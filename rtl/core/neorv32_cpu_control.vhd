@@ -1028,11 +1028,18 @@ begin
   monitor.exc <= monitor.cnt(monitor.cnt'left);
 
 
-  -- CSR Access Check: Available at All -----------------------------------------------------
+  -- CSR Access Check -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_avail_check: process(csr.addr)
+  csr_check: process(execute_engine.ir, decode_aux.rs1_zero, csr, debug_ctrl)
+    variable csr_addr_v : std_ulogic_vector(11 downto 0);
   begin
-    case csr.addr is
+    -- CSR address right from the instruction word --
+    csr_addr_v := execute_engine.ir(instr_imm12_msb_c downto instr_imm12_lsb_c);
+
+    -- ------------------------------------------------------------
+    -- Available at all
+    -- ------------------------------------------------------------
+    case csr_addr_v is
 
       -- user-defined U-mode CFU CSRs --
       when csr_cfureg0_c | csr_cfureg1_c | csr_cfureg2_c | csr_cfureg3_c =>
@@ -1089,14 +1096,11 @@ begin
         csr_valid(2) <= '0'; -- invalid access
 
     end case;
-  end process csr_avail_check;
 
-
-  -- CSR Access Check: R/W Capabilities -----------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  csr_rw_check: process(csr.addr, execute_engine.ir, decode_aux.rs1_zero)
-  begin
-    if (csr.addr(11 downto 10) = "11") and -- CSR is read-only
+    -- ------------------------------------------------------------
+    -- R/W capabilities
+    -- ------------------------------------------------------------
+    if (csr_addr_v(11 downto 10) = "11") and -- CSR is read-only
        ((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c)  or -- will always write to CSR
         (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- will always write to CSR
         (decode_aux.rs1_zero = '0')) then -- clear/set instructions: write to CSR only if rs1/imm5 is NOT zero
@@ -1104,27 +1108,25 @@ begin
     else
       csr_valid(1) <= '1'; -- access granted
     end if;
-  end process csr_rw_check;
 
-
-  -- CSR Access Check: Privilege Level ------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  csr_priv_check: process(csr, debug_ctrl)
-  begin
-    if ((csr.addr = csr_dcsr_c) or (csr.addr = csr_dpc_c) or (csr.addr = csr_dscratch0_c)) and -- debug-mode-only CSR?
+    -- ------------------------------------------------------------
+    -- Privilege level
+    -- ------------------------------------------------------------
+    if (csr_addr_v(11 downto 2) = csr_dcsr_c(11 downto 2)) and -- debug-mode-only CSR (dcsr, dpc, dscratch)?
        CPU_EXTENSION_RISCV_Sdext and (debug_ctrl.running = '0') then -- debug-mode implemented and not running?
       csr_valid(0) <= '0'; -- invalid access
-    elsif (csr.addr(11 downto 8) = csr_cycle_c(11 downto 8)) and -- user-mode counter access
+    elsif (csr_addr_v(11 downto 8) = csr_cycle_c(11 downto 8)) and -- user-mode counter access
           CPU_EXTENSION_RISCV_Zicntr and CPU_EXTENSION_RISCV_U and (csr.privilege_eff = '0') and -- any user-mode counters available and in user-mode?
-          (((csr.addr(1 downto 0) =   csr_cycle_c(1 downto 0)) and (csr.mcounteren_cy = '0')) or    -- illegal access to cycle
-           ((csr.addr(1 downto 0) = csr_instret_c(1 downto 0)) and (csr.mcounteren_ir = '0'))) then -- illegal access to instret
+          (((csr_addr_v(1 downto 0) =   csr_cycle_c(1 downto 0)) and (csr.mcounteren_cy = '0')) or    -- illegal access to cycle
+           ((csr_addr_v(1 downto 0) = csr_instret_c(1 downto 0)) and (csr.mcounteren_ir = '0'))) then -- illegal access to instret
       csr_valid(0) <= '0'; -- invalid access
-    elsif (csr.addr(9 downto 8) /= "00") and (csr.privilege_eff = '0') then -- invalid privilege level
+    elsif (csr_addr_v(9 downto 8) /= "00") and (csr.privilege_eff = '0') then -- invalid privilege level
       csr_valid(0) <= '0'; -- invalid access
     else
       csr_valid(0) <= '1'; -- access granted
     end if;
-  end process csr_priv_check;
+
+  end process csr_check;
 
 
   -- Illegal Instruction Check --------------------------------------------------------------
