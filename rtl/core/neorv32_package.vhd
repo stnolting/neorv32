@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100300"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100301"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -652,14 +652,10 @@ package neorv32_package is
   function max_natural_f(a : natural; b : natural) return natural;
   function min_natural_f(a : natural; b : natural) return natural;
   function bool_to_ulogic_f(cond : boolean) return std_ulogic;
-  function bin_to_gray_f(input : std_ulogic_vector) return std_ulogic_vector;
-  function gray_to_bin_f(input : std_ulogic_vector) return std_ulogic_vector;
   function or_reduce_f(input : std_ulogic_vector) return std_ulogic;
   function and_reduce_f(input : std_ulogic_vector) return std_ulogic;
   function xor_reduce_f(input : std_ulogic_vector) return std_ulogic;
-  function su_undefined_f(input : std_ulogic) return boolean;
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
-  function to_hstring32_f(input : std_ulogic_vector(31 downto 0)) return string;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
   function bswap_f(input : std_ulogic_vector) return std_ulogic_vector;
@@ -942,36 +938,11 @@ package body neorv32_package is
     end if;
   end function bool_to_ulogic_f;
 
-  -- Convert binary to gray -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function bin_to_gray_f(input : std_ulogic_vector) return std_ulogic_vector is
-    variable tmp_v : std_ulogic_vector(input'range);
-  begin
-    tmp_v(input'length-1) := input(input'length-1); -- keep MSB
-    for i in input'length-2 downto 0 loop
-      tmp_v(i) := input(i) xor input(i+1);
-    end loop;
-    return tmp_v;
-  end function bin_to_gray_f;
-
-  -- Convert gray to binary -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function gray_to_bin_f(input : std_ulogic_vector) return std_ulogic_vector is
-    variable tmp_v : std_ulogic_vector(input'range);
-  begin
-    tmp_v(input'length-1) := input(input'length-1); -- keep MSB
-    for i in input'length-2 downto 0 loop
-      tmp_v(i) := tmp_v(i+1) xor input(i);
-    end loop;
-    return tmp_v;
-  end function gray_to_bin_f;
-
   -- OR all bits ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function or_reduce_f(input : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic;
+    variable tmp_v : std_ulogic := '0';
   begin
-    tmp_v := '0';
     for i in input'range loop
       tmp_v := tmp_v or input(i);
     end loop;
@@ -981,9 +952,8 @@ package body neorv32_package is
   -- AND all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function and_reduce_f(input : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic;
+    variable tmp_v : std_ulogic := '1';
   begin
-    tmp_v := '1';
     for i in input'range loop
       tmp_v := tmp_v and input(i);
     end loop;
@@ -993,49 +963,28 @@ package body neorv32_package is
   -- XOR all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function xor_reduce_f(input : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic;
+    variable tmp_v : std_ulogic := '0';
   begin
-    tmp_v := '0';
     for i in input'range loop
       tmp_v := tmp_v xor input(i);
     end loop;
     return tmp_v;
   end function xor_reduce_f;
 
-  -- Check if std_ulogic is not '1' or '0' --------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function su_undefined_f(input : std_ulogic) return boolean is
-  begin
-    case input is
-      when '1' | '0' => return false;
-      when others    => return true;
-    end case;
-  end function su_undefined_f;
-
-  -- Convert std_ulogic_vector to lowercase hex char ----------------------------------------
+  -- Convert 4-bit std_ulogic_vector to lowercase hex char ----------------------------------
   -- -------------------------------------------------------------------------------------------
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character is
-    variable hex_v : string(1 to 16);
+    variable hex_v : string(1 to 16) := "0123456789abcdef";
   begin
-    hex_v := "0123456789abcdef";
-    for i in 0 to 3 loop
-      if su_undefined_f(input(i)) then
-        return '?';
-      end if;
-    end loop;
-    return hex_v(to_integer(unsigned(input)) + 1);
+    if ((input(0) /= '0') and (input(0) /= '1')) or
+       ((input(1) /= '0') and (input(1) /= '1')) or
+       ((input(2) /= '0') and (input(2) /= '1')) or
+       ((input(3) /= '0') and (input(3) /= '1')) then
+      return '?';
+    else
+      return hex_v(to_integer(unsigned(input)) + 1);
+    end if;
   end function to_hexchar_f;
-
-  -- Convert 32-bit std_ulogic_vector to hex string -----------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function to_hstring32_f(input : std_ulogic_vector(31 downto 0)) return string is
-    variable res_v : string(1 to 8);
-  begin
-    for i in 7 downto 0 loop
-      res_v(8-i) := to_hexchar_f(input(i*4+3 downto i*4+0));
-    end loop;
-    return res_v;
-  end function to_hstring32_f;
 
   -- Bit reversal ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1051,14 +1000,13 @@ package body neorv32_package is
   -- Test if input number is a power of two -------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function is_power_of_two_f(input : natural) return boolean is
-    variable tmp_v : unsigned(31 downto 0);
+    variable tmp_v : unsigned(31 downto 0) := to_unsigned(input, 32);
   begin
     if (input = 0) then
       return false;
     elsif (input = 1) then
       return true;
     else
-      tmp_v := to_unsigned(input, 32);
       if ((tmp_v and (tmp_v - 1)) = 0) then
         return true;
       else
@@ -1083,9 +1031,8 @@ package body neorv32_package is
   -- Population count (number of set bits) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function popcount_f(input : std_ulogic_vector) return natural is
-    variable cnt_v : natural range 0 to input'length;
+    variable cnt_v : natural range 0 to input'length := 0;
   begin
-    cnt_v := 0;
     for i in 0 to input'length-1 loop
       if (input(i) = '1') then
         cnt_v := cnt_v + 1;
@@ -1097,9 +1044,8 @@ package body neorv32_package is
   -- Count leading zeros --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function leading_zeros_f(input : std_ulogic_vector) return natural is
-    variable cnt_v : natural range 0 to input'length;
+    variable cnt_v : natural range 0 to input'length := 0;
   begin
-    cnt_v := 0;
     for i in input'length-1 downto 0 loop
       if (input(i) = '0') then
         cnt_v := cnt_v + 1;
@@ -1113,18 +1059,16 @@ package body neorv32_package is
   -- Replicate input bit num times ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector is
-    variable tmp_v : std_ulogic_vector(num-1 downto 0);
+    variable tmp_v : std_ulogic_vector(num-1 downto 0) := (others => input);
   begin
-    tmp_v := (others => input);
     return tmp_v;
   end function replicate_f;
 
   -- Initialize mem32_t array from another mem32_t array ------------------------------------
   -- -------------------------------------------------------------------------------------------
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t is
-    variable mem_v : mem32_t(0 to depth-1);
+    variable mem_v : mem32_t(0 to depth-1) := (others => (others => '0'));
   begin
-    mem_v := (others => (others => '0')); -- [IMPORTANT] make sure remaining memory entries are set to zero
     if (init'length > depth) then
       return mem_v;
     end if;
@@ -1138,9 +1082,8 @@ package body neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function print_version_f(version : std_ulogic_vector(31 downto 0)) return string is
     variable res_v : string(1 to 11);
-    variable idx_v : natural;
+    variable idx_v : natural := 1;
   begin
-    idx_v := 1;
     if (version(31 downto 28) /= x"0") then -- print only if not trailing zero
       res_v(idx_v) := to_hexchar_f(version(31 downto 28)); idx_v := idx_v + 1;
     end if;
