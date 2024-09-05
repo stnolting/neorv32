@@ -210,7 +210,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- control and status registers (CSRs) --
   type csr_t is record
     addr           : std_ulogic_vector(11 downto 0); -- csr address
-    raddr          : std_ulogic_vector(11 downto 0); -- simplified csr read address
     we, we_nxt     : std_ulogic; -- csr write enable
     re, re_nxt     : std_ulogic; -- csr read enable
     wdata, rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr write/read data
@@ -1481,9 +1480,9 @@ begin
 
   -- CSR Access Address ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr.addr  <= execute_engine.ir(instr_imm12_msb_c downto instr_imm12_lsb_c);
-  -- simplified CSR read address - [WARNING] M-mode (9:8 = 11) and U-mode (9:8 = 00) CSRs only! --
-  csr.raddr <= csr.addr(11 downto 10) & csr.addr(8) & csr.addr(8) & csr.addr(7 downto 0);
+  csr.addr <= execute_engine.ir(instr_imm12_lsb_c+11 downto instr_imm12_lsb_c+10) &
+              replicate_f(execute_engine.ir(instr_imm12_lsb_c+8), 2) & -- [NOTE] M-mode (11) and U-mode (00) CSRs only
+              execute_engine.ir(instr_imm12_lsb_c+7 downto instr_imm12_lsb_c);
 
 
   -- CSR Write-Data ALU ---------------------------------------------------------------------
@@ -1806,7 +1805,7 @@ begin
   csr_read_access: process(csr, trap_ctrl.irq_pnd, hpmevent_rd, cnt_lo_rd, cnt_hi_rd)
   begin
     csr_rdata <= (others => '0'); -- default
-    case csr.raddr is
+    case csr.addr is
 
       -- --------------------------------------------------------------------
       -- machine trap setup
@@ -1911,7 +1910,6 @@ begin
       -- --------------------------------------------------------------------
       -- low word --
       when csr_mcycle_c   | csr_cycle_c   => if CPU_EXTENSION_RISCV_Zicntr then csr_rdata <= cnt_lo_rd(0); end if;
---    when csr_mtime_c    | csr_time_c    => (others => '0'); -- not implemented
       when csr_minstret_c | csr_instret_c => if CPU_EXTENSION_RISCV_Zicntr then csr_rdata <= cnt_lo_rd(2); end if;
       when csr_mhpmcounter3_c  => if (hpm_num_c >  0) then csr_rdata <= cnt_lo_rd(3);  end if;
       when csr_mhpmcounter4_c  => if (hpm_num_c >  1) then csr_rdata <= cnt_lo_rd(4);  end if;
@@ -1929,7 +1927,6 @@ begin
 
       -- high word --
       when csr_mcycleh_c   | csr_cycleh_c   => if CPU_EXTENSION_RISCV_Zicntr then csr_rdata <= cnt_hi_rd(0); end if;
---    when csr_mtimeh_c    | csr_timeh_c    => (others => '0'); -- not implemented
       when csr_minstreth_c | csr_instreth_c => if CPU_EXTENSION_RISCV_Zicntr then csr_rdata <= cnt_hi_rd(2); end if;
       when csr_mhpmcounter3h_c  => if (hpm_num_c >  0) then csr_rdata <= cnt_hi_rd(3);  end if;
       when csr_mhpmcounter4h_c  => if (hpm_num_c >  1) then csr_rdata <= cnt_hi_rd(4);  end if;
@@ -1955,7 +1952,7 @@ begin
 --    when csr_mconfigptr_c => csr_rdata <= (others => '0'); -- machine configuration pointer register - hardwired to zero
 
       -- --------------------------------------------------------------------
-      -- debug mode CSRs
+      -- debug-mode CSRs
       -- --------------------------------------------------------------------
       when csr_dcsr_c      => if CPU_EXTENSION_RISCV_Sdext then csr_rdata <= csr.dcsr_rd;   end if; -- debug mode control and status
       when csr_dpc_c       => if CPU_EXTENSION_RISCV_Sdext then csr_rdata <= csr.dpc;       end if; -- debug mode program counter
@@ -1967,14 +1964,10 @@ begin
 --    when csr_tselect_c => if CPU_EXTENSION_RISCV_Sdtrig then csr_rdata <= (others => '0'); end if; -- hardwired to zero = only 1 trigger available
       when csr_tdata1_c  => if CPU_EXTENSION_RISCV_Sdtrig then csr_rdata <= csr.tdata1_rd;   end if; -- match control
       when csr_tdata2_c  => if CPU_EXTENSION_RISCV_Sdtrig then csr_rdata <= csr.tdata2;      end if; -- address-compare
-      when csr_tinfo_c   => -- trigger information
-        if CPU_EXTENSION_RISCV_Sdtrig then
-          csr_rdata(31 downto 24) <= x"01"; -- Sdtrig ISA spec. version 1.0
-          csr_rdata(15 downto  0) <= x"0006"; -- mcontrol6 type trigger only
-        end if;
+      when csr_tinfo_c   => if CPU_EXTENSION_RISCV_Sdtrig then csr_rdata <= x"01000006";     end if; -- trigger information (Sdtrig v1.0; mcontrol6-type only)
 
       -- --------------------------------------------------------------------
-      -- NEORV32-specific (RISC-V "custom") read-only CSRs
+      -- NEORV32-specific (RISC-V "custom") read-only machine-mode CSRs
       -- --------------------------------------------------------------------
       -- machine extended ISA extensions information --
       when csr_mxisa_c =>
