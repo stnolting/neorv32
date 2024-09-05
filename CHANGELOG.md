@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 05.09.2024 | 1.10.3.1 | minor CPU RTL cleanups and optimizations | [#1004](https://github.com/stnolting/neorv32/pull/1004) |
 | 03.09.2024 | [**:rocket:1.10.3**](https://github.com/stnolting/neorv32/releases/tag/v1.10.3) | **New release** | |
 | 30.08.2024 | 1.10.2.9 | :bug: fix PC reset bug (introduced in v1.10.2.8); minor RTL optimizations (size and critical path) | [#998](https://github.com/stnolting/neorv32/pull/998) |
 | 25.08.2024 | 1.10.2.8 | :warning: remove user-mode HPM counters; add individual `mocuntern` bits (`CY` and `IR`) rework Vivado IP module; minor RTL cleanups and optimization | [#996](https://github.com/stnolting/neorv32/pull/996) |
@@ -50,7 +51,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 10.07.2024 | 1.10.1.2 | minor rtl edits and cleanups | [#948](https://github.com/stnolting/neorv32/pull/948) |
 | 05.07.2024 | 1.10.1.1 | minor rtl cleanups and optimizations | [#941](https://github.com/stnolting/neorv32/pull/941) |
 | 04.07.2024 | [**:rocket:1.10.1**](https://github.com/stnolting/neorv32/releases/tag/v1.10.1) | **New release** | |
-| 04.07.2024 | 1.10.0.10 | :warning: rework GPTMRM and remove capture mode | [#939](https://github.com/stnolting/neorv32/pull/939) |
+| 04.07.2024 | 1.10.0.10 | :warning: rework GPTMR and remove capture mode | [#939](https://github.com/stnolting/neorv32/pull/939) |
 | 03.07.2024 | 1.10.0.9 | :warning: remove `AMO_RVS_GRANULARITY` generic, reservation set granularity is now fixed to 4 bytes | [#938](https://github.com/stnolting/neorv32/pull/938) |
 | 03.07.2024 | 1.10.0.8 | :test_tube: add XBUS to AHB3-lite bridge | [#937](https://github.com/stnolting/neorv32/pull/937) |
 | 02.07.2024 | 1.10.0.7 | minor rtl and software edits and cleanups | [#936](https://github.com/stnolting/neorv32/pull/936) |
