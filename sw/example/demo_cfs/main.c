@@ -68,14 +68,14 @@ int main() {
 
 
   // function examples
-  neorv32_uart0_printf("\n--- CFS 'binary to gray' function ---\n");
+  neorv32_uart0_printf("\n--- CFS 'OR-all-bits' function ---\n");
   for (i=0; i<TESTCASES; i++) {
     tmp = neorv32_aux_xorshift32(); // get random test data
     NEORV32_CFS->REG[0] = tmp; // write to CFS memory-mapped register 0
     neorv32_uart0_printf("%u: IN = 0x%x, OUT = 0x%x\n", i, tmp, NEORV32_CFS->REG[0]); // read from CFS memory-mapped register 0
   }
 
-  neorv32_uart0_printf("\n--- CFS 'gray to binary' function ---\n");
+  neorv32_uart0_printf("\n--- CFS 'XOR-all-bits' function ---\n");
   for (i=0; i<TESTCASES; i++) {
     tmp = neorv32_aux_xorshift32(); // get random test data
     NEORV32_CFS->REG[1] = tmp; // write to CFS memory-mapped register 1

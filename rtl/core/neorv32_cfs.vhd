@@ -203,8 +203,8 @@ begin
   -- The logic below is just a very simple example that transforms data
   -- from an input register into data in an output register.
 
-  cfs_reg_rd(0) <= bin_to_gray_f(cfs_reg_wr(0)); -- convert binary to gray code
-  cfs_reg_rd(1) <= gray_to_bin_f(cfs_reg_wr(1)); -- convert gray to binary code
+  cfs_reg_rd(0) <= x"0000000" & "000" & or_reduce_f(cfs_reg_wr(0)); -- OR all bits
+  cfs_reg_rd(1) <= x"0000000" & "000" & xor_reduce_f(cfs_reg_wr(1)); -- XOR all bits
   cfs_reg_rd(2) <= bit_rev_f(cfs_reg_wr(2)); -- bit reversal
   cfs_reg_rd(3) <= bswap_f(cfs_reg_wr(3)); -- byte swap (endianness conversion)
 
