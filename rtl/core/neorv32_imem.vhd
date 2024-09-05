@@ -63,8 +63,9 @@ begin
     cond_sel_string_f(IMEM_AS_IROM, "pre-initialized ROM.", "blank RAM.") severity note;
 
   assert not ((IMEM_AS_IROM = true) and (imem_app_size_c > IMEM_SIZE)) report
-    "[NEORV32] Application (image = " & natural'image(imem_app_size_c) &
-    " bytes) does not fit into processor-internal IMEM (ROM = " & natural'image(IMEM_SIZE) & " bytes)!" severity error;
+    "[NEORV32] Application image (" & natural'image(imem_app_size_c) &
+    " bytes) does not fit into processor-internal IMEM (" &
+    natural'image(IMEM_SIZE) & " bytes)!" severity error;
 
 
   -- Implement IMEM as pre-initialized ROM --------------------------------------------------
