@@ -326,12 +326,12 @@ ipgui::move_param -component [ipx::current_core] -order 32 [ipgui::get_guiparams
 # Configuration GUI: IP logo
 # **************************************************************
 ipx::add_file_group -type utility {} [ipx::current_core]
-ipx::add_file ../../$neorv32_home/$logo [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]
+ipx::add_file ../../$neorv32_home/$ip_logo [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]
 set_property type image [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]]
 set_property type LOGO  [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]]
 
 ipx::add_file_group -type gui_icon {} [ipx::current_core]
-ipx::add_file ../../$neorv32_home/$logo [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]
+ipx::add_file ../../$neorv32_home/$ip_logo [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]
 set_property type image [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
 set_property type LOGO  [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
 
