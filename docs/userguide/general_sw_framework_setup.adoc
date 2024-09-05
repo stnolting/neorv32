@@ -66,10 +66,10 @@ For more information see https://stnolting.github.io/neorv32/#_linker_script
 :sectnums:
 === Overriding the Default Configuration
 
-This will not change the default linker script at all. Hence, **this approach is recommended** as it allows to make
+This will not change the default linker script at all. Hence, **this approach is recommended** as it allows a
 per-project memory configuration without changing the code base.
 
-The RAM and ROM sizes from <<_modifying_the_linker_script>> (as well as the base addresses) can also be modified
+The RAM and ROM sizes from <<_modifying_the_linker_script>> (as well as the according base addresses) can also be modified
 by overriding the default values when invoking `make`. Therefore, the command needs to pass the according
 values to the linker using the makefile's `USER_FLAGS` variable.
 
@@ -77,17 +77,17 @@ values to the linker using the makefile's `USER_FLAGS` variable.
 See section "Application Makefile" of the data sheet for more information regarding the default makefile variables:
 https://stnolting.github.io/neorv32/#_application_makefile
 
-.Example: override default RAM size while invoking make
+.Example: override default RAM (DMEM) and ROM (IMEM) size while invoking make
 [source, bash]
 ----
-$ make USER_FLAGS+="-Wl,--defsym,__neorv32_rom_size=16k" clean_all exe
+$ make USER_FLAGS+="-Wl,--defsym,__neorv32_ram_size=16k -Wl,--defsym,__neorv32_rom_size=32k" clean_all exe
 ----
 
-The `-Wl` will pass the following commands/flags to the linker. `--defsym` will define a symbol for the linker.
-`neorv32_rom_size` is the variable that will be defined and `16k` is the value assigned to it (= 16*1024 bytes). As a result, this
-command will set the RAM region to a size of 16kB.
+The `-Wl` passes the following command/flag to the linker while `--defsym` defines a symbol for the linker.
+Hence, the default linker script section sizes are overridden. In this example the RAM size (=DMEM) is set to
+16kB and the ROM size (=IMEM) is set to 32kB.
 
-[NOTE]
+[TIP]
 When using this approach the customized attributes have to be specified every time the makefile is invoked!
 You can put the RAM/ROM override commands into the project's local makefile or define a simple shell script that defines
 all the setup-related parameters (memory sizes, RISC-V ISA extensions, optimization goal, further tuning flags, etc.).

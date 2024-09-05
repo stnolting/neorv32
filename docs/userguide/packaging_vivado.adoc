@@ -62,6 +62,6 @@ the NEORV32 IP module needs to be re-packaged by re-executing the packing script
  +
 This also applies if an executable installed right into the IMEM (see section <<_installing_an_executable_directly_into_memory>>)
 shall be updated. It is **not** not possible to replace the IMEM image (`neorv32_application_image.vhd`) file
-in the packaged_ip folder. For the Vivado design suite, the new program to be executed must be compiled and installe using the
+in the packaged_ip folder. For the Vivado design suite, the new program to be executed must be compiled and installed using the
 `install` makefile target. Next, the `neorv32_vivado_ip.tcl` script has to be executed again. Finally, Vivado will prompt to upgrade
 the NEORV32 IP.
