@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100301"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100302"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -1070,11 +1070,10 @@ package body neorv32_package is
     variable mem_v : mem32_t(0 to depth-1) := (others => (others => '0'));
   begin
     if (init'length > depth) then
-      return mem_v;
+      report "[NEORV32] mem32_init_f: initialization image is overflowing memory range!" severity warning;
+    else
+      mem_v(0 to init'length-1) := init(0 to init'length-1);
     end if;
-    for i in 0 to init'length-1 loop -- initialize only in range of source data array
-      mem_v(i) := init(i);
-    end loop;
     return mem_v;
   end function mem32_init_f;
 
