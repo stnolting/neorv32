@@ -80,7 +80,7 @@ begin
     end if;
   end process pointer_reg;
 
-  -- async pointer update --
+  -- pointer update --
   w_nxt <= (others => '0') when (clear_i = '1') else std_ulogic_vector(unsigned(w_pnt) + 1) when (we = '1') else w_pnt;
   r_nxt <= (others => '0') when (clear_i = '1') else std_ulogic_vector(unsigned(r_pnt) + 1) when (re = '1') else r_pnt;
 
