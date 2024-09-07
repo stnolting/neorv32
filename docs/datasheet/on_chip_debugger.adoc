@@ -433,7 +433,7 @@ hart's GPRs x0 - x15/31 (abstract command register index `0x1000` - `0x101f`).
 ==== DM CPU Access
 
 From the CPU's perspective, the DM acts like another memory-mapped peripheral. It occupies 256 bytes of the CPU's address
-space starting at address `dm_base_c` (see table below). This address space is divided into four sections of 64 bytes
+space starting at address `base_io_dm_c` (see table below). This address space is divided into four sections of 64 bytes
 each to provide access to the _park loop code ROM_, the _program buffer_, the _data buffer_ and the _status register_.
 The program buffer, the data buffer and the status register do not fully occupy the 64-byte-wide sections and are
 mirrored several times to fill the entire section.
@@ -471,13 +471,13 @@ has occurred while executing code _inside_ debug mode.
 [cols="^6,<4"]
 [options="header",grid="rows"]
 |=======================
-| Address                             | Description
-| `dm_exc_entry_c`  (`dm_base_c` + 0) | Exception entry address
-| `dm_park_entry_c` (`dm_base_c` + 8) | Normal entry address
+| Address                                | Description
+| `dm_exc_entry_c`  (`base_io_dm_c` + 0) | Exception entry address
+| `dm_park_entry_c` (`base_io_dm_c` + 8) | Normal entry address
 |=======================
 
 When the CPU enters or re-enters debug mode (for example via an `ebreak` in the DM's program buffer), it jumps to
-the _normal entry point_ that is configured via the `CPU_DEBUG_PARK_ADDR` (= `dm_base_c`) generic
+the _normal entry point_ that is configured via the `CPU_DEBUG_PARK_ADDR` generic
 (<<_cpu_top_entity_generics>>). By default, this generic is set to `dm_park_entry_c`, which is defined in main
 package file. If an exception is encountered during debug mode, the CPU jumps to the address of the _exception
 entry point_ configured via the `CPU_DEBUG_EXC_ADDR` generic (<<_cpu_top_entity_generics>>). By default, this generic

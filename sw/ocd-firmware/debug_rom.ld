@@ -17,7 +17,7 @@ ENTRY(__start)
 
 MEMORY
 {
-  debug_mem (rx) : ORIGIN = 0xFFFFF800, LENGTH = 128
+  debug_mem (rx) : ORIGIN = 0xFFFFFF00, LENGTH = 128
 }
 
 SECTIONS
