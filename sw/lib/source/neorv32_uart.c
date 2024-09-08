@@ -18,11 +18,8 @@
 #include "neorv32.h"
 #include <string.h>
 #include <stdarg.h>
-
-// Private functions
-static void __neorv32_uart_itoa(uint32_t x, char *res) __attribute__((unused)); // GCC: do not output a warning when this variable is unused
-static void __neorv32_uart_tohex(uint32_t x, char *res) __attribute__((unused)); // GCC: do not output a warning when this variable is unused
-static void __neorv32_uart_touppercase(uint32_t len, char *ptr) __attribute__((unused)); // GCC: do not output a warning when this variable is unused
+#include <stdlib.h>
+#include <ctype.h>
 
 
 /**********************************************************************//**
@@ -316,10 +313,11 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
 
   char c, string_buf[12];
   int32_t n;
+  int tmp;
 
   while ((c = *format++)) {
     if (c == '%') {
-      c = *format++;
+      c = tolower(*format++);
       switch (c) {
 
         case 's': // string
@@ -337,21 +335,21 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
             n = -n;
             neorv32_uart_putc(UARTx, '-');
           }
-          __neorv32_uart_itoa((uint32_t)n, string_buf);
+          itoa((uint32_t)n, string_buf, 10);
           neorv32_uart_puts(UARTx, string_buf);
           break;
 
         case 'u': // 32-bit unsigned
-          __neorv32_uart_itoa(va_arg(args, uint32_t), string_buf);
+          itoa(va_arg(args, uint32_t), string_buf, 10);
           neorv32_uart_puts(UARTx, string_buf);
           break;
 
-        case 'x': // 32-bit hexadecimal
+        case 'x': // 32-bit hexadecimal with leading zeros
         case 'p':
-        case 'X':
-          __neorv32_uart_tohex(va_arg(args, uint32_t), string_buf);
-          if (c == 'X') {
-           __neorv32_uart_touppercase(11, string_buf);
+          itoa(va_arg(args, uint32_t), string_buf, 16);
+          tmp = 8 - strlen(string_buf);
+          while (tmp--) { // add leading zeros
+            neorv32_uart_putc(UARTx, '0');
           }
           neorv32_uart_puts(UARTx, string_buf);
           break;
@@ -401,7 +399,7 @@ void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in,out] buffer Pointer to array of chars to store string.
- * @param[in] max_size Maximum number of chars to sample.
+ * @param[in] max_size Maximum number of chars to sample (including zero-termination).
  * @param[in] echo Echo UART input when 1.
  * @return Number of chars read.
  **************************************************************************/
@@ -434,85 +432,4 @@ int neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ech
   *buffer = '\0'; // terminate string
 
   return length;
-}
-
-
-/**********************************************************************//**
- * Private function for 'neorv32_printf' to convert into decimal.
- *
- * @param[in] x Unsigned input number.
- * @param[in,out] res Pointer for storing the resulting number string (11 chars).
- **************************************************************************/
-static void __neorv32_uart_itoa(uint32_t x, char *res) {
-
-  static const char numbers[] = "0123456789";
-  char buffer1[11];
-  int i, j;
-
-  buffer1[10] = '\0';
-  res[10] = '\0';
-
-  // convert
-  for (i=0; i<10; i++) {
-    buffer1[i] = numbers[x%10];
-    x /= 10;
-  }
-
-  // delete 'leading' zeros
-  for (i=9; i!=0; i--) {
-    if (buffer1[i] == '0')
-      buffer1[i] = '\0';
-    else
-      break;
-  }
-
-  // reverse
-  j = 0;
-  do {
-    if (buffer1[i] != '\0')
-      res[j++] = buffer1[i];
-  } while (i--);
-
-  res[j] = '\0'; // terminate result string
-}
-
-
-/**********************************************************************//**
- * Private function for 'neorv32_printf' to convert into hexadecimal.
- *
- * @param[in] x Unsigned input number.
- * @param[in,out] res Pointer for storing the resulting number string (9 chars).
- **************************************************************************/
-static void __neorv32_uart_tohex(uint32_t x, char *res) {
-
-  static const char symbols[] = "0123456789abcdef";
-
-  int i;
-  for (i=0; i<8; i++) { // nibble by nibble
-    uint32_t num_tmp = x >> (4*i);
-    res[7-i] = (char)symbols[num_tmp & 0x0f];
-  }
-
-  res[8] = '\0'; // terminate result string
-}
-
-
-/**********************************************************************//**
- * Private function to cast a string to UPPERCASE.
- *
- * @param[in] len Total length of input string.
- * @param[in,out] ptr Pointer for input/output string.
- **************************************************************************/
-static void __neorv32_uart_touppercase(uint32_t len, char *ptr) {
-
-  char tmp;
-
-  while (len > 0) {
-    tmp = *ptr;
-    if ((tmp >= 'a') && (tmp <= 'z')) {
-      *ptr = tmp - 32;
-    }
-    ptr++;
-    len--;
-  }
 }
