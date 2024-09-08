@@ -882,7 +882,7 @@ begin
         generic map (
           NUM_BLOCKS => XIP_CACHE_NUM_BLOCKS,
           BLOCK_SIZE => XIP_CACHE_BLOCK_SIZE,
-          UC_BEGIN   => (others => '-'),
+          UC_BEGIN   => (others => '0'),
           UC_ENABLE  => false,
           READ_ONLY  => true
         )
@@ -1020,17 +1020,17 @@ begin
       DEV_18_EN => IO_DMA_EN,           DEV_18_BASE => base_io_dma_c,
       DEV_19_EN => IO_SLINK_EN,         DEV_19_BASE => base_io_slink_c,
       DEV_20_EN => IO_CFS_EN,           DEV_20_BASE => base_io_cfs_c,
-      DEV_21_EN => false,               DEV_31_BASE => (others => '-'), -- reserved
-      DEV_22_EN => false,               DEV_30_BASE => (others => '-'), -- reserved
-      DEV_23_EN => false,               DEV_29_BASE => (others => '-'), -- reserved
-      DEV_24_EN => false,               DEV_28_BASE => (others => '-'), -- reserved
-      DEV_25_EN => false,               DEV_27_BASE => (others => '-'), -- reserved
-      DEV_26_EN => false,               DEV_26_BASE => (others => '-'), -- reserved
-      DEV_27_EN => false,               DEV_25_BASE => (others => '-'), -- reserved
-      DEV_28_EN => false,               DEV_24_BASE => (others => '-'), -- reserved
-      DEV_29_EN => false,               DEV_23_BASE => (others => '-'), -- reserved
-      DEV_30_EN => false,               DEV_22_BASE => (others => '-'), -- reserved
-      DEV_31_EN => false,               DEV_21_BASE => (others => '-')  -- reserved
+      DEV_21_EN => false,               DEV_31_BASE => (others => '0'), -- reserved
+      DEV_22_EN => false,               DEV_30_BASE => (others => '0'), -- reserved
+      DEV_23_EN => false,               DEV_29_BASE => (others => '0'), -- reserved
+      DEV_24_EN => false,               DEV_28_BASE => (others => '0'), -- reserved
+      DEV_25_EN => false,               DEV_27_BASE => (others => '0'), -- reserved
+      DEV_26_EN => false,               DEV_26_BASE => (others => '0'), -- reserved
+      DEV_27_EN => false,               DEV_25_BASE => (others => '0'), -- reserved
+      DEV_28_EN => false,               DEV_24_BASE => (others => '0'), -- reserved
+      DEV_29_EN => false,               DEV_23_BASE => (others => '0'), -- reserved
+      DEV_30_EN => false,               DEV_22_BASE => (others => '0'), -- reserved
+      DEV_31_EN => false,               DEV_21_BASE => (others => '0')  -- reserved
     )
     port map (
       clk_i        => clk_i,
