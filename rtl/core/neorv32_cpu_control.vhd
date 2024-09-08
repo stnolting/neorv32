@@ -594,7 +594,7 @@ begin
           elsif (debug_ctrl.running = '1') and CPU_EXTENSION_RISCV_Sdext then -- any other trap INSIDE debug mode
             execute_engine.next_pc <= CPU_DEBUG_EXC_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter: start at "parking loop" <exception_entry>
           else -- normal start of trap
-            if (csr.mtvec(1 downto 0) = "01") and (trap_ctrl.cause(6) = '1') then -- vectored mode + interrupt
+            if (csr.mtvec(0) = '1') and (trap_ctrl.cause(6) = '1') then -- vectored mode + interrupt
               execute_engine.next_pc <= csr.mtvec(XLEN-1 downto 7) & trap_ctrl.cause(4 downto 0) & "00"; -- pc = mtvec + 4 * mcause
             else
               execute_engine.next_pc <= csr.mtvec(XLEN-1 downto 2) & "00"; -- pc = mtvec
@@ -995,7 +995,7 @@ begin
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
   ctrl_o.ir_funct12   <= execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c);
-  ctrl_o.ir_opcode    <= execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c);
+  ctrl_o.ir_opcode    <= decode_aux.opcode;
   -- cpu status --
   ctrl_o.cpu_priv     <= csr.privilege_eff;
   ctrl_o.cpu_sleep    <= sleep_mode;
@@ -1587,11 +1587,7 @@ begin
             csr.mie_firq <= csr.wdata(31 downto 16);
 
           when csr_mtvec_c => -- machine trap-handler base address
-            if (csr.wdata(1 downto 0) = "01") then
-              csr.mtvec <= csr.wdata(XLEN-1 downto 7) & "00000" & "01"; -- mtvec.MODE=1 (vectored)
-            else
-              csr.mtvec <= csr.wdata(XLEN-1 downto 2) & "00"; -- mtvec.MODE=0 (direct)
-            end if;
+            csr.mtvec <= csr.wdata(XLEN-1 downto 2) & '0' & csr.wdata(0); -- base + mode (vectored/direct)
 
           when csr_mcounteren_c => -- machine counter access enable
             if CPU_EXTENSION_RISCV_U and CPU_EXTENSION_RISCV_Zicntr then
