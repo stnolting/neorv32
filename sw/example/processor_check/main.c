@@ -958,12 +958,15 @@ int main() {
     cnt_test++;
 
     // back-up RTE
-    uint32_t mtvec_bak = neorv32_cpu_csr_read(CSR_MTVEC);
+    tmp_a = neorv32_cpu_csr_read(CSR_MTVEC);
 
-    // install vector table and enable vector mode (mtvec[1:0] = 0b01)
-    neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)&vectored_irq_table | 0x1);
+    // install vector table (128-byte-aligned) and enable vectored mode (mtvec[1:0] = 0b01)
+    tmp_b = (uint32_t)&vectored_irq_table;
+    tmp_b &= 0xffffff80; // make sure this is aligned to 128-byte
+    tmp_b |= 0x1; // enable vectoring mode
+    neorv32_cpu_csr_write(CSR_MTVEC, tmp_b);
 
-    // enable interrupt
+    // enable interrupts
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MEIE);
 
     // trigger IRQ
@@ -984,7 +987,7 @@ int main() {
     }
 
     // restore RTE
-    neorv32_cpu_csr_write(CSR_MTVEC, mtvec_bak);
+    neorv32_cpu_csr_write(CSR_MTVEC, tmp_a);
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
