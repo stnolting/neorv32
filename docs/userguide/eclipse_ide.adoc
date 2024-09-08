@@ -190,6 +190,12 @@ the required `main.elf` file gets generated instead of _all_ executable files (l
 When you start debugging the first time you might need to select the provided debug configuration:
 **GDB OpenOCD Debugging > eclipse_example Default**
 
+.Debug Symbols
+[IMPORTANT]
+For debugging the ELF has to compiled to contain according debug symbols.
+Debug symbols are enabled by the project's local makefile: `USER_FLAGS += -ggdb -gdwarf-3`
+(this configuration seems to work best for Eclipse - at least for me).
+
 If you need to reconfigure OpenOCD binaries and/or paths:
 
 [start=1]
