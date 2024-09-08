@@ -29,7 +29,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 08.09.2024 | 1.10.3.4 | optimize CSR address logic (to reduce switching activity) | [#1008](https://github.com/stnolting/neorv32/pull/1008) |
+| 08.09.2024 | 1.10.3.4 | minor rtl/CSR optimizations | [#1010](https://github.com/stnolting/neorv32/pull/1010) |
+| 08.09.2024 | 1.10.3.3 | optimize CSR address logic (to reduce switching activity) | [#1008](https://github.com/stnolting/neorv32/pull/1008) |
 | 05.09.2024 | 1.10.3.2 | :test_tube: Remove "for loop" construct from memory initialization function as the max. number of loop/unrolling iterations might be constrained | [#1005](https://github.com/stnolting/neorv32/pull/1005) |
 | 05.09.2024 | 1.10.3.1 | minor CPU RTL cleanups and optimizations | [#1004](https://github.com/stnolting/neorv32/pull/1004) |
 | 03.09.2024 | [**:rocket:1.10.3**](https://github.com/stnolting/neorv32/releases/tag/v1.10.3) | **New release** | |
