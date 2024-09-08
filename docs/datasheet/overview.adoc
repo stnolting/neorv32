@@ -105,7 +105,6 @@ include::rationale.adoc[]
 * doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
 * FreeRTOS port + demos available
 
-
 **Extensibility and Customization**
 
 The NEORV32 processor is designed to ease customization and extensibility and provides several options for adding
