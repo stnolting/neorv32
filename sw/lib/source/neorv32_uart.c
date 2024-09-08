@@ -18,7 +18,6 @@
 #include "neorv32.h"
 #include <string.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include <ctype.h>
 
 
@@ -311,9 +310,10 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
  **************************************************************************/
 void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list args) {
 
-  char c, string_buf[12];
+  char c;
+  char string_buf[33];
   int32_t n;
-  int tmp;
+  unsigned int tmp;
 
   while ((c = *format++)) {
     if (c == '%') {
@@ -335,18 +335,18 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
             n = -n;
             neorv32_uart_putc(UARTx, '-');
           }
-          itoa((uint32_t)n, string_buf, 10);
+          neorv32_aux_itoa(string_buf, (uint32_t)n, 10);
           neorv32_uart_puts(UARTx, string_buf);
           break;
 
         case 'u': // 32-bit unsigned
-          itoa(va_arg(args, uint32_t), string_buf, 10);
+          neorv32_aux_itoa(string_buf, va_arg(args, uint32_t), 10);
           neorv32_uart_puts(UARTx, string_buf);
           break;
 
         case 'x': // 32-bit hexadecimal with leading zeros
         case 'p':
-          itoa(va_arg(args, uint32_t), string_buf, 16);
+          neorv32_aux_itoa(string_buf, va_arg(args, uint32_t), 16);
           tmp = 8 - strlen(string_buf);
           while (tmp--) { // add leading zeros
             neorv32_uart_putc(UARTx, '0');
