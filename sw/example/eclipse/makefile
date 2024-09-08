@@ -7,6 +7,9 @@
 # Override the default RISC-V GCC prefix
 RISCV_PREFIX = riscv-none-elf-
 
+# Add debug symbols
+USER_FLAGS += -ggdb -gdwarf-3
+
 # Modify this variable to fit your NEORV32 setup (neorv32 home folder)
 NEORV32_HOME ?= ../../..
 
