@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100302"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100303"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -941,8 +941,9 @@ package body neorv32_package is
   -- OR all bits ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function or_reduce_f(input : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic := '0';
+    variable tmp_v : std_ulogic;
   begin
+    tmp_v := '0';
     for i in input'range loop
       tmp_v := tmp_v or input(i);
     end loop;
@@ -952,8 +953,9 @@ package body neorv32_package is
   -- AND all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function and_reduce_f(input : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic := '1';
+    variable tmp_v : std_ulogic;
   begin
+    tmp_v := '1';
     for i in input'range loop
       tmp_v := tmp_v and input(i);
     end loop;
@@ -963,8 +965,9 @@ package body neorv32_package is
   -- XOR all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function xor_reduce_f(input : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic := '0';
+    variable tmp_v : std_ulogic;
   begin
+    tmp_v := '0';
     for i in input'range loop
       tmp_v := tmp_v xor input(i);
     end loop;
@@ -974,8 +977,9 @@ package body neorv32_package is
   -- Convert 4-bit std_ulogic_vector to lowercase hex char ----------------------------------
   -- -------------------------------------------------------------------------------------------
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character is
-    variable hex_v : string(1 to 16) := "0123456789abcdef";
+    variable hex_v : string(1 to 16);
   begin
+    hex_v := "0123456789abcdef";
     if ((input(0) /= '0') and (input(0) /= '1')) or
        ((input(1) /= '0') and (input(1) /= '1')) or
        ((input(2) /= '0') and (input(2) /= '1')) or
@@ -1000,8 +1004,9 @@ package body neorv32_package is
   -- Test if input number is a power of two -------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function is_power_of_two_f(input : natural) return boolean is
-    variable tmp_v : unsigned(31 downto 0) := to_unsigned(input, 32);
+    variable tmp_v : unsigned(31 downto 0);
   begin
+    tmp_v := to_unsigned(input, 32);
     if (input = 0) then
       return false;
     elsif (input = 1) then
@@ -1031,8 +1036,9 @@ package body neorv32_package is
   -- Population count (number of set bits) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function popcount_f(input : std_ulogic_vector) return natural is
-    variable cnt_v : natural range 0 to input'length := 0;
+    variable cnt_v : natural range 0 to input'length;
   begin
+    cnt_v := 0;
     for i in 0 to input'length-1 loop
       if (input(i) = '1') then
         cnt_v := cnt_v + 1;
@@ -1044,8 +1050,9 @@ package body neorv32_package is
   -- Count leading zeros --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function leading_zeros_f(input : std_ulogic_vector) return natural is
-    variable cnt_v : natural range 0 to input'length := 0;
+    variable cnt_v : natural range 0 to input'length;
   begin
+    cnt_v := 0;
     for i in input'length-1 downto 0 loop
       if (input(i) = '0') then
         cnt_v := cnt_v + 1;
@@ -1059,16 +1066,18 @@ package body neorv32_package is
   -- Replicate input bit num times ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector is
-    variable tmp_v : std_ulogic_vector(num-1 downto 0) := (others => input);
+    variable tmp_v : std_ulogic_vector(num-1 downto 0);
   begin
+    tmp_v := (others => input);
     return tmp_v;
   end function replicate_f;
 
   -- Initialize mem32_t array from another mem32_t array ------------------------------------
   -- -------------------------------------------------------------------------------------------
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t is
-    variable mem_v : mem32_t(0 to depth-1) := (others => (others => '0'));
+    variable mem_v : mem32_t(0 to depth-1);
   begin
+    mem_v := (others => (others => '0'));
     if (init'length > depth) then
       report "[NEORV32] mem32_init_f: initialization image is overflowing memory range!" severity warning;
     else
@@ -1081,27 +1090,21 @@ package body neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function print_version_f(version : std_ulogic_vector(31 downto 0)) return string is
     variable res_v : string(1 to 11);
-    variable idx_v : natural := 1;
+    variable idx_v : natural;
   begin
-    if (version(31 downto 28) /= x"0") then -- print only if not trailing zero
-      res_v(idx_v) := to_hexchar_f(version(31 downto 28)); idx_v := idx_v + 1;
-    end if;
-    res_v(idx_v) := to_hexchar_f(version(27 downto 24)); idx_v := idx_v + 1;
-    res_v(idx_v) := '.'; idx_v := idx_v + 1;
-    if (version(23 downto 20) /= x"0") then -- print only if not trailing zero
-      res_v(idx_v) := to_hexchar_f(version(23 downto 20)); idx_v := idx_v + 1;
-    end if;
-    res_v(idx_v) := to_hexchar_f(version(19 downto 16)); idx_v := idx_v + 1;
-    res_v(idx_v) := '.'; idx_v := idx_v + 1;
-    if (version(15 downto 12) /= x"0") then -- print only if not trailing zero
-      res_v(idx_v) := to_hexchar_f(version(15 downto 12)); idx_v := idx_v + 1;
-    end if;
-    res_v(idx_v) := to_hexchar_f(version(11 downto 8)); idx_v := idx_v + 1;
-    res_v(idx_v) := '.'; idx_v := idx_v + 1;
-    if (version(7 downto 4) /= x"0") then -- print only if not trailing zero
-      res_v(idx_v) := to_hexchar_f(version(7 downto 4)); idx_v := idx_v + 1;
-    end if;
-    res_v(idx_v) := to_hexchar_f(version(3 downto 0)); idx_v := idx_v + 1;
+    idx_v := 1;
+    for i in 4 downto 1 loop
+      if (version((i*8)-1 downto (i*8)-4) /= x"0") then -- print only if not trailing zero
+        res_v(idx_v) := to_hexchar_f(version((i*8)-1 downto (i*8)-4)); -- high nibble
+        idx_v := idx_v + 1;
+      end if;
+      res_v(idx_v) := to_hexchar_f(version((i*8)-5 downto (i*8)-8)); -- low nibble
+      idx_v := idx_v + 1;
+      if (i /= 1) then -- separator
+        res_v(idx_v) := '.';
+        idx_v := idx_v + 1;
+      end if;
+    end loop;
     return res_v;
   end function print_version_f;
 
