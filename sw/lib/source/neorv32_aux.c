@@ -202,3 +202,47 @@ uint32_t neorv32_aux_xorshift32(void) {
 
   return x32;
 }
+
+
+/**********************************************************************//**
+ * Simplified version of "itoa": convert number to string.
+ *
+ * @param[in,out] buffer Pointer to array for the result string [33 chars].
+ * @param[in] num Number to convert.
+ * @param[in] base Base of number representation (2..16).
+ **************************************************************************/
+void neorv32_aux_itoa(char *buffer, uint32_t num, uint32_t base) {
+
+  const char digits[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
+  char tmp[33];
+  char *tmp_ptr;
+  unsigned int i;
+
+  if ((base < 2) || (base > 16)) { // invalid base?
+    *buffer = '\0';
+    return;
+  }
+
+  // initialize with all-zero
+  for (i=0; i<sizeof(tmp); i++) {
+    tmp[i] = '\0';
+  }
+
+  tmp_ptr = &tmp[sizeof(tmp)-1]; // go to end of array
+  do { // generate digit by digit
+    tmp_ptr--;
+    *tmp_ptr = digits[num%base];
+    num /= base;
+  } while (num != 0);
+
+  // delete leading zeros
+  for (i=0; i<sizeof(tmp); i++) {
+    if (tmp[i] != '\0') {
+      *buffer = tmp[i];
+      buffer++;
+    }
+  }
+
+  // terminate result string
+  *buffer = '\0';
+}
