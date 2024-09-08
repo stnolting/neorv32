@@ -7,7 +7,7 @@
 // ================================================================================ //
 
 /**
- * @file neorv32_cfs.h
+ * @file neorv32_sysinfo.h
  * @brief System Information Memory (SYSINFO) HW driver header file.
  *
  * @see https://stnolting.github.io/neorv32/sw/files.html
