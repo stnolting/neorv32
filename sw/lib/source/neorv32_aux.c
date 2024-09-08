@@ -145,14 +145,19 @@ void neorv32_aux_unixtime2date(uint64_t unixtime, date_t* date) {
  * Helper function to convert up to 16 hex chars string into uint64_t
  *
  * @param[in,out] buffer Pointer to array of chars to convert into number.
- * @param[in,out] length Length of the conversion string.
+ * @param[in] length Length of the conversion string.
  * @return Converted number (uint64_t).
  **************************************************************************/
-uint64_t neorv32_aux_hexstr2uint64(char *buffer, uint8_t length) {
+uint64_t neorv32_aux_hexstr2uint64(char *buffer, unsigned int length) {
 
   uint64_t res = 0;
   uint32_t d = 0;
   char c = 0;
+
+  // constrain max range
+  if (length > 16) {
+    length = 16;
+  }
 
   while (length--) {
     c = *buffer++;

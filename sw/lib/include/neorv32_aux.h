@@ -47,7 +47,7 @@ typedef struct {
 /**@{*/
 uint64_t neorv32_aux_date2unixtime(date_t* date);
 void     neorv32_aux_unixtime2date(uint64_t unixtime, date_t* date);
-uint64_t neorv32_aux_hexstr2uint64(char *buffer, uint8_t length);
+uint64_t neorv32_aux_hexstr2uint64(char *buffer, unsigned int length);
 uint32_t neorv32_aux_xorshift32(void);
 /**@}*/
 
