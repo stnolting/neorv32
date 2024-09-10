@@ -137,8 +137,8 @@ package neorv32_package is
   -- bus response --
   type bus_rsp_t is record
     data : std_ulogic_vector(31 downto 0); -- read data, valid if ack=1
-    ack  : std_ulogic; -- access acknowledge, single-shot
-    err  : std_ulogic; -- access error, single-shot
+    ack  : std_ulogic; -- set if access acknowledge, single-shot, has priority over err
+    err  : std_ulogic; -- set if access error, single-shot
   end record;
 
   -- source (request) termination --

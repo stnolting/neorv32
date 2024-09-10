@@ -336,7 +336,7 @@ begin
       keeper.halt <= '0';
     elsif rising_edge(clk_i) then
       keeper.err  <= '0'; -- default
-      keeper.halt <= or_reduce_f(port_sel and (not tmo_en_list_c)); -- no timeout if *_TMO_EN = true
+      keeper.halt <= or_reduce_f(port_sel and (not tmo_en_list_c)); -- no timeout if *_TMO_EN = false
       if (keeper.busy = '0') then -- bus idle
         keeper.cnt  <= std_ulogic_vector(to_unsigned(TIMEOUT, keeper.cnt'length));
         keeper.busy <= req_i.stb;
