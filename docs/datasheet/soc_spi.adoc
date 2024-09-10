@@ -56,10 +56,11 @@ chip-select lines. The selected line will become enabled when bit `3` is also se
 lines will be disabled.
 
 Examples:
-. Enable chip-select line 3: `NEORV32_SPI->DATA = (1 << SPI_DATA_CMD) | (1 << 3) | 3;`
-. Enable chip-select line 7: `NEORV32_SPI->DATA = (1 << SPI_DATA_CMD) | (1 << 3) | 7;`
-. Disable all chip-select lines: `NEORV32_SPI->DATA = (1 << SPI_DATA_CMD) | (0 << 3);`
-. Send data byte `0xAB`: `NEORV32_SPI->DATA = (0 << SPI_DATA_CMD) | 0xAB;`
+
+* Enable chip-select line 3: `NEORV32_SPI->DATA = (1 << SPI_DATA_CMD) | (1 << 3) | 3;`
+* Enable chip-select line 7: `NEORV32_SPI->DATA = (1 << SPI_DATA_CMD) | (1 << 3) | 7;`
+* Disable all chip-select lines: `NEORV32_SPI->DATA = (1 << SPI_DATA_CMD) | (0 << 3);`
+* Send data byte `0xAB`: `NEORV32_SPI->DATA = (0 << SPI_DATA_CMD) | 0xAB;`
 
 Since all SPI operations are controlled via the FIFO, entire SPI sequences (chip-enable, data transmissions, chip-disable)
 can be "programmed". Thus, SPI operations can be executed without any CPU interaction at all.
