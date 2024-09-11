@@ -15,7 +15,7 @@ endif
 .DEFAULT_GOAL := help
 
 # 'compile' is still here for compatibility
-asm: 
+asm:
 	@for testsuite in $(testsuites); do \
 		cd $$testsuite && make USER_FLAGS+=-DRUN_CHECK USER_FLAGS+=-DUART0_SIM_MODE USER_FLAGS+=-DSILENT_MODE USER_FLAGS+=-Drv32_all asm ; \
 		cd .. ;\
@@ -65,7 +65,7 @@ all:
 # -----------------------------------------------------------------------------
 # In-console simulation using default/simple testbench and GHDL
 # -----------------------------------------------------------------------------
-sim:  
+sim:
 	@for testsuite in $(testsuites); do \
 		cd $$testsuite && make USER_FLAGS+=-DRUN_CHECK USER_FLAGS+=-DUART0_SIM_MODE USER_FLAGS+=-DSILENT_MODE USER_FLAGS+=-Drv32_all sim ; \
 		cd .. ;\
@@ -94,7 +94,7 @@ clean:
 clean_all:
 	@for testsuite in $(testsuites); do \
 		echo make $@ ; \
-		cd $$testsuite && make USER_FLAGS+=-DRUN_CHECK USER_FLAGS+=-DUART0_SIM_MODE USER_FLAGS+=-DSILENT_MODE USER_FLAGS+=-Drv32_all clean_all exe ; \
+		cd $$testsuite && make clean_all ; \
 		cd .. ;\
 	done
 
