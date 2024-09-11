@@ -8,7 +8,7 @@
 
 /**
  * @file neorv32_intrinsics.h
- * @brief Helper functions and macros for custom "intrinsics" / instructions.
+ * @brief Helper macros for custom "intrinsics" / instructions.
  *
  * @see https://stnolting.github.io/neorv32/sw/files.html
  */
@@ -17,42 +17,6 @@
 #define neorv32_intrinsics_h
 
 #include <stdint.h>
-
-
-// ****************************************************************************************************************************
-// Custom Instruction Intrinsics
-// Derived from https://github.com/google/CFU-Playground/blob/dfe5c2b75a4540dab62baef1b12fd03bfa78425e/third_party/SaxonSoc/riscv.h
-// Original license header:
-//
-//   From https://github.com/SpinalHDL/SaxonSoc/blob/dev-0.1/software/standalone/driver/riscv.h
-//
-//   Copyright (c) 2019 SaxonSoc contributors
-//
-//   MIT License: https://github.com/SpinalHDL/SaxonSoc/blob/dev-0.1/LICENSE
-//
-// LICENSE:
-//  MIT License
-//
-//  Copyright (c) 2019 SaxonSoc contributors
-//
-//  Permission is hereby granted, free of charge, to any person obtaining a copy
-//  of this software and associated documentation files (the "Software"), to deal
-//  in the Software without restriction, including without limitation the rights
-//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  copies of the Software, and to permit persons to whom the Software is
-//  furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in all
-//  copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-//  SOFTWARE.
-// ****************************************************************************************************************************
 
 
 /**********************************************************************//**
@@ -214,41 +178,6 @@ asm (
         "r" (rs3)                                           \
     );                                                      \
     __return;                                               \
-})
-
-
-/**********************************************************************//**
- * @name R5-type instruction format
- * @warning NOT RISC-V-standard, NEORV32-specific!
- **************************************************************************/
-#define CUSTOM_INSTR_R5_TYPE(rs4, rs3, rs2, rs1, opcode) \
-({                                                       \
-    uint32_t __return;                                   \
-    asm volatile (                                       \
-      ""                                                 \
-      : [output] "=r" (__return)                         \
-      : [input_i] "r" (rs1),                             \
-        [input_j] "r" (rs2),                             \
-        [input_k] "r" (rs3),                             \
-        [input_l] "r" (rs4)                              \
-    );                                                   \
-    asm volatile (                                       \
-      ".word (                                           \
-        (((  reg_%3   )       & 0x1f) << 27) |           \
-        (((( reg_%4   ) >> 3) & 0x03) << 25) |           \
-        (((  reg_%2   )       & 0x1f) << 20) |           \
-        (((  reg_%1   )       & 0x1f) << 15) |           \
-        (((  reg_%4   )       & 0x07) << 12) |           \
-        (((  reg_%0   )       & 0x1f) <<  7) |           \
-        (((" #opcode ")       & 0x7f) <<  0)             \
-      );"                                                \
-      : [rd] "=r" (__return)                             \
-      : "r" (rs1),                                       \
-        "r" (rs2),                                       \
-        "r" (rs3),                                       \
-        "r" (rs4)                                        \
-    );                                                   \
-    __return;                                            \
 })
 
 
