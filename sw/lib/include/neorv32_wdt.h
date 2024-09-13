@@ -62,7 +62,8 @@ enum NEORV32_WDT_CTRL_enum {
 enum NEORV32_WDT_RCAUSE_enum {
   WDT_RCAUSE_EXT = 0b00, /**< Reset caused by external signal/pin */
   WDT_RCAUSE_OCD = 0b01, /**< Reset caused by on-chip debugger */
-  WDT_RCAUSE_WDT = 0b10  /**< Reset caused by watchdog timer */
+  WDT_RCAUSE_TMO = 0b10, /**< Reset caused by watchdog timer timeout */
+  WDT_RCAUSE_ACC = 0b11  /**< Reset caused by watchdog timer invalid access */
 };
 
 
@@ -73,7 +74,7 @@ enum NEORV32_WDT_RCAUSE_enum {
 int  neorv32_wdt_available(void);
 void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en, int strict);
 int  neorv32_wdt_disable(void);
-void neorv32_wdt_feed(void);
+void neorv32_wdt_feed(uint32_t password);
 int  neorv32_wdt_get_cause(void);
 /**@}*/
 

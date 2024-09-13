@@ -44,7 +44,7 @@ int neorv32_wdt_available(void) {
  * @param[in] lock Control register will be locked when 1 (until next reset).
  * @param[in] debug_en Allow watchdog to continue operation even when CPU is in debug mode.
  * @param[in] sleep_en Allow watchdog to continue operation even when CPU is in sleep mode.
- * @param[in] strict Force hardware reset if reset password is incorrect.
+ * @param[in] strict Force hardware reset if reset password is incorrect or if trying to alter a locked configuration.
  **************************************************************************/
 void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en, int strict) {
 
@@ -52,11 +52,11 @@ void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en, i
 
   // update configuration
   uint32_t ctrl = 0;
-  ctrl |= ((uint32_t)(1))                    << WDT_CTRL_EN;
-  ctrl |= ((uint32_t)(timeout  & 0xffffffU)) << WDT_CTRL_TIMEOUT_LSB;
-  ctrl |= ((uint32_t)(debug_en & 0x1U))      << WDT_CTRL_DBEN;
-  ctrl |= ((uint32_t)(sleep_en & 0x1U))      << WDT_CTRL_SEN;
-  ctrl |= ((uint32_t)(strict & 0x1U))        << WDT_CTRL_STRICT;
+  ctrl |= ((uint32_t)(1))                   << WDT_CTRL_EN;
+  ctrl |= ((uint32_t)(timeout & 0xffffffU)) << WDT_CTRL_TIMEOUT_LSB;
+  ctrl |= ((uint32_t)(debug_en & 0x1U))     << WDT_CTRL_DBEN;
+  ctrl |= ((uint32_t)(sleep_en & 0x1U))     << WDT_CTRL_SEN;
+  ctrl |= ((uint32_t)(strict & 0x1U))       << WDT_CTRL_STRICT;
   NEORV32_WDT->CTRL = ctrl;
 
   // lock configuration?
@@ -89,23 +89,21 @@ int neorv32_wdt_disable(void) {
 
 /**********************************************************************//**
  * Feed watchdog (reset timeout counter).
+ *
+ * @param[in] password Password for WDT reset.
  **************************************************************************/
-void neorv32_wdt_feed(void) {
+void neorv32_wdt_feed(uint32_t password) {
 
-  NEORV32_WDT->RESET = (uint32_t)WDT_PASSWORD;
+  NEORV32_WDT->RESET = password;
 }
 
 
 /**********************************************************************//**
  * Get cause of last system reset.
  *
- * @return Cause of last reset (0: external reset, 1: OCD reset, 2: WDT reset).
+ * @return Cause of last reset (#NEORV32_WDT_RCAUSE_enum).
  **************************************************************************/
 int neorv32_wdt_get_cause(void) {
 
-  uint32_t tmp = NEORV32_WDT->CTRL;
-  tmp = tmp >> WDT_CTRL_RCAUSE_LO;
-  tmp = tmp & 3;
-
-  return tmp;
+  return (NEORV32_WDT->CTRL >> WDT_CTRL_RCAUSE_LO) & 0x3;
 }
