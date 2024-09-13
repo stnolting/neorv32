@@ -561,8 +561,8 @@ int main() {
   tmp_a = trap_cnt; // current number of traps
 
   // try executing some illegal instructions
-  asm volatile (".align 4");
-  asm volatile (".word 0x0e00202f"); // amoswap.w x0, x0, (x0)
+  asm volatile (".word 0x58007053"); // fsqrt.s x0, x0 (not supported)
+  asm volatile (".word 0x0e00202f"); // amoswap.w x0, x0, (x0) (not supported)
   asm volatile (".word 0x34004073"); // illegal CSR access funct3 (using mscratch)
   asm volatile (".word 0x30200077"); // mret with illegal opcode
   asm volatile (".word 0x3020007f"); // mret with illegal opcode
@@ -583,11 +583,11 @@ int main() {
   // number of traps we are expecting + expected instruction word of last illegal instruction
   uint32_t invalid_instr;
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
-    tmp_a += 12;
+    tmp_a += 13;
     invalid_instr = 0x08812681; // mtinst: pre-decompressed; clear bit 1 if compressed instruction
   }
   else { // C extension disabled
-    tmp_a += 10;
+    tmp_a += 11;
     invalid_instr = 0xfe002fe3;
   }
 
