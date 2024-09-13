@@ -18,9 +18,8 @@
 
 #include <stdint.h>
 
-
 /**********************************************************************//**
- * @name Register mappings
+ * @name Register aliases (physical names and ABI names)
  **************************************************************************/
 asm (
   ".set reg_x0,   0 \n"
@@ -100,11 +99,6 @@ asm (
 #define CUSTOM_INSTR_R2_TYPE(funct7, funct5, rs1, funct3, opcode) \
 ({                                                                \
     uint32_t __return;                                            \
-    asm volatile (                                                \
-      ""                                                          \
-      : [output] "=r" (__return)                                  \
-      : [input_i] "r" (rs1)                                       \
-    );                                                            \
     asm volatile(                                                 \
       ".word (                                                    \
         (((" #funct7 ") & 0x7f) << 25) |                          \
@@ -128,12 +122,6 @@ asm (
 ({                                                             \
     uint32_t __return;                                         \
     asm volatile (                                             \
-      ""                                                       \
-      : [output] "=r" (__return)                               \
-      : [input_i] "r" (rs1),                                   \
-        [input_j] "r" (rs2)                                    \
-    );                                                         \
-    asm volatile (                                             \
       ".word (                                                 \
         (((" #funct7 ") & 0x7f) << 25) |                       \
         (((  reg_%2   ) & 0x1f) << 20) |                       \
@@ -156,13 +144,6 @@ asm (
 #define CUSTOM_INSTR_R4_TYPE(rs3, rs2, rs1, funct3, opcode) \
 ({                                                          \
     uint32_t __return;                                      \
-    asm volatile (                                          \
-      ""                                                    \
-      : [output] "=r" (__return)                            \
-      : [input_i] "r" (rs1),                                \
-        [input_j] "r" (rs2),                                \
-        [input_k] "r" (rs3)                                 \
-    );                                                      \
     asm volatile (                                          \
       ".word (                                              \
         (((  reg_%3   ) & 0x1f) << 27) |                    \
@@ -188,11 +169,6 @@ asm (
 ({                                                      \
     uint32_t __return;                                  \
     asm volatile (                                      \
-      ""                                                \
-      : [output] "=r" (__return)                        \
-      : [input_i] "r" (rs1)                             \
-    );                                                  \
-    asm volatile (                                      \
       ".word (                                          \
         (((" #imm12  ") & 0xfff) << 20) |               \
         (((  reg_%1   ) &  0x1f) << 15) |               \
@@ -212,12 +188,6 @@ asm (
  **************************************************************************/
 #define CUSTOM_INSTR_S_TYPE(imm12, rs2, rs1, funct3, opcode) \
 ({                                                           \
-    asm volatile (                                           \
-      ""                                                     \
-      :                                                      \
-      : [input_i] "r" (rs1),                                 \
-        [input_j] "r" (rs2)                                  \
-    );                                                       \
     asm volatile (                                           \
       ".word (                                               \
         ((((" #imm12 ") >> 5) & 0x7f) << 25) |               \
