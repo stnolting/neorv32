@@ -252,10 +252,8 @@ architecture neorv32_top_rtl of neorv32_top is
   constant dmem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_DMEM_SIZE), MEM_INT_DMEM_SIZE, 2**index_size_f(MEM_INT_DMEM_SIZE));
 
   -- reset generator --
-  signal rstn_wdt                     : std_ulogic;
+  signal rstn_wdt, rstn_sys, rstn_ext : std_ulogic;
   signal rstn_sys_sreg, rstn_ext_sreg : std_ulogic_vector(3 downto 0);
-  signal rstn_sys, rstn_ext           : std_ulogic;
-  signal rst_cause                    : std_ulogic_vector(1 downto 0);
 
   -- clock generator --
   signal clk_cpu                   : std_ulogic; -- CPU core clock, can be switched off
@@ -400,22 +398,6 @@ begin
         rstn_sys <= and_reduce_f(rstn_sys_sreg);
       end if;
     end process reset_generator;
-
-
-    -- Reset Cause ----------------------------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    reset_cause: process(rstn_ext, clk_i)
-    begin
-      if (rstn_ext = '0') then
-        rst_cause <= "00"; -- reset from external pin
-      elsif rising_edge(clk_i) then
-        if (dci_ndmrstn = '0') then
-          rst_cause <= "01"; -- reset from on-chip debugger
-        elsif (rstn_wdt = '0') then
-          rst_cause <= "10"; -- reset from watchdog timer
-        end if;
-      end if;
-    end process reset_cause;
 
 
     -- Clock Generator ------------------------------------------------------------------------
@@ -1165,8 +1147,9 @@ begin
       neorv32_wdt_inst: entity neorv32.neorv32_wdt
       port map (
         clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        rst_cause_i => rst_cause,
+        rstn_ext_i  => rstn_ext,
+        rstn_db_i   => dci_ndmrstn,
+        rstn_sys_i  => rstn_sys,
         bus_req_i   => iodev_req(IODEV_WDT),
         bus_rsp_o   => iodev_rsp(IODEV_WDT),
         cpu_debug_i => cpu_debug,
