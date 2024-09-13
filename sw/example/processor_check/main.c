@@ -561,12 +561,14 @@ int main() {
   tmp_a = trap_cnt; // current number of traps
 
   // try executing some illegal instructions
-  asm volatile (".word 0x58007053"); // fsqrt.s x0, x0 (not supported)
-  asm volatile (".word 0x0e00202f"); // amoswap.w x0, x0, (x0) (not supported)
+  asm volatile (".word 0x58007053"); // unsupported fsqrt.s x0, x0
+  asm volatile (".word 0x0e00202f"); // unsupported amoswap.w x0, x0, (x0)
   asm volatile (".word 0x34004073"); // illegal CSR access funct3 (using mscratch)
   asm volatile (".word 0x30200077"); // mret with illegal opcode
   asm volatile (".word 0x3020007f"); // mret with illegal opcode
   asm volatile (".word 0x7b200073"); // dret outside of debug mode
+  asm volatile (".word 0x00000079"); // ecall with rs1 != 0
+  asm volatile (".word 0x00008073"); // ecall with rd != 0
   asm volatile (".word 0x7b300073"); // illegal system funct12
   asm volatile (".word 0xfe000033"); // illegal add funct7
   asm volatile (".word 0x80002163"); // illegal branch funct3 (misaligned DST if C not available)
@@ -574,7 +576,7 @@ int main() {
   asm volatile (".word 0xfe002fe3"); // illegal store funct3
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
     asm volatile (".align 4");
-    asm volatile (".half 0x0000"); // canonical compressed illegal
+    asm volatile (".half 0x0000"); // canonical compressed illegal instruction
     asm volatile (".half 0x66aa"); // c.flwsp (illegal since F ISA extension is not supported)
     asm volatile (".align 4");
   }
@@ -583,11 +585,11 @@ int main() {
   // number of traps we are expecting + expected instruction word of last illegal instruction
   uint32_t invalid_instr;
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
-    tmp_a += 13;
+    tmp_a += 15;
     invalid_instr = 0x08812681; // mtinst: pre-decompressed; clear bit 1 if compressed instruction
   }
   else { // C extension disabled
-    tmp_a += 11;
+    tmp_a += 13;
     invalid_instr = 0xfe002fe3;
   }
 
