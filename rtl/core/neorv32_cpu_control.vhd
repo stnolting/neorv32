@@ -636,7 +636,15 @@ begin
   -- Decoding Helper Logic ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   decode_helper: process(execute_engine)
+    variable f7_v : std_ulogic_vector(6 downto 0);
+    variable f5_v : std_ulogic_vector(4 downto 0);
+    variable f3_v : std_ulogic_vector(2 downto 0);
   begin
+    -- shortcuts --
+    f7_v := execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c); -- funct7
+    f5_v := execute_engine.ir(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c); -- funct5
+    f3_v := execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c); -- funct3
+
     -- defaults --
     decode_aux.is_b_imm  <= '0';
     decode_aux.is_b_reg  <= '0';
@@ -647,68 +655,54 @@ begin
     -- BITMANIP instruction --
     if CPU_EXTENSION_RISCV_B then -- implemented at all?
       -- register-immediate operation --
-      if ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001") and (
-           (execute_engine.ir(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00000") or -- CLZ
-           (execute_engine.ir(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00001") or -- CTZ
-           (execute_engine.ir(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00010") or -- CPOP
-           (execute_engine.ir(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00100") or -- SEXT.B
-           (execute_engine.ir(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00101")    -- SEXT.H
-          )) or
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101")) or -- RORI
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "101") and
-                                                                                            (execute_engine.ir(instr_funct12_lsb_c+4 downto instr_funct12_lsb_c) = "00111")) or -- ORCB
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- BCLRI / BEXTI
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- REV8 / BINVI
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) then -- BSETI
+      if ((f7_v = "0110000") and (f3_v = "001") and ((f5_v = "00000") or (f5_v = "00000") or (f5_v = "00010") or (f5_v = "00100") or (f5_v = "00101"))) or -- CLZ, CTZ, CPOP, SEXT.[B/H]
+         ((f7_v = "0110000") and (f3_v = "101")) or -- RORI
+         ((f7_v = "0010100") and (f3_v = "101") and (f5_v = "00111")) or -- ORCB
+         ((f7_v = "0100100") and (f3_v(1 downto 0) = "01")) or -- BCLRI / BEXTI
+         ((f7_v = "0110100") and (f3_v(1 downto 0) = "01")) or -- REV8 / BINVI
+         ((f7_v = "0010100") and (f3_v = "001")) then -- BSETI
         decode_aux.is_b_imm <= '1';
       end if;
       -- register-register operation --
-      if ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110000") and (execute_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- ROR / ROL
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000101") and (execute_engine.ir(instr_funct3_msb_c) = '1')) or -- MIN[U] / MAX[U]
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000100") and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")) or -- ZEXTH
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100100") and (execute_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01")) or -- BCLR / BEXT
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0110100") and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BINV
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010100") and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "001")) or -- BSET
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100000") and (
-           (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "111") or -- ANDN
-           (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "110") or -- ORN
-           (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100")    -- XORN
-          )) or
-         ((execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0010000") and (
-           (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") or -- SH1ADD
-           (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "100") or -- SH2ADD
-           (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "110")    -- SH3ADD
-          )
-         ) then
+      if ((f7_v = "0110000") and (f3_v(1 downto 0) = "01")) or -- ROR / ROL
+         ((f7_v = "0000101") and (f3_v(2) = '1')) or -- MIN[U] / MAX[U]
+         ((f7_v = "0000100") and (f3_v = "100")) or -- ZEXTH
+         ((f7_v = "0100100") and (f3_v(1 downto 0) = "01")) or -- BCLR / BEXT
+         (((f7_v = "0110100") or (f7_v = "0010100")) and (f3_v = "001")) or  -- BINV / BSET
+         ((f7_v = "0100000") and ((f3_v = "111") or (f3_v = "110") or (f3_v = "100"))) or -- ANDN, ORN, XORN
+         ((f7_v = "0010000") and ((f3_v = "010") or (f3_v = "100") or (f3_v = "110"))) then -- SH1ADD, SH2ADD, SH3ADD
         decode_aux.is_b_reg <= '1';
       end if;
     end if;
 
     -- integer MUL (M/Zmmul) / DIV (M) instruction --
-    if (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then
-      if (CPU_EXTENSION_RISCV_M or CPU_EXTENSION_RISCV_Zmmul) and (execute_engine.ir(instr_funct3_msb_c) = '0') then
+    if (f7_v = "0000001") then
+      if (CPU_EXTENSION_RISCV_M or CPU_EXTENSION_RISCV_Zmmul) and (f3_v(2) = '0') then
         decode_aux.is_m_mul <= '1';
       end if;
-      if CPU_EXTENSION_RISCV_M and (execute_engine.ir(instr_funct3_msb_c) = '1') then
+      if CPU_EXTENSION_RISCV_M and (f3_v(2) = '1') then
         decode_aux.is_m_div <= '1';
       end if;
     end if;
 
     -- CONDITIONAL instruction (Zicond) --
-    if CPU_EXTENSION_RISCV_Zicond and (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000111") and
-       (execute_engine.ir(instr_funct3_msb_c) = '1') and (execute_engine.ir(instr_funct3_lsb_c) = '1') then
+    if CPU_EXTENSION_RISCV_Zicond and (f7_v = "0000111") and (f3_v(2) = '1') and (f3_v(0) = '1') then
       decode_aux.is_zicond <= '1';
     end if;
-  end process decode_helper;
 
-  -- simplified rv32 opcode --
-  decode_aux.opcode <= execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
+    -- simplified rv32 opcode --
+    decode_aux.opcode <= execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
+  end process decode_helper;
 
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_comb: process(execute_engine, debug_ctrl, trap_ctrl, hw_trigger_match, decode_aux, issue_engine, csr, alu_cp_done_i, lsu_wait_i)
+    variable funct3_v : std_ulogic_vector(2 downto 0);
   begin
+    -- shortcuts --
+    funct3_v := execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
+
     -- arbiter defaults --
     execute_engine.state_nxt <= execute_engine.state;
     execute_engine.ir_nxt    <= execute_engine.ir;
@@ -727,10 +721,10 @@ begin
     ctrl_nxt                 <= ctrl_bus_zero_c; -- all zero/off by default (default ALU operation = ZERO, ALU.adder_out = ADD)
 
     -- ALU sign control --
-    if (execute_engine.ir(instr_opcode_lsb_c+4) = '1') then -- ALU ops
-      ctrl_nxt.alu_unsigned <= execute_engine.ir(instr_funct3_lsb_c+0); -- unsigned ALU operation? (SLTIU, SLTU)
+    if (decode_aux.opcode(4) = '1') then -- ALU ops
+      ctrl_nxt.alu_unsigned <= funct3_v(0); -- unsigned ALU operation? (SLTIU, SLTU)
     else -- branches
-      ctrl_nxt.alu_unsigned <= execute_engine.ir(instr_funct3_lsb_c+1); -- unsigned branches? (BLTU, BGEU)
+      ctrl_nxt.alu_unsigned <= funct3_v(1); -- unsigned branches? (BLTU, BGEU)
     end if;
 
     -- ALU operand A: is PC? --
@@ -806,7 +800,7 @@ begin
           when opcode_alu_c | opcode_alui_c =>
 
             -- ALU core operation --
-            case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+            case funct3_v is
               when funct3_subadd_c              => ctrl_nxt.alu_op <= alu_op_add_c; -- ADD(I), SUB
               when funct3_slt_c | funct3_sltu_c => ctrl_nxt.alu_op <= alu_op_slt_c; -- SLT(I), SLTU(I)
               when funct3_xor_c                 => ctrl_nxt.alu_op <= alu_op_xor_c; -- XOR(I)
@@ -816,29 +810,28 @@ begin
             end case;
 
             -- addition/subtraction control --
-            if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c+1) = funct3_slt_c(2 downto 1)) or -- SLT(I), SLTU(I)
-               ((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) and
-                (execute_engine.ir(instr_opcode_msb_c-1) = '1') and (execute_engine.ir(instr_funct7_msb_c-1) = '1')) then -- SUB
+            if (funct3_v(2 downto 1) = funct3_slt_c(2 downto 1)) or -- SLT(I), SLTU(I)
+               ((funct3_v = funct3_subadd_c) and (decode_aux.opcode(5) = '1') and (execute_engine.ir(instr_funct7_msb_c-1) = '1')) then -- SUB
               ctrl_nxt.alu_sub <= '1';
             end if;
 
             -- EXT: co-processor MULDIV operation (multi-cycle) --
-            if (CPU_EXTENSION_RISCV_M and (execute_engine.ir(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
-               (CPU_EXTENSION_RISCV_Zmmul and (execute_engine.ir(instr_opcode_lsb_c+5) = opcode_alu_c(5)) and (decode_aux.is_m_mul = '1')) then -- MUL
+            if (CPU_EXTENSION_RISCV_M and (decode_aux.opcode(5) = opcode_alu_c(5)) and ((decode_aux.is_m_mul = '1') or (decode_aux.is_m_div = '1'))) or -- MUL/DIV
+               (CPU_EXTENSION_RISCV_Zmmul and (decode_aux.opcode(5) = opcode_alu_c(5)) and (decode_aux.is_m_mul = '1')) then -- MUL
               ctrl_nxt.alu_cp_trig(cp_sel_muldiv_c) <= '1'; -- trigger MULDIV co-processor
               execute_engine.state_nxt              <= ALU_WAIT;
             -- EXT: co-processor BIT-MANIPULATION operation (multi-cycle) --
             elsif CPU_EXTENSION_RISCV_B and
-                  (((execute_engine.ir(instr_opcode_lsb_c+5) = opcode_alu_c(5))  and (decode_aux.is_b_reg = '1')) or -- register operation
-                   ((execute_engine.ir(instr_opcode_lsb_c+5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
+                  (((decode_aux.opcode(5) = opcode_alu_c(5))  and (decode_aux.is_b_reg = '1')) or -- register operation
+                   ((decode_aux.opcode(5) = opcode_alui_c(5)) and (decode_aux.is_b_imm = '1'))) then -- immediate operation
               ctrl_nxt.alu_cp_trig(cp_sel_bitmanip_c) <= '1'; -- trigger BITMANIP co-processor
               execute_engine.state_nxt                <= ALU_WAIT;
             -- EXT: co-processor CONDITIONAL operation (multi-cycle) --
-            elsif CPU_EXTENSION_RISCV_Zicond and (decode_aux.is_zicond = '1') and (execute_engine.ir(instr_opcode_lsb_c+5) = opcode_alu_c(5)) then
+            elsif CPU_EXTENSION_RISCV_Zicond and (decode_aux.is_zicond = '1') and (decode_aux.opcode(5) = opcode_alu_c(5)) then
               ctrl_nxt.alu_cp_trig(cp_sel_cond_c) <= '1'; -- trigger COND co-processor
               execute_engine.state_nxt            <= ALU_WAIT;
             -- BASE: co-processor SHIFT operation (multi-cycle) --
-            elsif (execute_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) = "01") then -- sll/sr
+            elsif (funct3_v(1 downto 0) = "01") then -- sll/sr
               ctrl_nxt.alu_cp_trig(cp_sel_shifter_c) <= '1'; -- trigger SHIFTER co-processor
               execute_engine.state_nxt               <= ALU_WAIT;
             -- BASE: ALU CORE operation (single-cycle) --
@@ -899,7 +892,7 @@ begin
 
       when BRANCH => -- update next_pc on taken branches and jumps
       -- ------------------------------------------------------------
-        ctrl_nxt.rf_wb_en <= execute_engine.ir(instr_opcode_lsb_c+2); -- save return address if link operation (won't happen if exception)
+        ctrl_nxt.rf_wb_en <= decode_aux.opcode(2); -- save return address if link operation (won't happen if exception)
         if (trap_ctrl.exc_buf(exc_illegal_c) = '0') and (execute_engine.branch_taken = '1') then -- valid taken branch
           fetch_engine.reset       <= '1'; -- reset instruction fetch to restart at modified PC
           execute_engine.state_nxt <= BRANCHED; -- shortcut (faster than going to RESTART)
@@ -924,8 +917,7 @@ begin
            (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
            (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
            (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- illegal instruction exception
-          if (CPU_EXTENSION_RISCV_A and (decode_aux.opcode(2) = opcode_amo_c(2))) or -- atomic operation
-             (execute_engine.ir(instr_opcode_msb_c-1) = '0') then -- normal load
+          if (CPU_EXTENSION_RISCV_A and (decode_aux.opcode(2) = opcode_amo_c(2))) or (decode_aux.opcode(5) = '0') then -- atomic operation / normal load
             ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file (won't happen in case of exception)
           end if;
           execute_engine.state_nxt <= DISPATCH;
@@ -939,7 +931,7 @@ begin
 
       when others => -- SYSTEM - system environment operation; no effect if illegal instruction
       -- ------------------------------------------------------------
-        if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) and (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- non-illegal ENVIRONMENT
+        if (funct3_v = funct3_env_c) and (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- non-illegal ENVIRONMENT
           -- three LSBs are sufficient to distinguish environment instructions --
           if (execute_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = "000") then
             trap_ctrl.ecall <= '1'; -- ecall
@@ -955,8 +947,7 @@ begin
             execute_engine.state_nxt <= DISPATCH; -- default
           end if;
         else -- CSR ACCESS or ILLEGAL SYSTEM instruction (no state change if illegal instruction)
-          if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrw_c) or  -- CSRRW:  always write CSR
-             (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csrrwi_c) or -- CSRRWI: always write CSR
+          if (funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or -- CSRRW[I]:  always write CSR
              (execute_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000") then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
             csr.we_nxt <= '1';
           end if;
@@ -1127,7 +1118,14 @@ begin
   -- Illegal Instruction Check --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   illegal_check: process(execute_engine, decode_aux, csr, csr_valid, debug_ctrl)
+    variable f7_v : std_ulogic_vector(6 downto 0);
+    variable f3_v : std_ulogic_vector(2 downto 0);
   begin
+    -- shortcuts --
+    f7_v := execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c); -- funct7
+    f3_v := execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c); -- funct3
+
+    -- check opcode-groups --
     illegal_cmd <= '0'; -- default
     case decode_aux.opcode is
 
@@ -1135,47 +1133,40 @@ begin
         illegal_cmd <= '0'; -- all encodings are valid
 
       when opcode_jalr_c => -- unconditional jump-and-link
-        case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+        case f3_v is
           when "000"  => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
 
       when opcode_branch_c => -- conditional branch
-        case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+        case f3_v is
           when funct3_beq_c | funct3_bne_c | funct3_blt_c | funct3_bge_c | funct3_bltu_c | funct3_bgeu_c => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
 
       when opcode_load_c => -- memory load
-        case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+        case f3_v is
           when funct3_lb_c | funct3_lh_c | funct3_lw_c | funct3_lbu_c | funct3_lhu_c => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
 
       when opcode_store_c => -- memory store
-        case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+        case f3_v is
           when funct3_sb_c | funct3_sh_c | funct3_sw_c => illegal_cmd <= '0';
           when others => illegal_cmd <= '1';
         end case;
 
       when opcode_amo_c => -- atomic memory operation (LR/SC)
-        if CPU_EXTENSION_RISCV_A and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and
-          (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c+3) = "0001") then -- LR.W/SC.W
+        if CPU_EXTENSION_RISCV_A and (f3_v = "010") and (f7_v(6 downto 3) = "0001") then -- LR.W/SC.W
           illegal_cmd <= '0';
         else
           illegal_cmd <= '1';
         end if;
 
       when opcode_alu_c => -- register-register ALU operation
-        if ((((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c)) and
-             (execute_engine.ir(instr_funct7_msb_c-2 downto instr_funct7_lsb_c) = "00000") and (execute_engine.ir(instr_funct7_msb_c) = '0')) or
-            (((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) or
-              (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or
-              (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sltu_c) or
-              (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_xor_c) or
-              (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_or_c) or
-              (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_and_c)) and
-             (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000"))) or -- valid base ALU instruction?
+        if ((((f3_v = funct3_subadd_c) or (f3_v = funct3_sr_c)) and (f7_v(4 downto 0) = "00000") and (f7_v(6) = '0')) or
+            (((f3_v = funct3_sll_c) or (f3_v = funct3_slt_c) or (f3_v = funct3_sltu_c) or (f3_v = funct3_xor_c) or (f3_v = funct3_or_c) or (f3_v = funct3_and_c)) and (f7_v = "0000000"))
+           ) or -- valid base ALU instruction?
            ((CPU_EXTENSION_RISCV_M or CPU_EXTENSION_RISCV_Zmmul) and (decode_aux.is_m_mul = '1')) or -- valid MUL instruction?
            (CPU_EXTENSION_RISCV_M and (decode_aux.is_m_div = '1')) or -- valid DIV instruction?
            (CPU_EXTENSION_RISCV_B and (decode_aux.is_b_reg = '1')) or -- valid BITMANIP register instruction?
@@ -1186,15 +1177,10 @@ begin
         end if;
 
       when opcode_alui_c => -- register-immediate ALU operation
-        if ((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_subadd_c) or
-            (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_slt_c) or
-            (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sltu_c) or
-            (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_xor_c) or
-            (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_or_c) or
-            (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_and_c) or
-            ((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sll_c) and (execute_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000")) or
-            ((execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_sr_c) and
-             ((execute_engine.ir(instr_funct7_msb_c-2 downto instr_funct7_lsb_c) = "00000") and (execute_engine.ir(instr_funct7_msb_c) = '0')))) or -- valid base ALUI instruction?
+        if ((f3_v = funct3_subadd_c) or (f3_v = funct3_slt_c) or (f3_v = funct3_sltu_c) or (f3_v = funct3_xor_c) or (f3_v = funct3_or_c) or (f3_v = funct3_and_c) or
+            ((f3_v = funct3_sll_c) and (f7_v = "0000000")) or
+            ((f3_v = funct3_sr_c) and ((f7_v(4 downto 0) = "00000") and (f7_v(6) = '0')))
+           ) or -- valid base ALUI instruction?
            (CPU_EXTENSION_RISCV_B and (decode_aux.is_b_imm = '1')) then -- valid BITMANIP immediate instruction?
           illegal_cmd <= '0';
         else
@@ -1202,13 +1188,13 @@ begin
         end if;
 
       when opcode_fence_c => -- memory ordering
-        case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+        case f3_v is
           when funct3_fence_c | funct3_fencei_c => illegal_cmd <= '0';
           when others                           => illegal_cmd <= '1';
         end case;
 
       when opcode_system_c => -- CSR and system instructions
-        if (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system environment
+        if (f3_v = funct3_env_c) then -- system environment
           if (execute_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") and (execute_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000") then
             case execute_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c) is
               when funct12_ecall_c | funct12_ebreak_c => illegal_cmd <= '0'; -- ecall and ebreak are always allowed
@@ -1220,7 +1206,7 @@ begin
           else
             illegal_cmd <= '1';
           end if;
-        elsif (csr_valid /= "111") or (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csril_c) then -- invalid CSR access?
+        elsif (csr_valid /= "111") or (f3_v = funct3_csril_c) then -- invalid CSR access?
           illegal_cmd <= '1';
         else
           illegal_cmd <= '0';
