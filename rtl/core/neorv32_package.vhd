@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100304"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100305"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -137,8 +137,8 @@ package neorv32_package is
   -- bus response --
   type bus_rsp_t is record
     data : std_ulogic_vector(31 downto 0); -- read data, valid if ack=1
-    ack  : std_ulogic; -- set if access acknowledge, single-shot, has priority over err
-    err  : std_ulogic; -- set if access error, single-shot
+    ack  : std_ulogic; -- set if access acknowledge, single-shot
+    err  : std_ulogic; -- set if access error, single-shot, has priority over ack
   end record;
 
   -- source (request) termination --
