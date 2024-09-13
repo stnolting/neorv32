@@ -89,7 +89,7 @@ entity neorv32_top is
     XBUS_CACHE_BLOCK_SIZE      : natural range 1 to 2**16       := 32;          -- x-cache: block size in bytes (min 4), has to be a power of 2
 
     -- Execute in-place module (XIP) --
-    XIP_EN                     : boolean                        := false;       -- implement execute in place module (XIP)?
+    XIP_EN                     : boolean                        := false;       -- implement execute in-place module (XIP)?
     XIP_CACHE_EN               : boolean                        := false;       -- implement XIP cache?
     XIP_CACHE_NUM_BLOCKS       : natural range 1 to 256         := 8;           -- number of blocks (min 1), has to be a power of 2
     XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16       := 256;         -- block size in bytes (min 4), has to be a power of 2
@@ -325,35 +325,35 @@ begin
     -- show SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: " &
-      cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",      "") &
-      cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",      "") &
-      cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",   "") &
-      cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",   "") &
-      cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",   "") &
-      cond_sel_string_f(XBUS_EN,                   "XBUS ",      "") &
-      cond_sel_string_f(XBUS_EN and XBUS_CACHE_EN, "X-CACHE ",   "") &
-      cond_sel_string_f(XIP_EN,                    "XIP ",       "") &
-      cond_sel_string_f(XIP_EN and XIP_CACHE_EN,   "XIP-CACHE ", "") &
-      cond_sel_string_f(io_gpio_en_c,              "GPIO ",      "") &
-      cond_sel_string_f(IO_MTIME_EN,               "MTIME ",     "") &
-      cond_sel_string_f(IO_UART0_EN,               "UART0 ",     "") &
-      cond_sel_string_f(IO_UART1_EN,               "UART1 ",     "") &
-      cond_sel_string_f(IO_SPI_EN,                 "SPI ",       "") &
-      cond_sel_string_f(IO_SDI_EN,                 "SDI ",       "") &
-      cond_sel_string_f(IO_TWI_EN,                 "TWI ",       "") &
-      cond_sel_string_f(io_pwm_en_c,               "PWM ",       "") &
-      cond_sel_string_f(IO_WDT_EN,                 "WDT ",       "") &
-      cond_sel_string_f(IO_TRNG_EN,                "TRNG ",      "") &
-      cond_sel_string_f(IO_CFS_EN,                 "CFS ",       "") &
-      cond_sel_string_f(IO_NEOLED_EN,              "NEOLED ",    "") &
-      cond_sel_string_f(io_xirq_en_c,              "XIRQ ",      "") &
-      cond_sel_string_f(IO_GPTMR_EN,               "GPTMR ",     "") &
-      cond_sel_string_f(IO_ONEWIRE_EN,             "ONEWIRE ",   "") &
-      cond_sel_string_f(IO_DMA_EN,                 "DMA ",       "") &
-      cond_sel_string_f(IO_SLINK_EN,               "SLINK ",     "") &
-      cond_sel_string_f(IO_CRC_EN,                 "CRC ",       "") &
-      cond_sel_string_f(io_sysinfo_en_c,           "SYSINFO ",   "") &
-      cond_sel_string_f(ON_CHIP_DEBUGGER_EN,       "OCD ",       "") &
+      cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",       "") &
+      cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",       "") &
+      cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",    "") &
+      cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",    "") &
+      cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",    "") &
+      cond_sel_string_f(XBUS_EN,                   "XBUS ",       "") &
+      cond_sel_string_f(XBUS_EN and XBUS_CACHE_EN, "XBUS-CACHE ", "") &
+      cond_sel_string_f(XIP_EN,                    "XIP ",        "") &
+      cond_sel_string_f(XIP_EN and XIP_CACHE_EN,   "XIP-CACHE ",  "") &
+      cond_sel_string_f(io_gpio_en_c,              "GPIO ",       "") &
+      cond_sel_string_f(IO_MTIME_EN,               "MTIME ",      "") &
+      cond_sel_string_f(IO_UART0_EN,               "UART0 ",      "") &
+      cond_sel_string_f(IO_UART1_EN,               "UART1 ",      "") &
+      cond_sel_string_f(IO_SPI_EN,                 "SPI ",        "") &
+      cond_sel_string_f(IO_SDI_EN,                 "SDI ",        "") &
+      cond_sel_string_f(IO_TWI_EN,                 "TWI ",        "") &
+      cond_sel_string_f(io_pwm_en_c,               "PWM ",        "") &
+      cond_sel_string_f(IO_WDT_EN,                 "WDT ",        "") &
+      cond_sel_string_f(IO_TRNG_EN,                "TRNG ",       "") &
+      cond_sel_string_f(IO_CFS_EN,                 "CFS ",        "") &
+      cond_sel_string_f(IO_NEOLED_EN,              "NEOLED ",     "") &
+      cond_sel_string_f(io_xirq_en_c,              "XIRQ ",       "") &
+      cond_sel_string_f(IO_GPTMR_EN,               "GPTMR ",      "") &
+      cond_sel_string_f(IO_ONEWIRE_EN,             "ONEWIRE ",    "") &
+      cond_sel_string_f(IO_DMA_EN,                 "DMA ",        "") &
+      cond_sel_string_f(IO_SLINK_EN,               "SLINK ",      "") &
+      cond_sel_string_f(IO_CRC_EN,                 "CRC ",        "") &
+      cond_sel_string_f(io_sysinfo_en_c,           "SYSINFO ",    "") &
+      cond_sel_string_f(ON_CHIP_DEBUGGER_EN,       "OCD ",        "") &
       ""
       severity note;
 
