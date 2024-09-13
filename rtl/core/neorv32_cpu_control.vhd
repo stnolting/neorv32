@@ -929,31 +929,24 @@ begin
           execute_engine.state_nxt <= DISPATCH;
         end if;
 
-      when others => -- SYSTEM - system environment operation; no effect if illegal instruction
+      when others => -- SYSTEM - CSR/ENVIRONMENT operation; no effect if illegal instruction
       -- ------------------------------------------------------------
+        execute_engine.state_nxt <= DISPATCH; -- default
         if (funct3_v = funct3_env_c) and (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- non-illegal ENVIRONMENT
-          -- three LSBs are sufficient to distinguish environment instructions --
-          if (execute_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = "000") then
-            trap_ctrl.ecall <= '1'; -- ecall
-          end if;
-          if (execute_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = "001") then
-            trap_ctrl.ebreak <= '1'; -- ebreak
-          end if;
-          if (execute_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = "010") then
-            execute_engine.state_nxt <= TRAP_EXIT; -- xret
-          elsif (execute_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) = "101") then
-            execute_engine.state_nxt <= SLEEP; -- wfi
-          else
-            execute_engine.state_nxt <= DISPATCH; -- default
-          end if;
-        else -- CSR ACCESS or ILLEGAL SYSTEM instruction (no state change if illegal instruction)
-          if (funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or -- CSRRW[I]:  always write CSR
-             (execute_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000") then -- CSRR(S/C)(I): write CSR if rs1/imm5 is NOT zero
-            csr.we_nxt <= '1';
-          end if;
-          ctrl_nxt.rf_wb_en        <= '1'; -- valid RF write-back (won't happen if exception)
-          execute_engine.state_nxt <= DISPATCH;
+          case execute_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) is -- three LSBs are sufficient here
+            when "000"  => trap_ctrl.ecall          <= '1'; -- ecall
+            when "001"  => trap_ctrl.ebreak         <= '1'; -- ebreak
+            when "010"  => execute_engine.state_nxt <= TRAP_EXIT; -- xret
+            when "101"  => execute_engine.state_nxt <= SLEEP; -- wfi
+            when others => execute_engine.state_nxt <= DISPATCH; -- illegal or CSR operation
+          end case;
         end if;
+        -- always write to CSR (if CSR instruction); ENVIRONMENT operations have rs1/imm5 = zero so this won't happen then --
+        if (funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or (execute_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000") then
+          csr.we_nxt <= '1'; -- CSRRW[I]: always write CSR; CSRR[S/C][I]: write CSR if rs1/imm5 is NOT zero
+        end if;
+        -- always write to RF; ENVIRONMENT operations have rd = zero so this does not hurt --
+        ctrl_nxt.rf_wb_en <= '1'; -- won't happen if exception
 
     end case;
   end process execute_engine_fsm_comb;
