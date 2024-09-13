@@ -867,7 +867,7 @@ include::cpu_csr.adoc[]
 <<<
 // ####################################################################################################################
 :sectnums:
-==== Traps, Exceptions and Interrupts
+=== Traps, Exceptions and Interrupts
 
 In this document the following terminology is used (derived from the RISC-V trace specification
 available at https://github.com/riscv-non-isa/riscv-trace-spec):
@@ -905,7 +905,7 @@ another interrupt handler can start. This allows program progress even if there 
 
 
 :sectnums:
-===== Memory Access Exceptions
+==== Memory Access Exceptions
 
 If a load operation causes any exception, the instruction's destination register is **not written** at all. Furthermore,
 exceptions caused by a misaligned memory address a physical memory protection fault do not trigger a memory access request at all.
@@ -916,7 +916,7 @@ instruction exception at all.
 
 
 :sectnums:
-===== Custom Fast Interrupt Request Lines
+==== Custom Fast Interrupt Request Lines
 
 As a custom extension, the NEORV32 CPU features 16 fast interrupt request (FIRQ) lines via the `firq_i` CPU top
 entity signals. These interrupts have custom configuration and status flags in the <<_mie>> and <<_mip>> CSRs and also
@@ -924,7 +924,7 @@ provide custom trap codes in <<_mcause>>. These FIRQs are reserved for NEORV32 p
 
 
 :sectnums:
-===== NEORV32 Trap Listing
+==== NEORV32 Trap Listing
 
 The following tables show all traps that are currently supported by the NEORV32 CPU. It also shows the prioritization
 and the CSR side-effects.
@@ -975,7 +975,7 @@ written to the according CSRs when a trap is triggered:
 | 24    | `0x8000001d` | `TRAP_CODE_FIRQ_13`      | fast interrupt request channel 13    | I-PC   | 0       | 0
 | 25    | `0x8000001e` | `TRAP_CODE_FIRQ_14`      | fast interrupt request channel 14    | I-PC   | 0       | 0
 | 26    | `0x8000001f` | `TRAP_CODE_FIRQ_15`      | fast interrupt request channel 15    | I-PC   | 0       | 0
-| 27    | `0x8000000B` | `TRAP_CODE_MEI`          | machine external interrupt (MEI)     | I-PC   | 0       | 0
+| 27    | `0x8000000b` | `TRAP_CODE_MEI`          | machine external interrupt (MEI)     | I-PC   | 0       | 0
 | 28    | `0x80000003` | `TRAP_CODE_MSI`          | machine software interrupt (MSI)     | I-PC   | 0       | 0
 | 29    | `0x80000007` | `TRAP_CODE_MTI`          | machine timer interrupt (MTI)        | I-PC   | 0       | 0
 |=======================
