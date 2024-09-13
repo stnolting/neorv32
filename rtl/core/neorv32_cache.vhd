@@ -176,7 +176,7 @@ begin
 
   -- Check if Direct/Uncached Access --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dir_acc_d <= '1' when (UC_ENABLE = true) and -- direct accesses implemented
+  dir_acc_d <= '1' when UC_ENABLE and -- direct accesses implemented
                         ((host_req_i.addr(31 downto 28) >= UC_BEGIN) or -- uncached memory page
                          (host_req_i.rvso = '1')) else '0'; -- atomic (reservation set) operation
 
@@ -210,7 +210,7 @@ begin
           dir_acc_q <= '0';
         end if;
         -- bus request buffer --
-        if (READ_ONLY = true) then -- do not propagate STB on write access, issue ERR instead
+        if READ_ONLY then -- do not propagate STB on write access, issue ERR instead
           dir_req_q     <= dir_req_d;
           dir_req_q.stb <= dir_req_d.stb and (not dir_req_d.rw); -- read accesses only
           dir_rsp_q     <= dir_rsp_d;
@@ -485,7 +485,7 @@ begin
           bus_sync_o     <= '1'; -- trigger bus unit: sync operation
           ctrl.state_nxt <= S_WAIT_SYNC;
         elsif (req_i.stb = '1') or (ctrl.req_buf = '1') then -- (pending) access request
-          if (req_i.rw = '1') and (READ_ONLY = true) then -- invalid write access?
+          if (req_i.rw = '1') and READ_ONLY then -- invalid write access?
             ctrl.state_nxt <= S_ERROR;
           else
             ctrl.state_nxt <= S_CHECK;
@@ -497,7 +497,7 @@ begin
         rsp_o.data       <= rdata_i; -- output read data
         ctrl.req_buf_nxt <= '0'; -- access request completed
         if (hit_i = '1') then
-          if (req_i.rw = '1') and (READ_ONLY = false) then -- write access
+          if (req_i.rw = '1') and (not READ_ONLY) then -- write access
             dirty_o <= '1'; -- cache block is dirty now
             we_o    <= req_i.ben; -- finalize write access
           end if;
@@ -683,7 +683,7 @@ begin
   -- Access Status (1 Cycle Latency) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   hit_o   <= '1' when (valid_mem_rd = '1') and (tag_mem_rd = acc_tag_ff) else '0'; -- cache access hit
-  dirty_o <= '1' when (valid_mem_rd = '1') and (dirty_mem_rd = '1') and (READ_ONLY = false) else '0'; -- accessed block is dirty
+  dirty_o <= '1' when (valid_mem_rd = '1') and (dirty_mem_rd = '1') and (not READ_ONLY) else '0'; -- accessed block is dirty
 
   -- base address of accessed block --
   base_o(31 downto 31-(tag_size_c-1))          <= tag_mem_rd;
@@ -698,10 +698,10 @@ begin
     if rising_edge(clk_i) then
       -- write access --
       if (we_i(0) = '1') then
-        data_mem_b0(to_integer(unsigned(acc_adr))) <= wdata_i(07 downto 00);
+        data_mem_b0(to_integer(unsigned(acc_adr))) <= wdata_i(7 downto 0);
       end if;
       if (we_i(1) = '1') then
-        data_mem_b1(to_integer(unsigned(acc_adr))) <= wdata_i(15 downto 08);
+        data_mem_b1(to_integer(unsigned(acc_adr))) <= wdata_i(15 downto 8);
       end if;
       if (we_i(2) = '1') then
         data_mem_b2(to_integer(unsigned(acc_adr))) <= wdata_i(23 downto 16);
@@ -882,7 +882,7 @@ begin
       -- ------------------------------------------------------------
         upret_nxt    <= S_DOWNLOAD_REQ; -- go straight to S_DOWNLOAD_REQ when S_UPLOAD_GET has completed (if executed)
         addr_nxt.idx <= baddr.idx; -- index of reference cache block
-        if (dirty_i = '1') and (READ_ONLY = false) then -- block is dirty, upload first
+        if (dirty_i = '1') and (not READ_ONLY) then -- block is dirty, upload first
           addr_nxt.tag <= baddr.tag; -- base address (tag + index) of accessed block
           state_nxt    <= S_UPLOAD_GET;
         else -- block is clean, download new block
@@ -915,7 +915,7 @@ begin
 
       when S_UPLOAD_GET => -- upload dirty cache block: read word from cache
       -- ------------------------------------------------------------
-        if (READ_ONLY = true) then
+        if READ_ONLY then
           state_nxt <= S_IDLE;
         else
           bus_req_o.rw <= '1'; -- write access
@@ -924,7 +924,7 @@ begin
 
       when S_UPLOAD_REQ => -- upload dirty cache block: request bus write
       -- ------------------------------------------------------------
-        if (READ_ONLY = true) then
+        if READ_ONLY then
           state_nxt <= S_IDLE;
         else
           bus_req_o.rw  <= '1'; -- write access
@@ -934,7 +934,7 @@ begin
 
       when S_UPLOAD_RSP => -- upload dirty cache block: wait for bus response
       -- ------------------------------------------------------------
-        if (READ_ONLY = true) then
+        if READ_ONLY then
           state_nxt <= S_IDLE;
         else
           bus_req_o.rw <= '1'; -- write access
@@ -964,7 +964,7 @@ begin
       -- ------------------------------------------------------------
         addr_nxt.tag <= baddr.tag; -- tag of currently index block
         inval_o      <= '1'; -- invalidate currently index block
-        if (dirty_i = '1') and (READ_ONLY = false) then -- block dirty?
+        if (dirty_i = '1') and (not READ_ONLY) then -- block dirty?
           state_nxt <= S_UPLOAD_GET;
         else -- move on to next block
           addr_nxt.idx <= std_ulogic_vector(unsigned(addr.idx) + 1);
