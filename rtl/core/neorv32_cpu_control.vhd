@@ -655,7 +655,7 @@ begin
     -- BITMANIP instruction --
     if CPU_EXTENSION_RISCV_B then -- implemented at all?
       -- register-immediate operation --
-      if ((f7_v = "0110000") and (f3_v = "001") and ((f5_v = "00000") or (f5_v = "00000") or (f5_v = "00010") or (f5_v = "00100") or (f5_v = "00101"))) or -- CLZ, CTZ, CPOP, SEXT.[B/H]
+      if ((f7_v = "0110000") and (f3_v = "001") and ((f5_v = "00000") or (f5_v = "00001") or (f5_v = "00010") or (f5_v = "00100") or (f5_v = "00101"))) or -- CLZ, CTZ, CPOP, SEXT.[B/H]
          ((f7_v = "0110000") and (f3_v = "101")) or -- RORI
          ((f7_v = "0010100") and (f3_v = "101") and (f5_v = "00111")) or -- ORCB
          ((f7_v = "0100100") and (f3_v(1 downto 0) = "01")) or -- BCLRI / BEXTI
