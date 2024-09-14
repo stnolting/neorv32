@@ -42,8 +42,6 @@ architecture neorv32_trng_rtl of neorv32_trng is
   constant ctrl_data_msb_c   : natural :=  7; -- r/-: Random data byte MSB
   --
   constant ctrl_fifo_size0_c : natural := 16; -- r/-: log2(FIFO size) bit 0
-  constant ctrl_fifo_size1_c : natural := 17; -- r/-: log2(FIFO size) bit 1
-  constant ctrl_fifo_size2_c : natural := 18; -- r/-: log2(FIFO size) bit 2
   constant ctrl_fifo_size3_c : natural := 19; -- r/-: log2(FIFO size) bit 3
   --
   constant ctrl_irq_sel_c    : natural := 27; -- r/w: interrupt select (0 = data available, 1 = FIFO full)

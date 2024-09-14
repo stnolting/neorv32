@@ -39,17 +39,12 @@ architecture neorv32_twi_rtl of neorv32_twi is
   -- control register --
   constant ctrl_en_c         : natural :=  0; -- r/w: module enable (reset when zero)
   constant ctrl_prsc0_c      : natural :=  1; -- r/w: CLK prsc bit 0
-  constant ctrl_prsc1_c      : natural :=  2; -- r/w: CLK prsc bit 1
   constant ctrl_prsc2_c      : natural :=  3; -- r/w: CLK prsc bit 2
   constant ctrl_cdiv0_c      : natural :=  4; -- r/w: clock divider bit 0
-  constant ctrl_cdiv1_c      : natural :=  5; -- r/w: clock divider bit 1
-  constant ctrl_cdiv2_c      : natural :=  6; -- r/w: clock divider bit 2
   constant ctrl_cdiv3_c      : natural :=  7; -- r/w: clock divider bit 3
   constant ctrl_clkstr_en_c  : natural :=  8; -- r/w: enable clock stretching
   --
   constant ctrl_fifo_size0_c : natural := 15; -- r/-: log2(fifo size), bit 0 (lsb)
-  constant ctrl_fifo_size1_c : natural := 16; -- r/-: log2(fifo size), bit 1
-  constant ctrl_fifo_size2_c : natural := 17; -- r/-: log2(fifo size), bit 2
   constant ctrl_fifo_size3_c : natural := 18; -- r/-: log2(fifo size), bit 3 (msb)
   --
   constant ctrl_tx_full_c    : natural := 29; -- r/-: TX FIFO full
