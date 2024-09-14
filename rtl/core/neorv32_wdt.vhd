@@ -19,7 +19,7 @@ entity neorv32_wdt is
   port (
     clk_i       : in  std_ulogic; -- global clock line
     rstn_ext_i  : in  std_ulogic; -- external reset, low-active
-    rstn_db_i   : in  std_ulogic; -- debugger reset, low-active
+    rstn_dbg_i  : in  std_ulogic; -- debugger reset, low-active
     rstn_sys_i  : in  std_ulogic; -- system reset, low-active
     bus_req_i   : in  bus_req_t;  -- bus request
     bus_rsp_o   : out bus_rsp_t;  -- bus response
@@ -186,7 +186,7 @@ begin
     if (rstn_ext_i = '0') then
       reset_cause <= "00"; -- reset from external hardware signal
     elsif rising_edge(clk_i) then
-      if (rstn_db_i = '0') then
+      if (rstn_dbg_i = '0') then
         reset_cause <= "01"; -- reset from on-chip debugger
       elsif (hw_rst_timeout = '1') then
         reset_cause <= "10"; -- reset from watchdog timer
