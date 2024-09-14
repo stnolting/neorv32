@@ -10,7 +10,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -112,9 +111,11 @@ begin
       if (ctrl_i.lsu_mo_we = '1') then
         case ctrl_i.ir_funct3(1 downto 0) is
           when "00" => -- byte
-            bus_req_o.data <= wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0);
-            bus_req_o.ben  <= (others => '0');
-            bus_req_o.ben(to_integer(unsigned(addr_i(1 downto 0)))) <= '1';
+            bus_req_o.data   <= wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0);
+            bus_req_o.ben(0) <= (not addr_i(1)) and (not addr_i(0));
+            bus_req_o.ben(1) <= (not addr_i(1)) and (    addr_i(0));
+            bus_req_o.ben(2) <= (    addr_i(1)) and (not addr_i(0));
+            bus_req_o.ben(3) <= (    addr_i(1)) and (    addr_i(0));
           when "01" => -- half-word
             bus_req_o.data <= wdata_i(15 downto 0) & wdata_i(15 downto 0);
             bus_req_o.ben  <= addr_i(1) & addr_i(1) & (not addr_i(1)) & (not addr_i(1));
