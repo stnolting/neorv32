@@ -189,8 +189,8 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 ││├neorv32_cpu_cp_cfu.vhd       - Custom instructions co-processor (Zxcfu ext.)
 ││├neorv32_cpu_cp_cond.vhd      - Integer conditional operations (Zicond ext.)
 ││├neorv32_cpu_cp_fpu.vhd       - Floating-point co-processor (Zfinx ext.)
-││├neorv32_cpu_cp_shifter.vhd   - Bit-shift co-processor (base ISA)
 ││├neorv32_cpu_cp_muldiv.vhd    - Mul/Div co-processor (M ext.)
+││└neorv32_cpu_cp_shifter.vhd   - Bit-shift co-processor (base ISA)
 │├neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
 ││└neorv32_cpu_decompressor.vhd - Compressed instructions decoder (C ext.)
 │├neorv32_cpu_lsu.vhd           - Load/store unit
@@ -199,10 +199,11 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 │
 ├neorv32_boot_rom.vhd           - Bootloader ROM
 │└neorv32_bootloader_image.vhd  - Bootloader ROM memory image
+├neorv32_bus.vhd                - SoC bus infrastructure modules
+├neorv32_cache.vhd              - Generic cache module
 ├neorv32_cfs.vhd                - Custom functions subsystem
 ├neorv32_clockgate.vhd          - Generic clock gating switch
 ├neorv32_crc.vhd                - Cyclic redundancy check unit
-├neorv32_cache.vhd              - Generic cache module
 ├neorv32_debug_dm.vhd           - on-chip debugger: debug module
 ├neorv32_debug_dtm.vhd          - on-chip debugger: debug transfer module
 ├neorv32_dma.vhd                - Direct memory access controller
@@ -211,8 +212,7 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 ├neorv32_gpio.vhd               - General purpose input/output port unit
 ├neorv32_gptmr.vhd              - General purpose 32-bit timer
 ├neorv32_imem.vhd               - Generic processor-internal instruction memory
-│└neor32_application_image.vhd  - IMEM application initialization image
-├neorv32_intercon.vhd           - SoC bus infrastructure
+│└neorv32_application_image.vhd - IMEM application initialization image
 ├neorv32_mtime.vhd              - Machine system timer
 ├neorv32_neoled.vhd             - NeoPixel (TM) compatible smart LED interface
 ├neorv32_onewire.vhd            - One-Wire serial interface controller
@@ -221,6 +221,7 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 ├neorv32_sdi.vhd                - Serial data interface controller (SPI device)
 ├neorv32_slink.vhd              - Stream link interface
 ├neorv32_spi.vhd                - Serial peripheral interface controller (SPI host)
+├neorv32_sys.vhd                - System infrastructure modules
 ├neorv32_sysinfo.vhd            - System configuration information memory
 ├neorv32_trng.vhd               - True random number generator
 ├neorv32_twi.vhd                - Two wire serial interface controller
