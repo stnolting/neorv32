@@ -71,9 +71,10 @@ control register bit an **immediate hardware** reset if enforced if
 
 The cause of the last system hardware reset can be determined via the `WDT_CTRL_RCAUSE_*` bits:
 
-* `0b00`: Reset caused by external reset signal/pin
-* `0b01`: Reset caused by on-chip debugger
-* `0b10`: Reset caused by watchdog
+* `WDT_RCAUSE_EXT` (0b00): Reset caused by external reset signal/pin
+* `WDT_RCAUSE_OCD` (0b01): Reset caused by on-chip debugger
+* `WDT_RCAUSE_TMO` (0b10): Reset caused by watchdog timeout
+* `WDT_RCAUSE_ACC` (0b11): Reset caused by illegal watchdog access (strict mode)
 
 
 **Register Map**
