@@ -15,7 +15,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -244,31 +243,29 @@ architecture neorv32_top_rtl of neorv32_top is
   constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
 
-  -- convert JEDEC ID to mvendor CSR --
+  -- convert JEDEC ID to mvendorid CSR --
   constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_IMEM_SIZE), MEM_INT_IMEM_SIZE, 2**index_size_f(MEM_INT_IMEM_SIZE));
   constant dmem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_DMEM_SIZE), MEM_INT_DMEM_SIZE, 2**index_size_f(MEM_INT_DMEM_SIZE));
 
-  -- reset generator --
+  -- reset nets --
   signal rstn_wdt, rstn_sys, rstn_ext : std_ulogic;
-  signal rstn_sys_sreg, rstn_ext_sreg : std_ulogic_vector(3 downto 0);
 
-  -- clock generator --
-  signal clk_cpu                   : std_ulogic; -- CPU core clock, can be switched off
-  signal clk_div, clk_div_ff       : std_ulogic_vector(11 downto 0);
-  signal clk_gen                   : std_ulogic_vector(7 downto 0);
-  signal clk_gen_en, clk_gen_en_ff : std_ulogic;
+  -- clock system --
+  signal clk_cpu : std_ulogic; -- CPU core clock, can be switched off
+  signal clk_gen : std_ulogic_vector(7 downto 0); -- scaled clock-enables
   --
-  type cg_en_enum_t is (
+  type clk_gen_en_enum_t is (
     CG_CFS, CG_UART0, CG_UART1, CG_SPI, CG_TWI, CG_PWM, CG_WDT, CG_NEOLED, CG_GPTMR, CG_XIP, CG_ONEWIRE
   );
-  type cg_en_t is array (cg_en_enum_t) of std_ulogic;
-  signal cg_en : cg_en_t;
+  type clk_gen_en_t is array (clk_gen_en_enum_t) of std_ulogic;
+  signal clk_gen_en  : clk_gen_en_t;
+  signal clk_gen_en2 : std_ulogic_vector(10 downto 0);
 
   -- CPU status --
-  signal cpu_debug, cpu_sleep : std_ulogic; -- cpu is in debug/sleep mode
+  signal cpu_debug, cpu_sleep : std_ulogic;
 
   -- debug module interface (DMI) --
   signal dmi_req : dmi_req_t;
@@ -312,7 +309,7 @@ begin
   -- Sanity Checks
   -- **************************************************************************************************************************
   sanity_checks:
-  if (true) generate
+  if true generate
 
     -- say hello --
     assert false report
@@ -374,65 +371,38 @@ begin
   -- Clock and Reset Generators
   -- **************************************************************************************************************************
   generators:
-  if (true) generate
+  if true generate
 
-    -- Reset Generator ------------------------------------------------------------------------
+    -- Reset Sequencer ------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    reset_generator: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        rstn_ext_sreg <= (others => '0');
-        rstn_ext      <= '0';
-        rstn_sys_sreg <= (others => '0');
-        rstn_sys      <= '0';
-      elsif rising_edge(clk_i) then -- inverted clock to release reset _before_ all FFs trigger (rising edge)
-        -- external reset --
-        rstn_ext_sreg <= rstn_ext_sreg(rstn_ext_sreg'left-1 downto 0) & '1'; -- active for at least <rstn_ext_sreg'size> clock cycles
-        rstn_ext      <= and_reduce_f(rstn_ext_sreg);
-        -- internal reset --
-        if (rstn_wdt = '0') or (dci_ndmrstn = '0') then -- sync reset sources
-          rstn_sys_sreg <= (others => '0');
-        else
-          rstn_sys_sreg <= rstn_sys_sreg(rstn_sys_sreg'left-1 downto 0) & '1'; -- active for at least <rstn_sys_sreg'size> clock cycles
-        end if;
-        rstn_sys <= and_reduce_f(rstn_sys_sreg);
-      end if;
-    end process reset_generator;
+    neorv32_sys_reset_inst: entity neorv32.neorv32_sys_reset
+    port map (
+      clk_i      => clk_i,
+      rstn_ext_i => rstn_i,
+      rstn_wdt_i => rstn_wdt,
+      rstn_dbg_i => dci_ndmrstn,
+      rstn_ext_o => rstn_ext,
+      rstn_sys_o => rstn_sys
+    );
 
 
-    -- Clock Generator ------------------------------------------------------------------------
+    -- Clock Divider / Pulse Generator --------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    clock_generator: process(rstn_sys, clk_i)
-    begin
-      if (rstn_sys = '0') then
-        clk_gen_en_ff <= '0';
-        clk_div       <= (others => '0');
-        clk_div_ff    <= (others => '0');
-      elsif rising_edge(clk_i) then
-        clk_gen_en_ff <= clk_gen_en;
-        if (clk_gen_en_ff = '1') then
-          clk_div <= std_ulogic_vector(unsigned(clk_div) + 1);
-        else -- reset if disabled
-          clk_div <= (others => '0');
-        end if;
-        clk_div_ff <= clk_div;
-      end if;
-    end process clock_generator;
-
-    -- clock enables: rising edge detectors --
-    clk_gen(clk_div2_c)    <= clk_div(0)  and (not clk_div_ff(0));  -- clk/2
-    clk_gen(clk_div4_c)    <= clk_div(1)  and (not clk_div_ff(1));  -- clk/4
-    clk_gen(clk_div8_c)    <= clk_div(2)  and (not clk_div_ff(2));  -- clk/8
-    clk_gen(clk_div64_c)   <= clk_div(5)  and (not clk_div_ff(5));  -- clk/64
-    clk_gen(clk_div128_c)  <= clk_div(6)  and (not clk_div_ff(6));  -- clk/128
-    clk_gen(clk_div1024_c) <= clk_div(9)  and (not clk_div_ff(9));  -- clk/1024
-    clk_gen(clk_div2048_c) <= clk_div(10) and (not clk_div_ff(10)); -- clk/2048
-    clk_gen(clk_div4096_c) <= clk_div(11) and (not clk_div_ff(11)); -- clk/4096
+    neorv32_sys_clock_inst: entity neorv32.neorv32_sys_clock
+    generic map (
+      NUM_EN => 11
+    )
+    port map (
+      clk_i    => clk_i,
+      rstn_i   => rstn_sys,
+      enable_i => clk_gen_en2,
+      clk_en_o => clk_gen
+    );
 
     -- fresh clocks anyone? --
-    clk_gen_en <= cg_en(CG_WDT)   or cg_en(CG_UART0) or cg_en(CG_UART1) or cg_en(CG_SPI)    or
-                  cg_en(CG_TWI)   or cg_en(CG_PWM)   or cg_en(CG_WDT)   or cg_en(CG_NEOLED) or
-                  cg_en(CG_GPTMR) or cg_en(CG_XIP)   or cg_en(CG_ONEWIRE);
+    clk_gen_en2 <= clk_gen_en(CG_WDT)   & clk_gen_en(CG_UART0) & clk_gen_en(CG_UART1) & clk_gen_en(CG_SPI)    &
+                   clk_gen_en(CG_TWI)   & clk_gen_en(CG_PWM)   & clk_gen_en(CG_WDT)   & clk_gen_en(CG_NEOLED) &
+                   clk_gen_en(CG_GPTMR) & clk_gen_en(CG_XIP)   & clk_gen_en(CG_ONEWIRE);
 
   end generate; -- /generators
 
@@ -441,7 +411,7 @@ begin
   -- Core Complex
   -- **************************************************************************************************************************
   core_complex:
-  if (true) generate
+  if true generate
 
     -- CPU Clock Gating -----------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -766,7 +736,7 @@ begin
   -- Memory System
   -- **************************************************************************************************************************
   memory_system:
-  if (true) generate
+  if true generate
 
     -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -849,7 +819,7 @@ begin
         bus_rsp_o   => iodev_rsp(IODEV_XIP),
         xip_req_i   => xipcache_req,
         xip_rsp_o   => xipcache_rsp,
-        clkgen_en_o => cg_en(CG_XIP),
+        clkgen_en_o => clk_gen_en(CG_XIP),
         clkgen_i    => clk_gen,
         spi_csn_o   => xip_csn_o,
         spi_clk_o   => xip_clk_o,
@@ -890,7 +860,7 @@ begin
     if not XIP_EN generate
       iodev_rsp(IODEV_XIP) <= rsp_terminate_c;
       xip_rsp              <= rsp_terminate_c;
-      cg_en(CG_XIP)        <= '0';
+      clk_gen_en(CG_XIP)   <= '0';
       xip_csn_o            <= '1';
       xip_clk_o            <= '0';
       xip_dat_o            <= '0';
@@ -974,7 +944,7 @@ begin
   -- IO/Peripheral Modules
   -- **************************************************************************************************************************
   io_system:
-  if (true) generate
+  if true generate
 
     -- IO Switch ------------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1069,7 +1039,7 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_CFS),
         bus_rsp_o   => iodev_rsp(IODEV_CFS),
-        clkgen_en_o => cg_en(CG_CFS),
+        clkgen_en_o => clk_gen_en(CG_CFS),
         clkgen_i    => clk_gen,
         irq_o       => firq(FIRQ_CFS),
         cfs_in_i    => cfs_in_i,
@@ -1080,7 +1050,7 @@ begin
     neorv32_cfs_inst_false:
     if not IO_CFS_EN generate
       iodev_rsp(IODEV_CFS) <= rsp_terminate_c;
-      cg_en(CG_CFS)        <= '0';
+      clk_gen_en(CG_CFS)   <= '0';
       firq(FIRQ_CFS)       <= '0';
       cfs_out_o            <= (others => '0');
     end generate;
@@ -1148,13 +1118,13 @@ begin
       port map (
         clk_i       => clk_i,
         rstn_ext_i  => rstn_ext,
-        rstn_db_i   => dci_ndmrstn,
+        rstn_dbg_i  => dci_ndmrstn,
         rstn_sys_i  => rstn_sys,
         bus_req_i   => iodev_req(IODEV_WDT),
         bus_rsp_o   => iodev_rsp(IODEV_WDT),
         cpu_debug_i => cpu_debug,
         cpu_sleep_i => cpu_sleep,
-        clkgen_en_o => cg_en(CG_WDT),
+        clkgen_en_o => clk_gen_en(CG_WDT),
         clkgen_i    => clk_gen,
         rstn_o      => rstn_wdt
       );
@@ -1163,7 +1133,7 @@ begin
     neorv32_wdt_inst_false:
     if not IO_WDT_EN generate
       iodev_rsp(IODEV_WDT) <= rsp_terminate_c;
-      cg_en(CG_WDT)        <= '0';
+      clk_gen_en(CG_WDT)   <= '0';
       rstn_wdt             <= '1';
     end generate;
 
@@ -1206,7 +1176,7 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_UART0),
         bus_rsp_o   => iodev_rsp(IODEV_UART0),
-        clkgen_en_o => cg_en(CG_UART0),
+        clkgen_en_o => clk_gen_en(CG_UART0),
         clkgen_i    => clk_gen,
         uart_txd_o  => uart0_txd_o,
         uart_rxd_i  => uart0_rxd_i,
@@ -1222,7 +1192,7 @@ begin
       iodev_rsp(IODEV_UART0) <= rsp_terminate_c;
       uart0_txd_o            <= '0';
       uart0_rts_o            <= '1';
-      cg_en(CG_UART0)        <= '0';
+      clk_gen_en(CG_UART0)   <= '0';
       firq(FIRQ_UART0_RX)    <= '0';
       firq(FIRQ_UART0_TX)    <= '0';
     end generate;
@@ -1243,7 +1213,7 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_UART1),
         bus_rsp_o   => iodev_rsp(IODEV_UART1),
-        clkgen_en_o => cg_en(CG_UART1),
+        clkgen_en_o => clk_gen_en(CG_UART1),
         clkgen_i    => clk_gen,
         uart_txd_o  => uart1_txd_o,
         uart_rxd_i  => uart1_rxd_i,
@@ -1259,7 +1229,7 @@ begin
       iodev_rsp(IODEV_UART1) <= rsp_terminate_c;
       uart1_txd_o            <= '0';
       uart1_rts_o            <= '1';
-      cg_en(CG_UART1)        <= '0';
+      clk_gen_en(CG_UART1)   <= '0';
       firq(FIRQ_UART1_RX)    <= '0';
       firq(FIRQ_UART1_TX)    <= '0';
     end generate;
@@ -1278,7 +1248,7 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_SPI),
         bus_rsp_o   => iodev_rsp(IODEV_SPI),
-        clkgen_en_o => cg_en(CG_SPI),
+        clkgen_en_o => clk_gen_en(CG_SPI),
         clkgen_i    => clk_gen,
         spi_clk_o   => spi_clk_o,
         spi_dat_o   => spi_dat_o,
@@ -1294,7 +1264,7 @@ begin
       spi_clk_o            <= '0';
       spi_dat_o            <= '0';
       spi_csn_o            <= (others => '1');
-      cg_en(CG_SPI)        <= '0';
+      clk_gen_en(CG_SPI)   <= '0';
       firq(FIRQ_SPI)       <= '0';
     end generate;
 
@@ -1312,7 +1282,7 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_TWI),
         bus_rsp_o   => iodev_rsp(IODEV_TWI),
-        clkgen_en_o => cg_en(CG_TWI),
+        clkgen_en_o => clk_gen_en(CG_TWI),
         clkgen_i    => clk_gen,
         twi_sda_i   => twi_sda_i,
         twi_sda_o   => twi_sda_o,
@@ -1327,7 +1297,7 @@ begin
       iodev_rsp(IODEV_TWI) <= rsp_terminate_c;
       twi_sda_o            <= '1';
       twi_scl_o            <= '1';
-      cg_en(CG_TWI)        <= '0';
+      clk_gen_en(CG_TWI)   <= '0';
       firq(FIRQ_TWI)       <= '0';
     end generate;
 
@@ -1345,7 +1315,7 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_PWM),
         bus_rsp_o   => iodev_rsp(IODEV_PWM),
-        clkgen_en_o => cg_en(CG_PWM),
+        clkgen_en_o => clk_gen_en(CG_PWM),
         clkgen_i    => clk_gen,
         pwm_o       => pwm_o
       );
@@ -1354,7 +1324,7 @@ begin
     neorv32_pwm_inst_false:
     if not io_pwm_en_c generate
       iodev_rsp(IODEV_PWM) <= rsp_terminate_c;
-      cg_en(CG_PWM)        <= '0';
+      clk_gen_en(CG_PWM)   <= '0';
       pwm_o                <= (others => '0');
     end generate;
 
@@ -1396,7 +1366,7 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_NEOLED),
         bus_rsp_o   => iodev_rsp(IODEV_NEOLED),
-        clkgen_en_o => cg_en(CG_NEOLED),
+        clkgen_en_o => clk_gen_en(CG_NEOLED),
         clkgen_i    => clk_gen,
         irq_o       => firq(FIRQ_NEOLED),
         neoled_o    => neoled_o
@@ -1406,7 +1376,7 @@ begin
     neorv32_neoled_inst_false:
     if not IO_NEOLED_EN generate
       iodev_rsp(IODEV_NEOLED) <= rsp_terminate_c;
-      cg_en(CG_NEOLED)        <= '0';
+      clk_gen_en(CG_NEOLED)   <= '0';
       firq(FIRQ_NEOLED)       <= '0';
       neoled_o                <= '0';
     end generate;
@@ -1447,7 +1417,7 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_GPTMR),
         bus_rsp_o   => iodev_rsp(IODEV_GPTMR),
-        clkgen_en_o => cg_en(CG_GPTMR),
+        clkgen_en_o => clk_gen_en(CG_GPTMR),
         clkgen_i    => clk_gen,
         irq_o       => firq(FIRQ_GPTMR)
       );
@@ -1456,7 +1426,7 @@ begin
     neorv32_gptmr_inst_false:
     if not IO_GPTMR_EN generate
       iodev_rsp(IODEV_GPTMR) <= rsp_terminate_c;
-      cg_en(CG_GPTMR)        <= '0';
+      clk_gen_en(CG_GPTMR)   <= '0';
       firq(FIRQ_GPTMR)       <= '0';
     end generate;
 
@@ -1471,7 +1441,7 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_ONEWIRE),
         bus_rsp_o   => iodev_rsp(IODEV_ONEWIRE),
-        clkgen_en_o => cg_en(CG_ONEWIRE),
+        clkgen_en_o => clk_gen_en(CG_ONEWIRE),
         clkgen_i    => clk_gen,
         onewire_i   => onewire_i,
         onewire_o   => onewire_o,
@@ -1483,7 +1453,7 @@ begin
     if not IO_ONEWIRE_EN generate
       iodev_rsp(IODEV_ONEWIRE) <= rsp_terminate_c;
       onewire_o                <= '1';
-      cg_en(CG_ONEWIRE)        <= '0';
+      clk_gen_en(CG_ONEWIRE)   <= '0';
       firq(FIRQ_ONEWIRE)       <= '0';
     end generate;
 
