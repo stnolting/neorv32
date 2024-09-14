@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 14.09.2024 | 1.10.3.7 | :warning: rework RTL files / hierarchy | [#1017](https://github.com/stnolting/neorv32/pull/1017) |
 | 13.09.2024 | 1.10.3.6 | cleanup and extend watchdog's reset-cause identification logic | [#1015](https://github.com/stnolting/neorv32/pull/1015) |
 | 13.09.2024 | 1.10.3.5 | rtl code cleanups; minor CPU control optimizations | [#1014](https://github.com/stnolting/neorv32/pull/1014) |
 | 08.09.2024 | 1.10.3.4 | minor rtl/CSR optimizations | [#1010](https://github.com/stnolting/neorv32/pull/1010) |
