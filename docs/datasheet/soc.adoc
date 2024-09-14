@@ -325,9 +325,9 @@ or macro wrapper to improve efficiency (clock skew, global clock tree usage, etc
 ==== Peripheral Clocks
 
 Many processor modules like the UARTs or the timers provide a programmable time base for operations. In order to simplify
-the hardware, the processor implements a global "clock generator" that provides _clock enables_ for certain frequencies that
-are derived from the man clock. Hence, these clock enable signals are synchronous to the system's main clock and will be high
-for only a single cycle. The processor modules can use these enables for sub-main-clock operations while still providing a single
+the hardware, the processor implements a global "clock generator" (`neorv32_sys.vhd`) that provides single-cycle _clock enables_
+for certain frequencies which are derived from the main clock. These clock enable signals are synchronous to the system's
+main clock. The processor modules can use these enables for sub-main-clock operations while still providing a single
 clock domain only.
 
 In total, 8 sub-main-clock signals are available. All processor modules, which feature a time-based configuration, provide a
@@ -354,34 +354,31 @@ dynamic power consumption.
 :sectnums:
 === Processor Reset
 
+The NEORV32 processor includes a central reset sequencer (`neorv32_sys.vhd`) that handles all reset requests
+and controls the internal reset nets. The processor-wide reset (aka "system reset") can be triggered by any
+of the following sources:
+
+* the asynchronous low-active `rstn_i` top entity input signal (External source)
+* the <<_on_chip_debugger_ocd>> (internal source)
+* the <<_watchdog_timer_wdt>> (internal source)
+
 .Processor Reset Signal
 [IMPORTANT]
-Always make sure to connect the processor's reset signal `rstn_i` to a valid reset source (a button, the "locked"
+Make sure to connect the processor's reset signal `rstn_i` to a valid reset source (a button, the "locked"
 signal of a PLL, a dedicated reset controller, etc.).
-
-The processor-wide reset can be triggered by any of the following sources:
-
-* the asynchronous low-active `rstn_i` top entity input signal
-* the <<_on_chip_debugger_ocd>>
-* the <<_watchdog_timer_wdt>>
 
 .Reset Cause
 [TIP]
 The actual reset cause can be determined via the <<_watchdog_timer_wdt>>.
 
-If any of these sources trigger a reset, the internal reset will be triggered for at least 4 clock cycles ensuring
-a valid reset of the entire processor. The internal global reset is asserted _aysynchronoulsy_ if triggered by the external
-`rstn_i` signal. For internal reset sources, the global reset is asserted _synchronously_. If the reset cause is de-asserted
-the internal reset is de-asserted _synchronously_ at the next rising clock edge.
+If any of these sources triggers a reset, the internal system-wide reset will be active for at least 4 clock cycles ensuring
+a valid reset of the entire processor. This system reset is asserted _asynchronoulsy_ if triggered by the external
+`rstn_i` signal and is asserted _synchronously_ if triggered by an internal reset source. However, the system reset is
+always de-asserted _synchronously_ at the next rising clock edge.
 
 Internally, **all registers** that are not meant for mapping to blockRAM (like the register file) do provide a dedicated and
-low-active **asynchronous hardware reset**. This asynchronous reset ensures that the entire processor logic is reset to a
+**low-active asynchronous** hardware reset. This asynchronous reset ensures that the entire processor logic is reset to a
 defined state even if the main clock is not operational yet.
-
-[NOTE]
-The system reset will only reset the control registers of each implemented IO/peripheral module. This control register
-reset will also reset the according "module enable flag" to zero, which - in turn - will cause a _synchronous_
-module-internal reset of the remaining logic.
 
 
 <<<
@@ -508,6 +505,10 @@ dedicated <<_io_switch>>.
 
 .Processor-Internal Bus Architecture
 image::neorv32_bus.png[1300]
+
+.Bus System Infrastructure
+[NOTE]
+The components of the processor's bus system infrastructure are located in `rtl/core/neorv32_bus.vhd`.
 
 .Bus Interface
 [TIP]
