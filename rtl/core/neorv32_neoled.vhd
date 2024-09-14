@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - Smart LED (WS2811/WS2812) Interface (NEOLED)                       --
+-- NEORV32 SoC - Smart LED / NeoPixel(C)TM (WS2811/WS2812) Interface (NEOLED)       --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -37,32 +37,15 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
   constant ctrl_en_c       : natural :=  0; -- r/w: module enable
   constant ctrl_mode_c     : natural :=  1; -- r/w: 0 = 24-bit RGB mode, 1 = 32-bit RGBW mode
   constant ctrl_strobe_c   : natural :=  2; -- r/w: 0 = send normal data, 1 = send LED strobe command (RESET) on data write
-  --
   constant ctrl_clksel0_c  : natural :=  3; -- r/w: prescaler select bit 0
-  constant ctrl_clksel1_c  : natural :=  4; -- r/w: prescaler select bit 1
   constant ctrl_clksel2_c  : natural :=  5; -- r/w: prescaler select bit 2
-  --
   constant ctrl_bufs_0_c   : natural :=  6; -- r/-: log2(FIFO_DEPTH) bit 0
-  constant ctrl_bufs_1_c   : natural :=  7; -- r/-: log2(FIFO_DEPTH) bit 1
-  constant ctrl_bufs_2_c   : natural :=  8; -- r/-: log2(FIFO_DEPTH) bit 2
   constant ctrl_bufs_3_c   : natural :=  9; -- r/-: log2(FIFO_DEPTH) bit 3
-  --
   constant ctrl_t_tot_0_c  : natural := 10; -- r/w: pulse-clock ticks per total period bit 0
-  constant ctrl_t_tot_1_c  : natural := 11; -- r/w: pulse-clock ticks per total period bit 1
-  constant ctrl_t_tot_2_c  : natural := 12; -- r/w: pulse-clock ticks per total period bit 2
-  constant ctrl_t_tot_3_c  : natural := 13; -- r/w: pulse-clock ticks per total period bit 3
   constant ctrl_t_tot_4_c  : natural := 14; -- r/w: pulse-clock ticks per total period bit 4
-  --
   constant ctrl_t_0h_0_c   : natural := 15; -- r/w: pulse-clock ticks per ZERO high-time bit 0
-  constant ctrl_t_0h_1_c   : natural := 16; -- r/w: pulse-clock ticks per ZERO high-time bit 1
-  constant ctrl_t_0h_2_c   : natural := 17; -- r/w: pulse-clock ticks per ZERO high-time bit 2
-  constant ctrl_t_0h_3_c   : natural := 18; -- r/w: pulse-clock ticks per ZERO high-time bit 3
   constant ctrl_t_0h_4_c   : natural := 19; -- r/w: pulse-clock ticks per ZERO high-time bit 4
-  --
   constant ctrl_t_1h_0_c   : natural := 20; -- r/w: pulse-clock ticks per ONE high-time bit 0
-  constant ctrl_t_1h_1_c   : natural := 21; -- r/w: pulse-clock ticks per ONE high-time bit 1
-  constant ctrl_t_1h_2_c   : natural := 22; -- r/w: pulse-clock ticks per ONE high-time bit 2
-  constant ctrl_t_1h_3_c   : natural := 23; -- r/w: pulse-clock ticks per ONE high-time bit 3
   constant ctrl_t_1h_4_c   : natural := 24; -- r/w: pulse-clock ticks per ONE high-time bit 4
   --
   constant ctrl_irq_conf_c : natural := 27; -- r/w: interrupt condition: 0=IRQ when buffer less than half full, 1=IRQ when buffer is empty
@@ -137,10 +120,9 @@ begin
       bus_rsp_o.ack  <= bus_req_i.stb;
       bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
+      -- bus access --
       if (bus_req_i.stb = '1') then
-
-        -- write access --
-        if (bus_req_i.rw = '1') then
+        if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(2) = '0') then
             ctrl.enable   <= bus_req_i.data(ctrl_en_c);
             ctrl.mode     <= bus_req_i.data(ctrl_mode_c);
@@ -151,9 +133,7 @@ begin
             ctrl.t0_high  <= bus_req_i.data(ctrl_t_0h_4_c  downto ctrl_t_0h_0_c);
             ctrl.t1_high  <= bus_req_i.data(ctrl_t_1h_4_c  downto ctrl_t_1h_0_c);
           end if;
-
-        -- read access --
-        else
+        else -- read access
           bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
           bus_rsp_o.data(ctrl_mode_c)                          <= ctrl.mode;
           bus_rsp_o.data(ctrl_strobe_c)                        <= ctrl.strobe;
@@ -169,7 +149,6 @@ begin
           bus_rsp_o.data(ctrl_tx_full_c)                       <= not tx_fifo.free;
           bus_rsp_o.data(ctrl_tx_busy_c)                       <= serial.busy;
         end if;
-
       end if;
     end if;
   end process bus_access;

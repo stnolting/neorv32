@@ -46,12 +46,6 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
   constant ctrl_prsc0_c     : natural :=  1; -- r/w: prescaler select bit 0
   constant ctrl_prsc1_c     : natural :=  2; -- r/w: prescaler select bit 1
   constant ctrl_clkdiv0_c   : natural :=  3; -- r/w: clock divider bit 0
-  constant ctrl_clkdiv1_c   : natural :=  4; -- r/w: clock divider bit 1
-  constant ctrl_clkdiv2_c   : natural :=  5; -- r/w: clock divider bit 2
-  constant ctrl_clkdiv3_c   : natural :=  6; -- r/w: clock divider bit 3
-  constant ctrl_clkdiv4_c   : natural :=  7; -- r/w: clock divider bit 4
-  constant ctrl_clkdiv5_c   : natural :=  8; -- r/w: clock divider bit 5
-  constant ctrl_clkdiv6_c   : natural :=  9; -- r/w: clock divider bit 6
   constant ctrl_clkdiv7_c   : natural := 10; -- r/w: clock divider bit 7
   constant ctrl_trig_rst_c  : natural := 11; -- -/w: trigger reset pulse, auto-clears
   constant ctrl_trig_bit_c  : natural := 12; -- -/w: trigger single-bit transmission, auto-clears
@@ -117,21 +111,16 @@ begin
       bus_rsp_o.ack  <= bus_req_i.stb;
       bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-
       -- write access --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        -- control register --
-        if (bus_req_i.addr(2) = '0') then
+        if (bus_req_i.addr(2) = '0') then -- control register
           ctrl.enable   <= bus_req_i.data(ctrl_en_c);
           ctrl.clk_prsc <= bus_req_i.data(ctrl_prsc1_c downto ctrl_prsc0_c);
           ctrl.clk_div  <= bus_req_i.data(ctrl_clkdiv7_c downto ctrl_clkdiv0_c);
-        end if;
-        -- data register --
-        if (bus_req_i.addr(2) = '1') then
+        else -- data register
           tx_data <= bus_req_i.data(7 downto 0);
         end if;
       end if;
-
       -- operation triggers --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') then -- set by host
         ctrl.trig_rst  <= bus_req_i.data(ctrl_trig_rst_c);
@@ -142,20 +131,16 @@ begin
         ctrl.trig_bit  <= '0';
         ctrl.trig_byte <= '0';
       end if;
-
       -- read access --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        -- control register --
-        if (bus_req_i.addr(2) = '0') then
+        if (bus_req_i.addr(2) = '0') then -- control register
           bus_rsp_o.data(ctrl_en_c)                            <= ctrl.enable;
           bus_rsp_o.data(ctrl_prsc1_c downto ctrl_prsc0_c)     <= ctrl.clk_prsc;
           bus_rsp_o.data(ctrl_clkdiv7_c downto ctrl_clkdiv0_c) <= ctrl.clk_div;
           --
           bus_rsp_o.data(ctrl_sense_c)                         <= serial.wire_in(1);
           bus_rsp_o.data(ctrl_presence_c)                      <= serial.presence;
-          bus_rsp_o.data(ctrl_busy_c)                          <= serial.busy;
-        -- data register --
-        else
+        else -- data register
           bus_rsp_o.data(7 downto 0) <= serial.sreg;
         end if;
       end if;

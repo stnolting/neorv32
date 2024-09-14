@@ -50,17 +50,8 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant ctrl_sim_en_c        : natural :=  1; -- r/w: simulation-mode enable
   constant ctrl_hwfc_en_c       : natural :=  2; -- r/w: enable RTS/CTS hardware flow-control
   constant ctrl_prsc0_c         : natural :=  3; -- r/w: baud prescaler bit 0
-  constant ctrl_prsc1_c         : natural :=  4; -- r/w: baud prescaler bit 1
   constant ctrl_prsc2_c         : natural :=  5; -- r/w: baud prescaler bit 2
   constant ctrl_baud0_c         : natural :=  6; -- r/w: baud divisor bit 0
-  constant ctrl_baud1_c         : natural :=  7; -- r/w: baud divisor bit 1
-  constant ctrl_baud2_c         : natural :=  8; -- r/w: baud divisor bit 2
-  constant ctrl_baud3_c         : natural :=  9; -- r/w: baud divisor bit 3
-  constant ctrl_baud4_c         : natural := 10; -- r/w: baud divisor bit 4
-  constant ctrl_baud5_c         : natural := 11; -- r/w: baud divisor bit 5
-  constant ctrl_baud6_c         : natural := 12; -- r/w: baud divisor bit 6
-  constant ctrl_baud7_c         : natural := 13; -- r/w: baud divisor bit 7
-  constant ctrl_baud8_c         : natural := 14; -- r/w: baud divisor bit 8
   constant ctrl_baud9_c         : natural := 15; -- r/w: baud divisor bit 9
   --
   constant ctrl_rx_nempty_c     : natural := 16; -- r/-: RX FIFO not empty

@@ -15,6 +15,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+library neorv32;
+use neorv32.neorv32_package.all;
+
 entity neorv32_clockgate is
   port (
     clk_i  : in  std_ulogic; -- global clock line, always-on
@@ -32,7 +35,7 @@ begin
 
   -- Warn about Clock Gating ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert false report "[NEORV32] Clock gating enabled (using generic clock switch)." severity warning;
+  assert false report "[NEORV32] Clock gating enabled (using default/generic clock switch)." severity warning;
 
 
   -- Clock Switch ---------------------------------------------------------------------------
