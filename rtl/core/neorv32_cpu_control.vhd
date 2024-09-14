@@ -470,8 +470,8 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
     port map (
-      instr16_i => issue_engine.ci_i16,
-      instr32_o => issue_engine.ci_i32
+      instr_i => issue_engine.ci_i16,
+      instr_o => issue_engine.ci_i32
     );
 
     -- half-word select --
