@@ -40,7 +40,7 @@ __crt0_pointer_init:
   .option norelax
   // setup pointers using linker script symbols
   la   x4, __crt0_ram_last   // last address of RAM, stack starts here
-  andi sp, x4, 0xfffffff0    // align to 16-bytes / 128-bit according to RISC-V ABI
+  andi sp, x4, 0xfffffff0    // align to 16-bytes / 128-bit according to RISC-V ABI (#1021)
   la   gp, __global_pointer$ // global pointer
   .option pop
 
