@@ -39,10 +39,9 @@ __crt0_pointer_init:
   .option push
   .option norelax
   // setup pointers using linker script symbols
-  la   x4, __crt0_stack_end  // stack pointer
-  andi sp, x4, 0xfffffffc    // word-aligned
-  la   x5, __global_pointer$ // global pointer
-  andi gp, x5, 0xfffffffc    // word-aligned
+  la   x4, __crt0_ram_last   // last address of RAM, stack starts here
+  andi sp, x4, 0xfffffff0    // align to 16-bytes / 128-bit according to RISC-V ABI
+  la   gp, __global_pointer$ // global pointer
   .option pop
 
 __crt0_reg_file_init:
@@ -51,7 +50,7 @@ __crt0_reg_file_init:
 //addi  x2, x0, 0 // stack pointer sp
 //addi  x3, x0, 0 // global pointer gp
 //addi  x4, x0, 0 // implicitly initialized within crt0
-//addi  x5, x0, 0 // implicitly initialized within crt0
+  addi  x5, x0, 0
   addi  x6, x0, 0
   addi  x7, x0, 0
   addi  x8, x0, 0
