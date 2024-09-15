@@ -444,7 +444,8 @@ contains _explicitly initialized_ global variables. This section is initialized 
 like global variables without explicit initialization. This section is cleared by the start-up code `crt0.S`.
 . **Heap (`.heap`)**: The heap is used for dynamic memory that is managed by functions like `malloc()` and `free()`. The heap
 grows upwards. This section is not initialized at all.
-. **Stack**: The stack starts at the very end of the RAM at address `ORIGIN(ram) + LENGTH(ram) - 4`. The stack grows downwards.
+. **Stack**: The stack starts at the very end of the RAM at address `ORIGIN(ram) + LENGTH(ram) - 1`. According to the RISC-V ABI / calling
+convention the stack is 128-bit-aligned before procedure entry. The stack grows downwards.
 
 There is _no explicit limit_ for the maximum stack size as this is hard to check. However, a physical memory protection rule could
 be used to configure a maximum size by adding a "protection area" between stack and heap (a PMP region without any access rights).
@@ -546,7 +547,7 @@ The `crt0.S` start-up performs the following operations:
 . Clear <<_mstatus>>.
 . Clear <<_mie>> disabling all interrupt sources.
 . Install an <<_early_trap_handler>> to <<_mtvec>>.
-. Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
+. Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script. According to the RISC-V ABI the stack pointer gets 128-bit-aligned.
 . Initialize all integer register `x1` - `x31` (only `x1` - `x15` if the `E` CPU extension is enabled).
 . Setup `.data` section to configure initialized variables.
 . Clear the `.bss` section.
