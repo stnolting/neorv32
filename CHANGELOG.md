@@ -29,7 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 15.09.2024 | 1.10.3.10 | :bug: SW: fix stack-alignment (hast to be 128-bit-aligned) before entering the very first procedure (`main`) | [#1021](https://github.com/stnolting/neorv32/pull/1021) |
+| 15.09.2024 | 1.10.3.10 | :bug: SW: fix stack-alignment (has to be 128-bit-aligned) before entering the very first procedure (`main`) | [#1021](https://github.com/stnolting/neorv32/pull/1021) |
 | 14.09.2024 | 1.10.3.9 | massive rtl code cleanup | [#1019](https://github.com/stnolting/neorv32/pull/1019) |
 | 14.09.2024 | 1.10.3.8 | :bug: fix `b.ctz` instruction decoding (bug introduced in v1.10.3.6) | [#1018](https://github.com/stnolting/neorv32/pull/1018) |
 | 14.09.2024 | 1.10.3.7 | :warning: rework RTL files / hierarchy | [#1017](https://github.com/stnolting/neorv32/pull/1017) |
