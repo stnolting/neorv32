@@ -289,9 +289,7 @@ SECTIONS
 /* Export symbols for neorv32 crt0 start-up code                                                     */
 /* ************************************************************************************************* */
   PROVIDE(__crt0_max_heap            = __neorv32_heap_size);
-  PROVIDE(__crt0_imem_begin          = ORIGIN(rom));
-  PROVIDE(__crt0_dmem_begin          = ORIGIN(ram));
-  PROVIDE(__crt0_stack_end           = (ORIGIN(ram) + LENGTH(ram)) - 1);
+  PROVIDE(__crt0_ram_last            = (ORIGIN(ram) + LENGTH(ram)) - 1);
   PROVIDE(__crt0_bss_start           = __BSS_START__);
   PROVIDE(__crt0_bss_end             = __BSS_END__);
   PROVIDE(__crt0_copy_data_src_begin = LOADADDR(.data));
