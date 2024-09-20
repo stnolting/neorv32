@@ -305,7 +305,7 @@ begin
   engine.busy <= '0' when (engine.state = S_IDLE) else '1';
 
   -- bus output --
-  dma_req_o.priv  <= priv_mode_m_c; -- privileged access
+  dma_req_o.priv  <= priv_mode_m_c; -- DMA accesses are always privileged
   dma_req_o.src   <= '0'; -- source = data access
   dma_req_o.addr  <= engine.src_addr when (engine.state = S_READ) else engine.dst_addr;
   dma_req_o.rvso  <= '0'; -- no reservation set operation possible
