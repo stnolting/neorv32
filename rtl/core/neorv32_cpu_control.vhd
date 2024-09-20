@@ -65,18 +65,18 @@ entity neorv32_cpu_control is
     rstn_i        : in  std_ulogic; -- global reset, low-active, async
     ctrl_o        : out ctrl_bus_t; -- main control bus
     -- instruction fetch interface --
-    i_pmp_fault_i : in  std_ulogic; -- instruction fetch pmp fault
-    bus_req_o     : out bus_req_t;  -- request
-    bus_rsp_i     : in  bus_rsp_t;  -- response
+    ibus_pmperr_i : in  std_ulogic; -- instruction fetch pmp fault
+    ibus_req_o    : out bus_req_t;  -- request
+    ibus_rsp_i    : in  bus_rsp_t;  -- response
     -- data path interface --
     alu_cp_done_i : in  std_ulogic; -- ALU iterative operation done
-    cmp_i         : in  std_ulogic_vector(1 downto 0); -- comparator status
+    alu_cmp_i     : in  std_ulogic_vector(1 downto 0); -- comparator status
     alu_add_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU address result
-    rs1_i         : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    imm_o         : out std_ulogic_vector(XLEN-1 downto 0); -- immediate
-    fetch_pc_o    : out std_ulogic_vector(XLEN-1 downto 0); -- instruction fetch address
-    curr_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
-    link_pc_o     : out std_ulogic_vector(XLEN-1 downto 0); -- link PC (return address)
+    alu_imm_o     : out std_ulogic_vector(XLEN-1 downto 0); -- immediate
+    rf_rs1_i      : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
+    pc_fetch_o    : out std_ulogic_vector(XLEN-1 downto 0); -- instruction fetch address
+    pc_curr_o     : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
+    pc_next_o     : out std_ulogic_vector(XLEN-1 downto 0); -- next PC (return address)
     csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
     -- external CSR interface --
     xcsr_we_o     : out std_ulogic; -- global write enable
@@ -84,18 +84,13 @@ entity neorv32_cpu_control is
     xcsr_wdata_o  : out std_ulogic_vector(XLEN-1 downto 0); -- write data
     xcsr_rdata_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- interrupts --
-    db_halt_req_i : in  std_ulogic; -- debug mode (halt) request
-    msi_i         : in  std_ulogic; -- machine software interrupt
-    mei_i         : in  std_ulogic; -- machine external interrupt
-    mti_i         : in  std_ulogic; -- machine timer interrupt
-    firq_i        : in  std_ulogic_vector(15 downto 0); -- fast interrupts
-    -- data access interface --
+    irq_dbg_i     : in  std_ulogic; -- debug mode (halt) request
+    irq_machine_i : in  std_ulogic_vector(2 downto 0); -- risc-v mti, mei, msi
+    irq_fast_i    : in  std_ulogic_vector(15 downto 0); -- fast interrupts
+    -- load/store unit interface --
     lsu_wait_i    : in  std_ulogic; -- wait for data bus
-    mar_i         : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-    ma_load_i     : in  std_ulogic; -- misaligned load data address
-    ma_store_i    : in  std_ulogic; -- misaligned store data address
-    be_load_i     : in  std_ulogic; -- bus error on load data access
-    be_store_i    : in  std_ulogic  -- bus error on store data access
+    lsu_mar_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
+    lsu_err_i     : in  std_ulogic_vector(3 downto 0) -- alignment/access errors
   );
 end neorv32_cpu_control;
 
@@ -163,7 +158,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc           : std_ulogic_vector(XLEN-1 downto 0); -- actual PC, corresponding to current executed instruction
     pc_we        : std_ulogic; -- PC update enable
     next_pc      : std_ulogic_vector(XLEN-1 downto 0); -- next PC, corresponding to next instruction to be executed
-    link_pc      : std_ulogic_vector(XLEN-1 downto 0); -- next PC for linking (return address)
   end record;
   signal execute_engine : execute_engine_t;
 
@@ -282,11 +276,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- debug-mode controller --
   type debug_ctrl_t is record
-    running    : std_ulogic; -- CPU is in debug mode
-    trig_hw    : std_ulogic; -- hardware trigger
-    trig_break : std_ulogic; -- ebreak instruction trigger
-    trig_halt  : std_ulogic; -- external request trigger
-    trig_step  : std_ulogic; -- single-stepping mode trigger
+    running, trig_hw, trig_break, trig_halt, trig_step : std_ulogic; -- single-stepping mode trigger
   end record;
   signal debug_ctrl : debug_ctrl_t;
 
@@ -301,9 +291,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
 begin
 
--- ****************************************************************************************************************************
--- Instruction Fetch (always fetch 32-bit-aligned 32-bit chunks of data)
--- ****************************************************************************************************************************
+  -- ****************************************************************************************************************************
+  -- Instruction Fetch (always fetch 32-bit-aligned 32-bit chunks of data)
+  -- ****************************************************************************************************************************
 
   -- Fetch Engine FSM -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -356,18 +346,18 @@ begin
   end process fetch_engine_fsm;
 
   -- PC output for instruction fetch --
-  bus_req_o.addr <= fetch_engine.pc(XLEN-1 downto 2) & "00"; -- word aligned
-  fetch_pc_o     <= fetch_engine.pc(XLEN-1 downto 2) & "00"; -- word aligned
+  ibus_req_o.addr <= fetch_engine.pc(XLEN-1 downto 2) & "00"; -- word aligned
+  pc_fetch_o      <= fetch_engine.pc(XLEN-1 downto 2) & "00"; -- word aligned
 
   -- instruction fetch (read) request if IPB not full --
-  bus_req_o.stb <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
+  ibus_req_o.stb <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
 
   -- instruction bus response --
-  fetch_engine.resp <= bus_rsp_i.ack or bus_rsp_i.err;
+  fetch_engine.resp <= ibus_rsp_i.ack or ibus_rsp_i.err;
 
   -- IPB instruction data and status --
-  ipb.wdata(0) <= (bus_rsp_i.err or i_pmp_fault_i) & bus_rsp_i.data(15 downto 0);
-  ipb.wdata(1) <= (bus_rsp_i.err or i_pmp_fault_i) & bus_rsp_i.data(31 downto 16);
+  ipb.wdata(0) <= (ibus_rsp_i.err or ibus_pmperr_i) & ibus_rsp_i.data(15 downto 0);
+  ipb.wdata(1) <= (ibus_rsp_i.err or ibus_pmperr_i) & ibus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
   ipb.we(0) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') and
@@ -375,13 +365,13 @@ begin
   ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
 
   -- bus access type --
-  bus_req_o.priv  <= fetch_engine.priv; -- current effective privilege level
-  bus_req_o.data  <= (others => '0'); -- read-only
-  bus_req_o.ben   <= (others => '0'); -- read-only
-  bus_req_o.rw    <= '0'; -- read-only
-  bus_req_o.src   <= '1'; -- source = instruction fetch
-  bus_req_o.rvso  <= '0'; -- cannot be a reservation set operation
-  bus_req_o.fence <= ctrl.lsu_fence; -- fence operation, valid without STB being set
+  ibus_req_o.priv  <= fetch_engine.priv; -- current effective privilege level
+  ibus_req_o.data  <= (others => '0'); -- read-only
+  ibus_req_o.ben   <= (others => '0'); -- read-only
+  ibus_req_o.rw    <= '0'; -- read-only
+  ibus_req_o.src   <= '1'; -- source = instruction fetch
+  ibus_req_o.rvso  <= '0'; -- cannot be a reservation set operation
+  ibus_req_o.fence <= ctrl.lsu_fence; -- fence operation, valid without STB being set
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
@@ -414,9 +404,9 @@ begin
   end generate;
 
 
--- ****************************************************************************************************************************
--- Instruction Issue (decompress 16-bit instructions and assemble a 32-bit instruction word)
--- ****************************************************************************************************************************
+  -- ****************************************************************************************************************************
+  -- Instruction Issue (decompress 16-bit instructions and assemble a 32-bit instruction word)
+  -- ****************************************************************************************************************************
 
   issue_engine_enabled:
   if CPU_EXTENSION_RISCV_C generate
@@ -497,37 +487,37 @@ begin
   ipb.re(1) <= issue_engine.valid(1) and issue_engine.ack;
 
 
--- ****************************************************************************************************************************
--- Instruction Execution
--- ****************************************************************************************************************************
+  -- ****************************************************************************************************************************
+  -- Instruction Execution
+  -- ****************************************************************************************************************************
 
   -- Immediate Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   imm_gen: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      imm_o <= (others => '0');
+      alu_imm_o <= (others => '0');
     elsif rising_edge(clk_i) then
       if (execute_engine.state = DISPATCH) then -- prepare update of next_pc (using ALU's PC + IMM in EXECUTE state)
-        imm_o <= (others => '0');
+        alu_imm_o <= (others => '0');
         if CPU_EXTENSION_RISCV_C and (issue_engine.data(33) = '1') then -- is de-compressed C instruction?
-          imm_o(3 downto 0) <= x"2";
+          alu_imm_o(3 downto 0) <= x"2";
         else
-          imm_o(3 downto 0) <= x"4";
+          alu_imm_o(3 downto 0) <= x"4";
         end if;
       else
-        imm_o <= replicate_f(execute_engine.ir(31), 21) & execute_engine.ir(30 downto 21) & execute_engine.ir(20); -- default: I-immediate
+        alu_imm_o <= replicate_f(execute_engine.ir(31), 21) & execute_engine.ir(30 downto 21) & execute_engine.ir(20); -- default: I-immediate
         case decode_aux.opcode is
           when opcode_store_c => -- S-immediate
-            imm_o <= replicate_f(execute_engine.ir(31), 21) & execute_engine.ir(30 downto 25) & execute_engine.ir(11 downto 7);
+            alu_imm_o <= replicate_f(execute_engine.ir(31), 21) & execute_engine.ir(30 downto 25) & execute_engine.ir(11 downto 7);
           when opcode_branch_c => -- B-immediate
-            imm_o <= replicate_f(execute_engine.ir(31), 20) & execute_engine.ir(7) & execute_engine.ir(30 downto 25) & execute_engine.ir(11 downto 8) & '0';
+            alu_imm_o <= replicate_f(execute_engine.ir(31), 20) & execute_engine.ir(7) & execute_engine.ir(30 downto 25) & execute_engine.ir(11 downto 8) & '0';
           when opcode_lui_c | opcode_auipc_c => -- U-immediate
-            imm_o <= execute_engine.ir(31 downto 12) & x"000";
+            alu_imm_o <= execute_engine.ir(31 downto 12) & x"000";
           when opcode_jal_c => -- J-immediate
-            imm_o <= replicate_f(execute_engine.ir(31), 12) & execute_engine.ir(19 downto 12) & execute_engine.ir(20) & execute_engine.ir(30 downto 21) & '0';
+            alu_imm_o <= replicate_f(execute_engine.ir(31), 12) & execute_engine.ir(19 downto 12) & execute_engine.ir(20) & execute_engine.ir(30 downto 21) & '0';
           when opcode_amo_c => -- atomic memory access
-            if CPU_EXTENSION_RISCV_A then imm_o <= (others => '0'); end if;
+            if CPU_EXTENSION_RISCV_A then alu_imm_o <= (others => '0'); end if;
           when others =>
             NULL; -- use default
         end case;
@@ -538,13 +528,13 @@ begin
 
   -- Branch Condition Check -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  branch_check: process(execute_engine.ir, cmp_i)
+  branch_check: process(execute_engine.ir, alu_cmp_i)
   begin
     if (execute_engine.ir(instr_opcode_lsb_c+2) = '0') then -- conditional branch
       if (execute_engine.ir(instr_funct3_msb_c) = '0') then -- beq / bne
-        execute_engine.branch_taken <= cmp_i(cmp_equal_c) xor execute_engine.ir(instr_funct3_lsb_c);
+        execute_engine.branch_taken <= alu_cmp_i(cmp_equal_c) xor execute_engine.ir(instr_funct3_lsb_c);
       else -- blt(u) / bge(u)
-        execute_engine.branch_taken <= cmp_i(cmp_less_c) xor execute_engine.ir(instr_funct3_lsb_c);
+        execute_engine.branch_taken <= alu_cmp_i(cmp_less_c) xor execute_engine.ir(instr_funct3_lsb_c);
       end if;
     else -- unconditional branch
       execute_engine.branch_taken <= '1';
@@ -563,7 +553,7 @@ begin
       execute_engine.is_ci   <= '0';
       execute_engine.pc      <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
       execute_engine.next_pc <= CPU_BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
-      execute_engine.link_pc <= (others => '0');
+      pc_next_o              <= (others => '0');
     elsif rising_edge(clk_i) then
       -- control bus --
       ctrl <= ctrl_nxt;
@@ -578,17 +568,12 @@ begin
         execute_engine.pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
       end if;
 
-      -- link PC: return address --
-      if (execute_engine.state = BRANCH) then
-        execute_engine.link_pc <= execute_engine.next_pc(XLEN-1 downto 1) & '0';
-      else -- output zero if not a branch instruction
-        execute_engine.link_pc <= (others => '0');
-      end if;
-
       -- next PC: address of next instruction --
+      pc_next_o <= (others => '0'); -- output zero if not a branch instruction
       case execute_engine.state is
 
         when TRAP_ENTER => -- starting trap environment
+        -- ------------------------------------------------------------
           if (trap_ctrl.cause(5) = '1') and CPU_EXTENSION_RISCV_Sdext then -- debug mode (re-)entry
             execute_engine.next_pc <= CPU_DEBUG_PARK_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter; start at "parking loop" <normal_entry>
           elsif (debug_ctrl.running = '1') and CPU_EXTENSION_RISCV_Sdext then -- any other trap INSIDE debug mode
@@ -602,6 +587,7 @@ begin
           end if;
 
         when TRAP_EXIT => -- leaving trap environment
+        -- ------------------------------------------------------------
           if (debug_ctrl.running = '1') and CPU_EXTENSION_RISCV_Sdext then -- debug mode exit
             execute_engine.next_pc <= csr.dpc(XLEN-1 downto 1) & '0';
           else -- normal end of trap
@@ -609,14 +595,18 @@ begin
           end if;
 
         when BRANCH => -- branch instruction
+        -- ------------------------------------------------------------
+          pc_next_o <= execute_engine.next_pc(XLEN-1 downto 1) & '0'; -- output as link/return address
           if (trap_ctrl.exc_buf(exc_illegal_c) = '0') and (execute_engine.branch_taken = '1') then -- valid taken branch
             execute_engine.next_pc <= alu_add_i(XLEN-1 downto 1) & '0';
           end if;
 
         when EXECUTE => -- linear increment (use ALU's adder to compute next_pc = current_pc + imm (2/4))
+        -- ------------------------------------------------------------
           execute_engine.next_pc <= alu_add_i(XLEN-1 downto 1) & '0';
 
         when others => -- no update
+        -- ------------------------------------------------------------
           NULL;
 
       end case;
@@ -628,9 +618,8 @@ begin
                                  (execute_engine.branch_taken = '1') and -- branch is taken
                                  (alu_add_i(1) = '1') and (not CPU_EXTENSION_RISCV_C) else '0'; -- misaligned destination
 
-  -- PC output --
-  curr_pc_o <= execute_engine.pc(XLEN-1 downto 1) & '0'; -- current PC
-  link_pc_o <= execute_engine.link_pc(XLEN-1 downto 1) & '0'; -- jump-and-link return address
+  -- current PC output --
+  pc_curr_o <= execute_engine.pc(XLEN-1 downto 1) & '0';
 
 
   -- Decoding Helper Logic ------------------------------------------------------------------
@@ -985,9 +974,9 @@ begin
   ctrl_o.cpu_debug    <= debug_ctrl.running;
 
 
--- ****************************************************************************************************************************
--- Illegal Instruction Detection
--- ****************************************************************************************************************************
+  -- ****************************************************************************************************************************
+  -- Illegal Instruction Detection
+  -- ****************************************************************************************************************************
 
   -- Instruction Execution Monitor (trap if multi-cycle instruction does not complete) ------
   -- -------------------------------------------------------------------------------------------
@@ -1226,9 +1215,9 @@ begin
                                   (execute_engine.ir(instr_opcode_lsb_c+1 downto instr_opcode_lsb_c) /= "11")) else '0'; -- illegal opcode LSBs?
 
 
--- ****************************************************************************************************************************
--- Trap Controller
--- ****************************************************************************************************************************
+  -- ****************************************************************************************************************************
+  -- Trap Controller
+  -- ****************************************************************************************************************************
 
   -- Exception Buffer -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1246,13 +1235,13 @@ begin
       -- ----------------------------------------------------------------------
 
       -- misaligned load/store/instruction address --
-      trap_ctrl.exc_buf(exc_lalign_c) <= (trap_ctrl.exc_buf(exc_lalign_c) or ma_load_i)          and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_salign_c) <= (trap_ctrl.exc_buf(exc_salign_c) or ma_store_i)         and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_lalign_c) <= (trap_ctrl.exc_buf(exc_lalign_c) or lsu_err_i(0))       and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_salign_c) <= (trap_ctrl.exc_buf(exc_salign_c) or lsu_err_i(2))       and (not trap_ctrl.env_enter);
       trap_ctrl.exc_buf(exc_ialign_c) <= (trap_ctrl.exc_buf(exc_ialign_c) or trap_ctrl.instr_ma) and (not trap_ctrl.env_enter);
 
       -- load/store/instruction access fault --
-      trap_ctrl.exc_buf(exc_laccess_c) <= (trap_ctrl.exc_buf(exc_laccess_c) or be_load_i)          and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or be_store_i)         and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_laccess_c) <= (trap_ctrl.exc_buf(exc_laccess_c) or lsu_err_i(1))       and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or lsu_err_i(3))       and (not trap_ctrl.env_enter);
       trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_enter);
 
       -- illegal instruction & environment call --
@@ -1291,12 +1280,12 @@ begin
       -- ----------------------------------------------------------------------
 
       -- RISC-V machine interrupts --
-      trap_ctrl.irq_pnd(irq_msi_irq_c) <= msi_i;
-      trap_ctrl.irq_pnd(irq_mei_irq_c) <= mei_i;
-      trap_ctrl.irq_pnd(irq_mti_irq_c) <= mti_i;
+      trap_ctrl.irq_pnd(irq_msi_irq_c) <= irq_machine_i(0);
+      trap_ctrl.irq_pnd(irq_mei_irq_c) <= irq_machine_i(1);
+      trap_ctrl.irq_pnd(irq_mti_irq_c) <= irq_machine_i(2);
 
       -- NEORV32-specific fast interrupts --
-      trap_ctrl.irq_pnd(irq_firq_15_c downto irq_firq_0_c) <= firq_i(15 downto 0);
+      trap_ctrl.irq_pnd(irq_firq_15_c downto irq_firq_0_c) <= irq_fast_i(15 downto 0);
 
       -- debug-mode entry --
       trap_ctrl.irq_pnd(irq_db_halt_c) <= '0'; -- unused
@@ -1450,9 +1439,9 @@ begin
   trap_ctrl.wakeup <= or_reduce_f(trap_ctrl.irq_buf) or debug_ctrl.running or csr.dcsr_step;
 
 
--- ****************************************************************************************************************************
--- Control and Status Registers (CSRs)
--- ****************************************************************************************************************************
+  -- ****************************************************************************************************************************
+  -- Control and Status Registers (CSRs)
+  -- ****************************************************************************************************************************
 
   -- CSR Address Register -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1473,7 +1462,7 @@ begin
 
   -- CSR Write-Data ALU ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_write_data: process(execute_engine.ir, csr.rdata, rs1_i)
+  csr_write_data: process(execute_engine.ir, csr.rdata, rf_rs1_i)
     variable tmp_v : std_ulogic_vector(XLEN-1 downto 0);
   begin
     -- immediate/register operand --
@@ -1481,7 +1470,7 @@ begin
       tmp_v := (others => '0');
       tmp_v(4 downto 0) := execute_engine.ir(19 downto 15); -- uimm5
     else
-      tmp_v := rs1_i;
+      tmp_v := rf_rs1_i;
     end if;
     -- tiny ALU to compute CSR write data --
     case execute_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) is
@@ -1665,7 +1654,7 @@ begin
           csr.mepc   <= trap_ctrl.epc(XLEN-1 downto 1) & '0'; -- trap PC
           -- trap value --
           if (trap_ctrl.cause(6) = '0') and (trap_ctrl.cause(2) = '1') then -- load/store misaligned/access faults [hacky!]
-            csr.mtval <= mar_i; -- faulting data access address
+            csr.mtval <= lsu_mar_i; -- faulting data access address
           else -- everything else including all interrupts
             csr.mtval <= (others => '0');
           end if;
@@ -2020,9 +2009,9 @@ begin
   csr_rdata_o <= csr.rdata;
 
 
--- ****************************************************************************************************************************
--- CPU Counters (Base Counters and Hardware Performance Monitors)
--- ****************************************************************************************************************************
+  -- ****************************************************************************************************************************
+  -- CPU Counters (Base Counters and Hardware Performance Monitors)
+  -- ****************************************************************************************************************************
 
   -- Counter CSRs ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -2187,9 +2176,9 @@ begin
   cnt_event(hpmcnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1')                                        else '0'; -- entered trap
 
 
--- ****************************************************************************************************************************
--- CPU Debug Mode (Part of the On-Chip Debugger)
--- ****************************************************************************************************************************
+  -- ****************************************************************************************************************************
+  -- CPU Debug Mode (Part of the On-Chip Debugger)
+  -- ****************************************************************************************************************************
 
   -- Debug Control --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -2218,7 +2207,7 @@ begin
     debug_ctrl.trig_break <= trap_ctrl.ebreak and (debug_ctrl.running or   -- re-enter debug mode
                              ((    csr.privilege) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
                              ((not csr.privilege) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
-    debug_ctrl.trig_halt  <= db_halt_req_i and (not debug_ctrl.running); -- external halt request (if not halted already)
+    debug_ctrl.trig_halt  <= irq_dbg_i     and (not debug_ctrl.running); -- external halt request (if not halted already)
     debug_ctrl.trig_step  <= csr.dcsr_step and (not debug_ctrl.running); -- single-step mode (trigger when NOT CURRENTLY in debug mode)
 
   end generate;
@@ -2253,9 +2242,9 @@ begin
   csr.dcsr_rd(1 downto 0)   <= (others => csr.dcsr_prv); -- prv: privilege mode when debug mode was entered
 
 
--- ****************************************************************************************************************************
--- Hardware Trigger Module
--- ****************************************************************************************************************************
+  -- ****************************************************************************************************************************
+  -- Hardware Trigger Module
+  -- ****************************************************************************************************************************
   trigger_module_enable:
   if CPU_EXTENSION_RISCV_Sdtrig generate
 
