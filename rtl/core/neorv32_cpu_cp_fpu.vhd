@@ -367,8 +367,8 @@ begin
       op_e_all_one_v  :=    and_reduce_f(op_data(i)(30 downto 23));
 
       -- check special cases --
-      op_is_zero_v   := op_e_all_zero_v and      op_m_all_zero_v;  -- zero
-      op_is_inf_v    := op_e_all_one_v  and      op_m_all_zero_v;  -- infinity
+      op_is_zero_v := op_e_all_zero_v and op_m_all_zero_v;  -- zero
+      op_is_inf_v  := op_e_all_one_v  and op_m_all_zero_v;  -- infinity
       -- As we are flushing subnormals before classification they will show up as 0.0
       -- So we check calculate the denorm value is the non-flushed mantissa gated by the op_e_all_zero
       if (i = 0) then
@@ -381,7 +381,7 @@ begin
       --if (i = 2) then
       --  op_is_denorm_v := or_reduce_f(rs3_i(22 downto 0)) and op_e_all_zero_v; -- set the number to subnormal
       --end if;
-      op_is_nan_v    := op_e_all_one_v  and (not op_m_all_zero_v); -- NaN
+      op_is_nan_v := op_e_all_one_v and (not op_m_all_zero_v); -- NaN
 
       -- actual attributes --
       op_class(i)(fp_class_neg_inf_c)    <= op_data(i)(31) and op_is_inf_v; -- negative infinity
@@ -772,14 +772,10 @@ begin
     elsif rising_edge(clk_i) then
       -- multiplier core --
       -- if the inputs to the multiplier is +/- zero or +/- denorm the result will always be +/- zero
-      if ((fpu_operands.rs1_class(fp_class_pos_zero_c) or
-           fpu_operands.rs1_class(fp_class_neg_zero_c) or
-           fpu_operands.rs2_class(fp_class_pos_zero_c) or
-           fpu_operands.rs2_class(fp_class_neg_zero_c) or
-           fpu_operands.rs1_class(fp_class_pos_denorm_c) or
-           fpu_operands.rs1_class(fp_class_neg_denorm_c) or
-           fpu_operands.rs2_class(fp_class_pos_denorm_c) or
-           fpu_operands.rs2_class(fp_class_neg_denorm_c)) = '1') then
+      if ((fpu_operands.rs1_class(fp_class_pos_zero_c)   or fpu_operands.rs1_class(fp_class_neg_zero_c)   or
+           fpu_operands.rs2_class(fp_class_pos_zero_c)   or fpu_operands.rs2_class(fp_class_neg_zero_c)   or
+           fpu_operands.rs1_class(fp_class_pos_denorm_c) or fpu_operands.rs1_class(fp_class_neg_denorm_c) or
+           fpu_operands.rs2_class(fp_class_pos_denorm_c) or fpu_operands.rs2_class(fp_class_neg_denorm_c)) = '1') then
         if (multiplier.start = '1') then
           -- the result will be 0 so force it to be 0
           multiplier.product <= (others => '0');
@@ -794,7 +790,7 @@ begin
         multiplier.product <= std_ulogic_vector(multiplier.buf_ff(47 downto 0)); -- let the register balancing do the magic here
         multiplier.exp_res <= std_ulogic_vector(unsigned('0' & multiplier.exp_sum) - 127);
       end if;
-      multiplier.sign    <= fpu_operands.rs1(31) xor fpu_operands.rs2(31); -- resulting sign
+      multiplier.sign <= fpu_operands.rs1(31) xor fpu_operands.rs2(31); -- resulting sign
 
       -- exponent computation --
       -- assume we are exact and the operation hasn't over/under flown
@@ -804,14 +800,10 @@ begin
 
       -- Multiplier exception handling
       -- Check that one operand is not inf or NAN before potentially setting OF, UF, and NX flags
-      if ((fpu_operands.rs1_class(fp_class_pos_inf_c)  or
-           fpu_operands.rs2_class(fp_class_pos_inf_c)  or
-           fpu_operands.rs1_class(fp_class_neg_inf_c)  or
-           fpu_operands.rs2_class(fp_class_neg_inf_c)  or
-           fpu_operands.rs1_class(fp_class_snan_c)     or
-           fpu_operands.rs2_class(fp_class_snan_c)     or
-           fpu_operands.rs1_class(fp_class_qnan_c)     or
-           fpu_operands.rs2_class(fp_class_qnan_c))    = '0')  then
+      if ((fpu_operands.rs1_class(fp_class_pos_inf_c) or fpu_operands.rs2_class(fp_class_pos_inf_c) or
+           fpu_operands.rs1_class(fp_class_neg_inf_c) or fpu_operands.rs2_class(fp_class_neg_inf_c) or
+           fpu_operands.rs1_class(fp_class_snan_c)    or fpu_operands.rs2_class(fp_class_snan_c)    or
+           fpu_operands.rs1_class(fp_class_qnan_c)    or fpu_operands.rs2_class(fp_class_qnan_c)) = '0') then
         if (multiplier.exp_res(multiplier.exp_res'left) = '1') then -- underflow (exp_res is "negative")
           multiplier.flags(fp_exc_of_c) <= '0';
           multiplier.flags(fp_exc_uf_c) <= '1';
@@ -877,16 +869,16 @@ begin
       multiplier.res_class <= (others => '0');
     elsif rising_edge(clk_i) then
       -- minions --
-      a_pos_norm_v := fpu_operands.rs1_class(fp_class_pos_norm_c);    b_pos_norm_v := fpu_operands.rs2_class(fp_class_pos_norm_c);
-      a_neg_norm_v := fpu_operands.rs1_class(fp_class_neg_norm_c);    b_neg_norm_v := fpu_operands.rs2_class(fp_class_neg_norm_c);
-      a_pos_subn_v := fpu_operands.rs1_class(fp_class_pos_denorm_c);  b_pos_subn_v := fpu_operands.rs2_class(fp_class_pos_denorm_c);
-      a_neg_subn_v := fpu_operands.rs1_class(fp_class_neg_denorm_c);  b_neg_subn_v := fpu_operands.rs2_class(fp_class_neg_denorm_c);
-      a_pos_zero_v := fpu_operands.rs1_class(fp_class_pos_zero_c);    b_pos_zero_v := fpu_operands.rs2_class(fp_class_pos_zero_c);
-      a_neg_zero_v := fpu_operands.rs1_class(fp_class_neg_zero_c);    b_neg_zero_v := fpu_operands.rs2_class(fp_class_neg_zero_c);
-      a_pos_inf_v  := fpu_operands.rs1_class(fp_class_pos_inf_c);     b_pos_inf_v  := fpu_operands.rs2_class(fp_class_pos_inf_c);
-      a_neg_inf_v  := fpu_operands.rs1_class(fp_class_neg_inf_c);     b_neg_inf_v  := fpu_operands.rs2_class(fp_class_neg_inf_c);
-      a_snan_v     := fpu_operands.rs1_class(fp_class_snan_c);        b_snan_v     := fpu_operands.rs2_class(fp_class_snan_c);
-      a_qnan_v     := fpu_operands.rs1_class(fp_class_qnan_c);        b_qnan_v     := fpu_operands.rs2_class(fp_class_qnan_c);
+      a_pos_norm_v := fpu_operands.rs1_class(fp_class_pos_norm_c);   b_pos_norm_v := fpu_operands.rs2_class(fp_class_pos_norm_c);
+      a_neg_norm_v := fpu_operands.rs1_class(fp_class_neg_norm_c);   b_neg_norm_v := fpu_operands.rs2_class(fp_class_neg_norm_c);
+      a_pos_subn_v := fpu_operands.rs1_class(fp_class_pos_denorm_c); b_pos_subn_v := fpu_operands.rs2_class(fp_class_pos_denorm_c);
+      a_neg_subn_v := fpu_operands.rs1_class(fp_class_neg_denorm_c); b_neg_subn_v := fpu_operands.rs2_class(fp_class_neg_denorm_c);
+      a_pos_zero_v := fpu_operands.rs1_class(fp_class_pos_zero_c);   b_pos_zero_v := fpu_operands.rs2_class(fp_class_pos_zero_c);
+      a_neg_zero_v := fpu_operands.rs1_class(fp_class_neg_zero_c);   b_neg_zero_v := fpu_operands.rs2_class(fp_class_neg_zero_c);
+      a_pos_inf_v  := fpu_operands.rs1_class(fp_class_pos_inf_c);    b_pos_inf_v  := fpu_operands.rs2_class(fp_class_pos_inf_c);
+      a_neg_inf_v  := fpu_operands.rs1_class(fp_class_neg_inf_c);    b_neg_inf_v  := fpu_operands.rs2_class(fp_class_neg_inf_c);
+      a_snan_v     := fpu_operands.rs1_class(fp_class_snan_c);       b_snan_v     := fpu_operands.rs2_class(fp_class_snan_c);
+      a_qnan_v     := fpu_operands.rs1_class(fp_class_qnan_c);       b_qnan_v     := fpu_operands.rs2_class(fp_class_qnan_c);
 
       -- +normal --
       multiplier.res_class(fp_class_pos_norm_c) <=
@@ -1094,8 +1086,8 @@ begin
           end if;
         else
           -- also use denorm for the check as we flush denorms.
-          if ((fpu_operands.rs1_class(fp_class_pos_zero_c  ) or fpu_operands.rs2_class(fp_class_pos_zero_c)   or
-               fpu_operands.rs1_class(fp_class_neg_zero_c  ) or fpu_operands.rs2_class(fp_class_neg_zero_c)   or
+          if ((fpu_operands.rs1_class(fp_class_pos_zero_c)   or fpu_operands.rs2_class(fp_class_pos_zero_c)   or
+               fpu_operands.rs1_class(fp_class_neg_zero_c)   or fpu_operands.rs2_class(fp_class_neg_zero_c)   or
                fpu_operands.rs1_class(fp_class_pos_denorm_c) or fpu_operands.rs2_class(fp_class_pos_denorm_c) or
                fpu_operands.rs1_class(fp_class_neg_denorm_c) or fpu_operands.rs2_class(fp_class_neg_denorm_c)) = '0') then -- no input is zero
             addsub.man_sreg <= addsub.small_man;
@@ -1218,13 +1210,13 @@ begin
       addsub.flags(fp_exc_nv_c) <= '0';
       if (ctrl_i.ir_funct12(7) = '0') then -- add
         -- Do we have 2 infinities of opposite sign?
-        if (((fpu_operands.rs1_class(fp_class_pos_inf_c) and fpu_operands.rs2_class(fp_class_neg_inf_c))         or
+        if (((fpu_operands.rs1_class(fp_class_pos_inf_c) and fpu_operands.rs2_class(fp_class_neg_inf_c)) or
              (fpu_operands.rs1_class(fp_class_neg_inf_c) and fpu_operands.rs2_class(fp_class_pos_inf_c))) = '1') then
           addsub.flags(fp_exc_nv_c) <= '1';
         end if;
       else -- sub
         -- Do we have 2 infinities of same sign?
-        if (((fpu_operands.rs1_class(fp_class_pos_inf_c) and fpu_operands.rs2_class(fp_class_pos_inf_c))         or
+        if (((fpu_operands.rs1_class(fp_class_pos_inf_c) and fpu_operands.rs2_class(fp_class_pos_inf_c)) or
              (fpu_operands.rs1_class(fp_class_neg_inf_c) and fpu_operands.rs2_class(fp_class_neg_inf_c))) = '1') then
           addsub.flags(fp_exc_nv_c) <= '1';
         end if;
@@ -1269,30 +1261,30 @@ begin
       addsub.res_class <= (others => '0');
     elsif rising_edge(clk_i) then
       -- minions --
-      a_pos_norm_v := fpu_operands.rs1_class(fp_class_pos_norm_c);    b_pos_norm_v := fpu_operands.rs2_class(fp_class_pos_norm_c);
-      a_neg_norm_v := fpu_operands.rs1_class(fp_class_neg_norm_c);    b_neg_norm_v := fpu_operands.rs2_class(fp_class_neg_norm_c);
+      a_pos_norm_v := fpu_operands.rs1_class(fp_class_pos_norm_c); b_pos_norm_v := fpu_operands.rs2_class(fp_class_pos_norm_c);
+      a_neg_norm_v := fpu_operands.rs1_class(fp_class_neg_norm_c); b_neg_norm_v := fpu_operands.rs2_class(fp_class_neg_norm_c);
       -- as we can now correctly classify subnormals we need to override the post-add class
       -- if we don't support subnormals as part of the add/sub circuit
       if (FPU_SUBNORMAL_SUPPORT) then
-        a_pos_subn_v := fpu_operands.rs1_class(fp_class_pos_denorm_c);  b_pos_subn_v := fpu_operands.rs2_class(fp_class_pos_denorm_c);
-        a_neg_subn_v := fpu_operands.rs1_class(fp_class_neg_denorm_c);  b_neg_subn_v := fpu_operands.rs2_class(fp_class_neg_denorm_c);
+        a_pos_subn_v := fpu_operands.rs1_class(fp_class_pos_denorm_c); b_pos_subn_v := fpu_operands.rs2_class(fp_class_pos_denorm_c);
+        a_neg_subn_v := fpu_operands.rs1_class(fp_class_neg_denorm_c); b_neg_subn_v := fpu_operands.rs2_class(fp_class_neg_denorm_c);
       else
         a_pos_subn_v := '0'; b_pos_subn_v := '0';
         a_neg_subn_v := '0'; b_neg_subn_v := '0';
       end if;
       if (FPU_SUBNORMAL_SUPPORT) then
-        a_pos_zero_v := fpu_operands.rs1_class(fp_class_pos_zero_c);    b_pos_zero_v := fpu_operands.rs2_class(fp_class_pos_zero_c);
-        a_neg_zero_v := fpu_operands.rs1_class(fp_class_neg_zero_c);    b_neg_zero_v := fpu_operands.rs2_class(fp_class_neg_zero_c);
+        a_pos_zero_v := fpu_operands.rs1_class(fp_class_pos_zero_c); b_pos_zero_v := fpu_operands.rs2_class(fp_class_pos_zero_c);
+        a_neg_zero_v := fpu_operands.rs1_class(fp_class_neg_zero_c); b_neg_zero_v := fpu_operands.rs2_class(fp_class_neg_zero_c);
       else
         a_pos_zero_v := fpu_operands.rs1_class(fp_class_pos_zero_c) or fpu_operands.rs1_class(fp_class_pos_denorm_c);
         b_pos_zero_v := fpu_operands.rs2_class(fp_class_pos_zero_c) or fpu_operands.rs2_class(fp_class_pos_denorm_c);
         a_neg_zero_v := fpu_operands.rs1_class(fp_class_neg_zero_c) or fpu_operands.rs1_class(fp_class_neg_denorm_c);
         b_neg_zero_v := fpu_operands.rs2_class(fp_class_neg_zero_c) or fpu_operands.rs2_class(fp_class_neg_denorm_c);
       end if;
-      a_pos_inf_v  := fpu_operands.rs1_class(fp_class_pos_inf_c);     b_pos_inf_v  := fpu_operands.rs2_class(fp_class_pos_inf_c);
-      a_neg_inf_v  := fpu_operands.rs1_class(fp_class_neg_inf_c);     b_neg_inf_v  := fpu_operands.rs2_class(fp_class_neg_inf_c);
-      a_snan_v     := fpu_operands.rs1_class(fp_class_snan_c);        b_snan_v     := fpu_operands.rs2_class(fp_class_snan_c);
-      a_qnan_v     := fpu_operands.rs1_class(fp_class_qnan_c);        b_qnan_v     := fpu_operands.rs2_class(fp_class_qnan_c);
+      a_pos_inf_v := fpu_operands.rs1_class(fp_class_pos_inf_c); b_pos_inf_v := fpu_operands.rs2_class(fp_class_pos_inf_c);
+      a_neg_inf_v := fpu_operands.rs1_class(fp_class_neg_inf_c); b_neg_inf_v := fpu_operands.rs2_class(fp_class_neg_inf_c);
+      a_snan_v    := fpu_operands.rs1_class(fp_class_snan_c);    b_snan_v    := fpu_operands.rs2_class(fp_class_snan_c);
+      a_qnan_v    := fpu_operands.rs1_class(fp_class_qnan_c);    b_qnan_v    := fpu_operands.rs2_class(fp_class_qnan_c);
 
       if (ctrl_i.ir_funct12(7) = '0') then -- addition
         -- +infinity --
