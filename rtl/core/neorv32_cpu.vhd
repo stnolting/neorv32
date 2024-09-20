@@ -81,9 +81,9 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
-  constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port (rs3)
+  constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port
 
-  -- control-unit-external CSR interface --
+  -- external CSR interface --
   signal xcsr_we        : std_ulogic;
   signal xcsr_addr      : std_ulogic_vector(11 downto 0);
   signal xcsr_wdata     : std_ulogic_vector(XLEN-1 downto 0);
@@ -93,26 +93,24 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- local signals --
   signal ctrl          : ctrl_bus_t; -- main control bus
-  signal imm           : std_ulogic_vector(XLEN-1 downto 0); -- immediate
+  signal alu_imm       : std_ulogic_vector(XLEN-1 downto 0); -- immediate
   signal rf_wdata      : std_ulogic_vector(XLEN-1 downto 0); -- register file write data
   signal rs1, rs2, rs3 : std_ulogic_vector(XLEN-1 downto 0); -- source registers
   signal alu_res       : std_ulogic_vector(XLEN-1 downto 0); -- alu result
   signal alu_add       : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp       : std_ulogic_vector(1 downto 0); -- comparator result
-  signal mem_rdata     : std_ulogic_vector(XLEN-1 downto 0); -- memory read data
-  signal cp_done       : std_ulogic; -- ALU co-processor operation done
+  signal lsu_rdata     : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory read data
+  signal alu_cp_done   : std_ulogic; -- alu co-processor operation done
   signal lsu_wait      : std_ulogic; -- wait for current data bus access
   signal csr_rdata     : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
-  signal mar           : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-  signal ma_load       : std_ulogic; -- misaligned load data address
-  signal ma_store      : std_ulogic; -- misaligned store data address
-  signal be_load       : std_ulogic; -- bus error on load data access
-  signal be_store      : std_ulogic; -- bus error on store data access
-  signal fetch_pc      : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
-  signal curr_pc       : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
-  signal link_pc       : std_ulogic_vector(XLEN-1 downto 0); -- link pc (return address)
-  signal pmp_ex_fault  : std_ulogic; -- PMP instruction fetch fault
-  signal pmp_rw_fault  : std_ulogic; -- PMP read/write access fault
+  signal lsu_mar       : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory address register
+  signal lsu_err       : std_ulogic_vector(3 downto 0); -- lsu alignment/access errors
+  signal pc_fetch      : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
+  signal pc_curr       : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
+  signal pc_next       : std_ulogic_vector(XLEN-1 downto 0); -- next pc (return address)
+  signal pmp_ex_fault  : std_ulogic; -- pmp instruction fetch fault
+  signal pmp_rw_fault  : std_ulogic; -- pmp read/write access fault
+  signal irq_machine   : std_ulogic_vector(2 downto 0); -- risc-v standard machine-level interrupts
 
 begin
 
@@ -192,18 +190,18 @@ begin
     rstn_i        => rstn_i,         -- global reset, low-active, async
     ctrl_o        => ctrl,           -- main control bus
     -- instruction fetch interface --
-    i_pmp_fault_i => pmp_ex_fault,   -- instruction fetch pmp fault
-    bus_req_o     => ibus_req_o,     -- request
-    bus_rsp_i     => ibus_rsp_i,     -- response
+    ibus_pmperr_i => pmp_ex_fault,   -- instruction fetch pmp fault
+    ibus_req_o    => ibus_req_o,     -- request
+    ibus_rsp_i    => ibus_rsp_i,     -- response
     -- data path interface --
-    alu_cp_done_i => cp_done,        -- ALU iterative operation done
-    cmp_i         => alu_cmp,        -- comparator status
+    alu_cp_done_i => alu_cp_done,    -- ALU iterative operation done
+    alu_cmp_i     => alu_cmp,        -- comparator status
     alu_add_i     => alu_add,        -- ALU address result
-    rs1_i         => rs1,            -- rf source 1
-    imm_o         => imm,            -- immediate
-    fetch_pc_o    => fetch_pc,       -- instruction fetch address
-    curr_pc_o     => curr_pc,        -- current PC (corresponding to current instruction)
-    link_pc_o     => link_pc,        -- link PC (return address)
+    alu_imm_o     => alu_imm,        -- immediate
+    rf_rs1_i      => rs1,            -- rf source 1
+    pc_fetch_o    => pc_fetch,       -- instruction fetch address
+    pc_curr_o     => pc_curr,        -- current PC (corresponding to current instruction)
+    pc_next_o     => pc_next,        -- next PC (return address)
     csr_rdata_o   => csr_rdata,      -- CSR read data
     -- external CSR interface --
     xcsr_we_o     => xcsr_we,        -- global write enable
@@ -211,19 +209,17 @@ begin
     xcsr_wdata_o  => xcsr_wdata,     -- write data
     xcsr_rdata_i  => xcsr_rdata_res, -- read data
     -- interrupts --
-    db_halt_req_i => dbi_i,          -- debug mode (halt) request
-    msi_i         => msi_i,          -- machine software interrupt
-    mei_i         => mei_i,          -- machine external interrupt
-    mti_i         => mti_i,          -- machine timer interrupt
-    firq_i        => firq_i,         -- fast interrupts
-    -- data access interface --
+    irq_dbg_i     => dbi_i,          -- debug mode (halt) request
+    irq_machine_i => irq_machine,    -- risc-v mti, mei, msi
+    irq_fast_i    => firq_i,         -- fast interrupts
+    -- load/store unit interface --
     lsu_wait_i    => lsu_wait,       -- wait for data bus
-    mar_i         => mar,            -- memory address register
-    ma_load_i     => ma_load,        -- misaligned load data address
-    ma_store_i    => ma_store,       -- misaligned store data address
-    be_load_i     => be_load,        -- bus error on load data access
-    be_store_i    => be_store        -- bus error on store data access
+    lsu_mar_i     => lsu_mar,        -- memory address register
+    lsu_err_i     => lsu_err         -- alignment/access errors
   );
+
+  -- RISC-V machine interrupts --
+  irq_machine <= mti_i & mei_i & msi_i;
 
   -- external CSR read-back --
   xcsr_rdata_res <= xcsr_rdata_pmp or xcsr_rdata_alu;
@@ -254,7 +250,7 @@ begin
   );
 
   -- all buses are zero unless there is an according operation --
-  rf_wdata <= alu_res or mem_rdata or csr_rdata or link_pc;
+  rf_wdata <= alu_res or lsu_rdata or csr_rdata or pc_next;
 
 
   -- ALU (Arithmetic/Logic Unit) and ALU Co-Processors --------------------------------------
@@ -286,14 +282,14 @@ begin
     rs1_i       => rs1,            -- rf source 1
     rs2_i       => rs2,            -- rf source 2
     rs3_i       => rs3,            -- rf source 3
-    pc_i        => curr_pc,        -- current PC
-    imm_i       => imm,            -- immediate
+    pc_i        => pc_curr,        -- current PC
+    imm_i       => alu_imm,        -- immediate
     -- data output --
     cmp_o       => alu_cmp,        -- comparator status
     res_o       => alu_res,        -- ALU result
     add_o       => alu_add,        -- address computation result
     -- status --
-    cp_done_o   => cp_done         -- iterative processing units done?
+    cp_done_o   => alu_cp_done     -- iterative processing units done?
   );
 
 
@@ -311,17 +307,14 @@ begin
     -- cpu data access interface --
     addr_i      => alu_add,      -- access address
     wdata_i     => rs2,          -- write data
-    rdata_o     => mem_rdata,    -- read data
-    mar_o       => mar,          -- memory address register
+    rdata_o     => lsu_rdata,    -- read data
+    mar_o       => lsu_mar,      -- memory address register
     wait_o      => lsu_wait,     -- wait for access to complete
-    ma_load_o   => ma_load,      -- misaligned load data address
-    ma_store_o  => ma_store,     -- misaligned store data address
-    be_load_o   => be_load,      -- bus error on load data access
-    be_store_o  => be_store,     -- bus error on store data access
+    err_o       => lsu_err,      -- alignment/access errors
     pmp_fault_i => pmp_rw_fault, -- PMP read/write access fault
     -- data bus --
-    bus_req_o   => dbus_req_o,   -- request
-    bus_rsp_i   => dbus_rsp_i    -- response
+    dbus_req_o  => dbus_req_o,   -- request
+    dbus_rsp_i  => dbus_rsp_i    -- response
   );
 
 
@@ -347,7 +340,7 @@ begin
       csr_wdata_i => xcsr_wdata,     -- write data
       csr_rdata_o => xcsr_rdata_pmp, -- read data
       -- address input --
-      addr_if_i   => fetch_pc,       -- instruction fetch address
+      addr_if_i   => pc_fetch,       -- instruction fetch address
       addr_ls_i   => alu_add,        -- load/store address
       -- faults --
       fault_ex_o  => pmp_ex_fault,   -- instruction fetch fault
