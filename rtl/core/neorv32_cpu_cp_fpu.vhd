@@ -826,12 +826,12 @@ begin
       end if;
 
       -- invalid operation --
-      -- Any multiplication between +/- inf and +/- zoer is a not valid operation
+      -- Any multiplication between +/- inf and +/- zero is a not valid operation
       -- Any multiplication with sNAN is not a valid operation
       -- If subnormals are flushed to zero we need to treat them as zero for exception handling
       if (not FPU_SUBNORMAL_SUPPORT) then
         multiplier.flags(fp_exc_nv_c) <=
-          ((fpu_operands.rs2_class(fp_class_snan_c)       or fpu_operands.rs2_class(fp_class_snan_c))) or -- mul(sNAN, X) or mul(X, sNAN)
+          ((fpu_operands.rs1_class(fp_class_snan_c)       or fpu_operands.rs2_class(fp_class_snan_c))) or -- mul(sNAN, X) or mul(X, sNAN)
           ((fpu_operands.rs1_class(fp_class_pos_denorm_c) or fpu_operands.rs1_class(fp_class_neg_denorm_c)) and
            (fpu_operands.rs2_class(fp_class_pos_inf_c)    or fpu_operands.rs2_class(fp_class_neg_inf_c))) or -- mul(+/-denorm, +/-inf)
           ((fpu_operands.rs1_class(fp_class_pos_inf_c)    or fpu_operands.rs1_class(fp_class_neg_inf_c)) and
