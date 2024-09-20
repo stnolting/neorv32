@@ -152,12 +152,18 @@ begin
   -- anyone firing? --
   irq_fire <= or_reduce_f(irq_raw);
 
-  -- encode highest-priority source (structural code) --
+  -- encode highest-priority source (structural code: mux-chain) --
   priority_encoder_gen:
-  for i in 0 to XIRQ_NUM_CH-2 generate -- start with highest priority
-    prio_enc(i) <= std_ulogic_vector(to_unsigned(i, 5)) when (irq_raw(i) = '1') else prio_enc(i+1);
+  for i in 0 to XIRQ_NUM_CH-1 generate -- start with highest priority
+    priority_encoder_gen_chain: -- inside chain
+    if i < XIRQ_NUM_CH-1 generate
+      prio_enc(i) <= std_ulogic_vector(to_unsigned(i, 5)) when (irq_raw(i) = '1') else prio_enc(i+1);
+    end generate;
+    priority_encoder_gen_last: -- end of chain
+    if i = XIRQ_NUM_CH-1 generate
+      prio_enc(XIRQ_NUM_CH-1) <= std_ulogic_vector(to_unsigned(XIRQ_NUM_CH-1, 5)); -- lowest priority
+    end generate;
   end generate;
-  prio_enc(XIRQ_NUM_CH-1) <= std_ulogic_vector(to_unsigned(XIRQ_NUM_CH-1, 5)); -- lowest priority
 
 
   -- IRQ Arbiter --------------------------------------------------------------
