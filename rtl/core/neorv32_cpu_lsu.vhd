@@ -29,14 +29,11 @@ entity neorv32_cpu_lsu is
     rdata_o     : out std_ulogic_vector(XLEN-1 downto 0); -- read data
     mar_o       : out std_ulogic_vector(XLEN-1 downto 0); -- current memory address register
     wait_o      : out std_ulogic; -- wait for access to complete
-    ma_load_o   : out std_ulogic; -- misaligned load data address
-    ma_store_o  : out std_ulogic; -- misaligned store data address
-    be_load_o   : out std_ulogic; -- bus error on load data access
-    be_store_o  : out std_ulogic; -- bus error on store data access
+    err_o       : out std_ulogic_vector(3 downto 0); -- alignment/access errors
     pmp_fault_i : in  std_ulogic; -- PMP read/write access fault
     -- data bus --
-    bus_req_o   : out bus_req_t; -- request
-    bus_rsp_i   : in  bus_rsp_t  -- response
+    dbus_req_o  : out bus_req_t; -- request
+    dbus_rsp_i  : in  bus_rsp_t  -- response
   );
 end neorv32_cpu_lsu;
 
@@ -68,67 +65,50 @@ begin
     end if;
   end process mem_addr_reg;
 
-  bus_req_o.addr <= mar; -- bus address
-  mar_o          <= mar; -- for MTVAL CSR
+  dbus_req_o.addr <= mar; -- bus address
+  mar_o           <= mar; -- for MTVAL CSR
 
 
-  -- Access Type ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  mem_type_reg: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      bus_req_o.rw   <= '0';
-      bus_req_o.priv <= '0';
-      bus_req_o.rvso <= '0';
-    elsif rising_edge(clk_i) then
-      if (ctrl_i.lsu_mo_we = '1') then
-        -- read/write --
-        bus_req_o.rw <= ctrl_i.lsu_rw;
-        -- privilege level --
-        bus_req_o.priv <= ctrl_i.lsu_priv;
-        -- reservation set operation --
-        if AMO_LRSC_ENABLE and (ctrl_i.ir_opcode(2) = opcode_amo_c(2)) then
-          bus_req_o.rvso <= '1';
-        else
-          bus_req_o.rvso <= '0';
-        end if;
-      end if;
-    end if;
-  end process mem_type_reg;
-
-  bus_req_o.src   <= '0'; -- 0 = data access
-  bus_req_o.fence <= ctrl_i.lsu_fence; -- this is valid without STB being set
-
-
-  -- Data Output - Alignment and Byte Enable ------------------------------------------------
+  -- Data Output: Alignment, Byte Enable and Type Identifiers -------------------------------
   -- -------------------------------------------------------------------------------------------
   mem_do_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_req_o.data <= (others => '0');
-      bus_req_o.ben  <= (others => '0');
+      dbus_req_o.rw   <= '0';
+      dbus_req_o.priv <= '0';
+      dbus_req_o.rvso <= '0';
+      dbus_req_o.data <= (others => '0');
+      dbus_req_o.ben  <= (others => '0');
     elsif rising_edge(clk_i) then
       if (ctrl_i.lsu_mo_we = '1') then
+        -- type identifiers --
+        dbus_req_o.rw   <= ctrl_i.lsu_rw; -- read/write
+        dbus_req_o.priv <= ctrl_i.lsu_priv; -- privilege level
+        dbus_req_o.rvso <= bool_to_ulogic_f(AMO_LRSC_ENABLE) and ctrl_i.ir_opcode(2); -- reservation set operation
+        -- data alignment + byte-enable --
         case ctrl_i.ir_funct3(1 downto 0) is
           when "00" => -- byte
-            bus_req_o.data   <= wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0);
-            bus_req_o.ben(0) <= (not addr_i(1)) and (not addr_i(0));
-            bus_req_o.ben(1) <= (not addr_i(1)) and (    addr_i(0));
-            bus_req_o.ben(2) <= (    addr_i(1)) and (not addr_i(0));
-            bus_req_o.ben(3) <= (    addr_i(1)) and (    addr_i(0));
+            dbus_req_o.data   <= wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0) & wdata_i(7 downto 0);
+            dbus_req_o.ben(0) <= (not addr_i(1)) and (not addr_i(0));
+            dbus_req_o.ben(1) <= (not addr_i(1)) and (    addr_i(0));
+            dbus_req_o.ben(2) <= (    addr_i(1)) and (not addr_i(0));
+            dbus_req_o.ben(3) <= (    addr_i(1)) and (    addr_i(0));
           when "01" => -- half-word
-            bus_req_o.data <= wdata_i(15 downto 0) & wdata_i(15 downto 0);
-            bus_req_o.ben  <= addr_i(1) & addr_i(1) & (not addr_i(1)) & (not addr_i(1));
+            dbus_req_o.data <= wdata_i(15 downto 0) & wdata_i(15 downto 0);
+            dbus_req_o.ben  <= addr_i(1) & addr_i(1) & (not addr_i(1)) & (not addr_i(1));
           when others => -- word
-            bus_req_o.data <= wdata_i;
-            bus_req_o.ben  <= (others => '1');
+            dbus_req_o.data <= wdata_i;
+            dbus_req_o.ben  <= (others => '1');
         end case;
       end if;
     end if;
   end process mem_do_reg;
 
+  dbus_req_o.src   <= '0'; -- 0 = data access
+  dbus_req_o.fence <= ctrl_i.lsu_fence; -- this is valid without STB being set
 
-  -- Data Input - Alignment and Sign-Extension ----------------------------------------------
+
+  -- Data Input Alignment and Sign-Extension ------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   mem_di_reg: process(rstn_i, clk_i)
   begin
@@ -141,22 +121,22 @@ begin
           when "00" => -- byte
             case mar(1 downto 0) is
               when "00" => -- byte 0
-                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(7), 24) & bus_rsp_i.data(7 downto 0);
+                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(7), 24) & dbus_rsp_i.data(7 downto 0);
               when "01" => -- byte 1
-                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(15), 24) & bus_rsp_i.data(15 downto 8);
+                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(15), 24) & dbus_rsp_i.data(15 downto 8);
               when "10" => -- byte 2
-                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(23), 24) & bus_rsp_i.data(23 downto 16);
+                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(23), 24) & dbus_rsp_i.data(23 downto 16);
               when others => -- byte 3
-                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(31), 24) & bus_rsp_i.data(31 downto 24);
+                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(31), 24) & dbus_rsp_i.data(31 downto 24);
             end case;
           when "01" => -- half-word
             if (mar(1) = '0') then -- low half-word
-              rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(15), 16) & bus_rsp_i.data(15 downto 0);
+              rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(15), 16) & dbus_rsp_i.data(15 downto 0);
             else -- high half-word
-              rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp_i.data(31), 16) & bus_rsp_i.data(31 downto 16);
+              rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(31), 16) & dbus_rsp_i.data(31 downto 16);
             end if;
           when others => -- word
-            rdata_o <= bus_rsp_i.data;
+            rdata_o <= dbus_rsp_i.data;
         end case;
       end if;
     end if;
@@ -171,26 +151,26 @@ begin
       arbiter_err <= '0';
       arbiter_req <= '0';
     elsif rising_edge(clk_i) then
-      arbiter_err <= bus_rsp_i.err or pmp_fault_i; -- buffer stage
+      arbiter_err <= dbus_rsp_i.err or pmp_fault_i; -- buffer stage
       if (arbiter_req = '0') then -- idle
         arbiter_req <= ctrl_i.lsu_req;
-      elsif (bus_rsp_i.ack = '1') or (ctrl_i.cpu_trap = '1') then -- normal termination or start of trap handling
+      elsif (dbus_rsp_i.ack = '1') or (ctrl_i.cpu_trap = '1') then -- normal termination or start of trap handling
         arbiter_req <= '0';
       end if;
     end if;
   end process access_arbiter;
 
   -- wait for bus response --
-  wait_o <= not bus_rsp_i.ack;
+  wait_o <= not dbus_rsp_i.ack;
 
   -- output access/alignment errors to control unit --
-  ma_load_o  <= arbiter_req and (not ctrl_i.lsu_rw) and misaligned;  -- misaligned load
-  be_load_o  <= arbiter_req and (not ctrl_i.lsu_rw) and arbiter_err; -- load bus error
-  ma_store_o <= arbiter_req and (    ctrl_i.lsu_rw) and misaligned;  -- misaligned store
-  be_store_o <= arbiter_req and (    ctrl_i.lsu_rw) and arbiter_err; -- store bus error
+  err_o(0) <= arbiter_req and (not ctrl_i.lsu_rw) and misaligned;  -- misaligned load
+  err_o(1) <= arbiter_req and (not ctrl_i.lsu_rw) and arbiter_err; -- load bus error
+  err_o(2) <= arbiter_req and (    ctrl_i.lsu_rw) and misaligned;  -- misaligned store
+  err_o(3) <= arbiter_req and (    ctrl_i.lsu_rw) and arbiter_err; -- store bus error
 
   -- access request (all source signals are driven by registers) --
-  bus_req_o.stb <= ctrl_i.lsu_req and (not misaligned) and (not pmp_fault_i);
+  dbus_req_o.stb <= ctrl_i.lsu_req and (not misaligned) and (not pmp_fault_i);
 
 
 end neorv32_cpu_lsu_rtl;
