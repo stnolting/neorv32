@@ -43,4 +43,5 @@ jobs:
         with:
           name: debug
           path: |
-            .linty/
+            ./bugfinder_workdir/
+            ./.linty/
