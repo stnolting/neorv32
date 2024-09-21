@@ -46,4 +46,4 @@ verific -work neorv32 -vhdl ./rtl/core/neorv32_top.vhd
 verific -work neorv32 -vhdl ./rtl/core/neorv32_application_image.vhd
 verific -work neorv32 -vhdl ./rtl/core/neorv32_bootloader_image.vhd
 
-verific -L neorv32 -vhdl ./rtl/processor_templates/neorv32_ProcessorTop_UP5KDemo.vhd
+verific -L neorv32 -vhdl ./rtl/core/neorv32_top.vhd
