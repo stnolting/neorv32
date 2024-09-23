@@ -27,7 +27,6 @@ entity neorv32_cpu_cp_shifter is
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
-    start_i : in  std_ulogic; -- trigger operation
     -- data input --
     rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     shamt_i : in  std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
@@ -38,6 +37,9 @@ entity neorv32_cpu_cp_shifter is
 end neorv32_cpu_cp_shifter;
 
 architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
+
+  -- instruction decode --
+  signal valid_cmd : std_ulogic;
 
   -- serial shifter --
   type shifter_t is record
@@ -58,6 +60,15 @@ architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
 
 begin
 
+  -- Valid Instruction? ---------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and (
+                         ((ctrl_i.ir_funct3 = funct3_sll_c) and (ctrl_i.ir_funct12(11 downto 5) = "0000000")) or -- SLL[I]
+                         ((ctrl_i.ir_funct3 = funct3_sr_c)  and (ctrl_i.ir_funct12(11 downto 5) = "0000000")) or -- SRL[I]
+                         ((ctrl_i.ir_funct3 = funct3_sr_c)  and (ctrl_i.ir_funct12(11 downto 5) = "0100000")) -- SRA[I]
+                        ) else '0';
+
+
   -- Serial Shifter (small but slow) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   serial_shifter:
@@ -73,13 +84,13 @@ begin
       elsif rising_edge(clk_i) then
         -- arbitration --
         shifter.done_ff <= shifter.busy and shifter.done;
-        if (start_i = '1') then
+        if (valid_cmd = '1') then
           shifter.busy <= '1';
         elsif (shifter.done = '1') or (ctrl_i.cpu_trap = '1') then -- abort on trap
           shifter.busy <= '0';
         end if;
         -- shift register --
-        if (start_i = '1') then -- trigger new operation
+        if (valid_cmd = '1') then -- trigger new operation
           shifter.cnt  <= shamt_i;
           shifter.sreg <= rs1_i;
         elsif (shifter.run = '1') then -- operation in progress
@@ -108,8 +119,8 @@ begin
   if FAST_SHIFT_EN generate
 
     -- input layer: operand gating and convert left shifts to right shifts by bit-reversal --
-    bs_level(0) <= (others => '0') when (start_i = '0') else bit_rev_f(rs1_i) when (ctrl_i.ir_funct3(2) = '0') else rs1_i;
-    bs_sign <= rs1_i(XLEN-1) and ctrl_i.ir_funct12(10) and start_i; -- sign extension for arithmetic shifts
+    bs_level(0) <= (others => '0') when (valid_cmd = '0') else bit_rev_f(rs1_i) when (ctrl_i.ir_funct3(2) = '0') else rs1_i;
+    bs_sign <= rs1_i(XLEN-1) and ctrl_i.ir_funct12(10) and valid_cmd; -- sign extension for arithmetic shifts
 
     -- mux layers: right-shifts only --
     barrel_shifter_core:
@@ -130,7 +141,7 @@ begin
 
     -- output layer: re-convert original left shifts --
     res_o   <= bit_rev_f(bs_result) when (ctrl_i.ir_funct3(2) = '0') else bs_result;
-    valid_o <= start_i;
+    valid_o <= valid_cmd;
 
   end generate;
 
