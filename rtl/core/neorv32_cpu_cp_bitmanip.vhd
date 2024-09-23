@@ -29,7 +29,6 @@ entity neorv32_cpu_cp_bitmanip is
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
-    start_i : in  std_ulogic; -- trigger operation
     -- data input --
     cmp_i   : in  std_ulogic_vector(1 downto 0); -- comparator status
     rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
@@ -75,6 +74,7 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   -- controller --
   type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT);
   signal ctrl_state : ctrl_state_t;
+  signal valid_cmd  : std_ulogic;
   signal cmd        : std_ulogic_vector(op_width_c-1 downto 0);
   signal valid      : std_ulogic;
 
@@ -110,32 +110,34 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
 
 begin
 
-  -- Instruction Decoding (One-Hot) ---------------------------------------------------------
+  -- Instruction Decoding -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- An "operation" decoding logic is used here just to distinguish between the different B instructions.
-  -- A more general decoding as well as a valid-instruction-check is performed by the CPU control unit.
-
   -- Zbb - Basic bit-manipulation instructions --
-  cmd(op_andn_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "11") else '0';
-  cmd(op_orn_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "10") else '0';
-  cmd(op_xnor_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct3(1 downto 0) = "00") else '0';
-  cmd(op_max_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '1') and (ctrl_i.ir_funct3(2) = '1') else '0';
-  cmd(op_zexth_c) <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "00") and (ctrl_i.ir_funct12(5) = '0') else '0';
-  cmd(op_orcb_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2 downto 0) = "101") else '0';
-  cmd(op_cz_c)    <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 1) = "00")  and (ctrl_i.ir_funct3(2) = '0') and (ctrl_i.ir_opcode(5) = '0') else '0';
-  cmd(op_cpop_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 0) = "010") and (ctrl_i.ir_funct3(2) = '0') and (ctrl_i.ir_opcode(5) = '0') else '0';
-  cmd(op_sext_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (ctrl_i.ir_funct12(2 downto 1) = "10")  and (ctrl_i.ir_funct3(2) = '0') and (ctrl_i.ir_opcode(5) = '0') else '0';
-  cmd(op_rot_c)   <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '0') and (((ctrl_i.ir_funct3(2 downto 0) = "001") and (ctrl_i.ir_opcode(5) = '1')) or (ctrl_i.ir_funct3(2 downto 0) = "101")) else '0';
-  cmd(op_rev8_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2 downto 0) = "101") else '0';
+  cmd(op_andn_c)  <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "111") else '0'; -- ANDN
+  cmd(op_orn_c)   <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "110") else '0'; -- ORN
+  cmd(op_xnor_c)  <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "100") else '0'; -- XORN
+  cmd(op_max_c)   <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000101") and (ctrl_i.ir_funct3(2) = '1') else '0'; -- MAX[U], MIN[U]
+  cmd(op_zexth_c) <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12 = "000010000000") and (ctrl_i.ir_funct3 = "100") else '0'; -- ZEXT.H
+  cmd(op_orcb_c)  <= '1' when (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "001010000111") and (ctrl_i.ir_funct3 = "101") else '0'; -- ORC.B
+  cmd(op_cz_c)    <= '1' when (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000000") and (ctrl_i.ir_funct3 = "001") else '0'; -- CLZ, CTZ
+  cmd(op_cpop_c)  <= '1' when (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011000000010") and (ctrl_i.ir_funct3 = "001") else '0'; -- CPOP
+  cmd(op_sext_c)  <= '1' when (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000010") and (ctrl_i.ir_funct3 = "001") else '0';
+  cmd(op_rev8_c)  <= '1' when (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011010011000") and (ctrl_i.ir_funct3 = "101") else '0';
+  cmd(op_rot_c)   <= '1' when (ctrl_i.ir_funct12(11 downto 5) = "0110000") and
+                              (((ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct3 = "001")) or (ctrl_i.ir_funct3 = "101")) else '0'; -- ROL, ROR[I]
 
   -- Zba - Address generation instructions --
-  cmd(op_shadd_c) <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '0') else '0';
+  cmd(op_shadd_c) <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0010000") and
+                              ((ctrl_i.ir_funct3 = "010") or (ctrl_i.ir_funct3 = "100") or (ctrl_i.ir_funct3 = "110")) else '0'; -- SH[1,2,3]ADD
 
   -- Zbs - Single-bit instructions --
-  cmd(op_bclr_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
-  cmd(op_bext_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "10") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '1') else '0';
-  cmd(op_binv_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "11") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
-  cmd(op_bset_c)  <= '1' when (ctrl_i.ir_funct12(10 downto 9) = "01") and (ctrl_i.ir_funct12(7) = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  cmd(op_bclr_c)  <= '1' when (ctrl_i.ir_funct12(11 downto 5) = "0100100") and (ctrl_i.ir_funct3 = "001") else '0'; -- BCLR[I]
+  cmd(op_bext_c)  <= '1' when (ctrl_i.ir_funct12(11 downto 5) = "0100100") and (ctrl_i.ir_funct3 = "101") else '0'; -- BEXT[I]
+  cmd(op_binv_c)  <= '1' when (ctrl_i.ir_funct12(11 downto 5) = "0110100") and (ctrl_i.ir_funct3 = "001") else '0'; -- BINV[I]
+  cmd(op_bset_c)  <= '1' when (ctrl_i.ir_funct12(11 downto 5) = "0010100") and (ctrl_i.ir_funct3 = "001") else '0'; -- BSET[I]
+
+  -- Valid Instruction? --
+  valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and (or_reduce_f(cmd) = '1') else '0';
 
 
   -- Co-Processor Controller ----------------------------------------------------------------
@@ -156,7 +158,7 @@ begin
       valid         <= '0';
 
       -- operand registers --
-      if (start_i = '1') then
+      if (ctrl_i.alu_cp_alu = '1') then
         less_reg <= cmp_i(cmp_less_c);
         rs1_reg  <= rs1_i;
         rs2_reg  <= rs2_i;
@@ -168,7 +170,7 @@ begin
 
         when S_IDLE => -- wait for operation trigger
         -- ------------------------------------------------------------
-          if (start_i = '1') then
+          if (valid_cmd = '1') then
             if (not FAST_SHIFT_EN) and ((cmd(op_cz_c) or cmd(op_cpop_c) or cmd(op_rot_c)) = '1') then -- multi-cycle shift operation
               shifter.start <= '1';
               ctrl_state <= S_START_SHIFT;
