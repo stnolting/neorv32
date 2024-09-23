@@ -727,12 +727,13 @@ begin
 
             -- ALU core operation --
             case funct3_v is
-              when funct3_subadd_c              => ctrl_nxt.alu_op <= alu_op_add_c; -- ADD(I), SUB
-              when funct3_slt_c | funct3_sltu_c => ctrl_nxt.alu_op <= alu_op_slt_c; -- SLT(I), SLTU(I)
-              when funct3_xor_c                 => ctrl_nxt.alu_op <= alu_op_xor_c; -- XOR(I)
-              when funct3_or_c                  => ctrl_nxt.alu_op <= alu_op_or_c;  -- OR(I)
-              when funct3_and_c                 => ctrl_nxt.alu_op <= alu_op_and_c; -- AND(I)
-              when others                       => ctrl_nxt.alu_op <= alu_op_zero_c;
+              when funct3_subadd_c => ctrl_nxt.alu_op <= alu_op_add_c; -- ADD(I), SUB
+              when funct3_slt_c    => ctrl_nxt.alu_op <= alu_op_slt_c; -- SLT(I)
+              when funct3_sltu_c   => ctrl_nxt.alu_op <= alu_op_slt_c; -- SLTU(I)
+              when funct3_xor_c    => ctrl_nxt.alu_op <= alu_op_xor_c; -- XOR(I)
+              when funct3_or_c     => ctrl_nxt.alu_op <= alu_op_or_c;  -- OR(I)
+              when funct3_and_c    => ctrl_nxt.alu_op <= alu_op_and_c; -- AND(I)
+              when others          => ctrl_nxt.alu_op <= alu_op_zero_c;
             end case;
 
             -- addition/subtraction control --
@@ -1030,10 +1031,9 @@ begin
 
   -- Illegal Instruction Check --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  illegal_check: process(opcode, execute_engine, csr, csr_valid, debug_ctrl)
+  illegal_check: process(execute_engine, csr, csr_valid, debug_ctrl)
   begin
-    illegal_cmd <= '0'; -- default
-    case opcode is
+    case execute_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c) is -- check entire opcode
 
       when opcode_lui_c | opcode_auipc_c | opcode_jal_c => -- U-instruction type
         illegal_cmd <= '0'; -- all encodings are valid
@@ -1071,7 +1071,7 @@ begin
           illegal_cmd <= '1';
         end if;
 
-      when opcode_alu_c | opcode_alui_c => -- ALU[I] operation
+      when opcode_alu_c | opcode_alui_c | opcode_fop_c | opcode_cust0_c | opcode_cust1_c => -- ALU[I] / FPU / CFU operation
         illegal_cmd <= '0'; -- [NOTE] valid if not terminated by the "instruction execution monitor"
 
       when opcode_fence_c => -- memory ordering
@@ -1093,17 +1093,11 @@ begin
           else
             illegal_cmd <= '1';
           end if;
-        elsif (csr_valid /= "111") or (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csril_c) then -- invalid CSR access?
+        elsif (csr_valid /= "111") or (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csril_c) then -- invalid CSR operation
           illegal_cmd <= '1';
         else
           illegal_cmd <= '0';
         end if;
-
-      when opcode_fop_c => -- floating-point operation
-        illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx); -- valid encodings checked by FPU
-
-      when opcode_cust0_c | opcode_cust1_c => -- custom instruction
-        illegal_cmd <= not bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu); -- all encodings valid if CFU enable
 
       when others => -- undefined/unimplemented/illegal opcode
         illegal_cmd <= '1';
@@ -1115,9 +1109,7 @@ begin
   -- Illegal Operation Check ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   trap_ctrl.instr_il <= '1' when ((execute_engine.state = EXECUTE) or (execute_engine.state = ALU_WAIT)) and -- check in execution states only
-                                 ((monitor.exc = '1') or -- execution monitor exception (multi-cycle instruction timeout)
-                                  (illegal_cmd = '1') or -- illegal instruction?
-                                  (execute_engine.ir(instr_opcode_lsb_c+1 downto instr_opcode_lsb_c) /= "11")) else '0'; -- illegal opcode LSBs?
+                                 ((monitor.exc = '1') or (illegal_cmd = '1')) else '0'; -- instruction timeout or illegal instruction
 
 
   -- ****************************************************************************************************************************
@@ -1356,7 +1348,7 @@ begin
       csr.addr <= (others => '0');
     elsif rising_edge(clk_i) then
       -- update only for actual CSR operations to reduce switching activity on the CSR address net --
-      if (execute_engine.state = EXECUTE) and (opcode = opcode_system_c) then
+      if (opcode = opcode_system_c) then
         csr.addr(11 downto 10) <= execute_engine.ir(instr_imm12_lsb_c+11 downto instr_imm12_lsb_c+10);
         csr.addr(9 downto 8)   <= replicate_f(execute_engine.ir(instr_imm12_lsb_c+8), 2); -- M-mode (11) and U-mode (00) CSRs only
         csr.addr(7 downto 0)   <= execute_engine.ir(instr_imm12_lsb_c+7 downto instr_imm12_lsb_c);
@@ -2108,7 +2100,7 @@ begin
     end process debug_control;
 
     -- debug mode entry triggers --
-    debug_ctrl.trig_hw    <= trap_ctrl.hwtrig and (not debug_ctrl.running) and csr.tdata1_action and csr.tdata1_dmode; -- enter debug mode by HW trigger module request if dmode is set
+    debug_ctrl.trig_hw    <= trap_ctrl.hwtrig and (not debug_ctrl.running) and csr.tdata1_action and csr.tdata1_dmode; -- enter debug mode by HW trigger module
     debug_ctrl.trig_break <= trap_ctrl.ebreak and (debug_ctrl.running or   -- re-enter debug mode
                              ((    csr.privilege) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
                              ((not csr.privilege) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
