@@ -40,7 +40,6 @@ entity neorv32_cpu_cp_fpu is
     clk_i       : in  std_ulogic; -- global clock, rising edge
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  ctrl_bus_t; -- main control bus
-    start_i     : in  std_ulogic; -- trigger operation
     -- CSR interface --
     csr_we_i    : in  std_ulogic; -- write enable
     csr_addr_i  : in  std_ulogic_vector(1 downto 0); -- address
@@ -224,7 +223,7 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     small_man : std_ulogic_vector(23 downto 0); -- mantissa + hidden one
     large_exp : std_ulogic_vector(7 downto 0);
     large_man : std_ulogic_vector(23 downto 0); -- mantissa + hidden one
-    -- smaller mantissa alginment --
+    -- smaller mantissa alignment --
     man_sreg  : std_ulogic_vector(23 downto 0); -- mantissa + hidden one
     man_g_ext : std_ulogic;
     man_r_ext : std_ulogic;
@@ -317,7 +316,7 @@ begin
   cmd.instr_class  <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11100") and (ctrl_i.ir_funct3 = "001")               else '0'; -- FCLASS
   cmd.instr_comp   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "10100") and (ctrl_i.ir_funct3(2) = '0')              else '0'; -- FEQ/FLT/FLE
   cmd.instr_i2f    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11010") and (ctrl_i.ir_funct12(4 downto 1) = "0000") else '0'; -- FCVT
-  cmd.instr_f2i    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11000") and (ctrl_i.ir_funct12(4 downto 1) = "0000") else '0' ;-- FCVT
+  cmd.instr_f2i    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11000") and (ctrl_i.ir_funct12(4 downto 1) = "0000") else '0'; -- FCVT
   cmd.instr_sgnj   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00100") and (ctrl_i.ir_funct3(2) = '0')              else '0'; -- FSGNJ
   cmd.instr_minmax <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00101") and (ctrl_i.ir_funct3(2 downto 1) = "00")    else '0'; -- FMIN/FMAX
   cmd.instr_addsub <= '1' when (ctrl_i.ir_funct12(11 downto 8) = "0000")                                               else '0'; -- FADD/FSUB
@@ -354,7 +353,7 @@ begin
   op_data(1)(22 downto 0)  <= (others => '0') when (rs2_i(30 downto 23) = "00000000") else rs2_i(22 downto 0); -- flush mantissa to zero if subnormal
 
 
-  -- O Classifier ----------------------------------------------------------------------
+  -- Number Classifier ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   number_classifier: process(op_data, rs1_i, rs2_i)
     variable op_m_all_zero_v, op_e_all_zero_v, op_e_all_one_v       : std_ulogic;
@@ -433,7 +432,7 @@ begin
             fpu_operands.frm <= ctrl_i.ir_funct3(2 downto 0);
           end if;
           --
-          if (start_i = '1') and (cmd.valid = '1') then
+          if (ctrl_i.alu_cp_fpu = '1') and (cmd.valid = '1') then
             -- operand data --
             fpu_operands.rs1       <= op_data(0);
             fpu_operands.rs1_class <= op_class(0);
