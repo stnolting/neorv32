@@ -29,7 +29,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 20.09-2024 | 1.10.4.2 | :bug: fix minor bug in FPU's multiplication instruction (invalid-check logic if any operand is sNAN) | [#1028](https://github.com/stnolting/neorv32/pull/1028) |
+| 23.09.2024 | 1.10.4.3 | rework/optimize ALU instruction decoding and CPU co-processor interface | [#1032](https://github.com/stnolting/neorv32/pull/1032) |
+| 20.09.2024 | 1.10.4.2 | :bug: fix minor bug in FPU's multiplication instruction (invalid-check logic if any operand is sNAN) | [#1028](https://github.com/stnolting/neorv32/pull/1028) |
 | 20.09.2024 | 1.10.4.1 | rtl signal renamings to make the code more readable | [#1026](https://github.com/stnolting/neorv32/pull/1026) |
 | 16.09.2024 | [**:rocket:1.10.4**](https://github.com/stnolting/neorv32/releases/tag/v1.10.4) | **New release** | |
 | 15.09.2024 | 1.10.3.10 | :bug: SW: fix stack-alignment (has to be 128-bit-aligned) before entering the very first procedure (`main`) | [#1021](https://github.com/stnolting/neorv32/pull/1021) |
