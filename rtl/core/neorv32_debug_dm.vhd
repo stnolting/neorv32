@@ -133,10 +133,6 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   end record;
   signal dm_ctrl : dm_ctrl_t;
 
-  -- program buffer access --
-  type prog_buf_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
-  signal prog_buf : prog_buf_t;
-
   -- **********************************************************
   -- CPU Bus and Debug Interfaces
   -- **********************************************************
