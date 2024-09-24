@@ -260,14 +260,14 @@ begin
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_B      => CPU_EXTENSION_RISCV_B,      -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,      -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond, -- implement integer conditional operations?
-    CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,  -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,  -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Zbkx   => false,                      -- implement cryptography crossbar permutation extension?
-    CPU_EXTENSION_RISCV_Zknh   => false,                      -- implement cryptography NIST hash extension?
+    CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,  -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond, -- implement integer conditional operations?
     CPU_EXTENSION_RISCV_Zkne   => false,                      -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknd   => false,                      -- implement cryptography NIST AES decryption extension?
+    CPU_EXTENSION_RISCV_Zknh   => false,                      -- implement cryptography NIST hash extension?
+    CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,  -- implement multiply-only M sub-extension?
+    CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
     -- Tuning Options --
     FAST_MUL_EN                => FAST_MUL_EN,                -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN              => FAST_SHIFT_EN               -- use barrel shifter for shift operations
