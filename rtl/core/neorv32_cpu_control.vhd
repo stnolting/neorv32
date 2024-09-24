@@ -41,10 +41,14 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_E      : boolean; -- implement embedded-class register file extension?
     CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U      : boolean; -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zbkx   : boolean; -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT regs)?
     CPU_EXTENSION_RISCV_Zicntr : boolean; -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond : boolean; -- implement integer conditional operations?
     CPU_EXTENSION_RISCV_Zihpm  : boolean; -- implement hardware performance monitors?
+    CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?
+    CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
+    CPU_EXTENSION_RISCV_Zknh   : boolean; -- implement cryptography NIST hash extension?
     CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  : boolean; -- implement external debug mode extension?
@@ -1885,6 +1889,10 @@ begin
             csr.rdata(9)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zihpm);  -- Zihpm: hardware performance monitors
             csr.rdata(10) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdext);  -- Sdext: RISC-V (external) debug mode
             csr.rdata(11) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Sdtrig); -- Sdtrig: trigger module
+            csr.rdata(12) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zbkx);   -- Zbkx: cryptography crossbar permutation
+            csr.rdata(13) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zknd);   -- Zknd: cryptography NIST AES decryption
+            csr.rdata(14) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zkne);   -- Zkne: cryptography NIST AES encryption
+            csr.rdata(15) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zknh);   -- Zknh: cryptography NIST hash functions
             -- misc --
             csr.rdata(20) <= bool_to_ulogic_f(is_simulation_c);            -- is this a simulation?
             -- tuning options --
