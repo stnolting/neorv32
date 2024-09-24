@@ -39,10 +39,14 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_E      : boolean                        := false;       -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M      : boolean                        := false;       -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U      : boolean                        := false;       -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zbkx   : boolean                        := false;       -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx  : boolean                        := false;       -- implement 32-bit floating-point extension (using INT regs!)
     CPU_EXTENSION_RISCV_Zicntr : boolean                        := true;        -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond : boolean                        := false;       -- implement integer conditional operations?
     CPU_EXTENSION_RISCV_Zihpm  : boolean                        := false;       -- implement hardware performance monitors?
+    CPU_EXTENSION_RISCV_Zknd   : boolean                        := false;       -- implement cryptography NIST AES decryption extension?
+    CPU_EXTENSION_RISCV_Zkne   : boolean                        := false;       -- implement cryptography NIST AES encryption extension?
+    CPU_EXTENSION_RISCV_Zknh   : boolean                        := false;       -- implement cryptography NIST hash extension?
     CPU_EXTENSION_RISCV_Zmmul  : boolean                        := false;       -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  : boolean                        := false;       -- implement custom (instr.) functions unit?
 
@@ -449,10 +453,14 @@ begin
       CPU_EXTENSION_RISCV_E      => CPU_EXTENSION_RISCV_E,
       CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,
       CPU_EXTENSION_RISCV_U      => CPU_EXTENSION_RISCV_U,
+      CPU_EXTENSION_RISCV_Zbkx   => CPU_EXTENSION_RISCV_Zbkx,
       CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,
       CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr,
       CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond,
       CPU_EXTENSION_RISCV_Zihpm  => CPU_EXTENSION_RISCV_Zihpm,
+      CPU_EXTENSION_RISCV_Zknd   => CPU_EXTENSION_RISCV_Zknd,
+      CPU_EXTENSION_RISCV_Zkne   => CPU_EXTENSION_RISCV_Zkne,
+      CPU_EXTENSION_RISCV_Zknh   => CPU_EXTENSION_RISCV_Zknh,
       CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,
       CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,
       CPU_EXTENSION_RISCV_Sdext  => ON_CHIP_DEBUGGER_EN,
