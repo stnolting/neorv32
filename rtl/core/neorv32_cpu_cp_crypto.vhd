@@ -91,8 +91,46 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   -- helper functions
   -- ----------------------------------------------------------------------------------------
 
+  -- byte-wise vector look-up --
+  function xperm8_f(vec : std_ulogic_vector(31 downto 0); sel : std_ulogic_vector(7 downto 0)) return std_ulogic_vector is
+    variable res_v : std_ulogic_vector(7 downto 0);
+  begin
+    if (sel(7 downto 2) /= "000000") then -- index out of range
+      res_v := (others => '0');
+    else
+      case sel(1 downto 0) is
+        when "00"   => res_v := vec(7 downto 0);
+        when "01"   => res_v := vec(15 downto 8);
+        when "10"   => res_v := vec(23 downto 16);
+        when others => res_v := vec(31 downto 24);
+      end case;
+    end if;
+    return res_v;
+  end function xperm8_f;
+
+  -- nibble-wise vector look-up --
+  function xperm4_f(vec : std_ulogic_vector(31 downto 0); sel : std_ulogic_vector(3 downto 0)) return std_ulogic_vector is
+    variable res_v : std_ulogic_vector(3 downto 0);
+  begin
+    if (sel(3) /= '0') then -- index out of range
+      res_v := (others => '0');
+    else
+      case sel(2 downto 0) is
+        when "000"  => res_v := vec(3 downto 0);
+        when "001"  => res_v := vec(7 downto 4);
+        when "010"  => res_v := vec(11 downto 8);
+        when "011"  => res_v := vec(15 downto 12);
+        when "100"  => res_v := vec(19 downto 16);
+        when "101"  => res_v := vec(23 downto 20);
+        when "110"  => res_v := vec(27 downto 24);
+        when others => res_v := vec(31 downto 28);
+      end case;
+    end if;
+    return res_v;
+  end function xperm4_f;
+
   -- logical shift left --
-  function lsl_f(data : std_ulogic_vector(31 downto 0); shamt : natural range 0 to 31) return std_ulogic_vector(31 downto 0) is
+  function lsl_f(data : std_ulogic_vector(31 downto 0); shamt : natural range 0 to 31) return std_ulogic_vector is
     variable res_v : std_ulogic_vector(31 downto 0);
   begin
     res_v := std_ulogic_vector(shift_left(unsigned(data), shamt));
@@ -100,7 +138,7 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   end function lsl_f;
 
   -- logical shift right --
-  function lsr_f(data : std_ulogic_vector(31 downto 0); shamt : natural range 0 to 31) return std_ulogic_vector(31 downto 0) is
+  function lsr_f(data : std_ulogic_vector(31 downto 0); shamt : natural range 0 to 31) return std_ulogic_vector is
     variable res_v : std_ulogic_vector(31 downto 0);
   begin
     res_v := std_ulogic_vector(shift_right(unsigned(data), shamt));
@@ -108,7 +146,7 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   end function lsr_f;
 
   -- rotate right --
-  function ror_f(data : std_ulogic_vector(31 downto 0); shamt : natural range 0 to 31) return std_ulogic_vector(31 downto 0) is
+  function ror_f(data : std_ulogic_vector(31 downto 0); shamt : natural range 0 to 31) return std_ulogic_vector is
     variable res_v : std_ulogic_vector(31 downto 0);
   begin
     res_v := std_ulogic_vector(rotate_right(unsigned(data), shamt));
@@ -116,7 +154,7 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   end function ror_f;
 
   -- multiply by 2 in Galois field (2^8) --
-  function xt2_f(a : std_ulogic_vector(7 downto 0)) return std_ulogic_vector(7 downto 0) is
+  function xt2_f(a : std_ulogic_vector(7 downto 0)) return std_ulogic_vector is
     variable res_v : std_ulogic_vector(7 downto 0);
   begin
     res_v := (a(6 downto 0) & '0') xor ("000" & a(7) & a(7) & '0' & a(7) & a(7)); -- XOR with 0x1B if a(7) is set
@@ -124,7 +162,7 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   end function xt2_f;
 
   -- multiply 8-bit field element by 4-bit value for AES MixCols step --
-  function gfmul_f(x : std_ulogic_vector(7 downto 0); y : std_ulogic_vector(3 downto 0)) return std_ulogic_vector(7 downto 0) is
+  function gfmul_f(x : std_ulogic_vector(7 downto 0); y : std_ulogic_vector(3 downto 0)) return std_ulogic_vector is
     variable res_v : std_ulogic_vector(7 downto 0);
   begin
     res_v := (others => '0');
@@ -161,6 +199,8 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   type state_t is (S_IDLE, S_BUSY_0, S_BUSY_1, S_DONE);
   signal state   : state_t;
   signal done    : std_ulogic;
+  signal rs1     : std_ulogic_vector(31 downto 0);
+  signal rs2     : std_ulogic_vector(31 downto 0);
   signal funct12 : std_ulogic_vector(11 downto 0);
   signal funct3  : std_ulogic_vector(2 downto 0);
   signal out_sel : std_ulogic_vector(1 downto 0);
@@ -170,6 +210,7 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
     dec  : std_ulogic; -- 0 = encryption, 1 = decryption
     mid  : std_ulogic; -- 0 = final round, 1 = middle round
     bs   : std_ulogic_vector(1 downto 0);
+    si   : std_ulogic_vector(7 downto 0);
     so   : std_ulogic_vector(7 downto 0);
     mix1 : std_ulogic_vector(31 downto 0);
     mix2 : std_ulogic_vector(31 downto 0);
@@ -178,8 +219,11 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   end record;
   signal aes : aes_t;
 
-  -- function units results --
-  signal sha_res, xperm_res : std_ulogic_vector(31 downto 0);
+  -- permutation core --
+  signal xperm_res, xperm4_res, xperm8_res : std_ulogic_vector(31 downto 0);
+
+  -- sha core --
+  signal sha_res : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -277,40 +321,22 @@ begin
   -- -------------------------------------------------------------------------------------------
   xperm_enabled:
   if EN_ZBKX generate
-    xperm_core: process(funct3, rs1, rs2)
-    begin
-      if (funct3(3) = '1') then -- byte-wise vector look-up
-        for i in 0 to 3 loop
-          if (rs1(8*i+7 downto 8*i+2) /= "000000") then -- index out of range
-            xperm_res(8*i+7 downto 8*i+0) <= (others => '0');
-          else
-            case rs1(8*i+1 downto 8*i+0) is
-              when "00"   => xperm_res(8*i+7 downto 8*i+0) <= rs2(7 downto 0);
-              when "01"   => xperm_res(8*i+7 downto 8*i+0) <= rs2(15 downto 8);
-              when "10"   => xperm_res(8*i+7 downto 8*i+0) <= rs2(23 downto 16);
-              when others => xperm_res(8*i+7 downto 8*i+0) <= rs2(31 downto 24);
-            end case;
-          end if;
-        end loop;
-      else -- nibble-wise vector look-up
-        for i in 0 to 7 loop
-          if (rs1(4*i+3) /= '0') then -- index out of range
-            xperm_res(4*i+3 downto 4*i+0) <= (others => '0');
-          else
-            case rs1(4*i+2 downto 4*i+0) is
-              when "000"  => xperm_res(4*i+3 downto 4*i+0) <= rs2(3 downto 0);
-              when "001"  => xperm_res(4*i+3 downto 4*i+0) <= rs2(7 downto 4);
-              when "010"  => xperm_res(4*i+3 downto 4*i+0) <= rs2(11 downto 8);
-              when "011"  => xperm_res(4*i+3 downto 4*i+0) <= rs2(15 downto 12);
-              when "100"  => xperm_res(4*i+3 downto 4*i+0) <= rs2(19 downto 16);
-              when "101"  => xperm_res(4*i+3 downto 4*i+0) <= rs2(23 downto 20);
-              when "110"  => xperm_res(4*i+3 downto 4*i+0) <= rs2(27 downto 24);
-              when others => xperm_res(4*i+3 downto 4*i+0) <= rs2(31 downto 28);
-            end case;
-          end if;
-        end loop;
-      end if;
-    end process xperm_core;
+
+    -- byte-wise vector look-up --
+    xperm8_gen:
+    for i in 0 to 3 generate
+      xperm8_res(8*i+7 downto 8*i+0) <= xperm8_f(rs2, rs1(8*i+7 downto 8*i+0));
+    end generate;
+
+    -- nibble-wise vector look-up --
+    xperm4_gen:
+    for i in 0 to 7 generate
+      xperm4_res(4*i+3 downto 4*i+0) <= xperm4_f(rs2, rs1(4*i+3 downto 4*i+0));
+    end generate;
+
+    -- operation select --
+    xperm_res <= xperm8_res when (funct3(2) = '1') else xperm4_res;
+
   end generate;
 
   xperm_disabled:
@@ -378,6 +404,7 @@ begin
 
     -- mix columns --
     mix_columns: process(rstn_i, clk_i)
+    begin
       if (rstn_i = '0') then
         aes.mix1 <= (others => '0');
       elsif rising_edge(clk_i) then
@@ -407,6 +434,7 @@ begin
 
     -- final XOR --
     aes.res <= rs1 xor aes.rot;
+
   end generate;
 
   aes_disabled:
