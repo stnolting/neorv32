@@ -24,6 +24,10 @@ entity neorv32_cpu_alu is
     CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
+    CPU_EXTENSION_RISCV_Zbkx   : boolean; -- implement cryptography crossbar permutation extension?
+    CPU_EXTENSION_RISCV_Zknh   : boolean; -- implement cryptography NIST hash extension?
+    CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
+    CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?
     -- Tuning Options --
     FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN              : boolean  -- use barrel shifter for shift operations
@@ -69,9 +73,9 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal cp_res     : std_ulogic_vector(XLEN-1 downto 0);
 
   -- co-processor interface --
-  type cp_data_t  is array (0 to 5) of std_ulogic_vector(XLEN-1 downto 0);
+  type cp_data_t  is array (0 to 6) of std_ulogic_vector(XLEN-1 downto 0);
   signal cp_result : cp_data_t; -- co-processor result
-  signal cp_valid  : std_ulogic_vector(5 downto 0); -- co-processor done
+  signal cp_valid  : std_ulogic_vector(6 downto 0); -- co-processor done
   signal cp_shamt  : std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
 
   -- CSR proxy --
@@ -142,11 +146,11 @@ begin
 
   -- multi-cycle co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
-  cp_done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5);
+  cp_done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5) or cp_valid(6);
 
   -- co-processor result --
   -- > "cp_result" data has to be always zero unless the specific co-processor has been actually triggered
-  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5);
+  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5) or cp_result(6);
 
   -- co-processor CSR read-back --
   -- > "csr_rdata_*" data has to be always zero unless the specific co-processor is actually being accessed
@@ -361,6 +365,40 @@ begin
   if not CPU_EXTENSION_RISCV_Zicond generate
     cp_result(5) <= (others => '0');
     cp_valid(5)  <= '0';
+  end generate;
+
+
+  -- ALU[I]-Opcode Co-Processor: Scalar Cryptography Unit ('Zk*' ISA Extensions) ------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_cpu_cp_crypto_inst_true:
+  if CPU_EXTENSION_RISCV_Zbkx or CPU_EXTENSION_RISCV_Zknh or
+     CPU_EXTENSION_RISCV_Zkne or CPU_EXTENSION_RISCV_Zknd generate
+    neorv32_cpu_cp_crypto_inst: entity neorv32.neorv32_cpu_cp_crypto
+    generic map (
+      EN_ZBKX => CPU_EXTENSION_RISCV_Zbkx, -- enable crossbar permutation extension
+      EN_ZKNH => CPU_EXTENSION_RISCV_Zknh, -- enable NIST hash extension
+      EN_ZKNE => CPU_EXTENSION_RISCV_Zkne, -- enable NIST AES encryption
+      EN_ZKND => CPU_EXTENSION_RISCV_Zknd  -- enable NIST AES decryption
+    )
+    port map (
+      -- global control --
+      clk_i   => clk_i,        -- global clock, rising edge
+      rstn_i  => rstn_i,       -- global reset, low-active, async
+      ctrl_i  => ctrl_i,       -- main control bus
+      -- data input --
+      rs1_i   => rs1_i,        -- rf source 1
+      rs2_i   => rs2_i,        -- rf source 2
+      -- result and status --
+      res_o   => cp_result(6), -- operation result
+      valid_o => cp_valid(6)   -- data output valid
+    );
+  end generate;
+
+  neorv32_cpu_cp_crypto_inst_false:
+  if (not CPU_EXTENSION_RISCV_Zbkx) and (not CPU_EXTENSION_RISCV_Zknh) and
+     (not CPU_EXTENSION_RISCV_Zkne) and (not CPU_EXTENSION_RISCV_Zknd) generate
+    cp_result(6) <= (others => '0');
+    cp_valid(6)  <= '0';
   end generate;
 
 
