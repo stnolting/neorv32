@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100402"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100403"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -460,7 +460,9 @@ package neorv32_package is
     alu_opa_mux  : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
     alu_opb_mux  : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
     alu_unsigned : std_ulogic;                     -- is unsigned ALU operation
-    alu_cp_trig  : std_ulogic_vector(5 downto 0);  -- co-processor trigger (one-hot)
+    alu_cp_alu   : std_ulogic;                     -- ALU.base co-processor trigger (one-shot)
+    alu_cp_cfu   : std_ulogic;                     -- CFU co-processor trigger (one-shot)
+    alu_cp_fpu   : std_ulogic;                     -- FPU co-processor trigger (one-shot)
     -- load/store unit --
     lsu_req      : std_ulogic;                     -- trigger memory access request
     lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
@@ -490,7 +492,9 @@ package neorv32_package is
     alu_opa_mux  => '0',
     alu_opb_mux  => '0',
     alu_unsigned => '0',
-    alu_cp_trig  => (others => '0'),
+    alu_cp_alu   => '0',
+    alu_cp_cfu   => '0',
+    alu_cp_fpu   => '0',
     lsu_req      => '0',
     lsu_rw       => '0',
     lsu_mo_we    => '0',
@@ -509,15 +513,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   constant cmp_equal_c : natural := 0;
   constant cmp_less_c  : natural := 1; -- for signed and unsigned comparisons
-
-  -- CPU Co-Processor IDs -------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  constant cp_sel_shifter_c  : natural := 0; -- CP0: shift operations (base ISA)
-  constant cp_sel_muldiv_c   : natural := 1; -- CP1: multiplication/division operations ('M' extensions)
-  constant cp_sel_bitmanip_c : natural := 2; -- CP2: bit manipulation ('B' extensions)
-  constant cp_sel_fpu_c      : natural := 3; -- CP3: floating-point unit ('Zfinx' extension)
-  constant cp_sel_cfu_c      : natural := 4; -- CP4: custom instructions CFU ('Zxcfu' extension)
-  constant cp_sel_cond_c     : natural := 5; -- CP5: conditional operations ('Zicond' extension)
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

@@ -71,7 +71,6 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   -- co-processor interface --
   type cp_data_t  is array (0 to 5) of std_ulogic_vector(XLEN-1 downto 0);
   signal cp_result : cp_data_t; -- co-processor result
-  signal cp_start  : std_ulogic_vector(5 downto 0); -- co-processor trigger
   signal cp_valid  : std_ulogic_vector(5 downto 0); -- co-processor done
   signal cp_shamt  : std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
 
@@ -141,17 +140,13 @@ begin
   -- ALU Co-Processors
   -- **************************************************************************************************************************
 
-  -- co-processor select / start trigger --
-  -- > "cp_start" is high for one cycle to trigger operation of the according co-processor
-  cp_start <= ctrl_i.alu_cp_trig;
-
   -- multi-cycle co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
-  cp_done_o <= cp_valid(5) or cp_valid(4) or cp_valid(3) or cp_valid(2) or cp_valid(1) or cp_valid(0);
+  cp_done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5);
 
   -- co-processor result --
   -- > "cp_result" data has to be always zero unless the specific co-processor has been actually triggered
-  cp_res <= cp_result(5) or cp_result(4) or cp_result(3) or cp_result(2) or cp_result(1) or cp_result(0);
+  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5);
 
   -- co-processor CSR read-back --
   -- > "csr_rdata_*" data has to be always zero unless the specific co-processor is actually being accessed
@@ -161,7 +156,7 @@ begin
   cp_shamt <= opb(index_size_f(XLEN)-1 downto 0);
 
 
-  -- Co-Processor 0: Shifter Unit (Base ISA) ------------------------------------------------
+  -- ALU[I]-Opcode Co-Processor: Shifter Unit (Base ISA) ------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_shifter_inst: entity neorv32.neorv32_cpu_cp_shifter
   generic map (
@@ -172,7 +167,6 @@ begin
     clk_i   => clk_i,        -- global clock, rising edge
     rstn_i  => rstn_i,       -- global reset, low-active, async
     ctrl_i  => ctrl_i,       -- main control bus
-    start_i => cp_start(0),  -- trigger operation
     -- data input --
     rs1_i   => rs1_i,        -- rf source 1
     shamt_i => cp_shamt,     -- shift amount
@@ -182,7 +176,7 @@ begin
   );
 
 
-  -- Co-Processor 1: Integer Multiplication/Division Unit ('M' ISA Extension) ---------------
+  -- ALU-Opcode Co-Processor: Integer Multiplication/Division Unit ('M' ISA Extension) ------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_muldiv_inst_true:
   if CPU_EXTENSION_RISCV_M or CPU_EXTENSION_RISCV_Zmmul generate
@@ -196,7 +190,6 @@ begin
       clk_i   => clk_i,        -- global clock, rising edge
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
-      start_i => cp_start(1),  -- trigger operation
       -- data input --
       rs1_i   => rs1_i,        -- rf source 1
       rs2_i   => rs2_i,        -- rf source 2
@@ -213,7 +206,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 2: Bit-Manipulation Unit ('B' ISA Extension) ------------------------------
+  -- ALU[I]-Opcode Co-Processor: Bit-Manipulation Unit ('B' ISA Extension) ------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_bitmanip_inst_true:
   if CPU_EXTENSION_RISCV_B generate
@@ -226,7 +219,6 @@ begin
       clk_i   => clk_i,        -- global clock, rising edge
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
-      start_i => cp_start(2),  -- trigger operation
       -- data input --
       cmp_i   => cmp,          -- comparator status
       rs1_i   => rs1_i,        -- rf source 1
@@ -245,7 +237,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 3: Single-Precision Floating-Point Unit ('Zfinx' ISA Extension) -----------
+  -- FLOAT-Opcode Co-Processor: Single-Precision FPUUnit ('Zfinx' ISA Extension) ------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_fpu_inst_true:
   if CPU_EXTENSION_RISCV_Zfinx generate
@@ -255,7 +247,6 @@ begin
       clk_i       => clk_i,                  -- global clock, rising edge
       rstn_i      => rstn_i,                 -- global reset, low-active, async
       ctrl_i      => ctrl_i,                 -- main control bus
-      start_i     => cp_start(3),            -- trigger operation
       -- CSR interface --
       csr_we_i    => fpu_csr_we,             -- write enable
       csr_addr_i  => csr_addr_i(1 downto 0), -- address
@@ -285,7 +276,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 4: Custom (Instructions) Functions Unit ('Zxcfu' ISA Extension) -----------
+  -- CUSTOM-Opcode Co-Processor: Custom Functions Unit ('Zxcfu' ISA Extension) --------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_cfu_inst_true:
   if CPU_EXTENSION_RISCV_Zxcfu generate
@@ -295,7 +286,7 @@ begin
       clk_i       => clk_i,                          -- global clock, rising edge
       rstn_i      => rstn_i,                         -- global reset, low-active, async
       -- operation control --
-      start_i     => cp_start(4),                    -- operation trigger/strobe
+      start_i     => ctrl_i.alu_cp_cfu,              -- operation trigger/strobe
       active_i    => cfu_run,                        -- operation in progress, CPU is waiting for CFU
       -- CSR interface --
       csr_we_i    => cfu_csr_we,                     -- write enable
@@ -327,14 +318,14 @@ begin
       elsif rising_edge(clk_i) then
         cfu_wait(1) <= cfu_wait(0);
         if (cfu_wait(0) = '0') then -- CFU is idle
-          cfu_wait(0) <= cp_start(4); -- trigger new CFU operation
+          cfu_wait(0) <= ctrl_i.alu_cp_cfu; -- trigger new CFU operation
         elsif (cfu_done = '1') or (ctrl_i.cpu_trap = '1') then -- operation done or abort if trap (exception)
           cfu_wait(0) <= '0';
         end if;
       end if;
     end process cfu_arbiter;
 
-    cfu_run      <= cp_start(4) or cfu_wait(0); -- CFU operation in progress
+    cfu_run      <= ctrl_i.alu_cp_cfu or cfu_wait(0); -- CFU operation in progress
     cp_result(4) <= cfu_res when (cfu_wait(1) = '1') else (others => '0'); -- output gate
     cp_valid(4)  <= cfu_wait(0) and cfu_done;
   end generate;
@@ -347,7 +338,7 @@ begin
   end generate;
 
 
-  -- Co-Processor 5: Integer Conditional Operations Unit ('Zicond' ISA Extension) -----------
+  -- ALU-Opcode Co-Processor: Integer Conditional Operations Unit ('Zicond' ISA Extension) ---
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_cond_inst_true:
   if CPU_EXTENSION_RISCV_Zicond generate
@@ -357,7 +348,6 @@ begin
       clk_i   => clk_i,        -- global clock, rising edge
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
-      start_i => cp_start(5),  -- trigger operation
       -- data input --
       rs1_i   => rs1_i,        -- rf source 1
       rs2_i   => rs2_i,        -- rf source 2

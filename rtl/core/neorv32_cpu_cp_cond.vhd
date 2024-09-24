@@ -20,7 +20,6 @@ entity neorv32_cpu_cp_cond is
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
-    start_i : in  std_ulogic; -- trigger operation
     -- data input --
     rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
@@ -33,9 +32,16 @@ end neorv32_cpu_cp_cond;
 architecture neorv32_cpu_cp_cond_rtl of neorv32_cpu_cp_cond is
 
   constant zero_c : std_ulogic_vector(XLEN-1 downto 0) := (others => '0');
-  signal rs2_zero, condition : std_ulogic;
+  signal valid_cmd, rs2_zero, condition : std_ulogic;
 
 begin
+
+  -- Valid Instruction? ---------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and (ctrl_i.ir_opcode(5) = '1') and
+                        (ctrl_i.ir_funct3(2) = '1') and (ctrl_i.ir_funct3(0) = '1') and
+                        (ctrl_i.ir_funct12(11 downto 5) = "0000111") else '0';
+
 
   -- Conditional Output ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -44,7 +50,7 @@ begin
     if (rstn_i = '0') then
       res_o <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (start_i = '1') and (condition = '1') then -- unit triggered and condition true
+      if (valid_cmd = '1') and (condition = '1') then -- unit triggered and condition true
         res_o <= rs1_i;
       else
         res_o <= (others => '0');
@@ -57,7 +63,7 @@ begin
   condition <= rs2_zero xnor ctrl_i.ir_funct3(1); -- equal zero / non equal zero
 
   -- processing done --
-  valid_o <= start_i;
+  valid_o <= valid_cmd;
 
 
 end neorv32_cpu_cp_cond_rtl;
