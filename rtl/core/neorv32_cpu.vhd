@@ -34,10 +34,14 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_E      : boolean; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U      : boolean; -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zbkx   : boolean; -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr : boolean; -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond : boolean; -- implement integer conditional operations?
     CPU_EXTENSION_RISCV_Zihpm  : boolean; -- implement hardware performance monitors?
+    CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?
+    CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
+    CPU_EXTENSION_RISCV_Zknh   : boolean; -- implement cryptography NIST hash extension?
     CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  : boolean; -- implement external debug mode extension?
@@ -125,12 +129,16 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_B,      "b",         "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_U,      "u",         "" ) &
     cond_sel_string_f(true,                       "x",         "" ) & -- always enabled
-    cond_sel_string_f(true,                       "_zicsr",    "" ) & -- always enabled
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zbkx,   "_zbkx",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_zicntr",   "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zicond, "_zicond",   "" ) &
+    cond_sel_string_f(true,                       "_zicsr",    "" ) & -- always enabled
     cond_sel_string_f(true,                       "_zifencei", "" ) & -- always enabled
-    cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,  "_zfinx",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm,  "_zihpm",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,  "_zfinx",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zknd,   "_zknd",     "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zkne,   "_zkne",     "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zknh,   "_zknh",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,  "_zmmul",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,  "_zxcfu",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,  "_sdext",    "" ) &
@@ -166,14 +174,14 @@ begin
     CPU_EXTENSION_RISCV_E      => CPU_EXTENSION_RISCV_E,      -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,      -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U      => CPU_EXTENSION_RISCV_U,      -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbkx   => false,                      -- implement cryptography crossbar permutation extension?
+    CPU_EXTENSION_RISCV_Zbkx   => CPU_EXTENSION_RISCV_Zbkx,   -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,  -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr, -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond, -- implement integer conditional operations?
     CPU_EXTENSION_RISCV_Zihpm  => CPU_EXTENSION_RISCV_Zihpm,  -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zknd   => false,                      -- implement cryptography NIST AES decryption extension?
-    CPU_EXTENSION_RISCV_Zkne   => false,                      -- implement cryptography NIST AES encryption extension?
-    CPU_EXTENSION_RISCV_Zknh   => false,                      -- implement cryptography NIST hash extension?
+    CPU_EXTENSION_RISCV_Zknd   => CPU_EXTENSION_RISCV_Zknd,   -- implement cryptography NIST AES decryption extension?
+    CPU_EXTENSION_RISCV_Zkne   => CPU_EXTENSION_RISCV_Zkne,   -- implement cryptography NIST AES encryption extension?
+    CPU_EXTENSION_RISCV_Zknh   => CPU_EXTENSION_RISCV_Zknh,   -- implement cryptography NIST hash extension?
     CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,  -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  => CPU_EXTENSION_RISCV_Sdext,  -- implement external debug mode extension?
@@ -264,12 +272,12 @@ begin
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_B      => CPU_EXTENSION_RISCV_B,      -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,      -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zbkx   => false,                      -- implement cryptography crossbar permutation extension?
+    CPU_EXTENSION_RISCV_Zbkx   => CPU_EXTENSION_RISCV_Zbkx,   -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,  -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond, -- implement integer conditional operations?
-    CPU_EXTENSION_RISCV_Zknd   => false,                      -- implement cryptography NIST AES decryption extension?
-    CPU_EXTENSION_RISCV_Zkne   => false,                      -- implement cryptography NIST AES encryption extension?
-    CPU_EXTENSION_RISCV_Zknh   => false,                      -- implement cryptography NIST hash extension?
+    CPU_EXTENSION_RISCV_Zknd   => CPU_EXTENSION_RISCV_Zknd,   -- implement cryptography NIST AES decryption extension?
+    CPU_EXTENSION_RISCV_Zkne   => CPU_EXTENSION_RISCV_Zkne,   -- implement cryptography NIST AES encryption extension?
+    CPU_EXTENSION_RISCV_Zknh   => CPU_EXTENSION_RISCV_Zknh,   -- implement cryptography NIST hash extension?
     CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,  -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
     -- Tuning Options --
