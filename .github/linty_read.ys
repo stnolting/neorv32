@@ -46,4 +46,4 @@ verific -work neorv32 -vhdl ./../rtl/core/neorv32_top.vhd
 verific -work neorv32 -vhdl ./../rtl/core/neorv32_application_image.vhd
 verific -work neorv32 -vhdl ./../rtl/core/neorv32_bootloader_image.vhd
 
-verific -L neorv32 -vhdl ./../sim/simple/neorv32_tb.simple.vhd
+verific -L neorv32 -vhdl ./../rtl/system_integration/neorv32_vivado_ip.vhd

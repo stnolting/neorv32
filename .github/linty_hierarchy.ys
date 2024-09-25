@@ -1,1 +1,1 @@
-hierarchy -top neorv32_tb_simple
+hierarchy -top neorv32_vivado_ip
