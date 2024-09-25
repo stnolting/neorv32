@@ -41,11 +41,15 @@ entity neorv32_vivado_ip is
     CPU_EXTENSION_RISCV_E      : boolean                       := false;
     CPU_EXTENSION_RISCV_M      : boolean                       := false;
     CPU_EXTENSION_RISCV_U      : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zbkx   : boolean                       := false;
     CPU_EXTENSION_RISCV_Zfinx  : boolean                       := false;
     CPU_EXTENSION_RISCV_Zicntr : boolean                       := false;
     CPU_EXTENSION_RISCV_Zicond : boolean                       := false;
     CPU_EXTENSION_RISCV_Zihpm  : boolean                       := false;
     CPU_EXTENSION_RISCV_Zmmul  : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zknd   : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zkne   : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zknh   : boolean                       := false;
     CPU_EXTENSION_RISCV_Zxcfu  : boolean                       := false;
     -- Tuning Options --
     FAST_MUL_EN                : boolean                       := false;
@@ -306,11 +310,15 @@ begin
     CPU_EXTENSION_RISCV_E      => CPU_EXTENSION_RISCV_E,
     CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,
     CPU_EXTENSION_RISCV_U      => CPU_EXTENSION_RISCV_U,
+    CPU_EXTENSION_RISCV_Zbkx   => CPU_EXTENSION_RISCV_Zbkx,
     CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,
     CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr,
     CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond,
     CPU_EXTENSION_RISCV_Zihpm  => CPU_EXTENSION_RISCV_Zihpm,
     CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,
+    CPU_EXTENSION_RISCV_Zknd   => CPU_EXTENSION_RISCV_Zknd,
+    CPU_EXTENSION_RISCV_Zkne   => CPU_EXTENSION_RISCV_Zkne,
+    CPU_EXTENSION_RISCV_Zknh   => CPU_EXTENSION_RISCV_Zknh,
     CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,
     -- Extension Options --
     FAST_MUL_EN                => FAST_MUL_EN,
