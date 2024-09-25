@@ -196,7 +196,7 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   signal cmd_valid : std_ulogic;
 
   -- controller --
-  type state_t is (S_IDLE, S_BUSY_0, S_BUSY_1, S_DONE);
+  type state_t is (S_IDLE, S_BUSY, S_DONE);
   signal state   : state_t;
   signal done    : std_ulogic;
   signal rs1     : std_ulogic_vector(31 downto 0);
@@ -236,8 +236,7 @@ begin
                                 (ctrl_i.ir_funct3 = "001") else '0';
 
   cmd(cmd_sha512_c) <= '1' when EN_ZKNH and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 8) = "0101") and
-                                (ctrl_i.ir_funct12(8 downto 5) /= "100") and (ctrl_i.ir_funct12(8 downto 5) /= "101") and
-                                (ctrl_i.ir_funct3 = "000") else '0';
+                                (ctrl_i.ir_funct12(7 downto 6) /= "10") and (ctrl_i.ir_funct3 = "000") else '0';
 
   cmd(cmd_aesenc_c) <= '1' when EN_ZKNE and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct3 = "000") and
                                 (ctrl_i.ir_funct12(9 downto 7) = "100") and (ctrl_i.ir_funct12(5) = '1') else '0';
@@ -275,14 +274,15 @@ begin
         when S_IDLE =>
           if (cmd_valid = '1') then -- trigger new operation
             if (cmd(cmd_aesenc_c) = '1') or (cmd(cmd_aesdec_c) = '1') then
-              state <= S_BUSY_0;
-            else
-              state <= S_DONE;
+              state <= S_BUSY;
+            else -- super fast
+              done  <= '1';
+              state <= S_IDLE;
             end if;
           end if;
-        -- delay cycles --
-        when S_BUSY_0 => state <= S_BUSY_1;
-        when S_BUSY_1 => state <= S_DONE;
+        -- delay cycle --
+        when S_BUSY =>
+          state <= S_DONE;
         -- S_DONE: final step & enable output for one cycle --
         when others =>
           done  <= '1';
@@ -325,13 +325,13 @@ begin
     -- byte-wise vector look-up --
     xperm8_gen:
     for i in 0 to 3 generate
-      xperm8_res(8*i+7 downto 8*i+0) <= xperm8_f(rs2, rs1(8*i+7 downto 8*i+0));
+      xperm8_res(8*i+7 downto 8*i+0) <= xperm8_f(rs1, rs2(8*i+7 downto 8*i+0));
     end generate;
 
     -- nibble-wise vector look-up --
     xperm4_gen:
     for i in 0 to 7 generate
-      xperm4_res(4*i+3 downto 4*i+0) <= xperm4_f(rs2, rs1(4*i+3 downto 4*i+0));
+      xperm4_res(4*i+3 downto 4*i+0) <= xperm4_f(rs1, rs2(4*i+3 downto 4*i+0));
     end generate;
 
     -- operation select --
