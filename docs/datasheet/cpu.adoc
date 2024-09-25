@@ -439,24 +439,28 @@ via the according <<_processor_top_entity_generics>>. This chapter gives a brief
 | <<_m_isa_extension,`M`>> | Integer multiplication and division instructions | `CPU_EXTENSION_RISCV_M`
 | <<_u_isa_extension,`U`>> | Less-privileged _user_ mode extension | `CPU_EXTENSION_RISCV_U`
 | <<_x_isa_extension,`X`>> | Platform-specific / NEORV32-specific extension | Always enabled
-| <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction | Always enabled
+| <<_zbkx_isa_extension,`Zbkx`>> | Scalar cryptographic crossbar permutation instructions | `CPU_EXTENSION_RISCV_Zbkx`
 | <<_zfinx_isa_extension,`Zfinx`>> | Floating-point instructions using integer registers | `CPU_EXTENSION_RISCV_Zfinx`
+| <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction | Always enabled
 | <<_zicntr_isa_extension,`Zicntr`>> | Base counters extension | `CPU_EXTENSION_RISCV_Zicntr`
 | <<_zicond_isa_extension,`Zicond`>> | Integer conditional operations | `CPU_EXTENSION_RISCV_Zicond`
 | <<_zicsr_isa_extension,`Zicsr`>> | Control and status register access instructions | Always enabled
 | <<_zihpm_isa_extension,`Zihpm`>> | Hardware performance monitors extension | `CPU_EXTENSION_RISCV_Zihpm`
+| <<_zknd_isa_extension,`Zknd`>> | Scalar cryptographic NIST AES decryption instructions | `CPU_EXTENSION_RISCV_Zknd`
+| <<_zkne_isa_extension,`Zkne`>> | Scalar cryptographic NIST AES encryption instructions | `CPU_EXTENSION_RISCV_Zkne`
+| <<_zknh_isa_extension,`Zknh`>> | Scalar cryptographic NIST hash function instructions | `CPU_EXTENSION_RISCV_Zknh`
 | <<_zmmul_isa_extension,`Zmmul`>> | Integer multiplication-only instruction | `CPU_EXTENSION_RISCV_Zmmul`
-| <<_zcfu_isa_extension,`Zcfu`>> | Custom / user-defined instructions | `CPU_EXTENSION_RISCV_Zxcfu`
+| <<_zxcfu_isa_extension,`Zcfu`>> | Custom / user-defined instructions | `CPU_EXTENSION_RISCV_Zxcfu`
 | <<_smpmp_isa_extension,`Smpmp`>> | Physical memory protection (PMP) extension | `CPU_EXTENSION_RISCV_Smpmp`
 | <<_sdext_isa_extension,`Sdext`>> | External debug support extension | `ON_CHIP_DEBUGGER_EN`
 | <<_sdtrig_isa_extension,`Sdtrig`>> | Trigger module extension | `ON_CHIP_DEBUGGER_EN`
 |=======================
 
-.RISC-V ISA Specifications
+.RISC-V ISA Specification
 [TIP]
 For more information regarding the RISC-V ISA extensions please refer to the "RISC-V Instruction Set Manual - Volume
-I: Unprivileged ISA" and "The RISC-V Instruction Set Manual Volume II: Privileged Architecture" Acopy of all currently
-implemented ISA extensions can be found in the projects `docs/references` folder.
+I: Unprivileged ISA" and "The RISC-V Instruction Set Manual Volume II: Privileged Architecture". A copy of these
+documents can be found in the projects `docs/references` folder.
 
 .Discovering ISA Extensions
 [TIP]
@@ -466,7 +470,7 @@ and checking for an illegal instruction exception (i.e. <<_full_virtualization>>
 .Instruction Cycles
 [TIP]
 This chapter shows the CPI values (cycles per instruction) for each individual instruction/type. Note that
-values reflect _optimal conditions_ (i.e. not additional memory delay, no cache misses, no pipeline waits, etc.).
+values reflect _optimal conditions_ (i.e. no additional memory delay, no cache misses, no pipeline waits, etc.).
 To benchmark a certain processor configuration for its setup-specific CPI value please refer to the
 `sw/example/performance_tests` test programs.
 
@@ -738,7 +742,7 @@ User-level access to the counter CSRs can be constrained by the <<_mcounteren>> 
 
 The `Zicond` ISA extension adds integer conditional move primitives that allow to implement branch-less
 control flows. It is enabled by the top's `CPU_EXTENSION_RISCV_Zicond` generic.
-This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_cond.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_cond.vhd`).
 
 .Instructions and Timing
 [cols="<2,<4,<3"]
@@ -788,6 +792,67 @@ Accessing any user-mode HPM CSR (`hpmcounter*[h]`) will raise an illegal instruc
 .Increment Inhibit
 [TIP]
 The event-driven increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
+
+
+==== `Zbkx` ISA Extension
+
+The `Zbkx` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and adds crossbar permutation instructions.
+It is enabled by the top's `CPU_EXTENSION_RISCV_Zbkx` generic.
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
+
+.Instructions and Timing
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| Crossbar permutation | `xperm8` `xperm4` | 4
+|=======================
+
+
+==== `Zknd` ISA Extension
+
+The `Zknd` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and adds NIST AES decryption instructions.
+It is enabled by the top's `CPU_EXTENSION_RISCV_Zknd` generic.
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
+
+.Instructions and Timing
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| AES decryption | `aes32dsi` `aes32dsmi` | 6
+|=======================
+
+
+==== `Zkne` ISA Extension
+
+The `Zkne` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and adds NIST AES encryption instructions.
+It is enabled by the top's `CPU_EXTENSION_RISCV_Zkne` generic.
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
+
+.Instructions and Timing
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| AES decryption | `aes32esi` `aes32esmi` | 6
+|=======================
+
+
+==== `Zknh` ISA Extension
+
+The `Zknh` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and adds NIST hash function instructions.
+It is enabled by the top's `CPU_EXTENSION_RISCV_Zknh` generic.
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
+
+.Instructions and Timing
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| sha256 | `sha256sig0` `sha256sig1` `sha256sum0` `sha256sum1` | 4
+| sha512 | `sha512sig0h` `sha512sig0l` `sha512sig1h` `sha512sig1l` `sha512sum0r` `sha512sum1r` | 4
+|=======================
 
 
 ==== `Zmmul` - ISA Extension
