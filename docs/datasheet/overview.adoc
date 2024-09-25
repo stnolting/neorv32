@@ -33,7 +33,7 @@ that provides hands-on tutorials to get you started.
 . <<_legal>>
 
 
-**Annotations**
+**Annotations Types**
 
 [WARNING]
 Warning
@@ -187,7 +187,8 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 │├neorv32_cpu_alu.vhd           - Arithmetic/logic unit
 ││├neorv32_cpu_cp_bitmanip.vhd  - Bit-manipulation co-processor (B ext.)
 ││├neorv32_cpu_cp_cfu.vhd       - Custom instructions co-processor (Zxcfu ext.)
-││├neorv32_cpu_cp_cond.vhd      - Integer conditional operations (Zicond ext.)
+││├neorv32_cpu_cp_cond.vhd      - Integer conditional co-processor (Zicond ext.)
+││├neorv32_cpu_cp_crypto.vhd    - Scalar cryptographic co-processor (Zk*/Zbk* ext.)
 ││├neorv32_cpu_cp_fpu.vhd       - Floating-point co-processor (Zfinx ext.)
 ││├neorv32_cpu_cp_muldiv.vhd    - Mul/Div co-processor (M ext.)
 ││└neorv32_cpu_cp_shifter.vhd   - Bit-shift co-processor (base ISA)
