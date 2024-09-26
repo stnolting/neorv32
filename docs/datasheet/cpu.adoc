@@ -1058,8 +1058,8 @@ written to the according CSRs when a trap is triggered:
 | `TRAP_CODE_BREAKPOINT`   | executing `ebreak` instruction or if <<_trigger_module>> fires
 | `TRAP_CODE_S_MISALIGNED` | storing data to an address that is not naturally aligned to the data size (half/word)
 | `TRAP_CODE_L_MISALIGNED` | loading data from an address that is not naturally aligned to the data size  (half/word)
-| `TRAP_CODE_S_ACCESS`     | bus timeout, bus access error or <<_smpmp_isa_extension,PMP>> rule violation during load data operation
-| `TRAP_CODE_L_ACCESS`     | bus timeout, bus access error or <<_smpmp_isa_extension,PMP>> rule violation during store data operation
+| `TRAP_CODE_L_ACCESS`     | bus timeout, bus access error or <<_smpmp_isa_extension,PMP>> rule violation during load data operation
+| `TRAP_CODE_S_ACCESS`     | bus timeout, bus access error or <<_smpmp_isa_extension,PMP>> rule violation during store data operation
 | `TRAP_CODE_FIRQ_*`       | caused by interrupt-condition of **processor-internal modules**, see <<_neorv32_specific_fast_interrupt_requests>>
 | `TRAP_CODE_MEI`          | machine external interrupt (via dedicated <<_processor_top_entity_signals>>)
 | `TRAP_CODE_MSI`          | machine software interrupt (via dedicated <<_processor_top_entity_signals>>)
