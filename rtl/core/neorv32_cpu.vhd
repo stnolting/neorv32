@@ -35,6 +35,7 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U      : boolean; -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zbkb   : boolean; -- implement bit-manipulation instructions for cryptography
+    CPU_EXTENSION_RISCV_Zbkc   : boolean; -- implement carry-less multiplication instructions?
     CPU_EXTENSION_RISCV_Zbkx   : boolean; -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr : boolean; -- implement base counters?
@@ -86,8 +87,8 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
-  constant regfile_rs3_en_c   : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port
-  constant fixed_latency_en_c : boolean := FAST_SHIFT_EN; -- data-independent execution time for crypto operations (RISC-V Zknt ISA ext.)
+  constant rf_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port
+  constant const_exe_c : boolean := FAST_SHIFT_EN; -- data-independent execution time for crypto operations (RISC-V Zknt ISA ext.)
 
   -- external CSR interface --
   signal xcsr_we        : std_ulogic;
@@ -132,6 +133,7 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_U,      "u",         "" ) &
     cond_sel_string_f(true,                       "x",         "" ) & -- always enabled
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zbkb,   "_zbkb",     "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zbkc,   "_zbkc",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zbkx,   "_zbkx",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_zicntr",   "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zicond, "_zicond",   "" ) &
@@ -142,7 +144,7 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zknd,   "_zknd",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zkne,   "_zkne",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zknh,   "_zknh",     "" ) &
-    cond_sel_string_f(fixed_latency_en_c,         "_zknt",     "" ) &
+    cond_sel_string_f(const_exe_c,                "_zknt",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,  "_zmmul",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,  "_zxcfu",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,  "_sdext",    "" ) &
@@ -179,6 +181,7 @@ begin
     CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,      -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U      => CPU_EXTENSION_RISCV_U,      -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zbkb   => CPU_EXTENSION_RISCV_Zbkb,   -- implement bit-manipulation instructions for cryptography
+    CPU_EXTENSION_RISCV_Zbkc   => CPU_EXTENSION_RISCV_Zbkc,   -- implement carry-less multiplication instructions?
     CPU_EXTENSION_RISCV_Zbkx   => CPU_EXTENSION_RISCV_Zbkx,   -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,  -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr, -- implement base counters?
@@ -187,7 +190,7 @@ begin
     CPU_EXTENSION_RISCV_Zknd   => CPU_EXTENSION_RISCV_Zknd,   -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   => CPU_EXTENSION_RISCV_Zkne,   -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   => CPU_EXTENSION_RISCV_Zknh,   -- implement cryptography NIST hash extension?
-    CPU_EXTENSION_RISCV_Zknt   => fixed_latency_en_c,         -- data-independent execution time available (for cryptographic operations)?
+    CPU_EXTENSION_RISCV_Zknt   => const_exe_c,                -- data-independent execution time available (for cryptographic operations)?
     CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,  -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  => CPU_EXTENSION_RISCV_Sdext,  -- implement external debug mode extension?
@@ -253,7 +256,7 @@ begin
   generic map (
     RST_EN => REGFILE_HW_RST,        -- enable dedicated hardware reset ("ASIC style")
     RVE_EN => CPU_EXTENSION_RISCV_E, -- implement embedded RF extension
-    RS3_EN => regfile_rs3_en_c       -- enable 3rd read port
+    RS3_EN => rf_rs3_en_c            -- enable 3rd read port
   )
   port map (
     -- global control --
@@ -280,6 +283,7 @@ begin
     CPU_EXTENSION_RISCV_Zba    => CPU_EXTENSION_RISCV_B,      -- implement address-generation instruction
     CPU_EXTENSION_RISCV_Zbb    => CPU_EXTENSION_RISCV_B,      -- implement basic bit-manipulation instruction
     CPU_EXTENSION_RISCV_Zbkb   => CPU_EXTENSION_RISCV_Zbkb,   -- implement bit-manipulation instructions for cryptography
+    CPU_EXTENSION_RISCV_Zbkc   => CPU_EXTENSION_RISCV_Zbkc,   -- implement carry-less multiplication instructions?
     CPU_EXTENSION_RISCV_Zbkx   => CPU_EXTENSION_RISCV_Zbkx,   -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zbs    => CPU_EXTENSION_RISCV_B,      -- implement single-bit instructions
     CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,  -- implement 32-bit floating-point extension (using INT reg!)

@@ -19,12 +19,13 @@ entity neorv32_cpu_alu is
   generic (
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zba    : boolean; -- implement address-generation instruction
-    CPU_EXTENSION_RISCV_Zbb    : boolean; -- implement basic bit-manipulation instruction
-    CPU_EXTENSION_RISCV_Zbkb   : boolean; -- implement bit-manipulation instructions for cryptography
+    CPU_EXTENSION_RISCV_Zba    : boolean; -- implement address-generation instruction?
+    CPU_EXTENSION_RISCV_Zbb    : boolean; -- implement basic bit-manipulation instruction?
+    CPU_EXTENSION_RISCV_Zbkb   : boolean; -- implement bit-manipulation instructions for cryptography?
+    CPU_EXTENSION_RISCV_Zbkc   : boolean; -- implement carry-less multiplication instructions?
     CPU_EXTENSION_RISCV_Zbkx   : boolean; -- implement cryptography crossbar permutation extension?
-    CPU_EXTENSION_RISCV_Zbs    : boolean; -- implement single-bit instructions
-    CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
+    CPU_EXTENSION_RISCV_Zbs    : boolean; -- implement single-bit instructions?
+    CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)?
     CPU_EXTENSION_RISCV_Zicond : boolean; -- implement integer conditional operations?
     CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
@@ -216,13 +217,15 @@ begin
   -- ALU[I]-Opcode Co-Processor: Bit-Manipulation Unit ('B' ISA Extension) ------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_bitmanip_inst_true:
-  if CPU_EXTENSION_RISCV_Zba or CPU_EXTENSION_RISCV_Zbb or CPU_EXTENSION_RISCV_Zbkb or CPU_EXTENSION_RISCV_Zbs generate
+  if CPU_EXTENSION_RISCV_Zba or CPU_EXTENSION_RISCV_Zbb or CPU_EXTENSION_RISCV_Zbkb or
+     CPU_EXTENSION_RISCV_Zbs or CPU_EXTENSION_RISCV_Zbkc generate
     neorv32_cpu_cp_bitmanip_inst: entity neorv32.neorv32_cpu_cp_bitmanip
     generic map (
-      FAST_SHIFT_EN => FAST_SHIFT_EN,            -- use barrel shifter for shift operations
+      EN_FAST_SHIFT => FAST_SHIFT_EN,            -- use barrel shifter for shift operations
       EN_ZBA        => CPU_EXTENSION_RISCV_Zba,  -- enable address-generation instruction
       EN_ZBB        => CPU_EXTENSION_RISCV_Zbb,  -- enable basic bit-manipulation instruction
       EN_ZBKB       => CPU_EXTENSION_RISCV_Zbkb, -- enable bit-manipulation instructions for cryptography
+      EN_ZBKC       => CPU_EXTENSION_RISCV_Zbkc, -- enable carry-less multiplication instructions
       EN_ZBS        => CPU_EXTENSION_RISCV_Zbs   -- enable single-bit instructions
     )
     port map (
@@ -242,7 +245,8 @@ begin
   end generate;
 
   neorv32_cpu_cp_bitmanip_inst_false:
-  if not (CPU_EXTENSION_RISCV_Zba or CPU_EXTENSION_RISCV_Zbb or CPU_EXTENSION_RISCV_Zbkb or CPU_EXTENSION_RISCV_Zbs) generate
+  if not (CPU_EXTENSION_RISCV_Zba or CPU_EXTENSION_RISCV_Zbb or CPU_EXTENSION_RISCV_Zbkb or
+          CPU_EXTENSION_RISCV_Zbs or CPU_EXTENSION_RISCV_Zbkc) generate
     cp_result(2) <= (others => '0');
     cp_valid(2)  <= '0';
   end generate;

@@ -62,6 +62,7 @@ not working as expected. See how to [contribute](https://github.com/stnolting/ne
 - [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the CPU's register file)
 - [x] optimized for high clock frequencies to ease integration / timing closure
 - [x] from zero to _"hello world!"_ - completely open source and documented
+- [x] highly documented - on software and hardware side
 - [x] easy to use even for FPGA / RISC-V starters – intended to work _out of the box_
 
 ### Project Status
@@ -109,6 +110,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 [[`U`](https://stnolting.github.io/neorv32/#_u_isa_extension)]
 [[`X`](https://stnolting.github.io/neorv32/#_x_isa_extension)]
 [[`Zbkb`](https://stnolting.github.io/neorv32/#_zbkb_isa_extension)]
+[[`Zbkc`](https://stnolting.github.io/neorv32/#_zbkc_isa_extension)]
 [[`Zbkx`](https://stnolting.github.io/neorv32/#_zbkx_isa_extension)]
 [[`Zicntr`](https://stnolting.github.io/neorv32/#_zicntr_isa_extension)]
 [[`Zicond`](https://stnolting.github.io/neorv32/#_zicond_isa_extension)]
