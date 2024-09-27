@@ -85,7 +85,8 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
-  constant regfile_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port
+  constant regfile_rs3_en_c   : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port
+  constant fixed_latency_en_c : boolean := FAST_SHIFT_EN; -- data-independent execution time for crypto operations (RISC-V Zknt ISA ext.)
 
   -- external CSR interface --
   signal xcsr_we        : std_ulogic;
@@ -139,6 +140,7 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zknd,   "_zknd",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zkne,   "_zkne",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zknh,   "_zknh",     "" ) &
+    cond_sel_string_f(fixed_latency_en_c,         "_zknt",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,  "_zmmul",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,  "_zxcfu",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,  "_sdext",    "" ) &
@@ -182,6 +184,7 @@ begin
     CPU_EXTENSION_RISCV_Zknd   => CPU_EXTENSION_RISCV_Zknd,   -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   => CPU_EXTENSION_RISCV_Zkne,   -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   => CPU_EXTENSION_RISCV_Zknh,   -- implement cryptography NIST hash extension?
+    CPU_EXTENSION_RISCV_Zknt   => fixed_latency_en_c,         -- data-independent execution time available (for cryptographic operations)?
     CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,  -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  => CPU_EXTENSION_RISCV_Sdext,  -- implement external debug mode extension?
