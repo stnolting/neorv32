@@ -543,12 +543,12 @@ The NEORV32 `B` ISA extension includes the following sub-extensions:
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Arithmetic/logic | `min[u]` `max[u]` `sext.b` `sext.h` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 4
-| Shifts           | `clz` `ctz`                                                                                       | 3 + 1..32; FAST_SHIFT: 4
-| Shifts           | `cpop`                                                                                            | 36; FAST_SHIFT: 4
-| Shifts           | `rol` `ror[i]`                                                                                    | 4 + _shift_amount_; FAST_SHIFT: 4
-| Shifted-add      | `sh1add` `sh2add` `sh3add`                                                                        | 4
-| Single-bit       | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]`                                                       | 4
+| Arithmetic/logic | `min[u]` `max[u]` `sext.b` `sext.h` `andn` `orn` `xnor` `zext`(pack) `rev8` `orc.b` | 4
+| Shifts           | `clz` `ctz`                                                                         | 3 + 1..32; FAST_SHIFT: 4
+| Shifts           | `cpop`                                                                              | 36; FAST_SHIFT: 4
+| Shifts           | `rol` `ror[i]`                                                                      | 4 + _shift_amount_; FAST_SHIFT: 4
+| Shifted-add      | `sh1add` `sh2add` `sh3add`                                                          | 4
+| Single-bit       | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]`                                         | 4
 |=======================
 
 .Shift Operations
@@ -811,6 +811,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 | Class | Instructions | Execution cycles
 | Packing | `pack` `packh` | 4
 | Interleaving | `zip` `unzip` | 4
+| Byte-wise bit reversal | `brev8` | 4
 |=======================
 
 
