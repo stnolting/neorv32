@@ -701,7 +701,10 @@ void system_error(uint8_t err_code) {
   }
 #endif
 
-  while(1); // freeze
+  // endless sleep mode
+  while(1) {
+    asm volatile("wfi");
+  }
 }
 
 

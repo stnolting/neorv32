@@ -203,7 +203,7 @@ is no valid boot image found, and error code will be shown.
 ==== Bootloader Error Codes
 
 If something goes wrong during bootloader operation an error code and a short message is shown. In this case the processor
-is halted, the bootloader status LED is permanently activated and the processor has to be reset manually.
+is halted (entering <<_sleep_mode>>), the bootloader status LED is permanently activated and the processor has to be reset manually.
 
 [TIP]
 In many cases the error source is just _temporary_ (like some HF spike during an UART upload). Just try again.
@@ -219,5 +219,5 @@ In many cases the error source is just _temporary_ (like some HF spike during an
 |=======================
 
 [TIP]
-If an unexpected exception has been raised the bootloader prints hexadecimal debug information showing
+If an unexpected exception has been raised, the bootloader prints hexadecimal debug information showing
 the <<_mcause>>, <<_mepc>> and <<_mtval>> CSR values.
