@@ -311,7 +311,7 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_ZIFENCEI  =  1, /**< CPU mxisa CSR  (1): instruction stream sync (r/-)*/
   CSR_MXISA_ZMMUL     =  2, /**< CPU mxisa CSR  (2): hardware mul/div (r/-)*/
   CSR_MXISA_ZXCFU     =  3, /**< CPU mxisa CSR  (3): custom RISC-V instructions (r/-)*/
-
+  CSR_MXISA_ZKNT      =  4, /**< CPU mxisa CSR  (4): data independent execution time (of cryptographic operations) (r/-)*/
   CSR_MXISA_ZFINX     =  5, /**< CPU mxisa CSR  (5): FPU using x registers (r/-)*/
   CSR_MXISA_ZICOND    =  6, /**< CPU mxisa CSR  (6): integer conditional operations (r/-)*/
   CSR_MXISA_ZICNTR    =  7, /**< CPU mxisa CSR  (7): standard instruction, cycle and time counter CSRs (r/-)*/

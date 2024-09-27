@@ -118,6 +118,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 [[`Zknd`](https://stnolting.github.io/neorv32/#_zknd_isa_extension)]
 [[`Zkne`](https://stnolting.github.io/neorv32/#_zkne_isa_extension)]
 [[`Zknh`](https://stnolting.github.io/neorv32/#_zknh_isa_extension)]
+[[`Zknt`](https://stnolting.github.io/neorv32/#_zknt_isa_extension)]
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_isa_extension)]
 [[`Zxcfu`](https://stnolting.github.io/neorv32/#_zxcfu_isa_extension)]
 [[`Sdext`](https://stnolting.github.io/neorv32/#_sdext_isa_extension)]

@@ -110,7 +110,7 @@ The specific generics are listed below.
 
 .Table Abbreviations
 [NOTE]
-The generic type "suv(x:y)" defines a `std_ulogic_vector(x downto y)`.
+The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 
 .NEORV32 CPU-Exclusive Generic List
 [cols="<4,^2,<8"]
@@ -423,8 +423,9 @@ The "normal" load data mechanism is used to return success/failure of the `sc.w`
 :sectnums:
 === Instruction Sets and Extensions
 
-The NEORV32 CPU provides several optional RISC-V and custom ISA extensions. The extensions can be enabled/configured
-via the according <<_processor_top_entity_generics>>. This chapter gives a brief overview of the different ISA extensions.
+The NEORV32 CPU provides several optional RISC-V-compliant and custom/user-defined ISA extensions.
+The extensions can be enabled/configured via the according <<_processor_top_entity_generics>>.
+This chapter gives a brief overview of all available ISA extensions.
 
 .NEORV32 Instruction Set Extensions
 [cols="<2,<5,<3"]
@@ -449,7 +450,8 @@ via the according <<_processor_top_entity_generics>>. This chapter gives a brief
 | <<_zknd_isa_extension,`Zknd`>> | Scalar cryptographic NIST AES decryption instructions | `CPU_EXTENSION_RISCV_Zknd`
 | <<_zkne_isa_extension,`Zkne`>> | Scalar cryptographic NIST AES encryption instructions | `CPU_EXTENSION_RISCV_Zkne`
 | <<_zknh_isa_extension,`Zknh`>> | Scalar cryptographic NIST hash function instructions | `CPU_EXTENSION_RISCV_Zknh`
-| <<_zmmul_isa_extension,`Zmmul`>> | Integer multiplication-only instruction | `CPU_EXTENSION_RISCV_Zmmul`
+| <<_zknt_isa_extension,`Zknt`>> | Data independent execution time (of cryptographic operations) | _Implicitly_ enabled
+| <<_zmmul_isa_extension,`Zmmul`>> | Integer multiplication-only instructions | `CPU_EXTENSION_RISCV_Zmmul`
 | <<_zxcfu_isa_extension,`Zcfu`>> | Custom / user-defined instructions | `CPU_EXTENSION_RISCV_Zxcfu`
 | <<_smpmp_isa_extension,`Smpmp`>> | Physical memory protection (PMP) extension | `CPU_EXTENSION_RISCV_Smpmp`
 | <<_sdext_isa_extension,`Sdext`>> | External debug support extension | `ON_CHIP_DEBUGGER_EN`
@@ -852,6 +854,32 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 | Class | Instructions | Execution cycles
 | sha256 | `sha256sig0` `sha256sig1` `sha256sum0` `sha256sum1` | 4
 | sha512 | `sha512sig0h` `sha512sig0l` `sha512sig1h` `sha512sig1l` `sha512sum0r` `sha512sum1r` | 4
+|=======================
+
+
+==== `Zknt` ISA Extension
+
+The `Zknt` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and guarantees data independent execution
+times of cryptographic and cryptography-related instructions. The ISA extension cannot be enabled by a specific generic.
+Instead, it is enabled implicitly by certain CPU configurations.
+
+The RISC-V `Zknt` specifications provides a list of instructions that are included within this specification.
+However, not all instructions are required to be implemented. Rather, every one of these instructions that the
+core does implement must adhere to the requirements of `Zknt`.
+
+.`Zknt` instruction listing
+[cols="<1,<6,<3"]
+[options="header", grid="rows"]
+|=======================
+| Parent extension | Instructions | Data independent execution time?
+.2+<| `RVI` <| `lui` `auipc` `add[i]` `slt[i][u]` `xor[i]` `or[i]` `and[i]` `sub` <| always
+            <| `sll[i]` `srl[i]` `sra[i]` <| only if `FAST_SHIFT_EN` enabled
+| `RVM` | `mul[h]` `mulh[s]u` | always
+.2+<| `RVC` <| `c.nop` `c.addi` `c.lui` `c.andi` `c.sub` `c.xor` `c.and` `c.mv` `c.add` <| always
+            <| `c.srli` `c.srai` `c.slli` <| only if `FAST_SHIFT_EN` enabled
+| `RVK` | `aes32ds[m]i` `aes32es[m]i` `sha256sig*` `sha512sig*` `sha512sum*` | always
+.2+<| `RVB` <| `xperm4` `xperm8` `andn` `orn` `xnor` `pack[h]` `brev8` `rev8` <| always
+            <| `ror[i]` `rol` <| only if `FAST_SHIFT_EN` enabled
 |=======================
 
 

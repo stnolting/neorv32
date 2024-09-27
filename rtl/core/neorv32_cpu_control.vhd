@@ -49,6 +49,7 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   : boolean; -- implement cryptography NIST hash extension?
+    CPU_EXTENSION_RISCV_Zknt   : boolean; -- data-independent execution time available (for cryptographic operations)?
     CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  : boolean; -- implement external debug mode extension?
@@ -1881,7 +1882,7 @@ begin
             csr.rdata(1)  <= '1';                                          -- Zifencei: instruction stream sync. (always enabled)
             csr.rdata(2)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);  -- Zmmul: mul/div
             csr.rdata(3)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);  -- Zxcfu: custom RISC-V instructions
-            csr.rdata(4)  <= '0';                                          -- reserved
+            csr.rdata(4)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zknt);   -- Zkt: data independent execution latency
             csr.rdata(5)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);  -- Zfinx: FPU using x registers
             csr.rdata(6)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicond); -- Zicond: integer conditional operations
             csr.rdata(7)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr); -- Zicntr: base counters
