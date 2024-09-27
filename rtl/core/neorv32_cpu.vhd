@@ -125,10 +125,10 @@ begin
   -- CPU ISA configuration --
   assert false report "[NEORV32] CPU ISA: rv32" &
     cond_sel_string_f(CPU_EXTENSION_RISCV_E,      "e",         "i") &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_M,      "m",         "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_A,      "a",         "" ) &
-    cond_sel_string_f(CPU_EXTENSION_RISCV_C,      "c",         "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_B,      "b",         "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_C,      "c",         "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_M,      "m",         "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_U,      "u",         "" ) &
     cond_sel_string_f(true,                       "x",         "" ) & -- always enabled
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zbkb,   "_zbkb",     "" ) &
