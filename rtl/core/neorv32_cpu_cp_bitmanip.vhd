@@ -6,6 +6,7 @@
 -- + Zbb:  Basic bit-manipulation instructions                                      --
 -- + Zbs:  Single-bit instructions                                                  --
 -- + Zbkb: Bit-manipulation instructions for cryptography                           --
+-- + Zbkc: Carry-less multiplication instructions for cryptography                  --
 -- [NOTE] RISC-V "B" ISA Extension = Zba + Zbb + Zbs                                --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
@@ -24,9 +25,10 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_bitmanip is
   generic (
-    FAST_SHIFT_EN : boolean; -- use barrel shifter for shift operations
-    EN_ZBA        : boolean; -- enable address-generation instruction
-    EN_ZBB        : boolean; -- enable basic bit-manipulation instruction
+    EN_FAST_SHIFT : boolean; -- use barrel shifter for shift operations
+    EN_ZBA        : boolean; -- enable address-generation instructions
+    EN_ZBB        : boolean; -- enable basic bit-manipulation instructions
+    EN_ZBKC       : boolean; -- enable carry-less multiplication instructions
     EN_ZBKB       : boolean; -- enable bit-manipulation instructions for cryptography
     EN_ZBS        : boolean  -- enable single-bit instructions
   );
@@ -71,11 +73,13 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   constant op_pack_c  : natural := 16; -- pack bytes/halves
   constant op_zip_c   : natural := 17; -- (de)interleave
   constant op_brev8_c : natural := 18; -- byte-wise bit-reverse
+  -- Zbkc --
+  constant op_clmul_c : natural := 19; -- carry-less multiplication
   --
-  constant op_width_c : natural := 19;
+  constant op_width_c : natural := 20;
 
   -- controller --
-  type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT);
+  type ctrl_state_t is (S_IDLE, S_START, S_BUSY);
   signal ctrl_state : ctrl_state_t;
   signal valid_cmd  : std_ulogic;
   signal cmd        : std_ulogic_vector(op_width_c-1 downto 0);
@@ -98,6 +102,15 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
     sreg    : std_ulogic_vector(XLEN-1 downto 0);
   end record;
   signal shifter : shifter_t;
+
+  -- serial carry-less multiplier --
+  type clmul_t is record
+    start : std_ulogic;
+    run   : std_ulogic;
+    cnt   : std_ulogic_vector(index_size_f(XLEN) downto 0);
+    res   : std_ulogic_vector(2*XLEN-1 downto 0);
+  end record;
+  signal clmul : clmul_t;
 
   -- barrel shifter --
   type bs_level_t is array (index_size_f(XLEN) downto 0) of std_ulogic_vector(XLEN-1 downto 0);
@@ -144,13 +157,16 @@ begin
   cmd(op_zip_c)   <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "000010001111") and ((ctrl_i.ir_funct3 = "001") or (ctrl_i.ir_funct3 = "101")) else '0'; -- [UN]ZIP
   cmd(op_brev8_c) <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011010000111") and (ctrl_i.ir_funct3 = "101") else '0'; -- BREV8
 
+  -- Zbkc - Carry-less multiplication instructions --
+  cmd(op_clmul_c) <= '1' when EN_ZBKC and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000101") and (ctrl_i.ir_funct3(2) = '0') and (ctrl_i.ir_funct3(0) = '1') else '0'; -- CLMUL[H]
+
   -- Valid Instruction? --
   valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and (or_reduce_f(cmd) = '1') else '0';
 
 
   -- Co-Processor Controller ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  coprocessor_ctrl: process(rstn_i, clk_i)
+  controller: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ctrl_state    <= S_IDLE;
@@ -159,13 +175,15 @@ begin
       sha_reg       <= (others => '0');
       less_reg      <= '0';
       shifter.start <= '0';
+      clmul.start   <= '0';
       valid         <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
       shifter.start <= '0';
+      clmul.start   <= '0';
       valid         <= '0';
 
-      -- operand registers --
+      -- operand gating / buffering --
       if (ctrl_i.alu_cp_alu = '1') then
         less_reg <= cmp_i(cmp_less_c);
         rs1_reg  <= rs1_i;
@@ -179,39 +197,38 @@ begin
         when S_IDLE => -- wait for operation trigger
         -- ------------------------------------------------------------
           if (valid_cmd = '1') then
-            if (not FAST_SHIFT_EN) and ((cmd(op_cz_c) or cmd(op_cpop_c) or cmd(op_rot_c)) = '1') then -- multi-cycle shift operation
+            if (not EN_FAST_SHIFT) and ((cmd(op_cz_c) or cmd(op_cpop_c) or cmd(op_rot_c)) = '1') then -- multi-cycle shift operation
               shifter.start <= '1';
-              ctrl_state <= S_START_SHIFT;
+              ctrl_state    <= S_START;
+            elsif (cmd(op_clmul_c) = '1') then -- multi-cycle carry-less multiplication operation
+              clmul.start <= '1';
+              ctrl_state  <= S_START;
             else
               valid      <= '1';
               ctrl_state <= S_IDLE;
             end if;
           end if;
 
-        when S_START_SHIFT => -- one cycle delay to start shift operation
+        when S_START => -- one cycle delay to start iterative operation
         -- ------------------------------------------------------------
-          ctrl_state <= S_BUSY_SHIFT;
+          ctrl_state <= S_BUSY;
 
-        when S_BUSY_SHIFT => -- wait for multi-cycle shift operation to finish
+        when others => -- S_BUSY: wait for multi-cycle operation to finish
         -- ------------------------------------------------------------
-          if (shifter.run = '0') or (ctrl_i.cpu_trap = '1') then -- abort on trap
+          if ((shifter.run = '0') and (clmul.run = '0')) or (ctrl_i.cpu_trap = '1') then -- abort on trap
             valid      <= '1';
             ctrl_state <= S_IDLE;
           end if;
 
-        when others => -- undefined
-        -- ------------------------------------------------------------
-          ctrl_state <= S_IDLE;
-
       end case;
     end if;
-  end process coprocessor_ctrl;
+  end process controller;
 
 
   -- Shifter Function Core (iterative: small but slow) --------------------------------------
   -- -------------------------------------------------------------------------------------------
   serial_shifter:
-  if not FAST_SHIFT_EN generate
+  if not EN_FAST_SHIFT generate
 
     serial_shifter_core: process(rstn_i, clk_i)
     begin
@@ -225,8 +242,7 @@ begin
           shifter.cnt  <= (others => '0');
           shifter.sreg <= rs1_reg;
           if (cmd(op_cpop_c) = '1') then -- population count
-            shifter.cnt_max <= (others => '0');
-            shifter.cnt_max(shifter.cnt_max'left) <= '1';
+            shifter.cnt_max <= std_ulogic_vector(to_unsigned(XLEN, shifter.cnt_max'length));
           else
             shifter.cnt_max <= '0' & shamt_i;
           end if;
@@ -276,7 +292,7 @@ begin
   -- Shifter Function Core (parallel: fast but large) ---------------------------------------
   -- -------------------------------------------------------------------------------------------
   barrel_shifter:
-  if FAST_SHIFT_EN generate
+  if EN_FAST_SHIFT generate
 
     -- rotator input layer: convert left-rotates to right-rotates (rotate by XLEN - N positions) --
     bs_shift <= std_ulogic_vector(unsigned(not sha_reg) + 1) when (ctrl_i.ir_funct3(2) = '0') else sha_reg;
@@ -328,6 +344,45 @@ begin
   end process shift_one_hot;
 
 
+  -- Carry-Less Multiplier ------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  clmul_enable:
+  if EN_ZBKC generate
+
+      clmul_core: process(rstn_i, clk_i)
+      begin
+        if (rstn_i = '0') then
+          clmul.cnt <= (others => '0');
+          clmul.res <= (others => '0');
+        elsif rising_edge(clk_i) then
+          if (clmul.start = '1') then -- start new multiplication
+            clmul.cnt <= std_ulogic_vector(to_unsigned(XLEN, clmul.cnt'length));
+            clmul.res <= replicate_f('0', XLEN) & rs1_reg;
+          elsif (clmul.run = '1') then -- operation in progress
+            clmul.cnt <= std_ulogic_vector(unsigned(clmul.cnt) - 1);
+            if (clmul.res(0) = '1') then
+              clmul.res(2*XLEN-2 downto XLEN-1) <= clmul.res(2*XLEN-1 downto XLEN) xor rs2_reg;
+            else
+              clmul.res(2*XLEN-2 downto XLEN-1) <= clmul.res(2*XLEN-1 downto XLEN);
+            end if;
+            clmul.res(XLEN-2 downto 0) <= clmul.res(XLEN-1 downto 1);
+          end if;
+        end if;
+      end process clmul_core;
+
+      -- operation in progress --
+      clmul.run <= '1' when (or_reduce_f(clmul.cnt) = '1') else '0';
+
+  end generate;
+
+  clmul_disable:
+  if not EN_ZBKC generate
+    clmul.cnt <= (others => '0');
+    clmul.res <= (others => '0');
+    clmul.run <= '1';
+  end generate;
+
+
   -- Operation Results ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- logic with negate --
@@ -352,8 +407,8 @@ begin
   res_int(op_sext_c)(7 downto 0)       <= rs1_reg(7 downto 0);
 
   -- zero-extension --
-  res_int(op_zexth_c)(XLEN-1 downto 16) <= (others => '0');
-  res_int(op_zexth_c)(15 downto 0)      <= rs1_reg(15 downto 0);
+  res_int(op_zexth_c)(XLEN-1 downto XLEN/2) <= (others => '0');
+  res_int(op_zexth_c)(XLEN/2-1 downto 0)    <= rs1_reg(XLEN/2-1 downto 0);
 
   -- rotate right/left --
   res_int(op_rot_c) <= shifter.sreg;
@@ -378,8 +433,8 @@ begin
   res_int(op_bset_c) <= rs1_reg or one_hot_res;
 
   -- pack --
-  res_int(op_pack_c) <= rs2_reg(15 downto 0) & rs1_reg(15 downto 0) when (ctrl_i.ir_funct3(0) = '0') else
-                        x"0000" & rs2_reg(7 downto 0) & rs1_reg(7 downto 0);
+  res_int(op_pack_c) <= rs2_reg(XLEN/2-1 downto 0) & rs1_reg(XLEN/2-1 downto 0) when (ctrl_i.ir_funct3(0) = '0') else
+                        replicate_f('0', XLEN/2) & rs2_reg(7 downto 0) & rs1_reg(7 downto 0);
 
   -- zip/unzip --
   interleave_gen:
@@ -396,6 +451,9 @@ begin
   for i in 0 to (XLEN/8)-1 generate -- byte loop
     res_int(op_brev8_c)(i*8+7 downto i*8) <= bit_rev_f(rs1_reg(i*8+7 downto i*8));
   end generate;
+
+  -- carry-less multiplication --
+  res_int(op_clmul_c) <= clmul.res(2*XLEN-1 downto XLEN) when (ctrl_i.ir_funct3(1) = '1') else clmul.res(XLEN-1 downto 0);
 
 
   -- Output Select --------------------------------------------------------------------------
@@ -419,6 +477,7 @@ begin
   res_out(op_pack_c)  <= res_int(op_pack_c)  when EN_ZBKB             and (cmd(op_pack_c)  = '1') else (others => '0');
   res_out(op_zip_c)   <= res_int(op_zip_c)   when EN_ZBKB             and (cmd(op_zip_c)   = '1') else (others => '0');
   res_out(op_brev8_c) <= res_int(op_brev8_c) when EN_ZBKB             and (cmd(op_brev8_c) = '1') else (others => '0');
+  res_out(op_clmul_c) <= res_int(op_clmul_c) when EN_ZBKC             and (cmd(op_clmul_c) = '1') else (others => '0');
 
 
   -- Output Gate ----------------------------------------------------------------------------
@@ -430,11 +489,11 @@ begin
     elsif rising_edge(clk_i) then
       res_o <= (others => '0'); -- default
       if (valid = '1') then
-        res_o <= res_out(op_andn_c) or res_out(op_orn_c)  or res_out(op_xnor_c) or res_out(op_cz_c)    or
-                 res_out(op_cpop_c) or res_out(op_max_c)  or res_out(op_sext_c) or res_out(op_zexth_c) or
-                 res_out(op_rot_c)  or res_out(op_orcb_c) or res_out(op_rev8_c) or res_out(op_shadd_c) or
-                 res_out(op_bclr_c) or res_out(op_bext_c) or res_out(op_binv_c) or res_out(op_bset_c)  or
-                 res_out(op_pack_c) or res_out(op_zip_c)  or res_out(op_brev8_c);
+        res_o <= res_out(op_andn_c) or res_out(op_orn_c)  or res_out(op_xnor_c)  or res_out(op_cz_c)    or
+                 res_out(op_cpop_c) or res_out(op_max_c)  or res_out(op_sext_c)  or res_out(op_zexth_c) or
+                 res_out(op_rot_c)  or res_out(op_orcb_c) or res_out(op_rev8_c)  or res_out(op_shadd_c) or
+                 res_out(op_bclr_c) or res_out(op_bext_c) or res_out(op_binv_c)  or res_out(op_bset_c)  or
+                 res_out(op_pack_c) or res_out(op_zip_c)  or res_out(op_brev8_c) or res_out(op_clmul_c);
       end if;
     end if;
   end process output_gate;
