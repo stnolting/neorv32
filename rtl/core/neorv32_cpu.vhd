@@ -34,6 +34,7 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_E      : boolean; -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U      : boolean; -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zbkb   : boolean; -- enable bit-manipulation instructions for cryptography
     CPU_EXTENSION_RISCV_Zbkx   : boolean; -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr : boolean; -- implement base counters?
@@ -130,6 +131,7 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_B,      "b",         "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_U,      "u",         "" ) &
     cond_sel_string_f(true,                       "x",         "" ) & -- always enabled
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zbkb,   "_zbkb",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zbkx,   "_zbkx",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zicntr, "_zicntr",   "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zicond, "_zicond",   "" ) &
@@ -176,6 +178,7 @@ begin
     CPU_EXTENSION_RISCV_E      => CPU_EXTENSION_RISCV_E,      -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,      -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U      => CPU_EXTENSION_RISCV_U,      -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zbkb   => CPU_EXTENSION_RISCV_Zbkb,   -- enable bit-manipulation instructions for cryptography
     CPU_EXTENSION_RISCV_Zbkx   => CPU_EXTENSION_RISCV_Zbkx,   -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,  -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr, -- implement base counters?
@@ -273,9 +276,12 @@ begin
   neorv32_cpu_alu_inst: entity neorv32.neorv32_cpu_alu
   generic map (
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_B      => CPU_EXTENSION_RISCV_B,      -- implement bit-manipulation extension?
     CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,      -- implement mul/div extension?
+    CPU_EXTENSION_RISCV_Zba    => CPU_EXTENSION_RISCV_B,      -- enable address-generation instruction
+    CPU_EXTENSION_RISCV_Zbb    => CPU_EXTENSION_RISCV_B,      -- enable basic bit-manipulation instruction
+    CPU_EXTENSION_RISCV_Zbkb   => CPU_EXTENSION_RISCV_Zbkb,   -- enable bit-manipulation instructions for cryptography
     CPU_EXTENSION_RISCV_Zbkx   => CPU_EXTENSION_RISCV_Zbkx,   -- implement cryptography crossbar permutation extension?
+    CPU_EXTENSION_RISCV_Zbs    => CPU_EXTENSION_RISCV_B,      -- enable single-bit instructions
     CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,  -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond, -- implement integer conditional operations?
     CPU_EXTENSION_RISCV_Zknd   => CPU_EXTENSION_RISCV_Zknd,   -- implement cryptography NIST AES decryption extension?
