@@ -207,6 +207,7 @@ begin
     CPU_EXTENSION_RISCV_M        => true,          -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U        => true,          -- implement user mode extension?
     CPU_EXTENSION_RISCV_Zbkb     => true,          -- implement bit-manipulation instructions for cryptography
+    CPU_EXTENSION_RISCV_Zbkc     => true,          -- implement carry-less multiplication instructions?
     CPU_EXTENSION_RISCV_Zbkx     => true,          -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx    => true,          -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicntr   => true,          -- implement base counters?
