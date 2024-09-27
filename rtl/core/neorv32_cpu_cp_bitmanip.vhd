@@ -290,7 +290,9 @@ begin
                    std_ulogic_vector(to_unsigned(leading_zeros_f(bit_rev_f(rs1_reg)), shifter.cnt'length)); -- ctz
 
     -- unused --
-    shifter.run <= '0';
+    shifter.run     <= '0';
+    shifter.nxt     <= '0';
+    shifter.cnt_max <= (others => '0');
 
   end generate; -- /barrel_shifter
 

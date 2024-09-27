@@ -323,7 +323,7 @@ begin
 
     -- show SoC configuration --
     assert false report
-      "[NEORV32] Processor Configuration: " &
+      "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
       cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",       "") &
       cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",       "") &
       cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",    "") &
