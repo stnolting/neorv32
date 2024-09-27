@@ -108,8 +108,8 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   type res_t is array (0 to op_width_c-1) of std_ulogic_vector(XLEN-1 downto 0);
   signal res_int, res_out : res_t;
 
-  -- shifted-add and one-hot results --
-  signal adder_res, one_hot_res : std_ulogic_vector(XLEN-1 downto 0);
+  -- intermediate results --
+  signal adder_res, one_hot_res, zip_res, unzip_res : std_ulogic_vector(XLEN-1 downto 0);
 
 begin
 
@@ -140,8 +140,8 @@ begin
   cmd(op_bset_c)  <= '1' when EN_ZBS and (ctrl_i.ir_funct12(11 downto 5) = "0010100") and (ctrl_i.ir_funct3 = "001") else '0'; -- BSET[I]
 
   -- Zbkb - Additional bit-manipulation instruction for cryptography (extending Zbb) --
-  cmd(op_pack_c)  <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '1') and  (ctrl_i.ir_funct12(11 downto 5) = "0000100") and ((ctrl_i.ir_funct3 = "100") or (ctrl_i.ir_funct3 = "111")) else '0'; -- PACK[H]
-  cmd(op_zip_c)   <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "000010011110") and (ctrl_i.ir_funct3(1 downto 0) = "01") else '0'; -- [UN]ZIP
+  cmd(op_pack_c)  <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000100") and ((ctrl_i.ir_funct3 = "100") or (ctrl_i.ir_funct3 = "111")) else '0'; -- PACK[H]
+  cmd(op_zip_c)   <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "000010001111") and ((ctrl_i.ir_funct3 = "001") or (ctrl_i.ir_funct3 = "101")) else '0'; -- [UN]ZIP
   cmd(op_brev8_c) <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011010000111") and (ctrl_i.ir_funct3 = "101") else '0'; -- BREV8
 
   -- Valid Instruction? --
@@ -382,11 +382,14 @@ begin
                         x"0000" & rs2_reg(7 downto 0) & rs1_reg(7 downto 0);
 
   -- zip/unzip --
-  zip_gen:
+  interleave_gen:
   for i in 0 to (XLEN/2)-1 generate
-    res_int(op_zip_c)(2*i+0) <= rs1_reg(i) when        (ctrl_i.ir_funct3(2) = '0') else rs1_reg(2*i);   -- even
-    res_int(op_zip_c)(2*i+1) <= rs1_reg(XLEN/2+i) when (ctrl_i.ir_funct3(2) = '0') else rs1_reg(2*i+1); -- odd
+    zip_res(2*i+0)      <= rs1_reg(i);
+    zip_res(2*i+1)      <= rs1_reg(XLEN/2+i);
+    unzip_res(i)        <= rs1_reg(2*i);
+    unzip_res(XLEN/2+i) <= rs1_reg(2*i+1);
   end generate;
+  res_int(op_zip_c) <= zip_res when (ctrl_i.ir_funct3(2) = '0') else unzip_res;
 
   -- byte-wise bit-reversal --
   brev_gen:
