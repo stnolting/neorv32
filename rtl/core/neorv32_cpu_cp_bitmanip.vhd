@@ -70,8 +70,9 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   -- Zbkb (extending Zbb) --
   constant op_pack_c  : natural := 16; -- pack bytes/halves
   constant op_zip_c   : natural := 17; -- (de)interleave
+  constant op_brev8_c : natural := 18; -- byte-wise bit-reverse
   --
-  constant op_width_c : natural := 18;
+  constant op_width_c : natural := 19;
 
   -- controller --
   type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT);
@@ -141,6 +142,7 @@ begin
   -- Zbkb - Additional bit-manipulation instruction for cryptography (extending Zbb) --
   cmd(op_pack_c)  <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '1') and  (ctrl_i.ir_funct12(11 downto 5) = "0000100") and ((ctrl_i.ir_funct3 = "100") or (ctrl_i.ir_funct3 = "111")) else '0'; -- PACK[H]
   cmd(op_zip_c)   <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "000010011110") and (ctrl_i.ir_funct3(1 downto 0) = "01") else '0'; -- [UN]ZIP
+  cmd(op_brev8_c) <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011010000111") and (ctrl_i.ir_funct3 = "101") else '0'; -- BREV8
 
   -- Valid Instruction? --
   valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and (or_reduce_f(cmd) = '1') else '0';
@@ -386,6 +388,12 @@ begin
     res_int(op_zip_c)(2*i+1) <= rs1_reg(XLEN/2+i) when (ctrl_i.ir_funct3(2) = '0') else rs1_reg(2*i+1); -- odd
   end generate;
 
+  -- byte-wise bit-reversal --
+  brev_gen:
+  for i in 0 to (XLEN/8)-1 generate -- byte loop
+    res_int(op_brev8_c)(i*8+7 downto i*8) <= bit_rev_f(rs1_reg(i*8+7 downto i*8));
+  end generate;
+
 
   -- Output Select --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -407,6 +415,7 @@ begin
   res_out(op_bset_c)  <= res_int(op_bset_c)  when EN_ZBS              and (cmd(op_bset_c)  = '1') else (others => '0');
   res_out(op_pack_c)  <= res_int(op_pack_c)  when EN_ZBKB             and (cmd(op_pack_c)  = '1') else (others => '0');
   res_out(op_zip_c)   <= res_int(op_zip_c)   when EN_ZBKB             and (cmd(op_zip_c)   = '1') else (others => '0');
+  res_out(op_brev8_c) <= res_int(op_brev8_c) when EN_ZBKB             and (cmd(op_brev8_c) = '1') else (others => '0');
 
 
   -- Output Gate ----------------------------------------------------------------------------
@@ -422,7 +431,7 @@ begin
                  res_out(op_cpop_c) or res_out(op_max_c)  or res_out(op_sext_c) or res_out(op_zexth_c) or
                  res_out(op_rot_c)  or res_out(op_orcb_c) or res_out(op_rev8_c) or res_out(op_shadd_c) or
                  res_out(op_bclr_c) or res_out(op_bext_c) or res_out(op_binv_c) or res_out(op_bset_c)  or
-                 res_out(op_pack_c) or res_out(op_zip_c);
+                 res_out(op_pack_c) or res_out(op_zip_c)  or res_out(op_brev8_c);
       end if;
     end if;
   end process output_gate;
