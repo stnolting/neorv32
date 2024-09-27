@@ -376,14 +376,14 @@ begin
   res_int(op_bset_c) <= rs1_reg or one_hot_res;
 
   -- pack --
-  res_int(op_pack_c) <= rs2_reg(15 downto 0) & rs1_reg(15 downto 0) when (ctrl_i.ir_funct12(0) = '0') else
+  res_int(op_pack_c) <= rs2_reg(15 downto 0) & rs1_reg(15 downto 0) when (ctrl_i.ir_funct3(0) = '0') else
                         x"0000" & rs2_reg(7 downto 0) & rs1_reg(7 downto 0);
 
   -- zip/unzip --
   zip_gen:
   for i in 0 to (XLEN/2)-1 generate
-    res_int(op_zip_c)(2*i+0) <= rs1_reg(i) when        (ctrl_i.ir_funct12(2) = '0') else rs1_reg(2*i);   -- even
-    res_int(op_zip_c)(2*i+1) <= rs1_reg(XLEN/2+i) when (ctrl_i.ir_funct12(2) = '0') else rs1_reg(2*i+1); -- odd
+    res_int(op_zip_c)(2*i+0) <= rs1_reg(i) when        (ctrl_i.ir_funct3(2) = '0') else rs1_reg(2*i);   -- even
+    res_int(op_zip_c)(2*i+1) <= rs1_reg(XLEN/2+i) when (ctrl_i.ir_funct3(2) = '0') else rs1_reg(2*i+1); -- odd
   end generate;
 
 
