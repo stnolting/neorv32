@@ -39,6 +39,7 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_E      : boolean                        := false;       -- implement embedded RF extension?
     CPU_EXTENSION_RISCV_M      : boolean                        := false;       -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U      : boolean                        := false;       -- implement user mode extension?
+    CPU_EXTENSION_RISCV_Zbkb   : boolean                        := false;       -- implement bit-manipulation instructions for cryptography
     CPU_EXTENSION_RISCV_Zbkx   : boolean                        := false;       -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx  : boolean                        := false;       -- implement 32-bit floating-point extension (using INT regs!)
     CPU_EXTENSION_RISCV_Zicntr : boolean                        := true;        -- implement base counters?
@@ -453,6 +454,7 @@ begin
       CPU_EXTENSION_RISCV_E      => CPU_EXTENSION_RISCV_E,
       CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,
       CPU_EXTENSION_RISCV_U      => CPU_EXTENSION_RISCV_U,
+      CPU_EXTENSION_RISCV_Zbkb   => CPU_EXTENSION_RISCV_Zbkb,
       CPU_EXTENSION_RISCV_Zbkx   => CPU_EXTENSION_RISCV_Zbkx,
       CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,
       CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr,

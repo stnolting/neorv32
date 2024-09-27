@@ -2,10 +2,10 @@
 -- NEORV32 CPU - Co-Processor: RISC-V Scalar Cryptography ('Zk*') ISA Extension     --
 -- -------------------------------------------------------------------------------- --
 -- Supported sub-extensions:                                                        --
--- - Zbkx: crossbar permutation                                                     --
--- - Zknh: NIST suite's hash function                                               --
--- - Zknd: NIST suite's AES decryption                                              --
--- - Zkne: NIST suite's AES encryption                                              --
+-- + Zbkx: crossbar permutation                                                     --
+-- + Zknh: NIST suite's hash function                                               --
+-- + Zknd: NIST suite's AES decryption                                              --
+-- + Zkne: NIST suite's AES encryption                                              --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --

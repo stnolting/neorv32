@@ -440,6 +440,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_m_isa_extension,`M`>> | Integer multiplication and division instructions | `CPU_EXTENSION_RISCV_M`
 | <<_u_isa_extension,`U`>> | Less-privileged _user_ mode extension | `CPU_EXTENSION_RISCV_U`
 | <<_x_isa_extension,`X`>> | Platform-specific / NEORV32-specific extension | Always enabled
+| <<_zbkb_isa_extension,`Zbkb`>> | Scalar cryptographic bit manipulation instructions | `CPU_EXTENSION_RISCV_Zbkb`
 | <<_zbkx_isa_extension,`Zbkx`>> | Scalar cryptographic crossbar permutation instructions | `CPU_EXTENSION_RISCV_Zbkx`
 | <<_zfinx_isa_extension,`Zfinx`>> | Floating-point instructions using integer registers | `CPU_EXTENSION_RISCV_Zfinx`
 | <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction | Always enabled
@@ -542,12 +543,12 @@ The NEORV32 `B` ISA extension includes the following sub-extensions:
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Arithmetic/logic | `min[u]` `max[u]` `sext.b` `sext.h` `andn` `orn` `xnor` `zext`(pack) `rev8`(grevi) `orc.b`(gorci) | 4
-| Shifts           | `clz` `ctz`                                                                                       | 3 + 1..32; FAST_SHIFT: 4
-| Shifts           | `cpop`                                                                                            | 36; FAST_SHIFT: 4
-| Shifts           | `rol` `ror[i]`                                                                                    | 4 + _shift_amount_; FAST_SHIFT: 4
-| Shifted-add      | `sh1add` `sh2add` `sh3add`                                                                        | 4
-| Single-bit       | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]`                                                       | 4
+| Arithmetic/logic | `min[u]` `max[u]` `sext.b` `sext.h` `andn` `orn` `xnor` `zext`(pack) `rev8` `orc.b` | 4
+| Shifts           | `clz` `ctz`                                                                         | 3 + 1..32; FAST_SHIFT: 4
+| Shifts           | `cpop`                                                                              | 36; FAST_SHIFT: 4
+| Shifts           | `rol` `ror[i]`                                                                      | 4 + _shift_amount_; FAST_SHIFT: 4
+| Shifted-add      | `sh1add` `sh2add` `sh3add`                                                          | 4
+| Single-bit       | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]`                                         | 4
 |=======================
 
 .Shift Operations
@@ -796,9 +797,27 @@ Accessing any user-mode HPM CSR (`hpmcounter*[h]`) will raise an illegal instruc
 The event-driven increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
 
 
+==== `Zbkb` ISA Extension
+
+The `Zbkb` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and extends the _RISC-V bit manipulation_
+ISA extension with additional instructions. It is enabled by the top's `CPU_EXTENSION_RISCV_Zbkb` generic.
+Note that enabling this extension will also enable the `Zbb` basic bit-manipulation ISA extension (which is extended by `Zknb`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+
+.Instructions and Timing (in addition to `Zbb`)
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| Packing | `pack` `packh` | 4
+| Interleaving | `zip` `unzip` | 4
+| Byte-wise bit reversal | `brev8` | 4
+|=======================
+
+
 ==== `Zbkx` ISA Extension
 
-The `Zbkx` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and adds crossbar permutation instructions.
+The `Zbkx` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds crossbar permutation instructions.
 It is enabled by the top's `CPU_EXTENSION_RISCV_Zbkx` generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
 
@@ -813,7 +832,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 
 ==== `Zknd` ISA Extension
 
-The `Zknd` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and adds NIST AES decryption instructions.
+The `Zknd` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds NIST AES decryption instructions.
 It is enabled by the top's `CPU_EXTENSION_RISCV_Zknd` generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
 
@@ -828,7 +847,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 
 ==== `Zkne` ISA Extension
 
-The `Zkne` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and adds NIST AES encryption instructions.
+The `Zkne` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds NIST AES encryption instructions.
 It is enabled by the top's `CPU_EXTENSION_RISCV_Zkne` generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
 
@@ -843,7 +862,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 
 ==== `Zknh` ISA Extension
 
-The `Zknh` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and adds NIST hash function instructions.
+The `Zknh` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds NIST hash function instructions.
 It is enabled by the top's `CPU_EXTENSION_RISCV_Zknh` generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
 
@@ -859,7 +878,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 
 ==== `Zknt` ISA Extension
 
-The `Zknt` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and guarantees data independent execution
+The `Zknt` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and guarantees data independent execution
 times of cryptographic and cryptography-related instructions. The ISA extension cannot be enabled by a specific generic.
 Instead, it is enabled implicitly by certain CPU configurations.
 
@@ -872,14 +891,14 @@ core does implement must adhere to the requirements of `Zknt`.
 [options="header", grid="rows"]
 |=======================
 | Parent extension | Instructions | Data independent execution time?
-.2+<| `RVI` <| `lui` `auipc` `add[i]` `slt[i][u]` `xor[i]` `or[i]` `and[i]` `sub` <| always
-            <| `sll[i]` `srl[i]` `sra[i]` <| only if `FAST_SHIFT_EN` enabled
-| `RVM` | `mul[h]` `mulh[s]u` | always
-.2+<| `RVC` <| `c.nop` `c.addi` `c.lui` `c.andi` `c.sub` `c.xor` `c.and` `c.mv` `c.add` <| always
-            <| `c.srli` `c.srai` `c.slli` <| only if `FAST_SHIFT_EN` enabled
-| `RVK` | `aes32ds[m]i` `aes32es[m]i` `sha256sig*` `sha512sig*` `sha512sum*` | always
-.2+<| `RVB` <| `xperm4` `xperm8` `andn` `orn` `xnor` `pack[h]` `brev8` `rev8` <| always
-            <| `ror[i]` `rol` <| only if `FAST_SHIFT_EN` enabled
+.2+<| `RVI` <| `lui` `auipc` `add[i]` `slt[i][u]` `xor[i]` `or[i]` `and[i]` `sub` <| yes
+            <| `sll[i]` `srl[i]` `sra[i]` <| yes if `FAST_SHIFT_EN` enabled
+| `RVM` | `mul[h]` `mulh[s]u` | yes
+.2+<| `RVC` <| `c.nop` `c.addi` `c.lui` `c.andi` `c.sub` `c.xor` `c.and` `c.mv` `c.add` <| yes
+            <| `c.srli` `c.srai` `c.slli` <| yes if `FAST_SHIFT_EN` enabled
+| `RVK` | `aes32ds[m]i` `aes32es[m]i` `sha256sig*` `sha512sig*` `sha512sum*` | yes
+.2+<| `RVB` <| `xperm4` `xperm8` `andn` `orn` `xnor` `pack[h]` `brev8` `rev8` <| yes
+            <| `ror[i]` `rol` <| yes if `FAST_SHIFT_EN` enabled
 |=======================
 
 
@@ -888,6 +907,7 @@ core does implement must adhere to the requirements of `Zknt`.
 This is a sub-extension of the <<_m_isa_extension>> ISA extension. It implements only the multiplication operations
 of the `M` extensions and is intended for size-constrained setups that require hardware-based
 integer multiplications but not hardware-based divisions, which will be computed entirely in software.
+Note that the <<_zmmul_isa_extension>> and <<_m_isa_extension>> are mutually exclusive.
 
 
 ==== `Zxcfu` ISA Extension
