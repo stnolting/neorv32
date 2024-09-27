@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 27.09.2024 | 1.10.4.7 | :sparkles: add support for RISC-V "carry-less multiplication instruction for cryptography" ISA extension `Zbkc` | [#1038](https://github.com/stnolting/neorv32/pull/1038) |
 | 27.09.2024 | 1.10.4.6 | :sparkles: add support for RISC-V "bit manipulation instructions for cryptography" ISA extension `Zbkb` | [#1037](https://github.com/stnolting/neorv32/pull/1037) |
 | 27.09.2024 | 1.10.4.5 | :sparkles: add support for RISC-V "data independent execution time" ISA extension `Zknt` | [#1036](https://github.com/stnolting/neorv32/pull/1036) |
 | 25.09.2024 | 1.10.4.4 | :sparkles: add support for RISC-V "scalar cryptography" ISA extensions `Zbkx`, `Zknd`, `Zkne`, `Zknh` | [#1033](https://github.com/stnolting/neorv32/pull/1033) |

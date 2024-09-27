@@ -964,7 +964,8 @@ discover ISA sub-extensions and CPU configuration options
 | 14    | `CSR_MXISA_ZKNE`      | r/- | <<_zkne_isa_extension>> available
 | 15    | `CSR_MXISA_ZKNH`      | r/- | <<_zknh_isa_extension>> available
 | 16    | `CSR_MXISA_ZBKB`      | r/- | <<_zbkb_isa_extension>> available
-| 19:17 | -                     | r/- | hardwired to zero
+| 17    | `CSR_MXISA_ZBKC`      | r/- | <<_zbkc_isa_extension>> available
+| 19:18 | -                     | r/- | hardwired to zero
 | 20    | `CSR_MXISA_IS_SIM`    | r/- | set if CPU is being **simulated** (⚠️ not guaranteed)
 | 28:21 | -                     | r/- | hardwired to zero
 | 29    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`REGFILE_HW_RST`)
