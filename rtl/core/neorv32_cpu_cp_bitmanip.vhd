@@ -1,10 +1,12 @@
 -- ================================================================================ --
--- NEORV32 CPU - Co-Processor: Bit-Manip. Co-Processor Unit (RISC-V "B" Extension)  --
+-- NEORV32 CPU - Co-Processor: Bit Manipulation Unit (RISC-V "Zb*" ISA Extensions)  --
 -- -------------------------------------------------------------------------------- --
--- RISC-V "B" ISA Extension = Zba + Zbb + Zbs                                       --
---  Zba: Address-generation instructions                                            --
---  Zbb: Basic bit-manipulation instructions                                        --
---  Zbs: Single-bit instructions                                                    --
+-- Supported sub-extensions:                                                        --
+-- + Zba:  Address-generation instructions                                          --
+-- + Zbb:  Basic bit-manipulation instructions                                      --
+-- + Zbs:  Single-bit instructions                                                  --
+-- + Zbkb: Bit-manipulation instructions for cryptography                           --
+-- [NOTE] RISC-V "B" ISA Extension = Zba + Zbb + Zbs                                --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -22,7 +24,11 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_bitmanip is
   generic (
-    FAST_SHIFT_EN : boolean  -- use barrel shifter for shift operations
+    FAST_SHIFT_EN : boolean; -- use barrel shifter for shift operations
+    EN_ZBA        : boolean; -- enable address-generation instruction
+    EN_ZBB        : boolean; -- enable basic bit-manipulation instruction
+    EN_ZBKB       : boolean; -- enable bit-manipulation instructions for cryptography
+    EN_ZBS        : boolean  -- enable single-bit instructions
   );
   port (
     -- global control --
@@ -42,34 +48,30 @@ end neorv32_cpu_cp_bitmanip;
 
 architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
 
-  -- Zbb - logic with negate --
-  constant op_andn_c  : natural := 0;
-  constant op_orn_c   : natural := 1;
-  constant op_xnor_c  : natural := 2;
-  -- Zbb - count leading/trailing zeros --
-  constant op_cz_c    : natural := 3;
-  -- Zbb - count population --
-  constant op_cpop_c  : natural := 4;
-  -- Zbb - minimum/maximum --
-  constant op_max_c   : natural := 5;
-  -- Zbb - sign/zero-extension --
-  constant op_sext_c  : natural := 6;
-  constant op_zexth_c : natural := 7;
-  -- Zbb - bitwise rotation --
-  constant op_rot_c   : natural := 8;
-  -- Zbb - or-combine --
-  constant op_orcb_c  : natural := 9;
-  -- Zbb - byte-reverse --
-  constant op_rev8_c  : natural := 10;
-  -- Zba - shifted-add --
-  constant op_shadd_c : natural := 11;
-  -- Zbs - single-bit operations --
-  constant op_bclr_c  : natural := 12;
-  constant op_bext_c  : natural := 13;
-  constant op_binv_c  : natural := 14;
-  constant op_bset_c  : natural := 15;
+  -- Zbb --
+  constant op_andn_c  : natural := 0; -- logic with negate
+  constant op_orn_c   : natural := 1; -- logic with negate
+  constant op_xnor_c  : natural := 2; -- logic with negate
+  constant op_cz_c    : natural := 3; -- count leading/trailing zeros
+  constant op_cpop_c  : natural := 4; -- count population
+  constant op_max_c   : natural := 5; -- signed/unsigned minimum/maximum
+  constant op_sext_c  : natural := 6; -- sign extension
+  constant op_zexth_c : natural := 7; -- zero extension
+  constant op_rot_c   : natural := 8; -- bitwise rotation
+  constant op_orcb_c  : natural := 9; -- or-combine
+  constant op_rev8_c  : natural := 10; -- byte-reverse
+  -- Zba --
+  constant op_shadd_c : natural := 11; -- shifted-add
+  -- Zbs --
+  constant op_bclr_c  : natural := 12; -- single bit clear
+  constant op_bext_c  : natural := 13; -- single bit extract
+  constant op_binv_c  : natural := 14; -- single bit invert
+  constant op_bset_c  : natural := 15; -- single bit set
+  -- Zbkb (extending Zbb) --
+  constant op_pack_c  : natural := 16; -- pack bytes/halves
+  constant op_zip_c   : natural := 17; -- (de)interleave
   --
-  constant op_width_c : natural := 16;
+  constant op_width_c : natural := 18;
 
   -- controller --
   type ctrl_state_t is (S_IDLE, S_START_SHIFT, S_BUSY_SHIFT);
@@ -113,28 +115,32 @@ begin
   -- Instruction Decoding -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- Zbb - Basic bit-manipulation instructions --
-  cmd(op_andn_c)  <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "111") else '0'; -- ANDN
-  cmd(op_orn_c)   <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "110") else '0'; -- ORN
-  cmd(op_xnor_c)  <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "100") else '0'; -- XORN
-  cmd(op_max_c)   <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000101") and (ctrl_i.ir_funct3(2) = '1') else '0'; -- MAX[U], MIN[U]
-  cmd(op_zexth_c) <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12 = "000010000000") and (ctrl_i.ir_funct3 = "100") else '0'; -- ZEXT.H
-  cmd(op_orcb_c)  <= '1' when (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "001010000111") and (ctrl_i.ir_funct3 = "101") else '0'; -- ORC.B
-  cmd(op_cz_c)    <= '1' when (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000000") and (ctrl_i.ir_funct3 = "001") else '0'; -- CLZ, CTZ
-  cmd(op_cpop_c)  <= '1' when (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011000000010") and (ctrl_i.ir_funct3 = "001") else '0'; -- CPOP
-  cmd(op_sext_c)  <= '1' when (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000010") and (ctrl_i.ir_funct3 = "001") else '0';
-  cmd(op_rev8_c)  <= '1' when (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011010011000") and (ctrl_i.ir_funct3 = "101") else '0';
-  cmd(op_rot_c)   <= '1' when (ctrl_i.ir_funct12(11 downto 5) = "0110000") and
-                              (((ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct3 = "001")) or (ctrl_i.ir_funct3 = "101")) else '0'; -- ROL, ROR[I]
+  cmd(op_andn_c)  <= '1' when (EN_ZBB or EN_ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "111") else '0'; -- ANDN
+  cmd(op_orn_c)   <= '1' when (EN_ZBB or EN_ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "110") else '0'; -- ORN
+  cmd(op_xnor_c)  <= '1' when (EN_ZBB or EN_ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "100") else '0'; -- XORN
+  cmd(op_max_c)   <= '1' when (EN_ZBB or EN_ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000101") and (ctrl_i.ir_funct3(2) = '1') else '0'; -- MAX[U], MIN[U]
+  cmd(op_zexth_c) <= '1' when (EN_ZBB or EN_ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12 = "000010000000") and (ctrl_i.ir_funct3 = "100") else '0'; -- ZEXT.H
+  cmd(op_orcb_c)  <= '1' when (EN_ZBB or EN_ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "001010000111") and (ctrl_i.ir_funct3 = "101") else '0'; -- ORC.B
+  cmd(op_cz_c)    <= '1' when (EN_ZBB or EN_ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000000") and (ctrl_i.ir_funct3 = "001") else '0'; -- CLZ, CTZ
+  cmd(op_cpop_c)  <= '1' when (EN_ZBB or EN_ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011000000010") and (ctrl_i.ir_funct3 = "001") else '0'; -- CPOP
+  cmd(op_sext_c)  <= '1' when (EN_ZBB or EN_ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000010") and (ctrl_i.ir_funct3 = "001") else '0';
+  cmd(op_rev8_c)  <= '1' when (EN_ZBB or EN_ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011010011000") and (ctrl_i.ir_funct3 = "101") else '0';
+  cmd(op_rot_c)   <= '1' when (EN_ZBB or EN_ZBKB) and (ctrl_i.ir_funct12(11 downto 5) = "0110000") and
+                                                      (((ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct3 = "001")) or (ctrl_i.ir_funct3 = "101")) else '0'; -- ROL, ROR[I]
 
   -- Zba - Address generation instructions --
-  cmd(op_shadd_c) <= '1' when (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0010000") and
-                              ((ctrl_i.ir_funct3 = "010") or (ctrl_i.ir_funct3 = "100") or (ctrl_i.ir_funct3 = "110")) else '0'; -- SH[1,2,3]ADD
+  cmd(op_shadd_c) <= '1' when EN_ZBA and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0010000") and
+                                         ((ctrl_i.ir_funct3 = "010") or (ctrl_i.ir_funct3 = "100") or (ctrl_i.ir_funct3 = "110")) else '0'; -- SH[1,2,3]ADD
 
   -- Zbs - Single-bit instructions --
-  cmd(op_bclr_c)  <= '1' when (ctrl_i.ir_funct12(11 downto 5) = "0100100") and (ctrl_i.ir_funct3 = "001") else '0'; -- BCLR[I]
-  cmd(op_bext_c)  <= '1' when (ctrl_i.ir_funct12(11 downto 5) = "0100100") and (ctrl_i.ir_funct3 = "101") else '0'; -- BEXT[I]
-  cmd(op_binv_c)  <= '1' when (ctrl_i.ir_funct12(11 downto 5) = "0110100") and (ctrl_i.ir_funct3 = "001") else '0'; -- BINV[I]
-  cmd(op_bset_c)  <= '1' when (ctrl_i.ir_funct12(11 downto 5) = "0010100") and (ctrl_i.ir_funct3 = "001") else '0'; -- BSET[I]
+  cmd(op_bclr_c)  <= '1' when EN_ZBS and (ctrl_i.ir_funct12(11 downto 5) = "0100100") and (ctrl_i.ir_funct3 = "001") else '0'; -- BCLR[I]
+  cmd(op_bext_c)  <= '1' when EN_ZBS and (ctrl_i.ir_funct12(11 downto 5) = "0100100") and (ctrl_i.ir_funct3 = "101") else '0'; -- BEXT[I]
+  cmd(op_binv_c)  <= '1' when EN_ZBS and (ctrl_i.ir_funct12(11 downto 5) = "0110100") and (ctrl_i.ir_funct3 = "001") else '0'; -- BINV[I]
+  cmd(op_bset_c)  <= '1' when EN_ZBS and (ctrl_i.ir_funct12(11 downto 5) = "0010100") and (ctrl_i.ir_funct3 = "001") else '0'; -- BSET[I]
+
+  -- Zbkb - Additional bit-manipulation instruction for cryptography (extending Zbb) --
+  cmd(op_pack_c)  <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '1') and  (ctrl_i.ir_funct12(11 downto 5) = "0000100") and ((ctrl_i.ir_funct3 = "100") or (ctrl_i.ir_funct3 = "111")) else '0'; -- PACK[H]
+  cmd(op_zip_c)   <= '1' when EN_ZBKB and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "000010011110") and (ctrl_i.ir_funct3(1 downto 0) = "01") else '0'; -- [UN]ZIP
 
   -- Valid Instruction? --
   valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and (or_reduce_f(cmd) = '1') else '0';
@@ -354,7 +360,7 @@ begin
   or_combine_gen:
   for i in 0 to (XLEN/8)-1 generate -- byte loop
     res_int(op_orcb_c)(i*8+7 downto i*8) <= (others => or_reduce_f(rs1_reg(i*8+7 downto i*8)));
-  end generate; -- i
+  end generate;
 
   -- reversal.8 (byte swap) --
   res_int(op_rev8_c) <= bswap_f(rs1_reg);
@@ -369,25 +375,38 @@ begin
   res_int(op_binv_c) <= rs1_reg xor one_hot_res;
   res_int(op_bset_c) <= rs1_reg or one_hot_res;
 
+  -- pack --
+  res_int(op_pack_c) <= rs2_reg(15 downto 0) & rs1_reg(15 downto 0) when (ctrl_i.ir_funct12(0) = '0') else
+                        x"0000" & rs2_reg(7 downto 0) & rs1_reg(7 downto 0);
+
+  -- zip/unzip --
+  zip_gen:
+  for i in 0 to (XLEN/2)-1 generate
+    res_int(op_zip_c)(2*i+0) <= rs1_reg(i) when        (ctrl_i.ir_funct12(2) = '0') else rs1_reg(2*i);   -- even
+    res_int(op_zip_c)(2*i+1) <= rs1_reg(XLEN/2+i) when (ctrl_i.ir_funct12(2) = '0') else rs1_reg(2*i+1); -- odd
+  end generate;
+
 
   -- Output Select --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  res_out(op_andn_c)  <= res_int(op_andn_c)  when (cmd(op_andn_c)  = '1') else (others => '0');
-  res_out(op_orn_c)   <= res_int(op_orn_c)   when (cmd(op_orn_c)   = '1') else (others => '0');
-  res_out(op_xnor_c)  <= res_int(op_xnor_c)  when (cmd(op_xnor_c)  = '1') else (others => '0');
-  res_out(op_cz_c)    <= res_int(op_cz_c)    when (cmd(op_cz_c)    = '1') else (others => '0');
-  res_out(op_cpop_c)  <= res_int(op_cpop_c)  when (cmd(op_cpop_c)  = '1') else (others => '0');
-  res_out(op_max_c)   <= res_int(op_max_c)   when (cmd(op_max_c)   = '1') else (others => '0');
-  res_out(op_sext_c)  <= res_int(op_sext_c)  when (cmd(op_sext_c)  = '1') else (others => '0');
-  res_out(op_zexth_c) <= res_int(op_zexth_c) when (cmd(op_zexth_c) = '1') else (others => '0');
-  res_out(op_rot_c)   <= res_int(op_rot_c)   when (cmd(op_rot_c)   = '1') else (others => '0');
-  res_out(op_orcb_c)  <= res_int(op_orcb_c)  when (cmd(op_orcb_c)  = '1') else (others => '0');
-  res_out(op_rev8_c)  <= res_int(op_rev8_c)  when (cmd(op_rev8_c)  = '1') else (others => '0');
-  res_out(op_shadd_c) <= res_int(op_shadd_c) when (cmd(op_shadd_c) = '1') else (others => '0');
-  res_out(op_bclr_c)  <= res_int(op_bclr_c)  when (cmd(op_bclr_c)  = '1') else (others => '0');
-  res_out(op_bext_c)  <= res_int(op_bext_c)  when (cmd(op_bext_c)  = '1') else (others => '0');
-  res_out(op_binv_c)  <= res_int(op_binv_c)  when (cmd(op_binv_c)  = '1') else (others => '0');
-  res_out(op_bset_c)  <= res_int(op_bset_c)  when (cmd(op_bset_c)  = '1') else (others => '0');
+  res_out(op_andn_c)  <= res_int(op_andn_c)  when (EN_ZBB or EN_ZBKB) and (cmd(op_andn_c)  = '1') else (others => '0');
+  res_out(op_orn_c)   <= res_int(op_orn_c)   when (EN_ZBB or EN_ZBKB) and (cmd(op_orn_c)   = '1') else (others => '0');
+  res_out(op_xnor_c)  <= res_int(op_xnor_c)  when (EN_ZBB or EN_ZBKB) and (cmd(op_xnor_c)  = '1') else (others => '0');
+  res_out(op_cz_c)    <= res_int(op_cz_c)    when (EN_ZBB or EN_ZBKB) and (cmd(op_cz_c)    = '1') else (others => '0');
+  res_out(op_cpop_c)  <= res_int(op_cpop_c)  when (EN_ZBB or EN_ZBKB) and (cmd(op_cpop_c)  = '1') else (others => '0');
+  res_out(op_max_c)   <= res_int(op_max_c)   when (EN_ZBB or EN_ZBKB) and (cmd(op_max_c)   = '1') else (others => '0');
+  res_out(op_sext_c)  <= res_int(op_sext_c)  when (EN_ZBB or EN_ZBKB) and (cmd(op_sext_c)  = '1') else (others => '0');
+  res_out(op_zexth_c) <= res_int(op_zexth_c) when (EN_ZBB or EN_ZBKB) and (cmd(op_zexth_c) = '1') else (others => '0');
+  res_out(op_rot_c)   <= res_int(op_rot_c)   when (EN_ZBB or EN_ZBKB) and (cmd(op_rot_c)   = '1') else (others => '0');
+  res_out(op_orcb_c)  <= res_int(op_orcb_c)  when (EN_ZBB or EN_ZBKB) and (cmd(op_orcb_c)  = '1') else (others => '0');
+  res_out(op_rev8_c)  <= res_int(op_rev8_c)  when (EN_ZBB or EN_ZBKB) and (cmd(op_rev8_c)  = '1') else (others => '0');
+  res_out(op_shadd_c) <= res_int(op_shadd_c) when EN_ZBA              and (cmd(op_shadd_c) = '1') else (others => '0');
+  res_out(op_bclr_c)  <= res_int(op_bclr_c)  when EN_ZBS              and (cmd(op_bclr_c)  = '1') else (others => '0');
+  res_out(op_bext_c)  <= res_int(op_bext_c)  when EN_ZBS              and (cmd(op_bext_c)  = '1') else (others => '0');
+  res_out(op_binv_c)  <= res_int(op_binv_c)  when EN_ZBS              and (cmd(op_binv_c)  = '1') else (others => '0');
+  res_out(op_bset_c)  <= res_int(op_bset_c)  when EN_ZBS              and (cmd(op_bset_c)  = '1') else (others => '0');
+  res_out(op_pack_c)  <= res_int(op_pack_c)  when EN_ZBKB             and (cmd(op_pack_c)  = '1') else (others => '0');
+  res_out(op_zip_c)   <= res_int(op_zip_c)   when EN_ZBKB             and (cmd(op_zip_c)   = '1') else (others => '0');
 
 
   -- Output Gate ----------------------------------------------------------------------------
@@ -402,7 +421,8 @@ begin
         res_o <= res_out(op_andn_c) or res_out(op_orn_c)  or res_out(op_xnor_c) or res_out(op_cz_c)    or
                  res_out(op_cpop_c) or res_out(op_max_c)  or res_out(op_sext_c) or res_out(op_zexth_c) or
                  res_out(op_rot_c)  or res_out(op_orcb_c) or res_out(op_rev8_c) or res_out(op_shadd_c) or
-                 res_out(op_bclr_c) or res_out(op_bext_c) or res_out(op_binv_c) or res_out(op_bset_c);
+                 res_out(op_bclr_c) or res_out(op_bext_c) or res_out(op_binv_c) or res_out(op_bset_c)  or
+                 res_out(op_pack_c) or res_out(op_zip_c);
       end if;
     end if;
   end process output_gate;
