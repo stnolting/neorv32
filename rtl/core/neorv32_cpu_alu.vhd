@@ -19,11 +19,11 @@ entity neorv32_cpu_alu is
   generic (
     -- RISC-V CPU Extensions --
     CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zba    : boolean; -- enable address-generation instruction
-    CPU_EXTENSION_RISCV_Zbb    : boolean; -- enable basic bit-manipulation instruction
-    CPU_EXTENSION_RISCV_Zbkb   : boolean; -- enable bit-manipulation instructions for cryptography
+    CPU_EXTENSION_RISCV_Zba    : boolean; -- implement address-generation instruction
+    CPU_EXTENSION_RISCV_Zbb    : boolean; -- implement basic bit-manipulation instruction
+    CPU_EXTENSION_RISCV_Zbkb   : boolean; -- implement bit-manipulation instructions for cryptography
     CPU_EXTENSION_RISCV_Zbkx   : boolean; -- implement cryptography crossbar permutation extension?
-    CPU_EXTENSION_RISCV_Zbs    : boolean; -- enable single-bit instructions
+    CPU_EXTENSION_RISCV_Zbs    : boolean; -- implement single-bit instructions
     CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
     CPU_EXTENSION_RISCV_Zicond : boolean; -- implement integer conditional operations?
     CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?

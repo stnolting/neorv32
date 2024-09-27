@@ -41,7 +41,7 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_E      : boolean; -- implement embedded-class register file extension?
     CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
     CPU_EXTENSION_RISCV_U      : boolean; -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbkb   : boolean; -- enable bit-manipulation instructions for cryptography
+    CPU_EXTENSION_RISCV_Zbkb   : boolean; -- implement bit-manipulation instructions for cryptography
     CPU_EXTENSION_RISCV_Zbkx   : boolean; -- implement cryptography crossbar permutation extension?
     CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT regs)?
     CPU_EXTENSION_RISCV_Zicntr : boolean; -- implement base counters?
