@@ -540,7 +540,7 @@ asynchronous interrupts) that are handled transparently by the control logic.
 * switch to debug-mode privilege level
 * move the current program counter to <<_dpc>>
 * copy the hart's current privilege level to the `prv` flags in <<_dcsr>>
-* set `cause` in <<_dcrs>> according to the cause why debug mode is entered
+* set `cause` in <<_dcsr>> according to the cause why debug mode is entered
 * **no update** of `mtval`, `mcause`, `mtval` and `mstatus` CSRs
 * load the address configured via the CPU's `CPU_DEBUG_PARK_ADDR` (<<_cpu_top_entity_generics>>) generic to the program counter jumping to the
 "debugger park loop" code stored in the debug module (DM)
@@ -564,7 +564,7 @@ Executing `dret` outside of debug mode will raise an illegal instruction excepti
 **Whenever the CPU leaves debug mode it performs the following operations:**
 
 * set the hart's current privilege level according to the `prv` flags of <<_dcsr>>
-* restore the original program counter from <<_dpcs>> resuming normal operation
+* restore the original program counter from <<_dpc>> resuming normal operation
 
 
 :sectnums:

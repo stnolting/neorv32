@@ -441,7 +441,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_u_isa_extension,`U`>> | Less-privileged _user_ mode extension | `CPU_EXTENSION_RISCV_U`
 | <<_x_isa_extension,`X`>> | Platform-specific / NEORV32-specific extension | Always enabled
 | <<_zbkb_isa_extension,`Zbkb`>> | Scalar cryptographic bit manipulation instructions | `CPU_EXTENSION_RISCV_Zbkb`
-| <<_zbkc_isa_extension,`Zbkb`>> | Scalar cryptographic carry-less multiplication instructions | `CPU_EXTENSION_RISCV_Zbkc`
+| <<_zbkc_isa_extension,`Zbkc`>> | Scalar cryptographic carry-less multiplication instructions | `CPU_EXTENSION_RISCV_Zbkc`
 | <<_zbkx_isa_extension,`Zbkx`>> | Scalar cryptographic crossbar permutation instructions | `CPU_EXTENSION_RISCV_Zbkx`
 | <<_zfinx_isa_extension,`Zfinx`>> | Floating-point instructions using integer registers | `CPU_EXTENSION_RISCV_Zfinx`
 | <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction | Always enabled
