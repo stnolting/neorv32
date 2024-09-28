@@ -30,8 +30,8 @@ entity neorv32_cpu_alu is
     CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   : boolean; -- implement cryptography NIST hash extension?
-    CPU_EXTENSION_RISCV_Zksed  : boolean; -- implement ShangMi hash extension?
-    CPU_EXTENSION_RISCV_Zksh   : boolean; -- implement ShangMi block cypher extension?
+    CPU_EXTENSION_RISCV_Zksed  : boolean; -- implement ShangMi block cypher extension?
+    CPU_EXTENSION_RISCV_Zksh   : boolean; -- implement ShangMi hash extension?
     CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
     -- Tuning Options --
@@ -392,8 +392,8 @@ begin
       EN_ZKNH  => CPU_EXTENSION_RISCV_Zknh,  -- enable NIST hash extension
       EN_ZKNE  => CPU_EXTENSION_RISCV_Zkne,  -- enable NIST AES encryption extension
       EN_ZKND  => CPU_EXTENSION_RISCV_Zknd,  -- enable NIST AES decryption extension
-      EN_ZKSED => CPU_EXTENSION_RISCV_Zksed, -- enable ShangMi hash extension
-      EN_ZKSH  => CPU_EXTENSION_RISCV_Zksh   -- enable ShangMi block cypher extension
+      EN_ZKSED => CPU_EXTENSION_RISCV_Zksed, -- enable ShangMi block cypher extension
+      EN_ZKSH  => CPU_EXTENSION_RISCV_Zksh   -- enable ShangMi hash extension
     )
     port map (
       -- global control --

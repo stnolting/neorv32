@@ -53,8 +53,8 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   : boolean; -- implement cryptography NIST hash extension?
     CPU_EXTENSION_RISCV_Zks    : boolean; -- ShangMi algorithm suite available?
-    CPU_EXTENSION_RISCV_Zksed  : boolean; -- implement ShangMi hash extension?
-    CPU_EXTENSION_RISCV_Zksh   : boolean; -- implement ShangMi block cypher extension?
+    CPU_EXTENSION_RISCV_Zksed  : boolean; -- implement ShangMi block cypher extension?
+    CPU_EXTENSION_RISCV_Zksh   : boolean; -- implement ShangMi hash extension?
     CPU_EXTENSION_RISCV_Zkt    : boolean; -- data-independent execution time available (for cryptographic operations)?
     CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
@@ -1088,7 +1088,7 @@ begin
       when opcode_fence_c => -- memory ordering
         case execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           when funct3_fence_c | funct3_fencei_c => illegal_cmd <= '0';
-          when others                           => illegal_cmd <= '1';
+          when others => illegal_cmd <= '1';
         end case;
 
       when opcode_system_c => -- CSR / system instruction

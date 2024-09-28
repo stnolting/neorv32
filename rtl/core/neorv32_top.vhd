@@ -49,8 +49,8 @@ entity neorv32_top is
     CPU_EXTENSION_RISCV_Zknd   : boolean                        := false;       -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   : boolean                        := false;       -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   : boolean                        := false;       -- implement cryptography NIST hash extension?
-    CPU_EXTENSION_RISCV_Zksed  : boolean                        := false;       -- implement ShangMi hash extension?
-    CPU_EXTENSION_RISCV_Zksh   : boolean                        := false;       -- implement ShangMi block cypher extension?
+    CPU_EXTENSION_RISCV_Zksed  : boolean                        := false;       -- implement ShangMi block cypher extension?
+    CPU_EXTENSION_RISCV_Zksh   : boolean                        := false;       -- implement ShangMi hash extension?
     CPU_EXTENSION_RISCV_Zmmul  : boolean                        := false;       -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  : boolean                        := false;       -- implement custom (instr.) functions unit?
 
