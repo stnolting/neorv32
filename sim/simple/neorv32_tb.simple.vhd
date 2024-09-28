@@ -188,6 +188,8 @@ begin
     CPU_EXTENSION_RISCV_Zknd     => true,          -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne     => true,          -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh     => true,          -- implement cryptography NIST hash extension?
+    CPU_EXTENSION_RISCV_Zksed    => true,          -- implement ShangMi block cypher extension?
+    CPU_EXTENSION_RISCV_Zksh     => true,          -- implement ShangMi hash extension?
     CPU_EXTENSION_RISCV_Zmmul    => false,         -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu    => true,          -- implement custom (instr.) functions unit?
     -- Extension Options --

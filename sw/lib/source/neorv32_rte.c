@@ -463,7 +463,10 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_ZKND))      { neorv32_uart0_printf("Zknd ");      }
   if (tmp & (1<<CSR_MXISA_ZKNE))      { neorv32_uart0_printf("Zkne ");      }
   if (tmp & (1<<CSR_MXISA_ZKNH))      { neorv32_uart0_printf("Zknh ");      }
-  if (tmp & (1<<CSR_MXISA_ZKNT))      { neorv32_uart0_printf("Zknt ");      }
+  if (tmp & (1<<CSR_MXISA_ZKS))       { neorv32_uart0_printf("Zks ");       }
+  if (tmp & (1<<CSR_MXISA_ZKSED))     { neorv32_uart0_printf("Zksed ");     }
+  if (tmp & (1<<CSR_MXISA_ZKSH))      { neorv32_uart0_printf("Zksh ");      }
+  if (tmp & (1<<CSR_MXISA_ZKT))       { neorv32_uart0_printf("Zkt ");       }
   if (tmp & (1<<CSR_MXISA_ZMMUL))     { neorv32_uart0_printf("Zmmul ");     }
   if (tmp & (1<<CSR_MXISA_ZXCFU))     { neorv32_uart0_printf("Zxcfu ");     }
   // CPU tuning options

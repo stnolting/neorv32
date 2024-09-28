@@ -44,6 +44,8 @@ entity neorv32_cpu is
     CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   : boolean; -- implement cryptography NIST hash extension?
+    CPU_EXTENSION_RISCV_Zksed  : boolean; -- implement ShangMi hash extension?
+    CPU_EXTENSION_RISCV_Zksh   : boolean; -- implement ShangMi block cypher extension?
     CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  : boolean; -- implement external debug mode extension?
@@ -88,9 +90,11 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
   constant rf_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port
-  constant const_exe_c : boolean := FAST_SHIFT_EN; -- data-independent execution time for crypto operations (RISC-V Zknt ISA ext.)
+  constant riscv_zkt_c : boolean := FAST_SHIFT_EN; -- Zkt: data-independent execution time for cryptographic operations
   constant riscv_zkn_c : boolean := CPU_EXTENSION_RISCV_Zbkb and CPU_EXTENSION_RISCV_Zbkc and CPU_EXTENSION_RISCV_Zbkx and
                                     CPU_EXTENSION_RISCV_Zkne and CPU_EXTENSION_RISCV_Zknd and CPU_EXTENSION_RISCV_Zknh; -- Zkn: NIST suite
+  constant riscv_zks_c : boolean := CPU_EXTENSION_RISCV_Zbkb and CPU_EXTENSION_RISCV_Zbkc and CPU_EXTENSION_RISCV_Zbkx and
+                                    CPU_EXTENSION_RISCV_Zksh and CPU_EXTENSION_RISCV_Zksed; -- Zks: ShangMi suite
 
   -- external CSR interface --
   signal xcsr_we        : std_ulogic;
@@ -107,19 +111,19 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal rs1, rs2, rs3 : std_ulogic_vector(XLEN-1 downto 0); -- source registers
   signal alu_res       : std_ulogic_vector(XLEN-1 downto 0); -- alu result
   signal alu_add       : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
-  signal alu_cmp       : std_ulogic_vector(1 downto 0); -- comparator result
+  signal alu_cmp       : std_ulogic_vector(1 downto 0);      -- comparator result
   signal lsu_rdata     : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory read data
-  signal alu_cp_done   : std_ulogic; -- alu co-processor operation done
-  signal lsu_wait      : std_ulogic; -- wait for current data bus access
+  signal alu_cp_done   : std_ulogic;                         -- alu co-processor operation done
+  signal lsu_wait      : std_ulogic;                         -- wait for current data bus access
   signal csr_rdata     : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
   signal lsu_mar       : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory address register
-  signal lsu_err       : std_ulogic_vector(3 downto 0); -- lsu alignment/access errors
+  signal lsu_err       : std_ulogic_vector(3 downto 0);      -- lsu alignment/access errors
   signal pc_fetch      : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
   signal pc_curr       : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
   signal pc_next       : std_ulogic_vector(XLEN-1 downto 0); -- next pc (return address)
-  signal pmp_ex_fault  : std_ulogic; -- pmp instruction fetch fault
-  signal pmp_rw_fault  : std_ulogic; -- pmp read/write access fault
-  signal irq_machine   : std_ulogic_vector(2 downto 0); -- risc-v standard machine-level interrupts
+  signal pmp_ex_fault  : std_ulogic;                         -- pmp instruction fetch fault
+  signal pmp_rw_fault  : std_ulogic;                         -- pmp read/write access fault
+  signal irq_machine   : std_ulogic_vector(2 downto 0);      -- risc-v standard machine-level interrupts
 
 begin
 
@@ -147,7 +151,10 @@ begin
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zknd,   "_zknd",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zkne,   "_zkne",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zknh,   "_zknh",     "" ) &
-    cond_sel_string_f(const_exe_c,                "_zknt",     "" ) &
+    cond_sel_string_f(riscv_zks_c,                "_zks",      "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zksed,  "_zksed",    "" ) &
+    cond_sel_string_f(CPU_EXTENSION_RISCV_Zksh,   "_zksh",     "" ) &
+    cond_sel_string_f(riscv_zkt_c,                "_zkt",      "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zmmul,  "_zmmul",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zxcfu,  "_zxcfu",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Sdext,  "_sdext",    "" ) &
@@ -194,7 +201,10 @@ begin
     CPU_EXTENSION_RISCV_Zknd   => CPU_EXTENSION_RISCV_Zknd,   -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   => CPU_EXTENSION_RISCV_Zkne,   -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   => CPU_EXTENSION_RISCV_Zknh,   -- implement cryptography NIST hash extension?
-    CPU_EXTENSION_RISCV_Zknt   => const_exe_c,                -- data-independent execution time available (for cryptographic operations)?
+    CPU_EXTENSION_RISCV_Zks    => riscv_zks_c,                -- ShangMi algorithm suite available?
+    CPU_EXTENSION_RISCV_Zksed  => CPU_EXTENSION_RISCV_Zksed,  -- implement ShangMi block cypher extension?
+    CPU_EXTENSION_RISCV_Zksh   => CPU_EXTENSION_RISCV_Zksh,   -- implement ShangMi hash extension?
+    CPU_EXTENSION_RISCV_Zkt    => riscv_zkt_c,                -- data-independent execution time available (for cryptographic operations)?
     CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,  -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  => CPU_EXTENSION_RISCV_Sdext,  -- implement external debug mode extension?
@@ -295,6 +305,8 @@ begin
     CPU_EXTENSION_RISCV_Zknd   => CPU_EXTENSION_RISCV_Zknd,   -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   => CPU_EXTENSION_RISCV_Zkne,   -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   => CPU_EXTENSION_RISCV_Zknh,   -- implement cryptography NIST hash extension?
+    CPU_EXTENSION_RISCV_Zksed  => CPU_EXTENSION_RISCV_Zksed,  -- implement ShangMi block cypher extension?
+    CPU_EXTENSION_RISCV_Zksh   => CPU_EXTENSION_RISCV_Zksh,   -- implement ShangMi hash extension?
     CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,  -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,  -- implement custom (instr.) functions unit?
     -- Tuning Options --

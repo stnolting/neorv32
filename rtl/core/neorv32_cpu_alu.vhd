@@ -30,6 +30,8 @@ entity neorv32_cpu_alu is
     CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   : boolean; -- implement cryptography NIST hash extension?
+    CPU_EXTENSION_RISCV_Zksed  : boolean; -- implement ShangMi block cypher extension?
+    CPU_EXTENSION_RISCV_Zksh   : boolean; -- implement ShangMi hash extension?
     CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
     -- Tuning Options --
@@ -382,13 +384,16 @@ begin
   -- ALU[I]-Opcode Co-Processor: Scalar Cryptography Unit ('Zk*' ISA Extensions) ------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_crypto_inst_true:
-  if CPU_EXTENSION_RISCV_Zbkx or CPU_EXTENSION_RISCV_Zknh or CPU_EXTENSION_RISCV_Zkne or CPU_EXTENSION_RISCV_Zknd generate
+  if CPU_EXTENSION_RISCV_Zbkx or CPU_EXTENSION_RISCV_Zknh or CPU_EXTENSION_RISCV_Zkne or
+     CPU_EXTENSION_RISCV_Zknd or CPU_EXTENSION_RISCV_Zksh or CPU_EXTENSION_RISCV_Zksed generate
     neorv32_cpu_cp_crypto_inst: entity neorv32.neorv32_cpu_cp_crypto
     generic map (
-      EN_ZBKX => CPU_EXTENSION_RISCV_Zbkx, -- enable crossbar permutation extension
-      EN_ZKNH => CPU_EXTENSION_RISCV_Zknh, -- enable NIST hash extension
-      EN_ZKNE => CPU_EXTENSION_RISCV_Zkne, -- enable NIST AES encryption
-      EN_ZKND => CPU_EXTENSION_RISCV_Zknd  -- enable NIST AES decryption
+      EN_ZBKX  => CPU_EXTENSION_RISCV_Zbkx,  -- enable crossbar permutation extension
+      EN_ZKNH  => CPU_EXTENSION_RISCV_Zknh,  -- enable NIST hash extension
+      EN_ZKNE  => CPU_EXTENSION_RISCV_Zkne,  -- enable NIST AES encryption extension
+      EN_ZKND  => CPU_EXTENSION_RISCV_Zknd,  -- enable NIST AES decryption extension
+      EN_ZKSED => CPU_EXTENSION_RISCV_Zksed, -- enable ShangMi block cypher extension
+      EN_ZKSH  => CPU_EXTENSION_RISCV_Zksh   -- enable ShangMi hash extension
     )
     port map (
       -- global control --
@@ -405,7 +410,8 @@ begin
   end generate;
 
   neorv32_cpu_cp_crypto_inst_false:
-  if not (CPU_EXTENSION_RISCV_Zbkx or CPU_EXTENSION_RISCV_Zknh or CPU_EXTENSION_RISCV_Zkne or CPU_EXTENSION_RISCV_Zknd) generate
+  if not (CPU_EXTENSION_RISCV_Zbkx or CPU_EXTENSION_RISCV_Zknh or CPU_EXTENSION_RISCV_Zkne or
+          CPU_EXTENSION_RISCV_Zknd or CPU_EXTENSION_RISCV_Zksh or CPU_EXTENSION_RISCV_Zksed) generate
     cp_result(6) <= (others => '0');
     cp_valid(6)  <= '0';
   end generate;
