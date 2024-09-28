@@ -52,6 +52,8 @@ entity neorv32_vivado_ip is
     CPU_EXTENSION_RISCV_Zknd   : boolean                       := false;
     CPU_EXTENSION_RISCV_Zkne   : boolean                       := false;
     CPU_EXTENSION_RISCV_Zknh   : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zksed  : boolean                       := false;
+    CPU_EXTENSION_RISCV_Zksh   : boolean                       := false;
     CPU_EXTENSION_RISCV_Zxcfu  : boolean                       := false;
     -- Tuning Options --
     FAST_MUL_EN                : boolean                       := false;
@@ -323,6 +325,8 @@ begin
     CPU_EXTENSION_RISCV_Zknd   => CPU_EXTENSION_RISCV_Zknd,
     CPU_EXTENSION_RISCV_Zkne   => CPU_EXTENSION_RISCV_Zkne,
     CPU_EXTENSION_RISCV_Zknh   => CPU_EXTENSION_RISCV_Zknh,
+    CPU_EXTENSION_RISCV_Zksed  => CPU_EXTENSION_RISCV_Zksed,
+    CPU_EXTENSION_RISCV_Zksh   => CPU_EXTENSION_RISCV_Zksh,
     CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,
     -- Extension Options --
     FAST_MUL_EN                => FAST_MUL_EN,
