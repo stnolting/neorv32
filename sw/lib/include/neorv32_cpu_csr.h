@@ -311,7 +311,7 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_ZIFENCEI  =  1, /**< CPU mxisa CSR  (1): instruction stream sync (r/-)*/
   CSR_MXISA_ZMMUL     =  2, /**< CPU mxisa CSR  (2): hardware mul/div (r/-)*/
   CSR_MXISA_ZXCFU     =  3, /**< CPU mxisa CSR  (3): custom RISC-V instructions (r/-)*/
-  CSR_MXISA_ZKNT      =  4, /**< CPU mxisa CSR  (4): data independent execution time (of cryptographic operations) (r/-)*/
+  CSR_MXISA_ZKT       =  4, /**< CPU mxisa CSR  (4): data independent execution time (of cryptographic operations) (r/-)*/
   CSR_MXISA_ZFINX     =  5, /**< CPU mxisa CSR  (5): FPU using x registers (r/-)*/
   CSR_MXISA_ZICOND    =  6, /**< CPU mxisa CSR  (6): integer conditional operations (r/-)*/
   CSR_MXISA_ZICNTR    =  7, /**< CPU mxisa CSR  (7): standard instruction, cycle and time counter CSRs (r/-)*/
@@ -326,6 +326,9 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_ZBKB      = 16, /**< CPU mxisa CSR (16): scalar cryptography - bit manipulation instructions (r/-)*/
   CSR_MXISA_ZBKC      = 17, /**< CPU mxisa CSR (17): scalar cryptography - carry-less multiplication instructions (r/-)*/
   CSR_MXISA_ZKN       = 18, /**< CPU mxisa CSR (18): scalar cryptography - NIST algorithm suite (r/-)*/
+  CSR_MXISA_ZKSH      = 19, /**< CPU mxisa CSR (19): scalar cryptography - ShangMi hash functions (r/-)*/
+  CSR_MXISA_ZKSED     = 20, /**< CPU mxisa CSR (20): scalar cryptography - ShangMi block cyphers (r/-)*/
+  CSR_MXISA_ZKS       = 21, /**< CPU mxisa CSR (21): scalar cryptography - ShangMi algorithm suite (r/-)*/
 
   // Misc
   CSR_MXISA_IS_SIM    = 24, /**< CPU mxisa CSR (24): this might be a simulation when set (r/-)*/

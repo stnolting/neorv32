@@ -52,7 +52,10 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   : boolean; -- implement cryptography NIST hash extension?
-    CPU_EXTENSION_RISCV_Zknt   : boolean; -- data-independent execution time available (for cryptographic operations)?
+    CPU_EXTENSION_RISCV_Zks    : boolean; -- ShangMi algorithm suite available?
+    CPU_EXTENSION_RISCV_Zksed  : boolean; -- implement ShangMi hash extension?
+    CPU_EXTENSION_RISCV_Zksh   : boolean; -- implement ShangMi block cypher extension?
+    CPU_EXTENSION_RISCV_Zkt    : boolean; -- data-independent execution time available (for cryptographic operations)?
     CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
     CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
     CPU_EXTENSION_RISCV_Sdext  : boolean; -- implement external debug mode extension?
@@ -1885,7 +1888,7 @@ begin
             csr.rdata(1)  <= '1';                                          -- Zifencei: instruction stream sync. (always enabled)
             csr.rdata(2)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zmmul);  -- Zmmul: mul/div
             csr.rdata(3)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zxcfu);  -- Zxcfu: custom RISC-V instructions
-            csr.rdata(4)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zknt);   -- Zkt: data independent execution latency
+            csr.rdata(4)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zkt);    -- Zkt: data independent execution latency
             csr.rdata(5)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zfinx);  -- Zfinx: FPU using x registers
             csr.rdata(6)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicond); -- Zicond: integer conditional operations
             csr.rdata(7)  <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zicntr); -- Zicntr: base counters
@@ -1900,6 +1903,9 @@ begin
             csr.rdata(16) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zbkb);   -- Zbkb: bit manipulation instructions for cryptography
             csr.rdata(17) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zbkc);   -- Zbkc: carry-less multiplication for cryptography
             csr.rdata(18) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zkn);    -- Zkn: NIST algorithm suite
+            csr.rdata(19) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zksh);   -- Zksh: ShangMi hash functions
+            csr.rdata(20) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zksed);  -- Zksed: ShangMi block cyphers
+            csr.rdata(21) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zks);    -- Zks: ShangMi algorithm suite
             -- misc --
             csr.rdata(24) <= bool_to_ulogic_f(is_simulation_c);            -- is this a simulation?
             -- tuning options --

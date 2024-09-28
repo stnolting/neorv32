@@ -951,7 +951,7 @@ discover ISA sub-extensions and CPU configuration options
 |  1    | `CSR_MXISA_ZIFENCEI`  | r/- | <<_zifencei_isa_extension>> available
 |  2    | `CSR_MXISA_ZMMUL`     | r/- | <<_zmmul_isa_extension>> available
 |  3    | `CSR_MXISA_ZXCFU`     | r/- | <<_zxcfu_isa_extension>> available
-|  4    | `CSR_MXISA_ZKNT`      | r/- | <<_zknt_isa_extension>> available
+|  4    | `CSR_MXISA_ZKT`       | r/- | <<_zkt_isa_extension>> available
 |  5    | `CSR_MXISA_ZFINX`     | r/- | <<_zfinx_isa_extension>> available
 |  6    | `CSR_MXISA_ZICOND`    | r/- | <<_zicond_isa_extension>> available
 |  7    | `CSR_MXISA_ZICNTR`    | r/- | <<_zicntr_isa_extension>> available
@@ -966,7 +966,10 @@ discover ISA sub-extensions and CPU configuration options
 | 16    | `CSR_MXISA_ZBKB`      | r/- | <<_zbkb_isa_extension>> available
 | 17    | `CSR_MXISA_ZBKC`      | r/- | <<_zbkc_isa_extension>> available
 | 18    | `CSR_MXISA_ZKN`       | r/- | <<_zkn_isa_extension>> available
-| 23:19 | -                     | r/- | hardwired to zero
+| 19    | `CSR_MXISA_ZKSH`      | r/- | <<_zksh_isa_extension>> available
+| 20    | `CSR_MXISA_ZKSED`     | r/- | <<_zksed_isa_extension>> available
+| 21    | `CSR_MXISA_ZKS`       | r/- | <<_zks_isa_extension>> available
+| 23:22 | -                     | r/- | hardwired to zero
 | 24    | `CSR_MXISA_IS_SIM`    | r/- | set if CPU is being **simulated** (⚠️ not guaranteed)
 | 28:25 | -                     | r/- | hardwired to zero
 | 29    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`REGFILE_HW_RST`)
