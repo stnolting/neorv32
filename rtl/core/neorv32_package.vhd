@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100408"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100409"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -693,6 +693,8 @@ package neorv32_package is
       CPU_EXTENSION_RISCV_Zknd   : boolean                        := false;
       CPU_EXTENSION_RISCV_Zkne   : boolean                        := false;
       CPU_EXTENSION_RISCV_Zknh   : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zksed  : boolean                        := false;
+      CPU_EXTENSION_RISCV_Zksh   : boolean                        := false;
       CPU_EXTENSION_RISCV_Zxcfu  : boolean                        := false;
       -- Tuning Options --
       FAST_MUL_EN                : boolean                        := false;
