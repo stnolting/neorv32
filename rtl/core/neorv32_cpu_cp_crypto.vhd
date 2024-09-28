@@ -2,10 +2,12 @@
 -- NEORV32 CPU - Co-Processor: RISC-V Scalar Cryptography ('Zk*') ISA Extension     --
 -- -------------------------------------------------------------------------------- --
 -- Supported sub-extensions:                                                        --
--- + Zbkx: crossbar permutation                                                     --
--- + Zknh: NIST suite's hash function                                               --
--- + Zknd: NIST suite's AES decryption                                              --
--- + Zkne: NIST suite's AES encryption                                              --
+-- + Zbkx:  crossbar permutations                                                   --
+-- + Zknh:  NIST suite's hash functions                                             --
+-- + Zkne:  NIST suite's AES encryption                                             --
+-- + Zknd:  NIST suite's AES decryption                                             --
+-- + Zksed: ShangMi suite's block cyphers                                           --
+-- + Zksh:  ShangMi suite's hash functions                                          --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -27,8 +29,8 @@ entity neorv32_cpu_cp_crypto is
     EN_ZKNH  : boolean; -- enable NIST hash extension
     EN_ZKNE  : boolean; -- enable NIST AES encryption extension
     EN_ZKND  : boolean; -- enable NIST AES decryption extension
-    EN_ZKSED : boolean; -- enable ShangMi hash extension
-    EN_ZKSH  : boolean  -- enable ShangMi block cypher extension
+    EN_ZKSED : boolean; -- enable ShangMi block cypher extension
+    EN_ZKSH  : boolean  -- enable ShangMi hash extension
   );
   port (
     -- global control --
@@ -240,17 +242,18 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   signal funct3  : std_ulogic_vector(2 downto 0);
   signal out_sel : std_ulogic_vector(2 downto 0);
 
+  -- helper logic --
+  signal rs2_sel : std_ulogic_vector(7 downto 0);
+  signal rol_in  : std_ulogic_vector(31 downto 0);
+  signal rol_res : std_ulogic_vector(31 downto 0);
+  signal blk_res : std_ulogic_vector(31 downto 0);
+
   -- aes core --
   type aes_t is record
-    dec  : std_ulogic; -- 0 = encryption, 1 = decryption
-    mid  : std_ulogic; -- 0 = final round, 1 = middle round
-    bs   : std_ulogic_vector(1 downto 0);
-    si   : std_ulogic_vector(7 downto 0);
+    dec  : std_ulogic;
     so   : std_ulogic_vector(7 downto 0);
     mix1 : std_ulogic_vector(31 downto 0);
     mix2 : std_ulogic_vector(31 downto 0);
-    rot  : std_ulogic_vector(31 downto 0);
-    res  : std_ulogic_vector(31 downto 0);
   end record;
   signal aes : aes_t;
 
@@ -259,13 +262,9 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
 
   -- ShangMi core --
   type sm4_t is record
-    bs  : std_ulogic_vector(1 downto 0);
-    si  : std_ulogic_vector(7 downto 0);
     so1 : std_ulogic_vector(7 downto 0);
     so2 : std_ulogic_vector(31 downto 0);
     rnd : std_ulogic_vector(31 downto 0);
-    rot : std_ulogic_vector(31 downto 0);
-    res : std_ulogic_vector(31 downto 0);
   end record;
   signal sm4 : sm4_t;
 
@@ -355,9 +354,8 @@ begin
       res_o <= (others => '0'); -- default
       if (done = '1') then
         case out_sel is
-          when "100"  => res_o <= xperm_res;
-          when "101"  => res_o <= aes.res;
-          when "110"  => res_o <= sm4.res;
+          when "100"         => res_o <= xperm_res;
+          when "101" | "110" => res_o <= blk_res;
           when others =>
             if EN_ZKSH and (ctrl_i.ir_opcode(5) = '0') and (funct12(3) = '1') then
               res_o <= sm3_res;
@@ -433,28 +431,71 @@ begin
   end generate;
 
 
+  -- ShangMi Hash Functions -----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  sm3_enabled:
+  if EN_ZKSH generate
+    sm3_res <= (rs1 xor rol_f(rs1,  9) xor rol_f(rs1, 17)) when (funct12(0) = '0') else
+               (rs1 xor rol_f(rs1, 15) xor rol_f(rs1, 23));
+  end generate;
+
+  sm3_disabled:
+  if not EN_ZKSH generate
+    sm3_res <= (others => '0');
+  end generate;
+
+
+  -- Block Cyphers (AES/SM4) Helper Logic ---------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  block_cyphers_enabled:
+  if EN_ZKNE or EN_ZKND or EN_ZKSED generate
+
+    -- select byte from rs2 via bs --
+    with funct12(11 downto 10) select rs2_sel <=
+      rs2(07 downto 00) when "00",
+      rs2(15 downto 08) when "01",
+      rs2(23 downto 16) when "10",
+      rs2(31 downto 24) when others;
+
+    -- rotate input select --
+    rol_in <= aes.mix2 when (not EN_ZKSED) else
+              sm4.rnd  when (not EN_ZKNE) and (not EN_ZKND) else
+              aes.mix2 when (funct12(8) = '0') else sm4.rnd;
+
+    -- rotate left by multiples of 8 via bs --
+    with funct12(11 downto 10) select rol_res <=
+      rol_in(31 downto 0)                        when "00",
+      rol_in(23 downto 0) & rol_in(31 downto 24) when "01",
+      rol_in(15 downto 0) & rol_in(31 downto 16) when "10",
+      rol_in(07 downto 0) & rol_in(31 downto 08) when others;
+
+    -- block cypher result --
+    blk_res <= rs1 xor rol_res;
+
+  end generate;
+
+  block_cyphers_disabled:
+  if not (EN_ZKNE or EN_ZKND or EN_ZKSED) generate
+    rs2_sel <= (others => '0');
+    rol_in  <= (others => '0');
+    rol_res <= (others => '0');
+    blk_res <= (others => '0');
+  end generate;
+
+
   -- NIST AES Encryption/Decryption ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   aes_enabled:
   if EN_ZKNE or EN_ZKND generate
 
     -- operation select --
-    aes.bs  <= funct12(11 downto 10); -- byte select
-    aes.mid <= funct12(6); -- 0 = final round, 1 = middle round
-    aes.dec <= '1' when (EN_ZKNE = false) else '0' when (EN_ZKND = false) else funct12(7); -- 0 = encrypt, 1 = decrypt
-
-    -- select byte from rs2 --
-    with aes.bs select aes.si <=
-      rs2(07 downto 00) when "00",
-      rs2(15 downto 08) when "01",
-      rs2(23 downto 16) when "10",
-      rs2(31 downto 24) when others;
+    aes.dec <= '1' when (not EN_ZKNE) else '0' when (not EN_ZKND) else funct12(7); -- 0 = encrypt, 1 = decrypt
 
     -- s-box look-up --
     aes_sbox_lookup: process(clk_i)
     begin
       if rising_edge(clk_i) then -- ROM access; try to infer memory primitives
-        aes.so <= aes_sbox_c(to_integer(unsigned(aes.dec & aes.si))); -- aes.dec = 0 -> fwd-s-box, aes.dec = 1 -> inv-s-box
+        aes.so <= aes_sbox_c(to_integer(unsigned(aes.dec & rs2_sel))); -- aes.dec = 0 -> fwd-s-box, aes.dec = 1 -> inv-s-box
       end if;
     end process aes_sbox_lookup;
 
@@ -478,44 +519,17 @@ begin
       end if;
     end process aes_mix_columns;
 
-    -- middle / final round --
-    aes.mix2 <= aes.mix1 when (aes.mid = '1') else x"000000" & aes.so;
-
-    -- rotate by multiples of 8 --
-    with aes.bs select aes.rot <=
-      aes.mix2(31 downto 0)                          when "00",
-      aes.mix2(23 downto 0) & aes.mix2(31 downto 24) when "01",
-      aes.mix2(15 downto 0) & aes.mix2(31 downto 16) when "10",
-      aes.mix2(07 downto 0) & aes.mix2(31 downto 08) when others;
-
-    -- final XOR --
-    aes.res <= rs1 xor aes.rot;
+    -- final / middle round --
+    aes.mix2 <= aes.mix1 when (funct12(6) = '1') else x"000000" & aes.so;
 
   end generate;
 
   aes_disabled:
   if (not EN_ZKNE) and (not EN_ZKND) generate
-    aes.bs   <= (others => '0');
-    aes.mid  <= '0';
     aes.dec  <= '0';
     aes.so   <= (others => '0');
     aes.mix1 <= (others => '0');
     aes.mix2 <= (others => '0');
-    aes.res  <= (others => '0');
-  end generate;
-
-
-  -- ShangMi Hash Functions -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  sm3_enabled:
-  if EN_ZKSH generate
-    sm3_res <= (rs1 xor rol_f(rs1,  9) xor rol_f(rs1, 17)) when (funct12(0) = '0') else
-               (rs1 xor rol_f(rs1, 15) xor rol_f(rs1, 23));
-  end generate;
-
-  sm3_disabled:
-  if not EN_ZKSH generate
-    sm3_res <= (others => '0');
   end generate;
 
 
@@ -524,29 +538,19 @@ begin
   sm4_enabled:
   if EN_ZKSED generate
 
-    -- operation select --
-    sm4.bs <= funct12(11 downto 10); -- byte select
-
-    -- select byte from rs2 --
-    with sm4.bs select sm4.si <=
-      rs2(07 downto 00) when "00",
-      rs2(15 downto 08) when "01",
-      rs2(23 downto 16) when "10",
-      rs2(31 downto 24) when others;
-
     -- s-box look-up --
     sm4_sbox_lookup: process(clk_i)
     begin
       if rising_edge(clk_i) then -- ROM access; try to infer memory primitives
-        sm4.so1 <= sm4_sbox_c(to_integer(unsigned(sm4.si)));
+        sm4.so1 <= sm4_sbox_c(to_integer(unsigned(rs2_sel)));
       end if;
     end process sm4_sbox_lookup;
 
     -- zero-extend --
     sm4.so2 <= x"000000" & sm4.so1;
 
-    -- encrypt/decrypt or key schedule round --
-    sm4_schedule: process(rstn_i, clk_i)
+    -- round update: encrypt/decrypt or key schedule --
+    sm4_round: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
         sm4.rnd <= (others => '0');
@@ -559,29 +563,15 @@ begin
                                  lsl_f((sm4.so2 and x"00000001"), 23) xor lsl_f((sm4.so2 and x"000000F8"), 13);
         end if;
       end if;
-    end process sm4_schedule;
-
-    -- rotate left by multiples of 8 --
-    with sm4.bs select sm4.rot <=
-      sm4.rnd(31 downto 0)                         when "00",
-      sm4.rnd(23 downto 0) & sm4.rnd(31 downto 24) when "01",
-      sm4.rnd(15 downto 0) & sm4.rnd(31 downto 16) when "10",
-      sm4.rnd(07 downto 0) & sm4.rnd(31 downto 08) when others;
-
-    -- final XOR --
-    sm4.res <= rs1 xor sm4.rot;
+    end process sm4_round;
 
   end generate;
 
   sm4_disabled:
   if not EN_ZKSED generate
-    sm4.bs  <= (others => '0');
-    sm4.si  <= (others => '0');
     sm4.so1 <= (others => '0');
     sm4.so2 <= (others => '0');
     sm4.rnd <= (others => '0');
-    sm4.rot <= (others => '0');
-    sm4.res <= (others => '0');
   end generate;
 
 
