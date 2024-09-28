@@ -449,6 +449,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_zicond_isa_extension,`Zicond`>> | Integer conditional operations | `CPU_EXTENSION_RISCV_Zicond`
 | <<_zicsr_isa_extension,`Zicsr`>> | Control and status register access instructions | Always enabled
 | <<_zihpm_isa_extension,`Zihpm`>> | Hardware performance monitors extension | `CPU_EXTENSION_RISCV_Zihpm`
+| <<_zkn_isa_extension,`Zkn`>> | Scalar cryptographic NIST algorithm suite | _Implicitly_ enabled
 | <<_zknd_isa_extension,`Zknd`>> | Scalar cryptographic NIST AES decryption instructions | `CPU_EXTENSION_RISCV_Zknd`
 | <<_zkne_isa_extension,`Zkne`>> | Scalar cryptographic NIST AES encryption instructions | `CPU_EXTENSION_RISCV_Zkne`
 | <<_zknh_isa_extension,`Zknh`>> | Scalar cryptographic NIST hash function instructions | `CPU_EXTENSION_RISCV_Zknh`
@@ -796,6 +797,24 @@ Accessing any user-mode HPM CSR (`hpmcounter*[h]`) will raise an illegal instruc
 .Increment Inhibit
 [TIP]
 The event-driven increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
+
+
+==== `Zbn` ISA Extension
+
+The `Zkn` ISA extension is part of the _RISC-V scalar cryptography_ ISA specification and defines the "NIST algorithm suite".
+This ISA extension cannot be enabled by a specific generic. Instead, it is enabled if a specific set of cryptography-related
+sub-extensions is enabled.
+
+The `Zkn` extension is shorthand for the following set of other extensions:
+
+* <<_zbkb_isa_extension>> - Bit manipulation instructions for cryptography.
+* <<_zbkc_isa_extension>> - Carry-less multiply instructions.
+* <<_zbkx_isa_extension>> - Cross-bar permutation instructions.
+* <<_zbne_isa_extension>> - AES encryption instructions.
+* <<_zbnd_isa_extension>> - AES decryption instructions.
+* <<_zbnh_isa_extension>> - SHA2 hash function instructions.
+
+A processor configuration which implements `Zkn` must implement all of the above extensions.
 
 
 ==== `Zbkb` ISA Extension
