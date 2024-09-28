@@ -48,6 +48,7 @@ entity neorv32_cpu_control is
     CPU_EXTENSION_RISCV_Zicntr : boolean; -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond : boolean; -- implement integer conditional operations?
     CPU_EXTENSION_RISCV_Zihpm  : boolean; -- implement hardware performance monitors?
+    CPU_EXTENSION_RISCV_Zkn    : boolean; -- NIST algorithm suite available?
     CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   : boolean; -- implement cryptography NIST hash extension?
@@ -1898,8 +1899,9 @@ begin
             csr.rdata(15) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zknh);   -- Zknh: cryptography NIST hash functions
             csr.rdata(16) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zbkb);   -- Zbkb: bit manipulation instructions for cryptography
             csr.rdata(17) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zbkc);   -- Zbkc: carry-less multiplication for cryptography
+            csr.rdata(18) <= bool_to_ulogic_f(CPU_EXTENSION_RISCV_Zkn);    -- Zkn: NIST algorithm suite
             -- misc --
-            csr.rdata(20) <= bool_to_ulogic_f(is_simulation_c);            -- is this a simulation?
+            csr.rdata(24) <= bool_to_ulogic_f(is_simulation_c);            -- is this a simulation?
             -- tuning options --
             csr.rdata(29) <= bool_to_ulogic_f(REGFILE_HW_RST);             -- full hardware reset of register file
             csr.rdata(30) <= bool_to_ulogic_f(FAST_MUL_EN);                -- DSP-based multiplication (M extensions only)

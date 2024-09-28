@@ -89,6 +89,8 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- auto-configuration --
   constant rf_rs3_en_c : boolean := CPU_EXTENSION_RISCV_Zxcfu or CPU_EXTENSION_RISCV_Zfinx; -- 3rd register file read port
   constant const_exe_c : boolean := FAST_SHIFT_EN; -- data-independent execution time for crypto operations (RISC-V Zknt ISA ext.)
+  constant riscv_zkn_c : boolean := CPU_EXTENSION_RISCV_Zbkb and CPU_EXTENSION_RISCV_Zbkc and CPU_EXTENSION_RISCV_Zbkx and
+                                    CPU_EXTENSION_RISCV_Zkne and CPU_EXTENSION_RISCV_Zknd and CPU_EXTENSION_RISCV_Zknh; -- Zkn: NIST suite
 
   -- external CSR interface --
   signal xcsr_we        : std_ulogic;
@@ -123,7 +125,7 @@ begin
 
   -- Sanity Checks --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- CPU ISA configuration --
+  -- CPU ISA configuration (in alphabetical order - not in canonical order!) --
   assert false report "[NEORV32] CPU ISA: rv32" &
     cond_sel_string_f(CPU_EXTENSION_RISCV_E,      "e",         "i") &
     cond_sel_string_f(CPU_EXTENSION_RISCV_A,      "a",         "" ) &
@@ -141,6 +143,7 @@ begin
     cond_sel_string_f(true,                       "_zifencei", "" ) & -- always enabled
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zihpm,  "_zihpm",    "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zfinx,  "_zfinx",    "" ) &
+    cond_sel_string_f(riscv_zkn_c,                "_zkn",      "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zknd,   "_zknd",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zkne,   "_zkne",     "" ) &
     cond_sel_string_f(CPU_EXTENSION_RISCV_Zknh,   "_zknh",     "" ) &
@@ -187,6 +190,7 @@ begin
     CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr, -- implement base counters?
     CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond, -- implement integer conditional operations?
     CPU_EXTENSION_RISCV_Zihpm  => CPU_EXTENSION_RISCV_Zihpm,  -- implement hardware performance monitors?
+    CPU_EXTENSION_RISCV_Zkn    => riscv_zkn_c,                -- NIST algorithm suite available?
     CPU_EXTENSION_RISCV_Zknd   => CPU_EXTENSION_RISCV_Zknd,   -- implement cryptography NIST AES decryption extension?
     CPU_EXTENSION_RISCV_Zkne   => CPU_EXTENSION_RISCV_Zkne,   -- implement cryptography NIST AES encryption extension?
     CPU_EXTENSION_RISCV_Zknh   => CPU_EXTENSION_RISCV_Zknh,   -- implement cryptography NIST hash extension?
