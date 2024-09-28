@@ -325,9 +325,10 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_ZKNH      = 15, /**< CPU mxisa CSR (15): scalar cryptography - NIST hash functions (r/-)*/
   CSR_MXISA_ZBKB      = 16, /**< CPU mxisa CSR (16): scalar cryptography - bit manipulation instructions (r/-)*/
   CSR_MXISA_ZBKC      = 17, /**< CPU mxisa CSR (17): scalar cryptography - carry-less multiplication instructions (r/-)*/
+  CSR_MXISA_ZKN       = 18, /**< CPU mxisa CSR (18): scalar cryptography - NIST algorithm suite (r/-)*/
 
   // Misc
-  CSR_MXISA_IS_SIM    = 20, /**< CPU mxisa CSR (20): this might be a simulation when set (r/-)*/
+  CSR_MXISA_IS_SIM    = 24, /**< CPU mxisa CSR (24): this might be a simulation when set (r/-)*/
 
   // Tuning options
   CSR_MXISA_RFHWRST   = 29, /**< CPU mxisa CSR (29): Register file has full hardware reset (r/-)*/
