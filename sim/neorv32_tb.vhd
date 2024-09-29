@@ -192,102 +192,102 @@ begin
   neorv32_top_inst: neorv32_top
   generic map (
     -- General --
-    CLOCK_FREQUENCY              => f_clock_c,     -- clock frequency of clk_i in Hz
-    CLOCK_GATING_EN              => true,          -- enable clock gating when in sleep mode
-    HART_ID                      => x"00000000",   -- hardware thread ID
-    JEDEC_ID                     => "00000000000", -- vendor's JEDEC ID
-    INT_BOOTLOADER_EN            => false,         -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    CLOCK_FREQUENCY       => f_clock_c,     -- clock frequency of clk_i in Hz
+    CLOCK_GATING_EN       => true,          -- enable clock gating when in sleep mode
+    HART_ID               => x"00000000",   -- hardware thread ID
+    JEDEC_ID              => "00000000000", -- vendor's JEDEC ID
+    INT_BOOTLOADER_EN     => false,         -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN          => true,          -- implement on-chip debugger
+    ON_CHIP_DEBUGGER_EN   => true,          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A        => true,          -- implement atomic memory operations extension?
-    CPU_EXTENSION_RISCV_B        => true,          -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_C        => true,          -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E        => false,         -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M        => true,          -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U        => true,          -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zbkb     => true,          -- implement bit-manipulation instructions for cryptography
-    CPU_EXTENSION_RISCV_Zbkc     => true,          -- implement carry-less multiplication instructions?
-    CPU_EXTENSION_RISCV_Zbkx     => true,          -- implement cryptography crossbar permutation extension?
-    CPU_EXTENSION_RISCV_Zfinx    => true,          -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zicntr   => true,          -- implement base counters?
-    CPU_EXTENSION_RISCV_Zicond   => true,          -- implement integer conditional operations?
-    CPU_EXTENSION_RISCV_Zihpm    => true,          -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zknd     => true,          -- implement cryptography NIST AES decryption extension?
-    CPU_EXTENSION_RISCV_Zkne     => true,          -- implement cryptography NIST AES encryption extension?
-    CPU_EXTENSION_RISCV_Zknh     => true,          -- implement cryptography NIST hash extension?
-    CPU_EXTENSION_RISCV_Zksed    => true,          -- implement ShangMi block cypher extension?
-    CPU_EXTENSION_RISCV_Zksh     => true,          -- implement ShangMi hash extension?
-    CPU_EXTENSION_RISCV_Zmmul    => false,         -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zxcfu    => true,          -- implement custom (instr.) functions unit?
+    RISCV_ISA_A           => true,          -- implement atomic memory operations extension?
+    RISCV_ISA_B           => true,          -- implement bit-manipulation extension?
+    RISCV_ISA_C           => true,          -- implement compressed extension?
+    RISCV_ISA_E           => false,         -- implement embedded RF extension?
+    RISCV_ISA_M           => true,          -- implement mul/div extension?
+    RISCV_ISA_U           => true,          -- implement user mode extension?
+    RISCV_ISA_Zbkb        => true,          -- implement bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc        => true,          -- implement carry-less multiplication instructions?
+    RISCV_ISA_Zbkx        => true,          -- implement cryptography crossbar permutation extension?
+    RISCV_ISA_Zfinx       => true,          -- implement 32-bit floating-point extension (using INT reg!)
+    RISCV_ISA_Zicntr      => true,          -- implement base counters?
+    RISCV_ISA_Zicond      => true,          -- implement integer conditional operations?
+    RISCV_ISA_Zihpm       => true,          -- implement hardware performance monitors?
+    RISCV_ISA_Zknd        => true,          -- implement cryptography NIST AES decryption extension?
+    RISCV_ISA_Zkne        => true,          -- implement cryptography NIST AES encryption extension?
+    RISCV_ISA_Zknh        => true,          -- implement cryptography NIST hash extension?
+    RISCV_ISA_Zksed       => true,          -- implement ShangMi block cypher extension?
+    RISCV_ISA_Zksh        => true,          -- implement ShangMi hash extension?
+    RISCV_ISA_Zmmul       => false,         -- implement multiply-only M sub-extension?
+    RISCV_ISA_Zxcfu       => true,          -- implement custom (instr.) functions unit?
     -- Extension Options --
-    FAST_MUL_EN                  => false,         -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN                => false,         -- use barrel shifter for shift operations
-    REGFILE_HW_RST               => true,          -- full hardware reset
+    FAST_MUL_EN           => false,         -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN         => false,         -- use barrel shifter for shift operations
+    REGFILE_HW_RST        => true,          -- full hardware reset
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS              => 5,             -- number of regions (0..16)
-    PMP_MIN_GRANULARITY          => 4,             -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
-    PMP_TOR_MODE_EN              => true,          -- implement TOR mode
-    PMP_NAP_MODE_EN              => true,          -- implement NAPOT/NA4 mode
+    PMP_NUM_REGIONS       => 5,             -- number of regions (0..16)
+    PMP_MIN_GRANULARITY   => 4,             -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_TOR_MODE_EN       => true,          -- implement TOR mode
+    PMP_NAP_MODE_EN       => true,          -- implement NAPOT/NA4 mode
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS                 => 12,            -- number of implemented HPM counters (0..29)
-    HPM_CNT_WIDTH                => 40,            -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS          => 12,            -- number of implemented HPM counters (0..29)
+    HPM_CNT_WIDTH         => 40,            -- total size of HPM counters (0..64)
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN              => int_imem_c ,   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            => imem_size_c,   -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_EN       => int_imem_c ,   -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE     => imem_size_c,   -- size of processor-internal instruction memory in bytes
     -- Internal Data memory --
-    MEM_INT_DMEM_EN              => int_dmem_c,    -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE            => dmem_size_c,   -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_EN       => int_dmem_c,    -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE     => dmem_size_c,   -- size of processor-internal data memory in bytes
     -- Internal Cache memory --
-    ICACHE_EN                    => false,         -- implement instruction cache
+    ICACHE_EN             => false,         -- implement instruction cache
     -- Internal Data Cache (dCACHE) --
-    DCACHE_EN                    => false,         -- implement data cache
+    DCACHE_EN             => false,         -- implement data cache
     -- External bus interface --
-    XBUS_EN                      => true,          -- implement external memory bus interface?
-    XBUS_TIMEOUT                 => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)
-    XBUS_REGSTAGE_EN             => false,         -- add register stage
-    XBUS_CACHE_EN                => true,          -- enable external bus cache (x-cache)
-    XBUS_CACHE_NUM_BLOCKS        => 64,            -- x-cache: number of blocks (min 1), has to be a power of 2
-    XBUS_CACHE_BLOCK_SIZE        => 32,            -- x-cache: block size in bytes (min 4), has to be a power of 2
+    XBUS_EN               => true,          -- implement external memory bus interface?
+    XBUS_TIMEOUT          => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)
+    XBUS_REGSTAGE_EN      => false,         -- add register stage
+    XBUS_CACHE_EN         => true,          -- enable external bus cache (x-cache)
+    XBUS_CACHE_NUM_BLOCKS => 64,            -- x-cache: number of blocks (min 1), has to be a power of 2
+    XBUS_CACHE_BLOCK_SIZE => 32,            -- x-cache: block size in bytes (min 4), has to be a power of 2
     -- Execute in-place module (XIP) --
-    XIP_EN                       => true,          -- implement execute in place module (XIP)?
-    XIP_CACHE_EN                 => true,          -- implement XIP cache?
-    XIP_CACHE_NUM_BLOCKS         => 4,             -- number of blocks (min 1), has to be a power of 2
-    XIP_CACHE_BLOCK_SIZE         => 256,           -- block size in bytes (min 4), has to be a power of 2
+    XIP_EN                => true,          -- implement execute in place module (XIP)?
+    XIP_CACHE_EN          => true,          -- implement XIP cache?
+    XIP_CACHE_NUM_BLOCKS  => 4,             -- number of blocks (min 1), has to be a power of 2
+    XIP_CACHE_BLOCK_SIZE  => 256,           -- block size in bytes (min 4), has to be a power of 2
     -- External Interrupts Controller (XIRQ) --
-    XIRQ_NUM_CH                  => 32,            -- number of external IRQ channels (0..32)
+    XIRQ_NUM_CH           => 32,            -- number of external IRQ channels (0..32)
     -- Processor peripherals --
-    IO_GPIO_NUM                  => 64,            -- number of GPIO input/output pairs (0..64)
-    IO_MTIME_EN                  => true,          -- implement machine system timer (MTIME)?
-    IO_UART0_EN                  => true,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART0_RX_FIFO             => 32,            -- RX fifo depth, has to be a power of two, min 1
-    IO_UART0_TX_FIFO             => 32,            -- TX fifo depth, has to be a power of two, min 1
-    IO_UART1_EN                  => true,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-    IO_UART1_RX_FIFO             => 1,             -- RX fifo depth, has to be a power of two, min 1
-    IO_UART1_TX_FIFO             => 1,             -- TX fifo depth, has to be a power of two, min 1
-    IO_SPI_EN                    => true,          -- implement serial peripheral interface (SPI)?
-    IO_SPI_FIFO                  => 4,             -- SPI RTX fifo depth, has to be zero or a power of two
-    IO_SDI_EN                    => true,          -- implement serial data interface (SDI)?
-    IO_SDI_FIFO                  => 4,             -- SDI RTX fifo depth, has to be zero or a power of two
-    IO_TWI_EN                    => true,          -- implement two-wire interface (TWI)?
-    IO_TWI_FIFO                  => 4,             -- RTX fifo depth, has to be zero or a power of two, min 1
-    IO_PWM_NUM_CH                => 12,            -- number of PWM channels to implement (0..12); 0 = disabled
-    IO_WDT_EN                    => true,          -- implement watch dog timer (WDT)?
-    IO_TRNG_EN                   => true,          -- implement true random number generator (TRNG)?
-    IO_TRNG_FIFO                 => 4,             -- TRNG fifo depth, has to be a power of two, min 1
-    IO_CFS_EN                    => true,          -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG                => (others => '0'), -- custom CFS configuration generic
-    IO_CFS_IN_SIZE               => 32,            -- size of CFS input conduit in bits
-    IO_CFS_OUT_SIZE              => 32,            -- size of CFS output conduit in bits
-    IO_NEOLED_EN                 => true,          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_NEOLED_TX_FIFO            => 8,             -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
-    IO_GPTMR_EN                  => true,          -- implement general purpose timer (GPTMR)?
-    IO_ONEWIRE_EN                => true,          -- implement 1-wire interface (ONEWIRE)?
-    IO_DMA_EN                    => true,          -- implement direct memory access controller (DMA)?
-    IO_SLINK_EN                  => true,          -- implement stream link interface (SLINK)?
-    IO_SLINK_RX_FIFO             => 4,             -- RX fifo depth, has to be a power of two, min 1
-    IO_SLINK_TX_FIFO             => 4,             -- TX fifo depth, has to be a power of two, min 1
-    IO_CRC_EN                    => true           -- implement cyclic redundancy check unit (CRC)?
+    IO_GPIO_NUM           => 64,            -- number of GPIO input/output pairs (0..64)
+    IO_MTIME_EN           => true,          -- implement machine system timer (MTIME)?
+    IO_UART0_EN           => true,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART0_RX_FIFO      => 32,            -- RX fifo depth, has to be a power of two, min 1
+    IO_UART0_TX_FIFO      => 32,            -- TX fifo depth, has to be a power of two, min 1
+    IO_UART1_EN           => true,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_UART1_RX_FIFO      => 1,             -- RX fifo depth, has to be a power of two, min 1
+    IO_UART1_TX_FIFO      => 1,             -- TX fifo depth, has to be a power of two, min 1
+    IO_SPI_EN             => true,          -- implement serial peripheral interface (SPI)?
+    IO_SPI_FIFO           => 4,             -- SPI RTX fifo depth, has to be zero or a power of two
+    IO_SDI_EN             => true,          -- implement serial data interface (SDI)?
+    IO_SDI_FIFO           => 4,             -- SDI RTX fifo depth, has to be zero or a power of two
+    IO_TWI_EN             => true,          -- implement two-wire interface (TWI)?
+    IO_TWI_FIFO           => 4,             -- RTX fifo depth, has to be zero or a power of two, min 1
+    IO_PWM_NUM_CH         => 12,            -- number of PWM channels to implement (0..12); 0 = disabled
+    IO_WDT_EN             => true,          -- implement watch dog timer (WDT)?
+    IO_TRNG_EN            => true,          -- implement true random number generator (TRNG)?
+    IO_TRNG_FIFO          => 4,             -- TRNG fifo depth, has to be a power of two, min 1
+    IO_CFS_EN             => true,          -- implement custom functions subsystem (CFS)?
+    IO_CFS_CONFIG         => (others => '0'), -- custom CFS configuration generic
+    IO_CFS_IN_SIZE        => 32,            -- size of CFS input conduit in bits
+    IO_CFS_OUT_SIZE       => 32,            -- size of CFS output conduit in bits
+    IO_NEOLED_EN          => true,          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_NEOLED_TX_FIFO     => 8,             -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
+    IO_GPTMR_EN           => true,          -- implement general purpose timer (GPTMR)?
+    IO_ONEWIRE_EN         => true,          -- implement 1-wire interface (ONEWIRE)?
+    IO_DMA_EN             => true,          -- implement direct memory access controller (DMA)?
+    IO_SLINK_EN           => true,          -- implement stream link interface (SLINK)?
+    IO_SLINK_RX_FIFO      => 4,             -- RX fifo depth, has to be a power of two, min 1
+    IO_SLINK_TX_FIFO      => 4,             -- TX fifo depth, has to be a power of two, min 1
+    IO_CRC_EN             => true           -- implement cyclic redundancy check unit (CRC)?
   )
   port map (
     -- Global control --
