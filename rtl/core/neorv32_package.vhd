@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100409"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100410"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -667,108 +667,108 @@ package neorv32_package is
   component neorv32_top
     generic (
       -- General --
-      CLOCK_FREQUENCY            : natural;
-      CLOCK_GATING_EN            : boolean                        := false;
-      HART_ID                    : std_ulogic_vector(31 downto 0) := x"00000000";
-      JEDEC_ID                   : std_ulogic_vector(10 downto 0) := "00000000000";
-      INT_BOOTLOADER_EN          : boolean                        := false;
+      CLOCK_FREQUENCY       : natural;
+      CLOCK_GATING_EN       : boolean                        := false;
+      HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000";
+      JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000";
+      INT_BOOTLOADER_EN     : boolean                        := false;
       -- On-Chip Debugger (OCD) --
-      ON_CHIP_DEBUGGER_EN        : boolean                        := false;
-      DM_LEGACY_MODE             : boolean                        := false;
+      ON_CHIP_DEBUGGER_EN   : boolean                        := false;
+      DM_LEGACY_MODE        : boolean                        := false;
       -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_A      : boolean                        := false;
-      CPU_EXTENSION_RISCV_B      : boolean                        := false;
-      CPU_EXTENSION_RISCV_C      : boolean                        := false;
-      CPU_EXTENSION_RISCV_E      : boolean                        := false;
-      CPU_EXTENSION_RISCV_M      : boolean                        := false;
-      CPU_EXTENSION_RISCV_U      : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zbkb   : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zbkc   : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zbkx   : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zfinx  : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zicntr : boolean                        := true;
-      CPU_EXTENSION_RISCV_Zicond : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zihpm  : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zmmul  : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zknd   : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zkne   : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zknh   : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zksed  : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zksh   : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zxcfu  : boolean                        := false;
+      RISCV_ISA_A           : boolean                        := false;
+      RISCV_ISA_B           : boolean                        := false;
+      RISCV_ISA_C           : boolean                        := false;
+      RISCV_ISA_E           : boolean                        := false;
+      RISCV_ISA_M           : boolean                        := false;
+      RISCV_ISA_U           : boolean                        := false;
+      RISCV_ISA_Zbkb        : boolean                        := false;
+      RISCV_ISA_Zbkc        : boolean                        := false;
+      RISCV_ISA_Zbkx        : boolean                        := false;
+      RISCV_ISA_Zfinx       : boolean                        := false;
+      RISCV_ISA_Zicntr      : boolean                        := true;
+      RISCV_ISA_Zicond      : boolean                        := false;
+      RISCV_ISA_Zihpm       : boolean                        := false;
+      RISCV_ISA_Zmmul       : boolean                        := false;
+      RISCV_ISA_Zknd        : boolean                        := false;
+      RISCV_ISA_Zkne        : boolean                        := false;
+      RISCV_ISA_Zknh        : boolean                        := false;
+      RISCV_ISA_Zksed       : boolean                        := false;
+      RISCV_ISA_Zksh        : boolean                        := false;
+      RISCV_ISA_Zxcfu       : boolean                        := false;
       -- Tuning Options --
-      FAST_MUL_EN                : boolean                        := false;
-      FAST_SHIFT_EN              : boolean                        := false;
-      REGFILE_HW_RST             : boolean                        := false;
+      FAST_MUL_EN           : boolean                        := false;
+      FAST_SHIFT_EN         : boolean                        := false;
+      REGFILE_HW_RST        : boolean                        := false;
       -- Physical Memory Protection (PMP) --
-      PMP_NUM_REGIONS            : natural range 0 to 16          := 0;
-      PMP_MIN_GRANULARITY        : natural                        := 4;
-      PMP_TOR_MODE_EN            : boolean                        := true;
-      PMP_NAP_MODE_EN            : boolean                        := true;
+      PMP_NUM_REGIONS       : natural range 0 to 16          := 0;
+      PMP_MIN_GRANULARITY   : natural                        := 4;
+      PMP_TOR_MODE_EN       : boolean                        := true;
+      PMP_NAP_MODE_EN       : boolean                        := true;
       -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS               : natural range 0 to 13          := 0;
-      HPM_CNT_WIDTH              : natural range 0 to 64          := 40;
+      HPM_NUM_CNTS          : natural range 0 to 13          := 0;
+      HPM_CNT_WIDTH         : natural range 0 to 64          := 40;
       -- Internal Instruction memory (IMEM) --
-      MEM_INT_IMEM_EN            : boolean                        := false;
-      MEM_INT_IMEM_SIZE          : natural                        := 16*1024;
+      MEM_INT_IMEM_EN       : boolean                        := false;
+      MEM_INT_IMEM_SIZE     : natural                        := 16*1024;
       -- Internal Data memory (DMEM) --
-      MEM_INT_DMEM_EN            : boolean                        := false;
-      MEM_INT_DMEM_SIZE          : natural                        := 8*1024;
+      MEM_INT_DMEM_EN       : boolean                        := false;
+      MEM_INT_DMEM_SIZE     : natural                        := 8*1024;
       -- Internal Instruction Cache (iCACHE) --
-      ICACHE_EN                  : boolean                        := false;
-      ICACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
-      ICACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
+      ICACHE_EN             : boolean                        := false;
+      ICACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
+      ICACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
       -- Internal Data Cache (dCACHE) --
-      DCACHE_EN                  : boolean                        := false;
-      DCACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
-      DCACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
+      DCACHE_EN             : boolean                        := false;
+      DCACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
+      DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
       -- External bus interface (XBUS) --
-      XBUS_EN                    : boolean                        := false;
-      XBUS_TIMEOUT               : natural                        := 255;
-      XBUS_REGSTAGE_EN           : boolean                        := false;
-      XBUS_CACHE_EN              : boolean                        := false;
-      XBUS_CACHE_NUM_BLOCKS      : natural range 1 to 256         := 64;
-      XBUS_CACHE_BLOCK_SIZE      : natural range 1 to 2**16       := 32;
+      XBUS_EN               : boolean                        := false;
+      XBUS_TIMEOUT          : natural                        := 255;
+      XBUS_REGSTAGE_EN      : boolean                        := false;
+      XBUS_CACHE_EN         : boolean                        := false;
+      XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 64;
+      XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16       := 32;
       -- Execute in-place module (XIP) --
-      XIP_EN                     : boolean                        := false;
-      XIP_CACHE_EN               : boolean                        := false;
-      XIP_CACHE_NUM_BLOCKS       : natural range 1 to 256         := 8;
-      XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16       := 256;
+      XIP_EN                : boolean                        := false;
+      XIP_CACHE_EN          : boolean                        := false;
+      XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256         := 8;
+      XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16       := 256;
       -- External Interrupts Controller (XIRQ) --
-      XIRQ_NUM_CH                : natural range 0 to 32          := 0;
+      XIRQ_NUM_CH           : natural range 0 to 32          := 0;
       -- Processor peripherals --
-      IO_DISABLE_SYSINFO         : boolean                        := false;
-      IO_GPIO_NUM                : natural range 0 to 64          := 0;
-      IO_MTIME_EN                : boolean                        := false;
-      IO_UART0_EN                : boolean                        := false;
-      IO_UART0_RX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_UART0_TX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_UART1_EN                : boolean                        := false;
-      IO_UART1_RX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_UART1_TX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_SPI_EN                  : boolean                        := false;
-      IO_SPI_FIFO                : natural range 1 to 2**15       := 1;
-      IO_SDI_EN                  : boolean                        := false;
-      IO_SDI_FIFO                : natural range 1 to 2**15       := 1;
-      IO_TWI_EN                  : boolean                        := false;
-      IO_TWI_FIFO                : natural range 1 to 2**15       := 1;
-      IO_PWM_NUM_CH              : natural range 0 to 12          := 0;
-      IO_WDT_EN                  : boolean                        := false;
-      IO_TRNG_EN                 : boolean                        := false;
-      IO_TRNG_FIFO               : natural range 1 to 2**15       := 1;
-      IO_CFS_EN                  : boolean                        := false;
-      IO_CFS_CONFIG              : std_ulogic_vector(31 downto 0) := x"00000000";
-      IO_CFS_IN_SIZE             : natural                        := 32;
-      IO_CFS_OUT_SIZE            : natural                        := 32;
-      IO_NEOLED_EN               : boolean                        := false;
-      IO_NEOLED_TX_FIFO          : natural range 1 to 2**15       := 1;
-      IO_GPTMR_EN                : boolean                        := false;
-      IO_ONEWIRE_EN              : boolean                        := false;
-      IO_DMA_EN                  : boolean                        := false;
-      IO_SLINK_EN                : boolean                        := false;
-      IO_SLINK_RX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_SLINK_TX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_CRC_EN                  : boolean                        := false
+      IO_DISABLE_SYSINFO    : boolean                        := false;
+      IO_GPIO_NUM           : natural range 0 to 64          := 0;
+      IO_MTIME_EN           : boolean                        := false;
+      IO_UART0_EN           : boolean                        := false;
+      IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_UART1_EN           : boolean                        := false;
+      IO_UART1_RX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_UART1_TX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_SPI_EN             : boolean                        := false;
+      IO_SPI_FIFO           : natural range 1 to 2**15       := 1;
+      IO_SDI_EN             : boolean                        := false;
+      IO_SDI_FIFO           : natural range 1 to 2**15       := 1;
+      IO_TWI_EN             : boolean                        := false;
+      IO_TWI_FIFO           : natural range 1 to 2**15       := 1;
+      IO_PWM_NUM_CH         : natural range 0 to 12          := 0;
+      IO_WDT_EN             : boolean                        := false;
+      IO_TRNG_EN            : boolean                        := false;
+      IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
+      IO_CFS_EN             : boolean                        := false;
+      IO_CFS_CONFIG         : std_ulogic_vector(31 downto 0) := x"00000000";
+      IO_CFS_IN_SIZE        : natural                        := 32;
+      IO_CFS_OUT_SIZE       : natural                        := 32;
+      IO_NEOLED_EN          : boolean                        := false;
+      IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;
+      IO_GPTMR_EN           : boolean                        := false;
+      IO_ONEWIRE_EN         : boolean                        := false;
+      IO_DMA_EN             : boolean                        := false;
+      IO_SLINK_EN           : boolean                        := false;
+      IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_CRC_EN             : boolean                        := false
     );
     port (
       -- Global control --

@@ -196,108 +196,108 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 |=======================
 | Name | Type | Default | Description
 4+^| **General**
-| `CLOCK_FREQUENCY`   | natural   | -           | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
-| `CLOCK_GATING_EN`   | boolean   | false       | Enable clock gating when CPU is in sleep mode (see sections <<_sleep_mode>> and <<_processor_clocking>>).
-| `INT_BOOTLOADER_EN` | boolean   | false       | Implement the processor-internal <<_bootloader_rom_bootrom>>, pre-initialized with the default <<_bootloader>> image.
-| `HART_ID`           | suv(31:0) | 0x00000000  | The hart thread ID of the CPU (passed to <<_mhartid>> CSR).
-| `JEDEC_ID`          | suv(10:0) | 00000000000 | JEDEC ID; continuation codes plus vendor ID (passed to <<_mvendorid>> CSR and to the <<_debug_transport_module_dtm>>).
+| `CLOCK_FREQUENCY`       | natural   | -           | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
+| `CLOCK_GATING_EN`       | boolean   | false       | Enable clock gating when CPU is in sleep mode (see sections <<_sleep_mode>> and <<_processor_clocking>>).
+| `INT_BOOTLOADER_EN`     | boolean   | false       | Implement the processor-internal <<_bootloader_rom_bootrom>>, pre-initialized with the default <<_bootloader>> image.
+| `HART_ID`               | suv(31:0) | 0x00000000  | The hart thread ID of the CPU (passed to <<_mhartid>> CSR).
+| `JEDEC_ID`              | suv(10:0) | 00000000000 | JEDEC ID; continuation codes plus vendor ID (passed to <<_mvendorid>> CSR and to the <<_debug_transport_module_dtm>>).
 4+^| **<<_on_chip_debugger_ocd>>**
-| `ON_CHIP_DEBUGGER_EN` | boolean | false | Implement the on-chip debugger and the CPU debug mode.
-| `DM_LEGACY_MODE`      | boolean | false | Debug module spec. version: `false` = v1.0, `true` = v0.13 (legacy mode).
+| `ON_CHIP_DEBUGGER_EN`   | boolean   | false       | Implement the on-chip debugger and the CPU debug mode.
+| `DM_LEGACY_MODE`        | boolean   | false       | Debug module spec. version: `false` = v1.0, `true` = v0.13 (legacy mode).
 4+^| **CPU <<_instruction_sets_and_extensions>>**
-| `CPU_EXTENSION_RISCV_A`      | boolean | false | Enable <<_a_isa_extension>> (atomic memory accesses).
-| `CPU_EXTENSION_RISCV_B`      | boolean | false | Enable <<_b_isa_extension>> (bit-manipulation).
-| `CPU_EXTENSION_RISCV_C`      | boolean | false | Enable <<_c_isa_extension>> (compressed instructions).
-| `CPU_EXTENSION_RISCV_E`      | boolean | false | Enable <<_e_isa_extension>> (reduced register file size).
-| `CPU_EXTENSION_RISCV_M`      | boolean | false | Enable <<_m_isa_extension>> (hardware-based integer multiplication and division).
-| `CPU_EXTENSION_RISCV_U`      | boolean | false | Enable <<_u_isa_extension>> (less-privileged user mode).
-| `CPU_EXTENSION_RISCV_Zbkb`   | boolean | false | Enable <<_zbkb_isa_extension>> (scalar cryptography bit manipulation instructions).
-| `CPU_EXTENSION_RISCV_Zbkc`   | boolean | false | Enable <<_zbkc_isa_extension>> (scalar cryptography carry-less multiplication instructions).
-| `CPU_EXTENSION_RISCV_Zbkx`   | boolean | false | Enable <<_zbkx_isa_extension>> (scalar cryptography crossbar permutations).
-| `CPU_EXTENSION_RISCV_Zfinx`  | boolean | false | Enable <<_zfinx_isa_extension>> (single-precision floating-point unit).
-| `CPU_EXTENSION_RISCV_Zicntr` | boolean | true  | Enable <<_zicntr_isa_extension>> (CPU base counters).
-| `CPU_EXTENSION_RISCV_Zicond` | boolean | false | Enable <<_zicond_isa_extension>> (integer conditional instructions).
-| `CPU_EXTENSION_RISCV_Zihpm`  | boolean | false | Enable <<_zihpm_isa_extension>> (hardware performance monitors).
-| `CPU_EXTENSION_RISCV_Zknd`   | boolean | false | Enable <<_zknd_isa_extension>> (scalar cryptography NIST AES decryption instructions).
-| `CPU_EXTENSION_RISCV_Zkne`   | boolean | false | Enable <<_zkne_isa_extension>> (scalar cryptography NIST AES encryption instructions).
-| `CPU_EXTENSION_RISCV_Zknh`   | boolean | false | Enable <<_zknh_isa_extension>> (scalar cryptography NIST hash instructions).
-| `CPU_EXTENSION_RISCV_Zksh`   | boolean | false | Enable <<_zksh_isa_extension>> (scalar cryptography ShangMi hash functions).
-| `CPU_EXTENSION_RISCV_Zksed`  | boolean | false | Enable <<_zksed_isa_extension>> (scalar cryptography ShangMi block cyphers).
-| `CPU_EXTENSION_RISCV_Zmmul`  | boolean | false | Enable <<_zmmul_isa_extension>> (hardware-based integer multiplication).
-| `CPU_EXTENSION_RISCV_Zxcfu`  | boolean | false | Enable NEORV32-specific <<_zxcfu_isa_extension>> (custom RISC-V instructions).
+| `RISCV_ISA_A`           | boolean   | false       | Enable <<_a_isa_extension>> (atomic memory accesses).
+| `RISCV_ISA_B`           | boolean   | false       | Enable <<_b_isa_extension>> (bit-manipulation).
+| `RISCV_ISA_C`           | boolean   | false       | Enable <<_c_isa_extension>> (compressed instructions).
+| `RISCV_ISA_E`           | boolean   | false       | Enable <<_e_isa_extension>> (reduced register file size).
+| `RISCV_ISA_M`           | boolean   | false       | Enable <<_m_isa_extension>> (hardware-based integer multiplication and division).
+| `RISCV_ISA_U`           | boolean   | false       | Enable <<_u_isa_extension>> (less-privileged user mode).
+| `RISCV_ISA_Zbkb`        | boolean   | false       | Enable <<_zbkb_isa_extension>> (scalar cryptography bit manipulation instructions).
+| `RISCV_ISA_Zbkc`        | boolean   | false       | Enable <<_zbkc_isa_extension>> (scalar cryptography carry-less multiplication instructions).
+| `RISCV_ISA_Zbkx`        | boolean   | false       | Enable <<_zbkx_isa_extension>> (scalar cryptography crossbar permutations).
+| `RISCV_ISA_Zfinx`       | boolean   | false       | Enable <<_zfinx_isa_extension>> (single-precision floating-point unit).
+| `RISCV_ISA_Zicntr`      | boolean   | true        | Enable <<_zicntr_isa_extension>> (CPU base counters).
+| `RISCV_ISA_Zicond`      | boolean   | false       | Enable <<_zicond_isa_extension>> (integer conditional instructions).
+| `RISCV_ISA_Zihpm`       | boolean   | false       | Enable <<_zihpm_isa_extension>> (hardware performance monitors).
+| `RISCV_ISA_Zknd`        | boolean   | false       | Enable <<_zknd_isa_extension>> (scalar cryptography NIST AES decryption instructions).
+| `RISCV_ISA_Zkne`        | boolean   | false       | Enable <<_zkne_isa_extension>> (scalar cryptography NIST AES encryption instructions).
+| `RISCV_ISA_Zknh`        | boolean   | false       | Enable <<_zknh_isa_extension>> (scalar cryptography NIST hash instructions).
+| `RISCV_ISA_Zksh`        | boolean   | false       | Enable <<_zksh_isa_extension>> (scalar cryptography ShangMi hash functions).
+| `RISCV_ISA_Zksed`       | boolean   | false       | Enable <<_zksed_isa_extension>> (scalar cryptography ShangMi block cyphers).
+| `RISCV_ISA_Zmmul`       | boolean   | false       | Enable <<_zmmul_isa_extension>> (hardware-based integer multiplication).
+| `RISCV_ISA_Zxcfu`       | boolean   | false       | Enable NEORV32-specific <<_zxcfu_isa_extension>> (custom RISC-V instructions).
 4+^| **CPU <<_architecture>> Tuning Options**
-| `FAST_MUL_EN`           | boolean   | false      | Implement fast but large full-parallel multipliers (trying to infer DSP blocks); see section <<_cpu_arithmetic_logic_unit>>.
-| `FAST_SHIFT_EN`         | boolean   | false      | Implement fast but large full-parallel barrel shifters; see section <<_cpu_arithmetic_logic_unit>>.
-| `REGFILE_HW_RST`        | boolean   | false      | Implement full hardware reset for register file (use individual FFs instead of BRAM); see section <<_cpu_register_file>>.
+| `FAST_MUL_EN`           | boolean   | false       | Implement fast but large full-parallel multipliers (trying to infer DSP blocks); see section <<_cpu_arithmetic_logic_unit>>.
+| `FAST_SHIFT_EN`         | boolean   | false       | Implement fast but large full-parallel barrel shifters; see section <<_cpu_arithmetic_logic_unit>>.
+| `REGFILE_HW_RST`        | boolean   | false       | Implement full hardware reset for register file (use individual FFs instead of BRAM); see section <<_cpu_register_file>>.
 4+^| **Physical Memory Protection (<<_smpmp_isa_extension>>)**
-| `PMP_NUM_REGIONS`       | natural   | 0          | Number of implemented PMP regions (0..16).
-| `PMP_MIN_GRANULARITY`   | natural   | 4          | Minimal region granularity in bytes. Has to be a power of two, min 4.
-| `PMP_TOR_MODE_EN`       | boolean   | true       | Implement support for top-of-region (TOR) mode.
-| `PMP_NAP_MODE_EN`       | boolean   | true       | Implement support for naturally-aligned power-of-two (NAPOT & NA4) modes.
+| `PMP_NUM_REGIONS`       | natural   | 0           | Number of implemented PMP regions (0..16).
+| `PMP_MIN_GRANULARITY`   | natural   | 4           | Minimal region granularity in bytes. Has to be a power of two, min 4.
+| `PMP_TOR_MODE_EN`       | boolean   | true        | Implement support for top-of-region (TOR) mode.
+| `PMP_NAP_MODE_EN`       | boolean   | true        | Implement support for naturally-aligned power-of-two (NAPOT & NA4) modes.
 4+^| **Hardware Performance Monitors (<<_zihpm_isa_extension>>)**
-| `HPM_NUM_CNTS`          | natural   | 0          | Number of implemented hardware performance monitor counters (0..13).
-| `HPM_CNT_WIDTH`         | natural   | 40         | Total LSB-aligned size of each HPM counter. Min 0, max 64.
+| `HPM_NUM_CNTS`          | natural   | 0           | Number of implemented hardware performance monitor counters (0..13).
+| `HPM_CNT_WIDTH`         | natural   | 40          | Total LSB-aligned size of each HPM counter. Min 0, max 64.
 4+^| **Internal <<_instruction_memory_imem>>**
-| `MEM_INT_IMEM_EN`       | boolean   | false      | Implement the processor-internal instruction memory.
-| `MEM_INT_IMEM_SIZE`     | natural   | 16*1024    | Size in bytes of the processor internal instruction memory (use a power of 2).
+| `MEM_INT_IMEM_EN`       | boolean   | false       | Implement the processor-internal instruction memory.
+| `MEM_INT_IMEM_SIZE`     | natural   | 16*1024     | Size in bytes of the processor internal instruction memory (use a power of 2).
 4+^| **Internal <<_data_memory_dmem>>**
-| `MEM_INT_DMEM_EN`       | boolean   | false      | Implement the processor-internal data memory.
-| `MEM_INT_DMEM_SIZE`     | natural   | 8*1024     | Size in bytes of the processor-internal data memory (use a power of 2).
+| `MEM_INT_DMEM_EN`       | boolean   | false       | Implement the processor-internal data memory.
+| `MEM_INT_DMEM_SIZE`     | natural   | 8*1024      | Size in bytes of the processor-internal data memory (use a power of 2).
 4+^| **<<_processor_internal_instruction_cache_icache>>**
-| `ICACHE_EN`             | boolean   | false      | Implement the instruction cache.
-| `ICACHE_NUM_BLOCKS`     | natural   | 4          | Number of blocks ("lines") Has to be a power of two.
-| `ICACHE_BLOCK_SIZE`     | natural   | 64         | Size in bytes of each block. Has to be a power of two.
+| `ICACHE_EN`             | boolean   | false       | Implement the instruction cache.
+| `ICACHE_NUM_BLOCKS`     | natural   | 4           | Number of blocks ("lines") Has to be a power of two.
+| `ICACHE_BLOCK_SIZE`     | natural   | 64          | Size in bytes of each block. Has to be a power of two.
 4+^| **<<_processor_internal_data_cache_dcache>>**
-| `DCACHE_EN`             | boolean   | false      | Implement the data cache.
-| `DCACHE_NUM_BLOCKS`     | natural   | 4          | Number of blocks ("lines"). Has to be a power of two.
-| `DCACHE_BLOCK_SIZE`     | natural   | 64         | Size in bytes of each block. Has to be a power of two.
+| `DCACHE_EN`             | boolean   | false       | Implement the data cache.
+| `DCACHE_NUM_BLOCKS`     | natural   | 4           | Number of blocks ("lines"). Has to be a power of two.
+| `DCACHE_BLOCK_SIZE`     | natural   | 64          | Size in bytes of each block. Has to be a power of two.
 4+^| **<<_processor_external_bus_interface_xbus>> (Wishbone b4 protocol)**
-| `XBUS_EN`               | boolean   | false      | Implement the external bus interface.
-| `XBUS_TIMEOUT`          | natural   | 255        | Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.
-| `XBUS_REGSTAGE_EN`      | boolean   | false      | Implement XBUS register stages to ease timing closure.
-| `XBUS_CACHE_EN`         | boolean   | false      | Implement the external bus cache.
-| `XBUS_CACHE_NUM_BLOCKS` | natural   | 64         | Number of blocks ("lines"). Has to be a power of two.
-| `XBUS_CACHE_BLOCK_SIZE` | natural   | 32         | Size in bytes of each block. Has to be a power of two.
+| `XBUS_EN`               | boolean   | false       | Implement the external bus interface.
+| `XBUS_TIMEOUT`          | natural   | 255         | Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.
+| `XBUS_REGSTAGE_EN`      | boolean   | false       | Implement XBUS register stages to ease timing closure.
+| `XBUS_CACHE_EN`         | boolean   | false       | Implement the external bus cache.
+| `XBUS_CACHE_NUM_BLOCKS` | natural   | 64          | Number of blocks ("lines"). Has to be a power of two.
+| `XBUS_CACHE_BLOCK_SIZE` | natural   | 32          | Size in bytes of each block. Has to be a power of two.
 4+^| **<<_execute_in_place_module_xip>>**
-| `XIP_EN`                | boolean   | false      | Implement the execute in-place module.
-| `XIP_CACHE_EN`          | boolean   | false      | Implement XIP cache.
-| `XIP_CACHE_NUM_BLOCKS`  | natural   | 8          | Number of blocks in XIP cache. Has to be a power of two.
-| `XIP_CACHE_BLOCK_SIZE`  | natural   | 256        | Number of bytes per XIP cache block. Has to be a power of two, min 4.
+| `XIP_EN`                | boolean   | false       | Implement the execute in-place module.
+| `XIP_CACHE_EN`          | boolean   | false       | Implement XIP cache.
+| `XIP_CACHE_NUM_BLOCKS`  | natural   | 8           | Number of blocks in XIP cache. Has to be a power of two.
+| `XIP_CACHE_BLOCK_SIZE`  | natural   | 256         | Number of bytes per XIP cache block. Has to be a power of two, min 4.
 4+^| **<<_external_interrupt_controller_xirq>>**
-| `XIRQ_NUM_CH`           | natural   | 0          | Number of channels of the external interrupt controller. Valid values are 0..32.
+| `XIRQ_NUM_CH`           | natural   | 0           | Number of channels of the external interrupt controller. Valid values are 0..32.
 4+^| **Peripheral/IO Modules**
-| `IO_DISABLE_SYSINFO`    | boolean   | false      | Disable <<_system_configuration_information_memory_sysinfo>> module; ⚠️ not recommended - for advanced users only!
-| `IO_GPIO_NUM`           | natural   | 0          | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>.
-| `IO_MTIME_EN`           | boolean   | false      | Implement the <<_machine_system_timer_mtime>>.
-| `IO_UART0_EN`           | boolean   | false      | Implement the <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>.
-| `IO_UART0_RX_FIFO`      | natural   | 1          | UART0 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_UART0_TX_FIFO`      | natural   | 1          | UART0 TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_UART1_EN`           | boolean   | false      | Implement the <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>.
-| `IO_UART1_RX_FIFO`      | natural   | 1          | UART1 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_UART1_TX_FIFO`      | natural   | 1          | UART1 TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_SPI_EN`             | boolean   | false      | Implement the <<_serial_peripheral_interface_controller_spi>>.
-| `IO_SPI_FIFO`           | natural   | 1          | Depth of the <<_serial_peripheral_interface_controller_spi>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_SDI_EN`             | boolean   | false      | Implement the <<_serial_data_interface_controller_sdi>>.
-| `IO_SDI_FIFO`           | natural   | 1          | Depth of the <<_serial_data_interface_controller_sdi>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_TWI_EN`             | boolean   | false      | Implement the <<_two_wire_serial_interface_controller_twi>>.
-| `IO_TWI_FIFO`           | natural   | 1          | Depth of the <<_two_wire_serial_interface_controller_twi>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_PWM_NUM_CH`         | natural   | 0          | Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..12).
-| `IO_WDT_EN`             | boolean   | false      | Implement the <<_watchdog_timer_wdt>>.
-| `IO_TRNG_EN`            | boolean   | false      | Implement the <<_true_random_number_generator_trng>>.
-| `IO_TRNG_FIFO`          | natural   | 1          | Depth of the TRNG data FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_CFS_EN`             | boolean   | false      | Implement the <<_custom_functions_subsystem_cfs>>.
-| `IO_CFS_CONFIG`         | suv(31:0) | 0x00000000 | "Conduit" generic to pass user-defined flags to the <<_custom_functions_subsystem_cfs>>.
-| `IO_CFS_IN_SIZE`        | natural   | 32         | Size of the <<_custom_functions_subsystem_cfs>> input signal conduit (`cfs_in_i`).
-| `IO_CFS_OUT_SIZE`       | natural   | 32         | Size of the <<_custom_functions_subsystem_cfs>> output signal conduit (`cfs_out_o`).
-| `IO_NEOLED_EN`          | boolean   | false      | Implement the <<_smart_led_interface_neoled>>.
-| `IO_NEOLED_TX_FIFO`     | natural   | 1          | TX FIFO depth of the the <<_smart_led_interface_neoled>>. Has to be a power of two, min 1, max 32768.
-| `IO_GPTMR_EN`           | boolean   | false      | Implement the <<_general_purpose_timer_gptmr>>.
-| `IO_ONEWIRE_EN`         | boolean   | false      | Implement the <<_one_wire_serial_interface_controller_onewire>>.
-| `IO_DMA_EN`             | boolean   | false      | Implement the <<_direct_memory_access_controller_dma>>.
-| `IO_SLINK_EN`           | boolean   | false      | Implement the <<_stream_link_interface_slink>>.
-| `IO_SLINK_RX_FIFO`      | natural   | 1          | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_SLINK_TX_FIFO`      | natural   | 1          | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_CRC_EN`             | boolean   | false      | Implement the <<_cyclic_redundancy_check_crc>> unit.
+| `IO_DISABLE_SYSINFO`    | boolean   | false       | Disable <<_system_configuration_information_memory_sysinfo>> module; ⚠️ not recommended - for advanced users only!
+| `IO_GPIO_NUM`           | natural   | 0           | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>.
+| `IO_MTIME_EN`           | boolean   | false       | Implement the <<_machine_system_timer_mtime>>.
+| `IO_UART0_EN`           | boolean   | false       | Implement the <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>.
+| `IO_UART0_RX_FIFO`      | natural   | 1           | UART0 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_UART0_TX_FIFO`      | natural   | 1           | UART0 TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_UART1_EN`           | boolean   | false       | Implement the <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>.
+| `IO_UART1_RX_FIFO`      | natural   | 1           | UART1 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_UART1_TX_FIFO`      | natural   | 1           | UART1 TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_SPI_EN`             | boolean   | false       | Implement the <<_serial_peripheral_interface_controller_spi>>.
+| `IO_SPI_FIFO`           | natural   | 1           | Depth of the <<_serial_peripheral_interface_controller_spi>> FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_SDI_EN`             | boolean   | false       | Implement the <<_serial_data_interface_controller_sdi>>.
+| `IO_SDI_FIFO`           | natural   | 1           | Depth of the <<_serial_data_interface_controller_sdi>> FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_TWI_EN`             | boolean   | false       | Implement the <<_two_wire_serial_interface_controller_twi>>.
+| `IO_TWI_FIFO`           | natural   | 1           | Depth of the <<_two_wire_serial_interface_controller_twi>> FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_PWM_NUM_CH`         | natural   | 0           | Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..12).
+| `IO_WDT_EN`             | boolean   | false       | Implement the <<_watchdog_timer_wdt>>.
+| `IO_TRNG_EN`            | boolean   | false       | Implement the <<_true_random_number_generator_trng>>.
+| `IO_TRNG_FIFO`          | natural   | 1           | Depth of the TRNG data FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_CFS_EN`             | boolean   | false       | Implement the <<_custom_functions_subsystem_cfs>>.
+| `IO_CFS_CONFIG`         | suv(31:0) | 0x00000000  | "Conduit" generic to pass user-defined flags to the <<_custom_functions_subsystem_cfs>>.
+| `IO_CFS_IN_SIZE`        | natural   | 32          | Size of the <<_custom_functions_subsystem_cfs>> input signal conduit (`cfs_in_i`).
+| `IO_CFS_OUT_SIZE`       | natural   | 32          | Size of the <<_custom_functions_subsystem_cfs>> output signal conduit (`cfs_out_o`).
+| `IO_NEOLED_EN`          | boolean   | false       | Implement the <<_smart_led_interface_neoled>>.
+| `IO_NEOLED_TX_FIFO`     | natural   | 1           | TX FIFO depth of the the <<_smart_led_interface_neoled>>. Has to be a power of two, min 1, max 32768.
+| `IO_GPTMR_EN`           | boolean   | false       | Implement the <<_general_purpose_timer_gptmr>>.
+| `IO_ONEWIRE_EN`         | boolean   | false       | Implement the <<_one_wire_serial_interface_controller_onewire>>.
+| `IO_DMA_EN`             | boolean   | false       | Implement the <<_direct_memory_access_controller_dma>>.
+| `IO_SLINK_EN`           | boolean   | false       | Implement the <<_stream_link_interface_slink>>.
+| `IO_SLINK_RX_FIFO`      | natural   | 1           | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_SLINK_TX_FIFO`      | natural   | 1           | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_CRC_EN`             | boolean   | false       | Implement the <<_cyclic_redundancy_check_crc>> unit.
 |=======================
 
 

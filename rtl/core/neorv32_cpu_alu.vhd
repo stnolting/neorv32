@@ -18,25 +18,25 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_alu is
   generic (
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zba    : boolean; -- implement address-generation instruction?
-    CPU_EXTENSION_RISCV_Zbb    : boolean; -- implement basic bit-manipulation instruction?
-    CPU_EXTENSION_RISCV_Zbkb   : boolean; -- implement bit-manipulation instructions for cryptography?
-    CPU_EXTENSION_RISCV_Zbkc   : boolean; -- implement carry-less multiplication instructions?
-    CPU_EXTENSION_RISCV_Zbkx   : boolean; -- implement cryptography crossbar permutation extension?
-    CPU_EXTENSION_RISCV_Zbs    : boolean; -- implement single-bit instructions?
-    CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)?
-    CPU_EXTENSION_RISCV_Zicond : boolean; -- implement integer conditional operations?
-    CPU_EXTENSION_RISCV_Zknd   : boolean; -- implement cryptography NIST AES decryption extension?
-    CPU_EXTENSION_RISCV_Zkne   : boolean; -- implement cryptography NIST AES encryption extension?
-    CPU_EXTENSION_RISCV_Zknh   : boolean; -- implement cryptography NIST hash extension?
-    CPU_EXTENSION_RISCV_Zksed  : boolean; -- implement ShangMi block cypher extension?
-    CPU_EXTENSION_RISCV_Zksh   : boolean; -- implement ShangMi hash extension?
-    CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
+    RISCV_ISA_M      : boolean; -- implement mul/div extension
+    RISCV_ISA_Zba    : boolean; -- implement address-generation instruction
+    RISCV_ISA_Zbb    : boolean; -- implement basic bit-manipulation instruction
+    RISCV_ISA_Zbkb   : boolean; -- implement bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc   : boolean; -- implement carry-less multiplication instructions
+    RISCV_ISA_Zbkx   : boolean; -- implement cryptography crossbar permutation extension
+    RISCV_ISA_Zbs    : boolean; -- implement single-bit instructions
+    RISCV_ISA_Zfinx  : boolean; -- implement 32-bit floating-point extension
+    RISCV_ISA_Zicond : boolean; -- implement integer conditional operations
+    RISCV_ISA_Zknd   : boolean; -- implement cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne   : boolean; -- implement cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh   : boolean; -- implement cryptography NIST hash extension
+    RISCV_ISA_Zksed  : boolean; -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksh   : boolean; -- implement ShangMi hash extension
+    RISCV_ISA_Zmmul  : boolean; -- implement multiply-only M sub-extension
+    RISCV_ISA_Zxcfu  : boolean; -- implement custom (instr.) functions unit
     -- Tuning Options --
-    FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN              : boolean  -- use barrel shifter for shift operations
+    FAST_MUL_EN      : boolean; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN    : boolean  -- use barrel shifter for shift operations
   );
   port (
     -- global control --
@@ -189,11 +189,11 @@ begin
   -- ALU-Opcode Co-Processor: Integer Multiplication/Division Unit ('M' ISA Extension) ------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_muldiv_inst_true:
-  if CPU_EXTENSION_RISCV_M or CPU_EXTENSION_RISCV_Zmmul generate
+  if RISCV_ISA_M or RISCV_ISA_Zmmul generate
     neorv32_cpu_cp_muldiv_inst: entity neorv32.neorv32_cpu_cp_muldiv
     generic map (
-      FAST_MUL_EN => FAST_MUL_EN,          -- use DSPs for faster multiplication
-      DIVISION_EN => CPU_EXTENSION_RISCV_M -- implement divider hardware
+      FAST_MUL_EN => FAST_MUL_EN, -- use DSPs for faster multiplication
+      DIVISION_EN => RISCV_ISA_M  -- implement divider hardware
     )
     port map (
       -- global control --
@@ -210,7 +210,7 @@ begin
   end generate;
 
   neorv32_cpu_cp_muldiv_inst_false:
-  if (not CPU_EXTENSION_RISCV_M) and (not CPU_EXTENSION_RISCV_Zmmul) generate
+  if (not RISCV_ISA_M) and (not RISCV_ISA_Zmmul) generate
     cp_result(1) <= (others => '0');
     cp_valid(1)  <= '0';
   end generate;
@@ -219,16 +219,15 @@ begin
   -- ALU[I]-Opcode Co-Processor: Bit-Manipulation Unit ('B' ISA Extension) ------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_bitmanip_inst_true:
-  if CPU_EXTENSION_RISCV_Zba or CPU_EXTENSION_RISCV_Zbb or CPU_EXTENSION_RISCV_Zbkb or
-     CPU_EXTENSION_RISCV_Zbs or CPU_EXTENSION_RISCV_Zbkc generate
+  if RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbs or RISCV_ISA_Zbkc generate
     neorv32_cpu_cp_bitmanip_inst: entity neorv32.neorv32_cpu_cp_bitmanip
     generic map (
-      EN_FAST_SHIFT => FAST_SHIFT_EN,            -- use barrel shifter for shift operations
-      EN_ZBA        => CPU_EXTENSION_RISCV_Zba,  -- enable address-generation instruction
-      EN_ZBB        => CPU_EXTENSION_RISCV_Zbb,  -- enable basic bit-manipulation instruction
-      EN_ZBKB       => CPU_EXTENSION_RISCV_Zbkb, -- enable bit-manipulation instructions for cryptography
-      EN_ZBKC       => CPU_EXTENSION_RISCV_Zbkc, -- enable carry-less multiplication instructions
-      EN_ZBS        => CPU_EXTENSION_RISCV_Zbs   -- enable single-bit instructions
+      EN_FAST_SHIFT => FAST_SHIFT_EN,  -- use barrel shifter for shift operations
+      EN_ZBA        => RISCV_ISA_Zba,  -- enable address-generation instruction
+      EN_ZBB        => RISCV_ISA_Zbb,  -- enable basic bit-manipulation instruction
+      EN_ZBKB       => RISCV_ISA_Zbkb, -- enable bit-manipulation instructions for cryptography
+      EN_ZBKC       => RISCV_ISA_Zbkc, -- enable carry-less multiplication instructions
+      EN_ZBS        => RISCV_ISA_Zbs   -- enable single-bit instructions
     )
     port map (
       -- global control --
@@ -247,8 +246,7 @@ begin
   end generate;
 
   neorv32_cpu_cp_bitmanip_inst_false:
-  if not (CPU_EXTENSION_RISCV_Zba or CPU_EXTENSION_RISCV_Zbb or CPU_EXTENSION_RISCV_Zbkb or
-          CPU_EXTENSION_RISCV_Zbs or CPU_EXTENSION_RISCV_Zbkc) generate
+  if not (RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbs or RISCV_ISA_Zbkc) generate
     cp_result(2) <= (others => '0');
     cp_valid(2)  <= '0';
   end generate;
@@ -257,7 +255,7 @@ begin
   -- FLOAT-Opcode Co-Processor: Single-Precision FPUUnit ('Zfinx' ISA Extension) ------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_fpu_inst_true:
-  if CPU_EXTENSION_RISCV_Zfinx generate
+  if RISCV_ISA_Zfinx generate
     neorv32_cpu_cp_fpu_inst: entity neorv32.neorv32_cpu_cp_fpu
     port map (
       -- global control --
@@ -286,7 +284,7 @@ begin
   end generate;
 
   neorv32_cpu_cp_fpu_inst_false:
-  if not CPU_EXTENSION_RISCV_Zfinx generate
+  if not RISCV_ISA_Zfinx generate
     csr_rdata_fpu <= (others => '0');
     cp_result(3)  <= (others => '0');
     cp_valid(3)   <= '0';
@@ -296,7 +294,7 @@ begin
   -- CUSTOM-Opcode Co-Processor: Custom Functions Unit ('Zxcfu' ISA Extension) --------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_cfu_inst_true:
-  if CPU_EXTENSION_RISCV_Zxcfu generate
+  if RISCV_ISA_Zxcfu generate
     neorv32_cpu_cp_cfu_inst: entity neorv32.neorv32_cpu_cp_cfu
     port map (
       -- global control --
@@ -348,7 +346,7 @@ begin
   end generate;
 
   neorv32_cpu_cp_cfu_inst_false:
-  if not CPU_EXTENSION_RISCV_Zxcfu generate
+  if not RISCV_ISA_Zxcfu generate
     csr_rdata_cfu <= (others => '0');
     cp_result(4)  <= (others => '0');
     cp_valid(4)   <= '0';
@@ -358,7 +356,7 @@ begin
   -- ALU-Opcode Co-Processor: Integer Conditional Operations Unit ('Zicond' ISA Extension) ---
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_cond_inst_true:
-  if CPU_EXTENSION_RISCV_Zicond generate
+  if RISCV_ISA_Zicond generate
     neorv32_cpu_cp_cond_inst: entity neorv32.neorv32_cpu_cp_cond
     port map (
       -- global control --
@@ -375,7 +373,7 @@ begin
   end generate;
 
   neorv32_cpu_cp_cond_inst_false:
-  if not CPU_EXTENSION_RISCV_Zicond generate
+  if not RISCV_ISA_Zicond generate
     cp_result(5) <= (others => '0');
     cp_valid(5)  <= '0';
   end generate;
@@ -384,16 +382,15 @@ begin
   -- ALU[I]-Opcode Co-Processor: Scalar Cryptography Unit ('Zk*' ISA Extensions) ------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_crypto_inst_true:
-  if CPU_EXTENSION_RISCV_Zbkx or CPU_EXTENSION_RISCV_Zknh or CPU_EXTENSION_RISCV_Zkne or
-     CPU_EXTENSION_RISCV_Zknd or CPU_EXTENSION_RISCV_Zksh or CPU_EXTENSION_RISCV_Zksed generate
+  if RISCV_ISA_Zbkx or RISCV_ISA_Zknh or RISCV_ISA_Zkne or RISCV_ISA_Zknd or RISCV_ISA_Zksh or RISCV_ISA_Zksed generate
     neorv32_cpu_cp_crypto_inst: entity neorv32.neorv32_cpu_cp_crypto
     generic map (
-      EN_ZBKX  => CPU_EXTENSION_RISCV_Zbkx,  -- enable crossbar permutation extension
-      EN_ZKNH  => CPU_EXTENSION_RISCV_Zknh,  -- enable NIST hash extension
-      EN_ZKNE  => CPU_EXTENSION_RISCV_Zkne,  -- enable NIST AES encryption extension
-      EN_ZKND  => CPU_EXTENSION_RISCV_Zknd,  -- enable NIST AES decryption extension
-      EN_ZKSED => CPU_EXTENSION_RISCV_Zksed, -- enable ShangMi block cypher extension
-      EN_ZKSH  => CPU_EXTENSION_RISCV_Zksh   -- enable ShangMi hash extension
+      EN_ZBKX  => RISCV_ISA_Zbkx,  -- enable crossbar permutation extension
+      EN_ZKNH  => RISCV_ISA_Zknh,  -- enable NIST hash extension
+      EN_ZKNE  => RISCV_ISA_Zkne,  -- enable NIST AES encryption extension
+      EN_ZKND  => RISCV_ISA_Zknd,  -- enable NIST AES decryption extension
+      EN_ZKSED => RISCV_ISA_Zksed, -- enable ShangMi block cypher extension
+      EN_ZKSH  => RISCV_ISA_Zksh   -- enable ShangMi hash extension
     )
     port map (
       -- global control --
@@ -410,8 +407,7 @@ begin
   end generate;
 
   neorv32_cpu_cp_crypto_inst_false:
-  if not (CPU_EXTENSION_RISCV_Zbkx or CPU_EXTENSION_RISCV_Zknh or CPU_EXTENSION_RISCV_Zkne or
-          CPU_EXTENSION_RISCV_Zknd or CPU_EXTENSION_RISCV_Zksh or CPU_EXTENSION_RISCV_Zksed) generate
+  if not (RISCV_ISA_Zbkx or RISCV_ISA_Zknh or RISCV_ISA_Zkne or RISCV_ISA_Zknd or RISCV_ISA_Zksh or RISCV_ISA_Zksed) generate
     cp_result(6) <= (others => '0');
     cp_valid(6)  <= '0';
   end generate;

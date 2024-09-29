@@ -118,35 +118,35 @@ begin
   neorv32_core_complex: neorv32_top
   generic map (
     -- General --
-    CLOCK_FREQUENCY            => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
-    HART_ID                    => hart_id_c,                      -- hardware thread ID
-    JEDEC_ID                   => jedec_id_c,                     -- vendor's JEDEC ID
+    CLOCK_FREQUENCY       => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
+    HART_ID               => hart_id_c,                      -- hardware thread ID
+    JEDEC_ID              => jedec_id_c,                     -- vendor's JEDEC ID
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN        => DEBUG,                          -- implement on-chip debugger
+    ON_CHIP_DEBUGGER_EN   => DEBUG,                          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_C      => configs_c.riscv_c(CONFIG),      -- implement compressed extension?
-    CPU_EXTENSION_RISCV_M      => configs_c.riscv_m(CONFIG),      -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U      => configs_c.riscv_u(CONFIG),      -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zicntr => configs_c.riscv_zicntr(CONFIG), -- implement base counters?
-    CPU_EXTENSION_RISCV_Zihpm  => configs_c.riscv_zihpm(CONFIG),  -- implement hardware performance monitors?
+    RISCV_ISA_C           => configs_c.riscv_c(CONFIG),      -- implement compressed extension?
+    RISCV_ISA_M           => configs_c.riscv_m(CONFIG),      -- implement mul/div extension?
+    RISCV_ISA_U           => configs_c.riscv_u(CONFIG),      -- implement user mode extension?
+    RISCV_ISA_Zicntr      => configs_c.riscv_zicntr(CONFIG), -- implement base counters?
+    RISCV_ISA_Zihpm       => configs_c.riscv_zihpm(CONFIG),  -- implement hardware performance monitors?
     -- Tuning Options --
-    FAST_MUL_EN                => configs_c.fast_ops(CONFIG),     -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN              => configs_c.fast_ops(CONFIG),     -- use barrel shifter for shift operations
+    FAST_MUL_EN           => configs_c.fast_ops(CONFIG),     -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN         => configs_c.fast_ops(CONFIG),     -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS            => configs_c.pmp_num(CONFIG),      -- number of regions (0..16)
-    PMP_MIN_GRANULARITY        => 4,                              -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_NUM_REGIONS       => configs_c.pmp_num(CONFIG),      -- number of regions (0..16)
+    PMP_MIN_GRANULARITY   => 4,                              -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS               => configs_c.hpm_num(CONFIG),      -- number of implemented HPM counters (0..29)
-    HPM_CNT_WIDTH              => 64,                             -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS          => configs_c.hpm_num(CONFIG),      -- number of implemented HPM counters (0..29)
+    HPM_CNT_WIDTH         => 64,                             -- total size of HPM counters (0..64)
     -- External bus interface (XBUS) --
-    XBUS_EN                    => true,                           -- implement external memory bus interface?
-    XBUS_TIMEOUT               => 1023,                           -- cycles after a pending bus access auto-terminates (0 = disabled)
-    XBUS_REGSTAGE_EN           => false,                          -- add XBUS register stage
-    XBUS_CACHE_EN              => configs_c.xcache_en(CONFIG),    -- enable external bus cache (x-cache)
-    XBUS_CACHE_NUM_BLOCKS      => configs_c.xcache_nb(CONFIG),    -- x-cache: number of blocks (min 1), has to be a power of 2
-    XBUS_CACHE_BLOCK_SIZE      => configs_c.xcache_bs(CONFIG),    -- x-cache: block size in bytes (min 4), has to be a power of 2
+    XBUS_EN               => true,                           -- implement external memory bus interface?
+    XBUS_TIMEOUT          => 1023,                           -- cycles after a pending bus access auto-terminates (0 = disabled)
+    XBUS_REGSTAGE_EN      => false,                          -- add XBUS register stage
+    XBUS_CACHE_EN         => configs_c.xcache_en(CONFIG),    -- enable external bus cache (x-cache)
+    XBUS_CACHE_NUM_BLOCKS => configs_c.xcache_nb(CONFIG),    -- x-cache: number of blocks (min 1), has to be a power of 2
+    XBUS_CACHE_BLOCK_SIZE => configs_c.xcache_bs(CONFIG),    -- x-cache: block size in bytes (min 4), has to be a power of 2
     -- Processor peripherals --
-    IO_MTIME_EN                => configs_c.mtime(CONFIG)         -- implement machine system timer (MTIME)?
+    IO_MTIME_EN           => configs_c.mtime(CONFIG)         -- implement machine system timer (MTIME)?
   )
   port map (
     -- Global control --

@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 29.09.2024 | 1.10.4.10 | :warning: rename CPU ISA configuration generics: `CPU_EXTENSION_* -> RISCV_ISA_*` | [#1041](https://github.com/stnolting/neorv32/pull/1041) |
 | 28.09.2024 | 1.10.4.9 | :sparkles: add support for RISC-V "ShangMi algorithm suite" ISA extensions: `Zks`, `Zksed`, `Zksh` | [#1040](https://github.com/stnolting/neorv32/pull/1040) |
 | 28.09.2024 | 1.10.4.8 | :sparkles: add support for RISC-V "NIST algorithm suite" ISA extension `Zkn` | [#1039](https://github.com/stnolting/neorv32/pull/1039) |
 | 27.09.2024 | 1.10.4.7 | :sparkles: add support for RISC-V "carry-less multiplication instruction for cryptography" ISA extension `Zbkc` | [#1038](https://github.com/stnolting/neorv32/pull/1038) |
