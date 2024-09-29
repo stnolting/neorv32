@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 CPU - Co-Processor: RISC-V Scalar Cryptography ('Zk*') ISA Extension     --
+-- NEORV32 CPU - Co-Processor: RISC-V Scalar Cryptography ('Zk*') ISA Extensions    --
 -- -------------------------------------------------------------------------------- --
 -- Supported sub-extensions:                                                        --
 -- + Zbkx:  crossbar permutations                                                   --
