@@ -75,7 +75,7 @@ devices. Precise exceptions allow a defined and fully-synchronized state of the 
 
 
 [discrete]
-==== A multi-cycle architecture?!?!
+==== A multi-cycle architecture?!
 
 Most mainstream CPUs out there are pipelined architectures to increase throughput. In contrast, most CPUs used for
 teaching are single-cycle designs since they are probably the most easiest to understand. But what about the
@@ -106,3 +106,17 @@ approach: instruction fetch (front-end) and instruction execution (back-end) are
 of each other. Data is interchanged via a queue building a simple 2-stage pipeline. Each "pipeline" stage in terms is
 implemented as multi-cycle architecture to simplify the hardware and to provide _precise_ state control (e.g. during
 exceptions).
+
+
+[discrete]
+==== Design Goals
+
+[start=1]
+. RISC-V-compliance and -compatibility
+. Functionality and features
+. Safety and security
+. Minimal area
+. Short critical paths, high operating clock
+. Low-power design
+. High overall performance
+. Simplicity / easy to understand
