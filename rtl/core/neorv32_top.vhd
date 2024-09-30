@@ -33,26 +33,28 @@ entity neorv32_top is
     DM_LEGACY_MODE        : boolean                        := false;       -- debug module spec version: false = v1.0, true = v0.13
 
     -- RISC-V CPU Extensions --
-    RISCV_ISA_A           : boolean                        := false;       -- implement atomic memory operations extension?
-    RISCV_ISA_B           : boolean                        := false;       -- implement bit-manipulation extension?
-    RISCV_ISA_C           : boolean                        := false;       -- implement compressed extension?
-    RISCV_ISA_E           : boolean                        := false;       -- implement embedded RF extension?
-    RISCV_ISA_M           : boolean                        := false;       -- implement mul/div extension?
-    RISCV_ISA_U           : boolean                        := false;       -- implement user mode extension?
-    RISCV_ISA_Zbkb        : boolean                        := false;       -- implement bit-manipulation instructions for cryptography?
-    RISCV_ISA_Zbkc        : boolean                        := false;       -- implement carry-less multiplication instructions?
-    RISCV_ISA_Zbkx        : boolean                        := false;       -- implement cryptography crossbar permutation extension?
-    RISCV_ISA_Zfinx       : boolean                        := false;       -- implement 32-bit floating-point extension (using INT regs!)?
-    RISCV_ISA_Zicntr      : boolean                        := true;        -- implement base counters?
-    RISCV_ISA_Zicond      : boolean                        := false;       -- implement integer conditional operations?
-    RISCV_ISA_Zihpm       : boolean                        := false;       -- implement hardware performance monitors?
-    RISCV_ISA_Zknd        : boolean                        := false;       -- implement cryptography NIST AES decryption extension?
-    RISCV_ISA_Zkne        : boolean                        := false;       -- implement cryptography NIST AES encryption extension?
-    RISCV_ISA_Zknh        : boolean                        := false;       -- implement cryptography NIST hash extension?
-    RISCV_ISA_Zksed       : boolean                        := false;       -- implement ShangMi block cypher extension?
-    RISCV_ISA_Zksh        : boolean                        := false;       -- implement ShangMi hash extension?
-    RISCV_ISA_Zmmul       : boolean                        := false;       -- implement multiply-only M sub-extension?
-    RISCV_ISA_Zxcfu       : boolean                        := false;       -- implement custom (instr.) functions unit?
+    RISCV_ISA_A           : boolean                        := false;       -- implement atomic memory operations extension
+    RISCV_ISA_C           : boolean                        := false;       -- implement compressed extension
+    RISCV_ISA_E           : boolean                        := false;       -- implement embedded RF extension
+    RISCV_ISA_M           : boolean                        := false;       -- implement mul/div extension
+    RISCV_ISA_U           : boolean                        := false;       -- implement user mode extension
+    RISCV_ISA_Zba         : boolean                        := false;       -- implement shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb         : boolean                        := false;       -- implement basic bit-manipulation extension
+    RISCV_ISA_Zbkb        : boolean                        := false;       -- implement bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc        : boolean                        := false;       -- implement carry-less multiplication instructions
+    RISCV_ISA_Zbkx        : boolean                        := false;       -- implement cryptography crossbar permutation extension
+    RISCV_ISA_Zbs         : boolean                        := false;       -- implement single-bit bit-manipulation extension
+    RISCV_ISA_Zfinx       : boolean                        := false;       -- implement 32-bit floating-point extension
+    RISCV_ISA_Zicntr      : boolean                        := true;        -- implement base counters
+    RISCV_ISA_Zicond      : boolean                        := false;       -- implement integer conditional operations
+    RISCV_ISA_Zihpm       : boolean                        := false;       -- implement hardware performance monitors
+    RISCV_ISA_Zknd        : boolean                        := false;       -- implement cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne        : boolean                        := false;       -- implement cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh        : boolean                        := false;       -- implement cryptography NIST hash extension
+    RISCV_ISA_Zksed       : boolean                        := false;       -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksh        : boolean                        := false;       -- implement ShangMi hash extension
+    RISCV_ISA_Zmmul       : boolean                        := false;       -- implement multiply-only M sub-extension
+    RISCV_ISA_Zxcfu       : boolean                        := false;       -- implement custom (instr.) functions unit
 
     -- Tuning Options --
     FAST_MUL_EN           : boolean                        := false;       -- use DSPs for M extension's multiplier
@@ -452,14 +454,16 @@ begin
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
       -- RISC-V ISA Extensions --
       RISCV_ISA_A         => RISCV_ISA_A,
-      RISCV_ISA_B         => RISCV_ISA_B,
       RISCV_ISA_C         => RISCV_ISA_C,
       RISCV_ISA_E         => RISCV_ISA_E,
       RISCV_ISA_M         => RISCV_ISA_M,
       RISCV_ISA_U         => RISCV_ISA_U,
+      RISCV_ISA_Zba       => RISCV_ISA_Zba,
+      RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
       RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
       RISCV_ISA_Zbkc      => RISCV_ISA_Zbkc,
       RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,
+      RISCV_ISA_Zbs       => RISCV_ISA_Zbs,
       RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
       RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
       RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
