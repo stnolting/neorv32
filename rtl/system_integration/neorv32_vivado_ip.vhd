@@ -36,14 +36,16 @@ entity neorv32_vivado_ip is
     ON_CHIP_DEBUGGER_EN   : boolean                       := false;
     -- RISC-V CPU Extensions --
     RISCV_ISA_A           : boolean                       := false;
-    RISCV_ISA_B           : boolean                       := false;
     RISCV_ISA_C           : boolean                       := false;
     RISCV_ISA_E           : boolean                       := false;
     RISCV_ISA_M           : boolean                       := false;
     RISCV_ISA_U           : boolean                       := false;
+    RISCV_ISA_Zba         : boolean                       := false;
+    RISCV_ISA_Zbb         : boolean                       := false;
     RISCV_ISA_Zbkb        : boolean                       := false;
     RISCV_ISA_Zbkc        : boolean                       := false;
     RISCV_ISA_Zbkx        : boolean                       := false;
+    RISCV_ISA_Zbs         : boolean                       := false;
     RISCV_ISA_Zfinx       : boolean                       := false;
     RISCV_ISA_Zicntr      : boolean                       := false;
     RISCV_ISA_Zicond      : boolean                       := false;
@@ -309,14 +311,16 @@ begin
     DM_LEGACY_MODE        => false,
     -- RISC-V CPU Extensions --
     RISCV_ISA_A           => RISCV_ISA_A,
-    RISCV_ISA_B           => RISCV_ISA_B,
     RISCV_ISA_C           => RISCV_ISA_C,
     RISCV_ISA_E           => RISCV_ISA_E,
     RISCV_ISA_M           => RISCV_ISA_M,
     RISCV_ISA_U           => RISCV_ISA_U,
+    RISCV_ISA_Zba         => RISCV_ISA_Zba,
+    RISCV_ISA_Zbb         => RISCV_ISA_Zbb,
     RISCV_ISA_Zbkb        => RISCV_ISA_Zbkb,
     RISCV_ISA_Zbkc        => RISCV_ISA_Zbkc,
     RISCV_ISA_Zbkx        => RISCV_ISA_Zbkx,
+    RISCV_ISA_Zbs         => RISCV_ISA_Zbs,
     RISCV_ISA_Zfinx       => RISCV_ISA_Zfinx,
     RISCV_ISA_Zicntr      => RISCV_ISA_Zicntr,
     RISCV_ISA_Zicond      => RISCV_ISA_Zicond,
