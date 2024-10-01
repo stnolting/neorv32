@@ -433,16 +433,19 @@ This chapter gives a brief overview of all available ISA extensions.
 |=======================
 | Name | Description | <<_processor_top_entity_generics, Enabled by Generic>>
 | <<_a_isa_extension,`A`>>               | Atomic memory access instructions                             | `RISCV_ISA_A`
-| <<_b_isa_extension,`B`>>               | Bit-manipulation instructions                                 | `RISCV_ISA_B`
+| <<_b_isa_extension,`B`>>               | Bit manipulation instructions                                 | _Implicitly_ enabled
 | <<_c_isa_extension,`C`>>               | Compressed (16-bit) instructions                              | `RISCV_ISA_C`
 | <<_e_isa_extension,`E`>>               | Embedded CPU extension (reduced register file size)           | `RISCV_ISA_E`
 | <<_i_isa_extension,`I`>>               | Integer base ISA                                              | Enabled if `RISCV_ISA_E` is **not** enabled
 | <<_m_isa_extension,`M`>>               | Integer multiplication and division instructions              | `RISCV_ISA_M`
 | <<_u_isa_extension,`U`>>               | Less-privileged _user_ mode extension                         | `RISCV_ISA_U`
 | <<_x_isa_extension,`X`>>               | Platform-specific / NEORV32-specific extension                | Always enabled
+| <<_zba_isa_extension,`Zba`>>           | Shifted-add bit manipulation instructions                     | `RISCV_ISA_Zba`
+| <<_zbb_isa_extension,`Zbb`>>           | Basic bit manipulation instructions                           | `RISCV_ISA_Zbb`
 | <<_zbkb_isa_extension,`Zbkb`>>         | Scalar cryptographic bit manipulation instructions            | `RISCV_ISA_Zbkb`
 | <<_zbkc_isa_extension,`Zbkc`>>         | Scalar cryptographic carry-less multiplication instructions   | `RISCV_ISA_Zbkc`
 | <<_zbkx_isa_extension,`Zbkx`>>         | Scalar cryptographic crossbar permutation instructions        | `RISCV_ISA_Zbkx`
+| <<_zbs_isa_extension,`Zbs`>>           | Single-bit bit manipulation instructions                      | `RISCV_ISA_Zbs`
 | <<_zfinx_isa_extension,`Zfinx`>>       | Floating-point instructions using integer registers           | `RISCV_ISA_Zfinx`
 | <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction                | Always enabled
 | <<_zicntr_isa_extension,`Zicntr`>>     | Base counters extension                                       | `RISCV_ISA_Zicntr`
@@ -536,30 +539,16 @@ to maintain data cache coherency (e.g. by using the `fence` instruction).
 ==== `B` ISA Extension
 
 The `B` ISA extension adds instructions for bit-manipulation operations.
-This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
-The NEORV32 `B` ISA extension includes the following sub-extensions:
+This ISA extension cannot be enabled by a specific generic. Instead, it is enabled if a specific set of
+bit-manipulation sub-extensions are enabled.
 
-* `Zba` - Address-generation instructions
-* `Zbb` - Basic bit-manipulation instructions
-* `Zbs` - Single-bit instructions
+The `B` extension is shorthand for the following set of other extensions:
 
-.Instructions and Timing
-[cols="<2,<4,<3"]
-[options="header", grid="rows"]
-|=======================
-| Class | Instructions | Execution cycles
-| Arithmetic/logic | `min[u]` `max[u]` `sext.b` `sext.h` `andn` `orn` `xnor` `zext`(pack) `rev8` `orc.b` | 4
-| Shifts           | `clz` `ctz`                                                                         | 6 + 1..32; FAST_SHIFT: 4
-| Shifts           | `cpop`                                                                              | 6 + 32; FAST_SHIFT: 4
-| Shifts           | `rol` `ror[i]`                                                                      | 6 + _shift_amount_; FAST_SHIFT: 4
-| Shifted-add      | `sh1add` `sh2add` `sh3add`                                                          | 4
-| Single-bit       | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]`                                         | 4
-|=======================
+* <<_zba_isa_extension>> - Address-generation / shifted-add instructions.
+* <<_zbb_isa_extension>> - Basic bit manipulation instructions.
+* <<_zbs_isa_extension>> - Single-bit operations.
 
-.Shift Operations
-[TIP]
-Shift operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_SHIFT_EN`
-configuration option that will replace the (time-variant) bit-serial shifter by a (time-constant) barrel shifter.
+A processor configuration which implements `B` must implement all of the above extensions.
 
 
 ==== `C` ISA Extension
@@ -800,6 +789,62 @@ Accessing any user-mode HPM CSR (`hpmcounter*[h]`) will raise an illegal instruc
 .Increment Inhibit
 [TIP]
 The event-driven increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
+
+
+==== `Zba` ISA Extension
+
+The `Zba` sub-extension is part of the _RISC-V bit manipulation_ ISA specification (<<_b_isa_extension>>)
+and adds shifted-add / address-generation instructions. It is enabled by the top's `RISCV_ISA_Zba` generic.
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+
+.Instructions and Timing
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| Shifted-add | `sh1add` `sh2add` `sh3add` | 4
+|=======================
+
+
+==== `Zbb` ISA Extension
+
+The `Zbb` sub-extension is part of the _RISC-V bit manipulation_ ISA specification (<<_b_isa_extension>>)
+and adds the basic bit manipulation instructions. It is enabled by the top's `RISCV_ISA_Zbb` generic.
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+
+.Instructions and Timing
+[cols="<5,<4,<5"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| Logic with negate            | `andn` `orn` `xnor`      | 4
+| Count leading/trailing zeros | `clz` `ctz`              | 6 + 1..32; FAST_SHIFT: 4
+| Count population             | `cpop`                   | 6 + 32; FAST_SHIFT: 4
+| Integer maximum/minimum      | `min[u]` `max[u]`        | 4
+| Sign/zero extension          | `sext.b` `sext.h` `zext` | 4
+| Bitwise rotation             | `rol` `ror[i]`           | 6 + _shift_amount_; FAST_SHIFT: 4
+| OR-combine                   | `orc.b`                  | 4
+| Byte-reverse                 | `rev8`                   | 4
+|=======================
+
+.Shift Operations
+[TIP]
+Shift operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_SHIFT_EN`
+configuration option that will replace the (time-variant) bit-serial shifter by a (time-constant) barrel shifter.
+
+
+==== `Zbs` ISA Extension
+
+The `Zbs` sub-extension is part of the _RISC-V bit manipulation_ ISA specification (<<_b_isa_extension>>)
+and adds single-bit operations. It is enabled by the top's `RISCV_ISA_Zbs` generic.
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+
+.Instructions and Timing
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Single-bit | `sbset[i]` `sbclr[i]` `sbinv[i]` `sbext[i]` | 4
+|=======================
 
 
 ==== `Zbkb` ISA Extension

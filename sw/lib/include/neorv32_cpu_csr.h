@@ -329,14 +329,15 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_ZKSH      = 19, /**< CPU mxisa CSR (19): scalar cryptography - ShangMi hash functions (r/-)*/
   CSR_MXISA_ZKSED     = 20, /**< CPU mxisa CSR (20): scalar cryptography - ShangMi block cyphers (r/-)*/
   CSR_MXISA_ZKS       = 21, /**< CPU mxisa CSR (21): scalar cryptography - ShangMi algorithm suite (r/-)*/
-
-  // Misc
-  CSR_MXISA_IS_SIM    = 24, /**< CPU mxisa CSR (24): this might be a simulation when set (r/-)*/
-
+  CSR_MXISA_ZBA       = 22, /**< CPU mxisa CSR (22): shifted-add bit-manipulation operation (r/-)*/
+  CSR_MXISA_ZBB       = 23, /**< CPU mxisa CSR (23): basic bit-manipulation operation (r/-)*/
+  CSR_MXISA_ZBS       = 24, /**< CPU mxisa CSR (24): single-bit bit-manipulation operation (r/-)*/
   // Tuning options
-  CSR_MXISA_RFHWRST   = 29, /**< CPU mxisa CSR (29): Register file has full hardware reset (r/-)*/
-  CSR_MXISA_FASTMUL   = 30, /**< CPU mxisa CSR (30): DSP-based multiplication (M extensions only) (r/-)*/
-  CSR_MXISA_FASTSHIFT = 31  /**< CPU mxisa CSR (31): parallel logic for shifts (barrel shifters) (r/-)*/
+  CSR_MXISA_RFHWRST   = 28, /**< CPU mxisa CSR (28): register file has full hardware reset (r/-)*/
+  CSR_MXISA_FASTMUL   = 29, /**< CPU mxisa CSR (29): DSP-based multiplication (M extensions only) (r/-)*/
+  CSR_MXISA_FASTSHIFT = 30, /**< CPU mxisa CSR (30): parallel logic for shifts (barrel shifters) (r/-)*/
+  // Misc
+  CSR_MXISA_IS_SIM    = 31  /**< CPU mxisa CSR (31): this might be a simulation when set (r/-)*/
 };
 
 

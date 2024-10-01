@@ -41,9 +41,12 @@ entity neorv32_cpu_control is
     RISCV_ISA_E      : boolean; -- implement embedded-class register file extension
     RISCV_ISA_M      : boolean; -- implement mul/div extension
     RISCV_ISA_U      : boolean; -- implement user mode extension
+    RISCV_ISA_Zba    : boolean; -- implement shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb    : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb   : boolean; -- implement bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc   : boolean; -- implement carry-less multiplication instructions
     RISCV_ISA_Zbkx   : boolean; -- implement cryptography crossbar permutation extension?
+    RISCV_ISA_Zbs    : boolean; -- implement single-bit bit-manipulation extension
     RISCV_ISA_Zfinx  : boolean; -- implement 32-bit floating-point extension
     RISCV_ISA_Zicntr : boolean; -- implement base counters
     RISCV_ISA_Zicond : boolean; -- implement integer conditional operations
@@ -1893,7 +1896,7 @@ begin
             csr.rdata(7)  <= bool_to_ulogic_f(RISCV_ISA_Zicntr); -- Zicntr: base counters
             csr.rdata(8)  <= bool_to_ulogic_f(RISCV_ISA_Smpmp);  -- Smpmp: physical memory protection
             csr.rdata(9)  <= bool_to_ulogic_f(RISCV_ISA_Zihpm);  -- Zihpm: hardware performance monitors
-            csr.rdata(10) <= bool_to_ulogic_f(RISCV_ISA_Sdext);  -- Sdext: RISC-V (external) debug mode
+            csr.rdata(10) <= bool_to_ulogic_f(RISCV_ISA_Sdext);  -- Sdext: RISC-V external debug
             csr.rdata(11) <= bool_to_ulogic_f(RISCV_ISA_Sdtrig); -- Sdtrig: trigger module
             csr.rdata(12) <= bool_to_ulogic_f(RISCV_ISA_Zbkx);   -- Zbkx: cryptography crossbar permutation
             csr.rdata(13) <= bool_to_ulogic_f(RISCV_ISA_Zknd);   -- Zknd: cryptography NIST AES decryption
@@ -1905,12 +1908,19 @@ begin
             csr.rdata(19) <= bool_to_ulogic_f(RISCV_ISA_Zksh);   -- Zksh: ShangMi hash functions
             csr.rdata(20) <= bool_to_ulogic_f(RISCV_ISA_Zksed);  -- Zksed: ShangMi block cyphers
             csr.rdata(21) <= bool_to_ulogic_f(RISCV_ISA_Zks);    -- Zks: ShangMi algorithm suite
-            -- misc --
-            csr.rdata(24) <= bool_to_ulogic_f(is_simulation_c);  -- is this a simulation?
+            csr.rdata(22) <= bool_to_ulogic_f(RISCV_ISA_Zba);    -- Zba: shifted-add bit-manipulation
+            csr.rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);    -- Zbb: basic bit-manipulation extension
+            csr.rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);    -- Zbs: single-bit bit-manipulation extension
+            -- reserved --
+            csr.rdata(25) <= '0';
+            csr.rdata(26) <= '0';
+            csr.rdata(27) <= '0';
             -- tuning options --
-            csr.rdata(29) <= bool_to_ulogic_f(REGFILE_HW_RST);   -- full hardware reset of register file
-            csr.rdata(30) <= bool_to_ulogic_f(FAST_MUL_EN);      -- DSP-based multiplication (M extensions only)
-            csr.rdata(31) <= bool_to_ulogic_f(FAST_SHIFT_EN);    -- parallel logic for shifts (barrel shifters)
+            csr.rdata(28) <= bool_to_ulogic_f(REGFILE_HW_RST);   -- full hardware reset of register file
+            csr.rdata(29) <= bool_to_ulogic_f(FAST_MUL_EN);      -- DSP-based multiplication (M extensions only)
+            csr.rdata(30) <= bool_to_ulogic_f(FAST_SHIFT_EN);    -- parallel logic for shifts (barrel shifters)
+            -- misc --
+            csr.rdata(31) <= bool_to_ulogic_f(is_simulation_c);  -- is this a simulation?
 
           -- --------------------------------------------------------------------
           -- undefined/unavailable

@@ -29,14 +29,16 @@ entity neorv32_cpu is
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
     -- RISC-V ISA Extensions --
     RISCV_ISA_A         : boolean; -- implement atomic memory operations extension
-    RISCV_ISA_B         : boolean; -- implement bit-manipulation extension
     RISCV_ISA_C         : boolean; -- implement compressed extension
     RISCV_ISA_E         : boolean; -- implement embedded RF extension
     RISCV_ISA_M         : boolean; -- implement mul/div extension
     RISCV_ISA_U         : boolean; -- implement user mode extension
+    RISCV_ISA_Zba       : boolean; -- implement shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb       : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean; -- implement bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc      : boolean; -- implement carry-less multiplication instructions
     RISCV_ISA_Zbkx      : boolean; -- implement cryptography crossbar permutation extension
+    RISCV_ISA_Zbs       : boolean; -- implement single-bit bit-manipulation extension
     RISCV_ISA_Zfinx     : boolean; -- implement 32-bit floating-point extension
     RISCV_ISA_Zicntr    : boolean; -- implement base counters
     RISCV_ISA_Zicond    : boolean; -- implement integer conditional operations
@@ -90,7 +92,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
   constant rf_rs3_en_c : boolean := RISCV_ISA_Zxcfu or RISCV_ISA_Zfinx; -- 3rd register file read port
---constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
+  constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
   constant riscv_zkt_c : boolean := FAST_SHIFT_EN; -- Zkt: data-independent execution time for cryptographic operations
   constant riscv_zkn_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
                                     RISCV_ISA_Zkne and RISCV_ISA_Zknd and RISCV_ISA_Zknh; -- Zkn: NIST suite
@@ -134,14 +136,17 @@ begin
   assert false report "[NEORV32] CPU ISA: rv32" &
     cond_sel_string_f(RISCV_ISA_E,      "e",         "i") &
     cond_sel_string_f(RISCV_ISA_A,      "a",         "" ) &
-    cond_sel_string_f(RISCV_ISA_B,      "b",         "" ) &
+    cond_sel_string_f(riscv_b_c,        "b",         "" ) &
     cond_sel_string_f(RISCV_ISA_C,      "c",         "" ) &
     cond_sel_string_f(RISCV_ISA_M,      "m",         "" ) &
     cond_sel_string_f(RISCV_ISA_U,      "u",         "" ) &
     cond_sel_string_f(true,             "x",         "" ) & -- always enabled
+    cond_sel_string_f(RISCV_ISA_Zba,    "_zba",      "" ) &
+    cond_sel_string_f(RISCV_ISA_Zbb,    "_zbb",      "" ) &
     cond_sel_string_f(RISCV_ISA_Zbkb,   "_zbkb",     "" ) &
     cond_sel_string_f(RISCV_ISA_Zbkc,   "_zbkc",     "" ) &
     cond_sel_string_f(RISCV_ISA_Zbkx,   "_zbkx",     "" ) &
+    cond_sel_string_f(RISCV_ISA_Zbs,    "_zbs",      "" ) &
     cond_sel_string_f(RISCV_ISA_Zicntr, "_zicntr",   "" ) &
     cond_sel_string_f(RISCV_ISA_Zicond, "_zicond",   "" ) &
     cond_sel_string_f(true,             "_zicsr",    "" ) & -- always enabled
@@ -186,14 +191,17 @@ begin
     DEBUG_EXC_ADDR   => DEBUG_EXC_ADDR,   -- cpu debug mode exception entry address
     -- RISC-V ISA Extensions --
     RISCV_ISA_A      => RISCV_ISA_A,      -- implement atomic memory operations extension
-    RISCV_ISA_B      => RISCV_ISA_B,      -- implement bit-manipulation extension
+    RISCV_ISA_B      => riscv_b_c,        -- implement bit-manipulation extension
     RISCV_ISA_C      => RISCV_ISA_C,      -- implement compressed extension
     RISCV_ISA_E      => RISCV_ISA_E,      -- implement embedded RF extension
     RISCV_ISA_M      => RISCV_ISA_M,      -- implement mul/div extension
     RISCV_ISA_U      => RISCV_ISA_U,      -- implement user mode extension
+    RISCV_ISA_Zba    => RISCV_ISA_Zba,    -- implement shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb    => RISCV_ISA_Zbb,    -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb   => RISCV_ISA_Zbkb,   -- implement bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc   => RISCV_ISA_Zbkc,   -- implement carry-less multiplication instructions
     RISCV_ISA_Zbkx   => RISCV_ISA_Zbkx,   -- implement cryptography crossbar permutation extension
+    RISCV_ISA_Zbs    => RISCV_ISA_Zbs,    -- implement single-bit bit-manipulation extension
     RISCV_ISA_Zfinx  => RISCV_ISA_Zfinx,  -- implement 32-bit floating-point extension
     RISCV_ISA_Zicntr => RISCV_ISA_Zicntr, -- implement base counters
     RISCV_ISA_Zicond => RISCV_ISA_Zicond, -- implement integer conditional operations
@@ -295,12 +303,12 @@ begin
   generic map (
     -- RISC-V CPU Extensions --
     RISCV_ISA_M      => RISCV_ISA_M,      -- implement mul/div extension
-    RISCV_ISA_Zba    => RISCV_ISA_B,      -- implement address-generation instruction
-    RISCV_ISA_Zbb    => RISCV_ISA_B,      -- implement basic bit-manipulation instruction
+    RISCV_ISA_Zba    => RISCV_ISA_Zba,    -- implement address-generation instruction
+    RISCV_ISA_Zbb    => RISCV_ISA_Zbb,    -- implement basic bit-manipulation instruction
     RISCV_ISA_Zbkb   => RISCV_ISA_Zbkb,   -- implement bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc   => RISCV_ISA_Zbkc,   -- implement carry-less multiplication instructions
     RISCV_ISA_Zbkx   => RISCV_ISA_Zbkx,   -- implement cryptography crossbar permutation extension
-    RISCV_ISA_Zbs    => RISCV_ISA_B,      -- implement single-bit instructions
+    RISCV_ISA_Zbs    => RISCV_ISA_Zbs,    -- implement single-bit instructions
     RISCV_ISA_Zfinx  => RISCV_ISA_Zfinx,  -- implement 32-bit floating-point extension
     RISCV_ISA_Zicond => RISCV_ISA_Zicond, -- implement integer conditional operations
     RISCV_ISA_Zknd   => RISCV_ISA_Zknd,   -- implement cryptography NIST AES decryption extension

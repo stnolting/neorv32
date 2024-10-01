@@ -173,14 +173,16 @@ begin
     ON_CHIP_DEBUGGER_EN   => true,          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
     RISCV_ISA_A           => true,          -- implement atomic memory operations extension?
-    RISCV_ISA_B           => true,          -- implement bit-manipulation extension?
     RISCV_ISA_C           => false,         -- implement compressed extension?
     RISCV_ISA_E           => false,         -- implement embedded RF extension?
     RISCV_ISA_M           => true,          -- implement mul/div extension?
     RISCV_ISA_U           => true,          -- implement user mode extension?
+    RISCV_ISA_Zba         => true,          -- implement shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb         => true,          -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb        => true,          -- implement bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc        => true,          -- implement carry-less multiplication instructions?
     RISCV_ISA_Zbkx        => true,          -- implement cryptography crossbar permutation extension?
+    RISCV_ISA_Zbs         => true,          -- implement single-bit bit-manipulation extension
     RISCV_ISA_Zfinx       => true,          -- implement 32-bit floating-point extension (using INT reg!)
     RISCV_ISA_Zicntr      => true,          -- implement base counters?
     RISCV_ISA_Zicond      => true,          -- implement integer conditional operations?
