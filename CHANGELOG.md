@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 02.10.2024 | 1.10.5.1 | :warning: rework CFU interface; reduce minimal latency of CFU instructions from 4 cycles to 3 cycles | [#1046](https://github.com/stnolting/neorv32/pull/1046) |
 | 01.10.2024 | [**:rocket:1.10.5**](https://github.com/stnolting/neorv32/releases/tag/v1.10.5) | **New release** | |
 | 30.09.2024 | 1.10.4.11 | :warning: split `B` ISA extensions into individual sub-extensions: `Zba`, `Zbb`, `Zbs` | [#1044](https://github.com/stnolting/neorv32/pull/1044) |
 | 29.09.2024 | 1.10.4.10 | :warning: rename CPU ISA configuration generics: `CPU_EXTENSION_* -> RISCV_ISA_*` | [#1041](https://github.com/stnolting/neorv32/pull/1041) |
