@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100500"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100501"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -423,7 +423,7 @@ package neorv32_package is
   constant csr_mhpmcounter14h_c : std_ulogic_vector(11 downto 0) := x"b8e";
   constant csr_mhpmcounter15h_c : std_ulogic_vector(11 downto 0) := x"b8f";
   -- NEORV32-specific read-write machine registers --
---constant csr_mxstatus_c       : std_ulogic_vector(11 downto 0) := x"bc0";
+--constant csr_mxstatus_c       : std_ulogic_vector(11 downto 0) := x"bc0"; -- to-be-implemented
   -- user counters/timers --
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
 --constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
@@ -440,6 +440,7 @@ package neorv32_package is
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
   -- NEORV32-specific read-only machine registers --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
+--constant csr_mxisah_c         : std_ulogic_vector(11 downto 0) := x"fc1"; -- to-be-implemented
 
 -- **********************************************************************************************************
 -- CPU Control
