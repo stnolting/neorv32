@@ -1051,6 +1051,20 @@ see section <<_custom_functions_unit_cfu>>.
 Software can utilize the custom instructions by using _intrinsics_, which are basically inline assembly functions that
 behave like regular C functions but that evaluate to a single custom instruction word (no calling overhead at all).
 
+.CFU Execution Time
+[NOTE]
+The actual CFU execution time depends on the logic being implemented. The CPU architecture requires a minimal execution
+time of 3 cycle and automatically terminates execution after 512 cycles if the CFU does not complete operation within
+this time window.
+
+.Instructions and Timing
+[cols="<2,<5,<2"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| Custom instructions | Instruction words with `custom-0` or `custom-1` opcode | 3 ... 3+512
+|=======================
+
 
 ==== `Smpmp` ISA Extension
 
