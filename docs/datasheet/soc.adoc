@@ -196,7 +196,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 |=======================
 | Name | Type | Default | Description
 4+^| **General**
-| `CLOCK_FREQUENCY`       | natural   | -             | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
+| `CLOCK_FREQUENCY`       | natural   | 0             | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
 | `CLOCK_GATING_EN`       | boolean   | false         | Enable clock gating when CPU is in sleep mode (see sections <<_sleep_mode>> and <<_processor_clocking>>).
 | `INT_BOOTLOADER_EN`     | boolean   | false         | Implement the processor-internal <<_bootloader_rom_bootrom>>, pre-initialized with the default <<_bootloader>> image.
 | `HART_ID`               | suv(31:0) | 0x00000000    | The hart thread ID of the CPU (passed to <<_mhartid>> CSR).
