@@ -22,7 +22,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_top is
   generic (
     -- General --
-    CLOCK_FREQUENCY       : natural;                                       -- clock frequency of clk_i in Hz
+    CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
     CLOCK_GATING_EN       : boolean                        := false;       -- enable clock gating when in sleep mode
     HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
     JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
@@ -373,6 +373,10 @@ begin
     -- SYSINFO disabled --
     assert not (io_sysinfo_en_c = false) report
       "[NEORV32] SYSINFO module disabled - some parts of the NEORV32 software framework will no longer work!" severity warning;
+
+    -- Clock speed not defined --
+    assert not (CLOCK_FREQUENCY = 0) report
+      "[NEORV32] CLOCK_FREQUENCY must be configured according to the frequency of clk_i port!" severity warning;
 
   end generate; -- /sanity_checks
 

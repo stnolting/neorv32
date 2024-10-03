@@ -668,7 +668,7 @@ package neorv32_package is
   component neorv32_top
     generic (
       -- General --
-      CLOCK_FREQUENCY       : natural;
+      CLOCK_FREQUENCY       : natural                        := 0;
       CLOCK_GATING_EN       : boolean                        := false;
       HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000";
       JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000";
