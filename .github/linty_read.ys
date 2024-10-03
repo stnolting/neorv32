@@ -11,6 +11,7 @@ verific -work neorv32 -vhdl ./../rtl/core/neorv32_cpu_cp_bitmanip.vhd
 verific -work neorv32 -vhdl ./../rtl/core/neorv32_cpu_cp_fpu.vhd
 verific -work neorv32 -vhdl ./../rtl/core/neorv32_cpu_cp_cfu.vhd
 verific -work neorv32 -vhdl ./../rtl/core/neorv32_cpu_cp_cond.vhd
+verific -work neorv32 -vhdl ./../rtl/core/neorv32_cpu_cp_crypto.vhd
 verific -work neorv32 -vhdl ./../rtl/core/neorv32_cpu_alu.vhd
 verific -work neorv32 -vhdl ./../rtl/core/neorv32_cpu_lsu.vhd
 verific -work neorv32 -vhdl ./../rtl/core/neorv32_cpu_pmp.vhd
