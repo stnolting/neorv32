@@ -130,8 +130,6 @@ ipgui::move_param -component [ipx::current_core] -order 10 [ipgui::get_guiparams
 # **************************************************************
 # Configuration GUI: CPU
 # **************************************************************
-set_property display_name {RISC-V A ISA extension}                         [ipgui::get_guiparamspec -name "RISCV_ISA_A"         -component [ipx::current_core]]
-set_property tooltip      {Atomic memory operations}                       [ipgui::get_guiparamspec -name "RISCV_ISA_A"         -component [ipx::current_core]]
 set_property display_name {RISC-V C ISA extension}                         [ipgui::get_guiparamspec -name "RISCV_ISA_C"         -component [ipx::current_core]]
 set_property tooltip      {Compressed instructions}                        [ipgui::get_guiparamspec -name "RISCV_ISA_C"         -component [ipx::current_core]]
 set_property display_name {RISC-V E ISA extension}                         [ipgui::get_guiparamspec -name "RISCV_ISA_E"         -component [ipx::current_core]]
@@ -140,6 +138,8 @@ set_property display_name {RISC-V M ISA extension}                         [ipgu
 set_property tooltip      {Integer multiplication and division hardware}   [ipgui::get_guiparamspec -name "RISCV_ISA_M"         -component [ipx::current_core]]
 set_property display_name {RISC-V U ISA extension}                         [ipgui::get_guiparamspec -name "RISCV_ISA_U"         -component [ipx::current_core]]
 set_property tooltip      {Less-privileged user-mode}                      [ipgui::get_guiparamspec -name "RISCV_ISA_U"         -component [ipx::current_core]]
+set_property display_name {RISC-V Zalrsc ISA extension}                    [ipgui::get_guiparamspec -name "RISCV_ISA_Zalrsc"    -component [ipx::current_core]]
+set_property tooltip      {Atomic reservation-set instructions}            [ipgui::get_guiparamspec -name "RISCV_ISA_Zalrsc"    -component [ipx::current_core]]
 set_property display_name {RISC-V Zba ISA extension}                       [ipgui::get_guiparamspec -name "RISCV_ISA_Zba"       -component [ipx::current_core]]
 set_property tooltip      {Shifted-add bit-manipulation instructions}      [ipgui::get_guiparamspec -name "RISCV_ISA_Zba"       -component [ipx::current_core]]
 set_property display_name {RISC-V Zbb ISA extension}                       [ipgui::get_guiparamspec -name "RISCV_ISA_Zbb"       -component [ipx::current_core]]
@@ -191,12 +191,12 @@ set_property display_name {Enable PMP NA2 and NAPOT modes}                 [ipgu
 set_property tooltip      {Naturally-aligned-power-of-two}                 [ipgui::get_guiparamspec -name "PMP_NAP_MODE_EN"     -component [ipx::current_core]]
 
 ipgui::add_group -name {CPU Configuration} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Page 0" -component [ipx::current_core]] -display_name {CPU Configuration}
-ipgui::move_group -component [ipx::current_core] -order  1 [ipgui::get_groupspec    -name "CPU Configuration"          -component [ipx::current_core]] -parent [ipgui::get_pagespec  -name "Page 0"            -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  0 [ipgui::get_guiparamspec -name "RISCV_ISA_A"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  1 [ipgui::get_guiparamspec -name "RISCV_ISA_C"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  2 [ipgui::get_guiparamspec -name "RISCV_ISA_E"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  3 [ipgui::get_guiparamspec -name "RISCV_ISA_M"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  4 [ipgui::get_guiparamspec -name "RISCV_ISA_U"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
+ipgui::move_group -component [ipx::current_core] -order  1 [ipgui::get_groupspec    -name "CPU Configuration"   -component [ipx::current_core]] -parent [ipgui::get_pagespec  -name "Page 0"            -component [ipx::current_core]]
+ipgui::move_param -component [ipx::current_core] -order  0 [ipgui::get_guiparamspec -name "RISCV_ISA_C"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
+ipgui::move_param -component [ipx::current_core] -order  1 [ipgui::get_guiparamspec -name "RISCV_ISA_E"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
+ipgui::move_param -component [ipx::current_core] -order  2 [ipgui::get_guiparamspec -name "RISCV_ISA_M"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
+ipgui::move_param -component [ipx::current_core] -order  3 [ipgui::get_guiparamspec -name "RISCV_ISA_U"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
+ipgui::move_param -component [ipx::current_core] -order  4 [ipgui::get_guiparamspec -name "RISCV_ISA_Zalrsc"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
 ipgui::move_param -component [ipx::current_core] -order  5 [ipgui::get_guiparamspec -name "RISCV_ISA_Zba"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
 ipgui::move_param -component [ipx::current_core] -order  6 [ipgui::get_guiparamspec -name "RISCV_ISA_Zbb"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
 ipgui::move_param -component [ipx::current_core] -order  7 [ipgui::get_guiparamspec -name "RISCV_ISA_Zfinx"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
@@ -376,8 +376,4 @@ ipx::save_core [ipx::current_core]
 set_property ip_repo_paths $cur_dir/$outputdir/packaged_ip [current_project]
 update_ip_catalog
 
-
-# **************************************************************
-# Close IP-packaging project
-# **************************************************************
 close_project
