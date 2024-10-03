@@ -220,7 +220,6 @@ will _not_ cause an illegal instruction exception.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 0     | `CSR_MISA_A_EXT` | r/- | **A**: CPU extension (atomic memory access) available, set when <<_a_isa_extension>> enabled
 | 1     | `CSR_MISA_B_EXT` | r/- | **B**: CPU extension (bit-manipulation) available, set when <<_b_isa_extension>> enabled
 | 2     | `CSR_MISA_C_EXT` | r/- | **C**: CPU extension (compressed instruction) available, set when <<_c_isa_extension>> enabled
 | 4     | `CSR_MISA_E_EXT` | r/- | **E**: CPU extension (embedded) available, set when <<_e_isa_extension>> enabled
@@ -972,7 +971,8 @@ discover ISA sub-extensions and CPU configuration options
 | 22    | `CSR_MXISA_ZBA`       | r/- | <<_zba_isa_extension>> available
 | 23    | `CSR_MXISA_ZBB`       | r/- | <<_zbb_isa_extension>> available
 | 24    | `CSR_MXISA_ZBS`       | r/- | <<_zbs_isa_extension>> available
-| 27:25 | -                     | r/- | _reserved_, hardwired to zero
+| 25    | `CSR_MXISA_ZALRSC`    | r/- | <<_zalrsc_isa_extension>> available
+| 27:26 | -                     | r/- | _reserved_, hardwired to zero
 | 28    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`REGFILE_HW_RST`)
 | 29    | `CSR_MXISA_FASTMUL`   | r/- | fast multiplication available when set (`FAST_MUL_EN`)
 | 30    | `CSR_MXISA_FASTSHIFT` | r/- | fast shifts available when set (`FAST_SHIFT_EN`)
