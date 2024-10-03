@@ -49,13 +49,6 @@ will raise an exception to allow a _software-based_ emulation provided by the ap
 access can be **emulated** using the NEORV32 runtime environment. See section <<_application_context_handling>>
 for more information.
 
-.No Atomic Read-Modify-Write Operations
-[IMPORTANT]
-The NEORV32 <<_a_isa_extension>> only supports the load-reservate (LR) and store-conditional (SR) instructions.
-The remaining read-modify-write operations are not supported. However, these missing instructions can
-be emulated. The NEORV32 <<_core_libraries>> provide an emulation wrapper for the missing AMO/read-modify-write
-instructions that is based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
-
 
 <<<
 // ####################################################################################################################
@@ -335,7 +328,7 @@ is driven by the _accessed_ device or bus system (i.e. a processor-internal memo
 | `rw`    |     1 | Access direction (`0` = read, `1` = write)
 | `src`   |     1 | Access source (`0` = instruction fetch, `1` = load/store)
 | `priv`  |     1 | Set if privileged (M-mode) access
-| `rvso`  |     1 | Set if current access is a reservation-set operation (atomic `lr` or `sc` instruction)
+| `rvso`  |     1 | Set if current access is a reservation-set operation (`lr` or `sc` instruction, <<_zalrsc_isa_extension>>)
 | `fence` |     1 | Data/instruction fence operation; valid without `stb` being set
 |=======================
 
@@ -382,7 +375,7 @@ additional latency). However, _all_ bus signals (request and response) need to b
 :sectnums:
 ==== Atomic Accesses
 
-The load-reservate (`lr.w`) and store-conditional (`sc.w`) instructions from the <<_a_isa_extension>> execute as standard
+The load-reservate (`lr.w`) and store-conditional (`sc.w`) instructions from the <<_zalrsc_isa_extension>> execute as standard
 load/store bus transactions but with the `rvso` ("reservation set operation") signal being set. It is the task of the
 <<_reservation_set_controller>> to handle these LR/SC bus transactions accordingly. Note that these reservation set operations
 are intended for processor-internal usage only (i.e. the reservation state is not available for processor-external modules yet).
@@ -390,12 +383,6 @@ are intended for processor-internal usage only (i.e. the reservation state is no
 .Reservation Set Controller
 [NOTE]
 See section <<_address_space>> / <<_reservation_set_controller>> for more information.
-
-.Read-Modify-Write Operations
-[IMPORTANT]
-Read-modify-write operations (like an atomic swap / `amoswap.w`) are **not** supported yet. However, the NEORV32
-<<_core_libraries>> provide an emulation wrapper for those unsupported instructions that is
-based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
 
 The figure below shows three exemplary bus accesses (1 to 3 from left to right). The `req` signal record represents
 the CPU-side of the bus interface. For easier understanding the current state of the reservation set is added as `rvs_valid` signal.
@@ -417,6 +404,11 @@ image::bus_interface_atomic.png[700]
 [NOTE]
 The "normal" load data mechanism is used to return success/failure of the `sc.w` instruction to the CPU (via the LSB of `rsp.data`).
 
+.Cache Coherency
+[IMPORTANT]
+Atomic operations **always bypass** the CPU caches using direct/uncached accesses. Care must be taken
+to maintain data cache coherency (e.g. by using the `fence` instruction).
+
 
 <<<
 // ####################################################################################################################
@@ -432,7 +424,6 @@ This chapter gives a brief overview of all available ISA extensions.
 [options="header",grid="rows"]
 |=======================
 | Name | Description | <<_processor_top_entity_generics, Enabled by Generic>>
-| <<_a_isa_extension,`A`>>               | Atomic memory access instructions                             | `RISCV_ISA_A`
 | <<_b_isa_extension,`B`>>               | Bit manipulation instructions                                 | _Implicitly_ enabled
 | <<_c_isa_extension,`C`>>               | Compressed (16-bit) instructions                              | `RISCV_ISA_C`
 | <<_e_isa_extension,`E`>>               | Embedded CPU extension (reduced register file size)           | `RISCV_ISA_E`
@@ -440,6 +431,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_m_isa_extension,`M`>>               | Integer multiplication and division instructions              | `RISCV_ISA_M`
 | <<_u_isa_extension,`U`>>               | Less-privileged _user_ mode extension                         | `RISCV_ISA_U`
 | <<_x_isa_extension,`X`>>               | Platform-specific / NEORV32-specific extension                | Always enabled
+| <<_zalrsc_isa_extension,`Zalrsc`>>     | Atomic reservation-set instructions                           | `RISCV_ISA_Zalrsc`
 | <<_zba_isa_extension,`Zba`>>           | Shifted-add bit manipulation instructions                     | `RISCV_ISA_Zba`
 | <<_zbb_isa_extension,`Zbb`>>           | Basic bit manipulation instructions                           | `RISCV_ISA_Zbb`
 | <<_zbkb_isa_extension,`Zbkb`>>         | Scalar cryptographic bit manipulation instructions            | `RISCV_ISA_Zbkb`
@@ -484,56 +476,6 @@ This chapter shows the CPI values (cycles per instruction) for each individual i
 values reflect _optimal conditions_ (i.e. no additional memory delay, no cache misses, no pipeline waits, etc.).
 To benchmark a certain processor configuration for its setup-specific CPI value please refer to the
 `sw/example/performance_tests` test programs.
-
-
-==== `A` ISA Extension
-
-The `A` ISA extension adds instructions and mechanisms for atomic memory access operations. Note that the NEORV32 `A`
-only includes the _load-reservate_ (`lr.w`) and _store-conditional_ (`sc.w`) instructions - the remaining read-modify-write
-instructions (like `amoswap`) are **not supported**. However, these missing instructions can be emulated using the
-LR and SC operations (quote from the RISC-V spec.: "_Any AMO can be emulated by an LR/SC pair._").
-
-.AMO Emulation
-[NOTE]
-The NEORV32 <<_core_libraries>> provide an emulation wrapper for the missing AMO/read-modify-write instructions that is
-based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
-
-Atomic instructions allow to notify an application if a certain memory location has been altered by another instance
-(like another process running on the same CPU or a DMA access). Hence, they can be used to implement synchronization
-mechanisms like mutexes and semaphores).
-
-The NEORV32 `A` extension is enabled via the `RISCV_ISA_A` generic (see <<_processor_top_entity_generics>>).
-When enabled the following additional instructions are available.
-
-.Instructions and Timing
-[cols="<2,<4,<3"]
-[options="header", grid="rows"]
-|=======================
-| Class | Instructions | Execution cycles
-| Load-reservate word    | `lr.w` | 5
-| Store-conditional word | `sc.w` | 5
-|=======================
-
-The `lr.w` instructions stores one word to a word-aligned address and registers a _reservation set_. The `sc.w`
-instruction stores a word to a word-aligned address only if the reservation set is still valid. Furthermore, the
-`sc.w` operations returns the state of the reservation set (0 = reservation set still valid, data has been written;
-1 = reservation set was broken, no data has been written). The reservation set is invalidated if another `lr.w` instruction
-is executed or if any write access to the _reservated_ address takes place. Traps and/or CPU privilege level changes
-do not modify current reservation sets.
-
-.`aq` and `rl` Bits
-[NOTE]
-The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
-
-.Atomic Memory Access on Hardware Level
-[NOTE]
-More information regarding the atomic memory accesses and the according reservation
-sets can be found in section <<_reservation_set_controller>>.
-
-.Cache Coherency
-[IMPORTANT]
-Atomic operations **always bypass** the CPU caches using direct/uncached accesses. Care must be taken
-to maintain data cache coherency (e.g. by using the `fence` instruction).
 
 
 ==== `B` ISA Extension
@@ -655,6 +597,38 @@ and <<_mip>> CSRs. These extensions are mapped to CSR bits, that are available f
 RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 * All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception (see <<_full_virtualization>>).
 * There are <<_neorv32_specific_csrs>>.
+
+
+==== `Zalrsc` ISA Extension
+
+The `Zalrsc` ISA extension is a sub-extension of the RISC-V _atomic memory access_ (`A`) ISA extension and includes
+instructions for reservation-set operations (load-reservate `lr` and store-conditional `sc`) only.
+It is enabled by the top's `RISCV_ISA_Zalrsc` generic.
+
+.AMO / `A` Emulation
+[NOTE]
+The atomic memory access / read-modify-write operations of the `A` ISA extension can be emulated using the
+LR and SC operations (quote from the RISC-V spec.: "_Any AMO can be emulated by an LR/SC pair._").
+The NEORV32 <<_core_libraries>> provide an emulation wrapper for emulating AMO/read-modify-write instructions that is
+based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
+
+.Instructions and Timing
+[cols="<2,<4,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| Load-reservate word    | `lr.w` | 5
+| Store-conditional word | `sc.w` | 5
+|=======================
+
+.`aq` and `rl` Bits
+[NOTE]
+The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
+
+.Atomic Memory Access on Hardware Level
+[NOTE]
+More information regarding the atomic memory accesses and the according reservation
+sets can be found in section <<_reservation_set_controller>>.
 
 
 ==== `Zifencei` ISA Extension
@@ -1054,8 +1028,8 @@ behave like regular C functions but that evaluate to a single custom instruction
 .CFU Execution Time
 [NOTE]
 The actual CFU execution time depends on the logic being implemented. The CPU architecture requires a minimal execution
-time of 3 cycle and automatically terminates execution after 512 cycles if the CFU does not complete operation within
-this time window.
+time of 3 cycles (purely combinatorial CFU operation) and automatically terminates execution after 512 cycles if the CFU
+does not complete operation within this time window.
 
 .Instructions and Timing
 [cols="<2,<5,<2"]

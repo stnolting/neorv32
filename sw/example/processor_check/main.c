@@ -1935,7 +1935,7 @@ int main() {
   PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
   PRINT_STANDARD("failing) ");
 
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_A)) {
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
     cnt_test++;
 
     // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
@@ -1976,7 +1976,7 @@ int main() {
   PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
   PRINT_STANDARD("succeed) ");
 
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_A)) {
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
     cnt_test++;
 
     // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload

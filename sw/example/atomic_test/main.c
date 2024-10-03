@@ -121,7 +121,7 @@ int main() {
   neorv32_uart0_printf("<<< NEORV32 AMO Operations (atomic read-modify-write) Emulation Test >>>\n\n");
 
   // check if A extension is implemented at all
-  if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_A)) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZALRSC)) == 0) {
     neorv32_uart0_printf("Error! A ISA extension not implemented!\n");
     return 1;
   }

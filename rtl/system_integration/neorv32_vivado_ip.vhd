@@ -35,11 +35,11 @@ entity neorv32_vivado_ip is
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN   : boolean                       := false;
     -- RISC-V CPU Extensions --
-    RISCV_ISA_A           : boolean                       := false;
     RISCV_ISA_C           : boolean                       := false;
     RISCV_ISA_E           : boolean                       := false;
     RISCV_ISA_M           : boolean                       := false;
     RISCV_ISA_U           : boolean                       := false;
+    RISCV_ISA_Zalrsc      : boolean                       := false;
     RISCV_ISA_Zba         : boolean                       := false;
     RISCV_ISA_Zbb         : boolean                       := false;
     RISCV_ISA_Zbkb        : boolean                       := false;
@@ -310,11 +310,11 @@ begin
     ON_CHIP_DEBUGGER_EN   => ON_CHIP_DEBUGGER_EN,
     DM_LEGACY_MODE        => false,
     -- RISC-V CPU Extensions --
-    RISCV_ISA_A           => RISCV_ISA_A,
     RISCV_ISA_C           => RISCV_ISA_C,
     RISCV_ISA_E           => RISCV_ISA_E,
     RISCV_ISA_M           => RISCV_ISA_M,
     RISCV_ISA_U           => RISCV_ISA_U,
+    RISCV_ISA_Zalrsc      => RISCV_ISA_Zalrsc,
     RISCV_ISA_Zba         => RISCV_ISA_Zba,
     RISCV_ISA_Zbb         => RISCV_ISA_Zbb,
     RISCV_ISA_Zbkb        => RISCV_ISA_Zbkb,
