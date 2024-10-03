@@ -35,17 +35,17 @@ entity neorv32_cpu_control is
     DEBUG_PARK_ADDR  : std_ulogic_vector(31 downto 0); -- cpu debug-mode parking loop entry address, 4-byte aligned
     DEBUG_EXC_ADDR   : std_ulogic_vector(31 downto 0); -- cpu debug-mode exception entry address, 4-byte aligned
     -- RISC-V ISA Extensions --
+    RISCV_ISA_A      : boolean; -- implement atomic memory operations extension
     RISCV_ISA_B      : boolean; -- implement bit-manipulation extension
     RISCV_ISA_C      : boolean; -- implement compressed extension
     RISCV_ISA_E      : boolean; -- implement embedded-class register file extension
     RISCV_ISA_M      : boolean; -- implement mul/div extension
     RISCV_ISA_U      : boolean; -- implement user mode extension
-    RISCV_ISA_Zalrsc : boolean; -- implement atomic reservation-set extension
     RISCV_ISA_Zba    : boolean; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb    : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb   : boolean; -- implement bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc   : boolean; -- implement carry-less multiplication instructions
-    RISCV_ISA_Zbkx   : boolean; -- implement cryptography crossbar permutation extension
+    RISCV_ISA_Zbkx   : boolean; -- implement cryptography crossbar permutation extension?
     RISCV_ISA_Zbs    : boolean; -- implement single-bit bit-manipulation extension
     RISCV_ISA_Zfinx  : boolean; -- implement 32-bit floating-point extension
     RISCV_ISA_Zicntr : boolean; -- implement base counters
@@ -525,7 +525,7 @@ begin
           when opcode_jal_c => -- J-immediate
             alu_imm_o <= replicate_f(execute_engine.ir(31), 12) & execute_engine.ir(19 downto 12) & execute_engine.ir(20) & execute_engine.ir(30 downto 21) & '0';
           when opcode_amo_c => -- atomic memory access
-            if RISCV_ISA_Zalrsc then alu_imm_o <= (others => '0'); end if;
+            if RISCV_ISA_A then alu_imm_o <= (others => '0'); end if;
           when others =>
             NULL; -- use default
         end case;
@@ -684,7 +684,7 @@ begin
     end case;
 
     -- memory read/write access --
-    if RISCV_ISA_Zalrsc and (opcode(2) = opcode_amo_c(2)) then -- atomic lr/sc
+    if RISCV_ISA_A and (opcode(2) = opcode_amo_c(2)) then -- atomic lr/sc
       ctrl_nxt.lsu_rw <= execute_engine.ir(instr_funct7_lsb_c+2);
     else -- normal load/store
       ctrl_nxt.lsu_rw <= execute_engine.ir(5);
@@ -850,7 +850,7 @@ begin
            (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
            (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
            (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- illegal instruction exception
-          if (RISCV_ISA_Zalrsc and (opcode(2) = opcode_amo_c(2))) or (opcode(5) = '0') then -- atomic operation / normal load
+          if (RISCV_ISA_A and (opcode(2) = opcode_amo_c(2))) or (opcode(5) = '0') then -- atomic operation / normal load
             ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file (won't happen in case of exception)
           end if;
           execute_engine.state_nxt <= DISPATCH;
@@ -1077,8 +1077,8 @@ begin
         end case;
 
       when opcode_amo_c => -- atomic memory operation (LR/SC)
-        if RISCV_ISA_Zalrsc and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and
-                                (execute_engine.ir(instr_funct7_lsb_c+6 downto instr_funct7_lsb_c+3) = "0001") then -- LR.W/SC.W
+        if RISCV_ISA_A and (execute_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and
+                           (execute_engine.ir(instr_funct7_lsb_c+6 downto instr_funct7_lsb_c+3) = "0001") then -- LR.W/SC.W
           illegal_cmd <= '0';
         else
           illegal_cmd <= '1';
@@ -1722,6 +1722,7 @@ begin
 --        when csr_mstatush_c => csr.rdata <= (others => '0'); -- machine status register, high word - hardwired to zero
 
           when csr_misa_c => -- ISA and extensions
+            csr.rdata(0)  <= bool_to_ulogic_f(RISCV_ISA_A);     -- A CPU extension
             csr.rdata(1)  <= bool_to_ulogic_f(RISCV_ISA_B);     -- B CPU extension
             csr.rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_C);     -- C CPU extension
             csr.rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_E);     -- E CPU extension
@@ -1910,8 +1911,8 @@ begin
             csr.rdata(22) <= bool_to_ulogic_f(RISCV_ISA_Zba);    -- Zba: shifted-add bit-manipulation
             csr.rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);    -- Zbb: basic bit-manipulation extension
             csr.rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);    -- Zbs: single-bit bit-manipulation extension
-            csr.rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc); -- Zalrsc: reservation set extension
             -- reserved --
+            csr.rdata(25) <= '0';
             csr.rdata(26) <= '0';
             csr.rdata(27) <= '0';
             -- tuning options --
