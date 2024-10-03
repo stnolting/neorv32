@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100502"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100501"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -677,11 +677,11 @@ package neorv32_package is
       ON_CHIP_DEBUGGER_EN   : boolean                        := false;
       DM_LEGACY_MODE        : boolean                        := false;
       -- RISC-V CPU Extensions --
+      RISCV_ISA_A           : boolean                        := false;
       RISCV_ISA_C           : boolean                        := false;
       RISCV_ISA_E           : boolean                        := false;
       RISCV_ISA_M           : boolean                        := false;
       RISCV_ISA_U           : boolean                        := false;
-      RISCV_ISA_Zalrsc      : boolean                        := false;
       RISCV_ISA_Zba         : boolean                        := false;
       RISCV_ISA_Zbb         : boolean                        := false;
       RISCV_ISA_Zbkb        : boolean                        := false;
