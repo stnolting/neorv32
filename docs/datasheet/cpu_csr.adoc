@@ -220,7 +220,6 @@ will _not_ cause an illegal instruction exception.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 0     | `CSR_MISA_A_EXT` | r/- | **A**: CPU extension (atomic memory access) available, set when <<_a_isa_extension>> enabled
 | 1     | `CSR_MISA_B_EXT` | r/- | **B**: CPU extension (bit-manipulation) available, set when <<_b_isa_extension>> enabled
 | 2     | `CSR_MISA_C_EXT` | r/- | **C**: CPU extension (compressed instruction) available, set when <<_c_isa_extension>> enabled
 | 4     | `CSR_MISA_E_EXT` | r/- | **E**: CPU extension (embedded) available, set when <<_e_isa_extension>> enabled
@@ -934,7 +933,7 @@ outside of machine-mode will raise an illegal instruction exception.
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
 |=======================
-| Name        | Machine extended isa and extensions register
+| Name        | Machine extended ISA and extensions register
 | Address     | `0xfc0`
 | Reset value | `DEFINED`
 | ISA         | `Zicsr` & `X`
@@ -951,7 +950,7 @@ discover ISA sub-extensions and CPU configuration options
 |  1    | `CSR_MXISA_ZIFENCEI`  | r/- | <<_zifencei_isa_extension>> available
 |  2    | `CSR_MXISA_ZMMUL`     | r/- | <<_zmmul_isa_extension>> available
 |  3    | `CSR_MXISA_ZXCFU`     | r/- | <<_zxcfu_isa_extension>> available
-|  4    | -                     | r/- | _reserved_, hardwired to zero
+|  4    | `CSR_MXISA_ZKT`       | r/- | <<_zkt_isa_extension>> available
 |  5    | `CSR_MXISA_ZFINX`     | r/- | <<_zfinx_isa_extension>> available
 |  6    | `CSR_MXISA_ZICOND`    | r/- | <<_zicond_isa_extension>> available
 |  7    | `CSR_MXISA_ZICNTR`    | r/- | <<_zicntr_isa_extension>> available
@@ -959,10 +958,23 @@ discover ISA sub-extensions and CPU configuration options
 |  9    | `CSR_MXISA_ZIHPM`     | r/- | <<_zihpm_isa_extension>> available
 | 10    | `CSR_MXISA_SDEXT`     | r/- | <<_sdext_isa_extension>> available
 | 11    | `CSR_MXISA_SDTRIG`    | r/- | <<_sdtrig_isa_extension>> available
-| 19:12 | -                     | r/- | hardwired to zero
-| 20    | `CSR_MXISA_IS_SIM`    | r/- | set if CPU is being **simulated** (⚠️ not guaranteed)
-| 28:21 | -                     | r/- | hardwired to zero
-| 29    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`REGFILE_HW_RST`)
-| 30    | `CSR_MXISA_FASTMUL`   | r/- | fast multiplication available when set (`FAST_MUL_EN`)
-| 31    | `CSR_MXISA_FASTSHIFT` | r/- | fast shifts available when set (`FAST_SHIFT_EN`)
+| 12    | `CSR_MXISA_ZBKX`      | r/- | <<_zbkx_isa_extension>> available
+| 13    | `CSR_MXISA_ZKND`      | r/- | <<_zknd_isa_extension>> available
+| 14    | `CSR_MXISA_ZKNE`      | r/- | <<_zkne_isa_extension>> available
+| 15    | `CSR_MXISA_ZKNH`      | r/- | <<_zknh_isa_extension>> available
+| 16    | `CSR_MXISA_ZBKB`      | r/- | <<_zbkb_isa_extension>> available
+| 17    | `CSR_MXISA_ZBKC`      | r/- | <<_zbkc_isa_extension>> available
+| 18    | `CSR_MXISA_ZKN`       | r/- | <<_zkn_isa_extension>> available
+| 19    | `CSR_MXISA_ZKSH`      | r/- | <<_zksh_isa_extension>> available
+| 20    | `CSR_MXISA_ZKSED`     | r/- | <<_zksed_isa_extension>> available
+| 21    | `CSR_MXISA_ZKS`       | r/- | <<_zks_isa_extension>> available
+| 22    | `CSR_MXISA_ZBA`       | r/- | <<_zba_isa_extension>> available
+| 23    | `CSR_MXISA_ZBB`       | r/- | <<_zbb_isa_extension>> available
+| 24    | `CSR_MXISA_ZBS`       | r/- | <<_zbs_isa_extension>> available
+| 25    | `CSR_MXISA_ZALRSC`    | r/- | <<_zalrsc_isa_extension>> available
+| 27:26 | -                     | r/- | _reserved_, hardwired to zero
+| 28    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`REGFILE_HW_RST`)
+| 29    | `CSR_MXISA_FASTMUL`   | r/- | fast multiplication available when set (`FAST_MUL_EN`)
+| 30    | `CSR_MXISA_FASTSHIFT` | r/- | fast shifts available when set (`FAST_SHIFT_EN`)
+| 31    | `CSR_MXISA_IS_SIM`    | r/- | set if CPU is being **simulated** (⚠️ not guaranteed)
 |=======================

@@ -11,6 +11,7 @@ NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_cp_bitmanip.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_cp_fpu.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_cp_cfu.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_cp_cond.vhd
+NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_cp_crypto.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_alu.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_lsu.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_pmp.vhd

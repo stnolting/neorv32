@@ -18,15 +18,25 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_alu is
   generic (
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_B      : boolean; -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_M      : boolean; -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_Zicond : boolean; -- implement integer conditional operations?
-    CPU_EXTENSION_RISCV_Zmmul  : boolean; -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zfinx  : boolean; -- implement 32-bit floating-point extension (using INT reg!)
-    CPU_EXTENSION_RISCV_Zxcfu  : boolean; -- implement custom (instr.) functions unit?
+    RISCV_ISA_M      : boolean; -- implement mul/div extension
+    RISCV_ISA_Zba    : boolean; -- implement address-generation instruction
+    RISCV_ISA_Zbb    : boolean; -- implement basic bit-manipulation instruction
+    RISCV_ISA_Zbkb   : boolean; -- implement bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc   : boolean; -- implement carry-less multiplication instructions
+    RISCV_ISA_Zbkx   : boolean; -- implement cryptography crossbar permutation extension
+    RISCV_ISA_Zbs    : boolean; -- implement single-bit instructions
+    RISCV_ISA_Zfinx  : boolean; -- implement 32-bit floating-point extension
+    RISCV_ISA_Zicond : boolean; -- implement integer conditional operations
+    RISCV_ISA_Zknd   : boolean; -- implement cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne   : boolean; -- implement cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh   : boolean; -- implement cryptography NIST hash extension
+    RISCV_ISA_Zksed  : boolean; -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksh   : boolean; -- implement ShangMi hash extension
+    RISCV_ISA_Zmmul  : boolean; -- implement multiply-only M sub-extension
+    RISCV_ISA_Zxcfu  : boolean; -- implement custom (instr.) functions unit
     -- Tuning Options --
-    FAST_MUL_EN                : boolean; -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN              : boolean  -- use barrel shifter for shift operations
+    FAST_MUL_EN      : boolean; -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN    : boolean  -- use barrel shifter for shift operations
   );
   port (
     -- global control --
@@ -69,10 +79,9 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal cp_res     : std_ulogic_vector(XLEN-1 downto 0);
 
   -- co-processor interface --
-  type cp_data_t  is array (0 to 5) of std_ulogic_vector(XLEN-1 downto 0);
+  type cp_data_t  is array (0 to 6) of std_ulogic_vector(XLEN-1 downto 0);
   signal cp_result : cp_data_t; -- co-processor result
-  signal cp_start  : std_ulogic_vector(5 downto 0); -- co-processor trigger
-  signal cp_valid  : std_ulogic_vector(5 downto 0); -- co-processor done
+  signal cp_valid  : std_ulogic_vector(6 downto 0); -- co-processor done
   signal cp_shamt  : std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
 
   -- CSR proxy --
@@ -81,10 +90,8 @@ architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
   signal fpu_csr_rd, cfu_csr_rd : std_ulogic_vector(XLEN-1 downto 0);
 
   -- CFU proxy --
-  signal cfu_run  : std_ulogic;
-  signal cfu_done : std_ulogic;
-  signal cfu_wait : std_ulogic_vector(1 downto 0);
-  signal cfu_res  : std_ulogic_vector(XLEN-1 downto 0);
+  signal cfu_active, cfu_done, cfu_busy : std_ulogic;
+  signal cfu_res : std_ulogic_vector(XLEN-1 downto 0);
 
   -- CSR read-backs --
   signal csr_rdata_fpu, csr_rdata_cfu : std_ulogic_vector(XLEN-1 downto 0);
@@ -141,17 +148,13 @@ begin
   -- ALU Co-Processors
   -- **************************************************************************************************************************
 
-  -- co-processor select / start trigger --
-  -- > "cp_start" is high for one cycle to trigger operation of the according co-processor
-  cp_start <= ctrl_i.alu_cp_trig;
-
   -- multi-cycle co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
-  cp_done_o <= cp_valid(5) or cp_valid(4) or cp_valid(3) or cp_valid(2) or cp_valid(1) or cp_valid(0);
+  cp_done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5) or cp_valid(6);
 
   -- co-processor result --
   -- > "cp_result" data has to be always zero unless the specific co-processor has been actually triggered
-  cp_res <= cp_result(5) or cp_result(4) or cp_result(3) or cp_result(2) or cp_result(1) or cp_result(0);
+  cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5) or cp_result(6);
 
   -- co-processor CSR read-back --
   -- > "csr_rdata_*" data has to be always zero unless the specific co-processor is actually being accessed
@@ -161,7 +164,7 @@ begin
   cp_shamt <= opb(index_size_f(XLEN)-1 downto 0);
 
 
-  -- Co-Processor 0: Shifter Unit (Base ISA) ------------------------------------------------
+  -- ALU[I]-Opcode Co-Processor: Shifter Unit (Base ISA) ------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_shifter_inst: entity neorv32.neorv32_cpu_cp_shifter
   generic map (
@@ -172,7 +175,6 @@ begin
     clk_i   => clk_i,        -- global clock, rising edge
     rstn_i  => rstn_i,       -- global reset, low-active, async
     ctrl_i  => ctrl_i,       -- main control bus
-    start_i => cp_start(0),  -- trigger operation
     -- data input --
     rs1_i   => rs1_i,        -- rf source 1
     shamt_i => cp_shamt,     -- shift amount
@@ -182,21 +184,20 @@ begin
   );
 
 
-  -- Co-Processor 1: Integer Multiplication/Division Unit ('M' ISA Extension) ---------------
+  -- ALU-Opcode Co-Processor: Integer Multiplication/Division Unit ('M' ISA Extension) ------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_muldiv_inst_true:
-  if CPU_EXTENSION_RISCV_M or CPU_EXTENSION_RISCV_Zmmul generate
+  if RISCV_ISA_M or RISCV_ISA_Zmmul generate
     neorv32_cpu_cp_muldiv_inst: entity neorv32.neorv32_cpu_cp_muldiv
     generic map (
-      FAST_MUL_EN => FAST_MUL_EN,          -- use DSPs for faster multiplication
-      DIVISION_EN => CPU_EXTENSION_RISCV_M -- implement divider hardware
+      FAST_MUL_EN => FAST_MUL_EN, -- use DSPs for faster multiplication
+      DIVISION_EN => RISCV_ISA_M  -- implement divider hardware
     )
     port map (
       -- global control --
       clk_i   => clk_i,        -- global clock, rising edge
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
-      start_i => cp_start(1),  -- trigger operation
       -- data input --
       rs1_i   => rs1_i,        -- rf source 1
       rs2_i   => rs2_i,        -- rf source 2
@@ -207,26 +208,30 @@ begin
   end generate;
 
   neorv32_cpu_cp_muldiv_inst_false:
-  if (not CPU_EXTENSION_RISCV_M) and (not CPU_EXTENSION_RISCV_Zmmul) generate
+  if (not RISCV_ISA_M) and (not RISCV_ISA_Zmmul) generate
     cp_result(1) <= (others => '0');
     cp_valid(1)  <= '0';
   end generate;
 
 
-  -- Co-Processor 2: Bit-Manipulation Unit ('B' ISA Extension) ------------------------------
+  -- ALU[I]-Opcode Co-Processor: Bit-Manipulation Unit ('B' ISA Extension) ------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_bitmanip_inst_true:
-  if CPU_EXTENSION_RISCV_B generate
+  if RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbs or RISCV_ISA_Zbkc generate
     neorv32_cpu_cp_bitmanip_inst: entity neorv32.neorv32_cpu_cp_bitmanip
     generic map (
-      FAST_SHIFT_EN => FAST_SHIFT_EN -- use barrel shifter for shift operations
+      EN_FAST_SHIFT => FAST_SHIFT_EN,  -- use barrel shifter for shift operations
+      EN_ZBA        => RISCV_ISA_Zba,  -- enable address-generation instruction
+      EN_ZBB        => RISCV_ISA_Zbb,  -- enable basic bit-manipulation instruction
+      EN_ZBKB       => RISCV_ISA_Zbkb, -- enable bit-manipulation instructions for cryptography
+      EN_ZBKC       => RISCV_ISA_Zbkc, -- enable carry-less multiplication instructions
+      EN_ZBS        => RISCV_ISA_Zbs   -- enable single-bit instructions
     )
     port map (
       -- global control --
       clk_i   => clk_i,        -- global clock, rising edge
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
-      start_i => cp_start(2),  -- trigger operation
       -- data input --
       cmp_i   => cmp,          -- comparator status
       rs1_i   => rs1_i,        -- rf source 1
@@ -239,23 +244,22 @@ begin
   end generate;
 
   neorv32_cpu_cp_bitmanip_inst_false:
-  if not CPU_EXTENSION_RISCV_B generate
+  if not (RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbs or RISCV_ISA_Zbkc) generate
     cp_result(2) <= (others => '0');
     cp_valid(2)  <= '0';
   end generate;
 
 
-  -- Co-Processor 3: Single-Precision Floating-Point Unit ('Zfinx' ISA Extension) -----------
+  -- FLOAT-Opcode Co-Processor: Single-Precision FPUUnit ('Zfinx' ISA Extension) ------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_fpu_inst_true:
-  if CPU_EXTENSION_RISCV_Zfinx generate
+  if RISCV_ISA_Zfinx generate
     neorv32_cpu_cp_fpu_inst: entity neorv32.neorv32_cpu_cp_fpu
     port map (
       -- global control --
       clk_i       => clk_i,                  -- global clock, rising edge
       rstn_i      => rstn_i,                 -- global reset, low-active, async
       ctrl_i      => ctrl_i,                 -- main control bus
-      start_i     => cp_start(3),            -- trigger operation
       -- CSR interface --
       csr_we_i    => fpu_csr_we,             -- write enable
       csr_addr_i  => csr_addr_i(1 downto 0), -- address
@@ -278,25 +282,27 @@ begin
   end generate;
 
   neorv32_cpu_cp_fpu_inst_false:
-  if not CPU_EXTENSION_RISCV_Zfinx generate
+  if not RISCV_ISA_Zfinx generate
+    fpu_csr_en    <= '0';
+    fpu_csr_we    <= '0';
     csr_rdata_fpu <= (others => '0');
     cp_result(3)  <= (others => '0');
     cp_valid(3)   <= '0';
   end generate;
 
 
-  -- Co-Processor 4: Custom (Instructions) Functions Unit ('Zxcfu' ISA Extension) -----------
+  -- CUSTOM-Opcode Co-Processor: Custom Functions Unit ('Zxcfu' ISA Extension) --------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_cfu_inst_true:
-  if CPU_EXTENSION_RISCV_Zxcfu generate
+  if RISCV_ISA_Zxcfu generate
     neorv32_cpu_cp_cfu_inst: entity neorv32.neorv32_cpu_cp_cfu
     port map (
       -- global control --
       clk_i       => clk_i,                          -- global clock, rising edge
       rstn_i      => rstn_i,                         -- global reset, low-active, async
       -- operation control --
-      start_i     => cp_start(4),                    -- operation trigger/strobe
-      active_i    => cfu_run,                        -- operation in progress, CPU is waiting for CFU
+      start_i     => ctrl_i.alu_cp_cfu,              -- operation trigger/strobe
+      active_i    => cfu_active,                     -- operation in progress, CPU is waiting for CFU
       -- CSR interface --
       csr_we_i    => cfu_csr_we,                     -- write enable
       csr_addr_i  => csr_addr_i(1 downto 0),         -- address
@@ -319,45 +325,52 @@ begin
     cfu_csr_we    <= cfu_csr_en and csr_we_i;
     csr_rdata_cfu <= cfu_csr_rd when (cfu_csr_en = '1') else (others => '0');
 
-    -- operation proxy --
+    -- response proxy --
     cfu_arbiter: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        cfu_wait <= (others => '0');
+        cfu_busy     <= '0';
+        cp_result(4) <= (others => '0');
       elsif rising_edge(clk_i) then
-        cfu_wait(1) <= cfu_wait(0);
-        if (cfu_wait(0) = '0') then -- CFU is idle
-          cfu_wait(0) <= cp_start(4); -- trigger new CFU operation
-        elsif (cfu_done = '1') or (ctrl_i.cpu_trap = '1') then -- operation done or abort if trap (exception)
-          cfu_wait(0) <= '0';
+        if (cfu_done = '1') or (ctrl_i.cpu_trap = '1') then -- terminate also on trap
+          cfu_busy <= '0';
+        elsif (ctrl_i.alu_cp_cfu = '1') then
+          cfu_busy <= '1';
+        end if;
+        if (cfu_done = '1') and ((ctrl_i.alu_cp_cfu = '1') or (cfu_busy = '1')) then
+          cp_result(4) <= cfu_res;
+        else -- output zero if there is no CFU operation
+          cp_result(4) <= (others => '0');
         end if;
       end if;
     end process cfu_arbiter;
 
-    cfu_run      <= cp_start(4) or cfu_wait(0); -- CFU operation in progress
-    cp_result(4) <= cfu_res when (cfu_wait(1) = '1') else (others => '0'); -- output gate
-    cp_valid(4)  <= cfu_wait(0) and cfu_done;
+    cfu_active  <= ctrl_i.alu_cp_cfu or cfu_busy; -- CFU operation in progress
+    cp_valid(4) <= cfu_done and (ctrl_i.alu_cp_cfu or cfu_busy);
   end generate;
 
   neorv32_cpu_cp_cfu_inst_false:
-  if not CPU_EXTENSION_RISCV_Zxcfu generate
+  if not RISCV_ISA_Zxcfu generate
+    cfu_csr_en    <= '0';
+    cfu_csr_we    <= '0';
     csr_rdata_cfu <= (others => '0');
+    cfu_busy      <= '0';
+    cfu_active    <= '0';
     cp_result(4)  <= (others => '0');
     cp_valid(4)   <= '0';
   end generate;
 
 
-  -- Co-Processor 5: Integer Conditional Operations Unit ('Zicond' ISA Extension) -----------
+  -- ALU-Opcode Co-Processor: Conditional Operations Unit ('Zicond' ISA Extension) ----------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_cond_inst_true:
-  if CPU_EXTENSION_RISCV_Zicond generate
+  if RISCV_ISA_Zicond generate
     neorv32_cpu_cp_cond_inst: entity neorv32.neorv32_cpu_cp_cond
     port map (
       -- global control --
       clk_i   => clk_i,        -- global clock, rising edge
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
-      start_i => cp_start(5),  -- trigger operation
       -- data input --
       rs1_i   => rs1_i,        -- rf source 1
       rs2_i   => rs2_i,        -- rf source 2
@@ -368,9 +381,43 @@ begin
   end generate;
 
   neorv32_cpu_cp_cond_inst_false:
-  if not CPU_EXTENSION_RISCV_Zicond generate
+  if not RISCV_ISA_Zicond generate
     cp_result(5) <= (others => '0');
     cp_valid(5)  <= '0';
+  end generate;
+
+
+  -- ALU[I]-Opcode Co-Processor: Scalar Cryptography Unit ('Zk*' ISA Extensions) ------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_cpu_cp_crypto_inst_true:
+  if RISCV_ISA_Zbkx or RISCV_ISA_Zknh or RISCV_ISA_Zkne or RISCV_ISA_Zknd or RISCV_ISA_Zksh or RISCV_ISA_Zksed generate
+    neorv32_cpu_cp_crypto_inst: entity neorv32.neorv32_cpu_cp_crypto
+    generic map (
+      EN_ZBKX  => RISCV_ISA_Zbkx,  -- enable crossbar permutation extension
+      EN_ZKNH  => RISCV_ISA_Zknh,  -- enable NIST hash extension
+      EN_ZKNE  => RISCV_ISA_Zkne,  -- enable NIST AES encryption extension
+      EN_ZKND  => RISCV_ISA_Zknd,  -- enable NIST AES decryption extension
+      EN_ZKSED => RISCV_ISA_Zksed, -- enable ShangMi block cypher extension
+      EN_ZKSH  => RISCV_ISA_Zksh   -- enable ShangMi hash extension
+    )
+    port map (
+      -- global control --
+      clk_i   => clk_i,        -- global clock, rising edge
+      rstn_i  => rstn_i,       -- global reset, low-active, async
+      ctrl_i  => ctrl_i,       -- main control bus
+      -- data input --
+      rs1_i   => rs1_i,        -- rf source 1
+      rs2_i   => rs2_i,        -- rf source 2
+      -- result and status --
+      res_o   => cp_result(6), -- operation result
+      valid_o => cp_valid(6)   -- data output valid
+    );
+  end generate;
+
+  neorv32_cpu_cp_crypto_inst_false:
+  if not (RISCV_ISA_Zbkx or RISCV_ISA_Zknh or RISCV_ISA_Zkne or RISCV_ISA_Zknd or RISCV_ISA_Zksh or RISCV_ISA_Zksed) generate
+    cp_result(6) <= (others => '0');
+    cp_valid(6)  <= '0';
   end generate;
 
 

@@ -30,7 +30,6 @@ entity neorv32_cpu_cp_muldiv is
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
-    start_i : in  std_ulogic; -- trigger operation
     -- data input --
     rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
@@ -51,6 +50,9 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   constant op_divu_c   : std_ulogic_vector(2 downto 0) := "101"; -- divu
   constant op_rem_c    : std_ulogic_vector(2 downto 0) := "110"; -- rem
   constant op_remu_c   : std_ulogic_vector(2 downto 0) := "111"; -- remu
+
+  -- instruction decode --
+  signal valid_cmd : std_ulogic;
 
   -- controller --
   type state_t is (S_IDLE, S_BUSY, S_DONE);
@@ -90,6 +92,13 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
 
 begin
 
+  -- Valid Instruction? ---------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and (ctrl_i.ir_opcode(5) = '1') and
+                        (ctrl_i.ir_funct12(11 downto 5) = "0000001") and
+                        ((ctrl_i.ir_funct3(2) = '0') or ((ctrl_i.ir_funct3(2) = '1') and DIVISION_EN)) else '0';
+
+
   -- Co-Processor Controller ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   control: process(rstn_i, clk_i)
@@ -108,7 +117,7 @@ begin
 
         when S_IDLE => -- wait for start signal
         -- ------------------------------------------------------------
-          if (start_i = '1') then -- trigger new operation
+          if (valid_cmd = '1') then -- trigger new operation
             if (ctrl_i.ir_funct3(2) = '0') and FAST_MUL_EN then -- is fast multiplication?
               ctrl.state <= S_DONE;
             else -- serial division or serial multiplication
@@ -142,8 +151,8 @@ begin
                                  (ctrl_i.ir_funct3 = op_div_c)  or (ctrl_i.ir_funct3 = op_rem_c) else '0';
 
   -- operation trigger --
-  mul.start <= '1' when (start_i = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
-  div.start <= '1' when (start_i = '1') and (ctrl_i.ir_funct3(2) = '1') else '0';
+  mul.start <= '1' when (valid_cmd = '1') and (ctrl_i.ir_funct3(2) = '0') else '0';
+  div.start <= '1' when (valid_cmd = '1') and (ctrl_i.ir_funct3(2) = '1') else '0';
 
 
   -- Multiplier Core (signed/unsigned) - Full Parallel --------------------------------------

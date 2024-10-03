@@ -22,113 +22,123 @@ use neorv32.neorv32_package.all;
 entity neorv32_top is
   generic (
     -- General --
-    CLOCK_FREQUENCY            : natural;                                       -- clock frequency of clk_i in Hz
-    CLOCK_GATING_EN            : boolean                        := false;       -- enable clock gating when in sleep mode
-    HART_ID                    : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
-    JEDEC_ID                   : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
-    INT_BOOTLOADER_EN          : boolean                        := false;       -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    CLOCK_FREQUENCY       : natural;                                       -- clock frequency of clk_i in Hz
+    CLOCK_GATING_EN       : boolean                        := false;       -- enable clock gating when in sleep mode
+    HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
+    JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
+    INT_BOOTLOADER_EN     : boolean                        := false;       -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN        : boolean                        := false;       -- implement on-chip debugger
-    DM_LEGACY_MODE             : boolean                        := false;       -- debug module spec version: false = v1.0, true = v0.13
+    ON_CHIP_DEBUGGER_EN   : boolean                        := false;       -- implement on-chip debugger
+    DM_LEGACY_MODE        : boolean                        := false;       -- debug module spec version: false = v1.0, true = v0.13
 
     -- RISC-V CPU Extensions --
-    CPU_EXTENSION_RISCV_A      : boolean                        := false;       -- implement atomic memory operations extension?
-    CPU_EXTENSION_RISCV_B      : boolean                        := false;       -- implement bit-manipulation extension?
-    CPU_EXTENSION_RISCV_C      : boolean                        := false;       -- implement compressed extension?
-    CPU_EXTENSION_RISCV_E      : boolean                        := false;       -- implement embedded RF extension?
-    CPU_EXTENSION_RISCV_M      : boolean                        := false;       -- implement mul/div extension?
-    CPU_EXTENSION_RISCV_U      : boolean                        := false;       -- implement user mode extension?
-    CPU_EXTENSION_RISCV_Zfinx  : boolean                        := false;       -- implement 32-bit floating-point extension (using INT regs!)
-    CPU_EXTENSION_RISCV_Zicntr : boolean                        := true;        -- implement base counters?
-    CPU_EXTENSION_RISCV_Zicond : boolean                        := false;       -- implement integer conditional operations?
-    CPU_EXTENSION_RISCV_Zihpm  : boolean                        := false;       -- implement hardware performance monitors?
-    CPU_EXTENSION_RISCV_Zmmul  : boolean                        := false;       -- implement multiply-only M sub-extension?
-    CPU_EXTENSION_RISCV_Zxcfu  : boolean                        := false;       -- implement custom (instr.) functions unit?
+    RISCV_ISA_C           : boolean                        := false;       -- implement compressed extension
+    RISCV_ISA_E           : boolean                        := false;       -- implement embedded RF extension
+    RISCV_ISA_M           : boolean                        := false;       -- implement mul/div extension
+    RISCV_ISA_U           : boolean                        := false;       -- implement user mode extension
+    RISCV_ISA_Zalrsc      : boolean                        := false;       -- implement atomic reservation-set extension
+    RISCV_ISA_Zba         : boolean                        := false;       -- implement shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb         : boolean                        := false;       -- implement basic bit-manipulation extension
+    RISCV_ISA_Zbkb        : boolean                        := false;       -- implement bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc        : boolean                        := false;       -- implement carry-less multiplication instructions
+    RISCV_ISA_Zbkx        : boolean                        := false;       -- implement cryptography crossbar permutation extension
+    RISCV_ISA_Zbs         : boolean                        := false;       -- implement single-bit bit-manipulation extension
+    RISCV_ISA_Zfinx       : boolean                        := false;       -- implement 32-bit floating-point extension
+    RISCV_ISA_Zicntr      : boolean                        := true;        -- implement base counters
+    RISCV_ISA_Zicond      : boolean                        := false;       -- implement integer conditional operations
+    RISCV_ISA_Zihpm       : boolean                        := false;       -- implement hardware performance monitors
+    RISCV_ISA_Zknd        : boolean                        := false;       -- implement cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne        : boolean                        := false;       -- implement cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh        : boolean                        := false;       -- implement cryptography NIST hash extension
+    RISCV_ISA_Zksed       : boolean                        := false;       -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksh        : boolean                        := false;       -- implement ShangMi hash extension
+    RISCV_ISA_Zmmul       : boolean                        := false;       -- implement multiply-only M sub-extension
+    RISCV_ISA_Zxcfu       : boolean                        := false;       -- implement custom (instr.) functions unit
 
     -- Tuning Options --
-    FAST_MUL_EN                : boolean                        := false;       -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN              : boolean                        := false;       -- use barrel shifter for shift operations
-    REGFILE_HW_RST             : boolean                        := false;       -- implement full hardware reset for register file
+    FAST_MUL_EN           : boolean                        := false;       -- use DSPs for M extension's multiplier
+    FAST_SHIFT_EN         : boolean                        := false;       -- use barrel shifter for shift operations
+    REGFILE_HW_RST        : boolean                        := false;       -- implement full hardware reset for register file
 
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS            : natural range 0 to 16          := 0;           -- number of regions (0..16)
-    PMP_MIN_GRANULARITY        : natural                        := 4;           -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
-    PMP_TOR_MODE_EN            : boolean                        := true;        -- implement TOR mode
-    PMP_NAP_MODE_EN            : boolean                        := true;        -- implement NAPOT/NA4 modes
+    PMP_NUM_REGIONS       : natural range 0 to 16          := 0;           -- number of regions (0..16)
+    PMP_MIN_GRANULARITY   : natural                        := 4;           -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_TOR_MODE_EN       : boolean                        := true;        -- implement TOR mode
+    PMP_NAP_MODE_EN       : boolean                        := true;        -- implement NAPOT/NA4 modes
 
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS               : natural range 0 to 13          := 0;           -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH              : natural range 0 to 64          := 40;          -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS          : natural range 0 to 13          := 0;           -- number of implemented HPM counters (0..13)
+    HPM_CNT_WIDTH         : natural range 0 to 64          := 40;          -- total size of HPM counters (0..64)
 
     -- Internal Instruction memory (IMEM) --
-    MEM_INT_IMEM_EN            : boolean                        := false;       -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE          : natural                        := 16*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
+    MEM_INT_IMEM_EN       : boolean                        := false;       -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE     : natural                        := 16*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
 
     -- Internal Data memory (DMEM) --
-    MEM_INT_DMEM_EN            : boolean                        := false;       -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE          : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
+    MEM_INT_DMEM_EN       : boolean                        := false;       -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE     : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
 
     -- Internal Instruction Cache (iCACHE) --
-    ICACHE_EN                  : boolean                        := false;       -- implement instruction cache
-    ICACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;           -- i-cache: number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;          -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_EN             : boolean                        := false;       -- implement instruction cache
+    ICACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;           -- i-cache: number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;          -- i-cache: block size in bytes (min 4), has to be a power of 2
 
     -- Internal Data Cache (dCACHE) --
-    DCACHE_EN                  : boolean                        := false;       -- implement data cache
-    DCACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;           -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;          -- d-cache: block size in bytes (min 4), has to be a power of 2
+    DCACHE_EN             : boolean                        := false;       -- implement data cache
+    DCACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;           -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;          -- d-cache: block size in bytes (min 4), has to be a power of 2
 
     -- External bus interface (XBUS) --
-    XBUS_EN                    : boolean                        := false;       -- implement external memory bus interface?
-    XBUS_TIMEOUT               : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
-    XBUS_REGSTAGE_EN           : boolean                        := false;       -- add XBUS register stage
-    XBUS_CACHE_EN              : boolean                        := false;       -- enable external bus cache (x-cache)
-    XBUS_CACHE_NUM_BLOCKS      : natural range 1 to 256         := 64;          -- x-cache: number of blocks (min 1), has to be a power of 2
-    XBUS_CACHE_BLOCK_SIZE      : natural range 1 to 2**16       := 32;          -- x-cache: block size in bytes (min 4), has to be a power of 2
+    XBUS_EN               : boolean                        := false;       -- implement external memory bus interface?
+    XBUS_TIMEOUT          : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
+    XBUS_REGSTAGE_EN      : boolean                        := false;       -- add XBUS register stage
+    XBUS_CACHE_EN         : boolean                        := false;       -- enable external bus cache (x-cache)
+    XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 64;          -- x-cache: number of blocks (min 1), has to be a power of 2
+    XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16       := 32;          -- x-cache: block size in bytes (min 4), has to be a power of 2
 
     -- Execute in-place module (XIP) --
-    XIP_EN                     : boolean                        := false;       -- implement execute in-place module (XIP)?
-    XIP_CACHE_EN               : boolean                        := false;       -- implement XIP cache?
-    XIP_CACHE_NUM_BLOCKS       : natural range 1 to 256         := 8;           -- number of blocks (min 1), has to be a power of 2
-    XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16       := 256;         -- block size in bytes (min 4), has to be a power of 2
+    XIP_EN                : boolean                        := false;       -- implement execute in-place module (XIP)?
+    XIP_CACHE_EN          : boolean                        := false;       -- implement XIP cache?
+    XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256         := 8;           -- number of blocks (min 1), has to be a power of 2
+    XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16       := 256;         -- block size in bytes (min 4), has to be a power of 2
 
     -- External Interrupts Controller (XIRQ) --
-    XIRQ_NUM_CH                : natural range 0 to 32          := 0;           -- number of external IRQ channels (0..32)
+    XIRQ_NUM_CH           : natural range 0 to 32          := 0;           -- number of external IRQ channels (0..32)
 
     -- Processor peripherals --
-    IO_DISABLE_SYSINFO         : boolean                        := false;       -- disable the SYSINFO module (for advanced users only)
-    IO_GPIO_NUM                : natural range 0 to 64          := 0;           -- number of GPIO input/output pairs (0..64)
-    IO_MTIME_EN                : boolean                        := false;       -- implement machine system timer (MTIME)?
-    IO_UART0_EN                : boolean                        := false;       -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART0_RX_FIFO           : natural range 1 to 2**15       := 1;           -- RX fifo depth, has to be a power of two, min 1
-    IO_UART0_TX_FIFO           : natural range 1 to 2**15       := 1;           -- TX fifo depth, has to be a power of two, min 1
-    IO_UART1_EN                : boolean                        := false;       -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-    IO_UART1_RX_FIFO           : natural range 1 to 2**15       := 1;           -- RX fifo depth, has to be a power of two, min 1
-    IO_UART1_TX_FIFO           : natural range 1 to 2**15       := 1;           -- TX fifo depth, has to be a power of two, min 1
-    IO_SPI_EN                  : boolean                        := false;       -- implement serial peripheral interface (SPI)?
-    IO_SPI_FIFO                : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be a power of two, min 1
-    IO_SDI_EN                  : boolean                        := false;       -- implement serial data interface (SDI)?
-    IO_SDI_FIFO                : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be zero or a power of two, min 1
-    IO_TWI_EN                  : boolean                        := false;       -- implement two-wire interface (TWI)?
-    IO_TWI_FIFO                : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be zero or a power of two, min 1
-    IO_PWM_NUM_CH              : natural range 0 to 12          := 0;           -- number of PWM channels to implement (0..12); 0 = disabled
-    IO_WDT_EN                  : boolean                        := false;       -- implement watch dog timer (WDT)?
-    IO_TRNG_EN                 : boolean                        := false;       -- implement true random number generator (TRNG)?
-    IO_TRNG_FIFO               : natural range 1 to 2**15       := 1;           -- data fifo depth, has to be a power of two, min 1
-    IO_CFS_EN                  : boolean                        := false;       -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG              : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
-    IO_CFS_IN_SIZE             : natural                        := 32;          -- size of CFS input conduit in bits
-    IO_CFS_OUT_SIZE            : natural                        := 32;          -- size of CFS output conduit in bits
-    IO_NEOLED_EN               : boolean                        := false;       -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_NEOLED_TX_FIFO          : natural range 1 to 2**15       := 1;           -- NEOLED FIFO depth, has to be a power of two, min 1
-    IO_GPTMR_EN                : boolean                        := false;       -- implement general purpose timer (GPTMR)?
-    IO_ONEWIRE_EN              : boolean                        := false;       -- implement 1-wire interface (ONEWIRE)?
-    IO_DMA_EN                  : boolean                        := false;       -- implement direct memory access controller (DMA)?
-    IO_SLINK_EN                : boolean                        := false;       -- implement stream link interface (SLINK)?
-    IO_SLINK_RX_FIFO           : natural range 1 to 2**15       := 1;           -- RX fifo depth, has to be a power of two, min 1
-    IO_SLINK_TX_FIFO           : natural range 1 to 2**15       := 1;           -- TX fifo depth, has to be a power of two, min 1
-    IO_CRC_EN                  : boolean                        := false        -- implement cyclic redundancy check unit (CRC)?
+    IO_DISABLE_SYSINFO    : boolean                        := false;       -- disable the SYSINFO module (for advanced users only)
+    IO_GPIO_NUM           : natural range 0 to 64          := 0;           -- number of GPIO input/output pairs (0..64)
+    IO_MTIME_EN           : boolean                        := false;       -- implement machine system timer (MTIME)?
+    IO_UART0_EN           : boolean                        := false;       -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX fifo depth, has to be a power of two, min 1
+    IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX fifo depth, has to be a power of two, min 1
+    IO_UART1_EN           : boolean                        := false;       -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_UART1_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX fifo depth, has to be a power of two, min 1
+    IO_UART1_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX fifo depth, has to be a power of two, min 1
+    IO_SPI_EN             : boolean                        := false;       -- implement serial peripheral interface (SPI)?
+    IO_SPI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be a power of two, min 1
+    IO_SDI_EN             : boolean                        := false;       -- implement serial data interface (SDI)?
+    IO_SDI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be zero or a power of two, min 1
+    IO_TWI_EN             : boolean                        := false;       -- implement two-wire interface (TWI)?
+    IO_TWI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be zero or a power of two, min 1
+    IO_PWM_NUM_CH         : natural range 0 to 12          := 0;           -- number of PWM channels to implement (0..12); 0 = disabled
+    IO_WDT_EN             : boolean                        := false;       -- implement watch dog timer (WDT)?
+    IO_TRNG_EN            : boolean                        := false;       -- implement true random number generator (TRNG)?
+    IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;           -- data fifo depth, has to be a power of two, min 1
+    IO_CFS_EN             : boolean                        := false;       -- implement custom functions subsystem (CFS)?
+    IO_CFS_CONFIG         : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
+    IO_CFS_IN_SIZE        : natural                        := 32;          -- size of CFS input conduit in bits
+    IO_CFS_OUT_SIZE       : natural                        := 32;          -- size of CFS output conduit in bits
+    IO_NEOLED_EN          : boolean                        := false;       -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;           -- NEOLED FIFO depth, has to be a power of two, min 1
+    IO_GPTMR_EN           : boolean                        := false;       -- implement general purpose timer (GPTMR)?
+    IO_ONEWIRE_EN         : boolean                        := false;       -- implement 1-wire interface (ONEWIRE)?
+    IO_DMA_EN             : boolean                        := false;       -- implement direct memory access controller (DMA)?
+    IO_SLINK_EN           : boolean                        := false;       -- implement stream link interface (SLINK)?
+    IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX fifo depth, has to be a power of two, min 1
+    IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX fifo depth, has to be a power of two, min 1
+    IO_CRC_EN             : boolean                        := false        -- implement cyclic redundancy check unit (CRC)?
   );
   port (
     -- Global control --
@@ -319,7 +329,7 @@ begin
 
     -- show SoC configuration --
     assert false report
-      "[NEORV32] Processor Configuration: " &
+      "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
       cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",       "") &
       cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",       "") &
       cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",    "") &
@@ -437,39 +447,49 @@ begin
     neorv32_cpu_inst: entity neorv32.neorv32_cpu
     generic map (
       -- General --
-      HART_ID                    => HART_ID,
-      VENDOR_ID                  => vendorid_c,
-      CPU_BOOT_ADDR              => cpu_boot_addr_c,
-      CPU_DEBUG_PARK_ADDR        => dm_park_entry_c,
-      CPU_DEBUG_EXC_ADDR         => dm_exc_entry_c,
-      -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_A      => CPU_EXTENSION_RISCV_A,
-      CPU_EXTENSION_RISCV_B      => CPU_EXTENSION_RISCV_B,
-      CPU_EXTENSION_RISCV_C      => CPU_EXTENSION_RISCV_C,
-      CPU_EXTENSION_RISCV_E      => CPU_EXTENSION_RISCV_E,
-      CPU_EXTENSION_RISCV_M      => CPU_EXTENSION_RISCV_M,
-      CPU_EXTENSION_RISCV_U      => CPU_EXTENSION_RISCV_U,
-      CPU_EXTENSION_RISCV_Zfinx  => CPU_EXTENSION_RISCV_Zfinx,
-      CPU_EXTENSION_RISCV_Zicntr => CPU_EXTENSION_RISCV_Zicntr,
-      CPU_EXTENSION_RISCV_Zicond => CPU_EXTENSION_RISCV_Zicond,
-      CPU_EXTENSION_RISCV_Zihpm  => CPU_EXTENSION_RISCV_Zihpm,
-      CPU_EXTENSION_RISCV_Zmmul  => CPU_EXTENSION_RISCV_Zmmul,
-      CPU_EXTENSION_RISCV_Zxcfu  => CPU_EXTENSION_RISCV_Zxcfu,
-      CPU_EXTENSION_RISCV_Sdext  => ON_CHIP_DEBUGGER_EN,
-      CPU_EXTENSION_RISCV_Sdtrig => ON_CHIP_DEBUGGER_EN,
-      CPU_EXTENSION_RISCV_Smpmp  => cpu_smpmp_c,
+      HART_ID             => HART_ID,
+      VENDOR_ID           => vendorid_c,
+      BOOT_ADDR           => cpu_boot_addr_c,
+      DEBUG_PARK_ADDR     => dm_park_entry_c,
+      DEBUG_EXC_ADDR      => dm_exc_entry_c,
+      -- RISC-V ISA Extensions --
+      RISCV_ISA_C         => RISCV_ISA_C,
+      RISCV_ISA_E         => RISCV_ISA_E,
+      RISCV_ISA_M         => RISCV_ISA_M,
+      RISCV_ISA_U         => RISCV_ISA_U,
+      RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
+      RISCV_ISA_Zba       => RISCV_ISA_Zba,
+      RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
+      RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
+      RISCV_ISA_Zbkc      => RISCV_ISA_Zbkc,
+      RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,
+      RISCV_ISA_Zbs       => RISCV_ISA_Zbs,
+      RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
+      RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
+      RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
+      RISCV_ISA_Zihpm     => RISCV_ISA_Zihpm,
+      RISCV_ISA_Zknd      => RISCV_ISA_Zknd,
+      RISCV_ISA_Zkne      => RISCV_ISA_Zkne,
+      RISCV_ISA_Zknh      => RISCV_ISA_Zknh,
+      RISCV_ISA_Zksed     => RISCV_ISA_Zksed,
+      RISCV_ISA_Zksh      => RISCV_ISA_Zksh,
+      RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
+      RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
+      RISCV_ISA_Sdext     => ON_CHIP_DEBUGGER_EN,
+      RISCV_ISA_Sdtrig    => ON_CHIP_DEBUGGER_EN,
+      RISCV_ISA_Smpmp     => cpu_smpmp_c,
       -- Tuning Options --
-      FAST_MUL_EN                => FAST_MUL_EN,
-      FAST_SHIFT_EN              => FAST_SHIFT_EN,
-      REGFILE_HW_RST             => REGFILE_HW_RST,
+      FAST_MUL_EN         => FAST_MUL_EN,
+      FAST_SHIFT_EN       => FAST_SHIFT_EN,
+      REGFILE_HW_RST      => REGFILE_HW_RST,
       -- Physical Memory Protection (PMP) --
-      PMP_NUM_REGIONS            => PMP_NUM_REGIONS,
-      PMP_MIN_GRANULARITY        => PMP_MIN_GRANULARITY,
-      PMP_TOR_MODE_EN            => PMP_TOR_MODE_EN,
-      PMP_NAP_MODE_EN            => PMP_NAP_MODE_EN,
+      PMP_NUM_REGIONS     => PMP_NUM_REGIONS,
+      PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY,
+      PMP_TOR_MODE_EN     => PMP_TOR_MODE_EN,
+      PMP_NAP_MODE_EN     => PMP_NAP_MODE_EN,
       -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS               => HPM_NUM_CNTS,
-      HPM_CNT_WIDTH              => HPM_CNT_WIDTH
+      HPM_NUM_CNTS        => HPM_NUM_CNTS,
+      HPM_CNT_WIDTH       => HPM_CNT_WIDTH
     )
     port map (
       -- global control --
@@ -646,7 +666,7 @@ begin
   -- Reservation Set Controller (for atomic LR/SC accesses)
   -- **************************************************************************************************************************
   neorv32_bus_reservation_set_true:
-  if CPU_EXTENSION_RISCV_A generate
+  if RISCV_ISA_Zalrsc generate
     neorv32_bus_reservation_set_inst: entity neorv32.neorv32_bus_reservation_set
     port map (
       clk_i       => clk_i,
@@ -662,7 +682,7 @@ begin
   end generate;
 
   neorv32_bus_reservation_set_false:
-  if not CPU_EXTENSION_RISCV_A generate
+  if not RISCV_ISA_Zalrsc generate
     main2_req <= main_req;
     main_rsp  <= main2_rsp;
   end generate;
@@ -1586,7 +1606,7 @@ begin
   -- **************************************************************************************************************************
   -- On-Chip Debugger Complex
   -- **************************************************************************************************************************
-  neorv32_neorv32_ocd_inst_true:
+  neorv32_ocd_inst_true:
   if ON_CHIP_DEBUGGER_EN generate
 
     -- On-Chip Debugger - Debug Transport Module (DTM) ----------------------------------------

@@ -29,6 +29,19 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 03.10.2024 | 1.10.5.2 | :warning: remove `A` ISA extensions; replaced by new `Zalrsc` ISA extension | [#1047](https://github.com/stnolting/neorv32/pull/1047) |
+| 02.10.2024 | 1.10.5.1 | :warning: rework CFU interface; reduce minimal latency of CFU instructions from 4 cycles to 3 cycles | [#1046](https://github.com/stnolting/neorv32/pull/1046) |
+| 01.10.2024 | [**:rocket:1.10.5**](https://github.com/stnolting/neorv32/releases/tag/v1.10.5) | **New release** | |
+| 30.09.2024 | 1.10.4.11 | :warning: split `B` ISA extensions into individual sub-extensions: `Zba`, `Zbb`, `Zbs` | [#1044](https://github.com/stnolting/neorv32/pull/1044) |
+| 29.09.2024 | 1.10.4.10 | :warning: rename CPU ISA configuration generics: `CPU_EXTENSION_* -> RISCV_ISA_*` | [#1041](https://github.com/stnolting/neorv32/pull/1041) |
+| 28.09.2024 | 1.10.4.9 | :sparkles: add support for RISC-V "ShangMi algorithm suite" ISA extensions: `Zks`, `Zksed`, `Zksh` | [#1040](https://github.com/stnolting/neorv32/pull/1040) |
+| 28.09.2024 | 1.10.4.8 | :sparkles: add support for RISC-V "NIST algorithm suite" ISA extension `Zkn` | [#1039](https://github.com/stnolting/neorv32/pull/1039) |
+| 27.09.2024 | 1.10.4.7 | :sparkles: add support for RISC-V "carry-less multiplication instruction for cryptography" ISA extension `Zbkc` | [#1038](https://github.com/stnolting/neorv32/pull/1038) |
+| 27.09.2024 | 1.10.4.6 | :sparkles: add support for RISC-V "bit manipulation instructions for cryptography" ISA extension `Zbkb` | [#1037](https://github.com/stnolting/neorv32/pull/1037) |
+| 27.09.2024 | 1.10.4.5 | :sparkles: add support for RISC-V "data independent execution time" ISA extension `Zkt` | [#1036](https://github.com/stnolting/neorv32/pull/1036) |
+| 25.09.2024 | 1.10.4.4 | :sparkles: add support for RISC-V "scalar cryptography" ISA extensions `Zbkx`, `Zknd`, `Zkne`, `Zknh` | [#1033](https://github.com/stnolting/neorv32/pull/1033) |
+| 23.09.2024 | 1.10.4.3 | rework/optimize ALU instruction decoding and CPU co-processor interface | [#1032](https://github.com/stnolting/neorv32/pull/1032) |
+| 20.09.2024 | 1.10.4.2 | :bug: fix minor bug in FPU's multiplication instruction (invalid-check logic if any operand is sNAN) | [#1028](https://github.com/stnolting/neorv32/pull/1028) |
 | 20.09.2024 | 1.10.4.1 | rtl signal renamings to make the code more readable | [#1026](https://github.com/stnolting/neorv32/pull/1026) |
 | 16.09.2024 | [**:rocket:1.10.4**](https://github.com/stnolting/neorv32/releases/tag/v1.10.4) | **New release** | |
 | 15.09.2024 | 1.10.3.10 | :bug: SW: fix stack-alignment (has to be 128-bit-aligned) before entering the very first procedure (`main`) | [#1021](https://github.com/stnolting/neorv32/pull/1021) |

@@ -62,6 +62,7 @@ not working as expected. See how to [contribute](https://github.com/stnolting/ne
 - [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the CPU's register file)
 - [x] optimized for high clock frequencies to ease integration / timing closure
 - [x] from zero to _"hello world!"_ - completely open source and documented
+- [x] highly documented - on software and hardware side
 - [x] easy to use even for FPGA / RISC-V starters – intended to work _out of the box_
 
 ### Project Status
@@ -103,22 +104,36 @@ setup according to your needs. Note that all of the following SoC modules are en
 `RV32`
 [[`I`](https://stnolting.github.io/neorv32/#_i_isa_extension)/[`E`](https://stnolting.github.io/neorv32/#_e_isa_extension)]
 [[`M`](https://stnolting.github.io/neorv32/#_m_isa_extension)]
-[[`A`](https://stnolting.github.io/neorv32/#_a_isa_extension)]
 [[`C`](https://stnolting.github.io/neorv32/#_c_isa_extension)]
 [[`B`](https://stnolting.github.io/neorv32/#_b_isa_extension)]
 [[`U`](https://stnolting.github.io/neorv32/#_u_isa_extension)]
 [[`X`](https://stnolting.github.io/neorv32/#_x_isa_extension)]
-[[`Zicsr`](https://stnolting.github.io/neorv32/#_zicsr_isa_extension)]
+[[`Zalrsc`](https://stnolting.github.io/neorv32/#_zalrsc_isa_extension)]
+[[`Zba`](https://stnolting.github.io/neorv32/#_zba_isa_extension)]
+[[`Zbb`](https://stnolting.github.io/neorv32/#_zbb_isa_extension)]
+[[`Zbkb`](https://stnolting.github.io/neorv32/#_zbkb_isa_extension)]
+[[`Zbkc`](https://stnolting.github.io/neorv32/#_zbkc_isa_extension)]
+[[`Zbkx`](https://stnolting.github.io/neorv32/#_zbkx_isa_extension)]
+[[`Zbs`](https://stnolting.github.io/neorv32/#_zbs_isa_extension)]
 [[`Zicntr`](https://stnolting.github.io/neorv32/#_zicntr_isa_extension)]
 [[`Zicond`](https://stnolting.github.io/neorv32/#_zicond_isa_extension)]
-[[`Zihpm`](https://stnolting.github.io/neorv32/#_zihpm_isa_extension)]
+[[`Zicsr`](https://stnolting.github.io/neorv32/#_zicsr_isa_extension)]
 [[`Zifencei`](https://stnolting.github.io/neorv32/#_zifencei_isa_extension)]
+[[`Zihpm`](https://stnolting.github.io/neorv32/#_zihpm_isa_extension)]
 [[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_isa_extension)]
+[[`Zkn`](https://stnolting.github.io/neorv32/#_zkn_isa_extension)]
+[[`Zknd`](https://stnolting.github.io/neorv32/#_zknd_isa_extension)]
+[[`Zkne`](https://stnolting.github.io/neorv32/#_zkne_isa_extension)]
+[[`Zknh`](https://stnolting.github.io/neorv32/#_zknh_isa_extension)]
+[[`Zkt`](https://stnolting.github.io/neorv32/#_zkt_isa_extension)]
+[[`Zks`](https://stnolting.github.io/neorv32/#_zks_isa_extension)]
+[[`Zksed`](https://stnolting.github.io/neorv32/#_zksed_isa_extension)]
+[[`Zksh`](https://stnolting.github.io/neorv32/#_zksh_isa_extension)]
 [[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_isa_extension)]
 [[`Zxcfu`](https://stnolting.github.io/neorv32/#_zxcfu_isa_extension)]
-[[`Smpmp`](https://stnolting.github.io/neorv32/#_smpmp_isa_extension)]
 [[`Sdext`](https://stnolting.github.io/neorv32/#_sdext_isa_extension)]
 [[`Sdtrig`](https://stnolting.github.io/neorv32/#_sdtrig_isa_extension)]
+[[`Smpmp`](https://stnolting.github.io/neorv32/#_smpmp_isa_extension)]
 * compatible to subsets of the RISC-V
 *Unprivileged ISA Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-spec.pdf))
 and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf)).

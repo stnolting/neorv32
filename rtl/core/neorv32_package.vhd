@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100401"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100502"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -423,7 +423,7 @@ package neorv32_package is
   constant csr_mhpmcounter14h_c : std_ulogic_vector(11 downto 0) := x"b8e";
   constant csr_mhpmcounter15h_c : std_ulogic_vector(11 downto 0) := x"b8f";
   -- NEORV32-specific read-write machine registers --
---constant csr_mxstatus_c       : std_ulogic_vector(11 downto 0) := x"bc0";
+--constant csr_mxstatus_c       : std_ulogic_vector(11 downto 0) := x"bc0"; -- to-be-implemented
   -- user counters/timers --
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
 --constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
@@ -440,6 +440,7 @@ package neorv32_package is
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
   -- NEORV32-specific read-only machine registers --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
+--constant csr_mxisah_c         : std_ulogic_vector(11 downto 0) := x"fc1"; -- to-be-implemented
 
 -- **********************************************************************************************************
 -- CPU Control
@@ -460,7 +461,9 @@ package neorv32_package is
     alu_opa_mux  : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
     alu_opb_mux  : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
     alu_unsigned : std_ulogic;                     -- is unsigned ALU operation
-    alu_cp_trig  : std_ulogic_vector(5 downto 0);  -- co-processor trigger (one-hot)
+    alu_cp_alu   : std_ulogic;                     -- ALU.base co-processor trigger (one-shot)
+    alu_cp_cfu   : std_ulogic;                     -- CFU co-processor trigger (one-shot)
+    alu_cp_fpu   : std_ulogic;                     -- FPU co-processor trigger (one-shot)
     -- load/store unit --
     lsu_req      : std_ulogic;                     -- trigger memory access request
     lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
@@ -490,7 +493,9 @@ package neorv32_package is
     alu_opa_mux  => '0',
     alu_opb_mux  => '0',
     alu_unsigned => '0',
-    alu_cp_trig  => (others => '0'),
+    alu_cp_alu   => '0',
+    alu_cp_cfu   => '0',
+    alu_cp_fpu   => '0',
     lsu_req      => '0',
     lsu_rw       => '0',
     lsu_mo_we    => '0',
@@ -509,15 +514,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   constant cmp_equal_c : natural := 0;
   constant cmp_less_c  : natural := 1; -- for signed and unsigned comparisons
-
-  -- CPU Co-Processor IDs -------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  constant cp_sel_shifter_c  : natural := 0; -- CP0: shift operations (base ISA)
-  constant cp_sel_muldiv_c   : natural := 1; -- CP1: multiplication/division operations ('M' extensions)
-  constant cp_sel_bitmanip_c : natural := 2; -- CP2: bit manipulation ('B' extensions)
-  constant cp_sel_fpu_c      : natural := 3; -- CP3: floating-point unit ('Zfinx' extension)
-  constant cp_sel_cfu_c      : natural := 4; -- CP4: custom instructions CFU ('Zxcfu' extension)
-  constant cp_sel_cond_c     : natural := 5; -- CP5: conditional operations ('Zicond' extension)
 
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -672,100 +668,110 @@ package neorv32_package is
   component neorv32_top
     generic (
       -- General --
-      CLOCK_FREQUENCY            : natural;
-      CLOCK_GATING_EN            : boolean                        := false;
-      HART_ID                    : std_ulogic_vector(31 downto 0) := x"00000000";
-      JEDEC_ID                   : std_ulogic_vector(10 downto 0) := "00000000000";
-      INT_BOOTLOADER_EN          : boolean                        := false;
+      CLOCK_FREQUENCY       : natural;
+      CLOCK_GATING_EN       : boolean                        := false;
+      HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000";
+      JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000";
+      INT_BOOTLOADER_EN     : boolean                        := false;
       -- On-Chip Debugger (OCD) --
-      ON_CHIP_DEBUGGER_EN        : boolean                        := false;
-      DM_LEGACY_MODE             : boolean                        := false;
+      ON_CHIP_DEBUGGER_EN   : boolean                        := false;
+      DM_LEGACY_MODE        : boolean                        := false;
       -- RISC-V CPU Extensions --
-      CPU_EXTENSION_RISCV_A      : boolean                        := false;
-      CPU_EXTENSION_RISCV_B      : boolean                        := false;
-      CPU_EXTENSION_RISCV_C      : boolean                        := false;
-      CPU_EXTENSION_RISCV_E      : boolean                        := false;
-      CPU_EXTENSION_RISCV_M      : boolean                        := false;
-      CPU_EXTENSION_RISCV_U      : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zfinx  : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zicntr : boolean                        := true;
-      CPU_EXTENSION_RISCV_Zicond : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zihpm  : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zmmul  : boolean                        := false;
-      CPU_EXTENSION_RISCV_Zxcfu  : boolean                        := false;
+      RISCV_ISA_C           : boolean                        := false;
+      RISCV_ISA_E           : boolean                        := false;
+      RISCV_ISA_M           : boolean                        := false;
+      RISCV_ISA_U           : boolean                        := false;
+      RISCV_ISA_Zalrsc      : boolean                        := false;
+      RISCV_ISA_Zba         : boolean                        := false;
+      RISCV_ISA_Zbb         : boolean                        := false;
+      RISCV_ISA_Zbkb        : boolean                        := false;
+      RISCV_ISA_Zbkc        : boolean                        := false;
+      RISCV_ISA_Zbkx        : boolean                        := false;
+      RISCV_ISA_Zbs         : boolean                        := false;
+      RISCV_ISA_Zfinx       : boolean                        := false;
+      RISCV_ISA_Zicntr      : boolean                        := true;
+      RISCV_ISA_Zicond      : boolean                        := false;
+      RISCV_ISA_Zihpm       : boolean                        := false;
+      RISCV_ISA_Zmmul       : boolean                        := false;
+      RISCV_ISA_Zknd        : boolean                        := false;
+      RISCV_ISA_Zkne        : boolean                        := false;
+      RISCV_ISA_Zknh        : boolean                        := false;
+      RISCV_ISA_Zksed       : boolean                        := false;
+      RISCV_ISA_Zksh        : boolean                        := false;
+      RISCV_ISA_Zxcfu       : boolean                        := false;
       -- Tuning Options --
-      FAST_MUL_EN                : boolean                        := false;
-      FAST_SHIFT_EN              : boolean                        := false;
-      REGFILE_HW_RST             : boolean                        := false;
+      FAST_MUL_EN           : boolean                        := false;
+      FAST_SHIFT_EN         : boolean                        := false;
+      REGFILE_HW_RST        : boolean                        := false;
       -- Physical Memory Protection (PMP) --
-      PMP_NUM_REGIONS            : natural range 0 to 16          := 0;
-      PMP_MIN_GRANULARITY        : natural                        := 4;
-      PMP_TOR_MODE_EN            : boolean                        := true;
-      PMP_NAP_MODE_EN            : boolean                        := true;
+      PMP_NUM_REGIONS       : natural range 0 to 16          := 0;
+      PMP_MIN_GRANULARITY   : natural                        := 4;
+      PMP_TOR_MODE_EN       : boolean                        := true;
+      PMP_NAP_MODE_EN       : boolean                        := true;
       -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS               : natural range 0 to 13          := 0;
-      HPM_CNT_WIDTH              : natural range 0 to 64          := 40;
+      HPM_NUM_CNTS          : natural range 0 to 13          := 0;
+      HPM_CNT_WIDTH         : natural range 0 to 64          := 40;
       -- Internal Instruction memory (IMEM) --
-      MEM_INT_IMEM_EN            : boolean                        := false;
-      MEM_INT_IMEM_SIZE          : natural                        := 16*1024;
+      MEM_INT_IMEM_EN       : boolean                        := false;
+      MEM_INT_IMEM_SIZE     : natural                        := 16*1024;
       -- Internal Data memory (DMEM) --
-      MEM_INT_DMEM_EN            : boolean                        := false;
-      MEM_INT_DMEM_SIZE          : natural                        := 8*1024;
+      MEM_INT_DMEM_EN       : boolean                        := false;
+      MEM_INT_DMEM_SIZE     : natural                        := 8*1024;
       -- Internal Instruction Cache (iCACHE) --
-      ICACHE_EN                  : boolean                        := false;
-      ICACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
-      ICACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
+      ICACHE_EN             : boolean                        := false;
+      ICACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
+      ICACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
       -- Internal Data Cache (dCACHE) --
-      DCACHE_EN                  : boolean                        := false;
-      DCACHE_NUM_BLOCKS          : natural range 1 to 256         := 4;
-      DCACHE_BLOCK_SIZE          : natural range 4 to 2**16       := 64;
+      DCACHE_EN             : boolean                        := false;
+      DCACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
+      DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
       -- External bus interface (XBUS) --
-      XBUS_EN                    : boolean                        := false;
-      XBUS_TIMEOUT               : natural                        := 255;
-      XBUS_REGSTAGE_EN           : boolean                        := false;
-      XBUS_CACHE_EN              : boolean                        := false;
-      XBUS_CACHE_NUM_BLOCKS      : natural range 1 to 256         := 64;
-      XBUS_CACHE_BLOCK_SIZE      : natural range 1 to 2**16       := 32;
+      XBUS_EN               : boolean                        := false;
+      XBUS_TIMEOUT          : natural                        := 255;
+      XBUS_REGSTAGE_EN      : boolean                        := false;
+      XBUS_CACHE_EN         : boolean                        := false;
+      XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 64;
+      XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16       := 32;
       -- Execute in-place module (XIP) --
-      XIP_EN                     : boolean                        := false;
-      XIP_CACHE_EN               : boolean                        := false;
-      XIP_CACHE_NUM_BLOCKS       : natural range 1 to 256         := 8;
-      XIP_CACHE_BLOCK_SIZE       : natural range 1 to 2**16       := 256;
+      XIP_EN                : boolean                        := false;
+      XIP_CACHE_EN          : boolean                        := false;
+      XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256         := 8;
+      XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16       := 256;
       -- External Interrupts Controller (XIRQ) --
-      XIRQ_NUM_CH                : natural range 0 to 32          := 0;
+      XIRQ_NUM_CH           : natural range 0 to 32          := 0;
       -- Processor peripherals --
-      IO_DISABLE_SYSINFO         : boolean                        := false;
-      IO_GPIO_NUM                : natural range 0 to 64          := 0;
-      IO_MTIME_EN                : boolean                        := false;
-      IO_UART0_EN                : boolean                        := false;
-      IO_UART0_RX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_UART0_TX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_UART1_EN                : boolean                        := false;
-      IO_UART1_RX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_UART1_TX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_SPI_EN                  : boolean                        := false;
-      IO_SPI_FIFO                : natural range 1 to 2**15       := 1;
-      IO_SDI_EN                  : boolean                        := false;
-      IO_SDI_FIFO                : natural range 1 to 2**15       := 1;
-      IO_TWI_EN                  : boolean                        := false;
-      IO_TWI_FIFO                : natural range 1 to 2**15       := 1;
-      IO_PWM_NUM_CH              : natural range 0 to 12          := 0;
-      IO_WDT_EN                  : boolean                        := false;
-      IO_TRNG_EN                 : boolean                        := false;
-      IO_TRNG_FIFO               : natural range 1 to 2**15       := 1;
-      IO_CFS_EN                  : boolean                        := false;
-      IO_CFS_CONFIG              : std_ulogic_vector(31 downto 0) := x"00000000";
-      IO_CFS_IN_SIZE             : natural                        := 32;
-      IO_CFS_OUT_SIZE            : natural                        := 32;
-      IO_NEOLED_EN               : boolean                        := false;
-      IO_NEOLED_TX_FIFO          : natural range 1 to 2**15       := 1;
-      IO_GPTMR_EN                : boolean                        := false;
-      IO_ONEWIRE_EN              : boolean                        := false;
-      IO_DMA_EN                  : boolean                        := false;
-      IO_SLINK_EN                : boolean                        := false;
-      IO_SLINK_RX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_SLINK_TX_FIFO           : natural range 1 to 2**15       := 1;
-      IO_CRC_EN                  : boolean                        := false
+      IO_DISABLE_SYSINFO    : boolean                        := false;
+      IO_GPIO_NUM           : natural range 0 to 64          := 0;
+      IO_MTIME_EN           : boolean                        := false;
+      IO_UART0_EN           : boolean                        := false;
+      IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_UART1_EN           : boolean                        := false;
+      IO_UART1_RX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_UART1_TX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_SPI_EN             : boolean                        := false;
+      IO_SPI_FIFO           : natural range 1 to 2**15       := 1;
+      IO_SDI_EN             : boolean                        := false;
+      IO_SDI_FIFO           : natural range 1 to 2**15       := 1;
+      IO_TWI_EN             : boolean                        := false;
+      IO_TWI_FIFO           : natural range 1 to 2**15       := 1;
+      IO_PWM_NUM_CH         : natural range 0 to 12          := 0;
+      IO_WDT_EN             : boolean                        := false;
+      IO_TRNG_EN            : boolean                        := false;
+      IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
+      IO_CFS_EN             : boolean                        := false;
+      IO_CFS_CONFIG         : std_ulogic_vector(31 downto 0) := x"00000000";
+      IO_CFS_IN_SIZE        : natural                        := 32;
+      IO_CFS_OUT_SIZE       : natural                        := 32;
+      IO_NEOLED_EN          : boolean                        := false;
+      IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;
+      IO_GPTMR_EN           : boolean                        := false;
+      IO_ONEWIRE_EN         : boolean                        := false;
+      IO_DMA_EN             : boolean                        := false;
+      IO_SLINK_EN           : boolean                        := false;
+      IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_CRC_EN             : boolean                        := false
     );
     port (
       -- Global control --
@@ -993,10 +999,11 @@ package body neorv32_package is
   -- Bit reversal ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector is
-    variable output_v : std_ulogic_vector(input'range);
+    variable tmp_v, output_v : std_ulogic_vector(input'length-1 downto 0);
   begin
+    tmp_v := input;
     for i in 0 to input'length-1 loop
-      output_v(input'length-i-1) := input(i);
+      output_v((input'length-1)-i) := tmp_v(i);
     end loop;
     return output_v;
   end function bit_rev_f;
