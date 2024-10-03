@@ -83,6 +83,10 @@ int main(int argc, char *argv[]) {
   unsigned int input_words = input_size / 4;
   rewind(input);
 
+  if ((input_size % 4) != 0) {
+    printf("WARNING - image size is not a multiple of 4 bytes.\n");
+  }
+
   // input file empty?
   if(input_size == 0) {
     printf("Input file is empty!");

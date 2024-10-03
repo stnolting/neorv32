@@ -153,7 +153,7 @@ target bootloader | bl_image: CC_OPTS += -Wl,--defsym=MAKE_BOOTLOADER=1 -DMAKE_B
 # -----------------------------------------------------------------------------
 # Compile image generator
 $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
-	@echo Compiling $(IMAGE_GEN)
+	@echo Compiling image generator...
 	@$(CC_HOST) $< -o $(IMAGE_GEN)
 
 # -----------------------------------------------------------------------------
