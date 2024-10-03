@@ -200,11 +200,11 @@ begin
     -- On-Chip Debugger (OCD) --
     ON_CHIP_DEBUGGER_EN   => true,          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
-    RISCV_ISA_A           => true,          -- implement atomic memory operations extension?
     RISCV_ISA_C           => true,          -- implement compressed extension?
     RISCV_ISA_E           => false,         -- implement embedded RF extension?
     RISCV_ISA_M           => true,          -- implement mul/div extension?
     RISCV_ISA_U           => true,          -- implement user mode extension?
+    RISCV_ISA_Zalrsc      => true,          -- implement atomic reservation-set extension
     RISCV_ISA_Zba         => true,          -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb         => true,          -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb        => true,          -- implement bit-manipulation instructions for cryptography
