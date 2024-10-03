@@ -33,11 +33,11 @@ entity neorv32_top is
     DM_LEGACY_MODE        : boolean                        := false;       -- debug module spec version: false = v1.0, true = v0.13
 
     -- RISC-V CPU Extensions --
-    RISCV_ISA_A           : boolean                        := false;       -- implement atomic memory operations extension
     RISCV_ISA_C           : boolean                        := false;       -- implement compressed extension
     RISCV_ISA_E           : boolean                        := false;       -- implement embedded RF extension
     RISCV_ISA_M           : boolean                        := false;       -- implement mul/div extension
     RISCV_ISA_U           : boolean                        := false;       -- implement user mode extension
+    RISCV_ISA_Zalrsc      : boolean                        := false;       -- implement atomic reservation-set extension
     RISCV_ISA_Zba         : boolean                        := false;       -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb         : boolean                        := false;       -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb        : boolean                        := false;       -- implement bit-manipulation instructions for cryptography
@@ -453,11 +453,11 @@ begin
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
       -- RISC-V ISA Extensions --
-      RISCV_ISA_A         => RISCV_ISA_A,
       RISCV_ISA_C         => RISCV_ISA_C,
       RISCV_ISA_E         => RISCV_ISA_E,
       RISCV_ISA_M         => RISCV_ISA_M,
       RISCV_ISA_U         => RISCV_ISA_U,
+      RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
       RISCV_ISA_Zba       => RISCV_ISA_Zba,
       RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
       RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
@@ -666,7 +666,7 @@ begin
   -- Reservation Set Controller (for atomic LR/SC accesses)
   -- **************************************************************************************************************************
   neorv32_bus_reservation_set_true:
-  if RISCV_ISA_A generate
+  if RISCV_ISA_Zalrsc generate
     neorv32_bus_reservation_set_inst: entity neorv32.neorv32_bus_reservation_set
     port map (
       clk_i       => clk_i,
@@ -682,7 +682,7 @@ begin
   end generate;
 
   neorv32_bus_reservation_set_false:
-  if not RISCV_ISA_A generate
+  if not RISCV_ISA_Zalrsc generate
     main2_req <= main_req;
     main_rsp  <= main2_rsp;
   end generate;
