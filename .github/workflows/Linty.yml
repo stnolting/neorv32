@@ -11,9 +11,12 @@ jobs:
 
     steps:
       - name: Git Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup
+        run: cp $GITHUB_WORKSPACE/.github/sonar-project.properties $GITHUB_WORKSPACE/sonar-project.properties
 
       - name: Cache
         uses: actions/cache@v3.3.0
