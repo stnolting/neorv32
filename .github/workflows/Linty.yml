@@ -18,7 +18,7 @@ jobs:
       - name: Create sonar-project.properties
         run: |
           echo "sonar.projectKey=neorv32" > $GITHUB_WORKSPACE/sonar-project.properties
-          echo "sonar.sources=./rtl/core,./sim" >> $GITHUB_WORKSPACE/sonar-project.properties
+          echo "sonar.sources=./rtl/core" >> $GITHUB_WORKSPACE/sonar-project.properties
 
       - name: Create linty_read.ys
         run: |
