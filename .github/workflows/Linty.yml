@@ -1,6 +1,10 @@
 name: Linty
 on:
   push:
+    paths:
+    - 'rtl/**'
+    - 'sim/**'
+    - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
