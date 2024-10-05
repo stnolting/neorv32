@@ -2,15 +2,17 @@ name: Processor
 
 on:
   push:
-    branches:
+    paths:
     - 'rtl/**'
     - 'sw/**'
     - 'sim/**'
+    - '.github/workflows/**'
   pull_request:
     paths:
     - 'rtl/**'
     - 'sw/**'
     - 'sim/**'
+    - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
