@@ -498,7 +498,7 @@ begin
     port map (
       -- global control --
       clk_i      => clk_cpu, -- switchable clock
-      clk_aux_i  => clk_i,
+      clk_aux_i  => clk_i,   -- always-on clock
       rstn_i     => rstn_sys,
       sleep_o    => cpu_sleep,
       debug_o    => cpu_debug,
