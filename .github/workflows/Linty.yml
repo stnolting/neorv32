@@ -20,6 +20,16 @@ jobs:
           echo "sonar.projectKey=neorv32" > $GITHUB_WORKSPACE/sonar-project.properties
           echo "sonar.sources=./rtl/core,./sim" >> $GITHUB_WORKSPACE/sonar-project.properties
 
+      - name: Create linty_read.ys
+        run: |
+          cp $GITHUB_WORKSPACE/rtl/file_list_soc.f $GITHUB_WORKSPACE/.github/linty_read.ys
+          sed -i 's/NEORV32_RTL_PATH_PLACEHOLDER/verific -work neorv32 -vhdl .\/..\/rtl/g' $GITHUB_WORKSPACE/.github/linty_read.ys
+          echo "verific -L neorv32 -vhdl ./../rtl/core/neorv32_top.vhd" >> $GITHUB_WORKSPACE/.github/linty_read.ys
+
+      - name: Create linty_hierarchy.ys
+        run: |
+          echo "hierarchy -top neorv32_top" > $GITHUB_WORKSPACE/.github/linty_hierarchy.ys
+
       - name: Cache
         uses: actions/cache@v3.3.0
         with:
