@@ -1,10 +1,11 @@
 name: Linty
 on:
-  pull_request:
   push:
+  workflow_dispatch:
 
 jobs:
   linty:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     name: Linty
     timeout-minutes: 10
     runs-on: ubuntu-latest
