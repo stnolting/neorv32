@@ -235,7 +235,7 @@ entity neorv32_top is
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- IRQ channels
 
-    -- CPU interrupts --
+    -- CPU interrupts (for chip-internal usage only) --
     mtime_irq_i    : in  std_ulogic := 'L';                                 -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i      : in  std_ulogic := 'L';                                 -- machine software interrupt
     mext_irq_i     : in  std_ulogic := 'L'                                  -- machine external interrupt

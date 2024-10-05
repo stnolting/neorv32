@@ -61,6 +61,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- By default, the CFS provides two IO signals (cfs_in_i and cfs_out_o) that are available at the processor's top entity.
   -- These are intended as "conduits" to propagate custom signals from this module and the processor top entity.
+  --
+  -- If the CFU output signals are to be used outside the chip, it is recommended to register these signals.
 
   cfs_out_o <= (others => '0'); -- not used for this minimal example
 

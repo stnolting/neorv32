@@ -69,7 +69,13 @@ bits/channels are hardwired to zero.
 
 .Tri-State Interfaces
 [NOTE]
-Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in the designs top module.
+Some interfaces (like the TWI and the 1-Wire bus) require explicit tri-state drivers in the final top module.
+
+.Input/Output Registers
+[NOTE] 
+By default all output signals are driven by register and all input signals are synchronized into the processor's
+clock domain also using registers. However, for ASIC implementations it is recommended to add another register state
+to all inputs and output so the synthesis tool can insert an explicit IO (boundary) scan chain.
 
 .NEORV32 Processor Signal List
 [cols="<3,^1,^1,^1,<8"]
@@ -154,9 +160,9 @@ Some interfaces (like the TWI and the 1-Wire bus) require tri-state drivers in t
 5+^| **<<_external_interrupt_controller_xirq>>**
 | `xirq_i`         | 32 |  in | `'L'` | external interrupt requests
 5+^| **RISC-V Machine-Mode <<_processor_interrupts>>**
-| `mtime_irq_i`    |  1 |  in | `'L'` | machine timer interrupt (RISC-V), high-level-active
-| `msw_irq_i`      |  1 |  in | `'L'` | machine software interrupt (RISC-V), high-level-active
-| `mext_irq_i`     |  1 |  in | `'L'` | machine external interrupt (RISC-V), high-level-active
+| `mtime_irq_i`    |  1 |  in | `'L'` | machine timer interrupt (RISC-V), high-level-active; for chip-internal usage only
+| `msw_irq_i`      |  1 |  in | `'L'` | machine software interrupt (RISC-V), high-level-active; for chip-internal usage only
+| `mext_irq_i`     |  1 |  in | `'L'` | machine external interrupt (RISC-V), high-level-active; for chip-internal usage only
 |=======================
 
 
