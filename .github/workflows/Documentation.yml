@@ -1,12 +1,15 @@
-name: 'Documentation'
+name: Documentation
 
 on:
   push:
+    paths:
+    - 'docs/**'
   pull_request:
+    paths:
+    - 'docs/**'
   workflow_dispatch:
 
 jobs:
-
 
   doxygen:
     runs-on: ubuntu-latest

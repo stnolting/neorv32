@@ -3,24 +3,17 @@ name: Processor
 on:
   push:
     branches:
-    - main
-    paths:
     - 'rtl/**'
     - 'sw/**'
     - 'sim/**'
-    - '.github/workflows/**'
   pull_request:
-    branches:
-    - main
     paths:
     - 'rtl/**'
     - 'sw/**'
     - 'sim/**'
-    - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
-
 
   Software:
     runs-on: ubuntu-latest
