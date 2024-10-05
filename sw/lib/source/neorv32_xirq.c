@@ -41,7 +41,7 @@
  * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#include "neorv32.h"
+#include <neorv32.h>
 
 
 /**********************************************************************//**
