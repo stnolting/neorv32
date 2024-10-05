@@ -84,6 +84,8 @@ generic (default = 32-bit). The size of the output signal conduit `cfs_out_o` is
 `IO_CFS_OUT_SIZE` configuration generic (default = 32-bit). If the custom function subsystem is not implemented
 (`IO_CFS_EN` = false) the `cfs_out_o` signal is tied to all-zero.
 
+If the CFU output signals are to be used outside the chip, it is recommended to register these signals.
+
 
 **Register Map**
 
