@@ -122,7 +122,7 @@ entity neorv32_top is
     IO_SDI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be zero or a power of two, min 1
     IO_TWI_EN             : boolean                        := false;       -- implement two-wire interface (TWI)?
     IO_TWI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be zero or a power of two, min 1
-    IO_PWM_NUM_CH         : natural range 0 to 12          := 0;           -- number of PWM channels to implement (0..12); 0 = disabled
+    IO_PWM_NUM_CH         : natural range 0 to 16          := 0;           -- number of PWM channels to implement (0..16)
     IO_WDT_EN             : boolean                        := false;       -- implement watch dog timer (WDT)?
     IO_TRNG_EN            : boolean                        := false;       -- implement true random number generator (TRNG)?
     IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;           -- data fifo depth, has to be a power of two, min 1
@@ -220,7 +220,7 @@ entity neorv32_top is
     onewire_o      : out std_ulogic;                                        -- 1-wire bus output (pull low only)
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o          : out std_ulogic_vector(11 downto 0);                    -- pwm channels
+    pwm_o          : out std_ulogic_vector(15 downto 0);                    -- pwm channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => 'L'); -- custom CFS inputs conduit
