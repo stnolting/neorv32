@@ -20,7 +20,8 @@ image::neorv32_processor.png[align=center]
 **Key Features**
 
 * _optional_ processor-internal data and instruction memories (<<_data_memory_dmem,**DMEM**>>/<<_instruction_memory_imem,**IMEM**>>)
-* _optional_ caches (<<_processor_internal_instruction_cache_icache,**iCACHE**>>, <<_processor_internal_data_cache_dcache,**dCACHE**>>, <<_execute_in_place_module_xip,**xipCACHE**>>, <<_processor_external_bus_interface_xbus,**xCACHE**>>)
+* _optional_ caches (<<_processor_internal_instruction_cache_icache,**I-CACHE**>>, <<_processor_internal_data_cache_dcache,**D-CACHE**>>,
+<<_execute_in_place_module_xip,**XIP-CACHE**>>, <<_processor_external_bus_interface_xbus,**XBUS-CACHE**>>)
 * _optional_ internal bootloader (<<_bootloader_rom_bootrom,**BOOTROM**>>) with UART console & SPI flash boot option
 * _optional_ machine system timer (<<_machine_system_timer_mtime,**MTIME**>>), RISC-V-compatible
 * _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>,
@@ -31,11 +32,11 @@ image::neorv32_processor.png[align=center]
 * _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 64xOut, 64xIn
 * _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_bus_interface_xbus,**XBUS**>>)
 * _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
-* _optional_ PWM controller with up to 12 channels & 8-bit duty cycle resolution (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
+* _optional_ PWM controller with up to 16 individual channels (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
 * _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**>>)
 * _optional_ custom functions subsystem for custom co-processor extensions (<<_custom_functions_subsystem_cfs,**CFS**>>)
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
-* _optional_ external interrupt controller with up to 32 channels (<<_external_interrupt_controller_xirq,**XIRQ**>>)
+* _optional_ external interrupt controller with up to 32 channels and programmable interrupt triggers (<<_external_interrupt_controller_xirq,**XIRQ**>>)
 * _optional_ general purpose 32-bit timer (<<_general_purpose_timer_gptmr,**GPTMR**>>)
 * _optional_ execute in-place module (<<_execute_in_place_module_xip,**XIP**>>)
 * _optional_ 1-wire serial interface controller (<<_one_wire_serial_interface_controller_onewire,**ONEWIRE**>>), compatible to the 1-wire standard
@@ -43,7 +44,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream compatible
 * _optional_ cyclic redundancy check unit (<<_cyclic_redundancy_check_crc,**CRC**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
-* (optional) system configuration information memory to check HW configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
+* _optional_ system configuration information memory to determine hardware configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
 
 <<<
@@ -72,7 +73,7 @@ bits/channels are hardwired to zero.
 Some interfaces (like the TWI and the 1-Wire bus) require explicit tri-state drivers in the final top module.
 
 .Input/Output Registers
-[NOTE] 
+[NOTE]
 By default all output signals are driven by register and all input signals are synchronized into the processor's
 clock domain also using registers. However, for ASIC implementations it is recommended to add another register state
 to all inputs and output so the synthesis tool can insert an explicit IO (boundary) scan chain.
@@ -149,7 +150,7 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `onewire_i`      |  1 |  in | `'H'` | 1-wire bus sense input
 | `onewire_o`      |  1 | out |   -   | 1-wire bus output (pull low only)
 5+^| **<<_pulse_width_modulation_controller_pwm>>**
-| `pwm_o`          | 12 | out |   -   | pulse-width modulated channels
+| `pwm_o`          | 16 | out |   -   | pulse-width modulated channels
 5+^| **<<_custom_functions_subsystem_cfs>>**
 | `cfs_in_i`       | 32 |  in | `'L'` | custom CFS input signal conduit
 | `cfs_out_o`      | 32 | out |   -   | custom CFS output signal conduit
@@ -289,7 +290,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_SDI_FIFO`           | natural   | 1             | Depth of the <<_serial_data_interface_controller_sdi>> FIFO. Has to be a power of two, min 1, max 32768.
 | `IO_TWI_EN`             | boolean   | false         | Implement the <<_two_wire_serial_interface_controller_twi>>.
 | `IO_TWI_FIFO`           | natural   | 1             | Depth of the <<_two_wire_serial_interface_controller_twi>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_PWM_NUM_CH`         | natural   | 0             | Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..12).
+| `IO_PWM_NUM_CH`         | natural   | 0             | Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..16).
 | `IO_WDT_EN`             | boolean   | false         | Implement the <<_watchdog_timer_wdt>>.
 | `IO_TRNG_EN`            | boolean   | false         | Implement the <<_true_random_number_generator_trng>>.
 | `IO_TRNG_FIFO`          | natural   | 1             | Depth of the TRNG data FIFO. Has to be a power of two, min 1, max 32768.
@@ -585,7 +586,7 @@ explicit specific processor generic. See section <<_processor_external_bus_inter
 ==== Reservation Set Controller
 
 The reservation set controller is responsible for handling the load-reservate and store-conditional bus transaction that
-are triggered by the `lr.w` (LR) and `sc.w` (SC) instructions from the CPU's <<_a_isa_extension>>.
+are triggered by the `lr.w` (LR) and `sc.w` (SC) instructions from the CPU's <<_zalrsc_isa_extension>>.
 
 A "reservation" defines an address or address range that provides a guarding mechanism to support atomic accesses. A new
 reservation is registered by the LR instruction. The address provided by this instruction defines the memory location
