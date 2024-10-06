@@ -249,7 +249,7 @@ begin
     IO_SDI_FIFO           => 4,             -- SDI RTX fifo depth, has to be zero or a power of two
     IO_TWI_EN             => true,          -- implement two-wire interface (TWI)?
     IO_TWI_FIFO           => 4,             -- RTX fifo depth, has to be zero or a power of two, min 1
-    IO_PWM_NUM_CH         => 12,            -- number of PWM channels to implement (0..12); 0 = disabled
+    IO_PWM_NUM_CH         => 8,             -- number of PWM channels to implement (0..16)
     IO_WDT_EN             => true,          -- implement watch dog timer (WDT)?
     IO_TRNG_EN            => true,          -- implement true random number generator (TRNG)?
     IO_TRNG_FIFO          => 4,             -- TRNG fifo depth, has to be a power of two, min 1

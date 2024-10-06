@@ -22,8 +22,8 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
-/** Maximum PWM output intensity (8-bit) */
-#define PWM_MAX 200
+/** Maximum PWM output intensity (8-bit duty cycle) */
+#define MAX_DUTY 200
 /**@}*/
 
 
@@ -61,49 +61,61 @@ int main() {
 
   int num_pwm_channels = neorv32_pmw_get_num_channels();
 
-  // check number of PWM channels
+  // get number of implemented PWM channels
   if (neorv32_uart0_available()) {
     neorv32_uart0_printf("Implemented PWM channels: %i\n\n", num_pwm_channels);
   }
 
-
-  // deactivate all PWM channels
+  // deactivate/clear all available channels
   int i;
   for (i=0; i<num_pwm_channels; i++) {
-    neorv32_pwm_set(i, 0);
+    neorv32_pwm_ch_disable(i);
+    neorv32_pwm_ch_set_clock(i, 0, 0);
+    neorv32_pwm_ch_set_duty(i, 0);
   }
 
-  // configure and enable PWM
-  neorv32_pwm_setup(CLK_PRSC_64);
+  // configure all available channels
+  for (i=0; i<num_pwm_channels; i++) {
+    neorv32_pwm_ch_set_clock(i, CLK_PRSC_64, 0);
+    neorv32_pwm_ch_enable(i);
+  }
 
-  uint8_t pwm = 0;
-  uint8_t up = 1;
-  uint8_t ch = 0;
+  // simple animation: "pulse" channels one by one
+  neorv32_uart0_printf("Starting animation...\n");
 
-  // animate!
-  while(1) {
+  int dc = 0; // current duty cycle
+  int up = 1; // up/down (increase/decrease)
+  int ch = 0; // current channel
+
+  while (1) {
 
     // update duty cycle
     if (up) {
-      if (pwm == PWM_MAX) {
+      if (dc >= (int)(MAX_DUTY)) { // maximum intensity reached?
         up = 0;
       }
       else {
-        pwm++;
+        dc++;
       }
     }
     else {
-      if (pwm == 0) {
-        ch = (ch + 1) & 3; // goto next channel
+      if (dc == 0) {
+        // goto next channel
+        if ((ch + 1) >= num_pwm_channels) {
+          ch = 0;
+        }
+        else {
+          ch++;
+        }
         up = 1;
       }
       else {
-        pwm--;
+        dc--;
       }
     }
 
-    neorv32_pwm_set(ch, pwm); // output new duty cycle
-    neorv32_cpu_delay_ms(3); // wait ~3ms
+    neorv32_pwm_ch_set_duty(ch, dc); // set new duty cycle for channel
+    neorv32_cpu_delay_ms(3); // wait ~3ms using busy-wait
   }
 
   return 0;

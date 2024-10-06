@@ -425,38 +425,38 @@ This chapter gives a brief overview of all available ISA extensions.
 |=======================
 | Name | Description | <<_processor_top_entity_generics, Enabled by Generic>>
 | <<_b_isa_extension,`B`>>               | Bit manipulation instructions                                 | _Implicitly_ enabled
-| <<_c_isa_extension,`C`>>               | Compressed (16-bit) instructions                              | `RISCV_ISA_C`
-| <<_e_isa_extension,`E`>>               | Embedded CPU extension (reduced register file size)           | `RISCV_ISA_E`
+| <<_c_isa_extension,`C`>>               | Compressed (16-bit) instructions                              | <<_processor_top_entity_generics, `RISCV_ISA_C`>>
+| <<_e_isa_extension,`E`>>               | Embedded CPU extension (reduced register file size)           | <<_processor_top_entity_generics, `RISCV_ISA_E`>>
 | <<_i_isa_extension,`I`>>               | Integer base ISA                                              | Enabled if `RISCV_ISA_E` is **not** enabled
-| <<_m_isa_extension,`M`>>               | Integer multiplication and division instructions              | `RISCV_ISA_M`
-| <<_u_isa_extension,`U`>>               | Less-privileged _user_ mode extension                         | `RISCV_ISA_U`
+| <<_m_isa_extension,`M`>>               | Integer multiplication and division instructions              | <<_processor_top_entity_generics, `RISCV_ISA_M`>>
+| <<_u_isa_extension,`U`>>               | Less-privileged _user_ mode extension                         | <<_processor_top_entity_generics, `RISCV_ISA_U`>>
 | <<_x_isa_extension,`X`>>               | Platform-specific / NEORV32-specific extension                | Always enabled
-| <<_zalrsc_isa_extension,`Zalrsc`>>     | Atomic reservation-set instructions                           | `RISCV_ISA_Zalrsc`
-| <<_zba_isa_extension,`Zba`>>           | Shifted-add bit manipulation instructions                     | `RISCV_ISA_Zba`
-| <<_zbb_isa_extension,`Zbb`>>           | Basic bit manipulation instructions                           | `RISCV_ISA_Zbb`
-| <<_zbkb_isa_extension,`Zbkb`>>         | Scalar cryptographic bit manipulation instructions            | `RISCV_ISA_Zbkb`
-| <<_zbkc_isa_extension,`Zbkc`>>         | Scalar cryptographic carry-less multiplication instructions   | `RISCV_ISA_Zbkc`
-| <<_zbkx_isa_extension,`Zbkx`>>         | Scalar cryptographic crossbar permutation instructions        | `RISCV_ISA_Zbkx`
-| <<_zbs_isa_extension,`Zbs`>>           | Single-bit bit manipulation instructions                      | `RISCV_ISA_Zbs`
-| <<_zfinx_isa_extension,`Zfinx`>>       | Floating-point instructions using integer registers           | `RISCV_ISA_Zfinx`
+| <<_zalrsc_isa_extension,`Zalrsc`>>     | Atomic reservation-set instructions                           | <<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>>
+| <<_zba_isa_extension,`Zba`>>           | Shifted-add bit manipulation instructions                     | <<_processor_top_entity_generics, `RISCV_ISA_Zba`>>
+| <<_zbb_isa_extension,`Zbb`>>           | Basic bit manipulation instructions                           | <<_processor_top_entity_generics, `RISCV_ISA_Zbb`>>
+| <<_zbkb_isa_extension,`Zbkb`>>         | Scalar cryptographic bit manipulation instructions            | <<_processor_top_entity_generics, `RISCV_ISA_Zbkb`>>
+| <<_zbkc_isa_extension,`Zbkc`>>         | Scalar cryptographic carry-less multiplication instructions   | <<_processor_top_entity_generics, `RISCV_ISA_Zbkc`>>
+| <<_zbkx_isa_extension,`Zbkx`>>         | Scalar cryptographic crossbar permutation instructions        | <<_processor_top_entity_generics, `RISCV_ISA_Zbkx`>>
+| <<_zbs_isa_extension,`Zbs`>>           | Single-bit bit manipulation instructions                      | <<_processor_top_entity_generics, `RISCV_ISA_Zbs`>>
+| <<_zfinx_isa_extension,`Zfinx`>>       | Floating-point instructions using integer registers           | <<_processor_top_entity_generics, `RISCV_ISA_Zfinx`>>
 | <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction                | Always enabled
-| <<_zicntr_isa_extension,`Zicntr`>>     | Base counters extension                                       | `RISCV_ISA_Zicntr`
-| <<_zicond_isa_extension,`Zicond`>>     | Integer conditional operations                                | `RISCV_ISA_Zicond`
+| <<_zicntr_isa_extension,`Zicntr`>>     | Base counters extension                                       | <<_processor_top_entity_generics, `RISCV_ISA_Zicntr`>>
+| <<_zicond_isa_extension,`Zicond`>>     | Integer conditional operations                                | <<_processor_top_entity_generics, `RISCV_ISA_Zicond`>>
 | <<_zicsr_isa_extension,`Zicsr`>>       | Control and status register access instructions               | Always enabled
-| <<_zihpm_isa_extension,`Zihpm`>>       | Hardware performance monitors extension                       | `RISCV_ISA_Zihpm`
+| <<_zihpm_isa_extension,`Zihpm`>>       | Hardware performance monitors extension                       | <<_processor_top_entity_generics, `RISCV_ISA_Zihpm`>>
 | <<_zkn_isa_extension,`Zkn`>>           | Scalar cryptographic NIST algorithm suite                     | _Implicitly_ enabled
-| <<_zknd_isa_extension,`Zknd`>>         | Scalar cryptographic NIST AES decryption instructions         | `RISCV_ISA_Zknd`
-| <<_zkne_isa_extension,`Zkne`>>         | Scalar cryptographic NIST AES encryption instructions         | `RISCV_ISA_Zkne`
-| <<_zknh_isa_extension,`Zknh`>>         | Scalar cryptographic NIST hash function instructions          | `RISCV_ISA_Zknh`
+| <<_zknd_isa_extension,`Zknd`>>         | Scalar cryptographic NIST AES decryption instructions         | <<_processor_top_entity_generics, `RISCV_ISA_Zknd`>>
+| <<_zkne_isa_extension,`Zkne`>>         | Scalar cryptographic NIST AES encryption instructions         | <<_processor_top_entity_generics, `RISCV_ISA_Zkne`>>
+| <<_zknh_isa_extension,`Zknh`>>         | Scalar cryptographic NIST hash function instructions          | <<_processor_top_entity_generics, `RISCV_ISA_Zknh`>>
 | <<_zkt_isa_extension,`Zkt`>>           | Data independent execution time (of cryptographic operations) | _Implicitly_ enabled
 | <<_zks_isa_extension,`Zks`>>           | Scalar cryptographic ShangMi algorithm suite                  | _Implicitly_ enabled
-| <<_zksed_isa_extension,`Zksed`>>       | Scalar cryptographic ShangMi block cypher instructions        | `RISCV_ISA_Zksed`
-| <<_zksh_isa_extension,`Zksh`>>         | Scalar cryptographic ShangMi hash instructions                | `RISCV_ISA_Zksh`
-| <<_zmmul_isa_extension,`Zmmul`>>       | Integer multiplication-only instructions                      | `RISCV_ISA_Zmmul`
-| <<_zxcfu_isa_extension,`Zcfu`>>        | Custom / user-defined instructions                            | `RISCV_ISA_Zxcfu`
-| <<_smpmp_isa_extension,`Smpmp`>>       | Physical memory protection (PMP) extension                    | `RISCV_ISA_Smpmp`
-| <<_sdext_isa_extension,`Sdext`>>       | External debug support extension                              | `ON_CHIP_DEBUGGER_EN`
-| <<_sdtrig_isa_extension,`Sdtrig`>>     | Trigger module extension                                      | `ON_CHIP_DEBUGGER_EN`
+| <<_zksed_isa_extension,`Zksed`>>       | Scalar cryptographic ShangMi block cypher instructions        | <<_processor_top_entity_generics, `RISCV_ISA_Zksed`>>
+| <<_zksh_isa_extension,`Zksh`>>         | Scalar cryptographic ShangMi hash instructions                | <<_processor_top_entity_generics, `RISCV_ISA_Zksh`>>
+| <<_zmmul_isa_extension,`Zmmul`>>       | Integer multiplication-only instructions                      | <<_processor_top_entity_generics, `RISCV_ISA_Zmmul`>>
+| <<_zxcfu_isa_extension,`Zcfu`>>        | Custom / user-defined instructions                            | <<_processor_top_entity_generics, `RISCV_ISA_Zxcfu`>>
+| <<_smpmp_isa_extension,`Smpmp`>>       | Physical memory protection (PMP) extension                    | <<_processor_top_entity_generics, `RISCV_ISA_Smpmp`>>
+| <<_sdext_isa_extension,`Sdext`>>       | External debug support extension                              | <<_processor_top_entity_generics, `ON_CHIP_DEBUGGER_EN`>>
+| <<_sdtrig_isa_extension,`Sdtrig`>>     | Trigger module extension                                      | <<_processor_top_entity_generics, `ON_CHIP_DEBUGGER_EN`>>
 |=======================
 
 .RISC-V ISA Specification
@@ -603,7 +603,7 @@ RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 
 The `Zalrsc` ISA extension is a sub-extension of the RISC-V _atomic memory access_ (`A`) ISA extension and includes
 instructions for reservation-set operations (load-reservate `lr` and store-conditional `sc`) only.
-It is enabled by the top's `RISCV_ISA_Zalrsc` generic.
+It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>> generic.
 
 .AMO / `A` Emulation
 [NOTE]
@@ -712,7 +712,7 @@ User-level access to the counter CSRs can be constrained by the <<_mcounteren>> 
 ==== `Zicond` ISA Extension
 
 The `Zicond` ISA extension adds integer conditional move primitives that allow to implement branch-less
-control flows. It is enabled by the top's `RISCV_ISA_Zicond` generic.
+control flows. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zicond`>> generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_cond.vhd`).
 
 .Instructions and Timing
@@ -768,8 +768,9 @@ The event-driven increment of the HPMs can be deactivated individually via the <
 ==== `Zba` ISA Extension
 
 The `Zba` sub-extension is part of the _RISC-V bit manipulation_ ISA specification (<<_b_isa_extension>>)
-and adds shifted-add / address-generation instructions. It is enabled by the top's `RISCV_ISA_Zba` generic.
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+and adds shifted-add / address-generation instructions. It is enabled by the top's
+<<_processor_top_entity_generics, `RISCV_ISA_Zba`>> generic. This ISA extension is implemented as multi-cycle
+ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
 
 .Instructions and Timing
 [cols="<2,<4,<3"]
@@ -783,8 +784,8 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 ==== `Zbb` ISA Extension
 
 The `Zbb` sub-extension is part of the _RISC-V bit manipulation_ ISA specification (<<_b_isa_extension>>)
-and adds the basic bit manipulation instructions. It is enabled by the top's `RISCV_ISA_Zbb` generic.
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+and adds the basic bit manipulation instructions. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zbb`>>
+generic. This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
 
 .Instructions and Timing
 [cols="<5,<4,<5"]
@@ -810,7 +811,7 @@ configuration option that will replace the (time-variant) bit-serial shifter by 
 ==== `Zbs` ISA Extension
 
 The `Zbs` sub-extension is part of the _RISC-V bit manipulation_ ISA specification (<<_b_isa_extension>>)
-and adds single-bit operations. It is enabled by the top's `RISCV_ISA_Zbs` generic.
+and adds single-bit operations. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zbs`>> generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
 
 .Instructions and Timing
@@ -824,7 +825,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 ==== `Zbkb` ISA Extension
 
 The `Zbkb` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and extends the _RISC-V bit manipulation_
-ISA extension with additional instructions. It is enabled by the top's `RISCV_ISA_Zbkb` generic.
+ISA extension with additional instructions. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zbkb`>> generic.
 Note that enabling this extension will also enable the `Zbb` basic bit-manipulation ISA extension (which is extended by `Zknb`).
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
 
@@ -842,7 +843,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 ==== `Zbkc` ISA Extension
 
 The `Zbkc` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and adds carry-less multiplication instruction.
-ISA extension with additional instructions. It is enabled by the top's `RISCV_ISA_Zbkc` generic.
+ISA extension with additional instructions. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zbkc`>> generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
 
 .Instructions and Timing
@@ -857,7 +858,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 ==== `Zbkx` ISA Extension
 
 The `Zbkx` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds crossbar permutation instructions.
-It is enabled by the top's `RISCV_ISA_Zbkx` generic.
+It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zbkx`>> generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
 
 .Instructions and Timing
@@ -890,7 +891,7 @@ A processor configuration which implements `Zkn` must implement all of the above
 ==== `Zknd` ISA Extension
 
 The `Zknd` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds NIST AES decryption instructions.
-It is enabled by the top's `RISCV_ISA_Zknd` generic.
+It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zknd`>> generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
 
 .Instructions and Timing
@@ -905,7 +906,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 ==== `Zkne` ISA Extension
 
 The `Zkne` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds NIST AES encryption instructions.
-It is enabled by the top's `RISCV_ISA_Zkne` generic.
+It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zkne`>> generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
 
 .Instructions and Timing
@@ -920,7 +921,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 ==== `Zknh` ISA Extension
 
 The `Zknh` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds NIST hash function instructions.
-It is enabled by the top's `RISCV_ISA_Zknh` generic.
+It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zknh`>> generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
 
 .Instructions and Timing
@@ -953,7 +954,7 @@ A processor configuration which implements `Zks` must implement all of the above
 ==== `Zksed` ISA Extension
 
 The `Zksed` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds ShangMi block cypher
-and key schedule instructions. It is enabled by the top's `RISCV_ISA_Zksed` generic.
+and key schedule instructions. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zksed`>> generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
 
 .Instructions and Timing
@@ -969,7 +970,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 ==== `Zksh` ISA Extension
 
 The `Zksh` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds ShangMi hash function instructions.
-It is enabled by the top's `RISCV_ISA_Zksh` generic.
+It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zksh`>> generic.
 This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
 
 .Instructions and Timing

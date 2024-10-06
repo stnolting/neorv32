@@ -8,8 +8,8 @@
 | Hardware source files:  | neorv32_pwm.vhd |
 | Software driver files:  | neorv32_pwm.c |
 |                         | neorv32_pwm.h |
-| Top entity ports:       | `pwm_o` | PWM output channels (12-bit)
-| Configuration generics: | `IO_PWM_NUM_CH` | number of PWM channels to implement (0..12)
+| Top entity ports:       | `pwm_o` | PWM output channels (16-bit)
+| Configuration generics: | `IO_PWM_NUM_CH` | number of PWM channels to implement (0..16)
 | CPU interrupts:         | none |
 | Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
@@ -17,47 +17,45 @@
 
 **Overview**
 
-The PWM module implements a pulse-width modulation controller with up to 12 independent channels providing
-8-bit resolution per channel. The actual number of implemented channels is defined by the `IO_PWM_NUM_CH` generic.
-Setting this generic to zero will completely remove the PWM controller from the design.
-
-[NOTE]
-The `pwm_o` has a static size of 12-bit. If less than 12 PWM channels are configured, only the LSB-aligned channel
-bits are used while the remaining bits are hardwired to zero.
+The PWM module implements a pulse-width modulation controller with up to 16 independent channels. Duty cycle and
+carrier frequency can be programmed individually for each channel.The total number of implemented channels is
+defined by the `IO_PWM_NUM_CH` generic. The PWM output signal `pwm_o` has a static size of 16-bit. Channel 0
+corresponds to bit 0, channel 1 to bit 1 and so on. If less than 16 channels are configured, only the LSB-aligned
+channel bits are connected while the remaining ones are hardwired to zero.
 
 
 **Theory of Operation**
 
-The PWM controller is activated by setting the `PWM_CTRL_EN` bit in the module's control register `CTRL`. When this
-bit is cleared, the unit is reset and all PWM output channels are set to zero. The module
-provides three duty cycle registers `DC[0]` to `DC[2]`. Each register contains the duty cycle configuration for four
-consecutive channels. For example, the duty cycle of channel 0 is defined via bits 7:0 in `DC[0]`. The duty cycle of
-channel 2 is defined via bits 15:0 in `DC[0]` and so on.
+Depending on the configured number channels, the PWM module provides 16 configuration registers `CHANNEL_CFG[0]` to
+`CHANNEL_CFG[15]` - one for each channel. Regardless of the configuration of `IO_PWM_NUM_CH` all channel registers can
+be accessed without raising an exception. However, registers above `IO_PWM_NUM_CH-1` are read-only and hardwired to
+all-zero.
 
-[NOTE]
-Regardless of the configuration of `IO_PWM_NUM_CH` all module registers can be accessed without raising an exception.
-Software can discover the number of available channels by writing 0xff to all duty cycle configuration bytes and
-reading those values back. The duty-cycle of channels that were not implemented always reads as zero.
+Each configuration provides a 1-bit enable flag to enable/disable the according channel, an 8-bit register for setting
+the duty cycle and a 3-bit clock prescaler select as well as a 10-bit clock diver for _coarse_ and _fine_ tuning of the
+carrier frequency, respectively.
 
-Based on the configured duty cycle the according intensity of the channel can be computed by the following formula:
+A channel is enabled by setting the `PWM_CFG_EN` bit. If this bit is cleared the according PWM output is set to zero.
+The duty cycle is programmed via the 8 `PWM_CFG_DUTY` bits. Based on the value programmed to this bits the duty cycle
+the resulting duty cycle of the according channel can be computed by the following formula:
 
-_**Intensity~x~**_ = `DC[y](i*8+7 downto i*8)` / (2^8^)
+_Duty Cycle_[%] = `PWM_CFG_DUTY` / 2^8^
 
-The base frequency of the generated PWM signals is defined by the PWM core clock. This clock is derived
-from the main processor clock and divided by a prescaler via the 3-bit `PWM_CTRL_PRSCx` in the unit's control
-register.
+The PWM period (carrier frequency) is derived from the processor's main clock (_f~main~_). The `PWM_CFG_PRSC` register
+bits allow to select one out of eight pre-defined clock prescalers for a coarse clock scaling. The 10 `PWM_CFG_CDIV` register
+bits can be used to apply another fine clock scaling.
 
 .PWM prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
-| **`PWM_CTRL_PRSCx`**        | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
+| **`PWM_CFG_PRSC`**          | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
 The resulting PWM carrier frequency is defined by:
 
-_**f~PWM~**_ = _f~main~[Hz]_ / (2^8^ * `clock_prescaler`)
+_f~PWM~_[Hz] = _f~main~_[Hz] / (2^8^ * `clock_prescaler` * (1 + `PWM_CFG_CDIV`))
 
 
 **Register Map**
@@ -67,19 +65,15 @@ _**f~PWM~**_ = _f~main~[Hz]_ / (2^8^ * `clock_prescaler`)
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.3+<| `0xfffff000` .3+<| `CTRL`  <|`0`    `PWM_CTRL_EN`                     ^| r/w <| PWM enable
-                                 <|`3:1`  `PWM_CTRL_PRSC2 : PWM_CTRL_PRSC0` ^| r/w <| 3-bit clock prescaler select
-                                 <|`31:4` -                                 ^| r/- <| _reserved_, read as zero
-.4+<| `0xfffff004` .4+<| `DC[0]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 0
-                                 <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 1
-                                 <|`23:16` ^| r/w <| 8-bit duty cycle for channel 2
-                                 <|`31:24` ^| r/w <| 8-bit duty cycle for channel 3
-.4+<| `0xfffff008` .4+<| `DC[1]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 4
-                                 <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 5
-                                 <|`23:16` ^| r/w <| 8-bit duty cycle for channel 6
-                                 <|`31:24` ^| r/w <| 8-bit duty cycle for channel 7
-.4+<| `0xfffff00c` .4+<| `DC[2]` <|`7:0`   ^| r/w <| 8-bit duty cycle for channel 8
-                                 <|`15:8`  ^| r/w <| 8-bit duty cycle for channel 9
-                                 <|`23:16` ^| r/w <| 8-bit duty cycle for channel 10
-                                 <|`31:24` ^| r/w <| 8-bit duty cycle for channel 11
+.5+<| `0xfffff000` .5+<| `CHANNEL_CFG[0]`  <|`31`    - `PWM_CFG_EN`                        ^| r/w <| Channel 0: channel enabled when set
+                                           <|`30:28` - `PWM_CFG_PRSC_MSB:PWM_CFG_PRSC_LSB` ^| r/w <| Channel 0: 3-bit clock prescaler select
+                                           <|`27:18`                                       ^| r/- <| Channel 0: _reserved_, hardwired to zero
+                                           <|`17:8`  - `PWM_CFG_CDIV_MSB:PWM_CFG_CDIV_LSB` ^| r/w <| Channel 0: 10-bit clock divider
+                                           <|`7:0`   - `PWM_CFG_DUTY_MSB:PWM_CFG_DUTY_LSB` ^| r/w <| Channel 0: 8-bit duty cycle
+| `0xfffff004` ... `0xfffff038` | `CHANNEL_CFG[1]` ... `CHANNEL_CFG[14]` | ... | r/w <| Channels 1 to 14
+.5+<| `0xfffff03C` .5+<| `CHANNEL_CFG[15]` <|`31`    - `PWM_CFG_EN`                        ^| r/w <| Channel 15: channel enabled when set
+                                           <|`30:28` - `PWM_CFG_PRSC_MSB:PWM_CFG_PRSC_LSB` ^| r/w <| Channel 15: 3-bit clock prescaler select
+                                           <|`27:18`                                       ^| r/- <| Channel 15: _reserved_, hardwired to zero
+                                           <|`17:8`  - `PWM_CFG_CDIV_MSB:PWM_CFG_CDIV_LSB` ^| r/w <| Channel 15: 10-bit clock divider
+                                           <|`7:0`   - `PWM_CFG_DUTY_MSB:PWM_CFG_DUTY_LSB` ^| r/w <| Channel 15: 8-bit duty cycle
 |=======================

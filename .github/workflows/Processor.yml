@@ -6,13 +6,13 @@ on:
     - 'rtl/**'
     - 'sw/**'
     - 'sim/**'
-    - '.github/workflows/**'
+    - '.github/workflows/Processor.yml'
   pull_request:
     paths:
     - 'rtl/**'
     - 'sw/**'
     - 'sim/**'
-    - '.github/workflows/**'
+    - '.github/workflows/Processor.yml'
   workflow_dispatch:
 
 jobs:

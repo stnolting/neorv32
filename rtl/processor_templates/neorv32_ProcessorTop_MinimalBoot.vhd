@@ -26,7 +26,7 @@ entity neorv32_ProcessorTop_MinimalBoot is
     MEM_INT_DMEM_SIZE : natural := 64*1024; -- size of processor-internal data memory in bytes
     -- Processor peripherals --
     IO_GPIO_NUM       : natural := 0;       -- number of GPIO input/output pairs (0..64)
-    IO_PWM_NUM_CH     : natural := 3        -- number of PWM channels to implement (0..12); 0 = disabled
+    IO_PWM_NUM_CH     : natural := 3        -- number of PWM channels to implement (0..16)
   );
   port (
     -- Global control --
@@ -46,7 +46,7 @@ architecture neorv32_ProcessorTop_MinimalBoot_rtl of neorv32_ProcessorTop_Minima
 
   -- internal IO connection --
   signal con_gpio_o : std_ulogic_vector(63 downto 0);
-  signal con_pwm_o  : std_ulogic_vector(11 downto 0);
+  signal con_pwm_o  : std_ulogic_vector(15 downto 0);
 
 begin
 
