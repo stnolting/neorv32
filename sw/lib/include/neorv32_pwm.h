@@ -27,19 +27,22 @@
 /**@{*/
 /** PWM module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_PWM_CTRL_enum) */
-  uint32_t DC[3]; /**< offset 4..12: duty cycle register 0..2 */
+  uint32_t CHANNEL_CFG[16]; /**< offset 0..64: channel configuration 0..15 (#CHANNEL_CFG_enum) */
 } neorv32_pwm_t;
 
 /** PWM module hardware access (#neorv32_pwm_t) */
 #define NEORV32_PWM ((neorv32_pwm_t*) (NEORV32_PWM_BASE))
 
-/** PWM control register bits */
-enum NEORV32_PWM_CTRL_enum {
-  PWM_CTRL_EN    =  0, /**< PWM control register(0) (r/w): PWM controller enable */
-  PWM_CTRL_PRSC0 =  1, /**< PWM control register(1) (r/w): Clock prescaler select bit 0 */
-  PWM_CTRL_PRSC1 =  2, /**< PWM control register(2) (r/w): Clock prescaler select bit 1 */
-  PWM_CTRL_PRSC2 =  3  /**< PWM control register(3) (r/w): Clock prescaler select bit 2 */
+/** PWM channel configuration bits */
+enum CHANNEL_CFG_enum {
+  PWM_CFG_DUTY_LSB =  0, /**< PWM configuration register(0)  (r/w): Duty cycle (8-bit), LSB */
+  PWM_CFG_DUTY_MSB =  7, /**< PWM configuration register(7)  (r/w): Duty cycle (8-bit), MSB */
+  PWM_CFG_CDIV_LSB =  8, /**< PWM configuration register(8)  (r/w): Clock divider (10-bit), LSB */
+  PWM_CFG_CDIV_MSB = 17, /**< PWM configuration register(17) (r/w): Clock divider (10-bit), MSB */
+
+  PWM_CFG_PRSC_LSB = 28, /**< PWM configuration register(28) (r/w): Clock prescaler select (3-bit), LSB */
+  PWM_CFG_PRSC_MSB = 30, /**< PWM configuration register(30) (r/w): Clock prescaler select (3-bit), MSB */
+  PWM_CFG_EN       = 31  /**< PWM configuration register(31) (r/w): channel enable */
 };
 /**@}*/
 
@@ -48,13 +51,12 @@ enum NEORV32_PWM_CTRL_enum {
  * @name Prototypes
  **************************************************************************/
 /**@{*/
-int     neorv32_pwm_available(void);
-void    neorv32_pwm_setup(int prsc);
-void    neorv32_pwm_disable(void);
-void    neorv32_pwm_enable(void);
-int     neorv32_pmw_get_num_channels(void);
-void    neorv32_pwm_set(int channel, uint8_t dc);
-uint8_t neorv32_pwm_get(int channel);
+int  neorv32_pwm_available(void);
+int  neorv32_pmw_get_num_channels(void);
+void neorv32_pwm_ch_enable(int channel);
+void neorv32_pwm_ch_disable(int channel);
+void neorv32_pwm_ch_set_clock(int channel, int prsc, int cdiv);
+void neorv32_pwm_ch_set_duty(int channel, int duty);
 /**@}*/
 
 #endif // neorv32_pwm_h
