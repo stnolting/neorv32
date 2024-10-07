@@ -4,7 +4,7 @@ on:
     paths:
     - 'rtl/**'
     - 'sim/**'
-    - '.github/workflows/**'
+    - '.github/workflows/Linty.yml'
   workflow_dispatch:
 
 jobs:
