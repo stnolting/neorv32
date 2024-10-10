@@ -342,7 +342,7 @@ begin
 
   -- Input Operands: Check for subnormal numbers (flush to zero) ----------------------------
   -- -------------------------------------------------------------------------------------------
-  -- [WARNING] Subnormal numbers are not supported yet and are "flushed to zero"! FIXME / TODO
+  -- [WARNING] Subnormal numbers are not supported yet and are "flushed to zero"!
   -- rs1 --
   op_data(0)(31)           <= rs1_i(31);
   op_data(0)(30 downto 23) <= rs1_i(30 downto 23);
@@ -781,7 +781,7 @@ begin
           multiplier.exp_res <= (others => '0');
         end if;
       else
-        if (multiplier.start = '1') then -- FIXME / TODO remove buffer?
+        if (multiplier.start = '1') then -- remove buffer?
           multiplier.opa <= unsigned('1' & fpu_operands.rs1(22 downto 0)); -- append hidden one
           multiplier.opb <= unsigned('1' & fpu_operands.rs2(22 downto 0)); -- append hidden one
         end if;
