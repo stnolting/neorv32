@@ -253,6 +253,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
   constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
+  constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
 
   -- convert JEDEC ID to mvendorid CSR --
   constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
@@ -360,7 +361,7 @@ begin
       cond_sel_string_f(IO_CRC_EN,                 "CRC ",        "") &
       cond_sel_string_f(io_sysinfo_en_c,           "SYSINFO ",    "") &
       cond_sel_string_f(OCD_EN,                    "OCD ",        "") &
-      cond_sel_string_f(OCD_AUTHENTICATION,        "OCD-AUTH ",   "") &
+      cond_sel_string_f(ocd_auth_en_c,             "OCD-AUTH ",   "") &
       ""
       severity note;
 
@@ -1573,7 +1574,7 @@ begin
         XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
         XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
         ON_CHIP_DEBUGGER_EN   => OCD_EN,
-        OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
+        OCD_AUTHENTICATION    => ocd_auth_en_c,
         IO_GPIO_EN            => io_gpio_en_c,
         IO_MTIME_EN           => IO_MTIME_EN,
         IO_UART0_EN           => IO_UART0_EN,
