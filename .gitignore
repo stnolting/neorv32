@@ -1,9 +1,3 @@
-# doit databases
-/.doit.db.*
-
-# python
-__pycache__
-
 # generated app files
 *.bin
 *.coe
