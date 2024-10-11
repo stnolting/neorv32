@@ -560,7 +560,7 @@ that directly corresponds to the `authenticated` bit in <<_dmstatus>>. This bit 
 <<_authdata>> CSR. Writing 1 to this register will result in a successful authentication. The default openOCD configuration
 script for the NEORV32 implements this basic authentication mechanism:
 
-.Default authentication process (`openocd_neorv32.cfg`)
+.Default authentication process (`sw/openocd/openocd_neorv32.cfg`)
 [source,tcl]
 ----
 set challenge [riscv authdata_read]          # read authdata; not required, just an example
