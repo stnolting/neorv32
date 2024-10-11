@@ -170,7 +170,8 @@ begin
     JEDEC_ID              => "00000000000", -- vendor's JEDEC ID
     INT_BOOTLOADER_EN     => false,         -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN   => true,          -- implement on-chip debugger
+    OCD_EN                => true,          -- implement on-chip debugger
+    OCD_AUTHENTICATION    => true,          -- implement on-chip debugger authentication
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           => false,         -- implement compressed extension?
     RISCV_ISA_E           => false,         -- implement embedded RF extension?
@@ -271,7 +272,7 @@ begin
     -- Global control --
     clk_i          => clk_gen,         -- global clock, rising edge
     rstn_i         => rst_gen,         -- global reset, low-active, async
-    -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
+    -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     => '0',             -- serial clock
     jtag_tdi_i     => '0',             -- serial data input
     jtag_tdo_o     => open,            -- serial data output

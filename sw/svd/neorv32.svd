@@ -1406,7 +1406,7 @@
               <name>WDT_CTRL_RCAUSE</name>
               <bitRange>[6:5]</bitRange>
               <access>read-only</access>
-              <description>Cause of last system reset: 0=external reset, 1=OCD reset, 2=WDT reset</description>
+              <description>Cause of last system reset: 0=external reset, 1=OCD reset, 2=WDT reset, 3=WDT access violation</description>
             </field>
             <field>
               <name>WDT_CTRL_TIMEOUT</name>
@@ -1619,6 +1619,7 @@
             <field><name>SYSINFO_SOC_XBUS_CACHE</name><bitRange>[8:8]</bitRange><description>External bus cache implemented</description></field>
             <field><name>SYSINFO_SOC_XIP</name><bitRange>[9:9]</bitRange><description>Execute in place module implemented</description></field>
             <field><name>SYSINFO_SOC_XIP_CACHE</name><bitRange>[10:10]</bitRange><description>Execute in place cache implemented</description></field>
+            <field><name>SYSINFO_SOC_OCD_AUTH</name><bitRange>[11:11]</bitRange><description>On-chip debugger authentication implemented</description></field>
             <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[14:14]</bitRange><description>Direct memory access controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[15:15]</bitRange><description>General purpose input/output port unit implemented</description></field>
             <field><name>SYSINFO_SOC_IO_MTIME</name><bitRange>[16:16]</bitRange><description>Machine system timer implemented</description></field>

@@ -33,7 +33,8 @@ entity neorv32_vivado_ip is
     JEDEC_ID              : std_logic_vector(10 downto 0) := "00000000000";
     INT_BOOTLOADER_EN     : boolean                       := false;
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN   : boolean                       := false;
+    OCD_EN                : boolean                       := false;
+    OCD_AUTHENTICATION    : boolean                       := false;
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           : boolean                       := false;
     RISCV_ISA_E           : boolean                       := false;
@@ -185,7 +186,7 @@ entity neorv32_vivado_ip is
     s1_axis_tdata  : in  std_logic_vector(31 downto 0) := x"00000000";
     s1_axis_tlast  : in  std_logic := '0';
     -- ------------------------------------------------------------
-    -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true)
+    -- JTAG on-chip debugger interface (available if OCD_EN = true)
     -- ------------------------------------------------------------
     jtag_tck_i     : in  std_logic := '0';
     jtag_tdi_i     : in  std_logic := '0';
@@ -307,8 +308,9 @@ begin
     JEDEC_ID              => std_ulogic_vector(JEDEC_ID),
     INT_BOOTLOADER_EN     => INT_BOOTLOADER_EN,
     -- On-Chip Debugger --
-    ON_CHIP_DEBUGGER_EN   => ON_CHIP_DEBUGGER_EN,
-    DM_LEGACY_MODE        => false,
+    OCD_EN                => OCD_EN,
+    OCD_DM_LEGACY_MODE    => false,
+    OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           => RISCV_ISA_C,
     RISCV_ISA_E           => RISCV_ISA_E,
@@ -409,7 +411,7 @@ begin
     -- Global control --
     clk_i          => std_ulogic(clk),
     rstn_i         => std_ulogic(resetn),
-    -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
+    -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     => std_ulogic(jtag_tck_i),
     jtag_tdi_i     => std_ulogic(jtag_tdi_i),
     jtag_tdo_o     => jtag_tdo_aux,

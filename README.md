@@ -198,6 +198,7 @@ data integrity (CRC8/16/32)
 * compatible to the "Minimal RISC-V Debug Specification Version 1.0"
 * compatible with **OpenOCD**, **GDB** and **Segger Embedded Studio**
 * RISC-V [trigger module](https://stnolting.github.io/neorv32/#_trigger_module) for hardware-assisted breakpoints
+* optional authentication module to implement custom security mechanisms
 
 
 ## 3. FPGA Implementation Results

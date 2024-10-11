@@ -29,8 +29,9 @@ entity neorv32_top is
     INT_BOOTLOADER_EN     : boolean                        := false;       -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
 
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN   : boolean                        := false;       -- implement on-chip debugger
-    DM_LEGACY_MODE        : boolean                        := false;       -- debug module spec version: false = v1.0, true = v0.13
+    OCD_EN                : boolean                        := false;       -- implement on-chip debugger
+    OCD_DM_LEGACY_MODE    : boolean                        := false;       -- debug module spec version: false = v1.0, true = v0.13
+    OCD_AUTHENTICATION    : boolean                        := false;       -- implement on-chip debugger authentication
 
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           : boolean                        := false;       -- implement compressed extension
@@ -145,7 +146,7 @@ entity neorv32_top is
     clk_i          : in  std_ulogic;                                        -- global clock, rising edge
     rstn_i         : in  std_ulogic;                                        -- global reset, low-active, async
 
-    -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
+    -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     : in  std_ulogic := 'L';                                 -- serial clock
     jtag_tdi_i     : in  std_ulogic := 'L';                                 -- serial data input
     jtag_tdo_o     : out std_ulogic;                                        -- serial data output
@@ -252,6 +253,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
   constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
+  constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
 
   -- convert JEDEC ID to mvendorid CSR --
   constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
@@ -358,7 +360,8 @@ begin
       cond_sel_string_f(IO_SLINK_EN,               "SLINK ",      "") &
       cond_sel_string_f(IO_CRC_EN,                 "CRC ",        "") &
       cond_sel_string_f(io_sysinfo_en_c,           "SYSINFO ",    "") &
-      cond_sel_string_f(ON_CHIP_DEBUGGER_EN,       "OCD ",        "") &
+      cond_sel_string_f(OCD_EN,                    "OCD ",        "") &
+      cond_sel_string_f(ocd_auth_en_c,             "OCD-AUTH ",   "") &
       ""
       severity note;
 
@@ -479,8 +482,8 @@ begin
       RISCV_ISA_Zksh      => RISCV_ISA_Zksh,
       RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
       RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
-      RISCV_ISA_Sdext     => ON_CHIP_DEBUGGER_EN,
-      RISCV_ISA_Sdtrig    => ON_CHIP_DEBUGGER_EN,
+      RISCV_ISA_Sdext     => OCD_EN,
+      RISCV_ISA_Sdtrig    => OCD_EN,
       RISCV_ISA_Smpmp     => cpu_smpmp_c,
       -- Tuning Options --
       FAST_MUL_EN         => FAST_MUL_EN,
@@ -975,38 +978,38 @@ begin
     neorv32_bus_io_switch_inst: entity neorv32.neorv32_bus_io_switch
     generic map (
       DEV_SIZE  => iodev_size_c, -- size of a single IO device
-      DEV_00_EN => ON_CHIP_DEBUGGER_EN, DEV_00_BASE => base_io_dm_c,
-      DEV_01_EN => io_sysinfo_en_c,     DEV_01_BASE => base_io_sysinfo_c,
-      DEV_02_EN => IO_NEOLED_EN,        DEV_02_BASE => base_io_neoled_c,
-      DEV_03_EN => io_gpio_en_c,        DEV_03_BASE => base_io_gpio_c,
-      DEV_04_EN => IO_WDT_EN,           DEV_04_BASE => base_io_wdt_c,
-      DEV_05_EN => IO_TRNG_EN,          DEV_05_BASE => base_io_trng_c,
-      DEV_06_EN => IO_TWI_EN,           DEV_06_BASE => base_io_twi_c,
-      DEV_07_EN => IO_SPI_EN,           DEV_07_BASE => base_io_spi_c,
-      DEV_08_EN => IO_SDI_EN,           DEV_08_BASE => base_io_sdi_c,
-      DEV_09_EN => IO_UART1_EN,         DEV_09_BASE => base_io_uart1_c,
-      DEV_10_EN => IO_UART0_EN,         DEV_10_BASE => base_io_uart0_c,
-      DEV_11_EN => IO_MTIME_EN,         DEV_11_BASE => base_io_mtime_c,
-      DEV_12_EN => io_xirq_en_c,        DEV_12_BASE => base_io_xirq_c,
-      DEV_13_EN => IO_ONEWIRE_EN,       DEV_13_BASE => base_io_onewire_c,
-      DEV_14_EN => IO_GPTMR_EN,         DEV_14_BASE => base_io_gptmr_c,
-      DEV_15_EN => io_pwm_en_c,         DEV_15_BASE => base_io_pwm_c,
-      DEV_16_EN => XIP_EN,              DEV_16_BASE => base_io_xip_c,
-      DEV_17_EN => IO_CRC_EN,           DEV_17_BASE => base_io_crc_c,
-      DEV_18_EN => IO_DMA_EN,           DEV_18_BASE => base_io_dma_c,
-      DEV_19_EN => IO_SLINK_EN,         DEV_19_BASE => base_io_slink_c,
-      DEV_20_EN => IO_CFS_EN,           DEV_20_BASE => base_io_cfs_c,
-      DEV_21_EN => false,               DEV_31_BASE => (others => '0'), -- reserved
-      DEV_22_EN => false,               DEV_30_BASE => (others => '0'), -- reserved
-      DEV_23_EN => false,               DEV_29_BASE => (others => '0'), -- reserved
-      DEV_24_EN => false,               DEV_28_BASE => (others => '0'), -- reserved
-      DEV_25_EN => false,               DEV_27_BASE => (others => '0'), -- reserved
-      DEV_26_EN => false,               DEV_26_BASE => (others => '0'), -- reserved
-      DEV_27_EN => false,               DEV_25_BASE => (others => '0'), -- reserved
-      DEV_28_EN => false,               DEV_24_BASE => (others => '0'), -- reserved
-      DEV_29_EN => false,               DEV_23_BASE => (others => '0'), -- reserved
-      DEV_30_EN => false,               DEV_22_BASE => (others => '0'), -- reserved
-      DEV_31_EN => false,               DEV_21_BASE => (others => '0')  -- reserved
+      DEV_00_EN => OCD_EN,          DEV_00_BASE => base_io_dm_c,
+      DEV_01_EN => io_sysinfo_en_c, DEV_01_BASE => base_io_sysinfo_c,
+      DEV_02_EN => IO_NEOLED_EN,    DEV_02_BASE => base_io_neoled_c,
+      DEV_03_EN => io_gpio_en_c,    DEV_03_BASE => base_io_gpio_c,
+      DEV_04_EN => IO_WDT_EN,       DEV_04_BASE => base_io_wdt_c,
+      DEV_05_EN => IO_TRNG_EN,      DEV_05_BASE => base_io_trng_c,
+      DEV_06_EN => IO_TWI_EN,       DEV_06_BASE => base_io_twi_c,
+      DEV_07_EN => IO_SPI_EN,       DEV_07_BASE => base_io_spi_c,
+      DEV_08_EN => IO_SDI_EN,       DEV_08_BASE => base_io_sdi_c,
+      DEV_09_EN => IO_UART1_EN,     DEV_09_BASE => base_io_uart1_c,
+      DEV_10_EN => IO_UART0_EN,     DEV_10_BASE => base_io_uart0_c,
+      DEV_11_EN => IO_MTIME_EN,     DEV_11_BASE => base_io_mtime_c,
+      DEV_12_EN => io_xirq_en_c,    DEV_12_BASE => base_io_xirq_c,
+      DEV_13_EN => IO_ONEWIRE_EN,   DEV_13_BASE => base_io_onewire_c,
+      DEV_14_EN => IO_GPTMR_EN,     DEV_14_BASE => base_io_gptmr_c,
+      DEV_15_EN => io_pwm_en_c,     DEV_15_BASE => base_io_pwm_c,
+      DEV_16_EN => XIP_EN,          DEV_16_BASE => base_io_xip_c,
+      DEV_17_EN => IO_CRC_EN,       DEV_17_BASE => base_io_crc_c,
+      DEV_18_EN => IO_DMA_EN,       DEV_18_BASE => base_io_dma_c,
+      DEV_19_EN => IO_SLINK_EN,     DEV_19_BASE => base_io_slink_c,
+      DEV_20_EN => IO_CFS_EN,       DEV_20_BASE => base_io_cfs_c,
+      DEV_21_EN => false,           DEV_31_BASE => (others => '0'), -- reserved
+      DEV_22_EN => false,           DEV_30_BASE => (others => '0'), -- reserved
+      DEV_23_EN => false,           DEV_29_BASE => (others => '0'), -- reserved
+      DEV_24_EN => false,           DEV_28_BASE => (others => '0'), -- reserved
+      DEV_25_EN => false,           DEV_27_BASE => (others => '0'), -- reserved
+      DEV_26_EN => false,           DEV_26_BASE => (others => '0'), -- reserved
+      DEV_27_EN => false,           DEV_25_BASE => (others => '0'), -- reserved
+      DEV_28_EN => false,           DEV_24_BASE => (others => '0'), -- reserved
+      DEV_29_EN => false,           DEV_23_BASE => (others => '0'), -- reserved
+      DEV_30_EN => false,           DEV_22_BASE => (others => '0'), -- reserved
+      DEV_31_EN => false,           DEV_21_BASE => (others => '0')  -- reserved
     )
     port map (
       clk_i        => clk_i,
@@ -1570,7 +1573,8 @@ begin
         XIP_CACHE_EN          => XIP_CACHE_EN,
         XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
         XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
-        ON_CHIP_DEBUGGER_EN   => ON_CHIP_DEBUGGER_EN,
+        ON_CHIP_DEBUGGER_EN   => OCD_EN,
+        OCD_AUTHENTICATION    => ocd_auth_en_c,
         IO_GPIO_EN            => io_gpio_en_c,
         IO_MTIME_EN           => IO_MTIME_EN,
         IO_UART0_EN           => IO_UART0_EN,
@@ -1611,7 +1615,7 @@ begin
   -- On-Chip Debugger Complex
   -- **************************************************************************************************************************
   neorv32_ocd_inst_true:
-  if ON_CHIP_DEBUGGER_EN generate
+  if OCD_EN generate
 
     -- On-Chip Debugger - Debug Transport Module (DTM) ----------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1637,7 +1641,8 @@ begin
     neorv32_debug_dm_inst: entity neorv32.neorv32_debug_dm
     generic map (
       CPU_BASE_ADDR => base_io_dm_c,
-      LEGACY_MODE   => DM_LEGACY_MODE
+      LEGACY_MODE   => OCD_DM_LEGACY_MODE,
+      AUTHENTICATOR => OCD_AUTHENTICATION
     )
     port map (
       clk_i          => clk_i,
@@ -1654,7 +1659,7 @@ begin
   end generate;
 
   neorv32_debug_ocd_inst_false:
-  if not ON_CHIP_DEBUGGER_EN generate
+  if not OCD_EN generate
     iodev_rsp(IODEV_OCD) <= rsp_terminate_c;
     jtag_tdo_o           <= jtag_tdi_i; -- JTAG pass-through
     dci_ndmrstn          <= '1';
