@@ -51,11 +51,8 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: '🐍 Install doit'
-      run: pip install doit
-
     - name: '📚 Build Datasheet and User Guide (PDF and HTML)'
-      run: ./do.py Documentation container
+      run: make -C docs container
 
     - name: '📤 Upload Artifact: HTML'
       uses: actions/upload-artifact@v4
@@ -80,7 +77,7 @@ jobs:
     - name: '📥 Download Artifacts'
       uses: actions/download-artifact@v4
 
-    - name: '🛠️ Organise public subdir and create a tarball'
+    - name: '🛠️ Organize public subdir and create a tarball'
       run: |
         mv NEORV32 public
         mv public/pdf ./
@@ -98,8 +95,13 @@ jobs:
       run: |
         gh release upload nightly NEORV32-SITE-nightly.tar.gz pdf/NEORV32*nightly.pdf --clobber
 
-    - name: '🐍 Install doit'
-      run: pip install doit
-
     - name: '🚀 Deploy to GitHub-Pages'
-      run: ./do.py DeployToGitHubPages "update ${{ github.sha }}"
+      run: |
+        git init
+        cp ../.git/config ./.git/config
+        touch .nojekyll
+        git add .
+        git config --local user.email "push@gha"
+        git config --local user.name "GHA"
+        git commit -am 'update ${{ github.sha }}'
+        git push -u origin +HEAD:gh-pages
