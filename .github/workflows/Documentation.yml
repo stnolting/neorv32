@@ -42,7 +42,6 @@ jobs:
 
   asciidoctor:
     runs-on: ubuntu-latest
-    container: ghcr.io/stnolting/neorv32/sim
     name: 'Datasheet'
 
     steps:
@@ -53,7 +52,8 @@ jobs:
         fetch-depth: 0
 
     - name: '📚 Build Datasheet and User Guide (PDF and HTML)'
-      run: make -C docs container
+      uses: mattnotmitt/doxygen-action@v1.2.1
+      run: make -C docs all
 
     - name: '📤 Upload Artifact: HTML'
       uses: actions/upload-artifact@v4
