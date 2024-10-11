@@ -19,8 +19,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_debug_dm is
   generic (
-    CPU_BASE_ADDR : std_ulogic_vector(31 downto 0);
-    LEGACY_MODE   : boolean -- false = spec. v1.0, true = spec. v0.13
+    CPU_BASE_ADDR : std_ulogic_vector(31 downto 0); -- base address for the memory-mapped CPU interface registers
+    LEGACY_MODE   : boolean; -- false = spec. v1.0, true = spec. v0.13
+    AUTHENTICATOR : boolean -- implement authentication module when true
   );
   port (
     -- global control --
@@ -41,17 +42,15 @@ end neorv32_debug_dm;
 
 architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
-  -- **********************************************************
-  -- DM Memory Layout
-  -- **********************************************************
-  constant dm_code_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"00"); -- base address of code ROM (park loop)
-  constant dm_pbuf_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"40"); -- base address of program buffer (PBUF)
-  constant dm_data_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"80"); -- base address of abstract data buffer (DATA)
-  constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"C0"); -- base address of status register (SREG)
+  -- memory map --
+  constant dm_code_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"00"); -- code ROM (park loop)
+  constant dm_pbuf_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"40"); -- program buffer (PBUF)
+  constant dm_data_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"80"); -- abstract data buffer (DATA)
+  constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"C0"); -- status register (SREG)
 
-  -- **********************************************************
+  -- ----------------------------------------------------------
   -- DMI Access
-  -- **********************************************************
+  -- ----------------------------------------------------------
 
   -- available DMI registers --
   constant addr_data0_c        : std_ulogic_vector(6 downto 0) := "0000100";
@@ -64,6 +63,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant addr_nextdm_c       : std_ulogic_vector(6 downto 0) := "0011101";
   constant addr_progbuf0_c     : std_ulogic_vector(6 downto 0) := "0100000";
   constant addr_progbuf1_c     : std_ulogic_vector(6 downto 0) := "0100001";
+  constant addr_authdata_c     : std_ulogic_vector(6 downto 0) := "0110000";
   constant addr_sbcs_c         : std_ulogic_vector(6 downto 0) := "0111000";
   constant addr_haltsum0_c     : std_ulogic_vector(6 downto 0) := "1000000";
 
@@ -74,8 +74,8 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant instr_ebreak_c : std_ulogic_vector(31 downto 0) := x"00100073"; -- ebreak
 
   -- DMI access --
-  signal dmi_wren : std_ulogic;
-  signal dmi_rden : std_ulogic;
+  signal dmi_wren, dmi_wren_auth : std_ulogic;
+  signal dmi_rden, dmi_rden_auth : std_ulogic;
 
   -- debug module DMI registers / access --
   type progbuf_t is array (0 to 1) of std_ulogic_vector(31 downto 0);
@@ -102,9 +102,9 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   type cpu_progbuf_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
   signal cpu_progbuf : cpu_progbuf_t;
 
-  -- **********************************************************
+  -- ----------------------------------------------------------
   -- DM Control
-  -- **********************************************************
+  -- ----------------------------------------------------------
 
   -- DM configuration --
   constant nscratch_c   : std_ulogic_vector(3 downto 0)  := "0001"; -- number of dscratch registers in CPU (=1)
@@ -133,9 +133,20 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   end record;
   signal dm_ctrl : dm_ctrl_t;
 
-  -- **********************************************************
+  -- authentication --
+  type auth_t is record
+    busy         : std_ulogic; -- authenticator is busy when set
+    valid        : std_ulogic; -- authentication successful
+    enable       : std_ulogic; -- authenticator enabled; reset authentication when disabled
+    reset        : std_ulogic; -- reset authentication (sync, high-active)
+    re, we       : std_ulogic; -- data interface read/write enable
+    rdata, wdata : std_ulogic_vector(31 downto 0); -- read/write data
+  end record;
+  signal auth : auth_t;
+
+  -- ----------------------------------------------------------
   -- CPU Bus and Debug Interfaces
-  -- **********************************************************
+  -- ----------------------------------------------------------
 
   -- status and control register - bits --
   -- for write access we only care about the actual BYTE WRITE ACCESSES! --
@@ -186,16 +197,21 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
 begin
 
-  -- Info -----------------------------------------------------------------------------------
+  -- Configuration Info ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (LEGACY_MODE = true)  report "[NEORV32] OCD DM compatible to debug spec. version 0.13" severity note;
-  assert not (LEGACY_MODE = false) report "[NEORV32] OCD DM compatible to debug spec. version 1.0"  severity note;
+  assert not (LEGACY_MODE   = true)  report "[NEORV32] OCD: DM compatible to debug spec. version 0.13" severity note;
+  assert not (LEGACY_MODE   = false) report "[NEORV32] OCD: DM compatible to debug spec. version 1.0"  severity note;
+  assert not (AUTHENTICATOR = false) report "[NEORV32] OCD: authentication enabled."  severity note;
 
 
   -- DMI Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  -- any access --
   dmi_wren <= '1' when (dmi_req_i.op = dmi_req_wr_c) else '0';
   dmi_rden <= '1' when (dmi_req_i.op = dmi_req_rd_c) else '0';
+  -- authenticated access --
+  dmi_wren_auth <= dmi_wren when (not AUTHENTICATOR) or (auth.valid = '1') else '0';
+  dmi_rden_auth <= dmi_rden when (not AUTHENTICATOR) or (auth.valid = '1') else '0';
 
 
   -- Debug Module Command Controller --------------------------------------------------------
@@ -232,7 +248,7 @@ begin
 
           when CMD_IDLE => -- wait for new abstract command
           -- ------------------------------------------------------------
-            if (dmi_wren = '1') then -- valid DM write access
+            if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
               if (dmi_req_i.addr = addr_command_c) then
                 if (dm_ctrl.cmderr = "000") then -- only execute if no error
                   dm_ctrl.state <= CMD_CHECK;
@@ -404,50 +420,60 @@ begin
       dm_reg.clr_acc_err <= '0';
       dm_reg.autoexec_wr <= '0';
 
-      -- DMI access --
-      if (dmi_wren = '1') then -- valid DMI write request
-
-        -- debug module control --
-        if (dmi_req_i.addr = addr_dmcontrol_c) then
+      -- debug module control --
+      if (dmi_req_i.addr = addr_dmcontrol_c) then
+        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
           dm_reg.halt_req           <= dmi_req_i.data(31); -- haltreq (-/w): write 1 to request halt; has to be cleared again by debugger
           dm_reg.resume_req         <= dmi_req_i.data(30); -- resumereq (-/w1): write 1 to request resume; auto-clears
           dm_reg.reset_ack          <= dmi_req_i.data(28); -- ackhavereset (-/w1): write 1 to ACK reset; auto-clears
           dm_reg.dmcontrol_ndmreset <= dmi_req_i.data(1);  -- ndmreset (r/w): SoC reset when high
+        end if;
+        if (dmi_wren = '1') then -- valid DM write access
           dm_reg.dmcontrol_dmactive <= dmi_req_i.data(0);  -- dmactive (r/w): DM reset when low
         end if;
+      end if;
 
-        -- write abstract command --
-        if (dmi_req_i.addr = addr_command_c) then
+      -- write abstract command --
+      if (dmi_req_i.addr = addr_command_c) then
+        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
           if (dm_ctrl.busy = '0') and (dm_ctrl.cmderr = "000") then -- idle and no errors yet
             dm_reg.command <= dmi_req_i.data;
           end if;
         end if;
+      end if;
 
-        -- write abstract command autoexec --
-        if (dmi_req_i.addr = addr_abstractauto_c) then
+      -- write abstract command autoexec --
+      if (dmi_req_i.addr = addr_abstractauto_c) then
+        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
           if (dm_ctrl.busy = '0') then -- idle and no errors yet
             dm_reg.abstractauto_autoexecdata       <= dmi_req_i.data(0);
             dm_reg.abstractauto_autoexecprogbuf(0) <= dmi_req_i.data(16);
             dm_reg.abstractauto_autoexecprogbuf(1) <= dmi_req_i.data(17);
           end if;
         end if;
+      end if;
 
-        -- auto execution trigger --
-        if ((dmi_req_i.addr = addr_data0_c)    and (dm_reg.abstractauto_autoexecdata = '1')) or
-           ((dmi_req_i.addr = addr_progbuf0_c) and (dm_reg.abstractauto_autoexecprogbuf(0) = '1')) or
-           ((dmi_req_i.addr = addr_progbuf1_c) and (dm_reg.abstractauto_autoexecprogbuf(1) = '1')) then
+      -- auto execution trigger --
+      if ((dmi_req_i.addr = addr_data0_c)    and (dm_reg.abstractauto_autoexecdata = '1')) or
+         ((dmi_req_i.addr = addr_progbuf0_c) and (dm_reg.abstractauto_autoexecprogbuf(0) = '1')) or
+         ((dmi_req_i.addr = addr_progbuf1_c) and (dm_reg.abstractauto_autoexecprogbuf(1) = '1')) then
+        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
           dm_reg.autoexec_wr <= '1';
         end if;
+      end if;
 
-        -- acknowledge command error --
-        if (dmi_req_i.addr = addr_abstractcs_c) then
+      -- acknowledge command error --
+      if (dmi_req_i.addr = addr_abstractcs_c) then
+        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
           if (dmi_req_i.data(10 downto 8) = "111") then
             dm_reg.clr_acc_err <= '1';
           end if;
         end if;
+      end if;
 
-        -- write program buffer --
-        if (dmi_req_i.addr(dmi_req_i.addr'left downto 1) = addr_progbuf0_c(dmi_req_i.addr'left downto 1)) then
+      -- write program buffer --
+      if (dmi_req_i.addr(dmi_req_i.addr'left downto 1) = addr_progbuf0_c(dmi_req_i.addr'left downto 1)) then
+        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
           if (dm_ctrl.busy = '0') then -- idle
             if (dmi_req_i.addr(0) = addr_progbuf0_c(0)) then
               dm_reg.progbuf(0) <= dmi_req_i.data;
@@ -456,20 +482,20 @@ begin
             end if;
           end if;
         end if;
+      end if;
 
-        -- invalid access while command is executing --
-        if (dm_ctrl.busy = '1') then -- busy
-          if (dmi_req_i.addr = addr_abstractcs_c) or
-             (dmi_req_i.addr = addr_command_c) or
-             (dmi_req_i.addr = addr_abstractauto_c) or
-             (dmi_req_i.addr = addr_data0_c) or
-             (dmi_req_i.addr = addr_progbuf0_c) or
-             (dmi_req_i.addr = addr_progbuf1_c) then
+      -- invalid access while command is executing --
+      if (dmi_req_i.addr = addr_abstractcs_c)   or (dmi_req_i.addr = addr_command_c)  or
+         (dmi_req_i.addr = addr_abstractauto_c) or (dmi_req_i.addr = addr_data0_c)    or
+         (dmi_req_i.addr = addr_progbuf0_c)     or (dmi_req_i.addr = addr_progbuf1_c) then
+        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
+          if (dm_ctrl.busy = '1') then -- busy
             dm_reg.wr_acc_err <= '1';
           end if;
         end if;
-
       end if;
+
+
     end if;
   end process dmi_write_access;
 
@@ -477,14 +503,14 @@ begin
   -- Direct Control -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- write to abstract data register --
-  dci.data_we <= '1' when (dmi_wren = '1') and (dmi_req_i.addr = addr_data0_c) and (dm_ctrl.busy = '0') else '0';
+  dci.data_we <= '1' when (dmi_wren_auth = '1') and (dmi_req_i.addr = addr_data0_c) and (dm_ctrl.busy = '0') else '0';
 
   -- CPU halt/resume request --
-  cpu_halt_req_o <= dm_reg.halt_req and dm_reg.dmcontrol_dmactive;
+  cpu_halt_req_o <= dm_reg.halt_req and dm_reg.dmcontrol_dmactive when ((not AUTHENTICATOR) or (auth.valid = '1')) else '0';
   dci.resume_req <= dm_ctrl.hart_resume_req; -- active until explicitly cleared
 
   -- SoC reset --
-  cpu_ndmrstn_o <= '0' when (dm_reg.dmcontrol_ndmreset = '1') and (dm_reg.dmcontrol_dmactive = '1') else '1'; -- to processor's reset generator
+  cpu_ndmrstn_o <= '0' when (dm_reg.dmcontrol_ndmreset = '1') and (dm_reg.dmcontrol_dmactive = '1') and ((not AUTHENTICATOR) or (auth.valid = '1')) else '1';
 
   -- construct program buffer array for CPU access --
   cpu_progbuf(0) <= dm_ctrl.ldsw_progbuf; -- pseudo program buffer for GPR access
@@ -512,93 +538,122 @@ begin
 
         -- debug module status register --
         when addr_dmstatus_c =>
-          dmi_rsp_o.data(31 downto 23) <= (others => '0');           -- reserved (r/-)
-          dmi_rsp_o.data(22)           <= '1';                       -- impebreak (r/-): there is an implicit ebreak instruction after the visible program buffer
-          dmi_rsp_o.data(21 downto 20) <= (others => '0');           -- reserved (r/-)
-          dmi_rsp_o.data(19)           <= dm_ctrl.hart_reset;        -- allhavereset (r/-): there is only one hart that can be reset
-          dmi_rsp_o.data(18)           <= dm_ctrl.hart_reset;        -- anyhavereset (r/-): there is only one hart that can be reset
-          dmi_rsp_o.data(17)           <= dm_ctrl.hart_resume_ack;   -- allresumeack (r/-): there is only one hart that can acknowledge resume request
-          dmi_rsp_o.data(16)           <= dm_ctrl.hart_resume_ack;   -- anyresumeack (r/-): there is only one hart that can acknowledge resume request
-          dmi_rsp_o.data(15)           <= '0';                       -- allnonexistent (r/-): there is only one hart that is always existent
-          dmi_rsp_o.data(14)           <= '0';                       -- anynonexistent (r/-): there is only one hart that is always existent
-          dmi_rsp_o.data(13)           <= dm_reg.dmcontrol_ndmreset; -- allunavail (r/-): there is only one hart that is unavailable during reset
-          dmi_rsp_o.data(12)           <= dm_reg.dmcontrol_ndmreset; -- anyunavail (r/-): there is only one hart that is unavailable during reset
-          dmi_rsp_o.data(11)           <= not dm_ctrl.hart_halted;   -- allrunning (r/-): there is only one hart that can be RUNNING or HALTED
-          dmi_rsp_o.data(10)           <= not dm_ctrl.hart_halted;   -- anyrunning (r/-): there is only one hart that can be RUNNING or HALTED
-          dmi_rsp_o.data(9)            <= dm_ctrl.hart_halted;       -- allhalted (r/-): there is only one hart that can be RUNNING or HALTED
-          dmi_rsp_o.data(8)            <= dm_ctrl.hart_halted;       -- anyhalted (r/-): there is only one hart that can be RUNNING or HALTED
-          dmi_rsp_o.data(7)            <= '1';                       -- authenticated (r/-): authentication passed since there is no authentication
-          dmi_rsp_o.data(6)            <= '0';                       -- authbusy (r/-): always ready since there is no authentication
-          dmi_rsp_o.data(5)            <= '0';                       -- hasresethaltreq (r/-): halt-on-reset not implemented
-          dmi_rsp_o.data(4)            <= '0';                       -- confstrptrvalid (r/-): no configuration string available
-          dmi_rsp_o.data(3 downto 0)   <= dm_version_c;              -- version (r/-): DM spec. version
+          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+            dmi_rsp_o.data(31 downto 23) <= (others => '0');           -- reserved (r/-)
+            dmi_rsp_o.data(22)           <= '1';                       -- impebreak (r/-): there is an implicit ebreak instruction after the visible program buffer
+            dmi_rsp_o.data(21 downto 20) <= (others => '0');           -- reserved (r/-)
+            dmi_rsp_o.data(19)           <= dm_ctrl.hart_reset;        -- allhavereset (r/-): there is only one hart that can be reset
+            dmi_rsp_o.data(18)           <= dm_ctrl.hart_reset;        -- anyhavereset (r/-): there is only one hart that can be reset
+            dmi_rsp_o.data(17)           <= dm_ctrl.hart_resume_ack;   -- allresumeack (r/-): there is only one hart that can acknowledge resume request
+            dmi_rsp_o.data(16)           <= dm_ctrl.hart_resume_ack;   -- anyresumeack (r/-): there is only one hart that can acknowledge resume request
+            dmi_rsp_o.data(15)           <= '0';                       -- allnonexistent (r/-): there is only one hart that is always existent
+            dmi_rsp_o.data(14)           <= '0';                       -- anynonexistent (r/-): there is only one hart that is always existent
+            dmi_rsp_o.data(13)           <= dm_reg.dmcontrol_ndmreset; -- allunavail (r/-): there is only one hart that is unavailable during reset
+            dmi_rsp_o.data(12)           <= dm_reg.dmcontrol_ndmreset; -- anyunavail (r/-): there is only one hart that is unavailable during reset
+            dmi_rsp_o.data(11)           <= not dm_ctrl.hart_halted;   -- allrunning (r/-): there is only one hart that can be RUNNING or HALTED
+            dmi_rsp_o.data(10)           <= not dm_ctrl.hart_halted;   -- anyrunning (r/-): there is only one hart that can be RUNNING or HALTED
+            dmi_rsp_o.data(9)            <= dm_ctrl.hart_halted;       -- allhalted (r/-): there is only one hart that can be RUNNING or HALTED
+            dmi_rsp_o.data(8)            <= dm_ctrl.hart_halted;       -- anyhalted (r/-): there is only one hart that can be RUNNING or HALTED
+            dmi_rsp_o.data(5)            <= '0';                       -- hasresethaltreq (r/-): halt-on-reset not implemented
+            dmi_rsp_o.data(4)            <= '0';                       -- confstrptrvalid (r/-): no configuration string available
+          end if;
+         dmi_rsp_o.data(7)          <= auth.valid;   -- authenticated (r/-): authentication successful when set
+         dmi_rsp_o.data(6)          <= auth.busy;    -- authbusy (r/-): wait for authenticator operation when set
+         dmi_rsp_o.data(3 downto 0) <= dm_version_c; -- version (r/-): DM spec. version
 
         -- debug module control --
         when addr_dmcontrol_c =>
-          dmi_rsp_o.data(31)           <= '0';                       -- haltreq (-/w): write-only
-          dmi_rsp_o.data(30)           <= '0';                       -- resumereq (-/w1): write-only
-          dmi_rsp_o.data(29)           <= '0';                       -- hartreset (r/w): not supported
-          dmi_rsp_o.data(28)           <= '0';                       -- ackhavereset (-/w1): write-only
-          dmi_rsp_o.data(27)           <= '0';                       -- reserved (r/-)
-          dmi_rsp_o.data(26)           <= '0';                       -- hasel (r/-) - only a single hart can be selected at once
-          dmi_rsp_o.data(25 downto 16) <= (others => '0');           -- hartsello (r/-) - there is only one hart
-          dmi_rsp_o.data(15 downto 6)  <= (others => '0');           -- hartselhi (r/-) - there is only one hart
-          dmi_rsp_o.data(5 downto 4)   <= (others => '0');           -- reserved (r/-)
-          dmi_rsp_o.data(3)            <= '0';                       -- setresethaltreq (-/w1): halt-on-reset request - halt-on-reset not implemented
-          dmi_rsp_o.data(2)            <= '0';                       -- clrresethaltreq (-/w1): halt-on-reset ack - halt-on-reset not implemented
-          dmi_rsp_o.data(1)            <= dm_reg.dmcontrol_ndmreset; -- ndmreset (r/w): soc reset
-          dmi_rsp_o.data(0)            <= dm_reg.dmcontrol_dmactive; -- dmactive (r/w): DM reset
+          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+            dmi_rsp_o.data(31)           <= '0';                       -- haltreq (-/w): write-only
+            dmi_rsp_o.data(30)           <= '0';                       -- resumereq (-/w1): write-only
+            dmi_rsp_o.data(29)           <= '0';                       -- hartreset (r/w): not supported
+            dmi_rsp_o.data(28)           <= '0';                       -- ackhavereset (-/w1): write-only
+            dmi_rsp_o.data(27)           <= '0';                       -- reserved (r/-)
+            dmi_rsp_o.data(26)           <= '0';                       -- hasel (r/-) - only a single hart can be selected at once
+            dmi_rsp_o.data(25 downto 16) <= (others => '0');           -- hartsello (r/-) - there is only one hart
+            dmi_rsp_o.data(15 downto 6)  <= (others => '0');           -- hartselhi (r/-) - there is only one hart
+            dmi_rsp_o.data(5 downto 4)   <= (others => '0');           -- reserved (r/-)
+            dmi_rsp_o.data(3)            <= '0';                       -- setresethaltreq (-/w1): halt-on-reset request - halt-on-reset not implemented
+            dmi_rsp_o.data(2)            <= '0';                       -- clrresethaltreq (-/w1): halt-on-reset ack - halt-on-reset not implemented
+            dmi_rsp_o.data(1)            <= dm_reg.dmcontrol_ndmreset; -- ndmreset (r/w): soc reset
+          end if;
+          dmi_rsp_o.data(0) <= dm_reg.dmcontrol_dmactive; -- dmactive (r/w): DM reset
 
         -- hart info --
         when addr_hartinfo_c =>
-          dmi_rsp_o.data(31 downto 24) <= (others => '0');         -- reserved (r/-)
-          dmi_rsp_o.data(23 downto 20) <= nscratch_c;              -- nscratch (r/-): number of dscratch CSRs
-          dmi_rsp_o.data(19 downto 17) <= (others => '0');         -- reserved (r/-)
-          dmi_rsp_o.data(16)           <= dataaccess_c;            -- dataaccess (r/-): 1: data registers are memory-mapped, 0: data registers are CSR-mapped
-          dmi_rsp_o.data(15 downto 12) <= datasize_c;              -- datasize (r/-): number data registers in memory/CSR space
-          dmi_rsp_o.data(11 downto 0)  <= dataaddr_c(11 downto 0); -- dataaddr (r/-): data registers base address (memory/CSR)
+          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+            dmi_rsp_o.data(31 downto 24) <= (others => '0');         -- reserved (r/-)
+            dmi_rsp_o.data(23 downto 20) <= nscratch_c;              -- nscratch (r/-): number of dscratch CSRs
+            dmi_rsp_o.data(19 downto 17) <= (others => '0');         -- reserved (r/-)
+            dmi_rsp_o.data(16)           <= dataaccess_c;            -- dataaccess (r/-): 1: data registers are memory-mapped, 0: data registers are CSR-mapped
+            dmi_rsp_o.data(15 downto 12) <= datasize_c;              -- datasize (r/-): number data registers in memory/CSR space
+            dmi_rsp_o.data(11 downto 0)  <= dataaddr_c(11 downto 0); -- dataaddr (r/-): data registers base address (memory/CSR)
+          end if;
 
         -- abstract control and status --
         when addr_abstractcs_c =>
-          dmi_rsp_o.data(31 downto 24) <= (others => '0'); -- reserved (r/-)
-          dmi_rsp_o.data(28 downto 24) <= "00010";         -- progbufsize (r/-): number of words in program buffer = 2
-          dmi_rsp_o.data(12)           <= dm_ctrl.busy;    -- busy (r/-): abstract command in progress (1) / idle (0)
-          dmi_rsp_o.data(11)           <= '1';             -- relaxedpriv (r/-): PMP rules are ignored when in debug-mode
-          dmi_rsp_o.data(10 downto 8)  <= dm_ctrl.cmderr;  -- cmderr (r/w1c): any error during execution?
-          dmi_rsp_o.data(7 downto 4)   <= (others => '0'); -- reserved (r/-)
-          dmi_rsp_o.data(3 downto 0)   <= "0001";          -- datacount (r/-): number of implemented data registers = 1
+          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+            dmi_rsp_o.data(31 downto 24) <= (others => '0'); -- reserved (r/-)
+            dmi_rsp_o.data(28 downto 24) <= "00010";         -- progbufsize (r/-): number of words in program buffer = 2
+            dmi_rsp_o.data(12)           <= dm_ctrl.busy;    -- busy (r/-): abstract command in progress (1) / idle (0)
+            dmi_rsp_o.data(11)           <= '1';             -- relaxedpriv (r/-): PMP rules are ignored when in debug-mode
+            dmi_rsp_o.data(10 downto 8)  <= dm_ctrl.cmderr;  -- cmderr (r/w1c): any error during execution?
+            dmi_rsp_o.data(7 downto 4)   <= (others => '0'); -- reserved (r/-)
+            dmi_rsp_o.data(3 downto 0)   <= "0001";          -- datacount (r/-): number of implemented data registers = 1
+          end if;
 
 --      -- abstract command (-/w) --
---      when addr_command_c =>
---        dmi_rsp_o.data <= (others => '0'); -- register is write-only
+--      when addr_command_c => dmi_rsp_o.data <= (others => '0'); -- register is write-only
 
         -- abstract command autoexec (r/w) --
         when addr_abstractauto_c =>
-          dmi_rsp_o.data(0)  <= dm_reg.abstractauto_autoexecdata;       -- autoexecdata(0):    read/write access to data0 triggers execution of program buffer
-          dmi_rsp_o.data(16) <= dm_reg.abstractauto_autoexecprogbuf(0); -- autoexecprogbuf(0): read/write access to progbuf0 triggers execution of program buffer
-          dmi_rsp_o.data(17) <= dm_reg.abstractauto_autoexecprogbuf(1); -- autoexecprogbuf(1): read/write access to progbuf1 triggers execution of program buffer
+          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+            dmi_rsp_o.data(0)  <= dm_reg.abstractauto_autoexecdata;       -- autoexecdata(0):    read/write access to data0 triggers execution of program buffer
+            dmi_rsp_o.data(16) <= dm_reg.abstractauto_autoexecprogbuf(0); -- autoexecprogbuf(0): read/write access to progbuf0 triggers execution of program buffer
+            dmi_rsp_o.data(17) <= dm_reg.abstractauto_autoexecprogbuf(1); -- autoexecprogbuf(1): read/write access to progbuf1 triggers execution of program buffer
+          end if;
 
 --      -- next debug module (r/-) --
---      when addr_nextdm_c =>
---        dmi_rsp_o.data <= (others => '0'); -- this is the only DM
+--      when addr_nextdm_c => dmi_rsp_o.data <= (others => '0'); -- this is the only DM
 
         -- abstract data 0 (r/w) --
         when addr_data0_c =>
-          dmi_rsp_o.data <= dci.data_reg;
+          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+            dmi_rsp_o.data <= dci.data_reg;
+          end if;
 
-        -- program buffer (r/w) --
+        -- program buffer 0 (r/w) --
         when addr_progbuf0_c =>
-          if (LEGACY_MODE = true) then dmi_rsp_o.data <= dm_reg.progbuf(0); else dmi_rsp_o.data <= (others => '0'); end if; -- program buffer 0
+          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+            if LEGACY_MODE then
+              dmi_rsp_o.data <= dm_reg.progbuf(0);
+            else
+              dmi_rsp_o.data <= (others => '0');
+            end if;
+          end if;
+
+        -- program buffer 0 (r/w) --
         when addr_progbuf1_c =>
-          if (LEGACY_MODE = true) then dmi_rsp_o.data <= dm_reg.progbuf(1); else dmi_rsp_o.data <= (others => '0'); end if; -- program buffer 1
+          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+            if LEGACY_MODE then
+              dmi_rsp_o.data <= dm_reg.progbuf(1);
+            else
+              dmi_rsp_o.data <= (others => '0');
+            end if;
+          end if;
+
+        -- authentication (r/w) --
+        when addr_authdata_c =>
+          dmi_rsp_o.data <= auth.rdata;
 
 --      -- system bus access control and status (r/-) --
---      when addr_sbcs_c =>
---        dmi_rsp_o.data <= (others => '0'); -- system bus access not implemented
+--      when addr_sbcs_c => dmi_rsp_o.data <= (others => '0'); -- system bus access not implemented
 
         -- halt summary 0 (r/-) --
         when addr_haltsum0_c =>
-          dmi_rsp_o.data(0) <= dm_ctrl.hart_halted; -- hart 0 is halted
+          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+            dmi_rsp_o.data(0) <= dm_ctrl.hart_halted; -- hart 0 is halted
+          end if;
 
         -- not implemented (r/-) --
         when others =>
@@ -608,7 +663,7 @@ begin
 
       -- invalid read access while command is executing --
       -- ------------------------------------------------------------
-      if (dmi_rden = '1') then -- valid DMI read request
+      if (dmi_rden_auth = '1') then -- valid and authenticated DMI read request and authenticated
         if (dm_ctrl.busy = '1') then -- busy
           if (dmi_req_i.addr = addr_data0_c) or
              (dmi_req_i.addr = addr_progbuf0_c) or
@@ -620,7 +675,7 @@ begin
 
       -- auto execution trigger --
       -- ------------------------------------------------------------
-      if (dmi_rden = '1') then -- valid DMI read request
+      if (dmi_rden_auth = '1') then -- valid and authenticated DMI read request and authenticated
         if ((dmi_req_i.addr = addr_data0_c)    and (dm_reg.abstractauto_autoexecdata = '1')) or
            ((dmi_req_i.addr = addr_progbuf0_c) and (dm_reg.abstractauto_autoexecprogbuf(0) = '1')) or
            ((dmi_req_i.addr = addr_progbuf1_c) and (dm_reg.abstractauto_autoexecprogbuf(1) = '1')) then
@@ -632,7 +687,7 @@ begin
   end process dmi_read_access;
 
 
-  -- Bus Access ----------------------------------------------------------------------------
+  -- Bus Access (from CPU) ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_access: process(rstn_i, clk_i)
   begin
@@ -689,6 +744,43 @@ begin
   accen <= cpu_debug_i and bus_req_i.stb; -- allow access only when in debug-mode
   rden  <= accen and (not bus_req_i.rw);
   wren  <= accen and (    bus_req_i.rw);
+
+
+  -- Authentication -------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  authenticator_enabled:
+  if AUTHENTICATOR generate
+    neorv32_debug_auth_inst: entity neorv32.neorv32_debug_auth
+    port map (
+      -- global control --
+      clk_i      => clk_i,
+      rstn_i     => rstn_i,
+      -- register interface --
+      we_i       => auth.we,
+      re_i       => auth.re,
+      wdata_i    => auth.wdata,
+      rdata_o    => auth.rdata,
+      -- status --
+      enable_i   => auth.enable,
+      busy_o     => auth.busy,
+      unlocked_o => auth.valid
+    );
+    auth.re     <= '1' when (dmi_rden = '1') and (dmi_req_i.addr = addr_authdata_c) else '0';
+    auth.we     <= '1' when (dmi_wren = '1') and (dmi_req_i.addr = addr_authdata_c) else '0';
+    auth.wdata  <= dmi_req_i.data;
+    auth.enable <= dm_reg.dmcontrol_dmactive; -- disable and reset authentication when DM gets disabled
+  end generate;
+
+  authenticator_disabled:
+  if not AUTHENTICATOR generate
+    auth.busy   <= '0';
+    auth.valid  <= '1'; -- always authenticated
+    auth.enable <= '0';
+    auth.re     <= '0';
+    auth.we     <= '0';
+    auth.rdata  <= (others => '0');
+    auth.wdata  <= (others => '0');
+  end generate;
 
 
 end neorv32_debug_dm_rtl;
