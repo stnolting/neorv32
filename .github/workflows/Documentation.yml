@@ -42,6 +42,7 @@ jobs:
 
   asciidoctor:
     runs-on: ubuntu-latest
+    container: ghcr.io/stnolting/neorv32/sim
     name: 'Datasheet'
 
     steps:
@@ -51,11 +52,8 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: '🐍 Install doit'
-      run: pip install doit
-
     - name: '📚 Build Datasheet and User Guide (PDF and HTML)'
-      run: ./do.py Documentation container
+      run: make -C docs container
 
     - name: '📤 Upload Artifact: HTML'
       uses: actions/upload-artifact@v4
