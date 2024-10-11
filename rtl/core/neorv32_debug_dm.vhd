@@ -1,7 +1,7 @@
 -- ================================================================================ --
 -- NEORV32 SoC - RISC-V-Compatible Debug Module (DM)                                --
 -- -------------------------------------------------------------------------------- --
--- Execution-based debugging for a single hart only.                                --
+-- Execution-based debugger compatible to the "Minimal RISC-V Debug Specification". --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -48,6 +48,12 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant dm_data_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"80"); -- abstract data buffer (DATA)
   constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"C0"); -- status register (SREG)
 
+  -- rv32i instruction prototypes --
+  constant instr_nop_c    : std_ulogic_vector(31 downto 0) := x"00000013"; -- nop
+  constant instr_lw_c     : std_ulogic_vector(31 downto 0) := x"00002003"; -- lw zero, 0(zero)
+  constant instr_sw_c     : std_ulogic_vector(31 downto 0) := x"00002023"; -- sw zero, 0(zero)
+  constant instr_ebreak_c : std_ulogic_vector(31 downto 0) := x"00100073"; -- ebreak
+
   -- ----------------------------------------------------------
   -- DMI Access
   -- ----------------------------------------------------------
@@ -67,15 +73,8 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant addr_sbcs_c         : std_ulogic_vector(6 downto 0) := "0111000";
   constant addr_haltsum0_c     : std_ulogic_vector(6 downto 0) := "1000000";
 
-  -- RISC-V 32-bit instruction prototypes --
-  constant instr_nop_c    : std_ulogic_vector(31 downto 0) := x"00000013"; -- nop
-  constant instr_lw_c     : std_ulogic_vector(31 downto 0) := x"00002003"; -- lw zero, 0(zero)
-  constant instr_sw_c     : std_ulogic_vector(31 downto 0) := x"00002023"; -- sw zero, 0(zero)
-  constant instr_ebreak_c : std_ulogic_vector(31 downto 0) := x"00100073"; -- ebreak
-
   -- DMI access --
-  signal dmi_wren, dmi_wren_auth : std_ulogic;
-  signal dmi_rden, dmi_rden_auth : std_ulogic;
+  signal dmi_wren, dmi_wren_auth, dmi_rden, dmi_rden_auth : std_ulogic;
 
   -- debug module DMI registers / access --
   type progbuf_t is array (0 to 1) of std_ulogic_vector(31 downto 0);
@@ -107,10 +106,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- ----------------------------------------------------------
 
   -- DM configuration --
-  constant nscratch_c   : std_ulogic_vector(3 downto 0)  := "0001"; -- number of dscratch registers in CPU (=1)
-  constant datasize_c   : std_ulogic_vector(3 downto 0)  := "0001"; -- number of data registers in memory/CSR space (=1)
   constant dataaddr_c   : std_ulogic_vector(11 downto 0) := dm_data_base_c(11 downto 0); -- signed base address of data registers in memory/CSR space
-  constant dataaccess_c : std_ulogic                     := '1';    -- 1: abstract data is memory-mapped, 0: abstract data is CSR-mapped
   constant dm_version_c : std_ulogic_vector(3 downto 0)  := cond_sel_suv_f(LEGACY_MODE, "0010", "0011"); -- version: v0.13 / v1.0
 
   -- debug module controller --
@@ -135,12 +131,11 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
   -- authentication --
   type auth_t is record
-    busy         : std_ulogic; -- authenticator is busy when set
-    valid        : std_ulogic; -- authentication successful
-    enable       : std_ulogic; -- authenticator enabled; reset authentication when disabled
-    reset        : std_ulogic; -- reset authentication (sync, high-active)
-    re, we       : std_ulogic; -- data interface read/write enable
-    rdata, wdata : std_ulogic_vector(31 downto 0); -- read/write data
+    busy   : std_ulogic; -- authenticator is busy when set
+    valid  : std_ulogic; -- authentication successful
+    reset  : std_ulogic; -- reset authentication (sync, high-active)
+    re, we : std_ulogic; -- data interface read/write enable
+    rdata  : std_ulogic_vector(31 downto 0); -- read data
   end record;
   signal auth : auth_t;
 
@@ -428,29 +423,21 @@ begin
           dm_reg.reset_ack          <= dmi_req_i.data(28); -- ackhavereset (-/w1): write 1 to ACK reset; auto-clears
           dm_reg.dmcontrol_ndmreset <= dmi_req_i.data(1);  -- ndmreset (r/w): SoC reset when high
         end if;
-        if (dmi_wren = '1') then -- valid DM write access
+        if (dmi_wren = '1') then -- valid DM write access (may be unauthenticated)
           dm_reg.dmcontrol_dmactive <= dmi_req_i.data(0);  -- dmactive (r/w): DM reset when low
         end if;
       end if;
 
-      -- write abstract command --
-      if (dmi_req_i.addr = addr_command_c) then
-        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
-          if (dm_ctrl.busy = '0') and (dm_ctrl.cmderr = "000") then -- idle and no errors yet
-            dm_reg.command <= dmi_req_i.data;
-          end if;
-        end if;
+      -- write abstract command (only when idle and no error yet) --
+      if (dmi_req_i.addr = addr_command_c) and (dmi_wren_auth = '1') and (dm_ctrl.busy = '0') and (dm_ctrl.cmderr = "000") then
+        dm_reg.command <= dmi_req_i.data;
       end if;
 
-      -- write abstract command autoexec --
-      if (dmi_req_i.addr = addr_abstractauto_c) then
-        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
-          if (dm_ctrl.busy = '0') then -- idle and no errors yet
-            dm_reg.abstractauto_autoexecdata       <= dmi_req_i.data(0);
-            dm_reg.abstractauto_autoexecprogbuf(0) <= dmi_req_i.data(16);
-            dm_reg.abstractauto_autoexecprogbuf(1) <= dmi_req_i.data(17);
-          end if;
-        end if;
+      -- write abstract command autoexec (only when idle) --
+      if (dmi_req_i.addr = addr_abstractauto_c) and (dmi_wren_auth = '1') and (dm_ctrl.busy = '0') then
+        dm_reg.abstractauto_autoexecdata       <= dmi_req_i.data(0);
+        dm_reg.abstractauto_autoexecprogbuf(0) <= dmi_req_i.data(16);
+        dm_reg.abstractauto_autoexecprogbuf(1) <= dmi_req_i.data(17);
       end if;
 
       -- auto execution trigger --
@@ -463,38 +450,27 @@ begin
       end if;
 
       -- acknowledge command error --
-      if (dmi_req_i.addr = addr_abstractcs_c) then
-        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
-          if (dmi_req_i.data(10 downto 8) = "111") then
-            dm_reg.clr_acc_err <= '1';
-          end if;
-        end if;
+      if (dmi_req_i.addr = addr_abstractcs_c) and (dmi_wren_auth = '1') and (dmi_req_i.data(10 downto 8) = "111") then
+        dm_reg.clr_acc_err <= '1';
       end if;
 
-      -- write program buffer --
-      if (dmi_req_i.addr(dmi_req_i.addr'left downto 1) = addr_progbuf0_c(dmi_req_i.addr'left downto 1)) then
-        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
-          if (dm_ctrl.busy = '0') then -- idle
-            if (dmi_req_i.addr(0) = addr_progbuf0_c(0)) then
-              dm_reg.progbuf(0) <= dmi_req_i.data;
-            else
-              dm_reg.progbuf(1) <= dmi_req_i.data;
-            end if;
-          end if;
-        end if;
+      -- write program buffer 0 (only when idle) --
+      if (dmi_req_i.addr = addr_progbuf0_c) and (dmi_wren_auth = '1') and (dm_ctrl.busy = '0') then
+        dm_reg.progbuf(0) <= dmi_req_i.data;
+      end if;
+
+      -- write program buffer 1 (only when idle) --
+      if (dmi_req_i.addr = addr_progbuf1_c) and (dmi_wren_auth = '1') and (dm_ctrl.busy = '0') then
+        dm_reg.progbuf(1) <= dmi_req_i.data;
       end if;
 
       -- invalid access while command is executing --
-      if (dmi_req_i.addr = addr_abstractcs_c)   or (dmi_req_i.addr = addr_command_c)  or
-         (dmi_req_i.addr = addr_abstractauto_c) or (dmi_req_i.addr = addr_data0_c)    or
-         (dmi_req_i.addr = addr_progbuf0_c)     or (dmi_req_i.addr = addr_progbuf1_c) then
-        if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
-          if (dm_ctrl.busy = '1') then -- busy
-            dm_reg.wr_acc_err <= '1';
-          end if;
-        end if;
+      if (dmi_wren_auth = '1') and (dm_ctrl.busy = '1') and -- write access while busy
+         ((dmi_req_i.addr = addr_abstractcs_c)   or (dmi_req_i.addr = addr_command_c)  or
+          (dmi_req_i.addr = addr_abstractauto_c) or (dmi_req_i.addr = addr_data0_c)    or
+          (dmi_req_i.addr = addr_progbuf0_c)     or (dmi_req_i.addr = addr_progbuf1_c)) then
+        dm_reg.wr_acc_err <= '1';
       end if;
-
 
     end if;
   end process dmi_write_access;
@@ -529,11 +505,8 @@ begin
       dm_reg.rd_acc_err  <= '0';
       dm_reg.autoexec_rd <= '0';
     elsif rising_edge(clk_i) then
-      dmi_rsp_o.ack      <= dmi_wren or dmi_rden; -- always ACK any request
-      dmi_rsp_o.data     <= (others => '0'); -- default
-      dm_reg.rd_acc_err  <= '0';
-      dm_reg.autoexec_rd <= '0';
-
+      dmi_rsp_o.ack  <= dmi_wren or dmi_rden; -- always ACK any request
+      dmi_rsp_o.data <= (others => '0'); -- default
       case dmi_req_i.addr is
 
         -- debug module status register --
@@ -583,10 +556,10 @@ begin
         when addr_hartinfo_c =>
           if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
             dmi_rsp_o.data(31 downto 24) <= (others => '0');         -- reserved (r/-)
-            dmi_rsp_o.data(23 downto 20) <= nscratch_c;              -- nscratch (r/-): number of dscratch CSRs
+            dmi_rsp_o.data(23 downto 20) <= "0001";                  -- nscratch (r/-): number of dscratch CSRs = 1
             dmi_rsp_o.data(19 downto 17) <= (others => '0');         -- reserved (r/-)
-            dmi_rsp_o.data(16)           <= dataaccess_c;            -- dataaccess (r/-): 1: data registers are memory-mapped, 0: data registers are CSR-mapped
-            dmi_rsp_o.data(15 downto 12) <= datasize_c;              -- datasize (r/-): number data registers in memory/CSR space
+            dmi_rsp_o.data(16)           <= '1';                     -- dataaccess (r/-): data registers are memory-mapped
+            dmi_rsp_o.data(15 downto 12) <= "0001";                  -- datasize (r/-): number data registers in memory/CSR space = 1
             dmi_rsp_o.data(11 downto 0)  <= dataaddr_c(11 downto 0); -- dataaddr (r/-): data registers base address (memory/CSR)
           end if;
 
@@ -602,10 +575,7 @@ begin
             dmi_rsp_o.data(3 downto 0)   <= "0001";          -- datacount (r/-): number of implemented data registers = 1
           end if;
 
---      -- abstract command (-/w) --
---      when addr_command_c => dmi_rsp_o.data <= (others => '0'); -- register is write-only
-
-        -- abstract command autoexec (r/w) --
+        -- abstract command autoexec --
         when addr_abstractauto_c =>
           if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
             dmi_rsp_o.data(0)  <= dm_reg.abstractauto_autoexecdata;       -- autoexecdata(0):    read/write access to data0 triggers execution of program buffer
@@ -613,74 +583,62 @@ begin
             dmi_rsp_o.data(17) <= dm_reg.abstractauto_autoexecprogbuf(1); -- autoexecprogbuf(1): read/write access to progbuf1 triggers execution of program buffer
           end if;
 
---      -- next debug module (r/-) --
---      when addr_nextdm_c => dmi_rsp_o.data <= (others => '0'); -- this is the only DM
-
-        -- abstract data 0 (r/w) --
+        -- abstract data 0 --
         when addr_data0_c =>
           if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
             dmi_rsp_o.data <= dci.data_reg;
           end if;
 
-        -- program buffer 0 (r/w) --
+        -- program buffer 0 --
         when addr_progbuf0_c =>
           if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
             if LEGACY_MODE then
               dmi_rsp_o.data <= dm_reg.progbuf(0);
-            else
-              dmi_rsp_o.data <= (others => '0');
             end if;
           end if;
 
-        -- program buffer 0 (r/w) --
+        -- program buffer 1 --
         when addr_progbuf1_c =>
           if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
             if LEGACY_MODE then
               dmi_rsp_o.data <= dm_reg.progbuf(1);
-            else
-              dmi_rsp_o.data <= (others => '0');
             end if;
           end if;
 
-        -- authentication (r/w) --
+        -- authentication --
         when addr_authdata_c =>
           dmi_rsp_o.data <= auth.rdata;
 
---      -- system bus access control and status (r/-) --
---      when addr_sbcs_c => dmi_rsp_o.data <= (others => '0'); -- system bus access not implemented
-
-        -- halt summary 0 (r/-) --
+        -- halt summary 0 --
         when addr_haltsum0_c =>
           if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
             dmi_rsp_o.data(0) <= dm_ctrl.hart_halted; -- hart 0 is halted
           end if;
 
-        -- not implemented (r/-) --
-        when others =>
+        -- not implemented or read-only-zero --
+        when others => -- addr_sbcs_c, addr_nextdm_c, addr_command_c
           dmi_rsp_o.data <= (others => '0');
 
       end case;
 
       -- invalid read access while command is executing --
       -- ------------------------------------------------------------
-      if (dmi_rden_auth = '1') then -- valid and authenticated DMI read request and authenticated
-        if (dm_ctrl.busy = '1') then -- busy
-          if (dmi_req_i.addr = addr_data0_c) or
-             (dmi_req_i.addr = addr_progbuf0_c) or
-             (dmi_req_i.addr = addr_progbuf1_c) then
-            dm_reg.rd_acc_err <= '1';
-          end if;
-        end if;
+      if (dmi_rden_auth = '1') and (dm_ctrl.busy = '1') and -- write while busy
+         ((dmi_req_i.addr = addr_data0_c) or (dmi_req_i.addr = addr_progbuf0_c) or (dmi_req_i.addr = addr_progbuf1_c)) then
+        dm_reg.rd_acc_err <= '1';
+      else
+        dm_reg.rd_acc_err  <= '0';
       end if;
 
       -- auto execution trigger --
       -- ------------------------------------------------------------
-      if (dmi_rden_auth = '1') then -- valid and authenticated DMI read request and authenticated
-        if ((dmi_req_i.addr = addr_data0_c)    and (dm_reg.abstractauto_autoexecdata = '1')) or
-           ((dmi_req_i.addr = addr_progbuf0_c) and (dm_reg.abstractauto_autoexecprogbuf(0) = '1')) or
-           ((dmi_req_i.addr = addr_progbuf1_c) and (dm_reg.abstractauto_autoexecprogbuf(1) = '1')) then
-          dm_reg.autoexec_rd <= '1';
-        end if;
+      if (dmi_rden_auth = '1') and
+         (((dmi_req_i.addr = addr_data0_c)    and (dm_reg.abstractauto_autoexecdata       = '1')) or
+          ((dmi_req_i.addr = addr_progbuf0_c) and (dm_reg.abstractauto_autoexecprogbuf(0) = '1')) or
+          ((dmi_req_i.addr = addr_progbuf1_c) and (dm_reg.abstractauto_autoexecprogbuf(1) = '1'))) then
+        dm_reg.autoexec_rd <= '1';
+      else
+        dm_reg.autoexec_rd <= '0';
       end if;
 
     end if;
@@ -717,7 +675,7 @@ begin
       dci.execute_ack   <= '0';
       dci.exception_ack <= '0';
       if (bus_req_i.addr(7 downto 6) = dm_sreg_base_c(7 downto 6)) and (wren = '1') then
-        dci.halt_ack      <= bus_req_i.ben(sreg_halt_ack_c/8); -- [NOTE] use the individual BYTE ENABLES and not the actual write data
+        dci.halt_ack      <= bus_req_i.ben(sreg_halt_ack_c/8); -- [NOTE] use individual BYTE ENABLES and not the actual write data
         dci.resume_ack    <= bus_req_i.ben(sreg_resume_ack_c/8);
         dci.execute_ack   <= bus_req_i.ben(sreg_execute_ack_c/8);
         dci.exception_ack <= bus_req_i.ben(sreg_exception_ack_c/8);
@@ -746,40 +704,36 @@ begin
   wren  <= accen and (    bus_req_i.rw);
 
 
-  -- Authentication -------------------------------------------------------------------------
+  -- Authentication Module ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   authenticator_enabled:
   if AUTHENTICATOR generate
     neorv32_debug_auth_inst: entity neorv32.neorv32_debug_auth
     port map (
       -- global control --
-      clk_i      => clk_i,
-      rstn_i     => rstn_i,
+      clk_i    => clk_i,
+      rstn_i   => rstn_i,
       -- register interface --
-      we_i       => auth.we,
-      re_i       => auth.re,
-      wdata_i    => auth.wdata,
-      rdata_o    => auth.rdata,
+      we_i     => auth.we,
+      re_i     => auth.re,
+      wdata_i  => dmi_req_i.data,
+      rdata_o  => auth.rdata,
       -- status --
-      enable_i   => auth.enable,
-      busy_o     => auth.busy,
-      unlocked_o => auth.valid
+      enable_i => dm_reg.dmcontrol_dmactive, -- disable and reset authentication when DM gets disabled
+      busy_o   => auth.busy,
+      valid_o  => auth.valid
     );
-    auth.re     <= '1' when (dmi_rden = '1') and (dmi_req_i.addr = addr_authdata_c) else '0';
-    auth.we     <= '1' when (dmi_wren = '1') and (dmi_req_i.addr = addr_authdata_c) else '0';
-    auth.wdata  <= dmi_req_i.data;
-    auth.enable <= dm_reg.dmcontrol_dmactive; -- disable and reset authentication when DM gets disabled
+    auth.re <= '1' when (dmi_rden = '1') and (dmi_req_i.addr = addr_authdata_c) else '0';
+    auth.we <= '1' when (dmi_wren = '1') and (dmi_req_i.addr = addr_authdata_c) else '0';
   end generate;
 
   authenticator_disabled:
   if not AUTHENTICATOR generate
-    auth.busy   <= '0';
-    auth.valid  <= '1'; -- always authenticated
-    auth.enable <= '0';
-    auth.re     <= '0';
-    auth.we     <= '0';
-    auth.rdata  <= (others => '0');
-    auth.wdata  <= (others => '0');
+    auth.busy  <= '0';
+    auth.valid <= '1'; -- always authenticated
+    auth.re    <= '0';
+    auth.we    <= '0';
+    auth.rdata <= (others => '0');
   end generate;
 
 

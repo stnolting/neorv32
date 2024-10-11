@@ -22,17 +22,17 @@ use neorv32.neorv32_package.all;
 entity neorv32_debug_auth is
   port (
     -- global control --
-    clk_i      : in  std_ulogic; -- global clock
-    rstn_i     : in  std_ulogic; -- global reset, low-active, asynchronous
+    clk_i    : in  std_ulogic; -- global clock
+    rstn_i   : in  std_ulogic; -- global reset, low-active, asynchronous
     -- register interface --
-    we_i       : in  std_ulogic; -- write data when high
-    re_i       : in  std_ulogic; -- read data has been consumed by the debugger when high
-    wdata_i    : in  std_ulogic_vector(31 downto 0); -- write data (from debugger)
-    rdata_o    : out std_ulogic_vector(31 downto 0); -- read data (to debugger)
+    we_i     : in  std_ulogic; -- write data when high
+    re_i     : in  std_ulogic; -- read data has been consumed by the debugger when high
+    wdata_i  : in  std_ulogic_vector(31 downto 0); -- write data (from debugger)
+    rdata_o  : out std_ulogic_vector(31 downto 0); -- read data (to debugger)
     -- status --
-    enable_i   : in  std_ulogic; -- authenticator enabled when high; reset & clear authentication when low
-    busy_o     : out std_ulogic; -- authenticator is busy when high; no further read/write accesses
-    unlocked_o : out std_ulogic  -- high when authentication passed; unlocks the on-chip debugger
+    enable_i : in  std_ulogic; -- authenticator enabled when high; reset & clear authentication when low
+    busy_o   : out std_ulogic; -- authenticator is busy when high; no further read/write accesses
+    valid_o  : out std_ulogic  -- high when authentication passed; unlocks the on-chip debugger
   );
 end neorv32_debug_auth;
 
@@ -66,7 +66,7 @@ begin
   busy_o <= '0'; -- this simple authenticator is always ready
 
   -- authentication passed --
-  unlocked_o <= authenticated;
+  valid_o <= authenticated;
 
   -- read data --
   rdata_o <= (others => '0'); -- there is nothing to read here
