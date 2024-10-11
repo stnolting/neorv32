@@ -97,7 +97,8 @@ jobs:
 
     - name: '🚀 Deploy to GitHub-Pages'
       run: |
-        cd docs/public
+        ls -al
+        cd public
         git init
         cp ../.git/config ./.git/config
         touch .nojekyll
