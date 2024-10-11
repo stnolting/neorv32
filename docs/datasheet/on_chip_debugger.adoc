@@ -107,7 +107,7 @@ register. The following table shows the available data registers and their addre
 [options="header",grid="rows"]
 |=======================
 | Address (via `IR`) | Name     | Size (bits) | Description
-| `00001`            | `IDCODE` | 32          | identifier, version and part ID fields are hardwired to zero, manufacturer ID is assigned via the `JEDEC_ID` top generic (<<_processor_top_entity_generics>>)
+| `00001`            | `IDCODE` | 32          | identifier, version and part ID fields are hardwired to zero, manufacturer ID is assigned via the <<_processor_top_entity_generics, `JEDEC_ID`>> generic
 | `10000`            | `DTMCS`  | 32          | debug transport module control and status register (see below)
 | `10001`            | `DMI`    | 41          | debug module interface: 7-bit address, 32-bit read/write data, 2-bit operation (`00` = NOP; `10` = write; `01` = read)
 | others             | `BYPASS` | 1           | default JTAG bypass register
@@ -144,7 +144,7 @@ It supports the following features:
 * Provides access to a reset signal that allows debugging from the very first instruction after reset.
 * Provides a _program buffer_ to force the hart to execute arbitrary instructions.
 * Allows memory access from a hart's point of view.
-* Optionally implements and authentication mechanism to secure on-chip debugger access.
+* Optionally implements an authentication mechanism to secure on-chip debugger access.
 
 The NEORV32 DM follows the "Minimal RISC-V External Debug Specification" to provide full debugging capabilities while
 keeping resource/area requirements at a minimum. It implements the **execution based debugging scheme** for a
@@ -159,7 +159,7 @@ single hart and provides the following architectural core features:
 .DM Spec. Version
 [TIP]
 By default, the OCD's debug module supports version 1.0 of the RISC-V debug spec. However, for backwards compatibility the
-DM can be downgraded back to version 0.13 via the `OCD_DM_LEGACY_MODE` generic (see <<_processor_top_entity_generics>>).
+DM can be downgraded back to version 0.13 via the see <<_processor_top_entity_generics, `OCD_DM_LEGACY_MODE`>> top generic.
 
 From the DTM's point of view, the DM implements a set of <<_dm_registers>> that are used to control and monitor the
 debugging session. From the CPU's point of view, the DM implements several memory-mapped registers that are used for
@@ -269,7 +269,7 @@ are configured as "zero" and are read-only. Writing '1' to these bits/fields wil
 |  6    | `authbusy`        | set if authentication is busy, see <<_debug_authentication>>
 |  5    | `hasresethaltreq` | `0`: halt-on-reset is not supported (directly)
 |  4    | `confstrptrvalid` | `0`: no configuration string available
-| 3:0   | `version`         | debug spec. version; `0011` (v1.0) or `0010` (v0.13); configured via the `OCD_DM_LEGACY_MODE` <<_processor_top_entity_generics>>
+| 3:0   | `version`         | debug spec. version; `0011` (v1.0) or `0010` (v0.13); configured via the <<_processor_top_entity_generics, `OCD_DM_LEGACY_MODE`>> top generic
 |=======================
 
 
@@ -480,10 +480,10 @@ code in debug mode.
 |=======================
 
 When the CPU enters (via an explicit halt request from the dubber) or re-enters debug mode (for example via an `ebreak` in the
-DM's program buffer), it jumps to the _normal entry point_ that is configured via the `CPU_DEBUG_PARK_ADDR` generic
-(<<_cpu_top_entity_generics>>). By default, this address is set to `dm_park_entry_c`, which is defined in the main
+DM's program buffer), it jumps to the _normal entry point_ that is configured via the <<_cpu_top_entity_generics, `CPU_DEBUG_PARK_ADDR`>>
+CPU generic. By default, this address is set to `dm_park_entry_c`, which is defined in the main
 package file. If an exception is encountered during debug mode, the CPU jumps to the address of the _exception entry point_
-configured via the `CPU_DEBUG_EXC_ADDR` generic (<<_cpu_top_entity_generics>>). By default, this address
+configured via the <<_cpu_top_entity_generics, `CPU_DEBUG_EXC_ADDR`>> CPU generic. By default, this address
 is set to `dm_exc_entry_c`, which is also defined in the main package file.
 
 
@@ -518,8 +518,54 @@ size and faster execution.
 :sectnums:
 === Debug Authentication
 
-TODO
+Optionally, the on-chip debugger's DM can be equipped with an _authenticator module_ to secure debugger access. This authentication
+is enabled by the <<_processor_top_entity_generics, `OCD_AUTHENTICATION`>> top generic. When disabled, the debugger is always
+authorized and has unlimited access. When enabled, the debugger is required to authenticate in order to gain access.
 
+The authenticator module is implemented as individual RTL module (`rtl/core/neorv32_debug_auth.vhd`). By default, it implements
+a very simple authentication mechanism. Note that this default mechanism is not secure in any way - it is intended as example
+logic to illustrate the interface and authentication process. Users can modify the default logic or replace the entire module
+to implement a more sophisticated custom authentication mechanism.
+
+The authentication interface is compliant to the RISC-V debug spec and is based on a single CSR and two additional status bits:
+
+* <<_authdata>> CSR: this 32-bit register is used to read/write data from/to the authentication module. It is hardwired to
+all-zero if authentication is not implemented.
+* <<_dmstatus>> CSR:
+** The `authenticated` bit (read-only) is set if authentication was successful. The debugger can access the processor only
+if this bit is set. It is automatically hardwired to `1` (always authenticated) if the authentication module is not implemented.
+** The `authbusy` bit (read-only) indicates if the authentication module is busy. When set, no data should be written/read to/from
+<<_authdata>>. This bit is automatically hardwired to `0` (never busy) if the authentication module is not implemented.
+
+openOCD provides dedicated commands to exchange data with the authenticator module:
+
+.openOCD RISC-V Authentication Commands
+[source,tcl]
+----
+riscv authdata_read        // read 32-bit from authdata CSR
+riscv authdata_write value // write 32-bit value to authdata CSR
+----
+
+Based on these two primitives arbitrary complex authentication mechanism can be implemented.
+
+
+:sectnums:
+==== Default Authentication Mechanism
+
+[IMPORTANT]
+The default authentication mechanism is not secure at all. Replace it by a custom design.
+
+The default authenticator hardware implements a very simple authentication mechanism: a single read/write bit is implemented
+that directly corresponds to the `authenticated` bit in <<_dmstatus>>. This bit can be read/written as bit zero (LSB) of the
+<<_authdata>> CSR. Writing 1 to this register will result in a successful authentication. The default openOCD configuration
+script for the NEORV32 implements this basic authentication mechanism:
+
+.Default authentication process (`openocd_neorv32.cfg`)
+[source,tcl]
+----
+set challenge [riscv authdata_read]          # read authdata; not required, just an example
+riscv authdata_write [expr {$challenge | 1}] # set LSB to authenticate
+----
 
 
 <<<
@@ -552,7 +598,7 @@ asynchronous interrupts) that are handled transparently by the control logic.
 * copy the hart's current privilege level to the `prv` flags in <<_dcsr>>
 * set `cause` in <<_dcsr>> according to the cause why debug mode is entered
 * **no update** of `mtval`, `mcause`, `mtval` and `mstatus` CSRs
-* load the address configured via the CPU's `CPU_DEBUG_PARK_ADDR` (<<_cpu_top_entity_generics>>) generic to the program counter jumping to the
+* load the address configured via the CPU's (<<_cpu_top_entity_generics, `CPU_DEBUG_PARK_ADDR`>>) generic to the program counter jumping to the
 "debugger park loop" code stored in the debug module (DM)
 
 **When the CPU is in debug-mode:**
@@ -561,9 +607,9 @@ asynchronous interrupts) that are handled transparently by the control logic.
 * effective CPU privilege level is `machine` mode; any active physical memory protection (PMP) configuration is bypassed
 * the `wfi` instruction acts as a `nop` (also during single-stepping)
 * if an exception occurs while being in debug mode:
-** if the exception was caused by any debug-mode entry action the CPU jumps to the normal entry point (defined by `CPU_DEBUG_PARK_ADDR` generic of
-the <<_cpu_top_entity_generics>>) of the park loop again (for example when executing `ebreak` while in debug-mode)
-** for all other exception sources the CPU jumps to the exception entry point (defined by `CPU_DEBUG_EXC_ADDR` generic of the <<_cpu_top_entity_generics>>)
+** if the exception was caused by any debug-mode entry action the CPU jumps to the normal entry point (defined by the
+<<_cpu_top_entity_generics, `CPU_DEBUG_PARK_ADDR`>> generic) of the park loop again (for example when executing `ebreak` while in debug-mode)
+** for all other exception sources the CPU jumps to the exception entry point (defined by the <<_cpu_top_entity_generics, `CPU_DEBUG_EXC_ADDR`>> generic)
 to signal an exception to the DM; the CPU restarts the park loop again afterwards
 * interrupts are disabled; however, they will remain pending and will get executed after the CPU has left debug mode and is not being single-stepped
 * if the DM makes a resume request, the park loop exits and the CPU leaves debug mode (executing `dret`)
