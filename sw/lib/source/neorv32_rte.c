@@ -407,8 +407,18 @@ void neorv32_rte_print_hw_config(void) {
   else { neorv32_uart0_printf("disabled\n"); }
 
   neorv32_uart0_printf("On-chip debugger:    ");
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD)) { neorv32_uart0_printf("enabled\n"); }
-  else { neorv32_uart0_printf("disabled\n"); }
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD)) {
+    neorv32_uart0_printf("enabled");
+  }
+  else {
+    neorv32_uart0_printf("disabled");
+  }
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD_AUTH)) {
+    neorv32_uart0_printf(" + authentication\n");
+  }
+  else {
+    neorv32_uart0_printf("\n");
+  }
 
   // IDs
   neorv32_uart0_printf("Hart ID:             0x%x\n"

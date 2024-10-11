@@ -122,7 +122,7 @@ begin
     HART_ID               => hart_id_c,                      -- hardware thread ID
     JEDEC_ID              => jedec_id_c,                     -- vendor's JEDEC ID
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN   => DEBUG,                          -- implement on-chip debugger
+    OCD_EN                => DEBUG,                          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           => configs_c.riscv_c(CONFIG),      -- implement compressed extension?
     RISCV_ISA_M           => configs_c.riscv_m(CONFIG),      -- implement mul/div extension?

@@ -39,6 +39,7 @@ entity neorv32_sysinfo is
     XIP_CACHE_NUM_BLOCKS  : natural; -- number of blocks (min 1), has to be a power of 2
     XIP_CACHE_BLOCK_SIZE  : natural; -- block size in bytes (min 4), has to be a power of 2
     ON_CHIP_DEBUGGER_EN   : boolean; -- implement OCD?
+    OCD_AUTHENTICATION    : boolean; -- implement OCD authenticator?
     IO_GPIO_EN            : boolean; -- implement general purpose IO port (GPIO)?
     IO_MTIME_EN           : boolean; -- implement machine system timer (MTIME)?
     IO_UART0_EN           : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
@@ -116,7 +117,7 @@ begin
   sysinfo(2)(8)  <= '1' when xcache_en_c         else '0'; -- external bus interface cache implemented?
   sysinfo(2)(9)  <= '1' when XIP_EN              else '0'; -- execute in-place module implemented?
   sysinfo(2)(10) <= '1' when xip_cache_en_c      else '0'; -- execute in-place cache implemented?
-  sysinfo(2)(11) <= '0';                                   -- reserved
+  sysinfo(2)(11) <= '1' when OCD_AUTHENTICATION  else '0'; -- on-chip debugger authentication implemented?
   sysinfo(2)(12) <= '0';                                   -- reserved
   sysinfo(2)(13) <= '0';                                   -- reserved
   sysinfo(2)(14) <= '1' when IO_DMA_EN           else '0'; -- direct memory access controller (DMA) implemented?

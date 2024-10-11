@@ -46,13 +46,14 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_XBUS         =  1, /**< SYSINFO_SOC  (1) (r/-): External bus interface implemented when 1 (via XBUS_EN generic) */
   SYSINFO_SOC_MEM_INT_IMEM =  2, /**< SYSINFO_SOC  (2) (r/-): Processor-internal instruction memory implemented when 1 (via MEM_INT_IMEM_EN generic) */
   SYSINFO_SOC_MEM_INT_DMEM =  3, /**< SYSINFO_SOC  (3) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_EN generic) */
-  SYSINFO_SOC_OCD          =  4, /**< SYSINFO_SOC  (4) (r/-): On-chip debugger implemented when 1 (via ON_CHIP_DEBUGGER_EN generic) */
+  SYSINFO_SOC_OCD          =  4, /**< SYSINFO_SOC  (4) (r/-): On-chip debugger implemented when 1 (via OCD_EN generic) */
   SYSINFO_SOC_ICACHE       =  5, /**< SYSINFO_SOC  (5) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
   SYSINFO_SOC_DCACHE       =  6, /**< SYSINFO_SOC  (6) (r/-): Processor-internal instruction cache implemented when 1 (via DCACHE_EN generic) */
   SYSINFO_SOC_CLOCK_GATING =  7, /**< SYSINFO_SOC  (7) (r/-): Clock gating implemented when 1 (via CLOCK_GATING_EN generic) */
   SYSINFO_SOC_XBUS_CACHE   =  8, /**< SYSINFO_SOC  (8) (r/-): External bus cache implemented when 1 (via XBUS_CACHE_EN generic) */
   SYSINFO_SOC_XIP          =  9, /**< SYSINFO_SOC  (9) (r/-): Execute in-place module implemented when 1 (via XIP_EN generic) */
-  SYSINFO_SOC_XIP_CACHE    = 10, /**< SYSINFO_S C (10) (r/-): Execute in-place cache implemented when 1 (via XIP_CACHE_EN generic) */
+  SYSINFO_SOC_XIP_CACHE    = 10, /**< SYSINFO_SOC (10) (r/-): Execute in-place cache implemented when 1 (via XIP_CACHE_EN generic) */
+  SYSINFO_SOC_OCD_AUTH     = 11, /**< SYSINFO_SOC (11) (r/-): On-chip debugger authentication implemented when 1 (via OCD_AUTHENTICATION generic) */
 
   SYSINFO_SOC_IO_DMA       = 14, /**< SYSINFO_SOC (14) (r/-): Direct memory access controller implemented when 1 (via IO_DMA_EN generic) */
   SYSINFO_SOC_IO_GPIO      = 15, /**< SYSINFO_SOC (15) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
