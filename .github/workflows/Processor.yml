@@ -28,7 +28,10 @@ jobs:
     - name: '⚙️ Build Software Framework Tests'
       uses: docker://ghcr.io/stnolting/neorv32/sim
       with:
-        args: ./do.py SoftwareFrameworkTests
+        args: |
+          make -C sw/example/processor_check check
+          make -C sw/example clean_all exe
+          make -C sw/bootloader clean_all info bootloader
 
 
   Simple:
