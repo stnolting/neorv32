@@ -94,7 +94,7 @@ include::rationale.adoc[]
 * optional execute in-place (XIP) module to execute code directly form an external SPI flash
 * optional DMA controller for CPU-independent data transfers
 * optional CRC module to check data integrity
-* on-chip debugger compatible with OpenOCD and gdb including hardware trigger module
+* on-chip debugger compatible with OpenOCD and GDB including hardware trigger module and optional authentication
 
 **Software framework**
 
@@ -206,6 +206,7 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 ├neorv32_clockgate.vhd          - Generic clock gating switch
 ├neorv32_crc.vhd                - Cyclic redundancy check unit
 ├neorv32_debug_dm.vhd           - on-chip debugger: debug module
+├neorv32_debug_auth.vhd         - on-chip debugger: authentication module
 ├neorv32_debug_dtm.vhd          - on-chip debugger: debug transfer module
 ├neorv32_dma.vhd                - Direct memory access controller
 ├neorv32_dmem.vhd               - Generic processor-internal data memory

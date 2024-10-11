@@ -42,6 +42,7 @@ NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_slink.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_crc.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_sysinfo.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_debug_dtm.vhd
+NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_debug_auth.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_debug_dm.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_top.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_application_image.vhd
