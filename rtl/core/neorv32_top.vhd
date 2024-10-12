@@ -30,7 +30,6 @@ entity neorv32_top is
 
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                        := false;       -- implement on-chip debugger
-    OCD_DM_LEGACY_MODE    : boolean                        := false;       -- debug module spec version: false = v1.0, true = v0.13
     OCD_AUTHENTICATION    : boolean                        := false;       -- implement on-chip debugger authentication
 
     -- RISC-V CPU Extensions --
@@ -253,7 +252,6 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
   constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
-  constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
 
   -- convert JEDEC ID to mvendorid CSR --
   constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
@@ -360,8 +358,7 @@ begin
       cond_sel_string_f(IO_SLINK_EN,               "SLINK ",      "") &
       cond_sel_string_f(IO_CRC_EN,                 "CRC ",        "") &
       cond_sel_string_f(io_sysinfo_en_c,           "SYSINFO ",    "") &
-      cond_sel_string_f(OCD_EN,                    "OCD ",        "") &
-      cond_sel_string_f(ocd_auth_en_c,             "OCD-AUTH ",   "") &
+      cond_sel_string_f(OCD_EN, cond_sel_string_f(OCD_AUTHENTICATION, "OCD-AUTH ", "OCD "), "") &
       ""
       severity note;
 
@@ -1573,8 +1570,8 @@ begin
         XIP_CACHE_EN          => XIP_CACHE_EN,
         XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
         XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
-        ON_CHIP_DEBUGGER_EN   => OCD_EN,
-        OCD_AUTHENTICATION    => ocd_auth_en_c,
+        OCD_EN                => OCD_EN,
+        OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
         IO_GPIO_EN            => io_gpio_en_c,
         IO_MTIME_EN           => IO_MTIME_EN,
         IO_UART0_EN           => IO_UART0_EN,
@@ -1641,7 +1638,6 @@ begin
     neorv32_debug_dm_inst: entity neorv32.neorv32_debug_dm
     generic map (
       CPU_BASE_ADDR => base_io_dm_c,
-      LEGACY_MODE   => OCD_DM_LEGACY_MODE,
       AUTHENTICATOR => OCD_AUTHENTICATION
     )
     port map (
