@@ -158,8 +158,7 @@ single hart and provides the following architectural core features:
 
 .DM Spec. Version
 [TIP]
-By default, the OCD's debug module supports version 1.0 of the RISC-V debug spec. However, for backwards compatibility the
-DM can be downgraded back to version 0.13 via the see <<_processor_top_entity_generics, `OCD_DM_LEGACY_MODE`>> top generic.
+The NEORV32 DM complies to the RISC-V DM spec version 1.0.
 
 From the DTM's point of view, the DM implements a set of <<_dm_registers>> that are used to control and monitor the
 debugging session. From the CPU's point of view, the DM implements several memory-mapped registers that are used for
@@ -192,8 +191,7 @@ to these registers will always return zero.
 | 0x20    | <<_progbuf, `progbuf0`>> | Program buffer 0
 | 0x21    | <<_progbuf, `progbuf1`>> | Program buffer 1
 | 0x30    | <<_authdata>>            | Data to/from the authentication module
-| 0x38    | `sbcs`                   | System bus access control and status; reads as zero to indicate there is **no** direct system bus access
-| 0x40    | <<_haltsum0>>            | Halted harts
+| 0x38    | `sbcs`                   | System bus access control and status; reads as zero to indicate there is **no** system bus access
 |=======================
 
 
@@ -269,7 +267,7 @@ are configured as "zero" and are read-only. Writing '1' to these bits/fields wil
 |  6    | `authbusy`        | set if authentication is busy, see <<_debug_authentication>>
 |  5    | `hasresethaltreq` | `0`: halt-on-reset is not supported (directly)
 |  4    | `confstrptrvalid` | `0`: no configuration string available
-| 3:0   | `version`         | debug spec. version; `0011` (v1.0) or `0010` (v0.13); configured via the <<_processor_top_entity_generics, `OCD_DM_LEGACY_MODE`>> top generic
+| 3:0   | `version`         | `0011`: DM compatible to debug spec. version v1.0
 |=======================
 
 
@@ -410,27 +408,6 @@ hart's GPRs x0 - x15/31 (abstract command register index `0x1000` - `0x101f`).
 3+| Reset value: _user-defined_
 3+| This register serves as a 32-bit serial port to/from the authentication module. See <<_debug_authentication>>.
 |======
-
-
-
-:sectnums!:
-===== **`haltsum0`**
-
-[cols="4,27,>7"]
-[frame="topbot",grid="none"]
-|======
-| 0x408 | **Halted harts status** | `haltsum0`
-3+| Reset value: `0x00000000`
-3+| Hart has halted when according bit is set.
-|======
-
-.`haltsum0` Register Bits
-[cols="^1,^2,^1,<8"]
-[options="header",grid="rows"]
-|=======================
-| Bit | Name [RISC-V] | R/W | Description
-| 0   | `haltsum0[0]` | r/- | Hart is halted when set.
-|=======================
 
 
 :sectnums:
