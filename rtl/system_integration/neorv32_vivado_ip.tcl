@@ -66,8 +66,8 @@ set_property description "The NEORV32 RISC-V Processor" [ipx::current_core]
 # **************************************************************
 # Interfaces: Configuration Dependencies
 # **************************************************************
-set_property enablement_dependency {$axi4_stream_en = true} [ipx::get_ports s0_axis_*    -of_objects [ipx::current_core]]
-set_property enablement_dependency {$axi4_stream_en = true} [ipx::get_ports s1_axis_*    -of_objects [ipx::current_core]]
+set_property enablement_dependency {$axi4_stream_en = true} [ipx::get_bus_interfaces s0_axis -of_objects [ipx::current_core]]
+set_property enablement_dependency {$axi4_stream_en = true} [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
 set_property enablement_dependency {$ocd_en = true}         [ipx::get_ports jtag_*       -of_objects [ipx::current_core]]
 set_property enablement_dependency {$xip_en = true}         [ipx::get_ports xip_*        -of_objects [ipx::current_core]]
 set_property enablement_dependency {$io_gpio_en = true}     [ipx::get_ports gpio_*       -of_objects [ipx::current_core]]
