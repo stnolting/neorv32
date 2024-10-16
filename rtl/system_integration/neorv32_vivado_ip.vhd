@@ -248,6 +248,14 @@ entity neorv32_vivado_ip is
     msw_irq_i      : in  std_logic := '0';
     mext_irq_i     : in  std_logic := '0'
   );
+
+  -- attributes to explicitly create interfaces in Vivado block design --
+  attribute x_interface_info : string;
+  attribute x_interface_info of jtag_tck_i: signal is "xilinx.com:interface:jtag:2.0 jtag TCK";
+  attribute x_interface_info of jtag_tdi_i: signal is "xilinx.com:interface:jtag:2.0 jtag TDI";
+  attribute x_interface_info of jtag_tdo_o: signal is "xilinx.com:interface:jtag:2.0 jtag TDO";
+  attribute x_interface_info of jtag_tms_i: signal is "xilinx.com:interface:jtag:2.0 jtag TMS";
+
 end entity;
 
 architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
@@ -344,13 +352,6 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal xbus_di  : std_ulogic_vector(31 downto 0);                    -- read data
   signal xbus_ack : std_ulogic;                                        -- transfer acknowledge
   signal xbus_err : std_ulogic;                                        -- transfer error
-
-  -- attributes to explicitly create interfaces in Vivado block design --
-  attribute x_interface_info : string;
-  attribute x_interface_info of jtag_tck_i: signal is "xilinx.com:interface:jtag:2.0 jtag TCK";
-  attribute x_interface_info of jtag_tdi_i: signal is "xilinx.com:interface:jtag:2.0 jtag TDI";
-  attribute x_interface_info of jtag_tdo_o: signal is "xilinx.com:interface:jtag:2.0 jtag TDO";
-  attribute x_interface_info of jtag_tms_i: signal is "xilinx.com:interface:jtag:2.0 jtag TMS";
 
 begin
 
