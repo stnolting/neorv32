@@ -50,6 +50,7 @@ set_property library neorv32 [get_files $file_list]
 
 # IP top module
 add_file $neorv32_home/rtl/system_integration/$ip_top.vhd
+add_file $neorv32_home/rtl/system_integration/xbus2axi4lite_bridge.vhd
 set_property top $ip_top [current_fileset]
 
 update_compile_order -fileset sources_1
@@ -63,286 +64,317 @@ set_property vendor_display_name "Stephan Nolting" [ipx::current_core]
 set_property company_url https://github.com/stnolting/neorv32 [ipx::current_core]
 set_property description "The NEORV32 RISC-V Processor" [ipx::current_core]
 
-# **************************************************************
-# Interfaces: Configuration Dependencies
-# **************************************************************
-set_property enablement_dependency {$axi4_stream_en = true} [ipx::get_bus_interfaces s0_axis -of_objects [ipx::current_core]]
-set_property enablement_dependency {$axi4_stream_en = true} [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
-set_property enablement_dependency {$ocd_en = true}         [ipx::get_ports jtag_*       -of_objects [ipx::current_core]]
-set_property enablement_dependency {$xip_en = true}         [ipx::get_ports xip_*        -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_gpio_en = true}     [ipx::get_ports gpio_*       -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_uart0_en = true}    [ipx::get_ports uart0_*      -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_uart1_en = true}    [ipx::get_ports uart1_*      -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_spi_en = true}      [ipx::get_ports spi_*        -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_sdi_en = true}      [ipx::get_ports sdi_*        -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_twi_en = true}      [ipx::get_ports twi_*        -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_onewire_en = true}  [ipx::get_ports onewire_*    -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_pwm_en = true}      [ipx::get_ports pwm_o        -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_cfs_en = true}      [ipx::get_ports cfs_*        -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_neoled_en = true}   [ipx::get_ports neoled_o     -of_objects [ipx::current_core]]
-set_property enablement_dependency {$xirq_en = true}        [ipx::get_ports xirq_i       -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_mtime_en = true}    [ipx::get_ports mtime_time_o -of_objects [ipx::current_core]]
-set_property enablement_dependency {$io_mtime_en = false}   [ipx::get_ports mtime_irq_i  -of_objects [ipx::current_core]]
+proc setup_ip_gui {} {
+  proc set_param_properties {name {display_name ""} {tooltip ""} {enablement_expr ""} {value_expr ""}} {
+    set param_spec [ipgui::get_guiparamspec -name $name -component [ipx::current_core]]
+    set user_param [ipx::get_user_parameters $name -of_objects [ipx::current_core]]
+    if {$display_name ne ""} {
+      set_property display_name $display_name $param_spec
+    }
+    if {$tooltip ne ""} {
+      set_property tooltip $tooltip $param_spec
+    }
+    if {$enablement_expr ne ""} {
+      set_property enablement_tcl_expr $enablement_expr $user_param
+    }
+    if {$value_expr ne ""} {
+      set_property value_tcl_expr $value_expr $user_param
+    }
+  }
 
-# **************************************************************
-# Configuration GUI: General
-# **************************************************************
-set_property display_name {Clock frequency (Hz)}                                   [ipgui::get_guiparamspec -name "CLOCK_FREQUENCY"       -component [ipx::current_core]]
-set_property tooltip      {Frequency of the clk signal in Hz}                      [ipgui::get_guiparamspec -name "CLOCK_FREQUENCY"       -component [ipx::current_core]]
-set_property display_name {HART ID}                                                [ipgui::get_guiparamspec -name "HART_ID"               -component [ipx::current_core]]
-set_property tooltip      {For mhartid CSR}                                        [ipgui::get_guiparamspec -name "HART_ID"               -component [ipx::current_core]]
-set_property display_name {JEDEC ID}                                               [ipgui::get_guiparamspec -name "JEDEC_ID"              -component [ipx::current_core]]
-set_property tooltip      {For JTAG tap identification and mvendorid CSR}          [ipgui::get_guiparamspec -name "JEDEC_ID"              -component [ipx::current_core]]
-set_property display_name {RISC-V on-chip debugger}                                [ipgui::get_guiparamspec -name "OCD_EN"                -component [ipx::current_core]]
-set_property display_name {RISC-V on-chip debugger authentication}                 [ipgui::get_guiparamspec -name "OCD_AUTHENTICATION"    -component [ipx::current_core]]
-set_property display_name {AXI4-Lite (XBUS) timeout}                               [ipgui::get_guiparamspec -name "XBUS_TIMEOUT"          -component [ipx::current_core]]
-set_property tooltip      {Max number of clock cycles before AXI access times out} [ipgui::get_guiparamspec -name "XBUS_TIMEOUT"          -component [ipx::current_core]]
-set_property display_name {AXI4-Lite (XBUS) cache}                                 [ipgui::get_guiparamspec -name "XBUS_CACHE_EN"         -component [ipx::current_core]]
-set_property display_name {AXI4-Lite (XBUS) cache number of blocks}                [ipgui::get_guiparamspec -name "XBUS_CACHE_NUM_BLOCKS" -component [ipx::current_core]]
-set_property display_name {AXI4-Lite (XBUS) cache block size}                      [ipgui::get_guiparamspec -name "XBUS_CACHE_BLOCK_SIZE" -component [ipx::current_core]]
-set_property tooltip      {In bytes (use a power of two)}                          [ipgui::get_guiparamspec -name "XBUS_CACHE_BLOCK_SIZE" -component [ipx::current_core]]
-set_property display_name {AXI4-Stream (SLINK) source and sink}                    [ipgui::get_guiparamspec -name "AXI4_STREAM_EN"        -component [ipx::current_core]]
-set_property display_name {AXI4-Stream (SLINK) input FIFO depth}                   [ipgui::get_guiparamspec -name "IO_SLINK_RX_FIFO"      -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}                 [ipgui::get_guiparamspec -name "IO_SLINK_RX_FIFO"      -component [ipx::current_core]]
-set_property display_name {AXI4-Stream (SLINK) output FIFO depth}                  [ipgui::get_guiparamspec -name "IO_SLINK_TX_FIFO"      -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}                 [ipgui::get_guiparamspec -name "IO_SLINK_TX_FIFO"      -component [ipx::current_core]]
+  proc add_page { name {tooltip ""} } {
+    set page [ipgui::add_page -name $name -component [ipx::current_core] -display_name $name]
+    if {$tooltip eq ""} {
+      set_property tooltip $tooltip $page
+    }
+    return $page
+  }
 
-ipgui::add_group -name {General} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Page 0" -component [ipx::current_core]] -display_name {General}
-ipgui::move_group -component [ipx::current_core] -order  0 [ipgui::get_groupspec    -name "General"               -component [ipx::current_core]] -parent [ipgui::get_pagespec  -name "Page 0"  -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  0 [ipgui::get_guiparamspec -name "CLOCK_FREQUENCY"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  1 [ipgui::get_guiparamspec -name "HART_ID"               -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  2 [ipgui::get_guiparamspec -name "JEDEC_ID"              -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  3 [ipgui::get_guiparamspec -name "OCD_EN"                -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  4 [ipgui::get_guiparamspec -name "OCD_AUTHENTICATION"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  5 [ipgui::get_guiparamspec -name "XBUS_TIMEOUT"          -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  6 [ipgui::get_guiparamspec -name "XBUS_CACHE_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  7 [ipgui::get_guiparamspec -name "XBUS_CACHE_NUM_BLOCKS" -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  8 [ipgui::get_guiparamspec -name "XBUS_CACHE_BLOCK_SIZE" -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  9 [ipgui::get_guiparamspec -name "AXI4_STREAM_EN"        -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 10 [ipgui::get_guiparamspec -name "IO_SLINK_RX_FIFO"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 11 [ipgui::get_guiparamspec -name "IO_SLINK_TX_FIFO"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "General" -component [ipx::current_core]]
+  proc add_group { parent name {display_name ""} } {
+    if {$display_name eq ""} {
+      set display_name $name
+    }
+    ipgui::add_group -name $name -component [ipx::current_core] -parent $parent -display_name $display_name
+  }
 
-# **************************************************************
-# Configuration GUI: CPU
-# **************************************************************
-set_property display_name {RISC-V C ISA extension}                         [ipgui::get_guiparamspec -name "RISCV_ISA_C"         -component [ipx::current_core]]
-set_property tooltip      {Compressed instructions}                        [ipgui::get_guiparamspec -name "RISCV_ISA_C"         -component [ipx::current_core]]
-set_property display_name {RISC-V E ISA extension}                         [ipgui::get_guiparamspec -name "RISCV_ISA_E"         -component [ipx::current_core]]
-set_property tooltip      {Reduced register file size (16 registers only)} [ipgui::get_guiparamspec -name "RISCV_ISA_E"         -component [ipx::current_core]]
-set_property display_name {RISC-V M ISA extension}                         [ipgui::get_guiparamspec -name "RISCV_ISA_M"         -component [ipx::current_core]]
-set_property tooltip      {Integer multiplication and division hardware}   [ipgui::get_guiparamspec -name "RISCV_ISA_M"         -component [ipx::current_core]]
-set_property display_name {RISC-V U ISA extension}                         [ipgui::get_guiparamspec -name "RISCV_ISA_U"         -component [ipx::current_core]]
-set_property tooltip      {Less-privileged user-mode}                      [ipgui::get_guiparamspec -name "RISCV_ISA_U"         -component [ipx::current_core]]
-set_property display_name {RISC-V Zalrsc ISA extension}                    [ipgui::get_guiparamspec -name "RISCV_ISA_Zalrsc"    -component [ipx::current_core]]
-set_property tooltip      {Atomic reservation-set instructions}            [ipgui::get_guiparamspec -name "RISCV_ISA_Zalrsc"    -component [ipx::current_core]]
-set_property display_name {RISC-V Zba ISA extension}                       [ipgui::get_guiparamspec -name "RISCV_ISA_Zba"       -component [ipx::current_core]]
-set_property tooltip      {Shifted-add bit-manipulation instructions}      [ipgui::get_guiparamspec -name "RISCV_ISA_Zba"       -component [ipx::current_core]]
-set_property display_name {RISC-V Zbb ISA extension}                       [ipgui::get_guiparamspec -name "RISCV_ISA_Zbb"       -component [ipx::current_core]]
-set_property tooltip      {Basic bit-manipulation instructions}            [ipgui::get_guiparamspec -name "RISCV_ISA_Zbb"       -component [ipx::current_core]]
-set_property display_name {RISC-V Zfinx ISA extension}                     [ipgui::get_guiparamspec -name "RISCV_ISA_Zfinx"     -component [ipx::current_core]]
-set_property tooltip      {Embedded FPU}                                   [ipgui::get_guiparamspec -name "RISCV_ISA_Zfinx"     -component [ipx::current_core]]
-set_property display_name {RISC-V Zihpm ISA extension}                     [ipgui::get_guiparamspec -name "RISCV_ISA_Zihpm"     -component [ipx::current_core]]
-set_property tooltip      {Hardware performance monitors (HPMs)}           [ipgui::get_guiparamspec -name "RISCV_ISA_Zihpm"     -component [ipx::current_core]]
-set_property display_name {HPM counters}                                   [ipgui::get_guiparamspec -name "HPM_NUM_CNTS"        -component [ipx::current_core]]
-set_property tooltip      {Numer of hardware performance monitor counters} [ipgui::get_guiparamspec -name "HPM_NUM_CNTS"        -component [ipx::current_core]]
-set_property display_name {HPM width}                                      [ipgui::get_guiparamspec -name "HPM_CNT_WIDTH"       -component [ipx::current_core]]
-set_property tooltip      {Counter width in bits}                          [ipgui::get_guiparamspec -name "HPM_CNT_WIDTH"       -component [ipx::current_core]]
-set_property display_name {RISC-V Zicntr ISA extension}                    [ipgui::get_guiparamspec -name "RISCV_ISA_Zicntr"    -component [ipx::current_core]]
-set_property tooltip      {Base counters (cycles and instructions)}        [ipgui::get_guiparamspec -name "RISCV_ISA_Zicntr"    -component [ipx::current_core]]
-set_property display_name {RISC-V Zicond ISA extension}                    [ipgui::get_guiparamspec -name "RISCV_ISA_Zicond"    -component [ipx::current_core]]
-set_property tooltip      {Conditional-move instructions}                  [ipgui::get_guiparamspec -name "RISCV_ISA_Zicond"    -component [ipx::current_core]]
-set_property display_name {RISC-V Zmmul ISA extension}                     [ipgui::get_guiparamspec -name "RISCV_ISA_Zmmul"     -component [ipx::current_core]]
-set_property tooltip      {Integer multiplication-only hardware}           [ipgui::get_guiparamspec -name "RISCV_ISA_Zmmul"     -component [ipx::current_core]]
-set_property display_name {NEORV32 Zxcfu ISA extension}                    [ipgui::get_guiparamspec -name "RISCV_ISA_Zxcfu"     -component [ipx::current_core]]
-set_property tooltip      {Custom-instructions unit}                       [ipgui::get_guiparamspec -name "RISCV_ISA_Zxcfu"     -component [ipx::current_core]]
-set_property display_name {RISC-V Zbkb ISA extension}                      [ipgui::get_guiparamspec -name "RISCV_ISA_Zbkb"      -component [ipx::current_core]]
-set_property tooltip      {Bit manipulation instructions for cryptography} [ipgui::get_guiparamspec -name "RISCV_ISA_Zbkb"      -component [ipx::current_core]]
-set_property display_name {RISC-V Zbkc ISA extension}                      [ipgui::get_guiparamspec -name "RISCV_ISA_Zbkc"      -component [ipx::current_core]]
-set_property tooltip      {Carry-less multiply instr. for cryptography}    [ipgui::get_guiparamspec -name "RISCV_ISA_Zbkc"      -component [ipx::current_core]]
-set_property display_name {RISC-V Zbkx ISA extension}                      [ipgui::get_guiparamspec -name "RISCV_ISA_Zbkx"      -component [ipx::current_core]]
-set_property tooltip      {Scalar cryptographic - crossbar permutations}   [ipgui::get_guiparamspec -name "RISCV_ISA_Zbkx"      -component [ipx::current_core]]
-set_property display_name {RISC-V Zbs ISA extension}                       [ipgui::get_guiparamspec -name "RISCV_ISA_Zbs"       -component [ipx::current_core]]
-set_property tooltip      {Single-bit bit-manipulation instructions}       [ipgui::get_guiparamspec -name "RISCV_ISA_Zbs"       -component [ipx::current_core]]
-set_property display_name {RISC-V Zknd ISA extension}                      [ipgui::get_guiparamspec -name "RISCV_ISA_Zknd"      -component [ipx::current_core]]
-set_property tooltip      {Scalar cryptographic - NIST AES decryption}     [ipgui::get_guiparamspec -name "RISCV_ISA_Zknd"      -component [ipx::current_core]]
-set_property display_name {RISC-V Zkne ISA extension}                      [ipgui::get_guiparamspec -name "RISCV_ISA_Zkne"      -component [ipx::current_core]]
-set_property tooltip      {Scalar cryptographic - NIST AES encryption}     [ipgui::get_guiparamspec -name "RISCV_ISA_Zkne"      -component [ipx::current_core]]
-set_property display_name {RISC-V Zknh ISA extension}                      [ipgui::get_guiparamspec -name "RISCV_ISA_Zknh"      -component [ipx::current_core]]
-set_property tooltip      {Scalar cryptographic - NIST hash functions}     [ipgui::get_guiparamspec -name "RISCV_ISA_Zknh"      -component [ipx::current_core]]
-set_property display_name {RISC-V Zksed ISA extension}                     [ipgui::get_guiparamspec -name "RISCV_ISA_Zksed"     -component [ipx::current_core]]
-set_property tooltip      {Scalar cryptographic - ShangMi block cyphers}   [ipgui::get_guiparamspec -name "RISCV_ISA_Zksed"     -component [ipx::current_core]]
-set_property display_name {RISC-V Zksh ISA extension}                      [ipgui::get_guiparamspec -name "RISCV_ISA_Zksh"      -component [ipx::current_core]]
-set_property tooltip      {Scalar cryptographic - ShangMi hash functions}  [ipgui::get_guiparamspec -name "RISCV_ISA_Zksh"      -component [ipx::current_core]]
-set_property display_name {DSP-based multiplier}                           [ipgui::get_guiparamspec -name "FAST_MUL_EN"         -component [ipx::current_core]]
-set_property display_name {Barrel shifter}                                 [ipgui::get_guiparamspec -name "FAST_SHIFT_EN"       -component [ipx::current_core]]
-set_property display_name {FF-based register file with full HW reset}      [ipgui::get_guiparamspec -name "REGFILE_HW_RST"      -component [ipx::current_core]]
-set_property display_name {PMP regions}                                    [ipgui::get_guiparamspec -name "PMP_NUM_REGIONS"     -component [ipx::current_core]]
-set_property tooltip      {Number of physical memory protection regions}   [ipgui::get_guiparamspec -name "PMP_NUM_REGIONS"     -component [ipx::current_core]]
-set_property display_name {PMP minimal granularity}                        [ipgui::get_guiparamspec -name "PMP_MIN_GRANULARITY" -component [ipx::current_core]]
-set_property tooltip      {In bytes (min 4 bytes)}                         [ipgui::get_guiparamspec -name "PMP_MIN_GRANULARITY" -component [ipx::current_core]]
-set_property display_name {Enable PMP TOR mode}                            [ipgui::get_guiparamspec -name "PMP_TOR_MODE_EN"     -component [ipx::current_core]]
-set_property tooltip      {Top-of-region}                                  [ipgui::get_guiparamspec -name "PMP_TOR_MODE_EN"     -component [ipx::current_core]]
-set_property display_name {Enable PMP NA2 and NAPOT modes}                 [ipgui::get_guiparamspec -name "PMP_NAP_MODE_EN"     -component [ipx::current_core]]
-set_property tooltip      {Naturally-aligned-power-of-two}                 [ipgui::get_guiparamspec -name "PMP_NAP_MODE_EN"     -component [ipx::current_core]]
+  proc add_params { parent params } {
+    foreach param $params {
+      set name [lindex $param 0]
+      ipgui::add_param -name $name -component [ipx::current_core] -parent $parent
+      set_param_properties {*}$param
+    }
+  }
 
-ipgui::add_group -name {CPU Configuration} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Page 0" -component [ipx::current_core]] -display_name {CPU Configuration}
-ipgui::move_group -component [ipx::current_core] -order  1 [ipgui::get_groupspec    -name "CPU Configuration"   -component [ipx::current_core]] -parent [ipgui::get_pagespec  -name "Page 0"            -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  0 [ipgui::get_guiparamspec -name "RISCV_ISA_C"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  1 [ipgui::get_guiparamspec -name "RISCV_ISA_E"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  2 [ipgui::get_guiparamspec -name "RISCV_ISA_M"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  3 [ipgui::get_guiparamspec -name "RISCV_ISA_U"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  4 [ipgui::get_guiparamspec -name "RISCV_ISA_Zalrsc"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  5 [ipgui::get_guiparamspec -name "RISCV_ISA_Zba"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  6 [ipgui::get_guiparamspec -name "RISCV_ISA_Zbb"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  7 [ipgui::get_guiparamspec -name "RISCV_ISA_Zfinx"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  8 [ipgui::get_guiparamspec -name "RISCV_ISA_Zihpm"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  9 [ipgui::get_guiparamspec -name "HPM_NUM_CNTS"        -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 10 [ipgui::get_guiparamspec -name "HPM_CNT_WIDTH"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 11 [ipgui::get_guiparamspec -name "RISCV_ISA_Zicntr"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 12 [ipgui::get_guiparamspec -name "RISCV_ISA_Zicond"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 13 [ipgui::get_guiparamspec -name "RISCV_ISA_Zmmul"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 14 [ipgui::get_guiparamspec -name "RISCV_ISA_Zxcfu"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 15 [ipgui::get_guiparamspec -name "RISCV_ISA_Zbkb"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 16 [ipgui::get_guiparamspec -name "RISCV_ISA_Zbkc"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 17 [ipgui::get_guiparamspec -name "RISCV_ISA_Zbkx"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 18 [ipgui::get_guiparamspec -name "RISCV_ISA_Zbs"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 19 [ipgui::get_guiparamspec -name "RISCV_ISA_Zknd"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 20 [ipgui::get_guiparamspec -name "RISCV_ISA_Zkne"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 21 [ipgui::get_guiparamspec -name "RISCV_ISA_Zknh"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 22 [ipgui::get_guiparamspec -name "RISCV_ISA_Zksed"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 23 [ipgui::get_guiparamspec -name "RISCV_ISA_Zksh"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 24 [ipgui::get_guiparamspec -name "FAST_MUL_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 25 [ipgui::get_guiparamspec -name "FAST_SHIFT_EN"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 26 [ipgui::get_guiparamspec -name "REGFILE_HW_RST"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 27 [ipgui::get_guiparamspec -name "PMP_NUM_REGIONS"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 28 [ipgui::get_guiparamspec -name "PMP_MIN_GRANULARITY" -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 29 [ipgui::get_guiparamspec -name "PMP_TOR_MODE_EN"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 30 [ipgui::get_guiparamspec -name "PMP_NAP_MODE_EN"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "CPU Configuration" -component [ipx::current_core]]
+  # **************************************************************
+  # Interfaces: Configuration Dependencies
+  # **************************************************************
+  set_property enablement_dependency {$AXI4_STREAM_EN} [ipx::get_bus_interfaces s0_axis -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$AXI4_STREAM_EN} [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$XBUS_EN}        [ipx::get_bus_interfaces m_axi   -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$OCD_EN}         [ipx::get_bus_interfaces jtag    -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$XIP_EN}         [ipx::get_ports xip_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_GPIO_EN}     [ipx::get_ports gpio_*           -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_UART0_EN}    [ipx::get_ports uart0_*          -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_UART1_EN}    [ipx::get_ports uart1_*          -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_SPI_EN}      [ipx::get_ports spi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_SDI_EN}      [ipx::get_ports sdi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_TWI_EN}      [ipx::get_ports twi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_ONEWIRE_EN}  [ipx::get_ports onewire_*        -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_PWM_EN}      [ipx::get_ports pwm_o            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_CFS_EN}      [ipx::get_ports cfs_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_NEOLED_EN}   [ipx::get_ports neoled_o         -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$XIRQ_EN}        [ipx::get_ports xirq_i           -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_MTIME_EN}    [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_MTIME_EN}   [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
 
-# **************************************************************
-# Configuration GUI: Memory System
-# **************************************************************
-set_property display_name {Internal instruction memory (IMEM)}                   [ipgui::get_guiparamspec -name "MEM_INT_IMEM_EN"      -component [ipx::current_core]]
-set_property display_name {Internal instruction memory size}                     [ipgui::get_guiparamspec -name "MEM_INT_IMEM_SIZE"    -component [ipx::current_core]]
-set_property tooltip      {In bytes (use a power of two)}                        [ipgui::get_guiparamspec -name "MEM_INT_IMEM_SIZE"    -component [ipx::current_core]]
-set_property display_name {Internal data memory (DMEM)}                          [ipgui::get_guiparamspec -name "MEM_INT_DMEM_EN"      -component [ipx::current_core]]
-set_property display_name {Internal data memory size}                            [ipgui::get_guiparamspec -name "MEM_INT_DMEM_SIZE"    -component [ipx::current_core]]
-set_property tooltip      {In bytes (use a power of two)}                        [ipgui::get_guiparamspec -name "MEM_INT_DMEM_SIZE"    -component [ipx::current_core]]
-set_property display_name {CPU instruction cache (ICACHE)}                       [ipgui::get_guiparamspec -name "ICACHE_EN"            -component [ipx::current_core]]
-set_property display_name {CPU instruction cache (ICACHE) number of blocks}      [ipgui::get_guiparamspec -name "ICACHE_NUM_BLOCKS"    -component [ipx::current_core]]
-set_property display_name {CPU instruction cache (ICACHE) block size}            [ipgui::get_guiparamspec -name "ICACHE_BLOCK_SIZE"    -component [ipx::current_core]]
-set_property tooltip      {In bytes (use a power of two)}                        [ipgui::get_guiparamspec -name "ICACHE_BLOCK_SIZE"    -component [ipx::current_core]]
-set_property display_name {CPU data cache (DCACHE)}                              [ipgui::get_guiparamspec -name "DCACHE_EN"            -component [ipx::current_core]]
-set_property display_name {CPU data cache (DCACHE) number of blocks}             [ipgui::get_guiparamspec -name "DCACHE_NUM_BLOCKS"    -component [ipx::current_core]]
-set_property display_name {CPU data cache (DCACHE) block size}                   [ipgui::get_guiparamspec -name "DCACHE_BLOCK_SIZE"    -component [ipx::current_core]]
-set_property tooltip      {In bytes (use a power of two)}                        [ipgui::get_guiparamspec -name "DCACHE_BLOCK_SIZE"    -component [ipx::current_core]]
-set_property display_name {Execute in-place module (XIP)}                        [ipgui::get_guiparamspec -name "XIP_EN"               -component [ipx::current_core]]
-set_property display_name {Execute in-place module (XIP) cache}                  [ipgui::get_guiparamspec -name "XIP_CACHE_EN"         -component [ipx::current_core]]
-set_property display_name {Execute in-place module (XIP) cache number of blocks} [ipgui::get_guiparamspec -name "XIP_CACHE_NUM_BLOCKS" -component [ipx::current_core]]
-set_property display_name {Execute in-place module (XIP) cache block size}       [ipgui::get_guiparamspec -name "XIP_CACHE_BLOCK_SIZE" -component [ipx::current_core]]
-set_property tooltip      {In bytes (use a power of two)}                        [ipgui::get_guiparamspec -name "XIP_CACHE_BLOCK_SIZE" -component [ipx::current_core]]
-set_property display_name {Internal bootloader}                                  [ipgui::get_guiparamspec -name "INT_BOOTLOADER_EN"    -component [ipx::current_core]]
-set_property tooltip {Start interactive bootloader console after reset}          [ipgui::get_guiparamspec -name "INT_BOOTLOADER_EN"    -component [ipx::current_core]]
+  # Remove default page
+  set page [ipgui::get_pagespec -name "Page 0" -component [ipx::current_core]]
+  if {$page ne ""} {
+    ipgui::remove_page -component [ipx::current_core] $page
+  }
 
-ipgui::add_group -name {Memory System} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Page 0" -component [ipx::current_core]] -display_name {Memory System}
-ipgui::move_group -component [ipx::current_core] -order  2 [ipgui::get_groupspec    -name "Memory System"        -component [ipx::current_core]] -parent [ipgui::get_pagespec  -name "Page 0"        -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  0 [ipgui::get_guiparamspec -name "MEM_INT_IMEM_EN"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  1 [ipgui::get_guiparamspec -name "MEM_INT_IMEM_SIZE"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  2 [ipgui::get_guiparamspec -name "MEM_INT_DMEM_EN"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  3 [ipgui::get_guiparamspec -name "MEM_INT_DMEM_SIZE"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  4 [ipgui::get_guiparamspec -name "ICACHE_EN"            -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  5 [ipgui::get_guiparamspec -name "ICACHE_NUM_BLOCKS"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  6 [ipgui::get_guiparamspec -name "ICACHE_BLOCK_SIZE"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  7 [ipgui::get_guiparamspec -name "DCACHE_EN"            -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  8 [ipgui::get_guiparamspec -name "DCACHE_NUM_BLOCKS"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  9 [ipgui::get_guiparamspec -name "DCACHE_BLOCK_SIZE"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 10 [ipgui::get_guiparamspec -name "XIP_EN"               -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 11 [ipgui::get_guiparamspec -name "XIP_CACHE_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 12 [ipgui::get_guiparamspec -name "XIP_CACHE_NUM_BLOCKS" -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 13 [ipgui::get_guiparamspec -name "XIP_CACHE_BLOCK_SIZE" -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 14 [ipgui::get_guiparamspec -name "INT_BOOTLOADER_EN"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Memory System" -component [ipx::current_core]]
+  # **************************************************************
+  # GUI Page: General
+  # **************************************************************
+  set page [add_page {General}]
 
-# **************************************************************
-# Configuration GUI: Peripherals
-# **************************************************************
-set_property display_name {External interrupt controller (XIRQ)}                [ipgui::get_guiparamspec -name "XIRQ_EN"           -component [ipx::current_core]]
-set_property display_name {External interrupt controller (XIRQ) channels}       [ipgui::get_guiparamspec -name "XIRQ_NUM_CH"       -component [ipx::current_core]]
-set_property display_name {General-Purpose Input/Output (GPIO) controller}      [ipgui::get_guiparamspec -name "IO_GPIO_EN"        -component [ipx::current_core]]
-set_property display_name {General-purpose (GPIO) inputs}                       [ipgui::get_guiparamspec -name "IO_GPIO_IN_NUM"    -component [ipx::current_core]]
-set_property display_name {General-purpose (GPIO) outputs}                      [ipgui::get_guiparamspec -name "IO_GPIO_OUT_NUM"   -component [ipx::current_core]]
-set_property display_name {Machine timer (MTIME)}                               [ipgui::get_guiparamspec -name "IO_MTIME_EN"       -component [ipx::current_core]]
-set_property display_name {Primary UART (UART0)}                                [ipgui::get_guiparamspec -name "IO_UART0_EN"       -component [ipx::current_core]]
-set_property display_name {Primary UART (UART0) RX FIFO depth}                  [ipgui::get_guiparamspec -name "IO_UART0_RX_FIFO"  -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_UART0_RX_FIFO"  -component [ipx::current_core]]
-set_property display_name {Primary UART (UART0) TX FIFO depth}                  [ipgui::get_guiparamspec -name "IO_UART0_TX_FIFO"  -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_UART0_TX_FIFO"  -component [ipx::current_core]]
-set_property display_name {Secondary UART (UART1)}                              [ipgui::get_guiparamspec -name "IO_UART1_EN"       -component [ipx::current_core]]
-set_property display_name {Secondary UART (UART1) RX FIFO depth}                [ipgui::get_guiparamspec -name "IO_UART1_RX_FIFO"  -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_UART1_RX_FIFO"  -component [ipx::current_core]]
-set_property display_name {Secondary UART (UART1) TX FIFO depth}                [ipgui::get_guiparamspec -name "IO_UART1_TX_FIFO"  -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_UART1_TX_FIFO"  -component [ipx::current_core]]
-set_property display_name {SPI host controller (SPI)}                           [ipgui::get_guiparamspec -name "IO_SPI_EN"         -component [ipx::current_core]]
-set_property display_name {SPI host controller (SPI) FIFO depth}                [ipgui::get_guiparamspec -name "IO_SPI_FIFO"       -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_SPI_FIFO"       -component [ipx::current_core]]
-set_property display_name {SPI device controller (SDI)}                         [ipgui::get_guiparamspec -name "IO_SDI_EN"         -component [ipx::current_core]]
-set_property display_name {SPI device controller (SDI) FIFO depth}              [ipgui::get_guiparamspec -name "IO_SDI_FIFO"       -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_SDI_FIFO"       -component [ipx::current_core]]
-set_property display_name {Two-Wire/I2C Interface (TWI)}                        [ipgui::get_guiparamspec -name "IO_TWI_EN"         -component [ipx::current_core]]
-set_property display_name {Two-Wire/I2C Interface (TWI) FIFO depth}             [ipgui::get_guiparamspec -name "IO_TWI_FIFO"       -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_TWI_FIFO"       -component [ipx::current_core]]
-set_property display_name {Pulse-Width Moduleation (PWM) controller}            [ipgui::get_guiparamspec -name "IO_PWM_EN"         -component [ipx::current_core]]
-set_property display_name {Pulse-Width Moduleation (PWM) channels}              [ipgui::get_guiparamspec -name "IO_PWM_NUM_CH"     -component [ipx::current_core]]
-set_property display_name {Watchdog timer (WDT)}                                [ipgui::get_guiparamspec -name "IO_WDT_EN"         -component [ipx::current_core]]
-set_property display_name {True-Random-Number Generator (TRNG)}                 [ipgui::get_guiparamspec -name "IO_TRNG_EN"        -component [ipx::current_core]]
-set_property display_name {True-Random-Number Generator (TRNG) FIFO depth}      [ipgui::get_guiparamspec -name "IO_TRNG_FIFO"      -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_TRNG_FIFO"      -component [ipx::current_core]]
-set_property display_name {Custom Functions Subsystem (CFS)}                    [ipgui::get_guiparamspec -name "IO_CFS_EN"         -component [ipx::current_core]]
-set_property display_name {Custom Functions Subsystem (CFS) configuration word} [ipgui::get_guiparamspec -name "IO_CFS_CONFIG"     -component [ipx::current_core]]
-set_property display_name {Custom Functions Subsystem (CFS) input port width}   [ipgui::get_guiparamspec -name "IO_CFS_IN_SIZE"    -component [ipx::current_core]]
-set_property display_name {Custom Functions Subsystem (CFS) output port width}  [ipgui::get_guiparamspec -name "IO_CFS_OUT_SIZE"   -component [ipx::current_core]]
-set_property display_name {Smart LED Interface (NEOLED)}                        [ipgui::get_guiparamspec -name "IO_NEOLED_EN"      -component [ipx::current_core]]
-set_property display_name {Smart LED Interface (NEOLED) FIFO depth}             [ipgui::get_guiparamspec -name "IO_NEOLED_TX_FIFO" -component [ipx::current_core]]
-set_property tooltip      {Number of entries (use a power of two)}              [ipgui::get_guiparamspec -name "IO_NEOLED_TX_FIFO" -component [ipx::current_core]]
-set_property display_name {General Purpose Timer (GPTMR)}                       [ipgui::get_guiparamspec -name "IO_GPTMR_EN"       -component [ipx::current_core]]
-set_property display_name {1-Wire (ONEWIRE) controller}                         [ipgui::get_guiparamspec -name "IO_ONEWIRE_EN"     -component [ipx::current_core]]
-set_property display_name {Direct Memory Access (DMA) controller}               [ipgui::get_guiparamspec -name "IO_DMA_EN"         -component [ipx::current_core]]
-set_property display_name {Cyclic Redundancy Check (CRC) Unit}                  [ipgui::get_guiparamspec -name "IO_CRC_EN"         -component [ipx::current_core]]
+  # { param_name {display_name} {tooltip} {enablement_expr} {value_expr} }
+  add_params $page {
+    { CLOCK_FREQUENCY       {Clock Frequency (Hz)}  {Frequency of the clk signal in Hz} }
+    { HART_ID               {HART ID}               {The hart thread ID of the CPU (passed to mhartid CSR)} }
+    { JEDEC_ID              {JEDEC ID}              {For JTAG tap identification and mvendorid CSR} }
+  }
 
-ipgui::add_group -name {Peripherals} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Page 0" -component [ipx::current_core]] -display_name {Peripherals}
-ipgui::move_group -component [ipx::current_core] -order  3 [ipgui::get_groupspec    -name "Peripherals"       -component [ipx::current_core]] -parent [ipgui::get_pagespec  -name "Page 0"      -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  0 [ipgui::get_guiparamspec -name "IO_GPIO_EN"        -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  1 [ipgui::get_guiparamspec -name "IO_GPIO_IN_NUM"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  2 [ipgui::get_guiparamspec -name "IO_GPIO_OUT_NUM"   -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  3 [ipgui::get_guiparamspec -name "IO_MTIME_EN"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  4 [ipgui::get_guiparamspec -name "IO_UART0_EN"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  5 [ipgui::get_guiparamspec -name "IO_UART0_RX_FIFO"  -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  6 [ipgui::get_guiparamspec -name "IO_UART0_TX_FIFO"  -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  7 [ipgui::get_guiparamspec -name "IO_UART1_EN"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  8 [ipgui::get_guiparamspec -name "IO_UART1_RX_FIFO"  -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order  9 [ipgui::get_guiparamspec -name "IO_UART1_TX_FIFO"  -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 10 [ipgui::get_guiparamspec -name "IO_SPI_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 11 [ipgui::get_guiparamspec -name "IO_SPI_FIFO"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 12 [ipgui::get_guiparamspec -name "IO_SDI_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 13 [ipgui::get_guiparamspec -name "IO_SDI_FIFO"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 14 [ipgui::get_guiparamspec -name "IO_TWI_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 15 [ipgui::get_guiparamspec -name "IO_TWI_FIFO"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 16 [ipgui::get_guiparamspec -name "IO_PWM_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 17 [ipgui::get_guiparamspec -name "IO_PWM_NUM_CH"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 18 [ipgui::get_guiparamspec -name "IO_WDT_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 19 [ipgui::get_guiparamspec -name "IO_TRNG_EN"        -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 20 [ipgui::get_guiparamspec -name "IO_TRNG_FIFO"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 21 [ipgui::get_guiparamspec -name "IO_CFS_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 22 [ipgui::get_guiparamspec -name "IO_CFS_CONFIG"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 23 [ipgui::get_guiparamspec -name "IO_CFS_IN_SIZE"    -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 24 [ipgui::get_guiparamspec -name "IO_CFS_OUT_SIZE"   -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 25 [ipgui::get_guiparamspec -name "IO_NEOLED_EN"      -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 26 [ipgui::get_guiparamspec -name "IO_NEOLED_TX_FIFO" -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 27 [ipgui::get_guiparamspec -name "IO_GPTMR_EN"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 28 [ipgui::get_guiparamspec -name "IO_ONEWIRE_EN"     -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 29 [ipgui::get_guiparamspec -name "IO_DMA_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 30 [ipgui::get_guiparamspec -name "XIRQ_EN"           -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 31 [ipgui::get_guiparamspec -name "XIRQ_NUM_CH"       -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
-ipgui::move_param -component [ipx::current_core] -order 32 [ipgui::get_guiparamspec -name "IO_CRC_EN"         -component [ipx::current_core]] -parent [ipgui::get_groupspec -name "Peripherals" -component [ipx::current_core]]
+  set group [add_group $page {On-Chip Debugger (OCD)}]
+  add_params $group {
+    { OCD_EN                {Enable OCD}            {Implement the on-chip debugger and the CPU debug mode} }
+    { OCD_AUTHENTICATION    {OCD Authentication}    {Implement Debug Authentication module}                   {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false}}
+  }
+
+  set group [add_group $page {External Bus Interface (XBUS)}]
+  add_params $group {
+    { XBUS_EN               {Enable XBUS}           {} }
+    { XBUS_TIMEOUT          {Timeout}               {Max number of clock cycles before AXI access times out}  {$XBUS_EN} }
+  }
+
+  set sub_group [add_group $group {XBUS Cache}]
+  add_params $sub_group {
+    { XBUS_CACHE_EN         {Enable XBUS Cache}     {}                                                        {$XBUS_EN} {$XBUS_EN ? $XBUS_CACHE_EN : false}}
+    { XBUS_CACHE_NUM_BLOCKS {Number of Blocks}      {}                                                        {$XBUS_CACHE_EN} }
+    { XBUS_CACHE_BLOCK_SIZE {Block Size}            {In bytes (use a power of two)}                           {$XBUS_CACHE_EN} }
+  }
+
+  set group [add_group $page {Stream Link Interface (SLINK)}]
+  add_params $group {
+    { AXI4_STREAM_EN        {Enable SLINK}          {} }
+    { IO_SLINK_RX_FIFO      {RX FIFO Depth}         {Number of entries (use a power of two)}                  {$AXI4_STREAM_EN} }
+    { IO_SLINK_TX_FIFO      {TX FIFO Depth}         {Number of entries (use a power of two)}                  {$AXI4_STREAM_EN} }
+  }
+
+
+  # **************************************************************
+  # GUI Page: CPU
+  # **************************************************************
+  set page [add_page {CPU Configuration}]
+
+  set group [add_group $page {RISC-V ISA Extensions}]
+  add_params $group {
+    { RISCV_ISA_C         {C Extension}                           {Compressed instructions} }
+    { RISCV_ISA_E         {E Extension}                           {Reduced register file size (16 registers only)} }
+    { RISCV_ISA_M         {M Extension}                           {Integer multiplication and division hardware} }
+    { RISCV_ISA_U         {U Extension}                           {Less-privileged user-mode} }
+    { RISCV_ISA_Zalrsc    {Zalrsc Extension}                      {Atomic reservation-set instructions} }
+    { RISCV_ISA_Zba       {Zba Extension}                         {Shifted-add bit-manipulation instructions} }
+    { RISCV_ISA_Zbb       {Zbb Extension}                         {Basic bit-manipulation instructions} }
+    { RISCV_ISA_Zbkb      {Zbkb Extension}                        {Bit manipulation instructions for cryptography} }
+    { RISCV_ISA_Zbkc      {Zbkc Extension}                        {Carry-less multiply instr. for cryptography} }
+    { RISCV_ISA_Zbkx      {Zbkx Extension}                        {Scalar cryptographic - crossbar permutations} }
+    { RISCV_ISA_Zbs       {Zbs Extension}                         {Single-bit bit-manipulation instructions} }
+    { RISCV_ISA_Zfinx     {Zfinx Extension}                       {Embedded FPU} }
+    { RISCV_ISA_Zicntr    {Zicntr Extension}                      {Base counters (cycles and instructions)} }
+    { RISCV_ISA_Zicond    {Zicond Extension}                      {Conditional-move instructions} }
+    { RISCV_ISA_Zihpm     {Zihpm Extension}                       {Hardware performance monitors (HPMs)} }
+    { HPM_CNT_WIDTH       {HPM Width}                             {Counter width in bits}                          {$RISCV_ISA_Zihpm}}
+    { HPM_NUM_CNTS        {HPM Counters}                          {Numer of hardware performance monitor counters} {$RISCV_ISA_Zihpm}}
+    { RISCV_ISA_Zknd      {Zknd Extension}                        {Scalar cryptographic - NIST AES decryption} }
+    { RISCV_ISA_Zkne      {Zkne Extension}                        {Scalar cryptographic - NIST AES encryption} }
+    { RISCV_ISA_Zknh      {Zknh Extension}                        {Scalar cryptographic - NIST hash functions} }
+    { RISCV_ISA_Zksed     {Zksed Extension}                       {Scalar cryptographic - ShangMi block cyphers} }
+    { RISCV_ISA_Zksh      {Zksh Extension}                        {Scalar cryptographic - ShangMi hash functions} }
+    { RISCV_ISA_Zmmul     {Zmmul Extension}                       {Integer multiplication-only hardware} }
+    { RISCV_ISA_Zxcfu     {NEORV32 Zxcfu ISA Extension}           {Custom-instructions unit} }
+  }
+
+  set group [add_group $page {Physical Memory Protection (PMP)}]
+  add_params $group {
+    { PMP_NUM_REGIONS     {PMP Regions}                           {Number of physical memory protection regions} }
+    { PMP_MIN_GRANULARITY {PMP Minimal Granularity}               {Minimal region granularity in bytes. Has to be a power of two.}           {$PMP_NUM_REGIONS > 0} }
+    { PMP_TOR_MODE_EN     {Enable PMP TOR Mode}                   {Implement support for top-of-region (TOR) mode}                           {$PMP_NUM_REGIONS > 0} }
+    { PMP_NAP_MODE_EN     {Enable PMP NAPOT and NA4 Modes}        {Implement support for naturally-aligned power-of-two (NAPOT & NA4) modes} {$PMP_NUM_REGIONS > 0} }
+  }
+  set_property value_validation_range_minimum 4 [ipx::get_user_parameters PMP_MIN_GRANULARITY -of_objects [ipx::current_core]]
+
+  set group [add_group $page {Architecture Tuning Options}]
+  add_params $group {
+    { FAST_MUL_EN         {DSP-Based Multiplier} }
+    { FAST_SHIFT_EN       {Barrel Shifter} }
+    { REGFILE_HW_RST      {Allow Full HW Reset for Register File} {Implement register file with FFs instead of BRAM to allow full hardware reset} }
+  }
+
+
+  # **************************************************************
+  # GUI Page: Memory System
+  # **************************************************************
+  set page [add_page {Memory System}]
+
+  set group [add_group $page {Internal Instruction Memory (IMEM)}]
+  add_params $group {
+    { MEM_INT_IMEM_EN      {Enable IMEM} }
+    { MEM_INT_IMEM_SIZE    {IMEM Size}        {In bytes (use a power of two)} {$MEM_INT_IMEM_EN} }
+  }
+
+  set group [add_group $page {Internal Data Memory (DMEM)}]
+  add_params $group {
+    { MEM_INT_DMEM_EN      {Enbale DMEM} }
+    { MEM_INT_DMEM_SIZE    {DMEM Size}        {In bytes (use a power of two)} {$MEM_INT_DMEM_EN} }
+  }
+
+  set group [add_group $page {CPU Instruction Cache (ICACHE)}]
+  add_params $group {
+    { ICACHE_EN            {Enable ICACHE} }
+    { ICACHE_NUM_BLOCKS    {Number of Blocks} {}                              {$ICACHE_EN} }
+    { ICACHE_BLOCK_SIZE    {Block Size}       {In bytes (use a power of two)} {$ICACHE_EN} }
+  }
+
+  set group [add_group $page {CPU Data Cache (DCACHE)}]
+  add_params $group {
+    { DCACHE_EN            {Enable DCACHE} }
+    { DCACHE_NUM_BLOCKS    {Number of Blocks} {}                              {$DCACHE_EN} }
+    { DCACHE_BLOCK_SIZE    {Block Size}       {In bytes (use a power of two)} {$DCACHE_EN} }
+  }
+
+  set group [add_group $page {Execute In-Place Module (XIP)}]
+  add_params $group {
+    { XIP_EN               {Enable XIP} }
+    { XIP_CACHE_EN         {Enable XIP Cache} {}                              {$XIP_EN} {$XIP_EN ? $XIP_CACHE_EN : false} }
+    { XIP_CACHE_NUM_BLOCKS {Cache Blocks}     {}                              {$XIP_CACHE_EN} }
+    { XIP_CACHE_BLOCK_SIZE {Cache Block Size} {In bytes (use a power of two)} {$XIP_CACHE_EN} }
+  }
+
+  set group [add_group $page {Internal Bootloader}]
+  add_params $group {
+    { INT_BOOTLOADER_EN    {Enable Bootloader} {Start interactive bootloader console after reset} }
+  }
+
+
+  # **************************************************************
+  # GUI Page: Peripherals
+  # **************************************************************
+  set page [add_page {Peripherals}]
+
+  set group [add_group $page {External Interrupt Controller (XIRQ)}]
+  add_params $group {
+    { XIRQ_EN           {Enable XIRQ} }
+    { XIRQ_NUM_CH       {Number of Channels}    {}                                        {$XIRQ_EN} }
+  }
+
+  set group [add_group $page {General-Purpose Input/Output Controller (GPIO)}]
+  add_params $group {
+    { IO_GPIO_EN        {Enable GPIO} }
+    { IO_GPIO_IN_NUM    {Number of Inputs}      {}                                        {$IO_GPIO_EN} }
+    { IO_GPIO_OUT_NUM   {Number of Outputs}     {}                                        {$IO_GPIO_EN} }
+  }
+
+  set group [add_group $page {Machine Timer (MTIME)}]
+  add_params $group {
+    { IO_MTIME_EN       {Enable Machine Timer} }
+  }
+
+  set group [add_group $page {Primary UART (UART0)}]
+  add_params $group {
+    { IO_UART0_EN       {Enable UART0} }
+    { IO_UART0_RX_FIFO  {RX FIFO Depth}         {Number of entries (use a power of two)}  {$IO_UART0_EN} }
+    { IO_UART0_TX_FIFO  {TX FIFO Depth}         {Number of entries (use a power of two)}  {$IO_UART0_EN} }
+  }
+
+  set group [add_group $page {Secondary UART (UART1)}]
+  add_params $group {
+    { IO_UART1_EN       {Enable UART1} }
+    { IO_UART1_RX_FIFO  {RX FIFO Depth}         {Number of entries (use a power of two)}  {$IO_UART1_EN} }
+    { IO_UART1_TX_FIFO  {TX FIFO Depth}         {Number of entries (use a power of two)}  {$IO_UART1_EN} }
+  }
+
+  set group [add_group $page {SPI Host Controller (SPI)}]
+  add_params $group {
+    { IO_SPI_EN         {Enable SPI} }
+    { IO_SPI_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_SPI_EN} }
+  }
+
+  set group [add_group $page {SPI Device Controller (SDI)}]
+  add_params $group {
+    { IO_SDI_EN         {Enable SDI} }
+    { IO_SDI_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_SDI_EN} }
+  }
+
+  set group [add_group $page {Two-Wire/I2C Interface (TWI)}]
+  add_params $group {
+    { IO_TWI_EN         {Enable TWI} }
+    { IO_TWI_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_TWI_EN} }
+  }
+
+  set group [add_group $page {Pulse-Width Modulation Controller (PWM)}]
+  add_params $group {
+    { IO_PWM_EN         {Enable PWM} }
+    { IO_PWM_NUM_CH     {Number of Channels}    {} {$IO_PWM_EN} }
+  }
+
+  set group [add_group $page {Watchdog Timer (WDT)}]
+  add_params $group {
+    { IO_WDT_EN         {Enable WDT} }
+  }
+
+  set group [add_group $page {True Random-Number Generator (TRNG)}]
+  add_params $group {
+    { IO_TRNG_EN        {Enable TRNG} }
+    { IO_TRNG_FIFO      {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_TRNG_EN} }
+  }
+
+  set group [add_group $page {Custom Functions Subsystem (CFS)}]
+  add_params $group {
+    { IO_CFS_EN         {Enable CFS} }
+    { IO_CFS_CONFIG     {Configuration Word}    {}                                        {$IO_CFS_EN} }
+    { IO_CFS_IN_SIZE    {Input Port Width}      {}                                        {$IO_CFS_EN} }
+    { IO_CFS_OUT_SIZE   {Output Port Width}     {}                                        {$IO_CFS_EN} }
+  }
+
+  set group [add_group $page {Smart LED Interface (NEOLED)}]
+  add_params $group {
+    { IO_NEOLED_EN      {Enable NEOLED} }
+    { IO_NEOLED_TX_FIFO {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_NEOLED_EN} }
+  }
+
+  set group [add_group $page {General Purpose Timer (GPTMR)}]
+  add_params $group {
+    { IO_GPTMR_EN       {Enable GPTMR} }
+  }
+
+  set group [add_group $page {One-Wire Interface Controller (ONEWIRE)}]
+  add_params $group {
+    { IO_ONEWIRE_EN     {Enable ONEWIRE} }
+  }
+
+  set group [add_group $page {Direct Memory Access Controller (DMA)}]
+  add_params $group {
+    { IO_DMA_EN         {Enable DMA} }
+  }
+
+  set group [add_group $page {Cyclic Redundancy Check (CRC)}]
+  add_params $group {
+    { IO_CRC_EN         {Enable CRC} }
+  }
+}
+
+setup_ip_gui
 
 # **************************************************************
 # Configuration GUI: IP logo
@@ -356,6 +388,9 @@ ipx::add_file_group -type gui_icon {} [ipx::current_core]
 ipx::add_file ../../$neorv32_home/$ip_logo [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]
 set_property type image [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
 set_property type LOGO  [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
+
+ipx::add_file_group -type product_guide {} [ipx::current_core]
+ipx::add_file {https://stnolting.github.io/neorv32/} [ipx::get_file_groups xilinx_productguide -of_objects [ipx::current_core]]
 
 # **************************************************************
 # Finalize and add to IP repository
