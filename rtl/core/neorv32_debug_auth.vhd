@@ -2,9 +2,9 @@
 -- NEORV32 SoC - RISC-V-Compatible Authentication Module for the On-Chip Debugger   --
 -- -------------------------------------------------------------------------------- --
 -- Note that this module (in its default state) just provides a very simple and     --
--- UNSECUR authentication mechanism that is meant as an example to showcase the     --
--- interface. Users should replace this module to implement a custom authentication --
--- (and SECURE) mechanism.                                                          --
+-- UNSECURE authentication mechanism that is meant as an example to showcase the    --
+-- interface. Users should replace this module to implement a custom (and SECURE)   --
+-- authentication mechanism.                                                        --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -15,6 +15,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -44,7 +45,7 @@ begin
 
   -- Warn about Default Authenticator -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert false report "[NEORV32] OCD: using DEFAULT authenticator. Replace by custom module." severity warning;
+  assert false report "[NEORV32] using DEFAULT on-chip debugger authenticator. Replace by custom module." severity warning;
 
 
   -- Exemplary Authentication Mechanism -----------------------------------------------------

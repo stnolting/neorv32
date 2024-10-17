@@ -11,7 +11,7 @@
 https://github.com/stnolting/neorv32 +
 Stephan Nolting, M.Sc. +
 🇪🇺 European Union +
-`stnolting[ät]gmail[d0t]com`
+stnolting@gmail.com
 ==========================
 
 

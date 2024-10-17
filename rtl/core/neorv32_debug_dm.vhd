@@ -20,7 +20,6 @@ use neorv32.neorv32_package.all;
 entity neorv32_debug_dm is
   generic (
     CPU_BASE_ADDR : std_ulogic_vector(31 downto 0); -- base address for the memory-mapped CPU interface registers
-    LEGACY_MODE   : boolean; -- false = spec. v1.0, true = spec. v0.13
     AUTHENTICATOR : boolean -- implement authentication module when true
   );
   port (
@@ -66,12 +65,11 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant addr_abstractcs_c   : std_ulogic_vector(6 downto 0) := "0010110";
   constant addr_command_c      : std_ulogic_vector(6 downto 0) := "0010111";
   constant addr_abstractauto_c : std_ulogic_vector(6 downto 0) := "0011000";
-  constant addr_nextdm_c       : std_ulogic_vector(6 downto 0) := "0011101";
+--constant addr_nextdm_c       : std_ulogic_vector(6 downto 0) := "0011101"; -- hardwired to zero
   constant addr_progbuf0_c     : std_ulogic_vector(6 downto 0) := "0100000";
   constant addr_progbuf1_c     : std_ulogic_vector(6 downto 0) := "0100001";
   constant addr_authdata_c     : std_ulogic_vector(6 downto 0) := "0110000";
-  constant addr_sbcs_c         : std_ulogic_vector(6 downto 0) := "0111000";
-  constant addr_haltsum0_c     : std_ulogic_vector(6 downto 0) := "1000000";
+--constant addr_sbcs_c         : std_ulogic_vector(6 downto 0) := "0111000"; -- hardwired to zero
 
   -- DMI access --
   signal dmi_wren, dmi_wren_auth, dmi_rden, dmi_rden_auth : std_ulogic;
@@ -106,8 +104,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- ----------------------------------------------------------
 
   -- DM configuration --
-  constant dataaddr_c   : std_ulogic_vector(11 downto 0) := dm_data_base_c(11 downto 0); -- signed base address of data registers in memory/CSR space
-  constant dm_version_c : std_ulogic_vector(3 downto 0)  := cond_sel_suv_f(LEGACY_MODE, "0010", "0011"); -- version: v0.13 / v1.0
+  constant dataaddr_c : std_ulogic_vector(11 downto 0) := dm_data_base_c(11 downto 0); -- signed base address of data registers in memory/CSR space
 
   -- debug module controller --
   type dm_ctrl_state_t is (CMD_IDLE, CMD_CHECK, CMD_PREPARE, CMD_TRIGGER, CMD_BUSY, CMD_ERROR);
@@ -192,13 +189,6 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
 begin
 
-  -- Configuration Info ---------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not (LEGACY_MODE   = true)  report "[NEORV32] OCD: DM compatible to debug spec. version 0.13" severity note;
-  assert not (LEGACY_MODE   = false) report "[NEORV32] OCD: DM compatible to debug spec. version 1.0"  severity note;
-  assert not (AUTHENTICATOR = false) report "[NEORV32] OCD: authentication enabled."  severity note;
-
-
   -- DMI Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- any access --
@@ -227,7 +217,6 @@ begin
         dm_ctrl.ldsw_progbuf  <= instr_sw_c;
         dci.execute_req       <= '0';
         dm_ctrl.pbuf_en       <= '0';
-        --
         dm_ctrl.illegal_cmd   <= '0';
         dm_ctrl.illegal_state <= '0';
         dm_ctrl.cmderr        <= (others => '0');
@@ -273,7 +262,7 @@ begin
 
           when CMD_PREPARE => -- setup program buffer
           -- ------------------------------------------------------------
-            if (dm_reg.command(17) = '1') then -- "transfer"
+            if (dm_reg.command(17) = '1') then -- "transfer" (GPR <-> DM.data0)
               if (dm_reg.command(16) = '0') then -- "write" = 0 -> read from GPR
                 dm_ctrl.ldsw_progbuf <= instr_sw_c;
                 dm_ctrl.ldsw_progbuf(31 downto 25) <= dataaddr_c(11 downto 5); -- destination address
@@ -347,8 +336,7 @@ begin
       dm_ctrl.hart_resume_ack <= '0';
       dm_ctrl.hart_reset      <= '0';
     elsif rising_edge(clk_i) then
-
-      -- HALTED ACK --
+      -- halted ACK --
       if (dm_reg.dmcontrol_ndmreset = '1') then
         dm_ctrl.hart_halted <= '0';
       elsif (dci.halt_ack = '1') then
@@ -356,8 +344,7 @@ begin
       elsif (dci.resume_ack = '1') then
         dm_ctrl.hart_halted <= '0';
       end if;
-
-      -- RESUME REQ --
+      -- resume REQ --
       if (dm_reg.dmcontrol_ndmreset = '1') then
         dm_ctrl.hart_resume_req <= '0';
       elsif (dm_reg.resume_req = '1') then
@@ -365,8 +352,7 @@ begin
       elsif (dci.resume_ack = '1') then
         dm_ctrl.hart_resume_req <= '0';
       end if;
-
-      -- RESUME ACK --
+      -- resume ACK --
       if (dm_reg.dmcontrol_ndmreset = '1') then
         dm_ctrl.hart_resume_ack <= '0';
       elsif (dci.resume_ack = '1') then
@@ -374,14 +360,12 @@ begin
       elsif (dm_reg.resume_req = '1') then
         dm_ctrl.hart_resume_ack <= '0';
       end if;
-
-      -- hart has been RESET --
+      -- reset ACK --
       if (dm_reg.dmcontrol_ndmreset = '1') then -- explicit RESET triggered by DM
         dm_ctrl.hart_reset <= '1';
       elsif (dm_reg.reset_ack = '1') then
         dm_ctrl.hart_reset <= '0';
       end if;
-
     end if;
   end process hart_status;
 
@@ -489,7 +473,7 @@ begin
   cpu_ndmrstn_o <= '0' when (dm_reg.dmcontrol_ndmreset = '1') and (dm_reg.dmcontrol_dmactive = '1') and ((not AUTHENTICATOR) or (auth.valid = '1')) else '1';
 
   -- construct program buffer array for CPU access --
-  cpu_progbuf(0) <= dm_ctrl.ldsw_progbuf; -- pseudo program buffer for GPR access
+  cpu_progbuf(0) <= dm_ctrl.ldsw_progbuf; -- pseudo program buffer for GPR<->DM.data0 transfer
   cpu_progbuf(1) <= instr_nop_c when (dm_ctrl.pbuf_en = '0') else dm_reg.progbuf(0);
   cpu_progbuf(2) <= instr_nop_c when (dm_ctrl.pbuf_en = '0') else dm_reg.progbuf(1);
   cpu_progbuf(3) <= instr_ebreak_c; -- implicit ebreak instruction
@@ -530,9 +514,9 @@ begin
             dmi_rsp_o.data(5)            <= '0';                       -- hasresethaltreq (r/-): halt-on-reset not implemented
             dmi_rsp_o.data(4)            <= '0';                       -- confstrptrvalid (r/-): no configuration string available
           end if;
-         dmi_rsp_o.data(7)          <= auth.valid;   -- authenticated (r/-): authentication successful when set
-         dmi_rsp_o.data(6)          <= auth.busy;    -- authbusy (r/-): wait for authenticator operation when set
-         dmi_rsp_o.data(3 downto 0) <= dm_version_c; -- version (r/-): DM spec. version
+         dmi_rsp_o.data(7)          <= auth.valid; -- authenticated (r/-): authentication successful when set
+         dmi_rsp_o.data(6)          <= auth.busy;  -- authbusy (r/-): wait for authenticator operation when set
+         dmi_rsp_o.data(3 downto 0) <= "0011";     -- version (r/-): DM spec. version v1.0
 
         -- debug module control --
         when addr_dmcontrol_c =>
@@ -589,34 +573,18 @@ begin
             dmi_rsp_o.data <= dci.data_reg;
           end if;
 
-        -- program buffer 0 --
-        when addr_progbuf0_c =>
-          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
-            if LEGACY_MODE then
-              dmi_rsp_o.data <= dm_reg.progbuf(0);
-            end if;
-          end if;
-
-        -- program buffer 1 --
-        when addr_progbuf1_c =>
-          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
-            if LEGACY_MODE then
-              dmi_rsp_o.data <= dm_reg.progbuf(1);
-            end if;
-          end if;
-
         -- authentication --
         when addr_authdata_c =>
           dmi_rsp_o.data <= auth.rdata;
 
-        -- halt summary 0 --
-        when addr_haltsum0_c =>
-          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
-            dmi_rsp_o.data(0) <= dm_ctrl.hart_halted; -- hart 0 is halted
-          end if;
+--      -- halt summary 0 (not required for DM spec. v1.0 if there is only a single hart) --
+--      when "1000000" => -- haltsum0
+--        if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+--          dmi_rsp_o.data(0) <= dm_ctrl.hart_halted; -- hart 0 is halted
+--        end if;
 
         -- not implemented or read-only-zero --
-        when others => -- addr_sbcs_c, addr_nextdm_c, addr_command_c
+        when others => -- addr_sbcs_c, addr_progbuf0_c, addr_progbuf1_c, addr_nextdm_c, addr_command_c
           dmi_rsp_o.data <= (others => '0');
 
       end case;
@@ -627,7 +595,7 @@ begin
          ((dmi_req_i.addr = addr_data0_c) or (dmi_req_i.addr = addr_progbuf0_c) or (dmi_req_i.addr = addr_progbuf1_c)) then
         dm_reg.rd_acc_err <= '1';
       else
-        dm_reg.rd_acc_err  <= '0';
+        dm_reg.rd_acc_err <= '0';
       end if;
 
       -- auto execution trigger --

@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100505"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100506"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -123,7 +123,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- bus request --
   type bus_req_t is record
-    -- in-band signals --
     addr  : std_ulogic_vector(31 downto 0); -- access address
     data  : std_ulogic_vector(31 downto 0); -- write data
     ben   : std_ulogic_vector(3 downto 0); -- byte enable
@@ -132,8 +131,7 @@ package neorv32_package is
     src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
     priv  : std_ulogic; -- set if privileged (machine-mode) access
     rvso  : std_ulogic; -- set if reservation set operation (atomic LR/SC)
-    -- out-of-band signals --
-    fence : std_ulogic; -- set if fence(.i) operation, single-shot
+    fence : std_ulogic; -- set if fence(.i) operation, single-shot (out-of-band)
   end record;
 
   -- bus response --
@@ -677,7 +675,6 @@ package neorv32_package is
       INT_BOOTLOADER_EN     : boolean                        := false;
       -- On-Chip Debugger (OCD) --
       OCD_EN                : boolean                        := false;
-      OCD_DM_LEGACY_MODE    : boolean                        := false;
       OCD_AUTHENTICATION    : boolean                        := false;
       -- RISC-V CPU Extensions --
       RISCV_ISA_C           : boolean                        := false;

@@ -125,14 +125,22 @@ void neorv32_xirq_global_disable(void) {
  **************************************************************************/
 int neorv32_xirq_get_num(void) {
 
-  uint32_t mask;
+  uint32_t prev_mie, prev_xirq_eie, mask;
   int i, cnt;
 
   if (neorv32_xirq_available()) {
 
+    // save previous registers
+    prev_mie = neorv32_cpu_csr_read(CSR_MIE);
+    prev_xirq_eie = NEORV32_XIRQ->EIE;
+
     neorv32_cpu_csr_clr(CSR_MIE, 1 << XIRQ_FIRQ_ENABLE); // make sure XIRQ cannot fire
     NEORV32_XIRQ->EIE = 0xffffffffU; // try to set all enable bits
     mask = NEORV32_XIRQ->EIE; // read back actually set flags
+
+    // restore previous registers
+    NEORV32_XIRQ->EIE = prev_xirq_eie;
+    neorv32_cpu_csr_write(CSR_MIE, prev_mie);
 
     // count set bits
     cnt = 0;

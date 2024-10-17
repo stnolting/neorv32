@@ -309,7 +309,6 @@ begin
     INT_BOOTLOADER_EN     => INT_BOOTLOADER_EN,
     -- On-Chip Debugger --
     OCD_EN                => OCD_EN,
-    OCD_DM_LEGACY_MODE    => false,
     OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           => RISCV_ISA_C,

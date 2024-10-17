@@ -29,7 +29,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 11.10.2024 | 1.10.5.5 | :sparkles: :lock: add optional support for on-chip debugger authentication; :warning: rename OCD-related top generics | [#](https://github.com/stnolting/neorv32/pull/1053) |
+| 12.10.2024 | 1.10.5.6 | :warning: remove legacy support for on-chip debugger DM version v0.13; now only supporting DM v1.0 (removing `OCD_DM_LEGACY_MODE` generic) | [#1056](https://github.com/stnolting/neorv32/pull/1056) |
+| 11.10.2024 | 1.10.5.5 | :sparkles: :lock: add support for optional on-chip debugger authentication; :warning: rename OCD-related top generics | [#1053](https://github.com/stnolting/neorv32/pull/1053) |
 | 06.10.2024 | 1.10.5.4 | :warning: rework PWM module | [#1049](https://github.com/stnolting/neorv32/pull/1049) |
 | 05.10.2024 | 1.10.5.3 | upgrade neoTRNG to version 3.2 | [#1048](https://github.com/stnolting/neorv32/pull/1048) |
 | 03.10.2024 | 1.10.5.2 | :warning: remove `A` ISA extensions; replaced by new `Zalrsc` ISA extension | [#1047](https://github.com/stnolting/neorv32/pull/1047) |
