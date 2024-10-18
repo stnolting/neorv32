@@ -256,6 +256,60 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   constant num_xirq_c : natural := cond_sel_natural_f(XIRQ_EN, XIRQ_NUM_CH, 0);
   constant num_pwm_c  : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM_CH, 0);
 
+  -- AXI4-Lite bridge --
+  component xbus2axi4lite_bridge
+    port (
+      -- ------------------------------------------------------------
+      -- Global Control
+      -- ------------------------------------------------------------
+      clk            : in  std_logic;
+      resetn         : in  std_logic; -- low-active
+      -- ------------------------------------------------------------
+      -- XBUS Device Interface
+      -- ------------------------------------------------------------
+      xbus_adr_i   : in  std_ulogic_vector(31 downto 0); -- address
+      xbus_dat_i   : in  std_ulogic_vector(31 downto 0); -- write data
+      xbus_tag_i   : in  std_ulogic_vector(2 downto 0);  -- access tag
+      xbus_we_i    : in  std_ulogic;                     -- read/write
+      xbus_sel_i   : in  std_ulogic_vector(3 downto 0);  -- byte enable
+      xbus_stb_i   : in  std_ulogic;                     -- strobe
+      xbus_cyc_i   : in  std_ulogic;                     -- valid cycle
+      xbus_ack_o   : out std_ulogic;                     -- transfer acknowledge
+      xbus_err_o   : out std_ulogic;                     -- transfer error
+      xbus_dat_o   : out std_ulogic_vector(31 downto 0); -- read data
+      -- ------------------------------------------------------------
+      -- AXI4-Lite Host Interface
+      -- ------------------------------------------------------------
+      -- Clock and Reset --
+  --  m_axi_aclk     : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
+  --  m_axi_aresetn  : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
+      -- Write Address Channel --
+      m_axi_awaddr   : out std_logic_vector(31 downto 0);
+      m_axi_awprot   : out std_logic_vector(2 downto 0);
+      m_axi_awvalid  : out std_logic;
+      m_axi_awready  : in  std_logic := '0';
+      -- Write Data Channel --
+      m_axi_wdata    : out std_logic_vector(31 downto 0);
+      m_axi_wstrb    : out std_logic_vector(3 downto 0);
+      m_axi_wvalid   : out std_logic;
+      m_axi_wready   : in  std_logic := '0';
+      -- Read Address Channel --
+      m_axi_araddr   : out std_logic_vector(31 downto 0);
+      m_axi_arprot   : out std_logic_vector(2 downto 0);
+      m_axi_arvalid  : out std_logic;
+      m_axi_arready  : in  std_logic := '0';
+      -- Read Data Channel --
+      m_axi_rdata    : in  std_logic_vector(31 downto 0) := x"00000000";
+      m_axi_rresp    : in  std_logic_vector(1 downto 0) := "11"; -- error by default
+      m_axi_rvalid   : in  std_logic := '0';
+      m_axi_rready   : out std_logic;
+      -- Write Response Channel --
+      m_axi_bresp    : in  std_logic_vector(1 downto 0) := "11"; -- error by default
+      m_axi_bvalid   : in  std_logic := '0';
+      m_axi_bready   : out std_logic
+    );
+  end component;
+
   -- type conversion --
   signal jtag_tdo_aux : std_ulogic;
   signal s0_axis_tdata_aux : std_ulogic_vector(31 downto 0);
@@ -279,21 +333,16 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal xirq_i_aux : std_ulogic_vector(31 downto 0);
 
   -- internal wishbone bus --
-  type wb_bus_t is record
-    adr : std_ulogic_vector(31 downto 0);
-    di  : std_ulogic_vector(31 downto 0);
-    do  : std_ulogic_vector(31 downto 0);
-    tag : std_ulogic_vector(2 downto 0);
-    we  : std_ulogic;
-    sel : std_ulogic_vector(3 downto 0);
-    cyc : std_ulogic;
-    ack : std_ulogic;
-    err : std_ulogic;
-  end record;
-  signal wb_core : wb_bus_t;
-
-  -- AXI bridge control --
-  signal axi_radr_received, axi_wadr_received, axi_wdat_received : std_ulogic;
+  signal xbus_adr : std_ulogic_vector(31 downto 0);                    -- address
+  signal xbus_do  : std_ulogic_vector(31 downto 0);                    -- write data
+  signal xbus_tag : std_ulogic_vector(2 downto 0);                     -- access tag
+  signal xbus_we  : std_ulogic;                                        -- read/write
+  signal xbus_sel : std_ulogic_vector(3 downto 0);                     -- byte enable
+  signal xbus_stb : std_ulogic;                                        -- strobe
+  signal xbus_cyc : std_ulogic;                                        -- valid cycle
+  signal xbus_di  : std_ulogic_vector(31 downto 0);                    -- read data
+  signal xbus_ack : std_ulogic;                                        -- transfer acknowledge
+  signal xbus_err : std_ulogic;                                        -- transfer error
 
 begin
 
@@ -416,16 +465,16 @@ begin
     jtag_tdo_o     => jtag_tdo_aux,
     jtag_tms_i     => std_ulogic(jtag_tms_i),
     -- External bus interface (available if XBUS_EN = true) --
-    xbus_adr_o     => wb_core.adr,
-    xbus_dat_o     => wb_core.do,
-    xbus_tag_o     => wb_core.tag,
-    xbus_we_o      => wb_core.we,
-    xbus_sel_o     => wb_core.sel,
-    xbus_stb_o     => open,
-    xbus_cyc_o     => wb_core.cyc,
-    xbus_dat_i     => wb_core.di,
-    xbus_ack_i     => wb_core.ack,
-    xbus_err_i     => wb_core.err,
+    xbus_adr_o     => xbus_adr,
+    xbus_dat_o     => xbus_do,
+    xbus_tag_o     => xbus_tag,
+    xbus_we_o      => xbus_we,
+    xbus_sel_o     => xbus_sel,
+    xbus_stb_o     => xbus_stb,
+    xbus_cyc_o     => xbus_cyc,
+    xbus_dat_i     => xbus_di,
+    xbus_ack_i     => xbus_ack,
+    xbus_err_i     => xbus_err,
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i => std_ulogic_vector(s1_axis_tdata),
     slink_rx_src_i => std_ulogic_vector(s1_axis_tid),
@@ -564,81 +613,53 @@ begin
 
   -- Wishbone-to-AXI4-Lite Bridge -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  axi_arbiter: process(resetn, clk)
-  begin
-    if (resetn = '0') then
-      axi_radr_received <= '0';
-      axi_wadr_received <= '0';
-      axi_wdat_received <= '0';
-    elsif rising_edge(clk) then
-      if (wb_core.cyc = '0') then
-        axi_radr_received <= '0';
-        axi_wadr_received <= '0';
-        axi_wdat_received <= '0';
-      else -- pending access
-        if (wb_core.we = '0') then -- read
-          if (m_axi_arready = '1') then -- read address received by interconnect?
-            axi_radr_received <= '1';
-          end if;
-        else -- write
-          if (m_axi_awready = '1') then -- write address received by interconnect?
-            axi_wadr_received <= '1';
-          end if;
-          if (m_axi_wready = '1') then -- write data received by interconnect?
-            axi_wdat_received <= '1';
-          end if;
-        end if;
-      end if;
-    end if;
-  end process axi_arbiter;
-
-
-  -- read address channel --
-  m_axi_araddr  <= std_logic_vector(wb_core.adr);
-  m_axi_arprot  <= std_logic_vector(wb_core.tag);
-  m_axi_arvalid <= std_logic(wb_core.cyc and (not wb_core.we) and (not axi_radr_received));
-
-  -- read data channel --
-  m_axi_rready  <= std_logic(wb_core.cyc and (not wb_core.we));
-  wb_core.di    <= std_ulogic_vector(m_axi_rdata);
-
-  -- write address channel --
-  m_axi_awaddr  <= std_logic_vector(wb_core.adr);
-  m_axi_awprot  <= std_logic_vector(wb_core.tag);
-  m_axi_awvalid <= std_logic(wb_core.cyc and wb_core.we and (not axi_wadr_received));
-
-  -- write data channel --
-  m_axi_wdata   <= std_logic_vector(wb_core.do);
-  m_axi_wstrb   <= std_logic_vector(wb_core.sel);
-  m_axi_wvalid  <= std_logic(wb_core.cyc and wb_core.we and (not axi_wdat_received));
-
-  -- write response channel --
-  m_axi_bready  <= std_logic(wb_core.cyc and wb_core.we);
-
-
-  -- read/write response --
-  axi_response: process(wb_core, m_axi_bvalid, m_axi_bresp, m_axi_rvalid, m_axi_rresp)
-  begin
-    wb_core.ack <= '0'; -- default
-    wb_core.err <= '0'; -- default
-    if (wb_core.we = '1') then -- write operation
-      if (m_axi_bvalid = '1') then -- valid write response
-        if (m_axi_bresp = "00") then -- status check
-          wb_core.ack <= '1'; -- OK
-        else
-          wb_core.err <= '1'; -- ERROR
-        end if;
-      end if;
-    else -- read operation
-      if (m_axi_rvalid = '1') then -- valid read response
-        if (m_axi_rresp = "00") then -- status check
-          wb_core.ack <= '1'; -- OK
-        else
-          wb_core.err <= '1'; -- ERROR
-        end if;
-      end if;
-    end if;
-  end process axi_response;
-
+  axi4_bridge_inst: xbus2axi4lite_bridge
+  port map (
+    -- ------------------------------------------------------------
+    -- Global Control
+    -- ------------------------------------------------------------
+    clk           => clk,
+    resetn        => resetn,
+    -- ------------------------------------------------------------
+    -- XBUS Device Interface
+    -- ------------------------------------------------------------
+    xbus_adr_i    => xbus_adr,
+    xbus_dat_i    => xbus_do,
+    xbus_tag_i    => xbus_tag,
+    xbus_we_i     => xbus_we,
+    xbus_sel_i    => xbus_sel,
+    xbus_stb_i    => xbus_stb,
+    xbus_cyc_i    => xbus_cyc,
+    xbus_ack_o    => xbus_ack,
+    xbus_err_o    => xbus_err,
+    xbus_dat_o    => xbus_di,
+    -- ------------------------------------------------------------
+    -- AXI4-Lite Host Interface
+    -- ------------------------------------------------------------
+    -- Write Address Channel --
+    m_axi_awaddr  => m_axi_awaddr,
+    m_axi_awprot  => m_axi_awprot,
+    m_axi_awvalid => m_axi_awvalid,
+    m_axi_awready => m_axi_awready,
+    -- Write Data Channel --
+    m_axi_wdata   => m_axi_wdata,
+    m_axi_wstrb   => m_axi_wstrb,
+    m_axi_wvalid  => m_axi_wvalid,
+    m_axi_wready  => m_axi_wready,
+    -- Read Address Channel --
+    m_axi_araddr  => m_axi_araddr,
+    m_axi_arprot  => m_axi_arprot,
+    m_axi_arvalid => m_axi_arvalid,
+    m_axi_arready => m_axi_arready,
+    -- Read Data Channel --
+    m_axi_rdata   => m_axi_rdata,
+    m_axi_rresp   => m_axi_rresp,
+    m_axi_rvalid  => m_axi_rvalid,
+    m_axi_rready  => m_axi_rready,
+    -- Write Response Channel --
+    m_axi_bresp   => m_axi_bresp,
+    m_axi_bvalid  => m_axi_bvalid,
+    m_axi_bready  => m_axi_bready
+  );
 
 end architecture neorv32_vivado_ip_rtl;

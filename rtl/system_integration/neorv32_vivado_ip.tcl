@@ -50,6 +50,7 @@ set_property library neorv32 [get_files $file_list]
 
 # IP top module
 add_file $neorv32_home/rtl/system_integration/$ip_top.vhd
+add_file $neorv32_home/rtl/system_integration/xbus2axi4lite_bridge.vhd
 set_property top $ip_top [current_fileset]
 
 update_compile_order -fileset sources_1
