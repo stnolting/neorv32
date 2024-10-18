@@ -26,6 +26,8 @@
 #include <string.h>
 #include "dhry.h"
 
+/** UART BAUD rate */
+#define BAUD_RATE   19200
 
 #ifndef DHRY_ITERS
 #define DHRY_ITERS 10000
@@ -104,7 +106,7 @@ int main (void)
   { /* *****  NEORV32-SPECIFIC ***** */
     neorv32_rte_setup();
     neorv32_cpu_csr_write(CSR_MIE, 0); // no interrupts
-    neorv32_uart0_setup(19200, 0);
+    neorv32_uart0_setup(BAUD_RATE, 0);
 
     neorv32_uart0_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)neorv32_sysinfo_get_clk());
     neorv32_uart0_printf("NEORV32: Executing Dhrystone (%u iterations). This may take some time...\n\n", (uint32_t)DHRY_ITERS);
