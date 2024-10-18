@@ -85,6 +85,7 @@ entity neorv32_vivado_ip is
     DCACHE_NUM_BLOCKS     : natural range 1 to 256        := 4;
     DCACHE_BLOCK_SIZE     : natural range 4 to 2**16      := 64;
     -- External Bus Interface --
+    XBUS_EN               : boolean                       := true;
     XBUS_TIMEOUT          : natural range 8 to 65536      := 64;
     XBUS_CACHE_EN         : boolean                       := false;
     XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256        := 8;
@@ -139,7 +140,7 @@ entity neorv32_vivado_ip is
     clk            : in  std_logic;
     resetn         : in  std_logic; -- low-active
     -- ------------------------------------------------------------
-    -- AXI4-Lite-Compatible Host Interface (always available)
+    -- AXI4-Lite Host Interface (available if XBUS_EN = true)
     -- ------------------------------------------------------------
     -- Clock and Reset --
 --  m_axi_aclk     : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
@@ -169,7 +170,7 @@ entity neorv32_vivado_ip is
     m_axi_bvalid   : in  std_logic := '0';
     m_axi_bready   : out std_logic;
     -- ------------------------------------------------------------
-    -- AXI4-Stream-Compatible Interfaces (available if AXI4_STREAM_EN = true)
+    -- AXI4-Stream Interfaces (available if AXI4_STREAM_EN = true)
     -- ------------------------------------------------------------
     -- Source --
 --  s0_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
@@ -409,7 +410,7 @@ begin
     DCACHE_NUM_BLOCKS     => DCACHE_NUM_BLOCKS,
     DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
     -- External bus interface --
-    XBUS_EN               => true,
+    XBUS_EN               => XBUS_EN,
     XBUS_TIMEOUT          => XBUS_TIMEOUT,
     XBUS_REGSTAGE_EN      => false,
     XBUS_CACHE_EN         => XBUS_CACHE_EN,
@@ -613,53 +614,56 @@ begin
 
   -- Wishbone-to-AXI4-Lite Bridge -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  axi4_bridge_inst: xbus2axi4lite_bridge
-  port map (
-    -- ------------------------------------------------------------
-    -- Global Control
-    -- ------------------------------------------------------------
-    clk           => clk,
-    resetn        => resetn,
-    -- ------------------------------------------------------------
-    -- XBUS Device Interface
-    -- ------------------------------------------------------------
-    xbus_adr_i    => xbus_adr,
-    xbus_dat_i    => xbus_do,
-    xbus_tag_i    => xbus_tag,
-    xbus_we_i     => xbus_we,
-    xbus_sel_i    => xbus_sel,
-    xbus_stb_i    => xbus_stb,
-    xbus_cyc_i    => xbus_cyc,
-    xbus_ack_o    => xbus_ack,
-    xbus_err_o    => xbus_err,
-    xbus_dat_o    => xbus_di,
-    -- ------------------------------------------------------------
-    -- AXI4-Lite Host Interface
-    -- ------------------------------------------------------------
-    -- Write Address Channel --
-    m_axi_awaddr  => m_axi_awaddr,
-    m_axi_awprot  => m_axi_awprot,
-    m_axi_awvalid => m_axi_awvalid,
-    m_axi_awready => m_axi_awready,
-    -- Write Data Channel --
-    m_axi_wdata   => m_axi_wdata,
-    m_axi_wstrb   => m_axi_wstrb,
-    m_axi_wvalid  => m_axi_wvalid,
-    m_axi_wready  => m_axi_wready,
-    -- Read Address Channel --
-    m_axi_araddr  => m_axi_araddr,
-    m_axi_arprot  => m_axi_arprot,
-    m_axi_arvalid => m_axi_arvalid,
-    m_axi_arready => m_axi_arready,
-    -- Read Data Channel --
-    m_axi_rdata   => m_axi_rdata,
-    m_axi_rresp   => m_axi_rresp,
-    m_axi_rvalid  => m_axi_rvalid,
-    m_axi_rready  => m_axi_rready,
-    -- Write Response Channel --
-    m_axi_bresp   => m_axi_bresp,
-    m_axi_bvalid  => m_axi_bvalid,
-    m_axi_bready  => m_axi_bready
-  );
+  axi4_bridge:
+  if XBUS_EN generate
+    axi4_bridge_inst: xbus2axi4lite_bridge
+    port map (
+      -- ------------------------------------------------------------
+      -- Global Control
+      -- ------------------------------------------------------------
+      clk           => clk,
+      resetn        => resetn,
+      -- ------------------------------------------------------------
+      -- XBUS Device Interface
+      -- ------------------------------------------------------------
+      xbus_adr_i    => xbus_adr,
+      xbus_dat_i    => xbus_do,
+      xbus_tag_i    => xbus_tag,
+      xbus_we_i     => xbus_we,
+      xbus_sel_i    => xbus_sel,
+      xbus_stb_i    => xbus_stb,
+      xbus_cyc_i    => xbus_cyc,
+      xbus_ack_o    => xbus_ack,
+      xbus_err_o    => xbus_err,
+      xbus_dat_o    => xbus_di,
+      -- ------------------------------------------------------------
+      -- AXI4-Lite Host Interface
+      -- ------------------------------------------------------------
+      -- Write Address Channel --
+      m_axi_awaddr  => m_axi_awaddr,
+      m_axi_awprot  => m_axi_awprot,
+      m_axi_awvalid => m_axi_awvalid,
+      m_axi_awready => m_axi_awready,
+      -- Write Data Channel --
+      m_axi_wdata   => m_axi_wdata,
+      m_axi_wstrb   => m_axi_wstrb,
+      m_axi_wvalid  => m_axi_wvalid,
+      m_axi_wready  => m_axi_wready,
+      -- Read Address Channel --
+      m_axi_araddr  => m_axi_araddr,
+      m_axi_arprot  => m_axi_arprot,
+      m_axi_arvalid => m_axi_arvalid,
+      m_axi_arready => m_axi_arready,
+      -- Read Data Channel --
+      m_axi_rdata   => m_axi_rdata,
+      m_axi_rresp   => m_axi_rresp,
+      m_axi_rvalid  => m_axi_rvalid,
+      m_axi_rready  => m_axi_rready,
+      -- Write Response Channel --
+      m_axi_bresp   => m_axi_bresp,
+      m_axi_bvalid  => m_axi_bvalid,
+      m_axi_bready  => m_axi_bready
+    );
+  end generate;
 
 end architecture neorv32_vivado_ip_rtl;
