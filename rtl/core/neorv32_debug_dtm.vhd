@@ -1,6 +1,8 @@
 -- ================================================================================ --
 -- NEORV32 SoC - RISC-V-Compatible Debug Transport Module (DTM)                     --
 -- -------------------------------------------------------------------------------- --
+-- Compatible to RISC-V debug spec. versions 0.13 and 1.0.                          --
+-- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
 -- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
@@ -24,11 +26,11 @@ entity neorv32_debug_dtm is
     -- global control --
     clk_i      : in  std_ulogic; -- global clock line
     rstn_i     : in  std_ulogic; -- global reset line, low-active
-    -- jtag connection --
-    jtag_tck_i : in  std_ulogic;
-    jtag_tdi_i : in  std_ulogic;
-    jtag_tdo_o : out std_ulogic;
-    jtag_tms_i : in  std_ulogic;
+    -- jtag connection (TAP access) --
+    jtag_tck_i : in  std_ulogic; -- serial clock
+    jtag_tdi_i : in  std_ulogic; -- serial data input
+    jtag_tdo_o : out std_ulogic; -- serial data output
+    jtag_tms_i : in  std_ulogic; -- mode select
     -- debug module interface (DMI) --
     dmi_req_o  : out dmi_req_t; -- request
     dmi_rsp_i  : in  dmi_rsp_t  -- response
@@ -37,11 +39,6 @@ end neorv32_debug_dtm;
 
 architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
 
-  -- DMI Configuration (fixed!) --
-  constant dmi_idle_c    : std_ulogic_vector(2 downto 0) := "000";    -- no idle cycles required
-  constant dmi_version_c : std_ulogic_vector(3 downto 0) := "0001";   -- debug spec. version (0.13 & 1.0)
-  constant dmi_abits_c   : std_ulogic_vector(5 downto 0) := "000111"; -- number of DMI address bits (7)
-
   -- TAP data register addresses --
   constant addr_idcode_c : std_ulogic_vector(4 downto 0) := "00001"; -- identifier
   constant addr_dtmcs_c  : std_ulogic_vector(4 downto 0) := "10000"; -- DTM status and control
@@ -49,10 +46,8 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
 
   -- tap JTAG signal synchronizer --
   type tap_sync_t is record
-    -- internal --
     tck_ff, tdi_ff, tms_ff : std_ulogic_vector(2 downto 0);
-    -- external --
-    tck_rising, tck_falling, tdi, tms: std_ulogic;
+    tck_rising, tck_falling, tdi, tms : std_ulogic;
   end record;
   signal tap_sync : tap_sync_t;
 
@@ -85,8 +80,7 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
     dmihardreset : std_ulogic;
     dmireset     : std_ulogic;
     err          : std_ulogic;
-    rdata        : std_ulogic_vector(31 downto 0);
-    wdata        : std_ulogic_vector(31 downto 0);
+    rdata, wdata : std_ulogic_vector(31 downto 0);
     addr         : std_ulogic_vector(6 downto 0);
   end record;
   signal dmi_ctrl : dmi_ctrl_t;
@@ -108,14 +102,12 @@ begin
     end if;
   end process tap_synchronizer;
 
-  -- JTAG clock edge --
+  -- JTAG clock edges --
   tap_sync.tck_rising  <= '1' when (tap_sync.tck_ff(2 downto 1) = "01") else '0';
   tap_sync.tck_falling <= '1' when (tap_sync.tck_ff(2 downto 1) = "10") else '0';
 
-  -- JTAG test mode select --
+  -- JTAG inputs --
   tap_sync.tms <= tap_sync.tms_ff(2);
-
-  -- JTAG serial data input --
   tap_sync.tdi <= tap_sync.tdi_ff(2);
 
 
@@ -165,6 +157,7 @@ begin
     end if;
   end process update_trigger;
 
+  -- edge detector --
   dr_trigger.valid <= '1' when (dr_trigger.sreg = "01") else '0';
 
 
@@ -184,10 +177,8 @@ begin
       -- serial data input: instruction register --
       if (tap_ctrl_state = LOGIC_RESET) or (tap_ctrl_state = IR_CAPTURE) then -- preload phase
         tap_reg.ireg <= addr_idcode_c;
-      elsif (tap_ctrl_state = IR_SHIFT) then -- access phase
-        if (tap_sync.tck_rising = '1') then -- [JTAG-SYNC] evaluate TDI on rising edge of TCK
-          tap_reg.ireg <= tap_sync.tdi & tap_reg.ireg(tap_reg.ireg'left downto 1);
-        end if;
+      elsif (tap_ctrl_state = IR_SHIFT) and (tap_sync.tck_rising = '1') then -- access phase; [JTAG-SYNC] evaluate TDI on rising edge of TCK
+        tap_reg.ireg <= tap_sync.tdi & tap_reg.ireg(tap_reg.ireg'left downto 1);
       end if;
 
       -- serial data input: data register --
@@ -198,15 +189,13 @@ begin
           when addr_dmi_c    => tap_reg.dmi    <= tap_reg.dmi_nxt; -- register interface
           when others        => tap_reg.bypass <= '0'; -- pass through
         end case;
-      elsif (tap_ctrl_state = DR_SHIFT) then -- access phase
-        if (tap_sync.tck_rising = '1') then -- [JTAG-SYNC] evaluate TDI on rising edge of TCK
-          case tap_reg.ireg is
-            when addr_idcode_c => tap_reg.idcode <= tap_sync.tdi & tap_reg.idcode(tap_reg.idcode'left downto 1);
-            when addr_dtmcs_c  => tap_reg.dtmcs  <= tap_sync.tdi & tap_reg.dtmcs(tap_reg.dtmcs'left downto 1);
-            when addr_dmi_c    => tap_reg.dmi    <= tap_sync.tdi & tap_reg.dmi(tap_reg.dmi'left downto 1);
-            when others        => tap_reg.bypass <= tap_sync.tdi;
-          end case;
-        end if;
+      elsif (tap_ctrl_state = DR_SHIFT) and (tap_sync.tck_rising = '1') then -- access phase; [JTAG-SYNC] evaluate TDI on rising edge of TCK
+        case tap_reg.ireg is
+          when addr_idcode_c => tap_reg.idcode <= tap_sync.tdi & tap_reg.idcode(tap_reg.idcode'left downto 1);
+          when addr_dtmcs_c  => tap_reg.dtmcs  <= tap_sync.tdi & tap_reg.dtmcs(tap_reg.dtmcs'left downto 1);
+          when addr_dmi_c    => tap_reg.dmi    <= tap_sync.tdi & tap_reg.dmi(tap_reg.dmi'left downto 1);
+          when others        => tap_reg.bypass <= tap_sync.tdi;
+        end case;
       end if;
 
       -- serial data output --
@@ -226,20 +215,18 @@ begin
     end if;
   end process reg_access;
 
-  -- DTM Control and Status Register (dtmcs) --
+  -- DTM control and status register (dtmcs) read-back --
   tap_reg.dtmcs_nxt(31 downto 18) <= (others => '0'); -- reserved
   tap_reg.dtmcs_nxt(17)           <= dmi_ctrl.dmihardreset; -- dmihardreset
   tap_reg.dtmcs_nxt(16)           <= dmi_ctrl.dmireset; -- dmireset
   tap_reg.dtmcs_nxt(15)           <= '0'; -- reserved
-  tap_reg.dtmcs_nxt(14 downto 12) <= dmi_idle_c; -- minimum number of idle cycles
+  tap_reg.dtmcs_nxt(14 downto 12) <= "000"; -- minimum number of idle cycles (= 0)
   tap_reg.dtmcs_nxt(11 downto 10) <= tap_reg.dmi_nxt(1 downto 0); -- dmistat
-  tap_reg.dtmcs_nxt(09 downto 04) <= dmi_abits_c; -- number of DMI address bits
-  tap_reg.dtmcs_nxt(03 downto 00) <= dmi_version_c; -- version
+  tap_reg.dtmcs_nxt(09 downto 04) <= "000111"; -- number of DMI address bits (7)
+  tap_reg.dtmcs_nxt(03 downto 00) <= "0001"; -- compatible to debug spec. version (0.13 & 1.0)
 
-  -- DMI register read access --
-  tap_reg.dmi_nxt(40 downto 34) <= dmi_ctrl.addr; -- address
-  tap_reg.dmi_nxt(33 downto 02) <= dmi_ctrl.rdata; -- read data
-  tap_reg.dmi_nxt(01 downto 00) <= (others => dmi_ctrl.err); -- status
+  -- DMI register (dmi) read-back --
+  tap_reg.dmi_nxt <= dmi_ctrl.addr & dmi_ctrl.rdata & replicate_f(dmi_ctrl.err, 2); -- address & read data & status
 
 
   -- Debug Module Interface -----------------------------------------------------------------
@@ -275,14 +262,12 @@ begin
       -- DMI interface arbiter --
       dmi_ctrl.op <= dmi_req_nop_c; -- default
       if (dmi_ctrl.busy = '0') then -- idle: waiting for new request
-        if (dmi_ctrl.dmihardreset = '0') then -- no DMI hard reset
-          if (dr_trigger.valid = '1') and (tap_reg.ireg = addr_dmi_c) then
-            dmi_ctrl.addr  <= tap_reg.dmi(40 downto 34);
-            dmi_ctrl.wdata <= tap_reg.dmi(33 downto 02);
-            if (tap_reg.dmi(1 downto 0) = dmi_req_rd_c) or (tap_reg.dmi(1 downto 0) = dmi_req_wr_c) then
-              dmi_ctrl.op   <= tap_reg.dmi(1 downto 0);
-              dmi_ctrl.busy <= '1';
-            end if;
+        if (dmi_ctrl.dmihardreset = '0') and (dr_trigger.valid = '1') and (tap_reg.ireg = addr_dmi_c) then -- valid non-reset access
+          dmi_ctrl.addr  <= tap_reg.dmi(40 downto 34);
+          dmi_ctrl.wdata <= tap_reg.dmi(33 downto 02);
+          if (tap_reg.dmi(1 downto 0) = dmi_req_rd_c) or (tap_reg.dmi(1 downto 0) = dmi_req_wr_c) then
+            dmi_ctrl.op   <= tap_reg.dmi(1 downto 0);
+            dmi_ctrl.busy <= '1';
           end if;
         end if;
       else -- busy: read/write access in progress

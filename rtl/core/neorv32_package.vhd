@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100507"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100508"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -58,7 +58,7 @@ package neorv32_package is
   constant mem_io_size_c   : natural := 8*1024; -- = 32 * iodev_size_c
 
   -- Start of uncached memory access (256MB page / 4MSBs only) --
-  constant uncached_begin_c  : std_ulogic_vector(31 downto 0) := x"f0000000";
+  constant mem_uncached_begin_c  : std_ulogic_vector(31 downto 0) := x"f0000000";
 
   -- IO Address Map (base address must be aligned to the region's size) --
   constant iodev_size_c      : natural := 256; -- size of a single IO device (bytes)
@@ -254,7 +254,7 @@ package neorv32_package is
   constant funct3_sh_c     : std_ulogic_vector(2 downto 0) := "001"; -- store half word
   constant funct3_sw_c     : std_ulogic_vector(2 downto 0) := "010"; -- store word
   -- alu --
-  constant funct3_subadd_c : std_ulogic_vector(2 downto 0) := "000"; -- sub/add
+  constant funct3_sadd_c   : std_ulogic_vector(2 downto 0) := "000"; -- sub/add
   constant funct3_sll_c    : std_ulogic_vector(2 downto 0) := "001"; -- shift logical left
   constant funct3_slt_c    : std_ulogic_vector(2 downto 0) := "010"; -- set on less
   constant funct3_sltu_c   : std_ulogic_vector(2 downto 0) := "011"; -- set on less unsigned

@@ -543,7 +543,7 @@ begin
       generic map (
         NUM_BLOCKS => ICACHE_NUM_BLOCKS,
         BLOCK_SIZE => ICACHE_BLOCK_SIZE,
-        UC_BEGIN   => uncached_begin_c(31 downto 28),
+        UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
         UC_ENABLE  => true,
         READ_ONLY  => true
       )
@@ -572,7 +572,7 @@ begin
       generic map (
         NUM_BLOCKS => DCACHE_NUM_BLOCKS,
         BLOCK_SIZE => DCACHE_BLOCK_SIZE,
-        UC_BEGIN   => uncached_begin_c(31 downto 28),
+        UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
         UC_ENABLE  => true,
         READ_ONLY  => false
       )
@@ -927,7 +927,7 @@ begin
         generic map (
           NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
           BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
-          UC_BEGIN   => uncached_begin_c(31 downto 28),
+          UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
           UC_ENABLE  => true,
           READ_ONLY  => false
         )
