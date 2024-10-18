@@ -267,16 +267,16 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
       -- ------------------------------------------------------------
       -- XBUS Device Interface
       -- ------------------------------------------------------------
-      xbus_adr_i   : in  std_ulogic_vector(31 downto 0); -- address
-      xbus_dat_i   : in  std_ulogic_vector(31 downto 0); -- write data
-      xbus_tag_i   : in  std_ulogic_vector(2 downto 0);  -- access tag
-      xbus_we_i    : in  std_ulogic;                     -- read/write
-      xbus_sel_i   : in  std_ulogic_vector(3 downto 0);  -- byte enable
-      xbus_stb_i   : in  std_ulogic;                     -- strobe
-      xbus_cyc_i   : in  std_ulogic;                     -- valid cycle
-      xbus_ack_o   : out std_ulogic;                     -- transfer acknowledge
-      xbus_err_o   : out std_ulogic;                     -- transfer error
-      xbus_dat_o   : out std_ulogic_vector(31 downto 0); -- read data
+      xbus_adr_i     : in  std_ulogic_vector(31 downto 0); -- address
+      xbus_dat_i     : in  std_ulogic_vector(31 downto 0); -- write data
+      xbus_tag_i     : in  std_ulogic_vector(2 downto 0);  -- access tag
+      xbus_we_i      : in  std_ulogic;                     -- read/write
+      xbus_sel_i     : in  std_ulogic_vector(3 downto 0);  -- byte enable
+      xbus_stb_i     : in  std_ulogic;                     -- strobe
+      xbus_cyc_i     : in  std_ulogic;                     -- valid cycle
+      xbus_ack_o     : out std_ulogic;                     -- transfer acknowledge
+      xbus_err_o     : out std_ulogic;                     -- transfer error
+      xbus_dat_o     : out std_ulogic_vector(31 downto 0); -- read data
       -- ------------------------------------------------------------
       -- AXI4-Lite Host Interface
       -- ------------------------------------------------------------
