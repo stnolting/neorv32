@@ -36,31 +36,31 @@ entity xbus2axi4lite_bridge is
     -- AXI4-Lite Host Interface
     -- ------------------------------------------------------------
     -- Clock and Reset --
---  m_axi_aclk     : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
---  m_axi_aresetn  : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
+--  m_axi_aclk     : in  std_logic; -- just to satisfy Vivado, but not actually used
+--  m_axi_aresetn  : in  std_logic; -- just to satisfy Vivado, but not actually used
     -- Write Address Channel --
     m_axi_awaddr   : out std_logic_vector(31 downto 0);
     m_axi_awprot   : out std_logic_vector(2 downto 0);
     m_axi_awvalid  : out std_logic;
-    m_axi_awready  : in  std_logic := '0';
+    m_axi_awready  : in  std_logic;
     -- Write Data Channel --
     m_axi_wdata    : out std_logic_vector(31 downto 0);
     m_axi_wstrb    : out std_logic_vector(3 downto 0);
     m_axi_wvalid   : out std_logic;
-    m_axi_wready   : in  std_logic := '0';
+    m_axi_wready   : in  std_logic;
     -- Read Address Channel --
     m_axi_araddr   : out std_logic_vector(31 downto 0);
     m_axi_arprot   : out std_logic_vector(2 downto 0);
     m_axi_arvalid  : out std_logic;
-    m_axi_arready  : in  std_logic := '0';
+    m_axi_arready  : in  std_logic;
     -- Read Data Channel --
-    m_axi_rdata    : in  std_logic_vector(31 downto 0) := x"00000000";
-    m_axi_rresp    : in  std_logic_vector(1 downto 0) := "11"; -- error by default
-    m_axi_rvalid   : in  std_logic := '0';
+    m_axi_rdata    : in  std_logic_vector(31 downto 0);
+    m_axi_rresp    : in  std_logic_vector(1 downto 0);
+    m_axi_rvalid   : in  std_logic;
     m_axi_rready   : out std_logic;
     -- Write Response Channel --
-    m_axi_bresp    : in  std_logic_vector(1 downto 0) := "11"; -- error by default
-    m_axi_bvalid   : in  std_logic := '0';
+    m_axi_bresp    : in  std_logic_vector(1 downto 0);
+    m_axi_bvalid   : in  std_logic;
     m_axi_bready   : out std_logic
   );
 end entity;
