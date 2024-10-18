@@ -48,9 +48,9 @@ puts $file_list
 add_files $file_list
 set_property library neorv32 [get_files $file_list]
 
-# IP top module
-add_file $neorv32_home/rtl/system_integration/$ip_top.vhd
+# IP top module and AXI4-Lite bridge
 add_file $neorv32_home/rtl/system_integration/xbus2axi4lite_bridge.vhd
+add_file $neorv32_home/rtl/system_integration/$ip_top.vhd
 set_property top $ip_top [current_fileset]
 
 update_compile_order -fileset sources_1
