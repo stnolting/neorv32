@@ -151,7 +151,7 @@ proc setup_ip_gui {} {
     { OCD_AUTHENTICATION    {OCD Authentication}    {Implement Debug Authentication module}                   {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false}}
   }
 
-  set group [add_group $page {External Bus Interface (XBUS)}]
+  set group [add_group $page {External Bus Interface (XBUS / AXI4-Lite-MM Host)}]
   add_params $group {
     { XBUS_EN               {Enable XBUS}           {} }
     { XBUS_TIMEOUT          {Timeout}               {Max number of clock cycles before AXI access times out}  {$XBUS_EN} }
@@ -164,7 +164,7 @@ proc setup_ip_gui {} {
     { XBUS_CACHE_BLOCK_SIZE {Block Size}            {In bytes (use a power of two)}                           {$XBUS_CACHE_EN} }
   }
 
-  set group [add_group $page {Stream Link Interface (SLINK)}]
+  set group [add_group $page {Stream Link Interface (SLINK / AXI4-Stream Source & Sink)}]
   add_params $group {
     { AXI4_STREAM_EN        {Enable SLINK}          {} }
     { IO_SLINK_RX_FIFO      {RX FIFO Depth}         {Number of entries (use a power of two)}                  {$AXI4_STREAM_EN} }
