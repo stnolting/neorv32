@@ -56,13 +56,11 @@ not working as expected. See how to [contribute](https://github.com/stnolting/ne
 
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
 - [x] completely described in behavioral, platform-independent VHDL - **no** platform-specific primitives, macros, attributes, etc.; an all-Verilog "version" is also [available](https://github.com/stnolting/neorv32-verilog)
-- [x] extensive configuration options for adapting the processor to the requirements of the application
-- [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, processor and system level
+- [x] extensive configuration options for adapting the processor to the requirements of the application (on CPU, processor and system level)
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
 - [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the CPU's register file)
 - [x] optimized for high clock frequencies to ease integration / timing closure
-- [x] from zero to _"hello world!"_ - completely open source and documented
-- [x] highly documented - on software and hardware side
+- [x] from zero to _"hello world!"_ - completely open source and documented (on software and hardware side)
 - [x] easy to use even for FPGA / RISC-V starters – intended to work _out of the box_
 
 ### Project Status
