@@ -110,6 +110,7 @@ proc setup_ip_gui {} {
   # **************************************************************
   set_property enablement_dependency {$AXI4_STREAM_EN} [ipx::get_bus_interfaces s0_axis -of_objects [ipx::current_core]]
   set_property enablement_dependency {$AXI4_STREAM_EN} [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$XBUS_EN}        [ipx::get_bus_interfaces m_axi   -of_objects [ipx::current_core]]
   set_property enablement_dependency {$OCD_EN}         [ipx::get_ports jtag_*           -of_objects [ipx::current_core]]
   set_property enablement_dependency {$XIP_EN}         [ipx::get_ports xip_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_GPIO_EN}     [ipx::get_ports gpio_*           -of_objects [ipx::current_core]]
@@ -150,19 +151,20 @@ proc setup_ip_gui {} {
     { OCD_AUTHENTICATION    {OCD Authentication}    {Implement Debug Authentication module}                   {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false}}
   }
 
-  set group [add_group $page {External Bus Interface (XBUS)}]
+  set group [add_group $page {External Bus Interface (XBUS / AXI4-Lite-MM Host)}]
   add_params $group {
-    { XBUS_TIMEOUT          {Timeout}               {Max number of clock cycles before AXI access times out} }
+    { XBUS_EN               {Enable XBUS}           {} }
+    { XBUS_TIMEOUT          {Timeout}               {Max number of clock cycles before AXI access times out}  {$XBUS_EN} }
   }
 
   set sub_group [add_group $group {XBUS Cache}]
   add_params $sub_group {
-    { XBUS_CACHE_EN         {Enable XBUS Cache}     {} }
+    { XBUS_CACHE_EN         {Enable XBUS Cache}     {}                                                        {$XBUS_EN} {$XBUS_EN ? $XBUS_CACHE_EN : false}}
     { XBUS_CACHE_NUM_BLOCKS {Number of Blocks}      {}                                                        {$XBUS_CACHE_EN} }
     { XBUS_CACHE_BLOCK_SIZE {Block Size}            {In bytes (use a power of two)}                           {$XBUS_CACHE_EN} }
   }
 
-  set group [add_group $page {Stream Link Interface (SLINK)}]
+  set group [add_group $page {Stream Link Interface (SLINK / AXI4-Stream Source & Sink)}]
   add_params $group {
     { AXI4_STREAM_EN        {Enable SLINK}          {} }
     { IO_SLINK_RX_FIFO      {RX FIFO Depth}         {Number of entries (use a power of two)}                  {$AXI4_STREAM_EN} }
