@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 20.10.2024 | 1.10.5.9 | :warning: rework XIRQ controller; remove "interrupt pending" register `EIP` | [#1071](https://github.com/stnolting/neorv32/pull/1071) |
 | 18.10.2024 | 1.10.5.8 | minor RTL code cleanups | [#1068](https://github.com/stnolting/neorv32/pull/1068) |
 | 18.10.2024 | 1.10.5.7 | use individual/new module for XBUS-to-AXI4-Lite bridge | [#1063](https://github.com/stnolting/neorv32/pull/1063) |
 | 12.10.2024 | 1.10.5.6 | :warning: remove legacy support for on-chip debugger DM version v0.13; now only supporting DM v1.0 (removing `OCD_DM_LEGACY_MODE` generic) | [#1056](https://github.com/stnolting/neorv32/pull/1056) |
