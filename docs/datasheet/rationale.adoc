@@ -95,8 +95,8 @@ long critical path tremendously reducing maximal operating frequency.
 * Pipelined designs increase performance by having several instruction "in fly" at the same time. But this also means
 there is some kind of "out-of-order" behavior: if an instruction at the end of the pipeline causes an exception
 all the instructions in earlier stages have to be invalidated. Potential architecture state changes have to be made _undone_
-requiring additional (exception-handling) logic. In a multi-cycle architecture this situation cannot occur because only a
-single instruction is "in fly" at a time.
+requiring additional (exception-handling) logic. In a multi-cycle architecture this situation cannot occur since only a
+single instruction is being processed at a time.
 * Having only a single instruction in fly does not only reduce hardware costs, it also simplifies
 simulation/verification/debugging, state preservation/restoring during exceptions and extensibility (no need to care
 about pipeline hazards) - but of course at the cost of reduced throughput.
