@@ -362,45 +362,39 @@ relevant for the executable itself; the remaining sections are just listed for c
 | `io`            | Address space for the processor-internal IO/peripheral devices
 |=======================
 
-[NOTE]
-The `rom` section is automatically re-mapped to the processor-internal <<_bootloader_rom_bootrom>> when compiling the
-bootloader sources.
-
 Each section has two main attributes: `ORIGIN` and `LENGTH`. `ORIGIN` defines the base address of the according section
 while `LENGTH` defines its size in bytes. For the `ram` and `rom` sections these attributes are configured indirectly
-via variables that provide default values.
+via variables that already provide _default values_:
 
 .Linker script - section configuration
 [source]
 ----
 /* Default rom/ram (IMEM/DMEM) sizes */
-__neorv32_rom_size = DEFINED(__neorv32_rom_size) ? __neorv32_rom_size : 2048M;
+__neorv32_rom_size = DEFINED(__neorv32_rom_size) ? __neorv32_rom_size : 16k;
 __neorv32_ram_size = DEFINED(__neorv32_ram_size) ? __neorv32_ram_size : 8K;
 
-/* Default section base addresses */
+/* Default rom/ram (IMEM/DMEM) base addresses */
 __neorv32_rom_base = DEFINED(__neorv32_rom_base) ? __neorv32_rom_base : 0x00000000;
 __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x80000000;
 ----
 
-The region size and base address configuration can be edited by the user - either by explicitly
-changing the default values in the linker script or by overriding them when invoking `make`:
+.Bootloader ROM
+[NOTE]
+The `rom` section is automatically re-mapped to the processor-internal <<_bootloader_rom_bootrom>> when compiling the
+bootloader sources.
 
-.Overriding default `rom` size configuration (configuring 4096 bytes)
+The default region sizes (and base addresses) can be edited by the user when invoking `make`:
+
+.Overriding default memory sizes (configuring 64kB IMEM and 32kB DMEM)
 [source, bash]
 ----
-$ make USER_FLAGS+="-Wl,--defsym,__neorv32_rom_size=4096" clean_all exe
+$ make USER_FLAGS+="-Wl,--defsym,__neorv32_rom_size=64k -Wl,--defsym,__neorv32_ram_size=32k" clean_all exe
 ----
 
-[IMPORTANT]
+.Changing the default base addresses
+[WARNING]
 `__neorv32_rom_base` (= `ORIGIN` of the `rom` section) and `__neorv32_ram_base` (= `ORIGIN` of the `ram` section) have to
-be sync to the actual memory layout configuration of the processor (see section <<_address_space>>).
-
-[NOTE]
-The default configuration for the `rom` section assumes a maximum of 2GB _logical_ memory address space. This size does not
-have to reflect the _actual_ physical size of the entire instruction memory. It just provides a maximum limit. When uploading
-a new executable via the bootloader, the bootloader itself checks if sufficient _physical_ instruction memory is available.
-If a new executable is embedded right into the internal-IMEM the synthesis tool will check, if the configured instruction memory
-size is sufficient.
+be match the actual processor memory layout configuration of the processor (see section <<_address_space>>).
 
 The linker maps all the regions from the compiled object files into five final sections: `.text`,
 `.rodata`, `.data`, `.bss` and `.heap`:
