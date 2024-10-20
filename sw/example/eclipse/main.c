@@ -1,5 +1,5 @@
 #include <neorv32.h>
-#include <stdio.h> // better use an embedded version of printf
+#include <stdio.h>
 
 // UART baud rate
 #define BAUD_RATE 19200
@@ -21,7 +21,8 @@ int main() {
 
   int cnt = 0;
   while (1) {
-    neorv32_gpio_port_set(cnt++ & 0xff); // increment counter and mask for lowest 8 bit
+    cnt = (cnt + 1) & 0xff; // increment counter and mask for lowest 8 bit
+    neorv32_gpio_port_set(cnt); // output via GPIO.out
     neorv32_cpu_delay_ms(250); // wait 250ms using busy wait
   }
 

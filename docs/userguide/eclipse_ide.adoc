@@ -58,6 +58,11 @@ to a different location (makefile, NEORV32 sources, etc.).
 Make sure to adjust the binaries / installation folders of the RISC-V GCC toolchain
 and OpenOCD according to your installation. See the following chapter for more information.
 
+.Makefile Adjustment
+[IMPORTANT]
+Make sure to adjust the variables inside the project's makefile to match your processor
+configuration (memory sizes, CPU ISA configuration, etc.).
+
 :sectnums:
 === Setup a new Eclipse Project from Scratch
 
