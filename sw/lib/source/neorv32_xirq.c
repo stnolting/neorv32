@@ -255,7 +255,7 @@ int neorv32_xirq_uninstall(int channel) {
 static void __neorv32_xirq_core(void) {
 
   // get highest-priority XIRQ channel
-  uint32_t src = NEORV32_XIRQ->ESC;
+  uint32_t src = NEORV32_XIRQ->ESC & 0x1f; // mask for channel ID
 
   // execute handler
   typedef void handler_t();
