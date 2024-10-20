@@ -44,10 +44,8 @@
 #include <neorv32.h>
 
 
-/**********************************************************************//**
- * The >private< trap vector look-up table of the XIRQ.
- **************************************************************************/
-static uint32_t __neorv32_xirq_vector_lut[32] __attribute__((unused)); // trap handler vector table
+// the private trap vector look-up table
+static uint32_t __neorv32_xirq_vector_lut[32] __attribute__((unused));
 
 // private functions
 static void __neorv32_xirq_core(void);
@@ -73,15 +71,14 @@ int neorv32_xirq_available(void) {
 /**********************************************************************//**
  * Initialize XIRQ controller.
  *
- * @note All interrupt channels will be deactivated, all pending IRQs will be deleted and all
- * handler addresses will be deleted.
+ * @note All interrupt channels will be deactivated and all installed
+ * handlers addresses will be deleted.
  *
  * @return 0 if success, != 0 if error.
  **************************************************************************/
 int neorv32_xirq_setup(void) {
 
-  NEORV32_XIRQ->EIE = 0; // disable all input channels
-  NEORV32_XIRQ->EIP = 0; // clear all pending IRQs
+  NEORV32_XIRQ->EIE = 0; // disable all channels
   NEORV32_XIRQ->ESC = 0; // acknowledge (clear) XIRQ interrupt
 
   int i;
@@ -160,7 +157,7 @@ int neorv32_xirq_get_num(void) {
  * Configure a channel's trigger type.
  *
  * @param[in] channel XIRQ interrupt channel (0..31).
- * @param[in] config Trigger type: 00 = low-level, 01 = high-level, 10 = falling-edge, 11 = rising-edge.
+ * @param[in] config Trigger type (#XIRQ_TRIGGER_enum).
  **************************************************************************/
 void neorv32_xirq_setup_trigger(int channel, int config) {
 
@@ -186,26 +183,13 @@ void neorv32_xirq_setup_trigger(int channel, int config) {
 
 
 /**********************************************************************//**
- * Clear pending interrupt.
- *
- * @param[in] channel XIRQ interrupt channel (0..31).
- **************************************************************************/
-void neorv32_xirq_clear_pending(int channel) {
-
-  channel &= 0x1f;
-  NEORV32_XIRQ->EIP = ~(1 << channel);
-}
-
-
-/**********************************************************************//**
  * Enable IRQ channel.
  *
  * @param[in] channel XIRQ interrupt channel (0..31).
  **************************************************************************/
 void neorv32_xirq_channel_enable(int channel) {
 
-  channel &= 0x1f;
-  NEORV32_XIRQ->EIE |= 1 << channel;
+  NEORV32_XIRQ->EIE |= 1 << (channel & 0x1f);
 }
 
 
@@ -216,8 +200,7 @@ void neorv32_xirq_channel_enable(int channel) {
  **************************************************************************/
 void neorv32_xirq_channel_disable(int channel) {
 
-  channel &= 0x1f;
-  NEORV32_XIRQ->EIE &= ~(1 << channel);
+  NEORV32_XIRQ->EIE &= ~(1 << (channel & 0x1f));
 }
 
 
@@ -226,7 +209,7 @@ void neorv32_xirq_channel_disable(int channel) {
  *
  * @param[in] channel XIRQ interrupt channel (0..31).
  * @param[in] handler The actual handler function for the specified interrupt (function MUST be of type "void function(void);").
- * @return 0 if success, 1 if error.
+ * @return 0 if success, -1 if invalid channel.
  **************************************************************************/
 int neorv32_xirq_install(int channel, void (*handler)(void)) {
 
@@ -235,7 +218,9 @@ int neorv32_xirq_install(int channel, void (*handler)(void)) {
     __neorv32_xirq_vector_lut[channel] = (uint32_t)handler; // install handler
     return 0;
   }
-  return 1;
+  else {
+    return -1;
+  }
 }
 
 
@@ -245,39 +230,40 @@ int neorv32_xirq_install(int channel, void (*handler)(void)) {
  * @note This will also deactivate the according XIRQ channel.
  *
  * @param[in] channel XIRQ interrupt channel (0..31).
- * @return 0 if success, 1 if error.
+ * @return 0 if success, -1 if invalid channel.
  **************************************************************************/
 int neorv32_xirq_uninstall(int channel) {
 
   // channel valid?
   if (channel < 32) {
     __neorv32_xirq_vector_lut[channel] = (uint32_t)(&__neorv32_xirq_dummy_handler); // override using dummy handler
-    uint32_t mask = 1 << channel;
-    NEORV32_XIRQ->EIE &= ~mask; // disable channel
+    neorv32_xirq_channel_disable(channel); // disable channel
     return 0;
   }
-  return 1;
+  else {
+    return -1;
+  }
 }
 
 
 /**********************************************************************//**
  * This is the actual second-level (F)IRQ handler for the XIRQ. It will
  * call the previously installed handler if an XIRQ fires.
+ *
+ * @note The XIRQ's channel interrupt is acknowledge AFTER the handler has been executed.
  **************************************************************************/
 static void __neorv32_xirq_core(void) {
 
   // get highest-priority XIRQ channel
   uint32_t src = NEORV32_XIRQ->ESC;
 
-  // clear the currently pending XIRQ interrupt
-  NEORV32_XIRQ->EIP = ~(1 << src);
-
   // execute handler
   typedef void handler_t();
   handler_t* handler = (handler_t*)__neorv32_xirq_vector_lut[src];
   handler();
 
-  NEORV32_XIRQ->ESC = 0; // acknowledge the current XIRQ interrupt
+  // acknowledge XIRQ channel interrupt
+  NEORV32_XIRQ->ESC = 0;
 }
 
 
