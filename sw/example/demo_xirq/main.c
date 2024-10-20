@@ -155,8 +155,6 @@ int main() {
   // All incoming XIRQ interrupt requests are "prioritized" in this example. The XIRQ FIRQ handler
   // reads the ID of the interrupt with the highest priority from the XIRQ controller ("source" register) and calls the according
   // handler function (installed via neorv32_xirq_install();).
-  // Non-prioritized handling of interrupts (or custom prioritization) can be implemented by manually reading the
-  // XIRQ controller's "pending" register. Then it is up to the software to define which pending IRQ should be serviced first.
 
   asm volatile ("nop");
   asm volatile ("nop");
@@ -165,14 +163,11 @@ int main() {
 
 
   // just as an example: to disable certain XIRQ interrupt channels, we can
-  // un-install the according handler. this will also clear a pending interrupt for that channel
+  // un-install the according handler. this will also disable the according channel.
   neorv32_xirq_uninstall(0); // disable XIRQ channel 0 and remove associated handler
   neorv32_xirq_uninstall(1); // disable XIRQ channel 1 and remove associated handler
   neorv32_xirq_uninstall(2); // disable XIRQ channel 2 and remove associated handler
   neorv32_xirq_uninstall(3); // disable XIRQ channel 3 and remove associated handler
-
-  // you can also manually clear pending interrupts
-  neorv32_xirq_clear_pending(0); // clear pending interrupt of channel 0
 
   // manually enable and disable XIRQ channels
   neorv32_xirq_channel_enable(0); // enable channel 0
