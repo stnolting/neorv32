@@ -1324,8 +1324,6 @@ int main() {
     xirq_err_cnt += neorv32_xirq_install(1, xirq_trap_handler1); // install XIRQ IRQ handler channel 1
     neorv32_xirq_setup_trigger(0, XIRQ_TRIGGER_EDGE_RISING); // configure channel 0 as rising-edge trigger
     neorv32_xirq_setup_trigger(1, XIRQ_TRIGGER_EDGE_RISING); // configure channel 1 as rising-edge trigger
-    neorv32_xirq_clear_pending(0); // clear any pending request
-    neorv32_xirq_clear_pending(1); // clear any pending request
     neorv32_xirq_channel_enable(0); // enable XIRQ channel 0
     neorv32_xirq_channel_enable(1); // enable XIRQ channel 1
 

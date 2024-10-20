@@ -28,22 +28,17 @@ The XIRQ provides up to 32 external interrupt channels configured via the `XIRQ_
 `xirq_i` input signal vector represents one interrupt channel. If less than 32 channels are configured, only the
 LSB-aligned channels are used while the remaining ones are left unconnected internally.
 
-The external interrupt controller features five interface registers:
+The external interrupt controller features four interface registers:
 
 [start=1]
 . external interrupt channel enable (`EIE`)
-. external interrupt channel pending (`EIP`)
 . external interrupt source (`ESC`)
 . trigger type configuration (`TTYP`)
 . trigger polarity configuration (`TPOL`)
 
-[TIP]
-From a functional point of view, the `EIE`, `EIP` and `ESC` registers follow the behavior
-of the RISC-V <<_mie>>, <<_mip>> and <<_mcause>> CSRs.
-
 The actual interrupt trigger type can be configured individually for each channel using the `TTYP` and `TPOL`
 registers. `TTYP` defines the actual trigger type (level-triggered or edge-triggered), while `TPOL` defines
-the trigger's polarity (low-level/falling-edge or high-level_/rising-edge). The position of each bit in these
+the trigger's polarity (low-level/falling-edge or high-level/rising-edge). The position of each bit in these
 registers corresponds the according XIRQ channel.
 
 .XIRQ Trigger Configuration
@@ -57,24 +52,19 @@ registers corresponds the according XIRQ channel.
 | `1`       | `1`       | rising-edge
 |=======================
 
-When the configured trigger of an interrupt channel fires the according interrupt channel becomes _pending_
-which is indicated by the according channel bit being set in the `EIP` register. This pending interrupt can
-be manually cleared at any time by writing zero to the according `EIP` bit.
+Each interrupt channel can be enabled or disabled individually using the `EIE` register. If the trigger of a
+disabled channel fires the interrupt request is entirely ignored.
 
-A pending interrupt can only generate a CPU interrupt if the according channel is enabled by the `EIE`
-register. Once triggered, disabled channels that **were already triggered** remain pending until explicitly
-(= manually) cleared. The channels are prioritized in a static order, i.e. channel 0 (`xirq_i(0)`) has the
-highest priority and channel 31 (`xirq_i(31)`) has the lowest priority. If **any** pending interrupt channel is
-also enabled, an interrupt request is sent to the CPU.
+If the configured trigger of an _enabled_ channels fires, the according interrupt request is buffered internally
+and an interrupt request is sent to the CPU. If more than one trigger fires at one a prioritization is used:
+the channels are prioritized in a static order, i.e. channel 0 (`xirq_i(0)`) has the highest priority and channel
+31 (`xirq_i(31)`) has the lowest priority.
 
-The CPU can determine the most prioritized external interrupt request either by checking the bits in the `EIP`
-register or by reading the interrupt source register `ESC`. This register provides a 5-bit wide ID (0..31)
-identifying the currently firing external interrupt source channel. Writing _any_ value to this register will
-acknowledge and clear the _current_ CPU interrupt (so the XIRQ controller can issue a new CPU interrupt).
-
-In order to acknowledge an XIRQ interrupt, the interrupt handler has to...
-* clear the pending XIRQ channel by clearing the according `EIP` bit
-* writing _any_ value to `ESC` to acknowledge the XIRQ CPU interrupt
+The CPU can determine the most prioritized external interrupt request by reading the interrupt source register `ESC`.
+This register provides a 5-bit wide ID (0..31) identifying the currently firing external interrupt source channel as
+well as a single bit (the MSB) that
+Writing _any_ value to this register will acknowledge and clear the _current_ CPU interrupt (so the XIRQ controller
+can issue a new CPU interrupt).
 
 
 **Register Map**
@@ -85,11 +75,9 @@ In order to acknowledge an XIRQ interrupt, the interrupt handler has to...
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Description
 | `0xfffff300` | `EIE`  | `31:0` | r/w | External interrupt enable register (one bit per channel, LSB-aligned)
-| `0xfffff304` | `EIP`  | `31:0` | r/w | External interrupt pending register (one bit per channel, LSB-aligned); writing 0 to a bit clears the according pending interrupt
-| `0xfffff308` | `ESC`  |  `4:0` | r/w | Interrupt source ID (0..31) of firing IRQ (prioritized!); writing _any_ value will acknowledge the current XIRQ CPU interrupt
-| `0xfffff30c` | `TTYP` | `31:0` | r/w | Trigger type select (`0` = level trigger, `1` = edge trigger); each bit corresponds to the according channel number
-| `0xfffff310` | `TPOL` | `31:0` | r/w | Trigger polarity select (`0` = low-level/falling-edge, `1` = high-level/rising-edge); each bit corresponds to the according channel number
-| `0xfffff314` | -      | `31:0` | r/- | _reserved_, read as zero
-| `0xfffff318` | -      | `31:0` | r/- | _reserved_, read as zero
-| `0xfffff31c` | -      | `31:0` | r/- | _reserved_, read as zero
+.3+^| `0xfffff304` .3+<| `ESC` ^| `31`   ^| r/c <| XIRQ interrupt when set; write any value to this register to acknowledge the current XIRQ interrupt
+                               ^| `30:5` ^| r/- <| _reserved_, read as zero
+                               ^| `4:0`  ^| r/c <| Interrupt source ID (0..31) of firing IRQ (prioritized!)
+| `0xfffff308` | `TTYP` | `31:0` | r/w | Trigger type select (`0` = level trigger, `1` = edge trigger); each bit corresponds to the according channel number
+| `0xfffff30c` | `TPOL` | `31:0` | r/w | Trigger polarity select (`0` = low-level/falling-edge, `1` = high-level/rising-edge); each bit corresponds to the according channel number
 |=======================
