@@ -25,14 +25,10 @@
 /**@{*/
 /** XIRQ module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t       EIE;       /**< offset 0:  external interrupt enable register */
-  uint32_t       EIP;       /**< offset 4:  external interrupt pending register */
-  uint32_t       ESC;       /**< offset 8:  external interrupt source register */
-  uint32_t       TTYP;      /**< offset 12: external interrupt source register */
-  uint32_t       TPOL;      /**< offset 16: external interrupt source register */
-  const uint32_t reserved0; /**< offset 20: reserved */
-  const uint32_t reserved1; /**< offset 24: reserved */
-  const uint32_t reserved2; /**< offset 28: reserved */
+  uint32_t EIE;  /**< offset 0:  external interrupt enable register */
+  uint32_t ESC;  /**< offset 4:  external interrupt source register */
+  uint32_t TTYP; /**< offset 8:  external interrupt source register */
+  uint32_t TPOL; /**< offset 12: external interrupt source register */
 } neorv32_xirq_t;
 
 /** XIRQ module hardware access (#neorv32_xirq_t) */
@@ -41,14 +37,14 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 
 /**********************************************************************//**
- * XIRQ trigger configuration
+ * XIRQ trigger type configuration
  **************************************************************************/
-/**@{*/
-#define XIRQ_TRIGGER_LEVEL_LOW    (0b00) // low-level
-#define XIRQ_TRIGGER_LEVEL_HIGH   (0b01) // high-level
-#define XIRQ_TRIGGER_EDGE_FALLING (0b10) // falling-edge
-#define XIRQ_TRIGGER_EDGE_RISING  (0b11) // rising-edge
-/**@}*/
+enum XIRQ_TRIGGER_enum {
+  XIRQ_TRIGGER_LEVEL_LOW    = 0b00, // low-level
+  XIRQ_TRIGGER_LEVEL_HIGH   = 0b01, // high-level
+  XIRQ_TRIGGER_EDGE_FALLING = 0b10, // falling-edge
+  XIRQ_TRIGGER_EDGE_RISING  = 0b11  // rising-edge
+};
 
 
 /**********************************************************************//**
@@ -61,7 +57,6 @@ void neorv32_xirq_global_enable(void);
 void neorv32_xirq_global_disable(void);
 int  neorv32_xirq_get_num(void);
 void neorv32_xirq_setup_trigger(int channel, int config);
-void neorv32_xirq_clear_pending(int channel);
 void neorv32_xirq_channel_enable(int channel);
 void neorv32_xirq_channel_disable(int channel);
 int  neorv32_xirq_install(int channel, void (*handler)(void));
