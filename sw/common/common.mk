@@ -127,7 +127,7 @@ NEO_ASFLAGS = $(CC_FLAGS) $(ASFLAGS)
 # -----------------------------------------------------------------------------
 # Application output definitions
 # -----------------------------------------------------------------------------
-.PHONY: check info help elf_info clean clean_all bootloader
+.PHONY: check info help elf_info clean clean_all
 .DEFAULT_GOAL := help
 
 asm:     $(APP_ASM)
@@ -141,12 +141,6 @@ mif:     $(APP_MIF)
 image:   $(APP_VHD)
 install: image install-$(APP_VHD)
 all:     $(APP_ASM) $(APP_EXE) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_VHD) install hex bin
-
-# Check if making bootloader
-# Use different base address and length for instruction memory/"rom" (BOOTROM instead of IMEM)
-# Also define "MAKE_BOOTLOADER" symbol for simplified code when building the bootloader
-# Use link-time optimization to further shrink bootloader code size
-target bootloader | bl_image: CC_OPTS += -Wl,--defsym=MAKE_BOOTLOADER=1 -DMAKE_BOOTLOADER -flto
 
 # -----------------------------------------------------------------------------
 # Image generator targets
@@ -240,24 +234,18 @@ $(APP_MEM): main.bin $(IMAGE_GEN)
 	@$(IMAGE_GEN) -raw_mem $< $@ $(shell basename $(CURDIR))
 
 # -----------------------------------------------------------------------------
-# Boot image targets
+# BOOTROM / booloader image targets
 # -----------------------------------------------------------------------------
-# Create VHDL boot image
-$(BOOT_VHD): main.bin $(IMAGE_GEN)
+# Create local VHDL BOOTROM image
+bl_image: main.bin $(IMAGE_GEN)
 	@set -e
 	@$(IMAGE_GEN) -bld_img $< $(BOOT_VHD) $(shell basename $(CURDIR))
 
-# Install image to VHDL source directory
-install-$(BOOT_VHD): $(BOOT_VHD)
+# Install BOOTROM image to VHDL source directory
+bootloader: bl_image
 	@set -e
 	@echo "Installing bootloader image to $(NEORV32_RTL_PATH)/core/$(BOOT_VHD)"
 	@cp $(BOOT_VHD) $(NEORV32_RTL_PATH)/core/.
-
-# Just an alias
-bl_image: $(BOOT_VHD)
-
-# Compile and install as VHDL bootloader image
-bootloader: bl_image install-$(BOOT_VHD)
 
 # -----------------------------------------------------------------------------
 # Check toolchain
@@ -374,17 +362,17 @@ help:
 	@echo "  help         - show this text"
 	@echo "  check        - check toolchain"
 	@echo "  info         - show makefile/toolchain configuration"
-	@echo "  gdb          - run GNU debugging session"
+	@echo "  gdb          - start GNU debugging session"
 	@echo "  asm          - compile and generate <$(APP_ASM)> assembly listing file for manual debugging"
 	@echo "  elf          - compile and generate <$(APP_ELF)> ELF file"
-	@echo "  exe          - compile and generate <$(APP_EXE)> executable image file for upload via default bootloader (binary file)"
-	@echo "  bin          - compile and generate <$(APP_BIN)> RAW executable memory image (binary file)"
-	@echo "  hex          - compile and generate <$(APP_HEX)> RAW executable memory image (hex char file)"
-	@echo "  coe          - compile and generate <$(APP_COE)> RAW executable memory image (COE file)"
-	@echo "  mem          - compile and generate <$(APP_MEM)> RAW executable memory image (MEM file)"
-	@echo "  mif          - compile and generate <$(APP_MIF)> RAW executable memory image (MIF file)"
-	@echo "  image        - compile and generate VHDL IMEM boot image (for application, no header) in local folder"
-	@echo "  install      - compile, generate and install VHDL IMEM boot image (for application, no header)"
+	@echo "  exe          - compile and generate <$(APP_EXE)> executable image file for bootloader upload (includes a HEADER!)"
+	@echo "  bin          - compile and generate <$(APP_BIN)> executable memory image"
+	@echo "  hex          - compile and generate <$(APP_HEX)> executable memory image"
+	@echo "  coe          - compile and generate <$(APP_COE)> executable memory image"
+	@echo "  mem          - compile and generate <$(APP_MEM)> executable memory image"
+	@echo "  mif          - compile and generate <$(APP_MIF)> executable memory image"
+	@echo "  image        - compile and generate VHDL IMEM application boot image <$(APP_VHD)> in local folder"
+	@echo "  install      - compile, generate and install VHDL IMEM application boot image <$(APP_VHD)>"
 	@echo "  sim          - in-console simulation using default/simple testbench and GHDL"
 	@echo "  hdl_lists    - regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
 	@echo "  all          - exe + install + hex + bin + asm"
@@ -392,8 +380,8 @@ help:
 	@echo "  elf_sections - show ELF sections"
 	@echo "  clean        - clean up project home folder"
 	@echo "  clean_all    - clean up whole project, core libraries and image generator"
-	@echo "  bl_image     - compile and generate VHDL BOOTROM boot image (for bootloader only, no header) in local folder"
-	@echo "  bootloader   - compile, generate and install VHDL BOOTROM boot image (for bootloader only, no header)"
+	@echo "  bl_image     - compile and generate VHDL BOOTROM bootloader boot image <$(BOOT_VHD)> in local folder"
+	@echo "  bootloader   - compile, generate and install VHDL BOOTROM bootloader boot image <$(BOOT_VHD)>"
 	@echo ""
 	@echo "Variables:"
 	@echo ""
