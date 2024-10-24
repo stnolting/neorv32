@@ -129,7 +129,9 @@ entity neorv32_top is
     IO_SLINK_EN                : boolean                        := false;       -- implement stream link interface (SLINK)?
     IO_SLINK_RX_FIFO           : natural range 1 to 2**15       := 1;           -- RX fifo depth, has to be a power of two, min 1
     IO_SLINK_TX_FIFO           : natural range 1 to 2**15       := 1;           -- TX fifo depth, has to be a power of two, min 1
-    IO_CRC_EN                  : boolean                        := false        -- implement cyclic redundancy check unit (CRC)?
+    IO_CRC_EN                  : boolean                        := false;        -- implement cyclic redundancy check unit (CRC)?
+  
+    SIGCOUNT_DEBOUNCE_LIMIT    : natural                        := 500000
   );
   port (
     -- Global control --
@@ -175,6 +177,7 @@ entity neorv32_top is
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o         : out std_ulogic_vector(63 downto 0);                    -- parallel output
     gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'L'); -- parallel input
+
 
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic;                                        -- UART0 send data
@@ -229,7 +232,10 @@ entity neorv32_top is
     -- CPU interrupts --
     mtime_irq_i    : in  std_ulogic := 'L';                                 -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i      : in  std_ulogic := 'L';                                 -- machine software interrupt
-    mext_irq_i     : in  std_ulogic := 'L'                                  -- machine external interrupt
+    mext_irq_i     : in  std_ulogic := 'L';                                 -- machine external interrupt
+  
+    -- HALL input signal
+    hall_signal_i  : in  std_ulogic;                                 -- HALL receive data
   );
 end neorv32_top;
 
@@ -291,7 +297,7 @@ architecture neorv32_top_rtl of neorv32_top is
   type io_devices_enum_t is (
     IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG, IODEV_TWI,
     IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_MTIME, IODEV_XIRQ, IODEV_ONEWIRE,
-    IODEV_GPTMR, IODEV_PWM, IODEV_XIP, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS
+    IODEV_GPTMR, IODEV_PWM, IODEV_XIP, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_SIGCOUNT
   );
   type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
   type iodev_rsp_t is array (io_devices_enum_t) of bus_rsp_t;
@@ -988,6 +994,9 @@ begin
   end generate; -- /memory_system
 
 
+
+
+
   -- **************************************************************************************************************************
   -- IO/Peripheral Modules
   -- **************************************************************************************************************************
@@ -1020,17 +1029,19 @@ begin
       DEV_18_EN => IO_DMA_EN,           DEV_18_BASE => base_io_dma_c,
       DEV_19_EN => IO_SLINK_EN,         DEV_19_BASE => base_io_slink_c,
       DEV_20_EN => IO_CFS_EN,           DEV_20_BASE => base_io_cfs_c,
-      DEV_21_EN => false,               DEV_31_BASE => (others => '0'), -- reserved
-      DEV_22_EN => false,               DEV_30_BASE => (others => '0'), -- reserved
-      DEV_23_EN => false,               DEV_29_BASE => (others => '0'), -- reserved
-      DEV_24_EN => false,               DEV_28_BASE => (others => '0'), -- reserved
-      DEV_25_EN => false,               DEV_27_BASE => (others => '0'), -- reserved
+
+      DEV_21_EN => true,                DEV_21_BASE => base_io_sigcount_c, -- Always enable sigcount
+
+      DEV_22_EN => false,               DEV_22_BASE => (others => '0'), -- reserved
+      DEV_23_EN => false,               DEV_23_BASE => (others => '0'), -- reserved
+      DEV_24_EN => false,               DEV_24_BASE => (others => '0'), -- reserved
+      DEV_25_EN => false,               DEV_25_BASE => (others => '0'), -- reserved
       DEV_26_EN => false,               DEV_26_BASE => (others => '0'), -- reserved
-      DEV_27_EN => false,               DEV_25_BASE => (others => '0'), -- reserved
-      DEV_28_EN => false,               DEV_24_BASE => (others => '0'), -- reserved
-      DEV_29_EN => false,               DEV_23_BASE => (others => '0'), -- reserved
-      DEV_30_EN => false,               DEV_22_BASE => (others => '0'), -- reserved
-      DEV_31_EN => false,               DEV_21_BASE => (others => '0')  -- reserved
+      DEV_27_EN => false,               DEV_27_BASE => (others => '0'), -- reserved
+      DEV_28_EN => false,               DEV_28_BASE => (others => '0'), -- reserved
+      DEV_29_EN => false,               DEV_29_BASE => (others => '0'), -- reserved
+      DEV_30_EN => false,               DEV_30_BASE => (others => '0'), -- reserved
+      DEV_31_EN => false,               DEV_31_BASE => (others => '0')  -- reserved
     )
     port map (
       clk_i        => clk_i,
@@ -1058,7 +1069,9 @@ begin
       dev_18_req_o => iodev_req(IODEV_DMA),     dev_18_rsp_i => iodev_rsp(IODEV_DMA),
       dev_19_req_o => iodev_req(IODEV_SLINK),   dev_19_rsp_i => iodev_rsp(IODEV_SLINK),
       dev_20_req_o => iodev_req(IODEV_CFS),     dev_20_rsp_i => iodev_rsp(IODEV_CFS),
-      dev_21_req_o => open,                     dev_21_rsp_i => rsp_terminate_c, -- reserved
+
+      dev_21_req_o => iodev_req(IODEV_SIGCOUNT),dev_21_rsp_i => iodev_rsp(IODEV_SIGCOUNT),
+  
       dev_22_req_o => open,                     dev_22_rsp_i => rsp_terminate_c, -- reserved
       dev_23_req_o => open,                     dev_23_rsp_i => rsp_terminate_c, -- reserved
       dev_24_req_o => open,                     dev_24_rsp_i => rsp_terminate_c, -- reserved
@@ -1131,6 +1144,22 @@ begin
       sdi_dat_o            <= '0';
       firq(FIRQ_SDI)       <= '0';
     end generate;
+
+
+    -- Signal Counter -------------------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_sigcount_inst: entity neorv32.neorv32_sigcount
+        generic map (
+            DEBOUNCE_LIMIT => SIGCOUNT_DEBOUNCE_LIMIT  -- Defina o valor desejado para o limite de debounce
+        )
+        port map (
+            clk_i        => clk_i,
+            rstn_i       => rstn_sys,
+            button_i     => hall_signal_i,          -- Sinal de entrada do botão
+            bus_req_i    => iodev_req(IODEV_SIGCOUNT),    -- Conectar a requisição do barramento
+            bus_rsp_o    => iodev_rsp(IODEV_SIGCOUNT)    -- Conectar a resposta do barramento
+            -- counter_o    => counter_output_signal          -- Sinal de saída do contador FOR DEBUG
+        );
 
 
     -- General Purpose Input/Output Port (GPIO) -----------------------------------------------

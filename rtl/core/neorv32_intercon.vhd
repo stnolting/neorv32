@@ -405,6 +405,7 @@ entity neorv32_bus_io_switch is
     DEV_18_EN : boolean := false; DEV_18_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
     DEV_19_EN : boolean := false; DEV_19_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
     DEV_20_EN : boolean := false; DEV_20_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
+
     DEV_21_EN : boolean := false; DEV_21_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
     DEV_22_EN : boolean := false; DEV_22_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
     DEV_23_EN : boolean := false; DEV_23_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
@@ -521,6 +522,7 @@ begin
   dev_18_req_o <= dev_req(18); dev_rsp(18) <= dev_18_rsp_i;
   dev_19_req_o <= dev_req(19); dev_rsp(19) <= dev_19_rsp_i;
   dev_20_req_o <= dev_req(20); dev_rsp(20) <= dev_20_rsp_i;
+
   dev_21_req_o <= dev_req(21); dev_rsp(21) <= dev_21_rsp_i;
   dev_22_req_o <= dev_req(22); dev_rsp(22) <= dev_22_rsp_i;
   dev_23_req_o <= dev_req(23); dev_rsp(23) <= dev_23_rsp_i;
