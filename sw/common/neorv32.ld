@@ -8,11 +8,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause                                            */
 /* ================================================================================ */
 
-/* Copyright (C) 2014-2020 Free Software Foundation, Inc.
- * Copying and distribution of this script, with or without modification,
- * are permitted in any medium without royalty provided the copyright
- * notice and this notice are preserved. */
-
 OUTPUT_FORMAT("elf32-littleriscv")
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
@@ -24,7 +19,7 @@ SEARCH_DIR("=/usr/lib")
 
 /* ************************************************************************************************* */
 /* +++ NEORV32 memory layout configuration +++                                                       */
-/* If the symbols are not explicitly defined the default configurations are used.                    */
+/* If the "__neorv32_*" symbols are not explicitly defined the default configurations are used.      */
 /* NOTE: section sizes have to be a multiple of 4 bytes; base addresses have to be 32-bit-aligned.   */
 /* ************************************************************************************************* */
 
@@ -41,16 +36,12 @@ __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x800000
 
 
 /* ************************************************************************************************* */
-/* When compiling the bootloader the ROM section is automatically re-mapped to the                   */
-/* processor-internal bootloader ROM address space.                                                  */
+/* Main memory segments that are relevant for the executable.                                        */
 /* ************************************************************************************************* */
 MEMORY
 {
-  rom  (rx) : ORIGIN = DEFINED(MAKE_BOOTLOADER) ? 0xFFFFC000 : __neorv32_rom_base, LENGTH = DEFINED(MAKE_BOOTLOADER) ? 8K : __neorv32_rom_size
-  ram (rwx) : ORIGIN = __neorv32_ram_base, LENGTH = DEFINED(MAKE_BOOTLOADER) ? 512 : __neorv32_ram_size
-  xip  (rx) : ORIGIN = 0xE0000000, LENGTH = 256M
-  boot (rx) : ORIGIN = 0xFFFFC000, LENGTH = 8K
-  io  (rwx) : ORIGIN = 0xFFFFE000, LENGTH = 8K
+  rom  (rx) : ORIGIN = __neorv32_rom_base, LENGTH = __neorv32_rom_size
+  ram (rwx) : ORIGIN = __neorv32_ram_base, LENGTH = __neorv32_ram_size
 }
 
 

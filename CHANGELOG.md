@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 26.10.2024 | 1.10.5.11 | cleanup central makefile and linker script | [#1077](https://github.com/stnolting/neorv32/pull/1077) |
 | 21.10.2024 | 1.10.5.10 | :test_tube: rework linker script's ROM/IMEM default size (=16kB); add customization variable to all makefiles in `sw/example` | [#1072](https://github.com/stnolting/neorv32/pull/1072) |
 | 20.10.2024 | 1.10.5.9 | :warning: rework XIRQ controller; remove "interrupt pending" register `EIP` | [#1071](https://github.com/stnolting/neorv32/pull/1071) |
 | 18.10.2024 | 1.10.5.8 | minor RTL code cleanups | [#1068](https://github.com/stnolting/neorv32/pull/1068) |
