@@ -10,8 +10,12 @@ RISCV_PREFIX ?= riscv-none-elf-
 # Override default optimization goal
 EFFORT = -Os
 
-# Add debug symbols for Eclipse
+# Add extended debug symbols for Eclipse
 USER_FLAGS += -ggdb -gdwarf-3
+
+# Additional sources
+APP_SRC += $(wildcard ./*.c)
+APP_INC += -I .
 
 # Adjust processor IMEM size
 USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=16k
