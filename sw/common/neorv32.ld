@@ -8,11 +8,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause                                            */
 /* ================================================================================ */
 
-/* Copyright (C) 2014-2020 Free Software Foundation, Inc.
- * Copying and distribution of this script, with or without modification,
- * are permitted in any medium without royalty provided the copyright
- * notice and this notice are preserved. */
-
 OUTPUT_FORMAT("elf32-littleriscv")
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
