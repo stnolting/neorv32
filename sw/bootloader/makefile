@@ -2,11 +2,13 @@
 
 # Minimal RISC-V ISA only
 MARCH = rv32i_zicsr_zifencei
+MABI = ilp32
 
 # Optimize for minimal size
 EFFORT = -Os
 
-# Adjust memory size and base for BOOTROM
+# Adjust "rom" memory size and base for BOOTROM
+# Just use a minimal "ram" size that should be available on any platform configuration.
 # Define MAKE_BOOTLOADER for SW library (reduces footprint)
 # Enable link-time-optimization
 USER_FLAGS += \
