@@ -407,7 +407,7 @@ The `crt0.S` start-up performs the following operations:
 
 
 :sectnums:
-===== Early Trap Handler
+==== Early Trap Handler
 
 The start-up code provides a very basic trap handler for the early boot phase. This handler does nothing but
 trying to move on to the next linear instruction whenever an interrupt or synchronous exception is encountered.
