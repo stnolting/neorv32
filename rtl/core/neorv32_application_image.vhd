@@ -1,11 +1,16 @@
--- The NEORV32 RISC-V Processor: https://github.com/stnolting/neorv32
--- Auto-generated memory initialization file (for APPLICATION) from source file <demo_blink_led/main.bin>
+-- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32
+-- Auto-generated memory initialization package (for internal IMEM)
+-- Source: demo_blink_led/main.bin
 -- Size: 1100 bytes
--- MARCH: default
--- Built: 15.09.2024 21:48:24 (dd.mm.yyyy hh:mm:ss)
+-- Built: 31.10.2024 22:32:21
 
--- prototype defined in 'neorv32_package.vhd'
-package body neorv32_application_image is
+library ieee;
+use ieee.std_logic_1164.all;
+
+library neorv32;
+use neorv32.neorv32_package.all;
+
+package neorv32_application_image is
 
 constant application_init_image : mem32_t := (
 x"000020b7",
