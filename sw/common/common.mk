@@ -59,7 +59,7 @@ NEORV32_EXG_PATH = $(NEORV32_HOME)/sw/image_gen
 # Path to NEORV32 rtl folder
 NEORV32_RTL_PATH = $(NEORV32_LOCAL_RTL)
 # Path to NEORV32 sim folder
-NEORV32_SIM_PATH = $(NEORV32_HOME)/sim/simple
+NEORV32_SIM_PATH = $(NEORV32_HOME)/sim
 # Marker file to check for NEORV32 home folder
 NEORV32_HOME_MARKER = $(NEORV32_INC_PATH)/neorv32.h
 
@@ -279,10 +279,10 @@ endif
 	@echo "Toolchain check OK"
 
 # -----------------------------------------------------------------------------
-# In-console simulation using default/simple testbench and GHDL
+# In-console simulation using default testbench and GHDL
 # -----------------------------------------------------------------------------
 sim: $(APP_VHD) install
-	@echo "Simulating processor using simple testbench..."
+	@echo "Simulating processor using default testbench..."
 	@sh $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
 
 # -----------------------------------------------------------------------------
@@ -375,7 +375,7 @@ help:
 	@echo "  mif          - compile and generate <$(APP_MIF)> executable memory image"
 	@echo "  image        - compile and generate VHDL IMEM application boot image <$(APP_VHD)> in local folder"
 	@echo "  install      - compile, generate and install VHDL IMEM application boot image <$(APP_VHD)>"
-	@echo "  sim          - in-console simulation using default/simple testbench and GHDL"
+	@echo "  sim          - in-console simulation using default testbench (sim folder) and GHDL"
 	@echo "  hdl_lists    - regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
 	@echo "  all          - exe + install + hex + bin + asm"
 	@echo "  elf_info     - show ELF layout info"

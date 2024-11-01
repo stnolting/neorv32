@@ -284,7 +284,7 @@ puts $file_list
 
 .File-List Usage Examples
 [TIP]
-The provided file-list files are used by the GHDL-based simple simulation setup (`sim/tb_simple/ghdl.setup.sh`) as
+The provided file-list files are used by the GHDL-based simple simulation setup (`sim/ghdl.setup.sh`) as
 well as by the Vivado IP packager script (`rtl/system_integration/neorv32_vivado_ip.tcl`).
 
 
