@@ -19,7 +19,7 @@ jobs:
 
   sim_default_tb:
     runs-on: ubuntu-latest
-    name: 'Default testbench simulation'
+    name: 'processor simulation'
     strategy:
       fail-fast: false
       matrix:
@@ -53,13 +53,10 @@ jobs:
         make -C sw/example clean_all exe
         make -C sw/bootloader clean_all info bootloader
 
-    - name: '🚧 Build and install software; then simulate with shell script'
+    - name: '🚧 Compile executable and run simulation'
       run: |
-        
         make -C sw/example/${{ matrix.example }} \
-        USER_FLAGS+="-DUART0_SIM_MODE -DUART1_SIM_MODE -flto" \
-        EFFORT=-Os \
-        MARCH=rv32ima_zicsr_zifencei \
+        USER_FLAGS+="-DUART0_SIM_MODE -DUART1_SIM_MODE" \
         clean_all \
         info \
         all \
