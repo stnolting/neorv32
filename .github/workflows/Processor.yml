@@ -17,24 +17,9 @@ on:
 
 jobs:
 
-  Software:
+  sim_default_tb:
     runs-on: ubuntu-latest
-    container: ghcr.io/stnolting/neorv32/sim
-
-    steps:
-
-    - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v4
-
-    - name: '⚙️ Build Software Framework Tests'
-      run: |
-        make -C sw/example/processor_check check
-        make -C sw/example clean_all exe
-        make -C sw/bootloader clean_all info bootloader
-
-  Default_TB:
-    runs-on: ubuntu-latest
-    name: 'Default testbench'
+    name: 'processor simulation'
     strategy:
       fail-fast: false
       matrix:
@@ -47,16 +32,32 @@ jobs:
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v4
 
-    - name: '🚧 Build and install software; then simulate with shell script'
-      uses: docker://ghcr.io/stnolting/neorv32/sim
-      # Redirect UART0 TX to text.io simulation output via <UARTx_SIM_MODE> user flags
-      with:
-        args: >-
-          make -C sw/example/${{ matrix.example }}
-          clean_all
-          USER_FLAGS+="-DUART0_SIM_MODE -DUART1_SIM_MODE -flto"
-          EFFORT=-Os
-          MARCH=rv32ima_zicsr_zifencei
-          info
-          all
-          sim-check
+    - name: '📦 Install RISC-V GCC'
+      run: |
+        wget -q https://github.com/stnolting/riscv-gcc-prebuilt/releases/download/rv32i-131023/riscv32-unknown-elf.gcc-13.2.0.tar.gz
+        mkdir $GITHUB_WORKSPACE/riscv-gcc
+        tar -xzf riscv32-unknown-elf.gcc-13.2.0.tar.gz -C $GITHUB_WORKSPACE/riscv-gcc
+        echo $GITHUB_WORKSPACE/riscv-gcc/bin >> $GITHUB_PATH
+
+    - name: '📦 Install GHDL'
+      uses: ghdl/setup-ghdl-ci@nightly
+
+    - name: '🔍 Check tools'
+      run: |
+        riscv32-unknown-elf-gcc -v
+        ghdl -v
+
+    - name: '⚙️ Build Software Framework Tests'
+      run: |
+        make -C sw/example/processor_check check
+        make -C sw/example clean_all exe
+        make -C sw/bootloader clean_all info bootloader
+
+    - name: '🚧 Compile executable and run simulation'
+      run: |
+        make -C sw/example/${{ matrix.example }} \
+        USER_FLAGS+="-DUART0_SIM_MODE -DUART1_SIM_MODE" \
+        clean_all \
+        info \
+        all \
+        sim-check
