@@ -32,10 +32,9 @@ jobs:
         make -C sw/example clean_all exe
         make -C sw/bootloader clean_all info bootloader
 
-
-  Simple:
+  Default_TB:
     runs-on: ubuntu-latest
-    name: 'Simple testbench'
+    name: 'Default testbench'
     strategy:
       fail-fast: false
       matrix:
@@ -61,37 +60,3 @@ jobs:
           info
           all
           sim-check
-
-
-  VUnit:
-    runs-on: ubuntu-latest
-
-    steps:
-
-    - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v4
-
-    - name: '⚙️ Build and install Processor Check software'
-      uses: docker://ghcr.io/stnolting/neorv32/sim
-      with:
-        args: >-
-          make -C sw/example/processor_check
-          clean_all
-          USER_FLAGS+=-DUART0_SIM_MODE
-          USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT
-          USER_FLAGS+=-flto
-          MARCH=rv32imac_zicsr_zifencei
-          info
-          all
-
-    - name: '📤 Archive Processor Check application image'
-      uses: actions/upload-artifact@v4
-      with:
-        name: application
-        path: rtl/core/neorv32_application_image.vhd
-
-    - name: '🚧 Run Processor Hardware Tests with VUnit'
-      uses: VUnit/vunit_action@master
-      with:
-        image: ghcr.io/stnolting/neorv32/sim
-        cmd: ./sim/run.py --ci-mode -v
