@@ -21,12 +21,17 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_top is
   generic (
-    -- General --
+    -- Processor Clocking --
     CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
     CLOCK_GATING_EN       : boolean                        := false;       -- enable clock gating when in sleep mode
+
+    -- Core Identification --
     HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
     JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
-    INT_BOOTLOADER_EN     : boolean                        := false;       -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+
+    -- Boot Configuration --
+    BOOT_MODE_SELECT      : natural range 0 to 2           := 0;           -- boot configuration select (default = 0 = bootloader)
+    BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
 
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                        := false;       -- implement on-chip debugger
@@ -244,16 +249,28 @@ end neorv32_top;
 
 architecture neorv32_top_rtl of neorv32_top is
 
+  -- ----------------------------------------------------------
+  -- Boot Configuration (BOOT_MODE_SELECT)
+  -- ----------------------------------------------------------
+  -- 0: Internal bootloader ROM
+  -- 1: Custom (use BOOT_ADDR_CUSTOM)
+  -- 2: Internal IMEM initialized with application image
+  -- ----------------------------------------------------------
+  constant bootrom_en_c    : boolean := boolean(BOOT_MODE_SELECT = 0);
+  constant imem_as_rom_c   : boolean := boolean(BOOT_MODE_SELECT = 2);
+  constant bootaddr_btld_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 0), mem_boot_base_c,  x"00000000");
+  constant bootaddr_cust_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 1), BOOT_ADDR_CUSTOM, x"00000000");
+  constant bootaddr_imem_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 2), mem_imem_base_c,  x"00000000");
+  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := bootaddr_btld_c or bootaddr_cust_c or bootaddr_imem_c;
+
   -- auto-configuration --
-  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(INT_BOOTLOADER_EN, mem_boot_base_c, mem_imem_base_c);
-  constant imem_as_rom_c   : boolean := not INT_BOOTLOADER_EN;
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
   constant io_xirq_en_c    : boolean := boolean(XIRQ_NUM_CH > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
   constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
 
-  -- convert JEDEC ID to mvendorid CSR --
+  -- convert JEDEC ID to MVENDORID CSR --
   constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
 
   -- make sure physical memory sizes are a power of two --
@@ -282,7 +299,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dmi_rsp : dmi_rsp_t;
 
   -- debug core interface (DCI) --
-  signal dci_ndmrstn, dci_halt_req : std_ulogic;
+  signal dci_ndmrstn, dci_haltreq : std_ulogic;
 
   -- bus: core complex (CPU + caches) and DMA --
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req, main_req, main2_req, dma_req : bus_req_t;
@@ -332,7 +349,7 @@ begin
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
       cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",       "") &
       cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",       "") &
-      cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",    "") &
+      cond_sel_string_f(bootrom_en_c,              "BOOTROM ",    "") &
       cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",    "") &
       cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",    "") &
       cond_sel_string_f(XBUS_EN,                   "XBUS ",       "") &
@@ -507,7 +524,7 @@ begin
       mei_i      => mext_irq_i,
       mti_i      => mtime_irq,
       firq_i     => cpu_firq,
-      dbi_i      => dci_halt_req,
+      dbi_i      => dci_haltreq,
       -- instruction bus interface --
       ibus_req_o => cpu_i_req,
       ibus_rsp_i => cpu_i_rsp,
@@ -717,7 +734,7 @@ begin
     C_TMO_EN => false, -- no timeout for XIP accesses
     C_PRIV   => false,
     -- port D: BOOT ROM --
-    D_ENABLE => INT_BOOTLOADER_EN,
+    D_ENABLE => bootrom_en_c,
     D_BASE   => mem_boot_base_c,
     D_SIZE   => mem_boot_size_c,
     D_TMO_EN => true,
@@ -768,8 +785,8 @@ begin
     if MEM_INT_IMEM_EN generate
       neorv32_int_imem_inst: entity neorv32.neorv32_imem
       generic map (
-        IMEM_SIZE    => imem_size_c,
-        IMEM_AS_IROM => imem_as_rom_c
+        IMEM_SIZE => imem_size_c,
+        IMEM_INIT => imem_as_rom_c
       )
       port map (
         clk_i     => clk_i,
@@ -810,7 +827,7 @@ begin
     -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_boot_rom_inst_true:
-    if INT_BOOTLOADER_EN generate
+    if bootrom_en_c generate
       neorv32_boot_rom_inst: entity neorv32.neorv32_boot_rom
       port map (
         clk_i     => clk_i,
@@ -821,7 +838,7 @@ begin
     end generate;
 
     neorv32_boot_rom_inst_false:
-    if not INT_BOOTLOADER_EN generate
+    if not bootrom_en_c generate
       boot_rsp <= rsp_terminate_c;
     end generate;
 
@@ -1551,7 +1568,7 @@ begin
       generic map (
         CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
         CLOCK_GATING_EN       => CLOCK_GATING_EN,
-        INT_BOOTLOADER_EN     => INT_BOOTLOADER_EN,
+        INT_BOOTLOADER_EN     => bootrom_en_c,
         MEM_INT_IMEM_EN       => MEM_INT_IMEM_EN,
         MEM_INT_IMEM_SIZE     => imem_size_c,
         MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
@@ -1649,7 +1666,7 @@ begin
       bus_req_i      => iodev_req(IODEV_OCD),
       bus_rsp_o      => iodev_rsp(IODEV_OCD),
       cpu_ndmrstn_o  => dci_ndmrstn,
-      cpu_halt_req_o => dci_halt_req
+      cpu_halt_req_o => dci_haltreq
     );
 
   end generate;
@@ -1659,7 +1676,7 @@ begin
     iodev_rsp(IODEV_OCD) <= rsp_terminate_c;
     jtag_tdo_o           <= jtag_tdi_i; -- JTAG pass-through
     dci_ndmrstn          <= '1';
-    dci_halt_req         <= '0';
+    dci_haltreq          <= '0';
   end generate;
 
 
