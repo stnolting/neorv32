@@ -202,7 +202,7 @@ $(APP_EXE): main.bin $(IMAGE_GEN)
 # Generate NEORV32 executable VHDL boot image
 $(APP_VHD): main.bin $(IMAGE_GEN)
 	@set -e
-	@$(IMAGE_GEN) -app_img $< $@ $(shell basename $(CURDIR))
+	@$(IMAGE_GEN) -app_vhd $< $@ $(shell basename $(CURDIR))
 
 # Install VHDL memory initialization file
 install-$(APP_VHD): $(APP_VHD)
@@ -241,7 +241,7 @@ $(APP_MEM): main.bin $(IMAGE_GEN)
 # Create local VHDL BOOTROM image
 bl_image: main.bin $(IMAGE_GEN)
 	@set -e
-	@$(IMAGE_GEN) -bld_img $< $(BOOT_VHD) $(shell basename $(CURDIR))
+	@$(IMAGE_GEN) -bld_vhd $< $(BOOT_VHD) $(shell basename $(CURDIR))
 
 # Install BOOTROM image to VHDL source directory
 bootloader: bl_image
