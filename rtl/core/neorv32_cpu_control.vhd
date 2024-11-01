@@ -1410,7 +1410,7 @@ begin
       csr.mie_firq       <= (others => '0');
       csr.mtvec          <= (others => '0');
       csr.mscratch       <= x"19880704";
-      csr.mepc           <= (others => '0');
+      csr.mepc           <= BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
       csr.mcause         <= (others => '0');
       csr.mtval          <= (others => '0');
       csr.mtinst         <= (others => '0');
