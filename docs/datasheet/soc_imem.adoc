@@ -5,13 +5,14 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source files:  | neorv32_imem.vhd    | default platform-agnostic instruction memory
-| Software driver files:  | none                | _implicitly used_
-| Top entity ports:       | none                |
-| Configuration generics: | `MEM_INT_IMEM_EN`   | implement processor-internal IMEM when `true`
-|                         | `MEM_INT_IMEM_SIZE` | IMEM size in bytes (use a power of 2)
-|                         | `INT_BOOTLOADER_EN` | use internal bootloader when `true` (implements IMEM as _uninitialized_ RAM, otherwise the IMEM is implemented an _pre-intialized_ ROM)
-| CPU interrupts:         | none                |
+| Hardware source files:  | neorv32_imem.vhd              | default platform-agnostic instruction memory (RAM or ROM)
+|                         | neorv32_application_image.vhd | initialization image (a VHDL package)
+| Software driver files:  | none                          | _implicitly used_
+| Top entity ports:       | none                          |
+| Configuration generics: | `MEM_INT_IMEM_EN`             | implement processor-internal IMEM when `true`
+|                         | `MEM_INT_IMEM_SIZE`           | IMEM size in bytes (use a power of 2)
+|                         | `INT_BOOTLOADER_EN`           | use internal bootloader when `true` (implements IMEM as _uninitialized_ RAM, otherwise the IMEM is implemented an _pre-intialized_ ROM)
+| CPU interrupts:         | none                          |
 | Access restrictions:  2+| none / read-only if `INT_BOOTLOADER_EN = true`
 |=======================
 
