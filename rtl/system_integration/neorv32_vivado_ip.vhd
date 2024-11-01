@@ -27,11 +27,14 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     -- AXI-Stream Interfaces --
     AXI4_STREAM_EN        : boolean                       := false;
-    -- General --
+    -- Clocking --
     CLOCK_FREQUENCY       : natural                       := 100_000_000;
+    -- Identification --
     HART_ID               : std_logic_vector(31 downto 0) := x"00000000";
     JEDEC_ID              : std_logic_vector(10 downto 0) := "00000000000";
-    INT_BOOTLOADER_EN     : boolean                       := false;
+    -- Boot Configuration --
+    BOOT_MODE_SELECT      : natural range 0 to 1          := 0;
+    BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000";
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                       := false;
     OCD_AUTHENTICATION    : boolean                       := false;
@@ -351,12 +354,15 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_top_inst: neorv32_top
   generic map (
-    -- General --
+    -- Clocking --
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
     CLOCK_GATING_EN       => false, -- clock gating is not supported here
+    -- Identification --
     HART_ID               => std_ulogic_vector(HART_ID),
     JEDEC_ID              => std_ulogic_vector(JEDEC_ID),
-    INT_BOOTLOADER_EN     => INT_BOOTLOADER_EN,
+    -- Boot Configuration --
+    BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
+    BOOT_ADDR_CUSTOM      => BOOT_ADDR_CUSTOM,
     -- On-Chip Debugger --
     OCD_EN                => OCD_EN,
     OCD_AUTHENTICATION    => OCD_AUTHENTICATION,

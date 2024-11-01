@@ -64,6 +64,9 @@ set_property vendor_display_name "Stephan Nolting" [ipx::current_core]
 set_property company_url https://github.com/stnolting/neorv32 [ipx::current_core]
 set_property description "The NEORV32 RISC-V Processor" [ipx::current_core]
 
+# **************************************************************
+# Setup configuration GUI
+# **************************************************************
 proc setup_ip_gui {} {
   proc set_param_properties {name {display_name ""} {tooltip ""} {enablement_expr ""} {value_expr ""}} {
     set param_spec [ipgui::get_guiparamspec -name $name -component [ipx::current_core]]
@@ -127,6 +130,9 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_MTIME_EN}    [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
   set_property enablement_dependency {!$IO_MTIME_EN}   [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
 
+  # **************************************************************
+  # Configuration pages
+  # **************************************************************
   # Remove default page
   set page [ipgui::get_pagespec -name "Page 0" -component [ipx::current_core]]
   if {$page ne ""} {
@@ -140,7 +146,20 @@ proc setup_ip_gui {} {
 
   # { param_name {display_name} {tooltip} {enablement_expr} {value_expr} }
   add_params $page {
-    { CLOCK_FREQUENCY       {Clock Frequency (Hz)}  {Frequency of the clk signal in Hz} }
+    { CLOCK_FREQUENCY       {Clock Frequency (Hz)}  {Frequency of the clk input signal in Hz} }
+  }
+
+  set group [add_group $page {Boot Configuration}]
+  add_params $group {
+    { BOOT_MODE_SELECT      {Boot mode select}      {CPU boot configuration} }
+    { BOOT_ADDR_CUSTOM      {Custom boot address}   {Available if BOOT_MODE_SELECT = 1; has to be 4-byte aligned}   {$BOOT_MODE_SELECT == 1}}
+  }
+  set_property widget {comboBox} [ipgui::get_guiparamspec -name "BOOT_MODE_SELECT" -component [ipx::current_core] ]
+  set_property value_validation_type pairs [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
+  set_property value_validation_pairs {{Internal bootloader} 0 {Custom address} 1} [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
+
+  set group [add_group $page {Core Identification}]
+  add_params $group {
     { HART_ID               {HART ID}               {The hart thread ID of the CPU (passed to mhartid CSR)} }
     { JEDEC_ID              {JEDEC ID}              {For JTAG tap identification and mvendorid CSR} }
   }
@@ -259,11 +278,6 @@ proc setup_ip_gui {} {
     { XIP_CACHE_EN         {Enable XIP Cache} {}                              {$XIP_EN} {$XIP_EN ? $XIP_CACHE_EN : false} }
     { XIP_CACHE_NUM_BLOCKS {Cache Blocks}     {}                              {$XIP_CACHE_EN} }
     { XIP_CACHE_BLOCK_SIZE {Cache Block Size} {In bytes (use a power of two)} {$XIP_CACHE_EN} }
-  }
-
-  set group [add_group $page {Internal Bootloader}]
-  add_params $group {
-    { INT_BOOTLOADER_EN    {Enable Bootloader} {Start interactive bootloader console after reset} }
   }
 
 
