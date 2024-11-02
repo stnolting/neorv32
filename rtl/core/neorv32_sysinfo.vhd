@@ -19,8 +19,10 @@ entity neorv32_sysinfo is
   generic (
     CLOCK_FREQUENCY       : natural; -- clock frequency of clk_i in Hz
     CLOCK_GATING_EN       : boolean; -- enable clock gating when in sleep mode
+    BOOT_MODE_SELECT      : natural; -- boot configuration select (default = 0 = bootloader)
     INT_BOOTLOADER_EN     : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     MEM_INT_IMEM_EN       : boolean; -- implement processor-internal instruction memory
+    MEM_INT_IMEM_ROM      : boolean; -- implement processor-internal instruction memory as pre-initialized ROM
     MEM_INT_IMEM_SIZE     : natural; -- size of processor-internal instruction memory in bytes
     MEM_INT_DMEM_EN       : boolean; -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE     : natural; -- size of processor-internal data memory in bytes
@@ -75,6 +77,7 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant xcache_en_c    : boolean := XBUS_EN and XBUS_CACHE_EN;
   constant xip_cache_en_c : boolean := XIP_EN and XIP_CACHE_EN;
   constant ocd_auth_en_c  : boolean := OCD_EN and OCD_AUTHENTICATION;
+  constant int_imem_rom_c : boolean := int_imem_en_c and MEM_INT_IMEM_ROM;
 
   -- system information memory --
   type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
@@ -104,7 +107,7 @@ begin
   sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_IMEM_SIZE), 8)); -- log2(IMEM size)
   sysinfo(1)(15 downto 8)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_DMEM_SIZE), 8)); -- log2(DMEM size)
   sysinfo(1)(23 downto 16) <= (others => '0'); -- reserved
-  sysinfo(1)(31 downto 24) <= (others => '0'); -- reserved
+  sysinfo(1)(31 downto 24) <= std_ulogic_vector(to_unsigned(BOOT_MODE_SELECT, 8)); -- boot configuration
 
   -- SYSINFO(2): SoC Configuration --
   sysinfo(2)(0)  <= '1' when INT_BOOTLOADER_EN else '0'; -- processor-internal bootloader implemented?
@@ -119,7 +122,7 @@ begin
   sysinfo(2)(9)  <= '1' when XIP_EN            else '0'; -- execute in-place module implemented?
   sysinfo(2)(10) <= '1' when xip_cache_en_c    else '0'; -- execute in-place cache implemented?
   sysinfo(2)(11) <= '1' when ocd_auth_en_c     else '0'; -- on-chip debugger authentication implemented?
-  sysinfo(2)(12) <= '0';                                 -- reserved
+  sysinfo(2)(12) <= '1' when int_imem_rom_c    else '0'; -- processor-internal instruction memory implemented as pre-initialized ROM?
   sysinfo(2)(13) <= '0';                                 -- reserved
   sysinfo(2)(14) <= '1' when IO_DMA_EN         else '0'; -- direct memory access controller (DMA) implemented?
   sysinfo(2)(15) <= '1' when IO_GPIO_EN        else '0'; -- general purpose input/output port unit (GPIO) implemented?
