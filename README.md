@@ -251,7 +251,8 @@ This overview provides some *quick links* to the most important sections of the
 
 * [Top Entity - Signals](https://stnolting.github.io/neorv32/#_processor_top_entity_signals) - how to connect to the processor
 * [Top Entity - Generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics) - processor/CPU configuration options
-* [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory layout and boot configurations
+* [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory layout and address mapping
+* [Boot Configuration](https://stnolting.github.io/neorv32/#_boot_configuration) - how to make the processor start executing
 * [SoC Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - IO/peripheral modules and memories
 * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - in-system debugging of the processor via JTAG
 
