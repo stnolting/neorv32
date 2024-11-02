@@ -11,6 +11,7 @@
 # -- SPDX-License-Identifier: BSD-3-Clause                                            --
 # -- ================================================================================ --
 
+
 # **************************************************************
 # Global configuration
 # **************************************************************
@@ -19,6 +20,7 @@ set ip_top neorv32_vivado_ip
 set ip_logo docs/figures/neorv32_logo_riscv_small.png
 set outputdir neorv32_vivado_ip_work
 set cur_dir [file normalize .]
+
 
 # **************************************************************
 # Create empty (!) output/working directory
@@ -30,11 +32,13 @@ if {[llength $files] != 0} {
   file delete -force {*}[glob -directory $outputdir *];
 }
 
+
 # **************************************************************
 # Create Vivado project
 # **************************************************************
 create_project "neorv32-ip" $outputdir
-#set_property target_language VHDL [current_project]
+set_property INCREMENTAL false [get_filesets sim_1]
+
 
 # **************************************************************
 # Import HDL source files
@@ -55,6 +59,7 @@ set_property top $ip_top [current_fileset]
 
 update_compile_order -fileset sources_1
 
+
 # **************************************************************
 # Package as IP block
 # **************************************************************
@@ -63,6 +68,7 @@ set_property display_name "NEORV32" [ipx::current_core]
 set_property vendor_display_name "Stephan Nolting" [ipx::current_core]
 set_property company_url https://github.com/stnolting/neorv32 [ipx::current_core]
 set_property description "The NEORV32 RISC-V Processor" [ipx::current_core]
+
 
 # **************************************************************
 # Setup configuration GUI
@@ -108,27 +114,29 @@ proc setup_ip_gui {} {
     }
   }
 
+
   # **************************************************************
   # Interfaces: Configuration Dependencies
   # **************************************************************
-  set_property enablement_dependency {$AXI4_STREAM_EN} [ipx::get_bus_interfaces s0_axis -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$AXI4_STREAM_EN} [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$XBUS_EN}        [ipx::get_bus_interfaces m_axi   -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$OCD_EN}         [ipx::get_ports jtag_*           -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$XIP_EN}         [ipx::get_ports xip_*            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_GPIO_EN}     [ipx::get_ports gpio_*           -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_UART0_EN}    [ipx::get_ports uart0_*          -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_UART1_EN}    [ipx::get_ports uart1_*          -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_SPI_EN}      [ipx::get_ports spi_*            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_SDI_EN}      [ipx::get_ports sdi_*            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_TWI_EN}      [ipx::get_ports twi_*            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_ONEWIRE_EN}  [ipx::get_ports onewire_*        -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_PWM_EN}      [ipx::get_ports pwm_o            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_CFS_EN}      [ipx::get_ports cfs_*            -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_NEOLED_EN}   [ipx::get_ports neoled_o         -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$XIRQ_EN}        [ipx::get_ports xirq_i           -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_MTIME_EN}    [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
-  set_property enablement_dependency {!$IO_MTIME_EN}   [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_SLINK_EN}   [ipx::get_bus_interfaces s0_axis -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_SLINK_EN}   [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$XBUS_EN}       [ipx::get_bus_interfaces m_axi   -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$OCD_EN}        [ipx::get_ports jtag_*           -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$XIP_EN}        [ipx::get_ports xip_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_GPIO_EN}    [ipx::get_ports gpio_*           -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_UART0_EN}   [ipx::get_ports uart0_*          -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_UART1_EN}   [ipx::get_ports uart1_*          -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_SPI_EN}     [ipx::get_ports spi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_SDI_EN}     [ipx::get_ports sdi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_TWI_EN}     [ipx::get_ports twi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_ONEWIRE_EN} [ipx::get_ports onewire_*        -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_PWM_EN}     [ipx::get_ports pwm_o            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_CFS_EN}     [ipx::get_ports cfs_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_NEOLED_EN}  [ipx::get_ports neoled_o         -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$XIRQ_EN}       [ipx::get_ports xirq_i           -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_MTIME_EN}   [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_MTIME_EN}  [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
+
 
   # **************************************************************
   # Configuration pages
@@ -145,18 +153,20 @@ proc setup_ip_gui {} {
   set page [add_page {General}]
 
   # { param_name {display_name} {tooltip} {enablement_expr} {value_expr} }
+
+  set group [add_group $page {Clocking}]
   add_params $page {
     { CLOCK_FREQUENCY       {Clock Frequency (Hz)}  {Frequency of the clk input signal in Hz} }
   }
 
   set group [add_group $page {Boot Configuration}]
   add_params $group {
-    { BOOT_MODE_SELECT      {Boot mode select}      {CPU boot configuration} }
+    { BOOT_MODE_SELECT      {Boot mode select}      {Processor boot configuration} }
     { BOOT_ADDR_CUSTOM      {Custom boot address}   {Available if BOOT_MODE_SELECT = 1; has to be 4-byte aligned}   {$BOOT_MODE_SELECT == 1}}
   }
   set_property widget {comboBox} [ipgui::get_guiparamspec -name "BOOT_MODE_SELECT" -component [ipx::current_core] ]
   set_property value_validation_type pairs [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
-  set_property value_validation_pairs {{Internal bootloader} 0 {Custom address} 1} [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
+  set_property value_validation_pairs {{Internal bootloader} 0 {Custom address} 1 {Internal IMEM image} 2} [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
 
   set group [add_group $page {Core Identification}]
   add_params $group {
@@ -178,6 +188,7 @@ proc setup_ip_gui {} {
 
   set sub_group [add_group $group {XBUS Cache}]
   add_params $sub_group {
+    { XBUS_REGSTAGE_EN      {Add register stages}   {Relaxes timing, but will increase latency}               {$XBUS_EN} }
     { XBUS_CACHE_EN         {Enable XBUS Cache}     {}                                                        {$XBUS_EN} {$XBUS_EN ? $XBUS_CACHE_EN : false}}
     { XBUS_CACHE_NUM_BLOCKS {Number of Blocks}      {}                                                        {$XBUS_CACHE_EN} }
     { XBUS_CACHE_BLOCK_SIZE {Block Size}            {In bytes (use a power of two)}                           {$XBUS_CACHE_EN} }
@@ -185,9 +196,9 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Stream Link Interface (SLINK / AXI4-Stream Source & Sink)}]
   add_params $group {
-    { AXI4_STREAM_EN        {Enable SLINK}          {} }
-    { IO_SLINK_RX_FIFO      {RX FIFO Depth}         {Number of entries (use a power of two)}                  {$AXI4_STREAM_EN} }
-    { IO_SLINK_TX_FIFO      {TX FIFO Depth}         {Number of entries (use a power of two)}                  {$AXI4_STREAM_EN} }
+    { IO_SLINK_EN           {Enable SLINK}          {} }
+    { IO_SLINK_RX_FIFO      {RX FIFO Depth}         {Number of entries (use a power of two)}                  {$IO_SLINK_EN} }
+    { IO_SLINK_TX_FIFO      {TX FIFO Depth}         {Number of entries (use a power of two)}                  {$IO_SLINK_EN} }
   }
 
 
@@ -233,7 +244,7 @@ proc setup_ip_gui {} {
   }
   set_property value_validation_range_minimum 4 [ipx::get_user_parameters PMP_MIN_GRANULARITY -of_objects [ipx::current_core]]
 
-  set group [add_group $page {Architecture Tuning Options}]
+  set group [add_group $page {Tuning Options}]
   add_params $group {
     { FAST_MUL_EN         {DSP-Based Multiplier} }
     { FAST_SHIFT_EN       {Barrel Shifter} }
@@ -390,6 +401,7 @@ proc setup_ip_gui {} {
 
 setup_ip_gui
 
+
 # **************************************************************
 # Configuration GUI: IP logo
 # **************************************************************
@@ -405,6 +417,7 @@ set_property type LOGO  [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects
 
 ipx::add_file_group -type product_guide {} [ipx::current_core]
 ipx::add_file {https://stnolting.github.io/neorv32/} [ipx::get_file_groups xilinx_productguide -of_objects [ipx::current_core]]
+
 
 # **************************************************************
 # Finalize and add to IP repository
