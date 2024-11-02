@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
     // header
     sprintf(tmp_string, "memory_initialization_radix=16;\n");
     fputs(tmp_string, output);
-    sprintf(tmp_string, "memory_initialization_vector=");
+    sprintf(tmp_string, "memory_initialization_vector=\n");
     fputs(tmp_string, output);
 
     i = 0;
@@ -359,18 +359,14 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
       if (i == (input_words-1)) {
-        sprintf(tmp_string, "\n%08x", (unsigned int)tmp);
+        sprintf(tmp_string, "%08x;\n", (unsigned int)tmp);
       }
       else {
-        sprintf(tmp_string, "\n%08x,", (unsigned int)tmp);
+        sprintf(tmp_string, "%08x,\n", (unsigned int)tmp);
       }
       fputs(tmp_string, output);
       i++;
     }
-
-    // footer
-    sprintf(tmp_string, ";\n");
-    fputs(tmp_string, output);
   }
 
 
