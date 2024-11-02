@@ -258,10 +258,10 @@ architecture neorv32_top_rtl of neorv32_top is
   -- ----------------------------------------------------------
   constant bootrom_en_c    : boolean := boolean(BOOT_MODE_SELECT = 0);
   constant imem_as_rom_c   : boolean := boolean(BOOT_MODE_SELECT = 2);
-  constant bootaddr_btld_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 0), mem_boot_base_c,  x"00000000");
-  constant bootaddr_cust_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 1), BOOT_ADDR_CUSTOM, x"00000000");
-  constant bootaddr_imem_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 2), mem_imem_base_c,  x"00000000");
-  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := bootaddr_btld_c or bootaddr_cust_c or bootaddr_imem_c;
+  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) :=
+    cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 0), mem_boot_base_c,
+    cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 1), BOOT_ADDR_CUSTOM,
+    cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 2), mem_imem_base_c, x"00000000")));
 
   -- auto-configuration --
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
@@ -347,7 +347,7 @@ begin
     -- show SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
-      cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",       "") &
+      cond_sel_string_f(MEM_INT_IMEM_EN,           cond_sel_string_f(imem_as_rom_c, "IMEM_ROM ", "IMEM "), "") &
       cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",       "") &
       cond_sel_string_f(bootrom_en_c,              "BOOTROM ",    "") &
       cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",    "") &
@@ -375,7 +375,7 @@ begin
       cond_sel_string_f(IO_SLINK_EN,               "SLINK ",      "") &
       cond_sel_string_f(IO_CRC_EN,                 "CRC ",        "") &
       cond_sel_string_f(io_sysinfo_en_c,           "SYSINFO ",    "") &
-      cond_sel_string_f(OCD_EN, cond_sel_string_f(OCD_AUTHENTICATION, "OCD-AUTH ", "OCD "), "") &
+      cond_sel_string_f(OCD_EN,                    cond_sel_string_f(OCD_AUTHENTICATION, "OCD-AUTH ", "OCD "), "") &
       ""
       severity note;
 
@@ -394,6 +394,15 @@ begin
     -- Clock speed not defined --
     assert not (CLOCK_FREQUENCY = 0) report
       "[NEORV32] CLOCK_FREQUENCY must be configured according to the frequency of clk_i port!" severity warning;
+
+    -- Boot configuration notifier --
+    assert not (BOOT_MODE_SELECT = 0) report "[NEORV32] BOOT_MODE_SELECT = 0: booting via bootloader" severity note;
+    assert not (BOOT_MODE_SELECT = 1) report "[NEORV32] BOOT_MODE_SELECT = 1: booting from custom address" severity note;
+    assert not (BOOT_MODE_SELECT = 2) report "[NEORV32] BOOT_MODE_SELECT = 2: booting IMEM image" severity note;
+
+    -- Boot configuration: boot from initialized IMEM requires the IMEM to be enabled --
+    assert not ((BOOT_MODE_SELECT = 2) and (MEM_INT_IMEM_EN = false)) report
+      "[NEORV32] BOOT_MODE_SELECT = 2 (boot IMEM image) requires the internal instruction memory (IMEM) to be enabled!" severity error;
 
   end generate; -- /sanity_checks
 
@@ -1568,8 +1577,10 @@ begin
       generic map (
         CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
         CLOCK_GATING_EN       => CLOCK_GATING_EN,
+        BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
         INT_BOOTLOADER_EN     => bootrom_en_c,
         MEM_INT_IMEM_EN       => MEM_INT_IMEM_EN,
+        MEM_INT_IMEM_ROM      => imem_as_rom_c,
         MEM_INT_IMEM_SIZE     => imem_size_c,
         MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
         MEM_INT_DMEM_SIZE     => dmem_size_c,
