@@ -12,11 +12,11 @@ That is used for running the RISC-V architecture tests, in order to guarantee co
 On the other hand, http://vunit.github.io/[VUnit] and http://vunit.github.io/verification_components/user_guide.html[Verification Components]
 are used for verifying the functionality of the various peripherals from a hardware point of view.
 
-.AMD Vivado / ISIM
-[TIP]
-When using AMD Vivado (ISIM for simulation) make sure to **turn of** "incremental compilation" (_Project Setting_
+.AMD Vivado / ISIM - Incremental Compilation
+[IMPORTANT]
+When using AMD Vivado (ISIM for simulation) make sure to **TURN OFF** "incremental compilation" (_Project Setting_
 -> _Simulation_ -> _Advanced_ -> _Enable incremental compilation). This will slow down simulation relaunch but will
-ensure that all application images (`*_image.vhd`) are reanalyzed when recompiling the NEORV32 application or bootloader
+ensure that all application images (`*_image.vhd`) are reanalyzed when recompiling the NEORV32 application or bootloader.
 
 :sectnums:
 === Testbench
@@ -36,7 +36,7 @@ The NEORV32 TRNG will be set to "simulation mode" when enabled for simulation (r
 by pseudo-random LFSRs). See the neoTRNG documentation for more information.
 
 The simulation setup is configured via the "User Configuration" section located right at the beginning of
-the testbench's architecture. Each configuration constant provides comments to explain the functionality.
+the testbench architecture. Each configuration constant provides comments to explain the functionality.
 
 [IMPORTANT]
 The simulated NEORV32 does not use the bootloader and _directly boots_ the current application image (from
