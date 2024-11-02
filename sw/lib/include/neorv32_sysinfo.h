@@ -37,12 +37,14 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /** NEORV32_SYSINFO.MEM (r/-): Memory configuration (sizes) */
 enum NEORV32_SYSINFO_MEM_enum {
   SYSINFO_MEM_IMEM = 0, /**< SYSINFO_MEM byte 0 (r/-): log2(internal IMEM size in bytes) (via MEM_INT_IMEM_SIZE generic) */
-  SYSINFO_MEM_DMEM = 1  /**< SYSINFO_MEM byte 1 (r/-): log2(internal DMEM size in bytes) (via MEM_INT_DMEM_SIZE generic) */
+  SYSINFO_MEM_DMEM = 1, /**< SYSINFO_MEM byte 1 (r/-): log2(internal DMEM size in bytes) (via MEM_INT_DMEM_SIZE generic) */
+  SYSINFO_MEM_res  = 2, /**< SYSINFO_MEM byte 2 (r/-): reserved, read as zero */
+  SYSINFO_MEM_BOOT = 3  /**< SYSINFO_MEM byte 3 (r/-): boot mode configuration (via BOOT_MODE_SELECT generic) */
 };
 
 /** NEORV32_SYSINFO.SOC (r/-): Implemented processor devices/features */
 enum NEORV32_SYSINFO_SOC_enum {
-  SYSINFO_SOC_BOOTLOADER   =  0, /**< SYSINFO_SOC  (0) (r/-): Bootloader implemented when 1 (via INT_BOOTLOADER_EN generic) */
+  SYSINFO_SOC_BOOTLOADER   =  0, /**< SYSINFO_SOC  (0) (r/-): Bootloader implemented when 1 (via BOOT_MODE_SELECT generic) */
   SYSINFO_SOC_XBUS         =  1, /**< SYSINFO_SOC  (1) (r/-): External bus interface implemented when 1 (via XBUS_EN generic) */
   SYSINFO_SOC_MEM_INT_IMEM =  2, /**< SYSINFO_SOC  (2) (r/-): Processor-internal instruction memory implemented when 1 (via MEM_INT_IMEM_EN generic) */
   SYSINFO_SOC_MEM_INT_DMEM =  3, /**< SYSINFO_SOC  (3) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_EN generic) */
@@ -54,6 +56,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_XIP          =  9, /**< SYSINFO_SOC  (9) (r/-): Execute in-place module implemented when 1 (via XIP_EN generic) */
   SYSINFO_SOC_XIP_CACHE    = 10, /**< SYSINFO_SOC (10) (r/-): Execute in-place cache implemented when 1 (via XIP_CACHE_EN generic) */
   SYSINFO_SOC_OCD_AUTH     = 11, /**< SYSINFO_SOC (11) (r/-): On-chip debugger authentication implemented when 1 (via OCD_AUTHENTICATION generic) */
+  SYSINFO_SOC_IMEM_ROM     = 12, /**< SYSINFO_SOC (12) (r/-): Processor-internal instruction memory implemented as pre-initialized ROM when 1 (via BOOT_MODE_SELECT generic) */
 
   SYSINFO_SOC_IO_DMA       = 14, /**< SYSINFO_SOC (14) (r/-): Direct memory access controller implemented when 1 (via IO_DMA_EN generic) */
   SYSINFO_SOC_IO_GPIO      = 15, /**< SYSINFO_SOC (15) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */

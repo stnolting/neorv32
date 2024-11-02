@@ -11,7 +11,7 @@
 | Top entity ports:       | none                          |
 | Configuration generics: | `MEM_INT_IMEM_EN`             | implement processor-internal IMEM when `true`
 |                         | `MEM_INT_IMEM_SIZE`           | IMEM size in bytes (use a power of 2)
-|                         | `INT_BOOTLOADER_EN`           | use internal bootloader when `true` (implements IMEM as _uninitialized_ RAM, otherwise the IMEM is implemented an _pre-intialized_ ROM)
+|                         | `BOOT_MODE_SELECT`            | implement IMEM as ROM when `BOOT_MODE_SELECT` = 2; see <<_boot_configuration>>
 | CPU interrupts:         | none                          |
 | Access restrictions:  2+| none / read-only if `INT_BOOTLOADER_EN = true`
 |=======================
@@ -21,19 +21,19 @@
 
 Implementation of the processor-internal instruction memory is enabled by the processor's
 `MEM_INT_IMEM_EN` generic. The total memory size in bytes is defined via the `MEM_INT_IMEM_SIZE` generic.
-Note that this size should be a power of two to optimize physical implementation. If the IMEM is implemented,
-it is mapped to base address `0x00000000` by default (see section <<_address_space>>).
+Note that this size should be a power of two to optimize physical implementation. If enabled,
+the IMEM is mapped to base address `0x00000000` (see section <<_address_space>>).
 
 By default the IMEM is implemented as true RAM so the content can be modified during run time. This is
-required when using the bootloader (or the on-chip debugger) so it can update the content of the IMEM at
-any time. If this feature is not required the IMEM can be implemented as _pre-intialized_ ROM so that the
-application code permanently resides in memory. This is automatically implemented when the
-processor-internal bootloader is disabled (`INT_BOOTLOADER_EN` = `false`).
+required when using the <<_bootloader>> (or the <<_on_chip_debugger>>) so it can update the content of the IMEM at
+any time.
 
-When the IMEM is implemented as ROM, it will be initialized during synthesis with the actual application program
-image. The compiler toolchain provides an option to generate and override the default VHDL initialization file
-`rtl/core/neorv32_application_image.vhd`, which is automatically inserted into the IMEM. If the IMEM is implemented
-as RAM (default), the memory block will **not be initialized at all**.
+Alternatively, the IMEM can be implemented as **pre-initialized read-only memory (ROM)**, so the processor can
+directly boot from it after reset. This option is configured via the `BOOT_MODE_SELECT` generic. See section
+<<_boot_configuration>> for more information. The initialization image is embedded into the bitstream during synthesis.
+The software framework provides an option to generate and override the default VHDL initialization file
+`rtl/core/neorv32_application_image.vhd`, which is automatically inserted into the IMEM (see <<_makefile_targets>>.
+If the IMEM is implemented as RAM (default), the memory block will not be initialized at all.
 
 .Platform-Specific Memory Primitives
 [NOTE]
@@ -48,9 +48,9 @@ physical memory size of 64kB).
 
 .Legacy HDL Style
 [TIP]
-If synthesis fails to infer block RAM for the IMEM, turn on the `alternaitve_style_en_c` option inside
+If synthesis fails to infer block RAM for the IMEM, turn on the `alt_style_c` option inside
 the memory's VHDL source file. When enabled, a different HDL style is used to describe the memory core.
 
 .Read-Only Access
 [NOTE]
-If the IMEM is implemented as true ROM any write attempt to it will raise a _store access fault_ exception.
+If the IMEM is implemented as ROM any write attempt to it will raise a _store access fault_ exception.

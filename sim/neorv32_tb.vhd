@@ -163,193 +163,196 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_top_inst: neorv32_top
   generic map (
-    -- General --
-    CLOCK_FREQUENCY       => f_clock_c,     -- clock frequency of clk_i in Hz
-    CLOCK_GATING_EN       => true,          -- enable clock gating when in sleep mode
-    HART_ID               => x"00000000",   -- hardware thread ID
-    JEDEC_ID              => "00000000000", -- vendor's JEDEC ID
-    INT_BOOTLOADER_EN     => false,         -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    -- Clocking --
+    CLOCK_FREQUENCY       => f_clock_c,
+    CLOCK_GATING_EN       => true,
+    -- Identification --
+    HART_ID               => x"00000000",
+    JEDEC_ID              => "00000000000",
+    -- Boot Configuration --
+    BOOT_MODE_SELECT      => 2, -- boot from pre-initialized internal IMEM
+    BOOT_ADDR_CUSTOM      => x"00000000",
     -- On-Chip Debugger (OCD) --
-    OCD_EN                => true,          -- implement on-chip debugger
-    OCD_AUTHENTICATION    => true,          -- implement on-chip debugger authentication
+    OCD_EN                => true,
+    OCD_AUTHENTICATION    => true,
     -- RISC-V CPU Extensions --
-    RISCV_ISA_C           => false,         -- implement compressed extension?
-    RISCV_ISA_E           => false,         -- implement embedded RF extension?
-    RISCV_ISA_M           => true,          -- implement mul/div extension?
-    RISCV_ISA_U           => true,          -- implement user mode extension?
-    RISCV_ISA_Zalrsc      => true,          -- implement atomic reservation-set extension
-    RISCV_ISA_Zba         => true,          -- implement shifted-add bit-manipulation extension
-    RISCV_ISA_Zbb         => true,          -- implement basic bit-manipulation extension
-    RISCV_ISA_Zbkb        => true,          -- implement bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc        => true,          -- implement carry-less multiplication instructions?
-    RISCV_ISA_Zbkx        => true,          -- implement cryptography crossbar permutation extension?
-    RISCV_ISA_Zbs         => true,          -- implement single-bit bit-manipulation extension
-    RISCV_ISA_Zfinx       => true,          -- implement 32-bit floating-point extension (using INT reg!)
-    RISCV_ISA_Zicntr      => true,          -- implement base counters?
-    RISCV_ISA_Zicond      => true,          -- implement integer conditional operations?
-    RISCV_ISA_Zihpm       => true,          -- implement hardware performance monitors?
-    RISCV_ISA_Zknd        => true,          -- implement cryptography NIST AES decryption extension?
-    RISCV_ISA_Zkne        => true,          -- implement cryptography NIST AES encryption extension?
-    RISCV_ISA_Zknh        => true,          -- implement cryptography NIST hash extension?
-    RISCV_ISA_Zksed       => true,          -- implement ShangMi block cypher extension?
-    RISCV_ISA_Zksh        => true,          -- implement ShangMi hash extension?
-    RISCV_ISA_Zmmul       => false,         -- implement multiply-only M sub-extension?
-    RISCV_ISA_Zxcfu       => true,          -- implement custom (instr.) functions unit?
+    RISCV_ISA_C           => false,
+    RISCV_ISA_E           => false,
+    RISCV_ISA_M           => true,
+    RISCV_ISA_U           => true,
+    RISCV_ISA_Zalrsc      => true,
+    RISCV_ISA_Zba         => true,
+    RISCV_ISA_Zbb         => true,
+    RISCV_ISA_Zbkb        => true,
+    RISCV_ISA_Zbkc        => true,
+    RISCV_ISA_Zbkx        => true,
+    RISCV_ISA_Zbs         => true,
+    RISCV_ISA_Zfinx       => true,
+    RISCV_ISA_Zicntr      => true,
+    RISCV_ISA_Zicond      => true,
+    RISCV_ISA_Zihpm       => true,
+    RISCV_ISA_Zknd        => true,
+    RISCV_ISA_Zkne        => true,
+    RISCV_ISA_Zknh        => true,
+    RISCV_ISA_Zksed       => true,
+    RISCV_ISA_Zksh        => true,
+    RISCV_ISA_Zmmul       => false,
+    RISCV_ISA_Zxcfu       => true,
     -- Extension Options --
-    FAST_MUL_EN           => performance_options_c.fast_mul_en_c(PERFORMANCE_OPTION), -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN         => performance_options_c.fast_shift_en_c(PERFORMANCE_OPTION), -- use barrel shifter for shift operations
-    REGFILE_HW_RST        => false,         -- no hardware reset
+    FAST_MUL_EN           => performance_options_c.fast_mul_en_c(PERFORMANCE_OPTION),
+    FAST_SHIFT_EN         => performance_options_c.fast_shift_en_c(PERFORMANCE_OPTION),
+    REGFILE_HW_RST        => false,
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS       => 5,             -- number of regions (0..16)
-    PMP_MIN_GRANULARITY   => 4,             -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
-    PMP_TOR_MODE_EN       => true,          -- implement TOR mode
-    PMP_NAP_MODE_EN       => true,          -- implement NAPOT/NA4 mode
+    PMP_NUM_REGIONS       => 5,
+    PMP_MIN_GRANULARITY   => 4,
+    PMP_TOR_MODE_EN       => true,
+    PMP_NAP_MODE_EN       => true,
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS          => 12,            -- number of implemented HPM counters (0..29)
-    HPM_CNT_WIDTH         => 40,            -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS          => 12,
+    HPM_CNT_WIDTH         => 40,
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN       => int_imem_c ,   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE     => performance_options_c.imem_size_c(PERFORMANCE_OPTION),   -- size of processor-internal instruction memory in bytes
+    MEM_INT_IMEM_EN       => int_imem_c ,
+    MEM_INT_IMEM_SIZE     => performance_options_c.imem_size_c(PERFORMANCE_OPTION),
     -- Internal Data memory --
-    MEM_INT_DMEM_EN       => int_dmem_c,    -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE     => dmem_size_c,   -- size of processor-internal data memory in bytes
+    MEM_INT_DMEM_EN       => int_dmem_c,
+    MEM_INT_DMEM_SIZE     => dmem_size_c,
     -- Internal Cache memory --
-    ICACHE_EN             => performance_options_c.icache_en_c(PERFORMANCE_OPTION),   -- implement instruction cache
-    ICACHE_NUM_BLOCKS     => 64,            -- i-cache: number of blocks (min 2), has to be a power of 2
-    ICACHE_BLOCK_SIZE     => performance_options_c.icache_block_size_c(PERFORMANCE_OPTION), -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_EN             => performance_options_c.icache_en_c(PERFORMANCE_OPTION),
+    ICACHE_NUM_BLOCKS     => 64,
+    ICACHE_BLOCK_SIZE     => performance_options_c.icache_block_size_c(PERFORMANCE_OPTION),
     -- Internal Data Cache (dCACHE) --
-    DCACHE_EN             => performance_options_c.dcache_en_c(PERFORMANCE_OPTION),   -- implement data cache
-    DCACHE_NUM_BLOCKS     => 32,            -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE     => performance_options_c.dcache_block_size_c(PERFORMANCE_OPTION), -- d-cache: block size in bytes (min 4), has to be a power of 2
+    DCACHE_EN             => performance_options_c.dcache_en_c(PERFORMANCE_OPTION),
+    DCACHE_NUM_BLOCKS     => 32,
+    DCACHE_BLOCK_SIZE     => performance_options_c.dcache_block_size_c(PERFORMANCE_OPTION),
     -- External bus interface --
-    XBUS_EN               => true,          -- implement external memory bus interface?
-    XBUS_TIMEOUT          => 256,           -- cycles after a pending bus access auto-terminates (0 = disabled)
-    XBUS_REGSTAGE_EN      => true,          -- add register stage
-    XBUS_CACHE_EN         => true,          -- enable external bus cache (x-cache)
-    XBUS_CACHE_NUM_BLOCKS => 4,             -- x-cache: number of blocks (min 1), has to be a power of 2
-    XBUS_CACHE_BLOCK_SIZE => 32,            -- x-cache: block size in bytes (min 4), has to be a power of 2
+    XBUS_EN               => true,
+    XBUS_TIMEOUT          => 256,
+    XBUS_REGSTAGE_EN      => true,
+    XBUS_CACHE_EN         => true,
+    XBUS_CACHE_NUM_BLOCKS => 4,
+    XBUS_CACHE_BLOCK_SIZE => 32,
     -- Execute in-place module (XIP) --
-    XIP_EN                => true,          -- implement execute in place module (XIP)?
-    XIP_CACHE_EN          => true,          -- implement XIP cache?
-    XIP_CACHE_NUM_BLOCKS  => 4,             -- number of blocks (min 1), has to be a power of 2
-    XIP_CACHE_BLOCK_SIZE  => 256,           -- block size in bytes (min 4), has to be a power of 2
+    XIP_EN                => true,
+    XIP_CACHE_EN          => true,
+    XIP_CACHE_NUM_BLOCKS  => 4,
+    XIP_CACHE_BLOCK_SIZE  => 256,
     -- External Interrupts Controller (XIRQ) --
-    XIRQ_NUM_CH           => 32,            -- number of external IRQ channels (0..32)
+    XIRQ_NUM_CH           => 32,
     -- Processor peripherals --
-    IO_GPIO_NUM           => 64,            -- number of GPIO input/output pairs (0..64)
-    IO_MTIME_EN           => true,          -- implement machine system timer (MTIME)?
-    IO_UART0_EN           => true,          -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART0_RX_FIFO      => 32,            -- RX fifo depth, has to be a power of two, min 1
-    IO_UART0_TX_FIFO      => 32,            -- TX fifo depth, has to be a power of two, min 1
-    IO_UART1_EN           => true,          -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-    IO_UART1_RX_FIFO      => 1,             -- RX fifo depth, has to be a power of two, min 1
-    IO_UART1_TX_FIFO      => 1,             -- TX fifo depth, has to be a power of two, min 1
-    IO_SPI_EN             => true,          -- implement serial peripheral interface (SPI)?
-    IO_SPI_FIFO           => 4,             -- SPI RTX fifo depth, has to be zero or a power of two
-    IO_SDI_EN             => true,          -- implement serial data interface (SDI)?
-    IO_SDI_FIFO           => 4,             -- SDI RTX fifo depth, has to be zero or a power of two
-    IO_TWI_EN             => true,          -- implement two-wire interface (TWI)?
-    IO_TWI_FIFO           => 4,             -- RTX fifo depth, has to be zero or a power of two, min 1
-    IO_PWM_NUM_CH         => 8,             -- number of PWM channels to implement (0..16)
-    IO_WDT_EN             => true,          -- implement watch dog timer (WDT)?
-    IO_TRNG_EN            => true,          -- implement true random number generator (TRNG)?
-    IO_TRNG_FIFO          => 4,             -- TRNG fifo depth, has to be a power of two, min 1
-    IO_CFS_EN             => true,          -- implement custom functions subsystem (CFS)?
-    IO_CFS_CONFIG         => (others => '0'), -- custom CFS configuration generic
-    IO_CFS_IN_SIZE        => 32,            -- size of CFS input conduit in bits
-    IO_CFS_OUT_SIZE       => 32,            -- size of CFS output conduit in bits
-    IO_NEOLED_EN          => true,          -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_NEOLED_TX_FIFO     => 8,             -- NEOLED TX FIFO depth, 1..32k, has to be a power of two
-    IO_GPTMR_EN           => true,          -- implement general purpose timer (GPTMR)?
-    IO_ONEWIRE_EN         => true,          -- implement 1-wire interface (ONEWIRE)?
-    IO_DMA_EN             => true,          -- implement direct memory access controller (DMA)?
-    IO_SLINK_EN           => true,          -- implement stream link interface (SLINK)?
-    IO_SLINK_RX_FIFO      => 4,             -- RX fifo depth, has to be a power of two, min 1
-    IO_SLINK_TX_FIFO      => 4,             -- TX fifo depth, has to be a power of two, min 1
-    IO_CRC_EN             => true           -- implement cyclic redundancy check unit (CRC)?
+    IO_GPIO_NUM           => 64,
+    IO_MTIME_EN           => true,
+    IO_UART0_EN           => true,
+    IO_UART0_RX_FIFO      => 32,
+    IO_UART0_TX_FIFO      => 32,
+    IO_UART1_EN           => true,
+    IO_UART1_RX_FIFO      => 1,
+    IO_UART1_TX_FIFO      => 1,
+    IO_SPI_EN             => true,
+    IO_SPI_FIFO           => 4,
+    IO_SDI_EN             => true,
+    IO_SDI_FIFO           => 4,
+    IO_TWI_EN             => true,
+    IO_TWI_FIFO           => 4,
+    IO_PWM_NUM_CH         => 8,
+    IO_WDT_EN             => true,
+    IO_TRNG_EN            => true,
+    IO_TRNG_FIFO          => 4,
+    IO_CFS_EN             => true,
+    IO_CFS_CONFIG         => (others => '0'),
+    IO_CFS_IN_SIZE        => 32,
+    IO_CFS_OUT_SIZE       => 32,
+    IO_NEOLED_EN          => true,
+    IO_NEOLED_TX_FIFO     => 8,
+    IO_GPTMR_EN           => true,
+    IO_ONEWIRE_EN         => true,
+    IO_DMA_EN             => true,
+    IO_SLINK_EN           => true,
+    IO_SLINK_RX_FIFO      => 4,
+    IO_SLINK_TX_FIFO      => 4,
+    IO_CRC_EN             => true
   )
   port map (
     -- Global control --
-    clk_i          => clk_gen,         -- global clock, rising edge
-    rstn_i         => rst_gen,         -- global reset, low-active, async
+    clk_i          => clk_gen,
+    rstn_i         => rst_gen,
     -- JTAG on-chip debugger interface (available if OCD_EN = true) --
-    jtag_tck_i     => '0',             -- serial clock
-    jtag_tdi_i     => '0',             -- serial data input
-    jtag_tdo_o     => open,            -- serial data output
-    jtag_tms_i     => '0',             -- mode select
+    jtag_tck_i     => '0',
+    jtag_tdi_i     => '0',
+    jtag_tdo_o     => open,
+    jtag_tms_i     => '0',
     -- External bus interface (available if XBUS_EN = true) --
-    xbus_adr_o     => wb_cpu.addr,     -- address
-    xbus_dat_o     => wb_cpu.wdata,    -- write data
-    xbus_tag_o     => wb_cpu.tag,      -- access tag
-    xbus_we_o      => wb_cpu.we,       -- read/write
-    xbus_sel_o     => wb_cpu.sel,      -- byte enable
-    xbus_stb_o     => wb_cpu.stb,      -- strobe
-    xbus_cyc_o     => wb_cpu.cyc,      -- valid cycle
-    xbus_dat_i     => wb_cpu.rdata,    -- read data
-    xbus_ack_i     => wb_cpu.ack,      -- transfer acknowledge
-    xbus_err_i     => wb_cpu.err,      -- transfer error
+    xbus_adr_o     => wb_cpu.addr,
+    xbus_dat_o     => wb_cpu.wdata,
+    xbus_tag_o     => wb_cpu.tag,
+    xbus_we_o      => wb_cpu.we,
+    xbus_sel_o     => wb_cpu.sel,
+    xbus_stb_o     => wb_cpu.stb,
+    xbus_cyc_o     => wb_cpu.cyc,
+    xbus_dat_i     => wb_cpu.rdata,
+    xbus_ack_i     => wb_cpu.ack,
+    xbus_err_i     => wb_cpu.err,
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
-    slink_rx_dat_i => slink_dat,       -- RX input data
-    slink_rx_src_i => slink_id,        -- RX source routing information
-    slink_rx_val_i => slink_val,       -- RX valid input
-    slink_rx_lst_i => slink_lst,       -- RX last element of stream
-    slink_rx_rdy_o => slink_rdy,       -- RX ready to receive
-    slink_tx_dat_o => slink_dat,       -- TX output data
-    slink_tx_dst_o => slink_id,        -- TX destination routing information
-    slink_tx_val_o => slink_val,       -- TX valid output
-    slink_tx_lst_o => slink_lst,       -- TX last element of stream
-    slink_tx_rdy_i => slink_rdy,       -- TX ready to send
+    slink_rx_dat_i => slink_dat,
+    slink_rx_src_i => slink_id,
+    slink_rx_val_i => slink_val,
+    slink_rx_lst_i => slink_lst,
+    slink_rx_rdy_o => slink_rdy,
+    slink_tx_dat_o => slink_dat,
+    slink_tx_dst_o => slink_id,
+    slink_tx_val_o => slink_val,
+    slink_tx_lst_o => slink_lst,
+    slink_tx_rdy_i => slink_rdy,
     -- XIP (execute in place via SPI) signals (available if XIP_EN = true) --
-    xip_csn_o      => open,            -- chip-select, low-active
-    xip_clk_o      => open,            -- serial clock
-    xip_dat_i      => '0',             -- device data input
-    xip_dat_o      => open,            -- controller data output
+    xip_csn_o      => open,
+    xip_clk_o      => open,
+    xip_dat_i      => '0',
+    xip_dat_o      => open,
     -- GPIO (available if IO_GPIO_NUM > true) --
-    gpio_o         => gpio,            -- parallel output
-    gpio_i         => gpio,            -- parallel input
+    gpio_o         => gpio,
+    gpio_i         => gpio,
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o    => uart0_txd,       -- UART0 send data
-    uart0_rxd_i    => uart0_txd,       -- UART0 receive data
-    uart0_rts_o    => uart1_cts,       -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i    => uart0_cts,       -- HW flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_txd_o    => uart0_txd,
+    uart0_rxd_i    => uart0_txd,
+    uart0_rts_o    => uart1_cts,
+    uart0_cts_i    => uart0_cts,
     -- secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o    => uart1_txd,       -- UART1 send data
-    uart1_rxd_i    => uart1_txd,       -- UART1 receive data
-    uart1_rts_o    => uart0_cts,       -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i    => uart1_cts,       -- HW flow control: UART0.TX allowed to transmit, low-active, optional
+    uart1_txd_o    => uart1_txd,
+    uart1_rxd_i    => uart1_txd,
+    uart1_rts_o    => uart0_cts,
+    uart1_cts_i    => uart1_cts,
     -- SPI (available if IO_SPI_EN = true) --
-    spi_clk_o      => spi_clk,         -- SPI serial clock
-    spi_dat_o      => spi_do,          -- controller data out, peripheral data in
-    spi_dat_i      => spi_di,          -- controller data in, peripheral data out
-    spi_csn_o      => spi_csn,         -- SPI CS
+    spi_clk_o      => spi_clk,
+    spi_dat_o      => spi_do,
+    spi_dat_i      => spi_di,
+    spi_csn_o      => spi_csn,
     -- SDI (available if IO_SDI_EN = true) --
-    sdi_clk_i      => sdi_clk,         -- SDI serial clock
-    sdi_dat_o      => sdi_do,          -- controller data out, peripheral data in
-    sdi_dat_i      => sdi_di,          -- controller data in, peripheral data out
-    sdi_csn_i      => sdi_csn,         -- chip-select
+    sdi_clk_i      => sdi_clk,
+    sdi_dat_o      => sdi_do,
+    sdi_dat_i      => sdi_di,
+    sdi_csn_i      => sdi_csn,
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_i      => twi_sda_i,       -- serial data line sense input
-    twi_sda_o      => twi_sda_o,       -- serial data line output (pull low only)
-    twi_scl_i      => twi_scl_i,       -- serial clock line sense input
-    twi_scl_o      => twi_scl_o,       -- serial clock line output (pull low only)
+    twi_sda_i      => twi_sda_i,
+    twi_sda_o      => twi_sda_o,
+    twi_scl_i      => twi_scl_i,
+    twi_scl_o      => twi_scl_o,
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_i      => onewire_i,       -- 1-wire bus sense input
-    onewire_o      => onewire_o,       -- 1-wire bus output (pull low only)
+    onewire_i      => onewire_i,
+    onewire_o      => onewire_o,
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o          => open,            -- pwm channels
+    pwm_o          => open,
     -- Custom Functions Subsystem IO --
-    cfs_in_i       => (others => '0'), -- custom CFS inputs
-    cfs_out_o      => open,            -- custom CFS outputs
+    cfs_in_i       => (others => '0'),
+    cfs_out_o      => open,
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o       => open,            -- async serial data line
+    neoled_o       => open,
     -- Machine timer system time (available if IO_MTIME_EN = true) --
     mtime_time_o   => open,
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i         => gpio(31 downto 0), -- IRQ channels
+    xirq_i         => gpio(31 downto 0),
     -- CPU Interrupts --
-    mtime_irq_i    => '0',             -- machine software interrupt, available if IO_MTIME_EN = false
-    msw_irq_i      => msi_ring,        -- machine software interrupt
-    mext_irq_i     => mei_ring         -- machine external interrupt
+    mtime_irq_i    => '0',
+    msw_irq_i      => msi_ring,
+    mext_irq_i     => mei_ring
   );
 
   -- TWI tri-state driver --

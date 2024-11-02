@@ -360,7 +360,7 @@ As software does not need to determine the interrupt cause the reduction in late
 |=======================
 | Name        | Machine exception program counter
 | Address     | `0x341`
-| Reset value | `0x00000000`
+| Reset value | `BOOT_ADDR` (CPU boot address, see <<_cpu_top_entity_generics>>)
 | ISA         | `Zicsr`
 | Description | The `mepc` CSR provides the instruction address where execution has stopped/failed when
 an interrupt is triggered / an exception is raised. See section <<_traps_exceptions_and_interrupts>> for a list of all legal values.

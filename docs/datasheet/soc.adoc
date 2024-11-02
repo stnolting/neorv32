@@ -202,12 +202,15 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 [options="header",grid="rows"]
 |=======================
 | Name | Type | Default | Description
-4+^| **General**
+4+^| **<<_processor_clocking>>**
 | `CLOCK_FREQUENCY`       | natural   | 0             | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
 | `CLOCK_GATING_EN`       | boolean   | false         | Enable clock gating when CPU is in sleep mode (see sections <<_sleep_mode>> and <<_processor_clocking>>).
-| `INT_BOOTLOADER_EN`     | boolean   | false         | Implement the processor-internal <<_bootloader_rom_bootrom>>, pre-initialized with the default <<_bootloader>> image.
-| `HART_ID`               | suv(31:0) | 0x00000000    | The hart thread ID of the CPU (passed to <<_mhartid>> CSR).
-| `JEDEC_ID`              | suv(10:0) | 0b00000000000 | JEDEC ID; continuation codes plus vendor ID (passed to <<_mvendorid>> CSR and to the <<_debug_transport_module_dtm>>).
+4+^| **Core Identification**
+| `HART_ID`               | suv(31:0) | x"00000000"   | The hart thread ID of the CPU (passed to <<_mhartid>> CSR).
+| `JEDEC_ID`              | suv(10:0) | "00000000000" | JEDEC ID; continuation codes plus vendor ID (passed to <<_mvendorid>> CSR and to the <<_debug_transport_module_dtm>>).
+4+^| **<<_boot_configuration>>**
+| `BOOT_MODE_SELECT`      | natural   | 0             | Boot mode select; see <<_boot_configuration>>.
+| `BOOT_ADDR_CUSTOM`      | suv(31:0) | x"00000000"   | Custom CPU boot address (available if `BOOT_MODE_SELECT` = 1).
 4+^| **<<_on_chip_debugger_ocd>>**
 | `OCD_EN`                | boolean   | false         | Implement the on-chip debugger and the CPU debug mode.
 | `OCD_AUTHENTICATION`    | boolean   | false         | Implement <<_debug_authentication>> module.
@@ -295,7 +298,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_TRNG_EN`            | boolean   | false         | Implement the <<_true_random_number_generator_trng>>.
 | `IO_TRNG_FIFO`          | natural   | 1             | Depth of the TRNG data FIFO. Has to be a power of two, min 1, max 32768.
 | `IO_CFS_EN`             | boolean   | false         | Implement the <<_custom_functions_subsystem_cfs>>.
-| `IO_CFS_CONFIG`         | suv(31:0) | 0x00000000    | "Conduit" generic to pass user-defined flags to the <<_custom_functions_subsystem_cfs>>.
+| `IO_CFS_CONFIG`         | suv(31:0) | x"00000000"   | "Conduit" generic to pass user-defined flags to the <<_custom_functions_subsystem_cfs>>.
 | `IO_CFS_IN_SIZE`        | natural   | 32            | Size of the <<_custom_functions_subsystem_cfs>> input signal conduit (`cfs_in_i`).
 | `IO_CFS_OUT_SIZE`       | natural   | 32            | Size of the <<_custom_functions_subsystem_cfs>> output signal conduit (`cfs_out_o`).
 | `IO_NEOLED_EN`          | boolean   | false         | Implement the <<_smart_led_interface_neoled>>.
@@ -564,7 +567,7 @@ monitor starts an internal timer. The accessed module has to respond ("ACK") to 
 .Internal Bus Timeout Configuration
 [source,vhdl]
 ----
-  constant bus_timeout_c : natural := 15;
+constant bus_timeout_c : natural := 15;
 ----
 
 This constant defines the _maximum_ number of cycles after which a non-responding bus request (i.e. no `ack`
@@ -657,11 +660,11 @@ package file (`rtl/core/neorv323_package.vhd`).
 .Exemplary Cut-Out from the IO Address Map
 [source,vhdl]
 ----
-  -- IO Address Map --
-  constant iodev_size_c    : natural := 256; -- size of a single IO device (bytes)
-  constant base_io_cfs_c   : std_ulogic_vector(31 downto 0) := x"ffffeb00";
-  constant base_io_slink_c : std_ulogic_vector(31 downto 0) := x"ffffec00";
-  constant base_io_dma_c   : std_ulogic_vector(31 downto 0) := x"ffffed00";
+-- IO Address Map --
+constant iodev_size_c    : natural := 256; -- size of a single IO device (bytes)
+constant base_io_cfs_c   : std_ulogic_vector(31 downto 0) := x"ffffeb00";
+constant base_io_slink_c : std_ulogic_vector(31 downto 0) := x"ffffec00";
+constant base_io_dma_c   : std_ulogic_vector(31 downto 0) := x"ffffed00";
 ----
 
 .IO Access Latency
@@ -671,47 +674,67 @@ buffers the address bus. Hence, accesses to the processor-internal IO region req
 to complete.
 
 
+<<<
+// ####################################################################################################################
 :sectnums:
-==== Boot Configuration
+=== Boot Configuration
 
-Due to the flexible memory configuration, the NEORV32 Processor provides several different boot scenarios.
-The following section illustrates the two most common boot scenarios.
+The NEORV32 processor provides some pre-defined boot configurations to adjust system start-up to
+the requirements of the application. The actual boot configuration is defined by the `BOOT_MODE_SELECT`
+generic (see <<_processor_top_entity_generics>>).
 
 .NEORV32 Boot Configurations
-image::neorv32_boot_configurations.png[800]
+[cols="^2,^2,^2,<6"]
+[options="header",grid="rows"]
+|=======================
+| `BOOT_MODE_SELECT` | Name           | Boot address | Description
+| 0 (default)        | Bootloader     | Base of internal BOOTROM   | Implement the processor-internal <<_bootloader_rom_bootrom>> as pre-initialized ROM and boot from there.
+| 1                  | Custom Address | `BOOT_ADDR_CUSTOM` generic | Start booting at user-defined address (`BOOT_ADDR_CUSTOM` top generic).
+| 2                  | IMEM Image     | Base of internal IMEM      | Implement the processor-internal <<_instruction_memory_imem>> as pre-initialized ROM and boot from there.
+|=======================
 
-There are two general boot scenarios: _Indirect Boot_ (1a and 1b) and _Direct Boot_ (2a and 2b) configured via the
-`INT_BOOTLOADER_EN` generic. If this generic is `true` the _indirect boot scenario_ is used. This is also the
-default boot configuration of the processor. If `INT_BOOTLOADER_EN` is `*false` the _direct boot scenario_ is used.
 
-:sectnums!:
-===== Indirect Boot
+:sectnums:
+==== Booting via Bootloader
 
-The indirect_boot scenarios **1a** and **1b** are based on the processor-internal <<_bootloader>>. This boot setup is enabled
-by setting the `INT_BOOTLOADER_EN` generic to `true`, which will implement the processor-internal <<_bootloader_rom_bootrom>>.
-This read-only memory is pre-initialized during synthesis with the default bootloader firmware. The bootloader provides several
-options to upload an executable copying it to the beginning of the _instruction address space_ so the CPU can execute it.
+This is the most common and thus, the default boot configuration. When selected, the processor-internal
+<<_bootloader_rom_bootrom>> is enabled. This ROM contains the executable image (`rtl/core/neorv32_bootloader_image.vhd`)
+of the default NEORV32 <<_bootloader>> that will be executed right after reset. The bootloader provides an interactive
+user console for executable upload as well as an automatic boot-configuration targeting external (SPI) memories.
 
-Boot scenario **1a** uses the processor-internal IMEM. This scenario implements the internal <<_instruction_memory_imem>>
-as non-initialized RAM so the bootloader can copy the actual executable to it.
+If the processor-internal <<_instruction_memory_imem>> is enabled it will be implemented as _blank_ RAM.
 
-Boot scenario **1b** uses a processor-external IMEM that is connected via the processor's bus interface. In this scenario
-the internal <<_instruction_memory_imem>> is not implemented at all and the bootloader will copy the executable to the
-processor-external memory. Hence, the external memory has to be implemented as RAM.
 
-:sectnums!:
-===== Direct Boot
+:sectnums:
+==== Boot from Custom Address
 
-The direct boot scenarios **2a** and **2b** do not use the processor-internal bootloader since the `INT_BOOTLOADER_EN`
-generic is set `false`. In this configuration the <<_bootloader_rom_bootrom>> is not implemented at all and the CPU will
-directly begin executing code from the beginning of the instruction address space after reset. An application-specific
-"pre-initialization" mechanism is required in order to provide an executable inside the memory.
+This is the most flexible boot configuration as it allows the user to specify a custom boot address via the
+`BOOT_ADDR_CUSTOM` generic. Note that this address has to be aligned to 4-byte boundary. The processor will
+start executing from the defined address right after reset. For example, this boot configuration ca be used to
+execute a _custom bootloader_ from a memory that is attached via the <<_processor_external_bus_interface_xbus>>.
 
-Boot scenario **2a** uses the processor-internal IMEM implemented as _read-only memory_ in this scenario.
-It is pre-initialized (by the bitstream) with the actual application executable during synthesis.
+The <<_bootloader_rom_bootrom>> is not enabled / implement at all.
+If the processor-internal <<_instruction_memory_imem>> is enabled it will be implemented as _blank_ RAM.
 
-In contrast, boot scenario **2b** uses a processor-external IMEM. In this scenario the system designer is responsible for
-providing an initialized external memory that contains the actual application to be executed.
+
+:sectnums:
+==== Boot IMEM Image
+
+This configuration will implement the <<_instruction_memory_imem>> as _pre-initialized read-only memory_ (ROM).
+The ROM is initialized during synthesis with the according application image file (`rtl/core/neorv32_application_image.vhd`).
+After reset, the CPU will directly start executing this image. Since the IMEM is implemented as ROM, the executable cannot
+be altered at runtime at all.
+
+The <<_bootloader_rom_bootrom>> is not enabled / implement at all.
+
+.Internal IMEM is Required
+[IMPORTANT]
+This boot configuration requires the IMEM to be enabled (`MEM_INT_IMEM_EN` = true).
+
+.Simulation Setup
+[TIP]
+This boot configuration is handy for simulations as the application software is executed right away without the
+need for an explicit initialization / executable upload.
 
 
 <<<
