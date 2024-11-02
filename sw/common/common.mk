@@ -195,13 +195,15 @@ main.bin: $(APP_ELF)
 # Generate NEORV32 executable image for upload via bootloader
 $(APP_EXE): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_EXE)"
 	@$(IMAGE_GEN) -app_bin $< $@ $(shell basename $(CURDIR))
-	@echo "Executable ($(APP_EXE)) size in bytes:"
+	@echo "Executable size in bytes:"
 	@wc -c < $(APP_EXE)
 
 # Generate NEORV32 executable VHDL boot image
 $(APP_VHD): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_VHD)"
 	@$(IMAGE_GEN) -app_vhd $< $@ $(shell basename $(CURDIR))
 
 # Install VHDL memory initialization file
@@ -213,26 +215,31 @@ install-$(APP_VHD): $(APP_VHD)
 # Generate NEORV32 RAW executable image in plain hex format
 $(APP_HEX): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_HEX)"
 	@$(IMAGE_GEN) -raw_hex $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in binary format
 $(APP_BIN): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_BIN)"
 	@$(IMAGE_GEN) -raw_bin $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in COE format
 $(APP_COE): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_COE)"
 	@$(IMAGE_GEN) -raw_coe $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in MIF format
 $(APP_MIF): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_MIF)"
 	@$(IMAGE_GEN) -raw_mif $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in MEM format
 $(APP_MEM): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_MEM)"
 	@$(IMAGE_GEN) -raw_mem $< $@ $(shell basename $(CURDIR))
 
 # -----------------------------------------------------------------------------
@@ -241,6 +248,7 @@ $(APP_MEM): main.bin $(IMAGE_GEN)
 # Create local VHDL BOOTROM image
 bl_image: main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(BOOT_VHD)"
 	@$(IMAGE_GEN) -bld_vhd $< $(BOOT_VHD) $(shell basename $(CURDIR))
 
 # Install BOOTROM image to VHDL source directory
