@@ -56,13 +56,11 @@ not working as expected. See how to [contribute](https://github.com/stnolting/ne
 
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
 - [x] completely described in behavioral, platform-independent VHDL - **no** platform-specific primitives, macros, attributes, etc.; an all-Verilog "version" is also [available](https://github.com/stnolting/neorv32-verilog)
-- [x] extensive configuration options for adapting the processor to the requirements of the application
-- [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, processor and system level
+- [x] extensive configuration options for adapting the processor to the requirements of the application (on CPU, processor and system level)
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
 - [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the CPU's register file)
 - [x] optimized for high clock frequencies to ease integration / timing closure
-- [x] from zero to _"hello world!"_ - completely open source and documented
-- [x] highly documented - on software and hardware side
+- [x] from zero to _"hello world!"_ - completely open source and documented (on software and hardware side)
 - [x] easy to use even for FPGA / RISC-V starters – intended to work _out of the box_
 
 ### Project Status
@@ -70,12 +68,13 @@ not working as expected. See how to [contribute](https://github.com/stnolting/ne
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
 [![commits-since-latest-release](https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/activity)
 
-| Task / Subproject                                  | Repository | CI Status |
-|:---------------------------------------------------|:-----------|:----------|
+| Task / Subproject | Repository | CI Status |
+|:------------------|:-----------|:----------|
 | Code quality ([Linty](https://linty-services.com)) | [neorv32](https://github.com/stnolting/neorv32)                       | [![Quality Gate Status](https://oss.linty-services.com/api/project_badges/measure?project=neorv32&metric=alert_status&token=sqb_97b392f36051f7887215e61c53d6f0f858ca2697)](https://oss.linty-services.com/dashboard?id=neorv32) |
 | GitHub pages (docs)                                | [neorv32](https://github.com/stnolting/neorv32)                       | [![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32) |
 | Build documentation                                | [neorv32](https://github.com/stnolting/neorv32)                       | [![Documentation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Documentation.yml?branch=main&longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation) |
 | Processor verification                             | [neorv32](https://github.com/stnolting/neorv32)                       | [![Processor](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Processor.yml?branch=main&longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor) |
+| VUnit testbench                                    | [neorv32-vunit](https://github.com/stnolting/neorv32-vunit)           | [![neorv32-vunit](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-vunit/vunit.yml?branch=main&longCache=true&style=flat-square&label=neorv32-vunit&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-vunit/actions/workflows/vunit.yml) |
 | RISCOF core verification                           | [neorv32-riscof](https://github.com/stnolting/neorv32-riscof)         | [![neorv32-riscof](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-riscof/main.yml?branch=main&longCache=true&style=flat-square&label=neorv32-riscof&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-riscof/actions/workflows/main.yml) |
 | FPGA implementations                               | [neorv32-setups](https://github.com/stnolting/neorv32-setups)         | [![Implementation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-setups/Implementation.yml?branch=main&longCache=true&style=flat-square&label=Implementation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-setups/actions?query=workflow%3AImplementation) |
 | All-Verilog version                                | [neorv32-verilog](https://github.com/stnolting/neorv32-verilog)       | [![neorv32-verilog](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-verilog/main.yml?branch=main&longCache=true&style=flat-square&label=neorv32-verilog&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verilog/actions/workflows/main.yml) |

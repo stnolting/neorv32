@@ -4,7 +4,7 @@
   <vendor>stnolting</vendor>
   <name>neorv32</name>
   <series>RISC-V</series>
-  <version>1.10.5</version>
+  <version>1.10.6</version>
   <description>The NEORV32 RISC-V Processor</description>
 
   <!-- CPU core -->
@@ -847,29 +847,24 @@
 
       <registers>
         <register>
-          <name>IER</name>
-          <description>IRQ input enable register</description>
+          <name>EIE</name>
+          <description>External IRQ channel enable register</description>
           <addressOffset>0x00</addressOffset>
         </register>
         <register>
-          <name>IPR</name>
-          <description>IRQ pending/ack/clear register</description>
+          <name>ESC</name>
+          <description>External IRQ source register</description>
           <addressOffset>0x04</addressOffset>
         </register>
         <register>
-          <name>SCR</name>
-          <description>IRQ source register</description>
+          <name>TTYP</name>
+          <description>External IRQ trigger type (level/edge)</description>
           <addressOffset>0x08</addressOffset>
         </register>
         <register>
-          <name>TTYP</name>
-          <description>IRQ trigger type (level/edge)</description>
-          <addressOffset>0x0c</addressOffset>
-        </register>
-        <register>
           <name>TPOL</name>
-          <description>IRQ trigger polarity (high/low, rising/falling)</description>
-          <addressOffset>0x10</addressOffset>
+          <description>External IRQ trigger polarity (high/low, rising/falling)</description>
+          <addressOffset>0x0c</addressOffset>
         </register>
       </registers>
     </peripheral>
@@ -1596,10 +1591,10 @@
           <addressOffset>0x04</addressOffset>
           <access>read-only</access>
           <fields>
-            <field><name>SYSINFO_MEM_0</name><bitRange>[7:0]</bitRange><description>log2(IMEM size in bytes)</description></field>
-            <field><name>SYSINFO_MEM_1</name><bitRange>[15:8]</bitRange><description>log2(DMEM size in bytes)</description></field>
-            <field><name>SYSINFO_MEM_2</name><bitRange>[23:16]</bitRange><description>yet unused</description></field>
-            <field><name>SYSINFO_MEM_3</name><bitRange>[31:24]</bitRange><description>yet unused</description></field>
+            <field><name>SYSINFO_MEM_IMEM</name><bitRange>[7:0]</bitRange><description>log2(IMEM size in bytes)</description></field>
+            <field><name>SYSINFO_MEM_DMEM</name><bitRange>[15:8]</bitRange><description>log2(DMEM size in bytes)</description></field>
+            <field><name>SYSINFO_MEM_res</name><bitRange>[23:16]</bitRange><description>yet unused</description></field>
+            <field><name>SYSINFO_MEM_BOOT</name><bitRange>[31:24]</bitRange><description>Boot mode configuration select</description></field>
           </fields>
         </register>
         <register>
@@ -1620,6 +1615,7 @@
             <field><name>SYSINFO_SOC_XIP</name><bitRange>[9:9]</bitRange><description>Execute in place module implemented</description></field>
             <field><name>SYSINFO_SOC_XIP_CACHE</name><bitRange>[10:10]</bitRange><description>Execute in place cache implemented</description></field>
             <field><name>SYSINFO_SOC_OCD_AUTH</name><bitRange>[11:11]</bitRange><description>On-chip debugger authentication implemented</description></field>
+            <field><name>SYSINFO_SOC_IMEM_ROM</name><bitRange>[12:12]</bitRange><description>Processor-internal instruction memory implemented as pre-initialized ROM</description></field>
             <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[14:14]</bitRange><description>Direct memory access controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[15:15]</bitRange><description>General purpose input/output port unit implemented</description></field>
             <field><name>SYSINFO_SOC_IO_MTIME</name><bitRange>[16:16]</bitRange><description>Machine system timer implemented</description></field>

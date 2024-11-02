@@ -179,7 +179,7 @@ All core VHDL files from the list below have to be assigned to a **new library**
 [NOTE]
 See section <<_file_list_files>> for more information.
 
-.RTL File List and Hierarchy
+.RTL File List and Hierarchy (in alphabetical order)
 ...................................
 neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 │
@@ -199,7 +199,7 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 │└neorv32_cpu_regfile.vhd       - Data register file
 │
 ├neorv32_boot_rom.vhd           - Bootloader ROM
-│└neorv32_bootloader_image.vhd  - Bootloader ROM memory image
+│└neorv32_bootloader_image.vhd  - Bootloader ROM memory image (package)
 ├neorv32_bus.vhd                - SoC bus infrastructure modules
 ├neorv32_cache.vhd              - Generic cache module
 ├neorv32_cfs.vhd                - Custom functions subsystem
@@ -214,7 +214,7 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 ├neorv32_gpio.vhd               - General purpose input/output port unit
 ├neorv32_gptmr.vhd              - General purpose 32-bit timer
 ├neorv32_imem.vhd               - Generic processor-internal instruction memory
-│└neorv32_application_image.vhd - IMEM application initialization image
+│└neorv32_application_image.vhd - IMEM application initialization image (package)
 ├neorv32_mtime.vhd              - Machine system timer
 ├neorv32_neoled.vhd             - NeoPixel (TM) compatible smart LED interface
 ├neorv32_onewire.vhd            - One-Wire serial interface controller
@@ -284,7 +284,7 @@ puts $file_list
 
 .File-List Usage Examples
 [TIP]
-The provided file-list files are used by the GHDL-based simple simulation setup (`sim/tb_simple/ghdl.setup.sh`) as
+The provided file-list files are used by the GHDL-based simple simulation setup (`sim/ghdl.setup.sh`) as
 well as by the Vivado IP packager script (`rtl/system_integration/neorv32_vivado_ip.tcl`).
 
 

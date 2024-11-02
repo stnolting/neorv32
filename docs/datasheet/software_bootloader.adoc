@@ -26,7 +26,7 @@ The bootloader requires certain CPU and SoC extensions and modules to be enabled
 [cols="^2,<8"]
 [grid="none"]
 |=======================
-| **REQUIRED**  | The bootloader is implemented only if the `INT_BOOTLOADER_EN` top generic is `true`. This will automatically select the CPU's <<_indirect_boot>> boot configuration.
+| **REQUIRED**  | The <<_boot_configuration>> (`BOOT_MODE_SELECT` generic) has to be set to "bootloader" mode.
 | **REQUIRED**  | The bootloader requires the privileged architecture CPU extension (<<_zicsr_isa_extension>>) to be enabled.
 | **REQUIRED**  | At least 512 bytes of data memory (processor-internal DMEM or processor-external DMEM) are required for the bootloader's stack and global variables.
 | _RECOMMENDED_ | For user interaction via the <<_bootloader_console>> (like uploading executables) the primary UART (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>) is required.

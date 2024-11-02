@@ -83,14 +83,14 @@ void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_m
   tmp |= (uint32_t)(irq_mask & (0x1fU << UART_CTRL_IRQ_RX_NEMPTY));
 
 #ifdef UART0_SIM_MODE
-#warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only!
+#warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulation only!
   if (((uint32_t)UARTx) == NEORV32_UART0_BASE) {
     tmp |= 1U << UART_CTRL_SIM_MODE;
   }
 #endif
 
 #ifdef UART1_SIM_MODE
-#warning UART1_SIM_MODE (secondary UART) enabled! Sending all UART1.TX data to text.io simulation output instead of real UART1 transmitter. Use this for simulations only!
+#warning UART1_SIM_MODE (secondary UART) enabled! Sending all UART1.TX data to text.io simulation output instead of real UART1 transmitter. Use this for simulation only!
   if (((uint32_t)UARTx) == NEORV32_UART1_BASE) {
     tmp |= 1U << UART_CTRL_SIM_MODE;
   }

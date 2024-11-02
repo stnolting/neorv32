@@ -2,9 +2,9 @@
 :sectnums:
 == Simulating the Processor
 
-The NEORV32 project includes a core CPU, built-in peripherals in the Processor Subsystem, and additional peripherals in
-the templates and examples.
-Therefore, there is a wide range of possible testing and verification strategies.
+The NEORV32 project includes a core CPU, built-in peripherals in the Processor Subsystem, and additional
+peripherals in the templates and examples. Therefore, there is a wide range of possible testing and
+verification strategies.
 
 On the one hand, a simple smoke testbench allows ensuring that functionality is correct from a software point of view.
 That is used for running the RISC-V architecture tests, in order to guarantee compliance with the ISA specification(s).
@@ -12,28 +12,23 @@ That is used for running the RISC-V architecture tests, in order to guarantee co
 On the other hand, http://vunit.github.io/[VUnit] and http://vunit.github.io/verification_components/user_guide.html[Verification Components]
 are used for verifying the functionality of the various peripherals from a hardware point of view.
 
-.AMD Vivado / ISIM
+.AMD Vivado / ISIM - Incremental Compilation
 [IMPORTANT]
-When using AMD Vivado (ISIM for simulation) make sure to **turn of** "incremental compilation" (_Project Setting_
+When using AMD Vivado (ISIM for simulation) make sure to **TURN OFF** "incremental compilation" (_Project Setting_
 -> _Simulation_ -> _Advanced_ -> _Enable incremental compilation). This will slow down simulation relaunch but will
-ensure that all application images (`*_image.vhd`) are reanalyzed when recompiling the NEORV32 application or bootloader
-
-[TIP]
-The processor can check if it is being _simulated_ by checking the SYSINFO _SYSINFO_SOC_IS_SIM_ flag
-(see https://stnolting.github.io/neorv32/#_system_configuration_information_memory_sysinfo).
-Note that this flag is not guaranteed to be set correctly (depending on the HDL toolchain's pragma support).
+ensure that all application images (`*_image.vhd`) are reanalyzed when recompiling the NEORV32 application or bootloader.
 
 :sectnums:
 === Testbench
 
-A plain-VHDL (no third-party libraries) testbench (`sim/simple/neorv32_tb.simple.vhd`) can be used for simulating and
-testing the processor.
-This testbench features a 100MHz clock and enables all optional peripheral and CPU extensions except for the `E`.
+.VUnit Testbench
+[TIP]
+A more sophisticated testbench using **VUnit** is available in a separate repository:
+https://github.com/stnolting/neorv32-vunit
 
-[IMPORTANT]
-In the simple testbench several optional extensions are disabled, such as C or E.
-If software is compiled using instructions corresponding to disabled extensions, the whole processor will hang in an eternal exception loop and, therefore, the simulation will timeout.
-The `MARCH` must be a subset of the extensions enabled in the testbench.
+A plain-VHDL (no third-party libraries) testbench (`sim/neorv32_tb.vhd`) can be used for simulating and
+testing the processor. This testbench features a 100MHz clock and enables all optional peripheral and CPU
+extensions.
 
 .True Random Number Generator
 [NOTE]
@@ -41,41 +36,7 @@ The NEORV32 TRNG will be set to "simulation mode" when enabled for simulation (r
 by pseudo-random LFSRs). See the neoTRNG documentation for more information.
 
 The simulation setup is configured via the "User Configuration" section located right at the beginning of
-the testbench's architecture. Each configuration constant provides comments to explain the functionality.
-
-Besides the actual NEORV32 Processor, the testbench also simulates "external" components that are connected
-to the processor's external bus/memory interface. These components are:
-
-* an external instruction memory (that also allows booting from it)
-* an external data memory
-* an external memory to simulate "external IO devices"
-* a memory-mapped registers to trigger the processor's interrupt signals
-
-The following table shows the base addresses of these four components and their default configuration and
-properties:
-
-[NOTE]
-====
-Attributes:
-
-* `r` = read
-* `w` = write
-* `e` = execute
-* `8` = byte-accessible
-* `16` = half-word-accessible
-* `32` = word-accessible
-====
-
-.Testbench: processor-external memories
-[cols="^4,>3,^5,<11"]
-[options="header",grid="rows"]
-|=======================
-| Base address | Size          | Attributes       | Description
-| `0x00000000` | `imem_size_c` | `r/w/e  8/16/32` | external IMEM (initialized with application image)
-| `0x80000000` | `dmem_size_c` | `r/w/e  8/16/32` | external DMEM
-| `0xf0000000` |      64 bytes | `r/w/e  8/16/32` | external "IO" memory
-| `0xff000000` |       4 bytes | `-/w/-   -/-/32` | memory-mapped register to trigger "machine external", "machine software" and "SoC Fast Interrupt" interrupts
-|=======================
+the testbench architecture. Each configuration constant provides comments to explain the functionality.
 
 [IMPORTANT]
 The simulated NEORV32 does not use the bootloader and _directly boots_ the current application image (from
@@ -100,7 +61,7 @@ for UART0/UART1 (see section https://stnolting.github.io/neorv32/#_primary_unive
 ASCII data sent to UART0|UART1 will be immediately printed to the simulator console and logged to files in the simulator
 execution directory:
 
-* `neorv32.uart?.sim_mode.text.out`: ASCII data.
+* `neorv32.uart*.sim_mode.text.out`: ASCII data.
 
 You can "automatically" enable the simulation mode of UART0/UART1 when compiling an application.
 In this case, the "real" UART0/UART1 transmitter unit is permanently disabled.
@@ -123,13 +84,13 @@ completed with a line feed (newline, ASCII `\n` = 10).
 :sectnums:
 === Simulation using a shell script (with GHDL)
 
-To simulate the processor using _GHDL_ navigate to the `sim/simple/` folder and run the provided shell script.
+To simulate the processor using _GHDL_ navigate to the `sim` folder and run the provided shell script.
 Any arguments that are provided while executing this script are passed to GHDL.
 For example the simulation time can be set to 20ms using `--stop-time=20ms` as argument.
 
 [source, bash]
 ----
-neorv32/sim/simple$ sh ghdl.sh --stop-time=20ms
+neorv32/sim$ sh ghdl.sh --stop-time=20ms
 ----
 
 
@@ -155,10 +116,6 @@ Blinking LED demo program
 To do a quick test of the NEORV32 make sure to have https://github.com/ghdl/ghdl[GHDL] and a
 https://github.com/stnolting/riscv-gcc-prebuilt[RISC-V gcc toolchain] installed.
 Navigate to the project's `sw/example/hello_world` folder and run `make USER_FLAGS+=-DUART0_SIM_MODE clean_all sim`:
-
-[TIP]
-The simulator will output some _sanity check_ notes (and warnings or even errors if something is ill-configured)
-right at the beginning of the simulation to give a brief overview of the actual NEORV32 SoC and CPU configurations.
 
 [source, bash]
 ----
@@ -208,39 +165,3 @@ Hello world! :)
 <5> List of (default) arguments that were send to the simulator. Here: maximum simulation time (10ms).
 <6> "Sanity checks" from the core's VHDL files. These reports give some brief information about the SoC/CPU configuration (-> generics). If there are problems with the current configuration, an ERROR will appear.
 <7> Execution of the actual program starts.
-
-
-:sectnums:
-=== Advanced Simulation using VUnit
-
-https://vunit.github.io/[VUnit] is an open source unit testing framework for VHDL/SystemVerilog.
-It allows continuous and automated testing of HDL code by complementing traditional testing methodologies.
-The motto of VUnit is _"testing early and often"_ through automation.
-
-VUnit is composed by a http://vunit.github.io/py/ui.html[Python interface] and multiple optional
-http://vunit.github.io/vhdl_libraries.html[VHDL libraries].
-The Python interface allows declaring sources and simulation options, and it handles the compilation, execution and
-gathering of the results regardless of the simulator used.
-That allows having a single `run.py` script to be used with GHDL, ModelSim/QuestaSim, Riviera PRO, etc.
-On the other hand, the VUnit's VHDL libraries provide utilities for assertions, logging, having virtual queues, handling CSV files, etc.
-The http://vunit.github.io/verification_components/user_guide.html[Verification Component Library] uses those features
-for abstracting away bit-toggling when verifying standard interfaces such as Wishbone, AXI, Avalon, UARTs, etc.
-
-Testbench sources in `sim` (such as `sim/neorv32_tb.vhd` and `sim/uart_rx*.vhd`) use VUnit's VHDL libraries for testing
-NEORV32 and peripherals.
-The entry-point for executing the tests is `sim/run.py`.
-
-[source, bash]
-----
-# ./sim/run.py -l
-neorv32.neorv32_tb.all
-Listed 1 tests
-
-# ./sim/run.py -v
-Compiling into neorv32:   rtl/core/neorv32_uart.vhd                                                                                            passed
-Compiling into neorv32:   rtl/core/neorv32_twi.vhd                                                                                             passed
-Compiling into neorv32:   rtl/core/neorv32_trng.vhd                                                                                            passed
-...
-----
-
-See http://vunit.github.io/user_guide.html[VUnit: User Guide] and http://vunit.github.io/cli.html[VUnit: Command Line Interface] for further info about VUnit's features.

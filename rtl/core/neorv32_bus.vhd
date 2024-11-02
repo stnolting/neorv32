@@ -374,7 +374,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_io_switch is
   generic (
-    DEV_SIZE  : natural; -- size of a single IO device, has to be a power of two
+    DEV_SIZE  : natural; -- size of each single IO device, has to be a power of two
     -- device port enable and base address; enabled ports do not have to be contiguous --
     DEV_00_EN : boolean := false; DEV_00_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
     DEV_01_EN : boolean := false; DEV_01_BASE : std_ulogic_vector(31 downto 0) := (others => '0');

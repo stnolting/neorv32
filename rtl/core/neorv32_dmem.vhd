@@ -20,7 +20,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_dmem is
   generic (
-    DMEM_SIZE : natural -- processor-internal instruction memory size in bytes, has to be a power of 2
+    DMEM_SIZE : natural -- memory size in bytes, has to be a power of 2, min 4
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -38,7 +38,7 @@ architecture neorv32_dmem_rtl of neorv32_dmem is
   -- local signals --
   signal rdata         : std_ulogic_vector(31 downto 0);
   signal rden          : std_ulogic;
-  signal addr, addr_ff : std_ulogic_vector(index_size_f(DMEM_SIZE/4)-1 downto 0);
+  signal addr, addr_ff : unsigned(index_size_f(DMEM_SIZE/4)-1 downto 0);
 
   -- [NOTE] The memory (RAM) is built from 4 individual byte-wide memories as some synthesis tools
   --        have issues inferring 32-bit memories with individual byte-enable signals.
@@ -57,22 +57,22 @@ begin
       if rising_edge(clk_i) then
         if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
           if (bus_req_i.ben(0) = '1') then -- byte 0
-            mem_ram_b0(to_integer(unsigned(addr))) <= bus_req_i.data(7 downto 0);
+            mem_ram_b0(to_integer(addr)) <= bus_req_i.data(7 downto 0);
           end if;
           if (bus_req_i.ben(1) = '1') then -- byte 1
-            mem_ram_b1(to_integer(unsigned(addr))) <= bus_req_i.data(15 downto 8);
+            mem_ram_b1(to_integer(addr)) <= bus_req_i.data(15 downto 8);
           end if;
           if (bus_req_i.ben(2) = '1') then -- byte 2
-            mem_ram_b2(to_integer(unsigned(addr))) <= bus_req_i.data(23 downto 16);
+            mem_ram_b2(to_integer(addr)) <= bus_req_i.data(23 downto 16);
           end if;
           if (bus_req_i.ben(3) = '1') then -- byte 3
-            mem_ram_b3(to_integer(unsigned(addr))) <= bus_req_i.data(31 downto 24);
+            mem_ram_b3(to_integer(addr)) <= bus_req_i.data(31 downto 24);
           end if;
         end if;
-        rdata(7  downto 0)  <= mem_ram_b0(to_integer(unsigned(addr)));
-        rdata(15 downto 8)  <= mem_ram_b1(to_integer(unsigned(addr)));
-        rdata(23 downto 16) <= mem_ram_b2(to_integer(unsigned(addr)));
-        rdata(31 downto 24) <= mem_ram_b3(to_integer(unsigned(addr)));
+        rdata(7  downto 0)  <= mem_ram_b0(to_integer(addr));
+        rdata(15 downto 8)  <= mem_ram_b1(to_integer(addr));
+        rdata(23 downto 16) <= mem_ram_b2(to_integer(addr));
+        rdata(31 downto 24) <= mem_ram_b3(to_integer(addr));
       end if;
     end process mem_access;
     addr_ff <= (others => '0'); -- unused
@@ -86,28 +86,28 @@ begin
         addr_ff <= addr;
         if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
           if (bus_req_i.ben(0) = '1') then -- byte 0
-            mem_ram_b0(to_integer(unsigned(addr))) <= bus_req_i.data(7 downto 0);
+            mem_ram_b0(to_integer(addr)) <= bus_req_i.data(7 downto 0);
           end if;
           if (bus_req_i.ben(1) = '1') then -- byte 1
-            mem_ram_b1(to_integer(unsigned(addr))) <= bus_req_i.data(15 downto 8);
+            mem_ram_b1(to_integer(addr)) <= bus_req_i.data(15 downto 8);
           end if;
           if (bus_req_i.ben(2) = '1') then -- byte 2
-            mem_ram_b2(to_integer(unsigned(addr))) <= bus_req_i.data(23 downto 16);
+            mem_ram_b2(to_integer(addr)) <= bus_req_i.data(23 downto 16);
           end if;
           if (bus_req_i.ben(3) = '1') then -- byte 3
-            mem_ram_b3(to_integer(unsigned(addr))) <= bus_req_i.data(31 downto 24);
+            mem_ram_b3(to_integer(addr)) <= bus_req_i.data(31 downto 24);
           end if;
         end if;
       end if;
     end process mem_access;
-    rdata(7  downto 0)  <= mem_ram_b0(to_integer(unsigned(addr_ff)));
-    rdata(15 downto 8)  <= mem_ram_b1(to_integer(unsigned(addr_ff)));
-    rdata(23 downto 16) <= mem_ram_b2(to_integer(unsigned(addr_ff)));
-    rdata(31 downto 24) <= mem_ram_b3(to_integer(unsigned(addr_ff)));
+    rdata(7  downto 0)  <= mem_ram_b0(to_integer(addr_ff));
+    rdata(15 downto 8)  <= mem_ram_b1(to_integer(addr_ff));
+    rdata(23 downto 16) <= mem_ram_b2(to_integer(addr_ff));
+    rdata(31 downto 24) <= mem_ram_b3(to_integer(addr_ff));
   end generate;
 
   -- word aligned access address --
-  addr <= bus_req_i.addr(index_size_f(DMEM_SIZE/4)+1 downto 2);
+  addr <= unsigned(bus_req_i.addr(index_size_f(DMEM_SIZE/4)+1 downto 2));
 
 
   -- Bus Response ---------------------------------------------------------------------------

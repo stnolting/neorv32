@@ -5,28 +5,24 @@
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source files:  | neorv32_boot_rom.vhd |
-| Software driver files:  | none                 |
-| Top entity ports:       | none                 |
-| Configuration generics: | `INT_BOOTLOADER_EN`  | implement processor-internal bootloader when `true`
-| CPU interrupts:         | none                 |
+| Hardware source files:  | neorv32_boot_rom.vhd         | default platform-agnostic bootloader ROM
+|                         | neorv32_bootloader_image.vhd | initialization image (a VHDL package)
+| Software driver files:  | none                         | _implicitly used_
+| Top entity ports:       | none                         |
+| Configuration generics: | `BOOT_MODE_SELECT`           | implement BOOTROM when `BOOT_MODE_SELECT` = 0; see <<_boot_configuration>>
+| CPU interrupts:         | none                         |
 | Access restrictions:  2+| privileged access only, read-only
 |=======================
 
 
 **Overview**
 
-This boot ROM module provides a read-only memory that contain the executable image of the default NEORV32
-<<_bootloader>>. If the internal bootloader is enabled via the `INT_BOOTLOADER_EN` generic the CPU's boot address
-is automatically set to the beginning of the bootloader ROM. See sections <<_address_space>> and
-<<_boot_configuration>> for more information regarding the processor's different boot scenarios.
-
-.Memory Size
-[IMPORTANT]
-If the configured boot ROM size is **not** a power of two the actual memory size will be auto-adjusted to
-the next power of two (e.g. configuring a memory size of 6kB will result in a physical memory size of 8kB).
+The boot ROM contains the executable image of the default NEORV32 <<_bootloader>>. When the
+<<_boot_configuration>> is set to _bootloader_ mode (0) via the `BOOT_MODE_SELECT` generic, the
+boot ROM is automatically enabled and the CPU boot address is automatically adjusted to the
+base address of the boot ROM.
 
 .Bootloader Image
 [IMPORTANT]
 The boot ROM is initialized during synthesis with the default bootloader image
-(`rtl/core/neorv32_bootloader_image.vhd`).
+(`rtl/core/neorv32_bootloader_image.vhd`). Note that the BOOTROM size is constrained to 4kB.

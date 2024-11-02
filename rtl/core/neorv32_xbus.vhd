@@ -126,7 +126,7 @@ begin
   xbus_tag_o <= bus_req.src & '0' & bus_req.priv; -- instr/data, secure, privileged/unprivileged
 
   -- response gating --
-  bus_rsp.data <= xbus_dat_i when (pending = '1') and (bus_rw = '0') else (others => '0'); -- no read-back if READ operation
+  bus_rsp.data <= xbus_dat_i when (pending = '1') and (bus_rw = '0') else (others => '0'); -- no read-back if WRITE operation
   bus_rsp.ack  <= xbus_ack_i when (pending = '1') else '0';
   bus_rsp.err  <= (xbus_err_i or timeout) when (pending = '1') else '0';
 
