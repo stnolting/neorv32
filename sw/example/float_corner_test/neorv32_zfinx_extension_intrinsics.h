@@ -60,6 +60,7 @@
 #define _GNU_SOURCE
 
 #include <float.h>
+#include <fenv.h>
 #include <math.h>
 
 
