@@ -44,7 +44,7 @@ jobs:
 
     - name: '🔍 Check tools'
       run: |
-        riscv32-unknown-elf-gcc -v
+        riscv-none-elf-gcc -v
         ghdl -v
 
     - name: '⚙️ Build Software Framework Tests'
