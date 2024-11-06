@@ -38,6 +38,8 @@ jobs:
         mkdir $GITHUB_WORKSPACE/riscv-gcc
         tar -xzf xpack-riscv-none-elf-gcc-14.2.0-2-linux-x64.tar.gz -C $GITHUB_WORKSPACE/riscv-gcc
         echo $GITHUB_WORKSPACE/riscv-gcc/bin >> $GITHUB_PATH
+        ls -al $GITHUB_WORKSPACE/riscv-gcc
+        ls -al $GITHUB_WORKSPACE/riscv-gcc/bin
 
     - name: '📦 Install GHDL'
       uses: ghdl/setup-ghdl-ci@nightly
