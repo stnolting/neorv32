@@ -34,9 +34,9 @@ jobs:
 
     - name: '📦 Install RISC-V GCC'
       run: |
-        wget -q https://github.com/stnolting/riscv-gcc-prebuilt/releases/download/rv32i-131023/riscv32-unknown-elf.gcc-13.2.0.tar.gz
+        wget -q https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.2.0-2/xpack-riscv-none-elf-gcc-14.2.0-2-linux-x64.tar.gz
         mkdir $GITHUB_WORKSPACE/riscv-gcc
-        tar -xzf riscv32-unknown-elf.gcc-13.2.0.tar.gz -C $GITHUB_WORKSPACE/riscv-gcc
+        tar -xzf xpack-riscv-none-elf-gcc-14.2.0-2-linux-x64.tar.gz -C $GITHUB_WORKSPACE/riscv-gcc
         echo $GITHUB_WORKSPACE/riscv-gcc/bin >> $GITHUB_PATH
 
     - name: '📦 Install GHDL'
@@ -49,13 +49,14 @@ jobs:
 
     - name: '⚙️ Build Software Framework Tests'
       run: |
-        make -C sw/example/processor_check check
-        make -C sw/example clean_all exe
-        make -C sw/bootloader clean_all info bootloader
+        make RISCV_PREFIX=riscv-none-elf- -C sw/example/processor_check check
+        make RISCV_PREFIX=riscv-none-elf- -C sw/example clean_all exe
+        make RISCV_PREFIX=riscv-none-elf- -C sw/bootloader clean_all info bootloader
 
     - name: '🚧 Compile executable and run simulation'
       run: |
         make -C sw/example/${{ matrix.example }} \
+        RISCV_PREFIX=riscv-none-elf- \
         USER_FLAGS+="-DUART0_SIM_MODE -DUART1_SIM_MODE" \
         clean_all \
         info \
