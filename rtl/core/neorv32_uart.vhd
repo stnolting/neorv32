@@ -23,7 +23,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_uart is
   generic (
-    SIM_LOG_FILE : string; -- name of SIM mode log file
+    SIM_MODE_EN  : boolean; -- enable simulation-mode option
+    SIM_LOG_FILE : string;  -- name of SIM mode log file
     UART_RX_FIFO : natural range 1 to 2**15; -- RX fifo depth, has to be a power of two, min 1
     UART_TX_FIFO : natural range 1 to 2**15  -- TX fifo depth, has to be a power of two, min 1
   );
@@ -44,6 +45,9 @@ entity neorv32_uart is
 end neorv32_uart;
 
 architecture neorv32_uart_rtl of neorv32_uart is
+
+  -- simulation mode available? --
+  constant sim_mode_en_c : boolean := SIM_MODE_EN and is_simulation_c;
 
   -- control register bits --
   constant ctrl_en_c            : natural :=  0; -- r/w: UART enable
@@ -169,7 +173,7 @@ begin
         if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(2) = '0') then -- control register
             ctrl.enable        <= bus_req_i.data(ctrl_en_c);
-            ctrl.sim_mode      <= bus_req_i.data(ctrl_sim_en_c);
+            ctrl.sim_mode      <= bus_req_i.data(ctrl_sim_en_c) and bool_to_ulogic_f(sim_mode_en_c);
             ctrl.hwfc_en       <= bus_req_i.data(ctrl_hwfc_en_c);
             ctrl.prsc          <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
             ctrl.baud          <= bus_req_i.data(ctrl_baud9_c downto ctrl_baud0_c);
@@ -185,7 +189,7 @@ begin
         else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
-            bus_rsp_o.data(ctrl_sim_en_c)                    <= ctrl.sim_mode;
+            bus_rsp_o.data(ctrl_sim_en_c)                    <= ctrl.sim_mode and bool_to_ulogic_f(sim_mode_en_c);
             bus_rsp_o.data(ctrl_hwfc_en_c)                   <= ctrl.hwfc_en;
             bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
             bus_rsp_o.data(ctrl_baud9_c downto ctrl_baud0_c) <= ctrl.baud;
@@ -473,7 +477,7 @@ begin
 -- pragma translate_off
 -- RTL_SYNTHESIS OFF
   simulation_transmitter:
-  if is_simulation_c generate -- for simulation only!
+  if sim_mode_en_c generate -- for simulation only!
     sim_tx: process(clk_i)
       file file_out          : text open write_mode is SIM_LOG_FILE;
       variable char_v        : integer;
