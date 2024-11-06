@@ -32,14 +32,12 @@ jobs:
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v4
 
-    - name: '📦 Install RISC-V GCC'
+    - name: '📦 Install xPack RISC-V GCC'
       run: |
         wget -q https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.2.0-2/xpack-riscv-none-elf-gcc-14.2.0-2-linux-x64.tar.gz
         mkdir $GITHUB_WORKSPACE/riscv-gcc
         tar -xzf xpack-riscv-none-elf-gcc-14.2.0-2-linux-x64.tar.gz -C $GITHUB_WORKSPACE/riscv-gcc
         echo $GITHUB_WORKSPACE/riscv-gcc/xpack-riscv-none-elf-gcc-14.2.0-2/bin >> $GITHUB_PATH
-        ls -al $GITHUB_WORKSPACE/riscv-gcc/xpack-riscv-none-elf-gcc-14.2.0-2
-        ls -al $GITHUB_WORKSPACE/riscv-gcc/xpack-riscv-none-elf-gcc-14.2.0-2/bin
 
     - name: '📦 Install GHDL'
       uses: ghdl/setup-ghdl-ci@nightly
