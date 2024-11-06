@@ -263,54 +263,44 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   -- AXI4-Lite bridge --
   component xbus2axi4lite_bridge
     port (
-      -- ------------------------------------------------------------
-      -- Global Control
-      -- ------------------------------------------------------------
-      clk            : in  std_logic;
-      resetn         : in  std_logic; -- low-active
-      -- ------------------------------------------------------------
-      -- XBUS Device Interface
-      -- ------------------------------------------------------------
-      xbus_adr_i     : in  std_ulogic_vector(31 downto 0); -- address
-      xbus_dat_i     : in  std_ulogic_vector(31 downto 0); -- write data
-      xbus_tag_i     : in  std_ulogic_vector(2 downto 0);  -- access tag
-      xbus_we_i      : in  std_ulogic;                     -- read/write
-      xbus_sel_i     : in  std_ulogic_vector(3 downto 0);  -- byte enable
-      xbus_stb_i     : in  std_ulogic;                     -- strobe
-      xbus_cyc_i     : in  std_ulogic;                     -- valid cycle
-      xbus_ack_o     : out std_ulogic;                     -- transfer acknowledge
-      xbus_err_o     : out std_ulogic;                     -- transfer error
-      xbus_dat_o     : out std_ulogic_vector(31 downto 0); -- read data
-      -- ------------------------------------------------------------
-      -- AXI4-Lite Host Interface
-      -- ------------------------------------------------------------
-      -- Clock and Reset --
-  --  m_axi_aclk     : in  std_logic; -- just to satisfy Vivado, but not actually used
-  --  m_axi_aresetn  : in  std_logic; -- just to satisfy Vivado, but not actually used
-      -- Write Address Channel --
-      m_axi_awaddr   : out std_logic_vector(31 downto 0);
-      m_axi_awprot   : out std_logic_vector(2 downto 0);
-      m_axi_awvalid  : out std_logic;
-      m_axi_awready  : in  std_logic;
-      -- Write Data Channel --
-      m_axi_wdata    : out std_logic_vector(31 downto 0);
-      m_axi_wstrb    : out std_logic_vector(3 downto 0);
-      m_axi_wvalid   : out std_logic;
-      m_axi_wready   : in  std_logic;
-      -- Read Address Channel --
-      m_axi_araddr   : out std_logic_vector(31 downto 0);
-      m_axi_arprot   : out std_logic_vector(2 downto 0);
-      m_axi_arvalid  : out std_logic;
-      m_axi_arready  : in  std_logic;
-      -- Read Data Channel --
-      m_axi_rdata    : in  std_logic_vector(31 downto 0);
-      m_axi_rresp    : in  std_logic_vector(1 downto 0);
-      m_axi_rvalid   : in  std_logic;
-      m_axi_rready   : out std_logic;
-      -- Write Response Channel --
-      m_axi_bresp    : in  std_logic_vector(1 downto 0);
-      m_axi_bvalid   : in  std_logic;
-      m_axi_bready   : out std_logic
+      -- Global control 
+      clk           : in  std_logic;
+      resetn        : in  std_logic;
+      -- XBUS device interface --
+      xbus_adr_i    : in  std_ulogic_vector(31 downto 0);
+      xbus_dat_i    : in  std_ulogic_vector(31 downto 0);
+      xbus_tag_i    : in  std_ulogic_vector(2 downto 0);
+      xbus_we_i     : in  std_ulogic;
+      xbus_sel_i    : in  std_ulogic_vector(3 downto 0);
+      xbus_stb_i    : in  std_ulogic;
+      xbus_cyc_i    : in  std_ulogic;
+      xbus_ack_o    : out std_ulogic;
+      xbus_err_o    : out std_ulogic;
+      xbus_dat_o    : out std_ulogic_vector(31 downto 0);
+      -- AXI4-Lite host write address channel --
+      m_axi_awaddr  : out std_logic_vector(31 downto 0);
+      m_axi_awprot  : out std_logic_vector(2 downto 0);
+      m_axi_awvalid : out std_logic;
+      m_axi_awready : in  std_logic;
+      -- AXI4-Lite host write data channel --
+      m_axi_wdata   : out std_logic_vector(31 downto 0);
+      m_axi_wstrb   : out std_logic_vector(3 downto 0);
+      m_axi_wvalid  : out std_logic;
+      m_axi_wready  : in  std_logic;
+      -- AXI4-Lite host read address channel --
+      m_axi_araddr  : out std_logic_vector(31 downto 0);
+      m_axi_arprot  : out std_logic_vector(2 downto 0);
+      m_axi_arvalid : out std_logic;
+      m_axi_arready : in  std_logic;
+      -- AXI4-Lite host read data channel --
+      m_axi_rdata   : in  std_logic_vector(31 downto 0);
+      m_axi_rresp   : in  std_logic_vector(1 downto 0);
+      m_axi_rvalid  : in  std_logic;
+      m_axi_rready  : out std_logic;
+      -- AXI4-Lite host write response channel --
+      m_axi_bresp   : in  std_logic_vector(1 downto 0);
+      m_axi_bvalid  : in  std_logic;
+      m_axi_bready  : out std_logic
     );
   end component;
 
@@ -625,14 +615,10 @@ begin
   if XBUS_EN generate
     axi4_bridge_inst: xbus2axi4lite_bridge
     port map (
-      -- ------------------------------------------------------------
-      -- Global Control
-      -- ------------------------------------------------------------
+      -- Global control --
       clk           => clk,
       resetn        => resetn,
-      -- ------------------------------------------------------------
-      -- XBUS Device Interface
-      -- ------------------------------------------------------------
+      -- XBUS device interface --
       xbus_adr_i    => xbus_adr,
       xbus_dat_i    => xbus_do,
       xbus_tag_i    => xbus_tag,
@@ -643,30 +629,27 @@ begin
       xbus_ack_o    => xbus_ack,
       xbus_err_o    => xbus_err,
       xbus_dat_o    => xbus_di,
-      -- ------------------------------------------------------------
-      -- AXI4-Lite Host Interface
-      -- ------------------------------------------------------------
-      -- Write Address Channel --
+      -- AXI4-Lite host write address channel --
       m_axi_awaddr  => m_axi_awaddr,
       m_axi_awprot  => m_axi_awprot,
       m_axi_awvalid => m_axi_awvalid,
       m_axi_awready => m_axi_awready,
-      -- Write Data Channel --
+      -- AXI4-Lite host write data channel --
       m_axi_wdata   => m_axi_wdata,
       m_axi_wstrb   => m_axi_wstrb,
       m_axi_wvalid  => m_axi_wvalid,
       m_axi_wready  => m_axi_wready,
-      -- Read Address Channel --
+      -- AXI4-Lite host read address channel --
       m_axi_araddr  => m_axi_araddr,
       m_axi_arprot  => m_axi_arprot,
       m_axi_arvalid => m_axi_arvalid,
       m_axi_arready => m_axi_arready,
-      -- Read Data Channel --
+      -- AXI4-Lite host read data channel --
       m_axi_rdata   => m_axi_rdata,
       m_axi_rresp   => m_axi_rresp,
       m_axi_rvalid  => m_axi_rvalid,
       m_axi_rready  => m_axi_rready,
-      -- Write Response Channel --
+      -- AXI4-Lite host write response channel --
       m_axi_bresp   => m_axi_bresp,
       m_axi_bvalid  => m_axi_bvalid,
       m_axi_bready  => m_axi_bready
