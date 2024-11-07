@@ -397,7 +397,7 @@ void hexdump(uint32_t address) {
 /**********************************************************************//**
  * Print HEX byte.
  *
- * @param[in] byte Byte to be printed as 2-cahr hex value.
+ * @param[in] byte Byte to be printed as 2-char hex value.
  **************************************************************************/
 void aux_print_hex_byte(uint8_t byte) {
 
