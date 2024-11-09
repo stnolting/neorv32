@@ -4,34 +4,47 @@ set -e
 
 cd $(dirname "$0")
 
-echo "[TIP] Compile application with USER_FLAGS+=-DUART[0/1]_SIM_MODE to enable UART[0/1]'s simulation mode (redirect UART output to simulator console)."
-
-# Prepare simulation output files for UART0 and UART 1
-# - Testbench receiver log file (neorv32.testbench_uart?.out)
-# - Direct simulation output (neorv32.uart?.sim_mode.text.out)
-for uart in 0 1; do
-  for item in \
-    testbench_uart"$uart" \
-    uart"$uart".sim_mode.text; do
-    touch neorv32."$item".out
-    chmod 777 neorv32."$item".out
-  done
-done
-
+NEORV32_RTL=${NEORV32_RTL:-../rtl}
+FILE_LIST=`cat $NEORV32_RTL/file_list_soc.f`
+CORE_SRCS="${FILE_LIST//NEORV32_RTL_PATH_PLACEHOLDER/"$NEORV32_RTL"}"
 GHDL="${GHDL:-ghdl}"
 
+# Prepare UART SIM_MODE output files
+touch neorv32.uart0_sim_mode.out neorv32.uart1_sim_mode.out
+chmod 777 neorv32.uart0_sim_mode.out neorv32.uart1_sim_mode.out
+
+# Prepare testbench UART log files
+touch neorv32_tb.uart0_rx.out neorv32_tb.uart1_rx.out
+chmod 777 neorv32_tb.uart0_rx.out neorv32_tb.uart1_rx.out
+
+# GHDL build directory
+mkdir -p build
+
+# GHDL import
+$GHDL -i --work=neorv32 --workdir=build \
+  $CORE_SRCS \
+  "$NEORV32_RTL"/processor_templates/*.vhd \
+  "$NEORV32_RTL"/system_integration/*.vhd \
+  "$NEORV32_RTL"/test_setups/*.vhd \
+  neorv32_tb.vhd \
+  sim_uart_rx.vhd \
+  xbus_gateway.vhd \
+  xbus_memory.vhd
+
+# GHDL analyze
 $GHDL -m --work=neorv32 --workdir=build neorv32_tb
 
+# GHDL run parameters
 if [ -z "$1" ]
   then
     GHDL_RUN_ARGS="${@:---stop-time=10ms}"
   else
-    # Lets pass down all the parameters to GHDL instead of just 1
+    # Let's pass down all the parameters to GHDL
     GHDL_RUN_ARGS=$@
 fi
+echo "GHDL simulation run parameters: $GHDL_RUN_ARGS";
 
-echo "Using simulation run arguments: $GHDL_RUN_ARGS";
-
+# GHDL run
 runcmd="$GHDL -r --work=neorv32 --workdir=build neorv32_tb \
   --max-stack-alloc=0 \
   --ieee-asserts=disable \

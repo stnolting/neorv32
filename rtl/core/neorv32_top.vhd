@@ -1218,7 +1218,7 @@ begin
       neorv32_uart0_inst: entity neorv32.neorv32_uart
       generic map (
         SIM_MODE_EN  => true,
-        SIM_LOG_FILE => "neorv32.uart0.sim_mode.text.out",
+        SIM_LOG_FILE => "neorv32.uart0_sim_mode.out",
         UART_RX_FIFO => IO_UART0_RX_FIFO,
         UART_TX_FIFO => IO_UART0_TX_FIFO
       )
@@ -1256,7 +1256,7 @@ begin
       neorv32_uart1_inst: entity neorv32.neorv32_uart
       generic map (
         SIM_MODE_EN  => true,
-        SIM_LOG_FILE => "neorv32.uart1.sim_mode.text.out",
+        SIM_LOG_FILE => "neorv32.uart1_sim_mode.out",
         UART_RX_FIFO => IO_UART1_RX_FIFO,
         UART_TX_FIFO => IO_UART1_TX_FIFO
       )
