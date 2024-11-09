@@ -23,7 +23,7 @@ override USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=32k
 override USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=8k
 
 # Adjust maximum heap size
-#SER_FLAGS += -Wl,--defsym,__neorv32_heap_size=3096
+override USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=3096
 
 # Simulation arguments
 override GHDL_RUN_FLAGS ?= --stop-time=15ms

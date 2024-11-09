@@ -241,9 +241,9 @@ int main() {
 
     cnt_test++;
 
-    // set execute permission for u-mode
+    // set execute permission for u-mode for the entire address range
     // use entry 2 so we can use entries 0 & 1 later on for higher-prioritized configurations
-    tmp_a = neorv32_cpu_pmp_configure_region(2, -1, (PMP_NAPOT << PMPCFG_A_LSB) | (1 << PMPCFG_X));
+    tmp_a = neorv32_cpu_pmp_configure_region(2, 0xffffffff, (PMP_NAPOT << PMPCFG_A_LSB) | (1 << PMPCFG_X));
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) && (tmp_a == 0)) {
       test_ok();
