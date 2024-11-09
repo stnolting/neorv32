@@ -40,4 +40,4 @@ include $(NEORV32_HOME)/sw/common/common.mk
 
 # Add test-specific makefile target
 sim-check: sim
-	cat $(NEORV32_HOME)/sim/neorv32.uart0.sim_mode.text.out | grep "PROCESSOR TEST COMPLETED SUCCESSFULLY!"
+	cat $(NEORV32_HOME)/sim/neorv32.uart0_sim_mode.out | grep "PROCESSOR TEST COMPLETED SUCCESSFULLY!"

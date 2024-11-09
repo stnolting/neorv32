@@ -31,6 +31,8 @@
 #define ADDR_UNREACHABLE (NEORV32_DM_BASE)
 //** External memory base address */
 #define EXT_MEM_BASE     (0xF0000000UL)
+//** External IRQ trigger base address */
+#define SIM_TRIG_BASE    (0xFF000000UL)
 /**@}*/
 
 
@@ -2237,7 +2239,7 @@ int main() {
  **************************************************************************/
 void sim_irq_trigger(uint32_t sel) {
 
-  *((volatile uint32_t*) (0xFF000000)) = sel;
+  *((volatile uint32_t*)SIM_TRIG_BASE) = sel;
 }
 
 
