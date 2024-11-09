@@ -29,7 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 10.11.2024 | 1.10.6.4 | rework default processor testbench | [#]() |
+| 10.11.2024 | 1.10.6.4 | rework default processor testbench | [#1093](https://github.com/stnolting/neorv32/pull/1093) |
 | 06.11.2024 | 1.10.6.3 | minor rtl edits and cleanups | [#1090](https://github.com/stnolting/neorv32/pull/1090) |
 | 02.11.2024 | 1.10.6.2 | :warning: rework processor boot configuration; add new boot-configuration generics | [#1086](https://github.com/stnolting/neorv32/pull/1086) |
 | 01.11.2024 | 1.10.6.1 | :test_tube: convert VHDL memory images into full-scale VHDL packages | [#1084](https://github.com/stnolting/neorv32/pull/1084) |
