@@ -448,16 +448,21 @@ begin
     -- latch with global reset and individual enable --
     latch(i) <= '0' when (en_i = '0') else latch(i) when (sreg(i) = '0') else inv_out(i);
 
-    -- inverter with "propagation delay" --
-    inverter_sim:
-    if SIM_MODE generate
-      inv_out(i) <= not inv_in(i) when rising_edge(clk_i); -- for SIMULATION ONLY
-    end generate;
-
     -- inverter for actual synthesis --
     inverter_phy:
     if not SIM_MODE generate
-      inv_out(i) <= not inv_in(i);
+      inv_out(i) <= not inv_in(i); -- this is one part of the ring oscillator's physical propagation delay
+    end generate;
+
+    -- inverter with "propagation delay (as a simple FF)" --
+    inverter_sim:
+    if SIM_MODE generate -- for SIMULATION ONLY
+      inverter_sim_ff: process(clk_i) -- this will NOT generate true random numbers
+      begin
+        if rising_edge(clk_i) then
+          inv_out(i) <= not inv_in(i);
+        end if;
+      end process inverter_sim_ff;
     end generate;
 
   end generate;

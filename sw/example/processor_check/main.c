@@ -31,6 +31,8 @@
 #define ADDR_UNREACHABLE (NEORV32_DM_BASE)
 //** External memory base address */
 #define EXT_MEM_BASE     (0xF0000000UL)
+//** External IRQ trigger base address */
+#define SIM_TRIG_BASE    (0xFF000000UL)
 /**@}*/
 
 
@@ -239,9 +241,9 @@ int main() {
 
     cnt_test++;
 
-    // set execute permission for u-mode
+    // set execute permission for u-mode for the entire address range
     // use entry 2 so we can use entries 0 & 1 later on for higher-prioritized configurations
-    tmp_a = neorv32_cpu_pmp_configure_region(2, -1, (PMP_NAPOT << PMPCFG_A_LSB) | (1 << PMPCFG_X));
+    tmp_a = neorv32_cpu_pmp_configure_region(2, 0xffffffff, (PMP_NAPOT << PMPCFG_A_LSB) | (1 << PMPCFG_X));
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) && (tmp_a == 0)) {
       test_ok();
@@ -2237,7 +2239,7 @@ int main() {
  **************************************************************************/
 void sim_irq_trigger(uint32_t sel) {
 
-  *((volatile uint32_t*) (0xFF000000)) = sel;
+  *((volatile uint32_t*)SIM_TRIG_BASE) = sel;
 }
 
 

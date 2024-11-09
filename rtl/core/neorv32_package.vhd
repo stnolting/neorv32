@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100602"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100604"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -179,6 +179,43 @@ package neorv32_package is
   type dmi_rsp_t is record
     data : std_ulogic_vector(31 downto 0);
     ack  : std_ulogic;
+  end record;
+
+  -- External Bus Interface (XBUS / Wishbone) -----------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- xbus request --
+  type xbus_req_t is record
+    addr : std_ulogic_vector(31 downto 0); -- access address
+    data : std_ulogic_vector(31 downto 0); -- write data
+    tag  : std_ulogic_vector(2 downto 0); -- access tag
+    we   : std_ulogic; -- read/write
+    sel  : std_ulogic_vector(3 downto 0); -- byte enable
+    stb  : std_ulogic; -- strobe
+    cyc  : std_ulogic; -- valid cycle
+  end record;
+
+  -- xbus response --
+  type xbus_rsp_t is record
+    data : std_ulogic_vector(31 downto 0); -- read data, valid if ack=1
+    ack  : std_ulogic; -- access acknowledge
+    err  : std_ulogic; -- access error
+  end record;
+
+  -- endpoint (response) termination --
+  constant xbus_rsp_terminate_c : xbus_rsp_t := (
+    data => (others => '0'),
+    ack  => '0',
+    err  => '0'
+  );
+
+  -- External Stream-Link Interface (SLINK / AXI4-Stream) -----------------------------------
+  -- -------------------------------------------------------------------------------------------
+  type slink_t is record
+    data  : std_ulogic_vector(31 downto 0); -- data
+    addr  : std_ulogic_vector(3 downto 0); -- source/destination ID
+    valid : std_ulogic; -- source valid
+    last  : std_ulogic; -- last element of packet
+    ready : std_ulogic; -- sink ready
   end record;
 
 -- **********************************************************************************************************
@@ -667,7 +704,7 @@ package neorv32_package is
 
   component neorv32_top
     generic (
-      -- Clocking --
+      -- Processor Clocking --
       CLOCK_FREQUENCY       : natural                        := 0;
       CLOCK_GATING_EN       : boolean                        := false;
       -- Identification --

@@ -347,7 +347,7 @@ begin
     -- show SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
-      cond_sel_string_f(MEM_INT_IMEM_EN,           cond_sel_string_f(imem_as_rom_c, "IMEM_ROM ", "IMEM "), "") &
+      cond_sel_string_f(MEM_INT_IMEM_EN,           cond_sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
       cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",       "") &
       cond_sel_string_f(bootrom_en_c,              "BOOTROM ",    "") &
       cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",    "") &
@@ -1217,7 +1217,8 @@ begin
     if IO_UART0_EN generate
       neorv32_uart0_inst: entity neorv32.neorv32_uart
       generic map (
-        SIM_LOG_FILE => "neorv32.uart0.sim_mode.text.out",
+        SIM_MODE_EN  => true,
+        SIM_LOG_FILE => "neorv32.uart0_sim_mode.out",
         UART_RX_FIFO => IO_UART0_RX_FIFO,
         UART_TX_FIFO => IO_UART0_TX_FIFO
       )
@@ -1254,7 +1255,8 @@ begin
     if IO_UART1_EN generate
       neorv32_uart1_inst: entity neorv32.neorv32_uart
       generic map (
-        SIM_LOG_FILE => "neorv32.uart1.sim_mode.text.out",
+        SIM_MODE_EN  => true,
+        SIM_LOG_FILE => "neorv32.uart1_sim_mode.out",
         UART_RX_FIFO => IO_UART1_RX_FIFO,
         UART_TX_FIFO => IO_UART1_TX_FIFO
       )
