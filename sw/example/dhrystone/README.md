@@ -1,7 +1,9 @@
 ## Dhrystone Benchmark
 
+**:warning: The Dhrystone port is outdated. Have a look at the CoreMark port for benchmarking.**
+
 :copyright: Original sources from [https://github.com/sifive/benchmark-dhrystone](https://github.com/sifive/benchmark-dhrystone);
- see `LICENSE` file. The origianl source code has been modified for the NEORV32 RISC-V Processor.
+ see `LICENSE` file. The original source code has been modified for the NEORV32 RISC-V Processor.
 
 To compile the `main.exe` executable:
 

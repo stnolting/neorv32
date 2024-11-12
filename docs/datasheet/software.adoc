@@ -220,7 +220,7 @@ Variables:
   APP_INC        - C include folder(s) [append only]: "-I ."
   APP_SRC        - C source folder(s) [append only]: "./main.c   "
   ASM_INC        - ASM include folder(s) [append only]: "-I ."
-  RISCV_PREFIX   - Toolchain prefix: "riscv32-unknown-elf-"
+  RISCV_PREFIX   - Toolchain prefix: "riscv-none-elf-"
   NEORV32_HOME   - NEORV32 home folder: "../../.."
   GDB_ARGS       - GDB (connection) arguments: "-ex target extended-remote localhost:3333"
   GHDL_RUN_FLAGS - GHDL simulation run arguments: ""

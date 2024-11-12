@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 10.11.2024 | 1.10.6.5 | :warning: switch to [xPack](https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack) as default prebuilt RISC-V GCC toolchain (now using `riscv-none-elf-` as default gcc prefix) | [#1091](https://github.com/stnolting/neorv32/pull/1091) |
 | 10.11.2024 | 1.10.6.4 | rework default processor testbench | [#1093](https://github.com/stnolting/neorv32/pull/1093) |
 | 06.11.2024 | 1.10.6.3 | minor rtl edits and cleanups | [#1090](https://github.com/stnolting/neorv32/pull/1090) |
 | 02.11.2024 | 1.10.6.2 | :warning: rework processor boot configuration; add new boot-configuration generics | [#1086](https://github.com/stnolting/neorv32/pull/1086) |

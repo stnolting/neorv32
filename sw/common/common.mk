@@ -25,8 +25,8 @@ ASM_INC ?= -I .
 # Optimization
 EFFORT ?= -Os
 
-# Compiler toolchain
-RISCV_PREFIX ?= riscv32-unknown-elf-
+# Compiler toolchain prefix
+RISCV_PREFIX ?= riscv-none-elf-
 
 # CPU architecture and ABI
 MARCH ?= rv32i_zicsr_zifencei
