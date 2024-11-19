@@ -21,7 +21,7 @@ chmod 777 neorv32_tb.uart0_rx.out neorv32_tb.uart1_rx.out
 mkdir -p build
 
 # GHDL import
-$GHDL -i --work=neorv32 --workdir=build \
+$GHDL -i --work=neorv32 --workdir=build --std=08 \
   $CORE_SRCS \
   "$NEORV32_RTL"/processor_templates/*.vhd \
   "$NEORV32_RTL"/system_integration/*.vhd \
@@ -32,7 +32,7 @@ $GHDL -i --work=neorv32 --workdir=build \
   xbus_memory.vhd
 
 # GHDL analyze
-$GHDL -m --work=neorv32 --workdir=build neorv32_tb
+$GHDL -m --work=neorv32 --workdir=build --std=08  neorv32_tb
 
 # GHDL run parameters
 if [ -z "$1" ]
