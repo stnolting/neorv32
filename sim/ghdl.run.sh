@@ -32,7 +32,7 @@ $GHDL -i --work=neorv32 --workdir=build --std=08 \
   xbus_memory.vhd
 
 # GHDL analyze
-$GHDL -m --work=neorv32 --workdir=build --std=08  neorv32_tb
+$GHDL -m --work=neorv32 --workdir=build --std=08 neorv32_tb
 
 # GHDL run parameters
 if [ -z "$1" ]
@@ -45,7 +45,7 @@ fi
 echo "GHDL simulation run parameters: $GHDL_RUN_ARGS";
 
 # GHDL run
-runcmd="$GHDL -r --work=neorv32 --workdir=build neorv32_tb \
+runcmd="$GHDL -r --work=neorv32 --workdir=build --std=08 neorv32_tb \
   --max-stack-alloc=0 \
   --ieee-asserts=disable \
   --assert-level=error $GHDL_RUN_ARGS"
