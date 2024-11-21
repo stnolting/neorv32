@@ -3,10 +3,6 @@
 set -e
 
 cd $(dirname "$0")
-
-NEORV32_RTL=${NEORV32_RTL:-../rtl}
-FILE_LIST=`cat $NEORV32_RTL/file_list_soc.f`
-CORE_SRCS="${FILE_LIST//NEORV32_RTL_PATH_PLACEHOLDER/"$NEORV32_RTL"}"
 GHDL="${GHDL:-ghdl}"
 
 # Prepare UART SIM_MODE output files
@@ -21,15 +17,8 @@ chmod 777 neorv32_tb.uart0_rx.out neorv32_tb.uart1_rx.out
 mkdir -p build
 
 # GHDL import
-$GHDL -i --work=neorv32 --workdir=build --std=08 \
-  $CORE_SRCS \
-  "$NEORV32_RTL"/processor_templates/*.vhd \
-  "$NEORV32_RTL"/system_integration/*.vhd \
-  "$NEORV32_RTL"/test_setups/*.vhd \
-  neorv32_tb.vhd \
-  sim_uart_rx.vhd \
-  xbus_gateway.vhd \
-  xbus_memory.vhd
+find .. -type f -name '*.vhd' -exec \
+     ghdl -i --std=08 --workdir=build --ieee=standard --work=neorv32 {} \;
 
 # GHDL analyze
 $GHDL -m --work=neorv32 --workdir=build --std=08 neorv32_tb
