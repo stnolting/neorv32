@@ -435,10 +435,10 @@ However, any write-access will be ignored and will not cause an exception to mai
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending; _cleared by platform-defined mechanism_
-| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending; _cleared by platform-defined mechanism_
-| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending; _cleared by platform-defined mechanism_
-| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending; _cleared by platform-defined mechanism_
+| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending, triggered by `msi_i` top port (see <<_cpu_top_entity_signals>>); _cleared by source-specific mechanism_
+| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending, triggered by `mei_i` top port (see <<_cpu_top_entity_signals>>); _cleared by source-specific mechanism_
+| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending, triggered by `mti_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<_machine_system_timer_mtime>>; _cleared by source-specific mechanism_
+| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending, see <<_neorv32_specific_fast_interrupt_requests>>; _cleared by source-specific mechanism_
 |=======================
 
 .FIRQ Channel Mapping
