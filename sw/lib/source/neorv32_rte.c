@@ -622,9 +622,9 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("Ext. bus interface:  ");
   tmp = NEORV32_SYSINFO->SOC;
   if (tmp & (1 << SYSINFO_SOC_XBUS)) {
-    neorv32_uart0_printf("Wishbone-b4 ");
+    neorv32_uart0_printf("enabled ");
     if (tmp & (1 << SYSINFO_SOC_XBUS_CACHE)) {
-      neorv32_uart0_printf("xbus-cache\n");
+      neorv32_uart0_printf("+ xbus-cache\n");
     }
     else {
       neorv32_uart0_printf("\n");
