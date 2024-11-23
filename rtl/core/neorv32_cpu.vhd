@@ -123,7 +123,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal lsu_err       : std_ulogic_vector(3 downto 0);      -- lsu alignment/access errors
   signal pc_fetch      : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
   signal pc_curr       : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
-  signal pc_next       : std_ulogic_vector(XLEN-1 downto 0); -- next pc (return address)
+  signal pc_ret        : std_ulogic_vector(XLEN-1 downto 0); -- return address
   signal pmp_ex_fault  : std_ulogic;                         -- pmp instruction fetch fault
   signal pmp_rw_fault  : std_ulogic;                         -- pmp read/write access fault
   signal irq_machine   : std_ulogic_vector(2 downto 0);      -- risc-v standard machine-level interrupts
@@ -245,7 +245,7 @@ begin
     rf_rs1_i      => rs1,            -- rf source 1
     pc_fetch_o    => pc_fetch,       -- instruction fetch address
     pc_curr_o     => pc_curr,        -- current PC (corresponding to current instruction)
-    pc_next_o     => pc_next,        -- next PC (return address)
+    pc_ret_o      => pc_ret,         -- return address
     csr_rdata_o   => csr_rdata,      -- CSR read data
     -- external CSR interface --
     xcsr_we_o     => xcsr_we,        -- global write enable
@@ -294,7 +294,7 @@ begin
   );
 
   -- all buses are zero unless there is an according operation --
-  rf_wdata <= alu_res or lsu_rdata or csr_rdata or pc_next;
+  rf_wdata <= alu_res or lsu_rdata or csr_rdata or pc_ret;
 
 
   -- ALU (Arithmetic/Logic Unit) and ALU Co-Processors --------------------------------------
