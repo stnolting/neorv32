@@ -408,7 +408,7 @@ begin
 
 
   -- ****************************************************************************************************************************
-  -- Instruction Issue (decompress 16-bit instructions and assemble a 32-bit instruction word)
+  -- Instruction Issue (decompress 16-bit instruction and/or assemble a 32-bit instruction word)
   -- ****************************************************************************************************************************
 
   issue_engine_enabled:
@@ -501,7 +501,7 @@ begin
     if (rstn_i = '0') then
       alu_imm_o <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (exe_engine.state = DISPATCH) then -- prepare update of next pc (using ALU's PC + IMM in EXECUTE state)
+      if (exe_engine.state = DISPATCH) then -- prepare update of next PC (using ALU's PC + IMM in EXECUTE state)
         alu_imm_o <= (others => '0');
         if RISCV_ISA_C and (issue_engine.data(33) = '1') then -- is de-compressed C instruction?
           alu_imm_o(3 downto 0) <= x"2";
@@ -509,7 +509,6 @@ begin
           alu_imm_o(3 downto 0) <= x"4";
         end if;
       else
-        alu_imm_o <= replicate_f(exe_engine.ir(31), 21) & exe_engine.ir(30 downto 21) & exe_engine.ir(20); -- default: I-immediate
         case opcode is
           when opcode_store_c => -- S-immediate
             alu_imm_o <= replicate_f(exe_engine.ir(31), 21) & exe_engine.ir(30 downto 25) & exe_engine.ir(11 downto 7);
@@ -520,9 +519,9 @@ begin
           when opcode_jal_c => -- J-immediate
             alu_imm_o <= replicate_f(exe_engine.ir(31), 12) & exe_engine.ir(19 downto 12) & exe_engine.ir(20) & exe_engine.ir(30 downto 21) & '0';
           when opcode_amo_c => -- atomic memory access
-            if RISCV_ISA_Zalrsc then alu_imm_o <= (others => '0'); end if;
-          when others =>
-            NULL; -- use default
+            alu_imm_o <= (others => '0');
+          when others => -- I-immediate
+            alu_imm_o <= replicate_f(exe_engine.ir(31), 21) & exe_engine.ir(30 downto 21) & exe_engine.ir(20);
         end case;
       end if;
     end if;
@@ -635,13 +634,13 @@ begin
 
       when DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
       -- ------------------------------------------------------------
-        ctrl_nxt.alu_opa_mux <= '1'; -- prepare update of next pc in EXECUTE (opa = current_pc)
-        ctrl_nxt.alu_opb_mux <= '1'; -- prepare update of next pc in EXECUTE (opb = imm = +2/4)
+        ctrl_nxt.alu_opa_mux <= '1'; -- prepare update of next PC in EXECUTE (opa = current PC)
+        ctrl_nxt.alu_opb_mux <= '1'; -- prepare update of next PC in EXECUTE (opb = imm = +2/4)
         --
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           exe_engine_nxt.state <= TRAP_ENTER;
         elsif RISCV_ISA_Sdtrig and (hw_trigger_match = '1') then -- hardware breakpoint
-          exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- pc <= next pc; intercept BEFORE executing the instruction
+          exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC; intercept BEFORE executing the instruction
           trap_ctrl.hwtrig     <= '1';
           exe_engine_nxt.state <= DISPATCH; -- stay here another round until trap_ctrl.hwtrig arrives in trap_ctrl.env_pending
         elsif (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- new instruction word available
@@ -649,7 +648,7 @@ begin
           trap_ctrl.instr_be   <= issue_engine.data(32); -- access fault during instruction fetch
           exe_engine_nxt.ci    <= issue_engine.data(33); -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= issue_engine.data(31 downto 0); -- instruction word
-          exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- pc <= next pc
+          exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
           exe_engine_nxt.state <= EXECUTE; -- start executing new instruction
         end if;
 
@@ -661,9 +660,9 @@ begin
           exe_engine_nxt.pc2 <= DEBUG_EXC_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter: start at "parking loop" <exception_entry>
         else -- normal start of trap
           if (csr.mtvec(0) = '1') and (trap_ctrl.cause(6) = '1') then -- vectored mode + interrupt
-            exe_engine_nxt.pc2 <= csr.mtvec(XLEN-1 downto 7) & trap_ctrl.cause(4 downto 0) & "00"; -- pc = mtvec + 4 * mcause
+            exe_engine_nxt.pc2 <= csr.mtvec(XLEN-1 downto 7) & trap_ctrl.cause(4 downto 0) & "00"; -- PC = mtvec + 4 * mcause
           else
-            exe_engine_nxt.pc2 <= csr.mtvec(XLEN-1 downto 2) & "00"; -- pc = mtvec
+            exe_engine_nxt.pc2 <= csr.mtvec(XLEN-1 downto 2) & "00"; -- PC = mtvec
           end if;
         end if;
         --
@@ -682,7 +681,7 @@ begin
         trap_ctrl.env_exit   <= '1';
         exe_engine_nxt.state <= RESTART; -- restart instruction fetch
 
-      when RESTART => -- reset and restart instruction fetch at next pc
+      when RESTART => -- reset and restart instruction fetch at next PC
       -- ------------------------------------------------------------
         ctrl_nxt.rf_zero_we  <= not bool_to_ulogic_f(REGFILE_HW_RST); -- house keeping: force writing zero to x0 if it's a phys. register
         fetch_engine.reset   <= '1';
@@ -691,7 +690,7 @@ begin
       when EXECUTE => -- decode and execute instruction (control will be here for exactly 1 cycle in any case)
       -- [NOTE] register file is read in this stage; due to the sync read, data will be available in the _next_ state
       -- ------------------------------------------------------------
-        exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0';
+        exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0'; -- next PC (= PC + immediate)
 
         -- decode instruction class/type --
         case opcode is
@@ -778,7 +777,7 @@ begin
           exe_engine_nxt.state <= DISPATCH;
         end if;
 
-      when BRANCH => -- update next pc on taken branches and jumps
+      when BRANCH => -- update next PC on taken branches and jumps
       -- ------------------------------------------------------------
         exe_engine_nxt.ra <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- output return address
         ctrl_nxt.rf_wb_en <= opcode(2); -- save return address if link operation (won't happen if exception)
@@ -1195,7 +1194,7 @@ begin
       if    (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
       elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c; -- illegal instruction
       elsif (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c; -- instruction address misaligned
-      elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & csr.privilege & csr.privilege; -- environment call (U/M)
+      elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & replicate_f(csr.privilege, 2); -- environment call (U/M)
       elsif (trap_ctrl.exc_buf(exc_ebreak_c)   = '1') then trap_ctrl.cause <= trap_brk_c; -- environment breakpoint
       elsif (trap_ctrl.exc_buf(exc_salign_c)   = '1') then trap_ctrl.cause <= trap_sma_c; -- store address misaligned
       elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c; -- load address misaligned

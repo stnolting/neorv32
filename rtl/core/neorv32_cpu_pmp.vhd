@@ -49,7 +49,7 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   -- auto-configuration --
   constant granularity_c : natural := cond_sel_natural_f(boolean(GRANULARITY < 4), 4, 2**index_size_f(GRANULARITY));
 
-  -- PMP configuration register bits --
+  -- configuration register bits --
   constant cfg_r_c  : natural := 0; -- read permit
   constant cfg_w_c  : natural := 1; -- write permit
   constant cfg_x_c  : natural := 2; -- execute permit
@@ -59,16 +59,16 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   constant cfg_rh_c : natural := 6; -- reserved
   constant cfg_l_c  : natural := 7; -- locked entry
 
-  -- PMP modes --
+  -- operation modes --
   constant mode_off_c   : std_ulogic_vector(1 downto 0) := "00"; -- null region (disabled)
   constant mode_tor_c   : std_ulogic_vector(1 downto 0) := "01"; -- top of range
   constant mode_na4_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
   constant mode_napot_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (>= 8 bytes)
 
-  -- PMP helpers --
+  -- address LSB according to granularity --
   constant pmp_lsb_c : natural := index_size_f(granularity_c); -- min = 2
 
-  -- PMP CSRs --
+  -- CSRs --
   type csr_cfg_t      is array (0 to NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
   type csr_addr_t     is array (0 to NUM_REGIONS-1) of std_ulogic_vector(XLEN-1 downto 0);
   type csr_cfg_rd_t   is array (0 to 15) of std_ulogic_vector(7 downto 0);
@@ -85,7 +85,7 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   signal cfg_rd32 : csr_cfg_rd32_t;
   signal addr_rd  : csr_addr_rd_t;
 
-  -- PMP address extension to 34 bit --
+  -- extended address (34-bit) --
   type xaddr_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(XLEN+1 downto 0);
   signal xaddr : xaddr_t;
 
@@ -240,7 +240,7 @@ begin
     -- extend region addresses to 34-bit --
     xaddr(r) <= csr.addr(r) & "00"; -- mask byte offset
 
-
+    -- naturally-aligned address mask --
     nap_mode_enable:
     if NAP_EN generate
 
@@ -365,7 +365,6 @@ begin
     fail_ex(r) <= not region.perm_ex(r) when (region.i_match(r) = '1') else fail_ex(r+1);
     fail_rw(r) <= not region.perm_rw(r) when (region.d_match(r) = '1') else fail_rw(r+1);
   end generate;
-
 
   -- final access check --
   access_check: process(rstn_i, clk_i)
