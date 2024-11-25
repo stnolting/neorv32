@@ -66,6 +66,7 @@ enum NEORV32_RTE_TRAP_enum {
  **************************************************************************/
 /**@{*/
 void     neorv32_rte_setup(void);
+void     neorv32_rte_core(void);
 int      neorv32_rte_handler_install(int id, void (*handler)(void));
 int      neorv32_rte_handler_uninstall(int id);
 void     neorv32_rte_debug_handler(void);

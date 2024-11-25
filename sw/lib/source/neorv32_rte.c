@@ -23,7 +23,6 @@
 static uint32_t __neorv32_rte_vector_lut[NEORV32_RTE_NUM_TRAPS] __attribute__((unused)); // trap handler vector table
 
 // private functions
-static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void);
 static void __neorv32_rte_print_hex_word(uint32_t num);
 
 
@@ -41,7 +40,7 @@ void neorv32_rte_setup(void) {
   neorv32_cpu_csr_write(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
 
   // configure trap handler base address
-  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&__neorv32_rte_core));
+  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&neorv32_rte_core));
 
   // disable all IRQ channels
   neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -98,7 +97,7 @@ int neorv32_rte_handler_uninstall(int id) {
  * NEORV32 runtime environment (RTE):
  * This is the core of the NEORV32 RTE (first-level trap handler, executed in machine mode).
  **************************************************************************/
-static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
+void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
 
   // save context
   asm volatile (
