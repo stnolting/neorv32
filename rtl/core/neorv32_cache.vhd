@@ -33,6 +33,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -176,7 +177,7 @@ begin
   -- Check if Direct/Uncached Access --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   dir_acc_d <= '1' when UC_ENABLE and -- direct accesses implemented
-                        ((host_req_i.addr(31 downto 28) >= UC_BEGIN) or -- uncached memory page
+                        ((unsigned(host_req_i.addr(31 downto 28)) >= unsigned(UC_BEGIN)) or -- uncached memory page
                          (host_req_i.rvso = '1')) else '0'; -- atomic (reservation set) operation
 
   -- request splitter: cached or direct access --
