@@ -128,11 +128,11 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
   -- authentication --
   type auth_t is record
-    busy   : std_ulogic; -- authenticator is busy when set
-    valid  : std_ulogic; -- authentication successful
-    reset  : std_ulogic; -- reset authentication (sync, high-active)
-    re, we : std_ulogic; -- data interface read/write enable
-    rdata  : std_ulogic_vector(31 downto 0); -- read data
+    busy  : std_ulogic; -- authenticator is busy when set
+    valid : std_ulogic; -- authentication successful
+    re    : std_ulogic; -- data interface read enable
+    we    : std_ulogic; -- data interface write enable
+    rdata : std_ulogic_vector(31 downto 0); -- read data
   end record;
   signal auth : auth_t;
 

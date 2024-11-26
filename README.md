@@ -39,7 +39,7 @@ informed via _precise_ and resumable hardware exceptions.
 targeting various FPGA boards and toolchains to get started.
 * :package: The entire processor is also available as [Vivado IP Block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block).
 * :kite: Support for [FreeRTOS](https://github.com/stnolting/neorv32-freertos),
-[Zephyr OS](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) and
+[Zephyr OS](https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html) and
 [LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC Builder Framework.
 * :desktop_computer: Pre-configured [Eclipse project](https://stnolting.github.io/neorv32/ug/#_eclipse_ide) for developing and debugging code using an IDE.
 * :label: The project's change log is available in [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
@@ -250,7 +250,8 @@ This overview provides some *quick links* to the most important sections of the
 
 * [Top Entity - Signals](https://stnolting.github.io/neorv32/#_processor_top_entity_signals) - how to connect to the processor
 * [Top Entity - Generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics) - processor/CPU configuration options
-* [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory layout and boot configurations
+* [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory layout and address mapping
+* [Boot Configuration](https://stnolting.github.io/neorv32/#_boot_configuration) - how to make the processor start executing
 * [SoC Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - IO/peripheral modules and memories
 * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - in-system debugging of the processor via JTAG
 

@@ -41,9 +41,10 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_top_inst: neorv32_top
   generic map (
-    -- General --
+    -- Clocking --
     CLOCK_FREQUENCY   => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
-    INT_BOOTLOADER_EN => false,             -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    -- Boot Configuration --
+    BOOT_MODE_SELECT  => 2,                 -- boot from pre-initialized IMEM
     -- RISC-V CPU Extensions --
     RISCV_ISA_C       => true,              -- implement compressed extension?
     RISCV_ISA_M       => true,              -- implement mul/div extension?

@@ -4,14 +4,14 @@
 [discrete]
 ==== Why did you make this?
 
-Processor and CPU architecture designs are fascinating things: they are the magic frontier where software meets hardware.
-This project started as something like a _journey_ into this magic realm to understand how things actually work
-down on this very low level and evolved over time to a capable system on chip.
+For me, processor and CPU architecture designs are fascinating things: they are the magic frontier where software meets hardware.
+This project started as something like a _journey_ into this realm to understand how things actually work
+down on the very low level and evolved over time to a quite capable system-on-chip.
 
-But there is more: when I started to dive into the emerging RISC-V ecosystem I felt overwhelmed by the complexity.
+When I started to dive into the emerging RISC-V ecosystem I felt overwhelmed by the complexity.
 As a beginner it is hard to get an overview - especially when you want to setup a minimal platform to tinker with...
 Which core to use? How to get the right toolchain? What features do I need? How does booting work? How do I
-create an actual executable? How to get that into the hardware? How to customize things? **_Where to start???_**
+create an actual executable? How to get that into the hardware? How to customize things? _Where to start???_
 
 This project aims to provide a _simple to understand_ and _easy to use_ yet _powerful_ and _flexible_ platform
 that targets FPGA and RISC-V beginners as well as advanced users.
@@ -20,15 +20,16 @@ that targets FPGA and RISC-V beginners as well as advanced users.
 [discrete]
 ==== Why a _soft-core_ processor?
 
-As a matter of fact soft-core processors _cannot_ compete with discrete (like FPGA hard-macro) processors in terms
-of performance, energy efficiency and size. But they do fill a niche in FPGA design space: for example, soft-core
-processors allow to implement the _control flow part_ of certain applications (e.g. communication protocol handling)
+As a matter of fact soft-core processors _cannot_ compete with discrete (ASIC) processors in terms
+of performance, energy efficiency and size. But they do fill a niche in the design space: for example, soft-core
+processors allow to implement the _control flow part_ of certain applications (like communication protocol handling)
 using software like plain C. This provides high flexibility as software can be easily changed, re-compiled and
 re-uploaded again.
 
 Furthermore, the concept of flexibility applies to all aspects of a soft-core processor. The user can add
 _exactly_ the features that are required by the application: additional memories, custom interfaces, specialized
-co-processors and even user-defined instructions.
+co-processors and even user-defined instructions. These application-specific optimization capabilities compensate
+for many of the limitations of soft-core processors.
 
 
 [discrete]
@@ -43,48 +44,58 @@ ____
 
 Open-source is a great thing!
 While open-source has already become quite popular in _software_, hardware-focused projects still need to catch up.
-Admittedly, there has been quite a development, but mainly in terms of _platforms_ and _applications_ (so
-schematics, PCBs, etc.). Although processors and CPUs are the heart of almost every digital system, having a true
-open-source silicon is still a rarity. RISC-V aims to change that - and even it is _just one approach_, it helps paving
-the road for future development.
+Although processors and CPUs are the heart of almost every digital system, having a true open-source platform is still
+a rarity. RISC-V aims to change that - and even it is _just one approach_, it helps paving the road for future development.
 
 Furthermore, I highly appreciate the community aspect of RISC-V. The ISA and everything beyond is developed in direct
-contact with the community: this includes businesses and professionals but also hobbyist, amateurs and people
-that are just curious. Everyone can join discussions and contribute to RISC-V in their very own way.
+contact with the community: this includes businesses and professionals but also hobbyist, amateurs and enthusiasts.
+Everyone can join discussions and contribute to RISC-V in their very own way.
 
 Finally, I really like the RISC-V ISA itself. It aims to be a clean, orthogonal and "intuitive" ISA that
-resembles with the basic concepts of _RISC_: simple yet effective.
+resembles with the basic concepts of RISC: _simple yet effective_.
 
 
 [discrete]
 ==== Yet another RISC-V core? What makes it special?
 
-The NEORV32 is not based on another RISC-V core. It was build entirely from ground up (just following the official
-ISA specs). The project does not intend to replace certain RISC-V cores or
-just beat existing ones like https://github.com/SpinalHDL/VexRiscv[VexRISC] in terms of performance or
-https://github.com/olofk/serv[SERV] in terms of size. It was build having a different design goal in mind.
+The NEORV32 is not based on another (RISC-V) core. It was build entirely from ground up just following the official
+ISA specs. The project does not intend to replace certain RISC-V cores or beat existing ones in terms of _performance_
+or _size_. It was build having a different design goal in mind.
 
 The project aims to provide _another option_ in the RISC-V / soft-core design space with a different performance
-vs. size trade-off and a different focus: _embrace_ concepts like documentation, platform-independence / portability,
-RISC-V compatibility, _extensibility & customization_ and _ease of use_ (see the <<_project_key_features>> below).
+vs. size trade-off and a different focus: embrace concepts like documentation, platform-independence / portability,
+RISC-V compatibility, extensibility & customization and - last but not least - ease of use.
 
 Furthermore, the NEORV32 pays special focus on _execution safety_ using <<_full_virtualization>>. The CPU aims to
 provide fall-backs for _everything that could go wrong_. This includes malformed instruction words, privilege escalations
 and even memory accesses that are checked for address space holes and deterministic response times of memory-mapped
 devices. Precise exceptions allow a defined and fully-synchronized state of the CPU at every time an in every situation.
 
+To summarize, this project pursues the following objectives (in rough order of importance):
+
+[start=1]
+. RISC-V-compliance and -compatibility
+. Functionality and features
+. Extensibility
+. Safety and security
+. Minimal area
+. Short critical paths, high operating clock
+. Simplicity / easy to understand
+. Low-power design
+. High overall performance
+
 
 [discrete]
 ==== A multi-cycle architecture?!
 
-Most mainstream CPUs out there are pipelined architectures to increase throughput. In contrast, most CPUs used for
-teaching are single-cycle designs since they are probably the most easiest to understand. But what about the
-multi-cycle architectures?
+The primary goal of many mainstream CPUs is pure performance. Deep pipelines and out-of-order execution are some concepts
+to boost performance, while also increasing complexity. In contrast, most CPUs used for teaching are single-cycle designs
+since they are probably the most easiest to understand. But what about something in-between?
 
-In terms of energy, throughput, area and maximal clock frequency multi-cycle architectures are somewhere in between
+In terms of energy, throughput, area and maximal clock frequency, multi-cycle architectures are somewhere in between
 single-cycle and fully-pipelined designs: they provide higher throughput and clock speed when compared to their
-single-cycle counterparts while having less hardware complexity (= area) then a fully-pipelined designs. I decided to
-use the multi-cycle approach because of the following reasons:
+single-cycle counterparts while having less hardware complexity (= area) and thus, less performance, then a fully-pipelined
+designs. So I decided to use the multi-cycle-approach because of the following reasons:
 
 * Multi-cycle architectures are quite small! There is no need for pipeline hazard detection/resolution logic
 (e.g. forwarding). Furthermore, you can "re-use" parts of the core to do several tasks (e.g. the ALU is used for
@@ -94,29 +105,15 @@ in real-world applications (i.e. FPGA block RAM is entirely synchronous). Furthe
 long critical path tremendously reducing maximal operating frequency.
 * Pipelined designs increase performance by having several instruction "in fly" at the same time. But this also means
 there is some kind of "out-of-order" behavior: if an instruction at the end of the pipeline causes an exception
-all the instructions in earlier stages have to be invalidated. Potential architectureral state changes have to be made _undone_
-requiring additional (exception-handling) logic. In a multi-cycle architecture this situation cannot occur since only a
+all the instructions in earlier stages have to be invalidated. Potential architectural state changes have to be made _undone_
+requiring additional logic (Spectre and Meltdown...). In a multi-cycle architecture this situation cannot occur since only a
 single instruction is being processed ("in-fly") at a time.
 * Having only a single instruction in fly does not only reduce hardware costs, it also simplifies
 simulation/verification/debugging, state preservation/restoring during exceptions and extensibility (no need to care
 about pipeline hazards) - but of course at the cost of reduced throughput.
 
 To counteract the loss of performance implied by a _pure_ multi-cycle architecture, the NEORV32 CPU uses a _mixed_
-approach: instruction fetch (front-end) and instruction execution (back-end) are de-coupled to operate independently
+approach: instruction-fetch (front-end) and instruction-execution (back-end) are de-coupled to operate independently
 of each other. Data is interchanged via a queue building a simple 2-stage pipeline. Each "pipeline" stage in terms is
-implemented as multi-cycle architecture to simplify the hardware and to provide _precise_ state control (e.g. during
-exceptions).
-
-
-[discrete]
-==== Objective
-
-[start=1]
-. RISC-V-compliance and -compatibility
-. Functionality and features
-. Safety and security
-. Minimal area
-. Short critical paths, high operating clock
-. Low-power design
-. High overall performance
-. Simplicity / easy to understand
+implemented as multi-cycle architecture to simplify the hardware and to provide _precise_ state control (for example
+during exceptions).

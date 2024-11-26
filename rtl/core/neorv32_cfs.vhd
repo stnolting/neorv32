@@ -30,12 +30,12 @@ entity neorv32_cfs is
     clk_i       : in  std_ulogic; -- global clock line
     rstn_i      : in  std_ulogic; -- global reset line, low-active, use as async
     bus_req_i   : in  bus_req_t; -- bus request
-    bus_rsp_o   : out bus_rsp_t := rsp_terminate_c; -- bus response
-    clkgen_en_o : out std_ulogic := '0'; -- enable clock generator
+    bus_rsp_o   : out bus_rsp_t; -- bus response
+    clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(7 downto 0); -- "clock" inputs
-    irq_o       : out std_ulogic := '0'; -- interrupt request
+    irq_o       : out std_ulogic; -- interrupt request
     cfs_in_i    : in  std_ulogic_vector(CFS_IN_SIZE-1 downto 0); -- custom inputs
-    cfs_out_o   : out std_ulogic_vector(CFS_OUT_SIZE-1 downto 0) := (others => '0') -- custom outputs
+    cfs_out_o   : out std_ulogic_vector(CFS_OUT_SIZE-1 downto 0) -- custom outputs
   );
 end neorv32_cfs;
 

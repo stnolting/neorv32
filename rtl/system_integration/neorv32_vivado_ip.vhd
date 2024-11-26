@@ -25,13 +25,14 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     -- Configuration Generics
     -- ------------------------------------------------------------
-    -- AXI-Stream Interfaces --
-    AXI4_STREAM_EN        : boolean                       := false;
-    -- General --
+    -- Clocking --
     CLOCK_FREQUENCY       : natural                       := 100_000_000;
+    -- Identification --
     HART_ID               : std_logic_vector(31 downto 0) := x"00000000";
     JEDEC_ID              : std_logic_vector(10 downto 0) := "00000000000";
-    INT_BOOTLOADER_EN     : boolean                       := false;
+    -- Boot Configuration --
+    BOOT_MODE_SELECT      : natural range 0 to 2          := 0;
+    BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000";
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                       := false;
     OCD_AUTHENTICATION    : boolean                       := false;
@@ -87,6 +88,7 @@ entity neorv32_vivado_ip is
     -- External Bus Interface --
     XBUS_EN               : boolean                       := true;
     XBUS_TIMEOUT          : natural range 8 to 65536      := 64;
+    XBUS_REGSTAGE_EN      : boolean                       := false;
     XBUS_CACHE_EN         : boolean                       := false;
     XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256        := 8;
     XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16      := 256;
@@ -129,6 +131,7 @@ entity neorv32_vivado_ip is
     IO_GPTMR_EN           : boolean                       := false;
     IO_ONEWIRE_EN         : boolean                       := false;
     IO_DMA_EN             : boolean                       := false;
+    IO_SLINK_EN           : boolean                        := false;
     IO_SLINK_RX_FIFO      : natural range 1 to 2**15      := 1;
     IO_SLINK_TX_FIFO      : natural range 1 to 2**15      := 1;
     IO_CRC_EN             : boolean                       := false
@@ -170,7 +173,7 @@ entity neorv32_vivado_ip is
     m_axi_bvalid   : in  std_logic := '0';
     m_axi_bready   : out std_logic;
     -- ------------------------------------------------------------
-    -- AXI4-Stream Interfaces (available if AXI4_STREAM_EN = true)
+    -- AXI4-Stream Interfaces (available if IO_SLINK_EN = true)
     -- ------------------------------------------------------------
     -- Source --
 --  s0_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
@@ -260,54 +263,44 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   -- AXI4-Lite bridge --
   component xbus2axi4lite_bridge
     port (
-      -- ------------------------------------------------------------
-      -- Global Control
-      -- ------------------------------------------------------------
-      clk            : in  std_logic;
-      resetn         : in  std_logic; -- low-active
-      -- ------------------------------------------------------------
-      -- XBUS Device Interface
-      -- ------------------------------------------------------------
-      xbus_adr_i     : in  std_ulogic_vector(31 downto 0); -- address
-      xbus_dat_i     : in  std_ulogic_vector(31 downto 0); -- write data
-      xbus_tag_i     : in  std_ulogic_vector(2 downto 0);  -- access tag
-      xbus_we_i      : in  std_ulogic;                     -- read/write
-      xbus_sel_i     : in  std_ulogic_vector(3 downto 0);  -- byte enable
-      xbus_stb_i     : in  std_ulogic;                     -- strobe
-      xbus_cyc_i     : in  std_ulogic;                     -- valid cycle
-      xbus_ack_o     : out std_ulogic;                     -- transfer acknowledge
-      xbus_err_o     : out std_ulogic;                     -- transfer error
-      xbus_dat_o     : out std_ulogic_vector(31 downto 0); -- read data
-      -- ------------------------------------------------------------
-      -- AXI4-Lite Host Interface
-      -- ------------------------------------------------------------
-      -- Clock and Reset --
-  --  m_axi_aclk     : in  std_logic; -- just to satisfy Vivado, but not actually used
-  --  m_axi_aresetn  : in  std_logic; -- just to satisfy Vivado, but not actually used
-      -- Write Address Channel --
-      m_axi_awaddr   : out std_logic_vector(31 downto 0);
-      m_axi_awprot   : out std_logic_vector(2 downto 0);
-      m_axi_awvalid  : out std_logic;
-      m_axi_awready  : in  std_logic;
-      -- Write Data Channel --
-      m_axi_wdata    : out std_logic_vector(31 downto 0);
-      m_axi_wstrb    : out std_logic_vector(3 downto 0);
-      m_axi_wvalid   : out std_logic;
-      m_axi_wready   : in  std_logic;
-      -- Read Address Channel --
-      m_axi_araddr   : out std_logic_vector(31 downto 0);
-      m_axi_arprot   : out std_logic_vector(2 downto 0);
-      m_axi_arvalid  : out std_logic;
-      m_axi_arready  : in  std_logic;
-      -- Read Data Channel --
-      m_axi_rdata    : in  std_logic_vector(31 downto 0);
-      m_axi_rresp    : in  std_logic_vector(1 downto 0);
-      m_axi_rvalid   : in  std_logic;
-      m_axi_rready   : out std_logic;
-      -- Write Response Channel --
-      m_axi_bresp    : in  std_logic_vector(1 downto 0);
-      m_axi_bvalid   : in  std_logic;
-      m_axi_bready   : out std_logic
+      -- Global control 
+      clk           : in  std_logic;
+      resetn        : in  std_logic;
+      -- XBUS device interface --
+      xbus_adr_i    : in  std_ulogic_vector(31 downto 0);
+      xbus_dat_i    : in  std_ulogic_vector(31 downto 0);
+      xbus_tag_i    : in  std_ulogic_vector(2 downto 0);
+      xbus_we_i     : in  std_ulogic;
+      xbus_sel_i    : in  std_ulogic_vector(3 downto 0);
+      xbus_stb_i    : in  std_ulogic;
+      xbus_cyc_i    : in  std_ulogic;
+      xbus_ack_o    : out std_ulogic;
+      xbus_err_o    : out std_ulogic;
+      xbus_dat_o    : out std_ulogic_vector(31 downto 0);
+      -- AXI4-Lite host write address channel --
+      m_axi_awaddr  : out std_logic_vector(31 downto 0);
+      m_axi_awprot  : out std_logic_vector(2 downto 0);
+      m_axi_awvalid : out std_logic;
+      m_axi_awready : in  std_logic;
+      -- AXI4-Lite host write data channel --
+      m_axi_wdata   : out std_logic_vector(31 downto 0);
+      m_axi_wstrb   : out std_logic_vector(3 downto 0);
+      m_axi_wvalid  : out std_logic;
+      m_axi_wready  : in  std_logic;
+      -- AXI4-Lite host read address channel --
+      m_axi_araddr  : out std_logic_vector(31 downto 0);
+      m_axi_arprot  : out std_logic_vector(2 downto 0);
+      m_axi_arvalid : out std_logic;
+      m_axi_arready : in  std_logic;
+      -- AXI4-Lite host read data channel --
+      m_axi_rdata   : in  std_logic_vector(31 downto 0);
+      m_axi_rresp   : in  std_logic_vector(1 downto 0);
+      m_axi_rvalid  : in  std_logic;
+      m_axi_rready  : out std_logic;
+      -- AXI4-Lite host write response channel --
+      m_axi_bresp   : in  std_logic_vector(1 downto 0);
+      m_axi_bvalid  : in  std_logic;
+      m_axi_bready  : out std_logic
     );
   end component;
 
@@ -334,16 +327,16 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal xirq_i_aux : std_ulogic_vector(31 downto 0);
 
   -- internal wishbone bus --
-  signal xbus_adr : std_ulogic_vector(31 downto 0);                    -- address
-  signal xbus_do  : std_ulogic_vector(31 downto 0);                    -- write data
-  signal xbus_tag : std_ulogic_vector(2 downto 0);                     -- access tag
-  signal xbus_we  : std_ulogic;                                        -- read/write
-  signal xbus_sel : std_ulogic_vector(3 downto 0);                     -- byte enable
-  signal xbus_stb : std_ulogic;                                        -- strobe
-  signal xbus_cyc : std_ulogic;                                        -- valid cycle
-  signal xbus_di  : std_ulogic_vector(31 downto 0);                    -- read data
-  signal xbus_ack : std_ulogic;                                        -- transfer acknowledge
-  signal xbus_err : std_ulogic;                                        -- transfer error
+  signal xbus_adr : std_ulogic_vector(31 downto 0); -- address
+  signal xbus_do  : std_ulogic_vector(31 downto 0); -- write data
+  signal xbus_tag : std_ulogic_vector(2 downto 0);  -- access tag
+  signal xbus_we  : std_ulogic;                     -- read/write
+  signal xbus_sel : std_ulogic_vector(3 downto 0);  -- byte enable
+  signal xbus_stb : std_ulogic;                     -- strobe
+  signal xbus_cyc : std_ulogic;                     -- valid cycle
+  signal xbus_di  : std_ulogic_vector(31 downto 0); -- read data
+  signal xbus_ack : std_ulogic;                     -- transfer acknowledge
+  signal xbus_err : std_ulogic;                     -- transfer error
 
 begin
 
@@ -351,12 +344,15 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_top_inst: neorv32_top
   generic map (
-    -- General --
+    -- Clocking --
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
     CLOCK_GATING_EN       => false, -- clock gating is not supported here
+    -- Identification --
     HART_ID               => std_ulogic_vector(HART_ID),
     JEDEC_ID              => std_ulogic_vector(JEDEC_ID),
-    INT_BOOTLOADER_EN     => INT_BOOTLOADER_EN,
+    -- Boot Configuration --
+    BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
+    BOOT_ADDR_CUSTOM      => BOOT_ADDR_CUSTOM,
     -- On-Chip Debugger --
     OCD_EN                => OCD_EN,
     OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
@@ -412,7 +408,7 @@ begin
     -- External bus interface --
     XBUS_EN               => XBUS_EN,
     XBUS_TIMEOUT          => XBUS_TIMEOUT,
-    XBUS_REGSTAGE_EN      => false,
+    XBUS_REGSTAGE_EN      => XBUS_REGSTAGE_EN,
     XBUS_CACHE_EN         => XBUS_CACHE_EN,
     XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
     XBUS_CACHE_BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
@@ -424,6 +420,7 @@ begin
     -- External Interrupts Controller --
     XIRQ_NUM_CH           => num_xirq_c,
     -- Processor peripherals --
+    IO_DISABLE_SYSINFO    => false,
     IO_GPIO_NUM           => num_gpio_c,
     IO_MTIME_EN           => IO_MTIME_EN,
     IO_UART0_EN           => IO_UART0_EN,
@@ -451,7 +448,7 @@ begin
     IO_GPTMR_EN           => IO_GPTMR_EN,
     IO_ONEWIRE_EN         => IO_ONEWIRE_EN,
     IO_DMA_EN             => IO_DMA_EN,
-    IO_SLINK_EN           => AXI4_STREAM_EN,
+    IO_SLINK_EN           => IO_SLINK_EN,
     IO_SLINK_RX_FIFO      => IO_SLINK_RX_FIFO,
     IO_SLINK_TX_FIFO      => IO_SLINK_TX_FIFO,
     IO_CRC_EN             => IO_CRC_EN
@@ -618,14 +615,10 @@ begin
   if XBUS_EN generate
     axi4_bridge_inst: xbus2axi4lite_bridge
     port map (
-      -- ------------------------------------------------------------
-      -- Global Control
-      -- ------------------------------------------------------------
+      -- Global control --
       clk           => clk,
       resetn        => resetn,
-      -- ------------------------------------------------------------
-      -- XBUS Device Interface
-      -- ------------------------------------------------------------
+      -- XBUS device interface --
       xbus_adr_i    => xbus_adr,
       xbus_dat_i    => xbus_do,
       xbus_tag_i    => xbus_tag,
@@ -636,30 +629,27 @@ begin
       xbus_ack_o    => xbus_ack,
       xbus_err_o    => xbus_err,
       xbus_dat_o    => xbus_di,
-      -- ------------------------------------------------------------
-      -- AXI4-Lite Host Interface
-      -- ------------------------------------------------------------
-      -- Write Address Channel --
+      -- AXI4-Lite host write address channel --
       m_axi_awaddr  => m_axi_awaddr,
       m_axi_awprot  => m_axi_awprot,
       m_axi_awvalid => m_axi_awvalid,
       m_axi_awready => m_axi_awready,
-      -- Write Data Channel --
+      -- AXI4-Lite host write data channel --
       m_axi_wdata   => m_axi_wdata,
       m_axi_wstrb   => m_axi_wstrb,
       m_axi_wvalid  => m_axi_wvalid,
       m_axi_wready  => m_axi_wready,
-      -- Read Address Channel --
+      -- AXI4-Lite host read address channel --
       m_axi_araddr  => m_axi_araddr,
       m_axi_arprot  => m_axi_arprot,
       m_axi_arvalid => m_axi_arvalid,
       m_axi_arready => m_axi_arready,
-      -- Read Data Channel --
+      -- AXI4-Lite host read data channel --
       m_axi_rdata   => m_axi_rdata,
       m_axi_rresp   => m_axi_rresp,
       m_axi_rvalid  => m_axi_rvalid,
       m_axi_rready  => m_axi_rready,
-      -- Write Response Channel --
+      -- AXI4-Lite host write response channel --
       m_axi_bresp   => m_axi_bresp,
       m_axi_bvalid  => m_axi_bvalid,
       m_axi_bready  => m_axi_bready

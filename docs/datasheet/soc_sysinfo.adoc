@@ -62,7 +62,7 @@ Bit fields in this register are set to all-zero if the according memory system i
 | `0`  | `SYSINFO_MEM_IMEM` | _log2_(internal IMEM size in bytes), via top's `MEM_INT_IMEM_SIZE` generic
 | `1`  | `SYSINFO_MEM_DMEM` | _log2_(internal DMEM size in bytes), via top's `MEM_INT_DMEM_SIZE` generic
 | `2`  | -                  | _reserved_, read as zero
-| `3`  | -                  | _reserved_, read as zero
+| `3`  | `SYSINFO_MEM_BOOT` | boot mode configuration, via top's `BOOT_MODE_SELECT` generic (see <<_boot_configuration>>))
 |=======================
 
 
@@ -73,37 +73,38 @@ Bit fields in this register are set to all-zero if the according memory system i
 [options="header",grid="all"]
 |=======================
 | Bit | Name [C] | Description
-| `0`     | `SYSINFO_SOC_BOOTLOADER`     | set if processor-internal bootloader is implemented (via top's `INT_BOOTLOADER_EN` generic)
-| `1`     | `SYSINFO_SOC_XBUS`           | set if external Wishbone bus interface is implemented (via top's `XBUS_EN` generic)
-| `2`     | `SYSINFO_SOC_MEM_INT_IMEM`   | set if processor-internal DMEM implemented (via top's `MEM_INT_DMEM_EN` generic)
-| `3`     | `SYSINFO_SOC_MEM_INT_DMEM`   | set if processor-internal IMEM is implemented (via top's `MEM_INT_IMEM_EN` generic)
-| `4`     | `SYSINFO_SOC_OCD`            | set if on-chip debugger is implemented (via top's `OCD_EN` generic)
-| `5`     | `SYSINFO_SOC_ICACHE`         | set if processor-internal instruction cache is implemented (via top's `ICACHE_EN` generic)
-| `6`     | `SYSINFO_SOC_DCACHE`         | set if processor-internal data cache is implemented (via top's `DCACHE_EN` generic)
-| `7`     | `SYSINFO_SOC_CLOCK_GATING`   | set if CPU clock gating is implemented (via top's `CLOCK_GATING_EN` generic)
-| `8`     | `SYSINFO_SOC_XBUS_CACHE`     | set if external bus interface cache is implemented (via top's `XBUS_CACHE_EN` generic)
-| `9`     | `SYSINFO_SOC_XIP`            | set if XIP module is implemented (via top's `XIP_EN` generic)
-| `10`    | `SYSINFO_SOC_XIP_CACHE`      | set if XIP cache is implemented (via top's `XIP_CACHE_EN` generic)
-| `11`    | `SYSINFO_SOC_OCD_AUTH`       | set if on-chip debugger authentication is implemented (via top's `OCD_AUTHENTICATION` generic)
-| `13:12` | -                            | _reserved_, read as zero
-| `14`    | `SYSINFO_SOC_IO_DMA`         | set if direct memory access controller is implemented (via top's `IO_DMA_EN` generic)
-| `15`    | `SYSINFO_SOC_IO_GPIO`        | set if GPIO is implemented (via top's `IO_GPIO_EN` generic)
-| `16`    | `SYSINFO_SOC_IO_MTIME`       | set if MTIME is implemented (via top's `IO_MTIME_EN` generic)
-| `17`    | `SYSINFO_SOC_IO_UART0`       | set if primary UART0 is implemented (via top's `IO_UART0_EN` generic)
-| `18`    | `SYSINFO_SOC_IO_SPI`         | set if SPI is implemented (via top's `IO_SPI_EN` generic)
-| `19`    | `SYSINFO_SOC_IO_TWI`         | set if TWI is implemented (via top's `IO_TWI_EN` generic)
-| `20`    | `SYSINFO_SOC_IO_PWM`         | set if PWM is implemented (via top's `IO_PWM_NUM_CH` generic)
-| `21`    | `SYSINFO_SOC_IO_WDT`         | set if WDT is implemented (via top's `IO_WDT_EN` generic)
-| `22`    | `SYSINFO_SOC_IO_CFS`         | set if custom functions subsystem is implemented (via top's `IO_CFS_EN` generic)
-| `23`    | `SYSINFO_SOC_IO_TRNG`        | set if TRNG is implemented (via top's `IO_TRNG_EN` generic)
-| `24`    | `SYSINFO_SOC_IO_SDI`         | set if SDI is implemented (via top's `IO_SDI_EN` generic)
-| `25`    | `SYSINFO_SOC_IO_UART1`       | set if secondary UART1 is implemented (via top's `IO_UART1_EN` generic)
-| `26`    | `SYSINFO_SOC_IO_NEOLED`      | set if NEOLED is implemented (via top's `IO_NEOLED_EN` generic)
-| `27`    | `SYSINFO_SOC_IO_XIRQ`        | set if XIRQ is implemented (via top's `XIRQ_NUM_CH` generic)
-| `28`    | `SYSINFO_SOC_IO_GPTMR`       | set if GPTMR is implemented (via top's `IO_GPTMR_EN` generic)
-| `29`    | `SYSINFO_SOC_IO_SLINK`       | set if stream link interface is implemented (via top's `IO_SLINK_EN` generic)
-| `30`    | `SYSINFO_SOC_IO_ONEWIRE`     | set if ONEWIRE interface is implemented (via top's `IO_ONEWIRE_EN` generic)
-| `31`    | `SYSINFO_SOC_IO_CRC`         | set if cyclic redundancy check unit is implemented (via top's `IO_CRC_EN` generic)
+| `0`     | `SYSINFO_SOC_BOOTLOADER`   | set if processor-internal bootloader is implemented (via top's `BOOT_MODE_SELECT` generic; see <<_boot_configuration>>)
+| `1`     | `SYSINFO_SOC_XBUS`         | set if external Wishbone bus interface is implemented (via top's `XBUS_EN` generic)
+| `2`     | `SYSINFO_SOC_MEM_INT_IMEM` | set if processor-internal DMEM is implemented (via top's `MEM_INT_IMEM_EN` generic)
+| `3`     | `SYSINFO_SOC_MEM_INT_DMEM` | set if processor-internal IMEM is implemented (via top's `MEM_INT_DMEM_EN` generic)
+| `4`     | `SYSINFO_SOC_OCD`          | set if on-chip debugger is implemented (via top's `OCD_EN` generic)
+| `5`     | `SYSINFO_SOC_ICACHE`       | set if processor-internal instruction cache is implemented (via top's `ICACHE_EN` generic)
+| `6`     | `SYSINFO_SOC_DCACHE`       | set if processor-internal data cache is implemented (via top's `DCACHE_EN` generic)
+| `7`     | `SYSINFO_SOC_CLOCK_GATING` | set if CPU clock gating is implemented (via top's `CLOCK_GATING_EN` generic)
+| `8`     | `SYSINFO_SOC_XBUS_CACHE`   | set if external bus interface cache is implemented (via top's `XBUS_CACHE_EN` generic)
+| `9`     | `SYSINFO_SOC_XIP`          | set if XIP module is implemented (via top's `XIP_EN` generic)
+| `10`    | `SYSINFO_SOC_XIP_CACHE`    | set if XIP cache is implemented (via top's `XIP_CACHE_EN` generic)
+| `11`    | `SYSINFO_SOC_OCD_AUTH`     | set if on-chip debugger authentication is implemented (via top's `OCD_AUTHENTICATION` generic)
+| `12`    | `SYSINFO_SOC_IMEM_ROM`     | set if processor-internal IMEM is implemented as pre-initialized ROM (via top's `BOOT_MODE_SELECT` generic; see <<_boot_configuration>>)
+| `13`    | -                          | _reserved_, read as zero
+| `14`    | `SYSINFO_SOC_IO_DMA`       | set if direct memory access controller is implemented (via top's `IO_DMA_EN` generic)
+| `15`    | `SYSINFO_SOC_IO_GPIO`      | set if GPIO is implemented (via top's `IO_GPIO_EN` generic)
+| `16`    | `SYSINFO_SOC_IO_MTIME`     | set if MTIME is implemented (via top's `IO_MTIME_EN` generic)
+| `17`    | `SYSINFO_SOC_IO_UART0`     | set if primary UART0 is implemented (via top's `IO_UART0_EN` generic)
+| `18`    | `SYSINFO_SOC_IO_SPI`       | set if SPI is implemented (via top's `IO_SPI_EN` generic)
+| `19`    | `SYSINFO_SOC_IO_TWI`       | set if TWI is implemented (via top's `IO_TWI_EN` generic)
+| `20`    | `SYSINFO_SOC_IO_PWM`       | set if PWM is implemented (via top's `IO_PWM_NUM_CH` generic)
+| `21`    | `SYSINFO_SOC_IO_WDT`       | set if WDT is implemented (via top's `IO_WDT_EN` generic)
+| `22`    | `SYSINFO_SOC_IO_CFS`       | set if custom functions subsystem is implemented (via top's `IO_CFS_EN` generic)
+| `23`    | `SYSINFO_SOC_IO_TRNG`      | set if TRNG is implemented (via top's `IO_TRNG_EN` generic)
+| `24`    | `SYSINFO_SOC_IO_SDI`       | set if SDI is implemented (via top's `IO_SDI_EN` generic)
+| `25`    | `SYSINFO_SOC_IO_UART1`     | set if secondary UART1 is implemented (via top's `IO_UART1_EN` generic)
+| `26`    | `SYSINFO_SOC_IO_NEOLED`    | set if NEOLED is implemented (via top's `IO_NEOLED_EN` generic)
+| `27`    | `SYSINFO_SOC_IO_XIRQ`      | set if XIRQ is implemented (via top's `XIRQ_NUM_CH` generic)
+| `28`    | `SYSINFO_SOC_IO_GPTMR`     | set if GPTMR is implemented (via top's `IO_GPTMR_EN` generic)
+| `29`    | `SYSINFO_SOC_IO_SLINK`     | set if stream link interface is implemented (via top's `IO_SLINK_EN` generic)
+| `30`    | `SYSINFO_SOC_IO_ONEWIRE`   | set if ONEWIRE interface is implemented (via top's `IO_ONEWIRE_EN` generic)
+| `31`    | `SYSINFO_SOC_IO_CRC`       | set if cyclic redundancy check unit is implemented (via top's `IO_CRC_EN` generic)
 |=======================
 
 

@@ -19,8 +19,10 @@ NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_bus.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cache.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_dma.vhd
+NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_application_image.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_imem.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_dmem.vhd
+NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_bootloader_image.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_boot_rom.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_xip.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_xbus.vhd
@@ -45,5 +47,3 @@ NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_debug_dtm.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_debug_auth.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_debug_dm.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_top.vhd
-NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_application_image.vhd
-NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_bootloader_image.vhd

@@ -16,7 +16,7 @@ library neorv32;
 
 entity neorv32_ProcessorTop_UP5KDemo is
   generic (
-    -- General --
+    -- Clocking --
     CLOCK_FREQUENCY   : natural := 0;       -- clock frequency of clk_i in Hz
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN   : boolean := true;    -- implement processor-internal instruction memory
@@ -77,9 +77,10 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_inst: entity neorv32.neorv32_top
   generic map (
-    -- General --
+    -- Clocking --
     CLOCK_FREQUENCY   => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
-    INT_BOOTLOADER_EN => true,              -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    -- Boot Configuration --
+    BOOT_MODE_SELECT  => 0,                 -- boot via internal bootloader
     -- RISC-V CPU Extensions --
     RISCV_ISA_M       => true,              -- implement mul/div extension?
     RISCV_ISA_U       => true,              -- implement user mode extension?

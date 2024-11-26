@@ -220,7 +220,7 @@ Variables:
   APP_INC        - C include folder(s) [append only]: "-I ."
   APP_SRC        - C source folder(s) [append only]: "./main.c   "
   ASM_INC        - ASM include folder(s) [append only]: "-I ."
-  RISCV_PREFIX   - Toolchain prefix: "riscv32-unknown-elf-"
+  RISCV_PREFIX   - Toolchain prefix: "riscv-none-elf-"
   NEORV32_HOME   - NEORV32 home folder: "../../.."
   GDB_ARGS       - GDB (connection) arguments: "-ex target extended-remote localhost:3333"
   GHDL_RUN_FLAGS - GHDL simulation run arguments: ""
@@ -407,7 +407,7 @@ The `crt0.S` start-up performs the following operations:
 
 
 :sectnums:
-===== Early Trap Handler
+==== Early Trap Handler
 
 The start-up code provides a very basic trap handler for the early boot phase. This handler does nothing but
 trying to move on to the next linear instruction whenever an interrupt or synchronous exception is encountered.
@@ -429,8 +429,8 @@ by a flag when calling the generator.
 [grid="none"]
 |=======================
 | `-app_bin` | Generates an executable binary file (including a bootloader header) for upload via the bootloader.
-| `-app_img` | Generates an executable VHDL memory initialization image for the processor-internal IMEM.
-| `-bld_img` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM.
+| `-app_vhd` | Generates an executable VHDL memory initialization image for the processor-internal IMEM.
+| `-bld_vhd` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM.
 | `-raw_hex` | Generates a raw 8x ASCII hex-char file for custom purpose.
 | `-raw_bin` | Generates a raw binary file `for custom purpose.
 | `-raw_coe` | Generates a raw COE file for FPGA memory initialization.

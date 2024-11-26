@@ -25,8 +25,8 @@ ASM_INC ?= -I .
 # Optimization
 EFFORT ?= -Os
 
-# Compiler toolchain
-RISCV_PREFIX ?= riscv32-unknown-elf-
+# Compiler toolchain prefix
+RISCV_PREFIX ?= riscv-none-elf-
 
 # CPU architecture and ABI
 MARCH ?= rv32i_zicsr_zifencei
@@ -59,7 +59,7 @@ NEORV32_EXG_PATH = $(NEORV32_HOME)/sw/image_gen
 # Path to NEORV32 rtl folder
 NEORV32_RTL_PATH = $(NEORV32_LOCAL_RTL)
 # Path to NEORV32 sim folder
-NEORV32_SIM_PATH = $(NEORV32_HOME)/sim/simple
+NEORV32_SIM_PATH = $(NEORV32_HOME)/sim
 # Marker file to check for NEORV32 home folder
 NEORV32_HOME_MARKER = $(NEORV32_INC_PATH)/neorv32.h
 
@@ -195,14 +195,16 @@ main.bin: $(APP_ELF)
 # Generate NEORV32 executable image for upload via bootloader
 $(APP_EXE): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_EXE)"
 	@$(IMAGE_GEN) -app_bin $< $@ $(shell basename $(CURDIR))
-	@echo "Executable ($(APP_EXE)) size in bytes:"
+	@echo "Executable size in bytes:"
 	@wc -c < $(APP_EXE)
 
 # Generate NEORV32 executable VHDL boot image
 $(APP_VHD): main.bin $(IMAGE_GEN)
 	@set -e
-	@$(IMAGE_GEN) -app_img $< $@ $(shell basename $(CURDIR))
+	@echo "Generating $(APP_VHD)"
+	@$(IMAGE_GEN) -app_vhd $< $@ $(shell basename $(CURDIR))
 
 # Install VHDL memory initialization file
 install-$(APP_VHD): $(APP_VHD)
@@ -213,26 +215,31 @@ install-$(APP_VHD): $(APP_VHD)
 # Generate NEORV32 RAW executable image in plain hex format
 $(APP_HEX): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_HEX)"
 	@$(IMAGE_GEN) -raw_hex $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in binary format
 $(APP_BIN): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_BIN)"
 	@$(IMAGE_GEN) -raw_bin $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in COE format
 $(APP_COE): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_COE)"
 	@$(IMAGE_GEN) -raw_coe $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in MIF format
 $(APP_MIF): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_MIF)"
 	@$(IMAGE_GEN) -raw_mif $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in MEM format
 $(APP_MEM): main.bin $(IMAGE_GEN)
 	@set -e
+	@echo "Generating $(APP_MEM)"
 	@$(IMAGE_GEN) -raw_mem $< $@ $(shell basename $(CURDIR))
 
 # -----------------------------------------------------------------------------
@@ -241,7 +248,8 @@ $(APP_MEM): main.bin $(IMAGE_GEN)
 # Create local VHDL BOOTROM image
 bl_image: main.bin $(IMAGE_GEN)
 	@set -e
-	@$(IMAGE_GEN) -bld_img $< $(BOOT_VHD) $(shell basename $(CURDIR))
+	@echo "Generating $(BOOT_VHD)"
+	@$(IMAGE_GEN) -bld_vhd $< $(BOOT_VHD) $(shell basename $(CURDIR))
 
 # Install BOOTROM image to VHDL source directory
 bootloader: bl_image
@@ -279,10 +287,10 @@ endif
 	@echo "Toolchain check OK"
 
 # -----------------------------------------------------------------------------
-# In-console simulation using default/simple testbench and GHDL
+# In-console simulation using default testbench and GHDL
 # -----------------------------------------------------------------------------
 sim: $(APP_VHD) install
-	@echo "Simulating processor using simple testbench..."
+	@echo "Simulating processor using default testbench..."
 	@sh $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
 
 # -----------------------------------------------------------------------------
@@ -375,7 +383,7 @@ help:
 	@echo "  mif          - compile and generate <$(APP_MIF)> executable memory image"
 	@echo "  image        - compile and generate VHDL IMEM application boot image <$(APP_VHD)> in local folder"
 	@echo "  install      - compile, generate and install VHDL IMEM application boot image <$(APP_VHD)>"
-	@echo "  sim          - in-console simulation using default/simple testbench and GHDL"
+	@echo "  sim          - in-console simulation using default testbench (sim folder) and GHDL"
 	@echo "  hdl_lists    - regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
 	@echo "  all          - exe + install + hex + bin + asm"
 	@echo "  elf_info     - show ELF layout info"

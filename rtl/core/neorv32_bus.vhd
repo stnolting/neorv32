@@ -374,7 +374,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_io_switch is
   generic (
-    DEV_SIZE  : natural; -- size of a single IO device, has to be a power of two
+    DEV_SIZE  : natural; -- size of each single IO device, has to be a power of two
     -- device port enable and base address; enabled ports do not have to be contiguous --
     DEV_00_EN : boolean := false; DEV_00_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
     DEV_01_EN : boolean := false; DEV_01_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
@@ -417,38 +417,38 @@ entity neorv32_bus_io_switch is
     main_req_i   : in  bus_req_t; -- host request
     main_rsp_o   : out bus_rsp_t; -- host response
     -- device ports --
-    dev_00_req_o : out bus_req_t; dev_00_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_01_req_o : out bus_req_t; dev_01_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_02_req_o : out bus_req_t; dev_02_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_03_req_o : out bus_req_t; dev_03_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_04_req_o : out bus_req_t; dev_04_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_05_req_o : out bus_req_t; dev_05_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_06_req_o : out bus_req_t; dev_06_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_07_req_o : out bus_req_t; dev_07_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_08_req_o : out bus_req_t; dev_08_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_09_req_o : out bus_req_t; dev_09_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_10_req_o : out bus_req_t; dev_10_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_11_req_o : out bus_req_t; dev_11_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_12_req_o : out bus_req_t; dev_12_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_13_req_o : out bus_req_t; dev_13_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_14_req_o : out bus_req_t; dev_14_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_15_req_o : out bus_req_t; dev_15_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_16_req_o : out bus_req_t; dev_16_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_17_req_o : out bus_req_t; dev_17_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_18_req_o : out bus_req_t; dev_18_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_19_req_o : out bus_req_t; dev_19_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_20_req_o : out bus_req_t; dev_20_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_21_req_o : out bus_req_t; dev_21_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_22_req_o : out bus_req_t; dev_22_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_23_req_o : out bus_req_t; dev_23_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_24_req_o : out bus_req_t; dev_24_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_25_req_o : out bus_req_t; dev_25_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_26_req_o : out bus_req_t; dev_26_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_27_req_o : out bus_req_t; dev_27_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_28_req_o : out bus_req_t; dev_28_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_29_req_o : out bus_req_t; dev_29_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_30_req_o : out bus_req_t; dev_30_rsp_i : in bus_rsp_t := rsp_terminate_c;
-    dev_31_req_o : out bus_req_t; dev_31_rsp_i : in bus_rsp_t := rsp_terminate_c
+    dev_00_req_o : out bus_req_t; dev_00_rsp_i : in bus_rsp_t;
+    dev_01_req_o : out bus_req_t; dev_01_rsp_i : in bus_rsp_t;
+    dev_02_req_o : out bus_req_t; dev_02_rsp_i : in bus_rsp_t;
+    dev_03_req_o : out bus_req_t; dev_03_rsp_i : in bus_rsp_t;
+    dev_04_req_o : out bus_req_t; dev_04_rsp_i : in bus_rsp_t;
+    dev_05_req_o : out bus_req_t; dev_05_rsp_i : in bus_rsp_t;
+    dev_06_req_o : out bus_req_t; dev_06_rsp_i : in bus_rsp_t;
+    dev_07_req_o : out bus_req_t; dev_07_rsp_i : in bus_rsp_t;
+    dev_08_req_o : out bus_req_t; dev_08_rsp_i : in bus_rsp_t;
+    dev_09_req_o : out bus_req_t; dev_09_rsp_i : in bus_rsp_t;
+    dev_10_req_o : out bus_req_t; dev_10_rsp_i : in bus_rsp_t;
+    dev_11_req_o : out bus_req_t; dev_11_rsp_i : in bus_rsp_t;
+    dev_12_req_o : out bus_req_t; dev_12_rsp_i : in bus_rsp_t;
+    dev_13_req_o : out bus_req_t; dev_13_rsp_i : in bus_rsp_t;
+    dev_14_req_o : out bus_req_t; dev_14_rsp_i : in bus_rsp_t;
+    dev_15_req_o : out bus_req_t; dev_15_rsp_i : in bus_rsp_t;
+    dev_16_req_o : out bus_req_t; dev_16_rsp_i : in bus_rsp_t;
+    dev_17_req_o : out bus_req_t; dev_17_rsp_i : in bus_rsp_t;
+    dev_18_req_o : out bus_req_t; dev_18_rsp_i : in bus_rsp_t;
+    dev_19_req_o : out bus_req_t; dev_19_rsp_i : in bus_rsp_t;
+    dev_20_req_o : out bus_req_t; dev_20_rsp_i : in bus_rsp_t;
+    dev_21_req_o : out bus_req_t; dev_21_rsp_i : in bus_rsp_t;
+    dev_22_req_o : out bus_req_t; dev_22_rsp_i : in bus_rsp_t;
+    dev_23_req_o : out bus_req_t; dev_23_rsp_i : in bus_rsp_t;
+    dev_24_req_o : out bus_req_t; dev_24_rsp_i : in bus_rsp_t;
+    dev_25_req_o : out bus_req_t; dev_25_rsp_i : in bus_rsp_t;
+    dev_26_req_o : out bus_req_t; dev_26_rsp_i : in bus_rsp_t;
+    dev_27_req_o : out bus_req_t; dev_27_rsp_i : in bus_rsp_t;
+    dev_28_req_o : out bus_req_t; dev_28_rsp_i : in bus_rsp_t;
+    dev_29_req_o : out bus_req_t; dev_29_rsp_i : in bus_rsp_t;
+    dev_30_req_o : out bus_req_t; dev_30_rsp_i : in bus_rsp_t;
+    dev_31_req_o : out bus_req_t; dev_31_rsp_i : in bus_rsp_t
   );
 end neorv32_bus_io_switch;
 

@@ -1051,6 +1051,7 @@ The NEORV32 PMP is fully compatible to the RISC-V Privileged Architecture Specif
 by default has full permissions. The PMP is configured via the <<_machine_physical_memory_protection_csrs>>.
 
 Several <<_processor_top_entity_generics>> are provided to fine-tune the CPU's PMP capabilities:
+
 * `PMP_NUM_REGIONS` defines the number of implemented PMP region
 * `PMP_MIN_GRANULARITY` defines the minimal granularity of each region
 * `PMP_TOR_MODE_EN` controls the implementation of the top-of-region (TOR) mode
