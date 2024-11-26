@@ -63,7 +63,7 @@ entity neorv32_cpu_alu is
   );
 end neorv32_cpu_alu;
 
-architecture neorv32_cpu_cpu_rtl of neorv32_cpu_alu is
+architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
 
   -- comparator --
   signal cmp_rs1 : std_ulogic_vector(XLEN downto 0);
@@ -413,4 +413,4 @@ begin
   end generate;
 
 
-end neorv32_cpu_cpu_rtl;
+end neorv32_cpu_alu_rtl;
