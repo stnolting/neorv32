@@ -79,17 +79,18 @@ entity neorv32_cpu_control is
     rstn_i        : in  std_ulogic; -- global reset, low-active, async
     ctrl_o        : out ctrl_bus_t; -- main control bus
     -- instruction fetch interface --
-    ibus_pmperr_i : in  std_ulogic; -- instruction fetch pmp fault
     ibus_req_o    : out bus_req_t;  -- request
     ibus_rsp_i    : in  bus_rsp_t;  -- response
+    -- pmp fault --
+    pmp_fault_i   : in  std_ulogic; -- instruction fetch / execute  pmp fault
     -- data path interface --
     alu_cp_done_i : in  std_ulogic; -- ALU iterative operation done
     alu_cmp_i     : in  std_ulogic_vector(1 downto 0); -- comparator status
     alu_add_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU address result
     alu_imm_o     : out std_ulogic_vector(XLEN-1 downto 0); -- immediate
     rf_rs1_i      : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    pc_fetch_o    : out std_ulogic_vector(XLEN-1 downto 0); -- instruction fetch address
     pc_curr_o     : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
+    pc_next_o     : out std_ulogic_vector(XLEN-1 downto 0); -- next PC (corresponding to next instruction)
     pc_ret_o      : out std_ulogic_vector(XLEN-1 downto 0); -- return address
     csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
     -- external CSR interface --
@@ -350,7 +351,6 @@ begin
 
   -- PC output for instruction fetch --
   ibus_req_o.addr <= fetch_engine.pc(XLEN-1 downto 2) & "00"; -- word aligned
-  pc_fetch_o      <= fetch_engine.pc(XLEN-1 downto 2) & "00"; -- word aligned
 
   -- instruction fetch (read) request if IPB not full --
   ibus_req_o.stb <= '1' when (fetch_engine.state = IF_REQUEST) and (ipb.free = "11") else '0';
@@ -359,8 +359,8 @@ begin
   fetch_engine.resp <= ibus_rsp_i.ack or ibus_rsp_i.err;
 
   -- IPB instruction data and status --
-  ipb.wdata(0) <= (ibus_rsp_i.err or ibus_pmperr_i) & ibus_rsp_i.data(15 downto 0);
-  ipb.wdata(1) <= (ibus_rsp_i.err or ibus_pmperr_i) & ibus_rsp_i.data(31 downto 16);
+  ipb.wdata(0) <= ibus_rsp_i.err & ibus_rsp_i.data(15 downto 0);
+  ipb.wdata(1) <= ibus_rsp_i.err & ibus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
   ipb.we(0) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') and
@@ -564,6 +564,7 @@ begin
 
   -- PC output --
   pc_curr_o <= exe_engine.pc(XLEN-1 downto 1) & '0'; -- address of current instruction
+  pc_next_o <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- address of next instruction
   pc_ret_o  <= exe_engine.ra(XLEN-1 downto 1) & '0'; -- return address
 
   -- simplified rv32 opcode --
@@ -572,7 +573,8 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hw_trigger_match, opcode, issue_engine, csr, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken)
+  execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hw_trigger_match, opcode, issue_engine, csr,
+                                   alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
   begin
@@ -688,11 +690,11 @@ begin
         exe_engine_nxt.state <= BRANCHED; -- delay cycle to restart front-end
 
       when EXECUTE => -- decode and execute instruction (control will be here for exactly 1 cycle in any case)
-      -- [NOTE] register file is read in this stage; due to the sync read, data will be available in the _next_ state
       -- ------------------------------------------------------------
         exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0'; -- next PC (= PC + immediate)
+        trap_ctrl.instr_be <= pmp_fault_i; -- did this instruction cause a PMP-execute violation?
 
-        -- decode instruction class/type --
+        -- decode instruction class/type; [NOTE] register file is read in THIS stage; due to the sync read data will be available in the NEXT state --
         case opcode is
 
           -- register/immediate ALU operation --
