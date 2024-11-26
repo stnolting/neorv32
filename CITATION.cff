@@ -3,9 +3,8 @@ message: "If you are using this project, please cite it as below."
 authors:
 - family-names: "Nolting"
   given-names: "Stephan"
-- family-names: "All the Awesome Contributors"
+- family-names: "All The Awesome Contributors"
   given-names: ""
 title: "The NEORV32 RISC-V Processor"
-doi: 10.5281/zenodo.5018888
-date-released: 2023-08-06
+doi: 10.5281/zenodo.13872735
 url: "https://github.com/stnolting/neorv32"

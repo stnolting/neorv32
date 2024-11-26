@@ -28,11 +28,11 @@ entity neorv32_cpu is
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
     -- RISC-V ISA Extensions --
-    RISCV_ISA_A         : boolean; -- implement atomic memory operations extension
     RISCV_ISA_C         : boolean; -- implement compressed extension
     RISCV_ISA_E         : boolean; -- implement embedded RF extension
     RISCV_ISA_M         : boolean; -- implement mul/div extension
     RISCV_ISA_U         : boolean; -- implement user mode extension
+    RISCV_ISA_Zalrsc    : boolean; -- implement atomic reservation-set extension
     RISCV_ISA_Zba       : boolean; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean; -- implement bit-manipulation instructions for cryptography
@@ -123,7 +123,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal lsu_err       : std_ulogic_vector(3 downto 0);      -- lsu alignment/access errors
   signal pc_fetch      : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
   signal pc_curr       : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
-  signal pc_next       : std_ulogic_vector(XLEN-1 downto 0); -- next pc (return address)
+  signal pc_ret        : std_ulogic_vector(XLEN-1 downto 0); -- return address
   signal pmp_ex_fault  : std_ulogic;                         -- pmp instruction fetch fault
   signal pmp_rw_fault  : std_ulogic;                         -- pmp read/write access fault
   signal irq_machine   : std_ulogic_vector(2 downto 0);      -- risc-v standard machine-level interrupts
@@ -135,12 +135,12 @@ begin
   -- CPU ISA configuration (in alphabetical order - not in canonical order!) --
   assert false report "[NEORV32] CPU ISA: rv32" &
     cond_sel_string_f(RISCV_ISA_E,      "e",         "i") &
-    cond_sel_string_f(RISCV_ISA_A,      "a",         "" ) &
     cond_sel_string_f(riscv_b_c,        "b",         "" ) &
     cond_sel_string_f(RISCV_ISA_C,      "c",         "" ) &
     cond_sel_string_f(RISCV_ISA_M,      "m",         "" ) &
     cond_sel_string_f(RISCV_ISA_U,      "u",         "" ) &
     cond_sel_string_f(true,             "x",         "" ) & -- always enabled
+    cond_sel_string_f(RISCV_ISA_Zalrsc, "_zalrsc",   "" ) &
     cond_sel_string_f(RISCV_ISA_Zba,    "_zba",      "" ) &
     cond_sel_string_f(RISCV_ISA_Zbb,    "_zbb",      "" ) &
     cond_sel_string_f(RISCV_ISA_Zbkb,   "_zbkb",     "" ) &
@@ -190,12 +190,12 @@ begin
     DEBUG_PARK_ADDR  => DEBUG_PARK_ADDR,  -- cpu debug mode parking loop entry address
     DEBUG_EXC_ADDR   => DEBUG_EXC_ADDR,   -- cpu debug mode exception entry address
     -- RISC-V ISA Extensions --
-    RISCV_ISA_A      => RISCV_ISA_A,      -- implement atomic memory operations extension
     RISCV_ISA_B      => riscv_b_c,        -- implement bit-manipulation extension
     RISCV_ISA_C      => RISCV_ISA_C,      -- implement compressed extension
     RISCV_ISA_E      => RISCV_ISA_E,      -- implement embedded RF extension
     RISCV_ISA_M      => RISCV_ISA_M,      -- implement mul/div extension
     RISCV_ISA_U      => RISCV_ISA_U,      -- implement user mode extension
+    RISCV_ISA_Zalrsc => RISCV_ISA_Zalrsc, -- implement atomic reservation-set extension
     RISCV_ISA_Zba    => RISCV_ISA_Zba,    -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb    => RISCV_ISA_Zbb,    -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb   => RISCV_ISA_Zbkb,   -- implement bit-manipulation instructions for cryptography
@@ -245,7 +245,7 @@ begin
     rf_rs1_i      => rs1,            -- rf source 1
     pc_fetch_o    => pc_fetch,       -- instruction fetch address
     pc_curr_o     => pc_curr,        -- current PC (corresponding to current instruction)
-    pc_next_o     => pc_next,        -- next PC (return address)
+    pc_ret_o      => pc_ret,         -- return address
     csr_rdata_o   => csr_rdata,      -- CSR read data
     -- external CSR interface --
     xcsr_we_o     => xcsr_we,        -- global write enable
@@ -294,7 +294,7 @@ begin
   );
 
   -- all buses are zero unless there is an according operation --
-  rf_wdata <= alu_res or lsu_rdata or csr_rdata or pc_next;
+  rf_wdata <= alu_res or lsu_rdata or csr_rdata or pc_ret;
 
 
   -- ALU (Arithmetic/Logic Unit) and ALU Co-Processors --------------------------------------
@@ -351,7 +351,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_lsu_inst: entity neorv32.neorv32_cpu_lsu
   generic map (
-    AMO_LRSC_ENABLE => RISCV_ISA_A -- enable atomic LR/SC operations
+    AMO_LRSC_ENABLE => RISCV_ISA_Zalrsc -- enable atomic LR/SC operations
   )
   port map (
     -- global control --

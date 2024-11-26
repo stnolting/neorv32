@@ -72,7 +72,7 @@ begin
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
             decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
             decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & instr_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c);
-            decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_subadd_c;
+            decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sadd_c;
             decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= "00" & instr_i(10 downto 7) & instr_i(12 downto 11) & instr_i(5) & instr_i(6) & "00";
             if (instr_i(12 downto 5) = "00000000") then -- canonical illegal C instruction or C.ADDI4SPN with nzuimm = 0
               illegal <= '1';
@@ -131,7 +131,7 @@ begin
           when "010" => -- C.LI
           -- --------------------------------------------------------------------------------------
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
-            decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_subadd_c;
+            decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sadd_c;
             decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00000"; -- x0
             decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
             decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= replicate_f(instr_i(12),6) & instr_i(12) & instr_i(6 downto 2);
@@ -140,7 +140,7 @@ begin
           -- --------------------------------------------------------------------------------------
             if (instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c) = "00010") then -- C.ADDI16SP
               decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
-              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_subadd_c;
+              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sadd_c;
               decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
               decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "00010"; -- stack pointer
               decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= "00010"; -- stack pointer
@@ -157,7 +157,7 @@ begin
           when "000" => -- C.NOP (rd=0) / C.ADDI
           -- --------------------------------------------------------------------------------------
             decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
-            decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_subadd_c;
+            decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sadd_c;
             decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= instr_i(ci_rs1_5_msb_c downto ci_rs1_5_lsb_c);
             decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
             decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= replicate_f(instr_i(12),7) & instr_i(6 downto 2);
@@ -188,7 +188,7 @@ begin
                 decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alu_c;
                 case instr_i(6 downto 5) is
                   when "00" => -- C.SUB
-                    decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_subadd_c;
+                    decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sadd_c;
                     decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0100000";
                   when "01" => -- C.XOR
                     decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_xor_c;

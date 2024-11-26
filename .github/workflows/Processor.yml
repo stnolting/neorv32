@@ -2,43 +2,24 @@ name: Processor
 
 on:
   push:
-    branches:
-    - main
     paths:
     - 'rtl/**'
     - 'sw/**'
     - 'sim/**'
-    - '.github/workflows/**'
+    - '.github/workflows/Processor.yml'
   pull_request:
-    branches:
-    - main
     paths:
     - 'rtl/**'
     - 'sw/**'
     - 'sim/**'
-    - '.github/workflows/**'
+    - '.github/workflows/Processor.yml'
   workflow_dispatch:
 
 jobs:
 
-
-  Software:
+  sim_default_tb:
     runs-on: ubuntu-latest
-
-    steps:
-
-    - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v4
-
-    - name: '⚙️ Build Software Framework Tests'
-      uses: docker://ghcr.io/stnolting/neorv32/sim
-      with:
-        args: ./do.py SoftwareFrameworkTests
-
-
-  Simple:
-    runs-on: ubuntu-latest
-    name: 'Simple testbench'
+    name: 'processor simulation'
     strategy:
       fail-fast: false
       matrix:
@@ -51,50 +32,33 @@ jobs:
     - name: '🧰 Repository Checkout'
       uses: actions/checkout@v4
 
-    - name: '🚧 Build and install software; then simulate with shell script'
-      uses: docker://ghcr.io/stnolting/neorv32/sim
-      # Redirect UART0 TX to text.io simulation output via <UARTx_SIM_MODE> user flags
-      with:
-        args: >-
-          make -C sw/example/${{ matrix.example }}
-          clean_all
-          USER_FLAGS+="-DUART0_SIM_MODE -DUART1_SIM_MODE -flto"
-          EFFORT=-Os
-          MARCH=rv32ima_zicsr_zifencei
-          info
-          all
-          sim-check
+    - name: '📦 Install xPack RISC-V GCC'
+      run: |
+        wget -q https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v14.2.0-2/xpack-riscv-none-elf-gcc-14.2.0-2-linux-x64.tar.gz
+        mkdir $GITHUB_WORKSPACE/riscv-gcc
+        tar -xzf xpack-riscv-none-elf-gcc-14.2.0-2-linux-x64.tar.gz -C $GITHUB_WORKSPACE/riscv-gcc
+        echo $GITHUB_WORKSPACE/riscv-gcc/xpack-riscv-none-elf-gcc-14.2.0-2/bin >> $GITHUB_PATH
 
+    - name: '📦 Install GHDL'
+      uses: ghdl/setup-ghdl-ci@nightly
 
-  VUnit:
-    runs-on: ubuntu-latest
+    - name: '🔍 Check tools'
+      run: |
+        riscv-none-elf-gcc -v
+        ghdl -v
 
-    steps:
+    - name: '⚙️ Build Software Framework Tests'
+      run: |
+        make RISCV_PREFIX=riscv-none-elf- -C sw/example/processor_check check
+        make RISCV_PREFIX=riscv-none-elf- -C sw/example clean_all exe
+        make RISCV_PREFIX=riscv-none-elf- -C sw/bootloader clean_all info bootloader
 
-    - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v4
-
-    - name: '⚙️ Build and install Processor Check software'
-      uses: docker://ghcr.io/stnolting/neorv32/sim
-      with:
-        args: >-
-          make -C sw/example/processor_check
-          clean_all
-          USER_FLAGS+=-DUART0_SIM_MODE
-          USER_FLAGS+=-DSUPPRESS_OPTIONAL_UART_PRINT
-          USER_FLAGS+=-flto
-          MARCH=rv32imac_zicsr_zifencei
-          info
-          all
-
-    - name: '📤 Archive Processor Check application image'
-      uses: actions/upload-artifact@v4
-      with:
-        name: application
-        path: rtl/core/neorv32_application_image.vhd
-
-    - name: '🚧 Run Processor Hardware Tests with VUnit'
-      uses: VUnit/vunit_action@master
-      with:
-        image: ghcr.io/stnolting/neorv32/sim
-        cmd: ./sim/run.py --ci-mode -v
+    - name: '🚧 Compile executable and run simulation'
+      run: |
+        make -C sw/example/${{ matrix.example }} \
+        RISCV_PREFIX=riscv-none-elf- \
+        USER_FLAGS+="-DUART0_SIM_MODE -DUART1_SIM_MODE" \
+        clean_all \
+        info \
+        all \
+        sim-check

@@ -46,8 +46,9 @@ Vivado project.
 .Combinatorial Loops DRC Errors
 [WARNING]
 If the TRNG is enabled it is recommended to add the following commands to the project's constraints file in order
-to prevent DRC errors during bitstream generation:
+to prevent DRC errors during bitstream generation.
 
+.Allow Combinatorial Loops
 [source,xdc]
 ----
 set_property SEVERITY {warning} [get_drc_checks LUTLP-1]
@@ -65,3 +66,9 @@ shall be updated. It is **not** not possible to replace the IMEM image (`neorv32
 in the packaged_ip folder. For the Vivado design suite, the new program to be executed must be compiled and installed using the
 `install` makefile target. Next, the `neorv32_vivado_ip.tcl` script has to be executed again. Finally, Vivado will prompt to upgrade
 the NEORV32 IP.
+
+.AMD Vivado / ISIM - Incremental Compilation of Simulation Sources
+[IMPORTANT]
+When using AMD Vivado (ISIM for simulation) make sure to **TURN OFF** "incremental compilation" (_Project Setting_
+-> _Simulation_ -> _Advanced_ -> _Enable incremental compilation). This will slow down simulation relaunch but will
+ensure that all application images (`*_image.vhd`) are reanalyzed when recompiling the NEORV32 application or bootloader.

@@ -19,8 +19,10 @@ entity neorv32_sysinfo is
   generic (
     CLOCK_FREQUENCY       : natural; -- clock frequency of clk_i in Hz
     CLOCK_GATING_EN       : boolean; -- enable clock gating when in sleep mode
+    BOOT_MODE_SELECT      : natural; -- boot configuration select (default = 0 = bootloader)
     INT_BOOTLOADER_EN     : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     MEM_INT_IMEM_EN       : boolean; -- implement processor-internal instruction memory
+    MEM_INT_IMEM_ROM      : boolean; -- implement processor-internal instruction memory as pre-initialized ROM
     MEM_INT_IMEM_SIZE     : natural; -- size of processor-internal instruction memory in bytes
     MEM_INT_DMEM_EN       : boolean; -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE     : natural; -- size of processor-internal data memory in bytes
@@ -38,7 +40,8 @@ entity neorv32_sysinfo is
     XIP_CACHE_EN          : boolean; -- implement execute in place cache?
     XIP_CACHE_NUM_BLOCKS  : natural; -- number of blocks (min 1), has to be a power of 2
     XIP_CACHE_BLOCK_SIZE  : natural; -- block size in bytes (min 4), has to be a power of 2
-    ON_CHIP_DEBUGGER_EN   : boolean; -- implement OCD?
+    OCD_EN                : boolean; -- implement OCD?
+    OCD_AUTHENTICATION    : boolean; -- implement OCD authenticator?
     IO_GPIO_EN            : boolean; -- implement general purpose IO port (GPIO)?
     IO_MTIME_EN           : boolean; -- implement machine system timer (MTIME)?
     IO_UART0_EN           : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
@@ -73,6 +76,8 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant int_dmem_en_c  : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
   constant xcache_en_c    : boolean := XBUS_EN and XBUS_CACHE_EN;
   constant xip_cache_en_c : boolean := XIP_EN and XIP_CACHE_EN;
+  constant ocd_auth_en_c  : boolean := OCD_EN and OCD_AUTHENTICATION;
+  constant int_imem_rom_c : boolean := int_imem_en_c and MEM_INT_IMEM_ROM;
 
   -- system information memory --
   type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
@@ -102,41 +107,41 @@ begin
   sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_IMEM_SIZE), 8)); -- log2(IMEM size)
   sysinfo(1)(15 downto 8)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_DMEM_SIZE), 8)); -- log2(DMEM size)
   sysinfo(1)(23 downto 16) <= (others => '0'); -- reserved
-  sysinfo(1)(31 downto 24) <= (others => '0'); -- reserved
+  sysinfo(1)(31 downto 24) <= std_ulogic_vector(to_unsigned(BOOT_MODE_SELECT, 8)); -- boot configuration
 
   -- SYSINFO(2): SoC Configuration --
-  sysinfo(2)(0)  <= '1' when INT_BOOTLOADER_EN   else '0'; -- processor-internal bootloader implemented?
-  sysinfo(2)(1)  <= '1' when XBUS_EN             else '0'; -- external bus interface implemented?
-  sysinfo(2)(2)  <= '1' when int_imem_en_c       else '0'; -- processor-internal instruction memory implemented?
-  sysinfo(2)(3)  <= '1' when int_dmem_en_c       else '0'; -- processor-internal data memory implemented?
-  sysinfo(2)(4)  <= '1' when ON_CHIP_DEBUGGER_EN else '0'; -- on-chip debugger implemented?
-  sysinfo(2)(5)  <= '1' when ICACHE_EN           else '0'; -- processor-internal instruction cache implemented?
-  sysinfo(2)(6)  <= '1' when DCACHE_EN           else '0'; -- processor-internal data cache implemented?
-  sysinfo(2)(7)  <= '1' when CLOCK_GATING_EN     else '0'; -- enable clock gating when in sleep mode
-  sysinfo(2)(8)  <= '1' when xcache_en_c         else '0'; -- external bus interface cache implemented?
-  sysinfo(2)(9)  <= '1' when XIP_EN              else '0'; -- execute in-place module implemented?
-  sysinfo(2)(10) <= '1' when xip_cache_en_c      else '0'; -- execute in-place cache implemented?
-  sysinfo(2)(11) <= '0';                                   -- reserved
-  sysinfo(2)(12) <= '0';                                   -- reserved
-  sysinfo(2)(13) <= '0';                                   -- reserved
-  sysinfo(2)(14) <= '1' when IO_DMA_EN           else '0'; -- direct memory access controller (DMA) implemented?
-  sysinfo(2)(15) <= '1' when IO_GPIO_EN          else '0'; -- general purpose input/output port unit (GPIO) implemented?
-  sysinfo(2)(16) <= '1' when IO_MTIME_EN         else '0'; -- machine system timer (MTIME) implemented?
-  sysinfo(2)(17) <= '1' when IO_UART0_EN         else '0'; -- primary universal asynchronous receiver/transmitter (UART0) implemented?
-  sysinfo(2)(18) <= '1' when IO_SPI_EN           else '0'; -- serial peripheral interface (SPI) implemented?
-  sysinfo(2)(19) <= '1' when IO_TWI_EN           else '0'; -- two-wire interface (TWI) implemented?
-  sysinfo(2)(20) <= '1' when IO_PWM_EN           else '0'; -- pulse-width modulation unit (PWM) implemented?
-  sysinfo(2)(21) <= '1' when IO_WDT_EN           else '0'; -- watch dog timer (WDT) implemented?
-  sysinfo(2)(22) <= '1' when IO_CFS_EN           else '0'; -- custom functions subsystem (CFS) implemented?
-  sysinfo(2)(23) <= '1' when IO_TRNG_EN          else '0'; -- true random number generator (TRNG) implemented?
-  sysinfo(2)(24) <= '1' when IO_SDI_EN           else '0'; -- serial data interface (SDI) implemented?
-  sysinfo(2)(25) <= '1' when IO_UART1_EN         else '0'; -- secondary universal asynchronous receiver/transmitter (UART1) implemented?
-  sysinfo(2)(26) <= '1' when IO_NEOLED_EN        else '0'; -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
-  sysinfo(2)(27) <= '1' when IO_XIRQ_EN          else '0'; -- external interrupt controller (XIRQ) implemented?
-  sysinfo(2)(28) <= '1' when IO_GPTMR_EN         else '0'; -- general purpose timer (GPTMR) implemented?
-  sysinfo(2)(29) <= '1' when IO_SLINK_EN         else '0'; -- stream link interface (SLINK) implemented?
-  sysinfo(2)(30) <= '1' when IO_ONEWIRE_EN       else '0'; -- 1-wire interface (ONEWIRE) implemented?
-  sysinfo(2)(31) <= '1' when IO_CRC_EN           else '0'; -- cyclic redundancy check unit (CRC) implemented?
+  sysinfo(2)(0)  <= '1' when INT_BOOTLOADER_EN else '0'; -- processor-internal bootloader implemented?
+  sysinfo(2)(1)  <= '1' when XBUS_EN           else '0'; -- external bus interface implemented?
+  sysinfo(2)(2)  <= '1' when int_imem_en_c     else '0'; -- processor-internal instruction memory implemented?
+  sysinfo(2)(3)  <= '1' when int_dmem_en_c     else '0'; -- processor-internal data memory implemented?
+  sysinfo(2)(4)  <= '1' when OCD_EN            else '0'; -- on-chip debugger implemented?
+  sysinfo(2)(5)  <= '1' when ICACHE_EN         else '0'; -- processor-internal instruction cache implemented?
+  sysinfo(2)(6)  <= '1' when DCACHE_EN         else '0'; -- processor-internal data cache implemented?
+  sysinfo(2)(7)  <= '1' when CLOCK_GATING_EN   else '0'; -- enable clock gating when in sleep mode
+  sysinfo(2)(8)  <= '1' when xcache_en_c       else '0'; -- external bus interface cache implemented?
+  sysinfo(2)(9)  <= '1' when XIP_EN            else '0'; -- execute in-place module implemented?
+  sysinfo(2)(10) <= '1' when xip_cache_en_c    else '0'; -- execute in-place cache implemented?
+  sysinfo(2)(11) <= '1' when ocd_auth_en_c     else '0'; -- on-chip debugger authentication implemented?
+  sysinfo(2)(12) <= '1' when int_imem_rom_c    else '0'; -- processor-internal instruction memory implemented as pre-initialized ROM?
+  sysinfo(2)(13) <= '0';                                 -- reserved
+  sysinfo(2)(14) <= '1' when IO_DMA_EN         else '0'; -- direct memory access controller (DMA) implemented?
+  sysinfo(2)(15) <= '1' when IO_GPIO_EN        else '0'; -- general purpose input/output port unit (GPIO) implemented?
+  sysinfo(2)(16) <= '1' when IO_MTIME_EN       else '0'; -- machine system timer (MTIME) implemented?
+  sysinfo(2)(17) <= '1' when IO_UART0_EN       else '0'; -- primary universal asynchronous receiver/transmitter (UART0) implemented?
+  sysinfo(2)(18) <= '1' when IO_SPI_EN         else '0'; -- serial peripheral interface (SPI) implemented?
+  sysinfo(2)(19) <= '1' when IO_TWI_EN         else '0'; -- two-wire interface (TWI) implemented?
+  sysinfo(2)(20) <= '1' when IO_PWM_EN         else '0'; -- pulse-width modulation unit (PWM) implemented?
+  sysinfo(2)(21) <= '1' when IO_WDT_EN         else '0'; -- watch dog timer (WDT) implemented?
+  sysinfo(2)(22) <= '1' when IO_CFS_EN         else '0'; -- custom functions subsystem (CFS) implemented?
+  sysinfo(2)(23) <= '1' when IO_TRNG_EN        else '0'; -- true random number generator (TRNG) implemented?
+  sysinfo(2)(24) <= '1' when IO_SDI_EN         else '0'; -- serial data interface (SDI) implemented?
+  sysinfo(2)(25) <= '1' when IO_UART1_EN       else '0'; -- secondary universal asynchronous receiver/transmitter (UART1) implemented?
+  sysinfo(2)(26) <= '1' when IO_NEOLED_EN      else '0'; -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
+  sysinfo(2)(27) <= '1' when IO_XIRQ_EN        else '0'; -- external interrupt controller (XIRQ) implemented?
+  sysinfo(2)(28) <= '1' when IO_GPTMR_EN       else '0'; -- general purpose timer (GPTMR) implemented?
+  sysinfo(2)(29) <= '1' when IO_SLINK_EN       else '0'; -- stream link interface (SLINK) implemented?
+  sysinfo(2)(30) <= '1' when IO_ONEWIRE_EN     else '0'; -- 1-wire interface (ONEWIRE) implemented?
+  sysinfo(2)(31) <= '1' when IO_CRC_EN         else '0'; -- cyclic redundancy check unit (CRC) implemented?
 
   -- SYSINFO(3): Cache Configuration --
   sysinfo(3)(3 downto 0)   <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE), 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(block_size_in_bytes)

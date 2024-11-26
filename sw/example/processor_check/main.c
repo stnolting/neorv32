@@ -31,6 +31,8 @@
 #define ADDR_UNREACHABLE (NEORV32_DM_BASE)
 //** External memory base address */
 #define EXT_MEM_BASE     (0xF0000000UL)
+//** External IRQ trigger base address */
+#define SIM_TRIG_BASE    (0xFF000000UL)
 /**@}*/
 
 
@@ -239,9 +241,9 @@ int main() {
 
     cnt_test++;
 
-    // set execute permission for u-mode
+    // set execute permission for u-mode for the entire address range
     // use entry 2 so we can use entries 0 & 1 later on for higher-prioritized configurations
-    tmp_a = neorv32_cpu_pmp_configure_region(2, -1, (PMP_NAPOT << PMPCFG_A_LSB) | (1 << PMPCFG_X));
+    tmp_a = neorv32_cpu_pmp_configure_region(2, 0xffffffff, (PMP_NAPOT << PMPCFG_A_LSB) | (1 << PMPCFG_X));
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) && (tmp_a == 0)) {
       test_ok();
@@ -1324,8 +1326,6 @@ int main() {
     xirq_err_cnt += neorv32_xirq_install(1, xirq_trap_handler1); // install XIRQ IRQ handler channel 1
     neorv32_xirq_setup_trigger(0, XIRQ_TRIGGER_EDGE_RISING); // configure channel 0 as rising-edge trigger
     neorv32_xirq_setup_trigger(1, XIRQ_TRIGGER_EDGE_RISING); // configure channel 1 as rising-edge trigger
-    neorv32_xirq_clear_pending(0); // clear any pending request
-    neorv32_xirq_clear_pending(1); // clear any pending request
     neorv32_xirq_channel_enable(0); // enable XIRQ channel 0
     neorv32_xirq_channel_enable(1); // enable XIRQ channel 1
 
@@ -1935,7 +1935,7 @@ int main() {
   PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
   PRINT_STANDARD("failing) ");
 
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_A)) {
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
     cnt_test++;
 
     // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
@@ -1976,7 +1976,7 @@ int main() {
   PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
   PRINT_STANDARD("succeed) ");
 
-  if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_A)) {
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
     cnt_test++;
 
     // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
@@ -2239,7 +2239,7 @@ int main() {
  **************************************************************************/
 void sim_irq_trigger(uint32_t sel) {
 
-  *((volatile uint32_t*) (0xFF000000)) = sel;
+  *((volatile uint32_t*)SIM_TRIG_BASE) = sel;
 }
 
 

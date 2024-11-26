@@ -36,7 +36,7 @@ physical memory size of 64kB).
 
 .Legacy HDL Style
 [TIP]
-If synthesis fails to infer block RAM for the DMEM, turn on the `alternaitve_style_en_c` option inside
+If synthesis fails to infer block RAM for the DMEM, turn on the `alt_style_c` option inside
 the memory's VHDL source file. When enabled, a different HDL style is used to describe the memory core.
 
 .Execute from RAM

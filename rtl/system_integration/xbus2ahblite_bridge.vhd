@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - XBUS to AHB3-Lite Bridge (non-overlapping single transfers only)   --
+-- NEORV32 SoC - XBUS to AHB3-Lite Bridge (single non-overlapping transfers only)   --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --

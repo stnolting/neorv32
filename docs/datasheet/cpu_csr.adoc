@@ -220,7 +220,6 @@ will _not_ cause an illegal instruction exception.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 0     | `CSR_MISA_A_EXT` | r/- | **A**: CPU extension (atomic memory access) available, set when <<_a_isa_extension>> enabled
 | 1     | `CSR_MISA_B_EXT` | r/- | **B**: CPU extension (bit-manipulation) available, set when <<_b_isa_extension>> enabled
 | 2     | `CSR_MISA_C_EXT` | r/- | **C**: CPU extension (compressed instruction) available, set when <<_c_isa_extension>> enabled
 | 4     | `CSR_MISA_E_EXT` | r/- | **E**: CPU extension (embedded) available, set when <<_e_isa_extension>> enabled
@@ -361,7 +360,7 @@ As software does not need to determine the interrupt cause the reduction in late
 |=======================
 | Name        | Machine exception program counter
 | Address     | `0x341`
-| Reset value | `0x00000000`
+| Reset value | `BOOT_ADDR` (CPU boot address, see <<_cpu_top_entity_generics>>)
 | ISA         | `Zicsr`
 | Description | The `mepc` CSR provides the instruction address where execution has stopped/failed when
 an interrupt is triggered / an exception is raised. See section <<_traps_exceptions_and_interrupts>> for a list of all legal values.
@@ -436,10 +435,10 @@ However, any write-access will be ignored and will not cause an exception to mai
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending; _cleared by platform-defined mechanism_
-| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending; _cleared by platform-defined mechanism_
-| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending; _cleared by platform-defined mechanism_
-| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending; _cleared by platform-defined mechanism_
+| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending, triggered by `msi_i` top port (see <<_cpu_top_entity_signals>>); _cleared by source-specific mechanism_
+| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending, triggered by `mei_i` top port (see <<_cpu_top_entity_signals>>); _cleared by source-specific mechanism_
+| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending, triggered by `mti_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<_machine_system_timer_mtime>>; _cleared by source-specific mechanism_
+| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending, see <<_neorv32_specific_fast_interrupt_requests>>; _cleared by source-specific mechanism_
 |=======================
 
 .FIRQ Channel Mapping
@@ -529,7 +528,7 @@ See section <<_smpmp_isa_extension>> for more information.
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
 |=======================
-| Name        | PMP region configuration registers
+| Name        | Physical memory protection region configuration registers
 | Address     | `0x3a0` (`pmpcfg0`)
 |             | `0x3a1` (`pmpcfg1`)
 |             | `0x3a2` (`pmpcfg2`)
@@ -539,7 +538,7 @@ See section <<_smpmp_isa_extension>> for more information.
 | Description | Configuration of physical memory protection regions. Each region provides an individual 8-bit array in these CSRs.
 |=======================
 
-.`pmpcfg0` CSR Bits
+.`pmpcfg*` CSR Bits
 [cols="^1,^2,^1,<11"]
 [options="header",grid="rows"]
 |=======================
@@ -561,12 +560,10 @@ implementation of the according modes.
 [discrete]
 ===== **`pmpaddr`**
 
-The `pmpaddr*` CSRs are used to configure the region's address boundaries.
-
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
 |=======================
-| Name        | Physical memory protection address registers
+| Name        | Physical memory protection region address registers
 | Address     | `0x3b0` (`pmpaddr1`)
 |             | `0x3b1` (`pmpaddr2`)
 |             | `0x3b2` (`pmpaddr3`)
@@ -585,7 +582,16 @@ The `pmpaddr*` CSRs are used to configure the region's address boundaries.
 |             | `0x3bf` (`pmpaddr15`)
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `Smpmp`
-| Description | Region address configuration. The two MSBs of each CSR are hardwired to zero (= bits 33:32 of the physical address).
+| Description | Region address/boundaries configuration.
+|=======================
+
+.`pmpaddr*` CSR Bits
+[cols="^1,^2,^1,<11"]
+[options="header",grid="rows"]
+|=======================
+| Bit   | R/W | Description
+| 31:30 | r-w | address bits `33 downto 32`´, hardwired to zero
+| 29:0  | r/w | address bits `31 downto 2`
 |=======================
 
 
@@ -763,8 +769,8 @@ caused by a fence instruction, a control flow transfer or a instruction fetch bu
 | 5   | `HPMCNT_EVENT_WAIT_ALU` | r/w | any delay/wait cycle caused by a _multi-cycle_ <<_cpu_arithmetic_logic_unit>> operation
 | 6   | `HPMCNT_EVENT_BRANCH`   | r/w | any executed branch instruction (unconditional, conditional-taken or conditional-not-taken)
 | 7   | `HPMCNT_EVENT_BRANCHED` | r/w | any control transfer operation (unconditional jump, taken conditional branch or trap entry/exit)
-| 8   | `HPMCNT_EVENT_LOAD`     | r/w | any executed load operation (including atomic memory operations, <<_a_isa_extension>>)
-| 9   | `HPMCNT_EVENT_STORE`    | r/w | any executed store operation (including atomic memory operations, <<_a_isa_extension>>)
+| 8   | `HPMCNT_EVENT_LOAD`     | r/w | any executed load operation (including atomic memory operations, <<_zalrsc_isa_extension>>)
+| 9   | `HPMCNT_EVENT_STORE`    | r/w | any executed store operation (including atomic memory operations, <<_zalrsc_isa_extension>>)
 | 10  | `HPMCNT_EVENT_WAIT_LSU` | r/w | any memory/bus/cache/etc. delay/wait cycle while executing any load or store operation (caused by a data bus wait cycle))
 | 11  | `HPMCNT_EVENT_TRAP`     | r/w | starting processing of any trap (<<_traps_exceptions_and_interrupts>>)
 |=======================
@@ -972,7 +978,8 @@ discover ISA sub-extensions and CPU configuration options
 | 22    | `CSR_MXISA_ZBA`       | r/- | <<_zba_isa_extension>> available
 | 23    | `CSR_MXISA_ZBB`       | r/- | <<_zbb_isa_extension>> available
 | 24    | `CSR_MXISA_ZBS`       | r/- | <<_zbs_isa_extension>> available
-| 27:25 | -                     | r/- | _reserved_, hardwired to zero
+| 25    | `CSR_MXISA_ZALRSC`    | r/- | <<_zalrsc_isa_extension>> available
+| 27:26 | -                     | r/- | _reserved_, hardwired to zero
 | 28    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`REGFILE_HW_RST`)
 | 29    | `CSR_MXISA_FASTMUL`   | r/- | fast multiplication available when set (`FAST_MUL_EN`)
 | 30    | `CSR_MXISA_FASTSHIFT` | r/- | fast shifts available when set (`FAST_SHIFT_EN`)

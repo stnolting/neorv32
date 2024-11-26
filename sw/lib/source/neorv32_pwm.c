@@ -15,7 +15,7 @@
  * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#include "neorv32.h"
+#include <neorv32.h>
 
 
 /**********************************************************************//**
@@ -35,59 +35,19 @@ int neorv32_pwm_available(void) {
 
 
 /**********************************************************************//**
- * Enable and configure pulse width modulation controller.
- * The PWM control register bits are listed in #NEORV32_PWM_CTRL_enum.
+ * Get number of implemented PWM channels.
+ * @warning This function will override all channel configuration registers.
  *
- * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
- **************************************************************************/
-void neorv32_pwm_setup(int prsc) {
-
-  NEORV32_PWM->CTRL = 0; // reset
-
-  uint32_t ct_enable = 1;
-  ct_enable = ct_enable << PWM_CTRL_EN;
-
-  uint32_t ct_prsc = (uint32_t)(prsc & 0x07);
-  ct_prsc = ct_prsc << PWM_CTRL_PRSC0;
-
-  NEORV32_PWM->CTRL = ct_enable | ct_prsc;
-}
-
-
-/**********************************************************************//**
- * Disable pulse width modulation controller.
- **************************************************************************/
-void neorv32_pwm_disable(void) {
-
-  NEORV32_PWM->CTRL &= ~((uint32_t)(1 << PWM_CTRL_EN));
-}
-
-
-/**********************************************************************//**
- * Enable pulse width modulation controller.
- **************************************************************************/
-void neorv32_pwm_enable(void) {
-
-  NEORV32_PWM->CTRL |= ((uint32_t)(1 << PWM_CTRL_EN));
-}
-
-
-/**********************************************************************//**
- * Get number of implemented channels.
- * @warning This function will override all duty cycle configuration registers.
- *
- * @return Number of implemented channels.
+ * @return Number of implemented PWM channels.
  **************************************************************************/
 int neorv32_pmw_get_num_channels(void) {
-
-  neorv32_pwm_disable();
 
   int i = 0;
   uint32_t cnt = 0;
 
-  for (i=0; i<12; i++) {
-    neorv32_pwm_set(i, 1);
-    cnt += neorv32_pwm_get(i);
+  for (i=0; i<16; i++) {
+    NEORV32_PWM->CHANNEL_CFG[i] = 1;
+    cnt += NEORV32_PWM->CHANNEL_CFG[i];
   }
 
   return (int)cnt;
@@ -95,42 +55,62 @@ int neorv32_pmw_get_num_channels(void) {
 
 
 /**********************************************************************//**
- * Set duty cycle for channel.
+ * Enable PWM channel.
  *
- * @param[in] channel Channel select (0..11).
- * @param[in] dc Duty cycle (8-bit, LSB-aligned).
+ * @param[in] channel Channel select (0..15).
  **************************************************************************/
-void neorv32_pwm_set(int channel, uint8_t dc) {
+void neorv32_pwm_ch_enable(int channel) {
 
-  if (channel > 11) {
-    return; // out-of-range
-  }
+  channel &= 0xf; // constrain range
 
-  const uint32_t dc_mask = 0xff;
-  uint32_t dc_new  = (uint32_t)dc;
-
-  uint32_t tmp = NEORV32_PWM->DC[channel/4];
-
-  tmp &= ~(dc_mask << ((channel % 4) * 8)); // clear previous duty cycle
-  tmp |=   dc_new  << ((channel % 4) * 8);  // set new duty cycle
-
-  NEORV32_PWM->DC[channel/4] = tmp;
+  NEORV32_PWM->CHANNEL_CFG[channel] |= ((uint32_t)(1 << PWM_CFG_EN));
 }
 
 
 /**********************************************************************//**
- * Get duty cycle from channel.
+ * Disable PWM channel.
  *
- * @param[in] channel Channel select (0..11).
- * @return Duty cycle (8-bit, LSB-aligned) of channel 'channel'.
+ * @param[in] channel Channel select (0..15).
  **************************************************************************/
-uint8_t neorv32_pwm_get(int channel) {
+void neorv32_pwm_ch_disable(int channel) {
 
-  if (channel > 11) {
-    return 0; // out of range
-  }
+  channel &= 0xf; // constrain range
 
-  uint32_t rd = NEORV32_PWM->DC[channel/4] >> (((channel % 4) * 8));
+  NEORV32_PWM->CHANNEL_CFG[channel] &= ~((uint32_t)(1 << PWM_CFG_EN));
+}
 
-  return (uint8_t)rd;
+
+/**********************************************************************//**
+ * Set PWM channel's clock configuration.
+ *
+ * @param[in] channel Channel select (0..15).
+ * @param[in] prsc Coarse clock prescaler select (3-bit, LSB-aligned). See #NEORV32_CLOCK_PRSC_enum.
+ * @param[in] cdiv Fine clock divider value (10-bit, LSB-aligned).
+ **************************************************************************/
+void neorv32_pwm_ch_set_clock(int channel, int prsc, int cdiv) {
+
+  channel &= 0xf; // constrain range
+
+  uint32_t tmp = NEORV32_PWM->CHANNEL_CFG[channel];
+  tmp &= 0x800000ffU; // clear current prsc and cdiv, keep enable and duty
+  tmp |= ((uint32_t)(prsc & 0x7U))   << PWM_CFG_PRSC_LSB;
+  tmp |= ((uint32_t)(cdiv & 0x3ffU)) << PWM_CFG_CDIV_LSB;
+  NEORV32_PWM->CHANNEL_CFG[channel] = tmp;
+}
+
+
+/**********************************************************************//**
+ * Set PWM channel's duty cycle.
+ *
+ * @param[in] channel Channel select (0..15).
+ * @param[in] duty Duty cycle (8-bit, LSB-aligned).
+ **************************************************************************/
+void neorv32_pwm_ch_set_duty(int channel, int duty) {
+
+  channel &= 0xf; // constrain range
+
+  uint32_t tmp = NEORV32_PWM->CHANNEL_CFG[channel];
+  tmp &= 0xffffff00U; // clear current duty cycle configuration
+  tmp |= (uint32_t)(duty & 0x000000ffU); // set new configuration
+  NEORV32_PWM->CHANNEL_CFG[channel] = tmp;
 }

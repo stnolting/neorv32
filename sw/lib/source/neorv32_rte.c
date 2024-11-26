@@ -13,7 +13,7 @@
  * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#include "neorv32.h"
+#include <neorv32.h>
 
 
 /**********************************************************************//**
@@ -23,7 +23,6 @@
 static uint32_t __neorv32_rte_vector_lut[NEORV32_RTE_NUM_TRAPS] __attribute__((unused)); // trap handler vector table
 
 // private functions
-static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void);
 static void __neorv32_rte_print_hex_word(uint32_t num);
 
 
@@ -41,7 +40,7 @@ void neorv32_rte_setup(void) {
   neorv32_cpu_csr_write(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
 
   // configure trap handler base address
-  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&__neorv32_rte_core));
+  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&neorv32_rte_core));
 
   // disable all IRQ channels
   neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -98,7 +97,7 @@ int neorv32_rte_handler_uninstall(int id) {
  * NEORV32 runtime environment (RTE):
  * This is the core of the NEORV32 RTE (first-level trap handler, executed in machine mode).
  **************************************************************************/
-static void __attribute__((__naked__,aligned(4))) __neorv32_rte_core(void) {
+void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
 
   // save context
   asm volatile (
@@ -407,8 +406,18 @@ void neorv32_rte_print_hw_config(void) {
   else { neorv32_uart0_printf("disabled\n"); }
 
   neorv32_uart0_printf("On-chip debugger:    ");
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD)) { neorv32_uart0_printf("enabled\n"); }
-  else { neorv32_uart0_printf("disabled\n"); }
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD)) {
+    neorv32_uart0_printf("enabled");
+  }
+  else {
+    neorv32_uart0_printf("disabled");
+  }
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD_AUTH)) {
+    neorv32_uart0_printf(" + authentication\n");
+  }
+  else {
+    neorv32_uart0_printf("\n");
+  }
 
   // IDs
   neorv32_uart0_printf("Hart ID:             0x%x\n"
@@ -450,6 +459,7 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_SDEXT))     { neorv32_uart0_printf("Sdext ");     }
   if (tmp & (1<<CSR_MXISA_SDTRIG))    { neorv32_uart0_printf("Sdtrig ");    }
   if (tmp & (1<<CSR_MXISA_SMPMP))     { neorv32_uart0_printf("Smpmp ");     }
+  if (tmp & (1<<CSR_MXISA_ZALRSC))    { neorv32_uart0_printf("Zalrsc ");    }
   if (tmp & (1<<CSR_MXISA_ZBA))       { neorv32_uart0_printf("Zba ");       }
   if (tmp & (1<<CSR_MXISA_ZBB))       { neorv32_uart0_printf("Zbb ");       }
   if (tmp & (1<<CSR_MXISA_ZBKB))      { neorv32_uart0_printf("Zbkb ");      }
@@ -482,21 +492,24 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("\nPhys. Memory Prot.:  ");
   uint32_t pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
   if (pmp_num_regions != 0)  {
-    neorv32_uart0_printf("%u region(s), %u bytes granularity, modes={OFF", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
+    neorv32_uart0_printf("%u region(s), %u bytes granularity, modes =", pmp_num_regions, neorv32_cpu_pmp_get_granularity());
     // check implemented modes
+    neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_OFF << PMPCFG_A_LSB)); // try to set mode "OFF"
+    if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) == (PMP_OFF << PMPCFG_A_LSB)) {
+      neorv32_uart0_printf(" OFF");
+    }
     neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_TOR << PMPCFG_A_LSB)); // try to set mode "TOR"
     if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) == (PMP_TOR << PMPCFG_A_LSB)) {
-      neorv32_uart0_printf(",TOR");
+      neorv32_uart0_printf(" TOR");
     }
     neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NA4 << PMPCFG_A_LSB)); // try to set mode "NA4"
     if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) == (PMP_NA4 << PMPCFG_A_LSB)) {
-      neorv32_uart0_printf(",NA4");
+      neorv32_uart0_printf(" NA4");
     }
     neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NAPOT << PMPCFG_A_LSB)); // try to set mode "NAPOT"
     if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) == (PMP_NAPOT << PMPCFG_A_LSB)) {
-      neorv32_uart0_printf(",NAPOT");
+      neorv32_uart0_printf(" NAPOT");
     }
-    neorv32_uart0_putc('}');
     neorv32_cpu_csr_write(CSR_PMPCFG0, 0); // disable PMP entry again
   }
   else {
@@ -513,12 +526,13 @@ void neorv32_rte_print_hw_config(void) {
     neorv32_uart0_printf("none");
   }
 
-  neorv32_uart0_printf("\nBoot configuration:  Boot ");
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_BOOTLOADER)) {
-    neorv32_uart0_printf("via Bootloader\n");
-  }
-  else {
-    neorv32_uart0_printf("from memory\n");
+  neorv32_uart0_printf("\nBoot configuration:  ");
+  int boot_config = (int)(NEORV32_SYSINFO->MEM[SYSINFO_MEM_BOOT]);
+  switch (boot_config) {
+    case 0:  neorv32_uart0_printf("boot via bootloader (0)\n"); break;
+    case 1:  neorv32_uart0_printf("boot from custom address (1)\n"); break;
+    case 2:  neorv32_uart0_printf("boot from pre-initialized IMEM (2)\n"); break;
+    default: neorv32_uart0_printf("unknown (%u)\n", boot_config); break;
   }
 
   // internal IMEM
@@ -607,9 +621,9 @@ void neorv32_rte_print_hw_config(void) {
   neorv32_uart0_printf("Ext. bus interface:  ");
   tmp = NEORV32_SYSINFO->SOC;
   if (tmp & (1 << SYSINFO_SOC_XBUS)) {
-    neorv32_uart0_printf("Wishbone-b4 ");
+    neorv32_uart0_printf("enabled ");
     if (tmp & (1 << SYSINFO_SOC_XBUS_CACHE)) {
-      neorv32_uart0_printf("x-cache\n");
+      neorv32_uart0_printf("+ xbus-cache\n");
     }
     else {
       neorv32_uart0_printf("\n");

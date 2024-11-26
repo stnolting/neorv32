@@ -13,7 +13,7 @@
  * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#include "neorv32.h"
+#include <neorv32.h>
 
 
 /**********************************************************************//**
@@ -301,7 +301,7 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
  * @warning This function expects a WORD address!
  *
  * @param[in] index Region number (index, 0..PMP_NUM_REGIONS-1).
- * @param[in] addr Region address (word address!).
+ * @param[in] addr Region address (bits [33:2]).
  * @param[in] config Region configuration byte (see #NEORV32_PMPCFG_ATTRIBUTES_enum).
  * @return Returns 0 on success, !=0 on failure.
  **************************************************************************/

@@ -29,6 +29,24 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 23.11.2024 | 1.10.6.6 | CPU control: large code edits and cleanups | [#1099](https://github.com/stnolting/neorv32/pull/1099) |
+| 10.11.2024 | 1.10.6.5 | :warning: switch to [xPack](https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack) as default prebuilt RISC-V GCC toolchain (now using `riscv-none-elf-` as default gcc prefix) | [#1091](https://github.com/stnolting/neorv32/pull/1091) |
+| 10.11.2024 | 1.10.6.4 | rework default processor testbench | [#1093](https://github.com/stnolting/neorv32/pull/1093) |
+| 06.11.2024 | 1.10.6.3 | minor rtl edits and cleanups | [#1090](https://github.com/stnolting/neorv32/pull/1090) |
+| 02.11.2024 | 1.10.6.2 | :warning: rework processor boot configuration; add new boot-configuration generics | [#1086](https://github.com/stnolting/neorv32/pull/1086) |
+| 01.11.2024 | 1.10.6.1 | :test_tube: convert VHDL memory images into full-scale VHDL packages | [#1084](https://github.com/stnolting/neorv32/pull/1084) |
+| 26.10.2024 | [**:rocket:1.10.6**](https://github.com/stnolting/neorv32/releases/tag/v1.10.6) | **New release** | |
+| 26.10.2024 | 1.10.5.11 | cleanup central makefile and linker script | [#1077](https://github.com/stnolting/neorv32/pull/1077) |
+| 21.10.2024 | 1.10.5.10 | :test_tube: rework linker script's ROM/IMEM default size (=16kB); add customization variable to all makefiles in `sw/example` | [#1072](https://github.com/stnolting/neorv32/pull/1072) |
+| 20.10.2024 | 1.10.5.9 | :warning: rework XIRQ controller; remove "interrupt pending" register `EIP` | [#1071](https://github.com/stnolting/neorv32/pull/1071) |
+| 18.10.2024 | 1.10.5.8 | minor RTL code cleanups | [#1068](https://github.com/stnolting/neorv32/pull/1068) |
+| 18.10.2024 | 1.10.5.7 | use individual/new module for XBUS-to-AXI4-Lite bridge | [#1063](https://github.com/stnolting/neorv32/pull/1063) |
+| 12.10.2024 | 1.10.5.6 | :warning: remove legacy support for on-chip debugger DM version v0.13; now only supporting DM v1.0 (removing `OCD_DM_LEGACY_MODE` generic) | [#1056](https://github.com/stnolting/neorv32/pull/1056) |
+| 11.10.2024 | 1.10.5.5 | :sparkles: :lock: add support for optional on-chip debugger authentication; :warning: rename OCD-related top generics | [#1053](https://github.com/stnolting/neorv32/pull/1053) |
+| 06.10.2024 | 1.10.5.4 | :warning: rework PWM module | [#1049](https://github.com/stnolting/neorv32/pull/1049) |
+| 05.10.2024 | 1.10.5.3 | upgrade neoTRNG to version 3.2 | [#1048](https://github.com/stnolting/neorv32/pull/1048) |
+| 03.10.2024 | 1.10.5.2 | :warning: remove `A` ISA extensions; replaced by new `Zalrsc` ISA extension | [#1047](https://github.com/stnolting/neorv32/pull/1047) |
+| 02.10.2024 | 1.10.5.1 | :warning: rework CFU interface; reduce minimal latency of CFU instructions from 4 cycles to 3 cycles | [#1046](https://github.com/stnolting/neorv32/pull/1046) |
 | 01.10.2024 | [**:rocket:1.10.5**](https://github.com/stnolting/neorv32/releases/tag/v1.10.5) | **New release** | |
 | 30.09.2024 | 1.10.4.11 | :warning: split `B` ISA extensions into individual sub-extensions: `Zba`, `Zbb`, `Zbs` | [#1044](https://github.com/stnolting/neorv32/pull/1044) |
 | 29.09.2024 | 1.10.4.10 | :warning: rename CPU ISA configuration generics: `CPU_EXTENSION_* -> RISCV_ISA_*` | [#1041](https://github.com/stnolting/neorv32/pull/1041) |
@@ -54,7 +72,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 05.09.2024 | 1.10.3.1 | minor CPU RTL cleanups and optimizations | [#1004](https://github.com/stnolting/neorv32/pull/1004) |
 | 03.09.2024 | [**:rocket:1.10.3**](https://github.com/stnolting/neorv32/releases/tag/v1.10.3) | **New release** | |
 | 30.08.2024 | 1.10.2.9 | :bug: fix PC reset bug (introduced in v1.10.2.8); minor RTL optimizations (size and critical path) | [#998](https://github.com/stnolting/neorv32/pull/998) |
-| 25.08.2024 | 1.10.2.8 | :warning: remove user-mode HPM counters; add individual `mocuntern` bits (`CY` and `IR`) rework Vivado IP module; minor RTL cleanups and optimization | [#996](https://github.com/stnolting/neorv32/pull/996) |
+| 25.08.2024 | 1.10.2.8 | :warning: remove user-mode HPM counters; add individual `mocunteren` bits (`CY` and `IR`) rework Vivado IP module; minor RTL cleanups and optimization | [#996](https://github.com/stnolting/neorv32/pull/996) |
 | 16.08.2024 | 1.10.2.7 | minor CPU area and critical path optimizations; minor code cleanups | [#990](https://github.com/stnolting/neorv32/pull/990) |
 | 09.08.2024 | 1.10.2.6 | :warning: re-organize RTL files; all core files are now located in `rtl/core`; remove `mem` sub-folder | [#985](https://github.com/stnolting/neorv32/pull/985) |
 | 09.08.2024 | 1.10.2.5 | minor HDL edits | [#984](https://github.com/stnolting/neorv32/pull/984) |
@@ -137,7 +155,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 16.02.2024 | 1.9.5.2 | :warning: **revert** support for page faults (keep that in mmu branch for now) | [#809](https://github.com/stnolting/neorv32/pull/809) |
 | 16.02.2024 | 1.9.5.1 | :sparkles: add two new generics to exclude certain PMP modes from synthesis | [#808](https://github.com/stnolting/neorv32/pull/808) |
 | 16.02.2024 | [**:rocket:1.9.5**](https://github.com/stnolting/neorv32/releases/tag/v1.9.5) | **New release** | |
-| 15.02.2023 | 1.9.4.13 | allow the DMA to issue a FENCE operation | [#807](https://github.com/stnolting/neorv32/pull/807) |
+| 15.02.2024 | 1.9.4.13 | allow the DMA to issue a FENCE operation | [#807](https://github.com/stnolting/neorv32/pull/807) |
 | 14.02.2024 | 1.9.4.12 | :lock: close another illegal compressed instruction encoding loophole | [#806](https://github.com/stnolting/neorv32/pull/806) |
 | 11.02.2024 | 1.9.4.11 | :bug: fix several FPU bugs and design flaws | [#794](https://github.com/stnolting/neorv32/pull/794) |
 | 11.02.2024 | 1.9.4.10 | minor additions to previous version (1.9.4.9): fix HPM configuration read-back | [#804](https://github.com/stnolting/neorv32/pull/804) |

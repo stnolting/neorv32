@@ -16,7 +16,7 @@ library neorv32;
 
 entity neorv32_ProcessorTop_UP5KDemo is
   generic (
-    -- General --
+    -- Clocking --
     CLOCK_FREQUENCY   : natural := 0;       -- clock frequency of clk_i in Hz
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN   : boolean := true;    -- implement processor-internal instruction memory
@@ -26,7 +26,7 @@ entity neorv32_ProcessorTop_UP5KDemo is
     MEM_INT_DMEM_SIZE : natural := 64*1024; -- size of processor-internal data memory in bytes
     -- Processor peripherals --
     IO_GPIO_NUM       : natural := 64;      -- number of GPIO input/output pairs (0..64)
-    IO_PWM_NUM_CH     : natural := 3        -- number of PWM channels to implement (0..12); 0 = disabled
+    IO_PWM_NUM_CH     : natural := 3        -- number of PWM channels to implement (0..16)
   );
   port (
     -- Global control --
@@ -61,7 +61,7 @@ architecture neorv32_ProcessorTop_UP5KDemo_rtl of neorv32_ProcessorTop_UP5KDemo 
   -- internal IO connection --
   signal con_gpio_o    : std_ulogic_vector(63 downto 0);
   signal con_gpio_i    : std_ulogic_vector(63 downto 0);
-  signal con_pwm_o     : std_ulogic_vector(11 downto 0);
+  signal con_pwm_o     : std_ulogic_vector(15 downto 0);
   signal con_spi_sck   : std_ulogic;
   signal con_spi_sdi   : std_ulogic;
   signal con_spi_sdo   : std_ulogic;
@@ -77,9 +77,10 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_inst: entity neorv32.neorv32_top
   generic map (
-    -- General --
+    -- Clocking --
     CLOCK_FREQUENCY   => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
-    INT_BOOTLOADER_EN => true,              -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    -- Boot Configuration --
+    BOOT_MODE_SELECT  => 0,                 -- boot via internal bootloader
     -- RISC-V CPU Extensions --
     RISCV_ISA_M       => true,              -- implement mul/div extension?
     RISCV_ISA_U       => true,              -- implement user mode extension?

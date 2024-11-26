@@ -49,11 +49,12 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_top_inst: neorv32_top
   generic map (
-    -- General --
+    -- Clocking --
     CLOCK_FREQUENCY     => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
-    INT_BOOTLOADER_EN   => true,              -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    -- Boot Configuration --
+    BOOT_MODE_SELECT    => 0,                 -- boot via internal bootloader
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN => true,              -- implement on-chip debugger
+    OCD_EN              => true,              -- implement on-chip debugger
     -- RISC-V CPU Extensions --
     RISCV_ISA_C         => true,              -- implement compressed extension?
     RISCV_ISA_M         => true,              -- implement mul/div extension?

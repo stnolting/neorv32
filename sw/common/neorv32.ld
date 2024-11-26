@@ -1,5 +1,5 @@
 /* ================================================================================ */
-/* NEORV32 CPU - RISC-V GCC Linker Script                                           */
+/* NEORV32 - RISC-V GCC Linker Script                                               */
 /* -------------------------------------------------------------------------------- */
 /* The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              */
 /* Copyright (c) NEORV32 contributors.                                              */
@@ -7,12 +7,6 @@
 /* Licensed under the BSD-3-Clause license, see LICENSE for details.                */
 /* SPDX-License-Identifier: BSD-3-Clause                                            */
 /* ================================================================================ */
-
-/* Copyright (C) 2014-2020 Free Software Foundation, Inc.
- * Copying and distribution of this script, with or without modification,
- * are permitted in any medium without royalty provided the copyright
- * notice and this notice are preserved. */
-
 
 OUTPUT_FORMAT("elf32-littleriscv")
 OUTPUT_ARCH(riscv)
@@ -25,34 +19,29 @@ SEARCH_DIR("=/usr/lib")
 
 /* ************************************************************************************************* */
 /* +++ NEORV32 memory layout configuration +++                                                       */
-/* If the symbols are not explicitly defined the default configurations are used. If required, only  */
-/* edit the very last entry in each row.                                                             */
+/* If the "__neorv32_*" symbols are not explicitly defined the default configurations are used.      */
 /* NOTE: section sizes have to be a multiple of 4 bytes; base addresses have to be 32-bit-aligned.   */
 /* ************************************************************************************************* */
-
-/* Default rom/ram (IMEM/DMEM) sizes */
-__neorv32_rom_size = DEFINED(__neorv32_rom_size) ? __neorv32_rom_size : 2048M;
-__neorv32_ram_size = DEFINED(__neorv32_ram_size) ? __neorv32_ram_size : 8K;
 
 /* Default HEAP size (= 0; no heap at all) */
 __neorv32_heap_size = DEFINED(__neorv32_heap_size) ? __neorv32_heap_size : 0;
 
-/* Default section base addresses */
+/* Default rom/ram (IMEM/DMEM) sizes */
+__neorv32_rom_size = DEFINED(__neorv32_rom_size) ? __neorv32_rom_size : 16k;
+__neorv32_ram_size = DEFINED(__neorv32_ram_size) ? __neorv32_ram_size : 8K;
+
+/* Default rom/ram (IMEM/DMEM) base addresses */
 __neorv32_rom_base = DEFINED(__neorv32_rom_base) ? __neorv32_rom_base : 0x00000000;
 __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x80000000;
 
 
 /* ************************************************************************************************* */
-/* when compiling the bootloader the ROM section is automatically re-mapped to the                   */
-/* processor-internal bootloader ROM address space.                                                  */
+/* Main memory segments that are relevant for the executable.                                        */
 /* ************************************************************************************************* */
 MEMORY
 {
-  rom  (rx) : ORIGIN = DEFINED(MAKE_BOOTLOADER) ? 0xFFFFC000 : __neorv32_rom_base, LENGTH = DEFINED(MAKE_BOOTLOADER) ? 8K : __neorv32_rom_size
-  ram (rwx) : ORIGIN = __neorv32_ram_base, LENGTH = DEFINED(MAKE_BOOTLOADER) ? 512 : __neorv32_ram_size
-  xip  (rx) : ORIGIN = 0xE0000000, LENGTH = 256M
-  boot (rx) : ORIGIN = 0xFFFFC000, LENGTH = 8K
-  io  (rwx) : ORIGIN = 0xFFFFE000, LENGTH = 8K
+  rom  (rx) : ORIGIN = __neorv32_rom_base, LENGTH = __neorv32_rom_size
+  ram (rwx) : ORIGIN = __neorv32_ram_base, LENGTH = __neorv32_ram_size
 }
 
 

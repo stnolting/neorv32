@@ -2,85 +2,71 @@
 :sectnums:
 == Software Toolchain Setup
 
-To compile (and debug) executables for the NEORV32 a RISC-V toolchain is required.
-There are two possibilities to get this:
+To compile (and debug) executables for the NEORV32 a RISC-V-compatible toolchain is required.
+By default, the project's software framework uses the GNU C Compiler RISC-V port "RISC-V GCC".
+Basically, there are two options to obtain such a toolchain:
 
-1. Download and _build_ the official RISC-V GNU toolchain yourself.
-2. Download and install a prebuilt version of the toolchain; this might also done via the package manager / app store of your OS
+1. Download and _build_ the RISC-V GNU toolchain by yourself.
+2. Download and _install_ a **prebuilt** version of the toolchain.
 
+.Default GCC Prefix
 [NOTE]
-The default toolchain prefix (`RISCV_PREFIX` variable) for this project is **`riscv32-unknown-elf-`**. Of course you can use any other RISC-V
-toolchain (like `riscv64-unknown-elf-`) that is capable to emit code for a `rv32` architecture. Just change `RISCV_PREFIX`
-according to your needs.
+The default toolchain prefix for this project is **`riscv-none-elf-`** (`RISCV_PREFIX` variable).
 
 
-:sectnums:
-=== Building the Toolchain from Scratch
+**Toolchain Requirements**
 
-To build the toolchain by yourself you can follow the guide from the official https://github.com/riscv-collab/riscv-gnu-toolchain GitHub page.
-You need to make sure the generated toolchain fits the architecture of the NEORV32 core. To get a toolchain that even supports minimal
-ISA extension configurations, it is recommend to compile for `rv32i` only. Please note that this minimal ISA also provides further ISA
-extensions like `m` or `c`. Of course you can use a _multilib_ approach to generate toolchains for several target ISAs at once.
+[start=1]
+.The toolchain must be able to emit code for a 32-bit architecture (i.e. `mabi=rv32`).
+.A "bare metal" / stand-alone C standard library should be used (i.e. the no-Linux version; for example "Newlib").
 
-.Preparing GCC build for `rv32i` (minimal ISA)
+.Library/ISA Considerations
+[IMPORTANT]
+Note that a toolchain build with `--with-arch=rv32imc` provides library code (like the C standard library)
+compiled entirely using compressed (`C`) and `mul`/`div` instructions (`M`). Hence, this pre-compiled library
+code CANNOT be executed (without emulation) on an architecture that does not support these ISA extensions.
+
+
+**Building the Toolchain from Scratch**
+
+The official RISC-V GCC GitHub repository (https://github.com/riscv-collab/riscv-gnu-toolchain) provides instructions
+for building the toolchain from scratch:
+
+.Preparing GCC build for `rv32i` (minimal ISA only in this example)
 [source,bash]
 ----
 $ git clone https://github.com/riscv/riscv-gnu-toolchain
 $ cd riscv-gnu-toolchain
-
 $ riscv-gnu-toolchain$ ./configure --prefix=/opt/riscv --with-arch=rv32i --with-abi=ilp32
 $ riscv-gnu-toolchain$ make
 ----
 
-[IMPORTANT]
-Keep in mind that - for instance - a toolchain build with `--with-arch=rv32imc` provides library code (like the C
-standard library) compiled entirely utilizing compressed (`C`) and `mul`/`div` instructions (`M`). Hence, this
-code CANNOT be executed (without emulation) on an architecture that does not support these ISA extensions.
+
+**Downloading and Installing a Prebuilt Toolchain**
+
+Alternatively, a prebuilt toolchain can be used. Some OS package managers provide embedded RISC-V GCC toolchain.
+However, I can highly recommend the toolchain provided by the X-Pack project (MIT license):
+https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack
 
 
-:sectnums:
-=== Downloading and Installing a Prebuilt Toolchain
+**Toolchain Installation**
 
-Alternatively, you can download a prebuilt toolchain.
-
-:sectnums:
-==== Use The Pre-Built Toolchains
-
-We have compiled several GCC toolchains on a 64-bit x86 Ubuntu (Ubuntu on Windows, actually) and uploaded it to
-GitHub. You can directly download the according toolchain archive as single _zip-file_ within a packed
-release from https://github.com/stnolting/riscv-gcc-prebuilt. More information about downloading and installing
-these prebuilt toolchains can be found in the repository's README.
-
-
-:sectnums:
-==== Use a Third Party Toolchain
-
-Of course you can also use any other prebuilt version of the toolchain. There are a lot  RISC-V GCC packages out there -
-even for Windows. On Linux system you might even be able to fetch a toolchain via your distribution's package manager.
-
-[IMPORTANT]
-Make sure the toolchain can (also) emit code for a `rv32i` architecture, uses the `ilp32` or `ilp32e` ABI and **was not build** using
-CPU extensions that are not supported by the NEORV32 (like `D`).
-
-
-:sectnums:
-=== Installation
-
-Now you have the toolchain binaries. The last step is to add them to your `PATH` environment variable (if you have not
-already done so): make sure to add the _binaries_ folder (`bin`) of your toolchain.
+To integrate the toolchain of choice into the NEORV32 software framework, the toolchain's binaries need
+to be added to the system path (e.g. `PATH` environment variable) so they can be used by a shell. Therefore,
+the absolute path to the toolchain's `bin` folder has to be appended to the `PATH` variable:
 
 [source,bash]
 ----
 $ export PATH=$PATH:/opt/riscv/bin
 ----
 
-You should add this command to your `.bashrc` (if you are using bash) to automatically add the RISC-V
+.bashrc
+[TIP]
+This command can be added to `.bashrc` (or similar) to automatically add the RISC-V
 toolchain at every console start.
 
-:sectnums:
-=== Testing the Installation
 
-To make sure everything works fine, navigate to an example project in the NEORV32 example folder and
+To make sure everything works fine, navigate to an example project in the NEORV32 `sw/example` folder and
 execute the following command:
 
 [source,bash]
@@ -89,4 +75,4 @@ neorv32/sw/example/demo_blink_led$ make check
 ----
 
 This will test all the tools required for generating NEORV32 executables.
-Everything is working fine if `Toolchain check OK` appears at the end.
+Everything is working fine if "Toolchain check OK" appears at the end of the log output.

@@ -90,10 +90,8 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
   signal fpu_csr_rd, cfu_csr_rd : std_ulogic_vector(XLEN-1 downto 0);
 
   -- CFU proxy --
-  signal cfu_run  : std_ulogic;
-  signal cfu_done : std_ulogic;
-  signal cfu_wait : std_ulogic_vector(1 downto 0);
-  signal cfu_res  : std_ulogic_vector(XLEN-1 downto 0);
+  signal cfu_active, cfu_done, cfu_busy : std_ulogic;
+  signal cfu_res : std_ulogic_vector(XLEN-1 downto 0);
 
   -- CSR read-backs --
   signal csr_rdata_fpu, csr_rdata_cfu : std_ulogic_vector(XLEN-1 downto 0);
@@ -285,6 +283,8 @@ begin
 
   neorv32_cpu_cp_fpu_inst_false:
   if not RISCV_ISA_Zfinx generate
+    fpu_csr_en    <= '0';
+    fpu_csr_we    <= '0';
     csr_rdata_fpu <= (others => '0');
     cp_result(3)  <= (others => '0');
     cp_valid(3)   <= '0';
@@ -302,7 +302,7 @@ begin
       rstn_i      => rstn_i,                         -- global reset, low-active, async
       -- operation control --
       start_i     => ctrl_i.alu_cp_cfu,              -- operation trigger/strobe
-      active_i    => cfu_run,                        -- operation in progress, CPU is waiting for CFU
+      active_i    => cfu_active,                     -- operation in progress, CPU is waiting for CFU
       -- CSR interface --
       csr_we_i    => cfu_csr_we,                     -- write enable
       csr_addr_i  => csr_addr_i(1 downto 0),         -- address
@@ -325,35 +325,43 @@ begin
     cfu_csr_we    <= cfu_csr_en and csr_we_i;
     csr_rdata_cfu <= cfu_csr_rd when (cfu_csr_en = '1') else (others => '0');
 
-    -- operation proxy --
+    -- response proxy --
     cfu_arbiter: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        cfu_wait <= (others => '0');
+        cfu_busy     <= '0';
+        cp_result(4) <= (others => '0');
       elsif rising_edge(clk_i) then
-        cfu_wait(1) <= cfu_wait(0);
-        if (cfu_wait(0) = '0') then -- CFU is idle
-          cfu_wait(0) <= ctrl_i.alu_cp_cfu; -- trigger new CFU operation
-        elsif (cfu_done = '1') or (ctrl_i.cpu_trap = '1') then -- operation done or abort if trap (exception)
-          cfu_wait(0) <= '0';
+        if (cfu_done = '1') or (ctrl_i.cpu_trap = '1') then -- terminate also on trap
+          cfu_busy <= '0';
+        elsif (ctrl_i.alu_cp_cfu = '1') then
+          cfu_busy <= '1';
+        end if;
+        if (cfu_done = '1') and ((ctrl_i.alu_cp_cfu = '1') or (cfu_busy = '1')) then
+          cp_result(4) <= cfu_res;
+        else -- output zero if there is no CFU operation
+          cp_result(4) <= (others => '0');
         end if;
       end if;
     end process cfu_arbiter;
 
-    cfu_run      <= ctrl_i.alu_cp_cfu or cfu_wait(0); -- CFU operation in progress
-    cp_result(4) <= cfu_res when (cfu_wait(1) = '1') else (others => '0'); -- output gate
-    cp_valid(4)  <= cfu_wait(0) and cfu_done;
+    cfu_active  <= ctrl_i.alu_cp_cfu or cfu_busy; -- CFU operation in progress
+    cp_valid(4) <= cfu_done and (ctrl_i.alu_cp_cfu or cfu_busy);
   end generate;
 
   neorv32_cpu_cp_cfu_inst_false:
   if not RISCV_ISA_Zxcfu generate
+    cfu_csr_en    <= '0';
+    cfu_csr_we    <= '0';
     csr_rdata_cfu <= (others => '0');
+    cfu_busy      <= '0';
+    cfu_active    <= '0';
     cp_result(4)  <= (others => '0');
     cp_valid(4)   <= '0';
   end generate;
 
 
-  -- ALU-Opcode Co-Processor: Integer Conditional Operations Unit ('Zicond' ISA Extension) ---
+  -- ALU-Opcode Co-Processor: Conditional Operations Unit ('Zicond' ISA Extension) ----------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_cond_inst_true:
   if RISCV_ISA_Zicond generate

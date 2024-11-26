@@ -39,7 +39,7 @@ informed via _precise_ and resumable hardware exceptions.
 targeting various FPGA boards and toolchains to get started.
 * :package: The entire processor is also available as [Vivado IP Block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block).
 * :kite: Support for [FreeRTOS](https://github.com/stnolting/neorv32-freertos),
-[Zephyr OS](https://docs.zephyrproject.org/latest/boards/riscv/neorv32/doc/index.html) and
+[Zephyr OS](https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html) and
 [LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC Builder Framework.
 * :desktop_computer: Pre-configured [Eclipse project](https://stnolting.github.io/neorv32/ug/#_eclipse_ide) for developing and debugging code using an IDE.
 * :label: The project's change log is available in [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
@@ -56,13 +56,11 @@ not working as expected. See how to [contribute](https://github.com/stnolting/ne
 
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
 - [x] completely described in behavioral, platform-independent VHDL - **no** platform-specific primitives, macros, attributes, etc.; an all-Verilog "version" is also [available](https://github.com/stnolting/neorv32-verilog)
-- [x] extensive configuration options for adapting the processor to the requirements of the application
-- [x] highly [extensible hardware](https://stnolting.github.io/neorv32/ug/#_comparative_summary) - on CPU, processor and system level
+- [x] extensive configuration options for adapting the processor to the requirements of the application (on CPU, processor and system level)
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
 - [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the CPU's register file)
 - [x] optimized for high clock frequencies to ease integration / timing closure
-- [x] from zero to _"hello world!"_ - completely open source and documented
-- [x] highly documented - on software and hardware side
+- [x] from zero to _"hello world!"_ - completely open source and documented (on software and hardware side)
 - [x] easy to use even for FPGA / RISC-V starters – intended to work _out of the box_
 
 ### Project Status
@@ -98,17 +96,17 @@ setup according to your needs. Note that all of the following SoC modules are en
 **CPU Core**
 
 * [![RISCV-ARCHID](https://img.shields.io/badge/RISC--V%20Architecture%20ID-19-000000.svg?longCache=true&style=flat-square&logo=riscv&colorA=273274&colorB=fbb517)](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
-* 32-bit little-endian RISC-V single-core, pipelined/multi-cycle modified Harvard architecture
-* configurable ISA extensions:
+* RISC-V 32-bit little-endian single-core pipelined/multi-cycle modified Harvard architecture
+* configurable [instruction sets and extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions):
 \
 `RV32`
 [[`I`](https://stnolting.github.io/neorv32/#_i_isa_extension)/[`E`](https://stnolting.github.io/neorv32/#_e_isa_extension)]
 [[`M`](https://stnolting.github.io/neorv32/#_m_isa_extension)]
-[[`A`](https://stnolting.github.io/neorv32/#_a_isa_extension)]
 [[`C`](https://stnolting.github.io/neorv32/#_c_isa_extension)]
 [[`B`](https://stnolting.github.io/neorv32/#_b_isa_extension)]
 [[`U`](https://stnolting.github.io/neorv32/#_u_isa_extension)]
 [[`X`](https://stnolting.github.io/neorv32/#_x_isa_extension)]
+[[`Zalrsc`](https://stnolting.github.io/neorv32/#_zalrsc_isa_extension)]
 [[`Zba`](https://stnolting.github.io/neorv32/#_zba_isa_extension)]
 [[`Zbb`](https://stnolting.github.io/neorv32/#_zbb_isa_extension)]
 [[`Zbkb`](https://stnolting.github.io/neorv32/#_zbkb_isa_extension)]
@@ -198,6 +196,7 @@ data integrity (CRC8/16/32)
 * compatible to the "Minimal RISC-V Debug Specification Version 1.0"
 * compatible with **OpenOCD**, **GDB** and **Segger Embedded Studio**
 * RISC-V [trigger module](https://stnolting.github.io/neorv32/#_trigger_module) for hardware-assisted breakpoints
+* optional authentication module to implement custom security mechanisms
 
 
 ## 3. FPGA Implementation Results
@@ -251,7 +250,8 @@ This overview provides some *quick links* to the most important sections of the
 
 * [Top Entity - Signals](https://stnolting.github.io/neorv32/#_processor_top_entity_signals) - how to connect to the processor
 * [Top Entity - Generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics) - processor/CPU configuration options
-* [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory layout and boot configurations
+* [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory layout and address mapping
+* [Boot Configuration](https://stnolting.github.io/neorv32/#_boot_configuration) - how to make the processor start executing
 * [SoC Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - IO/peripheral modules and memories
 * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - in-system debugging of the processor via JTAG
 

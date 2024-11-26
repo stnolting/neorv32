@@ -45,8 +45,8 @@ The NEORV32 CFU utilizes these two opcodes to support user-defined **R3-type** i
 1 destination register) and **R4-type** instructions (3 source registers, 1 destination register). Both instruction
 formats are compliant to the RISC-V specification.
 
-* `custom-0`: `0001011` RISC-V standard, used for NEORV32 <<_cfu_r3_type_instructions>> (3 register addresses)
-* `custom-1`: `0101011` RISC-V standard, used for NEORV32 <<_cfu_r4_type_instructions>> (4 register addresses)
+* `custom-0`: `0001011` RISC-V standard, used for NEORV32 <<_cfu_r3_type_instructions>> (3x register addresses)
+* `custom-1`: `0101011` RISC-V standard, used for NEORV32 <<_cfu_r4_type_instructions>> (4x register addresses)
 
 [TIP]
 The provided instructions formats are _predefined_ to allow an easy integration framework.
@@ -68,11 +68,11 @@ Example operation: `rd <= rs1 xnor rs2` (bit-wise logical XNOR)
 image::cfu_r3type_instruction.png[align=left]
 
 * `funct7`: 7-bit immediate (immediate data or function select)
-* `rs2`: address of second source register (32-bit source data)
-* `rs1`: address of first source register (32-bit source data)
+* `rs2`: address of second source register (providing 32-bit source data)
+* `rs1`: address of first source register (providing 32-bit source data)
 * `funct3`: 3-bit immediate (immediate data or function select)
 * `rd`: address of destination register (32-bit processing result)
-* `opcode`: `0001011` (RISC-V "custom-0" opcode)
+* `opcode`: `0001011` (RISC-V `custom-0` opcode)
 
 .Instruction encoding space
 [NOTE]
@@ -94,14 +94,14 @@ Example operation: `rd <= (rs1 * rs2 + rs3)[31:0]` (multiply-and-accumulate; "MA
 .CFU R4-type instruction format
 image::cfu_r4type_instruction.png[align=left]
 
-* `rs3`: address of third source register (32-bit source data)
-* `rs2`: address of second source register (32-bit source data)
-* `rs1`: address of first source register (32-bit source data)
+* `rs3`: address of third source register (providing 32-bit source data)
+* `rs2`: address of second source register (providing 32-bit source data)
+* `rs1`: address of first source register (providing 32-bit source data)
 * `funct3`: 3-bit immediate (immediate data or function select)
 * `rd`: address of destination register (32-bit processing result)
-* `opcode`: `0101011` (RISC-V "custom-1" opcode)
-* ⚠️ bits [26:25] of the R4-type instruction word are unused and should always be set to zero. However, these bits
-are ignored by the CPU's illegal instruction check logic.
+* `opcode`: `0101011` (RISC-V `custom-1` opcode)
+* ⚠️ bits [26:25] of the R4-type instruction word are unused. However, these bits are ignored
+by CPU's instruction decoder and can be retrieved via the CFU's `funct7_i(6 downto 5)` signal.
 
 .Instruction encoding space
 [NOTE]
@@ -195,7 +195,7 @@ CSRs.
 ==== Custom Instructions Hardware
 
 The actual functionality of the CFU's custom instructions is defined by the user-defined logic inside the CFU
-hardware module `rtl/core/neorv32_cpu_cp_cfu.vhd`. This file is highly commented to explain the interface and
+hardware module (`rtl/core/neorv32_cpu_cp_cfu.vhd`). This file is highly commented to explain the interface and
 to illustrate hardware design considerations.
 
 CFU operations can be entirely combinatorial (like bit-reversal) so the result is available at the end of the
@@ -211,7 +211,7 @@ of the register file by 50%.
 .CFU Execution Time
 [NOTE]
 The CFU has to complete computation within a **bound time window** (default = 512 clock cycles). Otherwise,
-the CFU operation is terminated by the hardware and an illegal instruction exception is raised. See section
+the CFU operation is terminated by the CPU execution logic and an illegal instruction exception is raised. See section
 <<_cpu_arithmetic_logic_unit>> for more information.
 
 .CFU Exception

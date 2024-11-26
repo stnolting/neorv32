@@ -14,5 +14,3 @@ NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_alu.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_lsu.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_pmp.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu.vhd
-NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_bootloader_image.vhd
-NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_application_image.vhd

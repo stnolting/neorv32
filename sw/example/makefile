@@ -1,6 +1,3 @@
-#-------------------------------------------------------------------------------
-# Make defaults and targets
-#-------------------------------------------------------------------------------
 .SUFFIXES:
 .DEFAULT_GOAL := help
 
@@ -9,8 +6,8 @@ TOPTARGETS := exe clean_all check info all
 SUBDIRS := $(wildcard */.)
 # ignore dummy folders (starting with '~')
 EXCLDIR := $(wildcard ~*/.)
-# ignore the Eclipse project
-EXCLDIR += eclipse/.
+# ignore some of the default projects/examples
+EXCLDIR += eclipse/. dhrystone/. performance_tests/. float_corner_test/.
 SUBDIRS := $(filter-out $(EXCLDIR), $(SUBDIRS))
 
 $(TOPTARGETS): $(SUBDIRS)
@@ -20,10 +17,6 @@ $(SUBDIRS):
 
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 
-
-#-------------------------------------------------------------------------------
-# Help
-#-------------------------------------------------------------------------------
 help:
 	@echo "Build / clean up all projects"
 	@echo "Targets:"

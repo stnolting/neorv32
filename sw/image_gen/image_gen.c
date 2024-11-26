@@ -20,8 +20,8 @@ const uint32_t signature = 0x4788CAFE;
 // output file types (operation select)
 enum operation_enum {
   OP_APP_BIN,
-  OP_APP_IMG,
-  OP_BLD_IMG,
+  OP_APP_VHD,
+  OP_BLD_VHD,
   OP_RAW_HEX,
   OP_RAW_BIN,
   OP_RAW_COE,
@@ -36,8 +36,8 @@ int main(int argc, char *argv[]) {
            "Three arguments are required.\n"
            "1st: Operation\n"
            " -app_bin : Generate application executable binary (binary file, little-endian, with header) \n"
-           " -app_img : Generate application raw executable memory image (vhdl package body file, no header)\n"
-           " -bld_img : Generate bootloader raw executable memory image (vhdl package body file, no header)\n"
+           " -app_vhd : Generate application raw executable memory image (vhdl package body file, no header)\n"
+           " -bld_vhd : Generate bootloader raw executable memory image (vhdl package body file, no header)\n"
            " -raw_hex : Generate application raw executable (ASCII hex file, no header)\n"
            " -raw_bin : Generate application raw executable (binary file, no header)\n"
            " -raw_coe : Generate application raw executable (COE file, no header)\n"
@@ -58,22 +58,22 @@ int main(int argc, char *argv[]) {
   unsigned long raw_exe_size = 0;
 
   if      (strcmp(argv[1], "-app_bin") == 0) { operation = OP_APP_BIN; }
-  else if (strcmp(argv[1], "-app_img") == 0) { operation = OP_APP_IMG; }
-  else if (strcmp(argv[1], "-bld_img") == 0) { operation = OP_BLD_IMG; }
+  else if (strcmp(argv[1], "-app_vhd") == 0) { operation = OP_APP_VHD; }
+  else if (strcmp(argv[1], "-bld_vhd") == 0) { operation = OP_BLD_VHD; }
   else if (strcmp(argv[1], "-raw_hex") == 0) { operation = OP_RAW_HEX; }
   else if (strcmp(argv[1], "-raw_bin") == 0) { operation = OP_RAW_BIN; }
   else if (strcmp(argv[1], "-raw_coe") == 0) { operation = OP_RAW_COE; }
   else if (strcmp(argv[1], "-raw_mem") == 0) { operation = OP_RAW_MEM; }
   else if (strcmp(argv[1], "-raw_mif") == 0) { operation = OP_RAW_MIF; }
   else {
-    printf("Invalid operation!");
+    printf("Invalid operation '%s'!\n", argv[1]);
     return -1;
   }
 
   // open input file
   input = fopen(argv[2], "rb");
   if(input == NULL) {
-    printf("Input file error!");
+    printf("Input file error (%s)!\n", argv[2]);
     return -2;
   }
 
@@ -83,9 +83,13 @@ int main(int argc, char *argv[]) {
   unsigned int input_words = input_size / 4;
   rewind(input);
 
+  if ((input_size % 4) != 0) {
+    printf("WARNING - image size is not a multiple of 4 bytes!\n");
+  }
+
   // input file empty?
   if(input_size == 0) {
-    printf("Input file is empty!");
+    printf("Input file is empty (%s)!\n", argv[2]);
     fclose(input);
     return -3;
   }
@@ -93,32 +97,21 @@ int main(int argc, char *argv[]) {
   // open output file
   output = fopen(argv[3], "wb");
   if(output == NULL) {
-    printf("Output file error!");
+    printf("Output file error (%s)!\n", argv[3]);
     fclose(input);
     return -4;
   }
 
-  // --------------------------------------------------------------------------
-  // Try to find out targeted CPU configuration via MARCH environment variable
-  // --------------------------------------------------------------------------
-  char string_march[64] = "default";
-  char *envvar_march = "MARCH";
-  if (getenv(envvar_march)) {
-    if (snprintf(string_march, 64, "%s", getenv(envvar_march)) >= 64){
-      strcpy(string_march, "default");
-    }
-  }
-
 
   // --------------------------------------------------------------------------
-  // Get image's compilation date and time
+  // Image's compilation date and time
   // --------------------------------------------------------------------------
   time_t time_current;
   time(&time_current);
   struct tm *time_local = localtime(&time_current);
   char compile_time[64];
 
-  snprintf(compile_time, 64, "%02d.%02d.%d %02d:%02d:%02d (dd.mm.yyyy hh:mm:ss)",
+  snprintf(compile_time, 64, "%02d.%02d.%d %02d:%02d:%02d",
     time_local->tm_mday,
     time_local->tm_mon + 1,
     time_local->tm_year + 1900,
@@ -129,7 +122,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Get size of application (in bytes)
+  // Size of application (in bytes)
   // --------------------------------------------------------------------------
   fseek(input, 0L, SEEK_END);
 
@@ -200,22 +193,26 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate RAW APPLICATION's executable memory initialization file
-  // -> VHDL package body
+  // Generate APPLICATION executable memory initialization image package (IMEM)
   // --------------------------------------------------------------------------
-  else if (operation == OP_APP_IMG) {
+  else if (operation == OP_APP_VHD) {
 
     // header
-    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor: https://github.com/stnolting/neorv32\n"
-                        "-- Auto-generated memory initialization file (for APPLICATION) from source file <%s/%s>\n"
+    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32\n"
+                        "-- Auto-generated memory initialization package (for internal IMEM)\n"
+                        "-- Source: %s/%s\n"
                         "-- Size: %lu bytes\n"
-                        "-- MARCH: %s\n"
                         "-- Built: %s\n"
                         "\n"
-                        "-- prototype defined in 'neorv32_package.vhd'\n"
-                        "package body neorv32_application_image is\n"
+                        "library ieee;\n"
+                        "use ieee.std_logic_1164.all;\n"
                         "\n"
-                        "constant application_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, string_march, compile_time);
+                        "library neorv32;\n"
+                        "use neorv32.neorv32_package.all;\n"
+                        "\n"
+                        "package neorv32_application_image is\n"
+                        "\n"
+                        "constant application_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, compile_time);
     fputs(tmp_string, output);
 
     i = 0;
@@ -257,22 +254,26 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate RAW BOOTLOADER's executable memory initialization file
-  // -> VHDL package body
+  // Generate BOOTLOADER executable memory initialization image package (BOOTROM)
   // --------------------------------------------------------------------------
-  else if (operation == OP_BLD_IMG) {
+  else if (operation == OP_BLD_VHD) {
 
     // header
-    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor: https://github.com/stnolting/neorv32\n"
-                        "-- Auto-generated memory initialization file (for BOOTLOADER) from source file <%s/%s>\n"
+    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32\n"
+                        "-- Auto-generated memory initialization package (for internal BOOTROM)\n"
+                        "-- Source: %s/%s\n"
                         "-- Size: %lu bytes\n"
-                        "-- MARCH: %s\n"
                         "-- Built: %s\n"
                         "\n"
-                        "-- prototype defined in 'neorv32_package.vhd'\n"
-                        "package body neorv32_bootloader_image is\n"
+                        "library ieee;\n"
+                        "use ieee.std_logic_1164.all;\n"
                         "\n"
-                        "constant bootloader_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, string_march, compile_time);
+                        "library neorv32;\n"
+                        "use neorv32.neorv32_package.all;\n"
+                        "\n"
+                        "package neorv32_bootloader_image is\n"
+                        "\n"
+                        "constant bootloader_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, compile_time);
     fputs(tmp_string, output);
 
     i = 0;
@@ -348,7 +349,7 @@ int main(int argc, char *argv[]) {
     // header
     sprintf(tmp_string, "memory_initialization_radix=16;\n");
     fputs(tmp_string, output);
-    sprintf(tmp_string, "memory_initialization_vector=");
+    sprintf(tmp_string, "memory_initialization_vector=\n");
     fputs(tmp_string, output);
 
     i = 0;
@@ -358,18 +359,14 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
       if (i == (input_words-1)) {
-        sprintf(tmp_string, "\n%08x", (unsigned int)tmp);
+        sprintf(tmp_string, "%08x;\n", (unsigned int)tmp);
       }
       else {
-        sprintf(tmp_string, "\n%08x,", (unsigned int)tmp);
+        sprintf(tmp_string, "%08x,\n", (unsigned int)tmp);
       }
       fputs(tmp_string, output);
       i++;
     }
-
-    // footer
-    sprintf(tmp_string, ";\n");
-    fputs(tmp_string, output);
   }
 
 
@@ -431,7 +428,7 @@ int main(int argc, char *argv[]) {
   // Invalid operation
   // --------------------------------------------------------------------------
   else {
-    printf("Invalid operation!");
+    printf("Invalid operation!\n");
     fclose(input);
     fclose(output);
     return -1;
@@ -439,7 +436,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Done, clean up
+  // Clean up
   // --------------------------------------------------------------------------
   fclose(input);
   fclose(output);

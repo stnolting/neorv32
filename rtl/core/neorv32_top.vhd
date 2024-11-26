@@ -21,23 +21,28 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_top is
   generic (
-    -- General --
-    CLOCK_FREQUENCY       : natural;                                       -- clock frequency of clk_i in Hz
+    -- Processor Clocking --
+    CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
     CLOCK_GATING_EN       : boolean                        := false;       -- enable clock gating when in sleep mode
+
+    -- Core Identification --
     HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
     JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
-    INT_BOOTLOADER_EN     : boolean                        := false;       -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+
+    -- Boot Configuration --
+    BOOT_MODE_SELECT      : natural range 0 to 2           := 0;           -- boot configuration select (default = 0 = bootloader)
+    BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
 
     -- On-Chip Debugger (OCD) --
-    ON_CHIP_DEBUGGER_EN   : boolean                        := false;       -- implement on-chip debugger
-    DM_LEGACY_MODE        : boolean                        := false;       -- debug module spec version: false = v1.0, true = v0.13
+    OCD_EN                : boolean                        := false;       -- implement on-chip debugger
+    OCD_AUTHENTICATION    : boolean                        := false;       -- implement on-chip debugger authentication
 
     -- RISC-V CPU Extensions --
-    RISCV_ISA_A           : boolean                        := false;       -- implement atomic memory operations extension
     RISCV_ISA_C           : boolean                        := false;       -- implement compressed extension
     RISCV_ISA_E           : boolean                        := false;       -- implement embedded RF extension
     RISCV_ISA_M           : boolean                        := false;       -- implement mul/div extension
     RISCV_ISA_U           : boolean                        := false;       -- implement user mode extension
+    RISCV_ISA_Zalrsc      : boolean                        := false;       -- implement atomic reservation-set extension
     RISCV_ISA_Zba         : boolean                        := false;       -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb         : boolean                        := false;       -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb        : boolean                        := false;       -- implement bit-manipulation instructions for cryptography
@@ -122,7 +127,7 @@ entity neorv32_top is
     IO_SDI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be zero or a power of two, min 1
     IO_TWI_EN             : boolean                        := false;       -- implement two-wire interface (TWI)?
     IO_TWI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be zero or a power of two, min 1
-    IO_PWM_NUM_CH         : natural range 0 to 12          := 0;           -- number of PWM channels to implement (0..12); 0 = disabled
+    IO_PWM_NUM_CH         : natural range 0 to 16          := 0;           -- number of PWM channels to implement (0..16)
     IO_WDT_EN             : boolean                        := false;       -- implement watch dog timer (WDT)?
     IO_TRNG_EN            : boolean                        := false;       -- implement true random number generator (TRNG)?
     IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;           -- data fifo depth, has to be a power of two, min 1
@@ -145,7 +150,7 @@ entity neorv32_top is
     clk_i          : in  std_ulogic;                                        -- global clock, rising edge
     rstn_i         : in  std_ulogic;                                        -- global reset, low-active, async
 
-    -- JTAG on-chip debugger interface (available if ON_CHIP_DEBUGGER_EN = true) --
+    -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     : in  std_ulogic := 'L';                                 -- serial clock
     jtag_tdi_i     : in  std_ulogic := 'L';                                 -- serial data input
     jtag_tdo_o     : out std_ulogic;                                        -- serial data output
@@ -220,7 +225,7 @@ entity neorv32_top is
     onewire_o      : out std_ulogic;                                        -- 1-wire bus output (pull low only)
 
     -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o          : out std_ulogic_vector(11 downto 0);                    -- pwm channels
+    pwm_o          : out std_ulogic_vector(15 downto 0);                    -- pwm channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => 'L'); -- custom CFS inputs conduit
@@ -235,7 +240,7 @@ entity neorv32_top is
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- IRQ channels
 
-    -- CPU interrupts --
+    -- CPU interrupts (for chip-internal usage only) --
     mtime_irq_i    : in  std_ulogic := 'L';                                 -- machine timer interrupt, available if IO_MTIME_EN = false
     msw_irq_i      : in  std_ulogic := 'L';                                 -- machine software interrupt
     mext_irq_i     : in  std_ulogic := 'L'                                  -- machine external interrupt
@@ -244,16 +249,28 @@ end neorv32_top;
 
 architecture neorv32_top_rtl of neorv32_top is
 
+  -- ----------------------------------------------------------
+  -- Boot Configuration (BOOT_MODE_SELECT)
+  -- ----------------------------------------------------------
+  -- 0: Internal bootloader ROM
+  -- 1: Custom (use BOOT_ADDR_CUSTOM)
+  -- 2: Internal IMEM initialized with application image
+  -- ----------------------------------------------------------
+  constant bootrom_en_c    : boolean := boolean(BOOT_MODE_SELECT = 0);
+  constant imem_as_rom_c   : boolean := boolean(BOOT_MODE_SELECT = 2);
+  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) :=
+    cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 0), mem_boot_base_c,
+    cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 1), BOOT_ADDR_CUSTOM,
+    cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 2), mem_imem_base_c, x"00000000")));
+
   -- auto-configuration --
-  constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) := cond_sel_suv_f(INT_BOOTLOADER_EN, mem_boot_base_c, mem_imem_base_c);
-  constant imem_as_rom_c   : boolean := not INT_BOOTLOADER_EN;
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
   constant io_xirq_en_c    : boolean := boolean(XIRQ_NUM_CH > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
   constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
 
-  -- convert JEDEC ID to mvendorid CSR --
+  -- convert JEDEC ID to MVENDORID CSR --
   constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
 
   -- make sure physical memory sizes are a power of two --
@@ -282,7 +299,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dmi_rsp : dmi_rsp_t;
 
   -- debug core interface (DCI) --
-  signal dci_ndmrstn, dci_halt_req : std_ulogic;
+  signal dci_ndmrstn, dci_haltreq : std_ulogic;
 
   -- bus: core complex (CPU + caches) and DMA --
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req, main_req, main2_req, dma_req : bus_req_t;
@@ -330,9 +347,9 @@ begin
     -- show SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
-      cond_sel_string_f(MEM_INT_IMEM_EN,           "IMEM ",       "") &
+      cond_sel_string_f(MEM_INT_IMEM_EN,           cond_sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
       cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",       "") &
-      cond_sel_string_f(INT_BOOTLOADER_EN,         "BOOTROM ",    "") &
+      cond_sel_string_f(bootrom_en_c,              "BOOTROM ",    "") &
       cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",    "") &
       cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",    "") &
       cond_sel_string_f(XBUS_EN,                   "XBUS ",       "") &
@@ -358,7 +375,7 @@ begin
       cond_sel_string_f(IO_SLINK_EN,               "SLINK ",      "") &
       cond_sel_string_f(IO_CRC_EN,                 "CRC ",        "") &
       cond_sel_string_f(io_sysinfo_en_c,           "SYSINFO ",    "") &
-      cond_sel_string_f(ON_CHIP_DEBUGGER_EN,       "OCD ",        "") &
+      cond_sel_string_f(OCD_EN,                    cond_sel_string_f(OCD_AUTHENTICATION, "OCD-AUTH ", "OCD "), "") &
       ""
       severity note;
 
@@ -373,6 +390,19 @@ begin
     -- SYSINFO disabled --
     assert not (io_sysinfo_en_c = false) report
       "[NEORV32] SYSINFO module disabled - some parts of the NEORV32 software framework will no longer work!" severity warning;
+
+    -- Clock speed not defined --
+    assert not (CLOCK_FREQUENCY = 0) report
+      "[NEORV32] CLOCK_FREQUENCY must be configured according to the frequency of clk_i port!" severity warning;
+
+    -- Boot configuration notifier --
+    assert not (BOOT_MODE_SELECT = 0) report "[NEORV32] BOOT_MODE_SELECT = 0: booting via bootloader" severity note;
+    assert not (BOOT_MODE_SELECT = 1) report "[NEORV32] BOOT_MODE_SELECT = 1: booting from custom address" severity note;
+    assert not (BOOT_MODE_SELECT = 2) report "[NEORV32] BOOT_MODE_SELECT = 2: booting IMEM image" severity note;
+
+    -- Boot configuration: boot from initialized IMEM requires the IMEM to be enabled --
+    assert not ((BOOT_MODE_SELECT = 2) and (MEM_INT_IMEM_EN = false)) report
+      "[NEORV32] BOOT_MODE_SELECT = 2 (boot IMEM image) requires the internal instruction memory (IMEM) to be enabled!" severity error;
 
   end generate; -- /sanity_checks
 
@@ -453,11 +483,11 @@ begin
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
       -- RISC-V ISA Extensions --
-      RISCV_ISA_A         => RISCV_ISA_A,
       RISCV_ISA_C         => RISCV_ISA_C,
       RISCV_ISA_E         => RISCV_ISA_E,
       RISCV_ISA_M         => RISCV_ISA_M,
       RISCV_ISA_U         => RISCV_ISA_U,
+      RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
       RISCV_ISA_Zba       => RISCV_ISA_Zba,
       RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
       RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
@@ -475,8 +505,8 @@ begin
       RISCV_ISA_Zksh      => RISCV_ISA_Zksh,
       RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
       RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
-      RISCV_ISA_Sdext     => ON_CHIP_DEBUGGER_EN,
-      RISCV_ISA_Sdtrig    => ON_CHIP_DEBUGGER_EN,
+      RISCV_ISA_Sdext     => OCD_EN,
+      RISCV_ISA_Sdtrig    => OCD_EN,
       RISCV_ISA_Smpmp     => cpu_smpmp_c,
       -- Tuning Options --
       FAST_MUL_EN         => FAST_MUL_EN,
@@ -494,7 +524,7 @@ begin
     port map (
       -- global control --
       clk_i      => clk_cpu, -- switchable clock
-      clk_aux_i  => clk_i,
+      clk_aux_i  => clk_i,   -- always-on clock
       rstn_i     => rstn_sys,
       sleep_o    => cpu_sleep,
       debug_o    => cpu_debug,
@@ -503,7 +533,7 @@ begin
       mei_i      => mext_irq_i,
       mti_i      => mtime_irq,
       firq_i     => cpu_firq,
-      dbi_i      => dci_halt_req,
+      dbi_i      => dci_haltreq,
       -- instruction bus interface --
       ibus_req_o => cpu_i_req,
       ibus_rsp_i => cpu_i_rsp,
@@ -539,7 +569,7 @@ begin
       generic map (
         NUM_BLOCKS => ICACHE_NUM_BLOCKS,
         BLOCK_SIZE => ICACHE_BLOCK_SIZE,
-        UC_BEGIN   => uncached_begin_c(31 downto 28),
+        UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
         UC_ENABLE  => true,
         READ_ONLY  => true
       )
@@ -568,7 +598,7 @@ begin
       generic map (
         NUM_BLOCKS => DCACHE_NUM_BLOCKS,
         BLOCK_SIZE => DCACHE_BLOCK_SIZE,
-        UC_BEGIN   => uncached_begin_c(31 downto 28),
+        UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
         UC_ENABLE  => true,
         READ_ONLY  => false
       )
@@ -666,7 +696,7 @@ begin
   -- Reservation Set Controller (for atomic LR/SC accesses)
   -- **************************************************************************************************************************
   neorv32_bus_reservation_set_true:
-  if RISCV_ISA_A generate
+  if RISCV_ISA_Zalrsc generate
     neorv32_bus_reservation_set_inst: entity neorv32.neorv32_bus_reservation_set
     port map (
       clk_i       => clk_i,
@@ -682,7 +712,7 @@ begin
   end generate;
 
   neorv32_bus_reservation_set_false:
-  if not RISCV_ISA_A generate
+  if not RISCV_ISA_Zalrsc generate
     main2_req <= main_req;
     main_rsp  <= main2_rsp;
   end generate;
@@ -713,7 +743,7 @@ begin
     C_TMO_EN => false, -- no timeout for XIP accesses
     C_PRIV   => false,
     -- port D: BOOT ROM --
-    D_ENABLE => INT_BOOTLOADER_EN,
+    D_ENABLE => bootrom_en_c,
     D_BASE   => mem_boot_base_c,
     D_SIZE   => mem_boot_size_c,
     D_TMO_EN => true,
@@ -764,8 +794,8 @@ begin
     if MEM_INT_IMEM_EN generate
       neorv32_int_imem_inst: entity neorv32.neorv32_imem
       generic map (
-        IMEM_SIZE    => imem_size_c,
-        IMEM_AS_IROM => imem_as_rom_c
+        IMEM_SIZE => imem_size_c,
+        IMEM_INIT => imem_as_rom_c
       )
       port map (
         clk_i     => clk_i,
@@ -806,7 +836,7 @@ begin
     -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_boot_rom_inst_true:
-    if INT_BOOTLOADER_EN generate
+    if bootrom_en_c generate
       neorv32_boot_rom_inst: entity neorv32.neorv32_boot_rom
       port map (
         clk_i     => clk_i,
@@ -817,7 +847,7 @@ begin
     end generate;
 
     neorv32_boot_rom_inst_false:
-    if not INT_BOOTLOADER_EN generate
+    if not bootrom_en_c generate
       boot_rsp <= rsp_terminate_c;
     end generate;
 
@@ -923,7 +953,7 @@ begin
         generic map (
           NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
           BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
-          UC_BEGIN   => uncached_begin_c(31 downto 28),
+          UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
           UC_ENABLE  => true,
           READ_ONLY  => false
         )
@@ -971,38 +1001,38 @@ begin
     neorv32_bus_io_switch_inst: entity neorv32.neorv32_bus_io_switch
     generic map (
       DEV_SIZE  => iodev_size_c, -- size of a single IO device
-      DEV_00_EN => ON_CHIP_DEBUGGER_EN, DEV_00_BASE => base_io_dm_c,
-      DEV_01_EN => io_sysinfo_en_c,     DEV_01_BASE => base_io_sysinfo_c,
-      DEV_02_EN => IO_NEOLED_EN,        DEV_02_BASE => base_io_neoled_c,
-      DEV_03_EN => io_gpio_en_c,        DEV_03_BASE => base_io_gpio_c,
-      DEV_04_EN => IO_WDT_EN,           DEV_04_BASE => base_io_wdt_c,
-      DEV_05_EN => IO_TRNG_EN,          DEV_05_BASE => base_io_trng_c,
-      DEV_06_EN => IO_TWI_EN,           DEV_06_BASE => base_io_twi_c,
-      DEV_07_EN => IO_SPI_EN,           DEV_07_BASE => base_io_spi_c,
-      DEV_08_EN => IO_SDI_EN,           DEV_08_BASE => base_io_sdi_c,
-      DEV_09_EN => IO_UART1_EN,         DEV_09_BASE => base_io_uart1_c,
-      DEV_10_EN => IO_UART0_EN,         DEV_10_BASE => base_io_uart0_c,
-      DEV_11_EN => IO_MTIME_EN,         DEV_11_BASE => base_io_mtime_c,
-      DEV_12_EN => io_xirq_en_c,        DEV_12_BASE => base_io_xirq_c,
-      DEV_13_EN => IO_ONEWIRE_EN,       DEV_13_BASE => base_io_onewire_c,
-      DEV_14_EN => IO_GPTMR_EN,         DEV_14_BASE => base_io_gptmr_c,
-      DEV_15_EN => io_pwm_en_c,         DEV_15_BASE => base_io_pwm_c,
-      DEV_16_EN => XIP_EN,              DEV_16_BASE => base_io_xip_c,
-      DEV_17_EN => IO_CRC_EN,           DEV_17_BASE => base_io_crc_c,
-      DEV_18_EN => IO_DMA_EN,           DEV_18_BASE => base_io_dma_c,
-      DEV_19_EN => IO_SLINK_EN,         DEV_19_BASE => base_io_slink_c,
-      DEV_20_EN => IO_CFS_EN,           DEV_20_BASE => base_io_cfs_c,
-      DEV_21_EN => false,               DEV_31_BASE => (others => '0'), -- reserved
-      DEV_22_EN => false,               DEV_30_BASE => (others => '0'), -- reserved
-      DEV_23_EN => false,               DEV_29_BASE => (others => '0'), -- reserved
-      DEV_24_EN => false,               DEV_28_BASE => (others => '0'), -- reserved
-      DEV_25_EN => false,               DEV_27_BASE => (others => '0'), -- reserved
-      DEV_26_EN => false,               DEV_26_BASE => (others => '0'), -- reserved
-      DEV_27_EN => false,               DEV_25_BASE => (others => '0'), -- reserved
-      DEV_28_EN => false,               DEV_24_BASE => (others => '0'), -- reserved
-      DEV_29_EN => false,               DEV_23_BASE => (others => '0'), -- reserved
-      DEV_30_EN => false,               DEV_22_BASE => (others => '0'), -- reserved
-      DEV_31_EN => false,               DEV_21_BASE => (others => '0')  -- reserved
+      DEV_00_EN => OCD_EN,          DEV_00_BASE => base_io_dm_c,
+      DEV_01_EN => io_sysinfo_en_c, DEV_01_BASE => base_io_sysinfo_c,
+      DEV_02_EN => IO_NEOLED_EN,    DEV_02_BASE => base_io_neoled_c,
+      DEV_03_EN => io_gpio_en_c,    DEV_03_BASE => base_io_gpio_c,
+      DEV_04_EN => IO_WDT_EN,       DEV_04_BASE => base_io_wdt_c,
+      DEV_05_EN => IO_TRNG_EN,      DEV_05_BASE => base_io_trng_c,
+      DEV_06_EN => IO_TWI_EN,       DEV_06_BASE => base_io_twi_c,
+      DEV_07_EN => IO_SPI_EN,       DEV_07_BASE => base_io_spi_c,
+      DEV_08_EN => IO_SDI_EN,       DEV_08_BASE => base_io_sdi_c,
+      DEV_09_EN => IO_UART1_EN,     DEV_09_BASE => base_io_uart1_c,
+      DEV_10_EN => IO_UART0_EN,     DEV_10_BASE => base_io_uart0_c,
+      DEV_11_EN => IO_MTIME_EN,     DEV_11_BASE => base_io_mtime_c,
+      DEV_12_EN => io_xirq_en_c,    DEV_12_BASE => base_io_xirq_c,
+      DEV_13_EN => IO_ONEWIRE_EN,   DEV_13_BASE => base_io_onewire_c,
+      DEV_14_EN => IO_GPTMR_EN,     DEV_14_BASE => base_io_gptmr_c,
+      DEV_15_EN => io_pwm_en_c,     DEV_15_BASE => base_io_pwm_c,
+      DEV_16_EN => XIP_EN,          DEV_16_BASE => base_io_xip_c,
+      DEV_17_EN => IO_CRC_EN,       DEV_17_BASE => base_io_crc_c,
+      DEV_18_EN => IO_DMA_EN,       DEV_18_BASE => base_io_dma_c,
+      DEV_19_EN => IO_SLINK_EN,     DEV_19_BASE => base_io_slink_c,
+      DEV_20_EN => IO_CFS_EN,       DEV_20_BASE => base_io_cfs_c,
+      DEV_21_EN => false,           DEV_31_BASE => (others => '0'), -- reserved
+      DEV_22_EN => false,           DEV_30_BASE => (others => '0'), -- reserved
+      DEV_23_EN => false,           DEV_29_BASE => (others => '0'), -- reserved
+      DEV_24_EN => false,           DEV_28_BASE => (others => '0'), -- reserved
+      DEV_25_EN => false,           DEV_27_BASE => (others => '0'), -- reserved
+      DEV_26_EN => false,           DEV_26_BASE => (others => '0'), -- reserved
+      DEV_27_EN => false,           DEV_25_BASE => (others => '0'), -- reserved
+      DEV_28_EN => false,           DEV_24_BASE => (others => '0'), -- reserved
+      DEV_29_EN => false,           DEV_23_BASE => (others => '0'), -- reserved
+      DEV_30_EN => false,           DEV_22_BASE => (others => '0'), -- reserved
+      DEV_31_EN => false,           DEV_21_BASE => (others => '0')  -- reserved
     )
     port map (
       clk_i        => clk_i,
@@ -1187,7 +1217,8 @@ begin
     if IO_UART0_EN generate
       neorv32_uart0_inst: entity neorv32.neorv32_uart
       generic map (
-        SIM_LOG_FILE => "neorv32.uart0.sim_mode.text.out",
+        SIM_MODE_EN  => true,
+        SIM_LOG_FILE => "neorv32.uart0_sim_mode.out",
         UART_RX_FIFO => IO_UART0_RX_FIFO,
         UART_TX_FIFO => IO_UART0_TX_FIFO
       )
@@ -1224,7 +1255,8 @@ begin
     if IO_UART1_EN generate
       neorv32_uart1_inst: entity neorv32.neorv32_uart
       generic map (
-        SIM_LOG_FILE => "neorv32.uart1.sim_mode.text.out",
+        SIM_MODE_EN  => true,
+        SIM_LOG_FILE => "neorv32.uart1_sim_mode.out",
         UART_RX_FIFO => IO_UART1_RX_FIFO,
         UART_TX_FIFO => IO_UART1_TX_FIFO
       )
@@ -1547,8 +1579,10 @@ begin
       generic map (
         CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
         CLOCK_GATING_EN       => CLOCK_GATING_EN,
-        INT_BOOTLOADER_EN     => INT_BOOTLOADER_EN,
+        BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
+        INT_BOOTLOADER_EN     => bootrom_en_c,
         MEM_INT_IMEM_EN       => MEM_INT_IMEM_EN,
+        MEM_INT_IMEM_ROM      => imem_as_rom_c,
         MEM_INT_IMEM_SIZE     => imem_size_c,
         MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
         MEM_INT_DMEM_SIZE     => dmem_size_c,
@@ -1566,7 +1600,8 @@ begin
         XIP_CACHE_EN          => XIP_CACHE_EN,
         XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
         XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
-        ON_CHIP_DEBUGGER_EN   => ON_CHIP_DEBUGGER_EN,
+        OCD_EN                => OCD_EN,
+        OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
         IO_GPIO_EN            => io_gpio_en_c,
         IO_MTIME_EN           => IO_MTIME_EN,
         IO_UART0_EN           => IO_UART0_EN,
@@ -1607,7 +1642,7 @@ begin
   -- On-Chip Debugger Complex
   -- **************************************************************************************************************************
   neorv32_ocd_inst_true:
-  if ON_CHIP_DEBUGGER_EN generate
+  if OCD_EN generate
 
     -- On-Chip Debugger - Debug Transport Module (DTM) ----------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1633,7 +1668,7 @@ begin
     neorv32_debug_dm_inst: entity neorv32.neorv32_debug_dm
     generic map (
       CPU_BASE_ADDR => base_io_dm_c,
-      LEGACY_MODE   => DM_LEGACY_MODE
+      AUTHENTICATOR => OCD_AUTHENTICATION
     )
     port map (
       clk_i          => clk_i,
@@ -1644,17 +1679,17 @@ begin
       bus_req_i      => iodev_req(IODEV_OCD),
       bus_rsp_o      => iodev_rsp(IODEV_OCD),
       cpu_ndmrstn_o  => dci_ndmrstn,
-      cpu_halt_req_o => dci_halt_req
+      cpu_halt_req_o => dci_haltreq
     );
 
   end generate;
 
   neorv32_debug_ocd_inst_false:
-  if not ON_CHIP_DEBUGGER_EN generate
+  if not OCD_EN generate
     iodev_rsp(IODEV_OCD) <= rsp_terminate_c;
     jtag_tdo_o           <= jtag_tdi_i; -- JTAG pass-through
     dci_ndmrstn          <= '1';
-    dci_halt_req         <= '0';
+    dci_haltreq          <= '0';
   end generate;
 
 

@@ -65,6 +65,7 @@ begin
     end if;
   end process mem_addr_reg;
 
+  -- address output --
   dbus_req_o.addr <= mar; -- bus address
   mar_o           <= mar; -- for MTVAL CSR
 
@@ -108,7 +109,7 @@ begin
   dbus_req_o.fence <= ctrl_i.lsu_fence; -- this is valid without STB being set
 
 
-  -- Data Input Alignment and Sign-Extension ------------------------------------------------
+  -- Data Input: Alignment and Sign-Extension -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   mem_di_reg: process(rstn_i, clk_i)
   begin
