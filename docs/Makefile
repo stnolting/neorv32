@@ -3,16 +3,23 @@
 PUBLIC_DIR = public
 PUBLIC_IMG_DIR = $(PUBLIC_DIR)/img
 
+DOXYGEN_IMG_DIR = doxygen_build/html/docs/figures
+
 all: pdf html ug-pdf ug-html
 
 # Public folder
 $(PUBLIC_DIR):
 	@mkdir -p $(PUBLIC_DIR)
 
-# Copy images
+# Copy images for datasheet and ug html
 $(PUBLIC_IMG_DIR): $(PUBLIC_DIR)
-	@mkdir -p $(PUBLIC_IMG_DIR)
-	cp -vr figures/* public/img/
+	@mkdir -p $@
+	cp -vr figures/* $@
+
+# Copy images for doxygen
+$(DOXYGEN_IMG_DIR):
+	@mkdir -p $@
+	cp -vr figures/* $@
 
 # Generate PDF datasheet
 pdf: $(PUBLIC_DIR)
@@ -51,7 +58,7 @@ ug-html: $(PUBLIC_IMG_DIR) $(PUBLIC_DIR)
 	  --out-file $(PUBLIC_DIR)/ug/index.html
 
 # Generate DOXYGEN software documentation
-doxygen:
+doxygen: $(DOXYGEN_IMG_DIR)
 	doxygen Doxyfile
 
 # Generate revnumber.txt for overriding the revnumber attribute in 'pdf' and/or 'html'
@@ -68,7 +75,7 @@ clean:
 	@rm -rf $(PUBLIC_IMG_DIR)
 	@rm -rf $(PUBLIC_DIR)
 	@rm -rf doxygen_build
-	@rm revnumber.txt
+	@rm -f revnumber.txt
 
 # Help
 help:
