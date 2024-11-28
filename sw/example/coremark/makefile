@@ -23,8 +23,8 @@ USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=8k
 #USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=1k
 
 # Additional sources
-#APP_SRC += $(wildcard ./*.c)
-#APP_INC += -I .
+APP_SRC += $(wildcard source/*.c)
+APP_INC += -I include
 
 # Set path to NEORV32 root directory
 NEORV32_HOME ?= ../../..
