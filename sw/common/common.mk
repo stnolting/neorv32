@@ -195,7 +195,7 @@ $(APP_ASM): $(APP_ELF)
 	@$(OBJDUMP) -d -S -z $< > $@
 
 # Generate final executable from .text + .rodata + .data (in THIS order!)
-$(BIN_MAIN): $(APP_ELF)
+$(BIN_MAIN): $(APP_ELF) | $(BUILD_DIR)
 	@$(OBJCOPY) -I elf32-little $< -j .text   -O binary text.bin
 	@$(OBJCOPY) -I elf32-little $< -j .rodata -O binary rodata.bin
 	@$(OBJCOPY) -I elf32-little $< -j .data   -O binary data.bin
