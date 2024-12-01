@@ -406,7 +406,7 @@ help:
 	@echo "  elf_info     - show ELF layout info"
 	@echo "  elf_sections - show ELF sections"
 	@echo "  clean        - clean up project home folder"
-	@echo "  clean_all    - clean up whole project, core libraries and image generator"
+	@echo "  clean_all    - clean up project home folder and image generator"
 	@echo "  bl_image     - compile and generate VHDL BOOTROM bootloader boot image <$(BOOT_VHD)> in local folder"
 	@echo "  bootloader   - compile, generate and install VHDL BOOTROM bootloader boot image <$(BOOT_VHD)>"
 	@echo ""
