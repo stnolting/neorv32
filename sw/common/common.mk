@@ -22,6 +22,9 @@ APP_INC ?= -I .
 # User's application include folders - for assembly files only (don't forget the '-I' before each entry)
 ASM_INC ?= -I .
 
+# Build folder for output
+BUILD_DIR ?= build
+
 # Optimization
 EFFORT ?= -Os
 
@@ -82,12 +85,22 @@ APP_ASM  = main.asm
 APP_VHD  = neorv32_application_image.vhd
 BOOT_VHD = neorv32_bootloader_image.vhd
 
+# Binary main file
+BIN_MAIN = $(BUILD_DIR)/main.bin
+
 # Define all sources
 SRC  = $(APP_SRC)
 SRC += $(CORE_SRC)
 
+# Define search path for prerequesites
+VPATH = $(sort $(dir $(SRC)))
+
+# Create the build directories if they don't exist
+$(BUILD_DIR):
+	@mkdir -p $(BUILD_DIR)
+
 # Define all object files
-OBJ = $(SRC:%=%.o)
+OBJ := $(patsubst %,$(BUILD_DIR)/%.o,$(notdir $(SRC)))
 
 # -----------------------------------------------------------------------------
 # Tools and flags
@@ -156,20 +169,20 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 # General targets: Assemble, compile, link, dump
 # -----------------------------------------------------------------------------
 # Compile app *.s sources (assembly)
-%.s.o: %.s
-	@$(CC) -c $(NEO_ASFLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $^ -o $@
+$(BUILD_DIR)/%.s.o: %.s | $(BUILD_DIR)
+	@$(CC) -c $(NEO_ASFLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
 
 # Compile app *.S sources (assembly + C pre-processor)
-%.S.o: %.S
-	@$(CC) -c $(NEO_ASFLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $^ -o $@
+$(BUILD_DIR)/%.S.o: %.S | $(BUILD_DIR)
+	@$(CC) -c $(NEO_ASFLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
 
 # Compile app *.c sources
-%.c.o: %.c
-	@$(CC) -c $(NEO_CFLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $^ -o $@
+$(BUILD_DIR)/%.c.o: %.c | $(BUILD_DIR)
+	@$(CC) -c $(NEO_CFLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Compile app *.cpp sources
-%.cpp.o: %.cpp
-	@$(CC) -c $(NEO_CXXFLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $^ -o $@
+$(BUILD_DIR)/%.cpp.o: %.cpp | $(BUILD_DIR)
+	@$(CC) -c $(NEO_CXXFLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Link object files and show memory utilization
 $(APP_ELF): $(OBJ)
@@ -182,7 +195,7 @@ $(APP_ASM): $(APP_ELF)
 	@$(OBJDUMP) -d -S -z $< > $@
 
 # Generate final executable from .text + .rodata + .data (in THIS order!)
-main.bin: $(APP_ELF)
+$(BIN_MAIN): $(APP_ELF) | $(BUILD_DIR)
 	@$(OBJCOPY) -I elf32-little $< -j .text   -O binary text.bin
 	@$(OBJCOPY) -I elf32-little $< -j .rodata -O binary rodata.bin
 	@$(OBJCOPY) -I elf32-little $< -j .data   -O binary data.bin
@@ -193,7 +206,7 @@ main.bin: $(APP_ELF)
 # Application targets: Generate executable formats
 # -----------------------------------------------------------------------------
 # Generate NEORV32 executable image for upload via bootloader
-$(APP_EXE): main.bin $(IMAGE_GEN)
+$(APP_EXE): $(BIN_MAIN) $(IMAGE_GEN)
 	@set -e
 	@echo "Generating $(APP_EXE)"
 	@$(IMAGE_GEN) -app_bin $< $@ $(shell basename $(CURDIR))
@@ -201,7 +214,7 @@ $(APP_EXE): main.bin $(IMAGE_GEN)
 	@wc -c < $(APP_EXE)
 
 # Generate NEORV32 executable VHDL boot image
-$(APP_VHD): main.bin $(IMAGE_GEN)
+$(APP_VHD): $(BIN_MAIN) $(IMAGE_GEN)
 	@set -e
 	@echo "Generating $(APP_VHD)"
 	@$(IMAGE_GEN) -app_vhd $< $@ $(shell basename $(CURDIR))
@@ -213,31 +226,31 @@ install-$(APP_VHD): $(APP_VHD)
 	@cp $(APP_VHD) $(NEORV32_RTL_PATH)/core/.
 
 # Generate NEORV32 RAW executable image in plain hex format
-$(APP_HEX): main.bin $(IMAGE_GEN)
+$(APP_HEX): $(BIN_MAIN) $(IMAGE_GEN)
 	@set -e
 	@echo "Generating $(APP_HEX)"
 	@$(IMAGE_GEN) -raw_hex $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in binary format
-$(APP_BIN): main.bin $(IMAGE_GEN)
+$(APP_BIN): $(BIN_MAIN) $(IMAGE_GEN)
 	@set -e
 	@echo "Generating $(APP_BIN)"
 	@$(IMAGE_GEN) -raw_bin $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in COE format
-$(APP_COE): main.bin $(IMAGE_GEN)
+$(APP_COE): $(BIN_MAIN) $(IMAGE_GEN)
 	@set -e
 	@echo "Generating $(APP_COE)"
 	@$(IMAGE_GEN) -raw_coe $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in MIF format
-$(APP_MIF): main.bin $(IMAGE_GEN)
+$(APP_MIF): $(BIN_MAIN) $(IMAGE_GEN)
 	@set -e
 	@echo "Generating $(APP_MIF)"
 	@$(IMAGE_GEN) -raw_mif $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in MEM format
-$(APP_MEM): main.bin $(IMAGE_GEN)
+$(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
 	@set -e
 	@echo "Generating $(APP_MEM)"
 	@$(IMAGE_GEN) -raw_mem $< $@ $(shell basename $(CURDIR))
@@ -246,7 +259,7 @@ $(APP_MEM): main.bin $(IMAGE_GEN)
 # BOOTROM / booloader image targets
 # -----------------------------------------------------------------------------
 # Create local VHDL BOOTROM image
-bl_image: main.bin $(IMAGE_GEN)
+bl_image: $(BIN_MAIN) $(IMAGE_GEN)
 	@set -e
 	@echo "Generating $(BOOT_VHD)"
 	@$(IMAGE_GEN) -bld_vhd $< $(BOOT_VHD) $(shell basename $(CURDIR))
@@ -318,10 +331,12 @@ gdb: $(APP_ELF)
 # Clean up
 # -----------------------------------------------------------------------------
 clean:
-	@rm -f *.elf *.o *.bin *.coe *.mem *.mif *.out *.asm *.vhd *.hex .gdb_history
+	@rm -rf $(BUILD_DIR)
+	@rm -f $(APP_EXE) $(APP_ELF) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BOOT_VHD)
+	@rm -f .gdb_history
 
 clean_all: clean
-	@rm -f $(OBJ) $(IMAGE_GEN)
+	@rm -f $(IMAGE_GEN)
 
 # -----------------------------------------------------------------------------
 # Show configuration
@@ -340,6 +355,8 @@ info:
 	@echo "$(CORE_SRC)"
 	@echo "Core include folder:"
 	@echo "$(NEORV32_INC_PATH)"
+	@echo "Search path (VPATH)"
+	@echo "$(VPATH)"
 	@echo "Project object files:"
 	@echo "$(OBJ)"
 	@echo "LIBGCC:"
@@ -389,7 +406,7 @@ help:
 	@echo "  elf_info     - show ELF layout info"
 	@echo "  elf_sections - show ELF sections"
 	@echo "  clean        - clean up project home folder"
-	@echo "  clean_all    - clean up whole project, core libraries and image generator"
+	@echo "  clean_all    - clean up project home folder and image generator"
 	@echo "  bl_image     - compile and generate VHDL BOOTROM bootloader boot image <$(BOOT_VHD)> in local folder"
 	@echo "  bootloader   - compile, generate and install VHDL BOOTROM bootloader boot image <$(BOOT_VHD)>"
 	@echo ""
