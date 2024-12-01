@@ -89,6 +89,7 @@ int main() {
                           " start - generate (repeated) START condition\n"
                           " stop  - generate STOP condition\n"
                           " send  - write/read single byte to/from bus\n"
+                          " sense - show current SCL and SDA bus levels\n"
                           "Start a new transmission by generating a START condition. Next, transfer the 7-bit device address\n"
                           "and the R/W flag. After that, transfer your data to be written or send a 0xFF if you want to read\n"
                           "data from the bus. Finish the transmission by generating a STOP condition.\n");
@@ -109,6 +110,10 @@ int main() {
     }
     else if (!strcmp(buffer, "send")) {
       send_twi();
+    }
+    else if (!strcmp(buffer, "sense")) {
+      neorv32_uart0_printf(" SCL: %u\n", neorv32_twi_sense_scl());
+      neorv32_uart0_printf(" SDA: %u\n", neorv32_twi_sense_sda());
     }
     else {
       neorv32_uart0_printf("Invalid command. Type 'help' to see all commands.\n");
@@ -168,6 +173,14 @@ void set_clock(void) {
   // print new clock frequency
   uint32_t clock = neorv32_sysinfo_get_clk() / (4 * PRSC_LUT[prsc] * (1 + cdiv));
   neorv32_uart0_printf("\nNew I2C clock: %u Hz\n", clock);
+
+  // check if bus lines are OK
+  if (neorv32_twi_sense_scl() != 1) {
+    neorv32_uart0_printf("WARNING! SCL bus line is not idle-high! Pull-up missing?\n");
+  }
+  if (neorv32_twi_sense_sda() != 1) {
+    neorv32_uart0_printf("WARNING! SDA bus line is not idle-high! Pull-up missing?\n");
+  }
 }
 
 

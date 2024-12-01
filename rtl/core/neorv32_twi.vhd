@@ -47,6 +47,8 @@ architecture neorv32_twi_rtl of neorv32_twi is
   constant ctrl_fifo_size0_c : natural := 15; -- r/-: log2(fifo size), bit 0 (lsb)
   constant ctrl_fifo_size3_c : natural := 18; -- r/-: log2(fifo size), bit 3 (msb)
   --
+  constant ctrl_sense_scl_c  : natural := 27; -- r/-: current state of the SCL bus line
+  constant ctrl_sense_sda_c  : natural := 28; -- r/-: current state of the SDA bus line
   constant ctrl_tx_full_c    : natural := 29; -- r/-: TX FIFO full
   constant ctrl_rx_avail_c   : natural := 30; -- r/-: RX FIFO data available
   constant ctrl_busy_c       : natural := 31; -- r/-: Set if TWI unit is busy
@@ -142,9 +144,11 @@ begin
             --
             bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_TWI_FIFO), 4));
             --
-            bus_rsp_o.data(ctrl_tx_full_c)  <= not fifo.tx_free;
-            bus_rsp_o.data(ctrl_rx_avail_c) <= fifo.rx_avail;
-            bus_rsp_o.data(ctrl_busy_c)     <= engine.busy or fifo.tx_avail; -- bus engine busy or TX FIFO not empty
+            bus_rsp_o.data(ctrl_sense_scl_c) <= io_con.scl_in_ff(1);
+            bus_rsp_o.data(ctrl_sense_sda_c) <= io_con.sda_in_ff(1);
+            bus_rsp_o.data(ctrl_tx_full_c)   <= not fifo.tx_free;
+            bus_rsp_o.data(ctrl_rx_avail_c)  <= fifo.rx_avail;
+            bus_rsp_o.data(ctrl_busy_c)      <= engine.busy or fifo.tx_avail; -- bus engine busy or TX FIFO not empty
           else -- RX FIFO
             bus_rsp_o.data(8 downto 0) <= fifo.rx_rdata; -- ACK + data
           end if;
@@ -378,7 +382,7 @@ begin
             engine.state(1 downto 0) <= "00"; -- go back to IDLE
           end if;
 
-        when others => -- "0---" OFFLINE: TWI deactivated, bus unclaimed
+        when others => -- "0--" OFFLINE: TWI deactivated, bus unclaimed
         -- ------------------------------------------------------------
           io_con.scl_out           <= '1'; -- SCL driven by pull-up resistor
           io_con.sda_out           <= '1'; -- SDA driven by pull-up resistor

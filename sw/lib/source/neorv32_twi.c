@@ -85,7 +85,39 @@ void neorv32_twi_enable(void) {
 
 
 /**********************************************************************//**
- * Check if TWI is busy (TWI bus engine busy or TX FIFO not empty).
+ * Get current state of SCL bus line.
+ *
+ * @return 1 if SCL is high, 0 if SCL is low.
+ **************************************************************************/
+int neorv32_twi_sense_scl(void) {
+
+  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_SENSE_SCL)) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
+
+/**********************************************************************//**
+ * Get current state of SDA bus line.
+ *
+ * @return 1 if SDA is high, 0 if SDA is low.
+ **************************************************************************/
+int neorv32_twi_sense_sda(void) {
+
+  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_SENSE_SDA)) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
+
+/**********************************************************************//**
+ * Check if TWI controller is busy (TWI bus engine busy or TX FIFO not empty).
  *
  * @return 0 if idle, 1 if busy
  **************************************************************************/
