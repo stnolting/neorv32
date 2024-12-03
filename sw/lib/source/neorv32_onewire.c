@@ -35,6 +35,18 @@ int neorv32_onewire_available(void) {
 
 
 /**********************************************************************//**
+ * Get ONEWIRE FIFO depth.
+ *
+ * @return FIFO depth (number of entries), zero if no FIFO implemented
+ **************************************************************************/
+int neorv32_onewire_get_fifo_depth(void) {
+
+  uint32_t tmp = (NEORV32_ONEWIRE->CTRL >> ONEWIRE_CTRL_FIFO_LSB) & 0x0f;
+  return (int)(1 << tmp);
+}
+
+
+/**********************************************************************//**
  * Reset, configure and enable ONEWIRE interface controller.
  *
  * @param[in] t_base Base tick time in ns.
@@ -46,7 +58,6 @@ int neorv32_onewire_setup(uint32_t t_base) {
 
   // reset
   NEORV32_ONEWIRE->CTRL = 0;
-  NEORV32_ONEWIRE->DATA = 0;
 
   uint32_t t_tick;
   uint32_t clkdiv;
@@ -100,6 +111,15 @@ void neorv32_onewire_disable(void) {
 
 
 /**********************************************************************//**
+ * Clear RTX FIFO.
+ **************************************************************************/
+void neorv32_onewire_flush(void) {
+
+  NEORV32_ONEWIRE->CTRL &= ~(1 << ONEWIRE_CTRL_CLEAR);
+}
+
+
+/**********************************************************************//**
  * Get current bus state.
  *
  * @return 1 if bus is high, 0 if bus is low.
@@ -114,16 +134,8 @@ int neorv32_onewire_sense(void) {
   }
 }
 
-
-// ----------------------------------------------------------------------------------------------------------------------------
-// NON-BLOCKING functions
-// ----------------------------------------------------------------------------------------------------------------------------
-
-
 /**********************************************************************//**
  * Check if ONEWIRE module is busy.
- *
- * @note This function is non-blocking.
  *
  * @return 0 if not busy, 1 if busy.
  **************************************************************************/
@@ -139,6 +151,11 @@ int neorv32_onewire_busy(void) {
 }
 
 
+// ----------------------------------------------------------------------------------------------------------------------------
+// NON-BLOCKING functions
+// ----------------------------------------------------------------------------------------------------------------------------
+
+
 /**********************************************************************//**
  * Initiate reset pulse.
  *
@@ -147,7 +164,7 @@ int neorv32_onewire_busy(void) {
 void neorv32_onewire_reset(void) {
 
   // trigger reset-pulse operation
-  NEORV32_ONEWIRE->CTRL |= 1 << ONEWIRE_CTRL_TRIG_RST;
+  NEORV32_ONEWIRE->DCMD = ONEWIRE_CMD_RESET << ONEWIRE_DCMD_CMD_LO;
 }
 
 
@@ -161,7 +178,7 @@ void neorv32_onewire_reset(void) {
 int neorv32_onewire_reset_get_presence(void) {
 
   // check presence bit
-  if (NEORV32_ONEWIRE->CTRL & (1 << ONEWIRE_CTRL_PRESENCE)) {
+  if (NEORV32_ONEWIRE->DCMD & (1 << ONEWIRE_DCMD_PRESENCE)) {
     return 0;
   }
   else {
@@ -177,11 +194,8 @@ int neorv32_onewire_reset_get_presence(void) {
  **************************************************************************/
 void neorv32_onewire_read_bit(void) {
 
-  // output all-one
-  NEORV32_ONEWIRE->DATA = 0xff;
-
-  // trigger bit operation
-  NEORV32_ONEWIRE->CTRL |= (1 << ONEWIRE_CTRL_TRIG_BIT);
+  // trigger bit operation with data = all-one
+  NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BIT << ONEWIRE_DCMD_CMD_LO) | (0xff << ONEWIRE_DCMD_DATA_LSB);
 }
 
 
@@ -195,7 +209,7 @@ void neorv32_onewire_read_bit(void) {
 uint8_t neorv32_onewire_read_bit_get(void) {
 
   // return read bit
-  if (NEORV32_ONEWIRE->DATA & (1 << 7)) { // LSB first -> read bit is in MSB
+  if (NEORV32_ONEWIRE->DCMD & (1 << ONEWIRE_DCMD_DATA_MSB)) { // LSB first -> read bit is in MSB
     return 1;
   }
   else {
@@ -213,16 +227,13 @@ uint8_t neorv32_onewire_read_bit_get(void) {
  **************************************************************************/
 void neorv32_onewire_write_bit(uint8_t bit) {
 
-  // set replicated bit
+  // set replicated bit and trigger bit operation
   if (bit) {
-    NEORV32_ONEWIRE->DATA = 0xff;
+    NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BIT << ONEWIRE_DCMD_CMD_LO) | (0xff << ONEWIRE_DCMD_DATA_LSB);
   }
   else {
-    NEORV32_ONEWIRE->DATA = 0x00;
+    NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BIT << ONEWIRE_DCMD_CMD_LO) | (0x00 << ONEWIRE_DCMD_DATA_LSB);
   }
-
-  // trigger bit operation
-  NEORV32_ONEWIRE->CTRL |= (1 << ONEWIRE_CTRL_TRIG_BIT);
 }
 
 
@@ -233,11 +244,8 @@ void neorv32_onewire_write_bit(uint8_t bit) {
  **************************************************************************/
 void neorv32_onewire_read_byte(void) {
 
-  // output all-one
-  NEORV32_ONEWIRE->DATA = 0xff;
-
-  //trigger byte operation
-  NEORV32_ONEWIRE->CTRL |= (1 << ONEWIRE_CTRL_TRIG_BYTE);
+  // output all-one and trigger byte operation
+  NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BYTE << ONEWIRE_DCMD_CMD_LO) | (0xff << ONEWIRE_DCMD_DATA_LSB);
 }
 
 
@@ -251,7 +259,7 @@ void neorv32_onewire_read_byte(void) {
 uint8_t neorv32_onewire_read_byte_get(void) {
 
   // return read bit
-  return (uint8_t)(NEORV32_ONEWIRE->DATA);
+  return (uint8_t)(NEORV32_ONEWIRE->DCMD);
 }
 
 
@@ -264,11 +272,8 @@ uint8_t neorv32_onewire_read_byte_get(void) {
  **************************************************************************/
 void neorv32_onewire_write_byte(uint8_t byte) {
 
-  // TX data
-  NEORV32_ONEWIRE->DATA = (uint32_t)byte;
-
   // and trigger byte operation
-  NEORV32_ONEWIRE->CTRL |= (1 << ONEWIRE_CTRL_TRIG_BYTE);
+  NEORV32_ONEWIRE->DCMD = (ONEWIRE_CMD_BYTE << ONEWIRE_DCMD_CMD_LO) | ((uint32_t)byte << ONEWIRE_DCMD_DATA_LSB);
 }
 
 
@@ -331,6 +336,9 @@ void neorv32_onewire_write_bit_blocking(uint8_t bit) {
 
   // wait for operation to complete
   while (neorv32_onewire_busy());
+
+  // discard received data
+  neorv32_onewire_read_byte_get();
 }
 
 
@@ -368,4 +376,7 @@ void neorv32_onewire_write_byte_blocking(uint8_t byte) {
 
   // wait for operation to complete
   while (neorv32_onewire_busy());
+
+  // discard received data
+  neorv32_onewire_read_byte_get();
 }

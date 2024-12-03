@@ -196,6 +196,7 @@ begin
     IO_NEOLED_TX_FIFO     => 8,
     IO_GPTMR_EN           => true,
     IO_ONEWIRE_EN         => true,
+    IO_ONEWIRE_FIFO       => 8,
     IO_DMA_EN             => true,
     IO_SLINK_EN           => true,
     IO_SLINK_RX_FIFO      => 4,

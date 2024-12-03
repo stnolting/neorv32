@@ -63,13 +63,16 @@ int main() {
   // intro
   neorv32_uart0_printf("\n\n<<< NEORV32 1-Wire Interface (ONEWIRE) Demo Program >>>\n\n");
 
+  // info
+  neorv32_uart0_printf("ONEWIRE FIFO depth: %u entries\n", neorv32_onewire_get_fifo_depth());
+
   // configure ONEWIRE base time
   neorv32_uart0_printf("Configuring ONEWIRE time base...\n");
   uint32_t t_base_ref = 10000; // reference: t_base = 10000ns = 10us
   uint32_t t_base_real = neorv32_onewire_setup(t_base_ref);
   neorv32_uart0_printf("t_base: requested    = %u ns\n"
                        "        actual value = %u ns\n"
-                       "        difference   = %i ns\n\n", t_base_ref, t_base_real, ((int)t_base_ref)-((int)t_base_real));
+                       "        difference   = %i ns\n", t_base_ref, t_base_real, ((int)t_base_ref)-((int)t_base_real));
 
   // check bus state - should be high (pulled-high by the pull-up resistor)
   neorv32_uart0_printf("Checking bus state... ");
@@ -168,7 +171,9 @@ void show_1wire_commands(void) {
                        " 0x33 - Read ROM (for identification)\n"
                        " 0x55 - Match ROM (access specific device)\n"
                        " 0xF0 - Search ROM (for device search algorithm)\n"
-                       " 0xCC - Skip ROM (skip addressing)\n");
+                       " 0xCC - Skip ROM (skip addressing)\n"
+                       " 0xF5 - PIO read access\n"
+                       " 0x5A - PIO write access\n");
 }
 
 

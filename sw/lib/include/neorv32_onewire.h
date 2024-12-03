@@ -28,7 +28,7 @@
 /** ONEWIRE module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL; /**< offset 0: control register (#NEORV32_ONEWIRE_CTRL_enum) */
-  uint32_t DATA; /**< offset 4: transmission data register (#NEORV32_ONEWIRE_DATA_enum) */
+  uint32_t DCMD; /**< offset 4: command and data register (#NEORV32_ONEWIRE_DCMD_enum) */
 } neorv32_onewire_t;
 
 /** ONEWIRE module hardware access (#neorv32_onewire_t) */
@@ -37,30 +37,40 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /** ONEWIRE control register bits */
 enum NEORV32_ONEWIRE_CTRL_enum {
   ONEWIRE_CTRL_EN        =  0, /**< ONEWIRE control register(0)  (r/w): ONEWIRE controller enable */
-  ONEWIRE_CTRL_PRSC0     =  1, /**< ONEWIRE control register(1)  (r/w): Clock prescaler select bit 0 */
-  ONEWIRE_CTRL_PRSC1     =  2, /**< ONEWIRE control register(2)  (r/w): Clock prescaler select bit 1 */
-  ONEWIRE_CTRL_CLKDIV0   =  3, /**< ONEWIRE control register(3)  (r/w): Clock divider bit 0 */
-  ONEWIRE_CTRL_CLKDIV1   =  4, /**< ONEWIRE control register(4)  (r/w): Clock divider bit 1 */
-  ONEWIRE_CTRL_CLKDIV2   =  5, /**< ONEWIRE control register(5)  (r/w): Clock divider bit 2 */
-  ONEWIRE_CTRL_CLKDIV3   =  6, /**< ONEWIRE control register(6)  (r/w): Clock divider bit 3 */
-  ONEWIRE_CTRL_CLKDIV4   =  7, /**< ONEWIRE control register(7)  (r/w): Clock divider bit 4 */
-  ONEWIRE_CTRL_CLKDIV5   =  8, /**< ONEWIRE control register(8)  (r/w): Clock divider bit 5 */
-  ONEWIRE_CTRL_CLKDIV6   =  9, /**< ONEWIRE control register(9)  (r/w): Clock divider bit 6 */
-  ONEWIRE_CTRL_CLKDIV7   = 10, /**< ONEWIRE control register(10) (r/w): Clock divider bit 7 */
-  ONEWIRE_CTRL_TRIG_RST  = 11, /**< ONEWIRE control register(11) (-/w): Trigger reset pulse, auto-clears */
-  ONEWIRE_CTRL_TRIG_BIT  = 12, /**< ONEWIRE control register(12) (-/w): Trigger single-bit transmission, auto-clears */
-  ONEWIRE_CTRL_TRIG_BYTE = 13, /**< ONEWIRE control register(13) (-/w): Trigger full-byte transmission, auto-clears */
+  ONEWIRE_CTRL_CLEAR     =  1, /**< ONEWIRE control register(1)  (-/w): Clear RXT FIFO, auto-clears */
+  ONEWIRE_CTRL_PRSC0     =  2, /**< ONEWIRE control register(2)  (r/w): Clock prescaler select bit 0 */
+  ONEWIRE_CTRL_PRSC1     =  3, /**< ONEWIRE control register(3)  (r/w): Clock prescaler select bit 1 */
+  ONEWIRE_CTRL_CLKDIV0   =  4, /**< ONEWIRE control register(4)  (r/w): Clock divider bit 0 */
+  ONEWIRE_CTRL_CLKDIV7   = 11, /**< ONEWIRE control register(11) (r/w): Clock divider bit 7 */
 
-  ONEWIRE_CTRL_SENSE     = 29, /**< ONEWIRE control register(29) (r/-): Current state of the bus line */
-  ONEWIRE_CTRL_PRESENCE  = 30, /**< ONEWIRE control register(30) (r/-): Bus presence detected */
+  ONEWIRE_CTRL_FIFO_LSB  = 15, /**< ONEWIRE control register(15) (r/-): log2(FIFO size), LSB */
+  ONEWIRE_CTRL_FIFO_MSB  = 18, /**< ONEWIRE control register(18) (r/-): log2(FIFO size), MSB */
+
+  ONEWIRE_CTRL_TX_FULL   = 28, /**< ONEWIRE control register(28) (r/-): TX FIFO full */
+  ONEWIRE_CTRL_RX_AVAIL  = 29, /**< ONEWIRE control register(29) (r/-): RX FIFO data available */
+  ONEWIRE_CTRL_SENSE     = 30, /**< ONEWIRE control register(30) (r/-): Current state of the bus line */
   ONEWIRE_CTRL_BUSY      = 31, /**< ONEWIRE control register(31) (r/-): Operation in progress when set */
 };
 
-/** ONEWIRE receive/transmit data register bits */
-enum NEORV32_ONEWIRE_DATA_enum {
-  ONEWIRE_DATA_LSB = 0, /**< ONEWIRE data register(0) (r/w): Receive/transmit data (8-bit) LSB */
-  ONEWIRE_DATA_MSB = 7  /**< ONEWIRE data register(7) (r/w): Receive/transmit data (8-bit) MSB */
+/** ONEWIRE command and data register bits */
+enum NEORV32_ONEWIRE_DCMD_enum {
+  ONEWIRE_DCMD_DATA_LSB = 0,  /**< ONEWIRE data/data register(0)  (r/w): Receive/transmit data (8-bit) LSB */
+  ONEWIRE_DCMD_DATA_MSB = 7,  /**< ONEWIRE data/data register(7)  (r/w): Receive/transmit data (8-bit) MSB */
+  ONEWIRE_DCMD_CMD_LO   = 8,  /**< ONEWIRE data/data register(8)  (-/w): Operation command LSB */
+  ONEWIRE_DCMD_CMD_HI   = 9,  /**< ONEWIRE data/data register(9)  (-/w): Operation command MSB */
+  ONEWIRE_DCMD_PRESENCE = 10  /**< ONEWIRE data/data register(10) (r/-): Bus presence detected */
 };
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name ONEWIRE DCMD commands
+ **************************************************************************/
+/**@{*/
+#define ONEWIRE_CMD_NOP   (0b00) // no operation
+#define ONEWIRE_CMD_BIT   (0b01) // read/write single bit
+#define ONEWIRE_CMD_BYTE  (0b10) // read/write full byte
+#define ONEWIRE_CMD_RESET (0b11) // generate reset pulse and check for presence
 /**@}*/
 
 
@@ -69,9 +79,11 @@ enum NEORV32_ONEWIRE_DATA_enum {
  **************************************************************************/
 /**@{*/
 int     neorv32_onewire_available(void);
+int     neorv32_onewire_get_fifo_depth(void);
 int     neorv32_onewire_setup(uint32_t t_base);
 void    neorv32_onewire_enable(void);
 void    neorv32_onewire_disable(void);
+void    neorv32_onewire_flush(void);
 int     neorv32_onewire_sense(void);
 
 int     neorv32_onewire_busy(void);
