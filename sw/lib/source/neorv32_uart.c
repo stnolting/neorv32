@@ -20,6 +20,29 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+// Drastically reduces the footprint, when knowing that uart is not synthesized anyway.
+#ifdef UART_DISABLED
+int  neorv32_uart_available(neorv32_uart_t *UARTx) { return 0; }
+int  neorv32_uart_get_rx_fifo_depth(neorv32_uart_t *UARTx) { return 0; }
+int  neorv32_uart_get_tx_fifo_depth(neorv32_uart_t *UARTx) { return 0; }
+void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_mask) {}
+void neorv32_uart_enable(neorv32_uart_t *UARTx) {}
+void neorv32_uart_disable(neorv32_uart_t *UARTx) {}
+void neorv32_uart_rtscts_enable(neorv32_uart_t *UARTx) {}
+void neorv32_uart_rtscts_disable(neorv32_uart_t *UARTx) {}
+void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {}
+void neorv32_uart_rx_clear(neorv32_uart_t *UARTx) {}
+void neorv32_uart_tx_clear(neorv32_uart_t *UARTx) {}
+int  neorv32_uart_tx_busy(neorv32_uart_t *UARTx) { return 0; }
+char neorv32_uart_getc(neorv32_uart_t *UARTx) {return 0; }
+int  neorv32_uart_char_received(neorv32_uart_t *UARTx) { return 0; }
+char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) { return 0; }
+void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {}
+void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list args) {}
+void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {}
+int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int echo) { return 0; }
+#else
+
 
 /**********************************************************************//**
  * Check if UART unit was synthesized.
@@ -433,3 +456,5 @@ int neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ech
 
   return length;
 }
+
+#endif //UART_DISABLED
