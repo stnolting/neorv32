@@ -155,6 +155,12 @@ USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=8k
 # Adjust maximum heap size
 USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=1k
 
+# Reduce library footprint when no UART is synthesized
+#USER_FLAGS += -DUART_DISABLED
+
+# Enable link-time-optimization
+#USER_FLAGS += -flto
+
 # Additional compiler flags (append to this variable)
 #USER_FLAGS += ...
 
