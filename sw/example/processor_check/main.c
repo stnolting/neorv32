@@ -1540,18 +1540,22 @@ int main() {
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_ONEWIRE)) {
     cnt_test++;
 
-    // enable ONEWIRE FIRQ
-    neorv32_cpu_csr_write(CSR_MIE, 1 << ONEWIRE_FIRQ_ENABLE);
-
     // configure interface for minimal timing
     neorv32_onewire_setup(200); // t_base = 200ns
 
-    // read single bit from bus
-    neorv32_onewire_read_bit_blocking();
+    // issue ONEWIRE reset command
+    neorv32_onewire_reset();
+    // fill FIFO with commands
+    tmp_a = (uint32_t)neorv32_onewire_get_fifo_depth() - 1;
+    while (tmp_a--) {
+      neorv32_onewire_read_bit();
+    }
+
+    // enable ONEWIRE FIRQ
+    neorv32_cpu_csr_write(CSR_MIE, 1 << ONEWIRE_FIRQ_ENABLE);
 
     // wait for interrupt
-    asm volatile ("nop");
-    asm volatile ("nop");
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
