@@ -24,9 +24,6 @@
 The NEORV32 TWI implements an I2C-compatible host controller to communicate with arbitrary I2C-devices.
 Note that peripheral-mode (controller acts as a device) and multi-controller mode are not supported yet.
 
-The TWI controller provides two memory-mapped registers that are used for configuring the module and
-for triggering operation: `CTRL` is the control and status register, `DCMD` is the command and data register.
-
 
 Key features:
 
@@ -37,10 +34,13 @@ Key features:
 * Generating a host-ACK (ACK send by the TWI controller)
 * Configurable data/command FIFO to "program" large TWI sequences without further involvement of the CPU
 
+The TWI controller provides two memory-mapped registers that are used for configuring the module and
+for triggering operations: the control and status register `CTRL` and the command and data register `DCMD`.
+
 
 **Tristate Drivers**
 
-The TWI module requires two tristate drivers (actually: open-drain drivers; signals can only be actively driven low) for
+The TWI module requires two tristate drivers (actually: open-drain drivers - signals can only be actively driven low) for
 the SDA and SCL lines, which have to be implemented by the user in the setup's top module / IO ring. A generic VHDL example
 is shown below (here, `sda_io` and `scl_io` are the actual TWI bus lines, which are of type `std_logic`).
 
@@ -56,8 +56,8 @@ twi_scl_i <= std_ulogic(scl_io); -- sense
 
 **TWI Clock Speed**
 
-The TWI clock frequency is programmed by two bit-fields in the device's control register `CTRL`: a 3-bit `TWI_CTRL_PRSCx`
-clock prescaler is sued for a coarse clock configuration and a 4-bit clock divider `TWI_CTRL_CDIVx` is used for a fine
+The TWI clock frequency is programmed by two bit-fields in the device's control register `CTRL`: a 3-bit clock prescaler
+(`TWI_CTRL_PRSCx`) is used for a coarse clock configuration and a 4-bit clock divider (`TWI_CTRL_CDIVx`) is used for a fine
 clock configuration.
 
 .TWI prescaler configuration
@@ -74,7 +74,7 @@ from the processor's main clock f~main~ according to the following equation:
 _**f~SCL~**_ = _f~main~[Hz]_ / (4 * `clock_prescaler` * (1 + TWI_CTRL_CDIV))
 
 Hence, the maximum TWI clock is f~main~ / 8 and the lowest TWI clock is f~main~ / 262144. The generated TWI clock is
-always symmetric having a duty cycle of exactly 50%.
+always symmetric having a duty cycle of exactly 50% (if the clock is not haled by a device during clock stretching).
 
 .Clock Stretching
 [NOTE]
@@ -110,6 +110,9 @@ that have not been executed yet) or of the TWI bus engine is still processing an
 [TIP]
 An active transmission can be terminated at any time by disabling the TWI module. This will also clear the data/command FIFO.
 
+[TIP]
+The current state of the TWI bus lines (SCL and SDA) can be checked by software via the `TWI_CTRL_SENSE_*` control register bits.
+
 [NOTE]
 When reading data from a device, an all-one byte (`0xFF`) has to be written to TWI data register `NEORV32_TWI.DATA`
 so the accessed device can actively pull-down SDA when required.
@@ -128,13 +131,15 @@ TWI module is enabled (`TWI_CTRL_EN` = `1`) and the TX FIFO is empty and the TWI
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xfffff900` .10+<| `CTRL` <|`0`     `TWI_CTRL_EN`                           ^| r/w <| TWI enable, reset if cleared
+.12+<| `0xfffff900` .12+<| `CTRL` <|`0`     `TWI_CTRL_EN`                           ^| r/w <| TWI enable, reset if cleared
                                   <|`3:1`   `TWI_CTRL_PRSC2 : TWI_CTRL_PRSC0`       ^| r/w <| 3-bit clock prescaler select
                                   <|`7:4`   `TWI_CTRL_CDIV3 : TWI_CTRL_CDIV0`       ^| r/w <| 4-bit clock divider
                                   <|`8`     `TWI_CTRL_CLKSTR`                       ^| r/w <| Enable (allow) clock stretching
                                   <|`14:9`   -                                      ^| r/- <| _reserved_, read as zero
                                   <|`18:15` `TWI_CTRL_FIFO_MSB : TWI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(`IO_TWI_FIFO`)
-                                  <|`28:12`  -                                      ^| r/- <| _reserved_, read as zero
+                                  <|`26:12`  -                                      ^| r/- <| _reserved_, read as zero
+                                  <|`27`    `TWI_CTRL_SENSE_SCL`                    ^| r/- <| current state of the SCL bus line
+                                  <|`28`    `TWI_CTRL_SENSE_SDA`                    ^| r/- <| current state of the SDA bus line
                                   <|`29`    `TWI_CTRL_TX_FULL`                      ^| r/- <| set if the TWI bus is claimed by any controller
                                   <|`30`    `TWI_CTRL_RX_AVAIL`                     ^| r/- <| RX FIFO data available
                                   <|`31`    `TWI_CTRL_BUSY`                         ^| r/- <| TWI bus engine busy or TX FIFO not empty

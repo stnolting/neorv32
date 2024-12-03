@@ -55,7 +55,7 @@ The basic timing configuration is programmed via the clock prescaler bits `ONEWI
 clock divider bits `ONEWIRE_CTRL_CLKDIVx` (see next section).
 
 The controller can execute three basic bus operations, which are triggered by setting one out of three specific
-control register bits (the bits auto-clear):
+control register bits (all those bits auto-clear):
 
 [start=1]
 . generate reset pulse and check for device presence; triggered when setting `ONEWIRE_CTRL_TRIG_RST`
@@ -158,8 +158,8 @@ constant t_presence_end_c    : unsigned(6 downto 0) := to_unsigned(96, 7); -- t6
 
 .Overdrive
 [IMPORTANT]
-The ONEWIRE controller does not support the _overdrive_ mode. However, it can be implemented by reducing the base
-time **T~base~** (and by eventually changing the hardwired timing configuration in the VHDL source file).
+The ONEWIRE controller does not support the overdrive mode natively. However, it can be implemented by reducing
+the base time **T~base~** (and by eventually changing the hardwired timing configuration in the VHDL source file).
 
 
 **Interrupt**

@@ -1,4 +1,0 @@
-:icons: font
-:imagesdir: ../figures
-:toc: macro
-:title-logo-image: image:neorv32_logo_riscv.png[pdfwidth=6.25in,align=center]

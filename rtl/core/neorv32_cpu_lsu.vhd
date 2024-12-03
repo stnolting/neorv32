@@ -65,6 +65,7 @@ begin
     end if;
   end process mem_addr_reg;
 
+  -- address output --
   dbus_req_o.addr <= mar; -- bus address
   mar_o           <= mar; -- for MTVAL CSR
 

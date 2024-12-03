@@ -1252,6 +1252,18 @@
               <description>TX FIFO full</description>
             </field>
             <field>
+              <name>TWI_CTRL_SENSE_SCL</name>
+              <bitRange>[27:27]</bitRange>
+              <access>read-only</access>
+              <description>current state of the SCL bus line</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_SENSE_SDA</name>
+              <bitRange>[28:28]</bitRange>
+              <access>read-only</access>
+              <description>current state of the SDA bus line</description>
+            </field>
+            <field>
               <name>TWI_CTRL_RX_AVAIL</name>
               <bitRange>[30:30]</bitRange>
               <access>read-only</access>
