@@ -11,6 +11,7 @@
 | Top entity ports:       | `onewire_i` | 1-bit 1-wire bus sense input
 |                         | `onewire_o` | 1-bit 1-wire bus output (pull low only)
 | Configuration generics: | `IO_ONEWIRE_EN`     | implement ONEWIRE interface controller when `true`
+|                         | `IO_ONEWIRE_FIFO`   | RTX fifo depth, has to be zero or a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 13 | operation done interrupt (see <<_processor_interrupts>>)
 | Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
@@ -19,72 +20,76 @@
 **Overview**
 
 The NEORV32 ONEWIRE module implements a single-wire interface controller that is compatible to the
-_Dallas/Maxim 1-Wire_ protocol, which is an asynchronous half-duplex bus requiring only a single signal wire
-connected to `onewire_io` (plus ground).
+Dallas/Maxim 1-Wire protocol, which is an asynchronous half-duplex bus requiring only a single signal wire
+(plus ground) for communication.
 
-The bus is based on a single open-drain signal. The controller and all the devices can only pull-down the bus actively.
-Hence, an external pull-up resistor is required. Recommended values are between 1kΩ and 4kΩ depending on the bus
-characteristics (wire length, number of devices, etc.). Furthermore, a series resistor (~100Ω) at the controller side
-is recommended to control the slew rate and to reduce signal reflections. Also, additional external ESD protection clamp diodes
-should be added to the bus line.
+The bus is based on a single open-drain signal. The controller as well as all devices on the bus can only pull-down
+the bus (similar to TWI/I2C). The default high-level is provided by a single pull-up resistor connected to the positive
+power supply close to the bus controller. Recommended values are between 1kΩ and 10kΩ depending on the bus
+characteristics (wire length, number of devices, etc.).
 
 
 **Tri-State Drivers**
 
-The ONEWIRE module requires a tri-state driver (actually, open-drain) for the 1-wire bus line, which has to be implemented
-in the top module of the setup. A generic VHDL example is given below (`onewire` is the actual 1-wire
-bus signal, which is of type `std_logic`).
+The ONEWIRE module requires a tristate driver (actually, just an open-drain driver) for the 1-wire bus line, which has
+to be implemented in the top module / IO ring of the design. A generic VHDL example is given below (`onewire_io` is the
+actual 1-wire bus signal, which is of type `std_logic`; `onewire_o` and `onewire_i` are the processor's ONEWIRE port signals).
 
-.ONEWIRE VHDL tri-state driver example
+.ONEWIRE VHDL Tristate Driver Example
 [source,VHDL]
 ----
-onewire   <= '0' when (onewire_o = '0') else 'Z'; -- drive
-onewire_i <= std_ulogic(onewire); -- sense
+onewire_io   <= '0' when (onewire_o = '0') else 'Z'; -- drive (low)
+onewire_i <= std_ulogic(onewire_io); -- sense
 ----
 
 
 **Theory of Operation**
 
-The ONEWIRE controller provides two interface registers: `CTRL` and `DATA.` The control registers (`CTRL`)
-is used to configure the module, to trigger bus transactions and to monitor the current state of the module.
-The `DATA` register is used to read/write data from/to the bus.
+The ONEWIRE controller provides two interface registers: `CTRL` and `DCMD.` The control register (`CTRL`)
+is used to configure the module and to monitor the current state. The `DCMD` register, which can optionally
+by buffered by a configurable FIFO (`IO_ONEWIRE_FIFO` generic), is used to read/write data from/to the bus
+and to trigger bus operations.
 
 The module is enabled by setting the `ONEWIRE_CTRL_EN` bit in the control register. If this bit is cleared, the
-module is automatically reset and the bus is brought to high-level (due to the external pull-up resistor).
-The basic timing configuration is programmed via the clock prescaler bits `ONEWIRE_CTRL_PRSCx` and the
-clock divider bits `ONEWIRE_CTRL_CLKDIVx` (see next section).
+module is automatically reset, any bus operation is aborted, the bus is brought to high-level (due to the external
+pull-up resistor) and the internal FIFO is cleared. The basic timing configuration is programmed via a coarse clock
+prescaler (`ONEWIRE_CTRL_PRSCx` bits) and a fine clock divider (`ONEWIRE_CTRL_CLKDIVx` bits).
 
-The controller can execute three basic bus operations, which are triggered by setting one out of three specific
-control register bits (all those bits auto-clear):
+The controller can execute four basic bus operations, which are triggered by writing the according command bits
+in the `DCMD` register (`ONEWIRE_DCMD_DATA_*` bits) while also writing the actual data bits (`ONEWIRE_DCMD_CMD_*`
+bits).
 
 [start=1]
-. generate reset pulse and check for device presence; triggered when setting `ONEWIRE_CTRL_TRIG_RST`
-. transfer a single-bit (read-while-write); triggered when setting `ONEWIRE_CTRL_TRIG_BIT`
-. transfer a full-byte (read-while-write); triggered when setting `ONEWIRE_CTRL_TRIG_BYTE`
+. `0b00` (`ONEWIRE_CMD_NOP`) - no operation (dummy)
+. `0b01` (`ONEWIRE_CMD_BIT`) - transfer a single-bit (read-while-write)
+. `0b10` (`ONEWIRE_CMD_BYTE`) - transfer a full-byte (read-while-write)
+. `0b11` (`ONEWIRE_CMD_RESET`) - generate reset pulse and check for device presence
 
-[IMPORTANT]
-Only one trigger bit may be set at once, otherwise undefined behavior might occur.
+Every command (except NOP) will result in a bus operation when dispatched from the data/command FIFO.
+Each command (except NOP) will also sample a bus response (a read bit, a read byte or a presence pulse) to a
+shadowed receive FIFO that is accessed when reading the `DCMD` register.
 
-When a single-bit operation has been triggered, the data previously written to `DATA[0]` will be send to the bus
-and `DATA[7]` will be sampled from the bus. Accordingly, a full-byte transmission will send the previously
-byte written to `DATA[7:0]` to the bus and will update `DATA[7:0]` with the data read from the bus (LSB-first).
-The triggered operation has completed when the module's busy flag `ONEWIRE_CTRL_BUSY` has cleared again.
+When the single-bit operation (`ONEWIRE_CMD_BIT`) is executed, the data previously written to `DCMD[0]` will
+be send to the bus and the response is sample to `DCMD[7]`. Accordingly, a full-byte transmission (`ONEWIRE_CMD_BYTE`)
+will send the byte written to `DCMD[7:0]` to the bus and will sample the response to `DCMD[7:0]` (LSB-first). Finally, the
+reset command (`ONEWIRE_CMD_RESET`) will generate a bus reset and will also sample the "presence pulse" from the device(s)
+to the `DCMD[ONEWIRE_DCMD_PRESENCE]`.
 
 .Read from Bus
 [NOTE]
-In order to read a single bit from the bus `DATA[0]` has to set to `1` before triggering the bit transmission
-operation to allow the accessed device to pull-down the bus. Accordingly, `DATA` has to be set to `0xFF` before
+In order to read a single bit from the bus `DCMD[0]` has to set to `1` before triggering the bit transmission
+operation to allow the accessed device to pull-down the bus. Accordingly, `DCMD[7:0]` has to be set to `0xFF` before
 triggering the byte transmission operation when the controller shall read a byte from the bus.
 
-The `ONEWIRE_CTRL_PRESENCE` bit gets set if at least one device has send a "presence" signal right after the
-reset pulse.
+As soon as the current bus operation has completed (and there are no further operations pending in the FIFO) the
+`ONEWIRE_CTRL_BUSY` bit in the control registers clears.
 
 
 **Bus Timing**
 
-The control register provides a 2-bit clock prescaler select (`ONEWIRE_CTRL_PRSCx`) and a 8-bit clock divider
-(`ONEWIRE_CTRL_CLKDIVx`) for timing configuration. Both are used to define the elementary **base time T~base~**.
-All bus operations are timed using _multiples_ of this elementary base time.
+The control register provides a 2-bit clock prescaler select (`ONEWIRE_CTRL_PRSC`) and a 8-bit clock divider
+(`ONEWIRE_CTRL_CLKDIV`) for timing configuration. Both are used to define the elementary base time T~base~.
+All bus operations are timed using multiples of this elementary base time.
 
 .ONEWIRE Clock Prescaler Configurations
 [cols="<4,^1,^1,^1,^1"]
@@ -108,9 +113,10 @@ Example:
 _**T~base~**_ = (1 / 100000000Hz) * 4 * (249 + 1) = 10000ns = **10µs**
 
 The base time is used to coordinate all bus interactions. Hence, all delays, time slots and points in time are
-quantized as multiples of the base time. The following images show the two basic operations of the ONEWIRE
-controller: single-bit (0 or 1) transaction and reset with presence detect. The relevant points in time are
-shown as _absolute_ time (in multiples of the time base) with the bus' falling edge as reference point.
+quantized as multiples of the base time T~base~. The following images show the two basic operations of the ONEWIRE
+controller: single-bit (0 or 1) transaction and reset with presence detect. Note that the full-byte operations just repeats
+the single-bit operation eight times. The relevant points in time are shown as _absolute_ time points (in multiples of the
+time base T~base~) with the falling edge of the bus as reference points.
 
 [cols="^2,^2"]
 [grid="none"]
@@ -136,14 +142,16 @@ a| image::onewire_reset.png[align=center]
 | `t6` (f->i) | Time until end of presence phase                                        | 96 | 960µs
 |=======================
 
+.Default Timing Parameters
 [NOTE]
-The default values for base time multiples were chosen to for stable and reliable bus
-operation (not for maximum throughput).
+The "known-good" default values for base time multiples were chosen for stable and reliable bus
+operation and not for maximum throughput.
 
 The absolute points in time are hardwired by the VHDL code and cannot be changed during runtime.
-However, the timing parameter can be customized by editing the ONEWIRE's VHDL source file:
+However, the timing parameter can be customized (if necessary) by editing the ONEWIRE's VHDL source file.
+The times t0 to t6 correspond to the previous timing diagrams.
 
-.Hardwired time configuration in `neorv32_onewire.vhd`
+.Hardwired timing configuration in `neorv32_onewire.vhd`
 [source,VHDL]
 ----
 -- timing configuration (absolute time in multiples of the base tick time t_base) --
@@ -156,8 +164,8 @@ constant t_presence_sample_c : unsigned(6 downto 0) := to_unsigned(55, 7); -- t5
 constant t_presence_end_c    : unsigned(6 downto 0) := to_unsigned(96, 7); -- t6
 ----
 
-.Overdrive
-[IMPORTANT]
+.Overdrive Mode
+[NOTE]
 The ONEWIRE controller does not support the overdrive mode natively. However, it can be implemented by reducing
 the base time **T~base~** (and by eventually changing the hardwired timing configuration in the VHDL source file).
 
@@ -165,7 +173,7 @@ the base time **T~base~** (and by eventually changing the hardwired timing confi
 **Interrupt**
 
 A single interrupt is provided by the ONEWIRE module to signal "idle" condition to the CPU. Whenever the
-controller is idle (again) the interrupt becomes active.
+controller is idle (again) and the data/command FIFO is empty, the interrupt becomes active.
 
 
 **Register Map**
@@ -175,15 +183,19 @@ controller is idle (again) the interrupt becomes active.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xfffff200` .10+<| `CTRL` <|`0`     `ONEWIRE_CTRL_EN`                             ^| r/w <| ONEWIRE enable, reset if cleared
-                                  <|`2:1`   `ONEWIRE_CTRL_PRSC1 : ONEWIRE_CTRL_PRSC0`     ^| r/w <| 2-bit clock prescaler select
-                                  <|`10:3`  `ONEWIRE_CTRL_CLKDIV7 : ONEWIRE_CTRL_CLKDIV0` ^| r/w <| 8-bit clock divider value
-                                  <|`11`    `ONEWIRE_CTRL_TRIG_RST`                       ^| -/w <| trigger reset pulse, auto-clears
-                                  <|`12`    `ONEWIRE_CTRL_TRIG_BIT`                       ^| -/w <| trigger single bit transmission, auto-clears
-                                  <|`13`    `ONEWIRE_CTRL_TRIG_BYTE`                      ^| -/w <| trigger full-byte transmission, auto-clears
-                                  <|`28:14` -                                             ^| r/- <| _reserved_, read as zero
-                                  <|`29`    `ONEWIRE_CTRL_SENSE`                          ^| r/- <| current state of the bus line
-                                  <|`30`    `ONEWIRE_CTRL_PRESENCE`                       ^| r/- <| device presence detected after reset pulse
-                                  <|`31`    `ONEWIRE_CTRL_BUSY`                           ^| r/- <| operation in progress when set
-| `0xfffff204` | `DATA` |`7:0` `ONEWIRE_DATA_MSB : ONEWIRE_DATA_LSB` | r/w | receive/transmit data (8-bit)
+.11+<| `0xfffff200` .11+<| `CTRL` <|`0`     `ONEWIRE_CTRL_EN`                               ^| r/w <| ONEWIRE enable, reset if cleared
+                                  <|`1`     `ONEWIRE_CTRL_CLEAR`                            ^| -/w <| clear RXT FIFO, auto-clears
+                                  <|`3:2`   `ONEWIRE_CTRL_PRSC1 : ONEWIRE_CTRL_PRSC0`       ^| r/w <| 2-bit clock prescaler select
+                                  <|`11:4`  `ONEWIRE_CTRL_CLKDIV7 : ONEWIRE_CTRL_CLKDIV0`   ^| r/w <| 8-bit clock divider value
+                                  <|`14:12` -                                               ^| r/- <| _reserved_, read as zero
+                                  <|`18:15` `ONEWIRE_CTRL_FIFO_MSB : ONEWIRE_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(`IO_ONEWIRE_FIFO`)
+                                  <|`27:19` -                                               ^| r/- <| _reserved_, read as zero
+                                  <|`28`    `ONEWIRE_CTRL_TX_FULL`                          ^| r/- <| TX FIFO full
+                                  <|`29`    `ONEWIRE_CTRL_RX_AVAIL`                         ^| r/- <| RX FIFO data available
+                                  <|`30`    `ONEWIRE_CTRL_SENSE`                            ^| r/- <| current state of the bus line
+                                  <|`31`    `ONEWIRE_CTRL_BUSY`                             ^| r/- <| operation in progress when set or TX FIFO not empty
+.4+<| `0xfffff204` .4+<| `DCMD` <|`7:0`  `ONEWIRE_DCMD_DATA_MSB : ONEWIRE_DCMD_DATA_LSB` ^| r/w <| receive/transmit data
+                                <|`9:8`  `ONEWIRE_DCMD_CMD_HI : ONEWIRE_DCMD_CMD_LO`     ^| -/w <| operation command LSBs
+                                <|`10`   `ONEWIRE_DCMD_PRESENCE`                         ^| -/w <| bus presence detected
+                                <|`31:11` -                                              ^| r/- <| _reserved_, read as zero
 |=======================

@@ -17,11 +17,11 @@ neorv32/sw/example/demo_blink_led$ make clean_all exe
 ----
 
 [start=3]
-. We are using the `clean_all` target to make sure everything is re-build.
-. This will compile and link the application sources together with all the included libraries. At the end,
-your application is transformed into an ELF file (`main.elf`). The _NEORV32 image generator_ (in `sw/image_gen`)
-takes this file and creates a final executable. The makefile will show the resulting memory utilization and
-the executable size:
+. The `clean_all` target is used (instead of just `clean`) to ensure everything is re-build.
+. The `exe` target will compile and link the application sources together with all the included libraries.
+At the end an ELF file (`main.elf`) is generated. The _NEORV32 image generator_ (in `sw/image_gen`)
+takes this file and creates the final executable (`neorv32_exe.bin`). The makefile will show the resulting
+memory utilization and the executable size:
 
 [source,bash]
 ----
@@ -34,14 +34,13 @@ Executable (neorv32_exe.bin) size in bytes:
 1016
 ----
 
+.Build Artifacts
 [NOTE]
-Make sure the size of the `text` segment (3176 bytes here) does not overflow the size of the processor's
-IMEM (if used at all) - otherwise there will be an error during synthesis or during bootloader upload.
+All _intermediate_ build artifacts (like object files and binaries) will be places into a (new) project-local
+folder named `build`. The _resulting_ build artifacts (like executable, the main ELF and all memory
+initialization/image files) will be placed in the root project folder.
 
 [start=5]
 . That's it. The `exe` target has created the actual executable `neorv32_exe.bin` in the current folder
-that is ready to be uploaded to the processor.
-
-[TIP]
-The compilation process will also create a `main.asm` assembly listing file in the current folder, which
-shows the actual assembly code of the application.
+that is ready to be uploaded to the processor using the build-in bootloader. Alternatively, the ELF file can
+be uploaded using the on-chip debugger.
