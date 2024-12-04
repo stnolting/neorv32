@@ -148,7 +148,7 @@ for **custom RISC-V instructions**;
 caches ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruction_cache_icache) and
 [dCACHE](https://stnolting.github.io/neorv32/#_processor_internal_data_cache_dcache))
 * pre-installed bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with serial user interface;
-allows booting application code via UART or from external SPI flash
+allows booting application code via UART, TWI or from external SPI flash
 
 **Timers and Counters**
 

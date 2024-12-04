@@ -124,5 +124,8 @@ See section <<_programming_an_external_spi_flash_via_the_bootloader>> to learn h
 flash for nonvolatile program storage.
 
 [TIP]
+The bootloader also supports booting from external TWI memory. Enable it in the bootloader makefile, but be caution, enabling all features might result in a too-big binary.
+
+[TIP]
 Executables can also be uploaded via the **on-chip debugger**.
 See section <<_debugging_with_gdb>> for more information.

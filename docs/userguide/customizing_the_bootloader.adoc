@@ -39,14 +39,22 @@ minimal base & privileged ISA `rv32i_zicsr_zifencei` only to ensure it can work 
 | `SPI_BOOT_BASE_ADDR`    | `0x00400000`        | _any_ 32-bit value | Defines the _base_ address of the executable in external flash
 4+^| XIP configuration
 | `XIP_EN`                | `0` | `0`, `1`      | Set `1` to enable the XIP options
+4+^| TWI configuration
+| `TWI_EN`                | `0` | `0`, `1`      | Set `1` to enable the usage of the SPI module (including load/store executables from/to SPI flash options)
+| `TWI_CLK_PRSC`          | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096`   | TWI clock pre-scaler (dividing main processor clock)
+| `TWI_CLK_DIV`  | `3` | `0` ... `15` | TWI clock divider (dividing twi clock)
+| `TWI_SLAVE_ID`  | `0x50` | `0x00` ... `0x7F` | First TWI slave ID to start. Is incremented until the end of the program is reached.
 |=======================
+
+[IMPORTANT]
+Enabling all features while sticking to the minimal RISC-V ISA will result in a too-large binary! 
 
 [NOTE]
 The XIP options re-use the "SPI configuration" options for configuring the XIP's SPI connection.
 
 Each configuration parameter is implemented as C-language `define` that can be manually overridden (_redefined_) when
 invoking the bootloader's makefile. The according parameter and its new value has to be _appended_
-(using `+=`) to the makefile `USER_FLAGS` variable. Make sure to use the `-D` prefix here.
+(using `+=`) to the makefile `USER_FLAGS` variable. Make sure to use the `-D` prefix here. The configuration is also listed in the makefile of the bootloader.
 
 For example, to configure a UART Baud rate of 57600 and redirecting the status LED to GPIO output pin 20
 use the following command:
