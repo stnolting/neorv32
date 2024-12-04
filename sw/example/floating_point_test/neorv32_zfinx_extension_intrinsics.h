@@ -44,11 +44,11 @@
  * @brief Also provides emulation functions for all intrinsics (functionality re-built in pure software). The functionality of the emulation
  * @brief functions is based on the RISC-V floating-point spec.
  *
- * @note All operations from this library use the default GCC "round to nearest, ties to even" rounding mode.
+ * @note All intrinsics/instruction use the DYNAMIC rounding mode (actual rounding mode is defined by the FCSR).
  *
  * @warning This library is just a temporary fall-back until the Zfinx extensions are supported by the upstream RISC-V GCC port.
  **************************************************************************/
- 
+
 #ifndef neorv32_zfinx_extension_intrinsics_h
 #define neorv32_zfinx_extension_intrinsics_h
 
@@ -112,6 +112,7 @@ float subnormal_flush(float tmp) {
 
 /**********************************************************************//**
  * Single-precision floating-point addition
+ * @note Instruction uses DYNAMIC rounding mode.
  *
  * @param[in] rs1 Source operand 1.
  * @param[in] rs2 Source operand 2.
@@ -123,13 +124,14 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fadds(float rs1, fl
   opa.float_value = rs1;
   opb.float_value = rs2;
 
-  res.binary_value = CUSTOM_INSTR_R3_TYPE(0b0000000, opb.binary_value, opa.binary_value, 0b000, 0b1010011);
+  res.binary_value = CUSTOM_INSTR_R3_TYPE(0b0000000, opb.binary_value, opa.binary_value, 0b111, 0b1010011);
   return res.float_value;
 }
 
 
 /**********************************************************************//**
  * Single-precision floating-point subtraction
+ * @note Instruction uses DYNAMIC rounding mode.
  *
  * @param[in] rs1 Source operand 1.
  * @param[in] rs2 Source operand 2.
@@ -141,13 +143,14 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fsubs(float rs1, fl
   opa.float_value = rs1;
   opb.float_value = rs2;
 
-  res.binary_value = CUSTOM_INSTR_R3_TYPE(0b0000100, opb.binary_value, opa.binary_value, 0b000, 0b1010011);
+  res.binary_value = CUSTOM_INSTR_R3_TYPE(0b0000100, opb.binary_value, opa.binary_value, 0b111, 0b1010011);
   return res.float_value;
 }
 
 
 /**********************************************************************//**
  * Single-precision floating-point multiplication
+ * @note Instruction uses DYNAMIC rounding mode.
  *
  * @param[in] rs1 Source operand 1.
  * @param[in] rs2 Source operand 2.
@@ -159,7 +162,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fmuls(float rs1, fl
   opa.float_value = rs1;
   opb.float_value = rs2;
 
-  res.binary_value = CUSTOM_INSTR_R3_TYPE(0b0001000, opb.binary_value, opa.binary_value, 0b000, 0b1010011);
+  res.binary_value = CUSTOM_INSTR_R3_TYPE(0b0001000, opb.binary_value, opa.binary_value, 0b111, 0b1010011);
   return res.float_value;
 }
 
@@ -202,6 +205,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fmaxs(float rs1, fl
 
 /**********************************************************************//**
  * Single-precision floating-point convert float to unsigned integer
+ * @note Instruction uses DYNAMIC rounding mode.
  *
  * @param[in] rs1 Source operand 1.
  * @return Result.
@@ -211,12 +215,13 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_wus(float r
   float_conv_t opa;
   opa.float_value = rs1;
 
-  return CUSTOM_INSTR_R2_TYPE(0b1100000, 0b00001, opa.binary_value, 0b000, 0b1010011);
+  return CUSTOM_INSTR_R2_TYPE(0b1100000, 0b00001, opa.binary_value, 0b111, 0b1010011);
 }
 
 
 /**********************************************************************//**
  * Single-precision floating-point convert float to signed integer
+ * @note Instruction uses DYNAMIC rounding mode.
  *
  * @param[in] rs1 Source operand 1.
  * @return Result.
@@ -226,12 +231,13 @@ inline int32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_ws(float rs1
   float_conv_t opa;
   opa.float_value = rs1;
 
-  return (int32_t)CUSTOM_INSTR_R2_TYPE(0b1100000, 0b00000, opa.binary_value, 0b000, 0b1010011);
+  return (int32_t)CUSTOM_INSTR_R2_TYPE(0b1100000, 0b00000, opa.binary_value, 0b111, 0b1010011);
 }
 
 
 /**********************************************************************//**
  * Single-precision floating-point convert unsigned integer to float
+ * @note Instruction uses DYNAMIC rounding mode.
  *
  * @param[in] rs1 Source operand 1.
  * @return Result.
@@ -240,13 +246,14 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_swu(uint32_t r
 
   float_conv_t res;
 
-  res.binary_value = CUSTOM_INSTR_R2_TYPE(0b1101000, 0b00001, rs1, 0b000, 0b1010011);
+  res.binary_value = CUSTOM_INSTR_R2_TYPE(0b1101000, 0b00001, rs1, 0b111, 0b1010011);
   return res.float_value;
 }
 
 
 /**********************************************************************//**
  * Single-precision floating-point convert signed integer to float
+ * @note Instruction uses DYNAMIC rounding mode.
  *
  * @param[in] rs1 Source operand 1.
  * @return Result.
@@ -255,7 +262,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_sw(int32_t rs1
 
   float_conv_t res;
 
-  res.binary_value = CUSTOM_INSTR_R2_TYPE(0b1101000, 0b00000, rs1, 0b000, 0b1010011);
+  res.binary_value = CUSTOM_INSTR_R2_TYPE(0b1101000, 0b00000, rs1, 0b111, 0b1010011);
   return res.float_value;
 }
 
@@ -1083,4 +1090,3 @@ float __attribute__ ((noinline)) riscv_emulate_fnmadds(float rs1, float rs2, flo
 
 
 #endif // neorv32_zfinx_extension_intrinsics_h
- 
