@@ -1044,28 +1044,40 @@ does not complete operation within this time window.
 
 ==== `Smpmp` ISA Extension
 
-The NEORV32 physical memory protection (PMP) provides an elementary memory
-protection mechanism that can be used to constrain read, write and execute rights of arbitrary memory regions.
-The NEORV32 PMP is fully compatible to the RISC-V Privileged Architecture Specifications. In general, the PMP can
-**grant permissions to user mode**, which by default has none, and can **revoke permissions from M-mode**, which
-by default has full permissions. The PMP is configured via the <<_machine_physical_memory_protection_csrs>>.
+The NEORV32 physical memory protection (PMP) provides an elementary memory protection mechanism that can be used
+to configure read/write(execute permission of arbitrary memory regions. In general, the PMP can **grant permissions
+to user mode**, which by default has none, and can **revoke permissions from M-mode**, which by default has full
+permissions. The NEORV32 PMP is fully compatible to the RISC-V Privileged Architecture Specifications and is
+configured via several CSRs (<<_machine_physical_memory_protection_csrs>>). Several <<_processor_top_entity_generics>>
+are provided to adjust the CPU's PMP capabilities according to the application requirements (pre-synthesis):
 
-Several <<_processor_top_entity_generics>> are provided to fine-tune the CPU's PMP capabilities:
+. `PMP_NUM_REGIONS` defines the number of implemented PMP regions (0..16); setting this generic to zero will
+result in absolutely no PMP logic being implemented
+. `PMP_MIN_GRANULARITY` defines the minimal granularity of each region (has to be a power of 2, minimal
+granularity = 4 bytes); note that a smaller granularity will lead to wider comparators and thus, to higher area footprint
+and longer critical path
+. `PMP_TOR_MODE_EN` controls the implementation of the top-of-region (TOR) mode (default = true); disabling this mode
+will reduce area footprint
+. `PMP_NAP_MODE_EN` controls the implementation of the naturally-aligned-power-of-two (NA4 and NAPOT) modes (default =
+true); disabling this mode will reduce area footprint and critical path length
 
-* `PMP_NUM_REGIONS` defines the number of implemented PMP region
-* `PMP_MIN_GRANULARITY` defines the minimal granularity of each region
-* `PMP_TOR_MODE_EN` controls the implementation of the top-of-region (TOR) mode
-* `PMP_NAP_MODE_EN` controls the implementation of the naturally-aligned-power-of-two (NA4 and NAPOT) modes
-
-.PMP Rules when in Debug Mode
+.PMP Permissions when in Debug Mode
 [NOTE]
-When in debug-mode all PMP rules are ignored making the debugger have maximum access rights.
+When in debug-mode all PMP rules are bypassed/ignored granting the debugger maximum access permissions.
 
-.Protected Instruction Fetches
+.PMP Time-Multiplex
+[NOTE]
+Instructions are executed in a multi-cycle manner. Hence, data access (load/store) and instruction fetch cannot occur
+at the same time. Therefore, the PMP hardware uses only a single set of comparators for memory access permissions checks
+that are switched in an iterative, time-multiplex style reducing hardware footprint by approx. 50% while maintaining
+full security features and RISC-V compatibility.
+
+.PMP Memory Accesses
 [IMPORTANT]
-New instruction fetches are **always triggered even when denied** by a certain PMP rule. However, the fetched instruction(s)
-will not be executed and will not change CPU core state. Instead, they will raise a bus exception when reaching the CPU's
-executions stage.
+Load/store accesses for which there are insufficient access permission do not trigger any memory/bus accesses at all.
+In contrast, instruction accesses for which there are insufficient access permission nevertheless lead to a memory/bus
+access (causing potential side effects on the memory side=. However, the fetched instruction will be discarded and the
+corresponding exception will still be triggered precisely.
 
 
 ==== `Sdext` ISA Extension
