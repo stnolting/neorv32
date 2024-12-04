@@ -109,7 +109,7 @@
 
 /** Enable TWI for cooping to RAM */
 #ifndef TWI_EN
-  #define TWI_EN 1
+  #define TWI_EN 0
 #endif
 
 /** TWI Clock pre-scaler */
