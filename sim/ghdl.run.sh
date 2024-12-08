@@ -17,7 +17,7 @@ chmod 777 neorv32_tb.uart0_rx.out neorv32_tb.uart1_rx.out
 mkdir -p build
 
 # GHDL import
-find .. -type f -name '*.vhd' -exec \
+find ../rtl ../sim -type f -name '*.vhd'  -exec \
      ghdl -i --std=08 --workdir=build --ieee=standard --work=neorv32 {} \;
 
 # GHDL analyze
