@@ -88,5 +88,5 @@ help:
 	@echo " ug-html   - build user guide as HTML page (public/ug/index.html)"
 	@echo " doxygen   - build software documentation as HTML page (doxygen_build/html/index.html)"
 	@echo " revnumber - for overriding the revnumber attribute in 'pdf' and/or 'html'"
-	@echo " container - Build 'pdf' and 'html' in an 'asciidoctor-wavedrom' container
+	@echo " container - Build 'pdf' and 'html' in an 'asciidoctor-wavedrom' container"
 	@echo " clean     - delete output files and directories"
