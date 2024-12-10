@@ -34,6 +34,7 @@ The bootloader requires certain CPU and SoC extensions and modules to be enabled
 | _RECOMMENDED_ | The <<_machine_system_timer_mtime>> is used to control blinking of the status LED and also to automatically trigger the <<_auto_boot_sequence>>.
 | OPTIONAL      | The SPI controller (<<_serial_peripheral_interface_controller_spi>>) is needed to store/load executable from external flash using the <<_auto_boot_sequence>>.
 | OPTIONAL      | The XIP controller (<<_execute_in_place_module_xip>>) is needed to boot/execute code directly from a pre-programmed SPI flash.
+| OPTIONAL      | The TWI controller (<<_two_wire_serial_interface_controller_twi>>) is needed to boot/execute code directly from pre-programmed TWI memory.
 |=======================
 
 
@@ -58,6 +59,14 @@ Most properties (like chip select line, flash address width, SPI clock frequency
 without the need to change the source code. Custom configuration can be made using command line switches (defines) when recompiling
 the bootloader. See the User Guide https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader for more information.
 
+:sectnums:
+==== Bootloader TWI memory Requirements
+
+The bootloader can access an TWI-compatible memory via the processor's top entity TWI port. Only single-address memory is supported, and reading is done in the following pattern
+`Slave Address + Enabled Read | Memory Address | Read Byte 0 | Read Byte 1 | Read Byte 2 | Read Byte 3`.
+The addresses are incremented until the end of the program binary is reached.
+
+Clock speed information can be read here: <<_two_wire_serial_interface_controller_twi>>.
 
 :sectnums:
 ==== Bootloader Console
@@ -142,6 +151,7 @@ Available CMDs:
  u: Upload
  s: Store to flash
  l: Load from flash
+ t: Load from TWI Slave
  x: Boot from flash (XIP)
  e: Execute
 CMD:>
@@ -155,6 +165,7 @@ The auto boot countdown is stopped and the bootloader's user console is ready to
 * `u`: Upload new program executable (`neorv32_exe.bin`) via UART into the instruction memory
 * `s`: Store executable to SPI flash at `spi_csn_o(0)` (little-endian byte order)
 * `l`: Load executable from SPI flash at `spi_csn_o(0)` (little-endian byte order)
+* `t`: Load executable from TWI memory at `0x50` (little-endian byte order) (disabled by default)
 * `x`: Boot program directly from flash via XIP (requires a pre-programmed image)
 * `e`: Start the application, which is currently stored in the instruction memory (IMEM)
 
@@ -194,7 +205,8 @@ https://stnolting.github.io/neorv32/ug/#_programming_an_external_spi_flash_via_t
 
 When you reset the NEORV32 processor, the bootloader waits 8 seconds for a UART console input before it
 starts the automatic boot sequence. This sequence tries to fetch a valid boot image from the external SPI
-flash, connected to SPI chip select `spi_csn_o(0)`. If a valid boot image is found that can be successfully
+flash, connected to SPI chip select `spi_csn_o(0)` or from external TWI memory. If both are enabled, the bootloader
+will select SPI. If a valid boot image is found that can be successfully
 transferred into the instruction memory, it is automatically started. If no SPI flash is detected or if there
 is no valid boot image found, and error code will be shown.
 
@@ -216,6 +228,7 @@ In many cases the error source is just _temporary_ (like some HF spike during an
 | **`ERR_CHKS`** | This indicates a checksum error. Something went wrong during the transfer of the program image (upload via UART or loading from the external SPI flash). If the error was caused by a UART upload, just try it again. When the error was generated during a flash access, the stored image might be corrupted.
 | **`ERR_FLSH`** | This error occurs if the attached SPI flash cannot be accessed. Make sure you have the right type of flash and that it is properly connected to the NEORV32 SPI port using chip select #0.
 | **`ERR_EXC`**  | The bootloader encountered an unexpected exception during operation. This might be caused when it tries to access peripherals that were not implemented during synthesis. Example: executing commands `l` or `s` (SPI flash operations) without the SPI module being implemented.
+| **`ERR_TWI`**  | The TWI received an unexpected NACK while reading the external memory. Are the address and speed settings correct?
 |=======================
 
 [TIP]
