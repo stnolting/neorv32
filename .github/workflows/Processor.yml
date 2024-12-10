@@ -18,7 +18,7 @@ on:
 jobs:
 
   sim_default_tb:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: 'processor simulation'
     strategy:
       fail-fast: false
