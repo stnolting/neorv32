@@ -6,7 +6,13 @@
 This section refers to the **default** NEORV32 bootloader. A pre-compiled memory image for the processor-internal
 <<_bootloader_rom_bootrom>> is available in the project's +rtl+ folder: `rtl/core/neorv32_bootloader_image.vhd`.
 This image is automatically inserted into the boot ROM when synthesizing the processor with the bootloader being
-enabled. **Note that the default bootloader image was compiled for a minimal `rv32i` + priv. ISA!**
+enabled.
+
+.Minimal RISC-V ISA and Memory Configuration
+[NOTE]
+The default bootloader image was compiled for a minimal `rv32e_zicsr_zifencei` ISA configuration. Furthermore, the
+bootloader only requires a RAM size of at least 256 bytes. Both constraints ensure that the bootloader can be executed
+by any actual CPU/processor configuration.
 
 The NEORV32 bootloader (`sw/bootloader/bootloader.c`) provides an optional built-in firmware that
 allows to upload new application executables at _any time_ without the need to re-synthesize the FPGA's bitstream.
