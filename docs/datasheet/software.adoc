@@ -155,6 +155,12 @@ USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=8k
 # Adjust maximum heap size
 USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=1k
 
+# Reduce library footprint when no UART is synthesized
+#USER_FLAGS += -DUART_DISABLED
+
+# Enable link-time-optimization
+#USER_FLAGS += -flto
+
 # Additional compiler flags (append to this variable)
 #USER_FLAGS += ...
 
@@ -170,7 +176,7 @@ include $(NEORV32_HOME)/sw/common/common.mk
 When creating a new project, copy an existing project folder or at least the makefile to the new project folder.
 It is recommended to create new projects also in `sw/example` to keep the file dependencies. However, these
 dependencies can be manually configured via makefile variables if the new project is located somewhere else.
-
+For more complex projects, it may be useful to use explicit `source` and `include` folders. See `sw/example/coremark` for an example.
 
 :sectnums:
 ==== Makefile Targets
@@ -206,7 +212,7 @@ Targets:
   elf_info     - show ELF layout info
   elf_sections - show ELF sections
   clean        - clean up project home folder
-  clean_all    - clean up whole project, core libraries and image generator
+  clean_all    - clean up project home folder and image generator
   bl_image     - compile and generate VHDL BOOTROM bootloader boot image <neorv32_bootloader_image.vhd> in local folder
   bootloader   - compile, generate and install VHDL BOOTROM bootloader boot image <neorv32_bootloader_image.vhd>
 
@@ -225,6 +231,12 @@ Variables:
   GDB_ARGS       - GDB (connection) arguments: "-ex target extended-remote localhost:3333"
   GHDL_RUN_FLAGS - GHDL simulation run arguments: ""
 ----
+
+.Build Artifacts
+[NOTE]
+All _intermediate_ build artifacts (like object files and binaries) will be places into a (new) project-local
+folder named `build`. The _resulting_ build artifacts (like executable, the main ELF and all memory
+initialization/image files) will be placed in the root project folder.
 
 
 :sectnums:

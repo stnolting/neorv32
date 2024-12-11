@@ -29,6 +29,9 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 10.12.2024 | [**:rocket:1.10.7**](https://github.com/stnolting/neorv32/releases/tag/v1.10.7) | **New release** | |
+| 03.12.2024 | 1.10.6.9 | :sparkles: add ONEWIRE command and data FIFO; :warning: rework ONEWIRE interface register layout; :bug: fix regression: busy flag was stuck at zero | [#1113](https://github.com/stnolting/neorv32/pull/1113) |
+| 01.12.2024 | 1.10.6.8 | add TWI bus sensing logic | [#1111](https://github.com/stnolting/neorv32/pull/1111) |
 | 26.11.2024 | 1.10.6.7 | :bug: fix some HDL issues that caused problems when auto-converting to Verilog | [#1103](https://github.com/stnolting/neorv32/pull/1103) |
 | 23.11.2024 | 1.10.6.6 | CPU control: large code edits and cleanups | [#1099](https://github.com/stnolting/neorv32/pull/1099) |
 | 10.11.2024 | 1.10.6.5 | :warning: switch to [xPack](https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack) as default prebuilt RISC-V GCC toolchain (now using `riscv-none-elf-` as default gcc prefix) | [#1091](https://github.com/stnolting/neorv32/pull/1091) |

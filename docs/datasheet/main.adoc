@@ -1,6 +1,5 @@
-= The NEORV32 RISC-V Processor: Datasheet
+= The NEORV32 RISC-V Processor - Datasheet
 include::../attrs.adoc[]
-include::../attrs.main.adoc[]
 
 
 <<<

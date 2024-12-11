@@ -1,6 +1,5 @@
-= The NEORV32 RISC-V Processor: User Guide
+= The NEORV32 RISC-V Processor - User Guide
 include::../attrs.adoc[]
-include::../attrs.main.adoc[]
 
 
 <<<

@@ -184,11 +184,11 @@ proc setup_ip_gui {} {
   add_params $group {
     { XBUS_EN               {Enable XBUS}           {} }
     { XBUS_TIMEOUT          {Timeout}               {Max number of clock cycles before AXI access times out}  {$XBUS_EN} }
+    { XBUS_REGSTAGE_EN      {Add register stages}   {Relaxes timing, but will increase latency}               {$XBUS_EN} }
   }
 
   set sub_group [add_group $group {XBUS Cache}]
   add_params $sub_group {
-    { XBUS_REGSTAGE_EN      {Add register stages}   {Relaxes timing, but will increase latency}               {$XBUS_EN} }
     { XBUS_CACHE_EN         {Enable XBUS Cache}     {}                                                        {$XBUS_EN} {$XBUS_EN ? $XBUS_CACHE_EN : false}}
     { XBUS_CACHE_NUM_BLOCKS {Number of Blocks}      {}                                                        {$XBUS_CACHE_EN} }
     { XBUS_CACHE_BLOCK_SIZE {Block Size}            {In bytes (use a power of two)}                           {$XBUS_CACHE_EN} }

@@ -4,7 +4,7 @@
   <vendor>stnolting</vendor>
   <name>neorv32</name>
   <series>RISC-V</series>
-  <version>1.10.6</version>
+  <version>1.10.7</version>
   <description>The NEORV32 RISC-V Processor</description>
 
   <!-- CPU core -->
@@ -771,41 +771,43 @@
               <description>ONEWIRE controller enable</description>
             </field>
             <field>
+              <name>ONEWIRE_CTRL_CLEAR</name>
+              <bitRange>[1:1]</bitRange>
+              <description>Clear RXT FIFO, auto-clears</description>
+            </field>
+            <field>
               <name>ONEWIRE_CTRL_PRSC</name>
-              <bitRange>[2:1]</bitRange>
+              <bitRange>[3:2]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
               <name>ONEWIRE_CTRL_CLKDIV</name>
-              <bitRange>[10:3]</bitRange>
+              <bitRange>[11:4]</bitRange>
               <description>Clock divider</description>
             </field>
             <field>
-              <name>ONEWIRE_CTRL_TRIG_RST</name>
-              <bitRange>[11:11]</bitRange>
-              <description>Trigger reset pulse and presence detect operation, auto-clears</description>
+              <name>ONEWIRE_CTRL_FIFO</name>
+              <bitRange>[18:15]</bitRange>
+              <access>read-only</access>
+              <description>log2(ONEWIRE FIFO size)</description>
             </field>
             <field>
-              <name>ONEWIRE_CTRL_TRIG_BIT</name>
-              <bitRange>[12:12]</bitRange>
-              <description>Trigger single-bit transmission operation, auto-clears</description>
+              <name>ONEWIRE_CTRL_TX_FULL</name>
+              <bitRange>[28:28]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO full</description>
             </field>
             <field>
-              <name>ONEWIRE_CTRL_TRIG_BYTE</name>
-              <bitRange>[13:13]</bitRange>
-              <description>Trigger full-byte transmission operation, auto-clears</description>
+              <name>ONEWIRE_CTRL_RX_AVAIL</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>RX FIFO data available</description>
             </field>
             <field>
               <name>ONEWIRE_CTRL_SENSE</name>
-              <bitRange>[29:29]</bitRange>
-              <access>read-only</access>
-              <description>Current state of the 1-wire bus line</description>
-            </field>
-            <field>
-              <name>ONEWIRE_CTRL_PRESENCE</name>
               <bitRange>[30:30]</bitRange>
               <access>read-only</access>
-              <description>Set if device(s) found during presence detect phase</description>
+              <description>Current state of the 1-wire bus line</description>
             </field>
             <field>
               <name>ONEWIRE_CTRL_BUSY</name>
@@ -816,14 +818,25 @@
           </fields>
         </register>
         <register>
-          <name>DATA</name>
-          <description>Read/write transmission data register</description>
+          <name>DCMD</name>
+          <description>Read/write transmission data/command register</description>
           <addressOffset>0x04</addressOffset>
           <fields>
             <field>
-              <name>ONEWIRE_DATA</name>
+              <name>ONEWIRE_DCMD_DATA</name>
               <bitRange>[7:0]</bitRange>
               <description>RTX data, transmitted LSB-first</description>
+            </field>
+            <field>
+              <name>ONEWIRE_DCMD_CMD</name>
+              <bitRange>[9:8]</bitRange>
+              <description>Operation command</description>
+            </field>
+            <field>
+              <name>ONEWIRE_DCMD_PRESENCE</name>
+              <bitRange>[10:10]</bitRange>
+              <access>read-only</access>
+              <description>Bus presence detected</description>
             </field>
           </fields>
         </register>
@@ -1250,6 +1263,18 @@
               <bitRange>[29:29]</bitRange>
               <access>read-only</access>
               <description>TX FIFO full</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_SENSE_SCL</name>
+              <bitRange>[27:27]</bitRange>
+              <access>read-only</access>
+              <description>current state of the SCL bus line</description>
+            </field>
+            <field>
+              <name>TWI_CTRL_SENSE_SDA</name>
+              <bitRange>[28:28]</bitRange>
+              <access>read-only</access>
+              <description>current state of the SDA bus line</description>
             </field>
             <field>
               <name>TWI_CTRL_RX_AVAIL</name>
