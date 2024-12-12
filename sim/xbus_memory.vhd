@@ -54,7 +54,7 @@ architecture xbus_memory_rtl of xbus_memory is
       index_v := 0;
       while (endfile(hex_file) = false) and (index_v < num_words) loop -- not end of file / end of memory
         readline(hex_file, hex_line_v); -- read one line from file
-        for i in 7 downto 0 loop -- get full 32-bit word
+        for i in 7 downto 0 loop -- get full 32-bit word in 'word_v'; no VHDL2008 required
           read(hex_line_v, hex_char_v);
           if (hex_char_v >= '0') and (hex_char_v <= '9') then
             tmp_v := 0 + (character'pos(hex_char_v) - character'pos('0'));
