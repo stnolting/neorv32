@@ -16,9 +16,9 @@ use std.textio.all;
 
 entity sim_uart_rx is
   generic (
-    name : string; -- receiver name (for log file)
-    fclk : real; -- clock speed of clk_i in Hz
-    baud : real -- baud rate
+    NAME : string; -- receiver name (for log file)
+    FCLK : real; -- clock speed of clk_i in Hz
+    BAUD : real -- baud rate
   );
   port (
     clk : in std_ulogic; -- global clock
@@ -33,8 +33,8 @@ architecture sim_uart_rx_rtl of sim_uart_rx is
   signal sreg : std_ulogic_vector(8 downto 0) := (others => '0');
   signal baudcnt : real;
   signal bitcnt  : natural;
-  constant baud_val_c : real := fclk / baud;
-  file file_out : text open write_mode is "neorv32_tb." & name & "_rx.out";
+  constant baud_val_c : real := FCLK / BAUD;
+  file file_out : text open write_mode is "neorv32_tb." & NAME & "_rx.out";
 
 begin
 
@@ -67,9 +67,9 @@ begin
             c := to_integer(unsigned(sreg(8 downto 1)));
 
             if (c < 32) or (c > 32+95) then -- non-printable character?
-              report name & ".rx: (" & integer'image(c) & ")";
+              report NAME & ".rx: (" & integer'image(c) & ")";
             else
-              report name & ".rx: " & character'val(c);
+              report NAME & ".rx: " & character'val(c);
             end if;
 
             if (c = 10) then -- LF line break
