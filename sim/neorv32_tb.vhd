@@ -58,12 +58,12 @@ entity neorv32_tb is
     DCACHE_NUM_BLOCKS : natural range 1 to 256         := 32;          -- d-cache: number of blocks (min 1), has to be a power of 2
     DCACHE_BLOCK_SIZE : natural range 4 to 2**16       := 32;          -- d-cache: block size in bytes (min 4), has to be a power of 2
     -- external memory A --
-    EXT_MEM_A_EN      : boolean                        := true;        -- enable memory
+    EXT_MEM_A_EN      : boolean                        := false;       -- enable memory
     EXT_MEM_A_BASE    : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address, has to be word-aligned
     EXT_MEM_A_SIZE    : natural                        := 64;          -- memory size in bytes, min 4
     EXT_MEM_A_FILE    : string                         := "";          -- memory initialization file (plain HEX), no initialization if empty
     -- external memory B --
-    EXT_MEM_B_EN      : boolean                        := true;        -- enable memory
+    EXT_MEM_B_EN      : boolean                        := false;       -- enable memory
     EXT_MEM_B_BASE    : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address, has to be word-aligned
     EXT_MEM_B_SIZE    : natural                        := 64;          -- memory size in bytes, min 4
     EXT_MEM_B_FILE    : string                         := ""           -- memory initialization file (plain HEX), no initialization if empty
