@@ -239,14 +239,6 @@ void    spi_flash_write_addr(uint32_t addr);
 
 
 /**********************************************************************//**
- * Sanity check: Base RV32I ISA only!
- **************************************************************************/
-#if defined __riscv_atomic || defined __riscv_a || __riscv_b || __riscv_compressed || defined __riscv_c || defined __riscv_mul || defined __riscv_m
-  #warning In order to allow the bootloader to run on *any* CPU configuration it should be compiled using the base rv32i ISA only.
-#endif
-
-
-/**********************************************************************//**
  * Bootloader main.
  **************************************************************************/
 int main(void) {
