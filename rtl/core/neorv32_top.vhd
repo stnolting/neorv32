@@ -323,7 +323,7 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- IRQs --
   type firq_enum_t is (
-    FIRQ_TRNG, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
+    FIRQ_reserved, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
     FIRQ_CFS, FIRQ_NEOLED, FIRQ_XIRQ, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK_RX, FIRQ_SLINK_TX
   );
   type firq_t is array (firq_enum_t) of std_ulogic;
@@ -544,7 +544,7 @@ begin
     );
 
     -- fast interrupt requests (FIRQs) --
-    cpu_firq(0)  <= firq(FIRQ_TRNG);
+    cpu_firq(0)  <= '0'; -- reserved
     cpu_firq(1)  <= firq(FIRQ_CFS);
     cpu_firq(2)  <= firq(FIRQ_UART0_RX);
     cpu_firq(3)  <= firq(FIRQ_UART0_TX);
@@ -1388,21 +1388,19 @@ begin
     if IO_TRNG_EN generate
       neorv32_trng_inst: entity neorv32.neorv32_trng
       generic map (
-        IO_TRNG_FIFO => IO_TRNG_FIFO
+        TRNG_FIFO => IO_TRNG_FIFO
       )
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
         bus_req_i => iodev_req(IODEV_TRNG),
-        bus_rsp_o => iodev_rsp(IODEV_TRNG),
-        irq_o     => firq(FIRQ_TRNG)
+        bus_rsp_o => iodev_rsp(IODEV_TRNG)
       );
     end generate;
 
     neorv32_trng_inst_false:
     if not IO_TRNG_EN generate
       iodev_rsp(IODEV_TRNG) <= rsp_terminate_c;
-      firq(FIRQ_TRNG)       <= '0';
     end generate;
 
 
