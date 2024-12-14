@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - Two-Wire Interface Controller (TWI)                                --
+-- NEORV32 SoC - Two-Wire Interface Host Controller (TWI)                           --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -38,14 +38,14 @@ architecture neorv32_twi_rtl of neorv32_twi is
 
   -- control register --
   constant ctrl_en_c         : natural :=  0; -- r/w: module enable (reset when zero)
-  constant ctrl_prsc0_c      : natural :=  1; -- r/w: CLK prsc bit 0
-  constant ctrl_prsc2_c      : natural :=  3; -- r/w: CLK prsc bit 2
+  constant ctrl_prsc0_c      : natural :=  1; -- r/w: clock prescaler bit 0
+  constant ctrl_prsc2_c      : natural :=  3; -- r/w: clock prescaler bit 2
   constant ctrl_cdiv0_c      : natural :=  4; -- r/w: clock divider bit 0
   constant ctrl_cdiv3_c      : natural :=  7; -- r/w: clock divider bit 3
   constant ctrl_clkstr_en_c  : natural :=  8; -- r/w: enable clock stretching
   --
-  constant ctrl_fifo_size0_c : natural := 15; -- r/-: log2(fifo size), bit 0 (lsb)
-  constant ctrl_fifo_size3_c : natural := 18; -- r/-: log2(fifo size), bit 3 (msb)
+  constant ctrl_fifo_size0_c : natural := 15; -- r/-: log2(FIFO size), bit 0 (LSB)
+  constant ctrl_fifo_size3_c : natural := 18; -- r/-: log2(FIFO size), bit 3 (MSB)
   --
   constant ctrl_sense_scl_c  : natural := 27; -- r/-: current state of the SCL bus line
   constant ctrl_sense_sda_c  : natural := 28; -- r/-: current state of the SDA bus line

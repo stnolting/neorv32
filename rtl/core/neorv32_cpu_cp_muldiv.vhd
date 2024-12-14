@@ -110,7 +110,7 @@ begin
     elsif rising_edge(clk_i) then
       -- defaults --
       ctrl.out_en <= '0';
-      ctrl.cnt    <= std_ulogic_vector(to_unsigned(XLEN-2, index_size_f(XLEN))); -- cycle counter initialization
+      ctrl.cnt    <= std_ulogic_vector(to_unsigned(XLEN-2, ctrl.cnt'length)); -- cycle counter initialization
 
       -- fsm --
       case ctrl.state is
