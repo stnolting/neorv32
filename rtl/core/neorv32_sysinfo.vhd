@@ -49,6 +49,7 @@ entity neorv32_sysinfo is
     IO_SPI_EN             : boolean; -- implement serial peripheral interface (SPI)?
     IO_SDI_EN             : boolean; -- implement serial data interface (SDI)?
     IO_TWI_EN             : boolean; -- implement two-wire interface (TWI)?
+    IO_TWD_EN             : boolean; -- implement two-wire device (TWD)?
     IO_PWM_EN             : boolean; -- implement pulse-width modulation controller (PWM)?
     IO_WDT_EN             : boolean; -- implement watch dog timer (WDT)?
     IO_TRNG_EN            : boolean; -- implement true random number generator (TRNG)?
@@ -123,7 +124,7 @@ begin
   sysinfo(2)(10) <= '1' when xip_cache_en_c    else '0'; -- execute in-place cache implemented?
   sysinfo(2)(11) <= '1' when ocd_auth_en_c     else '0'; -- on-chip debugger authentication implemented?
   sysinfo(2)(12) <= '1' when int_imem_rom_c    else '0'; -- processor-internal instruction memory implemented as pre-initialized ROM?
-  sysinfo(2)(13) <= '0';                                 -- reserved
+  sysinfo(2)(13) <= '1' when IO_TWD_EN         else '0'; -- two-wire device (TWD) implemented?
   sysinfo(2)(14) <= '1' when IO_DMA_EN         else '0'; -- direct memory access controller (DMA) implemented?
   sysinfo(2)(15) <= '1' when IO_GPIO_EN        else '0'; -- general purpose input/output port unit (GPIO) implemented?
   sysinfo(2)(16) <= '1' when IO_MTIME_EN       else '0'; -- machine system timer (MTIME) implemented?

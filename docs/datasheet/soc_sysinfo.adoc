@@ -86,7 +86,7 @@ Bit fields in this register are set to all-zero if the according memory system i
 | `10`    | `SYSINFO_SOC_XIP_CACHE`    | set if XIP cache is implemented (via top's `XIP_CACHE_EN` generic)
 | `11`    | `SYSINFO_SOC_OCD_AUTH`     | set if on-chip debugger authentication is implemented (via top's `OCD_AUTHENTICATION` generic)
 | `12`    | `SYSINFO_SOC_IMEM_ROM`     | set if processor-internal IMEM is implemented as pre-initialized ROM (via top's `BOOT_MODE_SELECT` generic; see <<_boot_configuration>>)
-| `13`    | -                          | _reserved_, read as zero
+| `13`    | `SYSINFO_SOC_IO_TWD`       | set if TWD is implemented (via top's `IO_TWD_EN` generic)
 | `14`    | `SYSINFO_SOC_IO_DMA`       | set if direct memory access controller is implemented (via top's `IO_DMA_EN` generic)
 | `15`    | `SYSINFO_SOC_IO_GPIO`      | set if GPIO is implemented (via top's `IO_GPIO_EN` generic)
 | `16`    | `SYSINFO_SOC_IO_MTIME`     | set if MTIME is implemented (via top's `IO_MTIME_EN` generic)
