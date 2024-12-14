@@ -1324,7 +1324,7 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x04</size>
+        <size>0x08</size>
         <usage>registers</usage>
       </addressBlock>
 
@@ -1335,43 +1335,45 @@
           <addressOffset>0x00</addressOffset>
           <fields>
             <field>
-              <name>TRNG_CTRL_DATA</name>
-              <bitRange>[7:0]</bitRange>
-              <access>read-only</access>
-              <description>Random data</description>
-            </field>
-            <field>
-              <name>TRNG_CTRL_FIFO</name>
-              <bitRange>[19:16]</bitRange>
-              <access>read-only</access>
-              <description>Log2(FIFO size)</description>
-            </field>
-            <field>
-              <name>TRNG_CTRL_IRQ_SEL</name>
-              <bitRange>[27:27]</bitRange>
-              <description>Interrupt trigger select (0 = data available, 1 = FIFO full)</description>
+              <name>TRNG_CTRL_EN</name>
+              <bitRange>[0:0]</bitRange>
+              <description>TRNG enable flag</description>
             </field>
             <field>
               <name>TRNG_CTRL_FIFO_CLR</name>
-              <bitRange>[28:28]</bitRange>
-              <description>Clear data FIFO when set (auto clears)</description>
+              <bitRange>[1:1]</bitRange>
+              <description>Clear data FIFO when set (flag auto clears)</description>
+            </field>
+            <field>
+              <name>ONEWIRE_CTRL_FIFO_SIZE</name>
+              <bitRange>[5:2]</bitRange>
+              <access>read-only</access>
+              <description>log2(TRNG FIFO size)</description>
             </field>
             <field>
               <name>TRNG_CTRL_SIM_MODE</name>
-              <bitRange>[29:29]</bitRange>
+              <bitRange>[6:6]</bitRange>
               <access>read-only</access>
               <description>TRNG simulation mode (PRNG!) active</description>
             </field>
             <field>
-              <name>TRNG_CTRL_EN</name>
-              <bitRange>[30:30]</bitRange>
-              <description>TRNG enable flag</description>
-            </field>
-            <field>
-              <name>TRNG_CTRL_VALID</name>
-              <bitRange>[31:31]</bitRange>
+              <name>TRNG_CTRL_AVAIL</name>
+              <bitRange>[7:7]</bitRange>
               <access>read-only</access>
-              <description>Random data output valid</description>
+              <description>Random data available</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DATA</name>
+          <description>Random data</description>
+          <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>TRNG_DATA</name>
+              <bitRange>[7:0]</bitRange>
+              <access>read-only</access>
+              <description>Random data</description>
             </field>
           </fields>
         </register>

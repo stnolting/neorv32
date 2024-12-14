@@ -17,8 +17,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_fifo is
   generic (
-    FIFO_DEPTH : natural := 4;     -- number of fifo entries; has to be a power of two; min 1
-    FIFO_WIDTH : natural := 32;    -- size of data elements in fifo
+    FIFO_DEPTH : natural := 4;     -- number of FIFO entries; has to be a power of two; min 1
+    FIFO_WIDTH : natural := 32;    -- size of data elements in FIFO
     FIFO_RSYNC : boolean := false; -- false = async read; true = sync read
     FIFO_SAFE  : boolean := false; -- true = allow read/write only if data available
     FULL_RESET : boolean := false  -- true = reset all memory cells (cannot be mapped to BRAM)
@@ -50,7 +50,7 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
   signal fifo_mem : fifo_mem_t; -- for fifo_depth_c > 1
   signal fifo_reg : std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- for fifo_depth_c = 1
 
-  -- Fifo control and status --
+  -- FIFO control and status --
   signal we, re, match, empty, full, half, free, avail : std_ulogic;
 
   -- write/read pointer --

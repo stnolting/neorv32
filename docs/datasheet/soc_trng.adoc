@@ -11,7 +11,7 @@
 | Top entity ports:       | none |
 | Configuration generics: | `IO_TRNG_EN`   | implement TRNG when `true`
 |                         | `IO_TRNG_FIFO` | data FIFO depth, min 1, has to be a power of two
-| CPU interrupts:         | fast IRQ channel 0 | TRNG data available interrupt (see <<_processor_interrupts>>)
+| CPU interrupts:         | none
 | Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
@@ -33,34 +33,27 @@ neoTRNG repository: https://github.com/stnolting/neoTRNG
 The synthesis tool might emit warnings regarding **inferred latches** or **combinatorial loops**. However, this
 is not design flaw as this is exactly what we want. ;)
 
-.Simulation
-[IMPORTANT]
-When simulating the processor the TRNG is automatically set to "simulation mode". In this mode the physical entropy
-sources (the ring oscillators) are replaced by a simple **pseudo RNG** based on a LFSR providing only
-**deterministic pseudo-random** data. The `TRNG_CTRL_SIM_MODE` flag of the control register is set if simulation
-mode is active.
-
 
 **Theory of Operation**
 
-The TRNG features a single control register `CTRL` for control, status check and data access. When the `TRNG_CTRL_EN`
-bit is set, the TRNG is enabled and starts operation. As soon as the `TRNG_CTRL_VALID` bit is set a new random data byte
-is available and can be obtained from the lowest 8 bits of the `CTRL` register. If this bit is cleared, there is no
-valid data available and the lowest 8 bit of the `CTRL` register are set to all-zero.
+The TRNG provides two memory mapped interface register. One control register (`CTRL`) for configuration and
+status check and one data register (`DATA`) for obtaining the random data. The TRNG is enabled by setting the
+control register's `TRNG_CTRL_EN`. As soon as the `TRNG_CTRL_AVAIL` bit is set a new random data byte is
+available and can be obtained from the lowest 8 bits of the `DATA` register. If this bit is cleared, there
+is no valid data available and the reading `DATA` will return all-zero.
 
 An internal entropy FIFO can be configured using the `IO_TRNG_FIFO` generic. This FIFO automatically samples
-new random data from the TRNG to provide some kind of _random data pool_ for applications, which require a large number
-of random data in a short time. The random data FIFO can be cleared at any time either by disabling the TRNG or by
-setting the `TRNG_CTRL_FIFO_CLR` flag. The FIFO depth can be retrieved by software via the `TRNG_CTRL_FIFO_*` bits.
+new random data from the TRNG to provide some kind of _random data pool_ for applications which require a
+larger number of random data in a short time. The random data FIFO can be cleared at any time either by
+disabling the TRNG or by setting the `TRNG_CTRL_FIFO_CLR` flag. The FIFO depth can be retrieved by software
+via the `TRNG_CTRL_FIFO_*` bits.
 
-
-**TRNG Interrupt**
-
-As the neoTRNG is a rather slow entropy source, a "data available" interrupt is provided to inform the application
-software that new random data is available. This interrupt can be trigger by either of two conditions: trigger the
-interrupt if _any_ random data is available (i.e. the data FIFO is not empty; `TRNG_CTRL_IRQ_SEL = 0`) or trigger
-the interrupt if the random pool is full (i.e. the data FIFO is full; `TRNG_CTRL_IRQ_SEL = 1`).
-Once the TRNG interrupt has fired it remains pending until the actual cause of the interrupt is resolved.
+.Simulation
+[IMPORTANT]
+When simulating the processor the TRNG is automatically set to "simulation mode". In this mode the physical
+entropy sources (the ring oscillators) are replaced by a simple **pseudo RNG** based on a LFSR providing only
+**deterministic pseudo-random** data. The `TRNG_CTRL_SIM_MODE` flag of the control register is set if simulation
+mode is active.
 
 
 **Register Map**
@@ -70,13 +63,11 @@ Once the TRNG interrupt has fired it remains pending until the actual cause of t
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.9+<| `0xfffffa00` .9+<| `CTRL` <|`7:0`   `TRNG_CTRL_DATA_MSB : TRNG_CTRL_DATA_MSB` ^| r/- <| 8-bit random data
-                                <|`15:8`   -                                        ^| r/- <| reserved, read as zero
-                                <|`19:16` `TRNG_CTRL_FIFO_MSB : TRNG_CTRL_FIFO_MSB` ^| r/- <| FIFO depth, log2(`IO_TRNG_FIFO`)
-                                <|`27:20`  -                                        ^| r/- <| reserved, read as zero
-                                <|`27`    `TRNG_CTRL_IRQ_SEL`                       ^| r/w <| interrupt trigger select (0 = data available, 1 = FIFO full)
-                                <|`28`    `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set; flag auto-clears
-                                <|`29`    `TRNG_CTRL_SIM_MODE`                      ^| r/- <| simulation mode (PRNG!)
-                                <|`30`    `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
-                                <|`31`    `TRNG_CTRL_VALID`                         ^| r/- <| random data is valid when set
+.5+<| `0xfffffa00` .5+<| `CTRL` <|`0`    `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
+                                <|`1`    `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set; flag auto-clears
+                                <|`5:2`  `TRNG_CTRL_FIFO_MSB : TRNG_CTRL_FIFO_LSB` ^| r/- <| FIFO depth, log2(`IO_TRNG_FIFO`)
+                                <|`6`    `TRNG_CTRL_SIM_MODE`                      ^| r/- <| simulation mode (PRNG!)
+                                <|`7`    `TRNG_CTRL_AVAIL`                         ^| r/- <| random data available when set
+.2+<| `0xfffffa04` .2+<| `DATA` <|`7:0`  `TRNG_DATA_MSB : TRNG_DATA_LSB`           ^| r/- <| random data byte
+                                <|`31:8` _reserved_                                ^| r/- <| reserved, read as zero
 |=======================

@@ -99,7 +99,7 @@ begin
       bus_rw      <= '0';
     elsif rising_edge(clk_i) then
       if (pending = '0') then -- idle, waiting for request
-        timeout_cnt <= std_ulogic_vector(to_unsigned(TIMEOUT_VAL, index_size_f(TIMEOUT_VAL)+1));
+        timeout_cnt <= std_ulogic_vector(to_unsigned(TIMEOUT_VAL, timeout_cnt'length));
         pending     <= bus_req.stb;
       else -- busy, transfer in progress
         timeout_cnt <= std_ulogic_vector(unsigned(timeout_cnt) - 1);
