@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100701"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100702"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -193,6 +193,17 @@ package neorv32_package is
     stb  : std_ulogic; -- strobe
     cyc  : std_ulogic; -- valid cycle
   end record;
+
+  -- source (request) termination --
+  constant xbus_req_terminate_c : xbus_req_t := (
+    addr => (others => '0'),
+    data => (others => '0'),
+    tag  => (others => '0'),
+    we   => '0',
+    sel  => (others => '0'),
+    stb  => '0',
+    cyc  => '0'
+  );
 
   -- xbus response --
   type xbus_rsp_t is record

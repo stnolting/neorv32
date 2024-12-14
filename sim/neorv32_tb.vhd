@@ -18,8 +18,10 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_tb is
   generic (
+    -- processor --
     CLOCK_FREQUENCY   : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
     BOOT_MODE_SELECT  : natural range 0 to 2           := 2;           -- boot from pre-initialized IMEM
+    BOOT_ADDR_CUSTOM  : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
     RISCV_ISA_C       : boolean                        := false;       -- implement compressed extension
     RISCV_ISA_E       : boolean                        := false;       -- implement embedded RF extension
     RISCV_ISA_M       : boolean                        := true;        -- implement mul/div extension
@@ -54,7 +56,17 @@ entity neorv32_tb is
     ICACHE_BLOCK_SIZE : natural range 4 to 2**16       := 32;          -- i-cache: block size in bytes (min 4), has to be a power of 2
     DCACHE_EN         : boolean                        := true;        -- implement data cache
     DCACHE_NUM_BLOCKS : natural range 1 to 256         := 32;          -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE : natural range 4 to 2**16       := 32           -- d-cache: block size in bytes (min 4), has to be a power of 2
+    DCACHE_BLOCK_SIZE : natural range 4 to 2**16       := 32;          -- d-cache: block size in bytes (min 4), has to be a power of 2
+    -- external memory A --
+    EXT_MEM_A_EN      : boolean                        := false;       -- enable memory
+    EXT_MEM_A_BASE    : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address, has to be word-aligned
+    EXT_MEM_A_SIZE    : natural                        := 64;          -- memory size in bytes, min 4
+    EXT_MEM_A_FILE    : string                         := "";          -- memory initialization file (plain HEX), no initialization if empty
+    -- external memory B --
+    EXT_MEM_B_EN      : boolean                        := false;       -- enable memory
+    EXT_MEM_B_BASE    : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address, has to be word-aligned
+    EXT_MEM_B_SIZE    : natural                        := 64;          -- memory size in bytes, min 4
+    EXT_MEM_B_FILE    : string                         := ""           -- memory initialization file (plain HEX), no initialization if empty
   );
 end neorv32_tb;
 
@@ -79,8 +91,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal slink_tx, slink_rx : slink_t;
 
   -- XBUS (Wishbone b4) bus --
-  signal xbus_core_req, xbus_imem_req, xbus_dmem_req, xbus_mmio_req, xbus_trig_req : xbus_req_t;
-  signal xbus_core_rsp, xbus_imem_rsp, xbus_dmem_rsp, xbus_mmio_rsp, xbus_trig_rsp : xbus_rsp_t;
+  signal xbus_core_req, xbus_ext_mem_a_req, xbus_ext_mem_b_req, xbus_mmio_req, xbus_trig_req : xbus_req_t;
+  signal xbus_core_rsp, xbus_ext_mem_a_rsp, xbus_ext_mem_b_rsp, xbus_mmio_rsp, xbus_trig_rsp : xbus_rsp_t;
 
 begin
 
@@ -102,7 +114,7 @@ begin
     JEDEC_ID              => "00000000000",
     -- Boot Configuration --
     BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
-    BOOT_ADDR_CUSTOM      => x"00000000",
+    BOOT_ADDR_CUSTOM      => BOOT_ADDR_CUSTOM,
     -- On-Chip Debugger (OCD) --
     OCD_EN                => true,
     OCD_AUTHENTICATION    => true,
@@ -142,7 +154,7 @@ begin
     HPM_NUM_CNTS          => 12,
     HPM_CNT_WIDTH         => 40,
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN       => MEM_INT_IMEM_EN ,
+    MEM_INT_IMEM_EN       => MEM_INT_IMEM_EN,
     MEM_INT_IMEM_SIZE     => MEM_INT_IMEM_SIZE,
     -- Internal Data memory --
     MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
@@ -352,9 +364,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   sim_rx_uart0: entity work.sim_uart_rx
   generic map (
-    name => "uart0",
-    fclk => real(CLOCK_FREQUENCY),
-    baud => real(19200)
+    NAME => "uart0",
+    FCLK => real(CLOCK_FREQUENCY),
+    BAUD => real(19200)
   )
   port map (
     clk => clk_gen,
@@ -363,9 +375,9 @@ begin
 
   sim_rx_uart1: entity work.sim_uart_rx
   generic map (
-    name => "uart1",
-    fclk => real(CLOCK_FREQUENCY),
-    baud => real(19200)
+    NAME => "uart1",
+    FCLK => real(CLOCK_FREQUENCY),
+    BAUD => real(19200)
   )
   port map (
     clk => clk_gen,
@@ -378,51 +390,69 @@ begin
   xbus_interconnect: entity work.xbus_gateway
   generic map (
     -- device address size in bytes and base address --
-    DEV_0_SIZE => MEM_INT_IMEM_SIZE, DEV_0_BASE => mem_imem_base_c,
-    DEV_1_SIZE => MEM_INT_DMEM_SIZE, DEV_1_BASE => mem_dmem_base_c,
-    DEV_2_SIZE =>                64, DEV_2_BASE => x"F0000000",
-    DEV_3_SIZE =>                 4, DEV_3_BASE => x"FF000000"
+    DEV_0_EN => EXT_MEM_A_EN, DEV_0_SIZE => EXT_MEM_A_SIZE, DEV_0_BASE => EXT_MEM_A_BASE,
+    DEV_1_EN => EXT_MEM_B_EN, DEV_1_SIZE => EXT_MEM_B_SIZE, DEV_1_BASE => EXT_MEM_B_BASE,
+    DEV_2_EN => true,         DEV_2_SIZE =>             64, DEV_2_BASE => x"F0000000",
+    DEV_3_EN => true,         DEV_3_SIZE =>              4, DEV_3_BASE => x"FF000000"
   )
   port map (
     -- host port --
     host_req_i  => xbus_core_req,
     host_rsp_o  => xbus_core_rsp,
     -- device ports --
-    dev_0_req_o => xbus_imem_req, dev_0_rsp_i => xbus_imem_rsp,
-    dev_1_req_o => xbus_dmem_req, dev_1_rsp_i => xbus_dmem_rsp,
-    dev_2_req_o => xbus_mmio_req, dev_2_rsp_i => xbus_mmio_rsp,
-    dev_3_req_o => xbus_trig_req, dev_3_rsp_i => xbus_trig_rsp
+    dev_0_req_o => xbus_ext_mem_a_req, dev_0_rsp_i => xbus_ext_mem_a_rsp,
+    dev_1_req_o => xbus_ext_mem_b_req, dev_1_rsp_i => xbus_ext_mem_b_rsp,
+    dev_2_req_o => xbus_mmio_req,      dev_2_rsp_i => xbus_mmio_rsp,
+    dev_3_req_o => xbus_trig_req,      dev_3_rsp_i => xbus_trig_rsp
   );
 
 
-  -- XBUS: Instruction Memory ---------------------------------------------------------------
+  -- XBUS: External Memory A ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  xbus_imem: entity work.xbus_memory
-  generic map (
-    MEM_SIZE => MEM_INT_IMEM_SIZE,
-    MEM_LATE => 1
-  )
-  port map (
-    clk_i      => clk_gen,
-    rstn_i     => rst_gen,
-    xbus_req_i => xbus_imem_req,
-    xbus_rsp_o => xbus_imem_rsp
-  );
+  xbus_external_memory_a_enable:
+  if EXT_MEM_A_EN generate
+    xbus_external_memory_a: entity work.xbus_memory
+    generic map (
+      MEM_SIZE => EXT_MEM_A_SIZE,
+      MEM_LATE => 1,
+      MEM_FILE => EXT_MEM_A_FILE
+    )
+    port map (
+      clk_i      => clk_gen,
+      rstn_i     => rst_gen,
+      xbus_req_i => xbus_ext_mem_a_req,
+      xbus_rsp_o => xbus_ext_mem_a_rsp
+    );
+  end generate;
+
+  xbus_external_memory_a_disable:
+  if not EXT_MEM_A_EN generate
+    xbus_ext_mem_a_rsp <= xbus_rsp_terminate_c;
+  end generate;
 
 
-  -- XBUS: Data Memory ----------------------------------------------------------------------
+  -- XBUS: External Memory B ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  xbus_dmem: entity work.xbus_memory
-  generic map (
-    MEM_SIZE => MEM_INT_DMEM_SIZE,
-    MEM_LATE => 1
-  )
-  port map (
-    clk_i      => clk_gen,
-    rstn_i     => rst_gen,
-    xbus_req_i => xbus_dmem_req,
-    xbus_rsp_o => xbus_dmem_rsp
-  );
+  xbus_external_memory_b_enable:
+  if EXT_MEM_B_EN generate
+    xbus_external_memory_b: entity work.xbus_memory
+    generic map (
+      MEM_SIZE => EXT_MEM_B_SIZE,
+      MEM_LATE => 1,
+      MEM_FILE => EXT_MEM_B_FILE
+    )
+    port map (
+      clk_i      => clk_gen,
+      rstn_i     => rst_gen,
+      xbus_req_i => xbus_ext_mem_b_req,
+      xbus_rsp_o => xbus_ext_mem_b_rsp
+    );
+  end generate;
+
+  xbus_external_memory_b_disable:
+  if not EXT_MEM_B_EN generate
+    xbus_ext_mem_b_rsp <= xbus_rsp_terminate_c;
+  end generate;
 
 
   -- XBUS: Memory-Mapped IO -----------------------------------------------------------------
@@ -430,7 +460,8 @@ begin
   xbus_mmio: entity work.xbus_memory
   generic map (
     MEM_SIZE => 64,
-    MEM_LATE => 32
+    MEM_LATE => 32,
+    MEM_FILE => "" -- no initialization
   )
   port map (
     clk_i      => clk_gen,
