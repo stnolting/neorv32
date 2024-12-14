@@ -24,6 +24,11 @@
 The NEORV32 TWI implements an I2C-compatible host controller to communicate with arbitrary I2C-devices.
 Note that peripheral-mode (controller acts as a device) and multi-controller mode are not supported yet.
 
+.Host-Mode Only
+[NOTE]
+The NEORV32 TWI controller only supports **host mode**. Transmission are initiated by the processor's TWI controller
+and not by an external TWI module. If you are looking for a _device-mode_ module (transactions
+initiated by an external host) check out the <<_two_wire_serial_device_controller_twd>>.
 
 Key features:
 
