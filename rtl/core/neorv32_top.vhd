@@ -116,21 +116,23 @@ entity neorv32_top is
     IO_GPIO_NUM           : natural range 0 to 64          := 0;           -- number of GPIO input/output pairs (0..64)
     IO_MTIME_EN           : boolean                        := false;       -- implement machine system timer (MTIME)?
     IO_UART0_EN           : boolean                        := false;       -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX fifo depth, has to be a power of two, min 1
-    IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX fifo depth, has to be a power of two, min 1
+    IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
+    IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
     IO_UART1_EN           : boolean                        := false;       -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-    IO_UART1_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX fifo depth, has to be a power of two, min 1
-    IO_UART1_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX fifo depth, has to be a power of two, min 1
+    IO_UART1_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
+    IO_UART1_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
     IO_SPI_EN             : boolean                        := false;       -- implement serial peripheral interface (SPI)?
-    IO_SPI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be a power of two, min 1
+    IO_SPI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be a power of two, min 1
     IO_SDI_EN             : boolean                        := false;       -- implement serial data interface (SDI)?
-    IO_SDI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be zero or a power of two, min 1
+    IO_SDI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
     IO_TWI_EN             : boolean                        := false;       -- implement two-wire interface (TWI)?
-    IO_TWI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be zero or a power of two, min 1
+    IO_TWI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
+    IO_TWD_EN             : boolean                        := false;       -- implement two-wire device (TWD)?
+    IO_TWD_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
     IO_PWM_NUM_CH         : natural range 0 to 16          := 0;           -- number of PWM channels to implement (0..16)
     IO_WDT_EN             : boolean                        := false;       -- implement watch dog timer (WDT)?
     IO_TRNG_EN            : boolean                        := false;       -- implement true random number generator (TRNG)?
-    IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;           -- data fifo depth, has to be a power of two, min 1
+    IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;           -- data FIFO depth, has to be a power of two, min 1
     IO_CFS_EN             : boolean                        := false;       -- implement custom functions subsystem (CFS)?
     IO_CFS_CONFIG         : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
     IO_CFS_IN_SIZE        : natural                        := 32;          -- size of CFS input conduit in bits
@@ -139,11 +141,11 @@ entity neorv32_top is
     IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;           -- NEOLED FIFO depth, has to be a power of two, min 1
     IO_GPTMR_EN           : boolean                        := false;       -- implement general purpose timer (GPTMR)?
     IO_ONEWIRE_EN         : boolean                        := false;       -- implement 1-wire interface (ONEWIRE)?
-    IO_ONEWIRE_FIFO       : natural range 1 to 2**15       := 1;           -- RTX fifo depth, has to be zero or a power of two, min 1
+    IO_ONEWIRE_FIFO       : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
     IO_DMA_EN             : boolean                        := false;       -- implement direct memory access controller (DMA)?
     IO_SLINK_EN           : boolean                        := false;       -- implement stream link interface (SLINK)?
-    IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX fifo depth, has to be a power of two, min 1
-    IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX fifo depth, has to be a power of two, min 1
+    IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
+    IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
     IO_CRC_EN             : boolean                        := false        -- implement cyclic redundancy check unit (CRC)?
   );
   port (
@@ -221,6 +223,12 @@ entity neorv32_top is
     twi_scl_i      : in  std_ulogic := 'H';                                 -- serial clock line sense input
     twi_scl_o      : out std_ulogic;                                        -- serial clock line output (pull low only)
 
+    -- TWD (available if IO_TWD_EN = true) --
+    twd_sda_i      : in  std_ulogic := 'H';                                 -- serial data line sense input
+    twd_sda_o      : out std_ulogic;                                        -- serial data line output (pull low only)
+    twd_scl_i      : in  std_ulogic := 'H';                                 -- serial clock line sense input
+    twd_scl_o      : out std_ulogic;                                        -- serial clock line output (pull low only)
+
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      : in  std_ulogic := 'H';                                 -- 1-wire bus sense input
     onewire_o      : out std_ulogic;                                        -- 1-wire bus output (pull low only)
@@ -286,11 +294,11 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clk_gen : std_ulogic_vector(7 downto 0); -- scaled clock-enables
   --
   type clk_gen_en_enum_t is (
-    CG_CFS, CG_UART0, CG_UART1, CG_SPI, CG_TWI, CG_PWM, CG_WDT, CG_NEOLED, CG_GPTMR, CG_XIP, CG_ONEWIRE
+    CG_CFS, CG_UART0, CG_UART1, CG_SPI, CG_TWI, CG_TWD, CG_PWM, CG_WDT, CG_NEOLED, CG_GPTMR, CG_XIP, CG_ONEWIRE
   );
   type clk_gen_en_t is array (clk_gen_en_enum_t) of std_ulogic;
   signal clk_gen_en  : clk_gen_en_t;
-  signal clk_gen_en2 : std_ulogic_vector(10 downto 0);
+  signal clk_gen_en2 : std_ulogic_vector(11 downto 0);
 
   -- CPU status --
   signal cpu_debug, cpu_sleep : std_ulogic;
@@ -314,7 +322,7 @@ architecture neorv32_top_rtl of neorv32_top is
   type io_devices_enum_t is (
     IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG, IODEV_TWI,
     IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_MTIME, IODEV_XIRQ, IODEV_ONEWIRE,
-    IODEV_GPTMR, IODEV_PWM, IODEV_XIP, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS
+    IODEV_GPTMR, IODEV_PWM, IODEV_XIP, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD
   );
   type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
   type iodev_rsp_t is array (io_devices_enum_t) of bus_rsp_t;
@@ -323,7 +331,7 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- IRQs --
   type firq_enum_t is (
-    FIRQ_reserved, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
+    FIRQ_TWD, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
     FIRQ_CFS, FIRQ_NEOLED, FIRQ_XIRQ, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK_RX, FIRQ_SLINK_TX
   );
   type firq_t is array (firq_enum_t) of std_ulogic;
@@ -364,6 +372,7 @@ begin
       cond_sel_string_f(IO_SPI_EN,                 "SPI ",        "") &
       cond_sel_string_f(IO_SDI_EN,                 "SDI ",        "") &
       cond_sel_string_f(IO_TWI_EN,                 "TWI ",        "") &
+      cond_sel_string_f(IO_TWD_EN,                 "TWD ",        "") &
       cond_sel_string_f(io_pwm_en_c,               "PWM ",        "") &
       cond_sel_string_f(IO_WDT_EN,                 "WDT ",        "") &
       cond_sel_string_f(IO_TRNG_EN,                "TRNG ",       "") &
@@ -431,7 +440,7 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_sys_clock_inst: entity neorv32.neorv32_sys_clock
     generic map (
-      NUM_EN => 11
+      NUM_EN => clk_gen_en2'length
     )
     port map (
       clk_i    => clk_i,
@@ -441,9 +450,9 @@ begin
     );
 
     -- fresh clocks anyone? --
-    clk_gen_en2 <= clk_gen_en(CG_WDT)   & clk_gen_en(CG_UART0) & clk_gen_en(CG_UART1) & clk_gen_en(CG_SPI)    &
-                   clk_gen_en(CG_TWI)   & clk_gen_en(CG_PWM)   & clk_gen_en(CG_WDT)   & clk_gen_en(CG_NEOLED) &
-                   clk_gen_en(CG_GPTMR) & clk_gen_en(CG_XIP)   & clk_gen_en(CG_ONEWIRE);
+    clk_gen_en2 <= clk_gen_en(CG_WDT)    & clk_gen_en(CG_UART0) & clk_gen_en(CG_UART1) & clk_gen_en(CG_SPI) &
+                   clk_gen_en(CG_TWI)    & clk_gen_en(CG_TWD)   & clk_gen_en(CG_PWM)   & clk_gen_en(CG_WDT) &
+                   clk_gen_en(CG_NEOLED) & clk_gen_en(CG_GPTMR) & clk_gen_en(CG_XIP)   & clk_gen_en(CG_ONEWIRE);
 
   end generate; -- /generators
 
@@ -544,7 +553,7 @@ begin
     );
 
     -- fast interrupt requests (FIRQs) --
-    cpu_firq(0)  <= '0'; -- reserved
+    cpu_firq(0)  <= firq(FIRQ_TWD);
     cpu_firq(1)  <= firq(FIRQ_CFS);
     cpu_firq(2)  <= firq(FIRQ_UART0_RX);
     cpu_firq(3)  <= firq(FIRQ_UART0_TX);
@@ -1023,17 +1032,17 @@ begin
       DEV_18_EN => IO_DMA_EN,       DEV_18_BASE => base_io_dma_c,
       DEV_19_EN => IO_SLINK_EN,     DEV_19_BASE => base_io_slink_c,
       DEV_20_EN => IO_CFS_EN,       DEV_20_BASE => base_io_cfs_c,
-      DEV_21_EN => false,           DEV_31_BASE => (others => '0'), -- reserved
-      DEV_22_EN => false,           DEV_30_BASE => (others => '0'), -- reserved
-      DEV_23_EN => false,           DEV_29_BASE => (others => '0'), -- reserved
-      DEV_24_EN => false,           DEV_28_BASE => (others => '0'), -- reserved
-      DEV_25_EN => false,           DEV_27_BASE => (others => '0'), -- reserved
+      DEV_21_EN => IO_TWD_EN,       DEV_21_BASE => base_io_twd_c,
+      DEV_22_EN => false,           DEV_22_BASE => (others => '0'), -- reserved
+      DEV_23_EN => false,           DEV_23_BASE => (others => '0'), -- reserved
+      DEV_24_EN => false,           DEV_24_BASE => (others => '0'), -- reserved
+      DEV_25_EN => false,           DEV_25_BASE => (others => '0'), -- reserved
       DEV_26_EN => false,           DEV_26_BASE => (others => '0'), -- reserved
-      DEV_27_EN => false,           DEV_25_BASE => (others => '0'), -- reserved
-      DEV_28_EN => false,           DEV_24_BASE => (others => '0'), -- reserved
-      DEV_29_EN => false,           DEV_23_BASE => (others => '0'), -- reserved
-      DEV_30_EN => false,           DEV_22_BASE => (others => '0'), -- reserved
-      DEV_31_EN => false,           DEV_21_BASE => (others => '0')  -- reserved
+      DEV_27_EN => false,           DEV_27_BASE => (others => '0'), -- reserved
+      DEV_28_EN => false,           DEV_28_BASE => (others => '0'), -- reserved
+      DEV_29_EN => false,           DEV_29_BASE => (others => '0'), -- reserved
+      DEV_30_EN => false,           DEV_30_BASE => (others => '0'), -- reserved
+      DEV_31_EN => false,           DEV_31_BASE => (others => '0')  -- reserved
     )
     port map (
       clk_i        => clk_i,
@@ -1061,7 +1070,7 @@ begin
       dev_18_req_o => iodev_req(IODEV_DMA),     dev_18_rsp_i => iodev_rsp(IODEV_DMA),
       dev_19_req_o => iodev_req(IODEV_SLINK),   dev_19_rsp_i => iodev_rsp(IODEV_SLINK),
       dev_20_req_o => iodev_req(IODEV_CFS),     dev_20_rsp_i => iodev_rsp(IODEV_CFS),
-      dev_21_req_o => open,                     dev_21_rsp_i => rsp_terminate_c, -- reserved
+      dev_21_req_o => iodev_req(IODEV_TWD),     dev_21_rsp_i => iodev_rsp(IODEV_TWD),
       dev_22_req_o => open,                     dev_22_rsp_i => rsp_terminate_c, -- reserved
       dev_23_req_o => open,                     dev_23_rsp_i => rsp_terminate_c, -- reserved
       dev_24_req_o => open,                     dev_24_rsp_i => rsp_terminate_c, -- reserved
@@ -1355,6 +1364,39 @@ begin
     end generate;
 
 
+    -- Two-Wire Device (TWD) ------------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_twd_inst_true:
+    if IO_TWD_EN generate
+      neorv32_twd_inst: entity neorv32.neorv32_twd
+      generic map (
+        TWD_FIFO => IO_TWD_FIFO
+      )
+      port map (
+        clk_i       => clk_i,
+        rstn_i      => rstn_sys,
+        bus_req_i   => iodev_req(IODEV_TWD),
+        bus_rsp_o   => iodev_rsp(IODEV_TWD),
+        clkgen_en_o => clk_gen_en(CG_TWD),
+        clkgen_i    => clk_gen,
+        twd_sda_i   => twd_sda_i,
+        twd_sda_o   => twd_sda_o,
+        twd_scl_i   => twd_scl_i,
+        twd_scl_o   => twd_scl_o,
+        irq_o       => firq(FIRQ_TWD)
+      );
+    end generate;
+
+    neorv32_twd_inst_false:
+    if not IO_TWD_EN generate
+      iodev_rsp(IODEV_TWD) <= rsp_terminate_c;
+      twd_sda_o            <= '1';
+      twd_scl_o            <= '1';
+      clk_gen_en(CG_TWD)   <= '0';
+      firq(FIRQ_TWD)       <= '0';
+    end generate;
+
+
     -- Pulse-Width Modulation Controller (PWM) ------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_pwm_inst_true:
@@ -1611,6 +1653,7 @@ begin
         IO_SPI_EN             => IO_SPI_EN,
         IO_SDI_EN             => IO_SDI_EN,
         IO_TWI_EN             => IO_TWI_EN,
+        IO_TWD_EN             => IO_TWD_EN,
         IO_PWM_EN             => io_pwm_en_c,
         IO_WDT_EN             => IO_WDT_EN,
         IO_TRNG_EN            => IO_TRNG_EN,
