@@ -1004,38 +1004,14 @@ int main() {
   // Fast interrupt channel 0
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FIRQ0 (TRNG) ", cnt_test);
-
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
-    cnt_test++;
-
-    // enable TRNG, trigger IRQ when FIFO is full
-    neorv32_trng_enable(1);
-
-    // enable fast interrupt
-    neorv32_cpu_csr_write(CSR_MIE, 1 << TRNG_FIRQ_ENABLE);
-
-    // sleep until interrupt
-    neorv32_cpu_sleep();
-
-    // no more interrupts
-    neorv32_cpu_csr_write(CSR_MIE, 0);
-
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRNG_TRAP_CODE) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
+  PRINT_STANDARD("[%i] FIRQ0 (reserved) ", cnt_test);
+  PRINT_STANDARD("[n.a.]\n");
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] FIRQ1 (CFS) ", cnt_test);
   PRINT_STANDARD("[n.a.]\n");
 
