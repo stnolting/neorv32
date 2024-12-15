@@ -21,13 +21,13 @@
 
 **Overview**
 
-The NEORV32 TWI implements a I2C-compatible host controller to communicate with arbitrary I2C-devices.
+The NEORV32 TWI implements a I²C-compatible host controller to communicate with arbitrary I2C-devices.
 Note that peripheral-mode (controller acts as a device) and multi-controller mode are not supported yet.
 
 .Host-Mode Only
 [NOTE]
 The NEORV32 TWI controller only supports **host mode**. Transmission are initiated by the processor's TWI controller
-and not by an external TWI module. If you are looking for a _device-mode_ module (transactions
+and not by an external I²C module. If you are looking for a _device-mode_ module (transactions
 initiated by an external host) check out the <<_two_wire_serial_device_controller_twd>>.
 
 Key features:
@@ -37,7 +37,7 @@ Key features:
 * Generate START / repeated-START and STOP conditions
 * Sending & receiving 8 data bits including ACK/NACK
 * Generating a host-ACK (ACK send by the TWI controller)
-* Configurable data/command FIFO to "program" large TWI sequences without further involvement of the CPU
+* Configurable data/command FIFO to "program" large I²C sequences without further involvement of the CPU
 
 The TWI controller provides two memory-mapped registers that are used for configuring the module and
 for triggering operations: the control and status register `CTRL` and the command and data register `DCMD`.
@@ -47,7 +47,7 @@ for triggering operations: the control and status register `CTRL` and the comman
 
 The TWI module requires two tristate drivers (actually: open-drain drivers - signals can only be actively driven low) for
 the SDA and SCL lines, which have to be implemented by the user in the setup's top module / IO ring. A generic VHDL example
-is shown below (here, `sda_io` and `scl_io` are the actual TWI bus lines, which are of type `std_logic`).
+is shown below (here, `sda_io` and `scl_io` are the actual I²C bus lines, which are of type `std_logic`).
 
 .TWI VHDL Tristate Driver Example
 [source,VHDL]
@@ -116,7 +116,7 @@ that have not been executed yet) or of the TWI bus engine is still processing an
 An active transmission can be terminated at any time by disabling the TWI module. This will also clear the data/command FIFO.
 
 [TIP]
-The current state of the TWI bus lines (SCL and SDA) can be checked by software via the `TWI_CTRL_SENSE_*` control register bits.
+The current state of the I²C bus lines (SCL and SDA) can be checked by software via the `TWI_CTRL_SENSE_*` control register bits.
 
 [NOTE]
 When reading data from a device, an all-one byte (`0xFF`) has to be written to TWI data register `NEORV32_TWI.DATA`
