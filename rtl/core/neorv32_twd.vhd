@@ -286,7 +286,7 @@ begin
   end process synchronizer;
 
   -- sample clock for input "filtering" --
-  smp.clk_en <= clkgen_i(clk_div64_c) when (ctrl.fsel = '1') else clkgen_i(clk_div4_c);
+  smp.clk_en <= clkgen_i(clk_div64_c) when (ctrl.fsel = '1') else clkgen_i(clk_div8_c);
 
   -- bus event detector (event signals are "single-shot") --
   bus_event: process(rstn_i, clk_i)
