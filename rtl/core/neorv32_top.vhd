@@ -56,7 +56,7 @@ entity neorv32_top is
     RISCV_ISA_Zknd        : boolean                        := false;       -- implement cryptography NIST AES decryption extension
     RISCV_ISA_Zkne        : boolean                        := false;       -- implement cryptography NIST AES encryption extension
     RISCV_ISA_Zknh        : boolean                        := false;       -- implement cryptography NIST hash extension
-    RISCV_ISA_Zksed       : boolean                        := false;       -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksed       : boolean                        := false;       -- implement ShangMi block cipher extension
     RISCV_ISA_Zksh        : boolean                        := false;       -- implement ShangMi hash extension
     RISCV_ISA_Zmmul       : boolean                        := false;       -- implement multiply-only M sub-extension
     RISCV_ISA_Zxcfu       : boolean                        := false;       -- implement custom (instr.) functions unit

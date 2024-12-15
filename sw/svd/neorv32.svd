@@ -1352,7 +1352,7 @@
               <description>Clear TX FIFO, flag auto-clears</description>
             </field>
             <field>
-              <name>TWD_CTRL_FESL</name>
+              <name>TWD_CTRL_FSEL</name>
               <bitRange>[3:3]</bitRange>
               <description>Bus sample clock / filter select</description>
             </field>

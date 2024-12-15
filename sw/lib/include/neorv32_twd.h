@@ -39,7 +39,7 @@ enum NEORV32_TWD_CTRL_enum {
   TWD_CTRL_EN           =  0, /**< TWD control register(0)  (r/w): TWD enable */
   TWD_CTRL_CLR_RX       =  1, /**< TWD control register(1)  (-/w): Clear RX FIFO, flag auto-clears */
   TWD_CTRL_CLR_TX       =  2, /**< TWD control register(2)  (-/w): Clear TX FIFO, flag auto-clears */
-  TWD_CTRL_FESL         =  3, /**< TWD control register(3)  (r/w): Bus sample clock / filter select */
+  TWD_CTRL_FSEL         =  3, /**< TWD control register(3)  (r/w): Bus sample clock / filter select */
   TWD_CTRL_DEV_ADDR0    =  4, /**< TWD control register(4)  (r/w): Device address (7-bit), LSB */
   TWD_CTRL_DEV_ADDR6    = 10, /**< TWD control register(10) (r/w): Device address (7-bit), MSB */
   TWD_CTRL_IRQ_RX_AVAIL = 11, /**< TWD control register(11) (r/w): IRQ if RX FIFO data available */

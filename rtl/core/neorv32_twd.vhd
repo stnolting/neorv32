@@ -351,7 +351,7 @@ begin
             engine.state <= S_ADDR;
           end if;
 
-        when S_ADDR => -- sample address and R/W bit and check if address match
+        when S_ADDR => -- sample address + R/W bit and check if address match
         -- ------------------------------------------------------------
           if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition received?
             engine.state <= S_IDLE;

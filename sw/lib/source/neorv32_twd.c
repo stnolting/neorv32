@@ -50,7 +50,7 @@ void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_f
   uint32_t ctrl = 0;
   ctrl |= ((uint32_t)(               0x01) << TWD_CTRL_EN);
   ctrl |= ((uint32_t)(device_addr  & 0x7f) << TWD_CTRL_DEV_ADDR0);
-  ctrl |= ((uint32_t)(fsel         & 0x01) << TWD_CTRL_FESL);
+  ctrl |= ((uint32_t)(fsel         & 0x01) << TWD_CTRL_FSEL);
   ctrl |= ((uint32_t)(irq_rx_avail & 0x01) << TWD_CTRL_IRQ_RX_AVAIL);
   ctrl |= ((uint32_t)(irq_rx_full  & 0x01) << TWD_CTRL_IRQ_RX_FULL);
   ctrl |= ((uint32_t)(irq_tx_empty & 0x01) << TWD_CTRL_IRQ_TX_EMPTY);
