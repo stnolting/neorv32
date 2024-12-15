@@ -1012,8 +1012,8 @@ int main() {
     // configure TWD and enable RX-available interrupt
     neorv32_twd_setup(0b1101001, 0, 1, 0, 0);
 
-    // configure TWI with second-fastest clock, no clock stretching
-    neorv32_twi_setup(CLK_PRSC_4, 0, 0);
+    // configure TWI with third-fastest clock, no clock stretching
+    neorv32_twi_setup(CLK_PRSC_8, 1, 0);
 
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << TWD_FIRQ_ENABLE);
@@ -1285,8 +1285,8 @@ int main() {
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWI)) {
     cnt_test++;
 
-    // configure TWI with second-fastest clock, no clock stretching
-    neorv32_twi_setup(CLK_PRSC_4, 0, 0);
+    // configure TWI with third-fastest clock, no clock stretching
+    neorv32_twi_setup(CLK_PRSC_8, 1, 0);
 
     // configure TWD, no interrupts
     neorv32_twd_setup(0b0010110, 0, 0, 0, 0);
