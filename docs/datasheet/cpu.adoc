@@ -158,23 +158,10 @@ Up to four individual synchronous read ports allow to fetch up to 4 register ope
 are mutually exclusive as they happen in separate cycles. Hence, there is no need to consider things like "read-during-write"
 behavior.
 
-The register file provides two different implementation options configured via the top's `REGFILE_HW_RST` generic.
-
-* `REGFILE_HW_RST = false` (default): In this configuration the register file is implemented as plain memory array without a
-dictated hardware reset. This architecture allows to infer FPGA block RAM for the entire register file resulting in minimal
-general logic utilization.
-* `REGFILE_HW_RST = true`: This configuration is based on individual FFs that do provide a dedicated hardware reset.
-Hence, the register cannot be mapped to FPGA block RAM. This optional can be selected if the application requires a
-reset of the register file (e.g. for security reasons) or if the design shall be synthesized for an **ASIC** implementation.
-Using individual FFs for th register file might also improve timing as no long routing lines are required to connect to
-block RAM primitives.
-
-The state of this configuration generic can be checked by software via the <<_mxisa>> CSR.
-
-.FPGA Implementation
-[WARNING]
-Enabling the `REGFILE_HW_RST` option for FPGA implementation is not recommended as this will massively increase the amount
-of required logic resources.
+.Memory Tuning Options
+[TIP]
+The physical implementation of the register file's memory core can be tuned for certain design goals like area or throughput.
+See section <<_cpu_tuning_options>> for more information.
 
 .Implementation of the `zero` Register within FPGA Block RAM
 [NOTE]
@@ -207,12 +194,6 @@ and <<_b_isa_extension>>).
 [NOTE]
 The CPU control will raise an illegal instruction exception if a multi-cycle functional unit (like the <<_custom_functions_unit_cfu>>)
 does not complete processing in a bound amount of time (configured via the package's `monitor_mc_tmo_c` constant; default = 512 clock cycles).
-
-.Tuning Options
-[TIP]
-The ALU architecture can be tuned for an application-specific area-vs-performance trade-off. The `FAST_MUL_EN` and `FAST_SHIFT_EN`
-generics can be used to implement performance-optimized barrel shifters and DSP blocks, respectively. See sections <<_i_isa_extension>>,
-<<_b_isa_extension>> and <<_m_isa_extension>> for specific examples.
 
 
 :sectnums:
@@ -259,6 +240,75 @@ side attacks.
 Instruction data from the instruction prefetch buffer is decompressed (if the `C` ISA extension is enabled) and sent to the
 CPU back-end for actual execution. Execution is conducted by a state-machine that controls all of the CPU modules. The back-end also
 includes the <<_control_and_status_registers_csrs>> as well as the trap controller.
+
+
+:sectnums:
+==== CPU Tuning Options
+
+The top module provides several tuning options to optimize the CPU for a specific goal.
+Note that these configuration options have no impact on the actual functionality (e.g. ISA compatibility).
+
+.Software Tuning Options Discovery
+[TIP]
+Software can check for configured tuning options via specific flags in the <<_mxisa>> CSR.
+
+
+{empty} +
+[discrete]
+===== **`FAST_MUL_EN`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Fast multiplication
+| Type        | `boolean`
+| Default     | `false`, disabled
+| Description | When **enabled** the `M`/`Zmmul` extension's multiplier is implemented as "plain multiplication" allowing the
+synthesis tool to infer DSP blocks / multiplication primitives. Multiplication operations only require a few cycles due to the
+DSP-internal register stages. The execution time is time-independent of the provided operands.
+|             | When **disabled** the `M`/`Zmmul` extension's multiplier is implemented as bit-serial multiplier that computes one
+result bit in every cycle. Multiplication operations only requires at least 32 cycles but the entire execution time is still
+time-independent of the provided operands.
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`FAST_SHIFT_EN`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Fast bit shifting
+| Type        | `boolean`
+| Default     | `false`, disabled
+| Description | When **enabled** the ALU's shifter unit is implemented as full-parallel barrel shifter that is capable
+of shifting a data word by an arbitrary number of positions within a single cycle. Hence, the execution time of any base-ISA
+shift operation is independent of the provided operands. Note that the barrel shifter requires a lot of hardware resources and
+might also increase the core's critical path.
+|             | When **disabled** the ALU's shifter unit is implemented as bit-serial shifter that can shift the input data
+only by one position per cycle. Hence, several cycles might be required to complete any base-ISA shift-related operations.
+Therefore, the execution time of the serial approach is **not** time-independent of the provided operands. However, the serial
+approach requires only a few hardware resources and does not impact the critical path.
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`REGFILE_HW_RST`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Register file hardware reset
+| Type        | `boolean`
+| Default     | `false`, disabled
+| Description | When **enabled** the CPU register file is implemented using single flip flops that provide a full hardware reset.
+The register file is reset to all-zero after each hardware reset. Note that this options requires a lot of flip flops and LUTs to
+build the register file. However, timing might be optimized as there is no need to route to far blockRAM resources.
+|             | When **disabled** the CPU register file is implemented in a way to allow synthesis to infer memory primitives
+like blockRAM. Note that these primitives do not provide any kind of hardware reset. Hence, the data content is undefined after reset.
+|=======================
 
 
 ==== Sleep Mode
@@ -555,11 +605,10 @@ platform-compatibility and to indicate the actual intention of the according fen
 The `wfi` instruction is used to enter <<_sleep_mode>>. Executing the `wfi` instruction in user-mode
 will raise an illegal instruction exception if the `TW` bit of <<_mstatus>> is set.
 
-.Barrel Shifter
+.Shifter Tuning Options
 [TIP]
-The shift operations are implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_shifter.vhd`).
-These operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_SHIFT_EN`
-configuration option that will replace the (time-variant) bit-serial shifter by a (time-constant) barrel shifter.
+The physical implementation of the bit-shifter can be tuned for certain design goals like area or throughput.
+See section <<_cpu_tuning_options>> for more information.
 
 
 ==== `M` ISA Extension
@@ -576,10 +625,10 @@ This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv
 | Division       | `div` `divu` `rem` `remu`     | 36
 |=======================
 
-.DSP Blocks
+.Multiplication Tuning Options
 [TIP]
-Multiplication operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_MUL_EN`
-configuration option that will replace the (time-variant) bit-serial multiplier by (time-constant) FPGA DSP blocks.
+The physical implementation of the multiplier can be tuned for certain design goals like area or throughput.
+See section <<_cpu_tuning_options>> for more information.
 
 
 ==== `U` ISA Extension
@@ -803,10 +852,10 @@ generic. This ISA extension is implemented as multi-cycle ALU co-processor (`rtl
 | Byte-reverse                 | `rev8`                   | 4
 |=======================
 
-.Shift Operations
+.shifter Tuning Options
 [TIP]
-Shift operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_SHIFT_EN`
-configuration option that will replace the (time-variant) bit-serial shifter by a (time-constant) barrel shifter.
+The physical implementation of the bit-shifter can be tuned for certain design goals like area or throughput.
+See section <<_cpu_tuning_options>> for more information.
 
 
 ==== `Zbs` ISA Extension
@@ -1163,6 +1212,10 @@ provide custom trap codes in <<_mcause>>. These FIRQs are reserved for NEORV32 p
 
 The following tables show all traps that are currently supported by the NEORV32 CPU. It also shows the prioritization
 and the CSR side-effects.
+
+.FIRQ Mapping
+[TIP]
+See section <<_neorv32_specific_fast_interrupt_requests>> for the mapping of the FIRQ channels to the according hardware modules.
 
 **Table Annotations**
 

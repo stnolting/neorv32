@@ -25,7 +25,7 @@ Note that this size should be a power of two to optimize physical implementation
 the IMEM is mapped to base address `0x00000000` (see section <<_address_space>>).
 
 By default the IMEM is implemented as true RAM so the content can be modified during run time. This is
-required when using the <<_bootloader>> (or the <<_on_chip_debugger>>) so it can update the content of the IMEM at
+required when using the <<_bootloader>> (or the <<_on_chip_debugger_ocd>>) so it can update the content of the IMEM at
 any time.
 
 Alternatively, the IMEM can be implemented as **pre-initialized read-only memory (ROM)**, so the processor can
