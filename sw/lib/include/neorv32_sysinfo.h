@@ -57,7 +57,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_XIP_CACHE    = 10, /**< SYSINFO_SOC (10) (r/-): Execute in-place cache implemented when 1 (via XIP_CACHE_EN generic) */
   SYSINFO_SOC_OCD_AUTH     = 11, /**< SYSINFO_SOC (11) (r/-): On-chip debugger authentication implemented when 1 (via OCD_AUTHENTICATION generic) */
   SYSINFO_SOC_IMEM_ROM     = 12, /**< SYSINFO_SOC (12) (r/-): Processor-internal instruction memory implemented as pre-initialized ROM when 1 (via BOOT_MODE_SELECT generic) */
-
+  SYSINFO_SOC_IO_TWD       = 13, /**< SYSINFO_SOC (13) (r/-): Two-wire device implemented when 1 (via IO_TWD_EN generic) */
   SYSINFO_SOC_IO_DMA       = 14, /**< SYSINFO_SOC (14) (r/-): Direct memory access controller implemented when 1 (via IO_DMA_EN generic) */
   SYSINFO_SOC_IO_GPIO      = 15, /**< SYSINFO_SOC (15) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
   SYSINFO_SOC_IO_MTIME     = 16, /**< SYSINFO_SOC (16) (r/-): Machine system timer implemented when 1 (via IO_MTIME_EN generic) */

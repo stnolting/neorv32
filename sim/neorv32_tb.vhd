@@ -78,8 +78,9 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- IO connection --
   signal uart0_txd, uart0_cts, uart1_txd, uart1_cts : std_ulogic;
   signal gpio : std_ulogic_vector(63 downto 0);
-  signal twi_scl, twi_sda : std_logic;
+  signal i2c_scl, i2c_sda : std_logic;
   signal twi_scl_i, twi_scl_o, twi_sda_i, twi_sda_o : std_ulogic;
+  signal twd_scl_i, twd_scl_o, twd_sda_i, twd_sda_o : std_ulogic;
   signal onewire : std_logic;
   signal onewire_i, onewire_o : std_ulogic;
   signal spi_csn : std_ulogic_vector(7 downto 0);
@@ -196,6 +197,8 @@ begin
     IO_SDI_FIFO           => 4,
     IO_TWI_EN             => true,
     IO_TWI_FIFO           => 4,
+    IO_TWD_EN             => true,
+    IO_TWD_FIFO           => 4,
     IO_PWM_NUM_CH         => 8,
     IO_WDT_EN             => true,
     IO_TRNG_EN            => true,
@@ -279,6 +282,11 @@ begin
     twi_sda_o      => twi_sda_o,
     twi_scl_i      => twi_scl_i,
     twi_scl_o      => twi_scl_o,
+    -- TWD --
+    twd_sda_i      => twd_sda_i,
+    twd_sda_o      => twd_sda_o,
+    twd_scl_i      => twd_scl_i,
+    twd_scl_o      => twd_scl_o,
     -- 1-Wire Interface --
     onewire_i      => onewire_i,
     onewire_o      => onewire_o,
@@ -300,28 +308,33 @@ begin
   );
 
 
-  -- Two-Wire Bus ---------------------------------------------------------------------------
+  -- Two-Wire Bus - Tri-State Drivers (modules can only actively pull the signals low) ------
   -- -------------------------------------------------------------------------------------------
-  twi_sda   <= '0' when (twi_sda_o = '0') else 'Z'; -- tristate driver: module can only pull the line low actively
-  twi_scl   <= '0' when (twi_scl_o = '0') else 'Z'; -- tristate driver: module can only pull the line low actively
-  twi_sda_i <= std_ulogic(twi_sda); -- sense input
-  twi_scl_i <= std_ulogic(twi_scl); -- sense input
+  i2c_sda   <= '0' when (twi_sda_o = '0') else 'Z';
+  i2c_scl   <= '0' when (twi_scl_o = '0') else 'Z';
+  twi_sda_i <= std_ulogic(i2c_sda); -- sense input
+  twi_scl_i <= std_ulogic(i2c_scl); -- sense input
 
-  -- TWI bus termination --
-  twi_scl <= 'H'; -- weak pull-up "resistor"
-  twi_sda <= 'H'; -- weak pull-up "resistor"
+  i2c_sda   <= '0' when (twd_sda_o = '0') else 'Z';
+  i2c_scl   <= '0' when (twd_scl_o = '0') else 'Z';
+  twd_sda_i <= std_ulogic(i2c_sda); -- sense input
+  twd_scl_i <= std_ulogic(i2c_scl); -- sense input
+
+  -- I2C bus termination with weak pull-ups --
+  i2c_scl <= 'H';
+  i2c_sda <= 'H';
 
 
-  -- One-Wire Bus ---------------------------------------------------------------------------
+  -- One-Wire Bus - Tri-State Driver (module can only actively pull the signals low) --------
   -- -------------------------------------------------------------------------------------------
-  onewire   <= '0' when (onewire_o = '0') else 'Z'; -- tristate driver: module can only pull the line low actively
+  onewire   <= '0' when (onewire_o = '0') else 'Z';
   onewire_i <= std_ulogic(onewire); -- sense input
 
-  -- 1-Wire bus termination --
-  onewire <= 'H'; -- weak pull-up "resistor"
+  -- 1-Wire bus termination with weak pull-up --
+  onewire <= 'H';
 
 
-  -- SP/SDI ---------------------------------------------------------------------------
+  -- SPI/SDI --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   sdi_clk <= spi_clk after 40 ns; -- echo with propagation delay
   sdi_csn <= spi_csn(7) after 40 ns;
@@ -455,7 +468,7 @@ begin
   end generate;
 
 
-  -- XBUS: Memory-Mapped IO -----------------------------------------------------------------
+  -- XBUS: External Memory-Mapped IO --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xbus_mmio: entity work.xbus_memory
   generic map (
@@ -471,7 +484,7 @@ begin
   );
 
 
-  -- XBUS: IRQ Triggers ---------------------------------------------------------------------
+  -- XBUS: External IRQ Trigger -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xbus_irq_trigger: process(rst_gen, clk_gen)
   begin

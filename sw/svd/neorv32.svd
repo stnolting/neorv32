@@ -1315,6 +1315,132 @@
       </registers>
     </peripheral>
 
+    <!-- TWD -->
+    <!-- **************************************************************** -->
+    <peripheral>
+      <name>TWD</name>
+      <description>Two-wire device controller</description>
+      <baseAddress>0xFFFFEA00</baseAddress>
+
+      <interrupt><name>TWD_FIRQ</name><value>0</value></interrupt>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x08</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>Control register</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>TWD_CTRL_EN</name>
+              <bitRange>[0:0]</bitRange>
+              <description>TWD enable flag</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_CLR_RX</name>
+              <bitRange>[1:1]</bitRange>
+              <description>Clear RX FIFO, flag auto-clears</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_CLR_TX</name>
+              <bitRange>[2:2]</bitRange>
+              <description>Clear TX FIFO, flag auto-clears</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_FSEL</name>
+              <bitRange>[3:3]</bitRange>
+              <description>Bus sample clock / filter select</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_DEV_ADDR</name>
+              <bitRange>[10:4]</bitRange>
+              <description>Device address (7-bit)</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_IRQ_RX_AVAIL</name>
+              <bitRange>[11:11]</bitRange>
+              <description>IRQ if RX FIFO data available</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_IRQ_RX_FULL</name>
+              <bitRange>[12:12]</bitRange>
+              <description>IRQ if RX FIFO full</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_IRQ_TX_EMPTY</name>
+              <bitRange>[13:13]</bitRange>
+              <description>IRQ if TX FIFO empty</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_FIFO</name>
+              <bitRange>[18:15]</bitRange>
+              <access>read-only</access>
+              <description>log2(TWD FIFO size)</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_RX_AVAIL</name>
+              <bitRange>[25:25]</bitRange>
+              <access>read-only</access>
+              <description>RX FIFO data available</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_RX_FULL</name>
+              <bitRange>[26:26]</bitRange>
+              <access>read-only</access>
+              <description>RX FIFO full</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_TX_EMPTY</name>
+              <bitRange>[27:27]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO empty</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_TX_FULL</name>
+              <bitRange>[28:28]</bitRange>
+              <access>read-only</access>
+              <description>TX FIFO full</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_SENSE_SCL</name>
+              <bitRange>[29:29]</bitRange>
+              <access>read-only</access>
+              <description>current state of the SCL bus line</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_SENSE_SDA</name>
+              <bitRange>[30:30]</bitRange>
+              <access>read-only</access>
+              <description>current state of the SDA bus line</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_BUSY</name>
+              <bitRange>[31:31]</bitRange>
+              <access>read-only</access>
+              <description>bus engine is busy (transaction in progress)</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DATA</name>
+          <description>RX/TX data register</description>
+          <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>TWI_DATA</name>
+              <bitRange>[7:0]</bitRange>
+              <description>RX/TX data FIFO access</description>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
     <!-- TRNG -->
     <!-- **************************************************************** -->
     <peripheral>
@@ -1643,6 +1769,7 @@
             <field><name>SYSINFO_SOC_XIP_CACHE</name><bitRange>[10:10]</bitRange><description>Execute in place cache implemented</description></field>
             <field><name>SYSINFO_SOC_OCD_AUTH</name><bitRange>[11:11]</bitRange><description>On-chip debugger authentication implemented</description></field>
             <field><name>SYSINFO_SOC_IMEM_ROM</name><bitRange>[12:12]</bitRange><description>Processor-internal instruction memory implemented as pre-initialized ROM</description></field>
+            <field><name>SYSINFO_SOC_IO_TWD</name><bitRange>[13:13]</bitRange><description>Two-wire device implemented</description></field>
             <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[14:14]</bitRange><description>Direct memory access controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[15:15]</bitRange><description>General purpose input/output port unit implemented</description></field>
             <field><name>SYSINFO_SOC_IO_MTIME</name><bitRange>[16:16]</bitRange><description>Machine system timer implemented</description></field>

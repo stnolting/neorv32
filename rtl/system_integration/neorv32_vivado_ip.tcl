@@ -129,6 +129,7 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_SPI_EN}     [ipx::get_ports spi_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_SDI_EN}     [ipx::get_ports sdi_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_TWI_EN}     [ipx::get_ports twi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_TWD_EN}     [ipx::get_ports twd_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_ONEWIRE_EN} [ipx::get_ports onewire_*        -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_PWM_EN}     [ipx::get_ports pwm_o            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_CFS_EN}     [ipx::get_ports cfs_*            -of_objects [ipx::current_core]]
@@ -341,10 +342,16 @@ proc setup_ip_gui {} {
     { IO_SDI_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_SDI_EN} }
   }
 
-  set group [add_group $page {Two-Wire/I2C Interface (TWI)}]
+  set group [add_group $page {Two-Wire/I2C Host (TWI)}]
   add_params $group {
     { IO_TWI_EN         {Enable TWI} }
     { IO_TWI_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_TWI_EN} }
+  }
+
+  set group [add_group $page {Two-Wire/I2C Device (TWD)}]
+  add_params $group {
+    { IO_TWD_EN         {Enable TWD} }
+    { IO_TWD_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_TWD_EN} }
   }
 
   set group [add_group $page {Pulse-Width Modulation Controller (PWM)}]

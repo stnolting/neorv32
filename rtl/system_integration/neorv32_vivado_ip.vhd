@@ -117,6 +117,8 @@ entity neorv32_vivado_ip is
     IO_SDI_FIFO           : natural range 1 to 2**15      := 1;
     IO_TWI_EN             : boolean                       := false;
     IO_TWI_FIFO           : natural range 1 to 2**15      := 1;
+    IO_TWD_EN             : boolean                       := false;
+    IO_TWD_FIFO           : natural range 1 to 2**15      := 1;
     IO_PWM_EN             : boolean                       := false;
     IO_PWM_NUM_CH         : natural range 1 to 16         := 1; -- variable-sized ports must be at least 0 downto 0; #974
     IO_WDT_EN             : boolean                       := false;
@@ -232,6 +234,11 @@ entity neorv32_vivado_ip is
     twi_sda_o      : out std_logic;
     twi_scl_i      : in  std_logic := '0';
     twi_scl_o      : out std_logic;
+    -- TWD (available if IO_TWD_EN = true) --
+    twd_sda_i      : in  std_logic := '0';
+    twd_sda_o      : out std_logic;
+    twd_scl_i      : in  std_logic := '0';
+    twd_scl_o      : out std_logic;
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      : in  std_logic := '0';
     onewire_o      : out std_logic;
@@ -263,7 +270,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   -- AXI4-Lite bridge --
   component xbus2axi4lite_bridge
     port (
-      -- Global control 
+      -- Global control
       clk           : in  std_logic;
       resetn        : in  std_logic;
       -- XBUS device interface --
@@ -315,6 +322,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal spi_csn_aux : std_ulogic_vector(7 downto 0);
   signal sdi_do_aux : std_ulogic;
   signal twi_sda_o_aux, twi_scl_o_aux : std_ulogic;
+  signal twd_sda_o_aux, twd_scl_o_aux : std_ulogic;
   signal onewire_o_aux : std_ulogic;
   signal cfs_out_aux : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
   signal neoled_aux : std_ulogic;
@@ -435,6 +443,8 @@ begin
     IO_SDI_FIFO           => IO_SDI_FIFO,
     IO_TWI_EN             => IO_TWI_EN,
     IO_TWI_FIFO           => IO_TWI_FIFO,
+    IO_TWD_EN             => IO_TWD_EN,
+    IO_TWD_FIFO           => IO_TWD_FIFO,
     IO_PWM_NUM_CH         => num_pwm_c,
     IO_WDT_EN             => IO_WDT_EN,
     IO_TRNG_EN            => IO_TRNG_EN,
@@ -517,6 +527,11 @@ begin
     twi_sda_o      => twi_sda_o_aux,
     twi_scl_i      => std_ulogic(twi_scl_i),
     twi_scl_o      => twi_scl_o_aux,
+    -- TWD (available if IO_TWD_EN = true) --
+    twd_sda_i      => std_ulogic(twd_sda_i),
+    twd_sda_o      => twd_sda_o_aux,
+    twd_scl_i      => std_ulogic(twd_scl_i),
+    twd_scl_o      => twd_scl_o_aux,
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      => std_ulogic(onewire_i),
     onewire_o      => onewire_o_aux,
@@ -565,6 +580,9 @@ begin
 
   twi_sda_o      <= std_logic(twi_sda_o_aux);
   twi_scl_o      <= std_logic(twi_scl_o_aux);
+
+  twd_sda_o      <= std_logic(twd_sda_o_aux);
+  twd_scl_o      <= std_logic(twd_scl_o_aux);
 
   onewire_o      <= std_logic(onewire_o_aux);
 

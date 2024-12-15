@@ -54,7 +54,7 @@ extern "C" {
 //#define NEORV32_???_BASE   (0xFFFFE700U) /**< reserved */
 //#define NEORV32_???_BASE   (0xFFFFE800U) /**< reserved */
 //#define NEORV32_???_BASE   (0xFFFFE900U) /**< reserved */
-//#define NEORV32_???_BASE   (0xFFFFEA00U) /**< reserved */
+#define NEORV32_TWD_BASE     (0xFFFFEA00U) /**< Two-Wire Device (TWD) */
 #define NEORV32_CFS_BASE     (0xFFFFEB00U) /**< Custom Functions Subsystem (CFS) */
 #define NEORV32_SLINK_BASE   (0xFFFFEC00U) /**< Stream Link Interface (SLINK) */
 #define NEORV32_DMA_BASE     (0xFFFFED00U) /**< Direct Memory Access Controller (DMA) */
@@ -83,12 +83,12 @@ extern "C" {
  * @name Fast Interrupt Requests (FIRQ) device aliases
  **************************************************************************/
 /**@{*/
-/** @name Reserved */
+/** @name Two-Wire Device (TWD) */
 /**@{*/
-//#define RESERVED_FIRQ_ENABLE       CSR_MIE_FIRQ0E    /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
-//#define RESERVED_FIRQ_PENDING      CSR_MIP_FIRQ0P    /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
-//#define RESERVED_RTE_ID            RTE_TRAP_FIRQ_0   /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
-//#define RESERVED_TRAP_CODE         TRAP_CODE_FIRQ_0  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+#define TWD_FIRQ_ENABLE        CSR_MIE_FIRQ0E    /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
+#define TWD_FIRQ_PENDING       CSR_MIP_FIRQ0P    /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
+#define TWD_RTE_ID             RTE_TRAP_FIRQ_0   /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
+#define TWD_TRAP_CODE          TRAP_CODE_FIRQ_0  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
 /** @name Custom Functions Subsystem (CFS) */
 /**@{*/
@@ -281,6 +281,7 @@ typedef union {
 #include "neorv32_spi.h"
 #include "neorv32_sysinfo.h"
 #include "neorv32_trng.h"
+#include "neorv32_twd.h"
 #include "neorv32_twi.h"
 #include "neorv32_uart.h"
 #include "neorv32_wdt.h"
