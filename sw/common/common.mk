@@ -219,12 +219,6 @@ $(APP_VHD): $(BIN_MAIN) $(IMAGE_GEN)
 	@echo "Generating $(APP_VHD)"
 	@$(IMAGE_GEN) -app_vhd $< $@ $(shell basename $(CURDIR))
 
-# Install VHDL memory initialization file
-install-$(APP_VHD): $(APP_VHD)
-	@set -e
-	@echo "Installing application image to $(NEORV32_RTL_PATH)/core/$(APP_VHD)"
-	@cp $(APP_VHD) $(NEORV32_RTL_PATH)/core/.
-
 # Generate NEORV32 RAW executable image in plain hex format
 $(APP_HEX): $(BIN_MAIN) $(IMAGE_GEN)
 	@set -e
@@ -306,6 +300,12 @@ sim: $(APP_VHD) install
 	@echo "Simulating processor using default testbench..."
 	@sh $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
 
+# Install VHDL memory initialization file
+install-$(APP_VHD): $(APP_VHD)
+	@set -e
+	@echo "Installing application image to $(NEORV32_RTL_PATH)/core/$(APP_VHD)"
+	@cp $(APP_VHD) $(NEORV32_RTL_PATH)/core/.
+
 # -----------------------------------------------------------------------------
 # Regenerate HDL file lists
 # -----------------------------------------------------------------------------
@@ -337,6 +337,7 @@ clean:
 
 clean_all: clean
 	@rm -f $(IMAGE_GEN)
+	@rm -rf $(NEORV32_SIM_PATH)/build
 
 # -----------------------------------------------------------------------------
 # Show configuration
