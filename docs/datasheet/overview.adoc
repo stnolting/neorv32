@@ -267,7 +267,7 @@ These placeholders need to be replaced by the actual path before being used. Exa
 ----
 NEORV32_HOME = path/to/neorv32 <1>
 NEORV32_SOC_FILE = $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f) <2>
-NEORV32_SOC_SRCS = $(subst NEORV32_RTL_PATH_PLACEHOLDER, $(NEORV32_HOME)/rtl, $(NEORV32_SOC_FILE))) <3>
+NEORV32_SOC_SRCS = $(subst NEORV32_RTL_PATH_PLACEHOLDER, $(NEORV32_HOME)/rtl, $(NEORV32_SOC_FILE)) <3>
 ----
 <1> Path to the NEORV32 home folder (i.e. the root folder of the GitHub repository).
 <2> Load the content of the `file_list_soc.f` file-list into a new variable `NEORV32_SOC_FILE`.
