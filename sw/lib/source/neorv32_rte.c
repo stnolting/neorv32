@@ -650,6 +650,7 @@ void neorv32_rte_print_hw_config(void) {
   if (tmp & (1 << SYSINFO_SOC_IO_SPI))     { neorv32_uart0_printf("SPI ");     }
                                              neorv32_uart0_printf("SYSINFO "); // always enabled
   if (tmp & (1 << SYSINFO_SOC_IO_TRNG))    { neorv32_uart0_printf("TRNG ");    }
+  if (tmp & (1 << SYSINFO_SOC_IO_TWD))     { neorv32_uart0_printf("TWD ");     }
   if (tmp & (1 << SYSINFO_SOC_IO_TWI))     { neorv32_uart0_printf("TWI ");     }
   if (tmp & (1 << SYSINFO_SOC_IO_UART0))   { neorv32_uart0_printf("UART0 ");   }
   if (tmp & (1 << SYSINFO_SOC_IO_UART1))   { neorv32_uart0_printf("UART1 ");   }

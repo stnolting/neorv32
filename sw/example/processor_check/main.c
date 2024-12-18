@@ -1004,24 +1004,33 @@ int main() {
   // Fast interrupt channel 0
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FIRQ0 (TRNG) ", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ0 (TWD) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWD)) {
     cnt_test++;
 
-    // enable TRNG, trigger IRQ when FIFO is full
-    neorv32_trng_enable(1);
+    // configure TWD and enable RX-available interrupt
+    neorv32_twd_setup(0b1101001, 0, 1, 0, 0);
+
+    // configure TWI with third-fastest clock, no clock stretching
+    neorv32_twi_setup(CLK_PRSC_8, 1, 0);
 
     // enable fast interrupt
-    neorv32_cpu_csr_write(CSR_MIE, 1 << TRNG_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << TWD_FIRQ_ENABLE);
+
+    // program sequence: write data via TWI
+    neorv32_twi_generate_start_nonblocking();
+    neorv32_twi_send_nonblocking(0b11010010, 0); // write-address
+    neorv32_twi_send_nonblocking(0x47, 0);
+    neorv32_twi_generate_stop_nonblocking();
 
     // sleep until interrupt
     neorv32_cpu_sleep();
 
-    // no more interrupts
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRNG_TRAP_CODE) {
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWD_TRAP_CODE) && // interrupt triggered
+        (neorv32_twd_get() == 0x47)) { // correct data written
       test_ok();
     }
     else {
@@ -1036,6 +1045,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] FIRQ1 (CFS) ", cnt_test);
   PRINT_STANDARD("[n.a.]\n");
 
@@ -1275,13 +1285,17 @@ int main() {
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWI)) {
     cnt_test++;
 
-    // configure TWI with fastest clock, no clock stretching
-    neorv32_twi_setup(CLK_PRSC_2, 0, 0);
+    // configure TWI with third-fastest clock, no clock stretching
+    neorv32_twi_setup(CLK_PRSC_8, 1, 0);
 
-    // issue some TWI operations, after they are done the interrupt will be fired
+    // configure TWD, no interrupts
+    neorv32_twd_setup(0b0010110, 0, 0, 0, 0);
+    neorv32_twd_put(0x8e);
+
+    // program sequence: read data via TWI
     neorv32_twi_generate_start_nonblocking();
-    neorv32_twi_send_nonblocking(0xA5, 0);
-    neorv32_twi_send_nonblocking(0x12, 0);
+    neorv32_twi_send_nonblocking(0b00101101, 0); // read-address
+    neorv32_twi_send_nonblocking(0xff, 1);
     neorv32_twi_generate_stop_nonblocking();
 
     // enable TWI FIRQ
@@ -1292,10 +1306,15 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    tmp_a = NEORV32_TWI->CTRL;
+    // get TWI response
+    uint8_t twi_data_y;
+    int twi_ack_x = neorv32_twi_get(&twi_data_y);
+    neorv32_twi_get(&twi_data_y);
+
+
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWI_TRAP_CODE) && // interrupt triggered
-        (tmp_a & (1<<TWI_CTRL_RX_AVAIL)) && // RX data is available
-        ((tmp_a & (1<<TWI_CTRL_BUSY)) == 0)) { // module is not busy anymore
+        (twi_ack_x == 0x00) && // device acknowledged access
+        (twi_data_y == 0x8e)) { // correct read data
       test_ok();
     }
     else {

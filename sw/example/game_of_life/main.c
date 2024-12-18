@@ -97,7 +97,7 @@ int main(void) {
     // check if TRNG was synthesized
     if (neorv32_trng_available()) {
       neorv32_uart0_printf("\nTRNG detected. Using TRNG for universe initialization.\n");
-      neorv32_trng_enable(0);
+      neorv32_trng_enable();
       trng_available = 1;
     }
 

@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100700"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100704"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -72,7 +72,7 @@ package neorv32_package is
 --constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe700"; -- reserved
 --constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe800"; -- reserved
 --constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe900"; -- reserved
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffea00"; -- reserved
+  constant base_io_twd_c     : std_ulogic_vector(31 downto 0) := x"ffffea00";
   constant base_io_cfs_c     : std_ulogic_vector(31 downto 0) := x"ffffeb00";
   constant base_io_slink_c   : std_ulogic_vector(31 downto 0) := x"ffffec00";
   constant base_io_dma_c     : std_ulogic_vector(31 downto 0) := x"ffffed00";
@@ -193,6 +193,17 @@ package neorv32_package is
     stb  : std_ulogic; -- strobe
     cyc  : std_ulogic; -- valid cycle
   end record;
+
+  -- source (request) termination --
+  constant xbus_req_terminate_c : xbus_req_t := (
+    addr => (others => '0'),
+    data => (others => '0'),
+    tag  => (others => '0'),
+    we   => '0',
+    sel  => (others => '0'),
+    stb  => '0',
+    cyc  => '0'
+  );
 
   -- xbus response --
   type xbus_rsp_t is record
@@ -795,6 +806,8 @@ package neorv32_package is
       IO_SDI_FIFO           : natural range 1 to 2**15       := 1;
       IO_TWI_EN             : boolean                        := false;
       IO_TWI_FIFO           : natural range 1 to 2**15       := 1;
+      IO_TWD_EN             : boolean                        := false;
+      IO_TWD_FIFO           : natural range 1 to 2**15       := 1;
       IO_PWM_NUM_CH         : natural range 0 to 16          := 0;
       IO_WDT_EN             : boolean                        := false;
       IO_TRNG_EN            : boolean                        := false;
@@ -878,6 +891,11 @@ package neorv32_package is
       twi_sda_o      : out std_ulogic;
       twi_scl_i      : in  std_ulogic := 'H';
       twi_scl_o      : out std_ulogic;
+      -- TWD (available if IO_TWD_EN = true) --
+      twd_sda_i      : in  std_ulogic := 'H';
+      twd_sda_o      : out std_ulogic;
+      twd_scl_i      : in  std_ulogic := 'H';
+      twd_scl_o      : out std_ulogic;
       -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
       onewire_i      : in  std_ulogic := 'H';
       onewire_o      : out std_ulogic;

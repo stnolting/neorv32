@@ -1,8 +1,8 @@
 # Bootloader (for BOOTROM) makefile.
 
-# Minimal RISC-V ISA only
-MARCH = rv32i_zicsr_zifencei
-MABI = ilp32
+# Minimal RISC-V ISA (E!) only
+MARCH = rv32e_zicsr_zifencei
+MABI = ilp32e
 
 # Optimize for minimal size
 EFFORT = -Os
@@ -14,7 +14,7 @@ EFFORT = -Os
 USER_FLAGS += \
 -Wl,--defsym,__neorv32_rom_size=4k \
 -Wl,--defsym,__neorv32_rom_base=0xFFFFC000 \
--Wl,--defsym,__neorv32_ram_size=512 \
+-Wl,--defsym,__neorv32_ram_size=256 \
 -DMAKE_BOOTLOADER \
 -flto
 

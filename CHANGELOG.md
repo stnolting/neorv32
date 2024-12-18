@@ -29,6 +29,10 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 14.12.2024 | 1.10.7.4 | :sparkles: add new module: I2C-compatible **Two-Wire Device Controller (TWD)** | [#1121](https://github.com/stnolting/neorv32/pull/1121) |
+| 14.12.2024 | 1.10.7.3 | :warning: rework TRNG (change HAL; remove interrupt) | [#1120](https://github.com/stnolting/neorv32/pull/1120) |
+| 12.12.2024 | 1.10.7.2 | add external memory configuration/initialization options to testbench | [#1119](https://github.com/stnolting/neorv32/pull/1119) |
+| 11.12.2024 | 1.10.7.1 | :test_tube: shrink bootloader's minimal ISA (`rv32e`) and RAM (256 bytes) requirements | [#1118](https://github.com/stnolting/neorv32/pull/1118) |
 | 10.12.2024 | [**:rocket:1.10.7**](https://github.com/stnolting/neorv32/releases/tag/v1.10.7) | **New release** | |
 | 03.12.2024 | 1.10.6.9 | :sparkles: add ONEWIRE command and data FIFO; :warning: rework ONEWIRE interface register layout; :bug: fix regression: busy flag was stuck at zero | [#1113](https://github.com/stnolting/neorv32/pull/1113) |
 | 01.12.2024 | 1.10.6.8 | add TWI bus sensing logic | [#1111](https://github.com/stnolting/neorv32/pull/1111) |

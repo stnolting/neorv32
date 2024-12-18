@@ -28,7 +28,8 @@ image::neorv32_processor.png[align=center]
 <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,**UART1**>>) with optional hardware flow control (RTS/CTS)
 * _optional_ serial peripheral interface host controller (<<_serial_peripheral_interface_controller_spi,**SPI**>>) with 8 dedicated CS lines
 * _optional_ 8-bit serial data device interface (<<_serial_data_interface_controller_spi,**SDI**>>)
-* _optional_ two wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
+* _optional_ two-wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
+* _optional_ two-wire serial device controller (<<_two_wire_serial_device_controller_twd,**TWD**>>), compatible to the I²C standard
 * _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 64xOut, 64xIn
 * _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_bus_interface_xbus,**XBUS**>>)
 * _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
@@ -70,7 +71,7 @@ bits/channels are hardwired to zero.
 
 .Tri-State Interfaces
 [NOTE]
-Some interfaces (like the TWI and the 1-Wire bus) require explicit tri-state drivers in the final top module.
+Some interfaces (like the TWI, the TWD and the 1-Wire bus) require explicit tri-state drivers in the final top module.
 
 .Input/Output Registers
 [NOTE]
@@ -146,6 +147,11 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `twi_sda_o`      |  1 | out |   -   | serial data line output (pull low only)
 | `twi_scl_i`      |  1 |  in | `'H'` | serial clock line sense input
 | `twi_scl_o`      |  1 | out |   -   | serial clock line output (pull low only)
+5+^| **<<_two_wire_serial_device_controller_twd>>**
+| `twd_sda_i`      |  1 |  in | `'H'` | serial data line sense input
+| `twd_sda_o`      |  1 | out |   -   | serial data line output (pull low only)
+| `twd_scl_i`      |  1 |  in | `'H'` | serial clock line sense input
+| `twd_scl_o`      |  1 | out |   -   | serial clock line output (pull low only)
 5+^| **<<_one_wire_serial_interface_controller_onewire>>**
 | `onewire_i`      |  1 |  in | `'H'` | 1-wire bus sense input
 | `onewire_o`      |  1 | out |   -   | 1-wire bus output (pull low only)
@@ -293,6 +299,8 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_SDI_FIFO`           | natural   | 1             | Depth of the <<_serial_data_interface_controller_sdi>> FIFO. Has to be a power of two, min 1, max 32768.
 | `IO_TWI_EN`             | boolean   | false         | Implement the <<_two_wire_serial_interface_controller_twi>>.
 | `IO_TWI_FIFO`           | natural   | 1             | Depth of the <<_two_wire_serial_interface_controller_twi>> FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_TWD_EN`             | boolean   | false         | Implement the <<_two_wire_serial_device_controller_twd>>.
+| `IO_TWD_FIFO`           | natural   | 1             | Depth of the <<_two_wire_serial_device_controller_twd>> FIFO. Has to be a power of two, min 1, max 32768.
 | `IO_PWM_NUM_CH`         | natural   | 0             | Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..16).
 | `IO_WDT_EN`             | boolean   | false         | Implement the <<_watchdog_timer_wdt>>.
 | `IO_TRNG_EN`            | boolean   | false         | Implement the <<_true_random_number_generator_trng>>.
@@ -449,7 +457,7 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 [options="header",grid="rows"]
 |=======================
 | Channel | Source | Description
-| 0       | <<_true_random_number_generator_trng,TRNG>> | TRNG data available interrupt
+| 0       | <<_two_wire_serial_device_controller_twd,TWD>> | TWD FIFO level interrupt
 | 1       | <<_custom_functions_subsystem_cfs,CFS>> | Custom functions subsystem (CFS) interrupt (user-defined)
 | 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 RX FIFO level interrupt
 | 3       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 TX FIFO level interrupt
@@ -809,6 +817,8 @@ include::soc_spi.adoc[]
 include::soc_sdi.adoc[]
 
 include::soc_twi.adoc[]
+
+include::soc_twd.adoc[]
 
 include::soc_onewire.adoc[]
 

@@ -72,8 +72,9 @@ int main(void) {
   // enable TRNG
   neorv32_uart0_printf("\nTRNG FIFO depth: %i\n", neorv32_trng_get_fifo_depth());
   neorv32_uart0_printf("Starting TRNG...\n");
-  neorv32_trng_enable(0);
+  neorv32_trng_enable();
   neorv32_cpu_delay_ms(100); // TRNG "warm up"
+  neorv32_trng_fifo_clear(); // discard "warm-up" data
 
   while(1) {
 
@@ -346,14 +347,13 @@ void compute_rate(void) {
 
   const uint32_t n_samples = 16*1024;
   uint32_t i;
-  uint32_t tmp;
+  uint8_t data;
 
   uint32_t cycles = neorv32_cpu_csr_read(CSR_CYCLE);
 
   i = 0;
   while (i<n_samples) {
-    tmp = NEORV32_TRNG->CTRL;
-    if (tmp & (1<<TRNG_CTRL_VALID)) { // valid sample?
+    if (neorv32_trng_get(&data)) { // data available?
       i++;
     }
   }
