@@ -3,16 +3,16 @@
 == Eclipse IDE
 
 Eclipse (https://www.eclipse.org/) is an interactive development environment that can be used to develop, debug and profile
-application code for the NEORV32 RISC-V Processor. This chapter shows how to import the provided example setup
+application code for the NEORV32 RISC-V Processor. This chapter shows how to import the provided **example setup**
 from the NEORV32 project repository. Additionally, all the required steps to create a compatible project from
 scratch are illustrated in this chapter.
 
 .This is a Makefile-Based Project!
 [IMPORTANT]
-Note that the provided Eclipse project as well as the setup tutorial in this section implement a **makefile-based project**.
-Hence, the makefile in the example folder (that includes the main NEORV32 makefile) is used for building the application
-instead of the Eclipse-managed build. Therefore, **all compiler options, include folder, source files, etc. have to be
-defined within the project's makefile**.
+Note that the provided Eclipse example project (as well as the setup tutorial in this section) implements a
+**makefile-based project**. Hence, the makefile in the example folder is used for building the application
+instead of the Eclipse-managed build system. Therefore, **all compiler options, include folder, source files,
+etc. have to be defined within this makefile**.
 
 .Developing and debugging code for the NEORV32 using the Eclipse IDE
 image::eclipse.png[align=center]
@@ -26,18 +26,18 @@ The following tools are required:
 * Eclipse IDE (**Eclipse IDE for Embedded C/C++ Developers**): https://www.eclipse.org/downloads/
 * Precompiled RISC-V GCC toolchain: e.g. https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack
 * Precompiled OpenOCD binaries: e.g. https://github.com/xpack-dev-tools/openocd-xpack
-* Build tools like make: e.g. https://github.com/xpack-dev-tools/windows-build-tools-xpack
+* Build tools like make and busybox: e.g. https://github.com/xpack-dev-tools/windows-build-tools-xpack
 
 .XPack Windows Build Tools
-[IMPORTANT]
-The NEORV32 makefile relies on the `basename` command which is not part of the default XPack
-Windows Build Tools. However, you can just open the `bin` folder, copy `busybox.exe` and rename
-that copy to `basename.exe`.
+[TIP]
+The NEORV32 makefile relies on the `basename` command which might not be part of the default XPack Windows Build Tools.
+However, you can just open the according `bin` folder, copy `busybox.exe` and rename that copy to `basename.exe`.
+
 
 :sectnums:
 === Import The Provided Eclipse Example Project
 
-A pre-configured Eclipse project is available in `neorv32/sw/example/eclipse`.
+A preconfigured Eclipse project is available in `neorv32/sw/example/eclipse`.
 To import it:
 
 [start=1]
@@ -50,29 +50,25 @@ To import it:
 .NEORV32 Folder and File Paths
 [IMPORTANT]
 The provided example project uses **relative paths** for including all the NEORV32-specific files and folders
-(in the Eclipse configuration files). Note that these paths need to be adjusted when moving this example setup
-to a different location (makefile, NEORV32 sources, etc.).
+(in the Eclipse configuration files). Note that these paths need to be adjusted when moving the example setup
+to a different location.
 
-.Executables Configuration
+.Tool Configuration
 [IMPORTANT]
-Make sure to adjust the binaries / installation folders of the RISC-V GCC toolchain
-and OpenOCD according to your installation. See the following chapter for more information.
+Make sure to adjust the binaries / installation folders of the RISC-V GCC toolchain, openOCD and Windows build tools
+according to your installation. See the section <<_configure_build_tools>> for more information.
 
 .Makefile Adjustment
 [IMPORTANT]
 Make sure to adjust the variables inside the project's makefile to match your processor
-configuration (memory sizes, CPU ISA configuration, etc.).
+configuration (memory sizes, CPU ISA configuration, etc.):
+https://stnolting.github.io/neorv32/#_application_makefile
+
 
 :sectnums:
 === Setup a new Eclipse Project from Scratch
 
 This chapter shows all the steps required to create an Eclipse project for the NEORV32 entirely from scratch.
-
-.This is an early version! ;)
-[NOTE]
-The provided Eclipse project as well as the tutorial from this chapter are in a very early stage.
-This setup was build and tested on Windows.
-Feel free to open a new issue or pull request to improve this setup.
 
 ==== Create a new Project
 
@@ -98,7 +94,6 @@ If you need to reconfigure the RISC-V GCC binaries and/or paths:
 . expand **MCU** and select **RISC-V Toolchain Paths**
 . adjust the **Toolchain folder** and the **Toolchain name** if required
 . Click **Apply**.
-
 
 ==== Add Initial Files
 
@@ -129,7 +124,7 @@ that there are no (incompatible) artifacts left from previous builds.
 See the NEORV32 data sheet for a list and description of all available makefile targets:
 https://stnolting.github.io/neorv32/#_makefile_targets
 
-=== Configure Build Tools
+==== Configure Build Tools
 
 This step is only required if your system does not provide any build tools (like `make`) by default.
 
@@ -140,7 +135,7 @@ This step is only required if your system does not provide any build tools (like
 * Example: `Build tools folder: C:/xpack/xpack-windows-build-tools-4.4.1-2/bin`
 . Click **Apply and Close**.
 
-=== Adjust Default Build Configuration (optional)
+==== Adjust Default Build Configuration (optional)
 
 This will simplify the auto-build by replacing the default `make all` command by `make elf`. Thus, only
 the required `main.elf` file gets generated instead of _all_ executable files (like HDL and memory image files).
@@ -230,6 +225,7 @@ Installing TM Terminal from the Eclipse market place:
 . Enter "TM Terminal" to the **Find** line and hit enter.
 . Select **TM Terminal** from the list and install it.
 . After installation restart Eclipse.
+
 
 === Eclipse Setup References
 
