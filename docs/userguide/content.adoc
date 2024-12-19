@@ -57,8 +57,6 @@ include::packaging_vivado.adoc[]
 
 include::simulating_the_processor.adoc[]
 
-include::vhdl_development_environment.adoc[]
-
 include::building_the_documentation.adoc[]
 
 include::zephyr_support.adoc[]
