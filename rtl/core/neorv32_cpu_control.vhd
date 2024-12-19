@@ -251,7 +251,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal csr : csr_t;
 
-  -- hpm event configuration CSRs --
+  -- HPM event configuration CSRs --
   type hpmevent_cfg_t is array (3 to 15) of std_ulogic_vector(hpmcnt_event_width_c-1 downto 0);
   type hpmevent_rd_t  is array (3 to 15) of std_ulogic_vector(XLEN-1 downto 0);
   signal hpmevent_cfg : hpmevent_cfg_t;
@@ -309,18 +309,11 @@ begin
       fetch_engine.pc      <= (others => '0');
       fetch_engine.priv    <= '0';
     elsif rising_edge(clk_i) then
-      -- restart request --
-      if (fetch_engine.state = IF_RESTART) then -- restart done
-        fetch_engine.restart <= '0';
-      else -- buffer request
-        fetch_engine.restart <= fetch_engine.restart or fetch_engine.reset;
-      end if;
-
-      -- fsm --
       case fetch_engine.state is
 
         when IF_REQUEST => -- request next 32-bit-aligned instruction word
         -- ------------------------------------------------------------
+          fetch_engine.restart <= fetch_engine.restart or fetch_engine.reset; -- buffer restart request
           if (ipb.free = "11") then -- free IPB space?
             fetch_engine.state <= IF_PENDING;
           elsif (fetch_engine.restart = '1') or (fetch_engine.reset = '1') then -- restart because of branch
@@ -329,6 +322,7 @@ begin
 
         when IF_PENDING => -- wait for bus response and write instruction data to prefetch buffer
         -- ------------------------------------------------------------
+          fetch_engine.restart <= fetch_engine.restart or fetch_engine.reset; -- buffer restart request
           if (fetch_engine.resp = '1') then -- wait for bus response
             fetch_engine.pc    <= std_ulogic_vector(unsigned(fetch_engine.pc) + 4); -- next word
             fetch_engine.pc(1) <= '0'; -- (re-)align to 32-bit
@@ -341,9 +335,10 @@ begin
 
         when others => -- IF_RESTART: set new start address
         -- ------------------------------------------------------------
-          fetch_engine.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- initialize from PC incl. 16-bit-alignment bit
-          fetch_engine.priv  <= csr.privilege_eff; -- set new privilege level
-          fetch_engine.state <= IF_REQUEST;
+          fetch_engine.restart <= '0'; -- restart done
+          fetch_engine.pc      <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- initialize from PC incl. 16-bit-alignment bit
+          fetch_engine.priv    <= csr.privilege_eff; -- set new privilege level
+          fetch_engine.state   <= IF_REQUEST;
 
       end case;
     end if;
@@ -384,7 +379,7 @@ begin
     prefetch_buffer_inst: entity neorv32.neorv32_fifo
     generic map (
       FIFO_DEPTH => 2,                   -- number of IPB entries; has to be a power of two, min 2
-      FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in fifo
+      FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in FIFO
       FIFO_RSYNC => false,               -- we NEED to read data asynchronously
       FIFO_SAFE  => false,               -- no safe access required (ensured by FIFO-external logic)
       FULL_RESET => true                 -- map to FFs and add a dedicated reset
@@ -1966,7 +1961,7 @@ begin
       cnt_lo_rd(2) <= cnt.lo(2); -- instret
       cnt_hi_rd(2) <= cnt.hi(2); -- instreth
     end if;
-    -- hpm counters --
+    -- HPM counters --
     if RISCV_ISA_Zihpm and (hpm_num_c > 0) then
       for i in 3 to (hpm_num_c+3)-1 loop
         if (hpm_cnt_lo_width_c > 0) then -- constrain low word size
@@ -2043,7 +2038,7 @@ begin
       cnt.inc(0) <= (others => (cnt_event(hpmcnt_event_cy_c) and (not csr.mcountinhibit(0)) and (not debug_ctrl.run)));
       cnt.inc(1) <= (others => '0'); -- time: not available
       cnt.inc(2) <= (others => (cnt_event(hpmcnt_event_ir_c) and (not csr.mcountinhibit(2)) and (not debug_ctrl.run)));
-      -- hpm counters --
+      -- HPM counters --
       for i in 3 to 15 loop
         cnt.inc(i) <= (others => (or_reduce_f(cnt_event and hpmevent_cfg(i)) and (not csr.mcountinhibit(i)) and (not debug_ctrl.run)));
       end loop;
