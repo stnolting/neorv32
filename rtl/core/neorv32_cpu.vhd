@@ -121,11 +121,10 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal csr_rdata     : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
   signal lsu_mar       : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory address register
   signal lsu_err       : std_ulogic_vector(3 downto 0);      -- lsu alignment/access errors
-  signal pc_fetch      : std_ulogic_vector(XLEN-1 downto 0); -- pc for instruction fetch
   signal pc_curr       : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
+  signal pc_next       : std_ulogic_vector(XLEN-1 downto 0); -- next PC (corresponding to next instruction)
   signal pc_ret        : std_ulogic_vector(XLEN-1 downto 0); -- return address
-  signal pmp_ex_fault  : std_ulogic;                         -- pmp instruction fetch fault
-  signal pmp_rw_fault  : std_ulogic;                         -- pmp read/write access fault
+  signal pmp_fault     : std_ulogic;                         -- pmp permission violation
   signal irq_machine   : std_ulogic_vector(2 downto 0);      -- risc-v standard machine-level interrupts
 
 begin
@@ -234,17 +233,18 @@ begin
     rstn_i        => rstn_i,         -- global reset, low-active, async
     ctrl_o        => ctrl,           -- main control bus
     -- instruction fetch interface --
-    ibus_pmperr_i => pmp_ex_fault,   -- instruction fetch pmp fault
     ibus_req_o    => ibus_req_o,     -- request
     ibus_rsp_i    => ibus_rsp_i,     -- response
+    -- pmp fault --
+    pmp_fault_i   => pmp_fault,      -- instruction fetch / execute pmp fault
     -- data path interface --
     alu_cp_done_i => alu_cp_done,    -- ALU iterative operation done
     alu_cmp_i     => alu_cmp,        -- comparator status
     alu_add_i     => alu_add,        -- ALU address result
     alu_imm_o     => alu_imm,        -- immediate
     rf_rs1_i      => rs1,            -- rf source 1
-    pc_fetch_o    => pc_fetch,       -- instruction fetch address
     pc_curr_o     => pc_curr,        -- current PC (corresponding to current instruction)
+    pc_next_o     => pc_next,        -- next PC (corresponding to next instruction)
     pc_ret_o      => pc_ret,         -- return address
     csr_rdata_o   => csr_rdata,      -- CSR read data
     -- external CSR interface --
@@ -269,8 +269,8 @@ begin
   xcsr_rdata_res <= xcsr_rdata_pmp or xcsr_rdata_alu;
 
   -- CPU state --
-  sleep_o <= ctrl.cpu_sleep; -- set when CPU is sleeping (after WFI)
-  debug_o <= ctrl.cpu_debug; -- set when CPU is in debug mode
+  sleep_o <= ctrl.cpu_sleep;
+  debug_o <= ctrl.cpu_debug;
 
 
   -- Register File --------------------------------------------------------------------------
@@ -365,7 +365,7 @@ begin
     mar_o       => lsu_mar,      -- memory address register
     wait_o      => lsu_wait,     -- wait for access to complete
     err_o       => lsu_err,      -- alignment/access errors
-    pmp_fault_i => pmp_rw_fault, -- PMP read/write access fault
+    pmp_fault_i => pmp_fault,    -- PMP read/write access fault
     -- data bus --
     dbus_req_o  => dbus_req_o,   -- request
     dbus_rsp_i  => dbus_rsp_i    -- response
@@ -394,19 +394,17 @@ begin
       csr_wdata_i => xcsr_wdata,     -- write data
       csr_rdata_o => xcsr_rdata_pmp, -- read data
       -- address input --
-      addr_if_i   => pc_fetch,       -- instruction fetch address
+      addr_if_i   => pc_next,        -- instruction fetch address
       addr_ls_i   => alu_add,        -- load/store address
-      -- faults --
-      fault_ex_o  => pmp_ex_fault,   -- instruction fetch fault
-      fault_rw_o  => pmp_rw_fault    -- read/write access fault
+      -- access error --
+      fault_o     => pmp_fault       -- permission violation
     );
   end generate;
 
   pmp_inst_false:
   if not RISCV_ISA_Smpmp generate
     xcsr_rdata_pmp <= (others => '0');
-    pmp_ex_fault   <= '0';
-    pmp_rw_fault   <= '0';
+    pmp_fault      <= '0';
   end generate;
 
 
