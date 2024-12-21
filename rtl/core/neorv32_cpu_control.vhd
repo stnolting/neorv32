@@ -151,7 +151,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal issue_engine : issue_engine_t;
 
   -- instruction execution engine --
-  type exe_engine_state_t is (DISPATCH, TRAP_ENTER, TRAP_EXIT, RESTART, SLEEP, EXECUTE, ALU_WAIT, BRANCH, BRANCHED, SYSTEM, MEM_REQ, MEM_RSP);
+  type exe_engine_state_t is (EX_DISPATCH, EX_TRAP_ENTER, EX_TRAP_EXIT, EX_RESTART, EX_SLEEP, EX_EXECUTE,
+                              EX_ALU_WAIT, EX_BRANCH, EX_BRANCHED, EX_SYSTEM, EX_MEM_REQ, EX_MEM_RSP);
   type exe_engine_t is record
     state : exe_engine_state_t;
     ir    : std_ulogic_vector(31 downto 0); -- instruction word being executed right now
@@ -169,8 +170,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal opcode : std_ulogic_vector(6 downto 0);
 
   -- execution monitor --
-  signal monitor_cnt, monitor_add : std_ulogic_vector(monitor_mc_tmo_c downto 0);
-  signal monitor_exc              : std_ulogic;
+  signal monitor_cnt : std_ulogic_vector(monitor_mc_tmo_c downto 0);
+  signal monitor_exc : std_ulogic;
 
   -- CPU sleep-mode --
   signal sleep_mode : std_ulogic;
@@ -207,6 +208,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type csr_t is record
     addr           : std_ulogic_vector(11 downto 0); -- physical access address
     we, we_nxt     : std_ulogic; -- write enable
+    operand        : std_ulogic_vector(XLEN-1 downto 0); -- write operand
     wdata          : std_ulogic_vector(XLEN-1 downto 0); -- write data
     rdata          : std_ulogic_vector(XLEN-1 downto 0); -- read data
     --
@@ -256,7 +258,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type hpmevent_rd_t  is array (3 to 15) of std_ulogic_vector(XLEN-1 downto 0);
   signal hpmevent_cfg : hpmevent_cfg_t;
   signal hpmevent_rd  : hpmevent_rd_t;
-  signal hpmevent_we  : std_ulogic_vector(15 downto 0);
 
   -- counter CSRs --
   type cnt_dat_t is array (0 to 2+hpm_num_c) of std_ulogic_vector(XLEN-1 downto 0);
@@ -264,13 +265,11 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type cnt_ovf_t is array (0 to 2+hpm_num_c) of std_ulogic_vector(0 downto 0);
   type cnt_inc_t is array (15 downto 0)      of std_ulogic_vector(0 downto 0);
   type cnt_t is record
-    we_lo : std_ulogic_vector(15 downto 0);
-    we_hi : std_ulogic_vector(15 downto 0);
-    inc   : cnt_inc_t;
-    lo    : cnt_dat_t; -- counter word low
-    hi    : cnt_dat_t; -- counter word high
-    nxt   : cnt_nxt_t; -- low-word increment including carry bit
-    ovf   : cnt_ovf_t; -- counter low-to-high-word overflow
+    inc : cnt_inc_t;
+    lo  : cnt_dat_t; -- counter word low
+    hi  : cnt_dat_t; -- counter word high
+    nxt : cnt_nxt_t; -- low-word increment including carry bit
+    ovf : cnt_ovf_t; -- counter low-to-high-word overflow
   end record;
   signal cnt                  : cnt_t;
   signal cnt_hi_rd, cnt_lo_rd : cnt_dat_t;
@@ -496,7 +495,7 @@ begin
     if (rstn_i = '0') then
       alu_imm_o <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (exe_engine.state = DISPATCH) then -- prepare update of next PC (using ALU's PC + IMM in EXECUTE state)
+      if (exe_engine.state = EX_DISPATCH) then -- prepare update of next PC (using ALU's PC + IMM in EX_EXECUTE state)
         alu_imm_o <= (others => '0');
         if RISCV_ISA_C and (issue_engine.data(33) = '1') then -- is de-compressed C instruction?
           alu_imm_o(3 downto 0) <= x"2";
@@ -545,7 +544,7 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl             <= ctrl_bus_zero_c;
-      exe_engine.state <= RESTART;
+      exe_engine.state <= EX_RESTART;
       exe_engine.ir    <= (others => '0');
       exe_engine.ci    <= '0';
       exe_engine.pc    <= BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
@@ -629,27 +628,27 @@ begin
     -- state machine --
     case exe_engine.state is
 
-      when DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
+      when EX_DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
       -- ------------------------------------------------------------
-        ctrl_nxt.alu_opa_mux <= '1'; -- prepare update of next PC in EXECUTE (opa = current PC)
-        ctrl_nxt.alu_opb_mux <= '1'; -- prepare update of next PC in EXECUTE (opb = imm = +2/4)
+        ctrl_nxt.alu_opa_mux <= '1'; -- prepare update of next PC in EX_EXECUTE (opa = current PC)
+        ctrl_nxt.alu_opb_mux <= '1'; -- prepare update of next PC in EX_EXECUTE (opb = imm = +2/4)
         --
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
-          exe_engine_nxt.state <= TRAP_ENTER;
+          exe_engine_nxt.state <= EX_TRAP_ENTER;
         elsif RISCV_ISA_Sdtrig and (hw_trigger_match = '1') then -- hardware breakpoint
           exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC; intercept BEFORE executing the instruction
           trap_ctrl.hwtrig     <= '1';
-          exe_engine_nxt.state <= DISPATCH; -- stay here another round until trap_ctrl.hwtrig arrives in trap_ctrl.env_pending
+          exe_engine_nxt.state <= EX_DISPATCH; -- stay here another round until trap_ctrl.hwtrig arrives in trap_ctrl.env_pending
         elsif (issue_engine.valid(0) = '1') or (issue_engine.valid(1) = '1') then -- new instruction word available
           issue_engine.ack     <= '1';
           trap_ctrl.instr_be   <= issue_engine.data(32); -- access fault during instruction fetch
           exe_engine_nxt.ci    <= issue_engine.data(33); -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= issue_engine.data(31 downto 0); -- instruction word
           exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
-          exe_engine_nxt.state <= EXECUTE; -- start executing new instruction
+          exe_engine_nxt.state <= EX_EXECUTE; -- start executing new instruction
         end if;
 
-      when TRAP_ENTER => -- enter trap environment and jump to trap vector
+      when EX_TRAP_ENTER => -- enter trap environment and jump to trap vector
       -- ------------------------------------------------------------
         if (trap_ctrl.cause(5) = '1') and RISCV_ISA_Sdext then -- debug mode (re-)entry
           exe_engine_nxt.pc2 <= DEBUG_PARK_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter; start at "parking loop" <normal_entry>
@@ -665,10 +664,10 @@ begin
         --
         if (trap_ctrl.env_pending = '1') then -- wait for sync. exceptions to become pending
           trap_ctrl.env_enter  <= '1';
-          exe_engine_nxt.state <= RESTART; -- restart instruction fetch
+          exe_engine_nxt.state <= EX_RESTART; -- restart instruction fetch
         end if;
 
-      when TRAP_EXIT => -- return from trap environment and jump to trap PC
+      when EX_TRAP_EXIT => -- return from trap environment and jump to trap PC
       -- ------------------------------------------------------------
         if (debug_ctrl.run = '1') and RISCV_ISA_Sdext then -- debug mode exit
           exe_engine_nxt.pc2 <= csr.dpc(XLEN-1 downto 1) & '0';
@@ -676,15 +675,15 @@ begin
           exe_engine_nxt.pc2 <= csr.mepc(XLEN-1 downto 1) & '0';
         end if;
         trap_ctrl.env_exit   <= '1';
-        exe_engine_nxt.state <= RESTART; -- restart instruction fetch
+        exe_engine_nxt.state <= EX_RESTART; -- restart instruction fetch
 
-      when RESTART => -- reset and restart instruction fetch at next PC
+      when EX_RESTART => -- reset and restart instruction fetch at next PC
       -- ------------------------------------------------------------
         ctrl_nxt.rf_zero_we  <= not bool_to_ulogic_f(REGFILE_HW_RST); -- house keeping: force writing zero to x0 if it's a phys. register
         fetch_engine.reset   <= '1';
-        exe_engine_nxt.state <= BRANCHED; -- delay cycle to restart front-end
+        exe_engine_nxt.state <= EX_BRANCHED; -- delay cycle to restart front-end
 
-      when EXECUTE => -- decode and execute instruction (control will be here for exactly 1 cycle in any case)
+      when EX_EXECUTE => -- decode and execute instruction (control will be here for exactly 1 cycle in any case)
       -- ------------------------------------------------------------
         exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0'; -- next PC (= PC + immediate)
         trap_ctrl.instr_be <= pmp_fault_i; -- did this instruction cause a PMP-execute violation?
@@ -719,62 +718,62 @@ begin
                                        ((funct3_v = funct3_xor_c)  and (funct7_v = "0000000")) or ((funct3_v = funct3_or_c)   and (funct7_v = "0000000")) or
                                        ((funct3_v = funct3_and_c)  and (funct7_v = "0000000")))) then -- base ALU instruction (excluding SLL, SRL, SRA)?
               ctrl_nxt.rf_wb_en    <= '1'; -- valid RF write-back (won't happen if exception)
-              exe_engine_nxt.state <= DISPATCH;
+              exe_engine_nxt.state <= EX_DISPATCH;
             else -- [NOTE] potential illegal ALU[I] instruction are handled as multi-cycle operations that will time-out if no co-processor responds
               ctrl_nxt.alu_cp_alu  <= '1'; -- trigger ALU[I] opcode-space co-processor
-              exe_engine_nxt.state <= ALU_WAIT;
+              exe_engine_nxt.state <= EX_ALU_WAIT;
             end if;
 
           -- load upper immediate --
           when opcode_lui_c =>
             ctrl_nxt.alu_op      <= alu_op_movb_c; -- pass immediate
             ctrl_nxt.rf_wb_en    <= '1'; -- valid RF write-back (won't happen if exception)
-            exe_engine_nxt.state <= DISPATCH;
+            exe_engine_nxt.state <= EX_DISPATCH;
 
           -- add upper immediate to PC --
           when opcode_auipc_c =>
             ctrl_nxt.alu_op      <= alu_op_add_c; -- add PC and immediate
             ctrl_nxt.rf_wb_en    <= '1'; -- valid RF write-back (won't happen if exception)
-            exe_engine_nxt.state <= DISPATCH;
+            exe_engine_nxt.state <= EX_DISPATCH;
 
           -- memory access --
           when opcode_load_c | opcode_store_c | opcode_amo_c =>
-            exe_engine_nxt.state <= MEM_REQ;
+            exe_engine_nxt.state <= EX_MEM_REQ;
 
           -- branch / jump-and-link (with register) --
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c =>
-            exe_engine_nxt.state <= BRANCH;
+            exe_engine_nxt.state <= EX_BRANCH;
 
           -- memory fence operations (execute even if illegal funct3) --
           when opcode_fence_c =>
             ctrl_nxt.lsu_fence   <= '1'; -- [NOTE] fence == fence.i; ignore all ordering bits
-            exe_engine_nxt.state <= RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
+            exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
 
           -- FPU: floating-point operations --
           when opcode_fop_c =>
             ctrl_nxt.alu_cp_fpu  <= '1'; -- trigger FPU co-processor
-            exe_engine_nxt.state <= ALU_WAIT; -- will be aborted via monitor timeout if FPU is not implemented
+            exe_engine_nxt.state <= EX_ALU_WAIT; -- will be aborted via monitor timeout if FPU is not implemented
 
           -- CFU: custom RISC-V instructions --
           when opcode_cust0_c | opcode_cust1_c =>
             ctrl_nxt.alu_cp_cfu  <= '1'; -- trigger CFU co-processor
-            exe_engine_nxt.state <= ALU_WAIT; -- will be aborted via monitor timeout if CFU is not implemented
+            exe_engine_nxt.state <= EX_ALU_WAIT; -- will be aborted via monitor timeout if CFU is not implemented
 
           -- environment/CSR operation or ILLEGAL opcode --
           when others =>
-            exe_engine_nxt.state <= SYSTEM;
+            exe_engine_nxt.state <= EX_SYSTEM;
 
-        end case; -- /EXECUTE
+        end case; -- /EX_EXECUTE
 
-      when ALU_WAIT => -- wait for multi-cycle ALU co-processor operation to finish or trap
+      when EX_ALU_WAIT => -- wait for multi-cycle ALU co-processor operation to finish or trap
       -- ------------------------------------------------------------
         ctrl_nxt.alu_op <= alu_op_cp_c;
         if (alu_cp_done_i = '1') or (trap_ctrl.exc_buf(exc_illegal_c) = '1') then
           ctrl_nxt.rf_wb_en    <= '1'; -- valid RF write-back (won't happen if exception)
-          exe_engine_nxt.state <= DISPATCH;
+          exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
-      when BRANCH => -- update next PC on taken branches and jumps
+      when EX_BRANCH => -- update next PC on taken branches and jumps
       -- ------------------------------------------------------------
         exe_engine_nxt.ra <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- output return address
         ctrl_nxt.rf_wb_en <= opcode(2); -- save return address if link operation (won't happen if exception)
@@ -782,23 +781,23 @@ begin
           trap_ctrl.instr_ma   <= alu_add_i(1) and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination is misaligned?
           fetch_engine.reset   <= '1'; -- reset instruction fetch to restart at modified PC
           exe_engine_nxt.pc2   <= alu_add_i(XLEN-1 downto 1) & '0';
-          exe_engine_nxt.state <= BRANCHED; -- shortcut (faster than going to RESTART)
+          exe_engine_nxt.state <= EX_BRANCHED; -- shortcut (faster than going to EX_RESTART)
         else
-          exe_engine_nxt.state <= DISPATCH;
+          exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
-      when BRANCHED => -- delay cycle to wait for reset of pipeline front-end (instruction fetch)
+      when EX_BRANCHED => -- delay cycle to wait for reset of pipeline front-end (instruction fetch)
       -- ------------------------------------------------------------
-        exe_engine_nxt.state <= DISPATCH;
+        exe_engine_nxt.state <= EX_DISPATCH;
 
-      when MEM_REQ => -- trigger memory request
+      when EX_MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
         if (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- memory request only if not an illegal instruction
           ctrl_nxt.lsu_req <= '1'; -- memory access request
         end if;
-        exe_engine_nxt.state <= MEM_RSP;
+        exe_engine_nxt.state <= EX_MEM_RSP;
 
-      when MEM_RSP => -- wait for memory response
+      when EX_MEM_RSP => -- wait for memory response
       -- ------------------------------------------------------------
         if (lsu_wait_i = '0') or -- bus system has completed the transaction (if there was any)
            (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
@@ -807,25 +806,25 @@ begin
           if (RISCV_ISA_Zalrsc and (opcode(2) = opcode_amo_c(2))) or (opcode(5) = '0') then -- atomic operation / normal load
             ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file (won't happen in case of exception)
           end if;
-          exe_engine_nxt.state <= DISPATCH;
+          exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
-      when SLEEP => -- sleep mode
+      when EX_SLEEP => -- sleep mode
       -- ------------------------------------------------------------
         if (trap_ctrl.wakeup = '1') then
-          exe_engine_nxt.state <= DISPATCH;
+          exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
-      when others => -- SYSTEM - CSR/ENVIRONMENT operation; no effect if illegal instruction
+      when others => -- EX_SYSTEM - CSR/ENVIRONMENT operation; no effect if illegal instruction
       -- ------------------------------------------------------------
-        exe_engine_nxt.state <= DISPATCH; -- default
+        exe_engine_nxt.state <= EX_DISPATCH; -- default
         if (funct3_v = funct3_env_c) and (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- non-illegal ENVIRONMENT
           case exe_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) is -- three LSBs are sufficient here
             when "000"  => trap_ctrl.ecall      <= '1'; -- ecall
             when "001"  => trap_ctrl.ebreak     <= '1'; -- ebreak
-            when "010"  => exe_engine_nxt.state <= TRAP_EXIT; -- xret
-            when "101"  => exe_engine_nxt.state <= SLEEP; -- wfi
-            when others => exe_engine_nxt.state <= DISPATCH; -- illegal or CSR operation
+            when "010"  => exe_engine_nxt.state <= EX_TRAP_EXIT; -- xret
+            when "101"  => exe_engine_nxt.state <= EX_SLEEP; -- wfi
+            when others => exe_engine_nxt.state <= EX_DISPATCH; -- illegal or CSR operation
           end case;
         end if;
         -- always write to CSR (if CSR instruction); ENVIRONMENT operations have rs1/imm5 = zero so this won't happen then --
@@ -860,7 +859,7 @@ begin
   -- load/store unit --
   ctrl_o.lsu_req      <= ctrl.lsu_req;
   ctrl_o.lsu_rw       <= ctrl.lsu_rw;
-  ctrl_o.lsu_mo_we    <= '1' when (exe_engine.state = MEM_REQ) else '0'; -- write memory output registers (data & address)
+  ctrl_o.lsu_mo_we    <= '1' when (exe_engine.state = EX_MEM_REQ) else '0'; -- write memory output registers (data & address)
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
   -- instruction word bit fields --
@@ -885,12 +884,13 @@ begin
     if (rstn_i = '0') then
       monitor_cnt <= (others => '0');
     elsif rising_edge(clk_i) then
-      monitor_cnt <= std_ulogic_vector(unsigned(monitor_add) + 1);
+      if (exe_engine.state = EX_ALU_WAIT) then
+        monitor_cnt <= std_ulogic_vector(unsigned(monitor_cnt) + 1);
+      else
+        monitor_cnt <= (others => '0');
+      end if;
     end if;
   end process multi_cycle_monitor;
-
-  -- timeout counter (allow mapping of entire logic into the LUTs in front of the carry-chain) --
-  monitor_add <= monitor_cnt when (exe_engine.state = ALU_WAIT) else (others => '0');
 
   -- raise illegal instruction exception if a multi-cycle instruction takes longer than a bound amount of time --
   monitor_exc <= monitor_cnt(monitor_cnt'left);
@@ -1039,7 +1039,7 @@ begin
         end if;
 
       when opcode_alu_c | opcode_alui_c | opcode_fop_c | opcode_cust0_c | opcode_cust1_c => -- ALU[I] / FPU / CFU operation
-        illegal_cmd <= '0'; -- [NOTE] valid if not terminated by the "instruction execution monitor"
+        illegal_cmd <= '0'; -- [NOTE] valid if not terminated/invalidated by the "instruction execution monitor"
 
       when opcode_fence_c => -- memory ordering
         case exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
@@ -1076,7 +1076,7 @@ begin
 
   -- Illegal Operation Check ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trap_ctrl.instr_il <= '1' when ((exe_engine.state = EXECUTE) or (exe_engine.state = ALU_WAIT)) and -- check in execution states only
+  trap_ctrl.instr_il <= '1' when ((exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_ALU_WAIT)) and -- check in execution states only
                                  ((monitor_exc = '1') or (illegal_cmd = '1')) else '0'; -- instruction timeout or illegal instruction
 
 
@@ -1250,7 +1250,7 @@ begin
         end if;
       end if;
       -- trap environment has just been entered --
-      if (exe_engine.state = EXECUTE) then -- first instruction of trap environment is executing
+      if (exe_engine.state = EX_EXECUTE) then -- first instruction of trap environment is executing
         trap_ctrl.env_entered <= '0';
       elsif (trap_ctrl.env_enter = '1') then
         trap_ctrl.env_entered <= '1';
@@ -1263,20 +1263,20 @@ begin
 
   -- system interrupt? --
   trap_ctrl.irq_fire(0) <= '1' when
-    (exe_engine.state = EXECUTE) and -- trigger system IRQ only in EXECUTE state
+    (exe_engine.state = EX_EXECUTE) and -- trigger system IRQ only in EX_EXECUTE state
     (or_reduce_f(trap_ctrl.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
     ((csr.mstatus_mie = '1') or (csr.privilege = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
 
   -- debug-entry halt interrupt? --
   trap_ctrl.irq_fire(1) <= '1' when
-    ((exe_engine.state = EXECUTE) or (exe_engine.state = BRANCHED)) and -- allow halt also after "reset" (#879)
+    ((exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_BRANCHED)) and -- allow halt also after "reset" (#879)
     (trap_ctrl.irq_buf(irq_db_halt_c) = '1') else '0'; -- pending external halt
 
   -- debug-entry single-step interrupt? --
   trap_ctrl.irq_fire(2) <= '1' when
-    ((exe_engine.state = EXECUTE) or -- trigger single-step in EXECUTE state
-     ((trap_ctrl.env_entered = '1') and (exe_engine.state = BRANCHED))) and -- also allow triggering when entering a system trap (#887)
+    ((exe_engine.state = EX_EXECUTE) or -- trigger single-step in EX_EXECUTE state
+     ((trap_ctrl.env_entered = '1') and (exe_engine.state = EX_BRANCHED))) and -- also allow triggering when entering a system trap (#887)
     (trap_ctrl.irq_buf(irq_db_step_c) = '1') else '0'; -- pending single-step halt
 
 
@@ -1287,7 +1287,7 @@ begin
     if (rstn_i = '0') then
       sleep_mode <= '0';
     elsif rising_edge(clk_aux_i) then
-      if (exe_engine.state = SLEEP) and -- instruction execution has halted
+      if (exe_engine.state = EX_SLEEP) and -- instruction execution has halted
          (ipb.free /= "11") and -- instruction fetch has halted
          (trap_ctrl.wakeup = '0') then -- no wake-up request
         sleep_mode <= '1';
@@ -1312,11 +1312,8 @@ begin
     if (rstn_i = '0') then
       csr.addr <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- update only for actual CSR operations to reduce switching activity on the CSR address net --
-      if (opcode = opcode_system_c) then
-        csr.addr(11 downto 10) <= exe_engine.ir(instr_imm12_lsb_c+11 downto instr_imm12_lsb_c+10);
-        csr.addr(9 downto 8)   <= replicate_f(exe_engine.ir(instr_imm12_lsb_c+8), 2); -- M-mode (11) and U-mode (00) CSRs only
-        csr.addr(7 downto 0)   <= exe_engine.ir(instr_imm12_lsb_c+7 downto instr_imm12_lsb_c);
+      if (opcode = opcode_system_c) then -- update only for actual CSR operations to reduce switching activity on csr.addr net
+        csr.addr <= exe_engine.ir(instr_imm12_msb_c downto instr_imm12_lsb_c);
       end if;
     end if;
   end process csr_addr_reg;
@@ -1324,23 +1321,13 @@ begin
 
   -- CSR Write-Data ALU ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_write_data: process(exe_engine.ir, csr.rdata, rf_rs1_i)
-    variable tmp_v : std_ulogic_vector(XLEN-1 downto 0);
-  begin
-    -- immediate/register operand --
-    if (exe_engine.ir(instr_funct3_msb_c) = '1') then
-      tmp_v := (others => '0');
-      tmp_v(4 downto 0) := exe_engine.ir(19 downto 15); -- uimm5
-    else
-      tmp_v := rf_rs1_i;
-    end if;
-    -- tiny ALU to compute CSR write data --
-    case exe_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) is
-      when "10"   => csr.wdata <= csr.rdata or tmp_v; -- set
-      when "11"   => csr.wdata <= csr.rdata and (not tmp_v); -- clear
-      when others => csr.wdata <= tmp_v; -- write
-    end case;
-  end process csr_write_data;
+  csr.operand <= rf_rs1_i when (exe_engine.ir(instr_funct3_msb_c) = '0') else (x"000000" & "000" & exe_engine.ir(19 downto 15));
+
+  -- tiny ALU to compute CSR write data --
+  with exe_engine.ir(instr_funct3_msb_c-1 downto instr_funct3_lsb_c) select csr.wdata <=
+    csr.rdata or       csr.operand  when "10", -- set
+    csr.rdata and (not csr.operand) when "11", -- clear
+    csr.operand                     when others; -- write
 
 
   -- External CSR Interface -----------------------------------------------------------------
@@ -1583,7 +1570,7 @@ begin
       end if;
 
       -- ********************************************************************************
-      -- Override - hardwire/terminate unavailable registers/bits
+      -- Override - terminate unavailable registers and bits
       -- ********************************************************************************
 
       -- hardwired bits --
@@ -1651,7 +1638,7 @@ begin
       csr.rdata <= (others => '0');
     elsif rising_edge(clk_i) then
       csr.rdata <= (others => '0'); -- default; output all-zero if there is no explicit CSR read operation
-      if (exe_engine.state = SYSTEM) then -- always read from CSR file in SYSTEM state
+      if (exe_engine.state = EX_SYSTEM) then -- always read from CSR file in EX_SYSTEM state
         case csr.addr is -- address is zero if there is no CSR operation
 
           -- --------------------------------------------------------------------
@@ -1901,22 +1888,6 @@ begin
 
   -- Counter CSRs ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- write enable decoder --
-  cnt_we: process(csr)
-  begin
-    cnt.we_lo <= (others => '0');
-    cnt.we_hi <= (others => '0');
-    -- [NOTE] no need to check bits 6:4 of the address as they're always zero (checked by illegal CSR logic)
-    if (csr.we = '1') and (csr.addr(11 downto 8) = csr_mcycle_c(11 downto 8)) then
-      if (csr.addr(7) = '0') then -- low word
-        cnt.we_lo(to_integer(unsigned(csr.addr(3 downto 0)))) <= '1';
-      else -- high word
-        cnt.we_hi(to_integer(unsigned(csr.addr(3 downto 0)))) <= '1';
-      end if;
-    end if;
-  end process cnt_we;
-
-  -- hardware counters --
   cnt_gen:
   for i in 0 to 2+hpm_num_c generate
 
@@ -1929,14 +1900,18 @@ begin
         cnt.hi(i)  <= (others => '0');
       elsif rising_edge(clk_i) then
         -- low word --
-        if (cnt.we_lo(i) = '1') then
+        -- [NOTE] no need to check bits 6:4 of the address as they're always zero (checked by illegal CSR logic)
+        if (csr.we = '1') and (csr.addr(11 downto 7) = csr_mcycle_c(11 downto 7)) and
+           (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
           cnt.lo(i) <= csr.wdata;
         else
           cnt.lo(i) <= cnt.nxt(i)(XLEN-1 downto 0);
         end if;
         cnt.ovf(i)(0) <= cnt.nxt(i)(XLEN);
         -- high word --
-        if (cnt.we_hi(i) = '1') then
+        -- [NOTE] no need to check bits 6:4 of the address as they're always zero (checked by illegal CSR logic)
+        if (csr.we = '1') and (csr.addr(11 downto 7) = csr_mcycleh_c(11 downto 7)) and
+           (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
           cnt.hi(i) <= csr.wdata;
         else
           cnt.hi(i) <= std_ulogic_vector(unsigned(cnt.hi(i)) + unsigned(cnt.ovf(i)));
@@ -1980,16 +1955,6 @@ begin
   hpmevent_gen_enable:
   if RISCV_ISA_Zihpm and (hpm_num_c > 0) generate
 
-    -- write enable decoder --
-    hpmevent_write: process(csr)
-    begin
-      hpmevent_we <= (others => '0');
-      -- [NOTE] no need to check bit 4 of the address as it is always zero (checked by illegal CSR logic)
-      if (csr.addr(11 downto 5) = csr_mhpmevent3_c(11 downto 5)) and (csr.we = '1') then
-        hpmevent_we(to_integer(unsigned(csr.addr(3 downto 0)))) <= '1';
-      end if;
-    end process hpmevent_write;
-
     -- event registers --
     hpmevent_reg_gen:
     for i in 3 to (hpm_num_c+3)-1 generate
@@ -1998,7 +1963,9 @@ begin
         if (rstn_i = '0') then
           hpmevent_cfg(i) <= (others => '0');
         elsif rising_edge(clk_i) then
-          if (hpmevent_we(i) = '1') then
+          -- [NOTE] no need to check bit 4 of the address as it is always zero (checked by illegal CSR logic)
+          if (csr.addr(11 downto 5) = csr_mhpmevent3_c(11 downto 5)) and
+             (csr.we = '1') and (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
             hpmevent_cfg(i) <= csr.wdata(hpmcnt_event_width_c-1 downto 0);
           end if;
           hpmevent_cfg(i)(hpmcnt_event_tm_c) <= '0'; -- time: not available
@@ -2021,7 +1988,6 @@ begin
   -- no HPMs implemented --
   hpmevent_gen_disable:
   if (not RISCV_ISA_Zihpm) or (hpm_num_c = 0) generate
-    hpmevent_we  <= (others => '0');
     hpmevent_cfg <= (others => (others => '0'));
     hpmevent_rd  <= (others => (others => '0'));
   end generate;
@@ -2048,22 +2014,22 @@ begin
   -- RISC-V-compliant counter events --
   cnt_event(hpmcnt_event_cy_c) <= '1' when (sleep_mode = '0')           else '0'; -- cycle: active cycle
   cnt_event(hpmcnt_event_tm_c) <=                                            '0'; -- time: not available
-  cnt_event(hpmcnt_event_ir_c) <= '1' when (exe_engine.state = EXECUTE) else '0'; -- instret: retired (==executed!) instruction
+  cnt_event(hpmcnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) else '0'; -- instret: retired (==executed!) instruction
 
   -- NEORV32-specific counter events --
-  cnt_event(hpmcnt_event_compr_c)    <= '1' when (exe_engine.state = EXECUTE)  and (exe_engine.ci = '1')       else '0'; -- executed compressed instruction
-  cnt_event(hpmcnt_event_wait_dis_c) <= '1' when (exe_engine.state = DISPATCH) and (issue_engine.valid = "00") else '0'; -- instruction dispatch wait cycle
-  cnt_event(hpmcnt_event_wait_alu_c) <= '1' when (exe_engine.state = ALU_WAIT)                                 else '0'; -- multi-cycle ALU wait cycle
-  cnt_event(hpmcnt_event_branch_c)   <= '1' when (exe_engine.state = BRANCH)                                   else '0'; -- executed branch instruction
-  cnt_event(hpmcnt_event_branched_c) <= '1' when (exe_engine.state = BRANCHED)                                 else '0'; -- control flow transfer
-  cnt_event(hpmcnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '0')                  else '0'; -- executed load operation
-  cnt_event(hpmcnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '1')                  else '0'; -- executed store operation
-  cnt_event(hpmcnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exe_engine.state = MEM_RSP)         else '0'; -- load/store memory wait cycle
-  cnt_event(hpmcnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1')                                   else '0'; -- entered trap
+  cnt_event(hpmcnt_event_compr_c)    <= '1' when (exe_engine.state = EX_EXECUTE)  and (exe_engine.ci = '1')       else '0'; -- executed compressed instruction
+  cnt_event(hpmcnt_event_wait_dis_c) <= '1' when (exe_engine.state = EX_DISPATCH) and (issue_engine.valid = "00") else '0'; -- instruction dispatch wait cycle
+  cnt_event(hpmcnt_event_wait_alu_c) <= '1' when (exe_engine.state = EX_ALU_WAIT)                                 else '0'; -- multi-cycle ALU wait cycle
+  cnt_event(hpmcnt_event_branch_c)   <= '1' when (exe_engine.state = EX_BRANCH)                                   else '0'; -- executed branch instruction
+  cnt_event(hpmcnt_event_branched_c) <= '1' when (exe_engine.state = EX_BRANCHED)                                 else '0'; -- control flow transfer
+  cnt_event(hpmcnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '0')                     else '0'; -- executed load operation
+  cnt_event(hpmcnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '1')                     else '0'; -- executed store operation
+  cnt_event(hpmcnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exe_engine.state = EX_MEM_RSP)         else '0'; -- load/store memory wait cycle
+  cnt_event(hpmcnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1')                                      else '0'; -- entered trap
 
 
   -- ****************************************************************************************************************************
-  -- CPU Debug Mode (Part of the On-Chip Debugger)
+  -- CPU Debug Mode
   -- ****************************************************************************************************************************
 
   -- Debug Control --------------------------------------------------------------------------
