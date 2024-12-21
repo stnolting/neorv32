@@ -374,7 +374,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_io_switch is
   generic (
-    DEV_SIZE  : natural; -- size of each single IO device, has to be a power of two
+    INREG_EN  : boolean := false; -- enable main_req_i register stage
+    OUTREG_EN : boolean := false; -- enable main_rsp_o register stage
+    DEV_SIZE  : natural := 256; -- size of each single IO device, has to be a power of two
     -- device port enable and base address; enabled ports do not have to be contiguous --
     DEV_00_EN : boolean := false; DEV_00_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
     DEV_01_EN : boolean := false; DEV_01_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
@@ -485,8 +487,9 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   signal dev_req : dev_req_t;
   signal dev_rsp : dev_rsp_t;
 
-  -- (partial) register stage --
+  -- register stages --
   signal main_req : bus_req_t;
+  signal main_rsp : bus_rsp_t;
 
 begin
 
@@ -526,29 +529,27 @@ begin
   dev_31_req_o <= dev_req(31); dev_rsp(31) <= dev_31_rsp_i;
 
 
-  -- Input Buffer ---------------------------------------------------------------------------
+  -- Optional Input Register ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  request_reg: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      main_req.addr <= (others => '0');
-      main_req.stb  <= '0';
-    elsif rising_edge(clk_i) then
-      if (main_req_i.stb = '1') then -- reduce switching activity on IO bus system
-        main_req.addr <= main_req_i.addr;
+  input_reg_enabled:
+  if INREG_EN generate
+    request_reg: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        main_req <= req_terminate_c;
+      elsif rising_edge(clk_i) then
+        if (main_req_i.stb = '1') then -- reduce switching activity on IO bus system
+          main_req <= main_req_i;
+        end if;
+        main_req.stb <= main_req_i.stb;
       end if;
-      main_req.stb <= main_req_i.stb;
-    end if;
-  end process request_reg;
+    end process request_reg;
+  end generate;
 
-  -- no need to register these signals; they are stable for the entire transfer and do not impact the critical path --
-  main_req.data  <= main_req_i.data;
-  main_req.ben   <= main_req_i.ben;
-  main_req.rw    <= main_req_i.rw;
-  main_req.src   <= main_req_i.src;
-  main_req.priv  <= main_req_i.priv;
-  main_req.rvso  <= main_req_i.rvso;
-  main_req.fence <= main_req_i.fence;
+  input_reg_disabled:
+  if not INREG_EN generate
+    main_req <= main_req_i;
+  end generate;
 
 
   -- Request --------------------------------------------------------------------------------
@@ -590,8 +591,28 @@ begin
         tmp_v.err  := tmp_v.err  or dev_rsp(i).err;
       end if;
     end loop;
-    main_rsp_o <= tmp_v;
+    main_rsp <= tmp_v;
   end process;
+
+
+  -- Optional Output Register ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  output_reg_enabled:
+  if OUTREG_EN generate
+    response_reg: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        main_rsp_o <= rsp_terminate_c;
+      elsif rising_edge(clk_i) then
+        main_rsp_o <= main_rsp;
+      end if;
+    end process response_reg;
+  end generate;
+
+  output_reg_disabled:
+  if not OUTREG_EN generate
+    main_rsp_o <= main_rsp;
+  end generate;
 
 
 end neorv32_bus_io_switch_rtl;

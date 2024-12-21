@@ -1010,6 +1010,8 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_bus_io_switch_inst: entity neorv32.neorv32_bus_io_switch
     generic map (
+      INREG_EN  => true,
+      OUTREG_EN => false,
       DEV_SIZE  => iodev_size_c, -- size of a single IO device
       DEV_00_EN => OCD_EN,          DEV_00_BASE => base_io_dm_c,
       DEV_01_EN => io_sysinfo_en_c, DEV_01_BASE => base_io_sysinfo_c,
@@ -1481,14 +1483,14 @@ begin
     if io_xirq_en_c generate
       neorv32_xirq_inst: entity neorv32.neorv32_xirq
       generic map (
-        XIRQ_NUM_CH => XIRQ_NUM_CH
+        NUM_CH => XIRQ_NUM_CH
       )
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
         bus_req_i => iodev_req(IODEV_XIRQ),
         bus_rsp_o => iodev_rsp(IODEV_XIRQ),
-        xirq_i    => xirq_i,
+        xirq_i    => xirq_i(XIRQ_NUM_CH-1 downto 0),
         cpu_irq_o => firq(FIRQ_XIRQ)
       );
     end generate;
