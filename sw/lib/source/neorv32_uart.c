@@ -81,7 +81,7 @@ void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_m
 
   // raw clock prescaler
   uint32_t clock = neorv32_sysinfo_get_clk(); // system clock in Hz
-#ifndef MAKE_BOOTLOADER // use div instructions
+#ifndef MAKE_BOOTLOADER // use div instructions / library functions
   baud_div = clock / (2*baudrate);
 #else // division via repeated subtraction (minimal size, only for bootloader)
   while (clock >= 2*baudrate) {
@@ -400,7 +400,7 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
 /**********************************************************************//**
  * Custom version of 'printf' printing to UART.
  *
- * @warning: This functions only provides a minimal subset of the 'printf' formating features!
+ * @warning: This functions only provides a minimal subset of the 'printf' formatting features!
  * @note This function is blocking.
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
