@@ -210,7 +210,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | Name | Type | Default | Description
 4+^| **<<_processor_clocking>>**
 | `CLOCK_FREQUENCY`       | natural   | 0             | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
-| `CLOCK_GATING_EN`       | boolean   | false         | Enable clock gating when CPU is in sleep mode (see sections <<_sleep_mode>> and <<_processor_clocking>>).
 4+^| **Core Identification**
 | `HART_ID`               | suv(31:0) | x"00000000"   | The hart thread ID of the CPU (passed to <<_mhartid>> CSR).
 | `JEDEC_ID`              | suv(10:0) | "00000000000" | JEDEC ID; continuation codes plus vendor ID (passed to <<_mvendorid>> CSR and to the <<_debug_transport_module_dtm>>).
@@ -243,7 +242,8 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `RISCV_ISA_Zksh`        | boolean   | false         | Enable <<_zksh_isa_extension>> (scalar cryptography ShangMi hash functions).
 | `RISCV_ISA_Zmmul`       | boolean   | false         | Enable <<_zmmul_isa_extension>> (hardware-based integer multiplication).
 | `RISCV_ISA_Zxcfu`       | boolean   | false         | Enable NEORV32-specific <<_zxcfu_isa_extension>> (custom RISC-V instructions).
-4+^| **CPU <<_architecture>> Tuning Options**
+4+^| **<<_cpu_tuning_options>>**
+| `CLOCK_GATING_EN`       | boolean   | false         | Implement sleep-mode clock gating (see sections <<_sleep_mode>> and <<_processor_clocking>>).
 | `FAST_MUL_EN`           | boolean   | false         | Implement fast but large full-parallel multipliers (trying to infer DSP blocks); see section <<_cpu_arithmetic_logic_unit>>.
 | `FAST_SHIFT_EN`         | boolean   | false         | Implement fast but large full-parallel barrel shifters; see section <<_cpu_arithmetic_logic_unit>>.
 | `REGFILE_HW_RST`        | boolean   | false         | Implement full hardware reset for register file (use individual FFs instead of BRAM); see section <<_cpu_register_file>>.
@@ -329,27 +329,13 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 
 The processor is implemented as fully-synchronous logic design using a single clock domain that is driven entirely
 by the top's `clk_i` signal. This clock signal is used by all internal registers and memories. All of them trigger
-on the **rising edge** of this clock signal - the only exception it the default <<_clock_gating>> module. External
-"clocks" like the OCD's JTAG clock or the SDI's serial clock are synchronized into the processor's clock domain
-before being used as "general logic signal" (and not as a dedicated clock).
+on the **rising edge** of this clock signal. External "clocks" like the OCD's JTAG clock or the SDI's serial clock
+are synchronized into the processor's clock domain before being used as "general logic signal" (and not as a dedicated clock).
 
-==== Clock Gating
-
-The single clock domain of the processor can be split into an always-on clock domain and a switchable clock domain.
-The switchable clock domain is used to clock the CPU core, the CPU's bus switch and - if implemented - the caches.
-This domain can be deactivated to reduce power consumption. The always-on clock domain is used to clock all other
-processor modules like peripherals, memories and IO devices. Hence, these modules can continue operation (e.g. a
-timer keeps running) even if the CPU is shut down.
-
-The splitting into two clock domain is enabled by the `CLOCK_GATING_EN` generic (<<_processor_top_entity_generics>>).
-When enabled, a generic clock switching gate is added to decouple the switchable clock from the always-on clock domain
-(VHDL file `neorv32_clockgate.vhd`). Whenever the CPU enters <<_sleep_mode>> the CPU clock domain ist shut down.
-
-.Clock Switch Hardware
+.CPU Clock Gating
 [NOTE]
-By default, a generic clock gate is used (`rtl/core/neorv32_clockgate.vhd`) to shut down the CPU clock.
-Especially for FPGA setups it is highly recommended to replace this default version by a technology-specific primitive
-or macro wrapper to improve efficiency (clock skew, global clock tree usage, etc.).
+The CPU core provides an optional clock-gating feature to switch off large parts of the core when sleep mode is entered.
+See section <<_cpu_clock_gating>> for more information.
 
 ==== Peripheral Clocks
 

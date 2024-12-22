@@ -65,6 +65,7 @@ entity neorv32_cpu_control is
     RISCV_ISA_Sdtrig : boolean; -- implement trigger module extension
     RISCV_ISA_Smpmp  : boolean; -- implement physical memory protection
     -- Tuning Options --
+    CLOCK_GATING_EN  : boolean; -- enable clock gating when in sleep mode
     FAST_MUL_EN      : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN    : boolean; -- use barrel shifter for shift operations
     REGFILE_HW_RST   : boolean; -- implement full hardware reset for register file
@@ -980,7 +981,7 @@ begin
     -- ------------------------------------------------------------
     -- Privilege level
     -- ------------------------------------------------------------
-    if (csr_addr_v(11 downto 2) = csr_dcsr_c(11 downto 2)) and -- debug-mode-only CSR (dcsr, dpc, dscratch)?
+    if (csr_addr_v(11 downto 4) = csr_dcsr_c(11 downto 4)) and -- debug-mode-only CSR?
        RISCV_ISA_Sdext and (debug_ctrl.run = '0') then -- debug-mode implemented and not running?
       csr_valid(0) <= '0'; -- invalid access
     elsif RISCV_ISA_Zicntr and RISCV_ISA_U and (csr.privilege_eff = '0') and -- any user-mode counters available and in user-mode?
@@ -1001,16 +1002,16 @@ begin
   -- -------------------------------------------------------------------------------------------
   illegal_check: process(exe_engine, csr, csr_valid, debug_ctrl)
   begin
+    illegal_cmd <= '1'; -- default: illegal
     case exe_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c) is -- check entire opcode
 
       when opcode_lui_c | opcode_auipc_c | opcode_jal_c => -- U-instruction type
         illegal_cmd <= '0'; -- all encodings are valid
 
       when opcode_jalr_c => -- unconditional jump-and-link
-        case exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when "000"  => illegal_cmd <= '0';
-          when others => illegal_cmd <= '1';
-        end case;
+        if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "000") then
+          illegal_cmd <= '0';
+        end if;
 
       when opcode_branch_c => -- conditional branch
         case exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
@@ -1031,21 +1032,18 @@ begin
         end case;
 
       when opcode_amo_c => -- atomic memory operation (LR/SC)
-        if RISCV_ISA_Zalrsc and (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and
-                                (exe_engine.ir(instr_funct7_lsb_c+6 downto instr_funct7_lsb_c+3) = "0001") then -- LR.W/SC.W
+        if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and RISCV_ISA_Zalrsc and
+           (exe_engine.ir(instr_funct7_lsb_c+6 downto instr_funct7_lsb_c+3) = "0001") then -- LR.W/SC.W
           illegal_cmd <= '0';
-        else
-          illegal_cmd <= '1';
         end if;
 
-      when opcode_alu_c | opcode_alui_c | opcode_fop_c | opcode_cust0_c | opcode_cust1_c => -- ALU[I] / FPU / CFU operation
+      when opcode_alu_c | opcode_alui_c | opcode_fop_c | opcode_cust0_c | opcode_cust1_c => -- ALU[I] / FPU / custom operations
         illegal_cmd <= '0'; -- [NOTE] valid if not terminated/invalidated by the "instruction execution monitor"
 
       when opcode_fence_c => -- memory ordering
-        case exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when funct3_fence_c | funct3_fencei_c => illegal_cmd <= '0';
-          when others => illegal_cmd <= '1';
-        end case;
+        if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c+1) = funct3_fence_c(2 downto 1)) then
+          illegal_cmd <= '0';
+        end if;
 
       when opcode_system_c => -- CSR / system instruction
         if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system environment
@@ -1058,12 +1056,8 @@ begin
               when funct12_wfi_c    => illegal_cmd <= (not csr.privilege) and csr.mstatus_tw; -- wfi allowed in M-mode or if TW is zero
               when others           => illegal_cmd <= '1'; -- undefined
             end case;
-          else
-            illegal_cmd <= '1';
           end if;
-        elsif (csr_valid /= "111") or (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csril_c) then -- invalid CSR operation
-          illegal_cmd <= '1';
-        else
+        elsif (csr_valid = "111") and (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) /= funct3_csril_c) then -- valid CSR operation
           illegal_cmd <= '0';
         end if;
 
@@ -1862,6 +1856,7 @@ begin
             csr.rdata(26) <= '0'; -- reserved
             csr.rdata(27) <= '0'; -- reserved
             -- tuning options --
+            csr.rdata(27) <= bool_to_ulogic_f(CLOCK_GATING_EN);  -- enable clock gating when in sleep mode
             csr.rdata(28) <= bool_to_ulogic_f(REGFILE_HW_RST);   -- full hardware reset of register file
             csr.rdata(29) <= bool_to_ulogic_f(FAST_MUL_EN);      -- DSP-based multiplication (M extensions only)
             csr.rdata(30) <= bool_to_ulogic_f(FAST_SHIFT_EN);    -- parallel logic for shifts (barrel shifters)

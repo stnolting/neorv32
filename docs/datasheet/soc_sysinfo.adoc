@@ -80,7 +80,7 @@ Bit fields in this register are set to all-zero if the according memory system i
 | `4`     | `SYSINFO_SOC_OCD`          | set if on-chip debugger is implemented (via top's `OCD_EN` generic)
 | `5`     | `SYSINFO_SOC_ICACHE`       | set if processor-internal instruction cache is implemented (via top's `ICACHE_EN` generic)
 | `6`     | `SYSINFO_SOC_DCACHE`       | set if processor-internal data cache is implemented (via top's `DCACHE_EN` generic)
-| `7`     | `SYSINFO_SOC_CLOCK_GATING` | set if CPU clock gating is implemented (via top's `CLOCK_GATING_EN` generic)
+| `7`     | -                          |_reserved_, read as zero
 | `8`     | `SYSINFO_SOC_XBUS_CACHE`   | set if external bus interface cache is implemented (via top's `XBUS_CACHE_EN` generic)
 | `9`     | `SYSINFO_SOC_XIP`          | set if XIP module is implemented (via top's `XIP_EN` generic)
 | `10`    | `SYSINFO_SOC_XIP_CACHE`    | set if XIP cache is implemented (via top's `XIP_CACHE_EN` generic)

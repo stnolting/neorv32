@@ -54,6 +54,7 @@ entity neorv32_cpu is
     RISCV_ISA_Sdtrig    : boolean; -- implement trigger module extension
     RISCV_ISA_Smpmp     : boolean; -- implement physical memory protection
     -- Tuning Options --
+    CLOCK_GATING_EN     : boolean; -- enable clock gating when in sleep mode
     FAST_MUL_EN         : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN       : boolean; -- use barrel shifter for shift operations
     REGFILE_HW_RST      : boolean; -- implement full hardware reset for register file
@@ -69,7 +70,6 @@ entity neorv32_cpu is
   port (
     -- global control --
     clk_i      : in  std_ulogic; -- switchable global clock, rising edge
-    clk_aux_i  : in  std_ulogic; -- always-on clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     sleep_o    : out std_ulogic; -- cpu is in sleep mode when set
     debug_o    : out std_ulogic; -- cpu is in debug mode when set
@@ -108,6 +108,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal xcsr_rdata_res : std_ulogic_vector(XLEN-1 downto 0);
 
   -- local signals --
+  signal clk_gated     : std_ulogic; -- switchable clock (clock gating)
   signal ctrl          : ctrl_bus_t; -- main control bus
   signal alu_imm       : std_ulogic_vector(XLEN-1 downto 0); -- immediate
   signal rf_wdata      : std_ulogic_vector(XLEN-1 downto 0); -- register file write data
@@ -178,6 +179,25 @@ begin
   assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
 
 
+  -- Clock Gating ---------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_cpu_clockgate_enabled:
+  if CLOCK_GATING_EN generate
+    neorv32_cpu_clockgate_inst: entity neorv32.neorv32_clockgate
+    port map (
+      clk_i  => clk_i,
+      rstn_i => rstn_i,
+      halt_i => ctrl.cpu_sleep,
+      clk_o  => clk_gated
+    );
+  end generate;
+
+  neorv32_cpu_clockgate_disabled:
+  if not CLOCK_GATING_EN generate
+    clk_gated <= clk_i;
+  end generate;
+
+
   -- Control Unit ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_control_inst: entity neorv32.neorv32_cpu_control
@@ -219,6 +239,7 @@ begin
     RISCV_ISA_Sdtrig => RISCV_ISA_Sdtrig, -- implement trigger module extension
     RISCV_ISA_Smpmp  => RISCV_ISA_Smpmp,  -- implement physical memory protection
     -- Tuning Options --
+    CLOCK_GATING_EN  => CLOCK_GATING_EN,  -- enable clock gating when in sleep mode
     FAST_MUL_EN      => FAST_MUL_EN,      -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN    => FAST_SHIFT_EN,    -- use barrel shifter for shift operations
     REGFILE_HW_RST   => REGFILE_HW_RST,   -- implement full hardware reset for register file
@@ -228,8 +249,8 @@ begin
   )
   port map (
     -- global control --
-    clk_i         => clk_i,          -- global clock, rising edge
-    clk_aux_i     => clk_aux_i,      -- always-on clock, rising edge
+    clk_i         => clk_gated,      -- global clock, rising edge
+    clk_aux_i     => clk_i,          -- always-on clock, rising edge
     rstn_i        => rstn_i,         -- global reset, low-active, async
     ctrl_o        => ctrl,           -- main control bus
     -- instruction fetch interface --
@@ -283,14 +304,14 @@ begin
   )
   port map (
     -- global control --
-    clk_i  => clk_i,    -- global clock, rising edge
-    rstn_i => rstn_i,   -- global reset, low-active, async
-    ctrl_i => ctrl,     -- main control bus
+    clk_i  => clk_gated, -- global clock, rising edge
+    rstn_i => rstn_i,    -- global reset, low-active, async
+    ctrl_i => ctrl,      -- main control bus
     -- operands --
-    rd_i   => rf_wdata, -- destination operand rd
-    rs1_o  => rs1,      -- source operand rs1
-    rs2_o  => rs2,      -- source operand rs2
-    rs3_o  => rs3       -- source operand rs3
+    rd_i   => rf_wdata,  -- destination operand rd
+    rs1_o  => rs1,       -- source operand rs1
+    rs2_o  => rs2,       -- source operand rs2
+    rs3_o  => rs3        -- source operand rs3
   );
 
   -- all buses are zero unless there is an according operation --
@@ -324,7 +345,7 @@ begin
   )
   port map (
     -- global control --
-    clk_i       => clk_i,          -- global clock, rising edge
+    clk_i       => clk_gated,      -- global clock, rising edge
     rstn_i      => rstn_i,         -- global reset, low-active, async
     ctrl_i      => ctrl,           -- main control bus
     -- CSR interface --
@@ -355,7 +376,7 @@ begin
   )
   port map (
     -- global control --
-    clk_i       => clk_i,        -- global clock, rising edge
+    clk_i       => clk_gated,    -- global clock, rising edge
     rstn_i      => rstn_i,       -- global reset, low-active, async
     ctrl_i      => ctrl,         -- main control bus
     -- cpu data access interface --
@@ -385,7 +406,7 @@ begin
     )
     port map (
       -- global control --
-      clk_i       => clk_i,          -- global clock, rising edge
+      clk_i       => clk_gated,      -- global clock, rising edge
       rstn_i      => rstn_i,         -- global reset, low-active, async
       ctrl_i      => ctrl,           -- main control bus
       -- CSR interface --

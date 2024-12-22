@@ -23,7 +23,6 @@ entity neorv32_top is
   generic (
     -- Processor Clocking --
     CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
-    CLOCK_GATING_EN       : boolean                        := false;       -- enable clock gating when in sleep mode
 
     -- Core Identification --
     HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
@@ -62,6 +61,7 @@ entity neorv32_top is
     RISCV_ISA_Zxcfu       : boolean                        := false;       -- implement custom (instr.) functions unit
 
     -- Tuning Options --
+    CLOCK_GATING_EN       : boolean                        := false;       -- enable clock gating when in sleep mode
     FAST_MUL_EN           : boolean                        := false;       -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN         : boolean                        := false;       -- use barrel shifter for shift operations
     REGFILE_HW_RST        : boolean                        := false;       -- implement full hardware reset for register file
@@ -290,7 +290,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal rstn_wdt, rstn_sys, rstn_ext : std_ulogic;
 
   -- clock system --
-  signal clk_cpu : std_ulogic; -- CPU core clock, can be switched off
   signal clk_gen : std_ulogic_vector(7 downto 0); -- scaled clock-enables
   --
   type clk_gen_en_enum_t is (
@@ -463,25 +462,6 @@ begin
   core_complex:
   if true generate
 
-    -- CPU Clock Gating -----------------------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_cpu_clockgate_inst_true:
-    if CLOCK_GATING_EN generate
-      neorv32_cpu_clockgate_inst: entity neorv32.neorv32_clockgate
-      port map (
-        clk_i  => clk_i,
-        rstn_i => rstn_sys,
-        halt_i => cpu_sleep,
-        clk_o  => clk_cpu
-      );
-    end generate;
-
-    neorv32_cpu_clockgate_inst_false:
-    if not CLOCK_GATING_EN generate
-      clk_cpu <= clk_i;
-    end generate;
-
-
     -- CPU Core -------------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_cpu_inst: entity neorv32.neorv32_cpu
@@ -519,6 +499,7 @@ begin
       RISCV_ISA_Sdtrig    => OCD_EN,
       RISCV_ISA_Smpmp     => cpu_smpmp_c,
       -- Tuning Options --
+      CLOCK_GATING_EN     => CLOCK_GATING_EN,
       FAST_MUL_EN         => FAST_MUL_EN,
       FAST_SHIFT_EN       => FAST_SHIFT_EN,
       REGFILE_HW_RST      => REGFILE_HW_RST,
@@ -533,8 +514,7 @@ begin
     )
     port map (
       -- global control --
-      clk_i      => clk_cpu, -- switchable clock
-      clk_aux_i  => clk_i,   -- always-on clock
+      clk_i      => clk_i,
       rstn_i     => rstn_sys,
       sleep_o    => cpu_sleep,
       debug_o    => cpu_debug,
@@ -1624,7 +1604,6 @@ begin
       neorv32_sysinfo_inst: entity neorv32.neorv32_sysinfo
       generic map (
         CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
-        CLOCK_GATING_EN       => CLOCK_GATING_EN,
         BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
         INT_BOOTLOADER_EN     => bootrom_en_c,
         MEM_INT_IMEM_EN       => MEM_INT_IMEM_EN,
