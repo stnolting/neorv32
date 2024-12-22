@@ -62,7 +62,7 @@ entity neorv32_vivado_ip is
     -- Tuning Options --
     CPU_FAST_MUL_EN       : boolean                       := false;
     CPU_FAST_SHIFT_EN     : boolean                       := false;
-    CPU_REGFILE_HW_RST    : boolean                       := false;
+    CPU_RF_HW_RST_EN      : boolean                       := false;
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       : natural range 0 to 16         := 0;
     PMP_MIN_GRANULARITY   : natural                       := 4;
@@ -390,7 +390,7 @@ begin
     CPU_CLOCK_GATING_EN   => false, -- clock gating is not supported here
     CPU_FAST_MUL_EN       => CPU_FAST_MUL_EN,
     CPU_FAST_SHIFT_EN     => CPU_FAST_SHIFT_EN,
-    CPU_REGFILE_HW_RST    => CPU_REGFILE_HW_RST,
+    CPU_RF_HW_RST_EN      => CPU_RF_HW_RST_EN,
     -- Physical Memory Protection --
     PMP_NUM_REGIONS       => PMP_NUM_REGIONS,
     PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY,

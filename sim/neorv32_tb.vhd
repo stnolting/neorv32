@@ -47,7 +47,7 @@ entity neorv32_tb is
     CPU_CLOCK_GATING_EN : boolean                        := true;        -- enable clock gating when in sleep mode
     CPU_FAST_MUL_EN     : boolean                        := true;        -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   : boolean                        := true;        -- use barrel shifter for shift operations
-    CPU_REGFILE_HW_RST  : boolean                        := true;        -- implement full hardware reset for register file
+    CPU_RF_HW_RST_EN    : boolean                        := true;        -- implement full hardware reset for register file
     MEM_INT_IMEM_EN     : boolean                        := true;        -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE   : natural                        := 32*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
     MEM_INT_DMEM_EN     : boolean                        := true;        -- implement processor-internal data memory
@@ -146,7 +146,7 @@ begin
     CPU_CLOCK_GATING_EN   => CPU_CLOCK_GATING_EN,
     CPU_FAST_MUL_EN       => CPU_FAST_MUL_EN,
     CPU_FAST_SHIFT_EN     => CPU_FAST_SHIFT_EN,
-    CPU_REGFILE_HW_RST    => CPU_REGFILE_HW_RST,
+    CPU_RF_HW_RST_EN      => CPU_RF_HW_RST_EN,
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       => 5,
     PMP_MIN_GRANULARITY   => 4,
