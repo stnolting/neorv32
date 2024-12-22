@@ -65,23 +65,22 @@ direction as seen from the CPU.
 |=======================
 | Signal | Width/Type | Dir | Description
 4+^| **Global Signals**
-| `clk_i`      |           1 | in  | Global clock line, all registers triggering on rising edge, this clock can be switched off during <<_sleep_mode>>
-| `clk_aux_i`  |           1 | in  | Always-on clock, used to keep the the sleep control active when `clk_i` is switched off
-| `rstn_i`     |           1 | in  | Global reset, low-active
-| `sleep_o`    |           1 | out | CPU is in <<_sleep_mode>> when set
-| `debug_o`    |           1 | out | CPU is in <<_cpu_debug_mode,debug mode>> when set
+| `clk_i`      |           1 | in  | Global clock line, all registers triggering on rising edge.
+| `rstn_i`     |           1 | in  | Global reset, low-active.
+| `sleep_o`    |           1 | out | CPU is in <<_sleep_mode>> when set.
+| `debug_o`    |           1 | out | CPU is in <<_cpu_debug_mode,debug mode>> when set.
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
-| `msi_i`      |           1 | in  | RISC-V machine software interrupt
-| `mei_i`      |           1 | in  | RISC-V machine external interrupt
-| `mti_i`      |           1 | in  | RISC-V machine timer interrupt
-| `firq_i`     |          16 | in  | Custom fast interrupt request signals
-| `dbi_i`      |           1 | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>)
+| `msi_i`      |           1 | in  | RISC-V machine software interrupt.
+| `mei_i`      |           1 | in  | RISC-V machine external interrupt.
+| `mti_i`      |           1 | in  | RISC-V machine timer interrupt.
+| `firq_i`     |          16 | in  | Custom fast interrupt request signals.
+| `dbi_i`      |           1 | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>).
 4+^| **Instruction <<_bus_interface>>**
-| `ibus_req_o` | `bus_req_t` | out | Instruction fetch bus request
-| `ibus_rsp_i` | `bus_rsp_t` | in  | Instruction fetch bus response
+| `ibus_req_o` | `bus_req_t` | out | Instruction fetch bus request.
+| `ibus_rsp_i` | `bus_rsp_t` | in  | Instruction fetch bus response.
 4+^| **Data <<_bus_interface>>**
-| `dbus_req_o` | `bus_req_t` | out | Data access (load/store) bus request
-| `dbus_rsp_i` | `bus_rsp_t` | in  | Data access (load/store) bus response
+| `dbus_req_o` | `bus_req_t` | out | Data access (load/store) bus request.
+| `dbus_rsp_i` | `bus_rsp_t` | in  | Data access (load/store) bus response.
 |=======================
 
 .Bus Interface Protocol
@@ -110,6 +109,7 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 [options="header",grid="rows"]
 |=======================
 | Name | Type | Description
+| `HART_ID`          | suv(31:0) | Value for the <<_mhartid>> CSR.
 | `VENDOR_ID`        | suv(31:0) | Value for the <<_mvendorid>> CSR.
 | `BOOT_ADDR`        | suv(31:0) | CPU reset address. See section <<_address_space>>.
 | `DEBUG_PARK_ADDR`  | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
@@ -118,6 +118,10 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 | `RISCV_ISA_Sdtrig` | boolean   | Implement RISC-V-compatible trigger module. See section <<_on_chip_debugger_ocd>>.
 | `RISCV_ISA_Smpmp`  | boolean   | Implement RISC-V-compatible physical memory protection (PMP). See section <<_smpmp_isa_extension>>.
 |=======================
+
+.Tuning Option Generics
+[TIP]
+Additional generics that are related to certain _tuning options_ are listed in section <<_cpu_tuning_options>>.
 
 
 <<<
@@ -255,6 +259,21 @@ Software can check for configured tuning options via specific flags in the <<_mx
 
 {empty} +
 [discrete]
+===== **`CLOCK_GATING_EN`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Clock gating
+| Type        | `boolean`
+| Default     | `false`, disabled
+| Description | When **enabled** the CPU's primary clock is switched off when the CPU enters <<_sleep_mode>>. See <<_cpu_clock_gating>>.
+|             | When **disabled** the CPU clock system is implemented as single always-on clock domain.
+|=======================
+
+
+{empty} +
+[discrete]
 ===== **`FAST_MUL_EN`**
 
 [cols="<1,<8"]
@@ -314,7 +333,7 @@ like blockRAM. Note that these primitives do not provide any kind of hardware re
 ==== Sleep Mode
 
 The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing
-dynamic power consumption. Sleep mode is entered by executing the `wfi` ("wait for interrupt") instruction.
+dynamic power consumption. Sleep mode is entered by executing the RISC-V `wfi` ("wait for interrupt") instruction.
 
 .Execution Details
 [NOTE]
@@ -323,7 +342,7 @@ if `TW` in <<_mstatus>> is set. When executed in debug-mode or during single-ste
 simple `nop` without entering sleep mode.
 
 After executing the `wfi` instruction the CPU's `sleep_o` signal (<<_cpu_top_entity_signals>>) will become set
-as soon as the CPU has fully halted ("CPU is sleeping"):
+as soon as the CPU has fully halted:
 
 [start=1]
 .The front-end (instruction fetch) has stopped. There is no pending instruction fetch bus access.
@@ -331,14 +350,25 @@ as soon as the CPU has fully halted ("CPU is sleeping"):
 .There is no enabled interrupt being pending.
 
 CPU-external modules like memories, timers and peripheral interfaces are not affected by this. Furthermore, the CPU will
-continue to buffer/enqueue incoming interrupt. The CPU will leave sleep mode as soon as any _enabled_ interrupt (via <<_mie>>)
+continue to buffer/enqueue incoming interrupts. The CPU will leave sleep mode as soon as any _enabled_ interrupt (via <<_mie>>)
 source becomes _pending_ or if a debug session is started.
 
-===== Power-Down Mode
 
-Optionally, the sleep mode can also be used to shut down the CPU's main clock to further reduce power consumption
-by halting the core's clock tree. This clock gating mode is enabled by the `CLOCK_GATING_EN` generic
-(<<_processor_top_entity_generics>>).  See section <<_processor_clocking>> for more information.
+==== CPU Clock Gating
+
+The single clock domain of the CPU core can be split into an always-on clock domain and a switchable clock domain.
+The switchable clock domain can be deactivated to further reduce reduce dynamic power consumption. CPU-external modules
+like timers, interfaces and memories are not affected by the clock gating.
+
+The splitting into two clock domain is enabled by the `CLOCK_GATING_EN` generic (<<_processor_top_entity_generics>> /
+<<_cpu_tuning_options>>). When enabled, a generic clock switching gate is added to decouple the switchable clock from
+the always-on clock domain. Whenever the CPU enters <<_sleep_mode>> the switchable clock domain is shut down.
+
+.Clock Switch Hardware
+[NOTE]
+By default, a generic clock switch is used (`rtl/core/neorv32_clockgate.vhd`). Especially for FPGA setups it is highly
+recommended to replace this default module by a technology-specific primitive or macro wrapper to improve synthesis results
+(clock skew, global clock tree usage, etc.).
 
 
 ==== Full Virtualization
