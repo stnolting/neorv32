@@ -314,7 +314,7 @@ approach requires only a few hardware resources and does not impact the critical
 
 {empty} +
 [discrete]
-===== **`CPU_REGFILE_HW_RST`**
+===== **`CPU_RF_HW_RST_EN`**
 
 [cols="<1,<8"]
 [frame="topbot",grid="none"]

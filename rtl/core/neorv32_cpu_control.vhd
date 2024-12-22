@@ -68,7 +68,7 @@ entity neorv32_cpu_control is
     CPU_CLOCK_GATING_EN : boolean; -- enable clock gating when in sleep mode
     CPU_FAST_MUL_EN     : boolean; -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   : boolean; -- use barrel shifter for shift operations
-    CPU_REGFILE_HW_RST  : boolean; -- implement full hardware reset for register file
+    CPU_RF_HW_RST_EN    : boolean; -- implement full hardware reset for register file
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS        : natural range 0 to 13; -- number of implemented HPM counters (0..13)
     HPM_CNT_WIDTH       : natural range 0 to 64  -- total size of HPM counters (0..64)
@@ -680,7 +680,7 @@ begin
 
       when EX_RESTART => -- reset and restart instruction fetch at next PC
       -- ------------------------------------------------------------
-        ctrl_nxt.rf_zero_we  <= not bool_to_ulogic_f(CPU_REGFILE_HW_RST); -- house keeping: force writing zero to x0 if it's a phys. register
+        ctrl_nxt.rf_zero_we  <= not bool_to_ulogic_f(CPU_RF_HW_RST_EN); -- house keeping: force writing zero to x0 if it's a phys. register
         fetch_engine.reset   <= '1';
         exe_engine_nxt.state <= EX_BRANCHED; -- delay cycle to restart front-end
 
@@ -1857,7 +1857,7 @@ begin
             csr.rdata(27) <= '0'; -- reserved
             -- tuning options --
             csr.rdata(27) <= bool_to_ulogic_f(CPU_CLOCK_GATING_EN); -- enable clock gating when in sleep mode
-            csr.rdata(28) <= bool_to_ulogic_f(CPU_REGFILE_HW_RST);  -- full hardware reset of register file
+            csr.rdata(28) <= bool_to_ulogic_f(CPU_RF_HW_RST_EN);    -- full hardware reset of register file
             csr.rdata(29) <= bool_to_ulogic_f(CPU_FAST_MUL_EN);     -- DSP-based multiplication (M extensions only)
             csr.rdata(30) <= bool_to_ulogic_f(CPU_FAST_SHIFT_EN);   -- parallel logic for shifts (barrel shifters)
             -- misc --
