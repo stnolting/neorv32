@@ -60,9 +60,9 @@ entity neorv32_vivado_ip is
     RISCV_ISA_Zksh        : boolean                       := false;
     RISCV_ISA_Zxcfu       : boolean                       := false;
     -- Tuning Options --
-    FAST_MUL_EN           : boolean                       := false;
-    FAST_SHIFT_EN         : boolean                       := false;
-    REGFILE_HW_RST        : boolean                       := false;
+    CPU_FAST_MUL_EN       : boolean                       := false;
+    CPU_FAST_SHIFT_EN     : boolean                       := false;
+    CPU_REGFILE_HW_RST    : boolean                       := false;
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       : natural range 0 to 16         := 0;
     PMP_MIN_GRANULARITY   : natural                       := 4;
@@ -387,10 +387,10 @@ begin
     RISCV_ISA_Zksh        => RISCV_ISA_Zksh,
     RISCV_ISA_Zxcfu       => RISCV_ISA_Zxcfu,
     -- Extension Options --
-    CLOCK_GATING_EN       => false, -- clock gating is not supported here
-    FAST_MUL_EN           => FAST_MUL_EN,
-    FAST_SHIFT_EN         => FAST_SHIFT_EN,
-    REGFILE_HW_RST        => REGFILE_HW_RST,
+    CPU_CLOCK_GATING_EN   => false, -- clock gating is not supported here
+    CPU_FAST_MUL_EN       => CPU_FAST_MUL_EN,
+    CPU_FAST_SHIFT_EN     => CPU_FAST_SHIFT_EN,
+    CPU_REGFILE_HW_RST    => CPU_REGFILE_HW_RST,
     -- Physical Memory Protection --
     PMP_NUM_REGIONS       => PMP_NUM_REGIONS,
     PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY,
