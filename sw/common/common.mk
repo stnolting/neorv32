@@ -250,7 +250,7 @@ $(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
 	@$(IMAGE_GEN) -raw_mem $< $@ $(shell basename $(CURDIR))
 
 # -----------------------------------------------------------------------------
-# BOOTROM / booloader image targets
+# BOOTROM / bootloader image targets
 # -----------------------------------------------------------------------------
 # Create local VHDL BOOTROM image
 bl_image: $(BIN_MAIN) $(IMAGE_GEN)
@@ -296,7 +296,7 @@ endif
 # -----------------------------------------------------------------------------
 # In-console simulation using default testbench and GHDL
 # -----------------------------------------------------------------------------
-sim: $(APP_VHD) install
+sim: $(APP_VHD)
 	@echo "Simulating processor using default testbench..."
 	@sh $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
 
