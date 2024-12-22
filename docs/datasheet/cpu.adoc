@@ -259,7 +259,7 @@ Software can check for configured tuning options via specific flags in the <<_mx
 
 {empty} +
 [discrete]
-===== **`CLOCK_GATING_EN`**
+===== **`CPU_CLOCK_GATING_EN`**
 
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
@@ -274,7 +274,7 @@ Software can check for configured tuning options via specific flags in the <<_mx
 
 {empty} +
 [discrete]
-===== **`FAST_MUL_EN`**
+===== **`CPU_FAST_MUL_EN`**
 
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
@@ -293,7 +293,7 @@ time-independent of the provided operands.
 
 {empty} +
 [discrete]
-===== **`FAST_SHIFT_EN`**
+===== **`CPU_FAST_SHIFT_EN`**
 
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
@@ -314,7 +314,7 @@ approach requires only a few hardware resources and does not impact the critical
 
 {empty} +
 [discrete]
-===== **`REGFILE_HW_RST`**
+===== **`CPU_REGFILE_HW_RST`**
 
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
@@ -360,7 +360,7 @@ The single clock domain of the CPU core can be split into an always-on clock dom
 The switchable clock domain can be deactivated to further reduce reduce dynamic power consumption. CPU-external modules
 like timers, interfaces and memories are not affected by the clock gating.
 
-The splitting into two clock domain is enabled by the `CLOCK_GATING_EN` generic (<<_processor_top_entity_generics>> /
+The splitting into two clock domain is enabled by the `CPU_CLOCK_GATING_EN` generic (<<_processor_top_entity_generics>> /
 <<_cpu_tuning_options>>). When enabled, a generic clock switching gate is added to decouple the switchable clock from
 the always-on clock domain. Whenever the CPU enters <<_sleep_mode>> the switchable clock domain is shut down.
 
@@ -583,7 +583,7 @@ The "compressed" ISA extension provides 16-bit encodings of commonly used instru
 |=======================
 | Class | Instructions | Execution cycles
 | ALU           | `c.addi4spn` `c.nop` `c.add[i]` `c.li` `c.addi16sp` `c.lui` `c.and[i]` `c.sub` `c.xor` `c.or` `c.mv` | 2
-| ALU           | `c.srli` `c.srai` `c.slli`                                                                           | 3 + 1..32; FAST_SHIFT: 4
+| ALU           | `c.srli` `c.srai` `c.slli`                                                                           | 3 + 1..32; `CPU_FAST_SHIFT_EN`: 4
 | Branches      | `c.beqz` `c.bnez`                                                                                    | taken: 6; not taken: 3
 | Jumps / calls | `c.jal[r]` `c.j` `c.jr`                                                                              | 6
 | Memory access | `c.lw` `c.sw` `c.lwsp` `c.swsp`                                                                      | 4
@@ -612,7 +612,7 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Class | Instructions | Execution cycles
 | ALU           | `add[i]` `slt[i]` `slt[i]u` `xor[i]` `or[i]` `and[i]` `sub` `lui` `auipc` | 2
 | No-operation  | "`nop`"                                                                   | 2
-| ALU shifts    | `sll[i]` `srl[i]` `sra[i]`                                                | 3 + 1..32; FAST_SHIFT: 4
+| ALU shifts    | `sll[i]` `srl[i]` `sra[i]`                                                | 3 + 1..32; `CPU_FAST_SHIFT_EN`: 4
 | Branches      | `beq` `bne` `blt` `bge` `bltu` `bgeu`                                     | taken: 6; not taken: 3
 | Jump/call     | `jal[r]`                                                                  | 6
 | Load/store    | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 5
@@ -651,7 +651,7 @@ This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Multiplication | `mul` `mulh` `mulhsu` `mulhu` | 36; FAST_MUL: 4
+| Multiplication | `mul` `mulh` `mulhsu` `mulhu` | 36; `CPU_FAST_MUL_EN`: 4
 | Division       | `div` `divu` `rem` `remu`     | 36
 |=======================
 
@@ -873,11 +873,11 @@ generic. This ISA extension is implemented as multi-cycle ALU co-processor (`rtl
 |=======================
 | Class | Instructions | Execution cycles
 | Logic with negate            | `andn` `orn` `xnor`      | 4
-| Count leading/trailing zeros | `clz` `ctz`              | 6 + 1..32; FAST_SHIFT: 4
-| Count population             | `cpop`                   | 6 + 32; FAST_SHIFT: 4
+| Count leading/trailing zeros | `clz` `ctz`              | 6 + 1..32; `CPU_FAST_SHIFT_EN`: 4
+| Count population             | `cpop`                   | 6 + 32; `CPU_FAST_SHIFT_EN`: 4
 | Integer maximum/minimum      | `min[u]` `max[u]`        | 4
 | Sign/zero extension          | `sext.b` `sext.h` `zext` | 4
-| Bitwise rotation             | `rol` `ror[i]`           | 6 + _shift_amount_; FAST_SHIFT: 4
+| Bitwise rotation             | `rol` `ror[i]`           | 6 + _shift_amount_; `CPU_FAST_SHIFT_EN`: 4
 | OR-combine                   | `orc.b`                  | 4
 | Byte-reverse                 | `rev8`                   | 4
 |=======================
@@ -1078,13 +1078,13 @@ core does implement must adhere to the requirements of `Zkt`.
 |=======================
 | Parent extension | Instructions | Data independent execution time?
 .2+<| `RVI` <| `lui` `auipc` `add[i]` `slt[i][u]` `xor[i]` `or[i]` `and[i]` `sub` <| yes
-            <| `sll[i]` `srl[i]` `sra[i]` <| yes if `FAST_SHIFT_EN` enabled
+            <| `sll[i]` `srl[i]` `sra[i]` <| yes if `CPU_FAST_SHIFT_EN` enabled
 | `RVM` | `mul[h]` `mulh[s]u` | yes
 .2+<| `RVC` <| `c.nop` `c.addi` `c.lui` `c.andi` `c.sub` `c.xor` `c.and` `c.mv` `c.add` <| yes
-            <| `c.srli` `c.srai` `c.slli` <| yes if `FAST_SHIFT_EN` enabled
+            <| `c.srli` `c.srai` `c.slli` <| yes if `CPU_FAST_SHIFT_EN` enabled
 | `RVK` | `aes32ds[m]i` `aes32es[m]i` `sha256sig*` `sha512sig*` `sha512sum*` `sm3p0` `sm3p1` `sm4ed` `sm4ks` | yes
 .2+<| `RVB` <| `xperm4` `xperm8` `andn` `orn` `xnor` `pack[h]` `brev8` `rev8` <| yes
-            <| `ror[i]` `rol` <| yes if `FAST_SHIFT_EN` enabled
+            <| `ror[i]` `rol` <| yes if `CPU_FAST_SHIFT_EN` enabled
 |=======================
 
 
