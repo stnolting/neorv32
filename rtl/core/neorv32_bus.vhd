@@ -143,6 +143,89 @@ end neorv32_bus_switch_rtl;
 
 
 -- ================================================================================ --
+-- NEORV32 SoC - Processor Bus Infrastructure: Bus Register Stage                   --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+library neorv32;
+use neorv32.neorv32_package.all;
+
+entity neorv32_bus_reg is
+  generic (
+    REQ_REG_EN : boolean := false; -- enable request bus register stage
+    RSP_REG_EN : boolean := false  -- enable response bus register stage
+  );
+  port (
+    -- global control --
+    clk_i        : in  std_ulogic; -- global clock, rising edge
+    rstn_i       : in  std_ulogic; -- global reset, low-active, async
+    -- bus ports --
+    host_req_i   : in  bus_req_t; -- host request
+    host_rsp_o   : out bus_rsp_t; -- host response
+    device_req_o : out bus_req_t; -- device request
+    device_rsp_i : in  bus_rsp_t  -- device response
+  );
+end neorv32_bus_reg;
+
+architecture neorv32_bus_reg_rtl of neorv32_bus_reg is
+
+begin
+
+  -- Request Register -----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  request_reg_enabled:
+  if REQ_REG_EN generate
+    request_reg: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        device_req_o <= req_terminate_c;
+      elsif rising_edge(clk_i) then
+        if (host_req_i.stb = '1') then -- reduce switching activity on device bus system
+          device_req_o <= host_req_i;
+        end if;
+        device_req_o.stb <= host_req_i.stb;
+      end if;
+    end process request_reg;
+  end generate;
+
+  request_reg_disabled:
+  if not REQ_REG_EN generate
+    device_req_o <= host_req_i;
+  end generate;
+
+
+  -- Response Register ----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  response_reg_enabled:
+  if RSP_REG_EN generate
+    response_reg: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        host_rsp_o <= rsp_terminate_c;
+      elsif rising_edge(clk_i) then
+        host_rsp_o <= device_rsp_i;
+      end if;
+    end process response_reg;
+  end generate;
+
+  response_reg_disabled:
+  if not RSP_REG_EN generate
+    host_rsp_o <= device_rsp_i;
+  end generate;
+
+
+end neorv32_bus_reg_rtl;
+
+
+-- ================================================================================ --
 -- NEORV32 SoC - Processor Bus Infrastructure: Section Gateway                      --
 -- -------------------------------------------------------------------------------- --
 -- Bus gateway to distribute accesses to 5 non-overlapping address sub-spaces       --
@@ -456,6 +539,24 @@ end neorv32_bus_io_switch;
 
 architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
 
+  -- bus register --
+  component neorv32_bus_reg
+  generic (
+    REQ_REG_EN : boolean := false; 
+    RSP_REG_EN : boolean := false  
+  );
+  port (
+    -- global control --
+    clk_i        : in  std_ulogic; 
+    rstn_i       : in  std_ulogic; 
+    -- bus ports --
+    host_req_i   : in  bus_req_t;
+    host_rsp_o   : out bus_rsp_t;
+    device_req_o : out bus_req_t;
+    device_rsp_i : in  bus_rsp_t 
+  );
+  end component;
+
   -- module configuration --
   constant num_devs_c : natural := 32; -- number of device ports
 
@@ -493,6 +594,25 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
 
 begin
 
+  -- Register Stages ------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_bus_reg_inst: neorv32_bus_reg
+  generic map (
+    REQ_REG_EN => INREG_EN,
+    RSP_REG_EN => OUTREG_EN
+  )
+  port map (
+    -- global control --
+    clk_i        => clk_i,
+    rstn_i       => rstn_i,
+    -- bus ports --
+    host_req_i   => main_req_i,
+    host_rsp_o   => main_rsp_o,
+    device_req_o => main_req,
+    device_rsp_i => main_rsp
+  );
+
+
   -- Combine Device Ports -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   dev_00_req_o <= dev_req(0);  dev_rsp(0)  <= dev_00_rsp_i;
@@ -527,29 +647,6 @@ begin
   dev_29_req_o <= dev_req(29); dev_rsp(29) <= dev_29_rsp_i;
   dev_30_req_o <= dev_req(30); dev_rsp(30) <= dev_30_rsp_i;
   dev_31_req_o <= dev_req(31); dev_rsp(31) <= dev_31_rsp_i;
-
-
-  -- Optional Input Register ----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  input_reg_enabled:
-  if INREG_EN generate
-    request_reg: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        main_req <= req_terminate_c;
-      elsif rising_edge(clk_i) then
-        if (main_req_i.stb = '1') then -- reduce switching activity on IO bus system
-          main_req <= main_req_i;
-        end if;
-        main_req.stb <= main_req_i.stb;
-      end if;
-    end process request_reg;
-  end generate;
-
-  input_reg_disabled:
-  if not INREG_EN generate
-    main_req <= main_req_i;
-  end generate;
 
 
   -- Request --------------------------------------------------------------------------------
@@ -593,26 +690,6 @@ begin
     end loop;
     main_rsp <= tmp_v;
   end process;
-
-
-  -- Optional Output Register ---------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  output_reg_enabled:
-  if OUTREG_EN generate
-    response_reg: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        main_rsp_o <= rsp_terminate_c;
-      elsif rising_edge(clk_i) then
-        main_rsp_o <= main_rsp;
-      end if;
-    end process response_reg;
-  end generate;
-
-  output_reg_disabled:
-  if not OUTREG_EN generate
-    main_rsp_o <= main_rsp;
-  end generate;
 
 
 end neorv32_bus_io_switch_rtl;

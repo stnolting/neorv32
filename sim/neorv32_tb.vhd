@@ -19,54 +19,55 @@ use neorv32.neorv32_package.all;
 entity neorv32_tb is
   generic (
     -- processor --
-    CLOCK_FREQUENCY   : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
-    BOOT_MODE_SELECT  : natural range 0 to 2           := 2;           -- boot from pre-initialized IMEM
-    BOOT_ADDR_CUSTOM  : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
-    RISCV_ISA_C       : boolean                        := false;       -- implement compressed extension
-    RISCV_ISA_E       : boolean                        := false;       -- implement embedded RF extension
-    RISCV_ISA_M       : boolean                        := true;        -- implement mul/div extension
-    RISCV_ISA_U       : boolean                        := true;        -- implement user mode extension
-    RISCV_ISA_Zalrsc  : boolean                        := true;        -- implement atomic reservation-set extension
-    RISCV_ISA_Zba     : boolean                        := true;        -- implement shifted-add bit-manipulation extension
-    RISCV_ISA_Zbb     : boolean                        := true;        -- implement basic bit-manipulation extension
-    RISCV_ISA_Zbkb    : boolean                        := true;        -- implement bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc    : boolean                        := true;        -- implement carry-less multiplication instructions
-    RISCV_ISA_Zbkx    : boolean                        := true;        -- implement cryptography crossbar permutation extension
-    RISCV_ISA_Zbs     : boolean                        := true;        -- implement single-bit bit-manipulation extension
-    RISCV_ISA_Zfinx   : boolean                        := true;        -- implement 32-bit floating-point extension
-    RISCV_ISA_Zicntr  : boolean                        := true;        -- implement base counters
-    RISCV_ISA_Zicond  : boolean                        := true;        -- implement integer conditional operations
-    RISCV_ISA_Zihpm   : boolean                        := true;        -- implement hardware performance monitors
-    RISCV_ISA_Zknd    : boolean                        := true;        -- implement cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne    : boolean                        := true;        -- implement cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh    : boolean                        := true;        -- implement cryptography NIST hash extension
-    RISCV_ISA_Zksed   : boolean                        := true;        -- implement ShangMi block cypher extension
-    RISCV_ISA_Zksh    : boolean                        := true;        -- implement ShangMi hash extension
-    RISCV_ISA_Zmmul   : boolean                        := true;        -- implement multiply-only M sub-extension
-    RISCV_ISA_Zxcfu   : boolean                        := true;        -- implement custom (instr.) functions unit
-    FAST_MUL_EN       : boolean                        := true;        -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN     : boolean                        := true;        -- use barrel shifter for shift operations
-    REGFILE_HW_RST    : boolean                        := true;        -- implement full hardware reset for register file
-    MEM_INT_IMEM_EN   : boolean                        := true;        -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE : natural                        := 32*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
-    MEM_INT_DMEM_EN   : boolean                        := true;        -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
-    ICACHE_EN         : boolean                        := true;        -- implement instruction cache
-    ICACHE_NUM_BLOCKS : natural range 1 to 256         := 64;          -- i-cache: number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE : natural range 4 to 2**16       := 32;          -- i-cache: block size in bytes (min 4), has to be a power of 2
-    DCACHE_EN         : boolean                        := true;        -- implement data cache
-    DCACHE_NUM_BLOCKS : natural range 1 to 256         := 32;          -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE : natural range 4 to 2**16       := 32;          -- d-cache: block size in bytes (min 4), has to be a power of 2
+    CLOCK_FREQUENCY     : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
+    BOOT_MODE_SELECT    : natural range 0 to 2           := 2;           -- boot from pre-initialized IMEM
+    BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
+    RISCV_ISA_C         : boolean                        := false;       -- implement compressed extension
+    RISCV_ISA_E         : boolean                        := false;       -- implement embedded RF extension
+    RISCV_ISA_M         : boolean                        := true;        -- implement mul/div extension
+    RISCV_ISA_U         : boolean                        := true;        -- implement user mode extension
+    RISCV_ISA_Zalrsc    : boolean                        := true;        -- implement atomic reservation-set extension
+    RISCV_ISA_Zba       : boolean                        := true;        -- implement shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb       : boolean                        := true;        -- implement basic bit-manipulation extension
+    RISCV_ISA_Zbkb      : boolean                        := true;        -- implement bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc      : boolean                        := true;        -- implement carry-less multiplication instructions
+    RISCV_ISA_Zbkx      : boolean                        := true;        -- implement cryptography crossbar permutation extension
+    RISCV_ISA_Zbs       : boolean                        := true;        -- implement single-bit bit-manipulation extension
+    RISCV_ISA_Zfinx     : boolean                        := true;        -- implement 32-bit floating-point extension
+    RISCV_ISA_Zicntr    : boolean                        := true;        -- implement base counters
+    RISCV_ISA_Zicond    : boolean                        := true;        -- implement integer conditional operations
+    RISCV_ISA_Zihpm     : boolean                        := true;        -- implement hardware performance monitors
+    RISCV_ISA_Zknd      : boolean                        := true;        -- implement cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne      : boolean                        := true;        -- implement cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh      : boolean                        := true;        -- implement cryptography NIST hash extension
+    RISCV_ISA_Zksed     : boolean                        := true;        -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksh      : boolean                        := true;        -- implement ShangMi hash extension
+    RISCV_ISA_Zmmul     : boolean                        := true;        -- implement multiply-only M sub-extension
+    RISCV_ISA_Zxcfu     : boolean                        := true;        -- implement custom (instr.) functions unit
+    CPU_CLOCK_GATING_EN : boolean                        := true;        -- enable clock gating when in sleep mode
+    CPU_FAST_MUL_EN     : boolean                        := true;        -- use DSPs for M extension's multiplier
+    CPU_FAST_SHIFT_EN   : boolean                        := true;        -- use barrel shifter for shift operations
+    CPU_RF_HW_RST_EN    : boolean                        := true;        -- implement full hardware reset for register file
+    MEM_INT_IMEM_EN     : boolean                        := true;        -- implement processor-internal instruction memory
+    MEM_INT_IMEM_SIZE   : natural                        := 32*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
+    MEM_INT_DMEM_EN     : boolean                        := true;        -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE   : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
+    ICACHE_EN           : boolean                        := true;        -- implement instruction cache
+    ICACHE_NUM_BLOCKS   : natural range 1 to 256         := 64;          -- i-cache: number of blocks (min 1), has to be a power of 2
+    ICACHE_BLOCK_SIZE   : natural range 4 to 2**16       := 32;          -- i-cache: block size in bytes (min 4), has to be a power of 2
+    DCACHE_EN           : boolean                        := true;        -- implement data cache
+    DCACHE_NUM_BLOCKS   : natural range 1 to 256         := 32;          -- d-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_BLOCK_SIZE   : natural range 4 to 2**16       := 32;          -- d-cache: block size in bytes (min 4), has to be a power of 2
     -- external memory A --
-    EXT_MEM_A_EN      : boolean                        := false;       -- enable memory
-    EXT_MEM_A_BASE    : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address, has to be word-aligned
-    EXT_MEM_A_SIZE    : natural                        := 64;          -- memory size in bytes, min 4
-    EXT_MEM_A_FILE    : string                         := "";          -- memory initialization file (plain HEX), no initialization if empty
+    EXT_MEM_A_EN        : boolean                        := false;       -- enable memory
+    EXT_MEM_A_BASE      : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address, has to be word-aligned
+    EXT_MEM_A_SIZE      : natural                        := 64;          -- memory size in bytes, min 4
+    EXT_MEM_A_FILE      : string                         := "";          -- memory initialization file (plain HEX), no initialization if empty
     -- external memory B --
-    EXT_MEM_B_EN      : boolean                        := false;       -- enable memory
-    EXT_MEM_B_BASE    : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address, has to be word-aligned
-    EXT_MEM_B_SIZE    : natural                        := 64;          -- memory size in bytes, min 4
-    EXT_MEM_B_FILE    : string                         := ""           -- memory initialization file (plain HEX), no initialization if empty
+    EXT_MEM_B_EN        : boolean                        := false;       -- enable memory
+    EXT_MEM_B_BASE      : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address, has to be word-aligned
+    EXT_MEM_B_SIZE      : natural                        := 64;          -- memory size in bytes, min 4
+    EXT_MEM_B_FILE      : string                         := ""           -- memory initialization file (plain HEX), no initialization if empty
   );
 end neorv32_tb;
 
@@ -142,10 +143,10 @@ begin
     RISCV_ISA_Zmmul       => RISCV_ISA_Zmmul,
     RISCV_ISA_Zxcfu       => RISCV_ISA_Zxcfu,
     -- Extension Options --
-    CLOCK_GATING_EN       => true,
-    FAST_MUL_EN           => FAST_MUL_EN,
-    FAST_SHIFT_EN         => FAST_SHIFT_EN,
-    REGFILE_HW_RST        => REGFILE_HW_RST,
+    CPU_CLOCK_GATING_EN   => CPU_CLOCK_GATING_EN,
+    CPU_FAST_MUL_EN       => CPU_FAST_MUL_EN,
+    CPU_FAST_SHIFT_EN     => CPU_FAST_SHIFT_EN,
+    CPU_RF_HW_RST_EN      => CPU_RF_HW_RST_EN,
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       => 5,
     PMP_MIN_GRANULARITY   => 4,
