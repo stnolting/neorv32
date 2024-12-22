@@ -18,7 +18,6 @@ use neorv32.neorv32_package.all;
 entity neorv32_sysinfo is
   generic (
     CLOCK_FREQUENCY       : natural; -- clock frequency of clk_i in Hz
-    CLOCK_GATING_EN       : boolean; -- enable clock gating when in sleep mode
     BOOT_MODE_SELECT      : natural; -- boot configuration select (default = 0 = bootloader)
     INT_BOOTLOADER_EN     : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     MEM_INT_IMEM_EN       : boolean; -- implement processor-internal instruction memory
@@ -118,7 +117,7 @@ begin
   sysinfo(2)(4)  <= '1' when OCD_EN            else '0'; -- on-chip debugger implemented?
   sysinfo(2)(5)  <= '1' when ICACHE_EN         else '0'; -- processor-internal instruction cache implemented?
   sysinfo(2)(6)  <= '1' when DCACHE_EN         else '0'; -- processor-internal data cache implemented?
-  sysinfo(2)(7)  <= '1' when CLOCK_GATING_EN   else '0'; -- enable clock gating when in sleep mode
+  sysinfo(2)(7)  <= '0';                                 -- reserved
   sysinfo(2)(8)  <= '1' when xcache_en_c       else '0'; -- external bus interface cache implemented?
   sysinfo(2)(9)  <= '1' when XIP_EN            else '0'; -- execute in-place module implemented?
   sysinfo(2)(10) <= '1' when xip_cache_en_c    else '0'; -- execute in-place cache implemented?
