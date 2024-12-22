@@ -300,7 +300,7 @@ enum NEORV32_CSR_MISA_enum {
 
 
 /**********************************************************************//**
- * CPU mxisa CSR (r/-): Machine _extended_ instruction set extensions (NEORV32-specific)
+ * CPU mxisa CSR (r/-): Machine extended instruction set extensions (NEORV32-specific)
  **************************************************************************/
 enum NEORV32_CSR_XISA_enum {
   // ISA (sub-)extensions
@@ -331,6 +331,7 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_ZBS       = 24, /**< CPU mxisa CSR (24): single-bit bit-manipulation operations (r/-)*/
   CSR_MXISA_ZALRSC    = 25, /**< CPU mxisa CSR (25): atomic reservation-set operations (r/-)*/
   // Tuning options
+  CSR_MXISA_CLKGATE   = 27, /**< CPU mxisa CSR (27): clock gating enabled (r/-)*/
   CSR_MXISA_RFHWRST   = 28, /**< CPU mxisa CSR (28): register file has full hardware reset (r/-)*/
   CSR_MXISA_FASTMUL   = 29, /**< CPU mxisa CSR (29): DSP-based multiplication (M extensions only) (r/-)*/
   CSR_MXISA_FASTSHIFT = 30, /**< CPU mxisa CSR (30): parallel logic for shifts (barrel shifters) (r/-)*/
