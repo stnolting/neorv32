@@ -109,7 +109,6 @@ begin
   generic map (
     -- Clocking --
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
-    CLOCK_GATING_EN       => true,
     -- Identification --
     HART_ID               => x"00000000",
     JEDEC_ID              => "00000000000",
@@ -143,6 +142,7 @@ begin
     RISCV_ISA_Zmmul       => RISCV_ISA_Zmmul,
     RISCV_ISA_Zxcfu       => RISCV_ISA_Zxcfu,
     -- Extension Options --
+    CLOCK_GATING_EN       => true,
     FAST_MUL_EN           => FAST_MUL_EN,
     FAST_SHIFT_EN         => FAST_SHIFT_EN,
     REGFILE_HW_RST        => REGFILE_HW_RST,

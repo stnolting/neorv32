@@ -354,7 +354,6 @@ begin
   generic map (
     -- Clocking --
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
-    CLOCK_GATING_EN       => false, -- clock gating is not supported here
     -- Identification --
     HART_ID               => std_ulogic_vector(HART_ID),
     JEDEC_ID              => std_ulogic_vector(JEDEC_ID),
@@ -388,6 +387,7 @@ begin
     RISCV_ISA_Zksh        => RISCV_ISA_Zksh,
     RISCV_ISA_Zxcfu       => RISCV_ISA_Zxcfu,
     -- Extension Options --
+    CLOCK_GATING_EN       => false, -- clock gating is not supported here
     FAST_MUL_EN           => FAST_MUL_EN,
     FAST_SHIFT_EN         => FAST_SHIFT_EN,
     REGFILE_HW_RST        => REGFILE_HW_RST,
