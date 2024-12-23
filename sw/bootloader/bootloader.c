@@ -361,7 +361,7 @@ int main(void) {
     PRINT_TEXT("\n");
 
     if (c == 'r') { // restart bootloader
-      asm volatile ("li t0, %[input_i]; jr t0" :  : [input_i] "i" (BOOTLOADER_BASE_ADDRESS)); // jump to beginning of boot ROM
+      asm volatile ("li t0, %[input_i]; jr t0" :  : [input_i] "i" (NEORV32_BOOTROM_BASE)); // jump to beginning of boot ROM
       __builtin_unreachable();
     }
     else if (c == 'h') { // help menu
