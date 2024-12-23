@@ -302,9 +302,9 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   -- port select --
   signal port_sel : std_ulogic_vector(4 downto 0);
 
-  -- port enable and privileged access lists --
+  -- port enable list --
   type port_bool_list_t is array (0 to 4) of boolean;
-  constant port_en_list_c  : port_bool_list_t := (A_ENABLE, B_ENABLE, C_ENABLE, D_ENABLE, X_ENABLE);
+  constant port_en_list_c : port_bool_list_t := (A_ENABLE, B_ENABLE, C_ENABLE, D_ENABLE, X_ENABLE);
 
   -- port timeout enable list --
   constant tmo_en_list_c : std_ulogic_vector(4 downto 0) := (
@@ -521,18 +521,18 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   -- bus register --
   component neorv32_bus_reg
   generic (
-    REQ_REG_EN : boolean := false; 
-    RSP_REG_EN : boolean := false  
+    REQ_REG_EN : boolean := false;
+    RSP_REG_EN : boolean := false
   );
   port (
     -- global control --
-    clk_i        : in  std_ulogic; 
-    rstn_i       : in  std_ulogic; 
+    clk_i        : in  std_ulogic;
+    rstn_i       : in  std_ulogic;
     -- bus ports --
     host_req_i   : in  bus_req_t;
     host_rsp_o   : out bus_rsp_t;
     device_req_o : out bus_req_t;
-    device_rsp_i : in  bus_rsp_t 
+    device_rsp_i : in  bus_rsp_t
   );
   end component;
 
