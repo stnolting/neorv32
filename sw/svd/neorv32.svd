@@ -39,13 +39,13 @@
     <peripheral>
       <name>CFS</name>
       <description>Custom functions subsystem</description>
-      <baseAddress>0xFFFFEB00</baseAddress>
+      <baseAddress>0xFFEB0000</baseAddress>
 
       <interrupt><name>CFS_FIRQ</name><value>1</value></interrupt>
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x100</size>
+        <size>0x10000</size>
         <usage>registers</usage>
       </addressBlock>
 
@@ -122,7 +122,7 @@
     <peripheral>
       <name>SDI</name>
       <description>Serial data interface controller</description>
-      <baseAddress>0xFFFFF700</baseAddress>
+      <baseAddress>0xFFF70000</baseAddress>
 
       <interrupt><name>SDI_FIRQ</name><value>11</value></interrupt>
 
@@ -230,7 +230,7 @@
     <peripheral>
       <name>SLINK</name>
       <description>Stream Link Interface</description>
-      <baseAddress>0xFFFFEC00</baseAddress>
+      <baseAddress>0xFFEC0000</baseAddress>
 
       <interrupt><name>SLINK_RX_FIRQ</name><value>14</value></interrupt>
       <interrupt><name>SLINK_TX_FIRQ</name><value>15</value></interrupt>
@@ -383,7 +383,7 @@
     <peripheral>
       <name>DMA</name>
       <description>Direct memory access controller</description>
-      <baseAddress>0xFFFFED00</baseAddress>
+      <baseAddress>0xFFED0000</baseAddress>
 
       <interrupt><name>DMA_FIRQ</name><value>10</value></interrupt>
 
@@ -499,7 +499,7 @@
     <peripheral>
       <name>CRC</name>
       <description>Cyclic redundancy check unit</description>
-      <baseAddress>0xFFFFEE00</baseAddress>
+      <baseAddress>0xFFEE0000</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -536,7 +536,7 @@
     <peripheral>
       <name>PWM</name>
       <description>Pulse-width modulation controller</description>
-      <baseAddress>0xFFFFF000</baseAddress>
+      <baseAddress>0xFFF00000</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -585,7 +585,7 @@
     <peripheral>
       <name>XIP</name>
       <description>Execute In Place Module</description>
-      <baseAddress>0xFFFFEF00</baseAddress>
+      <baseAddress>0xFFEF0000</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -686,7 +686,7 @@
     <peripheral>
       <name>GPTMR</name>
       <description>General purpose timer</description>
-      <baseAddress>0xFFFFF100</baseAddress>
+      <baseAddress>0xFFF10000</baseAddress>
 
       <interrupt><name>GPTMR_FIRQ</name><value>12</value></interrupt>
 
@@ -749,7 +749,7 @@
     <peripheral>
       <name>ONEWIRE</name>
       <description>1-Wire Interface Controller</description>
-      <baseAddress>0xFFFFF200</baseAddress>
+      <baseAddress>0xFFF20000</baseAddress>
 
       <interrupt><name>ONEWIRE_FIRQ</name><value>13</value></interrupt>
 
@@ -848,7 +848,7 @@
     <peripheral>
       <name>XIRQ</name>
       <description>External interrupts controller</description>
-      <baseAddress>0xFFFFF300</baseAddress>
+      <baseAddress>0xFFF30000</baseAddress>
 
       <interrupt><name>XIRQ_FIRQ</name><value>8</value></interrupt>
 
@@ -887,7 +887,7 @@
     <peripheral>
       <name>MTIME</name>
       <description>Machine timer</description>
-      <baseAddress>0xFFFFF400</baseAddress>
+      <baseAddress>0xFFF40000</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -924,7 +924,7 @@
     <peripheral>
       <name>UART0</name>
       <description>Primary universal asynchronous receiver and transmitter</description>
-      <baseAddress>0xFFFFF500</baseAddress>
+      <baseAddress>0xFFF50000</baseAddress>
 
       <interrupt><name>UART0_RX_FIRQ</name><value>2</value></interrupt>
       <interrupt><name>UART0_TX_FIRQ</name><value>3</value></interrupt>
@@ -1064,7 +1064,7 @@
     <peripheral derivedFrom="UART0">
       <name>UART1</name>
       <description>Secondary universal asynchronous receiver and transmitter</description>
-      <baseAddress>0xFFFFF600</baseAddress>
+      <baseAddress>0xFFF60000</baseAddress>
 
       <interrupt><name>UART1_RX_FIRQ</name><value>4</value></interrupt>
       <interrupt><name>UART1_TX_FIRQ</name><value>5</value></interrupt>
@@ -1081,7 +1081,7 @@
     <peripheral>
       <name>SPI</name>
       <description>Serial peripheral interface controller</description>
-      <baseAddress>0xFFFFF800</baseAddress>
+      <baseAddress>0xFFF80000</baseAddress>
 
       <interrupt><name>SPI_FIRQ</name><value>6</value></interrupt>
 
@@ -1216,7 +1216,7 @@
     <peripheral>
       <name>TWI</name>
       <description>Two-wire interface controller</description>
-      <baseAddress>0xFFFFF900</baseAddress>
+      <baseAddress>0xFFF90000</baseAddress>
 
       <interrupt><name>TWI_FIRQ</name><value>7</value></interrupt>
 
@@ -1320,7 +1320,7 @@
     <peripheral>
       <name>TWD</name>
       <description>Two-wire device controller</description>
-      <baseAddress>0xFFFFEA00</baseAddress>
+      <baseAddress>0xFFEA0000</baseAddress>
 
       <interrupt><name>TWD_FIRQ</name><value>0</value></interrupt>
 
@@ -1446,7 +1446,7 @@
     <peripheral>
       <name>TRNG</name>
       <description>True random number generator</description>
-      <baseAddress>0xFFFFFA00</baseAddress>
+      <baseAddress>0xFFFA0000</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -1511,7 +1511,7 @@
     <peripheral>
       <name>WDT</name>
       <description>Watchdog timer</description>
-      <baseAddress>0xFFFFFB00</baseAddress>
+      <baseAddress>0xFFFB0000</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -1584,7 +1584,7 @@
     <peripheral>
       <name>GPIO</name>
       <description>General purpose input/output port</description>
-      <baseAddress>0xFFFFFC00</baseAddress>
+      <baseAddress>0xFFFC0000</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
@@ -1623,7 +1623,7 @@
     <peripheral>
       <name>NEOLED</name>
       <description>Smart LED hardware interface</description>
-      <baseAddress>0xFFFFFD00</baseAddress>
+      <baseAddress>0xFFFD0000</baseAddress>
 
       <interrupt><name>NEOLED_FIRQ</name><value>9</value></interrupt>
 
@@ -1724,7 +1724,7 @@
     <peripheral>
       <name>SYSINFO</name>
       <description>System configuration information memory</description>
-      <baseAddress>0xFFFFFE00</baseAddress>
+      <baseAddress>0xFFFE0000</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
