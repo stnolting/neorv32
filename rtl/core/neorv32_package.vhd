@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100708"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100709"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -50,54 +50,52 @@ package neorv32_package is
   -- Main Address Regions (base address must be aligned to the region's size) ---
   constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via generic
   constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via generic
-  constant mem_xip_base_c  : std_ulogic_vector(31 downto 0) := x"e0000000"; -- page (4MSBs) only!
+  constant mem_xip_base_c  : std_ulogic_vector(31 downto 0) := x"e0000000"; -- page (4 MSBs) only!
   constant mem_xip_size_c  : natural := 256*1024*1024;
-  constant mem_boot_base_c : std_ulogic_vector(31 downto 0) := x"ffffc000";
-  constant mem_boot_size_c : natural := 8*1024;
-  constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffffe000";
-  constant mem_io_size_c   : natural := 8*1024; -- = 32 * iodev_size_c
+  constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffe00000";
+  constant mem_io_size_c   : natural := 32*64*1024; -- = 32 * iodev_size_c
 
-  -- Start of uncached memory access (256MB page / 4MSBs only) --
+  -- Start of uncached memory access (256MB page / 4 MSBs only) --
   constant mem_uncached_begin_c  : std_ulogic_vector(31 downto 0) := x"f0000000";
 
   -- IO Address Map (base address must be aligned to the region's size) --
-  constant iodev_size_c      : natural := 256; -- size of a single IO device (bytes)
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe000"; -- reserved
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe100"; -- reserved
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe200"; -- reserved
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe300"; -- reserved
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe400"; -- reserved
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe500"; -- reserved
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe600"; -- reserved
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe700"; -- reserved
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe800"; -- reserved
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffffe900"; -- reserved
-  constant base_io_twd_c     : std_ulogic_vector(31 downto 0) := x"ffffea00";
-  constant base_io_cfs_c     : std_ulogic_vector(31 downto 0) := x"ffffeb00";
-  constant base_io_slink_c   : std_ulogic_vector(31 downto 0) := x"ffffec00";
-  constant base_io_dma_c     : std_ulogic_vector(31 downto 0) := x"ffffed00";
-  constant base_io_crc_c     : std_ulogic_vector(31 downto 0) := x"ffffee00";
-  constant base_io_xip_c     : std_ulogic_vector(31 downto 0) := x"ffffef00";
-  constant base_io_pwm_c     : std_ulogic_vector(31 downto 0) := x"fffff000";
-  constant base_io_gptmr_c   : std_ulogic_vector(31 downto 0) := x"fffff100";
-  constant base_io_onewire_c : std_ulogic_vector(31 downto 0) := x"fffff200";
-  constant base_io_xirq_c    : std_ulogic_vector(31 downto 0) := x"fffff300";
-  constant base_io_mtime_c   : std_ulogic_vector(31 downto 0) := x"fffff400";
-  constant base_io_uart0_c   : std_ulogic_vector(31 downto 0) := x"fffff500";
-  constant base_io_uart1_c   : std_ulogic_vector(31 downto 0) := x"fffff600";
-  constant base_io_sdi_c     : std_ulogic_vector(31 downto 0) := x"fffff700";
-  constant base_io_spi_c     : std_ulogic_vector(31 downto 0) := x"fffff800";
-  constant base_io_twi_c     : std_ulogic_vector(31 downto 0) := x"fffff900";
-  constant base_io_trng_c    : std_ulogic_vector(31 downto 0) := x"fffffa00";
-  constant base_io_wdt_c     : std_ulogic_vector(31 downto 0) := x"fffffb00";
-  constant base_io_gpio_c    : std_ulogic_vector(31 downto 0) := x"fffffc00";
-  constant base_io_neoled_c  : std_ulogic_vector(31 downto 0) := x"fffffd00";
-  constant base_io_sysinfo_c : std_ulogic_vector(31 downto 0) := x"fffffe00";
-  constant base_io_dm_c      : std_ulogic_vector(31 downto 0) := x"ffffff00";
+  constant iodev_size_c      : natural := 64*1024; -- size of a single IO device (bytes)
+  constant base_io_bootrom_c : std_ulogic_vector(31 downto 0) := x"ffe00000";
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffe10000"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffe20000"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffe30000"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffe40000"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffe50000"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffe60000"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffe70000"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffe80000"; -- reserved
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffe90000"; -- reserved
+  constant base_io_twd_c     : std_ulogic_vector(31 downto 0) := x"ffea0000";
+  constant base_io_cfs_c     : std_ulogic_vector(31 downto 0) := x"ffeb0000";
+  constant base_io_slink_c   : std_ulogic_vector(31 downto 0) := x"ffec0000";
+  constant base_io_dma_c     : std_ulogic_vector(31 downto 0) := x"ffed0000";
+  constant base_io_crc_c     : std_ulogic_vector(31 downto 0) := x"ffee0000";
+  constant base_io_xip_c     : std_ulogic_vector(31 downto 0) := x"ffef0000";
+  constant base_io_pwm_c     : std_ulogic_vector(31 downto 0) := x"fff00000";
+  constant base_io_gptmr_c   : std_ulogic_vector(31 downto 0) := x"fff10000";
+  constant base_io_onewire_c : std_ulogic_vector(31 downto 0) := x"fff20000";
+  constant base_io_xirq_c    : std_ulogic_vector(31 downto 0) := x"fff30000";
+  constant base_io_mtime_c   : std_ulogic_vector(31 downto 0) := x"fff40000";
+  constant base_io_uart0_c   : std_ulogic_vector(31 downto 0) := x"fff50000";
+  constant base_io_uart1_c   : std_ulogic_vector(31 downto 0) := x"fff60000";
+  constant base_io_sdi_c     : std_ulogic_vector(31 downto 0) := x"fff70000";
+  constant base_io_spi_c     : std_ulogic_vector(31 downto 0) := x"fff80000";
+  constant base_io_twi_c     : std_ulogic_vector(31 downto 0) := x"fff90000";
+  constant base_io_trng_c    : std_ulogic_vector(31 downto 0) := x"fffa0000";
+  constant base_io_wdt_c     : std_ulogic_vector(31 downto 0) := x"fffb0000";
+  constant base_io_gpio_c    : std_ulogic_vector(31 downto 0) := x"fffc0000";
+  constant base_io_neoled_c  : std_ulogic_vector(31 downto 0) := x"fffd0000";
+  constant base_io_sysinfo_c : std_ulogic_vector(31 downto 0) := x"fffe0000";
+  constant base_io_ocd_c     : std_ulogic_vector(31 downto 0) := x"ffff0000";
 
   -- On-Chip Debugger - Debug Module Entry Points (Code ROM) --
-  constant dm_exc_entry_c  : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- = base_io_dm_c + 0, exceptions entry point
-  constant dm_park_entry_c : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- = base_io_dm_c + 8, normal entry point
+  constant dm_exc_entry_c  : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- = base_io_ocd_c + code_rom + 0
+  constant dm_park_entry_c : std_ulogic_vector(31 downto 0) := x"ffffff08"; -- = base_io_ocd_c + code_rom + 8
 
 -- **********************************************************************************************************
 -- SoC Definitions
