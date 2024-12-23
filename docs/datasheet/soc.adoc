@@ -468,55 +468,47 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 === Address Space
 
 As a 32-bit architecture the NEORV32 can access a 4GB physical address space. By default, this address space is
-split into six main regions. Each region provides specific _physical memory attributes_ ("PMAs") that define
-the access capabilities (`rwxac`; `r` = read permission, `w` = write permission, `x` - execute permission,
-`a` = atomic access support, `c` = cached CPU access, `p` = privileged access only).
+split into four main regions. All accesses to "unmapped" addresses (a.k.a. "the void") are redirected to the
+<<_processor_external_bus_interface_xbus>>. For example, if the internal IMEM is disabled, the accesses to the
+_entire_ address space between `0x00000000` and `0x7FFFFFFF` are converted into XBUS requests. If the XBUS interface
+is not enabled any access to the void will raise a bus error exception.
 
 .NEORV32 Processor Address Space (Default Configuration)
 image::address_space.png[900]
 
-.The "Void" (Unmapped Addresses)
-[NOTE]
-All accesses to "unmapped" addresses (= "void") are redirected to the <<_processor_external_bus_interface_xbus>>.
-For example, if the internal IMEM is disabled, the accesses to the _entire_ address space between `0x00000000` and
-`0x7FFFFFFF` are converted into XBUS requests. If the XBUS interface is not enabled any access to the void will
-raise a bus error exception.
-
-.Main Address Regions
-[cols="<1,^4,^2,<7"]
-[options="header",grid="rows"]
-|=======================
-| # | Region                      | PMAs    | Description
-| 1 | Internal IMEM address space | `rwxac-` | For instructions (=code) and constants; mapped to the internal <<_instruction_memory_imem>>.
-| 2 | Internal DMEM address space | `rwxac-` | For application runtime data (heap, stack, etc.); mapped to the internal <<_data_memory_dmem>>).
-| 3 | Memory-mapped XIP flash     | `r-xac-` | Memory-mapped access to the <<_execute_in_place_module_xip>> SPI flash.
-| 4 | Bootloader address space    | `r-xa-p` | Read-only memory for the internal <<_bootloader_rom_bootrom>> containing the default <<_bootloader>>.
-| 5 | IO/peripheral address space | `rwxa-p` | Processor-internal peripherals / IO devices.
-| 6 | The "**void**"              | `rwxac-` | Unmapped address space. All accesses to this region(s) are redirected to the <<_processor_external_bus_interface_xbus>> (if implemented).
-|=======================
-
-.Privileged IO and BOOTROM Access Only
-[IMPORTANT]
-Only privileged accesses (M-mode) to the IO/peripheral and bootloader address spaces are allowed.
-If an unprivileged application tries to access this address space a bus access error exception is raised.
+Each region provides specific _physical memory attributes_ ("PMAs") that define the access capabilities (`rwxac`;
+`r` = read access, `w` = write access, `x` - execute access, `a` = atomic access, `c` = cached CPU access).
 
 .Custom PMAs
 [TIP]
 Custom physical memory attributes enforced by the CPU's _physcial memory protection_ (<<_smpmp_isa_extension>>)
 can be used to further constrain the physical memory attributes.
 
+.Main Address Regions
+[cols="<1,^4,^2,<7"]
+[options="header",grid="rows"]
+|=======================
+| # | Region                      | PMAs      | Description
+| 1 | Internal IMEM address space | `rwxac`   | For instructions / code and constants; mapped to the internal <<_instruction_memory_imem>> if implemented.
+| 2 | Internal DMEM address space | `rwxac`   | For application runtime data (heap, stack, etc.); mapped to the internal <<_data_memory_dmem>>) if implemented.
+| 3 | Memory-mapped XIP flash     | `r-xac`   | Transparent memory-mapped access to an external <<_execute_in_place_module_xip>> SPI flash.
+| 4 | IO/peripheral address space | `rwxa-`   | Processor-internal peripherals / IO devices including the <<_bootloader_rom_bootrom>>.
+| - | The "**void**"              | `rwxa[c]` | Unmapped address space. All accesses to this region(s) are redirected to the <<_processor_external_bus_interface_xbus>> if implemented.
+|=======================
+
 
 :sectnums:
 ==== Bus System
 
-The CPU can access all of the 32-bit address space from the instruction fetch interface and also from the data access
-interface. Both CPU interfaces can be equipped with optional caches (<<_processor_internal_data_cache_dcache>> and
-<<_processor_internal_instruction_cache_icache>>). The two CPU interfaces are multiplexed by a simple bus switch into
-a _single processor-internal bus_. Optionally, this bus is further switched by another instance of the bus switch so the
-<<_direct_memory_access_controller_dma>> controller can also access the entire address space. Accesses via the
-resulting SoC bus are split by the <<_bus_gateway>> that redirects accesses to the according main address regions
-(see table above). Accesses to the processor-internal IO/peripheral devices are further redirected via a
-dedicated <<_io_switch>>.
+The CPU provides individual interfaces for instruction fetch and data access. It can can access all of the 32-bit
+address space from each of the interface. Both of them can be equipped with optional caches (<<_processor_internal_data_cache_dcache>>
+and <<_processor_internal_instruction_cache_icache>>).
+
+The two CPU interfaces are multiplexed by a simple bus switch into a _single processor-internal bus_. Optionally,
+this bus is further multiplexed by another instance of the bus switch so the <<_direct_memory_access_controller_dma>>
+controller can also access the entire address space. Accesses via the resulting SoC bus are split by the <<_bus_gateway>>
+that redirects accesses to the according main address regions (see table above). Accesses to the processor-internal
+IO/peripheral devices are further redirected via a dedicated <<_io_switch>>.
 
 .Processor-Internal Bus Architecture
 image::neorv32_bus.png[1300]
@@ -533,31 +525,27 @@ See sections CPU <<_architecture>> and <<_bus_interface>> for more information r
 :sectnums:
 ==== Bus Gateway
 
-The central bus gateway serves two purposes: **redirect** core accesses to the according modules (e.g. memory accesses
-vs. memory-mapped IO accesses) and **monitor** all bus transactions. The redirection of access request is based on a
+The central bus gateway serves two purposes: it **redirects** accesses to the according modules (e.g. memory accesses
+vs. memory-mapped IO accesses) and also **monitors** all bus transactions. The redirection of access request is based on a
 customizable memory map implemented via VHDL constants in the main package file (`rtl/core/neorv323_package.vhd`):
 
 .Main Address Regions Configuration in the VHDL Package File
 [source,vhdl]
 ----
 -- Main Address Regions ---
-constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000";
-constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000";
-constant mem_xip_base_c  : std_ulogic_vector(31 downto 0) := x"e0000000";
+constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via generic
+constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via generic
+constant mem_xip_base_c  : std_ulogic_vector(31 downto 0) := x"e0000000"; -- page (4 MSBs) only!
 constant mem_xip_size_c  : natural := 256*1024*1024;
-constant mem_boot_base_c : std_ulogic_vector(31 downto 0) := x"ffffc000";
-constant mem_boot_size_c : natural := 8*1024;
-constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffffe000";
-constant mem_io_size_c   : natural := 8*1024;
+constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffe00000";
+constant mem_io_size_c   : natural := 32*64*1024; -- = 32 * iodev_size_c
 ----
 
-Besides the delegation of bus requests the gateway also implements a bus monitor (aka "the bus keeper") that tracks all
-active bus transactions to ensure _safe_ and _deterministic_ operations.
-
-Whenever a memory-mapped device is accessed (a real memory, a memory-mapped IO or some processor-external module) the bus
-monitor starts an internal timer. The accessed module has to respond ("ACK") to the bus request within a specific
-**time window**. This time window is defined by a global constant in the processor's VHDL package file
-(`rtl/core/neorv323_package.vhd`).
+Besides the redirecting of bus requests the gateway also implements a bus monitor (aka "the bus keeper") that tracks all
+active bus transactions to ensure _safe_ and _deterministic_ operations. Whenever a memory-mapped device is accessed (a
+real memory, a memory-mapped IO or some processor-external module) the bus monitor starts an internal countdown. The
+accessed module has to respond ("ACK") to the bus request within a bound **time window**. This time window is defined
+by a global constant in the processor's VHDL package file (`rtl/core/neorv323_package.vhd`).
 
 .Internal Bus Timeout Configuration
 [source,vhdl]
