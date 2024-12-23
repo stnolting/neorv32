@@ -650,12 +650,6 @@ constant base_io_slink_c : std_ulogic_vector(31 downto 0) := x"ffffec00";
 constant base_io_dma_c   : std_ulogic_vector(31 downto 0) := x"ffffed00";
 ----
 
-.IO Access Latency
-[IMPORTANT]
-In order to shorten the critical path of the IO system, the IO switch contain a partial register stage that
-buffers the address bus. Hence, accesses to the processor-internal IO region requires an additional clock cycle
-to complete.
-
 
 <<<
 // ####################################################################################################################
@@ -725,30 +719,31 @@ need for an explicit initialization / executable upload.
 :sectnums:
 === Processor-Internal Modules
 
-.Privileged IO Access Only
-[IMPORTANT]
-Only privileged accesses (M-mode) to the IO/peripheral modules are allowed. If an unprivileged application
-tries to access this address space a bus access error exception is raised.
-
 .Full-Word Write Accesses Only
-[NOTE]
-All peripheral/IO devices should only be written in full-word mode (i.e. 32-bit). Byte or half-word (8/16-bit) write accesses
-might cause undefined behavior.
+[IMPORTANT]
+All peripheral/IO devices should only be accessed in full-word mode (i.e. 32-bit).
+Byte or half-word (8/16-bit) write accesses might cause undefined behavior.
 
-.Writing to Read-Only Registers
-[NOTE]
-Unless otherwise specified, writing to registers that are listed as read-only does not trigger an exception.
-The write access is simply ignored by the corresponding hardware module.
-
-.IO Module's Address Space
-[NOTE]
-Each peripheral/IO module occupies an address space of 256 bytes (64 words). Most devices do not fully utilize this address
-space and will simply _mirror_ the available interface registers across the entire 256 bytes of address space.
+.IO Module Address Space
+[IMPORTAN]
+Each peripheral/IO module occupies an address space of 64kB bytes. Most devices do not fully utilize this
+address space and will _mirror_ the available memory-mapped registers across the entire 64kB address space.
+However, accessing memory-mapped registers other than the specified ones should be avoided.
 
 .Unimplemented Modules / Address Holes
 [NOTE]
 When accessing an IO device that hast not been implemented (disabled via the according generic)
 or when accessing an address that is actually unused, a load/store access fault exception is raised.
+
+.Writing to Read-Only Registers
+[NOTE]
+Unless otherwise specified, writing to registers that are listed as read-only does not trigger an exception
+as the write access is simply ignored by the corresponding hardware module.
+
+.IO Access Latency
+[NOTE]
+In order to shorten the critical path of the IO system, the IO switch provides register stages for the request and
+response buses.Hence, accesses to the processor-internal IO region require two additional clock cycles to complete.
 
 .Module Interrupts
 [NOTE]
