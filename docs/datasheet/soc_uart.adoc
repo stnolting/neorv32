@@ -128,7 +128,7 @@ Both file are created in the simulation's home folder.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.20+<| `0xfffff500` .20+<| `CTRL` <|`0`     `UART_CTRL_EN`                      ^| r/w <| UART enable
+.21+<| `0xfff50000` .21+<| `CTRL` <|`0`     `UART_CTRL_EN`                      ^| r/w <| UART enable
                                   <|`1`     `UART_CTRL_SIM_MODE`                ^| r/w <| enable **simulation mode**
                                   <|`2`     `UART_CTRL_HWFC_EN`                 ^| r/w <| enable RTS/CTS hardware flow-control
                                   <|`5:3`   `UART_CTRL_PRSC2 : UART_CTRL_PRSC0` ^| r/w <| Baud rate clock prescaler select
@@ -149,7 +149,7 @@ Both file are created in the simulation's home folder.
                                   <|`29`    `UART_CTRL_TX_CLR`                  ^| r/w <| Clear TX FIFO, flag auto-clears
                                   <|`30`    `UART_CTRL_RX_OVER`                 ^| r/- <| RX FIFO overflow; cleared by disabling the module
                                   <|`31`    `UART_CTRL_TX_BUSY`                 ^| r/- <| TX busy or TX FIFO not empty
-.4+<| `0xfffff504` .4+<| `DATA` <|`7:0`   `UART_DATA_RTX_MSB : UART_DATA_RTX_LSB`                   ^| r/w <| receive/transmit data
+.4+<| `0xfff50004` .4+<| `DATA` <|`7:0`   `UART_DATA_RTX_MSB : UART_DATA_RTX_LSB`                   ^| r/w <| receive/transmit data
                                 <|`11:8`  `UART_DATA_RX_FIFO_SIZE_MSB : UART_DATA_RX_FIFO_SIZE_LSB` ^| r/- <| log2(RX FIFO size)
                                 <|`15:12` `UART_DATA_TX_FIFO_SIZE_MSB : UART_DATA_TX_FIFO_SIZE_LSB` ^| r/- <| log2(TX FIFO size)
                                 <|`31:16` ^| r/- <| _reserved_, read as zero
@@ -202,6 +202,6 @@ written to UART1-specific file `neorv32.uart1_sim_mode.out`. This data is also p
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-| `0xfffff600` | `CTRL` | ... | ... | Same as UART0
-| `0xfffff604` | `DATA` | ... | ... | Same as UART0
+| `0xfff60000` | `CTRL` | ... | ... | Same as UART0
+| `0xfff60004` | `DATA` | ... | ... | Same as UART0
 |=======================

@@ -28,11 +28,11 @@ end neorv32_boot_rom;
 architecture neorv32_boot_rom_rtl of neorv32_boot_rom is
 
   -- determine physical ROM size in bytes (expand to next power of two) --
-  constant boot_rom_size_index_c : natural := index_size_f((bootloader_init_image'length)); -- address with (32-bit entries)
-  constant boot_rom_size_c       : natural range 0 to mem_boot_size_c := (2**boot_rom_size_index_c)*4; -- physical size in bytes
+  constant boot_rom_size_index_c : natural := index_size_f((bootloader_init_size_c)); -- address with (bytes)
+  constant boot_rom_size_c       : natural range 0 to iodev_size_c := (2**boot_rom_size_index_c); -- physical size in bytes
 
   -- ROM initialized with executable code --
-  constant mem_rom_c : mem32_t(0 to boot_rom_size_c/4-1) := mem32_init_f(bootloader_init_image, boot_rom_size_c/4);
+  constant mem_rom_c : mem32_t(0 to boot_rom_size_c/4-1) := mem32_init_f(bootloader_init_image_c, boot_rom_size_c/4);
 
   -- local signals --
   signal rden  : std_ulogic;

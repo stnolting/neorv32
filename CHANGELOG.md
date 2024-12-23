@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 23.12.2024 | 1.10.7.9 | :warning: rework IO/peripheral address space; :sparkles: increase device size from 256 bytes to 64kB | [#1126](https://github.com/stnolting/neorv32/pull/1126) |
 | 22.12.2024 | 1.10.7.8 | :warning: rename CPU tuning options / generics | [#1125](https://github.com/stnolting/neorv32/pull/1125) |
 | 22.12.2024 | 1.10.7.7 | :warning: move clock gating switch from processor top to CPU clock; `CLOCK_GATING_EN` is now a CPU tuning option | [#1124](https://github.com/stnolting/neorv32/pull/1124) |
 | 21.12.2024 | 1.10.7.6 | minor rtl cleanups and optimizations | [#1123](https://github.com/stnolting/neorv32/pull/1123) |

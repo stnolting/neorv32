@@ -268,7 +268,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant bootrom_en_c    : boolean := boolean(BOOT_MODE_SELECT = 0);
   constant imem_as_rom_c   : boolean := boolean(BOOT_MODE_SELECT = 2);
   constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) :=
-    cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 0), mem_boot_base_c,
+    cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 0), base_io_bootrom_c,
     cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 1), BOOT_ADDR_CUSTOM,
     cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 2), mem_imem_base_c, x"00000000")));
 
@@ -314,12 +314,12 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp, main_rsp, main2_rsp, dma_rsp : bus_rsp_t;
 
   -- bus: main sections --
-  signal imem_req, dmem_req, xipcache_req, xip_req, boot_req, io_req, xcache_req, xbus_req : bus_req_t;
-  signal imem_rsp, dmem_rsp, xipcache_rsp, xip_rsp, boot_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
+  signal imem_req, dmem_req, xipcache_req, xip_req, io_req, xcache_req, xbus_req : bus_req_t;
+  signal imem_rsp, dmem_rsp, xipcache_rsp, xip_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
 
   -- bus: IO devices --
   type io_devices_enum_t is (
-    IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG, IODEV_TWI,
+    IODEV_BOOTROM, IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG, IODEV_TWI,
     IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_MTIME, IODEV_XIRQ, IODEV_ONEWIRE,
     IODEV_GPTMR, IODEV_PWM, IODEV_XIP, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD
   );
@@ -719,35 +719,24 @@ begin
     A_BASE   => mem_imem_base_c,
     A_SIZE   => imem_size_c,
     A_TMO_EN => true,
-    A_PRIV   => false,
     -- port B: internal DMEM --
     B_ENABLE => MEM_INT_DMEM_EN,
     B_BASE   => mem_dmem_base_c,
     B_SIZE   => dmem_size_c,
     B_TMO_EN => true,
-    B_PRIV   => false,
     -- port C: XIP --
     C_ENABLE => XIP_EN,
     C_BASE   => mem_xip_base_c,
     C_SIZE   => mem_xip_size_c,
     C_TMO_EN => false, -- no timeout for XIP accesses
-    C_PRIV   => false,
-    -- port D: BOOT ROM --
-    D_ENABLE => bootrom_en_c,
-    D_BASE   => mem_boot_base_c,
-    D_SIZE   => mem_boot_size_c,
+    -- port D: IO --
+    D_ENABLE => true, -- always enabled (but will be trimmed if no IO devices are implemented)
+    D_BASE   => mem_io_base_c,
+    D_SIZE   => mem_io_size_c,
     D_TMO_EN => true,
-    D_PRIV   => true, -- only privileged (M-mode) accesses are allowed
-    -- port E: IO --
-    E_ENABLE => true, -- always enabled (but will be trimmed if no IO devices are implemented)
-    E_BASE   => mem_io_base_c,
-    E_SIZE   => mem_io_size_c,
-    E_TMO_EN => true,
-    E_PRIV   => true, -- only privileged (M-mode) accesses are allowed
     -- port X (the void): XBUS --
     X_ENABLE => XBUS_EN,
-    X_TMO_EN => false, -- timeout handled by XBUS gateway
-    X_PRIV   => false
+    X_TMO_EN => false -- timeout handled by XBUS gateway
   )
   port map (
     -- global control --
@@ -763,10 +752,8 @@ begin
     b_rsp_i => dmem_rsp,
     c_req_o => xip_req,
     c_rsp_i => xip_rsp,
-    d_req_o => boot_req,
-    d_rsp_i => boot_rsp,
-    e_req_o => io_req,
-    e_rsp_i => io_rsp,
+    d_req_o => io_req,
+    d_rsp_i => io_rsp,
     x_req_o => xbus_req,
     x_rsp_i => xbus_rsp
   );
@@ -820,25 +807,6 @@ begin
     neorv32_int_dmem_inst_false:
     if not MEM_INT_DMEM_EN generate
       dmem_rsp <= rsp_terminate_c;
-    end generate;
-
-
-    -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_boot_rom_inst_true:
-    if bootrom_en_c generate
-      neorv32_boot_rom_inst: entity neorv32.neorv32_boot_rom
-      port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => boot_req,
-        bus_rsp_o => boot_rsp
-      );
-    end generate;
-
-    neorv32_boot_rom_inst_false:
-    if not bootrom_en_c generate
-      boot_rsp <= rsp_terminate_c;
     end generate;
 
 
@@ -991,79 +959,98 @@ begin
     neorv32_bus_io_switch_inst: entity neorv32.neorv32_bus_io_switch
     generic map (
       INREG_EN  => true,
-      OUTREG_EN => false,
+      OUTREG_EN => true,
       DEV_SIZE  => iodev_size_c, -- size of a single IO device
-      DEV_00_EN => OCD_EN,          DEV_00_BASE => base_io_dm_c,
-      DEV_01_EN => io_sysinfo_en_c, DEV_01_BASE => base_io_sysinfo_c,
-      DEV_02_EN => IO_NEOLED_EN,    DEV_02_BASE => base_io_neoled_c,
-      DEV_03_EN => io_gpio_en_c,    DEV_03_BASE => base_io_gpio_c,
-      DEV_04_EN => IO_WDT_EN,       DEV_04_BASE => base_io_wdt_c,
-      DEV_05_EN => IO_TRNG_EN,      DEV_05_BASE => base_io_trng_c,
-      DEV_06_EN => IO_TWI_EN,       DEV_06_BASE => base_io_twi_c,
-      DEV_07_EN => IO_SPI_EN,       DEV_07_BASE => base_io_spi_c,
-      DEV_08_EN => IO_SDI_EN,       DEV_08_BASE => base_io_sdi_c,
-      DEV_09_EN => IO_UART1_EN,     DEV_09_BASE => base_io_uart1_c,
-      DEV_10_EN => IO_UART0_EN,     DEV_10_BASE => base_io_uart0_c,
-      DEV_11_EN => IO_MTIME_EN,     DEV_11_BASE => base_io_mtime_c,
-      DEV_12_EN => io_xirq_en_c,    DEV_12_BASE => base_io_xirq_c,
-      DEV_13_EN => IO_ONEWIRE_EN,   DEV_13_BASE => base_io_onewire_c,
-      DEV_14_EN => IO_GPTMR_EN,     DEV_14_BASE => base_io_gptmr_c,
-      DEV_15_EN => io_pwm_en_c,     DEV_15_BASE => base_io_pwm_c,
-      DEV_16_EN => XIP_EN,          DEV_16_BASE => base_io_xip_c,
-      DEV_17_EN => IO_CRC_EN,       DEV_17_BASE => base_io_crc_c,
-      DEV_18_EN => IO_DMA_EN,       DEV_18_BASE => base_io_dma_c,
-      DEV_19_EN => IO_SLINK_EN,     DEV_19_BASE => base_io_slink_c,
-      DEV_20_EN => IO_CFS_EN,       DEV_20_BASE => base_io_cfs_c,
-      DEV_21_EN => IO_TWD_EN,       DEV_21_BASE => base_io_twd_c,
-      DEV_22_EN => false,           DEV_22_BASE => (others => '0'), -- reserved
-      DEV_23_EN => false,           DEV_23_BASE => (others => '0'), -- reserved
-      DEV_24_EN => false,           DEV_24_BASE => (others => '0'), -- reserved
-      DEV_25_EN => false,           DEV_25_BASE => (others => '0'), -- reserved
-      DEV_26_EN => false,           DEV_26_BASE => (others => '0'), -- reserved
-      DEV_27_EN => false,           DEV_27_BASE => (others => '0'), -- reserved
-      DEV_28_EN => false,           DEV_28_BASE => (others => '0'), -- reserved
-      DEV_29_EN => false,           DEV_29_BASE => (others => '0'), -- reserved
-      DEV_30_EN => false,           DEV_30_BASE => (others => '0'), -- reserved
-      DEV_31_EN => false,           DEV_31_BASE => (others => '0')  -- reserved
+      DEV_00_EN => bootrom_en_c,    DEV_00_BASE => base_io_bootrom_c,
+      DEV_01_EN => false,           DEV_01_BASE => (others => '0'), -- reserved
+      DEV_02_EN => false,           DEV_02_BASE => (others => '0'), -- reserved
+      DEV_03_EN => false,           DEV_03_BASE => (others => '0'), -- reserved
+      DEV_04_EN => false,           DEV_04_BASE => (others => '0'), -- reserved
+      DEV_05_EN => false,           DEV_05_BASE => (others => '0'), -- reserved
+      DEV_06_EN => false,           DEV_06_BASE => (others => '0'), -- reserved
+      DEV_07_EN => false,           DEV_07_BASE => (others => '0'), -- reserved
+      DEV_08_EN => false,           DEV_08_BASE => (others => '0'), -- reserved
+      DEV_09_EN => false,           DEV_09_BASE => (others => '0'), -- reserved
+      DEV_10_EN => IO_TWD_EN,       DEV_10_BASE => base_io_twd_c,
+      DEV_11_EN => IO_CFS_EN,       DEV_11_BASE => base_io_cfs_c,
+      DEV_12_EN => IO_SLINK_EN,     DEV_12_BASE => base_io_slink_c,
+      DEV_13_EN => IO_DMA_EN,       DEV_13_BASE => base_io_dma_c,
+      DEV_14_EN => IO_CRC_EN,       DEV_14_BASE => base_io_crc_c,
+      DEV_15_EN => XIP_EN,          DEV_15_BASE => base_io_xip_c,
+      DEV_16_EN => io_pwm_en_c,     DEV_16_BASE => base_io_pwm_c,
+      DEV_17_EN => IO_GPTMR_EN,     DEV_17_BASE => base_io_gptmr_c,
+      DEV_18_EN => IO_ONEWIRE_EN,   DEV_18_BASE => base_io_onewire_c,
+      DEV_19_EN => io_xirq_en_c,    DEV_19_BASE => base_io_xirq_c,
+      DEV_20_EN => IO_MTIME_EN,     DEV_20_BASE => base_io_mtime_c,
+      DEV_21_EN => IO_UART0_EN,     DEV_21_BASE => base_io_uart0_c,
+      DEV_22_EN => IO_UART1_EN,     DEV_22_BASE => base_io_uart1_c,
+      DEV_23_EN => IO_SDI_EN,       DEV_23_BASE => base_io_sdi_c,
+      DEV_24_EN => IO_SPI_EN,       DEV_24_BASE => base_io_spi_c,
+      DEV_25_EN => IO_TWI_EN,       DEV_25_BASE => base_io_twi_c,
+      DEV_26_EN => IO_TRNG_EN,      DEV_26_BASE => base_io_trng_c,
+      DEV_27_EN => IO_WDT_EN,       DEV_27_BASE => base_io_wdt_c,
+      DEV_28_EN => io_gpio_en_c,    DEV_28_BASE => base_io_gpio_c,
+      DEV_29_EN => IO_NEOLED_EN,    DEV_29_BASE => base_io_neoled_c,
+      DEV_30_EN => io_sysinfo_en_c, DEV_30_BASE => base_io_sysinfo_c,
+      DEV_31_EN => OCD_EN,          DEV_31_BASE => base_io_ocd_c
     )
     port map (
       clk_i        => clk_i,
       rstn_i       => rstn_sys,
       main_req_i   => io_req,
       main_rsp_o   => io_rsp,
-      dev_00_req_o => iodev_req(IODEV_OCD),     dev_00_rsp_i => iodev_rsp(IODEV_OCD),
-      dev_01_req_o => iodev_req(IODEV_SYSINFO), dev_01_rsp_i => iodev_rsp(IODEV_SYSINFO),
-      dev_02_req_o => iodev_req(IODEV_NEOLED),  dev_02_rsp_i => iodev_rsp(IODEV_NEOLED),
-      dev_03_req_o => iodev_req(IODEV_GPIO),    dev_03_rsp_i => iodev_rsp(IODEV_GPIO),
-      dev_04_req_o => iodev_req(IODEV_WDT),     dev_04_rsp_i => iodev_rsp(IODEV_WDT),
-      dev_05_req_o => iodev_req(IODEV_TRNG),    dev_05_rsp_i => iodev_rsp(IODEV_TRNG),
-      dev_06_req_o => iodev_req(IODEV_TWI),     dev_06_rsp_i => iodev_rsp(IODEV_TWI),
-      dev_07_req_o => iodev_req(IODEV_SPI),     dev_07_rsp_i => iodev_rsp(IODEV_SPI),
-      dev_08_req_o => iodev_req(IODEV_SDI),     dev_08_rsp_i => iodev_rsp(IODEV_SDI),
-      dev_09_req_o => iodev_req(IODEV_UART1),   dev_09_rsp_i => iodev_rsp(IODEV_UART1),
-      dev_10_req_o => iodev_req(IODEV_UART0),   dev_10_rsp_i => iodev_rsp(IODEV_UART0),
-      dev_11_req_o => iodev_req(IODEV_MTIME),   dev_11_rsp_i => iodev_rsp(IODEV_MTIME),
-      dev_12_req_o => iodev_req(IODEV_XIRQ),    dev_12_rsp_i => iodev_rsp(IODEV_XIRQ),
-      dev_13_req_o => iodev_req(IODEV_ONEWIRE), dev_13_rsp_i => iodev_rsp(IODEV_ONEWIRE),
-      dev_14_req_o => iodev_req(IODEV_GPTMR),   dev_14_rsp_i => iodev_rsp(IODEV_GPTMR),
-      dev_15_req_o => iodev_req(IODEV_PWM),     dev_15_rsp_i => iodev_rsp(IODEV_PWM),
-      dev_16_req_o => iodev_req(IODEV_XIP),     dev_16_rsp_i => iodev_rsp(IODEV_XIP),
-      dev_17_req_o => iodev_req(IODEV_CRC),     dev_17_rsp_i => iodev_rsp(IODEV_CRC),
-      dev_18_req_o => iodev_req(IODEV_DMA),     dev_18_rsp_i => iodev_rsp(IODEV_DMA),
-      dev_19_req_o => iodev_req(IODEV_SLINK),   dev_19_rsp_i => iodev_rsp(IODEV_SLINK),
-      dev_20_req_o => iodev_req(IODEV_CFS),     dev_20_rsp_i => iodev_rsp(IODEV_CFS),
-      dev_21_req_o => iodev_req(IODEV_TWD),     dev_21_rsp_i => iodev_rsp(IODEV_TWD),
-      dev_22_req_o => open,                     dev_22_rsp_i => rsp_terminate_c, -- reserved
-      dev_23_req_o => open,                     dev_23_rsp_i => rsp_terminate_c, -- reserved
-      dev_24_req_o => open,                     dev_24_rsp_i => rsp_terminate_c, -- reserved
-      dev_25_req_o => open,                     dev_25_rsp_i => rsp_terminate_c, -- reserved
-      dev_26_req_o => open,                     dev_26_rsp_i => rsp_terminate_c, -- reserved
-      dev_27_req_o => open,                     dev_27_rsp_i => rsp_terminate_c, -- reserved
-      dev_28_req_o => open,                     dev_28_rsp_i => rsp_terminate_c, -- reserved
-      dev_29_req_o => open,                     dev_29_rsp_i => rsp_terminate_c, -- reserved
-      dev_30_req_o => open,                     dev_30_rsp_i => rsp_terminate_c, -- reserved
-      dev_31_req_o => open,                     dev_31_rsp_i => rsp_terminate_c  -- reserved
+      dev_00_req_o => iodev_req(IODEV_BOOTROM), dev_00_rsp_i => iodev_rsp(IODEV_BOOTROM),
+      dev_01_req_o => open,                     dev_01_rsp_i => rsp_terminate_c, -- reserved
+      dev_02_req_o => open,                     dev_02_rsp_i => rsp_terminate_c, -- reserved
+      dev_03_req_o => open,                     dev_03_rsp_i => rsp_terminate_c, -- reserved
+      dev_04_req_o => open,                     dev_04_rsp_i => rsp_terminate_c, -- reserved
+      dev_05_req_o => open,                     dev_05_rsp_i => rsp_terminate_c, -- reserved
+      dev_06_req_o => open,                     dev_06_rsp_i => rsp_terminate_c, -- reserved
+      dev_07_req_o => open,                     dev_07_rsp_i => rsp_terminate_c, -- reserved
+      dev_08_req_o => open,                     dev_08_rsp_i => rsp_terminate_c, -- reserved
+      dev_09_req_o => open,                     dev_09_rsp_i => rsp_terminate_c, -- reserved
+      dev_10_req_o => iodev_req(IODEV_TWD),     dev_10_rsp_i => iodev_rsp(IODEV_TWD),
+      dev_11_req_o => iodev_req(IODEV_CFS),     dev_11_rsp_i => iodev_rsp(IODEV_CFS),
+      dev_12_req_o => iodev_req(IODEV_SLINK),   dev_12_rsp_i => iodev_rsp(IODEV_SLINK),
+      dev_13_req_o => iodev_req(IODEV_DMA),     dev_13_rsp_i => iodev_rsp(IODEV_DMA),
+      dev_14_req_o => iodev_req(IODEV_CRC),     dev_14_rsp_i => iodev_rsp(IODEV_CRC),
+      dev_15_req_o => iodev_req(IODEV_XIP),     dev_15_rsp_i => iodev_rsp(IODEV_XIP),
+      dev_16_req_o => iodev_req(IODEV_PWM),     dev_16_rsp_i => iodev_rsp(IODEV_PWM),
+      dev_17_req_o => iodev_req(IODEV_GPTMR),   dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
+      dev_18_req_o => iodev_req(IODEV_ONEWIRE), dev_18_rsp_i => iodev_rsp(IODEV_ONEWIRE),
+      dev_19_req_o => iodev_req(IODEV_XIRQ),    dev_19_rsp_i => iodev_rsp(IODEV_XIRQ),
+      dev_20_req_o => iodev_req(IODEV_MTIME),   dev_20_rsp_i => iodev_rsp(IODEV_MTIME),
+      dev_21_req_o => iodev_req(IODEV_UART0),   dev_21_rsp_i => iodev_rsp(IODEV_UART0),
+      dev_22_req_o => iodev_req(IODEV_UART1),   dev_22_rsp_i => iodev_rsp(IODEV_UART1),
+      dev_23_req_o => iodev_req(IODEV_SDI),     dev_23_rsp_i => iodev_rsp(IODEV_SDI),
+      dev_24_req_o => iodev_req(IODEV_SPI),     dev_24_rsp_i => iodev_rsp(IODEV_SPI),
+      dev_25_req_o => iodev_req(IODEV_TWI),     dev_25_rsp_i => iodev_rsp(IODEV_TWI),
+      dev_26_req_o => iodev_req(IODEV_TRNG),    dev_26_rsp_i => iodev_rsp(IODEV_TRNG),
+      dev_27_req_o => iodev_req(IODEV_WDT),     dev_27_rsp_i => iodev_rsp(IODEV_WDT),
+      dev_28_req_o => iodev_req(IODEV_GPIO),    dev_28_rsp_i => iodev_rsp(IODEV_GPIO),
+      dev_29_req_o => iodev_req(IODEV_NEOLED),  dev_29_rsp_i => iodev_rsp(IODEV_NEOLED),
+      dev_30_req_o => iodev_req(IODEV_SYSINFO), dev_30_rsp_i => iodev_rsp(IODEV_SYSINFO),
+      dev_31_req_o => iodev_req(IODEV_OCD),     dev_31_rsp_i => iodev_rsp(IODEV_OCD)
     );
+
+
+    -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_boot_rom_inst_true:
+    if bootrom_en_c generate
+      neorv32_boot_rom_inst: entity neorv32.neorv32_boot_rom
+      port map (
+        clk_i     => clk_i,
+        rstn_i    => rstn_sys,
+        bus_req_i => iodev_req(IODEV_BOOTROM),
+        bus_rsp_o => iodev_rsp(IODEV_BOOTROM)
+      );
+    end generate;
+
+    neorv32_boot_rom_inst_false:
+    if not bootrom_en_c generate
+      iodev_rsp(IODEV_BOOTROM) <= rsp_terminate_c;
+    end generate;
 
 
     -- Custom Functions Subsystem (CFS) -------------------------------------------------------
@@ -1693,7 +1680,6 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_debug_dm_inst: entity neorv32.neorv32_debug_dm
     generic map (
-      CPU_BASE_ADDR => base_io_dm_c,
       AUTHENTICATOR => OCD_AUTHENTICATION
     )
     port map (

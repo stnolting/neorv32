@@ -22,7 +22,7 @@
 **Overview**
 
 The custom functions subsystem is meant for implementing custom tightly-coupled co-processors or interfaces.
-IT provides up to 64 32-bit memory-mapped read/write registers (`REG`, see register map below) that can be
+IT provides up to 16384 32-bit memory-mapped read/write registers (`REG`, see register map below) that can be
 accessed by the CPU via normal load/store operations. The actual functionality of these register has to be
 defined by the hardware designer. Furthermore, the CFS provides two IO conduits to implement custom on-chip
 or off-chip interfaces.
@@ -94,9 +94,9 @@ If the CFU output signals are to be used outside the chip, it is recommended to 
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Function
-| `0xffffeb00` | `REG[0]`  |`31:0` | (r)/(w) | custom CFS register 0
-| `0xffffeb04` | `REG[1]`  |`31:0` | (r)/(w) | custom CFS register 1
-| ...          | ...       |`31:0` | (r)/(w) | ...
-| `0xffffebf8` | `REG[62]` |`31:0` | (r)/(w) | custom CFS register 62
-| `0xffffebfc` | `REG[63]` |`31:0` | (r)/(w) | custom CFS register 63
+| `0xffeb0000` | `REG[0]`     |`31:0` | (r)/(w) | custom CFS register 0
+| `0xffeb0004` | `REG[1]`     |`31:0` | (r)/(w) | custom CFS register 1
+| ...          | ...          |`31:0` | (r)/(w) | ...
+| `0xffebfff8` | `REG[16382]` |`31:0` | (r)/(w) | custom CFS register 16382
+| `0xffebfffc` | `REG[16383]` |`31:0` | (r)/(w) | custom CFS register 16383
 |=======================

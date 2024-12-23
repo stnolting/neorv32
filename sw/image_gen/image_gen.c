@@ -212,8 +212,8 @@ int main(int argc, char *argv[]) {
       "\n"
       "package neorv32_application_image is\n"
       "\n"
-      "constant application_init_size  : natural := %lu; -- bytes\n"
-      "constant application_init_image : mem32_t := (\n",
+      "constant application_init_size_c  : natural := %lu; -- bytes\n"
+      "constant application_init_image_c : mem32_t := (\n",
       argv[4], argv[2], compile_time, raw_exe_size);
     fputs(tmp_string, output);
 
@@ -276,8 +276,8 @@ int main(int argc, char *argv[]) {
       "\n"
       "package neorv32_bootloader_image is\n"
       "\n"
-      "constant bootloader_init_size  : natural := %lu; -- bytes\n"
-      "constant bootloader_init_image : mem32_t := (\n",
+      "constant bootloader_init_size_c  : natural := %lu; -- bytes\n"
+      "constant bootloader_init_image_c : mem32_t := (\n",
       argv[4], argv[2], compile_time, raw_exe_size);
     fputs(tmp_string, output);
 

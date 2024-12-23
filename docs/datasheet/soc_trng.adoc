@@ -63,11 +63,11 @@ mode is active.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.5+<| `0xfffffa00` .5+<| `CTRL` <|`0`    `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
+.5+<| `0xfffa0000` .5+<| `CTRL` <|`0`    `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
                                 <|`1`    `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set; flag auto-clears
                                 <|`5:2`  `TRNG_CTRL_FIFO_MSB : TRNG_CTRL_FIFO_LSB` ^| r/- <| FIFO depth, log2(`IO_TRNG_FIFO`)
                                 <|`6`    `TRNG_CTRL_SIM_MODE`                      ^| r/- <| simulation mode (PRNG!)
                                 <|`7`    `TRNG_CTRL_AVAIL`                         ^| r/- <| random data available when set
-.2+<| `0xfffffa04` .2+<| `DATA` <|`7:0`  `TRNG_DATA_MSB : TRNG_DATA_LSB`           ^| r/- <| random data byte
+.2+<| `0xfffa0004` .2+<| `DATA` <|`7:0`  `TRNG_DATA_MSB : TRNG_DATA_LSB`           ^| r/- <| random data byte
                                 <|`31:8` _reserved_                                ^| r/- <| reserved, read as zero
 |=======================

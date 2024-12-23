@@ -142,7 +142,7 @@ register).
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.12+<| `0xffffed00` .12+<| `CTRL` <|`0`     `DMA_CTRL_EN`                                   ^| r/w <| DMA module enable
+.12+<| `0xffed0000` .12+<| `CTRL` <|`0`     `DMA_CTRL_EN`                                   ^| r/w <| DMA module enable
                                   <|`1`     `DMA_CTRL_AUTO`                                 ^| r/w <| Enable automatic mode (FIRQ-triggered)
                                   <|`2`     `DMA_CTRL_FENCE`                                ^| r/w <| Issue a downstream FENCE operation when DMA transfer completes (without errors)
                                   <|`7:3`   _reserved_                                      ^| r/- <| reserved, read as zero
@@ -154,9 +154,9 @@ register).
                                   <|`15`    `DMA_CTRL_FIRQ_TYPE`                            ^| r/w <| Trigger on rising-edge (`0`) or high-level (`1`) or selected FIRQ channel
                                   <|`19:16` `DMA_CTRL_FIRQ_SEL_MSB : DMA_CTRL_FIRQ_SEL_LSB` ^| r/w <| FIRQ trigger select (FIRQ0=0 ... FIRQ15=15)
                                   <|`31:20` _reserved_                                      ^| r/- <| reserved, read as zero
-| `0xffffed04` | `SRC_BASE` |`31:0` | r/w | Source base address (shows the last-accessed source address when read)
-| `0xffffed08` | `DST_BASE` |`31:0` | r/w | Destination base address (shows the last-accessed destination address when read)
-.6+<| `0xffffed0c` .6+<| `TTYPE` <|`23:0`  `DMA_TTYPE_NUM_MSB : DMA_TTYPE_NUM_LSB`   ^| r/w <| Number of elements to transfer (shows the last-transferred element index when read)
+| `0xffed0004` | `SRC_BASE` |`31:0` | r/w | Source base address (shows the last-accessed source address when read)
+| `0xffed0008` | `DST_BASE` |`31:0` | r/w | Destination base address (shows the last-accessed destination address when read)
+.6+<| `0xffed000c` .6+<| `TTYPE` <|`23:0`  `DMA_TTYPE_NUM_MSB : DMA_TTYPE_NUM_LSB`   ^| r/w <| Number of elements to transfer (shows the last-transferred element index when read)
                                  <|`26:24` _reserved_                                ^| r/- <| reserved, read as zero
                                  <|`28:27` `DMA_TTYPE_QSEL_MSB : DMA_TTYPE_QSEL_LSB` ^| r/w <| Quantity select (`00` = byte -> byte, `01` = byte -> zero-extended-word, `10` = byte -> sign-extended-word, `11` = word -> word)
                                  <|`29`    `DMA_TTYPE_SRC_INC`                       ^| r/w <| Constant (`0`) or incrementing (`1`) source address

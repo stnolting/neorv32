@@ -45,8 +45,8 @@ high until the interrupt request is explicitly acknowledged (e.g. writing to a u
 [options="header",grid="all"]
 |=======================
 | Address      | Name [C]     | Bits | R/W | Function
-| `0xfffff400` | `TIME_LO`    | 31:0 | r/w | system time, low word
-| `0xfffff404` | `TIME_HI`    | 31:0 | r/w | system time, high word
-| `0xfffff408` | `TIMECMP_LO` | 31:0 | r/w | time compare, low word
-| `0xfffff40c` | `TIMECMP_HI` | 31:0 | r/w | time compare, high word
+| `0xfff40000` | `TIME_LO`    | 31:0 | r/w | system time, low word
+| `0xfff40004` | `TIME_HI`    | 31:0 | r/w | system time, high word
+| `0xfff40008` | `TIMECMP_LO` | 31:0 | r/w | time compare, low word
+| `0xfff4000c` | `TIMECMP_HI` | 31:0 | r/w | time compare, high word
 |=======================
