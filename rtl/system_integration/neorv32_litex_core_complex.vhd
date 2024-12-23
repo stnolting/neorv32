@@ -130,8 +130,8 @@ begin
     RISCV_ISA_Zicntr      => configs_c.riscv_zicntr(CONFIG), -- implement base counters?
     RISCV_ISA_Zihpm       => configs_c.riscv_zihpm(CONFIG),  -- implement hardware performance monitors?
     -- Tuning Options --
-    FAST_MUL_EN           => configs_c.fast_ops(CONFIG),     -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN         => configs_c.fast_ops(CONFIG),     -- use barrel shifter for shift operations
+    CPU_FAST_MUL_EN       => configs_c.fast_ops(CONFIG),     -- use DSPs for M extension's multiplier
+    CPU_FAST_SHIFT_EN     => configs_c.fast_ops(CONFIG),     -- use barrel shifter for shift operations
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       => configs_c.pmp_num(CONFIG),      -- number of regions (0..16)
     PMP_MIN_GRANULARITY   => 4,                              -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
