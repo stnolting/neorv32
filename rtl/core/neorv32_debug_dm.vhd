@@ -19,7 +19,6 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_debug_dm is
   generic (
-    CPU_BASE_ADDR : std_ulogic_vector(31 downto 0); -- base address for the memory-mapped CPU interface registers
     AUTHENTICATOR : boolean -- implement authentication module when true
   );
   port (
@@ -41,11 +40,11 @@ end neorv32_debug_dm;
 
 architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
-  -- memory map --
-  constant dm_code_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"00"); -- code ROM (park loop)
-  constant dm_pbuf_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"40"); -- program buffer (PBUF)
-  constant dm_data_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"80"); -- abstract data buffer (DATA)
-  constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"C0"); -- status register (SREG)
+  -- memory map; replicated throughout the entire device address space --
+  constant dm_code_base_c : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- code ROM (park loop)
+  constant dm_pbuf_base_c : std_ulogic_vector(31 downto 0) := x"ffffff40"; -- program buffer (PBUF)
+  constant dm_data_base_c : std_ulogic_vector(31 downto 0) := x"ffffff80"; -- abstract data buffer (DATA)
+  constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := x"ffffffC0"; -- status register (SREG)
 
   -- rv32i instruction prototypes --
   constant instr_nop_c    : std_ulogic_vector(31 downto 0) := x"00000013"; -- nop
