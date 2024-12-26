@@ -62,7 +62,7 @@ extern "C" {
 #define NEORV32_GPTMR_BASE   (0xFFF10000U) /**< General Purpose Timer (GPTMR) */
 #define NEORV32_ONEWIRE_BASE (0xFFF20000U) /**< 1-Wire Interface Controller (ONEWIRE) */
 #define NEORV32_XIRQ_BASE    (0xFFF30000U) /**< External Interrupt Controller (XIRQ) */
-#define NEORV32_MTIME_BASE   (0xFFF40000U) /**< Machine System Timer (MTIME) */
+#define NEORV32_CLINT_BASE   (0xFFF40000U) /**< Core Local Interruptor (CLINT) */
 #define NEORV32_UART0_BASE   (0xFFF50000U) /**< Primary Universal Asynchronous Receiver and Transmitter (UART0) */
 #define NEORV32_UART1_BASE   (0xFFF60000U) /**< Secondary Universal Asynchronous Receiver and Transmitter (UART1) */
 #define NEORV32_SDI_BASE     (0xFFF70000U) /**< Serial Data Interface (SDI) */
@@ -255,7 +255,7 @@ typedef union {
 // legacy compatibility layer
 #include "neorv32_legacy.h"
 
-// cpu core
+// CPU core
 #include "neorv32_cpu.h"
 #include "neorv32_cpu_amo.h"
 #include "neorv32_cpu_csr.h"
@@ -266,11 +266,11 @@ typedef union {
 
 // IO/peripheral devices
 #include "neorv32_cfs.h"
+#include "neorv32_clint.h"
 #include "neorv32_crc.h"
 #include "neorv32_dma.h"
 #include "neorv32_gpio.h"
 #include "neorv32_gptmr.h"
-#include "neorv32_mtime.h"
 #include "neorv32_neoled.h"
 #include "neorv32_onewire.h"
 #include "neorv32_pwm.h"
