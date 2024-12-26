@@ -158,8 +158,8 @@ int _read(int file, char *ptr, int len) {
 int _gettimeofday(struct timeval *tp, void *tzp) {
 
   // use MTIME as system time (if available)
-  if (neorv32_mtime_available()) {
-    tp->tv_sec = (long int)neorv32_mtime_get_unixtime();
+  if (neorv32_clint_available()) {
+    tp->tv_sec = (long int)neorv32_clint_unixtime_get();
     tp->tv_usec = 0;
     return 0;
   }
