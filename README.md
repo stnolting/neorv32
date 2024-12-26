@@ -152,7 +152,7 @@ allows booting application code via UART or from external SPI flash
 
 **Timers and Counters**
 
-* 64-bit machine timer ([MTIME](https://stnolting.github.io/neorv32/#_machine_system_timer_mtime)), RISC-V spec. compatible
+* core local interruptor ([CLINT](https://stnolting.github.io/neorv32/#_core_local_interruptor_clint)), RISC-V-compatible
 * 32-bit general purpose timer ([GPTMR](https://stnolting.github.io/neorv32/#_general_purpose_timer_gptmr))
 * watchdog timer ([WDT](https://stnolting.github.io/neorv32/#_watchdog_timer_wdt))
 

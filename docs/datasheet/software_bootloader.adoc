@@ -38,7 +38,7 @@ The bootloader requires certain CPU and SoC extensions and modules to be enabled
 | **REQUIRED**  | At least 512 bytes of data memory (processor-internal DMEM or processor-external DMEM) are required for the bootloader's stack and global variables.
 | _RECOMMENDED_ | For user interaction via the <<_bootloader_console>> (like uploading executables) the primary UART (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>) is required.
 | _RECOMMENDED_ | The default bootloader uses bit 0 of the <<_general_purpose_input_and_output_port_gpio>> output port to drive a high-active "heart beat" status LED.
-| _RECOMMENDED_ | The <<_machine_system_timer_mtime>> is used to control blinking of the status LED and also to automatically trigger the <<_auto_boot_sequence>>.
+| _RECOMMENDED_ | The machine timer of the <<_core_local_interruptor_clint>> is used to control blinking of the status LED and also to automatically trigger the <<_auto_boot_sequence>>.
 | OPTIONAL      | The SPI controller (<<_serial_peripheral_interface_controller_spi>>) is needed to store/load executable from external flash using the <<_auto_boot_sequence>>.
 | OPTIONAL      | The XIP controller (<<_execute_in_place_module_xip>>) is needed to boot/execute code directly from a pre-programmed SPI flash.
 |=======================
