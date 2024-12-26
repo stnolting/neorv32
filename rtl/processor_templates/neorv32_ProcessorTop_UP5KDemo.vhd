@@ -93,7 +93,7 @@ begin
     MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
     -- Processor peripherals --
     IO_GPIO_NUM       => IO_GPIO_NUM,       -- number of GPIO input/output pairs (0..64)
-    IO_MTIME_EN       => true,              -- implement machine system timer (MTIME)?
+    IO_CLINT_EN       => true,              -- implement core local interruptor (CLINT)?
     IO_UART0_EN       => true,              -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_SPI_EN         => true,              -- implement serial peripheral interface (SPI)?
     IO_TWI_EN         => true,              -- implement two-wire interface (TWI)?
