@@ -126,7 +126,7 @@ example if just the `SPI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep 
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.19+<| `0xfffff800` .19+<| `CTRL` <|`0`     `SPI_CTRL_EN`                           ^| r/w <| SPI module enable
+.19+<| `0xfff80000` .19+<| `CTRL` <|`0`     `SPI_CTRL_EN`                           ^| r/w <| SPI module enable
                                   <|`1`     `SPI_CTRL_CPHA`                         ^| r/w <| clock phase
                                   <|`2`     `SPI_CTRL_CPOL`                         ^| r/w <| clock polarity
                                   <|`5:3`   `SPI_CTRL_PRSC2 : SPI_CTRL_PRSC0`       ^| r/w <| 3-bit clock prescaler select
@@ -145,7 +145,7 @@ example if just the `SPI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep 
                                   <|`30:28` _reserved_                              ^| r/- <| reserved, read as zero
                                   <|`30`    `SPI_CS_ACTIVE`                         ^| r/- <| Set if any chip-select line is active
                                   <|`31`    `SPI_CTRL_BUSY`                         ^| r/- <| SPI module busy when set (serial engine operation in progress and TX FIFO not empty yet)
-.3+<| `0xfffff804` .3+<| `DATA` <|`7:0`  `SPI_DATA_MSB : SPI_DATA_LSB` ^| r/w <| receive/transmit data (FIFO)
+.3+<| `0xfff80004` .3+<| `DATA` <|`7:0`  `SPI_DATA_MSB : SPI_DATA_LSB` ^| r/w <| receive/transmit data (FIFO)
                                 <|`30:8` _reserved_                    ^| r/- <| reserved, read as zero
                                 <|`31`   `SPI_DATA_CMD`                ^| -/w <| data (`0`) / chip-select-command (`1`) select
 |=======================

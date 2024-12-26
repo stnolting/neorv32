@@ -183,7 +183,7 @@ controller is idle (again) and the data/command FIFO is empty, the interrupt bec
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.11+<| `0xfffff200` .11+<| `CTRL` <|`0`     `ONEWIRE_CTRL_EN`                               ^| r/w <| ONEWIRE enable, reset if cleared
+.11+<| `0xfff20000` .11+<| `CTRL` <|`0`     `ONEWIRE_CTRL_EN`                               ^| r/w <| ONEWIRE enable, reset if cleared
                                   <|`1`     `ONEWIRE_CTRL_CLEAR`                            ^| -/w <| clear RXT FIFO, auto-clears
                                   <|`3:2`   `ONEWIRE_CTRL_PRSC1 : ONEWIRE_CTRL_PRSC0`       ^| r/w <| 2-bit clock prescaler select
                                   <|`11:4`  `ONEWIRE_CTRL_CLKDIV7 : ONEWIRE_CTRL_CLKDIV0`   ^| r/w <| 8-bit clock divider value
@@ -194,7 +194,7 @@ controller is idle (again) and the data/command FIFO is empty, the interrupt bec
                                   <|`29`    `ONEWIRE_CTRL_RX_AVAIL`                         ^| r/- <| RX FIFO data available
                                   <|`30`    `ONEWIRE_CTRL_SENSE`                            ^| r/- <| current state of the bus line
                                   <|`31`    `ONEWIRE_CTRL_BUSY`                             ^| r/- <| operation in progress when set or TX FIFO not empty
-.4+<| `0xfffff204` .4+<| `DCMD` <|`7:0`  `ONEWIRE_DCMD_DATA_MSB : ONEWIRE_DCMD_DATA_LSB` ^| r/w <| receive/transmit data
+.4+<| `0xfff20004` .4+<| `DCMD` <|`7:0`  `ONEWIRE_DCMD_DATA_MSB : ONEWIRE_DCMD_DATA_LSB` ^| r/w <| receive/transmit data
                                 <|`9:8`  `ONEWIRE_DCMD_CMD_HI : ONEWIRE_DCMD_CMD_LO`     ^| -/w <| operation command LSBs
                                 <|`10`   `ONEWIRE_DCMD_PRESENCE`                         ^| -/w <| bus presence detected
                                 <|`31:11` -                                              ^| r/- <| _reserved_, read as zero

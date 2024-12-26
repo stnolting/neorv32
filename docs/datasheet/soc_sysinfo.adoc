@@ -42,10 +42,10 @@ to take into account a dynamic frequency scaling of the processor.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | R/W | Description
-| `0xfffffe00` | `CLK`    | r/w | clock frequency in Hz (initialized from top's `CLOCK_FREQUENCY` generic)
-| `0xfffffe04` | `MEM[4]` | r/- | internal memory configuration (see <<_sysinfo_memory_configuration>>)
-| `0xfffffe08` | `SOC`    | r/- | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
-| `0xfffffe0c` | `CACHE`  | r/- | cache configuration information (see <<_sysinfo_cache_configuration>>)
+| `0xfffe0000` | `CLK`    | r/w | clock frequency in Hz (initialized from top's `CLOCK_FREQUENCY` generic)
+| `0xfffe0004` | `MEM[4]` | r/- | internal memory configuration (see <<_sysinfo_memory_configuration>>)
+| `0xfffe0008` | `SOC`    | r/- | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
+| `0xfffe000c` | `CACHE`  | r/- | cache configuration information (see <<_sysinfo_cache_configuration>>)
 |=======================
 
 

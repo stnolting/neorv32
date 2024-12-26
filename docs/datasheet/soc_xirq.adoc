@@ -74,10 +74,10 @@ can issue a new CPU interrupt).
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Description
-| `0xfffff300` | `EIE`  | `31:0` | r/w | External interrupt enable register (one bit per channel, LSB-aligned)
-.3+^| `0xfffff304` .3+<| `ESC` ^| `31`   ^| r/c <| XIRQ interrupt when set; write any value to this register to acknowledge the current XIRQ interrupt
+| `0xfff30000` | `EIE`  | `31:0` | r/w | External interrupt enable register (one bit per channel, LSB-aligned)
+.3+^| `0xfff30004` .3+<| `ESC` ^| `31`   ^| r/c <| XIRQ interrupt when set; write any value to this register to acknowledge the current XIRQ interrupt
                                ^| `30:5` ^| r/- <| _reserved_, read as zero
                                ^| `4:0`  ^| r/c <| Interrupt source ID (0..31) of firing IRQ (prioritized!)
-| `0xfffff308` | `TTYP` | `31:0` | r/w | Trigger type select (`0` = level trigger, `1` = edge trigger); each bit corresponds to the according channel number
-| `0xfffff30c` | `TPOL` | `31:0` | r/w | Trigger polarity select (`0` = low-level/falling-edge, `1` = high-level/rising-edge); each bit corresponds to the according channel number
+| `0xfff30008` | `TTYP` | `31:0` | r/w | Trigger type select (`0` = level trigger, `1` = edge trigger); each bit corresponds to the according channel number
+| `0xfff3000c` | `TPOL` | `31:0` | r/w | Trigger polarity select (`0` = low-level/falling-edge, `1` = high-level/rising-edge); each bit corresponds to the according channel number
 |=======================
