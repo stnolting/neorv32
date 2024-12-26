@@ -115,7 +115,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- HPM counter auto-configuration --
   constant hpm_num_c          : natural := cond_sel_natural_f(RISCV_ISA_Zihpm, HPM_NUM_CNTS, 0);
   constant hpm_cnt_lo_width_c : natural := min_natural_f(HPM_CNT_WIDTH, 32); -- size low word
-  constant hpm_cnt_hi_width_c : natural := (HPM_CNT_WIDTH / 32) * (HPM_CNT_WIDTH rem 32); -- size high word
+  constant hpm_cnt_hi_width_c : natural := HPM_CNT_WIDTH - hpm_cnt_lo_width_c; -- size high word
 
   -- instruction fetch engine --
   type fetch_engine_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING);
