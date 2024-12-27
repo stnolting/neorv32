@@ -25,7 +25,6 @@ entity neorv32_debug_dm is
     -- global control --
     clk_i          : in  std_ulogic; -- global clock line
     rstn_i         : in  std_ulogic; -- global reset line, low-active
-    cpu_debug_i    : in  std_ulogic; -- CPU is in debug mode
     -- debug module interface (DMI) --
     dmi_req_i      : in  dmi_req_t; -- request
     dmi_rsp_o      : out dmi_rsp_t; -- response
@@ -69,6 +68,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant addr_progbuf1_c     : std_ulogic_vector(6 downto 0) := "0100001";
   constant addr_authdata_c     : std_ulogic_vector(6 downto 0) := "0110000";
 --constant addr_sbcs_c         : std_ulogic_vector(6 downto 0) := "0111000"; -- hardwired to zero
+  constant addr_haltsum0_c     : std_ulogic_vector(6 downto 0) := "1000000";
 
   -- DMI access --
   signal dmi_wren, dmi_wren_auth, dmi_rden, dmi_rden_auth : std_ulogic;
@@ -666,7 +666,7 @@ begin
   end process bus_access;
 
   -- access helpers --
-  accen <= cpu_debug_i and bus_req_i.stb; -- allow access only when in debug-mode
+  accen <= bus_req_i.debug and bus_req_i.stb; -- allow access only when in debug-mode
   rden  <= accen and (not bus_req_i.rw);
   wren  <= accen and (    bus_req_i.rw);
 

@@ -23,8 +23,6 @@ entity neorv32_wdt is
     rstn_sys_i  : in  std_ulogic; -- system reset, low-active
     bus_req_i   : in  bus_req_t;  -- bus request
     bus_rsp_o   : out bus_rsp_t;  -- bus response
-    cpu_debug_i : in  std_ulogic; -- CPU is in debug mode
-    cpu_sleep_i : in  std_ulogic; -- CPU is in sleep mode
     clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(7 downto 0);
     rstn_o      : out std_ulogic  -- timeout reset, low_active, sync
@@ -155,8 +153,8 @@ begin
 
   -- valid counter increment? --
   cnt_inc <= '1' when ((prsc_tick = '1') and (cnt_started = '1')) and -- clock tick and started
-                      ((cpu_debug_i = '0') or (ctrl.dben = '1')) and -- not in debug mode or allowed to run in debug mode
-                      ((cpu_sleep_i = '0') or (ctrl.sen = '1')) else '0'; -- not in sleep mode or allowed to run in sleep mode
+                      ((bus_req_i.debug = '0') or (ctrl.dben = '1')) and -- not in debug mode or allowed to run in debug mode
+                      ((bus_req_i.sleep = '0') or (ctrl.sen = '1')) else '0'; -- not in sleep mode or allowed to run in sleep mode
 
   -- timeout detector --
   cnt_timeout <= '1' when (cnt_started = '1') and (cnt = ctrl.timeout) else '0';

@@ -183,7 +183,7 @@ begin
   -- request splitter: cached or direct access --
   req_splitter: process(host_req_i, dir_acc_d)
   begin
-    -- default: pass-through of all bus signals --
+    -- default: pass-through all bus signals --
     cache_req <= host_req_i;
     dir_req_d <= host_req_i;
     -- direct access --
@@ -826,7 +826,7 @@ begin
 
   -- Control Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_engine_comb: process(state, upret, addr, haddr, baddr, bus_rsp_i, cmd_sync_i, cmd_miss_i, rdata_i, dirty_i)
+  ctrl_engine_comb: process(state, upret, addr, haddr, baddr, host_req_i, bus_rsp_i, cmd_sync_i, cmd_miss_i, rdata_i, dirty_i)
   begin
     -- control engine defaults --
     state_nxt <= state;
@@ -845,13 +845,19 @@ begin
     new_o   <= '0';
 
     -- bus interface defaults --
-    bus_req_o      <= req_terminate_c; -- all-zero
-    bus_req_o.addr <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
-    bus_req_o.data <= rdata_i;
-    bus_req_o.ben  <= (others => '1'); -- full-word writes only
-    bus_req_o.src  <= '0'; -- cache accesses are always "data" accesses
-    bus_req_o.priv <= '0'; -- cache accesses are always "unprivileged" accesses
-    bus_req_o.rvso <= '0'; -- cache accesses can never be a reservation set operation
+    bus_req_o       <= req_terminate_c; -- all-zero
+    bus_req_o.addr  <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
+    bus_req_o.data  <= rdata_i;
+    bus_req_o.ben   <= (others => '1'); -- full-word writes only
+    bus_req_o.src   <= '0'; -- cache accesses are always data accesses
+    bus_req_o.priv  <= '0'; -- cache accesses are always "unprivileged" accesses
+    bus_req_o.rvso  <= '0'; -- cache accesses can never be a reservation set operation
+    bus_req_o.debug <= host_req_i.debug;
+    if (state = S_IDLE) then
+      bus_req_o.sleep <= host_req_i.sleep;
+    else
+      bus_req_o.sleep <= '0';
+    end if;
 
     -- fsm --
     case state is

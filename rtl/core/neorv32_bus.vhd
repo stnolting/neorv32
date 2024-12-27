@@ -19,8 +19,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_switch is
   generic (
-    PORT_A_READ_ONLY : boolean; -- set if port A is read-only
-    PORT_B_READ_ONLY : boolean  -- set if port B is read-only
+    PORT_A_READ_ONLY : boolean := false; -- set if port A is read-only
+    PORT_B_READ_ONLY : boolean := false  -- set if port B is read-only
   );
   port (
     clk_i    : in  std_ulogic; -- global clock, rising edge
@@ -110,20 +110,22 @@ begin
 
   -- Request Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  x_req_o.addr  <= a_req_i.addr when (arbiter.sel = '0') else b_req_i.addr;
-  x_req_o.rvso  <= a_req_i.rvso when (arbiter.sel = '0') else b_req_i.rvso;
-  x_req_o.priv  <= a_req_i.priv when (arbiter.sel = '0') else b_req_i.priv;
-  x_req_o.src   <= a_req_i.src  when (arbiter.sel = '0') else b_req_i.src;
-  x_req_o.rw    <= a_req_i.rw   when (arbiter.sel = '0') else b_req_i.rw;
-  x_req_o.fence <= a_req_i.fence or b_req_i.fence; -- propagate any fence operations
+  x_req_o.addr  <= a_req_i.addr  when (arbiter.sel = '0') else b_req_i.addr;
+  x_req_o.rvso  <= a_req_i.rvso  when (arbiter.sel = '0') else b_req_i.rvso;
+  x_req_o.priv  <= a_req_i.priv  when (arbiter.sel = '0') else b_req_i.priv;
+  x_req_o.src   <= a_req_i.src   when (arbiter.sel = '0') else b_req_i.src;
+  x_req_o.rw    <= a_req_i.rw    when (arbiter.sel = '0') else b_req_i.rw;
+  x_req_o.fence <= a_req_i.fence or  b_req_i.fence; -- propagate any fence operations
+  x_req_o.sleep <= a_req_i.sleep and b_req_i.sleep; -- set if ALL upstream devices are in sleep mode
+  x_req_o.debug <= a_req_i.debug when (arbiter.sel = '0') else b_req_i.debug;
 
-  x_req_o.data  <= b_req_i.data when PORT_A_READ_ONLY    else
-                   a_req_i.data when PORT_B_READ_ONLY    else
-                   a_req_i.data when (arbiter.sel = '0') else b_req_i.data;
+  x_req_o.data  <= b_req_i.data  when PORT_A_READ_ONLY    else
+                   a_req_i.data  when PORT_B_READ_ONLY    else
+                   a_req_i.data  when (arbiter.sel = '0') else b_req_i.data;
 
-  x_req_o.ben   <= b_req_i.ben  when PORT_A_READ_ONLY    else
-                   a_req_i.ben  when PORT_B_READ_ONLY    else
-                   a_req_i.ben  when (arbiter.sel = '0') else b_req_i.ben;
+  x_req_o.ben   <= b_req_i.ben   when PORT_A_READ_ONLY    else
+                   a_req_i.ben   when PORT_B_READ_ONLY    else
+                   a_req_i.ben   when (arbiter.sel = '0') else b_req_i.ben;
 
   x_req_o.stb   <= arbiter.stb;
 
@@ -703,10 +705,10 @@ entity neorv32_bus_reservation_set is
     rvs_addr_o  : out std_ulogic_vector(31 downto 0);
     rvs_valid_o : out std_ulogic;
     rvs_clear_i : in  std_ulogic;
-    -- core/cpu port --
+    -- core port --
     core_req_i  : in  bus_req_t;
     core_rsp_o  : out bus_rsp_t;
-    -- system ports --
+    -- system port --
     sys_req_o   : out bus_req_t;
     sys_rsp_i   : in  bus_rsp_t
   );
