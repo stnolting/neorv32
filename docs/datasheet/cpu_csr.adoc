@@ -904,8 +904,7 @@ NEORV32 as BCD-coded number (example: `mimpid = 0x01020312` → 01.02.03.12 → 
 | Address     | `0xf14`
 | Reset value | `DEFINED`
 | ISA         | `Zicsr`
-| Description | The `mhartid` CSR is read-only and provides the core's hart ID,
-which is assigned via the `HW_THREAD_ID` top generic (<<_processor_top_entity_generics>>).
+| Description | The `mhartid` CSR is read-only and provides the core's hart ID which is hardwired to zero.
 |=======================
 
 

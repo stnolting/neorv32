@@ -717,7 +717,6 @@ package neorv32_package is
       -- Processor Clocking --
       CLOCK_FREQUENCY       : natural                        := 0;
       -- Identification --
-      HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000";
       JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000";
       -- Boot Configuration --
       BOOT_MODE_SELECT      : natural range 0 to 2           := 0;

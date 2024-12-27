@@ -25,7 +25,6 @@ entity neorv32_top is
     CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
 
     -- Core Identification --
-    HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
     JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
 
     -- Boot Configuration --
@@ -468,7 +467,7 @@ begin
     neorv32_cpu_inst: entity neorv32.neorv32_cpu
     generic map (
       -- General --
-      HART_ID             => HART_ID,
+      HART_ID             => 0,
       VENDOR_ID           => vendorid_c,
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,

@@ -68,8 +68,7 @@ end neorv32_litex_core_complex;
 
 architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
 
-  -- identifiers --
-  constant hart_id_c  : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID ("core ID")
+  -- core identification --
   constant jedec_id_c : std_ulogic_vector(10 downto 0) := "00000000000"; -- vendor's JEDEC manufacturer ID
 
   -- configuration helpers --
@@ -119,7 +118,6 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY       => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
-    HART_ID               => hart_id_c,                      -- hardware thread ID
     JEDEC_ID              => jedec_id_c,                     -- vendor's JEDEC ID
     -- On-Chip Debugger (OCD) --
     OCD_EN                => DEBUG,                          -- implement on-chip debugger

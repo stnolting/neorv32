@@ -28,7 +28,6 @@ entity neorv32_vivado_ip is
     -- Clocking --
     CLOCK_FREQUENCY       : natural                       := 100_000_000;
     -- Identification --
-    HART_ID               : std_logic_vector(31 downto 0) := x"00000000";
     JEDEC_ID              : std_logic_vector(10 downto 0) := "00000000000";
     -- Boot Configuration --
     BOOT_MODE_SELECT      : natural range 0 to 2          := 0;
@@ -355,7 +354,6 @@ begin
     -- Clocking --
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
     -- Identification --
-    HART_ID               => std_ulogic_vector(HART_ID),
     JEDEC_ID              => std_ulogic_vector(JEDEC_ID),
     -- Boot Configuration --
     BOOT_MODE_SELECT      => BOOT_MODE_SELECT,

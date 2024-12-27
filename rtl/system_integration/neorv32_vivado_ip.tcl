@@ -172,7 +172,6 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Core Identification}]
   add_params $group {
-    { HART_ID               {HART ID}               {The hart thread ID of the CPU (passed to mhartid CSR)} }
     { JEDEC_ID              {JEDEC ID}              {For JTAG tap identification and mvendorid CSR} }
   }
 

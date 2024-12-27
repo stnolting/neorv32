@@ -111,7 +111,6 @@ begin
     -- Clocking --
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
     -- Identification --
-    HART_ID               => x"00000000",
     JEDEC_ID              => "00000000000",
     -- Boot Configuration --
     BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
