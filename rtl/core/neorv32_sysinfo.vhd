@@ -103,7 +103,7 @@ begin
     end if;
   end process sysinfo_0_write;
 
-  -- SYSINFO(1): Internal Memory Configuration (sizes)
+  -- SYSINFO(1): Misc --
   sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_IMEM_SIZE), 8)); -- log2(IMEM size)
   sysinfo(1)(15 downto 8)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_DMEM_SIZE), 8)); -- log2(DMEM size)
   sysinfo(1)(23 downto 16) <= (others => '0'); -- reserved

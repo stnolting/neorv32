@@ -456,6 +456,26 @@ begin
   -- **************************************************************************************************************************
   -- Core Complex
   -- **************************************************************************************************************************
+
+  -- fast interrupt requests (FIRQs) --
+  cpu_firq(0)  <= firq(FIRQ_TWD);
+  cpu_firq(1)  <= firq(FIRQ_CFS);
+  cpu_firq(2)  <= firq(FIRQ_UART0_RX);
+  cpu_firq(3)  <= firq(FIRQ_UART0_TX);
+  cpu_firq(4)  <= firq(FIRQ_UART1_RX);
+  cpu_firq(5)  <= firq(FIRQ_UART1_TX);
+  cpu_firq(6)  <= firq(FIRQ_SPI);
+  cpu_firq(7)  <= firq(FIRQ_TWI);
+  cpu_firq(8)  <= firq(FIRQ_XIRQ);
+  cpu_firq(9)  <= firq(FIRQ_NEOLED);
+  cpu_firq(10) <= firq(FIRQ_DMA);
+  cpu_firq(11) <= firq(FIRQ_SDI);
+  cpu_firq(12) <= firq(FIRQ_GPTMR);
+  cpu_firq(13) <= firq(FIRQ_ONEWIRE);
+  cpu_firq(14) <= firq(FIRQ_SLINK_RX);
+  cpu_firq(15) <= firq(FIRQ_SLINK_TX);
+
+  -- CPU core + optional L1 caches --
   core_complex:
   if true generate
 
@@ -527,26 +547,8 @@ begin
       dbus_rsp_i => cpu_d_rsp
     );
 
-    -- fast interrupt requests (FIRQs) --
-    cpu_firq(0)  <= firq(FIRQ_TWD);
-    cpu_firq(1)  <= firq(FIRQ_CFS);
-    cpu_firq(2)  <= firq(FIRQ_UART0_RX);
-    cpu_firq(3)  <= firq(FIRQ_UART0_TX);
-    cpu_firq(4)  <= firq(FIRQ_UART1_RX);
-    cpu_firq(5)  <= firq(FIRQ_UART1_TX);
-    cpu_firq(6)  <= firq(FIRQ_SPI);
-    cpu_firq(7)  <= firq(FIRQ_TWI);
-    cpu_firq(8)  <= firq(FIRQ_XIRQ);
-    cpu_firq(9)  <= firq(FIRQ_NEOLED);
-    cpu_firq(10) <= firq(FIRQ_DMA);
-    cpu_firq(11) <= firq(FIRQ_SDI);
-    cpu_firq(12) <= firq(FIRQ_GPTMR);
-    cpu_firq(13) <= firq(FIRQ_ONEWIRE);
-    cpu_firq(14) <= firq(FIRQ_SLINK_RX);
-    cpu_firq(15) <= firq(FIRQ_SLINK_TX);
 
-
-    -- CPU Instruction Cache (I-Cache) --------------------------------------------------------
+    -- CPU L1 Instruction Cache (I-Cache) -----------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_icache_inst_true:
     if ICACHE_EN generate
@@ -575,7 +577,7 @@ begin
     end generate;
 
 
-    -- CPU Data Cache (D-Cache) ---------------------------------------------------------------
+    -- CPU L1 Data Cache (D-Cache) ------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_dcache_inst_true:
     if DCACHE_EN generate
@@ -608,13 +610,14 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_core_bus_switch_inst: entity neorv32.neorv32_bus_switch
     generic map (
+      ROUND_ROBIN_EN   => false, -- use prioritizing arbitration
       PORT_A_READ_ONLY => false,
       PORT_B_READ_ONLY => true -- i-fetch is read-only
     )
     port map (
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
-      a_lock_i => '0',        -- no exclusive accesses for port A
+      a_lock_i => '0',        -- no exclusive accesses
       a_req_i  => dcache_req, -- prioritized
       a_rsp_o  => dcache_rsp,
       b_req_i  => icache_req,
@@ -651,13 +654,14 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_dma_bus_switch_inst: entity neorv32.neorv32_bus_switch
     generic map (
+      ROUND_ROBIN_EN   => false, -- use prioritizing arbitration
       PORT_A_READ_ONLY => false,
       PORT_B_READ_ONLY => false
     )
     port map (
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
-      a_lock_i => '0',      -- no exclusive accesses for port A
+      a_lock_i => '0',      -- no exclusive accesses
       a_req_i  => core_req, -- prioritized
       a_rsp_o  => core_rsp,
       b_req_i  => dma_req,
