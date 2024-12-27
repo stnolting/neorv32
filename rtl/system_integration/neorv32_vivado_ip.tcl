@@ -135,8 +135,9 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_CFS_EN}     [ipx::get_ports cfs_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_NEOLED_EN}  [ipx::get_ports neoled_o         -of_objects [ipx::current_core]]
   set_property enablement_dependency {$XIRQ_EN}       [ipx::get_ports xirq_i           -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_MTIME_EN}   [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
-  set_property enablement_dependency {!$IO_MTIME_EN}  [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_CLINT_EN}   [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports msw_irq_i        -of_objects [ipx::current_core]]
 
 
   # **************************************************************
@@ -171,7 +172,6 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Core Identification}]
   add_params $group {
-    { HART_ID               {HART ID}               {The hart thread ID of the CPU (passed to mhartid CSR)} }
     { JEDEC_ID              {JEDEC ID}              {For JTAG tap identification and mvendorid CSR} }
   }
 
@@ -311,9 +311,9 @@ proc setup_ip_gui {} {
     { IO_GPIO_OUT_NUM   {Number of Outputs}     {}                                        {$IO_GPIO_EN} }
   }
 
-  set group [add_group $page {Machine Timer (MTIME)}]
+  set group [add_group $page {Core Local Interruptor (CLINT)}]
   add_params $group {
-    { IO_MTIME_EN       {Enable Machine Timer} }
+    { IO_CLINT_EN       {Enable Core Local Interruptor} }
   }
 
   set group [add_group $page {Primary UART (UART0)}]

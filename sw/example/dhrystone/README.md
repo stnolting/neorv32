@@ -19,7 +19,7 @@ Executable (neorv32_exe.bin) size in bytes:
 ```
 
 The default number of iterations is 10000. You can modify this by adding `USER_FLAGS+=-DDHRY_ITERS=2000000` to the makefile invocation.
-Dhrystone will require an IMEM size of at least 8kB and a DMEM size of about 11kB. The MTIME machine timer is used for timing benchmarking.
+Dhrystone will require an IMEM size of at least 8kB and a DMEM size of about 11kB. The CLINT machine timer is used for time benchmarking.
 Note that the Drhystone score is normalized to the original VAX machine (SiFive is giving a nice overview
 about this at https://www.sifive.com/blog/dhrystone-performance-tuning-on-the-freedom-platform):
 

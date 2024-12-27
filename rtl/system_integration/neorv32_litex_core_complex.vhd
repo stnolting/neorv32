@@ -68,8 +68,7 @@ end neorv32_litex_core_complex;
 
 architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
 
-  -- identifiers --
-  constant hart_id_c  : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID ("core ID")
+  -- core identification --
   constant jedec_id_c : std_ulogic_vector(10 downto 0) := "00000000000"; -- vendor's JEDEC manufacturer ID
 
   -- configuration helpers --
@@ -88,7 +87,7 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     xcache_en    : bool_t;
     xcache_nb    : natural_t;
     xcache_bs    : natural_t;
-    mtime        : bool_t;
+    clint        : bool_t;
   end record;
 
   -- core complex configurations --
@@ -105,7 +104,7 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     xcache_en    => ( false,   false,   true,    true  ), -- external bus cache enabled
     xcache_nb    => ( 0,       0,       32,      64    ), -- number of cache blocks (lines), power of two
     xcache_bs    => ( 0,       0,       32,      32    ), -- size of cache clock (lines) in bytes, power of two
-    mtime        => ( false,   true,    true,    true  )  -- RISC-V machine system timer
+    clint        => ( false,   true,    true,    true  )  -- RISC-V core local interruptor
   );
 
   -- misc --
@@ -119,7 +118,6 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY       => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
-    HART_ID               => hart_id_c,                      -- hardware thread ID
     JEDEC_ID              => jedec_id_c,                     -- vendor's JEDEC ID
     -- On-Chip Debugger (OCD) --
     OCD_EN                => DEBUG,                          -- implement on-chip debugger
@@ -146,7 +144,7 @@ begin
     XBUS_CACHE_NUM_BLOCKS => configs_c.xcache_nb(CONFIG),    -- x-cache: number of blocks (min 1), has to be a power of 2
     XBUS_CACHE_BLOCK_SIZE => configs_c.xcache_bs(CONFIG),    -- x-cache: block size in bytes (min 4), has to be a power of 2
     -- Processor peripherals --
-    IO_MTIME_EN           => configs_c.mtime(CONFIG)         -- implement machine system timer (MTIME)?
+    IO_CLINT_EN           => configs_c.clint(CONFIG)         -- implement core local interruptor (CLINT)?
   )
   port map (
     -- Global control --

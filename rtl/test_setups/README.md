@@ -33,7 +33,7 @@ your FPGA/board.
 
 This setup configures a `rv32imc_Zicsr_Zicntr` CPU with 16kB IMEM (as pre-initialized ROM),
 8kB DMEM and includes the **GPIO** module to drive 8 external signals (`gpio_o`)
-and the **MTIME** module for generating timer interrupts.
+and the **CLINT** module for generating timer interrupts.
 The setup uses the ["direct boot"](https://stnolting.github.io/neorv32/#_direct_boot)
 configuration, so software applications are "installed" directly into the
 processor-internal IMEM (via the bitstream) during synthesis.
@@ -45,7 +45,7 @@ processor-internal IMEM (via the bitstream) during synthesis.
 ### > [`neorv32_test_setup_bootloader.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/test_setups/neorv32_test_setup_bootloader.vhd)
 
 This setup configures a `rv32imc_Zicsr_Zicntr` CPU with 16kB IMEM (as RAM), 8kB DMEM
-and includes the **GPIO** module to drive 8 external signals (`gpio_o`), the **MTIME**
+and includes the **GPIO** module to drive 8 external signals (`gpio_o`), the **CLINT**
 module for generating timer interrupts and **UART0** to interface with the bootloader or application
 (via `uart0_txd_o` and `uart0_rxd_i`) via a serial terminal.
 The setup uses the ["indirect boot"](https://stnolting.github.io/neorv32/#_indirect_boot)
@@ -59,7 +59,7 @@ and a serial terminal.
 ### > [`neorv32_test_setup_on_chip_debugger.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/test_setups/neorv32_test_setup_on_chip_debugger.vhd)
 
 This setup configures a `rv32imc_Zicsr_Zicntr_Zifencei` CPU with 16kB IMEM (as RAM), 8kB DMEM
-and includes the **GPIO** module to drive 8 external signals (`gpio_o`), the **MTIME**
+and includes the **GPIO** module to drive 8 external signals (`gpio_o`), the **CLINT**
 module for generating timer interrupts, **UART0** to interface with the bootloader or application
 (via `uart0_txd_o` and `uart0_rxd_i`) via a serial terminal and also the RISC-V-compatible
 on-chip debugger (**OCD**), which is accessible via a standard JTAG interface (`jtag_*`).

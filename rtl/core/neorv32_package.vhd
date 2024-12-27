@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100800"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100801"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -80,7 +80,7 @@ package neorv32_package is
   constant base_io_gptmr_c   : std_ulogic_vector(31 downto 0) := x"fff10000";
   constant base_io_onewire_c : std_ulogic_vector(31 downto 0) := x"fff20000";
   constant base_io_xirq_c    : std_ulogic_vector(31 downto 0) := x"fff30000";
-  constant base_io_mtime_c   : std_ulogic_vector(31 downto 0) := x"fff40000";
+  constant base_io_clint_c   : std_ulogic_vector(31 downto 0) := x"fff40000";
   constant base_io_uart0_c   : std_ulogic_vector(31 downto 0) := x"fff50000";
   constant base_io_uart1_c   : std_ulogic_vector(31 downto 0) := x"fff60000";
   constant base_io_sdi_c     : std_ulogic_vector(31 downto 0) := x"fff70000";
@@ -717,7 +717,6 @@ package neorv32_package is
       -- Processor Clocking --
       CLOCK_FREQUENCY       : natural                        := 0;
       -- Identification --
-      HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000";
       JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000";
       -- Boot Configuration --
       BOOT_MODE_SELECT      : natural range 0 to 2           := 0;
@@ -792,7 +791,7 @@ package neorv32_package is
       -- Processor peripherals --
       IO_DISABLE_SYSINFO    : boolean                        := false;
       IO_GPIO_NUM           : natural range 0 to 64          := 0;
-      IO_MTIME_EN           : boolean                        := false;
+      IO_CLINT_EN           : boolean                        := false;
       IO_UART0_EN           : boolean                        := false;
       IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;
       IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;
@@ -905,7 +904,7 @@ package neorv32_package is
       cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
       -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
       neoled_o       : out std_ulogic;
-      -- Machine timer system time (available if IO_MTIME_EN = true) --
+      -- Machine timer system time (available if IO_CLINT_EN = true) --
       mtime_time_o   : out std_ulogic_vector(63 downto 0);
       -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
       xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');

@@ -23,7 +23,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ caches (<<_processor_internal_instruction_cache_icache,**I-CACHE**>>, <<_processor_internal_data_cache_dcache,**D-CACHE**>>,
 <<_execute_in_place_module_xip,**XIP-CACHE**>>, <<_processor_external_bus_interface_xbus,**XBUS-CACHE**>>)
 * _optional_ internal bootloader (<<_bootloader_rom_bootrom,**BOOTROM**>>) with UART console & SPI flash boot option
-* _optional_ machine system timer (<<_machine_system_timer_mtime,**MTIME**>>), RISC-V-compatible
+* _optional_ RISC-V-compatible core local interruptor (<<_core_local_interruptor_clint,**CLINT**>>)
 * _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>,
 <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,**UART1**>>) with optional hardware flow control (RTS/CTS)
 * _optional_ serial peripheral interface host controller (<<_serial_peripheral_interface_controller_spi,**SPI**>>) with 8 dedicated CS lines
@@ -162,8 +162,8 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `cfs_out_o`      | 32 | out |   -   | custom CFS output signal conduit
 5+^| **<<_smart_led_interface_neoled>>**
 | `neoled_o`       |  1 | out |   -   | asynchronous serial data output
-5+^| **<<_machine_system_timer_mtime>>**
-| `mtime_time_o`   | 64 | out |   -   | MTIME system time output
+5+^| **<<_core_local_interruptor_clint>**
+| `mtime_time_o`   | 64 | out |   -   | CLINT.MTIMER system time output
 5+^| **<<_external_interrupt_controller_xirq>>**
 | `xirq_i`         | 32 |  in | `'L'` | external interrupt requests
 5+^| **RISC-V Machine-Mode <<_processor_interrupts>>**
@@ -211,7 +211,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 4+^| **<<_processor_clocking>>**
 | `CLOCK_FREQUENCY`       | natural   | 0             | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
 4+^| **Core Identification**
-| `HART_ID`               | suv(31:0) | x"00000000"   | The hart thread ID of the CPU (passed to <<_mhartid>> CSR).
 | `JEDEC_ID`              | suv(10:0) | "00000000000" | JEDEC ID; continuation codes plus vendor ID (passed to <<_mvendorid>> CSR and to the <<_debug_transport_module_dtm>>).
 4+^| **<<_boot_configuration>>**
 | `BOOT_MODE_SELECT`      | natural   | 0             | Boot mode select; see <<_boot_configuration>>.
@@ -286,7 +285,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 4+^| **Peripheral/IO Modules**
 | `IO_DISABLE_SYSINFO`    | boolean   | false         | Disable <<_system_configuration_information_memory_sysinfo>> module; ⚠️ not recommended - for advanced users only!
 | `IO_GPIO_NUM`           | natural   | 0             | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>.
-| `IO_MTIME_EN`           | boolean   | false         | Implement the <<_machine_system_timer_mtime>>.
+| `IO_CLINT_EN`           | boolean   | false         | Implement the <<_core_local_interruptor_clint>>.
 | `IO_UART0_EN`           | boolean   | false         | Implement the <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>.
 | `IO_UART0_RX_FIFO`      | natural   | 1             | UART0 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_UART0_TX_FIFO`      | natural   | 1             | UART0 TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
@@ -421,8 +420,8 @@ specifications. However, bare-metal system can also repurpose these interrupts. 
 [options="header",grid="rows"]
 |=======================
 | Top signal | Description
-| `mtime_irq_i` | Machine timer interrupt from _processor-external_ MTIME unit (`MTI`). This IRQ is only available if the processor-internal <<_machine_system_timer_mtime>> unit is not implemented.
-| `msw_irq_i`   | Machine software interrupt (`MSI`). This interrupt is used for inter-processor interrupts in multi-core systems. However, it can also be used for any custom purpose.
+| `mtime_irq_i` | Machine timer interrupt from _processor-external_ CLINT (`MTI`). This IRQ is only available if the processor-internal <<_core_local_interruptor_clint>> unit is not implemented.
+| `msw_irq_i`   | Machine software interrupt from _processor-external_ CLINT (`MSI`). This IRQ is only available if the processor-internal <<_core_local_interruptor_clint>> unit is not implemented.
 | `mext_irq_i`  | Machine external interrupt (`MEI`). This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
 |=======================
 
@@ -777,7 +776,7 @@ include::soc_crc.adoc[]
 
 include::soc_wdt.adoc[]
 
-include::soc_mtime.adoc[]
+include::soc_clint.adoc[]
 
 include::soc_uart.adoc[]
 

@@ -138,9 +138,9 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCOUNTEREN, -1); // allow counter access from user-mode code
   }
 
-  // set CMP of machine system timer MTIME to max to prevent an IRQ
-  neorv32_mtime_set_timecmp(-1);
-  neorv32_mtime_set_time(0);
+  // set CMP of CLINT MTIMER to max to prevent an IRQ
+  neorv32_clint_mtimecmp_set(0, -1);
+  neorv32_clint_time_set(0);
 
   // get number of implemented PMP regions
   pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
@@ -778,17 +778,17 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Machine timer interrupt (MTIME)
+  // CLINT machine time interrupt
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] MTI IRQ ", cnt_test);
+  PRINT_STANDARD("[%i] CLINT.MTI ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     cnt_test++;
 
-    // configure MTIME (and check overflow from low word to high word)
-    neorv32_mtime_set_timecmp(0x0000000100000000ULL);
-    neorv32_mtime_set_time(   0x00000000FFFFFFFEULL);
+    // configure MTIMER (and check overflow from low word to high word)
+    neorv32_clint_mtimecmp_set(0, 0x0000000100000000ULL);
+    neorv32_clint_time_set(0x00000000FFFFFFFEULL);
     // enable interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
 
@@ -808,7 +808,7 @@ int main() {
     }
 
     // no more MTIME interrupts
-    neorv32_mtime_set_timecmp(-1);
+    neorv32_clint_mtimecmp_set(0, -1);
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
@@ -816,26 +816,26 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Machine software interrupt (MSI) via testbench
+  // CLINT machine software interrupt
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] MSI (sim) IRQ ", cnt_test);
+  PRINT_STANDARD("[%i] CLINT.MSI ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     cnt_test++;
 
     // enable interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MSIE);
 
     // trigger IRQ
-    sim_irq_trigger(1 << CSR_MIE_MSIE);
+    neorv32_clint_msi_set(0);
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile ("nop");
     asm volatile ("nop");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
-    sim_irq_trigger(0);
+    neorv32_clint_msi_clr(0);
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MSI) {
       test_ok();
@@ -889,12 +889,12 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Permanent IRQ (MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     cnt_test++;
 
-    // fire MTIME IRQ
+    // fire CLINT.MTIMER IRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
-    neorv32_mtime_set_timecmp(0); // force interrupt
+    neorv32_clint_mtimecmp_set(0, 0); // force interrupt
 
     volatile int test_cnt = 0;
 
@@ -922,14 +922,14 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Pending IRQ (MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     cnt_test++;
 
     // disable all interrupts
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    // fire MTIME IRQ
-    neorv32_mtime_set_timecmp(0); // force interrupt
+    // fire CLINT.MTIMER IRQ
+    neorv32_clint_mtimecmp_set(0, 0); // force interrupt
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile ("nop");
@@ -938,7 +938,7 @@ int main() {
     uint32_t was_pending = neorv32_cpu_csr_read(CSR_MIP) & (1 << CSR_MIP_MTIP); // should be pending now
 
     // clear pending MTI
-    neorv32_mtime_set_timecmp(-1);
+    neorv32_clint_mtimecmp_set(0, -1);
 
     uint32_t is_pending = neorv32_cpu_csr_read(CSR_MIP) & (1 << CSR_MIP_MTIP); // should NOT be pending anymore
 
@@ -1759,20 +1759,20 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test WFI ("sleep") instruction (executed in user mode), wakeup via MTIME
+  // Test WFI ("sleep") instruction (executed in user mode), wakeup via CLINT.MTIMER
   // mstatus.mie is cleared before to check if machine-mode IRQ still trigger in user-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] User-mode WFI (wake-up via MTI) ", cnt_test);
 
-  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) &&
+  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) &&
       (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U))) {
     cnt_test++;
 
     // program wake-up timer
-    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 300);
+    neorv32_clint_mtimecmp_set(0, neorv32_clint_time_get() + 300);
 
-    // enable mtime interrupt
+    // enable CLINT.MTIMER interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
 
     // clear mstatus.TW to allow execution of WFI also in user-mode
@@ -1805,16 +1805,16 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] WFI (wakeup on pending MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     cnt_test++;
 
     // disable m-mode interrupts globally
     neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
     // program wake-up timer
-    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 300);
+    neorv32_clint_mtimecmp_set(0, neorv32_clint_time_get() + 300);
 
-    // enable mtime interrupt
+    // enable machine timer interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
 
     // put CPU into sleep mode - the CPU has to wakeup again if any enabled interrupt source

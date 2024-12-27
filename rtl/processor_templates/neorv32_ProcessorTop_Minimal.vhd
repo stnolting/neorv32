@@ -58,7 +58,7 @@ begin
     MEM_INT_DMEM_EN              => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
     -- Processor peripherals --
-    IO_MTIME_EN                  => true,              -- implement machine system timer (MTIME)?
+    IO_CLINT_EN                  => true,              -- implement core local interruptor (CLINT)?
     IO_PWM_NUM_CH                => IO_PWM_NUM_CH      -- number of PWM channels to implement (0..12); 0 = disabled
   )
   port map (

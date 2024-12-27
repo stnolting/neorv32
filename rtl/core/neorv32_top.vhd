@@ -25,7 +25,6 @@ entity neorv32_top is
     CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
 
     -- Core Identification --
-    HART_ID               : std_ulogic_vector(31 downto 0) := x"00000000"; -- hardware thread ID
     JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
 
     -- Boot Configuration --
@@ -114,7 +113,7 @@ entity neorv32_top is
     -- Processor peripherals --
     IO_DISABLE_SYSINFO    : boolean                        := false;       -- disable the SYSINFO module (for advanced users only)
     IO_GPIO_NUM           : natural range 0 to 64          := 0;           -- number of GPIO input/output pairs (0..64)
-    IO_MTIME_EN           : boolean                        := false;       -- implement machine system timer (MTIME)?
+    IO_CLINT_EN           : boolean                        := false;       -- implement core local interruptor (CLINT)?
     IO_UART0_EN           : boolean                        := false;       -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
     IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
@@ -243,15 +242,15 @@ entity neorv32_top is
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_ulogic;                                        -- async serial data line
 
-    -- Machine timer system time (available if IO_MTIME_EN = true) --
+    -- Machine timer system time (available if IO_CLINT_EN = true) --
     mtime_time_o   : out std_ulogic_vector(63 downto 0);                    -- current system time
 
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- IRQ channels
 
     -- CPU interrupts (for chip-internal usage only) --
-    mtime_irq_i    : in  std_ulogic := 'L';                                 -- machine timer interrupt, available if IO_MTIME_EN = false
-    msw_irq_i      : in  std_ulogic := 'L';                                 -- machine software interrupt
+    mtime_irq_i    : in  std_ulogic := 'L';                                 -- machine timer interrupt, available if IO_CLINT_EN = false
+    msw_irq_i      : in  std_ulogic := 'L';                                 -- machine software interrupt, available if IO_CLINT_EN = false
     mext_irq_i     : in  std_ulogic := 'L'                                  -- machine external interrupt
   );
 end neorv32_top;
@@ -320,7 +319,7 @@ architecture neorv32_top_rtl of neorv32_top is
   -- bus: IO devices --
   type io_devices_enum_t is (
     IODEV_BOOTROM, IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG, IODEV_TWI,
-    IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_MTIME, IODEV_XIRQ, IODEV_ONEWIRE,
+    IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_CLINT, IODEV_XIRQ, IODEV_ONEWIRE,
     IODEV_GPTMR, IODEV_PWM, IODEV_XIP, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD
   );
   type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
@@ -337,6 +336,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal firq      : firq_t;
   signal cpu_firq  : std_ulogic_vector(15 downto 0);
   signal mtime_irq : std_ulogic;
+  signal msw_irq   : std_ulogic;
 
 begin
 
@@ -364,8 +364,8 @@ begin
       cond_sel_string_f(XBUS_EN and XBUS_CACHE_EN, "XBUS-CACHE ", "") &
       cond_sel_string_f(XIP_EN,                    "XIP ",        "") &
       cond_sel_string_f(XIP_EN and XIP_CACHE_EN,   "XIP-CACHE ",  "") &
+      cond_sel_string_f(IO_CLINT_EN,               "CLINT ",      "") &
       cond_sel_string_f(io_gpio_en_c,              "GPIO ",       "") &
-      cond_sel_string_f(IO_MTIME_EN,               "MTIME ",      "") &
       cond_sel_string_f(IO_UART0_EN,               "UART0 ",      "") &
       cond_sel_string_f(IO_UART1_EN,               "UART1 ",      "") &
       cond_sel_string_f(IO_SPI_EN,                 "SPI ",        "") &
@@ -467,7 +467,7 @@ begin
     neorv32_cpu_inst: entity neorv32.neorv32_cpu
     generic map (
       -- General --
-      HART_ID             => HART_ID,
+      HART_ID             => 0,
       VENDOR_ID           => vendorid_c,
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
@@ -519,7 +519,7 @@ begin
       sleep_o    => cpu_sleep,
       debug_o    => cpu_debug,
       -- interrupts --
-      msi_i      => msw_irq_i,
+      msi_i      => msw_irq,
       mei_i      => mext_irq_i,
       mti_i      => mtime_irq,
       firq_i     => cpu_firq,
@@ -981,7 +981,7 @@ begin
       DEV_17_EN => IO_GPTMR_EN,     DEV_17_BASE => base_io_gptmr_c,
       DEV_18_EN => IO_ONEWIRE_EN,   DEV_18_BASE => base_io_onewire_c,
       DEV_19_EN => io_xirq_en_c,    DEV_19_BASE => base_io_xirq_c,
-      DEV_20_EN => IO_MTIME_EN,     DEV_20_BASE => base_io_mtime_c,
+      DEV_20_EN => IO_CLINT_EN,     DEV_20_BASE => base_io_clint_c,
       DEV_21_EN => IO_UART0_EN,     DEV_21_BASE => base_io_uart0_c,
       DEV_22_EN => IO_UART1_EN,     DEV_22_BASE => base_io_uart1_c,
       DEV_23_EN => IO_SDI_EN,       DEV_23_BASE => base_io_sdi_c,
@@ -1019,7 +1019,7 @@ begin
       dev_17_req_o => iodev_req(IODEV_GPTMR),   dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
       dev_18_req_o => iodev_req(IODEV_ONEWIRE), dev_18_rsp_i => iodev_rsp(IODEV_ONEWIRE),
       dev_19_req_o => iodev_req(IODEV_XIRQ),    dev_19_rsp_i => iodev_rsp(IODEV_XIRQ),
-      dev_20_req_o => iodev_req(IODEV_MTIME),   dev_20_rsp_i => iodev_rsp(IODEV_MTIME),
+      dev_20_req_o => iodev_req(IODEV_CLINT),   dev_20_rsp_i => iodev_rsp(IODEV_CLINT),
       dev_21_req_o => iodev_req(IODEV_UART0),   dev_21_rsp_i => iodev_rsp(IODEV_UART0),
       dev_22_req_o => iodev_req(IODEV_UART1),   dev_22_rsp_i => iodev_rsp(IODEV_UART1),
       dev_23_req_o => iodev_req(IODEV_SDI),     dev_23_rsp_i => iodev_rsp(IODEV_SDI),
@@ -1167,26 +1167,31 @@ begin
     end generate;
 
 
-    -- Machine System Timer (MTIME) -----------------------------------------------------------
+    -- Core Local Interruptor (CLINT) ---------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_mtime_inst_true:
-    if IO_MTIME_EN generate
-      neorv32_mtime_inst: entity neorv32.neorv32_mtime
+    neorv32_clint_inst_true:
+    if IO_CLINT_EN generate
+      neorv32_clint_inst: entity neorv32.neorv32_clint
+      generic map (
+        NUM_HARTS => 1
+      )
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
-        bus_req_i => iodev_req(IODEV_MTIME),
-        bus_rsp_o => iodev_rsp(IODEV_MTIME),
+        bus_req_i => iodev_req(IODEV_CLINT),
+        bus_rsp_o => iodev_rsp(IODEV_CLINT),
         time_o    => mtime_time_o,
-        irq_o     => mtime_irq
+        mti_o(0)  => mtime_irq,
+        msi_o(0)  => msw_irq
       );
     end generate;
 
-    neorv32_mtime_inst_false:
-    if not IO_MTIME_EN generate
-      iodev_rsp(IODEV_MTIME) <= rsp_terminate_c;
+    neorv32_clint_inst_false:
+    if not IO_CLINT_EN generate
+      iodev_rsp(IODEV_CLINT) <= rsp_terminate_c;
       mtime_time_o           <= (others => '0');
       mtime_irq              <= mtime_irq_i;
+      msw_irq                <= msw_irq_i;
     end generate;
 
 
@@ -1615,7 +1620,7 @@ begin
         OCD_EN                => OCD_EN,
         OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
         IO_GPIO_EN            => io_gpio_en_c,
-        IO_MTIME_EN           => IO_MTIME_EN,
+        IO_CLINT_EN           => IO_CLINT_EN,
         IO_UART0_EN           => IO_UART0_EN,
         IO_UART1_EN           => IO_UART1_EN,
         IO_SPI_EN             => IO_SPI_EN,

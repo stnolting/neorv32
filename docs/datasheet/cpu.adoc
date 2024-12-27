@@ -39,7 +39,8 @@ instruction exception (see section  <<_full_virtualization>>).
 .`time[h]` CSRs (Wall Clock Time)
 [IMPORTANT]
 The NEORV32 does not implement the `time[h]` registers. Any access to these registers will trap. It is
-recommended that the trap handler software provides a means of accessing the platform-defined <<_machine_system_timer_mtime>>.
+recommended that the trap handler software provides a means of accessing the the machine timer of the
+<<_core_local_interruptor_clint>>.
 
 .No Hardware Support of Misaligned Memory Accesses
 [IMPORTANT]
@@ -109,7 +110,7 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 [options="header",grid="rows"]
 |=======================
 | Name | Type | Description
-| `HART_ID`          | suv(31:0) | Value for the <<_mhartid>> CSR.
+| `HART_ID`          | natural   | Value for the <<_mhartid>> CSR.
 | `VENDOR_ID`        | suv(31:0) | Value for the <<_mvendorid>> CSR.
 | `BOOT_ADDR`        | suv(31:0) | CPU reset address. See section <<_address_space>>.
 | `DEBUG_PARK_ADDR`  | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
@@ -777,7 +778,7 @@ counter CSRs. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Z
 .Time CSRs
 [NOTE]
 The user-mode `time[h]` CSRs are **not implemented**. Any access will trap allowing the trap handler to
-retrieve system time from the <<_machine_system_timer_mtime>>.
+retrieve system time from the <<_core_local_interruptor_clint>>.
 
 .Mandatory Extension
 [NOTE]
@@ -1327,8 +1328,8 @@ written to the according CSRs when a trap is triggered:
 | `TRAP_CODE_S_ACCESS`     | bus timeout, bus access error or <<_smpmp_isa_extension,PMP>> rule violation during store data operation
 | `TRAP_CODE_FIRQ_*`       | caused by interrupt-condition of **processor-internal modules**, see <<_neorv32_specific_fast_interrupt_requests>>
 | `TRAP_CODE_MEI`          | machine external interrupt (via dedicated <<_processor_top_entity_signals>>)
-| `TRAP_CODE_MSI`          | machine software interrupt (via dedicated <<_processor_top_entity_signals>>)
-| `TRAP_CODE_MTI`          | machine timer interrupt (internal <<_machine_system_timer_mtime>> or via dedicated <<_processor_top_entity_signals>>)
+| `TRAP_CODE_MSI`          | machine software interrupt (internal <<_core_local_interruptor_clint>> or via dedicated <<_processor_top_entity_signals>>)
+| `TRAP_CODE_MTI`          | machine timer interrupt (internal <<_core_local_interruptor_clint>> or via dedicated <<_processor_top_entity_signals>>)
 |=======================
 
 .Resumable Exceptions

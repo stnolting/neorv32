@@ -279,13 +279,13 @@ int main(void) {
 #endif
 #endif
 
-  // Configure machine system timer interrupt
-  if (neorv32_mtime_available()) {
-    NEORV32_MTIME->TIME_LO = 0;
-    NEORV32_MTIME->TIME_HI = 0;
-    NEORV32_MTIME->TIMECMP_LO = NEORV32_SYSINFO->CLK/4;
-    NEORV32_MTIME->TIMECMP_HI = 0;
-    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate MTIME IRQ source
+  // Configure CLINT timer interrupt
+  if (neorv32_clint_available()) {
+    NEORV32_CLINT->MTIME.uint32[0] = 0;
+    NEORV32_CLINT->MTIME.uint32[0] = 0;
+    NEORV32_CLINT->MTIMECMP[0].uint32[0] = NEORV32_SYSINFO->CLK/4;
+    NEORV32_CLINT->MTIMECMP[0].uint32[1] = 0;
+    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate timer IRQ source
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
   }
 
@@ -316,10 +316,10 @@ int main(void) {
   // ------------------------------------------------
 #if (SPI_EN != 0)
 #if (AUTO_BOOT_TIMEOUT != 0)
-  if (neorv32_mtime_available()) {
+  if (neorv32_clint_available()) {
 
     PRINT_TEXT("\nAutoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
-    uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO->CLK);
+    uint64_t timeout_time = neorv32_clint_time_get() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO->CLK);
 
     while(1){
 
@@ -330,7 +330,7 @@ int main(void) {
         }
       }
 
-      if (neorv32_mtime_get_time() >= timeout_time) { // timeout? start auto boot sequence
+      if (neorv32_clint_time_get() >= timeout_time) { // timeout? start auto boot sequence
         get_exe(EXE_STREAM_FLASH); // try booting from flash
         PRINT_TEXT("\n");
         start_app(0);
@@ -469,7 +469,7 @@ void start_app(int boot_xip) {
 
 
 /**********************************************************************//**
- * Bootloader trap handler. Used for the MTIME tick and to capture any other traps.
+ * Bootloader trap handler. Used for the CLINT timer tick and to capture any other traps.
  *
  * @note Since we have no runtime environment we have to use the interrupt attribute here.
  **************************************************************************/
@@ -485,8 +485,8 @@ void __attribute__((interrupt("machine"))) bootloader_trap_handler(void) {
     }
 #endif
     // set time for next IRQ
-    if (neorv32_mtime_available()) {
-      neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (NEORV32_SYSINFO->CLK/4));
+    if (neorv32_clint_available()) {
+      neorv32_clint_mtimecmp_set(0, neorv32_clint_time_get() + (NEORV32_SYSINFO->CLK/4));
     }
   }
 

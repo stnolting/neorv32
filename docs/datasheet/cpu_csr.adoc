@@ -254,8 +254,8 @@ Machine-mode software can discover available `Z*` _sub-extensions_ (like `Zicsr`
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 3     | `CSR_MIE_MSIE` | r/w | **MSIE**: Machine _software_ interrupt enable
-| 7     | `CSR_MIE_MTIE` | r/w | **MTIE**: Machine _timer_ interrupt enable (from <<_machine_system_timer_mtime>>)
+| 3     | `CSR_MIE_MSIE` | r/w | **MSIE**: Machine _software_ interrupt enable (from <<_core_local_interruptor_clint>>)
+| 7     | `CSR_MIE_MTIE` | r/w | **MTIE**: Machine _timer_ interrupt enable (from <<_core_local_interruptor_clint>>)
 | 11    | `CSR_MIE_MEIE` | r/w | **MEIE**: Machine _external_ interrupt enable
 | 31:16 | `CSR_MIE_FIRQ15E` : `CSR_MIE_FIRQ0E` | r/w | Fast interrupt channel 15..0 enable
 |=======================
@@ -436,8 +436,8 @@ However, any write-access will be ignored and will not cause an exception to mai
 |=======================
 | Bit | Name [C] | R/W | Function
 | 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending, triggered by `msi_i` top port (see <<_cpu_top_entity_signals>>); _cleared by source-specific mechanism_
-| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending, triggered by `mei_i` top port (see <<_cpu_top_entity_signals>>); _cleared by source-specific mechanism_
-| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending, triggered by `mti_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<_machine_system_timer_mtime>>; _cleared by source-specific mechanism_
+| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending, triggered by `mei_i` top port (see <<_cpu_top_entity_signals>>)or by the processor-internal <<(from <<_core_local_interruptor_clint>>)>>; _cleared by source-specific mechanism_
+| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending, triggered by `mti_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<(from <<_core_local_interruptor_clint>>)>>; _cleared by source-specific mechanism_
 | 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending, see <<_neorv32_specific_fast_interrupt_requests>>; _cleared by source-specific mechanism_
 |=======================
 
@@ -625,7 +625,8 @@ implementation of the according modes.
 .`time[h]` CSRs (Wall Clock Time)
 [IMPORTANT]
 The NEORV32 does not implement the user-mode `time[h]` registers. Any access to these registers will trap.
-It is recommended that the trap handler software provides a means of accessing the platform-defined <<_machine_system_timer_mtime>>.
+It is recommended that the trap handler software provides a means of accessing the machine timer oft the
+<<_core_local_interruptor_clint>>.
 
 .Instruction Retired Counter Increment
 [NOTE]
@@ -903,8 +904,7 @@ NEORV32 as BCD-coded number (example: `mimpid = 0x01020312` → 01.02.03.12 → 
 | Address     | `0xf14`
 | Reset value | `DEFINED`
 | ISA         | `Zicsr`
-| Description | The `mhartid` CSR is read-only and provides the core's hart ID,
-which is assigned via the `HW_THREAD_ID` top generic (<<_processor_top_entity_generics>>).
+| Description | The `mhartid` CSR is read-only and provides the core's hart ID which is hardwired to zero.
 |=======================
 
 

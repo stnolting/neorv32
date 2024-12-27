@@ -42,7 +42,7 @@ entity neorv32_sysinfo is
     OCD_EN                : boolean; -- implement OCD?
     OCD_AUTHENTICATION    : boolean; -- implement OCD authenticator?
     IO_GPIO_EN            : boolean; -- implement general purpose IO port (GPIO)?
-    IO_MTIME_EN           : boolean; -- implement machine system timer (MTIME)?
+    IO_CLINT_EN           : boolean; -- implement machine local interruptor (CLINT)?
     IO_UART0_EN           : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART1_EN           : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN             : boolean; -- implement serial peripheral interface (SPI)?
@@ -126,7 +126,7 @@ begin
   sysinfo(2)(13) <= '1' when IO_TWD_EN         else '0'; -- two-wire device (TWD) implemented?
   sysinfo(2)(14) <= '1' when IO_DMA_EN         else '0'; -- direct memory access controller (DMA) implemented?
   sysinfo(2)(15) <= '1' when IO_GPIO_EN        else '0'; -- general purpose input/output port unit (GPIO) implemented?
-  sysinfo(2)(16) <= '1' when IO_MTIME_EN       else '0'; -- machine system timer (MTIME) implemented?
+  sysinfo(2)(16) <= '1' when IO_CLINT_EN       else '0'; -- core local interruptor (CLINT) implemented?
   sysinfo(2)(17) <= '1' when IO_UART0_EN       else '0'; -- primary universal asynchronous receiver/transmitter (UART0) implemented?
   sysinfo(2)(18) <= '1' when IO_SPI_EN         else '0'; -- serial peripheral interface (SPI) implemented?
   sysinfo(2)(19) <= '1' when IO_TWI_EN         else '0'; -- two-wire interface (TWI) implemented?
