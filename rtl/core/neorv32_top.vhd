@@ -298,9 +298,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clk_gen_en  : clk_gen_en_t;
   signal clk_gen_en2 : std_ulogic_vector(11 downto 0);
 
-  -- CPU status --
-  signal cpu_debug, cpu_sleep : std_ulogic;
-
   -- debug module interface (DMI) --
   signal dmi_req : dmi_req_t;
   signal dmi_rsp : dmi_rsp_t;
@@ -516,8 +513,6 @@ begin
       -- global control --
       clk_i      => clk_i,
       rstn_i     => rstn_sys,
-      sleep_o    => cpu_sleep,
-      debug_o    => cpu_debug,
       -- interrupts --
       msi_i      => msw_irq,
       mei_i      => mext_irq_i,
@@ -1151,8 +1146,6 @@ begin
         rstn_sys_i  => rstn_sys,
         bus_req_i   => iodev_req(IODEV_WDT),
         bus_rsp_o   => iodev_rsp(IODEV_WDT),
-        cpu_debug_i => cpu_debug,
-        cpu_sleep_i => cpu_sleep,
         clkgen_en_o => clk_gen_en(CG_WDT),
         clkgen_i    => clk_gen,
         rstn_o      => rstn_wdt
@@ -1690,7 +1683,6 @@ begin
     port map (
       clk_i          => clk_i,
       rstn_i         => rstn_ext,
-      cpu_debug_i    => cpu_debug,
       dmi_req_i      => dmi_req,
       dmi_rsp_o      => dmi_rsp,
       bus_req_i      => iodev_req(IODEV_OCD),

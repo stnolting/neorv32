@@ -362,7 +362,7 @@ begin
                         ((fetch_engine.pc(1) = '0') or (not RISCV_ISA_C)) else '0';
   ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
 
-  -- bus access type --
+  -- bus access meta data --
   ibus_req_o.priv  <= fetch_engine.priv; -- current effective privilege level
   ibus_req_o.data  <= (others => '0'); -- read-only
   ibus_req_o.ben   <= (others => '0'); -- read-only
@@ -370,6 +370,8 @@ begin
   ibus_req_o.src   <= '1'; -- source = instruction fetch
   ibus_req_o.rvso  <= '0'; -- cannot be a reservation set operation
   ibus_req_o.fence <= ctrl.lsu_fence; -- fence operation, valid without STB being set
+  ibus_req_o.sleep <= sleep_mode; -- sleep mode, valid without STB being set
+  ibus_req_o.debug <= debug_ctrl.run; -- debug mode, valid without STB being set
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
