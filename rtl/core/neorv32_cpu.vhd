@@ -22,7 +22,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    HART_ID             : std_ulogic_vector(31 downto 0); -- hardware thread ID
+    HART_ID             : natural; -- hardware thread ID
     VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
