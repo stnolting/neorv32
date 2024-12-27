@@ -882,39 +882,44 @@
       </registers>
     </peripheral>
 
-    <!-- MTIME -->
+    <!-- CLINT -->
     <!-- **************************************************************** -->
     <peripheral>
-      <name>MTIME</name>
-      <description>Machine timer</description>
+      <name>CLINT</name>
+      <description>Core local interruptor</description>
       <baseAddress>0xFFF40000</baseAddress>
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x10</size>
+        <size>0x10000</size>
         <usage>registers</usage>
       </addressBlock>
 
       <registers>
         <register>
-          <name>TIME_LO</name>
-          <description>System time register - low</description>
-          <addressOffset>0x00</addressOffset>
+          <name>MSWI0</name>
+          <description>Machine software interrupt; hart 0</description>
+          <addressOffset>0x0000</addressOffset>
         </register>
         <register>
-          <name>TIME_HI</name>
-          <description>System time register - high</description>
-          <addressOffset>0x04</addressOffset>
+          <name>MTIMECMP0_LOW</name>
+          <description>Machine timer compare low word; hart0</description>
+          <addressOffset>0x4000</addressOffset>
         </register>
         <register>
-          <name>TIMECMP_LO</name>
-          <description>Time compare register - low</description>
-          <addressOffset>0x08</addressOffset>
+          <name>MTIMECMP0_HI</name>
+          <description>Machine timer compare low word; hart0</description>
+          <addressOffset>0x4004</addressOffset>
         </register>
         <register>
-          <name>TIMECMP_HI</name>
-          <description>Time compare register - high</description>
-          <addressOffset>0x0C</addressOffset>
+          <name>MTIME_LOW</name>
+          <description>Machine timer low word</description>
+          <addressOffset>0xbff8</addressOffset>
+        </register>
+        <register>
+          <name>MTIME_HI</name>
+          <description>Machine timer high word</description>
+          <addressOffset>0xbffc</addressOffset>
         </register>
       </registers>
     </peripheral>
@@ -1771,7 +1776,7 @@
             <field><name>SYSINFO_SOC_IO_TWD</name><bitRange>[13:13]</bitRange><description>Two-wire device implemented</description></field>
             <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[14:14]</bitRange><description>Direct memory access controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[15:15]</bitRange><description>General purpose input/output port unit implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_MTIME</name><bitRange>[16:16]</bitRange><description>Machine system timer implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_CLINT</name><bitRange>[16:16]</bitRange><description>Core local interruptor implemented</description></field>
             <field><name>SYSINFO_SOC_IO_UART0</name><bitRange>[17:17]</bitRange><description>Primary universal asynchronous receiver/transmitter 0 implemented</description></field>
             <field><name>SYSINFO_SOC_IO_SPI</name><bitRange>[18:18]</bitRange><description>Serial peripheral interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_TWI</name><bitRange>[19:19]</bitRange><description>Two-wire interface implemented</description></field>
