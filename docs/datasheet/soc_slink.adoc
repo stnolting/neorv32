@@ -23,7 +23,7 @@
 |                         | `IO_SLINK_TX_FIFO`  | TX FIFO depth (1..32k), has to be a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 14 | RX SLINK IRQ (see <<_processor_interrupts>>)
 |                         | fast IRQ channel 15 | TX SLINK IRQ (see <<_processor_interrupts>>)
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

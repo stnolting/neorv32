@@ -15,7 +15,7 @@
 | Configuration generics: | `IO_SPI_EN`   | implement SPI controller when `true`
 |                         | `IO_SPI_FIFO` | FIFO depth, has to be a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 6 | configurable SPI interrupt (see <<_processor_interrupts>>)
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

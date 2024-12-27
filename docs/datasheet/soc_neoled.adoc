@@ -12,7 +12,7 @@
 | Configuration generics: | `IO_NEOLED_EN`      | implement NEOLED controller when `true`
 |                         | `IO_NEOLED_TX_FIFO` | TX FIFO depth, has to be a power of 2, min 1
 | CPU interrupts:         | fast IRQ channel 9  | configurable NEOLED data FIFO interrupt (see <<_processor_interrupts>>)
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

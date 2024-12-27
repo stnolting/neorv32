@@ -11,7 +11,7 @@
 | Top entity ports:       | none |
 | Configuration generics: | `IO_WDT_EN` | implement watchdog when `true`
 | CPU interrupts:         | none |
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

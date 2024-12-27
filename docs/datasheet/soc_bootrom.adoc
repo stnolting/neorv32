@@ -11,7 +11,7 @@
 | Top entity ports:       | none                         |
 | Configuration generics: | `BOOT_MODE_SELECT`           | implement BOOTROM when `BOOT_MODE_SELECT` = 0; see <<_boot_configuration>>
 | CPU interrupts:         | none                         |
-| Access restrictions:  2+| privileged access only, read-only
+| Access restrictions:  2+| read-only
 |=======================
 
 
