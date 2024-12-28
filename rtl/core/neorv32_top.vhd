@@ -1685,14 +1685,14 @@ begin
       AUTHENTICATOR => OCD_AUTHENTICATION
     )
     port map (
-      clk_i          => clk_i,
-      rstn_i         => rstn_ext,
-      dmi_req_i      => dmi_req,
-      dmi_rsp_o      => dmi_rsp,
-      bus_req_i      => iodev_req(IODEV_OCD),
-      bus_rsp_o      => iodev_rsp(IODEV_OCD),
-      cpu_ndmrstn_o  => dci_ndmrstn,
-      cpu_halt_req_o => dci_haltreq
+      clk_i         => clk_i,
+      rstn_i        => rstn_ext,
+      dmi_req_i     => dmi_req,
+      dmi_rsp_o     => dmi_rsp,
+      bus_req_i     => iodev_req(IODEV_OCD),
+      bus_rsp_o     => iodev_rsp(IODEV_OCD),
+      ndmrstn_o     => dci_ndmrstn,
+      halt_req_o(0) => dci_haltreq
     );
 
   end generate;
