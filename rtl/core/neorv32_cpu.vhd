@@ -71,8 +71,6 @@ entity neorv32_cpu is
     -- global control --
     clk_i      : in  std_ulogic; -- switchable global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
-    sleep_o    : out std_ulogic; -- cpu is in sleep mode when set
-    debug_o    : out std_ulogic; -- cpu is in debug mode when set
     -- interrupts --
     msi_i      : in  std_ulogic; -- risc-v machine software interrupt
     mei_i      : in  std_ulogic; -- risc-v machine external interrupt
@@ -289,10 +287,6 @@ begin
 
   -- external CSR read-back --
   xcsr_rdata_res <= xcsr_rdata_pmp or xcsr_rdata_alu;
-
-  -- CPU state --
-  sleep_o <= ctrl.cpu_sleep;
-  debug_o <= ctrl.cpu_debug;
 
 
   -- Register File --------------------------------------------------------------------------

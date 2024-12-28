@@ -106,7 +106,9 @@ begin
   end process mem_do_reg;
 
   dbus_req_o.src   <= '0'; -- 0 = data access
-  dbus_req_o.fence <= ctrl_i.lsu_fence; -- this is valid without STB being set
+  dbus_req_o.fence <= ctrl_i.lsu_fence; -- out-of-band: this is valid without STB being set
+  dbus_req_o.sleep <= ctrl_i.cpu_sleep; -- out-of-band: this is valid without STB being set
+  dbus_req_o.debug <= ctrl_i.cpu_debug; -- out-of-band: this is valid without STB being set
 
 
   -- Data Input: Alignment and Sign-Extension -----------------------------------------------

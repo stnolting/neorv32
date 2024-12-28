@@ -68,8 +68,6 @@ direction as seen from the CPU.
 4+^| **Global Signals**
 | `clk_i`      |           1 | in  | Global clock line, all registers triggering on rising edge.
 | `rstn_i`     |           1 | in  | Global reset, low-active.
-| `sleep_o`    |           1 | out | CPU is in <<_sleep_mode>> when set.
-| `debug_o`    |           1 | out | CPU is in <<_cpu_debug_mode,debug mode>> when set.
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
 | `msi_i`      |           1 | in  | RISC-V machine software interrupt.
 | `mei_i`      |           1 | in  | RISC-V machine external interrupt.
@@ -342,7 +340,7 @@ The `wfi` instruction will raise an illegal instruction exception when executed 
 if `TW` in <<_mstatus>> is set. When executed in debug-mode or during single-stepping `wfi` will behave as
 simple `nop` without entering sleep mode.
 
-After executing the `wfi` instruction the CPU's `sleep_o` signal (<<_cpu_top_entity_signals>>) will become set
+After executing the `wfi` instruction the `sleep` signal of the CPU's request buses (<<_bus_interface>> will become set
 as soon as the CPU has fully halted:
 
 [start=1]
@@ -393,15 +391,22 @@ the instruction fetch interface (`i_bus_*` signals) is used for fetching instruc
 (`d_bus_*` signals) is used to access data via load and store operations. Each of these interfaces can access an address
 space of up to 2^32^ bytes (4GB).
 
-The bus interface uses two custom interface types: `bus_req_t` is used to propagate the bus access **requests**. These
-signals are driven by the _accessing_ device (i.e. the CPU core). `bus_rsp_t` is used to return the bus **response** and
-is driven by the _accessed_ device or bus system (i.e. a processor-internal memory or IO device).
+The bus interface uses two custom interface types: `bus_req_t` is used to propagate the bus access requests downstream
+from a host to a device. These signals are driven by the request-issuing device (i.e. the CPU core). Vice versa, `bus_rsp_t`
+is used to return the bus response upstream from a device back to the host and is driven by the accessed device or bus system
+(i.e. a processor-internal memory or IO device).
+
+The signals of the request bus are split in to two categories: _in-band_ signals and _out-of-band_ signals. In-band
+signals always belong to a certain bus transaction and are only valid between `stb` being set and the according response
+(`err` or `ack`). being set. In contrast, the out-of-band signals are not associated with any bus transaction and are
+always valid when set.
 
 .Bus Interface - Request Bus (`bus_req_t`)
 [cols="^1,^1,<6"]
 [options="header",grid="rows"]
 |=======================
 | Signal  | Width | Description
+3+^| **In-Band Signals**
 | `addr`  |    32 | Access address (byte addressing)
 | `data`  |    32 | Write data
 | `ben`   |     4 | Byte-enable for each byte in `data`
@@ -410,7 +415,10 @@ is driven by the _accessed_ device or bus system (i.e. a processor-internal memo
 | `src`   |     1 | Access source (`0` = instruction fetch, `1` = load/store)
 | `priv`  |     1 | Set if privileged (M-mode) access
 | `rvso`  |     1 | Set if current access is a reservation-set operation (`lr` or `sc` instruction, <<_zalrsc_isa_extension>>)
-| `fence` |     1 | Data/instruction fence operation; valid without `stb` being set
+3+^| **Out-Of-Band Signals**
+| `fence` |     1 | Data/instruction fence request; single-shot
+| `sleep` |     1 | Set if ALL upstream devices are in <<_sleep_mode>>
+| `debug` |     1 | Set if the upstream device is in debug-mode
 |=======================
 
 .Bus Interface - Response Bus (`bus_rsp_t`)
@@ -444,7 +452,7 @@ The figure below shows three exemplary bus accesses:
 . A write access to address `B_addr` writing `wdata` (fastest response; `ACK` arrives right in the next cycle).
 . A failing read access to address `C_addr` (slow response; `ERR` arrives after several cycles).
 
-.Three Exemplary Bus Transactions
+.Three Exemplary Bus Transactions (showing only in-band signals)
 image::bus_interface.png[700]
 
 .Adding Register Stages
@@ -478,7 +486,7 @@ and also registers a reservation for the address `addr` (`rvs_valid` becomes set
 invalidated (`rvs_valid` is `0`) the store access fails, so `wdata2` is **not** written to address `addr` at all. The failed
 operation is indicated by a **1** being returned via `rsp.data` together with `ack`.
 
-.Three Exemplary LR/SC Bus Transactions
+.Three Exemplary LR/SC Bus Transactions (showing only in-band signals)
 image::bus_interface_atomic.png[700]
 
 .Store-Conditional Status

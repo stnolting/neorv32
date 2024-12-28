@@ -19,14 +19,15 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_switch is
   generic (
-    PORT_A_READ_ONLY : boolean; -- set if port A is read-only
-    PORT_B_READ_ONLY : boolean  -- set if port B is read-only
+    ROUND_ROBIN_EN   : boolean := false; -- enable round-robing scheduling
+    PORT_A_READ_ONLY : boolean := false; -- set if port A is read-only
+    PORT_B_READ_ONLY : boolean := false  -- set if port B is read-only
   );
   port (
     clk_i    : in  std_ulogic; -- global clock, rising edge
     rstn_i   : in  std_ulogic; -- global reset, low-active, async
     a_lock_i : in  std_ulogic; -- exclusive access for port A while set
-    a_req_i  : in  bus_req_t;  -- host port A request bus (PRIORITIZED)
+    a_req_i  : in  bus_req_t;  -- host port A request bus
     a_rsp_o  : out bus_rsp_t;  -- host port A response bus
     b_req_i  : in  bus_req_t;  -- host port B request bus
     b_rsp_o  : out bus_rsp_t;  -- host port B response bus
@@ -38,17 +39,10 @@ end neorv32_bus_switch;
 architecture neorv32_bus_switch_rtl of neorv32_bus_switch is
 
   -- access arbiter --
-  type arbiter_t is record
-    state, state_nxt : std_ulogic_vector(1 downto 0);
-    a_req, b_req     : std_ulogic;
-    sel,   stb       : std_ulogic;
-  end record;
-  signal arbiter : arbiter_t;
-
-  -- FSM states --
-  constant IDLE   : std_ulogic_vector(1 downto 0) := "00";
-  constant BUSY_A : std_ulogic_vector(1 downto 0) := "01";
-  constant BUSY_B : std_ulogic_vector(1 downto 0) := "10";
+  type state_t is (S_CHECK_A, S_BUSY_A, S_CHECK_B, S_BUSY_B);
+  signal state, state_nxt : state_t;
+  signal a_req, b_req     : std_ulogic;
+  signal sel,   stb       : std_ulogic;
 
 begin
 
@@ -57,86 +51,158 @@ begin
   arbiter_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      arbiter.state <= IDLE;
-      arbiter.a_req <= '0';
-      arbiter.b_req <= '0';
+      state <= S_CHECK_A;
+      a_req <= '0';
+      b_req <= '0';
     elsif rising_edge(clk_i) then
-      arbiter.state <= arbiter.state_nxt;
-      arbiter.a_req <= (arbiter.a_req or a_req_i.stb) and (not arbiter.state(0)); -- clear STB buffer in BUSY_A
-      arbiter.b_req <= (arbiter.b_req or b_req_i.stb) and (not arbiter.state(1)); -- clear STB buffer in BUSY_B
+      state <= state_nxt;
+      if (state = S_BUSY_A) then -- clear request
+        a_req <= '0';
+      else -- buffer request
+        a_req <= a_req or a_req_i.stb;
+      end if;
+      if (state = S_BUSY_B) then -- clear request
+        b_req <= '0';
+      else -- buffer request
+        b_req <= b_req or b_req_i.stb;
+      end if;
     end if;
   end process arbiter_sync;
 
-  -- fsm --
-  arbiter_comb: process(arbiter, a_lock_i, a_req_i, b_req_i, x_rsp_i)
-  begin
-    -- defaults --
-    arbiter.state_nxt <= arbiter.state;
-    arbiter.sel       <= '0';
-    arbiter.stb       <= '0';
 
-    -- state machine --
-    case arbiter.state is
+  -- Prioritizing Bus Switch ----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  arbiter_prioritized:
+  if not ROUND_ROBIN_EN generate
+    arbiter_fsm: process(state, a_req, b_req, a_lock_i, a_req_i, b_req_i, x_rsp_i)
+    begin
+      -- defaults --
+      state_nxt <= state;
+      sel       <= '0';
+      stb       <= '0';
 
-      when BUSY_A => -- port A access in progress
-      -- ------------------------------------------------------------
-        arbiter.sel <= '0';
-        if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
-          arbiter.state_nxt <= IDLE;
-        end if;
+      -- state machine --
+      case state is
 
-      when BUSY_B => -- port B access in progress
-      -- ------------------------------------------------------------
-        arbiter.sel <= '1';
-        if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
-          arbiter.state_nxt <= IDLE;
-        end if;
+        when S_BUSY_A => -- port A access in progress
+        -- ------------------------------------------------------------
+          sel <= '0';
+          if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
+            state_nxt <= S_CHECK_A;
+          end if;
 
-      when others => -- IDLE: wait for requests
-      -- ------------------------------------------------------------
-        if (a_req_i.stb = '1') or (arbiter.a_req = '1') then -- request from port A (prioritized)?
-          arbiter.sel       <= '0';
-          arbiter.stb       <= '1';
-          arbiter.state_nxt <= BUSY_A;
-        elsif ((b_req_i.stb = '1') or (arbiter.b_req = '1')) and (a_lock_i = '0') then -- request from port B?
-          arbiter.sel       <= '1';
-          arbiter.stb       <= '1';
-          arbiter.state_nxt <= BUSY_B;
-        end if;
+        when S_BUSY_B => -- port B access in progress
+        -- ------------------------------------------------------------
+          sel <= '1';
+          if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
+            state_nxt <= S_CHECK_A;
+          end if;
 
-    end case;
-  end process arbiter_comb;
+        when others => -- wait for requests
+        -- ------------------------------------------------------------
+          if (a_req_i.stb = '1') or (a_req = '1') then -- request from port A (prioritized)?
+            sel       <= '0';
+            stb       <= '1';
+            state_nxt <= S_BUSY_A;
+          elsif ((b_req_i.stb = '1') or (b_req = '1')) and (a_lock_i = '0') then -- request from port B?
+            sel       <= '1';
+            stb       <= '1';
+            state_nxt <= S_BUSY_B;
+          end if;
+
+      end case;
+    end process arbiter_fsm;
+  end generate;
+
+
+  -- Round-Robin Arbiter --------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  arbiter_round_robin:
+  if ROUND_ROBIN_EN generate
+    arbiter_fsm: process(state, a_req, b_req, a_req_i, b_req_i, x_rsp_i)
+    begin
+      -- defaults --
+      state_nxt <= state;
+      sel       <= '0';
+      stb       <= '0';
+
+      -- state machine --
+      case state is
+
+        when S_CHECK_A => -- check if access from port A
+        -- ------------------------------------------------------------
+          sel <= '0';
+          if (a_req_i.stb = '1') or (a_req = '1') then
+            stb       <= '1';
+            state_nxt <= S_BUSY_A;
+          else
+            state_nxt <= S_CHECK_B;
+          end if;
+
+        when S_BUSY_A => -- port B access in progress
+        -- ------------------------------------------------------------
+          sel <= '0';
+          if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
+            state_nxt <= S_CHECK_B;
+          end if;
+
+        when S_CHECK_B => -- check if access from port B
+        -- ------------------------------------------------------------
+          sel <= '1';
+          if (b_req_i.stb = '1') or (b_req = '1') then
+            stb       <= '1';
+            state_nxt <= S_BUSY_B;
+          else
+            state_nxt <= S_CHECK_A;
+          end if;
+
+        when S_BUSY_B => -- port B access in progress
+        -- ------------------------------------------------------------
+          sel <= '1';
+          if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
+            state_nxt <= S_CHECK_A;
+          end if;
+
+        when others => -- undefined
+        -- ------------------------------------------------------------
+          state_nxt <= S_CHECK_A;
+
+      end case;
+    end process arbiter_fsm;
+  end generate;
 
 
   -- Request Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  x_req_o.addr  <= a_req_i.addr when (arbiter.sel = '0') else b_req_i.addr;
-  x_req_o.rvso  <= a_req_i.rvso when (arbiter.sel = '0') else b_req_i.rvso;
-  x_req_o.priv  <= a_req_i.priv when (arbiter.sel = '0') else b_req_i.priv;
-  x_req_o.src   <= a_req_i.src  when (arbiter.sel = '0') else b_req_i.src;
-  x_req_o.rw    <= a_req_i.rw   when (arbiter.sel = '0') else b_req_i.rw;
-  x_req_o.fence <= a_req_i.fence or b_req_i.fence; -- propagate any fence operations
+  x_req_o.addr  <= a_req_i.addr  when (sel = '0') else b_req_i.addr;
+  x_req_o.rvso  <= a_req_i.rvso  when (sel = '0') else b_req_i.rvso;
+  x_req_o.priv  <= a_req_i.priv  when (sel = '0') else b_req_i.priv;
+  x_req_o.src   <= a_req_i.src   when (sel = '0') else b_req_i.src;
+  x_req_o.rw    <= a_req_i.rw    when (sel = '0') else b_req_i.rw;
+  x_req_o.fence <= a_req_i.fence or  b_req_i.fence; -- propagate any fence request
+  x_req_o.sleep <= a_req_i.sleep and b_req_i.sleep; -- set if ALL upstream devices are in sleep mode
+  x_req_o.debug <= a_req_i.debug when (sel = '0') else b_req_i.debug;
 
-  x_req_o.data  <= b_req_i.data when PORT_A_READ_ONLY    else
-                   a_req_i.data when PORT_B_READ_ONLY    else
-                   a_req_i.data when (arbiter.sel = '0') else b_req_i.data;
+  x_req_o.data  <= b_req_i.data  when PORT_A_READ_ONLY    else
+                   a_req_i.data  when PORT_B_READ_ONLY    else
+                   a_req_i.data  when (sel = '0') else b_req_i.data;
 
-  x_req_o.ben   <= b_req_i.ben  when PORT_A_READ_ONLY    else
-                   a_req_i.ben  when PORT_B_READ_ONLY    else
-                   a_req_i.ben  when (arbiter.sel = '0') else b_req_i.ben;
+  x_req_o.ben   <= b_req_i.ben   when PORT_A_READ_ONLY    else
+                   a_req_i.ben   when PORT_B_READ_ONLY    else
+                   a_req_i.ben   when (sel = '0') else b_req_i.ben;
 
-  x_req_o.stb   <= arbiter.stb;
+  x_req_o.stb   <= stb;
 
 
   -- Response Switch ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   a_rsp_o.data <= x_rsp_i.data;
-  a_rsp_o.ack  <= x_rsp_i.ack when (arbiter.sel = '0') else '0';
-  a_rsp_o.err  <= x_rsp_i.err when (arbiter.sel = '0') else '0';
+  a_rsp_o.ack  <= x_rsp_i.ack when (sel = '0') else '0';
+  a_rsp_o.err  <= x_rsp_i.err when (sel = '0') else '0';
 
   b_rsp_o.data <= x_rsp_i.data;
-  b_rsp_o.ack  <= x_rsp_i.ack when (arbiter.sel = '1') else '0';
-  b_rsp_o.err  <= x_rsp_i.err when (arbiter.sel = '1') else '0';
+  b_rsp_o.ack  <= x_rsp_i.ack when (sel = '1') else '0';
+  b_rsp_o.err  <= x_rsp_i.err when (sel = '1') else '0';
 
 
 end neorv32_bus_switch_rtl;
@@ -703,10 +769,10 @@ entity neorv32_bus_reservation_set is
     rvs_addr_o  : out std_ulogic_vector(31 downto 0);
     rvs_valid_o : out std_ulogic;
     rvs_clear_i : in  std_ulogic;
-    -- core/cpu port --
+    -- core port --
     core_req_i  : in  bus_req_t;
     core_rsp_o  : out bus_rsp_t;
-    -- system ports --
+    -- system port --
     sys_req_o   : out bus_req_t;
     sys_rsp_i   : in  bus_rsp_t
   );
