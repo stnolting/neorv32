@@ -526,18 +526,18 @@ All four status register provide a write mode. Writing the hart ID to the first 
 [options="header",grid="rows"]
 |=======================
 | Offset  | R/W | Bits  | Description
-.9+| 0 .8+| r/- |     0 | Hart 0: RESUME request
-                |     1 | Hart 0: EXECUTE request
-                |     8 | Hart 1: RESUME request
-                |     9 | Hart 1: EXECUTE request
-                |    16 | Hart 2: RESUME request
-                |    17 | Hart 2: EXECUTE request
-                |    24 | Hart 3: RESUME request
-                |    25 | Hart 3: EXECUTE request
-          | -/w |   1:0 | Write hart ID (0..3) to acknowledge HALT
-|       4 | -/w |   1:0 | Write hart ID (0..3) to acknowledge RESUME
-|       8 | -/w |   1:0 | Write hart ID (0..3) to acknowledge EXECUTE
-|      12 | -/w |     - | Write any value to acknowledge EXCEPTION
+.9+| 0 .8+| r/- |     0 <| Hart 0: RESUME request
+                |     1 <| Hart 0: EXECUTE request
+                |     8 <| Hart 1: RESUME request
+                |     9 <| Hart 1: EXECUTE request
+                |    16 <| Hart 2: RESUME request
+                |    17 <| Hart 2: EXECUTE request
+                |    24 <| Hart 3: RESUME request
+                |    25 <| Hart 3: EXECUTE request
+          | -/w |   1:0 <| Write hart ID (0..3) to acknowledge HALT
+|       4 | -/w |   1:0 <| Write hart ID (0..3) to acknowledge RESUME
+|       8 | -/w |   1:0 <| Write hart ID (0..3) to acknowledge EXECUTE
+|      12 | -/w |     - <| Write any value to acknowledge EXCEPTION
 |=======================
 
 
