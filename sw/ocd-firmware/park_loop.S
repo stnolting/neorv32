@@ -16,7 +16,7 @@
 .option norvc
 .global _ocd_start
 .global entry_exception
-.global entry_normal
+.global entry_park
 
 // debug module (DM) address map
 .equ DM_CODE_BASE, 0xFFFFFE00 // base address of code ROM (park loop)
@@ -40,11 +40,11 @@ _ocd_start:
 entry_exception:
   sw      zero, (DM_SREG_BASE+ACK_EXC)(zero)  // send exception-acknowledge (no need for a hart ID)
   csrr    x8, dscratch0                       // restore x8 from dscratch0 (might be changed during PBUF execution)
-  ebreak                                      // re-enter debug mode (at "entry_normal" entry point)
-  nop
+  ebreak                                      // re-enter debug mode (at "entry_park" entry point)
+  nop                                         // dummy to align the address of "entry_park"
 
-// BASE + 16: normal entry - ebreak in debug-mode, halt request or return from single-stepped instruction
-entry_normal:
+// BASE + 16: normal entry - halt CPU: ebreak in debug-mode, halt request or return from single-stepped instruction
+entry_park:
   csrw    dscratch0, x8                       // backup x8 to dscratch0 so we have a GPR available
   csrr    x8, mhartid                         // get hart ID (0..3)
   sw      x8, (DM_SREG_BASE+ACK_HLT)(zero)    // send halt-acknowledge
@@ -68,7 +68,7 @@ resume:
   csrr    x8, dscratch0                       // restore x8 from dscratch0
   dret                                        // exit debug mode
 
-// execute program buffer (implicit ebreak at the end of the buffer will bring us back to 'entry_normal')
+// execute program buffer (implicit ebreak at the end of the buffer will bring us back to "entry_park")
 execute:
   csrr    x8, mhartid                         // get hart ID (0..3)
   sw      x8, (DM_SREG_BASE+ACK_EXE)(zero)    // send execute-acknowledge
