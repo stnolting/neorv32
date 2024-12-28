@@ -1,6 +1,8 @@
 // ================================================================================ //
 // NEORV32 CPU - park_loop.S - Execution-Based On-Chip Debugger (OCD) Firmware      //
 // -------------------------------------------------------------------------------- //
+// WARNING! This code only supports up to 4 harts!                                  //
+// -------------------------------------------------------------------------------- //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
 // Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
@@ -8,60 +10,79 @@
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
 
-// debug module (DM) address map
-.equ DM_CODE_BASE, 0xffffff00 // base address of debug_module's code ROM (park loop)
-.equ DM_PBUF_BASE, 0xffffff40 // base address of debug_module's program buffer (PBUF)
-.equ DM_DATA_BASE, 0xffffff80 // base address of debug_module's abstract data buffer (DATA)
-.equ DM_SREG_BASE, 0xffffffC0 // base address of debug_module's status register
-
-// status register (SREG) byte(!) offsets
-.equ SREG_HLT_ACK, ( 0 / 8) // -/w: CPU has halted in debug mode and is waiting in park loop
-.equ SREG_RES_REQ, ( 8 / 8) // r/-: DM requests to resume
-.equ SREG_RES_ACK, ( 8 / 8) // -/w: CPU starts to resume
-.equ SREG_EXE_REQ, (16 / 8) // r/-: DM requests to execute program buffer
-.equ SREG_EXE_ACK, (16 / 8) // -/w: CPU starts to execute program buffer
-.equ SREG_EXC_ACK, (24 / 8) // -/w: CPU has detected an exception while in debug-mode
-
 .file	"park_loop.S"
 .section .text.ocd
 .balign 4
 .option norvc
-.global __start
+.global _ocd_start
 .global entry_exception
 .global entry_normal
 
-__start:
+// debug module (DM) address map
+.equ DM_CODE_BASE, 0xFFFFFE00 // base address of code ROM (park loop)
+.equ DM_PBUF_BASE, 0xFFFFFE80 // base address of program buffer
+.equ DM_DATA_BASE, 0xFFFFFF00 // base address of abstract data buffer
+.equ DM_SREG_BASE, 0xFFFFFF80 // base address of status register(s)
 
-// BASE + 0: exception entry - signal EXCEPTION condition to DM and restart parking loop
+// Request register (DM_SREG_BASE read-access) byte-field bits
+.equ REQ_RES, 0 // r/-: DM requests to resume
+.equ REQ_EXE, 1 // r/-: DM requests to execute program buffer
+
+// Acknowledge register (DM_SREG_BASE write-access) address offsets
+.equ ACK_HLT, 0x0 // -/w: CPU has halted in debug mode and is waiting in park loop
+.equ ACK_RES, 0x4 // -/w: CPU starts to resume
+.equ ACK_EXE, 0x8 // -/w: CPU starts to execute program buffer
+.equ ACK_EXC, 0xC // -/w: CPU has detected an exception while in debug-mode
+
+_ocd_start:
+
+// BASE + 0: exception entry - exeption during program buffer execution
 entry_exception:
-  sb      zero, (DM_SREG_BASE+SREG_EXC_ACK)(zero) // trigger exception-acknowledge to inform DM
-  ebreak                                          // re-enter debug mode (at "entry_normal" entry point)
+  sw      zero, (DM_SREG_BASE+ACK_EXC)(zero)  // send exception-acknowledge (no need for a hart ID)
+  csrr    x8, dscratch0                       // restore x8 from dscratch0 (might be changed during PBUF execution)
+  ebreak                                      // re-enter debug mode (at "entry_normal" entry point)
+  nop
 
-// BASE + 8: normal entry - ebreak in debug-mode, halt request or return from single-stepped instruction
+// BASE + 16: normal entry - ebreak in debug-mode, halt request or return from single-stepped instruction
 entry_normal:
-  csrw    dscratch0, x8                           // backup x8 to dscratch0 so we have a GPR available
+  csrw    dscratch0, x8                       // backup x8 to dscratch0 so we have a GPR available
+  csrr    x8, mhartid                         // get hart ID (0..3)
+  sw      x8, (DM_SREG_BASE+ACK_HLT)(zero)    // send halt-acknowledge
 
 // polling loop - waiting for requests
 park_loop:
-  sb      zero, (DM_SREG_BASE+SREG_HLT_ACK)(zero) // ACK that CPU is halted
-  lbu     x8,   (DM_SREG_BASE+SREG_EXE_REQ)(zero) // request to execute program buffer?
-  bnez    x8,   execute
-  lbu     x8,   (DM_SREG_BASE+SREG_RES_REQ)(zero) // request to resume?
-  beqz    x8,   park_loop
+  csrr    x8, mhartid                         // get hart ID (0..3)
+  lbu     x8, DM_SREG_BASE(x8)                // read hart-specific byte from request register
+  andi    x8, x8, 1 << REQ_EXE                // execute-request bit set?
+  bnez    x8, execute
+
+  csrr    x8, mhartid                         // get hart ID (0..3)
+  lbu     x8, DM_SREG_BASE(x8)                // read hart-specific byte from request register
+  andi    x8, x8, 1 << REQ_RES                // resume-request bit set?
+  beqz    x8, park_loop
 
 // resume normal operation
 resume:
-  sb      zero, (DM_SREG_BASE+SREG_RES_ACK)(zero) // ACK that CPU is about to resume
-  csrr    x8,   dscratch0                         // restore x8 from dscratch0
-  dret                                            // exit debug mode
+  csrr    x8, mhartid                         // get hart ID (0..3)
+  sw      x8, (DM_SREG_BASE+ACK_RES)(zero)    // send resume-acknowledge
+  csrr    x8, dscratch0                       // restore x8 from dscratch0
+  dret                                        // exit debug mode
 
-// execute program buffer
+// execute program buffer (implicit ebreak at the end of the buffer will bring us back to 'entry_normal')
 execute:
-  sb      zero, (DM_SREG_BASE+SREG_EXE_ACK)(zero) // ACK that execution is about to start
-  csrr    x8,   dscratch0                         // restore x8 from dscratch0
-  fence.i                                         // synchronize instruction fetch with memory (PBUF)
-  jalr    zero, zero, %lo(DM_PBUF_BASE)           // jump to beginning of program buffer (PBUF)
+  csrr    x8, mhartid                         // get hart ID (0..3)
+  sw      x8, (DM_SREG_BASE+ACK_EXE)(zero)    // send execute-acknowledge
+  csrr    x8, dscratch0                       // restore x8 from dscratch0
+  fence.i                                     // synchronize instruction fetch with memory (PBUF)
+  jalr    zero, zero, %lo(DM_PBUF_BASE)       // jump to beginning of program buffer (PBUF)
 
 // fill remaining ROM space with instructions that cause a debug-mode-internal exception
-unused:
-  ecall                                           // should never be reached
+unused: // should never be reached
+  ecall
+  ecall
+  ecall
+  ecall
+  ecall
+  ecall
+  ecall
+  ecall
