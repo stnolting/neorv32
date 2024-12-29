@@ -399,6 +399,8 @@ void neorv32_rte_print_hw_config(void) {
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) { neorv32_uart0_printf("yes\n"); }
   else { neorv32_uart0_printf("no\n"); }
 
+  neorv32_uart0_printf("CPU cores (harts):   %u\n", (uint32_t)NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART]);
+
   neorv32_uart0_printf("Clock speed:         %u Hz\n", neorv32_sysinfo_get_clk());
 
   neorv32_uart0_printf("Clock gating:        ");
@@ -527,7 +529,7 @@ void neorv32_rte_print_hw_config(void) {
   }
 
   neorv32_uart0_printf("\nBoot configuration:  ");
-  int boot_config = (int)(NEORV32_SYSINFO->MEM[SYSINFO_MEM_BOOT]);
+  int boot_config = (int)(NEORV32_SYSINFO->MISC[SYSINFO_MISC_BOOT]);
   switch (boot_config) {
     case 0:  neorv32_uart0_printf("boot via bootloader (0)\n"); break;
     case 1:  neorv32_uart0_printf("boot from custom address (1)\n"); break;
@@ -538,7 +540,7 @@ void neorv32_rte_print_hw_config(void) {
   // internal IMEM
   neorv32_uart0_printf("Internal IMEM:       ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_IMEM)) {
-    neorv32_uart0_printf("%u bytes\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_IMEM]) & 0xFFFFFFFCUL);
+    neorv32_uart0_printf("%u bytes\n", (uint32_t)(1 << NEORV32_SYSINFO->MISC[SYSINFO_MISC_IMEM]) & 0xFFFFFFFCUL);
   }
   else {
     neorv32_uart0_printf("none\n");
@@ -547,7 +549,7 @@ void neorv32_rte_print_hw_config(void) {
   // internal DMEM
   neorv32_uart0_printf("Internal DMEM:       ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) {
-    neorv32_uart0_printf("%u bytes\n", (uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_DMEM]) & 0xFFFFFFFCUL);
+    neorv32_uart0_printf("%u bytes\n", (uint32_t)(1 << NEORV32_SYSINFO->MISC[SYSINFO_MISC_DMEM]) & 0xFFFFFFFCUL);
   }
   else {
     neorv32_uart0_printf("none\n");

@@ -1593,6 +1593,7 @@ begin
     if io_sysinfo_en_c generate
       neorv32_sysinfo_inst: entity neorv32.neorv32_sysinfo
       generic map (
+        NUM_HARTS             => 1,
         CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
         BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
         INT_BOOTLOADER_EN     => bootrom_en_c,

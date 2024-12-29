@@ -251,10 +251,9 @@ begin
   region_gen:
   for r in 0 to NUM_REGIONS-1 generate
 
-    -- naturally-aligned address mask --
+    -- NAPOT address mask --
     nap_mode_enable:
     if NAP_EN generate
-
       -- compute address masks for NAPOT mode --
       addr_mask_napot(r)(pmp_lsb_c) <= '0';
       addr_mask_napot_gen:
@@ -275,8 +274,14 @@ begin
           end if;
         end if;
       end process addr_masking;
-
     end generate; -- /nap_mode_enable
+
+    -- NAPOT disabled --
+    nap_mode_disable:
+    if not NAP_EN generate
+      addr_mask_napot <= (others => (others => '0'));
+      addr_mask       <= (others => (others => '0'));
+    end generate;
 
 
     -- check region address match --

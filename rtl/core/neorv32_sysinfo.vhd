@@ -17,6 +17,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_sysinfo is
   generic (
+    NUM_HARTS             : natural; -- number of physical CPU cores
     CLOCK_FREQUENCY       : natural; -- clock frequency of clk_i in Hz
     BOOT_MODE_SELECT      : natural; -- boot configuration select (default = 0 = bootloader)
     INT_BOOTLOADER_EN     : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
@@ -106,7 +107,7 @@ begin
   -- SYSINFO(1): Misc --
   sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_IMEM_SIZE), 8)); -- log2(IMEM size)
   sysinfo(1)(15 downto 8)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_DMEM_SIZE), 8)); -- log2(DMEM size)
-  sysinfo(1)(23 downto 16) <= (others => '0'); -- reserved
+  sysinfo(1)(23 downto 16) <= std_ulogic_vector(to_unsigned(NUM_HARTS, 8)); -- number of physical CPU cores
   sysinfo(1)(31 downto 24) <= std_ulogic_vector(to_unsigned(BOOT_MODE_SELECT, 8)); -- boot configuration
 
   -- SYSINFO(2): SoC Configuration --
