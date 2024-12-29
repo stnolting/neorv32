@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - RISC-V-Compatible Authentication Module for the On-Chip Debugger   --
+-- NEORV32 OCD - RISC-V-Compatible Authentication Module for the On-Chip Debugger   --
 -- -------------------------------------------------------------------------------- --
 -- Note that this module (in its default state) just provides a very simple and     --
 -- UNSECURE authentication mechanism that is meant as an example to showcase the    --
@@ -39,7 +39,7 @@ end neorv32_debug_auth;
 
 architecture neorv32_debug_auth_rtl of neorv32_debug_auth is
 
-  signal authenticated : std_ulogic;
+  signal authenticated_q : std_ulogic;
 
 begin
 
@@ -53,12 +53,12 @@ begin
   dm_controller: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      authenticated <= '0';
+      authenticated_q <= '0';
     elsif rising_edge(clk_i) then
       if (enable_i = '0') then
-        authenticated <= '0'; -- clear authentication when disabled
+        authenticated_q <= '0'; -- clear authentication when disabled
       elsif (we_i = '1') then
-        authenticated <= wdata_i(0); -- just write a 1 to authenticate
+        authenticated_q <= wdata_i(0); -- just write a "1" to authenticate
       end if;
     end if;
   end process dm_controller;
@@ -67,7 +67,7 @@ begin
   busy_o <= '0'; -- this simple authenticator is always ready
 
   -- authentication passed --
-  valid_o <= authenticated;
+  valid_o <= authenticated_q;
 
   -- read data --
   rdata_o <= (others => '0'); -- there is nothing to read here
