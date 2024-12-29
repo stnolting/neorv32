@@ -1,8 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - Processor Bus Infrastructure: Prioritizing 2-to-1 Bus Switch       --
--- -------------------------------------------------------------------------------- --
--- Allows to access a single device bus X by two controller ports A and B.          --
--- Controller port A has priority over controller port B.                           --
+-- NEORV32 SoC - Processor Bus Infrastructure: 2-to-1 Bus Switch                    --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
