@@ -110,7 +110,7 @@ It compatible to the the AXI4 `ARPROT` and `AWPROT` signals.
 * `xbus_tag_o(2)` **I**: access is an **instruction** fetch when set; access is a data access when cleared
 
 
-**External Bus Cache (X-CACHE)**
+**External Bus Cache (XBUS-CACHE)**
 
 The XBUS interface provides an optional internal cache that can be used to buffer processor-external accesses.
 The x-cache is enabled via the `XBUS_CACHE_EN` generic. The total size of the cache is split into the number of
