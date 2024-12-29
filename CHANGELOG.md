@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 29.12.2024 | 1.10.8.3 | :bug: fix incorrect HPM counter sizes if `HPM_CNT_WIDTH = 64` | [#1128](https://github.com/stnolting/neorv32/pull/1128) |
 | 27.12.2024 | 1.10.8.2 | add out-of-band signals to internal request bus | [#1131](https://github.com/stnolting/neorv32/pull/1131) |
 | 27.12.2024 | 1.10.8.1 | :warning: replace MTIME by CLINT; :warning: remove `HART_ID` generic | [#1130](https://github.com/stnolting/neorv32/pull/1130) |
 | 26.12.2024 | [**:rocket:1.10.8**](https://github.com/stnolting/neorv32/releases/tag/v1.10.8) | **New release** | |
