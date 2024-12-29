@@ -121,13 +121,13 @@ Do **NOT** use the `((interrupt))` attribute for the application trap handler fu
 will place a `mret` instruction to the end of it making it impossible to return to the first-level
 trap handler of the RTE core, which will cause stack corruption.
 
-The following example shows how to install a custom handler (`custom_mtime_irq_handler`) for handling
-the RISC-V machine timer (MTIME) interrupt:
+The following example shows how to install a custom handler (`custom_timer_irq_handler`) for handling
+the RISC-V CLINT timer interrupt:
 
-.Installing a MTIME IRQ Handler
+.Installing a CLINT Timer IRQ Handler
 [source,c]
 ----
-neorv32_rte_handler_install(RTE_TRAP_MTI, custom_mtime_irq_handler);
+neorv32_rte_handler_install(RTE_TRAP_MTI, custom_timer_irq_handler);
 ----
 
 User-defined trap handlers can also be un-installed. This will remove the users trap handler from the RTE core
@@ -140,10 +140,10 @@ int neorv32_rte_handler_uninstall(uint8_t id);
 ----
 
 The argument `id` defines the identifier of the according trap that shall be un-installed. 
-The following example shows how to un-install the custom handler `custom_mtime_irq_handler` from the
-RISC-V machine timer (MTIME) interrupt:
+The following example shows how to un-install the custom handler `custom_timer_irq_handler` from the
+RISC-V CLINT timer interrupt:
 
-.Example: Removing the Custom MTIME IRQ Handler
+.Example: Removing the Custom CLINT Timer IRQ Handler
 [source,c]
 ----
 neorv32_rte_handler_uninstall(RTE_TRAP_MTI);

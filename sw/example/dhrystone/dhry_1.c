@@ -195,7 +195,7 @@ int main (void)
 */
 
   { /* *****  NEORV32-SPECIFIC ***** */
-    Begin_Time = (long)neorv32_mtime_get_time();
+    Begin_Time = (long)neorv32_clint_time_get();
   } /* ***** /NEORV32-SPECIFIC ***** */
 
   for (Run_Index = 1; Run_Index <= Number_Of_Runs; ++Run_Index)
@@ -262,7 +262,7 @@ int main (void)
 */
 
   { /* *****  NEORV32-SPECIFIC ***** */
-    End_Time = (long)neorv32_mtime_get_time();
+    End_Time = (long)neorv32_clint_time_get();
   } /* ***** /NEORV32-SPECIFIC ***** */
 
 

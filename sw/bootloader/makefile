@@ -13,7 +13,7 @@ EFFORT = -Os
 # Enable link-time-optimization
 USER_FLAGS += \
 -Wl,--defsym,__neorv32_rom_size=4k \
--Wl,--defsym,__neorv32_rom_base=0xFFFFC000 \
+-Wl,--defsym,__neorv32_rom_base=0xFFE00000 \
 -Wl,--defsym,__neorv32_ram_size=256 \
 -DMAKE_BOOTLOADER \
 -flto

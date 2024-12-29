@@ -12,7 +12,7 @@
 |                         | `gpio_i` | 64-bit parallel input port
 | Configuration generics: | `IO_GPIO_NUM` | number of input/output pairs to implement (0..64)
 | CPU interrupts:         | none |
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 
@@ -41,8 +41,8 @@ be performed within a single clock cycle.
 [options="header",grid="rows"]
 |=======================
 | Address      | Name [C]    | Bit(s) | R/W | Function
-| `0xfffffc00` | `INPUT[0]`  | 31:0   | r/- | parallel input port pins 31:0
-| `0xfffffc04` | `INPUT[1]`  | 31:0   | r/- | parallel input port pins 63:32
-| `0xfffffc08` | `OUTPUT[0]` | 31:0   | r/w | parallel output port pins 31:0
-| `0xfffffc0c` | `OUTPUT[1]` | 31:0   | r/w | parallel output port pins 63:32
+| `0xfffc0000` | `INPUT[0]`  | 31:0   | r/- | parallel input port pins 31:0
+| `0xfffc0004` | `INPUT[1]`  | 31:0   | r/- | parallel input port pins 63:32
+| `0xfffc0008` | `OUTPUT[0]` | 31:0   | r/w | parallel output port pins 31:0
+| `0xfffc000c` | `OUTPUT[1]` | 31:0   | r/w | parallel output port pins 63:32
 |=======================

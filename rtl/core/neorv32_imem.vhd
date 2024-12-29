@@ -38,8 +38,7 @@ architecture neorv32_imem_rtl of neorv32_imem is
   constant alt_style_c : boolean := false; -- [TIP] enable this if synthesis fails to infer block RAM
 
   -- ROM - initialized with executable code --
-  constant imem_app_size_c : natural := (application_init_image'length)*4; -- application (image) size in bytes
-  constant mem_rom_c : mem32_t(0 to IMEM_SIZE/4-1) := mem32_init_f(application_init_image, IMEM_SIZE/4);
+  constant mem_rom_c : mem32_t(0 to IMEM_SIZE/4-1) := mem32_init_f(application_init_image_c, IMEM_SIZE/4);
 
   -- local signals --
   signal rdata         : std_ulogic_vector(31 downto 0);
@@ -60,8 +59,8 @@ begin
     "[NEORV32] Implementing processor-internal IMEM as " &
     cond_sel_string_f(IMEM_INIT, "pre-initialized ROM.", "blank RAM.") severity note;
 
-  assert not ((IMEM_INIT = true) and (imem_app_size_c > IMEM_SIZE)) report
-    "[NEORV32] Application image (" & natural'image(imem_app_size_c) &
+  assert not ((IMEM_INIT = true) and (application_init_size_c > IMEM_SIZE)) report
+    "[NEORV32] Application image (" & natural'image(application_init_size_c) &
     " bytes) does not fit into processor-internal IMEM (" &
     natural'image(IMEM_SIZE) & " bytes)!" severity error;
 

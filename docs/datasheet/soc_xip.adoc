@@ -18,7 +18,7 @@
 |                         | `XIP_CACHE_NUM_BLOCKS` | number of blocks in XIP cache; has to be a power of two
 |                         | `XIP_CACHE_BLOCK_SIZE` | number of bytes per XIP cache block; has to be a power of two, min 4
 | CPU interrupts:         | none                   |
-| Access restrictions:  2+| control registers: privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| control registers: non-32-bit write accesses are ignored
 |                       2+| XIP data access: read-only
 |=======================
 
@@ -193,7 +193,7 @@ The XIP cache is cleared when the XIP module is disabled (`XIP_CTRL_EN = 0`), wh
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.14+<| `0xffffff40` .14+<| `CTRL` <|`0`     `XIP_CTRL_EN`                                       ^| r/w <| XIP module enable
+.14+<| `0xffff4000` .14+<| `CTRL` <|`0`     `XIP_CTRL_EN`                                       ^| r/w <| XIP module enable
                                   <|`3:1`   `XIP_CTRL_PRSC2 : XIP_CTRL_PRSC0`                   ^| r/w <| 3-bit SPI clock prescaler select
                                   <|`4`     `XIP_CTRL_CPOL`                                     ^| r/w <| SPI clock polarity
                                   <|`5`     `XIP_CTRL_CPHA`                                     ^| r/w <| SPI clock phase
@@ -207,7 +207,7 @@ The XIP cache is cleared when the XIP module is disabled (`XIP_CTRL_EN = 0`), wh
                                   <|`29:27` -                                                   ^| r/- <| _reserved_, read as zero
                                   <|`30`    `XIP_CTRL_PHY_BUSY`                                 ^| r/- <| SPI PHY busy when set
                                   <|`31`    `XIP_CTRL_XIP_BUSY`                                 ^| r/- <| XIP access in progress when set
-| `0xffffff44` | _reserved_ |`31:0` | r/- | _reserved_, read as zero
-| `0xffffff48` | `DATA_LO`  |`31:0` | r/w | Direct SPI access - data register low
-| `0xffffff4C` | `DATA_HI`  |`31:0` | -/w | Direct SPI access - data register high; write access triggers SPI transfer
+| `0xffff4004` | _reserved_ |`31:0` | r/- | _reserved_, read as zero
+| `0xffff4008` | `DATA_LO`  |`31:0` | r/w | Direct SPI access - data register low
+| `0xffff400C` | `DATA_HI`  |`31:0` | -/w | Direct SPI access - data register high; write access triggers SPI transfer
 |=======================

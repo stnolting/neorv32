@@ -15,7 +15,7 @@
 | Configuration generics: | `IO_TWD_EN`        | implement TWD controller when `true`
 |                         | `IO_TWD_FIFO`      | RX/TX FIFO depth, has to be a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 0 | FIFO status interrupt (see <<_processor_interrupts>>)
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 
@@ -144,7 +144,7 @@ twd_scl_i <= std_ulogic(scl_io); -- sense
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.18+<| `0xffffea00` .18+<| `CTRL` <|`0`     `TWD_CTRL_EN`                             ^| r/w <| TWD enable, reset if cleared
+.18+<| `0xffea0000` .18+<| `CTRL` <|`0`     `TWD_CTRL_EN`                             ^| r/w <| TWD enable, reset if cleared
                                   <|`1`     `TWD_CTRL_CLR_RX`                         ^| -/w <| Clear RX FIFO, flag auto-clears
                                   <|`2`     `TWD_CTRL_CLR_TX`                         ^| -/w <| Clear TX FIFO, flag auto-clears
                                   <|`3`     `TWD_CTRL_FSEL`                           ^| r/w <| Bus sample clock / filter select
@@ -162,6 +162,6 @@ twd_scl_i <= std_ulogic(scl_io); -- sense
                                   <|`29`    `TWD_CTRL_SENSE_SCL`                      ^| r/- <| current state of the SCL bus line
                                   <|`30`    `TWD_CTRL_SENSE_SDA`                      ^| r/- <| current state of the SDA bus line
                                   <|`31`    `TWD_CTRL_BUSY`                           ^| r/- <| bus engine is busy (transaction in progress)
-.2+<| `0xffffea04` .2+<| `DATA`   <|`7:0`   `TWD_DATA_MSB : TWD_DATA_LSB`             ^| r/w <| RX/TX data FIFO access
+.2+<| `0xffea0004` .2+<| `DATA`   <|`7:0`   `TWD_DATA_MSB : TWD_DATA_LSB`             ^| r/w <| RX/TX data FIFO access
                                   <|`31:8`  -                                         ^| r/- <| _reserved_, read as zero
 |=======================

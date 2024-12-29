@@ -28,7 +28,6 @@ entity neorv32_vivado_ip is
     -- Clocking --
     CLOCK_FREQUENCY       : natural                       := 100_000_000;
     -- Identification --
-    HART_ID               : std_logic_vector(31 downto 0) := x"00000000";
     JEDEC_ID              : std_logic_vector(10 downto 0) := "00000000000";
     -- Boot Configuration --
     BOOT_MODE_SELECT      : natural range 0 to 2          := 0;
@@ -104,7 +103,7 @@ entity neorv32_vivado_ip is
     IO_GPIO_EN            : boolean                       := false;
     IO_GPIO_IN_NUM        : natural range 1 to 64         := 1; -- variable-sized ports must be at least 0 downto 0; #974
     IO_GPIO_OUT_NUM       : natural range 1 to 64         := 1;
-    IO_MTIME_EN           : boolean                       := false;
+    IO_CLINT_EN           : boolean                       := false;
     IO_UART0_EN           : boolean                       := false;
     IO_UART0_RX_FIFO      : natural range 1 to 2**15      := 1;
     IO_UART0_TX_FIFO      : natural range 1 to 2**15      := 1;
@@ -249,7 +248,7 @@ entity neorv32_vivado_ip is
     cfs_out_o      : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_logic;
-    -- Machine timer system time (available if IO_MTIME_EN = true) --
+    -- Machine timer system time (available if IO_CLINT_EN = true) --
     mtime_time_o   : out std_logic_vector(63 downto 0);
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_logic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
@@ -355,7 +354,6 @@ begin
     -- Clocking --
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
     -- Identification --
-    HART_ID               => std_ulogic_vector(HART_ID),
     JEDEC_ID              => std_ulogic_vector(JEDEC_ID),
     -- Boot Configuration --
     BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
@@ -430,7 +428,7 @@ begin
     -- Processor peripherals --
     IO_DISABLE_SYSINFO    => false,
     IO_GPIO_NUM           => num_gpio_c,
-    IO_MTIME_EN           => IO_MTIME_EN,
+    IO_CLINT_EN           => IO_CLINT_EN,
     IO_UART0_EN           => IO_UART0_EN,
     IO_UART0_RX_FIFO      => IO_UART0_RX_FIFO,
     IO_UART0_TX_FIFO      => IO_UART0_TX_FIFO,

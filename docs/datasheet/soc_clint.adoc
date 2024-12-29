@@ -1,0 +1,62 @@
+<<<
+:sectnums:
+==== Core Local Interruptor (CLINT)
+
+[cols="<3,<3,<4"]
+[frame="topbot",grid="none"]
+|=======================
+| Hardware source files:  | neorv32_clint.vhd |
+| Software driver files:  | neorv32_clint.c   |
+|                         | neorv32_clint.h   |
+| Top entity ports:       | `mtime_irq_i`     | RISC-V machine timer IRQ if CLINT is **not** implemented
+|                         | `msw_irq_i`       | RISC-V software IRQ if CLINT is **not** implemented
+|                         | `mtime_time_o`    | Current system time (from CLINT's MTIMER)
+| Configuration generics: | `IO_CLINT_EN`     | implement core local interruptor when `true`
+| CPU interrupts:         | `MTI`             | machine timer interrupt (see <<_processor_interrupts>>)
+|                         | `MSI`             | machine software interrupt (see <<_processor_interrupts>>)
+| Access restrictions:  2+| non-32-bit write accesses are ignored
+|=======================
+
+
+**Overview**
+
+The core local interruptor provides machine-level timer and software interrupts for a set of CPU cores (also called _harts).
+It is compatible to the original SiFive(R) CLINT specifications and it is also backwards-compatible to the upcoming RISC-V
+_Advanced Core Local Interruptor (ACLINT)_ specifications. In terms of the ACLINT spec the NEORV32 CLINT implements three
+_devices_ that are placed next to each other in the address space: an MTIMER and an MSWI device.
+
+The CLINT can support up to 4095 harts. However, the NEORV32 CLINT is configured for a single hart only (yet).
+Hence, only the according registers are implemented while the remaining ones are hardwired to zero.
+
+
+**MTIMER Device**
+
+The MTIMER device provides a global 64-bit machine timer (`NEORV32_CLINT->MTIME`) that increments with every main processor
+clock tick. Upon reset the timer is reset to all zero. Each hart provides an individual 64-bit timer-compare register
+(`NEORV32_CLINT->MTIMECMP[0]` for hart 0). Whenever `MTIMECMP >= MTIME` the according machine timer interrupt is pending.
+
+
+**MSIW Device**
+
+The MSIV provides software interrupts for each hart via hart-individual memory-mapped registers (`NEORV32_CLINT->MSWI[0]` for
+hart 0). Setting bit 0 of this register will bring the machine software interrupt into pending state.
+
+
+.External Machine Timer and Software Interrupts
+[NOTE]
+If the NEORV32 CLINT module is disabled (`IO_CLINT_EN` = `false`) the core's machine timer interrupt and
+machine software interrupt become available as processor-external signals (`mtime_irq_i` and `msw_irq_i`, respectively).
+
+
+**Register Map**
+
+.CLINT register map (`struct NEORV32_CLINT`)
+[cols="<3,<3,^1,^1,<6"]
+[options="header",grid="all"]
+|=======================
+| Address      | Name [C]      | Bits | R/W | Function
+.2+<| `0xfff40000` .2+<| `MSWI[0]` ^| 0    ^| r/w <| trigger machine software interrupt for hart 0 when set
+                                   ^| 31:1 ^| r/- <| hardwired to zero
+| `0xfff44000` | `MTIMECMP[0]` | 63:0 | r/w | 64-bit time compare for hart 0
+| `0xfff4bff8` | `MTIME`       | 63:0 | r/w | 64-bit global machine timer
+|=======================

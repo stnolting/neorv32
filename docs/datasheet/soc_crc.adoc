@@ -11,7 +11,7 @@
 | Top entity ports:       | none |
 | Configuration generics: | `IO_CRC_EN` | implement CRC module when `true`
 | CPU interrupts:         | none |
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 
@@ -63,10 +63,10 @@ and for CRC32-mode the entire 32-bit of `POLY` and `SREG` are used.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.2+<| `0xffffee00` .2+<| `CTRL` <|`1:0`  ^| r/w <| CRC mode select (`00` CRC8, `01`: CRC16, `10`: CRC32)
+.2+<| `0xffee0000` .2+<| `CTRL` <|`1:0`  ^| r/w <| CRC mode select (`00` CRC8, `01`: CRC16, `10`: CRC32)
                                 <|`31:2` ^| r/- <| _reserved_, read as zero
-| `0xffffee04` | `POLY` |`31:0` | r/w | CRC polynomial
-.2+<| `0xffffee08` .2+<| `DATA` <|`7:0`  ^| r/w <| data input (single byte)
+| `0xffee0004` | `POLY` |`31:0` | r/w | CRC polynomial
+.2+<| `0xffee0008` .2+<| `DATA` <|`7:0`  ^| r/w <| data input (single byte)
                                 <|`31:8` ^| r/- <| _reserved_, read as zero, writes are ignored
-| `0xffffee0c` | `SREG` |`32:0` | r/w | current CRC shift register value (set start value on write)
+| `0xffee000c` | `SREG` |`32:0` | r/w | current CRC shift register value (set start value on write)
 |=======================

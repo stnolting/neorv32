@@ -19,14 +19,12 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_debug_dm is
   generic (
-    CPU_BASE_ADDR : std_ulogic_vector(31 downto 0); -- base address for the memory-mapped CPU interface registers
     AUTHENTICATOR : boolean -- implement authentication module when true
   );
   port (
     -- global control --
     clk_i          : in  std_ulogic; -- global clock line
     rstn_i         : in  std_ulogic; -- global reset line, low-active
-    cpu_debug_i    : in  std_ulogic; -- CPU is in debug mode
     -- debug module interface (DMI) --
     dmi_req_i      : in  dmi_req_t; -- request
     dmi_rsp_o      : out dmi_rsp_t; -- response
@@ -41,11 +39,11 @@ end neorv32_debug_dm;
 
 architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
-  -- memory map --
-  constant dm_code_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"00"); -- code ROM (park loop)
-  constant dm_pbuf_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"40"); -- program buffer (PBUF)
-  constant dm_data_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"80"); -- abstract data buffer (DATA)
-  constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := std_ulogic_vector(unsigned(CPU_BASE_ADDR) + x"C0"); -- status register (SREG)
+  -- memory map; replicated throughout the entire device address space --
+  constant dm_code_base_c : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- code ROM (park loop)
+  constant dm_pbuf_base_c : std_ulogic_vector(31 downto 0) := x"ffffff40"; -- program buffer (PBUF)
+  constant dm_data_base_c : std_ulogic_vector(31 downto 0) := x"ffffff80"; -- abstract data buffer (DATA)
+  constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := x"ffffffC0"; -- status register (SREG)
 
   -- rv32i instruction prototypes --
   constant instr_nop_c    : std_ulogic_vector(31 downto 0) := x"00000013"; -- nop
@@ -70,6 +68,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant addr_progbuf1_c     : std_ulogic_vector(6 downto 0) := "0100001";
   constant addr_authdata_c     : std_ulogic_vector(6 downto 0) := "0110000";
 --constant addr_sbcs_c         : std_ulogic_vector(6 downto 0) := "0111000"; -- hardwired to zero
+  constant addr_haltsum0_c     : std_ulogic_vector(6 downto 0) := "1000000";
 
   -- DMI access --
   signal dmi_wren, dmi_wren_auth, dmi_rden, dmi_rden_auth : std_ulogic;
@@ -667,7 +666,7 @@ begin
   end process bus_access;
 
   -- access helpers --
-  accen <= cpu_debug_i and bus_req_i.stb; -- allow access only when in debug-mode
+  accen <= bus_req_i.debug and bus_req_i.stb; -- allow access only when in debug-mode
   rden  <= accen and (not bus_req_i.rw);
   wren  <= accen and (    bus_req_i.rw);
 

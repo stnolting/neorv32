@@ -57,7 +57,7 @@ begin
     MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
     -- Processor peripherals --
     IO_GPIO_NUM       => 8,                 -- number of GPIO input/output pairs (0..64)
-    IO_MTIME_EN       => true               -- implement machine system timer (MTIME)?
+    IO_CLINT_EN       => true               -- implement core local interruptor (CLINT)?
   )
   port map (
     -- Global control --

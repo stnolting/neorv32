@@ -29,7 +29,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    HART_ID             : std_ulogic_vector(31 downto 0); -- hardware thread ID
+    HART_ID             : natural; -- hardware thread ID
     VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug-mode parking loop entry address, 4-byte aligned
@@ -362,7 +362,7 @@ begin
                         ((fetch_engine.pc(1) = '0') or (not RISCV_ISA_C)) else '0';
   ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
 
-  -- bus access type --
+  -- bus access meta data --
   ibus_req_o.priv  <= fetch_engine.priv; -- current effective privilege level
   ibus_req_o.data  <= (others => '0'); -- read-only
   ibus_req_o.ben   <= (others => '0'); -- read-only
@@ -370,6 +370,8 @@ begin
   ibus_req_o.src   <= '1'; -- source = instruction fetch
   ibus_req_o.rvso  <= '0'; -- cannot be a reservation set operation
   ibus_req_o.fence <= ctrl.lsu_fence; -- fence operation, valid without STB being set
+  ibus_req_o.sleep <= sleep_mode; -- sleep mode, valid without STB being set
+  ibus_req_o.debug <= debug_ctrl.run; -- debug mode, valid without STB being set
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
@@ -1803,7 +1805,7 @@ begin
           when csr_mvendorid_c  => csr.rdata <= VENDOR_ID; -- vendor's JEDEC ID
           when csr_marchid_c    => csr.rdata(4 downto 0) <= "10011"; -- architecture ID - official RISC-V open-source arch ID
           when csr_mimpid_c     => csr.rdata <= hw_version_c; -- implementation ID -- NEORV32 hardware version
-          when csr_mhartid_c    => csr.rdata <= HART_ID; -- hardware thread ID
+          when csr_mhartid_c    => csr.rdata(9 downto 0) <= std_ulogic_vector(to_unsigned(HART_ID, 10)); -- hardware thread ID
 --        when csr_mconfigptr_c => csr.rdata <= (others => '0'); -- machine configuration pointer register - hardwired to zero
 
           -- --------------------------------------------------------------------
