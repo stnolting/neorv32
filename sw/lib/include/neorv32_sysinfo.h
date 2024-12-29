@@ -34,8 +34,8 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /** SYSINFO module hardware access (#neorv32_sysinfo_t) */
 #define NEORV32_SYSINFO ((neorv32_sysinfo_t*) (NEORV32_SYSINFO_BASE))
 
-/** NEORV32_SYSINFO_MISC_enum.MEM (r/-): Miscellaneous system configurations */
-enum NEORV32_SYSINFO_MEM_enum {
+/** NEORV32_SYSINFO.MISC (r/-): Miscellaneous system configurations */
+enum NEORV32_SYSINFO_MISC_enum {
   SYSINFO_MISC_IMEM = 0, /**< SYSINFO_MISC byte 0 (r/-): log2(internal IMEM size in bytes) (via MEM_INT_IMEM_SIZE generic) */
   SYSINFO_MISC_DMEM = 1, /**< SYSINFO_MISC byte 1 (r/-): log2(internal DMEM size in bytes) (via MEM_INT_DMEM_SIZE generic) */
   SYSINFO_MISC_HART = 2, /**< SYSINFO_MISC byte 2 (r/-): number of physical CPU cores ("harts") */
