@@ -303,7 +303,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dmi_rsp : dmi_rsp_t;
 
   -- debug core interface (DCI) --
-  signal dci_ndmrstn, dci_haltreq : std_ulogic;
+  signal dci_ndmrstn : std_ulogic;
+  signal dci_haltreq : std_ulogic_vector(0 downto 0);
 
   -- bus: core complex (CPU + caches) and DMA --
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req, main_req, main2_req, dma_req : bus_req_t;
@@ -538,7 +539,7 @@ begin
       mei_i      => mext_irq_i,
       mti_i      => mtime_irq,
       firq_i     => cpu_firq,
-      dbi_i      => dci_haltreq,
+      dbi_i      => dci_haltreq(0),
       -- instruction bus interface --
       ibus_req_o => cpu_i_req,
       ibus_rsp_i => cpu_i_rsp,
@@ -1683,17 +1684,18 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_debug_dm_inst: entity neorv32.neorv32_debug_dm
     generic map (
+      NUM_HARTS     => 1,
       AUTHENTICATOR => OCD_AUTHENTICATION
     )
     port map (
-      clk_i          => clk_i,
-      rstn_i         => rstn_ext,
-      dmi_req_i      => dmi_req,
-      dmi_rsp_o      => dmi_rsp,
-      bus_req_i      => iodev_req(IODEV_OCD),
-      bus_rsp_o      => iodev_rsp(IODEV_OCD),
-      cpu_ndmrstn_o  => dci_ndmrstn,
-      cpu_halt_req_o => dci_haltreq
+      clk_i      => clk_i,
+      rstn_i     => rstn_ext,
+      dmi_req_i  => dmi_req,
+      dmi_rsp_o  => dmi_rsp,
+      bus_req_i  => iodev_req(IODEV_OCD),
+      bus_rsp_o  => iodev_rsp(IODEV_OCD),
+      ndmrstn_o  => dci_ndmrstn,
+      halt_req_o => dci_haltreq
     );
 
   end generate;
@@ -1703,7 +1705,7 @@ begin
     iodev_rsp(IODEV_OCD) <= rsp_terminate_c;
     jtag_tdo_o           <= jtag_tdi_i; -- JTAG pass-through
     dci_ndmrstn          <= '1';
-    dci_haltreq          <= '0';
+    dci_haltreq          <= (others => '0');
   end generate;
 
 
