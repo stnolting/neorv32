@@ -1745,14 +1745,14 @@
         </register>
         <register>
           <name>MEM</name>
-          <description>Memory configuration (sizes)</description>
+          <description>Miscellaneous system configurations</description>
           <addressOffset>0x04</addressOffset>
           <access>read-only</access>
           <fields>
-            <field><name>SYSINFO_MEM_IMEM</name><bitRange>[7:0]</bitRange><description>log2(IMEM size in bytes)</description></field>
-            <field><name>SYSINFO_MEM_DMEM</name><bitRange>[15:8]</bitRange><description>log2(DMEM size in bytes)</description></field>
-            <field><name>SYSINFO_MEM_res</name><bitRange>[23:16]</bitRange><description>yet unused</description></field>
-            <field><name>SYSINFO_MEM_BOOT</name><bitRange>[31:24]</bitRange><description>Boot mode configuration select</description></field>
+            <field><name>SYSINFO_MISC_IMEM</name><bitRange>[7:0]</bitRange><description>log2(IMEM size in bytes)</description></field>
+            <field><name>SYSINFO_MISC_DMEM</name><bitRange>[15:8]</bitRange><description>log2(DMEM size in bytes)</description></field>
+            <field><name>SYSINFO_MISC_HART</name><bitRange>[23:16]</bitRange><description>Number of physical CPU cores</description></field>
+            <field><name>SYSINFO_MISC_BOOT</name><bitRange>[31:24]</bitRange><description>Boot mode configuration select</description></field>
           </fields>
         </register>
         <register>

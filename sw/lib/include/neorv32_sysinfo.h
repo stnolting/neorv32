@@ -25,21 +25,21 @@
 /**@{*/
 /** SYSINFO module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-        uint32_t CLK;    /**< offset 0:  Clock speed in Hz */
-  const uint8_t  MEM[4]; /**< offset 4:  Internal memory sizes (#NEORV32_SYSINFO_MEM_enum) */
-  const uint32_t SOC;    /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
-  const uint32_t CACHE;  /**< offset 12: Cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
+        uint32_t CLK;     /**< offset 0:  Clock speed in Hz */
+  const uint8_t  MISC[4]; /**< offset 4:  Miscellaneous system configurations (#NEORV32_SYSINFO_MISC_enum) */
+  const uint32_t SOC;     /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
+  const uint32_t CACHE;   /**< offset 12: Cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
 } neorv32_sysinfo_t;
 
 /** SYSINFO module hardware access (#neorv32_sysinfo_t) */
 #define NEORV32_SYSINFO ((neorv32_sysinfo_t*) (NEORV32_SYSINFO_BASE))
 
-/** NEORV32_SYSINFO.MEM (r/-): Memory configuration (sizes) */
+/** NEORV32_SYSINFO_MISC_enum.MEM (r/-): Miscellaneous system configurations */
 enum NEORV32_SYSINFO_MEM_enum {
-  SYSINFO_MEM_IMEM = 0, /**< SYSINFO_MEM byte 0 (r/-): log2(internal IMEM size in bytes) (via MEM_INT_IMEM_SIZE generic) */
-  SYSINFO_MEM_DMEM = 1, /**< SYSINFO_MEM byte 1 (r/-): log2(internal DMEM size in bytes) (via MEM_INT_DMEM_SIZE generic) */
-  SYSINFO_MEM_res  = 2, /**< SYSINFO_MEM byte 2 (r/-): reserved, read as zero */
-  SYSINFO_MEM_BOOT = 3  /**< SYSINFO_MEM byte 3 (r/-): boot mode configuration (via BOOT_MODE_SELECT generic) */
+  SYSINFO_MISC_IMEM = 0, /**< SYSINFO_MISC byte 0 (r/-): log2(internal IMEM size in bytes) (via MEM_INT_IMEM_SIZE generic) */
+  SYSINFO_MISC_DMEM = 1, /**< SYSINFO_MISC byte 1 (r/-): log2(internal DMEM size in bytes) (via MEM_INT_DMEM_SIZE generic) */
+  SYSINFO_MISC_HART = 2, /**< SYSINFO_MISC byte 2 (r/-): number of physical CPU cores ("harts") */
+  SYSINFO_MISC_BOOT = 3  /**< SYSINFO_MISC byte 3 (r/-): boot mode configuration (via BOOT_MODE_SELECT generic) */
 };
 
 /** NEORV32_SYSINFO.SOC (r/-): Implemented processor devices/features */
