@@ -70,7 +70,7 @@ int main() {
   neorv32_uart0_printf("Unix timestamp: %u\n", (uint32_t)neorv32_clint_unixtime_get);
 
   // configure MTIME timer to not trigger
-  neorv32_clint_mtimecmp_set(0, -1);
+  neorv32_clint_mtimecmp_set(-1);
 
   // install CLINT handlers to RTE
   neorv32_rte_handler_install(RTE_TRAP_MTI, mti_irq_handler);
@@ -80,7 +80,7 @@ int main() {
   neorv32_uart0_printf("\nStarting real-time clock demo...\n");
 
   // configure MTIME timer's first interrupt to trigger after 1 second starting from now
-  neorv32_clint_mtimecmp_set(0, neorv32_clint_time_get() + neorv32_sysinfo_get_clk());
+  neorv32_clint_mtimecmp_set(neorv32_clint_time_get() + neorv32_sysinfo_get_clk());
 
   // enable machine time and software interrupts
   neorv32_cpu_csr_set(CSR_MIE, (1 << CSR_MIE_MTIE) + (1 << CSR_MIE_MSIE));
@@ -104,13 +104,13 @@ int main() {
 void mti_irq_handler(void) {
 
   // configure MTIME timer's next interrupt to trigger after 1 second starting from now
-  neorv32_clint_mtimecmp_set(0, neorv32_clint_mtimecmp_get(0) + neorv32_sysinfo_get_clk());
+  neorv32_clint_mtimecmp_set(neorv32_clint_mtimecmp_get() + neorv32_sysinfo_get_clk());
 
   // toggle output port bit 0
   neorv32_gpio_pin_toggle(0);
 
-  // trigger software interrupt (just for fun)
-  neorv32_clint_msi_set(0);
+  // trigger software interrupt for this core (just for fun)
+  neorv32_clint_msi_set(neorv32_cpu_csr_read(CSR_MHARTID));
 
   // show date in human-readable format
   date_t date;
@@ -127,8 +127,8 @@ void mti_irq_handler(void) {
  **************************************************************************/
 void msi_irq_handler(void) {
 
-  // clear machine software interrupt
-  NEORV32_CLINT->MSWI[0] = 0;
+  // clear machine software interrupt for this core
+  neorv32_clint_msi_clr(neorv32_cpu_csr_read(CSR_MHARTID));
 
   neorv32_uart0_printf("\n[Machine Software Interrupt!]\n");
 }

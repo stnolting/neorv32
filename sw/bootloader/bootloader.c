@@ -483,7 +483,7 @@ void __attribute__((interrupt("machine"))) bootloader_trap_handler(void) {
 #endif
     // set time for next IRQ
     if (neorv32_clint_available()) {
-      neorv32_clint_mtimecmp_set(0, neorv32_clint_time_get() + (NEORV32_SYSINFO->CLK/4));
+      neorv32_clint_mtimecmp_set(neorv32_clint_time_get() + (NEORV32_SYSINFO->CLK/4));
     }
   }
 
