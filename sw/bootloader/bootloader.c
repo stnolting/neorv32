@@ -396,9 +396,6 @@ int main(void) {
       }
     }
 #endif
-    else if (c == '?') {
-      PRINT_TEXT("github.com/stnolting/neorv32");
-    }
     else { // unknown command
       PRINT_TEXT("Invalid CMD");
     }

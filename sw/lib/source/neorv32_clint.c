@@ -55,6 +55,17 @@ void neorv32_clint_msi_clr(int hart) {
 
 
 /**********************************************************************//**
+ * Get machine software interrupt register.
+ *
+ * @param[in] hart Hart index (0..4094).
+ **************************************************************************/
+uint32_t neorv32_clint_msi_get(int hart) {
+
+  return NEORV32_CLINT->MSWI[hart & 0xfff];
+}
+
+
+/**********************************************************************//**
  * Set current CLINT system time.
  *
  * @note The CLINT timer increments with the primary processor clock.
