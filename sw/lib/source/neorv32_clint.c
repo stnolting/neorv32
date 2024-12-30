@@ -68,7 +68,7 @@ uint32_t neorv32_clint_msi_get(int hart) {
 /**********************************************************************//**
  * Set current CLINT system time.
  *
- * @note The CLINT timer increments with the primary processor clock.
+ * @note The CLINT MTIMER increments with the primary processor clock.
  *
  * @param[in] time New system time (uint64_t).
  **************************************************************************/
@@ -87,7 +87,7 @@ void neorv32_clint_time_set(uint64_t time) {
 /**********************************************************************//**
  * Get current system time.
  *
- * @note The CLINT MTIME timer increments with the primary processor clock.
+ * @note The CLINT MTIMER increments with the primary processor clock.
  *
  * @return Current system time (uint64_t).
  **************************************************************************/
@@ -114,40 +114,40 @@ uint64_t neorv32_clint_time_get(void) {
 /**********************************************************************//**
  * Set MTIMER compare time register (MTIMECMP) for generating interrupts.
  *
- * @note The interrupt is triggered when MTIME >= MTIMECMP.
- * @note Global interrupts and the timer interrupt source have to be enabled.
+ * @note This functions uses MHARTID to automatically select the according hart's MTIMECMP register.
  *
- * @param[in] hart Hart index (0..4094).
  * @param[in] timecmp System time for interrupt (uint64_t).
  **************************************************************************/
-void neorv32_clint_mtimecmp_set(int hart, uint64_t timecmp) {
-
-  hart &= 0xfff;
+void neorv32_clint_mtimecmp_set(uint64_t timecmp) {
 
   subwords64_t cycles;
   cycles.uint64 = timecmp;
 
+  uint32_t hart_id = neorv32_cpu_csr_read(CSR_MHARTID);
+
   // prevent MTIMECMP from temporarily becoming smaller than the lesser of the old and new values
-  NEORV32_CLINT->MTIMECMP[hart].uint32[0] = -1;
-  NEORV32_CLINT->MTIMECMP[hart].uint32[1] = cycles.uint32[1];
-  NEORV32_CLINT->MTIMECMP[hart].uint32[0] = cycles.uint32[0];
+  NEORV32_CLINT->MTIMECMP[hart_id].uint32[0] = -1;
+  NEORV32_CLINT->MTIMECMP[hart_id].uint32[1] = cycles.uint32[1];
+  NEORV32_CLINT->MTIMECMP[hart_id].uint32[0] = cycles.uint32[0];
 }
 
 
 /**********************************************************************//**
  * Get MTIMER compare time register (MTIMECMP).
  *
- * @param[in] hart Hart index (0..4094).
+ * @note This functions uses MHARTID to automatically select the according hart's MTIMECMP register.
+ *
  * @return Current MTIMECMP value.
  **************************************************************************/
-uint64_t neorv32_clint_mtimecmp_get(int hart) {
+uint64_t neorv32_clint_mtimecmp_get(void) {
 
-  return NEORV32_CLINT->MTIMECMP[hart & 0xfff].uint64;
+  uint32_t hart_id = neorv32_cpu_csr_read(CSR_MHARTID);
+  return NEORV32_CLINT->MTIMECMP[hart_id].uint64;
 }
 
 
 /**********************************************************************//**
- * Set TIME to Unix time.
+ * Set MTIMER to Unix time.
  *
  * @param[in] unixtime Unix time since 00:00:00 UTC, January 1st, 1970 in seconds.
  **************************************************************************/
@@ -158,7 +158,7 @@ void neorv32_clint_unixtime_set(uint64_t unixtime) {
 
 
 /**********************************************************************//**
- * Get Unix time from TIME.
+ * Get Unix time from MTIMER.
  *
  * @return Unix time since 00:00:00 UTC, January 1st, 1970 in seconds.
  **************************************************************************/
