@@ -45,8 +45,8 @@ void     neorv32_clint_msi_clr(int hart);
 uint32_t neorv32_clint_msi_get(int hart);
 void     neorv32_clint_time_set(uint64_t time);
 uint64_t neorv32_clint_time_get(void);
-void     neorv32_clint_mtimecmp_set(int hart, uint64_t timecmp);
-uint64_t neorv32_clint_mtimecmp_get(int hart);
+void     neorv32_clint_mtimecmp_set(uint64_t timecmp);
+uint64_t neorv32_clint_mtimecmp_get(void);
 void     neorv32_clint_unixtime_set(uint64_t unixtime);
 uint64_t neorv32_clint_unixtime_get(void);
 /**@}*/
