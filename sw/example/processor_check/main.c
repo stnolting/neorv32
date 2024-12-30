@@ -139,7 +139,7 @@ int main() {
   }
 
   // set CMP of CLINT MTIMER to max to prevent an IRQ
-  neorv32_clint_mtimecmp_set(0, -1);
+  neorv32_clint_mtimecmp_set(-1);
   neorv32_clint_time_set(0);
 
   // get number of implemented PMP regions
@@ -787,7 +787,7 @@ int main() {
     cnt_test++;
 
     // configure MTIMER (and check overflow from low word to high word)
-    neorv32_clint_mtimecmp_set(0, 0x0000000100000000ULL);
+    neorv32_clint_mtimecmp_set(0x0000000100000000ULL);
     neorv32_clint_time_set(0x00000000FFFFFFFEULL);
     // enable interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
@@ -808,7 +808,7 @@ int main() {
     }
 
     // no more MTIME interrupts
-    neorv32_clint_mtimecmp_set(0, -1);
+    neorv32_clint_mtimecmp_set(-1);
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
@@ -894,7 +894,7 @@ int main() {
 
     // fire CLINT.MTIMER IRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
-    neorv32_clint_mtimecmp_set(0, 0); // force interrupt
+    neorv32_clint_mtimecmp_set(0); // force interrupt
 
     volatile int test_cnt = 0;
 
@@ -929,7 +929,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
     // fire CLINT.MTIMER IRQ
-    neorv32_clint_mtimecmp_set(0, 0); // force interrupt
+    neorv32_clint_mtimecmp_set(0); // force interrupt
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile ("nop");
@@ -938,7 +938,7 @@ int main() {
     uint32_t was_pending = neorv32_cpu_csr_read(CSR_MIP) & (1 << CSR_MIP_MTIP); // should be pending now
 
     // clear pending MTI
-    neorv32_clint_mtimecmp_set(0, -1);
+    neorv32_clint_mtimecmp_set(-1);
 
     uint32_t is_pending = neorv32_cpu_csr_read(CSR_MIP) & (1 << CSR_MIP_MTIP); // should NOT be pending anymore
 
@@ -1770,7 +1770,7 @@ int main() {
     cnt_test++;
 
     // program wake-up timer
-    neorv32_clint_mtimecmp_set(0, neorv32_clint_time_get() + 300);
+    neorv32_clint_mtimecmp_set(neorv32_clint_time_get() + 300);
 
     // enable CLINT.MTIMER interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
@@ -1812,7 +1812,7 @@ int main() {
     neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
     // program wake-up timer
-    neorv32_clint_mtimecmp_set(0, neorv32_clint_time_get() + 300);
+    neorv32_clint_mtimecmp_set(neorv32_clint_time_get() + 300);
 
     // enable machine timer interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
