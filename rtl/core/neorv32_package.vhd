@@ -721,7 +721,9 @@ package neorv32_package is
     generic (
       -- Processor Clocking --
       CLOCK_FREQUENCY       : natural                        := 0;
-      -- Identification --
+      -- Dual-Core Configuration --
+      DUAL_CORE_EN          : boolean                        := false;
+      -- Core Identification --
       JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000";
       -- Boot Configuration --
       BOOT_MODE_SELECT      : natural range 0 to 2           := 0;

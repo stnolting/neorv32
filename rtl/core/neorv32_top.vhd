@@ -24,6 +24,9 @@ entity neorv32_top is
     -- Processor Clocking --
     CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
 
+    -- Dual-Core Configuration --
+    DUAL_CORE_EN          : boolean                        := false;       -- enable dual-core homogeneous SMP
+
     -- Core Identification --
     JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
 
@@ -257,10 +260,6 @@ end neorv32_top;
 
 architecture neorv32_top_rtl of neorv32_top is
 
--- FIXME / TODO --
-constant DUAL_CORE_EN : boolean := false;
--- FIXME / TODO --
-
   -- ----------------------------------------------------------
   -- Boot Configuration (BOOT_MODE_SELECT)
   -- ----------------------------------------------------------
@@ -365,7 +364,7 @@ begin
     -- show SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
-      cond_sel_string_f(DUAL_CORE_EN,              "(dual-core) ", "(single-core) ") &
+      cond_sel_string_f(DUAL_CORE_EN,              "(dual-core-smp) ", "(single-core) ") &
       cond_sel_string_f(MEM_INT_IMEM_EN,           cond_sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
       cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",       "") &
       cond_sel_string_f(bootrom_en_c,              "BOOTROM ",    "") &
@@ -632,7 +631,7 @@ begin
     port map (
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
-      a_lock_i => '0',        -- no exclusive accesses
+      a_lock_i => '0', -- no exclusive accesses
       a_req_i  => dcache_req(i), -- prioritized
       a_rsp_o  => dcache_rsp(i),
       b_req_i  => icache_req(i),
@@ -658,8 +657,8 @@ begin
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
       a_lock_i => '0',
-      a_req_i  => core_req(0),
-      a_rsp_o  => core_rsp(0),
+      a_req_i  => core_req(core_req'left),
+      a_rsp_o  => core_rsp(core_req'left),
       b_req_i  => core_req(core_req'right), -- [hack] core_req(1) does not exist if single core
       b_rsp_o  => core_rsp(core_req'right),
       x_req_o  => complex_req,
