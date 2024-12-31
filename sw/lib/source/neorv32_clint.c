@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -35,7 +35,7 @@ int neorv32_clint_available(void) {
 /**********************************************************************//**
  * Trigger machine software interrupt.
  *
- * @param[in] hart Hart index (0..4094).
+ * @param[in] hart Hart index (0..4095).
  **************************************************************************/
 void neorv32_clint_msi_set(int hart) {
 
@@ -46,7 +46,7 @@ void neorv32_clint_msi_set(int hart) {
 /**********************************************************************//**
  * Clear machine software interrupt.
  *
- * @param[in] hart Hart index (0..4094).
+ * @param[in] hart Hart index (0..4095).
  **************************************************************************/
 void neorv32_clint_msi_clr(int hart) {
 
@@ -57,7 +57,7 @@ void neorv32_clint_msi_clr(int hart) {
 /**********************************************************************//**
  * Get machine software interrupt register.
  *
- * @param[in] hart Hart index (0..4094).
+ * @param[in] hart Hart index (0..4095).
  **************************************************************************/
 uint32_t neorv32_clint_msi_get(int hart) {
 
