@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -72,12 +72,6 @@ int      neorv32_rte_handler_uninstall(int id);
 void     neorv32_rte_debug_handler(void);
 uint32_t neorv32_rte_context_get(int x);
 void     neorv32_rte_context_put(int x, uint32_t data);
-
-void neorv32_rte_print_hw_config(void);
-void neorv32_rte_print_hw_version(void);
-void neorv32_rte_print_about(void);
-void neorv32_rte_print_logo(void);
-void neorv32_rte_print_license(void);
 /**@}*/
 
 
