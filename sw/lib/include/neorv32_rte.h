@@ -67,7 +67,7 @@ int      neorv32_rte_handler_uninstall(int id);
 void     neorv32_rte_debug_handler(void);
 uint32_t neorv32_rte_context_get(int x);
 void     neorv32_rte_context_put(int x, uint32_t data);
-int      neorv32_rte_core1_launch(void (*main_core1)(void), uint8_t* stack_memory, size_t stack_size_bytes);
+int      neorv32_rte_smp_launch(int hart_sel, void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes);
 /**@}*/
 
 #endif // neorv32_rte_h

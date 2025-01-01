@@ -22,13 +22,13 @@
 // the private trap vector look-up table for each CPU core
 static uint32_t __neorv32_rte_vector_lut[2][NEORV32_RTE_NUM_TRAPS];
 
-// core1 startup configuration
+// SMP startup configuration
 static volatile struct __attribute__((packed,aligned(4))) {
   uint32_t magic_word;  // to check for valid configuration
   uint32_t stack_lower; // stack begin address (lowest valid address); 16-byte aligned!
   uint32_t stack_upper; // stack end address (highest valid address); 16-byte aligned!
-  uint32_t entry_point; // core1 main function entry address
-} __neorv32_rte_core1_startup;
+  uint32_t entry_point; // main function entry address
+} __neorv32_rte_smp_startup;
 
 // private helper function
 static void __neorv32_rte_print_hex_word(uint32_t num);
@@ -333,10 +333,10 @@ void neorv32_rte_debug_handler(void) {
   // core ID
   uint32_t hart_id = neorv32_cpu_csr_read(CSR_MHARTID) & 1;
   if (hart_id) {
-    neorv32_uart0_puts("[core1] "); // core 1
+    neorv32_uart0_puts("core1: ");
   }
   else {
-    neorv32_uart0_puts("[core0] "); // core 0
+    neorv32_uart0_puts("core0: ");
   }
 
   // privilege level of the CPU when the trap occurred
@@ -411,6 +411,69 @@ void neorv32_rte_debug_handler(void) {
 
   // outro
   neorv32_uart0_puts(" </NEORV32-RTE>\n");
+}
+
+
+// ------------------------------------------------------------------------------------------------
+// Multi-core functions
+// ------------------------------------------------------------------------------------------------
+
+/**********************************************************************//**
+ * NEORV32 runtime environment (RTE):
+ * Configure and start CPU core.
+ *
+ * @warning This function can be called from any core, but core 0 cannot be started with it.
+ *
+ * @param[in] hart_sel Core select (>0).
+ * @param[in] entry_point Core 'hart_sel' main function (must be of type "void entry_point(void)").
+ * @param[in] stack_memory Pointer to beginning of core 'hart_sel' stack memory array. Should be at least 512 bytes.
+ * @param[in] stack_size_bytes Core 'hart_sel' stack size in bytes.
+ * @return 0 if launching succeeded. -1 if invalid hart selection. -2 if CLINT not available.
+ * -3 if core 'hart_sel' is not responding.
+ **************************************************************************/
+int neorv32_rte_smp_launch(int hart_sel, void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
+
+  // check core selection
+  if ((hart_sel == 0) || // we cannot use this to start core 0
+      (hart_sel == neorv32_cpu_csr_read(CSR_MHARTID)) || // we cannot start ourselves
+      (hart_sel > (int)(NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART]-1))) { // selected core not available
+    return -1;
+  }
+
+  // CLINT available?
+  if (neorv32_clint_available() == 0) {
+    return -2;
+  }
+
+  // align end of stack to 16-bytes according to the RISC-V ABI (#1021)
+  uint32_t stack_top = ((uint32_t)stack_memory + (uint32_t)(stack_size_bytes-1)) & 0xfffffff0u;
+
+  // setup launch-configuration struct
+  __neorv32_rte_smp_startup.magic_word  = 0x1337cafeu;
+  __neorv32_rte_smp_startup.stack_lower = (uint32_t)stack_memory;
+  __neorv32_rte_smp_startup.stack_upper = stack_top;
+  __neorv32_rte_smp_startup.entry_point = (uint32_t)entry_point;
+
+  // flush data cache (containing configuration struct) to main memory
+  asm volatile ("fence");
+
+  // use CLINT.MTIMECMP[hart_sel].low_word to pass the address of the configuration struct
+  NEORV32_CLINT->MTIMECMP[hart_sel].uint32[0] = (uint32_t)&__neorv32_rte_smp_startup;
+
+  // start core 'hart_sel' by triggering its software interrupt
+  neorv32_clint_msi_set(hart_sel);
+
+  // wait for core 'hart_sel' to clear its software interrupt
+  int cnt = 0;
+  while (1) {
+    if (neorv32_clint_msi_get(hart_sel) == 0) {
+      return 0; // success!
+    }
+    if (cnt > 10000) {
+      return -3; // timeout; core did not respond
+    }
+    cnt++;
+  }
 }
 
 
