@@ -32,7 +32,6 @@ static volatile struct __attribute__((packed,aligned(4))) {
 
 // private helper function
 static void __neorv32_rte_print_hex_word(uint32_t num);
-static void __neorv32_rte_spinlock(int lock);
 
 
 // // ------------------------------------------------------------------------------------------------
@@ -328,9 +327,6 @@ void neorv32_rte_debug_handler(void) {
     return; // handler cannot output anything if UART0 is not implemented
   }
 
-  // get exclusive access (UART0)
-  __neorv32_rte_spinlock(1);
-
   // intro
   neorv32_uart0_puts("<NEORV32-RTE> ");
 
@@ -415,9 +411,6 @@ void neorv32_rte_debug_handler(void) {
 
   // outro
   neorv32_uart0_puts(" </NEORV32-RTE>\n");
-
-  // remove exclusive access (UART0)
-  __neorv32_rte_spinlock(0);
 }
 
 
@@ -445,29 +438,4 @@ void __neorv32_rte_print_hex_word(uint32_t num) {
       neorv32_uart0_putc(hex_symbols[index]);
     }
   }
-}
-
-
-/**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * Private spinlock.
- *
- * @warning This function blocks until the lock is acquired and set.
- *
- * @param[in] lock 1 = acquire and set lock; 0 = release lock.
- **************************************************************************/
-void __neorv32_rte_spinlock(int lock) {
-
-#if defined __riscv_atomic
-  static volatile uint32_t __neorv32_rte_spin_locked = 0;
-
-  if (lock) {
-    while (neorv32_cpu_amoswapw((uint32_t)&__neorv32_rte_spin_locked, 1) != 0);
-  }
-  else {
-    neorv32_cpu_amoswapw((uint32_t)&__neorv32_rte_spin_locked, 0);
-  }
-#else
-  (void)lock;
-#endif
 }
