@@ -86,33 +86,20 @@ int main(void) {
   neorv32_uart0_printf("Launching core1...\n");
 
   // Launch execution of core 1. Arguments:
-  // 1st: ID of the core that we want to launch.
-  // 2nd: "main_core1" is the entry point for the core and we provide a total of 2kB of stack for it.
-  // 3rd: Pointer to the core's stack memory array.
-  // 4th: Size of the core's stack memory array.
+  // 1st:: "main_core1" is the entry point for the core and we provide a total of 2kB of stack for it.
+  // 2nd:: Pointer to the core's stack memory array.
+  // 3rd:: Size of the core's stack memory array.
 
-  int smp_launch_rc = neorv32_rte_smp_launch(1, main_core1, (uint8_t*)core1_stack, sizeof(core1_stack));
+  int smp_launch_rc = neorv32_rte_smp_launch(main_core1, (uint8_t*)core1_stack, sizeof(core1_stack));
 
   // Here we are using a statically allocated array as stack memory. Alternatively, malloc
   // could be used (it is recommend to align the stack memory on a 16-byte boundary):
   // uint8_t *core1_stack = (uint8_t*)aligned_alloc(16, stack_size_bytes*sizeof(uint8_t));
 
   // check if launching was successful
-  switch (smp_launch_rc) {
-    case 0: // launch successful!
-      break;
-    case -1: // we tried to launch core 0 or some unavailable core
-      neorv32_uart0_printf("[ERROR] Invalid core selection!\n");
-      return 1;
-    case -2: // CLINT was not synthesized
-      neorv32_uart0_printf("[ERROR] CLINT not available!\n");
-      return 1;
-    case -3: // core did not acknowledge its software interrupt
-      neorv32_uart0_printf("[ERROR] Core 1 does not respond!\n");
-      return 1;
-    default: // should not happen...
-      neorv32_uart0_printf("[ERROR] Unknown error!\n");
-      return 1;
+  if (smp_launch_rc) {
+    neorv32_uart0_printf("[ERROR] Launching core1 failed (%d)!\n", smp_launch_rc);
+    return 1;
   }
 
 

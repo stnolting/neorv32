@@ -2218,7 +2218,7 @@ int main() {
     asm volatile ("nop");
 
     // launch core1
-    tmp_a = (uint32_t)neorv32_rte_smp_launch(1, core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
+    tmp_a = (uint32_t)neorv32_rte_smp_launch(core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
 
     // wait for software interrupt in sleep mode
     neorv32_cpu_sleep();

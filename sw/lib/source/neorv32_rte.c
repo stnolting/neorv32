@@ -420,29 +420,22 @@ void neorv32_rte_debug_handler(void) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
- * Configure and start CPU core.
+ * Configure and start secondary CPU (core 1).
  *
- * @warning This function can be called from any core, but core 0 cannot be started with it.
+ * @warning This function can be called from core 0 only.
  *
- * @param[in] hart_sel Core select (>0).
- * @param[in] entry_point Core 'hart_sel' main function (must be of type "void entry_point(void)").
- * @param[in] stack_memory Pointer to beginning of core 'hart_sel' stack memory array. Should be at least 512 bytes.
- * @param[in] stack_size_bytes Core 'hart_sel' stack size in bytes.
- * @return 0 if launching succeeded. -1 if invalid hart selection. -2 if CLINT not available.
- * -3 if core 'hart_sel' is not responding.
+ * @param[in] entry_point Core 1 main function (must be of type "void entry_point(void)").
+ * @param[in] stack_memory Pointer to beginning of core 1 stack memory array. Should be at least 512 bytes.
+ * @param[in] stack_size_bytes Core 1 stack size in bytes.
+ * @return 0 if launching succeeded. -1 if hardware configuration error. -2 if core is not responding.
  **************************************************************************/
-int neorv32_rte_smp_launch(int hart_sel, void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
+int neorv32_rte_smp_launch(void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
 
-  // check core selection
-  if ((hart_sel == 0) || // we cannot use this to start core 0
-      (hart_sel == neorv32_cpu_csr_read(CSR_MHARTID)) || // we cannot start ourselves
-      (hart_sel > (int)(NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART]-1))) { // selected core not available
+  // sanity checks
+  if ((neorv32_cpu_csr_read(CSR_MHARTID) != 0) || // not execute on core 0
+      (neorv32_clint_available() == 0) || // CLINT not available
+      (NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] == 1)) { // there is only one CPU core
     return -1;
-  }
-
-  // CLINT available?
-  if (neorv32_clint_available() == 0) {
-    return -2;
   }
 
   // align end of stack to 16-bytes according to the RISC-V ABI (#1021)
@@ -457,20 +450,20 @@ int neorv32_rte_smp_launch(int hart_sel, void (*entry_point)(void), uint8_t* sta
   // flush data cache (containing configuration struct) to main memory
   asm volatile ("fence");
 
-  // use CLINT.MTIMECMP[hart_sel].low_word to pass the address of the configuration struct
-  NEORV32_CLINT->MTIMECMP[hart_sel].uint32[0] = (uint32_t)&__neorv32_rte_smp_startup;
+  // use CLINT.MTIMECMP[1].low_word to pass the address of the configuration struct
+  NEORV32_CLINT->MTIMECMP[1].uint32[0] = (uint32_t)&__neorv32_rte_smp_startup;
 
-  // start core 'hart_sel' by triggering its software interrupt
-  neorv32_clint_msi_set(hart_sel);
+  // start core 1 by triggering its software interrupt
+  neorv32_clint_msi_set(1);
 
-  // wait for core 'hart_sel' to clear its software interrupt
+  // wait for core 1 to clear its software interrupt
   int cnt = 0;
   while (1) {
-    if (neorv32_clint_msi_get(hart_sel) == 0) {
+    if (neorv32_clint_msi_get(1) == 0) {
       return 0; // success!
     }
     if (cnt > 10000) {
-      return -3; // timeout; core did not respond
+      return -2; // timeout; core did not respond
     }
     cnt++;
   }
