@@ -30,7 +30,6 @@ __crt0_entry:
   la    x4, __crt0_ram_last             // last address of RAM, stack pointer (sp) starts here
   andi  x2, x4, 0xfffffff0              // align stack to 16-bytes according to the RISC-V ABI (#1021)
   la    x3, __global_pointer$           // global pointer (gp)
-.option pop
 
   li    x5, 0x00001800                  // mstatus.mpp = machine-mode
   csrw  mstatus, x5
@@ -45,6 +44,7 @@ __crt0_entry:
   la    x11, __crt0_bss_end             // .bss: end address (not part of bss)
 
   csrr  x12, mhartid                    // get ID of this core
+.option pop
 
   // initialize rest of register file
   addi  x13, zero, 0
@@ -71,39 +71,37 @@ __crt0_entry:
 
 
 // ************************************************************************************************
-// Multi-core setup - wait for configuration if we are not core 0.
+// Dual-core setup - wait for configuration if we are not core 0.
 // ************************************************************************************************
-#ifndef DISABLE_MULTICORE
-__crt0_multicore_check:
-  beqz  x12, __crt0_multicore_primary     // proceed with normal boot-up if we are core 0
+#ifndef DISABLE_DUALCORE
+__crt0_dualcore_check:
+  beqz  x12, __crt0_dualcore_primary     // proceed with normal boot-up if we are core 0
 
   // setup machine software interrupt
-  la    x15, __crt0_multicore_mswi
+  la    x15, __crt0_dualcore_mswi
   csrw  mtvec, x15                       // install interrupt handler
   csrsi mie, 1 << 3                      // enable software interrupt source
   csrsi mstatus, 1 << 3                  // enable machine-level interrupts
   j     __crt0_sleep                     // wait for interrupt in sleep mode
 
   // machine software interrupt handler
-__crt0_multicore_mswi:
+__crt0_dualcore_mswi:
   csrr  x14, mcause
   li    x15, 0x80000003                  // is machine software interrupt?
-  beq   x14, x15, __crt0_multicore_init  // start initialization
+  beq   x14, x15, __crt0_dualcore_init   // start initialization
   mret                                   // go back to sleep if incorrect trap
 
   // get configuration struct address
-__crt0_multicore_init:
+__crt0_dualcore_init:
   fence                                  // reload data cache
   li    x13, 0xfff44000                  // CLINT.MTIMCEMP base address
-  slli  x15, x12, 3                      // compute offset, each MTIMECMP register is 8 bytes wide
-  add   x13, x13, x15                    // CLINT.MTIMCEMP[hart_id].low
-  lw    x13, 0(x13)                      // address of configuration struct
+  lw    x13, 8(x13)                      // CLINT.MTIMCEMP[1].low = address of configuration struct
   li    x14, 0x1337cafe                  // expected magic word
   lw    x15, 0(x13)                      // __neorv32_rte_smp_startup.magic_word
-  beq   x14, x15, __crt0_multicore_valid
+  beq   x14, x15, __crt0_dualcore_valid
   mret                                   // go back to sleep if invalid configuration
 
-__crt0_multicore_valid:
+__crt0_dualcore_valid:
   lw    x2, 8(x13)                       // sp = __neorv32_rte_smp_startup.stack_upper
   lw    x1, 12(x13)                      // ra = __neorv32_rte_smp_startup.entry_point
   sw    x0, 0(x13)                       // invalidate configuration struct
@@ -111,14 +109,12 @@ __crt0_multicore_valid:
 
   // acknowledge startup by clearing software interrupt
   li    x14,  0xfff40000                 // CLINT.MSWI base address
-  slli  x15, x12, 2                      // compute offset, each MSWI register is 4 bytes wide
-  add   x14, x14, x15                    // CLINT.MSWI[hart_id]
-  sw    zero, 0(x14)                     // this hart's software interrupt
+  sw    zero, 4(x14)                     // CLINT.MSWI[1]
 
   // start main function
   j     __crt0_main_entry
 
-__crt0_multicore_primary:
+__crt0_dualcore_primary:
 #endif
 
 
@@ -172,18 +168,18 @@ __crt0_constructors_end:
 // Setup arguments and call main function.
 // ************************************************************************************************
 __crt0_main_entry:
-  fence                 // reload instruction cache
-  fence.i               // reload instruction cache
+  fence                  // reload instruction cache
+  fence.i                // reload instruction cache
 
-  addi  x10, zero, 0    // x10 = a0 = argc = 0
-  addi  x11, zero, 0    // x11 = a1 = argv = 0
-  jalr  x1, x1          // call actual main function
+  addi  x10, zero, 0     // x10 = a0 = argc = 0
+  addi  x11, zero, 0     // x11 = a1 = argv = 0
+  jalr  x1, x1           // call actual main function
 
-__crt0_main_exit:       // main's "return" and "exit" will arrive here
-  csrw  mie, zero       // disable all interrupt sources
-  la    x8, __crt0_trap // re-install the crt0 trap handler
-  csrw  mtvec, x8
-  csrw  mscratch, a0    // backup main's return code to mscratch (for debugger or destructors)
+__crt0_main_exit:        // main's "return" and "exit" will arrive here
+  csrw  mie, zero        // disable all interrupt sources
+  csrw  mscratch, x10    // backup main's return code to mscratch (for debugger or destructors)
+  la    x10, __crt0_trap // re-install the crt0 trap handler
+  csrw  mtvec, x10
 
 
 // ************************************************************************************************
