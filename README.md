@@ -96,7 +96,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 **CPU Core**
 
 * [![RISCV-ARCHID](https://img.shields.io/badge/RISC--V%20Architecture%20ID-19-000000.svg?longCache=true&style=flat-square&logo=riscv&colorA=273274&colorB=fbb517)](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
-* RISC-V 32-bit little-endian single-core pipelined/multi-cycle modified Harvard architecture
+* RISC-V 32-bit little-endian single- or SMP-dual-core pipelined/multi-cycle modified Harvard architecture
 * configurable [instruction sets and extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions):
 \
 `RV32`
