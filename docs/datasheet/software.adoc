@@ -401,11 +401,12 @@ program and gets mapped before the actual application code so it gets executed r
 The `crt0.S` start-up performs the following operations:
 
 [start=1]
-. Clear <<_mstatus>> CSR.
-. Clear <<_mie>> CSR disabling all interrupt sources.
+. Setup the stack pointer and the global pointer according to the <<_ram_layout>> provided by the <<_linker_script>> symbols.
+. Initialize <<_mstatus>> CSR disabling machine-level interrupts.
 . Install an <<_early_trap_handler>> to <<_mtvec>> CSR.
-. Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
+. Clear <<_mie>> CSR disabling all interrupt sources.
 . Initialize all integer register `x1` - `x31` (only `x1` - `x15` if the `E` CPU extension is enabled).
+. If the executing CPU core is not core 0 an SMP-specific code is executed and the CPU is halted in sleep mode. See section <<_dual_core_boot>> for more information.
 . Setup `.data` section to configure initialized variables.
 . Clear the `.bss` section.
 . Call all _constructors_ (if there are any).
@@ -413,8 +414,9 @@ The `crt0.S` start-up performs the following operations:
 . If `main()` returns:
 ** All interrupt sources are disabled by clearing <<_mie>> CSR.
 ** The return value of `main()` is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
+** The <<_early_trap_handler>> is re-installed to <<_mtvec>> CSR.
 ** Call all _destructors_ (if there are any).
-** Re-install an <<_early_trap_handler>> to <<_mtvec>> CSR. If any destructor causes an exception the <<_early_trap_handler>> is used for handling.
+** Execute an `ebreak` instruction to enter debug mode if an external debugger is connected.
 ** The CPU enters sleep mode executing the `wfi` instruction in an endless loop.
 
 

@@ -68,6 +68,7 @@ void xirq_trap_handler0(void);
 void xirq_trap_handler1(void);
 void test_ok(void);
 void test_fail(void);
+void core1_main(void);
 
 // MCAUSE value that will be NEVER set by the hardware
 const uint32_t mcause_never_c = 0x80000000UL; // = reserved
@@ -80,6 +81,7 @@ volatile uint32_t num_hpm_cnts_global = 0; // global number of available hpms
 volatile int vectored_mei_handler_ack = 0; // vectored mei trap handler acknowledge
 volatile uint32_t xirq_trap_handler_ack = 0; // xirq trap handler acknowledge
 volatile uint32_t hw_brk_mscratch_ok = 0; // set when mepc was correct in trap handler
+volatile uint32_t constr_test = 0; // for constructor test
 
 volatile uint32_t dma_src; // dma source & destination data
 volatile uint32_t store_access_addr[2]; // variable to test store accesses
@@ -87,6 +89,15 @@ volatile uint32_t amo_var; // variable for testing atomic memory accesses
 volatile uint32_t __attribute__((aligned(4))) pmp_access[2]; // variable to test pmp
 volatile uint32_t trap_cnt; // number of triggered traps
 volatile uint32_t pmp_num_regions; // number of implemented pmp regions
+volatile uint8_t core1_stack[512]; // stack for core1
+
+
+/**********************************************************************//**
+ * Constructor; should be called before entering main.
+ **************************************************************************/
+void __attribute__((constructor)) neorv32_constructor() {
+  constr_test = 0x1234abcdu;
+}
 
 
 /**********************************************************************//**
@@ -1727,7 +1738,7 @@ int main() {
   // Check dynamic memory allocation
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] heap/malloc ", cnt_test);
+  PRINT_STANDARD("[%i] Heap/malloc ", cnt_test);
 
   tmp_a = (uint32_t)neorv32_heap_size_c;
 
@@ -1755,6 +1766,21 @@ int main() {
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Constructor test
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] Constructor ", cnt_test);
+  cnt_test++;
+
+  if (constr_test == 0x1234abcdu) { // has constructor been executed?
+    test_ok();
+  }
+  else {
+    test_fail();
   }
 
 
@@ -2198,6 +2224,46 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Dual-core test
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] Dual-core ", cnt_test);
+
+  if ((neorv32_cpu_csr_read(CSR_MHARTID) == 0) && // we need to be core 0
+      (NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] > 1) && // we need at least two cores
+      (neorv32_clint_available() != 0)) { // we need the CLINT
+    cnt_test++;
+
+    // enable machine software interrupt
+    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MSIE);
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile ("nop");
+    asm volatile ("nop");
+
+    // launch core1
+    tmp_a = (uint32_t)neorv32_rte_smp_launch(core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
+
+    // wait for software interrupt in sleep mode
+    neorv32_cpu_sleep();
+
+    // disable interrupts and clear software interrupt
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+    neorv32_clint_msi_clr(0);
+
+    if ((tmp_a == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MSI)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
   // HPM reports
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all HPM counters
@@ -2421,4 +2487,14 @@ void test_fail(void) {
 
   PRINT_CRITICAL("%c[1m[fail(%u)]%c[0m\n", 27, cnt_test-1, 27);
   cnt_fail++;
+}
+
+
+/**********************************************************************//**
+ * Test code to be run on second CPU core
+ **************************************************************************/
+void core1_main(void) {
+
+  // trigger software interrupt of core0
+  neorv32_clint_msi_set(0);
 }

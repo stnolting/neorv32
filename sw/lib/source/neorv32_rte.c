@@ -15,20 +15,34 @@
 
 #include <neorv32.h>
 
+// // ------------------------------------------------------------------------------------------------
+// RTE private variables and functions
+// // ------------------------------------------------------------------------------------------------
 
-/**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * The >private< trap vector look-up table of the NEORV32 RTE.
- **************************************************************************/
-static uint32_t __neorv32_rte_vector_lut[NEORV32_RTE_NUM_TRAPS] __attribute__((unused)); // trap handler vector table
+// the private trap vector look-up table for each CPU core
+static uint32_t __neorv32_rte_vector_lut[2][NEORV32_RTE_NUM_TRAPS];
 
-// private functions
+// SMP startup configuration
+static volatile struct __attribute__((packed,aligned(4))) {
+  uint32_t magic_word;  // to check for valid configuration
+  uint32_t stack_lower; // stack begin address (lowest valid address); 16-byte aligned!
+  uint32_t stack_upper; // stack end address (highest valid address); 16-byte aligned!
+  uint32_t entry_point; // main function entry address
+} __neorv32_rte_smp_startup;
+
+// private helper function
 static void __neorv32_rte_print_hex_word(uint32_t num);
 
+
+// // ------------------------------------------------------------------------------------------------
+// RTE core functions
+// // ------------------------------------------------------------------------------------------------
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
  * Setup RTE.
+ *
+ * @attention This function must be called on all cores that wish to use the RTE.
  *
  * @note This function installs a debug handler for ALL trap sources, which
  * gives detailed information about the trap. Actual handlers can be installed afterwards
@@ -50,6 +64,9 @@ void neorv32_rte_setup(void) {
   for (id = 0; id < ((int)NEORV32_RTE_NUM_TRAPS); id++) {
     neorv32_rte_handler_uninstall(id); // this will configure the debug handler
   }
+
+  // flush to main memory
+  asm volatile ("fence");
 }
 
 
@@ -57,16 +74,18 @@ void neorv32_rte_setup(void) {
  * NEORV32 runtime environment (RTE):
  * Install trap handler function (second-level trap handler).
  *
+ * @attention This function operates on the RTE configuration of the core on which this function is executed.
+ *
  * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
  * @param[in] handler The actual handler function for the specified trap (function MUST be of type "void function(void);").
  * @return 0 if success, -1 if error (invalid id or targeted trap not supported).
  **************************************************************************/
 int neorv32_rte_handler_install(int id, void (*handler)(void)) {
 
-  // id valid?
   uint32_t index = (uint32_t)id;
-  if (index < ((uint32_t)NEORV32_RTE_NUM_TRAPS)) {
-    __neorv32_rte_vector_lut[index] = (uint32_t)handler; // install handler
+  if (index < ((uint32_t)NEORV32_RTE_NUM_TRAPS)) { // id valid?
+    uint32_t hart_id = neorv32_cpu_csr_read(CSR_MHARTID) & 1;
+    __neorv32_rte_vector_lut[hart_id][index] = (uint32_t)handler; // install handler
     return 0;
   }
   return -1;
@@ -78,15 +97,17 @@ int neorv32_rte_handler_install(int id, void (*handler)(void)) {
  * Uninstall trap handler function from NEORV32 runtime environment, which was
  * previously installed via neorv32_rte_handler_install(uint8_t id, void (*handler)(void)).
  *
+ * @attention This function operates on the RTE configuration of the core on which this function is executed.
+ *
  * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
  * @return 0 if success, -1 if error (invalid id or targeted trap not supported).
  **************************************************************************/
 int neorv32_rte_handler_uninstall(int id) {
 
-  // id valid?
   uint32_t index = (uint32_t)id;
-  if (index < ((uint32_t)NEORV32_RTE_NUM_TRAPS)) {
-    __neorv32_rte_vector_lut[index] = (uint32_t)(&neorv32_rte_debug_handler); // use dummy handler in case the trap is accidentally triggered
+  if (index < ((uint32_t)NEORV32_RTE_NUM_TRAPS)) { // id valid?
+    uint32_t hart_id = neorv32_cpu_csr_read(CSR_MHARTID) & 1;
+    __neorv32_rte_vector_lut[hart_id][index] = (uint32_t)(&neorv32_rte_debug_handler); // use dummy handler in case the trap is accidentally triggered
     return 0;
   }
   return -1;
@@ -149,37 +170,38 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
   );
 
   // find according trap handler base address
+  uint32_t hart_id = neorv32_cpu_csr_read(CSR_MHARTID) & 1;
   uint32_t handler_base;
   switch (neorv32_cpu_csr_read(CSR_MCAUSE)) {
-    case TRAP_CODE_I_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ACCESS];     break;
-    case TRAP_CODE_I_ILLEGAL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ILLEGAL];    break;
-    case TRAP_CODE_I_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_MISALIGNED]; break;
-    case TRAP_CODE_BREAKPOINT:   handler_base = __neorv32_rte_vector_lut[RTE_TRAP_BREAKPOINT];   break;
-    case TRAP_CODE_L_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_L_MISALIGNED]; break;
-    case TRAP_CODE_L_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_L_ACCESS];     break;
-    case TRAP_CODE_S_MISALIGNED: handler_base = __neorv32_rte_vector_lut[RTE_TRAP_S_MISALIGNED]; break;
-    case TRAP_CODE_S_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_S_ACCESS];     break;
-    case TRAP_CODE_UENV_CALL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_UENV_CALL];    break;
-    case TRAP_CODE_MENV_CALL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MENV_CALL];    break;
-    case TRAP_CODE_MSI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MSI];          break;
-    case TRAP_CODE_MTI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MTI];          break;
-    case TRAP_CODE_MEI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MEI];          break;
-    case TRAP_CODE_FIRQ_0:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_0];       break;
-    case TRAP_CODE_FIRQ_1:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_1];       break;
-    case TRAP_CODE_FIRQ_2:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_2];       break;
-    case TRAP_CODE_FIRQ_3:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_3];       break;
-    case TRAP_CODE_FIRQ_4:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_4];       break;
-    case TRAP_CODE_FIRQ_5:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_5];       break;
-    case TRAP_CODE_FIRQ_6:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_6];       break;
-    case TRAP_CODE_FIRQ_7:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_7];       break;
-    case TRAP_CODE_FIRQ_8:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_8];       break;
-    case TRAP_CODE_FIRQ_9:       handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_9];       break;
-    case TRAP_CODE_FIRQ_10:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_10];      break;
-    case TRAP_CODE_FIRQ_11:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_11];      break;
-    case TRAP_CODE_FIRQ_12:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_12];      break;
-    case TRAP_CODE_FIRQ_13:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_13];      break;
-    case TRAP_CODE_FIRQ_14:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_14];      break;
-    case TRAP_CODE_FIRQ_15:      handler_base = __neorv32_rte_vector_lut[RTE_TRAP_FIRQ_15];      break;
+    case TRAP_CODE_I_ACCESS:     handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_I_ACCESS];     break;
+    case TRAP_CODE_I_ILLEGAL:    handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_I_ILLEGAL];    break;
+    case TRAP_CODE_I_MISALIGNED: handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_I_MISALIGNED]; break;
+    case TRAP_CODE_BREAKPOINT:   handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_BREAKPOINT];   break;
+    case TRAP_CODE_L_MISALIGNED: handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_L_MISALIGNED]; break;
+    case TRAP_CODE_L_ACCESS:     handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_L_ACCESS];     break;
+    case TRAP_CODE_S_MISALIGNED: handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_S_MISALIGNED]; break;
+    case TRAP_CODE_S_ACCESS:     handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_S_ACCESS];     break;
+    case TRAP_CODE_UENV_CALL:    handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_UENV_CALL];    break;
+    case TRAP_CODE_MENV_CALL:    handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_MENV_CALL];    break;
+    case TRAP_CODE_MSI:          handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_MSI];          break;
+    case TRAP_CODE_MTI:          handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_MTI];          break;
+    case TRAP_CODE_MEI:          handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_MEI];          break;
+    case TRAP_CODE_FIRQ_0:       handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_0];       break;
+    case TRAP_CODE_FIRQ_1:       handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_1];       break;
+    case TRAP_CODE_FIRQ_2:       handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_2];       break;
+    case TRAP_CODE_FIRQ_3:       handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_3];       break;
+    case TRAP_CODE_FIRQ_4:       handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_4];       break;
+    case TRAP_CODE_FIRQ_5:       handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_5];       break;
+    case TRAP_CODE_FIRQ_6:       handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_6];       break;
+    case TRAP_CODE_FIRQ_7:       handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_7];       break;
+    case TRAP_CODE_FIRQ_8:       handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_8];       break;
+    case TRAP_CODE_FIRQ_9:       handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_9];       break;
+    case TRAP_CODE_FIRQ_10:      handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_10];      break;
+    case TRAP_CODE_FIRQ_11:      handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_11];      break;
+    case TRAP_CODE_FIRQ_12:      handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_12];      break;
+    case TRAP_CODE_FIRQ_13:      handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_13];      break;
+    case TRAP_CODE_FIRQ_14:      handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_14];      break;
+    case TRAP_CODE_FIRQ_15:      handler_base = __neorv32_rte_vector_lut[hart_id][RTE_TRAP_FIRQ_15];      break;
     default:                     handler_base = (uint32_t)(&neorv32_rte_debug_handler);          break;
   }
 
@@ -253,6 +275,8 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
  * NEORV32 runtime environment (RTE):
  * Read register from application context (on stack).
  *
+ * @attention This function operates on the RTE configuration of the core on which this function is executed.
+ *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
  * @return Content of register x.
  **************************************************************************/
@@ -273,6 +297,8 @@ uint32_t neorv32_rte_context_get(int x) {
  * NEORV32 runtime environment (RTE):
  * Write register to application context (on stack).
  *
+ * @attention This function operates on the RTE configuration of the core on which this function is executed.
+ *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
  * @param[in] data Data to be written to register x.
  **************************************************************************/
@@ -292,6 +318,8 @@ void neorv32_rte_context_put(int x, uint32_t data) {
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
  * Debug trap handler, printing information via UART0.
+ *
+ * @attention This function operates on the RTE configuration of the core on which this function is executed.
  **************************************************************************/
 void neorv32_rte_debug_handler(void) {
 
@@ -301,6 +329,15 @@ void neorv32_rte_debug_handler(void) {
 
   // intro
   neorv32_uart0_puts("<NEORV32-RTE> ");
+
+  // core ID
+  uint32_t hart_id = neorv32_cpu_csr_read(CSR_MHARTID) & 1;
+  if (hart_id) {
+    neorv32_uart0_puts("core1: ");
+  }
+  else {
+    neorv32_uart0_puts("core0: ");
+  }
 
   // privilege level of the CPU when the trap occurred
   if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3 << CSR_MSTATUS_MPP_L)) {
@@ -376,6 +413,66 @@ void neorv32_rte_debug_handler(void) {
   neorv32_uart0_puts(" </NEORV32-RTE>\n");
 }
 
+
+// ------------------------------------------------------------------------------------------------
+// Multi-core functions
+// ------------------------------------------------------------------------------------------------
+
+/**********************************************************************//**
+ * NEORV32 runtime environment (RTE):
+ * Configure and start secondary CPU (core 1).
+ *
+ * @warning This function can be called from core 0 only.
+ *
+ * @param[in] entry_point Core 1 main function (must be of type "void entry_point(void)").
+ * @param[in] stack_memory Pointer to beginning of core 1 stack memory array. Should be at least 512 bytes.
+ * @param[in] stack_size_bytes Core 1 stack size in bytes.
+ * @return 0 if launching succeeded. -1 if hardware configuration error. -2 if core is not responding.
+ **************************************************************************/
+int neorv32_rte_smp_launch(void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
+
+  // sanity checks
+  if ((neorv32_cpu_csr_read(CSR_MHARTID) != 0) || // not execute on core 0
+      (neorv32_clint_available() == 0) || // CLINT not available
+      (NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] == 1)) { // there is only one CPU core
+    return -1;
+  }
+
+  // align end of stack to 16-bytes according to the RISC-V ABI (#1021)
+  uint32_t stack_top = ((uint32_t)stack_memory + (uint32_t)(stack_size_bytes-1)) & 0xfffffff0u;
+
+  // setup launch-configuration struct
+  __neorv32_rte_smp_startup.magic_word  = 0x1337cafeu;
+  __neorv32_rte_smp_startup.stack_lower = (uint32_t)stack_memory;
+  __neorv32_rte_smp_startup.stack_upper = stack_top;
+  __neorv32_rte_smp_startup.entry_point = (uint32_t)entry_point;
+
+  // flush data cache (containing configuration struct) to main memory
+  asm volatile ("fence");
+
+  // use CLINT.MTIMECMP[1].low_word to pass the address of the configuration struct
+  NEORV32_CLINT->MTIMECMP[1].uint32[0] = (uint32_t)&__neorv32_rte_smp_startup;
+
+  // start core 1 by triggering its software interrupt
+  neorv32_clint_msi_set(1);
+
+  // wait for core 1 to clear its software interrupt
+  int cnt = 0;
+  while (1) {
+    if (neorv32_clint_msi_get(1) == 0) {
+      return 0; // success!
+    }
+    if (cnt > 10000) {
+      return -2; // timeout; core did not respond
+    }
+    cnt++;
+  }
+}
+
+
+// ------------------------------------------------------------------------------------------------
+// Private helper functions
+// ------------------------------------------------------------------------------------------------
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):

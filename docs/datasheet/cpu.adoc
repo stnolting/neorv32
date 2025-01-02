@@ -3,8 +3,10 @@
 
 The NEORV32 CPU is an area-optimized RISC-V core implementing the `rv32i_zicsr_zifencei` base (privileged) ISA and
 supporting several additional/optional ISA extensions. The CPU's micro architecture is based on a von-Neumann
-machine build upon a mixture of multi-cycle and pipelined execution schemes.
+machine build upon a mixture of multi-cycle and pipelined execution schemes. Optionally, the core can be implemented
+as SMP <<_dual_core_configuration>>.
 
+.RISC-V Specifications
 [NOTE]
 This chapter assumes that the reader is familiar with the official
 RISC-V _User_ and _Privileged Architecture_ specifications.
@@ -32,7 +34,6 @@ test framework is available in a separate repository at GitHub: https://github.c
 [TIP]
 Executing instructions or accessing CSRs from yet unsupported ISA extensions will raise an illegal
 instruction exception (see section  <<_full_virtualization>>).
-
 
 **Incompatibility Issues and Limitations**
 
@@ -1345,3 +1346,8 @@ written to the according CSRs when a trap is triggered:
 Note that not all exceptions are resumable. For example, the "instruction access fault" exception or the "instruction
 address misaligned" exception are not resumable in most cases. These exception might indicate a fatal memory hardware failure.
 
+
+<<<
+// ####################################################################################################################
+
+include::cpu_dual_core.adoc[]

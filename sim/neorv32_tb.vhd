@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -20,6 +20,7 @@ entity neorv32_tb is
   generic (
     -- processor --
     CLOCK_FREQUENCY     : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
+    DUAL_CORE_EN        : boolean                        := true;        -- enable dual-core homogeneous SMP
     BOOT_MODE_SELECT    : natural range 0 to 2           := 2;           -- boot from pre-initialized IMEM
     BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
     RISCV_ISA_C         : boolean                        := false;       -- implement compressed extension
@@ -110,6 +111,8 @@ begin
   generic map (
     -- Clocking --
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
+    -- Dual-Core Configuration --
+    DUAL_CORE_EN          => DUAL_CORE_EN,
     -- Identification --
     JEDEC_ID              => "00000000000",
     -- Boot Configuration --

@@ -1,14 +1,20 @@
 <<<
 // ####################################################################################################################
 
+<<<
 include::overview.adoc[]
 
+<<<
 include::soc.adoc[]
 
+<<<
 include::cpu.adoc[]
 
+<<<
 include::software.adoc[]
 
+<<<
 include::on_chip_debugger.adoc[]
 
+<<<
 include::../legal.adoc[]

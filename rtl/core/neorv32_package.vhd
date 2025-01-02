@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100805"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100806"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -721,7 +721,9 @@ package neorv32_package is
     generic (
       -- Processor Clocking --
       CLOCK_FREQUENCY       : natural                        := 0;
-      -- Identification --
+      -- Dual-Core Configuration --
+      DUAL_CORE_EN          : boolean                        := false;
+      -- Core Identification --
       JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000";
       -- Boot Configuration --
       BOOT_MODE_SELECT      : natural range 0 to 2           := 0;

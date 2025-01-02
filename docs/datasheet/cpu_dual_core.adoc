@@ -1,0 +1,82 @@
+:sectnums:
+=== Dual-Core Configuration
+
+.Hardware Requirements
+[IMPORTANT]
+The SMP dual-core configuration requires the <<_core_local_interruptor_clint>> to be implemented.
+
+Optionally, the CPU core can be implemented as **symmetric multiprocessing (SMP) dual-core** system.
+This dual-core configuration is enabled by the `DUAL_CORE_EN` <<_processor_top_entity_generics, top generic>>.
+When enabled, two _core complexes_ are implemented. Each core complex consists of a CPU core and optional
+instruction (`I$`) and data (`D$`) caches. Similar to the single-core <<_bus_system>>, the instruction and
+data interfaces are switched into a single bus interface by a prioritizing bus switch. The bus interfaces
+of both core complexes are further switched into a single system bus using a round-robin arbiter.
+
+image::smp_system.png[align=center]
+
+Both CPU cores are fully identical and use the same configuration provided by the according
+<<_processor_top_entity_generics, top generics>>. However, each core can be identified by the according
+"hart ID" that can be retrieved from the <<_mhartid>> CSR. CPU core 0 (the _primary_ core) has `mhartid = 0`
+while core 1 (the _secondary_ core) has `mhartid = 1`.
+
+The following table summarizes the most important aspects when using the dual-core configuration.
+
+[cols="<2,<10"]
+[grid="rows"]
+|=======================
+| **Debugging** | A special SMP openOCD script (`sw/openocd/openocd_neorv32.dual_core.cfg`) is required to
+debug both cores at one. SMP-debugging is fully supported by RISC-V gdb port.
+| **Clock and reset** | Both cores use the same global processor clock and reset. If <<_cpu_clock_gating>>
+is enabled the clock of each core can be individually halted by putting it into <<_sleep_mode>>.
+| **Address space** | Both cores have access to the same <<_address_space>>.
+| **Interrupts** | All <<_processor_interrupts>> are routed to both cores. Hence, each core has access to
+all <<_neorv32_specific_fast_interrupt_requests>> (FIRQs). Additionally, the RISC-V machine-level _external
+interrupt_ (via the top `mext_irq_i` port) is also send to both cores. In contrast, the RISC-V machine level
+_software_ and _timer_ interrupts are exclusive for each core (provided by the <<_core_local_interruptor_clint>>).
+| **RTE** | The <<_neorv32_runtime_environment>> also supports the dual-core configuration. However, it needs
+to be explicitly initialized on each core individually. The RTE trap handling provides a individual handler
+tables for each core.
+| **Memory** | Each core has its own stack. The top of stack of core 0 is defined by the <<_linker_script>>
+while the top of stack of core 1 has to be explicitly defined by core 0 (see <<_dual_core_boot>>). Both
+cores share the same heap, `.data` and `.bss` sections.
+| **Constructors and destructors** | Constructors and destructors are executed on core 0 only.
+(see )
+| **Bootloader** | Only core 0 will boot and execute the bootloader while core 1 is held in standby.
+| **Booting** | See next section <<_dual_core_boot>>.
+|=======================
+
+.Dual-Core Example
+[TIP]
+A simple dual-core example setup / test program can be found in `sw/example/demo_dual_core`.
+
+
+==== Dual-Core Boot
+
+After reset both cores start booting. However, core 1 will always (regardless of the boot configuration) enter
+sleep mode inside the default <<_start_up_code_crt0>> that is linked with any compiled application. The primary
+core (core 0) will continue booting executing either the <<_bootloader>> or the pre-installed image in the
+internal instruction memory (depending on the <<_boot_configuration>>).
+
+To boot-up core 1 the primary core has to use a special library function provided by the NEORV32 runtime
+environment (RTE):
+
+.CPU Core 1 launch function prototype (note that this function can only be executed on core 0)
+[source,c]
+----
+int neorv32_rte_smp_launch(void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes);
+----
+
+When executed, core 0 will populate a configuration structure in main memory that contain the entry point
+for core 1 (via `entry_point`) and the actual stack configuration (via `stack_memory` and `stack_size_bytes`).
+
+.Core 1 Stack Memory
+[NOTE]
+The memory for the stack of core 1 (`stack_memory`) can be either statically allocated (i.e. a global
+volatile memory array; placed in the `.data` or `.bss` section of core 0) or dynamically allocated
+(using `malloc`; placed on the heap of core 0). In any case the memory should be aligned to a 16-byte
+boundary.´
+
+After that, the primary core triggers the _machine software interrupt_ of core 1 using the
+<<_core_local_interruptor_clint>>. Core 1 wakes up from sleep mode, consumes the configuration structure and
+finally starts executing at the provided entry point. When `neorv32_rte_smp_launch()` returns (with no error
+code) the secondary core is online and running.
