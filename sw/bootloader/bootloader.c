@@ -122,9 +122,14 @@
   #define TWI_CLK_DIV 3
 #endif
 
-/** TWI First Slave ID*/
+/** TWI First Slave ID */
 #ifndef TWI_SLAVE_ID
   #define TWI_SLAVE_ID 0x50
+#endif
+
+/** TWI Memory address width (in numbers of bytes; 1 or 2) */
+#ifndef TWI_ADDR_BYTES
+  #define TWI_ADDR_BYTES 1
 #endif
 
 /**@}*/
@@ -1040,8 +1045,13 @@ uint32_t twi_read_addr(uint32_t addr) {
 
   address.uint32 = addr;
 
-  uint8_t device_id = address.uint8[1] + TWI_SLAVE_ID;
-  
+#if (TWI_ADDR_BYTES == 1)
+  uint8_t device_id = address.uint8[TWI_ADDR_BYTES] + TWI_SLAVE_ID;
+#elif (TWI_ADDR_BYTES == 2)
+  uint8_t device_id = TWI_SLAVE_ID;
+#else
+  #error "Unsupported TWI_ADDR_BYTES configuration!"
+#endif
 
   
   /***********************
@@ -1055,8 +1065,17 @@ uint32_t twi_read_addr(uint32_t addr) {
   device_nack |= neorv32_twi_trans(&transfer, 0);
 
   // Send read address
+#if (TWI_ADDR_BYTES == 1)
   transfer = address.uint8[0];
   device_nack |= neorv32_twi_trans(&transfer, 0);
+#elif (TWI_ADDR_BYTES == 2)
+  transfer = address.uint8[1];
+  device_nack |= neorv32_twi_trans(&transfer, 0);
+  transfer = address.uint8[0];
+  device_nack |= neorv32_twi_trans(&transfer, 0);
+#else
+  #error "Unsupported TWI_ADDR_BYTES configuration!"
+#endif
 
   /***********************
    * Read data 
