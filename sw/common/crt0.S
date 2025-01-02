@@ -26,7 +26,8 @@ __crt0_entry:
 // ************************************************************************************************
 .option push
 .option norelax
-  la    x1, main                        // primary core's (core0) entry point
+  csrr  x1, mhartid                     // get ID of this core
+
   la    x4, __crt0_ram_last             // last address of RAM, stack pointer (sp) starts here
   andi  x2, x4, 0xfffffff0              // align stack to 16-bytes according to the RISC-V ABI (#1021)
   la    x3, __global_pointer$           // global pointer (gp)
@@ -43,7 +44,7 @@ __crt0_entry:
   la    x10, __crt0_bss_start           // .bss: start address
   la    x11, __crt0_bss_end             // .bss: end address (not part of bss)
 
-  csrr  x12, mhartid                    // get ID of this core
+  la    x12, main                       // primary core's (core0) entry point
 .option pop
 
   // initialize rest of register file
@@ -75,7 +76,7 @@ __crt0_entry:
 // ************************************************************************************************
 #ifndef DISABLE_DUALCORE
 __crt0_dualcore_check:
-  beqz  x12, __crt0_dualcore_primary     // proceed with normal boot-up if we are core 0
+  beqz  x1, __crt0_dualcore_primary      // proceed with normal boot-up if we are core 0
 
   // setup machine software interrupt
   la    x15, __crt0_dualcore_mswi
@@ -103,9 +104,8 @@ __crt0_dualcore_init:
 
 __crt0_dualcore_valid:
   lw    x2, 8(x13)                       // sp = __neorv32_rte_smp_startup.stack_upper
-  lw    x1, 12(x13)                      // ra = __neorv32_rte_smp_startup.entry_point
+  lw    x12, 12(x13)                     // __neorv32_rte_smp_startup.entry_point
   sw    x0, 0(x13)                       // invalidate configuration struct
-  csrw  mstatus, x5                      // re-initialize mstatus
 
   // acknowledge startup by clearing software interrupt
   li    x14,  0xfff40000                 // CLINT.MSWI base address
@@ -156,7 +156,7 @@ __crt0_bss_clear_end:
 __crt0_constructors:
   bge   x8, x9, __crt0_constructors_end
   lw    x1, 0(x8)
-  jalr  x1, 0(x1)
+  jalr  x1, 0(x1)  // call constructor function; put return address in ra
   addi  x8, x8, 4
   j     __crt0_constructors
 
@@ -171,9 +171,14 @@ __crt0_main_entry:
   fence                  // reload instruction cache
   fence.i                // reload instruction cache
 
+  // re-initialize trap CSRs
+  csrw  mstatus, x5
+  csrw  mcause, zero
+  csrw  mepc, zero
+
   addi  x10, zero, 0     // x10 = a0 = argc = 0
   addi  x11, zero, 0     // x11 = a1 = argv = 0
-  jalr  x1, x1           // call actual main function
+  jalr  x1, x12          // call actual main function; put return address in ra
 
 __crt0_main_exit:        // main's "return" and "exit" will arrive here
   csrw  mie, zero        // disable all interrupt sources
@@ -195,7 +200,7 @@ __crt0_main_exit:        // main's "return" and "exit" will arrive here
 __crt0_destructors:
   bge   x8, x9, __crt0_destructors_end
   lw    x1, 0(x8)
-  jalr  x1, 0(x1)
+  jalr  x1, 0(x1)  // call destructor function; put return address in ra
   addi  x8, x8, 4
   j     __crt0_destructors
 
