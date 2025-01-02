@@ -1,6 +1,10 @@
 :sectnums:
 === Dual-Core Configuration
 
+.Hardware Requirements
+[IMPORTANT]
+The SMP dual-core configuration requires the <<_core_local_interruptor_clint>> to be implemented.
+
 Optionally, the CPU core can be implemented as **symmetric multiprocessing (SMP) dual-core** system.
 This dual-core configuration is enabled by the `DUAL_CORE_EN` <<_processor_top_entity_generics, top generic>>.
 When enabled, two _core complexes_ are implemented. Each core complex consists of a CPU core and optional
@@ -41,6 +45,10 @@ cores share the same heap, `.data` and `.bss` sections.
 | **Booting** | See next section <<_dual_core_boot>>.
 |=======================
 
+.Dual-Core Example
+[TIP]
+A simple dual-core example setup / test program can be found in `sw/example/demo_dual_core`.
+
 
 ==== Dual-Core Boot
 
@@ -70,5 +78,5 @@ boundary.´
 
 After that, the primary core triggers the _machine software interrupt_ of core 1 using the
 <<_core_local_interruptor_clint>>. Core 1 wakes up from sleep mode, consumes the configuration structure and
-finally starts executing at the provided entry point. When `neorv32_rte_smp_launch()` returns (with no error)
-code the secondary core is online and running.
+finally starts executing at the provided entry point. When `neorv32_rte_smp_launch()` returns (with no error
+code) the secondary core is online and running.

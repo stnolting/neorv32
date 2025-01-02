@@ -15,6 +15,11 @@ RAM size of at least 256 bytes. Both constraints ensure that the bootloader can 
 configuration. However, the bootloader can recompiled with different capabilities. See the User Guide
 https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader for more information.
 
+.SMP Dual-Core Configuration
+[NOTE]
+For the SMP <<_dual_core_configuration>> only the primary core (core 0) will boot and execute the bootloader
+while the secondary core (core 1) will be halted in sleep mode.
+
 The NEORV32 bootloader (`sw/bootloader/bootloader.c`) provides an optional built-in firmware that
 allows to upload new application executables at _any time_ without the need to re-synthesize the FPGA's bitstream.
 A UART connection is used to provide a simple text-based user interface that allows to upload executables.

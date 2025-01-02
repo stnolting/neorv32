@@ -3,7 +3,7 @@
 :sectnums:
 == NEORV32 Processor (SoC)
 
-The NEORV32 Processor is based on the NEORV32 CPU. Together with common peripheral
+The NEORV32 Processor is build around the <<_neorv32_central_processing_unit_cpu>>. Together with common peripheral
 interfaces and embedded memories it provides a RISC-V-based full-scale microcontroller-like SoC platform.
 
 .The NEORV32 Processor (Block Diagram)
@@ -19,6 +19,7 @@ image::neorv32_processor.png[align=center]
 
 **Key Features**
 
+* _optional_ SMP <<_dual_core_configuration>>
 * _optional_ processor-internal data and instruction memories (<<_data_memory_dmem,**DMEM**>>/<<_instruction_memory_imem,**IMEM**>>)
 * _optional_ caches (<<_processor_internal_instruction_cache_icache,**I-CACHE**>>, <<_processor_internal_data_cache_dcache,**D-CACHE**>>,
 <<_execute_in_place_module_xip,**XIP-CACHE**>>, <<_processor_external_bus_interface_xbus,**XBUS-CACHE**>>)
@@ -162,7 +163,7 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `cfs_out_o`      | 32 | out |   -   | custom CFS output signal conduit
 5+^| **<<_smart_led_interface_neoled>>**
 | `neoled_o`       |  1 | out |   -   | asynchronous serial data output
-5+^| **<<_core_local_interruptor_clint>**
+5+^| **<<_core_local_interruptor_clint>>**
 | `mtime_time_o`   | 64 | out |   -   | CLINT.MTIMER system time output
 5+^| **<<_external_interrupt_controller_xirq>>**
 | `xirq_i`         | 32 |  in | `'L'` | external interrupt requests
@@ -210,6 +211,8 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | Name | Type | Default | Description
 4+^| **<<_processor_clocking>>**
 | `CLOCK_FREQUENCY`       | natural   | 0             | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
+4+^| **<<_dual_core_configuration>>**
+| `DUAL_CORE_EN`          | boolean   | false         | Enable the SMP dual-core configuration.
 4+^| **Core Identification**
 | `JEDEC_ID`              | suv(10:0) | "00000000000" | JEDEC ID; continuation codes plus vendor ID (passed to <<_mvendorid>> CSR and to the <<_debug_transport_module_dtm>>).
 4+^| **<<_boot_configuration>>**
@@ -520,6 +523,11 @@ The components of the processor's bus system infrastructure are located in `rtl/
 [TIP]
 See sections CPU <<_architecture>> and <<_bus_interface>> for more information regarding the CPU bus accesses.
 
+.SMP Dual-Core Configuration
+[TIP]
+The dual-core configuration adds a second CPU core complex in parallel to the first one.
+See section <<_dual_core_configuration>> for more information.
+
 
 :sectnums:
 ==== Bus Gateway
@@ -668,6 +676,10 @@ generic (see <<_processor_top_entity_generics>>).
 | 1                  | Custom Address | `BOOT_ADDR_CUSTOM` generic | Start booting at user-defined address (`BOOT_ADDR_CUSTOM` top generic).
 | 2                  | IMEM Image     | Base of internal IMEM      | Implement the processor-internal <<_instruction_memory_imem>> as pre-initialized ROM and boot from there.
 |=======================
+
+.Dual-Core Boot
+[TIP]
+For the SMPA dual-core CPU configuration boot procedure see section <<_dual_core_boot>>.
 
 
 :sectnums:
