@@ -221,6 +221,7 @@
           <name>DATA</name>
           <description>RX/TX data register (lowest 8 bit)</description>
           <addressOffset>0x04</addressOffset>
+          <readAction>modify</readAction>
         </register>
       </registers>
     </peripheral>
@@ -369,11 +370,13 @@
           <name>DATA</name>
           <description>RX/TX data register</description>
           <addressOffset>0x08</addressOffset>
+          <readAction>modify</readAction>
         </register>
         <register>
           <name>DATA_LAST</name>
           <description>RX/TX data register (plus TX end-of-stream delimiter)</description>
           <addressOffset>0x0c</addressOffset>
+          <readAction>modify</readAction>
         </register>
       </registers>
     </peripheral>
@@ -821,6 +824,7 @@
           <name>DCMD</name>
           <description>Read/write transmission data/command register</description>
           <addressOffset>0x04</addressOffset>
+          <readAction>modify</readAction>
           <fields>
             <field>
               <name>ONEWIRE_DCMD_DATA</name>
@@ -1060,6 +1064,7 @@
           <name>DATA</name>
           <description>RTX data register</description>
           <addressOffset>0x04</addressOffset>
+          <readAction>modify</readAction>
         </register>
       </registers>
     </peripheral>
@@ -1200,6 +1205,7 @@
           <name>DATA</name>
           <description>Data register</description>
           <addressOffset>0x04</addressOffset>
+          <readAction>modify</readAction>
           <fields>
             <field>
               <name>SPI_DATA</name>
@@ -1299,6 +1305,7 @@
           <name>DCMD</name>
           <description>RX/TX data/command register</description>
           <addressOffset>0x04</addressOffset>
+          <readAction>modify</readAction>
           <fields>
             <field>
               <name>TWI_DCMD</name>
@@ -1435,6 +1442,7 @@
           <name>DATA</name>
           <description>RX/TX data register</description>
           <addressOffset>0x04</addressOffset>
+          <readAction>modify</readAction>
           <fields>
             <field>
               <name>TWI_DATA</name>
@@ -1499,6 +1507,7 @@
           <name>DATA</name>
           <description>Random data</description>
           <addressOffset>0x04</addressOffset>
+          <readAction>modify</readAction>
           <fields>
             <field>
               <name>TRNG_DATA</name>
