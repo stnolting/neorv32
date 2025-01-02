@@ -81,6 +81,7 @@ volatile uint32_t num_hpm_cnts_global = 0; // global number of available hpms
 volatile int vectored_mei_handler_ack = 0; // vectored mei trap handler acknowledge
 volatile uint32_t xirq_trap_handler_ack = 0; // xirq trap handler acknowledge
 volatile uint32_t hw_brk_mscratch_ok = 0; // set when mepc was correct in trap handler
+volatile uint32_t constr_test = 0; // for constructor test
 
 volatile uint32_t dma_src; // dma source & destination data
 volatile uint32_t store_access_addr[2]; // variable to test store accesses
@@ -89,6 +90,14 @@ volatile uint32_t __attribute__((aligned(4))) pmp_access[2]; // variable to test
 volatile uint32_t trap_cnt; // number of triggered traps
 volatile uint32_t pmp_num_regions; // number of implemented pmp regions
 volatile uint8_t core1_stack[512]; // stack for core1
+
+
+/**********************************************************************//**
+ * Constructor; should be called before entering main.
+ **************************************************************************/
+void __attribute__((constructor)) neorv32_constructor() {
+  constr_test = 0x1234abcdu;
+}
 
 
 /**********************************************************************//**
@@ -1729,7 +1738,7 @@ int main() {
   // Check dynamic memory allocation
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] heap/malloc ", cnt_test);
+  PRINT_STANDARD("[%i] Heap/malloc ", cnt_test);
 
   tmp_a = (uint32_t)neorv32_heap_size_c;
 
@@ -1757,6 +1766,21 @@ int main() {
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Constructor test
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] Constructor ", cnt_test);
+  cnt_test++;
+
+  if (constr_test == 0x1234abcdu) { // has constructor been executed?
+    test_ok();
+  }
+  else {
+    test_fail();
   }
 
 
@@ -2203,7 +2227,7 @@ int main() {
   // Dual-core test
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Dual-core test ", cnt_test);
+  PRINT_STANDARD("[%i] Dual-core ", cnt_test);
 
   if ((neorv32_cpu_csr_read(CSR_MHARTID) == 0) && // we need to be core 0
       (NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] > 1) && // we need at least two cores
