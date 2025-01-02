@@ -107,7 +107,7 @@
 /* -------- TWI configuration -------- */
 /* assumes single byte address */
 
-/** Enable TWI for cooping to RAM */
+/** Enable TWI for copying to RAM */
 #ifndef TWI_EN
   #define TWI_EN 0
 #endif
