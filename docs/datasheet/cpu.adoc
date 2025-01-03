@@ -415,7 +415,8 @@ always valid when set.
 | `rw`    |     1 | Access direction (`0` = read, `1` = write)
 | `src`   |     1 | Access source (`0` = instruction fetch, `1` = load/store)
 | `priv`  |     1 | Set if privileged (M-mode) access
-| `rvso`  |     1 | Set if current access is a reservation-set operation (`lr` or `sc` instruction, <<_zalrsc_isa_extension>>)
+| `amo`   |     1 | Set if current access is an atomic memory operation (<<_atomic_memory_access>>)
+| `amoop` |     4 | Type of atomic memory operation (<<_atomic_memory_access>>)
 3+^| **Out-Of-Band Signals**
 | `fence` |     1 | Data/instruction fence request; single-shot
 | `sleep` |     1 | Set if ALL upstream devices are in <<_sleep_mode>>
@@ -463,36 +464,31 @@ additional latency). However, _all_ bus signals (request and response) need to b
 
 
 :sectnums:
-==== Atomic Accesses
+==== Atomic Memory Access
 
-The load-reservate (`lr.w`) and store-conditional (`sc.w`) instructions from the <<_zalrsc_isa_extension>> execute as standard
-load/store bus transactions but with the `rvso` ("reservation set operation") signal being set. It is the task of the
-<<_reservation_set_controller>> to handle these LR/SC bus transactions accordingly. Note that these reservation set operations
-are intended for processor-internal usage only (i.e. the reservation state is not available for processor-external modules yet).
+The <<_zaamo_isa_extension>> adds atomic read-modify-write memory operations. Since the <<_bus_interface_protocol>>
+only supports read-or-write operations, the atomic memory requests are handled by a dedicated module of the bus
+infrastructure - the <<_atomic_memory_operations_controller>>.
 
-.Reservation Set Controller
-[NOTE]
-See section <<_address_space>> / <<_reservation_set_controller>> for more information.
+For the CPU, the atomic memory accesses are handled as plain "load" operation but with the `amo` signal set
+and also providing write data (see <<_bus_interface>>). The `amoop` signal defines the actual atomic processing
+operation:
 
-The figure below shows three exemplary bus accesses (1 to 3 from left to right). The `req` signal record represents
-the CPU-side of the bus interface. For easier understanding the current state of the reservation set is added as `rvs_valid` signal.
-
-[start=1]
-. A load-reservate (LR) instruction using `addr` as address. This instruction returns the loaded data `rdata` via `rsp.data`
-and also registers a reservation for the address `addr` (`rvs_valid` becomes set).
-. A store-conditional (SC) instruction attempts to write `wdata1` to address `addr`. This SC operation **succeeds**, so
-`wdata1` is actually written to address `addr`. The successful operation is indicated by a **0** being returned via
-`rsp.data` together with `ack`. As the LR/SC is completed the registered reservation is invalidated (`rvs_valid` becomes cleared).
-. Another store-conditional (SC) instruction attempts to write `wdata2` to address `addr`. As the reservation set is already
-invalidated (`rvs_valid` is `0`) the store access fails, so `wdata2` is **not** written to address `addr` at all. The failed
-operation is indicated by a **1** being returned via `rsp.data` together with `ack`.
-
-.Three Exemplary LR/SC Bus Transactions (showing only in-band signals)
-image::bus_interface_atomic.png[700]
-
-.Store-Conditional Status
-[NOTE]
-The "normal" load data mechanism is used to return success/failure of the `sc.w` instruction to the CPU (via the LSB of `rsp.data`).
+.AMO Operation Type Encoding
+[cols="<1,<4"]
+[options="header",grid="rows"]
+|=======================
+| `bus_req_t.amoop` | Description
+| `-000` | swap
+| `-001` | unsigned add
+| `-010` | logical xor
+| `-011` | logical and
+| `-100` | logical or
+| `0110` | unsigned minimum
+| `0111` | unsigned maximum
+| `1110` | signed minimum
+| `1111` | signed maximum
+|=======================
 
 .Cache Coherency
 [IMPORTANT]
@@ -521,7 +517,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_m_isa_extension,`M`>>               | Integer multiplication and division instructions              | <<_processor_top_entity_generics, `RISCV_ISA_M`>>
 | <<_u_isa_extension,`U`>>               | Less-privileged _user_ mode extension                         | <<_processor_top_entity_generics, `RISCV_ISA_U`>>
 | <<_x_isa_extension,`X`>>               | Platform-specific / NEORV32-specific extension                | Always enabled
-| <<_zalrsc_isa_extension,`Zalrsc`>>     | Atomic reservation-set instructions                           | <<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>>
+| <<_zaamo_isa_extension,`Zaamo`>>       | Atomic memory operations                                      | <<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>>
 | <<_zba_isa_extension,`Zba`>>           | Shifted-add bit manipulation instructions                     | <<_processor_top_entity_generics, `RISCV_ISA_Zba`>>
 | <<_zbb_isa_extension,`Zbb`>>           | Basic bit manipulation instructions                           | <<_processor_top_entity_generics, `RISCV_ISA_Zbb`>>
 | <<_zbkb_isa_extension,`Zbkb`>>         | Scalar cryptographic bit manipulation instructions            | <<_processor_top_entity_generics, `RISCV_ISA_Zbkb`>>
@@ -689,36 +685,22 @@ RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 * There are <<_neorv32_specific_csrs>>.
 
 
-==== `Zalrsc` ISA Extension
+==== `Zaamo` ISA Extension
 
-The `Zalrsc` ISA extension is a sub-extension of the RISC-V _atomic memory access_ (`A`) ISA extension and includes
-instructions for reservation-set operations (load-reservate `lr` and store-conditional `sc`) only.
-It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>> generic.
-
-.AMO / `A` Emulation
-[NOTE]
-The atomic memory access / read-modify-write operations of the `A` ISA extension can be emulated using the
-LR and SC operations (quote from the RISC-V spec.: "_Any AMO can be emulated by an LR/SC pair._").
-The NEORV32 <<_core_libraries>> provide an emulation wrapper for emulating AMO/read-modify-write instructions that is
-based on LR/SC pairs. A demo/program can be found in `sw/example/atomic_test`.
+The `Zaamo` ISA extension is a sub-extension of the RISC-V `A` ISA extension and compromises instructions for read-modify-write
+<<_atomic_memory_access>> operations. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>> generic.
 
 .Instructions and Timing
-[cols="<2,<4,<3"]
+[cols="<2,<4,<1"]
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Load-reservate word    | `lr.w` | 5
-| Store-conditional word | `sc.w` | 5
+| Atomic memory operations | `amoswap.w` `amoadd.w` `amoand.w` `amoor.w` `amoxor.w` `amomax[u].w` `amomin[u].w` | 5 + 2 * _memory_latency_
 |=======================
 
 .`aq` and `rl` Bits
 [NOTE]
 The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
-
-.Atomic Memory Access on Hardware Level
-[NOTE]
-More information regarding the atomic memory accesses and the according reservation
-sets can be found in section <<_reservation_set_controller>>.
 
 
 ==== `Zifencei` ISA Extension
