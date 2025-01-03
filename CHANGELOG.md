@@ -29,7 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 03.01.2025 | 1.10.8.7 | :warning: :sparkles: replace `Zalrsc` ISA extensions (reservation-set operations) by `Zaamo` ISA extension (atomic read-modify-write operations) | [#]() |
+| 03.01.2025 | 1.10.8.7 | :warning: :sparkles: replace `Zalrsc` ISA extensions (reservation-set operations) by `Zaamo` ISA extension (atomic read-modify-write operations) | [#1141](https://github.com/stnolting/neorv32/pull/1141) |
 | 01.01.2025 | 1.10.8.6 | :sparkles: :test_tube: add smp dual-core option | [#1135](https://github.com/stnolting/neorv32/pull/1135) |
 | 29.12.2024 | 1.10.8.5 | :test_tube: add multi-hart support to debug module | [#1132](https://github.com/stnolting/neorv32/pull/1132) |
 | 29.12.2024 | 1.10.8.4 | :warning: rename `SYSINFO.MEM -> SYSINFO.MISC`; add new `SYSINFO.MISC` entry for number of CPU cores (hardwired to one) | [#1134](https://github.com/stnolting/neorv32/pull/1134) |
