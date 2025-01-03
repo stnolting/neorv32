@@ -30,7 +30,7 @@ volatile uint8_t __attribute__ ((aligned (16))) core1_stack[2048]; // stack memo
  * Main function for core 0 (primary core).
  *
  * @attention This program requires the dual-core configuration, the CLINT, UART0
- * and the Zalrsc ISa extension.
+ * and the Zaamo ISA extension.
  *
  * @return Irrelevant (but can be inspected by the debugger).
  **************************************************************************/
@@ -57,8 +57,8 @@ int main(void) {
     neorv32_uart0_printf("[ERROR] CLINT module not available!\n");
     return -1;
   }
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZALRSC)) == 0) { // atomic lr/sc operations available?
-    neorv32_uart0_printf("[ERROR] 'Zalrsc' ISA extension not available!\n");
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZAAMO)) == 0) { // atomic memory operations available?
+    neorv32_uart0_printf("[ERROR] 'Zaamo' ISA extension not available!\n");
     return -1;
   }
 #ifndef __riscv_atomic

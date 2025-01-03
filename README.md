@@ -106,7 +106,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 [[`B`](https://stnolting.github.io/neorv32/#_b_isa_extension)]
 [[`U`](https://stnolting.github.io/neorv32/#_u_isa_extension)]
 [[`X`](https://stnolting.github.io/neorv32/#_x_isa_extension)]
-[[`Zalrsc`](https://stnolting.github.io/neorv32/#_zalrsc_isa_extension)]
+[[`Zaamo`](https://stnolting.github.io/neorv32/#_zaamo_isa_extension)]
 [[`Zba`](https://stnolting.github.io/neorv32/#_zba_isa_extension)]
 [[`Zbb`](https://stnolting.github.io/neorv32/#_zbb_isa_extension)]
 [[`Zbkb`](https://stnolting.github.io/neorv32/#_zbkb_isa_extension)]

@@ -85,7 +85,6 @@ volatile uint32_t constr_test = 0; // for constructor test
 
 volatile uint32_t dma_src; // dma source & destination data
 volatile uint32_t store_access_addr[2]; // variable to test store accesses
-volatile uint32_t amo_var; // variable for testing atomic memory accesses
 volatile uint32_t __attribute__((aligned(4))) pmp_access[2]; // variable to test pmp
 volatile uint32_t trap_cnt; // number of triggered traps
 volatile uint32_t pmp_num_regions; // number of implemented pmp regions
@@ -1974,88 +1973,6 @@ int main() {
   else {
     PRINT_STANDARD("[n.a.]\n");
   }
-
-
-  // ----------------------------------------------------------
-  // Test atomic lr/sc memory access - failing access
-  // ----------------------------------------------------------
-#if defined __riscv_atomic
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
-  PRINT_STANDARD("failing) ");
-
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
-    cnt_test++;
-
-    // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
-    //        it before/after making "normal" load/store operations
-
-    amo_var = 0x00cafe00; // initialize
-    asm volatile ("fence"); // flush/reload d-cache
-
-    tmp_a = neorv32_cpu_amolr((uint32_t)&amo_var);
-    amo_var = 0x10cafe00; // break reservation
-    asm volatile ("fence"); // flush/reload d-cache
-    tmp_b = neorv32_cpu_amosc((uint32_t)&amo_var, 0xaaaaaaaa);
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc); // another SC: must fail
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0); // another SC: must fail; no bus exception!
-    asm volatile ("fence"); // flush/reload d-cache
-
-    if ((tmp_a   == 0x00cafe00) && // correct LR.W result
-        (amo_var == 0x10cafe00) && // atomic variable NOT updates by SC.W
-        (tmp_b   == 0x00000007) && // SC.W[2] failed, SC.W[1] failed, SC.W[0] failed
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
-#endif
-
-
-  // ----------------------------------------------------------
-  // Test atomic lr/sc memory access - succeeding access
-  // ----------------------------------------------------------
-#if defined __riscv_atomic
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
-  PRINT_STANDARD("succeed) ");
-
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
-    cnt_test++;
-
-    // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
-    //        it before/after making "normal" load/store operations
-
-    amo_var = 0x00abba00; // initialize
-    asm volatile ("fence"); // flush/reload d-cache
-
-    tmp_a = neorv32_cpu_amolr((uint32_t)&amo_var);
-    asm volatile ("fence"); // flush/reload d-cache
-    neorv32_cpu_load_unsigned_word((uint32_t)&amo_var); // dummy read, must not alter reservation set state
-    tmp_b = neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc);
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc); // another SC: must fail
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0); // another SC: must fail; no bus exception!
-    asm volatile ("fence"); // flush/reload d-cache
-
-    if ((tmp_a   == 0x00abba00) && // correct LR.W result
-        (amo_var == 0xcccccccc) && // atomic variable WAS updates by SC.W
-        (tmp_b   == 0x00000003) && // SC.W[2] succeeded, SC.W[1] failed, SC.W[0] failed
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
-#endif
 
 
   // ----------------------------------------------------------

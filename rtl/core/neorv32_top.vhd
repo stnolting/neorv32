@@ -43,7 +43,7 @@ entity neorv32_top is
     RISCV_ISA_E           : boolean                        := false;       -- implement embedded RF extension
     RISCV_ISA_M           : boolean                        := false;       -- implement mul/div extension
     RISCV_ISA_U           : boolean                        := false;       -- implement user mode extension
-    RISCV_ISA_Zalrsc      : boolean                        := false;       -- implement atomic reservation-set extension
+    RISCV_ISA_Zaamo       : boolean                        := false;       -- implement atomic memory operations extension
     RISCV_ISA_Zba         : boolean                        := false;       -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb         : boolean                        := false;       -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb        : boolean                        := false;       -- implement bit-manipulation instructions for cryptography
@@ -508,7 +508,7 @@ begin
       RISCV_ISA_E         => RISCV_ISA_E,
       RISCV_ISA_M         => RISCV_ISA_M,
       RISCV_ISA_U         => RISCV_ISA_U,
-      RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
+      RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,
       RISCV_ISA_Zba       => RISCV_ISA_Zba,
       RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
       RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
@@ -727,27 +727,24 @@ begin
 
 
   -- **************************************************************************************************************************
-  -- Reservation Set Controller (for atomic LR/SC accesses)
+  -- Read-Modify-Write Controller for Atomic Memory Operations
   -- **************************************************************************************************************************
 
-  neorv32_bus_reservation_set_true:
-  if RISCV_ISA_Zalrsc generate
-    neorv32_bus_reservation_set_inst: entity neorv32.neorv32_bus_reservation_set
+  neorv32_bus_amo_ctrl_true:
+  if RISCV_ISA_Zaamo generate
+    neorv32_bus_amo_ctrl_inst: entity neorv32.neorv32_bus_amo_ctrl
     port map (
-      clk_i       => clk_i,
-      rstn_i      => rstn_sys,
-      rvs_addr_o  => open, -- yet unused
-      rvs_valid_o => open, -- yet unused
-      rvs_clear_i => '0',  -- yet unused
-      core_req_i  => main_req,
-      core_rsp_o  => main_rsp,
-      sys_req_o   => main2_req,
-      sys_rsp_i   => main2_rsp
+      clk_i      => clk_i,
+      rstn_i     => rstn_sys,
+      core_req_i => main_req,
+      core_rsp_o => main_rsp,
+      sys_req_o  => main2_req,
+      sys_rsp_i  => main2_rsp
     );
   end generate;
 
-  neorv32_bus_reservation_set_false:
-  if not RISCV_ISA_Zalrsc generate
+  neorv32_bus_amo_ctrl_false:
+  if not RISCV_ISA_Zaamo generate
     main2_req <= main_req;
     main_rsp  <= main2_rsp;
   end generate;

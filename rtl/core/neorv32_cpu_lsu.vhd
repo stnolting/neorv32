@@ -16,7 +16,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_lsu is
   generic (
-    AMO_LRSC_ENABLE : boolean -- enable atomic LR/SC operations
+    AMO_EN : boolean -- enable atomic memory operations
   );
   port (
     -- global control --
@@ -43,6 +43,7 @@ architecture neorv32_cpu_lsu_rtl of neorv32_cpu_lsu is
   signal misaligned  : std_ulogic; -- misaligned address
   signal arbiter_req : std_ulogic; -- pending bus request
   signal arbiter_err : std_ulogic; -- access error
+  signal amo_cmd     : std_ulogic_vector(3 downto 0); -- atomic memory operation type
 
 begin
 
@@ -75,17 +76,19 @@ begin
   mem_do_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      dbus_req_o.rw   <= '0';
-      dbus_req_o.priv <= '0';
-      dbus_req_o.rvso <= '0';
-      dbus_req_o.data <= (others => '0');
-      dbus_req_o.ben  <= (others => '0');
+      dbus_req_o.rw    <= '0';
+      dbus_req_o.priv  <= '0';
+      dbus_req_o.amo   <= '0';
+      dbus_req_o.amoop <= (others => '0');
+      dbus_req_o.data  <= (others => '0');
+      dbus_req_o.ben   <= (others => '0');
     elsif rising_edge(clk_i) then
       if (ctrl_i.lsu_mo_we = '1') then
         -- type identifiers --
-        dbus_req_o.rw   <= ctrl_i.lsu_rw; -- read/write
-        dbus_req_o.priv <= ctrl_i.lsu_priv; -- privilege level
-        dbus_req_o.rvso <= bool_to_ulogic_f(AMO_LRSC_ENABLE) and ctrl_i.ir_opcode(2); -- reservation set operation
+        dbus_req_o.rw    <= ctrl_i.lsu_rw; -- read/write
+        dbus_req_o.priv  <= ctrl_i.lsu_priv; -- privilege level
+        dbus_req_o.amo   <= bool_to_ulogic_f(AMO_EN) and ctrl_i.ir_opcode(2); -- atomic memory operation
+        dbus_req_o.amoop <= amo_cmd;
         -- data alignment + byte-enable --
         case ctrl_i.ir_funct3(1 downto 0) is
           when "00" => -- byte
@@ -109,6 +112,27 @@ begin
   dbus_req_o.fence <= ctrl_i.lsu_fence; -- out-of-band: this is valid without STB being set
   dbus_req_o.sleep <= ctrl_i.cpu_sleep; -- out-of-band: this is valid without STB being set
   dbus_req_o.debug <= ctrl_i.cpu_debug; -- out-of-band: this is valid without STB being set
+
+
+  -- atomic memory access operation encoding --
+  amo_encode: process(ctrl_i.ir_funct12)
+  begin
+    if AMO_EN then
+      case ctrl_i.ir_funct12(11 downto 7) is
+        when "00000" => amo_cmd <= "0001"; -- ADD
+        when "00100" => amo_cmd <= "0010"; -- XOR
+        when "01100" => amo_cmd <= "0011"; -- AND
+        when "01000" => amo_cmd <= "0100"; -- OR
+        when "10000" => amo_cmd <= "1110"; -- MIN
+        when "10100" => amo_cmd <= "1111"; -- MAX
+        when "11000" => amo_cmd <= "0110"; -- MINU
+        when "11100" => amo_cmd <= "0111"; -- MAXU
+        when others  => amo_cmd <= "0000"; -- SWAP
+      end case;
+    else
+      amo_cmd <= (others => '0');
+    end if;
+  end process;
 
 
   -- Data Input: Alignment and Sign-Extension -----------------------------------------------

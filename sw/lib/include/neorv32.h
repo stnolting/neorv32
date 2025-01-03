@@ -257,7 +257,6 @@ typedef union {
 
 // CPU core
 #include "neorv32_cpu.h"
-#include "neorv32_cpu_amo.h"
 #include "neorv32_cpu_csr.h"
 #include "neorv32_cpu_cfu.h"
 

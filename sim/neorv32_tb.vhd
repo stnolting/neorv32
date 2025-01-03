@@ -27,7 +27,7 @@ entity neorv32_tb is
     RISCV_ISA_E         : boolean                        := false;       -- implement embedded RF extension
     RISCV_ISA_M         : boolean                        := true;        -- implement mul/div extension
     RISCV_ISA_U         : boolean                        := true;        -- implement user mode extension
-    RISCV_ISA_Zalrsc    : boolean                        := true;        -- implement atomic reservation-set extension
+    RISCV_ISA_Zaamo     : boolean                        := true;        -- implement atomic memory operations extension
     RISCV_ISA_Zba       : boolean                        := true;        -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean                        := true;        -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean                        := true;        -- implement bit-manipulation instructions for cryptography
@@ -126,7 +126,7 @@ begin
     RISCV_ISA_E           => RISCV_ISA_E,
     RISCV_ISA_M           => RISCV_ISA_M,
     RISCV_ISA_U           => RISCV_ISA_U,
-    RISCV_ISA_Zalrsc      => RISCV_ISA_Zalrsc,
+    RISCV_ISA_Zaamo       => RISCV_ISA_Zaamo,
     RISCV_ISA_Zba         => RISCV_ISA_Zba,
     RISCV_ISA_Zbb         => RISCV_ISA_Zbb,
     RISCV_ISA_Zbkb        => RISCV_ISA_Zbkb,

@@ -8,7 +8,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -40,7 +40,7 @@ entity neorv32_vivado_ip is
     RISCV_ISA_E           : boolean                       := false;
     RISCV_ISA_M           : boolean                       := false;
     RISCV_ISA_U           : boolean                       := false;
-    RISCV_ISA_Zalrsc      : boolean                       := false;
+    RISCV_ISA_Zaamo       : boolean                       := false;
     RISCV_ISA_Zba         : boolean                       := false;
     RISCV_ISA_Zbb         : boolean                       := false;
     RISCV_ISA_Zbkb        : boolean                       := false;
@@ -366,7 +366,7 @@ begin
     RISCV_ISA_E           => RISCV_ISA_E,
     RISCV_ISA_M           => RISCV_ISA_M,
     RISCV_ISA_U           => RISCV_ISA_U,
-    RISCV_ISA_Zalrsc      => RISCV_ISA_Zalrsc,
+    RISCV_ISA_Zaamo       => RISCV_ISA_Zaamo,
     RISCV_ISA_Zba         => RISCV_ISA_Zba,
     RISCV_ISA_Zbb         => RISCV_ISA_Zbb,
     RISCV_ISA_Zbkb        => RISCV_ISA_Zbkb,

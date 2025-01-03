@@ -6,7 +6,7 @@
 # -- -------------------------------------------------------------------------------- --
 # -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 # -- Copyright (c) NEORV32 contributors.                                              --
-# -- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+# -- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 # -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 # -- SPDX-License-Identifier: BSD-3-Clause                                            --
 # -- ================================================================================ --
@@ -214,7 +214,7 @@ proc setup_ip_gui {} {
     { RISCV_ISA_E         {E Extension}                           {Reduced register file size (16 registers only)} }
     { RISCV_ISA_M         {M Extension}                           {Integer multiplication and division hardware} }
     { RISCV_ISA_U         {U Extension}                           {Less-privileged user-mode} }
-    { RISCV_ISA_Zalrsc    {Zalrsc Extension}                      {Atomic reservation-set instructions} }
+    { RISCV_ISA_Zaamo     {Zaamo Extension}                       {Atomic memory operations instructions} }
     { RISCV_ISA_Zba       {Zba Extension}                         {Shifted-add bit-manipulation instructions} }
     { RISCV_ISA_Zbb       {Zbb Extension}                         {Basic bit-manipulation instructions} }
     { RISCV_ISA_Zbkb      {Zbkb Extension}                        {Bit manipulation instructions for cryptography} }

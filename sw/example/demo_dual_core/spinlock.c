@@ -1,6 +1,6 @@
 /**
  * @file spinlock.c
- * @brief Single simple spin-lock based on atomic lr/sc operations.
+ * @brief Single simple spin-lock based on atomic memory operations.
  */
 #include <neorv32.h>
 
@@ -18,7 +18,7 @@ static volatile uint32_t __spin_locked = 0;
  **************************************************************************/
 void spin_lock(void) {
 
-  while (neorv32_cpu_amoswapw((uint32_t)&__spin_locked, 1) != 0);
+  while(__sync_lock_test_and_set(&__spin_locked, -1)); // -> amoswap.w
 }
 
 
@@ -27,5 +27,6 @@ void spin_lock(void) {
  **************************************************************************/
 void spin_unlock(void) {
 
-  neorv32_cpu_amoswapw((uint32_t)&__spin_locked, 0);
+  //__sync_lock_release(&__spin_locked); // uses fence that is not required here
+  __sync_lock_test_and_set(&__spin_locked, 0); // -> amoswap.w
 }
