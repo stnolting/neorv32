@@ -354,8 +354,10 @@ begin
       res_o <= (others => '0'); -- default
       if (done = '1') then
         case out_sel is
-          when "100"         => res_o <= xperm_res;
-          when "101" | "110" => res_o <= blk_res;
+          when "100" =>
+            res_o <= xperm_res;
+          when "101" | "110" =>
+            res_o <= blk_res;
           when others =>
             if EN_ZKSH and (ctrl_i.ir_opcode(5) = '0') and (funct12(3) = '1') then
               res_o <= sm3_res;

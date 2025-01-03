@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -68,6 +68,7 @@ void xirq_trap_handler0(void);
 void xirq_trap_handler1(void);
 void test_ok(void);
 void test_fail(void);
+void core1_main(void);
 
 // MCAUSE value that will be NEVER set by the hardware
 const uint32_t mcause_never_c = 0x80000000UL; // = reserved
@@ -80,6 +81,7 @@ volatile uint32_t num_hpm_cnts_global = 0; // global number of available hpms
 volatile int vectored_mei_handler_ack = 0; // vectored mei trap handler acknowledge
 volatile uint32_t xirq_trap_handler_ack = 0; // xirq trap handler acknowledge
 volatile uint32_t hw_brk_mscratch_ok = 0; // set when mepc was correct in trap handler
+volatile uint32_t constr_test = 0; // for constructor test
 
 volatile uint32_t dma_src; // dma source & destination data
 volatile uint32_t store_access_addr[2]; // variable to test store accesses
@@ -87,6 +89,15 @@ volatile uint32_t amo_var; // variable for testing atomic memory accesses
 volatile uint32_t __attribute__((aligned(4))) pmp_access[2]; // variable to test pmp
 volatile uint32_t trap_cnt; // number of triggered traps
 volatile uint32_t pmp_num_regions; // number of implemented pmp regions
+volatile uint8_t core1_stack[512]; // stack for core1
+
+
+/**********************************************************************//**
+ * Constructor; should be called before entering main.
+ **************************************************************************/
+void __attribute__((constructor)) neorv32_constructor() {
+  constr_test = 0x1234abcdu;
+}
 
 
 /**********************************************************************//**
@@ -138,9 +149,9 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCOUNTEREN, -1); // allow counter access from user-mode code
   }
 
-  // set CMP of machine system timer MTIME to max to prevent an IRQ
-  neorv32_mtime_set_timecmp(-1);
-  neorv32_mtime_set_time(0);
+  // set CMP of CLINT MTIMER to max to prevent an IRQ
+  neorv32_clint_mtimecmp_set(-1);
+  neorv32_clint_time_set(0);
 
   // get number of implemented PMP regions
   pmp_num_regions = neorv32_cpu_pmp_get_num_regions();
@@ -148,9 +159,9 @@ int main() {
 
   // fancy intro
   // -----------------------------------------------
-  neorv32_rte_print_logo(); // show NEORV32 ASCII logo
-  neorv32_rte_print_about(); // show project credits
-  neorv32_rte_print_hw_config(); // show full hardware configuration report
+  neorv32_aux_print_logo(); // show NEORV32 ASCII logo
+  neorv32_aux_print_about(); // show project credits
+  neorv32_aux_print_hw_config(); // show full hardware configuration report
 
 
   // **********************************************************************************************
@@ -778,17 +789,17 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Machine timer interrupt (MTIME)
+  // CLINT machine time interrupt
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] MTI IRQ ", cnt_test);
+  PRINT_STANDARD("[%i] CLINT.MTI ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     cnt_test++;
 
-    // configure MTIME (and check overflow from low word to high word)
-    neorv32_mtime_set_timecmp(0x0000000100000000ULL);
-    neorv32_mtime_set_time(   0x00000000FFFFFFFEULL);
+    // configure MTIMER (and check overflow from low word to high word)
+    neorv32_clint_mtimecmp_set(0x0000000100000000ULL);
+    neorv32_clint_time_set(0x00000000FFFFFFFEULL);
     // enable interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
 
@@ -808,7 +819,7 @@ int main() {
     }
 
     // no more MTIME interrupts
-    neorv32_mtime_set_timecmp(-1);
+    neorv32_clint_mtimecmp_set(-1);
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
@@ -816,26 +827,26 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Machine software interrupt (MSI) via testbench
+  // CLINT machine software interrupt
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] MSI (sim) IRQ ", cnt_test);
+  PRINT_STANDARD("[%i] CLINT.MSI ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     cnt_test++;
 
     // enable interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MSIE);
 
     // trigger IRQ
-    sim_irq_trigger(1 << CSR_MIE_MSIE);
+    neorv32_clint_msi_set(0);
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile ("nop");
     asm volatile ("nop");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
-    sim_irq_trigger(0);
+    neorv32_clint_msi_clr(0);
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MSI) {
       test_ok();
@@ -889,12 +900,12 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Permanent IRQ (MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     cnt_test++;
 
-    // fire MTIME IRQ
+    // fire CLINT.MTIMER IRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
-    neorv32_mtime_set_timecmp(0); // force interrupt
+    neorv32_clint_mtimecmp_set(0); // force interrupt
 
     volatile int test_cnt = 0;
 
@@ -922,14 +933,14 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Pending IRQ (MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     cnt_test++;
 
     // disable all interrupts
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    // fire MTIME IRQ
-    neorv32_mtime_set_timecmp(0); // force interrupt
+    // fire CLINT.MTIMER IRQ
+    neorv32_clint_mtimecmp_set(0); // force interrupt
 
     // wait some time for the IRQ to arrive the CPU
     asm volatile ("nop");
@@ -938,7 +949,7 @@ int main() {
     uint32_t was_pending = neorv32_cpu_csr_read(CSR_MIP) & (1 << CSR_MIP_MTIP); // should be pending now
 
     // clear pending MTI
-    neorv32_mtime_set_timecmp(-1);
+    neorv32_clint_mtimecmp_set(-1);
 
     uint32_t is_pending = neorv32_cpu_csr_read(CSR_MIP) & (1 << CSR_MIP_MTIP); // should NOT be pending anymore
 
@@ -1004,24 +1015,33 @@ int main() {
   // Fast interrupt channel 0
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FIRQ0 (TRNG) ", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ0 (TWD) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWD)) {
     cnt_test++;
 
-    // enable TRNG, trigger IRQ when FIFO is full
-    neorv32_trng_enable(1);
+    // configure TWD and enable RX-available interrupt
+    neorv32_twd_setup(0b1101001, 0, 1, 0, 0);
+
+    // configure TWI with third-fastest clock, no clock stretching
+    neorv32_twi_setup(CLK_PRSC_8, 1, 0);
 
     // enable fast interrupt
-    neorv32_cpu_csr_write(CSR_MIE, 1 << TRNG_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << TWD_FIRQ_ENABLE);
+
+    // program sequence: write data via TWI
+    neorv32_twi_generate_start_nonblocking();
+    neorv32_twi_send_nonblocking(0b11010010, 0); // write-address
+    neorv32_twi_send_nonblocking(0x47, 0);
+    neorv32_twi_generate_stop_nonblocking();
 
     // sleep until interrupt
     neorv32_cpu_sleep();
 
-    // no more interrupts
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRNG_TRAP_CODE) {
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWD_TRAP_CODE) && // interrupt triggered
+        (neorv32_twd_get() == 0x47)) { // correct data written
       test_ok();
     }
     else {
@@ -1036,6 +1056,7 @@ int main() {
   // ----------------------------------------------------------
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] FIRQ1 (CFS) ", cnt_test);
   PRINT_STANDARD("[n.a.]\n");
 
@@ -1275,13 +1296,17 @@ int main() {
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWI)) {
     cnt_test++;
 
-    // configure TWI with fastest clock, no clock stretching
-    neorv32_twi_setup(CLK_PRSC_2, 0, 0);
+    // configure TWI with third-fastest clock, no clock stretching
+    neorv32_twi_setup(CLK_PRSC_8, 1, 0);
 
-    // issue some TWI operations, after they are done the interrupt will be fired
+    // configure TWD, no interrupts
+    neorv32_twd_setup(0b0010110, 0, 0, 0, 0);
+    neorv32_twd_put(0x8e);
+
+    // program sequence: read data via TWI
     neorv32_twi_generate_start_nonblocking();
-    neorv32_twi_send_nonblocking(0xA5, 0);
-    neorv32_twi_send_nonblocking(0x12, 0);
+    neorv32_twi_send_nonblocking(0b00101101, 0); // read-address
+    neorv32_twi_send_nonblocking(0xff, 1);
     neorv32_twi_generate_stop_nonblocking();
 
     // enable TWI FIRQ
@@ -1292,10 +1317,15 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    tmp_a = NEORV32_TWI->CTRL;
+    // get TWI response
+    uint8_t twi_data_y;
+    int twi_ack_x = neorv32_twi_get(&twi_data_y);
+    neorv32_twi_get(&twi_data_y);
+
+
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWI_TRAP_CODE) && // interrupt triggered
-        (tmp_a & (1<<TWI_CTRL_RX_AVAIL)) && // RX data is available
-        ((tmp_a & (1<<TWI_CTRL_BUSY)) == 0)) { // module is not busy anymore
+        (twi_ack_x == 0x00) && // device acknowledged access
+        (twi_data_y == 0x8e)) { // correct read data
       test_ok();
     }
     else {
@@ -1708,7 +1738,7 @@ int main() {
   // Check dynamic memory allocation
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] heap/malloc ", cnt_test);
+  PRINT_STANDARD("[%i] Heap/malloc ", cnt_test);
 
   tmp_a = (uint32_t)neorv32_heap_size_c;
 
@@ -1740,20 +1770,35 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test WFI ("sleep") instruction (executed in user mode), wakeup via MTIME
+  // Constructor test
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] Constructor ", cnt_test);
+  cnt_test++;
+
+  if (constr_test == 0x1234abcdu) { // has constructor been executed?
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
+
+
+  // ----------------------------------------------------------
+  // Test WFI ("sleep") instruction (executed in user mode), wakeup via CLINT.MTIMER
   // mstatus.mie is cleared before to check if machine-mode IRQ still trigger in user-mode
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] User-mode WFI (wake-up via MTI) ", cnt_test);
 
-  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) &&
+  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) &&
       (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U))) {
     cnt_test++;
 
     // program wake-up timer
-    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 300);
+    neorv32_clint_mtimecmp_set(neorv32_clint_time_get() + 300);
 
-    // enable mtime interrupt
+    // enable CLINT.MTIMER interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
 
     // clear mstatus.TW to allow execution of WFI also in user-mode
@@ -1786,16 +1831,16 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] WFI (wakeup on pending MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     cnt_test++;
 
     // disable m-mode interrupts globally
     neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
     // program wake-up timer
-    neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + 300);
+    neorv32_clint_mtimecmp_set(neorv32_clint_time_get() + 300);
 
-    // enable mtime interrupt
+    // enable machine timer interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
 
     // put CPU into sleep mode - the CPU has to wakeup again if any enabled interrupt source
@@ -2179,6 +2224,46 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Dual-core test
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] Dual-core ", cnt_test);
+
+  if ((neorv32_cpu_csr_read(CSR_MHARTID) == 0) && // we need to be core 0
+      (NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] > 1) && // we need at least two cores
+      (neorv32_clint_available() != 0)) { // we need the CLINT
+    cnt_test++;
+
+    // enable machine software interrupt
+    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MSIE);
+
+    // wait some time for the IRQ to arrive the CPU
+    asm volatile ("nop");
+    asm volatile ("nop");
+
+    // launch core1
+    tmp_a = (uint32_t)neorv32_rte_smp_launch(core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
+
+    // wait for software interrupt in sleep mode
+    neorv32_cpu_sleep();
+
+    // disable interrupts and clear software interrupt
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+    neorv32_clint_msi_clr(0);
+
+    if ((tmp_a == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MSI)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
   // HPM reports
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all HPM counters
@@ -2402,4 +2487,14 @@ void test_fail(void) {
 
   PRINT_CRITICAL("%c[1m[fail(%u)]%c[0m\n", 27, cnt_test-1, 27);
   cnt_fail++;
+}
+
+
+/**********************************************************************//**
+ * Test code to be run on second CPU core
+ **************************************************************************/
+void core1_main(void) {
+
+  // trigger software interrupt of core0
+  neorv32_clint_msi_set(0);
 }

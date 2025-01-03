@@ -40,8 +40,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cache is
   generic (
-    NUM_BLOCKS : natural range 2 to 4096;       -- number of cache blocks (min 2), has to be a power of 2
-    BLOCK_SIZE : natural range 4 to 4096;       -- cache block size in bytes (min 4), has to be a power of 2
+    NUM_BLOCKS : natural range 2 to 1024;       -- number of cache blocks (min 2), has to be a power of 2
+    BLOCK_SIZE : natural range 4 to 32768;      -- cache block size in bytes (min 4), has to be a power of 2
     UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (page number / 4 MSBs of address)
     UC_ENABLE  : boolean;                       -- enable direct/uncached accesses
     READ_ONLY  : boolean                        -- read-only accesses for host
@@ -183,7 +183,7 @@ begin
   -- request splitter: cached or direct access --
   req_splitter: process(host_req_i, dir_acc_d)
   begin
-    -- default: pass-through of all bus signals --
+    -- default: pass-through all bus signals --
     cache_req <= host_req_i;
     dir_req_d <= host_req_i;
     -- direct access --
@@ -826,7 +826,7 @@ begin
 
   -- Control Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_engine_comb: process(state, upret, addr, haddr, baddr, bus_rsp_i, cmd_sync_i, cmd_miss_i, rdata_i, dirty_i)
+  ctrl_engine_comb: process(state, upret, addr, haddr, baddr, host_req_i, bus_rsp_i, cmd_sync_i, cmd_miss_i, rdata_i, dirty_i)
   begin
     -- control engine defaults --
     state_nxt <= state;
@@ -845,13 +845,19 @@ begin
     new_o   <= '0';
 
     -- bus interface defaults --
-    bus_req_o      <= req_terminate_c; -- all-zero
-    bus_req_o.addr <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
-    bus_req_o.data <= rdata_i;
-    bus_req_o.ben  <= (others => '1'); -- full-word writes only
-    bus_req_o.src  <= '0'; -- cache accesses are always "data" accesses
-    bus_req_o.priv <= '0'; -- cache accesses are always "unprivileged" accesses
-    bus_req_o.rvso <= '0'; -- cache accesses can never be a reservation set operation
+    bus_req_o       <= req_terminate_c; -- all-zero
+    bus_req_o.addr  <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
+    bus_req_o.data  <= rdata_i;
+    bus_req_o.ben   <= (others => '1'); -- full-word writes only
+    bus_req_o.src   <= '0'; -- cache accesses are always data accesses
+    bus_req_o.priv  <= '0'; -- cache accesses are always "unprivileged" accesses
+    bus_req_o.rvso  <= '0'; -- cache accesses can never be a reservation set operation
+    bus_req_o.debug <= host_req_i.debug;
+    if (state = S_IDLE) then
+      bus_req_o.sleep <= host_req_i.sleep;
+    else
+      bus_req_o.sleep <= '0';
+    end if;
 
     -- fsm --
     case state is

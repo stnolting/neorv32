@@ -29,6 +29,23 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 01.01.2025 | 1.10.8.6 | :sparkles: :test_tube: add smp dual-core option | [#1135](https://github.com/stnolting/neorv32/pull/1135) |
+| 29.12.2024 | 1.10.8.5 | :test_tube: add multi-hart support to debug module | [#1132](https://github.com/stnolting/neorv32/pull/1132) |
+| 29.12.2024 | 1.10.8.4 | :warning: rename `SYSINFO.MEM -> SYSINFO.MISC`; add new `SYSINFO.MISC` entry for number of CPU cores (hardwired to one) | [#1134](https://github.com/stnolting/neorv32/pull/1134) |
+| 29.12.2024 | 1.10.8.3 | :bug: fix incorrect HPM counter sizes if `HPM_CNT_WIDTH = 64` | [#1128](https://github.com/stnolting/neorv32/pull/1128) |
+| 27.12.2024 | 1.10.8.2 | add out-of-band signals to internal request bus | [#1131](https://github.com/stnolting/neorv32/pull/1131) |
+| 27.12.2024 | 1.10.8.1 | :warning: replace MTIME by CLINT; :warning: remove `HART_ID` generic | [#1130](https://github.com/stnolting/neorv32/pull/1130) |
+| 26.12.2024 | [**:rocket:1.10.8**](https://github.com/stnolting/neorv32/releases/tag/v1.10.8) | **New release** | |
+| 23.12.2024 | 1.10.7.9 | :warning: rework IO/peripheral address space; :sparkles: increase device size from 256 bytes to 64kB | [#1126](https://github.com/stnolting/neorv32/pull/1126) |
+| 22.12.2024 | 1.10.7.8 | :warning: rename CPU tuning options / generics | [#1125](https://github.com/stnolting/neorv32/pull/1125) |
+| 22.12.2024 | 1.10.7.7 | :warning: move clock gating switch from processor top to CPU clock; `CLOCK_GATING_EN` is now a CPU tuning option | [#1124](https://github.com/stnolting/neorv32/pull/1124) |
+| 21.12.2024 | 1.10.7.6 | minor rtl cleanups and optimizations | [#1123](https://github.com/stnolting/neorv32/pull/1123) |
+| 19.12.2024 | 1.10.7.5 | :test_tube: use time-multiplex PMP architecture (reducing area footprint) | [#1105](https://github.com/stnolting/neorv32/pull/1105) |
+| 14.12.2024 | 1.10.7.4 | :sparkles: add new module: I2C-compatible **Two-Wire Device Controller (TWD)** | [#1121](https://github.com/stnolting/neorv32/pull/1121) |
+| 14.12.2024 | 1.10.7.3 | :warning: rework TRNG (change HAL; remove interrupt) | [#1120](https://github.com/stnolting/neorv32/pull/1120) |
+| 12.12.2024 | 1.10.7.2 | add external memory configuration/initialization options to testbench | [#1119](https://github.com/stnolting/neorv32/pull/1119) |
+| 11.12.2024 | 1.10.7.1 | :test_tube: shrink bootloader's minimal ISA (`rv32e`) and RAM (256 bytes) requirements | [#1118](https://github.com/stnolting/neorv32/pull/1118) |
+| 10.12.2024 | [**:rocket:1.10.7**](https://github.com/stnolting/neorv32/releases/tag/v1.10.7) | **New release** | |
 | 03.12.2024 | 1.10.6.9 | :sparkles: add ONEWIRE command and data FIFO; :warning: rework ONEWIRE interface register layout; :bug: fix regression: busy flag was stuck at zero | [#1113](https://github.com/stnolting/neorv32/pull/1113) |
 | 01.12.2024 | 1.10.6.8 | add TWI bus sensing logic | [#1111](https://github.com/stnolting/neorv32/pull/1111) |
 | 26.11.2024 | 1.10.6.7 | :bug: fix some HDL issues that caused problems when auto-converting to Verilog | [#1103](https://github.com/stnolting/neorv32/pull/1103) |

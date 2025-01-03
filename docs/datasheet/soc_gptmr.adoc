@@ -11,7 +11,7 @@
 | Top entity ports:       | none |
 | Configuration generics: | `IO_GPTMR_EN` | implement general purpose timer when `true`
 | CPU interrupts:         | fast IRQ channel 12 | timer interrupt (see <<_processor_interrupts>>)
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 
@@ -62,12 +62,12 @@ stay pending until explicitly cleared by writing a 1 to `GPTMR_CTRL_IRQ_CLR`.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.6+<| `0xfffff100` .6+<| `CTRL` <|`0`   `GPTMR_CTRL_EN`                       ^| r/w <| Timer enable flag
+.6+<| `0xfff10000` .6+<| `CTRL` <|`0`   `GPTMR_CTRL_EN`                       ^| r/w <| Timer enable flag
                                 <|`3:1` `GPTMR_CTRL_PRSC2 : GPTMR_CTRL_PRSC0` ^| r/w <| 3-bit clock prescaler select
                                 <|`4`   `GPTMR_CTRL_MODE`                     ^| r/w <| Operation mode (0=single-shot, 1=continuous)
                                 <|`29:5` -                                    ^| r/- <| _reserved_, read as zero
                                 <|`30`  `GPTMR_CTRL_IRQ_CLR`                  ^| -/w <| Write `1` to clear timer-match interrupt; auto-clears
                                 <|`31`  `GPTMR_CTRL_IRQ_PND`                  ^| r/- <| Timer-match interrupt pending
-| `0xfffff104` | `THRES`   |`31:0` | r/w | Threshold value register
-| `0xfffff108` | `COUNT`   |`31:0` | r/- | Counter register
+| `0xfff10004` | `THRES`   |`31:0` | r/w | Threshold value register
+| `0xfff10008` | `COUNT`   |`31:0` | r/- | Counter register
 |=======================

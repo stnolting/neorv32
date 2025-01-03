@@ -130,7 +130,7 @@ void neorv32_cpu_set_minstret(uint64_t value) {
  * Delay function using busy wait.
  *
  * @note This function uses the cycle CPU counter if available. Otherwise
- * the MTIME system timer is used if available. A simple loop is used as
+ * the CLINT.MTIMER system timer is used if available. A simple loop is used as
  * alternative fall-back (imprecise!).
  *
  * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
@@ -153,10 +153,10 @@ void neorv32_cpu_delay_ms(uint32_t time_ms) {
 
   // use MTIME machine timer
   // -------------------------------------------
-  else if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_MTIME)) { // MTIME timer available?
+  else if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) { // MTIMER available?
 
-    tmp = neorv32_mtime_get_time() + wait_cycles;
-    while (neorv32_mtime_get_time() < tmp);
+    tmp = neorv32_clint_time_get() + wait_cycles;
+    while (neorv32_clint_time_get() < tmp);
   }
 
   // simple loop as fall-back (imprecise!)

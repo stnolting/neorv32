@@ -203,6 +203,7 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 ├neorv32_bus.vhd                - SoC bus infrastructure modules
 ├neorv32_cache.vhd              - Generic cache module
 ├neorv32_cfs.vhd                - Custom functions subsystem
+├neorv32_clint.vhd              - Core local interruptor
 ├neorv32_clockgate.vhd          - Generic clock gating switch
 ├neorv32_crc.vhd                - Cyclic redundancy check unit
 ├neorv32_debug_dm.vhd           - on-chip debugger: debug module
@@ -215,7 +216,6 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 ├neorv32_gptmr.vhd              - General purpose 32-bit timer
 ├neorv32_imem.vhd               - Generic processor-internal instruction memory
 │└neorv32_application_image.vhd - IMEM application initialization image (package)
-├neorv32_mtime.vhd              - Machine system timer
 ├neorv32_neoled.vhd             - NeoPixel (TM) compatible smart LED interface
 ├neorv32_onewire.vhd            - One-Wire serial interface controller
 ├neorv32_package.vhd            - Main VHDL package file
@@ -267,7 +267,7 @@ These placeholders need to be replaced by the actual path before being used. Exa
 ----
 NEORV32_HOME = path/to/neorv32 <1>
 NEORV32_SOC_FILE = $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f) <2>
-NEORV32_SOC_SRCS = $(subst NEORV32_RTL_PATH_PLACEHOLDER, $(NEORV32_HOME)/rtl, $(NEORV32_SOC_FILE))) <3>
+NEORV32_SOC_SRCS = $(subst NEORV32_RTL_PATH_PLACEHOLDER, $(NEORV32_HOME)/rtl, $(NEORV32_SOC_FILE)) <3>
 ----
 <1> Path to the NEORV32 home folder (i.e. the root folder of the GitHub repository).
 <2> Load the content of the `file_list_soc.f` file-list into a new variable `NEORV32_SOC_FILE`.
@@ -281,11 +281,6 @@ set file_list [string map [list "NEORV32_RTL_PATH_PLACEHOLDER" "$neorv32_home/rt
 puts "NEORV32 source files:"
 puts $file_list
 ----
-
-.File-List Usage Examples
-[TIP]
-The provided file-list files are used by the GHDL-based simple simulation setup (`sim/ghdl.setup.sh`) as
-well as by the Vivado IP packager script (`rtl/system_integration/neorv32_vivado_ip.tcl`).
 
 
 <<<
@@ -389,7 +384,7 @@ https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configur
 | IO Switch         | _SoC bus infrastructure_                                       | 217 |   0 |        0 |    0
 | iCACHE            | Instruction cache (2x4 blocks, 64 bytes per block)             | 458 | 296 |     4096 |    0
 | IMEM              | Processor-internal instruction memory (16kB)                   |   7 |   2 |   131072 |    0
-| MTIME             | Machine system timer                                           | 307 | 166 |        0 |    0
+| CLINT             | Core local interruptor                                         | 307 | 166 |        0 |    0
 | NEOLED            | Smart LED Interface (NeoPixel/WS28128) (FIFO_depth=1)          | 171 | 129 |        0 |    0
 | ONEWIRE           | 1-wire interface                                               | 105 |  77 |        0 |    0
 | PWM               | Pulse_width modulation controller (4 channels)                 |  91 |  81 |        0 |    0

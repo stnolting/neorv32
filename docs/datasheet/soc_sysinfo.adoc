@@ -10,7 +10,7 @@
 | Top entity ports:       | none |
 | Configuration generics: | * | most of the top's configuration generics
 | CPU interrupts:         | none |
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 
@@ -42,14 +42,14 @@ to take into account a dynamic frequency scaling of the processor.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | R/W | Description
-| `0xfffffe00` | `CLK`    | r/w | clock frequency in Hz (initialized from top's `CLOCK_FREQUENCY` generic)
-| `0xfffffe04` | `MEM[4]` | r/- | internal memory configuration (see <<_sysinfo_memory_configuration>>)
-| `0xfffffe08` | `SOC`    | r/- | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
-| `0xfffffe0c` | `CACHE`  | r/- | cache configuration information (see <<_sysinfo_cache_configuration>>)
+| `0xfffe0000` | `CLK`     | r/w | clock frequency in Hz (initialized from top's `CLOCK_FREQUENCY` generic)
+| `0xfffe0004` | `MISC[4]` | r/- | miscellaneous system configurations (see <<_sysinfo_miscellaneous_configuration>>)
+| `0xfffe0008` | `SOC`     | r/- | specific SoC configuration (see <<_sysinfo_soc_configuration>>)
+| `0xfffe000c` | `CACHE`   | r/- | cache configuration information (see <<_sysinfo_cache_configuration>>)
 |=======================
 
 
-===== SYSINFO - Memory Configuration
+===== SYSINFO - Miscellaneous Configuration
 
 [NOTE]
 Bit fields in this register are set to all-zero if the according memory system is not implemented.
@@ -59,10 +59,10 @@ Bit fields in this register are set to all-zero if the according memory system i
 [options="header",grid="all"]
 |=======================
 | Byte | Name [C] | Description
-| `0`  | `SYSINFO_MEM_IMEM` | _log2_(internal IMEM size in bytes), via top's `MEM_INT_IMEM_SIZE` generic
-| `1`  | `SYSINFO_MEM_DMEM` | _log2_(internal DMEM size in bytes), via top's `MEM_INT_DMEM_SIZE` generic
-| `2`  | -                  | _reserved_, read as zero
-| `3`  | `SYSINFO_MEM_BOOT` | boot mode configuration, via top's `BOOT_MODE_SELECT` generic (see <<_boot_configuration>>))
+| `0`  | `SYSINFO_MISC_IMEM` | _log2_(internal IMEM size in bytes), via top's `MEM_INT_IMEM_SIZE` generic
+| `1`  | `SYSINFO_MISC_DMEM` | _log2_(internal DMEM size in bytes), via top's `MEM_INT_DMEM_SIZE` generic
+| `2`  | `SYSINFO_MISC_HART` | number of physical CPU cores ("harts")
+| `3`  | `SYSINFO_MISC_BOOT` | boot mode configuration, via top's `BOOT_MODE_SELECT` generic (see <<_boot_configuration>>))
 |=======================
 
 
@@ -80,16 +80,16 @@ Bit fields in this register are set to all-zero if the according memory system i
 | `4`     | `SYSINFO_SOC_OCD`          | set if on-chip debugger is implemented (via top's `OCD_EN` generic)
 | `5`     | `SYSINFO_SOC_ICACHE`       | set if processor-internal instruction cache is implemented (via top's `ICACHE_EN` generic)
 | `6`     | `SYSINFO_SOC_DCACHE`       | set if processor-internal data cache is implemented (via top's `DCACHE_EN` generic)
-| `7`     | `SYSINFO_SOC_CLOCK_GATING` | set if CPU clock gating is implemented (via top's `CLOCK_GATING_EN` generic)
+| `7`     | -                          |_reserved_, read as zero
 | `8`     | `SYSINFO_SOC_XBUS_CACHE`   | set if external bus interface cache is implemented (via top's `XBUS_CACHE_EN` generic)
 | `9`     | `SYSINFO_SOC_XIP`          | set if XIP module is implemented (via top's `XIP_EN` generic)
 | `10`    | `SYSINFO_SOC_XIP_CACHE`    | set if XIP cache is implemented (via top's `XIP_CACHE_EN` generic)
 | `11`    | `SYSINFO_SOC_OCD_AUTH`     | set if on-chip debugger authentication is implemented (via top's `OCD_AUTHENTICATION` generic)
 | `12`    | `SYSINFO_SOC_IMEM_ROM`     | set if processor-internal IMEM is implemented as pre-initialized ROM (via top's `BOOT_MODE_SELECT` generic; see <<_boot_configuration>>)
-| `13`    | -                          | _reserved_, read as zero
+| `13`    | `SYSINFO_SOC_IO_TWD`       | set if TWD is implemented (via top's `IO_TWD_EN` generic)
 | `14`    | `SYSINFO_SOC_IO_DMA`       | set if direct memory access controller is implemented (via top's `IO_DMA_EN` generic)
 | `15`    | `SYSINFO_SOC_IO_GPIO`      | set if GPIO is implemented (via top's `IO_GPIO_EN` generic)
-| `16`    | `SYSINFO_SOC_IO_MTIME`     | set if MTIME is implemented (via top's `IO_MTIME_EN` generic)
+| `16`    | `SYSINFO_SOC_IO_CLINT`     | set if CLINT is implemented (via top's `IO_CLINT_EN` generic)
 | `17`    | `SYSINFO_SOC_IO_UART0`     | set if primary UART0 is implemented (via top's `IO_UART0_EN` generic)
 | `18`    | `SYSINFO_SOC_IO_SPI`       | set if SPI is implemented (via top's `IO_SPI_EN` generic)
 | `19`    | `SYSINFO_SOC_IO_TWI`       | set if TWI is implemented (via top's `IO_TWI_EN` generic)
@@ -110,8 +110,12 @@ Bit fields in this register are set to all-zero if the according memory system i
 
 ===== SYSINFO - Cache Configuration
 
-[NOTE]
-Bit fields in this register are set to all-zero if the according cache is not implemented.
+The SYSINFO cache register provides information about the configuration of the processor caches:
+
+* <<_processor_internal_instruction_cache_icache>>
+* <<_processor_internal_data_cache_dcache>>
+* <<_execute_in_place_module_xip>> cache (XIP-CACHE)
+* <<_processor_external_bus_interface_xbus>> cache (XBUS-CACHE)
 
 .SYSINFO `CACHE` Bits
 [cols="^1,<10,<10"]

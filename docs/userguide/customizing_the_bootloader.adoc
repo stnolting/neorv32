@@ -12,7 +12,7 @@ bootloader ROM) and the processor has to be re-synthesized.
 
 [NOTE]
 Keep in mind that the maximum size for the bootloader is limited to 8kB and it should be compiled using the
-minimal base & privileged ISA `rv32i_zicsr_zifencei` only to ensure it can work independently of the actual CPU configuration.
+minimal base & privileged ISA `rv32e_zicsr_zifencei` only to ensure it can work with any actual CPU configuration.
 
 .Bootloader configuration parameters
 [cols="<2,^1,^2,<6"]

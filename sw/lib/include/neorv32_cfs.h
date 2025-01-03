@@ -29,7 +29,7 @@
 /**@{*/
 /** CFS module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t REG[64]; /**< offset 4*0..4*63: CFS register 0..63, user-defined */
+  uint32_t REG[(64*1024)/4]; /**< CFS registers, user-defined */
 } neorv32_cfs_t;
 
 /** CFS module hardware access (#neorv32_cfs_t) */

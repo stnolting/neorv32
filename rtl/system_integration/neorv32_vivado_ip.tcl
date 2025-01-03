@@ -129,13 +129,15 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_SPI_EN}     [ipx::get_ports spi_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_SDI_EN}     [ipx::get_ports sdi_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_TWI_EN}     [ipx::get_ports twi_*            -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_TWD_EN}     [ipx::get_ports twd_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_ONEWIRE_EN} [ipx::get_ports onewire_*        -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_PWM_EN}     [ipx::get_ports pwm_o            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_CFS_EN}     [ipx::get_ports cfs_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_NEOLED_EN}  [ipx::get_ports neoled_o         -of_objects [ipx::current_core]]
   set_property enablement_dependency {$XIRQ_EN}       [ipx::get_ports xirq_i           -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$IO_MTIME_EN}   [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
-  set_property enablement_dependency {!$IO_MTIME_EN}  [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_CLINT_EN}   [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports msw_irq_i        -of_objects [ipx::current_core]]
 
 
   # **************************************************************
@@ -170,7 +172,6 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Core Identification}]
   add_params $group {
-    { HART_ID               {HART ID}               {The hart thread ID of the CPU (passed to mhartid CSR)} }
     { JEDEC_ID              {JEDEC ID}              {For JTAG tap identification and mvendorid CSR} }
   }
 
@@ -246,9 +247,9 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Tuning Options}]
   add_params $group {
-    { FAST_MUL_EN         {DSP-Based Multiplier} }
-    { FAST_SHIFT_EN       {Barrel Shifter} }
-    { REGFILE_HW_RST      {Allow Full HW Reset for Register File} {Implement register file with FFs instead of BRAM to allow full hardware reset} }
+    { CPU_FAST_MUL_EN     {DSP-Based Multiplier} }
+    { CPU_FAST_SHIFT_EN   {Barrel Shifter} }
+    { CPU_RF_HW_RST_EN    {Allow Full HW Reset for Register File} {Implement register file with FFs instead of BRAM to allow full hardware reset} }
   }
 
 
@@ -310,9 +311,9 @@ proc setup_ip_gui {} {
     { IO_GPIO_OUT_NUM   {Number of Outputs}     {}                                        {$IO_GPIO_EN} }
   }
 
-  set group [add_group $page {Machine Timer (MTIME)}]
+  set group [add_group $page {Core Local Interruptor (CLINT)}]
   add_params $group {
-    { IO_MTIME_EN       {Enable Machine Timer} }
+    { IO_CLINT_EN       {Enable Core Local Interruptor} }
   }
 
   set group [add_group $page {Primary UART (UART0)}]
@@ -341,10 +342,16 @@ proc setup_ip_gui {} {
     { IO_SDI_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_SDI_EN} }
   }
 
-  set group [add_group $page {Two-Wire/I2C Interface (TWI)}]
+  set group [add_group $page {Two-Wire/I2C Host (TWI)}]
   add_params $group {
     { IO_TWI_EN         {Enable TWI} }
     { IO_TWI_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_TWI_EN} }
+  }
+
+  set group [add_group $page {Two-Wire/I2C Device (TWD)}]
+  add_params $group {
+    { IO_TWD_EN         {Enable TWD} }
+    { IO_TWD_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_TWD_EN} }
   }
 
   set group [add_group $page {Pulse-Width Modulation Controller (PWM)}]

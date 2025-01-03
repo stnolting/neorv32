@@ -11,7 +11,7 @@
 | Top entity ports:       | `xirq_i`           | External interrupts input (32-bit)
 | Configuration generics: | `XIRQ_NUM_CH`      | Number of external IRQ channels to implement (0..32)
 | CPU interrupts:         | fast IRQ channel 8 | XIRQ (see <<_processor_interrupts>>)
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 
@@ -74,10 +74,10 @@ can issue a new CPU interrupt).
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Description
-| `0xfffff300` | `EIE`  | `31:0` | r/w | External interrupt enable register (one bit per channel, LSB-aligned)
-.3+^| `0xfffff304` .3+<| `ESC` ^| `31`   ^| r/c <| XIRQ interrupt when set; write any value to this register to acknowledge the current XIRQ interrupt
+| `0xfff30000` | `EIE`  | `31:0` | r/w | External interrupt enable register (one bit per channel, LSB-aligned)
+.3+^| `0xfff30004` .3+<| `ESC` ^| `31`   ^| r/c <| XIRQ interrupt when set; write any value to this register to acknowledge the current XIRQ interrupt
                                ^| `30:5` ^| r/- <| _reserved_, read as zero
                                ^| `4:0`  ^| r/c <| Interrupt source ID (0..31) of firing IRQ (prioritized!)
-| `0xfffff308` | `TTYP` | `31:0` | r/w | Trigger type select (`0` = level trigger, `1` = edge trigger); each bit corresponds to the according channel number
-| `0xfffff30c` | `TPOL` | `31:0` | r/w | Trigger polarity select (`0` = low-level/falling-edge, `1` = high-level/rising-edge); each bit corresponds to the according channel number
+| `0xfff30008` | `TTYP` | `31:0` | r/w | Trigger type select (`0` = level trigger, `1` = edge trigger); each bit corresponds to the according channel number
+| `0xfff3000c` | `TPOL` | `31:0` | r/w | Trigger polarity select (`0` = low-level/falling-edge, `1` = high-level/rising-edge); each bit corresponds to the according channel number
 |=======================

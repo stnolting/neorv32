@@ -36,10 +36,8 @@ int neorv32_trng_available(void) {
 
 /**********************************************************************//**
  * Reset, configure and enable TRNG.
- *
- * @param[in] irq_sel Interrupt trigger select (0 = data available, 1 = FIFO full).
  **************************************************************************/
-void neorv32_trng_enable(int irq_sel) {
+void neorv32_trng_enable(void) {
 
   NEORV32_TRNG->CTRL = 0; // disable and reset
 
@@ -49,11 +47,7 @@ void neorv32_trng_enable(int irq_sel) {
     asm volatile ("nop");
   }
 
-  uint32_t tmp = 0;
-  tmp |= (1 << TRNG_CTRL_EN); // enable
-  tmp |= (((uint32_t)(irq_sel & 1)) << TRNG_CTRL_IRQ_SEL); // interrupt trigger select
-  tmp |= (1 << TRNG_CTRL_FIFO_CLR); // clear data FIFO
-  NEORV32_TRNG->CTRL = tmp;
+  NEORV32_TRNG->CTRL = 1 << TRNG_CTRL_EN; // enable
 }
 
 
@@ -95,11 +89,9 @@ int neorv32_trng_get_fifo_depth(void) {
  **************************************************************************/
 int neorv32_trng_get(uint8_t *data) {
 
-  uint32_t tmp = NEORV32_TRNG->CTRL;
-  *data = (uint8_t)(tmp >> TRNG_CTRL_DATA_LSB);
-
-  if (tmp & (1<<TRNG_CTRL_VALID)) { // output data valid?
-    return 0; // valid data
+  if (NEORV32_TRNG->CTRL & (1<<TRNG_CTRL_AVAIL)) { // random data available?
+    *data = (uint8_t)NEORV32_TRNG->DATA;
+    return 0;
   }
   else {
     return -1;

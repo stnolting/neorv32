@@ -3,7 +3,8 @@
 
 The NEORV32 software framework provides a minimal **runtime environment** (abbreviated "RTE") that takes care of a stable
 and _safe_ execution environment by handling _all_ traps (exceptions & interrupts). The RTE simplifies trap handling
-by wrapping the CPU's privileged architecture (i.e. trap-related CSRs) into a unified software API.
+by wrapping the CPU's privileged architecture (i.e. trap-related CSRs and the actual execution of trap handlers)
+into a unified software API.
 
 Once initialized, the RTE provides <<_default_rte_trap_handlers>> that catch all possible traps. These
 default handlers just output a message via UART to inform the user when a certain trap has been triggered. The
@@ -33,9 +34,14 @@ just output a message via the *primary UART (UART0)* to inform the user that a t
 handled by the actual application. After sending this message, the RTE tries to continue executing the actual program
 by resolving the trap cause.
 
+.Dual-Core Configuration
+[NOTE]
+The RTE also supports the SMP <<_dual_core_configuration>> as it provides core-individual internal trap management.
+
 
 ==== Using the RTE
 
+.Machine-Mode Only
 [IMPORTANT]
 All provided RTE functions can be called only from machine-mode code.
 
@@ -48,8 +54,10 @@ the RTE's setup function:
 void neorv32_rte_setup(void);
 ----
 
+.RTE Setup
 [NOTE]
-The RTE should be enabled right at the beginning of the application's `main` function.
+The RTE should be enabled right at the beginning of the application's `main` function. For the SMP
+<<_dual_core_configuration>> the RTE setup functions has to be called on each core individually.
 
 [IMPORTANT]
 It is recommended to not use the <<_mscratch>> CSR when using the RTE as this register is used to provide services
@@ -121,13 +129,13 @@ Do **NOT** use the `((interrupt))` attribute for the application trap handler fu
 will place a `mret` instruction to the end of it making it impossible to return to the first-level
 trap handler of the RTE core, which will cause stack corruption.
 
-The following example shows how to install a custom handler (`custom_mtime_irq_handler`) for handling
-the RISC-V machine timer (MTIME) interrupt:
+The following example shows how to install a custom handler (`custom_timer_irq_handler`) for handling
+the RISC-V CLINT timer interrupt:
 
-.Installing a MTIME IRQ Handler
+.Installing a CLINT Timer IRQ Handler
 [source,c]
 ----
-neorv32_rte_handler_install(RTE_TRAP_MTI, custom_mtime_irq_handler);
+neorv32_rte_handler_install(RTE_TRAP_MTI, custom_timer_irq_handler);
 ----
 
 User-defined trap handlers can also be un-installed. This will remove the users trap handler from the RTE core
@@ -140,17 +148,19 @@ int neorv32_rte_handler_uninstall(uint8_t id);
 ----
 
 The argument `id` defines the identifier of the according trap that shall be un-installed. 
-The following example shows how to un-install the custom handler `custom_mtime_irq_handler` from the
-RISC-V machine timer (MTIME) interrupt:
+The following example shows how to un-install the custom handler `custom_timer_irq_handler` from the
+RISC-V CLINT timer interrupt:
 
-.Example: Removing the Custom MTIME IRQ Handler
+.Example: Removing the Custom CLINT Timer IRQ Handler
 [source,c]
 ----
 neorv32_rte_handler_uninstall(RTE_TRAP_MTI);
 ----
 
-[TIP]
-The current RTE configuration can be printed via UART0 via the `neorv32_rte_info` function.
+.Dual-Core Configuration
+[NOTE]
+The RTE handler install/uninstall functions can be called on any core in the SMP <<_dual_core_configuration>>.
+Internally, the functions will only access the core-specific management entries.
 
 
 ==== Default RTE Trap Handlers

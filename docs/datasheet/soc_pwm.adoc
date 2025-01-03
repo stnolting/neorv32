@@ -11,7 +11,7 @@
 | Top entity ports:       | `pwm_o` | PWM output channels (16-bit)
 | Configuration generics: | `IO_PWM_NUM_CH` | number of PWM channels to implement (0..16)
 | CPU interrupts:         | none |
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 
@@ -60,18 +60,18 @@ _f~PWM~_[Hz] = _f~main~_[Hz] / (2^8^ * `clock_prescaler` * (1 + `PWM_CFG_CDIV`))
 
 **Register Map**
 
-.PWM register map (`struct neorv32_pwm_t`)
+.PWM register map (`struct NEORV32_PWM`)
 [cols="<4,<2,<6,^2,<8"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.5+<| `0xfffff000` .5+<| `CHANNEL_CFG[0]`  <|`31`    - `PWM_CFG_EN`                        ^| r/w <| Channel 0: channel enabled when set
+.5+<| `0xfff00000` .5+<| `CHANNEL_CFG[0]`  <|`31`    - `PWM_CFG_EN`                        ^| r/w <| Channel 0: channel enabled when set
                                            <|`30:28` - `PWM_CFG_PRSC_MSB:PWM_CFG_PRSC_LSB` ^| r/w <| Channel 0: 3-bit clock prescaler select
                                            <|`27:18`                                       ^| r/- <| Channel 0: _reserved_, hardwired to zero
                                            <|`17:8`  - `PWM_CFG_CDIV_MSB:PWM_CFG_CDIV_LSB` ^| r/w <| Channel 0: 10-bit clock divider
                                            <|`7:0`   - `PWM_CFG_DUTY_MSB:PWM_CFG_DUTY_LSB` ^| r/w <| Channel 0: 8-bit duty cycle
-| `0xfffff004` ... `0xfffff038` | `CHANNEL_CFG[1]` ... `CHANNEL_CFG[14]` | ... | r/w <| Channels 1 to 14
-.5+<| `0xfffff03C` .5+<| `CHANNEL_CFG[15]` <|`31`    - `PWM_CFG_EN`                        ^| r/w <| Channel 15: channel enabled when set
+| `0xfff00004` ... `0xfff00038` | `CHANNEL_CFG[1]` ... `CHANNEL_CFG[14]` | ... | r/w <| Channels 1 to 14
+.5+<| `0xfff0003C` .5+<| `CHANNEL_CFG[15]` <|`31`    - `PWM_CFG_EN`                        ^| r/w <| Channel 15: channel enabled when set
                                            <|`30:28` - `PWM_CFG_PRSC_MSB:PWM_CFG_PRSC_LSB` ^| r/w <| Channel 15: 3-bit clock prescaler select
                                            <|`27:18`                                       ^| r/- <| Channel 15: _reserved_, hardwired to zero
                                            <|`17:8`  - `PWM_CFG_CDIV_MSB:PWM_CFG_CDIV_LSB` ^| r/w <| Channel 15: 10-bit clock divider

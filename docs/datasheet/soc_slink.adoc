@@ -23,7 +23,7 @@
 |                         | `IO_SLINK_TX_FIFO`  | TX FIFO depth (1..32k), has to be a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 14 | RX SLINK IRQ (see <<_processor_interrupts>>)
 |                         | fast IRQ channel 15 | TX SLINK IRQ (see <<_processor_interrupts>>)
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 
@@ -116,31 +116,31 @@ interrupt-causing condition is resolved (e.g. by reading from the RX FIFO).
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s) | R/W | Function
-.22+<| `0xffffec00` .22+<| `NEORV32_SLINK.CTRL` <| `0`    `SLINK_CTRL_EN`                                    ^| r/w <| SLINK global enable
-                                                <| `1`    `SLINK_CTRL_RX_CLR`                                ^| -/w <| Clear RX FIFO when set (bit auto-clears)
-                                                <| `2`    `SLINK_CTRL_TX_CLR`                                ^| -/w <| Clear TX FIFO when set (bit auto-clears)
-                                                <| `3`    _reserved_                                         ^| r/- <| _reserved_, read as zero
-                                                <| `4`    `SLINK_CTRL_RX_LAST`                               ^| r/- <| Last word read from `RX_DATA` is marked as "end of stream"
-                                                <| `7:5`  _reserved_                                         ^| r/- <| _reserved_, read as zero
-                                                <| `8`    `SLINK_CTRL_RX_EMPTY`                              ^| r/- <| RX FIFO empty
-                                                <| `9`    `SLINK_CTRL_RX_HALF`                               ^| r/- <| RX FIFO at least half full
-                                                <| `10`   `SLINK_CTRL_RX_FULL`                               ^| r/- <| RX FIFO full
-                                                <| `11`   `SLINK_CTRL_TX_EMPTY`                              ^| r/- <| TX FIFO empty
-                                                <| `12`   `SLINK_CTRL_TX_HALF`                               ^| r/- <| TX FIFO at least half full
-                                                <| `13`   `SLINK_CTRL_TX_FULL`                               ^| r/- <| TX FIFO full
-                                                <| `15:14` _reserved_                                        ^| r/- <| _reserved_, read as zero
-                                                <| `16`   `SLINK_CTRL_IRQ_RX_NEMPTY`                         ^| r/w <| RX interrupt if RX FIFO not empty
-                                                <| `17`   `SLINK_CTRL_IRQ_RX_HALF`                           ^| r/w <| RX interrupt if RX FIFO at least half full
-                                                <| `18`   `SLINK_CTRL_IRQ_RX_FULL`                           ^| r/w <| RX interrupt if RX FIFO full
-                                                <| `19`   `SLINK_CTRL_IRQ_TX_EMPTY`                          ^| r/w <| TX interrupt if TX FIFO empty
-                                                <| `20`   `SLINK_CTRL_IRQ_TX_NHALF`                          ^| r/w <| TX interrupt if TX FIFO not at least half full
-                                                <| `21`   `SLINK_CTRL_IRQ_TX_NFULL`                          ^| r/w <| TX interrupt if TX FIFO not full
-                                                <| `23:22` _reserved_                                        ^| r/- <| _reserved_, read as zero
-                                                <| `27:24` `SLINK_CTRL_RX_FIFO_MSB : SLINK_CTRL_RX_FIFO_LSB` ^| r/- <| log2(RX FIFO size)
-                                                <| `31:28` `SLINK_CTRL_TX_FIFO_MSB : SLINK_CTRL_TX_FIFO_LSB` ^| r/- <| log2(TX FIFO size)
-.3+<| `0xffffec04` .3+<| `NEORV32_SLINK.ROUTE` <| `3:0` | r/w | TX destination routing information (`slink_tx_dst_o`)
-                                               <| `7:4` | r/- | RX source routing information (`slink_rx_src_i`)
-                                               <| `31:8` | -/- | _reserved_
-| `0xffffec08` | `NEORV32_SLINK.DATA`      | `31:0` | r/w | Write data to TX FIFO; read data from RX FIFO
-| `0xffffec0c` | `NEORV32_SLINK.DATA_LAST` | `31:0` | r/w | Write data to TX FIFO (and also set "last" signal); read data from RX FIFO
+.22+<| `0xffec0000` .22+<| `CTRL` <| `0`    `SLINK_CTRL_EN`                                    ^| r/w <| SLINK global enable
+                                  <| `1`    `SLINK_CTRL_RX_CLR`                                ^| -/w <| Clear RX FIFO when set (bit auto-clears)
+                                  <| `2`    `SLINK_CTRL_TX_CLR`                                ^| -/w <| Clear TX FIFO when set (bit auto-clears)
+                                  <| `3`    _reserved_                                         ^| r/- <| _reserved_, read as zero
+                                  <| `4`    `SLINK_CTRL_RX_LAST`                               ^| r/- <| Last word read from `RX_DATA` is marked as "end of stream"
+                                  <| `7:5`  _reserved_                                         ^| r/- <| _reserved_, read as zero
+                                  <| `8`    `SLINK_CTRL_RX_EMPTY`                              ^| r/- <| RX FIFO empty
+                                  <| `9`    `SLINK_CTRL_RX_HALF`                               ^| r/- <| RX FIFO at least half full
+                                  <| `10`   `SLINK_CTRL_RX_FULL`                               ^| r/- <| RX FIFO full
+                                  <| `11`   `SLINK_CTRL_TX_EMPTY`                              ^| r/- <| TX FIFO empty
+                                  <| `12`   `SLINK_CTRL_TX_HALF`                               ^| r/- <| TX FIFO at least half full
+                                  <| `13`   `SLINK_CTRL_TX_FULL`                               ^| r/- <| TX FIFO full
+                                  <| `15:14` _reserved_                                        ^| r/- <| _reserved_, read as zero
+                                  <| `16`   `SLINK_CTRL_IRQ_RX_NEMPTY`                         ^| r/w <| RX interrupt if RX FIFO not empty
+                                  <| `17`   `SLINK_CTRL_IRQ_RX_HALF`                           ^| r/w <| RX interrupt if RX FIFO at least half full
+                                  <| `18`   `SLINK_CTRL_IRQ_RX_FULL`                           ^| r/w <| RX interrupt if RX FIFO full
+                                  <| `19`   `SLINK_CTRL_IRQ_TX_EMPTY`                          ^| r/w <| TX interrupt if TX FIFO empty
+                                  <| `20`   `SLINK_CTRL_IRQ_TX_NHALF`                          ^| r/w <| TX interrupt if TX FIFO not at least half full
+                                  <| `21`   `SLINK_CTRL_IRQ_TX_NFULL`                          ^| r/w <| TX interrupt if TX FIFO not full
+                                  <| `23:22` _reserved_                                        ^| r/- <| _reserved_, read as zero
+                                  <| `27:24` `SLINK_CTRL_RX_FIFO_MSB : SLINK_CTRL_RX_FIFO_LSB` ^| r/- <| log2(RX FIFO size)
+                                  <| `31:28` `SLINK_CTRL_TX_FIFO_MSB : SLINK_CTRL_TX_FIFO_LSB` ^| r/- <| log2(TX FIFO size)
+.3+<| `0xffec0004` .3+<| `ROUTE` <| `3:0` | r/w | TX destination routing information (`slink_tx_dst_o`)
+                                 <| `7:4` | r/- | RX source routing information (`slink_rx_src_i`)
+                                 <| `31:8` | -/- | _reserved_
+| `0xffec0008` | `DATA`      | `31:0` | r/w | Write data to TX FIFO; read data from RX FIFO
+| `0xffec000c` | `DATA_LAST` | `31:0` | r/w | Write data to TX FIFO (and also set "last" signal); read data from RX FIFO
 |=======================

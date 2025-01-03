@@ -2,12 +2,12 @@
 :sectnums:
 == Simulating the Processor
 
-The NEORV32 project includes a core CPU, built-in peripherals in the Processor Subsystem, and additional
-peripherals in the templates and examples. Therefore, there is a wide range of possible testing and
-verification strategies.
+Due to the complexity of the NEORV32 processor and all the different configuration options,
+there is a wide range of possible testing and verification strategies.
 
 On the one hand, a simple smoke testbench allows ensuring that functionality is correct from a software point of view.
 That is used for running the RISC-V architecture tests, in order to guarantee compliance with the ISA specification(s).
+All required simulation sources are located in `sim`.
 
 On the other hand, http://vunit.github.io/[VUnit] and http://vunit.github.io/verification_components/user_guide.html[Verification Components]
 are used for verifying the functionality of the various peripherals from a hardware point of view.
@@ -26,68 +26,58 @@ ensure that all application images (`*_image.vhd`) are reanalyzed when recompili
 A more sophisticated testbench using **VUnit** is available in a separate repository:
 https://github.com/stnolting/neorv32-vunit
 
-A plain-VHDL (no third-party libraries) testbench (`sim/neorv32_tb.vhd`) can be used for simulating and
-testing the processor. This testbench features a 100MHz clock and enables all optional peripheral and CPU
-extensions.
-
-.True Random Number Generator
-[NOTE]
-The NEORV32 TRNG will be set to "simulation mode" when enabled for simulation (replacing the ring-oscillators
-by pseudo-random LFSRs). See the neoTRNG documentation for more information.
+A plain-VHDL testbench without any third-party libraries / dependencies (`sim/neorv32_tb.vhd`) can be used for simulating
+and testing the processor and all its configurations. This testbench features clock and reset generators and enables all
+optional peripheral and CPU extensions. The processor check program (`sw/example/processor_check`) is develop in close
+relation to the default testbench in order to test all primary processor functions.
 
 The simulation setup is configured via the "User Configuration" section located right at the beginning of
-the testbench architecture. Each configuration constant provides comments to explain the functionality.
-
-[IMPORTANT]
-The simulated NEORV32 does not use the bootloader and _directly boots_ the current application image (from
-the `rtl/core/neorv32_application_image.vhd` image file).
+the testbench architecture. Each configuration generic provides a default value and a comments to explain the functionality.
+Basically, these configuration generics represent most of the processor's **top generics**.
 
 .UART output during simulation
 [IMPORTANT]
-Data written to the NEORV32 UART0 / UART1 transmitter is send to a virtual UART receiver implemented
-as part of the testbench. Received chars are send to the simulator console and are also stored to a log file
-(`neorv32.testbench_uart0.out` for UART0, `neorv32.testbench_uart1.out` for UART1) inside the simulation's home folder.
-**Please note that printing via the native UART receiver takes a lot of time.** For faster simulation console output
-see section <<_faster_simulation_console_output>>.
+Data written to the NEORV32 UART0 / UART1 transmitter is send to a virtual UART receiver implemented as part of the default
+testbench. The received chars are send to the simulator console and are also stored to a log file (`neorv32_tb.uart0_rx.out`
+for UART0, `neorv32_tb.uart1_rx.out` for UART1) inside the simulator's home folder. **Please note that printing via the
+native UART receiver takes a lot of time.** For faster simulation console output see section <<_faster_simulation_console_output>>.
 
 
 :sectnums:
 === Faster Simulation Console Output
 
-When printing data via the physical UART the communication speed will always be based on the configured BAUD
-rate. For a simulation this might take some time. To have faster output you can enable the **simulation mode**
-for UART0/UART1 (see section https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0[Documentation: Primary Universal Asynchronous Receiver and Transmitter (UART0)]).
+When printing data via the physical UART the communication speed will always be based on the configured BAUD rate. For a
+simulation this might take some time. To have faster output you can enable the **simulation mode** for UART0/UART1 (see
+section https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0).
 
-ASCII data sent to UART0|UART1 will be immediately printed to the simulator console and logged to files in the simulator
-execution directory:
+ASCII data sent to UART0 / UART1 will be immediately printed to the simulator console and logged to files in the
+simulator's home directory.
 
-* `neorv32.uart*.sim_mode.text.out`: ASCII data.
+* `neorv32.uart0_sim_mode.out`: ASCII data send via UART0
+* `neorv32.uart1_sim_mode.out`: ASCII data send via UART1
 
-You can "automatically" enable the simulation mode of UART0/UART1 when compiling an application.
-In this case, the "real" UART0/UART1 transmitter unit is permanently disabled.
-To enable the simulation mode just compile and install your application and add _UART?_SIM_MODE_ to the compiler's
-_USER_FLAGS_ variable (do not forget the `-D` suffix flag):
+.Automatic Simulation Mode
+[TIP]
+You can "automatically" enable the simulation mode of UART0/UART1 when compiling an application. In this case, the "real"
+UART0/UART1 transmitter unit is permanently disabled by setting the UART's "sim-mode" bit.
+To enable the simulation mode just compile and install the application and add `-DUART0_SIM_MODE` `-DUART0_SIM_MODE` /
+`-DUART1_SIM_MODE` to the compiler's `USER_FLAGS` variable (do not forget the `-D` suffix flag):
 
+.Auto-Enable UART0 Simulation-Mode while Compiling
 [source, bash]
 ----
 sw/example/demo_blink_led$ make USER_FLAGS+=-DUART0_SIM_MODE clean_all all
 ----
 
-The provided define will change the default UART0/UART1 setup function in order to set the simulation
-mode flag in the according UART's control register.
-
-[NOTE]
-The UART simulation output (to file and to screen) outputs "complete lines" at once. A line is
-completed with a line feed (newline, ASCII `\n` = 10).
-
 
 :sectnums:
-=== Simulation using a shell script (with GHDL)
+=== GHDL Simulation
 
-To simulate the processor using _GHDL_ navigate to the `sim` folder and run the provided shell script.
-Any arguments that are provided while executing this script are passed to GHDL.
-For example the simulation time can be set to 20ms using `--stop-time=20ms` as argument.
+The default simulation setup that is also used by the project's CI pipeline is based on the free and open-source VHDL
+simulator **GHDL**. The `sim` folder also contains a simple script that evaluates and simulates all core files.
+This script can be called right from the command. Optionally, additional GHDL flags can be passes.
 
+.Invoking the default GHDL simulation script
 [source, bash]
 ----
 neorv32/sim$ sh ghdl.sh --stop-time=20ms
@@ -95,73 +85,76 @@ neorv32/sim$ sh ghdl.sh --stop-time=20ms
 
 
 :sectnums:
-=== Simulation using Application Makefiles (In-Console with GHDL)
+=== Simulation using Application Makefiles
 
-To directly compile and run a program in the console (using the default testbench and GHDL
-as simulator) you can use the `sim` makefile target. Make sure to use the UART simulation mode
-(`USER_FLAGS+=-DUART0_SIM_MODE` and/or `USER_FLAGS+=-DUART1_SIM_MODE`) to get
-faster / direct-to-console UART output.
+The <<_ghdl_simulation>> can also be started by the main application makefile (i.e. from each SW project folder).
 
+.Starting the GHDL simulation from the application makefile
 [source, bash]
 ----
-sw/example/demo_blink_led$ make USER_FLAGS+=-DUART0_SIM_MODE clean_all sim
+sw/example/demo_blink_led$ make USER_FLAGS+=-DUART0_SIM_MODE clean_all install sim
 [...]
 Blinking LED demo program
 ----
+
+Makefile targets:
+
+* `clean_all`: delete all artifacts and rebuild everything
+* `install`: install executable
+* `sim`: run GHDL simulation
+
+.Adjusting the Testbench Configuration
+[TIP]
+The testbench provides several generics for customization. These can be adjusted in-console using the
+makefile's `GHDL_RUN_FLAGS` variable. E.g.: `make GHDL_RUN_FLAGS+="-gBOOT_MODE_SELECT=1" sim`
 
 
 :sectnums:
 ==== Hello World!
 
-To do a quick test of the NEORV32 make sure to have https://github.com/ghdl/ghdl[GHDL] and a
-https://github.com/stnolting/riscv-gcc-prebuilt[RISC-V gcc toolchain] installed.
-Navigate to the project's `sw/example/hello_world` folder and run `make USER_FLAGS+=-DUART0_SIM_MODE clean_all sim`:
+To do a quick test of the NEORV32 make and the required tools navigate to the project's `sw/example/hello_world`
+folder and run `make USER_FLAGS+=-DUART0_SIM_MODE clean_all install sim`:
 
 [source, bash]
 ----
-neorv32/sw/example/hello_world$ make USER_FLAGS+=-DUART0_SIM_MODE clean_all sim
+neorv32/sw/example/hello_world$ make USER_FLAGS+=-DUART0_SIM_MODE clean_all install sim
 ../../../sw/lib/source/neorv32_uart.c: In function 'neorv32_uart_setup':
-../../../sw/lib/source/neorv32_uart.c:116:2: warning: #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only! [-Wcpp]
-  116 | #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulations only! <1>
+../../../sw/lib/source/neorv32_uart.c:109:2: warning: #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulation only! [-Wcpp]
+  109 | #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulation only! <1>
       |  ^~~~~~~
 Memory utilization:
    text    data     bss     dec     hex filename
-   4664       0     116    4780    12ac main.elf <2>
-Compiling ../../../sw/image_gen/image_gen
+   5540       0     116    5656    1618 main.elf <2>
+Compiling image generator...
+Generating neorv32_application_image.vhd
 Installing application image to ../../../rtl/core/neorv32_application_image.vhd <3>
-Simulating neorv32_application_image.vhd...
-Tip: Compile application with USER_FLAGS+=-DUART[0/1]_SIM_MODE to auto-enable UART[0/1]'s simulation mode (redirect UART output to simulator console). <4>
-Using simulation run arguments: --stop-time=10ms <5>
-../../rtl/core/neorv32_top.vhd:355:5:@0ms:(assertion note): [NEORV32] The NEORV32 RISC-V Processor (version 0x01090504), github.com/stnolting/neorv32 <6>
-../../rtl/core/neorv32_top.vhd:361:5:@0ms:(assertion note): [NEORV32] Processor Configuration: IMEM DMEM I-CACHE D-CACHE WISHBONE GPIO MTIME UART0 UART1 SPI SDI TWI PWM WDT TRNG CFS NEOLED XIRQ GPTMR XIP ONEWIRE DMA SLINK CRC SYSINFO OCD
-../../rtl/core/neorv32_clockgate.vhd:60:3:@0ms:(assertion warning): [NEORV32] Clock gating enabled (using generic clock switch).
-../../rtl/core/neorv32_cpu.vhd:142:3:@0ms:(assertion note): [NEORV32] CPU ISA: rv32imabu_zicsr_zicntr_zicond_zifencei_zfinx_zihpm_zxcfu_sdext_sdtrig_smpmp
-../../rtl/core/neorv32_cpu.vhd:163:3:@0ms:(assertion note): [NEORV32] CPU tuning options: fast_mul fast_shift
-../../rtl/core/neorv32_cpu.vhd:170:3:@0ms:(assertion warning): [NEORV32] Assuming this is a simulation.
-../../rtl/core/neorv32_cpu_cp_fpu.vhd:292:3:@0ms:(assertion warning): [NEORV32] The floating-point unit (Zfinx) is still in experimental state.
-../../rtl/core/mem/neorv32_imem.legacy.vhd:72:3:@0ms:(assertion note): [NEORV32] Implementing LEGACY processor-internal IMEM as pre-initialized ROM.
-../../rtl/core/neorv32_wishbone.vhd:117:3:@0ms:(assertion note): [NEORV32] Ext. Bus Interface (WISHBONE) - PIPELINED Wishbone protocol, auto-timeout, LITTLE-endian byte order, registered RX, registered TX
-../../rtl/core/neorv32_trng.vhd:343:3:@0ms:(assertion note): [neoTRNG NOTE] << neoTRNG V3 - A Tiny and Platform-Independent True Random Number Generator >>
-../../rtl/core/neorv32_trng.vhd:545:5:@0ms:(assertion warning): [neoTRNG WARNING] Implementing non-physical pseudo-RNG!
-../../rtl/core/neorv32_trng.vhd:545:5:@0ms:(assertion warning): [neoTRNG WARNING] Implementing non-physical pseudo-RNG!
-../../rtl/core/neorv32_trng.vhd:545:5:@0ms:(assertion warning): [neoTRNG WARNING] Implementing non-physical pseudo-RNG!
-../../rtl/core/neorv32_debug_dm.vhd:227:3:@0ms:(assertion note): [NEORV32] OCD DM compatible to debug spec. version 1.0
-<7>
+Simulating processor using default testbench...
+GHDL simulation run parameters: --stop-time=10ms <4>
+../rtl/core/neorv32_top.vhd:351:5:@0ms:(assertion note): [NEORV32] The NEORV32 RISC-V Processor (v1.10.7.6), github.com/stnolting/neorv32
+../rtl/core/neorv32_top.vhd:357:5:@0ms:(assertion note): [NEORV32] Processor Configuration: CPU IMEM-ROM DMEM I-CACHE D-CACHE XBUS XBUS-CACHE XIP XIP-CACHE CLINT GPIO UART0 UART1 SPI SDI TWI TWD PWM WDT TRNG CFS NEOLED XIRQ GPTMR ONEWIRE DMA SLINK CRC SYSINFO OCD-AUTH
+../rtl/core/neorv32_top.vhd:411:5:@0ms:(assertion note): [NEORV32] BOOT_MODE_SELECT = 2: booting IMEM image
+../rtl/core/neorv32_clockgate.vhd:38:3:@0ms:(assertion warning): [NEORV32] Clock gating enabled (using default/generic clock switch).
+../rtl/core/neorv32_cpu.vhd:135:3:@0ms:(assertion note): [NEORV32] CPU ISA: rv32ibmux_zalrsc_zba_zbb_zbkb_zbkc_zbkx_zbs_zicntr_zicond_zicsr_zifencei_zihpm_zfinx_zkn_zknd_zkne_zknh_zks_zksed_zksh_zkt_zmmul_zxcfu_sdext_sdtrig_smpmp
+../rtl/core/neorv32_cpu.vhd:171:3:@0ms:(assertion note): [NEORV32] CPU tuning options: fast_mul fast_shift rf_hw_rst
+../rtl/core/neorv32_cpu.vhd:178:3:@0ms:(assertion warning): [NEORV32] Assuming this is a simulation.
+../rtl/core/neorv32_imem.vhd:59:3:@0ms:(assertion note): [NEORV32] Implementing processor-internal IMEM as pre-initialized ROM.
+../rtl/core/neorv32_trng.vhd:277:3:@0ms:(assertion note): [neoTRNG] The neoTRNG (v3.2) - A Tiny and Platform-Independent True Random Number Generator, https://github.com/stnolting/neoTRNG
+../rtl/core/neorv32_trng.vhd:284:3:@0ms:(assertion warning): [neoTRNG] Simulation-mode enabled (NO TRUE/PHYSICAL RANDOM)!
+../rtl/core/neorv32_debug_auth.vhd:48:3:@0ms:(assertion warning): [NEORV32] using DEFAULT on-chip debugger authenticator. Replace by custom module.
+<5>
                                                                                       ##        ##   ##   ##
  ##     ##   #########   ########    ########   ##      ##   ########    ########     ##      ################
 ####    ##  ##          ##      ##  ##      ##  ##      ##  ##      ##  ##      ##    ##    ####            ####
 ## ##   ##  ##          ##      ##  ##      ##  ##      ##          ##         ##     ##      ##   ######   ##
 ##  ##  ##  #########   ##      ##  #########   ##      ##      #####        ##       ##    ####   ######   ####
-##   ## ##  ##          ##      ##  ##    ##     ##    ##           ##     ##         ##      ##   ######   ##
-##    ####  ##          ##      ##  ##     ##     ##  ##    ##      ##   ##           ##    ####            ####
-##     ##    #########   ########   ##      ##      ##       ########   ##########    ##      ################
+##   ## ##  ##          ##      ##  ##     ##    ##    ##           ##     ##         ##      ##   ######   ##
+##    ####  ##          ##      ##  ##      ##    ##  ##    ##      ##   ##           ##    ####            ####
+##     ##    #########   ########   ##       ##     ##       ########   ##########    ##      ################
                                                                                       ##        ##   ##   ##
 Hello world! :)
 ----
 <1> Notifier that "simulation mode" of UART0 is enabled (by the `USER_FLAGS+=-DUART0_SIM_MODE` makefile flag). All UART0 output is send to the simulator console.
 <2> Final executable size (`text`) and _static_ data memory requirements (`data`, `bss`).
 <3> The application code is _installed_ as pre-initialized IMEM. This is the default approach for simulation.
-<4> A note regarding UART "simulation mode", but we have already enabled that.
-<5> List of (default) arguments that were send to the simulator. Here: maximum simulation time (10ms).
-<6> "Sanity checks" from the core's VHDL files. These reports give some brief information about the SoC/CPU configuration (-> generics). If there are problems with the current configuration, an ERROR will appear.
-<7> Execution of the actual program starts.
+<4> List of (default) arguments that were send to the simulator. Here: maximum simulation time (10ms).
+<5> Execution of the actual program starts. UART0 TX data is printed right to the console.

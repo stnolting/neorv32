@@ -274,14 +274,6 @@ uint32_t twi_read_addr(uint32_t addr);
 
 
 /**********************************************************************//**
- * Sanity check: Base RV32I ISA only!
- **************************************************************************/
-#if defined __riscv_atomic || defined __riscv_a || __riscv_b || __riscv_compressed || defined __riscv_c || defined __riscv_mul || defined __riscv_m
-  #warning In order to allow the bootloader to run on *any* CPU configuration it should be compiled using the base rv32i ISA only.
-#endif
-
-
-/**********************************************************************//**
  * Bootloader main.
  **************************************************************************/
 int main(void) {
@@ -327,13 +319,18 @@ int main(void) {
   neorv32_twi_setup(TWI_CLK_PRSC, TWI_CLK_DIV, 0);
 #endif
 
-  // Configure machine system timer interrupt
-  if (neorv32_mtime_available()) {
-    NEORV32_MTIME->TIME_LO = 0;
-    NEORV32_MTIME->TIME_HI = 0;
-    NEORV32_MTIME->TIMECMP_LO = NEORV32_SYSINFO->CLK/4;
-    NEORV32_MTIME->TIMECMP_HI = 0;
-    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate MTIME IRQ source
+#if (TWI_EN != 0)
+  // setup TWI
+  neorv32_twi_setup(TWI_CLK_PRSC, TWI_CLK_DIV, 0);
+#endif
+
+  // Configure CLINT timer interrupt
+  if (neorv32_clint_available()) {
+    NEORV32_CLINT->MTIME.uint32[0] = 0;
+    NEORV32_CLINT->MTIME.uint32[0] = 0;
+    NEORV32_CLINT->MTIMECMP[0].uint32[0] = NEORV32_SYSINFO->CLK/4;
+    NEORV32_CLINT->MTIMECMP[0].uint32[1] = 0;
+    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate timer IRQ source
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
   }
 
@@ -353,9 +350,9 @@ int main(void) {
   PRINT_TEXT("\nSOC:  ");
   PRINT_XNUM(NEORV32_SYSINFO->SOC);
   PRINT_TEXT("\nIMEM: ");
-  PRINT_XNUM((uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_IMEM]) & 0xFFFFFFFCUL);
+  PRINT_XNUM((uint32_t)(1 << NEORV32_SYSINFO->MISC[SYSINFO_MISC_IMEM]) & 0xFFFFFFFCUL);
   PRINT_TEXT("\nDMEM: ");
-  PRINT_XNUM((uint32_t)(1 << NEORV32_SYSINFO->MEM[SYSINFO_MEM_DMEM]) & 0xFFFFFFFCUL);
+  PRINT_XNUM((uint32_t)(1 << NEORV32_SYSINFO->MISC[SYSINFO_MISC_DMEM]) & 0xFFFFFFFCUL);
   PRINT_TEXT("\n");
 
 
@@ -364,10 +361,10 @@ int main(void) {
   // ------------------------------------------------
 #if (SPI_EN != 0 || TWI_EN != 0)
 #if (AUTO_BOOT_TIMEOUT != 0)
-  if (neorv32_mtime_available()) {
+  if (neorv32_clint_available()) {
 
     PRINT_TEXT("\nAutoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
-    uint64_t timeout_time = neorv32_mtime_get_time() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO->CLK);
+    uint64_t timeout_time = neorv32_clint_time_get() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO->CLK);
 
     while(1){
 
@@ -378,7 +375,7 @@ int main(void) {
         }
       }
 
-      if (neorv32_mtime_get_time() >= timeout_time) { // timeout? start auto boot sequence
+      if (neorv32_clint_time_get() >= timeout_time) { // timeout? start auto boot sequence
         #if (SPI_EN != 0)
           get_exe(EXE_STREAM_FLASH); // try booting from flash
         #elif (TWI_EN != 0)
@@ -413,7 +410,7 @@ int main(void) {
     PRINT_TEXT("\n");
 
     if (c == 'r') { // restart bootloader
-      asm volatile ("li t0, %[input_i]; jr t0" :  : [input_i] "i" (BOOTLOADER_BASE_ADDRESS)); // jump to beginning of boot ROM
+      asm volatile ("li t0, %[input_i]; jr t0" :  : [input_i] "i" (NEORV32_BOOTROM_BASE)); // jump to beginning of boot ROM
       __builtin_unreachable();
     }
     else if (c == 'h') { // help menu
@@ -453,9 +450,6 @@ int main(void) {
       }
     }
 #endif
-    else if (c == '?') {
-      PRINT_TEXT("github.com/stnolting/neorv32");
-    }
     else { // unknown command
       PRINT_TEXT("Invalid CMD");
     }
@@ -529,7 +523,7 @@ void start_app(int boot_xip) {
 
 
 /**********************************************************************//**
- * Bootloader trap handler. Used for the MTIME tick and to capture any other traps.
+ * Bootloader trap handler. Used for the CLINT timer tick and to capture any other traps.
  *
  * @note Since we have no runtime environment we have to use the interrupt attribute here.
  **************************************************************************/
@@ -545,8 +539,8 @@ void __attribute__((interrupt("machine"))) bootloader_trap_handler(void) {
     }
 #endif
     // set time for next IRQ
-    if (neorv32_mtime_available()) {
-      neorv32_mtime_set_timecmp(neorv32_mtime_get_time() + (NEORV32_SYSINFO->CLK/4));
+    if (neorv32_clint_available()) {
+      neorv32_clint_mtimecmp_set(neorv32_clint_time_get() + (NEORV32_SYSINFO->CLK/4));
     }
   }
 

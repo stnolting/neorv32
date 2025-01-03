@@ -3,8 +3,10 @@
 
 The NEORV32 CPU is an area-optimized RISC-V core implementing the `rv32i_zicsr_zifencei` base (privileged) ISA and
 supporting several additional/optional ISA extensions. The CPU's micro architecture is based on a von-Neumann
-machine build upon a mixture of multi-cycle and pipelined execution schemes.
+machine build upon a mixture of multi-cycle and pipelined execution schemes. Optionally, the core can be implemented
+as SMP <<_dual_core_configuration>>.
 
+.RISC-V Specifications
 [NOTE]
 This chapter assumes that the reader is familiar with the official
 RISC-V _User_ and _Privileged Architecture_ specifications.
@@ -33,13 +35,13 @@ test framework is available in a separate repository at GitHub: https://github.c
 Executing instructions or accessing CSRs from yet unsupported ISA extensions will raise an illegal
 instruction exception (see section  <<_full_virtualization>>).
 
-
 **Incompatibility Issues and Limitations**
 
 .`time[h]` CSRs (Wall Clock Time)
 [IMPORTANT]
 The NEORV32 does not implement the `time[h]` registers. Any access to these registers will trap. It is
-recommended that the trap handler software provides a means of accessing the platform-defined <<_machine_system_timer_mtime>>.
+recommended that the trap handler software provides a means of accessing the the machine timer of the
+<<_core_local_interruptor_clint>>.
 
 .No Hardware Support of Misaligned Memory Accesses
 [IMPORTANT]
@@ -65,23 +67,20 @@ direction as seen from the CPU.
 |=======================
 | Signal | Width/Type | Dir | Description
 4+^| **Global Signals**
-| `clk_i`      |           1 | in  | Global clock line, all registers triggering on rising edge, this clock can be switched off during <<_sleep_mode>>
-| `clk_aux_i`  |           1 | in  | Always-on clock, used to keep the the sleep control active when `clk_i` is switched off
-| `rstn_i`     |           1 | in  | Global reset, low-active
-| `sleep_o`    |           1 | out | CPU is in <<_sleep_mode>> when set
-| `debug_o`    |           1 | out | CPU is in <<_cpu_debug_mode,debug mode>> when set
+| `clk_i`      |           1 | in  | Global clock line, all registers triggering on rising edge.
+| `rstn_i`     |           1 | in  | Global reset, low-active.
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
-| `msi_i`      |           1 | in  | RISC-V machine software interrupt
-| `mei_i`      |           1 | in  | RISC-V machine external interrupt
-| `mti_i`      |           1 | in  | RISC-V machine timer interrupt
-| `firq_i`     |          16 | in  | Custom fast interrupt request signals
-| `dbi_i`      |           1 | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>)
+| `msi_i`      |           1 | in  | RISC-V machine software interrupt.
+| `mei_i`      |           1 | in  | RISC-V machine external interrupt.
+| `mti_i`      |           1 | in  | RISC-V machine timer interrupt.
+| `firq_i`     |          16 | in  | Custom fast interrupt request signals.
+| `dbi_i`      |           1 | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>).
 4+^| **Instruction <<_bus_interface>>**
-| `ibus_req_o` | `bus_req_t` | out | Instruction fetch bus request
-| `ibus_rsp_i` | `bus_rsp_t` | in  | Instruction fetch bus response
+| `ibus_req_o` | `bus_req_t` | out | Instruction fetch bus request.
+| `ibus_rsp_i` | `bus_rsp_t` | in  | Instruction fetch bus response.
 4+^| **Data <<_bus_interface>>**
-| `dbus_req_o` | `bus_req_t` | out | Data access (load/store) bus request
-| `dbus_rsp_i` | `bus_rsp_t` | in  | Data access (load/store) bus response
+| `dbus_req_o` | `bus_req_t` | out | Data access (load/store) bus request.
+| `dbus_rsp_i` | `bus_rsp_t` | in  | Data access (load/store) bus response.
 |=======================
 
 .Bus Interface Protocol
@@ -110,6 +109,7 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 [options="header",grid="rows"]
 |=======================
 | Name | Type | Description
+| `HART_ID`          | natural   | Value for the <<_mhartid>> CSR.
 | `VENDOR_ID`        | suv(31:0) | Value for the <<_mvendorid>> CSR.
 | `BOOT_ADDR`        | suv(31:0) | CPU reset address. See section <<_address_space>>.
 | `DEBUG_PARK_ADDR`  | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
@@ -118,6 +118,10 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 | `RISCV_ISA_Sdtrig` | boolean   | Implement RISC-V-compatible trigger module. See section <<_on_chip_debugger_ocd>>.
 | `RISCV_ISA_Smpmp`  | boolean   | Implement RISC-V-compatible physical memory protection (PMP). See section <<_smpmp_isa_extension>>.
 |=======================
+
+.Tuning Option Generics
+[TIP]
+Additional generics that are related to certain _tuning options_ are listed in section <<_cpu_tuning_options>>.
 
 
 <<<
@@ -158,23 +162,10 @@ Up to four individual synchronous read ports allow to fetch up to 4 register ope
 are mutually exclusive as they happen in separate cycles. Hence, there is no need to consider things like "read-during-write"
 behavior.
 
-The register file provides two different implementation options configured via the top's `REGFILE_HW_RST` generic.
-
-* `REGFILE_HW_RST = false` (default): In this configuration the register file is implemented as plain memory array without a
-dictated hardware reset. This architecture allows to infer FPGA block RAM for the entire register file resulting in minimal
-general logic utilization.
-* `REGFILE_HW_RST = true`: This configuration is based on individual FFs that do provide a dedicated hardware reset.
-Hence, the register cannot be mapped to FPGA block RAM. This optional can be selected if the application requires a
-reset of the register file (e.g. for security reasons) or if the design shall be synthesized for an **ASIC** implementation.
-Using individual FFs for th register file might also improve timing as no long routing lines are required to connect to
-block RAM primitives.
-
-The state of this configuration generic can be checked by software via the <<_mxisa>> CSR.
-
-.FPGA Implementation
-[WARNING]
-Enabling the `REGFILE_HW_RST` option for FPGA implementation is not recommended as this will massively increase the amount
-of required logic resources.
+.Memory Tuning Options
+[TIP]
+The physical implementation of the register file's memory core can be tuned for certain design goals like area or throughput.
+See section <<_cpu_tuning_options>> for more information.
 
 .Implementation of the `zero` Register within FPGA Block RAM
 [NOTE]
@@ -207,12 +198,6 @@ and <<_b_isa_extension>>).
 [NOTE]
 The CPU control will raise an illegal instruction exception if a multi-cycle functional unit (like the <<_custom_functions_unit_cfu>>)
 does not complete processing in a bound amount of time (configured via the package's `monitor_mc_tmo_c` constant; default = 512 clock cycles).
-
-.Tuning Options
-[TIP]
-The ALU architecture can be tuned for an application-specific area-vs-performance trade-off. The `FAST_MUL_EN` and `FAST_SHIFT_EN`
-generics can be used to implement performance-optimized barrel shifters and DSP blocks, respectively. See sections <<_i_isa_extension>>,
-<<_b_isa_extension>> and <<_m_isa_extension>> for specific examples.
 
 
 :sectnums:
@@ -261,10 +246,94 @@ CPU back-end for actual execution. Execution is conducted by a state-machine tha
 includes the <<_control_and_status_registers_csrs>> as well as the trap controller.
 
 
+:sectnums:
+==== CPU Tuning Options
+
+The top module provides several tuning options to optimize the CPU for a specific goal.
+Note that these configuration options have no impact on the actual functionality (e.g. ISA compatibility).
+
+.Software Tuning Options Discovery
+[TIP]
+Software can check for configured tuning options via specific flags in the <<_mxisa>> CSR.
+
+
+{empty} +
+[discrete]
+===== **`CPU_CLOCK_GATING_EN`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Clock gating
+| Type        | `boolean`
+| Default     | `false`, disabled
+| Description | When **enabled** the CPU's primary clock is switched off when the CPU enters <<_sleep_mode>>. See <<_cpu_clock_gating>>.
+|             | When **disabled** the CPU clock system is implemented as single always-on clock domain.
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`CPU_FAST_MUL_EN`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Fast multiplication
+| Type        | `boolean`
+| Default     | `false`, disabled
+| Description | When **enabled** the `M`/`Zmmul` extension's multiplier is implemented as "plain multiplication" allowing the
+synthesis tool to infer DSP blocks / multiplication primitives. Multiplication operations only require a few cycles due to the
+DSP-internal register stages. The execution time is time-independent of the provided operands.
+|             | When **disabled** the `M`/`Zmmul` extension's multiplier is implemented as bit-serial multiplier that computes one
+result bit in every cycle. Multiplication operations only requires at least 32 cycles but the entire execution time is still
+time-independent of the provided operands.
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`CPU_FAST_SHIFT_EN`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Fast bit shifting
+| Type        | `boolean`
+| Default     | `false`, disabled
+| Description | When **enabled** the ALU's shifter unit is implemented as full-parallel barrel shifter that is capable
+of shifting a data word by an arbitrary number of positions within a single cycle. Hence, the execution time of any base-ISA
+shift operation is independent of the provided operands. Note that the barrel shifter requires a lot of hardware resources and
+might also increase the core's critical path.
+|             | When **disabled** the ALU's shifter unit is implemented as bit-serial shifter that can shift the input data
+only by one position per cycle. Hence, several cycles might be required to complete any base-ISA shift-related operations.
+Therefore, the execution time of the serial approach is **not** time-independent of the provided operands. However, the serial
+approach requires only a few hardware resources and does not impact the critical path.
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`CPU_RF_HW_RST_EN`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Register file hardware reset
+| Type        | `boolean`
+| Default     | `false`, disabled
+| Description | When **enabled** the CPU register file is implemented using single flip flops that provide a full hardware reset.
+The register file is reset to all-zero after each hardware reset. Note that this options requires a lot of flip flops and LUTs to
+build the register file. However, timing might be optimized as there is no need to route to far blockRAM resources.
+|             | When **disabled** the CPU register file is implemented in a way to allow synthesis to infer memory primitives
+like blockRAM. Note that these primitives do not provide any kind of hardware reset. Hence, the data content is undefined after reset.
+|=======================
+
+
 ==== Sleep Mode
 
 The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing
-dynamic power consumption. Sleep mode is entered by executing the `wfi` ("wait for interrupt") instruction.
+dynamic power consumption. Sleep mode is entered by executing the RISC-V `wfi` ("wait for interrupt") instruction.
 
 .Execution Details
 [NOTE]
@@ -272,8 +341,8 @@ The `wfi` instruction will raise an illegal instruction exception when executed 
 if `TW` in <<_mstatus>> is set. When executed in debug-mode or during single-stepping `wfi` will behave as
 simple `nop` without entering sleep mode.
 
-After executing the `wfi` instruction the CPU's `sleep_o` signal (<<_cpu_top_entity_signals>>) will become set
-as soon as the CPU has fully halted ("CPU is sleeping"):
+After executing the `wfi` instruction the `sleep` signal of the CPU's request buses (<<_bus_interface>> will become set
+as soon as the CPU has fully halted:
 
 [start=1]
 .The front-end (instruction fetch) has stopped. There is no pending instruction fetch bus access.
@@ -281,14 +350,25 @@ as soon as the CPU has fully halted ("CPU is sleeping"):
 .There is no enabled interrupt being pending.
 
 CPU-external modules like memories, timers and peripheral interfaces are not affected by this. Furthermore, the CPU will
-continue to buffer/enqueue incoming interrupt. The CPU will leave sleep mode as soon as any _enabled_ interrupt (via <<_mie>>)
+continue to buffer/enqueue incoming interrupts. The CPU will leave sleep mode as soon as any _enabled_ interrupt (via <<_mie>>)
 source becomes _pending_ or if a debug session is started.
 
-===== Power-Down Mode
 
-Optionally, the sleep mode can also be used to shut down the CPU's main clock to further reduce power consumption
-by halting the core's clock tree. This clock gating mode is enabled by the `CLOCK_GATING_EN` generic
-(<<_processor_top_entity_generics>>).  See section <<_processor_clocking>> for more information.
+==== CPU Clock Gating
+
+The single clock domain of the CPU core can be split into an always-on clock domain and a switchable clock domain.
+The switchable clock domain can be deactivated to further reduce reduce dynamic power consumption. CPU-external modules
+like timers, interfaces and memories are not affected by the clock gating.
+
+The splitting into two clock domain is enabled by the `CPU_CLOCK_GATING_EN` generic (<<_processor_top_entity_generics>> /
+<<_cpu_tuning_options>>). When enabled, a generic clock switching gate is added to decouple the switchable clock from
+the always-on clock domain. Whenever the CPU enters <<_sleep_mode>> the switchable clock domain is shut down.
+
+.Clock Switch Hardware
+[NOTE]
+By default, a generic clock switch is used (`rtl/core/neorv32_clockgate.vhd`). Especially for FPGA setups it is highly
+recommended to replace this default module by a technology-specific primitive or macro wrapper to improve synthesis results
+(clock skew, global clock tree usage, etc.).
 
 
 ==== Full Virtualization
@@ -312,15 +392,22 @@ the instruction fetch interface (`i_bus_*` signals) is used for fetching instruc
 (`d_bus_*` signals) is used to access data via load and store operations. Each of these interfaces can access an address
 space of up to 2^32^ bytes (4GB).
 
-The bus interface uses two custom interface types: `bus_req_t` is used to propagate the bus access **requests**. These
-signals are driven by the _accessing_ device (i.e. the CPU core). `bus_rsp_t` is used to return the bus **response** and
-is driven by the _accessed_ device or bus system (i.e. a processor-internal memory or IO device).
+The bus interface uses two custom interface types: `bus_req_t` is used to propagate the bus access requests downstream
+from a host to a device. These signals are driven by the request-issuing device (i.e. the CPU core). Vice versa, `bus_rsp_t`
+is used to return the bus response upstream from a device back to the host and is driven by the accessed device or bus system
+(i.e. a processor-internal memory or IO device).
+
+The signals of the request bus are split in to two categories: _in-band_ signals and _out-of-band_ signals. In-band
+signals always belong to a certain bus transaction and are only valid between `stb` being set and the according response
+(`err` or `ack`). being set. In contrast, the out-of-band signals are not associated with any bus transaction and are
+always valid when set.
 
 .Bus Interface - Request Bus (`bus_req_t`)
 [cols="^1,^1,<6"]
 [options="header",grid="rows"]
 |=======================
 | Signal  | Width | Description
+3+^| **In-Band Signals**
 | `addr`  |    32 | Access address (byte addressing)
 | `data`  |    32 | Write data
 | `ben`   |     4 | Byte-enable for each byte in `data`
@@ -329,7 +416,10 @@ is driven by the _accessed_ device or bus system (i.e. a processor-internal memo
 | `src`   |     1 | Access source (`0` = instruction fetch, `1` = load/store)
 | `priv`  |     1 | Set if privileged (M-mode) access
 | `rvso`  |     1 | Set if current access is a reservation-set operation (`lr` or `sc` instruction, <<_zalrsc_isa_extension>>)
-| `fence` |     1 | Data/instruction fence operation; valid without `stb` being set
+3+^| **Out-Of-Band Signals**
+| `fence` |     1 | Data/instruction fence request; single-shot
+| `sleep` |     1 | Set if ALL upstream devices are in <<_sleep_mode>>
+| `debug` |     1 | Set if the upstream device is in debug-mode
 |=======================
 
 .Bus Interface - Response Bus (`bus_rsp_t`)
@@ -363,7 +453,7 @@ The figure below shows three exemplary bus accesses:
 . A write access to address `B_addr` writing `wdata` (fastest response; `ACK` arrives right in the next cycle).
 . A failing read access to address `C_addr` (slow response; `ERR` arrives after several cycles).
 
-.Three Exemplary Bus Transactions
+.Three Exemplary Bus Transactions (showing only in-band signals)
 image::bus_interface.png[700]
 
 .Adding Register Stages
@@ -397,7 +487,7 @@ and also registers a reservation for the address `addr` (`rvs_valid` becomes set
 invalidated (`rvs_valid` is `0`) the store access fails, so `wdata2` is **not** written to address `addr` at all. The failed
 operation is indicated by a **1** being returned via `rsp.data` together with `ack`.
 
-.Three Exemplary LR/SC Bus Transactions
+.Three Exemplary LR/SC Bus Transactions (showing only in-band signals)
 image::bus_interface_atomic.png[700]
 
 .Store-Conditional Status
@@ -503,7 +593,7 @@ The "compressed" ISA extension provides 16-bit encodings of commonly used instru
 |=======================
 | Class | Instructions | Execution cycles
 | ALU           | `c.addi4spn` `c.nop` `c.add[i]` `c.li` `c.addi16sp` `c.lui` `c.and[i]` `c.sub` `c.xor` `c.or` `c.mv` | 2
-| ALU           | `c.srli` `c.srai` `c.slli`                                                                           | 3 + 1..32; FAST_SHIFT: 4
+| ALU           | `c.srli` `c.srai` `c.slli`                                                                           | 3 + 1..32; `CPU_FAST_SHIFT_EN`: 4
 | Branches      | `c.beqz` `c.bnez`                                                                                    | taken: 6; not taken: 3
 | Jumps / calls | `c.jal[r]` `c.j` `c.jr`                                                                              | 6
 | Memory access | `c.lw` `c.sw` `c.lwsp` `c.swsp`                                                                      | 4
@@ -532,7 +622,7 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Class | Instructions | Execution cycles
 | ALU           | `add[i]` `slt[i]` `slt[i]u` `xor[i]` `or[i]` `and[i]` `sub` `lui` `auipc` | 2
 | No-operation  | "`nop`"                                                                   | 2
-| ALU shifts    | `sll[i]` `srl[i]` `sra[i]`                                                | 3 + 1..32; FAST_SHIFT: 4
+| ALU shifts    | `sll[i]` `srl[i]` `sra[i]`                                                | 3 + 1..32; `CPU_FAST_SHIFT_EN`: 4
 | Branches      | `beq` `bne` `blt` `bge` `bltu` `bgeu`                                     | taken: 6; not taken: 3
 | Jump/call     | `jal[r]`                                                                  | 6
 | Load/store    | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 5
@@ -555,11 +645,10 @@ platform-compatibility and to indicate the actual intention of the according fen
 The `wfi` instruction is used to enter <<_sleep_mode>>. Executing the `wfi` instruction in user-mode
 will raise an illegal instruction exception if the `TW` bit of <<_mstatus>> is set.
 
-.Barrel Shifter
+.Shifter Tuning Options
 [TIP]
-The shift operations are implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_shifter.vhd`).
-These operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_SHIFT_EN`
-configuration option that will replace the (time-variant) bit-serial shifter by a (time-constant) barrel shifter.
+The physical implementation of the bit-shifter can be tuned for certain design goals like area or throughput.
+See section <<_cpu_tuning_options>> for more information.
 
 
 ==== `M` ISA Extension
@@ -572,14 +661,14 @@ This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Multiplication | `mul` `mulh` `mulhsu` `mulhu` | 36; FAST_MUL: 4
+| Multiplication | `mul` `mulh` `mulhsu` `mulhu` | 36; `CPU_FAST_MUL_EN`: 4
 | Division       | `div` `divu` `rem` `remu`     | 36
 |=======================
 
-.DSP Blocks
+.Multiplication Tuning Options
 [TIP]
-Multiplication operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_MUL_EN`
-configuration option that will replace the (time-variant) bit-serial multiplier by (time-constant) FPGA DSP blocks.
+The physical implementation of the multiplier can be tuned for certain design goals like area or throughput.
+See section <<_cpu_tuning_options>> for more information.
 
 
 ==== `U` ISA Extension
@@ -698,7 +787,7 @@ counter CSRs. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Z
 .Time CSRs
 [NOTE]
 The user-mode `time[h]` CSRs are **not implemented**. Any access will trap allowing the trap handler to
-retrieve system time from the <<_machine_system_timer_mtime>>.
+retrieve system time from the <<_core_local_interruptor_clint>>.
 
 .Mandatory Extension
 [NOTE]
@@ -794,19 +883,19 @@ generic. This ISA extension is implemented as multi-cycle ALU co-processor (`rtl
 |=======================
 | Class | Instructions | Execution cycles
 | Logic with negate            | `andn` `orn` `xnor`      | 4
-| Count leading/trailing zeros | `clz` `ctz`              | 6 + 1..32; FAST_SHIFT: 4
-| Count population             | `cpop`                   | 6 + 32; FAST_SHIFT: 4
+| Count leading/trailing zeros | `clz` `ctz`              | 6 + 1..32; `CPU_FAST_SHIFT_EN`: 4
+| Count population             | `cpop`                   | 6 + 32; `CPU_FAST_SHIFT_EN`: 4
 | Integer maximum/minimum      | `min[u]` `max[u]`        | 4
 | Sign/zero extension          | `sext.b` `sext.h` `zext` | 4
-| Bitwise rotation             | `rol` `ror[i]`           | 6 + _shift_amount_; FAST_SHIFT: 4
+| Bitwise rotation             | `rol` `ror[i]`           | 6 + _shift_amount_; `CPU_FAST_SHIFT_EN`: 4
 | OR-combine                   | `orc.b`                  | 4
 | Byte-reverse                 | `rev8`                   | 4
 |=======================
 
-.Shift Operations
+.shifter Tuning Options
 [TIP]
-Shift operations can be accelerated (at the cost of additional logic resources) by enabling the `FAST_SHIFT_EN`
-configuration option that will replace the (time-variant) bit-serial shifter by a (time-constant) barrel shifter.
+The physical implementation of the bit-shifter can be tuned for certain design goals like area or throughput.
+See section <<_cpu_tuning_options>> for more information.
 
 
 ==== `Zbs` ISA Extension
@@ -999,13 +1088,13 @@ core does implement must adhere to the requirements of `Zkt`.
 |=======================
 | Parent extension | Instructions | Data independent execution time?
 .2+<| `RVI` <| `lui` `auipc` `add[i]` `slt[i][u]` `xor[i]` `or[i]` `and[i]` `sub` <| yes
-            <| `sll[i]` `srl[i]` `sra[i]` <| yes if `FAST_SHIFT_EN` enabled
+            <| `sll[i]` `srl[i]` `sra[i]` <| yes if `CPU_FAST_SHIFT_EN` enabled
 | `RVM` | `mul[h]` `mulh[s]u` | yes
 .2+<| `RVC` <| `c.nop` `c.addi` `c.lui` `c.andi` `c.sub` `c.xor` `c.and` `c.mv` `c.add` <| yes
-            <| `c.srli` `c.srai` `c.slli` <| yes if `FAST_SHIFT_EN` enabled
+            <| `c.srli` `c.srai` `c.slli` <| yes if `CPU_FAST_SHIFT_EN` enabled
 | `RVK` | `aes32ds[m]i` `aes32es[m]i` `sha256sig*` `sha512sig*` `sha512sum*` `sm3p0` `sm3p1` `sm4ed` `sm4ks` | yes
 .2+<| `RVB` <| `xperm4` `xperm8` `andn` `orn` `xnor` `pack[h]` `brev8` `rev8` <| yes
-            <| `ror[i]` `rol` <| yes if `FAST_SHIFT_EN` enabled
+            <| `ror[i]` `rol` <| yes if `CPU_FAST_SHIFT_EN` enabled
 |=======================
 
 
@@ -1044,28 +1133,40 @@ does not complete operation within this time window.
 
 ==== `Smpmp` ISA Extension
 
-The NEORV32 physical memory protection (PMP) provides an elementary memory
-protection mechanism that can be used to constrain read, write and execute rights of arbitrary memory regions.
-The NEORV32 PMP is fully compatible to the RISC-V Privileged Architecture Specifications. In general, the PMP can
-**grant permissions to user mode**, which by default has none, and can **revoke permissions from M-mode**, which
-by default has full permissions. The PMP is configured via the <<_machine_physical_memory_protection_csrs>>.
+The NEORV32 physical memory protection (PMP) provides an elementary memory protection mechanism that can be used
+to configure read/write(execute permission of arbitrary memory regions. In general, the PMP can **grant permissions
+to user mode**, which by default has none, and can **revoke permissions from M-mode**, which by default has full
+permissions. The NEORV32 PMP is fully compatible to the RISC-V Privileged Architecture Specifications and is
+configured via several CSRs (<<_machine_physical_memory_protection_csrs>>). Several <<_processor_top_entity_generics>>
+are provided to adjust the CPU's PMP capabilities according to the application requirements (pre-synthesis):
 
-Several <<_processor_top_entity_generics>> are provided to fine-tune the CPU's PMP capabilities:
+. `PMP_NUM_REGIONS` defines the number of implemented PMP regions (0..16); setting this generic to zero will
+result in absolutely no PMP logic being implemented
+. `PMP_MIN_GRANULARITY` defines the minimal granularity of each region (has to be a power of 2, minimal
+granularity = 4 bytes); note that a smaller granularity will lead to wider comparators and thus, to higher area footprint
+and longer critical path
+. `PMP_TOR_MODE_EN` controls the implementation of the top-of-region (TOR) mode (default = true); disabling this mode
+will reduce area footprint
+. `PMP_NAP_MODE_EN` controls the implementation of the naturally-aligned-power-of-two (NA4 and NAPOT) modes (default =
+true); disabling this mode will reduce area footprint and critical path length
 
-* `PMP_NUM_REGIONS` defines the number of implemented PMP region
-* `PMP_MIN_GRANULARITY` defines the minimal granularity of each region
-* `PMP_TOR_MODE_EN` controls the implementation of the top-of-region (TOR) mode
-* `PMP_NAP_MODE_EN` controls the implementation of the naturally-aligned-power-of-two (NA4 and NAPOT) modes
-
-.PMP Rules when in Debug Mode
+.PMP Permissions when in Debug Mode
 [NOTE]
-When in debug-mode all PMP rules are ignored making the debugger have maximum access rights.
+When in debug-mode all PMP rules are bypassed/ignored granting the debugger maximum access permissions.
 
-.Protected Instruction Fetches
+.PMP Time-Multiplex
+[NOTE]
+Instructions are executed in a multi-cycle manner. Hence, data access (load/store) and instruction fetch cannot occur
+at the same time. Therefore, the PMP hardware uses only a single set of comparators for memory access permissions checks
+that are switched in an iterative, time-multiplex style reducing hardware footprint by approx. 50% while maintaining
+full security features and RISC-V compatibility.
+
+.PMP Memory Accesses
 [IMPORTANT]
-New instruction fetches are **always triggered even when denied** by a certain PMP rule. However, the fetched instruction(s)
-will not be executed and will not change CPU core state. Instead, they will raise a bus exception when reaching the CPU's
-executions stage.
+Load/store accesses for which there are insufficient access permission do not trigger any memory/bus accesses at all.
+In contrast, instruction accesses for which there are insufficient access permission nevertheless lead to a memory/bus
+access (causing potential side effects on the memory side=. However, the fetched instruction will be discarded and the
+corresponding exception will still be triggered precisely.
 
 
 ==== `Sdext` ISA Extension
@@ -1164,6 +1265,10 @@ provide custom trap codes in <<_mcause>>. These FIRQs are reserved for NEORV32 p
 The following tables show all traps that are currently supported by the NEORV32 CPU. It also shows the prioritization
 and the CSR side-effects.
 
+.FIRQ Mapping
+[TIP]
+See section <<_neorv32_specific_fast_interrupt_requests>> for the mapping of the FIRQ channels to the according hardware modules.
+
 **Table Annotations**
 
 The "Prio." column shows the priority of each trap with the highest priority being 1. The "RTE Trap ID" aliases are
@@ -1232,8 +1337,8 @@ written to the according CSRs when a trap is triggered:
 | `TRAP_CODE_S_ACCESS`     | bus timeout, bus access error or <<_smpmp_isa_extension,PMP>> rule violation during store data operation
 | `TRAP_CODE_FIRQ_*`       | caused by interrupt-condition of **processor-internal modules**, see <<_neorv32_specific_fast_interrupt_requests>>
 | `TRAP_CODE_MEI`          | machine external interrupt (via dedicated <<_processor_top_entity_signals>>)
-| `TRAP_CODE_MSI`          | machine software interrupt (via dedicated <<_processor_top_entity_signals>>)
-| `TRAP_CODE_MTI`          | machine timer interrupt (internal <<_machine_system_timer_mtime>> or via dedicated <<_processor_top_entity_signals>>)
+| `TRAP_CODE_MSI`          | machine software interrupt (internal <<_core_local_interruptor_clint>> or via dedicated <<_processor_top_entity_signals>>)
+| `TRAP_CODE_MTI`          | machine timer interrupt (internal <<_core_local_interruptor_clint>> or via dedicated <<_processor_top_entity_signals>>)
 |=======================
 
 .Resumable Exceptions
@@ -1241,3 +1346,8 @@ written to the according CSRs when a trap is triggered:
 Note that not all exceptions are resumable. For example, the "instruction access fault" exception or the "instruction
 address misaligned" exception are not resumable in most cases. These exception might indicate a fatal memory hardware failure.
 
+
+<<<
+// ####################################################################################################################
+
+include::cpu_dual_core.adoc[]

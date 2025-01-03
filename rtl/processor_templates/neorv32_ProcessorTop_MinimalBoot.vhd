@@ -66,7 +66,7 @@ begin
     MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
     -- Processor peripherals --
     IO_GPIO_NUM       => IO_GPIO_NUM,       -- number of GPIO input/output pairs (0..64)
-    IO_MTIME_EN       => true,              -- implement machine system timer (MTIME)?
+    IO_CLINT_EN       => true,              -- implement core local interruptor (CLINT)?
     IO_UART0_EN       => true,              -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_PWM_NUM_CH     => IO_PWM_NUM_CH      -- number of PWM channels to implement (0..12); 0 = disabled
   )

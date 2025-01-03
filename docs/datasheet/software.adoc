@@ -65,17 +65,16 @@ The NEORV32 HAL consists of the following files.
 | -                   | `neorv32.h`            | Main NEORV32 library file
 | `neorv32_aux.c`     | `neorv32_aux.h`        | General auxiliary/helper function
 | `neorv32_cfs.c`     | `neorv32_cfs.h`        | <<_custom_functions_subsystem_cfs>> HAL
-| `neorv32_crc.c`     | `neorv32_crc.h`        | <<_cyclic_redundancy_check_crc>> HAL
+| `neorv32_clint.c`   | `neorv32_clint.h`      | <<_core_local_interruptor_clint>> HAL
 | `neorv32_cpu.c`     | `neorv32_cpu.h`        | <<_neorv32_central_processing_unit_cpu>> HAL
 | `neorv32_cpu_amo.c` | `neorv32_cpu_amo.h`    | Emulation functions for the read-modify-write  <<_zalrsc_isa_extension>> / `A` instructions
 |                     | `neorv32_cpu_csr.h`    | <<_control_and_status_registers_csrs>> definitions
 | `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | <<_custom_functions_unit_cfu>> HAL
+| `neorv32_crc.c`     | `neorv32_crc.h`        | <<_cyclic_redundancy_check_crc>> HAL
 | `neorv32_dma.c`     | `neorv32_dma.h`        | <<_direct_memory_access_controller_dma>> HAL
 | `neorv32_gpio.c`    | `neorv32_gpio.h`       | <<_general_purpose_input_and_output_port_gpio>> HAL
 | `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | <<_general_purpose_timer_gptmr>> HAL
 | -                   | `neorv32_intrinsics.h` | Macros for intrinsics and custom instructions
-| -                   | `neorv32_legacy.h`     | Legacy compatibility layer / wrappers (**do not use for new designs**)
-| `neorv32_mtime.c`   | `neorv32_mtime.h`      | <<_machine_system_timer_mtime>> HAL
 | `neorv32_neoled.c`  | `neorv32_neoled.h`     | <<_smart_led_interface_neoled>> HAL
 | `neorv32_onewire.c` | `neorv32_onewire.h`    | <<_one_wire_serial_interface_controller_onewire>> HAL
 | `neorv32_pwm.c`     | `neorv32_pwm.h`        | <<_pulse_width_modulation_controller_pwm>> HAL
@@ -85,6 +84,7 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_spi.c`     | `neorv32_spi.h`        | <<_serial_peripheral_interface_controller_spi>> HAL
 | `neorv32_sysinfo.c` | `neorv32_sysinfo.h`    | <<_system_configuration_information_memory_sysinfo>> HAL
 | `neorv32_trng.c`    | `neorv32_trng.h`       | <<_true_random_number_generator_trng>> HAL
+| `neorv32_twd.c`     | `neorv32_twd.h`        | <<_two_wire_serial_device_controller_twd>> HAL
 | `neorv32_twi.c`     | `neorv32_twi.h`        | <<_two_wire_serial_interface_controller_twi>> HAL
 | `neorv32_uart.c`    | `neorv32_uart.h`       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>> and UART1 HAL
 | `neorv32_wdt.c`     | `neorv32_wdt.h`        | <<_watchdog_timer_wdt>> HAL
@@ -401,11 +401,12 @@ program and gets mapped before the actual application code so it gets executed r
 The `crt0.S` start-up performs the following operations:
 
 [start=1]
-. Clear <<_mstatus>> CSR.
-. Clear <<_mie>> CSR disabling all interrupt sources.
+. Setup the stack pointer and the global pointer according to the <<_ram_layout>> provided by the <<_linker_script>> symbols.
+. Initialize <<_mstatus>> CSR disabling machine-level interrupts.
 . Install an <<_early_trap_handler>> to <<_mtvec>> CSR.
-. Initialize the global pointer `gp` and the stack pointer `sp` according to the <<_ram_layout>> provided by the linker script.
+. Clear <<_mie>> CSR disabling all interrupt sources.
 . Initialize all integer register `x1` - `x31` (only `x1` - `x15` if the `E` CPU extension is enabled).
+. If the executing CPU core is not core 0 an SMP-specific code is executed and the CPU is halted in sleep mode. See section <<_dual_core_boot>> for more information.
 . Setup `.data` section to configure initialized variables.
 . Clear the `.bss` section.
 . Call all _constructors_ (if there are any).
@@ -413,8 +414,9 @@ The `crt0.S` start-up performs the following operations:
 . If `main()` returns:
 ** All interrupt sources are disabled by clearing <<_mie>> CSR.
 ** The return value of `main()` is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
+** The <<_early_trap_handler>> is re-installed to <<_mtvec>> CSR.
 ** Call all _destructors_ (if there are any).
-** Re-install an <<_early_trap_handler>> to <<_mtvec>> CSR. If any destructor causes an exception the <<_early_trap_handler>> is used for handling.
+** Execute an `ebreak` instruction to enter debug mode if an external debugger is connected.
 ** The CPU enters sleep mode executing the `wfi` instruction in an endless loop.
 
 

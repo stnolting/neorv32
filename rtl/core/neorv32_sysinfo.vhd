@@ -17,8 +17,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_sysinfo is
   generic (
+    NUM_HARTS             : natural; -- number of physical CPU cores
     CLOCK_FREQUENCY       : natural; -- clock frequency of clk_i in Hz
-    CLOCK_GATING_EN       : boolean; -- enable clock gating when in sleep mode
     BOOT_MODE_SELECT      : natural; -- boot configuration select (default = 0 = bootloader)
     INT_BOOTLOADER_EN     : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
     MEM_INT_IMEM_EN       : boolean; -- implement processor-internal instruction memory
@@ -43,12 +43,13 @@ entity neorv32_sysinfo is
     OCD_EN                : boolean; -- implement OCD?
     OCD_AUTHENTICATION    : boolean; -- implement OCD authenticator?
     IO_GPIO_EN            : boolean; -- implement general purpose IO port (GPIO)?
-    IO_MTIME_EN           : boolean; -- implement machine system timer (MTIME)?
+    IO_CLINT_EN           : boolean; -- implement machine local interruptor (CLINT)?
     IO_UART0_EN           : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART1_EN           : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
     IO_SPI_EN             : boolean; -- implement serial peripheral interface (SPI)?
     IO_SDI_EN             : boolean; -- implement serial data interface (SDI)?
     IO_TWI_EN             : boolean; -- implement two-wire interface (TWI)?
+    IO_TWD_EN             : boolean; -- implement two-wire device (TWD)?
     IO_PWM_EN             : boolean; -- implement pulse-width modulation controller (PWM)?
     IO_WDT_EN             : boolean; -- implement watch dog timer (WDT)?
     IO_TRNG_EN            : boolean; -- implement true random number generator (TRNG)?
@@ -103,10 +104,10 @@ begin
     end if;
   end process sysinfo_0_write;
 
-  -- SYSINFO(1): Internal Memory Configuration (sizes)
+  -- SYSINFO(1): Misc --
   sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_IMEM_SIZE), 8)); -- log2(IMEM size)
   sysinfo(1)(15 downto 8)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_DMEM_SIZE), 8)); -- log2(DMEM size)
-  sysinfo(1)(23 downto 16) <= (others => '0'); -- reserved
+  sysinfo(1)(23 downto 16) <= std_ulogic_vector(to_unsigned(NUM_HARTS, 8)); -- number of physical CPU cores
   sysinfo(1)(31 downto 24) <= std_ulogic_vector(to_unsigned(BOOT_MODE_SELECT, 8)); -- boot configuration
 
   -- SYSINFO(2): SoC Configuration --
@@ -117,16 +118,16 @@ begin
   sysinfo(2)(4)  <= '1' when OCD_EN            else '0'; -- on-chip debugger implemented?
   sysinfo(2)(5)  <= '1' when ICACHE_EN         else '0'; -- processor-internal instruction cache implemented?
   sysinfo(2)(6)  <= '1' when DCACHE_EN         else '0'; -- processor-internal data cache implemented?
-  sysinfo(2)(7)  <= '1' when CLOCK_GATING_EN   else '0'; -- enable clock gating when in sleep mode
+  sysinfo(2)(7)  <= '0';                                 -- reserved
   sysinfo(2)(8)  <= '1' when xcache_en_c       else '0'; -- external bus interface cache implemented?
   sysinfo(2)(9)  <= '1' when XIP_EN            else '0'; -- execute in-place module implemented?
   sysinfo(2)(10) <= '1' when xip_cache_en_c    else '0'; -- execute in-place cache implemented?
   sysinfo(2)(11) <= '1' when ocd_auth_en_c     else '0'; -- on-chip debugger authentication implemented?
   sysinfo(2)(12) <= '1' when int_imem_rom_c    else '0'; -- processor-internal instruction memory implemented as pre-initialized ROM?
-  sysinfo(2)(13) <= '0';                                 -- reserved
+  sysinfo(2)(13) <= '1' when IO_TWD_EN         else '0'; -- two-wire device (TWD) implemented?
   sysinfo(2)(14) <= '1' when IO_DMA_EN         else '0'; -- direct memory access controller (DMA) implemented?
   sysinfo(2)(15) <= '1' when IO_GPIO_EN        else '0'; -- general purpose input/output port unit (GPIO) implemented?
-  sysinfo(2)(16) <= '1' when IO_MTIME_EN       else '0'; -- machine system timer (MTIME) implemented?
+  sysinfo(2)(16) <= '1' when IO_CLINT_EN       else '0'; -- core local interruptor (CLINT) implemented?
   sysinfo(2)(17) <= '1' when IO_UART0_EN       else '0'; -- primary universal asynchronous receiver/transmitter (UART0) implemented?
   sysinfo(2)(18) <= '1' when IO_SPI_EN         else '0'; -- serial peripheral interface (SPI) implemented?
   sysinfo(2)(19) <= '1' when IO_TWI_EN         else '0'; -- two-wire interface (TWI) implemented?

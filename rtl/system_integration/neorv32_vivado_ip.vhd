@@ -28,7 +28,6 @@ entity neorv32_vivado_ip is
     -- Clocking --
     CLOCK_FREQUENCY       : natural                       := 100_000_000;
     -- Identification --
-    HART_ID               : std_logic_vector(31 downto 0) := x"00000000";
     JEDEC_ID              : std_logic_vector(10 downto 0) := "00000000000";
     -- Boot Configuration --
     BOOT_MODE_SELECT      : natural range 0 to 2          := 0;
@@ -60,9 +59,9 @@ entity neorv32_vivado_ip is
     RISCV_ISA_Zksh        : boolean                       := false;
     RISCV_ISA_Zxcfu       : boolean                       := false;
     -- Tuning Options --
-    FAST_MUL_EN           : boolean                       := false;
-    FAST_SHIFT_EN         : boolean                       := false;
-    REGFILE_HW_RST        : boolean                       := false;
+    CPU_FAST_MUL_EN       : boolean                       := false;
+    CPU_FAST_SHIFT_EN     : boolean                       := false;
+    CPU_RF_HW_RST_EN      : boolean                       := false;
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       : natural range 0 to 16         := 0;
     PMP_MIN_GRANULARITY   : natural                       := 4;
@@ -104,7 +103,7 @@ entity neorv32_vivado_ip is
     IO_GPIO_EN            : boolean                       := false;
     IO_GPIO_IN_NUM        : natural range 1 to 64         := 1; -- variable-sized ports must be at least 0 downto 0; #974
     IO_GPIO_OUT_NUM       : natural range 1 to 64         := 1;
-    IO_MTIME_EN           : boolean                       := false;
+    IO_CLINT_EN           : boolean                       := false;
     IO_UART0_EN           : boolean                       := false;
     IO_UART0_RX_FIFO      : natural range 1 to 2**15      := 1;
     IO_UART0_TX_FIFO      : natural range 1 to 2**15      := 1;
@@ -117,6 +116,8 @@ entity neorv32_vivado_ip is
     IO_SDI_FIFO           : natural range 1 to 2**15      := 1;
     IO_TWI_EN             : boolean                       := false;
     IO_TWI_FIFO           : natural range 1 to 2**15      := 1;
+    IO_TWD_EN             : boolean                       := false;
+    IO_TWD_FIFO           : natural range 1 to 2**15      := 1;
     IO_PWM_EN             : boolean                       := false;
     IO_PWM_NUM_CH         : natural range 1 to 16         := 1; -- variable-sized ports must be at least 0 downto 0; #974
     IO_WDT_EN             : boolean                       := false;
@@ -232,6 +233,11 @@ entity neorv32_vivado_ip is
     twi_sda_o      : out std_logic;
     twi_scl_i      : in  std_logic := '0';
     twi_scl_o      : out std_logic;
+    -- TWD (available if IO_TWD_EN = true) --
+    twd_sda_i      : in  std_logic := '0';
+    twd_sda_o      : out std_logic;
+    twd_scl_i      : in  std_logic := '0';
+    twd_scl_o      : out std_logic;
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      : in  std_logic := '0';
     onewire_o      : out std_logic;
@@ -242,7 +248,7 @@ entity neorv32_vivado_ip is
     cfs_out_o      : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_logic;
-    -- Machine timer system time (available if IO_MTIME_EN = true) --
+    -- Machine timer system time (available if IO_CLINT_EN = true) --
     mtime_time_o   : out std_logic_vector(63 downto 0);
     -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
     xirq_i         : in  std_logic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
@@ -263,7 +269,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   -- AXI4-Lite bridge --
   component xbus2axi4lite_bridge
     port (
-      -- Global control 
+      -- Global control
       clk           : in  std_logic;
       resetn        : in  std_logic;
       -- XBUS device interface --
@@ -315,6 +321,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal spi_csn_aux : std_ulogic_vector(7 downto 0);
   signal sdi_do_aux : std_ulogic;
   signal twi_sda_o_aux, twi_scl_o_aux : std_ulogic;
+  signal twd_sda_o_aux, twd_scl_o_aux : std_ulogic;
   signal onewire_o_aux : std_ulogic;
   signal cfs_out_aux : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
   signal neoled_aux : std_ulogic;
@@ -346,9 +353,7 @@ begin
   generic map (
     -- Clocking --
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
-    CLOCK_GATING_EN       => false, -- clock gating is not supported here
     -- Identification --
-    HART_ID               => std_ulogic_vector(HART_ID),
     JEDEC_ID              => std_ulogic_vector(JEDEC_ID),
     -- Boot Configuration --
     BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
@@ -380,9 +385,10 @@ begin
     RISCV_ISA_Zksh        => RISCV_ISA_Zksh,
     RISCV_ISA_Zxcfu       => RISCV_ISA_Zxcfu,
     -- Extension Options --
-    FAST_MUL_EN           => FAST_MUL_EN,
-    FAST_SHIFT_EN         => FAST_SHIFT_EN,
-    REGFILE_HW_RST        => REGFILE_HW_RST,
+    CPU_CLOCK_GATING_EN   => false, -- clock gating is not supported here
+    CPU_FAST_MUL_EN       => CPU_FAST_MUL_EN,
+    CPU_FAST_SHIFT_EN     => CPU_FAST_SHIFT_EN,
+    CPU_RF_HW_RST_EN      => CPU_RF_HW_RST_EN,
     -- Physical Memory Protection --
     PMP_NUM_REGIONS       => PMP_NUM_REGIONS,
     PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY,
@@ -422,7 +428,7 @@ begin
     -- Processor peripherals --
     IO_DISABLE_SYSINFO    => false,
     IO_GPIO_NUM           => num_gpio_c,
-    IO_MTIME_EN           => IO_MTIME_EN,
+    IO_CLINT_EN           => IO_CLINT_EN,
     IO_UART0_EN           => IO_UART0_EN,
     IO_UART0_RX_FIFO      => IO_UART0_RX_FIFO,
     IO_UART0_TX_FIFO      => IO_UART0_TX_FIFO,
@@ -435,6 +441,8 @@ begin
     IO_SDI_FIFO           => IO_SDI_FIFO,
     IO_TWI_EN             => IO_TWI_EN,
     IO_TWI_FIFO           => IO_TWI_FIFO,
+    IO_TWD_EN             => IO_TWD_EN,
+    IO_TWD_FIFO           => IO_TWD_FIFO,
     IO_PWM_NUM_CH         => num_pwm_c,
     IO_WDT_EN             => IO_WDT_EN,
     IO_TRNG_EN            => IO_TRNG_EN,
@@ -517,6 +525,11 @@ begin
     twi_sda_o      => twi_sda_o_aux,
     twi_scl_i      => std_ulogic(twi_scl_i),
     twi_scl_o      => twi_scl_o_aux,
+    -- TWD (available if IO_TWD_EN = true) --
+    twd_sda_i      => std_ulogic(twd_sda_i),
+    twd_sda_o      => twd_sda_o_aux,
+    twd_scl_i      => std_ulogic(twd_scl_i),
+    twd_scl_o      => twd_scl_o_aux,
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      => std_ulogic(onewire_i),
     onewire_o      => onewire_o_aux,
@@ -565,6 +578,9 @@ begin
 
   twi_sda_o      <= std_logic(twi_sda_o_aux);
   twi_scl_o      <= std_logic(twi_scl_o_aux);
+
+  twd_sda_o      <= std_logic(twd_sda_o_aux);
+  twd_scl_o      <= std_logic(twd_scl_o_aux);
 
   onewire_o      <= std_logic(onewire_o_aux);
 

@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -20,7 +20,7 @@
  * Atomic SWAP (AMOSWAP.W).
  * return <= MEM[addr]; MEM[addr] <= wdata
  *
- * @note This function requires the CPU A ISA extension.
+ * @note This function requires the CPU A/Zalrsc ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
  * @param[in] wdata Data word to be atomically stored to address (32-bit).
@@ -54,7 +54,7 @@ uint32_t neorv32_cpu_amoswapw(uint32_t addr, uint32_t wdata) {
  * Atomic ADD (AMOADD.W).
  * return <= MEM[addr]; MEM[addr] <= MEM[addr] + wdata
  *
- * @note This function requires the CPU A ISA extension.
+ * @note This function requires the CPU A/Zalrsc ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
  * @param[in] wdata Data word to be atomically added to original data at address (32-bit).
@@ -90,7 +90,7 @@ uint32_t neorv32_cpu_amoaddw(uint32_t addr, uint32_t wdata) {
  * Atomic AND (AMOAND.W).
  * return <= MEM[addr]; MEM[addr] <= MEM[addr] and wdata
  *
- * @note This function requires the CPU A ISA extension.
+ * @note This function requires the CPU A/Zalrsc ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
  * @param[in] wdata Data word to be atomically AND-ed with original data at address (32-bit).
@@ -126,7 +126,7 @@ uint32_t neorv32_cpu_amoandw(uint32_t addr, uint32_t wdata) {
  * Atomic OR (AMOOR.W).
  * return <= MEM[addr]; MEM[addr] <= MEM[addr] or wdata
  *
- * @note This function requires the CPU A ISA extension.
+ * @note This function requires the CPU A/Zalrsc ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
  * @param[in] wdata Data word to be atomically OR-ed with original data at address (32-bit).
@@ -162,7 +162,7 @@ uint32_t neorv32_cpu_amoorw(uint32_t addr, uint32_t wdata) {
  * Atomic XOR (AMOXOR.W).
  * return <= MEM[addr]; MEM[addr] <= MEM[addr] xor wdata
  *
- * @note This function requires the CPU A ISA extension.
+ * @note This function requires the CPU A/Zalrsc ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
  * @param[in] wdata Data word to be atomically XOR-ed with original data at address (32-bit).
@@ -198,7 +198,7 @@ uint32_t neorv32_cpu_amoxorw(uint32_t addr, uint32_t wdata) {
  * Atomic signed MAX (AMOMAX.W).
  * return <= MEM[addr]; MEM[addr] <= maximum_signed(MEM[addr], wdata)
  *
- * @note This function requires the CPU A ISA extension.
+ * @note This function requires the CPU A/Zalrsc ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
  * @param[in] wdata Data word to be atomically MAX-ed with original data at address (signed 32-bit).
@@ -234,7 +234,7 @@ int32_t neorv32_cpu_amomaxw(uint32_t addr, int32_t wdata) {
  * Atomic unsigned MAX (AMOMAXU.W).
  * return <= MEM[addr]; MEM[addr] <= maximum_unsigned(MEM[addr], wdata)
  *
- * @note This function requires the CPU A ISA extension.
+ * @note This function requires the CPU A/Zalrsc ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
  * @param[in] wdata Data word to be atomically MAX-ed with original data at address (unsigned 32-bit).
@@ -270,7 +270,7 @@ uint32_t neorv32_cpu_amomaxuw(uint32_t addr, uint32_t wdata) {
  * Atomic signed MIN (AMOMIN.W).
  * return <= MEM[addr]; MEM[addr] <= minimum_signed(MEM[addr], wdata)
  *
- * @note This function requires the CPU A ISA extension.
+ * @note This function requires the CPU A/Zalrsc ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
  * @param[in] wdata Data word to be atomically MIN-ed with original data at address (signed 32-bit).
@@ -306,7 +306,7 @@ int32_t neorv32_cpu_amominw(uint32_t addr, int32_t wdata) {
  * Atomic unsigned MIN (AMOMINU.W).
  * return <= MEM[addr]; MEM[addr] <= minimum_unsigned(MEM[addr], wdata)
  *
- * @note This function requires the CPU A ISA extension.
+ * @note This function requires the CPU A/Zalrsc ISA extension.
  *
  * @param[in] addr 32-bit memory address, word-aligned.
  * @param[in] wdata Data word to be atomically MIN-ed with original data at address (unsigned 32-bit).

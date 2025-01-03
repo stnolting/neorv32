@@ -198,21 +198,23 @@ int main(int argc, char *argv[]) {
   else if (operation == OP_APP_VHD) {
 
     // header
-    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32\n"
-                        "-- Auto-generated memory initialization package (for internal IMEM)\n"
-                        "-- Source: %s/%s\n"
-                        "-- Size: %lu bytes\n"
-                        "-- Built: %s\n"
-                        "\n"
-                        "library ieee;\n"
-                        "use ieee.std_logic_1164.all;\n"
-                        "\n"
-                        "library neorv32;\n"
-                        "use neorv32.neorv32_package.all;\n"
-                        "\n"
-                        "package neorv32_application_image is\n"
-                        "\n"
-                        "constant application_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, compile_time);
+    snprintf(tmp_string, sizeof(tmp_string),
+      "-- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32\n"
+      "-- Auto-generated memory initialization image (for internal IMEM)\n"
+      "-- Source: %s/%s\n"
+      "-- Built: %s\n"
+      "\n"
+      "library ieee;\n"
+      "use ieee.std_logic_1164.all;\n"
+      "\n"
+      "library neorv32;\n"
+      "use neorv32.neorv32_package.all;\n"
+      "\n"
+      "package neorv32_application_image is\n"
+      "\n"
+      "constant application_init_size_c  : natural := %lu; -- bytes\n"
+      "constant application_init_image_c : mem32_t := (\n",
+      argv[4], argv[2], compile_time, raw_exe_size);
     fputs(tmp_string, output);
 
     i = 0;
@@ -222,7 +224,7 @@ int main(int argc, char *argv[]) {
         tmp |= (uint32_t)(buffer[1] << 8);
         tmp |= (uint32_t)(buffer[2] << 16);
         tmp |= (uint32_t)(buffer[3] << 24);
-        sprintf(tmp_string, "x\"%08x\",\n", (unsigned int)tmp);
+        snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\",\n", (unsigned int)tmp);
         fputs(tmp_string, output);
         i++;
       }
@@ -237,7 +239,7 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[1] << 8);
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
-      sprintf(tmp_string, "x\"%08x\"\n", (unsigned int)tmp);
+      snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\"\n", (unsigned int)tmp);
       fputs(tmp_string, output);
       i++;
     }
@@ -246,9 +248,10 @@ int main(int argc, char *argv[]) {
     }
 
     // end
-    sprintf(tmp_string, ");\n"
-                        "\n"
-                        "end neorv32_application_image;\n");
+    snprintf(tmp_string, sizeof(tmp_string),
+      ");\n"
+      "\n"
+      "end neorv32_application_image;\n");
     fputs(tmp_string, output);
   }
 
@@ -259,21 +262,23 @@ int main(int argc, char *argv[]) {
   else if (operation == OP_BLD_VHD) {
 
     // header
-    sprintf(tmp_string, "-- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32\n"
-                        "-- Auto-generated memory initialization package (for internal BOOTROM)\n"
-                        "-- Source: %s/%s\n"
-                        "-- Size: %lu bytes\n"
-                        "-- Built: %s\n"
-                        "\n"
-                        "library ieee;\n"
-                        "use ieee.std_logic_1164.all;\n"
-                        "\n"
-                        "library neorv32;\n"
-                        "use neorv32.neorv32_package.all;\n"
-                        "\n"
-                        "package neorv32_bootloader_image is\n"
-                        "\n"
-                        "constant bootloader_init_image : mem32_t := (\n", argv[4], argv[2], raw_exe_size, compile_time);
+    snprintf(tmp_string, sizeof(tmp_string),
+      "-- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32\n"
+      "-- Auto-generated memory initialization image (for internal BOOTROM)\n"
+      "-- Source: %s/%s\n"
+      "-- Built: %s\n"
+      "\n"
+      "library ieee;\n"
+      "use ieee.std_logic_1164.all;\n"
+      "\n"
+      "library neorv32;\n"
+      "use neorv32.neorv32_package.all;\n"
+      "\n"
+      "package neorv32_bootloader_image is\n"
+      "\n"
+      "constant bootloader_init_size_c  : natural := %lu; -- bytes\n"
+      "constant bootloader_init_image_c : mem32_t := (\n",
+      argv[4], argv[2], compile_time, raw_exe_size);
     fputs(tmp_string, output);
 
     i = 0;
@@ -283,7 +288,7 @@ int main(int argc, char *argv[]) {
         tmp |= (uint32_t)(buffer[1] << 8);
         tmp |= (uint32_t)(buffer[2] << 16);
         tmp |= (uint32_t)(buffer[3] << 24);
-        sprintf(tmp_string, "x\"%08x\",\n", (unsigned int)tmp);
+        snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\",\n", (unsigned int)tmp);
         fputs(tmp_string, output);
         i++;
       }
@@ -298,7 +303,7 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[1] << 8);
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
-      sprintf(tmp_string, "x\"%08x\"\n", (unsigned int)tmp);
+      snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\"\n", (unsigned int)tmp);
       fputs(tmp_string, output);
       i++;
     }
@@ -307,9 +312,10 @@ int main(int argc, char *argv[]) {
     }
 
     // end
-    sprintf(tmp_string, ");\n"
-                        "\n"
-                        "end neorv32_bootloader_image;\n");
+    snprintf(tmp_string, sizeof(tmp_string),
+      ");\n"
+      "\n"
+      "end neorv32_bootloader_image;\n");
     fputs(tmp_string, output);
   }
 
@@ -324,7 +330,7 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[1] << 8);
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
-      sprintf(tmp_string, "%08x\n", (unsigned int)tmp);
+      snprintf(tmp_string, sizeof(tmp_string), "%08x\n", (unsigned int)tmp);
       fputs(tmp_string, output);
     }
   }
@@ -347,9 +353,9 @@ int main(int argc, char *argv[]) {
   else if (operation == OP_RAW_COE) {
 
     // header
-    sprintf(tmp_string, "memory_initialization_radix=16;\n");
+    snprintf(tmp_string, sizeof(tmp_string), "memory_initialization_radix=16;\n");
     fputs(tmp_string, output);
-    sprintf(tmp_string, "memory_initialization_vector=\n");
+    snprintf(tmp_string, sizeof(tmp_string), "memory_initialization_vector=\n");
     fputs(tmp_string, output);
 
     i = 0;
@@ -359,10 +365,10 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
       if (i == (input_words-1)) {
-        sprintf(tmp_string, "%08x;\n", (unsigned int)tmp);
+        snprintf(tmp_string, sizeof(tmp_string), "%08x;\n", (unsigned int)tmp);
       }
       else {
-        sprintf(tmp_string, "%08x,\n", (unsigned int)tmp);
+        snprintf(tmp_string, sizeof(tmp_string), "%08x,\n", (unsigned int)tmp);
       }
       fputs(tmp_string, output);
       i++;
@@ -381,7 +387,7 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[1] << 8);
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
-      sprintf(tmp_string, "@%08x %08x\n", (unsigned int)i, (unsigned int)tmp);
+      snprintf(tmp_string, sizeof(tmp_string), "@%08x %08x\n", (unsigned int)i, (unsigned int)tmp);
       fputs(tmp_string, output);
       i++;
     }
@@ -394,18 +400,18 @@ int main(int argc, char *argv[]) {
   else if (operation == OP_RAW_MIF) {
 
     // header
-    sprintf(tmp_string, "DEPTH = %lu;\n", raw_exe_size/4); // memory depth in words
+    snprintf(tmp_string, sizeof(tmp_string), "DEPTH = %lu;\n", raw_exe_size/4); // memory depth in words
     fputs(tmp_string, output);
-    sprintf(tmp_string, "WIDTH = 32;\n"); // bits per data word
+    snprintf(tmp_string, sizeof(tmp_string), "WIDTH = 32;\n"); // bits per data word
     fputs(tmp_string, output);
-    sprintf(tmp_string, "ADDRESS_RADIX = HEX;\n"); // hexadecimal address format
+    snprintf(tmp_string, sizeof(tmp_string), "ADDRESS_RADIX = HEX;\n"); // hexadecimal address format
     fputs(tmp_string, output);
-    sprintf(tmp_string, "DATA_RADIX = HEX;\n"); // hexadecimal data format
+    snprintf(tmp_string, sizeof(tmp_string), "DATA_RADIX = HEX;\n"); // hexadecimal data format
     fputs(tmp_string, output);
 
-    sprintf(tmp_string, "CONTENT\n");
+    snprintf(tmp_string, sizeof(tmp_string), "CONTENT\n");
     fputs(tmp_string, output);
-    sprintf(tmp_string, "BEGIN\n");
+    snprintf(tmp_string, sizeof(tmp_string), "BEGIN\n");
     fputs(tmp_string, output);
     i = 0;
     while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
@@ -413,13 +419,13 @@ int main(int argc, char *argv[]) {
       tmp |= (uint32_t)(buffer[1] << 8);
       tmp |= (uint32_t)(buffer[2] << 16);
       tmp |= (uint32_t)(buffer[3] << 24);
-      sprintf(tmp_string, "%08x : %08x;\n", (unsigned int)i, (unsigned int)tmp);
+      snprintf(tmp_string, sizeof(tmp_string), "%08x : %08x;\n", (unsigned int)i, (unsigned int)tmp);
       fputs(tmp_string, output);
       i++;
     }
 
     // footer
-    sprintf(tmp_string, "END;\n");
+    snprintf(tmp_string, sizeof(tmp_string), "END;\n");
     fputs(tmp_string, output);
   }
 

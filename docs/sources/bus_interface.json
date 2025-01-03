@@ -10,7 +10,6 @@
     {name: 'src',   wave: 'x0.|.x0.x..|..'},
     {name: 'priv',  wave: 'x0.|.x0.x..|..'},
     {name: 'rvso',  wave: 'x0.|.x0.x..|..'},
-    {name: 'fence', wave: '0....|.....|..'},
   ],
   {},
   [

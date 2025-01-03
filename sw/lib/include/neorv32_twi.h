@@ -27,8 +27,8 @@
 /**@{*/
 /** TWI module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL;  /**< offset 0: control register (#NEORV32_TWI_CTRL_enum) */
-  uint32_t DCMD;  /**< offset 4: data/cmd register (#NEORV32_TWI_DCMD_enum) */
+  uint32_t CTRL; /**< offset 0: control register (#NEORV32_TWI_CTRL_enum) */
+  uint32_t DCMD; /**< offset 4: data/cmd register (#NEORV32_TWI_DCMD_enum) */
 } neorv32_twi_t;
 
 /** TWI module hardware access (#neorv32_twi_t) */
@@ -46,8 +46,8 @@ enum NEORV32_TWI_CTRL_enum {
   TWI_CTRL_CDIV3     =  7, /**< TWI control register(7)  (r/w): Clock divider bit 3 */
   TWI_CTRL_CLKSTR    =  8, /**< TWI control register(8)  (r/w): Enable/allow clock stretching */
 
-  TWI_CTRL_FIFO_LSB  = 15, /**< SPI control register(15) (r/-): log2(FIFO size), lsb */
-  TWI_CTRL_FIFO_MSB  = 18, /**< SPI control register(18) (r/-): log2(FIFO size), msb */
+  TWI_CTRL_FIFO_LSB  = 15, /**< TWI control register(15) (r/-): log2(FIFO size), lsb */
+  TWI_CTRL_FIFO_MSB  = 18, /**< TWI control register(18) (r/-): log2(FIFO size), msb */
 
   TWI_CTRL_SENSE_SCL = 27, /**< TWI control register(27) (r/-): current state of the SCL bus line */
   TWI_CTRL_SENSE_SDA = 28, /**< TWI control register(28) (r/-): current state of the SDA bus line */

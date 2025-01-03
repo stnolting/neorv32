@@ -11,7 +11,7 @@
 | Top entity ports:       | none |
 | Configuration generics: | `IO_WDT_EN` | implement watchdog when `true`
 | CPU interrupts:         | none |
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
+| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 
@@ -84,7 +84,7 @@ The cause of the last system hardware reset can be determined via the `WDT_CTRL_
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Reset value | Writable if locked | Function
-.8+<| `0xfffffb00` .8+<| `CTRL` <|`0` `WDT_CTRL_EN`     ^| r/w ^| `0` ^| no  <| watchdog enable
+.8+<| `0xfffb0000` .8+<| `CTRL` <|`0` `WDT_CTRL_EN`     ^| r/w ^| `0` ^| no  <| watchdog enable
                                 <|`1` `WDT_CTRL_LOCK`   ^| r/w ^| `0` ^| no  <| lock configuration when set, clears only on system reset, can only be set if enable bit is set already
                                 <|`2` `WDT_CTRL_DBEN`   ^| r/w ^| `0` ^| no  <| set to allow WDT to continue operation even when CPU is in debug mode
                                 <|`3` `WDT_CTRL_SEN`    ^| r/w ^| `0` ^| no  <| set to allow WDT to continue operation even when CPU is in sleep mode
@@ -92,5 +92,5 @@ The cause of the last system hardware reset can be determined via the `WDT_CTRL_
                                 <|`6:5` `WDT_CTRL_RCAUSE_HI : WDT_CTRL_RCAUSE_LO` ^| r/- ^| `0` ^| -   <| cause of last system reset; 0=external reset, 1=ocd-reset, 2=watchdog reset
                                 <|`7` -                 ^| r/- ^| -   ^| -   <| _reserved_, reads as zero
                                 <|`31:8` `WDT_CTRL_TIMEOUT_MSB : WDT_CTRL_TIMEOUT_LSB` ^| r/w ^| 0 ^| no <| 24-bit watchdog timeout value
-| `0xfffffb04` | `RESET`         |`31:0`                 | -/w  | -    | yes  | Write _PASSWORD_ to reset WDT timeout counter
+| `0xfffb0004` | `RESET`         |`31:0`                 | -/w  | -    | yes  | Write _PASSWORD_ to reset WDT timeout counter
 |=======================

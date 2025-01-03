@@ -14,7 +14,7 @@ on:
 jobs:
 
   doxygen:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: 'SW Framework'
 
     steps:
@@ -41,7 +41,7 @@ jobs:
 
 
   asciidoctor:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: 'Datasheet'
 
     steps:
@@ -66,7 +66,7 @@ jobs:
     needs:
       - doxygen
       - asciidoctor
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: 'Deploy to Releases and Pages'
 
     steps:

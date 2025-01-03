@@ -96,7 +96,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 **CPU Core**
 
 * [![RISCV-ARCHID](https://img.shields.io/badge/RISC--V%20Architecture%20ID-19-000000.svg?longCache=true&style=flat-square&logo=riscv&colorA=273274&colorB=fbb517)](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
-* RISC-V 32-bit little-endian single-core pipelined/multi-cycle modified Harvard architecture
+* RISC-V 32-bit little-endian single- or SMP-dual-core pipelined/multi-cycle modified Harvard architecture
 * configurable [instruction sets and extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions):
 \
 `RV32`
@@ -152,7 +152,7 @@ allows booting application code via UART, TWI or from external SPI flash
 
 **Timers and Counters**
 
-* 64-bit machine timer ([MTIME](https://stnolting.github.io/neorv32/#_machine_system_timer_mtime)), RISC-V spec. compatible
+* core local interruptor ([CLINT](https://stnolting.github.io/neorv32/#_core_local_interruptor_clint)), RISC-V-compatible
 * 32-bit general purpose timer ([GPTMR](https://stnolting.github.io/neorv32/#_general_purpose_timer_gptmr))
 * watchdog timer ([WDT](https://stnolting.github.io/neorv32/#_watchdog_timer_wdt))
 
@@ -162,7 +162,8 @@ allows booting application code via UART, TWI or from external SPI flash
 ([UART](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0),
 [SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi) (SPI host),
 [SDI](https://stnolting.github.io/neorv32/#_serial_data_interface_controller_sdi) (SPI device),
-[TWI/I²C](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi),
+[TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi) (I²C host),
+[TWD](https://stnolting.github.io/neorv32/#_two_wire_serial_device_controller_twd) (I²C device),
 [ONEWIRE/1-Wire](https://stnolting.github.io/neorv32/#_one_wire_serial_interface_controller_onewire))
 * general purpose IOs ([GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio)) and
 [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)

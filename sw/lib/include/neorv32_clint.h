@@ -7,34 +7,31 @@
 // ================================================================================ //
 
 /**
- * @file neorv32_mtime.h
- * @brief Machine System Timer (MTIME) HW driver header file.
- *
- * @note These functions should only be used if the MTIME unit was synthesized (IO_MTIME_EN = true).
+ * @file neorv32_clint.h
+ * @brief Hardware Local Interruptor (CLINT) HW driver header file.
  *
  * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_mtime_h
-#define neorv32_mtime_h
+#ifndef neorv32_clint_h
+#define neorv32_clint_h
 
 #include <stdint.h>
 
 
 /**********************************************************************//**
- * @name IO Device: Machine System Timer (MTIME)
+ * @name IO Device: Core Local Interruptor (CLINT)
  **************************************************************************/
 /**@{*/
-/** MTIME module prototype */
+/** CLINT module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t TIME_LO;    /**< offset 0:  time register low word */
-  uint32_t TIME_HI;    /**< offset 4:  time register high word */
-  uint32_t TIMECMP_LO; /**< offset 8:  compare register low word */
-  uint32_t TIMECMP_HI; /**< offset 12: compare register high word */
-} neorv32_mtime_t;
+  uint32_t MSWI[4096];         /**< machine software interrupt for hart 0..4095 */
+  subwords64_t MTIMECMP[4095]; /**< machine timer compare interrupt for hart 0..4094; 64-bit */
+  subwords64_t MTIME;          /**< global machine timer; 64-bit */
+} neorv32_clint_t;
 
-/** MTIME module hardware access (#neorv32_mtime_t) */
-#define NEORV32_MTIME ((neorv32_mtime_t*) (NEORV32_MTIME_BASE))
+/** CLINT module hardware access (#neorv32_clint_t) */
+#define NEORV32_CLINT ((neorv32_clint_t*) (NEORV32_CLINT_BASE))
 /**@}*/
 
 
@@ -42,13 +39,16 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
  * @name Prototypes
  **************************************************************************/
 /**@{*/
-int      neorv32_mtime_available(void);
-void     neorv32_mtime_set_time(uint64_t time);
-uint64_t neorv32_mtime_get_time(void);
-void     neorv32_mtime_set_timecmp(uint64_t timecmp);
-uint64_t neorv32_mtime_get_timecmp(void);
-void     neorv32_mtime_set_unixtime(uint64_t unixtime);
-uint64_t neorv32_mtime_get_unixtime(void);
+int      neorv32_clint_available(void);
+void     neorv32_clint_msi_set(int hart);
+void     neorv32_clint_msi_clr(int hart);
+uint32_t neorv32_clint_msi_get(int hart);
+void     neorv32_clint_time_set(uint64_t time);
+uint64_t neorv32_clint_time_get(void);
+void     neorv32_clint_mtimecmp_set(uint64_t timecmp);
+uint64_t neorv32_clint_mtimecmp_get(void);
+void     neorv32_clint_unixtime_set(uint64_t unixtime);
+uint64_t neorv32_clint_unixtime_get(void);
 /**@}*/
 
-#endif // neorv32_mtime_h
+#endif // neorv32_clint_h

@@ -25,21 +25,21 @@
 /**@{*/
 /** SYSINFO module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-        uint32_t CLK;    /**< offset 0:  Clock speed in Hz */
-  const uint8_t  MEM[4]; /**< offset 4:  Internal memory sizes (#NEORV32_SYSINFO_MEM_enum) */
-  const uint32_t SOC;    /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
-  const uint32_t CACHE;  /**< offset 12: Cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
+        uint32_t CLK;     /**< offset 0:  Clock speed in Hz */
+  const uint8_t  MISC[4]; /**< offset 4:  Miscellaneous system configurations (#NEORV32_SYSINFO_MISC_enum) */
+  const uint32_t SOC;     /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
+  const uint32_t CACHE;   /**< offset 12: Cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
 } neorv32_sysinfo_t;
 
 /** SYSINFO module hardware access (#neorv32_sysinfo_t) */
 #define NEORV32_SYSINFO ((neorv32_sysinfo_t*) (NEORV32_SYSINFO_BASE))
 
-/** NEORV32_SYSINFO.MEM (r/-): Memory configuration (sizes) */
-enum NEORV32_SYSINFO_MEM_enum {
-  SYSINFO_MEM_IMEM = 0, /**< SYSINFO_MEM byte 0 (r/-): log2(internal IMEM size in bytes) (via MEM_INT_IMEM_SIZE generic) */
-  SYSINFO_MEM_DMEM = 1, /**< SYSINFO_MEM byte 1 (r/-): log2(internal DMEM size in bytes) (via MEM_INT_DMEM_SIZE generic) */
-  SYSINFO_MEM_res  = 2, /**< SYSINFO_MEM byte 2 (r/-): reserved, read as zero */
-  SYSINFO_MEM_BOOT = 3  /**< SYSINFO_MEM byte 3 (r/-): boot mode configuration (via BOOT_MODE_SELECT generic) */
+/** NEORV32_SYSINFO.MISC (r/-): Miscellaneous system configurations */
+enum NEORV32_SYSINFO_MISC_enum {
+  SYSINFO_MISC_IMEM = 0, /**< SYSINFO_MISC byte 0 (r/-): log2(internal IMEM size in bytes) (via MEM_INT_IMEM_SIZE generic) */
+  SYSINFO_MISC_DMEM = 1, /**< SYSINFO_MISC byte 1 (r/-): log2(internal DMEM size in bytes) (via MEM_INT_DMEM_SIZE generic) */
+  SYSINFO_MISC_HART = 2, /**< SYSINFO_MISC byte 2 (r/-): number of physical CPU cores ("harts") */
+  SYSINFO_MISC_BOOT = 3  /**< SYSINFO_MISC byte 3 (r/-): boot mode configuration (via BOOT_MODE_SELECT generic) */
 };
 
 /** NEORV32_SYSINFO.SOC (r/-): Implemented processor devices/features */
@@ -51,16 +51,16 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_OCD          =  4, /**< SYSINFO_SOC  (4) (r/-): On-chip debugger implemented when 1 (via OCD_EN generic) */
   SYSINFO_SOC_ICACHE       =  5, /**< SYSINFO_SOC  (5) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
   SYSINFO_SOC_DCACHE       =  6, /**< SYSINFO_SOC  (6) (r/-): Processor-internal instruction cache implemented when 1 (via DCACHE_EN generic) */
-  SYSINFO_SOC_CLOCK_GATING =  7, /**< SYSINFO_SOC  (7) (r/-): Clock gating implemented when 1 (via CLOCK_GATING_EN generic) */
+
   SYSINFO_SOC_XBUS_CACHE   =  8, /**< SYSINFO_SOC  (8) (r/-): External bus cache implemented when 1 (via XBUS_CACHE_EN generic) */
   SYSINFO_SOC_XIP          =  9, /**< SYSINFO_SOC  (9) (r/-): Execute in-place module implemented when 1 (via XIP_EN generic) */
   SYSINFO_SOC_XIP_CACHE    = 10, /**< SYSINFO_SOC (10) (r/-): Execute in-place cache implemented when 1 (via XIP_CACHE_EN generic) */
   SYSINFO_SOC_OCD_AUTH     = 11, /**< SYSINFO_SOC (11) (r/-): On-chip debugger authentication implemented when 1 (via OCD_AUTHENTICATION generic) */
   SYSINFO_SOC_IMEM_ROM     = 12, /**< SYSINFO_SOC (12) (r/-): Processor-internal instruction memory implemented as pre-initialized ROM when 1 (via BOOT_MODE_SELECT generic) */
-
+  SYSINFO_SOC_IO_TWD       = 13, /**< SYSINFO_SOC (13) (r/-): Two-wire device implemented when 1 (via IO_TWD_EN generic) */
   SYSINFO_SOC_IO_DMA       = 14, /**< SYSINFO_SOC (14) (r/-): Direct memory access controller implemented when 1 (via IO_DMA_EN generic) */
   SYSINFO_SOC_IO_GPIO      = 15, /**< SYSINFO_SOC (15) (r/-): General purpose input/output port unit implemented when 1 (via IO_GPIO_EN generic) */
-  SYSINFO_SOC_IO_MTIME     = 16, /**< SYSINFO_SOC (16) (r/-): Machine system timer implemented when 1 (via IO_MTIME_EN generic) */
+  SYSINFO_SOC_IO_CLINT     = 16, /**< SYSINFO_SOC (16) (r/-): Core local interruptor implemented when 1 (via IO_CLINT_EN generic) */
   SYSINFO_SOC_IO_UART0     = 17, /**< SYSINFO_SOC (17) (r/-): Primary universal asynchronous receiver/transmitter 0 implemented when 1 (via IO_UART0_EN generic) */
   SYSINFO_SOC_IO_SPI       = 18, /**< SYSINFO_SOC (18) (r/-): Serial peripheral interface implemented when 1 (via IO_SPI_EN generic) */
   SYSINFO_SOC_IO_TWI       = 19, /**< SYSINFO_SOC (19) (r/-): Two-wire interface implemented when 1 (via IO_TWI_EN generic) */
