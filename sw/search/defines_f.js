@@ -1,0 +1,22 @@
+var searchData=
+[
+  ['uart0_5frx_5ffirq_5fenable_0',['UART0_RX_FIRQ_ENABLE',['../neorv32_8h.html#a6b55ce6abe6b141000a6bb00949169e9',1,'neorv32.h']]],
+  ['uart0_5frx_5ffirq_5fpending_1',['UART0_RX_FIRQ_PENDING',['../neorv32_8h.html#a0b738b26abb2b951f1f5c5d9525d7701',1,'neorv32.h']]],
+  ['uart0_5frx_5frte_5fid_2',['UART0_RX_RTE_ID',['../neorv32_8h.html#ae8588cca20d5e36f74c5207c376389a1',1,'neorv32.h']]],
+  ['uart0_5frx_5ftrap_5fcode_3',['UART0_RX_TRAP_CODE',['../neorv32_8h.html#a7a849638eff31f2e1955bdc53d4fc84d',1,'neorv32.h']]],
+  ['uart0_5ftx_5ffirq_5fenable_4',['UART0_TX_FIRQ_ENABLE',['../neorv32_8h.html#aff756a395771f22c5f412f23f177ea7d',1,'neorv32.h']]],
+  ['uart0_5ftx_5ffirq_5fpending_5',['UART0_TX_FIRQ_PENDING',['../neorv32_8h.html#addbe29166bb77bc045ad0e3db68e57e9',1,'neorv32.h']]],
+  ['uart0_5ftx_5frte_5fid_6',['UART0_TX_RTE_ID',['../neorv32_8h.html#a9dc37695ca169bc0eb93898e7aeeee58',1,'neorv32.h']]],
+  ['uart0_5ftx_5ftrap_5fcode_7',['UART0_TX_TRAP_CODE',['../neorv32_8h.html#ab50df423fdba86bb83bc5d90a4c3bb20',1,'neorv32.h']]],
+  ['uart1_5frx_5ffirq_5fenable_8',['UART1_RX_FIRQ_ENABLE',['../neorv32_8h.html#a6c118c1784d8446360b00cde97437ca7',1,'neorv32.h']]],
+  ['uart1_5frx_5ffirq_5fpending_9',['UART1_RX_FIRQ_PENDING',['../neorv32_8h.html#a2e70d3a4e2973d224643813fcf315a20',1,'neorv32.h']]],
+  ['uart1_5frx_5frte_5fid_10',['UART1_RX_RTE_ID',['../neorv32_8h.html#ab1c351f5ea19ac9ea864155be9cc0b4b',1,'neorv32.h']]],
+  ['uart1_5frx_5ftrap_5fcode_11',['UART1_RX_TRAP_CODE',['../neorv32_8h.html#ad0b9eb2ee1f411d7fccdf4fe263214e1',1,'neorv32.h']]],
+  ['uart1_5ftx_5ffirq_5fenable_12',['UART1_TX_FIRQ_ENABLE',['../neorv32_8h.html#a0039bae3454a22e71d64e70d674f5d6a',1,'neorv32.h']]],
+  ['uart1_5ftx_5ffirq_5fpending_13',['UART1_TX_FIRQ_PENDING',['../neorv32_8h.html#ac4060532b7aa390623f54720460a2680',1,'neorv32.h']]],
+  ['uart1_5ftx_5frte_5fid_14',['UART1_TX_RTE_ID',['../neorv32_8h.html#a6af270d7ae8b1cde30e44eb9142491d3',1,'neorv32.h']]],
+  ['uart1_5ftx_5ftrap_5fcode_15',['UART1_TX_TRAP_CODE',['../neorv32_8h.html#a4cc50287c7a53982761a8116396ff7dd',1,'neorv32.h']]],
+  ['uart_5fbaud_16',['UART_BAUD',['../bootloader_8c.html#a1fac9153314479ad0ad495d752f0224a',1,'bootloader.c']]],
+  ['uart_5fen_17',['UART_EN',['../bootloader_8c.html#af1c2f103ac6e3183f08b39099fab2be9',1,'bootloader.c']]],
+  ['uart_5fhw_5fhandshake_5fen_18',['UART_HW_HANDSHAKE_EN',['../bootloader_8c.html#a20e93d623ce07939c3fdd53898f9d583',1,'bootloader.c']]]
+];
