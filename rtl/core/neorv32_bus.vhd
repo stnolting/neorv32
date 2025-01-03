@@ -819,7 +819,7 @@ begin
     arbiter_nxt <= arbiter; -- defaults
     case arbiter.state is
 
-      when S_IDLE => -- wait for AMO request
+      when S_IDLE => -- wait for AMO request; pass-through current request
       -- ------------------------------------------------------------
         if (core_req_i.stb = '1') and (core_req_i.amo = '1') then
           arbiter_nxt.cmd   <= core_req_i.amoop;
@@ -864,7 +864,7 @@ begin
   sys_req_o.src   <= core_req_i.src;
   sys_req_o.priv  <= core_req_i.priv;
   sys_req_o.amo   <= core_req_i.amo;
-  sys_req_o.amoop <= (others => '0'); -- the specific operation type should not matter after this point
+  sys_req_o.amoop <= (others => '0'); -- the specific AMO type should not matter after this point
   sys_req_o.fence <= core_req_i.fence;
   sys_req_o.sleep <= core_req_i.sleep;
   sys_req_o.debug <= core_req_i.debug;
@@ -892,14 +892,6 @@ begin
       end case;
     end if;
   end process amo_alu;
-
-  -- -000 : SWAP
-  -- -001 : ADD
-  -- -010 : XOR
-  -- -011 : AND
-  -- -100 : OR
-  -- s110 : MIN
-  -- s111 : MAX
 
   -- comparator logic (min/max and signed/unsigned) --
   cmp_opa  <= (arbiter.rdata(arbiter.rdata'left) and arbiter.cmd(3)) & arbiter.rdata; -- sign-extend if signed operation
