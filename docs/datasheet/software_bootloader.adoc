@@ -74,8 +74,8 @@ the bootloader. See the User Guide https://stnolting.github.io/neorv32/ug/#_cust
 :sectnums:
 ==== Bootloader TWI memory Requirements
 
-The bootloader can access an TWI-compatible memory via the processor's top entity TWI port. Only single-address memory is supported, and reading is done in the following pattern
-`Slave Address + Enabled Read | Memory Address | Read Byte 0 | Read Byte 1 | Read Byte 2 | Read Byte 3`.
+The bootloader can access an TWI-compatible memory via the processor's top entity TWI port. Single- and dual address memory is supported, and reading is done in the following pattern
+`Slave Address + Enabled Read | Memory Address Byte 0 | Memory Address 1 (optional) | Read Byte 0 | Read Byte 1 | Read Byte 2 | Read Byte 3`.
 The addresses are incremented until the end of the program binary is reached.
 
 Clock speed information can be read here: <<_two_wire_serial_interface_controller_twi>>.
