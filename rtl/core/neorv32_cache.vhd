@@ -26,7 +26,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -178,7 +178,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   dir_acc_d <= '1' when UC_ENABLE and -- direct accesses implemented
                         ((unsigned(host_req_i.addr(31 downto 28)) >= unsigned(UC_BEGIN)) or -- uncached memory page
-                         (host_req_i.rvso = '1')) else '0'; -- atomic (reservation set) operation
+                         (host_req_i.amo = '1')) else '0'; -- atomic memory operation
 
   -- request splitter: cached or direct access --
   req_splitter: process(host_req_i, dir_acc_d)
@@ -378,7 +378,7 @@ end neorv32_cache_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -538,7 +538,7 @@ end neorv32_cache_host_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -725,7 +725,7 @@ end neorv32_cache_memory_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -851,7 +851,8 @@ begin
     bus_req_o.ben   <= (others => '1'); -- full-word writes only
     bus_req_o.src   <= '0'; -- cache accesses are always data accesses
     bus_req_o.priv  <= '0'; -- cache accesses are always "unprivileged" accesses
-    bus_req_o.rvso  <= '0'; -- cache accesses can never be a reservation set operation
+    bus_req_o.amo   <= '0'; -- cache accesses can never be an atomic memory operation set operation
+    bus_req_o.amoop <= (others => '0'); -- cache accesses can never be an atomic memory operation set operation
     bus_req_o.debug <= host_req_i.debug;
     if (state = S_IDLE) then
       bus_req_o.sleep <= host_req_i.sleep;

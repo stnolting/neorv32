@@ -14,7 +14,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -40,7 +40,7 @@ entity neorv32_cpu_control is
     RISCV_ISA_E         : boolean; -- implement embedded-class register file extension
     RISCV_ISA_M         : boolean; -- implement mul/div extension
     RISCV_ISA_U         : boolean; -- implement user mode extension
-    RISCV_ISA_Zalrsc    : boolean; -- implement atomic reservation-set extension
+    RISCV_ISA_Zaamo     : boolean; -- implement atomic memory operations extension
     RISCV_ISA_Zba       : boolean; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean; -- implement bit-manipulation instructions for cryptography
@@ -368,7 +368,8 @@ begin
   ibus_req_o.ben   <= (others => '0'); -- read-only
   ibus_req_o.rw    <= '0'; -- read-only
   ibus_req_o.src   <= '1'; -- source = instruction fetch
-  ibus_req_o.rvso  <= '0'; -- cannot be a reservation set operation
+  ibus_req_o.amo   <= '0'; -- cannot be an atomic memory operation
+  ibus_req_o.amoop <= (others => '0'); -- cannot be an atomic memory operation
   ibus_req_o.fence <= ctrl.lsu_fence; -- fence operation, valid without STB being set
   ibus_req_o.sleep <= sleep_mode; -- sleep mode, valid without STB being set
   ibus_req_o.debug <= debug_ctrl.run; -- debug mode, valid without STB being set
@@ -622,8 +623,8 @@ begin
     end case;
 
     -- memory read/write access --
-    if RISCV_ISA_Zalrsc and (opcode(2) = opcode_amo_c(2)) then -- atomic lr/sc
-      ctrl_nxt.lsu_rw <= exe_engine.ir(instr_funct7_lsb_c+2);
+    if RISCV_ISA_Zaamo and (opcode(2) = opcode_amo_c(2)) then -- atomic memory operation (executed as single load for the CPU)
+      ctrl_nxt.lsu_rw <= '0';
     else -- normal load/store
       ctrl_nxt.lsu_rw <= exe_engine.ir(5);
     end if;
@@ -806,7 +807,7 @@ begin
            (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
            (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
            (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- illegal instruction exception
-          if (RISCV_ISA_Zalrsc and (opcode(2) = opcode_amo_c(2))) or (opcode(5) = '0') then -- atomic operation / normal load
+          if (RISCV_ISA_Zaamo and (opcode(2) = opcode_amo_c(2))) or (opcode(5) = '0') then -- atomic operation / normal load
             ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file (won't happen in case of exception)
           end if;
           exe_engine_nxt.state <= EX_DISPATCH;
@@ -1033,10 +1034,12 @@ begin
           when others => illegal_cmd <= '1';
         end case;
 
-      when opcode_amo_c => -- atomic memory operation (LR/SC)
-        if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and RISCV_ISA_Zalrsc and
-           (exe_engine.ir(instr_funct7_lsb_c+6 downto instr_funct7_lsb_c+3) = "0001") then -- LR.W/SC.W
-          illegal_cmd <= '0';
+      when opcode_amo_c => -- atomic memory operation
+        if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then
+          case exe_engine.ir(instr_funct5_msb_c downto instr_funct5_lsb_c) is
+            when "00001" | "00000" | "00100" | "01100" | "01000" | "10000" | "10100" | "11000" | "11100" => illegal_cmd <= '0';
+            when others => illegal_cmd <= '1';
+          end case;
         end if;
 
       when opcode_alu_c | opcode_alui_c | opcode_fop_c | opcode_cust0_c | opcode_cust1_c => -- ALU[I] / FPU / custom operations
@@ -1852,9 +1855,9 @@ begin
             csr.rdata(20) <= bool_to_ulogic_f(RISCV_ISA_Zksed);     -- Zksed: ShangMi block cyphers
             csr.rdata(21) <= bool_to_ulogic_f(RISCV_ISA_Zks);       -- Zks: ShangMi algorithm suite
             csr.rdata(22) <= bool_to_ulogic_f(RISCV_ISA_Zba);       -- Zba: shifted-add bit-manipulation
-            csr.rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);       -- Zbb: basic bit-manipulation extension
-            csr.rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);       -- Zbs: single-bit bit-manipulation extension
-            csr.rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc);    -- Zalrsc: reservation set extension
+            csr.rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);       -- Zbb: basic bit-manipulation
+            csr.rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);       -- Zbs: single-bit bit-manipulation
+            csr.rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);     -- Zaamo: atomic memory operations
             csr.rdata(26) <= '0'; -- reserved
             csr.rdata(27) <= '0'; -- reserved
             -- tuning options --
