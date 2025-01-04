@@ -19,7 +19,7 @@
 **Overview**
 
 The processor features an optional data cache to improve performance when using memories with high
-access latencies. The cache is connected directly to the CPU's data access interface and provides
+access latency. The cache is connected directly to the CPU's data access interface and provides
 full-transparent accesses. The cache is direct-mapped and uses "write-allocate" and "write-back" strategies.
 
 .Cached/Uncached Accesses
@@ -28,8 +28,8 @@ The data cache provides direct accesses (= uncached) to memory in order to acces
 processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
 will not be cached at all (see section <<_address_space>>). Direct/uncached accesses have **lower** priority than
 cache block operations to allow continuous burst transfer and also to maintain logical instruction forward
-progress / data coherency. Furthermore, atomic load-reservate and store-conditional instructions (<<_zalrsc_isa_extension>>)
-will always **bypass** the cache.
+progress / data coherency. Furthermore, the atomic memory operations of the <<_zaamo_isa_extension>> will
+always **bypass** the cache.
 
 .Caching Internal Memories
 [NOTE]

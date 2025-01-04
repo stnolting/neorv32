@@ -329,7 +329,7 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_ZBA       = 22, /**< CPU mxisa CSR (22): shifted-add bit-manipulation operations (r/-)*/
   CSR_MXISA_ZBB       = 23, /**< CPU mxisa CSR (23): basic bit-manipulation operations (r/-)*/
   CSR_MXISA_ZBS       = 24, /**< CPU mxisa CSR (24): single-bit bit-manipulation operations (r/-)*/
-  CSR_MXISA_ZALRSC    = 25, /**< CPU mxisa CSR (25): atomic reservation-set operations (r/-)*/
+  CSR_MXISA_ZAAMO     = 25, /**< CPU mxisa CSR (25): atomic memory operations (r/-)*/
   // Tuning options
   CSR_MXISA_CLKGATE   = 27, /**< CPU mxisa CSR (27): clock gating enabled (r/-)*/
   CSR_MXISA_RFHWRST   = 28, /**< CPU mxisa CSR (28): register file has full hardware reset (r/-)*/

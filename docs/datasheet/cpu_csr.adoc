@@ -435,10 +435,10 @@ However, any write-access will be ignored and will not cause an exception to mai
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending, triggered by `msi_i` top port (see <<_cpu_top_entity_signals>>); _cleared by source-specific mechanism_
-| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending, triggered by `mei_i` top port (see <<_cpu_top_entity_signals>>)or by the processor-internal <<(from <<_core_local_interruptor_clint>>)>>; _cleared by source-specific mechanism_
-| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending, triggered by `mti_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<(from <<_core_local_interruptor_clint>>)>>; _cleared by source-specific mechanism_
-| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending, see <<_neorv32_specific_fast_interrupt_requests>>; _cleared by source-specific mechanism_
+| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending, triggered by `msi_i` top port (see <<_cpu_top_entity_signals>>); cleared by source-specific mechanism
+| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending, triggered by `mei_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
+| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending, triggered by `mti_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
+| 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending, see <<_neorv32_specific_fast_interrupt_requests>>; cleared by source-specific mechanism
 |=======================
 
 .FIRQ Channel Mapping
@@ -770,8 +770,8 @@ caused by a fence instruction, a control flow transfer or a instruction fetch bu
 | 5   | `HPMCNT_EVENT_WAIT_ALU` | r/w | any delay/wait cycle caused by a _multi-cycle_ <<_cpu_arithmetic_logic_unit>> operation
 | 6   | `HPMCNT_EVENT_BRANCH`   | r/w | any executed branch instruction (unconditional, conditional-taken or conditional-not-taken)
 | 7   | `HPMCNT_EVENT_BRANCHED` | r/w | any control transfer operation (unconditional jump, taken conditional branch or trap entry/exit)
-| 8   | `HPMCNT_EVENT_LOAD`     | r/w | any executed load operation (including atomic memory operations, <<_zalrsc_isa_extension>>)
-| 9   | `HPMCNT_EVENT_STORE`    | r/w | any executed store operation (including atomic memory operations, <<_zalrsc_isa_extension>>)
+| 8   | `HPMCNT_EVENT_LOAD`     | r/w | any executed load operation (including any atomic memory operations)
+| 9   | `HPMCNT_EVENT_STORE`    | r/w | any executed store operation (including any atomic memory operations)
 | 10  | `HPMCNT_EVENT_WAIT_LSU` | r/w | any memory/bus/cache/etc. delay/wait cycle while executing any load or store operation (caused by a data bus wait cycle))
 | 11  | `HPMCNT_EVENT_TRAP`     | r/w | starting processing of any trap (<<_traps_exceptions_and_interrupts>>)
 |=======================
@@ -979,7 +979,7 @@ discover ISA sub-extensions and CPU configuration options
 | 22    | `CSR_MXISA_ZBA`       | r/- | <<_zba_isa_extension>> available
 | 23    | `CSR_MXISA_ZBB`       | r/- | <<_zbb_isa_extension>> available
 | 24    | `CSR_MXISA_ZBS`       | r/- | <<_zbs_isa_extension>> available
-| 25    | `CSR_MXISA_ZALRSC`    | r/- | <<_zalrsc_isa_extension>> available
+| 25    | `CSR_MXISA_ZAAMO`     | r/- | <<_zaamo_isa_extension>> available
 | 28:26 | -                     | r/- | _reserved_, hardwired to zero
 | 27    | `CSR_MXISA_CLKGATE`   | r/- | sleep-mode clock gating implemented when set (`CPU_CLOCK_GATING_EN`), see <<_cpu_tuning_options>>
 | 28    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`CPU_RF_HW_RST_EN`), see <<_cpu_tuning_options>>

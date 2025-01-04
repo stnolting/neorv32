@@ -8,7 +8,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -32,7 +32,7 @@ entity neorv32_cpu is
     RISCV_ISA_E         : boolean; -- implement embedded RF extension
     RISCV_ISA_M         : boolean; -- implement mul/div extension
     RISCV_ISA_U         : boolean; -- implement user mode extension
-    RISCV_ISA_Zalrsc    : boolean; -- implement atomic reservation-set extension
+    RISCV_ISA_Zaamo     : boolean; -- implement atomic memory operations extension
     RISCV_ISA_Zba       : boolean; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean; -- implement bit-manipulation instructions for cryptography
@@ -138,7 +138,7 @@ begin
     cond_sel_string_f(RISCV_ISA_M,      "m",         "" ) &
     cond_sel_string_f(RISCV_ISA_U,      "u",         "" ) &
     cond_sel_string_f(true,             "x",         "" ) & -- always enabled
-    cond_sel_string_f(RISCV_ISA_Zalrsc, "_zalrsc",   "" ) &
+    cond_sel_string_f(RISCV_ISA_Zaamo,  "_zaamo",    "" ) &
     cond_sel_string_f(RISCV_ISA_Zba,    "_zba",      "" ) &
     cond_sel_string_f(RISCV_ISA_Zbb,    "_zbb",      "" ) &
     cond_sel_string_f(RISCV_ISA_Zbkb,   "_zbkb",     "" ) &
@@ -213,7 +213,7 @@ begin
     RISCV_ISA_E         => RISCV_ISA_E,         -- implement embedded RF extension
     RISCV_ISA_M         => RISCV_ISA_M,         -- implement mul/div extension
     RISCV_ISA_U         => RISCV_ISA_U,         -- implement user mode extension
-    RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,    -- implement atomic reservation-set extension
+    RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,     -- implement atomic memory operations extension
     RISCV_ISA_Zba       => RISCV_ISA_Zba,       -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       => RISCV_ISA_Zbb,       -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,      -- implement bit-manipulation instructions for cryptography
@@ -269,6 +269,7 @@ begin
     csr_rdata_o   => csr_rdata,      -- CSR read data
     -- external CSR interface --
     xcsr_we_o     => xcsr_we,        -- global write enable
+    xcsr_re_o     => open,           -- global read enable
     xcsr_addr_o   => xcsr_addr,      -- address
     xcsr_wdata_o  => xcsr_wdata,     -- write data
     xcsr_rdata_i  => xcsr_rdata_res, -- read data
@@ -367,24 +368,24 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_lsu_inst: entity neorv32.neorv32_cpu_lsu
   generic map (
-    AMO_LRSC_ENABLE => RISCV_ISA_Zalrsc -- enable atomic LR/SC operations
+    AMO_EN => RISCV_ISA_Zaamo -- enable atomic memory operations
   )
   port map (
     -- global control --
-    clk_i       => clk_gated,    -- global clock, rising edge
-    rstn_i      => rstn_i,       -- global reset, low-active, async
-    ctrl_i      => ctrl,         -- main control bus
+    clk_i       => clk_gated,  -- global clock, rising edge
+    rstn_i      => rstn_i,     -- global reset, low-active, async
+    ctrl_i      => ctrl,       -- main control bus
     -- cpu data access interface --
-    addr_i      => alu_add,      -- access address
-    wdata_i     => rs2,          -- write data
-    rdata_o     => lsu_rdata,    -- read data
-    mar_o       => lsu_mar,      -- memory address register
-    wait_o      => lsu_wait,     -- wait for access to complete
-    err_o       => lsu_err,      -- alignment/access errors
-    pmp_fault_i => pmp_fault,    -- PMP read/write access fault
+    addr_i      => alu_add,    -- access address
+    wdata_i     => rs2,        -- write data
+    rdata_o     => lsu_rdata,  -- read data
+    mar_o       => lsu_mar,    -- memory address register
+    wait_o      => lsu_wait,   -- wait for access to complete
+    err_o       => lsu_err,    -- alignment/access errors
+    pmp_fault_i => pmp_fault,  -- PMP read/write access fault
     -- data bus --
-    dbus_req_o  => dbus_req_o,   -- request
-    dbus_rsp_i  => dbus_rsp_i    -- response
+    dbus_req_o  => dbus_req_o, -- request
+    dbus_rsp_i  => dbus_rsp_i  -- response
   );
 
 
