@@ -22,7 +22,8 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    HART_ID             : natural; -- hardware thread ID
+    HART_ID             : natural range 0 to 3; -- hardware thread ID
+    NUM_HARTS           : natural range 1 to 4; -- total number of harts in the system, has to be a power of 2
     VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
@@ -69,20 +70,28 @@ entity neorv32_cpu is
   );
   port (
     -- global control --
-    clk_i      : in  std_ulogic; -- switchable global clock, rising edge
-    rstn_i     : in  std_ulogic; -- global reset, low-active, async
+    clk_i        : in  std_ulogic; -- switchable global clock, rising edge
+    rstn_i       : in  std_ulogic; -- global reset, low-active, async
     -- interrupts --
-    msi_i      : in  std_ulogic; -- risc-v machine software interrupt
-    mei_i      : in  std_ulogic; -- risc-v machine external interrupt
-    mti_i      : in  std_ulogic; -- risc-v machine timer interrupt
-    firq_i     : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
-    dbi_i      : in  std_ulogic; -- risc-v debug halt request interrupt
+    msi_i        : in  std_ulogic; -- risc-v machine software interrupt
+    mei_i        : in  std_ulogic; -- risc-v machine external interrupt
+    mti_i        : in  std_ulogic; -- risc-v machine timer interrupt
+    firq_i       : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
+    dbi_i        : in  std_ulogic; -- risc-v debug halt request interrupt
     -- instruction bus interface --
-    ibus_req_o : out bus_req_t; -- request bus
-    ibus_rsp_i : in  bus_rsp_t; -- response bus
+    ibus_req_o   : out bus_req_t; -- request bus
+    ibus_rsp_i   : in  bus_rsp_t; -- response bus
     -- data bus interface --
-    dbus_req_o : out bus_req_t; -- request bus
-    dbus_rsp_i : in  bus_rsp_t  -- response bus
+    dbus_req_o   : out bus_req_t; -- request bus
+    dbus_rsp_i   : in  bus_rsp_t; -- response bus
+    -- ICC TX links --
+    icc_tx_rdy_o : out std_ulogic_vector(NUM_HARTS-1 downto 0); -- data available
+    icc_tx_ack_i : in  std_ulogic_vector(NUM_HARTS-1 downto 0); -- read-enable
+    icc_tx_dat_o : out std_ulogic_vector((NUM_HARTS*XLEN)-1 downto 0); -- data word
+    -- ICC RX links --
+    icc_rx_rdy_i : in  std_ulogic_vector(NUM_HARTS-1 downto 0); -- data available
+    icc_rx_ack_o : out std_ulogic_vector(NUM_HARTS-1 downto 0); -- read-enable
+    icc_rx_dat_i : in  std_ulogic_vector((NUM_HARTS*XLEN)-1 downto 0) -- data word
   );
 end neorv32_cpu;
 
@@ -98,12 +107,14 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
                                     RISCV_ISA_Zksh and RISCV_ISA_Zksed; -- Zks: ShangMi suite
 
   -- external CSR interface --
+  signal xcsr_re        : std_ulogic;
   signal xcsr_we        : std_ulogic;
   signal xcsr_addr      : std_ulogic_vector(11 downto 0);
   signal xcsr_wdata     : std_ulogic_vector(XLEN-1 downto 0);
   signal xcsr_rdata_pmp : std_ulogic_vector(XLEN-1 downto 0);
   signal xcsr_rdata_alu : std_ulogic_vector(XLEN-1 downto 0);
   signal xcsr_rdata_res : std_ulogic_vector(XLEN-1 downto 0);
+  signal xcsr_rdata_icc : std_ulogic_vector(XLEN-1 downto 0);
 
   -- local signals --
   signal clk_gated     : std_ulogic; -- switchable clock (clock gating)
@@ -128,7 +139,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
+  -- Configuration Info and Sanity Checks ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- CPU ISA configuration (in alphabetical order - not in canonical order!) --
   assert false report "[NEORV32] CPU ISA: rv32" &
@@ -177,6 +188,10 @@ begin
   -- simulation notifier --
   assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
 
+  -- ID checks --
+  assert is_power_of_two_f(NUM_HARTS) report "[NEORV32] NUM_HARTS has to be a power of two." severity error;
+  assert (HART_ID < NUM_HARTS) report "[NEORV32] HART_ID out of range." severity error;
+
 
   -- Clock Gating ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -197,7 +212,7 @@ begin
   end generate;
 
 
-  -- Control Unit ---------------------------------------------------------------------------
+  -- Control Unit (CTRL) --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_control_inst: entity neorv32.neorv32_cpu_control
   generic map (
@@ -269,7 +284,7 @@ begin
     csr_rdata_o   => csr_rdata,      -- CSR read data
     -- external CSR interface --
     xcsr_we_o     => xcsr_we,        -- global write enable
-    xcsr_re_o     => open,           -- global read enable
+    xcsr_re_o     => xcsr_re,        -- global read enable
     xcsr_addr_o   => xcsr_addr,      -- address
     xcsr_wdata_o  => xcsr_wdata,     -- write data
     xcsr_rdata_i  => xcsr_rdata_res, -- read data
@@ -287,10 +302,10 @@ begin
   irq_machine <= mti_i & mei_i & msi_i;
 
   -- external CSR read-back --
-  xcsr_rdata_res <= xcsr_rdata_pmp or xcsr_rdata_alu;
+  xcsr_rdata_res <= xcsr_rdata_alu or xcsr_rdata_pmp or xcsr_rdata_icc;
 
 
-  -- Register File --------------------------------------------------------------------------
+  -- Register File (RF) ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_regfile_inst: entity neorv32.neorv32_cpu_regfile
   generic map (
@@ -314,7 +329,7 @@ begin
   rf_wdata <= alu_res or lsu_rdata or csr_rdata or pc_ret;
 
 
-  -- ALU (Arithmetic/Logic Unit) and ALU Co-Processors --------------------------------------
+  -- Arithmetic/Logic Unit (ALU) and ALU Co-Processors --------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_inst: entity neorv32.neorv32_cpu_alu
   generic map (
@@ -364,7 +379,7 @@ begin
   );
 
 
-  -- Load/Store Unit ------------------------------------------------------------------------
+  -- Load/Store Unit (LSU) ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_lsu_inst: entity neorv32.neorv32_cpu_lsu
   generic map (
@@ -389,9 +404,9 @@ begin
   );
 
 
-  -- Physical Memory Protection -------------------------------------------------------------
+  -- Physical Memory Protection (PMP) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  pmp_inst_true:
+  pmp_enabled:
   if RISCV_ISA_Smpmp generate
     neorv32_cpu_pmp_inst: entity neorv32.neorv32_cpu_pmp
     generic map (
@@ -418,10 +433,46 @@ begin
     );
   end generate;
 
-  pmp_inst_false:
+  pmp_disabled:
   if not RISCV_ISA_Smpmp generate
     xcsr_rdata_pmp <= (others => '0');
     pmp_fault      <= '0';
+  end generate;
+
+
+  -- Inter-Core Communication (ICC) ---------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  icc_enabled:
+  if NUM_HARTS > 1 generate
+    neorv32_cpu_icc_inst: entity neorv32.neorv32_cpu_icc
+    generic map (
+      HART_ID   => HART_ID, -- ID of this core
+      NUM_HARTS => NUM_HARTS -- number of cores, has to be a power of two
+    )
+    port map (
+      -- global control --
+      clk_i        => clk_i,          -- global clock, rising edge
+      rstn_i       => rstn_i,         -- global reset, low-active, async
+      -- CSR interface --
+      csr_we_i     => xcsr_we,        -- global write enable
+      csr_re_i     => xcsr_re,        -- global read enable
+      csr_addr_i   => xcsr_addr,      -- address
+      csr_wdata_i  => xcsr_wdata,     -- write data
+      csr_rdata_o  => xcsr_rdata_icc, -- read data
+      -- ICC TX links --
+      icc_tx_rdy_o => icc_tx_rdy_o,   -- data available
+      icc_tx_ack_i => icc_tx_ack_i,   -- read-enable
+      icc_tx_dat_o => icc_tx_dat_o,   -- data word
+      -- ICC RX links --
+      icc_rx_rdy_i => icc_rx_rdy_i,   -- data available
+      icc_rx_ack_o => icc_rx_ack_o,   -- read-enable
+      icc_rx_dat_i => icc_rx_dat_i    -- data word
+    );
+  end generate;
+
+  icc_disabled:
+  if NUM_HARTS = 1 generate
+    xcsr_rdata_icc <= (others => '0');
   end generate;
 
 

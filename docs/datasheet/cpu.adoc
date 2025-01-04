@@ -62,25 +62,33 @@ type of all signals is _std_ulogic_ or _std_ulogic_vector_, respectively. The "D
 direction as seen from the CPU.
 
 .NEORV32 CPU Signal List
-[cols="<3,^3,^1,<5"]
+[cols="^2,^2,^1,<8"]
 [options="header", grid="rows"]
 |=======================
 | Signal | Width/Type | Dir | Description
 4+^| **Global Signals**
-| `clk_i`      |           1 | in  | Global clock line, all registers triggering on rising edge.
-| `rstn_i`     |           1 | in  | Global reset, low-active.
+| `clk_i`        | 1           | in  | Global clock line, all registers triggering on rising edge.
+| `rstn_i`       | 1           | in  | Global reset, low-active.
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
-| `msi_i`      |           1 | in  | RISC-V machine software interrupt.
-| `mei_i`      |           1 | in  | RISC-V machine external interrupt.
-| `mti_i`      |           1 | in  | RISC-V machine timer interrupt.
-| `firq_i`     |          16 | in  | Custom fast interrupt request signals.
-| `dbi_i`      |           1 | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>).
+| `msi_i`        | 1           | in  | RISC-V machine software interrupt.
+| `mei_i`        | 1           | in  | RISC-V machine external interrupt.
+| `mti_i`        | 1           | in  | RISC-V machine timer interrupt.
+| `firq_i`       | 16          | in  | Custom fast interrupt request signals.
+| `dbi_i`        | 1           | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>).
 4+^| **Instruction <<_bus_interface>>**
-| `ibus_req_o` | `bus_req_t` | out | Instruction fetch bus request.
-| `ibus_rsp_i` | `bus_rsp_t` | in  | Instruction fetch bus response.
+| `ibus_req_o`   | `bus_req_t` | out | Instruction fetch bus request.
+| `ibus_rsp_i`   | `bus_rsp_t` | in  | Instruction fetch bus response.
 4+^| **Data <<_bus_interface>>**
-| `dbus_req_o` | `bus_req_t` | out | Data access (load/store) bus request.
-| `dbus_rsp_i` | `bus_rsp_t` | in  | Data access (load/store) bus response.
+| `dbus_req_o`   | `bus_req_t` | out | Data access (load/store) bus request.
+| `dbus_rsp_i`   | `bus_rsp_t` | in  | Data access (load/store) bus response.
+4+^| **<<_inter_core_communication_icc>> TX links**
+| `icc_tx_rdy_o` | 2           | out | Data available for cores `0..1`.
+| `icc_tx_ack_i` | 2           | in  | Read-enable from cores `0..1`.
+| `icc_tx_dat_o` | 2*32        | out | Data for cores `0..1`.
+4+^| **<<_inter_core_communication_icc>> RX links**
+| `icc_rx_rdy_i` | 2           | in  | Data available from cores `0..1`.
+| `icc_rx_ack_o` | 2           | out | Read-enable for cores `0..1`.
+| `icc_rx_dat_i` | 2*32        | in  | Data from cores `0..1`.
 |=======================
 
 .Bus Interface Protocol
@@ -109,8 +117,9 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 [options="header",grid="rows"]
 |=======================
 | Name | Type | Description
-| `HART_ID`          | natural   | Value for the <<_mhartid>> CSR.
-| `VENDOR_ID`        | suv(31:0) | Value for the <<_mvendorid>> CSR.
+| `HART_ID`          | natural   | ID of the core (for <<_mhartid>> CSR).
+| `NUM_HARTS`        | natural   | Total number of cores in the system.
+| `VENDOR_ID`        | suv(31:0) | Vendor identification (for <<_mvendorid>> CSR).
 | `BOOT_ADDR`        | suv(31:0) | CPU reset address. See section <<_address_space>>.
 | `DEBUG_PARK_ADDR`  | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
 | `DEBUG_EXC_ADDR`   | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
