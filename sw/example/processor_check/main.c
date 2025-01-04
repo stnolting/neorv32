@@ -571,10 +571,10 @@ int main() {
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
   tmp_a = trap_cnt; // current number of traps
-
   // try executing some illegal instructions
   asm volatile (".word 0x58007053"); // unsupported fsqrt.s x0, x0
-  asm volatile (".word 0x0e00202f"); // unsupported amoswap.w x0, x0, (x0)
+  asm volatile (".word 0x0e00302f"); // unsupported amoswap.D x0, x0, (x0)
+  asm volatile (".word 0x1000202f"); // unsupported lr.w x0, (x0)
   asm volatile (".word 0x34004073"); // illegal CSR access funct3 (using mscratch)
   asm volatile (".word 0x30200077"); // mret with illegal opcode
   asm volatile (".word 0x3020007f"); // mret with illegal opcode
@@ -603,7 +603,7 @@ int main() {
     invalid_instr = 0x08812681; // mtinst: pre-decompressed; clear bit 1 if compressed instruction
   }
   else { // C extension disabled
-    tmp_a += 15;
+    tmp_a += 16;
     invalid_instr = 0xfe002fe3;
   }
 
@@ -2146,22 +2146,17 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Dual-core ", cnt_test);
 
-  if ((neorv32_cpu_csr_read(CSR_MHARTID) == 0) && // we need to be core 0
-      (NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] > 1) && // we need at least two cores
+  if ((NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] > 1) && // we need at least two cores
       (neorv32_clint_available() != 0)) { // we need the CLINT
     cnt_test++;
 
     // enable machine software interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MSIE);
 
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // launch core 1
+    tmp_a = (uint32_t)neorv32_smp_launch(1, core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
 
-    // launch core1
-    tmp_a = (uint32_t)neorv32_rte_smp_launch(core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
-
-    // wait for software interrupt in sleep mode
+    // wait for software interrupt (issued by core 1) in sleep mode
     neorv32_cpu_sleep();
 
     // disable interrupts and clear software interrupt
