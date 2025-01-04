@@ -15,28 +15,20 @@
 
 #include <neorv32.h>
 
-// // ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // RTE private variables and functions
-// // ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 // the private trap vector look-up table for each CPU core
 static uint32_t __neorv32_rte_vector_lut[2][NEORV32_RTE_NUM_TRAPS];
-
-// SMP startup configuration
-static volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t magic_word;  // to check for valid configuration
-  uint32_t stack_lower; // stack begin address (lowest valid address); 16-byte aligned!
-  uint32_t stack_upper; // stack end address (highest valid address); 16-byte aligned!
-  uint32_t entry_point; // main function entry address
-} __neorv32_rte_smp_startup;
 
 // private helper function
 static void __neorv32_rte_print_hex_word(uint32_t num);
 
 
-// // ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // RTE core functions
-// // ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
@@ -411,62 +403,6 @@ void neorv32_rte_debug_handler(void) {
 
   // outro
   neorv32_uart0_puts(" </NEORV32-RTE>\n");
-}
-
-
-// ------------------------------------------------------------------------------------------------
-// Multi-core functions
-// ------------------------------------------------------------------------------------------------
-
-/**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * Configure and start secondary CPU (core 1).
- *
- * @warning This function can be called from core 0 only.
- *
- * @param[in] entry_point Core 1 main function (must be of type "void entry_point(void)").
- * @param[in] stack_memory Pointer to beginning of core 1 stack memory array. Should be at least 512 bytes.
- * @param[in] stack_size_bytes Core 1 stack size in bytes.
- * @return 0 if launching succeeded. -1 if hardware configuration error. -2 if core is not responding.
- **************************************************************************/
-int neorv32_rte_smp_launch(void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
-
-  // sanity checks
-  if ((neorv32_cpu_csr_read(CSR_MHARTID) != 0) || // not execute on core 0
-      (neorv32_clint_available() == 0) || // CLINT not available
-      (NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] == 1)) { // there is only one CPU core
-    return -1;
-  }
-
-  // align end of stack to 16-bytes according to the RISC-V ABI (#1021)
-  uint32_t stack_top = ((uint32_t)stack_memory + (uint32_t)(stack_size_bytes-1)) & 0xfffffff0u;
-
-  // setup launch-configuration struct
-  __neorv32_rte_smp_startup.magic_word  = 0x1337cafeu;
-  __neorv32_rte_smp_startup.stack_lower = (uint32_t)stack_memory;
-  __neorv32_rte_smp_startup.stack_upper = stack_top;
-  __neorv32_rte_smp_startup.entry_point = (uint32_t)entry_point;
-
-  // flush data cache (containing configuration struct) to main memory
-  asm volatile ("fence");
-
-  // use CLINT.MTIMECMP[1].low_word to pass the address of the configuration struct
-  NEORV32_CLINT->MTIMECMP[1].uint32[0] = (uint32_t)&__neorv32_rte_smp_startup;
-
-  // start core 1 by triggering its software interrupt
-  neorv32_clint_msi_set(1);
-
-  // wait for core 1 to clear its software interrupt
-  int cnt = 0;
-  while (1) {
-    if (neorv32_clint_msi_get(1) == 0) {
-      return 0; // success!
-    }
-    if (cnt > 10000) {
-      return -2; // timeout; core did not respond
-    }
-    cnt++;
-  }
 }
 
 
