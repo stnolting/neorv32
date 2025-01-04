@@ -269,6 +269,7 @@ begin
     csr_rdata_o   => csr_rdata,      -- CSR read data
     -- external CSR interface --
     xcsr_we_o     => xcsr_we,        -- global write enable
+    xcsr_re_o     => open,           -- global read enable
     xcsr_addr_o   => xcsr_addr,      -- address
     xcsr_wdata_o  => xcsr_wdata,     -- write data
     xcsr_rdata_i  => xcsr_rdata_res, -- read data

@@ -96,6 +96,7 @@ entity neorv32_cpu_control is
     csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
     -- external CSR interface --
     xcsr_we_o     : out std_ulogic; -- global write enable
+    xcsr_re_o     : out std_ulogic; -- global read enable
     xcsr_addr_o   : out std_ulogic_vector(11 downto 0); -- address
     xcsr_wdata_o  : out std_ulogic_vector(XLEN-1 downto 0); -- write data
     xcsr_rdata_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- read data
@@ -385,7 +386,7 @@ begin
       FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in FIFO
       FIFO_RSYNC => false,               -- we NEED to read data asynchronously
       FIFO_SAFE  => false,               -- no safe access required (ensured by FIFO-external logic)
-      FULL_RESET => true                 -- map to FFs and add a dedicated reset
+      FULL_RESET => false                -- no need for a full hardware reset
     )
     port map (
       -- control --
@@ -1035,7 +1036,7 @@ begin
         end case;
 
       when opcode_amo_c => -- atomic memory operation
-        if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then
+        if RISCV_ISA_Zaamo and (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then
           case exe_engine.ir(instr_funct5_msb_c downto instr_funct5_lsb_c) is
             when "00001" | "00000" | "00100" | "01100" | "01000" | "10000" | "10100" | "11000" | "11100" => illegal_cmd <= '0';
             when others => illegal_cmd <= '1';
@@ -1332,6 +1333,7 @@ begin
   -- External CSR Interface -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xcsr_we_o    <= csr.we;
+  xcsr_re_o    <= '1' when (exe_engine.state = EX_SYSTEM) else '0';
   xcsr_addr_o  <= csr.addr;
   xcsr_wdata_o <= csr.wdata;
 
