@@ -161,6 +161,14 @@ proc setup_ip_gui {} {
     { CLOCK_FREQUENCY       {Clock Frequency (Hz)}  {Frequency of the clk input signal in Hz} }
   }
 
+  set group [add_group $page {Core Complex}]
+  add_params $group {
+    { DUAL_CORE_EN          {Number of CPU cores}   {} }
+  }
+  set_property widget {comboBox} [ipgui::get_guiparamspec -name "DUAL_CORE_EN" -component [ipx::current_core] ]
+  set_property value_validation_type pairs [ipx::get_user_parameters DUAL_CORE_EN -of_objects [ipx::current_core]]
+  set_property value_validation_pairs {{Single-core} false {SMP dual-core} true} [ipx::get_user_parameters DUAL_CORE_EN -of_objects [ipx::current_core]]
+
   set group [add_group $page {Boot Configuration}]
   add_params $group {
     { BOOT_MODE_SELECT      {Boot mode select}      {Processor boot configuration} }

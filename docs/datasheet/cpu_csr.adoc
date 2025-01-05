@@ -57,8 +57,6 @@ to check if the targeted bits can actually be modified.
 | 0x7b0 | <<_dcsr>>      | - | DRW | Debug control and status register
 | 0x7b1 | <<_dpc>>       | - | DRW | Debug program counter
 | 0x7b2 | <<_dscratch0>> | - | DRW | Debug scratch register 0
-5+^| **<<_custom_functions_unit_cfu_csrs>>**
-| 0x800 .. 0x803 | <<_cfureg, `cfureg0`>> .. <<_cfureg, `cfureg3`>> | `CSR_CFUCREG0` .. `CSR_CFUCREG3` | URW | Custom CFU registers 0 to 3
 5+^| **<<_machine_counter_and_timer_csrs>>**
 | 0xb00 | <<_mcycleh, `mcycle`>>      | `CSR_MCYCLE`    | MRW | Machine cycle counter low word
 | 0xb02 | <<_minstreth, `minstret`>>  | `CSR_MINSTRET`  | MRW | Machine instruction-retired counter low word
@@ -79,7 +77,11 @@ to check if the targeted bits can actually be modified.
 | 0xf14 | <<_mhartid>>    | `CSR_MHARTID`    | MRO | Machine hardware thread ID
 | 0xf15 | <<_mconfigptr>> | `CSR_MCONFIGPTR` | MRO | Machine configuration pointer register
 5+^| **<<_neorv32_specific_csrs>>**
-| 0xfc0 | <<_mxisa>> | `CSR_MXISA` | MRO | NEORV32-specific "eXtended" machine CPU ISA and extensions
+| 0xbc0 | <<_mxiccrxd>> | `CSR_MXICCRXD` | MRW | ICC RX data
+| 0xbc1 | <<_mxicctxd>> | `CSR_MXICCTXD` | MRW | ICC TX data
+| 0xbc2 .. 0xbc3 | <<_mxiccsr, `mxiccsr0`>> .. <<_mxiccsr, `mxiccsr0`>> | `CSR_MXICCSR0` .. `CSR_MXICCSR3` | MRW | ICC control and status
+| 0x800 .. 0x803 | <<_cfureg, `cfureg0`>> .. <<_cfureg, `cfureg3`>> | `CSR_CFUCREG0` .. `CSR_CFUCREG3` | URW | Custom CFU registers 0 to 3
+| 0xfc0 | <<_mxisa>> | `CSR_MXISA` | MRO | Extended machine CPU ISA and extensions
 |=======================
 
 
@@ -598,28 +600,6 @@ implementation of the according modes.
 <<<
 // ####################################################################################################################
 :sectnums:
-==== Custom Functions Unit (CFU) CSRs
-
-[discrete]
-===== **`cfureg`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | Custom (user-defined) CFU CSRs
-| Address     | `0x800` (`cfureg0`)
-|             | `0x801` (`cfureg1`)
-|             | `0x802` (`cfureg2`)
-|             | `0x803` (`cfureg3`)
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` & `Zxcfu`
-| Description | User-defined CSRs to be used within the <<_custom_functions_unit_cfu>>.
-|=======================
-
-
-<<<
-// ####################################################################################################################
-:sectnums:
 ==== (Machine) Counter and Timer CSRs
 
 .`time[h]` CSRs (Wall Clock Time)
@@ -929,12 +909,92 @@ core's hart ID is unique starting at 0 for the first core.
 :sectnums:
 ==== NEORV32-Specific CSRs
 
+.RISC-V-Compliant Mapping
 [NOTE]
-All NEORV32-specific CSRs are mapped to addresses that are explicitly reserved for custom **Machine-Mode, read-only** CSRs
-(assured by the RISC-V privileged specifications). Hence, these CSRs can only be accessed when in machine-mode. Any access
-outside of machine-mode will raise an illegal instruction exception.
+All NEORV32-specific CSRs are mapped to addresses that are explicitly reserved for
+custom/implementation-specific use (assured by the RISC-V privileged specifications).
 
 
+[discrete]
+===== **`cfureg`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Custom (user-defined) CFU CSRs
+| Address     | `0x800` (`cfureg0`)
+|             | `0x801` (`cfureg1`)
+|             | `0x802` (`cfureg2`)
+|             | `0x803` (`cfureg3`)
+| Reset value | `0x00000000`
+| ISA         | `Zicsr` & `Zxcfu`
+| Description | User-defined CSRs to be used within the <<_custom_functions_unit_cfu>>.
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`mxiccrxd`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | <<_inter_core_communication_icc>> RX data
+| Address     | `0xbc0`
+| Reset value | `0x00000000`
+| ISA         | `Zicsr` & `X`
+| Description | RX data from selected link. Buffered by a 4-entries-deep and 32-bit wide FIFO.
+This CSR is hardwired to all-zero if there is just a single CPU core in the system.
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`mxicctxd`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | <<_inter_core_communication_icc>> TX data
+| Address     | `0xbc1`
+| Reset value | `0x00000000`
+| ISA         | `Zicsr` & `X`
+| Description | TX data for selected link. Buffered by a 4-entries-deep and 32-bit wide FIFO.
+This CSR is hardwired to all-zero if there is just a single CPU core in the system.
+|=======================
+
+{empty} +
+[discrete]
+===== **`mxiccsr`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | <<_inter_core_communication_icc>> control and status
+| Address     | `0xbc2` (`mxiccsr0`)
+|             | `0xbc3` (`mxiccsr1`)
+| Reset value | `0x40000000`
+| ISA         | `Zicsr` & `X`
+| Description | Link selection and status. Note that `mxiccsr1` is just a mirrored copy of `mxiccsr0`.
+This CSR is hardwired to all-zero if there is just a single CPU core in the system.
+|=======================
+
+.`mxiccsr` CSR Bits
+[cols="^1,^2,^1,<5"]
+[options="header",grid="rows"]
+|=======================
+| Bit  | Name [C] | R/W | Description
+| 1:0  | `CSR_MXICCSR_LINK_MSB : CSR_MXICCSR_LINK_LSB` | r/w | Link select. The value in this memory corresponds
+to the ID of the core to which a connection is to be established via a link. The ICC data registers <<_mxiccrxd>>
+and <<_mxicctxd>> will only access the queue FIFOs of the selected link. Note that only bit 0 is writable. Bit 1
+is hardwaired to zero.
+| 29:2 | -                      | r/- | Reserved; hardwired to zero.
+| 30   | `CSR_MXICCSR_TX_FREE`  | r/- | Set if there is free space for TX data for the selected link.
+| 31   | `CSR_MXICCSR_RX_AVAIL` | r/- | Set if RX data from the selected link is available.
+|=======================
+
+
+{empty} +
 [discrete]
 ===== **`mxisa`**
 
@@ -946,7 +1006,7 @@ outside of machine-mode will raise an illegal instruction exception.
 | Reset value | `DEFINED`
 | ISA         | `Zicsr` & `X`
 | Description | The `mxisa` CSRs is a NEORV32-specific read-only CSR that helps machine-mode software to
-discover ISA sub-extensions and CPU configuration options
+discover additional ISA (sub-)extensions and CPU configuration options.
 |=======================
 
 .`mxisa` CSR Bits
@@ -985,5 +1045,5 @@ discover ISA sub-extensions and CPU configuration options
 | 28    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`CPU_RF_HW_RST_EN`), see <<_cpu_tuning_options>>
 | 29    | `CSR_MXISA_FASTMUL`   | r/- | fast multiplication available when set (`CPU_FAST_MUL_EN`), see <<_cpu_tuning_options>>
 | 30    | `CSR_MXISA_FASTSHIFT` | r/- | fast shifts available when set (`CPU_FAST_SHIFT_EN`), see <<_cpu_tuning_options>>
-| 31    | `CSR_MXISA_IS_SIM`    | r/- | set if CPU is being **simulated** (⚠️ not guaranteed)
+| 31    | `CSR_MXISA_IS_SIM`    | r/- | set if CPU is being **simulated**
 |=======================

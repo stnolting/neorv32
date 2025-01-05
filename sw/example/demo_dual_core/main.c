@@ -86,11 +86,12 @@ int main(void) {
   neorv32_uart0_printf("Launching core1...\n");
 
   // Launch execution of core 1. Arguments:
-  // 1st:: "main_core1" is the entry point for the core and we provide a total of 2kB of stack for it.
-  // 2nd:: Pointer to the core's stack memory array.
-  // 3rd:: Size of the core's stack memory array.
+  // 1st: Hart ID of the core that we want to launch.
+  // 2nd: "main_core1" is the entry point for the core and we provide a total of 2kB of stack for it.
+  // 3rd: Pointer to the core's stack memory array.
+  // 4th: Size of the core's stack memory array.
 
-  int smp_launch_rc = neorv32_rte_smp_launch(main_core1, (uint8_t*)core1_stack, sizeof(core1_stack));
+  int smp_launch_rc = neorv32_smp_launch(1, main_core1, (uint8_t*)core1_stack, sizeof(core1_stack));
 
   // Here we are using a statically allocated array as stack memory. Alternatively, malloc
   // could be used (it is recommend to align the stack memory on a 16-byte boundary):

@@ -72,49 +72,45 @@ __crt0_entry:
 
 
 // ************************************************************************************************
-// Dual-core setup - wait for configuration if we are not core 0.
+// SMP multi-core setup - wait for configuration if we are not core 0.
 // ************************************************************************************************
-#ifndef DISABLE_DUALCORE
-__crt0_dualcore_check:
-  beqz  x1, __crt0_dualcore_primary      // proceed with normal boot-up if we are core 0
+#ifndef DISABLE_MULTICORE
+__crt0_multicore_check:
+  beqz  x1, __crt0_multicore_primary        // proceed with normal boot-up if we are core 0
 
   // setup machine software interrupt
-  la    x15, __crt0_dualcore_mswi
-  csrw  mtvec, x15                       // install interrupt handler
-  csrsi mie, 1 << 3                      // enable software interrupt source
-  csrsi mstatus, 1 << 3                  // enable machine-level interrupts
-  j     __crt0_sleep                     // wait for interrupt in sleep mode
+  la    x15, __crt0_multicore_wakeup
+  csrw  mtvec, x15                          // install interrupt handler
+  csrsi mie, 1 << 3                         // enable software interrupt source
+  csrsi mstatus, 1 << 3                     // enable machine-level interrupts
+  j     __crt0_sleep                        // wait for interrupt in sleep mode
 
   // machine software interrupt handler
-__crt0_dualcore_mswi:
+__crt0_multicore_wakeup:
+  li    x14,  0xfff40000                    // CLINT.MSWI base address
+  slli  x15,  x1, 2                         // offset = hart_id * 4
+  add   x14,  x14, x15
+  sw    zero, 0(x14)                        // CLINT.MSWI[hart_id]
+
   csrr  x14, mcause
-  li    x15, 0x80000003                  // is machine software interrupt?
-  beq   x14, x15, __crt0_dualcore_init   // start initialization
-  mret                                   // go back to sleep if incorrect trap
+  li    x15, 0x80000003                     // is machine software interrupt?
+  bne   x14, x15, __crt0_multicore_exit     // go back to sleep if not
 
-  // get configuration struct address
-__crt0_dualcore_init:
-  fence                                  // reload data cache
-  li    x13, 0xfff44000                  // CLINT.MTIMCEMP base address
-  lw    x13, 8(x13)                      // CLINT.MTIMCEMP[1].low = address of configuration struct
-  li    x14, 0x1337cafe                  // expected magic word
-  lw    x15, 0(x13)                      // __neorv32_rte_smp_startup.magic_word
-  beq   x14, x15, __crt0_dualcore_valid
-  mret                                   // go back to sleep if invalid configuration
+  // get launch configuration from core 0
+  csrw  0xbc2, zero                         // ICC.SR: link select = 0
+  csrr  x13, 0xbc0                          // ICC.RX: signature
+  li    x14, 0xffab4321                     // expected signature
+  bne   x14, x13, __crt0_multicore_exit     // abort if incorrect signature
 
-__crt0_dualcore_valid:
-  lw    x2, 8(x13)                       // sp = __neorv32_rte_smp_startup.stack_upper
-  lw    x12, 12(x13)                     // __neorv32_rte_smp_startup.entry_point
-  sw    x0, 0(x13)                       // invalidate configuration struct
+  csrw  0xbc1, x14                          // ICC.TX: acknowledge start
+  csrr  x2,  0xbc0                          // ICC.RX: stack_top -> sp
+  csrr  x12, 0xbc0                          // ICC.RX: entry_point
+  j     __crt0_main_entry                   // start main function
 
-  // acknowledge startup by clearing software interrupt
-  li    x14,  0xfff40000                 // CLINT.MSWI base address
-  sw    zero, 4(x14)                     // CLINT.MSWI[1]
+__crt0_multicore_exit:
+  mret                                      // go back to sleep
 
-  // start main function
-  j     __crt0_main_entry
-
-__crt0_dualcore_primary:
+__crt0_multicore_primary:
 #endif
 
 
@@ -171,11 +167,7 @@ __crt0_main_entry:
   fence                  // reload instruction cache
   fence.i                // reload instruction cache
 
-  // re-initialize trap CSRs
-  csrw  mstatus, x5
-  csrw  mcause, zero
-  csrw  mepc, zero
-
+  csrw  mstatus, x5      // re-initialize
   addi  x10, zero, 0     // x10 = a0 = argc = 0
   addi  x11, zero, 0     // x11 = a1 = argv = 0
   jalr  x1, x12          // call actual main function; put return address in ra
