@@ -252,9 +252,6 @@ typedef union {
 // helper functions
 #include "neorv32_aux.h"
 
-// legacy compatibility layer
-#include "neorv32_legacy.h"
-
 // CPU core
 #include "neorv32_cpu.h"
 #include "neorv32_cpu_csr.h"
