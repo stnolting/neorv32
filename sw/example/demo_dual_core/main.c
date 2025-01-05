@@ -86,7 +86,7 @@ int main(void) {
   neorv32_uart0_printf("Launching core1...\n");
 
   // Launch execution of core 1. Arguments:
-  // 1st: CHart ID of the core that we want to launch.
+  // 1st: Hart ID of the core that we want to launch.
   // 2nd: "main_core1" is the entry point for the core and we provide a total of 2kB of stack for it.
   // 3rd: Pointer to the core's stack memory array.
   // 4th: Size of the core's stack memory array.
