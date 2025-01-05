@@ -27,7 +27,7 @@
  **************************************************************************/
 int neorv32_smp_launch(int hart_id, void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
 
-  const uint32_t signature = 0xffab4321u;
+  const uint32_t magic_number = 0xffab4321u;
   int num_cores = (int)NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART];
 
   // sanity checks
@@ -47,7 +47,7 @@ int neorv32_smp_launch(int hart_id, void (*entry_point)(void), uint8_t* stack_me
   uint32_t stack_top = ((uint32_t)stack_memory + (uint32_t)(stack_size_bytes-1)) & 0xfffffff0u;
 
   // send launch configuration
-  neorv32_smp_icc_put(hart_id, signature); // signature
+  neorv32_smp_icc_put(hart_id, magic_number); // identifies valid configuration
   neorv32_smp_icc_put(hart_id, stack_top); // top of core's stack
   neorv32_smp_icc_put(hart_id, (uint32_t)entry_point); // entry point
 
@@ -58,11 +58,11 @@ int neorv32_smp_launch(int hart_id, void (*entry_point)(void), uint8_t* stack_me
   int cnt = 0;
   while (1) {
     if (neorv32_smp_icc_avail(hart_id)) {
-      if (neorv32_smp_icc_get(hart_id) == signature) {
+      if (neorv32_smp_icc_get(hart_id) == magic_number) {
         return 0;
       }
     }
-    if (cnt > 10000) {
+    if (cnt > 1000) {
       return -2; // timeout; core did not respond
     }
     cnt++;

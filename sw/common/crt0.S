@@ -72,21 +72,21 @@ __crt0_entry:
 
 
 // ************************************************************************************************
-// Dual-core setup - wait for configuration if we are not core 0.
+// SMP multi-core setup - wait for configuration if we are not core 0.
 // ************************************************************************************************
-#ifndef DISABLE_DUALCORE
-__crt0_dualcore_check:
-  beqz  x1, __crt0_dualcore_primary         // proceed with normal boot-up if we are core 0
+#ifndef DISABLE_MULTICORE
+__crt0_multicore_check:
+  beqz  x1, __crt0_multicore_primary        // proceed with normal boot-up if we are core 0
 
   // setup machine software interrupt
-  la    x15, __crt0_dualcore_wakeup
+  la    x15, __crt0_multicore_wakeup
   csrw  mtvec, x15                          // install interrupt handler
   csrsi mie, 1 << 3                         // enable software interrupt source
   csrsi mstatus, 1 << 3                     // enable machine-level interrupts
   j     __crt0_sleep                        // wait for interrupt in sleep mode
 
   // machine software interrupt handler
-__crt0_dualcore_wakeup:
+__crt0_multicore_wakeup:
   li    x14,  0xfff40000                    // CLINT.MSWI base address
   slli  x15,  x1, 2                         // offset = hart_id * 4
   add   x14,  x14, x15
@@ -94,23 +94,23 @@ __crt0_dualcore_wakeup:
 
   csrr  x14, mcause
   li    x15, 0x80000003                     // is machine software interrupt?
-  bne   x14, x15, __crt0_dualcore_exit      // go back to sleep if not
+  bne   x14, x15, __crt0_multicore_exit     // go back to sleep if not
 
   // get launch configuration from core 0
   csrw  0xbc2, zero                         // ICC.SR: link select = 0
   csrr  x13, 0xbc0                          // ICC.RX: signature
   li    x14, 0xffab4321                     // expected signature
-  bne   x14, x13, __crt0_dualcore_exit      // abort if incorrect signature
+  bne   x14, x13, __crt0_multicore_exit     // abort if incorrect signature
 
   csrw  0xbc1, x14                          // ICC.TX: acknowledge start
   csrr  x2,  0xbc0                          // ICC.RX: stack_top -> sp
   csrr  x12, 0xbc0                          // ICC.RX: entry_point
   j     __crt0_main_entry                   // start main function
 
-__crt0_dualcore_exit:
+__crt0_multicore_exit:
   mret                                      // go back to sleep
 
-__crt0_dualcore_primary:
+__crt0_multicore_primary:
 #endif
 
 
