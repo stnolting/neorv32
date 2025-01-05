@@ -986,7 +986,7 @@ This CSR is hardwired to all-zero if there is just a single CPU core in the syst
 | Bit  | Name [C] | R/W | Description
 | 1:0  | `CSR_MXICCSR_LINK_MSB : CSR_MXICCSR_LINK_LSB` | r/w | Link select. The value in this memory corresponds
 to the ID of the core to which a connection is to be established via a link. The ICC data registers <<_mxiccrxd>>
-and <<_mxicctxd>> will only access the queue FIFOs of the selected link. Not that only bit 0 is writable. Bit 1
+and <<_mxicctxd>> will only access the queue FIFOs of the selected link. Note that only bit 0 is writable. Bit 1
 is hardwaired to zero.
 | 29:2 | -                      | r/- | Reserved; hardwired to zero.
 | 30   | `CSR_MXICCSR_TX_FREE`  | r/- | Set if there is free space for TX data for the selected link.
