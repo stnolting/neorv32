@@ -49,7 +49,7 @@ int main(void) {
 
 
   // check hardware/software configuration
-  if (NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] == 1) { // two cores available?
+  if (NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] != 2) { // two cores available?
     neorv32_uart0_printf("[ERROR] dual-core option not enabled!\n");
     return -1;
   }
@@ -135,8 +135,6 @@ int main(void) {
 
 /**********************************************************************//**
  * Main function for core 1 (secondary core).
- *
- * @return Irrelevant (but can be inspected by the debugger).
  **************************************************************************/
 void main_core1(void) {
 
