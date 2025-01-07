@@ -91,6 +91,13 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal msi, mei, mti : std_ulogic;
 
   -- slink --
+  type slink_t is record
+    data  : std_ulogic_vector(31 downto 0); -- data
+    addr  : std_ulogic_vector(3 downto 0); -- source/destination ID
+    valid : std_ulogic; -- source valid
+    last  : std_ulogic; -- last element of packet
+    ready : std_ulogic; -- sink ready
+  end record;
   signal slink_tx, slink_rx : slink_t;
 
   -- XBUS (Wishbone b4) bus --
