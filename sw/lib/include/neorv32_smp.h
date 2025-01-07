@@ -24,6 +24,17 @@ int neorv32_smp_launch(int hart_id, void (*entry_point)(void), uint8_t* stack_me
 
 
 /**********************************************************************//**
+ * Get core/hart ID of the CPU that is executing this function.
+ *
+ * @return Core ID from mhartid CSR.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) neorv32_smp_whoami(void) {
+
+  return neorv32_cpu_csr_read(CSR_MHARTID);
+}
+
+
+/**********************************************************************//**
  * Get data from core via ICC link.
  * Check link status before #neorv32_smp_icc_avail().
  *
