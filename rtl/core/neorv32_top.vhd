@@ -310,23 +310,19 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dci_ndmrstn : std_ulogic;
   signal dci_haltreq : std_ulogic_vector(num_cores_c-1 downto 0);
 
-  -- CPU ICC links --
-  type icc_rdy_t is array (0 to num_cores_c-1) of std_ulogic_vector(num_cores_c-1 downto 0);
-  type icc_ack_t is array (0 to num_cores_c-1) of std_ulogic_vector(num_cores_c-1 downto 0);
-  type icc_dat_t is array (0 to num_cores_c-1) of std_ulogic_vector(num_cores_c*32-1 downto 0);
-  signal icc_tx_rdy, icc_rx_rdy : icc_rdy_t;
-  signal icc_tx_ack, icc_rx_ack : icc_ack_t;
-  signal icc_tx_dat, icc_rx_dat : icc_dat_t;
+  -- CPU ICC links (up to 4 instances) --
+  type multicore_icc_t is array (0 to 3) of icc_t;
+  signal icc_tx, icc_rx : multicore_icc_t;
 
-  -- bus: CPU core(s) + L1 caches --
-  type multicore_req_t is array (0 to num_cores_c-1) of bus_req_t;
-  type multicore_rsp_t is array (0 to num_cores_c-1) of bus_rsp_t;
-  signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req : multicore_req_t;
-  signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp : multicore_rsp_t;
+  -- bus: CPU core complex (up to 4 instances) --
+  type multicore_req_t is array (0 to 3) of bus_req_t;
+  type multicore_rsp_t is array (0 to 3) of bus_rsp_t;
+  signal core_req : multicore_req_t;
+  signal core_rsp : multicore_rsp_t;
 
-  -- bus: core complex and DMA --
-  signal complex_req, main_req, main2_req, dma_req : bus_req_t;
-  signal complex_rsp, main_rsp, main2_rsp, dma_rsp : bus_rsp_t;
+  -- bus: system bus (including DMA complex) --
+  signal sys1_req, sys2_req, dma_req, sys3_req : bus_req_t;
+  signal sys1_rsp, sys2_rsp, dma_rsp, sys3_rsp : bus_rsp_t;
 
   -- bus: main sections --
   signal imem_req, dmem_req, xipcache_req, xip_req, io_req, xcache_req, xbus_req : bus_req_t;
@@ -372,7 +368,8 @@ begin
     -- show SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
-      cond_sel_string_f(DUAL_CORE_EN,              "(dual-core-smp) ", "(single-core) ") &
+      cond_sel_string_f(boolean(num_cores_c = 1),  "(single-core) ",   "") &
+      cond_sel_string_f(boolean(num_cores_c = 2),  "(smp-dual-core) ", "") &
       cond_sel_string_f(MEM_INT_IMEM_EN,           cond_sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
       cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",       "") &
       cond_sel_string_f(bootrom_en_c,              "BOOTROM ",    "") &
@@ -501,9 +498,9 @@ begin
   core_complex_gen:
   for i in 0 to num_cores_c-1 generate
 
-    -- CPU Core -------------------------------------------------------------------------------
+    -- Core Complex ---------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_cpu_inst: entity neorv32.neorv32_cpu
+    neorv32_cpu_neorv32_core_complex: entity neorv32.neorv32_core_complex
     generic map (
       -- General --
       HART_ID             => i,
@@ -550,141 +547,67 @@ begin
       PMP_NAP_MODE_EN     => PMP_NAP_MODE_EN,
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS        => HPM_NUM_CNTS,
-      HPM_CNT_WIDTH       => HPM_CNT_WIDTH
+      HPM_CNT_WIDTH       => HPM_CNT_WIDTH,
+      -- Instruction Cache (iCACHE) --
+      ICACHE_EN           => ICACHE_EN,
+      ICACHE_NUM_BLOCKS   => ICACHE_NUM_BLOCKS,
+      ICACHE_BLOCK_SIZE   => ICACHE_BLOCK_SIZE,
+      ICACHE_UC_BEGIN     => mem_uncached_begin_c,
+      -- Data Cache (dCACHE) --
+      DCACHE_EN           => DCACHE_EN,
+      DCACHE_NUM_BLOCKS   => DCACHE_NUM_BLOCKS,
+      DCACHE_BLOCK_SIZE   => DCACHE_BLOCK_SIZE,
+      DCACHE_UC_BEGIN     => mem_uncached_begin_c
     )
     port map (
       -- global control --
-      clk_i        => clk_i,
-      rstn_i       => rstn_sys,
+      clk_i     => clk_i,
+      rstn_i    => rstn_sys,
       -- interrupts --
-      msi_i        => msw_irq(i),
-      mei_i        => mext_irq_i,
-      mti_i        => mtime_irq(i),
-      firq_i       => cpu_firq,
-      dbi_i        => dci_haltreq(i),
-      -- instruction bus interface --
-      ibus_req_o   => cpu_i_req(i),
-      ibus_rsp_i   => cpu_i_rsp(i),
-      -- data bus interface --
-      dbus_req_o   => cpu_d_req(i),
-      dbus_rsp_i   => cpu_d_rsp(i),
-      -- ICC TX links --
-      icc_tx_rdy_o => icc_tx_rdy(i),
-      icc_tx_ack_i => icc_tx_ack(i),
-      icc_tx_dat_o => icc_tx_dat(i),
-      -- ICC RX links --
-      icc_rx_rdy_i => icc_rx_rdy(i),
-      icc_rx_ack_o => icc_rx_ack(i),
-      icc_rx_dat_i => icc_rx_dat(i)
+      msi_i     => msw_irq(i),
+      mei_i     => mext_irq_i,
+      mti_i     => mtime_irq(i),
+      firq_i    => cpu_firq,
+      dbi_i     => dci_haltreq(i),
+      -- inter-core communication links --
+      icc_tx_o  => icc_tx(i),
+      icc_rx_i  => icc_rx(i),
+      -- system bus interface --
+      bus_req_o => core_req(i),
+      bus_rsp_i => core_rsp(i)
     );
 
-    -- inter-core communication (ICC) links (connect every core with every other) --
-    icc_gen:
-    for j in 0 to num_cores_c-1 generate
-
-      icc_gen_terminate: -- do not connect a core's link to itself
-      if i = j generate
-        icc_rx_rdy(i)(j) <= '0';
-        icc_tx_ack(i)(j) <= '0';
-        icc_rx_dat(i)(j*32+31 downto j*32) <= (others => '0');
-      end generate;
-
-      ip_gen_connect:
-      if i /= j generate
-        icc_rx_rdy(i)(j) <= icc_tx_rdy(j)(i);
-        icc_tx_ack(i)(j) <= icc_rx_ack(j)(i);
-        icc_rx_dat(i)(j*32+31 downto j*32) <= icc_tx_dat(j)(i*32+31 downto i*32);
-      end generate;
-
-    end generate;
-
-
-    -- CPU L1 Instruction Cache (I-Cache) -----------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_icache_enabled:
-    if ICACHE_EN generate
-      neorv32_icache_inst: entity neorv32.neorv32_cache
-      generic map (
-        NUM_BLOCKS => ICACHE_NUM_BLOCKS,
-        BLOCK_SIZE => ICACHE_BLOCK_SIZE,
-        UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
-        UC_ENABLE  => true,
-        READ_ONLY  => true
-      )
-      port map (
-        clk_i      => clk_i,
-        rstn_i     => rstn_sys,
-        host_req_i => cpu_i_req(i),
-        host_rsp_o => cpu_i_rsp(i),
-        bus_req_o  => icache_req(i),
-        bus_rsp_i  => icache_rsp(i)
-      );
-    end generate;
-
-    neorv32_icache_disabled:
-    if not ICACHE_EN generate
-      icache_req(i) <= cpu_i_req(i);
-      cpu_i_rsp(i)  <= icache_rsp(i);
-    end generate;
-
-
-    -- CPU L1 Data Cache (D-Cache) ------------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_dcache_enabled:
-    if DCACHE_EN generate
-      neorv32_dcache_inst: entity neorv32.neorv32_cache
-      generic map (
-        NUM_BLOCKS => DCACHE_NUM_BLOCKS,
-        BLOCK_SIZE => DCACHE_BLOCK_SIZE,
-        UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
-        UC_ENABLE  => true,
-        READ_ONLY  => false
-      )
-      port map (
-        clk_i      => clk_i,
-        rstn_i     => rstn_sys,
-        host_req_i => cpu_d_req(i),
-        host_rsp_o => cpu_d_rsp(i),
-        bus_req_o  => dcache_req(i),
-        bus_rsp_i  => dcache_rsp(i)
-      );
-    end generate;
-
-    neorv32_dcache_disabled:
-    if not DCACHE_EN generate
-      dcache_req(i) <= cpu_d_req(i);
-      cpu_d_rsp(i)  <= dcache_rsp(i);
-    end generate;
-
-
-    -- Core Instruction/Data Bus Switch -------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_core_bus_switch_inst: entity neorv32.neorv32_bus_switch
-    generic map (
-      ROUND_ROBIN_EN   => false, -- use prioritizing arbitration
-      PORT_A_READ_ONLY => false,
-      PORT_B_READ_ONLY => true -- i-fetch is read-only
-    )
-    port map (
-      clk_i    => clk_i,
-      rstn_i   => rstn_sys,
-      a_lock_i => '0', -- no exclusive accesses
-      a_req_i  => dcache_req(i), -- prioritized
-      a_rsp_o  => dcache_rsp(i),
-      b_req_i  => icache_req(i),
-      b_rsp_o  => icache_rsp(i),
-      x_req_o  => core_req(i),
-      x_rsp_i  => core_rsp(i)
-    );
+    -- inter-core communication (ICC) links --
+    icc_connect: process(icc_tx)
+    begin
+      icc_rx(i) <= icc_terminate_c;
+      for j in 0 to num_cores_c-1 loop -- connect this core with every other core
+        icc_rx(i).rdy(j) <= icc_tx(j).rdy(i);
+        icc_rx(i).ack(j) <= icc_tx(j).ack(i);
+        icc_rx(i).dat(j*32+31 downto j*32) <= icc_tx(j).dat(i*32+31 downto i*32);
+      end loop;
+    end process icc_connect;
 
   end generate; -- /core_complex
 
+  -- terminate unused interfaces --
+  core_complex_terminate:
+  if num_cores_c < 4 generate
+    core_complex_terminate_gen:
+    for i in num_cores_c to 3 generate
+      core_req(i) <= req_terminate_c;
+      core_rsp(i) <= rsp_terminate_c;
+      icc_rx(i)   <= icc_terminate_c;
+      icc_tx(i)   <= icc_terminate_c;
+    end generate;
+  end generate;
 
-  -- Core Complex Bus Switch ----------------------------------------------------------------
+
+  -- Core Complex Bus Arbiter ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   core_complex_dual:
-  if num_cores_c > 1 generate
-    neorv32_complex_mux_inst: entity neorv32.neorv32_bus_switch
+  if num_cores_c = 2 generate
+    neorv32_complex_arbiter_inst: entity neorv32.neorv32_bus_switch
     generic map (
       ROUND_ROBIN_EN   => true,
       PORT_A_READ_ONLY => false,
@@ -694,19 +617,19 @@ begin
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
       a_lock_i => '0',
-      a_req_i  => core_req(core_req'left),
-      a_rsp_o  => core_rsp(core_req'left),
-      b_req_i  => core_req(core_req'right), -- [hack] core_req(1) does not exist if single core
-      b_rsp_o  => core_rsp(core_req'right),
-      x_req_o  => complex_req,
-      x_rsp_i  => complex_rsp
+      a_req_i  => core_req(0),
+      a_rsp_o  => core_rsp(0),
+      b_req_i  => core_req(1),
+      b_rsp_o  => core_rsp(1),
+      x_req_o  => sys1_req,
+      x_rsp_i  => sys1_rsp
     );
   end generate;
 
   core_complex_single:
   if num_cores_c = 1 generate
-    complex_req <= core_req(0);
-    core_rsp(0) <= complex_rsp;
+    sys1_req    <= core_req(0);
+    core_rsp(0) <= sys1_rsp;
   end generate;
 
 
@@ -744,12 +667,12 @@ begin
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
       a_lock_i => '0', -- no exclusive accesses
-      a_req_i  => complex_req, -- prioritized
-      a_rsp_o  => complex_rsp,
+      a_req_i  => sys1_req, -- prioritized
+      a_rsp_o  => sys1_rsp,
       b_req_i  => dma_req,
       b_rsp_o  => dma_rsp,
-      x_req_o  => main_req,
-      x_rsp_i  => main_rsp
+      x_req_o  => sys2_req,
+      x_rsp_i  => sys2_rsp
     );
 
   end generate; -- /neorv32_dma_complex_enabled
@@ -757,8 +680,8 @@ begin
   neorv32_dma_complex_disabled:
   if not IO_DMA_EN generate
     iodev_rsp(IODEV_DMA) <= rsp_terminate_c;
-    main_req             <= complex_req;
-    complex_rsp          <= main_rsp;
+    sys2_req             <= sys1_req;
+    sys1_rsp             <= sys2_rsp;
     firq(FIRQ_DMA)       <= '0';
   end generate;
 
@@ -773,17 +696,17 @@ begin
     port map (
       clk_i      => clk_i,
       rstn_i     => rstn_sys,
-      core_req_i => main_req,
-      core_rsp_o => main_rsp,
-      sys_req_o  => main2_req,
-      sys_rsp_i  => main2_rsp
+      core_req_i => sys2_req,
+      core_rsp_o => sys2_rsp,
+      sys_req_o  => sys3_req,
+      sys_rsp_i  => sys3_rsp
     );
   end generate;
 
   neorv32_bus_amo_ctrl_disabled:
   if not RISCV_ISA_Zaamo generate
-    main2_req <= main_req;
-    main_rsp  <= main2_rsp;
+    sys3_req <= sys2_req;
+    sys2_rsp <= sys3_rsp;
   end generate;
 
 
@@ -823,8 +746,8 @@ begin
     clk_i   => clk_i,
     rstn_i  => rstn_sys,
     -- host port --
-    req_i   => main2_req,
-    rsp_o   => main2_rsp,
+    req_i   => sys3_req,
+    rsp_o   => sys3_rsp,
     -- section ports --
     a_req_o => imem_req,
     a_rsp_i => imem_rsp,
@@ -1042,7 +965,7 @@ begin
     generic map (
       INREG_EN  => true,
       OUTREG_EN => true,
-      DEV_SIZE  => iodev_size_c, -- size of a single IO device
+      DEV_SIZE  => iodev_size_c,
       DEV_00_EN => bootrom_en_c,    DEV_00_BASE => base_io_bootrom_c,
       DEV_01_EN => false,           DEV_01_BASE => (others => '0'), -- reserved
       DEV_02_EN => false,           DEV_02_BASE => (others => '0'), -- reserved
