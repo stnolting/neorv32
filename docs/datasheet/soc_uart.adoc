@@ -17,7 +17,6 @@
 |                         | `UART0_TX_FIFO` | TX FIFO depth (power of 2, min 1)
 | CPU interrupts:         | fast IRQ channel 2 | RX interrupt
 |                         | fast IRQ channel 3 | TX interrupt (see <<_processor_interrupts>>)
-| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

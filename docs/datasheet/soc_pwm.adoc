@@ -11,7 +11,6 @@
 | Top entity ports:       | `pwm_o` | PWM output channels (16-bit)
 | Configuration generics: | `IO_PWM_NUM_CH` | number of PWM channels to implement (0..16)
 | CPU interrupts:         | none |
-| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

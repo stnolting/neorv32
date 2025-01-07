@@ -15,7 +15,6 @@
 |                         | `IO_CFS_IN_SIZE`   | size of `cfs_in_i`
 |                         | `IO_CFS_OUT_SIZE`  | size of `cfs_out_o`
 | CPU interrupts:         | fast IRQ channel 1 | CFS interrupt (see <<_processor_interrupts>>)
-| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

@@ -14,7 +14,6 @@
 | Configuration generics: | `IO_CLINT_EN`     | implement core local interruptor when `true`
 | CPU interrupts:         | `MTI`             | machine timer interrupt (see <<_processor_interrupts>>)
 |                         | `MSI`             | machine software interrupt (see <<_processor_interrupts>>)
-| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 
