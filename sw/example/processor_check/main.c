@@ -2141,10 +2141,10 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Dual-core test
+  // SMP dual-core test
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Dual-core ", cnt_test);
+  PRINT_STANDARD("[%i] SMP dual-core boot ", cnt_test);
 
   if ((NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] > 1) && // we need at least two cores
       (neorv32_clint_available() != 0)) { // we need the CLINT
