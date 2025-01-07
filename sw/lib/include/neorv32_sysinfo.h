@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -17,7 +17,6 @@
 #define neorv32_sysinfo_h
 
 #include <stdint.h>
-
 
 /**********************************************************************//**
  * @name IO Device: System Configuration Information Memory (SYSINFO)
@@ -102,14 +101,52 @@ enum NEORV32_SYSINFO_SOC_enum {
 };
 /**@}*/
 
+/**********************************************************************//**
+ * Get number of processor cores/harts.
+ * @return Number of physical CPU cores / harts.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_numcores(void) {
+  return (uint32_t)(NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART]);
+}
 
 /**********************************************************************//**
- * @name Prototypes
+ * Get size of internal IMEM.
+ * @return IMEM size in bytes.
  **************************************************************************/
-/**@{*/
-uint32_t neorv32_sysinfo_get_clk(void);
-void     neorv32_sysinfo_set_clk(uint32_t clock);
-/**@}*/
+inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imemsize(void) {
+  return (uint32_t)(1 << NEORV32_SYSINFO->MISC[SYSINFO_MISC_IMEM]);
+}
 
+/**********************************************************************//**
+ * Get size of internal DMEM.
+ * @return DMEM size in bytes.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmemsize(void) {
+  return (uint32_t)(1 << NEORV32_SYSINFO->MISC[SYSINFO_MISC_DMEM]);
+}
+
+/**********************************************************************//**
+ * Get boot configuration.
+ * @return Boot configuration ID.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bootmode(void) {
+  return (uint32_t)(NEORV32_SYSINFO->MISC[SYSINFO_MISC_BOOT]);
+}
+
+/**********************************************************************//**
+ * Get current processor clock frequency.
+ * @return Clock frequency in Hz.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_clk(void) {
+  return NEORV32_SYSINFO->CLK;
+}
+
+/**********************************************************************//**
+ * Set processor clock frequency.
+ * @param[in] clock Clock frequency in Hz.
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_sysinfo_set_clk(uint32_t clock) {
+  NEORV32_SYSINFO->CLK = clock;
+}
 
 #endif // neorv32_sysinfo_h
