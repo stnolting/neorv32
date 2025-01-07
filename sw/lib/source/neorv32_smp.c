@@ -27,13 +27,10 @@
  **************************************************************************/
 int neorv32_smp_launch(int hart_id, void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
 
-  const uint32_t magic_number = 0xffab4321u;
-  int num_cores = (int)NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART];
-
   // sanity checks
   if ((neorv32_cpu_csr_read(CSR_MHARTID) != 0) || // this can be executed on core 0 only
       (hart_id == 0) || // we cannot launch core 0
-      (hart_id > (num_cores-1)) || // selected core not available
+      (hart_id > (neorv32_sysinfo_get_numcores()-1)) || // selected core not available
       (neorv32_clint_available() == 0)) { // we need the CLINT
     return -1;
   }
@@ -47,6 +44,7 @@ int neorv32_smp_launch(int hart_id, void (*entry_point)(void), uint8_t* stack_me
   uint32_t stack_top = ((uint32_t)stack_memory + (uint32_t)(stack_size_bytes-1)) & 0xfffffff0u;
 
   // send launch configuration
+  const uint32_t magic_number = 0xffab4321u;
   neorv32_smp_icc_put(hart_id, magic_number); // identifies valid configuration
   neorv32_smp_icc_put(hart_id, stack_top); // top of core's stack
   neorv32_smp_icc_put(hart_id, (uint32_t)entry_point); // entry point

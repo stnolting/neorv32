@@ -92,23 +92,19 @@ __crt0_multicore_wakeup:
   add   x14,  x14, x15
   sw    zero, 0(x14)                        // CLINT.MSWI[hart_id]
 
-  csrr  x14, mcause
-  li    x15, 0x80000003                     // is machine software interrupt?
-  bne   x14, x15, __crt0_multicore_exit     // go back to sleep if not
-
-  // get launch configuration from core 0
+  // check launch configuration from core 0
   csrw  0xbc2, zero                         // ICC.SR: link select = 0
   csrr  x13, 0xbc0                          // ICC.RX: signature
   li    x14, 0xffab4321                     // expected signature
-  bne   x14, x13, __crt0_multicore_exit     // abort if incorrect signature
+  beq   x14, x13, __crt0_multicore_launch
+  mret                                      // go back to sleep if incorrect signature
 
+  // get launch configuration from core 0
+__crt0_multicore_launch:
   csrw  0xbc1, x14                          // ICC.TX: acknowledge start
-  csrr  x2,  0xbc0                          // ICC.RX: stack_top -> sp
-  csrr  x12, 0xbc0                          // ICC.RX: entry_point
-  j     __crt0_main_entry                   // start main function
-
-__crt0_multicore_exit:
-  mret                                      // go back to sleep
+  csrr  x2,  0xbc0                          // ICC.RX: stack top -> sp
+  csrr  x12, 0xbc0                          // ICC.RX: entry point
+  j     __crt0_main_entry                   // start at entry point
 
 __crt0_multicore_primary:
 #endif
