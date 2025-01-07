@@ -14,7 +14,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -29,7 +29,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    HART_ID             : natural; -- hardware thread ID
+    HART_ID             : natural range 0 to 3; -- hardware thread ID
     VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug-mode parking loop entry address, 4-byte aligned
@@ -40,7 +40,7 @@ entity neorv32_cpu_control is
     RISCV_ISA_E         : boolean; -- implement embedded-class register file extension
     RISCV_ISA_M         : boolean; -- implement mul/div extension
     RISCV_ISA_U         : boolean; -- implement user mode extension
-    RISCV_ISA_Zalrsc    : boolean; -- implement atomic reservation-set extension
+    RISCV_ISA_Zaamo     : boolean; -- implement atomic memory operations extension
     RISCV_ISA_Zba       : boolean; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean; -- implement bit-manipulation instructions for cryptography
@@ -96,6 +96,7 @@ entity neorv32_cpu_control is
     csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
     -- external CSR interface --
     xcsr_we_o     : out std_ulogic; -- global write enable
+    xcsr_re_o     : out std_ulogic; -- global read enable
     xcsr_addr_o   : out std_ulogic_vector(11 downto 0); -- address
     xcsr_wdata_o  : out std_ulogic_vector(XLEN-1 downto 0); -- write data
     xcsr_rdata_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- read data
@@ -368,7 +369,8 @@ begin
   ibus_req_o.ben   <= (others => '0'); -- read-only
   ibus_req_o.rw    <= '0'; -- read-only
   ibus_req_o.src   <= '1'; -- source = instruction fetch
-  ibus_req_o.rvso  <= '0'; -- cannot be a reservation set operation
+  ibus_req_o.amo   <= '0'; -- cannot be an atomic memory operation
+  ibus_req_o.amoop <= (others => '0'); -- cannot be an atomic memory operation
   ibus_req_o.fence <= ctrl.lsu_fence; -- fence operation, valid without STB being set
   ibus_req_o.sleep <= sleep_mode; -- sleep mode, valid without STB being set
   ibus_req_o.debug <= debug_ctrl.run; -- debug mode, valid without STB being set
@@ -384,7 +386,7 @@ begin
       FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in FIFO
       FIFO_RSYNC => false,               -- we NEED to read data asynchronously
       FIFO_SAFE  => false,               -- no safe access required (ensured by FIFO-external logic)
-      FULL_RESET => true                 -- map to FFs and add a dedicated reset
+      FULL_RESET => false                -- no need for a full hardware reset
     )
     port map (
       -- control --
@@ -622,8 +624,8 @@ begin
     end case;
 
     -- memory read/write access --
-    if RISCV_ISA_Zalrsc and (opcode(2) = opcode_amo_c(2)) then -- atomic lr/sc
-      ctrl_nxt.lsu_rw <= exe_engine.ir(instr_funct7_lsb_c+2);
+    if RISCV_ISA_Zaamo and (opcode(2) = opcode_amo_c(2)) then -- atomic memory operation (executed as single load for the CPU)
+      ctrl_nxt.lsu_rw <= '0';
     else -- normal load/store
       ctrl_nxt.lsu_rw <= exe_engine.ir(5);
     end if;
@@ -806,7 +808,7 @@ begin
            (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
            (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
            (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- illegal instruction exception
-          if (RISCV_ISA_Zalrsc and (opcode(2) = opcode_amo_c(2))) or (opcode(5) = '0') then -- atomic operation / normal load
+          if (RISCV_ISA_Zaamo and (opcode(2) = opcode_amo_c(2))) or (opcode(5) = '0') then -- atomic operation / normal load
             ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file (won't happen in case of exception)
           end if;
           exe_engine_nxt.state <= EX_DISPATCH;
@@ -921,9 +923,10 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zfinx); -- available if FPU implemented
 
       -- machine trap setup/handling, environment/information registers, etc. --
-      when csr_mstatus_c   | csr_mstatush_c | csr_misa_c   | csr_mie_c     | csr_mtvec_c      | csr_mscratch_c      |
-           csr_mepc_c      | csr_mcause_c   | csr_mip_c    | csr_mtval_c   | csr_mtinst_c     | csr_mcountinhibit_c |
-           csr_mvendorid_c | csr_marchid_c  | csr_mimpid_c | csr_mhartid_c | csr_mconfigptr_c | csr_mxisa_c =>
+      when csr_mstatus_c   | csr_mstatush_c | csr_misa_c     | csr_mie_c     | csr_mtvec_c      | csr_mscratch_c      |
+           csr_mepc_c      | csr_mcause_c   | csr_mip_c      | csr_mtval_c   | csr_mtinst_c     | csr_mcountinhibit_c |
+           csr_mvendorid_c | csr_marchid_c  | csr_mimpid_c   | csr_mhartid_c | csr_mconfigptr_c | csr_mxisa_c         |
+           csr_mxiccrxd_c  | csr_mxicctxd_c | csr_mxiccsr0_c | csr_mxiccsr1_c =>
         csr_valid(2) <= '1'; -- always implemented
 
       -- machine-controlled user-mode CSRs --
@@ -1033,10 +1036,12 @@ begin
           when others => illegal_cmd <= '1';
         end case;
 
-      when opcode_amo_c => -- atomic memory operation (LR/SC)
-        if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") and RISCV_ISA_Zalrsc and
-           (exe_engine.ir(instr_funct7_lsb_c+6 downto instr_funct7_lsb_c+3) = "0001") then -- LR.W/SC.W
-          illegal_cmd <= '0';
+      when opcode_amo_c => -- atomic memory operation
+        if RISCV_ISA_Zaamo and (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then
+          case exe_engine.ir(instr_funct5_msb_c downto instr_funct5_lsb_c) is
+            when "00001" | "00000" | "00100" | "01100" | "01000" | "10000" | "10100" | "11000" | "11100" => illegal_cmd <= '0';
+            when others => illegal_cmd <= '1';
+          end case;
         end if;
 
       when opcode_alu_c | opcode_alui_c | opcode_fop_c | opcode_cust0_c | opcode_cust1_c => -- ALU[I] / FPU / custom operations
@@ -1329,6 +1334,7 @@ begin
   -- External CSR Interface -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xcsr_we_o    <= csr.we;
+  xcsr_re_o    <= '1' when (exe_engine.state = EX_SYSTEM) else '0';
   xcsr_addr_o  <= csr.addr;
   xcsr_wdata_o <= csr.wdata;
 
@@ -1654,6 +1660,12 @@ begin
             end if;
 
           -- --------------------------------------------------------------------
+          -- inter-core communication
+          -- --------------------------------------------------------------------
+          when csr_mxiccrxd_c | csr_mxicctxd_c | csr_mxiccsr0_c | csr_mxiccsr1_c =>
+            csr.rdata <= xcsr_rdata_i; -- implemented externally
+
+          -- --------------------------------------------------------------------
           -- machine trap setup
           -- --------------------------------------------------------------------
           when csr_mstatus_c => -- machine status register - low word
@@ -1852,9 +1864,9 @@ begin
             csr.rdata(20) <= bool_to_ulogic_f(RISCV_ISA_Zksed);     -- Zksed: ShangMi block cyphers
             csr.rdata(21) <= bool_to_ulogic_f(RISCV_ISA_Zks);       -- Zks: ShangMi algorithm suite
             csr.rdata(22) <= bool_to_ulogic_f(RISCV_ISA_Zba);       -- Zba: shifted-add bit-manipulation
-            csr.rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);       -- Zbb: basic bit-manipulation extension
-            csr.rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);       -- Zbs: single-bit bit-manipulation extension
-            csr.rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc);    -- Zalrsc: reservation set extension
+            csr.rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);       -- Zbb: basic bit-manipulation
+            csr.rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);       -- Zbs: single-bit bit-manipulation
+            csr.rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);     -- Zaamo: atomic memory operations
             csr.rdata(26) <= '0'; -- reserved
             csr.rdata(27) <= '0'; -- reserved
             -- tuning options --
@@ -2009,20 +2021,20 @@ begin
   end process counter_event;
 
   -- RISC-V-compliant counter events --
-  cnt_event(hpmcnt_event_cy_c) <= '1' when (sleep_mode = '0')           else '0'; -- cycle: active cycle
-  cnt_event(hpmcnt_event_tm_c) <=                                            '0'; -- time: not available
+  cnt_event(hpmcnt_event_cy_c) <= '1' when (sleep_mode = '0')              else '0'; -- cycle: active cycle
+  cnt_event(hpmcnt_event_tm_c) <=                                               '0'; -- time: not available
   cnt_event(hpmcnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) else '0'; -- instret: retired (==executed!) instruction
 
   -- NEORV32-specific counter events --
-  cnt_event(hpmcnt_event_compr_c)    <= '1' when (exe_engine.state = EX_EXECUTE)  and (exe_engine.ci = '1')       else '0'; -- executed compressed instruction
-  cnt_event(hpmcnt_event_wait_dis_c) <= '1' when (exe_engine.state = EX_DISPATCH) and (issue_engine.valid = "00") else '0'; -- instruction dispatch wait cycle
-  cnt_event(hpmcnt_event_wait_alu_c) <= '1' when (exe_engine.state = EX_ALU_WAIT)                                 else '0'; -- multi-cycle ALU wait cycle
-  cnt_event(hpmcnt_event_branch_c)   <= '1' when (exe_engine.state = EX_BRANCH)                                   else '0'; -- executed branch instruction
-  cnt_event(hpmcnt_event_branched_c) <= '1' when (exe_engine.state = EX_BRANCHED)                                 else '0'; -- control flow transfer
-  cnt_event(hpmcnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '0')                     else '0'; -- executed load operation
-  cnt_event(hpmcnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rw = '1')                     else '0'; -- executed store operation
-  cnt_event(hpmcnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exe_engine.state = EX_MEM_RSP)         else '0'; -- load/store memory wait cycle
-  cnt_event(hpmcnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1')                                      else '0'; -- entered trap
+  cnt_event(hpmcnt_event_compr_c)    <= '1' when (exe_engine.state = EX_EXECUTE)  and (exe_engine.ci = '1')        else '0'; -- executed compressed instruction
+  cnt_event(hpmcnt_event_wait_dis_c) <= '1' when (exe_engine.state = EX_DISPATCH) and (issue_engine.valid = "00")  else '0'; -- instruction dispatch wait cycle
+  cnt_event(hpmcnt_event_wait_alu_c) <= '1' when (exe_engine.state = EX_ALU_WAIT)                                  else '0'; -- multi-cycle ALU wait cycle
+  cnt_event(hpmcnt_event_branch_c)   <= '1' when (exe_engine.state = EX_BRANCH)                                    else '0'; -- executed branch instruction
+  cnt_event(hpmcnt_event_branched_c) <= '1' when (exe_engine.state = EX_BRANCHED)                                  else '0'; -- control flow transfer
+  cnt_event(hpmcnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and ((opcode(5) = '0') or (opcode(2) = '1')) else '0'; -- executed load operation
+  cnt_event(hpmcnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and ((opcode(5) = '1') or (opcode(2) = '1')) else '0'; -- executed store operation
+  cnt_event(hpmcnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exe_engine.state = EX_MEM_RSP)          else '0'; -- load/store memory wait cycle
+  cnt_event(hpmcnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1')                                       else '0'; -- entered trap
 
 
   -- ****************************************************************************************************************************

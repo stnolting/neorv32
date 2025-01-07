@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100806"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100808"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -128,7 +128,8 @@ package neorv32_package is
     rw    : std_ulogic; -- 0=read, 1=write
     src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
     priv  : std_ulogic; -- set if privileged (machine-mode) access
-    rvso  : std_ulogic; -- set if reservation set operation (atomic LR/SC)
+    amo   : std_ulogic; -- set if atomic memory operation
+    amoop : std_ulogic_vector(3 downto 0); -- type of atomic memory operation
     -- out-of-band signals --
     fence : std_ulogic; -- set if fence(.i) request by upstream device, single-shot
     sleep : std_ulogic; -- set if ALL upstream sources are in sleep mode
@@ -151,7 +152,8 @@ package neorv32_package is
     rw    => '0',
     src   => '0',
     priv  => '0',
-    rvso  => '0',
+    amo   => '0',
+    amoop => (others => '0'),
     fence => '0',
     sleep => '1',
     debug => '0'
@@ -434,7 +436,7 @@ package neorv32_package is
   constant csr_dcsr_c           : std_ulogic_vector(11 downto 0) := x"7b0";
   constant csr_dpc_c            : std_ulogic_vector(11 downto 0) := x"7b1";
   constant csr_dscratch0_c      : std_ulogic_vector(11 downto 0) := x"7b2";
-  -- NEORV32-specific user registers --
+  -- NEORV32-specific read/write user registers --
   constant csr_cfureg0_c        : std_ulogic_vector(11 downto 0) := x"800";
   constant csr_cfureg1_c        : std_ulogic_vector(11 downto 0) := x"801";
   constant csr_cfureg2_c        : std_ulogic_vector(11 downto 0) := x"802";
@@ -473,8 +475,11 @@ package neorv32_package is
   constant csr_mhpmcounter13h_c : std_ulogic_vector(11 downto 0) := x"b8d";
   constant csr_mhpmcounter14h_c : std_ulogic_vector(11 downto 0) := x"b8e";
   constant csr_mhpmcounter15h_c : std_ulogic_vector(11 downto 0) := x"b8f";
-  -- NEORV32-specific read-write machine registers --
---constant csr_mxstatus_c       : std_ulogic_vector(11 downto 0) := x"bc0"; -- to-be-implemented
+  -- NEORV32-specific read/write machine registers --
+  constant csr_mxiccrxd_c       : std_ulogic_vector(11 downto 0) := x"bc0";
+  constant csr_mxicctxd_c       : std_ulogic_vector(11 downto 0) := x"bc1";
+  constant csr_mxiccsr0_c       : std_ulogic_vector(11 downto 0) := x"bc2";
+  constant csr_mxiccsr1_c       : std_ulogic_vector(11 downto 0) := x"bc3";
   -- user counters/timers --
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
 --constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
@@ -491,7 +496,6 @@ package neorv32_package is
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
   -- NEORV32-specific read-only machine registers --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
---constant csr_mxisah_c         : std_ulogic_vector(11 downto 0) := x"fc1"; -- to-be-implemented
 
 -- **********************************************************************************************************
 -- CPU Control
@@ -736,7 +740,7 @@ package neorv32_package is
       RISCV_ISA_E           : boolean                        := false;
       RISCV_ISA_M           : boolean                        := false;
       RISCV_ISA_U           : boolean                        := false;
-      RISCV_ISA_Zalrsc      : boolean                        := false;
+      RISCV_ISA_Zaamo       : boolean                        := false;
       RISCV_ISA_Zba         : boolean                        := false;
       RISCV_ISA_Zbb         : boolean                        := false;
       RISCV_ISA_Zbkb        : boolean                        := false;

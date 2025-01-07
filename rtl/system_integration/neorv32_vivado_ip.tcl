@@ -6,7 +6,7 @@
 # -- -------------------------------------------------------------------------------- --
 # -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 # -- Copyright (c) NEORV32 contributors.                                              --
-# -- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+# -- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 # -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 # -- SPDX-License-Identifier: BSD-3-Clause                                            --
 # -- ================================================================================ --
@@ -161,6 +161,14 @@ proc setup_ip_gui {} {
     { CLOCK_FREQUENCY       {Clock Frequency (Hz)}  {Frequency of the clk input signal in Hz} }
   }
 
+  set group [add_group $page {Core Complex}]
+  add_params $group {
+    { DUAL_CORE_EN          {Number of CPU cores}   {} }
+  }
+  set_property widget {comboBox} [ipgui::get_guiparamspec -name "DUAL_CORE_EN" -component [ipx::current_core] ]
+  set_property value_validation_type pairs [ipx::get_user_parameters DUAL_CORE_EN -of_objects [ipx::current_core]]
+  set_property value_validation_pairs {{Single-core} false {SMP dual-core} true} [ipx::get_user_parameters DUAL_CORE_EN -of_objects [ipx::current_core]]
+
   set group [add_group $page {Boot Configuration}]
   add_params $group {
     { BOOT_MODE_SELECT      {Boot mode select}      {Processor boot configuration} }
@@ -214,7 +222,7 @@ proc setup_ip_gui {} {
     { RISCV_ISA_E         {E Extension}                           {Reduced register file size (16 registers only)} }
     { RISCV_ISA_M         {M Extension}                           {Integer multiplication and division hardware} }
     { RISCV_ISA_U         {U Extension}                           {Less-privileged user-mode} }
-    { RISCV_ISA_Zalrsc    {Zalrsc Extension}                      {Atomic reservation-set instructions} }
+    { RISCV_ISA_Zaamo     {Zaamo Extension}                       {Atomic memory operations instructions} }
     { RISCV_ISA_Zba       {Zba Extension}                         {Shifted-add bit-manipulation instructions} }
     { RISCV_ISA_Zbb       {Zbb Extension}                         {Basic bit-manipulation instructions} }
     { RISCV_ISA_Zbkb      {Zbkb Extension}                        {Bit manipulation instructions for cryptography} }

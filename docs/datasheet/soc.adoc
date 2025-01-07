@@ -226,7 +226,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `RISCV_ISA_E`           | boolean   | false         | Enable <<_e_isa_extension>> (reduced register file size).
 | `RISCV_ISA_M`           | boolean   | false         | Enable <<_m_isa_extension>> (hardware-based integer multiplication and division).
 | `RISCV_ISA_U`           | boolean   | false         | Enable <<_u_isa_extension>> (less-privileged user mode).
-| `RISCV_ISA_Zalrsc`      | boolean   | false         | Enable <<_zalrsc_isa_extension>> (atomic reservation-set operations).
+| `RISCV_ISA_Zaamo`       | boolean   | false         | Enable <<_zaamo_isa_extension>> (atomic memory operations).
 | `RISCV_ISA_Zba`         | boolean   | false         | Enable <<_zba_isa_extension>> (shifted-add bit-manipulation instructions).
 | `RISCV_ISA_Zbb`         | boolean   | false         | Enable <<_zbb_isa_extension>> (basic bit-manipulation instructions).
 | `RISCV_ISA_Zbkb`        | boolean   | false         | Enable <<_zbkb_isa_extension>> (scalar cryptography bit manipulation instructions).
@@ -576,67 +576,41 @@ explicit specific processor generic. See section <<_processor_external_bus_inter
 
 
 :sectnums:
-==== Reservation Set Controller
+==== Atomic Memory Operations Controller
 
-The reservation set controller is responsible for handling the load-reservate and store-conditional bus transaction that
-are triggered by the `lr.w` (LR) and `sc.w` (SC) instructions from the CPU's <<_zalrsc_isa_extension>>.
+The atomic memory operations (AMO) controller is responsible for handling the read-modify-write operations issued by the
+CPU's <<_zaamo_isa_extension>>. For each AMO request, the controller executes an atomic set of three operations:
 
-A "reservation" defines an address or address range that provides a guarding mechanism to support atomic accesses. A new
-reservation is registered by the LR instruction. The address provided by this instruction defines the memory location
-that is now monitored for atomic accesses. The according SC instruction evaluates the state of this reservation. If
-the reservation is still valid the write access triggered by the SC instruction is finally executed and the instruction
-return a "success" state (`rd` = 0). If the reservation has been invalidated the SC instruction will not write to memory
-and will return a "failed" state (`rd` = 1).
+.Simplified AMO Controller Operation
+[cols="^1,<3,<6"]
+[options="header",grid="rows"]
+|=======================
+| Step | Pseudo Code | Description
+| 1    | `tmp1 <= MEM[address];` | Perform a read operation accessing the addressed memory
+cell and store the loaded data into an internal buffer (`tmp1`).
+| 2    | `tmp2 <= tmp1 OP cpu_wdata` | The buffered data from the first step is processed
+using the write data provide by the CPU. The result is stored to another internal buffer (`tmp2`).
+| 3    | `MEM[address] <= tmp2;` `cpu_rdata <= tmp1;` | The data from the second buffer (`tmp2`) is
+written to the addressed memory cell. In parallel, the data from the first buffer (`tmp1` = original
+content of the addresses memory cell) is sent back to the requesting CPU.
+|=======================
 
-.Reservation Set(s) and Granule
-[NOTE]
-The reservation set controller supports only **a single** global reservation set with a **word-aligned 4-byte granule**.
+The controller performs two bus transactions: a read operations and a write operation. Only the acknowledge/error
+handshake of the last transaction is sent back to the CPU.
 
-The reservation is invalidated if...
-
-* an SC instruction is executed that accesses an address **outside** of the reservation set of the previous LR instruction.
-This SC instruction will **fail** (not writing to memory).
-* an SC instruction is executed that accesses an address **inside** of the reservation set of the previous LR instruction.
-This SC instruction will **succeed** (finally writing to memory).
-* a normal store operation accesses an address **inside** of the current reservation set (by the CPU or by the DMA).
-* a hardware reset is triggered.
-
-.Consecutive LR Instructions
-[NOTE]
-If an LR instruction is followed by another LR instruction the reservation set of the former one is overridden
-by the reservation set of the latter one.
-
-.Bus Access Errors
-[IMPORTANT]
-If the LR operation causes a bus access error (raising a load access exception) the reservation **is registered anyway**.
-If the SC operation causes a bus access error (raising a store access exception) an already registered reservation set
-**is invalidated anyway**.
-
-.Strong Semantic
-[IMPORTANT]
-The LR/SC mechanism follows the _strong semantic_ approach: the LR/SC instruction pair fails only if there is a write
-access to the referenced memory location between the LR and SC instructions (by the CPU itself or by the DMA).
-Context changes, interrupts, traps, etc. do not effect nor invalidate the reservation state at all.
+As the AMO controller is the memory-nearest instance (see <<_bus_system>>) the previously described set of operations
+cannot be interrupted. Hence, they execute in an atomic way.
 
 .Physical Memory Attributes
 [NOTE]
-The reservation set can be set for _any_ address (only constrained by the configured granularity). This also
-includes cached memory, memory-mapped IO devices and processor-external address spaces.
-
-Bus transactions triggered by the LR instruction register a new reservation set and are delegated to the adressed
-memory/device. Bus transactions triggered by the SC remove a reservation set and are forwarded to the adressed
-memory/device only if the SC operations succeeds. Otherwise, the access request is not forwarded and a local ACK is
-generated to terminate the bus transaction.
-
-.LR/SC Bus Protocol
-[NOTE]
-More information regarding the LR/SC bus transactions and the the according protocol can be found in section
-<<_bus_interface>> / <<_atomic_accesses>>.
+Atomic memory operations can be executed for _any_ address. This also includes
+cached memory, memory-mapped IO devices and processor-external address spaces.
 
 .Cache Coherency
 [IMPORTANT]
-Atomic operations **always bypass** the cache using direct/uncached accesses. Care must be taken
-to maintain data cache coherency (e.g. by using the `fence` instruction).
+Atomic operations **always bypass** the CPU's <<_processor_internal_data_cache_dcache, data cache>>
+using direct/uncached accesses. Care must be taken to maintain data cache coherency when accessing
+cached memory (e.g. by using the `fence` instruction).
 
 
 :sectnums:

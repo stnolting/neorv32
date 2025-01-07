@@ -96,7 +96,8 @@ setup according to your needs. Note that all of the following SoC modules are en
 **CPU Core**
 
 * [![RISCV-ARCHID](https://img.shields.io/badge/RISC--V%20Architecture%20ID-19-000000.svg?longCache=true&style=flat-square&logo=riscv&colorA=273274&colorB=fbb517)](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
-* RISC-V 32-bit little-endian single- or SMP-dual-core pipelined/multi-cycle modified Harvard architecture
+* RISC-V 32-bit little-endian pipelined/multi-cycle modified Harvard architecture
+* Single-core or SMP dual-core configuration (including low-latency inter-core communication)
 * configurable [instruction sets and extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions):
 \
 `RV32`
@@ -106,7 +107,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 [[`B`](https://stnolting.github.io/neorv32/#_b_isa_extension)]
 [[`U`](https://stnolting.github.io/neorv32/#_u_isa_extension)]
 [[`X`](https://stnolting.github.io/neorv32/#_x_isa_extension)]
-[[`Zalrsc`](https://stnolting.github.io/neorv32/#_zalrsc_isa_extension)]
+[[`Zaamo`](https://stnolting.github.io/neorv32/#_zaamo_isa_extension)]
 [[`Zba`](https://stnolting.github.io/neorv32/#_zba_isa_extension)]
 [[`Zbb`](https://stnolting.github.io/neorv32/#_zbb_isa_extension)]
 [[`Zbkb`](https://stnolting.github.io/neorv32/#_zbkb_isa_extension)]

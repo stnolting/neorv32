@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -308,7 +308,8 @@ begin
   dma_req_o.priv  <= priv_mode_m_c; -- DMA accesses are always privileged
   dma_req_o.src   <= '0'; -- source = data access
   dma_req_o.addr  <= engine.src_addr when (engine.state = S_READ) else engine.dst_addr;
-  dma_req_o.rvso  <= '0'; -- no reservation set operation possible
+  dma_req_o.amo   <= '0'; -- no atomic memory operation possible
+  dma_req_o.amoop <= (others => '0'); -- no atomic memory operation possible
   dma_req_o.fence <= cfg.enable and cfg.fence and engine.done; -- issue FENCE operation when transfer is done
   dma_req_o.sleep <= '1' when (engine.state = S_IDLE) else '0'; -- idle = sleep mode
   dma_req_o.debug <= '0'; -- can never ever be in debug mode

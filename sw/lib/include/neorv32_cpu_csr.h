@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -137,6 +137,12 @@ enum NEORV32_CSR_enum {
   CSR_MHPMCOUNTER14H = 0xb8e, /**< 0xb8e - mhpmcounter14h: Machine hardware performance monitor 14 counter high word */
   CSR_MHPMCOUNTER15H = 0xb8f, /**< 0xb8f - mhpmcounter15h: Machine hardware performance monitor 15 counter high word */
 
+  /* inter-core communication */
+  CSR_MXICCRXD       = 0xbc0, /**< 0xbc0 - mxiccrxd: Machine ICC link RX data */
+  CSR_MXICCTXD       = 0xbc1, /**< 0xbc1 - mxicctxd: Machine ICC link TX data */
+  CSR_MXICCSR0       = 0xbc2, /**< 0xbc1 - mxiccsr0: Machine ICC link status register 0 (#NEORV32_CSR_MXICCSR_enum) */
+  CSR_MXICCSR1       = 0xbc3, /**< 0xbc1 - mxiccsr1: Machine ICC link status register 1 (#NEORV32_CSR_MXICCSR_enum) */
+
   /* user counters and timers */
   CSR_CYCLE          = 0xc00, /**< 0xc00 - cycle:        User cycle counter low word */
   CSR_INSTRET        = 0xc02, /**< 0xc02 - instret:      User instructions-retired counter low word */
@@ -150,7 +156,7 @@ enum NEORV32_CSR_enum {
   CSR_MIMPID         = 0xf13, /**< 0xf13 - mimpid:     Machine implementation ID */
   CSR_MHARTID        = 0xf14, /**< 0xf14 - mhartid:    Machine hardware thread ID */
   CSR_MCONFIGPTR     = 0xf15, /**< 0xf15 - mconfigptr: Machine configuration pointer register */
-  CSR_MXISA          = 0xfc0  /**< 0xfc0 - mxisa:      Machine extended ISA and extensions (#NEORV32_CSR_XISA_enum) */
+  CSR_MXISA          = 0xfc0  /**< 0xfc0 - mxisa:      Machine extended ISA and extensions (#NEORV32_CSR_MXISA_enum) */
 };
 
 
@@ -302,7 +308,7 @@ enum NEORV32_CSR_MISA_enum {
 /**********************************************************************//**
  * CPU mxisa CSR (r/-): Machine extended instruction set extensions (NEORV32-specific)
  **************************************************************************/
-enum NEORV32_CSR_XISA_enum {
+enum NEORV32_CSR_MXISA_enum {
   // ISA (sub-)extensions
   CSR_MXISA_ZICSR     =  0, /**< CPU mxisa CSR  (0): privileged architecture (r/-)*/
   CSR_MXISA_ZIFENCEI  =  1, /**< CPU mxisa CSR  (1): instruction stream sync (r/-)*/
@@ -329,7 +335,7 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_ZBA       = 22, /**< CPU mxisa CSR (22): shifted-add bit-manipulation operations (r/-)*/
   CSR_MXISA_ZBB       = 23, /**< CPU mxisa CSR (23): basic bit-manipulation operations (r/-)*/
   CSR_MXISA_ZBS       = 24, /**< CPU mxisa CSR (24): single-bit bit-manipulation operations (r/-)*/
-  CSR_MXISA_ZALRSC    = 25, /**< CPU mxisa CSR (25): atomic reservation-set operations (r/-)*/
+  CSR_MXISA_ZAAMO     = 25, /**< CPU mxisa CSR (25): atomic memory operations (r/-)*/
   // Tuning options
   CSR_MXISA_CLKGATE   = 27, /**< CPU mxisa CSR (27): clock gating enabled (r/-)*/
   CSR_MXISA_RFHWRST   = 28, /**< CPU mxisa CSR (28): register file has full hardware reset (r/-)*/
@@ -337,6 +343,18 @@ enum NEORV32_CSR_XISA_enum {
   CSR_MXISA_FASTSHIFT = 30, /**< CPU mxisa CSR (30): parallel logic for shifts (barrel shifters) (r/-)*/
   // Misc
   CSR_MXISA_IS_SIM    = 31  /**< CPU mxisa CSR (31): this might be a simulation when set (r/-)*/
+};
+
+
+/**********************************************************************//**
+ * CPU mxiccsr CSR (r/w): Inter-core communication control and status (NEORV32-specific)
+ **************************************************************************/
+enum NEORV32_CSR_MXICCSR_enum {
+  CSR_MXICCSR_LINK_LSB =  0, /**< CPU mxiccsr CSR (0): link/hart select LSB (r/w)*/
+  CSR_MXICCSR_LINK_MSB =  1, /**< CPU mxiccsr CSR (1): link/hart select MSB (r/w)*/
+
+  CSR_MXICCSR_TX_FREE  = 30, /**< CPU mxiccsr CSR (30): Free space in selected link's TX FIFO (r/-)*/
+  CSR_MXICCSR_RX_AVAIL = 31  /**< CPU mxiccsr CSR (31): Data available in selected link's RX FIFO (r/-)*/
 };
 
 

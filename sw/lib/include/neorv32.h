@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -252,17 +252,14 @@ typedef union {
 // helper functions
 #include "neorv32_aux.h"
 
-// legacy compatibility layer
-#include "neorv32_legacy.h"
-
 // CPU core
 #include "neorv32_cpu.h"
-#include "neorv32_cpu_amo.h"
 #include "neorv32_cpu_csr.h"
 #include "neorv32_cpu_cfu.h"
 
 // NEORV32 runtime environment
 #include "neorv32_rte.h"
+#include "neorv32_smp.h"
 
 // IO/peripheral devices
 #include "neorv32_cfs.h"

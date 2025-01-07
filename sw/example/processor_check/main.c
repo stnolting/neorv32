@@ -85,7 +85,6 @@ volatile uint32_t constr_test = 0; // for constructor test
 
 volatile uint32_t dma_src; // dma source & destination data
 volatile uint32_t store_access_addr[2]; // variable to test store accesses
-volatile uint32_t amo_var; // variable for testing atomic memory accesses
 volatile uint32_t __attribute__((aligned(4))) pmp_access[2]; // variable to test pmp
 volatile uint32_t trap_cnt; // number of triggered traps
 volatile uint32_t pmp_num_regions; // number of implemented pmp regions
@@ -572,10 +571,10 @@ int main() {
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
   tmp_a = trap_cnt; // current number of traps
-
   // try executing some illegal instructions
   asm volatile (".word 0x58007053"); // unsupported fsqrt.s x0, x0
-  asm volatile (".word 0x0e00202f"); // unsupported amoswap.w x0, x0, (x0)
+  asm volatile (".word 0x0e00302f"); // unsupported amoswap.D x0, x0, (x0)
+  asm volatile (".word 0x1000202f"); // unsupported lr.w x0, (x0)
   asm volatile (".word 0x34004073"); // illegal CSR access funct3 (using mscratch)
   asm volatile (".word 0x30200077"); // mret with illegal opcode
   asm volatile (".word 0x3020007f"); // mret with illegal opcode
@@ -604,7 +603,7 @@ int main() {
     invalid_instr = 0x08812681; // mtinst: pre-decompressed; clear bit 1 if compressed instruction
   }
   else { // C extension disabled
-    tmp_a += 15;
+    tmp_a += 16;
     invalid_instr = 0xfe002fe3;
   }
 
@@ -1977,88 +1976,6 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test atomic lr/sc memory access - failing access
-  // ----------------------------------------------------------
-#if defined __riscv_atomic
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
-  PRINT_STANDARD("failing) ");
-
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
-    cnt_test++;
-
-    // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
-    //        it before/after making "normal" load/store operations
-
-    amo_var = 0x00cafe00; // initialize
-    asm volatile ("fence"); // flush/reload d-cache
-
-    tmp_a = neorv32_cpu_amolr((uint32_t)&amo_var);
-    amo_var = 0x10cafe00; // break reservation
-    asm volatile ("fence"); // flush/reload d-cache
-    tmp_b = neorv32_cpu_amosc((uint32_t)&amo_var, 0xaaaaaaaa);
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc); // another SC: must fail
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0); // another SC: must fail; no bus exception!
-    asm volatile ("fence"); // flush/reload d-cache
-
-    if ((tmp_a   == 0x00cafe00) && // correct LR.W result
-        (amo_var == 0x10cafe00) && // atomic variable NOT updates by SC.W
-        (tmp_b   == 0x00000007) && // SC.W[2] failed, SC.W[1] failed, SC.W[0] failed
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
-#endif
-
-
-  // ----------------------------------------------------------
-  // Test atomic lr/sc memory access - succeeding access
-  // ----------------------------------------------------------
-#if defined __riscv_atomic
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
-  PRINT_STANDARD("succeed) ");
-
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
-    cnt_test++;
-
-    // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
-    //        it before/after making "normal" load/store operations
-
-    amo_var = 0x00abba00; // initialize
-    asm volatile ("fence"); // flush/reload d-cache
-
-    tmp_a = neorv32_cpu_amolr((uint32_t)&amo_var);
-    asm volatile ("fence"); // flush/reload d-cache
-    neorv32_cpu_load_unsigned_word((uint32_t)&amo_var); // dummy read, must not alter reservation set state
-    tmp_b = neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc);
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc); // another SC: must fail
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0); // another SC: must fail; no bus exception!
-    asm volatile ("fence"); // flush/reload d-cache
-
-    if ((tmp_a   == 0x00abba00) && // correct LR.W result
-        (amo_var == 0xcccccccc) && // atomic variable WAS updates by SC.W
-        (tmp_b   == 0x00000003) && // SC.W[2] succeeded, SC.W[1] failed, SC.W[0] failed
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
-#endif
-
-
-  // ----------------------------------------------------------
   // Test physical memory protection
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
@@ -2224,27 +2141,22 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Dual-core test
+  // SMP dual-core test
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Dual-core ", cnt_test);
+  PRINT_STANDARD("[%i] SMP dual-core boot ", cnt_test);
 
-  if ((neorv32_cpu_csr_read(CSR_MHARTID) == 0) && // we need to be core 0
-      (NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] > 1) && // we need at least two cores
+  if ((NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] > 1) && // we need at least two cores
       (neorv32_clint_available() != 0)) { // we need the CLINT
     cnt_test++;
 
     // enable machine software interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MSIE);
 
-    // wait some time for the IRQ to arrive the CPU
-    asm volatile ("nop");
-    asm volatile ("nop");
+    // launch core 1
+    tmp_a = (uint32_t)neorv32_smp_launch(1, core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
 
-    // launch core1
-    tmp_a = (uint32_t)neorv32_rte_smp_launch(core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
-
-    // wait for software interrupt in sleep mode
+    // wait for software interrupt (issued by core 1) in sleep mode
     neorv32_cpu_sleep();
 
     // disable interrupts and clear software interrupt

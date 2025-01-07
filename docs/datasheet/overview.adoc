@@ -194,6 +194,7 @@ neorv32_top.vhd                 - NEORV32 PROCESSOR/SOC TOP ENTITY
 ││└neorv32_cpu_cp_shifter.vhd   - Bit-shift co-processor (base ISA)
 │├neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
 ││└neorv32_cpu_decompressor.vhd - Compressed instructions decoder (C ext.)
+│├neorv32_cpu_icc.vhd           - Inter-core communication unit
 │├neorv32_cpu_lsu.vhd           - Load/store unit
 │├neorv32_cpu_pmp.vhd           - Physical memory protection unit (Smpmp ext.)
 │└neorv32_cpu_regfile.vhd       - Data register file

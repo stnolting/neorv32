@@ -67,7 +67,6 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_cfs.c`     | `neorv32_cfs.h`        | <<_custom_functions_subsystem_cfs>> HAL
 | `neorv32_clint.c`   | `neorv32_clint.h`      | <<_core_local_interruptor_clint>> HAL
 | `neorv32_cpu.c`     | `neorv32_cpu.h`        | <<_neorv32_central_processing_unit_cpu>> HAL
-| `neorv32_cpu_amo.c` | `neorv32_cpu_amo.h`    | Emulation functions for the read-modify-write  <<_zalrsc_isa_extension>> / `A` instructions
 |                     | `neorv32_cpu_csr.h`    | <<_control_and_status_registers_csrs>> definitions
 | `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | <<_custom_functions_unit_cfu>> HAL
 | `neorv32_crc.c`     | `neorv32_crc.h`        | <<_cyclic_redundancy_check_crc>> HAL
@@ -81,8 +80,9 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_rte.c`     | `neorv32_rte.h`        | <<_neorv32_runtime_environment>>
 | `neorv32_sdi.c`     | `neorv32_sdi.h`        | <<_serial_data_interface_controller_sdi>> HAL
 | `neorv32_slink.c`   | `neorv32_slink.h`      | <<_stream_link_interface_slink>> HAL
+| `neorv32_smp.c`     | `neorv32_smp.h`        | HAL for the SMP <<_dual_core_configuration>>
 | `neorv32_spi.c`     | `neorv32_spi.h`        | <<_serial_peripheral_interface_controller_spi>> HAL
-| `neorv32_sysinfo.c` | `neorv32_sysinfo.h`    | <<_system_configuration_information_memory_sysinfo>> HAL
+|                     | `neorv32_sysinfo.h`    | <<_system_configuration_information_memory_sysinfo>> HAL
 | `neorv32_trng.c`    | `neorv32_trng.h`       | <<_true_random_number_generator_trng>> HAL
 | `neorv32_twd.c`     | `neorv32_twd.h`        | <<_two_wire_serial_device_controller_twd>> HAL
 | `neorv32_twi.c`     | `neorv32_twi.h`        | <<_two_wire_serial_interface_controller_twi>> HAL

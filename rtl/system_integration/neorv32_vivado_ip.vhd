@@ -8,7 +8,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -26,116 +26,118 @@ entity neorv32_vivado_ip is
     -- Configuration Generics
     -- ------------------------------------------------------------
     -- Clocking --
-    CLOCK_FREQUENCY       : natural                       := 100_000_000;
+    CLOCK_FREQUENCY       : natural                        := 100_000_000;
+    -- Dual-Core Configuration --
+    DUAL_CORE_EN          : boolean                        := false;
     -- Identification --
-    JEDEC_ID              : std_logic_vector(10 downto 0) := "00000000000";
+    JEDEC_ID              : std_logic_vector(10 downto 0)  := "00000000000";
     -- Boot Configuration --
-    BOOT_MODE_SELECT      : natural range 0 to 2          := 0;
+    BOOT_MODE_SELECT      : natural range 0 to 2           := 0;
     BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000";
     -- On-Chip Debugger (OCD) --
-    OCD_EN                : boolean                       := false;
-    OCD_AUTHENTICATION    : boolean                       := false;
+    OCD_EN                : boolean                        := false;
+    OCD_AUTHENTICATION    : boolean                        := false;
     -- RISC-V CPU Extensions --
-    RISCV_ISA_C           : boolean                       := false;
-    RISCV_ISA_E           : boolean                       := false;
-    RISCV_ISA_M           : boolean                       := false;
-    RISCV_ISA_U           : boolean                       := false;
-    RISCV_ISA_Zalrsc      : boolean                       := false;
-    RISCV_ISA_Zba         : boolean                       := false;
-    RISCV_ISA_Zbb         : boolean                       := false;
-    RISCV_ISA_Zbkb        : boolean                       := false;
-    RISCV_ISA_Zbkc        : boolean                       := false;
-    RISCV_ISA_Zbkx        : boolean                       := false;
-    RISCV_ISA_Zbs         : boolean                       := false;
-    RISCV_ISA_Zfinx       : boolean                       := false;
-    RISCV_ISA_Zicntr      : boolean                       := false;
-    RISCV_ISA_Zicond      : boolean                       := false;
-    RISCV_ISA_Zihpm       : boolean                       := false;
-    RISCV_ISA_Zmmul       : boolean                       := false;
-    RISCV_ISA_Zknd        : boolean                       := false;
-    RISCV_ISA_Zkne        : boolean                       := false;
-    RISCV_ISA_Zknh        : boolean                       := false;
-    RISCV_ISA_Zksed       : boolean                       := false;
-    RISCV_ISA_Zksh        : boolean                       := false;
-    RISCV_ISA_Zxcfu       : boolean                       := false;
+    RISCV_ISA_C           : boolean                        := false;
+    RISCV_ISA_E           : boolean                        := false;
+    RISCV_ISA_M           : boolean                        := false;
+    RISCV_ISA_U           : boolean                        := false;
+    RISCV_ISA_Zaamo       : boolean                        := false;
+    RISCV_ISA_Zba         : boolean                        := false;
+    RISCV_ISA_Zbb         : boolean                        := false;
+    RISCV_ISA_Zbkb        : boolean                        := false;
+    RISCV_ISA_Zbkc        : boolean                        := false;
+    RISCV_ISA_Zbkx        : boolean                        := false;
+    RISCV_ISA_Zbs         : boolean                        := false;
+    RISCV_ISA_Zfinx       : boolean                        := false;
+    RISCV_ISA_Zicntr      : boolean                        := false;
+    RISCV_ISA_Zicond      : boolean                        := false;
+    RISCV_ISA_Zihpm       : boolean                        := false;
+    RISCV_ISA_Zmmul       : boolean                        := false;
+    RISCV_ISA_Zknd        : boolean                        := false;
+    RISCV_ISA_Zkne        : boolean                        := false;
+    RISCV_ISA_Zknh        : boolean                        := false;
+    RISCV_ISA_Zksed       : boolean                        := false;
+    RISCV_ISA_Zksh        : boolean                        := false;
+    RISCV_ISA_Zxcfu       : boolean                        := false;
     -- Tuning Options --
-    CPU_FAST_MUL_EN       : boolean                       := false;
-    CPU_FAST_SHIFT_EN     : boolean                       := false;
-    CPU_RF_HW_RST_EN      : boolean                       := false;
+    CPU_FAST_MUL_EN       : boolean                        := false;
+    CPU_FAST_SHIFT_EN     : boolean                        := false;
+    CPU_RF_HW_RST_EN      : boolean                        := false;
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS       : natural range 0 to 16         := 0;
-    PMP_MIN_GRANULARITY   : natural                       := 4;
-    PMP_TOR_MODE_EN       : boolean                       := false;
-    PMP_NAP_MODE_EN       : boolean                       := false;
+    PMP_NUM_REGIONS       : natural range 0 to 16          := 0;
+    PMP_MIN_GRANULARITY   : natural                        := 4;
+    PMP_TOR_MODE_EN       : boolean                        := false;
+    PMP_NAP_MODE_EN       : boolean                        := false;
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS          : natural range 0 to 13         := 0;
-    HPM_CNT_WIDTH         : natural range 0 to 64         := 40;
+    HPM_NUM_CNTS          : natural range 0 to 13          := 0;
+    HPM_CNT_WIDTH         : natural range 0 to 64          := 40;
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN       : boolean                       := false;
-    MEM_INT_IMEM_SIZE     : natural                       := 16384;
+    MEM_INT_IMEM_EN       : boolean                        := false;
+    MEM_INT_IMEM_SIZE     : natural                        := 16384;
     -- Internal Data memory --
-    MEM_INT_DMEM_EN       : boolean                       := false;
-    MEM_INT_DMEM_SIZE     : natural                       := 8192;
+    MEM_INT_DMEM_EN       : boolean                        := false;
+    MEM_INT_DMEM_SIZE     : natural                        := 8192;
     -- Internal Cache memory --
-    ICACHE_EN             : boolean                       := false;
-    ICACHE_NUM_BLOCKS     : natural range 1 to 256        := 4;
-    ICACHE_BLOCK_SIZE     : natural range 4 to 2**16      := 64;
+    ICACHE_EN             : boolean                        := false;
+    ICACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
+    ICACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
     -- Internal Data Cache (dCACHE) --
-    DCACHE_EN             : boolean                       := false;
-    DCACHE_NUM_BLOCKS     : natural range 1 to 256        := 4;
-    DCACHE_BLOCK_SIZE     : natural range 4 to 2**16      := 64;
+    DCACHE_EN             : boolean                        := false;
+    DCACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
+    DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
     -- External Bus Interface --
-    XBUS_EN               : boolean                       := true;
-    XBUS_TIMEOUT          : natural range 8 to 65536      := 64;
-    XBUS_REGSTAGE_EN      : boolean                       := false;
-    XBUS_CACHE_EN         : boolean                       := false;
-    XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256        := 8;
-    XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16      := 256;
+    XBUS_EN               : boolean                        := true;
+    XBUS_TIMEOUT          : natural range 8 to 65536       := 64;
+    XBUS_REGSTAGE_EN      : boolean                        := false;
+    XBUS_CACHE_EN         : boolean                        := false;
+    XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 8;
+    XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16       := 256;
     -- Execute in-place module (XIP) --
-    XIP_EN                : boolean                       := false;
-    XIP_CACHE_EN          : boolean                       := false;
-    XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256        := 8;
-    XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16      := 256;
+    XIP_EN                : boolean                        := false;
+    XIP_CACHE_EN          : boolean                        := false;
+    XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256         := 8;
+    XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16       := 256;
     -- External Interrupts Controller (XIRQ) --
-    XIRQ_EN               : boolean                       := false;
-    XIRQ_NUM_CH           : natural range 1 to 32         := 1; -- variable-sized ports must be at least 0 downto 0; #974
+    XIRQ_EN               : boolean                        := false;
+    XIRQ_NUM_CH           : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
     -- Processor peripherals --
-    IO_GPIO_EN            : boolean                       := false;
-    IO_GPIO_IN_NUM        : natural range 1 to 64         := 1; -- variable-sized ports must be at least 0 downto 0; #974
-    IO_GPIO_OUT_NUM       : natural range 1 to 64         := 1;
-    IO_CLINT_EN           : boolean                       := false;
-    IO_UART0_EN           : boolean                       := false;
-    IO_UART0_RX_FIFO      : natural range 1 to 2**15      := 1;
-    IO_UART0_TX_FIFO      : natural range 1 to 2**15      := 1;
-    IO_UART1_EN           : boolean                       := false;
-    IO_UART1_RX_FIFO      : natural range 1 to 2**15      := 1;
-    IO_UART1_TX_FIFO      : natural range 1 to 2**15      := 1;
-    IO_SPI_EN             : boolean                       := false;
-    IO_SPI_FIFO           : natural range 1 to 2**15      := 1;
-    IO_SDI_EN             : boolean                       := false;
-    IO_SDI_FIFO           : natural range 1 to 2**15      := 1;
-    IO_TWI_EN             : boolean                       := false;
-    IO_TWI_FIFO           : natural range 1 to 2**15      := 1;
-    IO_TWD_EN             : boolean                       := false;
-    IO_TWD_FIFO           : natural range 1 to 2**15      := 1;
-    IO_PWM_EN             : boolean                       := false;
-    IO_PWM_NUM_CH         : natural range 1 to 16         := 1; -- variable-sized ports must be at least 0 downto 0; #974
-    IO_WDT_EN             : boolean                       := false;
-    IO_TRNG_EN            : boolean                       := false;
-    IO_TRNG_FIFO          : natural range 1 to 2**15      := 1;
-    IO_CFS_EN             : boolean                       := false;
-    IO_CFS_CONFIG         : std_logic_vector(31 downto 0) := x"00000000";
-    IO_CFS_IN_SIZE        : natural range 1 to 4096       := 32; -- variable-sized ports must be at least 0 downto 0; #974
-    IO_CFS_OUT_SIZE       : natural range 1 to 4096       := 32; -- variable-sized ports must be at least 0 downto 0; #974
-    IO_NEOLED_EN          : boolean                       := false;
-    IO_NEOLED_TX_FIFO     : natural range 1 to 2**15      := 1;
-    IO_GPTMR_EN           : boolean                       := false;
-    IO_ONEWIRE_EN         : boolean                       := false;
-    IO_DMA_EN             : boolean                       := false;
+    IO_GPIO_EN            : boolean                        := false;
+    IO_GPIO_IN_NUM        : natural range 1 to 64          := 1; -- variable-sized ports must be at least 0 downto 0; #974
+    IO_GPIO_OUT_NUM       : natural range 1 to 64          := 1;
+    IO_CLINT_EN           : boolean                        := false;
+    IO_UART0_EN           : boolean                        := false;
+    IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;
+    IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;
+    IO_UART1_EN           : boolean                        := false;
+    IO_UART1_RX_FIFO      : natural range 1 to 2**15       := 1;
+    IO_UART1_TX_FIFO      : natural range 1 to 2**15       := 1;
+    IO_SPI_EN             : boolean                        := false;
+    IO_SPI_FIFO           : natural range 1 to 2**15       := 1;
+    IO_SDI_EN             : boolean                        := false;
+    IO_SDI_FIFO           : natural range 1 to 2**15       := 1;
+    IO_TWI_EN             : boolean                        := false;
+    IO_TWI_FIFO           : natural range 1 to 2**15       := 1;
+    IO_TWD_EN             : boolean                        := false;
+    IO_TWD_FIFO           : natural range 1 to 2**15       := 1;
+    IO_PWM_EN             : boolean                        := false;
+    IO_PWM_NUM_CH         : natural range 1 to 16          := 1; -- variable-sized ports must be at least 0 downto 0; #974
+    IO_WDT_EN             : boolean                        := false;
+    IO_TRNG_EN            : boolean                        := false;
+    IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
+    IO_CFS_EN             : boolean                        := false;
+    IO_CFS_CONFIG         : std_logic_vector(31 downto 0)  := x"00000000";
+    IO_CFS_IN_SIZE        : natural range 1 to 4096        := 32; -- variable-sized ports must be at least 0 downto 0; #974
+    IO_CFS_OUT_SIZE       : natural range 1 to 4096        := 32; -- variable-sized ports must be at least 0 downto 0; #974
+    IO_NEOLED_EN          : boolean                        := false;
+    IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;
+    IO_GPTMR_EN           : boolean                        := false;
+    IO_ONEWIRE_EN         : boolean                        := false;
+    IO_DMA_EN             : boolean                        := false;
     IO_SLINK_EN           : boolean                        := false;
-    IO_SLINK_RX_FIFO      : natural range 1 to 2**15      := 1;
-    IO_SLINK_TX_FIFO      : natural range 1 to 2**15      := 1;
-    IO_CRC_EN             : boolean                       := false
+    IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;
+    IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;
+    IO_CRC_EN             : boolean                        := false
   );
   port (
     -- ------------------------------------------------------------
@@ -353,6 +355,8 @@ begin
   generic map (
     -- Clocking --
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
+    -- Dual-Core Configuration --
+    DUAL_CORE_EN          => DUAL_CORE_EN,
     -- Identification --
     JEDEC_ID              => std_ulogic_vector(JEDEC_ID),
     -- Boot Configuration --
@@ -366,7 +370,7 @@ begin
     RISCV_ISA_E           => RISCV_ISA_E,
     RISCV_ISA_M           => RISCV_ISA_M,
     RISCV_ISA_U           => RISCV_ISA_U,
-    RISCV_ISA_Zalrsc      => RISCV_ISA_Zalrsc,
+    RISCV_ISA_Zaamo       => RISCV_ISA_Zaamo,
     RISCV_ISA_Zba         => RISCV_ISA_Zba,
     RISCV_ISA_Zbb         => RISCV_ISA_Zbb,
     RISCV_ISA_Zbkb        => RISCV_ISA_Zbkb,

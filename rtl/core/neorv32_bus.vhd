@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -172,7 +172,8 @@ begin
   -- Request Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   x_req_o.addr  <= a_req_i.addr  when (sel = '0') else b_req_i.addr;
-  x_req_o.rvso  <= a_req_i.rvso  when (sel = '0') else b_req_i.rvso;
+  x_req_o.amo   <= a_req_i.amo   when (sel = '0') else b_req_i.amo;
+  x_req_o.amoop <= a_req_i.amoop when (sel = '0') else b_req_i.amoop;
   x_req_o.priv  <= a_req_i.priv  when (sel = '0') else b_req_i.priv;
   x_req_o.src   <= a_req_i.src   when (sel = '0') else b_req_i.src;
   x_req_o.rw    <= a_req_i.rw    when (sel = '0') else b_req_i.rw;
@@ -210,7 +211,7 @@ end neorv32_bus_switch_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -300,7 +301,7 @@ end neorv32_bus_reg_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -486,7 +487,7 @@ end neorv32_bus_gateway_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -738,151 +739,165 @@ end neorv32_bus_io_switch_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 SoC - Processor Bus Infrastructure: Reservation Set Control              --
+-- NEORV32 SoC - Processor Bus Infrastructure: Atomic Memory Operations Controller  --
 -- -------------------------------------------------------------------------------- --
--- Reservation set controller for the A (atomic) ISA extension's LR.W               --
--- (load-reservate) and SC.W (store-conditional) instructions. Only a single        --
--- reservation set (granularity = 4 bytes) is supported. T                          --
+-- Read-modify-write controller for the RISC-V A/Zaamp ISA extension.               --
+-- [WARNING] Load-reservate and store-conditional operations (Zalrsc ISA extension) --
+-- are NOT supported!                                                               --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_bus_reservation_set is
+entity neorv32_bus_amo_ctrl is
   port (
     -- global control --
-    clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic; -- global reset, low-active, async
-    -- external status and control --
-    rvs_addr_o  : out std_ulogic_vector(31 downto 0);
-    rvs_valid_o : out std_ulogic;
-    rvs_clear_i : in  std_ulogic;
+    clk_i      : in  std_ulogic; -- global clock, rising edge
+    rstn_i     : in  std_ulogic; -- global reset, low-active, async
     -- core port --
-    core_req_i  : in  bus_req_t;
-    core_rsp_o  : out bus_rsp_t;
+    core_req_i : in  bus_req_t;
+    core_rsp_o : out bus_rsp_t;
     -- system port --
-    sys_req_o   : out bus_req_t;
-    sys_rsp_i   : in  bus_rsp_t
+    sys_req_o  : out bus_req_t;
+    sys_rsp_i  : in  bus_rsp_t
   );
-end neorv32_bus_reservation_set;
+end neorv32_bus_amo_ctrl;
 
-architecture neorv32_bus_reservation_set_rtl of neorv32_bus_reservation_set is
+architecture neorv32_bus_amo_ctrl_rtl of neorv32_bus_amo_ctrl is
 
-  -- reservation set --
-  type rsvs_t is record
-    state : std_ulogic_vector(1 downto 0);
-    addr  : std_ulogic_vector(31 downto 2); -- reservated address; 4-byte granularity
-    valid : std_ulogic;
-    match : std_ulogic;
+  -- arbiter --
+  type state_t is (S_IDLE, S_READ_WAIT, S_EXECUTE, S_WRITE, S_WRITE_WAIT);
+  type arbiter_t is record
+    state : state_t;
+    cmd   : std_ulogic_vector(3 downto 0);
+    rdata : std_ulogic_vector(31 downto 0);
+    wdata : std_ulogic_vector(31 downto 0);
+    ack   : std_ulogic;
   end record;
-  signal rsvs : rsvs_t;
+  signal arbiter, arbiter_nxt : arbiter_t;
 
-  -- ACK override for failed SC.W --
-  signal ack_local : std_ulogic;
+  -- internal data ALU --
+  signal alu_res : std_ulogic_vector(31 downto 0);
+
+  -- comparator --
+  signal cmp_opa  : std_ulogic_vector(32 downto 0);
+  signal cmp_opb  : std_ulogic_vector(32 downto 0);
+  signal cmp_less : std_ulogic;
+  signal cmp_res  : std_ulogic_vector(31 downto 0);
 
 begin
 
-  -- Reservation Set Control ----------------------------------------------------------------
+  -- Arbiter Sync ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rvs_control: process(rstn_i, clk_i)
+  arbiter_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      rsvs.state <= "00";
-      rsvs.addr  <= (others => '0');
+      arbiter.state <= S_IDLE;
+      arbiter.cmd   <= (others => '0');
+      arbiter.rdata <= (others => '0');
+      arbiter.wdata <= (others => '0');
     elsif rising_edge(clk_i) then
-      case rsvs.state is
+      arbiter <= arbiter_nxt;
+    end if;
+  end process arbiter_sync;
 
-        when "10" => -- active reservation: wait for condition to invalidate reservation
-        -- --------------------------------------------------------------------
-          if (core_req_i.stb = '1') and (core_req_i.rw = '0') and (core_req_i.rvso = '1') then -- another LR instruction overriding the current reservation
-            rsvs.addr <= core_req_i.addr(31 downto 2);
-          end if;
-          --
-          if (rvs_clear_i = '1') then -- external clear request (highest priority)
-            rsvs.state <= "00"; -- invalidate reservation
-          elsif (core_req_i.stb = '1') and (core_req_i.rw = '1') then -- write access
 
-            if (core_req_i.rvso = '1') then -- this is a SC operation
-              if (rsvs.match = '1') then -- SC to reservated address
-                rsvs.state <= "11"; -- execute SC instruction (reservation still valid)
-              else -- SC to any other address
-                rsvs.state <= "00"; -- invalidate reservation
-              end if;
+  -- Arbiter Comb ---------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  arbiter_comb: process(arbiter, core_req_i, sys_rsp_i)
+  begin
+    arbiter_nxt <= arbiter; -- defaults
+    case arbiter.state is
 
-            elsif (rsvs.match = '1') then -- normal write to reservated address
-              rsvs.state <= "00"; -- invalidate reservation
-            end if;
+      when S_IDLE => -- wait for AMO request; pass-through current request
+      -- ------------------------------------------------------------
+        if (core_req_i.stb = '1') and (core_req_i.amo = '1') then
+          arbiter_nxt.cmd   <= core_req_i.amoop;
+          arbiter_nxt.wdata <= core_req_i.data;
+          arbiter_nxt.state <= S_READ_WAIT;
+        end if;
 
-          end if;
+      when S_READ_WAIT => -- wait for device read-access to complete
+      -- ------------------------------------------------------------
+        arbiter_nxt.rdata <= sys_rsp_i.data;
+        if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
+          arbiter_nxt.state <= S_EXECUTE;
+        end if;
 
-        when "11" => -- active reservation: invalidate reservation at the end of bus access
-        -- --------------------------------------------------------------------
-          if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
-            rsvs.state <= "00";
-          end if;
+      when S_EXECUTE => -- execute atomic data operation
+      -- ------------------------------------------------------------
+        arbiter_nxt.state <= S_WRITE;
 
-        when others => -- "0-" no active reservation: wait for new registration request
-        -- --------------------------------------------------------------------
-          if (core_req_i.stb = '1') and (core_req_i.rw = '0') and (core_req_i.rvso = '1') then -- load-reservate instruction
-            rsvs.addr  <= core_req_i.addr(31 downto 2);
-            rsvs.state <= "10";
-          end if;
+      when S_WRITE => -- wait operation result to device
+      -- ------------------------------------------------------------
+        arbiter_nxt.state <= S_WRITE_WAIT;
 
+      when S_WRITE_WAIT => -- wait for device write-access to complete
+      -- ------------------------------------------------------------
+        if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
+          arbiter_nxt.state <= S_IDLE;
+        end if;
+
+      when others => -- undefined
+      -- ------------------------------------------------------------
+        arbiter_nxt.state <= S_IDLE;
+
+    end case;
+  end process arbiter_comb;
+
+  -- request switch --
+  sys_req_o.addr  <= core_req_i.addr;
+  sys_req_o.data  <= alu_res when (arbiter.state = S_WRITE) or (arbiter.state = S_WRITE_WAIT) else core_req_i.data;
+  sys_req_o.ben   <= core_req_i.ben;
+  sys_req_o.stb   <= '1' when (arbiter.state = S_WRITE) else core_req_i.stb;
+  sys_req_o.rw    <= '1' when (arbiter.state = S_WRITE) or (arbiter.state = S_WRITE_WAIT) else core_req_i.rw;
+  sys_req_o.src   <= core_req_i.src;
+  sys_req_o.priv  <= core_req_i.priv;
+  sys_req_o.amo   <= core_req_i.amo; -- set during the entire read-modify-write operation
+  sys_req_o.amoop <= (others => '0'); -- the specific AMO type should not matter after this point
+  sys_req_o.fence <= core_req_i.fence;
+  sys_req_o.sleep <= core_req_i.sleep;
+  sys_req_o.debug <= core_req_i.debug;
+
+  -- response switch --
+  core_rsp_o.data <= sys_rsp_i.data when (arbiter.state = S_IDLE) else arbiter.rdata;
+  core_rsp_o.err  <= sys_rsp_i.err  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) else '0';
+  core_rsp_o.ack  <= sys_rsp_i.ack  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) else '0';
+
+
+  -- Arbiter Sync ---------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  amo_alu: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      alu_res <= (others => '0');
+    elsif rising_edge(clk_i) then
+      case arbiter.cmd(2 downto 0) is
+        when "000"  => alu_res <= arbiter.wdata; -- AMOSWAP
+        when "001"  => alu_res <= std_ulogic_vector(unsigned(arbiter.rdata) + unsigned(arbiter.wdata)); -- AMOADD
+        when "010"  => alu_res <= arbiter.rdata xor arbiter.wdata; -- AMOXOR
+        when "011"  => alu_res <= arbiter.rdata and arbiter.wdata; -- AMOAND
+        when "100"  => alu_res <= arbiter.rdata or arbiter.wdata; -- AMOOR
+        when others => alu_res <= cmp_res; -- AMOMIN[U] / AMOMAX[U]
       end case;
     end if;
-  end process rvs_control;
+  end process amo_alu;
 
-  -- address match? --
-  rsvs.match <= '1' when (core_req_i.addr(31 downto 2) = rsvs.addr) else '0';
-
-  -- reservation valid? --
-  rsvs.valid <= rsvs.state(1);
-
-  -- status for external system --
-  rvs_valid_o <= rsvs.valid;
-  rvs_addr_o  <= rsvs.addr & "00";
+  -- comparator logic (min/max and signed/unsigned) --
+  cmp_opa  <= (arbiter.rdata(arbiter.rdata'left) and arbiter.cmd(3)) & arbiter.rdata; -- sign-extend if signed operation
+  cmp_opb  <= (arbiter.wdata(arbiter.wdata'left) and arbiter.cmd(3)) & arbiter.wdata; -- sign-extend if signed operation
+  cmp_less <= '1' when (signed(cmp_opa) < signed(cmp_opb)) else '0';
+  cmp_res  <= cmp_opa(31 downto 0) when ((cmp_less xor arbiter.cmd(0)) = '1') else cmp_opb(31 downto 0);
 
 
-  -- System Bus Interface -------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-
-  -- gated request --
-  bus_request: process(core_req_i, rsvs.valid)
-  begin
-    sys_req_o <= core_req_i;
-    if (core_req_i.rvso = '1') and (core_req_i.rw = '1') then -- SC operation
-      sys_req_o.stb <= core_req_i.stb and rsvs.valid; -- write allowed if reservation still valid
-    else -- normal memory request or LR
-      sys_req_o.stb <= core_req_i.stb;
-    end if;
-  end process bus_request;
-
-  -- if a SC.W instruction fails there will be no write-request being send to the bus system
-  -- so we need to provide a local ACK to complete the bus access
-  ack_override: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      ack_local <= '0';
-    elsif rising_edge(clk_i) then
-      ack_local <= core_req_i.rvso and core_req_i.stb and core_req_i.rw and (not rsvs.valid);
-    end if;
-  end process ack_override;
-
-  -- response --
-  core_rsp_o.err <= sys_rsp_i.err;
-  core_rsp_o.ack <= sys_rsp_i.ack or ack_local; -- generate local ACK if SC fails
-  -- inject 1 into read data's LSB if SC fails --
-  core_rsp_o.data(31 downto 1) <= sys_rsp_i.data(31 downto 1);
-  core_rsp_o.data(0) <= sys_rsp_i.data(0) or (core_req_i.rvso and core_req_i.rw and (not rsvs.valid));
-
-
-end neorv32_bus_reservation_set_rtl;
+end neorv32_bus_amo_ctrl_rtl;
