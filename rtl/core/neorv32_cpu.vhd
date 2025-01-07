@@ -70,7 +70,7 @@ entity neorv32_cpu is
   );
   port (
     -- global control --
-    clk_i        : in  std_ulogic; -- switchable global clock, rising edge
+    clk_i        : in  std_ulogic; -- global clock, rising edge
     rstn_i       : in  std_ulogic; -- global reset, low-active, async
     -- interrupts --
     msi_i        : in  std_ulogic; -- risc-v machine software interrupt
@@ -78,20 +78,15 @@ entity neorv32_cpu is
     mti_i        : in  std_ulogic; -- risc-v machine timer interrupt
     firq_i       : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
     dbi_i        : in  std_ulogic; -- risc-v debug halt request interrupt
+    -- inter-core communication links --
+    icc_tx_o     : out icc_t; -- TX links
+    icc_rx_i     : in  icc_t; -- RX links
     -- instruction bus interface --
     ibus_req_o   : out bus_req_t; -- request bus
     ibus_rsp_i   : in  bus_rsp_t; -- response bus
     -- data bus interface --
     dbus_req_o   : out bus_req_t; -- request bus
-    dbus_rsp_i   : in  bus_rsp_t; -- response bus
-    -- ICC TX links --
-    icc_tx_rdy_o : out std_ulogic_vector(NUM_HARTS-1 downto 0); -- data available
-    icc_tx_ack_i : in  std_ulogic_vector(NUM_HARTS-1 downto 0); -- read-enable
-    icc_tx_dat_o : out std_ulogic_vector((NUM_HARTS*XLEN)-1 downto 0); -- data word
-    -- ICC RX links --
-    icc_rx_rdy_i : in  std_ulogic_vector(NUM_HARTS-1 downto 0); -- data available
-    icc_rx_ack_o : out std_ulogic_vector(NUM_HARTS-1 downto 0); -- read-enable
-    icc_rx_dat_i : in  std_ulogic_vector((NUM_HARTS*XLEN)-1 downto 0) -- data word
+    dbus_rsp_i   : in  bus_rsp_t  -- response bus
   );
 end neorv32_cpu;
 
@@ -446,33 +441,29 @@ begin
   if NUM_HARTS > 1 generate
     neorv32_cpu_icc_inst: entity neorv32.neorv32_cpu_icc
     generic map (
-      HART_ID   => HART_ID, -- ID of this core
+      HART_ID   => HART_ID,  -- ID of this core
       NUM_HARTS => NUM_HARTS -- number of cores, has to be a power of two
     )
     port map (
       -- global control --
-      clk_i        => clk_i,          -- global clock, rising edge
-      rstn_i       => rstn_i,         -- global reset, low-active, async
+      clk_i       => clk_i,          -- global clock, rising edge
+      rstn_i      => rstn_i,         -- global reset, low-active, async
       -- CSR interface --
-      csr_we_i     => xcsr_we,        -- global write enable
-      csr_re_i     => xcsr_re,        -- global read enable
-      csr_addr_i   => xcsr_addr,      -- address
-      csr_wdata_i  => xcsr_wdata,     -- write data
-      csr_rdata_o  => xcsr_rdata_icc, -- read data
-      -- ICC TX links --
-      icc_tx_rdy_o => icc_tx_rdy_o,   -- data available
-      icc_tx_ack_i => icc_tx_ack_i,   -- read-enable
-      icc_tx_dat_o => icc_tx_dat_o,   -- data word
-      -- ICC RX links --
-      icc_rx_rdy_i => icc_rx_rdy_i,   -- data available
-      icc_rx_ack_o => icc_rx_ack_o,   -- read-enable
-      icc_rx_dat_i => icc_rx_dat_i    -- data word
+      csr_we_i    => xcsr_we,        -- global write enable
+      csr_re_i    => xcsr_re,        -- global read enable
+      csr_addr_i  => xcsr_addr,      -- address
+      csr_wdata_i => xcsr_wdata,     -- write data
+      csr_rdata_o => xcsr_rdata_icc, -- read data
+      -- ICC links --
+      icc_tx_o    => icc_tx_o,       -- TX links
+      icc_rx_i    => icc_rx_i        -- RX links
     );
   end generate;
 
   icc_disabled:
   if NUM_HARTS = 1 generate
     xcsr_rdata_icc <= (others => '0');
+    icc_tx_o       <= icc_terminate_c;
   end generate;
 
 
