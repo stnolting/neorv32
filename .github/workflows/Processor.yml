@@ -18,7 +18,7 @@ on:
 jobs:
 
   sim_default_tb:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     name: 'processor simulation'
     strategy:
       fail-fast: false
@@ -40,7 +40,11 @@ jobs:
         echo $GITHUB_WORKSPACE/riscv-gcc/xpack-riscv-none-elf-gcc-14.2.0-2/bin >> $GITHUB_PATH
 
     - name: '📦 Install GHDL'
-      uses: ghdl/setup-ghdl-ci@nightly
+      run: |
+        wget -q https://github.com/ghdl/ghdl/releases/download/v4.1.0/ghdl-gha-ubuntu-22.04-mcode.tgz
+        mkdir $GITHUB_WORKSPACE/ghdl
+        tar -xzf ghdl-gha-ubuntu-22.04-mcode.tgz -C $GITHUB_WORKSPACE/ghdl
+        echo $GITHUB_WORKSPACE/ghdl/bin >> $GITHUB_PATH
 
     - name: '🔍 Check tools'
       run: |
