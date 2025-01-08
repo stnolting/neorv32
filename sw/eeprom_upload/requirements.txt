@@ -1,2 +1,0 @@
-pyserial==3.5
-usb-iss==2.0.1
