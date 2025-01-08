@@ -123,8 +123,8 @@
 #endif
 
 /** TWI First Slave ID */
-#ifndef TWI_SLAVE_ID
-  #define TWI_SLAVE_ID 0x50
+#ifndef TWI_DEVICE_ID
+  #define TWI_DEVICE_ID 0x50
 #endif
 
 /** TWI Memory address width (in numbers of bytes; 1 or 2) */
@@ -603,7 +603,7 @@ void get_exe(int src) {
   #elif (TWI_EN)
   else {
     PRINT_TEXT("Loading from TWI slaves, starting with ");
-    PRINT_XNUM(TWI_SLAVE_ID);
+    PRINT_XNUM(TWI_DEVICE_ID);
     PRINT_TEXT("...\n");
   }
   #endif
@@ -1040,9 +1040,9 @@ uint32_t twi_read_addr(uint32_t addr) {
   address.uint32 = addr;
 
 #if (TWI_ADDR_BYTES == 1)
-  uint8_t device_id = address.uint8[TWI_ADDR_BYTES] + TWI_SLAVE_ID;
+  uint8_t device_id = address.uint8[TWI_ADDR_BYTES] + TWI_DEVICE_ID;
 #elif (TWI_ADDR_BYTES == 2)
-  uint8_t device_id = TWI_SLAVE_ID;
+  uint8_t device_id = TWI_DEVICE_ID;
 #else
   #error "Unsupported TWI_ADDR_BYTES configuration!"
 #endif
