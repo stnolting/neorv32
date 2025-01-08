@@ -43,7 +43,7 @@ minimal base & privileged ISA `rv32e_zicsr_zifencei` only to ensure it can work 
 | `TWI_EN`                | `0` | `0`, `1`      | Set `1` to enable the usage of the SPI module (including load/store executables from/to SPI flash options)
 | `TWI_CLK_PRSC`          | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096`   | TWI clock pre-scaler (dividing main processor clock)
 | `TWI_CLK_DIV`  | `3` | `0` ... `15` | TWI clock divider (dividing twi clock)
-| `TWI_DEVICE_ID`  | `0x50` | `0x00` ... `0x7F` | First TWI slave ID to start. Is incremented until the end of the program is reached, when `TWI_ADDR_BYTES` is `1`.
+| `TWI_DEVICE_ID`  | `0x50` | `0x00` ... `0x7F` | First TWI device ID to start. Is incremented until the end of the program is reached, when `TWI_ADDR_BYTES` is `1`.
 | `TWI_ADDR_BYTES`  | `1` | `1`, `2` | TWI memory address size in number of bytes. When `TWI_ADDR_BYTES` is `1`, `TWI_DEVICE_ID` the gets incremented as well.
 |=======================
 
