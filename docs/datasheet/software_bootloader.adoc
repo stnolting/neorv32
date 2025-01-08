@@ -75,7 +75,7 @@ the bootloader. See the User Guide https://stnolting.github.io/neorv32/ug/#_cust
 ==== Bootloader TWI memory Requirements
 
 The bootloader can access an TWI-compatible memory via the processor's top entity TWI port. Single- and dual address memory is supported, and reading is done in the following pattern
-`Slave Address + Enabled Read | Memory Address Byte 0 | Memory Address 1 (optional) | Read Byte 0 | Read Byte 1 | Read Byte 2 | Read Byte 3`.
+`Device Address + Enabled Read | Memory Address Byte 0 | Memory Address 1 (optional) | Read Byte 0 | Read Byte 1 | Read Byte 2 | Read Byte 3`.
 The addresses are incremented until the end of the program binary is reached.
 
 A python upload script for uploading is provided in the `sw/eeprom_upload` folder. Currently only for the https://www.robot-electronics.co.uk/htm/usb_iss_tech.htm[USB-ISS] module.
@@ -166,7 +166,7 @@ Available CMDs:
  u: Upload
  s: Store to flash
  l: Load from flash
- t: Load from TWI Slave
+ t: Load from TWI Device
  x: Boot from flash (XIP)
  e: Execute
 CMD:>

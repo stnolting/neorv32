@@ -122,7 +122,7 @@
   #define TWI_CLK_DIV 3
 #endif
 
-/** TWI First Slave ID */
+/** TWI First Device ID */
 #ifndef TWI_DEVICE_ID
   #define TWI_DEVICE_ID 0x50
 #endif
@@ -141,7 +141,7 @@
 enum EXE_STREAM_SOURCE_enum {
   EXE_STREAM_UART  = 0, /**< Get executable via UART */
   EXE_STREAM_FLASH = 1, /**< Get executable via SPI flash */
-  EXE_STREAM_TWI   = 2  /**< Get executable via I2c Slave */
+  EXE_STREAM_TWI   = 2  /**< Get executable via I2c Device */
 };
 
 
@@ -474,7 +474,7 @@ void print_help(void) {
              " l: Load from flash\n"
 #endif
 #if (TWI_EN != 0)
-             " t: Load from TWI Slave\n"
+             " t: Load from TWI Device\n"
 #endif
 #if (XIP_EN != 0)
              " x: Boot from flash (XIP)\n"
@@ -602,7 +602,7 @@ void get_exe(int src) {
   }
   #elif (TWI_EN)
   else {
-    PRINT_TEXT("Loading from TWI slaves, starting with ");
+    PRINT_TEXT("Loading from TWI Devices, starting with ");
     PRINT_XNUM(TWI_DEVICE_ID);
     PRINT_TEXT("...\n");
   }
@@ -714,7 +714,7 @@ void save_exe(void) {
  * Get word from executable stream
  *
  * @param src Source of executable stream data. See #EXE_STREAM_SOURCE_enum.
- * @param addr Address when accessing SPI flash or TWI slave.
+ * @param addr Address when accessing SPI flash or TWI Device.
  * @return 32-bit data word from stream.
  **************************************************************************/
 uint32_t get_exe_word(int src, uint32_t addr) {
