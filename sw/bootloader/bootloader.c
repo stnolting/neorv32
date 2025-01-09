@@ -594,8 +594,9 @@ void get_exe(int src) {
       system_error(ERROR_FLASH);
     }
   }
-  #elif (TWI_EN)
-  else {
+  #endif
+  #if (TWI_EN)
+  else if(src == EXE_STREAM_TWI) {
     PRINT_TEXT("Loading from TWI Devices, starting with ");
     PRINT_XNUM(TWI_DEVICE_ID);
     PRINT_TEXT("...\n");
