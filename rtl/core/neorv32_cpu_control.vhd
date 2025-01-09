@@ -210,6 +210,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type csr_t is record
     addr           : std_ulogic_vector(11 downto 0); -- physical access address
     we, we_nxt     : std_ulogic; -- write enable
+    re, re_nxt     : std_ulogic; -- read enable
     operand        : std_ulogic_vector(XLEN-1 downto 0); -- write operand
     wdata          : std_ulogic_vector(XLEN-1 downto 0); -- write data
     rdata          : std_ulogic_vector(XLEN-1 downto 0); -- read data
@@ -598,6 +599,7 @@ begin
     trap_ctrl.ebreak     <= '0';
     trap_ctrl.hwtrig     <= '0';
     csr.we_nxt           <= '0';
+    csr.re_nxt           <= '0';
     ctrl_nxt             <= ctrl_bus_zero_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
 
     -- ALU sign control --
@@ -766,6 +768,11 @@ begin
 
           -- environment/CSR operation or ILLEGAL opcode --
           when others =>
+            if ((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) and (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000") then
+              csr.re_nxt <= '0'; -- no read if CSRRW[I] and rd = 0
+            else
+              csr.re_nxt <= '1';
+            end if;
             exe_engine_nxt.state <= EX_SYSTEM;
 
         end case; -- /EX_EXECUTE
@@ -836,7 +843,7 @@ begin
         if (funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or (exe_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000") then
           csr.we_nxt <= '1'; -- CSRRW[I]: always write CSR; CSRR[S/C][I]: write CSR if rs1/imm5 is NOT zero
         end if;
-        -- always write to RF; ENVIRONMENT operations have rd = zero so this does not hurt --
+        -- always write to RF (even if csr.re = 0, but then we have rd = 0); ENVIRONMENT operations have rd = zero so this does not hurt --
         ctrl_nxt.rf_wb_en <= '1'; -- won't happen if exception
 
     end case;
@@ -1334,7 +1341,7 @@ begin
   -- External CSR Interface -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xcsr_we_o    <= csr.we;
-  xcsr_re_o    <= '1' when (exe_engine.state = EX_SYSTEM) else '0';
+  xcsr_re_o    <= csr.re;
   xcsr_addr_o  <= csr.addr;
   xcsr_wdata_o <= csr.wdata;
 
@@ -1637,10 +1644,12 @@ begin
   csr_read_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      csr.re    <= '0';
       csr.rdata <= (others => '0');
     elsif rising_edge(clk_i) then
+      csr.re    <= csr.re_nxt and (not trap_ctrl.exc_buf(exc_illegal_c)); -- read if not an illegal instruction
       csr.rdata <= (others => '0'); -- default; output all-zero if there is no explicit CSR read operation
-      if (exe_engine.state = EX_SYSTEM) then -- always read from CSR file in EX_SYSTEM state
+      if (csr.re = '1') then
         case csr.addr is -- address is zero if there is no CSR operation
 
           -- --------------------------------------------------------------------
