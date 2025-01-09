@@ -12,7 +12,6 @@
 |                         | `ICACHE_NUM_BLOCKS` | number of cache blocks (pages/lines)
 |                         | `ICACHE_BLOCK_SIZE` | size of a cache block in bytes
 | CPU interrupts:         | none |
-| Access restrictions:  2+| none
 |=======================
 
 

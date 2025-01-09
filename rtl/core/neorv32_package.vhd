@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100808"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100900"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -224,15 +224,21 @@ package neorv32_package is
     err  => '0'
   );
 
-  -- External Stream-Link Interface (SLINK / AXI4-Stream) -----------------------------------
+  -- Inter-Core Communication (ICC) Links ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  type slink_t is record
-    data  : std_ulogic_vector(31 downto 0); -- data
-    addr  : std_ulogic_vector(3 downto 0); -- source/destination ID
-    valid : std_ulogic; -- source valid
-    last  : std_ulogic; -- last element of packet
-    ready : std_ulogic; -- sink ready
+  -- icc link (for up to 4 cores) --
+  type icc_t is record
+    rdy : std_ulogic_vector(4-1 downto 0); -- data available
+    ack : std_ulogic_vector(4-1 downto 0); -- read-enable
+    dat : std_ulogic_vector(4*XLEN-1 downto 0); -- data word
   end record;
+
+  -- endpoint termination --
+  constant icc_terminate_c : icc_t := (
+    rdy => (others => '0'),
+    ack => (others => '0'),
+    dat => (others => '0')
+  );
 
 -- **********************************************************************************************************
 -- RISC-V ISA Definitions

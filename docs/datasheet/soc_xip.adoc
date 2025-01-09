@@ -18,8 +18,6 @@
 |                         | `XIP_CACHE_NUM_BLOCKS` | number of blocks in XIP cache; has to be a power of two
 |                         | `XIP_CACHE_BLOCK_SIZE` | number of bytes per XIP cache block; has to be a power of two, min 4
 | CPU interrupts:         | none                   |
-| Access restrictions:  2+| control registers: non-32-bit write accesses are ignored
-|                       2+| XIP data access: read-only
 |=======================
 
 

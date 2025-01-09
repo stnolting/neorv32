@@ -29,6 +29,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 08.01.2025 | [**:rocket:1.10.9**](https://github.com/stnolting/neorv32/releases/tag/v1.10.9) | **New release** | |
+| 07.01.2025 | 1.10.8.9 | rtl edits and cleanups; add dedicated "core complex" wrapper (CPU + L1 caches + bus switch) | [#1144](https://github.com/stnolting/neorv32/pull/1144) | 
 | 04.01.2025 | 1.10.8.8 | :sparkles: add inter-core communication (ICC) for the SMP dual-core setup | [#1142](https://github.com/stnolting/neorv32/pull/1142) |
 | 03.01.2025 | 1.10.8.7 | :warning: :sparkles: replace `Zalrsc` ISA extensions (reservation-set operations) by `Zaamo` ISA extension (atomic read-modify-write operations) | [#1141](https://github.com/stnolting/neorv32/pull/1141) |
 | 01.01.2025 | 1.10.8.6 | :sparkles: :test_tube: add smp dual-core option | [#1135](https://github.com/stnolting/neorv32/pull/1135) |

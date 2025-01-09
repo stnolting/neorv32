@@ -11,7 +11,6 @@
 | Top entity ports:       | `xirq_i`           | External interrupts input (32-bit)
 | Configuration generics: | `XIRQ_NUM_CH`      | Number of external IRQ channels to implement (0..32)
 | CPU interrupts:         | fast IRQ channel 8 | XIRQ (see <<_processor_interrupts>>)
-| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

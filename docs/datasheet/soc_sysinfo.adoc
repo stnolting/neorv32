@@ -10,7 +10,6 @@
 | Top entity ports:       | none |
 | Configuration generics: | * | most of the top's configuration generics
 | CPU interrupts:         | none |
-| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

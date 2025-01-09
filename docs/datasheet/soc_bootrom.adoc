@@ -11,7 +11,6 @@
 | Top entity ports:       | none                         |
 | Configuration generics: | `BOOT_MODE_SELECT`           | implement BOOTROM when `BOOT_MODE_SELECT` = 0; see <<_boot_configuration>>
 | CPU interrupts:         | none                         |
-| Access restrictions:  2+| read-only
 |=======================
 
 
@@ -20,6 +19,7 @@
 The boot ROM contains the executable image of the default NEORV32 <<_bootloader>>. When the
 <<_boot_configuration>> is set to _bootloader_ mode (0) via the `BOOT_MODE_SELECT` generic, the
 boot ROM is automatically enabled and the CPU boot address is adjusted to the base address of the boot ROM.
+Note that the entire boot ROM is read-only.
 
 .Bootloader Image
 [IMPORTANT]

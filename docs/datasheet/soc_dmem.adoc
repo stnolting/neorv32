@@ -11,7 +11,6 @@
 | Configuration generics: | `MEM_INT_DMEM_EN`   | implement processor-internal DMEM when `true`
 |                         | `MEM_INT_DMEM_SIZE` | DMEM size in bytes (use a power of 2)
 | CPU interrupts:         | none                |
-| Access restrictions:  2+| none
 |=======================
 
 

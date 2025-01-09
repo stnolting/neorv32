@@ -12,7 +12,6 @@
 |                         | `gpio_i` | 64-bit parallel input port
 | Configuration generics: | `IO_GPIO_NUM` | number of input/output pairs to implement (0..64)
 | CPU interrupts:         | none |
-| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

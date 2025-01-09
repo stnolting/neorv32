@@ -13,7 +13,6 @@
 | Configuration generics: | `IO_ONEWIRE_EN`     | implement ONEWIRE interface controller when `true`
 |                         | `IO_ONEWIRE_FIFO`   | RTX fifo depth, has to be zero or a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 13 | operation done interrupt (see <<_processor_interrupts>>)
-| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

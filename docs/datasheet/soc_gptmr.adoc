@@ -11,7 +11,6 @@
 | Top entity ports:       | none |
 | Configuration generics: | `IO_GPTMR_EN` | implement general purpose timer when `true`
 | CPU interrupts:         | fast IRQ channel 12 | timer interrupt (see <<_processor_interrupts>>)
-| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 

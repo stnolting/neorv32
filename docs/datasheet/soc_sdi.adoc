@@ -15,7 +15,6 @@
 | Configuration generics: | `IO_SDI_EN`   | implement SDI controller when `true`
 |                         | `IO_SDI_FIFO` | data FIFO size, has to a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 11 | configurable SDI interrupt (see <<_processor_interrupts>>)
-| Access restrictions:  2+| non-32-bit write accesses are ignored
 |=======================
 
 
