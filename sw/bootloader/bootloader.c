@@ -105,7 +105,6 @@
 #endif
 
 /* -------- TWI configuration -------- */
-/* assumes single byte address */
 
 /** Enable TWI for copying to RAM */
 #ifndef TWI_EN
