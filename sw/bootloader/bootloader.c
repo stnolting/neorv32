@@ -318,11 +318,6 @@ int main(void) {
   neorv32_twi_setup(TWI_CLK_PRSC, TWI_CLK_DIV, 0);
 #endif
 
-#if (TWI_EN != 0)
-  // setup TWI
-  neorv32_twi_setup(TWI_CLK_PRSC, TWI_CLK_DIV, 0);
-#endif
-
   // Configure CLINT timer interrupt
   if (neorv32_clint_available()) {
     NEORV32_CLINT->MTIME.uint32[0] = 0;
