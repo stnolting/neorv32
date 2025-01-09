@@ -141,7 +141,7 @@
 enum EXE_STREAM_SOURCE_enum {
   EXE_STREAM_UART  = 0, /**< Get executable via UART */
   EXE_STREAM_FLASH = 1, /**< Get executable via SPI flash */
-  EXE_STREAM_TWI   = 2  /**< Get executable via I2c Device */
+  EXE_STREAM_TWI   = 2  /**< Get executable via TWI device */
 };
 
 
@@ -164,7 +164,7 @@ const char error_message[5][5] = {
   "EXE",
   "SIZE",
   "CHKS",
-  "FLSH",
+  "SPI",
   "TWI"
 };
 
@@ -718,9 +718,11 @@ void save_exe(void) {
  * @return 32-bit data word from stream.
  **************************************************************************/
 uint32_t get_exe_word(int src, uint32_t addr) {
+#if (TWI_EN != 0)
   if (src == EXE_STREAM_TWI) {
     return twi_read_addr(addr);
   } else {
+#endif
     union {
       uint32_t uint32;
       uint8_t  uint8[sizeof(uint32_t)];
@@ -737,7 +739,9 @@ uint32_t get_exe_word(int src, uint32_t addr) {
       }
     }
   return data.uint32;
+#if (TWI_EN != 0)
   }
+#endif
 }
 
 
