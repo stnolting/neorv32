@@ -22,12 +22,12 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    HART_ID             : natural range 0 to 3; -- hardware thread ID
-    NUM_HARTS           : natural range 1 to 4; -- total number of harts in the system, has to be a power of 2
+    HART_ID             : natural range 0 to 1023; -- hardware thread ID
     VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
+    ICC_EN              : boolean; -- implement inter-core communication (ICC) links
     -- RISC-V ISA Extensions --
     RISCV_ISA_C         : boolean; -- implement compressed extension
     RISCV_ISA_E         : boolean; -- implement embedded RF extension
@@ -182,10 +182,6 @@ begin
 
   -- simulation notifier --
   assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
-
-  -- ID checks --
-  assert is_power_of_two_f(NUM_HARTS) report "[NEORV32] NUM_HARTS has to be a power of two." severity error;
-  assert (HART_ID < NUM_HARTS) report "[NEORV32] HART_ID out of range." severity error;
 
 
   -- Clock Gating ---------------------------------------------------------------------------
@@ -438,12 +434,8 @@ begin
   -- Inter-Core Communication (ICC) ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   icc_enabled:
-  if NUM_HARTS > 1 generate
+  if ICC_EN generate
     neorv32_cpu_icc_inst: entity neorv32.neorv32_cpu_icc
-    generic map (
-      HART_ID   => HART_ID,  -- ID of this core
-      NUM_HARTS => NUM_HARTS -- number of cores, has to be a power of two
-    )
     port map (
       -- global control --
       clk_i       => clk_i,          -- global clock, rising edge
@@ -461,7 +453,7 @@ begin
   end generate;
 
   icc_disabled:
-  if NUM_HARTS = 1 generate
+  if not ICC_EN generate
     xcsr_rdata_icc <= (others => '0');
     icc_tx_o       <= icc_terminate_c;
   end generate;
