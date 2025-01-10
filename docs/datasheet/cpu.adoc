@@ -33,7 +33,7 @@ test framework is available in a separate repository at GitHub: https://github.c
 .Unsupported ISA Extensions
 [TIP]
 Executing instructions or accessing CSRs from yet unsupported ISA extensions will raise an illegal
-instruction exception (see section  <<_full_virtualization>>).
+instruction exception (see section <<_full_virtualization>>).
 
 **Incompatibility Issues and Limitations**
 
