@@ -157,7 +157,7 @@ __crt0_constructors_end:
 // Setup arguments and call main function.
 // ************************************************************************************************
 __crt0_main_entry:
-  fence                  // reload instruction cache
+  fence                  // reload data cache
   fence.i                // reload instruction cache
 
   csrw  mstatus, x5      // re-initialize
