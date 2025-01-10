@@ -70,3 +70,31 @@ int neorv32_smp_launch(void (*entry_point)(void), uint8_t* stack_memory, size_t 
     cnt++;
   }
 }
+
+
+/**********************************************************************//**
+ * Send data to other core via ICC link (blocking).
+ *
+ * @warning This functions is blocking until data has been send.
+ *
+ * @param[in] data Data word (32-bit) to be send to other core.
+ **************************************************************************/
+void neorv32_smp_icc_push(uint32_t data) {
+
+  while (neorv32_smp_icc_free() == 0); // wait for free FIFO space
+  neorv32_smp_icc_put(data);
+}
+
+
+/**********************************************************************//**
+ * Get data from other core via ICC link (blocking).
+ *
+ * @warning This functions is blocking until data has been received.
+ *
+ * @return Data word (32-bit) received from other core.
+ **************************************************************************/
+uint32_t neorv32_smp_icc_pop(void) {
+
+  while (neorv32_smp_icc_avail() == 0); // wait until FIFO data is available
+  return neorv32_smp_icc_get();
+}
