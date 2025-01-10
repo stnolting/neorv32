@@ -19,7 +19,7 @@
  * @name Prototypes
  **************************************************************************/
 /**@{*/
-int      neorv32_smp_launch(void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes);
+int      neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes);
 void     neorv32_smp_icc_push(uint32_t data);
 uint32_t neorv32_smp_icc_pop(void);
 /**@}*/

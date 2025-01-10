@@ -19,8 +19,8 @@
  *
  * @warning This function can be executed on core 0 only.
  *
- * @param[in] entry_point Core1's main function
- * (must be of type "void entry_point(void)").
+ * @param[in] entry_point Core1's main function;
+ * must be of type "int entry_point(void)".
  *
  * @param[in] stack_memory Pointer to beginning of core1's stack memory array.
  * Should be at least 512 bytes.
@@ -30,7 +30,7 @@
  * @return 0 if launching succeeded. -1 if invalid hart ID or CLINT not available.
  * -2 if core1 is not responding.
  **************************************************************************/
-int neorv32_smp_launch(void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
+int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
 
   // sanity checks
   if ((neorv32_cpu_csr_read(CSR_MHARTID) != 0) || // this can be executed on core0 only
