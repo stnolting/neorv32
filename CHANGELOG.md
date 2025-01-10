@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 10.01.2025 | 1.10.9.2 | clean-up SMP dual-core configuration (HW and SW optimizations) | [#1146](https://github.com/stnolting/neorv32/pull/1146) |
 | 09.01.2025 | 1.10.9.1 | fix side-effects of CSR read instructions | [#1145](https://github.com/stnolting/neorv32/pull/1145) |
 | 08.01.2025 | [**:rocket:1.10.9**](https://github.com/stnolting/neorv32/releases/tag/v1.10.9) | **New release** | |
 | 07.01.2025 | 1.10.8.9 | rtl edits and cleanups; add dedicated "core complex" wrapper (CPU + L1 caches + bus switch) | [#1144](https://github.com/stnolting/neorv32/pull/1144) | 
