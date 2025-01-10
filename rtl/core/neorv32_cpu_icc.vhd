@@ -60,9 +60,9 @@ begin
   tx_fifo_we   <= '1' when (csr_we_i = '1') and (csr_addr_i = csr_mxiccdata_c) else '0';
 
 
-  -- Message Queue (FIFO) -------------------------------------------------------------------
+  -- Outgoing/TX Message Queue (FIFO) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  queue_inst: entity neorv32.neorv32_fifo
+  tx_queue_inst: entity neorv32.neorv32_fifo
   generic map (
     FIFO_DEPTH => 4, -- yes, this is fixed
     FIFO_WIDTH => XLEN,
