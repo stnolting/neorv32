@@ -39,6 +39,9 @@ int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t s
     return -1;
   }
 
+  // synchronize data cache with main memory
+  asm volatile ("fence");
+
   // drain input queue from selected core
   while (neorv32_smp_icc_avail()) {
     neorv32_smp_icc_get();
