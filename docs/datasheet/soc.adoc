@@ -576,6 +576,25 @@ explicit specific processor generic. See section <<_processor_external_bus_inter
 
 
 :sectnums:
+==== IO Switch
+
+The IO switch further decodes the address when accessing the processor-internal IO/peripheral devices and forwards
+the access request to the according module. Note that a total address space size of 256 bytes is assigned to each
+IO module in order to simplify address decoding. The IO-specific address map is also defined in the main VHDL
+package file (`rtl/core/neorv323_package.vhd`).
+
+.Exemplary Cut-Out from the IO Address Map
+[source,vhdl]
+----
+-- IO Address Map --
+constant iodev_size_c    : natural := 256; -- size of a single IO device (bytes)
+constant base_io_cfs_c   : std_ulogic_vector(31 downto 0) := x"ffffeb00";
+constant base_io_slink_c : std_ulogic_vector(31 downto 0) := x"ffffec00";
+constant base_io_dma_c   : std_ulogic_vector(31 downto 0) := x"ffffed00";
+----
+
+
+:sectnums:
 ==== Atomic Memory Operations Controller
 
 The atomic memory operations (AMO) controller is responsible for handling the read-modify-write operations issued by the
@@ -595,41 +614,62 @@ written to the addressed memory cell. In parallel, the data from the first buffe
 content of the addresses memory cell) is sent back to the requesting CPU.
 |=======================
 
-The controller performs two bus transactions: a read operations and a write operation. Only the acknowledge/error
-handshake of the last transaction is sent back to the CPU.
-
-As the AMO controller is the memory-nearest instance (see <<_bus_system>>) the previously described set of operations
-cannot be interrupted. Hence, they execute in an atomic way.
+.Direct Access
+[IMPORTANT]
+Atomic operations **always bypass** the CPU's <<_processor_internal_data_cache_dcache, data cache>>
+using direct/uncached accesses. Care must be taken to maintain data <<_cache_coherency>>.
 
 .Physical Memory Attributes
 [NOTE]
 Atomic memory operations can be executed for _any_ address. This also includes
 cached memory, memory-mapped IO devices and processor-external address spaces.
 
-.Cache Coherency
-[IMPORTANT]
-Atomic operations **always bypass** the CPU's <<_processor_internal_data_cache_dcache, data cache>>
-using direct/uncached accesses. Care must be taken to maintain data cache coherency when accessing
-cached memory (e.g. by using the `fence` instruction).
+The controller performs two bus transactions: a read operations and a write operation. Only the acknowledge/error
+handshake of the last transaction is sent back to the CPU.
+
+As the AMO controller is the memory-nearest instance (see <<_bus_system>>) the previously described set of operations
+cannot be interrupted. Hence, they execute in an atomic way.
 
 
 :sectnums:
-==== IO Switch
+==== Cache Coherency
 
-The IO switch further decodes the address when accessing the processor-internal IO/peripheral devices and forwards
-the access request to the according module. Note that a total address space size of 256 bytes is assigned to each
-IO module in order to simplify address decoding. The IO-specific address map is also defined in the main VHDL
-package file (`rtl/core/neorv323_package.vhd`).
+In total the NEORV32 Processor provides up to four optional caches organized in two levels. Level-1
+caches are closer to the CPU while level-2 caches are closer to main memory (however, this highly depends
+on the the actual cache configurations).
 
-.Exemplary Cut-Out from the IO Address Map
-[source,vhdl]
-----
--- IO Address Map --
-constant iodev_size_c    : natural := 256; -- size of a single IO device (bytes)
-constant base_io_cfs_c   : std_ulogic_vector(31 downto 0) := x"ffffeb00";
-constant base_io_slink_c : std_ulogic_vector(31 downto 0) := x"ffffec00";
-constant base_io_dma_c   : std_ulogic_vector(31 downto 0) := x"ffffed00";
-----
+* The <<_processor_internal_data_cache_dcache>> (level-1)
+* The <<_processor_internal_instruction_cache_icache>> (level-1)
+* The cache of the <<_processor_external_bus_interface_xbus>> (level-2)
+* The cache of the <<_execute_in_place_module_xip>> (level-2)
+
+As all caches operate transparently for the software, special attention must therefore be paid to coherence.
+Note that coherence and cache _synchronization_ is **not** performed by the hardware itself (there is no
+snooping implemented).
+
+The NEORV32 uses two instructions for manual cache synchronization (both instructions are always available
+regardless of the actual CPU/ISA configuration):
+
+* `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>)
+* `fence.i` (<<_zifencei_isa_extension>>)
+
+By executing the "data" `fence` instruction the CPU's data cache is synchronized in four steps:
+
+[start=1]
+. The CPU data cache is flushed: all local modifications are copied to the next higher memory level;
+this can be the XBUS cache or main memory.
+. The CPU data cache is cleared invalidating all local entries.
+. The synchronization request is sent to the next-higher memory level (for example to the XBUS cache
+so it can perform the same synchronization steps).
+. The CPU data cache is reloaded with up-to-date data from the next higher memory level.
+
+By executing the "instruction" `fence.i` instruction the CPU's instruction cache is synchronized in three steps:
+
+[start=1]
+. The synchronization request is sent to the next-higher memory level (for example to the XBUS cache
+so it can perform the same synchronization steps).
+. The CPU instruction cache is cleared invalidating all local entries.
+. The CPU instruction cache is reloaded with up-to-date data from the next higher memory level.
 
 
 <<<
