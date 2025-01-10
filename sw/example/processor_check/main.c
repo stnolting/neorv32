@@ -2154,7 +2154,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MSIE);
 
     // launch core 1
-    tmp_a = (uint32_t)neorv32_smp_launch(1, core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
+    tmp_a = (uint32_t)neorv32_smp_launch(core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
 
     // wait for software interrupt (issued by core 1) in sleep mode
     neorv32_cpu_sleep();
