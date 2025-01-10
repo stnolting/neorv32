@@ -3,11 +3,11 @@
 ==== General Purpose Input and Output Port (GPIO)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_gpio.vhd |
-| Software driver files:  | neorv32_gpio.c |
-|                         | neorv32_gpio.h |
+| Software driver files:  | neorv32_gpio.c | link:https://stnolting.github.io/neorv32/sw/neorv32__gpio_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_gpio.h | link:https://stnolting.github.io/neorv32/sw/neorv32__gpio_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | `gpio_o` | 64-bit parallel output port
 |                         | `gpio_i` | 64-bit parallel input port
 | Configuration generics: | `IO_GPIO_NUM` | number of input/output pairs to implement (0..64)

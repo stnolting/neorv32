@@ -3,11 +3,11 @@
 ==== Serial Data Interface Controller (SDI)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_sdi.vhd |
-| Software driver files:  | neorv32_sdi.c |
-|                         | neorv32_sdi.h |
+| Software driver files:  | neorv32_sdi.c | link:https://stnolting.github.io/neorv32/sw/neorv32__sdi_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_sdi.h | link:https://stnolting.github.io/neorv32/sw/neorv32__sdi_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | `sdi_clk_i` | 1-bit serial clock input
 |                         | `sdi_dat_o` | 1-bit serial data output
 |                         | `sdi_dat_i` | 1-bit serial data input

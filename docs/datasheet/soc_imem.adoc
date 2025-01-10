@@ -3,7 +3,7 @@
 ==== Instruction Memory (IMEM)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_imem.vhd              | default platform-agnostic instruction memory (RAM or ROM)
 |                         | neorv32_application_image.vhd | initialization image (a VHDL package)

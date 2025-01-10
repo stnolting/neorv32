@@ -3,11 +3,11 @@
 ==== Core Local Interruptor (CLINT)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_clint.vhd |
-| Software driver files:  | neorv32_clint.c   |
-|                         | neorv32_clint.h   |
+| Software driver files:  | neorv32_clint.c   | link:https://stnolting.github.io/neorv32/sw/neorv32__clint_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_clint.h   | link:https://stnolting.github.io/neorv32/sw/neorv32__clint_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | `mtime_irq_i`     | RISC-V machine timer IRQ if CLINT is **not** implemented
 |                         | `msw_irq_i`       | RISC-V software IRQ if CLINT is **not** implemented
 |                         | `mtime_time_o`    | Current system time (from CLINT's MTIMER)

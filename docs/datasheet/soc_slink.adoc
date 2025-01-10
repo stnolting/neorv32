@@ -3,11 +3,11 @@
 ==== Stream Link Interface (SLINK)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_slink.vhd   |
-| Software driver files:  | neorv32_slink.c     |
-|                         | neorv32_slink.h     |
+| Software driver files:  | neorv32_slink.c     | link:https://stnolting.github.io/neorv32/sw/neorv32__slink_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_slink.h     | link:https://stnolting.github.io/neorv32/sw/neorv32__slink_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | `slink_rx_dat_i`    | RX link data (32-bit)
 |                         | `slink_rx_src_i`    | RX routing information (4-bit)
 |                         | `slink_rx_val_i`    | RX link data valid (1-bit)

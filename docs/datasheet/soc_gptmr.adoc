@@ -3,11 +3,11 @@
 ==== General Purpose Timer (GPTMR)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_gptmr.vhd |
-| Software driver files:  | neorv32_gptmr.c |
-|                         | neorv32_gptmr.h |
+| Software driver files:  | neorv32_gptmr.c | link:https://stnolting.github.io/neorv32/sw/neorv32__gptmr_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_gptmr.h | link:https://stnolting.github.io/neorv32/sw/neorv32__gptmr_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | none |
 | Configuration generics: | `IO_GPTMR_EN` | implement general purpose timer when `true`
 | CPU interrupts:         | fast IRQ channel 12 | timer interrupt (see <<_processor_interrupts>>)

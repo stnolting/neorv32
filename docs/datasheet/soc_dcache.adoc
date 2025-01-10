@@ -3,7 +3,7 @@
 ==== Processor-Internal Data Cache (dCACHE)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_cache.vhd   | Generic cache module
 | Software driver files:  | none                | _implicitly used_

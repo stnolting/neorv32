@@ -3,11 +3,11 @@
 ==== Direct Memory Access Controller (DMA)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_dma.vhd |
-| Software driver files:  | neorv32_dma.c |
-|                         | neorv32_dma.h |
+| Software driver files:  | neorv32_dma.c | link:https://stnolting.github.io/neorv32/sw/neorv32__dma_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_dma.h | link:https://stnolting.github.io/neorv32/sw/neorv32__dma_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | none |
 | Configuration generics: | `IO_DMA_EN` | implement DMA when `true`
 | CPU interrupts:         | fast IRQ channel 10 | DMA transfer done (see <<_processor_interrupts>>)
