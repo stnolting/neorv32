@@ -98,9 +98,9 @@ __crt0_dualcore_wakeup:
 
   // get launch configuration from core 0
 __crt0_dualcore_launch:
-  csrw  0xbc1, x14                          // ICC_DATA: acknowledge start
   csrr  x2,  0xbc1                          // ICC_DATA: stack top -> sp
   csrr  x12, 0xbc1                          // ICC_DATA: entry point
+  csrw  0xbc1, x14                          // ICC_DATA: acknowledge start
   j     __crt0_main_entry                   // start at entry point
 
 __crt0_dualcore_primary:
