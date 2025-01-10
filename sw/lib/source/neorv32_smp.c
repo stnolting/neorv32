@@ -8,36 +8,40 @@
 
 /**
  * @file neorv32_smp.c
- * @brief SMP HW driver source file.
+ * @brief Symmetric multiprocessing (SMP) library source file.
  */
 
 #include <neorv32.h>
 
 
 /**********************************************************************//**
- * Configure and start SMP core.
+ * Configure and start SMP core 1.
  *
  * @warning This function can be executed on core 0 only.
  *
- * @param[in] hart_id Hart/core select.
- * @param[in] entry_point Core's main function (must be of type "void entry_point(void)").
- * @param[in] stack_memory Pointer to beginning of core's stack memory array. Should be at least 512 bytes.
- * @param[in] stack_size_bytes Core's stack size in bytes.
- * @return 0 if launching succeeded. -1 if invalid hart ID or CLINT not available. -2 if core is not responding.
+ * @param[in] entry_point Core1's main function
+ * (must be of type "void entry_point(void)").
+ *
+ * @param[in] stack_memory Pointer to beginning of core1's stack memory array.
+ * Should be at least 512 bytes.
+ *
+ * @param[in] stack_size_bytes Core1's stack size in bytes.
+ *
+ * @return 0 if launching succeeded. -1 if invalid hart ID or CLINT not available.
+ * -2 if core1 is not responding.
  **************************************************************************/
-int neorv32_smp_launch(int hart_id, void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
+int neorv32_smp_launch(void (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
 
   // sanity checks
-  if ((neorv32_cpu_csr_read(CSR_MHARTID) != 0) || // this can be executed on core 0 only
-      (hart_id == 0) || // we cannot launch core 0
-      (hart_id > (neorv32_sysinfo_get_numcores()-1)) || // selected core not available
+  if ((neorv32_cpu_csr_read(CSR_MHARTID) != 0) || // this can be executed on core0 only
+      (neorv32_sysinfo_get_numcores() < 2) || // core1 not available
       (neorv32_clint_available() == 0)) { // we need the CLINT
     return -1;
   }
 
   // drain input queue from selected core
-  while (neorv32_smp_icc_avail(hart_id)) {
-    neorv32_smp_icc_get(hart_id);
+  while (neorv32_smp_icc_avail()) {
+    neorv32_smp_icc_get();
   }
 
   // align end of stack to 16-bytes according to the RISC-V ABI (#1021)
@@ -45,23 +49,23 @@ int neorv32_smp_launch(int hart_id, void (*entry_point)(void), uint8_t* stack_me
 
   // send launch configuration
   const uint32_t magic_number = 0xffab4321u;
-  neorv32_smp_icc_put(hart_id, magic_number); // identifies valid configuration
-  neorv32_smp_icc_put(hart_id, stack_top); // top of core's stack
-  neorv32_smp_icc_put(hart_id, (uint32_t)entry_point); // entry point
+  neorv32_smp_icc_put(magic_number); // identifies valid configuration
+  neorv32_smp_icc_put(stack_top); // top of core1's stack
+  neorv32_smp_icc_put((uint32_t)entry_point); // entry point
 
-  // start core by triggering its software interrupt
-  neorv32_clint_msi_set(hart_id);
+  // start core1 by triggering its software interrupt
+  neorv32_clint_msi_set(1);
 
   // wait for start acknowledge
   int cnt = 0;
   while (1) {
-    if (neorv32_smp_icc_avail(hart_id)) {
-      if (neorv32_smp_icc_get(hart_id) == magic_number) {
+    if (neorv32_smp_icc_avail()) {
+      if (neorv32_smp_icc_get() == magic_number) {
         return 0;
       }
     }
     if (cnt > 1000) {
-      return -2; // timeout; core did not respond
+      return -2; // timeout; core1 did not respond
     }
     cnt++;
   }
