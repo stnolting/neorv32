@@ -56,6 +56,9 @@ machine software interrupt become available as processor-external signals (`mtim
 | Address      | Name [C]      | Bits | R/W | Function
 .2+<| `0xfff40000` .2+<| `MSWI[0]` ^| 0    ^| r/w <| trigger machine software interrupt for hart 0 when set
                                    ^| 31:1 ^| r/- <| hardwired to zero
+.2+<| `0xfff40004` .2+<| `MSWI[1]` ^| 0    ^| r/w <| trigger machine software interrupt for hart 1 when set
+                                   ^| 31:1 ^| r/- <| hardwired to zero
 | `0xfff44000` | `MTIMECMP[0]` | 63:0 | r/w | 64-bit time compare for hart 0
+| `0xfff44008` | `MTIMECMP[1]` | 63:0 | r/w | 64-bit time compare for hart 1
 | `0xfff4bff8` | `MTIME`       | 63:0 | r/w | 64-bit global machine timer
 |=======================
