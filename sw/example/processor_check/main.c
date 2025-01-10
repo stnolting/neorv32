@@ -68,7 +68,7 @@ void xirq_trap_handler0(void);
 void xirq_trap_handler1(void);
 void test_ok(void);
 void test_fail(void);
-void core1_main(void);
+int  core1_main(void);
 
 // MCAUSE value that will be NEVER set by the hardware
 const uint32_t mcause_never_c = 0x80000000UL; // = reserved
@@ -2405,7 +2405,7 @@ void test_fail(void) {
 /**********************************************************************//**
  * Test code to be run on second CPU core
  **************************************************************************/
-void core1_main(void) {
+int core1_main(void) {
 
   // trigger software interrupt of core0
   neorv32_clint_msi_set(0);
