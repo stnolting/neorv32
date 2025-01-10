@@ -130,7 +130,7 @@ int main(void) {
   // for core 1 has to be provided. This launch configuration defines the entry point for
   // core 1 as well as the stack setup. All this is handle by "neorv32_smp_launch()".
 
-  neorv32_uart0_printf("Launching core1...\n");
+  neorv32_uart0_printf("Launching core 1...\n");
   int smp_launch_rc = neorv32_smp_launch(core1_entry, (uint8_t*)core1_stack, sizeof(core1_stack));
 
   // check if launching was successful
