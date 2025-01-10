@@ -372,7 +372,7 @@ begin
   ibus_req_o.src   <= '1'; -- source = instruction fetch
   ibus_req_o.amo   <= '0'; -- cannot be an atomic memory operation
   ibus_req_o.amoop <= (others => '0'); -- cannot be an atomic memory operation
-  ibus_req_o.fence <= ctrl.lsu_fence; -- fence operation, valid without STB being set
+  ibus_req_o.fence <= ctrl.if_fence; -- fence operation, valid without STB being set
   ibus_req_o.sleep <= sleep_mode; -- sleep mode, valid without STB being set
   ibus_req_o.debug <= debug_ctrl.run; -- debug mode, valid without STB being set
 
@@ -753,7 +753,8 @@ begin
 
           -- memory fence operations (execute even if illegal funct3) --
           when opcode_fence_c =>
-            ctrl_nxt.lsu_fence   <= '1'; -- [NOTE] fence == fence.i; ignore all ordering bits
+            ctrl_nxt.if_fence    <=     exe_engine.ir(instr_funct3_lsb_c); -- fence
+            ctrl_nxt.lsu_fence   <= not exe_engine.ir(instr_funct3_lsb_c); -- fence.i
             exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
 
           -- FPU: floating-point operations --
@@ -853,6 +854,8 @@ begin
   -- CPU Control Bus Output -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
+  -- instruction fetch --
+  ctrl_o.if_fence     <= ctrl.if_fence;
   -- register file --
   ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and (not trap_ctrl.exc_fire); -- inhibit write-back if exception
   ctrl_o.rf_rs1       <= exe_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c);
