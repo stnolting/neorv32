@@ -11,6 +11,7 @@
  * @brief Simple dual-core SMP demo program.
  **************************************************************************/
 #include <neorv32.h>
+#include "spinlock.h"
 
 /** User configuration */
 #define BAUD_RATE 19200
@@ -29,8 +30,10 @@ int main_core1(void) {
   // setup NEORV32 runtime-environment (RTE) for _this_ core (core1)
   neorv32_rte_setup();
 
-  // print message from core0
+  // print message from core 0
+  spin_lock();
   neorv32_uart0_printf("Hello world! This is core 1 running!\n");
+  spin_unlock();
 
   return 0; // return to crt0 and halt
 }
@@ -39,7 +42,8 @@ int main_core1(void) {
 /**********************************************************************//**
  * Main function for core 0 (primary core).
  *
- * @attention This program requires the dual-core configuration, the CLINT and UART0.
+ * @attention This program requires the dual-core configuration, the CLINT, UART0
+ * and the A/Zaamo ISA extension.
  *
  * @return Irrelevant (but can be inspected by the debugger).
  **************************************************************************/
@@ -66,6 +70,15 @@ int main(void) {
     neorv32_uart0_printf("[ERROR] CLINT module not available!\n");
     return -1;
   }
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZAAMO)) == 0) { // atomic memory operations available?
+    neorv32_uart0_printf("[ERROR] 'A'/'Zaamo' ISA extension not available!\n");
+    return -1;
+  }
+#ifndef __riscv_atomic
+  #warning "Application has to be compiled with RISC-V 'A' ISA extension!"
+  neorv32_uart0_printf("[ERROR] Application has to be compiled with 'A' ISA extension!\n");
+  return -1;
+#endif
 
 
   // Core one is halted in crt0 right after reset and wait for its machine-level software
@@ -91,8 +104,15 @@ int main(void) {
     neorv32_uart0_printf("[ERROR] Launching core1 failed (%d)!\n", smp_launch_rc);
     return -1;
   }
-
   // Core1 should be running now.
+
+
+  // UART0 is used by both cores so it is a shared resource. We need to ensure exclusive
+  // access by using a simple spinlock (based on atomic memory operations).
+  spin_lock();
+  neorv32_uart0_printf("This is a message from core 0!\n");
+  spin_unlock();
+
 
   return 0; // return to crt0 and halt
 }
