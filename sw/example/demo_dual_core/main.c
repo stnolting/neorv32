@@ -49,7 +49,7 @@ int main(void) {
 
 
   // check hardware/software configuration
-  if (NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] != 2) { // two cores available?
+  if (neorv32_sysinfo_get_numcores() < 2) { // two cores available?
     neorv32_uart0_printf("[ERROR] dual-core option not enabled!\n");
     return -1;
   }
@@ -62,7 +62,7 @@ int main(void) {
     return -1;
   }
 #ifndef __riscv_atomic
-  #warning "Application has to be compiled with 'A' ISA extension!"
+  #warning "Application has to be compiled with RISC-V 'A' ISA extension!"
   neorv32_uart0_printf("[ERROR] Application has to be compiled with 'A' ISA extension!\n");
   return -1;
 #endif
@@ -86,12 +86,11 @@ int main(void) {
   neorv32_uart0_printf("Launching core1...\n");
 
   // Launch execution of core 1. Arguments:
-  // 1st: Hart ID of the core that we want to launch.
-  // 2nd: "main_core1" is the entry point for the core and we provide a total of 2kB of stack for it.
-  // 3rd: Pointer to the core's stack memory array.
-  // 4th: Size of the core's stack memory array.
+  // 1st: "main_core1" is the entry point for the core.
+  // 2nd: Pointer to the core's stack memory array.
+  // 3rd: Size of the core's stack memory array.
 
-  int smp_launch_rc = neorv32_smp_launch(1, main_core1, (uint8_t*)core1_stack, sizeof(core1_stack));
+  int smp_launch_rc = neorv32_smp_launch(main_core1, (uint8_t*)core1_stack, sizeof(core1_stack));
 
   // Here we are using a statically allocated array as stack memory. Alternatively, malloc
   // could be used (it is recommend to align the stack memory on a 16-byte boundary):
@@ -100,7 +99,7 @@ int main(void) {
   // check if launching was successful
   if (smp_launch_rc) {
     neorv32_uart0_printf("[ERROR] Launching core1 failed (%d)!\n", smp_launch_rc);
-    return 1;
+    return -1;
   }
 
 
@@ -113,13 +112,6 @@ int main(void) {
   // use spinlock to have exclusive access to UART0
   spin_lock();
   neorv32_uart0_printf("This is a message from core 0!\n");
-  spin_unlock();
-
-
-  // Test core0 RTE: raise an environment call exception
-  // As the RTE's debug handler is using UART0 we should use the spinlock here, too
-  spin_lock();
-  asm volatile("ecall");
   spin_unlock();
 
 
@@ -156,13 +148,6 @@ void main_core1(void) {
   neorv32_cpu_csr_set(CSR_MIE, 1 << CSR_MIE_MTIE); // enable MTIMER interrupt source
 
 
-  // Test core1 RTE: raise an environment call exception
-  // As the RTE's debug handler is using UART0 we should use the spinlock here, too
-  spin_lock();
-  asm volatile("ecall");
-  spin_unlock();
-
-
   // enable machine-level interrupts and wait in sleep mode
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
   while (1) {
@@ -172,7 +157,7 @@ void main_core1(void) {
 
 
 /**********************************************************************//**
- * CLINT machine timer interrupt handler for core0.
+ * CLINT machine timer interrupt handler for core 0.
  **************************************************************************/
 void clint_mtime_handler_core0(void) {
 
@@ -187,7 +172,7 @@ void clint_mtime_handler_core0(void) {
 
 
 /**********************************************************************//**
- * CLINT machine timer interrupt handler for core1.
+ * CLINT machine timer interrupt handler for core 1.
  **************************************************************************/
 void clint_mtime_handler_core1(void) {
 
