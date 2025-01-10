@@ -19,11 +19,11 @@
 // RTE private variables and functions
 // ------------------------------------------------------------------------------------------------
 
-// the private trap vector look-up table for each CPU core
-static uint32_t __neorv32_rte_vector_lut[2][NEORV32_RTE_NUM_TRAPS];
+// private trap vector look-up table (one table per core)
+static volatile uint32_t __neorv32_rte_vector_lut[2][NEORV32_RTE_NUM_TRAPS];
 
-// private helper function
-static void __neorv32_rte_print_hex_word(uint32_t num);
+// private helper functions
+static void __neorv32_rte_print_hex(uint32_t num, int digits);
 
 
 // ------------------------------------------------------------------------------------------------
@@ -34,11 +34,11 @@ static void __neorv32_rte_print_hex_word(uint32_t num);
  * NEORV32 runtime environment (RTE):
  * Setup RTE.
  *
- * @attention This function must be called on all cores that wish to use the RTE.
+ * @warning This function must be called on all cores that wish to use the RTE.
  *
  * @note This function installs a debug handler for ALL trap sources, which
- * gives detailed information about the trap. Actual handlers can be installed afterwards
- * via neorv32_rte_handler_install(uint8_t id, void (*handler)(void)).
+ * gives detailed information about the trap via UART0 (if available). Actual
+ * handlers can be installed afterwards via #neorv32_rte_handler_install().
  **************************************************************************/
 void neorv32_rte_setup(void) {
 
@@ -54,10 +54,10 @@ void neorv32_rte_setup(void) {
   // install debug handler for all trap sources
   int id;
   for (id = 0; id < ((int)NEORV32_RTE_NUM_TRAPS); id++) {
-    neorv32_rte_handler_uninstall(id); // this will configure the debug handler
+    neorv32_rte_handler_uninstall(id);
   }
 
-  // flush to main memory
+  // flush table to main memory
   asm volatile ("fence");
 }
 
@@ -66,49 +66,64 @@ void neorv32_rte_setup(void) {
  * NEORV32 runtime environment (RTE):
  * Install trap handler function (second-level trap handler).
  *
- * @attention This function operates on the RTE configuration of the core on which this function is executed.
+ * @note This function operates on the RTE instance of the
+ * core on which this function is executed.
  *
- * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
- * @param[in] handler The actual handler function for the specified trap (function MUST be of type "void function(void);").
- * @return 0 if success, -1 if error (invalid id or targeted trap not supported).
+ * @param[in] id Identifier (type) of the targeted trap
+ * See #NEORV32_RTE_TRAP_enum.
+ *
+ * @param[in] handler The actual handler function for the specified trap
+ * (function MUST be of type "void function(void);").
+ *
+ * @return 0 if success, -1 if invalid trap ID.
  **************************************************************************/
 int neorv32_rte_handler_install(int id, void (*handler)(void)) {
 
+  // check if invalid trap ID
   uint32_t index = (uint32_t)id;
-  if (index < ((uint32_t)NEORV32_RTE_NUM_TRAPS)) { // id valid?
-    uint32_t hart_id = neorv32_cpu_csr_read(CSR_MHARTID) & 1;
-    __neorv32_rte_vector_lut[hart_id][index] = (uint32_t)handler; // install handler
-    return 0;
+  if (index >= NEORV32_RTE_NUM_TRAPS) {
+    return -1;
   }
-  return -1;
+
+  // install handler
+  uint32_t hart_id = neorv32_cpu_csr_read(CSR_MHARTID) & 1;
+  __neorv32_rte_vector_lut[hart_id][index] = (uint32_t)handler;
+  return 0;
 }
 
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
- * Uninstall trap handler function from NEORV32 runtime environment, which was
- * previously installed via neorv32_rte_handler_install(uint8_t id, void (*handler)(void)).
+ * Uninstall trap handler function from NEORV32 runtime environment,
+ * which was previously installed via #neorv32_rte_handler_install().
  *
- * @attention This function operates on the RTE configuration of the core on which this function is executed.
+ * @note This function operates on the RTE instance of the
+ * core on which this function is executed.
  *
- * @param[in] id Identifier (type) of the targeted trap. See #NEORV32_RTE_TRAP_enum.
- * @return 0 if success, -1 if error (invalid id or targeted trap not supported).
+ * @param[in] id Identifier (type) of the targeted trap.
+ * See #NEORV32_RTE_TRAP_enum.
+ *
+ * @return 0 if success, -1 if invalid trap ID.
  **************************************************************************/
 int neorv32_rte_handler_uninstall(int id) {
 
+  // check if invalid trap ID
   uint32_t index = (uint32_t)id;
-  if (index < ((uint32_t)NEORV32_RTE_NUM_TRAPS)) { // id valid?
-    uint32_t hart_id = neorv32_cpu_csr_read(CSR_MHARTID) & 1;
-    __neorv32_rte_vector_lut[hart_id][index] = (uint32_t)(&neorv32_rte_debug_handler); // use dummy handler in case the trap is accidentally triggered
-    return 0;
+  if (index >= NEORV32_RTE_NUM_TRAPS) {
+    return -1;
   }
-  return -1;
+
+  // use dummy handler in case the trap is accidentally triggered
+  uint32_t hart_id = neorv32_cpu_csr_read(CSR_MHARTID) & 1;
+  __neorv32_rte_vector_lut[hart_id][index] = (uint32_t)(&neorv32_rte_debug_handler);
+  return 0;
 }
 
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
- * This is the core of the NEORV32 RTE (first-level trap handler, executed in machine mode).
+ * This is the core of the NEORV32 RTE (first-level trap handler,
+ * executed in machine mode).
  **************************************************************************/
 void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
 
@@ -267,9 +282,11 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
  * NEORV32 runtime environment (RTE):
  * Read register from application context (on stack).
  *
- * @attention This function operates on the RTE configuration of the core on which this function is executed.
+ * @note This function operates on the RTE instance of the
+ * core on which this function is executed.
  *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
+ *
  * @return Content of register x.
  **************************************************************************/
 uint32_t neorv32_rte_context_get(int x) {
@@ -289,9 +306,11 @@ uint32_t neorv32_rte_context_get(int x) {
  * NEORV32 runtime environment (RTE):
  * Write register to application context (on stack).
  *
- * @attention This function operates on the RTE configuration of the core on which this function is executed.
+ * @note This function operates on the RTE instance of the
+ * core on which this function is executed.
  *
  * @param[in] x Register number (0..31, corresponds to register x0..x31).
+ *
  * @param[in] data Data to be written to register x.
  **************************************************************************/
 void neorv32_rte_context_put(int x, uint32_t data) {
@@ -311,7 +330,8 @@ void neorv32_rte_context_put(int x, uint32_t data) {
  * NEORV32 runtime environment (RTE):
  * Debug trap handler, printing information via UART0.
  *
- * @attention This function operates on the RTE configuration of the core on which this function is executed.
+ * @note This function operates on the RTE instance of the
+ * core on which this function is executed.
  **************************************************************************/
 void neorv32_rte_debug_handler(void) {
 
@@ -370,21 +390,21 @@ void neorv32_rte_debug_handler(void) {
     case TRAP_CODE_FIRQ_12:
     case TRAP_CODE_FIRQ_13:
     case TRAP_CODE_FIRQ_14:
-    case TRAP_CODE_FIRQ_15:      neorv32_uart0_puts("Fast IRQ "); __neorv32_rte_print_hex_word(trap_cause & 0xf); break;
-    default:                     neorv32_uart0_puts("Unknown trap cause "); __neorv32_rte_print_hex_word(trap_cause); break;
+    case TRAP_CODE_FIRQ_15:      neorv32_uart0_puts("Fast IRQ "); __neorv32_rte_print_hex(trap_cause, 1); break;
+    default:                     neorv32_uart0_puts("Unknown trap cause "); __neorv32_rte_print_hex(trap_cause, 8); break;
   }
 
   // instruction address
   neorv32_uart0_puts(" @ PC=");
-  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MEPC));
+  __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MEPC), 8);
 
   // trapping instruction
   neorv32_uart0_puts(", MTINST=");
-  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTINST));
+  __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MTINST), 8);
 
   // trap value
   neorv32_uart0_puts(", MTVAL=");
-  __neorv32_rte_print_hex_word(neorv32_cpu_csr_read(CSR_MTVAL));
+  __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MTVAL), 8);
 
   // unhandled IRQ - disable interrupt channel
   if (((int32_t)trap_cause) < 0) { // is interrupt
@@ -412,11 +432,14 @@ void neorv32_rte_debug_handler(void) {
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
- * Private function to print 32-bit number as 8-digit hexadecimal value (with "0x" suffix).
+ * Private function to print the lowest 0 to 8 hex characters of a
+ * 32-bit number as hexadecimal value (with "0x" suffix).
  *
  * @param[in] num Number to print as hexadecimal via UART0.
+ *
+ * @param[in] digits Number of hexadecimal digits to print (0..8).
  **************************************************************************/
-void __neorv32_rte_print_hex_word(uint32_t num) {
+void __neorv32_rte_print_hex(uint32_t num, int digits) {
 
   int i;
   static const char hex_symbols[] = "0123456789ABCDEF";
@@ -425,7 +448,7 @@ void __neorv32_rte_print_hex_word(uint32_t num) {
     neorv32_uart0_putc('0');
     neorv32_uart0_putc('x');
 
-    for (i=0; i<8; i++) {
+    for (i=(digits-8); i<8; i++) {
       uint32_t index = (num >> (28 - 4*i)) & 0xF;
       neorv32_uart0_putc(hex_symbols[index]);
     }
