@@ -380,7 +380,8 @@ Note that `\n` (newline) is automatically converted to `\r\n` (carriage-return a
 .Constructors and Destructors
 [NOTE]
 Constructors and destructors for plain C code or for C++ applications are supported by the software framework.
-See `sw/example/hello_cpp` for a minimal example.
+See `sw/example/hello_cpp` for a minimal example. Note that constructor and destructors are only executed
+by core 0 (primary core) in the SMP <<_dual_core_configuration>>.
 
 .Newlib Test/Demo Program
 [TIP]

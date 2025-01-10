@@ -310,15 +310,15 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dci_ndmrstn : std_ulogic;
   signal dci_haltreq : std_ulogic_vector(num_cores_c-1 downto 0);
 
-  -- CPU ICC links (up to 4 instances) --
-  type multicore_icc_t is array (0 to 3) of icc_t;
-  signal icc_tx, icc_rx : multicore_icc_t;
+  -- CPU ICC links --
+  type core_complex_icc_t is array (0 to num_cores_c-1) of icc_t;
+  signal icc_tx, icc_rx : core_complex_icc_t;
 
-  -- bus: CPU core complex (up to 4 instances) --
-  type multicore_req_t is array (0 to 3) of bus_req_t;
-  type multicore_rsp_t is array (0 to 3) of bus_rsp_t;
-  signal core_req : multicore_req_t;
-  signal core_rsp : multicore_rsp_t;
+  -- bus: CPU core complex --
+  type core_complex_req_t is array (0 to num_cores_c-1) of bus_req_t;
+  type core_complex_rsp_t is array (0 to num_cores_c-1) of bus_rsp_t;
+  signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req : core_complex_req_t;
+  signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp : core_complex_rsp_t;
 
   -- bus: system bus (including DMA complex) --
   signal sys1_req, sys2_req, dma_req, sys3_req : bus_req_t;
@@ -494,21 +494,21 @@ begin
   cpu_firq(14) <= firq(FIRQ_SLINK_RX);
   cpu_firq(15) <= firq(FIRQ_SLINK_TX);
 
-  -- CPU core(s) + optional L1 caches --
+  -- CPU core(s) + optional L1 caches + bus switch --
   core_complex_gen:
   for i in 0 to num_cores_c-1 generate
 
-    -- Core Complex ---------------------------------------------------------------------------
+    -- CPU Core -------------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_cpu_neorv32_core_complex: entity neorv32.neorv32_core_complex
+    neorv32_cpu_inst: entity neorv32.neorv32_cpu
     generic map (
       -- General --
       HART_ID             => i,
-      NUM_HARTS           => num_cores_c,
       VENDOR_ID           => vendorid_c,
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
+      ICC_EN              => DUAL_CORE_EN,
       -- RISC-V ISA Extensions --
       RISCV_ISA_C         => RISCV_ISA_C,
       RISCV_ISA_E         => RISCV_ISA_E,
@@ -547,60 +547,115 @@ begin
       PMP_NAP_MODE_EN     => PMP_NAP_MODE_EN,
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS        => HPM_NUM_CNTS,
-      HPM_CNT_WIDTH       => HPM_CNT_WIDTH,
-      -- Instruction Cache (iCACHE) --
-      ICACHE_EN           => ICACHE_EN,
-      ICACHE_NUM_BLOCKS   => ICACHE_NUM_BLOCKS,
-      ICACHE_BLOCK_SIZE   => ICACHE_BLOCK_SIZE,
-      ICACHE_UC_BEGIN     => mem_uncached_begin_c,
-      -- Data Cache (dCACHE) --
-      DCACHE_EN           => DCACHE_EN,
-      DCACHE_NUM_BLOCKS   => DCACHE_NUM_BLOCKS,
-      DCACHE_BLOCK_SIZE   => DCACHE_BLOCK_SIZE,
-      DCACHE_UC_BEGIN     => mem_uncached_begin_c
+      HPM_CNT_WIDTH       => HPM_CNT_WIDTH
     )
     port map (
       -- global control --
-      clk_i     => clk_i,
-      rstn_i    => rstn_sys,
+      clk_i      => clk_i,
+      rstn_i     => rstn_sys,
       -- interrupts --
-      msi_i     => msw_irq(i),
-      mei_i     => mext_irq_i,
-      mti_i     => mtime_irq(i),
-      firq_i    => cpu_firq,
-      dbi_i     => dci_haltreq(i),
+      msi_i      => msw_irq(i),
+      mei_i      => mext_irq_i,
+      mti_i      => mtime_irq(i),
+      firq_i     => cpu_firq,
+      dbi_i      => dci_haltreq(i),
       -- inter-core communication links --
-      icc_tx_o  => icc_tx(i),
-      icc_rx_i  => icc_rx(i),
-      -- system bus interface --
-      bus_req_o => core_req(i),
-      bus_rsp_i => core_rsp(i)
+      icc_tx_o   => icc_tx(i),
+      icc_rx_i   => icc_rx(i),
+      -- instruction bus interface --
+      ibus_req_o => cpu_i_req(i),
+      ibus_rsp_i => cpu_i_rsp(i),
+      -- data bus interface --
+      dbus_req_o => cpu_d_req(i),
+      dbus_rsp_i => cpu_d_rsp(i)
     );
 
-    -- inter-core communication (ICC) links --
-    icc_connect: process(icc_tx)
-    begin
-      icc_rx(i) <= icc_terminate_c;
-      for j in 0 to num_cores_c-1 loop -- connect this core with every other core
-        icc_rx(i).rdy(j) <= icc_tx(j).rdy(i);
-        icc_rx(i).ack(j) <= icc_tx(j).ack(i);
-        icc_rx(i).dat(j*32+31 downto j*32) <= icc_tx(j).dat(i*32+31 downto i*32);
-      end loop;
-    end process icc_connect;
+
+    -- CPU L1 Instruction Cache (I-Cache) -----------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_icache_enabled:
+    if ICACHE_EN generate
+      neorv32_icache_inst: entity neorv32.neorv32_cache
+      generic map (
+        NUM_BLOCKS => ICACHE_NUM_BLOCKS,
+        BLOCK_SIZE => ICACHE_BLOCK_SIZE,
+        UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
+        UC_ENABLE  => true,
+        READ_ONLY  => true
+      )
+      port map (
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        host_req_i => cpu_i_req(i),
+        host_rsp_o => cpu_i_rsp(i),
+        bus_req_o  => icache_req(i),
+        bus_rsp_i  => icache_rsp(i)
+      );
+    end generate;
+
+    neorv32_icache_disabled:
+    if not ICACHE_EN generate
+      icache_req(i) <= cpu_i_req(i);
+      cpu_i_rsp(i)  <= icache_rsp(i);
+    end generate;
+
+
+    -- CPU L1 Data Cache (D-Cache) ------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_dcache_enabled:
+    if DCACHE_EN generate
+      neorv32_dcache_inst: entity neorv32.neorv32_cache
+      generic map (
+        NUM_BLOCKS => DCACHE_NUM_BLOCKS,
+        BLOCK_SIZE => DCACHE_BLOCK_SIZE,
+        UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
+        UC_ENABLE  => true,
+        READ_ONLY  => false
+      )
+      port map (
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        host_req_i => cpu_d_req(i),
+        host_rsp_o => cpu_d_rsp(i),
+        bus_req_o  => dcache_req(i),
+        bus_rsp_i  => dcache_rsp(i)
+      );
+    end generate;
+
+    neorv32_dcache_disabled:
+    if not DCACHE_EN generate
+      dcache_req(i) <= cpu_d_req(i);
+      cpu_d_rsp(i)  <= dcache_rsp(i);
+    end generate;
+
+
+    -- Core Instruction/Data Bus Switch -------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_core_bus_switch_inst: entity neorv32.neorv32_bus_switch
+    generic map (
+      ROUND_ROBIN_EN   => false, -- use prioritizing arbitration
+      PORT_A_READ_ONLY => false,
+      PORT_B_READ_ONLY => true   -- instruction fetch is read-only
+    )
+    port map (
+      clk_i    => clk_i,
+      rstn_i   => rstn_sys,
+      a_lock_i => '0', -- no exclusive accesses
+      a_req_i  => dcache_req(i), -- data accesses are prioritized
+      a_rsp_o  => dcache_rsp(i),
+      b_req_i  => icache_req(i),
+      b_rsp_o  => icache_rsp(i),
+      x_req_o  => core_req(i),
+      x_rsp_i  => core_rsp(i)
+    );
 
   end generate; -- /core_complex
 
-  -- terminate unused interfaces --
-  core_complex_terminate:
-  if num_cores_c < 4 generate
-    core_complex_terminate_gen:
-    for i in num_cores_c to 3 generate
-      core_req(i) <= req_terminate_c;
-      core_rsp(i) <= rsp_terminate_c;
-      icc_rx(i)   <= icc_terminate_c;
-      icc_tx(i)   <= icc_terminate_c;
-    end generate;
-  end generate;
+
+  -- Inter-Core Communication (ICC) Links ---------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  icc_rx(icc_rx'left)  <= icc_tx(icc_tx'right);
+  icc_rx(icc_rx'right) <= icc_tx(icc_tx'left);
 
 
   -- Core Complex Bus Arbiter ---------------------------------------------------------------
@@ -617,10 +672,10 @@ begin
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
       a_lock_i => '0',
-      a_req_i  => core_req(0),
-      a_rsp_o  => core_rsp(0),
-      b_req_i  => core_req(1),
-      b_rsp_o  => core_rsp(1),
+      a_req_i  => core_req(core_req'left),
+      a_rsp_o  => core_rsp(core_rsp'left),
+      b_req_i  => core_req(core_req'right),
+      b_rsp_o  => core_rsp(core_rsp'right),
       x_req_o  => sys1_req,
       x_rsp_i  => sys1_rsp
     );

@@ -68,7 +68,7 @@ void xirq_trap_handler0(void);
 void xirq_trap_handler1(void);
 void test_ok(void);
 void test_fail(void);
-void core1_main(void);
+int  core1_main(void);
 
 // MCAUSE value that will be NEVER set by the hardware
 const uint32_t mcause_never_c = 0x80000000UL; // = reserved
@@ -2154,7 +2154,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MSIE);
 
     // launch core 1
-    tmp_a = (uint32_t)neorv32_smp_launch(1, core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
+    tmp_a = (uint32_t)neorv32_smp_launch(core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
 
     // wait for software interrupt (issued by core 1) in sleep mode
     neorv32_cpu_sleep();
@@ -2405,7 +2405,7 @@ void test_fail(void) {
 /**********************************************************************//**
  * Test code to be run on second CPU core
  **************************************************************************/
-void core1_main(void) {
+int core1_main(void) {
 
   // trigger software interrupt of core0
   neorv32_clint_msi_set(0);

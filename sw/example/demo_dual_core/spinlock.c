@@ -1,12 +1,11 @@
 /**
  * @file spinlock.c
- * @brief Single simple spin-lock based on atomic memory operations.
+ * @brief Single simple spinlock based on atomic memory operations.
  */
 #include <neorv32.h>
 
 /**********************************************************************//**
- * Private spinlock locked variable. We can only use a single spinlock
- * as the processor only features a single reservation set.
+ * Private spinlock locked variable.
  **************************************************************************/
 static volatile uint32_t __spin_locked = 0;
 
@@ -14,7 +13,7 @@ static volatile uint32_t __spin_locked = 0;
 /**********************************************************************//**
  * Spinlock: set lock.
  *
- * @warning This function is blocking until the lock is acquired.
+ * @warning This function is blocking until the lock is acquired and set.
  **************************************************************************/
 void spin_lock(void) {
 

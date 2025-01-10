@@ -123,6 +123,7 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 | `BOOT_ADDR`        | suv(31:0) | CPU reset address. See section <<_address_space>>.
 | `DEBUG_PARK_ADDR`  | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
 | `DEBUG_EXC_ADDR`   | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
+| `ICC_EN`           | boolean   | Implement <<_inter_core_communication_icc>> module. Automatically enabled for the SMP <<_dual_core_configuration>>.
 | `RISCV_ISA_Sdext`  | boolean   | Implement RISC-V-compatible "debug" CPU operation mode required for the <<_on_chip_debugger_ocd>>.
 | `RISCV_ISA_Sdtrig` | boolean   | Implement RISC-V-compatible trigger module. See section <<_on_chip_debugger_ocd>>.
 | `RISCV_ISA_Smpmp`  | boolean   | Implement RISC-V-compatible physical memory protection (PMP). See section <<_smpmp_isa_extension>>.

@@ -29,7 +29,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    HART_ID             : natural range 0 to 3; -- hardware thread ID
+    HART_ID             : natural range 0 to 1023; -- hardware thread ID
     VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug-mode parking loop entry address, 4-byte aligned
@@ -930,10 +930,10 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zfinx); -- available if FPU implemented
 
       -- machine trap setup/handling, environment/information registers, etc. --
-      when csr_mstatus_c   | csr_mstatush_c | csr_misa_c     | csr_mie_c     | csr_mtvec_c      | csr_mscratch_c      |
-           csr_mepc_c      | csr_mcause_c   | csr_mip_c      | csr_mtval_c   | csr_mtinst_c     | csr_mcountinhibit_c |
-           csr_mvendorid_c | csr_marchid_c  | csr_mimpid_c   | csr_mhartid_c | csr_mconfigptr_c | csr_mxisa_c         |
-           csr_mxiccrxd_c  | csr_mxicctxd_c | csr_mxiccsr0_c | csr_mxiccsr1_c =>
+      when csr_mstatus_c   | csr_mstatush_c      | csr_misa_c      | csr_mie_c       | csr_mtvec_c  |
+           csr_mscratch_c  | csr_mepc_c          | csr_mcause_c    | csr_mip_c       | csr_mtval_c  |
+           csr_mtinst_c    | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c   | csr_mimpid_c |
+           csr_mhartid_c   | csr_mconfigptr_c    | csr_mxisa_c     | csr_mxiccsreg_c | csr_mxiccdata_c =>
         csr_valid(2) <= '1'; -- always implemented
 
       -- machine-controlled user-mode CSRs --
@@ -1671,7 +1671,7 @@ begin
           -- --------------------------------------------------------------------
           -- inter-core communication
           -- --------------------------------------------------------------------
-          when csr_mxiccrxd_c | csr_mxicctxd_c | csr_mxiccsr0_c | csr_mxiccsr1_c =>
+          when csr_mxiccsreg_c | csr_mxiccdata_c =>
             csr.rdata <= xcsr_rdata_i; -- implemented externally
 
           -- --------------------------------------------------------------------
