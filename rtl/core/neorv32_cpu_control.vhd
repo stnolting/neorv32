@@ -753,8 +753,8 @@ begin
 
           -- memory fence operations (execute even if illegal funct3) --
           when opcode_fence_c =>
-            ctrl_nxt.if_fence    <=     exe_engine.ir(instr_funct3_lsb_c); -- fence
-            ctrl_nxt.lsu_fence   <= not exe_engine.ir(instr_funct3_lsb_c); -- fence.i
+            ctrl_nxt.if_fence    <=     exe_engine.ir(instr_funct3_lsb_c); -- fence.i
+            ctrl_nxt.lsu_fence   <= not exe_engine.ir(instr_funct3_lsb_c); -- fence
             exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
 
           -- FPU: floating-point operations --
