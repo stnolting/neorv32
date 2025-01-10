@@ -48,7 +48,7 @@ begin
         csr_rdata_o(0) <= icc_rx_i.rdy;
         csr_rdata_o(1) <= tx_fifo_free;
       else -- csr_mxiccdata_c - data register
-        if (icc_rx_i.rdy = '1') then -- output zero if no RX data is available
+        if (icc_rx_i.rdy = '1') then -- "output gate": read zero if no RX data is available
           csr_rdata_o <= icc_rx_i.dat;
         end if;
       end if;
@@ -68,7 +68,7 @@ begin
     FIFO_WIDTH => XLEN,
     FIFO_RSYNC => true,
     FIFO_SAFE  => true,
-    FULL_RESET => false
+    FULL_RESET => false -- no need for a full HW reset as we have an "output gate"
   )
   port map (
     -- control --
