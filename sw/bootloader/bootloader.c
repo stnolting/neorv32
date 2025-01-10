@@ -58,6 +58,7 @@
 #endif
 
 /* -------- Auto-boot configuration -------- */
+/* Priority SPI > TWI */
 
 /** Time until the auto-boot sequence starts (in seconds); 0 = disabled */
 #ifndef AUTO_BOOT_TIMEOUT
@@ -103,6 +104,33 @@
   #define XIP_EN 1
 #endif
 
+/* -------- TWI configuration -------- */
+
+/** Enable TWI for copying to RAM */
+#ifndef TWI_EN
+  #define TWI_EN 0
+#endif
+
+/** TWI Clock pre-scaler */
+#ifndef TWI_CLK_PRSC
+  #define TWI_CLK_PRSC CLK_PRSC_64
+#endif
+
+/** TWI Clock divider */
+#ifndef TWI_CLK_DIV
+  #define TWI_CLK_DIV 3
+#endif
+
+/** TWI First Device ID */
+#ifndef TWI_DEVICE_ID
+  #define TWI_DEVICE_ID 0x50
+#endif
+
+/** TWI Memory address width (in numbers of bytes; 1 or 2) */
+#ifndef TWI_ADDR_BYTES
+  #define TWI_ADDR_BYTES 1
+#endif
+
 /**@}*/
 
 
@@ -111,7 +139,8 @@
  **************************************************************************/
 enum EXE_STREAM_SOURCE_enum {
   EXE_STREAM_UART  = 0, /**< Get executable via UART */
-  EXE_STREAM_FLASH = 1  /**< Get executable via SPI flash */
+  EXE_STREAM_FLASH = 1, /**< Get executable via SPI flash */
+  EXE_STREAM_TWI   = 2  /**< Get executable via TWI device */
 };
 
 
@@ -122,18 +151,20 @@ enum ERROR_CODES_enum {
   ERROR_SIGNATURE = 0, /**< 0: Wrong signature in executable */
   ERROR_SIZE      = 1, /**< 1: Insufficient instruction memory capacity */
   ERROR_CHECKSUM  = 2, /**< 2: Checksum error in executable */
-  ERROR_FLASH     = 3  /**< 3: SPI flash access error */
+  ERROR_FLASH     = 3, /**< 3: SPI flash access error */
+  ERROR_TWI       = 4  /**< 3: TWI access error (missing ACK) */
 };
 
 
 /**********************************************************************//**
  * Error messages
  **************************************************************************/
-const char error_message[4][5] = {
+const char error_message[5][5] = {
   "EXE",
   "SIZE",
   "CHKS",
-  "FLSH"
+  "SPI",
+  "TWI"
 };
 
 
@@ -237,6 +268,9 @@ void    spi_flash_write_disable(void);
 uint8_t spi_flash_read_status(void);
 void    spi_flash_write_addr(uint32_t addr);
 
+// TWI driver functions
+uint32_t twi_read_addr(uint32_t addr);
+
 
 /**********************************************************************//**
  * Bootloader main.
@@ -279,6 +313,11 @@ int main(void) {
 #endif
 #endif
 
+#if (TWI_EN != 0)
+  // setup TWI
+  neorv32_twi_setup(TWI_CLK_PRSC, TWI_CLK_DIV, 0);
+#endif
+
   // Configure CLINT timer interrupt
   if (neorv32_clint_available()) {
     NEORV32_CLINT->MTIME.uint32[0] = 0;
@@ -314,7 +353,7 @@ int main(void) {
   // ------------------------------------------------
   // Auto boot sequence
   // ------------------------------------------------
-#if (SPI_EN != 0)
+#if (SPI_EN != 0 || TWI_EN != 0)
 #if (AUTO_BOOT_TIMEOUT != 0)
   if (neorv32_clint_available()) {
 
@@ -331,7 +370,11 @@ int main(void) {
       }
 
       if (neorv32_clint_time_get() >= timeout_time) { // timeout? start auto boot sequence
-        get_exe(EXE_STREAM_FLASH); // try booting from flash
+        #if (SPI_EN != 0)
+          get_exe(EXE_STREAM_FLASH); // try booting from flash
+        #elif (TWI_EN != 0)
+          get_exe(EXE_STREAM_TWI); // try booting from twi
+        #endif
         PRINT_TEXT("\n");
         start_app(0);
         while(1);
@@ -378,6 +421,11 @@ int main(void) {
       get_exe(EXE_STREAM_FLASH);
     }
 #endif
+#if (TWI_EN != 0)
+    else if (c == 't') { // copy executable from TWI
+      get_exe(EXE_STREAM_TWI);
+    }
+#endif
     else if (c == 'e') { // start application program from IMEM
       if (exe_available == 0) { // executable available?
         PRINT_TEXT("No executable.");
@@ -418,6 +466,9 @@ void print_help(void) {
 #if (SPI_EN != 0)
              " s: Store to flash\n"
              " l: Load from flash\n"
+#endif
+#if (TWI_EN != 0)
+             " t: Load from TWI Device\n"
 #endif
 #if (XIP_EN != 0)
              " x: Boot from flash (XIP)\n"
@@ -521,25 +572,36 @@ void get_exe(int src) {
   getting_exe = 1; // to inform trap handler we were trying to get an executable
 
   // flash image base address
-  uint32_t addr = (uint32_t)SPI_BOOT_BASE_ADDR;
+  uint32_t addr = 0;
+  if (src == EXE_STREAM_FLASH) {
+    addr = (uint32_t)SPI_BOOT_BASE_ADDR;
+  }
+  
 
   // get image from UART?
   if (src == EXE_STREAM_UART) {
     PRINT_TEXT("Awaiting neorv32_exe.bin... ");
   }
-#if (SPI_EN != 0)
-  else {
+  #if (SPI_EN != 0)
+  else if(src == EXE_STREAM_FLASH) {
     PRINT_TEXT("Loading from SPI flash @");
     PRINT_XNUM(addr);
     PRINT_TEXT("...\n");
 
     // flash checks
     if (((NEORV32_SYSINFO->SOC & (1<<SYSINFO_SOC_IO_SPI)) == 0) || // SPI module not implemented?
-       (spi_flash_check() != 0)) { // check if flash ready (or available at all)
+      (spi_flash_check() != 0)) { // check if flash ready (or available at all)
       system_error(ERROR_FLASH);
     }
   }
-#endif
+  #endif
+  #if (TWI_EN)
+  else if(src == EXE_STREAM_TWI) {
+    PRINT_TEXT("Loading from TWI Devices, starting with ");
+    PRINT_XNUM(TWI_DEVICE_ID);
+    PRINT_TEXT("...\n");
+  }
+  #endif
 
   // check if valid image
   uint32_t signature = get_exe_word(src, addr + EXE_OFFSET_SIGNATURE);
@@ -647,27 +709,34 @@ void save_exe(void) {
  * Get word from executable stream
  *
  * @param src Source of executable stream data. See #EXE_STREAM_SOURCE_enum.
- * @param addr Address when accessing SPI flash.
+ * @param addr Address when accessing SPI flash or TWI Device.
  * @return 32-bit data word from stream.
  **************************************************************************/
 uint32_t get_exe_word(int src, uint32_t addr) {
+#if (TWI_EN != 0)
+  if (src == EXE_STREAM_TWI) {
+    return twi_read_addr(addr);
+  } else {
+#endif
+    union {
+      uint32_t uint32;
+      uint8_t  uint8[sizeof(uint32_t)];
+    } data;
 
-  union {
-    uint32_t uint32;
-    uint8_t  uint8[sizeof(uint32_t)];
-  } data;
+    uint32_t i;
 
-  uint32_t i;
-  for (i=0; i<4; i++) {
-    if (src == EXE_STREAM_UART) {
-      data.uint8[i] = (uint8_t)PRINT_GETC();
+    for (i=0; i<4; i++) {
+      if (src == EXE_STREAM_UART) {
+        data.uint8[i] = (uint8_t)PRINT_GETC();
+      }
+      else {
+        data.uint8[i] = spi_flash_read_byte(addr + i); // little-endian byte order
+      }
     }
-    else {
-      data.uint8[i] = spi_flash_read_byte(addr + i); // little-endian byte order
-    }
-  }
-
   return data.uint32;
+#if (TWI_EN != 0)
+  }
+#endif
 }
 
 
@@ -950,5 +1019,89 @@ void spi_flash_write_addr(uint32_t addr) {
   neorv32_spi_trans(address.uint8[0]);
 #else
   #error "Unsupported SPI_FLASH_ADDR_BYTES configuration!"
+#endif
+}
+
+// ##########################################################################################################
+// TWI driver functions
+// ##########################################################################################################
+uint32_t twi_read_addr(uint32_t addr) {
+
+#if (TWI_EN != 0)
+  int device_nack = 0;
+  uint8_t transfer;
+
+  union {
+    uint32_t uint32;
+    uint8_t  uint8[sizeof(uint32_t)];
+  } data, address;
+
+  address.uint32 = addr;
+
+#if (TWI_ADDR_BYTES == 1)
+  uint8_t device_id = address.uint8[TWI_ADDR_BYTES] + TWI_DEVICE_ID;
+#elif (TWI_ADDR_BYTES == 2)
+  uint8_t device_id = TWI_DEVICE_ID;
+#else
+  #error "Unsupported TWI_ADDR_BYTES configuration!"
+#endif
+
+  
+  /***********************
+   * Set address to read 
+   ***********************/
+
+  neorv32_twi_generate_start();
+
+  // Send device addr
+  transfer = device_id << 1;
+  device_nack |= neorv32_twi_trans(&transfer, 0);
+
+  // Send read address
+#if (TWI_ADDR_BYTES == 1)
+  transfer = address.uint8[0];
+  device_nack |= neorv32_twi_trans(&transfer, 0);
+#elif (TWI_ADDR_BYTES == 2)
+  transfer = address.uint8[1];
+  device_nack |= neorv32_twi_trans(&transfer, 0);
+  transfer = address.uint8[0];
+  device_nack |= neorv32_twi_trans(&transfer, 0);
+#else
+  #error "Unsupported TWI_ADDR_BYTES configuration!"
+#endif
+
+  /***********************
+   * Read data 
+   ***********************/
+
+  neorv32_twi_generate_start();
+
+  // Send device addr with read flag
+  transfer = device_id << 1;
+  transfer |= 0x01;
+  device_nack |= neorv32_twi_trans(&transfer, 0);
+
+  if (device_nack)
+  {
+    system_error(ERROR_TWI);
+  }
+
+  // Read
+  for (uint8_t i = 0; i <= 2; i++)
+  {
+    transfer = 0xFF;
+    neorv32_twi_trans(&transfer, 1); // ACK by master
+    data.uint8[i] = transfer;
+  }
+  // Last read with NACK by master
+  transfer = 0xFF;
+  neorv32_twi_trans(&transfer, 0); // NACK by master
+  data.uint8[3] = transfer;
+  
+  neorv32_twi_generate_stop();
+
+  return data.uint32;
+#else
+  return 0;
 #endif
 }
