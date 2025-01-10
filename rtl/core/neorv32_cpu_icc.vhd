@@ -16,10 +16,6 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_icc is
-  generic (
-    HART_ID   : natural range 0 to 3; -- ID of this core
-    NUM_HARTS : natural range 1 to 4 -- number of cores, has to be a power of two
-  );
   port (
     -- global control --
     clk_i       : in  std_ulogic; -- global clock, rising edge
@@ -38,109 +34,57 @@ end neorv32_cpu_icc;
 
 architecture neorv32_cpu_icc_rtl of neorv32_cpu_icc is
 
-  -- link select --
-  constant id_width_c : natural := index_size_f(NUM_HARTS);
-  signal link_id : std_ulogic_vector(id_width_c-1 downto 0);
-
-  -- link control --
-  signal link_sel, tx_fifo_we, tx_fifo_free : std_ulogic_vector(NUM_HARTS-1 downto 0);
-
-  -- incoming data as array --
-  type rx_data_t is array (0 to NUM_HARTS-1) of std_ulogic_vector(XLEN-1 downto 0);
-  signal rx_data : rx_data_t;
+  signal tx_fifo_we, tx_fifo_free : std_ulogic;
 
 begin
 
   -- CSR Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_write: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      link_id <= (others => '0');
-    elsif rising_edge(clk_i) then
-      if (csr_we_i = '1') and (csr_addr_i(11 downto 1) = csr_mxiccsr0_c(11 downto 1)) then
-        link_id <= csr_wdata_i(id_width_c-1 downto 0);
-      end if;
-    end if;
-  end process csr_write;
-
-  csr_read: process(csr_addr_i, link_id, icc_rx_i, tx_fifo_free, rx_data)
+  csr_read: process(csr_addr_i, icc_rx_i, tx_fifo_free)
   begin
     csr_rdata_o <= (others => '0'); -- default
-    if (csr_addr_i(11 downto 2) = csr_mxiccrxd_c(11 downto 2)) then -- ICC CSRs base address
-      if (csr_addr_i(1) = '0') then -- data register(s)
-        csr_rdata_o <= rx_data(to_integer(unsigned(link_id)));
-      else -- control and status register(s)
-        csr_rdata_o(XLEN-1)                <= icc_rx_i.rdy(to_integer(unsigned(link_id)));
-        csr_rdata_o(XLEN-2)                <= tx_fifo_free(to_integer(unsigned(link_id)));
-        csr_rdata_o(id_width_c-1 downto 0) <= link_id;
+    if (csr_addr_i(11 downto 1) = csr_mxiccsreg_c(11 downto 1)) then -- ICC CSR base address
+      if (csr_addr_i(0) = '0') then -- csr_mxiccsreg_c - control and status register
+        csr_rdata_o(0) <= icc_rx_i.rdy;
+        csr_rdata_o(1) <= tx_fifo_free;
+      else -- csr_mxiccdata_c - data register
+        if (icc_rx_i.rdy = '1') then -- output zero if no RX data is available
+          csr_rdata_o <= icc_rx_i.dat;
+        end if;
       end if;
     end if;
   end process csr_read;
 
+  -- link read/write --
+  icc_tx_o.ack <= '1' when (csr_re_i = '1') and (csr_addr_i = csr_mxiccdata_c) else '0';
+  tx_fifo_we   <= '1' when (csr_we_i = '1') and (csr_addr_i = csr_mxiccdata_c) else '0';
 
-  -- Communication Links --------------------------------------------------------------------
+
+  -- Message Queue (FIFO) -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  link_gen:
-  for i in 0 to NUM_HARTS-1 generate
-
-    -- TX FIFOs for outgoing links --
-    queue_gen:
-    if i /= HART_ID generate
-      queue_inst: entity neorv32.neorv32_fifo
-      generic map (
-        FIFO_DEPTH => 4, -- yes, this is fixed
-        FIFO_WIDTH => XLEN,
-        FIFO_RSYNC => true,
-        FIFO_SAFE  => true,
-        FULL_RESET => true
-      )
-      port map (
-        -- control --
-        clk_i   => clk_i,
-        rstn_i  => rstn_i,
-        clear_i => '0',
-        half_o  => open,
-        -- write port --
-        wdata_i => csr_wdata_i,
-        we_i    => tx_fifo_we(i),
-        free_o  => tx_fifo_free(i),
-        -- read port --
-        re_i    => icc_rx_i.ack(i),
-        rdata_o => icc_tx_o.dat(i*XLEN+(XLEN-1) downto i*XLEN),
-        avail_o => icc_tx_o.rdy(i)
-      );
-    end generate;
-
-    -- no FIFO/link for *this* core --
-    queue_terminate:
-    if i = HART_ID generate
-      tx_fifo_free(i)                             <= '0';
-      icc_tx_o.dat(i*XLEN+(XLEN-1) downto i*XLEN) <= (others => '0');
-      icc_tx_o.rdy(i)                             <= '0';
-    end generate;
-
-    -- reorganize incoming links as 2d-array --
-    rx_data(i) <= icc_rx_i.dat(i*XLEN+(XLEN-1) downto i*XLEN);
-
-    -- link control --
-    link_sel(i)     <= '1' when (unsigned(link_id) = to_unsigned(i, id_width_c)) else '0';
-    icc_tx_o.ack(i) <= '1' when (csr_re_i = '1') and (csr_addr_i = csr_mxiccrxd_c) and (link_sel(i) = '1') else '0';
-    tx_fifo_we(i)   <= '1' when (csr_we_i = '1') and (csr_addr_i = csr_mxicctxd_c) and (link_sel(i) = '1') else '0';
-
-  end generate;
-
-
-  -- terminate unused links --
-  link_terminate:
-  if NUM_HARTS < 4 generate
-    link_terminate_gen:
-    for i in NUM_HARTS to 3 generate
-      icc_tx_o.rdy(i) <= '0';
-      icc_tx_o.ack(i) <= '0';
-      icc_tx_o.dat(i*XLEN+(XLEN-1) downto i*XLEN) <= (others => '0');
-    end generate;
-  end generate;
+  queue_inst: entity neorv32.neorv32_fifo
+  generic map (
+    FIFO_DEPTH => 4, -- yes, this is fixed
+    FIFO_WIDTH => XLEN,
+    FIFO_RSYNC => true,
+    FIFO_SAFE  => true,
+    FULL_RESET => false
+  )
+  port map (
+    -- control --
+    clk_i   => clk_i,
+    rstn_i  => rstn_i,
+    clear_i => '0',
+    half_o  => open,
+    -- write port --
+    wdata_i => csr_wdata_i,
+    we_i    => tx_fifo_we,
+    free_o  => tx_fifo_free,
+    -- read port --
+    re_i    => icc_rx_i.ack,
+    rdata_o => icc_tx_o.dat,
+    avail_o => icc_tx_o.rdy
+  );
 
 
 end neorv32_cpu_icc_rtl;

@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100901"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100902"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -224,19 +224,18 @@ package neorv32_package is
     err  => '0'
   );
 
-  -- Inter-Core Communication (ICC) Links ---------------------------------------------------
+  -- Inter-Core Communication (ICC) Link ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- icc link (for up to 4 cores) --
   type icc_t is record
-    rdy : std_ulogic_vector(4-1 downto 0); -- data available
-    ack : std_ulogic_vector(4-1 downto 0); -- read-enable
-    dat : std_ulogic_vector(4*XLEN-1 downto 0); -- data word
+    rdy : std_ulogic; -- data available
+    ack : std_ulogic; -- read-enable
+    dat : std_ulogic_vector(XLEN-1 downto 0); -- data word
   end record;
 
   -- endpoint termination --
   constant icc_terminate_c : icc_t := (
-    rdy => (others => '0'),
-    ack => (others => '0'),
+    rdy => '0',
+    ack => '0',
     dat => (others => '0')
   );
 
@@ -482,10 +481,8 @@ package neorv32_package is
   constant csr_mhpmcounter14h_c : std_ulogic_vector(11 downto 0) := x"b8e";
   constant csr_mhpmcounter15h_c : std_ulogic_vector(11 downto 0) := x"b8f";
   -- NEORV32-specific read/write machine registers --
-  constant csr_mxiccrxd_c       : std_ulogic_vector(11 downto 0) := x"bc0";
-  constant csr_mxicctxd_c       : std_ulogic_vector(11 downto 0) := x"bc1";
-  constant csr_mxiccsr0_c       : std_ulogic_vector(11 downto 0) := x"bc2";
-  constant csr_mxiccsr1_c       : std_ulogic_vector(11 downto 0) := x"bc3";
+  constant csr_mxiccsreg_c      : std_ulogic_vector(11 downto 0) := x"bc0";
+  constant csr_mxiccdata_c      : std_ulogic_vector(11 downto 0) := x"bc1";
   -- user counters/timers --
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
 --constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
