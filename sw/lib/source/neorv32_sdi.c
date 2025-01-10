@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,10 +9,6 @@
 /**
  * @file neorv32_sdi.c
  * @brief Serial data interface controller (SDI) HW driver source file.
- *
- * @note These functions should only be used if the SDI unit was synthesized (IO_SDI_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #include <neorv32.h>
@@ -38,7 +34,7 @@ int neorv32_sdi_available(void) {
  * Reset, enable and configure SDI controller.
  * The SDI control register bits are listed in #NEORV32_SDI_CTRL_enum.
  *
- * @param[in] irq_mask Interrupt configuration mask (CTRL's irq_* bits).
+ * @param[in] irq_mask Interrupt configuration bit mask (CTRL's irq_* bits).
  **************************************************************************/
 void neorv32_sdi_setup(uint32_t irq_mask) {
 
