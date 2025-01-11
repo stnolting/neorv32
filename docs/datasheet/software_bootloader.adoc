@@ -29,6 +29,11 @@ An "auto boot" feature can optionally fetch this executable right after reset if
 via UART. This allows to build processor setups with _non-volatile application storage_ while maintaining the option
 to update the application software at any timer.
 
+.Software Documentation
+[TIP]
+The Doxygen-based documentation of the bootloader's software is available online:
+https://stnolting.github.io/neorv32/sw/bootloader_8c.html
+
 
 :sectnums:
 ==== Bootloader SoC/CPU Requirements
@@ -232,8 +237,10 @@ is no valid boot image found, and error code will be shown.
 If something goes wrong during bootloader operation an error code and a short message is shown. In this case the processor
 is halted (entering <<_sleep_mode>>), the bootloader status LED is permanently activated and the processor has to be reset manually.
 
+.Debugging Information
 [TIP]
-In many cases the error source is just _temporary_ (like some HF spike during an UART upload). Just try again.
+If an unexpected exception has been raised, the bootloader prints hexadecimal debug information showing
+the <<_mcause>>, <<_mepc>> and <<_mtval>> CSR values.
 
 [cols="<2,<8"]
 [grid="rows"]
@@ -245,7 +252,3 @@ In many cases the error source is just _temporary_ (like some HF spike during an
 | **`ERR_EXC`**  | The bootloader encountered an unexpected exception during operation. This might be caused when it tries to access peripherals that were not implemented during synthesis. Example: executing commands `l` or `s` (SPI flash operations) without the SPI module being implemented.
 | **`ERR_TWI`**  | The TWI received an unexpected NACK while reading the external memory. Are the address and speed settings correct?
 |=======================
-
-[TIP]
-If an unexpected exception has been raised, the bootloader prints hexadecimal debug information showing
-the <<_mcause>>, <<_mepc>> and <<_mtval>> CSR values.
