@@ -1045,7 +1045,7 @@ begin
         end case;
 
       when opcode_amo_c => -- atomic memory operation
-        if RISCV_ISA_Zaamo and (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then
+        if RISCV_ISA_Zaamo and (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then -- word-quantity only
           case exe_engine.ir(instr_funct5_msb_c downto instr_funct5_lsb_c) is
             when "00001" | "00000" | "00100" | "01100" | "01000" | "10000" | "10100" | "11000" | "11100" => illegal_cmd <= '0';
             when others => illegal_cmd <= '1';
