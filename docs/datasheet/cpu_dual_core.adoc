@@ -26,7 +26,7 @@ The following table summarizes the most important aspects when using the dual-co
 |=======================
 | **CPU configuration** | Both cores use the same cache, CPU and ISA configuration provided by the according top generics.
 | **Debugging** | A special SMP openOCD script (`sw/openocd/openocd_neorv32.dual_core.cfg`) is required to
-debug both cores at one. SMP-debugging is fully supported by the RISC-V gdb port.
+debug both cores at once. SMP-debugging is fully supported by the RISC-V gdb port.
 | **Clock and reset** | Both cores use the same global processor clock and reset. If <<_cpu_clock_gating>>
 is enabled, the clock of each core can be individually halted by putting the core into <<_sleep_mode>>.
 | **Address space** | Both cores have full access to the same physical <<_address_space>>.
@@ -34,9 +34,10 @@ is enabled, the clock of each core can be individually halted by putting the cor
 all <<_neorv32_specific_fast_interrupt_requests>> (FIRQs). Additionally, the RISC-V machine-level _external
 interrupt_ (via the top `mext_irq_i` port) is also send to both cores. In contrast, the RISC-V machine level
 _software_ and _timer_ interrupts are core-exclusive (provided by the <<_core_local_interruptor_clint>>).
-| **RTE** | The <<_neorv32_runtime_environment>> fully supports the dual-core configuration and provides
-core-individual trap handler tables. However, the RTE needs to be explicitly initialized on each core
-(executing `neorv32_rte_setup()`).
+| **RTE** | The <<_neorv32_runtime_environment>> can be used for both cores. However, the RTE needs to be
+explicitly initialized on each core (executing `neorv32_rte_setup()`). Note that the installed trap handlers
+apply to both cores. The installed user-defined trap handlers can determine the core's ID to perform
+core-specific trap handling.
 | **Memory** | Each core has its own stack. The top of stack of core 0 is defined by the <<_linker_script>>
 while the top of stack of core 1 has to be explicitly defined by core 0 (see <<_dual_core_boot>>). Both
 cores share the same heap, `.data` and `.bss` sections. Hence, only core 0 setups the `.data` and `.bss`
@@ -50,6 +51,19 @@ instructions) or by using <<_atomic_memory_access>>.
 | **Inter-core communication** | See section <<_inter_core_communication_icc>>.
 | **Bootloader** | Only core 0 will boot and execute the bootloader while core 1 is held in standby.
 | **Booting** | See section <<_dual_core_boot>>.
+|=======================
+
+
+==== SMP Software Library
+
+An SMP library provides basic functions for launching the secondary core and for performing direct
+core-to-core communication:
+
+[cols="<1,<8"]
+[grid="none"]
+|=======================
+| neorv32_smp.c | link:https://stnolting.github.io/neorv32/sw/neorv32__smp_8c.html[Online software reference (Doxygen)]
+| neorv32_smp.h | link:https://stnolting.github.io/neorv32/sw/neorv32__smp_8h.html[Online software reference (Doxygen)]
 |=======================
 
 
@@ -77,11 +91,6 @@ will return a data word from the RX FIFO of _this_ core.
 The ICC FIFOs do not provide any interrupt capabilities. Software is expected to use the machine-software
 interrupt of the receiving core (provided by the <<_core_local_interruptor_clint>>) to inform it about
 available messages.
-
-.ICC Software API
-[TIP]
-The NEORV32 software framework provides API wrappers to abstract inter-core communication:
-`sw/lib/include/noevr32_smp.h`
 
 
 ==== Dual-Core Boot

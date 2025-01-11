@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 11.01.2025 | 1.10.9.4 | :warning: RTE: use a single, global trap handler table that applies to _both_ cores | [#1150](https://github.com/stnolting/neorv32/pull/1150) |
 | 10.01.2025 | 1.10.9.3 | split functional behavior of `fence` and `fence.i` instructions | [#1149](https://github.com/stnolting/neorv32/pull/1149) |
 | 10.01.2025 | 1.10.9.2 | clean-up SMP dual-core configuration (HW and SW optimizations) | [#1146](https://github.com/stnolting/neorv32/pull/1146) |
 | 09.01.2025 | 1.10.9.1 | fix side-effects of CSR read instructions | [#1145](https://github.com/stnolting/neorv32/pull/1145) |
