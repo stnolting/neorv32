@@ -226,8 +226,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mie_mti        : std_ulogic; -- machine timer interrupt enable
     mie_firq       : std_ulogic_vector(15 downto 0); -- fast interrupt enable
     --
-    privilege      : std_ulogic; -- current privilege mode
-    privilege_eff  : std_ulogic; -- current *effective* privilege mode
+    prv_level      : std_ulogic; -- current privilege level
+    prv_level_eff  : std_ulogic; -- current *effective* privilege level
     --
     mepc           : std_ulogic_vector(XLEN-1 downto 0); -- machine exception PC
     mcause         : std_ulogic_vector(5 downto 0); -- machine trap cause
@@ -339,7 +339,7 @@ begin
         -- ------------------------------------------------------------
           fetch_engine.restart <= '0'; -- restart done
           fetch_engine.pc      <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- initialize from PC incl. 16-bit-alignment bit
-          fetch_engine.priv    <= csr.privilege_eff; -- set new privilege level
+          fetch_engine.priv    <= csr.prv_level_eff; -- set new privilege level
           fetch_engine.state   <= IF_REQUEST;
 
       end case;
@@ -816,9 +816,7 @@ begin
            (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
            (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
            (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- illegal instruction exception
-          if (RISCV_ISA_Zaamo and (opcode(2) = opcode_amo_c(2))) or (opcode(5) = '0') then -- atomic operation / normal load
-            ctrl_nxt.rf_wb_en <= '1'; -- allow write-back to register file (won't happen in case of exception)
-          end if;
+          ctrl_nxt.rf_wb_en    <= not ctrl.lsu_rw; -- write-back to register file if read operation (won't happen in case of exception)
           exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
@@ -876,13 +874,13 @@ begin
   ctrl_o.lsu_rw       <= ctrl.lsu_rw;
   ctrl_o.lsu_mo_we    <= '1' when (exe_engine.state = EX_MEM_REQ) else '0'; -- write memory output registers (data & address)
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
-  ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.privilege_eff; -- effective privilege level for loads/stores in M-mode
+  ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.prv_level_eff; -- effective privilege level for loads/stores in M-mode
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
   ctrl_o.ir_funct12   <= exe_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c);
   ctrl_o.ir_opcode    <= opcode;
   -- cpu status --
-  ctrl_o.cpu_priv     <= csr.privilege_eff;
+  ctrl_o.cpu_priv     <= csr.prv_level_eff;
   ctrl_o.cpu_sleep    <= sleep_mode;
   ctrl_o.cpu_trap     <= trap_ctrl.env_enter;
   ctrl_o.cpu_debug    <= debug_ctrl.run;
@@ -999,12 +997,12 @@ begin
     if (csr_addr_v(11 downto 4) = csr_dcsr_c(11 downto 4)) and -- debug-mode-only CSR?
        RISCV_ISA_Sdext and (debug_ctrl.run = '0') then -- debug-mode implemented and not running?
       csr_valid(0) <= '0'; -- invalid access
-    elsif RISCV_ISA_Zicntr and RISCV_ISA_U and (csr.privilege_eff = '0') and -- any user-mode counters available and in user-mode?
+    elsif RISCV_ISA_Zicntr and RISCV_ISA_U and (csr.prv_level_eff = '0') and -- any user-mode counters available and in user-mode?
           (csr_addr_v(11 downto 8) = csr_cycle_c(11 downto 8)) and -- user-mode counter access
           (((csr_addr_v(1 downto 0) = csr_cycle_c(1 downto 0)) and (csr.mcounteren_cy = '0')) or -- illegal access to cycle
            ((csr_addr_v(1 downto 0) = csr_instret_c(1 downto 0)) and (csr.mcounteren_ir = '0'))) then -- illegal access to instret
       csr_valid(0) <= '0'; -- invalid access
-    elsif (csr_addr_v(9 downto 8) /= "00") and (csr.privilege_eff = '0') then -- invalid privilege level
+    elsif (csr_addr_v(9 downto 8) /= "00") and (csr.prv_level_eff = '0') then -- invalid privilege level
       csr_valid(0) <= '0'; -- invalid access
     else
       csr_valid(0) <= '1'; -- access granted
@@ -1047,7 +1045,7 @@ begin
         end case;
 
       when opcode_amo_c => -- atomic memory operation
-        if RISCV_ISA_Zaamo and (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then
+        if RISCV_ISA_Zaamo and (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then -- word-quantity only
           case exe_engine.ir(instr_funct5_msb_c downto instr_funct5_lsb_c) is
             when "00001" | "00000" | "00100" | "01100" | "01000" | "10000" | "10100" | "11000" | "11100" => illegal_cmd <= '0';
             when others => illegal_cmd <= '1';
@@ -1068,9 +1066,9 @@ begin
             case exe_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c) is
               when funct12_ecall_c  => illegal_cmd <= '0'; -- ecall is always allowed
               when funct12_ebreak_c => illegal_cmd <= '0'; -- ebreak is always allowed
-              when funct12_mret_c   => illegal_cmd <= (not csr.privilege) or debug_ctrl.run; -- mret allowed in (real/non-debug) M-mode only
+              when funct12_mret_c   => illegal_cmd <= (not csr.prv_level) or debug_ctrl.run; -- mret allowed in (real/non-debug) M-mode only
               when funct12_dret_c   => illegal_cmd <= not debug_ctrl.run; -- dret allowed in debug mode only
-              when funct12_wfi_c    => illegal_cmd <= (not csr.privilege) and csr.mstatus_tw; -- wfi allowed in M-mode or if TW is zero
+              when funct12_wfi_c    => illegal_cmd <= (not csr.prv_level) and csr.mstatus_tw; -- wfi allowed in M-mode or if TW is zero
               when others           => illegal_cmd <= '1'; -- undefined
             end case;
           end if;
@@ -1128,8 +1126,8 @@ begin
       if RISCV_ISA_Sdext then
         trap_ctrl.exc_buf(exc_ebreak_c) <= (not trap_ctrl.env_enter) and (trap_ctrl.exc_buf(exc_ebreak_c) or
           (trap_ctrl.hwtrig and (not csr.tdata1_action)) or -- trigger module fires and enter-debug-action is disabled
-          (trap_ctrl.ebreak and (    csr.privilege) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- enter M-mode handler on ebreak in M-mode
-          (trap_ctrl.ebreak and (not csr.privilege) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run)));  -- enter M-mode handler on ebreak in U-mode
+          (trap_ctrl.ebreak and (    csr.prv_level) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- enter M-mode handler on ebreak in M-mode
+          (trap_ctrl.ebreak and (not csr.prv_level) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run)));  -- enter M-mode handler on ebreak in U-mode
       else
         trap_ctrl.exc_buf(exc_ebreak_c) <= (trap_ctrl.exc_buf(exc_ebreak_c) or trap_ctrl.ebreak or (trap_ctrl.hwtrig and (not csr.tdata1_action))) and (not trap_ctrl.env_enter);
       end if;
@@ -1202,7 +1200,7 @@ begin
       if    (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
       elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c; -- illegal instruction
       elsif (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c; -- instruction address misaligned
-      elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & replicate_f(csr.privilege, 2); -- environment call (U/M)
+      elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & replicate_f(csr.prv_level, 2); -- environment call (U/M)
       elsif (trap_ctrl.exc_buf(exc_ebreak_c)   = '1') then trap_ctrl.cause <= trap_brk_c; -- environment breakpoint
       elsif (trap_ctrl.exc_buf(exc_salign_c)   = '1') then trap_ctrl.cause <= trap_sma_c; -- store address misaligned
       elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c; -- load address misaligned
@@ -1276,7 +1274,7 @@ begin
   trap_ctrl.irq_fire(0) <= '1' when
     (exe_engine.state = EX_EXECUTE) and -- trigger system IRQ only in EX_EXECUTE state
     (or_reduce_f(trap_ctrl.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
-    ((csr.mstatus_mie = '1') or (csr.privilege = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
+    ((csr.mstatus_mie = '1') or (csr.prv_level = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
 
   -- debug-entry halt interrupt? --
@@ -1355,7 +1353,7 @@ begin
   begin
     if (rstn_i = '0') then
       csr.we             <= '0';
-      csr.privilege      <= priv_mode_m_c;
+      csr.prv_level      <= priv_mode_m_c;
       csr.mstatus_mie    <= '0';
       csr.mstatus_mpie   <= '0';
       csr.mstatus_mpp    <= priv_mode_m_c;
@@ -1366,8 +1364,8 @@ begin
       csr.mie_mti        <= '0';
       csr.mie_firq       <= (others => '0');
       csr.mtvec          <= (others => '0');
-      csr.mscratch       <= x"19880704";
-      csr.mepc           <= BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
+      csr.mscratch       <= (others => '0');
+      csr.mepc           <= (others => '0');
       csr.mcause         <= (others => '0');
       csr.mtval          <= (others => '0');
       csr.mtinst         <= (others => '0');
@@ -1540,16 +1538,16 @@ begin
             csr.mtinst <= (others => '0');
           end if;
           -- update privilege level and interrupt-enable stack --
-          csr.privilege    <= priv_mode_m_c; -- execute trap in machine mode
+          csr.prv_level    <= priv_mode_m_c; -- execute trap in machine mode
           csr.mstatus_mie  <= '0'; -- disable interrupts
           csr.mstatus_mpie <= csr.mstatus_mie; -- backup previous mie state
-          csr.mstatus_mpp  <= csr.privilege; -- backup previous privilege mode
+          csr.mstatus_mpp  <= csr.prv_level; -- backup previous privilege level
         end if;
 
         -- DEBUG trap entry - no CSR update when already in debug-mode! --
         if RISCV_ISA_Sdext and (trap_ctrl.cause(5) = '1') and (debug_ctrl.run = '0') then
           csr.dcsr_cause <= trap_ctrl.cause(2 downto 0); -- trap cause
-          csr.dcsr_prv   <= csr.privilege; -- current privilege mode when debug mode was entered
+          csr.dcsr_prv   <= csr.prv_level; -- current privilege level when debug mode was entered
           csr.dpc        <= trap_ctrl.epc(XLEN-1 downto 1) & '0'; -- trap PC
         end if;
 
@@ -1561,18 +1559,18 @@ begin
         -- return from debug mode --
         if RISCV_ISA_Sdext and (debug_ctrl.run = '1') then
           if RISCV_ISA_U then
-            csr.privilege <= csr.dcsr_prv;
+            csr.prv_level <= csr.dcsr_prv;
             if (csr.dcsr_prv /= priv_mode_m_c) then
-              csr.mstatus_mprv <= '0'; -- clear if return to priv. mode less than M
+              csr.mstatus_mprv <= '0'; -- clear if return to priv. level less than M
             end if;
           end if;
         -- return from normal trap --
         else
           if RISCV_ISA_U then
-            csr.privilege   <= csr.mstatus_mpp; -- restore previous privilege mode
-            csr.mstatus_mpp <= priv_mode_u_c; -- set to least-privileged mode that is supported
+            csr.prv_level   <= csr.mstatus_mpp; -- restore previous privilege level
+            csr.mstatus_mpp <= priv_mode_u_c; -- set to least-privileged level that is supported
             if (csr.mstatus_mpp /= priv_mode_m_c) then
-              csr.mstatus_mprv <= '0'; -- clear if return to priv. mode less than M
+              csr.mstatus_mprv <= '0'; -- clear if return to priv. level less than M
             end if;
           end if;
           csr.mstatus_mie  <= csr.mstatus_mpie; -- restore machine-mode IRQ enable flag
@@ -1606,7 +1604,7 @@ begin
 
       -- no user mode --
       if not RISCV_ISA_U then
-        csr.privilege     <= priv_mode_m_c;
+        csr.prv_level     <= priv_mode_m_c;
         csr.mstatus_mpp   <= priv_mode_m_c;
         csr.mstatus_mprv  <= '0';
         csr.mstatus_tw    <= '0';
@@ -1638,8 +1636,8 @@ begin
     end if;
   end process csr_write_access;
 
-  -- effective privilege mode is MACHINE when in debug mode --
-  csr.privilege_eff <= priv_mode_m_c when (debug_ctrl.run = '1') else csr.privilege;
+  -- effective privilege level is MACHINE when in debug mode --
+  csr.prv_level_eff <= priv_mode_m_c when (debug_ctrl.run = '1') else csr.prv_level;
 
 
   -- CSR Read Access ------------------------------------------------------------------------
@@ -1690,13 +1688,13 @@ begin
 --        when csr_mstatush_c => csr.rdata <= (others => '0'); -- machine status register, high word - hardwired to zero
 
           when csr_misa_c => -- ISA and extensions
-            csr.rdata(1)  <= bool_to_ulogic_f(RISCV_ISA_B);     -- B CPU extension
-            csr.rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_C);     -- C CPU extension
-            csr.rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_E);     -- E CPU extension
-            csr.rdata(8)  <= bool_to_ulogic_f(not RISCV_ISA_E); -- I CPU extension (if not E)
-            csr.rdata(12) <= bool_to_ulogic_f(RISCV_ISA_M);     -- M CPU extension
-            csr.rdata(20) <= bool_to_ulogic_f(RISCV_ISA_U);     -- U CPU extension
-            csr.rdata(23) <= '1';                               -- X CPU extension (non-standard / NEORV32-specific)
+            csr.rdata(1)  <= bool_to_ulogic_f(RISCV_ISA_B);
+            csr.rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_C);
+            csr.rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_E);
+            csr.rdata(8)  <= bool_to_ulogic_f(not RISCV_ISA_E); -- I = not E
+            csr.rdata(12) <= bool_to_ulogic_f(RISCV_ISA_M);
+            csr.rdata(20) <= bool_to_ulogic_f(RISCV_ISA_U);
+            csr.rdata(23) <= '1'; -- X CPU extension (non-standard / NEORV32-specific)
             csr.rdata(31 downto 30) <= "01"; -- MXL = 32
 
           when csr_mie_c => -- machine interrupt-enable register
@@ -1880,7 +1878,6 @@ begin
             csr.rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);       -- Zbs: single-bit bit-manipulation
             csr.rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);     -- Zaamo: atomic memory operations
             csr.rdata(26) <= '0'; -- reserved
-            csr.rdata(27) <= '0'; -- reserved
             -- tuning options --
             csr.rdata(27) <= bool_to_ulogic_f(CPU_CLOCK_GATING_EN); -- enable clock gating when in sleep mode
             csr.rdata(28) <= bool_to_ulogic_f(CPU_RF_HW_RST_EN);    -- full hardware reset of register file
@@ -2078,8 +2075,8 @@ begin
     -- debug mode entry triggers --
     debug_ctrl.trig_hw    <= trap_ctrl.hwtrig and (not debug_ctrl.run) and csr.tdata1_action and csr.tdata1_dmode; -- enter debug mode by HW trigger module
     debug_ctrl.trig_break <= trap_ctrl.ebreak and (debug_ctrl.run or -- re-enter debug mode
-                             ((    csr.privilege) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
-                             ((not csr.privilege) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
+                             ((    csr.prv_level) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
+                             ((not csr.prv_level) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
     debug_ctrl.trig_halt  <= irq_dbg_i     and (not debug_ctrl.run); -- external halt request (if not halted already)
     debug_ctrl.trig_step  <= csr.dcsr_step and (not debug_ctrl.run); -- single-step mode (trigger when NOT CURRENTLY in debug mode)
 
@@ -2112,7 +2109,7 @@ begin
   csr.dcsr_rd(4)            <= '1'; -- mprven: mstatus.mprv is also evaluated in debug mode
   csr.dcsr_rd(3)            <= '0'; -- nmip: no pending non-maskable interrupt
   csr.dcsr_rd(2)            <= csr.dcsr_step; -- step: single-step mode
-  csr.dcsr_rd(1 downto 0)   <= (others => csr.dcsr_prv); -- prv: privilege mode when debug mode was entered
+  csr.dcsr_rd(1 downto 0)   <= (others => csr.dcsr_prv); -- prv: privilege level when debug mode was entered
 
 
   -- ****************************************************************************************************************************

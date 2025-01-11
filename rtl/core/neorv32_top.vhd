@@ -654,8 +654,11 @@ begin
 
   -- Inter-Core Communication (ICC) Links ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  icc_rx(icc_rx'left)  <= icc_tx(icc_tx'right);
-  icc_rx(icc_rx'right) <= icc_tx(icc_tx'left);
+  icc_connect: process(icc_tx)
+  begin
+    icc_rx(icc_rx'left)  <= icc_tx(icc_tx'right);
+    icc_rx(icc_rx'right) <= icc_tx(icc_tx'left);
+  end process icc_connect;
 
 
   -- Core Complex Bus Arbiter ---------------------------------------------------------------
