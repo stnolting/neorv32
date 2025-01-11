@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -17,14 +17,17 @@ use neorv32.neorv32_package.all;
 entity neorv32_sys_reset is
   port (
     -- global control --
-    clk_i      : in  std_ulogic; -- global clock, rising edge
+    clk_i       : in  std_ulogic; -- global clock, rising edge
     -- reset sources --
-    rstn_ext_i : in  std_ulogic; -- external reset, low-active, async
-    rstn_wdt_i : in  std_ulogic; -- watchdog reset, low-active, sync
-    rstn_dbg_i : in  std_ulogic; -- debugger reset, low-active, sync
+    rstn_ext_i  : in  std_ulogic; -- external reset, low-active, async
+    rstn_wdt_i  : in  std_ulogic; -- watchdog reset, low-active, sync
+    rstn_dbg_i  : in  std_ulogic; -- debugger reset, low-active, sync
     -- reset nets --
-    rstn_ext_o : out std_ulogic; -- external reset, low-active, synchronized
-    rstn_sys_o : out std_ulogic  -- system reset, low-active, synchronized
+    rstn_ext_o  : out std_ulogic; -- external reset, low-active, synchronized
+    rstn_sys_o  : out std_ulogic; -- system reset, low-active, synchronized
+    -- processor reset outputs --
+    xrstn_wdt_o : out std_ulogic; -- reset from watchdog, low-active, sync
+    xrstn_ocd_o : out std_ulogic  -- reset from on-chip debugger, low-active, sync
   );
 end neorv32_sys_reset;
 
@@ -58,6 +61,20 @@ begin
   end process sequencer;
 
 
+  -- Processor Reset Output Synchronizer ----------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  synchronizer: process(rstn_ext_i, clk_i)
+  begin
+    if (rstn_ext_i = '0') then
+      xrstn_wdt_o <= '0';
+      xrstn_ocd_o <= '0';
+    elsif rising_edge(clk_i) then
+      xrstn_wdt_o <= rstn_wdt_i;
+      xrstn_ocd_o <= rstn_dbg_i;
+    end if;
+  end process synchronizer;
+
+
 end neorv32_sys_reset_rtl;
 
 
@@ -69,7 +86,7 @@ end neorv32_sys_reset_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -119,7 +136,7 @@ begin
     end if;
   end process ticker;
 
-  -- clock enables: rising edge detectors --
+  -- clock enables: rising edge detectors, clk_en_o signals are high for one cycle --
   clk_en_o(clk_div2_c)    <= cnt(0)  and (not cnt2(0));  -- clk_i / 2
   clk_en_o(clk_div4_c)    <= cnt(1)  and (not cnt2(1));  -- clk_i / 4
   clk_en_o(clk_div8_c)    <= cnt(2)  and (not cnt2(2));  -- clk_i / 8
