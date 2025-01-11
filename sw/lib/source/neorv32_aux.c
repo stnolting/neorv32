@@ -9,7 +9,6 @@
 /**
  * @file neorv32_aux.c
  * @brief General auxiliary functions source file.
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #include <neorv32.h>
@@ -302,7 +301,7 @@ void neorv32_aux_print_hw_config(void) {
                        neorv32_cpu_csr_read(CSR_MIMPID));
   // hardware version
   neorv32_uart0_printf(" (v");
-  neorv32_aux_print_hw_version();
+  neorv32_aux_print_hw_version(neorv32_cpu_csr_read(CSR_MIMPID));
   neorv32_uart0_printf(")\n");
 
   // CPU architecture and endianness
@@ -535,9 +534,12 @@ void neorv32_aux_print_hw_config(void) {
 
 
 /**********************************************************************//**
- * Print the processor version in human-readable format via UART0.
+ * Print processor version in human-readable format via UART0.
+ *
+ * @param[in] impid BCD-coded implementation ID (aka the version),
+ * typically from the mimpid CSR.
  **************************************************************************/
-void neorv32_aux_print_hw_version(void) {
+void neorv32_aux_print_hw_version(uint32_t impid) {
 
   uint32_t i;
   char tmp, cnt;
@@ -545,7 +547,7 @@ void neorv32_aux_print_hw_version(void) {
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     for (i=0; i<4; i++) {
 
-      tmp = (char)(neorv32_cpu_csr_read(CSR_MIMPID) >> (24 - 8*i));
+      tmp = (char)(impid >> (24 - 8*i));
 
       // serial division
       cnt = 0;
