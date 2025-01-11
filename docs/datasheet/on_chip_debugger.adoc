@@ -180,6 +180,15 @@ From the DTM's point of view, the DM implements a set of <<_dm_registers>> that 
 debugging session. From the CPU's point of view, the DM implements several memory-mapped registers that are used for
 communicating data, instructions, debugging control and status (<<_dm_cpu_access>>).
 
+**External Reset Output**
+
+The entire processor can be reset at any time by the debugger via the `ndmreset` bit of the <<_dmcontrol>> register.
+This signal is also available as processor top signal (<<_processor_top_entity_signals>>: `rstn_ocd_o`) and can be used
+to reset processor-external modules via the on-chip debugger. This signal is low-active and synchronous to the processor
+clock. It is available if the on-chip debugger is actually implemented; otherwise it is hardwired to `1`. Note that the
+signal also becomes active (low) when the processor's main reset signal is active (even if the on-chip debugger is
+deactivated or disabled for synthesis).
+
 
 :sectnums:
 ==== DM Registers
