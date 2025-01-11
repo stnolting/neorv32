@@ -2409,4 +2409,6 @@ int core1_main(void) {
 
   // trigger software interrupt of core0
   neorv32_clint_msi_set(0);
+
+  return 0;
 }
