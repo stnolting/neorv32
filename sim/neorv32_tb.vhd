@@ -232,6 +232,8 @@ begin
     -- Global control --
     clk_i          => clk_gen,
     rstn_i         => rst_gen,
+    rstn_ocd_o     => open,
+    rstn_wdt_o     => open,
     -- JTAG on-chip debugger interface --
     jtag_tck_i     => '0',
     jtag_tdi_i     => '0',
