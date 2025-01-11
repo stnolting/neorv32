@@ -827,7 +827,7 @@ begin
           arbiter_nxt.state <= S_READ_WAIT;
         end if;
 
-      when S_READ_WAIT => -- wait for device read-access to complete
+      when S_READ_WAIT => -- wait for read-access to complete
       -- ------------------------------------------------------------
         arbiter_nxt.rdata <= sys_rsp_i.data;
         if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
@@ -838,11 +838,11 @@ begin
       -- ------------------------------------------------------------
         arbiter_nxt.state <= S_WRITE;
 
-      when S_WRITE => -- wait operation result to device
+      when S_WRITE => -- write operation result
       -- ------------------------------------------------------------
         arbiter_nxt.state <= S_WRITE_WAIT;
 
-      when S_WRITE_WAIT => -- wait for device write-access to complete
+      when S_WRITE_WAIT => -- wait for write-access to complete
       -- ------------------------------------------------------------
         if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
           arbiter_nxt.state <= S_IDLE;

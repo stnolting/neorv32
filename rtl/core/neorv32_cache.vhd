@@ -846,8 +846,8 @@ begin
     bus_req_o.ben   <= (others => '1'); -- full-word writes only
     bus_req_o.src   <= '0'; -- cache accesses are always data accesses
     bus_req_o.priv  <= '0'; -- cache accesses are always "unprivileged" accesses
-    bus_req_o.amo   <= '0'; -- cache accesses can never be an atomic memory operation set operation
-    bus_req_o.amoop <= (others => '0'); -- cache accesses can never be an atomic memory operation set operation
+    bus_req_o.amo   <= '0'; -- cache accesses can never be an atomic memory operation
+    bus_req_o.amoop <= (others => '0'); -- cache accesses can never be an atomic memory operation
     bus_req_o.debug <= host_req_i.debug;
     if (state = S_IDLE) then
       bus_req_o.sleep <= host_req_i.sleep;

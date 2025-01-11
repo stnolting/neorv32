@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -117,6 +117,7 @@ begin
   -- atomic memory access operation encoding --
   amo_encode: process(ctrl_i.ir_funct12)
   begin
+    amo_cmd <= (others => '0'); -- default
     if AMO_EN then
       case ctrl_i.ir_funct12(11 downto 7) is
         when "00000" => amo_cmd <= "0001"; -- ADD
@@ -129,8 +130,6 @@ begin
         when "11100" => amo_cmd <= "0111"; -- MAXU
         when others  => amo_cmd <= "0000"; -- SWAP
       end case;
-    else
-      amo_cmd <= (others => '0');
     end if;
   end process;
 
