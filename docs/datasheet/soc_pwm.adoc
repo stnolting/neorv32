@@ -3,11 +3,11 @@
 ==== Pulse-Width Modulation Controller (PWM)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_pwm.vhd |
-| Software driver files:  | neorv32_pwm.c |
-|                         | neorv32_pwm.h |
+| Software driver files:  | neorv32_pwm.c | link:https://stnolting.github.io/neorv32/sw/neorv32__pwm_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_pwm.h | link:https://stnolting.github.io/neorv32/sw/neorv32__pwm_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | `pwm_o` | PWM output channels (16-bit)
 | Configuration generics: | `IO_PWM_NUM_CH` | number of PWM channels to implement (0..16)
 | CPU interrupts:         | none |

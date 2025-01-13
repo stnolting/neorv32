@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100900"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100905"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -224,19 +224,18 @@ package neorv32_package is
     err  => '0'
   );
 
-  -- Inter-Core Communication (ICC) Links ---------------------------------------------------
+  -- Inter-Core Communication (ICC) Link ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- icc link (for up to 4 cores) --
   type icc_t is record
-    rdy : std_ulogic_vector(4-1 downto 0); -- data available
-    ack : std_ulogic_vector(4-1 downto 0); -- read-enable
-    dat : std_ulogic_vector(4*XLEN-1 downto 0); -- data word
+    rdy : std_ulogic; -- data available
+    ack : std_ulogic; -- read-enable
+    dat : std_ulogic_vector(XLEN-1 downto 0); -- data word
   end record;
 
   -- endpoint termination --
   constant icc_terminate_c : icc_t := (
-    rdy => (others => '0'),
-    ack => (others => '0'),
+    rdy => '0',
+    ack => '0',
     dat => (others => '0')
   );
 
@@ -336,11 +335,11 @@ package neorv32_package is
 
   -- RISC-V Funct12 - SYSTEM ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant funct12_ecall_c  : std_ulogic_vector(11 downto 0) := x"000"; -- ecall
-  constant funct12_ebreak_c : std_ulogic_vector(11 downto 0) := x"001"; -- ebreak
-  constant funct12_wfi_c    : std_ulogic_vector(11 downto 0) := x"105"; -- wfi
-  constant funct12_mret_c   : std_ulogic_vector(11 downto 0) := x"302"; -- mret
-  constant funct12_dret_c   : std_ulogic_vector(11 downto 0) := x"7b2"; -- dret
+  constant funct12_ecall_c  : std_ulogic_vector(11 downto 0) := x"000";
+  constant funct12_ebreak_c : std_ulogic_vector(11 downto 0) := x"001";
+  constant funct12_wfi_c    : std_ulogic_vector(11 downto 0) := x"105";
+  constant funct12_mret_c   : std_ulogic_vector(11 downto 0) := x"302";
+  constant funct12_dret_c   : std_ulogic_vector(11 downto 0) := x"7b2";
 
   -- RISC-V Floating-Point Stuff ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -464,7 +463,6 @@ package neorv32_package is
   constant csr_mhpmcounter13_c  : std_ulogic_vector(11 downto 0) := x"b0d";
   constant csr_mhpmcounter14_c  : std_ulogic_vector(11 downto 0) := x"b0e";
   constant csr_mhpmcounter15_c  : std_ulogic_vector(11 downto 0) := x"b0f";
-  --
   constant csr_mcycleh_c        : std_ulogic_vector(11 downto 0) := x"b80";
 --constant csr_mtimeh_c         : std_ulogic_vector(11 downto 0) := x"b81";
   constant csr_minstreth_c      : std_ulogic_vector(11 downto 0) := x"b82";
@@ -482,15 +480,12 @@ package neorv32_package is
   constant csr_mhpmcounter14h_c : std_ulogic_vector(11 downto 0) := x"b8e";
   constant csr_mhpmcounter15h_c : std_ulogic_vector(11 downto 0) := x"b8f";
   -- NEORV32-specific read/write machine registers --
-  constant csr_mxiccrxd_c       : std_ulogic_vector(11 downto 0) := x"bc0";
-  constant csr_mxicctxd_c       : std_ulogic_vector(11 downto 0) := x"bc1";
-  constant csr_mxiccsr0_c       : std_ulogic_vector(11 downto 0) := x"bc2";
-  constant csr_mxiccsr1_c       : std_ulogic_vector(11 downto 0) := x"bc3";
+  constant csr_mxiccsreg_c      : std_ulogic_vector(11 downto 0) := x"bc0";
+  constant csr_mxiccdata_c      : std_ulogic_vector(11 downto 0) := x"bc1";
   -- user counters/timers --
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
 --constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
   constant csr_instret_c        : std_ulogic_vector(11 downto 0) := x"c02";
-  --
   constant csr_cycleh_c         : std_ulogic_vector(11 downto 0) := x"c80";
 --constant csr_timeh_c          : std_ulogic_vector(11 downto 0) := x"c81";
   constant csr_instreth_c       : std_ulogic_vector(11 downto 0) := x"c82";
@@ -502,6 +497,7 @@ package neorv32_package is
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
   -- NEORV32-specific read-only machine registers --
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
+--constant csr_mxisah_c         : std_ulogic_vector(11 downto 0) := x"fc1"; -- to be implemented...
 
 -- **********************************************************************************************************
 -- CPU Control
@@ -510,6 +506,8 @@ package neorv32_package is
   -- Main CPU Control Bus -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   type ctrl_bus_t is record
+    -- instruction fetch --
+    if_fence     : std_ulogic;                     -- fence.i operation
     -- register file --
     rf_wb_en     : std_ulogic; -- write back enable
     rf_rs1       : std_ulogic_vector(4 downto 0);  -- source register 1 address
@@ -529,7 +527,7 @@ package neorv32_package is
     lsu_req      : std_ulogic;                     -- trigger memory access request
     lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
     lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
-    lsu_fence    : std_ulogic;                     -- fence(.i) operation
+    lsu_fence    : std_ulogic;                     -- fence operation
     lsu_priv     : std_ulogic;                     -- effective privilege mode for load/store
     -- instruction word --
     ir_funct3    : std_ulogic_vector(2 downto 0);  -- funct3 bit field
@@ -544,6 +542,7 @@ package neorv32_package is
 
   -- control bus reset initializer --
   constant ctrl_bus_zero_c : ctrl_bus_t := (
+    if_fence     => '0',
     rf_wb_en     => '0',
     rf_rs1       => (others => '0'),
     rf_rs2       => (others => '0'),

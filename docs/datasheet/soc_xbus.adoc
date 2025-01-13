@@ -3,7 +3,7 @@
 ==== Processor-External Bus Interface (XBUS)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_xbus.vhd        | External bus gateway
 |                         | neorv32_cache.vhd       | Generic cache module
@@ -132,6 +132,12 @@ The cache uses a direct-mapped architecture that implements "write-allocate" and
 The **write-allocate** strategy will fetch the entire referenced block from main memory when encountering
 a cache write-miss. The **write-back** strategy will gather all writes locally inside the cache until the according
 cache block is about to be replaced. In this case, the entire modified cache block is written back to main memory.
+
+.Manual Cache Flush/Clear/Reload
+[NOTE]
+By executing a `fence` **or** `fence.i` instruction the XBUS cache is flushed (local modifications are send back to
+main memory), cleared (all cache entries are invalidated) and a reloaded (fetching new data from main memory).
+See section <<_cache_coherency>> for more information.
 
 .Cached/Uncached Accesses
 [NOTE]

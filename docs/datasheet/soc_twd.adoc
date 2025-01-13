@@ -3,11 +3,11 @@
 ==== Two-Wire Serial Device Controller (TWD)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_twd.vhd    |
-| Software driver files:  | neorv32_twd.c      |
-|                         | neorv32_twd.h      |
+| Software driver files:  | neorv32_twd.c      | link:https://stnolting.github.io/neorv32/sw/neorv32__twd_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_twd.h      | link:https://stnolting.github.io/neorv32/sw/neorv32__twd_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | `twd_sda_i`        | 1-bit serial data line sense input
 |                         | `twd_sda_o`        | 1-bit serial data line output (pull low only)
 |                         | `twd_scl_i`        | 1-bit serial clock line sense input

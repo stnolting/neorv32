@@ -9,7 +9,6 @@
 /**
  * @file neorv32_aux.h
  * @brief General auxiliary functions header file.
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #ifndef neorv32_aux_h
@@ -51,7 +50,7 @@ uint64_t neorv32_aux_hexstr2uint64(char *buffer, unsigned int length);
 uint32_t neorv32_aux_xorshift32(void);
 void     neorv32_aux_itoa(char *buffer, uint32_t num, uint32_t base);
 void     neorv32_aux_print_hw_config(void);
-void     neorv32_aux_print_hw_version(void);
+void     neorv32_aux_print_hw_version(uint32_t impid);
 void     neorv32_aux_print_about(void);
 void     neorv32_aux_print_logo(void);
 void     neorv32_aux_print_license(void);

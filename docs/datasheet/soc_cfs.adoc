@@ -3,11 +3,11 @@
 ==== Custom Functions Subsystem (CFS)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_cfs.vhd |
-| Software driver files:  | neorv32_cfs.c |
-|                         | neorv32_cfs.h |
+| Software driver files:  | neorv32_cfs.c | link:https://stnolting.github.io/neorv32/sw/neorv32__cfs_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_cfs.h | link:https://stnolting.github.io/neorv32/sw/neorv32__cfs_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | `cfs_in_i`  | custom input conduit
 |                         | `cfs_out_o` | custom output conduit
 | Configuration generics: | `IO_CFS_EN`        | implement CFS when `true`

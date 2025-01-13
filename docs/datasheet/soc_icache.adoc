@@ -3,7 +3,7 @@
 ==== Processor-Internal Instruction Cache (iCACHE)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_cache.vhd   | Generic cache module
 | Software driver files:  | none                | _implicitly used_
@@ -37,7 +37,8 @@ The CPU cache(s) should not be implemented when using only processor-internal da
 
 .Manual Cache Clear/Reload
 [NOTE]
-By executing the `fence(.i)` instruction the cache is cleared and a reload from main memory is triggered.
+By executing the `fence.i` instruction the instruction cache is cleared and reloaded.
+See section <<_cache_coherency>> for more information.
 
 .Retrieve Cache Configuration from Software
 [TIP]

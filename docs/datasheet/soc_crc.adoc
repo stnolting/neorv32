@@ -3,11 +3,11 @@
 ==== Cyclic Redundancy Check (CRC)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_crc.vhd |
-| Software driver files:  | neorv32_crc.c |
-|                         | neorv32_crc.h |
+| Software driver files:  | neorv32_crc.c | link:https://stnolting.github.io/neorv32/sw/neorv32__crc_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_crc.h | link:https://stnolting.github.io/neorv32/sw/neorv32__crc_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | none |
 | Configuration generics: | `IO_CRC_EN` | implement CRC module when `true`
 | CPU interrupts:         | none |

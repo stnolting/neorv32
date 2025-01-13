@@ -93,7 +93,7 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_newlib.c`  | -                      | Platform-specific system calls for _newlib_
 |=======================
 
-.Core Library Documentation
+.Core Libraries Documentation
 [TIP]
 The Doxygen-based documentation of the software framework including all core libraries is available online at
 https://stnolting.github.io/neorv32/sw/files.html.
@@ -171,7 +171,7 @@ NEORV32_HOME ?= ../../..
 include $(NEORV32_HOME)/sw/common/common.mk
 ```
 
-.New Project
+.Setup of a New Project
 [TIP]
 When creating a new project, copy an existing project folder or at least the makefile to the new project folder.
 It is recommended to create new projects also in `sw/example` to keep the file dependencies. However, these
@@ -380,7 +380,8 @@ Note that `\n` (newline) is automatically converted to `\r\n` (carriage-return a
 .Constructors and Destructors
 [NOTE]
 Constructors and destructors for plain C code or for C++ applications are supported by the software framework.
-See `sw/example/hello_cpp` for a minimal example.
+See `sw/example/hello_cpp` for a minimal example. Note that constructor and destructors are only executed
+by core 0 (primary core) in the SMP <<_dual_core_configuration>>.
 
 .Newlib Test/Demo Program
 [TIP]

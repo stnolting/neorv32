@@ -3,11 +3,11 @@
 ==== Serial Peripheral Interface Controller (SPI)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_spi.vhd |
-| Software driver files:  | neorv32_spi.c |
-|                         | neorv32_spi.h |
+| Software driver files:  | neorv32_spi.c | link:https://stnolting.github.io/neorv32/sw/neorv32__spi_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_spi.h | link:https://stnolting.github.io/neorv32/sw/neorv32__spi_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | `spi_clk_o` | 1-bit serial clock output
 |                         | `spi_dat_o` | 1-bit serial data output
 |                         | `spi_dat_i` | 1-bit serial data input

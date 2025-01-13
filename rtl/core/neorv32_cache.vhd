@@ -8,11 +8,6 @@
 -- the 4 most significant address bits, well as all atomic (reservation set)        --
 -- operations will always **bypass** the cache resulting in "direct accesses".      --
 --                                                                                  --
--- A fence request will first flush the data cache (write back modified blocks to   --
--- main memory before invalidating all cache blocks to force a re-fetch from main   --
--- memory. After this, the fence request is forwarded to the downstream memory      --
--- system.                                                                          --
---                                                                                  --
 -- Simplified cache architecture ("-->" = direction of access requests):            --
 --                                                                                  --
 --               Direct Access        +----------+                                  --
@@ -851,8 +846,8 @@ begin
     bus_req_o.ben   <= (others => '1'); -- full-word writes only
     bus_req_o.src   <= '0'; -- cache accesses are always data accesses
     bus_req_o.priv  <= '0'; -- cache accesses are always "unprivileged" accesses
-    bus_req_o.amo   <= '0'; -- cache accesses can never be an atomic memory operation set operation
-    bus_req_o.amoop <= (others => '0'); -- cache accesses can never be an atomic memory operation set operation
+    bus_req_o.amo   <= '0'; -- cache accesses can never be an atomic memory operation
+    bus_req_o.amoop <= (others => '0'); -- cache accesses can never be an atomic memory operation
     bus_req_o.debug <= host_req_i.debug;
     if (state = S_IDLE) then
       bus_req_o.sleep <= host_req_i.sleep;
@@ -946,9 +941,10 @@ begin
 
       when S_FLUSH_START => -- start checking for dirty blocks
       -- ------------------------------------------------------------
-        addr_nxt.idx <= (others => '0'); -- start with index 0
-        upret_nxt    <= S_FLUSH_CHECK; -- come back to S_FLUSH_CHECK after block upload
-        state_nxt    <= S_FLUSH_READ;
+        addr_nxt.idx    <= (others => '0'); -- start with index 0
+        bus_req_o.fence <= bool_to_ulogic_f(READ_ONLY); -- forward fence request
+        upret_nxt       <= S_FLUSH_CHECK; -- come back to S_FLUSH_CHECK after block upload
+        state_nxt       <= S_FLUSH_READ;
 
       when S_FLUSH_READ => -- cache read access latency cycle
       -- ------------------------------------------------------------
@@ -963,7 +959,7 @@ begin
         else -- move on to next block
           addr_nxt.idx <= std_ulogic_vector(unsigned(addr.idx) + 1);
           if (and_reduce_f(addr.idx) = '1') then -- all blocks done?
-            bus_req_o.fence <= '1'; -- forward fence request to downstream memories
+            bus_req_o.fence <= not bool_to_ulogic_f(READ_ONLY); -- forward fence request
             state_nxt       <= S_IDLE;
           else -- go to next block
             state_nxt <= S_FLUSH_READ;

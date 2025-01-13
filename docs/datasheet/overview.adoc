@@ -190,7 +190,6 @@ rtl/core
 ├-neorv32_clint.vhd             - Core local interruptor
 ├-neorv32_clockgate.vhd         - Generic clock gating switch
 ├-neorv32_cfs.vhd               - Custom functions subsystem
-├-neorv32_core_complex.vhd      - NEORV32 CORE COMPLEX TOP ENTITY
 ├-neorv32_cpu.vhd               - NEORV32 CPU TOP ENTITY
 ├-neorv32_cpu_alu.vhd           - Arithmetic/logic unit
 ├-neorv32_cpu_control.vhd       - CPU control, exception system and CSRs

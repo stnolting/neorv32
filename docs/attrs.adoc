@@ -4,6 +4,7 @@
 :description: A size-optimized, customizable and highly extensible MCU-class 32-bit RISC-V soft-core CPU and microcontroller-like SoC written in platform-independent VHDL.
 :revnumber: v1.10.9
 :icons: font
+:source-highlighter: highlight.js
 :imagesdir: ../figures
 :toc: macro
 :doctype: book

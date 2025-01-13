@@ -138,10 +138,8 @@ enum NEORV32_CSR_enum {
   CSR_MHPMCOUNTER15H = 0xb8f, /**< 0xb8f - mhpmcounter15h: Machine hardware performance monitor 15 counter high word */
 
   /* inter-core communication */
-  CSR_MXICCRXD       = 0xbc0, /**< 0xbc0 - mxiccrxd: Machine ICC link RX data */
-  CSR_MXICCTXD       = 0xbc1, /**< 0xbc1 - mxicctxd: Machine ICC link TX data */
-  CSR_MXICCSR0       = 0xbc2, /**< 0xbc1 - mxiccsr0: Machine ICC link status register 0 (#NEORV32_CSR_MXICCSR_enum) */
-  CSR_MXICCSR1       = 0xbc3, /**< 0xbc1 - mxiccsr1: Machine ICC link status register 1 (#NEORV32_CSR_MXICCSR_enum) */
+  CSR_MXICCSREG      = 0xbc0, /**< 0xbc0 - mxiccsreg: Machine ICC status register (#)*/
+  CSR_MXICCDATA      = 0xbc1, /**< 0xbc1 - mxiccdata: Machine ICC RX/TX data register */
 
   /* user counters and timers */
   CSR_CYCLE          = 0xc00, /**< 0xc00 - cycle:        User cycle counter low word */
@@ -347,14 +345,11 @@ enum NEORV32_CSR_MXISA_enum {
 
 
 /**********************************************************************//**
- * CPU mxiccsr CSR (r/w): Inter-core communication control and status (NEORV32-specific)
+ * CPU mxiccsreg CSR (r/w): Inter-core communication status register (NEORV32-specific)
  **************************************************************************/
-enum NEORV32_CSR_MXICCSR_enum {
-  CSR_MXICCSR_LINK_LSB =  0, /**< CPU mxiccsr CSR (0): link/hart select LSB (r/w)*/
-  CSR_MXICCSR_LINK_MSB =  1, /**< CPU mxiccsr CSR (1): link/hart select MSB (r/w)*/
-
-  CSR_MXICCSR_TX_FREE  = 30, /**< CPU mxiccsr CSR (30): Free space in selected link's TX FIFO (r/-)*/
-  CSR_MXICCSR_RX_AVAIL = 31  /**< CPU mxiccsr CSR (31): Data available in selected link's RX FIFO (r/-)*/
+enum NEORV32_CSR_MXICCSREG_enum {
+  CSR_MXICCSREG_RX_AVAIL = 0, /**< CPU mxiccsreg CSR (0): Data available in link's RX FIFO (r/-)*/
+  CSR_MXICCSREG_TX_FREE  = 1  /**< CPU mxiccsreg CSR (1): Free space in link's TX FIFO (r/-)*/
 };
 
 

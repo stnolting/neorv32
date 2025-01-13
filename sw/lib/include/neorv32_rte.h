@@ -22,6 +22,7 @@
  * NEORV32 runtime environment trap IDs.
  **************************************************************************/
 /**@{*/
+/**< Trap ID enumeration */
 enum NEORV32_RTE_TRAP_enum {
   RTE_TRAP_I_ACCESS     =  0, /**< Instruction access fault */
   RTE_TRAP_I_ILLEGAL    =  1, /**< Illegal instruction */
@@ -53,6 +54,7 @@ enum NEORV32_RTE_TRAP_enum {
   RTE_TRAP_FIRQ_14      = 27, /**< Fast interrupt channel 14 */
   RTE_TRAP_FIRQ_15      = 28  /**< Fast interrupt channel 15 */
 };
+/**< Total number of trap IDs */
 #define NEORV32_RTE_NUM_TRAPS 29
 /**@}*/
 
@@ -63,7 +65,6 @@ enum NEORV32_RTE_TRAP_enum {
 void     neorv32_rte_setup(void);
 void     neorv32_rte_core(void);
 int      neorv32_rte_handler_install(int id, void (*handler)(void));
-int      neorv32_rte_handler_uninstall(int id);
 void     neorv32_rte_debug_handler(void);
 uint32_t neorv32_rte_context_get(int x);
 void     neorv32_rte_context_put(int x, uint32_t data);

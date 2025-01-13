@@ -33,7 +33,7 @@ test framework is available in a separate repository at GitHub: https://github.c
 .Unsupported ISA Extensions
 [TIP]
 Executing instructions or accessing CSRs from yet unsupported ISA extensions will raise an illegal
-instruction exception (see section  <<_full_virtualization>>).
+instruction exception (see section <<_full_virtualization>>).
 
 **Incompatibility Issues and Limitations**
 
@@ -123,6 +123,7 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 | `BOOT_ADDR`        | suv(31:0) | CPU reset address. See section <<_address_space>>.
 | `DEBUG_PARK_ADDR`  | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
 | `DEBUG_EXC_ADDR`   | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
+| `ICC_EN`           | boolean   | Implement <<_inter_core_communication_icc>> module. Automatically enabled for the SMP <<_dual_core_configuration>>.
 | `RISCV_ISA_Sdext`  | boolean   | Implement RISC-V-compatible "debug" CPU operation mode required for the <<_on_chip_debugger_ocd>>.
 | `RISCV_ISA_Sdtrig` | boolean   | Implement RISC-V-compatible trigger module. See section <<_on_chip_debugger_ocd>>.
 | `RISCV_ISA_Smpmp`  | boolean   | Implement RISC-V-compatible physical memory protection (PMP). See section <<_smpmp_isa_extension>>.
@@ -502,7 +503,7 @@ operation:
 .Cache Coherency
 [IMPORTANT]
 Atomic operations **always bypass** the CPU caches using direct/uncached accesses. Care must be taken
-to maintain data cache coherency (e.g. by using the `fence` instruction).
+to maintain data <<_cache_coherency>>.
 
 
 <<<
@@ -640,10 +641,11 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 
 .`fence` Instruction
 [NOTE]
-The `fence` instruction word's _predecessor_ and _successor_ bits (used for memory ordering) are not evaluated
-by the hardware at all. For the NEORV32 the `fence` instruction behaves exactly like the `fence.i` instruction
-(see <<_zifencei_isa_extension>>). However, software should still use distinct `fence` and `fence.i` to provide
-platform-compatibility and to indicate the actual intention of the according fence instruction(s).
+Analogous to the `fence.i` instruction (<<_zifencei_isa_extension>>) the `fence` instruction triggers
+a data cache synchronization operation. See section <<_cache_coherency>> for more information.
+Furthermore, the `fence` instruction word's _predecessor_ and _successor_ bits (used for memory ordering)
+are not evaluated by the hardware at all.
+
 
 .`wfi` Instruction
 [NOTE]
@@ -716,11 +718,8 @@ The instruction word's `aq` and `lr` memory ordering bits are not evaluated by t
 
 The `Zifencei` CPU extension allows manual synchronization of the instruction stream. This extension is always enabled.
 
-.NEORV32 Fence Instructions
-[NOTE]
-The NEORV32 treats both fence instructions (`fence` = data fence, `fence.i` = instruction fence) in exactly the same way.
-Both instructions cause a flush of the CPU's instruction prefetch buffer and also send a fence request via the system
-bus (see <<_bus_interface>>). This system bus fence operation will, for example, clear/flush all downstream caches.
+Analogous to the `fence` instruction the `fence.i` instruction triggers an instruction cache synchronization operation.
+See section <<_cache_coherency>> for more information.
 
 .Instructions and Timing
 [cols="<2,<4,<3"]

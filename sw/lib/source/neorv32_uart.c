@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,10 +9,6 @@
 /**
  * @file neorv32_uart.c
  * @brief Universal asynchronous receiver/transmitter (UART0/UART1) HW driver source file.
- *
- * @note These functions should only be used if the UART0/UART1 unit was synthesized.
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #include <neorv32.h>
@@ -69,7 +65,7 @@ int neorv32_uart_available(neorv32_uart_t *UARTx) {
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] baudrate Targeted BAUD rate (e.g. 19200).
- * @param[in] irq_mask Interrupt configuration mask (CTRL's irq_* bits).
+ * @param[in] irq_mask Interrupt configuration bit mask (CTRL's irq_* bits).
  **************************************************************************/
 void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_mask) {
 

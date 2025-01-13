@@ -3,7 +3,7 @@
 ==== Bootloader ROM (BOOTROM)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_boot_rom.vhd         | default platform-agnostic bootloader ROM
 |                         | neorv32_bootloader_image.vhd | initialization image (a VHDL package)

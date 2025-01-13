@@ -77,9 +77,8 @@ to check if the targeted bits can actually be modified.
 | 0xf14 | <<_mhartid>>    | `CSR_MHARTID`    | MRO | Machine hardware thread ID
 | 0xf15 | <<_mconfigptr>> | `CSR_MCONFIGPTR` | MRO | Machine configuration pointer register
 5+^| **<<_neorv32_specific_csrs>>**
-| 0xbc0 | <<_mxiccrxd>> | `CSR_MXICCRXD` | MRW | ICC RX data
-| 0xbc1 | <<_mxicctxd>> | `CSR_MXICCTXD` | MRW | ICC TX data
-| 0xbc2 .. 0xbc3 | <<_mxiccsr, `mxiccsr0`>> .. <<_mxiccsr, `mxiccsr0`>> | `CSR_MXICCSR0` .. `CSR_MXICCSR3` | MRW | ICC control and status
+| 0xbc0 | <<_mxiccsreg>> | `CSR_MXICCSREG` | MRW | Inter-core communication status register
+| 0xbc1 | <<_mxiccdata>> | `CSR_MXICCDATA` | MRW | Inter-core communication data register
 | 0x800 .. 0x803 | <<_cfureg, `cfureg0`>> .. <<_cfureg, `cfureg3`>> | `CSR_CFUCREG0` .. `CSR_CFUCREG3` | URW | Custom CFU registers 0 to 3
 | 0xfc0 | <<_mxisa>> | `CSR_MXISA` | MRO | Extended machine CPU ISA and extensions
 |=======================
@@ -94,7 +93,7 @@ to check if the targeted bits can actually be modified.
 ===== **`fflags`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Floating-point accrued exceptions
 | Address     | `0x001`
@@ -120,7 +119,7 @@ to check if the targeted bits can actually be modified.
 ===== **`frm`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Floating-point dynamic rounding mode
 | Address     | `0x002`
@@ -143,7 +142,7 @@ to check if the targeted bits can actually be modified.
 ===== **`fcsr`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Floating-point control and status register
 | Address     | `0x003`
@@ -171,7 +170,7 @@ to check if the targeted bits can actually be modified.
 ===== **`mstatus`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine status register - low word
 | Address     | `0x300`
@@ -203,7 +202,7 @@ bit for the higher-privilege mode." - RISC-V ISA Spec.
 ===== **`misa`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | ISA and extensions
 | Address     | `0x301`
@@ -242,7 +241,7 @@ Machine-mode software can discover available `Z*` _sub-extensions_ (like `Zicsr`
 ===== **`mie`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine interrupt-enable register
 | Address     | `0x304`
@@ -268,7 +267,7 @@ Machine-mode software can discover available `Z*` _sub-extensions_ (like `Zicsr`
 ===== **`mtvec`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine trap-handler base address
 | Address     | `0x305`
@@ -298,7 +297,7 @@ As software does not need to determine the interrupt cause the reduction in late
 ===== **`mcounteren`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine counter enable
 | Address     | `0x306`
@@ -324,7 +323,7 @@ As software does not need to determine the interrupt cause the reduction in late
 ===== **`mstatush`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine status register - high word
 | Address     | `0x310`
@@ -343,7 +342,7 @@ As software does not need to determine the interrupt cause the reduction in late
 ===== **`mscratch`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Scratch register for machine trap handlers
 | Address     | `0x340`
@@ -358,11 +357,11 @@ As software does not need to determine the interrupt cause the reduction in late
 ===== **`mepc`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine exception program counter
 | Address     | `0x341`
-| Reset value | `BOOT_ADDR` (CPU boot address, see <<_cpu_top_entity_generics>>)
+| Reset value | `0x00000000`
 | ISA         | `Zicsr`
 | Description | The `mepc` CSR provides the instruction address where execution has stopped/failed when
 an interrupt is triggered / an exception is raised. See section <<_traps_exceptions_and_interrupts>> for a list of all legal values.
@@ -378,7 +377,7 @@ The `mret` instruction will return to the address stored in `mepc` by automatica
 ===== **`mcause`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine trap cause
 | Address     | `0x342`
@@ -403,7 +402,7 @@ The `mret` instruction will return to the address stored in `mepc` by automatica
 ===== **`mtval`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine trap value
 | Address     | `0x343`
@@ -423,7 +422,7 @@ However, any write-access will be ignored and will not cause an exception to mai
 ===== **`mip`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine interrupt pending
 | Address     | `0x344`
@@ -454,7 +453,7 @@ interrupt-triggering processor module.
 ===== **`mtinst`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine trap instruction
 | Address     | `0x34a`
@@ -487,7 +486,7 @@ while all remaining bits represent the pre-decoded 32-bit instruction equivalent
 ===== **`menvcfg`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine environment configuration register - low word
 | Address     | `0x30a`
@@ -502,7 +501,7 @@ while all remaining bits represent the pre-decoded 32-bit instruction equivalent
 ===== **`menvcfgh`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine environment configuration register - high word
 | Address     | `0x31a`
@@ -528,7 +527,7 @@ See section <<_smpmp_isa_extension>> for more information.
 ===== **`pmpcfg`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Physical memory protection region configuration registers
 | Address     | `0x3a0` (`pmpcfg0`)
@@ -563,7 +562,7 @@ implementation of the according modes.
 ===== **`pmpaddr`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Physical memory protection region address registers
 | Address     | `0x3b0` (`pmpaddr1`)
@@ -618,7 +617,7 @@ if this instruction is actually going to retire or if it causes an exception.
 ===== **`cycle[h]`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Cycle counter
 | Address     | `0xc00` (`cycle`)
@@ -635,7 +634,7 @@ counter are read-only. Any write access will raise an illegal instruction except
 ===== **`instret[h]`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Instructions-retired counter
 | Address     | `0xc02` (`instret`)
@@ -652,7 +651,7 @@ counter are read-only. Any write access will raise an illegal instruction except
 ===== **`mcycle[h]`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine cycle counter
 | Address     | `0xb00` (`mcycle`)
@@ -669,7 +668,7 @@ cycle (CPU not in sleep mode). These registers are read/write only for machine-m
 ===== **`minstret[h]`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine instructions-retired counter
 | Address     | `0xb02` (`minstret`)
@@ -710,7 +709,7 @@ If `HPM_NUM_CNTS` is less than 64, all remaining MSB-aligned bits are hardwired 
 ===== **`mhpmevent`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine hardware performance monitor event select
 | Address     | `0x233` (`mhpmevent3`)
@@ -767,7 +766,7 @@ cause an interrupt, trigger a privilege mode change or were not meant to retire 
 ===== **`mhpmcounter[h]`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine hardware performance monitor (HPM) counter
 | Address     | `0xb03`, `0xb83` (`mhpmcounter3`, `mhpmcounter3h`)
@@ -801,7 +800,7 @@ and are not accessible for lower-privileged software.
 ===== **`mcountinhibit`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine counter-inhibit register
 | Address     | `0x320`
@@ -831,7 +830,7 @@ and are not accessible for lower-privileged software.
 ===== **`mvendorid`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine vendor ID
 | Address     | `0xf11`
@@ -846,7 +845,7 @@ and are not accessible for lower-privileged software.
 ===== **`marchid`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine architecture ID
 | Address     | `0xf12`
@@ -862,7 +861,7 @@ and are not accessible for lower-privileged software.
 ===== **`mimpid`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine implementation ID
 | Address     | `0xf13`
@@ -878,7 +877,7 @@ NEORV32 as BCD-coded number (example: `mimpid = 0x01020312` → 01.02.03.12 → 
 ===== **`mhartid`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine hardware thread ID
 | Address     | `0xf14`
@@ -894,7 +893,7 @@ core's hart ID is unique starting at 0 for the first core.
 ===== **`mconfigptr`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine configuration pointer register
 | Address     | `0xf15`
@@ -919,7 +918,7 @@ custom/implementation-specific use (assured by the RISC-V privileged specificati
 ===== **`cfureg`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Custom (user-defined) CFU CSRs
 | Address     | `0x800` (`cfureg0`)
@@ -931,66 +930,49 @@ custom/implementation-specific use (assured by the RISC-V privileged specificati
 | Description | User-defined CSRs to be used within the <<_custom_functions_unit_cfu>>.
 |=======================
 
-
 {empty} +
 [discrete]
-===== **`mxiccrxd`**
+===== **`mxiccsreg`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
-| Name        | <<_inter_core_communication_icc>> RX data
+| Name        | <<_inter_core_communication_icc>> status register
 | Address     | `0xbc0`
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` & `X`
-| Description | RX data from selected link. Buffered by a 4-entries-deep and 32-bit wide FIFO.
-This CSR is hardwired to all-zero if there is just a single CPU core in the system.
-|=======================
-
-
-{empty} +
-[discrete]
-===== **`mxicctxd`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | <<_inter_core_communication_icc>> TX data
-| Address     | `0xbc1`
-| Reset value | `0x00000000`
-| ISA         | `Zicsr` & `X`
-| Description | TX data for selected link. Buffered by a 4-entries-deep and 32-bit wide FIFO.
-This CSR is hardwired to all-zero if there is just a single CPU core in the system.
-|=======================
-
-{empty} +
-[discrete]
-===== **`mxiccsr`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | <<_inter_core_communication_icc>> control and status
-| Address     | `0xbc2` (`mxiccsr0`)
-|             | `0xbc3` (`mxiccsr1`)
 | Reset value | `0x40000000`
 | ISA         | `Zicsr` & `X`
-| Description | Link selection and status. Note that `mxiccsr1` is just a mirrored copy of `mxiccsr0`.
-This CSR is hardwired to all-zero if there is just a single CPU core in the system.
+| Description | Shows the status of the core's inter-core communication link (message queue / FIFO status flags).
+The entire CSR is read-only. However, write accesses are ignored.
+This CSR is hardwired to all-zero if the <<_dual_core_configuration>> is disabled.
 |=======================
 
-.`mxiccsr` CSR Bits
+.`mxiccsreg` CSR Bits
 [cols="^1,^2,^1,<5"]
 [options="header",grid="rows"]
 |=======================
 | Bit  | Name [C] | R/W | Description
-| 1:0  | `CSR_MXICCSR_LINK_MSB : CSR_MXICCSR_LINK_LSB` | r/w | Link select. The value in this memory corresponds
-to the ID of the core to which a connection is to be established via a link. The ICC data registers <<_mxiccrxd>>
-and <<_mxicctxd>> will only access the queue FIFOs of the selected link. Note that only bit 0 is writable. Bit 1
-is hardwaired to zero.
-| 29:2 | -                      | r/- | Reserved; hardwired to zero.
-| 30   | `CSR_MXICCSR_TX_FREE`  | r/- | Set if there is free space for TX data for the selected link.
-| 31   | `CSR_MXICCSR_RX_AVAIL` | r/- | Set if RX data from the selected link is available.
+| 0    | `CSR_MXICCSREG_RX_AVAIL` | r/- | Set if RX data from the other core is available.
+| 1    | `CSR_MXICCSREG_TX_FREE`  | r/- | Set if there is free space for TX data for the other core.
+| 31:2 | -                        | r/- | Reserved; hardwired to zero.
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`mxiccdata`**
+
+[cols="<1,<8"]
+[grid="none"]
+|=======================
+| Name        | <<_inter_core_communication_icc>> data register
+| Address     | `0xbc1`
+| Reset value | `0x00000000`
+| ISA         | `Zicsr` & `X`
+| Description | This CSR provides access to the inter-core communication message queues that are implemented
+as simple FIFOs. Writing to this register will put data into the message queue so it can be read by the other
+core. Reading from this register will return data received from the other core (i.e. this CSR has side effects
+when reading). A read access will return all-zero of no RX data is available from the other core.
+This CSR is hardwired to all-zero if the <<_dual_core_configuration>> is disabled.
 |=======================
 
 
@@ -999,7 +981,7 @@ is hardwaired to zero.
 ===== **`mxisa`**
 
 [cols="<1,<8"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Name        | Machine extended ISA and extensions register
 | Address     | `0xfc0`

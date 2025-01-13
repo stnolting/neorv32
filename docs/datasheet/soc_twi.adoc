@@ -3,11 +3,11 @@
 ==== Two-Wire Serial Interface Controller (TWI)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_twi.vhd    |
-| Software driver files:  | neorv32_twi.c      |
-|                         | neorv32_twi.h      |
+| Software driver files:  | neorv32_twi.c      | link:https://stnolting.github.io/neorv32/sw/neorv32__twi_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_twi.h      | link:https://stnolting.github.io/neorv32/sw/neorv32__twi_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | `twi_sda_i`        | 1-bit serial data line sense input
 |                         | `twi_sda_o`        | 1-bit serial data line output (pull low only)
 |                         | `twi_scl_i`        | 1-bit serial clock line sense input

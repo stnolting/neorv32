@@ -3,10 +3,10 @@
 ==== System Configuration Information Memory (SYSINFO)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_sysinfo.vhd |
-| Software driver files:  | neorv32_sysinfo.h |
+| Software driver files:  | neorv32_sysinfo.h | link:https://stnolting.github.io/neorv32/sw/neorv32__sysinfo_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | none |
 | Configuration generics: | * | most of the top's configuration generics
 | CPU interrupts:         | none |

@@ -3,11 +3,11 @@
 ==== Primary Universal Asynchronous Receiver and Transmitter (UART0)
 
 [cols="<3,<3,<4"]
-[frame="topbot",grid="none"]
+[grid="none"]
 |=======================
 | Hardware source files:  | neorv32_uart.vhd |
-| Software driver files:  | neorv32_uart.c |
-|                         | neorv32_uart.h |
+| Software driver files:  | neorv32_uart.c | link:https://stnolting.github.io/neorv32/sw/neorv32__uart_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_uart.h | link:https://stnolting.github.io/neorv32/sw/neorv32__uart_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | `uart0_txd_o` | serial transmitter output
 |                         | `uart0_rxd_i` | serial receiver input
 |                         | `uart0_rts_o` | flow control: RX ready to receive, low-active

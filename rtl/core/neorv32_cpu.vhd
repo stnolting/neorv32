@@ -22,12 +22,12 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    HART_ID             : natural range 0 to 3; -- hardware thread ID
-    NUM_HARTS           : natural range 1 to 4; -- total number of harts in the system, has to be a power of 2
+    HART_ID             : natural range 0 to 1023; -- hardware thread ID
     VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
+    ICC_EN              : boolean; -- implement inter-core communication (ICC) links
     -- RISC-V ISA Extensions --
     RISCV_ISA_C         : boolean; -- implement compressed extension
     RISCV_ISA_E         : boolean; -- implement embedded RF extension
@@ -136,56 +136,57 @@ begin
 
   -- Configuration Info and Sanity Checks ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- CPU ISA configuration (in alphabetical order - not in canonical order!) --
-  assert false report "[NEORV32] CPU ISA: rv32" &
-    cond_sel_string_f(RISCV_ISA_E,      "e",         "i") &
-    cond_sel_string_f(riscv_b_c,        "b",         "" ) &
-    cond_sel_string_f(RISCV_ISA_C,      "c",         "" ) &
-    cond_sel_string_f(RISCV_ISA_M,      "m",         "" ) &
-    cond_sel_string_f(RISCV_ISA_U,      "u",         "" ) &
-    cond_sel_string_f(true,             "x",         "" ) & -- always enabled
-    cond_sel_string_f(RISCV_ISA_Zaamo,  "_zaamo",    "" ) &
-    cond_sel_string_f(RISCV_ISA_Zba,    "_zba",      "" ) &
-    cond_sel_string_f(RISCV_ISA_Zbb,    "_zbb",      "" ) &
-    cond_sel_string_f(RISCV_ISA_Zbkb,   "_zbkb",     "" ) &
-    cond_sel_string_f(RISCV_ISA_Zbkc,   "_zbkc",     "" ) &
-    cond_sel_string_f(RISCV_ISA_Zbkx,   "_zbkx",     "" ) &
-    cond_sel_string_f(RISCV_ISA_Zbs,    "_zbs",      "" ) &
-    cond_sel_string_f(RISCV_ISA_Zicntr, "_zicntr",   "" ) &
-    cond_sel_string_f(RISCV_ISA_Zicond, "_zicond",   "" ) &
-    cond_sel_string_f(true,             "_zicsr",    "" ) & -- always enabled
-    cond_sel_string_f(true,             "_zifencei", "" ) & -- always enabled
-    cond_sel_string_f(RISCV_ISA_Zihpm,  "_zihpm",    "" ) &
-    cond_sel_string_f(RISCV_ISA_Zfinx,  "_zfinx",    "" ) &
-    cond_sel_string_f(riscv_zkn_c,      "_zkn",      "" ) &
-    cond_sel_string_f(RISCV_ISA_Zknd,   "_zknd",     "" ) &
-    cond_sel_string_f(RISCV_ISA_Zkne,   "_zkne",     "" ) &
-    cond_sel_string_f(RISCV_ISA_Zknh,   "_zknh",     "" ) &
-    cond_sel_string_f(riscv_zks_c,      "_zks",      "" ) &
-    cond_sel_string_f(RISCV_ISA_Zksed,  "_zksed",    "" ) &
-    cond_sel_string_f(RISCV_ISA_Zksh,   "_zksh",     "" ) &
-    cond_sel_string_f(riscv_zkt_c,      "_zkt",      "" ) &
-    cond_sel_string_f(RISCV_ISA_Zmmul,  "_zmmul",    "" ) &
-    cond_sel_string_f(RISCV_ISA_Zxcfu,  "_zxcfu",    "" ) &
-    cond_sel_string_f(RISCV_ISA_Sdext,  "_sdext",    "" ) &
-    cond_sel_string_f(RISCV_ISA_Sdtrig, "_sdtrig",   "" ) &
-    cond_sel_string_f(RISCV_ISA_Smpmp,  "_smpmp",    "" )
-    severity note;
+  hello_neorv32:
+  if HART_ID = 0 generate -- print only for core 0
 
-  -- CPU tuning options --
-  assert false report "[NEORV32] CPU tuning options: " &
-    cond_sel_string_f(CPU_CLOCK_GATING_EN, "clock_gating ", "") &
-    cond_sel_string_f(CPU_FAST_MUL_EN,     "fast_mul ",     "") &
-    cond_sel_string_f(CPU_FAST_SHIFT_EN,   "fast_shift ",   "") &
-    cond_sel_string_f(CPU_RF_HW_RST_EN,    "rf_hw_rst ",    "")
-    severity note;
+    -- CPU ISA configuration (in alphabetical order - not in canonical order!) --
+    assert false report "[NEORV32] CPU ISA: rv32" &
+      cond_sel_string_f(RISCV_ISA_E,      "e",         "i") &
+      cond_sel_string_f(riscv_b_c,        "b",         "" ) &
+      cond_sel_string_f(RISCV_ISA_C,      "c",         "" ) &
+      cond_sel_string_f(RISCV_ISA_M,      "m",         "" ) &
+      cond_sel_string_f(RISCV_ISA_U,      "u",         "" ) &
+      cond_sel_string_f(true,             "x",         "" ) & -- always enabled
+      cond_sel_string_f(RISCV_ISA_Zaamo,  "_zaamo",    "" ) &
+      cond_sel_string_f(RISCV_ISA_Zba,    "_zba",      "" ) &
+      cond_sel_string_f(RISCV_ISA_Zbb,    "_zbb",      "" ) &
+      cond_sel_string_f(RISCV_ISA_Zbkb,   "_zbkb",     "" ) &
+      cond_sel_string_f(RISCV_ISA_Zbkc,   "_zbkc",     "" ) &
+      cond_sel_string_f(RISCV_ISA_Zbkx,   "_zbkx",     "" ) &
+      cond_sel_string_f(RISCV_ISA_Zbs,    "_zbs",      "" ) &
+      cond_sel_string_f(RISCV_ISA_Zicntr, "_zicntr",   "" ) &
+      cond_sel_string_f(RISCV_ISA_Zicond, "_zicond",   "" ) &
+      cond_sel_string_f(true,             "_zicsr",    "" ) & -- always enabled
+      cond_sel_string_f(true,             "_zifencei", "" ) & -- always enabled
+      cond_sel_string_f(RISCV_ISA_Zihpm,  "_zihpm",    "" ) &
+      cond_sel_string_f(RISCV_ISA_Zfinx,  "_zfinx",    "" ) &
+      cond_sel_string_f(riscv_zkn_c,      "_zkn",      "" ) &
+      cond_sel_string_f(RISCV_ISA_Zknd,   "_zknd",     "" ) &
+      cond_sel_string_f(RISCV_ISA_Zkne,   "_zkne",     "" ) &
+      cond_sel_string_f(RISCV_ISA_Zknh,   "_zknh",     "" ) &
+      cond_sel_string_f(riscv_zks_c,      "_zks",      "" ) &
+      cond_sel_string_f(RISCV_ISA_Zksed,  "_zksed",    "" ) &
+      cond_sel_string_f(RISCV_ISA_Zksh,   "_zksh",     "" ) &
+      cond_sel_string_f(riscv_zkt_c,      "_zkt",      "" ) &
+      cond_sel_string_f(RISCV_ISA_Zmmul,  "_zmmul",    "" ) &
+      cond_sel_string_f(RISCV_ISA_Zxcfu,  "_zxcfu",    "" ) &
+      cond_sel_string_f(RISCV_ISA_Sdext,  "_sdext",    "" ) &
+      cond_sel_string_f(RISCV_ISA_Sdtrig, "_sdtrig",   "" ) &
+      cond_sel_string_f(RISCV_ISA_Smpmp,  "_smpmp",    "" )
+      severity note;
 
-  -- simulation notifier --
-  assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
+    -- CPU tuning options --
+    assert false report "[NEORV32] CPU tuning options: " &
+      cond_sel_string_f(CPU_CLOCK_GATING_EN, "clock_gating ", "") &
+      cond_sel_string_f(CPU_FAST_MUL_EN,     "fast_mul ",     "") &
+      cond_sel_string_f(CPU_FAST_SHIFT_EN,   "fast_shift ",   "") &
+      cond_sel_string_f(CPU_RF_HW_RST_EN,    "rf_hw_rst ",    "")
+      severity note;
 
-  -- ID checks --
-  assert is_power_of_two_f(NUM_HARTS) report "[NEORV32] NUM_HARTS has to be a power of two." severity error;
-  assert (HART_ID < NUM_HARTS) report "[NEORV32] HART_ID out of range." severity error;
+    -- simulation notifier --
+    assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
+
+  end generate;
 
 
   -- Clock Gating ---------------------------------------------------------------------------
@@ -438,12 +439,8 @@ begin
   -- Inter-Core Communication (ICC) ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   icc_enabled:
-  if NUM_HARTS > 1 generate
+  if ICC_EN generate
     neorv32_cpu_icc_inst: entity neorv32.neorv32_cpu_icc
-    generic map (
-      HART_ID   => HART_ID,  -- ID of this core
-      NUM_HARTS => NUM_HARTS -- number of cores, has to be a power of two
-    )
     port map (
       -- global control --
       clk_i       => clk_i,          -- global clock, rising edge
@@ -461,7 +458,7 @@ begin
   end generate;
 
   icc_disabled:
-  if NUM_HARTS = 1 generate
+  if not ICC_EN generate
     xcsr_rdata_icc <= (others => '0');
     icc_tx_o       <= icc_terminate_c;
   end generate;
