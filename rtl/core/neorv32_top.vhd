@@ -154,6 +154,8 @@ entity neorv32_top is
     -- Global control --
     clk_i          : in  std_ulogic;                                        -- global clock, rising edge
     rstn_i         : in  std_ulogic;                                        -- global reset, low-active, async
+    rstn_ocd_o     : out std_ulogic;                                        -- watchdog reset output, low-active, sync
+    rstn_wdt_o     : out std_ulogic;                                        -- on-chip debugger reset output, low-active, sync
 
     -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     : in  std_ulogic := 'L';                                 -- serial clock
@@ -435,19 +437,21 @@ begin
   -- Clock and Reset Generators
   -- **************************************************************************************************************************
 
-  generators:
+  soc_generators:
   if true generate
 
     -- Reset Sequencer ------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_sys_reset_inst: entity neorv32.neorv32_sys_reset
     port map (
-      clk_i      => clk_i,
-      rstn_ext_i => rstn_i,
-      rstn_wdt_i => rstn_wdt,
-      rstn_dbg_i => dci_ndmrstn,
-      rstn_ext_o => rstn_ext,
-      rstn_sys_o => rstn_sys
+      clk_i       => clk_i,
+      rstn_ext_i  => rstn_i,
+      rstn_wdt_i  => rstn_wdt,
+      rstn_dbg_i  => dci_ndmrstn,
+      rstn_ext_o  => rstn_ext,
+      rstn_sys_o  => rstn_sys,
+      xrstn_wdt_o => rstn_wdt_o,
+      xrstn_ocd_o => rstn_ocd_o
     );
 
 
@@ -469,7 +473,7 @@ begin
                    clk_gen_en(CG_TWI)    & clk_gen_en(CG_TWD)   & clk_gen_en(CG_PWM)   & clk_gen_en(CG_WDT) &
                    clk_gen_en(CG_NEOLED) & clk_gen_en(CG_GPTMR) & clk_gen_en(CG_XIP)   & clk_gen_en(CG_ONEWIRE);
 
-  end generate; -- /generators
+  end generate; -- /soc_generators
 
 
   -- **************************************************************************************************************************

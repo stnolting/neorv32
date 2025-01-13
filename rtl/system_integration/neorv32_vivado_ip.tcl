@@ -118,6 +118,8 @@ proc setup_ip_gui {} {
   # **************************************************************
   # Interfaces: Configuration Dependencies
   # **************************************************************
+  set_property enablement_dependency {$OCD_EN}        [ipx::get_ports ocd_resetn       -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$IO_WDT_EN}     [ipx::get_ports wdt_resetn       -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_SLINK_EN}   [ipx::get_bus_interfaces s0_axis -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_SLINK_EN}   [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
   set_property enablement_dependency {$XBUS_EN}       [ipx::get_bus_interfaces m_axi   -of_objects [ipx::current_core]]
@@ -218,30 +220,30 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {RISC-V ISA Extensions}]
   add_params $group {
-    { RISCV_ISA_C         {C Extension}                           {Compressed instructions} }
-    { RISCV_ISA_E         {E Extension}                           {Reduced register file size (16 registers only)} }
-    { RISCV_ISA_M         {M Extension}                           {Integer multiplication and division hardware} }
-    { RISCV_ISA_U         {U Extension}                           {Less-privileged user-mode} }
-    { RISCV_ISA_Zaamo     {Zaamo Extension}                       {Atomic memory operations instructions} }
-    { RISCV_ISA_Zba       {Zba Extension}                         {Shifted-add bit-manipulation instructions} }
-    { RISCV_ISA_Zbb       {Zbb Extension}                         {Basic bit-manipulation instructions} }
-    { RISCV_ISA_Zbkb      {Zbkb Extension}                        {Bit manipulation instructions for cryptography} }
-    { RISCV_ISA_Zbkc      {Zbkc Extension}                        {Carry-less multiply instr. for cryptography} }
-    { RISCV_ISA_Zbkx      {Zbkx Extension}                        {Scalar cryptographic - crossbar permutations} }
-    { RISCV_ISA_Zbs       {Zbs Extension}                         {Single-bit bit-manipulation instructions} }
-    { RISCV_ISA_Zfinx     {Zfinx Extension}                       {Embedded FPU} }
-    { RISCV_ISA_Zicntr    {Zicntr Extension}                      {Base counters (cycles and instructions)} }
-    { RISCV_ISA_Zicond    {Zicond Extension}                      {Conditional-move instructions} }
-    { RISCV_ISA_Zihpm     {Zihpm Extension}                       {Hardware performance monitors (HPMs)} }
+    { RISCV_ISA_C         {C}                                     {16-bit compressed instructions} }
+    { RISCV_ISA_E         {E}                                     {Reduced register file size (16 registers only)} }
+    { RISCV_ISA_M         {M}                                     {Integer multiplication and division hardware} }
+    { RISCV_ISA_U         {U}                                     {Less-privileged user-mode} }
+    { RISCV_ISA_Zaamo     {Zaamo}                                 {Atomic memory operations (read-modify-write)} }
+    { RISCV_ISA_Zba       {Zba}                                   {Shifted-add bit-manipulation instructions} }
+    { RISCV_ISA_Zbb       {Zbb}                                   {Basic bit-manipulation instructions} }
+    { RISCV_ISA_Zbkb      {Zbkb}                                  {Bit manipulation instructions for cryptography} }
+    { RISCV_ISA_Zbkc      {Zbkc}                                  {Carry-less multiply instructions for cryptography} }
+    { RISCV_ISA_Zbkx      {Zbkx}                                  {Scalar cryptographic - crossbar permutations} }
+    { RISCV_ISA_Zbs       {Zbs}                                   {Single-bit bit-manipulation instructions} }
+    { RISCV_ISA_Zfinx     {Zfinx}                                 {Embedded FPU (using integer registers)} }
+    { RISCV_ISA_Zicntr    {Zicntr}                                {Base counters (cycles and instructions)} }
+    { RISCV_ISA_Zicond    {Zicond}                                {Conditional-move instructions} }
+    { RISCV_ISA_Zihpm     {Zihpm}                                 {Hardware performance monitors (HPMs)} }
     { HPM_CNT_WIDTH       {HPM Width}                             {Counter width in bits}                          {$RISCV_ISA_Zihpm}}
     { HPM_NUM_CNTS        {HPM Counters}                          {Numer of hardware performance monitor counters} {$RISCV_ISA_Zihpm}}
-    { RISCV_ISA_Zknd      {Zknd Extension}                        {Scalar cryptographic - NIST AES decryption} }
-    { RISCV_ISA_Zkne      {Zkne Extension}                        {Scalar cryptographic - NIST AES encryption} }
-    { RISCV_ISA_Zknh      {Zknh Extension}                        {Scalar cryptographic - NIST hash functions} }
-    { RISCV_ISA_Zksed     {Zksed Extension}                       {Scalar cryptographic - ShangMi block cyphers} }
-    { RISCV_ISA_Zksh      {Zksh Extension}                        {Scalar cryptographic - ShangMi hash functions} }
-    { RISCV_ISA_Zmmul     {Zmmul Extension}                       {Integer multiplication-only hardware} }
-    { RISCV_ISA_Zxcfu     {NEORV32 Zxcfu ISA Extension}           {Custom-instructions unit} }
+    { RISCV_ISA_Zknd      {Zknd}                                  {Scalar cryptographic - NIST AES decryption} }
+    { RISCV_ISA_Zkne      {Zkne}                                  {Scalar cryptographic - NIST AES encryption} }
+    { RISCV_ISA_Zknh      {Zknh}                                  {Scalar cryptographic - NIST hash functions} }
+    { RISCV_ISA_Zksed     {Zksed}                                 {Scalar cryptographic - ShangMi block cyphers} }
+    { RISCV_ISA_Zksh      {Zksh}                                  {Scalar cryptographic - ShangMi hash functions} }
+    { RISCV_ISA_Zmmul     {Zmmul}                                 {Integer multiplication-only hardware} }
+    { RISCV_ISA_Zxcfu     {Zxcfu}                                 {NEORV32-specifc custom-instructions unit (user-defined)} }
   }
 
   set group [add_group $page {Physical Memory Protection (PMP)}]

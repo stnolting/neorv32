@@ -145,6 +145,8 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     clk            : in  std_logic;
     resetn         : in  std_logic; -- low-active
+    ocd_resetn     : out std_logic; -- watchdog reset output, low-active, sync
+    wdt_resetn     : out std_logic; -- on-chip debugger reset output, low-active, sync
     -- ------------------------------------------------------------
     -- AXI4-Lite Host Interface (available if XBUS_EN = true)
     -- ------------------------------------------------------------
@@ -313,6 +315,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   end component;
 
   -- type conversion --
+  signal rstn_ocd, rstn_wdt : std_ulogic;
   signal jtag_tdo_aux : std_ulogic;
   signal s0_axis_tdata_aux : std_ulogic_vector(31 downto 0);
   signal s0_axis_tdest_aux : std_ulogic_vector(3 downto 0);
@@ -469,6 +472,8 @@ begin
     -- Global control --
     clk_i          => std_ulogic(clk),
     rstn_i         => std_ulogic(resetn),
+    rstn_ocd_o     => rstn_ocd,
+    rstn_wdt_o     => rstn_wdt,
     -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     => std_ulogic(jtag_tck_i),
     jtag_tdi_i     => std_ulogic(jtag_tdi_i),
@@ -557,6 +562,9 @@ begin
 
   -- Type Conversion (Outputs) --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  ocd_resetn     <= std_logic(rstn_ocd);
+  wdt_resetn     <= std_logic(rstn_wdt);
+
   jtag_tdo_o     <= std_logic(jtag_tdo_aux);
 
   s1_axis_tready <= std_logic(s1_axis_tready_aux);

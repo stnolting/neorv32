@@ -8,7 +8,7 @@
 | Hardware source files:  | neorv32_wdt.vhd |
 | Software driver files:  | neorv32_wdt.c | link:https://stnolting.github.io/neorv32/sw/neorv32__wdt_8c.html[Online software reference (Doxygen)]
 |                         | neorv32_wdt.h | link:https://stnolting.github.io/neorv32/sw/neorv32__wdt_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | none |
+| Top entity ports:       | `rstn_wdt_o` | synchronous watchdog reset output, low-active
 | Configuration generics: | `IO_WDT_EN` | implement watchdog when `true`
 | CPU interrupts:         | none |
 |=======================
@@ -74,6 +74,14 @@ The cause of the last system hardware reset can be determined via the `WDT_CTRL_
 * `WDT_RCAUSE_OCD` (0b01): Reset caused by on-chip debugger
 * `WDT_RCAUSE_TMO` (0b10): Reset caused by watchdog timeout
 * `WDT_RCAUSE_ACC` (0b11): Reset caused by illegal watchdog access (strict mode)
+
+
+**External Reset Output**
+
+The WDT provides a dedicated output (<<_processor_top_entity_signals>>: `rstn_wdt_o`) to reset processor-external modules
+when the watchdog times out. This signal is low-active and synchronous to the processor clock. It is available if the
+watchdog is implemented; otherwise it is hardwired to `1`. Note that the signal also becomes active (low) when the
+processor's main reset signal is active (even if the watchdog is deactivated or disabled for synthesis).
 
 
 **Register Map**
