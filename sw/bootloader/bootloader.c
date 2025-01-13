@@ -247,7 +247,7 @@ volatile uint32_t getting_exe;
 /**********************************************************************//**
  * Function prototypes
  **************************************************************************/
-void     __attribute__((interrupt("machine"))) bootloader_trap_handler(void);
+void     __attribute__((interrupt("machine"),aligned(4))) bootloader_trap_handler(void);
 void     print_help(void);
 void     start_app(int boot_xip);
 void     get_exe(int src);
@@ -521,7 +521,7 @@ void start_app(int boot_xip) {
  *
  * @note Since we have no runtime environment we have to use the interrupt attribute here.
  **************************************************************************/
-void __attribute__((interrupt("machine"))) bootloader_trap_handler(void) {
+void __attribute__((interrupt("machine"),aligned(4))) bootloader_trap_handler(void) {
 
   register uint32_t mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
 
