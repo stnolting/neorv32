@@ -25,7 +25,7 @@ entity neorv32_ProcessorTop_MinimalBoot is
     MEM_INT_DMEM_EN   : boolean := true;    -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE : natural := 64*1024; -- size of processor-internal data memory in bytes
     -- Processor peripherals --
-    IO_GPIO_NUM       : natural := 0;       -- number of GPIO input/output pairs (0..64)
+    IO_GPIO_NUM       : natural := 4;       -- number of GPIO input/output pairs (0..64)
     IO_PWM_NUM_CH     : natural := 3        -- number of PWM channels to implement (0..16)
   );
   port (
@@ -33,7 +33,7 @@ entity neorv32_ProcessorTop_MinimalBoot is
     clk_i      : in  std_logic;
     rstn_i     : in  std_logic;
     -- GPIO (available if IO_GPIO_EN = true) --
-    gpio_o     : out std_ulogic_vector(3 downto 0);
+    gpio_o     : out std_ulogic_vector(IO_GPIO_NUM-1 downto 0);
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart_txd_o : out std_ulogic; -- UART0 send data
     uart_rxd_i : in  std_ulogic := '0'; -- UART0 receive data
@@ -85,7 +85,7 @@ begin
   );
 
   -- GPIO --
-  gpio_o <= con_gpio_o(3 downto 0);
+  gpio_o <= con_gpio_o(IO_GPIO_NUM-1 downto 0);
   -- PWM --
   pwm_o <= con_pwm_o(IO_PWM_NUM_CH-1 downto 0);
 
