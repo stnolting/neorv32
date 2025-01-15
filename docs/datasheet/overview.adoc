@@ -231,8 +231,7 @@ rtl/core
 ├-neorv32_uart.vhd              - Universal async. receiver/transmitter
 ├-neorv32_wdt.vhd               - Watchdog timer
 ├-neorv32_xbus.vhd              - External (Wishbone) bus interface gateways
-├-neorv32_xip.vhd               - Execute in place module
-└-neorv32_xirq.vhd              - External interrupt controller
+└-neorv32_xip.vhd               - Execute in place module
 ...................................
 
 .Replacing Modules for Customization or Optimization
