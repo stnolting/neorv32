@@ -8,29 +8,65 @@
 | Hardware source files:  | neorv32_gpio.vhd |
 | Software driver files:  | neorv32_gpio.c | link:https://stnolting.github.io/neorv32/sw/neorv32__gpio_8c.html[Online software reference (Doxygen)]
 |                         | neorv32_gpio.h | link:https://stnolting.github.io/neorv32/sw/neorv32__gpio_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `gpio_o` | 64-bit parallel output port
-|                         | `gpio_i` | 64-bit parallel input port
-| Configuration generics: | `IO_GPIO_NUM` | number of input/output pairs to implement (0..64)
-| CPU interrupts:         | none |
+| Top entity ports:       | `gpio_o` | 32-bit parallel output port
+|                         | `gpio_i` | 32-bit parallel input port
+| Configuration generics: | `IO_GPIO_NUM` | number of input/output pairs to implement (0..32)
+| CPU interrupts:         | fast IRQ channel 8 | GPIO (see <<_processor_interrupts>>)
 |=======================
 
 
 **Overview**
 
-The general purpose parallel IO unit provides a simple parallel input and output port. These ports can be used
+The general purpose IO unit provides simple uni-directional input and output port. These ports can be used
 chip-externally (for example to drive status LEDs, connect buttons, etc.) or chip-internally to provide control
-signals for other IP modules.
+signals for other IP modules. The input port features programmable pin-individual level or edge interrupts
+capabilities.
+
+Data written to the `PORT_OUT` will appear on the processor's `gpio_o` port. Vice versa, the `PORT_IN` register
+represents the current state of the processor's `gpio_i`.
 
 The actual number of input/output pairs is defined by the `IO_GPIO_NUM` generic. When set to zero, the GPIO module
 is excluded from synthesis and the output port `gpio_o` is tied to all-zero. If `IO_GPIO_NUM` is less than the
-maximum value of 64, only the LSB-aligned bits in `gpio_o` and `gpio_i` are actually connected while the remaining
-bits are tied to zero or are left unconnected, respectively.
+maximum value of 32, only the LSB-aligned bits in `gpio_o` and `gpio_i` are actually connected while the remaining
+bits are tied to zero or are left unconnected, respectively. This also applies to all memory-mapped interface
+registers of the GPIO module (i.e. the according most-significant bits are hardwired to zero).
 
-.Access Atomicity
-[NOTE]
-The GPIO modules uses two memory-mapped registers (each 32-bit) each for accessing the input and
-output signals. Since the CPU can only process 32-bit "at once" updating the entire output cannot
-be performed within a single clock cycle.
+
+**Input Pin Interrupts**
+
+Each input pin (`gpio_i`) provides an individual programmable interrupt trigger. The actual interrupt trigger
+type can be configured individually for each input pin using the `IRQ_TYPE` and `IRQ_POLARITY` registers.
+`IRQ_TYPE` defines the actual trigger type (level-triggered or edge-triggered), while `IRQ_POLARITY` defines
+the trigger's polarity (low-level/falling-edge or high-level/rising-edge). The position of each bit in these
+registers corresponds the according `gpio_i` input pin.
+
+Each pin interrupt channel can be enabled or disabled individually using the `IRQ_ENABLE` register. Each bit
+in this register corresponds to the according input pin. If the programmed trigger of a disabled input
+(`IRQ_ENABLE(i) = 0`) fires, the interrupt request is entirely ignored.
+
+.GPIO Trigger Configuration for Pin _i_
+[cols="^2,^2,^2,<4"]
+[options="header",grid="all"]
+|=======================
+| `IRQ_ENABLE(i)` | `IRQ_TYPE(i)` | `IRQ_POLARITY(i)` | Resulting trigger of `gpio_i(i)`
+| `1`             | `0`           | `0`               | low-level (`GPIO_TRIG_LEVEL_LOW`)
+| `1`             | `0`           | `1`               | high-level (`GPIO_TRIG_LEVEL_HIGH`)
+| `1`             | `1`           | `0`               | falling-edge (`GPIO_TRIG_EDGE_FALLING`)
+| `1`             | `1`           | `1`               | rising-edge (`GPIO_TRIG_EDGE_RISING`)
+| `0`             | `-`           | `-`               | interrupt disabled
+|=======================
+
+If the configured trigger of an enabled input pin (`IRQ_ENABLE(i) = 1`) fires, the according interrupt request
+is buffered internally in the `IRQ_PENDING` register. When this register contains a non-zero value (i.e. any
+bit becomes set) an interrupt request is sent to the CPU via FIRQ channel 8 (see <<_processor_interrupts>>).
+
+The CPU can determine the interrupt-triggering pins by reading the `IRQ_PENDING` register. Each set bit in this
+register indicates that the according input pin's interrupt trigger has fired. Then, the CPU can clear those
+pending interrupt pin by setting all set bits to zero.
+
+.GPIO Interrupts Demo Program
+[TIP]
+A demo program for the GPIO input interrupts can be found in `sw/example/demo_gpio`.
 
 
 **Register Map**
@@ -39,9 +75,13 @@ be performed within a single clock cycle.
 [cols="<2,<2,^1,^1,<6"]
 [options="header",grid="rows"]
 |=======================
-| Address      | Name [C]    | Bit(s) | R/W | Function
-| `0xfffc0000` | `INPUT[0]`  | 31:0   | r/- | parallel input port pins 31:0
-| `0xfffc0004` | `INPUT[1]`  | 31:0   | r/- | parallel input port pins 63:32
-| `0xfffc0008` | `OUTPUT[0]` | 31:0   | r/w | parallel output port pins 31:0
-| `0xfffc000c` | `OUTPUT[1]` | 31:0   | r/w | parallel output port pins 63:32
+| Address      | Name [C]       | Bit(s) | R/W | Function
+| `0xfffc0000` | `PORT_IN`      | 31:0   | r/- | Parallel input port; `PORT_IN(i)` corresponds to `gpio_i(i)`
+| `0xfffc0004` | `PORT_OUT`     | 31:0   | r/w | Parallel output port; `PORT_OUT(i)` corresponds to `gpio_o(i)`
+| `0xfffc0008` | -              | 31:0   | r/- | _reserved_, read as zero
+| `0xfffc000c` | -              | 31:0   | r/- | _reserved_, read as zero
+| `0xfffc0010` | `IRQ_TYPE`     | 31:0   | r/w | Trigger type select (`0` = level trigger, `1` = edge trigger); `IRQ_TYPE(i)` corresponds to `gpio_i(i)`
+| `0xfffc0014` | `IRQ_POLARITY` | 31:0   | r/w | Trigger polarity select (`0` = low-level/falling-edge, `1` = high-level/rising-edge); `IRQ_POLARITY(i)` corresponds to `gpio_i(i)`
+| `0xfffc0018` | `IRQ_ENABLE`   | 31:0   | r/w | Per-pin interrupt enable; `IRQ_ENABLE(i)` corresponds to `gpio_i(i)`
+| `0xfffc001c` | `IRQ_PENDING`  | 31:0   | r/c | Per-pin interrupt pending, can be cleared by writing zero to the according bit(s); `IRQ_PENDING(i)` corresponds to `gpio_i(i)`
 |=======================
