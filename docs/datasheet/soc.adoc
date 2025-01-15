@@ -31,14 +31,13 @@ image::neorv32_processor.png[align=center]
 * _optional_ 8-bit serial data device interface (<<_serial_data_interface_controller_spi,**SDI**>>)
 * _optional_ two-wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
 * _optional_ two-wire serial device controller (<<_two_wire_serial_device_controller_twd,**TWD**>>), compatible to the I²C standard
-* _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 64xOut, 64xIn
+* _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 32 inputs (interrupt capable), 32 outputs
 * _optional_ 32-bit external bus interface, Wishbone b4 / AXI4-Lite compatible (<<_processor_external_bus_interface_xbus,**XBUS**>>)
 * _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
 * _optional_ PWM controller with up to 16 individual channels (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
 * _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**>>)
 * _optional_ custom functions subsystem for custom co-processor extensions (<<_custom_functions_subsystem_cfs,**CFS**>>)
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
-* _optional_ external interrupt controller with up to 32 channels and programmable interrupt triggers (<<_external_interrupt_controller_xirq,**XIRQ**>>)
 * _optional_ general purpose 32-bit timer (<<_general_purpose_timer_gptmr,**GPTMR**>>)
 * _optional_ execute in-place module (<<_execute_in_place_module_xip,**XIP**>>)
 * _optional_ 1-wire serial interface controller (<<_one_wire_serial_interface_controller_onewire,**ONEWIRE**>>), compatible to the 1-wire standard
@@ -123,8 +122,8 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `xip_dat_i`      |  1 |  in | `'L'` | serial data input
 | `xip_dat_o`      |  1 | out |   -   | serial data output
 5+^| **<<_general_purpose_input_and_output_port_gpio>>**
-| `gpio_o`         | 64 | out |   -   | general purpose parallel output
-| `gpio_i`         | 64 |  in | `'L'` | general purpose parallel input
+| `gpio_o`         | 32 | out |   -   | general purpose parallel output
+| `gpio_i`         | 32 |  in | `'L'` | general purpose parallel input (interrupt-capable)
 5+^| **<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>**
 | `uart0_txd_o`    |  1 | out |   -   | serial transmitter
 | `uart0_rxd_i`    |  1 |  in | `'L'` | serial receiver
@@ -167,8 +166,6 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `neoled_o`       |  1 | out |   -   | asynchronous serial data output
 5+^| **<<_core_local_interruptor_clint>>**
 | `mtime_time_o`   | 64 | out |   -   | CLINT.MTIMER system time output
-5+^| **<<_external_interrupt_controller_xirq>>**
-| `xirq_i`         | 32 |  in | `'L'` | external interrupt requests
 5+^| **RISC-V Machine-Mode <<_processor_interrupts>>**
 | `mtime_irq_i`    |  1 |  in | `'L'` | machine timer interrupt (RISC-V), high-level-active; for chip-internal usage only
 | `msw_irq_i`      |  1 |  in | `'L'` | machine software interrupt (RISC-V), high-level-active; for chip-internal usage only
@@ -285,11 +282,9 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `XIP_CACHE_EN`          | boolean   | false         | Implement XIP cache.
 | `XIP_CACHE_NUM_BLOCKS`  | natural   | 8             | Number of blocks in XIP cache. Has to be a power of two.
 | `XIP_CACHE_BLOCK_SIZE`  | natural   | 256           | Number of bytes per XIP cache block. Has to be a power of two, min 4.
-4+^| **<<_external_interrupt_controller_xirq>>**
-| `XIRQ_NUM_CH`           | natural   | 0             | Number of channels of the external interrupt controller. Valid values are 0..32.
 4+^| **Peripheral/IO Modules**
 | `IO_DISABLE_SYSINFO`    | boolean   | false         | Disable <<_system_configuration_information_memory_sysinfo>> module; ⚠️ not recommended - for advanced users only!
-| `IO_GPIO_NUM`           | natural   | 0             | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>.
+| `IO_GPIO_NUM`           | natural   | 0             | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>, max 32.
 | `IO_CLINT_EN`           | boolean   | false         | Implement the <<_core_local_interruptor_clint>>.
 | `IO_UART0_EN`           | boolean   | false         | Implement the <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>.
 | `IO_UART0_RX_FIFO`      | natural   | 1             | UART0 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
@@ -455,7 +450,7 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | 5       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 TX FIFO level interrupt
 | 6       | <<_serial_peripheral_interface_controller_spi,SPI>> | SPI FIFO level interrupt
 | 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI FIFO level interrupt
-| 8       | <<_external_interrupt_controller_xirq,XIRQ>> | External interrupt controller interrupt
+| 8       | <<_general_purpose_input_and_output_port_gpio,GPIO>> | GPIO input pin(s) interrupt
 | 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED TX FIFO level interrupt
 | 10      | <<_direct_memory_access_controller_dma,DMA>> | DMA transfer done interrupt
 | 11      | <<_serial_data_interface_controller_sdi,SDI>> | SDI FIFO level interrupt
@@ -825,8 +820,6 @@ include::soc_trng.adoc[]
 include::soc_cfs.adoc[]
 
 include::soc_neoled.adoc[]
-
-include::soc_xirq.adoc[]
 
 include::soc_gptmr.adoc[]
 

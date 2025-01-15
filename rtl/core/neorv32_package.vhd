@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100906"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01100907"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -79,7 +79,7 @@ package neorv32_package is
   constant base_io_pwm_c     : std_ulogic_vector(31 downto 0) := x"fff00000";
   constant base_io_gptmr_c   : std_ulogic_vector(31 downto 0) := x"fff10000";
   constant base_io_onewire_c : std_ulogic_vector(31 downto 0) := x"fff20000";
-  constant base_io_xirq_c    : std_ulogic_vector(31 downto 0) := x"fff30000";
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"fff30000"; -- reserved
   constant base_io_clint_c   : std_ulogic_vector(31 downto 0) := x"fff40000";
   constant base_io_uart0_c   : std_ulogic_vector(31 downto 0) := x"fff50000";
   constant base_io_uart1_c   : std_ulogic_vector(31 downto 0) := x"fff60000";
@@ -802,8 +802,6 @@ package neorv32_package is
       XIP_CACHE_EN          : boolean                        := false;
       XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256         := 8;
       XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16       := 256;
-      -- External Interrupts Controller (XIRQ) --
-      XIRQ_NUM_CH           : natural range 0 to 32          := 0;
       -- Processor peripherals --
       IO_DISABLE_SYSINFO    : boolean                        := false;
       IO_GPIO_NUM           : natural range 0 to 64          := 0;
@@ -880,8 +878,8 @@ package neorv32_package is
       xip_dat_i      : in  std_ulogic := 'L';
       xip_dat_o      : out std_ulogic;
       -- GPIO (available if IO_GPIO_NUM > 0) --
-      gpio_o         : out std_ulogic_vector(63 downto 0);
-      gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'L');
+      gpio_o         : out std_ulogic_vector(31 downto 0);
+      gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');
       -- primary UART0 (available if IO_UART0_EN = true) --
       uart0_txd_o    : out std_ulogic;
       uart0_rxd_i    : in  std_ulogic := 'L';
@@ -924,8 +922,6 @@ package neorv32_package is
       neoled_o       : out std_ulogic;
       -- Machine timer system time (available if IO_CLINT_EN = true) --
       mtime_time_o   : out std_ulogic_vector(63 downto 0);
-      -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-      xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');
       -- CPU Interrupts --
       mtime_irq_i    : in  std_ulogic := 'L';
       msw_irq_i      : in  std_ulogic := 'L';
