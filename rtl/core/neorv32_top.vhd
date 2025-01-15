@@ -110,12 +110,9 @@ entity neorv32_top is
     XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256         := 8;           -- number of blocks (min 1), has to be a power of 2
     XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16       := 256;         -- block size in bytes (min 4), has to be a power of 2
 
-    -- External Interrupts Controller (XIRQ) --
-    XIRQ_NUM_CH           : natural range 0 to 32          := 0;           -- number of external IRQ channels (0..32)
-
     -- Processor peripherals --
     IO_DISABLE_SYSINFO    : boolean                        := false;       -- disable the SYSINFO module (for advanced users only)
-    IO_GPIO_NUM           : natural range 0 to 64          := 0;           -- number of GPIO input/output pairs (0..64)
+    IO_GPIO_NUM           : natural range 0 to 32          := 0;           -- number of GPIO input/output pairs (0..32)
     IO_CLINT_EN           : boolean                        := false;       -- implement core local interruptor (CLINT)?
     IO_UART0_EN           : boolean                        := false;       -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
@@ -194,8 +191,8 @@ entity neorv32_top is
     xip_dat_o      : out std_ulogic;                                        -- controller data output
 
     -- GPIO (available if IO_GPIO_NUM > 0) --
-    gpio_o         : out std_ulogic_vector(63 downto 0);                    -- parallel output
-    gpio_i         : in  std_ulogic_vector(63 downto 0) := (others => 'L'); -- parallel input
+    gpio_o         : out std_ulogic_vector(31 downto 0);                    -- parallel output
+    gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- parallel input; interrupt-capable
 
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic;                                        -- UART0 send data
@@ -250,9 +247,6 @@ entity neorv32_top is
     -- Machine timer system time (available if IO_CLINT_EN = true) --
     mtime_time_o   : out std_ulogic_vector(63 downto 0);                    -- current system time
 
-    -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- IRQ channels
-
     -- CPU interrupts (for chip-internal usage only) --
     mtime_irq_i    : in  std_ulogic := 'L';                                 -- machine timer interrupt, available if IO_CLINT_EN = false
     msw_irq_i      : in  std_ulogic := 'L';                                 -- machine software interrupt, available if IO_CLINT_EN = false
@@ -279,7 +273,6 @@ architecture neorv32_top_rtl of neorv32_top is
   -- auto-configuration --
   constant num_cores_c     : natural := cond_sel_natural_f(DUAL_CORE_EN, 2, 1);
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
-  constant io_xirq_en_c    : boolean := boolean(XIRQ_NUM_CH > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
   constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
@@ -332,8 +325,8 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- bus: IO devices --
   type io_devices_enum_t is (
-    IODEV_BOOTROM, IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG, IODEV_TWI,
-    IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_CLINT, IODEV_XIRQ, IODEV_ONEWIRE,
+    IODEV_BOOTROM, IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG,
+    IODEV_TWI, IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_CLINT, IODEV_ONEWIRE,
     IODEV_GPTMR, IODEV_PWM, IODEV_XIP, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD
   );
   type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
@@ -344,7 +337,7 @@ architecture neorv32_top_rtl of neorv32_top is
   -- IRQs --
   type firq_enum_t is (
     FIRQ_TWD, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
-    FIRQ_CFS, FIRQ_NEOLED, FIRQ_XIRQ, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK_RX, FIRQ_SLINK_TX
+    FIRQ_CFS, FIRQ_NEOLED, FIRQ_GPIO, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK_RX, FIRQ_SLINK_TX
   );
   type firq_t is array (firq_enum_t) of std_ulogic;
   signal firq      : firq_t;
@@ -394,7 +387,6 @@ begin
       cond_sel_string_f(IO_TRNG_EN,                "TRNG ",       "") &
       cond_sel_string_f(IO_CFS_EN,                 "CFS ",        "") &
       cond_sel_string_f(IO_NEOLED_EN,              "NEOLED ",     "") &
-      cond_sel_string_f(io_xirq_en_c,              "XIRQ ",       "") &
       cond_sel_string_f(IO_GPTMR_EN,               "GPTMR ",      "") &
       cond_sel_string_f(IO_ONEWIRE_EN,             "ONEWIRE ",    "") &
       cond_sel_string_f(IO_DMA_EN,                 "DMA ",        "") &
@@ -489,7 +481,7 @@ begin
   cpu_firq(5)  <= firq(FIRQ_UART1_TX);
   cpu_firq(6)  <= firq(FIRQ_SPI);
   cpu_firq(7)  <= firq(FIRQ_TWI);
-  cpu_firq(8)  <= firq(FIRQ_XIRQ);
+  cpu_firq(8)  <= firq(FIRQ_GPIO);
   cpu_firq(9)  <= firq(FIRQ_NEOLED);
   cpu_firq(10) <= firq(FIRQ_DMA);
   cpu_firq(11) <= firq(FIRQ_SDI);
@@ -1047,7 +1039,7 @@ begin
       DEV_16_EN => io_pwm_en_c,     DEV_16_BASE => base_io_pwm_c,
       DEV_17_EN => IO_GPTMR_EN,     DEV_17_BASE => base_io_gptmr_c,
       DEV_18_EN => IO_ONEWIRE_EN,   DEV_18_BASE => base_io_onewire_c,
-      DEV_19_EN => io_xirq_en_c,    DEV_19_BASE => base_io_xirq_c,
+      DEV_19_EN => false,           DEV_19_BASE => (others => '0'), -- reserved
       DEV_20_EN => IO_CLINT_EN,     DEV_20_BASE => base_io_clint_c,
       DEV_21_EN => IO_UART0_EN,     DEV_21_BASE => base_io_uart0_c,
       DEV_22_EN => IO_UART1_EN,     DEV_22_BASE => base_io_uart1_c,
@@ -1085,7 +1077,7 @@ begin
       dev_16_req_o => iodev_req(IODEV_PWM),     dev_16_rsp_i => iodev_rsp(IODEV_PWM),
       dev_17_req_o => iodev_req(IODEV_GPTMR),   dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
       dev_18_req_o => iodev_req(IODEV_ONEWIRE), dev_18_rsp_i => iodev_rsp(IODEV_ONEWIRE),
-      dev_19_req_o => iodev_req(IODEV_XIRQ),    dev_19_rsp_i => iodev_rsp(IODEV_XIRQ),
+      dev_19_req_o => open,                     dev_19_rsp_i => rsp_terminate_c, -- reserved
       dev_20_req_o => iodev_req(IODEV_CLINT),   dev_20_rsp_i => iodev_rsp(IODEV_CLINT),
       dev_21_req_o => iodev_req(IODEV_UART0),   dev_21_rsp_i => iodev_rsp(IODEV_UART0),
       dev_22_req_o => iodev_req(IODEV_UART1),   dev_22_rsp_i => iodev_rsp(IODEV_UART1),
@@ -1195,7 +1187,8 @@ begin
         bus_req_i => iodev_req(IODEV_GPIO),
         bus_rsp_o => iodev_rsp(IODEV_GPIO),
         gpio_o    => gpio_o,
-        gpio_i    => gpio_i
+        gpio_i    => gpio_i,
+        cpu_irq_o => firq(FIRQ_GPIO)
       );
     end generate;
 
@@ -1203,6 +1196,7 @@ begin
     if not io_gpio_en_c generate
       iodev_rsp(IODEV_GPIO) <= rsp_terminate_c;
       gpio_o                <= (others => '0');
+      firq(FIRQ_GPIO)       <= '0';
     end generate;
 
 
@@ -1514,31 +1508,6 @@ begin
     end generate;
 
 
-    -- External Interrupt Controller (XIRQ) ---------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_xirq_enabled:
-    if io_xirq_en_c generate
-      neorv32_xirq_inst: entity neorv32.neorv32_xirq
-      generic map (
-        NUM_CH => XIRQ_NUM_CH
-      )
-      port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => iodev_req(IODEV_XIRQ),
-        bus_rsp_o => iodev_rsp(IODEV_XIRQ),
-        xirq_i    => xirq_i(XIRQ_NUM_CH-1 downto 0),
-        cpu_irq_o => firq(FIRQ_XIRQ)
-      );
-    end generate;
-
-    neorv32_xirq_disabled:
-    if not io_xirq_en_c generate
-      iodev_rsp(IODEV_XIRQ) <= rsp_terminate_c;
-      firq(FIRQ_XIRQ)       <= '0';
-    end generate;
-
-
     -- General Purpose Timer (GPTMR) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_gptmr_enabled:
@@ -1698,7 +1667,6 @@ begin
         IO_TRNG_EN            => IO_TRNG_EN,
         IO_CFS_EN             => IO_CFS_EN,
         IO_NEOLED_EN          => IO_NEOLED_EN,
-        IO_XIRQ_EN            => io_xirq_en_c,
         IO_GPTMR_EN           => IO_GPTMR_EN,
         IO_ONEWIRE_EN         => IO_ONEWIRE_EN,
         IO_DMA_EN             => IO_DMA_EN,
