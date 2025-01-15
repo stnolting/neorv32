@@ -412,7 +412,10 @@ begin
           engine.cnt  <= (others => '0');
           engine.sreg <= engine.rdata; -- FIFO TX data
           engine.dout <= engine.rdata(7); -- FIFO TX data (first bit)
-          if (ctrl.enable = '0') then -- disabled?
+          if (
+            (ctrl.enable = '0') or  -- disabled?
+            ((engine.cmd = '1') and (smp.scl_rise = '1') and (smp.sda = '1') ) -- or no ACK while read?
+          ) then
             engine.state <= S_IDLE;
           elsif (smp.scl_fall = '1') then
             engine.state <= S_RTX;
