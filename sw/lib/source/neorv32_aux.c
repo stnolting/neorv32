@@ -527,7 +527,6 @@ void neorv32_aux_print_hw_config(void) {
   if (tmp & (1 << SYSINFO_SOC_IO_UART1))   { neorv32_uart0_printf("UART1 ");   }
   if (tmp & (1 << SYSINFO_SOC_IO_WDT))     { neorv32_uart0_printf("WDT ");     }
   if (tmp & (1 << SYSINFO_SOC_XIP))        { neorv32_uart0_printf("XIP ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_XIRQ))    { neorv32_uart0_printf("XIRQ ");    }
 
   neorv32_uart0_printf("\n\n");
 }

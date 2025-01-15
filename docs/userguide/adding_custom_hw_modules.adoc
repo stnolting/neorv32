@@ -23,9 +23,7 @@ https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi
 https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi[TWI].
 
 The SPI and especially the GPIO interfaces might be the most straightforward approaches since they
-have a minimal  protocol overhead. Device-specific interrupt capabilities could be added using the
-https://stnolting.github.io/neorv32/#_external_interrupt_controller_xirq[External Interrupt Controller (XIRQ)].
-
+have a minimal  protocol overhead.
 Beyond simplicity, these interface only provide a very limited bandwidth and require more sophisticated
 software handling ("bit-banging" for the GPIO). Hence, it is not recommend to use them for _chip-internal_ communication.
 

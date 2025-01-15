@@ -9,8 +9,6 @@
 /**
  * @file neorv32.h
  * @brief Main NEORV32 core library / driver / HAL include file.
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #ifndef neorv32_h
@@ -61,7 +59,7 @@ extern "C" {
 #define NEORV32_PWM_BASE     (0xFFF00000U) /**< Pulse Width Modulation Controller (PWM) */
 #define NEORV32_GPTMR_BASE   (0xFFF10000U) /**< General Purpose Timer (GPTMR) */
 #define NEORV32_ONEWIRE_BASE (0xFFF20000U) /**< 1-Wire Interface Controller (ONEWIRE) */
-#define NEORV32_XIRQ_BASE    (0xFFF30000U) /**< External Interrupt Controller (XIRQ) */
+//#define NEORV32_???_BASE   (0xFFF30000U) /**< reserved */
 #define NEORV32_CLINT_BASE   (0xFFF40000U) /**< Core Local Interruptor (CLINT) */
 #define NEORV32_UART0_BASE   (0xFFF50000U) /**< Primary Universal Asynchronous Receiver and Transmitter (UART0) */
 #define NEORV32_UART1_BASE   (0xFFF60000U) /**< Secondary Universal Asynchronous Receiver and Transmitter (UART1) */
@@ -131,12 +129,12 @@ extern "C" {
 #define TWI_RTE_ID             RTE_TRAP_FIRQ_7   /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
 #define TWI_TRAP_CODE          TRAP_CODE_FIRQ_7  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
-/** @name External Interrupt Controller (XIRQ) */
+/** @name General Purpose Input/Output Controller (GPIO) */
 /**@{*/
-#define XIRQ_FIRQ_ENABLE       CSR_MIE_FIRQ8E    /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
-#define XIRQ_FIRQ_PENDING      CSR_MIP_FIRQ8P    /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
-#define XIRQ_RTE_ID            RTE_TRAP_FIRQ_8   /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
-#define XIRQ_TRAP_CODE         TRAP_CODE_FIRQ_8  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+#define GPIO_FIRQ_ENABLE       CSR_MIE_FIRQ8E    /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
+#define GPIO_FIRQ_PENDING      CSR_MIP_FIRQ8P    /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
+#define GPIO_RTE_ID            RTE_TRAP_FIRQ_8   /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
+#define GPIO_TRAP_CODE         TRAP_CODE_FIRQ_8  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
 /** @name Smart LED Controller (NEOLED) */
 /**@{*/
@@ -281,7 +279,6 @@ typedef union {
 #include "neorv32_uart.h"
 #include "neorv32_wdt.h"
 #include "neorv32_xip.h"
-#include "neorv32_xirq.h"
 
 
 #ifdef __cplusplus

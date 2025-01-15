@@ -38,7 +38,7 @@ concept and maximum RISC-V compatibility.
 * This is obvious, but exclude all unused optional IO/peripheral modules from synthesis via the processor
 configuration generics.
 * If an IO module provides an option to configure the number of "channels", constrain this number to the
-actually required value (e.g. the PWM module `IO_PWM_NUM_CH` or the external interrupt controller `XIRQ_NUM_CH`).
+actually required value (e.g. the PWM module's `IO_PWM_NUM_CH` generic).
 * Disable the instruction cache (`ICACHE_EN => false`) if the design only uses processor-internal IMEM
 and DMEM memories.
 * _To be continued..._

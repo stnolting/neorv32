@@ -79,7 +79,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
 
   -- IO connection --
   signal uart0_txd, uart0_cts, uart1_txd, uart1_cts : std_ulogic;
-  signal gpio : std_ulogic_vector(63 downto 0);
+  signal gpio : std_ulogic_vector(31 downto 0);
   signal i2c_scl, i2c_sda : std_logic;
   signal twi_scl_i, twi_scl_o, twi_sda_i, twi_sda_o : std_ulogic;
   signal twd_scl_i, twd_scl_o, twd_sda_i, twd_sda_o : std_ulogic;
@@ -190,10 +190,8 @@ begin
     XIP_CACHE_EN          => true,
     XIP_CACHE_NUM_BLOCKS  => 4,
     XIP_CACHE_BLOCK_SIZE  => 256,
-    -- External Interrupts Controller (XIRQ) --
-    XIRQ_NUM_CH           => 32,
     -- Processor peripherals --
-    IO_GPIO_NUM           => 64,
+    IO_GPIO_NUM           => 32,
     IO_CLINT_EN           => true,
     IO_UART0_EN           => true,
     IO_UART0_RX_FIFO      => 32,
@@ -311,8 +309,6 @@ begin
     neoled_o       => open,
     -- Machine timer system time --
     mtime_time_o   => open,
-    -- External platform interrupts --
-    xirq_i         => gpio(31 downto 0),
     -- CPU Interrupts --
     mtime_irq_i    => mti,
     msw_irq_i      => msi,

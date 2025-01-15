@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,10 +9,7 @@
 /**
  * @file neorv32_gpio.c
  * @brief General purpose input/output port unit (GPIO) HW driver source file.
- *
- * @note These functions should only be used if the GPIO unit was synthesized (IO_GPIO_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
+#include <neorv32.h>
  */
 
 #include <neorv32.h>
@@ -37,19 +34,18 @@ int neorv32_gpio_available(void) {
 /**********************************************************************//**
  * Set single pin of GPIO's output port.
  *
- * @param[in] pin Output pin number to be set (0..63).
+ * @param[in] pin Output pin number to be set (0..31).
  * @param[in] value Set pint high (1) or low (0).
  **************************************************************************/
 void neorv32_gpio_pin_set(int pin, int value) {
 
-  uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
-  int lohi = (pin < 32) ? 0 : 1;
+  uint32_t mask = (uint32_t)(1 << pin);
 
   if (value) {
-    NEORV32_GPIO->OUTPUT[lohi] |= mask;
+    NEORV32_GPIO->PORT_OUT |= mask;
   }
   else {
-    NEORV32_GPIO->OUTPUT[lohi] &= ~mask;
+    NEORV32_GPIO->PORT_OUT &= ~mask;
   }
 }
 
@@ -57,71 +53,126 @@ void neorv32_gpio_pin_set(int pin, int value) {
 /**********************************************************************//**
  * Toggle single pin of GPIO's output port.
  *
- * @param[in] pin Output pin number to be toggled (0..63).
+ * @param[in] pin Output pin number to be toggled (0..31).
  **************************************************************************/
 void neorv32_gpio_pin_toggle(int pin) {
 
-  uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
-  int lohi = (pin < 32) ? 0 : 1;
-  NEORV32_GPIO->OUTPUT[lohi] ^= mask;
+  NEORV32_GPIO->PORT_OUT ^= (uint32_t)(1 << pin);
 }
 
 
 /**********************************************************************//**
  * Get single pin of GPIO's input port.
  *
- * @param[in] pin Input pin to be read (0..63).
- * @return =0 if pin is low, !=0 if pin is high.
+ * @param[in] pin Input pin to be read (0..31).
+ * @return zero if pin is low, non-zero if pin is high.
  **************************************************************************/
 uint32_t neorv32_gpio_pin_get(int pin) {
 
-  uint32_t mask = (uint32_t)(1 << (pin & 0x1f));
-  int lohi = (pin < 32) ? 0 : 1;
-  return NEORV32_GPIO->INPUT[lohi] & mask;
+  return NEORV32_GPIO->PORT_IN & (uint32_t)(1 << pin);
 }
 
 
 /**********************************************************************//**
  * Set complete GPIO output port.
  *
- * @param[in] port_data New output port value (64-bit).
+ * @param[in] pin_mask New output port value (32-bit).
  **************************************************************************/
-void neorv32_gpio_port_set(uint64_t port_data) {
+void neorv32_gpio_port_set(uint32_t pin_mask) {
 
-  subwords64_t data;
-
-  data.uint64 = port_data;
-  NEORV32_GPIO->OUTPUT[0] = data.uint32[0];
-  NEORV32_GPIO->OUTPUT[1] = data.uint32[1];
+  NEORV32_GPIO->PORT_OUT = pin_mask;
 }
 
 
 /**********************************************************************//**
  * Toggle bit in entire GPIO output port.
  *
- * @param[in] toggle Bit mask; set bits will toggle the according output port (64-bit).
+ * @param[in] pin_mask Bit mask; set bits will toggle the according output pins (32-bit).
  **************************************************************************/
-void neorv32_gpio_port_toggle(uint64_t toggle) {
+void neorv32_gpio_port_toggle(uint32_t pin_mask) {
 
-  subwords64_t data;
-
-  data.uint64 = toggle;
-  NEORV32_GPIO->OUTPUT[0] ^= data.uint32[0];
-  NEORV32_GPIO->OUTPUT[1] ^= data.uint32[1];
+  NEORV32_GPIO->PORT_OUT ^= pin_mask;
 }
 
 
 /**********************************************************************//**
  * Get complete GPIO input port.
  *
- * @return Current input port state (64-bit).
+ * @return Current input port state (32-bit).
  **************************************************************************/
-uint64_t neorv32_gpio_port_get(void) {
+uint32_t neorv32_gpio_port_get(void) {
 
-  subwords64_t data;
+  return NEORV32_GPIO->PORT_IN;
+}
 
-  data.uint32[0] = NEORV32_GPIO->INPUT[0];
-  data.uint32[1] = NEORV32_GPIO->INPUT[1];
 
-  return data.uint64;
+/**********************************************************************//**
+ * Configure pin interrupt trigger.
+ *
+ * @param[in] pin Input pin select (0..31).
+ * @param[in] trigger Trigger select (#GPIO_TRIGGER_enum).
+ **************************************************************************/
+void neorv32_gpio_irq_setup(int pin, int trigger) {
+
+  uint32_t mask = (uint32_t)(1 << pin);
+
+  // trigger type
+  if ((trigger == GPIO_TRIG_EDGE_FALLING) || (trigger == GPIO_TRIG_EDGE_RISING)) {
+    NEORV32_GPIO->IRQ_TYPE |= mask; // set = edge
+  }
+  else {
+    NEORV32_GPIO->IRQ_TYPE &= ~mask; // clear = level
+  }
+
+  // polarity type
+  if ((trigger == GPIO_TRIG_EDGE_RISING) || (trigger == GPIO_TRIG_LEVEL_HIGH)) {
+    NEORV32_GPIO->IRQ_POLARITY |= mask; // set = rising edge / high level
+  }
+  else {
+    NEORV32_GPIO->IRQ_POLARITY &= ~mask; // clear = falling edge / low level
+  }
+}
+
+
+/**********************************************************************//**
+ * Enable input pin interrupt(s).
+ *
+ * @param[in] pin_mask Pin-IRQ enable mask (set to 1 to enable the according pin).
+ **************************************************************************/
+void neorv32_gpio_irq_enable(uint32_t pin_mask) {
+
+  NEORV32_GPIO->IRQ_ENABLE |= pin_mask;
+}
+
+
+/**********************************************************************//**
+ * Disable input pin interrupt(s).
+ *
+ * @param[in] pin_mask Pin-IRQ enable mask (set to 1 to disable the according pin).
+ **************************************************************************/
+void neorv32_gpio_irq_disable(uint32_t pin_mask) {
+
+  NEORV32_GPIO->IRQ_ENABLE &= ~pin_mask;
+}
+
+
+/**********************************************************************//**
+ * Get currently pending GPIO input interrupts.
+ *
+ * @param[in] Pending inputs (bit mask; high = pending).
+ **************************************************************************/
+uint32_t neorv32_gpio_irq_get(void) {
+
+  return NEORV32_GPIO->IRQ_PENDING;
+}
+
+
+/**********************************************************************//**
+ * Clear pending GPIO input interrupts via bit mask.
+ *
+ * @param[in] clr_mask Clear mask (bit high = clear according pending interrupt).
+ **************************************************************************/
+void neorv32_gpio_irq_clr(uint32_t clr_mask) {
+
+  NEORV32_GPIO->IRQ_PENDING = ~clr_mask;
 }
