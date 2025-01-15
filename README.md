@@ -166,7 +166,7 @@ allows booting application code via UART, TWI or from external SPI flash
 [TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi) (I²C host),
 [TWD](https://stnolting.github.io/neorv32/#_two_wire_serial_device_controller_twd) (I²C device),
 [ONEWIRE/1-Wire](https://stnolting.github.io/neorv32/#_one_wire_serial_interface_controller_onewire))
-* general purpose IOs ([GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio)) and
+* interrupt-capable general purpose IOs ([GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio)) and
 [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
 * smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly control NeoPixel(TM) LEDs
 
@@ -177,8 +177,6 @@ allows booting application code via UART, TWI or from external SPI flash
 [wrappers](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration) for AXI4-Lite and Avalon-MM host interfaces
 * stream link interface with independent RX and TX channels - AXI4-Stream compatible
 ([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink))
-* external interrupts controller with up to 32 channels
-([XIRQ](https://stnolting.github.io/neorv32/#_external_interrupt_controller_xirq))
 
 **Advanced**
 
