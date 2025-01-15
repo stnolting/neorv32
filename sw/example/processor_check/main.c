@@ -64,8 +64,7 @@ void vectored_global_handler(void);
 void vectored_mei_handler(void);
 void hw_breakpoint_handler(void);
 void trigger_module_dummy(void);
-void xirq_trap_handler0(void);
-void xirq_trap_handler1(void);
+void gpio_trap_handler(void);
 void test_ok(void);
 void test_fail(void);
 int  core1_main(void);
@@ -79,7 +78,7 @@ volatile int cnt_ok   = 0; // global counter for successful tests
 volatile int cnt_test = 0; // global counter for total number of tests
 volatile uint32_t num_hpm_cnts_global = 0; // global number of available hpms
 volatile int vectored_mei_handler_ack = 0; // vectored mei trap handler acknowledge
-volatile uint32_t xirq_trap_handler_ack = 0; // xirq trap handler acknowledge
+volatile uint32_t gpio_trap_handler_ack = 0; // gpio trap handler acknowledge
 volatile uint32_t hw_brk_mscratch_ok = 0; // set when mepc was correct in trap handler
 volatile uint32_t constr_test = 0; // for constructor test
 
@@ -1337,33 +1336,33 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 8 (XIRQ)
+  // Fast interrupt channel 8 (GPIO)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] FIRQ8 (XIRQ) ", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ8 (GPIO) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_XIRQ)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPIO)) {
     cnt_test++;
 
-    int xirq_err_cnt = 0;
-    xirq_trap_handler_ack = 0;
+    gpio_trap_handler_ack = 0;
+    neorv32_gpio_port_set(0b0101);
 
-    neorv32_gpio_port_set(0);
+    // install GPIO input trap handler and enable GPIO IRQ source
+    neorv32_rte_handler_install(GPIO_RTE_ID, gpio_trap_handler);
+    neorv32_cpu_csr_set(CSR_MIE, 1 << GPIO_FIRQ_ENABLE);
+    neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
-    xirq_err_cnt += neorv32_xirq_setup(); // initialize XIRQ
-    xirq_err_cnt += neorv32_xirq_install(0, xirq_trap_handler0); // install XIRQ IRQ handler channel 0
-    xirq_err_cnt += neorv32_xirq_install(1, xirq_trap_handler1); // install XIRQ IRQ handler channel 1
-    neorv32_xirq_setup_trigger(0, XIRQ_TRIGGER_EDGE_RISING); // configure channel 0 as rising-edge trigger
-    neorv32_xirq_setup_trigger(1, XIRQ_TRIGGER_EDGE_RISING); // configure channel 1 as rising-edge trigger
-    neorv32_xirq_channel_enable(0); // enable XIRQ channel 0
-    neorv32_xirq_channel_enable(1); // enable XIRQ channel 1
+    // setup triggers for the first 4 input pins
+    neorv32_gpio_irq_setup(0, GPIO_TRIG_LEVEL_LOW);
+    neorv32_gpio_irq_setup(1, GPIO_TRIG_LEVEL_HIGH);
+    neorv32_gpio_irq_setup(2, GPIO_TRIG_EDGE_FALLING);
+    neorv32_gpio_irq_setup(3, GPIO_TRIG_EDGE_RISING);
 
-    // enable XIRQ FIRQ
-    neorv32_cpu_csr_write(CSR_MIE, 1 << XIRQ_FIRQ_ENABLE);
+    // enable input pin interrupts
+    neorv32_gpio_irq_enable((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3));
 
-    // trigger XIRQ channel 1 and 0
-    neorv32_gpio_port_set(3);
-    neorv32_gpio_port_set(0);
+    // trigger interrupts of first 4 inputs
+    neorv32_gpio_port_toggle(-1);
 
     // wait for interrupt
     asm volatile ("nop");
@@ -1371,9 +1370,8 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == XIRQ_TRAP_CODE) && // FIRQ8 IRQ
-        (xirq_err_cnt == 0) && // no errors during XIRQ configuration
-        (xirq_trap_handler_ack == 4)) { // XIRQ channel handler 0 executed before handler 1
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == GPIO_TRAP_CODE) && // GPIO IRQ
+        (gpio_trap_handler_ack == 0x0000000f)) { // input 0..3 all fired
       test_ok();
     }
     else {
@@ -2365,20 +2363,13 @@ void __attribute__ ((noinline,naked,aligned(4))) trigger_module_dummy(void) {
 
 
 /**********************************************************************//**
- * XIRQ handler channel 0.
+ * GPIO input interrupt handler .
  **************************************************************************/
-void xirq_trap_handler0(void) {
+void gpio_trap_handler(void) {
 
-  xirq_trap_handler_ack += 2;
-}
-
-
-/**********************************************************************//**
- * XIRQ handler channel 1.
- **************************************************************************/
-void xirq_trap_handler1(void) {
-
-  xirq_trap_handler_ack *= 2;
+  gpio_trap_handler_ack = neorv32_gpio_irq_get(); // get currently pending pin interrupts
+  neorv32_gpio_irq_clr(gpio_trap_handler_ack); // clear currently pending pin interrupts
+  neorv32_gpio_irq_disable(-1); // disable all input pin interrupts
 }
 
 

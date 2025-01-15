@@ -2,7 +2,7 @@
 # Use this makefile to configure all relevant CPU / compiler options.
 
 # Override the default CPU ISA
-MARCH = rv32i_zicsr_zifencei
+MARCH = rv32ia_zicsr_zifencei
 
 # Override the default RISC-V GCC prefix
 #RISCV_PREFIX ?= riscv-none-elf-
@@ -20,7 +20,7 @@ USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=16k
 USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=8k
 
 # Adjust maximum heap size
-#USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=1k
+#USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=3k
 
 # Additional sources
 #APP_SRC += $(wildcard ./*.c)

@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 15.01.2025 | 1.10.9.7 | :sparkles: add GPIO interrupt(s); :warning: remove XIRQ controller, constrain GPIO input/output ports from 64-bit to 32-bit | [#1159](https://github.com/stnolting/neorv32/pull/1159) |
 | 13.01.2025 | 1.10.9.6 | add WDT and OCD rest outputs to top module | [#1152](https://github.com/stnolting/neorv32/pull/1152) |
 | 11.01.2025 | 1.10.9.5 | minor rtl cleanups; :bug: fix minor bug (multiple drivers on ICC nets; introduced in version 1.10.9.2) | [#1151](https://github.com/stnolting/neorv32/pull/1151) |
 | 11.01.2025 | 1.10.9.4 | :warning: RTE: use a single, global trap handler table that applies to _both_ cores | [#1150](https://github.com/stnolting/neorv32/pull/1150) |

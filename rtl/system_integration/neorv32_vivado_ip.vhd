@@ -98,13 +98,10 @@ entity neorv32_vivado_ip is
     XIP_CACHE_EN          : boolean                        := false;
     XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256         := 8;
     XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16       := 256;
-    -- External Interrupts Controller (XIRQ) --
-    XIRQ_EN               : boolean                        := false;
-    XIRQ_NUM_CH           : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
     -- Processor peripherals --
     IO_GPIO_EN            : boolean                        := false;
-    IO_GPIO_IN_NUM        : natural range 1 to 64          := 1; -- variable-sized ports must be at least 0 downto 0; #974
-    IO_GPIO_OUT_NUM       : natural range 1 to 64          := 1;
+    IO_GPIO_IN_NUM        : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
+    IO_GPIO_OUT_NUM       : natural range 1 to 32          := 1;
     IO_CLINT_EN           : boolean                        := false;
     IO_UART0_EN           : boolean                        := false;
     IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;
@@ -254,8 +251,6 @@ entity neorv32_vivado_ip is
     neoled_o       : out std_logic;
     -- Machine timer system time (available if IO_CLINT_EN = true) --
     mtime_time_o   : out std_logic_vector(63 downto 0);
-    -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i         : in  std_logic_vector(XIRQ_NUM_CH-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
     -- CPU Interrupts --
     mtime_irq_i    : in  std_logic := '0';
     msw_irq_i      : in  std_logic := '0';
@@ -267,7 +262,6 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
 
   -- auto-configuration --
   constant num_gpio_c : natural := cond_sel_natural_f(IO_GPIO_EN, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
-  constant num_xirq_c : natural := cond_sel_natural_f(XIRQ_EN, XIRQ_NUM_CH, 0);
   constant num_pwm_c  : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM_CH, 0);
 
   -- AXI4-Lite bridge --
@@ -333,10 +327,9 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal mtime_time_aux : std_ulogic_vector(63 downto 0);
 
   -- constrained size ports --
-  signal gpio_o_aux : std_ulogic_vector(63 downto 0);
-  signal gpio_i_aux : std_ulogic_vector(63 downto 0);
+  signal gpio_o_aux : std_ulogic_vector(31 downto 0);
+  signal gpio_i_aux : std_ulogic_vector(31 downto 0);
   signal pwm_o_aux  : std_ulogic_vector(15 downto 0);
-  signal xirq_i_aux : std_ulogic_vector(31 downto 0);
 
   -- internal wishbone bus --
   signal xbus_adr : std_ulogic_vector(31 downto 0); -- address
@@ -430,8 +423,6 @@ begin
     XIP_CACHE_EN          => XIP_CACHE_EN,
     XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
     XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
-    -- External Interrupts Controller --
-    XIRQ_NUM_CH           => num_xirq_c,
     -- Processor peripherals --
     IO_DISABLE_SYSINFO    => false,
     IO_GPIO_NUM           => num_gpio_c,
@@ -551,8 +542,6 @@ begin
     neoled_o       => neoled_aux,
     -- Machine timer system time (available if IO_MTIME_EN = true) --
     mtime_time_o   => mtime_time_aux,
-    -- External platform interrupts (available if XIRQ_NUM_CH > 0) --
-    xirq_i         => xirq_i_aux,
     -- CPU Interrupts --
     mtime_irq_i    => std_ulogic(mtime_irq_i),
     msw_irq_i      => std_ulogic(msw_irq_i),
@@ -626,15 +615,6 @@ begin
   for i in 0 to IO_PWM_NUM_CH-1 generate
     pwm_o(i) <= std_logic(pwm_o_aux(i));
   end generate;
-
-  -- XIRQ --
-  xirq_mapping: process(xirq_i)
-  begin
-    xirq_i_aux <= (others => '0');
-    for i in 0 to XIRQ_NUM_CH-1 loop
-      xirq_i_aux(i) <= std_ulogic(xirq_i(i));
-    end loop;
-  end process xirq_mapping;
 
 
   -- Wishbone-to-AXI4-Lite Bridge -----------------------------------------------------------

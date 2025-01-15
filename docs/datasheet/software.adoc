@@ -89,7 +89,6 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_uart.c`    | `neorv32_uart.h`       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>> and UART1 HAL
 | `neorv32_wdt.c`     | `neorv32_wdt.h`        | <<_watchdog_timer_wdt>> HAL
 | `neorv32_xip.c`     | `neorv32_xip.h`        | <<_execute_in_place_module_xip>> HAL
-| `neorv32_xirq.c`    | `neorv32_xirq.h`       | <<_external_interrupt_controller_xirq>> HAL
 | `neorv32_newlib.c`  | -                      | Platform-specific system calls for _newlib_
 |=======================
 

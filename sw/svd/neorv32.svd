@@ -847,45 +847,6 @@
       </registers>
     </peripheral>
 
-    <!-- XIRQ -->
-    <!-- **************************************************************** -->
-    <peripheral>
-      <name>XIRQ</name>
-      <description>External interrupts controller</description>
-      <baseAddress>0xFFF30000</baseAddress>
-
-      <interrupt><name>XIRQ_FIRQ</name><value>8</value></interrupt>
-
-      <addressBlock>
-        <offset>0</offset>
-        <size>0x14</size>
-        <usage>registers</usage>
-      </addressBlock>
-
-      <registers>
-        <register>
-          <name>EIE</name>
-          <description>External IRQ channel enable register</description>
-          <addressOffset>0x00</addressOffset>
-        </register>
-        <register>
-          <name>ESC</name>
-          <description>External IRQ source register</description>
-          <addressOffset>0x04</addressOffset>
-        </register>
-        <register>
-          <name>TTYP</name>
-          <description>External IRQ trigger type (level/edge)</description>
-          <addressOffset>0x08</addressOffset>
-        </register>
-        <register>
-          <name>TPOL</name>
-          <description>External IRQ trigger polarity (high/low, rising/falling)</description>
-          <addressOffset>0x0c</addressOffset>
-        </register>
-      </registers>
-    </peripheral>
-
     <!-- CLINT -->
     <!-- **************************************************************** -->
     <peripheral>
@@ -1600,34 +1561,45 @@
       <description>General purpose input/output port</description>
       <baseAddress>0xFFFC0000</baseAddress>
 
+      <interrupt><name>GPIO_FIRQ</name><value>8</value></interrupt>
+
       <addressBlock>
         <offset>0</offset>
-        <size>0x10</size>
+        <size>0x20</size>
         <usage>registers</usage>
       </addressBlock>
 
       <registers>
         <register>
-          <name>INPUT[0]</name>
-          <description>Parallel input register - low</description>
+          <name>PORT_IN</name>
+          <description>Parallel input port</description>
           <addressOffset>0x00</addressOffset>
           <access>read-only</access>
         </register>
         <register>
-          <name>INPUT[1]</name>
-          <description>Parallel input register - high</description>
+          <name>PORT_OUT</name>
+          <description>Parallel output port</description>
           <addressOffset>0x04</addressOffset>
-          <access>read-only</access>
         </register>
         <register>
-          <name>OUTPUT[0]</name>
-          <description>Parallel output register - low</description>
-          <addressOffset>0x08</addressOffset>
+          <name>IRQ_TYPE</name>
+          <description>Interrupt trigger type (level/edge) for each input pin</description>
+          <addressOffset>0x10</addressOffset>
         </register>
         <register>
-          <name>OUTPUT[1]</name>
-          <description>Parallel output register - high</description>
-          <addressOffset>0x0C</addressOffset>
+          <name>IRQ_POLARITY</name>
+          <description>Interrupt trigger polarity (rising/falling or high/low) for each input pin</description>
+          <addressOffset>0x14</addressOffset>
+        </register>
+        <register>
+          <name>IRQ_ENABLE</name>
+          <description>Interrupt enable for each input pin</description>
+          <addressOffset>0x18</addressOffset>
+        </register>
+        <register>
+          <name>IRQ_PENDING</name>
+          <description>Interrupt pending for each input pin; cleared by writing zero</description>
+          <addressOffset>0x1C</addressOffset>
         </register>
       </registers>
     </peripheral>
@@ -1796,7 +1768,6 @@
             <field><name>SYSINFO_SOC_IO_SDI</name><bitRange>[24:24]</bitRange><description>Serial data interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_UART1</name><bitRange>[25:25]</bitRange><description>Secondary universal asynchronous receiver/transmitter 1 implemented</description></field>
             <field><name>SYSINFO_SOC_IO_NEOLED</name><bitRange>[26:26]</bitRange><description>NeoPixel-compatible smart LED interface implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_XIRQ</name><bitRange>[27:27]</bitRange><description>External interrupt controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPTMR</name><bitRange>[28:28]</bitRange><description>General purpose timer implemented</description></field>
             <field><name>SYSINFO_SOC_IO_SLINK</name><bitRange>[29:29]</bitRange><description>Stream link interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_ONEWIRE</name><bitRange>[30:30]</bitRange><description>1-wire interface controller implemented</description></field>
