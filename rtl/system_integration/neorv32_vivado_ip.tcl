@@ -136,7 +136,6 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_PWM_EN}     [ipx::get_ports pwm_o            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_CFS_EN}     [ipx::get_ports cfs_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_NEOLED_EN}  [ipx::get_ports neoled_o         -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$XIRQ_EN}       [ipx::get_ports xirq_i           -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_CLINT_EN}   [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
   set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
   set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports msw_irq_i        -of_objects [ipx::current_core]]
@@ -308,16 +307,10 @@ proc setup_ip_gui {} {
   # **************************************************************
   set page [add_page {Peripherals}]
 
-  set group [add_group $page {External Interrupt Controller (XIRQ)}]
-  add_params $group {
-    { XIRQ_EN           {Enable XIRQ} }
-    { XIRQ_NUM_CH       {Number of Channels}    {}                                        {$XIRQ_EN} }
-  }
-
   set group [add_group $page {General-Purpose Input/Output Controller (GPIO)}]
   add_params $group {
     { IO_GPIO_EN        {Enable GPIO} }
-    { IO_GPIO_IN_NUM    {Number of Inputs}      {}                                        {$IO_GPIO_EN} }
+    { IO_GPIO_IN_NUM    {Number of Inputs}      {Interrupt-capable}                       {$IO_GPIO_EN} }
     { IO_GPIO_OUT_NUM   {Number of Outputs}     {}                                        {$IO_GPIO_EN} }
   }
 
