@@ -190,9 +190,11 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
   }
 
   // call handler
-  typedef void handler_t();
-  handler_t* handler = (handler_t*)handler_base;
-  handler();
+  if (handler_base != 0) {
+    typedef void handler_t();
+    handler_t* handler = (handler_t*)handler_base;
+    handler();
+  }
 
   // compute return address (for exceptions only)
   // do not alter return address if instruction access exception (fatal?)
@@ -319,20 +321,20 @@ void neorv32_rte_debug_handler(void) {
   // intro
   neorv32_uart0_puts("<NEORV32-RTE> ");
 
-  // core ID
+  // CPU ID
   if (neorv32_cpu_csr_read(CSR_MHARTID) & 1) {
-    neorv32_uart0_puts("[cpu1] ");
+    neorv32_uart0_puts("[cpu1|");
   }
   else {
-    neorv32_uart0_puts("[cpu0] ");
+    neorv32_uart0_puts("[cpu0|");
   }
 
   // privilege level of the CPU when the trap occurred
   if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3 << CSR_MSTATUS_MPP_L)) {
-    neorv32_uart0_puts("[M] "); // machine-mode
+    neorv32_uart0_puts("M] "); // machine-mode
   }
   else {
-    neorv32_uart0_puts("[U] "); // user-mode
+    neorv32_uart0_puts("U] "); // user-mode
   }
 
   // cause
