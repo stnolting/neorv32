@@ -3,7 +3,6 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -25,7 +24,7 @@ entity neorv32_ProcessorTop_MinimalBoot is
     MEM_INT_DMEM_EN   : boolean := true;    -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE : natural := 64*1024; -- size of processor-internal data memory in bytes
     -- Processor peripherals --
-    IO_GPIO_NUM       : natural := 4;       -- number of GPIO input/output pairs (0..64)
+    IO_GPIO_NUM       : natural := 4;       -- number of GPIO input/output pairs (0..32)
     IO_PWM_NUM_CH     : natural := 3        -- number of PWM channels to implement (0..16)
   );
   port (
@@ -45,7 +44,7 @@ end entity;
 architecture neorv32_ProcessorTop_MinimalBoot_rtl of neorv32_ProcessorTop_MinimalBoot is
 
   -- internal IO connection --
-  signal con_gpio_o : std_ulogic_vector(63 downto 0);
+  signal con_gpio_o : std_ulogic_vector(31 downto 0);
   signal con_pwm_o  : std_ulogic_vector(15 downto 0);
 
 begin
@@ -65,7 +64,7 @@ begin
     MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
     -- Processor peripherals --
-    IO_GPIO_NUM       => IO_GPIO_NUM,       -- number of GPIO input/output pairs (0..64)
+    IO_GPIO_NUM       => IO_GPIO_NUM,       -- number of GPIO input/output pairs (0..32)
     IO_CLINT_EN       => true,              -- implement core local interruptor (CLINT)?
     IO_UART0_EN       => true,              -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_PWM_NUM_CH     => IO_PWM_NUM_CH      -- number of PWM channels to implement (0..12); 0 = disabled
@@ -86,6 +85,7 @@ begin
 
   -- GPIO --
   gpio_o <= con_gpio_o(IO_GPIO_NUM-1 downto 0);
+
   -- PWM --
   pwm_o <= con_pwm_o(IO_PWM_NUM_CH-1 downto 0);
 
