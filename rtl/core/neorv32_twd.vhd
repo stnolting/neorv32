@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -393,7 +393,7 @@ begin
           elsif (smp.start = '1') then -- start-condition
             engine.state <= S_INIT; -- restart transaction
           elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
-            engine.wr_we <= '1'; -- write byte to RX FIFO
+            engine.wr_we <= not engine.cmd; -- write byte to RX FIFO (only if WRITE command)
             engine.state <= S_ACK;
           end if;
           -- sample bus on rising edge --
@@ -401,10 +401,12 @@ begin
             engine.sreg <= engine.sreg(6 downto 0) & smp.sda;
             engine.cnt  <= engine.cnt + 1;
           end if;
-          -- update bus on falling edge --
-          twd_sda_o <= engine.dout;
-          if (smp.scl_fall = '1') and (engine.cmd = '1') then
-            engine.dout <= engine.sreg(7);
+          -- set bus output only if READ operation --
+          if (engine.cmd = '1') then
+            twd_sda_o <= engine.dout;
+            if (smp.scl_fall = '1') then -- get next bit
+              engine.dout <= engine.sreg(7);
+            end if;
           end if;
 
         when S_ACK => -- receive/transmit ACK/NACK
@@ -412,10 +414,12 @@ begin
           engine.cnt  <= (others => '0');
           engine.sreg <= engine.rdata; -- FIFO TX data
           engine.dout <= engine.rdata(7); -- FIFO TX data (first bit)
-          if (ctrl.enable = '0') then -- disabled?
+          if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
-          elsif (smp.scl_fall = '1') then
-            engine.state <= S_RTX;
+          elsif (smp.scl_fall = '1') then -- end of this time slot
+            if (engine.cmd = '0') or ((engine.cmd = '1') and (smp.sda = '0')) then -- WRITE or READ with ACK
+              engine.state <= S_RTX;
+            end if;
           end if;
           -- [READ] advance to next data byte if ACK is send by host --
           if (engine.cmd = '1') and (smp.scl_rise = '1') and (smp.sda = '0') then
