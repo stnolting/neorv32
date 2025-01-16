@@ -1010,7 +1010,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 0
+  // Fast interrupt channel 0 (TWD)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] FIRQ0 (TWD) ", cnt_test);
@@ -1038,8 +1038,10 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
+    tmp_a = neorv32_twd_get();
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWD_TRAP_CODE) && // interrupt triggered
-        (neorv32_twd_get() == 0x47)) { // correct data written
+        (tmp_a == 0x47) && // correct data received by TWD
+        (neorv32_twd_rx_available() == 0)) { // no more data received by TWD
       test_ok();
     }
     else {
@@ -1320,10 +1322,10 @@ int main() {
     int twi_ack_x = neorv32_twi_get(&twi_data_y);
     neorv32_twi_get(&twi_data_y);
 
-
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWI_TRAP_CODE) && // interrupt triggered
         (twi_ack_x == 0x00) && // device acknowledged access
-        (twi_data_y == 0x8e)) { // correct read data
+        (twi_data_y == 0x8e) && // correct read data
+        (neorv32_twd_tx_empty())) { // no TX data left in TWD
       test_ok();
     }
     else {
