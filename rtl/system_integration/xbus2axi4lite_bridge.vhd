@@ -68,9 +68,9 @@ begin
     if (resetn = '0') then
       ready <= (others => '0');
     elsif rising_edge(clk) then
-      ready(0) <= xbus_cyc_i and (ready(0) or std_ulogic(m_axi_arready));
-      ready(1) <= xbus_cyc_i and (ready(1) or std_ulogic(m_axi_awready));
-      ready(2) <= xbus_cyc_i and (ready(2) or std_ulogic(m_axi_wready));
+      ready(0) <= xbus_cyc_i and (ready(0) or std_ulogic(m_axi_arready)) and not std_ulogic(m_axi_rvalid);
+      ready(1) <= xbus_cyc_i and (ready(1) or std_ulogic(m_axi_awready)) and not std_ulogic(m_axi_bvalid);
+      ready(2) <= xbus_cyc_i and (ready(2) or std_ulogic(m_axi_wready)) and not std_ulogic(m_axi_bvalid);
     end if;
   end process axi_handshake;
 
@@ -80,7 +80,7 @@ begin
   m_axi_arvalid <= std_logic(xbus_cyc_i and (not xbus_we_i) and (not ready(0)));
 
   -- AXI read data channel --
-  m_axi_rready  <= std_logic(xbus_cyc_i and (not xbus_we_i));
+  m_axi_rready  <= '1';
   xbus_dat_o    <= std_ulogic_vector(m_axi_rdata);
   xbus_rd_ack   <= '1' when (m_axi_rvalid = '1') and (m_axi_rresp  = "00") else '0';
   xbus_rd_err   <= '1' when (m_axi_rvalid = '1') and (m_axi_rresp /= "00") else '0';
@@ -96,7 +96,7 @@ begin
   m_axi_wvalid  <= std_logic(xbus_cyc_i and xbus_we_i and (not ready(2)));
 
   -- AXI write response channel --
-  m_axi_bready  <= std_logic(xbus_cyc_i and xbus_we_i);
+  m_axi_bready  <= '1';
   xbus_wr_ack   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp  = "00") else '0';
   xbus_wr_err   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp /= "00") else '0';
 
