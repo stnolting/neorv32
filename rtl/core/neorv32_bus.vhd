@@ -782,7 +782,6 @@ architecture neorv32_bus_amo_ctrl_rtl of neorv32_bus_amo_ctrl is
     cmd   : std_ulogic_vector(3 downto 0);
     rdata : std_ulogic_vector(31 downto 0);
     wdata : std_ulogic_vector(31 downto 0);
-    ack   : std_ulogic;
   end record;
   signal arbiter, arbiter_nxt : arbiter_t;
 
@@ -830,7 +829,9 @@ begin
       when S_READ_WAIT => -- wait for read-access to complete
       -- ------------------------------------------------------------
         arbiter_nxt.rdata <= sys_rsp_i.data;
-        if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
+        if (sys_rsp_i.err = '1') then -- abort if error
+          arbiter_nxt.state <= S_IDLE;
+        elsif (sys_rsp_i.ack = '1') then
           arbiter_nxt.state <= S_EXECUTE;
         end if;
 
@@ -871,7 +872,7 @@ begin
 
   -- response switch --
   core_rsp_o.data <= sys_rsp_i.data when (arbiter.state = S_IDLE) else arbiter.rdata;
-  core_rsp_o.err  <= sys_rsp_i.err  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) else '0';
+  core_rsp_o.err  <= sys_rsp_i.err  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) or (arbiter.state = S_READ_WAIT) else '0';
   core_rsp_o.ack  <= sys_rsp_i.ack  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) else '0';
 
 
