@@ -70,6 +70,11 @@ Native support for the "classic" Wishbone protocol has been deprecated.
 However, classic mode can still be _emulated_ by connecting the processor's `xbus_cyc_o` directly to the
 device's / bus system's `cyc` and `stb` signals (omitting the processor's `xbus_stb_o` signal).
 
+.Atomic Memory Accesses
+[NOTE]
+<<_Atomic_Memory_Access>> keep the `cyc` signal active to perform a back-to-back bus access consisting of
+two `stb` strobes (one for the load/read operation and another one for the store/write operation).
+
 .Endianness
 [NOTE]
 Just like the processor itself the XBUS interface uses **little-endian** byte order.

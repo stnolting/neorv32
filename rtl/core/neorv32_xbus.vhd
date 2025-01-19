@@ -1,11 +1,11 @@
 -- ================================================================================ --
 -- NEORV32 SoC - External Bus Interface (XBUS)                                      --
 -- -------------------------------------------------------------------------------- --
--- Converts internal bus transactions into Wishbone b4-compatible bus transactions. --
+-- Converts internal bus transactions into Wishbone b4-compatible bus accesses.     --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -48,45 +48,27 @@ architecture neorv32_xbus_rtl of neorv32_xbus is
   signal bus_rsp : bus_rsp_t;
 
   -- bus arbiter --
-  signal pending     : std_ulogic;
-  signal bus_rw      : std_ulogic;
-  signal timeout     : std_ulogic;
-  signal timeout_cnt : std_ulogic_vector(index_size_f(TIMEOUT_VAL) downto 0);
+  signal pending : std_ulogic_vector(1 downto 0);
+  signal timeout : std_ulogic;
+  signal timecnt : std_ulogic_vector(index_size_f(TIMEOUT_VAL) downto 0);
 
 begin
 
-  -- Configuration Info ---------------------------------------------------------------------
+  -- Optional Register Stage ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (TIMEOUT_VAL = 0) report
-    "[NEORV32] External Bus Interface (XBUS): NO auto-timeout defined - can cause permanent CPU stall!" severity warning;
-
-
-  -- Register Stage -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  reg_stage_enable:
-  if REGSTAGE_EN generate
-    reg_stage: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        bus_req   <= req_terminate_c;
-        bus_rsp_o <= rsp_terminate_c;
-      elsif rising_edge(clk_i) then
-        -- request --
-        if (bus_req_i.stb = '1') then -- keep all signals stable ...
-          bus_req <= bus_req_i;
-        end if;
-        bus_req.stb <= bus_req_i.stb; -- ... except for STB that is single-shot
-        -- response --
-        bus_rsp_o <= bus_rsp;
-      end if;
-    end process reg_stage;
-  end generate;
-
-  reg_state_disable:
-  if not REGSTAGE_EN generate
-    bus_req   <= bus_req_i;
-    bus_rsp_o <= bus_rsp;
-  end generate;
+  reg_stage_inst: entity neorv32.neorv32_bus_reg
+  generic map (
+    REQ_REG_EN => REGSTAGE_EN,
+    RSP_REG_EN => REGSTAGE_EN
+  )
+  port map (
+    clk_i        => clk_i,
+    rstn_i       => rstn_i,
+    host_req_i   => bus_req_i,
+    host_rsp_o   => bus_rsp_o,
+    device_req_o => bus_req,
+    device_rsp_i => bus_rsp
+  );
 
 
   -- Bus Arbiter ----------------------------------------------------------------------------
@@ -94,41 +76,71 @@ begin
   arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      timeout_cnt <= (others => '0');
-      pending     <= '0';
-      bus_rw      <= '0';
+      timecnt <= (others => '0');
+      pending <= (others => '0');
+      timeout <= '0';
     elsif rising_edge(clk_i) then
-      if (pending = '0') then -- idle, waiting for request
-        timeout_cnt <= std_ulogic_vector(to_unsigned(TIMEOUT_VAL, timeout_cnt'length));
-        pending     <= bus_req.stb;
-      else -- busy, transfer in progress
-        timeout_cnt <= std_ulogic_vector(unsigned(timeout_cnt) - 1);
-        if (xbus_ack_i = '1') or (xbus_err_i = '1') or (timeout = '1') then
-          pending <= '0';
-        end if;
+
+      -- access control --
+      case pending is
+
+        when "10" => -- single access / atomic access (2nd access: store)
+        -- ------------------------------------------------------------
+          timecnt <= std_ulogic_vector(unsigned(timecnt) + 1);
+          if (xbus_ack_i = '1') or (xbus_err_i = '1') or (timeout = '1') then
+            pending <= "00";
+          end if;
+
+        when "11" => -- atomic access (1st access: load)
+        -- ------------------------------------------------------------
+          timecnt <= std_ulogic_vector(unsigned(timecnt) + 1);
+          if (xbus_err_i = '1') or (timeout = '1') then -- abort if error
+            pending <= "00";
+          elsif (xbus_ack_i = '1') then
+            pending <= "10";
+          end if;
+
+        when others => -- "0-": idle; waiting for request
+        -- ------------------------------------------------------------
+          timecnt <= (others => '0');
+          if (bus_req.stb = '1') then
+            if (bus_req.amo = '1') then
+              pending <= "11";
+            else
+              pending <= "10";
+            end if;
+          end if;
+
+      end case;
+
+      -- access timeout --
+      if (TIMEOUT_VAL /= 0) and (unsigned(timecnt) = TIMEOUT_VAL) then
+        timeout <= '1';
+      else
+        timeout <= '0';
       end if;
-      bus_rw <= bus_req.rw;
+
     end if;
   end process arbiter;
 
-  -- bus timeout --
-  timeout <= '1' when (TIMEOUT_VAL /= 0) and (or_reduce_f(timeout_cnt) = '0') else '0';
+  -- no-timeout warning --
+  assert not (TIMEOUT_VAL = 0) report "[NEORV32] XBUS: NO auto-timeout configured!" severity warning;
 
 
-  -- Bus Access -----------------------------------------------------------------------------
+  -- XBUS ("Pipelined" Wishbone b4) ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xbus_adr_o <= bus_req.addr;
   xbus_dat_o <= bus_req.data;
   xbus_we_o  <= bus_req.rw;
   xbus_sel_o <= bus_req.ben;
   xbus_stb_o <= bus_req.stb;
-  xbus_cyc_o <= bus_req.stb or pending;
+  xbus_cyc_o <= bus_req.stb or pending(1);
   xbus_tag_o <= bus_req.src & '0' & bus_req.priv; -- instr/data, secure, privileged/unprivileged
 
   -- response gating --
-  bus_rsp.data <= xbus_dat_i when (pending = '1') and (bus_rw = '0') else (others => '0'); -- no read-back if WRITE operation
-  bus_rsp.ack  <= xbus_ack_i when (pending = '1') else '0';
-  bus_rsp.err  <= (xbus_err_i or timeout) when (pending = '1') else '0';
+  bus_rsp.data <= xbus_dat_i when (pending(1) = '1') else (others => '0');
+  bus_rsp.ack  <= pending(1) and xbus_ack_i;
+  bus_rsp.err  <= pending(1) and (xbus_err_i or timeout);
 
 
 end neorv32_xbus_rtl;

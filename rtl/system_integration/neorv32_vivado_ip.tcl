@@ -258,7 +258,7 @@ proc setup_ip_gui {} {
   add_params $group {
     { CPU_FAST_MUL_EN     {DSP-Based Multiplier} }
     { CPU_FAST_SHIFT_EN   {Barrel Shifter} }
-    { CPU_RF_HW_RST_EN    {Allow Full HW Reset for Register File} {Implement register file with FFs instead of BRAM to allow full hardware reset} }
+    { CPU_RF_HW_RST_EN    {Full HW Reset for Register File}       {Implement register file with FFs instead of BRAM to allow full hardware reset} }
   }
 
 
