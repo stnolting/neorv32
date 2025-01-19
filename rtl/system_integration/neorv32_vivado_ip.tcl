@@ -150,16 +150,22 @@ proc setup_ip_gui {} {
     ipgui::remove_page -component [ipx::current_core] $page
   }
 
+
   # **************************************************************
   # GUI Page: General
   # **************************************************************
   set page [add_page {General}]
+  set about_text "NEORV32 is a small, customizable and extensible MCU-class 32-bit RISC-V soft-core CPU and microcontroller-like SoC."
+  ipgui::add_static_text -name {About} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "General" -component [ipx::current_core] ] -text $about_text
+  set documentation_text "Find more information online at github.com/stnolting/neorv32"
+  ipgui::add_static_text -name {Documentation} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "General" -component [ipx::current_core] ] -text $documentation_text
+
 
   # { param_name {display_name} {tooltip} {enablement_expr} {value_expr} }
 
-  set group [add_group $page {Clocking}]
-  add_params $page {
-    { CLOCK_FREQUENCY       {Clock Frequency (Hz)}  {Frequency of the clk input signal in Hz} }
+  set group [add_group $page {Clock input}]
+  add_params $group {
+    { CLOCK_FREQUENCY       {Clock frequency [Hz]} {Frequency of the clk input signal in Hz} }
   }
 
   set group [add_group $page {Core Complex}]
@@ -186,7 +192,7 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {On-Chip Debugger (OCD)}]
   add_params $group {
-    { OCD_EN                {Enable OCD}            {Implement the on-chip debugger and the CPU debug mode} }
+    { OCD_EN                {Enable OCD}            {Implement the on-chip debugger, the CPU debug mode and the JTAG port} }
     { OCD_AUTHENTICATION    {OCD Authentication}    {Implement Debug Authentication module}                   {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false}}
   }
 
@@ -216,6 +222,8 @@ proc setup_ip_gui {} {
   # GUI Page: CPU
   # **************************************************************
   set page [add_page {CPU Configuration}]
+  set isa_note "Make sure to set the same ISA configuration for the RISC-V GCC ISA string."
+  ipgui::add_static_text -name {ISA note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "CPU Configuration" -component [ipx::current_core] ] -text $isa_note
 
   set group [add_group $page {RISC-V ISA Extensions}]
   add_params $group {
@@ -266,6 +274,12 @@ proc setup_ip_gui {} {
   # GUI Page: Memory System
   # **************************************************************
   set page [add_page {Memory System}]
+  set mem_note "The memory sizes need to be exported to the linker via dedicated symbols."
+  set imem_note "IMEM size (32kB): -Wl,--defsym,__neorv32_rom_size=32k"
+  set dmem_note "DMEM size (16kB): -Wl,--defsym,__neorv32_ram_size=16k"
+  ipgui::add_static_text -name {MEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory System" -component [ipx::current_core] ] -text $mem_note
+  ipgui::add_static_text -name {IMEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory System" -component [ipx::current_core] ] -text $imem_note
+  ipgui::add_static_text -name {DMEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory System" -component [ipx::current_core] ] -text $dmem_note
 
   set group [add_group $page {Internal Instruction Memory (IMEM)}]
   add_params $group {
