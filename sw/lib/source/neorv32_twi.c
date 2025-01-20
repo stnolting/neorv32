@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,10 +9,6 @@
 /**
  * @file neorv32_twi.c
  * @brief Two-Wire Interface Controller (TWI) HW driver source file.
- *
- * @note These functions should only be used if the TWI unit was synthesized (IO_TWI_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #include <neorv32.h>
@@ -161,8 +157,8 @@ int neorv32_twi_get(uint8_t *data) {
  **************************************************************************/
 int neorv32_twi_trans(uint8_t *data, int mack) {
 
-  uint8_t rx_data;
-  int device_ack;
+  uint8_t rx_data = 0;
+  int device_ack = 0;
 
   while (NEORV32_TWI->CTRL & (1<<TWI_CTRL_TX_FULL)); // wait for free TX entry
 

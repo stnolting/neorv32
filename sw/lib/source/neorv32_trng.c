@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,10 +9,6 @@
 /**
  * @file neorv32_trng.c
  * @brief True Random Number Generator (TRNG) HW driver source file.
- *
- * @note These functions should only be used if the TRNG unit was synthesized (IO_TRNG_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #include <neorv32.h>
@@ -42,7 +38,7 @@ void neorv32_trng_enable(void) {
   NEORV32_TRNG->CTRL = 0; // disable and reset
 
   // wait for all internal components to reset
-  int i;
+  int i = 0;
   for (i=0; i<256; i++) {
     asm volatile ("nop");
   }

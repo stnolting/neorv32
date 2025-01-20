@@ -9,8 +9,6 @@
 /**
  * @file neorv32_rte.c
  * @brief NEORV32 Runtime Environment.
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #include <neorv32.h>
@@ -155,7 +153,7 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
   asm volatile ("fence");
 
   // find according trap handler base address
-  uint32_t handler_base;
+  uint32_t handler_base = 0;
   switch (neorv32_cpu_csr_read(CSR_MCAUSE)) {
     case TRAP_CODE_I_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ACCESS];     break;
     case TRAP_CODE_I_ILLEGAL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_I_ILLEGAL];    break;
@@ -419,8 +417,8 @@ void neorv32_rte_debug_handler(void) {
  **************************************************************************/
 void __neorv32_rte_print_hex(uint32_t num, int digits) {
 
-  int i;
-  static const char hex_symbols[] = "0123456789ABCDEF";
+  int i = 0;
+  const char hex_symbols[] = "0123456789ABCDEF";
 
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     neorv32_uart0_putc('0');

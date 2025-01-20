@@ -48,10 +48,10 @@ int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ec
  **************************************************************************/
 int neorv32_uart_available(neorv32_uart_t *UARTx) {
 
-  if ( ((uint32_t)UARTx == NEORV32_UART0_BASE) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART0)) ) {
+  if (((uint32_t)UARTx == NEORV32_UART0_BASE) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART0))) {
     return 1;
   }
-  else if ( ((uint32_t)UARTx == NEORV32_UART1_BASE) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1)) ) {
+  else if (((uint32_t)UARTx == NEORV32_UART1_BASE) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1))) {
     return 1;
   }
   else {
@@ -329,10 +329,15 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
  **************************************************************************/
 void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list args) {
 
-  char c;
-  char string_buf[33];
-  int32_t n;
-  unsigned int tmp;
+  char c = 0;
+  char __attribute__((aligned(4))) string_buf[36]; // optimize stack layout
+  int32_t n = 0;
+  unsigned int tmp = 0;
+
+  // prevent uninitialized stack bytes
+  for (n=0; n<sizeof(string_buf); n++) {
+    string_buf[n] = 0;
+  }
 
   while ((c = *format++)) {
     if (c == '%') {
@@ -377,7 +382,7 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
           neorv32_uart_putc(UARTx, c);
           break;
 
-        default: // unsupported formating character
+        default: // unsupported formatting character
           neorv32_uart_putc(UARTx, '%');
           neorv32_uart_putc(UARTx, c);
           break;
