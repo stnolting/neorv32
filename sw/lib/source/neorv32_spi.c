@@ -86,7 +86,7 @@ uint32_t neorv32_spi_get_clock_speed(void) {
   uint32_t prsc_sel  = (ctrl >> SPI_CTRL_PRSC0) & 0x7;
   uint32_t clock_div = (ctrl >> SPI_CTRL_CDIV0) & 0xf;
 
-  uint32_t tmp;
+  uint32_t tmp = 0;
 
   if (ctrl & (1 << SPI_CTRL_HIGHSPEED)) { // high-speed mode enabled?
     tmp = 2 * 1 * (1 + clock_div);
@@ -139,7 +139,7 @@ int neorv32_spi_get_fifo_depth(void) {
  **************************************************************************/
 void neorv32_spi_cs_en(int cs) {
 
-  while(NEORV32_SPI->CTRL & (1<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
+  while (NEORV32_SPI->CTRL & (1<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
   neorv32_spi_cs_en_nonblocking(cs);
 }
 
@@ -152,7 +152,7 @@ void neorv32_spi_cs_en(int cs) {
  **************************************************************************/
 void neorv32_spi_cs_dis(void) {
 
-  while(NEORV32_SPI->CTRL & (1<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
+  while (NEORV32_SPI->CTRL & (1<<SPI_CTRL_TX_FULL)); // wait for free space in TX FIFO
   neorv32_spi_cs_dis_nonblocking();
 }
 
