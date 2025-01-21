@@ -417,7 +417,7 @@ begin
           if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
           elsif (smp.scl_fall = '1') then -- end of this time slot
-            if (engine.cmd = '0') or ((engine.cmd = '1') and (smp.sda = '0')) then -- WRITE or READ with ACK
+            if (engine.cmd = '0') or ((engine.cmd = '1') and (smp.sda_sreg(2) = '0')) then -- WRITE or READ with ACK (read sda "from the past")
               engine.state <= S_RTX;
             end if;
           end if;
