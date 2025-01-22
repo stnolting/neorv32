@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,10 +9,6 @@
 /**
  * @file neorv32_wdt.c
  * @brief Watchdog Timer (WDT) HW driver source file.
- *
- * @note These functions should only be used if the WDT unit was synthesized (IO_WDT_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #include <neorv32.h>
@@ -73,7 +69,7 @@ void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en, i
  **************************************************************************/
 int neorv32_wdt_disable(void) {
 
-  const uint32_t en_mask_c =  (uint32_t)(1 << WDT_CTRL_EN);
+  const uint32_t en_mask_c = (uint32_t)(1 << WDT_CTRL_EN);
 
   NEORV32_WDT->CTRL &= en_mask_c; // try to disable
 

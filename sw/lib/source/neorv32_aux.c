@@ -26,7 +26,7 @@
  **************************************************************************/
 uint64_t neorv32_aux_date2unixtime(date_t* date) {
 
-  uint32_t y, m, d, t;
+  uint32_t y = 0, m = 0, d = 0, t = 0;
 
   // range checks
   if (date->year < 1970) {
@@ -83,7 +83,7 @@ uint64_t neorv32_aux_date2unixtime(date_t* date) {
  **************************************************************************/
 void neorv32_aux_unixtime2date(uint64_t unixtime, date_t* date) {
 
-  uint32_t a, b, c, d, e, f;
+  uint32_t a = 0, b = 0, c = 0, d = 0, e = 0, f = 0;
 
   // invalid
   if (unixtime < 1) {
@@ -213,9 +213,14 @@ uint32_t neorv32_aux_xorshift32(void) {
 void neorv32_aux_itoa(char *buffer, uint32_t num, uint32_t base) {
 
   const char digits[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
-  char tmp[33];
-  char *tmp_ptr;
-  unsigned int i;
+  char __attribute__((aligned(4))) tmp[36]; // optimize stack layout
+  char *tmp_ptr = 0;
+  unsigned int i = 0;
+
+  // prevent uninitialized stack bytes
+  for (i=0; i<sizeof(tmp); i++) {
+    tmp[i] = 0;
+  }
 
   if ((base < 2) || (base > 16)) { // invalid base?
     *buffer = '\0';
@@ -258,8 +263,8 @@ void neorv32_aux_print_hw_config(void) {
     return; // cannot output anything if UART0 is not implemented
   }
 
-  uint32_t tmp;
-  int i;
+  uint32_t tmp = 0;
+  int i = 0;
 
   neorv32_uart0_printf("\n\n<< NEORV32 Processor Configuration >>\n\n");
 
@@ -540,8 +545,8 @@ void neorv32_aux_print_hw_config(void) {
  **************************************************************************/
 void neorv32_aux_print_hw_version(uint32_t impid) {
 
-  uint32_t i;
-  char tmp, cnt;
+  uint32_t i = 0;
+  char tmp = 0, cnt = 0;
 
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     for (i=0; i<4; i++) {
@@ -598,9 +603,9 @@ void neorv32_aux_print_logo(void) {
     {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0300, 0xc630}
   };
 
-  unsigned int x, y, z;
-  uint16_t tmp;
-  char c;
+  unsigned int x = 0, y = 0, z = 0;
+  uint16_t tmp = 0;
+  char c = 0;
 
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     for (y=0; y<(sizeof(logo_c) / sizeof(logo_c[0])); y++) {

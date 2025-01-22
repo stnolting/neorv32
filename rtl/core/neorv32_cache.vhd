@@ -198,13 +198,7 @@ begin
         dir_req_q <= req_terminate_c;
         dir_rsp_q <= rsp_terminate_c;
       elsif rising_edge(clk_i) then
-        -- is direct access? --
-        if (dir_acc_q = '0') and (host_req_i.stb = '1') and (dir_acc_d = '1') then
-          dir_acc_q <= '1';
-        elsif (dir_acc_q = '1') and ((dir_rsp_q.ack = '1') or (dir_rsp_q.err = '1')) then
-          dir_acc_q <= '0';
-        end if;
-        -- bus request buffer --
+        dir_acc_q <= dir_acc_d;
         if READ_ONLY then -- do not propagate STB on write access, issue ERR instead
           dir_req_q     <= dir_req_d;
           dir_req_q.stb <= dir_req_d.stb and (not dir_req_d.rw); -- read accesses only

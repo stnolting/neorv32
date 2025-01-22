@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -33,7 +33,7 @@ end entity;
 
 architecture neorv32_test_setup_approm_rtl of neorv32_test_setup_approm is
 
-  signal con_gpio_out : std_ulogic_vector(63 downto 0);
+  signal con_gpio_out : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -56,7 +56,7 @@ begin
     MEM_INT_DMEM_EN   => true,              -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
     -- Processor peripherals --
-    IO_GPIO_NUM       => 8,                 -- number of GPIO input/output pairs (0..64)
+    IO_GPIO_NUM       => 8,                 -- number of GPIO input/output pairs (0..32)
     IO_CLINT_EN       => true               -- implement core local interruptor (CLINT)?
   )
   port map (

@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -42,10 +42,14 @@ int main() {
   // setup UART at default baud rate, no interrupts
   neorv32_uart0_setup(BAUD_RATE, 0);
 
-
   // check if CLINT unit is implemented at all
   if (neorv32_clint_available() == 0) {
-    neorv32_uart0_puts("ERROR! CLINT not implemented!\n");
+    neorv32_uart0_puts("[ERROR] CLINT not implemented!\n");
+    return 1;
+  }
+  // check if GPIO module is implemented at all
+  if (neorv32_gpio_available() == 0) {
+    neorv32_uart0_puts("[ERROR] GPIO module not implemented!\n");
     return 1;
   }
 
@@ -85,7 +89,6 @@ int main() {
   // enable machine time and software interrupts
   neorv32_cpu_csr_set(CSR_MIE, (1 << CSR_MIE_MTIE) + (1 << CSR_MIE_MSIE));
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
-
 
   // go to sleep mode and wait for interrupt
   while(1) {
