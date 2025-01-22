@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 22.01.2025 | 1.10.9.10 | :bug: fix TWD ACK/NACK sampling | [#1165](https://github.com/stnolting/neorv32/pull/1165) |
 | 18.01.2025 | 1.10.9.9 | atomic memory access updates and improvements | [#1163](https://github.com/stnolting/neorv32/pull/1163) |
 | 16.01.2025 | 1.10.9.8 | :bug: fix several TWD design flaws | [#1161](https://github.com/stnolting/neorv32/pull/1161) |
 | 15.01.2025 | 1.10.9.7 | :sparkles: add GPIO interrupt(s); :warning: remove XIRQ controller, constrain GPIO input/output ports from 64-bit to 32-bit | [#1159](https://github.com/stnolting/neorv32/pull/1159) |
