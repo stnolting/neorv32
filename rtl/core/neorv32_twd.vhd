@@ -264,8 +264,8 @@ begin
   synchronizer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      smp.sda_sreg <= (others => '0');
-      smp.scl_sreg <= (others => '0');
+      smp.sda_sreg <= (others => '1');
+      smp.scl_sreg <= (others => '1');
       smp.valid    <= '0';
     elsif rising_edge(clk_i) then
       -- input register --
@@ -293,8 +293,8 @@ begin
   bus_event: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      smp.sda      <= '0';
-      smp.scl      <= '0';
+      smp.sda      <= '1';
+      smp.scl      <= '1';
       smp.scl_rise <= '0';
       smp.scl_fall <= '0';
       smp.start    <= '0';
