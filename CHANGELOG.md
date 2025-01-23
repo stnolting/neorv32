@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 23.01.2025 | 1.11.0.1 | reset SDA and SCL of TWI and TWD modules to `1` | [#1167](https://github.com/stnolting/neorv32/pull/1167) |
 | 22.01.2025 | [**:rocket:1.11.0**](https://github.com/stnolting/neorv32/releases/tag/v1.11.0) | **New release** | |
 | 22.01.2025 | 1.10.9.10 | :bug: fix TWD ACK/NACK sampling | [#1165](https://github.com/stnolting/neorv32/pull/1165) |
 | 18.01.2025 | 1.10.9.9 | atomic memory access updates and improvements | [#1163](https://github.com/stnolting/neorv32/pull/1163) |
