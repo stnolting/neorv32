@@ -44,12 +44,16 @@ see section <<_address_space>>) are **redirected** to the external bus interface
 .AXI4-Lite Interface Bridge
 [TIP]
 A simple bridge that converts the processor's XBUS into an AXI4-lite-compatible host interface can
-be found in in `rtl/system_inegration` (`xbus2axi4lite_bridge.vhd`).
+be found in in `rtl/system_inegration` (`xbus2axi4lite_bridge.vhd`). Note that the AXI specifications
+do not allow any bus timeouts. Hence, `XBUS_TIMEOUT` should be set to zero (disabling the bus timeout)
+when using the XBUS-AXI bridge.
 
 .AHB3-Lite Interface Bridge
 [TIP]
 A simple bridge that converts the processor's XBUS into an AHB3-lite-compatible host interface can
-be found in in `rtl/system_inegration` (`xbus2ahblite_bridge.vhd`).
+be found in in `rtl/system_inegration` (`xbus2ahblite_bridge.vhd`). Note that the AHB specifications
+do not allow any bus timeouts. Hence, `XBUS_TIMEOUT` should be set to zero (disabling the bus timeout)
+when using the XBUS-AHB bridge.
 
 
 **Wishbone Bus Protocol**
