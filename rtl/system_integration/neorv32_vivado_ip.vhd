@@ -29,14 +29,13 @@ entity neorv32_vivado_ip is
     CLOCK_FREQUENCY       : natural                        := 100_000_000;
     -- Dual-Core Configuration --
     DUAL_CORE_EN          : boolean                        := false;
-    -- Identification --
-    JEDEC_ID              : std_logic_vector(10 downto 0)  := "00000000000";
     -- Boot Configuration --
     BOOT_MODE_SELECT      : natural range 0 to 2           := 0;
     BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000";
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                        := false;
     OCD_AUTHENTICATION    : boolean                        := false;
+    OCD_JEDEC_ID          : std_logic_vector(10 downto 0)  := "00000000000";
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           : boolean                        := false;
     RISCV_ISA_E           : boolean                        := false;
@@ -88,7 +87,6 @@ entity neorv32_vivado_ip is
     DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
     -- External Bus Interface --
     XBUS_EN               : boolean                        := true;
-    XBUS_TIMEOUT          : natural range 8 to 65536       := 64;
     XBUS_REGSTAGE_EN      : boolean                        := false;
     XBUS_CACHE_EN         : boolean                        := false;
     XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 8;
@@ -353,14 +351,13 @@ begin
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
     -- Dual-Core Configuration --
     DUAL_CORE_EN          => DUAL_CORE_EN,
-    -- Identification --
-    JEDEC_ID              => std_ulogic_vector(JEDEC_ID),
     -- Boot Configuration --
     BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
     BOOT_ADDR_CUSTOM      => BOOT_ADDR_CUSTOM,
     -- On-Chip Debugger --
     OCD_EN                => OCD_EN,
     OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
+    OCD_JEDEC_ID          => std_ulogic_vector(OCD_JEDEC_ID),
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           => RISCV_ISA_C,
     RISCV_ISA_E           => RISCV_ISA_E,
@@ -413,7 +410,7 @@ begin
     DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
     -- External bus interface --
     XBUS_EN               => XBUS_EN,
-    XBUS_TIMEOUT          => XBUS_TIMEOUT,
+    XBUS_TIMEOUT          => 0, -- AXI does not allow any timeouts
     XBUS_REGSTAGE_EN      => XBUS_REGSTAGE_EN,
     XBUS_CACHE_EN         => XBUS_CACHE_EN,
     XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,

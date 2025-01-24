@@ -27,9 +27,6 @@ entity neorv32_top is
     -- Dual-Core Configuration --
     DUAL_CORE_EN          : boolean                        := false;       -- enable dual-core homogeneous SMP
 
-    -- Core Identification --
-    JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
-
     -- Boot Configuration --
     BOOT_MODE_SELECT      : natural range 0 to 2           := 0;           -- boot configuration select (default = 0 = bootloader)
     BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
@@ -37,6 +34,7 @@ entity neorv32_top is
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                        := false;       -- implement on-chip debugger
     OCD_AUTHENTICATION    : boolean                        := false;       -- implement on-chip debugger authentication
+    OCD_JEDEC_ID          : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
 
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           : boolean                        := false;       -- implement compressed extension
@@ -277,9 +275,6 @@ architecture neorv32_top_rtl of neorv32_top is
   constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
 
-  -- convert JEDEC ID to MVENDORID CSR --
-  constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
-
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_IMEM_SIZE), MEM_INT_IMEM_SIZE, 2**index_size_f(MEM_INT_IMEM_SIZE));
   constant dmem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_DMEM_SIZE), MEM_INT_DMEM_SIZE, 2**index_size_f(MEM_INT_DMEM_SIZE));
@@ -500,7 +495,6 @@ begin
     generic map (
       -- General --
       HART_ID             => i,
-      VENDOR_ID           => vendorid_c,
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
@@ -1703,7 +1697,7 @@ begin
     generic map (
       IDCODE_VERSION => (others => '0'), -- yet unused
       IDCODE_PARTID  => (others => '0'), -- yet unused
-      IDCODE_MANID   => JEDEC_ID
+      IDCODE_MANID   => OCD_JEDEC_ID
     )
     port map (
       clk_i      => clk_i,

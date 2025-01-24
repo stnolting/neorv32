@@ -834,9 +834,9 @@ and are not accessible for lower-privileged software.
 |=======================
 | Name        | Machine vendor ID
 | Address     | `0xf11`
-| Reset value | `DEFINED`
+| Reset value | `0x00000000`
 | ISA         | `Zicsr`
-| Description | Vendor ID (JEDEC identifier, lowest 11 bits), assigned via the `JEDEC_ID` top generic (<<_processor_top_entity_generics>>).
+| Description | Hardwired to zero; read accesses are ignored.
 |=======================
 
 

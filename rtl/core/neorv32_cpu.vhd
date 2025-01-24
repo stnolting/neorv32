@@ -23,7 +23,6 @@ entity neorv32_cpu is
   generic (
     -- General --
     HART_ID             : natural range 0 to 1023; -- hardware thread ID
-    VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
@@ -214,7 +213,6 @@ begin
   generic map (
     -- General --
     HART_ID             => HART_ID,             -- hardware thread ID
-    VENDOR_ID           => VENDOR_ID,           -- vendor's JEDEC ID
     BOOT_ADDR           => BOOT_ADDR,           -- cpu boot address
     DEBUG_PARK_ADDR     => DEBUG_PARK_ADDR,     -- cpu debug mode parking loop entry address
     DEBUG_EXC_ADDR      => DEBUG_EXC_ADDR,      -- cpu debug mode exception entry address

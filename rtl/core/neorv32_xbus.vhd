@@ -76,24 +76,18 @@ begin
   arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      timecnt <= (others => '0');
       pending <= (others => '0');
-      timeout <= '0';
     elsif rising_edge(clk_i) then
-
-      -- access control --
       case pending is
 
         when "10" => -- single access / atomic access (2nd access: store)
         -- ------------------------------------------------------------
-          timecnt <= std_ulogic_vector(unsigned(timecnt) + 1);
           if (xbus_ack_i = '1') or (xbus_err_i = '1') or (timeout = '1') then
             pending <= "00";
           end if;
 
         when "11" => -- atomic access (1st access: load)
         -- ------------------------------------------------------------
-          timecnt <= std_ulogic_vector(unsigned(timecnt) + 1);
           if (xbus_err_i = '1') or (timeout = '1') then -- abort if error
             pending <= "00";
           elsif (xbus_ack_i = '1') then
@@ -102,7 +96,6 @@ begin
 
         when others => -- "0-": idle; waiting for request
         -- ------------------------------------------------------------
-          timecnt <= (others => '0');
           if (bus_req.stb = '1') then
             if (bus_req.amo = '1') then
               pending <= "11";
@@ -112,22 +105,45 @@ begin
           end if;
 
       end case;
-
-      -- access timeout --
-      if (TIMEOUT_VAL /= 0) and (unsigned(timecnt) = TIMEOUT_VAL) then
-        timeout <= '1';
-      else
-        timeout <= '0';
-      end if;
-
     end if;
   end process arbiter;
+
+
+  -- Bus Timeout ----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  timeout_enabled:
+  if TIMEOUT_VAL /= 0 generate
+    timeout_counter: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        timecnt <= (others => '0');
+        timeout <= '0';
+      elsif rising_edge(clk_i) then
+        if (pending(1) = '0') then
+          timecnt <= (others => '0');
+        else
+          timecnt <= std_ulogic_vector(unsigned(timecnt) + 1);
+        end if;
+        if (unsigned(timecnt) = TIMEOUT_VAL) then
+          timeout <= '1';
+        else
+          timeout <= '0';
+        end if;
+      end if;
+    end process timeout_counter;
+  end generate;
+
+  timeout_disabled:
+  if TIMEOUT_VAL = 0 generate
+    timecnt <= (others => '0');
+    timeout <= '0';
+  end generate;
 
   -- no-timeout warning --
   assert not (TIMEOUT_VAL = 0) report "[NEORV32] XBUS: NO auto-timeout configured!" severity warning;
 
 
-  -- XBUS ("Pipelined" Wishbone b4) ---------------------------------------------------------
+  -- XBUS (Compatible to "pipelined" Wishbone b4 protocol) ----------------------------------
   -- -------------------------------------------------------------------------------------------
   xbus_adr_o <= bus_req.addr;
   xbus_dat_o <= bus_req.data;

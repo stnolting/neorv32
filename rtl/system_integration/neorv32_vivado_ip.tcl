@@ -185,21 +185,16 @@ proc setup_ip_gui {} {
   set_property value_validation_type pairs [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
   set_property value_validation_pairs {{Internal bootloader} 0 {Custom address} 1 {Internal IMEM image} 2} [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
 
-  set group [add_group $page {Core Identification}]
-  add_params $group {
-    { JEDEC_ID              {JEDEC ID}              {For JTAG tap identification and mvendorid CSR} }
-  }
-
   set group [add_group $page {On-Chip Debugger (OCD)}]
   add_params $group {
-    { OCD_EN                {Enable OCD}            {Implement the on-chip debugger, the CPU debug mode and the JTAG port} }
+    { OCD_EN                {Enable OCD}            {Implement JTAG-based on-chip debugger} }
     { OCD_AUTHENTICATION    {OCD Authentication}    {Implement Debug Authentication module}                   {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false}}
+    { OCD_JEDEC_ID          {JEDEC ID}              {JTAG tap identification}                                 {$OCD_EN}}
   }
 
   set group [add_group $page {External Bus Interface (XBUS / AXI4-Lite-MM Host)}]
   add_params $group {
     { XBUS_EN               {Enable XBUS}           {} }
-    { XBUS_TIMEOUT          {Timeout}               {Max number of clock cycles before AXI access times out}  {$XBUS_EN} }
     { XBUS_REGSTAGE_EN      {Add register stages}   {Relaxes timing, but will increase latency}               {$XBUS_EN} }
   }
 
