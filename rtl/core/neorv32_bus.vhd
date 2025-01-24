@@ -460,11 +460,11 @@ begin
       keeper.err  <= '0'; -- default
       keeper.halt <= or_reduce_f(port_sel and (not tmo_en_list_c)); -- no timeout if *_TMO_EN = false
       if (keeper.busy = '0') then -- bus idle
-        keeper.cnt  <= std_ulogic_vector(to_unsigned(TIMEOUT, keeper.cnt'length));
+        keeper.cnt  <= (others => '0');
         keeper.busy <= req_i.stb;
       else -- bus access in progress
-        keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) - 1);
-        if (int_rsp.err = '1') or ((or_reduce_f(keeper.cnt) = '0') and (keeper.halt = '0')) then -- bus error or timeout
+        keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1);
+        if (int_rsp.err = '1') or ((keeper.cnt(keeper.cnt'left) = '1') and (keeper.halt = '0')) then -- bus error or timeout
           keeper.err  <= '1';
           keeper.busy <= '0';
         elsif (int_rsp.ack = '1') then -- normal access termination
