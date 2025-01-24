@@ -22,14 +22,14 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- max response time for processor-internal bus transactions --
   -- cycles after which an unacknowledged internal bus access will timeout raising a bus fault exception
-  constant bus_timeout_c : natural := 15; -- default = 15
+  constant bus_timeout_c : natural := 16; -- has to be a power of two
 
   -- instruction monitor: raise exception if multi-cycle operation times out --
   constant monitor_mc_tmo_c : natural := 9; -- = log2 of max execution cycles; default = 2^9 = 512 cycles
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110001"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110002"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -732,14 +732,13 @@ package neorv32_package is
       CLOCK_FREQUENCY       : natural                        := 0;
       -- Dual-Core Configuration --
       DUAL_CORE_EN          : boolean                        := false;
-      -- Core Identification --
-      JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000";
       -- Boot Configuration --
       BOOT_MODE_SELECT      : natural range 0 to 2           := 0;
       BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000";
       -- On-Chip Debugger (OCD) --
       OCD_EN                : boolean                        := false;
       OCD_AUTHENTICATION    : boolean                        := false;
+      OCD_JEDEC_ID          : std_ulogic_vector(10 downto 0) := "00000000000";
       -- RISC-V CPU Extensions --
       RISCV_ISA_C           : boolean                        := false;
       RISCV_ISA_E           : boolean                        := false;

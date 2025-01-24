@@ -120,8 +120,6 @@ begin
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
     -- Dual-Core Configuration --
     DUAL_CORE_EN          => DUAL_CORE_EN,
-    -- Identification --
-    JEDEC_ID              => "00000000000",
     -- Boot Configuration --
     BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
     BOOT_ADDR_CUSTOM      => BOOT_ADDR_CUSTOM,
