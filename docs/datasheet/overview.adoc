@@ -33,21 +33,6 @@ that provides hands-on tutorials to get you started.
 . <<_legal>>
 
 
-**Annotations Types**
-
-[WARNING]
-Warning
-
-[IMPORTANT]
-Important
-
-[NOTE]
-Note
-
-[TIP]
-Tip
-
-
 <<<
 // ####################################################################################################################
 
@@ -102,7 +87,7 @@ include::rationale.adoc[]
 * internal bootloader with serial user interface (via UART)
 * core libraries and HAL for high-level usage of the provided functions and peripherals
 * processor-specific runtime environment and several example programs
-* doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
+* Doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
 * FreeRTOS port + demos available
 
 **Extensibility and Customization**
