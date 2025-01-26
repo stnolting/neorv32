@@ -1,8 +1,8 @@
 -- ================================================================================ --
 -- NEORV32 CPU - Central Control Unit                                               --
 -- -------------------------------------------------------------------------------- --
--- CPU operations are controlled by several "engines" (modules). These engines      --
--- operate in parallel to implement a tiny 2-stage pipeline:                        --
+-- CPU operations are controlled by several "engines". These engines operate in     --
+--  parallel to implement a simple 2-stage pipeline:                                --
 -- + Fetch engine:    Fetches 32-bit chunks of instruction words (pipeline stage 1) --
 -- + Issue engine:    Decodes RVC instructions, aligns & queues instruction words   --
 -- + Execute engine:  Multi-cycle execution of instructions (pipeline stage 2)      --
@@ -55,9 +55,9 @@ entity neorv32_cpu_control is
     RISCV_ISA_Zkne      : boolean; -- implement cryptography NIST AES encryption extension
     RISCV_ISA_Zknh      : boolean; -- implement cryptography NIST hash extension
     RISCV_ISA_Zks       : boolean; -- ShangMi algorithm suite available
-    RISCV_ISA_Zksed     : boolean; -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksed     : boolean; -- implement ShangMi block cipher extension
     RISCV_ISA_Zksh      : boolean; -- implement ShangMi hash extension
-    RISCV_ISA_Zkt       : boolean; -- data-independent execution time available (for cryptographic operations)
+    RISCV_ISA_Zkt       : boolean; -- data-independent execution time available (for cryptography operations)
     RISCV_ISA_Zmmul     : boolean; -- implement multiply-only M sub-extension
     RISCV_ISA_Zxcfu     : boolean; -- implement custom (instr.) functions unit
     RISCV_ISA_Sdext     : boolean; -- implement external debug mode extension
@@ -722,10 +722,10 @@ begin
                ((opcode(5) = '1') and (((funct3_v = funct3_sadd_c) and (funct7_v = "0000000")) or ((funct3_v = funct3_sadd_c) and (funct7_v = "0100000")) or
                                        ((funct3_v = funct3_slt_c)  and (funct7_v = "0000000")) or ((funct3_v = funct3_sltu_c) and (funct7_v = "0000000")) or
                                        ((funct3_v = funct3_xor_c)  and (funct7_v = "0000000")) or ((funct3_v = funct3_or_c)   and (funct7_v = "0000000")) or
-                                       ((funct3_v = funct3_and_c)  and (funct7_v = "0000000")))) then -- base ALU instruction (excluding SLL, SRL, SRA)?
+                                       ((funct3_v = funct3_and_c)  and (funct7_v = "0000000")))) then -- base ALU instruction (excluding SLL, SRL, SRA)
               ctrl_nxt.rf_wb_en    <= '1'; -- valid RF write-back (won't happen if exception)
               exe_engine_nxt.state <= EX_DISPATCH;
-            else -- [NOTE] potential illegal ALU[I] instruction are handled as multi-cycle operations that will time-out if no co-processor responds
+            else -- [NOTE] potential illegal ALU[I] instructions are handled as multi-cycle operations that will time-out if no ALU co-processor responds
               ctrl_nxt.alu_cp_alu  <= '1'; -- trigger ALU[I] opcode-space co-processor
               exe_engine_nxt.state <= EX_ALU_WAIT;
             end if;
@@ -1870,7 +1870,7 @@ begin
             csr.rdata(17) <= bool_to_ulogic_f(RISCV_ISA_Zbkc);      -- Zbkc: carry-less multiplication for cryptography
             csr.rdata(18) <= bool_to_ulogic_f(RISCV_ISA_Zkn);       -- Zkn: NIST algorithm suite
             csr.rdata(19) <= bool_to_ulogic_f(RISCV_ISA_Zksh);      -- Zksh: ShangMi hash functions
-            csr.rdata(20) <= bool_to_ulogic_f(RISCV_ISA_Zksed);     -- Zksed: ShangMi block cyphers
+            csr.rdata(20) <= bool_to_ulogic_f(RISCV_ISA_Zksed);     -- Zksed: ShangMi block ciphers
             csr.rdata(21) <= bool_to_ulogic_f(RISCV_ISA_Zks);       -- Zks: ShangMi algorithm suite
             csr.rdata(22) <= bool_to_ulogic_f(RISCV_ISA_Zba);       -- Zba: shifted-add bit-manipulation
             csr.rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);       -- Zbb: basic bit-manipulation

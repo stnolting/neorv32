@@ -1,10 +1,9 @@
 -- ================================================================================ --
 -- NEORV32 SoC - Processor Top Entity                                               --
 -- -------------------------------------------------------------------------------- --
--- HQ:           https://github.com/stnolting/neorv32                               --
--- Data Sheet:   https://stnolting.github.io/neorv32                                --
--- User Guide:   https://stnolting.github.io/neorv32/ug                             --
--- Software Ref: https://stnolting.github.io/neorv32/sw/files.html                  --
+-- HQ:         https://github.com/stnolting/neorv32                                 --
+-- Data Sheet: https://stnolting.github.io/neorv32                                  --
+-- User Guide: https://stnolting.github.io/neorv32/ug                               --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -625,7 +624,7 @@ begin
     generic map (
       ROUND_ROBIN_EN   => false, -- use prioritizing arbitration
       PORT_A_READ_ONLY => false,
-      PORT_B_READ_ONLY => true   -- instruction fetch is read-only
+      PORT_B_READ_ONLY => true -- instruction fetch is read-only
     )
     port map (
       clk_i    => clk_i,
@@ -890,11 +889,11 @@ begin
       -- XIP cache (XIP-CACHE) --
       neorv32_xipcache_enabled:
       if XIP_CACHE_EN generate
-        neorv32_xcache_inst: entity neorv32.neorv32_cache
+        neorv32_xipcache_inst: entity neorv32.neorv32_cache
         generic map (
           NUM_BLOCKS => XIP_CACHE_NUM_BLOCKS,
           BLOCK_SIZE => XIP_CACHE_BLOCK_SIZE,
-          UC_BEGIN   => (others => '0'),
+          UC_BEGIN   => (others => '0'), -- don't care
           UC_ENABLE  => false,
           READ_ONLY  => true
         )
@@ -943,7 +942,6 @@ begin
         rstn_i     => rstn_sys,
         bus_req_i  => xcache_req,
         bus_rsp_o  => xcache_rsp,
-        --
         xbus_adr_o => xbus_adr_o,
         xbus_dat_i => xbus_dat_i,
         xbus_dat_o => xbus_dat_o,
