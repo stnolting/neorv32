@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110002"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110003"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -606,7 +606,7 @@ package neorv32_package is
   constant trap_laf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00101"; -- 5: load access fault
   constant trap_sma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00110"; -- 6: store address misaligned
   constant trap_saf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00111"; -- 7: store access fault
-  constant trap_env_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "010UU"; -- 8..11: environment call from u/s/h/m
+  constant trap_env_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01000"; -- 8..11: environment call
   -- RISC-V compliant asynchronous exceptions (interrupts) --
   constant trap_msi_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00011"; -- 3:  machine software interrupt
   constant trap_mti_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00111"; -- 7:  machine timer interrupt
