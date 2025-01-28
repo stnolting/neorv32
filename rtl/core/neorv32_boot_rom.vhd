@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -27,12 +27,12 @@ end neorv32_boot_rom;
 
 architecture neorv32_boot_rom_rtl of neorv32_boot_rom is
 
-  -- determine physical ROM size in bytes (expand to next power of two) --
-  constant boot_rom_size_index_c : natural := index_size_f((bootloader_init_size_c)); -- address with (bytes)
-  constant boot_rom_size_c       : natural range 0 to iodev_size_c := (2**boot_rom_size_index_c); -- physical size in bytes
+  -- determine physical ROM size in WORDS (expand to next power of two) --
+  constant boot_rom_size_index_c : natural := index_size_f((bootloader_init_size_c/4)); -- address with (words)
+  constant boot_rom_size_c       : natural range 0 to iodev_size_c := (2**boot_rom_size_index_c); -- physical size in words
 
   -- ROM initialized with executable code --
-  constant mem_rom_c : mem32_t(0 to boot_rom_size_c/4-1) := mem32_init_f(bootloader_init_image_c, boot_rom_size_c/4);
+  constant mem_rom_c : mem32_t(0 to boot_rom_size_c-1) := mem32_init_f(bootloader_init_image_c, boot_rom_size_c);
 
   -- local signals --
   signal rden  : std_ulogic;
