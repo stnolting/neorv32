@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 28.01.2025 | 1.11.0.3 | :bug: fix BOOTROM addressing (index was out-of-range) | [#1171](https://github.com/stnolting/neorv32/pull/1171) |
 | 24.01.2025 | 1.11.0.2 | :warning: rename JEDEC ID generic; minor rtl edits and optimizations | [#1168](https://github.com/stnolting/neorv32/pull/1168) |
 | 23.01.2025 | 1.11.0.1 | reset SDA and SCL of TWI and TWD modules to `1` | [#1167](https://github.com/stnolting/neorv32/pull/1167) |
 | 22.01.2025 | [**:rocket:1.11.0**](https://github.com/stnolting/neorv32/releases/tag/v1.11.0) | **New release** | |
