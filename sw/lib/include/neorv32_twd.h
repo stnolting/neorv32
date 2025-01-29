@@ -27,8 +27,9 @@
 /**@{*/
 /** TWD module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL; /**< offset 0: control register (#NEORV32_TWD_CTRL_enum) */
-  uint32_t DATA; /**< offset 4: data register (#NEORV32_TWD_DATA_enum) */
+  uint32_t CTRL;   /**< offset 0: control register (#NEORV32_TWD_CTRL_enum) */
+  uint32_t DATA;   /**< offset 4: data register (#NEORV32_TWD_DATA_enum) */
+  uint32_t TX_REG; /**< offset 8: rx data register (#NEORV32_TWD_TX_REG_enum) */
 } neorv32_twd_t;
 
 /** TWD module hardware access (#neorv32_twd_t) */
@@ -45,9 +46,12 @@ enum NEORV32_TWD_CTRL_enum {
   TWD_CTRL_IRQ_RX_AVAIL = 11, /**< TWD control register(11) (r/w): IRQ if RX FIFO data available */
   TWD_CTRL_IRQ_RX_FULL  = 12, /**< TWD control register(12) (r/w): IRQ if RX FIFO full */
   TWD_CTRL_IRQ_TX_EMPTY = 13, /**< TWD control register(13) (r/w): IRQ if TX FIFO empty */
+  TWD_CTRL_TX_REG_EN    = 14, /**< TWD control register(14) (r/w): Enable TX reg mode (instead of FIFO) */
 
-  TWD_CTRL_FIFO_LSB     = 15, /**< TWD control register(15) (r/-): log2(FIFO size), LSB */
-  TWD_CTRL_FIFO_MSB     = 18, /**< TWD control register(18) (r/-): log2(FIFO size), MSB */
+  TWD_CTRL_RX_FIFO_LSB     = 15, /**< TWD control register(15) (r/-): log2(RX_FIFO size), LSB */
+  TWD_CTRL_RX_FIFO_MSB     = 18, /**< TWD control register(18) (r/-): log2(RX_FIFO size), MSB */
+  TWD_CTRL_TX_FIFO_LSB     = 19, /**< TWD control register(19) (r/-): log2(TX_FIFO size), LSB */
+  TWD_CTRL_TX_FIFO_MSB     = 22, /**< TWD control register(22) (r/-): log2(TX_FIFO size), MSB */
 
   TWD_CTRL_RX_AVAIL     = 25, /**< TWD control register(25) (r/-): RX FIFO data available */
   TWD_CTRL_RX_FULL      = 26, /**< TWD control register(26) (r/-): RX FIFO full */
@@ -65,14 +69,22 @@ enum NEORV32_TWD_DATA_enum {
 };
 /**@}*/
 
+/** TWD tx reg register bits */
+enum NEORV32_TWD_TX_REG_enum {
+  TWD_TX_REG_LSB = 0, /**< TWD data register(0) (r/w): Transmit register data (8-bit) LSB */
+  TWD_TX_REG_MSB = 7  /**< TWD data register(7) (r/w): Transmit register data (8-bit) MSB */
+};
+/**@}*/
+
 
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
 /**@{*/
 int     neorv32_twd_available(void);
-void    neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty);
-int     neorv32_twd_get_fifo_depth(void);
+void    neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int tx_reg_en);
+int     neorv32_twd_get_rx_fifo_depth(void);
+int     neorv32_twd_get_tx_fifo_depth(void);
 void    neorv32_twd_disable(void);
 void    neorv32_twd_enable(void);
 void    neorv32_twd_clear_rx(void);
@@ -86,6 +98,8 @@ int     neorv32_twd_tx_empty(void);
 int     neorv32_twd_tx_full(void);
 void    neorv32_twd_put(uint8_t data);
 uint8_t neorv32_twd_get(void);
+void    neorv32_twd_set_tx_reg(uint8_t data);
+uint8_t neorv32_twd_get_tx_reg();
 /**@}*/
 
 

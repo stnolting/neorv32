@@ -42,8 +42,9 @@ int neorv32_twd_available(void) {
  * @param[in] irq_rx_avail IRQ if RX FIFO data available.
  * @param[in] irq_rx_full IRQ if RX FIFO full.
  * @param[in] irq_tx_empty IRQ if TX FIFO empty.
+ * @param[in] tx_reg_en enable TX reg mode (instead of FIFO).
  **************************************************************************/
-void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty) {
+void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int tx_reg_en) {
 
   NEORV32_TWD->CTRL = 0; // reset
 
@@ -54,18 +55,31 @@ void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_f
   ctrl |= ((uint32_t)(irq_rx_avail & 0x01) << TWD_CTRL_IRQ_RX_AVAIL);
   ctrl |= ((uint32_t)(irq_rx_full  & 0x01) << TWD_CTRL_IRQ_RX_FULL);
   ctrl |= ((uint32_t)(irq_tx_empty & 0x01) << TWD_CTRL_IRQ_TX_EMPTY);
+  ctrl |= ((uint32_t)(tx_reg_en    & 0x01) << TWD_CTRL_TX_REG_EN);
   NEORV32_TWD->CTRL = ctrl;
 }
 
 
 /**********************************************************************//**
- * Get TWD FIFO depth.
+ * Get TWD RX FIFO depth.
  *
- * @return FIFO depth (number of entries), zero if no FIFO implemented
+ * @return RX FIFO depth (number of entries), zero if no RX FIFO implemented
  **************************************************************************/
-int neorv32_twd_get_fifo_depth(void) {
+int neorv32_twd_get_rx_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_FIFO_LSB) & 0xf;
+  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_RX_FIFO_LSB) & 0xf;
+  return (int)(1 << tmp);
+}
+
+
+/**********************************************************************//**
+ * Get TWD TX FIFO depth.
+ *
+ * @return TX FIFO depth (number of entries), zero if no TX FIFO implemented
+ **************************************************************************/
+int neorv32_twd_get_tx_fifo_depth(void) {
+
+  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_TX_FIFO_LSB) & 0xf;
   return (int)(1 << tmp);
 }
 
@@ -241,4 +255,24 @@ void neorv32_twd_put(uint8_t data) {
 uint8_t neorv32_twd_get(void) {
 
   return NEORV32_TWD->DATA;
+}
+
+/**********************************************************************//**
+ * Set data byte of TX Register.
+ *
+ * @param[in] data Data byte to be stored in TX Register.
+ **************************************************************************/
+void neorv32_twd_set_tx_reg(uint8_t data) {
+
+  NEORV32_TWD->TX_REG = data;
+}
+
+/**********************************************************************//**
+ * Get data byte of TX Register.
+ *
+ * @return Data byte to be stored in TX Register.
+ **************************************************************************/
+uint8_t neorv32_twd_get_tx_reg() {
+
+  return NEORV32_TWD->TX_REG;
 }

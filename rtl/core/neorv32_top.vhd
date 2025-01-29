@@ -124,7 +124,8 @@ entity neorv32_top is
     IO_TWI_EN             : boolean                        := false;       -- implement two-wire interface (TWI)?
     IO_TWI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
     IO_TWD_EN             : boolean                        := false;       -- implement two-wire device (TWD)?
-    IO_TWD_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
+    IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be zero or a power of two, min 1
+    IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be zero or a power of two, min 1
     IO_PWM_NUM_CH         : natural range 0 to 16          := 0;           -- number of PWM channels to implement (0..16)
     IO_WDT_EN             : boolean                        := false;       -- implement watch dog timer (WDT)?
     IO_TRNG_EN            : boolean                        := false;       -- implement true random number generator (TRNG)?
@@ -1395,7 +1396,8 @@ begin
     if IO_TWD_EN generate
       neorv32_twd_inst: entity neorv32.neorv32_twd
       generic map (
-        TWD_FIFO => IO_TWD_FIFO
+        TWD_RX_FIFO => IO_TWD_RX_FIFO,
+        TWD_TX_FIFO => IO_TWD_TX_FIFO
       )
       port map (
         clk_i       => clk_i,
