@@ -45,6 +45,9 @@ minimal base & privileged ISA `rv32e_zicsr_zifencei` only to ensure it can work 
 | `TWI_CLK_DIV`  | `3` | `0` ... `15` | TWI clock divider (dividing twi clock)
 | `TWI_DEVICE_ID`  | `0x50` | `0x00` ... `0x7F` | First TWI device ID to start. Is incremented until the end of the program is reached, when `TWI_ADDR_BYTES` is `1`.
 | `TWI_ADDR_BYTES`  | `1` | `1`, `2` | TWI memory address size in number of bytes. When `TWI_ADDR_BYTES` is `1`, `TWI_DEVICE_ID` the gets incremented as well.
+| `TWD_EN`  | `1` | `0`, `1`      | Set `1` to enable the usage of the TWD module (including load executables as TWI device)
+| `TWD_FSEL`  | `0` | `0`, `1` | TWD Bus sample clock / filter select.
+| `TWD_DEVICE_ID`  | `0x3F0` | `0x00` ... `0x7F` | TWD device ID to listen.
 |=======================
 
 [IMPORTANT]
@@ -73,12 +76,12 @@ compile and install the bootloader to the HDL boot ROM (updating `rtl/core/neorv
 :sectnums:
 === Auto-Boot Configuration
 
-The default bootloader provides a UART-based user interface that allows to upload new executables
+The default bootloader provides a UART- and TWD-based user interface that allows to upload new executables
 at any time. Optionally, the executable can also be programmed to an external SPI flash by the bootloader (see
 section <<_programming_an_external_spi_flash_via_the_bootloader>>).
 
 The bootloader also provides an _automatic boot sequence_ (auto-boot) which will start copying an executable
-from external SPI flash to IMEM using the default SPI configuration. By this, the default bootloader
+from external SPI flash (or TWI memory) to IMEM using the default SPI configuration. By this, the default bootloader
 provides a "non-volatile program storage" mechanism that automatically boots from external SPI flash
 (after `AUTO_BOOT_TIMEOUT`) while still providing the option to re-program the SPI flash at any time
 via the UART console.

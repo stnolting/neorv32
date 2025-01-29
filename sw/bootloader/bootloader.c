@@ -131,6 +131,23 @@
   #define TWI_ADDR_BYTES 1
 #endif
 
+/* -------- TWD configuration -------- */
+
+/** Enable TWD for copying to RAM */
+#ifndef TWD_EN
+  #define TWD_EN 1
+#endif
+
+/** TWD Bus sample clock / filter select */
+#ifndef TWD_FSEL
+  #define TWD_FSEL 0
+#endif
+
+/** TWD Device ID */
+#ifndef TWD_DEVICE_ID
+  #define TWD_DEVICE_ID 0x3F
+#endif
+
 /**@}*/
 
 
@@ -140,7 +157,8 @@
 enum EXE_STREAM_SOURCE_enum {
   EXE_STREAM_UART  = 0, /**< Get executable via UART */
   EXE_STREAM_FLASH = 1, /**< Get executable via SPI flash */
-  EXE_STREAM_TWI   = 2  /**< Get executable via TWI device */
+  EXE_STREAM_TWI   = 2, /**< Get executable via TWI device */
+  EXE_STREAM_TWD   = 3  /**< Get executable as TWD */
 };
 
 
@@ -188,6 +206,16 @@ enum SPI_FLASH_CMD_enum {
 enum SPI_FLASH_SREG_enum {
   FLASH_SREG_BUSY = 0, /**< Busy, write/erase in progress when set, read-only */
   FLASH_SREG_WEL  = 1  /**< Write access enabled when set, read-only */
+};
+
+
+/**********************************************************************//**
+ * TWD status register content
+ **************************************************************************/
+enum TWD_SREG_enum {
+  TWD_SREG_READY     = 0x01, /**< Ready */
+  TWD_SREG_WAIT_FOR_EXE = 0x02, /**< Waiting for exe */
+  // >0x08 = ERROR_CODES_enum << 4
 };
 
 
@@ -324,10 +352,17 @@ int main(void) {
     NEORV32_CLINT->MTIME.uint32[0] = 0;
     NEORV32_CLINT->MTIMECMP[0].uint32[0] = NEORV32_SYSINFO->CLK/4;
     NEORV32_CLINT->MTIMECMP[0].uint32[1] = 0;
-    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate timer IRQ source
+    neorv32_cpu_csr_set(CSR_MIE, 1 << CSR_MIE_MTIE); // activate timer IRQ source
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
   }
 
+#if (TWD_EN != 0)
+  // setup TWD
+  neorv32_twd_set_tx_reg(TWD_SREG_READY);
+  neorv32_twd_setup(TWD_DEVICE_ID, TWD_FSEL, 1, 0, 0, 1);
+  neorv32_cpu_csr_set(CSR_MIE, 1 << TWD_FIRQ_ENABLE); // activate TWD IRQ source
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
+#endif
 
   // ------------------------------------------------
   // Show bootloader intro and system info
@@ -362,13 +397,15 @@ int main(void) {
 
     while(1){
 
+    #if (UART_EN != 0)
       if (neorv32_uart0_available()) { // wait for any key to be pressed
         if (neorv32_uart0_char_received()) {
           neorv32_uart0_char_received_get(); // discard received char
           break;
         }
       }
-
+    #endif
+    
       if (neorv32_clint_time_get() >= timeout_time) { // timeout? start auto boot sequence
         #if (SPI_EN != 0)
           get_exe(EXE_STREAM_FLASH); // try booting from flash
@@ -426,6 +463,12 @@ int main(void) {
       get_exe(EXE_STREAM_TWI);
     }
 #endif
+// TODO: Remove when not needed
+#if (TWD_EN != 0)
+    else if (c == 'd') { // get executable as TWD
+      get_exe(EXE_STREAM_TWD);
+    }
+#endif
     else if (c == 'e') { // start application program from IMEM
       if (exe_available == 0) { // executable available?
         PRINT_TEXT("No executable.");
@@ -473,7 +516,11 @@ void print_help(void) {
 #if (XIP_EN != 0)
              " x: Boot from flash (XIP)\n"
 #endif
-             " e: Execute");
+             " e: Execute\n"
+#if (TWD_EN != 0)
+             "Info: TWD enabled\n"
+#endif
+  );
 }
 
 
@@ -503,6 +550,11 @@ void start_app(int boot_xip) {
   if (neorv32_gpio_available()) {
     neorv32_gpio_port_set(0);
   }
+#endif
+
+#if (TWD_EN != 0)
+  // disable twd
+  neorv32_twd_disable();
 #endif
 
   // wait for UART0 to finish transmitting
@@ -537,6 +589,14 @@ void __attribute__((interrupt("machine"),aligned(4))) bootloader_trap_handler(vo
       neorv32_clint_mtimecmp_set(neorv32_clint_time_get() + (NEORV32_SYSINFO->CLK/4));
     }
   }
+#if (TWD_EN != 0)
+  else if (mcause == TWD_TRAP_CODE) {
+    neorv32_twd_get();
+    get_exe(EXE_STREAM_TWD);
+    PRINT_TEXT("\n");
+    start_app(0);
+  }
+#endif
 
   // Bus store access error during get_exe
   else if ((mcause == TRAP_CODE_S_ACCESS) && (getting_exe)) {
@@ -573,9 +633,11 @@ void get_exe(int src) {
 
   // flash image base address
   uint32_t addr = 0;
+  #if (SPI_EN != 0)
   if (src == EXE_STREAM_FLASH) {
     addr = (uint32_t)SPI_BOOT_BASE_ADDR;
   }
+  #endif
   
 
   // get image from UART?
@@ -600,6 +662,21 @@ void get_exe(int src) {
     PRINT_TEXT("Loading from TWI Devices, starting with ");
     PRINT_XNUM(TWI_DEVICE_ID);
     PRINT_TEXT("...\n");
+  }
+  #endif
+  #if (TWD_EN)
+  else if (src == EXE_STREAM_TWD) {
+    // No uart print to prevent timing errors
+    neorv32_cpu_csr_write(CSR_MIE, 0x000000000); // deactivate all IRQ sources
+    neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // disable machine-mode interrupts
+    #if (STATUS_LED_EN != 0)
+    // Turn on LED
+    if (neorv32_gpio_available()) {
+      neorv32_gpio_port_set(1 << STATUS_LED_PIN);
+    }
+    PRINT_TEXT("\nWaiting for TWD data.\n");
+    neorv32_twd_set_tx_reg(TWD_SREG_WAIT_FOR_EXE);
+    #endif
   }
   #endif
 
@@ -728,6 +805,9 @@ uint32_t get_exe_word(int src, uint32_t addr) {
     for (i=0; i<4; i++) {
       if (src == EXE_STREAM_UART) {
         data.uint8[i] = (uint8_t)PRINT_GETC();
+      } else if (src == EXE_STREAM_TWD) {
+        while (!neorv32_twd_rx_available());
+        data.uint8[i] = (uint8_t)neorv32_twd_get();
       }
       else {
         data.uint8[i] = spi_flash_read_byte(addr + i); // little-endian byte order
@@ -751,6 +831,10 @@ void system_error(uint8_t err_code) {
   PRINT_TEXT(error_message[err_code]);
 
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // deactivate IRQs
+
+#if (TWD_EN != 0)
+  neorv32_twd_set_tx_reg(err_code << 4);
+#endif
 
   // permanently light up status LED
 #if (STATUS_LED_EN != 0)
