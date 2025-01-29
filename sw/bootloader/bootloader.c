@@ -463,12 +463,6 @@ int main(void) {
       get_exe(EXE_STREAM_TWI);
     }
 #endif
-// TODO: Remove when not needed
-#if (TWD_EN != 0)
-    else if (c == 'd') { // get executable as TWD
-      get_exe(EXE_STREAM_TWD);
-    }
-#endif
     else if (c == 'e') { // start application program from IMEM
       if (exe_available == 0) { // executable available?
         PRINT_TEXT("No executable.");
