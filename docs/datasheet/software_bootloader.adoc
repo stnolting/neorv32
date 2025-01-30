@@ -89,6 +89,19 @@ A python upload script for uploading is provided in the `sw/eeprom_upload` folde
 
 Clock speed information can be read here: <<_two_wire_serial_interface_controller_twi>>.
 
+
+:sectnums:
+==== Bootloader TWD overview
+
+The SoC acts as a TWD (I2C device) and listens by default to the device address `0x3F`. When a host wants to load a new executable, it should
+
+. read from the address and wait for the device to return `0x01` to check if the TWD interface is ready
+. send one byte of any data to put the bootloader in the required state
+. read again and wait until the device returns `0x02` as it is then in the state to accept data.
+. send the executable. The speed is limited by the clock speed and the fifo depth.
+. check for errors by reading again. If the address is unreachable (returns a NACK), the bootloader has exited successfully. Otherwise, you can read the error code by shifting the value to the right by 4 and looking in <<_bootloader_error_codes>>.
+
+
 :sectnums:
 ==== Bootloader Console
 
