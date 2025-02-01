@@ -77,7 +77,7 @@ begin
   begin
     if (rstn_i = '0') then
       dbus_req_o.rw    <= '0';
-      dbus_req_o.priv  <= '0';
+      dbus_req_o.priv  <= priv_mode_m_c;
       dbus_req_o.amo   <= '0';
       dbus_req_o.amoop <= (others => '0');
       dbus_req_o.data  <= (others => '0');
