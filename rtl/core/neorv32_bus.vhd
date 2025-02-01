@@ -292,8 +292,8 @@ end neorv32_bus_reg_rtl;
 -- ================================================================================ --
 -- NEORV32 SoC - Processor Bus Infrastructure: Section Gateway                      --
 -- -------------------------------------------------------------------------------- --
--- Bus gateway to distribute accesses to 4 non-overlapping address sub-spaces       --
--- (A to D). Note that the sub-spaces have to be aligned to their individual sizes. --
+-- Bus gateway to distribute accesses to 3 non-overlapping address sub-spaces       --
+-- (A to C). Note that the sub-spaces have to be aligned to their individual sizes. --
 -- All accesses that do not match any of these sections are redirected to the "X"   --
 -- port. The gateway-internal bus monitor ensures that all accesses are completed   --
 -- within a bound time window (if port's *_TMO_EN is true). Otherwise, a bus error  --

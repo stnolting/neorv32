@@ -48,10 +48,10 @@ package neorv32_package is
 -- **********************************************************************************************************
 
   -- Main Address Regions (base address must be aligned to the region's size) ---
-  constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via generic
-  constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via generic
+  constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via top generic
+  constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via top generic
   constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffe00000";
-  constant mem_io_size_c   : natural := 32*64*1024; -- = 32 * iodev_size_c
+  constant mem_io_size_c   : natural := 32*64*1024; -- 32 * iodev_size_c
 
   -- Start of uncached memory access (256MB page / 4 MSBs only) --
   constant mem_uncached_begin_c  : std_ulogic_vector(31 downto 0) := x"f0000000";
@@ -73,7 +73,7 @@ package neorv32_package is
   constant base_io_slink_c   : std_ulogic_vector(31 downto 0) := x"ffec0000";
   constant base_io_dma_c     : std_ulogic_vector(31 downto 0) := x"ffed0000";
   constant base_io_crc_c     : std_ulogic_vector(31 downto 0) := x"ffee0000";
---constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffef0000";
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffef0000"; -- reserved
   constant base_io_pwm_c     : std_ulogic_vector(31 downto 0) := x"fff00000";
   constant base_io_gptmr_c   : std_ulogic_vector(31 downto 0) := x"fff10000";
   constant base_io_onewire_c : std_ulogic_vector(31 downto 0) := x"fff20000";
