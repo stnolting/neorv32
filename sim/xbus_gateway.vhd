@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -24,6 +24,8 @@ entity xbus_gateway is
     DEV_3_EN : boolean := false; DEV_3_SIZE : natural := 0; DEV_3_BASE : std_ulogic_vector(31 downto 0) := (others => '0')
   );
   port (
+    clk_i       : in  std_ulogic;
+    rstn_i      : in  std_ulogic;
     -- host port --
     host_req_i  : in  xbus_req_t;
     host_rsp_o  : out xbus_rsp_t;
@@ -54,8 +56,9 @@ architecture xbus_gateway_rtl of xbus_gateway is
   signal dev_req : dev_req_t;
   signal dev_rsp : dev_rsp_t;
 
-  -- access enable --
-  signal acc_en : std_ulogic_vector(num_devs_c-1 downto 0);
+  -- device access --
+  signal acc_en  : std_ulogic_vector(num_devs_c-1 downto 0);
+  signal acc_err : std_ulogic;
 
 begin
 
@@ -73,6 +76,16 @@ begin
                           (unsigned(host_req_i.addr) < (unsigned(dev_base_list_c(i)) + dev_size_list_c(i))) else '0';
   end generate;
 
+  -- invalid access address --
+  err_gen: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      acc_err <= '0';
+    elsif rising_edge(clk_i) then
+      acc_err <= host_req_i.stb and host_req_i.cyc and (not or_reduce_f(acc_en));
+    end if;
+  end process err_gen;
+
   -- request --
   bus_request_gen:
   for i in 0 to num_devs_c-1 generate
@@ -88,12 +101,12 @@ begin
   end generate;
 
   -- response --
-  bus_response: process(dev_rsp, acc_en)
+  bus_response: process(acc_err, dev_rsp, acc_en)
     variable tmp_v : xbus_rsp_t;
   begin
     tmp_v.data := (others => '0');
     tmp_v.ack  := '0';
-    tmp_v.err  := '0';
+    tmp_v.err  := acc_err;
     for i in 0 to num_devs_c-1 loop -- OR all enabled response buses
       if (acc_en(i) = '1') and dev_en_list_c(i) then
         tmp_v.data := tmp_v.data or dev_rsp(i).data;
