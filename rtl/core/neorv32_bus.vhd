@@ -331,11 +331,6 @@ entity neorv32_bus_gateway is
     C_BASE   : std_ulogic_vector(31 downto 0);
     C_SIZE   : natural;
     C_TMO_EN : boolean;
-    -- port D --
-    D_ENABLE : boolean;
-    D_BASE   : std_ulogic_vector(31 downto 0);
-    D_SIZE   : natural;
-    D_TMO_EN : boolean;
     -- port X (the void) --
     X_ENABLE : boolean;
     X_TMO_EN : boolean
@@ -354,8 +349,6 @@ entity neorv32_bus_gateway is
     b_rsp_i : in  bus_rsp_t;
     c_req_o : out bus_req_t;
     c_rsp_i : in  bus_rsp_t;
-    d_req_o : out bus_req_t;
-    d_rsp_i : in  bus_rsp_t;
     x_req_o : out bus_req_t;
     x_rsp_i : in  bus_rsp_t
   );
@@ -364,20 +357,20 @@ end neorv32_bus_gateway;
 architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
 
   -- port select --
-  signal port_sel : std_ulogic_vector(4 downto 0);
+  signal port_sel : std_ulogic_vector(3 downto 0);
 
   -- port enable list --
-  type port_bool_list_t is array (0 to 4) of boolean;
-  constant port_en_list_c : port_bool_list_t := (A_ENABLE, B_ENABLE, C_ENABLE, D_ENABLE, X_ENABLE);
+  type port_bool_list_t is array (0 to 3) of boolean;
+  constant port_en_list_c : port_bool_list_t := (A_ENABLE, B_ENABLE, C_ENABLE, X_ENABLE);
 
   -- port timeout enable list --
-  constant tmo_en_list_c : std_ulogic_vector(4 downto 0) := (
-    bool_to_ulogic_f(X_TMO_EN), bool_to_ulogic_f(D_TMO_EN), bool_to_ulogic_f(C_TMO_EN), bool_to_ulogic_f(B_TMO_EN), bool_to_ulogic_f(A_TMO_EN)
+  constant tmo_en_list_c : std_ulogic_vector(3 downto 0) := (
+    bool_to_ulogic_f(X_TMO_EN), bool_to_ulogic_f(C_TMO_EN), bool_to_ulogic_f(B_TMO_EN), bool_to_ulogic_f(A_TMO_EN)
   );
 
   -- gateway ports combined as arrays --
-  type port_req_t is array (0 to 4) of bus_req_t;
-  type port_rsp_t is array (0 to 4) of bus_rsp_t;
+  type port_req_t is array (0 to 3) of bus_req_t;
+  type port_rsp_t is array (0 to 3) of bus_rsp_t;
   signal port_req : port_req_t;
   signal port_rsp : port_rsp_t;
 
@@ -400,10 +393,9 @@ begin
   port_sel(0) <= '1' when A_ENABLE and (req_i.addr(31 downto index_size_f(A_SIZE)) = A_BASE(31 downto index_size_f(A_SIZE))) else '0';
   port_sel(1) <= '1' when B_ENABLE and (req_i.addr(31 downto index_size_f(B_SIZE)) = B_BASE(31 downto index_size_f(B_SIZE))) else '0';
   port_sel(2) <= '1' when C_ENABLE and (req_i.addr(31 downto index_size_f(C_SIZE)) = C_BASE(31 downto index_size_f(C_SIZE))) else '0';
-  port_sel(3) <= '1' when D_ENABLE and (req_i.addr(31 downto index_size_f(D_SIZE)) = D_BASE(31 downto index_size_f(D_SIZE))) else '0';
 
   -- accesses to the "void" are redirected to the X port --
-  port_sel(4) <= '1' when X_ENABLE and (port_sel(3 downto 0) = "0000") else '0';
+  port_sel(3) <= '1' when X_ENABLE and (port_sel(2 downto 0) = "000") else '0';
 
 
   -- Gateway Ports --------------------------------------------------------------------------
@@ -411,13 +403,12 @@ begin
   a_req_o <= port_req(0); port_rsp(0) <= a_rsp_i;
   b_req_o <= port_req(1); port_rsp(1) <= b_rsp_i;
   c_req_o <= port_req(2); port_rsp(2) <= c_rsp_i;
-  d_req_o <= port_req(3); port_rsp(3) <= d_rsp_i;
-  x_req_o <= port_req(4); port_rsp(4) <= x_rsp_i;
+  x_req_o <= port_req(3); port_rsp(3) <= x_rsp_i;
 
   -- bus request --
   request: process(req_i, port_sel)
   begin
-    for i in 0 to 4 loop
+    for i in 0 to 3 loop
       port_req(i) <= req_terminate_c;
       if port_en_list_c(i) then -- port enabled
         port_req(i) <= req_i;
@@ -431,7 +422,7 @@ begin
     variable tmp_v : bus_rsp_t;
   begin
     tmp_v := rsp_terminate_c; -- start with all-zero
-    for i in 0 to 4 loop -- OR all response signals
+    for i in 0 to 3 loop -- OR all response signals
       if port_en_list_c(i) then -- port enabled
         tmp_v.data := tmp_v.data or port_rsp(i).data;
         tmp_v.ack  := tmp_v.ack  or port_rsp(i).ack;
