@@ -27,7 +27,6 @@ entity neorv32_xbus is
     rstn_i     : in  std_ulogic; -- global reset line, low-active
     bus_req_i  : in  bus_req_t;  -- bus request
     bus_rsp_o  : out bus_rsp_t;  -- bus response
-    --
     xbus_adr_o : out std_ulogic_vector(31 downto 0); -- address
     xbus_dat_i : in  std_ulogic_vector(31 downto 0); -- read data
     xbus_dat_o : out std_ulogic_vector(31 downto 0); -- write data
