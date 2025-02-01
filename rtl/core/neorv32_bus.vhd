@@ -21,15 +21,14 @@ entity neorv32_bus_switch is
     PORT_B_READ_ONLY : boolean := false  -- set if port B is read-only
   );
   port (
-    clk_i    : in  std_ulogic; -- global clock, rising edge
-    rstn_i   : in  std_ulogic; -- global reset, low-active, async
-    a_lock_i : in  std_ulogic; -- exclusive access for port A while set
-    a_req_i  : in  bus_req_t;  -- host port A request bus
-    a_rsp_o  : out bus_rsp_t;  -- host port A response bus
-    b_req_i  : in  bus_req_t;  -- host port B request bus
-    b_rsp_o  : out bus_rsp_t;  -- host port B response bus
-    x_req_o  : out bus_req_t;  -- device port request bus
-    x_rsp_i  : in  bus_rsp_t   -- device port response bus
+    clk_i   : in  std_ulogic; -- global clock, rising edge
+    rstn_i  : in  std_ulogic; -- global reset, low-active, async
+    a_req_i : in  bus_req_t;  -- host port A request bus
+    a_rsp_o : out bus_rsp_t;  -- host port A response bus
+    b_req_i : in  bus_req_t;  -- host port B request bus
+    b_rsp_o : out bus_rsp_t;  -- host port B response bus
+    x_req_o : out bus_req_t;  -- device port request bus
+    x_rsp_i : in  bus_rsp_t   -- device port response bus
   );
 end neorv32_bus_switch;
 
@@ -71,7 +70,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   arbiter_prioritized:
   if not ROUND_ROBIN_EN generate
-    arbiter_fsm: process(state, a_req, b_req, a_lock_i, a_req_i, b_req_i, x_rsp_i)
+    arbiter_fsm: process(state, a_req, b_req, a_req_i, b_req_i, x_rsp_i)
     begin
       -- defaults --
       state_nxt <= state;
@@ -101,7 +100,7 @@ begin
             sel       <= '0';
             stb       <= '1';
             state_nxt <= S_BUSY_A;
-          elsif ((b_req_i.stb = '1') or (b_req = '1')) and (a_lock_i = '0') then -- request from port B?
+          elsif (b_req_i.stb = '1') or (b_req = '1') then -- request from port B?
             sel       <= '1';
             stb       <= '1';
             state_nxt <= S_BUSY_B;
