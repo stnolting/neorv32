@@ -124,7 +124,6 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_SLINK_EN}   [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
   set_property enablement_dependency {$XBUS_EN}       [ipx::get_bus_interfaces m_axi   -of_objects [ipx::current_core]]
   set_property enablement_dependency {$OCD_EN}        [ipx::get_ports jtag_*           -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$XIP_EN}        [ipx::get_ports xip_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_GPIO_EN}    [ipx::get_ports gpio_*           -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_UART0_EN}   [ipx::get_ports uart0_*          -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_UART1_EN}   [ipx::get_ports uart1_*          -of_objects [ipx::current_core]]
@@ -300,14 +299,6 @@ proc setup_ip_gui {} {
     { DCACHE_EN         {Enable DCACHE} }
     { DCACHE_NUM_BLOCKS {Number of blocks} {}                              {$DCACHE_EN} }
     { DCACHE_BLOCK_SIZE {Block size}       {In bytes (use a power of two)} {$DCACHE_EN} }
-  }
-
-  set group [add_group $page {Execute In-Place Module (XIP)}]
-  add_params $group {
-    { XIP_EN               {Enable XIP} }
-    { XIP_CACHE_EN         {Enable XIP cache} {}                              {$XIP_EN} {$XIP_EN ? $XIP_CACHE_EN : false} }
-    { XIP_CACHE_NUM_BLOCKS {Cache blocks}     {}                              {$XIP_CACHE_EN} }
-    { XIP_CACHE_BLOCK_SIZE {Cache block size} {In bytes (use a power of two)} {$XIP_CACHE_EN} }
   }
 
 

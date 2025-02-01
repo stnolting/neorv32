@@ -91,11 +91,6 @@ entity neorv32_vivado_ip is
     XBUS_CACHE_EN         : boolean                        := false;
     XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 8;
     XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16       := 256;
-    -- Execute in-place module (XIP) --
-    XIP_EN                : boolean                        := false;
-    XIP_CACHE_EN          : boolean                        := false;
-    XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256         := 8;
-    XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16       := 256;
     -- Processor peripherals --
     IO_GPIO_EN            : boolean                        := false;
     IO_GPIO_IN_NUM        : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
@@ -199,11 +194,6 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     -- Processor IO
     -- ------------------------------------------------------------
-    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
-    xip_csn_o      : out std_logic;
-    xip_clk_o      : out std_logic;
-    xip_dat_i      : in  std_logic := '0';
-    xip_dat_o      : out std_logic;
     -- GPIO (available if IO_GPIO_IN/OUT_NUM > 0) --
     gpio_o         : out std_logic_vector(IO_GPIO_OUT_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     gpio_i         : in  std_logic_vector(IO_GPIO_IN_NUM-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
@@ -311,7 +301,6 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal s0_axis_tdata_aux : std_ulogic_vector(31 downto 0);
   signal s0_axis_tdest_aux : std_ulogic_vector(3 downto 0);
   signal s1_axis_tready_aux, s0_axis_tvalid_aux, s0_axis_tlast_aux : std_ulogic;
-  signal xip_csn_aux, xip_clk_aux, xip_do_aux : std_ulogic;
   signal uart0_txd_aux, uart0_rts_aux, uart1_txd_aux, uart1_rts_aux : std_ulogic;
   signal spi_clk_aux, spi_do_aux : std_ulogic;
   signal spi_csn_aux : std_ulogic_vector(7 downto 0);
@@ -413,11 +402,6 @@ begin
     XBUS_CACHE_EN         => XBUS_CACHE_EN,
     XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
     XBUS_CACHE_BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
-    -- Execute in-place module --
-    XIP_EN                => XIP_EN,
-    XIP_CACHE_EN          => XIP_CACHE_EN,
-    XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
-    XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
     -- Processor peripherals --
     IO_DISABLE_SYSINFO    => false,
     IO_GPIO_NUM           => num_gpio_c,
@@ -487,11 +471,6 @@ begin
     slink_tx_val_o => s0_axis_tvalid_aux,
     slink_tx_lst_o => s0_axis_tlast_aux,
     slink_tx_rdy_i => std_ulogic(s0_axis_tready),
-    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
-    xip_csn_o      => xip_csn_aux,
-    xip_clk_o      => xip_clk_aux,
-    xip_dat_i      => std_ulogic(xip_dat_i),
-    xip_dat_o      => xip_do_aux,
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o         => gpio_o_aux,
     gpio_i         => gpio_i_aux,
@@ -556,10 +535,6 @@ begin
   s0_axis_tdest  <= std_logic_vector(s0_axis_tdest_aux);
   s0_axis_tvalid <= std_logic(s0_axis_tvalid_aux);
   s0_axis_tlast  <= std_logic(s0_axis_tlast_aux);
-
-  xip_csn_o      <= std_logic(xip_csn_aux);
-  xip_clk_o      <= std_logic(xip_clk_aux);
-  xip_dat_o      <= std_logic(xip_do_aux);
 
   uart0_txd_o    <= std_logic(uart0_txd_aux);
   uart0_rts_o    <= std_logic(uart0_rts_aux);
