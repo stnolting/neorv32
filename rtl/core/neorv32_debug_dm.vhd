@@ -6,7 +6,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -148,9 +148,9 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- copied manually from 'sw/ocd-firmware/neorv32_application_image.vhd' --
   type code_rom_t is array (0 to 31) of std_ulogic_vector(31 downto 0);
   constant code_rom_c : code_rom_t := (
-    00 => x"f8002623",
-    01 => x"7b202473",
-    02 => x"00100073",
+    00 => x"0ff0000f",
+    01 => x"f8002623",
+    02 => x"0080006f",
     03 => x"00000013",
     04 => x"7b241073",
     05 => x"f1402473",
@@ -158,7 +158,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     07 => x"f1402473",
     08 => x"f8044403",
     09 => x"00247413",
-    10 => x"02041263",
+    10 => x"02041463",
     11 => x"f1402473",
     12 => x"f8044403",
     13 => x"00147413",
@@ -166,11 +166,11 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     15 => x"f1402473",
     16 => x"f8802223",
     17 => x"7b202473",
-    18 => x"7b200073",
-    19 => x"f1402473",
-    20 => x"f8802423",
-    21 => x"7b202473",
-    22 => x"0000100f",
+    18 => x"0000100f",
+    19 => x"7b200073",
+    20 => x"f1402473",
+    21 => x"f8802423",
+    22 => x"7b202473",
     23 => x"e8000067",
     24 => x"00000073",
     25 => x"00000073",
@@ -279,12 +279,12 @@ begin
             if (dm_reg.command(17) = '1') then -- "transfer" (GPR <-> DM.data0)
               if (dm_reg.command(16) = '0') then -- "write" = 0 -> read from GPR
                 dm_ctrl.ldsw_progbuf <= instr_sw_c;
-                dm_ctrl.ldsw_progbuf(31 downto 25) <= dataaddr_c(11 downto 5); -- destination address
+                dm_ctrl.ldsw_progbuf(31 downto 25) <= dataaddr_c(11 downto 5); -- destination address = DM.data0
                 dm_ctrl.ldsw_progbuf(24 downto 20) <= dm_reg.command(4 downto 0); -- "regno" = source register
-                dm_ctrl.ldsw_progbuf(11 downto 07) <= dataaddr_c(4 downto 0); -- destination address
+                dm_ctrl.ldsw_progbuf(11 downto 07) <= dataaddr_c(4 downto 0); -- destination address = DM.data0
               else -- "write" = 1 -> write to GPR
                 dm_ctrl.ldsw_progbuf <= instr_lw_c;
-                dm_ctrl.ldsw_progbuf(31 downto 20) <= dataaddr_c(11 downto 0); -- source address
+                dm_ctrl.ldsw_progbuf(31 downto 20) <= dataaddr_c(11 downto 0); -- source address = DM.data0
                 dm_ctrl.ldsw_progbuf(11 downto 07) <= dm_reg.command(4 downto 0); -- "regno" = destination register
               end if;
             else

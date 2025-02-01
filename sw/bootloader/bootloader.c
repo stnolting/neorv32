@@ -576,7 +576,7 @@ void get_exe(int src) {
   if (src == EXE_STREAM_FLASH) {
     addr = (uint32_t)SPI_BOOT_BASE_ADDR;
   }
-  
+
 
   // get image from UART?
   if (src == EXE_STREAM_UART) {
@@ -634,7 +634,11 @@ void get_exe(int src) {
     exe_available = size; // store exe size
   }
 
-  getting_exe = 0; // to inform trap handler we are done getting an executable
+  // we might have caches so the executable might not yet have fully arrived in main memory yet
+  asm volatile ("fence"); // flush data caches to main memory
+  asm volatile ("fence.i"); // re-sync instruction fetch to updated main memory
+
+  getting_exe = 0; // inform trap handler that we are done getting an executable
 }
 
 
@@ -1046,9 +1050,9 @@ uint32_t twi_read_addr(uint32_t addr) {
   #error "Unsupported TWI_ADDR_BYTES configuration!"
 #endif
 
-  
+
   /***********************
-   * Set address to read 
+   * Set address to read
    ***********************/
 
   neorv32_twi_generate_start();
@@ -1071,7 +1075,7 @@ uint32_t twi_read_addr(uint32_t addr) {
 #endif
 
   /***********************
-   * Read data 
+   * Read data
    ***********************/
 
   neorv32_twi_generate_start();
@@ -1097,7 +1101,7 @@ uint32_t twi_read_addr(uint32_t addr) {
   transfer = 0xFF;
   neorv32_twi_trans(&transfer, 0); // NACK by master
   data.uint8[3] = transfer;
-  
+
   neorv32_twi_generate_stop();
 
   return data.uint32;

@@ -1,7 +1,7 @@
 -- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32
 -- Auto-generated memory initialization image (for internal IMEM)
 -- Source: demo_blink_led/build/main.bin
--- Built: 15.01.2025 21:11:45
+-- Built: 01.02.2025 15:17:07
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -11,7 +11,7 @@ use neorv32.neorv32_package.all;
 
 package neorv32_application_image is
 
-constant application_init_size_c  : natural := 1204; -- bytes
+constant application_init_size_c  : natural := 1208; -- bytes
 constant application_init_image_c : mem32_t := (
 x"f14020f3",
 x"80002217",
@@ -23,11 +23,11 @@ x"000022b7",
 x"80028293",
 x"30029073",
 x"00000317",
-x"18830313",
+x"18c30313",
 x"30531073",
 x"30401073",
 x"00000397",
-x"48038393",
+x"48438393",
 x"80000417",
 x"fc440413",
 x"80000497",
@@ -36,8 +36,7 @@ x"80000517",
 x"fb450513",
 x"80000597",
 x"fac58593",
-x"00000617",
-x"19060613",
+x"00000613",
 x"00000693",
 x"00000713",
 x"00000793",
@@ -63,7 +62,7 @@ x"01878793",
 x"30579073",
 x"30446073",
 x"30046073",
-x"0dc0006f",
+x"0e40006f",
 x"fff40737",
 x"00072223",
 x"bc1026f3",
@@ -74,7 +73,7 @@ x"30200073",
 x"bc102173",
 x"bc102673",
 x"bc171073",
-x"0540006f",
+x"05c0006f",
 x"00838e63",
 x"00945c63",
 x"0003a783",
@@ -87,14 +86,16 @@ x"00052023",
 x"00450513",
 x"ff5ff06f",
 x"00000417",
-x"39040413",
+x"39840413",
 x"00000497",
-x"38848493",
+x"39048493",
 x"00945a63",
 x"00042083",
 x"000080e7",
 x"00440413",
 x"ff1ff06f",
+x"00000617",
+x"0ac60613",
 x"0ff0000f",
 x"0000100f",
 x"30029073",

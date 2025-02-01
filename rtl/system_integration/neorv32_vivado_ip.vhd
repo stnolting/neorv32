@@ -275,7 +275,6 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
       xbus_we_i     : in  std_ulogic;
       xbus_sel_i    : in  std_ulogic_vector(3 downto 0);
       xbus_stb_i    : in  std_ulogic;
-      xbus_cyc_i    : in  std_ulogic;
       xbus_ack_o    : out std_ulogic;
       xbus_err_o    : out std_ulogic;
       xbus_dat_o    : out std_ulogic_vector(31 downto 0);
@@ -336,7 +335,6 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal xbus_we  : std_ulogic;                     -- read/write
   signal xbus_sel : std_ulogic_vector(3 downto 0);  -- byte enable
   signal xbus_stb : std_ulogic;                     -- strobe
-  signal xbus_cyc : std_ulogic;                     -- valid cycle
   signal xbus_di  : std_ulogic_vector(31 downto 0); -- read data
   signal xbus_ack : std_ulogic;                     -- transfer acknowledge
   signal xbus_err : std_ulogic;                     -- transfer error
@@ -474,7 +472,7 @@ begin
     xbus_we_o      => xbus_we,
     xbus_sel_o     => xbus_sel,
     xbus_stb_o     => xbus_stb,
-    xbus_cyc_o     => xbus_cyc,
+    xbus_cyc_o     => open,
     xbus_dat_i     => xbus_di,
     xbus_ack_i     => xbus_ack,
     xbus_err_i     => xbus_err,
@@ -614,7 +612,7 @@ begin
   end generate;
 
 
-  -- Wishbone-to-AXI4-Lite Bridge -----------------------------------------------------------
+  -- XBUS-to-AXI4-Lite Bridge ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   axi4_bridge:
   if XBUS_EN generate
@@ -630,7 +628,6 @@ begin
       xbus_we_i     => xbus_we,
       xbus_sel_i    => xbus_sel,
       xbus_stb_i    => xbus_stb,
-      xbus_cyc_i    => xbus_cyc,
       xbus_ack_o    => xbus_ack,
       xbus_err_o    => xbus_err,
       xbus_dat_o    => xbus_di,
