@@ -459,22 +459,6 @@ void neorv32_aux_print_hw_config(void) {
     neorv32_uart0_printf("none\n");
   }
 
-  // XIP-cache
-  neorv32_uart0_printf("XIP-cache:           ");
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XIP_CACHE)) {
-
-    uint32_t xip_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_XIP_BLOCK_SIZE_0) & 0x0F;
-    xip_block_size = 1 << xip_block_size;
-
-    uint32_t xip_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_XIP_NUM_BLOCKS_0) & 0x0F;
-    xip_num_blocks = 1 << xip_num_blocks;
-
-    neorv32_uart0_printf("%u bytes (%ux%u)\n", xip_num_blocks*xip_block_size, xip_num_blocks, xip_block_size);
-  }
-  else {
-    neorv32_uart0_printf("none\n");
-  }
-
   // XBUS-cache
   neorv32_uart0_printf("XBUS-cache:          ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS_CACHE)) {
@@ -529,7 +513,6 @@ void neorv32_aux_print_hw_config(void) {
   if (tmp & (1 << SYSINFO_SOC_IO_UART0))   { neorv32_uart0_printf("UART0 ");   }
   if (tmp & (1 << SYSINFO_SOC_IO_UART1))   { neorv32_uart0_printf("UART1 ");   }
   if (tmp & (1 << SYSINFO_SOC_IO_WDT))     { neorv32_uart0_printf("WDT ");     }
-  if (tmp & (1 << SYSINFO_SOC_XIP))        { neorv32_uart0_printf("XIP ");     }
 
   neorv32_uart0_printf("\n\n");
 }
