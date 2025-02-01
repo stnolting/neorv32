@@ -97,13 +97,6 @@
   #define SPI_BOOT_BASE_ADDR 0x00400000UL
 #endif
 
-/* -------- XIP configuration -------- */
-
-/** Enable XIP boot options */
-#ifndef XIP_EN
-  #define XIP_EN 1
-#endif
-
 /* -------- TWI configuration -------- */
 
 /** Enable TWI for copying to RAM */
@@ -249,7 +242,7 @@ volatile uint32_t getting_exe;
  **************************************************************************/
 void     __attribute__((interrupt("machine"),aligned(4))) bootloader_trap_handler(void);
 void     print_help(void);
-void     start_app(int boot_xip);
+void     start_app(void);
 void     get_exe(int src);
 void     save_exe(void);
 uint32_t get_exe_word(int src, uint32_t addr);
@@ -287,14 +280,6 @@ int main(void) {
   // setup SPI for clock-mode 0
   if (neorv32_spi_available()) {
     neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0, 0);
-  }
-#endif
-
-#if (XIP_EN != 0)
-  // setup XIP: clock divider 0, clock mode 0
-  if (neorv32_xip_available()) {
-    neorv32_xip_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0, SPI_FLASH_CMD_READ);
-    neorv32_xip_start(SPI_FLASH_ADDR_BYTES);
   }
 #endif
 
@@ -376,7 +361,7 @@ int main(void) {
           get_exe(EXE_STREAM_TWI); // try booting from twi
         #endif
         PRINT_TEXT("\n");
-        start_app(0);
+        start_app();
         while(1);
       }
 
@@ -431,19 +416,9 @@ int main(void) {
         PRINT_TEXT("No executable.");
       }
       else {
-        start_app(0); // run app from IMEM
+        start_app(); // run app from IMEM
       }
     }
-#if (XIP_EN != 0)
-    else if (c == 'x') { // boot from SPI flash via XIP
-      if (neorv32_xip_available()) { // XIP module really implemented?
-        start_app(1);
-      }
-      else {
-        PRINT_TEXT("Invalid CMD");
-      }
-    }
-#endif
     else { // unknown command
       PRINT_TEXT("Invalid CMD");
     }
@@ -470,30 +445,19 @@ void print_help(void) {
 #if (TWI_EN != 0)
              " t: Load from TWI Device\n"
 #endif
-#if (XIP_EN != 0)
-             " x: Boot from flash (XIP)\n"
-#endif
              " e: Execute");
 }
 
 
 /**********************************************************************//**
  * Start application program.
- *
- * @param boot_xip Set to boot via XIP.
  **************************************************************************/
-void start_app(int boot_xip) {
+void start_app(void) {
 
   // deactivate global IRQs
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
   register uint32_t app_base = (uint32_t)EXE_BASE_ADDR; // default = start at beginning of IMEM
-#if (XIP_EN != 0)
-  if (boot_xip) {
-    app_base = (uint32_t)(XIP_MEM_BASE_ADDRESS + SPI_BOOT_BASE_ADDR); // start from XIP mapped address
-  }
-#endif
-
   PRINT_TEXT("Booting from ");
   PRINT_XNUM(app_base);
   PRINT_TEXT("...\n\n");

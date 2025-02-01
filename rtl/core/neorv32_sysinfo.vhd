@@ -36,10 +36,6 @@ entity neorv32_sysinfo is
     XBUS_CACHE_EN         : boolean; -- implement external bus cache
     XBUS_CACHE_NUM_BLOCKS : natural; -- x-cache: number of blocks (min 1), has to be a power of 2
     XBUS_CACHE_BLOCK_SIZE : natural; -- x-cache: block size in bytes (min 4), has to be a power of 2
-    XIP_EN                : boolean; -- implement execute in place module (XIP)?
-    XIP_CACHE_EN          : boolean; -- implement execute in place cache?
-    XIP_CACHE_NUM_BLOCKS  : natural; -- number of blocks (min 1), has to be a power of 2
-    XIP_CACHE_BLOCK_SIZE  : natural; -- block size in bytes (min 4), has to be a power of 2
     OCD_EN                : boolean; -- implement OCD?
     OCD_AUTHENTICATION    : boolean; -- implement OCD authenticator?
     IO_GPIO_EN            : boolean; -- implement general purpose IO port (GPIO)?
@@ -75,7 +71,6 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant int_imem_en_c  : boolean := MEM_INT_IMEM_EN and boolean(MEM_INT_IMEM_SIZE > 0);
   constant int_dmem_en_c  : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
   constant xcache_en_c    : boolean := XBUS_EN and XBUS_CACHE_EN;
-  constant xip_cache_en_c : boolean := XIP_EN and XIP_CACHE_EN;
   constant ocd_auth_en_c  : boolean := OCD_EN and OCD_AUTHENTICATION;
   constant int_imem_rom_c : boolean := int_imem_en_c and MEM_INT_IMEM_ROM;
 
@@ -119,8 +114,8 @@ begin
   sysinfo(2)(6)  <= '1' when DCACHE_EN         else '0'; -- processor-internal data cache implemented?
   sysinfo(2)(7)  <= '0';                                 -- reserved
   sysinfo(2)(8)  <= '1' when xcache_en_c       else '0'; -- external bus interface cache implemented?
-  sysinfo(2)(9)  <= '1' when XIP_EN            else '0'; -- execute in-place module implemented?
-  sysinfo(2)(10) <= '1' when xip_cache_en_c    else '0'; -- execute in-place cache implemented?
+  sysinfo(2)(9)  <= '0';                                 -- reserved
+  sysinfo(2)(10) <= '0';                                 -- reservedented?
   sysinfo(2)(11) <= '1' when ocd_auth_en_c     else '0'; -- on-chip debugger authentication implemented?
   sysinfo(2)(12) <= '1' when int_imem_rom_c    else '0'; -- processor-internal instruction memory implemented as pre-initialized ROM?
   sysinfo(2)(13) <= '1' when IO_TWD_EN         else '0'; -- two-wire device (TWD) implemented?
@@ -150,8 +145,8 @@ begin
   sysinfo(3)(11 downto 8)  <= std_ulogic_vector(to_unsigned(index_size_f(DCACHE_BLOCK_SIZE), 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(block_size)
   sysinfo(3)(15 downto 12) <= std_ulogic_vector(to_unsigned(index_size_f(DCACHE_NUM_BLOCKS), 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(num_blocks)
   --
-  sysinfo(3)(19 downto 16) <= std_ulogic_vector(to_unsigned(index_size_f(XIP_CACHE_BLOCK_SIZE), 4)) when xip_cache_en_c else (others => '0'); -- xip-cache: log2(block_size_in_bytes)
-  sysinfo(3)(23 downto 20) <= std_ulogic_vector(to_unsigned(index_size_f(XIP_CACHE_NUM_BLOCKS), 4)) when xip_cache_en_c else (others => '0'); -- xip-cache: log2(number_of_block)
+  sysinfo(3)(19 downto 16) <= (others => '0'); -- reserved
+  sysinfo(3)(23 downto 20) <= (others => '0'); -- reserved
   --
   sysinfo(3)(27 downto 24) <= std_ulogic_vector(to_unsigned(index_size_f(XBUS_CACHE_BLOCK_SIZE), 4)) when xcache_en_c else (others => '0'); -- xbus-cache: log2(block_size_in_bytes)
   sysinfo(3)(31 downto 28) <= std_ulogic_vector(to_unsigned(index_size_f(XBUS_CACHE_NUM_BLOCKS), 4)) when xcache_en_c else (others => '0'); -- xbus-cache: log2(number_of_block)

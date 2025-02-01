@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110005"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110006"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -48,12 +48,10 @@ package neorv32_package is
 -- **********************************************************************************************************
 
   -- Main Address Regions (base address must be aligned to the region's size) ---
-  constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via generic
-  constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via generic
-  constant mem_xip_base_c  : std_ulogic_vector(31 downto 0) := x"e0000000"; -- page (4 MSBs) only!
-  constant mem_xip_size_c  : natural := 256*1024*1024;
+  constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via top generic
+  constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via top generic
   constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffe00000";
-  constant mem_io_size_c   : natural := 32*64*1024; -- = 32 * iodev_size_c
+  constant mem_io_size_c   : natural := 32*64*1024; -- 32 * iodev_size_c
 
   -- Start of uncached memory access (256MB page / 4 MSBs only) --
   constant mem_uncached_begin_c  : std_ulogic_vector(31 downto 0) := x"f0000000";
@@ -75,7 +73,7 @@ package neorv32_package is
   constant base_io_slink_c   : std_ulogic_vector(31 downto 0) := x"ffec0000";
   constant base_io_dma_c     : std_ulogic_vector(31 downto 0) := x"ffed0000";
   constant base_io_crc_c     : std_ulogic_vector(31 downto 0) := x"ffee0000";
-  constant base_io_xip_c     : std_ulogic_vector(31 downto 0) := x"ffef0000";
+--constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffef0000"; -- reserved
   constant base_io_pwm_c     : std_ulogic_vector(31 downto 0) := x"fff00000";
   constant base_io_gptmr_c   : std_ulogic_vector(31 downto 0) := x"fff10000";
   constant base_io_onewire_c : std_ulogic_vector(31 downto 0) := x"fff20000";
@@ -796,11 +794,6 @@ package neorv32_package is
       XBUS_CACHE_EN         : boolean                        := false;
       XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 64;
       XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16       := 32;
-      -- Execute in-place module (XIP) --
-      XIP_EN                : boolean                        := false;
-      XIP_CACHE_EN          : boolean                        := false;
-      XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256         := 8;
-      XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16       := 256;
       -- Processor peripherals --
       IO_DISABLE_SYSINFO    : boolean                        := false;
       IO_GPIO_NUM           : natural range 0 to 64          := 0;
@@ -871,11 +864,6 @@ package neorv32_package is
       slink_tx_val_o : out std_ulogic;
       slink_tx_lst_o : out std_ulogic;
       slink_tx_rdy_i : in  std_ulogic := 'L';
-      -- XIP (execute in-place via SPI) signals (available if XIP_EN = true) --
-      xip_csn_o      : out std_ulogic;
-      xip_clk_o      : out std_ulogic;
-      xip_dat_i      : in  std_ulogic := 'L';
-      xip_dat_o      : out std_ulogic;
       -- GPIO (available if IO_GPIO_NUM > 0) --
       gpio_o         : out std_ulogic_vector(31 downto 0);
       gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');

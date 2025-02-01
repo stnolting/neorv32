@@ -762,9 +762,8 @@ return to the address stored in `dpc` by automatically moving `dpc` to the progr
 
 "Normal" software breakpoints (using GDB's `b`/`break` command) are implemented by temporarily replacing the according
 instruction word by an `[c.]ebreak` instruction. However, this is not possible when debugging code that is executed from
-read-only memory (for example when debugging programs that are executed via the <<_execute_in_place_module_xip>>).
-To circumvent this limitation a hardware trigger logic allows to (re-)enter debug-mode when instruction execution
-reaches a programmable address. These "hardware-assisted breakpoints" are used by GDB's `hb`/`hbreak` commands.
+read-only memory. To circumvent this limitation a hardware trigger logic allows to (re-)enter debug-mode when instruction
+execution reaches a programmable address. These "hardware-assisted breakpoints" are used by GDB's `hb`/`hbreak` commands.
 
 The RISC-V `Sdtrig` ISA extension adds a programmable _trigger module_ to the CPU core that is enabled via the
 <<_sdtrig_isa_extension>> generic. The trigger module implements a subset of the features described in the
