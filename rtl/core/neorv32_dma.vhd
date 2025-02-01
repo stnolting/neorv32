@@ -43,7 +43,6 @@ architecture neorv32_dma_rtl of neorv32_dma is
   -- control and status register bits --
   constant ctrl_en_c           : natural :=  0; -- r/w: DMA enable
   constant ctrl_auto_c         : natural :=  1; -- r/w: enable FIRQ-triggered transfer
-  constant ctrl_fence_c        : natural :=  2; -- r/w: issue FENCE operation when DMA is done
   --
   constant ctrl_error_rd_c     : natural :=  8; -- r/-: error during read transfer
   constant ctrl_error_wr_c     : natural :=  9; -- r/-: error during write transfer
@@ -64,7 +63,6 @@ architecture neorv32_dma_rtl of neorv32_dma is
   type cfg_t is record
     enable    : std_ulogic; -- DMA enabled when set
     auto      : std_ulogic; -- FIRQ-driven auto transfer
-    fence     : std_ulogic; -- issue FENCE operation when DMA is done
     firq_sel  : std_ulogic_vector(3 downto 0);  -- FIRQ trigger select
     firq_type : std_ulogic; -- trigger on FIRQ rising-edge (0) or high-level (1)
     src_base  : std_ulogic_vector(31 downto 0); -- source base address
@@ -115,7 +113,6 @@ begin
       bus_rsp_o     <= rsp_terminate_c;
       cfg.enable    <= '0';
       cfg.auto      <= '0';
-      cfg.fence     <= '0';
       cfg.firq_sel  <= (others => '0');
       cfg.firq_type <= '0';
       cfg.src_base  <= (others => '0');
@@ -142,7 +139,6 @@ begin
           if (bus_req_i.addr(3 downto 2) = "00") then -- control and status register
             cfg.enable    <= bus_req_i.data(ctrl_en_c);
             cfg.auto      <= bus_req_i.data(ctrl_auto_c);
-            cfg.fence     <= bus_req_i.data(ctrl_fence_c);
             cfg.done      <= '0'; -- clear on write access
             cfg.firq_type <= bus_req_i.data(ctrl_firq_type_c);
             cfg.firq_sel  <= bus_req_i.data(ctrl_firq_sel_msb_c downto ctrl_firq_sel_lsb_c);
@@ -166,7 +162,6 @@ begin
             when "00" => -- control and status register
               bus_rsp_o.data(ctrl_en_c)        <= cfg.enable;
               bus_rsp_o.data(ctrl_auto_c)      <= cfg.auto;
-              bus_rsp_o.data(ctrl_fence_c)     <= cfg.fence;
               bus_rsp_o.data(ctrl_error_rd_c)  <= engine.err_rd;
               bus_rsp_o.data(ctrl_error_wr_c)  <= engine.err_wr;
               bus_rsp_o.data(ctrl_busy_c)      <= engine.busy;
@@ -305,12 +300,12 @@ begin
   engine.busy <= '0' when (engine.state = S_IDLE) else '1';
 
   -- bus output --
-  dma_req_o.priv  <= priv_mode_m_c; -- DMA accesses are always privileged
-  dma_req_o.src   <= '0'; -- source = data access
   dma_req_o.addr  <= engine.src_addr when (engine.state = S_READ) else engine.dst_addr;
+  dma_req_o.src   <= '0'; -- source = data access
+  dma_req_o.priv  <= priv_mode_m_c; -- DMA accesses are always privileged
   dma_req_o.amo   <= '0'; -- no atomic memory operation possible
   dma_req_o.amoop <= (others => '0'); -- no atomic memory operation possible
-  dma_req_o.fence <= cfg.enable and cfg.fence and engine.done; -- issue FENCE operation when transfer is done
+  dma_req_o.fence <= '0'; -- no fences
   dma_req_o.sleep <= '1' when (engine.state = S_IDLE) else '0'; -- idle = sleep mode
   dma_req_o.debug <= '0'; -- can never ever be in debug mode
 

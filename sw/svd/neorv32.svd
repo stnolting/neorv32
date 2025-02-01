@@ -413,11 +413,6 @@
               <description>Enable automatic transfer trigger (FIRQ-triggered)</description>
             </field>
             <field>
-              <name>DMA_CTRL_FENCE</name>
-              <bitRange>[2:2]</bitRange>
-              <description>Issue a downstream FENCE operation when DMA transfer completes (without errors)</description>
-            </field>
-            <field>
               <name>DMA_CTRL_ERROR_RD</name>
               <bitRange>[8:8]</bitRange>
               <access>read-only</access>

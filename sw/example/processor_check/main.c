@@ -1448,7 +1448,6 @@ int main() {
 
     // enable DMA, auto-fencing and according FIRQ channel
     neorv32_dma_enable();
-    neorv32_dma_fence_enable();
     neorv32_cpu_csr_write(CSR_MIE, 1 << DMA_FIRQ_ENABLE);
 
     // setup source data

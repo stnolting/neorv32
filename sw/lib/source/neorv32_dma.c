@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,10 +9,6 @@
 /**
  * @file neorv32_wdt.c
  * @brief Direct Memory Access Controller (DMA) HW driver source file.
- *
- * @note These functions should only be used if the DMA controller was synthesized (IO_DMA_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #include <neorv32.h>
@@ -49,25 +45,6 @@ void neorv32_dma_enable(void) {
 void neorv32_dma_disable(void) {
 
   NEORV32_DMA->CTRL &= ~((uint32_t)(1 << DMA_CTRL_EN));
-}
-
-
-/**********************************************************************//**
- * Enable memory barrier (fence): issue a FENCE operation when DMA transfer
- * completes  without errors.
- **************************************************************************/
-void neorv32_dma_fence_enable(void) {
-
-  NEORV32_DMA->CTRL |= (uint32_t)(1 << DMA_CTRL_FENCE);
-}
-
-
-/**********************************************************************//**
- * Disable memory barrier (fence).
- **************************************************************************/
-void neorv32_dma_fence_disable(void) {
-
-  NEORV32_DMA->CTRL &= ~((uint32_t)(1 << DMA_CTRL_FENCE));
 }
 
 
