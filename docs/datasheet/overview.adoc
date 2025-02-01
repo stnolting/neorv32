@@ -76,7 +76,6 @@ include::rationale.adoc[]
 * optional general purpose IO and PWM; a native NeoPixel(c)-compatible smart LED interface
 * optional embedded memories and caches for data, instructions and bootloader
 * optional external memory interface for custom connectivity
-* optional execute in-place (XIP) module to execute code directly form an external SPI flash
 * optional DMA controller for CPU-independent data transfers
 * optional CRC module to check data integrity
 * on-chip debugger compatible with OpenOCD and GDB including hardware trigger module and optional authentication
@@ -215,8 +214,7 @@ rtl/core
 ├-neorv32_twi.vhd               - Two wire serial interface controller
 ├-neorv32_uart.vhd              - Universal async. receiver/transmitter
 ├-neorv32_wdt.vhd               - Watchdog timer
-├-neorv32_xbus.vhd              - External (Wishbone) bus interface gateways
-└-neorv32_xip.vhd               - Execute in place module
+└-neorv32_xbus.vhd              - External (Wishbone) bus interface gateways
 ...................................
 
 .Replacing Modules for Customization or Optimization

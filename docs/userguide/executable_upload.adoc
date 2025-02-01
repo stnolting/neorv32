@@ -69,7 +69,6 @@ Available CMDs:
  u: Upload
  s: Store to flash
  l: Load from flash
- x: Boot from flash (XIP)
  e: Execute
 CMD:>
 ----
