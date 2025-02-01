@@ -158,8 +158,8 @@ __crt0_constructors_end:
 // ************************************************************************************************
   la    x12, main        // primary core's (core0) entry point (#1169)
 __crt0_main_entry:
-  fence                  // reload data cache
-  fence.i                // reload instruction cache
+  fence                  // synchronize loads/stores
+  fence.i                // synchronize instruction fetch
 
   csrw  mstatus, x5      // re-initialize
   addi  x10, zero, 0     // x10 = a0 = argc = 0
