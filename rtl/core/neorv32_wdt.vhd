@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -37,12 +37,10 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   -- Control register bits --
   constant ctrl_enable_c      : natural :=  0; -- r/w: WDT enable
   constant ctrl_lock_c        : natural :=  1; -- r/w: lock write access to control register when set
-  constant ctrl_dben_c        : natural :=  2; -- r/w: allow WDT to continue operation even when CPU is in debug mode
-  constant ctrl_sen_c         : natural :=  3; -- r/w: allow WDT to continue operation even when CPU is in sleep mode
-  constant ctrl_strict_c      : natural :=  4; -- r/w: force hardware reset if reset password is incorrect or if access to locked config
-  constant ctrl_rcause_lo_c   : natural :=  5; -- r/-: cause of last system reset - low
-  constant ctrl_rcause_hi_c   : natural :=  6; -- r/-: cause of last system reset - high
---constant ctrl_reserved_c    : natural :=  7; -- r/-: reserved
+  constant ctrl_strict_c      : natural :=  2; -- r/w: force hardware reset if reset password is incorrect or if access to locked config
+  constant ctrl_rcause_lo_c   : natural :=  3; -- r/-: cause of last system reset - low
+  constant ctrl_rcause_hi_c   : natural :=  4; -- r/-: cause of last system reset - high
+  --
   constant ctrl_timeout_lsb_c : natural :=  8; -- r/w: timeout value LSB
   constant ctrl_timeout_msb_c : natural := 31; -- r/w: timeout value MSB
 
@@ -50,8 +48,6 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   type ctrl_t is record
     enable  : std_ulogic;
     lock    : std_ulogic;
-    dben    : std_ulogic;
-    sen     : std_ulogic;
     strict  : std_ulogic;
     timeout : std_ulogic_vector(23 downto 0);
   end record;
@@ -61,7 +57,6 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   signal cnt            : std_ulogic_vector(23 downto 0); -- timeout counter
   signal cnt_started    : std_ulogic; -- set when timeout counter has started
   signal cnt_inc        : std_ulogic; -- increment counter when set
-  signal cnt_inc_ff     : std_ulogic;
   signal cnt_timeout    : std_ulogic; -- counter matches programmed timeout value
   signal reset_cause    : std_ulogic_vector(1 downto 0); -- cause of last reset
   signal hw_rst_timeout : std_ulogic; -- trigger reset because of timeout
@@ -79,8 +74,6 @@ begin
       bus_rsp_o    <= rsp_terminate_c;
       ctrl.enable  <= '0'; -- disable WDT after reset
       ctrl.lock    <= '0'; -- unlock after reset
-      ctrl.dben    <= '0';
-      ctrl.sen     <= '0';
       ctrl.strict  <= '0';
       ctrl.timeout <= (others => '0');
       reset_wdt    <= '0';
@@ -100,8 +93,6 @@ begin
             if (ctrl.lock = '0') then -- update configuration only if not locked
               ctrl.enable  <= bus_req_i.data(ctrl_enable_c);
               ctrl.lock    <= bus_req_i.data(ctrl_lock_c) and ctrl.enable; -- lock only if already enabled
-              ctrl.dben    <= bus_req_i.data(ctrl_dben_c);
-              ctrl.sen     <= bus_req_i.data(ctrl_sen_c);
               ctrl.strict  <= bus_req_i.data(ctrl_strict_c);
               ctrl.timeout <= bus_req_i.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c);
             else -- write access attempt to locked CTRL register
@@ -117,8 +108,6 @@ begin
         else -- read access
           bus_rsp_o.data(ctrl_enable_c)                                <= ctrl.enable;
           bus_rsp_o.data(ctrl_lock_c)                                  <= ctrl.lock;
-          bus_rsp_o.data(ctrl_dben_c)                                  <= ctrl.dben;
-          bus_rsp_o.data(ctrl_sen_c)                                   <= ctrl.sen;
           bus_rsp_o.data(ctrl_rcause_hi_c downto ctrl_rcause_lo_c)     <= reset_cause;
           bus_rsp_o.data(ctrl_strict_c)                                <= ctrl.strict;
           bus_rsp_o.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c) <= ctrl.timeout;
@@ -133,15 +122,15 @@ begin
   wdt_counter: process(rstn_sys_i, clk_i)
   begin
     if (rstn_sys_i = '0') then
-      cnt_inc_ff  <= '0';
+      cnt_inc     <= '0';
       cnt_started <= '0';
       cnt         <= (others => '0');
     elsif rising_edge(clk_i) then
-      cnt_inc_ff  <= cnt_inc;
+      cnt_inc     <= prsc_tick and cnt_started; -- clock tick and started
       cnt_started <= ctrl.enable and (cnt_started or prsc_tick); -- start with next clock tick
       if (ctrl.enable = '0') or (reset_wdt = '1') then -- watchdog disabled or reset with correct password
         cnt <= (others => '0');
-      elsif (cnt_inc_ff = '1') then
+      elsif (cnt_inc = '1') then
         cnt <= std_ulogic_vector(unsigned(cnt) + 1);
       end if;
     end if;
@@ -150,11 +139,6 @@ begin
   -- clock generator --
   clkgen_en_o <= ctrl.enable; -- enable clock generator
   prsc_tick   <= clkgen_i(clk_div4096_c); -- clock enable tick
-
-  -- valid counter increment? --
-  cnt_inc <= '1' when ((prsc_tick = '1') and (cnt_started = '1')) and -- clock tick and started
-                      ((bus_req_i.debug = '0') or (ctrl.dben = '1')) and -- not in debug mode or allowed to run in debug mode
-                      ((bus_req_i.sleep = '0') or (ctrl.sen = '1')) else '0'; -- not in sleep mode or allowed to run in sleep mode
 
   -- timeout detector --
   cnt_timeout <= '1' when (cnt_started = '1') and (cnt = ctrl.timeout) else '0';

@@ -1405,23 +1405,13 @@
               <description>Lock write access to control register, clears on reset (HW or WDT) only</description>
             </field>
             <field>
-              <name>WDT_CTRL_DBEN</name>
-              <bitRange>[2:2]</bitRange>
-              <description>Allow WDT to continue operation even when in debug mode</description>
-            </field>
-            <field>
-              <name>WDT_CTRL_SEN</name>
-              <bitRange>[3:3]</bitRange>
-              <description>Allow WDT to continue operation even when in sleep mode</description>
-            </field>
-            <field>
               <name>WDT_CTRL_STRICT</name>
-              <bitRange>[4:4]</bitRange>
+              <bitRange>[2:2]</bitRange>
               <description>Force hardware reset if reset password is incorrect or if write attempt to locked CTRL register</description>
             </field>
             <field>
               <name>WDT_CTRL_RCAUSE</name>
-              <bitRange>[6:5]</bitRange>
+              <bitRange>[4:3]</bitRange>
               <access>read-only</access>
               <description>Cause of last system reset: 0=external reset, 1=OCD reset, 2=WDT reset, 3=WDT access violation</description>
             </field>
