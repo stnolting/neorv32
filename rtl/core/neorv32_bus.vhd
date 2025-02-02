@@ -174,11 +174,10 @@ begin
   x_req_o.amo   <= a_req_i.amo   when (sel = '0') else b_req_i.amo;
   x_req_o.amoop <= a_req_i.amoop when (sel = '0') else b_req_i.amoop;
   x_req_o.priv  <= a_req_i.priv  when (sel = '0') else b_req_i.priv;
+  x_req_o.debug <= a_req_i.debug when (sel = '0') else b_req_i.debug;
   x_req_o.src   <= a_req_i.src   when (sel = '0') else b_req_i.src;
   x_req_o.rw    <= a_req_i.rw    when (sel = '0') else b_req_i.rw;
-  x_req_o.fence <= a_req_i.fence or  b_req_i.fence; -- propagate any fence request
-  x_req_o.sleep <= a_req_i.sleep and b_req_i.sleep; -- set if ALL upstream devices are in sleep mode
-  x_req_o.debug <= a_req_i.debug when (sel = '0') else b_req_i.debug;
+  x_req_o.fence <= a_req_i.fence or b_req_i.fence;
 
   x_req_o.data  <= b_req_i.data  when PORT_A_READ_ONLY    else
                    a_req_i.data  when PORT_B_READ_ONLY    else
@@ -854,11 +853,10 @@ begin
   sys_req_o.rw    <= '1' when (arbiter.state = S_WRITE) or (arbiter.state = S_WRITE_WAIT) else core_req_i.rw;
   sys_req_o.src   <= core_req_i.src;
   sys_req_o.priv  <= core_req_i.priv;
+  sys_req_o.debug <= core_req_i.debug;
   sys_req_o.amo   <= core_req_i.amo; -- set during the entire read-modify-write operation
   sys_req_o.amoop <= (others => '0'); -- the specific AMO type should not matter after this point
   sys_req_o.fence <= core_req_i.fence;
-  sys_req_o.sleep <= core_req_i.sleep;
-  sys_req_o.debug <= core_req_i.debug;
 
   -- response switch --
   core_rsp_o.data <= sys_rsp_i.data when (arbiter.state = S_IDLE) else arbiter.rdata;

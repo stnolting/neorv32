@@ -303,11 +303,10 @@ begin
   dma_req_o.addr  <= engine.src_addr when (engine.state = S_READ) else engine.dst_addr;
   dma_req_o.src   <= '0'; -- source = data access
   dma_req_o.priv  <= priv_mode_m_c; -- DMA accesses are always privileged
+  dma_req_o.debug <= '0'; -- can never ever be in debug mode
   dma_req_o.amo   <= '0'; -- no atomic memory operation possible
   dma_req_o.amoop <= (others => '0'); -- no atomic memory operation possible
-  dma_req_o.fence <= '0'; -- no fences
-  dma_req_o.sleep <= '1' when (engine.state = S_IDLE) else '0'; -- idle = sleep mode
-  dma_req_o.debug <= '0'; -- can never ever be in debug mode
+  dma_req_o.fence <= '0';
 
   -- address increment --
   address_inc: process(cfg.qsel)
