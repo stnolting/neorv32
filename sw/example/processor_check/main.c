@@ -80,8 +80,6 @@ volatile uint32_t num_hpm_cnts_global = 0; // global number of available hpms
 volatile int vectored_mei_handler_ack = 0; // vectored mei trap handler acknowledge
 volatile uint32_t gpio_trap_handler_ack = 0; // gpio trap handler acknowledge
 volatile uint32_t hw_brk_mscratch_ok = 0; // set when mepc was correct in trap handler
-
-
 volatile uint32_t dma_src; // dma source & destination data
 volatile uint32_t store_access_addr[2]; // variable to test store accesses
 volatile uint32_t __attribute__((aligned(4))) pmp_access[2]; // variable to test pmp
@@ -278,6 +276,32 @@ int main() {
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test fence instructions
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] Fences ", cnt_test);
+
+  cnt_test++;
+
+  // test that we do no crash the core and check if cache flushing works
+  store_access_addr[0] = 0x01234567;
+  asm volatile ("fence");
+  asm volatile ("fence.i");
+  store_access_addr[0] += 0x76543210;
+  asm volatile ("fence");
+  asm volatile ("fence.i");
+  store_access_addr[0] += 0x11111111;
+
+  if ((store_access_addr[0] == 0x88888888) &&
+      (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
+    test_ok();
+  }
+  else {
+    test_fail();
   }
 
 
