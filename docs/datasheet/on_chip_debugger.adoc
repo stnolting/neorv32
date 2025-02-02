@@ -16,7 +16,7 @@ to `true`.
 * execution of arbitrary programs via the program buffer
 * compatible with upstream OpenOCD and GDB
 * optional trigger module for hardware breakpoints
-* optional authentication for increased security
+* optional authentication for advanced security
 
 .Hands-On Tutorial
 [TIP]
@@ -56,6 +56,31 @@ an endless loop that is used to poll a memory-mapped <<_status_register>> of the
 communicate requests from the DM and to acknowledge their processing them by the CPU: trigger execution of the program buffer
 or resume the halted application. Furthermore, the CPU uses this register to signal that the CPU has halted after a halt
 request or to signal that an exception has been raised while being in debug mode.
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== openOCD
+
+By default, the free and open-source openOCD (https://openocd.org/) is used to establish a debugger connection.
+However, other interfaces can be used (like Segger or Lauterbach tools) if they support the RISC-V debug specification.
+
+openOCD is configured by single configuration script. Currently, two scripts are provided - one for the single-core
+processor configuration and another one for the SMP dual-core configuration:
+
+* `neorv32/sw/openocd/openocd_neorv32.cfg`: openOCD script for the single-core configuration
+* `neorv32/sw/openocd/openocd_neorv32.dual-core.cfg`: openOCD script for the dual-core configuration
+
+Both scripts include several helper scripts (located in the same folder) that are used to hide some complexity.
+Two of these scripts may be modified to adjust openOCD for the actual setup:
+
+* `interface.cfg`: physical JTAG adapter configuration; by default this is configured
+for a simple FTDI USB converter; **adjust this for your specific JTAG adapter**.
+* `authentication.cfg`: optional authentication process; the
+<<_default_authentication_mechanism>> is implemented as example; **adjust this when using a custom authentication
+mechanism**.
+* `target.cfg`: main NEORV32 target configuration; end users should not alter this file.
 
 
 <<<
@@ -603,14 +628,23 @@ The default authentication mechanism is not secure at all. Replace it by a custo
 
 The default authenticator hardware implements a very simple authentication mechanism: a single read/write bit is implemented
 that directly corresponds to the `authenticated` bit in <<_dmstatus>>. This bit can be read/written as bit zero (LSB) of the
-<<_authdata>> CSR. Writing 1 to this register will result in a successful authentication. The default openOCD configuration
-script for the NEORV32 implements this basic authentication mechanism:
+<<_authdata>> CSR. Writing 1 to this register will result in a successful authentication.
 
-.Default authentication process (`sw/openocd/openocd_neorv32.cfg`)
+The default openOCD configuration script provides a helper script for authentication. This script also provides
+several helper functions for interaction with the RISC-V debug mechanism. Additionally, the default authentication
+mechanism is implemented there (as example):
+
+.Default authentication process (`sw/openocd/authentication.cfg`)
 [source,tcl]
 ----
-set challenge [riscv authdata_read]          # read authdata; not required, just an example
-riscv authdata_write [expr {$challenge | 1}] # set LSB to authenticate
+# read challenge
+set CHALLENGE [authenticator_read]
+# compute response (default authenticator module)
+set RESPONSE [expr {$CHALLENGE | 1}]
+# send response
+authenticator_write $RESPONSE
+# success?
+authenticator_check
 ----
 
 
