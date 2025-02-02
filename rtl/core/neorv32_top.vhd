@@ -316,6 +316,10 @@ architecture neorv32_top_rtl of neorv32_top is
   signal iodev_req : iodev_req_t;
   signal iodev_rsp : iodev_rsp_t;
 
+  -- memory synchronization / ordering / coherence --
+  signal mem_sync, dcache_clean : std_ulogic_vector(num_cores_c-1 downto 0);
+  signal xcache_clean : std_ulogic;
+
   -- IRQs --
   type firq_enum_t is (
     FIRQ_TWD, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
@@ -542,8 +546,13 @@ begin
       ibus_rsp_i => cpu_i_rsp(i),
       -- data bus interface --
       dbus_req_o => cpu_d_req(i),
-      dbus_rsp_i => cpu_d_rsp(i)
+      dbus_rsp_i => cpu_d_rsp(i),
+      -- memory synchronization --
+      mem_sync_i => mem_sync(i)
     );
+
+    -- memory synchronization (ordering / coherence) --
+    mem_sync(i) <= dcache_clean(i) and xcache_clean;
 
 
     -- CPU L1 Instruction Cache (I-Cache) -----------------------------------------------------
@@ -555,12 +564,12 @@ begin
         NUM_BLOCKS => ICACHE_NUM_BLOCKS,
         BLOCK_SIZE => ICACHE_BLOCK_SIZE,
         UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
-        UC_ENABLE  => true,
         READ_ONLY  => true
       )
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
+        clean_o    => open, -- cache is read-only so it cannot be dirty
         host_req_i => cpu_i_req(i),
         host_rsp_o => cpu_i_rsp(i),
         bus_req_o  => icache_req(i),
@@ -584,12 +593,12 @@ begin
         NUM_BLOCKS => DCACHE_NUM_BLOCKS,
         BLOCK_SIZE => DCACHE_BLOCK_SIZE,
         UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
-        UC_ENABLE  => true,
         READ_ONLY  => false
       )
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
+        clean_o    => dcache_clean(i),
         host_req_i => cpu_d_req(i),
         host_rsp_o => cpu_d_rsp(i),
         bus_req_o  => dcache_req(i),
@@ -599,8 +608,9 @@ begin
 
     neorv32_dcache_disabled:
     if not DCACHE_EN generate
-      dcache_req(i) <= cpu_d_req(i);
-      cpu_d_rsp(i)  <= dcache_rsp(i);
+      dcache_clean(i) <= '1';
+      dcache_req(i)   <= cpu_d_req(i);
+      cpu_d_rsp(i)    <= dcache_rsp(i);
     end generate;
 
 
@@ -613,15 +623,14 @@ begin
       PORT_B_READ_ONLY => true -- instruction fetch is read-only
     )
     port map (
-      clk_i    => clk_i,
-      rstn_i   => rstn_sys,
-      a_lock_i => '0', -- no exclusive accesses
-      a_req_i  => dcache_req(i), -- data accesses are prioritized
-      a_rsp_o  => dcache_rsp(i),
-      b_req_i  => icache_req(i),
-      b_rsp_o  => icache_rsp(i),
-      x_req_o  => core_req(i),
-      x_rsp_i  => core_rsp(i)
+      clk_i   => clk_i,
+      rstn_i  => rstn_sys,
+      a_req_i => dcache_req(i), -- data accesses are prioritized
+      a_rsp_o => dcache_rsp(i),
+      b_req_i => icache_req(i),
+      b_rsp_o => icache_rsp(i),
+      x_req_o => core_req(i),
+      x_rsp_i => core_rsp(i)
     );
 
   end generate; -- /core_complex
@@ -647,15 +656,14 @@ begin
       PORT_B_READ_ONLY => false
     )
     port map (
-      clk_i    => clk_i,
-      rstn_i   => rstn_sys,
-      a_lock_i => '0',
-      a_req_i  => core_req(core_req'left),
-      a_rsp_o  => core_rsp(core_rsp'left),
-      b_req_i  => core_req(core_req'right),
-      b_rsp_o  => core_rsp(core_rsp'right),
-      x_req_o  => sys1_req,
-      x_rsp_i  => sys1_rsp
+      clk_i   => clk_i,
+      rstn_i  => rstn_sys,
+      a_req_i => core_req(core_req'left),
+      a_rsp_o => core_rsp(core_rsp'left),
+      b_req_i => core_req(core_req'right),
+      b_rsp_o => core_rsp(core_rsp'right),
+      x_req_o => sys1_req,
+      x_rsp_i => sys1_rsp
     );
   end generate;
 
@@ -697,15 +705,14 @@ begin
       PORT_B_READ_ONLY => false
     )
     port map (
-      clk_i    => clk_i,
-      rstn_i   => rstn_sys,
-      a_lock_i => '0', -- no exclusive accesses
-      a_req_i  => sys1_req, -- prioritized
-      a_rsp_o  => sys1_rsp,
-      b_req_i  => dma_req,
-      b_rsp_o  => dma_rsp,
-      x_req_o  => sys2_req,
-      x_rsp_i  => sys2_rsp
+      clk_i   => clk_i,
+      rstn_i  => rstn_sys,
+      a_req_i => sys1_req, -- prioritized
+      a_rsp_o => sys1_rsp,
+      b_req_i => dma_req,
+      b_rsp_o => dma_rsp,
+      x_req_o => sys2_req,
+      x_rsp_i => sys2_rsp
     );
 
   end generate; -- /neorv32_dma_complex_enabled
@@ -876,12 +883,12 @@ begin
           NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
           BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
           UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
-          UC_ENABLE  => true,
           READ_ONLY  => false
         )
         port map (
           clk_i      => clk_i,
           rstn_i     => rstn_sys,
+          clean_o    => xcache_clean,
           host_req_i => xbus_req,
           host_rsp_o => xbus_rsp,
           bus_req_o  => xcache_req,
@@ -891,22 +898,25 @@ begin
 
       neorv32_xcache_disabled:
       if not XBUS_CACHE_EN generate
-        xcache_req <= xbus_req;
-        xbus_rsp   <= xcache_rsp;
+        xcache_clean <= '1';
+        xcache_req   <= xbus_req;
+        xbus_rsp     <= xcache_rsp;
       end generate;
 
     end generate; -- /neorv32_xbus_enabled
 
     neorv32_xbus_disabled:
     if not XBUS_EN generate
-      xbus_rsp   <= rsp_terminate_c;
-      xbus_adr_o <= (others => '0');
-      xbus_dat_o <= (others => '0');
-      xbus_tag_o <= (others => '0');
-      xbus_we_o  <= '0';
-      xbus_sel_o <= (others => '0');
-      xbus_stb_o <= '0';
-      xbus_cyc_o <= '0';
+      xcache_clean <= '1';
+      xcache_req   <= req_terminate_c;
+      xbus_rsp     <= rsp_terminate_c;
+      xbus_adr_o   <= (others => '0');
+      xbus_dat_o   <= (others => '0');
+      xbus_tag_o   <= (others => '0');
+      xbus_we_o    <= '0';
+      xbus_sel_o   <= (others => '0');
+      xbus_stb_o   <= '0';
+      xbus_cyc_o   <= '0';
     end generate;
 
   end generate; -- /memory_system
