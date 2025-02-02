@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110006"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110007"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -123,20 +123,19 @@ package neorv32_package is
     data  : std_ulogic_vector(31 downto 0); -- write data
     ben   : std_ulogic_vector(3 downto 0); -- byte enable
     stb   : std_ulogic; -- request strobe, single-shot
-    rw    : std_ulogic; -- 0=read, 1=write
-    src   : std_ulogic; -- access source (1=instruction fetch, 0=data access)
+    rw    : std_ulogic; -- 0 = read, 1 = write
+    src   : std_ulogic; -- 0 = data access, 1 = instruction fetch
     priv  : std_ulogic; -- set if privileged (machine-mode) access
+    debug : std_ulogic; -- set if debug mode access
     amo   : std_ulogic; -- set if atomic memory operation
     amoop : std_ulogic_vector(3 downto 0); -- type of atomic memory operation
     -- out-of-band signals --
-    fence : std_ulogic; -- set if fence(.i) request by upstream device, single-shot
-    sleep : std_ulogic; -- set if ALL upstream sources are in sleep mode
-    debug : std_ulogic; -- set if upstream device is in debug mode
+    fence : std_ulogic; -- set if fence(.i) operation, single-shot
   end record;
 
   -- bus response --
   type bus_rsp_t is record
-    data : std_ulogic_vector(31 downto 0); -- read data, valid if ack=1
+    data : std_ulogic_vector(31 downto 0); -- read data, valid if ack = 1
     ack  : std_ulogic; -- set if access acknowledge, single-shot
     err  : std_ulogic; -- set if access error, single-shot, has priority over ack
   end record;
@@ -150,11 +149,10 @@ package neorv32_package is
     rw    => '0',
     src   => '0',
     priv  => '0',
+    debug => '0',
     amo   => '0',
     amoop => (others => '0'),
-    fence => '0',
-    sleep => '1',
-    debug => '0'
+    fence => '0'
   );
 
   -- endpoint (response) termination --

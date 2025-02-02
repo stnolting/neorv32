@@ -7,8 +7,11 @@
     {name: 'ben',   wave: 'x..|..4.x..|..', data: ['ben']},
     {name: 'stb',   wave: '010|..10.10|..', node: '.a....d..f....'},
     {name: 'rw',    wave: '0..|..1..0.|..', node: '..............'},
-    {name: 'src',   wave: 'x0.|.x0.x..|..'},
+    {name: 'src',   wave: 'x1.|.x1.x..|..'},
     {name: 'priv',  wave: 'x0.|.x0.x..|..'},
+    {name: 'debug', wave: 'x0.|.x0.x..|..'},
+    {name: 'amo',   wave: 'x0.|.x0.x..|..'},
+    {name: 'amoop', wave: 'x0.|.x0.x..|..'},
   ],
   {},
   [
