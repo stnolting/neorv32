@@ -441,7 +441,7 @@ begin
     );
 
     -- fresh clocks anyone? --
-    clk_gen_en2 <= clk_gen_en(CG_WDT)    & clk_gen_en(CG_UART0) & clk_gen_en(CG_UART1) & clk_gen_en(CG_SPI) &
+    clk_gen_en2 <= clk_gen_en(CG_CFS)    & clk_gen_en(CG_UART0) & clk_gen_en(CG_UART1) & clk_gen_en(CG_SPI) &
                    clk_gen_en(CG_TWI)    & clk_gen_en(CG_TWD)   & clk_gen_en(CG_PWM)   & clk_gen_en(CG_WDT) &
                    clk_gen_en(CG_NEOLED) & clk_gen_en(CG_GPTMR) & clk_gen_en(CG_ONEWIRE);
 
