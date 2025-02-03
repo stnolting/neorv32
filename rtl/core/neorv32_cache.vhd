@@ -153,9 +153,6 @@ begin
   end process ctrl_engine_sync;
 
 
--- [TODO] register stage for host_req_i on direct access
-
-
   -- Control Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   ctrl_engine_comb: process(ctrl, addr, host_req_i, bus_rsp_i, cache_i)
@@ -581,8 +578,8 @@ begin
         data_mem_b3(to_integer(unsigned(acc_adr))) <= wdata_i(31 downto 24);
       end if;
       -- read access --
-      rdata_o(07 downto 00) <= data_mem_b0(to_integer(unsigned(acc_adr)));
-      rdata_o(15 downto 08) <= data_mem_b1(to_integer(unsigned(acc_adr)));
+      rdata_o(7 downto 0)   <= data_mem_b0(to_integer(unsigned(acc_adr)));
+      rdata_o(15 downto 8)  <= data_mem_b1(to_integer(unsigned(acc_adr)));
       rdata_o(23 downto 16) <= data_mem_b2(to_integer(unsigned(acc_adr)));
       rdata_o(31 downto 24) <= data_mem_b3(to_integer(unsigned(acc_adr)));
     end if;
