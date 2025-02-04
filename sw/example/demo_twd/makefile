@@ -2,8 +2,7 @@
 # Use this makefile to configure all relevant CPU / compiler options.
 
 # Override the default CPU ISA
-MARCH = rv32e_zicsr_zifencei
-MABI  = ilp32e
+MARCH = rv32_zicsr_zifencei
 
 # Override the default RISC-V GCC prefix
 #RISCV_PREFIX ?= riscv-none-elf-
