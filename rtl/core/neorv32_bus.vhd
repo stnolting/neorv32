@@ -21,15 +21,14 @@ entity neorv32_bus_switch is
     PORT_B_READ_ONLY : boolean := false  -- set if port B is read-only
   );
   port (
-    clk_i    : in  std_ulogic; -- global clock, rising edge
-    rstn_i   : in  std_ulogic; -- global reset, low-active, async
-    a_lock_i : in  std_ulogic; -- exclusive access for port A while set
-    a_req_i  : in  bus_req_t;  -- host port A request bus
-    a_rsp_o  : out bus_rsp_t;  -- host port A response bus
-    b_req_i  : in  bus_req_t;  -- host port B request bus
-    b_rsp_o  : out bus_rsp_t;  -- host port B response bus
-    x_req_o  : out bus_req_t;  -- device port request bus
-    x_rsp_i  : in  bus_rsp_t   -- device port response bus
+    clk_i   : in  std_ulogic; -- global clock, rising edge
+    rstn_i  : in  std_ulogic; -- global reset, low-active, async
+    a_req_i : in  bus_req_t;  -- host port A request bus
+    a_rsp_o : out bus_rsp_t;  -- host port A response bus
+    b_req_i : in  bus_req_t;  -- host port B request bus
+    b_rsp_o : out bus_rsp_t;  -- host port B response bus
+    x_req_o : out bus_req_t;  -- device port request bus
+    x_rsp_i : in  bus_rsp_t   -- device port response bus
   );
 end neorv32_bus_switch;
 
@@ -71,7 +70,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   arbiter_prioritized:
   if not ROUND_ROBIN_EN generate
-    arbiter_fsm: process(state, a_req, b_req, a_lock_i, a_req_i, b_req_i, x_rsp_i)
+    arbiter_fsm: process(state, a_req, b_req, a_req_i, b_req_i, x_rsp_i)
     begin
       -- defaults --
       state_nxt <= state;
@@ -101,7 +100,7 @@ begin
             sel       <= '0';
             stb       <= '1';
             state_nxt <= S_BUSY_A;
-          elsif ((b_req_i.stb = '1') or (b_req = '1')) and (a_lock_i = '0') then -- request from port B?
+          elsif (b_req_i.stb = '1') or (b_req = '1') then -- request from port B?
             sel       <= '1';
             stb       <= '1';
             state_nxt <= S_BUSY_B;
@@ -175,11 +174,10 @@ begin
   x_req_o.amo   <= a_req_i.amo   when (sel = '0') else b_req_i.amo;
   x_req_o.amoop <= a_req_i.amoop when (sel = '0') else b_req_i.amoop;
   x_req_o.priv  <= a_req_i.priv  when (sel = '0') else b_req_i.priv;
+  x_req_o.debug <= a_req_i.debug when (sel = '0') else b_req_i.debug;
   x_req_o.src   <= a_req_i.src   when (sel = '0') else b_req_i.src;
   x_req_o.rw    <= a_req_i.rw    when (sel = '0') else b_req_i.rw;
-  x_req_o.fence <= a_req_i.fence or  b_req_i.fence; -- propagate any fence request
-  x_req_o.sleep <= a_req_i.sleep and b_req_i.sleep; -- set if ALL upstream devices are in sleep mode
-  x_req_o.debug <= a_req_i.debug when (sel = '0') else b_req_i.debug;
+  x_req_o.fence <= a_req_i.fence or b_req_i.fence;
 
   x_req_o.data  <= b_req_i.data  when PORT_A_READ_ONLY    else
                    a_req_i.data  when PORT_B_READ_ONLY    else
@@ -855,11 +853,10 @@ begin
   sys_req_o.rw    <= '1' when (arbiter.state = S_WRITE) or (arbiter.state = S_WRITE_WAIT) else core_req_i.rw;
   sys_req_o.src   <= core_req_i.src;
   sys_req_o.priv  <= core_req_i.priv;
+  sys_req_o.debug <= core_req_i.debug;
   sys_req_o.amo   <= core_req_i.amo; -- set during the entire read-modify-write operation
   sys_req_o.amoop <= (others => '0'); -- the specific AMO type should not matter after this point
   sys_req_o.fence <= core_req_i.fence;
-  sys_req_o.sleep <= core_req_i.sleep;
-  sys_req_o.debug <= core_req_i.debug;
 
   -- response switch --
   core_rsp_o.data <= sys_rsp_i.data when (arbiter.state = S_IDLE) else arbiter.rdata;

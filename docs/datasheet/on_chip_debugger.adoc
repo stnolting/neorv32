@@ -667,7 +667,7 @@ Debug-mode is entered on any of the following events:
 . A hardware trigger from the <<_trigger_module>> fires (`exe` and `action` in <<_tdata1>> / `mcontrol` are set).
 
 [NOTE]
-From a hardware point of view these debug-mode-entry conditions are special traps (synchronous exceptions or
+From a hardware point of view these debug-mode-entry conditions are normal traps (synchronous exceptions or
 asynchronous interrupts) that are handled transparently by the control logic.
 
 **Whenever the CPU enters debug-mode it performs the following operations:**
@@ -684,6 +684,8 @@ asynchronous interrupts) that are handled transparently by the control logic.
 **When the CPU is in debug-mode:**
 
 * while in debug mode, the CPU executes the parking loop and - if requested by the DM - the program buffer
+* all **caches are bypassed** when in debug-mode; hence, a <<_memory_coherence>> has to be re-established when entering debug-mode
+and when leaving debug-mode
 * effective CPU privilege level is `machine` mode; any active physical memory protection (PMP) configuration is bypassed
 * the `wfi` instruction acts as a `nop` (also during single-stepping)
 * if an exception occurs while being in debug mode:

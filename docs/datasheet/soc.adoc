@@ -1,5 +1,4 @@
-
-// ####################################################################################################################
+<<<
 :sectnums:
 == NEORV32 Processor (SoC)
 
@@ -595,7 +594,7 @@ content of the addresses memory cell) is sent back to the requesting CPU.
 .Direct Access
 [IMPORTANT]
 Atomic operations **always bypass** the CPU's <<_processor_internal_data_cache_dcache, data cache>>
-using direct/uncached accesses. Care must be taken to maintain data <<_cache_coherency>>.
+using direct/uncached accesses. Care must be taken to maintain data <<_memory_coherence>>.
 
 .Physical Memory Attributes
 [NOTE]
@@ -610,43 +609,50 @@ cannot be interrupted. Hence, they execute in an atomic way.
 
 
 :sectnums:
-==== Cache Coherency
+==== Memory Coherence
 
-In total the NEORV32 Processor provides up to three optional caches organized in two levels. Level-1
-caches are closer to the CPU while level-2 caches are closer to main memory (however, this highly depends
-on the the actual cache configurations).
+Depending on the configuration, the NEORV32 processor provides several _layer_ of memory consisting
+of caches, buffers and storage.
 
+* The CPU instruction prefetch buffer ("level-0")
 * The <<_processor_internal_data_cache_dcache>> (level-1)
 * The <<_processor_internal_instruction_cache_icache>> (level-1)
 * The cache of the <<_processor_external_bus_interface_xbus>> (level-2)
+* Internal and external memories
 
-As all caches operate transparently for the software, special attention must therefore be paid to coherence.
-Note that coherence and cache _synchronization_ is **not** performed by the hardware itself (there is no
-snooping implemented).
+All caches and buffers operate transparently for the software. Hence, special attention must therefore be
+paid to maintain coherence. Note that coherence and cache _synchronization_ is **not** automatically performed
+by the hardware itself as there is no snooping implemented.
 
-The NEORV32 uses two instructions for manual cache synchronization (both instructions are always available
-regardless of the actual CPU/ISA configuration):
+NEORV32 uses two instructions for manual memory synchronization which are always available
+regardless of the actual CPU/ISA configuration:
 
 * `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>)
 * `fence.i` (<<_zifencei_isa_extension>>)
 
-By executing the "data" `fence` instruction the CPU's data cache is synchronized in four steps:
+By executing the "data" `fence` instruction the CPU's load/store operations are ordered
+and synchronized across the entire system:
 
 [start=1]
-. The CPU data cache is flushed: all local modifications are copied to the next higher memory level;
-this can be the XBUS cache or main memory.
-. The CPU data cache is cleared invalidating all local entries.
-. The synchronization request is sent to the next-higher memory level (for example to the XBUS cache
-so it can perform the same synchronization steps).
-. The CPU data cache is reloaded with up-to-date data from the next higher memory level.
+. The CPU data cache (if enabled) is flushed and invalidated: all local modifications are copied to
+the next higher memory level (for example the internal DMEM or the XBUS-cache).
+. The CPU data cache is cleared invalidating so the next load/store access will cause a cache miss
+that will fetch up-to-date data from the memory system.
+. The synchronization request is forwarded to the next-higher memory level. If the XBUS cache is implemented
+it will also be flushed and invalidated.
 
-By executing the "instruction" `fence.i` instruction the CPU's instruction cache is synchronized in three steps:
+By executing the "instruction" `fence.i` instruction the CPU's instruction-fetch cache is are ordered
+and synchronized across the entire system:
 
 [start=1]
-. The synchronization request is sent to the next-higher memory level (for example to the XBUS cache
-so it can perform the same synchronization steps).
-. The CPU instruction cache is cleared invalidating all local entries.
-. The CPU instruction cache is reloaded with up-to-date data from the next higher memory level.
+. Perform all the steps that are performed by the `fence` instruction.
+. The CPU instruction cache is cleared invalidating all local entries so the next instruction fetch access
+will cause a cache miss that will fetch up-to-date data from the memory system.
+
+.CPU Stall While Synchronizing
+[IMPORTANT]
+Executing any fence instruction will stall the CPU until all the requested ordering/synchronization
+steps are completed.
 
 
 <<<

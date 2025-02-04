@@ -115,7 +115,7 @@ begin
   sysinfo(2)(7)  <= '0';                                 -- reserved
   sysinfo(2)(8)  <= '1' when xcache_en_c       else '0'; -- external bus interface cache implemented?
   sysinfo(2)(9)  <= '0';                                 -- reserved
-  sysinfo(2)(10) <= '0';                                 -- reservedented?
+  sysinfo(2)(10) <= '0';                                 -- reserved
   sysinfo(2)(11) <= '1' when ocd_auth_en_c     else '0'; -- on-chip debugger authentication implemented?
   sysinfo(2)(12) <= '1' when int_imem_rom_c    else '0'; -- processor-internal instruction memory implemented as pre-initialized ROM?
   sysinfo(2)(13) <= '1' when IO_TWD_EN         else '0'; -- two-wire device (TWD) implemented?
