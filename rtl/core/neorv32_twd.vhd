@@ -139,7 +139,7 @@ begin
       ctrl.irq_rx_full  <= '0';
       ctrl.irq_tx_empty <= '0';
       ctrl.dummy_en     <= '0';
-      dummy             <= (others => '0');
+      dummy             <= (others => '1');
     elsif rising_edge(clk_i) then
       -- bus handshake defaults --
       bus_rsp_o.ack  <= bus_req_i.stb;
@@ -231,7 +231,9 @@ begin
   tx_fifo.re    <= engine.rd_re;
 
   -- TX Data
-  engine.rdata  <= tx_fifo.rdata when (tx_fifo.avail = '1') else dummy; -- read 'dummy' when TX FIFO is drained
+  engine.rdata  <= tx_fifo.rdata when (tx_fifo.avail = '1') else
+  dummy when (ctrl.dummy_en = '1')  -- read 'dummy' when TX FIFO is drained and dummy enabled
+  else (others => '1');             -- read '1' when TX FIFO is drained and dummy disabled 
 
 
   -- RX FIFO --

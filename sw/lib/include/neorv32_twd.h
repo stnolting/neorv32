@@ -29,7 +29,7 @@
 typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CTRL;   /**< offset 0: control register (#NEORV32_TWD_CTRL_enum) */
   uint32_t DATA;   /**< offset 4: data register (#NEORV32_TWD_DATA_enum) */
-  uint32_t TX_REG; /**< offset 8: rx data register (#NEORV32_TWD_TX_REG_enum) */
+  uint32_t DUMMY;  /**< offset 8: rx data register (#NEORV32_TWD_DUMMY_enum) */
 } neorv32_twd_t;
 
 /** TWD module hardware access (#neorv32_twd_t) */
@@ -46,7 +46,7 @@ enum NEORV32_TWD_CTRL_enum {
   TWD_CTRL_IRQ_RX_AVAIL = 11, /**< TWD control register(11) (r/w): IRQ if RX FIFO data available */
   TWD_CTRL_IRQ_RX_FULL  = 12, /**< TWD control register(12) (r/w): IRQ if RX FIFO full */
   TWD_CTRL_IRQ_TX_EMPTY = 13, /**< TWD control register(13) (r/w): IRQ if TX FIFO empty */
-  TWD_CTRL_TX_REG_EN    = 14, /**< TWD control register(14) (r/w): Enable TX reg mode (instead of FIFO) */
+  TWD_CTRL_DUMMY_EN     = 14, /**< TWD control register(14) (r/w): Enable TX reg mode (instead of FIFO) */
 
   TWD_CTRL_RX_FIFO_LSB     = 15, /**< TWD control register(15) (r/-): log2(RX_FIFO size), LSB */
   TWD_CTRL_RX_FIFO_MSB     = 18, /**< TWD control register(18) (r/-): log2(RX_FIFO size), MSB */
@@ -70,9 +70,9 @@ enum NEORV32_TWD_DATA_enum {
 /**@}*/
 
 /** TWD tx reg register bits */
-enum NEORV32_TWD_TX_REG_enum {
-  TWD_TX_REG_LSB = 0, /**< TWD data register(0) (r/w): Transmit register data (8-bit) LSB */
-  TWD_TX_REG_MSB = 7  /**< TWD data register(7) (r/w): Transmit register data (8-bit) MSB */
+enum NEORV32_TWD_DUMMY_enum {
+  TWD_DUMMY_LSB = 0, /**< TWD data register(0) (r/w): Transmit register data (8-bit) LSB */
+  TWD_DUMMY_MSB = 7  /**< TWD data register(7) (r/w): Transmit register data (8-bit) MSB */
 };
 /**@}*/
 
@@ -82,11 +82,13 @@ enum NEORV32_TWD_TX_REG_enum {
  **************************************************************************/
 /**@{*/
 int     neorv32_twd_available(void);
-void    neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int tx_reg_en);
+void    neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int dummy_en);
 int     neorv32_twd_get_rx_fifo_depth(void);
 int     neorv32_twd_get_tx_fifo_depth(void);
 void    neorv32_twd_disable(void);
 void    neorv32_twd_enable(void);
+void    neorv32_twd_disable_dummy(void);
+void    neorv32_twd_enable_dummy(void);
 void    neorv32_twd_clear_rx(void);
 void    neorv32_twd_clear_tx(void);
 int     neorv32_twd_sense_scl(void);
@@ -98,8 +100,8 @@ int     neorv32_twd_tx_empty(void);
 int     neorv32_twd_tx_full(void);
 void    neorv32_twd_put(uint8_t data);
 uint8_t neorv32_twd_get(void);
-void    neorv32_twd_set_tx_reg(uint8_t data);
-uint8_t neorv32_twd_get_tx_reg();
+void    neorv32_twd_set_dummy(uint8_t data);
+uint8_t neorv32_twd_get_dummy();
 /**@}*/
 
 

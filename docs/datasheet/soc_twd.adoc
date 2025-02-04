@@ -30,7 +30,7 @@ Key features:
 * Programmable 7-bit device address
 * Programmable interrupt conditions
 * Configurable RX/TX data FIFO to "program" large TWD sequences without further involvement of the CPU
-* Register RX mode where a host read operation always reads this byte
+* Optional dummy TX byte which gets read when the TX FIFO is empty
 
 .Device-Mode Only
 [NOTE]
@@ -44,17 +44,15 @@ check out the <<_two_wire_serial_interface_controller_twi>>.
 The TWD module provides two memory-mapped registers that are used for configuration & status check (`CTRL`) and
 for accessing transmission data (`DATA`). The `DATA` register is transparently buffered by separate RX and TX FIFOs.
 The size of those FIFOs can be configured by the `IO_TWD_RX_FIFO` and `IO_TWD_TX_FIFO` generics. Software can determine the FIFO size via the
-control register's `TWD_CTRL_FIFO_*` bits.
+`TWD_CTRL_FIFO_*` bits.
 
 The module is globally enabled by setting the control register's `TWD_CTRL_EN` bit. Clearing this bit will disable
-and reset the entire module also clearing the internal RX and TX FIFOs. Each FIFO can also be cleared individually at
+and reset the entire module also clearing the internal RX and TX FIFOs, but not the dummy byte. Each FIFO can also be cleared individually at
 any time by setting `TWD_CTRL_CLR_RX` or `TWD_CTRL_CLR_TX`, respectively.
 
 The external two wire bus is sampled sampled and synchronized into the processor's clock domain with a sampling
 frequency of 1/8 of the processor's main clock. In order to increase the resistance to glitches the sampling
 frequency can be lowered to 1/64 of the processor clock by setting the control register's `TWD_CTRL_FSEL` bit.
-
-When the Register RX mode ist enabled the RX Fifo gets cleared a host read operation always reads the `TX_REG` byte.
 
 .Current Bus State
 [TIP]
@@ -68,7 +66,9 @@ addresses are not supported.
 Depending on the transaction type, data is either read from the RX FIFO and transferred to the host ("read operation")
 or data is received from the host and written to the TX FIFO ("write operation"). Hence, data sequences can be
 programmed to the TX FIFO to be fetched from the host. If the TX FIFO is empty and the host keeps performing read
-transaction, the transferred data byte is automatically set to all-one.
+transaction, either the dummy byte gets read when enabled or the read will be not acknowledged.
+
+The dummy behavior can be used by the host to perform polling, for example, to check the status of the device.
 
 The current status of the RX and TX FIFO can be polled by software via the `TWD_CTRL_RX_*` and `TWD_CTRL_TX_*`
 flags.
@@ -110,13 +110,13 @@ clock pules (**ACK**). Each received data byte is pushed to the internal RX FIFO
 The transaction is terminated when the host issues a **STOP** condition after the TWD has acknowledged the last data
 transfer.
 
-For a **read transaction** (lower timing diagram) the host keeps the SDA line at high state while sending the clock
-pulse. The TWD will read a byte from the internal TX FIFO and will transmit it MSB-first to the host (blue signals `D7`
-to `D0)`. During the 9th clock pulse the host has to acknowledged the transfer (**ACK**) by pulling SDA low. If no ACK
-is received by the TWD no data is taken from the TX FIFO and the same byte can be transmitted in the next data phase.
-If the TX FIFO becomes empty while the host keeps reading data, all-one bytes are transmitted. To terminate the
-transmission the host hast so send a **NACK** after receiving the last data byte by keeping SDA high. After that, the
-host has to issue a **STOP** condition.
+For a **read transaction** (lower timing diagram) the cost keeps the SDA line at high state while sending the clock
+pulse. The TWD will read a byte from the internal TX FIFO or dummy byte and will transmit it MSB-first to the host (blue signals `D7`
+to `D0)`. When no data is available and the dummy byte is disabled, the TWD will not acknowledge the transaction and waits for the next one.
+During the 9th clock pulse the host can acknowledged the transfer (**ACK**) to get the next byte immediately. If no ACK (**NACK**) is received by the
+TWD, the host does not await the new byte. If the TX FIFO becomes
+empty while the host keeps reading data, the dummy is transmitted, when enabled, else `0xFF` is ts transmitted. The transaction is terminated when the host
+issues a **STOP** condition.
 
 A **repeated-START** condition can be issued at any time (but after the complete transaction of a data byte and there
 according ACK/NACK) bringing the TWD back to the start of the address/command transmission phase. The control register's
@@ -159,7 +159,7 @@ twd_scl_i <= std_ulogic(scl_io); -- sense
                                   <|`11`    `TWD_CTRL_IRQ_RX_AVAIL`                         ^| r/w <| IRQ if RX FIFO data available
                                   <|`12`    `TWD_CTRL_IRQ_RX_FULL`                          ^| r/w <| IRQ if RX FIFO full
                                   <|`13`    `TWD_CTRL_IRQ_TX_EMPTY`                         ^| r/w <| IRQ if TX FIFO empty
-                                  <|`14`    `TWD_CTRL_TX_REG_EN`                            ^| r/w <| Enable TX reg mode (instead of FIFO)
+                                  <|`14`    `TWD_CTRL_DUMMY_EN`                            ^| r/w <| Enable TX dummy byte
                                   <|`15:9`   -                                              ^| r/- <| _reserved_, read as zero
                                   <|`18:15` `TWD_CTRL_RX_FIFO_MSB : TWD_CTRL_RX_FIFO_LSB`   ^| r/- <| FIFO depth; log2(`IO_TWD_RX_FIFO`)
                                   <|`22:19` `TWD_CTRL_TX_FIFO_MSB : TWD_CTRL_TX_FIFO_LSB`   ^| r/- <| FIFO depth; log2(`IO_TWD_TX_FIFO`)
@@ -173,6 +173,6 @@ twd_scl_i <= std_ulogic(scl_io); -- sense
                                   <|`31`    `TWD_CTRL_BUSY`                                 ^| r/- <| bus engine is busy (transaction in progress)
 .2+<| `0xffea0004` .2+<| `DATA`   <|`7:0`   `TWD_DATA_MSB : TWD_DATA_LSB`                   ^| r/w <| RX/TX data FIFO access
                                   <|`31:8`  -                                               ^| r/- <| _reserved_, read as zero
-.2+<| `0xffea0008` .2+<| `TX_REG` <|`7:0`   `TWD_TX_REG_MSB : TWD_TX_REG_LSB`               ^| r/w <| RX data register access
+.2+<| `0xffea0008` .2+<| `DUMMY` <|`7:0`   `TWD_DUMMY_MSB : TWD_DUMMY_LSB`               ^| r/w <| RX dummy byte register access
                                   <|`31:8`  -                                               ^| r/- <| _reserved_, read as zero
 |=======================

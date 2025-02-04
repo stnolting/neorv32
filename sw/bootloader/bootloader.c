@@ -358,7 +358,7 @@ int main(void) {
 
 #if (TWD_EN != 0)
   // setup TWD
-  neorv32_twd_set_tx_reg(TWD_SREG_READY);
+  neorv32_twd_set_dummy(TWD_SREG_READY);
   neorv32_twd_setup(TWD_DEVICE_ID, TWD_FSEL, 1, 0, 0, 1);
   neorv32_cpu_csr_set(CSR_MIE, 1 << TWD_FIRQ_ENABLE); // activate TWD IRQ source
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
@@ -652,7 +652,7 @@ void get_exe(int src) {
   }
   #endif
   #if (TWI_EN)
-  else if(src == EXE_STREAM_TWI) {
+  else if (src == EXE_STREAM_TWI) {
     PRINT_TEXT("Loading from TWI Devices, starting with ");
     PRINT_XNUM(TWI_DEVICE_ID);
     PRINT_TEXT("...\n");
@@ -669,7 +669,7 @@ void get_exe(int src) {
       neorv32_gpio_port_set(1 << STATUS_LED_PIN);
     }
     PRINT_TEXT("\nWaiting for TWD data.\n");
-    neorv32_twd_set_tx_reg(TWD_SREG_WAIT_FOR_EXE);
+    neorv32_twd_set_dummy(TWD_SREG_WAIT_FOR_EXE);
     #endif
   }
   #endif
@@ -827,7 +827,7 @@ void system_error(uint8_t err_code) {
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // deactivate IRQs
 
 #if (TWD_EN != 0)
-  neorv32_twd_set_tx_reg(err_code << 4);
+  neorv32_twd_set_dummy(err_code << 4);
 #endif
 
   // permanently light up status LED
