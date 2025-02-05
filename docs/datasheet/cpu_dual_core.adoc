@@ -83,7 +83,7 @@ The ICC communication links are accessed via two NEORV32-specific CSRs. Hence, t
 by the CPU core itself and cannot be accessed by the DMA or any other CPU core.
 
 The <<_mxiccsreg>> provides read-only status information about the core's ICC links: bit 0 becomes set if
-there is RX data available for _this_ core (send from the the other core). Bit 1 is set as long there is
+there is RX data available for _this_ core (send from the other core). Bit 1 is set as long there is
 free space in _this_ core's TX data FIFO. The <<_mxiccdata>> CSR is used for actual data send/receive operations.
 Writing this register will put the according data word into the TX link FIFO of _this_ core. Reading this CSR
 will return a data word from the RX FIFO of _this_ core.

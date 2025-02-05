@@ -53,7 +53,7 @@ The SLINK interface consists of four signals for each channel:
 [NOTE]
 The interface names (except for `src` and `dst`) and the underlying protocol is compatible to the AXI4-Stream protocol standard.
 A processor top entity with a AXI4-Stream-compatible interfaces can be found in `rtl/system_inegration`.
-More information regarding this alternate top entity can be found in in the user guide:
+More information regarding this alternate top entity can be found in the user guide:
 https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block
 
 
