@@ -286,7 +286,8 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_TWI_EN`             | boolean   | false         | Implement the <<_two_wire_serial_interface_controller_twi>>.
 | `IO_TWI_FIFO`           | natural   | 1             | Depth of the <<_two_wire_serial_interface_controller_twi>> FIFO. Has to be a power of two, min 1, max 32768.
 | `IO_TWD_EN`             | boolean   | false         | Implement the <<_two_wire_serial_device_controller_twd>>.
-| `IO_TWD_FIFO`           | natural   | 1             | Depth of the <<_two_wire_serial_device_controller_twd>> FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_TWD_RX_FIFO`        | natural   | 1             | Depth of the <<_two_wire_serial_device_controller_twd>> RX FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_TWD_TX_FIFO`        | natural   | 1             | Depth of the <<_two_wire_serial_device_controller_twd>> TX FIFO. Has to be a power of two, min 1, max 32768.
 | `IO_PWM_NUM_CH`         | natural   | 0             | Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..16).
 | `IO_WDT_EN`             | boolean   | false         | Implement the <<_watchdog_timer_wdt>>.
 | `IO_TRNG_EN`            | boolean   | false         | Implement the <<_true_random_number_generator_trng>>.
