@@ -681,7 +681,7 @@ These registers are read/write only for machine-mode software
 
 .Instruction Retiring
 [IMPORTANT]
-Note that **all** executed instruction do increment the `[m]instret`[h] counters even if they do not retire
+Note that **all** executed instruction do increment the `[m]instret[h]` counters even if they do not retire
 (e.g. if the instruction causes an exception).
 
 
