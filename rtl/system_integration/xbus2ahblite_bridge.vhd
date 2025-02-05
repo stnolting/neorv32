@@ -103,7 +103,7 @@ begin
   begin
     case xbus_sel_i is
       when "1000" | "0100" | "0010" | "0001" => ahb_hsize_o <= "000"; -- byte
-      when "1100" | "0011" => ahb_hsize_o <= "001" -- half-word
+      when "1100" | "0011" => ahb_hsize_o <= "001"; -- half-word
       when others => ahb_hsize_o <= "010"; -- word
     end case;
   end process data_size;
