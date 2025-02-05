@@ -29,6 +29,11 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 03.02.2025 | 1.11.0.8 | :sparkles: add explicit memory ordering/coherence support; :warning: remove WDT "halt-on-debug" and "halt-on-sleep" options; :bug: rework cache module fixing several (minor?) design flaws | [#1176](https://github.com/stnolting/neorv32/pull/1176) |
+| 03.02.2025 | 1.11.0.7 | :bug: add missing CFS clock gen enable signal | [#1177](https://github.com/stnolting/neorv32/pull/1177) |
+| 01.02.2025 | 1.11.0.6 | :warning: remove XIP module | [#1175](https://github.com/stnolting/neorv32/pull/1175) |
+| 01.02.2025 | 1.11.0.5 | minor rtl optimizations and cleanups; :warning: remove DMA "fence" feature | [#1174](https://github.com/stnolting/neorv32/pull/1174) |
+| 28.01.2025 | 1.11.0.4 | :bug: fix crt0's entry address being overridden by core0's constructors (that do not backup any registers) | [#1172](https://github.com/stnolting/neorv32/pull/1172) |
 | 28.01.2025 | 1.11.0.3 | :bug: fix BOOTROM addressing (index was out-of-range) | [#1171](https://github.com/stnolting/neorv32/pull/1171) |
 | 24.01.2025 | 1.11.0.2 | :warning: rename JEDEC ID generic; minor rtl edits and optimizations | [#1168](https://github.com/stnolting/neorv32/pull/1168) |
 | 23.01.2025 | 1.11.0.1 | reset SDA and SCL of TWI and TWD modules to `1` | [#1167](https://github.com/stnolting/neorv32/pull/1167) |

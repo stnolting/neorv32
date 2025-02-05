@@ -77,7 +77,8 @@ begin
   begin
     if (rstn_i = '0') then
       dbus_req_o.rw    <= '0';
-      dbus_req_o.priv  <= '0';
+      dbus_req_o.priv  <= priv_mode_m_c;
+      dbus_req_o.debug <= '0';
       dbus_req_o.amo   <= '0';
       dbus_req_o.amoop <= (others => '0');
       dbus_req_o.data  <= (others => '0');
@@ -87,6 +88,7 @@ begin
         -- type identifiers --
         dbus_req_o.rw    <= ctrl_i.lsu_rw; -- read/write
         dbus_req_o.priv  <= ctrl_i.lsu_priv; -- privilege level
+        dbus_req_o.debug <= ctrl_i.cpu_debug; -- debug-mode access
         dbus_req_o.amo   <= bool_to_ulogic_f(AMO_EN) and ctrl_i.ir_opcode(2); -- atomic memory operation
         dbus_req_o.amoop <= amo_cmd;
         -- data alignment + byte-enable --
@@ -108,11 +110,11 @@ begin
     end if;
   end process mem_do_reg;
 
-  dbus_req_o.src   <= '0'; -- 0 = data access
-  dbus_req_o.fence <= ctrl_i.lsu_fence; -- out-of-band: this is valid without STB being set
-  dbus_req_o.sleep <= ctrl_i.cpu_sleep; -- out-of-band: this is valid without STB being set
-  dbus_req_o.debug <= ctrl_i.cpu_debug; -- out-of-band: this is valid without STB being set
+  -- hardwired signals --
+  dbus_req_o.src <= '0'; -- always "data" access
 
+  -- out-of band signals --
+  dbus_req_o.fence <= ctrl_i.lsu_fence;
 
   -- atomic memory access operation encoding --
   amo_encode: process(ctrl_i.ir_funct12)

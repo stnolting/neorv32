@@ -43,11 +43,10 @@ __crt0_entry:
   la    x9,  __crt0_copy_data_dst_end   // .data: end of actual data region
   la    x10, __crt0_bss_start           // .bss: start address
   la    x11, __crt0_bss_end             // .bss: end address (not part of bss)
-
-  la    x12, main                       // primary core's (core0) entry point
 .option pop
 
-  // initialize rest of register file
+  // initialize remaining registers
+  addi  x12, zero, 0
   addi  x13, zero, 0
   addi  x14, zero, 0
   addi  x15, zero, 0
@@ -137,6 +136,7 @@ __crt0_bss_clear_end:
 
 // ************************************************************************************************
 // Call constructors (not supported for bootloader).
+// WARNING! Constructors do not preserve any registers on the stack.
 // ************************************************************************************************
 #ifndef MAKE_BOOTLOADER
   la    x8, __init_array_start
@@ -156,9 +156,10 @@ __crt0_constructors_end:
 // ************************************************************************************************
 // Setup arguments and call main function.
 // ************************************************************************************************
+  la    x12, main        // primary core's (core0) entry point (#1169)
 __crt0_main_entry:
-  fence                  // reload data cache
-  fence.i                // reload instruction cache
+  fence                  // synchronize loads/stores
+  fence.i                // synchronize instruction fetch
 
   csrw  mstatus, x5      // re-initialize
   addi  x10, zero, 0     // x10 = a0 = argc = 0
@@ -174,6 +175,7 @@ __crt0_main_exit:        // main's "return" and "exit" will arrive here
 
 // ************************************************************************************************
 // Call destructors (not supported for bootloader).
+// WARNING! Destructors do not preserve any registers on the stack.
 // ************************************************************************************************
 #ifndef MAKE_BOOTLOADER
   csrr  x8, mhartid

@@ -38,11 +38,9 @@ int neorv32_wdt_available(void) {
  * @param[in] timeout 24-bit timeout value. A WDT IRQ is triggered when the internal counter reaches
  * 'timeout/2'. A system hardware reset is triggered when the internal counter reaches 'timeout'.
  * @param[in] lock Control register will be locked when 1 (until next reset).
- * @param[in] debug_en Allow watchdog to continue operation even when CPU is in debug mode.
- * @param[in] sleep_en Allow watchdog to continue operation even when CPU is in sleep mode.
  * @param[in] strict Force hardware reset if reset password is incorrect or if trying to alter a locked configuration.
  **************************************************************************/
-void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en, int strict) {
+void neorv32_wdt_setup(uint32_t timeout, int lock, int strict) {
 
   NEORV32_WDT->CTRL = 0; // reset and disable
 
@@ -50,8 +48,6 @@ void neorv32_wdt_setup(uint32_t timeout, int lock, int debug_en, int sleep_en, i
   uint32_t ctrl = 0;
   ctrl |= ((uint32_t)(1))                   << WDT_CTRL_EN;
   ctrl |= ((uint32_t)(timeout & 0xffffffU)) << WDT_CTRL_TIMEOUT_LSB;
-  ctrl |= ((uint32_t)(debug_en & 0x1U))     << WDT_CTRL_DBEN;
-  ctrl |= ((uint32_t)(sleep_en & 0x1U))     << WDT_CTRL_SEN;
   ctrl |= ((uint32_t)(strict & 0x1U))       << WDT_CTRL_STRICT;
   NEORV32_WDT->CTRL = ctrl;
 

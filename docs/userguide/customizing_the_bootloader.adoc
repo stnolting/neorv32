@@ -37,8 +37,6 @@ minimal base & privileged ISA `rv32e_zicsr_zifencei` only to ensure it can work 
 | `SPI_FLASH_SECTOR_SIZE` | `65536` | _any_     | SPI flash sector size in bytes
 | `SPI_FLASH_CLK_PRSC`    | `CLK_PRSC_8`        | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock pre-scaler (dividing main processor clock)
 | `SPI_BOOT_BASE_ADDR`    | `0x00400000`        | _any_ 32-bit value | Defines the _base_ address of the executable in external flash
-4+^| XIP configuration
-| `XIP_EN`                | `0` | `0`, `1`      | Set `1` to enable the XIP options
 4+^| TWI configuration
 | `TWI_EN`                | `0` | `0`, `1`      | Set `1` to enable the usage of the TWI module (including load executables from TWI device option)
 | `TWI_CLK_PRSC`          | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096`   | TWI clock pre-scaler (dividing main processor clock)
@@ -51,10 +49,7 @@ minimal base & privileged ISA `rv32e_zicsr_zifencei` only to ensure it can work 
 |=======================
 
 [IMPORTANT]
-Enabling all features while sticking to the minimal RISC-V ISA will result in a too-large binary! 
-
-[NOTE]
-The XIP options re-use the "SPI configuration" options for configuring the XIP's SPI connection.
+Enabling all features while sticking to the minimal RISC-V ISA will result in a too-large binary!
 
 Each configuration parameter is implemented as C-language `define` that can be manually overridden (_redefined_) when
 invoking the bootloader's makefile. The according parameter and its new value has to be _appended_

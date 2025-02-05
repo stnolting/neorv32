@@ -1,4 +1,5 @@
 <<<
+<<<
 :sectnums:
 ==== Processor-Internal Instruction Cache (iCACHE)
 
@@ -6,11 +7,11 @@
 [grid="none"]
 |=======================
 | Hardware source files:  | neorv32_cache.vhd   | Generic cache module
-| Software driver files:  | none                | _implicitly used_
+| Software driver files:  | none                | 
 | Top entity ports:       | none                |
 | Configuration generics: | `ICACHE_EN`         | implement processor-internal instruction cache when `true`
-|                         | `ICACHE_NUM_BLOCKS` | number of cache blocks (pages/lines)
-|                         | `ICACHE_BLOCK_SIZE` | size of a cache block in bytes
+|                         | `ICACHE_NUM_BLOCKS` | number of cache blocks (pages or lines); has to be a power of two
+|                         | `ICACHE_BLOCK_SIZE` | size of a cache block in bytes; has to be a power of two
 | CPU interrupts:         | none |
 |=======================
 
@@ -21,24 +22,17 @@ The processor features an optional instruction cache to improve performance when
 access latency. The cache is connected directly to the CPU's instruction fetch interface and provides
 full-transparent accesses. The cache is direct-mapped and read-only.
 
-.Cached/Uncached Accesses
+.Uncached Accesses
 [NOTE]
 The data cache provides direct accesses (= uncached) to memory in order to access memory-mapped IO (like the
 processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
-will not be cached at all (see section <<_address_space>>). Direct/uncached accesses have **lower** priority than
-cache block operations to allow continuous burst transfer and also to maintain logical instruction forward
-progress / data coherency. Furthermore, the atomic memory operations of the <<_zaamo_isa_extension>> will
-always **bypass** the cache.
+will not be cached at all (see section <<_address_space>>). Furthermore, the atomic memory operations
+of the <<_zaamo_isa_extension>> will always **bypass** the cache.
 
-.Caching Internal Memories
-[NOTE]
-The data cache is intended to accelerate data access to **processor-external** memories.
-The CPU cache(s) should not be implemented when using only processor-internal data and instruction memories.
-
-.Manual Cache Clear/Reload
+.Manual Cache Flush/Clear/Reload and Memory Coherence
 [NOTE]
 By executing the `fence.i` instruction the instruction cache is cleared and reloaded.
-See section <<_cache_coherency>> for more information.
+See section <<_memory_coherence>> for more information.
 
 .Retrieve Cache Configuration from Software
 [TIP]
@@ -46,8 +40,6 @@ Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_c
 
 .Bus Access Fault Handling
 [NOTE]
-The cache always loads a complete cache block (aligned to the block size) every time a
-cache miss is detected. Each cached word from this block provides a single status bit that indicates if the
-according bus access was successful or caused a bus error. Hence, the whole cache block remains valid even
-if certain addresses inside caused a bus error. If the CPU accesses any of the faulty cache words, an
-instruction bus error exception is raised.
+If the cache encounters a bus error when uploading a modified block to the next memory level or when
+downloading a new block from the next memory level, the entire block is invalidated and a bus access
+error exception is raised.

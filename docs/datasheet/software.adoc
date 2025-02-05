@@ -1,3 +1,4 @@
+<<<
 :sectnums:
 == Software Framework
 
@@ -88,7 +89,6 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_twi.c`     | `neorv32_twi.h`        | <<_two_wire_serial_interface_controller_twi>> HAL
 | `neorv32_uart.c`    | `neorv32_uart.h`       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>> and UART1 HAL
 | `neorv32_wdt.c`     | `neorv32_wdt.h`        | <<_watchdog_timer_wdt>> HAL
-| `neorv32_xip.c`     | `neorv32_xip.h`        | <<_execute_in_place_module_xip>> HAL
 | `neorv32_newlib.c`  | -                      | Platform-specific system calls for _newlib_
 |=======================
 
@@ -465,7 +465,7 @@ at the beginning of the file. The first word of the executable is the signature 
 Based on this word the bootloader can identify a valid image file. The next word represents the size in bytes of the
 actual program image in bytes. A simple complement checksum of the actual program image is given by the third word.
 This provides a simple protection against data transmission or storage errors.
-**Note that this executable format cannot be used for _direct_ execution (e.g. via XIP or direct memory access).**
+**Note that this executable format cannot be used for _direct_ execution.**
 
 
 <<<

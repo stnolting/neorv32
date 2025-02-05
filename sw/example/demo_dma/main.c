@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -70,10 +70,6 @@ int main() {
 
   // enable DMA
   neorv32_dma_enable();
-
-  // issue a FENCE operation when the DMA transfer completes (without errors); this
-  // will re-sync / flush and reload) all **DOWNSTREAM** caches
-  neorv32_dma_fence_enable();
 
   // initialize and data arrays
   dma_src[0] = 0x66778899UL;

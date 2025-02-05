@@ -119,13 +119,6 @@ The DMA transfer will start if a **rising edge** is detected on the configured F
 once even if the selected FIRQ channel keeps pending.
 
 
-**Memory Barrier / Fence Operation**
-
-Optionally, the DMA can issue a FENCE request to the downstream memory system when a transfer has been completed
-without errors. This can be used to re-sync caches (flush and reload) and buffers to maintain data coherency.
-This automatic fencing is enabled by the setting the control register's `DMA_CTRL_FENCE` bit.
-
-
 **DMA Interrupt**
 
 The DMA features a single CPU interrupt that is triggered when the programmed transfer has completed. This
@@ -141,10 +134,9 @@ register).
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.12+<| `0xffed0000` .12+<| `CTRL` <|`0`     `DMA_CTRL_EN`                                   ^| r/w <| DMA module enable
+.11+<| `0xffed0000` .11+<| `CTRL` <|`0`     `DMA_CTRL_EN`                                   ^| r/w <| DMA module enable
                                   <|`1`     `DMA_CTRL_AUTO`                                 ^| r/w <| Enable automatic mode (FIRQ-triggered)
-                                  <|`2`     `DMA_CTRL_FENCE`                                ^| r/w <| Issue a downstream FENCE operation when DMA transfer completes (without errors)
-                                  <|`7:3`   _reserved_                                      ^| r/- <| reserved, read as zero
+                                  <|`7:2`   _reserved_                                      ^| r/- <| reserved, read as zero
                                   <|`8`     `DMA_CTRL_ERROR_RD`                             ^| r/- <| Error during read access, clears when starting a new transfer
                                   <|`9`     `DMA_CTRL_ERROR_WR`                             ^| r/- <| Error during write access, clears when starting a new transfer
                                   <|`10`    `DMA_CTRL_BUSY`                                 ^| r/- <| DMA transfer in progress

@@ -27,7 +27,6 @@ entity neorv32_xbus is
     rstn_i     : in  std_ulogic; -- global reset line, low-active
     bus_req_i  : in  bus_req_t;  -- bus request
     bus_rsp_o  : out bus_rsp_t;  -- bus response
-    --
     xbus_adr_o : out std_ulogic_vector(31 downto 0); -- address
     xbus_dat_i : in  std_ulogic_vector(31 downto 0); -- read data
     xbus_dat_o : out std_ulogic_vector(31 downto 0); -- write data
@@ -151,7 +150,11 @@ begin
   xbus_sel_o <= bus_req.ben;
   xbus_stb_o <= bus_req.stb;
   xbus_cyc_o <= bus_req.stb or pending(1);
-  xbus_tag_o <= bus_req.src & '0' & bus_req.priv; -- instr/data, secure, privileged/unprivileged
+
+  -- access meta data (compatible to AXI4 "xPROT") --
+  xbus_tag_o(2) <= bus_req.src; -- 0 = data access, 1 = instruction fetch
+  xbus_tag_o(1) <= '0'; -- always "secure" access
+  xbus_tag_o(0) <= bus_req.priv or bus_req.debug; -- 0 = unprivileged access, 1 = privileged access
 
   -- response gating --
   bus_rsp.data <= xbus_dat_i when (pending(1) = '1') else (others => '0');

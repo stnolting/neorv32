@@ -1,5 +1,4 @@
-
-// ####################################################################################################################
+<<<
 :sectnums:
 == NEORV32 Processor (SoC)
 
@@ -22,7 +21,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ SMP <<_dual_core_configuration>>
 * _optional_ processor-internal data and instruction memories (<<_data_memory_dmem,**DMEM**>>/<<_instruction_memory_imem,**IMEM**>>)
 * _optional_ caches (<<_processor_internal_instruction_cache_icache,**I-CACHE**>>, <<_processor_internal_data_cache_dcache,**D-CACHE**>>,
-<<_execute_in_place_module_xip,**XIP-CACHE**>>, <<_processor_external_bus_interface_xbus,**XBUS-CACHE**>>)
+<<_processor_external_bus_interface_xbus,**XBUS-CACHE**>>)
 * _optional_ internal bootloader (<<_bootloader_rom_bootrom,**BOOTROM**>>) with UART console & SPI flash boot option
 * _optional_ RISC-V-compatible core local interruptor (<<_core_local_interruptor_clint,**CLINT**>>)
 * _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>,
@@ -39,7 +38,6 @@ image::neorv32_processor.png[align=center]
 * _optional_ custom functions subsystem for custom co-processor extensions (<<_custom_functions_subsystem_cfs,**CFS**>>)
 * _optional_ NeoPixel(TM)/WS2812-compatible smart LED interface (<<_smart_led_interface_neoled,**NEOLED**>>)
 * _optional_ general purpose 32-bit timer (<<_general_purpose_timer_gptmr,**GPTMR**>>)
-* _optional_ execute in-place module (<<_execute_in_place_module_xip,**XIP**>>)
 * _optional_ 1-wire serial interface controller (<<_one_wire_serial_interface_controller_onewire,**ONEWIRE**>>), compatible to the 1-wire standard
 * _optional_ autonomous direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
 * _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream compatible
@@ -116,11 +114,6 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `slink_tx_val_o` |  1 | out |   -   | TX data valid
 | `slink_tx_lst_o` |  1 | out |   -   | TX last element of stream
 | `slink_tx_rdy_i` |  1 |  in | `'L'` | TX allowed to send
-5+^| **<<_execute_in_place_module_xip>>**
-| `xip_csn_o`      |  1 | out |   -   | chip select, low-active
-| `xip_clk_o`      |  1 | out |   -   | serial clock
-| `xip_dat_i`      |  1 |  in | `'L'` | serial data input
-| `xip_dat_o`      |  1 | out |   -   | serial data output
 5+^| **<<_general_purpose_input_and_output_port_gpio>>**
 | `gpio_o`         | 32 | out |   -   | general purpose parallel output
 | `gpio_i`         | 32 |  in | `'L'` | general purpose parallel input (interrupt-capable)
@@ -276,11 +269,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `XBUS_CACHE_EN`         | boolean   | false         | Implement the external bus cache.
 | `XBUS_CACHE_NUM_BLOCKS` | natural   | 64            | Number of blocks ("lines"). Has to be a power of two.
 | `XBUS_CACHE_BLOCK_SIZE` | natural   | 32            | Size in bytes of each block. Has to be a power of two.
-4+^| **<<_execute_in_place_module_xip>>**
-| `XIP_EN`                | boolean   | false         | Implement the execute in-place module.
-| `XIP_CACHE_EN`          | boolean   | false         | Implement XIP cache.
-| `XIP_CACHE_NUM_BLOCKS`  | natural   | 8             | Number of blocks in XIP cache. Has to be a power of two.
-| `XIP_CACHE_BLOCK_SIZE`  | natural   | 256           | Number of bytes per XIP cache block. Has to be a power of two, min 4.
 4+^| **Peripheral/IO Modules**
 | `IO_DISABLE_SYSINFO`    | boolean   | false         | Disable <<_system_configuration_information_memory_sysinfo>> module; ⚠️ not recommended - for advanced users only!
 | `IO_GPIO_NUM`           | natural   | 0             | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>, max 32.
@@ -467,7 +455,7 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 === Address Space
 
 As a 32-bit architecture the NEORV32 can access a 4GB physical address space. By default, this address space is
-split into four main regions. All accesses to "unmapped" addresses (a.k.a. "the void") are redirected to the
+split into three main regions. All accesses to "unmapped" addresses (a.k.a. "the void") are redirected to the
 <<_processor_external_bus_interface_xbus>>. For example, if the internal IMEM is disabled, the accesses to the
 _entire_ address space between `0x00000000` and `0x7FFFFFFF` are converted into XBUS requests. If the XBUS interface
 is not enabled any access to the void will raise a bus error exception.
@@ -490,8 +478,7 @@ can be used to further constrain the physical memory attributes.
 | # | Region                      | PMAs      | Description
 | 1 | Internal IMEM address space | `rwxac`   | For instructions / code and constants; mapped to the internal <<_instruction_memory_imem>> if implemented.
 | 2 | Internal DMEM address space | `rwxac`   | For application runtime data (heap, stack, etc.); mapped to the internal <<_data_memory_dmem>>) if implemented.
-| 3 | Memory-mapped XIP flash     | `r-xac`   | Transparent memory-mapped access to an external <<_execute_in_place_module_xip>> SPI flash.
-| 4 | IO/peripheral address space | `rwxa-`   | Processor-internal peripherals / IO devices including the <<_bootloader_rom_bootrom>>.
+| 3 | IO/peripheral address space | `rwxa-`   | Processor-internal peripherals / IO devices including the <<_bootloader_rom_bootrom>>.
 | - | The "**void**"              | `rwxa[c]` | Unmapped address space. All accesses to this region(s) are redirected to the <<_processor_external_bus_interface_xbus>> if implemented.
 |=======================
 
@@ -539,8 +526,6 @@ customizable memory map implemented via VHDL constants in the main package file 
 -- Main Address Regions ---
 constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via generic
 constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via generic
-constant mem_xip_base_c  : std_ulogic_vector(31 downto 0) := x"e0000000"; -- page (4 MSBs) only!
-constant mem_xip_size_c  : natural := 256*1024*1024;
 constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffe00000";
 constant mem_io_size_c   : natural := 32*64*1024; -- = 32 * iodev_size_c
 ----
@@ -561,10 +546,6 @@ This constant defines the _maximum_ number of cycles after which a non-respondin
 and no `err` signal) will time out raising a bus access fault exception. For example this can happen when accessing
 "address space holes" - addresses that are not mapped to any physical module. The resulting exception type corresponds
 to the according access type, i.e. instruction fetch access exception, load access exception or store access exception.
-
-.XIP Timeout
-[NOTE]
-Accesses to the memory-mapped XIP flash (via the <<_execute_in_place_module_xip>>) will _never_ time out.
 
 .External Bus Interface Timeout
 [NOTE]
@@ -614,7 +595,7 @@ content of the addresses memory cell) is sent back to the requesting CPU.
 .Direct Access
 [IMPORTANT]
 Atomic operations **always bypass** the CPU's <<_processor_internal_data_cache_dcache, data cache>>
-using direct/uncached accesses. Care must be taken to maintain data <<_cache_coherency>>.
+using direct/uncached accesses. Care must be taken to maintain data <<_memory_coherence>>.
 
 .Physical Memory Attributes
 [NOTE]
@@ -629,44 +610,50 @@ cannot be interrupted. Hence, they execute in an atomic way.
 
 
 :sectnums:
-==== Cache Coherency
+==== Memory Coherence
 
-In total the NEORV32 Processor provides up to four optional caches organized in two levels. Level-1
-caches are closer to the CPU while level-2 caches are closer to main memory (however, this highly depends
-on the the actual cache configurations).
+Depending on the configuration, the NEORV32 processor provides several _layer_ of memory consisting
+of caches, buffers and storage.
 
+* The CPU instruction prefetch buffer ("level-0")
 * The <<_processor_internal_data_cache_dcache>> (level-1)
 * The <<_processor_internal_instruction_cache_icache>> (level-1)
 * The cache of the <<_processor_external_bus_interface_xbus>> (level-2)
-* The cache of the <<_execute_in_place_module_xip>> (level-2)
+* Internal and external memories
 
-As all caches operate transparently for the software, special attention must therefore be paid to coherence.
-Note that coherence and cache _synchronization_ is **not** performed by the hardware itself (there is no
-snooping implemented).
+All caches and buffers operate transparently for the software. Hence, special attention must therefore be
+paid to maintain coherence. Note that coherence and cache _synchronization_ is **not** automatically performed
+by the hardware itself as there is no snooping implemented.
 
-The NEORV32 uses two instructions for manual cache synchronization (both instructions are always available
-regardless of the actual CPU/ISA configuration):
+NEORV32 uses two instructions for manual memory synchronization which are always available
+regardless of the actual CPU/ISA configuration:
 
 * `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>)
 * `fence.i` (<<_zifencei_isa_extension>>)
 
-By executing the "data" `fence` instruction the CPU's data cache is synchronized in four steps:
+By executing the "data" `fence` instruction the CPU's load/store operations are ordered
+and synchronized across the entire system:
 
 [start=1]
-. The CPU data cache is flushed: all local modifications are copied to the next higher memory level;
-this can be the XBUS cache or main memory.
-. The CPU data cache is cleared invalidating all local entries.
-. The synchronization request is sent to the next-higher memory level (for example to the XBUS cache
-so it can perform the same synchronization steps).
-. The CPU data cache is reloaded with up-to-date data from the next higher memory level.
+. The CPU data cache (if enabled) is flushed and invalidated: all local modifications are copied to
+the next higher memory level (for example the internal DMEM or the XBUS-cache).
+. The CPU data cache is cleared invalidating so the next load/store access will cause a cache miss
+that will fetch up-to-date data from the memory system.
+. The synchronization request is forwarded to the next-higher memory level. If the XBUS cache is implemented
+it will also be flushed and invalidated.
 
-By executing the "instruction" `fence.i` instruction the CPU's instruction cache is synchronized in three steps:
+By executing the "instruction" `fence.i` instruction the CPU's instruction-fetch cache is are ordered
+and synchronized across the entire system:
 
 [start=1]
-. The synchronization request is sent to the next-higher memory level (for example to the XBUS cache
-so it can perform the same synchronization steps).
-. The CPU instruction cache is cleared invalidating all local entries.
-. The CPU instruction cache is reloaded with up-to-date data from the next higher memory level.
+. Perform all the steps that are performed by the `fence` instruction.
+. The CPU instruction cache is cleared invalidating all local entries so the next instruction fetch access
+will cause a cache miss that will fetch up-to-date data from the memory system.
+
+.CPU Stall While Synchronizing
+[IMPORTANT]
+Executing any fence instruction will stall the CPU until all the requested ordering/synchronization
+steps are completed.
 
 
 <<<
@@ -822,7 +809,5 @@ include::soc_cfs.adoc[]
 include::soc_neoled.adoc[]
 
 include::soc_gptmr.adoc[]
-
-include::soc_xip.adoc[]
 
 include::soc_sysinfo.adoc[]
