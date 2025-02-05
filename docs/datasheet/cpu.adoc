@@ -41,7 +41,7 @@ instruction exception (see section <<_full_virtualization>>).
 .`time[h]` CSRs (Wall Clock Time)
 [IMPORTANT]
 The NEORV32 does not implement the `time[h]` registers. Any access to these registers will trap. It is
-recommended that the trap handler software provides a means of accessing the the machine timer of the
+recommended that the trap handler software provides a means of accessing the machine timer of the
 <<_core_local_interruptor_clint>>.
 
 .No Hardware Support of Misaligned Memory Accesses
@@ -606,7 +606,7 @@ The "compressed" ISA extension provides 16-bit encodings of commonly used instru
 ==== `E` ISA Extension
 
 The "embedded" ISA extensions reduces the size of the general purpose register file from 32 entries to 16 entries to
-shrink hardware size. It provides the same instructions as the the base `I` ISA extensions.
+shrink hardware size. It provides the same instructions as the base `I` ISA extensions.
 
 .Alternative MABI
 [NOTE]
@@ -1199,7 +1199,7 @@ available at https://github.com/riscv-non-isa/riscv-trace-spec):
 * **trap**: the transfer of control to a trap handler caused by either an _exception_ or an _interrupt_
 
 Whenever an exception or interrupt is triggered, the CPU switches to machine-mode (if not already in machine-mode)
-and continues operation at the address being stored in the <<_mtvec>> CSR. The cause of the the trap can be determined via the
+and continues operation at the address being stored in the <<_mtvec>> CSR. The cause of the trap can be determined via the
 <<_mcause>> CSR. A list of all implemented `mcause` values and the according description can be found below in section
 <<_neorv32_trap_listing>>. The address that reflects the current program counter when a trap was taken is stored to
 <<_mepc>> CSR. Additional information regarding the cause of the trap can be retrieved from the <<_mtval>> and <<_mtinst>> CSRs.

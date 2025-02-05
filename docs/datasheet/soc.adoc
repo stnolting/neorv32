@@ -296,7 +296,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_CFS_IN_SIZE`        | natural   | 32            | Size of the <<_custom_functions_subsystem_cfs>> input signal conduit (`cfs_in_i`).
 | `IO_CFS_OUT_SIZE`       | natural   | 32            | Size of the <<_custom_functions_subsystem_cfs>> output signal conduit (`cfs_out_o`).
 | `IO_NEOLED_EN`          | boolean   | false         | Implement the <<_smart_led_interface_neoled>>.
-| `IO_NEOLED_TX_FIFO`     | natural   | 1             | TX FIFO depth of the the <<_smart_led_interface_neoled>>. Has to be a power of two, min 1, max 32768.
+| `IO_NEOLED_TX_FIFO`     | natural   | 1             | TX FIFO depth of the <<_smart_led_interface_neoled>>. Has to be a power of two, min 1, max 32768.
 | `IO_GPTMR_EN`           | boolean   | false         | Implement the <<_general_purpose_timer_gptmr>>.
 | `IO_ONEWIRE_EN`         | boolean   | false         | Implement the <<_one_wire_serial_interface_controller_onewire>>.
 | `IO_ONEWIRE_FIFO`       | natural   | 1             | Depth of the <<_one_wire_serial_interface_controller_onewire>> FIFO. Has to be a power of two, min 1, max 32768.
