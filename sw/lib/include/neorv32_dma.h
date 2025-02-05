@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,10 +9,6 @@
 /**
  * @file neorv32_dma.h
  * @brief Direct Memory Access Controller (DMA) HW driver header file.
- *
- * @note These functions should only be used if the DMA controller was synthesized (IO_DMA_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #ifndef neorv32_dma_h
@@ -40,7 +36,6 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 enum NEORV32_DMA_CTRL_enum {
   DMA_CTRL_EN           =  0, /**< DMA control register(0) (r/w): DMA enable */
   DMA_CTRL_AUTO         =  1, /**< DMA control register(1) (r/w): Automatic trigger mode enable */
-  DMA_CTRL_FENCE        =  2, /**< DMA control register(2) (r/w): Issue FENCE downstream operation when DMA transfer is completed */
 
   DMA_CTRL_ERROR_RD     =  8, /**< DMA control register(8)  (r/-): Error during read access; SRC_BASE shows the faulting address */
   DMA_CTRL_ERROR_WR     =  9, /**< DMA control register(9)  (r/-): Error during write access; DST_BASE shows the faulting address */
@@ -103,8 +98,6 @@ enum NEORV32_DMA_STATUS_enum {
 int  neorv32_dma_available(void);
 void neorv32_dma_enable(void);
 void neorv32_dma_disable(void);
-void neorv32_dma_fence_enable(void);
-void neorv32_dma_fence_disable(void);
 void neorv32_dma_transfer(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config);
 void neorv32_dma_transfer_auto(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config, int firq_sel, int firq_type);
 int  neorv32_dma_status(void);

@@ -33,17 +33,9 @@ hardware reset is triggered.
 The watchdog's timeout counter is reset ("feeding the watchdog") by writing the reset **PASSWORD** to the `RESET` register.
 The password is hardwired to hexadecimal `0x709D1AB3`.
 
-.Watchdog Operation during Debugging
 [IMPORTANT]
-By default, the watchdog stops operation when the CPU enters debug mode and will resume normal operation after
-the CPU has left debug mode again. This will prevent an unintended watchdog timeout during a debug session. However,
-the watchdog can also be configured to keep operating even when the CPU is in debug mode by setting the control
-register's `WDT_CTRL_DBEN` bit.
-
-.Watchdog Operation during CPU Sleep
-[IMPORTANT]
-By default, the watchdog stops operating when the CPU enters sleep mode. However, the watchdog can also be configured
-to keep operating even when the CPU is in sleep mode by setting the control register's `WDT_CTRL_SEN` bit.
+Once enabled, the watchdog keeps operating even if the CPU is in <<_sleep_mode>> or if the processor is being
+debugged via the <<_on_chip_debugger_ocd>>.
 
 
 **Configuration Lock**
@@ -91,12 +83,10 @@ processor's main reset signal is active (even if the watchdog is deactivated or 
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Reset value | Writable if locked | Function
-.8+<| `0xfffb0000` .8+<| `CTRL` <|`0` `WDT_CTRL_EN`     ^| r/w ^| `0` ^| no  <| watchdog enable
+.6+<| `0xfffb0000` .6+<| `CTRL` <|`0` `WDT_CTRL_EN`     ^| r/w ^| `0` ^| no  <| watchdog enable
                                 <|`1` `WDT_CTRL_LOCK`   ^| r/w ^| `0` ^| no  <| lock configuration when set, clears only on system reset, can only be set if enable bit is set already
-                                <|`2` `WDT_CTRL_DBEN`   ^| r/w ^| `0` ^| no  <| set to allow WDT to continue operation even when CPU is in debug mode
-                                <|`3` `WDT_CTRL_SEN`    ^| r/w ^| `0` ^| no  <| set to allow WDT to continue operation even when CPU is in sleep mode
-                                <|`4` `WDT_CTRL_STRICT` ^| r/w ^| `0` ^| no  <| set to enable strict mode (force hardware reset if reset password is incorrect or if write access to locked CTRL register)
-                                <|`6:5` `WDT_CTRL_RCAUSE_HI : WDT_CTRL_RCAUSE_LO` ^| r/- ^| `0` ^| -   <| cause of last system reset; 0=external reset, 1=ocd-reset, 2=watchdog reset
+                                <|`2` `WDT_CTRL_STRICT` ^| r/w ^| `0` ^| no  <| set to enable strict mode (force hardware reset if reset password is incorrect or if write access to locked CTRL register)
+                                <|`4:3` `WDT_CTRL_RCAUSE_HI : WDT_CTRL_RCAUSE_LO` ^| r/- ^| `0` ^| -   <| cause of last system reset; 0=external reset, 1=ocd-reset, 2=watchdog reset
                                 <|`7` -                 ^| r/- ^| -   ^| -   <| _reserved_, reads as zero
                                 <|`31:8` `WDT_CTRL_TIMEOUT_MSB : WDT_CTRL_TIMEOUT_LSB` ^| r/w ^| 0 ^| no <| 24-bit watchdog timeout value
 | `0xfffb0004` | `RESET`         |`31:0`                 | -/w  | -    | yes  | Write _PASSWORD_ to reset WDT timeout counter

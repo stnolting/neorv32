@@ -1,3 +1,4 @@
+<<<
 :sectnums:
 === Bootloader
 
@@ -50,7 +51,6 @@ The bootloader requires certain CPU and SoC extensions and modules to be enabled
 | _RECOMMENDED_ | The default bootloader uses bit 0 of the <<_general_purpose_input_and_output_port_gpio>> output port to drive a high-active "heart beat" status LED.
 | _RECOMMENDED_ | The machine timer of the <<_core_local_interruptor_clint>> is used to control blinking of the status LED and also to automatically trigger the <<_auto_boot_sequence>>.
 | OPTIONAL      | The SPI controller (<<_serial_peripheral_interface_controller_spi>>) is needed to store/load executable from external flash using the <<_auto_boot_sequence>>.
-| OPTIONAL      | The XIP controller (<<_execute_in_place_module_xip>>) is needed to boot/execute code directly from a pre-programmed SPI flash.
 | OPTIONAL      | The TWI controller (<<_two_wire_serial_interface_controller_twi>>) is needed to boot/execute code directly from pre-programmed TWI memory.
 |=======================
 
@@ -172,7 +172,6 @@ Available CMDs:
  s: Store to flash
  l: Load from flash
  t: Load from TWI Device
- x: Boot from flash (XIP)
  e: Execute
 CMD:>
 ----
@@ -186,7 +185,6 @@ The auto boot countdown is stopped and the bootloader's user console is ready to
 * `s`: Store executable to SPI flash at `spi_csn_o(0)` (little-endian byte order)
 * `l`: Load executable from SPI flash at `spi_csn_o(0)` (little-endian byte order)
 * `t`: Load executable from TWI memory at `0x50` (little-endian byte order) (disabled by default)
-* `x`: Boot program directly from flash via XIP (requires a pre-programmed image)
 * `e`: Start the application, which is currently stored in the instruction memory (IMEM)
 
 A new executable can be uploaded via UART by executing the `u` command. After that, the executable can be directly
@@ -199,20 +197,10 @@ manually restarted via the `r` command.
 Make sure to upload the NEORV32 executable `neorv32_exe.bin`. Uploading any other file (like `main.bin`)
 will cause an `ERR_EXE` bootloader error (see <<_bootloader_error_codes>>).
 
-.Booting via XIP
-[NOTE]
-The bootloader allows to execute an application right from flash using the <<_execute_in_place_module_xip>> module.
-This requires a pre-programmed flash. The bootloader's "store" option can **not** be used to program an XIP image.
-
 .SPI Flash Power Down Mode
 [NOTE]
 The bootloader will issue a "wake-up" command prior to using the SPI flash to ensure it is not
 in sleep mode / power-down mode (see https://github.com/stnolting/neorv32/pull/552).
-
-.Default Configuration
-[TIP]
-More information regarding the default SPI, GPIO, XIP, etc. configuration can be found in the User Guide
-section https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader.
 
 .SPI Flash Programming
 [TIP]

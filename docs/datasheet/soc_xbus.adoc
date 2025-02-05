@@ -7,30 +7,30 @@
 |=======================
 | Hardware source files:  | neorv32_xbus.vhd        | External bus gateway
 |                         | neorv32_cache.vhd       | Generic cache module
-| Software driver files:  | none                    | _implicitly used_
+| Software driver files:  | none                    |
 | Top entity ports:       | `xbus_adr_o`            | address output (32-bit)
+|                         | `xbus_dat_i`            | data input (32-bit)
 |                         | `xbus_dat_o`            | data output (32-bit)
 |                         | `xbus_tag_o`            | access tag (3-bit)
 |                         | `xbus_we_o`             | write enable (1-bit)
 |                         | `xbus_sel_o`            | byte enable (4-bit)
 |                         | `xbus_stb_o`            | bus strobe (1-bit)
 |                         | `xbus_cyc_o`            | valid cycle (1-bit)
-|                         | `xbus_dat_i`            | data input (32-bit)
 |                         | `xbus_ack_i`            | acknowledge (1-bit)
 |                         | `xbus_err_i`            | bus error (1-bit)
 | Configuration generics: | `XBUS_EN`               | enable external bus interface when `true`
 |                         | `XBUS_TIMEOUT`          | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
 |                         | `XBUS_REGSTAGE_EN`      | implement XBUS register stages
-|                         | `XBUS_CACHE_EN`         | implement the external bus cache
-|                         | `XBUS_CACHE_NUM_BLOCKS` | number of blocks ("lines"), has to be a power of two.
-|                         | `XBUS_CACHE_BLOCK_SIZE` | size in bytes of each block, has to be a power of two.
+|                         | `XBUS_CACHE_EN`         | implement the external bus cache when `true`
+|                         | `XBUS_CACHE_NUM_BLOCKS` | number of cache blocks (pages or lines); has to be a power of two
+|                         | `XBUS_CACHE_BLOCK_SIZE` | size of a cache block in bytes; has to be a power of two
 | CPU interrupts:         | none |
 |=======================
 
 
 **Overview**
 
-The external bus interface provides a **Wishbone b4**-compatible on-chip bus interface that is
+The external bus interface provides a **Wishbone b4**-compatible on-chip bus interface that gets
 implemented if the `XBUS_EN` generic is `true`. This bus interface can be used to attach processor-external
 modules like memories, custom hardware accelerators or additional peripheral devices.
 An optional cache module ("XCACHE") can be enabled to improve memory access latency.
@@ -44,12 +44,16 @@ see section <<_address_space>>) are **redirected** to the external bus interface
 .AXI4-Lite Interface Bridge
 [TIP]
 A simple bridge that converts the processor's XBUS into an AXI4-lite-compatible host interface can
-be found in in `rtl/system_inegration` (`xbus2axi4lite_bridge.vhd`).
+be found in `rtl/system_inegration` (`xbus2axi4lite_bridge.vhd`). Note that the AXI specifications
+do not allow any bus timeouts. Hence, `XBUS_TIMEOUT` should be set to zero (disabling the bus timeout)
+when using the XBUS-AXI bridge.
 
 .AHB3-Lite Interface Bridge
 [TIP]
 A simple bridge that converts the processor's XBUS into an AHB3-lite-compatible host interface can
-be found in in `rtl/system_inegration` (`xbus2ahblite_bridge.vhd`).
+be found in `rtl/system_inegration` (`xbus2ahblite_bridge.vhd`). Note that the AHB specifications
+do not allow any bus timeouts. Hence, `XBUS_TIMEOUT` should be set to zero (disabling the bus timeout)
+when using the XBUS-AHB bridge.
 
 
 **Wishbone Bus Protocol**
@@ -72,12 +76,8 @@ device's / bus system's `cyc` and `stb` signals (omitting the processor's `xbus_
 
 .Atomic Memory Accesses
 [NOTE]
-<<_Atomic_Memory_Access>> keep the `cyc` signal active to perform a back-to-back bus access consisting of
-two `stb` strobes (one for the load/read operation and another one for the store/write operation).
-
-.Endianness
-[NOTE]
-Just like the processor itself the XBUS interface uses **little-endian** byte order.
+<<_atomic_memory_access>> operations keep the `cyc` signal active to perform a back-to-back bus access
+consisting of two `stb` strobes (one for the load/read operation and another one for the store/write operation).
 
 .Wishbone Specs.
 [TIP]
@@ -107,7 +107,7 @@ being initiated.
 **Access Tag**
 
 The XBUS tag signal `xbus_tag_o(0)` provides additional information about the current access cycle.
-It compatible to the the AXI4 `ARPROT` and `AWPROT` signals.
+It compatible to the AXI4 `ARPROT` and `AWPROT` signals.
 
 * `xbus_tag_o(0)` **P**: access is performed from **privileged** mode (machine-mode) when set
 * `xbus_tag_o(1)` **NS**: this bit is hardwired to `0` indicating a **secure** access
@@ -119,36 +119,28 @@ It compatible to the the AXI4 `ARPROT` and `AWPROT` signals.
 The XBUS interface provides an optional internal cache that can be used to buffer processor-external accesses.
 The x-cache is enabled via the `XBUS_CACHE_EN` generic. The total size of the cache is split into the number of
 cache lines or cache blocks (`XBUS_CACHE_NUM_BLOCKS` generic) and the line or block size in bytes
-(`XBUS_CACHE_BLOCK_SIZE` generic).
+(`XBUS_CACHE_BLOCK_SIZE` generic). The cache uses a direct-mapped architecture that implements "write-allocate"
+and "write-back" strategies.
 
-.Simplified X-Cache Architecture
-[source,asciiart]
----------------------------------------
-                Direct Access         +----------+
-          /|------------------------->| Register |------------------------>|\
-         | |                          +----------+                         | |
-Core --->| |                                                               | |---> XBUS
-         | |    +--------------+    +--------------+    +-------------+    | |
-          \|--->| Host Arbiter |--->| Cache Memory |<---| Bus Arbiter |--->|/
-                +--------------+    +--------------+    +-------------+
----------------------------------------
-
-The cache uses a direct-mapped architecture that implements "write-allocate" and "write-back" strategies.
-The **write-allocate** strategy will fetch the entire referenced block from main memory when encountering
-a cache write-miss. The **write-back** strategy will gather all writes locally inside the cache until the according
-cache block is about to be replaced. In this case, the entire modified cache block is written back to main memory.
-
-.Manual Cache Flush/Clear/Reload
-[NOTE]
-By executing a `fence` **or** `fence.i` instruction the XBUS cache is flushed (local modifications are send back to
-main memory), cleared (all cache entries are invalidated) and a reloaded (fetching new data from main memory).
-See section <<_cache_coherency>> for more information.
-
-.Cached/Uncached Accesses
+.Uncached Accesses
 [NOTE]
 The data cache provides direct accesses (= uncached) to memory in order to access memory-mapped IO.
 All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
-will not be cached at all (see section <<_address_space>>). Direct/uncached accesses have **lower** priority than
-cache block operations to allow continuous burst transfer and also to maintain logical instruction forward
-progress / data coherency. Furthermore, the atomic memory operations of the <<_zaamo_isa_extension>> will
-always **bypass** the cache.
+will not be cached at all (see section <<_address_space>>). Furthermore, the atomic memory operations
+of the <<_zaamo_isa_extension>> will always **bypass** the cache.
+
+.Manual Cache Flush/Clear/Reload and Memory Coherence
+[NOTE]
+By executing a `fence` **or** `fence.i` instruction the XBUS cache is flushed (local modifications are send back to
+main memory), cleared (all cache entries are invalidated) and a reloaded (fetching new data from main memory).
+See section <<_memory_coherence>> for more information.
+
+.Retrieve Cache Configuration from Software
+[TIP]
+Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_configuration>> register.
+
+.Bus Access Fault Handling
+[NOTE]
+If the cache encounters a bus error when uploading a modified block to the next memory level or when
+downloading a new block from the next memory level, the entire block is invalidated and a bus access
+error exception is raised.

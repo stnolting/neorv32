@@ -107,6 +107,7 @@ architecture neorv32_twd_rtl of neorv32_twd is
     cmd   : std_ulogic; -- 0 = write, 1 = read
     rdata : std_ulogic_vector(7 downto 0); -- read-access data
     dout  : std_ulogic; -- output bit
+    ack   : std_ulogic; -- ACK/NACK after transmission
     busy  : std_ulogic; -- bus operation in progress
     wr_we : std_ulogic; -- write write-enable
     rd_re : std_ulogic; -- read read-enable
@@ -263,8 +264,8 @@ begin
   synchronizer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      smp.sda_sreg <= (others => '0');
-      smp.scl_sreg <= (others => '0');
+      smp.sda_sreg <= (others => '1');
+      smp.scl_sreg <= (others => '1');
       smp.valid    <= '0';
     elsif rising_edge(clk_i) then
       -- input register --
@@ -292,8 +293,8 @@ begin
   bus_event: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      smp.sda      <= '0';
-      smp.scl      <= '0';
+      smp.sda      <= '1';
+      smp.scl      <= '1';
       smp.scl_rise <= '0';
       smp.scl_fall <= '0';
       smp.start    <= '0';
@@ -321,6 +322,7 @@ begin
       engine.sreg  <= (others => '1');
       engine.cmd   <= '0';
       engine.dout  <= '0';
+      engine.ack   <= '0';
       engine.wr_we <= '0';
       engine.rd_re <= '0';
     elsif rising_edge(clk_i) then
@@ -417,9 +419,13 @@ begin
           if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
           elsif (smp.scl_fall = '1') then -- end of this time slot
-            if (engine.cmd = '0') or ((engine.cmd = '1') and (smp.sda = '0')) then -- WRITE or READ with ACK
+            if (engine.cmd = '0') or ((engine.cmd = '1') and (engine.ack = '0')) then -- WRITE or READ-with-ACK
               engine.state <= S_RTX;
             end if;
+          end if;
+          -- sample bus on rising edge --
+          if (smp.scl_rise = '1') then
+            engine.ack <= smp.sda;
           end if;
           -- [READ] advance to next data byte if ACK is send by host --
           if (engine.cmd = '1') and (smp.scl_rise = '1') and (smp.sda = '0') then

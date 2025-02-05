@@ -1,3 +1,4 @@
+<<<
 :sectnums:
 == Overview
 
@@ -31,21 +32,6 @@ that provides hands-on tutorials to get you started.
 . <<_software_framework>>
 . <<_on_chip_debugger_ocd>>
 . <<_legal>>
-
-
-**Annotations Types**
-
-[WARNING]
-Warning
-
-[IMPORTANT]
-Important
-
-[NOTE]
-Note
-
-[TIP]
-Tip
 
 
 <<<
@@ -91,7 +77,6 @@ include::rationale.adoc[]
 * optional general purpose IO and PWM; a native NeoPixel(c)-compatible smart LED interface
 * optional embedded memories and caches for data, instructions and bootloader
 * optional external memory interface for custom connectivity
-* optional execute in-place (XIP) module to execute code directly form an external SPI flash
 * optional DMA controller for CPU-independent data transfers
 * optional CRC module to check data integrity
 * on-chip debugger compatible with OpenOCD and GDB including hardware trigger module and optional authentication
@@ -102,7 +87,7 @@ include::rationale.adoc[]
 * internal bootloader with serial user interface (via UART)
 * core libraries and HAL for high-level usage of the provided functions and peripherals
 * processor-specific runtime environment and several example programs
-* doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
+* Doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
 * FreeRTOS port + demos available
 
 **Extensibility and Customization**
@@ -230,8 +215,7 @@ rtl/core
 ├-neorv32_twi.vhd               - Two wire serial interface controller
 ├-neorv32_uart.vhd              - Universal async. receiver/transmitter
 ├-neorv32_wdt.vhd               - Watchdog timer
-├-neorv32_xbus.vhd              - External (Wishbone) bus interface gateways
-└-neorv32_xip.vhd               - Execute in place module
+└-neorv32_xbus.vhd              - External (Wishbone) bus interface gateways
 ...................................
 
 .Replacing Modules for Customization or Optimization

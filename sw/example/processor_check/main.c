@@ -80,21 +80,34 @@ volatile uint32_t num_hpm_cnts_global = 0; // global number of available hpms
 volatile int vectored_mei_handler_ack = 0; // vectored mei trap handler acknowledge
 volatile uint32_t gpio_trap_handler_ack = 0; // gpio trap handler acknowledge
 volatile uint32_t hw_brk_mscratch_ok = 0; // set when mepc was correct in trap handler
-volatile uint32_t constr_test = 0; // for constructor test
-
 volatile uint32_t dma_src; // dma source & destination data
 volatile uint32_t store_access_addr[2]; // variable to test store accesses
 volatile uint32_t __attribute__((aligned(4))) pmp_access[2]; // variable to test pmp
 volatile uint32_t trap_cnt; // number of triggered traps
 volatile uint32_t pmp_num_regions; // number of implemented pmp regions
 volatile uint8_t core1_stack[512]; // stack for core1
-
+volatile unsigned char constr_src[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+volatile uint32_t constr_res = 0; // for constructor test
 
 /**********************************************************************//**
  * Constructor; should be called before entering main.
+ * @warning Constructors do not preserve any registers on the stack (issue #1169).
  **************************************************************************/
 void __attribute__((constructor)) neorv32_constructor() {
-  constr_test = 0x1234abcdu;
+
+  int i;
+  volatile unsigned char tmp[16];
+
+  // do some dummy copying (just to ensure we are using a lot of UNSAVED registers)
+  for (i=0; i<16; i++) {
+    tmp[i] = constr_src[i];
+  }
+
+  // simple hash
+  constr_res = 0;
+  for (i=0; i<16; i++) {
+    constr_res = (31 * constr_res) + tmp[i];
+  }
 }
 
 
@@ -267,6 +280,32 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Test fence instructions
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] Fences ", cnt_test);
+
+  cnt_test++;
+
+  // test that we do no crash the core and check if cache flushing works
+  store_access_addr[0] = 0x01234567;
+  asm volatile ("fence");
+  asm volatile ("fence.i");
+  store_access_addr[0] += 0x76543210;
+  asm volatile ("fence");
+  asm volatile ("fence.i");
+  store_access_addr[0] += 0x11111111;
+
+  if ((store_access_addr[0] == 0x88888888) &&
+      (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
+    test_ok();
+  }
+  else {
+    test_fail();
+  }
+
+
+  // ----------------------------------------------------------
   // Test standard RISC-V counters
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
@@ -404,13 +443,12 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // External memory interface test
-  // (and iCache block-/word-wise error check)
+  // External memory interface test (and I-cache block-/word-wise error check)
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Ext. memory (@0x%x) ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) {
+  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) && (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM))) {
     cnt_test++;
 
     // clear scratch CSR
@@ -1434,7 +1472,6 @@ int main() {
 
     // enable DMA, auto-fencing and according FIRQ channel
     neorv32_dma_enable();
-    neorv32_dma_fence_enable();
     neorv32_cpu_csr_write(CSR_MIE, 1 << DMA_FIRQ_ENABLE);
 
     // setup source data
@@ -1775,7 +1812,7 @@ int main() {
   PRINT_STANDARD("[%i] Constructor ", cnt_test);
   cnt_test++;
 
-  if (constr_test == 0x1234abcdu) { // has constructor been executed?
+  if (constr_res == 0xb4459108) { // has constructor been executed (correct hash)?
     test_ok();
   }
   else {

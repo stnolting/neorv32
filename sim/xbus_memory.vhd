@@ -56,15 +56,25 @@ architecture xbus_memory_rtl of xbus_memory is
         readline(hex_file, hex_line_v); -- read one line from file
         for i in 7 downto 0 loop -- get full 32-bit word in 'word_v'; no VHDL2008 required
           read(hex_line_v, hex_char_v);
-          if (hex_char_v >= '0') and (hex_char_v <= '9') then
-            tmp_v := 0 + (character'pos(hex_char_v) - character'pos('0'));
-          elsif (hex_char_v >= 'a') and (hex_char_v <= 'f') then
-            tmp_v := 10 + (character'pos(hex_char_v) - character'pos('a'));
-          elsif (hex_char_v >= 'A') and (hex_char_v <= 'F') then
-            tmp_v := 10 + (character'pos(hex_char_v) - character'pos('A'));
-          else -- invalid character
-            tmp_v := 0;
-          end if;
+          case hex_char_v is
+            when '0'       => tmp_v := 0;
+            when '1'       => tmp_v := 1;
+            when '2'       => tmp_v := 2;
+            when '3'       => tmp_v := 3;
+            when '4'       => tmp_v := 4;
+            when '5'       => tmp_v := 5;
+            when '6'       => tmp_v := 6;
+            when '7'       => tmp_v := 7;
+            when '8'       => tmp_v := 8;
+            when '9'       => tmp_v := 9;
+            when 'a' | 'A' => tmp_v := 10;
+            when 'b' | 'B' => tmp_v := 11;
+            when 'c' | 'C' => tmp_v := 12;
+            when 'd' | 'D' => tmp_v := 13;
+            when 'e' | 'E' => tmp_v := 14;
+            when 'f' | 'F' => tmp_v := 15;
+            when others    => tmp_v := 0;
+          end case;
           word_v(i*4+3 downto i*4+0) := to_bitvector(std_ulogic_vector((to_unsigned(tmp_v, 4))));
         end loop;
         mem_v(index_v) := word_v(byte_sel*8+7 downto byte_sel*8+0); -- extract desired byte

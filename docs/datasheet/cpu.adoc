@@ -1,3 +1,4 @@
+<<<
 :sectnums:
 == NEORV32 Central Processing Unit (CPU)
 
@@ -40,7 +41,7 @@ instruction exception (see section <<_full_virtualization>>).
 .`time[h]` CSRs (Wall Clock Time)
 [IMPORTANT]
 The NEORV32 does not implement the `time[h]` registers. Any access to these registers will trap. It is
-recommended that the trap handler software provides a means of accessing the the machine timer of the
+recommended that the trap handler software provides a means of accessing the machine timer of the
 <<_core_local_interruptor_clint>>.
 
 .No Hardware Support of Misaligned Memory Accesses
@@ -66,7 +67,7 @@ direction as seen from the CPU.
 [options="header", grid="rows"]
 |=======================
 | Signal | Width/Type | Dir | Description
-4+^| **Global Signals**
+4+^| **Clock and reset**
 | `clk_i`        | 1           | in  | Global clock line, all registers triggering on rising edge.
 | `rstn_i`       | 1           | in  | Global reset, low-active.
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
@@ -75,20 +76,17 @@ direction as seen from the CPU.
 | `mti_i`        | 1           | in  | RISC-V machine timer interrupt.
 | `firq_i`       | 16          | in  | Custom fast interrupt request signals.
 | `dbi_i`        | 1           | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>).
+4+^| **<<_inter_core_communication_icc>> links**
+| `icc_tx_o` | `icc_t`         | out | TX link
+| `icc_rx_i` | `icc_t`         | in  | RX link
 4+^| **Instruction <<_bus_interface>>**
 | `ibus_req_o`   | `bus_req_t` | out | Instruction fetch bus request.
 | `ibus_rsp_i`   | `bus_rsp_t` | in  | Instruction fetch bus response.
 4+^| **Data <<_bus_interface>>**
 | `dbus_req_o`   | `bus_req_t` | out | Data access (load/store) bus request.
 | `dbus_rsp_i`   | `bus_rsp_t` | in  | Data access (load/store) bus response.
-4+^| **<<_inter_core_communication_icc>> TX links**
-| `icc_tx_rdy_o` | 2           | out | Data available for cores `0..1`.
-| `icc_tx_ack_i` | 2           | in  | Read-enable from cores `0..1`.
-| `icc_tx_dat_o` | 2*32        | out | Data for cores `0..1`.
-4+^| **<<_inter_core_communication_icc>> RX links**
-| `icc_rx_rdy_i` | 2           | in  | Data available from cores `0..1`.
-| `icc_rx_ack_o` | 2           | out | Read-enable for cores `0..1`.
-| `icc_rx_dat_i` | 2*32        | in  | Data from cores `0..1`.
+4+^| **<<_memory_coherence>> status**
+| `mem_sync_i`   | 1           | in  | Requested coherence established when set (single-shot)
 |=======================
 
 .Bus Interface Protocol
@@ -119,7 +117,6 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 | Name | Type | Description
 | `HART_ID`          | natural   | ID of the core (for <<_mhartid>> CSR).
 | `NUM_HARTS`        | natural   | Total number of cores in the system.
-| `VENDOR_ID`        | suv(31:0) | Vendor identification (for <<_mvendorid>> CSR).
 | `BOOT_ADDR`        | suv(31:0) | CPU reset address. See section <<_address_space>>.
 | `DEBUG_PARK_ADDR`  | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
 | `DEBUG_EXC_ADDR`   | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
@@ -425,12 +422,11 @@ always valid when set.
 | `rw`    |     1 | Access direction (`0` = read, `1` = write)
 | `src`   |     1 | Access source (`0` = instruction fetch, `1` = load/store)
 | `priv`  |     1 | Set if privileged (M-mode) access
+| `debug` |     1 | Set if debug mode access
 | `amo`   |     1 | Set if current access is an atomic memory operation (<<_atomic_memory_access>>)
 | `amoop` |     4 | Type of atomic memory operation (<<_atomic_memory_access>>)
 3+^| **Out-Of-Band Signals**
-| `fence` |     1 | Data/instruction fence request; single-shot
-| `sleep` |     1 | Set if ALL upstream devices are in <<_sleep_mode>>
-| `debug` |     1 | Set if the upstream device is in debug-mode
+| `fence` |     1 | Data (load/store; `fence`) or instruction (instruction-fetch; `fence.i`) fence request; single-shot; see <<_memory_coherence>>
 |=======================
 
 .Bus Interface - Response Bus (`bus_rsp_t`)
@@ -464,7 +460,7 @@ The figure below shows three exemplary bus accesses:
 . A write access to address `B_addr` writing `wdata` (fastest response; `ACK` arrives right in the next cycle).
 . A failing read access to address `C_addr` (slow response; `ERR` arrives after several cycles).
 
-.Three Exemplary Bus Transactions (showing only in-band signals)
+.Three Exemplary Bus Transactions (showing only in-band signals; privileged non-debug non-atomic accesses)
 image::bus_interface.png[700]
 
 .Adding Register Stages
@@ -502,8 +498,8 @@ operation:
 
 .Cache Coherency
 [IMPORTANT]
-Atomic operations **always bypass** the CPU caches using direct/uncached accesses. Care must be taken
-to maintain data <<_cache_coherency>>.
+Atomic operations **always bypass** the (CPU) caches using direct/uncached accesses. Care must be taken
+to maintain data synchronization. See section <<_memory_coherence>> for more information.
 
 
 <<<
@@ -610,7 +606,7 @@ The "compressed" ISA extension provides 16-bit encodings of commonly used instru
 ==== `E` ISA Extension
 
 The "embedded" ISA extensions reduces the size of the general purpose register file from 32 entries to 16 entries to
-shrink hardware size. It provides the same instructions as the the base `I` ISA extensions.
+shrink hardware size. It provides the same instructions as the base `I` ISA extensions.
 
 .Alternative MABI
 [NOTE]
@@ -633,7 +629,7 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | Jump/call     | `jal[r]`                                                                  | 6
 | Load/store    | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 5
 | System        | `ecall` `ebreak`                                                          | 3
-| Data fence    | `fence`                                                                   | 5
+| Data fence    | `fence`                                                                   | depends on the memory system
 | System        | `wfi`                                                                     | 3
 | System        | `mret`                                                                    | 5
 | Illegal inst. | -                                                                         | 3
@@ -642,10 +638,10 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 .`fence` Instruction
 [NOTE]
 Analogous to the `fence.i` instruction (<<_zifencei_isa_extension>>) the `fence` instruction triggers
-a data cache synchronization operation. See section <<_cache_coherency>> for more information.
-Furthermore, the `fence` instruction word's _predecessor_ and _successor_ bits (used for memory ordering)
-are not evaluated by the hardware at all.
-
+a load/store memory synchronization operation. The CPU will stall until the requested coherence is
+established (`mem_sync_i` goes high). See section <<_memory_coherence>> for more information.
+NEORV32 ignores the predecessor and successor fields and always executes a conservative fence on all
+operations.
 
 .`wfi` Instruction
 [NOTE]
@@ -717,16 +713,16 @@ The instruction word's `aq` and `lr` memory ordering bits are not evaluated by t
 ==== `Zifencei` ISA Extension
 
 The `Zifencei` CPU extension allows manual synchronization of the instruction stream. This extension is always enabled.
-
-Analogous to the `fence` instruction the `fence.i` instruction triggers an instruction cache synchronization operation.
-See section <<_cache_coherency>> for more information.
+This instruction is the only standard mechanism to ensure that stores visible to a hart will also be visible to its
+instruction fetches. The CPU will stall until the requested coherence is established (`mem_sync_i` goes high).
+See section <<_memory_coherence>> for more information.
 
 .Instructions and Timing
 [cols="<2,<4,<3"]
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Instruction fence | `fence.i` | 5
+| Instruction fence | `fence.i` | depends on the memory system
 |=======================
 
 
@@ -1203,7 +1199,7 @@ available at https://github.com/riscv-non-isa/riscv-trace-spec):
 * **trap**: the transfer of control to a trap handler caused by either an _exception_ or an _interrupt_
 
 Whenever an exception or interrupt is triggered, the CPU switches to machine-mode (if not already in machine-mode)
-and continues operation at the address being stored in the <<_mtvec>> CSR. The cause of the the trap can be determined via the
+and continues operation at the address being stored in the <<_mtvec>> CSR. The cause of the trap can be determined via the
 <<_mcause>> CSR. A list of all implemented `mcause` values and the according description can be found below in section
 <<_neorv32_trap_listing>>. The address that reflects the current program counter when a trap was taken is stored to
 <<_mepc>> CSR. Additional information regarding the cause of the trap can be retrieved from the <<_mtval>> and <<_mtinst>> CSRs.

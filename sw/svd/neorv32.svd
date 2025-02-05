@@ -4,7 +4,7 @@
   <vendor>stnolting</vendor>
   <name>neorv32</name>
   <series>RISC-V</series>
-  <version>1.10.9</version>
+  <version>1.11.0</version>
   <description>The NEORV32 RISC-V Processor</description>
 
   <!-- CPU core -->
@@ -413,11 +413,6 @@
               <description>Enable automatic transfer trigger (FIRQ-triggered)</description>
             </field>
             <field>
-              <name>DMA_CTRL_FENCE</name>
-              <bitRange>[2:2]</bitRange>
-              <description>Issue a downstream FENCE operation when DMA transfer completes (without errors)</description>
-            </field>
-            <field>
               <name>DMA_CTRL_ERROR_RD</name>
               <bitRange>[8:8]</bitRange>
               <access>read-only</access>
@@ -578,107 +573,6 @@
         <register>
           <name>DC[2]</name>
           <description>Duty cycle register 2</description>
-          <addressOffset>0x0C</addressOffset>
-        </register>
-      </registers>
-    </peripheral>
-
-    <!-- XIP -->
-    <!-- **************************************************************** -->
-    <peripheral>
-      <name>XIP</name>
-      <description>Execute In Place Module</description>
-      <baseAddress>0xFFEF0000</baseAddress>
-
-      <addressBlock>
-        <offset>0</offset>
-        <size>0x10</size>
-        <usage>registers</usage>
-      </addressBlock>
-
-      <registers>
-        <register>
-          <name>CTRL</name>
-          <description>Control register</description>
-          <addressOffset>0x00</addressOffset>
-          <fields>
-            <field>
-              <name>XIP_CTRL_EN</name>
-              <bitRange>[0:0]</bitRange>
-              <description>XIP module enable flag</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_PRSC</name>
-              <bitRange>[3:1]</bitRange>
-              <description>SPI clock prescaler select</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_CPOL</name>
-              <bitRange>[4:4]</bitRange>
-              <description>SPI clock (idle) polarity</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_CPHA</name>
-              <bitRange>[5:5]</bitRange>
-              <description>SPI clock phase</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_SPI_NBYTES</name>
-              <bitRange>[9:6]</bitRange>
-              <description>Number of bytes in SPI transmission</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_XIP_EN</name>
-              <bitRange>[10:10]</bitRange>
-              <description>XIP mode enable</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_XIP_ABYTES</name>
-              <bitRange>[12:11]</bitRange>
-              <description>Number of XIP address bytes (minus 1)</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_RD_CMD</name>
-              <bitRange>[20:13]</bitRange>
-              <description>SPI flash read command</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_SPI_CSEN</name>
-              <bitRange>[21:21]</bitRange>
-              <description>SPI chip-select enable</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_HIGHSPEED</name>
-              <bitRange>[22:22]</bitRange>
-              <description>SPI high-speed mode enable (ignoring XIP_CTRL_PRSC)</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_CDIV</name>
-              <bitRange>[26:23]</bitRange>
-              <description>SPI clock divider</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_PHY_BUSY</name>
-              <bitRange>[30:30]</bitRange>
-              <access>read-only</access>
-              <description>SPI PHY busy</description>
-            </field>
-            <field>
-              <name>XIP_CTRL_XIP_BUSY</name>
-              <bitRange>[31:31]</bitRange>
-              <access>read-only</access>
-              <description>XIP access in progress</description>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>DATA_LO</name>
-          <description>Direct SPI access - data register low</description>
-          <addressOffset>0x08</addressOffset>
-        </register>
-        <register>
-          <name>DATA_HI</name>
-          <description>Direct SPI access - data register high</description>
           <addressOffset>0x0C</addressOffset>
         </register>
       </registers>
@@ -1511,23 +1405,13 @@
               <description>Lock write access to control register, clears on reset (HW or WDT) only</description>
             </field>
             <field>
-              <name>WDT_CTRL_DBEN</name>
-              <bitRange>[2:2]</bitRange>
-              <description>Allow WDT to continue operation even when in debug mode</description>
-            </field>
-            <field>
-              <name>WDT_CTRL_SEN</name>
-              <bitRange>[3:3]</bitRange>
-              <description>Allow WDT to continue operation even when in sleep mode</description>
-            </field>
-            <field>
               <name>WDT_CTRL_STRICT</name>
-              <bitRange>[4:4]</bitRange>
+              <bitRange>[2:2]</bitRange>
               <description>Force hardware reset if reset password is incorrect or if write attempt to locked CTRL register</description>
             </field>
             <field>
               <name>WDT_CTRL_RCAUSE</name>
-              <bitRange>[6:5]</bitRange>
+              <bitRange>[4:3]</bitRange>
               <access>read-only</access>
               <description>Cause of last system reset: 0=external reset, 1=OCD reset, 2=WDT reset, 3=WDT access violation</description>
             </field>
@@ -1750,8 +1634,6 @@
             <field><name>SYSINFO_SOC_ICACHE</name><bitRange>[5:5]</bitRange><description>Processor-internal instruction cache implemented</description></field>
             <field><name>SYSINFO_SOC_DCACHE</name><bitRange>[6:6]</bitRange><description>Processor-internal data cache implemented</description></field>
             <field><name>SYSINFO_SOC_XBUS_CACHE</name><bitRange>[8:8]</bitRange><description>External bus cache implemented</description></field>
-            <field><name>SYSINFO_SOC_XIP</name><bitRange>[9:9]</bitRange><description>Execute in place module implemented</description></field>
-            <field><name>SYSINFO_SOC_XIP_CACHE</name><bitRange>[10:10]</bitRange><description>Execute in place cache implemented</description></field>
             <field><name>SYSINFO_SOC_OCD_AUTH</name><bitRange>[11:11]</bitRange><description>On-chip debugger authentication implemented</description></field>
             <field><name>SYSINFO_SOC_IMEM_ROM</name><bitRange>[12:12]</bitRange><description>Processor-internal instruction memory implemented as pre-initialized ROM</description></field>
             <field><name>SYSINFO_SOC_IO_TWD</name><bitRange>[13:13]</bitRange><description>Two-wire device implemented</description></field>
@@ -1784,8 +1666,6 @@
             <field><name>SYSINFO_CACHE_INST_NUM_BLOCKS</name><bitRange>[7:4]</bitRange><description>i-cache: log2(Number of cache blocks)</description></field>
             <field><name>SYSINFO_CACHE_DATA_BLOCK_SIZE</name><bitRange>[11:8]</bitRange><description>d-cache: log2(Block size in bytes)</description></field>
             <field><name>SYSINFO_CACHE_DATA_NUM_BLOCKS</name><bitRange>[15:12]</bitRange><description>d-cache: log2(Number of cache blocks)</description></field>
-            <field><name>SYSINFO_CACHE_XIP_BLOCK_SIZE</name><bitRange>[19:16]</bitRange><description>xip-cache: log2(Block size in bytes)</description></field>
-            <field><name>SYSINFO_CACHE_XIP_NUM_BLOCKS</name><bitRange>[23:20]</bitRange><description>xip-cache: log2(Number of cache blocks)</description></field>
             <field><name>SYSINFO_CACHE_XBUS_BLOCK_SIZE</name><bitRange>[27:24]</bitRange><description>xbus-cache: log2(Block size in bytes)</description></field>
             <field><name>SYSINFO_CACHE_XBUS_NUM_BLOCKS</name><bitRange>[31:28]</bitRange><description>xbus-cache: log2(Number of cache blocks)</description></field>
           </fields>

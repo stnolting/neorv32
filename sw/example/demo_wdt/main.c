@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -82,9 +82,9 @@ int main() {
     return -1;
   }
 
-  // setup watchdog: no lock, disable in debug mode, enable in sleep mode, enable strict mode
+  // setup watchdog: no lock, enable strict mode
   neorv32_uart0_puts("Starting WDT...\n");
-  neorv32_wdt_setup(timeout, 0, 0, 1, 1);
+  neorv32_wdt_setup(timeout, 0, 1);
 
 
   // feed the watchdog

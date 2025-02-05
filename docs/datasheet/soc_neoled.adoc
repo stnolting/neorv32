@@ -141,7 +141,7 @@ The data transfer size (`NEOLED_MODE_EN`) can be modified at any time since this
 in the FIFO. This allows an arbitrary mix of RGB and RGBW LEDs in the chain.
 
 Software can check the FIFO fill level via the control register's `NEOLED_CTRL_TX_EMPTY`, `NEOLED_CTRL_TX_HALF`
-and `NEOLED_CTRL_TX_FULL` flags. The `NEOLED_CTRL_TX_BUSY` flags provides additional information if the the serial
+and `NEOLED_CTRL_TX_FULL` flags. The `NEOLED_CTRL_TX_BUSY` flags provides additional information if the serial
 transmit engine is still busy sending data.
 
 [WARNING]

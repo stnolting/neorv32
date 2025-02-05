@@ -36,8 +36,8 @@ interrupt_ (via the top `mext_irq_i` port) is also send to both cores. In contra
 _software_ and _timer_ interrupts are core-exclusive (provided by the <<_core_local_interruptor_clint>>).
 | **RTE** | The <<_neorv32_runtime_environment>> can be used for both cores. However, the RTE needs to be
 explicitly initialized on each core (executing `neorv32_rte_setup()`). Note that the installed trap handlers
-apply to both cores. The installed user-defined trap handlers can determine the core's ID to perform
-core-specific trap handling.
+apply to both cores. The installed user-defined trap handlers can check the according core's ID via the
+<<_mhartid>> CSR to perform core-specific trap handling.
 | **Memory** | Each core has its own stack. The top of stack of core 0 is defined by the <<_linker_script>>
 while the top of stack of core 1 has to be explicitly defined by core 0 (see <<_dual_core_boot>>). Both
 cores share the same heap, `.data` and `.bss` sections. Hence, only core 0 setups the `.data` and `.bss`
@@ -83,7 +83,7 @@ The ICC communication links are accessed via two NEORV32-specific CSRs. Hence, t
 by the CPU core itself and cannot be accessed by the DMA or any other CPU core.
 
 The <<_mxiccsreg>> provides read-only status information about the core's ICC links: bit 0 becomes set if
-there is RX data available for _this_ core (send from the the other core). Bit 1 is set as long there is
+there is RX data available for _this_ core (send from the other core). Bit 1 is set as long there is
 free space in _this_ core's TX data FIFO. The <<_mxiccdata>> CSR is used for actual data send/receive operations.
 Writing this register will put the according data word into the TX link FIFO of _this_ core. Reading this CSR
 will return a data word from the RX FIFO of _this_ core.
@@ -96,9 +96,9 @@ available messages.
 ==== Dual-Core Boot
 
 After reset, both cores start booting. However, core 1 will - regardless of the <<_boot_configuration>> - always
-enter <<_sleep_mode>> right inside the default <<_start_up_code_crt0>> that is linked with any compiled
-application. The primary core (core 0) will continue booting, executing either the <<_bootloader>> or the
-pre-installed image from the internal instruction memory (depending on the boot configuration).
+enter <<_sleep_mode>> right inside the default <<_start_up_code_crt0>>. The primary core (core 0) will continue
+booting, executing either the <<_bootloader>> or the pre-installed image from the internal instruction memory
+(depending on the boot configuration).
 
 To boot-up core 1, the primary core has to use a special library function provided by the NEORV32 software framework:
 
@@ -125,7 +125,7 @@ int core1_main(void) {
 The memory for the stack of core 1 (`stack_memory`) can be either statically allocated (i.e. a global
 volatile memory array; placed in the `.data` or `.bss` section of core 0) or dynamically allocated
 (using `malloc`; placed on the heap of core 0). In any case the memory should be aligned to a 16-byte
-boundary.´
+boundary.
 
 After that, the primary core triggers the _machine software interrupt_ of core 1 using the
 <<_core_local_interruptor_clint>>. Core 1 wakes up from sleep mode, consumes the configuration structure and

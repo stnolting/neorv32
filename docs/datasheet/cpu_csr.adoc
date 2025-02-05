@@ -307,7 +307,7 @@ As software does not need to determine the interrupt cause the reduction in late
 |=======================
 
 .`mcounteren` CSR bits
-[cols="^1,^1,<8"]
+[cols="^1,^3,^1,<8"]
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
@@ -587,7 +587,7 @@ implementation of the according modes.
 |=======================
 
 .`pmpaddr*` CSR Bits
-[cols="^1,^2,^1,<11"]
+[cols="^1,^1,<11"]
 [options="header",grid="rows"]
 |=======================
 | Bit   | R/W | Description
@@ -681,7 +681,7 @@ These registers are read/write only for machine-mode software
 
 .Instruction Retiring
 [IMPORTANT]
-Note that **all** executed instruction do increment the `[m]instret`[h] counters even if they do not retire
+Note that **all** executed instruction do increment the `[m]instret[h]` counters even if they do not retire
 (e.g. if the instruction causes an exception).
 
 
@@ -834,9 +834,9 @@ and are not accessible for lower-privileged software.
 |=======================
 | Name        | Machine vendor ID
 | Address     | `0xf11`
-| Reset value | `DEFINED`
+| Reset value | `0x00000000`
 | ISA         | `Zicsr`
-| Description | Vendor ID (JEDEC identifier, lowest 11 bits), assigned via the `JEDEC_ID` top generic (<<_processor_top_entity_generics>>).
+| Description | Hardwired to zero; read accesses are ignored.
 |=======================
 
 

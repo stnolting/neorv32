@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - XBUS to AHB3-Lite Bridge (single non-overlapping transfers only)   --
+-- NEORV32 SoC - XBUS to AHB3-Lite Bridge                                           --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -10,14 +10,13 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 entity xbus2ahblite_bridge is
   port (
-    -- global control --
+    -- Global control --
     clk_i        : in  std_ulogic;                     -- global clock line
     rstn_i       : in  std_ulogic;                     -- global reset line, low-active, use as async
-    -- xbus device interface --
+    -- XBUS device interface --
     xbus_adr_i   : in  std_ulogic_vector(31 downto 0); -- address
     xbus_dat_i   : in  std_ulogic_vector(31 downto 0); -- write data
     xbus_tag_i   : in  std_ulogic_vector(2 downto 0);  -- access tag
@@ -28,7 +27,7 @@ entity xbus2ahblite_bridge is
     xbus_ack_o   : out std_ulogic;                     -- transfer acknowledge
     xbus_err_o   : out std_ulogic;                     -- transfer error
     xbus_dat_o   : out std_ulogic_vector(31 downto 0); -- read data
-    -- ahb-lite host interface --
+    -- AHB3-Lite host interface --
     ahb_haddr_o  : out std_ulogic_vector(31 downto 0); -- address
     ahb_hwdata_o : out std_ulogic_vector(31 downto 0); -- write data
     ahb_hwrite_o : out std_ulogic;                     -- read/write
@@ -100,9 +99,13 @@ begin
   xbus_dat_o   <= ahb_hrdata_i;
 
   -- data quantity --
-  with xbus_sel_i select ahb_hsize_o <=
-    "000" when "1000" | "0100" | "0010" | "0001", -- byte
-    "001" when "1100" | "0011", -- half-word (aligned only)
-    "010" when others; -- word
+  data_size: process(xbus_sel_i)
+  begin
+    case xbus_sel_i is
+      when "1000" | "0100" | "0010" | "0001" => ahb_hsize_o <= "000"; -- byte
+      when "1100" | "0011" => ahb_hsize_o <= "001"; -- half-word
+      when others => ahb_hsize_o <= "010"; -- word
+    end case;
+  end process data_size;
 
 end xbus2ahblite_bridge_rtl;

@@ -41,7 +41,7 @@ entity neorv32_tb is
     RISCV_ISA_Zknd      : boolean                        := true;        -- implement cryptography NIST AES decryption extension
     RISCV_ISA_Zkne      : boolean                        := true;        -- implement cryptography NIST AES encryption extension
     RISCV_ISA_Zknh      : boolean                        := true;        -- implement cryptography NIST hash extension
-    RISCV_ISA_Zksed     : boolean                        := true;        -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksed     : boolean                        := true;        -- implement ShangMi block cipher extension
     RISCV_ISA_Zksh      : boolean                        := true;        -- implement ShangMi hash extension
     RISCV_ISA_Zmmul     : boolean                        := true;        -- implement multiply-only M sub-extension
     RISCV_ISA_Zxcfu     : boolean                        := true;        -- implement custom (instr.) functions unit
@@ -63,11 +63,13 @@ entity neorv32_tb is
     EXT_MEM_A_EN        : boolean                        := false;       -- enable memory
     EXT_MEM_A_BASE      : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address, has to be word-aligned
     EXT_MEM_A_SIZE      : natural                        := 64;          -- memory size in bytes, min 4
+    EXT_MEM_A_LATE      : natural range 1 to 4096        := 20;          -- access latency cycles
     EXT_MEM_A_FILE      : string                         := "";          -- memory initialization file (plain HEX), no initialization if empty
     -- external memory B --
     EXT_MEM_B_EN        : boolean                        := false;       -- enable memory
     EXT_MEM_B_BASE      : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address, has to be word-aligned
     EXT_MEM_B_SIZE      : natural                        := 64;          -- memory size in bytes, min 4
+    EXT_MEM_B_LATE      : natural range 1 to 4096        := 40;          -- access latency cycles
     EXT_MEM_B_FILE      : string                         := ""           -- memory initialization file (plain HEX), no initialization if empty
   );
 end neorv32_tb;
@@ -120,8 +122,6 @@ begin
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
     -- Dual-Core Configuration --
     DUAL_CORE_EN          => DUAL_CORE_EN,
-    -- Identification --
-    JEDEC_ID              => "00000000000",
     -- Boot Configuration --
     BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
     BOOT_ADDR_CUSTOM      => BOOT_ADDR_CUSTOM,
@@ -180,16 +180,11 @@ begin
     DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
     -- External bus interface --
     XBUS_EN               => true,
-    XBUS_TIMEOUT          => 256,
+    XBUS_TIMEOUT          => 0,
     XBUS_REGSTAGE_EN      => true,
     XBUS_CACHE_EN         => true,
     XBUS_CACHE_NUM_BLOCKS => 4,
-    XBUS_CACHE_BLOCK_SIZE => 32,
-    -- Execute in-place module (XIP) --
-    XIP_EN                => true,
-    XIP_CACHE_EN          => true,
-    XIP_CACHE_NUM_BLOCKS  => 4,
-    XIP_CACHE_BLOCK_SIZE  => 256,
+    XBUS_CACHE_BLOCK_SIZE => 64,
     -- Processor peripherals --
     IO_GPIO_NUM           => 32,
     IO_CLINT_EN           => true,
@@ -259,11 +254,6 @@ begin
     slink_tx_val_o => slink_tx.valid,
     slink_tx_lst_o => slink_tx.last,
     slink_tx_rdy_i => slink_tx.ready,
-    -- XIP --
-    xip_csn_o      => open,
-    xip_clk_o      => open,
-    xip_dat_i      => '0',
-    xip_dat_o      => open,
     -- GPIO --
     gpio_o         => gpio,
     gpio_i         => gpio,
@@ -417,6 +407,8 @@ begin
     DEV_3_EN => true,         DEV_3_SIZE =>              4, DEV_3_BASE => x"FF000000"
   )
   port map (
+    clk_i       => clk_gen,
+    rstn_i      => rst_gen,
     -- host port --
     host_req_i  => xbus_core_req,
     host_rsp_o  => xbus_core_rsp,
@@ -435,7 +427,7 @@ begin
     xbus_external_memory_a: entity work.xbus_memory
     generic map (
       MEM_SIZE => EXT_MEM_A_SIZE,
-      MEM_LATE => 1,
+      MEM_LATE => EXT_MEM_A_LATE,
       MEM_FILE => EXT_MEM_A_FILE
     )
     port map (
@@ -459,7 +451,7 @@ begin
     xbus_external_memory_b: entity work.xbus_memory
     generic map (
       MEM_SIZE => EXT_MEM_B_SIZE,
-      MEM_LATE => 1,
+      MEM_LATE => EXT_MEM_B_LATE,
       MEM_FILE => EXT_MEM_B_FILE
     )
     port map (
@@ -480,7 +472,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   xbus_mmio: entity work.xbus_memory
   generic map (
-    MEM_SIZE => 64,
+    MEM_SIZE => 8,
     MEM_LATE => 32,
     MEM_FILE => "" -- no initialization
   )

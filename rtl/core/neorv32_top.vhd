@@ -1,10 +1,9 @@
 -- ================================================================================ --
 -- NEORV32 SoC - Processor Top Entity                                               --
 -- -------------------------------------------------------------------------------- --
--- HQ:           https://github.com/stnolting/neorv32                               --
--- Data Sheet:   https://stnolting.github.io/neorv32                                --
--- User Guide:   https://stnolting.github.io/neorv32/ug                             --
--- Software Ref: https://stnolting.github.io/neorv32/sw/files.html                  --
+-- HQ:         https://github.com/stnolting/neorv32                                 --
+-- Data Sheet: https://stnolting.github.io/neorv32                                  --
+-- User Guide: https://stnolting.github.io/neorv32/ug                               --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -27,9 +26,6 @@ entity neorv32_top is
     -- Dual-Core Configuration --
     DUAL_CORE_EN          : boolean                        := false;       -- enable dual-core homogeneous SMP
 
-    -- Core Identification --
-    JEDEC_ID              : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
-
     -- Boot Configuration --
     BOOT_MODE_SELECT      : natural range 0 to 2           := 0;           -- boot configuration select (default = 0 = bootloader)
     BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
@@ -37,6 +33,7 @@ entity neorv32_top is
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                        := false;       -- implement on-chip debugger
     OCD_AUTHENTICATION    : boolean                        := false;       -- implement on-chip debugger authentication
+    OCD_JEDEC_ID          : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
 
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           : boolean                        := false;       -- implement compressed extension
@@ -103,12 +100,6 @@ entity neorv32_top is
     XBUS_CACHE_EN         : boolean                        := false;       -- enable external bus cache (x-cache)
     XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 64;          -- x-cache: number of blocks (min 1), has to be a power of 2
     XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16       := 32;          -- x-cache: block size in bytes (min 4), has to be a power of 2
-
-    -- Execute in-place module (XIP) --
-    XIP_EN                : boolean                        := false;       -- implement execute in-place module (XIP)?
-    XIP_CACHE_EN          : boolean                        := false;       -- implement XIP cache?
-    XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256         := 8;           -- number of blocks (min 1), has to be a power of 2
-    XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16       := 256;         -- block size in bytes (min 4), has to be a power of 2
 
     -- Processor peripherals --
     IO_DISABLE_SYSINFO    : boolean                        := false;       -- disable the SYSINFO module (for advanced users only)
@@ -183,12 +174,6 @@ entity neorv32_top is
     slink_tx_val_o : out std_ulogic;                                        -- TX valid output
     slink_tx_lst_o : out std_ulogic;                                        -- TX last element of stream
     slink_tx_rdy_i : in  std_ulogic := 'L';                                 -- TX ready to send
-
-    -- XIP (execute in place via SPI) signals (available if XIP_EN = true) --
-    xip_csn_o      : out std_ulogic;                                        -- chip-select, low-active
-    xip_clk_o      : out std_ulogic;                                        -- serial clock
-    xip_dat_i      : in  std_ulogic := 'L';                                 -- device data input
-    xip_dat_o      : out std_ulogic;                                        -- controller data output
 
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o         : out std_ulogic_vector(31 downto 0);                    -- parallel output
@@ -277,9 +262,6 @@ architecture neorv32_top_rtl of neorv32_top is
   constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
 
-  -- convert JEDEC ID to MVENDORID CSR --
-  constant vendorid_c : std_ulogic_vector(31 downto 0) := x"00000" & "0" & JEDEC_ID;
-
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_IMEM_SIZE), MEM_INT_IMEM_SIZE, 2**index_size_f(MEM_INT_IMEM_SIZE));
   constant dmem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_DMEM_SIZE), MEM_INT_DMEM_SIZE, 2**index_size_f(MEM_INT_DMEM_SIZE));
@@ -291,11 +273,11 @@ architecture neorv32_top_rtl of neorv32_top is
   signal clk_gen : std_ulogic_vector(7 downto 0); -- scaled clock-enables
   --
   type clk_gen_en_enum_t is (
-    CG_CFS, CG_UART0, CG_UART1, CG_SPI, CG_TWI, CG_TWD, CG_PWM, CG_WDT, CG_NEOLED, CG_GPTMR, CG_XIP, CG_ONEWIRE
+    CG_CFS, CG_UART0, CG_UART1, CG_SPI, CG_TWI, CG_TWD, CG_PWM, CG_WDT, CG_NEOLED, CG_GPTMR, CG_ONEWIRE
   );
   type clk_gen_en_t is array (clk_gen_en_enum_t) of std_ulogic;
   signal clk_gen_en  : clk_gen_en_t;
-  signal clk_gen_en2 : std_ulogic_vector(11 downto 0);
+  signal clk_gen_en2 : std_ulogic_vector(10 downto 0);
 
   -- debug module interface (DMI) --
   signal dmi_req : dmi_req_t;
@@ -320,19 +302,23 @@ architecture neorv32_top_rtl of neorv32_top is
   signal sys1_rsp, sys2_rsp, dma_rsp, sys3_rsp : bus_rsp_t;
 
   -- bus: main sections --
-  signal imem_req, dmem_req, xipcache_req, xip_req, io_req, xcache_req, xbus_req : bus_req_t;
-  signal imem_rsp, dmem_rsp, xipcache_rsp, xip_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
+  signal imem_req, dmem_req, io_req, xcache_req, xbus_req : bus_req_t;
+  signal imem_rsp, dmem_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
 
   -- bus: IO devices --
   type io_devices_enum_t is (
     IODEV_BOOTROM, IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG,
     IODEV_TWI, IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_CLINT, IODEV_ONEWIRE,
-    IODEV_GPTMR, IODEV_PWM, IODEV_XIP, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD
+    IODEV_GPTMR, IODEV_PWM, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD
   );
   type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
   type iodev_rsp_t is array (io_devices_enum_t) of bus_rsp_t;
   signal iodev_req : iodev_req_t;
   signal iodev_rsp : iodev_rsp_t;
+
+  -- memory synchronization / ordering / coherence --
+  signal mem_sync, dcache_clean : std_ulogic_vector(num_cores_c-1 downto 0);
+  signal xcache_clean : std_ulogic;
 
   -- IRQs --
   type firq_enum_t is (
@@ -372,8 +358,6 @@ begin
       cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",    "") &
       cond_sel_string_f(XBUS_EN,                   "XBUS ",       "") &
       cond_sel_string_f(XBUS_EN and XBUS_CACHE_EN, "XBUS-CACHE ", "") &
-      cond_sel_string_f(XIP_EN,                    "XIP ",        "") &
-      cond_sel_string_f(XIP_EN and XIP_CACHE_EN,   "XIP-CACHE ",  "") &
       cond_sel_string_f(IO_CLINT_EN,               "CLINT ",      "") &
       cond_sel_string_f(io_gpio_en_c,              "GPIO ",       "") &
       cond_sel_string_f(IO_UART0_EN,               "UART0 ",      "") &
@@ -461,9 +445,9 @@ begin
     );
 
     -- fresh clocks anyone? --
-    clk_gen_en2 <= clk_gen_en(CG_WDT)    & clk_gen_en(CG_UART0) & clk_gen_en(CG_UART1) & clk_gen_en(CG_SPI) &
+    clk_gen_en2 <= clk_gen_en(CG_CFS)    & clk_gen_en(CG_UART0) & clk_gen_en(CG_UART1) & clk_gen_en(CG_SPI) &
                    clk_gen_en(CG_TWI)    & clk_gen_en(CG_TWD)   & clk_gen_en(CG_PWM)   & clk_gen_en(CG_WDT) &
-                   clk_gen_en(CG_NEOLED) & clk_gen_en(CG_GPTMR) & clk_gen_en(CG_XIP)   & clk_gen_en(CG_ONEWIRE);
+                   clk_gen_en(CG_NEOLED) & clk_gen_en(CG_GPTMR) & clk_gen_en(CG_ONEWIRE);
 
   end generate; -- /soc_generators
 
@@ -500,7 +484,6 @@ begin
     generic map (
       -- General --
       HART_ID             => i,
-      VENDOR_ID           => vendorid_c,
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
@@ -563,8 +546,13 @@ begin
       ibus_rsp_i => cpu_i_rsp(i),
       -- data bus interface --
       dbus_req_o => cpu_d_req(i),
-      dbus_rsp_i => cpu_d_rsp(i)
+      dbus_rsp_i => cpu_d_rsp(i),
+      -- memory synchronization --
+      mem_sync_i => mem_sync(i)
     );
+
+    -- memory synchronization (ordering / coherence) --
+    mem_sync(i) <= dcache_clean(i) and xcache_clean;
 
 
     -- CPU L1 Instruction Cache (I-Cache) -----------------------------------------------------
@@ -576,12 +564,12 @@ begin
         NUM_BLOCKS => ICACHE_NUM_BLOCKS,
         BLOCK_SIZE => ICACHE_BLOCK_SIZE,
         UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
-        UC_ENABLE  => true,
         READ_ONLY  => true
       )
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
+        clean_o    => open, -- cache is read-only so it cannot be dirty
         host_req_i => cpu_i_req(i),
         host_rsp_o => cpu_i_rsp(i),
         bus_req_o  => icache_req(i),
@@ -605,12 +593,12 @@ begin
         NUM_BLOCKS => DCACHE_NUM_BLOCKS,
         BLOCK_SIZE => DCACHE_BLOCK_SIZE,
         UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
-        UC_ENABLE  => true,
         READ_ONLY  => false
       )
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
+        clean_o    => dcache_clean(i),
         host_req_i => cpu_d_req(i),
         host_rsp_o => cpu_d_rsp(i),
         bus_req_o  => dcache_req(i),
@@ -620,8 +608,9 @@ begin
 
     neorv32_dcache_disabled:
     if not DCACHE_EN generate
-      dcache_req(i) <= cpu_d_req(i);
-      cpu_d_rsp(i)  <= dcache_rsp(i);
+      dcache_clean(i) <= '1';
+      dcache_req(i)   <= cpu_d_req(i);
+      cpu_d_rsp(i)    <= dcache_rsp(i);
     end generate;
 
 
@@ -631,18 +620,17 @@ begin
     generic map (
       ROUND_ROBIN_EN   => false, -- use prioritizing arbitration
       PORT_A_READ_ONLY => false,
-      PORT_B_READ_ONLY => true   -- instruction fetch is read-only
+      PORT_B_READ_ONLY => true -- instruction fetch is read-only
     )
     port map (
-      clk_i    => clk_i,
-      rstn_i   => rstn_sys,
-      a_lock_i => '0', -- no exclusive accesses
-      a_req_i  => dcache_req(i), -- data accesses are prioritized
-      a_rsp_o  => dcache_rsp(i),
-      b_req_i  => icache_req(i),
-      b_rsp_o  => icache_rsp(i),
-      x_req_o  => core_req(i),
-      x_rsp_i  => core_rsp(i)
+      clk_i   => clk_i,
+      rstn_i  => rstn_sys,
+      a_req_i => dcache_req(i), -- data accesses are prioritized
+      a_rsp_o => dcache_rsp(i),
+      b_req_i => icache_req(i),
+      b_rsp_o => icache_rsp(i),
+      x_req_o => core_req(i),
+      x_rsp_i => core_rsp(i)
     );
 
   end generate; -- /core_complex
@@ -668,15 +656,14 @@ begin
       PORT_B_READ_ONLY => false
     )
     port map (
-      clk_i    => clk_i,
-      rstn_i   => rstn_sys,
-      a_lock_i => '0',
-      a_req_i  => core_req(core_req'left),
-      a_rsp_o  => core_rsp(core_rsp'left),
-      b_req_i  => core_req(core_req'right),
-      b_rsp_o  => core_rsp(core_rsp'right),
-      x_req_o  => sys1_req,
-      x_rsp_i  => sys1_rsp
+      clk_i   => clk_i,
+      rstn_i  => rstn_sys,
+      a_req_i => core_req(core_req'left),
+      a_rsp_o => core_rsp(core_rsp'left),
+      b_req_i => core_req(core_req'right),
+      b_rsp_o => core_rsp(core_rsp'right),
+      x_req_o => sys1_req,
+      x_rsp_i => sys1_rsp
     );
   end generate;
 
@@ -718,15 +705,14 @@ begin
       PORT_B_READ_ONLY => false
     )
     port map (
-      clk_i    => clk_i,
-      rstn_i   => rstn_sys,
-      a_lock_i => '0', -- no exclusive accesses
-      a_req_i  => sys1_req, -- prioritized
-      a_rsp_o  => sys1_rsp,
-      b_req_i  => dma_req,
-      b_rsp_o  => dma_rsp,
-      x_req_o  => sys2_req,
-      x_rsp_i  => sys2_rsp
+      clk_i   => clk_i,
+      rstn_i  => rstn_sys,
+      a_req_i => sys1_req, -- prioritized
+      a_rsp_o => sys1_rsp,
+      b_req_i => dma_req,
+      b_rsp_o => dma_rsp,
+      x_req_o => sys2_req,
+      x_rsp_i => sys2_rsp
     );
 
   end generate; -- /neorv32_dma_complex_enabled
@@ -781,16 +767,11 @@ begin
     B_BASE   => mem_dmem_base_c,
     B_SIZE   => dmem_size_c,
     B_TMO_EN => true,
-    -- port C: XIP --
-    C_ENABLE => XIP_EN,
-    C_BASE   => mem_xip_base_c,
-    C_SIZE   => mem_xip_size_c,
-    C_TMO_EN => false, -- no timeout for XIP accesses
-    -- port D: IO --
-    D_ENABLE => true, -- always enabled (but will be trimmed if no IO devices are implemented)
-    D_BASE   => mem_io_base_c,
-    D_SIZE   => mem_io_size_c,
-    D_TMO_EN => true,
+    -- port C: IO --
+    C_ENABLE => true, -- always enabled (but will be trimmed if no IO devices are implemented)
+    C_BASE   => mem_io_base_c,
+    C_SIZE   => mem_io_size_c,
+    C_TMO_EN => true,
     -- port X (the void): XBUS --
     X_ENABLE => XBUS_EN,
     X_TMO_EN => false -- timeout handled by XBUS gateway
@@ -807,10 +788,8 @@ begin
     a_rsp_i => imem_rsp,
     b_req_o => dmem_req,
     b_rsp_i => dmem_rsp,
-    c_req_o => xip_req,
-    c_rsp_i => xip_rsp,
-    d_req_o => io_req,
-    d_rsp_i => io_rsp,
+    c_req_o => io_req,
+    c_rsp_i => io_rsp,
     x_req_o => xbus_req,
     x_rsp_i => xbus_rsp
   );
@@ -868,71 +847,6 @@ begin
     end generate;
 
 
-    -- Execute In-Place Module (XIP) ----------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_xip_enabled:
-    if XIP_EN generate
-
-      -- XIP interface --
-      neorv32_xip_inst: entity neorv32.neorv32_xip
-      generic map (
-        XIP_CACHE_EN => XIP_CACHE_EN
-      )
-      port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_XIP),
-        bus_rsp_o   => iodev_rsp(IODEV_XIP),
-        xip_req_i   => xipcache_req,
-        xip_rsp_o   => xipcache_rsp,
-        clkgen_en_o => clk_gen_en(CG_XIP),
-        clkgen_i    => clk_gen,
-        spi_csn_o   => xip_csn_o,
-        spi_clk_o   => xip_clk_o,
-        spi_dat_i   => xip_dat_i,
-        spi_dat_o   => xip_dat_o
-      );
-
-      -- XIP cache (XIP-CACHE) --
-      neorv32_xipcache_enabled:
-      if XIP_CACHE_EN generate
-        neorv32_xcache_inst: entity neorv32.neorv32_cache
-        generic map (
-          NUM_BLOCKS => XIP_CACHE_NUM_BLOCKS,
-          BLOCK_SIZE => XIP_CACHE_BLOCK_SIZE,
-          UC_BEGIN   => (others => '0'),
-          UC_ENABLE  => false,
-          READ_ONLY  => true
-        )
-        port map (
-          clk_i      => clk_i,
-          rstn_i     => rstn_sys,
-          host_req_i => xip_req,
-          host_rsp_o => xip_rsp,
-          bus_req_o  => xipcache_req,
-          bus_rsp_i  => xipcache_rsp
-        );
-      end generate;
-
-      neorv32_xipcache_disabled:
-      if not XIP_CACHE_EN generate
-        xipcache_req <= xip_req;
-        xip_rsp      <= xipcache_rsp;
-      end generate;
-
-    end generate; -- /neorv32_xip_enabled
-
-    neorv32_xip_disabled:
-    if not XIP_EN generate
-      iodev_rsp(IODEV_XIP) <= rsp_terminate_c;
-      xip_rsp              <= rsp_terminate_c;
-      clk_gen_en(CG_XIP)   <= '0';
-      xip_csn_o            <= '1';
-      xip_clk_o            <= '0';
-      xip_dat_o            <= '0';
-    end generate;
-
-
     -- External Bus Interface (XBUS) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_xbus_enabled:
@@ -949,7 +863,6 @@ begin
         rstn_i     => rstn_sys,
         bus_req_i  => xcache_req,
         bus_rsp_o  => xcache_rsp,
-        --
         xbus_adr_o => xbus_adr_o,
         xbus_dat_i => xbus_dat_i,
         xbus_dat_o => xbus_dat_o,
@@ -970,12 +883,12 @@ begin
           NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
           BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
           UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
-          UC_ENABLE  => true,
           READ_ONLY  => false
         )
         port map (
           clk_i      => clk_i,
           rstn_i     => rstn_sys,
+          clean_o    => xcache_clean,
           host_req_i => xbus_req,
           host_rsp_o => xbus_rsp,
           bus_req_o  => xcache_req,
@@ -985,22 +898,25 @@ begin
 
       neorv32_xcache_disabled:
       if not XBUS_CACHE_EN generate
-        xcache_req <= xbus_req;
-        xbus_rsp   <= xcache_rsp;
+        xcache_clean <= '1';
+        xcache_req   <= xbus_req;
+        xbus_rsp     <= xcache_rsp;
       end generate;
 
     end generate; -- /neorv32_xbus_enabled
 
     neorv32_xbus_disabled:
     if not XBUS_EN generate
-      xbus_rsp   <= rsp_terminate_c;
-      xbus_adr_o <= (others => '0');
-      xbus_dat_o <= (others => '0');
-      xbus_tag_o <= (others => '0');
-      xbus_we_o  <= '0';
-      xbus_sel_o <= (others => '0');
-      xbus_stb_o <= '0';
-      xbus_cyc_o <= '0';
+      xcache_clean <= '1';
+      xcache_req   <= req_terminate_c;
+      xbus_rsp     <= rsp_terminate_c;
+      xbus_adr_o   <= (others => '0');
+      xbus_dat_o   <= (others => '0');
+      xbus_tag_o   <= (others => '0');
+      xbus_we_o    <= '0';
+      xbus_sel_o   <= (others => '0');
+      xbus_stb_o   <= '0';
+      xbus_cyc_o   <= '0';
     end generate;
 
   end generate; -- /memory_system
@@ -1035,7 +951,7 @@ begin
       DEV_12_EN => IO_SLINK_EN,     DEV_12_BASE => base_io_slink_c,
       DEV_13_EN => IO_DMA_EN,       DEV_13_BASE => base_io_dma_c,
       DEV_14_EN => IO_CRC_EN,       DEV_14_BASE => base_io_crc_c,
-      DEV_15_EN => XIP_EN,          DEV_15_BASE => base_io_xip_c,
+      DEV_15_EN => false,           DEV_15_BASE => (others => '0'), -- reserved
       DEV_16_EN => io_pwm_en_c,     DEV_16_BASE => base_io_pwm_c,
       DEV_17_EN => IO_GPTMR_EN,     DEV_17_BASE => base_io_gptmr_c,
       DEV_18_EN => IO_ONEWIRE_EN,   DEV_18_BASE => base_io_onewire_c,
@@ -1073,7 +989,7 @@ begin
       dev_12_req_o => iodev_req(IODEV_SLINK),   dev_12_rsp_i => iodev_rsp(IODEV_SLINK),
       dev_13_req_o => iodev_req(IODEV_DMA),     dev_13_rsp_i => iodev_rsp(IODEV_DMA),
       dev_14_req_o => iodev_req(IODEV_CRC),     dev_14_rsp_i => iodev_rsp(IODEV_CRC),
-      dev_15_req_o => iodev_req(IODEV_XIP),     dev_15_rsp_i => iodev_rsp(IODEV_XIP),
+      dev_15_req_o => open,                     dev_15_rsp_i => rsp_terminate_c, -- reserved
       dev_16_req_o => iodev_req(IODEV_PWM),     dev_16_rsp_i => iodev_rsp(IODEV_PWM),
       dev_17_req_o => iodev_req(IODEV_GPTMR),   dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
       dev_18_req_o => iodev_req(IODEV_ONEWIRE), dev_18_rsp_i => iodev_rsp(IODEV_ONEWIRE),
@@ -1648,10 +1564,6 @@ begin
         XBUS_CACHE_EN         => XBUS_CACHE_EN,
         XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
         XBUS_CACHE_BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
-        XIP_EN                => XIP_EN,
-        XIP_CACHE_EN          => XIP_CACHE_EN,
-        XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
-        XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
         OCD_EN                => OCD_EN,
         OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
         IO_GPIO_EN            => io_gpio_en_c,
@@ -1703,7 +1615,7 @@ begin
     generic map (
       IDCODE_VERSION => (others => '0'), -- yet unused
       IDCODE_PARTID  => (others => '0'), -- yet unused
-      IDCODE_MANID   => JEDEC_ID
+      IDCODE_MANID   => OCD_JEDEC_ID
     )
     port map (
       clk_i      => clk_i,

@@ -29,14 +29,13 @@ entity neorv32_vivado_ip is
     CLOCK_FREQUENCY       : natural                        := 100_000_000;
     -- Dual-Core Configuration --
     DUAL_CORE_EN          : boolean                        := false;
-    -- Identification --
-    JEDEC_ID              : std_logic_vector(10 downto 0)  := "00000000000";
     -- Boot Configuration --
     BOOT_MODE_SELECT      : natural range 0 to 2           := 0;
     BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000";
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                        := false;
     OCD_AUTHENTICATION    : boolean                        := false;
+    OCD_JEDEC_ID          : std_logic_vector(10 downto 0)  := "00000000000";
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           : boolean                        := false;
     RISCV_ISA_E           : boolean                        := false;
@@ -88,16 +87,10 @@ entity neorv32_vivado_ip is
     DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
     -- External Bus Interface --
     XBUS_EN               : boolean                        := true;
-    XBUS_TIMEOUT          : natural range 8 to 65536       := 64;
     XBUS_REGSTAGE_EN      : boolean                        := false;
     XBUS_CACHE_EN         : boolean                        := false;
     XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 8;
     XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16       := 256;
-    -- Execute in-place module (XIP) --
-    XIP_EN                : boolean                        := false;
-    XIP_CACHE_EN          : boolean                        := false;
-    XIP_CACHE_NUM_BLOCKS  : natural range 1 to 256         := 8;
-    XIP_CACHE_BLOCK_SIZE  : natural range 1 to 2**16       := 256;
     -- Processor peripherals --
     IO_GPIO_EN            : boolean                        := false;
     IO_GPIO_IN_NUM        : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
@@ -201,11 +194,6 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     -- Processor IO
     -- ------------------------------------------------------------
-    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
-    xip_csn_o      : out std_logic;
-    xip_clk_o      : out std_logic;
-    xip_dat_i      : in  std_logic := '0';
-    xip_dat_o      : out std_logic;
     -- GPIO (available if IO_GPIO_IN/OUT_NUM > 0) --
     gpio_o         : out std_logic_vector(IO_GPIO_OUT_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     gpio_i         : in  std_logic_vector(IO_GPIO_IN_NUM-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
@@ -277,7 +265,6 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
       xbus_we_i     : in  std_ulogic;
       xbus_sel_i    : in  std_ulogic_vector(3 downto 0);
       xbus_stb_i    : in  std_ulogic;
-      xbus_cyc_i    : in  std_ulogic;
       xbus_ack_o    : out std_ulogic;
       xbus_err_o    : out std_ulogic;
       xbus_dat_o    : out std_ulogic_vector(31 downto 0);
@@ -314,7 +301,6 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal s0_axis_tdata_aux : std_ulogic_vector(31 downto 0);
   signal s0_axis_tdest_aux : std_ulogic_vector(3 downto 0);
   signal s1_axis_tready_aux, s0_axis_tvalid_aux, s0_axis_tlast_aux : std_ulogic;
-  signal xip_csn_aux, xip_clk_aux, xip_do_aux : std_ulogic;
   signal uart0_txd_aux, uart0_rts_aux, uart1_txd_aux, uart1_rts_aux : std_ulogic;
   signal spi_clk_aux, spi_do_aux : std_ulogic;
   signal spi_csn_aux : std_ulogic_vector(7 downto 0);
@@ -338,7 +324,6 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal xbus_we  : std_ulogic;                     -- read/write
   signal xbus_sel : std_ulogic_vector(3 downto 0);  -- byte enable
   signal xbus_stb : std_ulogic;                     -- strobe
-  signal xbus_cyc : std_ulogic;                     -- valid cycle
   signal xbus_di  : std_ulogic_vector(31 downto 0); -- read data
   signal xbus_ack : std_ulogic;                     -- transfer acknowledge
   signal xbus_err : std_ulogic;                     -- transfer error
@@ -353,14 +338,13 @@ begin
     CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
     -- Dual-Core Configuration --
     DUAL_CORE_EN          => DUAL_CORE_EN,
-    -- Identification --
-    JEDEC_ID              => std_ulogic_vector(JEDEC_ID),
     -- Boot Configuration --
     BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
     BOOT_ADDR_CUSTOM      => BOOT_ADDR_CUSTOM,
     -- On-Chip Debugger --
     OCD_EN                => OCD_EN,
     OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
+    OCD_JEDEC_ID          => std_ulogic_vector(OCD_JEDEC_ID),
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           => RISCV_ISA_C,
     RISCV_ISA_E           => RISCV_ISA_E,
@@ -413,16 +397,11 @@ begin
     DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
     -- External bus interface --
     XBUS_EN               => XBUS_EN,
-    XBUS_TIMEOUT          => XBUS_TIMEOUT,
+    XBUS_TIMEOUT          => 0, -- AXI does not allow any timeouts
     XBUS_REGSTAGE_EN      => XBUS_REGSTAGE_EN,
     XBUS_CACHE_EN         => XBUS_CACHE_EN,
     XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
     XBUS_CACHE_BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
-    -- Execute in-place module --
-    XIP_EN                => XIP_EN,
-    XIP_CACHE_EN          => XIP_CACHE_EN,
-    XIP_CACHE_NUM_BLOCKS  => XIP_CACHE_NUM_BLOCKS,
-    XIP_CACHE_BLOCK_SIZE  => XIP_CACHE_BLOCK_SIZE,
     -- Processor peripherals --
     IO_DISABLE_SYSINFO    => false,
     IO_GPIO_NUM           => num_gpio_c,
@@ -477,7 +456,7 @@ begin
     xbus_we_o      => xbus_we,
     xbus_sel_o     => xbus_sel,
     xbus_stb_o     => xbus_stb,
-    xbus_cyc_o     => xbus_cyc,
+    xbus_cyc_o     => open,
     xbus_dat_i     => xbus_di,
     xbus_ack_i     => xbus_ack,
     xbus_err_i     => xbus_err,
@@ -492,11 +471,6 @@ begin
     slink_tx_val_o => s0_axis_tvalid_aux,
     slink_tx_lst_o => s0_axis_tlast_aux,
     slink_tx_rdy_i => std_ulogic(s0_axis_tready),
-    -- XIP (execute in place via SPI) signals (available if IO_XIP_EN = true) --
-    xip_csn_o      => xip_csn_aux,
-    xip_clk_o      => xip_clk_aux,
-    xip_dat_i      => std_ulogic(xip_dat_i),
-    xip_dat_o      => xip_do_aux,
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o         => gpio_o_aux,
     gpio_i         => gpio_i_aux,
@@ -562,10 +536,6 @@ begin
   s0_axis_tvalid <= std_logic(s0_axis_tvalid_aux);
   s0_axis_tlast  <= std_logic(s0_axis_tlast_aux);
 
-  xip_csn_o      <= std_logic(xip_csn_aux);
-  xip_clk_o      <= std_logic(xip_clk_aux);
-  xip_dat_o      <= std_logic(xip_do_aux);
-
   uart0_txd_o    <= std_logic(uart0_txd_aux);
   uart0_rts_o    <= std_logic(uart0_rts_aux);
   uart1_txd_o    <= std_logic(uart1_txd_aux);
@@ -617,7 +587,7 @@ begin
   end generate;
 
 
-  -- Wishbone-to-AXI4-Lite Bridge -----------------------------------------------------------
+  -- XBUS-to-AXI4-Lite Bridge ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   axi4_bridge:
   if XBUS_EN generate
@@ -633,7 +603,6 @@ begin
       xbus_we_i     => xbus_we,
       xbus_sel_i    => xbus_sel,
       xbus_stb_i    => xbus_stb,
-      xbus_cyc_i    => xbus_cyc,
       xbus_ack_o    => xbus_ack,
       xbus_err_o    => xbus_err,
       xbus_dat_o    => xbus_di,

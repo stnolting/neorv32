@@ -124,7 +124,6 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_SLINK_EN}   [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
   set_property enablement_dependency {$XBUS_EN}       [ipx::get_bus_interfaces m_axi   -of_objects [ipx::current_core]]
   set_property enablement_dependency {$OCD_EN}        [ipx::get_ports jtag_*           -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$XIP_EN}        [ipx::get_ports xip_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_GPIO_EN}    [ipx::get_ports gpio_*           -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_UART0_EN}   [ipx::get_ports uart0_*          -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_UART1_EN}   [ipx::get_ports uart1_*          -of_objects [ipx::current_core]]
@@ -174,7 +173,7 @@ proc setup_ip_gui {} {
   }
   set_property widget {comboBox} [ipgui::get_guiparamspec -name "DUAL_CORE_EN" -component [ipx::current_core] ]
   set_property value_validation_type pairs [ipx::get_user_parameters DUAL_CORE_EN -of_objects [ipx::current_core]]
-  set_property value_validation_pairs {{Single-core} false {SMP dual-core} true} [ipx::get_user_parameters DUAL_CORE_EN -of_objects [ipx::current_core]]
+  set_property value_validation_pairs {{Single-core} false {Dual-core (SMP)} true} [ipx::get_user_parameters DUAL_CORE_EN -of_objects [ipx::current_core]]
 
   set group [add_group $page {Boot Configuration}]
   add_params $group {
@@ -185,134 +184,121 @@ proc setup_ip_gui {} {
   set_property value_validation_type pairs [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
   set_property value_validation_pairs {{Internal bootloader} 0 {Custom address} 1 {Internal IMEM image} 2} [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
 
-  set group [add_group $page {Core Identification}]
-  add_params $group {
-    { JEDEC_ID              {JEDEC ID}              {For JTAG tap identification and mvendorid CSR} }
-  }
-
   set group [add_group $page {On-Chip Debugger (OCD)}]
   add_params $group {
-    { OCD_EN                {Enable OCD}            {Implement the on-chip debugger, the CPU debug mode and the JTAG port} }
-    { OCD_AUTHENTICATION    {OCD Authentication}    {Implement Debug Authentication module}                   {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false}}
+    { OCD_EN                {Enable OCD}            {Implement JTAG-based on-chip debugger} }
+    { OCD_AUTHENTICATION    {OCD authentication}    {Implement Debug Authentication module}                   {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false}}
+    { OCD_JEDEC_ID          {JEDEC ID}              {JTAG tap identification}                                 {$OCD_EN}}
   }
 
   set group [add_group $page {External Bus Interface (XBUS / AXI4-Lite-MM Host)}]
   add_params $group {
     { XBUS_EN               {Enable XBUS}           {} }
-    { XBUS_TIMEOUT          {Timeout}               {Max number of clock cycles before AXI access times out}  {$XBUS_EN} }
     { XBUS_REGSTAGE_EN      {Add register stages}   {Relaxes timing, but will increase latency}               {$XBUS_EN} }
   }
 
   set sub_group [add_group $group {XBUS Cache}]
   add_params $sub_group {
-    { XBUS_CACHE_EN         {Enable XBUS Cache}     {}                                                        {$XBUS_EN} {$XBUS_EN ? $XBUS_CACHE_EN : false}}
-    { XBUS_CACHE_NUM_BLOCKS {Number of Blocks}      {}                                                        {$XBUS_CACHE_EN} }
-    { XBUS_CACHE_BLOCK_SIZE {Block Size}            {In bytes (use a power of two)}                           {$XBUS_CACHE_EN} }
+    { XBUS_CACHE_EN         {Enable XBUS cache}     {}                                                        {$XBUS_EN} {$XBUS_EN ? $XBUS_CACHE_EN : false}}
+    { XBUS_CACHE_NUM_BLOCKS {Number of blocks}      {}                                                        {$XBUS_CACHE_EN} }
+    { XBUS_CACHE_BLOCK_SIZE {Block size}            {In bytes (use a power of two)}                           {$XBUS_CACHE_EN} }
   }
 
   set group [add_group $page {Stream Link Interface (SLINK / AXI4-Stream Source & Sink)}]
   add_params $group {
     { IO_SLINK_EN           {Enable SLINK}          {} }
-    { IO_SLINK_RX_FIFO      {RX FIFO Depth}         {Number of entries (use a power of two)}                  {$IO_SLINK_EN} }
-    { IO_SLINK_TX_FIFO      {TX FIFO Depth}         {Number of entries (use a power of two)}                  {$IO_SLINK_EN} }
+    { IO_SLINK_RX_FIFO      {RX FIFO depth}         {Number of entries (use a power of two)}                  {$IO_SLINK_EN} }
+    { IO_SLINK_TX_FIFO      {TX FIFO depth}         {Number of entries (use a power of two)}                  {$IO_SLINK_EN} }
   }
 
 
   # **************************************************************
   # GUI Page: CPU
   # **************************************************************
-  set page [add_page {CPU Configuration}]
+  set page [add_page {CPU}]
   set isa_note "Make sure to set the same ISA configuration for the RISC-V GCC ISA string."
-  ipgui::add_static_text -name {ISA note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "CPU Configuration" -component [ipx::current_core] ] -text $isa_note
+  ipgui::add_static_text -name {ISA note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "CPU" -component [ipx::current_core] ] -text $isa_note
 
   set group [add_group $page {RISC-V ISA Extensions}]
   add_params $group {
-    { RISCV_ISA_C         {C}                                     {16-bit compressed instructions} }
-    { RISCV_ISA_E         {E}                                     {Reduced register file size (16 registers only)} }
-    { RISCV_ISA_M         {M}                                     {Integer multiplication and division hardware} }
-    { RISCV_ISA_U         {U}                                     {Less-privileged user-mode} }
-    { RISCV_ISA_Zaamo     {Zaamo}                                 {Atomic memory operations (read-modify-write)} }
-    { RISCV_ISA_Zba       {Zba}                                   {Shifted-add bit-manipulation instructions} }
-    { RISCV_ISA_Zbb       {Zbb}                                   {Basic bit-manipulation instructions} }
-    { RISCV_ISA_Zbkb      {Zbkb}                                  {Bit manipulation instructions for cryptography} }
-    { RISCV_ISA_Zbkc      {Zbkc}                                  {Carry-less multiply instructions for cryptography} }
-    { RISCV_ISA_Zbkx      {Zbkx}                                  {Scalar cryptographic - crossbar permutations} }
-    { RISCV_ISA_Zbs       {Zbs}                                   {Single-bit bit-manipulation instructions} }
-    { RISCV_ISA_Zfinx     {Zfinx}                                 {Embedded FPU (using integer registers)} }
-    { RISCV_ISA_Zicntr    {Zicntr}                                {Base counters (cycles and instructions)} }
-    { RISCV_ISA_Zicond    {Zicond}                                {Conditional-move instructions} }
-    { RISCV_ISA_Zihpm     {Zihpm}                                 {Hardware performance monitors (HPMs)} }
-    { HPM_CNT_WIDTH       {HPM Width}                             {Counter width in bits}                          {$RISCV_ISA_Zihpm}}
-    { HPM_NUM_CNTS        {HPM Counters}                          {Numer of hardware performance monitor counters} {$RISCV_ISA_Zihpm}}
-    { RISCV_ISA_Zknd      {Zknd}                                  {Scalar cryptographic - NIST AES decryption} }
-    { RISCV_ISA_Zkne      {Zkne}                                  {Scalar cryptographic - NIST AES encryption} }
-    { RISCV_ISA_Zknh      {Zknh}                                  {Scalar cryptographic - NIST hash functions} }
-    { RISCV_ISA_Zksed     {Zksed}                                 {Scalar cryptographic - ShangMi block cyphers} }
-    { RISCV_ISA_Zksh      {Zksh}                                  {Scalar cryptographic - ShangMi hash functions} }
-    { RISCV_ISA_Zmmul     {Zmmul}                                 {Integer multiplication-only hardware} }
-    { RISCV_ISA_Zxcfu     {Zxcfu}                                 {NEORV32-specifc custom-instructions unit (user-defined)} }
+    { RISCV_ISA_C      {C - 16-bit compressed instructions}                       {} }
+    { RISCV_ISA_E      {E - Reduced register file size (16 registers only)}       {} }
+    { RISCV_ISA_M      {M - Integer multiplication and division hardware}         {} }
+    { RISCV_ISA_U      {U - Less-privileged user-mode}                            {} }
+    { RISCV_ISA_Zaamo  {Zaamo - Atomic memory operations (read-modify-write)}     {} }
+    { RISCV_ISA_Zba    {Zba - Shifted-add bit-manipulation instructions}          {} }
+    { RISCV_ISA_Zbb    {Zbb - Basic bit-manipulation instructions}                {} }
+    { RISCV_ISA_Zbkb   {Zbkb - Bit manipulation instructions for cryptography}    {} }
+    { RISCV_ISA_Zbkc   {Zbkc - Carry-less multiply instructions for cryptography} {} }
+    { RISCV_ISA_Zbkx   {Zbkx - Crossbar permutations for cryptography}            {} }
+    { RISCV_ISA_Zbs    {Zbs - Single-bit bit-manipulation instructions}           {} }
+    { RISCV_ISA_Zfinx  {Zfinx - Embedded FPU (using integer register file)}       {} }
+    { RISCV_ISA_Zicntr {Zicntr - Base counters (cycles and instructions)}         {} }
+    { RISCV_ISA_Zicond {Zicond - Conditional-move instructions}                   {} }
+    { RISCV_ISA_Zihpm  {Zihpm - Hardware performance monitors (HPMs)}             {} }
+    { HPM_CNT_WIDTH    {HPM Width}                                                {Counter width in bits} {$RISCV_ISA_Zihpm} }
+    { HPM_NUM_CNTS     {HPM Counters}                                             {Numer of HPM counters} {$RISCV_ISA_Zihpm} }
+    { RISCV_ISA_Zknd   {Zknd - Scalar cryptographic - NIST AES decryption}        {} }
+    { RISCV_ISA_Zkne   {Zkne - Scalar cryptographic - NIST AES encryption}        {} }
+    { RISCV_ISA_Zknh   {Zknh - Scalar cryptographic - NIST hash functions}        {} }
+    { RISCV_ISA_Zksed  {Zksed - Scalar cryptographic - ShangMi block cyphers}     {} }
+    { RISCV_ISA_Zksh   {Zksh - Scalar cryptographic - ShangMi hash functions}     {} }
+    { RISCV_ISA_Zmmul  {Zmmul - Integer multiplication-only hardware}             {} {!$RISCV_ISA_M} {$RISCV_ISA_M ? false : $RISCV_ISA_Zksh} }
+    { RISCV_ISA_Zxcfu  {Zxcfu - Custom-instructions unit (user-defined)}          {} }
   }
 
   set group [add_group $page {Physical Memory Protection (PMP)}]
   add_params $group {
-    { PMP_NUM_REGIONS     {PMP Regions}                           {Number of physical memory protection regions} }
-    { PMP_MIN_GRANULARITY {PMP Minimal Granularity}               {Minimal region granularity in bytes. Has to be a power of two.}           {$PMP_NUM_REGIONS > 0} }
-    { PMP_TOR_MODE_EN     {Enable PMP TOR Mode}                   {Implement support for top-of-region (TOR) mode}                           {$PMP_NUM_REGIONS > 0} }
-    { PMP_NAP_MODE_EN     {Enable PMP NAPOT and NA4 Modes}        {Implement support for naturally-aligned power-of-two (NAPOT & NA4) modes} {$PMP_NUM_REGIONS > 0} }
+    { PMP_NUM_REGIONS     {PMP regions}                    {Number of physical memory protection regions} }
+    { PMP_MIN_GRANULARITY {PMP minimal granularity}        {Minimal region granularity in bytes. Has to be a power of two.}           {$PMP_NUM_REGIONS > 0} }
+    { PMP_TOR_MODE_EN     {Enable PMP TOR mode}            {Implement support for top-of-region (TOR) mode}                           {$PMP_NUM_REGIONS > 0} }
+    { PMP_NAP_MODE_EN     {Enable PMP NAPOT and NA4 modes} {Implement support for naturally-aligned power-of-two (NAPOT & NA4) modes} {$PMP_NUM_REGIONS > 0} }
   }
   set_property value_validation_range_minimum 4 [ipx::get_user_parameters PMP_MIN_GRANULARITY -of_objects [ipx::current_core]]
 
   set group [add_group $page {Tuning Options}]
   add_params $group {
-    { CPU_FAST_MUL_EN     {DSP-Based Multiplier} }
-    { CPU_FAST_SHIFT_EN   {Barrel Shifter} }
-    { CPU_RF_HW_RST_EN    {Full HW Reset for Register File}       {Implement register file with FFs instead of BRAM to allow full hardware reset} }
+    { CPU_FAST_MUL_EN     {DSP-based multiplier} }
+    { CPU_FAST_SHIFT_EN   {Barrel shifter} }
+    { CPU_RF_HW_RST_EN    {Full HW reset for register file} {Implement register file with FFs instead of BRAM to allow full hardware reset} }
   }
 
 
   # **************************************************************
-  # GUI Page: Memory System
+  # GUI Page: Memory
   # **************************************************************
-  set page [add_page {Memory System}]
-  set mem_note "The memory sizes need to be exported to the linker via dedicated symbols."
+  set page [add_page {Memory}]
+  set mem_note "The memory sizes need to be exported to the linker via dedicated symbols. Example:"
   set imem_note "IMEM size (32kB): -Wl,--defsym,__neorv32_rom_size=32k"
   set dmem_note "DMEM size (16kB): -Wl,--defsym,__neorv32_ram_size=16k"
-  ipgui::add_static_text -name {MEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory System" -component [ipx::current_core] ] -text $mem_note
-  ipgui::add_static_text -name {IMEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory System" -component [ipx::current_core] ] -text $imem_note
-  ipgui::add_static_text -name {DMEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory System" -component [ipx::current_core] ] -text $dmem_note
+  ipgui::add_static_text -name {MEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory" -component [ipx::current_core] ] -text $mem_note
+  ipgui::add_static_text -name {IMEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory" -component [ipx::current_core] ] -text $imem_note
+  ipgui::add_static_text -name {DMEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory" -component [ipx::current_core] ] -text $dmem_note
 
   set group [add_group $page {Internal Instruction Memory (IMEM)}]
   add_params $group {
-    { MEM_INT_IMEM_EN      {Enable IMEM} }
-    { MEM_INT_IMEM_SIZE    {IMEM Size}        {In bytes (use a power of two)} {$MEM_INT_IMEM_EN} }
+    { MEM_INT_IMEM_EN   {Enable internal IMEM} }
+    { MEM_INT_IMEM_SIZE {IMEM size} {In bytes (use a power of two)} {$MEM_INT_IMEM_EN} }
   }
 
   set group [add_group $page {Internal Data Memory (DMEM)}]
   add_params $group {
-    { MEM_INT_DMEM_EN      {Enbale DMEM} }
-    { MEM_INT_DMEM_SIZE    {DMEM Size}        {In bytes (use a power of two)} {$MEM_INT_DMEM_EN} }
+    { MEM_INT_DMEM_EN   {Enbale internal DMEM} }
+    { MEM_INT_DMEM_SIZE {DMEM size} {In bytes (use a power of two)} {$MEM_INT_DMEM_EN} }
   }
 
   set group [add_group $page {CPU Instruction Cache (ICACHE)}]
   add_params $group {
-    { ICACHE_EN            {Enable ICACHE} }
-    { ICACHE_NUM_BLOCKS    {Number of Blocks} {}                              {$ICACHE_EN} }
-    { ICACHE_BLOCK_SIZE    {Block Size}       {In bytes (use a power of two)} {$ICACHE_EN} }
+    { ICACHE_EN         {Enable ICACHE} }
+    { ICACHE_NUM_BLOCKS {Number of blocks} {}                              {$ICACHE_EN} }
+    { ICACHE_BLOCK_SIZE {Block size}       {In bytes (use a power of two)} {$ICACHE_EN} }
   }
 
   set group [add_group $page {CPU Data Cache (DCACHE)}]
   add_params $group {
-    { DCACHE_EN            {Enable DCACHE} }
-    { DCACHE_NUM_BLOCKS    {Number of Blocks} {}                              {$DCACHE_EN} }
-    { DCACHE_BLOCK_SIZE    {Block Size}       {In bytes (use a power of two)} {$DCACHE_EN} }
-  }
-
-  set group [add_group $page {Execute In-Place Module (XIP)}]
-  add_params $group {
-    { XIP_EN               {Enable XIP} }
-    { XIP_CACHE_EN         {Enable XIP Cache} {}                              {$XIP_EN} {$XIP_EN ? $XIP_CACHE_EN : false} }
-    { XIP_CACHE_NUM_BLOCKS {Cache Blocks}     {}                              {$XIP_CACHE_EN} }
-    { XIP_CACHE_BLOCK_SIZE {Cache Block Size} {In bytes (use a power of two)} {$XIP_CACHE_EN} }
+    { DCACHE_EN         {Enable DCACHE} }
+    { DCACHE_NUM_BLOCKS {Number of blocks} {}                              {$DCACHE_EN} }
+    { DCACHE_BLOCK_SIZE {Block size}       {In bytes (use a power of two)} {$DCACHE_EN} }
   }
 
 
@@ -324,57 +310,57 @@ proc setup_ip_gui {} {
   set group [add_group $page {General-Purpose Input/Output Controller (GPIO)}]
   add_params $group {
     { IO_GPIO_EN        {Enable GPIO} }
-    { IO_GPIO_IN_NUM    {Number of Inputs}      {Interrupt-capable}                       {$IO_GPIO_EN} }
-    { IO_GPIO_OUT_NUM   {Number of Outputs}     {}                                        {$IO_GPIO_EN} }
+    { IO_GPIO_IN_NUM    {Number of inputs (IRQ capable)} {Interrupt-capable} {$IO_GPIO_EN} }
+    { IO_GPIO_OUT_NUM   {Number of outputs}              {}                  {$IO_GPIO_EN} }
   }
 
   set group [add_group $page {Core Local Interruptor (CLINT)}]
   add_params $group {
-    { IO_CLINT_EN       {Enable Core Local Interruptor} }
+    { IO_CLINT_EN       {Enable core-local interruptor} }
   }
 
   set group [add_group $page {Primary UART (UART0)}]
   add_params $group {
     { IO_UART0_EN       {Enable UART0} }
-    { IO_UART0_RX_FIFO  {RX FIFO Depth}         {Number of entries (use a power of two)}  {$IO_UART0_EN} }
-    { IO_UART0_TX_FIFO  {TX FIFO Depth}         {Number of entries (use a power of two)}  {$IO_UART0_EN} }
+    { IO_UART0_RX_FIFO  {RX FIFO depth}         {Number of entries (use a power of two)}  {$IO_UART0_EN} }
+    { IO_UART0_TX_FIFO  {TX FIFO depth}         {Number of entries (use a power of two)}  {$IO_UART0_EN} }
   }
 
   set group [add_group $page {Secondary UART (UART1)}]
   add_params $group {
     { IO_UART1_EN       {Enable UART1} }
-    { IO_UART1_RX_FIFO  {RX FIFO Depth}         {Number of entries (use a power of two)}  {$IO_UART1_EN} }
-    { IO_UART1_TX_FIFO  {TX FIFO Depth}         {Number of entries (use a power of two)}  {$IO_UART1_EN} }
+    { IO_UART1_RX_FIFO  {RX FIFO depth}         {Number of entries (use a power of two)}  {$IO_UART1_EN} }
+    { IO_UART1_TX_FIFO  {TX FIFO depth}         {Number of entries (use a power of two)}  {$IO_UART1_EN} }
   }
 
   set group [add_group $page {SPI Host Controller (SPI)}]
   add_params $group {
     { IO_SPI_EN         {Enable SPI} }
-    { IO_SPI_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_SPI_EN} }
+    { IO_SPI_FIFO       {FIFO depth}            {Number of entries (use a power of two)}  {$IO_SPI_EN} }
   }
 
   set group [add_group $page {SPI Device Controller (SDI)}]
   add_params $group {
     { IO_SDI_EN         {Enable SDI} }
-    { IO_SDI_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_SDI_EN} }
+    { IO_SDI_FIFO       {FIFO depth}            {Number of entries (use a power of two)}  {$IO_SDI_EN} }
   }
 
   set group [add_group $page {Two-Wire/I2C Host (TWI)}]
   add_params $group {
     { IO_TWI_EN         {Enable TWI} }
-    { IO_TWI_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_TWI_EN} }
+    { IO_TWI_FIFO       {FIFO depth}            {Number of entries (use a power of two)}  {$IO_TWI_EN} }
   }
 
   set group [add_group $page {Two-Wire/I2C Device (TWD)}]
   add_params $group {
     { IO_TWD_EN         {Enable TWD} }
-    { IO_TWD_FIFO       {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_TWD_EN} }
+    { IO_TWD_FIFO       {FIFO depth}            {Number of entries (use a power of two)}  {$IO_TWD_EN} }
   }
 
   set group [add_group $page {Pulse-Width Modulation Controller (PWM)}]
   add_params $group {
     { IO_PWM_EN         {Enable PWM} }
-    { IO_PWM_NUM_CH     {Number of Channels}    {} {$IO_PWM_EN} }
+    { IO_PWM_NUM_CH     {Number of channels}    {} {$IO_PWM_EN} }
   }
 
   set group [add_group $page {Watchdog Timer (WDT)}]
@@ -385,21 +371,21 @@ proc setup_ip_gui {} {
   set group [add_group $page {True Random-Number Generator (TRNG)}]
   add_params $group {
     { IO_TRNG_EN        {Enable TRNG} }
-    { IO_TRNG_FIFO      {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_TRNG_EN} }
+    { IO_TRNG_FIFO      {FIFO depth}            {Number of entries (use a power of two)}  {$IO_TRNG_EN} }
   }
 
   set group [add_group $page {Custom Functions Subsystem (CFS)}]
   add_params $group {
     { IO_CFS_EN         {Enable CFS} }
-    { IO_CFS_CONFIG     {Configuration Word}    {}                                        {$IO_CFS_EN} }
-    { IO_CFS_IN_SIZE    {Input Port Width}      {}                                        {$IO_CFS_EN} }
-    { IO_CFS_OUT_SIZE   {Output Port Width}     {}                                        {$IO_CFS_EN} }
+    { IO_CFS_CONFIG     {Configuration word}    {}                                        {$IO_CFS_EN} }
+    { IO_CFS_IN_SIZE    {Input port width}      {}                                        {$IO_CFS_EN} }
+    { IO_CFS_OUT_SIZE   {Output port width}     {}                                        {$IO_CFS_EN} }
   }
 
   set group [add_group $page {Smart LED Interface (NEOLED)}]
   add_params $group {
     { IO_NEOLED_EN      {Enable NEOLED} }
-    { IO_NEOLED_TX_FIFO {FIFO Depth}            {Number of entries (use a power of two)}  {$IO_NEOLED_EN} }
+    { IO_NEOLED_TX_FIFO {FIFO depth}            {Number of entries (use a power of two)}  {$IO_NEOLED_EN} }
   }
 
   set group [add_group $page {General Purpose Timer (GPTMR)}]
@@ -417,7 +403,7 @@ proc setup_ip_gui {} {
     { IO_DMA_EN         {Enable DMA} }
   }
 
-  set group [add_group $page {Cyclic Redundancy Check (CRC)}]
+  set group [add_group $page {Cyclic Redundancy Check Unit (CRC)}]
   add_params $group {
     { IO_CRC_EN         {Enable CRC} }
   }

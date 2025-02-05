@@ -1,8 +1,8 @@
 -- ================================================================================ --
 -- NEORV32 CPU - Central Control Unit                                               --
 -- -------------------------------------------------------------------------------- --
--- CPU operations are controlled by several "engines" (modules). These engines      --
--- operate in parallel to implement a tiny 2-stage pipeline:                        --
+-- CPU operations are controlled by several "engines". These engines operate in     --
+--  parallel to implement a simple 2-stage pipeline:                                --
 -- + Fetch engine:    Fetches 32-bit chunks of instruction words (pipeline stage 1) --
 -- + Issue engine:    Decodes RVC instructions, aligns & queues instruction words   --
 -- + Execute engine:  Multi-cycle execution of instructions (pipeline stage 2)      --
@@ -30,7 +30,6 @@ entity neorv32_cpu_control is
   generic (
     -- General --
     HART_ID             : natural range 0 to 1023; -- hardware thread ID
-    VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug-mode parking loop entry address, 4-byte aligned
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug-mode exception entry address, 4-byte aligned
@@ -56,9 +55,9 @@ entity neorv32_cpu_control is
     RISCV_ISA_Zkne      : boolean; -- implement cryptography NIST AES encryption extension
     RISCV_ISA_Zknh      : boolean; -- implement cryptography NIST hash extension
     RISCV_ISA_Zks       : boolean; -- ShangMi algorithm suite available
-    RISCV_ISA_Zksed     : boolean; -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksed     : boolean; -- implement ShangMi block cipher extension
     RISCV_ISA_Zksh      : boolean; -- implement ShangMi hash extension
-    RISCV_ISA_Zkt       : boolean; -- data-independent execution time available (for cryptographic operations)
+    RISCV_ISA_Zkt       : boolean; -- data-independent execution time available (for cryptography operations)
     RISCV_ISA_Zmmul     : boolean; -- implement multiply-only M sub-extension
     RISCV_ISA_Zxcfu     : boolean; -- implement custom (instr.) functions unit
     RISCV_ISA_Sdext     : boolean; -- implement external debug mode extension
@@ -107,7 +106,9 @@ entity neorv32_cpu_control is
     -- load/store unit interface --
     lsu_wait_i    : in  std_ulogic; -- wait for data bus
     lsu_mar_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-    lsu_err_i     : in  std_ulogic_vector(3 downto 0) -- alignment/access errors
+    lsu_err_i     : in  std_ulogic_vector(3 downto 0); -- alignment/access errors
+    -- memory synchronization --
+    mem_sync_i    : in  std_ulogic -- synchronization operation done
   );
 end neorv32_cpu_control;
 
@@ -154,7 +155,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
   type exe_engine_state_t is (EX_DISPATCH, EX_TRAP_ENTER, EX_TRAP_EXIT, EX_RESTART, EX_SLEEP, EX_EXECUTE,
-                              EX_ALU_WAIT, EX_BRANCH, EX_BRANCHED, EX_SYSTEM, EX_MEM_REQ, EX_MEM_RSP);
+                              EX_ALU_WAIT, EX_FENCE, EX_BRANCH, EX_BRANCHED, EX_SYSTEM, EX_MEM_REQ, EX_MEM_RSP);
   type exe_engine_t is record
     state : exe_engine_state_t;
     ir    : std_ulogic_vector(31 downto 0); -- instruction word being executed right now
@@ -162,6 +163,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc    : std_ulogic_vector(XLEN-1 downto 0); -- current PC (current instruction)
     pc2   : std_ulogic_vector(XLEN-1 downto 0); -- next PC (next linear instruction)
     ra    : std_ulogic_vector(XLEN-1 downto 0); -- return address
+    msync : std_ulogic; -- memory synchronization completed
   end record;
   signal exe_engine, exe_engine_nxt : exe_engine_t;
 
@@ -309,7 +311,7 @@ begin
       fetch_engine.state   <= IF_RESTART;
       fetch_engine.restart <= '1'; -- reset IPB and issue engine
       fetch_engine.pc      <= (others => '0');
-      fetch_engine.priv    <= '0';
+      fetch_engine.priv    <= priv_mode_m_c;
     elsif rising_edge(clk_i) then
       case fetch_engine.state is
 
@@ -365,16 +367,15 @@ begin
   ipb.we(1) <= '1' when (fetch_engine.state = IF_PENDING) and (fetch_engine.resp = '1') else '0';
 
   -- bus access meta data --
-  ibus_req_o.priv  <= fetch_engine.priv; -- current effective privilege level
   ibus_req_o.data  <= (others => '0'); -- read-only
   ibus_req_o.ben   <= (others => '0'); -- read-only
   ibus_req_o.rw    <= '0'; -- read-only
-  ibus_req_o.src   <= '1'; -- source = instruction fetch
+  ibus_req_o.src   <= '1'; -- always "instruction fetch" access
+  ibus_req_o.priv  <= fetch_engine.priv; -- current effective privilege level
+  ibus_req_o.debug <= debug_ctrl.run; -- debug mode, valid without STB being set
   ibus_req_o.amo   <= '0'; -- cannot be an atomic memory operation
   ibus_req_o.amoop <= (others => '0'); -- cannot be an atomic memory operation
   ibus_req_o.fence <= ctrl.if_fence; -- fence operation, valid without STB being set
-  ibus_req_o.sleep <= sleep_mode; -- sleep mode, valid without STB being set
-  ibus_req_o.debug <= debug_ctrl.run; -- debug mode, valid without STB being set
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
@@ -556,6 +557,7 @@ begin
       exe_engine.pc    <= BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
       exe_engine.pc2   <= BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
       exe_engine.ra    <= (others => '0');
+      exe_engine.msync <= '0';
     elsif rising_edge(clk_i) then
       ctrl       <= ctrl_nxt;
       exe_engine <= exe_engine_nxt;
@@ -574,7 +576,7 @@ begin
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hw_trigger_match, opcode, issue_engine, csr,
-                                   ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)
+                                   ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i, mem_sync_i)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
   begin
@@ -589,6 +591,7 @@ begin
     exe_engine_nxt.pc    <= exe_engine.pc;
     exe_engine_nxt.pc2   <= exe_engine.pc2;
     exe_engine_nxt.ra    <= (others => '0'); -- output zero if not a branch instruction
+    exe_engine_nxt.msync <= mem_sync_i and (not ctrl.lsu_fence);
     issue_engine.ack     <= '0';
     fetch_engine.reset   <= '0';
     trap_ctrl.env_enter  <= '0';
@@ -723,10 +726,10 @@ begin
                ((opcode(5) = '1') and (((funct3_v = funct3_sadd_c) and (funct7_v = "0000000")) or ((funct3_v = funct3_sadd_c) and (funct7_v = "0100000")) or
                                        ((funct3_v = funct3_slt_c)  and (funct7_v = "0000000")) or ((funct3_v = funct3_sltu_c) and (funct7_v = "0000000")) or
                                        ((funct3_v = funct3_xor_c)  and (funct7_v = "0000000")) or ((funct3_v = funct3_or_c)   and (funct7_v = "0000000")) or
-                                       ((funct3_v = funct3_and_c)  and (funct7_v = "0000000")))) then -- base ALU instruction (excluding SLL, SRL, SRA)?
+                                       ((funct3_v = funct3_and_c)  and (funct7_v = "0000000")))) then -- base ALU instruction (excluding SLL, SRL, SRA)
               ctrl_nxt.rf_wb_en    <= '1'; -- valid RF write-back (won't happen if exception)
               exe_engine_nxt.state <= EX_DISPATCH;
-            else -- [NOTE] potential illegal ALU[I] instruction are handled as multi-cycle operations that will time-out if no co-processor responds
+            else -- [NOTE] potential illegal ALU[I] instructions are handled as multi-cycle operations that will time-out if no ALU co-processor responds
               ctrl_nxt.alu_cp_alu  <= '1'; -- trigger ALU[I] opcode-space co-processor
               exe_engine_nxt.state <= EX_ALU_WAIT;
             end if;
@@ -753,9 +756,8 @@ begin
 
           -- memory fence operations (execute even if illegal funct3) --
           when opcode_fence_c =>
-            ctrl_nxt.if_fence    <=     exe_engine.ir(instr_funct3_lsb_c); -- fence.i
-            ctrl_nxt.lsu_fence   <= not exe_engine.ir(instr_funct3_lsb_c); -- fence
-            exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
+            ctrl_nxt.lsu_fence   <= '1'; -- load/store fence (always executed)
+            exe_engine_nxt.state <= EX_FENCE;
 
           -- FPU: floating-point operations --
           when opcode_fop_c =>
@@ -784,6 +786,17 @@ begin
         if (alu_cp_done_i = '1') or (trap_ctrl.exc_buf(exc_illegal_c) = '1') then
           ctrl_nxt.rf_wb_en    <= '1'; -- valid RF write-back (won't happen if exception)
           exe_engine_nxt.state <= EX_DISPATCH;
+        end if;
+
+      when EX_FENCE => -- wait for LOAD/STORE memory synchronization
+      -- ------------------------------------------------------------
+        if (exe_engine.msync = '1') then -- wait for pending synchronization request to complete
+          if (exe_engine.ir(instr_funct3_lsb_c) = '0') then -- fence
+            exe_engine_nxt.state <= EX_DISPATCH;
+          else -- fence.i
+            ctrl_nxt.if_fence    <= '1'; -- instruction-fetch fence
+            exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB
+          end if;
         end if;
 
       when EX_BRANCH => -- update next PC on taken branches and jumps
@@ -1824,7 +1837,7 @@ begin
           -- --------------------------------------------------------------------
           -- machine information registers
           -- --------------------------------------------------------------------
-          when csr_mvendorid_c  => csr.rdata <= VENDOR_ID; -- vendor's JEDEC ID
+--        when csr_mvendorid_c  => csr.rdata <= (others => '0'); -- vendor's JEDEC ID
           when csr_marchid_c    => csr.rdata(4 downto 0) <= "10011"; -- architecture ID - official RISC-V open-source arch ID
           when csr_mimpid_c     => csr.rdata <= hw_version_c; -- implementation ID -- NEORV32 hardware version
           when csr_mhartid_c    => csr.rdata(9 downto 0) <= std_ulogic_vector(to_unsigned(HART_ID, 10)); -- hardware thread ID
@@ -1871,7 +1884,7 @@ begin
             csr.rdata(17) <= bool_to_ulogic_f(RISCV_ISA_Zbkc);      -- Zbkc: carry-less multiplication for cryptography
             csr.rdata(18) <= bool_to_ulogic_f(RISCV_ISA_Zkn);       -- Zkn: NIST algorithm suite
             csr.rdata(19) <= bool_to_ulogic_f(RISCV_ISA_Zksh);      -- Zksh: ShangMi hash functions
-            csr.rdata(20) <= bool_to_ulogic_f(RISCV_ISA_Zksed);     -- Zksed: ShangMi block cyphers
+            csr.rdata(20) <= bool_to_ulogic_f(RISCV_ISA_Zksed);     -- Zksed: ShangMi block ciphers
             csr.rdata(21) <= bool_to_ulogic_f(RISCV_ISA_Zks);       -- Zks: ShangMi algorithm suite
             csr.rdata(22) <= bool_to_ulogic_f(RISCV_ISA_Zba);       -- Zba: shifted-add bit-manipulation
             csr.rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);       -- Zbb: basic bit-manipulation

@@ -81,8 +81,8 @@ Bit fields in this register are set to all-zero if the according memory system i
 | `6`     | `SYSINFO_SOC_DCACHE`       | set if processor-internal data cache is implemented (via top's `DCACHE_EN` generic)
 | `7`     | -                          |_reserved_, read as zero
 | `8`     | `SYSINFO_SOC_XBUS_CACHE`   | set if external bus interface cache is implemented (via top's `XBUS_CACHE_EN` generic)
-| `9`     | `SYSINFO_SOC_XIP`          | set if XIP module is implemented (via top's `XIP_EN` generic)
-| `10`    | `SYSINFO_SOC_XIP_CACHE`    | set if XIP cache is implemented (via top's `XIP_CACHE_EN` generic)
+| `9`     | -                          |_reserved_, read as zero
+| `10`    | -                          |_reserved_, read as zero
 | `11`    | `SYSINFO_SOC_OCD_AUTH`     | set if on-chip debugger authentication is implemented (via top's `OCD_AUTHENTICATION` generic)
 | `12`    | `SYSINFO_SOC_IMEM_ROM`     | set if processor-internal IMEM is implemented as pre-initialized ROM (via top's `BOOT_MODE_SELECT` generic; see <<_boot_configuration>>)
 | `13`    | `SYSINFO_SOC_IO_TWD`       | set if TWD is implemented (via top's `IO_TWD_EN` generic)
@@ -113,7 +113,6 @@ The SYSINFO cache register provides information about the configuration of the p
 
 * <<_processor_internal_instruction_cache_icache>>
 * <<_processor_internal_data_cache_dcache>>
-* <<_execute_in_place_module_xip>> cache (XIP-CACHE)
 * <<_processor_external_bus_interface_xbus>> cache (XBUS-CACHE)
 
 .SYSINFO `CACHE` Bits
@@ -125,8 +124,8 @@ The SYSINFO cache register provides information about the configuration of the p
 | `7:4`   | `SYSINFO_CACHE_INST_NUM_BLOCKS_3 : SYSINFO_CACHE_INST_NUM_BLOCKS_0` | _log2_(i-cache number of cache blocks), via top's `ICACHE_NUM_BLOCKS` generic
 | `11:8`  | `SYSINFO_CACHE_DATA_BLOCK_SIZE_3 : SYSINFO_CACHE_DATA_BLOCK_SIZE_0` | _log2_(d-cache block size in bytes), via top's `DCACHE_BLOCK_SIZE` generic
 | `15:12` | `SYSINFO_CACHE_DATA_NUM_BLOCKS_3 : SYSINFO_CACHE_DATA_NUM_BLOCKS_0` | _log2_(d-cache number of cache blocks), via top's `DCACHE_NUM_BLOCKS` generic
-| `19:16` | `SYSINFO_CACHE_XIP_BLOCK_SIZE_3 : SYSINFO_CACHE_XIP_BLOCK_SIZE_0`   | _log2_(xip-cache block size in bytes), via top's `XIP_CACHE_BLOCK_SIZE` generic
-| `23:20` | `SYSINFO_CACHE_XIP_NUM_BLOCKS_3 : SYSINFO_CACHE_XIP_NUM_BLOCKS_0`   | _log2_(xip-cache number of cache blocks), via top's `XIP_CACHE_NUM_BLOCKS` generic
+| `19:16` | `0000`                                                              | _reserved_
+| `23:20` | `0000`                                                              | _reserved_
 | `27:24` | `SYSINFO_CACHE_XBUS_BLOCK_SIZE_3 : SYSINFO_CACHE_XBUS_BLOCK_SIZE_0` | _log2_(xbus-cache block size in bytes), via top's `XBUS_CACHE_BLOCK_SIZE` generic
 | `31:28` | `SYSINFO_CACHE_XBUS_NUM_BLOCKS_3 : SYSINFO_CACHE_XBUS_NUM_BLOCKS_0` | _log2_(xbus-cache number of cache blocks), via top's `XBUS_CACHE_NUM_BLOCKS` generic
 |=======================

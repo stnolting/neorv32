@@ -21,25 +21,14 @@ extern "C" {
 // Standard libraries
 #include <stdint.h>
 #include <inttypes.h>
-#include <unistd.h>
 #include <stdlib.h>
-
-
-/**********************************************************************//**
- * @name Main Address Space Sections
- **************************************************************************/
-/**@{*/
-/** XIP-mapped memory base address */
-#define XIP_MEM_BASE_ADDRESS (0xE0000000U)
-/** peripheral/IO devices memory base address */
-#define IO_BASE_ADDRESS      (0XFFE00000U)
-/**@}*/
 
 
 /**********************************************************************//**
  * @name IO Address Space Map - Peripheral/IO Devices
  **************************************************************************/
 /**@{*/
+#define IO_BASE_ADDRESS      (0XFFE00000U)
 #define NEORV32_BOOTROM_BASE (0xFFE00000U) /**< Bootloader ROM (BOOTROM) */
 //#define NEORV32_???_BASE   (0xFFE10000U) /**< reserved */
 //#define NEORV32_???_BASE   (0xFFE20000U) /**< reserved */
@@ -55,7 +44,7 @@ extern "C" {
 #define NEORV32_SLINK_BASE   (0xFFEC0000U) /**< Stream Link Interface (SLINK) */
 #define NEORV32_DMA_BASE     (0xFFED0000U) /**< Direct Memory Access Controller (DMA) */
 #define NEORV32_CRC_BASE     (0xFFEE0000U) /**< Cyclic Redundancy Check Unit (DMA) */
-#define NEORV32_XIP_BASE     (0xFFEF0000U) /**< Execute In Place Module (XIP) */
+//#define NEORV32_???_BASE   (0xFFEF0000U) /**< reserved */
 #define NEORV32_PWM_BASE     (0xFFF00000U) /**< Pulse Width Modulation Controller (PWM) */
 #define NEORV32_GPTMR_BASE   (0xFFF10000U) /**< General Purpose Timer (GPTMR) */
 #define NEORV32_ONEWIRE_BASE (0xFFF20000U) /**< 1-Wire Interface Controller (ONEWIRE) */
@@ -278,7 +267,6 @@ typedef union {
 #include "neorv32_twi.h"
 #include "neorv32_uart.h"
 #include "neorv32_wdt.h"
-#include "neorv32_xip.h"
 
 
 #ifdef __cplusplus

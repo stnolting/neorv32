@@ -298,8 +298,8 @@ begin
     if (rstn_i = '0') then
       io_con.sda_in_ff <= (others => '0');
       io_con.scl_in_ff <= (others => '0');
-      io_con.sda_out   <= '0';
-      io_con.scl_out   <= '0';
+      io_con.sda_out   <= '1';
+      io_con.scl_out   <= '1';
       engine.state     <= (others => '0');
       engine.bitcnt    <= (others => '0');
       engine.sreg      <= (others => '0');

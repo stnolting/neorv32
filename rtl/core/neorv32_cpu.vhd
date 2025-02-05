@@ -23,7 +23,6 @@ entity neorv32_cpu is
   generic (
     -- General --
     HART_ID             : natural range 0 to 1023; -- hardware thread ID
-    VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor's JEDEC ID
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
@@ -48,7 +47,7 @@ entity neorv32_cpu is
     RISCV_ISA_Zkne      : boolean; -- implement cryptography NIST AES encryption extension
     RISCV_ISA_Zknh      : boolean; -- implement cryptography NIST hash extension
     RISCV_ISA_Zksed     : boolean; -- implement ShangMi hash extension
-    RISCV_ISA_Zksh      : boolean; -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksh      : boolean; -- implement ShangMi block cipher extension
     RISCV_ISA_Zmmul     : boolean; -- implement multiply-only M sub-extension
     RISCV_ISA_Zxcfu     : boolean; -- implement custom (instr.) functions unit
     RISCV_ISA_Sdext     : boolean; -- implement external debug mode extension
@@ -70,23 +69,25 @@ entity neorv32_cpu is
   );
   port (
     -- global control --
-    clk_i        : in  std_ulogic; -- global clock, rising edge
-    rstn_i       : in  std_ulogic; -- global reset, low-active, async
+    clk_i      : in  std_ulogic; -- global clock, rising edge
+    rstn_i     : in  std_ulogic; -- global reset, low-active, async
     -- interrupts --
-    msi_i        : in  std_ulogic; -- risc-v machine software interrupt
-    mei_i        : in  std_ulogic; -- risc-v machine external interrupt
-    mti_i        : in  std_ulogic; -- risc-v machine timer interrupt
-    firq_i       : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
-    dbi_i        : in  std_ulogic; -- risc-v debug halt request interrupt
+    msi_i      : in  std_ulogic; -- risc-v machine software interrupt
+    mei_i      : in  std_ulogic; -- risc-v machine external interrupt
+    mti_i      : in  std_ulogic; -- risc-v machine timer interrupt
+    firq_i     : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
+    dbi_i      : in  std_ulogic; -- risc-v debug halt request interrupt
     -- inter-core communication links --
-    icc_tx_o     : out icc_t; -- TX links
-    icc_rx_i     : in  icc_t; -- RX links
+    icc_tx_o   : out icc_t; -- TX links
+    icc_rx_i   : in  icc_t; -- RX links
     -- instruction bus interface --
-    ibus_req_o   : out bus_req_t; -- request bus
-    ibus_rsp_i   : in  bus_rsp_t; -- response bus
+    ibus_req_o : out bus_req_t; -- request bus
+    ibus_rsp_i : in  bus_rsp_t; -- response bus
     -- data bus interface --
-    dbus_req_o   : out bus_req_t; -- request bus
-    dbus_rsp_i   : in  bus_rsp_t  -- response bus
+    dbus_req_o : out bus_req_t; -- request bus
+    dbus_rsp_i : in  bus_rsp_t; -- response bus
+    -- memory synchronization --
+    mem_sync_i : in  std_ulogic -- synchronization operation done
   );
 end neorv32_cpu;
 
@@ -214,7 +215,6 @@ begin
   generic map (
     -- General --
     HART_ID             => HART_ID,             -- hardware thread ID
-    VENDOR_ID           => VENDOR_ID,           -- vendor's JEDEC ID
     BOOT_ADDR           => BOOT_ADDR,           -- cpu boot address
     DEBUG_PARK_ADDR     => DEBUG_PARK_ADDR,     -- cpu debug mode parking loop entry address
     DEBUG_EXC_ADDR      => DEBUG_EXC_ADDR,      -- cpu debug mode exception entry address
@@ -240,7 +240,7 @@ begin
     RISCV_ISA_Zkne      => RISCV_ISA_Zkne,      -- implement cryptography NIST AES encryption extension
     RISCV_ISA_Zknh      => RISCV_ISA_Zknh,      -- implement cryptography NIST hash extension
     RISCV_ISA_Zks       => riscv_zks_c,         -- ShangMi algorithm suite available
-    RISCV_ISA_Zksed     => RISCV_ISA_Zksed,     -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksed     => RISCV_ISA_Zksed,     -- implement ShangMi block cipher extension
     RISCV_ISA_Zksh      => RISCV_ISA_Zksh,      -- implement ShangMi hash extension
     RISCV_ISA_Zkt       => riscv_zkt_c,         -- data-independent execution time available (for cryptographic operations)
     RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,     -- implement multiply-only M sub-extension
@@ -291,7 +291,9 @@ begin
     -- load/store unit interface --
     lsu_wait_i    => lsu_wait,       -- wait for data bus
     lsu_mar_i     => lsu_mar,        -- memory address register
-    lsu_err_i     => lsu_err         -- alignment/access errors
+    lsu_err_i     => lsu_err,        -- alignment/access errors
+    -- memory synchronization --
+    mem_sync_i    => mem_sync_i      -- synchronization operation done
   );
 
   -- RISC-V machine interrupts --
