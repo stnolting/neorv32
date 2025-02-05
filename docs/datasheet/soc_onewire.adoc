@@ -95,8 +95,8 @@ All bus operations are timed using multiples of this elementary base time.
 [cols="<4,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
-| **`ONEWIRE_CTRL_PRSCx`**    | `0b00` | `0b01` | `0b10` | `0b11`
-| Resulting `clock_prescaler` |      2 |      4 |      8 |     64
+| **`ONEWIRE_CTRL_PRSC[2:0]`** | `0b00` | `0b01` | `0b10` | `0b11`
+| Resulting `clock_prescaler`  |      2 |      4 |      8 |     64
 |=======================
 
 Together with the clock divider value (`ONEWIRE_CTRL_PRSCx` bits = `clock_divider`) the base time is defined by the
