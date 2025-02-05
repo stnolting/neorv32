@@ -587,7 +587,7 @@ implementation of the according modes.
 |=======================
 
 .`pmpaddr*` CSR Bits
-[cols="^1,^2,^1,<11"]
+[cols="^1,^1,<11"]
 [options="header",grid="rows"]
 |=======================
 | Bit   | R/W | Description
