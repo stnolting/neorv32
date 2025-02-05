@@ -47,12 +47,12 @@ via the module's `DATA` register. Note that this register will access the TX FIF
 access the RX FIFO of the ring-buffer when reading.
 
 The most significant bit of the `DATA` register (`SPI_DATA_CMD`) is used to select the purpose of the data being written.
-When the `SPI_DATA_CMD` is cleared, the lowest 8-bit represent the actual SPI TX data. This data will be transmitted by the
+When the `SPI_DATA_CMD` is cleared, the lowest 8-bit represent the actual SPI TX data that will be transmitted by the
 SPI bus engine. After completion, the received data is stored to the RX FIFO.
 
-If `SPI_DATA_CMD` is cleared, the lowest 4-bit control the chip-select lines. In this case, bis `2:0` select one of the eight
+If `SPI_DATA_CMD` is set, the lowest 4-bit control the chip-select lines. In this case, bis `2:0` select one of the eight
 chip-select lines. The selected line will become enabled when bit `3` is also set. If bit `3` is cleared, all chip-select
-lines will be disabled.
+lines will be disabled at once.
 
 Examples:
 
@@ -84,7 +84,7 @@ The following clock prescalers (`SPI_CTRL_PRSCx`) are available:
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
-| **`SPI_CTRL_PRSCx`**        | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
+| **`SPI_CTRL_PRSC[2:0]`**    | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
@@ -129,7 +129,7 @@ example if just the `SPI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep 
                                   <|`1`     `SPI_CTRL_CPHA`                         ^| r/w <| clock phase
                                   <|`2`     `SPI_CTRL_CPOL`                         ^| r/w <| clock polarity
                                   <|`5:3`   `SPI_CTRL_PRSC2 : SPI_CTRL_PRSC0`       ^| r/w <| 3-bit clock prescaler select
-                                  <|`9:6`   `SPI_CTRL_CDIV2 : SPI_CTRL_CDIV0`       ^| r/w <| 4-bit clock divider for fine-tuning
+                                  <|`9:6`   `SPI_CTRL_CDIV3 : SPI_CTRL_CDIV0`       ^| r/w <| 4-bit clock divider for fine-tuning
                                   <|`10`    `SPI_CTRL_HIGHSPEED`                    ^| r/w <| high-speed mode enable (overriding `SPI_CTRL_PRSC*`)
                                   <|`15:11` _reserved_                              ^| r/- <| reserved, read as zero
                                   <|`16`    `SPI_CTRL_RX_AVAIL`                     ^| r/- <| RX FIFO data available (RX FIFO not empty)
@@ -141,7 +141,7 @@ example if just the `SPI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep 
                                   <|`22`    `SPI_CTRL_IRQ_TX_NHALF`                 ^| r/w <| Trigger IRQ if TX FIFO _not_ at least half full
                                   <|`23`    `SPI_CTRL_IRQ_IDLE`                     ^| r/w <| Trigger IRQ if TX FIFO is empty and SPI bus engine is idle
                                   <|`27:24` `SPI_CTRL_FIFO_MSB : SPI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(`IO_SPI_FIFO`)
-                                  <|`30:28` _reserved_                              ^| r/- <| reserved, read as zero
+                                  <|`29:28` _reserved_                              ^| r/- <| reserved, read as zero
                                   <|`30`    `SPI_CS_ACTIVE`                         ^| r/- <| Set if any chip-select line is active
                                   <|`31`    `SPI_CTRL_BUSY`                         ^| r/- <| SPI module busy when set (serial engine operation in progress and TX FIFO not empty yet)
 .3+<| `0xfff80004` .3+<| `DATA` <|`7:0`  `SPI_DATA_MSB : SPI_DATA_LSB` ^| r/w <| receive/transmit data (FIFO)
