@@ -16,7 +16,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_switch is
   generic (
-    ROUND_ROBIN_EN   : boolean := false; -- enable round-robing scheduling
+    ROUND_ROBIN_EN   : boolean := false; -- enable round-robin scheduling
     PORT_A_READ_ONLY : boolean := false; -- set if port A is read-only
     PORT_B_READ_ONLY : boolean := false  -- set if port B is read-only
   );
@@ -37,8 +37,7 @@ architecture neorv32_bus_switch_rtl of neorv32_bus_switch is
   -- access arbiter --
   type state_t is (S_CHECK_A, S_BUSY_A, S_CHECK_B, S_BUSY_B);
   signal state, state_nxt : state_t;
-  signal a_req, b_req     : std_ulogic;
-  signal sel,   stb       : std_ulogic;
+  signal a_req, b_req, sel, stb : std_ulogic;
 
 begin
 
@@ -66,7 +65,7 @@ begin
   end process arbiter_sync;
 
 
-  -- Prioritizing Bus Switch ----------------------------------------------------------------
+  -- Prioritizing Arbiter -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   arbiter_prioritized:
   if not ROUND_ROBIN_EN generate
@@ -250,7 +249,7 @@ begin
       if (rstn_i = '0') then
         device_req_o <= req_terminate_c;
       elsif rising_edge(clk_i) then
-        if (host_req_i.stb = '1') then -- reduce switching activity on device bus system
+        if (host_req_i.stb = '1') then -- reduce switching activity on downstream bus system
           device_req_o <= host_req_i;
         end if;
         device_req_o.stb <= host_req_i.stb;
@@ -730,7 +729,7 @@ end neorv32_bus_io_switch_rtl;
 -- ================================================================================ --
 -- NEORV32 SoC - Processor Bus Infrastructure: Atomic Memory Operations Controller  --
 -- -------------------------------------------------------------------------------- --
--- Read-modify-write controller for the RISC-V A/Zaamp ISA extension.               --
+-- Read-modify-write controller for the RISC-V A/Zaamo ISA extension.               --
 -- [WARNING] Load-reservate and store-conditional operations (Zalrsc ISA extension) --
 -- are NOT supported!                                                               --
 -- -------------------------------------------------------------------------------- --
@@ -864,7 +863,7 @@ begin
   core_rsp_o.ack  <= sys_rsp_i.ack  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) else '0';
 
 
-  -- Arbiter Sync ---------------------------------------------------------------------------
+  -- Data ALU -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   amo_alu: process(rstn_i, clk_i)
   begin
