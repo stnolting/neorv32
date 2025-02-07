@@ -182,14 +182,14 @@ entity neorv32_top is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic;                                        -- UART0 send data
     uart0_rxd_i    : in  std_ulogic := 'L';                                 -- UART0 receive data
-    uart0_rts_o    : out std_ulogic;                                        -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_cts_i    : in  std_ulogic := 'L';                                 -- HW flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_rtsn_o   : out std_ulogic;                                        -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_ctsn_i   : in  std_ulogic := 'L';                                 -- HW flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic;                                        -- UART1 send data
     uart1_rxd_i    : in  std_ulogic := 'L';                                 -- UART1 receive data
-    uart1_rts_o    : out std_ulogic;                                        -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_cts_i    : in  std_ulogic := 'L';                                 -- HW flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_rtsn_o   : out std_ulogic;                                        -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_ctsn_i   : in  std_ulogic := 'L';                                 -- HW flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      : out std_ulogic;                                        -- SPI serial clock
@@ -1186,8 +1186,8 @@ begin
         clkgen_i    => clk_gen,
         uart_txd_o  => uart0_txd_o,
         uart_rxd_i  => uart0_rxd_i,
-        uart_rts_o  => uart0_rts_o,
-        uart_cts_i  => uart0_cts_i,
+        uart_rtsn_o => uart0_rtsn_o,
+        uart_ctsn_i => uart0_ctsn_i,
         irq_rx_o    => firq(FIRQ_UART0_RX),
         irq_tx_o    => firq(FIRQ_UART0_TX)
       );
@@ -1197,7 +1197,7 @@ begin
     if not IO_UART0_EN generate
       iodev_rsp(IODEV_UART0) <= rsp_terminate_c;
       uart0_txd_o            <= '0';
-      uart0_rts_o            <= '1';
+      uart0_rtsn_o           <= '1';
       clk_gen_en(CG_UART0)   <= '0';
       firq(FIRQ_UART0_RX)    <= '0';
       firq(FIRQ_UART0_TX)    <= '0';
@@ -1224,8 +1224,8 @@ begin
         clkgen_i    => clk_gen,
         uart_txd_o  => uart1_txd_o,
         uart_rxd_i  => uart1_rxd_i,
-        uart_rts_o  => uart1_rts_o,
-        uart_cts_i  => uart1_cts_i,
+        uart_rtsn_o => uart1_rtsn_o,
+        uart_ctsn_i => uart1_ctsn_i,
         irq_rx_o    => firq(FIRQ_UART1_RX),
         irq_tx_o    => firq(FIRQ_UART1_TX)
       );
@@ -1235,7 +1235,7 @@ begin
     if not IO_UART1_EN generate
       iodev_rsp(IODEV_UART1) <= rsp_terminate_c;
       uart1_txd_o            <= '0';
-      uart1_rts_o            <= '1';
+      uart1_rtsn_o           <= '1';
       clk_gen_en(CG_UART1)   <= '0';
       firq(FIRQ_UART1_RX)    <= '0';
       firq(FIRQ_UART1_TX)    <= '0';
