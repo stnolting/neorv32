@@ -285,7 +285,7 @@ begin
 
       when S_DOWNLOAD_DONE => -- delay cycle for update of cache status
       -- ------------------------------------------------------------
-        ctrl_nxt.state  <= S_CHECK;
+        ctrl_nxt.state <= S_CHECK;
 
       when S_DOWNLOAD_ERR => -- error during block download
       -- ------------------------------------------------------------
