@@ -34,7 +34,6 @@ end neorv32_bus_switch;
 
 architecture neorv32_bus_switch_rtl of neorv32_bus_switch is
 
-  -- access arbiter --
   type state_t is (S_CHECK_A, S_BUSY_A, S_CHECK_B, S_BUSY_B);
   signal state, state_nxt : state_t;
   signal a_req, b_req, sel, stb : std_ulogic;
@@ -293,8 +292,8 @@ end neorv32_bus_reg_rtl;
 -- (A to C). Note that the sub-spaces have to be aligned to their individual sizes. --
 -- All accesses that do not match any of these sections are redirected to the "X"   --
 -- port. The gateway-internal bus monitor ensures that all accesses are completed   --
--- within a bound time window (if port's *_TMO_EN is true). Otherwise, a bus error  --
--- exception is raised.                                                             --
+-- within a bound time window. Otherwise, a bus error exception is raised. Note     --
+-- that the X-port does not provide such a timeout.                                 --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -314,23 +313,19 @@ entity neorv32_bus_gateway is
   generic (
     TIMEOUT  : natural; -- internal bus timeout cycles
     -- port A --
-    A_ENABLE : boolean; -- port enable
-    A_BASE   : std_ulogic_vector(31 downto 0); -- port address space base address
-    A_SIZE   : natural; -- port address space size in bytes (power of two), aligned to size
-    A_TMO_EN : boolean; -- port access timeout enable
+    A_EN   : boolean; -- port enable
+    A_BASE : std_ulogic_vector(31 downto 0); -- port address space base address
+    A_SIZE : natural; -- port address space size in bytes (power of two), aligned to size
     -- port B --
-    B_ENABLE : boolean;
-    B_BASE   : std_ulogic_vector(31 downto 0);
-    B_SIZE   : natural;
-    B_TMO_EN : boolean;
+    B_EN   : boolean;
+    B_BASE : std_ulogic_vector(31 downto 0);
+    B_SIZE : natural;
     -- port C --
-    C_ENABLE : boolean;
-    C_BASE   : std_ulogic_vector(31 downto 0);
-    C_SIZE   : natural;
-    C_TMO_EN : boolean;
+    C_EN   : boolean;
+    C_BASE : std_ulogic_vector(31 downto 0);
+    C_SIZE : natural;
     -- port X (the void) --
-    X_ENABLE : boolean;
-    X_TMO_EN : boolean
+    X_EN   : boolean
   );
   port (
     -- global control --
@@ -358,12 +353,7 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
 
   -- port enable list --
   type port_bool_list_t is array (0 to 3) of boolean;
-  constant port_en_list_c : port_bool_list_t := (A_ENABLE, B_ENABLE, C_ENABLE, X_ENABLE);
-
-  -- port timeout enable list --
-  constant tmo_en_list_c : std_ulogic_vector(3 downto 0) := (
-    bool_to_ulogic_f(X_TMO_EN), bool_to_ulogic_f(C_TMO_EN), bool_to_ulogic_f(B_TMO_EN), bool_to_ulogic_f(A_TMO_EN)
-  );
+  constant port_en_list_c : port_bool_list_t := (A_EN, B_EN, C_EN, X_EN);
 
   -- gateway ports combined as arrays --
   type port_req_t is array (0 to 3) of bus_req_t;
@@ -387,12 +377,12 @@ begin
 
   -- Address Section Decoder ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  port_sel(0) <= '1' when A_ENABLE and (req_i.addr(31 downto index_size_f(A_SIZE)) = A_BASE(31 downto index_size_f(A_SIZE))) else '0';
-  port_sel(1) <= '1' when B_ENABLE and (req_i.addr(31 downto index_size_f(B_SIZE)) = B_BASE(31 downto index_size_f(B_SIZE))) else '0';
-  port_sel(2) <= '1' when C_ENABLE and (req_i.addr(31 downto index_size_f(C_SIZE)) = C_BASE(31 downto index_size_f(C_SIZE))) else '0';
+  port_sel(0) <= '1' when A_EN and (req_i.addr(31 downto index_size_f(A_SIZE)) = A_BASE(31 downto index_size_f(A_SIZE))) else '0';
+  port_sel(1) <= '1' when B_EN and (req_i.addr(31 downto index_size_f(B_SIZE)) = B_BASE(31 downto index_size_f(B_SIZE))) else '0';
+  port_sel(2) <= '1' when C_EN and (req_i.addr(31 downto index_size_f(C_SIZE)) = C_BASE(31 downto index_size_f(C_SIZE))) else '0';
 
   -- accesses to the "void" are redirected to the X port --
-  port_sel(3) <= '1' when X_ENABLE and (port_sel(2 downto 0) = "000") else '0';
+  port_sel(3) <= '1' when X_EN and (port_sel(2 downto 0) = "000") else '0';
 
 
   -- Gateway Ports --------------------------------------------------------------------------
@@ -446,7 +436,7 @@ begin
       keeper.halt <= '0';
     elsif rising_edge(clk_i) then
       keeper.err  <= '0'; -- default
-      keeper.halt <= or_reduce_f(port_sel and (not tmo_en_list_c)); -- no timeout if *_TMO_EN = false
+      keeper.halt <= port_sel(port_sel'left); -- no timeout if x-port access
       if (keeper.busy = '0') then -- bus idle
         keeper.cnt  <= (others => '0');
         keeper.busy <= req_i.stb;
@@ -730,8 +720,6 @@ end neorv32_bus_io_switch_rtl;
 -- NEORV32 SoC - Processor Bus Infrastructure: Atomic Memory Operations Controller  --
 -- -------------------------------------------------------------------------------- --
 -- Read-modify-write controller for the RISC-V A/Zaamo ISA extension.               --
--- [WARNING] Load-reservate and store-conditional operations (Zalrsc ISA extension) --
--- are NOT supported!                                                               --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -747,7 +735,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_bus_amo_ctrl is
+entity neorv32_bus_amo_rmw is
   port (
     -- global control --
     clk_i      : in  std_ulogic; -- global clock, rising edge
@@ -759,9 +747,9 @@ entity neorv32_bus_amo_ctrl is
     sys_req_o  : out bus_req_t;
     sys_rsp_i  : in  bus_rsp_t
   );
-end neorv32_bus_amo_ctrl;
+end neorv32_bus_amo_rmw;
 
-architecture neorv32_bus_amo_ctrl_rtl of neorv32_bus_amo_ctrl is
+architecture neorv32_bus_amo_rmw_rtl of neorv32_bus_amo_rmw is
 
   -- arbiter --
   type state_t is (S_IDLE, S_READ_WAIT, S_EXECUTE, S_WRITE, S_WRITE_WAIT);
@@ -854,7 +842,7 @@ begin
   sys_req_o.priv  <= core_req_i.priv;
   sys_req_o.debug <= core_req_i.debug;
   sys_req_o.amo   <= core_req_i.amo; -- set during the entire read-modify-write operation
-  sys_req_o.amoop <= (others => '0'); -- the specific AMO type should not matter after this point
+  sys_req_o.amoop <= core_req_i.amoop;
   sys_req_o.fence <= core_req_i.fence;
 
   -- response switch --
@@ -888,4 +876,4 @@ begin
   cmp_res  <= cmp_opa(31 downto 0) when ((cmp_less xor arbiter.cmd(0)) = '1') else cmp_opb(31 downto 0);
 
 
-end neorv32_bus_amo_ctrl_rtl;
+end neorv32_bus_amo_rmw_rtl;
