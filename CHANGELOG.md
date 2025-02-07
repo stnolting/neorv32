@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 07.02.2025 | 1.11.0.10 | :warning: rename UART RTS/CTS signals | [#1180](https://github.com/stnolting/neorv32/pull/1180) |
 | 07.02.2025 | 1.11.0.9 | minor rtl edits and cleanups | [#1179](https://github.com/stnolting/neorv32/pull/1179) |
 | 03.02.2025 | 1.11.0.8 | :sparkles: add explicit memory ordering/coherence support; :warning: remove WDT "halt-on-debug" and "halt-on-sleep" options; :bug: rework cache module fixing several (minor?) design flaws | [#1176](https://github.com/stnolting/neorv32/pull/1176) |
 | 03.02.2025 | 1.11.0.7 | :bug: add missing CFS clock gen enable signal | [#1177](https://github.com/stnolting/neorv32/pull/1177) |
