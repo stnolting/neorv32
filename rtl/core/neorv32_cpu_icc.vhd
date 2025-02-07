@@ -71,11 +71,12 @@ begin
     FULL_RESET => false -- no need for a full HW reset as we have an "output gate"
   )
   port map (
-    -- control --
+    -- control and status --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => '0',
     half_o  => open,
+    level_o => open,
     -- write port --
     wdata_i => csr_wdata_i,
     we_i    => tx_fifo_we,

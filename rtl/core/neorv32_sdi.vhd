@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -177,11 +177,12 @@ begin
     FULL_RESET => false     -- no HW reset, try to infer BRAM
   )
   port map (
-    -- control --
+    -- control and status --
     clk_i   => clk_i,         -- clock, rising edge
     rstn_i  => rstn_i,        -- async reset, low-active
     clear_i => tx_fifo.clear, -- sync reset, high-active
     half_o  => tx_fifo.half,  -- FIFO at least half-full
+    level_o => open,          -- fill level, zero-extended
     -- write port --
     wdata_i => tx_fifo.wdata, -- write data
     we_i    => tx_fifo.we,    -- write enable
@@ -216,6 +217,7 @@ begin
     rstn_i  => rstn_i,        -- async reset, low-active
     clear_i => rx_fifo.clear, -- sync reset, high-active
     half_o  => rx_fifo.half,  -- FIFO at least half-full
+    level_o => open,          -- fill level, zero-extended
     -- write port --
     wdata_i => rx_fifo.wdata, -- write data
     we_i    => rx_fifo.we,    -- write enable

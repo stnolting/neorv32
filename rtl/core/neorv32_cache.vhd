@@ -155,7 +155,7 @@ begin
 
   -- Control Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_engine_comb: process(ctrl, addr, host_req_i, bus_rsp_i, cache_i)
+  ctrl_engine_comb: process(ctrl, addr, host_req_i, cache_i, bus_rsp_i)
   begin
     -- control engine defaults --
     ctrl_nxt.state    <= ctrl.state;
@@ -175,7 +175,7 @@ begin
     -- host response defaults --
     host_rsp_o <= rsp_terminate_c;
 
-    -- bus interface defaults --
+    -- bus interface defaults (default = host access) --
     bus_req_o.addr  <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
     bus_req_o.data  <= cache_i.data;
     bus_req_o.ben   <= (others => '1'); -- full-word writes only
@@ -285,7 +285,7 @@ begin
 
       when S_DOWNLOAD_DONE => -- delay cycle for update of cache status
       -- ------------------------------------------------------------
-        ctrl_nxt.state  <= S_CHECK;
+        ctrl_nxt.state <= S_CHECK;
 
       when S_DOWNLOAD_ERR => -- error during block download
       -- ------------------------------------------------------------

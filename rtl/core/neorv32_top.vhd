@@ -552,7 +552,7 @@ begin
     );
 
     -- memory synchronization (ordering / coherence) --
-    mem_sync(i) <= dcache_clean(i) and xcache_clean;
+    mem_sync(i) <= dcache_clean(i) and xcache_clean; -- for this hart's perspective only
 
 
     -- CPU L1 Instruction Cache (I-Cache) -----------------------------------------------------
@@ -730,9 +730,9 @@ begin
   -- Read-Modify-Write Controller for Atomic Memory Operations
   -- **************************************************************************************************************************
 
-  neorv32_bus_amo_ctrl_enabled:
+  neorv32_bus_amo_rmw_enabled:
   if RISCV_ISA_Zaamo generate
-    neorv32_bus_amo_ctrl_inst: entity neorv32.neorv32_bus_amo_ctrl
+    neorv32_bus_amo_rmw_inst: entity neorv32.neorv32_bus_amo_rmw
     port map (
       clk_i      => clk_i,
       rstn_i     => rstn_sys,
@@ -743,7 +743,7 @@ begin
     );
   end generate;
 
-  neorv32_bus_amo_ctrl_disabled:
+  neorv32_bus_amo_rmw_disabled:
   if not RISCV_ISA_Zaamo generate
     sys3_req <= sys2_req;
     sys2_rsp <= sys3_rsp;
@@ -758,23 +758,19 @@ begin
   generic map (
     TIMEOUT  => bus_timeout_c,
     -- port A: internal IMEM --
-    A_ENABLE => MEM_INT_IMEM_EN,
-    A_BASE   => mem_imem_base_c,
-    A_SIZE   => imem_size_c,
-    A_TMO_EN => true,
+    A_EN   => MEM_INT_IMEM_EN,
+    A_BASE => mem_imem_base_c,
+    A_SIZE => imem_size_c,
     -- port B: internal DMEM --
-    B_ENABLE => MEM_INT_DMEM_EN,
-    B_BASE   => mem_dmem_base_c,
-    B_SIZE   => dmem_size_c,
-    B_TMO_EN => true,
+    B_EN   => MEM_INT_DMEM_EN,
+    B_BASE => mem_dmem_base_c,
+    B_SIZE => dmem_size_c,
     -- port C: IO --
-    C_ENABLE => true, -- always enabled (but will be trimmed if no IO devices are implemented)
-    C_BASE   => mem_io_base_c,
-    C_SIZE   => mem_io_size_c,
-    C_TMO_EN => true,
+    C_EN   => true, -- always enabled (but will be trimmed if no IO devices are implemented)
+    C_BASE => mem_io_base_c,
+    C_SIZE => mem_io_size_c,
     -- port X (the void): XBUS --
-    X_ENABLE => XBUS_EN,
-    X_TMO_EN => false -- timeout handled by XBUS gateway
+    X_EN   => XBUS_EN
   )
   port map (
     -- global control --

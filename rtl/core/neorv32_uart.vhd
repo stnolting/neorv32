@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -236,14 +236,17 @@ begin
     FULL_RESET => false
   )
   port map (
-    -- control --
+    -- control and status --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => tx_fifo.clear,
     half_o  => tx_fifo.half,
+    level_o => open,
+    -- write port --
     wdata_i => tx_fifo.wdata,
     we_i    => tx_fifo.we,
     free_o  => tx_fifo.free,
+    -- read port --
     re_i    => tx_fifo.re,
     rdata_o => tx_fifo.rdata,
     avail_o => tx_fifo.avail
@@ -278,13 +281,17 @@ begin
     FULL_RESET => false
   )
   port map (
+    -- control and status --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => rx_fifo.clear,
     half_o  => rx_fifo.half,
+    level_o => open,
+    -- write port --
     wdata_i => rx_fifo.wdata,
     we_i    => rx_fifo.we,
     free_o  => rx_fifo.free,
+    -- read port --
     re_i    => rx_fifo.re,
     rdata_o => rx_fifo.rdata,
     avail_o => rx_fifo.avail

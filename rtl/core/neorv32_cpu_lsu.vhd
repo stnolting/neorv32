@@ -113,7 +113,7 @@ begin
   -- hardwired signals --
   dbus_req_o.src <= '0'; -- always "data" access
 
-  -- out-of band signals --
+  -- out-of-band signals --
   dbus_req_o.fence <= ctrl_i.lsu_fence;
 
   -- atomic memory access operation encoding --
