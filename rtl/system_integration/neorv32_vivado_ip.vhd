@@ -200,13 +200,13 @@ entity neorv32_vivado_ip is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_logic;
     uart0_rxd_i    : in  std_logic := '0';
-    uart0_rts_o    : out std_logic;
-    uart0_cts_i    : in  std_logic := '0';
+    uart0_rtsn_o   : out std_logic;
+    uart0_ctsn_i   : in  std_logic := '0';
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_logic;
     uart1_rxd_i    : in  std_logic := '0';
-    uart1_rts_o    : out std_logic;
-    uart1_cts_i    : in  std_logic := '0';
+    uart1_rtsn_o   : out std_logic;
+    uart1_ctsn_i   : in  std_logic := '0';
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      : out std_logic;
     spi_dat_o      : out std_logic;
@@ -301,7 +301,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal s0_axis_tdata_aux : std_ulogic_vector(31 downto 0);
   signal s0_axis_tdest_aux : std_ulogic_vector(3 downto 0);
   signal s1_axis_tready_aux, s0_axis_tvalid_aux, s0_axis_tlast_aux : std_ulogic;
-  signal uart0_txd_aux, uart0_rts_aux, uart1_txd_aux, uart1_rts_aux : std_ulogic;
+  signal uart0_txd_aux, uart0_rtsn_aux, uart1_txd_aux, uart1_rtsn_aux : std_ulogic;
   signal spi_clk_aux, spi_do_aux : std_ulogic;
   signal spi_csn_aux : std_ulogic_vector(7 downto 0);
   signal sdi_do_aux : std_ulogic;
@@ -477,13 +477,13 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    => uart0_txd_aux,
     uart0_rxd_i    => std_ulogic(uart0_rxd_i),
-    uart0_rts_o    => uart0_rts_aux,
-    uart0_cts_i    => std_ulogic(uart0_cts_i),
+    uart0_rtsn_o   => uart0_rtsn_aux,
+    uart0_ctsn_i   => std_ulogic(uart0_ctsn_i),
     -- secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    => uart1_txd_aux,
     uart1_rxd_i    => std_ulogic(uart1_rxd_i),
-    uart1_rts_o    => uart1_rts_aux,
-    uart1_cts_i    => std_ulogic(uart1_cts_i),
+    uart1_rtsn_o   => uart1_rtsn_aux,
+    uart1_ctsn_i   => std_ulogic(uart1_ctsn_i),
     -- SPI (available if IO_SPI_EN = true) --
     spi_clk_o      => spi_clk_aux,
     spi_dat_o      => spi_do_aux,
@@ -537,9 +537,9 @@ begin
   s0_axis_tlast  <= std_logic(s0_axis_tlast_aux);
 
   uart0_txd_o    <= std_logic(uart0_txd_aux);
-  uart0_rts_o    <= std_logic(uart0_rts_aux);
+  uart0_rtsn_o   <= std_logic(uart0_rtsn_aux);
   uart1_txd_o    <= std_logic(uart1_txd_aux);
-  uart1_rts_o    <= std_logic(uart1_rts_aux);
+  uart1_rtsn_o   <= std_logic(uart1_rtsn_aux);
 
   spi_clk_o      <= std_logic(spi_clk_aux);
   spi_dat_o      <= std_logic(spi_do_aux);
