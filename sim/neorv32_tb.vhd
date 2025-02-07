@@ -81,7 +81,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   constant f_period_c : time := (1 sec) / CLOCK_FREQUENCY;
 
   -- IO connection --
-  signal uart0_txd, uart0_cts, uart1_txd, uart1_cts : std_ulogic;
+  signal uart0_txd, uart0_ctsn, uart1_txd, uart1_ctsn : std_ulogic;
   signal gpio : std_ulogic_vector(31 downto 0);
   signal i2c_scl, i2c_sda : std_logic;
   signal twi_scl_i, twi_scl_o, twi_sda_i, twi_sda_o : std_ulogic;
@@ -262,13 +262,13 @@ begin
     -- primary UART0 --
     uart0_txd_o    => uart0_txd,
     uart0_rxd_i    => uart0_txd,
-    uart0_rts_o    => uart0_cts,
-    uart0_cts_i    => uart0_cts,
+    uart0_rtsn_o   => uart0_ctsn,
+    uart0_ctsn_i   => uart0_ctsn,
     -- secondary UART1 --
     uart1_txd_o    => uart1_txd,
     uart1_rxd_i    => uart1_txd,
-    uart1_rts_o    => uart1_cts,
-    uart1_cts_i    => uart1_cts,
+    uart1_rtsn_o   => uart1_ctsn,
+    uart1_ctsn_i   => uart1_ctsn,
     -- SPI --
     spi_clk_o      => spi_clk,
     spi_dat_o      => spi_do,

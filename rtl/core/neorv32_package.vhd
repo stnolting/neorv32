@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110009"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110010"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -868,13 +868,13 @@ package neorv32_package is
       -- primary UART0 (available if IO_UART0_EN = true) --
       uart0_txd_o    : out std_ulogic;
       uart0_rxd_i    : in  std_ulogic := 'L';
-      uart0_rts_o    : out std_ulogic;
-      uart0_cts_i    : in  std_ulogic := 'L';
+      uart0_rtsn_o   : out std_ulogic;
+      uart0_ctsn_i   : in  std_ulogic := 'L';
       -- secondary UART1 (available if IO_UART1_EN = true) --
       uart1_txd_o    : out std_ulogic;
       uart1_rxd_i    : in  std_ulogic := 'L'; -- UART1 receive data
-      uart1_rts_o    : out std_ulogic;
-      uart1_cts_i    : in  std_ulogic := 'L';
+      uart1_rtsn_o   : out std_ulogic;
+      uart1_ctsn_i   : in  std_ulogic := 'L';
       -- SPI (available if IO_SPI_EN = true) --
       spi_clk_o      : out std_ulogic;
       spi_dat_o      : out std_ulogic;

@@ -37,8 +37,8 @@ entity neorv32_uart is
     clkgen_i    : in  std_ulogic_vector(7 downto 0);
     uart_txd_o  : out std_ulogic; -- serial TX line
     uart_rxd_i  : in  std_ulogic; -- serial RX line
-    uart_rts_o  : out std_ulogic; -- UART.RX ready to receive ("RTR"), low-active, optional
-    uart_cts_i  : in  std_ulogic; -- UART.TX allowed to transmit, low-active, optional
+    uart_rtsn_o : out std_ulogic; -- ready to receive ("RTR"), low-active, optional
+    uart_ctsn_i : in  std_ulogic; -- allowed to transmit, low-active, optional
     irq_rx_o    : out std_ulogic; -- RX interrupt
     irq_tx_o    : out std_ulogic  -- TX interrupt
   );
@@ -105,14 +105,14 @@ architecture neorv32_uart_rtl of neorv32_uart is
 
   -- UART transmitter --
   type tx_engine_t is record
-    state    : std_ulogic_vector(2 downto 0);
-    sreg     : std_ulogic_vector(8 downto 0);
-    bitcnt   : std_ulogic_vector(3 downto 0);
-    baudcnt  : std_ulogic_vector(9 downto 0);
-    done     : std_ulogic;
-    busy     : std_ulogic;
-    cts_sync : std_ulogic_vector(1 downto 0);
-    txd      : std_ulogic;
+    state   : std_ulogic_vector(2 downto 0);
+    sreg    : std_ulogic_vector(8 downto 0);
+    bitcnt  : std_ulogic_vector(3 downto 0);
+    baudcnt : std_ulogic_vector(9 downto 0);
+    done    : std_ulogic;
+    busy    : std_ulogic;
+    cts     : std_ulogic_vector(1 downto 0);
+    txd     : std_ulogic;
   end record;
   signal tx_engine : tx_engine_t;
 
@@ -321,16 +321,16 @@ begin
   transmitter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      tx_engine.cts_sync <= (others => '0');
-      tx_engine.done     <= '0';
-      tx_engine.state    <= (others => '0');
-      tx_engine.baudcnt  <= (others => '0');
-      tx_engine.bitcnt   <= (others => '0');
-      tx_engine.sreg     <= (others => '0');
-      tx_engine.txd      <= '1';
+      tx_engine.cts     <= (others => '0');
+      tx_engine.done    <= '0';
+      tx_engine.state   <= (others => '0');
+      tx_engine.baudcnt <= (others => '0');
+      tx_engine.bitcnt  <= (others => '0');
+      tx_engine.sreg    <= (others => '0');
+      tx_engine.txd     <= '1';
     elsif rising_edge(clk_i) then
       -- synchronize clear-to-send --
-      tx_engine.cts_sync <= tx_engine.cts_sync(0) & uart_cts_i;
+      tx_engine.cts <= tx_engine.cts(0) & uart_ctsn_i;
 
       -- defaults --
       tx_engine.done <= '0';
@@ -352,7 +352,7 @@ begin
         when "101" => -- WAIT: check if we can start sending
         -- ------------------------------------------------------------
           if (uart_clk = '1') and -- start with next clock tick
-             ((tx_engine.cts_sync(1) = '0') or (ctrl.hwfc_en = '0')) then -- allowed to send OR flow-control disabled
+             ((tx_engine.cts(1) = '0') or (ctrl.hwfc_en = '0')) then -- allowed to send OR flow-control disabled
             tx_engine.state(1 downto 0) <= "11";
           end if;
 
@@ -463,17 +463,17 @@ begin
   rtr_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      uart_rts_o <= '0';
+      uart_rtsn_o <= '0';
     elsif rising_edge(clk_i) then
       if (ctrl.hwfc_en = '1') then
         if (ctrl.enable = '0') or -- UART disabled
            (rx_fifo.half = '1') then -- RX FIFO at least half-full: no "safe space" left in RX FIFO
-          uart_rts_o <= '1'; -- NOT allowed to send
+          uart_rtsn_o <= '1'; -- NOT allowed to send
         else
-          uart_rts_o <= '0'; -- ready to receive
+          uart_rtsn_o <= '0'; -- ready to receive
         end if;
       else
-        uart_rts_o <= '0'; -- always ready to receive when HW flow-control is disabled
+        uart_rtsn_o <= '0'; -- always ready to receive when HW flow-control is disabled
       end if;
     end if;
   end process rtr_control;

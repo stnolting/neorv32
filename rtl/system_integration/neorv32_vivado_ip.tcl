@@ -123,7 +123,6 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_SLINK_EN}   [ipx::get_bus_interfaces s0_axis -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_SLINK_EN}   [ipx::get_bus_interfaces s1_axis -of_objects [ipx::current_core]]
   set_property enablement_dependency {$XBUS_EN}       [ipx::get_bus_interfaces m_axi   -of_objects [ipx::current_core]]
-  set_property enablement_dependency {$OCD_EN}        [ipx::get_ports jtag_*           -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_GPIO_EN}    [ipx::get_ports gpio_*           -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_UART0_EN}   [ipx::get_ports uart0_*          -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_UART1_EN}   [ipx::get_ports uart1_*          -of_objects [ipx::current_core]]
@@ -139,6 +138,23 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
   set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports msw_irq_i        -of_objects [ipx::current_core]]
 
+  # **************************************************************
+  # Interfaces: Add JTAG as standard interface
+  # **************************************************************
+  ipx::add_bus_interface JTAG [ipx::current_core]
+  set_property abstraction_type_vlnv xilinx.com:interface:jtag_rtl:2.0 [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]
+  set_property bus_type_vlnv xilinx.com:interface:jtag:2.0 [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]
+  set_property display_name JTAG [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]
+  set_property description {JTAG tap of the on-chip debugger} [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$OCD_EN} [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]
+  ipx::add_port_map TDI [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]
+  set_property physical_name jtag_tdi_i [ipx::get_port_maps TDI -of_objects [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]]
+  ipx::add_port_map TMS [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]
+  set_property physical_name jtag_tms_i [ipx::get_port_maps TMS -of_objects [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]]
+  ipx::add_port_map TCK [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]
+  set_property physical_name jtag_tck_i [ipx::get_port_maps TCK -of_objects [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]]
+  ipx::add_port_map TDO [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]
+  set_property physical_name jtag_tdo_o [ipx::get_port_maps TDO -of_objects [ipx::get_bus_interfaces JTAG -of_objects [ipx::current_core]]]
 
   # **************************************************************
   # Configuration pages
