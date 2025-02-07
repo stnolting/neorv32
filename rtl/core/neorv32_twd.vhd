@@ -192,11 +192,12 @@ begin
     FULL_RESET => false
   )
   port map (
-    -- control --
+    -- control and status --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => tx_fifo.clr,
     half_o  => open,
+    level_o => open,
     -- write port --
     wdata_i => tx_fifo.wdata,
     we_i    => tx_fifo.we,
@@ -224,11 +225,12 @@ begin
     FULL_RESET => false
   )
   port map (
-    -- control --
+    -- control and status --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => rx_fifo.clr,
     half_o  => open,
+    level_o => open,
     -- write port --
     wdata_i => rx_fifo.wdata,
     we_i    => rx_fifo.we,

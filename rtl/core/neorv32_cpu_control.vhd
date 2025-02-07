@@ -391,11 +391,12 @@ begin
       FULL_RESET => false                -- no need for a full hardware reset
     )
     port map (
-      -- control --
+      -- control and status --
       clk_i   => clk_i,                -- clock, rising edge
       rstn_i  => rstn_i,               -- async reset, low-active
       clear_i => fetch_engine.restart, -- sync reset, high-active
       half_o  => open,                 -- at least half full
+      level_o => open,                 -- fill level, zero-extended
       -- write port --
       wdata_i => ipb.wdata(i),         -- write data
       we_i    => ipb.we(i),            -- write enable
