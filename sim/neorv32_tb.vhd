@@ -77,7 +77,8 @@ end neorv32_tb;
 architecture neorv32_tb_rtl of neorv32_tb is
 
   -- generators --
-  signal clk_gen, rst_gen : std_ulogic := '0';
+  signal clk_en, clk_gen, rst_gen : std_ulogic;
+  constant f_period_c : time := (1 sec) / CLOCK_FREQUENCY;
 
   -- IO connection --
   signal uart0_txd, uart0_cts, uart1_txd, uart1_cts : std_ulogic;
@@ -102,7 +103,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   end record;
   signal slink_tx, slink_rx : slink_t;
 
-  -- XBUS (Wishbone b4) bus --
+  -- XBUS --
   signal xbus_core_req, xbus_ext_mem_a_req, xbus_ext_mem_b_req, xbus_mmio_req, xbus_trig_req : xbus_req_t;
   signal xbus_core_rsp, xbus_ext_mem_a_rsp, xbus_ext_mem_b_rsp, xbus_mmio_rsp, xbus_trig_rsp : xbus_rsp_t;
 
@@ -110,8 +111,9 @@ begin
 
   -- Clock & Reset Generators ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  clk_gen <= not clk_gen after (((1 sec) / CLOCK_FREQUENCY) / 2);
-  rst_gen <= '0', '1' after 60*(((1 sec) / CLOCK_FREQUENCY) / 2);
+  rst_gen <= '0', '1' after 30*(f_period_c/2);
+  clk_en  <= '0', '1' after 60*(f_period_c/2);
+  clk_gen <= (not clk_gen) and clk_en after (f_period_c/2);
 
 
   -- The Core of the Problem ----------------------------------------------------------------
@@ -356,6 +358,7 @@ begin
     rstn_i                => rst_gen,
     clear_i               => '0',
     half_o                => open,
+    level_o               => open,
     -- write port --
     wdata_i(31 downto  0) => slink_tx.data,
     wdata_i(35 downto 32) => slink_tx.addr,
