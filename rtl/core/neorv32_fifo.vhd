@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -20,15 +20,16 @@ entity neorv32_fifo is
     FIFO_DEPTH : natural := 4;     -- number of FIFO entries; has to be a power of two; min 1
     FIFO_WIDTH : natural := 32;    -- size of data elements in FIFO
     FIFO_RSYNC : boolean := false; -- false = async read; true = sync read
-    FIFO_SAFE  : boolean := false; -- true = allow read/write only if data available
+    FIFO_SAFE  : boolean := false; -- true = allow read/write only if data/space available
     FULL_RESET : boolean := false  -- true = reset all memory cells (cannot be mapped to BRAM)
   );
   port (
-    -- control --
+    -- control and status --
     clk_i   : in  std_ulogic; -- clock, rising edge
     rstn_i  : in  std_ulogic; -- async reset, low-active
     clear_i : in  std_ulogic; -- sync reset, high-active
     half_o  : out std_ulogic; -- FIFO is at least half full
+    level_o : out std_ulogic_vector(31 downto 0); -- fill level, zero-extended, 0 to FIFO_DEPTH
     -- write port --
     wdata_i : in  std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- write data
     we_i    : in  std_ulogic; -- write enable
@@ -53,11 +54,8 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
   -- FIFO control and status --
   signal we, re, match, empty, full, half, free, avail : std_ulogic;
 
-  -- write/read pointer --
-  signal w_pnt, w_nxt, r_pnt, r_nxt, r_pnt_ff : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0);
-
-  -- fill level --
-  signal diff : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0);
+  -- write/read pointers --
+  signal w_pnt, w_nxt, r_pnt, r_nxt, r_pnt_ff, level : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0);
 
 begin
 
@@ -94,8 +92,8 @@ begin
     match <= '1' when (r_pnt(r_pnt'left-1 downto 0) = w_pnt(w_pnt'left-1 downto 0)) else '0';
     full  <= '1' when (r_pnt(r_pnt'left) /= w_pnt(w_pnt'left)) and (match = '1') else '0';
     empty <= '1' when (r_pnt(r_pnt'left)  = w_pnt(w_pnt'left)) and (match = '1') else '0';
-    diff  <= std_ulogic_vector(unsigned(w_pnt) - unsigned(r_pnt));
-    half  <= diff(diff'left-1) or full;
+    level <= std_ulogic_vector(unsigned(w_pnt) - unsigned(r_pnt));
+    half  <= level(level'left-1) or full;
   end generate;
 
   -- just 1 FIFO entry --
@@ -104,11 +102,20 @@ begin
     match <= '1' when (r_pnt(0) = w_pnt(0)) else '0';
     full  <= not match;
     empty <= match;
+    level <= (others => full);
     half  <= full;
   end generate;
 
+  -- aliases --
   free  <= not full;
   avail <= not empty;
+
+  -- fill level, zero-extended --
+  level_extend: process(level)
+  begin
+    level_o <= (others => '0');
+    level_o(level'left downto 0) <= level(level'left downto 0);
+  end process level_extend;
 
 
   -- Write Access (with Reset) --------------------------------------------------------------
