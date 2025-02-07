@@ -120,13 +120,13 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 5+^| **<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>**
 | `uart0_txd_o`    |  1 | out |   -   | serial transmitter
 | `uart0_rxd_i`    |  1 |  in | `'L'` | serial receiver
-| `uart0_rts_o`    |  1 | out |   -   | RX ready to receive new char
-| `uart0_cts_i`    |  1 |  in | `'L'` | TX allowed to start sending, low-active
+| `uart0_rtsn_o`   |  1 | out |   -   | RX ready to receive new char
+| `uart0_ctsn_i`   |  1 |  in | `'L'` | TX allowed to start sending, low-active
 5+^| **<<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>**
 | `uart1_txd_o`    |  1 | out |   -   | serial transmitter
 | `uart1_rxd_i`    |  1 |  in | `'L'` | serial receiver
-| `uart1_rts_o`    |  1 | out |   -   | RX ready to receive new char
-| `uart1_cts_i`    |  1 |  in | `'L'` | TX allowed to start sending, low-active
+| `uart1_rtsn_o`   |  1 | out |   -   | RX ready to receive new char
+| `uart1_ctsn_i`   |  1 |  in | `'L'` | TX allowed to start sending, low-active
 5+^| **<<_serial_peripheral_interface_controller_spi>>**
 | `spi_clk_o`      |  1 | out |   -   | controller clock line
 | `spi_dat_o`      |  1 | out |   -   | serial data output
