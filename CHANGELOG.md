@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 08.02.2025 | 1.11.1.1 | :sparkles: add support for `A` and `Zalrsc` ISA extensions | [#1181](https://github.com/stnolting/neorv32/pull/1181) |
 | 07.02.2025 | [**:rocket:1.11.1**](https://github.com/stnolting/neorv32/releases/tag/v1.11.1) | **New release** | |
 | 07.02.2025 | 1.11.0.10 | :warning: rename UART RTS/CTS signals | [#1180](https://github.com/stnolting/neorv32/pull/1180) |
 | 07.02.2025 | 1.11.0.9 | minor rtl edits and cleanups | [#1179](https://github.com/stnolting/neorv32/pull/1179) |

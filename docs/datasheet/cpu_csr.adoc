@@ -221,6 +221,7 @@ will _not_ cause an illegal instruction exception.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
+| 0     | `CSR_MISA_A_EXT` | r/- | **A**: CPU extension (atomic memory access) available, set when <<_a_isa_extension>> enabled
 | 1     | `CSR_MISA_B_EXT` | r/- | **B**: CPU extension (bit-manipulation) available, set when <<_b_isa_extension>> enabled
 | 2     | `CSR_MISA_C_EXT` | r/- | **C**: CPU extension (compressed instruction) available, set when <<_c_isa_extension>> enabled
 | 4     | `CSR_MISA_E_EXT` | r/- | **E**: CPU extension (embedded) available, set when <<_e_isa_extension>> enabled
@@ -760,6 +761,11 @@ caused by a fence instruction, a control flow transfer or a instruction fetch bu
 The CPU HPM/counter logic treats all executed instruction as "retired" even if they raise an exception,
 cause an interrupt, trigger a privilege mode change or were not meant to retire (i.e. claimed by the RISC-V spec.).
 
+.Atomic Memory Access
+[NOTE]
+The read-modify-write instructions of the <<_zaamo_isa_extension>> operate as simple load for the CPU hardware.
+Hence, they will only trigger `HPMCNT_EVENT_LOAD` and only once.
+
 
 {empty} +
 [discrete]
@@ -1022,7 +1028,7 @@ discover additional ISA (sub-)extensions and CPU configuration options.
 | 23    | `CSR_MXISA_ZBB`       | r/- | <<_zbb_isa_extension>> available
 | 24    | `CSR_MXISA_ZBS`       | r/- | <<_zbs_isa_extension>> available
 | 25    | `CSR_MXISA_ZAAMO`     | r/- | <<_zaamo_isa_extension>> available
-| 28:26 | -                     | r/- | _reserved_, hardwired to zero
+| 26    | `CSR_MXISA_ZALRSC`    | r/- | <<_zalrsc_isa_extension>> available
 | 27    | `CSR_MXISA_CLKGATE`   | r/- | sleep-mode clock gating implemented when set (`CPU_CLOCK_GATING_EN`), see <<_cpu_tuning_options>>
 | 28    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`CPU_RF_HW_RST_EN`), see <<_cpu_tuning_options>>
 | 29    | `CSR_MXISA_FASTMUL`   | r/- | fast multiplication available when set (`CPU_FAST_MUL_EN`), see <<_cpu_tuning_options>>

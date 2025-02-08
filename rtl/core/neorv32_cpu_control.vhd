@@ -34,12 +34,14 @@ entity neorv32_cpu_control is
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug-mode parking loop entry address, 4-byte aligned
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug-mode exception entry address, 4-byte aligned
     -- RISC-V ISA Extensions --
+    RISCV_ISA_A         : boolean; -- implement atomic memory operations extension
     RISCV_ISA_B         : boolean; -- implement bit-manipulation extension
     RISCV_ISA_C         : boolean; -- implement compressed extension
     RISCV_ISA_E         : boolean; -- implement embedded-class register file extension
     RISCV_ISA_M         : boolean; -- implement mul/div extension
     RISCV_ISA_U         : boolean; -- implement user mode extension
-    RISCV_ISA_Zaamo     : boolean; -- implement atomic memory operations extension
+    RISCV_ISA_Zaamo     : boolean; -- implement atomic read-modify-write extension
+    RISCV_ISA_Zalrsc    : boolean; -- implement atomic reservation-set operations extension
     RISCV_ISA_Zba       : boolean; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean; -- implement bit-manipulation instructions for cryptography
@@ -629,11 +631,16 @@ begin
         ctrl_nxt.alu_opb_mux <= '0';
     end case;
 
-    -- memory read/write access --
-    if RISCV_ISA_Zaamo and (opcode(2) = opcode_amo_c(2)) then -- atomic memory operation (executed as single load for the CPU)
-      ctrl_nxt.lsu_rw <= '0';
+    -- (atomic) memory read/write access --
+    if RISCV_ISA_Zaamo and (opcode(2) = opcode_amo_c(2)) and (exe_engine.ir(instr_funct5_lsb_c+1) = '0') then -- atomic read-modify-write operation
+      ctrl_nxt.lsu_amo <= '1';
+      ctrl_nxt.lsu_rw  <= '0'; -- executed as single load for the CPU
+    elsif RISCV_ISA_Zalrsc and (opcode(2) = opcode_amo_c(2)) and (exe_engine.ir(instr_funct5_lsb_c+1) = '1') then -- atomic reservation-set operation
+      ctrl_nxt.lsu_amo <= '1';
+      ctrl_nxt.lsu_rw  <= exe_engine.ir(instr_funct5_lsb_c);
     else -- normal load/store
-      ctrl_nxt.lsu_rw <= exe_engine.ir(5);
+      ctrl_nxt.lsu_amo <= '0';
+      ctrl_nxt.lsu_rw  <= exe_engine.ir(instr_opcode_lsb_c+5);
     end if;
 
     -- state machine --
@@ -830,7 +837,7 @@ begin
            (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
            (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
            (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- illegal instruction exception
-          ctrl_nxt.rf_wb_en    <= not ctrl.lsu_rw; -- write-back to register file if read operation (won't happen in case of exception)
+          ctrl_nxt.rf_wb_en    <= (not ctrl.lsu_rw) or ctrl.lsu_amo; -- write-back to register file if read operation (won't happen in case of exception)
           exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
@@ -886,6 +893,7 @@ begin
   -- load/store unit --
   ctrl_o.lsu_req      <= ctrl.lsu_req;
   ctrl_o.lsu_rw       <= ctrl.lsu_rw;
+  ctrl_o.lsu_amo      <= ctrl.lsu_amo;
   ctrl_o.lsu_mo_we    <= '1' when (exe_engine.state = EX_MEM_REQ) else '0'; -- write memory output registers (data & address)
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.prv_level_eff; -- effective privilege level for loads/stores in M-mode
@@ -1059,9 +1067,10 @@ begin
         end case;
 
       when opcode_amo_c => -- atomic memory operation
-        if RISCV_ISA_Zaamo and (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then -- word-quantity only
+        if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then -- word-quantity only
           case exe_engine.ir(instr_funct5_msb_c downto instr_funct5_lsb_c) is
-            when "00001" | "00000" | "00100" | "01100" | "01000" | "10000" | "10100" | "11000" | "11100" => illegal_cmd <= '0';
+            when "00001" | "00000" | "00100" | "01100" | "01000" | "10000" | "10100" | "11000" | "11100" => illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zaamo);
+            when "00010" | "00011" => illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zalrsc);
             when others => illegal_cmd <= '1';
           end case;
         end if;
@@ -1702,6 +1711,7 @@ begin
 --        when csr_mstatush_c => csr.rdata <= (others => '0'); -- machine status register, high word - hardwired to zero
 
           when csr_misa_c => -- ISA and extensions
+            csr.rdata(0)  <= bool_to_ulogic_f(RISCV_ISA_A);
             csr.rdata(1)  <= bool_to_ulogic_f(RISCV_ISA_B);
             csr.rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_C);
             csr.rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_E);
@@ -1891,7 +1901,7 @@ begin
             csr.rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);       -- Zbb: basic bit-manipulation
             csr.rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);       -- Zbs: single-bit bit-manipulation
             csr.rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);     -- Zaamo: atomic memory operations
-            csr.rdata(26) <= '0'; -- reserved
+            csr.rdata(26) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc);    -- Zalrsc: reservation-set operations
             -- tuning options --
             csr.rdata(27) <= bool_to_ulogic_f(CPU_CLOCK_GATING_EN); -- enable clock gating when in sleep mode
             csr.rdata(28) <= bool_to_ulogic_f(CPU_RF_HW_RST_EN);    -- full hardware reset of register file

@@ -75,9 +75,11 @@ However, classic mode can still be _emulated_ by connecting the processor's `xbu
 device's / bus system's `cyc` and `stb` signals (omitting the processor's `xbus_stb_o` signal).
 
 .Atomic Memory Accesses
-[NOTE]
-<<_atomic_memory_access>> operations keep the `cyc` signal active to perform a back-to-back bus access
-consisting of two `stb` strobes (one for the load/read operation and another one for the store/write operation).
+[IMPORTANT]
+<<_atomic_memory_access>> operations (read-modify-write) keep the `cyc` signal active to perform a
+back-to-back bus access consisting of two `stb` strobes (one for the load/read operation and another
+one for the store/write operation). Reservation-set operations (<<_zalrsc_isa_extension>>) are not
+propagated via the XBUS interface and appear as normal load/store operations.
 
 .Wishbone Specs.
 [TIP]

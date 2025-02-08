@@ -217,7 +217,8 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `RISCV_ISA_E`           | boolean   | false         | Enable <<_e_isa_extension>> (reduced register file size).
 | `RISCV_ISA_M`           | boolean   | false         | Enable <<_m_isa_extension>> (hardware-based integer multiplication and division).
 | `RISCV_ISA_U`           | boolean   | false         | Enable <<_u_isa_extension>> (less-privileged user mode).
-| `RISCV_ISA_Zaamo`       | boolean   | false         | Enable <<_zaamo_isa_extension>> (atomic memory operations).
+| `RISCV_ISA_Zaamo`       | boolean   | false         | Enable <<_zaamo_isa_extension>> (atomic read-modify-write operations).
+| `RISCV_ISA_Zalrsc`      | boolean   | false         | Enable <<_zalrsc_isa_extension>> (atomic reservation-set operations).
 | `RISCV_ISA_Zba`         | boolean   | false         | Enable <<_zba_isa_extension>> (shifted-add bit-manipulation instructions).
 | `RISCV_ISA_Zbb`         | boolean   | false         | Enable <<_zbb_isa_extension>> (basic bit-manipulation instructions).
 | `RISCV_ISA_Zbkb`        | boolean   | false         | Enable <<_zbkb_isa_extension>> (scalar cryptography bit manipulation instructions).
@@ -574,8 +575,32 @@ constant base_io_dma_c   : std_ulogic_vector(31 downto 0) := x"ffffed00";
 :sectnums:
 ==== Atomic Memory Operations Controller
 
-The atomic memory operations (AMO) controller is responsible for handling the read-modify-write operations issued by the
-CPU's <<_zaamo_isa_extension>>. For each AMO request, the controller executes an atomic set of three operations:
+The atomic memory operations controller is split into two individual modules. Each module
+implements a specific sub-extensions of the <<_a_isa_extension,`A`>> ISA extension:
+
+[cols="<3,<3,<4"]
+[options="header",grid="rows"]
+|=======================
+| Hardware Module | ISA Extensions | Description
+| `neorv32_bus_amo_rmw` | <<_zaamo_isa_extension>>  | Atomic read-modify-write operations
+| `neorv32_bus_amo_rvs` | <<_zalrsc_isa_extension>> | Atomic reservation-set operations
+|=======================
+
+.Direct Access
+[IMPORTANT]
+Atomic operations **always bypass** the CPU's <<_processor_internal_data_cache_dcache, data cache>>
+using direct/uncached accesses. Care must be taken to maintain data <<_memory_coherence>>.
+
+.Physical Memory Attributes
+[NOTE]
+Atomic memory operations can be executed for _any_ address. This also includes
+cached memory, memory-mapped IO devices and processor-external address spaces.
+
+===== Atomic Read-Modify-Write Controller
+
+This modules converts a single atomic memory operations request into a set of bus transactions
+to execute an un-interruptable read-modify-write (RMW) operation. For each request, the controller
+executes an atomic set of three operations:
 
 .Simplified AMO Controller Operation
 [cols="^1,<3,<6"]
@@ -591,21 +616,31 @@ written to the addressed memory cell. In parallel, the data from the first buffe
 content of the addresses memory cell) is sent back to the requesting CPU.
 |=======================
 
-.Direct Access
-[IMPORTANT]
-Atomic operations **always bypass** the CPU's <<_processor_internal_data_cache_dcache, data cache>>
-using direct/uncached accesses. Care must be taken to maintain data <<_memory_coherence>>.
-
-.Physical Memory Attributes
-[NOTE]
-Atomic memory operations can be executed for _any_ address. This also includes
-cached memory, memory-mapped IO devices and processor-external address spaces.
-
 The controller performs two bus transactions: a read operations and a write operation. Only the acknowledge/error
-handshake of the last transaction is sent back to the CPU.
+handshake of the last transaction is sent back to the CPU. As the RMW controller is the memory-nearest instance
+(see <<_bus_system>>) the previously described set of operations cannot be interrupted. Hence, they execute in
+an atomic way.
 
-As the AMO controller is the memory-nearest instance (see <<_bus_system>>) the previously described set of operations
-cannot be interrupted. Hence, they execute in an atomic way.
+===== Atomic Reservation-Set Controller
+
+A "reservation" defines an address or address range that provides a guarding mechanism to support atomic accesses. A new
+reservation is registered by the `LR` instruction. The address provided by this instruction defines the memory location
+that is now monitored for atomic accesses. The according `SC` instruction evaluates the state of this reservation. If
+the reservation is still valid the write access triggered by the SC instruction is finally executed and the instruction
+return a "success" state (`rd` = 0). If the reservation has been invalidated the SC instruction will not write to memory
+and will return a "failed" state (`rd` = 1).
+
+.Reservation Set and Granule
+[NOTE]
+The reservation set controller supports only **single global`` reservation set. Hence, the entire physical address
+space is treated as single granule.
+
+The reservation-set controller implements the _strong semnatics_. An active reservation is invalidated if...
+
+* an `SC` instruction is executed. If there is **no** previous `LR` instruction, the `SC` instruction will **fail** (not writing to memory).
+* an `SC` instruction is executed. If there **is** a previous `LR` instruction, the `SC` instruction will **succeed** (finally writing to memory).
+* a normal store operation is executed (by a CPU / CPU cache, the DMA or the on-chip debugger).
+* a hardware reset is triggered.
 
 
 :sectnums:

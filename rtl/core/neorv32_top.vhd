@@ -40,7 +40,8 @@ entity neorv32_top is
     RISCV_ISA_E           : boolean                        := false;       -- implement embedded RF extension
     RISCV_ISA_M           : boolean                        := false;       -- implement mul/div extension
     RISCV_ISA_U           : boolean                        := false;       -- implement user mode extension
-    RISCV_ISA_Zaamo       : boolean                        := false;       -- implement atomic memory operations extension
+    RISCV_ISA_Zaamo       : boolean                        := false;       -- implement atomic read-modify-write operations extension
+    RISCV_ISA_Zalrsc      : boolean                        := false;       -- implement atomic reservation-set operations extension
     RISCV_ISA_Zba         : boolean                        := false;       -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb         : boolean                        := false;       -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb        : boolean                        := false;       -- implement bit-manipulation instructions for cryptography
@@ -298,8 +299,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp : core_complex_rsp_t;
 
   -- bus: system bus (including DMA complex) --
-  signal sys1_req, sys2_req, dma_req, sys3_req : bus_req_t;
-  signal sys1_rsp, sys2_rsp, dma_rsp, sys3_rsp : bus_rsp_t;
+  signal sys1_req, sys2_req, dma_req, amo_req, sys3_req : bus_req_t;
+  signal sys1_rsp, sys2_rsp, dma_rsp, amo_rsp, sys3_rsp : bus_rsp_t;
 
   -- bus: main sections --
   signal imem_req, dmem_req, io_req, xcache_req, xbus_req : bus_req_t;
@@ -494,6 +495,7 @@ begin
       RISCV_ISA_M         => RISCV_ISA_M,
       RISCV_ISA_U         => RISCV_ISA_U,
       RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,
+      RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
       RISCV_ISA_Zba       => RISCV_ISA_Zba,
       RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
       RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
@@ -727,27 +729,56 @@ begin
 
 
   -- **************************************************************************************************************************
-  -- Read-Modify-Write Controller for Atomic Memory Operations
+  -- Atomic Memory Operations
   -- **************************************************************************************************************************
 
-  neorv32_bus_amo_rmw_enabled:
-  if RISCV_ISA_Zaamo generate
-    neorv32_bus_amo_rmw_inst: entity neorv32.neorv32_bus_amo_rmw
-    port map (
-      clk_i      => clk_i,
-      rstn_i     => rstn_sys,
-      core_req_i => sys2_req,
-      core_rsp_o => sys2_rsp,
-      sys_req_o  => sys3_req,
-      sys_rsp_i  => sys3_rsp
-    );
-  end generate;
+  atomics:
+  if true generate
 
-  neorv32_bus_amo_rmw_disabled:
-  if not RISCV_ISA_Zaamo generate
-    sys3_req <= sys2_req;
-    sys2_rsp <= sys3_rsp;
-  end generate;
+    -- Read-Modify-Write Controller -----------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_bus_amo_rmw_enabled:
+    if RISCV_ISA_Zaamo generate
+      neorv32_bus_amo_rmw_inst: entity neorv32.neorv32_bus_amo_rmw
+      port map (
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        core_req_i => sys2_req,
+        core_rsp_o => sys2_rsp,
+        sys_req_o  => amo_req,
+        sys_rsp_i  => amo_rsp
+      );
+    end generate;
+
+    neorv32_bus_amo_rmw_disabled:
+    if not RISCV_ISA_Zaamo generate
+      amo_req  <= sys2_req;
+      sys2_rsp <= amo_rsp;
+    end generate;
+
+
+    -- Reservation-Set Controller -------------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_bus_amo_rvs_enabled:
+    if RISCV_ISA_Zalrsc generate
+      neorv32_bus_amo_rvs_inst: entity neorv32.neorv32_bus_amo_rvs
+      port map (
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        core_req_i => amo_req,
+        core_rsp_o => amo_rsp,
+        sys_req_o  => sys3_req,
+        sys_rsp_i  => sys3_rsp
+      );
+    end generate;
+
+    neorv32_bus_amo_rvs_disabled:
+    if not RISCV_ISA_Zalrsc generate
+      sys3_req <= amo_req;
+      amo_rsp  <= sys3_rsp;
+    end generate;
+
+  end generate; -- /atomics
 
 
   -- **************************************************************************************************************************

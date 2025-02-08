@@ -60,17 +60,15 @@ int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t s
   neorv32_clint_msi_set(1);
 
   // wait for start acknowledge
-  int cnt = 0;
   while (1) {
     if (neorv32_smp_icc_avail()) {
       if (neorv32_smp_icc_get() == magic_number) {
         return 0;
       }
+      else {
+        return -2;
+      }
     }
-    if (cnt > 1000) {
-      return -2; // timeout; core1 did not respond
-    }
-    cnt++;
   }
 }
 

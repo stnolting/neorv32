@@ -241,7 +241,8 @@ proc setup_ip_gui {} {
     { RISCV_ISA_E      {E - Reduced register file size (16 registers only)}       {} }
     { RISCV_ISA_M      {M - Integer multiplication and division hardware}         {} }
     { RISCV_ISA_U      {U - Less-privileged user-mode}                            {} }
-    { RISCV_ISA_Zaamo  {Zaamo - Atomic memory operations (read-modify-write)}     {} }
+    { RISCV_ISA_Zaamo  {Zaamo - Atomic read-modify-write memory operations}       {} }
+    { RISCV_ISA_Zalrsc {Zalrsc - Atomic reservation-set operations}               {} }
     { RISCV_ISA_Zba    {Zba - Shifted-add bit-manipulation instructions}          {} }
     { RISCV_ISA_Zbb    {Zbb - Basic bit-manipulation instructions}                {} }
     { RISCV_ISA_Zbkb   {Zbkb - Bit manipulation instructions for cryptography}    {} }
@@ -252,8 +253,8 @@ proc setup_ip_gui {} {
     { RISCV_ISA_Zicntr {Zicntr - Base counters (cycles and instructions)}         {} }
     { RISCV_ISA_Zicond {Zicond - Conditional-move instructions}                   {} }
     { RISCV_ISA_Zihpm  {Zihpm - Hardware performance monitors (HPMs)}             {} }
-    { HPM_CNT_WIDTH    {HPM Width}                                                {Counter width in bits} {$RISCV_ISA_Zihpm} }
-    { HPM_NUM_CNTS     {HPM Counters}                                             {Numer of HPM counters} {$RISCV_ISA_Zihpm} }
+    { HPM_CNT_WIDTH    {HPM width}                                                {Counter width in bits} {$RISCV_ISA_Zihpm} }
+    { HPM_NUM_CNTS     {HPM counters}                                             {Number of HPM counters} {$RISCV_ISA_Zihpm} }
     { RISCV_ISA_Zknd   {Zknd - Scalar cryptographic - NIST AES decryption}        {} }
     { RISCV_ISA_Zkne   {Zkne - Scalar cryptographic - NIST AES encryption}        {} }
     { RISCV_ISA_Zknh   {Zknh - Scalar cryptographic - NIST hash functions}        {} }

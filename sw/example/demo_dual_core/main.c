@@ -43,7 +43,7 @@ int main_core1(void) {
  * Main function for core 0 (primary core).
  *
  * @attention This program requires the dual-core configuration, the CLINT, UART0
- * and the A/Zaamo ISA extension.
+ * and the A/Zalrsc ISA extension.
  *
  * @return Irrelevant (but can be inspected by the debugger).
  **************************************************************************/
@@ -70,8 +70,8 @@ int main(void) {
     neorv32_uart0_printf("[ERROR] CLINT module not available!\n");
     return -1;
   }
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZAAMO)) == 0) { // atomic memory operations available?
-    neorv32_uart0_printf("[ERROR] 'A'/'Zaamo' ISA extension not available!\n");
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZALRSC)) == 0) { // reservation-set operations available?
+    neorv32_uart0_printf("[ERROR] 'A'/'Zalrsc' ISA extension not available!\n");
     return -1;
   }
 #ifndef __riscv_atomic

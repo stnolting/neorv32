@@ -9,8 +9,6 @@
 /**
  * @file neorv32_cpu_csr.h
  * @brief Control and Status Registers (CSR) definitions.
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #ifndef neorv32_cpu_csr_h
@@ -291,6 +289,7 @@ enum NEORV32_CSR_MIP_enum {
  * CPU misa CSR (r/-): Machine instruction set extensions
  **************************************************************************/
 enum NEORV32_CSR_MISA_enum {
+  CSR_MISA_A      =  0, /**< CPU misa CSR  (0): A: Atomic memory accesses CPU extension available (r/-)*/
   CSR_MISA_B      =  1, /**< CPU misa CSR  (1): B: Bit manipulation CPU extension available (r/-)*/
   CSR_MISA_C      =  2, /**< CPU misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
   CSR_MISA_E      =  4, /**< CPU misa CSR  (4): E: Embedded CPU extension available (r/-) */
@@ -333,7 +332,8 @@ enum NEORV32_CSR_MXISA_enum {
   CSR_MXISA_ZBA       = 22, /**< CPU mxisa CSR (22): shifted-add bit-manipulation operations (r/-)*/
   CSR_MXISA_ZBB       = 23, /**< CPU mxisa CSR (23): basic bit-manipulation operations (r/-)*/
   CSR_MXISA_ZBS       = 24, /**< CPU mxisa CSR (24): single-bit bit-manipulation operations (r/-)*/
-  CSR_MXISA_ZAAMO     = 25, /**< CPU mxisa CSR (25): atomic memory operations (r/-)*/
+  CSR_MXISA_ZAAMO     = 25, /**< CPU mxisa CSR (25): atomic read-modify-write operations (r/-)*/
+  CSR_MXISA_ZALRSC    = 26, /**< CPU mxisa CSR (26): atomic reservation-set operations (r/-)*/
   // Tuning options
   CSR_MXISA_CLKGATE   = 27, /**< CPU mxisa CSR (27): clock gating enabled (r/-)*/
   CSR_MXISA_RFHWRST   = 28, /**< CPU mxisa CSR (28): register file has full hardware reset (r/-)*/
