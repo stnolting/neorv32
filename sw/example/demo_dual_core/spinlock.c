@@ -23,8 +23,14 @@ void spin_lock(void) {
 
 /**********************************************************************//**
  * Spinlock: remove lock.
+ *
+ * @warning This function is blocking until the lock is released.
  **************************************************************************/
 void spin_unlock(void) {
 
-  while(!__sync_bool_compare_and_swap(&__spin_locked, -1, 0)); // -> lr/sc
+  uint32_t failed = 1;
+  while (failed) {
+    neorv32_cpu_amolr((uint32_t)&__spin_locked);
+    failed = neorv32_cpu_amosc((uint32_t)&__spin_locked, 0);
+  }
 }
