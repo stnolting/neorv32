@@ -17,7 +17,7 @@ static volatile uint32_t __spin_locked = 0;
  **************************************************************************/
 void spin_lock(void) {
 
-  while(__sync_lock_test_and_set(&__spin_locked, -1)); // -> amoswap.w
+  while(!__sync_bool_compare_and_swap(&__spin_locked, 0, -1)); // -> lr/sc
 }
 
 
@@ -26,6 +26,5 @@ void spin_lock(void) {
  **************************************************************************/
 void spin_unlock(void) {
 
-  //__sync_lock_release(&__spin_locked); // uses fence that is not required here
-  __sync_lock_test_and_set(&__spin_locked, 0); // -> amoswap.w
+  while(!__sync_bool_compare_and_swap(&__spin_locked, -1, 0)); // -> lr/sc
 }
