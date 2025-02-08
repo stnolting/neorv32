@@ -472,33 +472,32 @@ additional latency). However, _all_ bus signals (request and response) need to b
 :sectnums:
 ==== Atomic Memory Access
 
-The <<_zaamo_isa_extension>> adds atomic read-modify-write memory operations. Since the <<_bus_interface_protocol>>
-only supports read-or-write operations, the atomic memory requests are handled by a dedicated module of the bus
-infrastructure - the <<_atomic_memory_operations_controller>>.
-
-For the CPU, the atomic memory accesses are handled as plain "load" operation but with the `amo` signal set
-and also providing write data (see <<_bus_interface>>). The `amoop` signal defines the actual atomic processing
-operation:
+As the <<_bus_interface_protocol>> only supports read-or-write operations, all atomic memory requests are
+handled by a dedicated module of the bus infrastructure - the <<_atomic_memory_operations_controller>>.
+For the CPU, the atomic memory accesses are handled as plain load/store operation but with the `amo` signal set.
+The `amoop` signal specifies the actual atomic processing operation:
 
 .AMO Operation Type Encoding
-[cols="<1,<4"]
+[cols="<1,<4,<4"]
 [options="header",grid="rows"]
 |=======================
-| `bus_req_t.amoop` | Description
-| `-000` | swap
-| `-001` | unsigned add
-| `-010` | logical xor
-| `-011` | logical and
-| `-100` | logical or
-| `0110` | unsigned minimum
-| `0111` | unsigned maximum
-| `1110` | signed minimum
-| `1111` | signed maximum
+| `bus_req_t.amoop` | Description | ISA Extension
+| `-000` | swap              | <<_zaamo_isa_extension,`Zaamo`>>
+| `-001` | unsigned add      | <<_zaamo_isa_extension,`Zaamo`>>
+| `-010` | logical xor       | <<_zaamo_isa_extension,`Zaamo`>>
+| `-011` | logical and       | <<_zaamo_isa_extension,`Zaamo`>>
+| `-100` | logical or        | <<_zaamo_isa_extension,`Zaamo`>>
+| `0110` | unsigned minimum  | <<_zaamo_isa_extension,`Zaamo`>>
+| `0111` | unsigned maximum  | <<_zaamo_isa_extension,`Zaamo`>>
+| `1110` | signed minimum    | <<_zaamo_isa_extension,`Zaamo`>>
+| `1111` | signed maximum    | <<_zaamo_isa_extension,`Zaamo`>>
+| `1000` | load-reservate    | <<_zalrsc_isa_extension,`Zalrsc`>>
+| `1001` | store-conditional | <<_zalrsc_isa_extension,`Zalrsc`>>
 |=======================
 
 .Cache Coherency
 [IMPORTANT]
-Atomic operations **always bypass** the (CPU) caches using direct/uncached accesses. Care must be taken
+Atomic operations **always bypass** the caches using direct/uncached accesses. Care must be taken
 to maintain data synchronization. See section <<_memory_coherence>> for more information.
 
 
@@ -516,6 +515,7 @@ This chapter gives a brief overview of all available ISA extensions.
 [options="header",grid="rows"]
 |=======================
 | Name | Description | <<_processor_top_entity_generics, Enabled by Generic>>
+| <<_a_isa_extension,`B`>>               | Atomic memory instructions                                    | _Implicitly_ enabled
 | <<_b_isa_extension,`B`>>               | Bit manipulation instructions                                 | _Implicitly_ enabled
 | <<_c_isa_extension,`C`>>               | Compressed (16-bit) instructions                              | <<_processor_top_entity_generics, `RISCV_ISA_C`>>
 | <<_e_isa_extension,`E`>>               | Embedded CPU extension (reduced register file size)           | <<_processor_top_entity_generics, `RISCV_ISA_E`>>
@@ -523,7 +523,8 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_m_isa_extension,`M`>>               | Integer multiplication and division instructions              | <<_processor_top_entity_generics, `RISCV_ISA_M`>>
 | <<_u_isa_extension,`U`>>               | Less-privileged _user_ mode extension                         | <<_processor_top_entity_generics, `RISCV_ISA_U`>>
 | <<_x_isa_extension,`X`>>               | Platform-specific / NEORV32-specific extension                | Always enabled
-| <<_zaamo_isa_extension,`Zaamo`>>       | Atomic memory operations                                      | <<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>>
+| <<_zaamo_isa_extension,`Zaamo`>>       | Atomic read-modify-write memory operations                    | <<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>>
+| <<_zalrsc_isa_extension,`Zalrsc`>>     | Atomic reservation-set memory operations                      | <<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>>
 | <<_zba_isa_extension,`Zba`>>           | Shifted-add bit manipulation instructions                     | <<_processor_top_entity_generics, `RISCV_ISA_Zba`>>
 | <<_zbb_isa_extension,`Zbb`>>           | Basic bit manipulation instructions                           | <<_processor_top_entity_generics, `RISCV_ISA_Zbb`>>
 | <<_zbkb_isa_extension,`Zbkb`>>         | Scalar cryptographic bit manipulation instructions            | <<_processor_top_entity_generics, `RISCV_ISA_Zbkb`>>
@@ -570,13 +571,23 @@ To benchmark a certain processor configuration for its setup-specific CPI value 
 `sw/example/performance_tests` test programs.
 
 
+==== `A` ISA Extension
+
+The `A` ISA extension adds instructions for bit-manipulation operations.
+This ISA extension cannot be enabled by a specific generic. Instead, it is enabled if a specific set of
+sub-extensions is enabled. The `A` extension is shorthand for the following set of other extensions:
+
+* <<_zaamo_isa_extension>> - Atomic read-modify-write instructions.
+* <<_zalrsc_isa_extension>> - Atomic reservation-set instructions.
+
+A processor configuration which implements `A` must implement all of the above extensions.
+
+
 ==== `B` ISA Extension
 
 The `B` ISA extension adds instructions for bit-manipulation operations.
 This ISA extension cannot be enabled by a specific generic. Instead, it is enabled if a specific set of
-bit-manipulation sub-extensions are enabled.
-
-The `B` extension is shorthand for the following set of other extensions:
+sub-extensions is enabled. The `B` extension is shorthand for the following set of other extensions:
 
 * <<_zba_isa_extension>> - Address-generation / shifted-add instructions.
 * <<_zbb_isa_extension>> - Basic bit manipulation instructions.
@@ -689,20 +700,40 @@ The NEORV32-specific ISA extensions `X` is always enabled. The most important po
 and <<_mip>> CSRs. These extensions are mapped to CSR bits, that are available for custom use according to the
 RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 * All undefined/unimplemented/malformed/illegal instructions do raise an illegal instruction exception (see <<_full_virtualization>>).
-* There are <<_neorv32_specific_csrs>>.
+* Additional <<_neorv32_specific_csrs>>.
 
 
 ==== `Zaamo` ISA Extension
 
-The `Zaamo` ISA extension is a sub-extension of the RISC-V `A` ISA extension and compromises instructions for read-modify-write
-<<_atomic_memory_access>> operations. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>> generic.
+The `Zaamo` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension,`A`>> ISA extension and compromises
+instructions for read-modify-write <<_atomic_memory_access>> operations. It is enabled by the top's
+<<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>> generic.
 
 .Instructions and Timing
 [cols="<2,<4,<1"]
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Atomic memory operations | `amoswap.w` `amoadd.w` `amoand.w` `amoor.w` `amoxor.w` `amomax[u].w` `amomin[u].w` | 5 + 2 * _memory_latency_
+| Atomic read-modify-write | `amoswap.w` `amoadd.w` `amoand.w` `amoor.w` `amoxor.w` `amomax[u].w` `amomin[u].w` | 5 + 2 * _memory_latency_
+|=======================
+
+.`aq` and `rl` Bits
+[NOTE]
+The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
+
+
+==== `Zalrsc` ISA Extension
+
+The `Zalrsc` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension,`A`>> ISA extension and compromises
+instructions for reservation-set <<_atomic_memory_access>> operations. It is enabled by the top's
+<<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>> generic.
+
+.Instructions and Timing
+[cols="<2,<4,<1"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| Atomic reservation-set | `lr.w` `sc.w` | 5 +_memory_latency_
 |=======================
 
 .`aq` and `rl` Bits
