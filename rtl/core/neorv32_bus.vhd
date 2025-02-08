@@ -932,7 +932,7 @@ begin
         -- --------------------------------------------------------------------
           if (core_req_i.stb = '1') and (core_req_i.rw = '1') then -- write access
             if (rvso = '1') then -- SC operation
-              state <= "11"; -- execute SC instruction
+              state <= "11"; -- execute SC
             else -- normal store
               state <= "00"; -- invalidate reservation
             end if;
@@ -982,10 +982,9 @@ begin
   end process sc_result;
 
   -- response --
-  core_rsp_o.err <= sys_rsp_i.err;
-  core_rsp_o.ack <= sys_rsp_i.ack or sc_fail; -- generate local ACK if SC fails
-  -- inject "1" into read data LSB if SC fails --
-  core_rsp_o.data <= sys_rsp_i.data(31 downto 1) & (sys_rsp_i.data(0) or sc_fail);
+  core_rsp_o.err  <= sys_rsp_i.err;
+  core_rsp_o.ack  <= sys_rsp_i.ack or sc_fail; -- generate local ACK if SC fails
+  core_rsp_o.data <= sys_rsp_i.data(31 downto 1) & (sys_rsp_i.data(0) or sc_fail);-- inject "1" into LSB if SC fails
 
 
 end neorv32_bus_amo_rvs_rtl;
