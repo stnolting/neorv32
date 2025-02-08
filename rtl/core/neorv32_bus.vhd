@@ -794,9 +794,9 @@ begin
     arbiter_nxt <= arbiter; -- defaults
     case arbiter.state is
 
-      when S_IDLE => -- wait for AMO request; pass-through current request
+      when S_IDLE => -- wait for RMW request; pass-through current request
       -- ------------------------------------------------------------
-        if (core_req_i.stb = '1') and (core_req_i.amo = '1') then
+        if (core_req_i.stb = '1') and (core_req_i.amo = '1') and (core_req_i.amoop(3 downto 2) /= "10") then
           arbiter_nxt.cmd   <= core_req_i.amoop;
           arbiter_nxt.wdata <= core_req_i.data;
           arbiter_nxt.state <= S_READ_WAIT;
@@ -841,7 +841,7 @@ begin
   sys_req_o.src   <= core_req_i.src;
   sys_req_o.priv  <= core_req_i.priv;
   sys_req_o.debug <= core_req_i.debug;
-  sys_req_o.amo   <= core_req_i.amo; -- set during the entire read-modify-write operation
+  sys_req_o.amo   <= core_req_i.amo;
   sys_req_o.amoop <= core_req_i.amoop;
   sys_req_o.fence <= core_req_i.fence;
 
@@ -877,3 +877,115 @@ begin
 
 
 end neorv32_bus_amo_rmw_rtl;
+
+
+-- ================================================================================ --
+-- NEORV32 SoC - Processor Bus Infrastructure: Reservation Set Controller           --
+-- -------------------------------------------------------------------------------- --
+-- Reservation set controller for the RISC-V A/Zalrsc ISA extension.                --
+-- [NOTE] Only a single global reservation set is implemented.                      --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+library neorv32;
+use neorv32.neorv32_package.all;
+
+entity neorv32_bus_amo_rvs is
+  port (
+    -- global control --
+    clk_i      : in  std_ulogic; -- global clock, rising edge
+    rstn_i     : in  std_ulogic; -- global reset, low-active, async
+    -- core port --
+    core_req_i : in  bus_req_t;
+    core_rsp_o : out bus_rsp_t;
+    -- system port --
+    sys_req_o  : out bus_req_t;
+    sys_rsp_i  : in  bus_rsp_t
+  );
+end neorv32_bus_amo_rvs;
+
+architecture neorv32_bus_amo_rvs_rtl of neorv32_bus_amo_rvs is
+
+  signal state : std_ulogic_vector(1 downto 0);
+  signal rvso, sc_fail : std_ulogic;
+
+begin
+
+  -- Reservation Set Control ----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  rvs_control: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      state <= (others => '0');
+    elsif rising_edge(clk_i) then
+      case state is
+
+        when "10" => -- active reservation: wait for condition to invalidate reservation
+        -- --------------------------------------------------------------------
+          if (core_req_i.stb = '1') and (core_req_i.rw = '1') then -- write access
+            if (rvso = '1') then -- SC operation
+              state <= "11"; -- execute SC instruction
+            else -- normal store
+              state <= "00"; -- invalidate reservation
+            end if;
+          end if;
+
+        when "11" => -- active reservation: invalidate reservation at the end of bus access
+        -- --------------------------------------------------------------------
+          if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
+            state <= "00";
+          end if;
+
+        when others => -- "0-" no active reservation: wait for new reservation request
+        -- --------------------------------------------------------------------
+          if (core_req_i.stb = '1') and (core_req_i.rw = '0') and (rvso = '1') then -- LR operation
+            state <= "10";
+          end if;
+
+      end case;
+    end if;
+  end process rvs_control;
+
+  -- check if reservation-set operation --
+  rvso <= '1' when (core_req_i.amoop(3 downto 2) = "10") else '0';
+
+
+  -- System Bus Interface -------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  bus_request: process(core_req_i, rvso, state)
+  begin
+    sys_req_o <= core_req_i; -- pass-through everything except STB
+    if (rvso = '1') and (core_req_i.rw = '1') then -- SC operation
+      sys_req_o.stb <= core_req_i.stb and state(1); -- write allowed if reservation still valid
+    else -- normal memory request or LR
+      sys_req_o.stb <= core_req_i.stb;
+    end if;
+  end process bus_request;
+
+  -- if a SC instruction fails there will be no write-request being send to the bus system
+  -- so we need to provide a local ACK to complete the host's bus access
+  sc_result: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      sc_fail <= '0';
+    elsif rising_edge(clk_i) then
+      sc_fail <= rvso and core_req_i.stb and core_req_i.rw and (not state(1));
+    end if;
+  end process sc_result;
+
+  -- response --
+  core_rsp_o.err <= sys_rsp_i.err;
+  core_rsp_o.ack <= sys_rsp_i.ack or sc_fail; -- generate local ACK if SC fails
+  -- inject "1" into read data LSB if SC fails --
+  core_rsp_o.data <= sys_rsp_i.data(31 downto 1) & (sys_rsp_i.data(0) or sc_fail);
+
+
+end neorv32_bus_amo_rvs_rtl;
