@@ -88,6 +88,7 @@ volatile uint32_t pmp_num_regions; // number of implemented pmp regions
 volatile uint8_t core1_stack[512]; // stack for core1
 volatile unsigned char constr_src[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
 volatile uint32_t constr_res = 0; // for constructor test
+volatile uint32_t amo_var = 0; // atomic memory access test
 
 /**********************************************************************//**
  * Constructor; should be called before entering main.
@@ -611,7 +612,6 @@ int main() {
   // try executing some illegal instructions
   asm volatile (".word 0x58007053"); // unsupported fsqrt.s x0, x0
   asm volatile (".word 0x0e00302f"); // unsupported amoswap.D x0, x0, (x0)
-  asm volatile (".word 0x1000202f"); // unsupported lr.w x0, (x0)
   asm volatile (".word 0x34004073"); // illegal CSR access funct3 (using mscratch)
   asm volatile (".word 0x30200077"); // mret with illegal opcode
   asm volatile (".word 0x3020007f"); // mret with illegal opcode
@@ -636,11 +636,11 @@ int main() {
   // number of traps we are expecting + expected instruction word of last illegal instruction
   uint32_t invalid_instr;
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
-    tmp_a += 18;
+    tmp_a += 17;
     invalid_instr = 0x08812681; // mtinst: pre-decompressed; clear bit 1 if compressed instruction
   }
   else { // C extension disabled
-    tmp_a += 16;
+    tmp_a += 15;
     invalid_instr = 0xfe002fe3;
   }
 
@@ -2006,6 +2006,45 @@ int main() {
 
     // restore RTE
     neorv32_cpu_csr_write(CSR_MTVEC, rte_bak);
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test atomic lr/sc memory access - failing access
+  // ----------------------------------------------------------
+  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
+  PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
+  PRINT_STANDARD("failing) ");
+
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
+    cnt_test++;
+
+    // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
+    //        it before/after making "normal" load/store operations
+
+    amo_var = 0x00cafe00; // initialize
+    asm volatile ("fence"); // flush/reload d-cache
+
+    tmp_a = neorv32_cpu_amolr((uint32_t)&amo_var);
+    amo_var = 0x10cafe00; // break reservation
+    asm volatile ("fence"); // flush/reload d-cache
+    tmp_b = neorv32_cpu_amosc((uint32_t)&amo_var, 0xaaaaaaaa);
+    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc); // another SC: must fail
+    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0); // another SC: must fail; no bus exception!
+    asm volatile ("fence"); // flush/reload d-cache
+
+    if ((tmp_a   == 0x00cafe00) && // correct LR.W result
+        (amo_var == 0x10cafe00) && // atomic variable NOT updates by SC.W
+        (tmp_b   == 0x00000007) && // SC.W[2] failed, SC.W[1] failed, SC.W[0] failed
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
