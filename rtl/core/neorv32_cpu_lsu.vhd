@@ -15,9 +15,6 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_lsu is
-  generic (
-    AMO_EN : boolean -- enable atomic memory operations
-  );
   port (
     -- global control --
     clk_i       : in  std_ulogic; -- global clock, rising edge
@@ -87,9 +84,9 @@ begin
       if (ctrl_i.lsu_mo_we = '1') then
         -- type identifiers --
         dbus_req_o.rw    <= ctrl_i.lsu_rw; -- read/write
+        dbus_req_o.amo   <= ctrl_i.lsu_amo; -- atomic memory operation
         dbus_req_o.priv  <= ctrl_i.lsu_priv; -- privilege level
         dbus_req_o.debug <= ctrl_i.cpu_debug; -- debug-mode access
-        dbus_req_o.amo   <= bool_to_ulogic_f(AMO_EN) and ctrl_i.ir_opcode(2); -- atomic memory operation
         dbus_req_o.amoop <= amo_cmd;
         -- data alignment + byte-enable --
         case ctrl_i.ir_funct3(1 downto 0) is
@@ -119,20 +116,19 @@ begin
   -- atomic memory access operation encoding --
   amo_encode: process(ctrl_i.ir_funct12)
   begin
-    amo_cmd <= (others => '0'); -- default
-    if AMO_EN then
-      case ctrl_i.ir_funct12(11 downto 7) is
-        when "00000" => amo_cmd <= "0001"; -- ADD
-        when "00100" => amo_cmd <= "0010"; -- XOR
-        when "01100" => amo_cmd <= "0011"; -- AND
-        when "01000" => amo_cmd <= "0100"; -- OR
-        when "10000" => amo_cmd <= "1110"; -- MIN
-        when "10100" => amo_cmd <= "1111"; -- MAX
-        when "11000" => amo_cmd <= "0110"; -- MINU
-        when "11100" => amo_cmd <= "0111"; -- MAXU
-        when others  => amo_cmd <= "0000"; -- SWAP
-      end case;
-    end if;
+    case ctrl_i.ir_funct12(11 downto 7) is
+      when "00010" => amo_cmd <= "1000"; -- LR
+      when "00011" => amo_cmd <= "1001"; -- SC
+      when "00000" => amo_cmd <= "0001"; -- ADD
+      when "00100" => amo_cmd <= "0010"; -- XOR
+      when "01100" => amo_cmd <= "0011"; -- AND
+      when "01000" => amo_cmd <= "0100"; -- OR
+      when "10000" => amo_cmd <= "1110"; -- MIN
+      when "10100" => amo_cmd <= "1111"; -- MAX
+      when "11000" => amo_cmd <= "0110"; -- MINU
+      when "11100" => amo_cmd <= "0111"; -- MAXU
+      when others  => amo_cmd <= "0000"; -- SWAP
+    end case;
   end process;
 
 

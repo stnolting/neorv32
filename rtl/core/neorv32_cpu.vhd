@@ -32,7 +32,8 @@ entity neorv32_cpu is
     RISCV_ISA_E         : boolean; -- implement embedded RF extension
     RISCV_ISA_M         : boolean; -- implement mul/div extension
     RISCV_ISA_U         : boolean; -- implement user mode extension
-    RISCV_ISA_Zaamo     : boolean; -- implement atomic memory operations extension
+    RISCV_ISA_Zaamo     : boolean; -- implement atomic read-modify-write operations extension
+    RISCV_ISA_Zalrsc    : boolean; -- implement atomic reservation-set operations extension
     RISCV_ISA_Zba       : boolean; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean; -- implement bit-manipulation instructions for cryptography
@@ -95,6 +96,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
   constant rf_rs3_en_c : boolean := RISCV_ISA_Zxcfu or RISCV_ISA_Zfinx; -- 3rd register file read port
+  constant riscv_a_c   : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
   constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
   constant riscv_zkt_c : boolean := CPU_FAST_SHIFT_EN; -- Zkt: data-independent execution time for cryptographic operations
   constant riscv_zkn_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
@@ -143,12 +145,14 @@ begin
     -- CPU ISA configuration (in alphabetical order - not in canonical order!) --
     assert false report "[NEORV32] CPU ISA: rv32" &
       cond_sel_string_f(RISCV_ISA_E,      "e",         "i") &
+      cond_sel_string_f(riscv_a_c,        "a",         "" ) &
       cond_sel_string_f(riscv_b_c,        "b",         "" ) &
       cond_sel_string_f(RISCV_ISA_C,      "c",         "" ) &
       cond_sel_string_f(RISCV_ISA_M,      "m",         "" ) &
       cond_sel_string_f(RISCV_ISA_U,      "u",         "" ) &
       cond_sel_string_f(true,             "x",         "" ) & -- always enabled
       cond_sel_string_f(RISCV_ISA_Zaamo,  "_zaamo",    "" ) &
+      cond_sel_string_f(RISCV_ISA_Zalrsc, "_zalrsc",   "" ) &
       cond_sel_string_f(RISCV_ISA_Zba,    "_zba",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zbb,    "_zbb",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zbkb,   "_zbkb",     "" ) &
@@ -219,12 +223,14 @@ begin
     DEBUG_PARK_ADDR     => DEBUG_PARK_ADDR,     -- cpu debug mode parking loop entry address
     DEBUG_EXC_ADDR      => DEBUG_EXC_ADDR,      -- cpu debug mode exception entry address
     -- RISC-V ISA Extensions --
+    RISCV_ISA_A         => riscv_a_c,           -- implement atomic memory operations extension
     RISCV_ISA_B         => riscv_b_c,           -- implement bit-manipulation extension
     RISCV_ISA_C         => RISCV_ISA_C,         -- implement compressed extension
     RISCV_ISA_E         => RISCV_ISA_E,         -- implement embedded RF extension
     RISCV_ISA_M         => RISCV_ISA_M,         -- implement mul/div extension
     RISCV_ISA_U         => RISCV_ISA_U,         -- implement user mode extension
-    RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,     -- implement atomic memory operations extension
+    RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,     -- implement atomic read-modify-write operations extension
+    RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,    -- implement atomic reservation-set operations extension
     RISCV_ISA_Zba       => RISCV_ISA_Zba,       -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       => RISCV_ISA_Zbb,       -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,      -- implement bit-manipulation instructions for cryptography
@@ -380,9 +386,6 @@ begin
   -- Load/Store Unit (LSU) ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_lsu_inst: entity neorv32.neorv32_cpu_lsu
-  generic map (
-    AMO_EN => RISCV_ISA_Zaamo -- enable atomic memory operations
-  )
   port map (
     -- global control --
     clk_i       => clk_gated,  -- global clock, rising edge
