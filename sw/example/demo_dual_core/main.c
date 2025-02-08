@@ -31,11 +31,9 @@ int main_core1(void) {
   neorv32_rte_setup();
 
   // print message from core 0
-  while(1) {
   spin_lock();
   neorv32_uart0_printf("Hello world! This is core 1 running!\n");
   spin_unlock();
-  }
 
   return 0; // return to crt0 and halt
 }
@@ -111,11 +109,9 @@ int main(void) {
 
   // UART0 is used by both cores so it is a shared resource. We need to ensure exclusive
   // access by using a simple spinlock (based on atomic memory operations).
-  while(1){
   spin_lock();
   neorv32_uart0_printf("This is a message from core 0!\n");
   spin_unlock();
-  }
 
 
   return 0; // return to crt0 and halt
