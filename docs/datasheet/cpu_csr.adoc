@@ -761,6 +761,11 @@ caused by a fence instruction, a control flow transfer or a instruction fetch bu
 The CPU HPM/counter logic treats all executed instruction as "retired" even if they raise an exception,
 cause an interrupt, trigger a privilege mode change or were not meant to retire (i.e. claimed by the RISC-V spec.).
 
+.Atomic Memory Access
+[NOTE]
+The read-modify-write instructions of the <<_zaamo_isa_extension>> operate as simple load for the CPU hardware.
+Hence, they will only trigger `HPMCNT_EVENT_LOAD` and only once.
+
 
 {empty} +
 [discrete]
