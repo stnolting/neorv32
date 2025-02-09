@@ -178,14 +178,14 @@ proc setup_ip_gui {} {
 
   # { param_name {display_name} {tooltip} {enablement_expr} {value_expr} }
 
-  set group [add_group $page {Clock input}]
+  set group [add_group $page {Clock Input}]
   add_params $group {
-    { CLOCK_FREQUENCY       {Clock frequency [Hz]} {Frequency of the clk input signal in Hz} }
+    { CLOCK_FREQUENCY {Clock frequency [Hz]} {Frequency of the clk input signal in Hz} }
   }
 
   set group [add_group $page {Core Complex}]
   add_params $group {
-    { DUAL_CORE_EN          {Number of CPU cores}   {} }
+    { DUAL_CORE_EN {Number of CPU cores} {} }
   }
   set_property widget {comboBox} [ipgui::get_guiparamspec -name "DUAL_CORE_EN" -component [ipx::current_core] ]
   set_property value_validation_type pairs [ipx::get_user_parameters DUAL_CORE_EN -of_objects [ipx::current_core]]
@@ -193,38 +193,38 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Boot Configuration}]
   add_params $group {
-    { BOOT_MODE_SELECT      {Boot mode select}      {Processor boot configuration} }
-    { BOOT_ADDR_CUSTOM      {Custom boot address}   {Available if BOOT_MODE_SELECT = 1; has to be 4-byte aligned}   {$BOOT_MODE_SELECT == 1}}
+    { BOOT_MODE_SELECT {Boot mode select}    {Processor boot configuration} }
+    { BOOT_ADDR_CUSTOM {Custom boot address} {Available if boot mode = Custom address; has to be 4-byte aligned} {$BOOT_MODE_SELECT == 1} }
   }
   set_property widget {comboBox} [ipgui::get_guiparamspec -name "BOOT_MODE_SELECT" -component [ipx::current_core] ]
   set_property value_validation_type pairs [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
-  set_property value_validation_pairs {{Internal bootloader} 0 {Custom address} 1 {Internal IMEM image} 2} [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
+  set_property value_validation_pairs {{NEORV32 bootloader} 0 {Custom address} 1 {Internal IMEM image} 2} [ipx::get_user_parameters BOOT_MODE_SELECT -of_objects [ipx::current_core]]
 
   set group [add_group $page {On-Chip Debugger (OCD)}]
   add_params $group {
-    { OCD_EN                {Enable OCD}            {Implement JTAG-based on-chip debugger} }
-    { OCD_AUTHENTICATION    {OCD authentication}    {Implement Debug Authentication module}                   {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false}}
-    { OCD_JEDEC_ID          {JEDEC ID}              {JTAG tap identification}                                 {$OCD_EN}}
+    { OCD_EN             {Enable OCD}         {Implement JTAG-based on-chip debugger} }
+    { OCD_AUTHENTICATION {OCD authentication} {Implement Debug Authentication module} {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false} }
+    { OCD_JEDEC_ID       {JEDEC ID}           {JTAG tap identification}               {$OCD_EN}}
   }
 
   set group [add_group $page {External Bus Interface (XBUS / AXI4-Lite-MM Host)}]
   add_params $group {
-    { XBUS_EN               {Enable XBUS}           {} }
-    { XBUS_REGSTAGE_EN      {Add register stages}   {Relaxes timing, but will increase latency}               {$XBUS_EN} }
+    { XBUS_EN          {Enable XBUS} }
+    { XBUS_REGSTAGE_EN {Add register stages} {In/out register stages; relaxes timing, but will increase latency} {$XBUS_EN} }
   }
 
-  set sub_group [add_group $group {XBUS Cache}]
+  set sub_group [add_group $group {XBUS Cache (external bus cache)}]
   add_params $sub_group {
-    { XBUS_CACHE_EN         {Enable XBUS cache}     {}                                                        {$XBUS_EN} {$XBUS_EN ? $XBUS_CACHE_EN : false}}
-    { XBUS_CACHE_NUM_BLOCKS {Number of blocks}      {}                                                        {$XBUS_CACHE_EN} }
-    { XBUS_CACHE_BLOCK_SIZE {Block size}            {In bytes (use a power of two)}                           {$XBUS_CACHE_EN} }
+    { XBUS_CACHE_EN         {Enable XBUS cache} {}                              {$XBUS_EN} {$XBUS_EN ? $XBUS_CACHE_EN : false} }
+    { XBUS_CACHE_NUM_BLOCKS {Number of blocks}  {}                              {$XBUS_CACHE_EN} }
+    { XBUS_CACHE_BLOCK_SIZE {Block size}        {In bytes (use a power of two)} {$XBUS_CACHE_EN} }
   }
 
   set group [add_group $page {Stream Link Interface (SLINK / AXI4-Stream Source & Sink)}]
   add_params $group {
-    { IO_SLINK_EN           {Enable SLINK}          {} }
-    { IO_SLINK_RX_FIFO      {RX FIFO depth}         {Number of entries (use a power of two)}                  {$IO_SLINK_EN} }
-    { IO_SLINK_TX_FIFO      {TX FIFO depth}         {Number of entries (use a power of two)}                  {$IO_SLINK_EN} }
+    { IO_SLINK_EN      {Enable SLINK} }
+    { IO_SLINK_RX_FIFO {RX FIFO depth} {Number of entries (use a power of two)} {$IO_SLINK_EN} }
+    { IO_SLINK_TX_FIFO {TX FIFO depth} {Number of entries (use a power of two)} {$IO_SLINK_EN} }
   }
 
 
@@ -275,9 +275,9 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Tuning Options}]
   add_params $group {
-    { CPU_FAST_MUL_EN     {DSP-based multiplier} }
-    { CPU_FAST_SHIFT_EN   {Barrel shifter} }
-    { CPU_RF_HW_RST_EN    {Full HW reset for register file} {Implement register file with FFs instead of BRAM to allow full hardware reset} }
+    { CPU_FAST_MUL_EN   {DSP-based multiplier} }
+    { CPU_FAST_SHIFT_EN {Barrel shifter} }
+    { CPU_RF_HW_RST_EN  {Full HW reset for register file} {Implement register file with FFs instead of BRAM to allow full hardware reset} }
   }
 
 
@@ -300,22 +300,22 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Internal Data Memory (DMEM)}]
   add_params $group {
-    { MEM_INT_DMEM_EN   {Enbale internal DMEM} }
+    { MEM_INT_DMEM_EN   {Enable internal DMEM} }
     { MEM_INT_DMEM_SIZE {DMEM size} {In bytes (use a power of two)} {$MEM_INT_DMEM_EN} }
   }
 
   set group [add_group $page {CPU Instruction Cache (ICACHE)}]
   add_params $group {
     { ICACHE_EN         {Enable ICACHE} }
-    { ICACHE_NUM_BLOCKS {Number of blocks} {}                              {$ICACHE_EN} }
-    { ICACHE_BLOCK_SIZE {Block size}       {In bytes (use a power of two)} {$ICACHE_EN} }
+    { ICACHE_NUM_BLOCKS {Number of lines} {}                              {$ICACHE_EN} }
+    { ICACHE_BLOCK_SIZE {Line size}       {In bytes (use a power of two)} {$ICACHE_EN} }
   }
 
   set group [add_group $page {CPU Data Cache (DCACHE)}]
   add_params $group {
     { DCACHE_EN         {Enable DCACHE} }
-    { DCACHE_NUM_BLOCKS {Number of blocks} {}                              {$DCACHE_EN} }
-    { DCACHE_BLOCK_SIZE {Block size}       {In bytes (use a power of two)} {$DCACHE_EN} }
+    { DCACHE_NUM_BLOCKS {Number of lines} {}                              {$DCACHE_EN} }
+    { DCACHE_BLOCK_SIZE {Line size}       {In bytes (use a power of two)} {$DCACHE_EN} }
   }
 
 
@@ -324,105 +324,105 @@ proc setup_ip_gui {} {
   # **************************************************************
   set page [add_page {Peripherals}]
 
-  set group [add_group $page {General-Purpose Input/Output Controller (GPIO)}]
+  set group [add_group $page {General-Purpose Inputs/Outputs (GPIO)}]
   add_params $group {
-    { IO_GPIO_EN        {Enable GPIO} }
-    { IO_GPIO_IN_NUM    {Number of inputs (IRQ capable)} {Interrupt-capable} {$IO_GPIO_EN} }
-    { IO_GPIO_OUT_NUM   {Number of outputs}              {}                  {$IO_GPIO_EN} }
+    { IO_GPIO_EN      {Enable GPIO} }
+    { IO_GPIO_IN_NUM  {Number of inputs (IRQ capable)} {Interrupt-capable} {$IO_GPIO_EN} }
+    { IO_GPIO_OUT_NUM {Number of outputs}              {}                  {$IO_GPIO_EN} }
   }
 
   set group [add_group $page {Core Local Interruptor (CLINT)}]
   add_params $group {
-    { IO_CLINT_EN       {Enable core-local interruptor} }
+    { IO_CLINT_EN {Enable RISC-V core-local interruptor} }
   }
 
   set group [add_group $page {Primary UART (UART0)}]
   add_params $group {
-    { IO_UART0_EN       {Enable UART0} }
-    { IO_UART0_RX_FIFO  {RX FIFO depth}         {Number of entries (use a power of two)}  {$IO_UART0_EN} }
-    { IO_UART0_TX_FIFO  {TX FIFO depth}         {Number of entries (use a power of two)}  {$IO_UART0_EN} }
+    { IO_UART0_EN      {Enable UART0} }
+    { IO_UART0_RX_FIFO {RX FIFO depth} {Number of entries (use a power of two)}  {$IO_UART0_EN} }
+    { IO_UART0_TX_FIFO {TX FIFO depth} {Number of entries (use a power of two)}  {$IO_UART0_EN} }
   }
 
   set group [add_group $page {Secondary UART (UART1)}]
   add_params $group {
-    { IO_UART1_EN       {Enable UART1} }
-    { IO_UART1_RX_FIFO  {RX FIFO depth}         {Number of entries (use a power of two)}  {$IO_UART1_EN} }
-    { IO_UART1_TX_FIFO  {TX FIFO depth}         {Number of entries (use a power of two)}  {$IO_UART1_EN} }
+    { IO_UART1_EN      {Enable UART1} }
+    { IO_UART1_RX_FIFO {RX FIFO depth} {Number of entries (use a power of two)}  {$IO_UART1_EN} }
+    { IO_UART1_TX_FIFO {TX FIFO depth} {Number of entries (use a power of two)}  {$IO_UART1_EN} }
   }
 
   set group [add_group $page {SPI Host Controller (SPI)}]
   add_params $group {
-    { IO_SPI_EN         {Enable SPI} }
-    { IO_SPI_FIFO       {FIFO depth}            {Number of entries (use a power of two)}  {$IO_SPI_EN} }
+    { IO_SPI_EN   {Enable SPI} }
+    { IO_SPI_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_SPI_EN} }
   }
 
   set group [add_group $page {SPI Device Controller (SDI)}]
   add_params $group {
-    { IO_SDI_EN         {Enable SDI} }
-    { IO_SDI_FIFO       {FIFO depth}            {Number of entries (use a power of two)}  {$IO_SDI_EN} }
+    { IO_SDI_EN   {Enable SDI} }
+    { IO_SDI_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_SDI_EN} }
   }
 
   set group [add_group $page {Two-Wire/I2C Host (TWI)}]
   add_params $group {
-    { IO_TWI_EN         {Enable TWI} }
-    { IO_TWI_FIFO       {FIFO depth}            {Number of entries (use a power of two)}  {$IO_TWI_EN} }
+    { IO_TWI_EN   {Enable TWI} }
+    { IO_TWI_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_TWI_EN} }
   }
 
   set group [add_group $page {Two-Wire/I2C Device (TWD)}]
   add_params $group {
-    { IO_TWD_EN         {Enable TWD} }
-    { IO_TWD_FIFO       {FIFO depth}            {Number of entries (use a power of two)}  {$IO_TWD_EN} }
+    { IO_TWD_EN   {Enable TWD} }
+    { IO_TWD_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_TWD_EN} }
   }
 
   set group [add_group $page {Pulse-Width Modulation Controller (PWM)}]
   add_params $group {
-    { IO_PWM_EN         {Enable PWM} }
-    { IO_PWM_NUM_CH     {Number of channels}    {} {$IO_PWM_EN} }
+    { IO_PWM_EN     {Enable PWM} }
+    { IO_PWM_NUM_CH {Number of channels} {} {$IO_PWM_EN} }
   }
 
   set group [add_group $page {Watchdog Timer (WDT)}]
   add_params $group {
-    { IO_WDT_EN         {Enable WDT} }
+    { IO_WDT_EN {Enable WDT} }
   }
 
   set group [add_group $page {True Random-Number Generator (TRNG)}]
   add_params $group {
-    { IO_TRNG_EN        {Enable TRNG} }
-    { IO_TRNG_FIFO      {FIFO depth}            {Number of entries (use a power of two)}  {$IO_TRNG_EN} }
+    { IO_TRNG_EN   {Enable TRNG} }
+    { IO_TRNG_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_TRNG_EN} }
   }
 
   set group [add_group $page {Custom Functions Subsystem (CFS)}]
   add_params $group {
-    { IO_CFS_EN         {Enable CFS} }
-    { IO_CFS_CONFIG     {Configuration word}    {}                                        {$IO_CFS_EN} }
-    { IO_CFS_IN_SIZE    {Input port width}      {}                                        {$IO_CFS_EN} }
-    { IO_CFS_OUT_SIZE   {Output port width}     {}                                        {$IO_CFS_EN} }
+    { IO_CFS_EN       {Enable CFS} }
+    { IO_CFS_CONFIG   {Custom configuration word} {} {$IO_CFS_EN} }
+    { IO_CFS_IN_SIZE  {Input conduit width}       {} {$IO_CFS_EN} }
+    { IO_CFS_OUT_SIZE {Output conduit width}      {} {$IO_CFS_EN} }
   }
 
   set group [add_group $page {Smart LED Interface (NEOLED)}]
   add_params $group {
     { IO_NEOLED_EN      {Enable NEOLED} }
-    { IO_NEOLED_TX_FIFO {FIFO depth}            {Number of entries (use a power of two)}  {$IO_NEOLED_EN} }
+    { IO_NEOLED_TX_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_NEOLED_EN} }
   }
 
   set group [add_group $page {General Purpose Timer (GPTMR)}]
   add_params $group {
-    { IO_GPTMR_EN       {Enable GPTMR} }
+    { IO_GPTMR_EN {Enable GPTMR} }
   }
 
   set group [add_group $page {One-Wire Interface Controller (ONEWIRE)}]
   add_params $group {
-    { IO_ONEWIRE_EN     {Enable ONEWIRE} }
+    { IO_ONEWIRE_EN {Enable ONEWIRE} }
   }
 
   set group [add_group $page {Direct Memory Access Controller (DMA)}]
   add_params $group {
-    { IO_DMA_EN         {Enable DMA} }
+    { IO_DMA_EN {Enable DMA} }
   }
 
   set group [add_group $page {Cyclic Redundancy Check Unit (CRC)}]
   add_params $group {
-    { IO_CRC_EN         {Enable CRC} }
+    { IO_CRC_EN {Enable CRC} }
   }
 }
 
