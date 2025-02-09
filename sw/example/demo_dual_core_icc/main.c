@@ -38,8 +38,8 @@ int core1_entry(void ) {
   // int32_t return value by simply pushing it back on the FIFO
   // which also indicates the result is ready.
   while (1) {
-    int32_t (*func)() = (int32_t(*)())neorv32_smp_icc_pop();
-    int32_t p = neorv32_smp_icc_pop();
+    int32_t (*func)() = (int32_t(*)())neorv32_smp_icc_pop(); // function to execute
+    int32_t p = neorv32_smp_icc_pop(); // function argument
     int32_t result = (*func)(p);
     neorv32_smp_icc_push(result);
   }
@@ -125,7 +125,7 @@ int main(void) {
   }
 
 
-  // Core one is halted in crt0 right after reset and wait for its machine-level software
+  // Core one is halted in crt0 right after reset and waits for its machine-level software
   // interrupt before resuming. Before the interrupt is triggered, a launch configuration
   // for core 1 has to be provided. This launch configuration defines the entry point for
   // core 1 as well as the stack setup. All this is handle by "neorv32_smp_launch()".
@@ -143,13 +143,13 @@ int main(void) {
   // This example dispatches arbitrary functions to run on the second core. To do this we
   // run a dispatcher on the second core that accepts a function pointer and runs it.
 
-  neorv32_smp_icc_push((uintptr_t) &factorial);
+  neorv32_smp_icc_push((uintptr_t)&factorial);
   neorv32_smp_icc_push(TEST_NUM);
   // We could now do a load of stuff on core 0 and get our result later
   neorv32_uart0_printf("Factorial(%d) is %d\n", TEST_NUM, neorv32_smp_icc_pop());
 
   // Now try a different function
-  neorv32_smp_icc_push((uintptr_t) &fibonacci);
+  neorv32_smp_icc_push((uintptr_t)&fibonacci);
   neorv32_smp_icc_push(TEST_NUM);
   neorv32_uart0_printf("Fibonacci(%d) is %d\n", TEST_NUM, neorv32_smp_icc_pop());
 
