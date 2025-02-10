@@ -418,8 +418,13 @@ begin
           elsif (smp.start = '1') then -- start-condition
             engine.state <= S_INIT; -- restart transaction
           elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
-            engine.wr_we <= not engine.cmd; -- write byte to RX FIFO (only if WRITE command)
-            engine.state <= S_ACK;
+            if (engine.cmd = '0' and rx_fifo.free = '0') then -- WRITE command but RX FIFO full
+              engine.wr_we <= '0';      -- Don't write into RX FIFO
+              engine.state <= S_IDLE; -- Don't acknowledge (NACK)
+            else
+              engine.wr_we <= not engine.cmd; -- write byte to RX FIFO (only if WRITE command)
+              engine.state <= S_ACK;
+            end if;
           end if;
           -- sample bus on rising edge --
           if (smp.scl_rise = '1') then
