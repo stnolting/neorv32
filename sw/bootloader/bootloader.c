@@ -343,8 +343,8 @@ int main(void) {
 
 #if (TWD_EN != 0)
   // setup TWD
-  neorv32_twd_set_dummy(TWD_SREG_READY);
-  neorv32_twd_setup(TWD_DEVICE_ID, TWD_FSEL, 1, 0, 0, 1);
+  neorv32_twd_setup(TWD_DEVICE_ID, TWD_FSEL, 1, 0, 0, 1, 0);
+  neorv32_twd_put(TWD_SREG_READY); // neorv32_twd_set_dummy not necessary as the fifo is empty now
   neorv32_cpu_csr_set(CSR_MIE, 1 << TWD_FIRQ_ENABLE); // activate TWD IRQ source
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 #endif

@@ -47,12 +47,14 @@ architecture neorv32_twd_rtl of neorv32_twd is
   constant ctrl_irq_rx_avail_c : natural := 11; -- r/w: IRQ if RX FIFO data available
   constant ctrl_irq_rx_full_c  : natural := 12; -- r/w: IRQ if RX FIFO full
   constant ctrl_irq_tx_empty_c : natural := 13; -- r/w: IRQ if TX FIFO empty
-  constant ctrl_dummy_en_c     : natural := 14; -- r/w: enable TX reg mode (instead of FIFO)
+  constant ctrl_tx_dummy_en_c  : natural := 14; -- r/w: enable sending tx_dummy (last sent byte) when fifo is empty
   --
   constant ctrl_rx_fifo_size0_c   : natural := 15; -- r/-: log2(RX_FIFO size), bit 0 (LSB)
   constant ctrl_rx_fifo_size3_c   : natural := 18; -- r/-: log2(RX_FIFO size), bit 3 (MSB)
   constant ctrl_tx_fifo_size0_c   : natural := 19; -- r/-: log2(TX_FIFO size), bit 0 (LSB)
   constant ctrl_tx_fifo_size3_c   : natural := 22; -- r/-: log2(TX_FIFO size), bit 3 (MSB)
+  --
+  constant ctrl_hide_read_c    : natural := 23; -- r/w: generate NACK ony READ-access when TX FIFO is empty
   --
   constant ctrl_rx_avail_c     : natural := 25; -- r/-: RX FIFO data available
   constant ctrl_rx_full_c      : natural := 26; -- r/-: RX FIFO full
@@ -72,12 +74,13 @@ architecture neorv32_twd_rtl of neorv32_twd is
     irq_rx_avail : std_ulogic;
     irq_rx_full  : std_ulogic;
     irq_tx_empty : std_ulogic;
-    dummy_en     : std_ulogic;
+    tx_dummy_en  : std_ulogic;
+    hide_read : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
 
-  -- dummy for reg-mode --
-  signal dummy : std_ulogic_vector(7 downto 0);
+  -- tx_dummy register --
+  signal tx_dummy : std_ulogic_vector(7 downto 0);
 
   -- bus sample logic --
   type smp_t is record
@@ -124,7 +127,7 @@ architecture neorv32_twd_rtl of neorv32_twd is
 
 begin
 
-  -- Bus Access and dummy byte -----------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_access: process(rstn_i, clk_i)
   begin
@@ -138,21 +141,19 @@ begin
       ctrl.irq_rx_avail <= '0';
       ctrl.irq_rx_full  <= '0';
       ctrl.irq_tx_empty <= '0';
-      ctrl.dummy_en     <= '0';
-      dummy             <= (others => '1');
+      ctrl.tx_dummy_en  <= '0';
+      ctrl.hide_read    <= '0';
     elsif rising_edge(clk_i) then
       -- bus handshake defaults --
       bus_rsp_o.ack  <= bus_req_i.stb;
       bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-      -- reg behavior --
-      dummy <= dummy;
       -- read/write access --
       ctrl.clr_rx <= '0'; -- auto-clear
       ctrl.clr_tx <= '0'; -- auto-clear
       if (bus_req_i.stb = '1') then
         if (bus_req_i.rw = '1') then -- write access
-          if (bus_req_i.addr(3 downto 2) = "00") then -- control register
+          if (bus_req_i.addr(2) = '0') then -- control register
             ctrl.enable       <= bus_req_i.data(ctrl_en_c);
             ctrl.clr_rx       <= bus_req_i.data(ctrl_clr_rx_c);
             ctrl.clr_tx       <= bus_req_i.data(ctrl_clr_tx_c);
@@ -161,21 +162,24 @@ begin
             ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
             ctrl.irq_rx_full  <= bus_req_i.data(ctrl_irq_rx_full_c);
             ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
-            ctrl.dummy_en     <= bus_req_i.data(ctrl_dummy_en_c);
-          elsif (bus_req_i.addr(3 downto 2) = "10") then -- TX REG
-            dummy <= bus_req_i.data(7 downto 0);
+            ctrl.tx_dummy_en  <= bus_req_i.data(ctrl_tx_dummy_en_c);
+            ctrl.hide_read    <= bus_req_i.data(ctrl_hide_read_c);
           end if;
         else -- read access
-          if (bus_req_i.addr(3 downto 2) = "00") then -- control register
+          if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c)                                  <= ctrl.enable;
             bus_rsp_o.data(ctrl_fsel_c)                                <= ctrl.fsel;
             bus_rsp_o.data(ctrl_dev_addr6_c downto ctrl_dev_addr0_c)   <= ctrl.device_addr;
             bus_rsp_o.data(ctrl_irq_rx_avail_c)                        <= ctrl.irq_rx_avail;
             bus_rsp_o.data(ctrl_irq_rx_full_c)                         <= ctrl.irq_rx_full;
             bus_rsp_o.data(ctrl_irq_tx_empty_c)                        <= ctrl.irq_tx_empty;
+            bus_rsp_o.data(ctrl_tx_dummy_en_c)                         <= ctrl.tx_dummy_en;
             --
             bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(TWD_RX_FIFO), 4));
             bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(TWD_TX_FIFO), 4));
+            --
+            bus_rsp_o.data(ctrl_hide_read_c)                           <= ctrl.hide_read;
+            --
             bus_rsp_o.data(ctrl_rx_avail_c)                            <= rx_fifo.avail;
             bus_rsp_o.data(ctrl_rx_full_c)                             <= not rx_fifo.free;
             bus_rsp_o.data(ctrl_tx_empty_c)                            <= not tx_fifo.avail;
@@ -183,10 +187,8 @@ begin
             bus_rsp_o.data(ctrl_sense_scl_c)                           <= smp.scl;
             bus_rsp_o.data(ctrl_sense_sda_c)                           <= smp.sda;
             bus_rsp_o.data(ctrl_busy_c)                                <= engine.busy;
-          elsif (bus_req_i.addr(3 downto 2) = "01") then -- RX FIFO
+          else -- RX FIFO
             bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
-          elsif (bus_req_i.addr(3 downto 2) = "10") then -- TX REG
-            bus_rsp_o.data(7 downto 0) <= dummy;
           end if;
         end if;
       end if;
@@ -230,10 +232,25 @@ begin
   tx_fifo.wdata <= bus_req_i.data(7 downto 0);
   tx_fifo.re    <= engine.rd_re;
 
+  -- Backup last TX byte in case FIFO runs empty --
+  tx_backup: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      tx_dummy <= (others => '0');
+    elsif rising_edge(clk_i) then
+      if (tx_fifo.avail = '1') and (engine.rd_re = '1') then
+        tx_dummy <= tx_fifo.rdata;
+      else
+        tx_dummy <= tx_dummy;
+      end if;
+    end if;
+  end process tx_backup;
+
   -- TX Data
-  engine.rdata  <= tx_fifo.rdata when (tx_fifo.avail = '1') else
-  dummy when (ctrl.dummy_en = '1')  -- read 'dummy' when TX FIFO is drained and dummy enabled
-  else (others => '1');             -- read '1' when TX FIFO is drained and dummy disabled 
+  engine.rdata  <=
+    tx_fifo.rdata when (tx_fifo.avail = '1') else -- read TX FIFO when available
+    tx_dummy when (ctrl.tx_dummy_en = '1')        -- read 'tx_dummy' when TX FIFO is drained and tx_dummy_en enabled
+    else (others => '1');                         -- read '1' when TX FIFO is drained and tx_dummy_en disabled 
 
 
   -- RX FIFO --
@@ -382,11 +399,14 @@ begin
           elsif (smp.start = '1') then -- start-condition received?
             engine.state <= S_INIT;
           elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
-            if ((ctrl.device_addr = engine.sreg(7 downto 1)) and -- address match?
-            ((ctrl.dummy_en = '1') or (tx_fifo.avail = '1'))) then -- dummy enabled or tx data available?
-              engine.state <= S_RESP; -- access device
-            else
-              engine.state <= S_IDLE; -- no match or data, go back to idle
+            if (ctrl.device_addr = engine.sreg(7 downto 1)) then -- address match?
+            -- ------------------------------------------------------------
+              if (engine.sreg(0) = '1' and (ctrl.hide_read = '1' and (tx_fifo.free = '0'))) then -- READ but tx fifo is empty and hide_read is enabled
+                engine.state <= S_IDLE;
+              else
+                engine.state <= S_RESP; -- access device
+              end if;
+            -- ------------------------------------------------------------
             end if;
           end if;
           -- sample bus on rising edge --
