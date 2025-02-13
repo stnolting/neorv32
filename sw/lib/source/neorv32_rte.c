@@ -8,7 +8,7 @@
 
 /**
  * @file neorv32_rte.c
- * @brief NEORV32 Runtime Environment.
+ * @brief NEORV32 Runtime Environment (RTE).
  */
 
 #include <neorv32.h>
@@ -49,7 +49,7 @@ void neorv32_rte_setup(void) {
   // disable all IRQ channels
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
-  // install debug handler for all trap sources (only on core 0)
+  // install debug handler for all trap sources (executed only on core 0)
   if (neorv32_cpu_csr_read(CSR_MHARTID) == 0) {
     int index;
     for (index = 0; index < ((int)NEORV32_RTE_NUM_TRAPS); index++) {
