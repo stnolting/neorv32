@@ -79,8 +79,8 @@ entity neorv32_cpu is
     firq_i     : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
     dbi_i      : in  std_ulogic; -- risc-v debug halt request interrupt
     -- inter-core communication links --
-    icc_tx_o   : out icc_t; -- TX links
-    icc_rx_i   : in  icc_t; -- RX links
+    icc_tx_o   : out icc_t; -- TX link
+    icc_rx_i   : in  icc_t; -- RX link
     -- instruction bus interface --
     ibus_req_o : out bus_req_t; -- request bus
     ibus_rsp_i : in  bus_rsp_t; -- response bus
@@ -191,7 +191,7 @@ begin
     -- simulation notifier --
     assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
 
-  end generate;
+  end generate; -- /hello_neorv32
 
 
   -- Clock Gating ---------------------------------------------------------------------------
@@ -305,7 +305,7 @@ begin
   -- RISC-V machine interrupts --
   irq_machine <= mti_i & mei_i & msi_i;
 
-  -- external CSR read-back --
+  -- control-external CSR read-back --
   xcsr_rdata_res <= xcsr_rdata_alu or xcsr_rdata_pmp or xcsr_rdata_icc;
 
 
@@ -457,8 +457,8 @@ begin
       csr_wdata_i => xcsr_wdata,     -- write data
       csr_rdata_o => xcsr_rdata_icc, -- read data
       -- ICC links --
-      icc_tx_o    => icc_tx_o,       -- TX links
-      icc_rx_i    => icc_rx_i        -- RX links
+      icc_tx_o    => icc_tx_o,       -- TX link
+      icc_rx_i    => icc_rx_i        -- RX link
     );
   end generate;
 
