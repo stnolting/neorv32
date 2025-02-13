@@ -7,7 +7,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -22,17 +22,17 @@ entity neorv32_cpu_cp_cfu is
     clk_i       : in  std_ulogic; -- global clock, rising edge
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     -- operation control --
-    start_i     : in std_ulogic; -- operation trigger/strobe
-    active_i    : in std_ulogic; -- operation in progress, CPU is waiting for CFU
+    start_i     : in  std_ulogic; -- operation trigger/strobe
+    active_i    : in  std_ulogic; -- operation in progress, CPU is waiting for CFU
     -- CSR interface --
     csr_we_i    : in  std_ulogic; -- write enable
     csr_addr_i  : in  std_ulogic_vector(1 downto 0); -- address (CSR address 0x800 to 0x803)
     csr_wdata_i : in  std_ulogic_vector(31 downto 0); -- write data
     csr_rdata_o : out std_ulogic_vector(31 downto 0); -- read data
-    -- operands (form/via custom instruction word) --
-    rtype_i     : in std_ulogic; -- instruction type (R3-type or R4-type); from instruction word's "opcode[5]" bit
-    funct3_i    : in std_ulogic_vector(2 downto 0); -- "funct3" bit-field from custom instruction word
-    funct7_i    : in std_ulogic_vector(6 downto 0); -- "funct7" bit-field from custom instruction word
+    -- operands (from/via custom instruction word) --
+    rtype_i     : in  std_ulogic; -- instruction type (0 = R3-type, 1 = R4-type); from instruction word's "opcode[5]" bit
+    funct3_i    : in  std_ulogic_vector(2 downto 0); -- "funct3" bit-field from custom instruction word
+    funct7_i    : in  std_ulogic_vector(6 downto 0); -- "funct7" bit-field from custom instruction word
     rs1_i       : in  std_ulogic_vector(31 downto 0); -- rf source 1 via "rs1" bit-field from custom instruction word
     rs2_i       : in  std_ulogic_vector(31 downto 0); -- rf source 2 via "rs2" bit-field from custom instruction word
     rs3_i       : in  std_ulogic_vector(31 downto 0); -- rf source 3 via "rs3" bit-field from custom instruction word
@@ -49,35 +49,35 @@ end neorv32_cpu_cp_cfu;
   -- ----------------------------------------------------------------------------------------
   -- Input Operands
   -- ----------------------------------------------------------------------------------------
-  -- > rtype_i  (input,  2-bit): instruction R-type; driven by the instruction word's OPCODE bit 5
+  -- > rtype_i  (input,  1-bit): instruction R-type (r3 or r4); driven by the instruction word's OPCODE bit 5
   -- > funct3_i (input,  3-bit): 3-bit function select / immediate value; driven by instruction word's <funct3> bit-field
   -- > funct7_i (input,  7-bit): 7-bit function select / immediate value; driven by instruction word's <funct7> bit-field, r3-type only
   --
-  -- > rs1_i    (input, 32-bit): source register 1; selected by instruction word's <rs1> bit-field
-  -- > rs2_i    (input, 32-bit): source register 2; selected by instruction word's <rs2> bit-field
-  -- > rs3_i    (input, 32-bit): source register 3; selected by instruction word's <rs3> bit-field, r4-type only
+  -- > rs1_i (input, 32-bit): source register 1; selected by instruction word's <rs1> bit-field
+  -- > rs2_i (input, 32-bit): source register 2; selected by instruction word's <rs2> bit-field
+  -- > rs3_i (input, 32-bit): source register 3; selected by instruction word's <rs3> bit-field, r4-type only
   --
-  -- [NOTE] All input operands/signals remain stable during CFU operation.
+  -- [NOTE] All input operands/signals remain stable until the CFU operation has completed.
   --
   -- The general instruction type is identified by the <rtype_i> input.
-  -- r3type_c (= 0): R3-type instructions (custom-0 opcode); 'rs1', 'rs2' and 'funct7' and 'funct3'
-  -- r4type_c (= 1): R4-type instructions (custom-1 opcode); 'rs1', 'rs2', 'rs3' and 'funct3'
+  -- r3type_c (= 0): R3-type instruction (RISC-V custom-0 opcode); 'rs1', 'rs2', 'funct7' and 'funct3'
+  -- r4type_c (= 1): R4-type instruction (RISC-V custom-1 opcode); 'rs1', 'rs2', 'rs3' and 'funct3'
   --
   -- The signals <rs1_i>, <rs2_i> and <rs3_i> provide the actual source operand data read from the CPU's register
-  -- file. These register operands are adressed by the custom instruction word's 'rs1', 'rs2' and 'rs3' bit-fields.
+  -- file. These register operands are addressed by the custom instruction word's 'rs1', 'rs2' and 'rs3' bit-fields.
   --
   -- [NOTE] The R4-type instructions provide an additional source register (rs3). When this input source is actually used,
   --        the hardware requirements of the register file will increase by +50% due to the additional read port.
   --
   -- The actual CFU operation can be defined by using the <funct3_i> and/or <funct7_i> signals (depending on the R-type).
-  -- Both signals are driven by the according bit-fields of the custom instruction word. These immediates can be used to
+  -- Both signals are driven by the according bit-fields of the custom instruction word. These literals can be used to
   -- select the actual function or to provide small literals for certain operations (like shift amounts, offsets, ...).
 
   -- ----------------------------------------------------------------------------------------
   -- Operation Control, Result and Status
   -- ----------------------------------------------------------------------------------------
-  -- > start_i  (input,   1-bit): operation trigger (start processing, high for one cycle)
-  -- > active_i (input,   1-bit): operation in progress while (optional signal)
+  -- > start_i  (input, 1-bit): operation trigger (start processing, high for one cycle)
+  -- > active_i (input, 1-bit): operation in progress while (optional signal)
   --
   -- > result_o (output, 32-bit): processing result
   -- > valid_o  (output,  1-bit): set high (for one cycle) when processing is done
@@ -99,7 +99,7 @@ end neorv32_cpu_cp_cfu;
   -- valid_o  ________________________/---------\_________ set for one cycle when operation is done / result is valid
   -- result_o ........................|DDDDDDDDD|......... don't care ('.') except for valid-output phase ('D')
   --
-  -- [NOTE] If the <valid_o> signal is not set within a bound time window after the CFU has been triggered via <start_i>
+  -- [NOTE] If the <valid_o> signal is not set within a bound time after the CFU has been triggered via <start_i>
   --        (default = 512 cycles; see "monitor_mc_tmo_c" constant in the main NEORV32 package file) the CFU operation
   --        is automatically terminated by the hardware (clearing <active_i>) and an illegal instruction exception is raised.
 
@@ -117,7 +117,8 @@ end neorv32_cpu_cp_cfu;
   --
   -- [TIP] If more than four CFU-internal CSRs are required the designer can implement an "indirect access mechanism" based
   --       on just two of the default CSRs: one CSR is used to configure the index while the other is used as an alias to
-  --       exchange data with the indexed CFU-internal CSR.
+  --       exchange data with the indexed CFU-internal CSR (similar to the RISC-V "Smcsrind" ISA extension).
+
 
   -- **************************************************************************************************************************
   -- Actual CFU User Logic Example: XTEA - Extended Tiny Encryption Algorithm (replace this with your custom logic)
@@ -244,7 +245,7 @@ begin
     if (rtype_i = r3type_c) then -- R3-type instructions; function select via "funct3" and ""funct7
     -- ----------------------------------------------------------------------
       case funct3_i is -- just check "funct3" here; "funct7" bit-field is ignored in this example
-        when xtea_enc_v0_c | xtea_enc_v1_c | xtea_dec_v0_c | xtea_dec_v1_c => -- xtea encryption/decryption
+        when xtea_enc_v0_c | xtea_enc_v1_c | xtea_dec_v0_c | xtea_dec_v1_c => -- encryption/decryption
           result_o <= xtea.res; -- processing result
           valid_o  <= xtea.done(1); -- multi-cycle processing done when set
         when xtea_init_c => -- xtea initialization
