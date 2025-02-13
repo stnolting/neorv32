@@ -506,11 +506,10 @@ begin
       alu_imm_o <= (others => '0');
     elsif rising_edge(clk_i) then
       if (exe_engine.state = EX_DISPATCH) then -- prepare update of next PC (using ALU's PC + IMM in EX_EXECUTE state)
-        alu_imm_o <= (others => '0');
-        if RISCV_ISA_C and (issue_engine.data(33) = '1') then -- is de-compressed C instruction?
-          alu_imm_o(3 downto 0) <= x"2";
+        if RISCV_ISA_C and (issue_engine.data(33) = '1') then -- is decompressed C instruction?
+          alu_imm_o <= x"00000002";
         else
-          alu_imm_o(3 downto 0) <= x"4";
+          alu_imm_o <= x"00000004";
         end if;
       else
         case opcode is
