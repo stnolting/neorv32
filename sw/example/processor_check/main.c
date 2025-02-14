@@ -623,6 +623,7 @@ int main() {
   asm volatile (".word 0xf0a01013"); // illegal slli funct7
   asm volatile (".word 0xde000033"); // illegal mul funct7
   asm volatile (".word 0x80002163"); // illegal branch funct3 (misaligned DST if C not available)
+  asm volatile (".word 0x00001067"); // illegal jalr funct3
   asm volatile (".word 0x0000200f"); // illegal fence funct3
   asm volatile (".word 0xfe002fe3"); // illegal store funct3
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
@@ -636,11 +637,11 @@ int main() {
   // number of traps we are expecting + expected instruction word of last illegal instruction
   uint32_t invalid_instr;
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
-    tmp_a += 17;
+    tmp_a += 18;
     invalid_instr = 0x08812681; // mtinst: pre-decompressed; clear bit 1 if compressed instruction
   }
   else { // C extension disabled
-    tmp_a += 15;
+    tmp_a += 16;
     invalid_instr = 0xfe002fe3;
   }
 

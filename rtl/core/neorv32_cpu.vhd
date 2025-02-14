@@ -104,36 +104,28 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant riscv_zks_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
                                     RISCV_ISA_Zksh and RISCV_ISA_Zksed; -- Zks: ShangMi suite
 
-  -- external CSR interface --
-  signal xcsr_re        : std_ulogic;
-  signal xcsr_we        : std_ulogic;
-  signal xcsr_addr      : std_ulogic_vector(11 downto 0);
-  signal xcsr_wdata     : std_ulogic_vector(XLEN-1 downto 0);
-  signal xcsr_rdata_pmp : std_ulogic_vector(XLEN-1 downto 0);
-  signal xcsr_rdata_alu : std_ulogic_vector(XLEN-1 downto 0);
-  signal xcsr_rdata_res : std_ulogic_vector(XLEN-1 downto 0);
-  signal xcsr_rdata_icc : std_ulogic_vector(XLEN-1 downto 0);
+  -- external CSR interface read-back --
+  signal xcsr_pmp, xcsr_alu, xcsr_res, xcsr_icc : std_ulogic_vector(XLEN-1 downto 0);
 
   -- local signals --
-  signal clk_gated     : std_ulogic; -- switchable clock (clock gating)
-  signal ctrl          : ctrl_bus_t; -- main control bus
-  signal alu_imm       : std_ulogic_vector(XLEN-1 downto 0); -- immediate
-  signal rf_wdata      : std_ulogic_vector(XLEN-1 downto 0); -- register file write data
-  signal rs1, rs2, rs3 : std_ulogic_vector(XLEN-1 downto 0); -- source registers
-  signal alu_res       : std_ulogic_vector(XLEN-1 downto 0); -- alu result
-  signal alu_add       : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
-  signal alu_cmp       : std_ulogic_vector(1 downto 0);      -- comparator result
-  signal lsu_rdata     : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory read data
-  signal alu_cp_done   : std_ulogic;                         -- alu co-processor operation done
-  signal lsu_wait      : std_ulogic;                         -- wait for current data bus access
-  signal csr_rdata     : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
-  signal lsu_mar       : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory address register
-  signal lsu_err       : std_ulogic_vector(3 downto 0);      -- lsu alignment/access errors
-  signal pc_curr       : std_ulogic_vector(XLEN-1 downto 0); -- current pc (for currently executed instruction)
-  signal pc_next       : std_ulogic_vector(XLEN-1 downto 0); -- next PC (corresponding to next instruction)
-  signal pc_ret        : std_ulogic_vector(XLEN-1 downto 0); -- return address
-  signal pmp_fault     : std_ulogic;                         -- pmp permission violation
-  signal irq_machine   : std_ulogic_vector(2 downto 0);      -- risc-v standard machine-level interrupts
+  signal ctrl        : ctrl_bus_t;                         -- main control bus
+  signal clk_gated   : std_ulogic;                         -- switchable clock (clock gating)
+  signal frontend    : if_bus_t;                           -- instruction-fetch interface
+  signal rf_wdata    : std_ulogic_vector(XLEN-1 downto 0); -- register file write data
+  signal rs1         : std_ulogic_vector(XLEN-1 downto 0); -- source register 1
+  signal rs2         : std_ulogic_vector(XLEN-1 downto 0); -- source register 2
+  signal rs3         : std_ulogic_vector(XLEN-1 downto 0); -- source register 3
+  signal alu_res     : std_ulogic_vector(XLEN-1 downto 0); -- alu result
+  signal alu_add     : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
+  signal alu_cmp     : std_ulogic_vector(1 downto 0);      -- comparator result
+  signal lsu_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory read data
+  signal alu_cp_done : std_ulogic;                         -- alu co-processor operation done
+  signal lsu_wait    : std_ulogic;                         -- wait for current data bus access
+  signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
+  signal lsu_mar     : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory address register
+  signal lsu_err     : std_ulogic_vector(3 downto 0);      -- lsu alignment/access errors
+  signal pmp_fault   : std_ulogic;                         -- pmp permission violation
+  signal irq_machine : std_ulogic_vector(2 downto 0);      -- risc-v standard machine-level interrupts
 
 begin
 
@@ -213,7 +205,26 @@ begin
   end generate;
 
 
-  -- Control Unit (CTRL) --------------------------------------------------------------------
+  -- Front-End (Instruction Fetch) ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_cpu_frontend_inst: entity neorv32.neorv32_cpu_frontend
+  generic map (
+    RVC_EN => RISCV_ISA_C -- implement compressed extension
+  )
+  port map (
+    -- global control --
+    clk_i      => clk_gated,  -- global clock, rising edge
+    rstn_i     => rstn_i,     -- global reset, low-active, async
+    ctrl_i     => ctrl,       -- main control bus
+    -- instruction fetch interface --
+    ibus_req_o => ibus_req_o, -- request
+    ibus_rsp_i => ibus_rsp_i, -- response
+    -- back-end interface --
+    frontend_o => frontend
+  );
+
+
+  -- Control Unit (Back-End) ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_control_inst: entity neorv32.neorv32_cpu_control
   generic map (
@@ -265,51 +276,41 @@ begin
   )
   port map (
     -- global control --
-    clk_i         => clk_gated,      -- global clock, rising edge
-    clk_aux_i     => clk_i,          -- always-on clock, rising edge
-    rstn_i        => rstn_i,         -- global reset, low-active, async
-    ctrl_o        => ctrl,           -- main control bus
-    -- instruction fetch interface --
-    ibus_req_o    => ibus_req_o,     -- request
-    ibus_rsp_i    => ibus_rsp_i,     -- response
+    clk_i         => clk_gated,   -- global clock, rising edge
+    clk_aux_i     => clk_i,       -- always-on clock, rising edge
+    rstn_i        => rstn_i,      -- global reset, low-active, async
+    ctrl_o        => ctrl,        -- main control bus
+    -- instruction fetch (front-end) interface --
+    frontend_i    => frontend,    -- front-end status and data
     -- pmp fault --
-    pmp_fault_i   => pmp_fault,      -- instruction fetch / execute pmp fault
+    pmp_fault_i   => pmp_fault,   -- instruction fetch / execute pmp fault
     -- data path interface --
-    alu_cp_done_i => alu_cp_done,    -- ALU iterative operation done
-    alu_cmp_i     => alu_cmp,        -- comparator status
-    alu_add_i     => alu_add,        -- ALU address result
-    alu_imm_o     => alu_imm,        -- immediate
-    rf_rs1_i      => rs1,            -- rf source 1
-    pc_curr_o     => pc_curr,        -- current PC (corresponding to current instruction)
-    pc_next_o     => pc_next,        -- next PC (corresponding to next instruction)
-    pc_ret_o      => pc_ret,         -- return address
-    csr_rdata_o   => csr_rdata,      -- CSR read data
-    -- external CSR interface --
-    xcsr_we_o     => xcsr_we,        -- global write enable
-    xcsr_re_o     => xcsr_re,        -- global read enable
-    xcsr_addr_o   => xcsr_addr,      -- address
-    xcsr_wdata_o  => xcsr_wdata,     -- write data
-    xcsr_rdata_i  => xcsr_rdata_res, -- read data
+    alu_cp_done_i => alu_cp_done, -- ALU iterative operation done
+    alu_cmp_i     => alu_cmp,     -- comparator status
+    alu_add_i     => alu_add,     -- ALU address result
+    rf_rs1_i      => rs1,         -- rf source 1
+    csr_rdata_o   => csr_rdata,   -- CSR read data
+    xcsr_rdata_i  => xcsr_res,    -- external CSR read data
     -- interrupts --
-    irq_dbg_i     => dbi_i,          -- debug mode (halt) request
-    irq_machine_i => irq_machine,    -- risc-v mti, mei, msi
-    irq_fast_i    => firq_i,         -- fast interrupts
+    irq_dbg_i     => dbi_i,       -- debug mode (halt) request
+    irq_machine_i => irq_machine, -- risc-v mti, mei, msi
+    irq_fast_i    => firq_i,      -- fast interrupts
     -- load/store unit interface --
-    lsu_wait_i    => lsu_wait,       -- wait for data bus
-    lsu_mar_i     => lsu_mar,        -- memory address register
-    lsu_err_i     => lsu_err,        -- alignment/access errors
+    lsu_wait_i    => lsu_wait,    -- wait for data bus
+    lsu_mar_i     => lsu_mar,     -- memory address register
+    lsu_err_i     => lsu_err,     -- alignment/access errors
     -- memory synchronization --
-    mem_sync_i    => mem_sync_i      -- synchronization operation done
+    mem_sync_i    => mem_sync_i   -- synchronization operation done
   );
 
   -- RISC-V machine interrupts --
   irq_machine <= mti_i & mei_i & msi_i;
 
   -- control-external CSR read-back --
-  xcsr_rdata_res <= xcsr_rdata_alu or xcsr_rdata_pmp or xcsr_rdata_icc;
+  xcsr_res <= xcsr_alu or xcsr_pmp or xcsr_icc;
 
 
-  -- Register File (RF) ---------------------------------------------------------------------
+  -- Register File --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_regfile_inst: entity neorv32.neorv32_cpu_regfile
   generic map (
@@ -330,7 +331,7 @@ begin
   );
 
   -- all buses are zero unless there is an according operation --
-  rf_wdata <= alu_res or lsu_rdata or csr_rdata or pc_ret;
+  rf_wdata <= alu_res or lsu_rdata or csr_rdata or ctrl.pc_ret;
 
 
   -- Arithmetic/Logic Unit (ALU) and ALU Co-Processors --------------------------------------
@@ -360,26 +361,20 @@ begin
   )
   port map (
     -- global control --
-    clk_i       => clk_gated,      -- global clock, rising edge
-    rstn_i      => rstn_i,         -- global reset, low-active, async
-    ctrl_i      => ctrl,           -- main control bus
-    -- CSR interface --
-    csr_we_i    => xcsr_we,        -- global write enable
-    csr_addr_i  => xcsr_addr,      -- address
-    csr_wdata_i => xcsr_wdata,     -- write data
-    csr_rdata_o => xcsr_rdata_alu, -- read data
+    clk_i  => clk_gated,  -- global clock, rising edge
+    rstn_i => rstn_i,     -- global reset, low-active, async
+    ctrl_i => ctrl,       -- main control bus
     -- data input --
-    rs1_i       => rs1,            -- rf source 1
-    rs2_i       => rs2,            -- rf source 2
-    rs3_i       => rs3,            -- rf source 3
-    pc_i        => pc_curr,        -- current PC
-    imm_i       => alu_imm,        -- immediate
+    rs1_i  => rs1,        -- rf source 1
+    rs2_i  => rs2,        -- rf source 2
+    rs3_i  => rs3,        -- rf source 3
     -- data output --
-    cmp_o       => alu_cmp,        -- comparator status
-    res_o       => alu_res,        -- ALU result
-    add_o       => alu_add,        -- address computation result
+    cmp_o  => alu_cmp,    -- comparator status
+    res_o  => alu_res,    -- ALU result
+    add_o  => alu_add,    -- address computation result
+    csr_o  => xcsr_alu,   -- CSR read data
     -- status --
-    cp_done_o   => alu_cp_done     -- iterative processing units done?
+    done_o => alu_cp_done -- iterative processing units done?
   );
 
 
@@ -418,25 +413,21 @@ begin
     )
     port map (
       -- global control --
-      clk_i       => clk_gated,      -- global clock, rising edge
-      rstn_i      => rstn_i,         -- global reset, low-active, async
-      ctrl_i      => ctrl,           -- main control bus
+      clk_i       => clk_gated, -- global clock, rising edge
+      rstn_i      => rstn_i,    -- global reset, low-active, async
+      ctrl_i      => ctrl,      -- main control bus
       -- CSR interface --
-      csr_we_i    => xcsr_we,        -- global write enable
-      csr_addr_i  => xcsr_addr,      -- address
-      csr_wdata_i => xcsr_wdata,     -- write data
-      csr_rdata_o => xcsr_rdata_pmp, -- read data
+      csr_rdata_o => xcsr_pmp,  -- read data
       -- address input --
-      addr_if_i   => pc_next,        -- instruction fetch address
-      addr_ls_i   => alu_add,        -- load/store address
+      addr_ls_i   => alu_add,   -- load/store address
       -- access error --
-      fault_o     => pmp_fault       -- permission violation
+      fault_o     => pmp_fault  -- permission violation
     );
   end generate;
 
   pmp_disabled:
   if not RISCV_ISA_Smpmp generate
-    xcsr_rdata_pmp <= (others => '0');
+    xcsr_pmp <= (others => '0');
     pmp_fault      <= '0';
   end generate;
 
@@ -451,11 +442,11 @@ begin
       clk_i       => clk_i,          -- global clock, rising edge
       rstn_i      => rstn_i,         -- global reset, low-active, async
       -- CSR interface --
-      csr_we_i    => xcsr_we,        -- global write enable
-      csr_re_i    => xcsr_re,        -- global read enable
-      csr_addr_i  => xcsr_addr,      -- address
-      csr_wdata_i => xcsr_wdata,     -- write data
-      csr_rdata_o => xcsr_rdata_icc, -- read data
+      csr_we_i    => ctrl.csr_we,    -- global write enable
+      csr_re_i    => ctrl.csr_re,    -- global read enable
+      csr_addr_i  => ctrl.csr_addr,  -- address
+      csr_wdata_i => ctrl.csr_wdata, -- write data
+      csr_rdata_o => xcsr_icc,       -- read data
       -- ICC links --
       icc_tx_o    => icc_tx_o,       -- TX link
       icc_rx_i    => icc_rx_i        -- RX link
@@ -464,7 +455,7 @@ begin
 
   icc_disabled:
   if not ICC_EN generate
-    xcsr_rdata_icc <= (others => '0');
+    xcsr_icc <= (others => '0');
     icc_tx_o       <= icc_terminate_c;
   end generate;
 

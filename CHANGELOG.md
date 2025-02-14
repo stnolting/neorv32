@@ -29,7 +29,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 14.02.2025 | 1.11.1.2 |minor rtl edits and cleanups (cache optimizations) | [#1182](https://github.com/stnolting/neorv32/pull/1182) |
+| 14.02.2025 | 1.11.1.3 | source-out CPU front-end into new rtl file (`neorv32_cpu_frontend.vhd`) | [#1183](https://github.com/stnolting/neorv32/pull/1183) |
+| 14.02.2025 | 1.11.1.2 | minor rtl edits and cleanups (cache optimizations) | [#1182](https://github.com/stnolting/neorv32/pull/1182) |
 | 08.02.2025 | 1.11.1.1 | :sparkles: add support for `A` and `Zalrsc` ISA extensions | [#1181](https://github.com/stnolting/neorv32/pull/1181) |
 | 07.02.2025 | [**:rocket:1.11.1**](https://github.com/stnolting/neorv32/releases/tag/v1.11.1) | **New release** | |
 | 07.02.2025 | 1.11.0.10 | :warning: rename UART RTS/CTS signals | [#1180](https://github.com/stnolting/neorv32/pull/1180) |
