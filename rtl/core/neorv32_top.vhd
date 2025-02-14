@@ -396,7 +396,7 @@ begin
 
     -- Clock speed not defined --
     assert not (CLOCK_FREQUENCY = 0) report
-      "[NEORV32] CLOCK_FREQUENCY must be configured according to the frequency of clk_i port!" severity warning;
+      "[NEORV32] CLOCK_FREQUENCY must be configured according to the frequency of clk_i port." severity warning;
 
     -- Boot configuration notifier --
     assert not (BOOT_MODE_SELECT = 0) report "[NEORV32] BOOT_MODE_SELECT = 0: booting via bootloader" severity note;
@@ -405,7 +405,11 @@ begin
 
     -- Boot configuration: boot from initialized IMEM requires the IMEM to be enabled --
     assert not ((BOOT_MODE_SELECT = 2) and (MEM_INT_IMEM_EN = false)) report
-      "[NEORV32] BOOT_MODE_SELECT = 2 (boot IMEM image) requires the internal instruction memory (IMEM) to be enabled!" severity error;
+      "[NEORV32] ERROR: BOOT_MODE_SELECT = 2 (boot IMEM image) requires the internal instruction memory (IMEM) to be enabled!" severity error;
+
+    -- The SMP dual-core configuration requires the CLINT --
+    assert not ((DUAL_CORE_EN = true) and (IO_CLINT_EN = false)) report
+      "[NEORV32] ERROR: The SMP dual-core configuration requires the CLINT to be enabled!" severity error;
 
   end generate; -- /sanity_checks
 

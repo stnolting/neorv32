@@ -27,8 +27,8 @@ entity neorv32_cpu_icc is
     csr_wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
     csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- ICC links --
-    icc_tx_o    : out icc_t; -- TX links
-    icc_rx_i    : in  icc_t -- RX links
+    icc_tx_o    : out icc_t; -- TX link
+    icc_rx_i    : in  icc_t  -- RX link
   );
 end neorv32_cpu_icc;
 

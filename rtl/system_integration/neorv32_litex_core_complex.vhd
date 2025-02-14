@@ -22,7 +22,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -67,9 +67,6 @@ entity neorv32_litex_core_complex is
 end neorv32_litex_core_complex;
 
 architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
-
-  -- core identification --
-  constant jedec_id_c : std_ulogic_vector(10 downto 0) := "00000000000"; -- vendor's JEDEC manufacturer ID
 
   -- configuration helpers --
   constant num_configs_c : natural := 4;    -- number of pre-defined configurations
@@ -118,7 +115,6 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY       => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
-    JEDEC_ID              => jedec_id_c,                     -- vendor's JEDEC ID
     -- On-Chip Debugger (OCD) --
     OCD_EN                => DEBUG,                          -- implement on-chip debugger
     -- RISC-V CPU Extensions --

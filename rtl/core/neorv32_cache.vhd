@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 - Generic Cache                                                          --
+-- NEORV32 SoC - Generic Cache                                                      --
 -- -------------------------------------------------------------------------------- --
 -- Configurable generic cache module. The cache is direct-mapped and implements     --
 -- "write-back" and "write-allocate" strategies.                                    --
@@ -53,7 +53,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   constant index_size_c  : natural := index_size_f(block_num_c);
   constant tag_size_c    : natural := 32 - (offset_size_c + index_size_c + 2);
 
-  -- cache memory core (cache memory and management) --
+  -- cache memory component --
   component neorv32_cache_memory
   generic (
     NUM_BLOCKS : natural;
@@ -100,7 +100,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
 
   -- control fsm --
   type state_t is (
-    S_IDLE, S_CHECK, S_MISS, S_DIRECT_REQ, S_DIRECT_RSP,
+    S_IDLE, S_LOOKUP, S_DIRECT_REQ, S_DIRECT_RSP,
     S_DOWNLOAD_REQ, S_DOWNLOAD_RSP, S_DOWNLOAD_DONE, S_DOWNLOAD_ERR,
     S_UPLOAD_GET, S_UPLOAD_REQ, S_UPLOAD_RSP,
     S_FLUSH_START, S_FLUSH_READ, S_FLUSH_CHECK, S_FLUSH_DONE,
@@ -108,7 +108,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   );
   type ctrl_t is record
     state    : state_t;
-    upret    : state_t;
+    stret    : state_t;
     buf_req  : std_ulogic;
     buf_sync : std_ulogic;
   end record;
@@ -130,7 +130,7 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl.state    <= S_IDLE;
-      ctrl.upret    <= S_IDLE;
+      ctrl.stret    <= S_IDLE;
       ctrl.buf_req  <= '0';
       ctrl.buf_sync <= '0';
       addr.tag      <= (others => '0');
@@ -139,7 +139,7 @@ begin
       clean_o       <= '0';
     elsif rising_edge(clk_i) then
       ctrl.state    <= ctrl_nxt.state;
-      ctrl.upret    <= ctrl_nxt.upret;
+      ctrl.stret    <= ctrl_nxt.stret;
       ctrl.buf_req  <= ctrl_nxt.buf_req;
       ctrl.buf_sync <= ctrl_nxt.buf_sync;
       addr          <= addr_nxt;
@@ -159,7 +159,7 @@ begin
   begin
     -- control engine defaults --
     ctrl_nxt.state    <= ctrl.state;
-    ctrl_nxt.upret    <= ctrl.upret;
+    ctrl_nxt.stret    <= ctrl.stret;
     ctrl_nxt.buf_req  <= ctrl.buf_req or host_req_i.stb;
     ctrl_nxt.buf_sync <= ctrl.buf_sync or host_req_i.fence;
     addr_nxt          <= addr;
@@ -173,7 +173,7 @@ begin
     cache_o.data    <= host_req_i.data;
 
     -- host response defaults --
-    host_rsp_o <= rsp_terminate_c;
+    host_rsp_o <= rsp_terminate_c; -- all-zero
 
     -- bus interface defaults (default = host access) --
     bus_req_o.addr  <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
@@ -198,62 +198,56 @@ begin
         elsif (host_req_i.stb = '1') or (ctrl.buf_req = '1') then -- (pending) access request
           if (host_req_i.rw = '1') and (READ_ONLY = true) then -- invalid write access
             ctrl_nxt.state <= S_ERROR;
-          elsif (unsigned(host_req_i.addr(31 downto 28)) >= unsigned(UC_BEGIN)) or
-             (host_req_i.amo = '1') or (host_req_i.debug = '1') then
+          elsif (unsigned(host_req_i.addr(31 downto 28)) >= unsigned(UC_BEGIN)) or -- uncached address space
+                (host_req_i.amo = '1') or (host_req_i.debug = '1') then -- atomic or debug access
             ctrl_nxt.state <= S_DIRECT_REQ;
           else
-            ctrl_nxt.state <= S_CHECK;
+            ctrl_nxt.state <= S_LOOKUP;
+          end if;
+        end if;
+
+      when S_LOOKUP => -- check if cache hit
+      -- ------------------------------------------------------------
+        ctrl_nxt.buf_req <= '0'; -- access (about to be) completed
+        host_rsp_o.data  <= cache_i.data; -- cache response data (for hit)
+        addr_nxt.ofs     <= (others => '0'); -- align block base address for upload/download
+        addr_nxt.idx     <= host_req_i.addr((offset_size_c+2+index_size_c)-1 downto offset_size_c+2); -- index of referenced block
+        ctrl_nxt.stret   <= S_DOWNLOAD_REQ; -- start block download immediately after upload has completed
+        --
+        if (cache_i.sta_hit = '1') then -- cache hit
+          if (host_req_i.rw = '0') or (READ_ONLY = true) then -- read access
+            host_rsp_o.ack <= '1';
+          else -- write access
+            cache_o.cmd_dir <= '1'; -- cache block is dirty now
+            cache_o.we      <= host_req_i.ben; -- finalize cache write access
+            host_rsp_o.ack  <= '1';
+          end if;
+          ctrl_nxt.state <= S_IDLE;
+        else -- cache miss
+          if (cache_i.sta_dir = '1') and (READ_ONLY = false) then -- block is dirty, upload first
+            addr_nxt.tag   <= cache_i.sta_tag(31 downto 32-tag_size_c); -- tag of accessed block
+            ctrl_nxt.state <= S_UPLOAD_GET;
+          else -- block is clean, replace by new block
+            addr_nxt.tag   <= host_req_i.addr(31 downto 32-tag_size_c); -- tag of referenced block
+            ctrl_nxt.state <= S_DOWNLOAD_REQ;
           end if;
         end if;
 
 
       when S_DIRECT_REQ => -- direct (uncached) access request
       -- ------------------------------------------------------------
-        bus_req_o      <= host_req_i;
-        bus_req_o.stb  <= '1';
-        ctrl_nxt.state <= S_DIRECT_RSP;
+        ctrl_nxt.buf_req <= '0'; -- access (about to be) completed
+        bus_req_o        <= host_req_i; -- pass-through (cache bypass)
+        bus_req_o.stb    <= '1';
+        ctrl_nxt.state   <= S_DIRECT_RSP;
 
       when S_DIRECT_RSP => -- wait for direct (uncached) access response
       -- ------------------------------------------------------------
-        bus_req_o        <= host_req_i;
-        bus_req_o.stb    <= '0';
-        host_rsp_o       <= bus_rsp_i;
-        ctrl_nxt.buf_req <= '0'; -- access (about to be) completed
+        bus_req_o     <= host_req_i; -- pass-through (cache bypass)
+        bus_req_o.stb <= '0';
+        host_rsp_o    <= bus_rsp_i; -- pass-through (cache bypass)
         if (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') then
           ctrl_nxt.state <= S_IDLE;
-        end if;
-
-
-      when S_CHECK => -- check if cache hit
-      -- ------------------------------------------------------------
-        ctrl_nxt.buf_req <= '0'; -- access (about to be) completed
-        host_rsp_o.data  <= cache_i.data;
-        if (cache_i.sta_hit = '1') then
-          if (host_req_i.rw = '0') then -- read access
-            host_rsp_o.ack <= '1';
-          else -- write access
-            cache_o.cmd_dir <= '1'; -- cache block is dirty now
-            cache_o.we      <= host_req_i.ben; -- finalize write access
-            host_rsp_o.ack  <= '1';
-          end if;
-          ctrl_nxt.state <= S_IDLE;
-        else -- cache miss
-          ctrl_nxt.state <= S_MISS;
-        end if;
-
-      when S_MISS => -- check if accessed block is dirty (cache address is still applied by host controller!)
-      -- ------------------------------------------------------------
-        ctrl_nxt.buf_req <= '0'; -- access (about to be) completed
-        addr_nxt.ofs     <= (others => '0'); -- align block base address for upload/download
-        addr_nxt.idx     <= host_req_i.addr((offset_size_c+2+index_size_c)-1 downto offset_size_c+2); -- index of referenced block
-        ctrl_nxt.upret   <= S_MISS; -- come back here after UPLOAD
-        --
-        if (cache_i.sta_dir = '1') and (READ_ONLY = false) then -- block is dirty, upload first
-          addr_nxt.tag   <= cache_i.sta_tag(31 downto 32-tag_size_c); -- tag of accessed block
-          ctrl_nxt.state <= S_UPLOAD_GET;
-        else -- block is clean, replace by new block
-          addr_nxt.tag   <= host_req_i.addr(31 downto 32-tag_size_c); -- tag of referenced block
-          ctrl_nxt.state <= S_DOWNLOAD_REQ;
         end if;
 
 
@@ -269,8 +263,9 @@ begin
       -- ------------------------------------------------------------
         cache_o.addr    <= addr.tag & addr.idx & addr.ofs & "00";
         cache_o.data    <= bus_rsp_i.data;
-        cache_o.cmd_new <= '1'; -- set new block (set tag, make valid, make clean)
+        cache_o.cmd_new <= '1'; -- set new block (set tag, make valid & clean)
         bus_req_o.rw    <= '0'; -- read access
+        --
         if (bus_rsp_i.err = '1') then --
           ctrl_nxt.state <= S_DOWNLOAD_ERR;
         elsif (bus_rsp_i.ack = '1') then
@@ -285,7 +280,7 @@ begin
 
       when S_DOWNLOAD_DONE => -- delay cycle for update of cache status
       -- ------------------------------------------------------------
-        ctrl_nxt.state <= S_CHECK;
+        ctrl_nxt.state <= S_LOOKUP;
 
       when S_DOWNLOAD_ERR => -- error during block download
       -- ------------------------------------------------------------
@@ -321,13 +316,13 @@ begin
         else
           cache_o.addr    <= addr.tag & addr.idx & addr.ofs & "00";
           bus_req_o.rw    <= '1'; -- write access
-          cache_o.cmd_new <= '1'; -- set new block (set tag, make valid, make clean)
+          cache_o.cmd_new <= '1'; -- set new block (set tag, make valid & clean)
           if (bus_rsp_i.err = '1') then -- bus error (this is really bad...)
             ctrl_nxt.state <= S_ERROR;
           elsif (bus_rsp_i.ack = '1') then
             addr_nxt.ofs <= std_ulogic_vector(unsigned(addr.ofs) + 1);
             if (and_reduce_f(addr.ofs) = '1') then -- block completed
-              ctrl_nxt.state <= ctrl.upret; -- go back to "upload-done return state"
+              ctrl_nxt.state <= ctrl.stret; -- go back to "upload-done return state"
             else -- get next word
               ctrl_nxt.state <= S_UPLOAD_GET;
             end if;
@@ -339,7 +334,7 @@ begin
       -- ------------------------------------------------------------
         cache_o.addr   <= addr.tag & addr.idx & addr.ofs & "00";
         addr_nxt.idx   <= (others => '0'); -- start with index 0
-        ctrl_nxt.upret <= S_FLUSH_READ; -- come back to S_FLUSH_READ after block UPLOAD
+        ctrl_nxt.stret <= S_FLUSH_READ; -- go back to S_FLUSH_READ after block UPLOAD
         ctrl_nxt.state <= S_FLUSH_READ;
 
       when S_FLUSH_READ => -- cache read access latency cycle
@@ -352,6 +347,7 @@ begin
         cache_o.addr    <= addr.tag & addr.idx & addr.ofs & "00";
         addr_nxt.tag    <= cache_i.sta_tag(31 downto 32-tag_size_c); -- tag of currently index block
         cache_o.cmd_inv <= '1'; -- invalidate currently indexed block
+        --
         if (cache_i.sta_dir = '1') and (READ_ONLY = false) then -- block dirty?
           ctrl_nxt.state <= S_UPLOAD_GET;
         else -- move on to next block
@@ -372,7 +368,7 @@ begin
         ctrl_nxt.state    <= S_IDLE;
 
 
-      when S_ERROR => -- error
+      when S_ERROR => -- block operation error
       -- ------------------------------------------------------------
         host_rsp_o.err <= '1';
         ctrl_nxt.state <= S_IDLE;
@@ -417,7 +413,7 @@ end neorv32_cache_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 CPU - Generic Cache: Data and Status Memory (direct-mapped)              --
+-- NEORV32 SoC - Generic Cache: Data and Status Memory (direct-mapped)              --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
