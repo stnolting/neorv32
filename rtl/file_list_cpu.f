@@ -2,6 +2,7 @@ NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_package.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_clockgate.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_fifo.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_decompressor.vhd
+NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_frontend.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_control.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_regfile.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_cp_shifter.vhd

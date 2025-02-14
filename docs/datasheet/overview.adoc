@@ -164,6 +164,13 @@ All core VHDL files from the list below have to be assigned to a **new library**
 [NOTE]
 See section <<_file_list_files>> for more information.
 
+.Replacing Modules for Customization or Optimization
+[TIP]
+Any module of the core can be replaced by the user for customization purpose. For example, the default IMEM and DMEM
+modules as well as the CPU's register file can be replaced by technology-specific primitives to optimize energy, speed
+and area utilization. The module, which are dedicated for customization, i.e. CFS and CFU can be replaced by
+user-defined modules to implement application-specific functionality.
+
 .RTL File List (in alphabetical order)
 ...................................
 rtl/core
@@ -186,6 +193,7 @@ rtl/core
 ├-neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M ext.)
 ├-neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
 ├-neorv32_cpu_decompressor.vhd  - Compressed instructions decoder (C ext.)
+├-neorv32_cpu_frontend.vhd      - Instruction fetch and issue
 ├-neorv32_cpu_icc.vhd           - Inter-core communication unit
 ├-neorv32_cpu_lsu.vhd           - Load/store unit
 ├-neorv32_cpu_pmp.vhd           - Physical memory protection unit (Smpmp ext.)
@@ -217,13 +225,6 @@ rtl/core
 ├-neorv32_wdt.vhd               - Watchdog timer
 └-neorv32_xbus.vhd              - External (Wishbone) bus interface gateways
 ...................................
-
-.Replacing Modules for Customization or Optimization
-[TIP]
-Any module of the core can be replaced by the user for customization purpose. For example, the default IMEM and DMEM
-modules as well as the CPU's register file can be replaced by technology-specific primitives to optimize energy, speed
-and area utilization. The module, which are dedicated for customization, i.e. CFS and CFU can be replaced by
-user-defined modules to implement application-specific functionality.
 
 
 :sectnums:
