@@ -504,6 +504,9 @@ package neorv32_package is
   type ctrl_bus_t is record
     -- instruction fetch --
     if_fence     : std_ulogic;                     -- fence.i operation
+    if_reset     : std_ulogic;                     -- restart instruction fetch
+    if_ack       : std_ulogic;                     -- consume data from instruction fetch
+    -- program counter --
     pc_cur       : std_ulogic_vector(31 downto 0); -- address of current instruction
     pc_nxt       : std_ulogic_vector(31 downto 0); -- address of next instruction
     pc_ret       : std_ulogic_vector(31 downto 0); -- return address
@@ -549,6 +552,8 @@ package neorv32_package is
   -- control bus reset initializer --
   constant ctrl_bus_zero_c : ctrl_bus_t := (
     if_fence     => '0',
+    if_reset     => '0',
+    if_ack       => '0',
     pc_cur       => (others => '0'),
     pc_nxt       => (others => '0'),
     pc_ret       => (others => '0'),
@@ -584,6 +589,16 @@ package neorv32_package is
     cpu_trap     => '0',
     cpu_debug    => '0'
   );
+
+  -- Instruction Fetch Interface ------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  type if_bus_t is record
+    valid  : std_ulogic;                     -- bus signals are valid
+    instr  : std_ulogic_vector(31 downto 0); -- instruction word
+    compr  : std_ulogic;                     -- instruction is decompressed
+    error  : std_ulogic;                     -- instruction-fetch error
+    halted : std_ulogic;                     -- instruction fetch has halted
+  end record;
 
   -- Comparator Bus -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

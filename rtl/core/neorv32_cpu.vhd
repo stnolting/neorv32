@@ -108,8 +108,9 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal xcsr_pmp, xcsr_alu, xcsr_res, xcsr_icc : std_ulogic_vector(XLEN-1 downto 0);
 
   -- local signals --
-  signal ctrl        : ctrl_bus_t; -- main control bus
-  signal clk_gated   : std_ulogic; -- switchable clock (clock gating)
+  signal ctrl        : ctrl_bus_t;                         -- main control bus
+  signal clk_gated   : std_ulogic;                         -- switchable clock (clock gating)
+  signal frontend    : if_bus_t;                           -- instruction-fetch interface
   signal rf_wdata    : std_ulogic_vector(XLEN-1 downto 0); -- register file write data
   signal rs1         : std_ulogic_vector(XLEN-1 downto 0); -- source register 1
   signal rs2         : std_ulogic_vector(XLEN-1 downto 0); -- source register 2
@@ -204,6 +205,25 @@ begin
   end generate;
 
 
+  -- Front-End (Instruction Fetch) ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  neorv32_cpu_frontend_inst: entity neorv32.neorv32_cpu_frontend
+  generic map (
+    RVC_EN => RISCV_ISA_C -- implement compressed extension
+  )
+  port map (
+    -- global control --
+    clk_i      => clk_gated,  -- global clock, rising edge
+    rstn_i     => rstn_i,     -- global reset, low-active, async
+    ctrl_i     => ctrl,       -- main control bus
+    -- instruction fetch interface --
+    ibus_req_o => ibus_req_o, -- request
+    ibus_rsp_i => ibus_rsp_i, -- response
+    -- back-end interface --
+    frontend_o => frontend
+  );
+
+
   -- Control Unit (Back-End) ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_control_inst: entity neorv32.neorv32_cpu_control
@@ -260,9 +280,8 @@ begin
     clk_aux_i     => clk_i,       -- always-on clock, rising edge
     rstn_i        => rstn_i,      -- global reset, low-active, async
     ctrl_o        => ctrl,        -- main control bus
-    -- instruction fetch interface --
-    ibus_req_o    => ibus_req_o,  -- request
-    ibus_rsp_i    => ibus_rsp_i,  -- response
+    -- instruction fetch (front-end) interface --
+    frontend_i    => frontend,    -- front-end status and data
     -- pmp fault --
     pmp_fault_i   => pmp_fault,   -- instruction fetch / execute pmp fault
     -- data path interface --
@@ -342,20 +361,20 @@ begin
   )
   port map (
     -- global control --
-    clk_i       => clk_gated,  -- global clock, rising edge
-    rstn_i      => rstn_i,     -- global reset, low-active, async
-    ctrl_i      => ctrl,       -- main control bus
+    clk_i  => clk_gated,  -- global clock, rising edge
+    rstn_i => rstn_i,     -- global reset, low-active, async
+    ctrl_i => ctrl,       -- main control bus
     -- data input --
-    rs1_i       => rs1,        -- rf source 1
-    rs2_i       => rs2,        -- rf source 2
-    rs3_i       => rs3,        -- rf source 3
+    rs1_i  => rs1,        -- rf source 1
+    rs2_i  => rs2,        -- rf source 2
+    rs3_i  => rs3,        -- rf source 3
     -- data output --
-    cmp_o       => alu_cmp,    -- comparator status
-    res_o       => alu_res,    -- ALU result
-    add_o       => alu_add,    -- address computation result
-    csr_o       => xcsr_alu,   -- CSR read data
+    cmp_o  => alu_cmp,    -- comparator status
+    res_o  => alu_res,    -- ALU result
+    add_o  => alu_add,    -- address computation result
+    csr_o  => xcsr_alu,   -- CSR read data
     -- status --
-    cp_done_o   => alu_cp_done -- iterative processing units done?
+    done_o => alu_cp_done -- iterative processing units done?
   );
 
 
