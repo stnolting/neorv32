@@ -87,18 +87,9 @@ entity neorv32_cpu_control is
     alu_cp_done_i : in  std_ulogic; -- ALU iterative operation done
     alu_cmp_i     : in  std_ulogic_vector(1 downto 0); -- comparator status
     alu_add_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU address result
-    alu_imm_o     : out std_ulogic_vector(XLEN-1 downto 0); -- immediate
     rf_rs1_i      : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    pc_curr_o     : out std_ulogic_vector(XLEN-1 downto 0); -- current PC (corresponding to current instruction)
-    pc_next_o     : out std_ulogic_vector(XLEN-1 downto 0); -- next PC (corresponding to next instruction)
-    pc_ret_o      : out std_ulogic_vector(XLEN-1 downto 0); -- return address
     csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
-    -- external CSR interface --
-    xcsr_we_o     : out std_ulogic; -- global write enable
-    xcsr_re_o     : out std_ulogic; -- global read enable
-    xcsr_addr_o   : out std_ulogic_vector(11 downto 0); -- address
-    xcsr_wdata_o  : out std_ulogic_vector(XLEN-1 downto 0); -- write data
-    xcsr_rdata_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- read data
+    xcsr_rdata_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- external CSR read data
     -- interrupts --
     irq_dbg_i     : in  std_ulogic; -- debug mode (halt) request
     irq_machine_i : in  std_ulogic_vector(2 downto 0); -- risc-v mti, mei, msi
@@ -172,6 +163,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- simplified opcode (2 LSBs hardwired to "11" to indicate rv32) --
   signal opcode : std_ulogic_vector(6 downto 0);
+
+  -- instruction's immediate
+  signal immediate : std_ulogic_vector(XLEN-1 downto 0);
 
   -- execution monitor --
   signal monitor_cnt : std_ulogic_vector(monitor_mc_tmo_c downto 0);
@@ -501,28 +495,28 @@ begin
   imm_gen: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      alu_imm_o <= (others => '0');
+      immediate <= (others => '0');
     elsif rising_edge(clk_i) then
       if (exe_engine.state = EX_DISPATCH) then -- prepare update of next PC (using ALU's PC + IMM in EX_EXECUTE state)
         if RISCV_ISA_C and (issue_engine.data(33) = '1') then -- is decompressed C instruction?
-          alu_imm_o <= x"00000002";
+          immediate <= x"00000002";
         else
-          alu_imm_o <= x"00000004";
+          immediate <= x"00000004";
         end if;
       else
         case opcode is
           when opcode_store_c => -- S-immediate
-            alu_imm_o <= replicate_f(exe_engine.ir(31), 21) & exe_engine.ir(30 downto 25) & exe_engine.ir(11 downto 7);
+            immediate <= replicate_f(exe_engine.ir(31), 21) & exe_engine.ir(30 downto 25) & exe_engine.ir(11 downto 7);
           when opcode_branch_c => -- B-immediate
-            alu_imm_o <= replicate_f(exe_engine.ir(31), 20) & exe_engine.ir(7) & exe_engine.ir(30 downto 25) & exe_engine.ir(11 downto 8) & '0';
+            immediate <= replicate_f(exe_engine.ir(31), 20) & exe_engine.ir(7) & exe_engine.ir(30 downto 25) & exe_engine.ir(11 downto 8) & '0';
           when opcode_lui_c | opcode_auipc_c => -- U-immediate
-            alu_imm_o <= exe_engine.ir(31 downto 12) & x"000";
+            immediate <= exe_engine.ir(31 downto 12) & x"000";
           when opcode_jal_c => -- J-immediate
-            alu_imm_o <= replicate_f(exe_engine.ir(31), 12) & exe_engine.ir(19 downto 12) & exe_engine.ir(20) & exe_engine.ir(30 downto 21) & '0';
+            immediate <= replicate_f(exe_engine.ir(31), 12) & exe_engine.ir(19 downto 12) & exe_engine.ir(20) & exe_engine.ir(30 downto 21) & '0';
           when opcode_amo_c => -- atomic memory access
-            alu_imm_o <= (others => '0');
+            immediate <= (others => '0');
           when others => -- I-immediate
-            alu_imm_o <= replicate_f(exe_engine.ir(31), 21) & exe_engine.ir(30 downto 21) & exe_engine.ir(20);
+            immediate <= replicate_f(exe_engine.ir(31), 21) & exe_engine.ir(30 downto 21) & exe_engine.ir(20);
         end case;
       end if;
     end if;
@@ -563,11 +557,6 @@ begin
       exe_engine <= exe_engine_nxt;
     end if;
   end process execute_engine_fsm_sync;
-
-  -- PC output --
-  pc_curr_o <= exe_engine.pc(XLEN-1 downto 1) & '0'; -- address of current instruction
-  pc_next_o <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- address of next instruction
-  pc_ret_o  <= exe_engine.ra(XLEN-1 downto 1) & '0'; -- return address
 
   -- simplified rv32 opcode --
   opcode <= exe_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
@@ -872,6 +861,9 @@ begin
 
   -- instruction fetch --
   ctrl_o.if_fence     <= ctrl.if_fence;
+  ctrl_o.pc_cur       <= exe_engine.pc(XLEN-1 downto 1) & '0';
+  ctrl_o.pc_nxt       <= exe_engine.pc2(XLEN-1 downto 1) & '0';
+  ctrl_o.pc_ret       <= exe_engine.ra(XLEN-1 downto 1) & '0';
   -- register file --
   ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and (not trap_ctrl.exc_fire); -- inhibit write-back if exception
   ctrl_o.rf_rs1       <= exe_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c);
@@ -884,6 +876,7 @@ begin
   ctrl_o.alu_opa_mux  <= ctrl.alu_opa_mux;
   ctrl_o.alu_opb_mux  <= ctrl.alu_opb_mux;
   ctrl_o.alu_unsigned <= ctrl.alu_unsigned;
+  ctrl_o.alu_imm      <= immediate;
   ctrl_o.alu_cp_alu   <= ctrl.alu_cp_alu;
   ctrl_o.alu_cp_cfu   <= ctrl.alu_cp_cfu;
   ctrl_o.alu_cp_fpu   <= ctrl.alu_cp_fpu;
@@ -894,6 +887,11 @@ begin
   ctrl_o.lsu_mo_we    <= '1' when (exe_engine.state = EX_MEM_REQ) else '0'; -- write memory output registers (data & address)
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.prv_level_eff; -- effective privilege level for loads/stores in M-mode
+  -- control and status registers --
+  ctrl_o.csr_we       <= csr.we;
+  ctrl_o.csr_re       <= csr.re;
+  ctrl_o.csr_addr     <= csr.addr;
+  ctrl_o.csr_wdata    <= csr.wdata;
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
   ctrl_o.ir_funct12   <= exe_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c);
@@ -1357,14 +1355,6 @@ begin
     csr.rdata or       csr.operand  when "10", -- set
     csr.rdata and (not csr.operand) when "11", -- clear
     csr.operand                     when others; -- write
-
-
-  -- External CSR Interface -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  xcsr_we_o    <= csr.we;
-  xcsr_re_o    <= csr.re;
-  xcsr_addr_o  <= csr.addr;
-  xcsr_wdata_o <= csr.wdata;
 
 
   -- CSR Write Access -----------------------------------------------------------------------
