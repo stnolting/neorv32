@@ -1,11 +1,9 @@
 -- ================================================================================ --
 -- NEORV32 CPU - Central Control Unit                                               --
 -- -------------------------------------------------------------------------------- --
--- CPU operations are controlled by several "engines". These engines operate in     --
---  parallel to implement a simple 2-stage pipeline:                                --
 -- + Fetch engine:    Fetches 32-bit chunks of instruction words (pipeline stage 1) --
 -- + Issue engine:    Decodes RVC instructions, aligns & queues instruction words   --
--- + Execute engine:  Multi-cycle execution of instructions (pipeline stage 2)      --
+-- + Execute engine:  Multi-cycle execution of instruction (pipeline stage 2)       --
 -- + Trap controller: Handles interrupts and exceptions                             --
 -- + CSR module:      Read/write access to control and status registers             --
 -- + CPU counters:    Base and HPM counters                                         --
@@ -703,7 +701,7 @@ begin
       when EX_EXECUTE => -- decode and execute instruction (control will be here for exactly 1 cycle in any case)
       -- ------------------------------------------------------------
         exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0'; -- next PC (= PC + immediate)
-        trap_ctrl.instr_be <= pmp_fault_i; -- did this instruction cause a PMP-execute violation?
+        trap_ctrl.instr_be <= pmp_fault_i; -- did this instruction fetch cause a PMP-execute violation?
 
         -- decode instruction class/type; [NOTE] register file is read in THIS stage; due to the sync read data will be available in the NEXT state --
         case opcode is
