@@ -241,7 +241,7 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access switch (check I/D in time-multiplex) --
-  acc_addr <= ctrl_i.pc_nxt  when (ctrl_i.lsu_mo_we = '0') else addr_ls_i;
+  acc_addr <= ctrl_i.pc_nxt   when (ctrl_i.lsu_mo_we = '0') else addr_ls_i;
   acc_priv <= ctrl_i.cpu_priv when (ctrl_i.lsu_mo_we = '0') else ctrl_i.lsu_priv;
 
   region_gen:

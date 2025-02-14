@@ -40,20 +40,20 @@ entity neorv32_cpu_alu is
   );
   port (
     -- global control --
-    clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i      : in  ctrl_bus_t; -- main control bus
+    clk_i  : in  std_ulogic; -- global clock, rising edge
+    rstn_i : in  std_ulogic; -- global reset, low-active, async
+    ctrl_i : in  ctrl_bus_t; -- main control bus
     -- data input --
-    rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
-    rs3_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
+    rs1_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
+    rs2_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+    rs3_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
     -- data output --
-    cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
-    res_o       : out std_ulogic_vector(XLEN-1 downto 0); -- ALU result
-    add_o       : out std_ulogic_vector(XLEN-1 downto 0); -- address computation result
-    csr_o       : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
+    cmp_o  : out std_ulogic_vector(1 downto 0); -- comparator status
+    res_o  : out std_ulogic_vector(XLEN-1 downto 0); -- ALU result
+    add_o  : out std_ulogic_vector(XLEN-1 downto 0); -- address computation result
+    csr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
     -- status --
-    cp_done_o   : out std_ulogic  -- co-processor operation done?
+    done_o : out std_ulogic -- co-processor operation done?
   );
 end neorv32_cpu_alu;
 
@@ -108,7 +108,7 @@ begin
   opb <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i;
 
 
-  -- Adder/Subtracter Core ------------------------------------------------------------------
+  -- Adder/Subtractor Core ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   opa_x <= (opa(opa'left) and (not ctrl_i.alu_unsigned)) & opa; -- sign-extend
   opb_x <= (opb(opb'left) and (not ctrl_i.alu_unsigned)) & opb; -- sign-extend
@@ -144,7 +144,7 @@ begin
 
   -- multi-cycle co-processor operation done? --
   -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
-  cp_done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5) or cp_valid(6);
+  done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5) or cp_valid(6);
 
   -- co-processor result --
   -- > "cp_result" data has to be always zero unless the specific co-processor has been actually triggered
