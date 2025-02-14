@@ -8,7 +8,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -33,12 +33,8 @@ entity neorv32_cpu_pmp is
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  ctrl_bus_t; -- main control bus
     -- CSR interface --
-    csr_we_i    : in  std_ulogic; -- global write enable
-    csr_addr_i  : in  std_ulogic_vector(11 downto 0); -- address
-    csr_wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
     csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- address input --
-    addr_if_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- instruction fetch address
     addr_ls_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- load/store address
     -- access error --
     fault_o     : out std_ulogic -- permission violation
@@ -111,11 +107,11 @@ begin
 
   -- CSR Write Access: Configuration (PMPCFG) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_we_cfg: process(csr_we_i, csr_addr_i) -- write enable decoder
+  csr_we_cfg: process(ctrl_i) -- write enable decoder
   begin
     pmpcfg_we <= (others => '0');
-    if (csr_addr_i(11 downto 2) = csr_pmpcfg0_c(11 downto 2)) and (csr_we_i = '1') then
-      pmpcfg_we(to_integer(unsigned(csr_addr_i(1 downto 0)))) <= '1';
+    if (ctrl_i.csr_addr(11 downto 2) = csr_pmpcfg0_c(11 downto 2)) and (ctrl_i.csr_we = '1') then
+      pmpcfg_we(to_integer(unsigned(ctrl_i.csr_addr(1 downto 0)))) <= '1';
     end if;
   end process csr_we_cfg;
 
@@ -130,11 +126,11 @@ begin
       elsif rising_edge(clk_i) then
         if (pmpcfg_we(i/4) = '1') and (pmpcfg(i)(cfg_l_c) = '0') then -- unlocked write access
           -- permissions --
-          pmpcfg(i)(cfg_r_c) <= csr_wdata_i((i mod 4)*8+cfg_r_c); -- R (read)
-          pmpcfg(i)(cfg_w_c) <= csr_wdata_i((i mod 4)*8+cfg_w_c); -- W (write)
-          pmpcfg(i)(cfg_x_c) <= csr_wdata_i((i mod 4)*8+cfg_x_c); -- X (execute)
+          pmpcfg(i)(cfg_r_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_r_c); -- R (read)
+          pmpcfg(i)(cfg_w_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_w_c); -- W (write)
+          pmpcfg(i)(cfg_x_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_x_c); -- X (execute)
           -- mode --
-          mode_v := csr_wdata_i((i mod 4)*8+cfg_ah_c downto (i mod 4)*8+cfg_al_c);
+          mode_v := ctrl_i.csr_wdata((i mod 4)*8+cfg_ah_c downto (i mod 4)*8+cfg_al_c);
           if ((mode_v = mode_tor_c)   and (not TOR_EN)) or -- TOR mode not implemented
              ((mode_v = mode_na4_c)   and (not NAP_EN)) or -- NA4 mode not implemented
              ((mode_v = mode_napot_c) and (not NAP_EN)) or -- NAPOT mode not implemented
@@ -146,7 +142,7 @@ begin
           -- reserved --
           pmpcfg(i)(6 downto 5) <= (others => '0');
           -- locked --
-          pmpcfg(i)(cfg_l_c)  <= csr_wdata_i((i mod 4)*8+cfg_l_c);
+          pmpcfg(i)(cfg_l_c)  <= ctrl_i.csr_wdata((i mod 4)*8+cfg_l_c);
         end if;
       end if;
     end process csr_pmpcfg;
@@ -155,11 +151,11 @@ begin
 
   -- CSR Write Access: Address (PMPADDR) ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_we_addr: process(csr_we_i, csr_addr_i) -- write enable decoder
+  csr_we_addr: process(ctrl_i) -- write enable decoder
   begin
     pmpaddr_we <= (others => '0');
-    if (csr_addr_i(11 downto 4) = csr_pmpaddr0_c(11 downto 4)) and (csr_we_i = '1') then
-      pmpaddr_we(to_integer(unsigned(csr_addr_i(3 downto 0)))) <= '1';
+    if (ctrl_i.csr_addr(11 downto 4) = csr_pmpaddr0_c(11 downto 4)) and (ctrl_i.csr_we = '1') then
+      pmpaddr_we(to_integer(unsigned(ctrl_i.csr_addr(3 downto 0)))) <= '1';
     end if;
   end process csr_we_addr;
 
@@ -174,10 +170,10 @@ begin
         if (pmpaddr_we(i) = '1') and (pmpcfg(i)(cfg_l_c) = '0') then -- unlocked write access
           if (i < NUM_REGIONS-1) then
             if (pmpcfg(i+1)(cfg_l_c) = '0') or (pmpcfg(i+1)(cfg_ah_c downto cfg_al_c) /= mode_tor_c) then -- pmpcfg(i+1) not "LOCKED TOR"
-              pmpaddr(i) <= "00" & csr_wdata_i(XLEN-3 downto 0);
+              pmpaddr(i) <= "00" & ctrl_i.csr_wdata(XLEN-3 downto 0);
             end if;
           else -- very last entry
-            pmpaddr(i) <= "00" & csr_wdata_i(XLEN-3 downto 0);
+            pmpaddr(i) <= "00" & ctrl_i.csr_wdata(XLEN-3 downto 0);
           end if;
         end if;
       end if;
@@ -187,13 +183,13 @@ begin
 
   -- CSR Read Access ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_read_access: process(csr_addr_i, cfg_rd32, addr_rd)
+  csr_read_access: process(ctrl_i.csr_addr, cfg_rd32, addr_rd)
   begin
-    if (csr_addr_i(11 downto 5) = csr_pmpcfg0_c(11 downto 5)) then -- PMP CSR
-      if (csr_addr_i(4) = '0') then -- PMP configuration CSR
-        csr_rdata_o <= cfg_rd32(to_integer(unsigned(csr_addr_i(1 downto 0))));
+    if (ctrl_i.csr_addr(11 downto 5) = csr_pmpcfg0_c(11 downto 5)) then -- PMP CSR
+      if (ctrl_i.csr_addr(4) = '0') then -- PMP configuration CSR
+        csr_rdata_o <= cfg_rd32(to_integer(unsigned(ctrl_i.csr_addr(1 downto 0))));
       else -- PMP address CSR
-        csr_rdata_o <= addr_rd(to_integer(unsigned(csr_addr_i(3 downto 0))));
+        csr_rdata_o <= addr_rd(to_integer(unsigned(ctrl_i.csr_addr(3 downto 0))));
       end if;
     else
       csr_rdata_o <= (others => '0');
@@ -245,7 +241,7 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access switch (check I/D in time-multiplex) --
-  acc_addr <= addr_if_i       when (ctrl_i.lsu_mo_we = '0') else addr_ls_i;
+  acc_addr <= ctrl_i.pc_nxt  when (ctrl_i.lsu_mo_we = '0') else addr_ls_i;
   acc_priv <= ctrl_i.cpu_priv when (ctrl_i.lsu_mo_we = '0') else ctrl_i.lsu_priv;
 
   region_gen:

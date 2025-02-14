@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -43,21 +43,15 @@ entity neorv32_cpu_alu is
     clk_i       : in  std_ulogic; -- global clock, rising edge
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  ctrl_bus_t; -- main control bus
-    -- CSR interface --
-    csr_we_i    : in  std_ulogic; -- global write enable
-    csr_addr_i  : in  std_ulogic_vector(11 downto 0); -- address
-    csr_wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
-    csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- data input --
     rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     rs3_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
-    pc_i        : in  std_ulogic_vector(XLEN-1 downto 0); -- current PC
-    imm_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- immediate
     -- data output --
     cmp_o       : out std_ulogic_vector(1 downto 0); -- comparator status
     res_o       : out std_ulogic_vector(XLEN-1 downto 0); -- ALU result
     add_o       : out std_ulogic_vector(XLEN-1 downto 0); -- address computation result
+    csr_o       : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
     -- status --
     cp_done_o   : out std_ulogic  -- co-processor operation done?
   );
@@ -110,8 +104,8 @@ begin
 
   -- ALU Input Operand Select ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  opa <= pc_i  when (ctrl_i.alu_opa_mux = '1') else rs1_i;
-  opb <= imm_i when (ctrl_i.alu_opb_mux = '1') else rs2_i;
+  opa <= ctrl_i.pc_cur  when (ctrl_i.alu_opa_mux = '1') else rs1_i;
+  opb <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i;
 
 
   -- Adder/Subtracter Core ------------------------------------------------------------------
@@ -158,7 +152,7 @@ begin
 
   -- co-processor CSR read-back --
   -- > "csr_rdata_*" data has to be always zero unless the specific co-processor is actually being accessed
-  csr_rdata_o <= csr_rdata_fpu or csr_rdata_cfu;
+  csr_o <= csr_rdata_fpu or csr_rdata_cfu;
 
   -- shift amount --
   cp_shamt <= opb(index_size_f(XLEN)-1 downto 0);
@@ -257,27 +251,27 @@ begin
     neorv32_cpu_cp_fpu_inst: entity neorv32.neorv32_cpu_cp_fpu
     port map (
       -- global control --
-      clk_i       => clk_i,                  -- global clock, rising edge
-      rstn_i      => rstn_i,                 -- global reset, low-active, async
-      ctrl_i      => ctrl_i,                 -- main control bus
+      clk_i       => clk_i,                       -- global clock, rising edge
+      rstn_i      => rstn_i,                      -- global reset, low-active, async
+      ctrl_i      => ctrl_i,                      -- main control bus
       -- CSR interface --
-      csr_we_i    => fpu_csr_we,             -- write enable
-      csr_addr_i  => csr_addr_i(1 downto 0), -- address
-      csr_wdata_i => csr_wdata_i,            -- write data
-      csr_rdata_o => fpu_csr_rd,             -- read data
+      csr_we_i    => fpu_csr_we,                  -- write enable
+      csr_addr_i  => ctrl_i.csr_addr(1 downto 0), -- address
+      csr_wdata_i => ctrl_i.csr_wdata,            -- write data
+      csr_rdata_o => fpu_csr_rd,                  -- read data
       -- data input --
-      cmp_i       => cmp,                    -- comparator status
-      rs1_i       => rs1_i,                  -- rf source 1
-      rs2_i       => rs2_i,                  -- rf source 2
-      rs3_i       => rs3_i,                  -- rf source 3
+      cmp_i       => cmp,                         -- comparator status
+      rs1_i       => rs1_i,                       -- rf source 1
+      rs2_i       => rs2_i,                       -- rf source 2
+      rs3_i       => rs3_i,                       -- rf source 3
       -- result and status --
-      res_o       => cp_result(3),           -- operation result
-      valid_o     => cp_valid(3)             -- data output valid
+      res_o       => cp_result(3),                -- operation result
+      valid_o     => cp_valid(3)                  -- data output valid
     );
 
     -- CSR proxy --
-    fpu_csr_en    <= '1' when (csr_addr_i(11 downto 2) = csr_fflags_c(11 downto 2)) else '0';
-    fpu_csr_we    <= fpu_csr_en and csr_we_i;
+    fpu_csr_en    <= '1' when (ctrl_i.csr_addr(11 downto 2) = csr_fflags_c(11 downto 2)) else '0';
+    fpu_csr_we    <= fpu_csr_en and ctrl_i.csr_we;
     csr_rdata_fpu <= fpu_csr_rd when (fpu_csr_en = '1') else (others => '0');
   end generate;
 
@@ -305,8 +299,8 @@ begin
       active_i    => cfu_active,                     -- operation in progress, CPU is waiting for CFU
       -- CSR interface --
       csr_we_i    => cfu_csr_we,                     -- write enable
-      csr_addr_i  => csr_addr_i(1 downto 0),         -- address
-      csr_wdata_i => csr_wdata_i,                    -- write data
+      csr_addr_i  => ctrl_i.csr_addr(1 downto 0),    -- address
+      csr_wdata_i => ctrl_i.csr_wdata,               -- write data
       csr_rdata_o => cfu_csr_rd,                     -- read data
       -- operands --
       rtype_i     => ctrl_i.ir_opcode(5),            -- instruction type (R3-type or R4-type)
@@ -321,8 +315,8 @@ begin
     );
 
     -- CSR proxy --
-    cfu_csr_en    <= '1' when (csr_addr_i(11 downto 2) = csr_cfureg0_c(11 downto 2)) else '0';
-    cfu_csr_we    <= cfu_csr_en and csr_we_i;
+    cfu_csr_en    <= '1' when (ctrl_i.csr_addr(11 downto 2) = csr_cfureg0_c(11 downto 2)) else '0';
+    cfu_csr_we    <= cfu_csr_en and ctrl_i.csr_we;
     csr_rdata_cfu <= cfu_csr_rd when (cfu_csr_en = '1') else (others => '0');
 
     -- response proxy --
