@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110102"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110103"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -504,6 +504,9 @@ package neorv32_package is
   type ctrl_bus_t is record
     -- instruction fetch --
     if_fence     : std_ulogic;                     -- fence.i operation
+    pc_cur       : std_ulogic_vector(31 downto 0); -- address of current instruction
+    pc_nxt       : std_ulogic_vector(31 downto 0); -- address of next instruction
+    pc_ret       : std_ulogic_vector(31 downto 0); -- return address
     -- register file --
     rf_wb_en     : std_ulogic; -- write back enable
     rf_rs1       : std_ulogic_vector(4 downto 0);  -- source register 1 address
@@ -516,6 +519,7 @@ package neorv32_package is
     alu_opa_mux  : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
     alu_opb_mux  : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
     alu_unsigned : std_ulogic;                     -- is unsigned ALU operation
+    alu_imm      : std_ulogic_vector(31 downto 0); -- immediate
     alu_cp_alu   : std_ulogic;                     -- ALU.base co-processor trigger (one-shot)
     alu_cp_cfu   : std_ulogic;                     -- CFU co-processor trigger (one-shot)
     alu_cp_fpu   : std_ulogic;                     -- FPU co-processor trigger (one-shot)
@@ -526,6 +530,11 @@ package neorv32_package is
     lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
     lsu_fence    : std_ulogic;                     -- fence operation
     lsu_priv     : std_ulogic;                     -- effective privilege mode for load/store
+    -- control and status registers --
+    csr_we       : std_ulogic;                     -- global write-enable
+    csr_re       : std_ulogic;                     -- global read-enable
+    csr_addr     : std_ulogic_vector(11 downto 0); -- address
+    csr_wdata    : std_ulogic_vector(31 downto 0); -- write data
     -- instruction word --
     ir_funct3    : std_ulogic_vector(2 downto 0);  -- funct3 bit field
     ir_funct12   : std_ulogic_vector(11 downto 0); -- funct12 bit field
@@ -540,6 +549,9 @@ package neorv32_package is
   -- control bus reset initializer --
   constant ctrl_bus_zero_c : ctrl_bus_t := (
     if_fence     => '0',
+    pc_cur       => (others => '0'),
+    pc_nxt       => (others => '0'),
+    pc_ret       => (others => '0'),
     rf_wb_en     => '0',
     rf_rs1       => (others => '0'),
     rf_rs2       => (others => '0'),
@@ -550,6 +562,7 @@ package neorv32_package is
     alu_opa_mux  => '0',
     alu_opb_mux  => '0',
     alu_unsigned => '0',
+    alu_imm      => (others => '0'),
     alu_cp_alu   => '0',
     alu_cp_cfu   => '0',
     alu_cp_fpu   => '0',
@@ -559,6 +572,10 @@ package neorv32_package is
     lsu_mo_we    => '0',
     lsu_fence    => '0',
     lsu_priv     => '0',
+    csr_we       => '0',
+    csr_re       => '0',
+    csr_addr     => (others => '0'),
+    csr_wdata    => (others => '0'),
     ir_funct3    => (others => '0'),
     ir_funct12   => (others => '0'),
     ir_opcode    => (others => '0'),
