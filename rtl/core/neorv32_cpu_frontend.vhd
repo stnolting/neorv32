@@ -39,7 +39,7 @@ end neorv32_cpu_frontend;
 architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
   -- instruction fetch engine --
-  type fetch_state_t is (IF_RESTART, IF_REQUEST, IF_PENDING);
+  type fetch_state_t is (S_RESTART, S_REQUEST, S_PENDING);
   type fetch_t is record
     state   : fetch_state_t;
     restart : std_ulogic; -- buffered restart request (after branch)
@@ -83,41 +83,41 @@ begin
   fetch_fsm: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      fetch.state   <= IF_RESTART;
+      fetch.state   <= S_RESTART;
       fetch.restart <= '1'; -- reset IPB and issue engine
       fetch.pc      <= (others => '0');
       fetch.priv    <= priv_mode_m_c;
     elsif rising_edge(clk_i) then
       case fetch.state is
 
-        when IF_REQUEST => -- request next 32-bit-aligned instruction word
+        when S_REQUEST => -- request next 32-bit-aligned instruction word
         -- ------------------------------------------------------------
           fetch.restart <= fetch.restart or ctrl_i.if_reset; -- buffer restart request
           if (ipb.free = "11") then -- free IPB space?
-            fetch.state <= IF_PENDING;
+            fetch.state <= S_PENDING;
           elsif (fetch.restart = '1') or (ctrl_i.if_reset = '1') then -- restart because of branch
-            fetch.state <= IF_RESTART;
+            fetch.state <= S_RESTART;
           end if;
 
-        when IF_PENDING => -- wait for bus response and write instruction data to prefetch buffer
+        when S_PENDING => -- wait for bus response and write instruction data to prefetch buffer
         -- ------------------------------------------------------------
           fetch.restart <= fetch.restart or ctrl_i.if_reset; -- buffer restart request
           if (fetch.resp = '1') then -- wait for bus response
             fetch.pc    <= std_ulogic_vector(unsigned(fetch.pc) + 4); -- next word
             fetch.pc(1) <= '0'; -- (re-)align to 32-bit
             if (fetch.restart = '1') or (ctrl_i.if_reset = '1') then -- restart request due to branch
-              fetch.state <= IF_RESTART;
+              fetch.state <= S_RESTART;
             else -- request next linear instruction word
-              fetch.state <= IF_REQUEST;
+              fetch.state <= S_REQUEST;
             end if;
           end if;
 
-        when others => -- IF_RESTART: set new start address
+        when others => -- S_RESTART: set new start address
         -- ------------------------------------------------------------
           fetch.restart <= '0'; -- restart done
           fetch.pc      <= ctrl_i.pc_nxt; -- initialize from PC incl. 16-bit-alignment bit
           fetch.priv    <= ctrl_i.cpu_priv; -- set new privilege level
-          fetch.state   <= IF_REQUEST;
+          fetch.state   <= S_REQUEST;
 
       end case;
     end if;
@@ -127,7 +127,7 @@ begin
   ibus_req_o.addr <= fetch.pc(XLEN-1 downto 2) & "00"; -- word aligned
 
   -- instruction fetch (read) request if IPB not full --
-  ibus_req_o.stb <= '1' when (fetch.state = IF_REQUEST) and (ipb.free = "11") else '0';
+  ibus_req_o.stb <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
 
   -- instruction bus response --
   fetch.resp <= ibus_rsp_i.ack or ibus_rsp_i.err;
@@ -137,8 +137,8 @@ begin
   ipb.wdata(1) <= ibus_rsp_i.err & ibus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
-  ipb.we(0) <= '1' when (fetch.state = IF_PENDING) and (fetch.resp = '1') and ((fetch.pc(1) = '0') or (not RVC_EN)) else '0';
-  ipb.we(1) <= '1' when (fetch.state = IF_PENDING) and (fetch.resp = '1') else '0';
+  ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (fetch.resp = '1') and ((fetch.pc(1) = '0') or (not RVC_EN)) else '0';
+  ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (fetch.resp = '1') else '0';
 
   -- bus access meta data --
   ibus_req_o.data  <= (others => '0'); -- read-only
@@ -279,7 +279,7 @@ begin
   frontend_o.instr  <= issue.instr;
   frontend_o.compr  <= issue.compr;
   frontend_o.error  <= issue.error;
-  frontend_o.halted <= '1' when (fetch.state = IF_REQUEST) and (ipb.free /= "11") else '0';
+  frontend_o.halted <= '1' when (fetch.state = S_REQUEST) and (ipb.free /= "11") else '0';
 
 
 end neorv32_cpu_frontend_rtl;

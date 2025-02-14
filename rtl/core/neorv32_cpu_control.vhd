@@ -567,7 +567,7 @@ begin
       -- ------------------------------------------------------------
         exe_engine_nxt.ra <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- output return address
         ctrl_nxt.rf_wb_en <= opcode(2); -- save return address if link operation (won't happen if exception)
-        if (trap_ctrl.exc_buf(exc_illegal_c) = '0') and (branch_taken = '1') then -- valid taken branch
+        if (trap_ctrl.exc_buf(exc_illegal_c) = '0') and (branch_taken = '1') then -- valid taken branch / jump
           trap_ctrl.instr_ma   <= alu_add_i(1) and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination is misaligned?
           if_reset             <= '1'; -- reset instruction fetch to restart at modified PC
           exe_engine_nxt.pc2   <= alu_add_i(XLEN-1 downto 1) & '0';
@@ -1814,8 +1814,8 @@ begin
   end process counter_event;
 
   -- RISC-V-compliant counter events --
-  cnt_event(hpmcnt_event_cy_c) <= '1' when (sleep_mode = '0')              else '0'; -- cycle: active cycle
-  cnt_event(hpmcnt_event_tm_c) <=                                               '0'; -- time: not available
+  cnt_event(hpmcnt_event_cy_c) <= '1' when (sleep_mode = '0') else '0'; -- cycle: active cycle
+  cnt_event(hpmcnt_event_tm_c) <= '0'; -- time: not available
   cnt_event(hpmcnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) else '0'; -- instret: retired (==executed!) instruction
 
   -- NEORV32-specific counter events --
