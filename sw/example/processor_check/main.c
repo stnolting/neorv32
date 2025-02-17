@@ -1912,7 +1912,7 @@ int main() {
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_TW);
 
     // put CPU into sleep mode (from user mode)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       asm volatile ("wfi"); // this has to fail
     }
