@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -76,7 +76,7 @@ int main() {
 
 
   // heap size definition
-  uint32_t max_heap = (uint32_t)neorv32_heap_size_c;
+  uint32_t max_heap = (uint32_t)NEORV32_HEAP_SIZE;
   if (max_heap > 0){
     neorv32_uart0_printf("MAX heap size: %u bytes\n", max_heap);
   }

@@ -5,6 +5,13 @@
 #define BAUD_RATE 19200
 
 
+// Simple bus-wait helper
+void delay_ms(uint32_t time_ms) {
+  neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), time_ms);
+}
+
+
+// Main function
 int main() {
 
   // setup NEORV32 runtime environment
@@ -23,7 +30,7 @@ int main() {
   while (1) {
     cnt = (cnt + 1) & 0xff; // increment counter and mask for lowest 8 bit
     neorv32_gpio_port_set(cnt); // output via GPIO.out
-    neorv32_cpu_delay_ms(250); // wait 250ms using busy wait
+    delay_ms(250); // wait 250ms using busy wait
   }
 
   // this should never be reached
