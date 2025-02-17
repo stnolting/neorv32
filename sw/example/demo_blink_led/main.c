@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -13,6 +13,16 @@
  * @brief Minimal blinking LED demo program using the lowest 8 bits of the GPIO.output port.
  **************************************************************************/
 #include <neorv32.h>
+
+
+/**********************************************************************//**
+ * Simple bus-wait helper.
+ *
+ * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
+ **************************************************************************/
+void delay_ms(uint32_t time_ms) {
+  neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), time_ms);
+}
 
 
 /**********************************************************************//**
@@ -31,7 +41,7 @@ int main() {
 
   while (1) {
     neorv32_gpio_port_set(cnt++ & 0xFF); // increment counter and mask for lowest 8 bit
-    neorv32_cpu_delay_ms(250); // wait 250ms using busy wait
+    delay_ms(250); // wait 250ms using busy wait
   }
 
   // this should never be reached
