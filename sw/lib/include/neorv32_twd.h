@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,14 +9,10 @@
 /**
  * @file neorv32_twd.h
  * @brief Two-Wire Device Controller (TWD) HW driver header file.
- *
- * @note These functions should only be used if the TWD unit was synthesized (IO_TWD_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_twd_h
-#define neorv32_twd_h
+#ifndef NEORV32_TWD_H
+#define NEORV32_TWD_H
 
 #include <stdint.h>
 
@@ -89,4 +85,4 @@ uint8_t neorv32_twd_get(void);
 /**@}*/
 
 
-#endif // neorv32_twd_h
+#endif // NEORV32_TWD_H

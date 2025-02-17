@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,12 +9,10 @@
 /**
  * @file neorv32_uart.h
  * @brief Universal asynchronous receiver/transmitter (UART0/UART1) HW driver header file
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_uart_h
-#define neorv32_uart_h
+#ifndef NEORV32_UART_H
+#define NEORV32_UART_H
 
 #include <stdint.h>
 #include <stdarg.h>
@@ -115,7 +113,7 @@ int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ec
 
 
 /**********************************************************************//**
- * @name UART wrappers for easy access
+ * @name UART aliases for easy access
  **************************************************************************/
 /**@{*/
 #define neorv32_uart0_available()                  neorv32_uart_available(NEORV32_UART0)
@@ -158,4 +156,4 @@ int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ec
 /**@}*/
 
 
-#endif // neorv32_uart_h
+#endif // NEORV32_UART_H

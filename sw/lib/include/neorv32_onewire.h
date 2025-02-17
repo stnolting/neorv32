@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,14 +9,10 @@
 /**
  * @file neorv32_onewire.h
  * @brief 1-Wire Interface Controller (ONEWIRE) HW driver header file.
- *
- * @note These functions should only be used if the ONEWIRE unit was synthesized (IO_ONEWIRE_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_onewire_h
-#define neorv32_onewire_h
+#ifndef NEORV32_ONEWIRE_H
+#define NEORV32_ONEWIRE_H
 
 #include <stdint.h>
 
@@ -104,4 +100,4 @@ void    neorv32_onewire_write_byte_blocking(uint8_t byte);
 /**@}*/
 
 
-#endif // neorv32_onewire_h
+#endif // NEORV32_ONEWIRE_H

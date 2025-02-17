@@ -11,8 +11,8 @@
  * @brief Watchdog Timer (WDT) HW driver header file.
  */
 
-#ifndef neorv32_wdt_h
-#define neorv32_wdt_h
+#ifndef NEORV32_WDT_H
+#define NEORV32_WDT_H
 
 #include <stdint.h>
 
@@ -73,4 +73,4 @@ int  neorv32_wdt_get_cause(void);
 /**@}*/
 
 
-#endif // neorv32_wdt_h
+#endif // NEORV32_WDT_H

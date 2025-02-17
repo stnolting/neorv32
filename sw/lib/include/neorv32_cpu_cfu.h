@@ -9,12 +9,10 @@
 /**
  * @file neorv32_cpu_cfu.h
  * @brief CPU Core custom functions unit HW driver header file.
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_cpu_cfu_h
-#define neorv32_cpu_cfu_h
+#ifndef NEORV32_CPU_CFU_H
+#define NEORV32_CPU_CFU_H
 
 #include <stdint.h>
 
@@ -36,4 +34,5 @@ int neorv32_cpu_cfu_available(void);
 #define neorv32_cfu_r4_instr(funct3, rs1, rs2, rs3) CUSTOM_INSTR_R4_TYPE(rs3, rs2, rs1, funct3, 0b0101011)
 /**@}*/
 
-#endif // neorv32_cpu_cfu_h
+
+#endif // NEORV32_CPU_CFU_H
