@@ -121,86 +121,6 @@ void neorv32_cpu_set_minstret(uint64_t value) {
 
 
 /**********************************************************************//**
- * Delay function using busy wait.
- *
- * @note This function uses the cycle CPU counter if available. Otherwise
- * the CLINT.MTIMER system timer is used if available. A simple loop is used as
- * alternative fall-back (imprecise!).
- *
- * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
- **************************************************************************/
-void neorv32_cpu_delay_ms(uint32_t time_ms) {
-
-  uint32_t clock = neorv32_sysinfo_get_clk(); // clock ticks per second
-  clock = clock / 1000; // clock ticks per ms
-  uint64_t wait_cycles = ((uint64_t)clock) * ((uint64_t)time_ms);
-  uint64_t tmp = 0;
-
-  // use CYCLE CSRs
-  // -------------------------------------------
-  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_ZICNTR)) && // cycle counter available?
-      ((neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT) & (1<<CSR_MCOUNTINHIBIT_CY)) == 0)) { // counter is running?
-    tmp = neorv32_cpu_get_cycle() + wait_cycles;
-    while (neorv32_cpu_get_cycle() < tmp);
-  }
-
-  // use MTIME machine timer
-  // -------------------------------------------
-  else if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) { // MTIMER available?
-    tmp = neorv32_clint_time_get() + wait_cycles;
-    while (neorv32_clint_time_get() < tmp);
-  }
-
-  // simple loop as fall-back (imprecise!)
-  // -------------------------------------------
-  else {
-    const uint32_t loop_cycles_c = 16; // clock cycles per iteration of the ASM loop
-    uint32_t iterations = (uint32_t)(wait_cycles / loop_cycles_c);
-    asm volatile (" .balign 4                                        \n" // make sure this is 32-bit aligned
-                  " __neorv32_cpu_delay_ms_start:                    \n"
-                  " beq  %[cnt_r], zero, __neorv32_cpu_delay_ms_end  \n" // 3 cycles (not taken)
-                  " beq  %[cnt_r], zero, __neorv32_cpu_delay_ms_end  \n" // 3 cycles (never taken)
-                  " addi %[cnt_w], %[cnt_r], -1                      \n" // 2 cycles
-                  " nop                                              \n" // 2 cycles
-                  " j    __neorv32_cpu_delay_ms_start                \n" // 6 cycles
-                  " __neorv32_cpu_delay_ms_end: "
-                  : [cnt_w] "=r" (iterations) : [cnt_r] "r" (iterations));
-  }
-}
-
-
-/**********************************************************************//**
- * Get actual clocking frequency from prescaler select #NEORV32_CLOCK_PRSC_enum
- *
- * @param[in] prsc Prescaler select #NEORV32_CLOCK_PRSC_enum.
- * return Actual _raw_ clock frequency in Hz.
- **************************************************************************/
-uint32_t neorv32_cpu_get_clk_from_prsc(int prsc) {
-
-  if ((prsc < CLK_PRSC_2) || (prsc > CLK_PRSC_4096)) { // out of range?
-    return 0;
-  }
-
-  uint32_t res = 0;
-  uint32_t clock = neorv32_sysinfo_get_clk(); // SoC main clock in Hz
-
-  switch(prsc & 7) {
-    case CLK_PRSC_2    : res = clock/2    ; break;
-    case CLK_PRSC_4    : res = clock/4    ; break;
-    case CLK_PRSC_8    : res = clock/8    ; break;
-    case CLK_PRSC_64   : res = clock/64   ; break;
-    case CLK_PRSC_128  : res = clock/128  ; break;
-    case CLK_PRSC_1024 : res = clock/1024 ; break;
-    case CLK_PRSC_2048 : res = clock/2048 ; break;
-    case CLK_PRSC_4096 : res = clock/4096 ; break;
-    default: break;
-  }
-
-  return res;
-}
-
-
-/**********************************************************************//**
  * Physical memory protection (PMP): Get number of available regions.
  *
  * @warning This function overrides all available PMPCFG* CSRs!
@@ -428,22 +348,4 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
   }
 
   return cnt;
-}
-
-
-/**********************************************************************//**
- * Switch from privilege mode MACHINE to privilege mode USER.
- **************************************************************************/
-void __attribute__((naked,noinline)) neorv32_cpu_goto_user_mode(void) {
-
-  asm volatile (
-    "csrw mepc, ra     \n" // move return address to mepc so we can return using mret; we can now use ra as temp register
-    "li   ra, 3<<11    \n" // bit mask to clear the two MPP bits
-    "csrc mstatus, ra  \n" // clear MPP bits -> MPP = u-mode
-    "csrr ra, mstatus  \n" // get mstatus
-    "andi ra, ra, 1<<3 \n" // isolate MIE bit
-    "slli ra, ra, 4    \n" // shift to MPIE position
-    "csrs mstatus, ra  \n" // set MPIE if MIE is set
-    "mret              \n" // return and switch to user mode
-  );
 }
