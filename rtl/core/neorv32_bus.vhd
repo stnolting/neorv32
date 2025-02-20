@@ -117,7 +117,6 @@ begin
     begin
       -- defaults --
       state_nxt <= state;
-      sel       <= '0';
       stb       <= '0';
 
       -- state machine --
@@ -125,7 +124,6 @@ begin
 
         when S_CHECK_A => -- check if access from port A
         -- ------------------------------------------------------------
-          sel <= '0';
           if (a_req_i.stb = '1') or (a_req = '1') then
             stb       <= '1';
             state_nxt <= S_BUSY_A;
@@ -135,14 +133,12 @@ begin
 
         when S_BUSY_A => -- port B access in progress
         -- ------------------------------------------------------------
-          sel <= '0';
           if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
             state_nxt <= S_CHECK_B;
           end if;
 
         when S_CHECK_B => -- check if access from port B
         -- ------------------------------------------------------------
-          sel <= '1';
           if (b_req_i.stb = '1') or (b_req = '1') then
             stb       <= '1';
             state_nxt <= S_BUSY_B;
@@ -152,7 +148,6 @@ begin
 
         when S_BUSY_B => -- port B access in progress
         -- ------------------------------------------------------------
-          sel <= '1';
           if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
             state_nxt <= S_CHECK_A;
           end if;
@@ -163,6 +158,9 @@ begin
 
       end case;
     end process arbiter_fsm;
+ 
+    -- port select --
+    sel <= '1' when (state = S_CHECK_B) or (state = S_BUSY_B) else '0';
   end generate;
 
 
@@ -955,7 +953,7 @@ begin
   end process rvs_control;
 
   -- check if reservation-set operation --
-  rvso <= '1' when (core_req_i.amoop(3 downto 2) = "10") else '0';
+  rvso <= '1' when (core_req_i.amo = '1') and (core_req_i.amoop(3 downto 2) = "10") else '0';
 
 
   -- System Bus Interface -------------------------------------------------------------------
