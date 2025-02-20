@@ -49,7 +49,7 @@ entity neorv32_top is
     RISCV_ISA_Zbkx        : boolean                        := false;       -- implement cryptography crossbar permutation extension
     RISCV_ISA_Zbs         : boolean                        := false;       -- implement single-bit bit-manipulation extension
     RISCV_ISA_Zfinx       : boolean                        := false;       -- implement 32-bit floating-point extension
-    RISCV_ISA_Zicntr      : boolean                        := true;        -- implement base counters
+    RISCV_ISA_Zicntr      : boolean                        := false;       -- implement base counters
     RISCV_ISA_Zicond      : boolean                        := false;       -- implement integer conditional operations
     RISCV_ISA_Zihpm       : boolean                        := false;       -- implement hardware performance monitors
     RISCV_ISA_Zknd        : boolean                        := false;       -- implement cryptography NIST AES decryption extension
@@ -69,8 +69,8 @@ entity neorv32_top is
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       : natural range 0 to 16          := 0;           -- number of regions (0..16)
     PMP_MIN_GRANULARITY   : natural                        := 4;           -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
-    PMP_TOR_MODE_EN       : boolean                        := true;        -- implement TOR mode
-    PMP_NAP_MODE_EN       : boolean                        := true;        -- implement NAPOT/NA4 modes
+    PMP_TOR_MODE_EN       : boolean                        := false;       -- implement TOR mode
+    PMP_NAP_MODE_EN       : boolean                        := false;       -- implement NAPOT/NA4 modes
 
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS          : natural range 0 to 13          := 0;           -- number of implemented HPM counters (0..13)
