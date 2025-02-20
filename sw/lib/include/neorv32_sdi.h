@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,14 +9,10 @@
 /**
  * @file neorv32_sdi.h
  * @brief Serial data interface controller (SPPI) HW driver header file.
- *
- * @note These functions should only be used if the SDI unit was synthesized (IO_SDI_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_sdi_h
-#define neorv32_sdi_h
+#ifndef NEORV32_SDI_H
+#define NEORV32_SDI_H
 
 #include <stdint.h>
 
@@ -74,4 +70,4 @@ int  neorv32_sdi_check_cs(void);
 /**@}*/
 
 
-#endif // neorv32_sdi_h
+#endif // NEORV32_SDI_H

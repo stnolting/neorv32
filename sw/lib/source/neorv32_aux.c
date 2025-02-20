@@ -15,6 +15,35 @@
 
 
 /**********************************************************************//**
+ * Simple delay function using busy-wait.
+ *
+ * @warning Timing is imprecise! Use CLINT.MTIME or CSR.[M]CYCLE[H] for precise timing.
+ *
+ * @param[in] clock_hz CPU clock speed in Hz.
+ * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
+ **************************************************************************/
+void neorv32_aux_delay_ms(uint32_t clock_hz, uint32_t time_ms) {
+
+  // clock ticks per ms (avoid division, therefore shift by 10 instead dividing by 1000)
+  uint32_t ms_ticks = clock_hz >> 10;
+  uint64_t wait_cycles = ((uint64_t)ms_ticks) * ((uint64_t)time_ms);
+  // divide by clock cycles per iteration of the ASM loop (16 = shift by 4)
+  uint32_t iterations = (uint32_t)(wait_cycles >> 4);
+
+  asm volatile (
+    " __neorv32_aux_delay_ms_start:                   \n"
+    " beq  %[cnt_r], zero, __neorv32_aux_delay_ms_end \n" // 3 cycles (if not taken)
+    " bne  zero,     zero, __neorv32_aux_delay_ms_end \n" // 3 cycles (never taken)
+    " addi %[cnt_w], %[cnt_r], -1                     \n" // 2 cycles
+    " nop                                             \n" // 2 cycles
+    " j    __neorv32_aux_delay_ms_start               \n" // 6 cycles
+    " __neorv32_aux_delay_ms_end:                     \n"
+    : [cnt_w] "=r" (iterations) : [cnt_r] "r" (iterations)
+  );
+}
+
+
+/**********************************************************************//**
  * Convert date to Unix time stamp.
  *
  * @copyright Copyright (C) 2010-2024 Oryx Embedded SARL. All rights reserved.

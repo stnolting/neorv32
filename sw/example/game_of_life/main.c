@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -21,17 +21,17 @@
  **************************************************************************/
 /**@{*/
 /** UART BAUD rate */
-#define BAUD_RATE     19200
+#define BAUD_RATE   (19200)
 /** Universe x size (has to be a multiple of 8) */
-#define NUM_CELLS_X   160
+#define NUM_CELLS_X (160)
 /** Universe y size */
-#define NUM_CELLS_Y   40
+#define NUM_CELLS_Y (40)
 /** Delay between generations in ms */
-#define GEN_DELAY     500
+#define GEN_DELAY   (500)
 /** Symbol for dead cell */
-#define CELL_DEAD  (' ')
+#define CELL_DEAD   (' ')
 /** Symbol for alive cell */
-#define CELL_ALIVE ('#')
+#define CELL_ALIVE  ('#')
 /**@}*/
 
 
@@ -48,6 +48,16 @@ int get_cell(int u, int x, int y);
 int get_neighborhood(int u, int x, int y);
 void print_universe(int u);
 int pop_count(int u);
+
+
+/**********************************************************************//**
+ * Simple bus-wait helper.
+ *
+ * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
+ **************************************************************************/
+void delay_ms(uint32_t time_ms) {
+  neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), time_ms);
+}
 
 
 /**********************************************************************//**
@@ -168,7 +178,7 @@ int main(void) {
       generation++;
 
       // wait GEN_DELAY ms
-      neorv32_cpu_delay_ms(GEN_DELAY);
+      delay_ms(GEN_DELAY);
     }
 
   }

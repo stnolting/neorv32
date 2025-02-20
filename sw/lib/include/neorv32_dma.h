@@ -11,8 +11,8 @@
  * @brief Direct Memory Access Controller (DMA) HW driver header file.
  */
 
-#ifndef neorv32_dma_h
-#define neorv32_dma_h
+#ifndef NEORV32_DMA_H
+#define NEORV32_DMA_H
 
 #include <stdint.h>
 
@@ -105,4 +105,4 @@ int  neorv32_dma_done(void);
 /**@}*/
 
 
-#endif // neorv32_dma_h
+#endif // NEORV32_DMA_H

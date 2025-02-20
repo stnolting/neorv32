@@ -11,8 +11,8 @@
  * @brief Symmetric multiprocessing (SMP) library header file.
  */
 
-#ifndef neorv32_smp_h
-#define neorv32_smp_h
+#ifndef NEORV32_SMP_H
+#define NEORV32_SMP_H
 
 
 /**********************************************************************//**
@@ -81,4 +81,4 @@ inline int __attribute__ ((always_inline)) neorv32_smp_icc_free(void) {
   return neorv32_cpu_csr_read(CSR_MXICCSREG) & (1 << CSR_MXICCSREG_TX_FREE);
 }
 
-#endif // neorv32_smp_h
+#endif // NEORV32_SMP_H

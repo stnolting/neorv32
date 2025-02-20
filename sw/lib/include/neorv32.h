@@ -11,8 +11,8 @@
  * @brief Main NEORV32 core library / driver / HAL include file.
  */
 
-#ifndef neorv32_h
-#define neorv32_h
+#ifndef NEORV32_H
+#define NEORV32_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -182,9 +182,9 @@ extern char __heap_start[];    /**< heap start address */
 extern char __heap_end[];      /**< heap last address */
 extern char __crt0_max_heap[]; /**< heap size in bytes */
 // aliases
-#define neorv32_heap_begin_c ((uint32_t)&__heap_start[0])
-#define neorv32_heap_end_c   ((uint32_t)&__heap_end[0])
-#define neorv32_heap_size_c  ((uint32_t)&__crt0_max_heap[0])
+#define NEORV32_HEAP_BEGIN ((uint32_t)&__heap_start[0])
+#define NEORV32_HEAP_END   ((uint32_t)&__heap_end[0])
+#define NEORV32_HEAP_SIZE  ((uint32_t)&__crt0_max_heap[0])
 /**@}*/
 
 
@@ -273,4 +273,4 @@ typedef union {
 }
 #endif
 
-#endif // neorv32_h
+#endif // NEORV32_H

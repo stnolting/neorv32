@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,14 +9,10 @@
 /**
  * @file neorv32_gptmr.h
  * @brief General purpose timer (GPTMR) HW driver header file.
- *
- * @note These functions should only be used if the GPTMR unit was synthesized (IO_GPTMR_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_gptmr_h
-#define neorv32_gptmr_h
+#ifndef NEORV32_GPTMR_H
+#define NEORV32_GPTMR_H
 
 #include <stdint.h>
 
@@ -61,4 +57,4 @@ void neorv32_gptmr_irq_ack(void);
 /**@}*/
 
 
-#endif // neorv32_gptmr_h
+#endif // NEORV32_GPTMR_H

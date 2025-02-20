@@ -92,6 +92,10 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_newlib.c`  | -                      | Platform-specific system calls for _newlib_
 |=======================
 
+.Defines and Macros
+[TIP]
+Macros and defines provides by the NEORV32 software framework are written in capital letters.
+
 .Core Libraries Documentation
 [TIP]
 The Doxygen-based documentation of the software framework including all core libraries is available online at

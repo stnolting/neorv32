@@ -27,6 +27,16 @@
 
 
 /**********************************************************************//**
+ * Simple bus-wait helper.
+ *
+ * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
+ **************************************************************************/
+void delay_ms(uint32_t time_ms) {
+  neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), time_ms);
+}
+
+
+/**********************************************************************//**
  * Main function
  *
  * @note This program requires the WDT and UART0 to be synthesized.
@@ -91,7 +101,7 @@ int main() {
   neorv32_uart0_puts("Resetting WDT 5 times...\n");
   int i;
   for (i=0; i<5; i++) {
-    neorv32_cpu_delay_ms(750);
+    delay_ms(750);
     neorv32_wdt_feed(WDT_PASSWORD); // reset internal counter using the access password
     neorv32_uart0_puts("WDT reset.\n");
   }

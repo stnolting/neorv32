@@ -68,6 +68,7 @@ void gpio_trap_handler(void);
 void test_ok(void);
 void test_fail(void);
 int  core1_main(void);
+void goto_user_mode(void);
 
 // MCAUSE value that will be NEVER set by the hardware
 const uint32_t mcause_never_c = 0x80000000UL; // = reserved
@@ -354,7 +355,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MCOUNTEREN, 1<<CSR_MCOUNTEREN_CY);
 
     // read base counter from user mode
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       asm volatile ("addi      %[cy], zero, 123 \n"
                     "rdcycle   %[cy]            \n"
@@ -426,7 +427,7 @@ int main() {
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       asm volatile ("mret");
     }
@@ -808,7 +809,7 @@ int main() {
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       asm volatile ("ecall");
     }
@@ -1747,7 +1748,7 @@ int main() {
 
   // try to execute service call in user mode
   // hart will be back in MACHINE mode when trap handler returns
-  neorv32_cpu_goto_user_mode();
+  goto_user_mode();
   {
     syscall_a0 = 127;
     syscall_a1 = 12000;
@@ -1777,7 +1778,7 @@ int main() {
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Heap/malloc ", cnt_test);
 
-  tmp_a = (uint32_t)neorv32_heap_size_c;
+  tmp_a = (uint32_t)NEORV32_HEAP_SIZE;
 
   if (tmp_a >= 3096) { // sufficient heap for this test?
     cnt_test++;
@@ -1789,7 +1790,7 @@ int main() {
     free(malloc_c);
     free(malloc_a);
 
-    if ((((uint32_t)neorv32_heap_begin_c + tmp_a) == (uint32_t)neorv32_heap_end_c) && // correct heap layout
+    if ((((uint32_t)NEORV32_HEAP_BEGIN + tmp_a) == (uint32_t)NEORV32_HEAP_END) && // correct heap layout
         (malloc_a != NULL) && // malloc successful
         (malloc_b == NULL) && // malloc failed due to exhausted heap
         (malloc_c != NULL) && // malloc successful
@@ -1838,12 +1839,11 @@ int main() {
     // enable CLINT.MTIMER interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE);
 
-    // clear mstatus.TW to allow execution of WFI also in user-mode
-    // clear mstatus.MIE and mstatus.MPIE to check if IRQ can still trigger in User-mode
-    neorv32_cpu_csr_clr(CSR_MSTATUS, (1<<CSR_MSTATUS_TW) | (1<<CSR_MSTATUS_MIE) | (1<<CSR_MSTATUS_MPIE));
+    // clear mstatus.MIE and mstatus.MPIE to check if IRQ can still trigger in user-mode
+    neorv32_cpu_csr_clr(CSR_MSTATUS, (1<<CSR_MSTATUS_MIE) | (1<<CSR_MSTATUS_MPIE));
 
     // put CPU into sleep mode (from user mode)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       asm volatile ("wfi");
     }
@@ -1912,7 +1912,7 @@ int main() {
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_TW);
 
     // put CPU into sleep mode (from user mode)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       asm volatile ("wfi"); // this has to fail
     }
@@ -1939,7 +1939,7 @@ int main() {
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       // access to misa not allowed for user-level programs
       asm volatile ("addi %[rd], zero, 234 \n" // this value must not change
@@ -2073,7 +2073,7 @@ int main() {
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       asm volatile ("addi %[rd], zero, 0 \n"
                     "lw   %[rd], 0(%[rs])" : [rd] "=r" (tmp_a) : [rs] "r" ((uint32_t)(&pmp_access[0])) );
@@ -2116,7 +2116,7 @@ int main() {
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       asm volatile ("addi %[rd], zero, 0 \n"
                     "lw   %[rd], 0(%[rs])" : [rd] "=r" (tmp_b) : [rs] "r" ((uint32_t)(&pmp_access[0])) );
@@ -2138,7 +2138,7 @@ int main() {
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access[0]), 0); // store access -> should fail
     }
@@ -2158,7 +2158,7 @@ int main() {
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
-    neorv32_cpu_goto_user_mode();
+    goto_user_mode();
     {
       asm volatile ("jalr ra, %[rs]" : : [rs] "r" ((uint32_t)(&pmp_access[0])));
     }
@@ -2481,4 +2481,22 @@ int core1_main(void) {
   neorv32_clint_msi_set(0);
 
   return 0;
+}
+
+
+/**********************************************************************//**
+ * Switch from privilege mode MACHINE to privilege mode USER.
+ **************************************************************************/
+void __attribute__((naked,noinline)) goto_user_mode(void) {
+
+  asm volatile (
+    "csrw mepc, ra     \n" // move return address to mepc so we can return using mret; we can now use ra as temp register
+    "li   ra, 3<<11    \n" // bit mask to clear the two MPP bits
+    "csrc mstatus, ra  \n" // clear MPP bits -> MPP = u-mode
+    "csrr ra, mstatus  \n" // get mstatus
+    "andi ra, ra, 1<<3 \n" // isolate MIE bit
+    "slli ra, ra, 4    \n" // shift to MPIE position
+    "csrs mstatus, ra  \n" // set MPIE if MIE is set
+    "mret              \n" // return and switch to user mode
+  );
 }

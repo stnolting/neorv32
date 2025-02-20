@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,11 +9,8 @@
 /**
  * @file neorv32_newlib.c
  * @brief NEORV32-specific Newlib system calls
- *
  * @note Original source file: https://github.com/openhwgroup/cv32e40p/blob/master/example_tb/core/custom/syscalls.c
  * @note More information was derived from: https://interrupt.memfault.com/blog/boostrapping-libc-with-newlib#implementing-newlib
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #include <neorv32.h>
@@ -37,17 +34,17 @@ void *_sbrk(int incr) {
 
   // initialize
   if (curr_heap_ptr == NULL) {
-    curr_heap_ptr = (unsigned char *)neorv32_heap_begin_c;
+    curr_heap_ptr = (unsigned char *)NEORV32_HEAP_BEGIN;
   }
 
   // do we have a heap at all?
-  if ((neorv32_heap_begin_c == neorv32_heap_end_c) || (neorv32_heap_size_c == 0)) {
+  if ((NEORV32_HEAP_BEGIN == NEORV32_HEAP_END) || (NEORV32_HEAP_SIZE == 0)) {
     errno = ENOMEM;
     return (void*)-1; // error - no more memory
   }
 
   // sufficient space left?
-  if ((((uint32_t)curr_heap_ptr) + ((uint32_t)incr)) >= neorv32_heap_end_c) {
+  if ((((uint32_t)curr_heap_ptr) + ((uint32_t)incr)) >= NEORV32_HEAP_END) {
     errno = ENOMEM;
     return (void*)-1; // error - no more memory
   }

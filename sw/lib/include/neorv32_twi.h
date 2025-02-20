@@ -9,14 +9,10 @@
 /**
  * @file neorv32_twi.h
  * @brief Two-Wire Interface Controller (TWI) HW driver header file.
- *
- * @note These functions should only be used if the TWI unit was synthesized (IO_TWI_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_twi_h
-#define neorv32_twi_h
+#ifndef NEORV32_TWI_H
+#define NEORV32_TWI_H
 
 #include <stdint.h>
 
@@ -104,4 +100,4 @@ void neorv32_twi_generate_start_nonblocking(void);
 /**@}*/
 
 
-#endif // neorv32_twi_h
+#endif // NEORV32_TWI_H
