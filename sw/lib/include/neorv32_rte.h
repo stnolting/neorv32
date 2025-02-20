@@ -9,12 +9,10 @@
 /**
  * @file neorv32_rte.h
  * @brief NEORV32 Runtime Environment.
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_rte_h
-#define neorv32_rte_h
+#ifndef NEORV32_RTE_H
+#define NEORV32_RTE_H
 
 #include <stdint.h>
 
@@ -70,4 +68,4 @@ uint32_t neorv32_rte_context_get(int x);
 void     neorv32_rte_context_put(int x, uint32_t data);
 /**@}*/
 
-#endif // neorv32_rte_h
+#endif // NEORV32_RTE_H

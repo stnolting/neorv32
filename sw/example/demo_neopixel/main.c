@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -31,6 +31,16 @@
 
 // prototypes
 uint32_t hsv2rgb(int h, int v);
+
+
+/**********************************************************************//**
+ * Simple bus-wait helper.
+ *
+ * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
+ **************************************************************************/
+void delay_ms(uint32_t time_ms) {
+  neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), time_ms);
+}
 
 
 /**********************************************************************//**
@@ -83,7 +93,7 @@ int main() {
   for (i=0; i<NUM_LEDS_24BIT; i++) {
     neorv32_neoled_write_blocking(0);
   }
-  neorv32_cpu_delay_ms(500);
+  delay_ms(500);
 
 
   // a simple animation example: rotating rainbow
@@ -100,7 +110,7 @@ int main() {
     angle += 1; // rotation increment per frame
 
     neorv32_neoled_strobe_blocking(); // send strobe ("RESET") command
-    neorv32_cpu_delay_ms(10); // delay between frames
+    delay_ms(10); // delay between frames
   }
 
   return 0;

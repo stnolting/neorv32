@@ -9,12 +9,10 @@
 /**
  * @file neorv32_sysinfo.h
  * @brief System Information Memory (SYSINFO) HW driver header file.
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_sysinfo_h
-#define neorv32_sysinfo_h
+#ifndef NEORV32_SYSINFO_H
+#define NEORV32_SYSINFO_H
 
 #include <stdint.h>
 
@@ -143,4 +141,4 @@ inline void __attribute__ ((always_inline)) neorv32_sysinfo_set_clk(uint32_t clo
   NEORV32_SYSINFO->CLK = clock;
 }
 
-#endif // neorv32_sysinfo_h
+#endif // NEORV32_SYSINFO_H

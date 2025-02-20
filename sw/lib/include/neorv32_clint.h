@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,12 +9,10 @@
 /**
  * @file neorv32_clint.h
  * @brief Hardware Local Interruptor (CLINT) HW driver header file.
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_clint_h
-#define neorv32_clint_h
+#ifndef NEORV32_CLINT_H
+#define NEORV32_CLINT_H
 
 #include <stdint.h>
 
@@ -51,4 +49,5 @@ void     neorv32_clint_unixtime_set(uint64_t unixtime);
 uint64_t neorv32_clint_unixtime_get(void);
 /**@}*/
 
-#endif // neorv32_clint_h
+
+#endif // NEORV32_CLINT_H

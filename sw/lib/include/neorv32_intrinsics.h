@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,12 +9,10 @@
 /**
  * @file neorv32_intrinsics.h
  * @brief Helper macros for custom "intrinsics" / instructions.
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
-#ifndef neorv32_intrinsics_h
-#define neorv32_intrinsics_h
+#ifndef NEORV32_INTRINSICS_H
+#define NEORV32_INTRINSICS_H
 
 #include <stdint.h>
 
@@ -204,4 +202,4 @@ asm (
 })
 
 
-#endif // neorv32_intrinsics_h
+#endif // NEORV32_INTRINSICS_H

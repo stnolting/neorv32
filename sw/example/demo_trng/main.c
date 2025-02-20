@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -31,6 +31,16 @@ void repetition_count_test(void);
 void adaptive_proportion_test(void);
 void generate_histogram(void);
 void compute_rate(void);
+
+
+/**********************************************************************//**
+ * Simple bus-wait helper.
+ *
+ * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
+ **************************************************************************/
+void delay_ms(uint32_t time_ms) {
+  neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), time_ms);
+}
 
 
 /**********************************************************************//**
@@ -73,7 +83,7 @@ int main(void) {
   neorv32_uart0_printf("\nTRNG FIFO depth: %i\n", neorv32_trng_get_fifo_depth());
   neorv32_uart0_printf("Starting TRNG...\n");
   neorv32_trng_enable();
-  neorv32_cpu_delay_ms(100); // TRNG "warm up"
+  delay_ms(100); // TRNG "warm up"
   neorv32_trng_fifo_clear(); // discard "warm-up" data
 
   while(1) {
