@@ -264,11 +264,6 @@ be altered. However, experienced users can modify them to further tune compilati
 | `-g`                  | Add (simple) debug information.
 |=======================
 
-.Checking Compiler Flags from a Compiled Program
-[TIP]
-The makefile's `CC_OPTS` is exported as **define** to be available within a C program; for example
-`neorv32_uart0_printf("%s\n", CC_OPTS);`.
-
 .Linker Libraries (`LD_LIBS`)
 [cols="<2,<9"]
 [grid="none"]
