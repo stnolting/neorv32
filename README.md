@@ -44,24 +44,23 @@ targeting various FPGA boards and toolchains to get started.
 * :desktop_computer: Pre-configured [Eclipse project](https://stnolting.github.io/neorv32/ug/#_eclipse_ide) for developing and debugging code using an IDE.
 * :label: The project's change log is available in [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
 * :rocket: Check out the [quick links below](#5-getting-started) and the
-[*User Guide*](https://stnolting.github.io/neorv32/ug/) to get started setting up _your_ NEORV32 processor!
+[User Guide](https://stnolting.github.io/neorv32/ug/) to get started setting up _your_ NEORV32 processor!
 * :books: For detailed information see the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
 * :interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
-
-Feel free to open a new [issue](https://github.com/stnolting/neorv32/issues) or start a new
-[discussion](https://github.com/stnolting/neorv32/discussions) if you have questions, comments, ideas, feedback or if something is
-not working as expected. See how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
+* :clipboard: File an [issue](https://github.com/stnolting/neorv32/issues)/[discussion](https://github.com/stnolting/neorv32/discussions)/
+[PR](https://github.com/stnolting/neorv32/pulls) for questions, comments, ideas, feedback or if something isn't working as expected.
+* :handshake: Find out how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
 
 ### Key Features
 
-- [x] all-in-one package: **CPU** + **SoC** + **Software Framework & Tooling**
+- [x] all-in-one package: **CPU** + **SoC** + **Software Framework** + **Tooling**
 - [x] completely described in behavioral, platform-independent VHDL - **no** platform-specific primitives, macros, attributes, etc.; an all-Verilog "version" is also [available](https://github.com/stnolting/neorv32-verilog)
 - [x] extensive configuration options for adapting the processor to the requirements of the application (on CPU, processor and system level)
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
 - [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the CPU's register file)
 - [x] optimized for high clock frequencies to ease integration / timing closure
 - [x] from zero to _"hello world!"_ - completely open source and documented (on software and hardware side)
-- [x] easy to use even for FPGA / RISC-V starters – intended to work _out of the box_
+- [x] easy to use even for digital logic / FPGA / RISC-V newcomers – intended to work _out of the box_
 
 ### Project Status
 
