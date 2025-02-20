@@ -22,7 +22,7 @@ USER_FLAGS += \
 # Warning: Enabling them all while sticking to the minimal RISC-V ISA will result in a too-large binary!
 
 #USER_FLAGS += -DUART_EN=1
-#USER_FLAGS += -DUART_EN=19200
+#USER_FLAGS += -DUART_BAUD=19200
 #USER_FLAGS += -DUART_HW_HANDSHAKE_EN=0
 
 #USER_FLAGS += -DSTATUS_LED_EN=1
