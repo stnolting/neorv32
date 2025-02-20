@@ -178,7 +178,8 @@ optimize the system for certain design goals like minimal area or maximum perfor
 
 .Default Values
 [NOTE]
-All _optional_ configuration generics provide default values in case they are not explicitly assigned during instantiation.
+All configuration generics provide default values in case they are not explicitly assigned during instantiation.
+By default, all configuration options are **disabled**.
 
 .Software Discovery of Configuration
 [TIP]
@@ -194,7 +195,6 @@ and do not impact timing.
 .Table Abbreviations
 [NOTE]
 The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downto y)`".
-
 
 .NEORV32 Processor Generic List
 [cols="<3,^2,^2,<8"]
@@ -226,7 +226,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `RISCV_ISA_Zbkx`        | boolean   | false         | Enable <<_zbkx_isa_extension>> (scalar cryptography crossbar permutations).
 | `RISCV_ISA_Zbs`         | boolean   | false         | Enable <<_zbs_isa_extension>> (single-bit bit-manipulation instructions).
 | `RISCV_ISA_Zfinx`       | boolean   | false         | Enable <<_zfinx_isa_extension>> (single-precision floating-point unit).
-| `RISCV_ISA_Zicntr`      | boolean   | true          | Enable <<_zicntr_isa_extension>> (CPU base counters).
+| `RISCV_ISA_Zicntr`      | boolean   | false         | Enable <<_zicntr_isa_extension>> (CPU base counters).
 | `RISCV_ISA_Zicond`      | boolean   | false         | Enable <<_zicond_isa_extension>> (integer conditional instructions).
 | `RISCV_ISA_Zihpm`       | boolean   | false         | Enable <<_zihpm_isa_extension>> (hardware performance monitors).
 | `RISCV_ISA_Zknd`        | boolean   | false         | Enable <<_zknd_isa_extension>> (scalar cryptography NIST AES decryption instructions).
@@ -244,8 +244,8 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 4+^| **Physical Memory Protection (<<_smpmp_isa_extension>>)**
 | `PMP_NUM_REGIONS`       | natural   | 0             | Number of implemented PMP regions (0..16).
 | `PMP_MIN_GRANULARITY`   | natural   | 4             | Minimal region granularity in bytes. Has to be a power of two, min 4.
-| `PMP_TOR_MODE_EN`       | boolean   | true          | Implement support for top-of-region (TOR) mode.
-| `PMP_NAP_MODE_EN`       | boolean   | true          | Implement support for naturally-aligned power-of-two (NAPOT & NA4) modes.
+| `PMP_TOR_MODE_EN`       | boolean   | false         | Implement support for top-of-region (TOR) mode.
+| `PMP_NAP_MODE_EN`       | boolean   | false         | Implement support for naturally-aligned power-of-two (NAPOT & NA4) modes.
 4+^| **Hardware Performance Monitors (<<_zihpm_isa_extension>>)**
 | `HPM_NUM_CNTS`          | natural   | 0             | Number of implemented hardware performance monitor counters (0..13).
 | `HPM_CNT_WIDTH`         | natural   | 40            | Total LSB-aligned size of each HPM counter. Min 0, max 64.
@@ -271,7 +271,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `XBUS_CACHE_NUM_BLOCKS` | natural   | 64            | Number of blocks ("lines"). Has to be a power of two.
 | `XBUS_CACHE_BLOCK_SIZE` | natural   | 32            | Size in bytes of each block. Has to be a power of two.
 4+^| **Peripheral/IO Modules**
-| `IO_DISABLE_SYSINFO`    | boolean   | false         | Disable <<_system_configuration_information_memory_sysinfo>> module; ⚠️ not recommended - for advanced users only!
+| `IO_DISABLE_SYSINFO`    | boolean   | false         | Disable <<_system_configuration_information_memory_sysinfo>> module; not recommended - for advanced users only!
 | `IO_GPIO_NUM`           | natural   | 0             | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>, max 32.
 | `IO_CLINT_EN`           | boolean   | false         | Implement the <<_core_local_interruptor_clint>>.
 | `IO_UART0_EN`           | boolean   | false         | Implement the <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>.
@@ -646,10 +646,10 @@ The reservation-set controller implements the _strong semnatics_. An active rese
 :sectnums:
 ==== Memory Coherence
 
-Depending on the configuration, the NEORV32 processor provides several _layer_ of memory consisting
+Depending on the configuration, the NEORV32 processor provides several _layers_ of memory consisting
 of caches, buffers and storage.
 
-* The CPU instruction prefetch buffer ("level-0")
+* The CPU pipeline and its instruction prefetch buffer (level-0)
 * The <<_processor_internal_data_cache_dcache>> (level-1)
 * The <<_processor_internal_instruction_cache_icache>> (level-1)
 * The cache of the <<_processor_external_bus_interface_xbus>> (level-2)
@@ -664,6 +664,13 @@ regardless of the actual CPU/ISA configuration:
 
 * `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>)
 * `fence.i` (<<_zifencei_isa_extension>>)
+
+.Weak Coherence Model
+[IMPORTANT]
+The NEORV32-specific implementation of the `fence[.i]` ordering instructions only provides a rather **weak**
+coherence model. A core's `fence` just orders all memory accesses towards main memory. Hence, they _can_ become
+visible by other agents (the secondary CPU core, the DMA, processor-external modules) if these agents also
+synchronize (e.g. reload) their cache(s).
 
 By executing the "data" `fence` instruction the CPU's load/store operations are ordered
 and synchronized across the entire system:
