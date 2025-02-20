@@ -16,7 +16,7 @@ limitations under the License.
 Original Author: Shay Gal-on
 */
 
-/* Modified for the NEORV32 Processor - by Stephan Nolting */
+/* Modified for the NEORV32 Processor - 2025, Stephan Nolting */
 
 /* Topic : Description
         This file contains configuration constants required to execute on
@@ -33,7 +33,6 @@ Original Author: Shay Gal-on
 /************************/
 #define BAUD_RATE  (19200)
 #define ITERATIONS (2000)
-#define FLAGS_STR  CC_OPTS
 
 /************************/
 /* Data types and settings */
@@ -42,34 +41,34 @@ Original Author: Shay Gal-on
         Define to 1 if the platform supports floating point.
 */
 #ifndef HAS_FLOAT
-#define HAS_FLOAT 0
+#define HAS_FLOAT 1
 #endif
 /* Configuration : HAS_TIME_H
         Define to 1 if platform has the time.h header file,
         and implementation of functions thereof.
 */
 #ifndef HAS_TIME_H
-#define HAS_TIME_H 0
+#define HAS_TIME_H 1
 #endif
 /* Configuration : USE_CLOCK
         Define to 1 if platform has the time.h header file,
         and implementation of functions thereof.
 */
 #ifndef USE_CLOCK
-#define USE_CLOCK 0
+#define USE_CLOCK 1
 #endif
 /* Configuration : HAS_STDIO
         Define to 1 if the platform has stdio.h.
 */
 #ifndef HAS_STDIO
-#define HAS_STDIO 0
+#define HAS_STDIO 1
 #endif
 /* Configuration : HAS_PRINTF
         Define to 1 if the platform has stdio.h and implements the printf
    function.
 */
 #ifndef HAS_PRINTF
-#define HAS_PRINTF 0
+#define HAS_PRINTF 1
 #endif
 
 /* Definitions : COMPILER_VERSION, COMPILER_FLAGS, MEM_LOCATION
@@ -83,8 +82,7 @@ Original Author: Shay Gal-on
 #endif
 #endif
 #ifndef COMPILER_FLAGS
-#define COMPILER_FLAGS \
-    FLAGS_STR /* "Please put compiler flags here (e.g. -o3)" */
+#define COMPILER_FLAGS "See Makefile"
 #endif
 #ifndef MEM_LOCATION
 #define MEM_LOCATION "STATIC"
@@ -94,7 +92,7 @@ Original Author: Shay Gal-on
         To avoid compiler issues, define the data types that need ot be used for
    8b, 16b and 32b in <core_portme.h>.
 
-        *Imprtant* :
+        *Important* :
         ee_ptr_int needs to be the data type used to hold pointers, otherwise
    coremark may fail!!!
 */
@@ -134,7 +132,7 @@ typedef ee_u64 CORE_TICKS;
 #endif
 
 /* Configuration : MEM_METHOD
-        Defines method to get a block of memry.
+        Defines method to get a block of memory.
 
         Valid values :
         MEM_MALLOC - for platforms that implement malloc and have malloc.h.
@@ -196,7 +194,7 @@ typedef ee_u64 CORE_TICKS;
 #endif
 
 /* Variable : default_num_contexts
-        Not used for this simple port, must cintain the value 1.
+        Not used for this simple port, must contain the value 1.
 */
 extern ee_u32 default_num_contexts;
 

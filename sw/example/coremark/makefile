@@ -14,13 +14,17 @@ EFFORT = -O3
 USER_FLAGS += -ggdb -gdwarf-3
 
 # Adjust processor IMEM size
-USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=32k
+USER_FLAGS += \
+-Wl,--defsym,__neorv32_rom_size=64k \
+-Wl,--defsym,__neorv32_rom_base=0x00000000
 
 # Adjust processor DMEM size
-USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=8k
+USER_FLAGS += \
+-Wl,--defsym,__neorv32_ram_size=16k \
+-Wl,--defsym,__neorv32_ram_base=0x80000000
 
 # Adjust maximum heap size
-#USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=1k
+##USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=8k
 
 # Additional sources
 APP_SRC += $(wildcard source/*.c)

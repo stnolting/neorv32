@@ -16,7 +16,7 @@ limitations under the License.
 Original Author: Shay Gal-on
 */
 
-/* Ported to the NEORV32 RISC-V Processor by Stephan Nolting, 2024 */
+/* Modified for the NEORV32 Processor - 2025, Stephan Nolting */
 
 #include "coremark.h"
 #include "core_portme.h"
@@ -204,4 +204,15 @@ void portable_fini(core_portable *p) {
     if (num_hpm_cnts_global > 7)  {neorv32_uart0_printf(" > Load/store wait cycles      : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10)); }
     if (num_hpm_cnts_global > 8)  {neorv32_uart0_printf(" > Entered traps               : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER11)); }
     neorv32_uart0_printf("\n");
+}
+
+
+/* Function : portable_malloc */
+void *portable_malloc(size_t size) {
+  return malloc(size);
+}
+
+/* Function : portable_free */
+void portable_free(void *p) {
+  free(p);
 }
