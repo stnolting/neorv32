@@ -176,24 +176,18 @@ begin
   end generate;
 
 
-  -- Data Read-Back -------------------------------------------------------------------------
+  -- Data Read-Back (OR all device read-backs) ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   read_back: process(mtime_rd, mtimecmp_rd, mswi_rd)
-    variable tmp_v : std_ulogic_vector(31 downto 0);
+    variable mti_v, msi_v : std_ulogic_vector(31 downto 0);
   begin
-    tmp_v := (others => '0');
-    -- mtime --
-    tmp_v := tmp_v or mtime_rd;
-    -- mtimecmp --
+    mti_v := (others => '0');
+    msi_v := (others => '0');
     for i in 0 to NUM_HARTS-1 loop
-      tmp_v := tmp_v or mtimecmp_rd(i);
+      mti_v := mti_v or mtimecmp_rd(i);
+      msi_v := msi_v or mswi_rd(i);
     end loop;
-    -- mswi --
-    for i in 0 to NUM_HARTS-1 loop
-      tmp_v := tmp_v or mswi_rd(i);
-    end loop;
-    -- output --
-    rdata <= tmp_v;
+    rdata <= mtime_rd or mti_v or msi_v;
   end process read_back;
 
 
@@ -248,10 +242,8 @@ end neorv32_clint_mtime;
 
 architecture neorv32_clint_mtime_rtl of neorv32_clint_mtime is
 
-  signal re_q       : std_ulogic_vector(1 downto 0);
-  signal we_q       : std_ulogic_vector(1 downto 0);
-  signal mtime_lo_q : std_ulogic_vector(31 downto 0);
-  signal mtime_hi_q : std_ulogic_vector(31 downto 0);
+  signal we_q, re_q : std_ulogic_vector(1 downto 0);
+  signal mtime_q    : std_ulogic_vector(63 downto 0);
   signal carry_q    : std_ulogic_vector(0 downto 0);
   signal inc_lo     : std_ulogic_vector(32 downto 0);
   signal inc_hi     : std_ulogic_vector(32 downto 0);
@@ -263,11 +255,10 @@ begin
   mtime_core: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      we_q       <= (others => '0');
-      re_q       <= (others => '0');
-      mtime_lo_q <= (others => '0');
-      carry_q    <= (others => '0');
-      mtime_hi_q <= (others => '0');
+      we_q    <= (others => '0');
+      re_q    <= (others => '0');
+      mtime_q <= (others => '0');
+      carry_q <= (others => '0');
     elsif rising_edge(clk_i) then
       we_q(0) <= en_i and rw_i and (not addr_i);
       we_q(1) <= en_i and rw_i and (    addr_i);
@@ -275,31 +266,30 @@ begin
       re_q(1) <= en_i and (    addr_i);
       -- low-word --
       if (we_q(0) = '1') then
-        mtime_lo_q <= wdata_i;
+        mtime_q(31 downto 0) <= wdata_i;
       else
-        mtime_lo_q <= inc_lo(31 downto 0);
+        mtime_q(31 downto 0) <= inc_lo(31 downto 0);
       end if;
       carry_q(0) <= inc_lo(32); -- low-to-high carry
       -- high-word --
       if (we_q(1) = '1') then
-        mtime_hi_q <= wdata_i;
+        mtime_q(63 downto 32) <= wdata_i;
       else
-        mtime_hi_q <= inc_hi(31 downto 0);
+        mtime_q(63 downto 32) <= inc_hi(31 downto 0);
       end if;
     end if;
   end process mtime_core;
 
   -- increments --
-  inc_lo <= std_ulogic_vector(unsigned('0' & mtime_lo_q) + 1);
-  inc_hi <= std_ulogic_vector(unsigned('0' & mtime_hi_q) + unsigned(carry_q));
+  inc_lo <= std_ulogic_vector(unsigned('0' & mtime_q(31 downto  0)) + 1);
+  inc_hi <= std_ulogic_vector(unsigned('0' & mtime_q(63 downto 32)) + unsigned(carry_q));
 
   -- global time output; low and high words are off-sync by one cycle! --
-  mtime_o <= mtime_hi_q & mtime_lo_q;
+  mtime_o <= mtime_q;
 
   -- read access --
-  rdata_o <= mtime_hi_q when (re_q(1) = '1') else
-             mtime_lo_q when (re_q(0) = '1') else
-             (others => '0');
+  rdata_o <= mtime_q(63 downto 32) when (re_q(1) = '1') else
+             mtime_q(31 downto  0) when (re_q(0) = '1') else (others => '0');
 
 
 end neorv32_clint_mtime_rtl;
@@ -366,8 +356,7 @@ begin
 
   -- read access --
   rdata_o <= mtimecmp_q(63 downto 32) when (rden_q(1) = '1') else
-             mtimecmp_q(31 downto 00) when (rden_q(0) = '1') else
-             (others => '0');
+             mtimecmp_q(31 downto 00) when (rden_q(0) = '1') else (others => '0');
 
 
   -- Interrupt Generator (comparator is split across two cycles) ----------------------------
