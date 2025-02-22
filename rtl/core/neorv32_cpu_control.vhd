@@ -216,7 +216,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal csr : csr_t;
 
   -- HPM event configuration CSRs --
-  type hpmevent_cfg_t is array (3 to 15) of std_ulogic_vector(hpmcnt_event_width_c-1 downto 0);
+  type hpmevent_cfg_t is array (3 to 15) of std_ulogic_vector(cnt_event_width_c-1 downto 0);
   type hpmevent_rd_t  is array (3 to 15) of std_ulogic_vector(XLEN-1 downto 0);
   signal hpmevent_cfg : hpmevent_cfg_t;
   signal hpmevent_rd  : hpmevent_rd_t;
@@ -237,7 +237,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal cnt_hi_rd, cnt_lo_rd : cnt_dat_t;
 
   -- counter events --
-  signal cnt_event : std_ulogic_vector(hpmcnt_event_width_c-1 downto 0);
+  signal cnt_event : std_ulogic_vector(cnt_event_width_c-1 downto 0);
 
   -- debug-mode controller --
   type debug_ctrl_t is record
@@ -555,12 +555,10 @@ begin
       when EX_FENCE => -- wait for LOAD/STORE memory synchronization
       -- ------------------------------------------------------------
         if (exe_engine.msync = '1') then -- wait for pending synchronization request to complete
-          if (exe_engine.ir(instr_funct3_lsb_c) = '0') then -- fence
-            exe_engine_nxt.state <= EX_DISPATCH;
-          else -- fence.i
-            ctrl_nxt.if_fence    <= '1'; -- instruction-fetch fence
-            exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB
+          if (exe_engine.ir(instr_funct3_lsb_c) = '1') then -- fence.i
+            ctrl_nxt.if_fence <= '1';
           end if;
+          exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB (EX_DISPATCH would be sufficient for normal FENCE)
         end if;
 
       when EX_BRANCH => -- update next PC on taken branches and jumps
@@ -1768,14 +1766,14 @@ begin
           -- [NOTE] no need to check bit 4 of the address as it is always zero (checked by illegal CSR logic)
           if (csr.addr(11 downto 5) = csr_mhpmevent3_c(11 downto 5)) and
              (csr.we = '1') and (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
-            hpmevent_cfg(i) <= csr.wdata(hpmcnt_event_width_c-1 downto 0);
+            hpmevent_cfg(i) <= csr.wdata(cnt_event_width_c-1 downto 0);
           end if;
-          hpmevent_cfg(i)(hpmcnt_event_tm_c) <= '0'; -- time: not available
+          hpmevent_cfg(i)(cnt_event_tm_c) <= '0'; -- time: not available
         end if;
       end process hpmevent_reg;
       -- read-back --
-      hpmevent_rd(i)(XLEN-1 downto hpmcnt_event_width_c) <= (others => '0');
-      hpmevent_rd(i)(hpmcnt_event_width_c-1 downto 0)    <= hpmevent_cfg(i);
+      hpmevent_rd(i)(XLEN-1 downto cnt_event_width_c) <= (others => '0');
+      hpmevent_rd(i)(cnt_event_width_c-1 downto 0)    <= hpmevent_cfg(i);
     end generate;
 
     -- terminate unused entries --
@@ -1803,9 +1801,9 @@ begin
       cnt.inc <= (others => (others => '0'));
     elsif rising_edge(clk_i) then
       -- base counters --
-      cnt.inc(0) <= (others => (cnt_event(hpmcnt_event_cy_c) and (not csr.mcountinhibit(0)) and (not debug_ctrl.run)));
+      cnt.inc(0) <= (others => (cnt_event(cnt_event_cy_c) and (not csr.mcountinhibit(0)) and (not debug_ctrl.run)));
       cnt.inc(1) <= (others => '0'); -- time: not available
-      cnt.inc(2) <= (others => (cnt_event(hpmcnt_event_ir_c) and (not csr.mcountinhibit(2)) and (not debug_ctrl.run)));
+      cnt.inc(2) <= (others => (cnt_event(cnt_event_ir_c) and (not csr.mcountinhibit(2)) and (not debug_ctrl.run)));
       -- HPM counters --
       for i in 3 to 15 loop
         cnt.inc(i) <= (others => (or_reduce_f(cnt_event and hpmevent_cfg(i)) and (not csr.mcountinhibit(i)) and (not debug_ctrl.run)));
@@ -1814,20 +1812,20 @@ begin
   end process counter_event;
 
   -- RISC-V-compliant counter events --
-  cnt_event(hpmcnt_event_cy_c) <= '1' when (sleep_mode = '0') else '0'; -- cycle: active cycle
-  cnt_event(hpmcnt_event_tm_c) <= '0'; -- time: not available
-  cnt_event(hpmcnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) else '0'; -- instret: retired (==executed!) instruction
+  cnt_event(cnt_event_cy_c) <= '1' when (sleep_mode = '0') else '0'; -- cycle: active cycle
+  cnt_event(cnt_event_tm_c) <= '0'; -- time: not available
+  cnt_event(cnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) else '0'; -- instret: retired (==executed!) instruction
 
   -- NEORV32-specific counter events --
-  cnt_event(hpmcnt_event_compr_c)    <= '1' when (exe_engine.state = EX_EXECUTE)  and (exe_engine.ci = '1')        else '0'; -- executed compressed instruction
-  cnt_event(hpmcnt_event_wait_dis_c) <= '1' when (exe_engine.state = EX_DISPATCH) and (frontend_i.valid = '0')     else '0'; -- instruction dispatch wait cycle
-  cnt_event(hpmcnt_event_wait_alu_c) <= '1' when (exe_engine.state = EX_ALU_WAIT)                                  else '0'; -- multi-cycle ALU wait cycle
-  cnt_event(hpmcnt_event_branch_c)   <= '1' when (exe_engine.state = EX_BRANCH)                                    else '0'; -- executed branch instruction
-  cnt_event(hpmcnt_event_branched_c) <= '1' when (exe_engine.state = EX_BRANCHED)                                  else '0'; -- control flow transfer
-  cnt_event(hpmcnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and ((opcode(5) = '0') or (opcode(2) = '1')) else '0'; -- executed load operation
-  cnt_event(hpmcnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and ((opcode(5) = '1') or (opcode(2) = '1')) else '0'; -- executed store operation
-  cnt_event(hpmcnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exe_engine.state = EX_MEM_RSP)          else '0'; -- load/store memory wait cycle
-  cnt_event(hpmcnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1')                                       else '0'; -- entered trap
+  cnt_event(cnt_event_compr_c)    <= '1' when (exe_engine.state = EX_EXECUTE)  and (exe_engine.ci = '1')        else '0'; -- executed compressed instruction
+  cnt_event(cnt_event_wait_dis_c) <= '1' when (exe_engine.state = EX_DISPATCH) and (frontend_i.valid = '0')     else '0'; -- instruction dispatch wait cycle
+  cnt_event(cnt_event_wait_alu_c) <= '1' when (exe_engine.state = EX_ALU_WAIT)                                  else '0'; -- multi-cycle ALU wait cycle
+  cnt_event(cnt_event_branch_c)   <= '1' when (exe_engine.state = EX_BRANCH)                                    else '0'; -- executed branch instruction
+  cnt_event(cnt_event_branched_c) <= '1' when (exe_engine.state = EX_BRANCHED)                                  else '0'; -- control flow transfer
+  cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and ((opcode(5) = '0') or (opcode(2) = '1')) else '0'; -- executed load operation
+  cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and ((opcode(5) = '1') or (opcode(2) = '1')) else '0'; -- executed store operation
+  cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exe_engine.state = EX_MEM_RSP)          else '0'; -- load/store memory wait cycle
+  cnt_event(cnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1')                                       else '0'; -- entered trap
 
 
   -- ****************************************************************************************************************************
