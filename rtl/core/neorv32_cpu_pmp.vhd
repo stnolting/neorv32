@@ -29,15 +29,15 @@ entity neorv32_cpu_pmp is
   );
   port (
     -- global control --
-    clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i      : in  ctrl_bus_t; -- main control bus
+    clk_i     : in  std_ulogic; -- global clock, rising edge
+    rstn_i    : in  std_ulogic; -- global reset, low-active, async
+    ctrl_i    : in  ctrl_bus_t; -- main control bus
     -- CSR interface --
-    csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
+    csr_o     : out std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- address input --
-    addr_ls_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- load/store address
+    addr_ls_i : in  std_ulogic_vector(XLEN-1 downto 0); -- load/store address
     -- access error --
-    fault_o     : out std_ulogic -- permission violation
+    fault_o   : out std_ulogic -- permission violation
   );
 end neorv32_cpu_pmp;
 
@@ -187,12 +187,12 @@ begin
   begin
     if (ctrl_i.csr_addr(11 downto 5) = csr_pmpcfg0_c(11 downto 5)) then -- PMP CSR
       if (ctrl_i.csr_addr(4) = '0') then -- PMP configuration CSR
-        csr_rdata_o <= cfg_rd32(to_integer(unsigned(ctrl_i.csr_addr(1 downto 0))));
+        csr_o <= cfg_rd32(to_integer(unsigned(ctrl_i.csr_addr(1 downto 0))));
       else -- PMP address CSR
-        csr_rdata_o <= addr_rd(to_integer(unsigned(ctrl_i.csr_addr(3 downto 0))));
+        csr_o <= addr_rd(to_integer(unsigned(ctrl_i.csr_addr(3 downto 0))));
       end if;
     else
-      csr_rdata_o <= (others => '0');
+      csr_o <= (others => '0');
     end if;
   end process csr_read_access;
 
