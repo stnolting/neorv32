@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110104"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110105"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -444,7 +444,7 @@ package neorv32_package is
   constant csr_cfureg3_c        : std_ulogic_vector(11 downto 0) := x"803";
   -- machine counters/timers --
   constant csr_mcycle_c         : std_ulogic_vector(11 downto 0) := x"b00";
---constant csr_mtime_c          : std_ulogic_vector(11 downto 0) := x"b01";
+  constant csr_mtime_c          : std_ulogic_vector(11 downto 0) := x"b01";
   constant csr_minstret_c       : std_ulogic_vector(11 downto 0) := x"b02";
   constant csr_mhpmcounter3_c   : std_ulogic_vector(11 downto 0) := x"b03";
   constant csr_mhpmcounter4_c   : std_ulogic_vector(11 downto 0) := x"b04";
@@ -460,7 +460,7 @@ package neorv32_package is
   constant csr_mhpmcounter14_c  : std_ulogic_vector(11 downto 0) := x"b0e";
   constant csr_mhpmcounter15_c  : std_ulogic_vector(11 downto 0) := x"b0f";
   constant csr_mcycleh_c        : std_ulogic_vector(11 downto 0) := x"b80";
---constant csr_mtimeh_c         : std_ulogic_vector(11 downto 0) := x"b81";
+  constant csr_mtimeh_c         : std_ulogic_vector(11 downto 0) := x"b81";
   constant csr_minstreth_c      : std_ulogic_vector(11 downto 0) := x"b82";
   constant csr_mhpmcounter3h_c  : std_ulogic_vector(11 downto 0) := x"b83";
   constant csr_mhpmcounter4h_c  : std_ulogic_vector(11 downto 0) := x"b84";
@@ -708,24 +708,24 @@ package neorv32_package is
   constant priv_mode_m_c : std_ulogic := '1'; -- machine mode
   constant priv_mode_u_c : std_ulogic := '0'; -- user mode
 
-  -- HPM Events -----------------------------------------------------------------------------
+  -- Counter Events -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- RISC-V-compliant --
-  constant hpmcnt_event_cy_c       : natural := 0;  -- active cycle
-  constant hpmcnt_event_tm_c       : natural := 1;  -- time (unused/reserved)
-  constant hpmcnt_event_ir_c       : natural := 2;  -- retired instruction
-  -- NEORV32-specific --
-  constant hpmcnt_event_compr_c    : natural := 3;  -- executed compressed instruction
-  constant hpmcnt_event_wait_dis_c : natural := 4;  -- instruction dispatch wait cycle
-  constant hpmcnt_event_wait_alu_c : natural := 5;  -- multi-cycle ALU co-processor wait cycle
-  constant hpmcnt_event_branch_c   : natural := 6;  -- executed branch instruction
-  constant hpmcnt_event_branched_c : natural := 7;  -- control flow transfer
-  constant hpmcnt_event_load_c     : natural := 8;  -- load operation
-  constant hpmcnt_event_store_c    : natural := 9;  -- store operation
-  constant hpmcnt_event_wait_lsu_c : natural := 10; -- load-store unit memory wait cycle
-  constant hpmcnt_event_trap_c     : natural := 11; -- entered trap
+  -- RISC-V-compliant base counter events --
+  constant cnt_event_cy_c       : natural := 0;  -- active cycle
+  constant cnt_event_tm_c       : natural := 1;  -- time (unused/reserved)
+  constant cnt_event_ir_c       : natural := 2;  -- retired instruction
+  -- NEORV32-specific HPM counter events --
+  constant cnt_event_compr_c    : natural := 3;  -- executed compressed instruction
+  constant cnt_event_wait_dis_c : natural := 4;  -- instruction dispatch wait cycle
+  constant cnt_event_wait_alu_c : natural := 5;  -- multi-cycle ALU co-processor wait cycle
+  constant cnt_event_branch_c   : natural := 6;  -- executed branch instruction
+  constant cnt_event_branched_c : natural := 7;  -- control flow transfer
+  constant cnt_event_load_c     : natural := 8;  -- load operation
+  constant cnt_event_store_c    : natural := 9;  -- store operation
+  constant cnt_event_wait_lsu_c : natural := 10; -- load-store unit memory wait cycle
+  constant cnt_event_trap_c     : natural := 11; -- entered trap
   --
-  constant hpmcnt_event_width_c    : natural := 12; -- length of this list
+  constant cnt_event_width_c    : natural := 12; -- length of this list
 
 -- **********************************************************************************************************
 -- Helper Functions
