@@ -330,7 +330,7 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
 void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list args) {
 
   char c = 0;
-  char __attribute__((aligned(4))) string_buf[36]; // optimize stack layout
+  char string_buf[36];
   int32_t n = 0;
   unsigned int tmp = 0;
 

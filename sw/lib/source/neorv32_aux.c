@@ -242,7 +242,7 @@ uint32_t neorv32_aux_xorshift32(void) {
 void neorv32_aux_itoa(char *buffer, uint32_t num, uint32_t base) {
 
   const char digits[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
-  char __attribute__((aligned(4))) tmp[36]; // optimize stack layout
+  char tmp[36];
   char *tmp_ptr = 0;
   unsigned int i = 0;
 
