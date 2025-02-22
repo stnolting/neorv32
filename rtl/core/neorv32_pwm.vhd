@@ -7,7 +7,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -38,17 +38,17 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
 
   -- pwm channel controller --
   component neorv32_pwm_channel
-    port (
-      clk_i       : in  std_ulogic; -- global clock line
-      rstn_i      : in  std_ulogic; -- global reset line, low-active, async
-      we_i        : in  std_ulogic; -- write enable
-      re_i        : in  std_ulogic; -- read enable
-      wdata_i     : in  std_ulogic_vector(31 downto 0); -- write data
-      rdata_o     : out std_ulogic_vector(31 downto 0); -- read data
-      clkgen_i    : in  std_ulogic_vector(7 downto 0); -- clock divider input
-      clkgen_en_o : out std_ulogic; -- enable clock generator
-      pwm_o       : out std_ulogic -- PWM output
-    );
+  port (
+    clk_i       : in  std_ulogic; -- global clock line
+    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
+    we_i        : in  std_ulogic; -- write enable
+    re_i        : in  std_ulogic; -- read enable
+    wdata_i     : in  std_ulogic_vector(31 downto 0); -- write data
+    rdata_o     : out std_ulogic_vector(31 downto 0); -- read data
+    clkgen_i    : in  std_ulogic_vector(7 downto 0); -- clock divider input
+    clkgen_en_o : out std_ulogic; -- enable clock generator
+    pwm_o       : out std_ulogic -- PWM output
+  );
   end component;
 
   -- wiring --

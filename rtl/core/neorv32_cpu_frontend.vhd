@@ -141,15 +141,15 @@ begin
   ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (fetch.resp = '1') else '0';
 
   -- bus access meta data --
-  ibus_req_o.data  <= (others => '0'); -- read-only
-  ibus_req_o.ben   <= (others => '0'); -- read-only
-  ibus_req_o.rw    <= '0'; -- read-only
-  ibus_req_o.src   <= '1'; -- always "instruction fetch" access
-  ibus_req_o.priv  <= fetch.priv; -- current effective privilege level
+  ibus_req_o.data  <= (others => '0');  -- read-only
+  ibus_req_o.ben   <= (others => '0');  -- read-only
+  ibus_req_o.rw    <= '0';              -- read-only
+  ibus_req_o.src   <= '1';              -- always "instruction fetch" access
+  ibus_req_o.priv  <= fetch.priv;       -- current effective privilege level
   ibus_req_o.debug <= ctrl_i.cpu_debug; -- debug mode, valid without STB being set
-  ibus_req_o.amo   <= '0'; -- cannot be an atomic memory operation
-  ibus_req_o.amoop <= (others => '0'); -- cannot be an atomic memory operation
-  ibus_req_o.fence <= ctrl_i.if_fence; -- fence operation, valid without STB being set
+  ibus_req_o.amo   <= '0';              -- cannot be an atomic memory operation
+  ibus_req_o.amoop <= (others => '0');  -- cannot be an atomic memory operation
+  ibus_req_o.fence <= ctrl_i.if_fence;  -- fence operation, valid without STB being set
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
