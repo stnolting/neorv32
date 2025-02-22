@@ -11,7 +11,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -112,7 +112,6 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
     x"89", x"69", x"97", x"4A", x"0C", x"96", x"77", x"7E", x"65", x"B9", x"F1", x"09", x"C5", x"6E", x"C6", x"84",
     x"18", x"F0", x"7D", x"EC", x"3A", x"DC", x"4D", x"20", x"79", x"EE", x"5F", x"3E", x"D7", x"CB", x"39", x"48"
   );
-
 
   -- ----------------------------------------------------------------------------------------
   -- helper functions
@@ -397,7 +396,9 @@ begin
 
   xperm_disabled:
   if not EN_ZBKX generate
-    xperm_res <= (others => '0');
+    xperm8_res <= (others => '0');
+    xperm4_res <= (others => '0');
+    xperm_res  <= (others => '0');
   end generate;
 
 
@@ -437,8 +438,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   sm3_enabled:
   if EN_ZKSH generate
-    sm3_res <= (rs1 xor rol_f(rs1,  9) xor rol_f(rs1, 17)) when (funct12(0) = '0') else
-               (rs1 xor rol_f(rs1, 15) xor rol_f(rs1, 23));
+    sm3_res <= (rs1 xor rol_f(rs1, 9) xor rol_f(rs1, 17)) when (funct12(0) = '0') else (rs1 xor rol_f(rs1, 15) xor rol_f(rs1, 23));
   end generate;
 
   sm3_disabled:
