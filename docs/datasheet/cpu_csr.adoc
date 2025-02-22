@@ -303,7 +303,7 @@ As software does not need to determine the interrupt cause the reduction in late
 | Name        | Machine counter enable
 | Address     | `0x306`
 | Reset value | `0x00000000`
-| ISA         | `Zicsr` & `Zicntr` & `U`
+| ISA         | `Zicsr` & `U`
 | Description | The `mcounteren` CSR is used to constrain user-mode access to the CPU's counter CSRs.
 |=======================
 
@@ -315,7 +315,7 @@ As software does not need to determine the interrupt cause the reduction in late
 | 0    | `CSR_MCOUNTEREN_CY` | r/w | **CY**: User-mode is allowed to read <<_cycleh>> CSRs when set
 | 1    | -                   | r/- | **TM**: not implemented, hardwired to zero
 | 2    | `CSR_MCOUNTEREN_IR` | r/w | **IR**: User-mode is allowed to read <<_instreth>> CSRs when set
-| 31:3 | -                   | r/- | not implemented, hardwired to zero
+| 31:3 | -                   | r/- | **HPM**: hardwired to zero; hardware performance monitors are accessible by machine-mode software only
 |=======================
 
 
