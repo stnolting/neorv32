@@ -344,17 +344,15 @@ dynamic power consumption. Sleep mode is entered by executing the RISC-V `wfi` (
 
 .Execution Details
 [NOTE]
-The `wfi` instruction will raise an illegal instruction exception when executed in user-mode
-if `TW` in <<_mstatus>> is set. When executed in debug-mode or during single-stepping `wfi` will behave as
-simple `nop` without entering sleep mode.
+When executed in debug-mode or during single-stepping, `wfi` will behave as simple `nop` without entering sleep mode.
 
 After executing the `wfi` instruction the `sleep` signal of the CPU's request buses (<<_bus_interface>> will become set
 as soon as the CPU has fully halted:
 
 [start=1]
-.The front-end (instruction fetch) has stopped. There is no pending instruction fetch bus access.
-.The back-end (instruction execution) has stopped. There is no pending data bus access.
-.There is no enabled interrupt being pending.
+. The front-end (instruction fetch) has stopped. There is no pending instruction fetch bus access.
+. The back-end (instruction execution) has stopped. There is no pending data bus access.
+. There is no enabled interrupt being pending.
 
 CPU-external modules like memories, timers and peripheral interfaces are not affected by this. Furthermore, the CPU will
 continue to buffer/enqueue incoming interrupts. The CPU will leave sleep mode as soon as any _enabled_ interrupt (via <<_mie>>)
@@ -656,13 +654,7 @@ operations.
 
 .`wfi` Instruction
 [NOTE]
-The `wfi` instruction is used to enter <<_sleep_mode>>. Executing the `wfi` instruction in user-mode
-will raise an illegal instruction exception if the `TW` bit of <<_mstatus>> is set.
-
-.Shifter Tuning Options
-[TIP]
-The physical implementation of the bit-shifter can be tuned for certain design goals like area or throughput.
-See section <<_cpu_tuning_options>> for more information.
+The `wfi` instruction is used to enter CPU <<_sleep_mode>>.
 
 
 ==== `M` ISA Extension
@@ -721,6 +713,13 @@ instructions for read-modify-write <<_atomic_memory_access>> operations. It is e
 [NOTE]
 The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
 
+.RMW Operations Execute as "Loads" for the CPU
+[IMPORTANT]
+For the CPU hardware, all atomic read-modify-write operations are treated as **load** operations. Hence, any `amo*.w`
+instruction will trigger the `HPMCNT_EVENT_LOAD` HPM event (see <<_mhpmevent>>). If any `amo*.w` instruction causes
+a bus access error or tries to access an unaligned address, a _load access error_ or _load address misaligned_ exception
+is raised, respectively.
+
 
 ==== `Zalrsc` ISA Extension
 
@@ -772,7 +771,7 @@ This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv
 Fused multiply-add instructions `f[n]m[add/sub].s` are not supported. A special GCC switch is used to prevent the
 compiler from emitting contracted/fused floating-point operations (see <<_default_compiler_flags>>).
 
-.Division and Squarer Root Instructions
+.Division and Square Root Instructions
 [WARNING]
 Division `fdiv.s` and square root `fsqrt.s` instructions are not supported yet.
 
@@ -805,11 +804,6 @@ counter CSRs. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Z
 [NOTE]
 The user-mode `time[h]` CSRs are **not implemented**. Any access will trap allowing the trap handler to
 retrieve system time from the <<_core_local_interruptor_clint>>.
-
-.Mandatory Extension
-[NOTE]
-This extensions is stated as _mandatory_ by the RISC-V spec. However, area-constrained setups may remove
-support for these counters.
 
 .Constrained Access
 [TIP]
