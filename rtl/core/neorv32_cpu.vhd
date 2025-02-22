@@ -413,15 +413,15 @@ begin
     )
     port map (
       -- global control --
-      clk_i       => clk_gated, -- global clock, rising edge
-      rstn_i      => rstn_i,    -- global reset, low-active, async
-      ctrl_i      => ctrl,      -- main control bus
+      clk_i     => clk_gated, -- global clock, rising edge
+      rstn_i    => rstn_i,    -- global reset, low-active, async
+      ctrl_i    => ctrl,      -- main control bus
       -- CSR interface --
-      csr_rdata_o => xcsr_pmp,  -- read data
+      csr_o     => xcsr_pmp,  -- read data
       -- address input --
-      addr_ls_i   => alu_add,   -- load/store address
+      addr_ls_i => alu_add,   -- load/store address
       -- access error --
-      fault_o     => pmp_fault  -- permission violation
+      fault_o   => pmp_fault  -- permission violation
     );
   end generate;
 

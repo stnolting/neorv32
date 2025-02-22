@@ -304,6 +304,7 @@ begin
 
         when others => -- "0--": disabled
         -- ------------------------------------------------------------
+          neoled_o                 <= '0';
           serial.state(1 downto 0) <= "00";
 
       end case;

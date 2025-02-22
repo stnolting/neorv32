@@ -8,7 +8,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -125,9 +125,10 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- Here we are reading/writing from/to the interface registers of the module and generate the CPU access handshake (bus response).
   --
-  -- The CFS provides up to 64 memory-mapped 32-bit interface registers. For instance, these could be used to provide a
-  -- <control register> for global control of the unit, a <data register> for reading/writing from/to a data FIFO, a
-  -- <command register> for issuing commands and a <status register> for status information.
+  -- The CFS provides up to 64kB of memory-mapped address space (16 address bits, byte-addressing) that can be used for custom
+  -- memories and interface registers. If the complete 16-bit address space is not required, only the minimum LSBs required for
+  -- address decoding can be used. In this case, however, the implemented registers are replicated (several times) across the CFS
+  -- address space.
   --
   -- Following the interface protocol, each read or write access has to be acknowledged in the following cycle using the ack_o
   -- signal (or even later if the module needs additional time). If no ACK is generated at all, the bus access will time out
@@ -167,29 +168,29 @@ begin
       -- bus access --
       if (bus_req_i.stb = '1') then -- valid access cycle, STB is high for one cycle
 
-        -- write access --
+        -- write access (word-wise) --
         if (bus_req_i.rw = '1') then
-          if (bus_req_i.addr(7 downto 2) = "000000") then -- address size is fixed!
+          if (bus_req_i.addr(15 downto 2) = "00000000000000") then -- 16-bit byte address = 14-bit word address
             cfs_reg_wr(0) <= bus_req_i.data;
           end if;
-          if (bus_req_i.addr(7 downto 2) = "000001") then
+          if (bus_req_i.addr(15 downto 2) = "00000000000001") then
             cfs_reg_wr(1) <= bus_req_i.data;
           end if;
-          if (bus_req_i.addr(7 downto 2) = "000010") then
+          if (bus_req_i.addr(15 downto 2) = "00000000000010") then
             cfs_reg_wr(2) <= bus_req_i.data;
           end if;
-          if (bus_req_i.addr(7 downto 2) = "000011") then
+          if (bus_req_i.addr(15 downto 2) = "00000000000011") then
             cfs_reg_wr(3) <= bus_req_i.data;
           end if;
 
-        -- read access --
+        -- read access (word-wise) --
         else
-          case bus_req_i.addr(7 downto 2) is -- address size is fixed!
-            when "000000" => bus_rsp_o.data <= cfs_reg_rd(0);
-            when "000001" => bus_rsp_o.data <= cfs_reg_rd(1);
-            when "000010" => bus_rsp_o.data <= cfs_reg_rd(2);
-            when "000011" => bus_rsp_o.data <= cfs_reg_rd(3);
-            when others   => bus_rsp_o.data <= (others => '0');
+          case bus_req_i.addr(15 downto 2) is -- 16-bit byte address = 14-bit word address
+            when "00000000000000" => bus_rsp_o.data <= cfs_reg_rd(0);
+            when "00000000000001" => bus_rsp_o.data <= cfs_reg_rd(1);
+            when "00000000000010" => bus_rsp_o.data <= cfs_reg_rd(2);
+            when "00000000000011" => bus_rsp_o.data <= cfs_reg_rd(3);
+            when others           => bus_rsp_o.data <= (others => '0');
           end case;
         end if;
 
