@@ -185,6 +185,7 @@ rtl/core
 ├-neorv32_cpu.vhd               - NEORV32 CPU TOP ENTITY
 ├-neorv32_cpu_alu.vhd           - Arithmetic/logic unit
 ├-neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
+├-neorv32_cpu_counters.vhd      - Hardware counters (Zicntr & Zihpm ext.)
 ├-neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
 ├-neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
 ├-neorv32_cpu_cp_cond.vhd       - Integer conditional co-processor (Zicond ext.)
