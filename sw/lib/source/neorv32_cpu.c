@@ -124,7 +124,6 @@ void neorv32_cpu_set_minstret(uint64_t value) {
  * Physical memory protection (PMP): Get number of available regions.
  *
  * @warning This function overrides all available PMPCFG* CSRs!
- * @note This function requires the PMP CPU extension.
  *
  * @return Returns number of available PMP regions.
  **************************************************************************/
@@ -169,7 +168,6 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
  * Physical memory protection (PMP): Get minimal region size (granularity).
  *
  * @warning This function overrides PMPCFG0[0] and PMPADDR0 CSRs!
- * @note This function requires the PMP CPU extension.
  *
  * @return Returns minimal region size in bytes. Returns zero on error.
  **************************************************************************/
@@ -205,8 +203,6 @@ uint32_t neorv32_cpu_pmp_get_granularity(void) {
 
 /**********************************************************************//**
  * Physical memory protection (PMP): Configure region.
- *
- * @note This function requires the PMP CPU extension.
  *
  * @warning This function expects a WORD address!
  *
@@ -279,6 +275,8 @@ int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
 /**********************************************************************//**
  * Hardware performance monitors (HPM): Get number of available HPM counters.
  *
+ * @warning This function overrides all available HPMCOUNTER* CSRs!
+ *
  * @return Returns number of available HPM counters.
  **************************************************************************/
 uint32_t neorv32_cpu_hpm_get_num_counters(void) {
@@ -288,24 +286,41 @@ uint32_t neorv32_cpu_hpm_get_num_counters(void) {
     return 0;
   }
 
-  // backup
-  uint32_t mcountinhibit_tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT);
-
-  // try to set all HPM bits
+  // halt all HPMs
   neorv32_cpu_csr_set(CSR_MCOUNTINHIBIT, 0xfffffff8U);
 
-  // count actually set bits
-  uint32_t cnt = 0;
-  uint32_t tmp = neorv32_cpu_csr_read(CSR_MCOUNTINHIBIT) >> 3; // remove IR, TM and CY
-  while (tmp) {
-    cnt++;
-    tmp >>= 1;
-  }
+  // try to set all HPM counters to 1
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER12, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER15, 1);
 
-  // restore
-  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, mcountinhibit_tmp);
+  // sum-up all actually set HPMs
+  uint32_t num_hpm = 0;
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER3);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER4);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER5);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER6);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER7);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER8);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER9);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER10);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER11);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER12);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER13);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER14);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER15);
 
-  return cnt;
+  return num_hpm;
 }
 
 
