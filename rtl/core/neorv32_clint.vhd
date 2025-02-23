@@ -215,7 +215,7 @@ end neorv32_clint_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -223,9 +223,6 @@ end neorv32_clint_rtl;
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
-library neorv32;
-use neorv32.neorv32_package.all;
 
 entity neorv32_clint_mtime is
   port (
@@ -243,10 +240,9 @@ end neorv32_clint_mtime;
 architecture neorv32_clint_mtime_rtl of neorv32_clint_mtime is
 
   signal we_q, re_q : std_ulogic_vector(1 downto 0);
-  signal mtime_q    : std_ulogic_vector(63 downto 0);
-  signal carry_q    : std_ulogic_vector(0 downto 0);
-  signal inc_lo     : std_ulogic_vector(32 downto 0);
-  signal inc_hi     : std_ulogic_vector(32 downto 0);
+  signal mtime_q : std_ulogic_vector(63 downto 0);
+  signal carry_q : std_ulogic_vector(0 downto 0);
+  signal inc_lo, inc_hi : std_ulogic_vector(32 downto 0);
 
 begin
 
@@ -300,7 +296,7 @@ end neorv32_clint_mtime_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -308,9 +304,6 @@ end neorv32_clint_mtime_rtl;
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
-library neorv32;
-use neorv32.neorv32_package.all;
 
 entity neorv32_clint_mtimecmp is
   port (
@@ -382,22 +375,18 @@ begin
 end neorv32_clint_mtimecmp_rtl;
 
 
-
 -- ================================================================================ --
 -- NEORV32 SoC - CLINT SWI (software interrupt trigger)                             --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
 
 library ieee;
 use ieee.std_logic_1164.all;
-
-library neorv32;
-use neorv32.neorv32_package.all;
 
 entity neorv32_clint_swi is
   port (
