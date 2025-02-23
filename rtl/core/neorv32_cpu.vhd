@@ -105,7 +105,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
                                     RISCV_ISA_Zksh and RISCV_ISA_Zksed; -- Zks: ShangMi suite
 
   -- external CSR interface read-back --
-  signal xcsr_pmp, xcsr_alu, xcsr_res, xcsr_icc : std_ulogic_vector(XLEN-1 downto 0);
+  signal xcsr_cnt, xcsr_pmp, xcsr_alu, xcsr_res, xcsr_icc : std_ulogic_vector(XLEN-1 downto 0);
 
   -- local signals --
   signal ctrl        : ctrl_bus_t;                         -- main control bus
@@ -269,10 +269,7 @@ begin
     CPU_CLOCK_GATING_EN => CPU_CLOCK_GATING_EN, -- enable clock gating when in sleep mode
     CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,     -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,   -- use barrel shifter for shift operations
-    CPU_RF_HW_RST_EN    => CPU_RF_HW_RST_EN,    -- implement full hardware reset for register file
-    -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS        => HPM_NUM_CNTS,        -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH       => HPM_CNT_WIDTH        -- total size of HPM counters
+    CPU_RF_HW_RST_EN    => CPU_RF_HW_RST_EN     -- implement full hardware reset for register file
   )
   port map (
     -- global control --
@@ -307,7 +304,34 @@ begin
   irq_machine <= mti_i & mei_i & msi_i;
 
   -- control-external CSR read-back --
-  xcsr_res <= xcsr_alu or xcsr_pmp or xcsr_icc;
+  xcsr_res <= xcsr_cnt or xcsr_alu or xcsr_pmp or xcsr_icc;
+
+
+  -- Hardware Counters ----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  cnts_enabled:
+  if RISCV_ISA_Zicntr or RISCV_ISA_Zihpm generate
+    neorv32_cpu_counters_inst: entity neorv32.neorv32_cpu_counters
+    generic map (
+    ZICNTR_EN => RISCV_ISA_Zicntr, -- implement base counters
+    ZIHPM_EN  => RISCV_ISA_Zihpm,  -- implement hardware performance monitors
+    HPM_NUM   => HPM_NUM_CNTS,     -- number of implemented HPM counters (0..13)
+    HPM_WIDTH => HPM_CNT_WIDTH     -- total size of HPM counters (0..64)
+    )
+    port map (
+      -- global control --
+      clk_i   => clk_gated, -- global clock, rising edge
+      rstn_i  => rstn_i,    -- global reset, low-active, async
+      ctrl_i  => ctrl,      -- main control bus
+      -- read back --
+      rdata_o => xcsr_cnt   -- read data
+    );
+  end generate;
+
+  cnts_disabled:
+  if (not RISCV_ISA_Zicntr) and (not RISCV_ISA_Zihpm) generate
+    xcsr_cnt <= (others => '0');
+  end generate;
 
 
   -- Register File --------------------------------------------------------------------------
