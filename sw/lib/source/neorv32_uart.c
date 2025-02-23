@@ -332,11 +332,11 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
   char c = 0;
   char string_buf[36];
   int32_t n = 0;
-  unsigned int tmp = 0;
+  unsigned int i = 0;
 
   // prevent uninitialized stack bytes
-  for (n=0; n<sizeof(string_buf); n++) {
-    string_buf[n] = 0;
+  for (i=0; i<sizeof(string_buf); i++) {
+    string_buf[i] = 0;
   }
 
   while ((c = *format++)) {
@@ -371,8 +371,8 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
         case 'x': // 32-bit hexadecimal with leading zeros
         case 'p':
           neorv32_aux_itoa(string_buf, va_arg(args, uint32_t), 16);
-          tmp = 8 - strlen(string_buf);
-          while (tmp--) { // add leading zeros
+          i = 8 - strlen(string_buf);
+          while (i--) { // add leading zeros
             neorv32_uart_putc(UARTx, '0');
           }
           neorv32_uart_puts(UARTx, string_buf);
