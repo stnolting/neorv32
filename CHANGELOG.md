@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 23.02.2025 | 1.11.1.6 | source-out CPU counters into a new rtl file (`neorv32_cpu_counters.vhd`) | [#1192](https://github.com/stnolting/neorv32/pull/1192) |
 | 22.02.2025 | 1.11.1.5 | minor rtl edits and cleanups | [#1191](https://github.com/stnolting/neorv32/pull/1191) |
 | 20.02.2025 | 1.11.1.4 | :bug: fix bug in `Zalrsc` ISA extension's bus request decoding | [#1190](https://github.com/stnolting/neorv32/pull/1190) |
 | 14.02.2025 | 1.11.1.3 | source-out CPU front-end into new rtl file (`neorv32_cpu_frontend.vhd`) | [#1183](https://github.com/stnolting/neorv32/pull/1183) |
@@ -57,7 +58,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 10.01.2025 | 1.10.9.2 | clean-up SMP dual-core configuration (HW and SW optimizations) | [#1146](https://github.com/stnolting/neorv32/pull/1146) |
 | 09.01.2025 | 1.10.9.1 | fix side-effects of CSR read instructions | [#1145](https://github.com/stnolting/neorv32/pull/1145) |
 | 08.01.2025 | [**:rocket:1.10.9**](https://github.com/stnolting/neorv32/releases/tag/v1.10.9) | **New release** | |
-| 07.01.2025 | 1.10.8.9 | rtl edits and cleanups; add dedicated "core complex" wrapper (CPU + L1 caches + bus switch) | [#1144](https://github.com/stnolting/neorv32/pull/1144) | 
+| 07.01.2025 | 1.10.8.9 | rtl edits and cleanups; add dedicated "core complex" wrapper (CPU + L1 caches + bus switch) | [#1144](https://github.com/stnolting/neorv32/pull/1144) |
 | 04.01.2025 | 1.10.8.8 | :sparkles: add inter-core communication (ICC) for the SMP dual-core setup | [#1142](https://github.com/stnolting/neorv32/pull/1142) |
 | 03.01.2025 | 1.10.8.7 | :warning: :sparkles: replace `Zalrsc` ISA extensions (reservation-set operations) by `Zaamo` ISA extension (atomic read-modify-write operations) | [#1141](https://github.com/stnolting/neorv32/pull/1141) |
 | 01.01.2025 | 1.10.8.6 | :sparkles: :test_tube: add smp dual-core option | [#1135](https://github.com/stnolting/neorv32/pull/1135) |
