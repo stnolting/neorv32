@@ -65,10 +65,7 @@ entity neorv32_cpu_control is
     CPU_CLOCK_GATING_EN : boolean; -- enable clock gating when in sleep mode
     CPU_FAST_MUL_EN     : boolean; -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   : boolean; -- use barrel shifter for shift operations
-    CPU_RF_HW_RST_EN    : boolean; -- implement full hardware reset for register file
-    -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS        : natural range 0 to 13; -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH       : natural range 0 to 64  -- total size of HPM counters (0..64)
+    CPU_RF_HW_RST_EN    : boolean  -- implement full hardware reset for register file
   );
   port (
     -- global control --
@@ -102,11 +99,6 @@ end neorv32_cpu_control;
 
 architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
-  -- HPM counter auto-configuration --
-  constant hpm_num_c          : natural := cond_sel_natural_f(RISCV_ISA_Zihpm, HPM_NUM_CNTS, 0);
-  constant hpm_cnt_lo_width_c : natural := min_natural_f(HPM_CNT_WIDTH, 32); -- size low word
-  constant hpm_cnt_hi_width_c : natural := HPM_CNT_WIDTH - hpm_cnt_lo_width_c; -- size high word
-
   -- instruction execution engine --
   type exe_engine_state_t is (EX_DISPATCH, EX_TRAP_ENTER, EX_TRAP_EXIT, EX_RESTART, EX_SLEEP, EX_EXECUTE,
                               EX_ALU_WAIT, EX_FENCE, EX_BRANCH, EX_BRANCHED, EX_SYSTEM, EX_MEM_REQ, EX_MEM_RSP);
@@ -120,22 +112,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     msync : std_ulogic; -- memory synchronization completed
   end record;
   signal exe_engine, exe_engine_nxt : exe_engine_t;
-
-  -- helpers --
-  signal if_ack, if_reset, branch_taken : std_ulogic;
-
-  -- simplified opcode (2 LSBs hardwired to "11" to indicate rv32) --
-  signal opcode : std_ulogic_vector(6 downto 0);
-
-  -- instruction's immediate
-  signal immediate : std_ulogic_vector(XLEN-1 downto 0);
-
-  -- execution monitor --
-  signal monitor_cnt : std_ulogic_vector(monitor_mc_tmo_c downto 0);
-  signal monitor_exc : std_ulogic;
-
-  -- CPU sleep-mode --
-  signal sleep_mode : std_ulogic;
 
   -- trap controller --
   type trap_ctrl_t is record
@@ -162,7 +138,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal trap_ctrl : trap_ctrl_t;
 
-  -- CPU main control bus --
+  -- CPU control bus --
   signal ctrl, ctrl_nxt : ctrl_bus_t;
 
   -- control and status registers (CSRs) --
@@ -215,44 +191,26 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal csr : csr_t;
 
-  -- HPM event configuration CSRs --
-  type hpmevent_cfg_t is array (3 to 15) of std_ulogic_vector(cnt_event_width_c-1 downto 0);
-  type hpmevent_rd_t  is array (3 to 15) of std_ulogic_vector(XLEN-1 downto 0);
-  signal hpmevent_cfg : hpmevent_cfg_t;
-  signal hpmevent_rd  : hpmevent_rd_t;
-
-  -- counter CSRs --
-  type cnt_dat_t is array (0 to 2+hpm_num_c) of std_ulogic_vector(XLEN-1 downto 0);
-  type cnt_nxt_t is array (0 to 2+hpm_num_c) of std_ulogic_vector(XLEN downto 0);
-  type cnt_ovf_t is array (0 to 2+hpm_num_c) of std_ulogic_vector(0 downto 0);
-  type cnt_inc_t is array (15 downto 0)      of std_ulogic_vector(0 downto 0);
-  type cnt_t is record
-    inc : cnt_inc_t;
-    lo  : cnt_dat_t; -- counter word low
-    hi  : cnt_dat_t; -- counter word high
-    nxt : cnt_nxt_t; -- low-word increment including carry bit
-    ovf : cnt_ovf_t; -- counter low-to-high-word overflow
-  end record;
-  signal cnt                  : cnt_t;
-  signal cnt_hi_rd, cnt_lo_rd : cnt_dat_t;
-
-  -- counter events --
-  signal cnt_event : std_ulogic_vector(cnt_event_width_c-1 downto 0);
-
   -- debug-mode controller --
   type debug_ctrl_t is record
     run, trig_hw, trig_break, trig_halt, trig_step : std_ulogic;
   end record;
   signal debug_ctrl : debug_ctrl_t;
 
-  -- illegal instruction check --
-  signal illegal_cmd : std_ulogic;
-
-  -- CSR access existence/read-write/privilege check --
-  signal csr_valid : std_ulogic_vector(2 downto 0); -- [2]: implemented, [1]: r/w access, [0]: privilege
-
-  -- hardware trigger module --
-  signal hw_trigger_match, hw_trigger_fired : std_ulogic;
+  -- misc/helpers --
+  signal if_ack       : std_ulogic; -- acknowledge instruction data from instruction fetch (front-end)
+  signal if_reset     : std_ulogic; -- reset instruction fetch (front-end)
+  signal branch_taken : std_ulogic; -- fulfilled branch condition or unconditional jump
+  signal monitor_cnt  : std_ulogic_vector(monitor_mc_tmo_c downto 0); -- execution monitor cycle counter
+  signal monitor_exc  : std_ulogic; -- execution monitor timeout exception
+  signal opcode       : std_ulogic_vector(6 downto 0); -- simplified opcode (2 LSBs hardwired to "11" to indicate rv32)
+  signal immediate    : std_ulogic_vector(XLEN-1 downto 0); -- instruction's immediate
+  signal illegal_cmd  : std_ulogic; -- illegal instruction check
+  signal sleep_mode   : std_ulogic; -- CPU is in sleep-mode
+  signal csr_valid    : std_ulogic_vector(2 downto 0); -- CSR access: [2] implemented, [1] r/w access, [0] privilege
+  signal cnt_event    : std_ulogic_vector(11 downto 0); -- counter events
+  signal hwtrig_match : std_ulogic; -- hardware trigger matches programmed address
+  signal hwtrig_fired : std_ulogic; -- hardware trigger has fired
 
 begin
 
@@ -334,7 +292,7 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hw_trigger_match, opcode, frontend_i, csr,
+  execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hwtrig_match, opcode, frontend_i, csr,
                                    ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i, mem_sync_i)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
@@ -409,7 +367,7 @@ begin
         --
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           exe_engine_nxt.state <= EX_TRAP_ENTER;
-        elsif RISCV_ISA_Sdtrig and (hw_trigger_match = '1') then -- hardware breakpoint
+        elsif RISCV_ISA_Sdtrig and (hwtrig_match = '1') then -- hardware breakpoint
           exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC; intercept BEFORE executing the instruction
           trap_ctrl.hwtrig     <= '1';
           exe_engine_nxt.state <= EX_DISPATCH; -- stay here another round until trap_ctrl.hwtrig arrives in trap_ctrl.env_pending
@@ -663,6 +621,8 @@ begin
   ctrl_o.csr_re       <= csr.re;
   ctrl_o.csr_addr     <= csr.addr;
   ctrl_o.csr_wdata    <= csr.wdata;
+  ctrl_o.cnt_halt     <= csr.mcountinhibit;
+  ctrl_o.cnt_event    <= cnt_event;
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
   ctrl_o.ir_funct12   <= exe_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c);
@@ -1545,63 +1505,47 @@ begin
               csr.rdata(0) <= csr.mcountinhibit(0); -- [m]cycle[h]
               csr.rdata(2) <= csr.mcountinhibit(2); -- [m]instret[h]
             end if;
-            if RISCV_ISA_Zihpm and (hpm_num_c > 0) then
-              for i in 3 to (hpm_num_c+3)-1 loop
-                csr.rdata(i) <= csr.mcountinhibit(i); -- [m]hpmcounter*[h]
-              end loop;
+            if RISCV_ISA_Zihpm then
+              csr.rdata(15 downto 3) <= csr.mcountinhibit(15 downto 3); -- [m]hpmcounter*[h]
             end if;
 
           -- HPM event configuration --
-          when csr_mhpmevent3_c  => if (hpm_num_c >  0) then csr.rdata <= hpmevent_rd(3);  end if;
-          when csr_mhpmevent4_c  => if (hpm_num_c >  1) then csr.rdata <= hpmevent_rd(4);  end if;
-          when csr_mhpmevent5_c  => if (hpm_num_c >  2) then csr.rdata <= hpmevent_rd(5);  end if;
-          when csr_mhpmevent6_c  => if (hpm_num_c >  3) then csr.rdata <= hpmevent_rd(6);  end if;
-          when csr_mhpmevent7_c  => if (hpm_num_c >  4) then csr.rdata <= hpmevent_rd(7);  end if;
-          when csr_mhpmevent8_c  => if (hpm_num_c >  5) then csr.rdata <= hpmevent_rd(8);  end if;
-          when csr_mhpmevent9_c  => if (hpm_num_c >  6) then csr.rdata <= hpmevent_rd(9);  end if;
-          when csr_mhpmevent10_c => if (hpm_num_c >  7) then csr.rdata <= hpmevent_rd(10); end if;
-          when csr_mhpmevent11_c => if (hpm_num_c >  8) then csr.rdata <= hpmevent_rd(11); end if;
-          when csr_mhpmevent12_c => if (hpm_num_c >  9) then csr.rdata <= hpmevent_rd(12); end if;
-          when csr_mhpmevent13_c => if (hpm_num_c > 10) then csr.rdata <= hpmevent_rd(13); end if;
-          when csr_mhpmevent14_c => if (hpm_num_c > 11) then csr.rdata <= hpmevent_rd(14); end if;
-          when csr_mhpmevent15_c => if (hpm_num_c > 12) then csr.rdata <= hpmevent_rd(15); end if;
+          when csr_mhpmevent3_c  | csr_mhpmevent4_c  | csr_mhpmevent5_c  | csr_mhpmevent6_c  |
+               csr_mhpmevent7_c  | csr_mhpmevent8_c  | csr_mhpmevent9_c  | csr_mhpmevent10_c |
+               csr_mhpmevent11_c | csr_mhpmevent12_c | csr_mhpmevent13_c | csr_mhpmevent14_c |
+               csr_mhpmevent15_c =>
+            if RISCV_ISA_Zihpm then
+              csr.rdata <= xcsr_rdata_i; -- implemented externally
+            end if;
 
           -- --------------------------------------------------------------------
           -- counters and timers
           -- --------------------------------------------------------------------
-          -- low word --
-          when csr_mcycle_c   | csr_cycle_c   => if RISCV_ISA_Zicntr then csr.rdata <= cnt_lo_rd(0); end if;
-          when csr_minstret_c | csr_instret_c => if RISCV_ISA_Zicntr then csr.rdata <= cnt_lo_rd(2); end if;
-          when csr_mhpmcounter3_c  => if (hpm_num_c >  0) then csr.rdata <= cnt_lo_rd(3);  end if;
-          when csr_mhpmcounter4_c  => if (hpm_num_c >  1) then csr.rdata <= cnt_lo_rd(4);  end if;
-          when csr_mhpmcounter5_c  => if (hpm_num_c >  2) then csr.rdata <= cnt_lo_rd(5);  end if;
-          when csr_mhpmcounter6_c  => if (hpm_num_c >  3) then csr.rdata <= cnt_lo_rd(6);  end if;
-          when csr_mhpmcounter7_c  => if (hpm_num_c >  4) then csr.rdata <= cnt_lo_rd(7);  end if;
-          when csr_mhpmcounter8_c  => if (hpm_num_c >  5) then csr.rdata <= cnt_lo_rd(8);  end if;
-          when csr_mhpmcounter9_c  => if (hpm_num_c >  6) then csr.rdata <= cnt_lo_rd(9);  end if;
-          when csr_mhpmcounter10_c => if (hpm_num_c >  7) then csr.rdata <= cnt_lo_rd(10); end if;
-          when csr_mhpmcounter11_c => if (hpm_num_c >  8) then csr.rdata <= cnt_lo_rd(11); end if;
-          when csr_mhpmcounter12_c => if (hpm_num_c >  9) then csr.rdata <= cnt_lo_rd(12); end if;
-          when csr_mhpmcounter13_c => if (hpm_num_c > 10) then csr.rdata <= cnt_lo_rd(13); end if;
-          when csr_mhpmcounter14_c => if (hpm_num_c > 11) then csr.rdata <= cnt_lo_rd(14); end if;
-          when csr_mhpmcounter15_c => if (hpm_num_c > 12) then csr.rdata <= cnt_lo_rd(15); end if;
+          -- base counters --
+          when csr_cycle_c   | csr_cycleh_c   | csr_mcycle_c   | csr_mcycleh_c   |
+               csr_time_c    | csr_timeh_c    | csr_mtime_c    | csr_mtimeh_c    |
+               csr_instret_c | csr_instreth_c | csr_minstret_c | csr_minstreth_c =>
+            if RISCV_ISA_Zicntr then
+              csr.rdata <= xcsr_rdata_i; -- implemented externally
+            end if;
 
-          -- high word --
-          when csr_mcycleh_c   | csr_cycleh_c   => if RISCV_ISA_Zicntr then csr.rdata <= cnt_hi_rd(0); end if;
-          when csr_minstreth_c | csr_instreth_c => if RISCV_ISA_Zicntr then csr.rdata <= cnt_hi_rd(2); end if;
-          when csr_mhpmcounter3h_c  => if (hpm_num_c >  0) then csr.rdata <= cnt_hi_rd(3);  end if;
-          when csr_mhpmcounter4h_c  => if (hpm_num_c >  1) then csr.rdata <= cnt_hi_rd(4);  end if;
-          when csr_mhpmcounter5h_c  => if (hpm_num_c >  2) then csr.rdata <= cnt_hi_rd(5);  end if;
-          when csr_mhpmcounter6h_c  => if (hpm_num_c >  3) then csr.rdata <= cnt_hi_rd(6);  end if;
-          when csr_mhpmcounter7h_c  => if (hpm_num_c >  4) then csr.rdata <= cnt_hi_rd(7);  end if;
-          when csr_mhpmcounter8h_c  => if (hpm_num_c >  5) then csr.rdata <= cnt_hi_rd(8);  end if;
-          when csr_mhpmcounter9h_c  => if (hpm_num_c >  6) then csr.rdata <= cnt_hi_rd(9);  end if;
-          when csr_mhpmcounter10h_c => if (hpm_num_c >  7) then csr.rdata <= cnt_hi_rd(10); end if;
-          when csr_mhpmcounter11h_c => if (hpm_num_c >  8) then csr.rdata <= cnt_hi_rd(11); end if;
-          when csr_mhpmcounter12h_c => if (hpm_num_c >  9) then csr.rdata <= cnt_hi_rd(12); end if;
-          when csr_mhpmcounter13h_c => if (hpm_num_c > 10) then csr.rdata <= cnt_hi_rd(13); end if;
-          when csr_mhpmcounter14h_c => if (hpm_num_c > 11) then csr.rdata <= cnt_hi_rd(14); end if;
-          when csr_mhpmcounter15h_c => if (hpm_num_c > 12) then csr.rdata <= cnt_hi_rd(15); end if;
+          -- hardware performance monitors --
+          when csr_hpmcounter3_c  | csr_hpmcounter3h_c  | csr_mhpmcounter3_c  | csr_mhpmcounter3h_c  |
+               csr_hpmcounter4_c  | csr_hpmcounter4h_c  | csr_mhpmcounter4_c  | csr_mhpmcounter4h_c  |
+               csr_hpmcounter5_c  | csr_hpmcounter5h_c  | csr_mhpmcounter5_c  | csr_mhpmcounter5h_c  |
+               csr_hpmcounter6_c  | csr_hpmcounter6h_c  | csr_mhpmcounter6_c  | csr_mhpmcounter6h_c  |
+               csr_hpmcounter7_c  | csr_hpmcounter7h_c  | csr_mhpmcounter7_c  | csr_mhpmcounter7h_c  |
+               csr_hpmcounter8_c  | csr_hpmcounter8h_c  | csr_mhpmcounter8_c  | csr_mhpmcounter8h_c  |
+               csr_hpmcounter9_c  | csr_hpmcounter9h_c  | csr_mhpmcounter9_c  | csr_mhpmcounter9h_c  |
+               csr_hpmcounter10_c | csr_hpmcounter10h_c | csr_mhpmcounter10_c | csr_mhpmcounter10h_c |
+               csr_hpmcounter11_c | csr_hpmcounter11h_c | csr_mhpmcounter11_c | csr_mhpmcounter11h_c |
+               csr_hpmcounter12_c | csr_hpmcounter12h_c | csr_mhpmcounter12_c | csr_mhpmcounter12h_c |
+               csr_hpmcounter13_c | csr_hpmcounter13h_c | csr_mhpmcounter13_c | csr_mhpmcounter13h_c |
+               csr_hpmcounter14_c | csr_hpmcounter14h_c | csr_mhpmcounter14_c | csr_mhpmcounter14h_c |
+               csr_hpmcounter15_c | csr_hpmcounter15h_c | csr_mhpmcounter15_c | csr_mhpmcounter15h_c =>
+            if RISCV_ISA_Zihpm then
+              csr.rdata <= xcsr_rdata_i; -- implemented externally
+            end if;
 
           -- --------------------------------------------------------------------
           -- machine information registers
@@ -1683,138 +1627,13 @@ begin
 
 
   -- ****************************************************************************************************************************
-  -- CPU Counters (Base Counters and Hardware Performance Monitors)
+  -- CPU Counter Increment Control (Trigger Events)
   -- ****************************************************************************************************************************
 
-  -- Counter CSRs ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  cnt_gen:
-  for i in 0 to 2+hpm_num_c generate
-
-    -- counter CSRs --
-    cnt_reg: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        cnt.lo(i)  <= (others => '0');
-        cnt.ovf(i) <= (others => '0');
-        cnt.hi(i)  <= (others => '0');
-      elsif rising_edge(clk_i) then
-        -- low word --
-        -- [NOTE] no need to check bits 6:4 of the address as they're always zero (checked by illegal CSR logic)
-        if (csr.we = '1') and (csr.addr(11 downto 7) = csr_mcycle_c(11 downto 7)) and
-           (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
-          cnt.lo(i) <= csr.wdata;
-        else
-          cnt.lo(i) <= cnt.nxt(i)(XLEN-1 downto 0);
-        end if;
-        cnt.ovf(i)(0) <= cnt.nxt(i)(XLEN);
-        -- high word --
-        -- [NOTE] no need to check bits 6:4 of the address as they're always zero (checked by illegal CSR logic)
-        if (csr.we = '1') and (csr.addr(11 downto 7) = csr_mcycleh_c(11 downto 7)) and
-           (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
-          cnt.hi(i) <= csr.wdata;
-        else
-          cnt.hi(i) <= std_ulogic_vector(unsigned(cnt.hi(i)) + unsigned(cnt.ovf(i)));
-        end if;
-      end if;
-    end process cnt_reg;
-
-    -- low-word increment --
-    cnt.nxt(i) <= std_ulogic_vector(unsigned('0' & cnt.lo(i)) + unsigned(cnt.inc(i)));
-
-  end generate; -- /cnt_gen
-
-  -- read-back --
-  cnt_readback: process(cnt)
-  begin
-    cnt_lo_rd <= (others => (others => '0'));
-    cnt_hi_rd <= (others => (others => '0'));
-    -- base counters --
-    if RISCV_ISA_Zicntr then
-      cnt_lo_rd(0) <= cnt.lo(0); -- cycle
-      cnt_hi_rd(0) <= cnt.hi(0); -- cycleh
-      cnt_lo_rd(2) <= cnt.lo(2); -- instret
-      cnt_hi_rd(2) <= cnt.hi(2); -- instreth
-    end if;
-    -- HPM counters --
-    if RISCV_ISA_Zihpm and (hpm_num_c > 0) then
-      for i in 3 to (hpm_num_c+3)-1 loop
-        if (hpm_cnt_lo_width_c > 0) then -- constrain low word size
-          cnt_lo_rd(i)(hpm_cnt_lo_width_c-1 downto 0) <= cnt.lo(i)(hpm_cnt_lo_width_c-1 downto 0);
-        end if;
-        if (hpm_cnt_hi_width_c > 0) then -- constrain high word size
-          cnt_hi_rd(i)(hpm_cnt_hi_width_c-1 downto 0) <= cnt.hi(i)(hpm_cnt_hi_width_c-1 downto 0);
-        end if;
-      end loop;
-    end if;
-  end process cnt_readback;
-
-
-  -- Hardware Performance Monitors (HPM) - Counter Event Configuration CSRs -----------------
-  -- -------------------------------------------------------------------------------------------
-  hpmevent_gen_enable:
-  if RISCV_ISA_Zihpm and (hpm_num_c > 0) generate
-
-    -- event registers --
-    hpmevent_reg_gen:
-    for i in 3 to (hpm_num_c+3)-1 generate
-      hpmevent_reg: process(rstn_i, clk_i)
-      begin
-        if (rstn_i = '0') then
-          hpmevent_cfg(i) <= (others => '0');
-        elsif rising_edge(clk_i) then
-          -- [NOTE] no need to check bit 4 of the address as it is always zero (checked by illegal CSR logic)
-          if (csr.addr(11 downto 5) = csr_mhpmevent3_c(11 downto 5)) and
-             (csr.we = '1') and (csr.addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) then
-            hpmevent_cfg(i) <= csr.wdata(cnt_event_width_c-1 downto 0);
-          end if;
-          hpmevent_cfg(i)(cnt_event_tm_c) <= '0'; -- time: not available
-        end if;
-      end process hpmevent_reg;
-      -- read-back --
-      hpmevent_rd(i)(XLEN-1 downto cnt_event_width_c) <= (others => '0');
-      hpmevent_rd(i)(cnt_event_width_c-1 downto 0)    <= hpmevent_cfg(i);
-    end generate;
-
-    -- terminate unused entries --
-    hpmevent_terminate_gen:
-    for i in hpm_num_c+3 to 15 generate
-      hpmevent_cfg(i) <= (others => '0');
-      hpmevent_rd(i)  <= (others => '0');
-    end generate;
-
-  end generate;
-
-  -- no HPMs implemented --
-  hpmevent_gen_disable:
-  if (not RISCV_ISA_Zihpm) or (hpm_num_c = 0) generate
-    hpmevent_cfg <= (others => (others => '0'));
-    hpmevent_rd  <= (others => (others => '0'));
-  end generate;
-
-
-  -- Counter Increment Control (Trigger Events) ---------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  counter_event: process(rstn_i, clk_i)
-  begin -- increment if an enabled event fires; do not increment if CPU is in debug mode or if counter is inhibited
-    if (rstn_i = '0') then
-      cnt.inc <= (others => (others => '0'));
-    elsif rising_edge(clk_i) then
-      -- base counters --
-      cnt.inc(0) <= (others => (cnt_event(cnt_event_cy_c) and (not csr.mcountinhibit(0)) and (not debug_ctrl.run)));
-      cnt.inc(1) <= (others => '0'); -- time: not available
-      cnt.inc(2) <= (others => (cnt_event(cnt_event_ir_c) and (not csr.mcountinhibit(2)) and (not debug_ctrl.run)));
-      -- HPM counters --
-      for i in 3 to 15 loop
-        cnt.inc(i) <= (others => (or_reduce_f(cnt_event and hpmevent_cfg(i)) and (not csr.mcountinhibit(i)) and (not debug_ctrl.run)));
-      end loop;
-    end if;
-  end process counter_event;
-
   -- RISC-V-compliant counter events --
-  cnt_event(cnt_event_cy_c) <= '1' when (sleep_mode = '0') else '0'; -- cycle: active cycle
+  cnt_event(cnt_event_cy_c) <= '1' when (sleep_mode = '0') else '0'; -- active cycle
   cnt_event(cnt_event_tm_c) <= '0'; -- time: not available
-  cnt_event(cnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) else '0'; -- instret: retired (==executed!) instruction
+  cnt_event(cnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) else '0'; -- retired (=executed) instruction
 
   -- NEORV32-specific counter events --
   cnt_event(cnt_event_compr_c)    <= '1' when (exe_engine.state = EX_EXECUTE)  and (exe_engine.ci = '1')        else '0'; -- executed compressed instruction
@@ -1897,36 +1716,37 @@ begin
   -- ****************************************************************************************************************************
   -- Hardware Trigger Module
   -- ****************************************************************************************************************************
+
   trigger_module_enable:
   if RISCV_ISA_Sdtrig generate
 
     -- trigger on instruction address match (trigger right BEFORE execution) --
-    hw_trigger_match <= '1' when (csr.tdata1_execute = '1') and -- trigger enabled to match on instruction address
-                                 (hw_trigger_fired = '0') and -- trigger has not fired yet
-                                 (csr.tdata2(XLEN-1 downto 1) = exe_engine.pc2(XLEN-1 downto 1)) -- address match
-                                 else '0';
+    hwtrig_match <= '1' when (csr.tdata1_execute = '1') and -- trigger enabled to match on instruction address
+                             (hwtrig_fired = '0') and -- trigger has not fired yet
+                             (csr.tdata2(XLEN-1 downto 1) = exe_engine.pc2(XLEN-1 downto 1)) -- address match
+                             else '0';
 
     -- status flag - set when trigger has fired --
-    hw_trigger_exception: process(rstn_i, clk_i)
+    hwtrig_exception: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        hw_trigger_fired <= '0';
+        hwtrig_fired <= '0';
       elsif rising_edge(clk_i) then
-        if (hw_trigger_fired = '0') then
-          hw_trigger_fired <= hw_trigger_match and trap_ctrl.exc_buf(exc_ebreak_c); -- trigger has fired and breakpoint exception is pending
+        if (hwtrig_fired = '0') then
+          hwtrig_fired <= hwtrig_match and trap_ctrl.exc_buf(exc_ebreak_c); -- trigger has fired and breakpoint exception is pending
         elsif (csr.we = '1') and (csr.addr = csr_tdata1_c) and (csr.wdata(22) = '0') then -- tdata1 write access
-          hw_trigger_fired <= '0';
+          hwtrig_fired <= '0';
         end if;
       end if;
-    end process hw_trigger_exception;
+    end process hwtrig_exception;
 
   end generate;
 
   -- Sdtrig ISA extension not enabled --
   trigger_module_disable:
   if not RISCV_ISA_Sdtrig generate
-    hw_trigger_match <= '0';
-    hw_trigger_fired <= '0';
+    hwtrig_match <= '0';
+    hwtrig_fired <= '0';
   end generate;
 
 
@@ -1938,7 +1758,7 @@ begin
   csr.tdata1_rd(25)           <= '0'; -- hit1: hardwired to zero
   csr.tdata1_rd(24)           <= '0'; -- vs: VS-mode not implemented
   csr.tdata1_rd(23)           <= '0'; -- vu: VU-mode not implemented
-  csr.tdata1_rd(22)           <= hw_trigger_fired; -- hit0: set when trigger has fired
+  csr.tdata1_rd(22)           <= hwtrig_fired; -- hit0: set when trigger has fired
   csr.tdata1_rd(21)           <= '0'; -- select: only address matching is supported
   csr.tdata1_rd(20 downto 19) <= "00"; -- reserved
   csr.tdata1_rd(18 downto 16) <= "000"; -- size: match accesses of any size
