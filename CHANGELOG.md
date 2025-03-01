@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 01.03.2025 | 1.11.1.7 | minor rtl / coding style edits (fixing a Vivado 2024.2 synthesis issue) | [#1193](https://github.com/stnolting/neorv32/pull/1193) |
 | 23.02.2025 | 1.11.1.6 | source-out CPU counters into a new rtl file (`neorv32_cpu_counters.vhd`) | [#1192](https://github.com/stnolting/neorv32/pull/1192) |
 | 22.02.2025 | 1.11.1.5 | minor rtl edits and cleanups | [#1191](https://github.com/stnolting/neorv32/pull/1191) |
 | 20.02.2025 | 1.11.1.4 | :bug: fix bug in `Zalrsc` ISA extension's bus request decoding | [#1190](https://github.com/stnolting/neorv32/pull/1190) |
