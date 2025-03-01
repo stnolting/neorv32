@@ -1,10 +1,9 @@
 -- ================================================================================ --
 -- NEORV32 CPU - Central Control Unit                                               --
 -- -------------------------------------------------------------------------------- --
--- + Execute engine:  Multi-cycle execution of instruction (pipeline stage 2)       --
+-- + Execute engine:  Multi-cycle execution of instructions ("back-end")            --
 -- + Trap controller: Handles interrupts and exceptions                             --
 -- + CSR module:      Read/write access to control and status registers             --
--- + CPU counters:    Base and HPM counters                                         --
 -- + Debug module:    CPU debug mode handling (on-chip debugger)                    --
 -- + Trigger module:  Hardware-assisted breakpoints (on-chip debugger)              --
 -- -------------------------------------------------------------------------------- --
@@ -532,7 +531,7 @@ begin
           exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
-      when EX_BRANCHED => -- delay cycle to wait for reset of pipeline front-end (instruction fetch)
+      when EX_BRANCHED => -- delay cycle to wait for reset of front-end (instruction fetch)
       -- ------------------------------------------------------------
         exe_engine_nxt.state <= EX_DISPATCH;
 

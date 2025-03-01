@@ -136,8 +136,8 @@ begin
       rdata_o => cycle_rd
     );
 
-    -- [m]time[h] CSR --
-    time_rd <= (others => '0'); -- not implemented (yet?)
+    -- time[h] CSR --
+    time_rd <= (others => '0'); -- not implemented
 
     -- [m]instret[h] CSR --
     instret_inst: neorv32_cpu_counters_cnt

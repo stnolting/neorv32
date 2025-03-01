@@ -224,7 +224,7 @@ begin
   );
 
 
-  -- Control Unit (Back-End) ----------------------------------------------------------------
+  -- Control Unit (Back-End / Instruction Execution) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_control_inst: entity neorv32.neorv32_cpu_control
   generic map (
@@ -314,7 +314,7 @@ begin
     neorv32_cpu_counters_inst: entity neorv32.neorv32_cpu_counters
     generic map (
     ZICNTR_EN => RISCV_ISA_Zicntr, -- implement base counters
-    ZIHPM_EN  => RISCV_ISA_Zihpm,  -- implement hardware performance monitors
+    ZIHPM_EN  => RISCV_ISA_Zihpm,  -- implement hardware performance monitors (HPMs)
     HPM_NUM   => HPM_NUM_CNTS,     -- number of implemented HPM counters (0..13)
     HPM_WIDTH => HPM_CNT_WIDTH     -- total size of HPM counters (0..64)
     )

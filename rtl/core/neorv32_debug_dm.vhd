@@ -86,7 +86,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     command                      : std_ulogic_vector(31 downto 0);
     --
     halt_req    : std_ulogic;
-    req_res  : std_ulogic;
+    req_res     : std_ulogic;
     reset_ack   : std_ulogic;
     hartsel     : std_ulogic_vector(1+1 downto 0); -- plus one bit to detect "unavailable hart"
     hartsel_dec : std_ulogic_vector(NUM_HARTS-1 downto 0);
@@ -481,7 +481,7 @@ begin
     end if;
   end process dmi_write_access;
 
-  -- hat select decoder (one-hot) --
+  -- hart select decoder (one-hot) --
   hartsel_decode:
   for i in 0 to NUM_HARTS-1 generate
     dm_reg.hartsel_dec(i) <= '1' when (dm_reg.hartsel(2) = '0') and (dm_reg.hartsel(1 downto 0) = std_ulogic_vector(to_unsigned(i, 2))) else '0';
