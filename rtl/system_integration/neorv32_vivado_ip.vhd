@@ -87,7 +87,7 @@ entity neorv32_vivado_ip is
     DCACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
     DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
     -- External Bus Interface --
-    XBUS_EN               : boolean                        := true;
+    XBUS_EN               : boolean                        := false;
     XBUS_REGSTAGE_EN      : boolean                        := false;
     XBUS_CACHE_EN         : boolean                        := false;
     XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 8;
