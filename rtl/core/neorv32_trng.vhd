@@ -48,6 +48,9 @@ architecture neorv32_trng_rtl of neorv32_trng is
   constant ctrl_data_lsb_c : natural := 0; -- r/-: random data bit 0, LSB
   constant ctrl_data_msb_c : natural := 7; -- r/-: random data bit 7, MSB
 
+  -- helpers --
+  constant log2_fifo_size_c : natural := index_size_f(TRNG_FIFO);
+
   -- neoTRNG true random number generator --
   component neoTRNG
     generic (
@@ -104,7 +107,7 @@ begin
         else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c)                                  <= enable;
-            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(TRNG_FIFO), 4));
+            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
             bus_rsp_o.data(ctrl_sim_mode_c)                            <= bool_to_ulogic_f(is_simulation_c);
             bus_rsp_o.data(ctrl_avail_c)                               <= fifo.avail;
           else -- data register

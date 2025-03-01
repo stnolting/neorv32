@@ -54,6 +54,9 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
   constant ctrl_tx_full_c  : natural := 30; -- r/-: TX FIFO is full
   constant ctrl_tx_busy_c  : natural := 31; -- r/-: serial TX engine busy when set
 
+  -- helpers --
+  constant log2_fifo_size_c : natural := index_size_f(FIFO_DEPTH);
+
   -- control register --
   type ctrl_t is record
     enable   : std_ulogic;
@@ -139,7 +142,7 @@ begin
           bus_rsp_o.data(ctrl_strobe_c)                        <= ctrl.strobe;
           bus_rsp_o.data(ctrl_clksel2_c downto ctrl_clksel0_c) <= ctrl.clk_prsc;
           bus_rsp_o.data(ctrl_irq_conf_c)                      <= ctrl.irq_conf or bool_to_ulogic_f(boolean(FIFO_DEPTH = 1)); -- tie to one if FIFO_DEPTH is 1
-          bus_rsp_o.data(ctrl_bufs_3_c  downto ctrl_bufs_0_c)  <= std_ulogic_vector(to_unsigned(index_size_f(FIFO_DEPTH), 4));
+          bus_rsp_o.data(ctrl_bufs_3_c  downto ctrl_bufs_0_c)  <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
           bus_rsp_o.data(ctrl_t_tot_4_c downto ctrl_t_tot_0_c) <= ctrl.t_total;
           bus_rsp_o.data(ctrl_t_0h_4_c  downto ctrl_t_0h_0_c)  <= ctrl.t0_high;
           bus_rsp_o.data(ctrl_t_1h_4_c  downto ctrl_t_1h_0_c)  <= ctrl.t1_high;

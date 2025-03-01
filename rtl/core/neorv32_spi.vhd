@@ -65,6 +65,9 @@ architecture neorv32_spi_rtl of neorv32_spi is
   constant ctrl_cs_active_c    : natural := 30; -- r/-: a chip-select line is active when set
   constant ctrl_busy_c         : natural := 31; -- r/-: spi phy busy or tx fifo not empty yet
 
+  -- helpers --
+  constant log2_fifo_size_c : natural := index_size_f(IO_SPI_FIFO);
+
   -- control register --
   type ctrl_t is record
     enable       : std_ulogic;
@@ -163,7 +166,7 @@ begin
             bus_rsp_o.data(ctrl_irq_tx_nhalf_c) <= ctrl.irq_tx_nhalf;
             bus_rsp_o.data(ctrl_irq_idle_c)     <= ctrl.irq_idle;
             --
-            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_SPI_FIFO), 4));
+            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
             --
             bus_rsp_o.data(ctrl_cs_active_c) <= rtx_engine.cs_ctrl(3);
             bus_rsp_o.data(ctrl_busy_c)      <= rtx_engine.busy or tx_fifo.avail;

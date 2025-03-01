@@ -79,6 +79,10 @@ architecture neorv32_slink_rtl of neorv32_slink is
   constant ctrl_tx_fifo_size2_c : natural := 30; -- r/-: log2(TX fifo size), bit 2
   constant ctrl_tx_fifo_size3_c : natural := 31; -- r/-: log2(TX fifo size), bit 3 (msb)
 
+  -- helpers --
+  constant log2_rx_fifo_c : natural := index_size_f(SLINK_RX_FIFO);
+  constant log2_tx_fifo_c : natural := index_size_f(SLINK_TX_FIFO);
+
   -- control register --
   type ctrl_t is record
     enable                      : std_ulogic;
@@ -178,8 +182,8 @@ begin
               bus_rsp_o.data(ctrl_irq_tx_nhalf_c)  <= ctrl.irq_tx_nhalf;
               bus_rsp_o.data(ctrl_irq_tx_nfull_c)  <= ctrl.irq_tx_nfull;
               --
-              bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_RX_FIFO), 4));
-              bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(SLINK_TX_FIFO), 4));
+              bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_rx_fifo_c, 4));
+              bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_tx_fifo_c, 4));
             when "01" => -- routing information
               bus_rsp_o.data(3 downto 0) <= route_dst;
               bus_rsp_o.data(7 downto 4) <= route_src;

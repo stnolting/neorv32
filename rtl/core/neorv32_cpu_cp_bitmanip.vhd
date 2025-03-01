@@ -11,7 +11,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -304,7 +304,7 @@ begin
       bs_level(i+1)(XLEN-1 downto XLEN-(2**i)) <= bs_level(i)((2**i)-1 downto 0)  when (bs_shift(i) = '1') else bs_level(i)(XLEN-1 downto XLEN-(2**i));
       bs_level(i+1)((XLEN-(2**i))-1 downto 0)  <= bs_level(i)(XLEN-1 downto 2**i) when (bs_shift(i) = '1') else bs_level(i)((XLEN-(2**i))-1 downto 0);
     end generate;
-    shifter.sreg <= bs_level(index_size_f(XLEN)); -- rol/ror[i]
+    shifter.sreg <= bs_level(bs_level'left); -- rol/ror[i]
 
     -- population count --
     shifter.bcnt <= std_ulogic_vector(to_unsigned(popcount_f(rs1_reg), shifter.bcnt'length)); -- cpop

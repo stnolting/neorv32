@@ -58,6 +58,9 @@ architecture neorv32_twd_rtl of neorv32_twd is
   constant ctrl_sense_sda_c    : natural := 30; -- r/-: current state of the SDA bus line
   constant ctrl_busy_c         : natural := 31; -- r/-: bus engine is busy (transaction in progress)
 
+  -- helpers --
+  constant log2_fifo_size_c : natural := index_size_f(TWD_FIFO);
+
   -- control register --
   type ctrl_t is record
     enable       : std_ulogic;
@@ -159,7 +162,7 @@ begin
             bus_rsp_o.data(ctrl_irq_rx_full_c)                         <= ctrl.irq_rx_full;
             bus_rsp_o.data(ctrl_irq_tx_empty_c)                        <= ctrl.irq_tx_empty;
             --
-            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(TWD_FIFO), 4));
+            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
             bus_rsp_o.data(ctrl_rx_avail_c)                            <= rx_fifo.avail;
             bus_rsp_o.data(ctrl_rx_full_c)                             <= not rx_fifo.free;
             bus_rsp_o.data(ctrl_tx_empty_c)                            <= not tx_fifo.avail;

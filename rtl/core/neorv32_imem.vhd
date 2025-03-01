@@ -6,7 +6,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -36,6 +36,9 @@ architecture neorv32_imem_rtl of neorv32_imem is
 
   -- alternative memory description style --
   constant alt_style_c : boolean := false; -- [TIP] enable this if synthesis fails to infer block RAM
+
+  -- highest address bit --
+  constant addr_hi_c : natural := index_size_f(IMEM_SIZE/4)+1;
 
   -- ROM - initialized with executable code --
   constant mem_rom_c : mem32_t(0 to IMEM_SIZE/4-1) := mem32_init_f(application_init_image_c, IMEM_SIZE/4);
@@ -95,7 +98,7 @@ begin
   end generate;
 
   -- word aligned access address --
-  addr <= unsigned(bus_req_i.addr(index_size_f(IMEM_SIZE/4)+1 downto 2));
+  addr <= unsigned(bus_req_i.addr(addr_hi_c downto 2));
 
 
   -- Implement IMEM as non-initialized RAM --------------------------------------------------
