@@ -46,6 +46,7 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
     pc      : std_ulogic_vector(XLEN-1 downto 0);
     resp    : std_ulogic; -- bus response
     priv    : std_ulogic; -- fetch privilege level
+    halted  : std_ulogic; -- instruction fetch has halted
   end record;
   signal fetch : fetch_t;
 
@@ -115,7 +116,7 @@ begin
         when others => -- S_RESTART: set new start address
         -- ------------------------------------------------------------
           fetch.restart <= '0'; -- restart done
-          fetch.pc      <= ctrl_i.pc_nxt; -- initialize from PC incl. 16-bit-alignment bit
+          fetch.pc      <= ctrl_i.pc_nxt; -- initialize from PC
           fetch.priv    <= ctrl_i.cpu_priv; -- set new privilege level
           fetch.state   <= S_REQUEST;
 
@@ -140,16 +141,19 @@ begin
   ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (fetch.resp = '1') and ((fetch.pc(1) = '0') or (not RVC_EN)) else '0';
   ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (fetch.resp = '1') else '0';
 
+  -- instruction fetch has halted --
+  fetch.halted <= '1' when (fetch.state = S_REQUEST) and (ipb.free /= "11") else '0';
+
   -- bus access meta data --
   ibus_req_o.data  <= (others => '0');  -- read-only
   ibus_req_o.ben   <= (others => '0');  -- read-only
   ibus_req_o.rw    <= '0';              -- read-only
   ibus_req_o.src   <= '1';              -- always "instruction fetch" access
   ibus_req_o.priv  <= fetch.priv;       -- current effective privilege level
-  ibus_req_o.debug <= ctrl_i.cpu_debug; -- debug mode, valid without STB being set
+  ibus_req_o.debug <= ctrl_i.cpu_debug; -- CPU is in debug mode
   ibus_req_o.amo   <= '0';              -- cannot be an atomic memory operation
   ibus_req_o.amoop <= (others => '0');  -- cannot be an atomic memory operation
-  ibus_req_o.fence <= ctrl_i.if_fence;  -- fence operation, valid without STB being set
+  ibus_req_o.fence <= ctrl_i.if_fence;  -- fence request, valid without STB being set ("out-of-band" signal)
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
@@ -158,11 +162,11 @@ begin
   for i in 0 to 1 generate -- low half-word + high half-word (incl. status bits)
     prefetch_buffer_inst: entity neorv32.neorv32_fifo
     generic map (
-      FIFO_DEPTH => 2,                   -- number of IPB entries; has to be a power of two, min 2
-      FIFO_WIDTH => ipb.wdata(i)'length, -- size of data elements in FIFO
-      FIFO_RSYNC => false,               -- we NEED to read data asynchronously
-      FIFO_SAFE  => false,               -- no safe access required (ensured by FIFO-external logic)
-      FULL_RESET => false                -- no need for a full hardware reset
+      FIFO_DEPTH => 2,     -- number of IPB entries; has to be a power of two, min 2
+      FIFO_WIDTH => 17,    -- size of data elements in FIFO
+      FIFO_RSYNC => false, -- we NEED to read data asynchronously
+      FIFO_SAFE  => false, -- no safe access required (ensured by FIFO-external logic)
+      FULL_RESET => false  -- no need for a full hardware reset
     )
     port map (
       -- control and status --
@@ -274,12 +278,13 @@ begin
   end generate;
 
 
-  -- assemble output bus --
+  -- Instruction Interface to CPU Back-End (Execution) --------------------------------------
+  -- -------------------------------------------------------------------------------------------
   frontend_o.valid  <= issue.valid(1) or issue.valid(0);
   frontend_o.instr  <= issue.instr;
   frontend_o.compr  <= issue.compr;
   frontend_o.error  <= issue.error;
-  frontend_o.halted <= '1' when (fetch.state = S_REQUEST) and (ipb.free /= "11") else '0';
+  frontend_o.halted <= fetch.halted;
 
 
 end neorv32_cpu_frontend_rtl;
