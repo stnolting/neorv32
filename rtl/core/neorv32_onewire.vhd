@@ -73,6 +73,9 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
   constant cmd_byt_c : std_ulogic_vector(1 downto 0) := "10"; -- trigger full-byte transmission
   constant cmd_rst_c : std_ulogic_vector(1 downto 0) := "11"; -- trigger reset pulse and sample presence
 
+  -- helpers --
+  constant log2_fifo_size_c : natural := index_size_f(ONEWIRE_FIFO);
+
   -- control register --
   type ctrl_t is record
     enable    : std_ulogic;
@@ -148,7 +151,7 @@ begin
           bus_rsp_o.data(ctrl_prsc1_c downto ctrl_prsc0_c)     <= ctrl.clk_prsc;
           bus_rsp_o.data(ctrl_clkdiv7_c downto ctrl_clkdiv0_c) <= ctrl.clk_div;
           --
-          bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(ONEWIRE_FIFO), 4));
+          bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
           --
           bus_rsp_o.data(ctrl_tx_full_c)  <= not fifo.tx_free;
           bus_rsp_o.data(ctrl_rx_avail_c) <= fifo.rx_avail;

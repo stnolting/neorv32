@@ -347,6 +347,9 @@ end neorv32_bus_gateway;
 architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
 
   -- port select --
+  constant a_lo_c : natural := index_size_f(A_SIZE);
+  constant b_lo_c : natural := index_size_f(B_SIZE);
+  constant c_lo_c : natural := index_size_f(C_SIZE);
   signal port_sel : std_ulogic_vector(3 downto 0);
 
   -- port enable list --
@@ -375,9 +378,9 @@ begin
 
   -- Address Section Decoder ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  port_sel(0) <= '1' when A_EN and (req_i.addr(31 downto index_size_f(A_SIZE)) = A_BASE(31 downto index_size_f(A_SIZE))) else '0';
-  port_sel(1) <= '1' when B_EN and (req_i.addr(31 downto index_size_f(B_SIZE)) = B_BASE(31 downto index_size_f(B_SIZE))) else '0';
-  port_sel(2) <= '1' when C_EN and (req_i.addr(31 downto index_size_f(C_SIZE)) = C_BASE(31 downto index_size_f(C_SIZE))) else '0';
+  port_sel(0) <= '1' when A_EN and (req_i.addr(31 downto a_lo_c) = A_BASE(31 downto a_lo_c)) else '0';
+  port_sel(1) <= '1' when B_EN and (req_i.addr(31 downto b_lo_c) = B_BASE(31 downto b_lo_c)) else '0';
+  port_sel(2) <= '1' when C_EN and (req_i.addr(31 downto c_lo_c) = C_BASE(31 downto c_lo_c)) else '0';
 
   -- accesses to the "void" are redirected to the X port --
   port_sel(3) <= '1' when X_EN and (port_sel(2 downto 0) = "000") else '0';

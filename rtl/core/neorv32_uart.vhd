@@ -83,6 +83,10 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant data_tx_fifo_size_lsb : natural := 12; -- r/-: log2(TX fifo size) LSB
   constant data_tx_fifo_size_msb : natural := 15; -- r/-: log2(TX fifo size) MSB
 
+  -- helpers --
+  constant log2_rx_fifo_c : natural := index_size_f(UART_RX_FIFO);
+  constant log2_tx_fifo_c : natural := index_size_f(UART_TX_FIFO);
+
   -- clock generator --
   signal uart_clk : std_ulogic;
 
@@ -211,8 +215,8 @@ begin
             bus_rsp_o.data(ctrl_tx_busy_c)                   <= tx_engine.busy or tx_fifo.avail;
           else -- data register
             bus_rsp_o.data(data_rtx_msb_c        downto data_rtx_lsb_c)        <= rx_fifo.rdata;
-            bus_rsp_o.data(data_rx_fifo_size_msb downto data_rx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_RX_FIFO), 4));
-            bus_rsp_o.data(data_tx_fifo_size_msb downto data_tx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(index_size_f(UART_TX_FIFO), 4));
+            bus_rsp_o.data(data_rx_fifo_size_msb downto data_rx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(log2_rx_fifo_c, 4));
+            bus_rsp_o.data(data_tx_fifo_size_msb downto data_tx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(log2_tx_fifo_c, 4));
           end if;
         end if;
 

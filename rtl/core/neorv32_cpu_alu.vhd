@@ -155,7 +155,7 @@ begin
   csr_o <= csr_rdata_fpu or csr_rdata_cfu;
 
   -- shift amount --
-  cp_shamt <= opb(index_size_f(XLEN)-1 downto 0);
+  cp_shamt <= opb(cp_shamt'left downto 0);
 
 
   -- ALU[I]-Opcode Co-Processor: Shifter Unit (Base ISA) ------------------------------------

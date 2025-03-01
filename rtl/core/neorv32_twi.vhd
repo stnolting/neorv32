@@ -60,6 +60,9 @@ architecture neorv32_twi_rtl of neorv32_twi is
   constant dcmd_cmd_lo_c : natural :=  9; -- -/w: operation command; 00=NOP, 01=START
   constant dcmd_cmd_hi_c : natural := 10; -- -/w: operation command; 10=STOP, 11=DATA
 
+  -- helpers --
+  constant log2_fifo_size_c : natural := index_size_f(IO_TWI_FIFO);
+
   -- control register --
   type ctrl_t is record
     enable : std_ulogic;
@@ -142,7 +145,7 @@ begin
             bus_rsp_o.data(ctrl_cdiv3_c downto ctrl_cdiv0_c) <= ctrl.cdiv;
             bus_rsp_o.data(ctrl_clkstr_en_c)                 <= ctrl.clkstr;
             --
-            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(IO_TWI_FIFO), 4));
+            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
             --
             bus_rsp_o.data(ctrl_sense_scl_c) <= io_con.scl_in_ff(1);
             bus_rsp_o.data(ctrl_sense_sda_c) <= io_con.sda_in_ff(1);

@@ -57,6 +57,9 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
   --
   constant ctrl_cs_active_c    : natural := 31; -- r/-: chip-select is active when set
 
+  -- helpers --
+  constant log2_fifo_size_c : natural := index_size_f(RTX_FIFO);
+
   -- control register (see bit definitions above) --
   type ctrl_t is record
     enable       : std_ulogic;
@@ -139,7 +142,7 @@ begin
           if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
             --
-            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(index_size_f(RTX_FIFO), 4));
+            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
             --
             bus_rsp_o.data(ctrl_irq_rx_avail_c) <= ctrl.irq_rx_avail;
             bus_rsp_o.data(ctrl_irq_rx_half_c)  <= ctrl.irq_rx_half;

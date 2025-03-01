@@ -73,6 +73,15 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant xcache_en_c    : boolean := XBUS_EN and XBUS_CACHE_EN;
   constant ocd_auth_en_c  : boolean := OCD_EN and OCD_AUTHENTICATION;
   constant int_imem_rom_c : boolean := int_imem_en_c and MEM_INT_IMEM_ROM;
+  --
+  constant log2_imem_size_c : natural := index_size_f(MEM_INT_IMEM_SIZE);
+  constant log2_dmem_size_c : natural := index_size_f(MEM_INT_DMEM_SIZE);
+  constant log2_ic_bsize_c  : natural := index_size_f(ICACHE_BLOCK_SIZE);
+  constant log2_ic_bnum_c   : natural := index_size_f(ICACHE_NUM_BLOCKS);
+  constant log2_dc_bsize_c  : natural := index_size_f(DCACHE_BLOCK_SIZE);
+  constant log2_dc_bnum_c   : natural := index_size_f(DCACHE_NUM_BLOCKS);
+  constant log2_xc_bsize_c  : natural := index_size_f(XBUS_CACHE_BLOCK_SIZE);
+  constant log2_xc_bnum_c   : natural := index_size_f(XBUS_CACHE_NUM_BLOCKS);
 
   -- system information memory --
   type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
@@ -99,8 +108,8 @@ begin
   end process sysinfo_0_write;
 
   -- SYSINFO(1): Misc --
-  sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_IMEM_SIZE), 8)); -- log2(IMEM size)
-  sysinfo(1)(15 downto 8)  <= std_ulogic_vector(to_unsigned(index_size_f(MEM_INT_DMEM_SIZE), 8)); -- log2(DMEM size)
+  sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(log2_imem_size_c, 8)); -- log2(IMEM size)
+  sysinfo(1)(15 downto 8)  <= std_ulogic_vector(to_unsigned(log2_dmem_size_c, 8)); -- log2(DMEM size)
   sysinfo(1)(23 downto 16) <= std_ulogic_vector(to_unsigned(NUM_HARTS, 8)); -- number of physical CPU cores
   sysinfo(1)(31 downto 24) <= std_ulogic_vector(to_unsigned(BOOT_MODE_SELECT, 8)); -- boot configuration
 
@@ -139,17 +148,17 @@ begin
   sysinfo(2)(31) <= '1' when IO_CRC_EN         else '0'; -- cyclic redundancy check unit (CRC) implemented?
 
   -- SYSINFO(3): Cache Configuration --
-  sysinfo(3)(3 downto 0)   <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_BLOCK_SIZE), 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(block_size_in_bytes)
-  sysinfo(3)(7 downto 4)   <= std_ulogic_vector(to_unsigned(index_size_f(ICACHE_NUM_BLOCKS), 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(number_of_block)
+  sysinfo(3)(3 downto 0)   <= std_ulogic_vector(to_unsigned(log2_ic_bsize_c, 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(block_size_in_bytes)
+  sysinfo(3)(7 downto 4)   <= std_ulogic_vector(to_unsigned(log2_ic_bnum_c, 4))  when ICACHE_EN else (others => '0'); -- i-cache: log2(number_of_block)
   --
-  sysinfo(3)(11 downto 8)  <= std_ulogic_vector(to_unsigned(index_size_f(DCACHE_BLOCK_SIZE), 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(block_size)
-  sysinfo(3)(15 downto 12) <= std_ulogic_vector(to_unsigned(index_size_f(DCACHE_NUM_BLOCKS), 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(num_blocks)
+  sysinfo(3)(11 downto 8)  <= std_ulogic_vector(to_unsigned(log2_dc_bsize_c, 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(block_size)
+  sysinfo(3)(15 downto 12) <= std_ulogic_vector(to_unsigned(log2_dc_bnum_c, 4))  when DCACHE_EN else (others => '0'); -- d-cache: log2(num_blocks)
   --
   sysinfo(3)(19 downto 16) <= (others => '0'); -- reserved
   sysinfo(3)(23 downto 20) <= (others => '0'); -- reserved
   --
-  sysinfo(3)(27 downto 24) <= std_ulogic_vector(to_unsigned(index_size_f(XBUS_CACHE_BLOCK_SIZE), 4)) when xcache_en_c else (others => '0'); -- xbus-cache: log2(block_size_in_bytes)
-  sysinfo(3)(31 downto 28) <= std_ulogic_vector(to_unsigned(index_size_f(XBUS_CACHE_NUM_BLOCKS), 4)) when xcache_en_c else (others => '0'); -- xbus-cache: log2(number_of_block)
+  sysinfo(3)(27 downto 24) <= std_ulogic_vector(to_unsigned(log2_xc_bsize_c, 4)) when xcache_en_c else (others => '0'); -- xbus-cache: log2(block_size_in_bytes)
+  sysinfo(3)(31 downto 28) <= std_ulogic_vector(to_unsigned(log2_xc_bnum_c, 4))  when xcache_en_c else (others => '0'); -- xbus-cache: log2(number_of_block)
 
 
   -- Bus Access -----------------------------------------------------------------------------

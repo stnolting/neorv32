@@ -6,7 +6,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -135,7 +135,7 @@ begin
       if (rstn_i = '0') then
         bs_result <= (others => '0');
       elsif rising_edge(clk_i) then
-        bs_result <= bs_level(index_size_f(XLEN));
+        bs_result <= bs_level(bs_level'left);
       end if;
     end process barrel_shifter_buf;
 
