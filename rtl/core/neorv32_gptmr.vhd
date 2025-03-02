@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -34,12 +34,11 @@ architecture neorv32_gptmr_rtl of neorv32_gptmr is
   constant ctrl_prsc0_c   : natural := 1; -- r/w: clock prescaler select bit 0
   constant ctrl_prsc1_c   : natural := 2; -- r/w: clock prescaler select bit 1
   constant ctrl_prsc2_c   : natural := 3; -- r/w: clock prescaler select bit 2
-  constant ctrl_mode_c    : natural := 4; -- r/w: mode (0=single-shot, 1=continuous)
   --
   constant ctrl_irq_clr_c : natural := 30; -- -/w: set to clear timer-match interrupt
   constant ctrl_irq_c     : natural := 31; -- r/-: timer-match interrupt pending
   --
-  signal ctrl : std_ulogic_vector(4 downto 0);
+  signal ctrl : std_ulogic_vector(3 downto 0);
 
   -- timer core --
   type timer_t is record
@@ -78,7 +77,6 @@ begin
             ctrl(ctrl_prsc0_c) <= bus_req_i.data(ctrl_prsc0_c);
             ctrl(ctrl_prsc1_c) <= bus_req_i.data(ctrl_prsc1_c);
             ctrl(ctrl_prsc2_c) <= bus_req_i.data(ctrl_prsc2_c);
-            ctrl(ctrl_mode_c)  <= bus_req_i.data(ctrl_mode_c);
             --
             irq_clr <= bus_req_i.data(ctrl_irq_clr_c);
           end if;
@@ -92,7 +90,6 @@ begin
               bus_rsp_o.data(ctrl_prsc0_c) <= ctrl(ctrl_prsc0_c);
               bus_rsp_o.data(ctrl_prsc1_c) <= ctrl(ctrl_prsc1_c);
               bus_rsp_o.data(ctrl_prsc2_c) <= ctrl(ctrl_prsc2_c);
-              bus_rsp_o.data(ctrl_mode_c)  <= ctrl(ctrl_mode_c);
               --
               bus_rsp_o.data(ctrl_irq_c) <= irq_pnd;
             when "01" => -- threshold register
@@ -122,9 +119,7 @@ begin
         timer.count <= (others => '0');
       elsif (timer.tick = '1') then -- timer enabled and clock tick
         if (timer.match = '1') then
-          if (ctrl(ctrl_mode_c) = '1') then -- reset counter if continuous mode
-            timer.count <= (others => '0');
-          end if;
+          timer.count <= (others => '0');
         else
           timer.count <= std_ulogic_vector(unsigned(timer.count) + 1);
         end if;

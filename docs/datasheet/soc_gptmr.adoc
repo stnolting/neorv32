@@ -16,13 +16,13 @@
 
 **Overview**
 
-The general purpose timer module implements a simple yet universal 32-bit timer. It is implemented if the processor's
+The general purpose timer module implements a simple 32-bit interval timer. It is implemented if the processor's
 `IO_GPTMR_EN` top generic is set `true`. The timer provides a pre-scaled counter register that can trigger an interrupt
 when reaching a programmable threshold value.
 
 The GPTMR provides three interface registers : a control register (`CTRL`), a 32-bit counter register (`COUNT`) and a
 32-bit threshold register (`THRES`). The timer is globally enabled by setting the `GPTMR_CTRL_EN` bit in the module's
-control register. When the timer is enable the `COUNT` register will start incrementing from zero at a programmable
+control register. When the timer is enabled the `COUNT` register will start incrementing from zero at a programmable
 rate that scales the main processor clock. this pre-scaler is configured via the three `GPTMR_CTRL_PRSCx`
 control register bits:
 
@@ -34,14 +34,10 @@ control register bits:
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-Whenever the counter register `COUNT` equals the programmable threshold value `THRES` the module's interrupt
-signal becomes pending (indicated by `GPTMR_CTRL_IRQ_PND` being set). Note that a pending interrupt has to be
-cleared manually by writing a `1` to `GPTMR_CTRL_IRQ_CLR`.
+Whenever the counter register `COUNT` equals the programmable threshold value `THRES` the module's interrupt signal becomes
+pending (indicated by `GPTMR_CTRL_IRQ_PND` being set). In this case the `COUNT` register is automatically reset and restarts
+incrementing from zero. Note that a pending interrupt has to be cleared manually by writing a `1` to `GPTMR_CTRL_IRQ_CLR`.
 
-The control register's `GPTMR_CTRL_MODE` bit defines what will happen when `COUNT == THRES`.
-
-* `GPTMR_CTRL_MODE = 0`: **single-shot mode** - the `COUNT` register will stop incrementing
-* `GPTMR_CTRL_MODE = 1`: **continuous mode** - the `COUNT` register is automatically reset and restarts incrementing from zero
 
 .Resetting the Counter
 [NOTE]
@@ -61,10 +57,9 @@ stay pending until explicitly cleared by writing a 1 to `GPTMR_CTRL_IRQ_CLR`.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.6+<| `0xfff10000` .6+<| `CTRL` <|`0`   `GPTMR_CTRL_EN`                       ^| r/w <| Timer enable flag
+.5+<| `0xfff10000` .5+<| `CTRL` <|`0`   `GPTMR_CTRL_EN`                       ^| r/w <| Timer enable flag
                                 <|`3:1` `GPTMR_CTRL_PRSC2 : GPTMR_CTRL_PRSC0` ^| r/w <| 3-bit clock prescaler select
-                                <|`4`   `GPTMR_CTRL_MODE`                     ^| r/w <| Operation mode (0=single-shot, 1=continuous)
-                                <|`29:5` -                                    ^| r/- <| _reserved_, read as zero
+                                <|`29:4` -                                    ^| r/- <| _reserved_, read as zero
                                 <|`30`  `GPTMR_CTRL_IRQ_CLR`                  ^| -/w <| Write `1` to clear timer-match interrupt; auto-clears
                                 <|`31`  `GPTMR_CTRL_IRQ_PND`                  ^| r/- <| Timer-match interrupt pending
 | `0xfff10004` | `THRES`   |`31:0` | r/w | Threshold value register
