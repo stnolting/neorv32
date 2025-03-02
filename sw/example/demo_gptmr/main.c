@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,7 +9,6 @@
 
 /**********************************************************************//**
  * @file demo_gptmr/main.c
- * @author Stephan Nolting
  * @brief Simple GPTMR timer-match interrupt example.
  **************************************************************************/
 
@@ -63,8 +62,8 @@ int main() {
   // install GPTMR interrupt handler
   neorv32_rte_handler_install(GPTMR_RTE_ID, gptmr_firq_handler);
 
-  // configure timer for 0.5Hz ticks with clock divisor = 8 and set to run in continuous mode
-  neorv32_gptmr_setup(CLK_PRSC_8, neorv32_sysinfo_get_clk() / (8 * 2), 1);
+  // configure timer for 0.5Hz ticks with clock divisor = 8
+  neorv32_gptmr_setup(CLK_PRSC_8, neorv32_sysinfo_get_clk() / (8 * 2));
 
   // enable interrupt
   neorv32_cpu_csr_set(CSR_MIE, 1 << GPTMR_FIRQ_ENABLE);   // enable GPTMR FIRQ channel

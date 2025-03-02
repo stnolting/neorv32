@@ -408,42 +408,32 @@
               <description>DMA enable flag</description>
             </field>
             <field>
-              <name>DMA_CTRL_AUTO</name>
+              <name>DMA_CTRL_START</name>
               <bitRange>[1:1]</bitRange>
-              <description>Enable automatic transfer trigger (FIRQ-triggered)</description>
+              <description>Start programmed DMA transfer</description>
             </field>
             <field>
               <name>DMA_CTRL_ERROR_RD</name>
-              <bitRange>[8:8]</bitRange>
+              <bitRange>[28:28]</bitRange>
               <access>read-only</access>
               <description>Error during last read access</description>
             </field>
             <field>
               <name>DMA_CTRL_ERROR_WR</name>
-              <bitRange>[9:9]</bitRange>
+              <bitRange>[29:29]</bitRange>
               <access>read-only</access>
               <description>Error during last write access</description>
             </field>
             <field>
-              <name>DMA_CTRL_BUSY</name>
-              <bitRange>[10:10]</bitRange>
-              <access>read-only</access>
-              <description>DMA transfer in progress</description>
-            </field>
-            <field>
               <name>DMA_CTRL_DONE</name>
-              <bitRange>[11:11]</bitRange>
-              <description>DMA transfer done; auto-clears on write access</description>
+              <bitRange>[30:30]</bitRange>
+              <description>Transfer done; auto-clears on write access</description>
             </field>
             <field>
-              <name>DMA_CTRL_FIRQ_TYPE</name>
-              <bitRange>[15:15]</bitRange>
-              <description>Trigger on rising-edge (0) or high-level (1) or selected FIRQ channel</description>
-            </field>
-            <field>
-              <name>DMA_CTRL_FIRQ_SEL</name>
-              <bitRange>[19:16]</bitRange>
-              <description>FIRQ trigger select</description>
+              <name>DMA_CTRL_BUSY</name>
+              <bitRange>[31:31]</bitRange>
+              <access>read-only</access>
+              <description>Transfer in progress</description>
             </field>
           </fields>
         </register>
@@ -608,11 +598,6 @@
               <name>GPTMR_CTRL_PRSC</name>
               <bitRange>[3:1]</bitRange>
               <description>Clock prescaler select</description>
-            </field>
-            <field>
-              <name>GPTMR_CTRL_MODE</name>
-              <bitRange>[4:4]</bitRange>
-              <description>Operation mode (0=single-shot, 1=continuous)</description>
             </field>
             <field>
               <name>GPTMR_CTRL_IRQ_CLR</name>

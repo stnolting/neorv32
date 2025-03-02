@@ -35,16 +35,12 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /** DMA control and status register bits */
 enum NEORV32_DMA_CTRL_enum {
   DMA_CTRL_EN           =  0, /**< DMA control register(0) (r/w): DMA enable */
-  DMA_CTRL_AUTO         =  1, /**< DMA control register(1) (r/w): Automatic trigger mode enable */
+  DMA_CTRL_START        =  1, /**< DMA control register(1) (-/s): Start configured DMA transfer */
 
-  DMA_CTRL_ERROR_RD     =  8, /**< DMA control register(8)  (r/-): Error during read access; SRC_BASE shows the faulting address */
-  DMA_CTRL_ERROR_WR     =  9, /**< DMA control register(9)  (r/-): Error during write access; DST_BASE shows the faulting address */
-  DMA_CTRL_BUSY         = 10, /**< DMA control register(10) (r/-): DMA busy / transfer in progress */
-  DMA_CTRL_DONE         = 11, /**< DMA control register(11) (r/c): A transfer was executed when set */
-
-  DMA_CTRL_FIRQ_TYPE    = 15, /**< DMA control register(15) (r/w): Trigger on FIRQ rising-edge (0) or high-level (1) */
-  DMA_CTRL_FIRQ_SEL_LSB = 16, /**< DMA control register(16) (r/w): FIRQ trigger select LSB */
-  DMA_CTRL_FIRQ_SEL_MSB = 19  /**< DMA control register(19) (r/w): FIRQ trigger select MSB */
+  DMA_CTRL_ERROR_RD     = 28, /**< DMA control register(28) (r/-): Error during read access; SRC_BASE shows the faulting address */
+  DMA_CTRL_ERROR_WR     = 29, /**< DMA control register(29) (r/-): Error during write access; DST_BASE shows the faulting address */
+  DMA_CTRL_DONE         = 30, /**< DMA control register(30) (r/c): A transfer has been executed when set */
+  DMA_CTRL_BUSY         = 31  /**< DMA control register(32) (r/-): DMA busy / transfer in progress */
 };
 
 /** DMA transfer type bits */
@@ -87,8 +83,20 @@ enum NEORV32_DMA_STATUS_enum {
   DMA_STATUS_ERR_WR = -2, /**< write access error during last transfer (-2) */
   DMA_STATUS_ERR_RD = -1, /**< read access error during last transfer (-1) */
   DMA_STATUS_IDLE   =  0, /**< DMA idle (0) */
-  DMA_STATUS_BUSY   =  1  /**< DMA busy (1) */
+  DMA_STATUS_BUSY   =  1, /**< DMA busy (1) */
+  DMA_STATUS_DONE   =  2  /**< transfer done (2) */
 };
+
+
+/**********************************************************************//**
+ * DMA transfer descriptor
+ **************************************************************************/
+typedef struct __attribute__((packed,aligned(4))) {
+  uint32_t src; /**< 32-bit source base address */
+  uint32_t dst; /**< 32-bit destination base address */
+  uint32_t num; /**< 24-bit (LSB-aligned) number of elements to transfer */
+  uint32_t cmd; /**< transfer type */
+} neorv32_dma_desc_t;
 
 
 /**********************************************************************//**
@@ -98,10 +106,8 @@ enum NEORV32_DMA_STATUS_enum {
 int  neorv32_dma_available(void);
 void neorv32_dma_enable(void);
 void neorv32_dma_disable(void);
-void neorv32_dma_transfer(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config);
-void neorv32_dma_transfer_auto(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config, int firq_sel, int firq_type);
+void neorv32_dma_transfer(neorv32_dma_desc_t *desc);
 int  neorv32_dma_status(void);
-int  neorv32_dma_done(void);
 /**@}*/
 
 

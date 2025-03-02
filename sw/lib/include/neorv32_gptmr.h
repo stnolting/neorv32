@@ -23,8 +23,8 @@
 /**@{*/
 /** GPTMR module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL;        /**< offset 0: control register (#NEORV32_GPTMR_CTRL_enum) */
-  uint32_t THRES;       /**< offset 4: threshold register */
+  uint32_t       CTRL;  /**< offset 0: control register (#NEORV32_GPTMR_CTRL_enum) */
+  uint32_t       THRES; /**< offset 4: threshold register */
   const uint32_t COUNT; /**< offset 8: counter register, read-only */
 } neorv32_gptmr_t;
 
@@ -37,7 +37,6 @@ enum NEORV32_GPTMR_CTRL_enum {
   GPTMR_CTRL_PRSC0   = 1, /**< GPTMR control register(1) (r/w): Clock prescaler select bit 0 */
   GPTMR_CTRL_PRSC1   = 2, /**< GPTMR control register(2) (r/w): Clock prescaler select bit 1 */
   GPTMR_CTRL_PRSC2   = 3, /**< GPTMR control register(3) (r/w): Clock prescaler select bit 2 */
-  GPTMR_CTRL_MODE    = 4, /**< GPTMR control register(4) (r/w): Operation mode (0=single-shot, 1=continuous) */
 
   GPTMR_CTRL_IRQ_CLR = 30, /**< GPTMR control register(30) (-/w): Set to clear timer-match interrupt */
   GPTMR_CTRL_IRQ_PND = 31, /**< GPTMR control register(31) (r/-): Timer-match interrupt pending */
@@ -50,7 +49,7 @@ enum NEORV32_GPTMR_CTRL_enum {
  **************************************************************************/
 /**@{*/
 int  neorv32_gptmr_available(void);
-void neorv32_gptmr_setup(int prsc, uint32_t threshold, int cont_mode);
+void neorv32_gptmr_setup(int prsc, uint32_t threshold);
 void neorv32_gptmr_disable(void);
 void neorv32_gptmr_enable(void);
 void neorv32_gptmr_irq_ack(void);

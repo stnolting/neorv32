@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -45,7 +45,7 @@ architecture neorv32_crc_rtl of neorv32_crc is
   signal crc : crc_t;
 
   -- delayed ACK on write access --
-  signal we_ack : std_ulogic_vector(5 downto 0); -- to wait for serial CRC processing
+  signal we_ack : std_ulogic_vector(4 downto 0); -- to wait for serial CRC processing
 
 begin
 
@@ -68,13 +68,13 @@ begin
       -- write access --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (bus_req_i.addr(3 downto 2) = mode_addr_c) then -- mode select
-          crc.mode <= bus_req_i.data(01 downto 0);
+          crc.mode <= bus_req_i.data(1 downto 0);
         end if;
         if (bus_req_i.addr(3 downto 2) = poly_addr_c) then -- polynomial
           crc.poly <= bus_req_i.data(31 downto 0);
         end if;
         if (bus_req_i.addr(3 downto 2) = data_addr_c) then -- data
-          crc.data <= bus_req_i.data(07 downto 0);
+          crc.data <= bus_req_i.data(7 downto 0);
         end if;
       end if;
 
@@ -84,7 +84,7 @@ begin
       -- read access --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(3 downto 2) is
-          when mode_addr_c => bus_rsp_o.data(01 downto 0) <= crc.mode; -- mode select
+          when mode_addr_c => bus_rsp_o.data(1 downto 0)  <= crc.mode; -- mode select
           when poly_addr_c => bus_rsp_o.data(31 downto 0) <= crc.poly; -- polynomial
           when others      => bus_rsp_o.data(31 downto 0) <= crc.sreg; -- CRC result
         end case;
@@ -123,7 +123,7 @@ begin
 
   -- operation mode --
   with crc.mode select crc.msb <=
-    crc.sreg(07) when "00",   -- crc8
+    crc.sreg(7)  when "00",   -- crc8
     crc.sreg(15) when "01",   -- crc16
     crc.sreg(31) when others; -- crc32
 

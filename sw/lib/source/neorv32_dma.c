@@ -56,37 +56,12 @@ void neorv32_dma_disable(void) {
  * @param[in] num Number of elements to transfer (24-bit).
  * @param[in] config Transfer type configuration/commands.
  **************************************************************************/
-void neorv32_dma_transfer(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config) {
+void neorv32_dma_transfer(neorv32_dma_desc_t *desc) {
 
-  NEORV32_DMA->CTRL &= ~((uint32_t)(1 << DMA_CTRL_AUTO)); // manual transfer trigger
-  NEORV32_DMA->SRC_BASE = base_src;
-  NEORV32_DMA->DST_BASE = base_dst;
-  NEORV32_DMA->TTYPE    = (num & 0x00ffffffUL) | (config & 0xff000000UL); // trigger transfer
-}
-
-
-/**********************************************************************//**
- * Configure automatic DMA transfer (triggered by CPU FIRQ).
- *
- * @param[in] base_src Source base address (has to be aligned to source data type!).
- * @param[in] base_dst Destination base address (has to be aligned to destination data type!).
- * @param[in] num Number of elements to transfer (24-bit).
- * @param[in] config Transfer type configuration/commands.
- * @param[in] firq_sel FIRQ trigger select (#NEORV32_CSR_MIP_enum); only FIRQ0..FIRQ15 = 16..31.
- * @param[in] firq_type Trigger on rising-edge (0) or high-level (1) of FIRQ channel.
- **************************************************************************/
-void neorv32_dma_transfer_auto(uint32_t base_src, uint32_t base_dst, uint32_t num, uint32_t config, int firq_sel, int firq_type) {
-
-  uint32_t tmp = NEORV32_DMA->CTRL;
-  tmp |= (uint32_t)(1 << DMA_CTRL_AUTO); // automatic transfer trigger
-  tmp &= ~(0xf << DMA_CTRL_FIRQ_SEL_LSB); // clear current FIRQ select
-  tmp |= (uint32_t)((firq_sel & 0xf) << DMA_CTRL_FIRQ_SEL_LSB); // set new FIRQ select
-  tmp |= (uint32_t)((firq_type & 1) << DMA_CTRL_FIRQ_TYPE); // FIRQ trigger type
-  NEORV32_DMA->CTRL = tmp;
-
-  NEORV32_DMA->SRC_BASE = base_src;
-  NEORV32_DMA->DST_BASE = base_dst;
-  NEORV32_DMA->TTYPE    = (num & 0x00ffffffUL) | (config & 0xff000000UL);
+  NEORV32_DMA->SRC_BASE = desc->src;
+  NEORV32_DMA->DST_BASE = desc->dst;
+  NEORV32_DMA->TTYPE    = (desc->num & 0x00ffffffUL) | (desc->cmd & 0xff000000UL);
+  NEORV32_DMA->CTRL    |= 1<<DMA_CTRL_START;
 }
 
 
@@ -108,24 +83,10 @@ int neorv32_dma_status(void) {
   else if (tmp & (1 << DMA_CTRL_BUSY)) {
     return DMA_STATUS_BUSY; // transfer in progress
   }
+  else if (tmp & (1 << DMA_CTRL_DONE)) {
+    return DMA_STATUS_DONE; // transfer done
+  }
   else {
     return DMA_STATUS_IDLE; // idle
-  }
-}
-
-
-/**********************************************************************//**
- * Check if a transfer has actually been executed.
- *
- * @return 0 if no transfer was executed, 1 if a transfer has actually been executed.
- * Use neorv32_dma_status(void) to check if there was an error during that transfer.
- **************************************************************************/
-int neorv32_dma_done(void) {
-
-  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DONE)) {
-    return 1; // there was a transfer
-  }
-  else {
-    return 0; // no transfer executed
   }
 }
