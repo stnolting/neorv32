@@ -462,7 +462,7 @@ begin
   -- **************************************************************************************************************************
 
   -- fast interrupt requests (FIRQs) --
-  cpu_firq(0)  <= firq(FIRQ_TWD);
+  cpu_firq(0)  <= firq(FIRQ_TWD); -- highest priority
   cpu_firq(1)  <= firq(FIRQ_CFS);
   cpu_firq(2)  <= firq(FIRQ_UART0_RX);
   cpu_firq(3)  <= firq(FIRQ_UART0_TX);
@@ -477,7 +477,7 @@ begin
   cpu_firq(12) <= firq(FIRQ_GPTMR);
   cpu_firq(13) <= firq(FIRQ_ONEWIRE);
   cpu_firq(14) <= firq(FIRQ_SLINK_RX);
-  cpu_firq(15) <= firq(FIRQ_SLINK_TX);
+  cpu_firq(15) <= firq(FIRQ_SLINK_TX); -- lowest priority
 
   -- CPU core(s) + optional L1 caches + bus switch --
   core_complex_gen:
@@ -561,7 +561,7 @@ begin
     mem_sync(i) <= dcache_clean(i) and xcache_clean; -- for this hart's perspective only
 
 
-    -- CPU L1 Instruction Cache (I-Cache) -----------------------------------------------------
+    -- CPU L1 Instruction Cache ---------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_icache_enabled:
     if ICACHE_EN generate
@@ -590,7 +590,7 @@ begin
     end generate;
 
 
-    -- CPU L1 Data Cache (D-Cache) ------------------------------------------------------------
+    -- CPU L1 Data Cache ----------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_dcache_enabled:
     if DCACHE_EN generate
@@ -697,7 +697,6 @@ begin
       bus_rsp_o => iodev_rsp(IODEV_DMA),
       dma_req_o => dma_req,
       dma_rsp_i => dma_rsp,
-      firq_i    => cpu_firq,
       irq_o     => firq(FIRQ_DMA)
     );
 
