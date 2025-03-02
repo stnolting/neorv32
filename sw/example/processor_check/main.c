@@ -1486,8 +1486,12 @@ int main() {
     neorv32_crc_setup(CRC_MODE32, 0x04C11DB7, 0xFFFFFFFF);
 
     // configure and trigger DMA transfer
-    tmp_a = DMA_CMD_B2UW | DMA_CMD_SRC_INC | DMA_CMD_DST_CONST | DMA_CMD_ENDIAN;
-    neorv32_dma_transfer((uint32_t)(&dma_src), (uint32_t)(&NEORV32_CRC->DATA), 4, tmp_a);
+    neorv32_dma_desc_t dma_desc;
+    dma_desc.src = (uint32_t)(&dma_src);
+    dma_desc.dst = (uint32_t)(&NEORV32_CRC->DATA);
+    dma_desc.num = 4;
+    dma_desc.cmd = DMA_CMD_B2UW | DMA_CMD_SRC_INC | DMA_CMD_DST_CONST | DMA_CMD_ENDIAN;
+    neorv32_dma_transfer(&dma_desc);
 
     // sleep until interrupt
     neorv32_cpu_sleep();
@@ -1499,8 +1503,7 @@ int main() {
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == DMA_TRAP_CODE) && // correct interrupt source
         (neorv32_crc_get() == 0x31DC476E) && // correct CRC sum
-        (neorv32_dma_done() != 0) && // DMA has actually attempted a transfer
-        (neorv32_dma_status() == DMA_STATUS_IDLE)) { // DMA back in idle mode without errors
+        (neorv32_dma_status() == DMA_STATUS_DONE)) { // DMA transfer completed without errors
       test_ok();
     }
     else {
@@ -1573,8 +1576,8 @@ int main() {
     // enable GPTMR FIRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << GPTMR_FIRQ_ENABLE);
 
-    // match-interrupt after CLK_PRSC_2*THRESHOLD = 2*2 = 8 clock cycles, single-shot mode
-    neorv32_gptmr_setup(CLK_PRSC_2, 2, 0);
+    // match-interrupt after CLK_PRSC_2*THRESHOLD = 2*2 = 8 clock cycles
+    neorv32_gptmr_setup(CLK_PRSC_2, 2);
 
     // wait for interrupt
     asm volatile ("nop");
