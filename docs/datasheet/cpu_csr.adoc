@@ -660,7 +660,7 @@ counter are read-only. Any write access will raise an illegal instruction except
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `Zicntr`
 | Description | If not halted via the <<_mcountinhibit>> CSR the `cycle[h]` CSRs will increment with every active CPU clock
-cycle (CPU not in sleep mode). These registers are read/write only for machine-mode software.
+cycle (CPU not in <<_sleep_mode>>). These registers are read/write only for machine-mode software.
 |=======================
 
 
@@ -1029,7 +1029,7 @@ discover additional ISA (sub-)extensions and CPU configuration options.
 | 24    | `CSR_MXISA_ZBS`       | r/- | <<_zbs_isa_extension>> available
 | 25    | `CSR_MXISA_ZAAMO`     | r/- | <<_zaamo_isa_extension>> available
 | 26    | `CSR_MXISA_ZALRSC`    | r/- | <<_zalrsc_isa_extension>> available
-| 27    | `CSR_MXISA_CLKGATE`   | r/- | sleep-mode clock gating implemented when set (`CPU_CLOCK_GATING_EN`), see <<_cpu_tuning_options>>
+| 27    | `CSR_MXISA_CLKGATE`   | r/- | <<_sleep_mode>> clock gating implemented when set (`CPU_CLOCK_GATING_EN`), see <<_cpu_tuning_options>>
 | 28    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`CPU_RF_HW_RST_EN`), see <<_cpu_tuning_options>>
 | 29    | `CSR_MXISA_FASTMUL`   | r/- | fast multiplication available when set (`CPU_FAST_MUL_EN`), see <<_cpu_tuning_options>>
 | 30    | `CSR_MXISA_FASTSHIFT` | r/- | fast shifts available when set (`CPU_FAST_SHIFT_EN`), see <<_cpu_tuning_options>>

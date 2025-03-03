@@ -66,21 +66,24 @@ request or to signal that an exception has been raised while being in debug mode
 By default, the free and open-source openOCD (https://openocd.org/) is used to establish a debugger connection.
 However, other interfaces can be used (like Segger or Lauterbach tools) if they support the RISC-V debug specification.
 
-openOCD is configured by single configuration script. Currently, two scripts are provided - one for the single-core
-processor configuration and another one for the SMP dual-core configuration:
+openOCD is configured by a set of configuration scripts which are located in `neorv32/sw/openocd`.
+Two top scripts are provided (`openocd_neorv32.*`) - one for the single-core processor configuration
+and another one for the SMP dual-core configuration. Several helper files are included that can be modified by
+the user:
 
-* `neorv32/sw/openocd/openocd_neorv32.cfg`: openOCD script for the single-core configuration
-* `neorv32/sw/openocd/openocd_neorv32.dual-core.cfg`: openOCD script for the dual-core configuration
-
-Both scripts include several helper scripts (located in the same folder) that are used to hide some complexity.
-Two of these scripts may be modified to adjust openOCD for the actual setup:
-
-* `interface.cfg`: physical JTAG adapter configuration; by default this is configured
-for a simple FTDI USB converter; **adjust this for your specific JTAG adapter**.
-* `authentication.cfg`: optional authentication process; the
-<<_default_authentication_mechanism>> is implemented as example; **adjust this when using a custom authentication
-mechanism**.
-* `target.cfg`: main NEORV32 target configuration; end users should not alter this file.
+.NEORV32 openOCD Configuration Files
+[cols="<4,<7"]
+[options="header",grid="rows"]
+|=======================
+| File                            | Description
+| `openocd_neorv32.cfg`           | main openOCD file for the **single-core** setup
+| `openocd_neorv32.dual-core.cfg` | main openOCD file for the **dual-core** setup
+| `interface.cfg`                 | physical JTAG adapter configuration; by default this is configured
+for a simple FTDI USB converter; **adjust this for your specific JTAG adapter**
+| `authentication.cfg`            | optional authentication process; the <<_default_authentication_mechanism>>
+is implemented as example; **adjust this when using a custom authentication mechanism**
+| `target.cfg`                    | main NEORV32 target configuration; end users should not alter this file
+|=======================
 
 
 <<<
