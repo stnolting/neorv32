@@ -57,6 +57,8 @@ begin
     CLOCK_FREQUENCY   => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
     -- Boot Configuration --
     BOOT_MODE_SELECT  => 0,                 -- boot via internal bootloader
+    -- RISC-V CPU Extensions --
+    RISCV_ISA_Zicntr  => true,              -- implement base counters?
     -- Internal Instruction memory --
     MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
     MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
