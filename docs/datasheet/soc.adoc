@@ -85,8 +85,8 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 5+^| **Global Control (<<_processor_clocking>> and <<_processor_reset>>)**
 | `clk_i`          |  1 |  in | none  | global clock line, all registers triggering on rising edge
 | `rstn_i`         |  1 |  in | none  | global reset, asynchronous, **low-active**
-| `rstn_ocd_o`     |  1 | out | none  | <<_watchdog_timer_wdt>> reset output, synchronous, **low-active**
-| `rstn_wdt_o`     |  1 | out | none  | <<_on_chip_debugger_ocd>> reset output, synchronous, **low-active**
+| `rstn_ocd_o`     |  1 | out | none  | <<_on_chip_debugger_ocd>> reset output, synchronous, **low-active**
+| `rstn_wdt_o`     |  1 | out | none  | <<_watchdog_timer_wdt>> reset output, synchronous, **low-active**
 5+^| **JTAG Access Port for <<_on_chip_debugger_ocd>>**
 | `jtag_tck_i`     |  1 |  in | `'L'` | serial clock
 | `jtag_tdi_i`     |  1 |  in | `'L'` | serial data input

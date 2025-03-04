@@ -143,8 +143,8 @@ entity neorv32_top is
     -- Global control --
     clk_i          : in  std_ulogic;                                        -- global clock, rising edge
     rstn_i         : in  std_ulogic;                                        -- global reset, low-active, async
-    rstn_ocd_o     : out std_ulogic;                                        -- watchdog reset output, low-active, sync
-    rstn_wdt_o     : out std_ulogic;                                        -- on-chip debugger reset output, low-active, sync
+    rstn_ocd_o     : out std_ulogic;                                        -- on-chip debugger reset output, low-active, sync
+    rstn_wdt_o     : out std_ulogic;                                        -- watchdog reset output, low-active, sync
 
     -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     : in  std_ulogic := 'L';                                 -- serial clock

@@ -136,8 +136,8 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     clk            : in  std_logic;
     resetn         : in  std_logic; -- low-active
-    ocd_resetn     : out std_logic; -- watchdog reset output, low-active, sync
-    wdt_resetn     : out std_logic; -- on-chip debugger reset output, low-active, sync
+    ocd_resetn     : out std_logic; -- on-chip debugger reset output, low-active, sync
+    wdt_resetn     : out std_logic; -- watchdog reset output, low-active, sync
     -- ------------------------------------------------------------
     -- AXI4-Lite Host Interface (available if XBUS_EN = true)
     -- ------------------------------------------------------------
