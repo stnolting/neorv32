@@ -281,7 +281,7 @@ endif
 	@echo "NEORV32_HOME: $(NEORV32_HOME)"
 	@echo "---------------- Check: Shell ----------------"
 	@echo ${SHELL}
-	@readlink -f ${SHELL}
+	@readlink -f "${SHELL}"
 	@echo "---------------- Check: $(CC) ----------------"
 	@$(CC) -v
 	@echo "---------------- Check: $(OBJDUMP) ----------------"
