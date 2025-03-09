@@ -770,12 +770,12 @@ need for an explicit initialization / executable upload.
 === Processor-Internal Modules
 
 .Full-Word Write Accesses Only
-[IMPORTANT]
+[NOTE]
 All peripheral/IO devices should only be accessed in full-word mode (i.e. 32-bit).
 Byte or half-word (8/16-bit) write accesses might cause undefined behavior.
 
 .IO Module Address Space
-[IMPORTAN]
+[NOTE]
 Each peripheral/IO module occupies an address space of 64kB bytes. Most devices do not fully utilize this
 address space and will _mirror_ the available memory-mapped registers across the entire 64kB address space.
 However, accessing memory-mapped registers other than the specified ones should be avoided.
