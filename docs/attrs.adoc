@@ -13,5 +13,5 @@
 :reproducible:
 :listing-caption: Listing
 :toclevels: 3
-:title-logo-image: neorv32_logo_riscv.png[pdfwidth=6.25in,align=center]
+:title-logo-image: ../figures/neorv32_logo_riscv.png
 :favicon: img/icon.png
