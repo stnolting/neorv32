@@ -102,8 +102,8 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     pmp_num      => ( 0,       0,       0,       8,     0     ), -- number of PMP regions (0..16)
     hpm_num      => ( 0,       0,       0,       8,     0     ), -- number of HPM counters (0..29)
     xcache_en    => ( false,   false,   true,    true,  false ), -- external bus cache enabled
-    xcache_nb    => ( 0,       0,       32,      64,    0     ), -- number of cache blocks (lines), power of two
-    xcache_bs    => ( 0,       0,       32,      32,    0     ), -- size of cache clock (lines) in bytes, power of two
+    xcache_nb    => ( 32,      32,      32,      64,    32    ), -- number of cache blocks (lines), power of two
+    xcache_bs    => ( 32,      32,      32,      32,    32    ), -- size of cache clock (lines) in bytes, power of two
     clint        => ( false,   true,    true,    true,  true  )  -- RISC-V core local interruptor
   );
 
@@ -118,7 +118,7 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY       => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
-    HART_ID               => HART_ID,
+    HART_BASE               => HART_ID,
     -- On-Chip Debugger (OCD) --
     OCD_EN                => DEBUG,                          -- implement on-chip debugger
     -- RISC-V CPU Extensions --

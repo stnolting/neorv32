@@ -788,6 +788,7 @@ package neorv32_package is
     generic (
       -- Processor Clocking --
       CLOCK_FREQUENCY       : natural                        := 0;
+      HART_BASE             : natural                        := 0;
       -- Dual-Core Configuration --
       DUAL_CORE_EN          : boolean                        := false;
       -- Boot Configuration --
