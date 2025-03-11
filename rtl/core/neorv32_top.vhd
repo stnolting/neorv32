@@ -22,6 +22,7 @@ entity neorv32_top is
   generic (
     -- Processor Clocking --
     CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
+    HART_BASE             : natural                        := 0;           -- offset in HART_IDs
 
     -- Dual-Core Configuration --
     DUAL_CORE_EN          : boolean                        := false;       -- enable dual-core homogeneous SMP
@@ -488,7 +489,7 @@ begin
     neorv32_cpu_inst: entity neorv32.neorv32_cpu
     generic map (
       -- General --
-      HART_ID             => i,
+      HART_ID             => i+HART_BASE,
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,

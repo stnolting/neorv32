@@ -36,8 +36,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_litex_core_complex is
   generic (
-    CONFIG : natural; -- configuration select (0=minimal, 1=lite, 2=standard, 3=full)
-    DEBUG  : boolean  -- enable on-chip debugger, valid for all configurations
+    CONFIG  : natural; -- configuration select (0=minimal, 1=lite, 2=standard, 3=full)
+    DEBUG   : boolean; -- enable on-chip debugger, valid for all configurations
+    HART_ID : natural  -- the hardware thread ID for this core
   );
   port (
     -- Global control --
@@ -69,13 +70,14 @@ end neorv32_litex_core_complex;
 architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
 
   -- configuration helpers --
-  constant num_configs_c : natural := 4;    -- number of pre-defined configurations
+  constant num_configs_c : natural := 5;    -- number of pre-defined configurations
   type bool_t is array (0 to num_configs_c-1) of boolean;
   type natural_t is array (0 to num_configs_c-1) of natural;
   type configs_t is record
     riscv_c      : bool_t;
     riscv_m      : bool_t;
     riscv_u      : bool_t;
+    riscv_a      : bool_t;
     riscv_zicntr : bool_t;
     riscv_zihpm  : bool_t;
     fast_ops     : bool_t;
@@ -89,19 +91,20 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
 
   -- core complex configurations --
   constant configs_c : configs_t := (
-    --               minimal   lite    standard  full
-    riscv_c      => ( false,   true,    true,    true  ), -- RISC-V compressed instructions 'C'
-    riscv_m      => ( false,   true,    true,    true  ), -- RISC-V hardware mul/div 'M'
-    riscv_u      => ( false,   false,   true,    true  ), -- RISC-V user mode 'U'
-    riscv_zicntr => ( false,   false,   true,    true  ), -- RISC-V standard CPU counters 'Zicntr'
-    riscv_zihpm  => ( false,   false,   false,   true  ), -- RISC-V hardware performance monitors 'Zihpm'
-    fast_ops     => ( false,   false,   true,    true  ), -- use DSPs and barrel-shifters
-    pmp_num      => ( 0,       0,       0,       8     ), -- number of PMP regions (0..16)
-    hpm_num      => ( 0,       0,       0,       8     ), -- number of HPM counters (0..29)
-    xcache_en    => ( false,   false,   true,    true  ), -- external bus cache enabled
-    xcache_nb    => ( 0,       0,       32,      64    ), -- number of cache blocks (lines), power of two
-    xcache_bs    => ( 0,       0,       32,      32    ), -- size of cache clock (lines) in bytes, power of two
-    clint        => ( false,   true,    true,    true  )  -- RISC-V core local interruptor
+    --               minimal   lite     standard full   numa
+    riscv_c      => ( false,   true,    true,    true,  true  ), -- RISC-V compressed instructions 'C'
+    riscv_m      => ( false,   true,    true,    true,  false ), -- RISC-V hardware mul/div 'M'
+    riscv_u      => ( false,   false,   true,    true,  false ), -- RISC-V user mode 'U'
+    riscv_a      => ( false,   false,   false,   false, true  ), -- RISC-V atomics
+    riscv_zicntr => ( false,   false,   true,    true,  true  ), -- RISC-V standard CPU counters 'Zicntr'
+    riscv_zihpm  => ( false,   false,   false,   true,  true  ), -- RISC-V hardware performance monitors 'Zihpm'
+    fast_ops     => ( false,   false,   true,    true,  true  ), -- use DSPs and barrel-shifters
+    pmp_num      => ( 0,       0,       0,       8,     0     ), -- number of PMP regions (0..16)
+    hpm_num      => ( 0,       0,       0,       8,     0     ), -- number of HPM counters (0..29)
+    xcache_en    => ( false,   false,   true,    true,  false ), -- external bus cache enabled
+    xcache_nb    => ( 32,      32,      32,      64,    32    ), -- number of cache blocks (lines), power of two
+    xcache_bs    => ( 32,      32,      32,      32,    32    ), -- size of cache clock (lines) in bytes, power of two
+    clint        => ( false,   true,    true,    true,  true  )  -- RISC-V core local interruptor
   );
 
   -- misc --
@@ -115,12 +118,15 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY       => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
+    HART_BASE             => HART_ID,
     -- On-Chip Debugger (OCD) --
     OCD_EN                => DEBUG,                          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
     RISCV_ISA_C           => configs_c.riscv_c(CONFIG),      -- implement compressed extension?
     RISCV_ISA_M           => configs_c.riscv_m(CONFIG),      -- implement mul/div extension?
     RISCV_ISA_U           => configs_c.riscv_u(CONFIG),      -- implement user mode extension?
+    RISCV_ISA_Zaamo       => configs_c.riscv_a(CONFIG),      -- implement atomics
+    RISCV_ISA_Zalrsc      => configs_c.riscv_a(CONFIG),
     RISCV_ISA_Zicntr      => configs_c.riscv_zicntr(CONFIG), -- implement base counters?
     RISCV_ISA_Zihpm       => configs_c.riscv_zihpm(CONFIG),  -- implement hardware performance monitors?
     -- Tuning Options --
