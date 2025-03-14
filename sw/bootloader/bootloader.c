@@ -767,7 +767,7 @@ void spi_flash_wakeup(void) {
 
 #if (SPI_EN != 0)
   neorv32_spi_cs_en(SPI_FLASH_CS);
-  neorv32_spi_trans(SPI_FLASH_CMD_WAKE);
+  neorv32_spi_transfer(SPI_FLASH_CMD_WAKE);
   neorv32_spi_cs_dis();
 #endif
 }
@@ -815,9 +815,9 @@ uint8_t spi_flash_read_byte(uint32_t addr) {
 #if (SPI_EN != 0)
   neorv32_spi_cs_en(SPI_FLASH_CS);
 
-  neorv32_spi_trans(SPI_FLASH_CMD_READ);
+  neorv32_spi_transfer(SPI_FLASH_CMD_READ);
   spi_flash_write_addr(addr);
-  uint8_t rdata = neorv32_spi_trans(0);
+  uint8_t rdata = neorv32_spi_transfer(0);
 
   neorv32_spi_cs_dis();
 
@@ -841,9 +841,9 @@ void spi_flash_write_byte(uint32_t addr, uint8_t wdata) {
 
   neorv32_spi_cs_en(SPI_FLASH_CS);
 
-  neorv32_spi_trans(SPI_FLASH_CMD_PAGE_PROGRAM);
+  neorv32_spi_transfer(SPI_FLASH_CMD_PAGE_PROGRAM);
   spi_flash_write_addr(addr);
-  neorv32_spi_trans(wdata);
+  neorv32_spi_transfer(wdata);
 
   neorv32_spi_cs_dis();
 
@@ -893,7 +893,7 @@ void spi_flash_erase_sector(uint32_t addr) {
 
   neorv32_spi_cs_en(SPI_FLASH_CS);
 
-  neorv32_spi_trans(SPI_FLASH_CMD_SECTOR_ERASE);
+  neorv32_spi_transfer(SPI_FLASH_CMD_SECTOR_ERASE);
   spi_flash_write_addr(addr);
 
   neorv32_spi_cs_dis();
@@ -914,7 +914,7 @@ void spi_flash_write_enable(void) {
 
 #if (SPI_EN != 0)
   neorv32_spi_cs_en(SPI_FLASH_CS);
-  neorv32_spi_trans(SPI_FLASH_CMD_WRITE_ENABLE);
+  neorv32_spi_transfer(SPI_FLASH_CMD_WRITE_ENABLE);
   neorv32_spi_cs_dis();
 #endif
 }
@@ -927,7 +927,7 @@ void spi_flash_write_disable(void) {
 
 #if (SPI_EN != 0)
   neorv32_spi_cs_en(SPI_FLASH_CS);
-  neorv32_spi_trans(SPI_FLASH_CMD_WRITE_DISABLE);
+  neorv32_spi_transfer(SPI_FLASH_CMD_WRITE_DISABLE);
   neorv32_spi_cs_dis();
 #endif
 }
@@ -943,8 +943,8 @@ uint8_t spi_flash_read_status(void) {
 #if (SPI_EN != 0)
   neorv32_spi_cs_en(SPI_FLASH_CS);
 
-  neorv32_spi_trans(SPI_FLASH_CMD_READ_STATUS);
-  uint8_t res = neorv32_spi_trans(0);
+  neorv32_spi_transfer(SPI_FLASH_CMD_READ_STATUS);
+  uint8_t res = neorv32_spi_transfer(0);
 
   neorv32_spi_cs_dis();
 
@@ -974,17 +974,17 @@ void spi_flash_write_addr(uint32_t addr) {
   address.uint32 = addr;
 
 #if (SPI_FLASH_ADDR_BYTES == 2)
-  neorv32_spi_trans(address.uint8[1]);
-  neorv32_spi_trans(address.uint8[0]);
+  neorv32_spi_transfer(address.uint8[1]);
+  neorv32_spi_transfer(address.uint8[0]);
 #elif (SPI_FLASH_ADDR_BYTES == 3)
-  neorv32_spi_trans(address.uint8[2]);
-  neorv32_spi_trans(address.uint8[1]);
-  neorv32_spi_trans(address.uint8[0]);
+  neorv32_spi_transfer(address.uint8[2]);
+  neorv32_spi_transfer(address.uint8[1]);
+  neorv32_spi_transfer(address.uint8[0]);
 #elif (SPI_FLASH_ADDR_BYTES == 4)
-  neorv32_spi_trans(address.uint8[3]);
-  neorv32_spi_trans(address.uint8[2]);
-  neorv32_spi_trans(address.uint8[1]);
-  neorv32_spi_trans(address.uint8[0]);
+  neorv32_spi_transfer(address.uint8[3]);
+  neorv32_spi_transfer(address.uint8[2]);
+  neorv32_spi_transfer(address.uint8[1]);
+  neorv32_spi_transfer(address.uint8[0]);
 #else
   #error "Unsupported SPI_FLASH_ADDR_BYTES configuration!"
 #endif
@@ -1023,17 +1023,17 @@ uint32_t twi_read_addr(uint32_t addr) {
 
   // Send device addr
   transfer = device_id << 1;
-  device_nack |= neorv32_twi_trans(&transfer, 0);
+  device_nack |= neorv32_twi_transfer(&transfer, 0);
 
   // Send read address
 #if (TWI_ADDR_BYTES == 1)
   transfer = address.uint8[0];
-  device_nack |= neorv32_twi_trans(&transfer, 0);
+  device_nack |= neorv32_twi_transfer(&transfer, 0);
 #elif (TWI_ADDR_BYTES == 2)
   transfer = address.uint8[1];
-  device_nack |= neorv32_twi_trans(&transfer, 0);
+  device_nack |= neorv32_twi_transfer(&transfer, 0);
   transfer = address.uint8[0];
-  device_nack |= neorv32_twi_trans(&transfer, 0);
+  device_nack |= neorv32_twi_transfer(&transfer, 0);
 #else
   #error "Unsupported TWI_ADDR_BYTES configuration!"
 #endif
@@ -1047,7 +1047,7 @@ uint32_t twi_read_addr(uint32_t addr) {
   // Send device addr with read flag
   transfer = device_id << 1;
   transfer |= 0x01;
-  device_nack |= neorv32_twi_trans(&transfer, 0);
+  device_nack |= neorv32_twi_transfer(&transfer, 0);
 
   if (device_nack)
   {
@@ -1058,12 +1058,12 @@ uint32_t twi_read_addr(uint32_t addr) {
   for (uint8_t i = 0; i <= 2; i++)
   {
     transfer = 0xFF;
-    neorv32_twi_trans(&transfer, 1); // ACK by master
+    neorv32_twi_transfer(&transfer, 1); // ACK by master
     data.uint8[i] = transfer;
   }
   // Last read with NACK by master
   transfer = 0xFF;
-  neorv32_twi_trans(&transfer, 0); // NACK by master
+  neorv32_twi_transfer(&transfer, 0); // NACK by master
   data.uint8[3] = transfer;
 
   neorv32_twi_generate_stop();
