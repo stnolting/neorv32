@@ -873,7 +873,8 @@ package neorv32_package is
       IO_TWI_EN             : boolean                        := false;
       IO_TWI_FIFO           : natural range 1 to 2**15       := 1;
       IO_TWD_EN             : boolean                        := false;
-      IO_TWD_FIFO           : natural range 1 to 2**15       := 1;
+      IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;
+      IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;
       IO_PWM_NUM_CH         : natural range 0 to 16          := 0;
       IO_WDT_EN             : boolean                        := false;
       IO_TRNG_EN            : boolean                        := false;

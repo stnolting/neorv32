@@ -110,7 +110,8 @@ entity neorv32_vivado_ip is
     IO_TWI_EN             : boolean                        := false;
     IO_TWI_FIFO           : natural range 1 to 2**15       := 1;
     IO_TWD_EN             : boolean                        := false;
-    IO_TWD_FIFO           : natural range 1 to 2**15       := 1;
+    IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;
+    IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;
     IO_PWM_EN             : boolean                        := false;
     IO_PWM_NUM_CH         : natural range 1 to 16          := 1; -- variable-sized ports must be at least 0 downto 0; #974
     IO_WDT_EN             : boolean                        := false;
@@ -421,7 +422,8 @@ begin
     IO_TWI_EN             => IO_TWI_EN,
     IO_TWI_FIFO           => IO_TWI_FIFO,
     IO_TWD_EN             => IO_TWD_EN,
-    IO_TWD_FIFO           => IO_TWD_FIFO,
+    IO_TWD_RX_FIFO        => IO_TWD_RX_FIFO,
+    IO_TWD_TX_FIFO        => IO_TWD_TX_FIFO,
     IO_PWM_NUM_CH         => num_pwm_c,
     IO_WDT_EN             => IO_WDT_EN,
     IO_TRNG_EN            => IO_TRNG_EN,

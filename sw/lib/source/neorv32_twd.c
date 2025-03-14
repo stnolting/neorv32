@@ -42,8 +42,10 @@ int neorv32_twd_available(void) {
  * @param[in] irq_rx_avail IRQ if RX FIFO data available.
  * @param[in] irq_rx_full IRQ if RX FIFO full.
  * @param[in] irq_tx_empty IRQ if TX FIFO empty.
+ * @param[in] tx_dummy_en enable sending tx_dummy (last sent byte) when fifo is empty
+ * @param[in] hide_read generate NACK ony READ-access when TX FIFO is empty
  **************************************************************************/
-void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty) {
+void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int tx_dummy_en, int hide_read) {
 
   NEORV32_TWD->CTRL = 0; // reset
 
@@ -54,18 +56,32 @@ void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_f
   ctrl |= ((uint32_t)(irq_rx_avail & 0x01) << TWD_CTRL_IRQ_RX_AVAIL);
   ctrl |= ((uint32_t)(irq_rx_full  & 0x01) << TWD_CTRL_IRQ_RX_FULL);
   ctrl |= ((uint32_t)(irq_tx_empty & 0x01) << TWD_CTRL_IRQ_TX_EMPTY);
+  ctrl |= ((uint32_t)(tx_dummy_en  & 0x01) << TWD_CTRL_TX_DUMMY_EN);
+  ctrl |= ((uint32_t)(hide_read    & 0x01) << TWD_CTRL_HIDE_READ);
   NEORV32_TWD->CTRL = ctrl;
 }
 
 
 /**********************************************************************//**
- * Get TWD FIFO depth.
+ * Get TWD RX FIFO depth.
  *
- * @return FIFO depth (number of entries), zero if no FIFO implemented
+ * @return RX FIFO depth (number of entries), zero if no RX FIFO implemented
  **************************************************************************/
-int neorv32_twd_get_fifo_depth(void) {
+int neorv32_twd_get_rx_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_FIFO_LSB) & 0xf;
+  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_RX_FIFO_LSB) & 0xf;
+  return (int)(1 << tmp);
+}
+
+
+/**********************************************************************//**
+ * Get TWD TX FIFO depth.
+ *
+ * @return TX FIFO depth (number of entries), zero if no TX FIFO implemented
+ **************************************************************************/
+int neorv32_twd_get_tx_fifo_depth(void) {
+
+  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_TX_FIFO_LSB) & 0xf;
   return (int)(1 << tmp);
 }
 
@@ -85,6 +101,24 @@ void neorv32_twd_disable(void) {
 void neorv32_twd_enable(void) {
 
   NEORV32_TWD->CTRL |= (uint32_t)(1 << TWD_CTRL_EN);
+}
+
+
+/**********************************************************************//**
+ * Disable TWD tx_dummy byte.
+ **************************************************************************/
+void neorv32_twd_disable_tx_dummy(void) {
+
+  NEORV32_TWD->CTRL &= ~((uint32_t)(1 << TWD_CTRL_TX_DUMMY_EN));
+}
+
+
+/**********************************************************************//**
+ * Enable TWD tx_dummy byte.
+ **************************************************************************/
+void neorv32_twd_enable_tx_dummy(void) {
+
+  NEORV32_TWD->CTRL |= (uint32_t)(1 << TWD_CTRL_TX_DUMMY_EN);
 }
 
 
@@ -241,4 +275,17 @@ void neorv32_twd_put(uint8_t data) {
 uint8_t neorv32_twd_get(void) {
 
   return NEORV32_TWD->DATA;
+}
+
+
+/**********************************************************************//**
+ * Clear TX Fifo and put data byte into TX FIFO to get stored into dummy.abs
+ * 
+ * @warning This function expects enabled dummy byte
+ *
+ * @param[in] data Data byte to be stored in TX FIFO/dummy.
+ **************************************************************************/
+void neorv32_twd_set_dummy(uint8_t data) {
+  neorv32_twd_clear_tx();
+  neorv32_twd_put(data);
 }
