@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,7 +9,6 @@
 
 /**********************************************************************//**
  * @file demo_twi/main.c
- * @author Stephan Nolting
  * @brief TWI bus explorer.
  **************************************************************************/
 
@@ -197,7 +196,7 @@ void scan_twi(void) {
   for (i=0; i<128; i++) {
     neorv32_twi_generate_start();
     uint8_t tmp = 2*i + 1;
-    twi_ack = neorv32_twi_trans(&tmp, 0);
+    twi_ack = neorv32_twi_transfer(&tmp, 0);
     neorv32_twi_generate_stop();
 
     if (twi_ack == 0) {
@@ -241,7 +240,7 @@ void send_twi(void) {
   }
 
   // execute transmission (blocking)
-  device_ack = neorv32_twi_trans(&data, host_ack);
+  device_ack = neorv32_twi_transfer(&data, host_ack);
 
   neorv32_uart0_printf("\n RX data:  0x");
   print_hex_byte(data);

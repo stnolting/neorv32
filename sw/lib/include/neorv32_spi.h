@@ -85,7 +85,7 @@ void     neorv32_spi_enable(void);
 int      neorv32_spi_get_fifo_depth(void);
 void     neorv32_spi_cs_en(int cs);
 void     neorv32_spi_cs_dis(void);
-uint8_t  neorv32_spi_trans(uint8_t tx_data);
+uint8_t  neorv32_spi_transfer(uint8_t tx_data);
 void     neorv32_spi_put_nonblocking(uint8_t tx_data);
 uint8_t  neorv32_spi_get_nonblocking(void);
 void     neorv32_spi_cs_en_nonblocking(int cs);

@@ -155,7 +155,7 @@ int neorv32_twi_get(uint8_t *data) {
  * @param[in] mack Generate ACK by host controller when set.
  * @return 0: ACK received, 1: NACK received.
  **************************************************************************/
-int neorv32_twi_trans(uint8_t *data, int mack) {
+int neorv32_twi_transfer(uint8_t *data, int mack) {
 
   uint8_t rx_data = 0;
   int device_ack = 0;

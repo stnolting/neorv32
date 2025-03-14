@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,7 +9,6 @@
 
 /**********************************************************************//**
  * @file demo_spi/main.c
- * @author Stephan Nolting
  * @brief SPI bus explorer (execute SPI transactions by hand).
  **************************************************************************/
 
@@ -31,7 +30,7 @@ uint32_t spi_configured;
 
 // Prototypes
 void spi_cs(uint32_t type);
-void spi_trans(void);
+void spi_transfer(void);
 void spi_setup(void);
 void aux_print_hex_byte(uint8_t byte);
 
@@ -111,7 +110,7 @@ int main() {
       spi_cs(0);
     }
     else if (!strcmp(buffer, "trans")) {
-      spi_trans();
+      spi_transfer();
     }
     else {
       neorv32_uart0_printf("Invalid command. Type 'help' to see all commands.\n");
@@ -163,7 +162,7 @@ void spi_cs(uint32_t type) {
 /**********************************************************************//**
  * SPI data transfer
  **************************************************************************/
-void spi_trans(void) {
+void spi_transfer(void) {
 
   char terminal_buffer[4];
 
@@ -176,7 +175,7 @@ void spi_trans(void) {
   neorv32_uart0_scan(terminal_buffer, 2+1, 1);
   uint32_t tx_data = (uint32_t)neorv32_aux_hexstr2uint64(terminal_buffer, strlen(terminal_buffer));
 
-  uint32_t rx_data = neorv32_spi_trans(tx_data);
+  uint32_t rx_data = neorv32_spi_transfer(tx_data);
 
   neorv32_uart0_printf("\nTX data: 0x");
   aux_print_hex_byte(tx_data);
