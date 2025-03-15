@@ -475,7 +475,7 @@ handled by a dedicated module of the bus infrastructure - the <<_atomic_memory_o
 For the CPU, the atomic memory accesses are handled as plain load/store operation but with the `amo` signal set.
 The `amoop` signal specifies the actual atomic processing operation:
 
-.AMO Operation Type Encoding
+.AMO Operation Type Encoding (Bus Interface Signals)
 [cols="<1,<4,<4"]
 [options="header",grid="rows"]
 |=======================
