@@ -450,7 +450,7 @@ begin
                                        ((funct3_v = funct3_and_c)  and (funct7_v = "0000000")))) then -- base ALU instruction (excluding SLL, SRL, SRA)
               ctrl_nxt.rf_wb_en    <= '1'; -- valid RF write-back (won't happen if exception)
               exe_engine_nxt.state <= EX_DISPATCH;
-            else -- [NOTE] potential illegal ALU[I] instructions are handled as multi-cycle operations that will time-out if no ALU co-processor responds
+            else -- [NOTE] illegal ALU[I] instructions are handled as multi-cycle operations that will time-out as no ALU co-processor responds
               ctrl_nxt.alu_cp_alu  <= '1'; -- trigger ALU[I] opcode-space co-processor
               exe_engine_nxt.state <= EX_ALU_WAIT;
             end if;
