@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110109"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110200"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -696,7 +696,7 @@ package neorv32_package is
 
   -- Trap System ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- exception source bits --
+  -- exception source list --
   constant exc_iaccess_c  : natural :=  0; -- instruction access fault
   constant exc_illegal_c  : natural :=  1; -- illegal instruction
   constant exc_ialign_c   : natural :=  2; -- instruction address misaligned
@@ -709,7 +709,7 @@ package neorv32_package is
   constant exc_db_break_c : natural :=  9; -- enter debug mode via ebreak instruction
   constant exc_db_hw_c    : natural := 10; -- enter debug mode via hw trigger
   constant exc_width_c    : natural := 11; -- length of this list in bits
-  -- interrupt source bits --
+  -- interrupt source list --
   constant irq_msi_irq_c  : natural :=  0; -- machine software interrupt
   constant irq_mti_irq_c  : natural :=  1; -- machine timer interrupt
   constant irq_mei_irq_c  : natural :=  2; -- machine external interrupt
