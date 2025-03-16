@@ -65,7 +65,7 @@ always compile-time-static.
 Example operation: `rd <= rs1 xnor rs2` (bit-wise logical XNOR)
 
 .CFU R3-type instruction format
-[wavedrom, png] 
+[wavedrom, format="svg", align="center"]
 ----
 {reg: [
     {bits: 7, name: 11,       attr: 'Opcode: Custom-0'},
@@ -102,7 +102,7 @@ values are always compile-time-static.
 Example operation: `rd <= (rs1 * rs2 + rs3)[31:0]` (multiply-and-accumulate; "MAC")
 
 .CFU R4-type instruction format
-[wavedrom, png] 
+[wavedrom, format="svg", align="center"]
 ----
 {reg: [
     {bits: 7, name: 43,       attr: 'Opcode: Custom-1'},
