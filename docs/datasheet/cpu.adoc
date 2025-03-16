@@ -540,7 +540,7 @@ This chapter gives a brief overview of all available ISA extensions.
 [options="header",grid="rows"]
 |=======================
 | Name | Description | <<_processor_top_entity_generics, Enabled by Generic>>
-| <<_a_isa_extension,`B`>>               | Atomic memory instructions                                    | _Implicitly_ enabled
+| <<_a_isa_extension,`A`>>               | Atomic memory instructions                                    | _Implicitly_ enabled
 | <<_b_isa_extension,`B`>>               | Bit manipulation instructions                                 | _Implicitly_ enabled
 | <<_c_isa_extension,`C`>>               | Compressed (16-bit) instructions                              | <<_processor_top_entity_generics, `RISCV_ISA_C`>>
 | <<_e_isa_extension,`E`>>               | Embedded CPU extension (reduced register file size)           | <<_processor_top_entity_generics, `RISCV_ISA_E`>>
