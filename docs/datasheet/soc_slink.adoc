@@ -49,6 +49,18 @@ The SLINK interface consists of four signals for each channel:
 * `rdy` indicates that the receiver is ready to receive
 * `src` and `dst` provide source/destination routing information (optional)
 
+.SLINK example transmissions
+[wavedrom, format="svg", align="center"]
+----
+{signal: [
+  {name: 'clk',  wave: 'p.........'},
+  {name: 'dat',  wave: 'x345..6x7x', data: ["A", "B", "C", "D", "E"]},
+  {name: 'val',  wave: '01.....010'},
+  {name: 'rdy',  wave: '01.0.1...0'},
+  {name: 'lst',  wave: '0.......10'},
+]}
+----
+
 .AXI4-Stream Compatibility
 [NOTE]
 The interface names (except for `src` and `dst`) and the underlying protocol is compatible to the AXI4-Stream protocol standard.

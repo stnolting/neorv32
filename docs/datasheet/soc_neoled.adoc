@@ -65,7 +65,16 @@ value. The actual data bits are transferred by modifying the duty cycle of the s
 WS2812 are shown below). A RESET command is "send" by pulling the data line LOW for at least 50μs.
 
 .WS2812 bit-level timing (timing does not scale)
-image::neopixel_timing.png[align=left]
+[wavedrom, format="svg", align="center"]
+----
+{signal: [
+  {name: '0-code', wave: '01...0...1',  node: '.a...b...c' },
+  {name: '1-code', wave: '01....0..1',  node: '.d....e..f' },
+  {name: 'reset',  wave: '10.......1',  node: '.g.......h' },
+],
+ edge: ['a~>b T0H', 'b~>c T0L', 'd~>e T1H', 'e~>f T1L', 'g~>h TRESET']
+}
+----
 
 .WS2812 interface timing
 [cols="<2,<2,<6"]

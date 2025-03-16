@@ -91,7 +91,43 @@ two operation types are illustrated in the following figure (note that the trans
 to improve readability).
 
 .TWD single-byte read and write transaction timing (not to scale)
-image::twd_sequences.png[]
+[wavedrom, format="svg", align="center"]
+----
+{signal: [
+   [
+     "write byte",
+     {name: 'SDA', wave: '10.7..7..7..7..7..7..7..0..0..x|.', node: 'a.b.....................c..d..e', data: ['A6', 'A5', 'A4', 'A3', 'A2', 'A1', 'A0']},
+     {name: 'SCL', wave: '1.0.10.10.10.10.10.10.10.10.10.|.'},
+   {},
+     {name: 'SDA', wave: 'x|.5..5..5..5..5..5..5..5..0..0.1', node: '...........................f..gh.i', data: ['D7', 'D6', 'D5', 'D4', 'D3', 'D2', 'D1', 'D0']},
+     {name: 'SCL', wave: '0|..10.10.10.10.10.10.10.10.10.1.'}
+   ],
+   {},
+   {},
+   [
+     "read byte",
+     {name: 'SDA', wave: '10.7..7..7..7..7..7..7..1..0..x|.', node: 'j.k.....................l..m..n', data: ['A6', 'A5', 'A4', 'A3', 'A2', 'A1', 'A0']},
+     {name: 'SCL', wave: '1.0.10.10.10.10.10.10.10.10.10.|.'},
+   {},
+     {name: 'SDA', wave: 'x|.9..9..9..9..9..9..9..9..0..0.1', node: '...........................o..pq.r', data: ['D7', 'D6', 'D5', 'D4', 'D3', 'D2', 'D1', 'D0']},
+     {name: 'SCL', wave: '0|..10.10.10.10.10.10.10.10.10.1.'}
+   ]
+ ],
+   edge: [
+    'a-b START',
+    'c-d WRITE',
+    'd-e ACK by TWD',
+    'f-g ACK by TWD',
+    'h-i STOP',
+
+    'j-k START',
+    'l-m READ',
+    'm-n ACK by TWD',
+    'o-p ACK by HOST',
+    'q-r STOP'
+ ]
+}
+----
 
 Any new transaction starts with a **START** condition. Then, the host transmits the 7 bit device address MSB-first
 (green signals `A6` to `A0`) plus a command bit. The command bit can be either **write** (pulling the SDA line low)
