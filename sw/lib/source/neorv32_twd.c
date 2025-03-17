@@ -43,8 +43,9 @@ int neorv32_twd_available(void) {
  * @param[in] irq_rx_full IRQ if RX FIFO full.
  * @param[in] irq_tx_empty IRQ if TX FIFO empty.
  * @param[in] tx_dummy_en enable sending tx_dummy (last sent byte) when fifo is empty
+ * @param[in] hide_read generate NACK ony READ-access when TX FIFO is empty
  **************************************************************************/
-void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int tx_dummy_en) {
+void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int tx_dummy_en, int hide_read) {
 
   NEORV32_TWD->CTRL = 0; // reset
 
@@ -56,6 +57,7 @@ void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_f
   ctrl |= ((uint32_t)(irq_rx_full  & 0x01) << TWD_CTRL_IRQ_RX_FULL);
   ctrl |= ((uint32_t)(irq_tx_empty & 0x01) << TWD_CTRL_IRQ_TX_EMPTY);
   ctrl |= ((uint32_t)(tx_dummy_en  & 0x01) << TWD_CTRL_TX_DUMMY_EN);
+  ctrl |= ((uint32_t)(hide_read    & 0x01) << TWD_CTRL_HIDE_READ);
   NEORV32_TWD->CTRL = ctrl;
 }
 
