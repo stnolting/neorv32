@@ -61,13 +61,25 @@ void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_f
 
 
 /**********************************************************************//**
- * Get TWD FIFO depth.
+ * Get TWD RX FIFO depth.
  *
- * @return FIFO depth (number of entries), zero if no FIFO implemented
+ * @return RX FIFO depth (number of entries), zero if no RX FIFO implemented
  **************************************************************************/
-int neorv32_twd_get_fifo_depth(void) {
+int neorv32_twd_get_rx_fifo_depth(void) {
 
-  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_FIFO_LSB) & 0xf;
+  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_RX_FIFO_LSB) & 0xf;
+  return (int)(1 << tmp);
+}
+
+
+/**********************************************************************//**
+ * Get TWD TX FIFO depth.
+ *
+ * @return TX FIFO depth (number of entries), zero if no TX FIFO implemented
+ **************************************************************************/
+int neorv32_twd_get_tx_fifo_depth(void) {
+
+  uint32_t tmp = (NEORV32_TWD->CTRL >> TWD_CTRL_TX_FIFO_LSB) & 0xf;
   return (int)(1 << tmp);
 }
 

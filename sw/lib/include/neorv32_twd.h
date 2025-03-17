@@ -44,8 +44,10 @@ enum NEORV32_TWD_CTRL_enum {
   TWD_CTRL_TX_DUMMY_EN  = 14, /**< TWD control register(14) (r/w): enable sending tx_dummy (last sent byte) when fifo is empty */
 
 
-  TWD_CTRL_FIFO_LSB     = 15, /**< TWD control register(15) (r/-): log2(FIFO size), LSB */
-  TWD_CTRL_FIFO_MSB     = 18, /**< TWD control register(18) (r/-): log2(FIFO size), MSB */
+  TWD_CTRL_RX_FIFO_LSB     = 15, /**< TWD control register(15) (r/-): log2(RX_FIFO size), LSB */
+  TWD_CTRL_RX_FIFO_MSB     = 18, /**< TWD control register(18) (r/-): log2(RX_FIFO size), MSB */
+  TWD_CTRL_TX_FIFO_LSB     = 19, /**< TWD control register(19) (r/-): log2(TX_FIFO size), LSB */
+  TWD_CTRL_TX_FIFO_MSB     = 22, /**< TWD control register(22) (r/-): log2(TX_FIFO size), MSB */
 
   TWD_CTRL_RX_AVAIL     = 25, /**< TWD control register(25) (r/-): RX FIFO data available */
   TWD_CTRL_RX_FULL      = 26, /**< TWD control register(26) (r/-): RX FIFO full */
@@ -70,7 +72,8 @@ enum NEORV32_TWD_DATA_enum {
 /**@{*/
 int     neorv32_twd_available(void);
 void    neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int tx_dummy_en);
-int     neorv32_twd_get_fifo_depth(void);
+int     neorv32_twd_get_rx_fifo_depth(void);
+int     neorv32_twd_get_tx_fifo_depth(void);
 void    neorv32_twd_disable(void);
 void    neorv32_twd_enable(void);
 void    neorv32_twd_disable_tx_dummy(void);
