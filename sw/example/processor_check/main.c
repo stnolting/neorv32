@@ -9,7 +9,6 @@
 
 /**********************************************************************//**
  * @file processor_check/main.c
- * @author Stephan Nolting
  * @brief CPU/Processor test/verification program.
  **************************************************************************/
 
@@ -1539,7 +1538,7 @@ int main() {
 
     // trigger SDI IRQ by sending data via SPI
     neorv32_spi_cs_en(7); // select SDI
-    tmp_a = neorv32_spi_trans(0x83);
+    tmp_a = neorv32_spi_transfer(0x83);
     neorv32_spi_cs_dis();
 
     // wait for interrupt

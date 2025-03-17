@@ -236,10 +236,15 @@ begin
 
       when S_DIRECT_REQ => -- direct (uncached) access request
       -- ------------------------------------------------------------
-        ctrl_nxt.buf_req <= '0'; -- access (about to be) completed
         bus_req_o        <= host_req_i; -- pass-through (cache bypass)
         bus_req_o.stb    <= '1';
+        ctrl_nxt.buf_req <= '0'; -- access (about to be) completed
         ctrl_nxt.state   <= S_DIRECT_RSP;
+--     -- update cache if accessed address is cached --
+--     [NOTE] not implemented: this would make atomic memory access / memory coherence even more difficult to understand
+--     if (cache_i.sta_hit = '1') and (host_req_i.rw = '1') and (READ_ONLY = false) then -- cache write hit
+--       cache_o.we <= host_req_i.ben;
+--     end if;
 
       when S_DIRECT_RSP => -- wait for direct (uncached) access response
       -- ------------------------------------------------------------
@@ -249,6 +254,12 @@ begin
         if (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') then
           ctrl_nxt.state <= S_IDLE;
         end if;
+--     -- update cache if accessed address is cached --
+--     [NOTE] not implemented: this would make atomic memory access / memory coherence even more difficult to understand
+--     cache_o.data <= bus_rsp_i.data;
+--     if (cache_i.sta_hit = '1') and (host_req_i.rw = '0') and (bus_rsp_i.ack = '1') then -- cache read hit
+--       cache_o.we <= (others => '1');
+--     end if;
 
 
       when S_DOWNLOAD_REQ => -- download new cache block: request new word

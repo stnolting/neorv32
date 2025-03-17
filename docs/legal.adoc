@@ -65,7 +65,7 @@ POSSIBILITY OF SUCH DAMAGE.
 * "NeoPixel" is a trademark of Adafruit Industries.
 * "Segger Embedded Studio" and "J-Link" are trademarks of Segger Microcontroller Systems GmbH.
 * Images/figures made with _Microsoft Power Point_.
-* Timing diagrams made with _WaveDrom Editor_.
+* Diagrams made with _WaveDrom_.
 * Documentation made with `asciidoctor`.
 
 All further/unreferenced projects/products/brands belong to their according copyright holders.

@@ -165,7 +165,7 @@ void neorv32_spi_cs_dis(void) {
  * @param tx_data Transmit data (8-bit, LSB-aligned).
  * @return Receive data (8-bit, LSB-aligned).
  **************************************************************************/
-uint8_t neorv32_spi_trans(uint8_t tx_data) {
+uint8_t neorv32_spi_transfer(uint8_t tx_data) {
 
   neorv32_spi_put_nonblocking(tx_data);
   while (neorv32_spi_busy()); // wait for current transfer to finish
