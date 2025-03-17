@@ -139,6 +139,7 @@ or **read** (leaving the SDA line high). If the transferred address matches the 
 control register bits the TWD module will response with an **ACK** (acknowledge) by pulling the SDA bus line actively
 low during the 9th SCL clock pulse. If there is no address match the TWD will not interfere with the bus and move back
 to idle state.
+If the `hide_read` option is enabled, the address gets not acknowledged if the tx fifo is empty.
 
 For a **write transaction** (upper timing diagram) the host can now transfer an arbitrary number of bytes (blue signals
 `D7` to `D0`, MSB-first) to the TWD module. Each byte is acknowledged by the TWD by pulling SDA low during the 9th SCL
