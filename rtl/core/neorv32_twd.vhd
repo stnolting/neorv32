@@ -46,6 +46,7 @@ architecture neorv32_twd_rtl of neorv32_twd is
   constant ctrl_irq_rx_avail_c : natural := 11; -- r/w: IRQ if RX FIFO data available
   constant ctrl_irq_rx_full_c  : natural := 12; -- r/w: IRQ if RX FIFO full
   constant ctrl_irq_tx_empty_c : natural := 13; -- r/w: IRQ if TX FIFO empty
+  constant ctrl_tx_dummy_en_c  : natural := 14; -- r/w: enable sending tx_dummy (last sent byte) when fifo is empty
   --
   constant ctrl_fifo_size0_c   : natural := 15; -- r/-: log2(FIFO size), bit 0 (LSB)
   constant ctrl_fifo_size3_c   : natural := 18; -- r/-: log2(FIFO size), bit 3 (MSB)
@@ -71,8 +72,12 @@ architecture neorv32_twd_rtl of neorv32_twd is
     irq_rx_avail : std_ulogic;
     irq_rx_full  : std_ulogic;
     irq_tx_empty : std_ulogic;
+    tx_dummy_en  : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
+
+  -- tx_dummy register --
+  signal tx_dummy : std_ulogic_vector(7 downto 0);
 
   -- bus sample logic --
   type smp_t is record
@@ -133,6 +138,7 @@ begin
       ctrl.irq_rx_avail <= '0';
       ctrl.irq_rx_full  <= '0';
       ctrl.irq_tx_empty <= '0';
+      ctrl.tx_dummy_en  <= '0';
     elsif rising_edge(clk_i) then
       -- bus handshake defaults --
       bus_rsp_o.ack  <= bus_req_i.stb;
@@ -152,6 +158,7 @@ begin
             ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
             ctrl.irq_rx_full  <= bus_req_i.data(ctrl_irq_rx_full_c);
             ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
+            ctrl.tx_dummy_en  <= bus_req_i.data(ctrl_tx_dummy_en_c);
           end if;
         else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
@@ -161,6 +168,7 @@ begin
             bus_rsp_o.data(ctrl_irq_rx_avail_c)                        <= ctrl.irq_rx_avail;
             bus_rsp_o.data(ctrl_irq_rx_full_c)                         <= ctrl.irq_rx_full;
             bus_rsp_o.data(ctrl_irq_tx_empty_c)                        <= ctrl.irq_tx_empty;
+            bus_rsp_o.data(ctrl_tx_dummy_en_c)                         <= ctrl.tx_dummy_en;
             --
             bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
             bus_rsp_o.data(ctrl_rx_avail_c)                            <= rx_fifo.avail;
@@ -215,7 +223,26 @@ begin
   tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.wdata <= bus_req_i.data(7 downto 0);
   tx_fifo.re    <= engine.rd_re;
-  engine.rdata  <= tx_fifo.rdata when (tx_fifo.avail = '1') else (others => '1'); -- read ones when TX FIFO is drained
+
+  -- Backup last TX byte in case FIFO runs empty --
+  tx_backup: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      tx_dummy <= (others => '0');
+    elsif rising_edge(clk_i) then
+      if (tx_fifo.avail = '1') and (engine.rd_re = '1') then
+        tx_dummy <= tx_fifo.rdata;
+      else
+        tx_dummy <= tx_dummy;
+      end if;
+    end if;
+  end process tx_backup;
+
+  -- TX Data
+  engine.rdata  <=
+    tx_fifo.rdata when (tx_fifo.avail = '1') else -- read TX FIFO when available
+    tx_dummy when (ctrl.tx_dummy_en = '1')        -- read 'tx_dummy' when TX FIFO is drained and tx_dummy_en enabled
+    else (others => '1');                         -- read '1' when TX FIFO is drained and tx_dummy_en disabled 
 
 
   -- RX FIFO --
@@ -400,8 +427,13 @@ begin
           elsif (smp.start = '1') then -- start-condition
             engine.state <= S_INIT; -- restart transaction
           elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
+            if (engine.cmd = '0' and rx_fifo.free = '0') then -- WRITE command but RX FIFO full
+              engine.wr_we <= '0';      -- Don't write into RX FIFO
+              engine.state <= S_IDLE; -- Don't acknowledge (NACK)
+            else
             engine.wr_we <= not engine.cmd; -- write byte to RX FIFO (only if WRITE command)
             engine.state <= S_ACK;
+            end if;
           end if;
           -- sample bus on rising edge --
           if (smp.scl_rise = '1') then

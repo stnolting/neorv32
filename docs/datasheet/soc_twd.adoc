@@ -29,6 +29,7 @@ Key features:
 * Programmable 7-bit device address
 * Programmable interrupt conditions
 * Configurable RX/TX data FIFO to "program" large TWD sequences without further involvement of the CPU
+* Optional dummy TX byte which gets read when the TX FIFO is empty
 
 .Device-Mode Only
 [NOTE]
@@ -45,7 +46,7 @@ The size of those FIFOs can be configured by the `IO_TWD_FIFO` generic. Software
 control register's `TWD_CTRL_FIFO_*` bits.
 
 The module is globally enabled by setting the control register's `TWD_CTRL_EN` bit. Clearing this bit will disable
-and reset the entire module also clearing the internal RX and TX FIFOs. Each FIFO can also be cleared individually at
+and reset the entire module also clearing the internal RX and TX FIFOs, but not the dummy byte. Each FIFO can also be cleared individually at
 any time by setting `TWD_CTRL_CLR_RX` or `TWD_CTRL_CLR_TX`, respectively.
 
 The external two wire bus is sampled sampled and synchronized into the processor's clock domain with a sampling
@@ -64,7 +65,9 @@ addresses are not supported.
 Depending on the transaction type, data is either read from the RX FIFO and transferred to the host ("read operation")
 or data is received from the host and written to the TX FIFO ("write operation"). Hence, data sequences can be
 programmed to the TX FIFO to be fetched from the host. If the TX FIFO is empty and the host keeps performing read
-transaction, the transferred data byte is automatically set to all-one.
+transaction, either the dummy byte gets read when enabled or the read will be not acknowledged.
+
+The dummy behavior can be used by the host to perform polling, for example, to check the status of the device.
 
 The current status of the RX and TX FIFO can be polled by software via the `TWD_CTRL_RX_*` and `TWD_CTRL_TX_*`
 flags.
@@ -138,7 +141,8 @@ to idle state.
 
 For a **write transaction** (upper timing diagram) the host can now transfer an arbitrary number of bytes (blue signals
 `D7` to `D0`, MSB-first) to the TWD module. Each byte is acknowledged by the TWD by pulling SDA low during the 9th SCL
-clock pules (**ACK**). Each received data byte is pushed to the internal RX FIFO. Data will be lost if the FIFO overflows.
+clock pules (**ACK**), if moved into the fifo. When the fifo is full, the transfer gets not acknowledged (**NACK**).
+Each received data byte is pushed to the internal RX FIFO. Data will be lost if the FIFO overflows.
 The transaction is terminated when the host issues a **STOP** condition after the TWD has acknowledged the last data
 transfer.
 
@@ -183,24 +187,26 @@ twd_scl_i <= std_ulogic(scl_io); -- sense
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.18+<| `0xffea0000` .18+<| `CTRL` <|`0`     `TWD_CTRL_EN`                             ^| r/w <| TWD enable, reset if cleared
-                                  <|`1`     `TWD_CTRL_CLR_RX`                         ^| -/w <| Clear RX FIFO, flag auto-clears
-                                  <|`2`     `TWD_CTRL_CLR_TX`                         ^| -/w <| Clear TX FIFO, flag auto-clears
-                                  <|`3`     `TWD_CTRL_FSEL`                           ^| r/w <| Bus sample clock / filter select
-                                  <|`10:4`  `TWD_CTRL_DEV_ADDR6 : TWD_CTRL_DEV_ADDR0` ^| r/w <| Device address (7-bit)
-                                  <|`11`    `TWD_CTRL_IRQ_RX_AVAIL`                   ^| r/w <| IRQ if RX FIFO data available
-                                  <|`12`    `TWD_CTRL_IRQ_RX_FULL`                    ^| r/w <| IRQ if RX FIFO full
-                                  <|`13`    `TWD_CTRL_IRQ_TX_EMPTY`                   ^| r/w <| IRQ if TX FIFO empty
-                                  <|`14:9`   -                                        ^| r/- <| _reserved_, read as zero
-                                  <|`18:15` `TWD_CTRL_FIFO_MSB : TWD_CTRL_FIFO_LSB`   ^| r/- <| FIFO depth; log2(`IO_TWD_FIFO`)
-                                  <|`24:12`  -                                        ^| r/- <| _reserved_, read as zero
-                                  <|`25`    `TWD_CTRL_RX_AVAIL`                       ^| r/- <| RX FIFO data available
-                                  <|`26`    `TWD_CTRL_RX_FULL`                        ^| r/- <| RX FIFO full
-                                  <|`27`    `TWD_CTRL_TX_EMPTY`                       ^| r/- <| TX FIFO empty
-                                  <|`28`    `TWD_CTRL_TX_FULL`                        ^| r/- <| TX FIFO full
-                                  <|`29`    `TWD_CTRL_SENSE_SCL`                      ^| r/- <| current state of the SCL bus line
-                                  <|`30`    `TWD_CTRL_SENSE_SDA`                      ^| r/- <| current state of the SDA bus line
-                                  <|`31`    `TWD_CTRL_BUSY`                           ^| r/- <| bus engine is busy (transaction in progress)
-.2+<| `0xffea0004` .2+<| `DATA`   <|`7:0`   `TWD_DATA_MSB : TWD_DATA_LSB`             ^| r/w <| RX/TX data FIFO access
-                                  <|`31:8`  -                                         ^| r/- <| _reserved_, read as zero
+.19+<| `0xffea0000` .19+<| `CTRL` <|`0`     `TWD_CTRL_EN`                                   ^| r/w <| TWD enable, reset if cleared
+                                  <|`1`     `TWD_CTRL_CLR_RX`                               ^| -/w <| Clear RX FIFO, flag auto-clears
+                                  <|`2`     `TWD_CTRL_CLR_TX`                               ^| -/w <| Clear TX FIFO, flag auto-clears
+                                  <|`3`     `TWD_CTRL_FSEL`                                 ^| r/w <| Bus sample clock / filter select
+                                  <|`10:4`  `TWD_CTRL_DEV_ADDR6 : TWD_CTRL_DEV_ADDR0`       ^| r/w <| Device address (7-bit)
+                                  <|`11`    `TWD_CTRL_IRQ_RX_AVAIL`                         ^| r/w <| IRQ if RX FIFO data available
+                                  <|`12`    `TWD_CTRL_IRQ_RX_FULL`                          ^| r/w <| IRQ if RX FIFO full
+                                  <|`13`    `TWD_CTRL_IRQ_TX_EMPTY`                         ^| r/w <| IRQ if TX FIFO empty
+                                  <|`14`    `TWD_CTRL_TX_DUMMY_EN`                          ^| r/w <| enable sending tx_dummy (last sent byte) when fifo is empty
+                                  <|`15:9`   -                                              ^| r/- <| _reserved_, read as zero
+                                  <|`18:15` `TWD_CTRL_RX_FIFO_MSB : TWD_CTRL_RX_FIFO_LSB`   ^| r/- <| FIFO depth; log2(`IO_TWD_RX_FIFO`)
+                                  <|`22:19` `TWD_CTRL_TX_FIFO_MSB : TWD_CTRL_TX_FIFO_LSB`   ^| r/- <| FIFO depth; log2(`IO_TWD_TX_FIFO`)
+                                  <|`24:23`  -                                              ^| r/- <| _reserved_, read as zero
+                                  <|`25`    `TWD_CTRL_RX_AVAIL`                             ^| r/- <| RX FIFO data available
+                                  <|`26`    `TWD_CTRL_RX_FULL`                              ^| r/- <| RX FIFO full
+                                  <|`27`    `TWD_CTRL_TX_EMPTY`                             ^| r/- <| TX FIFO empty
+                                  <|`28`    `TWD_CTRL_TX_FULL`                              ^| r/- <| TX FIFO full
+                                  <|`29`    `TWD_CTRL_SENSE_SCL`                            ^| r/- <| current state of the SCL bus line
+                                  <|`30`    `TWD_CTRL_SENSE_SDA`                            ^| r/- <| current state of the SDA bus line
+                                  <|`31`    `TWD_CTRL_BUSY`                                 ^| r/- <| bus engine is busy (transaction in progress)
+.2+<| `0xffea0004` .2+<| `DATA`   <|`7:0`   `TWD_DATA_MSB : TWD_DATA_LSB`                   ^| r/w <| RX/TX data FIFO access
+                                  <|`31:8`  -                                               ^| r/- <| _reserved_, read as zero
 |=======================
