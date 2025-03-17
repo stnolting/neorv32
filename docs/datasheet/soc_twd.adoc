@@ -13,7 +13,8 @@
 |                         | `twd_scl_i`        | 1-bit serial clock line sense input
 |                         | `twd_scl_o`        | 1-bit serial clock line output (pull low only)
 | Configuration generics: | `IO_TWD_EN`        | implement TWD controller when `true`
-|                         | `IO_TWD_FIFO`      | RX/TX FIFO depth, has to be a power of two, min 1
+|                         | `IO_TWD_RX_FIFO`   | RX FIFO depth, has to be a power of two, min 1
+|                         | `IO_TWD_TX_FIFO`   | TX FIFO depth, has to be a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 0 | FIFO status interrupt (see <<_processor_interrupts>>)
 |=======================
 
@@ -42,8 +43,8 @@ check out the <<_two_wire_serial_interface_controller_twi>>.
 
 The TWD module provides two memory-mapped registers that are used for configuration & status check (`CTRL`) and
 for accessing transmission data (`DATA`). The `DATA` register is transparently buffered by separate RX and TX FIFOs.
-The size of those FIFOs can be configured by the `IO_TWD_FIFO` generic. Software can determine the FIFO size via the
-control register's `TWD_CTRL_FIFO_*` bits.
+The size of those FIFOs can be configured by the `IO_TWD_RX_FIFO` and `IO_TWD_TX_FIFO` generics. Software can determine the FIFO size via the control register's 
+`TWD_CTRL_FIFO_*` bits.
 
 The module is globally enabled by setting the control register's `TWD_CTRL_EN` bit. Clearing this bit will disable
 and reset the entire module also clearing the internal RX and TX FIFOs, but not the dummy byte. Each FIFO can also be cleared individually at

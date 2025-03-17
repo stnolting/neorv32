@@ -17,7 +17,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_twd is
   generic (
-    TWD_FIFO : natural range 1 to 2**15 -- RTX FIFO depth, has to be a power of two, min 1
+    TWD_RX_FIFO : natural range 1 to 2**15; -- Receive FIFO depth, has to be a power of two, min 1
+    TWD_TX_FIFO : natural range 1 to 2**15  -- Transmit FIFO depth, has to be a power of two, min 1
   );
   port (
     clk_i       : in  std_ulogic; -- global clock line
@@ -48,8 +49,10 @@ architecture neorv32_twd_rtl of neorv32_twd is
   constant ctrl_irq_tx_empty_c : natural := 13; -- r/w: IRQ if TX FIFO empty
   constant ctrl_tx_dummy_en_c  : natural := 14; -- r/w: enable sending tx_dummy (last sent byte) when fifo is empty
   --
-  constant ctrl_fifo_size0_c   : natural := 15; -- r/-: log2(FIFO size), bit 0 (LSB)
-  constant ctrl_fifo_size3_c   : natural := 18; -- r/-: log2(FIFO size), bit 3 (MSB)
+  constant ctrl_rx_fifo_size0_c   : natural := 15; -- r/-: log2(RX_FIFO size), bit 0 (LSB)
+  constant ctrl_rx_fifo_size3_c   : natural := 18; -- r/-: log2(RX_FIFO size), bit 3 (MSB)
+  constant ctrl_tx_fifo_size0_c   : natural := 19; -- r/-: log2(TX_FIFO size), bit 0 (LSB)
+  constant ctrl_tx_fifo_size3_c   : natural := 22; -- r/-: log2(TX_FIFO size), bit 3 (MSB)
   --
   constant ctrl_rx_avail_c     : natural := 25; -- r/-: RX FIFO data available
   constant ctrl_rx_full_c      : natural := 26; -- r/-: RX FIFO full
@@ -60,7 +63,8 @@ architecture neorv32_twd_rtl of neorv32_twd is
   constant ctrl_busy_c         : natural := 31; -- r/-: bus engine is busy (transaction in progress)
 
   -- helpers --
-  constant log2_fifo_size_c : natural := index_size_f(TWD_FIFO);
+  constant log2_rx_fifo_size_c : natural := index_size_f(TWD_RX_FIFO);
+  constant log2_tx_fifo_size_c : natural := index_size_f(TWD_TX_FIFO);
 
   -- control register --
   type ctrl_t is record
@@ -170,7 +174,9 @@ begin
             bus_rsp_o.data(ctrl_irq_tx_empty_c)                        <= ctrl.irq_tx_empty;
             bus_rsp_o.data(ctrl_tx_dummy_en_c)                         <= ctrl.tx_dummy_en;
             --
-            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+            bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_rx_fifo_size_c, 4));
+            bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_tx_fifo_size_c, 4));
+            --
             bus_rsp_o.data(ctrl_rx_avail_c)                            <= rx_fifo.avail;
             bus_rsp_o.data(ctrl_rx_full_c)                             <= not rx_fifo.free;
             bus_rsp_o.data(ctrl_tx_empty_c)                            <= not tx_fifo.avail;
@@ -196,7 +202,7 @@ begin
   -- TX FIFO --
   tx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
-    FIFO_DEPTH => TWD_FIFO,
+    FIFO_DEPTH => TWD_TX_FIFO,
     FIFO_WIDTH => 8,
     FIFO_RSYNC => true,
     FIFO_SAFE  => true,
@@ -248,7 +254,7 @@ begin
   -- RX FIFO --
   rx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
-    FIFO_DEPTH => TWD_FIFO,
+    FIFO_DEPTH => TWD_RX_FIFO,
     FIFO_WIDTH => 8,
     FIFO_RSYNC => true,
     FIFO_SAFE  => true,
