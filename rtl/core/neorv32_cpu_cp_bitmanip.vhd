@@ -379,7 +379,7 @@ begin
   if not EN_ZBKC generate
     clmul.cnt <= (others => '0');
     clmul.res <= (others => '0');
-    clmul.run <= '1';
+    clmul.run <= '0';
   end generate;
 
 

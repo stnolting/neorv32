@@ -118,13 +118,41 @@ controller: single-bit (0 or 1) transaction and reset with presence detect. Note
 the single-bit operation eight times. The relevant points in time are shown as _absolute_ time points (in multiples of the
 time base T~base~) with the falling edge of the bus as reference points.
 
-[cols="^2,^2"]
-[grid="none"]
-|=======================
-a| image::onewire_data.png[align=center]
-a| image::onewire_reset.png[align=center]
-| Single-bit data transmission (not to scale) | Reset pulse and presence detect (not to scale)
-|=======================
+.Single-bit data transmission (not to scale)
+[wavedrom, format="svg", align="center"]
+----
+{ signal: [
+  { wave: '10x....1.', node: '.........'},
+  {                    node: '.ab......'},
+  {                    node: '.X..c....'},
+  {                    node: '.Y.....d.'},
+  {                    node: '.Z......e'}
+  ],
+  edge: [
+    'a-b t0',
+    'X-c t1',
+    'Y-d t2',
+    'Z-e t3'
+  ]
+}
+----
+
+.Reset pulse and presence detect (not to scale)
+[wavedrom, format="svg", align="center"]
+----
+{ signal: [
+  { wave: '10..x...1', node: '.........'},
+  {                    node: '.f..g....'},
+  {                    node: '.X.. h...'},
+  {                    node: '.Y......i'}
+  ],
+  edge: [
+    'f-g t4',
+    'X-h t5',
+    'Y-i t6',
+  ]
+}
+----
 
 .Data Transmission Timing
 [cols="<2,<6,^3,^3"]
