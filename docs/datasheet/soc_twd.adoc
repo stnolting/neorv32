@@ -189,7 +189,7 @@ twd_scl_i <= std_ulogic(scl_io); -- sense
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.19+<| `0xffea0000` .19+<| `CTRL` <|`0`     `TWD_CTRL_EN`                                   ^| r/w <| TWD enable, reset if cleared
+.20+<| `0xffea0000` .20+<| `CTRL` <|`0`     `TWD_CTRL_EN`                                   ^| r/w <| TWD enable, reset if cleared
                                   <|`1`     `TWD_CTRL_CLR_RX`                               ^| -/w <| Clear RX FIFO, flag auto-clears
                                   <|`2`     `TWD_CTRL_CLR_TX`                               ^| -/w <| Clear TX FIFO, flag auto-clears
                                   <|`3`     `TWD_CTRL_FSEL`                                 ^| r/w <| Bus sample clock / filter select
@@ -201,7 +201,8 @@ twd_scl_i <= std_ulogic(scl_io); -- sense
                                   <|`15:9`   -                                              ^| r/- <| _reserved_, read as zero
                                   <|`18:15` `TWD_CTRL_RX_FIFO_MSB : TWD_CTRL_RX_FIFO_LSB`   ^| r/- <| FIFO depth; log2(`IO_TWD_RX_FIFO`)
                                   <|`22:19` `TWD_CTRL_TX_FIFO_MSB : TWD_CTRL_TX_FIFO_LSB`   ^| r/- <| FIFO depth; log2(`IO_TWD_TX_FIFO`)
-                                  <|`24:23`  -                                              ^| r/- <| _reserved_, read as zero
+                                  <|`23`    `TWD_CTRL_HIDE_READ`                            ^| r/- <| Generate NACK ony READ-access when TX FIFO is empty
+                                  <|`24`     -                                              ^| r/- <| _reserved_, read as zero
                                   <|`25`    `TWD_CTRL_RX_AVAIL`                             ^| r/- <| RX FIFO data available
                                   <|`26`    `TWD_CTRL_RX_FULL`                              ^| r/- <| RX FIFO full
                                   <|`27`    `TWD_CTRL_TX_EMPTY`                             ^| r/- <| TX FIFO empty
