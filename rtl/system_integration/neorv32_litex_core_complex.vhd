@@ -122,6 +122,7 @@ begin
     CLOCK_FREQUENCY       => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
     HART_BASE             => HART_ID,
     BOOT_MODE_SELECT      => 1,
+    BOOT_ADDR_CUSTOM      => x"00000000",
     -- On-Chip Debugger (OCD) --
     OCD_EN                => DEBUG,                          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
