@@ -1058,7 +1058,7 @@ int main() {
     cnt_test++;
 
     // configure TWD and enable RX-available interrupt
-    neorv32_twd_setup(0b1101001, 0, 1, 0, 0, 0);
+    neorv32_twd_setup(0b1101001, 0, 1, 0, 0, 0, 0);
 
     // configure TWI with third-fastest clock, no clock stretching
     neorv32_twi_setup(CLK_PRSC_8, 1, 0);
