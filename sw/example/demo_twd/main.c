@@ -69,7 +69,7 @@ int main() {
   // setup TWD
   neorv32_rte_handler_install(TWD_RTE_ID, isr_twd);
   neorv32_twd_set_tx_dummy(status);
-  neorv32_twd_setup(TWD_DEVICE_ID, 0, 1, 0, 0, 1);
+  neorv32_twd_setup(TWD_DEVICE_ID, 0, 1, 0, 0, 1, 0);
   neorv32_cpu_csr_set(CSR_MIE,
                       1 << TWD_FIRQ_ENABLE); 
   neorv32_cpu_csr_set(CSR_MSTATUS,
