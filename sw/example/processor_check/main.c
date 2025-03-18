@@ -1339,7 +1339,7 @@ int main() {
     neorv32_twi_setup(CLK_PRSC_8, 1, 0);
 
     // configure TWD, no interrupts
-    neorv32_twd_setup(0b0010110, 0, 0, 0, 0, 0);
+    neorv32_twd_setup(0b0010110, 0, 0, 0, 0, 0, 0);
     neorv32_twd_put(0x8e);
 
     // program sequence: read data via TWI
