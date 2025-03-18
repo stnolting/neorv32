@@ -482,9 +482,6 @@ void print_help(void) {
 #if (TWI_EN != 0)
              " t: Load from TWI Device\n"
 #endif
-#if (XIP_EN != 0)
-             " x: Boot from flash (XIP)\n"
-#endif
              " e: Execute\n"
 #if (TWD_EN != 0)
              "Info: TWD enabled\n"
@@ -555,7 +552,7 @@ void __attribute__((interrupt("machine"),aligned(4))) bootloader_trap_handler(vo
     neorv32_twd_get();
     get_exe(EXE_STREAM_TWD);
     PRINT_TEXT("\n");
-    start_app(0);
+    start_app();
   }
 #endif
 
