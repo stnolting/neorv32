@@ -46,6 +46,8 @@ for accessing transmission data (`DATA`). The `DATA` register is transparently b
 The size of those FIFOs can be configured by the `IO_TWD_RX_FIFO` and `IO_TWD_TX_FIFO` generics. Software can determine the FIFO size via the control register's 
 `TWD_CTRL_FIFO_*` bits.
 
+In addition to the TX FIFO itself, there is a dummy byte register that stores the last TX FIFO byte.
+
 The module is globally enabled by setting the control register's `TWD_CTRL_EN` bit. Clearing this bit will disable
 and reset the entire module also clearing the internal RX and TX FIFOs, but not the dummy byte. Each FIFO can also be cleared individually at
 any time by setting `TWD_CTRL_CLR_RX` or `TWD_CTRL_CLR_TX`, respectively.
