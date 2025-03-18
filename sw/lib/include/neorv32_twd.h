@@ -73,7 +73,7 @@ enum NEORV32_TWD_DATA_enum {
  **************************************************************************/
 /**@{*/
 int     neorv32_twd_available(void);
-void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int tx_dummy_en, int hide_read);
+void    neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int tx_dummy_en, int hide_read);
 int     neorv32_twd_get_rx_fifo_depth(void);
 int     neorv32_twd_get_tx_fifo_depth(void);
 void    neorv32_twd_disable(void);
@@ -91,7 +91,7 @@ int     neorv32_twd_tx_empty(void);
 int     neorv32_twd_tx_full(void);
 void    neorv32_twd_put(uint8_t data);
 uint8_t neorv32_twd_get(void);
-void    neorv32_twd_set_dummy(uint8_t data);
+void    neorv32_twd_set_tx_dummy(uint8_t data);
 /**@}*/
 
 

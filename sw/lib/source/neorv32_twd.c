@@ -285,7 +285,7 @@ uint8_t neorv32_twd_get(void) {
  *
  * @param[in] data Data byte to be stored in TX FIFO/dummy.
  **************************************************************************/
-void neorv32_twd_set_dummy(uint8_t data) {
+void neorv32_twd_set_tx_dummy(uint8_t data) {
   neorv32_twd_clear_tx();
   neorv32_twd_put(data);
 }
