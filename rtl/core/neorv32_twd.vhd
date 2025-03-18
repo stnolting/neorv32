@@ -48,13 +48,12 @@ architecture neorv32_twd_rtl of neorv32_twd is
   constant ctrl_irq_rx_full_c  : natural := 12; -- r/w: IRQ if RX FIFO full
   constant ctrl_irq_tx_empty_c : natural := 13; -- r/w: IRQ if TX FIFO empty
   constant ctrl_tx_dummy_en_c  : natural := 14; -- r/w: enable sending tx_dummy (last sent byte) when fifo is empty
+  constant ctrl_hide_read_c    : natural := 15; -- r/w: generate NACK ony READ-access when TX FIFO is empty
   --
-  constant ctrl_rx_fifo_size0_c   : natural := 15; -- r/-: log2(RX_FIFO size), bit 0 (LSB)
-  constant ctrl_rx_fifo_size3_c   : natural := 18; -- r/-: log2(RX_FIFO size), bit 3 (MSB)
-  constant ctrl_tx_fifo_size0_c   : natural := 19; -- r/-: log2(TX_FIFO size), bit 0 (LSB)
-  constant ctrl_tx_fifo_size3_c   : natural := 22; -- r/-: log2(TX_FIFO size), bit 3 (MSB)
-  --
-  constant ctrl_hide_read_c    : natural := 23; -- r/w: generate NACK ony READ-access when TX FIFO is empty
+  constant ctrl_rx_fifo_size0_c   : natural := 16; -- r/-: log2(RX_FIFO size), bit 0 (LSB)
+  constant ctrl_rx_fifo_size3_c   : natural := 19; -- r/-: log2(RX_FIFO size), bit 3 (MSB)
+  constant ctrl_tx_fifo_size0_c   : natural := 20; -- r/-: log2(TX_FIFO size), bit 0 (LSB)
+  constant ctrl_tx_fifo_size3_c   : natural := 23; -- r/-: log2(TX_FIFO size), bit 3 (MSB)
   --
   constant ctrl_rx_avail_c     : natural := 25; -- r/-: RX FIFO data available
   constant ctrl_rx_full_c      : natural := 26; -- r/-: RX FIFO full
