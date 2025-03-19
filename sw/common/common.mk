@@ -173,19 +173,21 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 
 # Compile app *.s sources (assembly)
 $(BUILD_DIR)/%.s.o: %.s | $(BUILD_DIR)
-	@$(CC) -c $(NEO_ASFLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
+	@$(CC) -c $(NEO_ASFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.s.d -MT $(BUILD_DIR)/$*.s.o -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
 
 # Compile app *.S sources (assembly + C pre-processor)
 $(BUILD_DIR)/%.S.o: %.S | $(BUILD_DIR)
-	@$(CC) -c $(NEO_ASFLAGS) -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
+	@$(CC) -c $(NEO_ASFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.S.d -MT $(BUILD_DIR)/$*.S.o -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
 
 # Compile app *.c sources
 $(BUILD_DIR)/%.c.o: %.c | $(BUILD_DIR)
-	@$(CC) -c $(NEO_CFLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+	@$(CC) -c $(NEO_CFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.c.d -MT $(BUILD_DIR)/$*.c.o -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Compile app *.cpp sources
 $(BUILD_DIR)/%.cpp.o: %.cpp | $(BUILD_DIR)
-	@$(CC) -c $(NEO_CXXFLAGS) -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+	@$(CC) -c $(NEO_CXXFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.cpp.d -MT $(BUILD_DIR)/$*.cpp.o -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+
+-include $(OBJ:.o=.d)
 
 # Link object files and show memory utilization
 $(APP_ELF): $(OBJ)
