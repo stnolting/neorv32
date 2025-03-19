@@ -121,6 +121,9 @@ CC_HOST = gcc -Wall -O -g
 
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
+ifeq ($(OS),Windows_NT)
+	IMAGE_GEN := $(IMAGE_GEN).exe
+endif
 
 # Compiler & linker flags
 CC_OPTS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
