@@ -79,6 +79,9 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     riscv_u      : bool_t;
     riscv_a      : bool_t;
     dmem         : bool_t;
+    imem         : bool_t;
+    dcache       : bool_t;
+    icache       : bool_t;
     riscv_zicntr : bool_t;
     riscv_zihpm  : bool_t;
     fast_ops     : bool_t;
@@ -98,6 +101,9 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     riscv_u      => ( false,   false,   true,    true,  false ), -- RISC-V user mode 'U'
     riscv_a      => ( false,   false,   false,   false, true  ), -- RISC-V atomics
     dmem         => ( false,   false,   false,   false, true  ), -- enable data memory
+    imem         => ( false,   false,   false,   false, false ), -- enable instruction memory
+    dcache       => ( false,   false,   false,   true,  false ), -- enable data cache
+    icache       => ( false,   false,   false,   true,  true ), -- enable instruction cache
     riscv_zicntr => ( false,   false,   true,    true,  true  ), -- RISC-V standard CPU counters 'Zicntr'
     riscv_zihpm  => ( false,   false,   false,   true,  true  ), -- RISC-V hardware performance monitors 'Zihpm'
     fast_ops     => ( false,   false,   true,    true,  false ), -- use DSPs and barrel-shifters
@@ -133,7 +139,11 @@ begin
     -- Tuning Options --
     CPU_FAST_MUL_EN       => configs_c.fast_ops(CONFIG),     -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN     => configs_c.fast_ops(CONFIG),     -- use barrel shifter for shift operations
+    -- Internal memories --
     MEM_INT_DMEM_EN       => configs_c.dmem(CONFIG),
+    MEM_INT_IMEM_EN       => configs_c.imem(CONFIG),
+    DCACHE_EN             => configs_c.dcache(CONFIG),
+    ICACHE_EN             => configs_c.icache(CONFIG),
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       => configs_c.pmp_num(CONFIG),      -- number of regions (0..16)
     PMP_MIN_GRANULARITY   => 4,                              -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
