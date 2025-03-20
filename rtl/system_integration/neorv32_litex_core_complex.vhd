@@ -78,6 +78,10 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     riscv_m      : bool_t;
     riscv_u      : bool_t;
     riscv_a      : bool_t;
+    dmem         : bool_t;
+    imem         : bool_t;
+    dcache       : bool_t;
+    icache       : bool_t;
     riscv_zicntr : bool_t;
     riscv_zihpm  : bool_t;
     fast_ops     : bool_t;
@@ -96,9 +100,13 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     riscv_m      => ( false,   true,    true,    true,  false ), -- RISC-V hardware mul/div 'M'
     riscv_u      => ( false,   false,   true,    true,  false ), -- RISC-V user mode 'U'
     riscv_a      => ( false,   false,   false,   false, true  ), -- RISC-V atomics
+    dmem         => ( false,   false,   false,   false, true  ), -- enable data memory
+    imem         => ( false,   false,   false,   false, false ), -- enable instruction memory
+    dcache       => ( false,   false,   false,   true,  false ), -- enable data cache
+    icache       => ( false,   false,   false,   true,  true ), -- enable instruction cache
     riscv_zicntr => ( false,   false,   true,    true,  true  ), -- RISC-V standard CPU counters 'Zicntr'
     riscv_zihpm  => ( false,   false,   false,   true,  true  ), -- RISC-V hardware performance monitors 'Zihpm'
-    fast_ops     => ( false,   false,   true,    true,  true  ), -- use DSPs and barrel-shifters
+    fast_ops     => ( false,   false,   true,    true,  false ), -- use DSPs and barrel-shifters
     pmp_num      => ( 0,       0,       0,       8,     0     ), -- number of PMP regions (0..16)
     hpm_num      => ( 0,       0,       0,       8,     0     ), -- number of HPM counters (0..29)
     xcache_en    => ( false,   false,   true,    true,  false ), -- external bus cache enabled
@@ -106,9 +114,6 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     xcache_bs    => ( 32,      32,      32,      32,    32    ), -- size of cache clock (lines) in bytes, power of two
     clint        => ( false,   true,    true,    true,  true  )  -- RISC-V core local interruptor
   );
-
-  -- misc --
-  signal wb_cyc : std_ulogic;
 
 begin
 
@@ -119,6 +124,8 @@ begin
     -- General --
     CLOCK_FREQUENCY       => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
     HART_BASE             => HART_ID,
+    BOOT_MODE_SELECT      => 1,
+    BOOT_ADDR_CUSTOM      => x"00000000",
     -- On-Chip Debugger (OCD) --
     OCD_EN                => DEBUG,                          -- implement on-chip debugger
     -- RISC-V CPU Extensions --
@@ -132,6 +139,11 @@ begin
     -- Tuning Options --
     CPU_FAST_MUL_EN       => configs_c.fast_ops(CONFIG),     -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN     => configs_c.fast_ops(CONFIG),     -- use barrel shifter for shift operations
+    -- Internal memories --
+    MEM_INT_DMEM_EN       => configs_c.dmem(CONFIG),
+    MEM_INT_IMEM_EN       => configs_c.imem(CONFIG),
+    DCACHE_EN             => configs_c.dcache(CONFIG),
+    ICACHE_EN             => configs_c.icache(CONFIG),
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       => configs_c.pmp_num(CONFIG),      -- number of regions (0..16)
     PMP_MIN_GRANULARITY   => 4,                              -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -162,18 +174,14 @@ begin
     xbus_dat_o  => wb_dat_o,   -- write data
     xbus_we_o   => wb_we_o,    -- read/write
     xbus_sel_o  => wb_sel_o,   -- byte enable
-    xbus_stb_o  => open,       -- strobe
-    xbus_cyc_o  => wb_cyc,     -- valid cycle
+    xbus_stb_o  => wb_stb_o,       -- strobe
+    xbus_cyc_o  => wb_cyc_o,     -- valid cycle
     xbus_dat_i  => wb_dat_i,   -- read data
     xbus_ack_i  => wb_ack_i,   -- transfer acknowledge
     xbus_err_i  => wb_err_i,   -- transfer error
     -- CPU Interrupts --
     mext_irq_i  => mext_irq_i  -- machine external interrupt
   );
-
-  -- convert to "classic" Wishbone protocol (STB = CYC) --
-  wb_cyc_o <= wb_cyc;
-  wb_stb_o <= wb_cyc;
 
 
 end neorv32_litex_core_complex_rtl;
