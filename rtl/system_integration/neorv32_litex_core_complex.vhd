@@ -109,9 +109,6 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     clint        => ( false,   true,    true,    true,  true  )  -- RISC-V core local interruptor
   );
 
-  -- misc --
-  signal wb_cyc : std_ulogic;
-
 begin
 
   -- NEORV32 Core Complex -------------------------------------------------------------------
@@ -167,18 +164,14 @@ begin
     xbus_dat_o  => wb_dat_o,   -- write data
     xbus_we_o   => wb_we_o,    -- read/write
     xbus_sel_o  => wb_sel_o,   -- byte enable
-    xbus_stb_o  => open,       -- strobe
-    xbus_cyc_o  => wb_cyc,     -- valid cycle
+    xbus_stb_o  => wb_stb_o,       -- strobe
+    xbus_cyc_o  => wb_cyc_o,     -- valid cycle
     xbus_dat_i  => wb_dat_i,   -- read data
     xbus_ack_i  => wb_ack_i,   -- transfer acknowledge
     xbus_err_i  => wb_err_i,   -- transfer error
     -- CPU Interrupts --
     mext_irq_i  => mext_irq_i  -- machine external interrupt
   );
-
-  -- convert to "classic" Wishbone protocol (STB = CYC) --
-  wb_cyc_o <= wb_cyc;
-  wb_stb_o <= wb_cyc;
 
 
 end neorv32_litex_core_complex_rtl;
