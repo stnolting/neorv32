@@ -354,8 +354,9 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Two-Wire/I2C Device (TWD)}]
   add_params $group {
-    { IO_TWD_EN   {Enable TWD} }
-    { IO_TWD_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_TWD_EN} }
+    { IO_TWD_EN         {Enable TWD} }
+    { IO_TWD_RX_FIFO    {RX FIFO depth}            {Number of entries (use a power of two)}  {$IO_TWD_EN} }
+    { IO_TWD_TX_FIFO    {TX FIFO depth}            {Number of entries (use a power of two)}  {$IO_TWD_EN} }
   }
 
   set group [add_group $page {Pulse-Width Modulation Controller (PWM)}]
