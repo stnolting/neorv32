@@ -237,7 +237,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `RISCV_ISA_Zmmul`       | boolean   | false         | Enable <<_zmmul_isa_extension>> (hardware-based integer multiplication).
 | `RISCV_ISA_Zxcfu`       | boolean   | false         | Enable NEORV32-specific <<_zxcfu_isa_extension>> (custom RISC-V instructions).
 4+^| **<<_cpu_tuning_options>>**
-| `CPU_CLOCK_GATING_EN`   | boolean   | false         | Implement sleep-mode clock gating; see sections <<_sleep_mode>> and <<_cpu_clock_gating>>.
 | `CPU_FAST_MUL_EN`       | boolean   | false         | Implement fast but large full-parallel multipliers (trying to infer DSP blocks); see section <<_cpu_arithmetic_logic_unit>>.
 | `CPU_FAST_SHIFT_EN`     | boolean   | false         | Implement fast but large full-parallel barrel shifters; see section <<_cpu_arithmetic_logic_unit>>.
 | `CPU_RF_HW_RST_EN`      | boolean   | false         | Implement full hardware reset for register file (use individual FFs instead of BRAM); see section <<_cpu_register_file>>.

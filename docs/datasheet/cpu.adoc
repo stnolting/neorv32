@@ -266,21 +266,6 @@ Software can check for configured tuning options via specific flags in the <<_mx
 
 {empty} +
 [discrete]
-===== **`CPU_CLOCK_GATING_EN`**
-
-[cols="<1,<8"]
-[frame="topbot",grid="none"]
-|=======================
-| Name        | Clock gating
-| Type        | `boolean`
-| Default     | `false`, disabled
-| Description | When **enabled** the CPU's primary clock is switched off when the CPU enters <<_sleep_mode>>. See <<_cpu_clock_gating>>.
-|             | When **disabled** the CPU clock system is implemented as single always-on clock domain.
-|=======================
-
-
-{empty} +
-[discrete]
 ===== **`CPU_FAST_MUL_EN`**
 
 [cols="<1,<8"]
@@ -357,23 +342,6 @@ as soon as the CPU has fully halted:
 CPU-external modules like memories, timers and peripheral interfaces are not affected by this. Furthermore, the CPU will
 continue to buffer/enqueue incoming interrupts. The CPU will leave sleep mode as soon as any _enabled_ interrupt (via <<_mie>>)
 source becomes _pending_ or if a debug session is started.
-
-
-==== CPU Clock Gating
-
-The single clock domain of the CPU core can be split into an always-on clock domain and a switchable clock domain.
-The switchable clock domain can be deactivated to further reduce reduce dynamic power consumption. CPU-external modules
-like timers, interfaces and memories are not affected by the clock gating.
-
-The splitting into two clock domain is enabled by the `CPU_CLOCK_GATING_EN` generic (<<_processor_top_entity_generics>> /
-<<_cpu_tuning_options>>). When enabled, a generic clock switching gate is added to decouple the switchable clock from
-the always-on clock domain. Whenever the CPU enters <<_sleep_mode>> the switchable clock domain is shut down.
-
-.Clock Switch Hardware
-[NOTE]
-By default, a generic clock switch is used (`rtl/core/neorv32_clockgate.vhd`). Especially for FPGA setups it is highly
-recommended to replace this default module by a technology-specific primitive or macro wrapper to improve synthesis results
-(clock skew, global clock tree usage, etc.).
 
 
 ==== Full Virtualization

@@ -24,52 +24,50 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    HART_ID             : natural range 0 to 1023; -- hardware thread ID
-    BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
-    DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug-mode parking loop entry address, 4-byte aligned
-    DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug-mode exception entry address, 4-byte aligned
+    HART_ID           : natural range 0 to 1023; -- hardware thread ID
+    BOOT_ADDR         : std_ulogic_vector(31 downto 0); -- cpu boot address
+    DEBUG_PARK_ADDR   : std_ulogic_vector(31 downto 0); -- cpu debug-mode parking loop entry address, 4-byte aligned
+    DEBUG_EXC_ADDR    : std_ulogic_vector(31 downto 0); -- cpu debug-mode exception entry address, 4-byte aligned
     -- RISC-V ISA Extensions --
-    RISCV_ISA_A         : boolean; -- implement atomic memory operations extension
-    RISCV_ISA_B         : boolean; -- implement bit-manipulation extension
-    RISCV_ISA_C         : boolean; -- implement compressed extension
-    RISCV_ISA_E         : boolean; -- implement embedded-class register file extension
-    RISCV_ISA_M         : boolean; -- implement mul/div extension
-    RISCV_ISA_U         : boolean; -- implement user mode extension
-    RISCV_ISA_Zaamo     : boolean; -- implement atomic read-modify-write extension
-    RISCV_ISA_Zalrsc    : boolean; -- implement atomic reservation-set operations extension
-    RISCV_ISA_Zba       : boolean; -- implement shifted-add bit-manipulation extension
-    RISCV_ISA_Zbb       : boolean; -- implement basic bit-manipulation extension
-    RISCV_ISA_Zbkb      : boolean; -- implement bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc      : boolean; -- implement carry-less multiplication instructions
-    RISCV_ISA_Zbkx      : boolean; -- implement cryptography crossbar permutation extension
-    RISCV_ISA_Zbs       : boolean; -- implement single-bit bit-manipulation extension
-    RISCV_ISA_Zfinx     : boolean; -- implement 32-bit floating-point extension
-    RISCV_ISA_Zicntr    : boolean; -- implement base counters
-    RISCV_ISA_Zicond    : boolean; -- implement integer conditional operations
-    RISCV_ISA_Zihpm     : boolean; -- implement hardware performance monitors
-    RISCV_ISA_Zkn       : boolean; -- NIST algorithm suite available
-    RISCV_ISA_Zknd      : boolean; -- implement cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne      : boolean; -- implement cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh      : boolean; -- implement cryptography NIST hash extension
-    RISCV_ISA_Zks       : boolean; -- ShangMi algorithm suite available
-    RISCV_ISA_Zksed     : boolean; -- implement ShangMi block cipher extension
-    RISCV_ISA_Zksh      : boolean; -- implement ShangMi hash extension
-    RISCV_ISA_Zkt       : boolean; -- data-independent execution time available (for cryptography operations)
-    RISCV_ISA_Zmmul     : boolean; -- implement multiply-only M sub-extension
-    RISCV_ISA_Zxcfu     : boolean; -- implement custom (instr.) functions unit
-    RISCV_ISA_Sdext     : boolean; -- implement external debug mode extension
-    RISCV_ISA_Sdtrig    : boolean; -- implement trigger module extension
-    RISCV_ISA_Smpmp     : boolean; -- implement physical memory protection
+    RISCV_ISA_A       : boolean; -- implement atomic memory operations extension
+    RISCV_ISA_B       : boolean; -- implement bit-manipulation extension
+    RISCV_ISA_C       : boolean; -- implement compressed extension
+    RISCV_ISA_E       : boolean; -- implement embedded-class register file extension
+    RISCV_ISA_M       : boolean; -- implement mul/div extension
+    RISCV_ISA_U       : boolean; -- implement user mode extension
+    RISCV_ISA_Zaamo   : boolean; -- implement atomic read-modify-write extension
+    RISCV_ISA_Zalrsc  : boolean; -- implement atomic reservation-set operations extension
+    RISCV_ISA_Zba     : boolean; -- implement shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb     : boolean; -- implement basic bit-manipulation extension
+    RISCV_ISA_Zbkb    : boolean; -- implement bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc    : boolean; -- implement carry-less multiplication instructions
+    RISCV_ISA_Zbkx    : boolean; -- implement cryptography crossbar permutation extension
+    RISCV_ISA_Zbs     : boolean; -- implement single-bit bit-manipulation extension
+    RISCV_ISA_Zfinx   : boolean; -- implement 32-bit floating-point extension
+    RISCV_ISA_Zicntr  : boolean; -- implement base counters
+    RISCV_ISA_Zicond  : boolean; -- implement integer conditional operations
+    RISCV_ISA_Zihpm   : boolean; -- implement hardware performance monitors
+    RISCV_ISA_Zkn     : boolean; -- NIST algorithm suite available
+    RISCV_ISA_Zknd    : boolean; -- implement cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne    : boolean; -- implement cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh    : boolean; -- implement cryptography NIST hash extension
+    RISCV_ISA_Zks     : boolean; -- ShangMi algorithm suite available
+    RISCV_ISA_Zksed   : boolean; -- implement ShangMi block cipher extension
+    RISCV_ISA_Zksh    : boolean; -- implement ShangMi hash extension
+    RISCV_ISA_Zkt     : boolean; -- data-independent execution time available (for cryptography operations)
+    RISCV_ISA_Zmmul   : boolean; -- implement multiply-only M sub-extension
+    RISCV_ISA_Zxcfu   : boolean; -- implement custom (instr.) functions unit
+    RISCV_ISA_Sdext   : boolean; -- implement external debug mode extension
+    RISCV_ISA_Sdtrig  : boolean; -- implement trigger module extension
+    RISCV_ISA_Smpmp   : boolean; -- implement physical memory protection
     -- Tuning Options --
-    CPU_CLOCK_GATING_EN : boolean; -- enable clock gating when in sleep mode
-    CPU_FAST_MUL_EN     : boolean; -- use DSPs for M extension's multiplier
-    CPU_FAST_SHIFT_EN   : boolean; -- use barrel shifter for shift operations
-    CPU_RF_HW_RST_EN    : boolean  -- implement full hardware reset for register file
+    CPU_FAST_MUL_EN   : boolean; -- use DSPs for M extension's multiplier
+    CPU_FAST_SHIFT_EN : boolean; -- use barrel shifter for shift operations
+    CPU_RF_HW_RST_EN  : boolean  -- implement full hardware reset for register file
   );
   port (
     -- global control --
     clk_i         : in  std_ulogic; -- global clock, rising edge
-    clk_aux_i     : in  std_ulogic; -- always-on clock, rising edge
     rstn_i        : in  std_ulogic; -- global reset, low-active, async
     ctrl_o        : out ctrl_bus_t; -- main control bus
     -- instruction fetch (front-end) interface --
@@ -889,12 +887,12 @@ begin
 
   -- Interrupt Buffer -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  interrupt_buffer: process(rstn_i, clk_aux_i) -- always-on clock domain
+  interrupt_buffer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       trap_ctrl.irq_pnd <= (others => '0');
       trap_ctrl.irq_buf <= (others => '0');
-    elsif rising_edge(clk_aux_i) then
+    elsif rising_edge(clk_i) then
 
       -- Interrupt-Pending Buffer ---------------------------------------------
       -- Once triggered the interrupt line should stay active until explicitly
@@ -1039,11 +1037,11 @@ begin
 
   -- CPU Sleep Mode Control -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sleep_control: process(rstn_i, clk_aux_i) -- always-on clock domain
+  sleep_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       sleep_mode <= '0';
-    elsif rising_edge(clk_aux_i) then
+    elsif rising_edge(clk_i) then
       if (exe_engine.state = EX_SLEEP) and -- instruction execution has halted
          (frontend_i.halted = '1') and -- instruction fetch has halted
          (trap_ctrl.wakeup = '0') then -- no wake-up request
@@ -1603,8 +1601,8 @@ begin
             csr.rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);       -- Zbs: single-bit bit-manipulation
             csr.rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);     -- Zaamo: atomic memory operations
             csr.rdata(26) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc);    -- Zalrsc: reservation-set operations
+            csr.rdata(27) <= '0';                                   -- reserved
             -- tuning options --
-            csr.rdata(27) <= bool_to_ulogic_f(CPU_CLOCK_GATING_EN); -- enable clock gating when in sleep mode
             csr.rdata(28) <= bool_to_ulogic_f(CPU_RF_HW_RST_EN);    -- full hardware reset of register file
             csr.rdata(29) <= bool_to_ulogic_f(CPU_FAST_MUL_EN);     -- DSP-based multiplication (M extensions only)
             csr.rdata(30) <= bool_to_ulogic_f(CPU_FAST_SHIFT_EN);   -- parallel logic for shifts (barrel shifters)

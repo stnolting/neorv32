@@ -371,7 +371,6 @@ begin
     RISCV_ISA_Zksh        => RISCV_ISA_Zksh,
     RISCV_ISA_Zxcfu       => RISCV_ISA_Zxcfu,
     -- Extension Options --
-    CPU_CLOCK_GATING_EN   => false, -- clock gating is not supported here
     CPU_FAST_MUL_EN       => CPU_FAST_MUL_EN,
     CPU_FAST_SHIFT_EN     => CPU_FAST_SHIFT_EN,
     CPU_RF_HW_RST_EN      => CPU_RF_HW_RST_EN,

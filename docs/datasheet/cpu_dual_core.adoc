@@ -27,8 +27,7 @@ The following table summarizes the most important aspects when using the dual-co
 | **CPU configuration** | Both cores use the same cache, CPU and ISA configuration provided by the according top generics.
 | **Debugging** | A special SMP openOCD script (`sw/openocd/openocd_neorv32.dual_core.cfg`) is required to
 debug both cores at once. SMP-debugging is fully supported by the RISC-V gdb port.
-| **Clock and reset** | Both cores use the same global processor clock and reset. If <<_cpu_clock_gating>>
-is enabled, the clock of each core can be individually halted by putting the core into <<_sleep_mode>>.
+| **Clock and reset** | Both cores use the same global processor clock and reset.
 | **Address space** | Both cores have full access to the same physical <<_address_space>>.
 | **Interrupts** | All <<_processor_interrupts>> are routed to both cores. Hence, each core has access to
 all <<_neorv32_specific_fast_interrupt_requests>> (FIRQs). Additionally, the RISC-V machine-level _external

@@ -62,7 +62,6 @@ entity neorv32_top is
     RISCV_ISA_Zxcfu       : boolean                        := false;       -- implement custom (instr.) functions unit
 
     -- Tuning Options --
-    CPU_CLOCK_GATING_EN   : boolean                        := false;       -- enable clock gating when in sleep mode
     CPU_FAST_MUL_EN       : boolean                        := false;       -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN     : boolean                        := false;       -- use barrel shifter for shift operations
     CPU_RF_HW_RST_EN      : boolean                        := false;       -- implement full hardware reset for register file
@@ -522,7 +521,6 @@ begin
       RISCV_ISA_Sdtrig    => OCD_EN,
       RISCV_ISA_Smpmp     => cpu_smpmp_c,
       -- Tuning Options --
-      CPU_CLOCK_GATING_EN => CPU_CLOCK_GATING_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
       CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
       CPU_RF_HW_RST_EN    => CPU_RF_HW_RST_EN,

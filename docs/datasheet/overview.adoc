@@ -179,7 +179,6 @@ rtl/core
 ├-neorv32_bus.vhd               - SoC bus infrastructure modules
 ├-neorv32_cache.vhd             - Generic cache module
 ├-neorv32_clint.vhd             - Core local interruptor
-├-neorv32_clockgate.vhd         - Generic clock gating switch
 ├-neorv32_cfs.vhd               - Custom functions subsystem
 ├-neorv32_cpu.vhd               - NEORV32 CPU TOP ENTITY
 ├-neorv32_cpu_alu.vhd           - Arithmetic/logic unit
