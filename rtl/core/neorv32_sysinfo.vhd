@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - System Configuration Information Memory (SYSINFO)                  --
+-- NEORV32 SoC - System Configuration Information Module (SYSINFO)                  --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -68,12 +68,11 @@ end neorv32_sysinfo;
 architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
 
   -- helpers --
-  constant int_imem_en_c  : boolean := MEM_INT_IMEM_EN and boolean(MEM_INT_IMEM_SIZE > 0);
-  constant int_dmem_en_c  : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
-  constant xcache_en_c    : boolean := XBUS_EN and XBUS_CACHE_EN;
-  constant ocd_auth_en_c  : boolean := OCD_EN and OCD_AUTHENTICATION;
-  constant int_imem_rom_c : boolean := int_imem_en_c and MEM_INT_IMEM_ROM;
-  --
+  constant int_imem_en_c    : boolean := MEM_INT_IMEM_EN and boolean(MEM_INT_IMEM_SIZE > 0);
+  constant int_dmem_en_c    : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
+  constant xcache_en_c      : boolean := XBUS_EN and XBUS_CACHE_EN;
+  constant ocd_auth_en_c    : boolean := OCD_EN and OCD_AUTHENTICATION;
+  constant int_imem_rom_c   : boolean := int_imem_en_c and MEM_INT_IMEM_ROM;
   constant log2_imem_size_c : natural := index_size_f(MEM_INT_IMEM_SIZE);
   constant log2_dmem_size_c : natural := index_size_f(MEM_INT_DMEM_SIZE);
   constant log2_ic_bsize_c  : natural := index_size_f(ICACHE_BLOCK_SIZE);
@@ -87,16 +86,15 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
   signal sysinfo : sysinfo_t;
 
-  -- bus access buffer --
+  -- bus access --
   signal buf_adr : std_ulogic_vector(1 downto 0);
   signal buf_ack : std_ulogic;
 
 begin
 
-  -- Construct Info Memory ------------------------------------------------------------------
+  -- SYSINFO(0): Processor Clock Frequency in Hz --------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- SYSINFO(0): Processor Clock Frequency in Hz --
-  sysinfo_0_write: process(rstn_i, clk_i)
+  sysinfo_clk: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       sysinfo(0) <= std_ulogic_vector(to_unsigned(CLOCK_FREQUENCY, 32)); -- initialize from generic
@@ -105,15 +103,17 @@ begin
         sysinfo(0) <= bus_req_i.data;
       end if;
     end if;
-  end process sysinfo_0_write;
+  end process sysinfo_clk;
 
-  -- SYSINFO(1): Misc --
-  sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(log2_imem_size_c, 8)); -- log2(IMEM size)
-  sysinfo(1)(15 downto 8)  <= std_ulogic_vector(to_unsigned(log2_dmem_size_c, 8)); -- log2(DMEM size)
+  -- SYSINFO(1): Misc -----------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(log2_imem_size_c, 8)) when int_imem_en_c else (others => '0'); -- log2(IMEM size)
+  sysinfo(1)(15 downto 8)  <= std_ulogic_vector(to_unsigned(log2_dmem_size_c, 8)) when int_dmem_en_c else (others => '0'); -- log2(DMEM size)
   sysinfo(1)(23 downto 16) <= std_ulogic_vector(to_unsigned(NUM_HARTS, 8)); -- number of physical CPU cores
   sysinfo(1)(31 downto 24) <= std_ulogic_vector(to_unsigned(BOOT_MODE_SELECT, 8)); -- boot configuration
 
-  -- SYSINFO(2): SoC Configuration --
+  -- SYSINFO(2): SoC Configuration ----------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   sysinfo(2)(0)  <= '1' when INT_BOOTLOADER_EN else '0'; -- processor-internal bootloader implemented?
   sysinfo(2)(1)  <= '1' when XBUS_EN           else '0'; -- external bus interface implemented?
   sysinfo(2)(2)  <= '1' when int_imem_en_c     else '0'; -- processor-internal instruction memory implemented?
@@ -147,7 +147,8 @@ begin
   sysinfo(2)(30) <= '1' when IO_ONEWIRE_EN     else '0'; -- 1-wire interface (ONEWIRE) implemented?
   sysinfo(2)(31) <= '1' when IO_CRC_EN         else '0'; -- cyclic redundancy check unit (CRC) implemented?
 
-  -- SYSINFO(3): Cache Configuration --
+  -- SYSINFO(4): Cache Configuration --------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
   sysinfo(3)(3 downto 0)   <= std_ulogic_vector(to_unsigned(log2_ic_bsize_c, 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(block_size_in_bytes)
   sysinfo(3)(7 downto 4)   <= std_ulogic_vector(to_unsigned(log2_ic_bnum_c, 4))  when ICACHE_EN else (others => '0'); -- i-cache: log2(number_of_block)
   --
@@ -160,8 +161,7 @@ begin
   sysinfo(3)(27 downto 24) <= std_ulogic_vector(to_unsigned(log2_xc_bsize_c, 4)) when xcache_en_c else (others => '0'); -- xbus-cache: log2(block_size_in_bytes)
   sysinfo(3)(31 downto 28) <= std_ulogic_vector(to_unsigned(log2_xc_bnum_c, 4))  when xcache_en_c else (others => '0'); -- xbus-cache: log2(number_of_block)
 
-
-  -- Bus Access -----------------------------------------------------------------------------
+  -- Bus Response ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   access_buffer: process(rstn_i, clk_i)
   begin
@@ -180,6 +180,5 @@ begin
   bus_rsp_o.data <= sysinfo(to_integer(unsigned(buf_adr))) when (buf_ack = '1') else (others => '0');
   bus_rsp_o.ack  <= buf_ack;
   bus_rsp_o.err  <= '0'; -- no bus errors
-
 
 end neorv32_sysinfo_rtl;
