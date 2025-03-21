@@ -23,23 +23,24 @@ access latency. The cache is connected directly to the CPU's data access interfa
 full-transparent accesses. The cache is direct-mapped and uses "write-allocate" and "write-back" strategies.
 
 .Uncached Accesses
-[NOTE]
+[WARNING]
 The data cache provides direct accesses (= uncached) to memory in order to access memory-mapped IO (like the
 processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
-will not be cached at all (see section <<_address_space>>). Furthermore, the atomic memory operations
-of the <<_zaamo_isa_extension>> will always **bypass** the cache.
+will not be cached at all (see section <<_address_space>>). Furthermore, the **atomic memory operations**
+of the <<_zaamo_isa_extension>> will always **bypass** the cache. Hence, special attentions is required for
+maintaining <<_memory_coherence>>.
 
 .Manual Cache Flush/Clear/Reload and Memory Coherence
 [NOTE]
 By executing the `fence` instruction the data cache is flushed, cleared and reloaded.
 See section <<_memory_coherence>> for more information.
-
-.Retrieve Cache Configuration from Software
-[TIP]
-Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_configuration>> register.
-
 .Bus Access Fault Handling
+
 [NOTE]
 If the cache encounters a bus error when uploading a modified block to the next memory level or when
 downloading a new block from the next memory level, the entire block is invalidated and a bus access
 error exception is raised.
+
+.Retrieve Cache Configuration from Software
+[TIP]
+Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_configuration>> register.
