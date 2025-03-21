@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -36,7 +36,7 @@ architecture xbus_memory_rtl of xbus_memory is
   constant addr_bits_c : natural := index_size_f(MEM_SIZE/4);
 
   -- memory type --
-  type ram8bv_t is array (natural range <>) of bit_vector(7 downto 0); -- bit_vector type for optimized system storage
+  type ram8bv_t is array (natural range <>) of bit_vector(7 downto 0); -- bit_vector type for optimized simulator storage
 
   -- initialize ram8bv_t array from ASCII HEX file (no VHDL08 required) --
   impure function init_mem8bv_from_hexfile_f(file_name : string; num_words : natural; byte_sel : natural) return ram8bv_t is
@@ -97,16 +97,16 @@ begin
 
   -- Pre-Initialized Memory (all-zero or HEX image if specified) ----------------------------
   -- -------------------------------------------------------------------------------------------
-  memory_core: process(clk_i)
+  memory_data: process(clk_i)
+    -- [NOTE] The memory is split into four sub-memories using _variables_ of
+    -- type 'bit_vector' to minimize the simulator's RAM footprint.
     variable mem8bv_b0_v : ram8bv_t(0 to (MEM_SIZE/4)-1) := init_mem8bv_from_hexfile_f(MEM_FILE, MEM_SIZE/4, 0);
     variable mem8bv_b1_v : ram8bv_t(0 to (MEM_SIZE/4)-1) := init_mem8bv_from_hexfile_f(MEM_FILE, MEM_SIZE/4, 1);
     variable mem8bv_b2_v : ram8bv_t(0 to (MEM_SIZE/4)-1) := init_mem8bv_from_hexfile_f(MEM_FILE, MEM_SIZE/4, 2);
     variable mem8bv_b3_v : ram8bv_t(0 to (MEM_SIZE/4)-1) := init_mem8bv_from_hexfile_f(MEM_FILE, MEM_SIZE/4, 3);
   begin
     if rising_edge(clk_i) then
-      ack <= '0';
       if (xbus_req_i.cyc = '1') and (xbus_req_i.stb = '1') then
-        ack <= '1';
         if (xbus_req_i.we = '1') then
           if (xbus_req_i.sel(0) = '1') then
             mem8bv_b0_v(to_integer(unsigned(xbus_req_i.addr(addr_bits_c+1 downto 2)))) := to_bitvector(xbus_req_i.data(07 downto 00));
@@ -128,7 +128,16 @@ begin
         end if;
       end if;
     end if;
-  end process memory_core;
+  end process memory_data;
+
+  memory_ack: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      ack <= '0';
+    elsif rising_edge(clk_i) then
+      ack <= xbus_req_i.cyc and xbus_req_i.stb;
+    end if;
+  end process memory_ack;
 
 
   -- Latency Generator ----------------------------------------------------------------------
