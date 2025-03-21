@@ -1583,7 +1583,7 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x20</size>
+        <size>0x10</size>
         <usage>registers</usage>
       </addressBlock>
 
