@@ -191,11 +191,6 @@ to check if the targeted bits can actually be modified.
 | 21    | `CSR_MSTATUS_TW`   | r/w | **TW**: Trap on execution of `wfi` instruction in user mode when set; hardwired to zero if user-mode not implemented
 |=======================
 
-[NOTE]
-If the core is in user-mode, machine-mode interrupts are globally **enabled** even if `mstatus.mie` is cleared:
-"Interrupts for higher-privilege modes, y>x, are always globally enabled regardless of the setting of the global yIE
-bit for the higher-privilege mode." - RISC-V ISA Spec.
-
 
 {empty} +
 [discrete]
@@ -233,7 +228,7 @@ will _not_ cause an illegal instruction exception.
 |=======================
 
 [TIP]
-Machine-mode software can discover available `Z*` _sub-extensions_ (like `Zicsr` or `Zfinx`) by checking the NEORV32-specific
+Machine-mode software can discover available `Z*` sub-extensions (like `Zicsr` or `Zfinx`) by checking the NEORV32-specific
 <<_mxisa>> CSR.
 
 
