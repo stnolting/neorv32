@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 21.03.2025 | 1.11.2.1 | :warning: remove clock gating option | [#1214](https://github.com/stnolting/neorv32/pull/1214) |
 | 15.03.2025 | [**:rocket:1.11.2**](https://github.com/stnolting/neorv32/releases/tag/v1.11.2) | **New release** | |
 | 14.03.2025 | 1.11.1.9 | :bug: fix broken shift instructions of `Zbb` ISA extension (when `Zbkc` and `CPU_FAST_SHIFT_EN` are both disabled) | [#1206](https://github.com/stnolting/neorv32/pull/1206) |
 | 02.03.2025 | 1.11.1.8 | :warning: remove DMA FIRQ-triggered auto mode; :warning: remove GPTMR mode configuration bit | [#1194](https://github.com/stnolting/neorv32/pull/1194) |
