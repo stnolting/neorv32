@@ -89,6 +89,21 @@
 #define SPI_FLASH_CLK_PRSC CLK_PRSC_64 // see #NEORV32_CLOCK_PRSC_enum
 #endif
 
+// SPI flash base address
+#ifndef SPI_FLASH_BASE_ADDR
+#define SPI_FLASH_BASE_ADDR 0x00400000U
+#endif
+
+// SPI flash address width (number of bytes: 1,2,3,4)
+#ifndef SPI_FLASH_ADDR_BYTES
+#define SPI_FLASH_ADDR_BYTES 3 // default = 3 address bytes = 24-bit
+#endif
+
+// SPI flash sector size in bytes
+#ifndef SPI_FLASH_SECTOR_SIZE
+#define SPI_FLASH_SECTOR_SIZE 65536 // default = 64kB
+#endif
+
 /**********************************************************************
  * TWI configuration
  **********************************************************************/
@@ -113,28 +128,14 @@
 #define TWI_DEVICE_ID 0x50
 #endif
 
-/**********************************************************************
- * Flash configuration (SPI / TWI)
- **********************************************************************/
-
-// SPI flash base address
-#ifndef FLASH_SPI_BASE_ADDR
-#define FLASH_SPI_BASE_ADDR 0x00400000U
-#endif
-
 // TWI flash base address
-#ifndef FLASH_TWI_BASE_ADDR
-#define FLASH_TWI_BASE_ADDR 0x00000000U
+#ifndef TWI_FLASH_BASE_ADDR
+#define TWI_FLASH_BASE_ADDR 0x00000000U
 #endif
 
-// Flash address width (number of bytes: 1,2,3,4)
-#ifndef FLASH_ADDR_BYTES
-#define FLASH_ADDR_BYTES 3 // default = 3 address bytes = 24-bit
-#endif
-
-// Flash sector size in bytes
-#ifndef FLASH_SECTOR_SIZE
-#define FLASH_SECTOR_SIZE 65536 // default = 64kB
+// TWI flash address width (number of bytes: 1,2,3,4)
+#ifndef TWI_FLASH_ADDR_BYTES
+#define TWI_FLASH_ADDR_BYTES 3 // default = 3 address bytes = 24-bit
 #endif
 
 #endif // CONFIG_H

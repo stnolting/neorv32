@@ -357,7 +357,7 @@ int load_exe(int src) {
   // get image from SPI flash?
 #if (SPI_EN != 0)
   if (src == EXE_STREAM_SPI) {
-    src_addr = FLASH_SPI_BASE_ADDR;
+    src_addr = SPI_FLASH_BASE_ADDR;
     uart_puts("Loading from SPI flash @");
     uart_puth(src_addr);
     uart_puts("... ");
@@ -368,7 +368,7 @@ int load_exe(int src) {
   // get image from TWI flash?
 #if (TWI_EN)
   if (src == EXE_STREAM_TWI) {
-    src_addr = FLASH_TWI_BASE_ADDR;
+    src_addr = TWI_FLASH_BASE_ADDR;
     uart_puts("Loading from TWI flash ");
     uart_puth(TWI_DEVICE_ID);
     uart_puts(" @");
@@ -451,7 +451,7 @@ void save_exe(int dst) {
   uart_puts("Write ");
   uart_puth(size);
   uart_puts(" bytes to SPI flash @");
-  uart_puth((uint32_t)FLASH_SPI_BASE_ADDR);
+  uart_puth((uint32_t)SPI_FLASH_BASE_ADDR);
   uart_puts(" (y/n)?\n");
   if (uart_getc() != 'y') {
     return;
@@ -466,17 +466,17 @@ void save_exe(int dst) {
   }
 
   // clear memory before writing
-  uint32_t num_sectors = (size / (FLASH_SECTOR_SIZE)) + 1; // clear at least 1 sector
-  uint32_t sector_base_addr = (uint32_t)FLASH_SPI_BASE_ADDR ;
+  uint32_t num_sectors = (size / (SPI_FLASH_SECTOR_SIZE)) + 1; // clear at least 1 sector
+  uint32_t sector_base_addr = (uint32_t)SPI_FLASH_BASE_ADDR ;
   while (num_sectors--) {
     spi_flash_erase_sector(sector_base_addr);
-    sector_base_addr += FLASH_SECTOR_SIZE;
+    sector_base_addr += SPI_FLASH_SECTOR_SIZE;
   }
 
   // store data from memory and update checksum
   uint32_t checksum = 0, i = 0;
   uint32_t *pnt = (uint32_t*)EXE_BASE_ADDR;
-  uint32_t src_addr = (uint32_t)FLASH_SPI_BASE_ADDR + EXE_OFFSET_DATA;
+  uint32_t src_addr = (uint32_t)SPI_FLASH_BASE_ADDR + EXE_OFFSET_DATA;
   while (i < size) { // in chunks of 4 bytes
     uint32_t d = (uint32_t)*pnt++;
     checksum += d;
@@ -486,9 +486,9 @@ void save_exe(int dst) {
   }
 
   // write header
-  spi_flash_write_word(FLASH_SPI_BASE_ADDR + EXE_OFFSET_SIGNATURE, EXE_SIGNATURE);
-  spi_flash_write_word(FLASH_SPI_BASE_ADDR + EXE_OFFSET_SIZE, size);
-  spi_flash_write_word(FLASH_SPI_BASE_ADDR + EXE_OFFSET_CHECKSUM, (~checksum)+1);
+  spi_flash_write_word(SPI_FLASH_BASE_ADDR + EXE_OFFSET_SIGNATURE, EXE_SIGNATURE);
+  spi_flash_write_word(SPI_FLASH_BASE_ADDR + EXE_OFFSET_SIZE, size);
+  spi_flash_write_word(SPI_FLASH_BASE_ADDR + EXE_OFFSET_CHECKSUM, (~checksum)+1);
 
   uart_puts("OK\n");
 }

@@ -80,22 +80,22 @@ void spi_flash_send_addr(uint32_t addr) {
   subwords32_t address;
   address.uint32 = addr;
 
-#if (FLASH_ADDR_BYTES == 1)
+#if (SPI_FLASH_ADDR_BYTES == 1)
   neorv32_spi_transfer(address.uint8[0]);
-#elif (FLASH_ADDR_BYTES == 2)
+#elif (SPI_FLASH_ADDR_BYTES == 2)
   neorv32_spi_transfer(address.uint8[1]);
   neorv32_spi_transfer(address.uint8[0]);
-#elif (FLASH_ADDR_BYTES == 3)
+#elif (SPI_FLASH_ADDR_BYTES == 3)
   neorv32_spi_transfer(address.uint8[2]);
   neorv32_spi_transfer(address.uint8[1]);
   neorv32_spi_transfer(address.uint8[0]);
-#elif (FLASH_ADDR_BYTES == 4)
+#elif (SPI_FLASH_ADDR_BYTES == 4)
   neorv32_spi_transfer(address.uint8[3]);
   neorv32_spi_transfer(address.uint8[2]);
   neorv32_spi_transfer(address.uint8[1]);
   neorv32_spi_transfer(address.uint8[0]);
 #else
-  #error "Invalid FLASH_ADDR_BYTES configuration!"
+  #error "Invalid SPI_FLASH_ADDR_BYTES configuration!"
 #endif
 }
 
