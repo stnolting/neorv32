@@ -80,7 +80,9 @@ void spi_flash_send_addr(uint32_t addr) {
   subwords32_t address;
   address.uint32 = addr;
 
-#if (FLASH_ADDR_BYTES == 2)
+#if (FLASH_ADDR_BYTES == 1)
+  neorv32_spi_transfer(address.uint8[0]);
+#elif (FLASH_ADDR_BYTES == 2)
   neorv32_spi_transfer(address.uint8[1]);
   neorv32_spi_transfer(address.uint8[0]);
 #elif (FLASH_ADDR_BYTES == 3)
