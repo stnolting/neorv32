@@ -60,6 +60,15 @@ int twi_flash_read_word(uint32_t addr, uint32_t* rdata) {
   device_nack |= neorv32_twi_transfer(&transfer, 0);
   transfer = address.uint8[0];
   device_nack |= neorv32_twi_transfer(&transfer, 0);
+#elif (FLASH_ADDR_BYTES == 4)
+  transfer = address.uint8[3];
+  device_nack |= neorv32_twi_transfer(&transfer, 0);
+  transfer = address.uint8[2];
+  device_nack |= neorv32_twi_transfer(&transfer, 0);
+  transfer = address.uint8[1];
+  device_nack |= neorv32_twi_transfer(&transfer, 0);
+  transfer = address.uint8[0];
+  device_nack |= neorv32_twi_transfer(&transfer, 0);
 #else
   #error "Invalid FLASH_ADDR_BYTES configuration!"
 #endif
