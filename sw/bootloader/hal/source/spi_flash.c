@@ -12,8 +12,8 @@
  */
 
 #include <neorv32.h>
-#include "config.h"
-#include "spi_flash.h"
+#include <config.h>
+#include <spi_flash.h>
 
 
 /**********************************************************************//**

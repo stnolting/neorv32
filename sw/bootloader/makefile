@@ -7,6 +7,10 @@ MABI = ilp32e
 # Optimize for minimal size
 EFFORT = -Os
 
+# Hardware abstraction layer
+APP_SRC += $(wildcard ./*.c) $(wildcard ./hal/source/*.c)
+APP_INC += -I . -I ./hal/include
+
 # Adjust "rom" memory size and base for BOOTROM
 # Just use a minimal "ram" size that should be available on any platform configuration
 # Define MAKE_BOOTLOADER for SW library optimizations (reduces footprint) and enable link-time-optimization

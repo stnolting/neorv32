@@ -12,8 +12,8 @@
  */
 
 #include <neorv32.h>
-#include "config.h"
-#include "uart.h"
+#include <config.h>
+#include <uart.h>
 
 
 

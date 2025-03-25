@@ -14,10 +14,10 @@
 // libraries
 #include <stdint.h>
 #include <neorv32.h>
-#include "config.h"
-#include "spi_flash.h"
-#include "twi_flash.h"
-#include "uart.h"
+#include <config.h>
+#include <spi_flash.h>
+#include <twi_flash.h>
+#include <uart.h>
 
 // Executable source select
 #define EXE_STREAM_UART 0 // Get executable via UART
