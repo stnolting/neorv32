@@ -95,7 +95,7 @@
 
 // Enable TWI for copying to RAM
 #ifndef TWI_EN
-#define TWI_EN 1
+#define TWI_EN 0
 #endif
 
 // TWI clock prescaler
