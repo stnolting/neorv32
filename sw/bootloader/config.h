@@ -24,20 +24,20 @@
 #endif
 
 /**********************************************************************
- * UART interface
+ * UART configuration
  **********************************************************************/
 
-// Set to 0 to disable UART interface
+// Set to 0 to disable UART
 #ifndef UART_EN
 #define UART_EN 1
 #endif
 
-// UART BAUD rate for serial interface
+// UART BAUD rate for serial
 #ifndef UART_BAUD
 #define UART_BAUD 19200
 #endif
 
-// Set to 1 to enable UART HW handshaking
+// Set to 1 to enable UART RTS/CTS hardware flow control
 #ifndef UART_HW_HANDSHAKE_EN
 #define UART_HW_HANDSHAKE_EN 0
 #endif
@@ -95,7 +95,7 @@
 
 // Enable TWI for copying to RAM
 #ifndef TWI_EN
-#define TWI_EN 0
+#define TWI_EN 1
 #endif
 
 // TWI clock prescaler
@@ -114,15 +114,20 @@
 #endif
 
 /**********************************************************************
- * Flash configuration
+ * Flash configuration (SPI / TWI)
  **********************************************************************/
 
-// Flash base address
-#ifndef FLASH_BASE_ADDR
-#define FLASH_BASE_ADDR 0x00400000U
+// SPI flash base address
+#ifndef FLASH_SPI_BASE_ADDR
+#define FLASH_SPI_BASE_ADDR 0x00400000U
 #endif
 
-// Flash address width (number of bytes: 2,3,4)
+// TWI flash base address
+#ifndef FLASH_TWI_BASE_ADDR
+#define FLASH_TWI_BASE_ADDR 0x00000000U
+#endif
+
+// Flash address width (number of bytes: 1,2,3,4)
 #ifndef FLASH_ADDR_BYTES
 #define FLASH_ADDR_BYTES 3 // default = 3 address bytes = 24-bit
 #endif

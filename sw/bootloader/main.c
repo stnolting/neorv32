@@ -15,15 +15,30 @@
 #include <stdint.h>
 #include <neorv32.h>
 #include "config.h"
-#include "main.h"
 #include "spi_flash.h"
 #include "twi_flash.h"
 #include "uart.h"
 
-// global variables
+// Executable source select
+#define EXE_STREAM_UART 0 // Get executable via UART
+#define EXE_STREAM_SPI  1 // Get executable from SPI flash
+#define EXE_STREAM_TWI  2 // Get executable from TWI device
+
+// NEORV32 executable
+#define EXE_OFFSET_SIGNATURE  (0) // Offset in bytes from start to signature (32-bit)
+#define EXE_OFFSET_SIZE       (4) // Offset in bytes from start to size (32-bit)
+#define EXE_OFFSET_CHECKSUM   (8) // Offset in bytes from start to checksum (32-bit)
+#define EXE_OFFSET_DATA      (12) // Offset in bytes from start to data (32-bit)
+#define EXE_SIGNATURE 0x4788CAFEU // valid executable identifier
+
+// Helper macros
+#define xstr(a) str(a)
+#define str(a) #a
+
+// Global variables
 uint32_t exe_available = 0; // size of the loaded executable; 0 if no executable available
 
-// function prototypes
+// Function prototypes
 void __attribute__((interrupt("machine"),aligned(4))) bootloader_trap_handler(void);
 void print_help(void);
 void start_app(void);
@@ -327,12 +342,10 @@ void __attribute__((interrupt("machine"),aligned(4))) bootloader_trap_handler(vo
 int load_exe(int src) {
 
   int rc = 0;
+  uint32_t src_addr = 0;
 
   // no executable available yet
   exe_available = 0;
-
-  // flash image base address
-  uint32_t src_addr = (uint32_t)FLASH_BASE_ADDR;
 
   // get image from UART?
 #if (UART_EN != 0)
@@ -344,6 +357,7 @@ int load_exe(int src) {
   // get image from SPI flash?
 #if (SPI_EN != 0)
   if (src == EXE_STREAM_SPI) {
+    src_addr = FLASH_SPI_BASE_ADDR;
     uart_puts("Loading from SPI flash @");
     uart_puth(src_addr);
     uart_puts("... ");
@@ -354,6 +368,7 @@ int load_exe(int src) {
   // get image from TWI flash?
 #if (TWI_EN)
   if (src == EXE_STREAM_TWI) {
+    src_addr = FLASH_TWI_BASE_ADDR;
     uart_puts("Loading from TWI flash ");
     uart_puth(TWI_DEVICE_ID);
     uart_puts(" @");
@@ -436,7 +451,7 @@ void save_exe(int dst) {
   uart_puts("Write ");
   uart_puth(size);
   uart_puts(" bytes to SPI flash @");
-  uart_puth((uint32_t)FLASH_BASE_ADDR);
+  uart_puth((uint32_t)FLASH_SPI_BASE_ADDR);
   uart_puts(" (y/n)?\n");
   if (uart_getc() != 'y') {
     return;
@@ -452,7 +467,7 @@ void save_exe(int dst) {
 
   // clear memory before writing
   uint32_t num_sectors = (size / (FLASH_SECTOR_SIZE)) + 1; // clear at least 1 sector
-  uint32_t sector_base_addr = (uint32_t)FLASH_BASE_ADDR ;
+  uint32_t sector_base_addr = (uint32_t)FLASH_SPI_BASE_ADDR ;
   while (num_sectors--) {
     spi_flash_erase_sector(sector_base_addr);
     sector_base_addr += FLASH_SECTOR_SIZE;
@@ -461,7 +476,7 @@ void save_exe(int dst) {
   // store data from memory and update checksum
   uint32_t checksum = 0, i = 0;
   uint32_t *pnt = (uint32_t*)EXE_BASE_ADDR;
-  uint32_t src_addr = (uint32_t)FLASH_BASE_ADDR + EXE_OFFSET_DATA;
+  uint32_t src_addr = (uint32_t)FLASH_SPI_BASE_ADDR + EXE_OFFSET_DATA;
   while (i < size) { // in chunks of 4 bytes
     uint32_t d = (uint32_t)*pnt++;
     checksum += d;
@@ -471,9 +486,9 @@ void save_exe(int dst) {
   }
 
   // write header
-  spi_flash_write_word(FLASH_BASE_ADDR + EXE_OFFSET_SIGNATURE, EXE_SIGNATURE);
-  spi_flash_write_word(FLASH_BASE_ADDR + EXE_OFFSET_SIZE, size);
-  spi_flash_write_word(FLASH_BASE_ADDR + EXE_OFFSET_CHECKSUM, (~checksum)+1);
+  spi_flash_write_word(FLASH_SPI_BASE_ADDR + EXE_OFFSET_SIGNATURE, EXE_SIGNATURE);
+  spi_flash_write_word(FLASH_SPI_BASE_ADDR + EXE_OFFSET_SIZE, size);
+  spi_flash_write_word(FLASH_SPI_BASE_ADDR + EXE_OFFSET_CHECKSUM, (~checksum)+1);
 
   uart_puts("OK\n");
 }
