@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 24.03.2025 | 1.11.2.2 | TWD: add separate RX/TX FIFO configuration; add dummy response (if TX FIFO is empty); add optional no-ACK on read access if TX FIFO is empty | [#1210](https://github.com/stnolting/neorv32/pull/1210) |
 | 21.03.2025 | 1.11.2.1 | :warning: remove clock gating option | [#1214](https://github.com/stnolting/neorv32/pull/1214) |
 | 15.03.2025 | [**:rocket:1.11.2**](https://github.com/stnolting/neorv32/releases/tag/v1.11.2) | **New release** | |
 | 14.03.2025 | 1.11.1.9 | :bug: fix broken shift instructions of `Zbb` ISA extension (when `Zbkc` and `CPU_FAST_SHIFT_EN` are both disabled) | [#1206](https://github.com/stnolting/neorv32/pull/1206) |
