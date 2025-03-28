@@ -17,5 +17,6 @@
 #include <stdint.h>
 
 int twi_flash_read_word(uint32_t addr, uint32_t* rdata);
+int twi_flash_write_word(uint32_t addr, uint32_t wdata);
 
 #endif // TWI_FLASH_H
