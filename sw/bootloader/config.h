@@ -84,24 +84,24 @@
 #define SPI_FLASH_CS 0
 #endif
 
-// SPI flash clock prescaler
+// SPI flash clock prescaler, see #NEORV32_CLOCK_PRSC_enum
 #ifndef SPI_FLASH_CLK_PRSC
-#define SPI_FLASH_CLK_PRSC CLK_PRSC_64 // see #NEORV32_CLOCK_PRSC_enum
+#define SPI_FLASH_CLK_PRSC CLK_PRSC_64
 #endif
 
-// SPI flash base address
+// SPI flash base address (hast to be aligned to the sector size)
 #ifndef SPI_FLASH_BASE_ADDR
 #define SPI_FLASH_BASE_ADDR 0x00400000U
 #endif
 
-// SPI flash address width (number of bytes: 1,2,3,4)
+// SPI flash address bytes (1,2,3,4)
 #ifndef SPI_FLASH_ADDR_BYTES
-#define SPI_FLASH_ADDR_BYTES 3 // default = 3 address bytes = 24-bit
+#define SPI_FLASH_ADDR_BYTES 3
 #endif
 
 // SPI flash sector size in bytes
 #ifndef SPI_FLASH_SECTOR_SIZE
-#define SPI_FLASH_SECTOR_SIZE 65536 // default = 64kB
+#define SPI_FLASH_SECTOR_SIZE 65536
 #endif
 
 /**********************************************************************
@@ -113,29 +113,29 @@
 #define TWI_EN 0
 #endif
 
-// TWI clock prescaler
+// TWI clock prescaler, see #NEORV32_CLOCK_PRSC_enum
 #ifndef TWI_CLK_PRSC
-#define TWI_CLK_PRSC CLK_PRSC_64 // see #NEORV32_CLOCK_PRSC_enum
+#define TWI_CLK_PRSC CLK_PRSC_1024
 #endif
 
 // TWI clock divider
 #ifndef TWI_CLK_DIV
-#define TWI_CLK_DIV 3
+#define TWI_CLK_DIV 1
 #endif
 
-// TWI device ID
+// TWI device ID (write address; R/W cleared)
 #ifndef TWI_DEVICE_ID
-#define TWI_DEVICE_ID 0x50
+#define TWI_DEVICE_ID 0xA0
 #endif
 
-// TWI flash base address
+// TWI flash base address (has to 4-byte aligned)
 #ifndef TWI_FLASH_BASE_ADDR
 #define TWI_FLASH_BASE_ADDR 0x00000000U
 #endif
 
-// TWI flash address width (number of bytes: 1,2,3,4)
+// TWI flash address bytes (1,2,3,4)
 #ifndef TWI_FLASH_ADDR_BYTES
-#define TWI_FLASH_ADDR_BYTES 3 // default = 3 address bytes = 24-bit
+#define TWI_FLASH_ADDR_BYTES 2
 #endif
 
 #endif // CONFIG_H

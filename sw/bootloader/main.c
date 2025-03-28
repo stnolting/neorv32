@@ -45,7 +45,7 @@ void start_app(void);
 int  load_exe(int src);
 void save_exe(int dst);
 int  get_exe_word(int src, uint32_t addr, uint32_t *rdata);
-void set_boot_addr(void);
+int  put_exe_word(int dst, uint32_t addr, uint32_t wdata);
 
 
 /**********************************************************************//**
@@ -76,15 +76,19 @@ int main(void) {
 
   // setup UART0
 #if (UART_EN != 0)
-  neorv32_uart0_setup(UART_BAUD, 0);
+  if (neorv32_uart0_available()) {
+    neorv32_uart0_setup(UART_BAUD, 0);
+#if (UART_HW_HANDSHAKE_EN != 0)
+    neorv32_uart0_rtscts_enable();
 #endif
-#if (UART_EN != 0) && (UART_HW_HANDSHAKE_EN != 0)
-  neorv32_uart0_rtscts_enable();
+  }
 #endif
 
   // setup TWI
 #if (TWI_EN != 0)
-  neorv32_twi_setup(TWI_CLK_PRSC, TWI_CLK_DIV, 0);
+  if (neorv32_uart0_available()) {
+    neorv32_twi_available();
+  }
 #endif
 
   // Configure CLINT timer interrupt
@@ -101,7 +105,8 @@ int main(void) {
   // Splash screen
   // ------------------------------------------------
 
-  uart_puts("\n\nNEORV32 Bootloader\n\n"
+  uart_puts("\033[2J" // clear screen
+            "\n\nNEORV32 Bootloader\n\n"
             "BLDV: "
             __DATE__
             "\nHWV:  ");
@@ -194,6 +199,9 @@ skip_auto_boot:
     }
 #endif
 #if (TWI_EN != 0)
+    else if (cmd == 'w') { // copy memory to TWI flash
+      save_exe(EXE_STREAM_TWI);
+    }
     else if (cmd == 't') { // copy executable from TWI flash
       load_exe(EXE_STREAM_TWI);
     }
@@ -240,6 +248,7 @@ void print_help(void) {
     "l: Load from SPI flash\n"
 #endif
 #if (TWI_EN != 0)
+    "w: Store to TWI flash\n"
     "t: Load from TWI flash\n"
 #endif
     "e: Start executable\n"
@@ -435,10 +444,8 @@ int load_exe(int src) {
  **************************************************************************/
 void save_exe(int dst) {
 
-  // only SPI programming is supported yet
-  if (dst != EXE_STREAM_SPI) {
-    return;
-  }
+  int rc = 0;
+  uint32_t dst_addr = 0;
 
   // size of last uploaded executable
   uint32_t size = exe_available;
@@ -447,11 +454,20 @@ void save_exe(int dst) {
     return;
   }
 
-  // info prompt
+  // info prompt and flash address setup
   uart_puts("Write ");
   uart_puth(size);
-  uart_puts(" bytes to SPI flash @");
-  uart_puth((uint32_t)SPI_FLASH_BASE_ADDR);
+  uart_puts(" bytes to ");
+  if (dst == EXE_STREAM_SPI) {
+    uart_puts("SPI");
+    dst_addr = (uint32_t)SPI_FLASH_BASE_ADDR;
+  }
+  else  {
+    uart_puts("TWI "xstr(TWI_DEVICE_ID)"");
+    dst_addr = (uint32_t)TWI_FLASH_BASE_ADDR;
+  }
+  uart_puts(" flash @");
+  uart_puth(dst_addr);
   uart_puts(" (y/n)?\n");
   if (uart_getc() != 'y') {
     return;
@@ -459,38 +475,50 @@ void save_exe(int dst) {
 
   uart_puts("Flashing... ");
 
-  // SPI and flash ok?
-  if (spi_flash_check()) {
-    uart_puts("ERROR_DEVICE\n");
-    return;
+  // prepare SPI flash
+  if (dst == EXE_STREAM_SPI) {
+    if (spi_flash_check()) { // SPI and flash OK?
+      uart_puts("ERROR_DEVICE\n");
+      return;
+    }
+
+    // clear memory before writing
+    uint32_t num_sectors = (size / (SPI_FLASH_SECTOR_SIZE)) + 1; // clear at least 1 sector
+    uint32_t sector_base_addr = dst_addr;
+    while (num_sectors--) {
+      rc |= spi_flash_erase_sector(sector_base_addr);
+      sector_base_addr += SPI_FLASH_SECTOR_SIZE;
+    }
   }
 
-  // clear memory before writing
-  uint32_t num_sectors = (size / (SPI_FLASH_SECTOR_SIZE)) + 1; // clear at least 1 sector
-  uint32_t sector_base_addr = (uint32_t)SPI_FLASH_BASE_ADDR ;
-  while (num_sectors--) {
-    spi_flash_erase_sector(sector_base_addr);
-    sector_base_addr += SPI_FLASH_SECTOR_SIZE;
-  }
-
-  // store data from memory and update checksum
-  uint32_t checksum = 0, i = 0;
-  uint32_t *pnt = (uint32_t*)EXE_BASE_ADDR;
-  uint32_t src_addr = (uint32_t)SPI_FLASH_BASE_ADDR + EXE_OFFSET_DATA;
+  // transfer executable
+  uint32_t checksum = 0, tmp = 0, i = 0;
+  uint32_t pnt = (uint32_t)EXE_BASE_ADDR;
+  uint32_t addr = dst_addr + EXE_OFFSET_DATA;
   while (i < size) { // in chunks of 4 bytes
-    uint32_t d = (uint32_t)*pnt++;
-    checksum += d;
-    spi_flash_write_word(src_addr, d);
-    src_addr += 4;
+    tmp = neorv32_cpu_load_unsigned_word(pnt);
+    pnt += 4;
+    checksum += tmp;
+    if (put_exe_word(dst, addr, tmp)) {
+      rc |= 1;
+      break;
+    }
+    addr += 4;
     i += 4;
   }
 
   // write header
-  spi_flash_write_word(SPI_FLASH_BASE_ADDR + EXE_OFFSET_SIGNATURE, EXE_SIGNATURE);
-  spi_flash_write_word(SPI_FLASH_BASE_ADDR + EXE_OFFSET_SIZE, size);
-  spi_flash_write_word(SPI_FLASH_BASE_ADDR + EXE_OFFSET_CHECKSUM, (~checksum)+1);
+  rc |= put_exe_word(dst, dst_addr + EXE_OFFSET_SIGNATURE, EXE_SIGNATURE);
+  rc |= put_exe_word(dst, dst_addr + EXE_OFFSET_SIZE, size);
+  rc |= put_exe_word(dst, dst_addr + EXE_OFFSET_CHECKSUM, (~checksum)+1);
 
-  uart_puts("OK\n");
+  // checks
+  if (rc) {
+    uart_puts("ERROR_DEVICE\n");
+  }
+  else {
+    uart_puts("OK\n");
+  }
 }
 
 
@@ -512,6 +540,28 @@ int get_exe_word(int src, uint32_t addr, uint32_t *rdata) {
   }
   else if (src == EXE_STREAM_TWI) {
     return twi_flash_read_word(addr, rdata);
+  }
+  else {
+    return 1;
+  }
+}
+
+
+/**********************************************************************//**
+ * Put word to executable stream.
+ *
+ * @param dst Source of executable stream data. See #EXE_STREAM_SOURCE_enum.
+ * @param addr Address when accessing SPI flash or TWI Device.
+ * @param[in] wdata Write data word (uint32_t).
+ * @return 0 if success, != 0 if error.
+ **************************************************************************/
+int put_exe_word(int dst, uint32_t addr, uint32_t wdata) {
+
+  if (dst == EXE_STREAM_SPI) {
+    return spi_flash_write_word(addr, wdata);
+  }
+  else if (dst == EXE_STREAM_TWI) {
+    return twi_flash_write_word(addr, wdata);
   }
   else {
     return 1;
