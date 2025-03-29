@@ -94,8 +94,7 @@ energy/instruction ratio) yet. However, a reduced processor area (<<_optimize_fo
 static energy consumption.
 
 To optimize your setup for low-power applications, you can make use of the CPU sleep mode (`wfi` instruction).
-Put the CPU to sleep mode whenever possible. If the clock gating feature is enabled (`CLOCK_GATING_EN`) the entire
-CPU complex will be disconnected from the clock tree while in sleep mode.
+Put the CPU to sleep mode whenever possible.
 
 Disable all processor modules that are not actually used (exclude them
 from synthesis if they will be _never_ used; disable a module via it's control register if the module is not
