@@ -27,7 +27,7 @@
  *
  * @param[in] stack_size_bytes Core1's stack size in bytes.
  *
- * @return 0 if launching succeeded. -1 if invalid hart ID or CLINT not available.
+ * @return 0 if launching succeeded, -1 if invalid hart ID or CLINT not available,
  * -2 if core1 is not responding.
  **************************************************************************/
 int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
@@ -59,7 +59,7 @@ int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t s
   // start core1 by triggering its software interrupt
   neorv32_clint_msi_set(1);
 
-  // wait for start acknowledge
+  // wait for core 1 start acknowledge
   while (1) {
     if (neorv32_smp_icc_avail()) {
       if (neorv32_smp_icc_get() == magic_number) {
