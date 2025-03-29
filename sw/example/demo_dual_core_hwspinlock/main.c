@@ -15,8 +15,11 @@
 /** User configuration */
 #define BAUD_RATE 19200
 
-/** Hardware spinlock alias **/
-#define SPINLOCK_UART 0 // could be 0 to 31
+/** Hardware spinlock enumeration **/
+enum hw_spinlock_enum {
+  SPINLOCK_UART0 = 0 // lock for mutual-exclusive access to UART0
+  // here we could add up to 31 additional locks for shared resources
+};
 
 /** Global variables */
 volatile uint8_t __attribute__ ((aligned (16))) core1_stack[2048]; // stack memory for core1
@@ -25,11 +28,11 @@ volatile uint8_t __attribute__ ((aligned (16))) core1_stack[2048]; // stack memo
 /**********************************************************************//**
  * Main application that is executed on both cores.
  *
- * @return Irrelevant (but can be inspected by the debugger).
+ * @return Irrelevant.
  **************************************************************************/
 int app_main(void) {
 
-  // setup NEORV32 runtime-environment (RTE) if we are core 1
+  // setup local NEORV32 runtime-environment (RTE) if we are core 1
   if (neorv32_smp_whoami() == 1) {
     neorv32_rte_setup();
   }
@@ -37,7 +40,7 @@ int app_main(void) {
   while (1) {
     // block until we have acquired the lock for the shared resources
     // the other core will wait here until the lock is released
-    neorv32_hwspinlock_acquire_blocking(SPINLOCK_UART);
+    neorv32_hwspinlock_acquire_blocking(SPINLOCK_UART0);
 
     // UART0 is the shared resource
     if (neorv32_smp_whoami() == 0) {
@@ -48,10 +51,10 @@ int app_main(void) {
     }
 
     // release the lock so the other core can use the shared resource
-    neorv32_hwspinlock_release(SPINLOCK_UART);
+    neorv32_hwspinlock_release(SPINLOCK_UART0);
   }
 
-  return 0; // return to crt0 and halt
+  return 0;
 }
 
 
@@ -75,7 +78,7 @@ int main(void) {
   neorv32_uart0_setup(BAUD_RATE, 0);
   neorv32_uart0_printf("\n<< NEORV32 Hardware Spinlock Dual-Core Demo >>\n\n");
 
-  // check hardware/software configuration
+  // check hardware configuration
   if (neorv32_sysinfo_get_numcores() < 2) { // two cores available?
     neorv32_uart0_printf("[ERROR] dual-core option not enabled!\n");
     return -1;
