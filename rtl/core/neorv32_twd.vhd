@@ -47,8 +47,8 @@ architecture neorv32_twd_rtl of neorv32_twd is
   constant ctrl_irq_rx_avail_c  : natural := 11; -- r/w: IRQ if RX FIFO data available
   constant ctrl_irq_rx_full_c   : natural := 12; -- r/w: IRQ if RX FIFO full
   constant ctrl_irq_tx_empty_c  : natural := 13; -- r/w: IRQ if TX FIFO empty
-  constant ctrl_tx_dummy_en_c   : natural := 14; -- r/w: enable sending tx_dummy (last sent byte) when fifo is empty
-  constant ctrl_hide_read_c     : natural := 15; -- r/w: generate NACK ony READ-access when TX FIFO is empty
+  constant ctrl_tx_dummy_en_c   : natural := 14; -- r/w: enable sending tx_dummy (last sent byte) when FIFO is empty
+  constant ctrl_hide_read_c     : natural := 15; -- r/w: generate NACK on READ-access when TX FIFO is empty
   constant ctrl_rx_fifo_size0_c : natural := 16; -- r/-: log2(RX_FIFO size), bit 0 (LSB)
   constant ctrl_rx_fifo_size3_c : natural := 19; -- r/-: log2(RX_FIFO size), bit 3 (MSB)
   constant ctrl_tx_fifo_size0_c : natural := 20; -- r/-: log2(TX_FIFO size), bit 0 (LSB)
@@ -247,10 +247,9 @@ begin
   end process tx_backup;
 
   -- TX Data
-  engine.rdata <=
-    tx_fifo.rdata when (tx_fifo.avail = '1') else -- read TX FIFO when available
-    tx_dummy when (ctrl.tx_dummy_en = '1')        -- read 'tx_dummy' when TX FIFO is drained and tx_dummy_en enabled
-    else (others => '1');                         -- read '1' when TX FIFO is drained and tx_dummy_en disabled
+  engine.rdata <= tx_fifo.rdata when (tx_fifo.avail = '1') else -- read TX FIFO when available
+                  tx_dummy when (ctrl.tx_dummy_en = '1') else   -- read 'tx_dummy' when TX FIFO is drained and tx_dummy_en enabled
+                  (others => '1');                              -- read '1' when TX FIFO is drained and tx_dummy_en disabled
 
 
   -- RX FIFO --
