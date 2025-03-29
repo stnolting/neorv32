@@ -1589,6 +1589,35 @@
       </registers>
     </peripheral>
 
+    <!-- HWSPINLOCK -->
+    <!-- **************************************************************** -->
+    <peripheral>
+      <name>HWSPINLOCK</name>
+      <description>Hardware spinlocks</description>
+      <baseAddress>0xFFF30000</baseAddress>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x84</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>LOCK</name>
+          <description>32 locks, one binary spinlock per word</description>
+          <addressOffset>0x00</addressOffset>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>STATUS</name>
+          <description>Status of all 32 spinlocks</description>
+          <addressOffset>0x80</addressOffset>
+          <access>read-only</access>
+        </register>
+      </registers>
+    </peripheral>
+
     <!-- SYSINFO -->
     <!-- **************************************************************** -->
     <peripheral>
@@ -1640,7 +1669,7 @@
             <field><name>SYSINFO_SOC_IO_DMA</name><bitRange>[14:14]</bitRange><description>Direct memory access controller implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPIO</name><bitRange>[15:15]</bitRange><description>General purpose input/output port unit implemented</description></field>
             <field><name>SYSINFO_SOC_IO_CLINT</name><bitRange>[16:16]</bitRange><description>Core local interruptor implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_UART0</name><bitRange>[17:17]</bitRange><description>Primary universal asynchronous receiver/transmitter 0 implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_UART0</name><bitRange>[17:17]</bitRange><description>Primary universal asynchronous receiver/transmitter implemented</description></field>
             <field><name>SYSINFO_SOC_IO_SPI</name><bitRange>[18:18]</bitRange><description>Serial peripheral interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_TWI</name><bitRange>[19:19]</bitRange><description>Two-wire interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_PWM</name><bitRange>[20:20]</bitRange><description>Pulse-width modulation unit implemented</description></field>
@@ -1648,7 +1677,8 @@
             <field><name>SYSINFO_SOC_IO_CFS</name><bitRange>[22:22]</bitRange><description>Custom functions subsystem implemented</description></field>
             <field><name>SYSINFO_SOC_IO_TRNG</name><bitRange>[23:23]</bitRange><description>True random number generator implemented</description></field>
             <field><name>SYSINFO_SOC_IO_SDI</name><bitRange>[24:24]</bitRange><description>Serial data interface implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_UART1</name><bitRange>[25:25]</bitRange><description>Secondary universal asynchronous receiver/transmitter 1 implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_UART1</name><bitRange>[25:25]</bitRange><description>Secondary universal asynchronous receiver/transmitter implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_HWSPINLOCK</name><bitRange>[27:27]</bitRange><description>Hardware spinlocks module implemented</description></field>
             <field><name>SYSINFO_SOC_IO_NEOLED</name><bitRange>[26:26]</bitRange><description>NeoPixel-compatible smart LED interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPTMR</name><bitRange>[28:28]</bitRange><description>General purpose timer implemented</description></field>
             <field><name>SYSINFO_SOC_IO_SLINK</name><bitRange>[29:29]</bitRange><description>Stream link interface implemented</description></field>
