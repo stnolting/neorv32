@@ -520,25 +520,26 @@ void neorv32_aux_print_hw_config(void) {
   // peripherals
   neorv32_uart0_printf("Peripherals:         ");
   tmp = NEORV32_SYSINFO->SOC;
-  if (tmp & (1 << SYSINFO_SOC_IO_CFS))     { neorv32_uart0_printf("CFS ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_CRC))     { neorv32_uart0_printf("CRC ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_DMA))     { neorv32_uart0_printf("DMA ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_GPIO))    { neorv32_uart0_printf("GPIO ");    }
-  if (tmp & (1 << SYSINFO_SOC_IO_GPTMR))   { neorv32_uart0_printf("GPTMR ");   }
-  if (tmp & (1 << SYSINFO_SOC_IO_CLINT))   { neorv32_uart0_printf("CLINT ");   }
-  if (tmp & (1 << SYSINFO_SOC_IO_NEOLED))  { neorv32_uart0_printf("NEOLED ");  }
-  if (tmp & (1 << SYSINFO_SOC_IO_ONEWIRE)) { neorv32_uart0_printf("ONEWIRE "); }
-  if (tmp & (1 << SYSINFO_SOC_IO_PWM))     { neorv32_uart0_printf("PWM ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_SDI))     { neorv32_uart0_printf("SDI ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_SLINK))   { neorv32_uart0_printf("SLINK ");   }
-  if (tmp & (1 << SYSINFO_SOC_IO_SPI))     { neorv32_uart0_printf("SPI ");     }
-                                             neorv32_uart0_printf("SYSINFO "); // always enabled
-  if (tmp & (1 << SYSINFO_SOC_IO_TRNG))    { neorv32_uart0_printf("TRNG ");    }
-  if (tmp & (1 << SYSINFO_SOC_IO_TWD))     { neorv32_uart0_printf("TWD ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_TWI))     { neorv32_uart0_printf("TWI ");     }
-  if (tmp & (1 << SYSINFO_SOC_IO_UART0))   { neorv32_uart0_printf("UART0 ");   }
-  if (tmp & (1 << SYSINFO_SOC_IO_UART1))   { neorv32_uart0_printf("UART1 ");   }
-  if (tmp & (1 << SYSINFO_SOC_IO_WDT))     { neorv32_uart0_printf("WDT ");     }
+  if (tmp & (1 << SYSINFO_SOC_IO_CFS))        { neorv32_uart0_printf("CFS ");        }
+  if (tmp & (1 << SYSINFO_SOC_IO_CLINT))      { neorv32_uart0_printf("CLINT ");      }
+  if (tmp & (1 << SYSINFO_SOC_IO_CRC))        { neorv32_uart0_printf("CRC ");        }
+  if (tmp & (1 << SYSINFO_SOC_IO_DMA))        { neorv32_uart0_printf("DMA ");        }
+  if (tmp & (1 << SYSINFO_SOC_IO_GPIO))       { neorv32_uart0_printf("GPIO ");       }
+  if (tmp & (1 << SYSINFO_SOC_IO_GPTMR))      { neorv32_uart0_printf("GPTMR ");      }
+  if (tmp & (1 << SYSINFO_SOC_IO_HWSPINLOCK)) { neorv32_uart0_printf("HWSPINLOCK "); }
+  if (tmp & (1 << SYSINFO_SOC_IO_NEOLED))     { neorv32_uart0_printf("NEOLED ");     }
+  if (tmp & (1 << SYSINFO_SOC_IO_ONEWIRE))    { neorv32_uart0_printf("ONEWIRE ");    }
+  if (tmp & (1 << SYSINFO_SOC_IO_PWM))        { neorv32_uart0_printf("PWM ");        }
+  if (tmp & (1 << SYSINFO_SOC_IO_SDI))        { neorv32_uart0_printf("SDI ");        }
+  if (tmp & (1 << SYSINFO_SOC_IO_SLINK))      { neorv32_uart0_printf("SLINK ");      }
+  if (tmp & (1 << SYSINFO_SOC_IO_SPI))        { neorv32_uart0_printf("SPI ");        }
+                                                neorv32_uart0_printf("SYSINFO "); // always enabled
+  if (tmp & (1 << SYSINFO_SOC_IO_TRNG))       { neorv32_uart0_printf("TRNG ");       }
+  if (tmp & (1 << SYSINFO_SOC_IO_TWD))        { neorv32_uart0_printf("TWD ");        }
+  if (tmp & (1 << SYSINFO_SOC_IO_TWI))        { neorv32_uart0_printf("TWI ");        }
+  if (tmp & (1 << SYSINFO_SOC_IO_UART0))      { neorv32_uart0_printf("UART0 ");      }
+  if (tmp & (1 << SYSINFO_SOC_IO_UART1))      { neorv32_uart0_printf("UART1 ");      }
+  if (tmp & (1 << SYSINFO_SOC_IO_WDT))        { neorv32_uart0_printf("WDT ");        }
 
   neorv32_uart0_printf("\n\n");
 }
