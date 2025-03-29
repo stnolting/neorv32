@@ -222,7 +222,8 @@ begin
     IO_SLINK_EN           => true,
     IO_SLINK_RX_FIFO      => 4,
     IO_SLINK_TX_FIFO      => 4,
-    IO_CRC_EN             => true
+    IO_CRC_EN             => true,
+    IO_HWSPINLOCK_EN      => true
   )
   port map (
     -- Global control --
