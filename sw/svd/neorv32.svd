@@ -1423,7 +1423,6 @@
             </field>
           </fields>
         </register>
-
         <register>
           <name>RESET</name>
           <description>Watchdog reset register</description>
