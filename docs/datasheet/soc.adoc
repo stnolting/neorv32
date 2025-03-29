@@ -42,6 +42,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ autonomous direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
 * _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream compatible
 * _optional_ cyclic redundancy check unit (<<_cyclic_redundancy_check_crc,**CRC**>>)
+* _optional_ hardware spinlocks (32x) (<<_hardware_spinlocks_hwspinlock,**HWSPINLOCK**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>)
 * _optional_ system configuration information memory to determine hardware configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
@@ -306,6 +307,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_SLINK_RX_FIFO`      | natural   | 1             | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_SLINK_TX_FIFO`      | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_CRC_EN`             | boolean   | false         | Implement the <<_cyclic_redundancy_check_crc>> unit.
+| `IO_HWSPINLOCK_EN`      | boolean   | false         | Implement the <<_hardware_spinlocks_hwspinlock>> module.
 |=======================
 
 
@@ -319,10 +321,6 @@ by the top's `clk_i` signal. This clock signal is used by all internal registers
 on the **rising edge** of this clock signal. External "clocks" like the OCD's JTAG clock or the SDI's serial clock
 are synchronized into the processor's clock domain before being used as "general logic signal" (and not as a dedicated clock).
 
-.CPU Clock Gating
-[NOTE]
-The CPU core provides an optional clock-gating feature to switch off large parts of the core when sleep mode is entered.
-See section <<_cpu_clock_gating>> for more information.
 
 ==== Peripheral Clocks
 
@@ -696,6 +694,43 @@ will cause a cache miss that will fetch up-to-date data from the memory system.
 Executing any fence instruction will stall the CPU until all the requested ordering/synchronization
 steps are completed.
 
+===== Coherence Example
+
+The following C example shows how to declare and use an atomic variable using the`_Atomic` specifier:
+
+.Atomic Variables - C Source Code
+[source, c]
+----
+_Atomic int counter = 0;
+
+counter = 3;
+counter++;
+----
+
+The initial assignment `counter = 0` is translated into a store-word instruction (`sw`) that is
+automatically encapsulated within two `fence` instructions. This guarantees <<_memory_coherence>> as each
+FENCE will synchronize the CPU's data cache cache with upstream/main memory.
+
+.Atomic Variables - According RISC-V Assembly Code
+[source, assembly]
+----
+li a3,3
+li a4,1
+
+fence rw,w
+sw    a3,0(a2)
+fence rw,rw
+
+amoadd.w.aqrl zero,a4,(a2)
+----
+
+The increment (`counter++`) is implemented as RISC-V atomic memory operation (`amoadd`). However, the
+compiler does not encapsulate this in within FENCE instructions. Hence, the altered atomic variable
+is **not** updated in the CPU's data cache (but in upstream/main memory).
+
+The above example clearly shows that special attention must be paid to memory coherence when using
+atomic memory operations.
+
 
 <<<
 // ####################################################################################################################
@@ -850,5 +885,7 @@ include::soc_cfs.adoc[]
 include::soc_neoled.adoc[]
 
 include::soc_gptmr.adoc[]
+
+include::soc_hwspinlock.adoc[]
 
 include::soc_sysinfo.adoc[]
