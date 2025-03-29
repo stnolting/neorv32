@@ -309,21 +309,21 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_gateway is
   generic (
-    TIMEOUT  : natural; -- internal bus timeout cycles
+    TIMEOUT : natural; -- internal bus timeout cycles
     -- port A --
-    A_EN   : boolean; -- port enable
-    A_BASE : std_ulogic_vector(31 downto 0); -- port address space base address
-    A_SIZE : natural; -- port address space size in bytes (power of two), aligned to size
+    A_EN    : boolean; -- port enable
+    A_BASE  : std_ulogic_vector(31 downto 0); -- port address space base address
+    A_SIZE  : natural; -- port address space size in bytes (power of two), aligned to size
     -- port B --
-    B_EN   : boolean;
-    B_BASE : std_ulogic_vector(31 downto 0);
-    B_SIZE : natural;
+    B_EN    : boolean;
+    B_BASE  : std_ulogic_vector(31 downto 0);
+    B_SIZE  : natural;
     -- port C --
-    C_EN   : boolean;
-    C_BASE : std_ulogic_vector(31 downto 0);
-    C_SIZE : natural;
+    C_EN    : boolean;
+    C_BASE  : std_ulogic_vector(31 downto 0);
+    C_SIZE  : natural;
     -- port X (the void) --
-    X_EN   : boolean
+    X_EN    : boolean
   );
   port (
     -- global control --
