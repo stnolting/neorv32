@@ -1,0 +1,47 @@
+<<<
+:sectnums:
+==== Hardware Spinlocks (HWSPINLOCK)
+
+[cols="<3,<3,<4"]
+[grid="none"]
+|=======================
+| Hardware source files:  | neorv32_hwspinlock.vhd |
+| Software driver files:  | neorv32_hwspinlock.c | link:https://stnolting.github.io/neorv32/sw/neorv32__hwspinlock_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_hwspinlock.h | link:https://stnolting.github.io/neorv32/sw/neorv32__hwspinlock_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | none |
+| Configuration generics: | `IO_HWSPINLOCK_EN` | implement hardware spinlocks when `true`
+| CPU interrupts:         | none |
+|=======================
+
+
+**Overview**
+
+The HWSPINLOCK module provides 32 binary hardware spinlocks that can be used to manage mutually-exclusive access
+to shared resources. Each hardware spinlock is a one-bit flag, mapped to a different address (`LOCK[0]` to `LOCK[31]`).
+Software interacts with each spinlock with one of the following operations:
+
+* `LOCK[i]` read access: Attempt to claim the lock. Read value is non-zero if the lock was successfully claimed,
+or zero if the lock had already been claimed by a previous read.
+* `LOCK[i]` write access (any value): Release the lock. The next attempt to claim the lock will succeed.
+
+Hence, all `LOCK` register cause _side-effects_ when being accessed.
+For debugging purposes, the current state of all 32 spinlocks can be observed via the read-only `STATUS` register.
+
+.Advantages over RISC-V atomic memory operations
+[TIP]
+Using the HWSPINLOCK module instead of software-managed synchronization primitives based on the <<_a_isa_extension>>
+reduces hardware complexity (smaller size) and also simplifies <<_memory_coherence>>
+
+
+**Register Map**
+
+.HWSPINLOCK module register map (`struct NEORV32_HWSPINLOCK`)
+[cols="<2,<2,^1,^1,<6"]
+[options="header",grid="rows"]
+|=======================
+| Address      | Name [C]   | Bit(s) | R/W | Function
+| `0xfff30000` | `LOCK[0]`  | 0      | r/w | Binary hardware spinlock 0
+| ...          | ...        | ...    | ... | Binary hardware spinlocks 1 to 30
+| `0xfff3007C` | `LOCK[31]` | 0      | r/w | Binary hardware spinlock 31
+| `0xfff30080` | `STATUS`   | 31:0   | r/- | Status of all spinlocks (one bit per lock, e.g. bit 0 represents the state of `LOCK[0]`)
+|=======================
