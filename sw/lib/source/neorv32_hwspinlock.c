@@ -43,6 +43,21 @@ int neorv32_hwspinlock_acquire(int select) {
 
 
  /**********************************************************************//**
+ * Block until spinlock is acquired.
+ *
+ * @param select Spinlock select (0..31).
+ **************************************************************************/
+void neorv32_hwspinlock_acquire_blocking(int select) {
+
+  while(1) {
+    if (neorv32_hwspinlock_acquire(select) == 0) {
+      return;
+    }
+  }
+}
+
+
+ /**********************************************************************//**
  * Release hardware spinlock.
  *
  * @param select Spinlock select (0..31).

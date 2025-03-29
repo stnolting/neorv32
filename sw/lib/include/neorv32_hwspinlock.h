@@ -38,6 +38,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /**@{*/
 int  neorv32_hwspinlock_available(void);
 int  neorv32_hwspinlock_acquire(int select);
+void neorv32_hwspinlock_acquire_blocking(int select);
 void neorv32_hwspinlock_release(int select);
 int  neorv32_hwspinlock_probe(int select);
 void neorv32_hwspinlock_clear(void);
