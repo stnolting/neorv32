@@ -279,29 +279,21 @@ bootloader: bl_image
 # -----------------------------------------------------------------------------
 
 check: $(IMAGE_GEN)
-ifneq ("$(wildcard $NEORV32_HOME_MARKER)", "")
-	$(error NEORV32_HOME folder not found!)
-endif
-	@echo "---------------- Check: NEORV32_HOME folder ----------------"
-	@echo "NEORV32_HOME: $(NEORV32_HOME)"
-	@echo "---------------- Check: Shell ----------------"
-	@echo ${SHELL}
-	@readlink -f "${SHELL}"
-	@echo "---------------- Check: $(CC) ----------------"
+	@echo "---------------- $(CC) ----------------"
 	@$(CC) -v
-	@echo "---------------- Check: $(OBJDUMP) ----------------"
+	@echo "---------------- $(OBJDUMP) ----------------"
 	@$(OBJDUMP) -V
-	@echo "---------------- Check: $(OBJCOPY) ----------------"
+	@echo "---------------- $(OBJCOPY) ----------------"
 	@$(OBJCOPY) -V
-	@echo "---------------- Check: $(READELF) ----------------"
+	@echo "---------------- $(READELF) ----------------"
 	@$(READELF) -v
-	@echo "---------------- Check: $(SIZE) ----------------"
+	@echo "---------------- $(SIZE) ----------------"
 	@$(SIZE) -V
-	@echo "---------------- Check: NEORV32 image_gen ----------------"
+	@echo "---------------- NEORV32 image_gen ----------------"
 	@$(IMAGE_GEN) -help
-	@echo "---------------- Check: Host's native GCC ----------------"
+	@echo "---------------- Native GCC ----------------"
 	@$(CC_HOST) -v
-	@echo
+	@echo ""
 	@echo "Toolchain check OK"
 
 # -----------------------------------------------------------------------------
@@ -319,7 +311,7 @@ install-$(APP_VHD): $(APP_VHD)
 	@cp $(APP_VHD) $(NEORV32_RTL_PATH)/core/.
 
 # -----------------------------------------------------------------------------
-# Regenerate HDL file lists
+# Regenerate HDL file list file(s)
 # -----------------------------------------------------------------------------
 
 hdl_lists:
