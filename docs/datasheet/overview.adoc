@@ -206,6 +206,7 @@ rtl/core
 ├-neorv32_fifo.vhd              - Generic FIFO component
 ├-neorv32_gpio.vhd              - General purpose input/output port unit
 ├-neorv32_gptmr.vhd             - General purpose 32-bit timer
+├-neorv32_hwspinlock.vhd        - Hardware spinlocks
 ├-neorv32_imem.vhd              - Generic processor-internal instruction memory
 ├-neorv32_neoled.vhd            - NeoPixel (TM) compatible smart LED interface
 ├-neorv32_onewire.vhd           - One-Wire serial interface controller
