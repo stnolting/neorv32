@@ -27,7 +27,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t DATA; /**< offset 4: data register (#NEORV32_TWD_DATA_enum) */
 } neorv32_twd_t;
 
-/** TWD module hardware access (#neorv32_twd_t) */
+/** TWD module hardware handle (#neorv32_twd_t) */
 #define NEORV32_TWD ((neorv32_twd_t*) (NEORV32_TWD_BASE))
 
 /** TWD control register bits */

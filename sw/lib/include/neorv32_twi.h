@@ -27,7 +27,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t DCMD; /**< offset 4: data/cmd register (#NEORV32_TWI_DCMD_enum) */
 } neorv32_twi_t;
 
-/** TWI module hardware access (#neorv32_twi_t) */
+/** TWI module hardware handle (#neorv32_twi_t) */
 #define NEORV32_TWI ((neorv32_twi_t*) (NEORV32_TWI_BASE))
 
 /** TWI control register bits */

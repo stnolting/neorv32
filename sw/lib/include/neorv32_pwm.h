@@ -26,7 +26,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t CHANNEL_CFG[16]; /**< offset 0..64: channel configuration 0..15 (#CHANNEL_CFG_enum) */
 } neorv32_pwm_t;
 
-/** PWM module hardware access (#neorv32_pwm_t) */
+/** PWM module hardware handle (#neorv32_pwm_t) */
 #define NEORV32_PWM ((neorv32_pwm_t*) (NEORV32_PWM_BASE))
 
 /** PWM channel configuration bits */

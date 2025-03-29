@@ -27,7 +27,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t DCMD; /**< offset 4: command and data register (#NEORV32_ONEWIRE_DCMD_enum) */
 } neorv32_onewire_t;
 
-/** ONEWIRE module hardware access (#neorv32_onewire_t) */
+/** ONEWIRE module hardware handle (#neorv32_onewire_t) */
 #define NEORV32_ONEWIRE ((neorv32_onewire_t*) (NEORV32_ONEWIRE_BASE))
 
 /** ONEWIRE control register bits */

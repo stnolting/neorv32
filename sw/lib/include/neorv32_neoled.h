@@ -27,7 +27,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t DATA; /**< offset 4: data register (#NEORV32_NEOLED_CTRL_enum) */
 } neorv32_neoled_t;
 
-/** NEOLED module hardware access (#neorv32_neoled_t) */
+/** NEOLED module hardware handle (#neorv32_neoled_t) */
 #define NEORV32_NEOLED ((neorv32_neoled_t*) (NEORV32_NEOLED_BASE))
 
 /** NEOLED control register bits */

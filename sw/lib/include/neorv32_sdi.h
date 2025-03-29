@@ -27,7 +27,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t DATA; /**< offset 4: data register */
 } neorv32_sdi_t;
 
-/** SDI module hardware access (#neorv32_sdi_t) */
+/** SDI module hardware handle (#neorv32_sdi_t) */
 #define NEORV32_SDI ((neorv32_sdi_t*) (NEORV32_SDI_BASE))
 
 /** SDI control register bits */

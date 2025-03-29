@@ -28,10 +28,10 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t DATA;  /**< offset 4: data register  (#NEORV32_UART_DATA_enum) */
 } neorv32_uart_t;
 
-/** UART0 module hardware access (#neorv32_uart_t) */
+/** UART0 module hardware handle (#neorv32_uart_t) */
 #define NEORV32_UART0 ((neorv32_uart_t*) (NEORV32_UART0_BASE))
 
-/** UART1 module hardware access (#neorv32_uart_t) */
+/** UART1 module hardware handle (#neorv32_uart_t) */
 #define NEORV32_UART1 ((neorv32_uart_t*) (NEORV32_UART1_BASE))
 
 /** UART control register bits */

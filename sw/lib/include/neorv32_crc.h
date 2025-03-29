@@ -29,7 +29,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t SREG; /**< offset 12: CRC shift register */
 } neorv32_crc_t;
 
-/** CRC module hardware access (#neorv32_crc_t) */
+/** CRC module hardware handle (#neorv32_crc_t) */
 #define NEORV32_CRC ((neorv32_crc_t*) (NEORV32_CRC_BASE))
 
 /** CRC mode select */

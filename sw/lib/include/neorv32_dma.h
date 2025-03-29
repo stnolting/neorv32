@@ -29,7 +29,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t TTYPE;    /**< offset 12: transfer type configuration register & manual trigger (#NEORV32_DMA_TTYPE_enum) */
 } neorv32_dma_t;
 
-/** DMA module hardware access (#neorv32_dma_t) */
+/** DMA module hardware handle (#neorv32_dma_t) */
 #define NEORV32_DMA ((neorv32_dma_t*) (NEORV32_DMA_BASE))
 
 /** DMA control and status register bits */

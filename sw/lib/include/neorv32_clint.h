@@ -28,7 +28,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   subwords64_t MTIME;          /**< global machine timer; 64-bit */
 } neorv32_clint_t;
 
-/** CLINT module hardware access (#neorv32_clint_t) */
+/** CLINT module hardware handle (#neorv32_clint_t) */
 #define NEORV32_CLINT ((neorv32_clint_t*) (NEORV32_CLINT_BASE))
 /**@}*/
 
