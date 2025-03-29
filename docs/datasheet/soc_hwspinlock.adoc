@@ -32,6 +32,9 @@ For debugging purposes, the current state of all 32 spinlocks can be observed vi
 Using the HWSPINLOCK module instead of software-managed synchronization primitives based on the <<_a_isa_extension>>
 reduces hardware complexity (smaller size) and also simplifies <<_memory_coherence>>
 
+.Example Program
+[TIP]
+A simple example program can be found in `sw/example/demo_dual_core_hwspinlock`.
 
 **Register Map**
 
