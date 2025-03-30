@@ -27,7 +27,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t DATA;  /**< offset 4: data register  (#NEORV32_SPI_DATA_enum) */
 } neorv32_spi_t;
 
-/** SPI module hardware access (#neorv32_spi_t) */
+/** SPI module hardware handle (#neorv32_spi_t) */
 #define NEORV32_SPI ((neorv32_spi_t*) (NEORV32_SPI_BASE))
 
 /** SPI control register bits */

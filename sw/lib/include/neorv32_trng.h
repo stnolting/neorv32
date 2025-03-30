@@ -27,7 +27,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   const uint32_t DATA; /**< offset 4: random data register (#NEORV32_TRNG_DATA_enum) */
 } neorv32_trng_t;
 
-/** TRNG module hardware access (#neorv32_trng_t) */
+/** TRNG module hardware handle (#neorv32_trng_t) */
 #define NEORV32_TRNG ((neorv32_trng_t*) (NEORV32_TRNG_BASE))
 
 /** TRNG control register bits */

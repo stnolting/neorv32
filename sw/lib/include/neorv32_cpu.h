@@ -214,6 +214,21 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int csr_id
 
 
 /**********************************************************************//**
+ * Atomic write-after-read CSR operation.
+ *
+ * @param[in] csr_id ID of CSR. See #NEORV32_CSR_enum.
+ * @param[in] wdata New data to write to selected CSR.
+ * @return Old data read from selected CSR.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_swap(const int csr_id, uint32_t wdata) {
+
+  uint32_t tmp;
+  asm volatile ("csrrw %[dst], %[id], %[src]" : [dst] "=r" (tmp) : [id] "i" (csr_id), [src] "r" (wdata));
+  return tmp;
+}
+
+
+/**********************************************************************//**
  * Put CPU into sleep / power-down mode.
  *
  * @note The WFI (wait for interrupt) instruction will make the CPU halt until

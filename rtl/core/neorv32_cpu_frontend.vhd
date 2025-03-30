@@ -220,7 +220,7 @@ begin
         if (fetch.restart = '1') then
           issue.align <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
         elsif (ctrl_i.if_ack = '1') then
-          issue.align <= (issue.align and (not issue.alclr)) or issue.alset; -- "rs flip-flop"
+          issue.align <= (issue.align and (not issue.alclr)) or issue.alset; -- alignment "RS flip-flop"
         end if;
       end if;
     end process issue_fsm_sync;
@@ -231,7 +231,7 @@ begin
       issue.alset <= '0';
       issue.alclr <= '0';
       issue.valid <= "00";
-      -- start with LOW half-word --
+      -- start at LOW half-word --
       if (issue.align = '0')  then
         issue.error <= ipb.rdata(0)(16);
         if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, use IPB(0) entry
@@ -244,7 +244,7 @@ begin
           issue.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
           issue.compr <= '0';
         end if;
-      -- start with HIGH half-word --
+      -- start at HIGH half-word --
       else
         issue.error <= ipb.rdata(1)(16);
         if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, use IPB(1) entry

@@ -17,7 +17,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_twd is
   generic (
-    TWD_FIFO : natural range 1 to 2**15 -- RTX FIFO depth, has to be a power of two, min 1
+    TWD_RX_FIFO : natural range 1 to 2**15; -- Receive FIFO depth, has to be a power of two, min 1
+    TWD_TX_FIFO : natural range 1 to 2**15  -- Transmit FIFO depth, has to be a power of two, min 1
   );
   port (
     clk_i       : in  std_ulogic; -- global clock line
@@ -37,29 +38,33 @@ end neorv32_twd;
 architecture neorv32_twd_rtl of neorv32_twd is
 
   -- control register --
-  constant ctrl_en_c           : natural :=  0; -- r/w: module enable (reset when zero)
-  constant ctrl_clr_rx_c       : natural :=  1; -- -/w: clear RX FIFO (flag auto-clears)
-  constant ctrl_clr_tx_c       : natural :=  2; -- -/w: clear TX FIFO (flag auto-clears)
-  constant ctrl_fsel_c         : natural :=  3; -- r/w: input filter / sample clock select
-  constant ctrl_dev_addr0_c    : natural :=  4; -- r/w: device address, bit 0 (LSB)
-  constant ctrl_dev_addr6_c    : natural := 10; -- r/w: device address, bit 6 (MSB)
-  constant ctrl_irq_rx_avail_c : natural := 11; -- r/w: IRQ if RX FIFO data available
-  constant ctrl_irq_rx_full_c  : natural := 12; -- r/w: IRQ if RX FIFO full
-  constant ctrl_irq_tx_empty_c : natural := 13; -- r/w: IRQ if TX FIFO empty
+  constant ctrl_en_c            : natural :=  0; -- r/w: module enable (reset when zero)
+  constant ctrl_clr_rx_c        : natural :=  1; -- -/w: clear RX FIFO (flag auto-clears)
+  constant ctrl_clr_tx_c        : natural :=  2; -- -/w: clear TX FIFO (flag auto-clears)
+  constant ctrl_fsel_c          : natural :=  3; -- r/w: input filter / sample clock select
+  constant ctrl_dev_addr0_c     : natural :=  4; -- r/w: device address, bit 0 (LSB)
+  constant ctrl_dev_addr6_c     : natural := 10; -- r/w: device address, bit 6 (MSB)
+  constant ctrl_irq_rx_avail_c  : natural := 11; -- r/w: IRQ if RX FIFO data available
+  constant ctrl_irq_rx_full_c   : natural := 12; -- r/w: IRQ if RX FIFO full
+  constant ctrl_irq_tx_empty_c  : natural := 13; -- r/w: IRQ if TX FIFO empty
+  constant ctrl_tx_dummy_en_c   : natural := 14; -- r/w: enable sending tx_dummy (last sent byte) when FIFO is empty
+  constant ctrl_hide_read_c     : natural := 15; -- r/w: generate NACK on READ-access when TX FIFO is empty
+  constant ctrl_rx_fifo_size0_c : natural := 16; -- r/-: log2(RX_FIFO size), bit 0 (LSB)
+  constant ctrl_rx_fifo_size3_c : natural := 19; -- r/-: log2(RX_FIFO size), bit 3 (MSB)
+  constant ctrl_tx_fifo_size0_c : natural := 20; -- r/-: log2(TX_FIFO size), bit 0 (LSB)
+  constant ctrl_tx_fifo_size3_c : natural := 23; -- r/-: log2(TX_FIFO size), bit 3 (MSB)
   --
-  constant ctrl_fifo_size0_c   : natural := 15; -- r/-: log2(FIFO size), bit 0 (LSB)
-  constant ctrl_fifo_size3_c   : natural := 18; -- r/-: log2(FIFO size), bit 3 (MSB)
-  --
-  constant ctrl_rx_avail_c     : natural := 25; -- r/-: RX FIFO data available
-  constant ctrl_rx_full_c      : natural := 26; -- r/-: RX FIFO full
-  constant ctrl_tx_empty_c     : natural := 27; -- r/-: TX FIFO empty
-  constant ctrl_tx_full_c      : natural := 28; -- r/-: TX FIFO full
-  constant ctrl_sense_scl_c    : natural := 29; -- r/-: current state of the SCL bus line
-  constant ctrl_sense_sda_c    : natural := 30; -- r/-: current state of the SDA bus line
-  constant ctrl_busy_c         : natural := 31; -- r/-: bus engine is busy (transaction in progress)
+  constant ctrl_rx_avail_c      : natural := 25; -- r/-: RX FIFO data available
+  constant ctrl_rx_full_c       : natural := 26; -- r/-: RX FIFO full
+  constant ctrl_tx_empty_c      : natural := 27; -- r/-: TX FIFO empty
+  constant ctrl_tx_full_c       : natural := 28; -- r/-: TX FIFO full
+  constant ctrl_sense_scl_c     : natural := 29; -- r/-: current state of the SCL bus line
+  constant ctrl_sense_sda_c     : natural := 30; -- r/-: current state of the SDA bus line
+  constant ctrl_busy_c          : natural := 31; -- r/-: bus engine is busy (transaction in progress)
 
   -- helpers --
-  constant log2_fifo_size_c : natural := index_size_f(TWD_FIFO);
+  constant log2_rx_fifo_size_c : natural := index_size_f(TWD_RX_FIFO);
+  constant log2_tx_fifo_size_c : natural := index_size_f(TWD_TX_FIFO);
 
   -- control register --
   type ctrl_t is record
@@ -71,8 +76,13 @@ architecture neorv32_twd_rtl of neorv32_twd is
     irq_rx_avail : std_ulogic;
     irq_rx_full  : std_ulogic;
     irq_tx_empty : std_ulogic;
+    tx_dummy_en  : std_ulogic;
+    hide_read    : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
+
+  -- tx_dummy register --
+  signal tx_dummy : std_ulogic_vector(7 downto 0);
 
   -- bus sample logic --
   type smp_t is record
@@ -133,6 +143,8 @@ begin
       ctrl.irq_rx_avail <= '0';
       ctrl.irq_rx_full  <= '0';
       ctrl.irq_tx_empty <= '0';
+      ctrl.tx_dummy_en  <= '0';
+      ctrl.hide_read    <= '0';
     elsif rising_edge(clk_i) then
       -- bus handshake defaults --
       bus_rsp_o.ack  <= bus_req_i.stb;
@@ -152,24 +164,28 @@ begin
             ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
             ctrl.irq_rx_full  <= bus_req_i.data(ctrl_irq_rx_full_c);
             ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
+            ctrl.tx_dummy_en  <= bus_req_i.data(ctrl_tx_dummy_en_c);
+            ctrl.hide_read    <= bus_req_i.data(ctrl_hide_read_c);
           end if;
         else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
-            bus_rsp_o.data(ctrl_en_c)                                  <= ctrl.enable;
-            bus_rsp_o.data(ctrl_fsel_c)                                <= ctrl.fsel;
-            bus_rsp_o.data(ctrl_dev_addr6_c downto ctrl_dev_addr0_c)   <= ctrl.device_addr;
-            bus_rsp_o.data(ctrl_irq_rx_avail_c)                        <= ctrl.irq_rx_avail;
-            bus_rsp_o.data(ctrl_irq_rx_full_c)                         <= ctrl.irq_rx_full;
-            bus_rsp_o.data(ctrl_irq_tx_empty_c)                        <= ctrl.irq_tx_empty;
-            --
-            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-            bus_rsp_o.data(ctrl_rx_avail_c)                            <= rx_fifo.avail;
-            bus_rsp_o.data(ctrl_rx_full_c)                             <= not rx_fifo.free;
-            bus_rsp_o.data(ctrl_tx_empty_c)                            <= not tx_fifo.avail;
-            bus_rsp_o.data(ctrl_tx_full_c)                             <= not tx_fifo.free;
-            bus_rsp_o.data(ctrl_sense_scl_c)                           <= smp.scl;
-            bus_rsp_o.data(ctrl_sense_sda_c)                           <= smp.sda;
-            bus_rsp_o.data(ctrl_busy_c)                                <= engine.busy;
+            bus_rsp_o.data(ctrl_en_c)                                        <= ctrl.enable;
+            bus_rsp_o.data(ctrl_fsel_c)                                      <= ctrl.fsel;
+            bus_rsp_o.data(ctrl_dev_addr6_c downto ctrl_dev_addr0_c)         <= ctrl.device_addr;
+            bus_rsp_o.data(ctrl_irq_rx_avail_c)                              <= ctrl.irq_rx_avail;
+            bus_rsp_o.data(ctrl_irq_rx_full_c)                               <= ctrl.irq_rx_full;
+            bus_rsp_o.data(ctrl_irq_tx_empty_c)                              <= ctrl.irq_tx_empty;
+            bus_rsp_o.data(ctrl_tx_dummy_en_c)                               <= ctrl.tx_dummy_en;
+            bus_rsp_o.data(ctrl_hide_read_c)                                 <= ctrl.hide_read;
+            bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_rx_fifo_size_c, 4));
+            bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_tx_fifo_size_c, 4));
+            bus_rsp_o.data(ctrl_rx_avail_c)                                  <= rx_fifo.avail;
+            bus_rsp_o.data(ctrl_rx_full_c)                                   <= not rx_fifo.free;
+            bus_rsp_o.data(ctrl_tx_empty_c)                                  <= not tx_fifo.avail;
+            bus_rsp_o.data(ctrl_tx_full_c)                                   <= not tx_fifo.free;
+            bus_rsp_o.data(ctrl_sense_scl_c)                                 <= smp.scl;
+            bus_rsp_o.data(ctrl_sense_sda_c)                                 <= smp.sda;
+            bus_rsp_o.data(ctrl_busy_c)                                      <= engine.busy;
           else -- RX FIFO
             bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
           end if;
@@ -188,7 +204,7 @@ begin
   -- TX FIFO --
   tx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
-    FIFO_DEPTH => TWD_FIFO,
+    FIFO_DEPTH => TWD_TX_FIFO,
     FIFO_WIDTH => 8,
     FIFO_RSYNC => true,
     FIFO_SAFE  => true,
@@ -215,13 +231,31 @@ begin
   tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.wdata <= bus_req_i.data(7 downto 0);
   tx_fifo.re    <= engine.rd_re;
-  engine.rdata  <= tx_fifo.rdata when (tx_fifo.avail = '1') else (others => '1'); -- read ones when TX FIFO is drained
+
+  -- Backup last TX byte in case FIFO runs empty --
+  tx_backup: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      tx_dummy <= (others => '0');
+    elsif rising_edge(clk_i) then
+      if (tx_fifo.avail = '1') and (engine.rd_re = '1') then
+        tx_dummy <= tx_fifo.rdata;
+      else
+        tx_dummy <= tx_dummy;
+      end if;
+    end if;
+  end process tx_backup;
+
+  -- TX Data
+  engine.rdata <= tx_fifo.rdata when (tx_fifo.avail = '1') else -- read TX FIFO when available
+                  tx_dummy when (ctrl.tx_dummy_en = '1') else   -- read 'tx_dummy' when TX FIFO is drained and tx_dummy_en enabled
+                  (others => '1');                              -- read '1' when TX FIFO is drained and tx_dummy_en disabled
 
 
   -- RX FIFO --
   rx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
-    FIFO_DEPTH => TWD_FIFO,
+    FIFO_DEPTH => TWD_RX_FIFO,
     FIFO_WIDTH => 8,
     FIFO_RSYNC => true,
     FIFO_SAFE  => true,
@@ -358,7 +392,7 @@ begin
             engine.state <= S_ADDR;
           end if;
 
-        when S_ADDR => -- sample address + R/W bit and check if address match
+        when S_ADDR => -- sample address + R/W bit and check if address match and data is available
         -- ------------------------------------------------------------
           if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition received?
             engine.state <= S_IDLE;
@@ -366,9 +400,11 @@ begin
             engine.state <= S_INIT;
           elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
             if (ctrl.device_addr = engine.sreg(7 downto 1)) then -- address match?
-              engine.state <= S_RESP; -- access device
-            else
-              engine.state <= S_IDLE; -- no match, go back to idle
+              if (engine.sreg(0) = '1' and (ctrl.hide_read = '1' and (tx_fifo.free = '0'))) then -- READ but TX FIFO is empty and hide_read is enabled
+                engine.state <= S_IDLE; -- ignore access, no ACK
+              else
+                engine.state <= S_RESP; -- access device
+              end if;
             end if;
           end if;
           -- sample bus on rising edge --
@@ -400,8 +436,13 @@ begin
           elsif (smp.start = '1') then -- start-condition
             engine.state <= S_INIT; -- restart transaction
           elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
-            engine.wr_we <= not engine.cmd; -- write byte to RX FIFO (only if WRITE command)
-            engine.state <= S_ACK;
+            if (engine.cmd = '0' and rx_fifo.free = '0') then -- WRITE command but RX FIFO full
+              engine.wr_we <= '0';      -- Don't write into RX FIFO
+              engine.state <= S_IDLE; -- Don't acknowledge (NACK)
+            else
+              engine.wr_we <= not engine.cmd; -- write byte to RX FIFO (only if WRITE command)
+              engine.state <= S_ACK;
+            end if;
           end if;
           -- sample bus on rising edge --
           if (smp.scl_rise = '1') then

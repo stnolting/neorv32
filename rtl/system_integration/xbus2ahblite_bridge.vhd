@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -28,16 +28,16 @@ entity xbus2ahblite_bridge is
     xbus_err_o   : out std_ulogic;                     -- transfer error
     xbus_dat_o   : out std_ulogic_vector(31 downto 0); -- read data
     -- AHB3-Lite host interface --
-    ahb_haddr_o  : out std_ulogic_vector(31 downto 0); -- address
-    ahb_hwdata_o : out std_ulogic_vector(31 downto 0); -- write data
-    ahb_hwrite_o : out std_ulogic;                     -- read/write
-    ahb_hsize_o  : out std_ulogic_vector(2 downto 0);  -- transfer size
-    ahb_hburst_o : out std_ulogic_vector(2 downto 0);  -- burst type
-    ahb_hprot_o  : out std_ulogic_vector(3 downto 0);  -- protection control
-    ahb_htrans_o : out std_ulogic_vector(1 downto 0);  -- transfer type
-    ahb_hready_i : in  std_ulogic;                     -- transfer completed
-    ahb_hresp_i  : in  std_ulogic;                     -- transfer response
-    ahb_hrdata_i : in  std_ulogic_vector(31 downto 0)  -- read data
+    ahb_haddr_o  : out std_logic_vector(31 downto 0);  -- address
+    ahb_hwdata_o : out std_logic_vector(31 downto 0);  -- write data
+    ahb_hwrite_o : out std_logic;                      -- read/write
+    ahb_hsize_o  : out std_logic_vector(2 downto 0);   -- transfer size
+    ahb_hburst_o : out std_logic_vector(2 downto 0);   -- burst type
+    ahb_hprot_o  : out std_logic_vector(3 downto 0);   -- protection control
+    ahb_htrans_o : out std_logic_vector(1 downto 0);   -- transfer type
+    ahb_hready_i : in  std_logic;                      -- transfer completed
+    ahb_hresp_i  : in  std_logic;                      -- transfer response
+    ahb_hrdata_i : in  std_logic_vector(31 downto 0)   -- read data
   );
 end xbus2ahblite_bridge;
 
@@ -57,13 +57,13 @@ begin
       pending_q  <= '0';
     elsif rising_edge(clk_i) then
       if (pending_q = '0') then -- idle (also AHB address phase)
-        addr_ack_q <= ahb_hready_i; -- sample HREADY in address phase
+        addr_ack_q <= std_ulogic(ahb_hready_i); -- sample HREADY in address phase
         if (xbus_stb_i = '1') then
           pending_q <= '1';
         end if;
       else -- transfer in progress (AHB data phase)
-        -- complete if HREADY has acknowledged address phase and is acknowledging data phase
-        -- abort if core terminated the transfer by pulling CYC low
+        -- complete if HREADY _has_ acknowledged address phase and _is_ acknowledging data phase
+        -- abort if core terminates the transfer by clearing CYC
         if ((addr_ack_q = '1') and (ahb_hready_i = '1')) or (xbus_cyc_i = '0') then
           addr_ack_q <= '0';
           pending_q  <= '0';
@@ -82,30 +82,30 @@ begin
   -- protection control --
   ahb_hprot_o(3) <= '0'; -- non-cacheable
   ahb_hprot_o(2) <= '0'; -- non-bufferable
-  ahb_hprot_o(1) <= xbus_tag_i(0); -- 0 = user-access, 1 = privileged access
-  ahb_hprot_o(0) <= not xbus_tag_i(2); -- 0 = instruction fetch, 1 = data access
+  ahb_hprot_o(1) <= std_logic(xbus_tag_i(0)); -- 0 = user-access, 1 = privileged access
+  ahb_hprot_o(0) <= not std_logic(xbus_tag_i(2)); -- 0 = instruction fetch, 1 = data access
 
   -- burst control --
   ahb_hburst_o <= "000"; -- single burst
 
   -- read/write --
-  ahb_hwrite_o <= xbus_we_i;
+  ahb_hwrite_o <= std_logic(xbus_we_i);
 
   -- address --
-  ahb_haddr_o <= xbus_adr_i;
+  ahb_haddr_o <= std_logic_vector(xbus_adr_i);
 
   -- data --
-  ahb_hwdata_o <= xbus_dat_i;
-  xbus_dat_o   <= ahb_hrdata_i;
+  ahb_hwdata_o <= std_logic_vector(xbus_dat_i);
+  xbus_dat_o   <= std_ulogic_vector(ahb_hrdata_i);
 
   -- data quantity --
   data_size: process(xbus_sel_i)
   begin
     case xbus_sel_i is
       when "1000" | "0100" | "0010" | "0001" => ahb_hsize_o <= "000"; -- byte
-      when "1100" | "0011" => ahb_hsize_o <= "001"; -- half-word
-      when others => ahb_hsize_o <= "010"; -- word
+      when "1100" | "0011"                   => ahb_hsize_o <= "001"; -- half-word
+      when others                            => ahb_hsize_o <= "010"; -- word
     end case;
-  end process data_size;
+  end process data_size
 
 end xbus2ahblite_bridge_rtl;

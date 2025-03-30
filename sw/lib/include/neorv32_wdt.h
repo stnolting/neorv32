@@ -27,7 +27,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t RESET; /**< offset 4: WDT reset trigger (write password to "feed" watchdog) */
 } neorv32_wdt_t;
 
-/** WDT module hardware access (#neorv32_wdt_t) */
+/** WDT module hardware handle (#neorv32_wdt_t) */
 #define NEORV32_WDT ((neorv32_wdt_t*) (NEORV32_WDT_BASE))
 
 /** WDT control register bits */

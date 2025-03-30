@@ -1229,10 +1229,26 @@
               <description>IRQ if TX FIFO empty</description>
             </field>
             <field>
-              <name>TWD_CTRL_FIFO</name>
-              <bitRange>[18:15]</bitRange>
+              <name>TWD_CTRL_TX_DUMMY_EN</name>
+              <bitRange>[14:14]</bitRange>
+              <description>Repeat sending last sent byte if TY FIFO is empty</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_HIDE_READ</name>
+              <bitRange>[15:15]</bitRange>
+              <description>Send no ACK on READ access if TX FIFO is empty</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_RX_FIFO</name>
+              <bitRange>[19:16]</bitRange>
               <access>read-only</access>
-              <description>log2(TWD FIFO size)</description>
+              <description>log2(TWD RX FIFO size)</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_TX_FIFO</name>
+              <bitRange>[23:20]</bitRange>
+              <access>read-only</access>
+              <description>log2(TWD TX FIFO size)</description>
             </field>
             <field>
               <name>TWD_CTRL_RX_AVAIL</name>
@@ -1407,7 +1423,6 @@
             </field>
           </fields>
         </register>
-
         <register>
           <name>RESET</name>
           <description>Watchdog reset register</description>

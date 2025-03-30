@@ -28,7 +28,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   const uint32_t COUNT; /**< offset 8: counter register, read-only */
 } neorv32_gptmr_t;
 
-/** GPTMR module hardware access (#neorv32_gptmr_t) */
+/** GPTMR module hardware handle (#neorv32_gptmr_t) */
 #define NEORV32_GPTMR ((neorv32_gptmr_t*) (NEORV32_GPTMR_BASE))
 
 /** GPTMR control register bits */

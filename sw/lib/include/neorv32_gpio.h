@@ -32,7 +32,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t       IRQ_PENDING;  /**< interrupt pending */
 } neorv32_gpio_t;
 
-/** GPIO module hardware access (#neorv32_gpio_t) */
+/** GPIO module hardware handle (#neorv32_gpio_t) */
 #define NEORV32_GPIO ((neorv32_gpio_t*) (NEORV32_GPIO_BASE))
 /**@}*/
 

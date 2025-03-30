@@ -29,7 +29,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t DATA_LAST; /**< offset 12: RX/TX data register (+ TX end-of-stream) */
 } neorv32_slink_t;
 
-/** SLINK module hardware access (#neorv32_slink_t) */
+/** SLINK module hardware handle (#neorv32_slink_t) */
 #define NEORV32_SLINK ((neorv32_slink_t*) (NEORV32_SLINK_BASE))
 
 /** SLINK control register bits */
