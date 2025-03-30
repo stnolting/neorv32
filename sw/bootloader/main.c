@@ -105,8 +105,7 @@ int main(void) {
   // Splash screen
   // ------------------------------------------------
 
-  uart_puts("\033[2J" // clear screen
-            "\n\nNEORV32 Bootloader\n\n"
+  uart_puts("\n\n\nNEORV32 Bootloader\n\n"
             "BLDV: "
             __DATE__
             "\nHWV:  ");
@@ -240,18 +239,18 @@ void print_help(void) {
 
   uart_puts(
     "Available CMDs:\n"
-    "h: Help\n"
-    "r: Restart\n"
-    "u: Upload via UART\n"
+    " h: Help\n"
+    " r: Restart\n"
+    " u: Upload via UART\n"
 #if (SPI_EN != 0)
-    "s: Store to SPI flash\n"
-    "l: Load from SPI flash\n"
+    " s: Store to SPI flash\n"
+    " l: Load from SPI flash\n"
 #endif
 #if (TWI_EN != 0)
-    "w: Store to TWI flash\n"
-    "t: Load from TWI flash\n"
+    " w: Store to TWI flash\n"
+    " t: Load from TWI flash\n"
 #endif
-    "e: Start executable\n"
+    " e: Start executable\n"
   );
 }
 
