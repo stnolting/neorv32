@@ -566,14 +566,27 @@ To benchmark a certain processor configuration for its setup-specific CPI value 
 
 ==== `A` ISA Extension
 
-The `A` ISA extension adds instructions for bit-manipulation operations.
-This ISA extension cannot be enabled by a specific generic. Instead, it is enabled if a specific set of
-sub-extensions is enabled. The `A` extension is shorthand for the following set of other extensions:
+The `A` ISA extension adds instructions and mechanisms for atomic memory operations hat can be used to
+manage mutually-exclusive access to shared resources. Note that this ISA extension cannot be enabled by
+a specific generic. Instead, it is enabled if a specific set of sub-extensions is enabled. The `A`
+extension is shorthand for the following set of other extensions:
 
 * <<_zaamo_isa_extension>> - Atomic read-modify-write instructions.
 * <<_zalrsc_isa_extension>> - Atomic reservation-set instructions.
 
-A processor configuration which implements `A` must implement all of the above extensions.
+.Atomic Variable in C Languages
+[NOTE]
+The C `_Atomic` specifier should be used for atomic variables.
+See section <<_coherence_example>> for more information.
+
+.Hardware-Based Spinlocks
+[TIP]
+The `A` ISA extension and the according sub-extensions require a lot of additional logic that increases
+the size of the processor. Furthermore, the `A` instructions require special attention to maintain
+<<_memory_coherence>>. Alternatively (or as a further addition), hardware-based spinlocks can be enabled,
+which can be used to build more complex synchronization structures without the need for the complex `A`
+ISA extension or special attention to memory coherence. See the <<_hardware_spinlocks_hwspinlock>> module
+description for more information.
 
 
 ==== `B` ISA Extension
@@ -692,7 +705,7 @@ RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 
 ==== `Zaamo` ISA Extension
 
-The `Zaamo` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension,`A`>> ISA extension and compromises
+The `Zaamo` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension>> and compromises
 instructions for read-modify-write <<_atomic_memory_access>> operations. It is enabled by the top's
 <<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>> generic.
 
@@ -718,7 +731,7 @@ is raised, respectively.
 
 ==== `Zalrsc` ISA Extension
 
-The `Zalrsc` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension,`A`>> ISA extension and compromises
+The `Zalrsc` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension>> and compromises
 instructions for reservation-set <<_atomic_memory_access>> operations. It is enabled by the top's
 <<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>> generic.
 

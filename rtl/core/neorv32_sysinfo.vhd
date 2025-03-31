@@ -32,30 +32,31 @@ entity neorv32_sysinfo is
     DCACHE_EN             : boolean; -- implement data cache
     DCACHE_NUM_BLOCKS     : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
     DCACHE_BLOCK_SIZE     : natural; -- d-cache: block size in bytes (min 4), has to be a power of 2
-    XBUS_EN               : boolean; -- implement external memory bus interface?
+    XBUS_EN               : boolean; -- implement external memory bus interface
     XBUS_CACHE_EN         : boolean; -- implement external bus cache
     XBUS_CACHE_NUM_BLOCKS : natural; -- x-cache: number of blocks (min 1), has to be a power of 2
     XBUS_CACHE_BLOCK_SIZE : natural; -- x-cache: block size in bytes (min 4), has to be a power of 2
-    OCD_EN                : boolean; -- implement OCD?
-    OCD_AUTHENTICATION    : boolean; -- implement OCD authenticator?
-    IO_GPIO_EN            : boolean; -- implement general purpose IO port (GPIO)?
-    IO_CLINT_EN           : boolean; -- implement machine local interruptor (CLINT)?
-    IO_UART0_EN           : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_UART1_EN           : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)?
-    IO_SPI_EN             : boolean; -- implement serial peripheral interface (SPI)?
-    IO_SDI_EN             : boolean; -- implement serial data interface (SDI)?
-    IO_TWI_EN             : boolean; -- implement two-wire interface (TWI)?
-    IO_TWD_EN             : boolean; -- implement two-wire device (TWD)?
-    IO_PWM_EN             : boolean; -- implement pulse-width modulation controller (PWM)?
-    IO_WDT_EN             : boolean; -- implement watch dog timer (WDT)?
-    IO_TRNG_EN            : boolean; -- implement true random number generator (TRNG)?
-    IO_CFS_EN             : boolean; -- implement custom functions subsystem (CFS)?
-    IO_NEOLED_EN          : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)?
-    IO_GPTMR_EN           : boolean; -- implement general purpose timer (GPTMR)?
-    IO_ONEWIRE_EN         : boolean; -- implement 1-wire interface (ONEWIRE)?
-    IO_DMA_EN             : boolean; -- implement direct memory access controller (DMA)?
-    IO_SLINK_EN           : boolean; -- implement stream link interface (SLINK)?
-    IO_CRC_EN             : boolean  -- implement cyclic redundancy check unit (CRC)?
+    OCD_EN                : boolean; -- implement OCD
+    OCD_AUTHENTICATION    : boolean; -- implement OCD authenticator
+    IO_GPIO_EN            : boolean; -- implement general purpose IO port (GPIO)
+    IO_CLINT_EN           : boolean; -- implement machine local interruptor (CLINT)
+    IO_UART0_EN           : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)
+    IO_UART1_EN           : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)
+    IO_SPI_EN             : boolean; -- implement serial peripheral interface (SPI)
+    IO_SDI_EN             : boolean; -- implement serial data interface (SDI)
+    IO_TWI_EN             : boolean; -- implement two-wire interface (TWI)
+    IO_TWD_EN             : boolean; -- implement two-wire device (TWD)
+    IO_PWM_EN             : boolean; -- implement pulse-width modulation controller (PWM)
+    IO_WDT_EN             : boolean; -- implement watch dog timer (WDT)
+    IO_TRNG_EN            : boolean; -- implement true random number generator (TRNG)
+    IO_CFS_EN             : boolean; -- implement custom functions subsystem (CFS)
+    IO_NEOLED_EN          : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)
+    IO_GPTMR_EN           : boolean; -- implement general purpose timer (GPTMR)
+    IO_ONEWIRE_EN         : boolean; -- implement 1-wire interface (ONEWIRE)
+    IO_DMA_EN             : boolean; -- implement direct memory access controller (DMA)
+    IO_SLINK_EN           : boolean; -- implement stream link interface (SLINK)
+    IO_CRC_EN             : boolean; -- implement cyclic redundancy check unit (CRC)
+    IO_HWSPINLOCK_EN      : boolean  -- implement hardware spinlocks (HWSPINLOCK)
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -114,38 +115,38 @@ begin
 
   -- SYSINFO(2): SoC Configuration ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sysinfo(2)(0)  <= '1' when INT_BOOTLOADER_EN else '0'; -- processor-internal bootloader implemented?
-  sysinfo(2)(1)  <= '1' when XBUS_EN           else '0'; -- external bus interface implemented?
-  sysinfo(2)(2)  <= '1' when int_imem_en_c     else '0'; -- processor-internal instruction memory implemented?
-  sysinfo(2)(3)  <= '1' when int_dmem_en_c     else '0'; -- processor-internal data memory implemented?
-  sysinfo(2)(4)  <= '1' when OCD_EN            else '0'; -- on-chip debugger implemented?
-  sysinfo(2)(5)  <= '1' when ICACHE_EN         else '0'; -- processor-internal instruction cache implemented?
-  sysinfo(2)(6)  <= '1' when DCACHE_EN         else '0'; -- processor-internal data cache implemented?
+  sysinfo(2)(0)  <= '1' when INT_BOOTLOADER_EN else '0'; -- processor-internal bootloader implemented
+  sysinfo(2)(1)  <= '1' when XBUS_EN           else '0'; -- external bus interface implemented
+  sysinfo(2)(2)  <= '1' when int_imem_en_c     else '0'; -- processor-internal instruction memory implemented
+  sysinfo(2)(3)  <= '1' when int_dmem_en_c     else '0'; -- processor-internal data memory implemented
+  sysinfo(2)(4)  <= '1' when OCD_EN            else '0'; -- on-chip debugger implemented
+  sysinfo(2)(5)  <= '1' when ICACHE_EN         else '0'; -- processor-internal instruction cache implemented
+  sysinfo(2)(6)  <= '1' when DCACHE_EN         else '0'; -- processor-internal data cache implemented
   sysinfo(2)(7)  <= '0';                                 -- reserved
-  sysinfo(2)(8)  <= '1' when xcache_en_c       else '0'; -- external bus interface cache implemented?
+  sysinfo(2)(8)  <= '1' when xcache_en_c       else '0'; -- external bus interface cache implemented
   sysinfo(2)(9)  <= '0';                                 -- reserved
   sysinfo(2)(10) <= '0';                                 -- reserved
-  sysinfo(2)(11) <= '1' when ocd_auth_en_c     else '0'; -- on-chip debugger authentication implemented?
-  sysinfo(2)(12) <= '1' when int_imem_rom_c    else '0'; -- processor-internal instruction memory implemented as pre-initialized ROM?
-  sysinfo(2)(13) <= '1' when IO_TWD_EN         else '0'; -- two-wire device (TWD) implemented?
-  sysinfo(2)(14) <= '1' when IO_DMA_EN         else '0'; -- direct memory access controller (DMA) implemented?
-  sysinfo(2)(15) <= '1' when IO_GPIO_EN        else '0'; -- general purpose input/output port unit (GPIO) implemented?
-  sysinfo(2)(16) <= '1' when IO_CLINT_EN       else '0'; -- core local interruptor (CLINT) implemented?
-  sysinfo(2)(17) <= '1' when IO_UART0_EN       else '0'; -- primary universal asynchronous receiver/transmitter (UART0) implemented?
-  sysinfo(2)(18) <= '1' when IO_SPI_EN         else '0'; -- serial peripheral interface (SPI) implemented?
-  sysinfo(2)(19) <= '1' when IO_TWI_EN         else '0'; -- two-wire interface (TWI) implemented?
-  sysinfo(2)(20) <= '1' when IO_PWM_EN         else '0'; -- pulse-width modulation unit (PWM) implemented?
-  sysinfo(2)(21) <= '1' when IO_WDT_EN         else '0'; -- watch dog timer (WDT) implemented?
-  sysinfo(2)(22) <= '1' when IO_CFS_EN         else '0'; -- custom functions subsystem (CFS) implemented?
-  sysinfo(2)(23) <= '1' when IO_TRNG_EN        else '0'; -- true random number generator (TRNG) implemented?
-  sysinfo(2)(24) <= '1' when IO_SDI_EN         else '0'; -- serial data interface (SDI) implemented?
-  sysinfo(2)(25) <= '1' when IO_UART1_EN       else '0'; -- secondary universal asynchronous receiver/transmitter (UART1) implemented?
-  sysinfo(2)(26) <= '1' when IO_NEOLED_EN      else '0'; -- NeoPixel-compatible smart LED interface (NEOLED) implemented?
-  sysinfo(2)(27) <= '0';                                 -- reserved
-  sysinfo(2)(28) <= '1' when IO_GPTMR_EN       else '0'; -- general purpose timer (GPTMR) implemented?
-  sysinfo(2)(29) <= '1' when IO_SLINK_EN       else '0'; -- stream link interface (SLINK) implemented?
-  sysinfo(2)(30) <= '1' when IO_ONEWIRE_EN     else '0'; -- 1-wire interface (ONEWIRE) implemented?
-  sysinfo(2)(31) <= '1' when IO_CRC_EN         else '0'; -- cyclic redundancy check unit (CRC) implemented?
+  sysinfo(2)(11) <= '1' when ocd_auth_en_c     else '0'; -- on-chip debugger authentication implemented
+  sysinfo(2)(12) <= '1' when int_imem_rom_c    else '0'; -- processor-internal instruction memory implemented as pre-initialized ROM
+  sysinfo(2)(13) <= '1' when IO_TWD_EN         else '0'; -- two-wire device (TWD) implemented
+  sysinfo(2)(14) <= '1' when IO_DMA_EN         else '0'; -- direct memory access controller (DMA) implemented
+  sysinfo(2)(15) <= '1' when IO_GPIO_EN        else '0'; -- general purpose input/output port unit (GPIO) implemented
+  sysinfo(2)(16) <= '1' when IO_CLINT_EN       else '0'; -- core local interruptor (CLINT) implemented
+  sysinfo(2)(17) <= '1' when IO_UART0_EN       else '0'; -- primary universal asynchronous receiver/transmitter (UART0) implemented
+  sysinfo(2)(18) <= '1' when IO_SPI_EN         else '0'; -- serial peripheral interface (SPI) implemented
+  sysinfo(2)(19) <= '1' when IO_TWI_EN         else '0'; -- two-wire interface (TWI) implemented
+  sysinfo(2)(20) <= '1' when IO_PWM_EN         else '0'; -- pulse-width modulation unit (PWM) implemented
+  sysinfo(2)(21) <= '1' when IO_WDT_EN         else '0'; -- watch dog timer (WDT) implemented
+  sysinfo(2)(22) <= '1' when IO_CFS_EN         else '0'; -- custom functions subsystem (CFS) implemented
+  sysinfo(2)(23) <= '1' when IO_TRNG_EN        else '0'; -- true random number generator (TRNG) implemented
+  sysinfo(2)(24) <= '1' when IO_SDI_EN         else '0'; -- serial data interface (SDI) implemented
+  sysinfo(2)(25) <= '1' when IO_UART1_EN       else '0'; -- secondary universal asynchronous receiver/transmitter (UART1) implemented
+  sysinfo(2)(26) <= '1' when IO_NEOLED_EN      else '0'; -- NeoPixel-compatible smart LED interface (NEOLED) implemented
+  sysinfo(2)(27) <= '1' when IO_HWSPINLOCK_EN  else '0'; -- hardware spinlocks (HWSPINLOCK) implemented
+  sysinfo(2)(28) <= '1' when IO_GPTMR_EN       else '0'; -- general purpose timer (GPTMR) implemented
+  sysinfo(2)(29) <= '1' when IO_SLINK_EN       else '0'; -- stream link interface (SLINK) implemented
+  sysinfo(2)(30) <= '1' when IO_ONEWIRE_EN     else '0'; -- 1-wire interface (ONEWIRE) implemented
+  sysinfo(2)(31) <= '1' when IO_CRC_EN         else '0'; -- cyclic redundancy check unit (CRC) implemented
 
   -- SYSINFO(4): Cache Configuration --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

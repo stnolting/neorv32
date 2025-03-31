@@ -409,6 +409,11 @@ proc setup_ip_gui {} {
   add_params $group {
     { IO_CRC_EN {Enable CRC} }
   }
+
+  set group [add_group $page {Hardware Spinlocks (HWSPINLOCK)}]
+  add_params $group {
+    { IO_HWSPINLOCK_EN {Implement 32 HW-based spinlocks} }
+  }
 }
 
 setup_ip_gui

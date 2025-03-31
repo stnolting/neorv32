@@ -188,6 +188,7 @@ for custom tightly-coupled co-processors, accelerators or interfaces
 data transfers and conversions
 * cyclic redundancy check unit ([CRC](https://stnolting.github.io/neorv32/#_cyclic_redundancy_check_crc)) to test
 data integrity (CRC8/16/32)
+* 32 dedicated hardware spinlocks ([HWSPINLOCK](https://stnolting.github.io/neorv32/#_hardware_spinlocks_hwspinlock))
 
 **Debugging**
 
