@@ -199,6 +199,7 @@ begin
   begin
     if (rstn_i = '0') then
       cnt_cdiv <= (others => '0');
+      cnt_tick <= '0';
       cnt_duty <= (others => '0');
       pwm_o    <= '0';
     elsif rising_edge(clk_i) then
@@ -206,11 +207,14 @@ begin
       -- clock divider --
       if (cfg_en = '0') then
         cnt_cdiv <= (others => '0');
+        cnt_tick <= '0';
       elsif (clkgen_i(to_integer(unsigned(cfg_prsc))) = '1') then -- pre-scaled clock (coarse)
-        if (cnt_tick = '1') then -- fine-tuned clock
+        if (cnt_cdiv = cfg_cdiv) then -- fine-tuned clock
           cnt_cdiv <= (others => '0');
+          cnt_tick <= '1';
         else
           cnt_cdiv <= std_ulogic_vector(unsigned(cnt_cdiv) + 1);
+          cnt_tick <= '0';
         end if;
       end if;
 
@@ -230,8 +234,5 @@ begin
 
     end if;
   end process pwm_core;
-
-  -- fine-tuned clock tick --
-  cnt_tick <= '1' when (cnt_cdiv = cfg_cdiv) else '0';
 
 end neorv32_pwm_channel_rtl;
