@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 01.04.2025 | 1.11.2.4 | :bug: fix bug in PWM clock prescaler | [#1222](https://github.com/stnolting/neorv32/pull/1222) |
 | 29.03.2025 | 1.11.2.3 | :sparkles: add optional 32 hardware spinlocks (`HWSPINLOCK` module) | [#1220](https://github.com/stnolting/neorv32/pull/1220) |
 | 24.03.2025 | 1.11.2.2 | TWD: add separate RX/TX FIFO configuration; add dummy response (if TX FIFO is empty); add optional no-ACK on read access if TX FIFO is empty | [#1210](https://github.com/stnolting/neorv32/pull/1210) |
 | 21.03.2025 | 1.11.2.1 | :warning: remove clock gating option | [#1214](https://github.com/stnolting/neorv32/pull/1214) |
