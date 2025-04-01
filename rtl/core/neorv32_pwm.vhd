@@ -198,23 +198,22 @@ begin
   pwm_core: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cnt_cdiv <= (others => '0');
       cnt_tick <= '0';
+      cnt_cdiv <= (others => '0');
       cnt_duty <= (others => '0');
       pwm_o    <= '0';
     elsif rising_edge(clk_i) then
 
       -- clock divider --
+      cnt_tick <= '0'; -- default
       if (cfg_en = '0') then
         cnt_cdiv <= (others => '0');
-        cnt_tick <= '0';
       elsif (clkgen_i(to_integer(unsigned(cfg_prsc))) = '1') then -- pre-scaled clock (coarse)
         if (cnt_cdiv = cfg_cdiv) then -- fine-tuned clock
           cnt_cdiv <= (others => '0');
-          cnt_tick <= '1';
+          cnt_tick <= '1'; -- single-shot
         else
           cnt_cdiv <= std_ulogic_vector(unsigned(cnt_cdiv) + 1);
-          cnt_tick <= '0';
         end if;
       end if;
 
