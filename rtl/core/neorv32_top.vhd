@@ -95,7 +95,7 @@ entity neorv32_top is
     DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;          -- d-cache: block size in bytes (min 4), has to be a power of 2
 
     -- External bus interface (XBUS) --
-    XBUS_EN               : boolean                        := false;       -- implement external memory bus interface?
+    XBUS_EN               : boolean                        := false;       -- implement external memory bus interface
     XBUS_TIMEOUT          : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_REGSTAGE_EN      : boolean                        := false;       -- add XBUS register stage
     XBUS_CACHE_EN         : boolean                        := false;       -- enable external bus cache (x-cache)
@@ -105,40 +105,41 @@ entity neorv32_top is
     -- Processor peripherals --
     IO_DISABLE_SYSINFO    : boolean                        := false;       -- disable the SYSINFO module (for advanced users only)
     IO_GPIO_NUM           : natural range 0 to 32          := 0;           -- number of GPIO input/output pairs (0..32)
-    IO_CLINT_EN           : boolean                        := false;       -- implement core local interruptor (CLINT)?
-    IO_UART0_EN           : boolean                        := false;       -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_CLINT_EN           : boolean                        := false;       -- implement core local interruptor (CLINT)
+    IO_UART0_EN           : boolean                        := false;       -- implement primary universal asynchronous receiver/transmitter (UART0)
     IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
     IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
-    IO_UART1_EN           : boolean                        := false;       -- implement secondary universal asynchronous receiver/transmitter (UART1)?
+    IO_UART1_EN           : boolean                        := false;       -- implement secondary universal asynchronous receiver/transmitter (UART1)
     IO_UART1_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
     IO_UART1_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
-    IO_SPI_EN             : boolean                        := false;       -- implement serial peripheral interface (SPI)?
+    IO_SPI_EN             : boolean                        := false;       -- implement serial peripheral interface (SPI)
     IO_SPI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be a power of two, min 1
-    IO_SDI_EN             : boolean                        := false;       -- implement serial data interface (SDI)?
+    IO_SDI_EN             : boolean                        := false;       -- implement serial data interface (SDI)
     IO_SDI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
-    IO_TWI_EN             : boolean                        := false;       -- implement two-wire interface (TWI)?
+    IO_TWI_EN             : boolean                        := false;       -- implement two-wire interface (TWI)
     IO_TWI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
-    IO_TWD_EN             : boolean                        := false;       -- implement two-wire device (TWD)?
+    IO_TWD_EN             : boolean                        := false;       -- implement two-wire device (TWD)
     IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be zero or a power of two, min 1
     IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be zero or a power of two, min 1
     IO_PWM_NUM_CH         : natural range 0 to 16          := 0;           -- number of PWM channels to implement (0..16)
-    IO_WDT_EN             : boolean                        := false;       -- implement watch dog timer (WDT)?
-    IO_TRNG_EN            : boolean                        := false;       -- implement true random number generator (TRNG)?
+    IO_WDT_EN             : boolean                        := false;       -- implement watch dog timer (WDT)
+    IO_TRNG_EN            : boolean                        := false;       -- implement true random number generator (TRNG)
     IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;           -- data FIFO depth, has to be a power of two, min 1
-    IO_CFS_EN             : boolean                        := false;       -- implement custom functions subsystem (CFS)?
+    IO_CFS_EN             : boolean                        := false;       -- implement custom functions subsystem (CFS)
     IO_CFS_CONFIG         : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
     IO_CFS_IN_SIZE        : natural                        := 32;          -- size of CFS input conduit in bits
     IO_CFS_OUT_SIZE       : natural                        := 32;          -- size of CFS output conduit in bits
-    IO_NEOLED_EN          : boolean                        := false;       -- implement NeoPixel-compatible smart LED interface (NEOLED)?
+    IO_NEOLED_EN          : boolean                        := false;       -- implement NeoPixel-compatible smart LED interface (NEOLED)
     IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;           -- NEOLED FIFO depth, has to be a power of two, min 1
-    IO_GPTMR_EN           : boolean                        := false;       -- implement general purpose timer (GPTMR)?
-    IO_ONEWIRE_EN         : boolean                        := false;       -- implement 1-wire interface (ONEWIRE)?
+    IO_GPTMR_EN           : boolean                        := false;       -- implement general purpose timer (GPTMR)
+    IO_ONEWIRE_EN         : boolean                        := false;       -- implement 1-wire interface (ONEWIRE)
     IO_ONEWIRE_FIFO       : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
-    IO_DMA_EN             : boolean                        := false;       -- implement direct memory access controller (DMA)?
-    IO_SLINK_EN           : boolean                        := false;       -- implement stream link interface (SLINK)?
+    IO_DMA_EN             : boolean                        := false;       -- implement direct memory access controller (DMA)
+    IO_SLINK_EN           : boolean                        := false;       -- implement stream link interface (SLINK)
     IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
     IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
-    IO_CRC_EN             : boolean                        := false        -- implement cyclic redundancy check unit (CRC)?
+    IO_CRC_EN             : boolean                        := false;       -- implement cyclic redundancy check unit (CRC)
+    IO_HWSPINLOCK_EN      : boolean                        := false        -- implement hardware spinlocks (HWSPINLOCK)
   );
   port (
     -- Global control --
@@ -311,7 +312,7 @@ architecture neorv32_top_rtl of neorv32_top is
   type io_devices_enum_t is (
     IODEV_BOOTROM, IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG,
     IODEV_TWI, IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_CLINT, IODEV_ONEWIRE,
-    IODEV_GPTMR, IODEV_PWM, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD
+    IODEV_GPTMR, IODEV_PWM, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_HWSPINLOCK, IODEV_TWD
   );
   type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
   type iodev_rsp_t is array (io_devices_enum_t) of bus_rsp_t;
@@ -377,6 +378,7 @@ begin
       cond_sel_string_f(IO_ONEWIRE_EN,             "ONEWIRE ",    "") &
       cond_sel_string_f(IO_DMA_EN,                 "DMA ",        "") &
       cond_sel_string_f(IO_SLINK_EN,               "SLINK ",      "") &
+      cond_sel_string_f(IO_HWSPINLOCK_EN,          "HWSPINLOCK ", "") &
       cond_sel_string_f(IO_CRC_EN,                 "CRC ",        "") &
       cond_sel_string_f(io_sysinfo_en_c,           "SYSINFO ",    "") &
       cond_sel_string_f(OCD_EN,                    cond_sel_string_f(OCD_AUTHENTICATION, "OCD-AUTH ", "OCD "), "") &
@@ -642,7 +644,7 @@ begin
   end generate; -- /core_complex
 
 
-  -- Inter-Core Communication (ICC) Links ---------------------------------------------------
+  -- Inter-Core Communication (ICC) Links - Cross-Connect -----------------------------------
   -- -------------------------------------------------------------------------------------------
   icc_connect: process(icc_tx)
   begin
@@ -966,76 +968,76 @@ begin
       INREG_EN  => true,
       OUTREG_EN => true,
       DEV_SIZE  => iodev_size_c,
-      DEV_00_EN => bootrom_en_c,    DEV_00_BASE => base_io_bootrom_c,
-      DEV_01_EN => false,           DEV_01_BASE => (others => '0'), -- reserved
-      DEV_02_EN => false,           DEV_02_BASE => (others => '0'), -- reserved
-      DEV_03_EN => false,           DEV_03_BASE => (others => '0'), -- reserved
-      DEV_04_EN => false,           DEV_04_BASE => (others => '0'), -- reserved
-      DEV_05_EN => false,           DEV_05_BASE => (others => '0'), -- reserved
-      DEV_06_EN => false,           DEV_06_BASE => (others => '0'), -- reserved
-      DEV_07_EN => false,           DEV_07_BASE => (others => '0'), -- reserved
-      DEV_08_EN => false,           DEV_08_BASE => (others => '0'), -- reserved
-      DEV_09_EN => false,           DEV_09_BASE => (others => '0'), -- reserved
-      DEV_10_EN => IO_TWD_EN,       DEV_10_BASE => base_io_twd_c,
-      DEV_11_EN => IO_CFS_EN,       DEV_11_BASE => base_io_cfs_c,
-      DEV_12_EN => IO_SLINK_EN,     DEV_12_BASE => base_io_slink_c,
-      DEV_13_EN => IO_DMA_EN,       DEV_13_BASE => base_io_dma_c,
-      DEV_14_EN => IO_CRC_EN,       DEV_14_BASE => base_io_crc_c,
-      DEV_15_EN => false,           DEV_15_BASE => (others => '0'), -- reserved
-      DEV_16_EN => io_pwm_en_c,     DEV_16_BASE => base_io_pwm_c,
-      DEV_17_EN => IO_GPTMR_EN,     DEV_17_BASE => base_io_gptmr_c,
-      DEV_18_EN => IO_ONEWIRE_EN,   DEV_18_BASE => base_io_onewire_c,
-      DEV_19_EN => false,           DEV_19_BASE => (others => '0'), -- reserved
-      DEV_20_EN => IO_CLINT_EN,     DEV_20_BASE => base_io_clint_c,
-      DEV_21_EN => IO_UART0_EN,     DEV_21_BASE => base_io_uart0_c,
-      DEV_22_EN => IO_UART1_EN,     DEV_22_BASE => base_io_uart1_c,
-      DEV_23_EN => IO_SDI_EN,       DEV_23_BASE => base_io_sdi_c,
-      DEV_24_EN => IO_SPI_EN,       DEV_24_BASE => base_io_spi_c,
-      DEV_25_EN => IO_TWI_EN,       DEV_25_BASE => base_io_twi_c,
-      DEV_26_EN => IO_TRNG_EN,      DEV_26_BASE => base_io_trng_c,
-      DEV_27_EN => IO_WDT_EN,       DEV_27_BASE => base_io_wdt_c,
-      DEV_28_EN => io_gpio_en_c,    DEV_28_BASE => base_io_gpio_c,
-      DEV_29_EN => IO_NEOLED_EN,    DEV_29_BASE => base_io_neoled_c,
-      DEV_30_EN => io_sysinfo_en_c, DEV_30_BASE => base_io_sysinfo_c,
-      DEV_31_EN => OCD_EN,          DEV_31_BASE => base_io_ocd_c
+      DEV_00_EN => bootrom_en_c,     DEV_00_BASE => base_io_bootrom_c,
+      DEV_01_EN => false,            DEV_01_BASE => (others => '0'), -- reserved
+      DEV_02_EN => false,            DEV_02_BASE => (others => '0'), -- reserved
+      DEV_03_EN => false,            DEV_03_BASE => (others => '0'), -- reserved
+      DEV_04_EN => false,            DEV_04_BASE => (others => '0'), -- reserved
+      DEV_05_EN => false,            DEV_05_BASE => (others => '0'), -- reserved
+      DEV_06_EN => false,            DEV_06_BASE => (others => '0'), -- reserved
+      DEV_07_EN => false,            DEV_07_BASE => (others => '0'), -- reserved
+      DEV_08_EN => false,            DEV_08_BASE => (others => '0'), -- reserved
+      DEV_09_EN => false,            DEV_09_BASE => (others => '0'), -- reserved
+      DEV_10_EN => IO_TWD_EN,        DEV_10_BASE => base_io_twd_c,
+      DEV_11_EN => IO_CFS_EN,        DEV_11_BASE => base_io_cfs_c,
+      DEV_12_EN => IO_SLINK_EN,      DEV_12_BASE => base_io_slink_c,
+      DEV_13_EN => IO_DMA_EN,        DEV_13_BASE => base_io_dma_c,
+      DEV_14_EN => IO_CRC_EN,        DEV_14_BASE => base_io_crc_c,
+      DEV_15_EN => false,            DEV_15_BASE => (others => '0'), -- reserved
+      DEV_16_EN => io_pwm_en_c,      DEV_16_BASE => base_io_pwm_c,
+      DEV_17_EN => IO_GPTMR_EN,      DEV_17_BASE => base_io_gptmr_c,
+      DEV_18_EN => IO_ONEWIRE_EN,    DEV_18_BASE => base_io_onewire_c,
+      DEV_19_EN => IO_HWSPINLOCK_EN, DEV_19_BASE => base_io_hwspinlock_c,
+      DEV_20_EN => IO_CLINT_EN,      DEV_20_BASE => base_io_clint_c,
+      DEV_21_EN => IO_UART0_EN,      DEV_21_BASE => base_io_uart0_c,
+      DEV_22_EN => IO_UART1_EN,      DEV_22_BASE => base_io_uart1_c,
+      DEV_23_EN => IO_SDI_EN,        DEV_23_BASE => base_io_sdi_c,
+      DEV_24_EN => IO_SPI_EN,        DEV_24_BASE => base_io_spi_c,
+      DEV_25_EN => IO_TWI_EN,        DEV_25_BASE => base_io_twi_c,
+      DEV_26_EN => IO_TRNG_EN,       DEV_26_BASE => base_io_trng_c,
+      DEV_27_EN => IO_WDT_EN,        DEV_27_BASE => base_io_wdt_c,
+      DEV_28_EN => io_gpio_en_c,     DEV_28_BASE => base_io_gpio_c,
+      DEV_29_EN => IO_NEOLED_EN,     DEV_29_BASE => base_io_neoled_c,
+      DEV_30_EN => io_sysinfo_en_c,  DEV_30_BASE => base_io_sysinfo_c,
+      DEV_31_EN => OCD_EN,           DEV_31_BASE => base_io_ocd_c
     )
     port map (
       clk_i        => clk_i,
       rstn_i       => rstn_sys,
       main_req_i   => io_req,
       main_rsp_o   => io_rsp,
-      dev_00_req_o => iodev_req(IODEV_BOOTROM), dev_00_rsp_i => iodev_rsp(IODEV_BOOTROM),
-      dev_01_req_o => open,                     dev_01_rsp_i => rsp_terminate_c, -- reserved
-      dev_02_req_o => open,                     dev_02_rsp_i => rsp_terminate_c, -- reserved
-      dev_03_req_o => open,                     dev_03_rsp_i => rsp_terminate_c, -- reserved
-      dev_04_req_o => open,                     dev_04_rsp_i => rsp_terminate_c, -- reserved
-      dev_05_req_o => open,                     dev_05_rsp_i => rsp_terminate_c, -- reserved
-      dev_06_req_o => open,                     dev_06_rsp_i => rsp_terminate_c, -- reserved
-      dev_07_req_o => open,                     dev_07_rsp_i => rsp_terminate_c, -- reserved
-      dev_08_req_o => open,                     dev_08_rsp_i => rsp_terminate_c, -- reserved
-      dev_09_req_o => open,                     dev_09_rsp_i => rsp_terminate_c, -- reserved
-      dev_10_req_o => iodev_req(IODEV_TWD),     dev_10_rsp_i => iodev_rsp(IODEV_TWD),
-      dev_11_req_o => iodev_req(IODEV_CFS),     dev_11_rsp_i => iodev_rsp(IODEV_CFS),
-      dev_12_req_o => iodev_req(IODEV_SLINK),   dev_12_rsp_i => iodev_rsp(IODEV_SLINK),
-      dev_13_req_o => iodev_req(IODEV_DMA),     dev_13_rsp_i => iodev_rsp(IODEV_DMA),
-      dev_14_req_o => iodev_req(IODEV_CRC),     dev_14_rsp_i => iodev_rsp(IODEV_CRC),
-      dev_15_req_o => open,                     dev_15_rsp_i => rsp_terminate_c, -- reserved
-      dev_16_req_o => iodev_req(IODEV_PWM),     dev_16_rsp_i => iodev_rsp(IODEV_PWM),
-      dev_17_req_o => iodev_req(IODEV_GPTMR),   dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
-      dev_18_req_o => iodev_req(IODEV_ONEWIRE), dev_18_rsp_i => iodev_rsp(IODEV_ONEWIRE),
-      dev_19_req_o => open,                     dev_19_rsp_i => rsp_terminate_c, -- reserved
-      dev_20_req_o => iodev_req(IODEV_CLINT),   dev_20_rsp_i => iodev_rsp(IODEV_CLINT),
-      dev_21_req_o => iodev_req(IODEV_UART0),   dev_21_rsp_i => iodev_rsp(IODEV_UART0),
-      dev_22_req_o => iodev_req(IODEV_UART1),   dev_22_rsp_i => iodev_rsp(IODEV_UART1),
-      dev_23_req_o => iodev_req(IODEV_SDI),     dev_23_rsp_i => iodev_rsp(IODEV_SDI),
-      dev_24_req_o => iodev_req(IODEV_SPI),     dev_24_rsp_i => iodev_rsp(IODEV_SPI),
-      dev_25_req_o => iodev_req(IODEV_TWI),     dev_25_rsp_i => iodev_rsp(IODEV_TWI),
-      dev_26_req_o => iodev_req(IODEV_TRNG),    dev_26_rsp_i => iodev_rsp(IODEV_TRNG),
-      dev_27_req_o => iodev_req(IODEV_WDT),     dev_27_rsp_i => iodev_rsp(IODEV_WDT),
-      dev_28_req_o => iodev_req(IODEV_GPIO),    dev_28_rsp_i => iodev_rsp(IODEV_GPIO),
-      dev_29_req_o => iodev_req(IODEV_NEOLED),  dev_29_rsp_i => iodev_rsp(IODEV_NEOLED),
-      dev_30_req_o => iodev_req(IODEV_SYSINFO), dev_30_rsp_i => iodev_rsp(IODEV_SYSINFO),
-      dev_31_req_o => iodev_req(IODEV_OCD),     dev_31_rsp_i => iodev_rsp(IODEV_OCD)
+      dev_00_req_o => iodev_req(IODEV_BOOTROM),    dev_00_rsp_i => iodev_rsp(IODEV_BOOTROM),
+      dev_01_req_o => open,                        dev_01_rsp_i => rsp_terminate_c, -- reserved
+      dev_02_req_o => open,                        dev_02_rsp_i => rsp_terminate_c, -- reserved
+      dev_03_req_o => open,                        dev_03_rsp_i => rsp_terminate_c, -- reserved
+      dev_04_req_o => open,                        dev_04_rsp_i => rsp_terminate_c, -- reserved
+      dev_05_req_o => open,                        dev_05_rsp_i => rsp_terminate_c, -- reserved
+      dev_06_req_o => open,                        dev_06_rsp_i => rsp_terminate_c, -- reserved
+      dev_07_req_o => open,                        dev_07_rsp_i => rsp_terminate_c, -- reserved
+      dev_08_req_o => open,                        dev_08_rsp_i => rsp_terminate_c, -- reserved
+      dev_09_req_o => open,                        dev_09_rsp_i => rsp_terminate_c, -- reserved
+      dev_10_req_o => iodev_req(IODEV_TWD),        dev_10_rsp_i => iodev_rsp(IODEV_TWD),
+      dev_11_req_o => iodev_req(IODEV_CFS),        dev_11_rsp_i => iodev_rsp(IODEV_CFS),
+      dev_12_req_o => iodev_req(IODEV_SLINK),      dev_12_rsp_i => iodev_rsp(IODEV_SLINK),
+      dev_13_req_o => iodev_req(IODEV_DMA),        dev_13_rsp_i => iodev_rsp(IODEV_DMA),
+      dev_14_req_o => iodev_req(IODEV_CRC),        dev_14_rsp_i => iodev_rsp(IODEV_CRC),
+      dev_15_req_o => open,                        dev_15_rsp_i => rsp_terminate_c, -- reserved
+      dev_16_req_o => iodev_req(IODEV_PWM),        dev_16_rsp_i => iodev_rsp(IODEV_PWM),
+      dev_17_req_o => iodev_req(IODEV_GPTMR),      dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
+      dev_18_req_o => iodev_req(IODEV_ONEWIRE),    dev_18_rsp_i => iodev_rsp(IODEV_ONEWIRE),
+      dev_19_req_o => iodev_req(IODEV_HWSPINLOCK), dev_19_rsp_i => iodev_rsp(IODEV_HWSPINLOCK),
+      dev_20_req_o => iodev_req(IODEV_CLINT),      dev_20_rsp_i => iodev_rsp(IODEV_CLINT),
+      dev_21_req_o => iodev_req(IODEV_UART0),      dev_21_rsp_i => iodev_rsp(IODEV_UART0),
+      dev_22_req_o => iodev_req(IODEV_UART1),      dev_22_rsp_i => iodev_rsp(IODEV_UART1),
+      dev_23_req_o => iodev_req(IODEV_SDI),        dev_23_rsp_i => iodev_rsp(IODEV_SDI),
+      dev_24_req_o => iodev_req(IODEV_SPI),        dev_24_rsp_i => iodev_rsp(IODEV_SPI),
+      dev_25_req_o => iodev_req(IODEV_TWI),        dev_25_rsp_i => iodev_rsp(IODEV_TWI),
+      dev_26_req_o => iodev_req(IODEV_TRNG),       dev_26_rsp_i => iodev_rsp(IODEV_TRNG),
+      dev_27_req_o => iodev_req(IODEV_WDT),        dev_27_rsp_i => iodev_rsp(IODEV_WDT),
+      dev_28_req_o => iodev_req(IODEV_GPIO),       dev_28_rsp_i => iodev_rsp(IODEV_GPIO),
+      dev_29_req_o => iodev_req(IODEV_NEOLED),     dev_29_rsp_i => iodev_rsp(IODEV_NEOLED),
+      dev_30_req_o => iodev_req(IODEV_SYSINFO),    dev_30_rsp_i => iodev_rsp(IODEV_SYSINFO),
+      dev_31_req_o => iodev_req(IODEV_OCD),        dev_31_rsp_i => iodev_rsp(IODEV_OCD)
     );
 
 
@@ -1570,6 +1572,25 @@ begin
     end generate;
 
 
+    -- Hardware Spinlocks (HWSPINLOCK) --------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_hwspinlock_enabled:
+    if IO_HWSPINLOCK_EN generate
+      neorv32_hwspinlock_inst: entity neorv32.neorv32_hwspinlock
+        port map (
+        clk_i     => clk_i,
+        rstn_i    => rstn_sys,
+        bus_req_i => iodev_req(IODEV_HWSPINLOCK),
+        bus_rsp_o => iodev_rsp(IODEV_HWSPINLOCK)
+      );
+    end generate;
+
+    neorv32_hwspinlock_disabled:
+    if not IO_HWSPINLOCK_EN generate
+      iodev_rsp(IODEV_HWSPINLOCK) <= rsp_terminate_c;
+    end generate;
+
+
     -- System Configuration Information Memory (SYSINFO) --------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_sysinfo_enabled:
@@ -1614,7 +1635,8 @@ begin
         IO_ONEWIRE_EN         => IO_ONEWIRE_EN,
         IO_DMA_EN             => IO_DMA_EN,
         IO_SLINK_EN           => IO_SLINK_EN,
-        IO_CRC_EN             => IO_CRC_EN
+        IO_CRC_EN             => IO_CRC_EN,
+        IO_HWSPINLOCK_EN      => IO_HWSPINLOCK_EN
       )
       port map (
         clk_i     => clk_i,

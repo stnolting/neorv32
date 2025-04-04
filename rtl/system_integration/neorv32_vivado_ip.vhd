@@ -129,7 +129,9 @@ entity neorv32_vivado_ip is
     IO_SLINK_EN           : boolean                        := false;
     IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;
     IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;
-    IO_CRC_EN             : boolean                        := false
+    IO_CRC_EN             : boolean                        := false;
+    IO_HWSPINLOCK_EN      : boolean                        := false
+
   );
   port (
     -- ------------------------------------------------------------
@@ -439,7 +441,8 @@ begin
     IO_SLINK_EN           => IO_SLINK_EN,
     IO_SLINK_RX_FIFO      => IO_SLINK_RX_FIFO,
     IO_SLINK_TX_FIFO      => IO_SLINK_TX_FIFO,
-    IO_CRC_EN             => IO_CRC_EN
+    IO_CRC_EN             => IO_CRC_EN,
+    IO_HWSPINLOCK_EN      => IO_HWSPINLOCK_EN
   )
   port map (
     -- Global control --
