@@ -20,8 +20,8 @@ which provides **SoC setups** for various FPGAs, boards and toolchains.
 <<_installing_an_executable_directly_into_memory, persistent>> in internal memory
 * setup a new <<_setup_of_a_new_application_program_project, application project>>
 * <<_application_specific_processor_configuration, optimizing>> the core for your application
-* add <<_adding_custom_hardware_modules, custom hardware extensions>> and <<_customizing_the_internal_bootloader, customizing the bootloader>>
-* <<_programming_an_external_spi_flash_via_the_bootloader, program>> an external SPI flash for persistent application storage
+* add <<_adding_custom_hardware_modules, custom hardware extensions>>
+* <<_using_the_neorv32_bootloader>>
 * generate an AMD Vivado <<_packaging_the_processor_as_vivado_ip_block, IP block>>
 * <<_simulating_the_processor, simulate>> the processor and <<_building_the_documentation, build the documentation>>
 * RTOS support for <<_zephyr_rtos_support, Zephyr>> and <<_freertos_support, FreeRTOS>>
@@ -49,9 +49,7 @@ include::application_specific_configuration.adoc[]
 
 include::adding_custom_hw_modules.adoc[]
 
-include::customizing_the_bootloader.adoc[]
-
-include::programming_an_external_spi_flash_via_bootloader.adoc[]
+include::using_the_neorv32_bootloader.adoc[]
 
 include::packaging_vivado.adoc[]
 
