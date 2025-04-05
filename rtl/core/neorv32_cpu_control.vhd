@@ -518,10 +518,10 @@ begin
 
       when EX_BRANCH => -- update next PC on taken branches and jumps
       -- ------------------------------------------------------------
-        exe_engine_nxt.ra <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- output return address
-        ctrl_nxt.rf_wb_en <= opcode(2); -- save return address if link operation (won't happen if exception)
+        exe_engine_nxt.ra  <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- output return address
+        ctrl_nxt.rf_wb_en  <= opcode(2); -- save return address if link operation (won't happen if exception)
+        trap_ctrl.instr_ma <= alu_add_i(1) and branch_taken and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination misaligned?
         if (trap_ctrl.exc_buf(exc_illegal_c) = '0') and (branch_taken = '1') then -- valid taken branch / jump
-          trap_ctrl.instr_ma   <= alu_add_i(1) and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination is misaligned?
           if_reset             <= '1'; -- reset instruction fetch to restart at modified PC
           exe_engine_nxt.pc2   <= alu_add_i(XLEN-1 downto 1) & '0';
           exe_engine_nxt.state <= EX_BRANCHED; -- shortcut (faster than going to EX_RESTART)
@@ -839,59 +839,14 @@ begin
   -- Trap Controller
   -- ****************************************************************************************************************************
 
-  -- Exception Buffer -----------------------------------------------------------------------
+  -- Trap Buffer ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  exception_buffer: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      trap_ctrl.exc_buf <= (others => '0');
-    elsif rising_edge(clk_i) then
-
-      -- Exception Buffer -----------------------------------------------------
-      -- If several exception sources trigger at once, all the requests will
-      -- stay active until the trap environment is started. Only the exception
-      -- with highest priority will be used to update the MCAUSE CSR. All
-      -- remaining ones will be discarded.
-      -- ----------------------------------------------------------------------
-
-      -- misaligned load/store/instruction address --
-      trap_ctrl.exc_buf(exc_lalign_c) <= (trap_ctrl.exc_buf(exc_lalign_c) or lsu_err_i(0))       and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_salign_c) <= (trap_ctrl.exc_buf(exc_salign_c) or lsu_err_i(2))       and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_ialign_c) <= (trap_ctrl.exc_buf(exc_ialign_c) or trap_ctrl.instr_ma) and (not trap_ctrl.env_enter);
-
-      -- load/store/instruction access fault --
-      trap_ctrl.exc_buf(exc_laccess_c) <= (trap_ctrl.exc_buf(exc_laccess_c) or lsu_err_i(1))       and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or lsu_err_i(3))       and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_enter);
-
-      -- illegal instruction & environment call --
-      trap_ctrl.exc_buf(exc_ecall_c)   <= (trap_ctrl.exc_buf(exc_ecall_c)   or trap_ctrl.ecall)    and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_illegal_c) <= (trap_ctrl.exc_buf(exc_illegal_c) or trap_ctrl.instr_il) and (not trap_ctrl.env_enter);
-
-      -- break point --
-      if RISCV_ISA_Sdext then
-        trap_ctrl.exc_buf(exc_ebreak_c) <= (not trap_ctrl.env_enter) and (trap_ctrl.exc_buf(exc_ebreak_c) or
-          (trap_ctrl.hwtrig and (not csr.tdata1_action)) or -- trigger module fires and enter-debug-action is disabled
-          (trap_ctrl.ebreak and (    csr.prv_level) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- enter M-mode handler on ebreak in M-mode
-          (trap_ctrl.ebreak and (not csr.prv_level) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run)));  -- enter M-mode handler on ebreak in U-mode
-      else
-        trap_ctrl.exc_buf(exc_ebreak_c) <= (trap_ctrl.exc_buf(exc_ebreak_c) or trap_ctrl.ebreak or (trap_ctrl.hwtrig and (not csr.tdata1_action))) and (not trap_ctrl.env_enter);
-      end if;
-
-      -- debug-mode entry --
-      trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_enter);
-    end if;
-  end process exception_buffer;
-
-
-  -- Interrupt Buffer -----------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  interrupt_buffer: process(rstn_i, clk_i)
+  trap_buffer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       trap_ctrl.irq_pnd <= (others => '0');
       trap_ctrl.irq_buf <= (others => '0');
+      trap_ctrl.exc_buf <= (others => '0');
     elsif rising_edge(clk_i) then
 
       -- Interrupt-Pending Buffer ---------------------------------------------
@@ -930,8 +885,43 @@ begin
       -- debug-mode entry --
       trap_ctrl.irq_buf(irq_db_halt_c) <= debug_ctrl.trig_halt or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_db_halt_c));
       trap_ctrl.irq_buf(irq_db_step_c) <= debug_ctrl.trig_step or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_db_step_c));
+
+      -- Exception Buffer -----------------------------------------------------
+      -- If several exception sources trigger at once, all the requests will
+      -- stay active until the trap environment is started. Only the exception
+      -- with highest priority will be used to update the MCAUSE CSR. All
+      -- remaining ones will be discarded.
+      -- ----------------------------------------------------------------------
+
+      -- misaligned load/store/instruction address --
+      trap_ctrl.exc_buf(exc_lalign_c) <= (trap_ctrl.exc_buf(exc_lalign_c) or lsu_err_i(0))       and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_salign_c) <= (trap_ctrl.exc_buf(exc_salign_c) or lsu_err_i(2))       and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_ialign_c) <= (trap_ctrl.exc_buf(exc_ialign_c) or trap_ctrl.instr_ma) and (not trap_ctrl.env_enter);
+
+      -- load/store/instruction access fault --
+      trap_ctrl.exc_buf(exc_laccess_c) <= (trap_ctrl.exc_buf(exc_laccess_c) or lsu_err_i(1))       and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or lsu_err_i(3))       and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_enter);
+
+      -- illegal instruction & environment call --
+      trap_ctrl.exc_buf(exc_ecall_c)   <= (trap_ctrl.exc_buf(exc_ecall_c)   or trap_ctrl.ecall)    and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_illegal_c) <= (trap_ctrl.exc_buf(exc_illegal_c) or trap_ctrl.instr_il) and (not trap_ctrl.env_enter);
+
+      -- break point --
+      if RISCV_ISA_Sdext then
+        trap_ctrl.exc_buf(exc_ebreak_c) <= (not trap_ctrl.env_enter) and (trap_ctrl.exc_buf(exc_ebreak_c) or
+          (trap_ctrl.hwtrig and (not csr.tdata1_action)) or -- trigger module fires and enter-debug-action is disabled
+          (trap_ctrl.ebreak and (    csr.prv_level) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- enter M-mode handler on ebreak in M-mode
+          (trap_ctrl.ebreak and (not csr.prv_level) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run)));  -- enter M-mode handler on ebreak in U-mode
+      else
+        trap_ctrl.exc_buf(exc_ebreak_c) <= (trap_ctrl.exc_buf(exc_ebreak_c) or trap_ctrl.ebreak or (trap_ctrl.hwtrig and (not csr.tdata1_action))) and (not trap_ctrl.env_enter);
+      end if;
+
+      -- debug-mode entry --
+      trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_enter);
     end if;
-  end process interrupt_buffer;
+  end process trap_buffer;
 
 
   -- Trap Priority Logic --------------------------------------------------------------------
@@ -1389,7 +1379,7 @@ begin
       csr.re    <= csr.re_nxt and (not trap_ctrl.exc_buf(exc_illegal_c)); -- read if not an illegal instruction
       csr.rdata <= (others => '0'); -- default; output all-zero if there is no explicit CSR read operation
       if (csr.re = '1') then
-        case csr.addr is -- address is zero if there is no CSR operation
+        case csr.addr is
 
           -- --------------------------------------------------------------------
           -- floating-point unit

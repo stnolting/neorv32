@@ -158,7 +158,7 @@ begin
 
       end case;
     end process arbiter_fsm;
- 
+
     -- port select --
     sel <= '1' when (state = S_CHECK_B) or (state = S_BUSY_B) else '0';
   end generate;

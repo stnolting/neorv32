@@ -191,7 +191,7 @@ begin
   )
   port map (
     -- global control --
-    clk_i      => clk_i,  -- global clock, rising edge
+    clk_i      => clk_i,      -- global clock, rising edge
     rstn_i     => rstn_i,     -- global reset, low-active, async
     ctrl_i     => ctrl,       -- main control bus
     -- instruction fetch interface --

@@ -106,6 +106,6 @@ begin
       when "1100" | "0011"                   => ahb_hsize_o <= "001"; -- half-word
       when others                            => ahb_hsize_o <= "010"; -- word
     end case;
-  end process data_size
+  end process data_size;
 
 end xbus2ahblite_bridge_rtl;
