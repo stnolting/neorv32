@@ -18,15 +18,9 @@ This section refers to the **default** NEORV32 bootloader. The <<_bootloader_rom
 [NOTE]
 The default bootloader image was compiled for a minimal `rv32e_zicsr_zifencei` ISA configuration and requires a
 RAM (DMEM) size of at least 256 bytes. These constraints ensure that the bootloader can be executed on any
-CPU/processor configuration. It is recommended to enable at least the UART0, CLINT and GPIO processor modules
-for the _intuitive_ bootloader features.
-
-.Bootloader Customization and Additional Features
-[TIP]
-Most parts of the bootloader can be customized (for example the auto-boot timeout, the actual LED pin, the SPI clock
-speed, etc.). Additionally, an **TWI/I²C boot** option is available, which is disabled by default. The bootloader is
-customized by editing the _defines_ in a single C header file (`config.h`). See the User Guide
-https://stnolting.github.io/neorv32/ug/#_customizing_the_internal_bootloader for more information.
+CPU/processor configuration. It is recommended to enable at least
+<<_primary_universal_asynchronous_receiver_and_transmitter_uart0, UART0>>,
+the <<_core_local_interruptor_clint, CLINT>> and the <<_general_purpose_input_and_output_port_gpio, GPIO>> controller.
 
 
 :sectnums:
@@ -120,6 +114,52 @@ If a valid boot image is loaded it will be immediately started.
 
 
 :sectnums:
+==== Customizing the Internal Bootloader
+
+The NEORV32 bootloader provides several options to configure it for a custom setup.
+It configured via set of C-language `defines` in `sw/bootloader/config.h`. All defines
+provide default value that can be altered or overridden by Makefile directives.
+
+.Software Documentation
+[TIP]
+The Doxygen-based documentation of the bootloader's software is available online:
+https://stnolting.github.io/neorv32/sw/bootloader_8c.html
+
+.Bootloader configuration parameters
+[cols="<2,^1,^2,<6"]
+[options="header", grid="rows"]
+|=======================
+| Parameter | Default | Legal values | Description
+4+^| Memory layout
+| `EXE_BASE_ADDR`         | `0x00000000` | _any_ | Memory base address for the executable; also the boot address for the application.
+4+^| Serial console interface
+| `UART_EN`               | `1`     | `0,1` | Set to `0` to disable UART0 (no serial console at all).
+| `UART_BAUD`             | `19200` | _any_    | Baud rate of UART0.
+| `UART_HW_HANDSHAKE_EN`  | `0`     | `0,1` | Set to `1` to enable UART0 hardware flow control.
+4+^| Status LED
+| `STATUS_LED_EN`         | `1` | `0,1`   | Enable bootloader status led ("heart beat") at `GPIO` output port pin `STATUS_LED_PIN` when `1`.
+| `STATUS_LED_PIN`        | `0` | `0..31` | `GPIO` output pin used for the high-active status LED.
+4+^| Auto-boot configuration
+| `AUTO_BOOT_EN`          | `1`  | `0,1` | Auto-boot enabled when `1`.
+| `AUTO_BOOT_TIMEOUT`     | `10` | _any_ | Time in seconds after the auto-boot sequence starts (if there is no UART input by the user).
+4+^| SPI configuration
+| `SPI_EN`                | `1`          | `0,1`     | Set `1` to enable usage of the SPI module.
+| `SPI_FLASH_CS`          | `0`          | `0..7`    | SPI chip select line (port `spi_csn_o`) for selecting flash.
+| `SPI_FLASH_CLK_PRSC`    | `CLK_PRSC_8` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock pre-scaler.
+| `SPI_FLASH_BASE_ADDR`   | `0x00400000` | _any_     | Defines the SPI flash base address for the executable.
+| `SPI_FLASH_ADDR_BYTES`  | `3`          | `1,2,3,4` | SPI flash address size in number of bytes.
+| `SPI_FLASH_SECTOR_SIZE` | `65536`      | _any_     | SPI flash sector size in bytes.
+4+^| TWI configuration
+| `TWI_EN`                | `0`             | `0,1`     | Set `1` to enable usage of the TWI module.
+| `TWI_CLK_PRSC`          | `CLK_PRSC_1024` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | TWI clock pre-scaler.
+| `TWI_CLK_DIV`           | `1`             | `1..31`   | TWI clock divider.
+| `TWI_DEVICE_ID`         | `0xA0`          | _any_     | TWI flash I2C address ("write address" with R/W bit cleared).
+| `TWI_FLASH_BASE_ADDR`   | `0x00000000`    | _any_     | Defines the TWI flash base address for the executable.
+| `TWI_FLASH_ADDR_BYTES`  | `2`             | `1,2,3,4` | TWI flash address size in number of bytes.
+|=======================
+
+
+:sectnums:
 ==== Bootloader Error Codes
 
 If something goes wrong an error code is shown. In this case the bootloader status LED stops blinking, an error code is printed
@@ -137,17 +177,4 @@ error or by an invalid or corrupted executable.
 | **`ERROR_EXCEPTION`** | An unexpected trap (synchronous exception or interrupt) has occurred. This can be caused by an
 invalid bootloader configuration (actually available processor modules, memory layout, ...). For debugging purpose the error
 message will also display the
-|=======================
-
-
-[cols="^2,<8"]
-[grid="none"]
-|=======================
-| **REQUIRED**  | The <<_boot_configuration>> (`BOOT_MODE_SELECT` generic) has to be set to "bootloader" mode.
-| **REQUIRED**  | At least 256 bytes of data memory (processor-internal DMEM or processor-external DMEM) are required for the bootloader's stack and global variables.
-| _RECOMMENDED_ | For user interaction via the <<_bootloader_console>> (like uploading executables) the primary UART (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>) is required.
-| _RECOMMENDED_ | The default bootloader uses bit 0 of the <<_general_purpose_input_and_output_port_gpio>> output port to drive a high-active "heart beat" status LED.
-| _RECOMMENDED_ | The machine timer of the <<_core_local_interruptor_clint>> is used to control blinking of the status LED and also to automatically trigger the <<_auto_boot_sequence>>.
-| OPTIONAL      | The SPI controller (<<_serial_peripheral_interface_controller_spi>>) is needed to store/load executable from external flash using the <<_auto_boot_sequence>>.
-| OPTIONAL      | The TWI controller (<<_two_wire_serial_interface_controller_twi>>) is needed to boot/execute code directly from pre-programmed TWI memory.
 |=======================
