@@ -29,8 +29,8 @@ entity neorv32_cpu_frontend is
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     ctrl_i     : in  ctrl_bus_t; -- main control bus
     -- instruction fetch interface --
-    ibus_req_o : out bus_req_t; -- request
-    ibus_rsp_i : in  bus_rsp_t; -- response
+    ibus_req_o : out bus_req_t;
+    ibus_rsp_i : in  bus_rsp_t;
     -- back-end interface --
     frontend_o : out if_bus_t
   );
@@ -46,7 +46,6 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
     pc      : std_ulogic_vector(XLEN-1 downto 0);
     resp    : std_ulogic; -- bus response
     priv    : std_ulogic; -- fetch privilege level
-    halted  : std_ulogic; -- instruction fetch has halted
   end record;
   signal fetch : fetch_t;
 
@@ -61,15 +60,12 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
   -- instruction issue engine --
   type issue_t is record
-    align : std_ulogic;
-    alset : std_ulogic;
-    alclr : std_ulogic;
+    algn  : std_ulogic;
+    aset  : std_ulogic;
+    aclr  : std_ulogic;
+    ack   : std_ulogic_vector(1 downto 0);
     cmd16 : std_ulogic_vector(15 downto 0);
     cmd32 : std_ulogic_vector(31 downto 0);
-    valid : std_ulogic_vector(1 downto 0);
-    instr : std_ulogic_vector(31 downto 0);
-    compr : std_ulogic;
-    error : std_ulogic;
   end record;
   signal issue : issue_t;
 
@@ -124,11 +120,18 @@ begin
     end if;
   end process fetch_fsm;
 
-  -- PC output for instruction fetch --
-  ibus_req_o.addr <= fetch.pc(XLEN-1 downto 2) & "00"; -- word aligned
-
-  -- instruction fetch (read) request if IPB not full --
-  ibus_req_o.stb <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
+  -- instruction bus request --
+  ibus_req_o.addr  <= fetch.pc(XLEN-1 downto 2) & "00"; -- word aligned
+  ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
+  ibus_req_o.data  <= (others => '0');  -- read-only
+  ibus_req_o.ben   <= (others => '0');  -- read-only
+  ibus_req_o.rw    <= '0';              -- read-only
+  ibus_req_o.src   <= '1';              -- always "instruction fetch" access
+  ibus_req_o.priv  <= fetch.priv;       -- current effective privilege level
+  ibus_req_o.debug <= ctrl_i.cpu_debug; -- CPU is in debug mode
+  ibus_req_o.amo   <= '0';              -- cannot be an atomic memory operation
+  ibus_req_o.amoop <= (others => '0');  -- cannot be an atomic memory operation
+  ibus_req_o.fence <= ctrl_i.if_fence;  -- fence request, valid without STB being set ("out-of-band" signal)
 
   -- instruction bus response --
   fetch.resp <= ibus_rsp_i.ack or ibus_rsp_i.err;
@@ -142,28 +145,17 @@ begin
   ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (fetch.resp = '1') else '0';
 
   -- instruction fetch has halted --
-  fetch.halted <= '1' when (fetch.state = S_REQUEST) and (ipb.free /= "11") else '0';
-
-  -- bus access meta data --
-  ibus_req_o.data  <= (others => '0');  -- read-only
-  ibus_req_o.ben   <= (others => '0');  -- read-only
-  ibus_req_o.rw    <= '0';              -- read-only
-  ibus_req_o.src   <= '1';              -- always "instruction fetch" access
-  ibus_req_o.priv  <= fetch.priv;       -- current effective privilege level
-  ibus_req_o.debug <= ctrl_i.cpu_debug; -- CPU is in debug mode
-  ibus_req_o.amo   <= '0';              -- cannot be an atomic memory operation
-  ibus_req_o.amoop <= (others => '0');  -- cannot be an atomic memory operation
-  ibus_req_o.fence <= ctrl_i.if_fence;  -- fence request, valid without STB being set ("out-of-band" signal)
+  frontend_o.halted <= '1' when (fetch.state = S_REQUEST) and (ipb.free /= "11") else '0';
 
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   prefetch_buffer:
-  for i in 0 to 1 generate -- low half-word + high half-word (incl. status bits)
+  for i in 0 to 1 generate
     prefetch_buffer_inst: entity neorv32.neorv32_fifo
     generic map (
       FIFO_DEPTH => 2,     -- number of IPB entries; has to be a power of two, min 2
-      FIFO_WIDTH => 17,    -- size of data elements in FIFO
+      FIFO_WIDTH => 17,    -- error status & instruction half-word data
       FIFO_RSYNC => false, -- we NEED to read data asynchronously
       FIFO_SAFE  => false, -- no safe access required (ensured by FIFO-external logic)
       FULL_RESET => false  -- no need for a full hardware reset
@@ -186,10 +178,6 @@ begin
     );
   end generate;
 
-  -- read access --
-  ipb.re(0) <= issue.valid(0) and ctrl_i.if_ack;
-  ipb.re(1) <= issue.valid(1) and ctrl_i.if_ack;
-
 
   -- ******************************************************************************************************************
   -- Instruction Issue (decompress 16-bit instruction and/or assemble a 32-bit instruction word)
@@ -207,7 +195,7 @@ begin
     );
 
     -- half-word select --
-    issue.cmd16 <= ipb.rdata(0)(15 downto 0) when (issue.align = '0') else ipb.rdata(1)(15 downto 0);
+    issue.cmd16 <= ipb.rdata(0)(15 downto 0) when (issue.algn = '0') else ipb.rdata(1)(15 downto 0);
 
 
     -- Issue Engine FSM -----------------------------------------------------------------------
@@ -215,12 +203,12 @@ begin
     issue_fsm_sync: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        issue.align <= '0'; -- start aligned after reset
+        issue.algn <= '0'; -- start aligned after reset
       elsif rising_edge(clk_i) then
         if (fetch.restart = '1') then
-          issue.align <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
+          issue.algn <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
         elsif (ctrl_i.if_ack = '1') then
-          issue.align <= (issue.align and (not issue.alclr)) or issue.alset; -- alignment "RS flip-flop"
+          issue.algn <= (issue.algn and (not issue.aclr)) or issue.aset; -- alignment "RS flip-flop"
         end if;
       end if;
     end process issue_fsm_sync;
@@ -228,37 +216,44 @@ begin
     issue_fsm_comb: process(issue, ipb)
     begin
       -- defaults --
-      issue.alset <= '0';
-      issue.alclr <= '0';
-      issue.valid <= "00";
+      issue.aset <= '0';
+      issue.aclr <= '0';
       -- start at LOW half-word --
-      if (issue.align = '0')  then
-        issue.error <= ipb.rdata(0)(16);
-        if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, use IPB(0) entry
-          issue.alset <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
-          issue.valid <= '0' & ipb.avail(0);
-          issue.instr <= issue.cmd32;
-          issue.compr <= '1';
-        else -- aligned uncompressed
-          issue.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-          issue.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
-          issue.compr <= '0';
+      if (issue.algn = '0') then
+        frontend_o.error <= ipb.rdata(0)(16);
+        if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
+          issue.aset       <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
+          issue.ack        <= "01";
+          frontend_o.valid <= ipb.avail(0);
+          frontend_o.instr <= issue.cmd32;
+          frontend_o.compr <= '1';
+        else -- aligned uncompressed, consume both IPB entries
+          issue.ack        <= "11";
+          frontend_o.valid <= ipb.avail(1) and ipb.avail(0);
+          frontend_o.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
+          frontend_o.compr <= '0';
         end if;
       -- start at HIGH half-word --
       else
-        issue.error <= ipb.rdata(1)(16);
-        if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, use IPB(1) entry
-          issue.alclr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
-          issue.valid <= ipb.avail(1) & '0';
-          issue.instr <= issue.cmd32;
-          issue.compr <= '1';
-        else -- unaligned uncompressed
-          issue.valid <= (others => (ipb.avail(0) and ipb.avail(1)));
-          issue.instr <= ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
-          issue.compr <= '0';
+        frontend_o.error <= ipb.rdata(1)(16);
+        if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
+          issue.aclr       <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
+          issue.ack        <= "10";
+          frontend_o.valid <= ipb.avail(1);
+          frontend_o.instr <= issue.cmd32;
+          frontend_o.compr <= '1';
+        else -- unaligned uncompressed, consume both IPB entries
+          issue.ack        <= "11";
+          frontend_o.valid <= ipb.avail(0) and ipb.avail(1);
+          frontend_o.instr <= ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
+          frontend_o.compr <= '0';
         end if;
       end if;
     end process issue_fsm_comb;
+
+    -- IPB read access --
+    ipb.re(0) <= issue.ack(0) and ctrl_i.if_ack;
+    ipb.re(1) <= issue.ack(1) and ctrl_i.if_ack;
 
   end generate; -- /issue_enabled
 
@@ -266,25 +261,17 @@ begin
   -- issue engine disabled --
   issue_disabled:
   if not RVC_EN generate
-    issue.align <= '0';
-    issue.alset <= '0';
-    issue.alclr <= '0';
-    issue.cmd16 <= (others => '0');
-    issue.cmd32 <= (others => '0');
-    issue.valid <= (others => ipb.avail(0)); -- use IPB(0) status flags only
-    issue.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
-    issue.compr <= '0';
-    issue.error <= ipb.rdata(0)(16);
+    issue.algn       <= '0';
+    issue.aset       <= '0';
+    issue.aclr       <= '0';
+    issue.cmd16      <= (others => '0');
+    issue.cmd32      <= (others => '0');
+    ipb.re           <= (others => ctrl_i.if_ack);
+    frontend_o.valid <= ipb.avail(0);
+    frontend_o.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
+    frontend_o.compr <= '0';
+    frontend_o.error <= ipb.rdata(0)(16);
   end generate;
-
-
-  -- Instruction Interface to CPU Back-End (Execution) --------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  frontend_o.valid  <= issue.valid(1) or issue.valid(0);
-  frontend_o.instr  <= issue.instr;
-  frontend_o.compr  <= issue.compr;
-  frontend_o.error  <= issue.error;
-  frontend_o.halted <= fetch.halted;
 
 
 end neorv32_cpu_frontend_rtl;
