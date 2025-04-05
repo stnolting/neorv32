@@ -3,7 +3,7 @@
 /* -------------------------------------------------------------------------------- */
 /* The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              */
 /* Copyright (c) NEORV32 contributors.                                              */
-/* Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  */
+/* Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  */
 /* Licensed under the BSD-3-Clause license, see LICENSE for details.                */
 /* SPDX-License-Identifier: BSD-3-Clause                                            */
 /* ================================================================================ */
@@ -11,16 +11,12 @@
 OUTPUT_FORMAT("elf32-littleriscv")
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
-SEARCH_DIR("/opt/riscv/riscv32-unknown-elf/lib")
-SEARCH_DIR("=/usr/local/lib")
-SEARCH_DIR("=/lib")
-SEARCH_DIR("=/usr/lib")
 
 
 /* ************************************************************************************************* */
-/* +++ NEORV32 memory layout configuration +++                                                       */
-/* If the "__neorv32_*" symbols are not explicitly defined the default configurations are used.      */
-/* NOTE: section sizes have to be a multiple of 4 bytes; base addresses have to be 32-bit-aligned.   */
+/* NEORV32 memory layout configuration                                                               */
+/* If the "__neorv32_*" symbols are not **explicitly defined** the default configurations are used.  */
+/* [NOTE] section sizes have to be a multiple of 4 bytes; base addresses have to be 32-bit-aligned.  */
 /* ************************************************************************************************* */
 
 /* Default HEAP size (= 0; no heap at all) */
@@ -73,6 +69,7 @@ SECTIONS
     /* The following defines an array with constructors, which are called
      * from crt0.s before "main", but of course after data init / bss clear. */
 
+    . = ALIGN(4);
     PROVIDE_HIDDEN(__init_array_start = .);
     KEEP (*(.preinit_array))
     KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
@@ -82,8 +79,7 @@ SECTIONS
     KEEP (*(SORT_NONE(.init)))
     KEEP (*(SORT_NONE(.fini)))
 
-    /* main should never return, but if it does, the destructors are called. */
-
+    . = ALIGN(4);
     PROVIDE_HIDDEN(__fini_array_start = .);
     KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
     KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
@@ -101,7 +97,7 @@ SECTIONS
 /* Section ".rodata" - read-only constants and ".data" initialization                                */
 /* This is the second part of the actual/final executable the will be places right after ".text"     */
 /* ************************************************************************************************* */
-  .rodata __etext :
+  .rodata __etext : ALIGN(4)
   {
     /* constant data like strings */
     *(.rodata .rodata.* .gnu.linkonce.r.*)
@@ -231,47 +227,44 @@ SECTIONS
 /* ************************************************************************************************* */
 /* Debug symbols                                                                                     */
 /* ************************************************************************************************* */
-  .stab          0 : { *(.stab) }
-  .stabstr       0 : { *(.stabstr) }
-  .stab.excl     0 : { *(.stab.excl) }
-  .stab.exclstr  0 : { *(.stab.exclstr) }
-  .stab.index    0 : { *(.stab.index) }
-  .stab.indexstr 0 : { *(.stab.indexstr) }
-  .comment       0 : { *(.comment) }
+  .stab            0 : { *(.stab) }
+  .stabstr         0 : { *(.stabstr) }
+  .stab.excl       0 : { *(.stab.excl) }
+  .stab.exclstr    0 : { *(.stab.exclstr) }
+  .stab.index      0 : { *(.stab.index) }
+  .stab.indexstr   0 : { *(.stab.indexstr) }
+  .comment         0 : { *(.comment) }
   .gnu.build.attributes : { *(.gnu.build.attributes .gnu.build.attributes.*) }
-  /* DWARF debug sections.
-     Symbols in the DWARF debugging sections are relative to the beginning
-     of the section so we begin them at 0.  */
   /* DWARF 1 */
-  .debug          0 : { *(.debug) }
-  .line           0 : { *(.line) }
+  .debug           0 : { *(.debug) }
+  .line            0 : { *(.line) }
   /* GNU DWARF 1 extensions */
-  .debug_srcinfo  0 : { *(.debug_srcinfo) }
-  .debug_sfnames  0 : { *(.debug_sfnames) }
+  .debug_srcinfo   0 : { *(.debug_srcinfo) }
+  .debug_sfnames   0 : { *(.debug_sfnames) }
   /* DWARF 1.1 and DWARF 2 */
-  .debug_aranges  0 : { *(.debug_aranges) }
-  .debug_pubnames 0 : { *(.debug_pubnames) }
+  .debug_aranges   0 : { *(.debug_aranges) }
+  .debug_pubnames  0 : { *(.debug_pubnames) }
   /* DWARF 2 */
-  .debug_info     0 : { *(.debug_info .gnu.linkonce.wi.*) }
-  .debug_abbrev   0 : { *(.debug_abbrev) }
-  .debug_line     0 : { *(.debug_line .debug_line.* .debug_line_end) }
-  .debug_frame    0 : { *(.debug_frame) }
-  .debug_str      0 : { *(.debug_str) }
-  .debug_loc      0 : { *(.debug_loc) }
-  .debug_macinfo  0 : { *(.debug_macinfo) }
+  .debug_info      0 : { *(.debug_info .gnu.linkonce.wi.*) }
+  .debug_abbrev    0 : { *(.debug_abbrev) }
+  .debug_line      0 : { *(.debug_line .debug_line.* .debug_line_end) }
+  .debug_frame     0 : { *(.debug_frame) }
+  .debug_str       0 : { *(.debug_str) }
+  .debug_loc       0 : { *(.debug_loc) }
+  .debug_macinfo   0 : { *(.debug_macinfo) }
   /* SGI/MIPS DWARF 2 extensions */
   .debug_weaknames 0 : { *(.debug_weaknames) }
   .debug_funcnames 0 : { *(.debug_funcnames) }
   .debug_typenames 0 : { *(.debug_typenames) }
   .debug_varnames  0 : { *(.debug_varnames) }
   /* DWARF 3 */
-  .debug_pubtypes 0 : { *(.debug_pubtypes) }
-  .debug_ranges   0 : { *(.debug_ranges) }
+  .debug_pubtypes  0 : { *(.debug_pubtypes) }
+  .debug_ranges    0 : { *(.debug_ranges) }
   /* DWARF Extension.  */
-  .debug_macro    0 : { *(.debug_macro) }
-  .debug_addr     0 : { *(.debug_addr) }
-  .gnu.attributes 0 : { KEEP (*(.gnu.attributes)) }
-  /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
+  .debug_macro     0 : { *(.debug_macro) }
+  .debug_addr      0 : { *(.debug_addr) }
+  .gnu.attributes  0 : { KEEP (*(.gnu.attributes)) }
+  /DISCARD/          : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
 
 
 /* ************************************************************************************************* */
