@@ -175,16 +175,18 @@ extern "C" {
 
 
 /**********************************************************************//**
- * @name Export linker script symbols
+ * @name NEORV32 linker symbols
  **************************************************************************/
 /**@{*/
 extern char __heap_start[];    /**< heap start address */
 extern char __heap_end[];      /**< heap last address */
 extern char __crt0_max_heap[]; /**< heap size in bytes */
+extern char __crt0_entry[];    /**< crt0 entry point */
 // aliases
 #define NEORV32_HEAP_BEGIN ((uint32_t)&__heap_start[0])
 #define NEORV32_HEAP_END   ((uint32_t)&__heap_end[0])
 #define NEORV32_HEAP_SIZE  ((uint32_t)&__crt0_max_heap[0])
+#define NEORV32_CRT0_ENTRY ((uint32_t)&__crt0_entry[0])
 /**@}*/
 
 
