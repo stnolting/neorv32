@@ -66,7 +66,7 @@ yet. However, experiments have shown that the SDI module can also deal with both
 
 All SDI operations are clocked by the external `sdi_clk_i` signal. This signal is synchronized to the processor's
 clock domain to simplify timing behavior. This clock synchronization requires the external SDI clock
-(`sdi_clk_i`) does **not exceed 1/4 of the processor's main clock**.
+(`sdi_clk_i`) to not **not exceed 1/4 of the processor's main clock**.
 
 
 **SDI Interrupt**
