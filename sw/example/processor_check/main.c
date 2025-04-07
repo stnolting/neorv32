@@ -1528,8 +1528,9 @@ int main() {
     cnt_test++;
 
     // configure and enable SDI + SPI
+    // SDI input clock (= SPI output clock) must be less than 1/4 of the processor clock
     neorv32_sdi_setup(1 << SDI_CTRL_IRQ_RX_AVAIL);
-    neorv32_spi_setup(CLK_PRSC_8, 0, 0, 0, 0);
+    neorv32_spi_setup(CLK_PRSC_2, 1, 0, 0, 0);
 
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << SDI_FIRQ_ENABLE);
