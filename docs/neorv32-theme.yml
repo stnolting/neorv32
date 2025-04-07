@@ -3,6 +3,8 @@ page:
   margin: [0.8in, 0.67in, 0.75in, 0.67in]
 link:
   font-color: #edac00
+base:
+  text-align: justify
 image:
   align: center
 caption:
