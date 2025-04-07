@@ -89,6 +89,7 @@ volatile uint8_t core1_stack[512]; // stack for core1
 volatile unsigned char constr_src[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
 volatile uint32_t constr_res = 0; // for constructor test
 volatile uint32_t amo_var = 0; // atomic memory access test
+volatile _Atomic int atomic_cnt = 0; // dual core atomic test
 
 /**********************************************************************//**
  * Constructor; should be called before entering main.
@@ -2223,11 +2224,14 @@ int main() {
   // SMP dual-core test
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] SMP dual-core boot ", cnt_test);
+  PRINT_STANDARD("[%i] SMP dual-core test ", cnt_test);
 
-  if ((NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] > 1) && // we need at least two cores
+  if ((NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] > 1) && // we need two cores
       (neorv32_clint_available() != 0)) { // we need the CLINT
     cnt_test++;
+
+    // initialize _Atomic variable
+    atomic_cnt = 1;
 
     // enable machine software interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MSIE);
@@ -2235,14 +2239,16 @@ int main() {
     // launch core 1
     tmp_a = (uint32_t)neorv32_smp_launch(core1_main, (uint8_t*)core1_stack, sizeof(core1_stack));
 
-    // wait for software interrupt (issued by core 1) in sleep mode
+    // sleep until software interrupt (issued by core 1)
     neorv32_cpu_sleep();
 
     // disable interrupts and clear software interrupt
     neorv32_cpu_csr_write(CSR_MIE, 0);
     neorv32_clint_msi_clr(0);
 
-    if ((tmp_a == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MSI)) {
+    if ((tmp_a == 0) && // core 1 has booted
+        (atomic_cnt == 2) && // AMO access successful
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MSI)) { // MSI triggered by core 1
       test_ok();
     }
     else {
@@ -2478,6 +2484,9 @@ void test_fail(void) {
  * Test code to be run on second CPU core
  **************************************************************************/
 int core1_main(void) {
+
+  // atomic add
+  atomic_cnt++; // = amoadd
 
   // trigger software interrupt of core0
   neorv32_clint_msi_set(0);
