@@ -91,6 +91,21 @@ void neorv32_wdt_feed(uint32_t password) {
 
 
 /**********************************************************************//**
+ * Force a hardware reset triggered by the watchdog.
+ **************************************************************************/
+void neorv32_wdt_force_hwreset(void) {
+
+  // enable strict mode; if strict mode is already enabled and the WDT
+  // is locked this will already trigger a hardware reset
+  NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_STRICT);
+
+  // try to reset the WDT using an incorrect password;
+  // this will finally trigger a hardware reset
+  NEORV32_WDT->RESET = 0;
+}
+
+
+/**********************************************************************//**
  * Get cause of last system reset.
  *
  * @return Cause of last reset (#NEORV32_WDT_RCAUSE_enum).
