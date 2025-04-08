@@ -54,7 +54,7 @@ void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero,
   tmp |= (uint32_t)((t_total     & 0x1fU) << NEOLED_CTRL_T_TOT_0);    // serial data output: total period length for one bit
   tmp |= (uint32_t)((t_high_zero & 0x1fU) << NEOLED_CTRL_T_ZERO_H_0); // serial data output: high-time for sending a '0'
   tmp |= (uint32_t)((t_high_one  & 0x1fU) << NEOLED_CTRL_T_ONE_H_0);  // serial data output: high-time for sending a '1'
-  tmp |= (uint32_t)((irq_mode    & 0x01U) << NEOLED_CTRL_EN);         // interrupt mode
+  tmp |= (uint32_t)((irq_mode    & 0x01U) << NEOLED_CTRL_IRQ_CONF);   // interrupt mode
   NEORV32_NEOLED->CTRL = tmp;
 }
 
