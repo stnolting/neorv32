@@ -69,6 +69,7 @@ int  neorv32_wdt_available(void);
 void neorv32_wdt_setup(uint32_t timeout, int lock, int strict);
 int  neorv32_wdt_disable(void);
 void neorv32_wdt_feed(uint32_t password);
+void neorv32_wdt_force_hwreset(void);
 int  neorv32_wdt_get_cause(void);
 /**@}*/
 

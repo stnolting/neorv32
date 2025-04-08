@@ -8,7 +8,6 @@
 | Hardware source files:  | neorv32_onewire.vhd |
 | Software driver files:  | neorv32_onewire.c | link:https://stnolting.github.io/neorv32/sw/neorv32__onewire_8c.html[Online software reference (Doxygen)]
 |                         | neorv32_onewire.h | link:https://stnolting.github.io/neorv32/sw/neorv32__onewire_8h.html[Online software reference (Doxygen)]
-| Software reference:     | link:https://stnolting.github.io/neorv32/sw/neorv32__onewire_8h.html[Online Doxygen] |
 | Top entity ports:       | `onewire_i` | 1-bit 1-wire bus sense input
 |                         | `onewire_o` | 1-bit 1-wire bus output (pull low only)
 | Configuration generics: | `IO_ONEWIRE_EN`     | implement ONEWIRE interface controller when `true`

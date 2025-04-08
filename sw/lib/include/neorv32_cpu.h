@@ -34,6 +34,20 @@ uint32_t neorv32_cpu_hpm_get_size(void);
 
 
 /**********************************************************************//**
+ * Restart CPU core (jump to boot address).
+ *
+ * @warning This is just a "software reset" that uses the in-code reset/boot/entry address linked at compile time.
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_cpu_soft_restart(void) {
+
+  uint32_t sw_boot_addr = NEORV32_CRT0_ENTRY; // linker symbol
+  asm volatile ("jalr x0, 0(%[dst])" : : [dst] "r" (sw_boot_addr));
+  __builtin_unreachable();
+  while(1); // should never be reached
+}
+
+
+/**********************************************************************//**
  * Store unsigned word to address space.
  *
  * @note An unaligned access address will raise an alignment exception.

@@ -17,7 +17,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_sdi is
   generic (
-    RTX_FIFO : natural range 1 to 2**15 -- RTX fifo depth, has to be a power of two, min 1
+    RTX_FIFO : natural range 1 to 2**15 -- RTX FIFO depth, has to be a power of two, min 1
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -37,16 +37,16 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
   -- control register --
   constant ctrl_en_c           : natural :=  0; -- r/w: SDI enable
   --
-  constant ctrl_fifo_size0_c   : natural :=  4; -- r/-: log2(FIFO size), bit 0 (lsb)
+  constant ctrl_fifo_size0_c   : natural :=  4; -- r/-: log2(FIFO size), bit 0 (LSB)
   constant ctrl_fifo_size1_c   : natural :=  5; -- r/-: log2(FIFO size), bit 1
   constant ctrl_fifo_size2_c   : natural :=  6; -- r/-: log2(FIFO size), bit 2
-  constant ctrl_fifo_size3_c   : natural :=  7; -- r/-: log2(FIFO size), bit 3 (msb)
+  constant ctrl_fifo_size3_c   : natural :=  7; -- r/-: log2(FIFO size), bit 3 (MSB)
   --
-  constant ctrl_irq_rx_avail_c : natural := 15; -- r/w: RX FIFO not empty
-  constant ctrl_irq_rx_half_c  : natural := 16; -- r/w: RX FIFO at least half full
-  constant ctrl_irq_rx_full_c  : natural := 17; -- r/w: RX FIFO full
-  constant ctrl_irq_tx_empty_c : natural := 18; -- r/w: TX FIFO empty
-  constant ctrl_irq_tx_nhalf_c : natural := 19; -- r/w: TX FIFO not at least half full
+  constant ctrl_irq_rx_avail_c : natural := 15; -- r/w: interrupt if RX FIFO not empty
+  constant ctrl_irq_rx_half_c  : natural := 16; -- r/w: interrupt if RX FIFO at least half full
+  constant ctrl_irq_rx_full_c  : natural := 17; -- r/w: interrupt if RX FIFO full
+  constant ctrl_irq_tx_empty_c : natural := 18; -- r/w: interrupt if TX FIFO empty
+  constant ctrl_irq_tx_nhalf_c : natural := 19; -- r/w: interrupt if TX FIFO not at least half full
   --
   constant ctrl_rx_avail_c     : natural := 23; -- r/-: RX FIFO not empty
   constant ctrl_rx_half_c      : natural := 24; -- r/-: RX FIFO at least half full
@@ -173,8 +173,8 @@ begin
   -- TX --
   tx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
-    FIFO_DEPTH => RTX_FIFO, -- number of fifo entries; has to be a power of two; min 1
-    FIFO_WIDTH => 8,        -- size of data elements in fifo (32-bit only for simulation)
+    FIFO_DEPTH => RTX_FIFO, -- number of FIFO entries; has to be a power of two; min 1
+    FIFO_WIDTH => 8,        -- size of data elements in FIFO (32-bit only for simulation)
     FIFO_RSYNC => true,     -- sync read
     FIFO_SAFE  => true,     -- safe access
     FULL_RESET => false     -- no HW reset, try to infer BRAM
@@ -208,8 +208,8 @@ begin
   -- RX --
   rx_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
-    FIFO_DEPTH => RTX_FIFO, -- number of fifo entries; has to be a power of two; min 1
-    FIFO_WIDTH => 8,        -- size of data elements in fifo (32-bit only for simulation)
+    FIFO_DEPTH => RTX_FIFO, -- number of FIFO entries; has to be a power of two; min 1
+    FIFO_WIDTH => 8,        -- size of data elements in FIFO (32-bit only for simulation)
     FIFO_RSYNC => true,     -- sync read
     FIFO_SAFE  => true,     -- safe access
     FULL_RESET => false     -- no HW reset, try to infer BRAM
@@ -311,7 +311,7 @@ begin
 
         when "110" => -- bit phase A: sample
         -- ------------------------------------------------------------
-          serial.sdi_ff <= sdi_dat_i;
+          serial.sdi_ff <= sync.sdi;
           if (sync.csn = '1') then -- transmission aborted?
             serial.state(1 downto 0) <= "00";
           elsif (sync.sck = '1') then

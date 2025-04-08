@@ -42,7 +42,7 @@ int neorv32_neoled_available(void) {
  * @param[in] t_total Number of pre-scaled clock ticks for total bit period (0..31).
  * @param[in] t_high_zero Number of pre-scaled clock ticks to generate high-time for sending a '0' (0..31).
  * @param[in] t_high_one Number of pre-scaled clock ticks to generate high-time for sending a '1' (0..31).
- * @param[in] irq_mode Interrupt condition (1=IRQ if FIFO is empty, 1=IRQ if FIFO is less than half-full).
+ * @param[in] irq_mode Interrupt condition (0=IRQ if FIFO is empty, 1=IRQ if FIFO is less than half-full).
  **************************************************************************/
 void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero, uint32_t t_high_one, int irq_mode) {
 
@@ -54,7 +54,7 @@ void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero,
   tmp |= (uint32_t)((t_total     & 0x1fU) << NEOLED_CTRL_T_TOT_0);    // serial data output: total period length for one bit
   tmp |= (uint32_t)((t_high_zero & 0x1fU) << NEOLED_CTRL_T_ZERO_H_0); // serial data output: high-time for sending a '0'
   tmp |= (uint32_t)((t_high_one  & 0x1fU) << NEOLED_CTRL_T_ONE_H_0);  // serial data output: high-time for sending a '1'
-  tmp |= (uint32_t)((irq_mode    & 0x01U) << NEOLED_CTRL_EN);         // interrupt mode
+  tmp |= (uint32_t)((irq_mode    & 0x01U) << NEOLED_CTRL_IRQ_CONF);   // interrupt mode
   NEORV32_NEOLED->CTRL = tmp;
 }
 
@@ -66,7 +66,7 @@ void neorv32_neoled_setup(uint32_t prsc, uint32_t t_total, uint32_t t_high_zero,
  * @note WS2812 timing: T_period = 1.2us, T_high_zero = 0.4us, T_high_one = 0.8us. Change the constants if required.
  * @note This function uses the SYSINFO_CLK value (from the SYSINFO HW module) to do the timing computations.
  *
- * @param[in] irq_mode Interrupt condition (1=IRQ if FIFO is empty, 1=IRQ if FIFO is less than half-full).
+ * @param[in] irq_mode Interrupt condition (0=IRQ if FIFO is empty, 1=IRQ if FIFO is less than half-full).
  **************************************************************************/
 void neorv32_neoled_setup_ws2812(int irq_mode) {
 
