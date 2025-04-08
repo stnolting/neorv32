@@ -336,12 +336,12 @@ begin
   onewire <= 'H';
 
 
-  -- SPI/SDI --------------------------------------------------------------------------------
+  -- SPI/SDI Loop-Back ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sdi_clk <= spi_clk after 40 ns; -- echo with propagation delay
-  sdi_csn <= spi_csn(7) after 40 ns;
-  sdi_di  <= spi_do after 40 ns;
-  spi_di  <= sdi_do when (spi_csn(7) = '0') else spi_do after 40 ns;
+  sdi_clk <= spi_clk;
+  sdi_csn <= spi_csn(7);
+  sdi_di  <= spi_do;
+  spi_di  <= sdi_do when (spi_csn(7) = '0') else spi_do;
 
 
   -- Stream-Link FIFO Buffer ----------------------------------------------------------------

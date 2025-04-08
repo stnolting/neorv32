@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 07.04.2025 | 1.11.2.6 | :bug: fix SDI input synchronization | [#1227](https://github.com/stnolting/neorv32/pull/1227) |
 | 05.04.2025 | 1.11.2.5 | minor rtl edits and optimizations | [#1225](https://github.com/stnolting/neorv32/pull/1225) |
 | 01.04.2025 | 1.11.2.4 | :bug: fix bug in PWM clock prescaler | [#1222](https://github.com/stnolting/neorv32/pull/1222) |
 | 29.03.2025 | 1.11.2.3 | :sparkles: add optional 32 hardware spinlocks (`HWSPINLOCK` module) | [#1220](https://github.com/stnolting/neorv32/pull/1220) |
