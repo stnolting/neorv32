@@ -1,0 +1,21 @@
+var searchData=
+[
+  ['dma_5fctrl_5fbusy_0',['DMA_CTRL_BUSY',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a8e5ff34ac48eea4b352378bb2af47bcb',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fdone_1',['DMA_CTRL_DONE',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a0d51df1bb87dc54d331891c5db787bcc',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fen_2',['DMA_CTRL_EN',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a5f39deea0212f45423243c8100c40838',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5ferror_5frd_3',['DMA_CTRL_ERROR_RD',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4a539609fc4d80867b3eb98c78206f5f96',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5ferror_5fwr_4',['DMA_CTRL_ERROR_WR',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4af7e038b0b0e3ac64f5a2c598eb9c5101',1,'neorv32_dma.h']]],
+  ['dma_5fctrl_5fstart_5',['DMA_CTRL_START',['../neorv32__dma_8h.html#a6716eddb145b80ad38799da3b87cb2a4ad3f11a927cf251d439e300e508b1cd19',1,'neorv32_dma.h']]],
+  ['dma_5fstatus_5fbusy_6',['DMA_STATUS_BUSY',['../neorv32__dma_8h.html#a002cb188ea5156df0ba282e239a6e74bad0f66e962296f5451d73dc1cae1fdc0d',1,'neorv32_dma.h']]],
+  ['dma_5fstatus_5fdone_7',['DMA_STATUS_DONE',['../neorv32__dma_8h.html#a002cb188ea5156df0ba282e239a6e74bad74fe6f5b7682191bb3ff9b4d3ed0a1d',1,'neorv32_dma.h']]],
+  ['dma_5fstatus_5ferr_5frd_8',['DMA_STATUS_ERR_RD',['../neorv32__dma_8h.html#a002cb188ea5156df0ba282e239a6e74baed7242b847e3cc8cf20d7da99f9b1492',1,'neorv32_dma.h']]],
+  ['dma_5fstatus_5ferr_5fwr_9',['DMA_STATUS_ERR_WR',['../neorv32__dma_8h.html#a002cb188ea5156df0ba282e239a6e74ba038b6ef194c3db158cb59168f763a7b8',1,'neorv32_dma.h']]],
+  ['dma_5fstatus_5fidle_10',['DMA_STATUS_IDLE',['../neorv32__dma_8h.html#a002cb188ea5156df0ba282e239a6e74bac9c380cd5729386e5f5673e20b86326f',1,'neorv32_dma.h']]],
+  ['dma_5fttype_5fdst_5finc_11',['DMA_TTYPE_DST_INC',['../neorv32__dma_8h.html#a33187c5a074d62b46d2262e352edb8d9abb1293915b076e5d37be6724b44ab0da',1,'neorv32_dma.h']]],
+  ['dma_5fttype_5fendian_12',['DMA_TTYPE_ENDIAN',['../neorv32__dma_8h.html#a33187c5a074d62b46d2262e352edb8d9a37ea8ef1e6b342db330d3885545fc802',1,'neorv32_dma.h']]],
+  ['dma_5fttype_5fnum_5flsb_13',['DMA_TTYPE_NUM_LSB',['../neorv32__dma_8h.html#a33187c5a074d62b46d2262e352edb8d9a8dba4160c033c763f5102928c471e450',1,'neorv32_dma.h']]],
+  ['dma_5fttype_5fnum_5fmsb_14',['DMA_TTYPE_NUM_MSB',['../neorv32__dma_8h.html#a33187c5a074d62b46d2262e352edb8d9a61553eee00ed2382565bf826074c44bd',1,'neorv32_dma.h']]],
+  ['dma_5fttype_5fqsel_5flsb_15',['DMA_TTYPE_QSEL_LSB',['../neorv32__dma_8h.html#a33187c5a074d62b46d2262e352edb8d9afcfdedeca4c4a1def4905660811e31e2',1,'neorv32_dma.h']]],
+  ['dma_5fttype_5fqsel_5fmsb_16',['DMA_TTYPE_QSEL_MSB',['../neorv32__dma_8h.html#a33187c5a074d62b46d2262e352edb8d9a4217c9a8ac4ccc52bb45944f30a598c5',1,'neorv32_dma.h']]],
+  ['dma_5fttype_5fsrc_5finc_17',['DMA_TTYPE_SRC_INC',['../neorv32__dma_8h.html#a33187c5a074d62b46d2262e352edb8d9a4b99a30b851851f3388dd4e77effacec',1,'neorv32_dma.h']]]
+];
