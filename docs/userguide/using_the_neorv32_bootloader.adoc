@@ -1,0 +1,80 @@
+<<<
+:sectnums:
+== Using the NEORV32 Bootloader
+
+.Customization
+[NOTE]
+This section assumes the _default_ configuration of the NEORV32 bootloader.
+See the NEORV32 data sheet's bootloader section for more information.
+
+
+:sectnums:
+=== Bootloader SPI Flash Requirements
+
+The bootloader can access an SPI-compatible flash via the processor's top entity SPI port. By default, the flash
+chip-select line is driven by `spi_csn_o(0)` and the SPI clock uses 1/8 of the processor's main clock as clock frequency.
+The SPI flash has to support single-byte read and write operations, 24-bit addresses and at least the following standard commands:
+
+* `0x02`: Program page (write byte)
+* `0x03`: Read data (byte)
+* `0x04`: Write disable (for volatile status register)
+* `0x05`: Read (first) status register
+* `0x06`: Write enable (for volatile status register)
+* `0xAB`: Wake-up from sleep mode (optional)
+* `0xD8`: Block erase (64kB)
+
+.SPI Flash Power Down Mode
+[NOTE]
+The bootloader will issue a "wake-up" command prior to using the SPI flash to ensure it is not
+in sleep mode / power-down mode (see https://github.com/stnolting/neorv32/pull/552).
+
+
+:sectnums:
+=== Programming an External SPI Flash via the Bootloader
+
+The default processor-internal NEORV32 bootloader supports automatic booting from an external SPI flash.
+This guide shows how to write an executable to the SPI flash via the bootloader so it can be automatically
+fetched and executed after processor reset. For example, you can use a section of the FPGA bitstream
+configuration memory to store an application executable.
+
+[start=1]
+. At first, reset the NEORV32 processor and wait until the bootloader start screen appears in your terminal program.
+. Abort the auto boot sequence and start the user console by pressing any key.
+. Press `u` to upload the executable that you want to store to the external flash:
+
+[source]
+----
+CMD:> u
+Awaiting neorv32_exe.bin...
+----
+
+[start=4]
+. Send the binary in raw binary via your terminal program. When the upload is completed and "OK"
+appears, press `s` to trigger the programming of the flash::
+
+[source]
+----
+CMD:> u
+Awaiting neorv32_exe.bin... OK
+CMD:> s
+Write 0x00001614 bytes to SPI flash @0x00400000 (y/n)?
+----
+
+[start=5]
+. The bootloader shows the size of the executable and the base address of the SPI flash where the
+executable will be stored. A prompt appears: type `y` to start the programming or type `n` to abort.
+
+[source]
+----
+CMD:> u
+Awaiting neorv32_exe.bin... OK
+CMD:> s
+Write 0x00001614 bytes to SPI flash @0x00400000 (y/n)?
+Flashing... OK
+CMD:>
+----
+
+[start=6]
+. If "OK" appears in the terminal line, the programming process was successful. Now you can use the
+auto boot sequence to automatically boot your application from the flash at system start-up without
+any user interaction.
