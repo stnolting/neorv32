@@ -160,12 +160,16 @@ int main(void) {
 
   // try booting from SPI flash
 #if (SPI_EN != 0)
-  if (load_exe(EXE_STREAM_SPI) == 0) { start_app(); }
+  if(neorv32_spi_available()) {
+    if (load_exe(EXE_STREAM_SPI) == 0) { start_app(); }
+  }
 #endif
 
   // try booting from TWI flash
 #if (TWI_EN != 0)
-  if (load_exe(EXE_STREAM_TWI) == 0) { start_app(); }
+  if(neorv32_twi_available()) {
+    if (load_exe(EXE_STREAM_TWI) == 0) { start_app(); }
+  }
 #endif
 
 skip_auto_boot:
