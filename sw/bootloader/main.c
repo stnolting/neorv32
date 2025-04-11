@@ -87,7 +87,15 @@ int main(void) {
   // setup TWI
 #if (TWI_EN != 0)
   if (neorv32_uart0_available()) {
-    neorv32_twi_available();
+    
+    if(neorv32_twi_available())
+    {
+      // Default config:
+      // f_SCL = f_main[Hz] / (4 * NEORV32_CLOCK_PRSC_enum(TWI_CLK_PRSC) * (1 + TWI_CLK_DIV))
+      // f_SCL = 100MHz / (4 * 64 * (1 + 3)) ~= 100kHz
+      neorv32_twi_setup(TWI_CLK_PRSC, TWI_CLK_DIV, TWI_CLK_STRECH_EN);
+    }
+    
   }
 #endif
 
@@ -152,12 +160,16 @@ int main(void) {
 
   // try booting from SPI flash
 #if (SPI_EN != 0)
-  if (load_exe(EXE_STREAM_SPI) == 0) { start_app(); }
+  if(neorv32_spi_available()) {
+    if (load_exe(EXE_STREAM_SPI) == 0) { start_app(); }
+  }
 #endif
 
   // try booting from TWI flash
 #if (TWI_EN != 0)
-  if (load_exe(EXE_STREAM_TWI) == 0) { start_app(); }
+  if(neorv32_twi_available()) {
+    if (load_exe(EXE_STREAM_TWI) == 0) { start_app(); }
+  }
 #endif
 
 skip_auto_boot:
@@ -504,8 +516,9 @@ void save_exe(int dst) {
     }
     addr += 4;
     i += 4;
+    uart_putc('.');
   }
-
+  
   // write header
   rc |= put_exe_word(dst, dst_addr + EXE_OFFSET_SIGNATURE, EXE_SIGNATURE);
   rc |= put_exe_word(dst, dst_addr + EXE_OFFSET_SIZE, size);
