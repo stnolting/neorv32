@@ -158,6 +158,7 @@ architecture neorv32_pwm_channel_rtl of neorv32_pwm_channel is
   -- configuration register --
   signal cfg_en   : std_ulogic; -- channel enable
   signal cfg_prsc : std_ulogic_vector(2 downto 0); -- (course) clock prescaler select
+  signal cfg_pol  : std_ulogic; -- channel polarity
   signal cfg_cdiv : std_ulogic_vector(9 downto 0); -- (fine) clock divider
   signal cfg_duty : std_ulogic_vector(7 downto 0); -- duty cycle
 
@@ -175,12 +176,14 @@ begin
     if (rstn_i = '0') then
       cfg_en   <= '0';
       cfg_prsc <= (others => '0');
+      cfg_pol <= '0';
       cfg_cdiv <= (others => '0');
       cfg_duty <= (others => '0');
     elsif rising_edge(clk_i) then
       if (we_i = '1') then
         cfg_en   <= wdata_i(31);
         cfg_prsc <= wdata_i(30 downto 28);
+        cfg_pol  <= wdata_i(27);
         cfg_cdiv <= wdata_i(17 downto 8);
         cfg_duty <= wdata_i(7 downto 0);
       end if;
@@ -188,7 +191,7 @@ begin
   end process config_write;
 
   -- read access --
-  rdata_o <= cfg_en & cfg_prsc & "0000000000" & cfg_cdiv & cfg_duty when (re_i = '1') else (others => '0');
+  rdata_o <= cfg_en & cfg_prsc & cfg_pol & "000000000" & cfg_cdiv & cfg_duty when (re_i = '1') else (others => '0');
 
   -- enable global clock generator --
   clkgen_en_o <= cfg_en;
@@ -226,9 +229,9 @@ begin
 
       -- pwm output --
       if (cfg_en = '0') or (unsigned(cnt_duty) >= unsigned(cfg_duty)) then
-        pwm_o <= '0';
+        pwm_o <= cfg_pol; -- deasserted
       else
-        pwm_o <= '1';
+        pwm_o <= not cfg_pol; -- asserted
       end if;
 
     end if;
