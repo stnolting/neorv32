@@ -162,13 +162,29 @@ install: image install-$(APP_VHD)
 all:     $(APP_ELF) $(APP_ASM) $(APP_EXE) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_VHD) install hex bin
 
 # -----------------------------------------------------------------------------
+# Verbosity
+# -----------------------------------------------------------------------------
+
+ifeq ("$(origin V)", "command line")
+BUILD_VERBOSE=$(V)
+endif
+ifndef BUILD_VERBOSE
+BUILD_VERBOSE = 0
+endif
+ifeq ($(BUILD_VERBOSE),0)
+Q = @
+else
+Q =
+endif
+
+# -----------------------------------------------------------------------------
 # Image generator targets
 # -----------------------------------------------------------------------------
 
 # Compile image generator
 $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 	@echo Compiling image generator...
-	@$(CC_HOST) $< -o $(IMAGE_GEN)
+	$(Q)$(CC_HOST) $< -o $(IMAGE_GEN)
 
 # -----------------------------------------------------------------------------
 # General targets: Assemble, compile, link, dump
@@ -176,34 +192,34 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 
 # Compile app *.s sources (assembly)
 $(BUILD_DIR)/%.s.o: %.s | $(BUILD_DIR)
-	@$(CC) -c $(NEO_ASFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.s.d -MT $(BUILD_DIR)/$*.s.o -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
+	$(Q)$(CC) -c $(NEO_ASFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.s.d -MT $(BUILD_DIR)/$*.s.o -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
 
 # Compile app *.S sources (assembly + C pre-processor)
 $(BUILD_DIR)/%.S.o: %.S | $(BUILD_DIR)
-	@$(CC) -c $(NEO_ASFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.S.d -MT $(BUILD_DIR)/$*.S.o -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
+	$(Q)$(CC) -c $(NEO_ASFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.S.d -MT $(BUILD_DIR)/$*.S.o -I $(NEORV32_INC_PATH) $(ASM_INC) $< -o $@
 
 # Compile app *.c sources
 $(BUILD_DIR)/%.c.o: %.c | $(BUILD_DIR)
-	@$(CC) -c $(NEO_CFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.c.d -MT $(BUILD_DIR)/$*.c.o -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+	$(Q)$(CC) -c $(NEO_CFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.c.d -MT $(BUILD_DIR)/$*.c.o -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Compile app *.cpp sources
 $(BUILD_DIR)/%.cpp.o: %.cpp | $(BUILD_DIR)
-	@$(CC) -c $(NEO_CXXFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.cpp.d -MT $(BUILD_DIR)/$*.cpp.o -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+	$(Q)$(CC) -c $(NEO_CXXFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.cpp.d -MT $(BUILD_DIR)/$*.cpp.o -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Link object files and show memory utilization
 -include $(OBJ:.o=.d)
 $(APP_ELF): $(OBJ)
-	@$(CC) $(NEO_LDFLAGS) -T $(LD_SCRIPT) $^ $(LD_LIBS) -o $@
+	$(Q)$(CC) $(NEO_LDFLAGS) -T $(LD_SCRIPT) $^ $(LD_LIBS) -o $@
 	@echo "Memory utilization:"
-	@$(SIZE) $(APP_ELF)
+	$(Q)$(SIZE) $(APP_ELF)
 
 # Assembly listing file (for debugging)
 $(APP_ASM): $(APP_ELF)
-	@$(OBJDUMP) -d -S -z $< > $@
+	$(Q)$(OBJDUMP) -d -S -z $< > $@
 
 # Generate final executable from .text + .rodata + .data (in THIS order!)
 $(BIN_MAIN): $(APP_ELF) | $(BUILD_DIR)
-	@$(OBJCOPY) -I elf32-little $< -j .text -j .rodata -j .data -O binary $@
+	$(Q)$(OBJCOPY) -I elf32-little $< -j .text -j .rodata -j .data -O binary $@
 
 # -----------------------------------------------------------------------------
 # Application targets: Generate executable formats
@@ -211,47 +227,47 @@ $(BIN_MAIN): $(APP_ELF) | $(BUILD_DIR)
 
 # Generate NEORV32 executable image for upload via bootloader
 $(APP_EXE): $(BIN_MAIN) $(IMAGE_GEN)
-	@set -e
+	$(Q)set -e
 	@echo "Generating $(APP_EXE)"
-	@$(IMAGE_GEN) -app_bin $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -app_bin $< $@ $(shell basename $(CURDIR))
 	@echo "Executable size in bytes:"
-	@wc -c < $(APP_EXE)
+	$(Q)wc -c < $(APP_EXE)
 
 # Generate NEORV32 executable VHDL boot image
 $(APP_VHD): $(BIN_MAIN) $(IMAGE_GEN)
-	@set -e
+	$(Q)set -e
 	@echo "Generating $(APP_VHD)"
-	@$(IMAGE_GEN) -app_vhd $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -app_vhd $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in plain hex format
 $(APP_HEX): $(BIN_MAIN) $(IMAGE_GEN)
-	@set -e
+	$(Q)set -e
 	@echo "Generating $(APP_HEX)"
-	@$(IMAGE_GEN) -raw_hex $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -raw_hex $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in binary format
 $(APP_BIN): $(BIN_MAIN) $(IMAGE_GEN)
-	@set -e
+	$(Q)set -e
 	@echo "Generating $(APP_BIN)"
-	@$(IMAGE_GEN) -raw_bin $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -raw_bin $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in COE format
 $(APP_COE): $(BIN_MAIN) $(IMAGE_GEN)
-	@set -e
+	$(Q)set -e
 	@echo "Generating $(APP_COE)"
-	@$(IMAGE_GEN) -raw_coe $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -raw_coe $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in MIF format
 $(APP_MIF): $(BIN_MAIN) $(IMAGE_GEN)
-	@set -e
+	$(Q)set -e
 	@echo "Generating $(APP_MIF)"
-	@$(IMAGE_GEN) -raw_mif $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -raw_mif $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in MEM format
 $(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
-	@set -e
+	$(Q)set -e
 	@echo "Generating $(APP_MEM)"
-	@$(IMAGE_GEN) -raw_mem $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -raw_mem $< $@ $(shell basename $(CURDIR))
 
 # -----------------------------------------------------------------------------
 # BOOTROM / bootloader image targets
@@ -259,15 +275,68 @@ $(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
 
 # Create local VHDL BOOTROM image
 bl_image: $(BIN_MAIN) $(IMAGE_GEN)
-	@set -e
+	$(Q)set -e
 	@echo "Generating $(BOOT_VHD)"
-	@$(IMAGE_GEN) -bld_vhd $< $(BOOT_VHD) $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -bld_vhd $< $(BOOT_VHD) $(shell basename $(CURDIR))
 
 # Install BOOTROM image to VHDL source directory
 bootloader: bl_image
-	@set -e
+	$(Q)set -e
 	@echo "Installing bootloader image to $(NEORV32_RTL_PATH)/core/$(BOOT_VHD)"
-	@cp $(BOOT_VHD) $(NEORV32_RTL_PATH)/core/.
+	$(Q)cp $(BOOT_VHD) $(NEORV32_RTL_PATH)/core/.
+
+# -----------------------------------------------------------------------------
+# In-console simulation using default testbench and GHDL
+# -----------------------------------------------------------------------------
+
+sim: $(APP_VHD)
+	@echo "Simulating processor using default testbench..."
+	$(Q)sh $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
+
+# Install VHDL memory initialization file
+install-$(APP_VHD): $(APP_VHD)
+	$(Q)set -e
+	@echo "Installing application image to $(NEORV32_RTL_PATH)/core/$(APP_VHD)"
+	$(Q)cp $(APP_VHD) $(NEORV32_RTL_PATH)/core/.
+
+# -----------------------------------------------------------------------------
+# Regenerate HDL file list file(s)
+# -----------------------------------------------------------------------------
+
+hdl_lists:
+	$(Q)sh $(NEORV32_RTL_PATH)/generate_file_lists.sh
+
+# -----------------------------------------------------------------------------
+# Show final ELF details (just for debugging)
+# -----------------------------------------------------------------------------
+
+elf_info: $(APP_ELF)
+	$(Q)$(OBJDUMP) -x $(APP_ELF)
+
+elf_sections: $(APP_ELF)
+	$(Q)$(READELF) -S $(APP_ELF)
+
+# -----------------------------------------------------------------------------
+# Run GDB
+# -----------------------------------------------------------------------------
+
+gdb: $(APP_ELF)
+	$(Q)$(GDB) $(APP_ELF) $(GDB_ARGS)
+
+# -----------------------------------------------------------------------------
+# Clean up
+# -----------------------------------------------------------------------------
+
+# remove all build artifacts
+clean:
+	$(Q)rm -rf $(BUILD_DIR)
+	$(Q)rm -f $(APP_EXE) $(APP_ELF) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BOOT_VHD)
+	$(Q)rm -f .gdb_history
+
+# also remove image generator
+clean_all: clean
+	$(Q)rm -f $(IMAGE_GEN)
+	$(Q)rm -rf $(NEORV32_SIM_PATH)/build
 
 # -----------------------------------------------------------------------------
 # Check toolchain
@@ -290,59 +359,6 @@ check: $(IMAGE_GEN)
 	@$(CC_HOST) -v
 	@echo ""
 	@echo "Toolchain check OK"
-
-# -----------------------------------------------------------------------------
-# In-console simulation using default testbench and GHDL
-# -----------------------------------------------------------------------------
-
-sim: $(APP_VHD)
-	@echo "Simulating processor using default testbench..."
-	@sh $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
-
-# Install VHDL memory initialization file
-install-$(APP_VHD): $(APP_VHD)
-	@set -e
-	@echo "Installing application image to $(NEORV32_RTL_PATH)/core/$(APP_VHD)"
-	@cp $(APP_VHD) $(NEORV32_RTL_PATH)/core/.
-
-# -----------------------------------------------------------------------------
-# Regenerate HDL file list file(s)
-# -----------------------------------------------------------------------------
-
-hdl_lists:
-	@sh $(NEORV32_RTL_PATH)/generate_file_lists.sh
-
-# -----------------------------------------------------------------------------
-# Show final ELF details (just for debugging)
-# -----------------------------------------------------------------------------
-
-elf_info: $(APP_ELF)
-	@$(OBJDUMP) -x $(APP_ELF)
-
-elf_sections: $(APP_ELF)
-	@$(READELF) -S $(APP_ELF)
-
-# -----------------------------------------------------------------------------
-# Run GDB
-# -----------------------------------------------------------------------------
-
-gdb: $(APP_ELF)
-	@$(GDB) $(APP_ELF) $(GDB_ARGS)
-
-# -----------------------------------------------------------------------------
-# Clean up
-# -----------------------------------------------------------------------------
-
-# remove all build artifacts
-clean:
-	@rm -rf $(BUILD_DIR)
-	@rm -f $(APP_EXE) $(APP_ELF) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BOOT_VHD)
-	@rm -f .gdb_history
-
-# also remove image generator
-clean_all: clean
-	@rm -f $(IMAGE_GEN)
-	@rm -rf $(NEORV32_SIM_PATH)/build
 
 # -----------------------------------------------------------------------------
 # Show configuration
@@ -391,6 +407,7 @@ info:
 help:
 	@echo "NEORV32 Software Makefile"
 	@echo "Find more information at https://github.com/stnolting/neorv32"
+	@echo "Use make V=1 or set BUILD_VERBOSE in your environment to increase build verbosity"
 	@echo ""
 	@echo "Targets:"
 	@echo ""
@@ -420,6 +437,7 @@ help:
 	@echo ""
 	@echo "Variables:"
 	@echo ""
+	@echo "  BUILD_VERBOSE  - Set to increase build verbosity: \"$(BUILD_VERBOSE)\""
 	@echo "  USER_FLAGS     - Custom toolchain flags [append only]: \"$(USER_FLAGS)\""
 	@echo "  USER_LIBS      - Custom libraries [append only]: \"$(USER_LIBS)\""
 	@echo "  EFFORT         - Optimization level: \"$(EFFORT)\""
