@@ -185,6 +185,7 @@ available targets as well as all variable including their _current_ setting.
 neorv32/sw/example/hello_world$ make
 NEORV32 Software Makefile
 Find more information at https://github.com/stnolting/neorv32
+Use make V=1 or set BUILD_VERBOSE in your environment to increase build verbosity
 
 Targets:
 
@@ -214,6 +215,7 @@ Targets:
 
 Variables:
 
+  BUILD_VERBOSE  - Set to increase build verbosity: 0
   USER_FLAGS     - Custom toolchain flags [append only]: "-ggdb -gdwarf-3 -Wl,--defsym,__neorv32_rom_size=16k -Wl,--defsym,__neorv32_ram_size=8k"
   USER_LIBS      - Custom libraries [append only]: ""
   EFFORT         - Optimization level: "-Os"
@@ -234,6 +236,10 @@ Variables:
 All _intermediate_ build artifacts (like object files and binaries) will be places into a (new) project-local
 folder named `build`. The _resulting_ build artifacts (like executable, the main ELF and all memory
 initialization/image files) will be placed in the root project folder.
+
+.Increse Verbosity
+[TIP]
+Use `make V=1` or set `BUILD_VERBOSE` in your environment to increase build verbosity.
 
 
 :sectnums:
