@@ -14,6 +14,7 @@
 #ifndef NEORV32_PWM_H
 #define NEORV32_PWM_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 
@@ -36,6 +37,7 @@ enum CHANNEL_CFG_enum {
   PWM_CFG_CDIV_LSB =  8, /**< PWM configuration register(8)  (r/w): Clock divider (10-bit), LSB */
   PWM_CFG_CDIV_MSB = 17, /**< PWM configuration register(17) (r/w): Clock divider (10-bit), MSB */
 
+  PWM_CFG_POL      = 27, /**< PWM configuration register(27) (r/w): Channel polarity, inverted when set */
   PWM_CFG_PRSC_LSB = 28, /**< PWM configuration register(28) (r/w): Clock prescaler select (3-bit), LSB */
   PWM_CFG_PRSC_MSB = 30, /**< PWM configuration register(30) (r/w): Clock prescaler select (3-bit), MSB */
   PWM_CFG_EN       = 31  /**< PWM configuration register(31) (r/w): channel enable */
@@ -51,6 +53,7 @@ int  neorv32_pwm_available(void);
 int  neorv32_pmw_get_num_channels(void);
 void neorv32_pwm_ch_enable(int channel);
 void neorv32_pwm_ch_disable(int channel);
+void neorv32_pwm_ch_set_polarity(int channel, bool inverted);
 void neorv32_pwm_ch_set_clock(int channel, int prsc, int cdiv);
 void neorv32_pwm_ch_set_duty(int channel, int duty);
 /**@}*/
