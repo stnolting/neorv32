@@ -81,6 +81,24 @@ void neorv32_pwm_ch_disable(int channel) {
 
 
 /**********************************************************************//**
+ * Set PWM channel's polarity configuration.
+ *
+ * @param[in] channel Channel select (0..15).
+ * @param[in] normal polarity if false (default), inverted polarity if true
+ **************************************************************************/
+void neorv32_pwm_ch_set_polarity(int channel, bool inverted) {
+
+  channel &= 0xf; // constrain range
+
+  if (inverted) {
+    NEORV32_PWM->CHANNEL_CFG[channel] |= ((uint32_t)(1 << PWM_CFG_POL));
+  } else {
+    NEORV32_PWM->CHANNEL_CFG[channel] &= ~((uint32_t)(1 << PWM_CFG_POL));
+  }
+}
+
+
+/**********************************************************************//**
  * Set PWM channel's clock configuration.
  *
  * @param[in] channel Channel select (0..15).
@@ -92,7 +110,7 @@ void neorv32_pwm_ch_set_clock(int channel, int prsc, int cdiv) {
   channel &= 0xf; // constrain range
 
   uint32_t tmp = NEORV32_PWM->CHANNEL_CFG[channel];
-  tmp &= 0x800000ffU; // clear current prsc and cdiv, keep enable and duty
+  tmp &= 0x880000ffU; // clear current prsc and cdiv, keep enable, polarity, and duty
   tmp |= ((uint32_t)(prsc & 0x7U))   << PWM_CFG_PRSC_LSB;
   tmp |= ((uint32_t)(cdiv & 0x3ffU)) << PWM_CFG_CDIV_LSB;
   NEORV32_PWM->CHANNEL_CFG[channel] = tmp;
