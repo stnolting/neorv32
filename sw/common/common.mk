@@ -44,7 +44,6 @@ USER_FLAGS ?=
 
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
-NEORV32_LOCAL_RTL ?= $(NEORV32_HOME)/rtl
 
 # GDB arguments
 GDB_ARGS ?= -ex "target extended-remote localhost:3333"
@@ -65,7 +64,7 @@ NEORV32_SRC_PATH = $(NEORV32_HOME)/sw/lib/source
 # Path to NEORV32 executable generator
 NEORV32_EXG_PATH = $(NEORV32_HOME)/sw/image_gen
 # Path to NEORV32 rtl folder
-NEORV32_RTL_PATH = $(NEORV32_LOCAL_RTL)
+NEORV32_RTL_PATH = $(NEORV32_HOME)/rtl
 # Path to NEORV32 sim folder
 NEORV32_SIM_PATH = $(NEORV32_HOME)/sim
 # Marker file to check for NEORV32 home folder
@@ -150,8 +149,8 @@ NEO_ASFLAGS  = $(CC_FLAGS) $(ASFLAGS)
 .PHONY: check info help elf_info clean clean_all
 .DEFAULT_GOAL := help
 
-asm:     $(APP_ASM)
 elf:     $(APP_ELF)
+asm:     $(APP_ASM)
 exe:     $(APP_EXE)
 hex:     $(APP_HEX)
 bin:     $(APP_BIN)
@@ -160,7 +159,7 @@ mem:     $(APP_MEM)
 mif:     $(APP_MIF)
 image:   $(APP_VHD)
 install: image install-$(APP_VHD)
-all:     $(APP_ASM) $(APP_EXE) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_VHD) install hex bin
+all:     $(APP_ELF) $(APP_ASM) $(APP_EXE) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_VHD) install hex bin
 
 # -----------------------------------------------------------------------------
 # Image generator targets
@@ -191,9 +190,8 @@ $(BUILD_DIR)/%.c.o: %.c | $(BUILD_DIR)
 $(BUILD_DIR)/%.cpp.o: %.cpp | $(BUILD_DIR)
 	@$(CC) -c $(NEO_CXXFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.cpp.d -MT $(BUILD_DIR)/$*.cpp.o -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
--include $(OBJ:.o=.d)
-
 # Link object files and show memory utilization
+-include $(OBJ:.o=.d)
 $(APP_ELF): $(OBJ)
 	@$(CC) $(NEO_LDFLAGS) -T $(LD_SCRIPT) $^ $(LD_LIBS) -o $@
 	@echo "Memory utilization:"
@@ -335,11 +333,13 @@ gdb: $(APP_ELF)
 # Clean up
 # -----------------------------------------------------------------------------
 
+# remove all build artifacts
 clean:
 	@rm -rf $(BUILD_DIR)
 	@rm -f $(APP_EXE) $(APP_ELF) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BOOT_VHD)
 	@rm -f .gdb_history
 
+# also remove image generator
 clean_all: clean
 	@rm -f $(IMAGE_GEN)
 	@rm -rf $(NEORV32_SIM_PATH)/build
