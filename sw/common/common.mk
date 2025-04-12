@@ -67,8 +67,6 @@ NEORV32_EXG_PATH = $(NEORV32_HOME)/sw/image_gen
 NEORV32_RTL_PATH = $(NEORV32_HOME)/rtl
 # Path to NEORV32 sim folder
 NEORV32_SIM_PATH = $(NEORV32_HOME)/sim
-# Marker file to check for NEORV32 home folder
-NEORV32_HOME_MARKER = $(NEORV32_INC_PATH)/neorv32.h
 
 # Core libraries (peripheral and CPU drivers)
 CORE_SRC = $(wildcard $(NEORV32_SRC_PATH)/*.c)
@@ -125,7 +123,7 @@ CC_HOST = gcc -Wall -O -g
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
 ifeq ($(OS),Windows_NT)
-	IMAGE_GEN := $(IMAGE_GEN).exe
+IMAGE_GEN := $(IMAGE_GEN).exe
 endif
 
 # Compiler & linker flags
