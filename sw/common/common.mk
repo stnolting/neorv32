@@ -18,6 +18,9 @@
 # User's application sources (*.c, *.cpp, *.s, *.S); add additional files here
 APP_SRC ?= $(wildcard ./*.c) $(wildcard ./*.s) $(wildcard ./*.cpp) $(wildcard ./*.S)
 
+# User's application object files (*.o, *.cpp, *.s, *.S); add additional files here
+APP_OBJ ?=
+
 # User's application include folders (don't forget the '-I' before each entry)
 APP_INC ?= -I .
 # User's application include folders - for assembly files only (don't forget the '-I' before each entry)
@@ -103,6 +106,7 @@ $(BUILD_DIR):
 
 # Define all object files
 OBJ := $(patsubst %,$(BUILD_DIR)/%.o,$(notdir $(SRC)))
+OBJ += $(APP_OBJ)
 
 # -----------------------------------------------------------------------------
 # Tools and flags
@@ -126,14 +130,11 @@ ifeq ($(OS),Windows_NT)
 endif
 
 # Compiler & linker flags
-CC_OPTS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
-CC_OPTS += -mstrict-align -mbranch-cost=10 -Wl,--gc-sections -ffp-contract=off -g
-CC_OPTS += $(USER_FLAGS)
-LD_LIBS  = -lm -lc -lgcc
-LD_LIBS += $(USER_LIBS)
-
-# Actual flags passed to the compiler
-CC_FLAGS = $(CC_OPTS)
+CC_FLAGS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
+CC_FLAGS += -mstrict-align -mbranch-cost=10 -Wl,--gc-sections -ffp-contract=off -g
+CC_FLAGS += $(USER_FLAGS)
+LD_LIBS   = -lm -lc -lgcc
+LD_LIBS  += $(USER_LIBS)
 
 # Allow users to use tool-specific flags
 # Uses naming from https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
@@ -204,11 +205,7 @@ $(APP_ASM): $(APP_ELF)
 
 # Generate final executable from .text + .rodata + .data (in THIS order!)
 $(BIN_MAIN): $(APP_ELF) | $(BUILD_DIR)
-	@$(OBJCOPY) -I elf32-little $< -j .text   -O binary text.bin
-	@$(OBJCOPY) -I elf32-little $< -j .rodata -O binary rodata.bin
-	@$(OBJCOPY) -I elf32-little $< -j .data   -O binary data.bin
-	@cat text.bin rodata.bin data.bin > $@
-	@rm -f text.bin rodata.bin data.bin
+	@$(OBJCOPY) -I elf32-little $< -j .text -j .rodata -j .data -O binary $@
 
 # -----------------------------------------------------------------------------
 # Application targets: Generate executable formats
@@ -385,7 +382,7 @@ info:
 	@echo "GDB_ARGS: $(GDB_ARGS)"
 	@echo "GHDL_RUN_FLAGS: $(GHDL_RUN_FLAGS)"
 	@echo "USER_FLAGS: $(USER_FLAGS)"
-	@echo "CC_OPTS: $(CC_OPTS)"
+	@echo "CC_FLAGS: $(CC_FLAGS)"
 
 # -----------------------------------------------------------------------------
 # Help
@@ -430,6 +427,7 @@ help:
 	@echo "  MABI           - Machine binary interface: \"$(MABI)\""
 	@echo "  APP_INC        - C include folder(s) [append only]: \"$(APP_INC)\""
 	@echo "  APP_SRC        - C source folder(s) [append only]: \"$(APP_SRC)\""
+	@echo "  APP_OBJ        - Object file(s) [append only]: \"$(APP_OBJ)\""
 	@echo "  ASM_INC        - ASM include folder(s) [append only]: \"$(ASM_INC)\""
 	@echo "  RISCV_PREFIX   - Toolchain prefix: \"$(RISCV_PREFIX)\""
 	@echo "  NEORV32_HOME   - NEORV32 home folder: \"$(NEORV32_HOME)\""
