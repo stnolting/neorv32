@@ -115,7 +115,7 @@
 
 // TWI clock prescaler, see #NEORV32_CLOCK_PRSC_enum
 #ifndef TWI_CLK_PRSC
-#define TWI_CLK_PRSC CLK_PRSC_64
+#define TWI_CLK_PRSC CLK_PRSC_1024
 #endif
 
 // TWI clock divider
@@ -123,7 +123,7 @@
 #define TWI_CLK_DIV 3
 #endif
 
-// TWI allow clock streching
+// TWI allow clock stretching
 #ifndef TWI_CLK_STRECH_EN
 #define TWI_CLK_STRECH_EN 0
 #endif
@@ -149,4 +149,3 @@
 #endif
 
 #endif // CONFIG_H
- 
