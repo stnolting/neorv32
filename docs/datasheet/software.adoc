@@ -185,50 +185,50 @@ available targets as well as all variable including their _current_ setting.
 neorv32/sw/example/hello_world$ make
 NEORV32 Software Makefile
 Find more information at https://github.com/stnolting/neorv32
-Use make V=1 or set BUILD_VERBOSE in your environment to increase build verbosity
+Use make V=1 or set BUILD_VERBOSE to increase build verbosity
 
 Targets:
 
-  help         - show this text
-  check        - check toolchain
-  info         - show makefile/toolchain configuration
-  gdb          - start GNU debugging session
-  asm          - compile and generate <main.asm> assembly listing file for manual debugging
-  elf          - compile and generate <main.elf> ELF file
-  exe          - compile and generate <neorv32_exe.bin> executable image file for bootloader upload (includes a HEADER!)
-  bin          - compile and generate <neorv32_raw_exe.bin> executable memory image
-  hex          - compile and generate <neorv32_raw_exe.hex> executable memory image
-  coe          - compile and generate <neorv32_raw_exe.coe> executable memory image
-  mem          - compile and generate <neorv32_raw_exe.mem> executable memory image
-  mif          - compile and generate <neorv32_raw_exe.mif> executable memory image
-  image        - compile and generate VHDL IMEM application boot image <neorv32_application_image.vhd> in local folder
-  install      - compile, generate and install VHDL IMEM application boot image <neorv32_application_image.vhd>
-  sim          - in-console simulation using default/simple testbench and GHDL
-  hdl_lists    - regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl
-  all          - exe + install + hex + bin + asm
-  elf_info     - show ELF layout info
-  elf_sections - show ELF sections
-  clean        - clean up project home folder
-  clean_all    - clean up project home folder and image generator
-  bl_image     - compile and generate VHDL BOOTROM bootloader boot image <neorv32_bootloader_image.vhd> in local folder
-  bootloader   - compile, generate and install VHDL BOOTROM bootloader boot image <neorv32_bootloader_image.vhd>
+  help          show this text
+  check         check toolchain
+  info          show makefile/toolchain configuration
+  gdb           start GNU debugging session
+  asm           compile and generate <main.asm> assembly listing file for manual debugging
+  elf           compile and generate <main.elf> ELF file
+  exe           compile and generate <neorv32_exe.bin> executable image file for bootloader upload (includes a HEADER!)
+  bin           compile and generate <neorv32_raw_exe.bin> executable memory image
+  hex           compile and generate <neorv32_raw_exe.hex> executable memory image
+  coe           compile and generate <neorv32_raw_exe.coe> executable memory image
+  mem           compile and generate <neorv32_raw_exe.mem> executable memory image
+  mif           compile and generate <neorv32_raw_exe.mif> executable memory image
+  image         compile and generate VHDL IMEM application boot image <neorv32_application_image.vhd> in local folder
+  install       compile, generate and install VHDL IMEM application boot image <neorv32_application_image.vhd>
+  sim           in-console simulation using default/simple testbench and GHDL
+  hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl
+  all           exe + install + hex + bin + asm
+  elf_info      show ELF layout info
+  elf_sections  show ELF sections
+  clean         clean up project home folder
+  clean_all     clean up project home folder and image generator
+  bl_image      compile and generate VHDL BOOTROM bootloader boot image <neorv32_bootloader_image.vhd> in local folder
+  bootloader    compile, generate and install VHDL BOOTROM bootloader boot image <neorv32_bootloader_image.vhd>
 
 Variables:
 
-  BUILD_VERBOSE  - Set to increase build verbosity: 0
-  USER_FLAGS     - Custom toolchain flags [append only]: "-ggdb -gdwarf-3 -Wl,--defsym,__neorv32_rom_size=16k -Wl,--defsym,__neorv32_ram_size=8k"
-  USER_LIBS      - Custom libraries [append only]: ""
-  EFFORT         - Optimization level: "-Os"
-  MARCH          - Machine architecture: "rv32i_zicsr_zifencei"
-  MABI           - Machine binary interface: "ilp32"
-  APP_INC        - C include folder(s) [append only]: "-I ."
-  APP_SRC        - C source folder(s) [append only]: "./main.c   "
-  APP_OBJ        - Object file(s) [append only]
-  ASM_INC        - ASM include folder(s) [append only]: "-I ."
-  RISCV_PREFIX   - Toolchain prefix: "riscv-none-elf-"
-  NEORV32_HOME   - NEORV32 home folder: "../../.."
-  GDB_ARGS       - GDB (connection) arguments: "-ex target extended-remote localhost:3333"
-  GHDL_RUN_FLAGS - GHDL simulation run arguments: ""
+  BUILD_VERBOSE   Set to increase build verbosity: 0
+  USER_FLAGS      Custom toolchain flags [append only]: "-ggdb -gdwarf-3 -Wl,--defsym,__neorv32_rom_size=16k -Wl,--defsym,__neorv32_ram_size=8k"
+  USER_LIBS       Custom libraries [append only]: ""
+  EFFORT          Optimization level: "-Os"
+  MARCH           Machine architecture: "rv32i_zicsr_zifencei"
+  MABI            Machine binary interface: "ilp32"
+  APP_INC         C include folder(s) [append only]: "-I ."
+  APP_SRC         C source folder(s) [append only]: "./main.c   "
+  APP_OBJ         Object file(s) [append only]
+  ASM_INC         ASM include folder(s) [append only]: "-I ."
+  RISCV_PREFIX    Toolchain prefix: "riscv-none-elf-"
+  NEORV32_HOME    NEORV32 home folder: "../../.."
+  GDB_ARGS        GDB (connection) arguments: "-ex target extended-remote localhost:3333"
+  GHDL_RUN_FLAGS  GHDL simulation run arguments: ""
 ----
 
 .Build Artifacts
