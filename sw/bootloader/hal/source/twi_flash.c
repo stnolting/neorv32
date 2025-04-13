@@ -105,7 +105,7 @@ int twi_flash_read_word(uint32_t addr, uint32_t* rdata) {
   // delay next read
   twi_flash_delay_twi_tick(1000);
 
-  return 0;
+  return device_nack;
 #else
   return 1;
 #endif
