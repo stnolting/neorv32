@@ -101,7 +101,7 @@ int twi_flash_read_word(uint32_t addr, uint32_t* rdata) {
 
   // send stop condition
   neorv32_twi_generate_stop();
-  
+
   // delay next read
   twi_flash_delay_twi_tick(1000);
 
@@ -174,7 +174,7 @@ int twi_flash_write_byte(uint32_t addr, uint8_t wdata, int stop) {
     // delay next send for EEPROM write cycle
     neorv32_aux_delay_ms(NEORV32_SYSINFO->CLK,5); // t_wr(max) = 5ms
   }
-  
+
 
   return device_nack;
 }

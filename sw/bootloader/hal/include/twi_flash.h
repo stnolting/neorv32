@@ -15,15 +15,15 @@
 #define TWI_FLASH_H
 
 #include <stdint.h>
- 
+
 int twi_flash_read_word(uint32_t addr, uint32_t* rdata);
 int twi_flash_write_word(uint32_t addr, uint32_t wdata);
 
 /**
 * @brief Keeps TWI Peripheral in IDLE for 'tick_count' TWI clock ticks
-* 
+*
 * @param tick_count Amount of TWI NOP ticks to wait
-* 
+*
 */
 inline void __attribute__ ((always_inline)) twi_flash_delay_twi_tick(int tick_count){
 
@@ -36,4 +36,3 @@ inline void __attribute__ ((always_inline)) twi_flash_delay_twi_tick(int tick_co
 }
 
 #endif // TWI_FLASH_H
- 
