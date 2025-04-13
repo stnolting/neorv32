@@ -176,6 +176,19 @@ Q =
 endif
 
 # -----------------------------------------------------------------------------
+# Git tag and commit hash
+# -----------------------------------------------------------------------------
+
+NEORV32_GIT_TAG = "unknown"
+# check if git is available at all
+ifneq (, $(shell git 2>/dev/null))
+$(eval NEORV32_GIT_TAG = $(shell git describe --tags))
+endif
+# add short commit hash as C define
+NEO_CFLAGS += -DNEORV32_GIT_TAG="\"$(NEORV32_GIT_TAG)\""
+
+
+# -----------------------------------------------------------------------------
 # Image generator targets
 # -----------------------------------------------------------------------------
 
@@ -364,8 +377,9 @@ check: $(IMAGE_GEN)
 
 info:
 	@echo "******************************************************"
-	@echo "Project / Makfile Configuration"
+	@echo "Project / Makefile Configuration"
 	@echo "******************************************************"
+	@echo "Git tag: $(NEORV32_GIT_TAG)"
 	@echo "Project folder: $(shell basename $(CURDIR))"
 	@echo "Source files: $(APP_SRC)"
 	@echo "Include folder(s): $(APP_INC)"
@@ -405,7 +419,7 @@ info:
 help:
 	@echo "NEORV32 Software Makefile"
 	@echo "Find more information at https://github.com/stnolting/neorv32"
-	@echo "Use make V=1 or set BUILD_VERBOSE in your environment to increase build verbosity"
+	@echo "Use make V=1 or set BUILD_VERBOSE to increase build verbosity"
 	@echo ""
 	@echo "Targets:"
 	@echo ""
