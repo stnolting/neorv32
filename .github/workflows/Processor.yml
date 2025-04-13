@@ -42,7 +42,7 @@ jobs:
     - name: '📦 Install GHDL'
       uses: ghdl/setup-ghdl@v1
       with:
-        version: v5.0.1
+        version: nightly
         backend: mcode
 
     - name: '🔍 Check tools'
