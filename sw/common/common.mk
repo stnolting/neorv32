@@ -97,10 +97,6 @@ SRC += $(CORE_SRC)
 # Define search path for prerequisites
 VPATH = $(sort $(dir $(SRC)))
 
-# Create the build directories if they don't exist
-$(BUILD_DIR):
-	@mkdir -p $(BUILD_DIR)
-
 # Define all object files
 OBJ := $(patsubst %,$(BUILD_DIR)/%.o,$(notdir $(SRC)))
 OBJ += $(APP_OBJ)
@@ -119,6 +115,15 @@ GDB     = $(RISCV_PREFIX)gdb
 
 # Host's native compiler
 CC_HOST = gcc -Wall -O -g
+
+# System tools
+ECHO  = @echo
+SET   = set
+CP    = cp
+RM    = rm
+MKDIR = mkdir
+SH    = sh
+WC    = wc
 
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
@@ -187,19 +192,22 @@ endif
 # add short commit hash as C define
 NEO_CFLAGS += -DNEORV32_GIT_TAG="\"$(NEORV32_GIT_TAG)\""
 
-
 # -----------------------------------------------------------------------------
 # Image generator targets
 # -----------------------------------------------------------------------------
 
 # Compile image generator
 $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
-	@echo Compiling image generator...
+	$(ECHO) Compiling image generator...
 	$(Q)$(CC_HOST) $< -o $(IMAGE_GEN)
 
 # -----------------------------------------------------------------------------
 # General targets: Assemble, compile, link, dump
 # -----------------------------------------------------------------------------
+
+# Create the build directories if they don't exist
+$(BUILD_DIR):
+	$(Q)$(MKDIR) -p $(BUILD_DIR)
 
 # Compile app *.s sources (assembly)
 $(BUILD_DIR)/%.s.o: %.s | $(BUILD_DIR)
@@ -221,7 +229,7 @@ $(BUILD_DIR)/%.cpp.o: %.cpp | $(BUILD_DIR)
 -include $(OBJ:.o=.d)
 $(APP_ELF): $(OBJ)
 	$(Q)$(CC) $(NEO_LDFLAGS) -T $(LD_SCRIPT) $^ $(LD_LIBS) -o $@
-	@echo "Memory utilization:"
+	$(ECHO) "Memory utilization:"
 	$(Q)$(SIZE) $(APP_ELF)
 
 # Assembly listing file (for debugging)
@@ -238,46 +246,46 @@ $(BIN_MAIN): $(APP_ELF) | $(BUILD_DIR)
 
 # Generate NEORV32 executable image for upload via bootloader
 $(APP_EXE): $(BIN_MAIN) $(IMAGE_GEN)
-	$(Q)set -e
-	@echo "Generating $(APP_EXE)"
+	$(Q)$(SET) -e
+	$(ECHO) "Generating $(APP_EXE)"
 	$(Q)$(IMAGE_GEN) -app_bin $< $@ $(shell basename $(CURDIR))
-	@echo "Executable size in bytes:"
-	$(Q)wc -c < $(APP_EXE)
+	$(ECHO) "Executable size in bytes:"
+	$(Q)$(WC) -c < $(APP_EXE)
 
 # Generate NEORV32 executable VHDL boot image
 $(APP_VHD): $(BIN_MAIN) $(IMAGE_GEN)
-	$(Q)set -e
-	@echo "Generating $(APP_VHD)"
+	$(Q)$(SET) -e
+	$(ECHO) "Generating $(APP_VHD)"
 	$(Q)$(IMAGE_GEN) -app_vhd $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in plain hex format
 $(APP_HEX): $(BIN_MAIN) $(IMAGE_GEN)
-	$(Q)set -e
-	@echo "Generating $(APP_HEX)"
+	$(Q)$(SET) -e
+	$(ECHO) "Generating $(APP_HEX)"
 	$(Q)$(IMAGE_GEN) -raw_hex $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in binary format
 $(APP_BIN): $(BIN_MAIN) $(IMAGE_GEN)
-	$(Q)set -e
-	@echo "Generating $(APP_BIN)"
+	$(Q)$(SET) -e
+	$(ECHO) "Generating $(APP_BIN)"
 	$(Q)$(IMAGE_GEN) -raw_bin $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in COE format
 $(APP_COE): $(BIN_MAIN) $(IMAGE_GEN)
-	$(Q)set -e
-	@echo "Generating $(APP_COE)"
+	$(Q)$(SET) -e
+	$(ECHO) "Generating $(APP_COE)"
 	$(Q)$(IMAGE_GEN) -raw_coe $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in MIF format
 $(APP_MIF): $(BIN_MAIN) $(IMAGE_GEN)
-	$(Q)set -e
-	@echo "Generating $(APP_MIF)"
+	$(Q)$(SET) -e
+	$(ECHO) "Generating $(APP_MIF)"
 	$(Q)$(IMAGE_GEN) -raw_mif $< $@ $(shell basename $(CURDIR))
 
 # Generate NEORV32 RAW executable image in MEM format
 $(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
-	$(Q)set -e
-	@echo "Generating $(APP_MEM)"
+	$(Q)$(SET) -e
+	$(ECHO) "Generating $(APP_MEM)"
 	$(Q)$(IMAGE_GEN) -raw_mem $< $@ $(shell basename $(CURDIR))
 
 # -----------------------------------------------------------------------------
@@ -286,36 +294,36 @@ $(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
 
 # Create local VHDL BOOTROM image
 bl_image: $(BIN_MAIN) $(IMAGE_GEN)
-	$(Q)set -e
-	@echo "Generating $(BOOT_VHD)"
+	$(Q)$(SET) -e
+	$(ECHO) "Generating $(BOOT_VHD)"
 	$(Q)$(IMAGE_GEN) -bld_vhd $< $(BOOT_VHD) $(shell basename $(CURDIR))
 
 # Install BOOTROM image to VHDL source directory
 bootloader: bl_image
-	$(Q)set -e
-	@echo "Installing bootloader image to $(NEORV32_RTL_PATH)/core/$(BOOT_VHD)"
-	$(Q)cp $(BOOT_VHD) $(NEORV32_RTL_PATH)/core/.
+	$(Q)$(SET) -e
+	$(ECHO) "Installing bootloader image to $(NEORV32_RTL_PATH)/core/$(BOOT_VHD)"
+	$(Q)$(CP) $(BOOT_VHD) $(NEORV32_RTL_PATH)/core/.
 
 # -----------------------------------------------------------------------------
 # In-console simulation using default testbench and GHDL
 # -----------------------------------------------------------------------------
 
 sim: $(APP_VHD)
-	@echo "Simulating processor using default testbench..."
-	$(Q)sh $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
+	$(ECHO) "Simulating processor using default testbench..."
+	$(Q)$(SH) $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
 
 # Install VHDL memory initialization file
 install-$(APP_VHD): $(APP_VHD)
-	$(Q)set -e
-	@echo "Installing application image to $(NEORV32_RTL_PATH)/core/$(APP_VHD)"
-	$(Q)cp $(APP_VHD) $(NEORV32_RTL_PATH)/core/.
+	$(Q)$(SET) -e
+	$(ECHO) "Installing application image to $(NEORV32_RTL_PATH)/core/$(APP_VHD)"
+	$(Q)$(CP) $(APP_VHD) $(NEORV32_RTL_PATH)/core/.
 
 # -----------------------------------------------------------------------------
 # Regenerate HDL file list file(s)
 # -----------------------------------------------------------------------------
 
 hdl_lists:
-	$(Q)sh $(NEORV32_RTL_PATH)/generate_file_lists.sh
+	$(Q)$(SH) $(NEORV32_RTL_PATH)/generate_file_lists.sh
 
 # -----------------------------------------------------------------------------
 # Show final ELF details (just for debugging)
@@ -340,127 +348,127 @@ gdb: $(APP_ELF)
 
 # remove all build artifacts
 clean:
-	$(Q)rm -rf $(BUILD_DIR)
-	$(Q)rm -f $(APP_EXE) $(APP_ELF) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BOOT_VHD)
-	$(Q)rm -f .gdb_history
+	$(Q)$(RM) -rf $(BUILD_DIR)
+	$(Q)$(RM) -f $(APP_EXE) $(APP_ELF) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BOOT_VHD)
+	$(Q)$(RM) -f .gdb_history
 
 # also remove image generator
 clean_all: clean
-	$(Q)rm -f $(IMAGE_GEN)
-	$(Q)rm -rf $(NEORV32_SIM_PATH)/build
+	$(Q)$(RM) -f $(IMAGE_GEN)
+	$(Q)$(RM) -rf $(NEORV32_SIM_PATH)/build
 
 # -----------------------------------------------------------------------------
 # Check toolchain
 # -----------------------------------------------------------------------------
 
 check: $(IMAGE_GEN)
-	@echo "---------------- $(CC) ----------------"
-	@$(CC) -v
-	@echo "---------------- $(OBJDUMP) ----------------"
-	@$(OBJDUMP) -V
-	@echo "---------------- $(OBJCOPY) ----------------"
-	@$(OBJCOPY) -V
-	@echo "---------------- $(READELF) ----------------"
-	@$(READELF) -v
-	@echo "---------------- $(SIZE) ----------------"
-	@$(SIZE) -V
-	@echo "---------------- NEORV32 image_gen ----------------"
-	@$(IMAGE_GEN) -help
-	@echo "---------------- Native GCC ----------------"
-	@$(CC_HOST) -v
-	@echo ""
-	@echo "Toolchain check OK"
+	$(ECHO) "---------------- $(CC) ----------------"
+	$(Q)$(CC) -v
+	$(ECHO) "---------------- $(OBJDUMP) ----------------"
+	$(Q)$(OBJDUMP) -V
+	$(ECHO) "---------------- $(OBJCOPY) ----------------"
+	$(Q)$(OBJCOPY) -V
+	$(ECHO) "---------------- $(READELF) ----------------"
+	$(Q)$(READELF) -v
+	$(ECHO) "---------------- $(SIZE) ----------------"
+	$(Q)$(SIZE) -V
+	$(ECHO) "---------------- NEORV32 image_gen ----------------"
+	$(Q)$(IMAGE_GEN) -help
+	$(ECHO) "---------------- Native GCC ----------------"
+	$(Q)$(CC_HOST) -v
+	$(ECHO) ""
+	$(ECHO) "Toolchain check OK"
 
 # -----------------------------------------------------------------------------
 # Show configuration
 # -----------------------------------------------------------------------------
 
 info:
-	@echo "******************************************************"
-	@echo "Project / Makefile Configuration"
-	@echo "******************************************************"
-	@echo "Git tag: $(NEORV32_GIT_TAG)"
-	@echo "Project folder: $(shell basename $(CURDIR))"
-	@echo "Source files: $(APP_SRC)"
-	@echo "Include folder(s): $(APP_INC)"
-	@echo "ASM include folder(s): $(ASM_INC)"
-	@echo "NEORV32 home folder (NEORV32_HOME): $(NEORV32_HOME)"
-	@echo "IMAGE_GEN: $(IMAGE_GEN)"
-	@echo "Core source files:"
-	@echo "$(CORE_SRC)"
-	@echo "Core include folder:"
-	@echo "$(NEORV32_INC_PATH)"
-	@echo "Search path (VPATH)"
-	@echo "$(VPATH)"
-	@echo "Project object files:"
-	@echo "$(OBJ)"
-	@echo "LIBGCC:"
-	@$(CC) -print-libgcc-file-name
-	@echo "SEARCH-DIRS:"
-	@$(CC) -print-search-dirs
-	@echo "USER_LIBS: $(USER_LIBS)"
-	@echo "LD_LIBS: $(LD_LIBS)"
-	@echo "MARCH: $(MARCH)"
-	@echo "MABI: $(MABI)"
-	@echo "CC: $(CC)"
-	@echo "OBJDUMP: $(OBJDUMP)"
-	@echo "OBJCOPY: $(OBJCOPY)"
-	@echo "SIZE: $(SIZE)"
-	@echo "DEBUGGER: $(GDB)"
-	@echo "GDB_ARGS: $(GDB_ARGS)"
-	@echo "GHDL_RUN_FLAGS: $(GHDL_RUN_FLAGS)"
-	@echo "USER_FLAGS: $(USER_FLAGS)"
-	@echo "CC_FLAGS: $(CC_FLAGS)"
+	$(ECHO) "******************************************************"
+	$(ECHO) "Project / Makefile Configuration"
+	$(ECHO) "******************************************************"
+	$(ECHO) "Git tag: $(NEORV32_GIT_TAG)"
+	$(ECHO) "Project folder: $(shell basename $(CURDIR))"
+	$(ECHO) "Source files: $(APP_SRC)"
+	$(ECHO) "Include folder(s): $(APP_INC)"
+	$(ECHO) "ASM include folder(s): $(ASM_INC)"
+	$(ECHO) "NEORV32 home folder (NEORV32_HOME): $(NEORV32_HOME)"
+	$(ECHO) "IMAGE_GEN: $(IMAGE_GEN)"
+	$(ECHO) "Core source files:"
+	$(ECHO) "$(CORE_SRC)"
+	$(ECHO) "Core include folder:"
+	$(ECHO) "$(NEORV32_INC_PATH)"
+	$(ECHO) "Search path (VPATH)"
+	$(ECHO) "$(VPATH)"
+	$(ECHO) "Project object files:"
+	$(ECHO) "$(OBJ)"
+	$(ECHO) "LIBGCC:"
+	$(Q)$(CC) -print-libgcc-file-name
+	$(ECHO) "SEARCH-DIRS:"
+	$(Q)$(CC) -print-search-dirs
+	$(ECHO) "USER_LIBS: $(USER_LIBS)"
+	$(ECHO) "LD_LIBS: $(LD_LIBS)"
+	$(ECHO) "MARCH: $(MARCH)"
+	$(ECHO) "MABI: $(MABI)"
+	$(ECHO) "CC: $(CC)"
+	$(ECHO) "OBJDUMP: $(OBJDUMP)"
+	$(ECHO) "OBJCOPY: $(OBJCOPY)"
+	$(ECHO) "SIZE: $(SIZE)"
+	$(ECHO) "DEBUGGER: $(GDB)"
+	$(ECHO) "GDB_ARGS: $(GDB_ARGS)"
+	$(ECHO) "GHDL_RUN_FLAGS: $(GHDL_RUN_FLAGS)"
+	$(ECHO) "USER_FLAGS: $(USER_FLAGS)"
+	$(ECHO) "CC_FLAGS: $(CC_FLAGS)"
 
 # -----------------------------------------------------------------------------
 # Help
 # -----------------------------------------------------------------------------
 
 help:
-	@echo "NEORV32 Software Makefile"
-	@echo "Find more information at https://github.com/stnolting/neorv32"
-	@echo "Use make V=1 or set BUILD_VERBOSE to increase build verbosity"
-	@echo ""
-	@echo "Targets:"
-	@echo ""
-	@echo "  help          show this text"
-	@echo "  check         check toolchain"
-	@echo "  info          show makefile/toolchain configuration"
-	@echo "  gdb           start GNU debugging session"
-	@echo "  asm           compile and generate <$(APP_ASM)> assembly listing file for manual debugging"
-	@echo "  elf           compile and generate <$(APP_ELF)> ELF file"
-	@echo "  exe           compile and generate <$(APP_EXE)> executable image file for bootloader upload (includes a HEADER!)"
-	@echo "  bin           compile and generate <$(APP_BIN)> executable memory image"
-	@echo "  hex           compile and generate <$(APP_HEX)> executable memory image"
-	@echo "  coe           compile and generate <$(APP_COE)> executable memory image"
-	@echo "  mem           compile and generate <$(APP_MEM)> executable memory image"
-	@echo "  mif           compile and generate <$(APP_MIF)> executable memory image"
-	@echo "  image         compile and generate VHDL IMEM application boot image <$(APP_VHD)> in local folder"
-	@echo "  install       compile, generate and install VHDL IMEM application boot image <$(APP_VHD)>"
-	@echo "  sim           in-console simulation using default testbench (sim folder) and GHDL"
-	@echo "  hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
-	@echo "  all           exe + install + hex + bin + asm"
-	@echo "  elf_info      show ELF layout info"
-	@echo "  elf_sections  show ELF sections"
-	@echo "  clean         clean up project home folder"
-	@echo "  clean_all     clean up project home folder and image generator"
-	@echo "  bl_image      compile and generate VHDL BOOTROM bootloader boot image <$(BOOT_VHD)> in local folder"
-	@echo "  bootloader    compile, generate and install VHDL BOOTROM bootloader boot image <$(BOOT_VHD)>"
-	@echo ""
-	@echo "Variables:"
-	@echo ""
-	@echo "  BUILD_VERBOSE   Set to increase build verbosity: \"$(BUILD_VERBOSE)\""
-	@echo "  USER_FLAGS      Custom toolchain flags [append only]: \"$(USER_FLAGS)\""
-	@echo "  USER_LIBS       Custom libraries [append only]: \"$(USER_LIBS)\""
-	@echo "  EFFORT          Optimization level: \"$(EFFORT)\""
-	@echo "  MARCH           Machine architecture: \"$(MARCH)\""
-	@echo "  MABI            Machine binary interface: \"$(MABI)\""
-	@echo "  APP_INC         C include folder(s) [append only]: \"$(APP_INC)\""
-	@echo "  APP_SRC         C source folder(s) [append only]: \"$(APP_SRC)\""
-	@echo "  APP_OBJ         Object file(s) [append only]: \"$(APP_OBJ)\""
-	@echo "  ASM_INC         ASM include folder(s) [append only]: \"$(ASM_INC)\""
-	@echo "  RISCV_PREFIX    Toolchain prefix: \"$(RISCV_PREFIX)\""
-	@echo "  NEORV32_HOME    NEORV32 home folder: \"$(NEORV32_HOME)\""
-	@echo "  GDB_ARGS        GDB (connection) arguments: \"$(GDB_ARGS)\""
-	@echo "  GHDL_RUN_FLAGS  GHDL simulation run arguments: \"$(GHDL_RUN_FLAGS)\""
-	@echo ""
+	$(ECHO) "NEORV32 Software Makefile"
+	$(ECHO) "Find more information at https://github.com/stnolting/neorv32"
+	$(ECHO) "Use make V=1 or set BUILD_VERBOSE to increase build verbosity"
+	$(ECHO) ""
+	$(ECHO) "Targets:"
+	$(ECHO) ""
+	$(ECHO) "  help          show this text"
+	$(ECHO) "  check         check toolchain"
+	$(ECHO) "  info          show makefile/toolchain configuration"
+	$(ECHO) "  gdb           start GNU debugging session"
+	$(ECHO) "  asm           compile and generate <$(APP_ASM)> assembly listing file for manual debugging"
+	$(ECHO) "  elf           compile and generate <$(APP_ELF)> ELF file"
+	$(ECHO) "  exe           compile and generate <$(APP_EXE)> executable image file for bootloader upload (includes a HEADER!)"
+	$(ECHO) "  bin           compile and generate <$(APP_BIN)> executable memory image"
+	$(ECHO) "  hex           compile and generate <$(APP_HEX)> executable memory image"
+	$(ECHO) "  coe           compile and generate <$(APP_COE)> executable memory image"
+	$(ECHO) "  mem           compile and generate <$(APP_MEM)> executable memory image"
+	$(ECHO) "  mif           compile and generate <$(APP_MIF)> executable memory image"
+	$(ECHO) "  image         compile and generate VHDL IMEM application boot image <$(APP_VHD)> in local folder"
+	$(ECHO) "  install       compile, generate and install VHDL IMEM application boot image <$(APP_VHD)>"
+	$(ECHO) "  sim           in-console simulation using default testbench (sim folder) and GHDL"
+	$(ECHO) "  hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
+	$(ECHO) "  all           exe + install + hex + bin + asm"
+	$(ECHO) "  elf_info      show ELF layout info"
+	$(ECHO) "  elf_sections  show ELF sections"
+	$(ECHO) "  clean         clean up project home folder"
+	$(ECHO) "  clean_all     clean up project home folder and image generator"
+	$(ECHO) "  bl_image      compile and generate VHDL BOOTROM bootloader boot image <$(BOOT_VHD)> in local folder"
+	$(ECHO) "  bootloader    compile, generate and install VHDL BOOTROM bootloader boot image <$(BOOT_VHD)>"
+	$(ECHO) ""
+	$(ECHO) "Variables:"
+	$(ECHO) ""
+	$(ECHO) "  BUILD_VERBOSE   Set to increase build verbosity: \"$(BUILD_VERBOSE)\""
+	$(ECHO) "  USER_FLAGS      Custom toolchain flags [append only]: \"$(USER_FLAGS)\""
+	$(ECHO) "  USER_LIBS       Custom libraries [append only]: \"$(USER_LIBS)\""
+	$(ECHO) "  EFFORT          Optimization level: \"$(EFFORT)\""
+	$(ECHO) "  MARCH           Machine architecture: \"$(MARCH)\""
+	$(ECHO) "  MABI            Machine binary interface: \"$(MABI)\""
+	$(ECHO) "  APP_INC         C include folder(s) [append only]: \"$(APP_INC)\""
+	$(ECHO) "  APP_SRC         C source folder(s) [append only]: \"$(APP_SRC)\""
+	$(ECHO) "  APP_OBJ         Object file(s) [append only]: \"$(APP_OBJ)\""
+	$(ECHO) "  ASM_INC         ASM include folder(s) [append only]: \"$(ASM_INC)\""
+	$(ECHO) "  RISCV_PREFIX    Toolchain prefix: \"$(RISCV_PREFIX)\""
+	$(ECHO) "  NEORV32_HOME    NEORV32 home folder: \"$(NEORV32_HOME)\""
+	$(ECHO) "  GDB_ARGS        GDB (connection) arguments: \"$(GDB_ARGS)\""
+	$(ECHO) "  GHDL_RUN_FLAGS  GHDL simulation run arguments: \"$(GHDL_RUN_FLAGS)\""
+	$(ECHO) ""
