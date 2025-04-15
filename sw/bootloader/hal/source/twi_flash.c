@@ -73,12 +73,6 @@ int twi_flash_read_word(uint32_t addr, uint32_t* rdata) {
   #error "Invalid TWI_FLASH_ADDR_BYTES configuration!"
 #endif
 
-  // delay repeated-start with bus released
-  uint32_t ctrl = NEORV32_TWI->CTRL;
-  NEORV32_TWI->CTRL = 0;         // disable TWI
-  for(int i = 0; i < 5; i++) asm volatile("nop"); // delay
-  NEORV32_TWI->CTRL = ctrl;	    // enable TWI
-
   // repeated-start condition
   neorv32_twi_generate_start();
 
