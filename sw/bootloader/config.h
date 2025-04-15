@@ -42,6 +42,11 @@
 #define UART_HW_HANDSHAKE_EN 0
 #endif
 
+// Print splash screen
+#ifndef UART_PRINT_SPLASH_EN
+#define UART_PRINT_SPLASH_EN 1
+#endif
+
 /**********************************************************************
  * Status LED
  **********************************************************************/
