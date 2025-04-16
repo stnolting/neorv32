@@ -226,3 +226,19 @@ int twi_flash_write_word(uint32_t addr, uint32_t wdata) {
   return 1;
 #endif
 }
+
+/**
+* @brief Keeps TWI Peripheral in IDLE for 'tick_count' TWI clock ticks
+*
+* @param tick_count Amount of TWI NOP ticks to wait
+*
+*/
+void twi_flash_delay_twi_tick(int tick_count){
+
+  for(int i = 0; i < tick_count; i++)
+  {
+    while (NEORV32_TWI->CTRL & (1<<TWI_CTRL_TX_FULL)); // wait for free TX entry
+    NEORV32_TWI->DCMD = (uint32_t)(TWI_CMD_NOP << TWI_DCMD_CMD_LO); // IDLE for 1 twi tick
+  }
+  while (NEORV32_TWI->CTRL & (1 << TWI_CTRL_BUSY)); // wait until FIFO empty
+}
