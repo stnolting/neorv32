@@ -333,7 +333,7 @@ begin
         -- ------------------------------------------------------------
           if (clk_gen.phase(0) = '1') then
             io_con.sda_out <= '1';
-          elsif (clk_gen.phase(2) = '1') then
+          elsif (clk_gen.phase(1) = '1') then
             io_con.sda_out <= '0';
           end if;
           --
