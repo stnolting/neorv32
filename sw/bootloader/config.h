@@ -150,7 +150,7 @@
 
 // TWI flash bulk write enable
 #ifndef TWI_FLASH_BULK_WRITE_EN
-#define TWI_FLASH_BULK_WRITE_EN 1
+#define TWI_FLASH_BULK_WRITE_EN 0
 #endif
 
 #endif // CONFIG_H
