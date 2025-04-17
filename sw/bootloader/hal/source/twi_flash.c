@@ -84,10 +84,10 @@ int twi_flash_read_word(uint32_t addr, uint32_t* rdata) {
   for (i = 0; i < 4; i++) {
     transfer = 0xFF;
     if (i == 3) {
-      device_nack |= neorv32_twi_transfer(&transfer, 1); // NACK by host
+      neorv32_twi_transfer(&transfer, 0); // NACK by host
     }
     else {
-      neorv32_twi_transfer(&transfer, 0);
+      neorv32_twi_transfer(&transfer, 1); // ACK by Host
     }
     data.uint8[i] = transfer;
   }
@@ -96,14 +96,10 @@ int twi_flash_read_word(uint32_t addr, uint32_t* rdata) {
   // send stop condition
   neorv32_twi_generate_stop();
 
-  if (device_nack) {
-    neorv32_uart0_puts("\nTWI_R ERR\n");
-    return 1;
-  }
-  else {
-    neorv32_uart0_puts("\nTWI_R OK\n");
-    return 0;
-  }
+  // delay next read
+  twi_flash_delay_twi_tick(1000);
+
+  return device_nack;
 #else
   return 1;
 #endif
@@ -115,9 +111,10 @@ int twi_flash_read_word(uint32_t addr, uint32_t* rdata) {
  *
  * @param addr TWI flash write address.
  * @param wdata TWI flash write data.
+ * @param stop Send TWI stop command at end of transmission
  * @return 0 if success, !=0 if error
  **************************************************************************/
-int twi_flash_write_byte(uint32_t addr, uint8_t wdata) {
+int twi_flash_write_byte(uint32_t addr, uint8_t wdata, int stop) {
 
   int device_nack = 0;
   uint8_t transfer;
@@ -165,7 +162,13 @@ int twi_flash_write_byte(uint32_t addr, uint8_t wdata) {
   device_nack |= neorv32_twi_transfer(&transfer, 0);
 
   // send stop condition
-  neorv32_twi_generate_stop();
+  if (stop) {
+    neorv32_twi_generate_stop();
+
+    // delay next send for EEPROM write cycle
+    neorv32_aux_delay_ms(NEORV32_SYSINFO->CLK,5); // t_wr(max) = 5ms
+  }
+
 
   return device_nack;
 }
@@ -191,11 +194,28 @@ int twi_flash_write_word(uint32_t addr, uint32_t wdata) {
 
   // write four bytes
   data.uint32 = wdata;
-  device_nack += twi_flash_write_byte(addr+0, data.uint8[0]);
-  device_nack += twi_flash_write_byte(addr+1, data.uint8[1]);
-  device_nack += twi_flash_write_byte(addr+2, data.uint8[2]);
-  device_nack += twi_flash_write_byte(addr+3, data.uint8[3]);
+  #if(TWI_FLASH_BULK_WRITE_EN != 0)
+    // send data
+    uint8_t transfer = 0;
+    device_nack += twi_flash_write_byte(addr, data.uint8[0], 0);  // Start + addr + first byte
+    transfer = data.uint8[1];
+    device_nack += neorv32_twi_transfer(&transfer, 0);
+    transfer = data.uint8[2];
+    device_nack += neorv32_twi_transfer(&transfer, 0);
+    transfer = data.uint8[3];
+    device_nack += neorv32_twi_transfer(&transfer, 0);
 
+    // send stop condition
+    neorv32_twi_generate_stop();
+
+    // delay next send for EEPROM write cycle
+    neorv32_aux_delay_ms(NEORV32_SYSINFO->CLK,5); // t_wr(max) = 5ms
+  #else
+    device_nack += twi_flash_write_byte(addr+0, data.uint8[0], 1);
+    device_nack += twi_flash_write_byte(addr+1, data.uint8[1], 1);
+    device_nack += twi_flash_write_byte(addr+2, data.uint8[2], 1);
+    device_nack += twi_flash_write_byte(addr+3, data.uint8[3], 1);
+  #endif
   if (device_nack) {
     return 1;
   }
@@ -205,4 +225,20 @@ int twi_flash_write_word(uint32_t addr, uint32_t wdata) {
 #else
   return 1;
 #endif
+}
+
+/**
+* @brief Keeps TWI Peripheral in IDLE for 'tick_count' TWI clock ticks
+*
+* @param tick_count Amount of TWI NOP ticks to wait
+*
+*/
+void twi_flash_delay_twi_tick(int tick_count){
+
+  for(int i = 0; i < tick_count; i++)
+  {
+    while (NEORV32_TWI->CTRL & (1<<TWI_CTRL_TX_FULL)); // wait for free TX entry
+    NEORV32_TWI->DCMD = (uint32_t)(TWI_CMD_NOP << TWI_DCMD_CMD_LO); // IDLE for 1 twi tick
+  }
+  while (NEORV32_TWI->CTRL & (1 << TWI_CTRL_BUSY)); // wait until FIFO empty
 }

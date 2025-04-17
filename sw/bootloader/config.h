@@ -42,6 +42,11 @@
 #define UART_HW_HANDSHAKE_EN 0
 #endif
 
+// Print splash screen
+#ifndef UART_PRINT_SPLASH_EN
+#define UART_PRINT_SPLASH_EN 1
+#endif
+
 /**********************************************************************
  * Status LED
  **********************************************************************/
@@ -120,7 +125,12 @@
 
 // TWI clock divider
 #ifndef TWI_CLK_DIV
-#define TWI_CLK_DIV 1
+#define TWI_CLK_DIV 3
+#endif
+
+// TWI allow clock stretching
+#ifndef TWI_CLK_STRECH_EN
+#define TWI_CLK_STRECH_EN 0
 #endif
 
 // TWI device ID (write address; R/W cleared)
@@ -136,6 +146,11 @@
 // TWI flash address bytes (1,2,3,4)
 #ifndef TWI_FLASH_ADDR_BYTES
 #define TWI_FLASH_ADDR_BYTES 2
+#endif
+
+// TWI flash bulk write enable
+#ifndef TWI_FLASH_BULK_WRITE_EN
+#define TWI_FLASH_BULK_WRITE_EN 0
 #endif
 
 #endif // CONFIG_H

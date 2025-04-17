@@ -86,8 +86,8 @@ int main(void) {
 
   // setup TWI
 #if (TWI_EN != 0)
-  if (neorv32_uart0_available()) {
-    neorv32_twi_available();
+  if (neorv32_twi_available()) {
+    neorv32_twi_setup(TWI_CLK_PRSC, TWI_CLK_DIV, TWI_CLK_STRECH_EN);
   }
 #endif
 
@@ -104,7 +104,7 @@ int main(void) {
   // ------------------------------------------------
   // Splash screen
   // ------------------------------------------------
-
+#if (UART_PRINT_SPLASH_EN != 0)
   uart_puts("\n\n\nNEORV32 Bootloader\n\n"
             "BLDV: "
             __DATE__
@@ -123,6 +123,7 @@ int main(void) {
   uart_puts("\nDMEM: ");
   uart_puth((uint32_t)(1 << NEORV32_SYSINFO->MISC[SYSINFO_MISC_DMEM]) & 0xFFFFFFFCU);
   uart_puts("\n\n");
+#endif
 
   // ------------------------------------------------
   // Auto boot sequence
