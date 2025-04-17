@@ -30,13 +30,14 @@ Depending on the configured number channels, the PWM module provides 16 configur
 be accessed without raising an exception. However, registers above `IO_PWM_NUM_CH-1` are read-only and hardwired to
 all-zero.
 
-Each configuration provides a 1-bit enable flag to enable/disable the according channel, an 8-bit register for setting
-the duty cycle and a 3-bit clock prescaler select as well as a 10-bit clock diver for _coarse_ and _fine_ tuning of the
-carrier frequency, respectively.
+Each configuration provides a 1-bit enable flag to enable/disable the according channel, a 1-bit flag for setting the
+channel polarity, an 8-bit register for setting the duty cycle and a 3-bit clock prescaler select as well as a 10-bit clock
+diver for _coarse_ and _fine_ tuning of the carrier frequency, respectively.
 
-A channel is enabled by setting the `PWM_CFG_EN` bit. If this bit is cleared the according PWM output is set to zero.
-The duty cycle is programmed via the 8 `PWM_CFG_DUTY` bits. Based on the value programmed to this bits the duty cycle
-the resulting duty cycle of the according channel can be computed by the following formula:
+A channel is enabled by setting the `PWM_CFG_EN` bit. If this bit is cleared the according PWM output is deasserted
+(zero if channel polarity is not inverted, one if inverted). The duty cycle is programmed via the 8 `PWM_CFG_DUTY` bits.
+Based on the value programmed to these bits the resulting duty cycle of the according channel can be computed by the
+following formula:
 
 _Duty Cycle_[%] = `PWM_CFG_DUTY` / 2^8^
 
@@ -66,13 +67,15 @@ _f~PWM~_[Hz] = _f~main~_[Hz] / (2^8^ * `clock_prescaler` * (1 + `PWM_CFG_CDIV`))
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
 .5+<| `0xfff00000` .5+<| `CHANNEL_CFG[0]`  <|`31`    - `PWM_CFG_EN`                        ^| r/w <| Channel 0: channel enabled when set
                                            <|`30:28` - `PWM_CFG_PRSC_MSB:PWM_CFG_PRSC_LSB` ^| r/w <| Channel 0: 3-bit clock prescaler select
-                                           <|`27:18`                                       ^| r/- <| Channel 0: _reserved_, hardwired to zero
+                                           <|`27`    - `PWM_CFG_POL`                       ^| r/w <| Channel 0: channel polarity, inverted when set
+                                           <|`26:18`                                       ^| r/- <| Channel 0: _reserved_, hardwired to zero
                                            <|`17:8`  - `PWM_CFG_CDIV_MSB:PWM_CFG_CDIV_LSB` ^| r/w <| Channel 0: 10-bit clock divider
                                            <|`7:0`   - `PWM_CFG_DUTY_MSB:PWM_CFG_DUTY_LSB` ^| r/w <| Channel 0: 8-bit duty cycle
 | `0xfff00004` ... `0xfff00038` | `CHANNEL_CFG[1]` ... `CHANNEL_CFG[14]` | ... | r/w <| Channels 1 to 14
 .5+<| `0xfff0003C` .5+<| `CHANNEL_CFG[15]` <|`31`    - `PWM_CFG_EN`                        ^| r/w <| Channel 15: channel enabled when set
                                            <|`30:28` - `PWM_CFG_PRSC_MSB:PWM_CFG_PRSC_LSB` ^| r/w <| Channel 15: 3-bit clock prescaler select
-                                           <|`27:18`                                       ^| r/- <| Channel 15: _reserved_, hardwired to zero
+                                           <|`27`    - `PWM_CFG_POL`                       ^| r/w <| Channel 15: channel polarity, inverted when set
+                                           <|`26:18`                                       ^| r/- <| Channel 15: _reserved_, hardwired to zero
                                            <|`17:8`  - `PWM_CFG_CDIV_MSB:PWM_CFG_CDIV_LSB` ^| r/w <| Channel 15: 10-bit clock divider
                                            <|`7:0`   - `PWM_CFG_DUTY_MSB:PWM_CFG_DUTY_LSB` ^| r/w <| Channel 15: 8-bit duty cycle
 |=======================

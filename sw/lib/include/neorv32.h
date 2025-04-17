@@ -23,7 +23,6 @@ extern "C" {
 #include <inttypes.h>
 #include <stdlib.h>
 
-
 /**********************************************************************//**
  * @name IO Address Space Map - Peripheral/IO Devices
  **************************************************************************/
@@ -171,6 +170,16 @@ extern "C" {
 #define SLINK_TX_RTE_ID        RTE_TRAP_FIRQ_15  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
 #define SLINK_TX_TRAP_CODE     TRAP_CODE_FIRQ_15 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name NEORV32 Makefile symbols
+ **************************************************************************/
+/**@{*/
+#ifndef NEORV32_GIT_TAG
+#define NEORV32_GIT_TAG "unknown"
+#endif
 /**@}*/
 
 

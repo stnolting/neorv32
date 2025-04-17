@@ -4,33 +4,27 @@
 // UART baud rate
 #define BAUD_RATE 19200
 
+// Setup the processor
+void platform_init(void) {
+  neorv32_rte_setup();
+  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, 0);
+}
 
-// Simple bus-wait helper
+// Simple busy-wait delay function
 void delay_ms(uint32_t time_ms) {
   neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), time_ms);
 }
 
-
 // Main function
 int main() {
 
-  // setup NEORV32 runtime environment
-  neorv32_rte_setup();
-
-  // setup UART0 at default baud rate, no interrupts
-  neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, 0);
-
-  // clear GPIO output (set all bits to 0)
-  neorv32_gpio_port_set(0);
+  // initialize the platform
+  platform_init();
 
   // say hello
-  printf("Hello Eclipse!\n"); // stdio's printf uses UART0
-
-  int cnt = 0;
-  while (1) {
-    cnt = (cnt + 1) & 0xff; // increment counter and mask for lowest 8 bit
-    neorv32_gpio_port_set(cnt); // output via GPIO.out
-    delay_ms(250); // wait 250ms using busy wait
+  while(1) {
+    printf("Hello Eclipse!\n");
+    delay_ms(500);
   }
 
   // this should never be reached
