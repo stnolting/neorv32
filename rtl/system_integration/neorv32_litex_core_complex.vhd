@@ -103,7 +103,7 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     dmem         => ( false,   false,   false,   false, true  ), -- enable data memory
     imem         => ( false,   false,   false,   false, false ), -- enable instruction memory
     dcache       => ( false,   false,   false,   true,  false ), -- enable data cache
-    icache       => ( false,   false,   false,   true,  true ), -- enable instruction cache
+    icache       => ( false,   false,   false,   true,  true ),  -- enable instruction cache
     riscv_zicntr => ( false,   false,   true,    true,  true  ), -- RISC-V standard CPU counters 'Zicntr'
     riscv_zihpm  => ( false,   false,   false,   true,  true  ), -- RISC-V hardware performance monitors 'Zihpm'
     fast_ops     => ( false,   false,   true,    true,  false ), -- use DSPs and barrel-shifters
@@ -174,8 +174,8 @@ begin
     xbus_dat_o  => wb_dat_o,   -- write data
     xbus_we_o   => wb_we_o,    -- read/write
     xbus_sel_o  => wb_sel_o,   -- byte enable
-    xbus_stb_o  => wb_stb_o,       -- strobe
-    xbus_cyc_o  => wb_cyc_o,     -- valid cycle
+    xbus_stb_o  => wb_stb_o,   -- strobe
+    xbus_cyc_o  => wb_cyc_o,   -- valid cycle
     xbus_dat_i  => wb_dat_i,   -- read data
     xbus_ack_i  => wb_ack_i,   -- transfer acknowledge
     xbus_err_i  => wb_err_i,   -- transfer error
