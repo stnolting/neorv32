@@ -272,13 +272,6 @@ begin
       end process addr_masking;
     end generate; -- /nap_mode_enable
 
-    -- NAPOT disabled --
-    nap_mode_disable:
-    if not NAP_EN generate
-      addr_mask_napot <= (others => (others => '0'));
-      addr_mask       <= (others => (others => '0'));
-    end generate;
-
 
     -- check region address match --
     -- NA4 and NAPOT --
@@ -341,6 +334,14 @@ begin
       end if;
     end process perm_gen;
 
+  end generate;
+
+
+  -- NAPOT disabled --
+  nap_mode_disable:
+  if not NAP_EN generate
+    addr_mask_napot <= (others => (others => '0'));
+    addr_mask       <= (others => (others => '0'));
   end generate;
 
 
