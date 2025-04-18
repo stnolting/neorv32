@@ -27,7 +27,7 @@ support block-based transmissions without CPU interaction.
 
 .Device-Mode Only
 [NOTE]
-The NEORV32 SDI module only supports _device mode_. Transmission are initiated by an external host and not by the
+The NEORV32 SDI module only supports _device mode_. Transmission is initiated by an external host and not by
 the processor itself. If you are looking for a _host-mode_ serial peripheral interface (transactions
 performed by the NEORV32) check out the <<_serial_peripheral_interface_controller_spi>>.
 
