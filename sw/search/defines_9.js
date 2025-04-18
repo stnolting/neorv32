@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['sdi_5ffirq_5fenable_0',['SDI_FIRQ_ENABLE',['../neorv32_8h.html#a30cf20b6d704c50cc5c46238bb43646f',1,'neorv32.h']]],
+  ['sdi_5ffirq_5fpending_1',['SDI_FIRQ_PENDING',['../neorv32_8h.html#a68611c0dfbe331739eff10230ac3fede',1,'neorv32.h']]],
+  ['sdi_5frte_5fid_2',['SDI_RTE_ID',['../neorv32_8h.html#aa0ff72ea560d7e1462787dc31bd467cf',1,'neorv32.h']]],
+  ['sdi_5ftrap_5fcode_3',['SDI_TRAP_CODE',['../neorv32_8h.html#a68925ca3f482f148caedd36118fd8d79',1,'neorv32.h']]],
+  ['silent_5fmode_4',['SILENT_MODE',['../example_2float__corner__test_2main_8c.html#a87f296d7594bb8178cf76f0c045b7013',1,'SILENT_MODE:&#160;main.c'],['../example_2floating__point__test_2main_8c.html#a87f296d7594bb8178cf76f0c045b7013',1,'SILENT_MODE:&#160;main.c']]],
+  ['slink_5frx_5ffirq_5fenable_5',['SLINK_RX_FIRQ_ENABLE',['../neorv32_8h.html#a8680ab1f14e512f21913572b35cbbf77',1,'neorv32.h']]],
+  ['slink_5frx_5ffirq_5fpending_6',['SLINK_RX_FIRQ_PENDING',['../neorv32_8h.html#a5c48d5c4effb47cdb019aa2da7c84526',1,'neorv32.h']]],
+  ['slink_5frx_5frte_5fid_7',['SLINK_RX_RTE_ID',['../neorv32_8h.html#a4fff18e72d10377cdcb8d2ac0a617a5d',1,'neorv32.h']]],
+  ['slink_5frx_5ftrap_5fcode_8',['SLINK_RX_TRAP_CODE',['../neorv32_8h.html#ab1fdaedb2c4c8753ef3be87c82568dda',1,'neorv32.h']]],
+  ['slink_5ftx_5ffirq_5fenable_9',['SLINK_TX_FIRQ_ENABLE',['../neorv32_8h.html#a232fe0eb5665373b6e2b464bdc228df2',1,'neorv32.h']]],
+  ['slink_5ftx_5ffirq_5fpending_10',['SLINK_TX_FIRQ_PENDING',['../neorv32_8h.html#ac8e98b2af75c8e31f9815dee3dcbaf8e',1,'neorv32.h']]],
+  ['slink_5ftx_5frte_5fid_11',['SLINK_TX_RTE_ID',['../neorv32_8h.html#a4e039d13b8d3f20453e1bb6b40512e43',1,'neorv32.h']]],
+  ['slink_5ftx_5ftrap_5fcode_12',['SLINK_TX_TRAP_CODE',['../neorv32_8h.html#a7fbe28901775e284d5700086f0b0bfcd',1,'neorv32.h']]],
+  ['spi_5ffirq_5fenable_13',['SPI_FIRQ_ENABLE',['../neorv32_8h.html#ab8fcd3f80c373eb0f9d0fc6bf64ca626',1,'neorv32.h']]],
+  ['spi_5ffirq_5fpending_14',['SPI_FIRQ_PENDING',['../neorv32_8h.html#ab2f58f746febb29a9828447c733f8043',1,'neorv32.h']]],
+  ['spi_5frte_5fid_15',['SPI_RTE_ID',['../neorv32_8h.html#a4c1cd9ec9f80da2080e5d0d35cc524dd',1,'neorv32.h']]],
+  ['spi_5ftrap_5fcode_16',['SPI_TRAP_CODE',['../neorv32_8h.html#a83c212f1f5d8ee2a5921b3b2b19e9cc4',1,'neorv32.h']]]
+];
