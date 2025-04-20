@@ -254,7 +254,12 @@ int neorv32_uart_tx_busy(neorv32_uart_t *UARTx) {
  **************************************************************************/
 int neorv32_uart_tx_free(neorv32_uart_t *UARTx) {
 
-  return (int)~(UARTx->CTRL & (1<<UART_CTRL_TX_FULL));
+  if (UARTx->CTRL & (1<<UART_CTRL_TX_FULL)) {
+    return 0;
+  }
+  else {
+    return 1;
+  }
 }
 
 
