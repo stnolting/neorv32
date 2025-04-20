@@ -102,6 +102,8 @@ void neorv32_uart_putc(neorv32_uart_t *UARTx, char c);
 void neorv32_uart_rx_clear(neorv32_uart_t *UARTx);
 void neorv32_uart_tx_clear(neorv32_uart_t *UARTx);
 int  neorv32_uart_tx_busy(neorv32_uart_t *UARTx);
+int  neorv32_uart_tx_free(neorv32_uart_t *UARTx);
+void neorv32_uart_tx_put(neorv32_uart_t *UARTx, char c);
 char neorv32_uart_getc(neorv32_uart_t *UARTx);
 int  neorv32_uart_char_received(neorv32_uart_t *UARTx);
 char neorv32_uart_char_received_get(neorv32_uart_t *UARTx);
@@ -128,6 +130,8 @@ int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ec
 #define neorv32_uart0_rx_clear()                   neorv32_uart_rx_clear(NEORV32_UART0)
 #define neorv32_uart0_tx_clear()                   neorv32_uart_tx_clear(NEORV32_UART0)
 #define neorv32_uart0_tx_busy()                    neorv32_uart_tx_busy(NEORV32_UART0)
+#define neorv32_uart0_tx_free()                    neorv32_uart_tx_free(NEORV32_UART0)
+#define neorv32_uart0_tx_put(c)                    neorv32_uart_tx_put(NEORV32_UART0, c)
 #define neorv32_uart0_getc()                       neorv32_uart_getc(NEORV32_UART0)
 #define neorv32_uart0_char_received()              neorv32_uart_char_received(NEORV32_UART0)
 #define neorv32_uart0_char_received_get()          neorv32_uart_char_received_get(NEORV32_UART0)
@@ -147,6 +151,8 @@ int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ec
 #define neorv32_uart1_rx_clear()                   neorv32_uart_rx_clear(NEORV32_UART1)
 #define neorv32_uart1_tx_clear()                   neorv32_uart_tx_clear(NEORV32_UART1)
 #define neorv32_uart1_tx_busy()                    neorv32_uart_tx_busy(NEORV32_UART1)
+#define neorv32_uart1_tx_free()                    neorv32_uart_tx_free(NEORV32_UART1)
+#define neorv32_uart1_tx_put(c)                    neorv32_uart_tx_put(NEORV32_UART1, c)
 #define neorv32_uart1_getc()                       neorv32_uart_getc(NEORV32_UART1)
 #define neorv32_uart1_char_received()              neorv32_uart_char_received(NEORV32_UART1)
 #define neorv32_uart1_char_received_get()          neorv32_uart_char_received_get(NEORV32_UART1)

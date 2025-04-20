@@ -194,6 +194,8 @@ void neorv32_uart_rtscts_disable(neorv32_uart_t *UARTx) {
 /**********************************************************************//**
  * Send single char via UART.
  *
+ * @note This function is blocking.
+ *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] c Char to be send.
  **************************************************************************/
@@ -241,6 +243,30 @@ int neorv32_uart_tx_busy(neorv32_uart_t *UARTx) {
   else {
     return 0;
   }
+}
+
+
+/**********************************************************************//**
+ * Check if there is free space in the TX output FIFO.
+ *
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
+ * @return Zero if TX FIFO is full, non-zero if at least one free entry is left.
+ **************************************************************************/
+int neorv32_uart_tx_free(neorv32_uart_t *UARTx) {
+
+  return (int)~(UARTx->CTRL & (1<<UART_CTRL_TX_FULL));
+}
+
+
+/**********************************************************************//**
+ * Put char to TX output FIFO.
+ *
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
+ * @param[in] c Character to be send.
+ **************************************************************************/
+void neorv32_uart_tx_put(neorv32_uart_t *UARTx, char c) {
+
+  UARTx->DATA = (uint32_t)c << UART_DATA_RTX_LSB;
 }
 
 
