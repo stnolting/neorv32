@@ -14,19 +14,13 @@ controlled by a single _CONFIGURATION_ option wrapped in the LiteX build flow. T
 other LiteX SoC parts.
 
 .Core Complex Wrapper
-[TIP]
+[NOTE]
 The NEORV32 core complex wrapper used by LiteX for integration can be found in
 `rtl/system_integration/neorv32_litex_core_complex.vhd`.
 
-.LiteX NEORV32 Documentation
+.LiteX Port Documentation
 [TIP]
 More information can be found in the "NEORV32" section of the LiteX project wiki: https://github.com/enjoy-digital/litex/wiki/CPUs
-
-.Work-In-Progress 🚧
-[NOTE]
-UG: synthesis - how to create a whole NEORV32 + LiteX SoC for a FPGA +
-LiteX: debugger - the NEORV32 on-chip-debugger is not supported by the LiteX port yet +
-LiteX: external interrupt - the "RISC-V machine external interrupt" is not supported by the LiteX port yet
 
 
 === LiteX Setup

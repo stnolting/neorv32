@@ -839,7 +839,6 @@ Several peripheral/IO devices provide some kind of interrupt. These interrupts a
 [TIP]
 A CMSIS-compatible **System View Description (SVD)** file including all peripherals is available in `sw/svd`.
 
-
 include::soc_imem.adoc[]
 
 include::soc_dmem.adoc[]

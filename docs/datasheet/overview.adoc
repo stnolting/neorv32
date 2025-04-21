@@ -88,7 +88,12 @@ include::rationale.adoc[]
 * core libraries and HAL for high-level usage of the provided functions and peripherals
 * processor-specific runtime environment and several example programs
 * Doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
-* FreeRTOS port + demos available
+
+**OS Support**
+
+* FreeRTOS port: https://github.com/stnolting/neorv32-freertos
+* Upstream Zephyr support: https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html
+* MicroPython port: https://github.com/stnolting/neorv32-micropython
 
 **Extensibility and Customization**
 
