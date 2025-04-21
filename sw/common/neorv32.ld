@@ -12,14 +12,13 @@ OUTPUT_FORMAT("elf32-littleriscv")
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
 
-
 /* ************************************************************************************************* */
 /* NEORV32 memory layout configuration                                                               */
 /* If the "__neorv32_*" symbols are not **explicitly defined** the default configurations are used.  */
 /* [NOTE] section sizes have to be a multiple of 4 bytes; base addresses have to be 32-bit-aligned.  */
 /* ************************************************************************************************* */
 
-/* Default HEAP size (= 0; no heap at all) */
+/* Default HEAP size (= 0; no heap by default) */
 __neorv32_heap_size = DEFINED(__neorv32_heap_size) ? __neorv32_heap_size : 0;
 
 /* Default rom/ram (IMEM/DMEM) sizes */
@@ -30,7 +29,6 @@ __neorv32_ram_size = DEFINED(__neorv32_ram_size) ? __neorv32_ram_size : 8K;
 __neorv32_rom_base = DEFINED(__neorv32_rom_base) ? __neorv32_rom_base : 0x00000000;
 __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x80000000;
 
-
 /* ************************************************************************************************* */
 /* Main memory segments that are relevant for the executable.                                        */
 /* ************************************************************************************************* */
@@ -39,7 +37,6 @@ MEMORY
   rom  (rx) : ORIGIN = __neorv32_rom_base, LENGTH = __neorv32_rom_size
   ram (rwx) : ORIGIN = __neorv32_ram_base, LENGTH = __neorv32_ram_size
 }
-
 
 /* ************************************************************************************************* */
 /* Section ".text" - program code                                                                    */
@@ -92,7 +89,6 @@ SECTIONS
     PROVIDE (etext = .);
   } > rom
 
-
 /* ************************************************************************************************* */
 /* Section ".rodata" - read-only constants and ".data" initialization                                */
 /* This is the second part of the actual/final executable the will be places right after ".text"     */
@@ -107,7 +103,6 @@ SECTIONS
     . = ALIGN(4);
     __RODATA_END__ = .;
   } > rom
-
 
 /* ************************************************************************************************* */
 /* Section ".data" - pre-initialized variables                                                       */
@@ -143,7 +138,6 @@ SECTIONS
     __global_pointer$ = __DATA_END__ + 0x800;
   } > ram AT > rom
 
-
 /* ************************************************************************************************* */
 /* Section ".bss" - non-initialized variables                                                        */
 /* The start-up code will clear this section during boot-up                                          */
@@ -177,7 +171,6 @@ SECTIONS
     _end = .; PROVIDE (end = .);
   } > ram
 
-
 /* ************************************************************************************************* */
 /* Section ".heap" - dynamic memory (e.g. malloc)                                                    */
 /* ************************************************************************************************* */
@@ -192,12 +185,11 @@ SECTIONS
     PROVIDE(__heap_end = .);
   } > ram
 
-
 /* ************************************************************************************************* */
 /* Unused sections                                                                                   */
 /* ************************************************************************************************* */
   .jcr                : { KEEP (*(.jcr)) }
-  .got                : { *(.got.plt) *(.igot.plt) *(.got) *(.igot) }  .interp         : { *(.interp) }
+  .got                : { *(.got.plt) *(.igot.plt) *(.got) *(.igot) } .interp : { *(.interp) }
   .note.gnu.build-id  : { *(.note.gnu.build-id) }
   .hash               : { *(.hash) }
   .gnu.hash           : { *(.gnu.hash) }
@@ -222,7 +214,6 @@ SECTIONS
   .rela.sdata2        : { *(.rela.sdata2 .rela.sdata2.* .rela.gnu.linkonce.s2.*) }
   .rela.sbss2         : { *(.rela.sbss2 .rela.sbss2.* .rela.gnu.linkonce.sb2.*) }
   .rela.bss           : { *(.rela.bss .rela.bss.* .rela.gnu.linkonce.b.*) }
-
 
 /* ************************************************************************************************* */
 /* Debug symbols                                                                                     */
@@ -265,7 +256,6 @@ SECTIONS
   .debug_addr      0 : { *(.debug_addr) }
   .gnu.attributes  0 : { KEEP (*(.gnu.attributes)) }
   /DISCARD/          : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
-
 
 /* ************************************************************************************************* */
 /* Export symbols for neorv32 crt0 start-up code                                                     */
