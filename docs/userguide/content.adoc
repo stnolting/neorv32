@@ -26,10 +26,10 @@ which provides **SoC setups** for various FPGAs, boards and toolchains.
 * <<_simulating_the_processor, simulate>> the processor and <<_building_the_documentation, build the documentation>>
 * RTOS support for <<_zephyr_rtos_support, Zephyr>> and <<_freertos_support, FreeRTOS>>
 * build SoCs using <<_litex_soc_builder_support, LiteX>>
+* run Python code using the <<_micropython_port>>
 * in-system <<_debugging_using_the_on_chip_debugger, debugging>> of the whole processor
 * <<_neorv32_in_verilog>> - an all-Verilog "version" of the processor
 * use the <<_eclipse_ide>> to develop and debug code for the NEORV32
-
 
 include::sw_toolchain_setup.adoc[]
 
@@ -63,11 +63,12 @@ include::free_rtos_support.adoc[]
 
 include::litex_support.adoc[]
 
+include::micropython_port.adoc[]
+
 include::debugging_with_ocd.adoc[]
 
 include::neorv32_in_verilog.adoc[]
 
 include::eclipse_ide.adoc[]
-
 
 include::../legal.adoc[]

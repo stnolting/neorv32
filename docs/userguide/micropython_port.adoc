@@ -1,0 +1,46 @@
+<<<
+:sectnums:
+== MicroPython Port
+
+A simple out-of-tree port of https://github.com/micropython/micropython[MicroPython]
+for the NEORV32 RISC-V Processor can be found in a separate repository:
+https://github.com/stnolting/neorv32-micropython
+
+.Work-In-Progress
+[NOTE]
+This port is still under development. Hence, it supports just some simple modules and
+methods yet. However, it is already fully operational.
+
+.MicroPython REPL Console
+[source, python]
+----
+MicroPython v1.25.0 on 2025-04-20; neorv32-default with neorv32
+Type "help()" for more information.
+>>> help("modules")
+__main__          collections       machine           sys
+array             gc                micropython       time
+builtins          io                struct
+Plus any modules on the filesystem
+----
+
+.Basic build-in Modules
+[source, python]
+----
+>>> import machine
+>>> machine.info()
+NEORV32 version 1.11.2.9
+Clock: 150000000 Hz
+MISA:  0x40901105
+MXISA: 0x66006cd3
+SoC:   0x480ba97b
+>>> import time
+>>> time.localtime()
+(2025, 4, 20, 19, 52, 46, 6, 110)
+>>> import builtins
+>>> builtins.neorv32.help()
+neorv32 - helper functions:
+  gpio_pin_set(pin, level)       - Set GPIO.output [pin] to [level]
+  gpio_pin_toggle(pin)           - Toggle GPIO.output [pin]
+  systick_set_callback(callback) - Call [callback] from SysTICK IRQ
+  help()                         - Show this text
+----
