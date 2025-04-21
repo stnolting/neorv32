@@ -997,6 +997,7 @@ discover additional ISA (sub-)extensions and CPU configuration options.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Description
+4+^| **<<_instruction_sets_and_extensions>>**
 |  0    | `CSR_MXISA_ZICSR`     | r/- | <<_zicsr_isa_extension>> available
 |  1    | `CSR_MXISA_ZIFENCEI`  | r/- | <<_zifencei_isa_extension>> available
 |  2    | `CSR_MXISA_ZMMUL`     | r/- | <<_zmmul_isa_extension>> available
@@ -1025,8 +1026,10 @@ discover additional ISA (sub-)extensions and CPU configuration options.
 | 25    | `CSR_MXISA_ZAAMO`     | r/- | <<_zaamo_isa_extension>> available
 | 26    | `CSR_MXISA_ZALRSC`    | r/- | <<_zalrsc_isa_extension>> available
 | 27    | -                     | r/- | _reserved_, hardwired to zero
-| 28    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`CPU_RF_HW_RST_EN`), see <<_cpu_tuning_options>>
-| 29    | `CSR_MXISA_FASTMUL`   | r/- | fast multiplication available when set (`CPU_FAST_MUL_EN`), see <<_cpu_tuning_options>>
-| 30    | `CSR_MXISA_FASTSHIFT` | r/- | fast shifts available when set (`CPU_FAST_SHIFT_EN`), see <<_cpu_tuning_options>>
+4+^| **<<_cpu_tuning_options>>**
+| 28    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`CPU_RF_HW_RST_EN`)
+| 29    | `CSR_MXISA_FASTMUL`   | r/- | fast multiplication available when set (`CPU_FAST_MUL_EN`)
+| 30    | `CSR_MXISA_FASTSHIFT` | r/- | fast shifts available when set (`CPU_FAST_SHIFT_EN`)
+4+^| **Miscellaneous**
 | 31    | `CSR_MXISA_IS_SIM`    | r/- | set if CPU is being **simulated**
 |=======================

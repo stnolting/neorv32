@@ -5,7 +5,7 @@ To make your first NEORV32 project run, follow the guides from the upcoming sect
 follow these guides step by step and eventually in the presented order.
 
 [TIP]
-This guide uses the minimalistic and platform/toolchain agnostic SoC **test setups** from
+This guide uses the minimalist and platform/toolchain agnostic SoC **test setups** from
 `rtl/test_setups` for illustration. You can use one of the provided test setups for
 your first FPGA tests. +
  +
