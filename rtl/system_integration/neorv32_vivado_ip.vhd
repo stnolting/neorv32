@@ -34,6 +34,7 @@ entity neorv32_vivado_ip is
     BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000";
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                        := false;
+    OCD_HW_BREAKPOINT     : boolean                        := false;
     OCD_AUTHENTICATION    : boolean                        := false;
     OCD_JEDEC_ID          : std_logic_vector(10 downto 0)  := "00000000000";
     -- RISC-V CPU Extensions --
@@ -347,6 +348,7 @@ begin
     BOOT_ADDR_CUSTOM      => BOOT_ADDR_CUSTOM,
     -- On-Chip Debugger --
     OCD_EN                => OCD_EN,
+    OCD_HW_BREAKPOINT     => OCD_HW_BREAKPOINT,
     OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
     OCD_JEDEC_ID          => std_ulogic_vector(OCD_JEDEC_ID),
     -- RISC-V CPU Extensions --
