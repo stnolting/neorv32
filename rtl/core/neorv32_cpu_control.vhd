@@ -182,7 +182,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     --
     tdata1_execute : std_ulogic; -- enable instruction address match trigger
     tdata1_action  : std_ulogic; -- enter debug mode / ebreak exception when trigger fires
-    tdata1_dmode   : std_ulogic; -- set to ignore tdata* CSR access from machine-mode
     tdata1_rd      : std_ulogic_vector(XLEN-1 downto 0); -- trigger register read-back
     tdata2         : std_ulogic_vector(XLEN-1 downto 0); -- address-match register
   end record;
@@ -1109,7 +1108,6 @@ begin
       csr.dscratch0      <= (others => '0');
       csr.tdata1_execute <= '0';
       csr.tdata1_action  <= '0';
-      csr.tdata1_dmode   <= '0';
       csr.tdata2         <= (others => '0');
     elsif rising_edge(clk_i) then
 
@@ -1225,18 +1223,15 @@ begin
 
         -- match control --
         if (csr.addr = csr_tdata1_c) and RISCV_ISA_Sdtrig then
-          if (csr.tdata1_dmode = '0') or (debug_ctrl.run = '1') then -- write access from debug-mode only?
+          if (debug_ctrl.run = '1') then -- only accept write-access from debug-mode (DMODE = 1)
             csr.tdata1_execute <= csr.wdata(2);
             csr.tdata1_action  <= csr.wdata(12);
-          end if;
-          if (debug_ctrl.run = '1') then -- writable from debug-mode only
-            csr.tdata1_dmode <= csr.wdata(27);
           end if;
         end if;
 
         -- address compare --
         if (csr.addr = csr_tdata2_c) and RISCV_ISA_Sdtrig then
-          if (csr.tdata1_dmode = '0') or (debug_ctrl.run = '1') then -- write access from debug-mode only?
+          if (debug_ctrl.run = '1') then -- only accept write-access from debug-mode (DMODE = 1)
             csr.tdata2 <= csr.wdata(XLEN-1 downto 1) & '0';
           end if;
         end if;
@@ -1357,7 +1352,6 @@ begin
       if not RISCV_ISA_Sdtrig then
         csr.tdata1_execute <= '0';
         csr.tdata1_action  <= '0';
-        csr.tdata1_dmode   <= '0';
         csr.tdata2         <= (others => '0');
       end if;
 
@@ -1661,7 +1655,7 @@ begin
     end process debug_control;
 
     -- debug mode entry triggers --
-    debug_ctrl.trig_hw    <= trap_ctrl.hwtrig and (not debug_ctrl.run) and csr.tdata1_action and csr.tdata1_dmode; -- enter debug mode by HW trigger module
+    debug_ctrl.trig_hw    <= trap_ctrl.hwtrig and (not debug_ctrl.run) and csr.tdata1_action; -- enter debug mode by HW trigger module
     debug_ctrl.trig_break <= trap_ctrl.ebreak and (debug_ctrl.run or -- re-enter debug mode
                              ((    csr.prv_level) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
                              ((not csr.prv_level) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
@@ -1740,7 +1734,7 @@ begin
   -- Match Control CSR (mcontrol6 @ tdata1) - Read-Back -------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr.tdata1_rd(31 downto 28) <= x"6"; -- type: address match trigger (mcontrol6)
-  csr.tdata1_rd(27)           <= csr.tdata1_dmode; -- dmode: set to ignore machine-mode write access to tdata* CSRs
+  csr.tdata1_rd(27)           <= '1'; -- dmode: ignore machine-mode write accesses
   csr.tdata1_rd(26)           <= '0'; -- uncertain: trigger satisfies the configured conditions
   csr.tdata1_rd(25)           <= '0'; -- hit1: hardwired to zero
   csr.tdata1_rd(24)           <= '0'; -- vs: VS-mode not implemented
