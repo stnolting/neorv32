@@ -279,8 +279,14 @@ void start_app(void) {
   // wait for UART0 to finish transmitting
   while (neorv32_uart0_tx_busy());
 
-  // start application
-  asm volatile ("csrw mepc, %0; mret" : : "r" (app_base));
+  // start application in machine mode
+  uint32_t mstatus_init = (1 << CSR_MSTATUS_MPP_H) + (1 << CSR_MSTATUS_MPP_L);
+  asm volatile (
+    "csrw mstatus, %[msta] \n"
+    "csrw mepc,    %[addr] \n"
+    "mret                  \n"
+    : : [msta] "r" (mstatus_init), [addr] "r" (app_base)
+  );
 
   __builtin_unreachable();
   while (1); // should never be reached
