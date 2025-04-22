@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 22.04.2025 | 1.11.3.1 | add new top generic (`OCD_HW_BREAKPOINT`) to enable/disable OCD's hardware trigger; :warning: hardwire `tdata1.dmode` to `1` - only debug-mode can use the trigger module | [#1239](https://github.com/stnolting/neorv32/pull/1239) |
 | 21.04.2025 | [**:rocket:1.11.3**](https://github.com/stnolting/neorv32/releases/tag/v1.11.3) | **New release** | |
 | 18.04.2025 | 1.11.2.9 | adjust TWI timing to allow for repeated-start at higher TWI clock speeds | [#1237](https://github.com/stnolting/neorv32/pull/1237) |
 | 18.04.2025 | 1.11.2.8 | :bug: fix bug in PMP logic: multiple signal assignments when NAPOT-mode is disabled | [#1236](https://github.com/stnolting/neorv32/pull/1236) |
