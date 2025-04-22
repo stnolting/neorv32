@@ -799,14 +799,15 @@ return to the address stored in `dpc` by automatically moving `dpc` to the progr
 :sectnums:
 === Trigger Module
 
-"Normal" software breakpoints (using GDB's `b`/`break` command) are implemented by temporarily replacing the according
+Normal software breakpoints (using GDB's `b`/`break` command) are implemented by temporarily replacing the according
 instruction word by an `[c.]ebreak` instruction. However, this is not possible when debugging code that is executed from
 read-only memory. To circumvent this limitation a hardware trigger logic allows to (re-)enter debug-mode when instruction
 execution reaches a programmable address. These "hardware-assisted breakpoints" are used by GDB's `hb`/`hbreak` commands.
 
-The RISC-V `Sdtrig` ISA extension adds a programmable _trigger module_ to the CPU core that is enabled via the
-<<_sdtrig_isa_extension>> generic. The trigger module implements a subset of the features described in the
-"RISC-V Debug Specification / Trigger Module" and complies to version v1.0 of the `Sdtrig` spec.
+The RISC-V `Sdtrig` ISA extension adds a programmable _trigger module_ to the CPU core that is enabled via the top's
+<<_processor_top_entity_generics, `OCD_HW_BREAKPOINT`>> which enabled the <<_sdtrig_isa_extension>>. The trigger module
+implements a subset of the features described in the "RISC-V Debug Specification / Trigger Module" and complies to version
+v1.0 of the `Sdtrig` spec.
 
 The NEORV32 trigger module features only a _single_ trigger implementing a "type 6 - instruction address match" trigger.
 This limitation is granted by the RISC-V debug spec and is sufficient to **debug code executed from read-only memory (ROM)**.
@@ -830,8 +831,6 @@ of the actual `ebreak` instruction itself.
 ==== Trigger Module CSRs
 
 The `Sdtrig` ISA extension adds 4 additional CSRs that are accessible from debug-mode and also from machine-mode.
-Machine-mode write accesses can be ignored by setting ´dmode´ in <<_tdata1>>. This is automatically done by the debugger
-if it uses the trigger module for implementing a "hardware breakpoint"
 
 :sectnums!:
 ===== **`tselect`**
@@ -866,7 +865,7 @@ if it uses the trigger module for implementing a "hardware breakpoint"
 |=======================
 | Bit   | Name [RISC-V] | R/W | Description
 | 31:28 | `type`        | r/- | `0100`: address match trigger type 6
-| 27    | `dmode`       | r/w | set to ignore write accesses to <<_tdata1>> and <<_tdata2>> from machine-mode; writable from debug-mode only
+| 27    | `dmode`       | r/- | '1': ignore write accesses to <<_tdata1>> and <<_tdata2>> from machine-mode
 | 26    | `uncertain`   | r/- | `0`: trigger satisfies the configured conditions
 | 25    | `hit1`        | r/- | `0`: hardwired to zero, only `hit0` is used
 | 24    | `vs`          | r/- | `0`: VS-mode not supported
