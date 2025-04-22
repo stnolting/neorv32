@@ -33,6 +33,7 @@ entity neorv32_top is
 
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                        := false;       -- implement on-chip debugger
+    OCD_HW_BREAKPOINT     : boolean                        := false;       -- implement on-chip-debugger hardware breakpoint
     OCD_AUTHENTICATION    : boolean                        := false;       -- implement on-chip debugger authentication
     OCD_JEDEC_ID          : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
 
@@ -262,8 +263,10 @@ architecture neorv32_top_rtl of neorv32_top is
   constant num_cores_c     : natural := cond_sel_natural_f(DUAL_CORE_EN, 2, 1);
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
-  constant cpu_smpmp_c     : boolean := boolean(PMP_NUM_REGIONS > 0);
+  constant cpu_smpmp_en_c  : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
+  constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
+  constant ocd_hwbp_en_c   : boolean := OCD_EN and OCD_HW_BREAKPOINT;
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_IMEM_SIZE), MEM_INT_IMEM_SIZE, 2**index_size_f(MEM_INT_IMEM_SIZE));
@@ -381,7 +384,9 @@ begin
       cond_sel_string_f(IO_HWSPINLOCK_EN,          "HWSPINLOCK ", "") &
       cond_sel_string_f(IO_CRC_EN,                 "CRC ",        "") &
       cond_sel_string_f(io_sysinfo_en_c,           "SYSINFO ",    "") &
-      cond_sel_string_f(OCD_EN,                    cond_sel_string_f(OCD_AUTHENTICATION, "OCD-AUTH ", "OCD "), "") &
+      cond_sel_string_f(OCD_EN,                    "OCD ",        "") &
+      cond_sel_string_f(OCD_EN,                    "OCD-AUTH ",   "") &
+      cond_sel_string_f(OCD_EN,                    "OCD-HWBP ",   "") &
       ""
       severity note;
 
@@ -521,8 +526,8 @@ begin
       RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
       RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
       RISCV_ISA_Sdext     => OCD_EN,
-      RISCV_ISA_Sdtrig    => OCD_EN,
-      RISCV_ISA_Smpmp     => cpu_smpmp_c,
+      RISCV_ISA_Sdtrig    => ocd_hwbp_en_c,
+      RISCV_ISA_Smpmp     => cpu_smpmp_en_c,
       -- Tuning Options --
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
       CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
@@ -1617,7 +1622,7 @@ begin
         XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
         XBUS_CACHE_BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
         OCD_EN                => OCD_EN,
-        OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
+        OCD_AUTH              => ocd_auth_en_c,
         IO_GPIO_EN            => io_gpio_en_c,
         IO_CLINT_EN           => IO_CLINT_EN,
         IO_UART0_EN           => IO_UART0_EN,
@@ -1686,7 +1691,7 @@ begin
     neorv32_debug_dm_inst: entity neorv32.neorv32_debug_dm
     generic map (
       NUM_HARTS     => num_cores_c,
-      AUTHENTICATOR => OCD_AUTHENTICATION
+      AUTHENTICATOR => ocd_auth_en_c
     )
     port map (
       clk_i      => clk_i,

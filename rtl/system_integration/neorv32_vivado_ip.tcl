@@ -169,7 +169,7 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Core Complex}]
   add_params $group {
-    { DUAL_CORE_EN {Number of CPU cores} {} }
+    { DUAL_CORE_EN {CPU core(s))} {} }
   }
   set_property widget {comboBox} [ipgui::get_guiparamspec -name "DUAL_CORE_EN" -component [ipx::current_core] ]
   set_property value_validation_type pairs [ipx::get_user_parameters DUAL_CORE_EN -of_objects [ipx::current_core]]
@@ -186,9 +186,10 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {On-Chip Debugger (OCD)}]
   add_params $group {
-    { OCD_EN             {Enable OCD}         {Implement JTAG-based on-chip debugger} }
-    { OCD_AUTHENTICATION {OCD authentication} {Implement Debug Authentication module} {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false} }
-    { OCD_JEDEC_ID       {JEDEC ID}           {JTAG tap identification}               {$OCD_EN}}
+    { OCD_EN             {Enable OCD}          {Implement JTAG-based on-chip debugger} }
+    { OCD_HW_BREAKPOINT  {Hardware breakpoint} {Implement a single hardware-assistet breakpoint} {$OCD_EN} {$OCD_EN ? $OCD_HW_BREAKPOINT  : false} }
+    { OCD_AUTHENTICATION {OCD authentication}  {Implement debug authentication module}           {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false} }
+    { OCD_JEDEC_ID       {JEDEC ID}            {JTAG tap identification}                         {$OCD_EN}}
   }
 
   set group [add_group $page {External Bus Interface (XBUS / AXI4-Lite-MM Host)}]

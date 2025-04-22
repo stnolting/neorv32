@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110300"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110301"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -796,6 +796,7 @@ package neorv32_package is
       BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000";
       -- On-Chip Debugger (OCD) --
       OCD_EN                : boolean                        := false;
+      OCD_HW_BREAKPOINT     : boolean                        := false;
       OCD_AUTHENTICATION    : boolean                        := false;
       OCD_JEDEC_ID          : std_ulogic_vector(10 downto 0) := "00000000000";
       -- RISC-V CPU Extensions --

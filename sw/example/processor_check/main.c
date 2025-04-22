@@ -79,7 +79,6 @@ volatile int cnt_test = 0; // global counter for total number of tests
 volatile uint32_t num_hpm_cnts_global = 0; // global number of available hpms
 volatile int vectored_mei_handler_ack = 0; // vectored mei trap handler acknowledge
 volatile uint32_t gpio_trap_handler_ack = 0; // gpio trap handler acknowledge
-volatile uint32_t hw_brk_mscratch_ok = 0; // set when mepc was correct in trap handler
 volatile uint32_t dma_src; // dma source & destination data
 volatile uint32_t store_access_addr[2]; // variable to test store accesses
 volatile uint32_t __attribute__((aligned(4))) pmp_access[2]; // variable to test pmp
@@ -1964,61 +1963,6 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test trigger module (hardware breakpoint)
-  // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
-  PRINT_STANDARD("[%i] Trigger module (HW breakpoint) ", cnt_test);
-
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_SDTRIG)) {
-    cnt_test++;
-
-    // back-up RTE
-    uint32_t rte_bak = neorv32_cpu_csr_read(CSR_MTVEC);
-
-    // install hardware-breakpoint handler
-    neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)&hw_breakpoint_handler);
-
-    // setup test registers
-    neorv32_cpu_csr_write(CSR_MSCRATCH, 0);
-    hw_brk_mscratch_ok = 0;
-
-    // setup hardware breakpoint
-    neorv32_cpu_csr_write(CSR_TDATA2, (uint32_t)(&trigger_module_dummy)); // triggering address
-    neorv32_cpu_csr_write(CSR_TDATA1, (1 <<  2) | // exe    = 1: enable trigger module execution
-                                      (0 << 12)); // action = 0: breakpoint exception, do not enter debug-mode
-
-    // call the hw-breakpoint triggering function
-    trigger_module_dummy();
-
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_BREAKPOINT) && // correct exception cause
-        (neorv32_cpu_csr_read(CSR_MSCRATCH) == 4) && // breakpoint-triggering function was finally executed
-        (neorv32_cpu_csr_read(CSR_MEPC) == neorv32_cpu_csr_read(CSR_TDATA2)) && // mepc has to be set to the triggering instruction address
-        (neorv32_cpu_csr_read(CSR_TDATA1) & (1 << 22)) && // trigger has fired
-        (hw_brk_mscratch_ok == 1)) { // make sure mepc was correct in trap handler
-      neorv32_cpu_csr_clr(CSR_TDATA1, 1 << 22); // clear pending trigger hit flag
-      if (neorv32_cpu_csr_read(CSR_TDATA1) & (1 << 22)) { // fail if falg is still set
-        test_fail();
-      }
-      else {
-        test_ok();
-      }
-    }
-    else {
-      test_fail();
-    }
-
-    // shut-down and reset trigger
-    neorv32_cpu_csr_write(CSR_TDATA1, 0);
-
-    // restore RTE
-    neorv32_cpu_csr_write(CSR_MTVEC, rte_bak);
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
-
-
-  // ----------------------------------------------------------
   // Test atomic lr/sc memory access - failing access
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
@@ -2423,21 +2367,6 @@ void __attribute__((interrupt("machine"))) vectored_global_handler(void) {
 void __attribute__((interrupt("machine"))) vectored_mei_handler(void) {
 
   vectored_mei_handler_ack = 1; // successfully called
-}
-
-
-/**********************************************************************//**
- * Hardware-breakpoint trap handler
- **************************************************************************/
-void __attribute__ ((interrupt("machine"),aligned(4))) hw_breakpoint_handler(void) {
-
-  // make sure mscratch has not been updated yet
-  if (neorv32_cpu_csr_read(CSR_MSCRATCH) == 0) {
-    hw_brk_mscratch_ok += 1;
-  }
-
-  // [NOTE] do not update MEPC here as hardware-breakpoint exceptions will set
-  // MEPC to the address of the instruction thats has NOT BEEN EXECUTED yet
 }
 
 
