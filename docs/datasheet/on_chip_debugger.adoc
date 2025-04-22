@@ -667,7 +667,7 @@ Debug-mode is entered on any of the following events:
 . The CPU executes an `ebreak` instruction (when in machine-mode and `ebreakm` in <<_dcsr>> is set OR when in user-mode and `ebreaku` in <<_dcsr>> is set).
 . A debug halt request is issued by the DM (via CPU `db_halt_req_i` signal, high-active).
 . The CPU completes executing of a single instruction while being in single-step debugging mode (`step` in <<_dcsr>> is set).
-. A hardware trigger from the <<_trigger_module>> fires (`exe` and `action` in <<_tdata1>> / `mcontrol` are set).
+. A hardware trigger from the <<_trigger_module>> fires (if `exe` in <<_tdata1>> / `mcontrol` is set).
 
 [NOTE]
 From a hardware point of view these debug-mode-entry conditions are normal traps (synchronous exceptions or
@@ -867,14 +867,14 @@ The `Sdtrig` ISA extension adds 4 additional CSRs that are accessible from debug
 | 31:28 | `type`        | r/- | `0100`: address match trigger type 6
 | 27    | `dmode`       | r/- | '1': ignore write accesses to <<_tdata1>> and <<_tdata2>> from machine-mode
 | 26    | `uncertain`   | r/- | `0`: trigger satisfies the configured conditions
-| 25    | `hit1`        | r/- | `0`: hardwired to zero, only `hit0` is used
+| 25    | `hit1`        | r/- | `0`: only `hit0` is used
 | 24    | `vs`          | r/- | `0`: VS-mode not supported
 | 23    | `vu`          | r/- | `0`: VU-mode not supported
 | 22    | `hit0`        | r/c | set when trigger has fired (**BEFORE** executing the triggering address); must be explicitly cleared by writing zero; writing 1 has no effect
 | 21    | `select`      | r/- | `0`: only address matching is supported
 | 20:19 | reserved      | r/- | `00`: hardwired to zero
 | 18:16 | `size`        | r/- | `000`: match accesses of any size
-| 15:12 | `action`      | r/w | `0000` = breakpoint exception on trigger match, `0001` = enter debug-mode on trigger match
+| 15:12 | `action`      | r/- | `0001`: enter debug-mode on trigger match
 | 11    | `chain`       | r/- | `0`: chaining is not supported as there is only one trigger
 | 10:6  | `match`       | r/- | `0000`: equal-match only
 | 6     | `m`           | r/- | `1`: trigger enabled when in machine-mode
