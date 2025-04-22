@@ -37,7 +37,7 @@ entity neorv32_sysinfo is
     XBUS_CACHE_NUM_BLOCKS : natural; -- x-cache: number of blocks (min 1), has to be a power of 2
     XBUS_CACHE_BLOCK_SIZE : natural; -- x-cache: block size in bytes (min 4), has to be a power of 2
     OCD_EN                : boolean; -- implement OCD
-    OCD_AUTHENTICATION    : boolean; -- implement OCD authenticator
+    OCD_AUTH              : boolean; -- implement OCD authenticator
     IO_GPIO_EN            : boolean; -- implement general purpose IO port (GPIO)
     IO_CLINT_EN           : boolean; -- implement machine local interruptor (CLINT)
     IO_UART0_EN           : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)
@@ -72,7 +72,6 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant int_imem_en_c    : boolean := MEM_INT_IMEM_EN and boolean(MEM_INT_IMEM_SIZE > 0);
   constant int_dmem_en_c    : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
   constant xcache_en_c      : boolean := XBUS_EN and XBUS_CACHE_EN;
-  constant ocd_auth_en_c    : boolean := OCD_EN and OCD_AUTHENTICATION;
   constant int_imem_rom_c   : boolean := int_imem_en_c and MEM_INT_IMEM_ROM;
   constant log2_imem_size_c : natural := index_size_f(MEM_INT_IMEM_SIZE);
   constant log2_dmem_size_c : natural := index_size_f(MEM_INT_DMEM_SIZE);
@@ -126,7 +125,7 @@ begin
   sysinfo(2)(8)  <= '1' when xcache_en_c       else '0'; -- external bus interface cache implemented
   sysinfo(2)(9)  <= '0';                                 -- reserved
   sysinfo(2)(10) <= '0';                                 -- reserved
-  sysinfo(2)(11) <= '1' when ocd_auth_en_c     else '0'; -- on-chip debugger authentication implemented
+  sysinfo(2)(11) <= '1' when OCD_AUTH          else '0'; -- on-chip debugger authentication implemented
   sysinfo(2)(12) <= '1' when int_imem_rom_c    else '0'; -- processor-internal instruction memory implemented as pre-initialized ROM
   sysinfo(2)(13) <= '1' when IO_TWD_EN         else '0'; -- two-wire device (TWD) implemented
   sysinfo(2)(14) <= '1' when IO_DMA_EN         else '0'; -- direct memory access controller (DMA) implemented

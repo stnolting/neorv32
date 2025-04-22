@@ -122,7 +122,7 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 | `DEBUG_EXC_ADDR`   | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
 | `ICC_EN`           | boolean   | Implement <<_inter_core_communication_icc>> module. Automatically enabled for the SMP <<_dual_core_configuration>>.
 | `RISCV_ISA_Sdext`  | boolean   | Implement RISC-V-compatible "debug" CPU operation mode required for the <<_on_chip_debugger_ocd>>.
-| `RISCV_ISA_Sdtrig` | boolean   | Implement RISC-V-compatible trigger module. See section <<_on_chip_debugger_ocd>>.
+| `RISCV_ISA_Sdtrig` | boolean   | Implement RISC-V-compatible <<_trigger_module>>. See section <<_on_chip_debugger_ocd>>.
 | `RISCV_ISA_Smpmp`  | boolean   | Implement RISC-V-compatible physical memory protection (PMP). See section <<_smpmp_isa_extension>>.
 |=======================
 
@@ -541,7 +541,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_zxcfu_isa_extension,`Zcfu`>>        | Custom / user-defined instructions                            | <<_processor_top_entity_generics, `RISCV_ISA_Zxcfu`>>
 | <<_smpmp_isa_extension,`Smpmp`>>       | Physical memory protection (PMP) extension                    | <<_processor_top_entity_generics, `RISCV_ISA_Smpmp`>>
 | <<_sdext_isa_extension,`Sdext`>>       | External debug support extension                              | <<_processor_top_entity_generics, `OCD_EN`>>
-| <<_sdtrig_isa_extension,`Sdtrig`>>     | Trigger module extension                                      | <<_processor_top_entity_generics, `OCD_EN`>>
+| <<_sdtrig_isa_extension,`Sdtrig`>>     | Trigger module extension                                      | <<_processor_top_entity_generics, `OCD_HW_BREAKPOINT`>>
 |=======================
 
 .RISC-V ISA Specification

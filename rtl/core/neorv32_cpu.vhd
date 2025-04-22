@@ -427,8 +427,8 @@ begin
 
   pmp_disabled:
   if not RISCV_ISA_Smpmp generate
-    xcsr_pmp <= (others => '0');
-    pmp_fault      <= '0';
+    xcsr_pmp  <= (others => '0');
+    pmp_fault <= '0';
   end generate;
 
 
@@ -456,7 +456,7 @@ begin
   icc_disabled:
   if not ICC_EN generate
     xcsr_icc <= (others => '0');
-    icc_tx_o       <= icc_terminate_c;
+    icc_tx_o <= icc_terminate_c;
   end generate;
 
 
