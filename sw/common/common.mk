@@ -181,18 +181,6 @@ Q =
 endif
 
 # -----------------------------------------------------------------------------
-# Git tag and commit hash
-# -----------------------------------------------------------------------------
-
-NEORV32_GIT_TAG = "unknown"
-# check if git is available at all
-ifneq (, $(shell git 2>/dev/null))
-$(eval NEORV32_GIT_TAG = $(shell git describe --tags))
-endif
-# add short commit hash as C define
-NEO_CFLAGS += -DNEORV32_GIT_TAG="\"$(NEORV32_GIT_TAG)\""
-
-# -----------------------------------------------------------------------------
 # Image generator targets
 # -----------------------------------------------------------------------------
 
@@ -387,7 +375,6 @@ info:
 	$(ECHO) "******************************************************"
 	$(ECHO) "Project / Makefile Configuration"
 	$(ECHO) "******************************************************"
-	$(ECHO) "Git tag: $(NEORV32_GIT_TAG)"
 	$(ECHO) "Project folder: $(shell basename $(CURDIR))"
 	$(ECHO) "Source files: $(APP_SRC)"
 	$(ECHO) "Include folder(s): $(APP_INC)"

@@ -173,7 +173,7 @@ int main() {
   // -----------------------------------------------
   neorv32_aux_print_logo(); // show NEORV32 ASCII logo
   neorv32_aux_print_about(); // show project credits
-  PRINT_STANDARD("Build: %s "__DATE__" "__TIME__"\n", NEORV32_GIT_TAG);
+  PRINT_STANDARD("Build: "__DATE__" "__TIME__"\n");
   neorv32_aux_print_hw_config(); // show full hardware configuration report
 
 
