@@ -74,7 +74,7 @@ begin
   begin
     if (rstn_i = '0') then
       dbus_req_o.rw    <= '0';
-      dbus_req_o.priv  <= priv_mode_m_c;
+      dbus_req_o.priv  <= '0';
       dbus_req_o.debug <= '0';
       dbus_req_o.amo   <= '0';
       dbus_req_o.amoop <= (others => '0');
@@ -84,9 +84,9 @@ begin
       if (ctrl_i.lsu_mo_we = '1') then
         -- type identifiers --
         dbus_req_o.rw    <= ctrl_i.lsu_rw; -- read/write
-        dbus_req_o.amo   <= ctrl_i.lsu_amo; -- atomic memory operation
         dbus_req_o.priv  <= ctrl_i.lsu_priv; -- privilege level
         dbus_req_o.debug <= ctrl_i.cpu_debug; -- debug-mode access
+        dbus_req_o.amo   <= ctrl_i.lsu_amo; -- atomic memory operation
         dbus_req_o.amoop <= amo_cmd;
         -- data alignment + byte-enable --
         case ctrl_i.ir_funct3(1 downto 0) is
@@ -108,7 +108,8 @@ begin
   end process mem_do_reg;
 
   -- hardwired signals --
-  dbus_req_o.src <= '0'; -- always "data" access
+  dbus_req_o.src  <= '0'; -- always data access
+  dbus_req_o.lock <= '0'; -- always single access
 
   -- out-of-band signals --
   dbus_req_o.fence <= ctrl_i.lsu_fence;
