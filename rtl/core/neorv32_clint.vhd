@@ -201,8 +201,8 @@ begin
     end if;
   end process bus_access;
 
-  bus_rsp_o.ack  <= ack_q;
-  bus_rsp_o.err  <= '0';
+  bus_rsp_o.ack <= ack_q;
+  bus_rsp_o.err <= '0';
 
 
 end neorv32_clint_rtl;
