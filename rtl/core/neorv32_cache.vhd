@@ -267,10 +267,10 @@ begin
         cache_o.cmd_new <= '1'; -- set new block (set tag, make valid & clean)
         bus_req_o.rw    <= '0'; -- read access
         --
+        cache_o.we <= (others => '1'); -- just keep writing full words
         if (bus_rsp_i.err = '1') then -- bus error
           ctrl_nxt.state <= S_DOWNLOAD_ERR;
         elsif (bus_rsp_i.ack = '1') then
-          cache_o.we   <= (others => '1'); -- cache: full-word write
           addr_nxt.ofs <= std_ulogic_vector(unsigned(addr.ofs) + 1);
           if (and_reduce_f(addr.ofs) = '1') then -- block completed
             ctrl_nxt.state <= S_DOWNLOAD_DONE;
