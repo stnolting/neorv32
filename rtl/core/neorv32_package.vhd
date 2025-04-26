@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110303"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110304"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -125,6 +125,7 @@ package neorv32_package is
     stb   : std_ulogic; -- request strobe, single-shot
     rw    : std_ulogic; -- 0 = read, 1 = write
     src   : std_ulogic; -- 0 = data access, 1 = instruction fetch
+    lock  : std_ulogic; -- set if contiguous transfer
     priv  : std_ulogic; -- set if privileged (machine-mode) access
     debug : std_ulogic; -- set if debug mode access
     amo   : std_ulogic; -- set if atomic memory operation
@@ -148,6 +149,7 @@ package neorv32_package is
     stb   => '0',
     rw    => '0',
     src   => '0',
+    lock  => '0',
     priv  => '0',
     debug => '0',
     amo   => '0',
@@ -626,7 +628,7 @@ package neorv32_package is
     valid  : std_ulogic;                     -- bus signals are valid
     instr  : std_ulogic_vector(31 downto 0); -- instruction word
     compr  : std_ulogic;                     -- instruction is decompressed
-    error  : std_ulogic;                     -- instruction-fetch error
+    fault  : std_ulogic;                     -- instruction-fetch error
     halted : std_ulogic;                     -- instruction fetch has halted
   end record;
 

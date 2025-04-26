@@ -368,7 +368,7 @@ begin
           exe_engine_nxt.state <= EX_DISPATCH; -- stay here another round until hwtrig_start arrives in trap_ctrl.env_pending
         elsif (frontend_i.valid = '1') then -- new instruction word available
           if_ack               <= '1'; -- instruction data is about to be consumed
-          trap_ctrl.instr_be   <= frontend_i.error; -- access fault during instruction fetch
+          trap_ctrl.instr_be   <= frontend_i.fault; -- access fault during instruction fetch
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
           exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC

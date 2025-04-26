@@ -36,7 +36,7 @@ architecture neorv32_bus_switch_rtl of neorv32_bus_switch is
 
   type state_t is (S_IDLE, S_BUSY_A, S_BUSY_B);
   signal state, state_nxt : state_t;
-  signal prev, prev_nxt, a_req, b_req, sel, stb : std_ulogic;
+  signal prio, prio_nxt, a_req, b_req, sel, stb : std_ulogic;
 
 begin
 
@@ -46,12 +46,12 @@ begin
   begin
     if (rstn_i = '0') then
       state <= S_IDLE;
-      prev  <= '0';
+      prio  <= '0';
       a_req <= '0';
       b_req <= '0';
     elsif rising_edge(clk_i) then
       state <= state_nxt;
-      prev  <= prev_nxt;
+      prio  <= prio_nxt;
       if (state = S_BUSY_A) then -- clear request
         a_req <= '0';
       else -- buffer request
@@ -68,11 +68,11 @@ begin
 
   -- Access Arbiter Comb --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  arbiter_fsm: process(state, prev, a_req, b_req, a_req_i, b_req_i, x_rsp_i)
+  arbiter_fsm: process(state, prio, a_req, b_req, a_req_i, b_req_i, x_rsp_i)
   begin
     -- defaults --
     state_nxt <= state;
-    prev_nxt  <= prev;
+    prio_nxt  <= prio;
     sel       <= '0';
     stb       <= '0';
 
@@ -81,23 +81,31 @@ begin
 
       when S_BUSY_A => -- port A access in progress
       -- ------------------------------------------------------------
-        prev_nxt <= '0';
-        sel      <= '0';
+        sel <= '0';
+        if (a_req_i.lock = '1') then -- give port A prioritized access in the next cycle
+          prio_nxt <= '1';
+        else
+          prio_nxt <= '0';
+        end if;
         if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
           state_nxt <= S_IDLE;
         end if;
 
       when S_BUSY_B => -- port B access in progress
       -- ------------------------------------------------------------
-        prev_nxt <= '1';
-        sel      <= '1';
+        sel <= '1';
+        if (b_req_i.lock = '1') then -- give port B prioritized access in the next cycle
+          prio_nxt <= '0';
+        else
+          prio_nxt <= '1';
+        end if;
         if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
           state_nxt <= S_IDLE;
         end if;
 
       when others => -- wait for requests
       -- ------------------------------------------------------------
-        if (prev = '1') or (ROUND_ROBIN_EN = false) then -- port B has just been served OR static prioritization
+        if (prio = '1') or (ROUND_ROBIN_EN = false) then -- serve port A first OR use static prioritization
           if (a_req_i.stb = '1') or (a_req = '1') then -- request from port A (prioritized)?
             sel       <= '0';
             stb       <= '1';
@@ -107,7 +115,7 @@ begin
             stb       <= '1';
             state_nxt <= S_BUSY_B;
           end if;
-        else -- port A has just been served
+        else -- serve port B first
           if (b_req_i.stb = '1') or (b_req = '1') then -- request from port B (prioritized)?
             sel       <= '1';
             stb       <= '1';
@@ -128,6 +136,7 @@ begin
   x_req_o.addr  <= a_req_i.addr  when (sel = '0') else b_req_i.addr;
   x_req_o.amo   <= a_req_i.amo   when (sel = '0') else b_req_i.amo;
   x_req_o.amoop <= a_req_i.amoop when (sel = '0') else b_req_i.amoop;
+  x_req_o.lock  <= a_req_i.lock  when (sel = '0') else b_req_i.lock;
   x_req_o.priv  <= a_req_i.priv  when (sel = '0') else b_req_i.priv;
   x_req_o.debug <= a_req_i.debug when (sel = '0') else b_req_i.debug;
   x_req_o.src   <= a_req_i.src   when (sel = '0') else b_req_i.src;
@@ -799,6 +808,7 @@ begin
   sys_req_o.stb   <= '1' when (arbiter.state = S_WRITE) else core_req_i.stb;
   sys_req_o.rw    <= '1' when (arbiter.state = S_WRITE) or (arbiter.state = S_WRITE_WAIT) else core_req_i.rw;
   sys_req_o.src   <= core_req_i.src;
+  sys_req_o.lock  <= core_req_i.lock;
   sys_req_o.priv  <= core_req_i.priv;
   sys_req_o.debug <= core_req_i.debug;
   sys_req_o.amo   <= core_req_i.amo;

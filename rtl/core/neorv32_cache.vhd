@@ -175,13 +175,14 @@ begin
     -- host response defaults --
     host_rsp_o <= rsp_terminate_c; -- all-zero
 
-    -- bus interface defaults (default = host access) --
+    -- bus interface defaults (default = cached host access) --
     bus_req_o.addr  <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
     bus_req_o.data  <= cache_i.data;
     bus_req_o.ben   <= (others => '1'); -- full-word writes only
     bus_req_o.stb   <= '0'; -- no request by default
     bus_req_o.rw    <= '0';
     bus_req_o.src   <= host_req_i.src; -- pass-through
+    bus_req_o.lock  <= '1'; -- cache block updates are contiguous transfers
     bus_req_o.priv  <= host_req_i.priv; -- pass-through
     bus_req_o.debug <= host_req_i.debug; -- pass-through
     bus_req_o.amo   <= '0'; -- cache accesses cannot be atomic
@@ -223,14 +224,12 @@ begin
             host_rsp_o.ack  <= '1';
           end if;
           ctrl_nxt.state <= S_IDLE;
-        else -- cache miss
-          if (cache_i.sta_dir = '1') and (READ_ONLY = false) then -- block is dirty, upload first
-            addr_nxt.tag   <= cache_i.sta_tag(31 downto 32-tag_size_c); -- tag of accessed block
-            ctrl_nxt.state <= S_UPLOAD_GET;
-          else -- block is clean, replace by new block
-            addr_nxt.tag   <= host_req_i.addr(31 downto 32-tag_size_c); -- tag of referenced block
-            ctrl_nxt.state <= S_DOWNLOAD_REQ;
-          end if;
+        elsif (cache_i.sta_dir = '1') and (READ_ONLY = false) then -- cache miss: block is dirty, upload first
+          addr_nxt.tag   <= cache_i.sta_tag(31 downto 32-tag_size_c); -- tag of accessed block
+          ctrl_nxt.state <= S_UPLOAD_GET;
+        else -- cache miss: block is clean, replace by new block
+          addr_nxt.tag   <= host_req_i.addr(31 downto 32-tag_size_c); -- tag of referenced block
+          ctrl_nxt.state <= S_DOWNLOAD_REQ;
         end if;
 
 
@@ -240,11 +239,6 @@ begin
         bus_req_o.stb    <= '1';
         ctrl_nxt.buf_req <= '0'; -- access (about to be) completed
         ctrl_nxt.state   <= S_DIRECT_RSP;
---     -- update cache if accessed address is cached --
---     [NOTE] not implemented: this would make atomic memory access / memory coherence even more difficult to understand
---     if (cache_i.sta_hit = '1') and (host_req_i.rw = '1') and (READ_ONLY = false) then -- cache write hit
---       cache_o.we <= host_req_i.ben;
---     end if;
 
       when S_DIRECT_RSP => -- wait for direct (uncached) access response
       -- ------------------------------------------------------------
@@ -254,12 +248,6 @@ begin
         if (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') then
           ctrl_nxt.state <= S_IDLE;
         end if;
---     -- update cache if accessed address is cached --
---     [NOTE] not implemented: this would make atomic memory access / memory coherence even more difficult to understand
---     cache_o.data <= bus_rsp_i.data;
---     if (cache_i.sta_hit = '1') and (host_req_i.rw = '0') and (bus_rsp_i.ack = '1') then -- cache read hit
---       cache_o.we <= (others => '1');
---     end if;
 
 
       when S_DOWNLOAD_REQ => -- download new cache block: request new word
@@ -277,10 +265,10 @@ begin
         cache_o.cmd_new <= '1'; -- set new block (set tag, make valid & clean)
         bus_req_o.rw    <= '0'; -- read access
         --
-        if (bus_rsp_i.err = '1') then --
+        cache_o.we <= (others => '1'); -- just keep writing full words
+        if (bus_rsp_i.err = '1') then -- bus error
           ctrl_nxt.state <= S_DOWNLOAD_ERR;
         elsif (bus_rsp_i.ack = '1') then
-          cache_o.we   <= (others => '1'); -- cache: full-word write
           addr_nxt.ofs <= std_ulogic_vector(unsigned(addr.ofs) + 1);
           if (and_reduce_f(addr.ofs) = '1') then -- block completed
             ctrl_nxt.state <= S_DOWNLOAD_DONE;
@@ -328,6 +316,7 @@ begin
           cache_o.addr    <= addr.tag & addr.idx & addr.ofs & "00";
           bus_req_o.rw    <= '1'; -- write access
           cache_o.cmd_new <= '1'; -- set new block (set tag, make valid & clean)
+          --
           if (bus_rsp_i.err = '1') then -- bus error (this is really bad...)
             ctrl_nxt.state <= S_ERROR;
           elsif (bus_rsp_i.ack = '1') then
