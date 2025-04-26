@@ -808,6 +808,7 @@ begin
   sys_req_o.stb   <= '1' when (arbiter.state = S_WRITE) else core_req_i.stb;
   sys_req_o.rw    <= '1' when (arbiter.state = S_WRITE) or (arbiter.state = S_WRITE_WAIT) else core_req_i.rw;
   sys_req_o.src   <= core_req_i.src;
+  sys_req_o.lock  <= core_req_i.lock;
   sys_req_o.priv  <= core_req_i.priv;
   sys_req_o.debug <= core_req_i.debug;
   sys_req_o.amo   <= core_req_i.amo;
