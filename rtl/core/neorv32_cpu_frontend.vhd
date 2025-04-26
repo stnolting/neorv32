@@ -220,7 +220,7 @@ begin
       issue.aclr <= '0';
       -- start at LOW half-word --
       if (issue.algn = '0') then
-        frontend_o.error <= ipb.rdata(0)(16);
+        frontend_o.fault <= ipb.rdata(0)(16);
         if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
           issue.aset       <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
           issue.ack        <= "01";
@@ -235,7 +235,7 @@ begin
         end if;
       -- start at HIGH half-word --
       else
-        frontend_o.error <= ipb.rdata(1)(16);
+        frontend_o.fault <= ipb.rdata(1)(16);
         if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
           issue.aclr       <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
           issue.ack        <= "10";
@@ -270,7 +270,7 @@ begin
     frontend_o.valid <= ipb.avail(0);
     frontend_o.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
     frontend_o.compr <= '0';
-    frontend_o.error <= ipb.rdata(0)(16);
+    frontend_o.fault <= ipb.rdata(0)(16);
   end generate;
 
 

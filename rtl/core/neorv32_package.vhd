@@ -626,7 +626,7 @@ package neorv32_package is
     valid  : std_ulogic;                     -- bus signals are valid
     instr  : std_ulogic_vector(31 downto 0); -- instruction word
     compr  : std_ulogic;                     -- instruction is decompressed
-    error  : std_ulogic;                     -- instruction-fetch error
+    fault  : std_ulogic;                     -- instruction-fetch error
     halted : std_ulogic;                     -- instruction fetch has halted
   end record;
 
