@@ -224,14 +224,12 @@ begin
             host_rsp_o.ack  <= '1';
           end if;
           ctrl_nxt.state <= S_IDLE;
-        else -- cache miss
-          if (cache_i.sta_dir = '1') and (READ_ONLY = false) then -- block is dirty, upload first
-            addr_nxt.tag   <= cache_i.sta_tag(31 downto 32-tag_size_c); -- tag of accessed block
-            ctrl_nxt.state <= S_UPLOAD_GET;
-          else -- block is clean, replace by new block
-            addr_nxt.tag   <= host_req_i.addr(31 downto 32-tag_size_c); -- tag of referenced block
-            ctrl_nxt.state <= S_DOWNLOAD_REQ;
-          end if;
+        elsif (cache_i.sta_dir = '1') and (READ_ONLY = false) then -- cache miss: block is dirty, upload first
+          addr_nxt.tag   <= cache_i.sta_tag(31 downto 32-tag_size_c); -- tag of accessed block
+          ctrl_nxt.state <= S_UPLOAD_GET;
+        else -- cache miss: block is clean, replace by new block
+          addr_nxt.tag   <= host_req_i.addr(31 downto 32-tag_size_c); -- tag of referenced block
+          ctrl_nxt.state <= S_DOWNLOAD_REQ;
         end if;
 
 
