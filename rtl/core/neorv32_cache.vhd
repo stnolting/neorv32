@@ -175,13 +175,14 @@ begin
     -- host response defaults --
     host_rsp_o <= rsp_terminate_c; -- all-zero
 
-    -- bus interface defaults (default = host access) --
+    -- bus interface defaults (default = cached host access) --
     bus_req_o.addr  <= addr.tag & addr.idx & addr.ofs & "00"; -- always word-aligned
     bus_req_o.data  <= cache_i.data;
     bus_req_o.ben   <= (others => '1'); -- full-word writes only
     bus_req_o.stb   <= '0'; -- no request by default
     bus_req_o.rw    <= '0';
     bus_req_o.src   <= host_req_i.src; -- pass-through
+    bus_req_o.lock  <= '1'; -- cache block updates are contiguous transfers
     bus_req_o.priv  <= host_req_i.priv; -- pass-through
     bus_req_o.debug <= host_req_i.debug; -- pass-through
     bus_req_o.amo   <= '0'; -- cache accesses cannot be atomic
@@ -277,7 +278,7 @@ begin
         cache_o.cmd_new <= '1'; -- set new block (set tag, make valid & clean)
         bus_req_o.rw    <= '0'; -- read access
         --
-        if (bus_rsp_i.err = '1') then --
+        if (bus_rsp_i.err = '1') then -- bus error
           ctrl_nxt.state <= S_DOWNLOAD_ERR;
         elsif (bus_rsp_i.ack = '1') then
           cache_o.we   <= (others => '1'); -- cache: full-word write
@@ -328,6 +329,7 @@ begin
           cache_o.addr    <= addr.tag & addr.idx & addr.ofs & "00";
           bus_req_o.rw    <= '1'; -- write access
           cache_o.cmd_new <= '1'; -- set new block (set tag, make valid & clean)
+          --
           if (bus_rsp_i.err = '1') then -- bus error (this is really bad...)
             ctrl_nxt.state <= S_ERROR;
           elsif (bus_rsp_i.ack = '1') then
