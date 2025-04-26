@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 26.04.2025 | 1.11.3.4 | :sparkles: add bus lock feature | [#1245](https://github.com/stnolting/neorv32/pull/1245) |
 | 26.04.2025 | 1.11.3.3 | optimize round-robin bus switch: remove idle cycles | [#1244](https://github.com/stnolting/neorv32/pull/1244) |
 | 22.04.2025 | 1.11.3.2 | :bug: fix the privilege level with which the bootloader boots an application image | [#1241](https://github.com/stnolting/neorv32/pull/1241) |
 | 22.04.2025 | 1.11.3.1 | add new top generic (`OCD_HW_BREAKPOINT`) to enable/disable OCD's hardware trigger; :warning: hardwire `tdata1.dmode` to `1` - only debug-mode can use the trigger module; hardwire `tdata1.action` to `0001` - debug-mode entry only | [#1239](https://github.com/stnolting/neorv32/pull/1239) |
