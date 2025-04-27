@@ -370,9 +370,9 @@ is used to return the bus response upstream from a device back to the host and i
 (i.e. a processor-internal memory or IO device).
 
 The signals of the request bus are split in to two categories: _in-band_ signals and _out-of-band_ signals. In-band
-signals always belong to a certain bus transaction and are only valid between `stb` being set and the according response
-(`err` or `ack`). being set. In contrast, the out-of-band signals are not associated with any bus transaction and are
-always valid when set.
+signals always belong to a certain bus transaction and are valid between `stb` (request) being set and the according
+`err` or `ack` (response) being set. In contrast, the out-of-band signals are not associated with any bus transaction
+and are always valid when set.
 
 .Bus Interface - Request Bus (`bus_req_t`)
 [cols="^1,^1,<6"]
@@ -383,7 +383,7 @@ always valid when set.
 | `addr`  |    32 | Access address using byte-wise addressing. Half-word (16-bit) and word (32-bit) addresses are aligned accordingly (e.g. LSB = 0 for half-word accesses).
 | `data`  |    32 | Write data. Writing individual bytes is controlled via `ben`.
 | `ben`   |     4 | Byte-enable for each byte in `data`.
-| `stb`   |     1 | Request trigger ("strobe"). This signal is high for exactly one cycle starting a bus request.
+| `stb`   |     1 | Request trigger ("strobe"). This signal is high for exactly one cycle starting a bus request. All other _in-band_ signals are valid only if `stb` is set.
 | `rw`    |     1 | Access direction (`0` = read, `1` = write).
 | `src`   |     1 | Access source (`0` = instruction fetch, `1` = load/store).
 | `lock`  |     1 | Set if contiguous transfer; the current transfer is part of a group of transfers that should not be interleaved. This signal is relevant for the bus network only and may be ignored.
@@ -543,8 +543,8 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_zmmul_isa_extension,`Zmmul`>>       | Integer multiplication-only instructions                      | <<_processor_top_entity_generics, `RISCV_ISA_Zmmul`>>
 | <<_zxcfu_isa_extension,`Zcfu`>>        | Custom / user-defined instructions                            | <<_processor_top_entity_generics, `RISCV_ISA_Zxcfu`>>
 | <<_smpmp_isa_extension,`Smpmp`>>       | Physical memory protection (PMP) extension                    | <<_processor_top_entity_generics, `RISCV_ISA_Smpmp`>>
-| <<_sdext_isa_extension,`Sdext`>>       | External debug support extension                              | <<_processor_top_entity_generics, `OCD_EN`>>
-| <<_sdtrig_isa_extension,`Sdtrig`>>     | Trigger module extension                                      | <<_processor_top_entity_generics, `OCD_HW_BREAKPOINT`>>
+| <<_sdext_isa_extension,`Sdext`>>       | External debug support extension (on-chip debugger)           | <<_processor_top_entity_generics, `OCD_EN`>>
+| <<_sdtrig_isa_extension,`Sdtrig`>>     | Debug trigger module extension (hardware breakpoint)          | <<_processor_top_entity_generics, `OCD_HW_BREAKPOINT`>>
 |=======================
 
 .RISC-V ISA Specification
@@ -1204,7 +1204,8 @@ See section <<_on_chip_debugger_ocd>> / <<_cpu_debug_mode>> for more information
 
 ==== `Sdtrig` ISA Extension
 
-This ISA extension implements the RISC-V-compatible "trigger module".
+This ISA extension implements the RISC-V-compatible "trigger module" which provides support for
+hardware breakpoints for the on-chip-debugger. 
 See section <<_on_chip_debugger_ocd>> / <<_trigger_module>> for more information.
 
 
