@@ -16,7 +16,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_switch is
   generic (
-    ROUND_ROBIN_EN   : boolean := false; -- enable round-robin scheduling
+    ROUND_ROBIN_EN   : boolean := false; -- enable round-robin arbitration
     PORT_A_READ_ONLY : boolean := false; -- set if port A is read-only
     PORT_B_READ_ONLY : boolean := false  -- set if port B is read-only
   );
@@ -82,10 +82,10 @@ begin
       when S_BUSY_A => -- port A access in progress
       -- ------------------------------------------------------------
         sel <= '0';
-        if (a_req_i.lock = '1') then -- give port A prioritized access in the next cycle
-          prio_nxt <= '1';
+        if (a_req_i.lock = '1') then
+          prio_nxt <= '1'; -- give port A prioritized access in the next cycle
         else
-          prio_nxt <= '0';
+          prio_nxt <= '0'; -- give port B prioritized access in the next cycle
         end if;
         if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
           state_nxt <= S_IDLE;
@@ -94,10 +94,10 @@ begin
       when S_BUSY_B => -- port B access in progress
       -- ------------------------------------------------------------
         sel <= '1';
-        if (b_req_i.lock = '1') then -- give port B prioritized access in the next cycle
-          prio_nxt <= '0';
+        if (b_req_i.lock = '1') then
+          prio_nxt <= '0'; -- give port B prioritized access in the next cycle
         else
-          prio_nxt <= '1';
+          prio_nxt <= '1'; -- give port A prioritized access in the next cycle
         end if;
         if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
           state_nxt <= S_IDLE;
@@ -105,7 +105,7 @@ begin
 
       when others => -- wait for requests
       -- ------------------------------------------------------------
-        if (prio = '1') or (ROUND_ROBIN_EN = false) then -- serve port A first OR use static prioritization
+        if (prio = '1') or (ROUND_ROBIN_EN = false) then
           if (a_req_i.stb = '1') or (a_req = '1') then -- request from port A (prioritized)?
             sel       <= '0';
             stb       <= '1';
@@ -115,7 +115,7 @@ begin
             stb       <= '1';
             state_nxt <= S_BUSY_B;
           end if;
-        else -- serve port B first
+        else
           if (b_req_i.stb = '1') or (b_req = '1') then -- request from port B (prioritized)?
             sel       <= '1';
             stb       <= '1';
