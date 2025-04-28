@@ -369,11 +369,12 @@ The default software framework relies on **newlib** as default C standard librar
 "system calls" (like file handling and standard input/output) that are used by other C libraries like `stdio`.
 These hooks are available in `sw/lib/source/newlib.c` and were adapted for the NEORV32 processor.
 
-.Standard Consoles
+.Standard Input/Output Streams / Consoles
 [NOTE]
 The <<_primary_universal_asynchronous_receiver_and_transmitter_uart0, UART0>>
-is used to implement all the standard input, output and error consoles (`STDIN`, `STDOUT` and `STDERR`).
-Note that `\n` (newline) is automatically converted to `\r\n` (carriage-return and newline).
+is used to implement all the standard input, output and error consoles (`STDIN` = file number 0, `STDOUT` = file
+number 1, `STDERR` = file number 2). All other input/output streams (other file number than 0,1,2) are redirected
+to <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1, UART1>>.
 
 .Constructors and Destructors
 [NOTE]
