@@ -16,9 +16,10 @@
 
 #include <neorv32.h>
 #include <newlib.h>
-#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 
 // global error variable
 #include <errno.h>
@@ -203,7 +204,7 @@ void *_sbrk(int incr) {
   }
 
   // runtime stack collision?
-  register int stack_pntr asm("sp");
+  register uint32_t stack_pntr asm("sp");
   asm volatile ("" : "=r" (stack_pntr));
   if ((((uint32_t)curr_heap_ptr) + ((uint32_t)incr)) >= stack_pntr) {
     write(STDERR_FILENO, "[neorv32-newlib] heap/stack collision\r\n", 39);
