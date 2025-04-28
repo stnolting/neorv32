@@ -213,7 +213,7 @@ begin
         host_rsp_o.data  <= cache_i.data; -- cache response data (for hit)
         addr_nxt.ofs     <= (others => '0'); -- align block base address for upload/download
         addr_nxt.idx     <= host_req_i.addr((offset_size_c+2+index_size_c)-1 downto offset_size_c+2); -- index of referenced block
-        ctrl_nxt.stret   <= S_DOWNLOAD_REQ; -- start block download immediately after upload has completed
+        ctrl_nxt.stret   <= S_LOOKUP; -- come back here after upload has completed
         --
         if (cache_i.sta_hit = '1') then -- cache hit
           if (host_req_i.rw = '0') or (READ_ONLY = true) then -- read access
