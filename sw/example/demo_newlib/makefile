@@ -20,7 +20,7 @@ USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=16k
 USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=8k
 
 # Adjust maximum heap size
-USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=3072
+USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=4k
 
 # Additional sources
 #APP_SRC += $(wildcard ./*.c)
