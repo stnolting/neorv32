@@ -267,6 +267,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
   constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
   constant ocd_hwbp_en_c   : boolean := OCD_EN and OCD_HW_BREAKPOINT;
+  constant any_cpu_cache_c : boolean := ICACHE_EN or DCACHE_EN;
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_IMEM_SIZE), MEM_INT_IMEM_SIZE, 2**index_size_f(MEM_INT_IMEM_SIZE));
@@ -278,9 +279,7 @@ architecture neorv32_top_rtl of neorv32_top is
   -- clock system --
   signal clk_gen : std_ulogic_vector(7 downto 0); -- scaled clock-enables
   --
-  type clk_gen_en_enum_t is (
-    CG_CFS, CG_UART0, CG_UART1, CG_SPI, CG_TWI, CG_TWD, CG_PWM, CG_WDT, CG_NEOLED, CG_GPTMR, CG_ONEWIRE
-  );
+  type clk_gen_en_enum_t is (CG_CFS, CG_UART0, CG_UART1, CG_SPI, CG_TWI, CG_TWD, CG_PWM, CG_WDT, CG_NEOLED, CG_GPTMR, CG_ONEWIRE);
   type clk_gen_en_t is array (clk_gen_en_enum_t) of std_ulogic;
   signal clk_gen_en  : clk_gen_en_t;
   signal clk_gen_en2 : std_ulogic_vector(10 downto 0);
@@ -303,13 +302,9 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req : core_complex_req_t;
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp : core_complex_rsp_t;
 
-  -- bus: system bus (including DMA complex) --
-  signal sys1_req, sys2_req, dma_req, amo_req, sys3_req : bus_req_t;
-  signal sys1_rsp, sys2_rsp, dma_rsp, amo_rsp, sys3_rsp : bus_rsp_t;
-
-  -- bus: main sections --
-  signal imem_req, dmem_req, io_req, xcache_req, xbus_req : bus_req_t;
-  signal imem_rsp, dmem_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
+  -- bus: system --
+  signal sys1_req, sys2_req, dma_req, amo_req, sys3_req, imem_req, dmem_req, io_req, xcache_req, xbus_req : bus_req_t;
+  signal sys1_rsp, sys2_rsp, dma_rsp, amo_rsp, sys3_rsp, imem_rsp, dmem_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
 
   -- bus: IO devices --
   type io_devices_enum_t is (
@@ -631,14 +626,14 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_core_bus_switch_inst: entity neorv32.neorv32_bus_switch
     generic map (
-      ROUND_ROBIN_EN   => false, -- use prioritizing arbitration
+      ROUND_ROBIN_EN   => any_cpu_cache_c, -- enable locked round-robin to prevent cache burst interleaving
       PORT_A_READ_ONLY => false,
       PORT_B_READ_ONLY => true -- instruction fetch is read-only
     )
     port map (
       clk_i   => clk_i,
       rstn_i  => rstn_sys,
-      a_req_i => dcache_req(i), -- data accesses are prioritized
+      a_req_i => dcache_req(i), -- data accesses are prioritized if there are no CPU caches
       a_rsp_o => dcache_rsp(i),
       b_req_i => icache_req(i),
       b_rsp_o => icache_rsp(i),
@@ -664,7 +659,7 @@ begin
   if num_cores_c = 2 generate
     neorv32_complex_arbiter_inst: entity neorv32.neorv32_bus_switch
     generic map (
-      ROUND_ROBIN_EN   => true,
+      ROUND_ROBIN_EN   => true, -- fair (and lockable) scheduling
       PORT_A_READ_ONLY => false,
       PORT_B_READ_ONLY => false
     )
@@ -719,7 +714,7 @@ begin
     port map (
       clk_i   => clk_i,
       rstn_i  => rstn_sys,
-      a_req_i => sys1_req, -- prioritized
+      a_req_i => sys1_req, -- CPU accesses are prioritized
       a_rsp_o => sys1_rsp,
       b_req_i => dma_req,
       b_rsp_o => dma_rsp,
