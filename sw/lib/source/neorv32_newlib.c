@@ -32,13 +32,13 @@ extern int errno;
  **************************************************************************/
 void _exit(int status) {
 
-  (void)status;
-
-  // jump to crt0's exit code
+  // put status into register 'a0' and jump to crt0's exit code
   asm volatile (
     ".extern __crt0_main_exit \n"
     "la ra,  __crt0_main_exit \n"
+    "mv a0,  %[exit_code]     \n"
     "jr ra                    \n"
+    : : [exit_code] "r" (status)
   );
 
   // will never be reached
@@ -209,7 +209,7 @@ void *_sbrk(int incr) {
   if ((((uint32_t)curr_heap_ptr) + ((uint32_t)incr)) >= stack_pntr) {
     write(STDERR_FILENO, "[neorv32-newlib] heap/stack collision\r\n", 39);
     errno = ENOMEM;
-    exit(-911);
+    _exit(-911); // fast exit, no need for the C-Lib "fini" stuff
     return (void*)-1; // error - no more memory
   }
 
