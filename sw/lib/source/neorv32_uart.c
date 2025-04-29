@@ -16,29 +16,6 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-// Drastically reduces the footprint, when knowing that uart is not synthesized anyway.
-#ifdef UART_DISABLED
-int  neorv32_uart_available(neorv32_uart_t *UARTx) { return 0; }
-int  neorv32_uart_get_rx_fifo_depth(neorv32_uart_t *UARTx) { return 0; }
-int  neorv32_uart_get_tx_fifo_depth(neorv32_uart_t *UARTx) { return 0; }
-void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_mask) {}
-void neorv32_uart_enable(neorv32_uart_t *UARTx) {}
-void neorv32_uart_disable(neorv32_uart_t *UARTx) {}
-void neorv32_uart_rtscts_enable(neorv32_uart_t *UARTx) {}
-void neorv32_uart_rtscts_disable(neorv32_uart_t *UARTx) {}
-void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {}
-void neorv32_uart_rx_clear(neorv32_uart_t *UARTx) {}
-void neorv32_uart_tx_clear(neorv32_uart_t *UARTx) {}
-int  neorv32_uart_tx_busy(neorv32_uart_t *UARTx) { return 0; }
-char neorv32_uart_getc(neorv32_uart_t *UARTx) {return 0; }
-int  neorv32_uart_char_received(neorv32_uart_t *UARTx) { return 0; }
-char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) { return 0; }
-void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {}
-void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list args) {}
-void neorv32_uart_printf(neorv32_uart_t *UARTx, const char *format, ...) {}
-int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int echo) { return 0; }
-#else
-
 
 /**********************************************************************//**
  * Check if UART unit was synthesized.
@@ -48,15 +25,13 @@ int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ec
  **************************************************************************/
 int neorv32_uart_available(neorv32_uart_t *UARTx) {
 
-  if (((uint32_t)UARTx == NEORV32_UART0_BASE) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART0))) {
+  if ((UARTx == NEORV32_UART0) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART0))) {
     return 1;
   }
-  else if (((uint32_t)UARTx == NEORV32_UART1_BASE) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1))) {
+  if ((UARTx == NEORV32_UART1) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1))) {
     return 1;
   }
-  else {
-    return 0;
-  }
+  return 0;
 }
 
 
@@ -102,14 +77,18 @@ void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_m
   tmp |= (uint32_t)(irq_mask & (0x1fU << UART_CTRL_IRQ_RX_NEMPTY));
 
 #ifdef UART0_SIM_MODE
-#warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulation only!
+#warning UART0_SIM_MODE (primary UART) enabled! \
+Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. \
+Use this for simulation only!
   if (((uint32_t)UARTx) == NEORV32_UART0_BASE) {
     tmp |= 1U << UART_CTRL_SIM_MODE;
   }
 #endif
 
 #ifdef UART1_SIM_MODE
-#warning UART1_SIM_MODE (secondary UART) enabled! Sending all UART1.TX data to text.io simulation output instead of real UART1 transmitter. Use this for simulation only!
+#warning UART1_SIM_MODE (secondary UART) enabled! \
+Sending all UART1.TX data to text.io simulation output instead of real UART1 transmitter. \
+Use this for simulation only!
   if (((uint32_t)UARTx) == NEORV32_UART1_BASE) {
     tmp |= 1U << UART_CTRL_SIM_MODE;
   }
@@ -329,9 +308,10 @@ char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) {
 
 
 /**********************************************************************//**
- * Print string (zero-terminated) via UART. Print full line break "\r\n" for every '\n'.
+ * Print string (zero-terminated) via UART.
  *
  * @note This function is blocking.
+ * @warning "/n" line breaks are automatically converted to "/r/n".
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] s Pointer to string.
@@ -352,6 +332,7 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
  * Custom version of 'vprintf' printing to UART.
  *
  * @warning: This functions only provides a minimal subset of the 'vprintf' formating features!
+ * @warning "/n" line breaks are automatically converted to "/r/n".
  * @note This function is blocking.
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
@@ -474,8 +455,9 @@ int neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ech
         length--;
       }
     }
-    else if (c == '\r') // carriage return
+    else if ((c == '\r') || (c == '\n')) { // "enter"
       break;
+    }
     else if ((c >= ' ') && (c <= '~') && (length < (max_size-1))) {
       if (echo) {
         neorv32_uart_putc(UARTx, c); // echo
@@ -488,5 +470,3 @@ int neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ech
 
   return length;
 }
-
-#endif //UART_DISABLED
