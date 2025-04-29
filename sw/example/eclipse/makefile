@@ -18,7 +18,7 @@ APP_SRC += $(wildcard ./*.c)
 APP_INC += -I .
 
 # Adjust processor IMEM size and base address
-USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=16k
+USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=20k
 USER_FLAGS += -Wl,--defsym,__neorv32_rom_base=0x00000000
 
 # Adjust processor DMEM size and base address

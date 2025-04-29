@@ -23,7 +23,7 @@ int main() {
 
   // say hello
   while(1) {
-    printf("Hello Eclipse!\n");
+    printf("Hello Eclipse!\r\n");
     delay_ms(500);
   }
 
