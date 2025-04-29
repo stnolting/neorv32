@@ -113,21 +113,30 @@ int _lseek(int file, int ptr, int dir) {
  **************************************************************************/
 int _read(int file, char *ptr, int len) {
 
+  char c = 0;
   int read_cnt = 0;
 
   // read STDIN stream from NEORV32.UART0 (if available)
   if ((file == STDIN_FILENO) && (neorv32_uart_available(NEORV32_UART0))) {
     while (len--) {
-      *ptr++ = (char)neorv32_uart_getc(NEORV32_UART0);
+      c = (char)neorv32_uart_getc(NEORV32_UART0);
+      *ptr++ = c;
       read_cnt++;
+      if ((c == '\n') || (c == '\r')) { // also terminate on [press enter]
+        return read_cnt;
+      }
     }
     return read_cnt;
   }
   // read all other input streams from NEORV32.UART1 (if available)
   else if (neorv32_uart_available(NEORV32_UART1)) {
     while (len--) {
-      *ptr++ = (char)neorv32_uart_getc(NEORV32_UART1);
+      c = (char)neorv32_uart_getc(NEORV32_UART1);
+      *ptr++ = c;
       read_cnt++;
+      if ((c == '\n') || (c == '\r')) { // also terminate on [press enter]
+        return read_cnt;
+      }
     }
     return read_cnt;
   }
