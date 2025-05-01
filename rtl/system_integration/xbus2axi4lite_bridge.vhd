@@ -84,8 +84,8 @@ begin
 
   -- AXI read data channel --
   m_axi_rready  <= std_logic(rready);
-  xbus_rd_ack   <= '1' when (rready = '1') and (m_axi_rvalid = '1') and (m_axi_rresp  = "00") else '0';
-  xbus_rd_err   <= '1' when (rready = '1') and (m_axi_rvalid = '1') and (m_axi_rresp /= "00") else '0';
+  xbus_rd_ack   <= '1' when (rready = '1') and (m_axi_rvalid = '1')  else '0';
+  xbus_rd_err   <= '1' when (rready = '1') and (m_axi_rresp /= "00") else '0';
   xbus_dat_o    <= std_ulogic_vector(m_axi_rdata);
 
   -- AXI write address channel --
@@ -100,8 +100,8 @@ begin
 
   -- AXI write response channel --
   m_axi_bready  <= std_logic(bready);
-  xbus_wr_ack   <= '1' when (bready = '1') and (m_axi_bvalid = '1') and (m_axi_bresp  = "00") else '0';
-  xbus_wr_err   <= '1' when (bready = '1') and (m_axi_bvalid = '1') and (m_axi_bresp /= "00") else '0';
+  xbus_wr_ack   <= '1' when (bready = '1') and (m_axi_bvalid = '1')  else '0';
+  xbus_wr_err   <= '1' when (bready = '1') and (m_axi_bresp /= "00") else '0';
 
   -- XBUS response --
   xbus_ack_o    <= xbus_rd_ack or xbus_wr_ack;
