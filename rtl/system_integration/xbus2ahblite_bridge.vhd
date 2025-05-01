@@ -73,10 +73,8 @@ begin
   end process arbiter;
 
   -- host response: evaluate in data phase --
-  xbus_ack_o <= '1' when (addr_ack_q = '1') and (pending_q = '1') and (ahb_hready_i = '1') and (ahb_hresp_i = '0') else '0';
-
-  -- access status --
-  xbus_err_o <= '1' when (ahb_hresp_i = '1') else '0'; -- error/okay
+  xbus_ack_o <= '1' when (addr_ack_q = '1') and (pending_q = '1') and (ahb_hready_i = '1') and (ahb_hresp_i = '0') else '0'; -- okay
+  xbus_err_o <= '1' when (addr_ack_q = '1') and (pending_q = '1') and (ahb_hready_i = '1') and (ahb_hresp_i = '1') else '0'; -- error
 
   -- host request: NONSEQ during address phase, IDLE during data phase --
   ahb_htrans_o <= "10" when (xbus_stb_i = '1') else "00";
