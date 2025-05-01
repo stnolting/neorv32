@@ -190,42 +190,36 @@ int _write(int file, char *ptr, int len) {
  **************************************************************************/
 void *_sbrk(int incr) {
 
-  static unsigned char *curr_heap_ptr = NULL; // current heap pointer
-  unsigned char *prev_heap_ptr; // previous heap pointer
+  static unsigned char *curr_heap = NULL; // current heap pointer
+  unsigned char *prev_heap; // previous heap pointer
 
   // initialize
-  if (curr_heap_ptr == NULL) {
-    curr_heap_ptr = (unsigned char *)NEORV32_HEAP_BEGIN;
+  if (curr_heap == NULL) {
+    curr_heap = (unsigned char *)NEORV32_HEAP_BEGIN;
   }
 
   // do we have a heap at all?
   if ((NEORV32_HEAP_BEGIN == NEORV32_HEAP_END) || (NEORV32_HEAP_SIZE == 0)) {
+#ifdef NEWLIB_DEBUG
     write(STDERR_FILENO, "[neorv32-newlib] no heap available\r\n", 36);
+#endif
     errno = ENOMEM;
     return (void*)-1; // error - no more memory
   }
 
   // sufficient space left?
-  if ((((uint32_t)curr_heap_ptr) + ((uint32_t)incr)) >= NEORV32_HEAP_END) {
+  if ((uint32_t)(curr_heap + incr) >= NEORV32_HEAP_END) {
+#ifdef NEWLIB_DEBUG
     write(STDERR_FILENO, "[neorv32-newlib] heap exhausted\r\n", 33);
+#endif
     errno = ENOMEM;
     return (void*)-1; // error - no more memory
   }
 
-  // runtime stack collision?
-  register uint32_t stack_pntr asm("sp");
-  asm volatile ("" : "=r" (stack_pntr));
-  if ((((uint32_t)curr_heap_ptr) + ((uint32_t)incr)) >= stack_pntr) {
-    write(STDERR_FILENO, "[neorv32-newlib] heap/stack collision\r\n", 39);
-    errno = ENOMEM;
-    _exit(-911); // fast exit, no need for the C-Lib "fini" stuff
-    return (void*)-1; // error - no more memory
-  }
+  prev_heap = curr_heap;
+  curr_heap += incr;
 
-  prev_heap_ptr = curr_heap_ptr;
-  curr_heap_ptr += incr;
-
-  return (void*)prev_heap_ptr;
+  return (void*)prev_heap;
 }
 
 
