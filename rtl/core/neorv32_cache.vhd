@@ -101,7 +101,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   -- control fsm --
   type state_t is (
     S_IDLE, S_LOOKUP, S_DIRECT_REQ, S_DIRECT_RSP,
-    S_DOWNLOAD_REQ, S_DOWNLOAD_RSP, S_DOWNLOAD_DONE, S_DOWNLOAD_ERR,
+    S_DOWNLOAD_REQ, S_DOWNLOAD_RSP, S_DOWNLOAD_DONE,
     S_UPLOAD_GET, S_UPLOAD_REQ, S_UPLOAD_RSP,
     S_FLUSH_START, S_FLUSH_READ, S_FLUSH_CHECK, S_FLUSH_DONE,
     S_ERROR
@@ -245,7 +245,7 @@ begin
         bus_req_o     <= host_req_i; -- pass-through (cache bypass)
         bus_req_o.stb <= '0';
         host_rsp_o    <= bus_rsp_i; -- pass-through (cache bypass)
-        if (bus_rsp_i.ack = '1') or (bus_rsp_i.err = '1') then
+        if (bus_rsp_i.ack = '1') then
           ctrl_nxt.state <= S_IDLE;
         end if;
 
@@ -266,11 +266,11 @@ begin
         bus_req_o.rw    <= '0'; -- read access
         --
         cache_o.we <= (others => '1'); -- just keep writing full words
-        if (bus_rsp_i.err = '1') then -- bus error
-          ctrl_nxt.state <= S_DOWNLOAD_ERR;
-        elsif (bus_rsp_i.ack = '1') then
+        if (bus_rsp_i.ack = '1') then
           addr_nxt.ofs <= std_ulogic_vector(unsigned(addr.ofs) + 1);
-          if (and_reduce_f(addr.ofs) = '1') then -- block completed
+          if (bus_rsp_i.err = '1') then
+            ctrl_nxt.state <= S_ERROR;
+          elsif (and_reduce_f(addr.ofs) = '1') then -- block completed
             ctrl_nxt.state <= S_DOWNLOAD_DONE;
           else -- get next word
             ctrl_nxt.state <= S_DOWNLOAD_REQ;
@@ -280,11 +280,6 @@ begin
       when S_DOWNLOAD_DONE => -- delay cycle for update of cache status
       -- ------------------------------------------------------------
         ctrl_nxt.state <= S_LOOKUP;
-
-      when S_DOWNLOAD_ERR => -- error during block download
-      -- ------------------------------------------------------------
-        cache_o.cmd_inv <= '1'; -- this block in broken
-        ctrl_nxt.state  <= S_ERROR;
 
 
       when S_UPLOAD_GET => -- upload dirty cache block: read word from cache
@@ -317,11 +312,11 @@ begin
           bus_req_o.rw    <= '1'; -- write access
           cache_o.cmd_new <= '1'; -- set new block (set tag, make valid & clean)
           --
-          if (bus_rsp_i.err = '1') then -- bus error (this is really bad...)
-            ctrl_nxt.state <= S_ERROR;
-          elsif (bus_rsp_i.ack = '1') then
+          if (bus_rsp_i.ack = '1') then
             addr_nxt.ofs <= std_ulogic_vector(unsigned(addr.ofs) + 1);
-            if (and_reduce_f(addr.ofs) = '1') then -- block completed
+            if (bus_rsp_i.err = '1') then
+              ctrl_nxt.state <= S_ERROR;
+            elsif (and_reduce_f(addr.ofs) = '1') then -- block completed
               ctrl_nxt.state <= ctrl.stret; -- go back to "upload-done return state"
             else -- get next word
               ctrl_nxt.state <= S_UPLOAD_GET;
@@ -370,8 +365,10 @@ begin
 
       when S_ERROR => -- block operation error
       -- ------------------------------------------------------------
-        host_rsp_o.err <= '1';
-        ctrl_nxt.state <= S_IDLE;
+        cache_o.cmd_inv <= '1'; -- this block in broken
+        host_rsp_o.ack  <= '1';
+        host_rsp_o.err  <= '1';
+        ctrl_nxt.state  <= S_IDLE;
 
       when others => -- undefined
       -- ------------------------------------------------------------

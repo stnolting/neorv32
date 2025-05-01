@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110306"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110307"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -54,7 +54,7 @@ package neorv32_package is
   constant mem_io_size_c   : natural := 32*64*1024; -- 32 * iodev_size_c
 
   -- Start of uncached memory access (256MB page / 4 MSBs only) --
-  constant mem_uncached_begin_c  : std_ulogic_vector(31 downto 0) := x"f0000000";
+  constant mem_uncached_begin_c : std_ulogic_vector(31 downto 0) := x"f0000000";
 
   -- IO Address Map (base address must be aligned to the region's size) --
   constant iodev_size_c         : natural := 64*1024; -- size of a single IO device (bytes)
@@ -136,9 +136,9 @@ package neorv32_package is
 
   -- bus response --
   type bus_rsp_t is record
-    data : std_ulogic_vector(31 downto 0); -- read data, valid if ack = 1
     ack  : std_ulogic; -- set if access acknowledge, single-shot
-    err  : std_ulogic; -- set if access error, single-shot, has priority over ack
+    err  : std_ulogic; -- set if access error, valid if ack = 1
+    data : std_ulogic_vector(31 downto 0); -- read data, valid if ack = 1
   end record;
 
   -- source (request) termination --
@@ -159,9 +159,9 @@ package neorv32_package is
 
   -- endpoint (response) termination --
   constant rsp_terminate_c : bus_rsp_t := (
-    data => (others => '0'),
     ack  => '0',
-    err  => '0'
+    err  => '0',
+    data => (others => '0')
   );
 
   -- Debug Module Interface -----------------------------------------------------------------

@@ -206,25 +206,29 @@ begin
 
         when S_READ => -- pending read access
         -- ------------------------------------------------------------
-          if (dma_rsp_i.err = '1') then
-            engine.done   <= '1';
-            engine.err_rd <= '1';
-            engine.state  <= S_IDLE;
-          elsif (dma_rsp_i.ack = '1') then
-            engine.rw    <= '1'; -- write
-            engine.stb   <= '1'; -- issue write request
-            engine.state <= S_WRITE;
+          if (dma_rsp_i.ack = '1') then
+            if (dma_rsp_i.err = '1') then
+              engine.done   <= '1';
+              engine.err_rd <= '1';
+              engine.state  <= S_IDLE;
+            else
+              engine.rw    <= '1'; -- write
+              engine.stb   <= '1'; -- issue write request
+              engine.state <= S_WRITE;
+            end if;
           end if;
 
         when S_WRITE => -- pending write access
         -- ------------------------------------------------------------
-          if (dma_rsp_i.err = '1') then
-            engine.done   <= '1';
-            engine.err_wr <= '1';
-            engine.state  <= S_IDLE;
-          elsif (dma_rsp_i.ack = '1') then
-            engine.num   <= std_ulogic_vector(unsigned(engine.num) - 1);
-            engine.state <= S_NEXT;
+          if (dma_rsp_i.ack = '1') then
+            engine.num <= std_ulogic_vector(unsigned(engine.num) - 1);
+            if (dma_rsp_i.err = '1') then
+              engine.done   <= '1';
+              engine.err_wr <= '1';
+              engine.state  <= S_IDLE;
+            else
+              engine.state <= S_NEXT;
+            end if;
           end if;
 
         when S_NEXT => -- check if done; prepare next access
