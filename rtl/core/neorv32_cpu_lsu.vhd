@@ -185,9 +185,9 @@ begin
   wait_o <= not dbus_rsp_i.ack;
 
   -- output access/alignment errors to control unit --
-  err_o(0) <= pending and (not ctrl_i.lsu_rw) and misaligned;  -- misaligned load
+  err_o(0) <= pending and (not ctrl_i.lsu_rw) and misaligned; -- misaligned load
   err_o(1) <= pending and (not ctrl_i.lsu_rw) and (dbus_rsp_i.err or pmp_err); -- load bus error
-  err_o(2) <= pending and (    ctrl_i.lsu_rw) and misaligned;  -- misaligned store
+  err_o(2) <= pending and (    ctrl_i.lsu_rw) and misaligned; -- misaligned store
   err_o(3) <= pending and (    ctrl_i.lsu_rw) and (dbus_rsp_i.err or pmp_err); -- store bus error
 
   -- access request (all source signals are driven by registers) --
