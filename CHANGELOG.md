@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 01.05.2025 | 1.11.3.7 | :warning: rework processor bus protocol | [#1252](https://github.com/stnolting/neorv32/pull/1252) |
 | 28.04.2025 | 1.11.3.6 | :warning: update/rework newlib system calls | [#1249](https://github.com/stnolting/neorv32/pull/1249) |
 | 28.04.2025 | 1.11.3.5 | optimize cache block replacement logic and block transfers | [#1248](https://github.com/stnolting/neorv32/pull/1248) |
 | 26.04.2025 | 1.11.3.4 | :sparkles: add bus lock feature | [#1245](https://github.com/stnolting/neorv32/pull/1245) |
