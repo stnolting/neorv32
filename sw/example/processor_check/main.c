@@ -62,7 +62,6 @@ void vectored_irq_table(void);
 void vectored_global_handler(void);
 void vectored_mei_handler(void);
 void hw_breakpoint_handler(void);
-void trigger_module_dummy(void);
 void gpio_trap_handler(void);
 void test_ok(void);
 void test_fail(void);
@@ -81,7 +80,7 @@ volatile int vectored_mei_handler_ack = 0; // vectored mei trap handler acknowle
 volatile uint32_t gpio_trap_handler_ack = 0; // gpio trap handler acknowledge
 volatile uint32_t dma_src; // dma source & destination data
 volatile uint32_t store_access_addr[2]; // variable to test store accesses
-volatile uint32_t __attribute__((aligned(4))) pmp_access[2]; // variable to test pmp
+volatile uint32_t __attribute__((aligned(8*4))) pmp_access[8]; // variable to test pmp
 volatile uint32_t trap_cnt; // number of triggered traps
 volatile uint32_t pmp_num_regions; // number of implemented pmp regions
 volatile uint8_t core1_stack[512]; // stack for core1
@@ -463,7 +462,7 @@ int main() {
     // execute program
     asm volatile ("fence.i"); // flush i-cache
     tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
-    asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
+    asm volatile ("jalr ra, %[input_i]" : : [input_i] "r" (tmp_a));
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c) && // make sure there was no exception
         (neorv32_cpu_csr_read(CSR_MSCRATCH) == 15)) { // make sure the program was executed in the right way
@@ -488,7 +487,7 @@ int main() {
 
   // DSCRATCH0 is accessible in only debug mode
   asm volatile ("addi %[rd], zero, 789 \n" // this value must not change
-                "csrr %[rd], %[csr]" : [rd] "=r" (tmp_a) : [csr] "i" (CSR_DSCRATCH0));
+                "csrr %[rd], %[csr]    \n" : [rd] "=r" (tmp_a) : [csr] "i" (CSR_DSCRATCH0));
 
   if ((tmp_a == 789) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL)) {
     test_ok();
@@ -549,8 +548,8 @@ int main() {
 
     tmp_a = 0;
     tmp_b = (uint32_t)ADDR_UNALIGNED_3;
-    asm volatile ("li   %[link], 0x123   \n" // initialize link register with known value
-                  "jalr %[link], 0(%[addr])" // must not update link register due to exception
+    asm volatile ("li   %[link], 0x123      \n" // initialize link register with known value
+                  "jalr %[link], 0(%[addr]) \n" // must not update link register due to exception
                   : [link] "=r" (tmp_a) : [addr] "r" (tmp_b));
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_MISALIGNED) && (tmp_a == 0x123)) {
@@ -575,18 +574,13 @@ int main() {
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
     cnt_test++;
 
-    // put "ret" instruction to the beginning of the external memory module
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+0, 0x00008067); // exception handler hack will try to resume execution here
-
-    // jump to beginning of external memory minus 4 bytes
+    // jump to an unreachable address
     // this will cause an instruction access fault as there is no module responding to the fetch request
-    // the exception handler will try to resume at the instruction 4 bytes ahead, which is the "ret" we just created
     asm volatile ("fence.i"); // flush i-cache
-    tmp_a = ((uint32_t)EXT_MEM_BASE) - 4;
-    asm volatile ("jalr ra, %[input_i]" :  : [input_i] "r" (tmp_a));
+    tmp_a = (uint32_t)ADDR_UNREACHABLE;
+    asm volatile ("jalr ra, %[dst]" : : [dst] "r" (tmp_a));
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ACCESS) && // correct exception cause
-        ((neorv32_cpu_csr_read(CSR_MEPC)-4) == tmp_a))  { // correct trap value (address of instruction that caused ifetch error)
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ACCESS) { // correct exception cause
       test_ok();
     }
     else {
@@ -694,7 +688,7 @@ int main() {
 
   // load from unaligned address
   asm volatile ("li %[da], 0xcafe1230 \n" // initialize destination register with known value
-                "lw %[da], 0(%[ad])     " // must not update destination register to to exception
+                "lw %[da], 0(%[ad])   \n" // must not update destination register to to exception
                 : [da] "=r" (tmp_b) : [ad] "r" (ADDR_UNALIGNED_1));
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_MISALIGNED) &&
@@ -717,7 +711,7 @@ int main() {
 
   // load from unreachable aligned address
   asm volatile ("li %[da], 0xcafe1230 \n" // initialize destination register with known value
-                "lw %[da], 0(%[ad])     " // must not update destination register due to exception
+                "lw %[da], 0(%[ad])   \n" // must not update destination register due to exception
                 : [da] "=r" (tmp_b) : [ad] "r" (ADDR_UNREACHABLE));
 
   if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS) && // load bus access error exception
@@ -1781,33 +1775,25 @@ int main() {
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCAUSE, mcause_never_c);
   PRINT_STANDARD("[%i] Heap/malloc ", cnt_test);
+  cnt_test++;
 
-  tmp_a = (uint32_t)NEORV32_HEAP_SIZE;
+  uint8_t *malloc_a = (uint8_t*)malloc(64 * sizeof(uint8_t));
+  uint8_t *malloc_b = (uint8_t*)malloc(NEORV32_HEAP_SIZE * sizeof(uint8_t));
+  free(malloc_b);
+  uint8_t *malloc_c = (uint8_t*)malloc(48 * sizeof(uint8_t));
+  free(malloc_c);
+  free(malloc_a);
 
-  if (tmp_a >= 3096) { // sufficient heap for this test?
-    cnt_test++;
-
-    uint8_t *malloc_a = (uint8_t*)malloc(8 * sizeof(uint8_t));
-    uint8_t *malloc_b = (uint8_t*)malloc(tmp_a * sizeof(uint8_t));
-    free(malloc_b);
-    uint8_t *malloc_c = (uint8_t*)malloc(8 * sizeof(uint8_t));
-    free(malloc_c);
-    free(malloc_a);
-
-    if ((((uint32_t)NEORV32_HEAP_BEGIN + tmp_a) == (uint32_t)NEORV32_HEAP_END) && // correct heap layout
-        (malloc_a != NULL) && // malloc successful
-        (malloc_b == NULL) && // malloc failed due to exhausted heap
-        (malloc_c != NULL) && // malloc successful
-        (malloc_a != malloc_c) && // allocated different base addresses
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
+  if ((((uint32_t)NEORV32_HEAP_BEGIN + NEORV32_HEAP_SIZE) == (uint32_t)NEORV32_HEAP_END) && // correct heap layout
+      (malloc_a != NULL) && // malloc successful
+      (malloc_b == NULL) && // malloc failed due to exhausted heap
+      (malloc_c != NULL) && // malloc successful
+      (malloc_a != malloc_c) && // allocated different chunks of memory
+      (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) { // no exception
+    test_ok();
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    test_fail();
   }
 
 
@@ -1947,7 +1933,7 @@ int main() {
     {
       // access to misa not allowed for user-level programs
       asm volatile ("addi %[rd], zero, 234 \n" // this value must not change
-                    "csrr %[rd], misa " : [rd] "=r" (tmp_a) : ); // has to fail
+                    "csrr %[rd], misa      \n" : [rd] "=r" (tmp_a) : ); // has to fail
     }
 
     if ((tmp_a == 234) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL)) {
@@ -2010,8 +1996,9 @@ int main() {
   if (pmp_num_regions >= 3)  {
 
     // initialize protected variable
-    pmp_access[0] = 0x00000013; // nop (32-bit)
-    pmp_access[1] = 0x00008067; // ret (32-bit)
+    for (tmp_a = 0; tmp_a < sizeof(pmp_access)/4; tmp_a++) {
+      pmp_access[tmp_a] = 0xcafe00ff; // illegal instructions
+    }
 
 
     // General memory access from user mode - has to
@@ -2022,10 +2009,15 @@ int main() {
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    tmp_a = 0;
+    tmp_b = (uint32_t)(&pmp_access[0]);
     goto_user_mode();
     {
-      asm volatile ("addi %[rd], zero, 0 \n"
-                    "lw   %[rd], 0(%[rs])" : [rd] "=r" (tmp_a) : [rs] "r" ((uint32_t)(&pmp_access[0])) );
+      asm volatile (
+        "addi %[rd], zero, 0  \n"
+        "lw   %[rd], 0(%[rs]) \n"
+        : [rd] "=r" (tmp_a) : [rs] "r" (tmp_b)
+      );
     }
 
     if ((tmp_a == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_L_ACCESS)) {
@@ -2042,15 +2034,17 @@ int main() {
     PRINT_STANDARD("[%i] PMP config ", cnt_test);
     cnt_test++;
 
-    tmp_a = (uint32_t)(&pmp_access[0]); // base address of protected region
-
     // configure new region (with highest priority)
-    PRINT_STANDARD("[0]: OFF @ 0x%x, ", tmp_a); // base
-    tmp_b = neorv32_cpu_pmp_configure_region(0, tmp_a >> 2, 0);
-    PRINT_STANDARD("[1]: TOR (!L,!X,!W,R) @ 0x%x ", tmp_a+4); // bound
-    tmp_b += neorv32_cpu_pmp_configure_region(1, (tmp_a+4) >> 2, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_R)); // read-only
+    uint32_t pmp_base  = (uint32_t)(&pmp_access[0]);
+    uint32_t pmp_bound = (pmp_base + sizeof(pmp_access)) - 4;
 
-    if ((tmp_b == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) {
+    PRINT_STANDARD("[0]: OFF @ 0x%x, ", pmp_base); // base
+    tmp_a = neorv32_cpu_pmp_configure_region(0, pmp_base >> 2, 0);
+
+    PRINT_STANDARD("[1]: TOR (!L,!X,!W,R) @ 0x%x ", pmp_bound); // bound
+    tmp_a += neorv32_cpu_pmp_configure_region(1, pmp_bound >> 2, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_R)); // read-only
+
+    if ((tmp_a == 0) && (neorv32_cpu_csr_read(CSR_MCAUSE) == mcause_never_c)) {
       test_ok();
     }
     else {
@@ -2065,14 +2059,14 @@ int main() {
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    tmp_a = (uint32_t)(&pmp_access[1]);
     goto_user_mode();
     {
-      asm volatile ("addi %[rd], zero, 0 \n"
-                    "lw   %[rd], 0(%[rs])" : [rd] "=r" (tmp_b) : [rs] "r" ((uint32_t)(&pmp_access[0])) );
+      asm volatile ("lw %[rd], 0(%[rs])" : [rd] "=r" (tmp_a) : [rs] "r" (tmp_a));
     }
-
     asm volatile ("ecall"); // go back to m-mode
-    if (tmp_b == 0x00000013) {
+
+    if (tmp_a == 0xcafe00ff) {
       test_ok();
     }
     else {
@@ -2089,10 +2083,10 @@ int main() {
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
     goto_user_mode();
     {
-      neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access[0]), 0); // store access -> should fail
+      neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access[2]), 0); // store access -> should fail
     }
 
-    if ((pmp_access[0] == 0x00000013) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS)) {
+    if ((pmp_access[2] == 0xcafe00ff) && (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS)) {
       test_ok();
     }
     else {
@@ -2107,9 +2101,10 @@ int main() {
     cnt_test++;
 
     // switch to user mode (hart will be back in MACHINE mode when trap handler returns)
+    tmp_a = (uint32_t)(&pmp_access[3]);
     goto_user_mode();
     {
-      asm volatile ("jalr ra, %[rs]" : : [rs] "r" ((uint32_t)(&pmp_access[0])));
+      asm volatile ("jalr ra, %[rs]" : : [rs] "r" (tmp_a));
     }
 
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ACCESS) {
@@ -2130,11 +2125,11 @@ int main() {
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MPRV); // set MPRV: M uses U permissions for load/stores
     neorv32_cpu_csr_clr(CSR_MSTATUS, 3 << CSR_MSTATUS_MPP_L); // clear MPP: use U as effective privilege mode
 
-    neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access[0]), 0); // store access -> should fail
+    neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access[4]), 0); // store access -> should fail
 
     neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MPRV);
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && (pmp_access[0] == 0x00000013)) {
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && (pmp_access[4] == 0xcafe00ff)) {
       test_ok();
     }
     else {
@@ -2151,9 +2146,9 @@ int main() {
     // set lock bit
     neorv32_cpu_csr_set(CSR_PMPCFG0, (1 << PMPCFG_L) << 8); // set lock bit in entry 1
 
-    neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access[0]), 0); // store access -> should fail
+    neorv32_cpu_store_unsigned_word((uint32_t)(&pmp_access[5]), 0); // store access -> should fail
 
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && (pmp_access[0] == 0x00000013)) {
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS) && (pmp_access[5] == 0xcafe00ff)) {
       test_ok();
     }
     else {
@@ -2283,8 +2278,9 @@ void global_trap_handler(void) {
   uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
 
   // hack: make "instruction access fault" exception resumable as we *exactly* know how to handle it in this case
+  // -> as this is triggered by a JAL instruction we return to calling program at [context.ra]
   if (cause == TRAP_CODE_I_ACCESS) {
-    neorv32_cpu_csr_write(CSR_MEPC, (uint32_t)EXT_MEM_BASE+0);
+    neorv32_cpu_csr_write(CSR_MEPC, neorv32_rte_context_get(1)); // x1 = ra = return address
   }
 
   // increment global trap counter
@@ -2367,16 +2363,6 @@ void __attribute__((interrupt("machine"))) vectored_global_handler(void) {
 void __attribute__((interrupt("machine"))) vectored_mei_handler(void) {
 
   vectored_mei_handler_ack = 1; // successfully called
-}
-
-
-/**********************************************************************//**
- * Test function for the trigger module
- **************************************************************************/
-void __attribute__ ((noinline,naked,aligned(4))) trigger_module_dummy(void) {
-
-  asm volatile ("csrwi mscratch, 4 \n" // hardware breakpoint should trigger before executing this
-                "ret               \n");
 }
 
 
