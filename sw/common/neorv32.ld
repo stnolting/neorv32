@@ -145,6 +145,8 @@ SECTIONS
   .bss (NOLOAD): ALIGN(4)
   {
     __BSS_START__ = .;
+    /* start section on WORD boundary */
+    . = ALIGN(4);
     *(.dynsbss)
     *(.sbss .sbss.* .gnu.linkonce.sb.*)
     *(.sbss2 .sbss2.* .gnu.linkonce.sb2.*)
@@ -158,17 +160,9 @@ SECTIONS
     PROVIDE_HIDDEN (__preinit_array_end = .);
 
     *(COMMON)
-    /* Align here to ensure that the .bss section occupies space up to
-       _end.  Align after .bss to ensure correct alignment even if the
-       .bss section disappears because there are no input sections.
-       FIXME: Why do we need it? When there is no .bss section, we do not
-       pad the .data section.  */
-    . = ALIGN(. != 0 ? 32 / 8 : 1);
-
     /* finish section on WORD boundary */
     . = ALIGN(4);
     __BSS_END__ = .;
-    _end = .; PROVIDE (end = .);
   } > ram
 
 /* ************************************************************************************************* */
@@ -188,32 +182,32 @@ SECTIONS
 /* ************************************************************************************************* */
 /* Unused sections                                                                                   */
 /* ************************************************************************************************* */
-  .jcr                : { KEEP (*(.jcr)) }
-  .got                : { *(.got.plt) *(.igot.plt) *(.got) *(.igot) } .interp : { *(.interp) }
-  .note.gnu.build-id  : { *(.note.gnu.build-id) }
-  .hash               : { *(.hash) }
-  .gnu.hash           : { *(.gnu.hash) }
-  .dynsym             : { *(.dynsym) }
-  .dynstr             : { *(.dynstr) }
-  .gnu.version        : { *(.gnu.version) }
-  .gnu.version_d      : { *(.gnu.version_d) }
-  .gnu.version_r      : { *(.gnu.version_r) }
-  .rela.init          : { *(.rela.init) }
-  .rela.text          : { *(.rela.text .rela.text.* .rela.gnu.linkonce.t.*) }
-  .rela.fini          : { *(.rela.fini) }
-  .rela.rodata        : { *(.rela.rodata .rela.rodata.* .rela.gnu.linkonce.r.*) }
-  .rela.data.rel.ro   : { *(.rela.data.rel.ro .rela.data.rel.ro.* .rela.gnu.linkonce.d.rel.ro.*) }
-  .rela.data          : { *(.rela.data .rela.data.* .rela.gnu.linkonce.d.*) }
-  .rela.tdata         : { *(.rela.tdata .rela.tdata.* .rela.gnu.linkonce.td.*) }
-  .rela.tbss          : { *(.rela.tbss .rela.tbss.* .rela.gnu.linkonce.tb.*) }
-  .rela.ctors         : { *(.rela.ctors) }
-  .rela.dtors         : { *(.rela.dtors) }
-  .rela.got           : { *(.rela.got) }
-  .rela.sdata         : { *(.rela.sdata .rela.sdata.* .rela.gnu.linkonce.s.*) }
-  .rela.sbss          : { *(.rela.sbss .rela.sbss.* .rela.gnu.linkonce.sb.*) }
-  .rela.sdata2        : { *(.rela.sdata2 .rela.sdata2.* .rela.gnu.linkonce.s2.*) }
-  .rela.sbss2         : { *(.rela.sbss2 .rela.sbss2.* .rela.gnu.linkonce.sb2.*) }
-  .rela.bss           : { *(.rela.bss .rela.bss.* .rela.gnu.linkonce.b.*) }
+  .jcr               : { KEEP (*(.jcr)) }
+  .got               : { *(.got.plt) *(.igot.plt) *(.got) *(.igot) } .interp : { *(.interp) }
+  .note.gnu.build-id : { *(.note.gnu.build-id) }
+  .hash              : { *(.hash) }
+  .gnu.hash          : { *(.gnu.hash) }
+  .dynsym            : { *(.dynsym) }
+  .dynstr            : { *(.dynstr) }
+  .gnu.version       : { *(.gnu.version) }
+  .gnu.version_d     : { *(.gnu.version_d) }
+  .gnu.version_r     : { *(.gnu.version_r) }
+  .rela.init         : { *(.rela.init) }
+  .rela.text         : { *(.rela.text .rela.text.* .rela.gnu.linkonce.t.*) }
+  .rela.fini         : { *(.rela.fini) }
+  .rela.rodata       : { *(.rela.rodata .rela.rodata.* .rela.gnu.linkonce.r.*) }
+  .rela.data.rel.ro  : { *(.rela.data.rel.ro .rela.data.rel.ro.* .rela.gnu.linkonce.d.rel.ro.*) }
+  .rela.data         : { *(.rela.data .rela.data.* .rela.gnu.linkonce.d.*) }
+  .rela.tdata        : { *(.rela.tdata .rela.tdata.* .rela.gnu.linkonce.td.*) }
+  .rela.tbss         : { *(.rela.tbss .rela.tbss.* .rela.gnu.linkonce.tb.*) }
+  .rela.ctors        : { *(.rela.ctors) }
+  .rela.dtors        : { *(.rela.dtors) }
+  .rela.got          : { *(.rela.got) }
+  .rela.sdata        : { *(.rela.sdata .rela.sdata.* .rela.gnu.linkonce.s.*) }
+  .rela.sbss         : { *(.rela.sbss .rela.sbss.* .rela.gnu.linkonce.sb.*) }
+  .rela.sdata2       : { *(.rela.sdata2 .rela.sdata2.* .rela.gnu.linkonce.s2.*) }
+  .rela.sbss2        : { *(.rela.sbss2 .rela.sbss2.* .rela.gnu.linkonce.sb2.*) }
+  .rela.bss          : { *(.rela.bss .rela.bss.* .rela.gnu.linkonce.b.*) }
 
 /* ************************************************************************************************* */
 /* Debug symbols                                                                                     */
