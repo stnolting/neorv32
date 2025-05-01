@@ -90,7 +90,7 @@ begin
       when S_BUSY_B => -- port B access in progress
       -- ------------------------------------------------------------
         sel      <= '1';
-        prio_nxt <= not a_req_i.lock; -- if locked: give port B prioritized access in the next cycle
+        prio_nxt <= not b_req_i.lock; -- if locked: give port B prioritized access in the next cycle
         if (x_rsp_i.ack = '1') then
           state_nxt <= S_IDLE;
         end if;
