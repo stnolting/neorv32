@@ -162,8 +162,8 @@ begin
 
   -- response gating --
   bus_rsp.data <= xbus_dat_i when (pending(1) = '1') else (others => '0');
-  bus_rsp.ack  <= pending(1) and (xbus_ack_i or timeout);
-  bus_rsp.err  <= pending(1) and (xbus_err_i or timeout);
+  bus_rsp.ack  <= pending(1) and (timeout or xbus_err_i or xbus_ack_i);
+  bus_rsp.err  <= pending(1) and (timeout or xbus_err_i);
 
 
 end neorv32_xbus_rtl;
