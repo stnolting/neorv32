@@ -52,8 +52,8 @@ puts $file_list
 add_files $file_list
 set_property library neorv32 [get_files $file_list]
 
-# IP top module and AXI4-Lite bridge
-add_file $neorv32_home/rtl/system_integration/xbus2axi4lite_bridge.vhd
+# IP top module and AXI4 bridge
+add_file $neorv32_home/rtl/system_integration/xbus2axi4_bridge.vhd
 add_file $neorv32_home/rtl/system_integration/$ip_top.vhd
 set_property top $ip_top [current_fileset]
 
@@ -192,7 +192,7 @@ proc setup_ip_gui {} {
     { OCD_JEDEC_ID       {JEDEC ID}            {JTAG tap identification}                         {$OCD_EN}}
   }
 
-  set group [add_group $page {External Bus Interface (XBUS / AXI4-Lite-MM Host)}]
+  set group [add_group $page {External Bus Interface (XBUS / AXI4-MM Host)}]
   add_params $group {
     { XBUS_EN          {Enable XBUS} }
     { XBUS_REGSTAGE_EN {Add register stages} {In/out register stages; relaxes timing, but will increase latency} {$XBUS_EN} }

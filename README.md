@@ -176,7 +176,7 @@ allows booting application code via UART, TWI or from external SPI flash
 
 * 32-bit external bus interface - Wishbone b4 compatible
 ([XBUS](https://stnolting.github.io/neorv32/#_processor_external_bus_interface_xbus)) with optional cache (XCACHE);
-[wrappers](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration) for AXI4-Lite and Avalon-MM host interfaces
+[wrapper](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration) for AXI4 interfaces
 * stream link interface with independent RX and TX channels - AXI4-Stream compatible
 ([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink))
 

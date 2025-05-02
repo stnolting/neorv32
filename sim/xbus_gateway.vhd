@@ -105,7 +105,7 @@ begin
     variable tmp_v : xbus_rsp_t;
   begin
     tmp_v.data := (others => '0');
-    tmp_v.ack  := acc_err;
+    tmp_v.ack  := '0';
     tmp_v.err  := acc_err;
     for i in 0 to num_devs_c-1 loop -- OR all enabled response buses
       if (acc_en(i) = '1') and dev_en_list_c(i) then

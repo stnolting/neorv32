@@ -81,20 +81,16 @@ begin
 
         when "10" => -- single access / atomic access (2nd access: store)
         -- ------------------------------------------------------------
-          if (xbus_ack_i = '1') or (timeout = '1') then
+          if (timeout = '1') or (xbus_err_i = '1') or (xbus_ack_i = '1') then
             pending <= "00";
           end if;
 
         when "11" => -- atomic access (1st access: load)
         -- ------------------------------------------------------------
-          if (timeout = '1') then
+          if (timeout = '1') or (xbus_err_i = '1') then
             pending <= "00";
           elsif (xbus_ack_i = '1') then
-            if (xbus_err_i = '1') then
-              pending <= "00";
-            else
-              pending <= "10";
-            end if;
+            pending <= "10";
           end if;
 
         when others => -- "0-": idle; waiting for request
