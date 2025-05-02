@@ -392,7 +392,7 @@ and are always valid when set.
 | `amo`   |     1 | Set if current access is an atomic memory operation (<<_atomic_memory_access>>).
 | `amoop` |     4 | Actual type of atomic memory operation (<<_atomic_memory_access>>). Irrelevant if `amo` is not set.
 3+^| **Out-Of-Band Signals**
-| `fence` |     1 | Data (load/store; `fence`) or instruction (instruction-fetch; `fence.i`) fence request; single-shot; see <<_memory_coherence>>
+| `fence` |     1 | Data (load/store; `fence`) or instruction (instruction-fetch; `fence.i`) fence request; single-shot; see <<_memory_coherence>>.
 |=======================
 
 .Bus Interface - Response Bus (`bus_rsp_t`)
@@ -400,24 +400,22 @@ and are always valid when set.
 [options="header",grid="rows"]
 |=======================
 | Signal | Width | Description
-| `data` |    32 | Read data (single-shot)
-| `ack`  |     1 | Transfer acknowledge / success (single-shot)
-| `err`  |     1 | Transfer error / fail (single-shot)
+| `ack`  |     1 | Transfer acknowledge, single-shot.
+| `err`  |     1 | Transfer error when set, valid if `ack = 1`.
+| `data` |    32 | Read data, valid if `ack = 1`.
 |=======================
 
 
 :sectnums:
 ==== Bus Interface Protocol
 
-Transactions are triggered entirely by the request bus. A new bus request is initiated by setting the _strobe_
+Transactions are triggered by the request bus. A new bus request is initiated by setting the _strobe_
 signal `stb` high for exactly one cycle. All remaining signals of the bus are set together with `stb` and will
 remain unchanged until the transaction is completed.
 
-The transaction is completed when the accessed device returns a response via the response interface:
-`ack` is high for exactly one cycle if the transaction was completed successfully. `err` is high for exactly
-one cycle if the transaction failed to complete. These two signals are mutually exclusive. In case of a read
-access the read data is returned together with the `ack` signal. Otherwise, the return data signal is
-kept at all-zero allowing wired-or interconnection of all response buses.
+The transaction is completed when the accessed device returns an acknowledge via the `ack` signal, which is high
+for exactly one cycle. Together with `ack` the accessed device returns an optional error status (`err`) and read
+data (`rdata`) in case of a read-access. `err` and `data` are evaluated only when `ack` is high.
 
 The figure below shows three exemplary bus accesses:
 
@@ -436,7 +434,7 @@ The figure below shows three exemplary bus accesses:
     {name: 'addr',  wave: 'x3.|.x4.x5.|.x', data: ['A_addr', 'B_addr', 'C_addr']},
     {name: 'data',  wave: 'x..|..4.x..|..', data: ['wdata']},
     {name: 'ben',   wave: 'x..|..4.x..|..', data: ['ben']},
-    {name: 'stb',   wave: '010|..10.10|..', node: '.a....d..f....'},
+    {name: 'stb',   wave: '010|..10.10|..', node: '.a....c..e....'},
     {name: 'rw',    wave: 'x0.|.x1.x0.|..', node: '..............'},
     {name: 'src',   wave: 'x0.|.x0.x0.|.x'},
     {name: 'lock',  wave: '0..|.......|..'},
@@ -449,12 +447,12 @@ The figure below shows three exemplary bus accesses:
   {},
   [
     "response",
-    {name: 'data', wave: '2..|32.....|x2', data: ['0', 'rdata', '0'], node: '....b.......g.'},
-    {name: 'ack',  wave: '0..|10.10..|..', node: '....c..e......'},
-    {name: 'err',  wave: '0..|.......|10', node: '............h.'}
+    {name: 'ack',  wave: '0..|10.10..|10', node: '....b..d....f.'},
+    {name: 'err',  wave: '0..|.......|10'},
+    {name: 'data', wave: '2..|32.....|x2', data: ['0', 'rdata', '0']},
   ]
 ],
- edge: ['a~>b', 'a~>c', 'd~>e', 'f~>g', 'f~>h']
+ edge: ['a~>b', 'c~>d', 'e~>f']
 }
 ----
 
@@ -1205,7 +1203,7 @@ See section <<_on_chip_debugger_ocd>> / <<_cpu_debug_mode>> for more information
 ==== `Sdtrig` ISA Extension
 
 This ISA extension implements the RISC-V-compatible "trigger module" which provides support for
-hardware breakpoints for the on-chip-debugger. 
+hardware breakpoints for the on-chip-debugger.
 See section <<_on_chip_debugger_ocd>> / <<_trigger_module>> for more information.
 
 

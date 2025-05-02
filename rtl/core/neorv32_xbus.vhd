@@ -81,16 +81,20 @@ begin
 
         when "10" => -- single access / atomic access (2nd access: store)
         -- ------------------------------------------------------------
-          if (xbus_ack_i = '1') or (xbus_err_i = '1') or (timeout = '1') then
+          if (xbus_ack_i = '1') or (timeout = '1') then
             pending <= "00";
           end if;
 
         when "11" => -- atomic access (1st access: load)
         -- ------------------------------------------------------------
-          if (xbus_err_i = '1') or (timeout = '1') then -- abort if error
+          if (timeout = '1') then
             pending <= "00";
           elsif (xbus_ack_i = '1') then
-            pending <= "10";
+            if (xbus_err_i = '1') then
+              pending <= "00";
+            else
+              pending <= "10";
+            end if;
           end if;
 
         when others => -- "0-": idle; waiting for request
@@ -158,8 +162,8 @@ begin
 
   -- response gating --
   bus_rsp.data <= xbus_dat_i when (pending(1) = '1') else (others => '0');
-  bus_rsp.ack  <= pending(1) and xbus_ack_i;
-  bus_rsp.err  <= pending(1) and (xbus_err_i or timeout);
+  bus_rsp.ack  <= pending(1) and (timeout or xbus_err_i or xbus_ack_i);
+  bus_rsp.err  <= pending(1) and (timeout or xbus_err_i);
 
 
 end neorv32_xbus_rtl;

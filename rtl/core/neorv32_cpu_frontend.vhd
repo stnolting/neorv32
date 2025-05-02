@@ -44,7 +44,6 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
     state   : fetch_state_t;
     restart : std_ulogic; -- buffered restart request (after branch)
     pc      : std_ulogic_vector(XLEN-1 downto 0);
-    resp    : std_ulogic; -- bus response
     priv    : std_ulogic; -- fetch privilege level
   end record;
   signal fetch : fetch_t;
@@ -99,7 +98,7 @@ begin
         when S_PENDING => -- wait for bus response and write instruction data to prefetch buffer
         -- ------------------------------------------------------------
           fetch.restart <= fetch.restart or ctrl_i.if_reset; -- buffer restart request
-          if (fetch.resp = '1') then -- wait for bus response
+          if (ibus_rsp_i.ack = '1') then -- wait for bus response
             fetch.pc    <= std_ulogic_vector(unsigned(fetch.pc) + 4); -- next word
             fetch.pc(1) <= '0'; -- (re-)align to 32-bit
             if (fetch.restart = '1') or (ctrl_i.if_reset = '1') then -- restart request due to branch
@@ -134,16 +133,13 @@ begin
   ibus_req_o.amoop <= (others => '0');  -- cannot be an atomic memory operation
   ibus_req_o.fence <= ctrl_i.if_fence;  -- fence request, valid without STB being set ("out-of-band" signal)
 
-  -- instruction bus response --
-  fetch.resp <= ibus_rsp_i.ack or ibus_rsp_i.err;
-
   -- IPB instruction data and status --
   ipb.wdata(0) <= ibus_rsp_i.err & ibus_rsp_i.data(15 downto 0);
   ipb.wdata(1) <= ibus_rsp_i.err & ibus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
-  ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (fetch.resp = '1') and ((fetch.pc(1) = '0') or (not RVC_EN)) else '0';
-  ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (fetch.resp = '1') else '0';
+  ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.pc(1) = '0') or (not RVC_EN)) else '0';
+  ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') else '0';
 
   -- instruction fetch has halted --
   frontend_o.halted <= '1' when (fetch.state = S_REQUEST) and (ipb.free /= "11") else '0';

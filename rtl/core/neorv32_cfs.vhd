@@ -160,7 +160,7 @@ begin
       bus_rsp_o.ack <= bus_req_i.stb;
 
       -- tie to zero if not explicitly used --
-      bus_rsp_o.err <= '0';
+      bus_rsp_o.err <= '0'; -- set high together with bus_rsp_o.ack if there is an access error
 
       -- defaults --
       bus_rsp_o.data <= (others => '0'); -- the output HAS TO BE ZERO if there is no actual (read) access

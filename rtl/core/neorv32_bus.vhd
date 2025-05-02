@@ -81,25 +81,17 @@ begin
 
       when S_BUSY_A => -- port A access in progress
       -- ------------------------------------------------------------
-        sel <= '0';
-        if (a_req_i.lock = '1') then
-          prio_nxt <= '1'; -- give port A prioritized access in the next cycle
-        else
-          prio_nxt <= '0'; -- give port B prioritized access in the next cycle
-        end if;
-        if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
+        sel      <= '0';
+        prio_nxt <= a_req_i.lock; -- if locked: give port A prioritized access in the next cycle
+        if (x_rsp_i.ack = '1') then
           state_nxt <= S_IDLE;
         end if;
 
       when S_BUSY_B => -- port B access in progress
       -- ------------------------------------------------------------
-        sel <= '1';
-        if (b_req_i.lock = '1') then
-          prio_nxt <= '0'; -- give port B prioritized access in the next cycle
-        else
-          prio_nxt <= '1'; -- give port A prioritized access in the next cycle
-        end if;
-        if (x_rsp_i.err = '1') or (x_rsp_i.ack = '1') then
+        sel      <= '1';
+        prio_nxt <= not b_req_i.lock; -- if locked: give port B prioritized access in the next cycle
+        if (x_rsp_i.ack = '1') then
           state_nxt <= S_IDLE;
         end if;
 
@@ -390,8 +382,8 @@ begin
 
   -- host response --
   rsp_o.data <= int_rsp.data;
-  rsp_o.ack  <= int_rsp.ack;
-  rsp_o.err  <= keeper.err;
+  rsp_o.ack  <= int_rsp.ack or keeper.err;
+  rsp_o.err  <= int_rsp.err or keeper.err;
 
 
   -- Bus Monitor (aka "the KEEPER") ---------------------------------------------------------
@@ -411,7 +403,7 @@ begin
         keeper.busy <= req_i.stb;
       else -- bus access in progress
         keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1);
-        if (int_rsp.err = '1') or ((keeper.cnt(keeper.cnt'left) = '1') and (keeper.halt = '0')) then -- bus error or timeout
+        if ((keeper.cnt(keeper.cnt'left) = '1') and (keeper.halt = '0')) then -- timeout
           keeper.err  <= '1';
           keeper.busy <= '0';
         elsif (int_rsp.ack = '1') then -- normal access termination
@@ -774,9 +766,7 @@ begin
       when S_READ_WAIT => -- wait for read-access to complete
       -- ------------------------------------------------------------
         arbiter_nxt.rdata <= sys_rsp_i.data;
-        if (sys_rsp_i.err = '1') then -- abort if error
-          arbiter_nxt.state <= S_IDLE;
-        elsif (sys_rsp_i.ack = '1') then
+        if (sys_rsp_i.ack = '1') then -- ignore bus error here; the same error should occur again in S_WRITE_WAIT
           arbiter_nxt.state <= S_EXECUTE;
         end if;
 
@@ -790,7 +780,7 @@ begin
 
       when S_WRITE_WAIT => -- wait for write-access to complete
       -- ------------------------------------------------------------
-        if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
+        if (sys_rsp_i.ack = '1') then
           arbiter_nxt.state <= S_IDLE;
         end if;
 
@@ -817,7 +807,7 @@ begin
 
   -- response switch --
   core_rsp_o.data <= sys_rsp_i.data when (arbiter.state = S_IDLE) else arbiter.rdata;
-  core_rsp_o.err  <= sys_rsp_i.err  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) or (arbiter.state = S_READ_WAIT) else '0';
+  core_rsp_o.err  <= sys_rsp_i.err  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) else '0';
   core_rsp_o.ack  <= sys_rsp_i.ack  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) else '0';
 
 
@@ -910,7 +900,7 @@ begin
 
         when "11" => -- active reservation: invalidate reservation at the end of bus access
         -- --------------------------------------------------------------------
-          if (sys_rsp_i.ack = '1') or (sys_rsp_i.err = '1') then
+          if (sys_rsp_i.ack = '1') then
             state <= "00";
           end if;
 

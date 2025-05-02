@@ -36,11 +36,11 @@ end neorv32_cpu_lsu;
 
 architecture neorv32_cpu_lsu_rtl of neorv32_cpu_lsu is
 
-  signal mar         : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-  signal misaligned  : std_ulogic; -- misaligned address
-  signal arbiter_req : std_ulogic; -- pending bus request
-  signal arbiter_err : std_ulogic; -- access error
-  signal amo_cmd     : std_ulogic_vector(3 downto 0); -- atomic memory operation type
+  signal mar        : std_ulogic_vector(XLEN-1 downto 0); -- memory address register
+  signal misaligned : std_ulogic; -- misaligned address
+  signal pending    : std_ulogic; -- pending bus request
+  signal pmp_err    : std_ulogic; -- PMP access violation
+  signal amo_cmd    : std_ulogic_vector(3 downto 0); -- atomic memory operation type
 
 begin
 
@@ -141,7 +141,7 @@ begin
       rdata_o <= (others => '0');
     elsif rising_edge(clk_i) then
       rdata_o <= (others => '0'); -- output zero if there is no memory access
-      if (arbiter_req = '1') then -- pending request
+      if (pending = '1') then -- pending request
         case ctrl_i.ir_funct3(1 downto 0) is
           when "00" => -- byte
             case mar(1 downto 0) is
@@ -169,14 +169,14 @@ begin
   access_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      arbiter_err <= '0';
-      arbiter_req <= '0';
+      pmp_err <= '0';
+      pending <= '0';
     elsif rising_edge(clk_i) then
-      arbiter_err <= dbus_rsp_i.err or pmp_fault_i; -- buffer stage
-      if (arbiter_req = '0') then -- idle
-        arbiter_req <= ctrl_i.lsu_req;
-      elsif (dbus_rsp_i.ack = '1') or (ctrl_i.cpu_trap = '1') then -- normal termination or start of trap handling
-        arbiter_req <= '0';
+      pmp_err <= pmp_fault_i;
+      if (pending = '0') then -- idle
+        pending <= ctrl_i.lsu_req;
+      elsif (dbus_rsp_i.ack = '1') or (ctrl_i.cpu_trap = '1') then -- bus response or start of trap handling
+        pending <= '0';
       end if;
     end if;
   end process access_arbiter;
@@ -185,10 +185,10 @@ begin
   wait_o <= not dbus_rsp_i.ack;
 
   -- output access/alignment errors to control unit --
-  err_o(0) <= arbiter_req and (not ctrl_i.lsu_rw) and misaligned;  -- misaligned load
-  err_o(1) <= arbiter_req and (not ctrl_i.lsu_rw) and arbiter_err; -- load bus error
-  err_o(2) <= arbiter_req and (    ctrl_i.lsu_rw) and misaligned;  -- misaligned store
-  err_o(3) <= arbiter_req and (    ctrl_i.lsu_rw) and arbiter_err; -- store bus error
+  err_o(0) <= pending and (not ctrl_i.lsu_rw) and misaligned; -- misaligned load
+  err_o(1) <= pending and (not ctrl_i.lsu_rw) and (dbus_rsp_i.err or pmp_err); -- load bus error
+  err_o(2) <= pending and (    ctrl_i.lsu_rw) and misaligned; -- misaligned store
+  err_o(3) <= pending and (    ctrl_i.lsu_rw) and (dbus_rsp_i.err or pmp_err); -- store bus error
 
   -- access request (all source signals are driven by registers) --
   dbus_req_o.stb <= ctrl_i.lsu_req and (not misaligned) and (not pmp_fault_i);
