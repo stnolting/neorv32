@@ -3,7 +3,7 @@
 This folder provides exemplary templates that wrap the processor top entity and provide a simplified
 set of configuration generics and IOs. These setups are intended to allow beginner an easy start by
 hiding much of the processor's configuration complexity. Furthermore, these setups are used by many
-of the provided [example setups](https://github.com/stnolting/neorv32/tree/main/setups).
+of the provided [example setups](https://github.com/stnolting/neorv32-setups).
 
 Alternatively, you can directly instantiate the processor's top entity
 [`rtl/core/neorv32_top.vhd`](https://github.com/stnolting/neorv32/blob/main/rtl/core/neorv32_top.vhd)
