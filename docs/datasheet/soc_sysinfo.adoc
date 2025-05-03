@@ -113,7 +113,6 @@ The SYSINFO cache register provides information about the configuration of the p
 
 * <<_processor_internal_instruction_cache_icache>>
 * <<_processor_internal_data_cache_dcache>>
-* <<_processor_external_bus_interface_xbus>> cache (XBUS-CACHE)
 
 .SYSINFO `CACHE` Bits
 [cols="^1,<10,<10"]
