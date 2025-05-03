@@ -209,7 +209,9 @@ begin
         if (host_req_i.stb = '1') then -- reduce switching activity on downstream bus system
           device_req_o <= host_req_i;
         end if;
-        device_req_o.stb <= host_req_i.stb;
+        device_req_o.stb   <= host_req_i.stb;
+        device_req_o.lock  <= host_req_i.lock; -- out-of-band signal
+        device_req_o.fence <= host_req_i.fence; -- out-of-band signal
       end if;
     end process request_reg;
   end generate;
@@ -798,11 +800,11 @@ begin
   sys_req_o.stb   <= '1' when (arbiter.state = S_WRITE) else core_req_i.stb;
   sys_req_o.rw    <= '1' when (arbiter.state = S_WRITE) or (arbiter.state = S_WRITE_WAIT) else core_req_i.rw;
   sys_req_o.src   <= core_req_i.src;
-  sys_req_o.lock  <= core_req_i.lock;
   sys_req_o.priv  <= core_req_i.priv;
   sys_req_o.debug <= core_req_i.debug;
   sys_req_o.amo   <= core_req_i.amo;
   sys_req_o.amoop <= core_req_i.amoop;
+  sys_req_o.lock  <= core_req_i.lock;
   sys_req_o.fence <= core_req_i.fence;
 
   -- response switch --
@@ -944,7 +946,7 @@ begin
   -- response --
   core_rsp_o.err  <= sys_rsp_i.err;
   core_rsp_o.ack  <= sys_rsp_i.ack or sc_fail; -- generate local ACK if SC fails
-  core_rsp_o.data <= sys_rsp_i.data(31 downto 1) & (sys_rsp_i.data(0) or sc_fail);-- inject "1" into LSB if SC fails
+  core_rsp_o.data <= sys_rsp_i.data(31 downto 1) & (sys_rsp_i.data(0) or sc_fail); -- set LSB=1 if SC fails
 
 
 end neorv32_bus_amo_rvs_rtl;

@@ -125,12 +125,12 @@ package neorv32_package is
     stb   : std_ulogic; -- request strobe, single-shot
     rw    : std_ulogic; -- 0 = read, 1 = write
     src   : std_ulogic; -- 0 = data access, 1 = instruction fetch
-    lock  : std_ulogic; -- set if contiguous transfer
     priv  : std_ulogic; -- set if privileged (machine-mode) access
     debug : std_ulogic; -- set if debug mode access
     amo   : std_ulogic; -- set if atomic memory operation
     amoop : std_ulogic_vector(3 downto 0); -- type of atomic memory operation
     -- out-of-band signals --
+    lock  : std_ulogic; -- set if contiguous transfer
     fence : std_ulogic; -- set if fence(.i) operation, single-shot
   end record;
 
@@ -149,11 +149,11 @@ package neorv32_package is
     stb   => '0',
     rw    => '0',
     src   => '0',
-    lock  => '0',
     priv  => '0',
     debug => '0',
     amo   => '0',
     amoop => (others => '0'),
+    lock  => '0',
     fence => '0'
   );
 
