@@ -80,7 +80,7 @@ Bit fields in this register are set to all-zero if the according memory system i
 | `5`     | `SYSINFO_SOC_ICACHE`        | set if processor-internal instruction cache is implemented (via top's `ICACHE_EN` generic)
 | `6`     | `SYSINFO_SOC_DCACHE`        | set if processor-internal data cache is implemented (via top's `DCACHE_EN` generic)
 | `7`     | -                           |_reserved_, read as zero
-| `8`     | `SYSINFO_SOC_XBUS_CACHE`    | set if external bus interface cache is implemented (via top's `XBUS_CACHE_EN` generic)
+| `8`     | -                           |_reserved_, read as zero
 | `9`     | -                           |_reserved_, read as zero
 | `10`    | -                           |_reserved_, read as zero
 | `11`    | `SYSINFO_SOC_OCD_AUTH`      | set if on-chip debugger authentication is implemented (via top's `OCD_AUTHENTICATION` generic)
@@ -113,7 +113,6 @@ The SYSINFO cache register provides information about the configuration of the p
 
 * <<_processor_internal_instruction_cache_icache>>
 * <<_processor_internal_data_cache_dcache>>
-* <<_processor_external_bus_interface_xbus>> cache (XBUS-CACHE)
 
 .SYSINFO `CACHE` Bits
 [cols="^1,<10,<10"]
@@ -126,6 +125,6 @@ The SYSINFO cache register provides information about the configuration of the p
 | `15:12` | `SYSINFO_CACHE_DATA_NUM_BLOCKS_3 : SYSINFO_CACHE_DATA_NUM_BLOCKS_0` | _log2_(d-cache number of cache blocks), via top's `DCACHE_NUM_BLOCKS` generic
 | `19:16` | `0000`                                                              | _reserved_
 | `23:20` | `0000`                                                              | _reserved_
-| `27:24` | `SYSINFO_CACHE_XBUS_BLOCK_SIZE_3 : SYSINFO_CACHE_XBUS_BLOCK_SIZE_0` | _log2_(xbus-cache block size in bytes), via top's `XBUS_CACHE_BLOCK_SIZE` generic
-| `31:28` | `SYSINFO_CACHE_XBUS_NUM_BLOCKS_3 : SYSINFO_CACHE_XBUS_NUM_BLOCKS_0` | _log2_(xbus-cache number of cache blocks), via top's `XBUS_CACHE_NUM_BLOCKS` generic
+| `27:24` | `0000`                                                              | _reserved_
+| `31:28` | `0000`                                                              | _reserved_
 |=======================
