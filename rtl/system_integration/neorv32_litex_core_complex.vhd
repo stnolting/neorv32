@@ -87,9 +87,6 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     fast_ops     : bool_t;
     pmp_num      : natural_t;
     hpm_num      : natural_t;
-    xcache_en    : bool_t;
-    xcache_nb    : natural_t;
-    xcache_bs    : natural_t;
     clint        : bool_t;
   end record;
 
@@ -103,15 +100,12 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
     dmem         => ( false,   false,   false,   false, true  ), -- enable data memory
     imem         => ( false,   false,   false,   false, false ), -- enable instruction memory
     dcache       => ( false,   false,   false,   true,  false ), -- enable data cache
-    icache       => ( false,   false,   false,   true,  true ),  -- enable instruction cache
+    icache       => ( false,   false,   false,   true,  true  ), -- enable instruction cache
     riscv_zicntr => ( false,   false,   true,    true,  true  ), -- RISC-V standard CPU counters 'Zicntr'
     riscv_zihpm  => ( false,   false,   false,   true,  true  ), -- RISC-V hardware performance monitors 'Zihpm'
     fast_ops     => ( false,   false,   true,    true,  false ), -- use DSPs and barrel-shifters
     pmp_num      => ( 0,       0,       0,       8,     0     ), -- number of PMP regions (0..16)
     hpm_num      => ( 0,       0,       0,       8,     0     ), -- number of HPM counters (0..29)
-    xcache_en    => ( false,   false,   true,    true,  false ), -- external bus cache enabled
-    xcache_nb    => ( 32,      32,      32,      64,    32    ), -- number of cache blocks (lines), power of two
-    xcache_bs    => ( 32,      32,      32,      32,    32    ), -- size of cache clock (lines) in bytes, power of two
     clint        => ( false,   true,    true,    true,  true  )  -- RISC-V core local interruptor
   );
 
@@ -154,9 +148,6 @@ begin
     XBUS_EN               => true,                           -- implement external memory bus interface?
     XBUS_TIMEOUT          => 1023,                           -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_REGSTAGE_EN      => false,                          -- add XBUS register stage
-    XBUS_CACHE_EN         => configs_c.xcache_en(CONFIG),    -- enable external bus cache (x-cache)
-    XBUS_CACHE_NUM_BLOCKS => configs_c.xcache_nb(CONFIG),    -- x-cache: number of blocks (min 1), has to be a power of 2
-    XBUS_CACHE_BLOCK_SIZE => configs_c.xcache_bs(CONFIG),    -- x-cache: block size in bytes (min 4), has to be a power of 2
     -- Processor peripherals --
     IO_CLINT_EN           => configs_c.clint(CONFIG)         -- implement core local interruptor (CLINT)?
   )

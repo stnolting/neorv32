@@ -90,9 +90,6 @@ entity neorv32_vivado_ip is
     -- External Bus Interface --
     XBUS_EN               : boolean                        := false;
     XBUS_REGSTAGE_EN      : boolean                        := false;
-    XBUS_CACHE_EN         : boolean                        := false;
-    XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 8;
-    XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16       := 256;
     -- Processor peripherals --
     IO_GPIO_EN            : boolean                        := false;
     IO_GPIO_IN_NUM        : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
@@ -425,9 +422,6 @@ begin
     XBUS_EN               => XBUS_EN,
     XBUS_TIMEOUT          => 0, -- AXI does not allow any timeouts
     XBUS_REGSTAGE_EN      => XBUS_REGSTAGE_EN,
-    XBUS_CACHE_EN         => XBUS_CACHE_EN,
-    XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
-    XBUS_CACHE_BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
     -- Processor peripherals --
     IO_DISABLE_SYSINFO    => false,
     IO_GPIO_NUM           => num_gpio_c,

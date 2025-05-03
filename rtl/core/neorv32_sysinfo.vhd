@@ -33,9 +33,6 @@ entity neorv32_sysinfo is
     DCACHE_NUM_BLOCKS     : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
     DCACHE_BLOCK_SIZE     : natural; -- d-cache: block size in bytes (min 4), has to be a power of 2
     XBUS_EN               : boolean; -- implement external memory bus interface
-    XBUS_CACHE_EN         : boolean; -- implement external bus cache
-    XBUS_CACHE_NUM_BLOCKS : natural; -- x-cache: number of blocks (min 1), has to be a power of 2
-    XBUS_CACHE_BLOCK_SIZE : natural; -- x-cache: block size in bytes (min 4), has to be a power of 2
     OCD_EN                : boolean; -- implement OCD
     OCD_AUTH              : boolean; -- implement OCD authenticator
     IO_GPIO_EN            : boolean; -- implement general purpose IO port (GPIO)
@@ -71,7 +68,6 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   -- helpers --
   constant int_imem_en_c    : boolean := MEM_INT_IMEM_EN and boolean(MEM_INT_IMEM_SIZE > 0);
   constant int_dmem_en_c    : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
-  constant xcache_en_c      : boolean := XBUS_EN and XBUS_CACHE_EN;
   constant int_imem_rom_c   : boolean := int_imem_en_c and MEM_INT_IMEM_ROM;
   constant log2_imem_size_c : natural := index_size_f(MEM_INT_IMEM_SIZE);
   constant log2_dmem_size_c : natural := index_size_f(MEM_INT_DMEM_SIZE);
@@ -79,8 +75,6 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant log2_ic_bnum_c   : natural := index_size_f(ICACHE_NUM_BLOCKS);
   constant log2_dc_bsize_c  : natural := index_size_f(DCACHE_BLOCK_SIZE);
   constant log2_dc_bnum_c   : natural := index_size_f(DCACHE_NUM_BLOCKS);
-  constant log2_xc_bsize_c  : natural := index_size_f(XBUS_CACHE_BLOCK_SIZE);
-  constant log2_xc_bnum_c   : natural := index_size_f(XBUS_CACHE_NUM_BLOCKS);
 
   -- system information memory --
   type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
@@ -122,7 +116,7 @@ begin
   sysinfo(2)(5)  <= '1' when ICACHE_EN         else '0'; -- processor-internal instruction cache implemented
   sysinfo(2)(6)  <= '1' when DCACHE_EN         else '0'; -- processor-internal data cache implemented
   sysinfo(2)(7)  <= '0';                                 -- reserved
-  sysinfo(2)(8)  <= '1' when xcache_en_c       else '0'; -- external bus interface cache implemented
+  sysinfo(2)(8)  <= '0';                                 -- reserved
   sysinfo(2)(9)  <= '0';                                 -- reserved
   sysinfo(2)(10) <= '0';                                 -- reserved
   sysinfo(2)(11) <= '1' when OCD_AUTH          else '0'; -- on-chip debugger authentication implemented
@@ -155,11 +149,7 @@ begin
   sysinfo(3)(11 downto 8)  <= std_ulogic_vector(to_unsigned(log2_dc_bsize_c, 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(block_size)
   sysinfo(3)(15 downto 12) <= std_ulogic_vector(to_unsigned(log2_dc_bnum_c, 4))  when DCACHE_EN else (others => '0'); -- d-cache: log2(num_blocks)
   --
-  sysinfo(3)(19 downto 16) <= (others => '0'); -- reserved
-  sysinfo(3)(23 downto 20) <= (others => '0'); -- reserved
-  --
-  sysinfo(3)(27 downto 24) <= std_ulogic_vector(to_unsigned(log2_xc_bsize_c, 4)) when xcache_en_c else (others => '0'); -- xbus-cache: log2(block_size_in_bytes)
-  sysinfo(3)(31 downto 28) <= std_ulogic_vector(to_unsigned(log2_xc_bnum_c, 4))  when xcache_en_c else (others => '0'); -- xbus-cache: log2(number_of_block)
+  sysinfo(3)(31 downto 16) <= (others => '0'); -- reserved
 
   -- Bus Response ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

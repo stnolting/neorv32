@@ -185,9 +185,6 @@ begin
     XBUS_EN               => true,
     XBUS_TIMEOUT          => 0,
     XBUS_REGSTAGE_EN      => true,
-    XBUS_CACHE_EN         => true,
-    XBUS_CACHE_NUM_BLOCKS => 4,
-    XBUS_CACHE_BLOCK_SIZE => 64,
     -- Processor peripherals --
     IO_GPIO_NUM           => 32,
     IO_CLINT_EN           => true,

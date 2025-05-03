@@ -198,13 +198,6 @@ proc setup_ip_gui {} {
     { XBUS_REGSTAGE_EN {Add register stages} {In/out register stages; relaxes timing, but will increase latency} {$XBUS_EN} }
   }
 
-  set sub_group [add_group $group {XBUS Cache (external bus cache)}]
-  add_params $sub_group {
-    { XBUS_CACHE_EN         {Enable XBUS cache} {}                              {$XBUS_EN} {$XBUS_EN ? $XBUS_CACHE_EN : false} }
-    { XBUS_CACHE_NUM_BLOCKS {Number of blocks}  {}                              {$XBUS_CACHE_EN} }
-    { XBUS_CACHE_BLOCK_SIZE {Block size}        {In bytes (use a power of two)} {$XBUS_CACHE_EN} }
-  }
-
   set group [add_group $page {Stream Link Interface (SLINK / AXI4-Stream Source & Sink)}]
   add_params $group {
     { IO_SLINK_EN      {Enable SLINK} }

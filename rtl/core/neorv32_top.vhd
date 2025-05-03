@@ -99,9 +99,6 @@ entity neorv32_top is
     XBUS_EN               : boolean                        := false;       -- implement external memory bus interface
     XBUS_TIMEOUT          : natural                        := 255;         -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_REGSTAGE_EN      : boolean                        := false;       -- add XBUS register stage
-    XBUS_CACHE_EN         : boolean                        := false;       -- enable external bus cache (x-cache)
-    XBUS_CACHE_NUM_BLOCKS : natural range 1 to 256         := 64;          -- x-cache: number of blocks (min 1), has to be a power of 2
-    XBUS_CACHE_BLOCK_SIZE : natural range 1 to 2**16       := 32;          -- x-cache: block size in bytes (min 4), has to be a power of 2
 
     -- Processor peripherals --
     IO_DISABLE_SYSINFO    : boolean                        := false;       -- disable the SYSINFO module (for advanced users only)
@@ -303,8 +300,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp : core_complex_rsp_t;
 
   -- bus: system --
-  signal sys1_req, sys2_req, dma_req, amo_req, sys3_req, imem_req, dmem_req, io_req, xcache_req, xbus_req : bus_req_t;
-  signal sys1_rsp, sys2_rsp, dma_rsp, amo_rsp, sys3_rsp, imem_rsp, dmem_rsp, io_rsp, xcache_rsp, xbus_rsp : bus_rsp_t;
+  signal sys1_req, sys2_req, dma_req, amo_req, sys3_req, imem_req, dmem_req, io_req, xbus_req : bus_req_t;
+  signal sys1_rsp, sys2_rsp, dma_rsp, amo_rsp, sys3_rsp, imem_rsp, dmem_rsp, io_rsp, xbus_rsp : bus_rsp_t;
 
   -- bus: IO devices --
   type io_devices_enum_t is (
@@ -318,8 +315,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal iodev_rsp : iodev_rsp_t;
 
   -- memory synchronization / ordering / coherence --
-  signal mem_sync, dcache_clean : std_ulogic_vector(num_cores_c-1 downto 0);
-  signal xcache_clean : std_ulogic;
+  signal dcache_clean : std_ulogic_vector(num_cores_c-1 downto 0);
 
   -- IRQs --
   type firq_enum_t is (
@@ -350,38 +346,37 @@ begin
     -- show SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
-      cond_sel_string_f(boolean(num_cores_c = 1),  "(single-core) ",   "") &
-      cond_sel_string_f(boolean(num_cores_c = 2),  "(smp-dual-core) ", "") &
-      cond_sel_string_f(MEM_INT_IMEM_EN,           cond_sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
-      cond_sel_string_f(MEM_INT_DMEM_EN,           "DMEM ",       "") &
-      cond_sel_string_f(bootrom_en_c,              "BOOTROM ",    "") &
-      cond_sel_string_f(ICACHE_EN,                 "I-CACHE ",    "") &
-      cond_sel_string_f(DCACHE_EN,                 "D-CACHE ",    "") &
-      cond_sel_string_f(XBUS_EN,                   "XBUS ",       "") &
-      cond_sel_string_f(XBUS_EN and XBUS_CACHE_EN, "XBUS-CACHE ", "") &
-      cond_sel_string_f(IO_CLINT_EN,               "CLINT ",      "") &
-      cond_sel_string_f(io_gpio_en_c,              "GPIO ",       "") &
-      cond_sel_string_f(IO_UART0_EN,               "UART0 ",      "") &
-      cond_sel_string_f(IO_UART1_EN,               "UART1 ",      "") &
-      cond_sel_string_f(IO_SPI_EN,                 "SPI ",        "") &
-      cond_sel_string_f(IO_SDI_EN,                 "SDI ",        "") &
-      cond_sel_string_f(IO_TWI_EN,                 "TWI ",        "") &
-      cond_sel_string_f(IO_TWD_EN,                 "TWD ",        "") &
-      cond_sel_string_f(io_pwm_en_c,               "PWM ",        "") &
-      cond_sel_string_f(IO_WDT_EN,                 "WDT ",        "") &
-      cond_sel_string_f(IO_TRNG_EN,                "TRNG ",       "") &
-      cond_sel_string_f(IO_CFS_EN,                 "CFS ",        "") &
-      cond_sel_string_f(IO_NEOLED_EN,              "NEOLED ",     "") &
-      cond_sel_string_f(IO_GPTMR_EN,               "GPTMR ",      "") &
-      cond_sel_string_f(IO_ONEWIRE_EN,             "ONEWIRE ",    "") &
-      cond_sel_string_f(IO_DMA_EN,                 "DMA ",        "") &
-      cond_sel_string_f(IO_SLINK_EN,               "SLINK ",      "") &
-      cond_sel_string_f(IO_HWSPINLOCK_EN,          "HWSPINLOCK ", "") &
-      cond_sel_string_f(IO_CRC_EN,                 "CRC ",        "") &
-      cond_sel_string_f(io_sysinfo_en_c,           "SYSINFO ",    "") &
-      cond_sel_string_f(OCD_EN,                    "OCD ",        "") &
-      cond_sel_string_f(OCD_EN,                    "OCD-AUTH ",   "") &
-      cond_sel_string_f(OCD_EN,                    "OCD-HWBP ",   "") &
+      cond_sel_string_f(boolean(num_cores_c = 1), "(single-core) ",   "") &
+      cond_sel_string_f(boolean(num_cores_c = 2), "(smp-dual-core) ", "") &
+      cond_sel_string_f(MEM_INT_IMEM_EN,          cond_sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
+      cond_sel_string_f(MEM_INT_DMEM_EN,          "DMEM ",       "") &
+      cond_sel_string_f(bootrom_en_c,             "BOOTROM ",    "") &
+      cond_sel_string_f(ICACHE_EN,                "I-CACHE ",    "") &
+      cond_sel_string_f(DCACHE_EN,                "D-CACHE ",    "") &
+      cond_sel_string_f(XBUS_EN,                  "XBUS ",       "") &
+      cond_sel_string_f(IO_CLINT_EN,              "CLINT ",      "") &
+      cond_sel_string_f(io_gpio_en_c,             "GPIO ",       "") &
+      cond_sel_string_f(IO_UART0_EN,              "UART0 ",      "") &
+      cond_sel_string_f(IO_UART1_EN,              "UART1 ",      "") &
+      cond_sel_string_f(IO_SPI_EN,                "SPI ",        "") &
+      cond_sel_string_f(IO_SDI_EN,                "SDI ",        "") &
+      cond_sel_string_f(IO_TWI_EN,                "TWI ",        "") &
+      cond_sel_string_f(IO_TWD_EN,                "TWD ",        "") &
+      cond_sel_string_f(io_pwm_en_c,              "PWM ",        "") &
+      cond_sel_string_f(IO_WDT_EN,                "WDT ",        "") &
+      cond_sel_string_f(IO_TRNG_EN,               "TRNG ",       "") &
+      cond_sel_string_f(IO_CFS_EN,                "CFS ",        "") &
+      cond_sel_string_f(IO_NEOLED_EN,             "NEOLED ",     "") &
+      cond_sel_string_f(IO_GPTMR_EN,              "GPTMR ",      "") &
+      cond_sel_string_f(IO_ONEWIRE_EN,            "ONEWIRE ",    "") &
+      cond_sel_string_f(IO_DMA_EN,                "DMA ",        "") &
+      cond_sel_string_f(IO_SLINK_EN,              "SLINK ",      "") &
+      cond_sel_string_f(IO_HWSPINLOCK_EN,         "HWSPINLOCK ", "") &
+      cond_sel_string_f(IO_CRC_EN,                "CRC ",        "") &
+      cond_sel_string_f(io_sysinfo_en_c,          "SYSINFO ",    "") &
+      cond_sel_string_f(OCD_EN,                   "OCD ",        "") &
+      cond_sel_string_f(OCD_EN,                   "OCD-AUTH ",   "") &
+      cond_sel_string_f(OCD_EN,                   "OCD-HWBP ",   "") &
       ""
       severity note;
 
@@ -556,11 +551,8 @@ begin
       dbus_req_o => cpu_d_req(i),
       dbus_rsp_i => cpu_d_rsp(i),
       -- memory synchronization --
-      mem_sync_i => mem_sync(i)
+      mem_sync_i => dcache_clean(i)
     );
-
-    -- memory synchronization (ordering / coherence) --
-    mem_sync(i) <= dcache_clean(i) and xcache_clean; -- for this hart's perspective only
 
 
     -- CPU L1 Instruction Cache ---------------------------------------------------------------
@@ -883,8 +875,6 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_xbus_enabled:
     if XBUS_EN generate
-
-      -- external bus gateway (XBUS) --
       neorv32_xbus_inst: entity neorv32.neorv32_xbus
       generic map (
         TIMEOUT_VAL => XBUS_TIMEOUT,
@@ -893,8 +883,8 @@ begin
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
-        bus_req_i  => xcache_req,
-        bus_rsp_o  => xcache_rsp,
+        bus_req_i  => xbus_req,
+        bus_rsp_o  => xbus_rsp,
         xbus_adr_o => xbus_adr_o,
         xbus_dat_i => xbus_dat_i,
         xbus_dat_o => xbus_dat_o,
@@ -906,49 +896,18 @@ begin
         xbus_ack_i => xbus_ack_i,
         xbus_err_i => xbus_err_i
       );
-
-      -- external bus cache (X-CACHE) --
-      neorv32_xcache_enabled:
-      if XBUS_CACHE_EN generate
-        neorv32_xcache_inst: entity neorv32.neorv32_cache
-        generic map (
-          NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
-          BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
-          UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
-          READ_ONLY  => false
-        )
-        port map (
-          clk_i      => clk_i,
-          rstn_i     => rstn_sys,
-          clean_o    => xcache_clean,
-          host_req_i => xbus_req,
-          host_rsp_o => xbus_rsp,
-          bus_req_o  => xcache_req,
-          bus_rsp_i  => xcache_rsp
-        );
-      end generate;
-
-      neorv32_xcache_disabled:
-      if not XBUS_CACHE_EN generate
-        xcache_clean <= '1';
-        xcache_req   <= xbus_req;
-        xbus_rsp     <= xcache_rsp;
-      end generate;
-
-    end generate; -- /neorv32_xbus_enabled
+    end generate;
 
     neorv32_xbus_disabled:
     if not XBUS_EN generate
-      xcache_clean <= '1';
-      xcache_req   <= req_terminate_c;
-      xbus_rsp     <= rsp_terminate_c;
-      xbus_adr_o   <= (others => '0');
-      xbus_dat_o   <= (others => '0');
-      xbus_tag_o   <= (others => '0');
-      xbus_we_o    <= '0';
-      xbus_sel_o   <= (others => '0');
-      xbus_stb_o   <= '0';
-      xbus_cyc_o   <= '0';
+      xbus_rsp   <= rsp_terminate_c;
+      xbus_adr_o <= (others => '0');
+      xbus_dat_o <= (others => '0');
+      xbus_tag_o <= (others => '0');
+      xbus_we_o  <= '0';
+      xbus_sel_o <= (others => '0');
+      xbus_stb_o <= '0';
+      xbus_cyc_o <= '0';
     end generate;
 
   end generate; -- /memory_system
@@ -1613,9 +1572,6 @@ begin
         DCACHE_NUM_BLOCKS     => DCACHE_NUM_BLOCKS,
         DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
         XBUS_EN               => XBUS_EN,
-        XBUS_CACHE_EN         => XBUS_CACHE_EN,
-        XBUS_CACHE_NUM_BLOCKS => XBUS_CACHE_NUM_BLOCKS,
-        XBUS_CACHE_BLOCK_SIZE => XBUS_CACHE_BLOCK_SIZE,
         OCD_EN                => OCD_EN,
         OCD_AUTH              => ocd_auth_en_c,
         IO_GPIO_EN            => io_gpio_en_c,
