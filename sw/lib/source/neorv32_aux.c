@@ -485,33 +485,11 @@ void neorv32_aux_print_hw_config(void) {
     neorv32_uart0_printf("none\n");
   }
 
-  // XBUS-cache
-  neorv32_uart0_printf("XBUS-cache:          ");
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS_CACHE)) {
-
-    uint32_t xbus_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_XBUS_BLOCK_SIZE_0) & 0x0F;
-    xbus_block_size = 1 << xbus_block_size;
-
-    uint32_t xbus_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_XBUS_NUM_BLOCKS_0) & 0x0F;
-    xbus_num_blocks = 1 << xbus_num_blocks;
-
-    neorv32_uart0_printf("%u bytes (%ux%u)\n", xbus_num_blocks*xbus_block_size, xbus_num_blocks, xbus_block_size);
-  }
-  else {
-    neorv32_uart0_printf("none\n");
-  }
-
   // external bus interface
   neorv32_uart0_printf("Ext. bus interface:  ");
   tmp = NEORV32_SYSINFO->SOC;
   if (tmp & (1 << SYSINFO_SOC_XBUS)) {
     neorv32_uart0_printf("enabled ");
-    if (tmp & (1 << SYSINFO_SOC_XBUS_CACHE)) {
-      neorv32_uart0_printf("+ xbus-cache\n");
-    }
-    else {
-      neorv32_uart0_printf("\n");
-    }
   }
   else {
     neorv32_uart0_printf("none\n");

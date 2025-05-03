@@ -49,7 +49,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_ICACHE        =  5, /**< SYSINFO_SOC  (5) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
   SYSINFO_SOC_DCACHE        =  6, /**< SYSINFO_SOC  (6) (r/-): Processor-internal instruction cache implemented when 1 (via DCACHE_EN generic) */
 //SYSINFO_SOC_reserved      =  7, /**< SYSINFO_SOC  (7) (r/-): reserved */
-  SYSINFO_SOC_XBUS_CACHE    =  8, /**< SYSINFO_SOC  (8) (r/-): External bus cache implemented when 1 (via XBUS_CACHE_EN generic) */
+//SYSINFO_SOC_reserved      =  8, /**< SYSINFO_SOC  (8) (r/-): reserved */
 //SYSINFO_SOC_reserved      =  9, /**< SYSINFO_SOC  (9) (r/-): reserved */
 //SYSINFO_SOC_reserved      = 10, /**< SYSINFO_SOC (10) (r/-): reserved */
   SYSINFO_SOC_OCD_AUTH      = 11, /**< SYSINFO_SOC (11) (r/-): On-chip debugger authentication implemented when 1 (via OCD_AUTHENTICATION generic) */
@@ -85,12 +85,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_CACHE_DATA_BLOCK_SIZE_0 =  8, /**< SYSINFO_CACHE  (8) (r/-): d-cache: log2(Block size in bytes), bit 0 (via DCACHE_BLOCK_SIZE generic) */
   SYSINFO_CACHE_DATA_BLOCK_SIZE_3 = 11, /**< SYSINFO_CACHE (11) (r/-): d-cache: log2(Block size in bytes), bit 3 (via DCACHE_BLOCK_SIZE generic) */
   SYSINFO_CACHE_DATA_NUM_BLOCKS_0 = 12, /**< SYSINFO_CACHE (12) (r/-): d-cache: log2(Number of cache blocks), bit 0 (via DCACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_DATA_NUM_BLOCKS_3 = 15, /**< SYSINFO_CACHE (15) (r/-): d-cache: log2(Number of cache blocks), bit 3 (via DCACHE_NUM_BLOCKS generic) */
-
-  SYSINFO_CACHE_XBUS_BLOCK_SIZE_0 = 24, /**< SYSINFO_CACHE (24) (r/-): xbus-cache: log2(Block size in bytes), bit 0 (via XBUS_CACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_XBUS_BLOCK_SIZE_3 = 27, /**< SYSINFO_CACHE (27) (r/-): xbus-cache: log2(Block size in bytes), bit 3 (via XBUS_CACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_XBUS_NUM_BLOCKS_0 = 28, /**< SYSINFO_CACHE (28) (r/-): xbus-cache: log2(Number of cache blocks), bit 0 (via XBUS_CACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_XBUS_NUM_BLOCKS_3 = 31  /**< SYSINFO_CACHE (31) (r/-): xbus-cache: log2(Number of cache blocks), bit 3 (via XBUS_CACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_DATA_NUM_BLOCKS_3 = 15  /**< SYSINFO_CACHE (15) (r/-): d-cache: log2(Number of cache blocks), bit 3 (via DCACHE_NUM_BLOCKS generic) */
 };
 /**@}*/
 
