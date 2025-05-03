@@ -7,39 +7,42 @@
 [grid="none"]
 |=======================
 | Hardware source files:  | neorv32_cache.vhd   | Generic cache module
-| Software driver files:  | none                | 
+| Software driver files:  | none                |
 | Top entity ports:       | none                |
-| Configuration generics: | `ICACHE_EN`         | implement processor-internal instruction cache when `true`
-|                         | `ICACHE_NUM_BLOCKS` | number of cache blocks (pages or lines); has to be a power of two
-|                         | `ICACHE_BLOCK_SIZE` | size of a cache block in bytes; has to be a power of two
+| Configuration generics: | `ICACHE_EN`         | implement processor-internal instruction cache (I$) when `true`
+|                         | `ICACHE_NUM_BLOCKS` | number of cache blocks ("cache lines"); has to be a power of two
+|                         | `CACHE_BLOCK_SIZE`  | size of a cache block in bytes; has to be a power of two (global configuration for I$ and D$)
 | CPU interrupts:         | none |
 |=======================
 
 
 **Overview**
 
-The processor features an optional instruction cache to improve performance when using memories with high
-access latency. The cache is connected directly to the CPU's instruction fetch interface and provides
-full-transparent accesses. The cache is direct-mapped and read-only.
+The processor features an optional CPU instruction cache. The cache is connected directly to the CPU's instruction
+fetch interface and provides full-transparent accesses. The cache is direct-mapped and read-only.
+In the <<_dual_core_configuration>> each CPU core is equipped with a private instruction cache.
 
-.Uncached Accesses
-[NOTE]
-The data cache provides direct accesses (= uncached) to memory in order to access memory-mapped IO (like the
-processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
-will not be cached at all (see section <<_address_space>>). Furthermore, the atomic memory operations
-of the <<_zaamo_isa_extension>> will always **bypass** the cache.
-
-.Manual Cache Flush/Clear/Reload and Memory Coherence
-[NOTE]
-By executing the `fence.i` instruction the instruction cache is cleared and reloaded.
-See section <<_memory_coherence>> for more information.
+The instruction cache is implemented if `ICACHE_EN` it _true_. The total cache memory size in bytes is defined by
+`ICACHE_NUM_BLOCKS x CACHE_BLOCK_SIZE`. `ICACHE_NUM_BLOCKS` defines the number of cache blocks (or "cache lines")
+and `CACHE_BLOCK_SIZE` defines the block size in bytes; note that this configuration is global for all caches.
 
 .Retrieve Cache Configuration from Software
 [TIP]
 Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_configuration>> register.
 
-.Bus Access Fault Handling
+.Uncached Accesses
 [NOTE]
-If the cache encounters a bus error when uploading a modified block to the next memory level or when
-downloading a new block from the next memory level, the entire block is invalidated and a bus access
-error exception is raised.
+The cache provides direct/uncached accesses to memory (bypassing the cache) in order to access memory-mapped IO (like the
+processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
+will bypass the cache. Hence, access will not be cached. See section <<_address_space>> for more information. Furthermore,
+the atomic memory operations of the <<_zaamo_isa_extension>> will always **bypass** the cache.
+
+.Manual Cache Clear/Reload and Memory Coherence
+[NOTE]
+By executing the `fence.i` instruction the instruction cache is cleared and reloaded.
+See section <<_memory_coherence>> for more information.
+
+.Cache Block Update Fault Handling
+[NOTE]
+If the cache encounters a bus error when downloading a new block from main memory, the
+entire block is invalidated and a bus access error exception is raised.
