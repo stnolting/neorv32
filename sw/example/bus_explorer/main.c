@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -94,18 +94,20 @@ int main() {
 
     // decode input and execute command
     if ((!strcmp(command, "help")) || (command == NULL)) {
-      neorv32_uart0_printf("Available commands:\n"
-                          " help                   - show this text\n"
-                          " setup                  - configure memory access width (byte,half,word)\n"
-                          " read <address>         - read from address (byte,half,word)\n"
-                          " write <address> <data> - write data to address (byte,half,word)\n"
-                          " dump <address>         - dump several bytes/halfs/words from base address\n"
-                          " hex <address>          - hex dump (bytes + ASCII) from base address\n"
-                          " fence                  - synchronize with main memory\n"
-                          "\n"
-                          "NOTE: <address> and <date> are hexadecimal numbers without prefix.\n"
-                          "Example: write 80000020 feedcafe\n"
-                          );
+      neorv32_uart0_printf(
+        "Available commands:\n"
+        " help                   - show this text\n"
+        " setup                  - configure memory access width (byte,half,word)\n"
+        " read <address>         - read from address (byte,half,word)\n"
+        " write <address> <data> - write data to address (byte,half,word)\n"
+        " dump <address>         - dump several bytes/halfs/words from base address\n"
+        " hex <address>          - hex dump (bytes + ASCII) from base address\n"
+        " fence                  - synchronize with main memory\n"
+        "\n"
+        "NOTE: <address> and <data> are hexadecimal numbers without prefix.\n"
+        "Example: write 80000020 feedcafe\n"
+        "Example: read 00000460\n"
+      );
     }
 
     else if (!strcmp(command, "setup")) {
