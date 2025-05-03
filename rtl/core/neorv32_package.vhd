@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110309"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110310"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -125,12 +125,12 @@ package neorv32_package is
     stb   : std_ulogic; -- request strobe, single-shot
     rw    : std_ulogic; -- 0 = read, 1 = write
     src   : std_ulogic; -- 0 = data access, 1 = instruction fetch
-    lock  : std_ulogic; -- set if contiguous transfer
     priv  : std_ulogic; -- set if privileged (machine-mode) access
     debug : std_ulogic; -- set if debug mode access
     amo   : std_ulogic; -- set if atomic memory operation
     amoop : std_ulogic_vector(3 downto 0); -- type of atomic memory operation
     -- out-of-band signals --
+    lock  : std_ulogic; -- set if contiguous transfer
     fence : std_ulogic; -- set if fence(.i) operation, single-shot
   end record;
 
@@ -149,11 +149,11 @@ package neorv32_package is
     stb   => '0',
     rw    => '0',
     src   => '0',
-    lock  => '0',
     priv  => '0',
     debug => '0',
     amo   => '0',
     amoop => (others => '0'),
+    lock  => '0',
     fence => '0'
   );
 
@@ -843,14 +843,12 @@ package neorv32_package is
       -- Internal Data memory (DMEM) --
       MEM_INT_DMEM_EN       : boolean                        := false;
       MEM_INT_DMEM_SIZE     : natural                        := 8*1024;
-      -- Internal Instruction Cache (iCACHE) --
+      -- CPU Caches --
       ICACHE_EN             : boolean                        := false;
-      ICACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
-      ICACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
-      -- Internal Data Cache (dCACHE) --
+      ICACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
       DCACHE_EN             : boolean                        := false;
-      DCACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
-      DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
+      DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
+      CACHE_BLOCK_SIZE      : natural range 4 to 1024        := 64;
       -- External bus interface (XBUS) --
       XBUS_EN               : boolean                        := false;
       XBUS_TIMEOUT          : natural                        := 255;

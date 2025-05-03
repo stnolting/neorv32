@@ -43,9 +43,9 @@ cores share the same heap, `.data` and `.bss` sections. Hence, only core 0 setup
 sections at boot-up.
 | **Constructors and destructors** | Constructors and destructors are executed by core 0 only
 (see section <<_c_standard_library>>).
-| **Cache coherency** | Be aware that there is no cache snooping available. If any level-1 cache is enabled
-(<<_processor_internal_instruction_cache_icache>> and/or <<_processor_internal_data_cache_dcache>>) care
-must be taken to prevent access to outdated data - either by using cache synchronization (`fence` / `fence.i`
+| **Cache layout** | If enabled, each CPU core has its own data and/or instruction cache.
+| **Cache coherency** | Be aware that there is no cache snooping available. If any CPU1 cache is enabled
+care must be taken to prevent access to outdated data - either by using cache synchronization (`fence` / `fence.i`
 instructions) or by using <<_atomic_memory_access>>. See <<_memory_coherence>> for more information.
 | **Inter-core communication** | See section <<_inter_core_communication_icc>>.
 | **Bootloader** | Only core 0 will boot and execute the bootloader while core 1 is held in standby.

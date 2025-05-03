@@ -79,14 +79,12 @@ entity neorv32_vivado_ip is
     -- Internal Data memory --
     MEM_INT_DMEM_EN       : boolean                        := false;
     MEM_INT_DMEM_SIZE     : natural                        := 8192;
-    -- Internal Cache memory --
+    -- CPU Caches --
     ICACHE_EN             : boolean                        := false;
-    ICACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
-    ICACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
-    -- Internal Data Cache (dCACHE) --
+    ICACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
     DCACHE_EN             : boolean                        := false;
-    DCACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
-    DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
+    DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
+    CACHE_BLOCK_SIZE      : natural range 4 to 1024        := 64;
     -- External Bus Interface --
     XBUS_EN               : boolean                        := false;
     XBUS_REGSTAGE_EN      : boolean                        := false;
@@ -357,108 +355,106 @@ begin
   neorv32_top_inst: neorv32_top
   generic map (
     -- Clocking --
-    CLOCK_FREQUENCY       => CLOCK_FREQUENCY,
+    CLOCK_FREQUENCY     => CLOCK_FREQUENCY,
     -- Dual-Core Configuration --
-    DUAL_CORE_EN          => DUAL_CORE_EN,
+    DUAL_CORE_EN        => DUAL_CORE_EN,
     -- Boot Configuration --
-    BOOT_MODE_SELECT      => BOOT_MODE_SELECT,
-    BOOT_ADDR_CUSTOM      => BOOT_ADDR_CUSTOM,
+    BOOT_MODE_SELECT    => BOOT_MODE_SELECT,
+    BOOT_ADDR_CUSTOM    => BOOT_ADDR_CUSTOM,
     -- On-Chip Debugger --
-    OCD_EN                => OCD_EN,
-    OCD_HW_BREAKPOINT     => OCD_HW_BREAKPOINT,
-    OCD_AUTHENTICATION    => OCD_AUTHENTICATION,
-    OCD_JEDEC_ID          => std_ulogic_vector(OCD_JEDEC_ID),
+    OCD_EN              => OCD_EN,
+    OCD_HW_BREAKPOINT   => OCD_HW_BREAKPOINT,
+    OCD_AUTHENTICATION  => OCD_AUTHENTICATION,
+    OCD_JEDEC_ID        => std_ulogic_vector(OCD_JEDEC_ID),
     -- RISC-V CPU Extensions --
-    RISCV_ISA_C           => RISCV_ISA_C,
-    RISCV_ISA_E           => RISCV_ISA_E,
-    RISCV_ISA_M           => RISCV_ISA_M,
-    RISCV_ISA_U           => RISCV_ISA_U,
-    RISCV_ISA_Zaamo       => RISCV_ISA_Zaamo,
-    RISCV_ISA_Zalrsc      => RISCV_ISA_Zalrsc,
-    RISCV_ISA_Zba         => RISCV_ISA_Zba,
-    RISCV_ISA_Zbb         => RISCV_ISA_Zbb,
-    RISCV_ISA_Zbkb        => RISCV_ISA_Zbkb,
-    RISCV_ISA_Zbkc        => RISCV_ISA_Zbkc,
-    RISCV_ISA_Zbkx        => RISCV_ISA_Zbkx,
-    RISCV_ISA_Zbs         => RISCV_ISA_Zbs,
-    RISCV_ISA_Zfinx       => RISCV_ISA_Zfinx,
-    RISCV_ISA_Zicntr      => RISCV_ISA_Zicntr,
-    RISCV_ISA_Zicond      => RISCV_ISA_Zicond,
-    RISCV_ISA_Zihpm       => RISCV_ISA_Zihpm,
-    RISCV_ISA_Zmmul       => RISCV_ISA_Zmmul,
-    RISCV_ISA_Zknd        => RISCV_ISA_Zknd,
-    RISCV_ISA_Zkne        => RISCV_ISA_Zkne,
-    RISCV_ISA_Zknh        => RISCV_ISA_Zknh,
-    RISCV_ISA_Zksed       => RISCV_ISA_Zksed,
-    RISCV_ISA_Zksh        => RISCV_ISA_Zksh,
-    RISCV_ISA_Zxcfu       => RISCV_ISA_Zxcfu,
+    RISCV_ISA_C         => RISCV_ISA_C,
+    RISCV_ISA_E         => RISCV_ISA_E,
+    RISCV_ISA_M         => RISCV_ISA_M,
+    RISCV_ISA_U         => RISCV_ISA_U,
+    RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,
+    RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
+    RISCV_ISA_Zba       => RISCV_ISA_Zba,
+    RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
+    RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
+    RISCV_ISA_Zbkc      => RISCV_ISA_Zbkc,
+    RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,
+    RISCV_ISA_Zbs       => RISCV_ISA_Zbs,
+    RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
+    RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
+    RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
+    RISCV_ISA_Zihpm     => RISCV_ISA_Zihpm,
+    RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
+    RISCV_ISA_Zknd      => RISCV_ISA_Zknd,
+    RISCV_ISA_Zkne      => RISCV_ISA_Zkne,
+    RISCV_ISA_Zknh      => RISCV_ISA_Zknh,
+    RISCV_ISA_Zksed     => RISCV_ISA_Zksed,
+    RISCV_ISA_Zksh      => RISCV_ISA_Zksh,
+    RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
     -- Extension Options --
-    CPU_FAST_MUL_EN       => CPU_FAST_MUL_EN,
-    CPU_FAST_SHIFT_EN     => CPU_FAST_SHIFT_EN,
-    CPU_RF_HW_RST_EN      => CPU_RF_HW_RST_EN,
+    CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
+    CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
+    CPU_RF_HW_RST_EN    => CPU_RF_HW_RST_EN,
     -- Physical Memory Protection --
-    PMP_NUM_REGIONS       => PMP_NUM_REGIONS,
-    PMP_MIN_GRANULARITY   => PMP_MIN_GRANULARITY,
-    PMP_TOR_MODE_EN       => PMP_TOR_MODE_EN,
-    PMP_NAP_MODE_EN       => PMP_NAP_MODE_EN,
+    PMP_NUM_REGIONS     => PMP_NUM_REGIONS,
+    PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY,
+    PMP_TOR_MODE_EN     => PMP_TOR_MODE_EN,
+    PMP_NAP_MODE_EN     => PMP_NAP_MODE_EN,
     -- Hardware Performance Monitors --
-    HPM_NUM_CNTS          => HPM_NUM_CNTS,
-    HPM_CNT_WIDTH         => HPM_CNT_WIDTH,
+    HPM_NUM_CNTS        => HPM_NUM_CNTS,
+    HPM_CNT_WIDTH       => HPM_CNT_WIDTH,
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN       => MEM_INT_IMEM_EN,
-    MEM_INT_IMEM_SIZE     => MEM_INT_IMEM_SIZE,
+    MEM_INT_IMEM_EN     => MEM_INT_IMEM_EN,
+    MEM_INT_IMEM_SIZE   => MEM_INT_IMEM_SIZE,
     -- Internal Data memory --
-    MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
-    MEM_INT_DMEM_SIZE     => MEM_INT_DMEM_SIZE,
-    -- Internal Cache memory --
-    ICACHE_EN             => ICACHE_EN,
-    ICACHE_NUM_BLOCKS     => ICACHE_NUM_BLOCKS,
-    ICACHE_BLOCK_SIZE     => ICACHE_BLOCK_SIZE,
-    -- Internal Data Cache (dCACHE) --
-    DCACHE_EN             => DCACHE_EN,
-    DCACHE_NUM_BLOCKS     => DCACHE_NUM_BLOCKS,
-    DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
+    MEM_INT_DMEM_EN     => MEM_INT_DMEM_EN,
+    MEM_INT_DMEM_SIZE   => MEM_INT_DMEM_SIZE,
+    -- CPU Caches --    
+    ICACHE_EN           => ICACHE_EN,
+    ICACHE_NUM_BLOCKS   => ICACHE_NUM_BLOCKS,
+    DCACHE_EN           => DCACHE_EN,
+    DCACHE_NUM_BLOCKS   => DCACHE_NUM_BLOCKS,
+    CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
     -- External bus interface --
-    XBUS_EN               => XBUS_EN,
-    XBUS_TIMEOUT          => 0, -- AXI does not allow any timeouts
-    XBUS_REGSTAGE_EN      => XBUS_REGSTAGE_EN,
+    XBUS_EN             => XBUS_EN,
+    XBUS_TIMEOUT        => 0, -- AXI does not allow any timeouts
+    XBUS_REGSTAGE_EN    => XBUS_REGSTAGE_EN,
     -- Processor peripherals --
-    IO_DISABLE_SYSINFO    => false,
-    IO_GPIO_NUM           => num_gpio_c,
-    IO_CLINT_EN           => IO_CLINT_EN,
-    IO_UART0_EN           => IO_UART0_EN,
-    IO_UART0_RX_FIFO      => IO_UART0_RX_FIFO,
-    IO_UART0_TX_FIFO      => IO_UART0_TX_FIFO,
-    IO_UART1_EN           => IO_UART1_EN,
-    IO_UART1_RX_FIFO      => IO_UART1_RX_FIFO,
-    IO_UART1_TX_FIFO      => IO_UART1_TX_FIFO,
-    IO_SPI_EN             => IO_SPI_EN,
-    IO_SPI_FIFO           => IO_SPI_FIFO,
-    IO_SDI_EN             => IO_SDI_EN,
-    IO_SDI_FIFO           => IO_SDI_FIFO,
-    IO_TWI_EN             => IO_TWI_EN,
-    IO_TWI_FIFO           => IO_TWI_FIFO,
-    IO_TWD_EN             => IO_TWD_EN,
-    IO_TWD_RX_FIFO        => IO_TWD_RX_FIFO,
-    IO_TWD_TX_FIFO        => IO_TWD_TX_FIFO,
-    IO_PWM_NUM_CH         => num_pwm_c,
-    IO_WDT_EN             => IO_WDT_EN,
-    IO_TRNG_EN            => IO_TRNG_EN,
-    IO_TRNG_FIFO          => IO_TRNG_FIFO,
-    IO_CFS_EN             => IO_CFS_EN,
-    IO_CFS_CONFIG         => std_ulogic_vector(IO_CFS_CONFIG),
-    IO_CFS_IN_SIZE        => IO_CFS_IN_SIZE,
-    IO_CFS_OUT_SIZE       => IO_CFS_OUT_SIZE,
-    IO_NEOLED_EN          => IO_NEOLED_EN,
-    IO_NEOLED_TX_FIFO     => IO_NEOLED_TX_FIFO,
-    IO_GPTMR_EN           => IO_GPTMR_EN,
-    IO_ONEWIRE_EN         => IO_ONEWIRE_EN,
-    IO_DMA_EN             => IO_DMA_EN,
-    IO_SLINK_EN           => IO_SLINK_EN,
-    IO_SLINK_RX_FIFO      => IO_SLINK_RX_FIFO,
-    IO_SLINK_TX_FIFO      => IO_SLINK_TX_FIFO,
-    IO_CRC_EN             => IO_CRC_EN,
-    IO_HWSPINLOCK_EN      => IO_HWSPINLOCK_EN
+    IO_DISABLE_SYSINFO  => false,
+    IO_GPIO_NUM         => num_gpio_c,
+    IO_CLINT_EN         => IO_CLINT_EN,
+    IO_UART0_EN         => IO_UART0_EN,
+    IO_UART0_RX_FIFO    => IO_UART0_RX_FIFO,
+    IO_UART0_TX_FIFO    => IO_UART0_TX_FIFO,
+    IO_UART1_EN         => IO_UART1_EN,
+    IO_UART1_RX_FIFO    => IO_UART1_RX_FIFO,
+    IO_UART1_TX_FIFO    => IO_UART1_TX_FIFO,
+    IO_SPI_EN           => IO_SPI_EN,
+    IO_SPI_FIFO         => IO_SPI_FIFO,
+    IO_SDI_EN           => IO_SDI_EN,
+    IO_SDI_FIFO         => IO_SDI_FIFO,
+    IO_TWI_EN           => IO_TWI_EN,
+    IO_TWI_FIFO         => IO_TWI_FIFO,
+    IO_TWD_EN           => IO_TWD_EN,
+    IO_TWD_RX_FIFO      => IO_TWD_RX_FIFO,
+    IO_TWD_TX_FIFO      => IO_TWD_TX_FIFO,
+    IO_PWM_NUM_CH       => num_pwm_c,
+    IO_WDT_EN           => IO_WDT_EN,
+    IO_TRNG_EN          => IO_TRNG_EN,
+    IO_TRNG_FIFO        => IO_TRNG_FIFO,
+    IO_CFS_EN           => IO_CFS_EN,
+    IO_CFS_CONFIG       => std_ulogic_vector(IO_CFS_CONFIG),
+    IO_CFS_IN_SIZE      => IO_CFS_IN_SIZE,
+    IO_CFS_OUT_SIZE     => IO_CFS_OUT_SIZE,
+    IO_NEOLED_EN        => IO_NEOLED_EN,
+    IO_NEOLED_TX_FIFO   => IO_NEOLED_TX_FIFO,
+    IO_GPTMR_EN         => IO_GPTMR_EN,
+    IO_ONEWIRE_EN       => IO_ONEWIRE_EN,
+    IO_DMA_EN           => IO_DMA_EN,
+    IO_SLINK_EN         => IO_SLINK_EN,
+    IO_SLINK_RX_FIFO    => IO_SLINK_RX_FIFO,
+    IO_SLINK_TX_FIFO    => IO_SLINK_TX_FIFO,
+    IO_CRC_EN           => IO_CRC_EN,
+    IO_HWSPINLOCK_EN    => IO_HWSPINLOCK_EN
   )
   port map (
     -- Global control --

@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 03.05.2025 | 1.11.3.10 | :warning: rework cache configuration options | [#1257](https://github.com/stnolting/neorv32/pull/1257) |
 | 03.05.2025 | 1.11.3.9 | :warning: remove external bus interface cache (xbus-cache) | [#1256](https://github.com/stnolting/neorv32/pull/1256) |
 | 02.05.2025 | 1.11.3.8 | add full-scale AXI4 bridge; :bug: fix XBUS/Wishbone conversion bug (from v1.11.3.7 / #1252) | [#1253](https://github.com/stnolting/neorv32/pull/1253) |
 | 01.05.2025 | 1.11.3.7 | :warning: rework processor-internal bus protocol | [#1252](https://github.com/stnolting/neorv32/pull/1252) |

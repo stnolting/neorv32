@@ -255,15 +255,13 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 4+^| **Internal <<_data_memory_dmem>>**
 | `MEM_INT_DMEM_EN`       | boolean   | false         | Implement the processor-internal data memory.
 | `MEM_INT_DMEM_SIZE`     | natural   | 8*1024        | Size in bytes of the processor-internal data memory (use a power of 2).
-4+^| **<<_processor_internal_instruction_cache_icache>>**
-| `ICACHE_EN`             | boolean   | false         | Implement the instruction cache.
+4+^| **CPU Caches (<<_processor_internal_instruction_cache_icache, instruction-cache>> & <<_processor_internal_data_cache_dcache, data-cache>>)**
+| `ICACHE_EN`             | boolean   | false         | Implement the instruction cache (I$).
 | `ICACHE_NUM_BLOCKS`     | natural   | 4             | Number of blocks ("lines") Has to be a power of two.
-| `ICACHE_BLOCK_SIZE`     | natural   | 64            | Size in bytes of each block. Has to be a power of two.
-4+^| **<<_processor_internal_data_cache_dcache>>**
-| `DCACHE_EN`             | boolean   | false         | Implement the data cache.
+| `DCACHE_EN`             | boolean   | false         | Implement the data cache (D$)
 | `DCACHE_NUM_BLOCKS`     | natural   | 4             | Number of blocks ("lines"). Has to be a power of two.
-| `DCACHE_BLOCK_SIZE`     | natural   | 64            | Size in bytes of each block. Has to be a power of two.
-4+^| **<<_processor_external_bus_interface_xbus>> (Wishbone b4 protocol)**
+| `CACHE_BLOCK_SIZE`      | natural   | 64            | Size in bytes of each block (I$ and D$). Has to be a power of two.
+4+^| **<<_processor_external_bus_interface_xbus>> (Wishbone / AXI4)**
 | `XBUS_EN`               | boolean   | false         | Implement the external bus interface.
 | `XBUS_TIMEOUT`          | natural   | 255           | Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.
 | `XBUS_REGSTAGE_EN`      | boolean   | false         | Implement XBUS register stages to ease timing closure.
@@ -300,7 +298,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_ONEWIRE_EN`         | boolean   | false         | Implement the <<_one_wire_serial_interface_controller_onewire>>.
 | `IO_ONEWIRE_FIFO`       | natural   | 1             | Depth of the <<_one_wire_serial_interface_controller_onewire>> FIFO. Has to be a power of two, min 1, max 32768.
 | `IO_DMA_EN`             | boolean   | false         | Implement the <<_direct_memory_access_controller_dma>>.
-| `IO_SLINK_EN`           | boolean   | false         | Implement the <<_stream_link_interface_slink>>.
+| `IO_SLINK_EN`           | boolean   | false         | Implement the <<_stream_link_interface_slink>> (AXI4-Stream).
 | `IO_SLINK_RX_FIFO`      | natural   | 1             | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_SLINK_TX_FIFO`      | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_CRC_EN`             | boolean   | false         | Implement the <<_cyclic_redundancy_check_crc>> unit.
@@ -644,11 +642,10 @@ The reservation-set controller implements the _strong semnatics_. An active rese
 Depending on the configuration, the NEORV32 processor provides several _layers_ of memory consisting
 of caches, buffers and storage.
 
-* The CPU pipeline and its instruction prefetch buffer (level-0)
-* The <<_processor_internal_data_cache_dcache>> (level-1)
-* The <<_processor_internal_instruction_cache_icache>> (level-1)
-* The cache of the <<_processor_external_bus_interface_xbus>> (level-2)
-* Internal and external memories
+[start=1]
+. The CPU pipeline and its instruction prefetch buffer
+. The <<_processor_internal_data_cache_dcache>> and <<_processor_internal_instruction_cache_icache>>
+. Internal and external memories
 
 All caches and buffers operate transparently for the software. Hence, special attention must therefore be
 paid to maintain coherence. Note that coherence and cache _synchronization_ is **not** automatically performed
@@ -672,11 +669,10 @@ and synchronized across the entire system:
 
 [start=1]
 . The CPU data cache (if enabled) is flushed and invalidated: all local modifications are copied to
-the next higher memory level (for example the internal DMEM or the XBUS-cache).
+the next higher memory level.
 . The CPU data cache is cleared invalidating so the next load/store access will cause a cache miss
 that will fetch up-to-date data from the memory system.
-. The synchronization request is forwarded to the next-higher memory level. If the XBUS cache is implemented
-it will also be flushed and invalidated.
+. The synchronization request is forwarded to the next-higher memory level.
 
 By executing the "instruction" `fence.i` instruction the CPU's instruction-fetch cache is are ordered
 and synchronized across the entire system:

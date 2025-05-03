@@ -386,12 +386,12 @@ and are always valid when set.
 | `stb`   |     1 | Request trigger ("strobe"). This signal is high for exactly one cycle starting a bus request. All other _in-band_ signals are valid only if `stb` is set.
 | `rw`    |     1 | Access direction (`0` = read, `1` = write).
 | `src`   |     1 | Access source (`0` = instruction fetch, `1` = load/store).
-| `lock`  |     1 | Set if contiguous transfer; the current transfer is part of a group of transfers that should not be interleaved. This signal is relevant for the bus network only and may be ignored.
 | `priv`  |     1 | Set if privileged (Machine-mode) access.
 | `debug` |     1 | Set if debug-mode access (access from the on-chip debugger).
 | `amo`   |     1 | Set if current access is an atomic memory operation (<<_atomic_memory_access>>).
 | `amoop` |     4 | Actual type of atomic memory operation (<<_atomic_memory_access>>). Irrelevant if `amo` is not set.
 3+^| **Out-Of-Band Signals**
+| `lock`  |     1 | Set if contiguous transfer; the current transfer is part of a group of transfers that should not be interleaved. This signal is relevant for the bus network only and may be ignored.
 | `fence` |     1 | Data (load/store; `fence`) or instruction (instruction-fetch; `fence.i`) fence request; single-shot; see <<_memory_coherence>>.
 |=======================
 
@@ -437,11 +437,11 @@ The figure below shows three exemplary bus accesses:
     {name: 'stb',   wave: '010|..10.10|..', node: '.a....c..e....'},
     {name: 'rw',    wave: 'x0.|.x1.x0.|..', node: '..............'},
     {name: 'src',   wave: 'x0.|.x0.x0.|.x'},
-    {name: 'lock',  wave: '0..|.......|..'},
     {name: 'priv',  wave: 'x1.|.x1.x1.|.x'},
     {name: 'debug', wave: 'x0.|.x0.x0.|.x'},
     {name: 'amo',   wave: 'x0.|.x0.x0.|.x'},
     {name: 'amoop', wave: 'x..|.......|..'},
+    {name: 'lock',  wave: '0..|.......|..'},
     {name: 'fence', wave: '0..|.......|..'},
   ],
   {},
