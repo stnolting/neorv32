@@ -282,18 +282,13 @@ proc setup_ip_gui {} {
     { MEM_INT_DMEM_SIZE {DMEM size} {In bytes (use a power of two)} {$MEM_INT_DMEM_EN} }
   }
 
-  set group [add_group $page {CPU Instruction Cache (ICACHE)}]
+  set group [add_group $page {CPU Caches}]
   add_params $group {
-    { ICACHE_EN         {Enable ICACHE} }
-    { ICACHE_NUM_BLOCKS {Number of lines} {}                              {$ICACHE_EN} }
-    { ICACHE_BLOCK_SIZE {Line size}       {In bytes (use a power of two)} {$ICACHE_EN} }
-  }
-
-  set group [add_group $page {CPU Data Cache (DCACHE)}]
-  add_params $group {
-    { DCACHE_EN         {Enable DCACHE} }
-    { DCACHE_NUM_BLOCKS {Number of lines} {}                              {$DCACHE_EN} }
-    { DCACHE_BLOCK_SIZE {Line size}       {In bytes (use a power of two)} {$DCACHE_EN} }
+    { CACHE_BLOCK_SIZE  {Cache line size} {In bytes (use a power of two)} }
+    { ICACHE_EN         {Enable instruction cache (I-cache)} }
+    { ICACHE_NUM_BLOCKS {Number of I-cache lines} {} {$ICACHE_EN} }
+    { DCACHE_EN         {Enable data cache (D-cache)} }
+    { DCACHE_NUM_BLOCKS {Number of D-cache lines}  {} {$DCACHE_EN} }
   }
 
 

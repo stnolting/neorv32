@@ -79,14 +79,12 @@ entity neorv32_vivado_ip is
     -- Internal Data memory --
     MEM_INT_DMEM_EN       : boolean                        := false;
     MEM_INT_DMEM_SIZE     : natural                        := 8192;
-    -- Internal Cache memory --
+    -- CPU Caches --
     ICACHE_EN             : boolean                        := false;
-    ICACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
-    ICACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
-    -- Internal Data Cache (dCACHE) --
+    ICACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
     DCACHE_EN             : boolean                        := false;
-    DCACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;
-    DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;
+    DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
+    CACHE_BLOCK_SIZE      : natural range 4 to 1024        := 64;
     -- External Bus Interface --
     XBUS_EN               : boolean                        := false;
     XBUS_REGSTAGE_EN      : boolean                        := false;
@@ -410,14 +408,12 @@ begin
     -- Internal Data memory --
     MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
     MEM_INT_DMEM_SIZE     => MEM_INT_DMEM_SIZE,
-    -- Internal Cache memory --
+    -- CPU Caches --
     ICACHE_EN             => ICACHE_EN,
     ICACHE_NUM_BLOCKS     => ICACHE_NUM_BLOCKS,
-    ICACHE_BLOCK_SIZE     => ICACHE_BLOCK_SIZE,
-    -- Internal Data Cache (dCACHE) --
     DCACHE_EN             => DCACHE_EN,
     DCACHE_NUM_BLOCKS     => DCACHE_NUM_BLOCKS,
-    DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
+    CACHE_BLOCK_SIZE      => CACHE_BLOCK_SIZE,
     -- External bus interface --
     XBUS_EN               => XBUS_EN,
     XBUS_TIMEOUT          => 0, -- AXI does not allow any timeouts

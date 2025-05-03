@@ -28,10 +28,9 @@ entity neorv32_sysinfo is
     MEM_INT_DMEM_SIZE     : natural; -- size of processor-internal data memory in bytes
     ICACHE_EN             : boolean; -- implement instruction cache
     ICACHE_NUM_BLOCKS     : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
-    ICACHE_BLOCK_SIZE     : natural; -- i-cache: block size in bytes (min 4), has to be a power of 2
     DCACHE_EN             : boolean; -- implement data cache
     DCACHE_NUM_BLOCKS     : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
-    DCACHE_BLOCK_SIZE     : natural; -- d-cache: block size in bytes (min 4), has to be a power of 2
+    CACHE_BLOCK_SIZE      : natural; -- i-cache/d-cache: block size in bytes (min 4), has to be a power of 2
     XBUS_EN               : boolean; -- implement external memory bus interface
     OCD_EN                : boolean; -- implement OCD
     OCD_AUTH              : boolean; -- implement OCD authenticator
@@ -71,10 +70,9 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant int_imem_rom_c   : boolean := int_imem_en_c and MEM_INT_IMEM_ROM;
   constant log2_imem_size_c : natural := index_size_f(MEM_INT_IMEM_SIZE);
   constant log2_dmem_size_c : natural := index_size_f(MEM_INT_DMEM_SIZE);
-  constant log2_ic_bsize_c  : natural := index_size_f(ICACHE_BLOCK_SIZE);
   constant log2_ic_bnum_c   : natural := index_size_f(ICACHE_NUM_BLOCKS);
-  constant log2_dc_bsize_c  : natural := index_size_f(DCACHE_BLOCK_SIZE);
   constant log2_dc_bnum_c   : natural := index_size_f(DCACHE_NUM_BLOCKS);
+  constant log2_c_bsize_c   : natural := index_size_f(CACHE_BLOCK_SIZE);
 
   -- system information memory --
   type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
@@ -143,11 +141,11 @@ begin
 
   -- SYSINFO(4): Cache Configuration --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sysinfo(3)(3 downto 0)   <= std_ulogic_vector(to_unsigned(log2_ic_bsize_c, 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(block_size_in_bytes)
-  sysinfo(3)(7 downto 4)   <= std_ulogic_vector(to_unsigned(log2_ic_bnum_c, 4))  when ICACHE_EN else (others => '0'); -- i-cache: log2(number_of_block)
+  sysinfo(3)(3 downto 0)   <= std_ulogic_vector(to_unsigned(log2_c_bsize_c, 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(block_size_in_bytes)
+  sysinfo(3)(7 downto 4)   <= std_ulogic_vector(to_unsigned(log2_ic_bnum_c, 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(number_of_block)
   --
-  sysinfo(3)(11 downto 8)  <= std_ulogic_vector(to_unsigned(log2_dc_bsize_c, 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(block_size)
-  sysinfo(3)(15 downto 12) <= std_ulogic_vector(to_unsigned(log2_dc_bnum_c, 4))  when DCACHE_EN else (others => '0'); -- d-cache: log2(num_blocks)
+  sysinfo(3)(11 downto 8)  <= std_ulogic_vector(to_unsigned(log2_c_bsize_c, 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(block_size)
+  sysinfo(3)(15 downto 12) <= std_ulogic_vector(to_unsigned(log2_dc_bnum_c, 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(num_blocks)
   --
   sysinfo(3)(31 downto 16) <= (others => '0'); -- reserved
 

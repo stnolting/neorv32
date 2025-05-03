@@ -54,11 +54,10 @@ entity neorv32_tb is
     MEM_INT_DMEM_EN     : boolean                        := true;        -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE   : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
     ICACHE_EN           : boolean                        := true;        -- implement instruction cache
-    ICACHE_NUM_BLOCKS   : natural range 1 to 256         := 64;          -- i-cache: number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE   : natural range 4 to 2**16       := 32;          -- i-cache: block size in bytes (min 4), has to be a power of 2
+    ICACHE_NUM_BLOCKS   : natural range 1 to 4096        := 64;          -- i-cache: number of blocks (min 1), has to be a power of 2
     DCACHE_EN           : boolean                        := true;        -- implement data cache
-    DCACHE_NUM_BLOCKS   : natural range 1 to 256         := 32;          -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE   : natural range 4 to 2**16       := 32;          -- d-cache: block size in bytes (min 4), has to be a power of 2
+    DCACHE_NUM_BLOCKS   : natural range 1 to 4096        := 32;          -- d-cache: number of blocks (min 1), has to be a power of 2
+    CACHE_BLOCK_SIZE    : natural range 4 to 1024        := 32;          -- i-cache/d-cache: block size in bytes (min 4), has to be a power of 2
     -- external memory A --
     EXT_MEM_A_EN        : boolean                        := false;       -- enable memory
     EXT_MEM_A_BASE      : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address, has to be word-aligned
@@ -173,14 +172,12 @@ begin
     -- Internal Data memory --
     MEM_INT_DMEM_EN       => MEM_INT_DMEM_EN,
     MEM_INT_DMEM_SIZE     => MEM_INT_DMEM_SIZE,
-    -- Internal Cache memory --
+    -- CPU Caches --
     ICACHE_EN             => ICACHE_EN,
     ICACHE_NUM_BLOCKS     => ICACHE_NUM_BLOCKS,
-    ICACHE_BLOCK_SIZE     => ICACHE_BLOCK_SIZE,
-    -- Internal Data Cache (dCACHE) --
     DCACHE_EN             => DCACHE_EN,
     DCACHE_NUM_BLOCKS     => DCACHE_NUM_BLOCKS,
-    DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
+    CACHE_BLOCK_SIZE      => CACHE_BLOCK_SIZE,
     -- External bus interface --
     XBUS_EN               => true,
     XBUS_TIMEOUT          => 0,

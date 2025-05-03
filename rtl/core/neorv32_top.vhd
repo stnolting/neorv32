@@ -85,15 +85,12 @@ entity neorv32_top is
     MEM_INT_DMEM_EN       : boolean                        := false;       -- implement processor-internal data memory
     MEM_INT_DMEM_SIZE     : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
 
-    -- Internal Instruction Cache (iCACHE) --
-    ICACHE_EN             : boolean                        := false;       -- implement instruction cache
-    ICACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;           -- i-cache: number of blocks (min 1), has to be a power of 2
-    ICACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;          -- i-cache: block size in bytes (min 4), has to be a power of 2
-
-    -- Internal Data Cache (dCACHE) --
-    DCACHE_EN             : boolean                        := false;       -- implement data cache
-    DCACHE_NUM_BLOCKS     : natural range 1 to 256         := 4;           -- d-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_BLOCK_SIZE     : natural range 4 to 2**16       := 64;          -- d-cache: block size in bytes (min 4), has to be a power of 2
+    -- CPU Caches --
+    ICACHE_EN             : boolean                        := false;       -- implement instruction cache (i-cache)
+    ICACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;           -- i-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_EN             : boolean                        := false;       -- implement data cache (d-cache)
+    DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;           -- d-cache: number of blocks (min 1), has to be a power of 2
+    CACHE_BLOCK_SIZE      : natural range 4 to 1024        := 64;          -- i-cache/d-cache: block size in bytes (min 4), has to be a power of 2
 
     -- External bus interface (XBUS) --
     XBUS_EN               : boolean                        := false;       -- implement external memory bus interface
@@ -562,7 +559,7 @@ begin
       neorv32_icache_inst: entity neorv32.neorv32_cache
       generic map (
         NUM_BLOCKS => ICACHE_NUM_BLOCKS,
-        BLOCK_SIZE => ICACHE_BLOCK_SIZE,
+        BLOCK_SIZE => CACHE_BLOCK_SIZE,
         UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
         READ_ONLY  => true
       )
@@ -591,7 +588,7 @@ begin
       neorv32_dcache_inst: entity neorv32.neorv32_cache
       generic map (
         NUM_BLOCKS => DCACHE_NUM_BLOCKS,
-        BLOCK_SIZE => DCACHE_BLOCK_SIZE,
+        BLOCK_SIZE => CACHE_BLOCK_SIZE,
         UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
         READ_ONLY  => false
       )
@@ -1567,10 +1564,9 @@ begin
         MEM_INT_DMEM_SIZE     => dmem_size_c,
         ICACHE_EN             => ICACHE_EN,
         ICACHE_NUM_BLOCKS     => ICACHE_NUM_BLOCKS,
-        ICACHE_BLOCK_SIZE     => ICACHE_BLOCK_SIZE,
         DCACHE_EN             => DCACHE_EN,
         DCACHE_NUM_BLOCKS     => DCACHE_NUM_BLOCKS,
-        DCACHE_BLOCK_SIZE     => DCACHE_BLOCK_SIZE,
+        CACHE_BLOCK_SIZE      => CACHE_BLOCK_SIZE,
         XBUS_EN               => XBUS_EN,
         OCD_EN                => OCD_EN,
         OCD_AUTH              => ocd_auth_en_c,
