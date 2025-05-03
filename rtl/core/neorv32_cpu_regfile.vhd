@@ -6,19 +6,16 @@
 --                                                                                  --
 -- By default the register file is coded to infer block RAM (for FPGAs), that does  --
 -- not provide a dedicated hardware reset. For ASIC implementation or setups that   --
--- do require a dedicated hardware reset a single-FF-based architecture can be      --
+-- do require a dedicated hardware reset a flip-flop-based architecture can be      --
 -- enabled via "RST_EN".                                                            --
 --                                                                                  --
 -- [NOTE] Read-during-write behavior of the register file's memory core is          --
 --        irrelevant as read and write accesses are mutually exclusive and will     --
 --        never happen at the same time.                                            --
---                                                                                  --
--- [TIP] This file can be replaced by a technology-specific implementation to       --
---       optimize timing, area, energy, etc.                                        --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -93,7 +90,7 @@ begin
       end if;
     end process register_file;
 
-  end generate;
+  end generate; -- /register_file_fpga
 
 
   -- ASIC-Style Register File (individual FFs, full hardware reset) -------------------------
@@ -131,12 +128,12 @@ begin
       end if;
     end process rf_read;
 
-  end generate;
+  end generate; -- /register_file_asic
 
 
-  -- Optional 3rd Read Port (rs3) -----------------------------------------------------------
+  -- Optional Third Read Port (rs3) ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rs3_enable:
+  rs3_enabled:
   if RS3_EN generate
     rs3_read: process(clk_i)
     begin
@@ -147,7 +144,7 @@ begin
     rs3_addr <= ctrl_i.ir_funct12(11 downto 7); -- RISC-V compliant
   end generate;
 
-  rs3_disable:
+  rs3_disabled:
   if not RS3_EN generate
     rs3_o <= (others => '0');
   end generate;
