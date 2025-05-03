@@ -489,7 +489,7 @@ void neorv32_aux_print_hw_config(void) {
   neorv32_uart0_printf("Ext. bus interface:  ");
   tmp = NEORV32_SYSINFO->SOC;
   if (tmp & (1 << SYSINFO_SOC_XBUS)) {
-    neorv32_uart0_printf("enabled ");
+    neorv32_uart0_printf("enabled\n");
   }
   else {
     neorv32_uart0_printf("none\n");
