@@ -85,9 +85,7 @@ entity neorv32_cpu is
     ibus_rsp_i : in  bus_rsp_t; -- response bus
     -- data bus interface --
     dbus_req_o : out bus_req_t; -- request bus
-    dbus_rsp_i : in  bus_rsp_t; -- response bus
-    -- memory synchronization --
-    mem_sync_i : in  std_ulogic -- synchronization operation done
+    dbus_rsp_i : in  bus_rsp_t  -- response bus
   );
 end neorv32_cpu;
 
@@ -271,9 +269,7 @@ begin
     -- load/store unit interface --
     lsu_wait_i    => lsu_wait,    -- wait for data bus
     lsu_mar_i     => lsu_mar,     -- memory address register
-    lsu_err_i     => lsu_err,     -- alignment/access errors
-    -- memory synchronization --
-    mem_sync_i    => mem_sync_i   -- synchronization operation done
+    lsu_err_i     => lsu_err      -- alignment/access errors
   );
 
   -- RISC-V machine interrupts --

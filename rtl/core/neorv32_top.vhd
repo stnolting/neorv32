@@ -311,9 +311,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal iodev_req : iodev_req_t;
   signal iodev_rsp : iodev_rsp_t;
 
-  -- memory synchronization / ordering / coherence --
-  signal dcache_clean : std_ulogic_vector(num_cores_c-1 downto 0);
-
   -- IRQs --
   type firq_enum_t is (
     FIRQ_TWD, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
@@ -546,9 +543,7 @@ begin
       ibus_rsp_i => cpu_i_rsp(i),
       -- data bus interface --
       dbus_req_o => cpu_d_req(i),
-      dbus_rsp_i => cpu_d_rsp(i),
-      -- memory synchronization --
-      mem_sync_i => dcache_clean(i)
+      dbus_rsp_i => cpu_d_rsp(i)
     );
 
 
@@ -566,7 +561,6 @@ begin
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
-        clean_o    => open, -- cache is read-only so it cannot be dirty
         host_req_i => cpu_i_req(i),
         host_rsp_o => cpu_i_rsp(i),
         bus_req_o  => icache_req(i),
@@ -595,7 +589,6 @@ begin
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
-        clean_o    => dcache_clean(i),
         host_req_i => cpu_d_req(i),
         host_rsp_o => cpu_d_rsp(i),
         bus_req_o  => dcache_req(i),
@@ -605,9 +598,8 @@ begin
 
     neorv32_dcache_disabled:
     if not DCACHE_EN generate
-      dcache_clean(i) <= '1';
-      dcache_req(i)   <= cpu_d_req(i);
-      cpu_d_rsp(i)    <= dcache_rsp(i);
+      dcache_req(i) <= cpu_d_req(i);
+      cpu_d_rsp(i)  <= dcache_rsp(i);
     end generate;
 
 
