@@ -648,14 +648,17 @@ of caches, buffers and storage.
 . Internal and external memories
 
 All caches and buffers operate transparently for the software. Hence, special attention must therefore be
-paid to maintain coherence. Note that coherence and cache _synchronization_ is **not** automatically performed
-by the hardware itself as there is no snooping implemented.
+paid to maintain memory coherence. Note that coherence and cache _synchronization_ is **not** performed
+automatically by the hardware itself as there is no snooping implemented.
 
 NEORV32 uses two instructions for manual memory synchronization which are always available
 regardless of the actual CPU/ISA configuration:
 
-* `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>)
-* `fence.i` (<<_zifencei_isa_extension>>)
+* `fence.i` (<<_zifencei_isa_extension>>): flush the CPU's instruction prefetch buffer and
+clear the CPU's <<_processor_internal_instruction_cache_icache, instruction cache>>.
+* `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>): clear and reload the CPU's
+<<_processor_internal_data_cache_dcache, data cache>>. Flushing is not required as the data cache
+uses the **write-through** strategy. Hence, write operations are always synchronized with main memory.
 
 .Weak Coherence Model
 [IMPORTANT]
@@ -663,29 +666,6 @@ The NEORV32-specific implementation of the `fence[.i]` ordering instructions onl
 coherence model. A core's `fence` just orders all memory accesses towards main memory. Hence, they _can_ become
 visible by other agents (the secondary CPU core, the DMA, processor-external modules) if these agents also
 synchronize (e.g. reload) their cache(s).
-
-By executing the "data" `fence` instruction the CPU's load/store operations are ordered
-and synchronized across the entire system:
-
-[start=1]
-. The CPU data cache (if enabled) is flushed and invalidated: all local modifications are copied to
-the next higher memory level.
-. The CPU data cache is cleared invalidating so the next load/store access will cause a cache miss
-that will fetch up-to-date data from the memory system.
-. The synchronization request is forwarded to the next-higher memory level.
-
-By executing the "instruction" `fence.i` instruction the CPU's instruction-fetch cache is are ordered
-and synchronized across the entire system:
-
-[start=1]
-. Perform all the steps that are performed by the `fence` instruction.
-. The CPU instruction cache is cleared invalidating all local entries so the next instruction fetch access
-will cause a cache miss that will fetch up-to-date data from the memory system.
-
-.CPU Stall While Synchronizing
-[IMPORTANT]
-Executing any fence instruction will stall the CPU until all the requested ordering/synchronization
-steps are completed.
 
 ===== Coherence Example
 
@@ -700,10 +680,6 @@ counter = 3;
 counter++;
 ----
 
-The initial assignment `counter = 0` is translated into a store-word instruction (`sw`) that is
-automatically encapsulated within two `fence` instructions. This guarantees <<_memory_coherence>> as each
-FENCE will synchronize the CPU's data cache cache with upstream/main memory.
-
 .Atomic Variables - According RISC-V Assembly Code
 [source, assembly]
 ----
@@ -717,7 +693,11 @@ fence rw,rw
 amoadd.w.aqrl zero,a4,(a2)
 ----
 
-The increment (`counter++`) is implemented as RISC-V atomic memory operation (`amoadd`). However, the
+The initial assignment `counter = 0` is translated into a store-word instruction (`sw`) that is
+automatically encapsulated within two `fence` instructions. This guarantees memory coherence as each
+`fence` will synchronize the CPU's data cache with upstream/main memory.
+
+The counter increment (`counter++`) is implemented as RISC-V atomic memory operation (`amoadd`). However, the
 compiler does not encapsulate this in within FENCE instructions. Hence, the altered atomic variable
 is **not** updated in the CPU's data cache (but in upstream/main memory).
 

@@ -88,9 +88,7 @@ entity neorv32_cpu_control is
     -- load/store unit interface --
     lsu_wait_i    : in  std_ulogic; -- wait for data bus
     lsu_mar_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-    lsu_err_i     : in  std_ulogic_vector(3 downto 0); -- alignment/access errors
-    -- memory synchronization --
-    mem_sync_i    : in  std_ulogic -- synchronization operation done
+    lsu_err_i     : in  std_ulogic_vector(3 downto 0) -- alignment/access errors
   );
 end neorv32_cpu_control;
 
@@ -98,7 +96,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
   type exe_engine_state_t is (EX_DISPATCH, EX_TRAP_ENTER, EX_TRAP_EXIT, EX_RESTART, EX_SLEEP, EX_EXECUTE,
-                              EX_ALU_WAIT, EX_FENCE, EX_BRANCH, EX_BRANCHED, EX_SYSTEM, EX_MEM_REQ, EX_MEM_RSP);
+                              EX_ALU_WAIT, EX_BRANCH, EX_BRANCHED, EX_SYSTEM, EX_MEM_REQ, EX_MEM_RSP);
   type exe_engine_t is record
     state : exe_engine_state_t;
     ir    : std_ulogic_vector(31 downto 0); -- instruction word being executed right now
@@ -106,7 +104,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc    : std_ulogic_vector(XLEN-1 downto 0); -- current PC (current instruction)
     pc2   : std_ulogic_vector(XLEN-1 downto 0); -- next PC (next linear instruction)
     ra    : std_ulogic_vector(XLEN-1 downto 0); -- return address
-    msync : std_ulogic; -- memory synchronization completed
   end record;
   signal exe_engine, exe_engine_nxt : exe_engine_t;
 
@@ -274,7 +271,6 @@ begin
       exe_engine.pc    <= BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
       exe_engine.pc2   <= BOOT_ADDR(XLEN-1 downto 2) & "00"; -- 32-bit-aligned boot address
       exe_engine.ra    <= (others => '0');
-      exe_engine.msync <= '0';
     elsif rising_edge(clk_i) then
       ctrl       <= ctrl_nxt;
       exe_engine <= exe_engine_nxt;
@@ -288,7 +284,7 @@ begin
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hwtrig_match, opcode, frontend_i, csr,
-                                   ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i, mem_sync_i)
+                                   ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
   begin
@@ -303,7 +299,6 @@ begin
     exe_engine_nxt.pc    <= exe_engine.pc;
     exe_engine_nxt.pc2   <= exe_engine.pc2;
     exe_engine_nxt.ra    <= (others => '0'); -- output zero if not a branch instruction
-    exe_engine_nxt.msync <= mem_sync_i and (not ctrl.lsu_fence);
     if_ack               <= '0';
     if_reset             <= '0';
     trap_ctrl.env_enter  <= '0';
@@ -471,10 +466,17 @@ begin
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c =>
             exe_engine_nxt.state <= EX_BRANCH;
 
-          -- memory fence operations (execute even if illegal funct3) --
+          -- memory fence operations --
           when opcode_fence_c =>
-            ctrl_nxt.lsu_fence   <= '1'; -- load/store fence (always executed)
-            exe_engine_nxt.state <= EX_FENCE;
+            if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) then -- instruction fence
+              ctrl_nxt.if_fence    <= '1';
+              exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB
+            elsif (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then -- data fence
+              ctrl_nxt.lsu_fence   <= '1'; -- load/store fence
+              exe_engine_nxt.state <= EX_DISPATCH;
+            else -- illegal
+              exe_engine_nxt.state <= EX_DISPATCH;
+            end if;
 
           -- FPU: floating-point operations --
           when opcode_fop_c =>
@@ -503,15 +505,6 @@ begin
         if (alu_cp_done_i = '1') or (trap_ctrl.exc_buf(exc_illegal_c) = '1') then
           ctrl_nxt.rf_wb_en    <= '1'; -- valid RF write-back (won't happen if exception)
           exe_engine_nxt.state <= EX_DISPATCH;
-        end if;
-
-      when EX_FENCE => -- wait for LOAD/STORE memory synchronization
-      -- ------------------------------------------------------------
-        if (exe_engine.msync = '1') then -- wait for pending synchronization request to complete
-          if (exe_engine.ir(instr_funct3_lsb_c) = '1') then -- fence.i
-            ctrl_nxt.if_fence <= '1';
-          end if;
-          exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB (EX_DISPATCH would be sufficient for normal FENCE)
         end if;
 
       when EX_BRANCH => -- update next PC on taken branches and jumps

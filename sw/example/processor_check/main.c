@@ -10,6 +10,7 @@
 /**********************************************************************//**
  * @file processor_check/main.c
  * @brief CPU/Processor test/verification program.
+ * @note This test program is written for simulation using the default testbench only.
  **************************************************************************/
 
 #include <neorv32.h>
@@ -22,16 +23,16 @@
 /**@{*/
 //** UART BAUD rate */
 #define BAUD_RATE        (19200)
-//** Reachable but unaligned address */
-#define ADDR_UNALIGNED_1 (0x00000001UL)
-//** Reachable but unaligned address */
-#define ADDR_UNALIGNED_3 (0x00000003UL)
-//** Unreachable word-aligned address */
-#define ADDR_UNREACHABLE (NEORV32_DM_BASE)
+//** Reachable but unaligned cached address */
+#define ADDR_UNALIGNED_1 (0x00000001U)
+//** Reachable but unaligned cached address */
+#define ADDR_UNALIGNED_3 (0x00000003U)
+//** Unreachable word-aligned cached address */
+#define ADDR_UNREACHABLE (0x70000000U)
 //** External memory base address */
-#define EXT_MEM_BASE     (0xF0000000UL)
+#define EXT_MEM_BASE     (0xF0000000U)
 //** External IRQ trigger base address */
-#define SIM_TRIG_BASE    (0xFF000000UL)
+#define SIM_TRIG_BASE    (0xFF000000U)
 /**@}*/
 
 
