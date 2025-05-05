@@ -388,8 +388,8 @@ and are always valid when set.
 | `debug` |     1 | Set if debug-mode access (access from the on-chip debugger).
 | `amo`   |     1 | Set if current access is an atomic memory operation (<<_atomic_memory_access>>).
 | `amoop` |     4 | Actual type of atomic memory operation (<<_atomic_memory_access>>). Irrelevant if `amo` is not set.
+| `lock`  |     1 | Set if contiguous transfer; the current transfer is part of a group of transfers that should not be interleaved. This signal is relevant for the interconnect / bus system only.
 3+^| **Out-Of-Band Signals**
-| `lock`  |     1 | Set if contiguous transfer; the current transfer is part of a group of transfers that should not be interleaved. This signal is relevant for the bus network only and may be ignored.
 | `fence` |     1 | Data (load/store; `fence`) or instruction (instruction-fetch; `fence.i`) fence request; single-shot; see <<_memory_coherence>>.
 |=======================
 
@@ -415,7 +415,7 @@ The transaction is completed when the accessed device returns an acknowledge via
 for exactly one cycle. Together with `ack` the accessed device returns an optional error status (`err`) and read
 data (`rdata`) in case of a read-access. `err` and `data` are evaluated only when `ack` is high.
 
-The figure below shows three exemplary bus accesses:
+The figure below shows three exemplary single-access bus transactions:
 
 [start=1]
 . A read access to address `A_addr` returning `rdata` after several cycles (slow response; `ACK` arrives after several cycles).
