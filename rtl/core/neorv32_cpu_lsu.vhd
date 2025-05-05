@@ -108,10 +108,10 @@ begin
   end process mem_do_reg;
 
   -- hardwired signals --
-  dbus_req_o.src <= '0'; -- always data access
+  dbus_req_o.src  <= '0'; -- always data access
+  dbus_req_o.lock <= '0'; -- always unlocked/single access
 
   -- out-of-band signals --
-  dbus_req_o.lock  <= '0'; -- always single access
   dbus_req_o.fence <= ctrl_i.lsu_fence;
 
   -- atomic memory access operation encoding --

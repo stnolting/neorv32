@@ -129,8 +129,8 @@ package neorv32_package is
     debug : std_ulogic; -- set if debug mode access
     amo   : std_ulogic; -- set if atomic memory operation
     amoop : std_ulogic_vector(3 downto 0); -- type of atomic memory operation
-    -- out-of-band signals --
     lock  : std_ulogic; -- set if contiguous transfer
+    -- out-of-band signals --
     fence : std_ulogic; -- set if fence(.i) operation, single-shot
   end record;
 
