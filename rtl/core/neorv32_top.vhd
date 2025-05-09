@@ -261,7 +261,6 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
   constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
   constant ocd_hwbp_en_c   : boolean := OCD_EN and OCD_HW_BREAKPOINT;
-  constant any_cpu_cache_c : boolean := ICACHE_EN or DCACHE_EN;
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_IMEM_SIZE), MEM_INT_IMEM_SIZE, 2**index_size_f(MEM_INT_IMEM_SIZE));
@@ -607,14 +606,14 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_core_bus_switch_inst: entity neorv32.neorv32_bus_switch
     generic map (
-      ROUND_ROBIN_EN   => any_cpu_cache_c, -- enable locked round-robin to prevent cache burst interleaving
+      ROUND_ROBIN_EN   => false, -- use prioritizing arbitration
       PORT_A_READ_ONLY => false,
       PORT_B_READ_ONLY => true -- instruction fetch is read-only
     )
     port map (
       clk_i   => clk_i,
       rstn_i  => rstn_sys,
-      a_req_i => dcache_req(i), -- data accesses are prioritized if there are no CPU caches
+      a_req_i => dcache_req(i), -- data accesses are prioritized
       a_rsp_o => dcache_rsp(i),
       b_req_i => icache_req(i),
       b_rsp_o => icache_rsp(i),
