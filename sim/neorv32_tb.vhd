@@ -172,7 +172,7 @@ begin
     -- Internal Data memory --
     MEM_INT_DMEM_EN     => MEM_INT_DMEM_EN,
     MEM_INT_DMEM_SIZE   => MEM_INT_DMEM_SIZE,
-    -- CPU Caches --    
+    -- CPU Caches --
     ICACHE_EN           => ICACHE_EN,
     ICACHE_NUM_BLOCKS   => ICACHE_NUM_BLOCKS,
     DCACHE_EN           => DCACHE_EN,
@@ -180,7 +180,7 @@ begin
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
     -- External bus interface --
     XBUS_EN             => true,
-    XBUS_TIMEOUT        => 0,
+    XBUS_TIMEOUT        => 64,
     XBUS_REGSTAGE_EN    => true,
     -- Processor peripherals --
     IO_GPIO_NUM         => 32,
@@ -473,7 +473,7 @@ begin
   xbus_mmio: entity work.xbus_memory
   generic map (
     MEM_SIZE => 8,
-    MEM_LATE => 32,
+    MEM_LATE => 16,
     MEM_FILE => "" -- no initialization
   )
   port map (
