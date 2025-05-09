@@ -477,7 +477,7 @@ exclusive bus access using the lock mechanism. Beyond others, the atomic read-mo
 . When the exclusive access is completed the host clears `lock` after receiving the last `ack` of the transfer ("f").
 . `lock` has to be low for at least one cycle after the last `ack` ("f"). This will release the bus lock.
 
-.Exemplary Read-Write Operation usind the Bus Locking Mechanism
+.Exemplary "Atomic" Read-followed-by-Write Operation using the Bus Locking Mechanism
 [wavedrom, format="svg", align="center"]
 ----
 {signal: [
