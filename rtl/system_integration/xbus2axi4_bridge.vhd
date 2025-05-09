@@ -115,7 +115,7 @@ begin
   -- write data channel --
   m_axi_wdata   <= std_logic_vector(xbus_dat_i);
   m_axi_wstrb   <= std_logic_vector(xbus_sel_i);
-  m_axi_wlast   <= std_logic(wvalid); -- there is only one transfer so it is also the last
+  m_axi_wlast   <= '1'; -- there is only one transfer so it is also the last
   m_axi_wvalid  <= std_logic(wvalid);
 
   -- write response channel --
