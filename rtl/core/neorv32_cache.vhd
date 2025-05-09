@@ -158,7 +158,6 @@ begin
     -- bus interface defaults --
     bus_req_o       <= host_req_i;
     bus_req_o.stb   <= '0'; -- no request by default
-    bus_req_o.lock  <= '0'; -- no locked access
     bus_req_o.fence <= '0'; -- no fence by default
 
     -- fsm --
