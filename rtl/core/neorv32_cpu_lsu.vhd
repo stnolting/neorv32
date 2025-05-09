@@ -108,8 +108,7 @@ begin
   end process mem_do_reg;
 
   -- hardwired signals --
-  dbus_req_o.src  <= '0'; -- always data access
-  dbus_req_o.lock <= '0'; -- always unlocked/single access
+  dbus_req_o.src <= '0'; -- always data access
 
   -- out-of-band signals --
   dbus_req_o.fence <= ctrl_i.lsu_fence;
@@ -118,19 +117,35 @@ begin
   amo_encode: process(ctrl_i.ir_funct12)
   begin
     case ctrl_i.ir_funct12(11 downto 7) is
-      when "00010" => amo_cmd <= "1000"; -- LR
-      when "00011" => amo_cmd <= "1001"; -- SC
-      when "00000" => amo_cmd <= "0001"; -- ADD
-      when "00100" => amo_cmd <= "0010"; -- XOR
-      when "01100" => amo_cmd <= "0011"; -- AND
-      when "01000" => amo_cmd <= "0100"; -- OR
-      when "10000" => amo_cmd <= "1110"; -- MIN
-      when "10100" => amo_cmd <= "1111"; -- MAX
-      when "11000" => amo_cmd <= "0110"; -- MINU
-      when "11100" => amo_cmd <= "0111"; -- MAXU
-      when others  => amo_cmd <= "0000"; -- SWAP
+      when "00010" => amo_cmd <= "1000"; -- Zalrsc.LR
+      when "00011" => amo_cmd <= "1001"; -- Zalrsc.SC
+      when "00000" => amo_cmd <= "0001"; -- Zaamo.ADD
+      when "00100" => amo_cmd <= "0010"; -- Zaamo.XOR
+      when "01100" => amo_cmd <= "0011"; -- Zaamo.AND
+      when "01000" => amo_cmd <= "0100"; -- Zaamo.OR
+      when "10000" => amo_cmd <= "1110"; -- Zaamo.MIN
+      when "10100" => amo_cmd <= "1111"; -- Zaamo.MAX
+      when "11000" => amo_cmd <= "0110"; -- Zaamo.MINU
+      when "11100" => amo_cmd <= "0111"; -- Zaamo.MAXU
+      when others  => amo_cmd <= "0000"; -- Zaamo.SWAP
     end case;
   end process;
+
+
+  -- Bus-Locking (for atomic read-modify-write operations) ----------------------------------
+  -- -------------------------------------------------------------------------------------------
+  bus_lock: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      dbus_req_o.lock <= '0';
+    elsif rising_edge(clk_i) then
+      if (ctrl_i.lsu_mo_we = '1') and (ctrl_i.lsu_amo = '1') and (ctrl_i.ir_funct12(8) = '0') then
+        dbus_req_o.lock <= '1'; -- set if Zaamo instruction
+      elsif (pending = '0') then
+        dbus_req_o.lock <= '0'; -- clear at the end of the bus access
+      end if;
+    end if;
+  end process bus_lock;
 
 
   -- Data Input: Alignment and Sign-Extension -----------------------------------------------

@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 09.05.2025 | 1.11.4.2 | rework locking of processor-internal bus; bus locking is now implemented for the entire bus infrastructure | [#1260](https://github.com/stnolting/neorv32/pull/1260) |
 | 04.05.2025 | 1.11.4.1 | rework I/D-cache architecture: switch from "write-allocate & write-back" to "write-through" | [#1259](https://github.com/stnolting/neorv32/pull/1259) |
 | 04.05.2025 | [**:rocket:1.11.4**](https://github.com/stnolting/neorv32/releases/tag/v1.11.4) | **New release** | |
 | 03.05.2025 | 1.11.3.10 | :warning: rework cache configuration options | [#1257](https://github.com/stnolting/neorv32/pull/1257) |

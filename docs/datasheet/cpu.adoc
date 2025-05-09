@@ -433,13 +433,13 @@ The figure below shows three exemplary single-access bus transactions:
     {name: 'data',  wave: 'x..|..4.x..|..', data: ['wdata']},
     {name: 'ben',   wave: 'x..|..4.x..|..', data: ['ben']},
     {name: 'stb',   wave: '010|..10.10|..', node: '.a....c..e....'},
-    {name: 'rw',    wave: 'x0.|.x1.x0.|..', node: '..............'},
+    {name: 'rw',    wave: 'x0.|.x1.x0.|.x', node: '..............'},
     {name: 'src',   wave: 'x0.|.x0.x0.|.x'},
     {name: 'priv',  wave: 'x1.|.x1.x1.|.x'},
     {name: 'debug', wave: 'x0.|.x0.x0.|.x'},
     {name: 'amo',   wave: 'x0.|.x0.x0.|.x'},
     {name: 'amoop', wave: 'x..|.......|..'},
-    {name: 'lock',  wave: '0..|.......|..'},
+    {name: 'lock',  wave: 'x0.|.......|.x'},
     {name: 'fence', wave: '0..|.......|..'},
   ],
   {},
@@ -461,12 +461,63 @@ additional latency). However, _all_ bus signals (request and response) need to b
 
 
 :sectnums:
+==== Locked Bus Accesses
+
+Access hosts like the CPU or the caches can request exclusive access to the downstream bus infrastructure using
+the "bus lock" mechanism. While the bus is locked the locking host has exclusive access and can issue an arbitrary
+number of transfers that cannot be interleaved by any other host.
+
+The following figure shows a simplified read-followed-by-write transaction implemented as uninterruptible
+exclusive bus access using the lock mechanism. Beyond others, the atomic read-modify-write operations use this concept.
+
+[start=1]
+. The lock request is sent by setting `lock` together with the first `stb` ("a"). `lock` stays high until the end of the entire read-write transfer.
+. The bus is locked when the bus returns the first `ack` ("c").
+. Now the host can send further requests using `stb` ("d").
+. When the exclusive access is completed the host clears `lock` after receiving the last `ack` of the transfer ("f").
+. `lock` has to be low for at least one cycle after the last `ack` ("f"). This will release the bus lock.
+
+.Exemplary "Atomic" Read-followed-by-Write Operation using the Bus Locking Mechanism
+[wavedrom, format="svg", align="center"]
+----
+{signal: [
+  {name: 'clk', wave: 'p......'},
+  [
+    "request",
+    {name: 'addr',  wave: 'x3.4.x.'},
+    {name: 'data',  wave: 'x..4.x.'},
+    {name: 'ben',   wave: 'x..4.x.'},
+    {name: 'stb',   wave: '01010..', node: '.a.d'},
+    {name: 'rw',    wave: 'x0.1.x.'},
+    {name: 'src',   wave: 'x0...x.'},
+    {name: 'priv',  wave: 'x1...x.'},
+    {name: 'debug', wave: 'x0...x.'},
+    {name: 'amo',   wave: 'x0...x.'},
+    {name: 'amoop', wave: 'x......'},
+    {name: 'lock',  wave: 'x1...0x', node: '.b...f'},
+    {name: 'fence', wave: '0......'},
+  ],
+  {},
+  [
+    "response",
+    {name: 'ack',  wave: '0.1010.', node: '..c.eg'},
+    {name: 'err',  wave: 'x.0x0x.'},
+    {name: 'data', wave: 'x.3x...'},
+  ]
+],
+ edge: ['ab', 'a~>c', 'c~>d', 'd~>e', 'e~>f', 'fg']
+}
+----
+
+
+:sectnums:
 ==== Atomic Memory Access
 
 As the <<_bus_interface_protocol>> only supports read-or-write operations, all atomic memory requests are
 handled by a dedicated module of the bus infrastructure - the <<_atomic_memory_operations_controller>>.
 For the CPU, the atomic memory accesses are handled as plain load/store operation but with the `amo` signal set.
-The `amoop` signal specifies the actual atomic processing operation:
+Read-modify-write operation from the <<_zaamo_isa_extension,`Zaamo`>> ISa extension will also force exclusive bus
+access by setting the `lock` signal. The `amoop` signal specifies the actual atomic processing operation:
 
 .AMO Operation Type Encoding (Bus Interface Signals)
 [cols="<2,<4,<4"]

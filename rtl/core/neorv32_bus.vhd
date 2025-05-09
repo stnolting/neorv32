@@ -36,7 +36,8 @@ architecture neorv32_bus_switch_rtl of neorv32_bus_switch is
 
   type state_t is (S_IDLE, S_BUSY_A, S_BUSY_B);
   signal state, state_nxt : state_t;
-  signal prio, prio_nxt, a_req, b_req, sel, stb : std_ulogic;
+  signal a_req, b_req, sel, sel_q, stb : std_ulogic;
+  signal locked, locked_nxt : std_ulogic_vector(1 downto 0);
 
 begin
 
@@ -45,13 +46,15 @@ begin
   arbiter_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      state <= S_IDLE;
-      prio  <= '0';
-      a_req <= '0';
-      b_req <= '0';
+      state  <= S_IDLE;
+      sel_q  <= '0';
+      locked <= "00";
+      a_req  <= '0';
+      b_req  <= '0';
     elsif rising_edge(clk_i) then
-      state <= state_nxt;
-      prio  <= prio_nxt;
+      state  <= state_nxt;
+      sel_q  <= sel;
+      locked <= locked_nxt;
       if (state = S_BUSY_A) then -- clear request
         a_req <= '0';
       else -- buffer request
@@ -68,36 +71,45 @@ begin
 
   -- Access Arbiter Comb --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  arbiter_fsm: process(state, prio, a_req, b_req, a_req_i, b_req_i, x_rsp_i)
+  arbiter_fsm: process(state, locked, sel_q, a_req, b_req, a_req_i, b_req_i, x_rsp_i)
   begin
     -- defaults --
-    state_nxt <= state;
-    prio_nxt  <= prio;
-    sel       <= '0';
-    stb       <= '0';
+    state_nxt  <= state;
+    locked_nxt <= locked;
+    sel        <= '0';
+    stb        <= '0';
 
     -- state machine --
     case state is
 
       when S_BUSY_A => -- port A access in progress
       -- ------------------------------------------------------------
-        sel      <= '0';
-        prio_nxt <= a_req_i.lock; -- if locked: give port A prioritized access in the next cycle
-        if (x_rsp_i.ack = '1') then
+        sel <= '0';
+        if (locked(0) = '1') then -- port A has exclusive access until the lock is released
+          stb <= a_req_i.stb; -- allow further transfer requests from port A
+          if (a_req_i.lock = '0') then -- lock is released
+            state_nxt <= S_IDLE;
+          end if;
+        elsif (x_rsp_i.ack = '1') then -- single-access: terminate when receiving ACK
           state_nxt <= S_IDLE;
         end if;
 
       when S_BUSY_B => -- port B access in progress
       -- ------------------------------------------------------------
-        sel      <= '1';
-        prio_nxt <= not b_req_i.lock; -- if locked: give port B prioritized access in the next cycle
-        if (x_rsp_i.ack = '1') then
+        sel <= '1';
+        if (locked(1) = '1') then -- port B has exclusive access until the lock is released
+          stb <= b_req_i.stb; -- allow further transfer requests from port B
+          if (b_req_i.lock = '0') then -- lock is released
+            state_nxt <= S_IDLE;
+          end if;
+        elsif (x_rsp_i.ack = '1') then -- single-access: terminate when receiving ACK
           state_nxt <= S_IDLE;
         end if;
 
       when others => -- wait for requests
       -- ------------------------------------------------------------
-        if (prio = '1') or (ROUND_ROBIN_EN = false) then
+        locked_nxt <= b_req_i.lock & a_req_i.lock;
+        if (sel_q = '1') or (not ROUND_ROBIN_EN) then
           if (a_req_i.stb = '1') or (a_req = '1') then -- request from port A (prioritized)?
             sel       <= '0';
             stb       <= '1';
@@ -209,8 +221,8 @@ begin
         if (host_req_i.stb = '1') then -- reduce switching activity on downstream bus system
           device_req_o <= host_req_i;
         end if;
-        device_req_o.stb   <= host_req_i.stb;
-        device_req_o.lock  <= host_req_i.lock; -- out-of-band signal
+        device_req_o.stb   <= host_req_i.stb; -- access control signal
+        device_req_o.lock  <= host_req_i.lock; -- access control signal
         device_req_o.fence <= host_req_i.fence; -- out-of-band signal
       end if;
     end process request_reg;

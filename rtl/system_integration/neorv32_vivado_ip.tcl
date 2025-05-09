@@ -284,7 +284,7 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {CPU Caches}]
   add_params $group {
-    { CACHE_BLOCK_SIZE  {Cache line size} {In bytes (use a power of two)} }
+    { CACHE_BLOCK_SIZE  {Cache line size} {In bytes; has to be a power a power of two} }
     { ICACHE_EN         {Enable instruction cache (I-cache)} }
     { ICACHE_NUM_BLOCKS {Number of I-cache lines} {} {$ICACHE_EN} }
     { DCACHE_EN         {Enable data cache (D-cache)} }
