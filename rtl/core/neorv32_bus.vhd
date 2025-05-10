@@ -342,6 +342,7 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   -- bus monitor --
   type keeper_t is record
     busy : std_ulogic;
+    lock : std_ulogic;
     cnt  : std_ulogic_vector(index_size_f(TIMEOUT) downto 0);
     err  : std_ulogic;
     halt : std_ulogic;
@@ -406,6 +407,7 @@ begin
   begin
     if (rstn_i = '0') then
       keeper.busy <= '0';
+      keeper.lock <= '0';
       keeper.cnt  <= (others => '0');
       keeper.err  <= '0';
       keeper.halt <= '0';
@@ -415,12 +417,13 @@ begin
       if (keeper.busy = '0') then -- bus idle
         keeper.cnt  <= (others => '0');
         keeper.busy <= req_i.stb;
+        keeper.lock <= req_i.lock;
       else -- bus access in progress
         keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1);
         if ((keeper.cnt(keeper.cnt'left) = '1') and (keeper.halt = '0')) then -- timeout
           keeper.err  <= '1';
           keeper.busy <= '0';
-        elsif (int_rsp.ack = '1') then -- normal access termination
+        elsif (int_rsp.ack = '1') or ((keeper.lock = '1') and (req_i.lock = '0')) then -- normal access termination
           keeper.busy <= '0';
         end if;
       end if;

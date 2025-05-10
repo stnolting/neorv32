@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110402"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110403"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -91,9 +91,9 @@ package neorv32_package is
   constant base_io_sysinfo_c    : std_ulogic_vector(31 downto 0) := x"fffe0000";
   constant base_io_ocd_c        : std_ulogic_vector(31 downto 0) := x"ffff0000";
 
-  -- On-Chip Debugger - Debug Module Entry Points (Code ROM) --
+  -- On-Chip Debugger - debug module entry points (code ROM) --
   constant dm_exc_entry_c  : std_ulogic_vector(31 downto 0) := x"fffffe00"; -- = base_io_ocd_c + code_rom_base + 0
-  constant dm_park_entry_c : std_ulogic_vector(31 downto 0) := x"fffffe10"; -- = base_io_ocd_c + code_rom_base + 16
+  constant dm_park_entry_c : std_ulogic_vector(31 downto 0) := x"fffffe04"; -- = base_io_ocd_c + code_rom_base + 4
 
 -- **********************************************************************************************************
 -- SoC Definitions

@@ -130,8 +130,9 @@ int main(void) {
   // ------------------------------------------------
 
 #if (AUTO_BOOT_EN != 0)
-  uart_puts("Autoboot in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
+  uart_puts("Auto-boot");
   if (neorv32_clint_available()) {
+    uart_puts(" in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
     uint64_t timeout_time = neorv32_clint_time_get() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO->CLK);
     while (1) {
 
@@ -150,6 +151,7 @@ int main(void) {
       }
     }
   }
+  uart_puts("\n");
 
   // try booting from SPI flash
 #if (SPI_EN != 0)

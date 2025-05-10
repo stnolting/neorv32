@@ -38,18 +38,15 @@ _ocd_start:
 
 // BASE + 0: exception entry - exeption during program buffer execution
 entry_exception:
-  fence                                       // debug-mode is bypassing the caches so make sure they're sync with main memory
   sw      zero, (DM_SREG_BASE+ACK_EXC)(zero)  // send exception-acknowledge (no need for a hart ID)
-  j       entry_park                          // enter park loop
-  nop                                         // dummy to align the address of "entry_park"
 
-// BASE + 16: normal entry - halt CPU: ebreak in debug-mode, halt request or return from single-stepped instruction
+// BASE + 4: normal entry - halt CPU: ebreak in debug-mode, halt request or return from single-stepped instruction
 entry_park:
   csrw    dscratch0, x8                       // backup x8 to dscratch0 so we have a GPR available
   csrr    x8, mhartid                         // get hart ID
   sw      x8, (DM_SREG_BASE+ACK_HLT)(zero)    // send halt-acknowledge
 
-// polling loop - waiting for requests
+// polling loop (wait for debugger requests)
 park_loop:
   csrr    x8, mhartid                         // get hart ID
   lbu     x8, DM_SREG_BASE(x8)                // read hart-specific byte from request register
@@ -61,12 +58,13 @@ park_loop:
   andi    x8, x8, 1 << REQ_RES                // resume-request bit set?
   beqz    x8, park_loop
 
-// resume normal operation
+// resume normal operation (exit debug mode)
 exit_resume:
   csrr    x8, mhartid                         // get hart ID
   sw      x8, (DM_SREG_BASE+ACK_RES)(zero)    // send resume-acknowledge
   csrr    x8, dscratch0                       // restore x8 from dscratch0
-  fence.i                                     // reload caches in case we have modified (main) memory
+  fence                                       // synchronize d-cache and main memory
+  fence.i                                     // synchronize i-cache and main memory
   dret                                        // exit debug mode
 
 // execute program buffer (implicit ebreak at the end of the buffer will bring us back to "entry_park")
@@ -78,6 +76,8 @@ exit_execute:
 
 // fill remaining ROM space with instructions that cause a debug-mode-internal exception; this should never be reached
 terminate:
+  ecall
+  ecall
   ecall
   ecall
   ecall
