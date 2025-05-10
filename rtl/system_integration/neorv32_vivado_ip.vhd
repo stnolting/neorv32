@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 - Processor Top Entity with AXI4 & AXI4-Stream Compatible Interface      --
+-- NEORV32 - Processor Wrapper with AXI4 & AXI4-Stream Compatible Interfaces        --
 -- -------------------------------------------------------------------------------- --
 -- Dedicated for IP packaging/integration using AMD Vivado.                         --
 -- Use the provided TCL script to automatically package this as IP module:          --
@@ -141,8 +141,8 @@ entity neorv32_vivado_ip is
     -- AXI4 Host Interface (available if XBUS_EN = true)
     -- ------------------------------------------------------------
     -- Clock and Reset --
---  m_axi_aclk     : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
---  m_axi_aresetn  : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
+--  m_axi_aclk     : in  std_logic := '0'; -- just to satisfy Vivado
+--  m_axi_aresetn  : in  std_logic := '0'; -- just to satisfy Vivado
     -- Write Address Channel --
     m_axi_awaddr   : out std_logic_vector(31 downto 0);
     m_axi_awlen    : out std_logic_vector(7 downto 0);
@@ -181,14 +181,14 @@ entity neorv32_vivado_ip is
     -- AXI4-Stream Interfaces (available if IO_SLINK_EN = true)
     -- ------------------------------------------------------------
     -- Source --
---  s0_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
+--  s0_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado
     s0_axis_tdest  : out std_logic_vector(3 downto 0);
     s0_axis_tvalid : out std_logic;
     s0_axis_tready : in  std_logic := '0';
     s0_axis_tdata  : out std_logic_vector(31 downto 0);
     s0_axis_tlast  : out std_logic;
     -- Sink --
---  s1_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado, but not actually used
+--  s1_axis_aclk   : in  std_logic := '0'; -- just to satisfy Vivado
     s1_axis_tid    : in  std_logic_vector(3 downto 0) := x"0";
     s1_axis_tvalid : in  std_logic := '0';
     s1_axis_tready : out std_logic;
@@ -261,9 +261,14 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   -- auto-configuration --
   constant num_gpio_c : natural := cond_sel_natural_f(IO_GPIO_EN, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
   constant num_pwm_c  : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM_CH, 0);
+  constant burst_en_c : boolean := ICACHE_EN or DCACHE_EN; -- any cache bursts?
 
   -- AXI4 bridge --
   component xbus2axi4_bridge
+  generic (
+    BURST_EN  : boolean; -- enable burst transfers
+    BURST_LEN : natural range 4 to 1024 -- bytes per burst, has to be a multiple of 4
+  );
   port (
     -- Global control
     clk           : in  std_logic;
@@ -271,6 +276,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
     -- XBUS device interface --
     xbus_adr_i    : in  std_ulogic_vector(31 downto 0);
     xbus_dat_i    : in  std_ulogic_vector(31 downto 0);
+    xbus_cti_i    : in  std_ulogic_vector(2 downto 0);
     xbus_tag_i    : in  std_ulogic_vector(2 downto 0);
     xbus_we_i     : in  std_ulogic;
     xbus_sel_i    : in  std_ulogic_vector(3 downto 0);
@@ -337,16 +343,9 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal gpio_i_aux : std_ulogic_vector(31 downto 0);
   signal pwm_o_aux  : std_ulogic_vector(15 downto 0);
 
-  -- internal wishbone bus --
-  signal xbus_adr : std_ulogic_vector(31 downto 0); -- address
-  signal xbus_do  : std_ulogic_vector(31 downto 0); -- write data
-  signal xbus_tag : std_ulogic_vector(2 downto 0);  -- access tag
-  signal xbus_we  : std_ulogic;                     -- read/write
-  signal xbus_sel : std_ulogic_vector(3 downto 0);  -- byte enable
-  signal xbus_stb : std_ulogic;                     -- strobe
-  signal xbus_di  : std_ulogic_vector(31 downto 0); -- read data
-  signal xbus_ack : std_ulogic;                     -- transfer acknowledge
-  signal xbus_err : std_ulogic;                     -- transfer error
+  -- internal xbus --
+  signal xbus_req : xbus_req_t;
+  signal xbus_rsp : xbus_rsp_t;
 
 begin
 
@@ -408,7 +407,7 @@ begin
     -- Internal Data memory --
     MEM_INT_DMEM_EN     => MEM_INT_DMEM_EN,
     MEM_INT_DMEM_SIZE   => MEM_INT_DMEM_SIZE,
-    -- CPU Caches --    
+    -- CPU Caches --
     ICACHE_EN           => ICACHE_EN,
     ICACHE_NUM_BLOCKS   => ICACHE_NUM_BLOCKS,
     DCACHE_EN           => DCACHE_EN,
@@ -468,16 +467,17 @@ begin
     jtag_tdo_o     => jtag_tdo_aux,
     jtag_tms_i     => std_ulogic(jtag_tms_i),
     -- External bus interface (available if XBUS_EN = true) --
-    xbus_adr_o     => xbus_adr,
-    xbus_dat_o     => xbus_do,
-    xbus_tag_o     => xbus_tag,
-    xbus_we_o      => xbus_we,
-    xbus_sel_o     => xbus_sel,
-    xbus_stb_o     => xbus_stb,
-    xbus_cyc_o     => open,
-    xbus_dat_i     => xbus_di,
-    xbus_ack_i     => xbus_ack,
-    xbus_err_i     => xbus_err,
+    xbus_adr_o     => xbus_req.addr,
+    xbus_dat_o     => xbus_req.data,
+    xbus_cti_o     => xbus_req.cti,
+    xbus_tag_o     => xbus_req.tag,
+    xbus_we_o      => xbus_req.we,
+    xbus_sel_o     => xbus_req.sel,
+    xbus_stb_o     => xbus_req.stb,
+    xbus_cyc_o     => xbus_req.cyc,
+    xbus_dat_i     => xbus_rsp.data,
+    xbus_ack_i     => xbus_rsp.ack,
+    xbus_err_i     => xbus_rsp.err,
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i => std_ulogic_vector(s1_axis_tdata),
     slink_rx_src_i => std_ulogic_vector(s1_axis_tid),
@@ -543,10 +543,10 @@ begin
 
   -- Type Conversion (Outputs) --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ocd_resetn     <= std_logic(rstn_ocd);
-  wdt_resetn     <= std_logic(rstn_wdt);
+  ocd_resetn <= std_logic(rstn_ocd);
+  wdt_resetn <= std_logic(rstn_wdt);
 
-  jtag_tdo_o     <= std_logic(jtag_tdo_aux);
+  jtag_tdo_o <= std_logic(jtag_tdo_aux);
 
   s1_axis_tready <= std_logic(s1_axis_tready_aux);
   s0_axis_tdata  <= std_logic_vector(s0_axis_tdata_aux);
@@ -554,33 +554,34 @@ begin
   s0_axis_tvalid <= std_logic(s0_axis_tvalid_aux);
   s0_axis_tlast  <= std_logic(s0_axis_tlast_aux);
 
-  uart0_txd_o    <= std_logic(uart0_txd_aux);
-  uart0_rtsn_o   <= std_logic(uart0_rtsn_aux);
-  uart1_txd_o    <= std_logic(uart1_txd_aux);
-  uart1_rtsn_o   <= std_logic(uart1_rtsn_aux);
+  uart0_txd_o  <= std_logic(uart0_txd_aux);
+  uart0_rtsn_o <= std_logic(uart0_rtsn_aux);
 
-  spi_clk_o      <= std_logic(spi_clk_aux);
-  spi_dat_o      <= std_logic(spi_do_aux);
-  spi_csn_o      <= std_logic_vector(spi_csn_aux);
+  uart1_txd_o  <= std_logic(uart1_txd_aux);
+  uart1_rtsn_o <= std_logic(uart1_rtsn_aux);
 
-  sdi_dat_o      <= std_logic(sdi_do_aux);
+  spi_clk_o <= std_logic(spi_clk_aux);
+  spi_dat_o <= std_logic(spi_do_aux);
+  spi_csn_o <= std_logic_vector(spi_csn_aux);
 
-  twi_sda_o      <= std_logic(twi_sda_o_aux);
-  twi_scl_o      <= std_logic(twi_scl_o_aux);
+  sdi_dat_o <= std_logic(sdi_do_aux);
 
-  twd_sda_o      <= std_logic(twd_sda_o_aux);
-  twd_scl_o      <= std_logic(twd_scl_o_aux);
+  twi_sda_o <= std_logic(twi_sda_o_aux);
+  twi_scl_o <= std_logic(twi_scl_o_aux);
 
-  onewire_o      <= std_logic(onewire_o_aux);
+  twd_sda_o <= std_logic(twd_sda_o_aux);
+  twd_scl_o <= std_logic(twd_scl_o_aux);
 
-  cfs_out_o      <= std_logic_vector(cfs_out_aux);
+  onewire_o <= std_logic(onewire_o_aux);
 
-  neoled_o       <= std_logic(neoled_aux);
+  cfs_out_o <= std_logic_vector(cfs_out_aux);
 
-  mtime_time_o   <= std_logic_vector(mtime_time_aux);
+  neoled_o <= std_logic(neoled_aux);
+
+  mtime_time_o <= std_logic_vector(mtime_time_aux);
 
 
-  -- Type Conversion (Constrained Size Ports) -----------------------------------------------
+  -- Type Conversion (Constrained-Size Ports) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
   -- GPIO input --
@@ -610,20 +611,25 @@ begin
   axi4_bridge:
   if XBUS_EN generate
     axi4_bridge_inst: xbus2axi4_bridge
+    generic map (
+      BURST_EN  => burst_en_c,
+      BURST_LEN => CACHE_BLOCK_SIZE
+    )
     port map (
       -- Global control --
       clk           => clk,
       resetn        => resetn,
       -- XBUS device interface --
-      xbus_adr_i    => xbus_adr,
-      xbus_dat_i    => xbus_do,
-      xbus_tag_i    => xbus_tag,
-      xbus_we_i     => xbus_we,
-      xbus_sel_i    => xbus_sel,
-      xbus_stb_i    => xbus_stb,
-      xbus_ack_o    => xbus_ack,
-      xbus_err_o    => xbus_err,
-      xbus_dat_o    => xbus_di,
+      xbus_adr_i    => xbus_req.addr,
+      xbus_dat_i    => xbus_req.data,
+      xbus_cti_i    => xbus_req.cti,
+      xbus_tag_i    => xbus_req.tag,
+      xbus_we_i     => xbus_req.we,
+      xbus_sel_i    => xbus_req.sel,
+      xbus_stb_i    => xbus_req.stb,
+      xbus_ack_o    => xbus_rsp.ack,
+      xbus_err_o    => xbus_rsp.err,
+      xbus_dat_o    => xbus_rsp.data,
       -- AXI4 host write address channel --
       m_axi_awaddr  => m_axi_awaddr,
       m_axi_awlen   => m_axi_awlen ,
