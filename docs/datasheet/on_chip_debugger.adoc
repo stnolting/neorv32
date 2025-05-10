@@ -526,9 +526,9 @@ has occurred while executing code in debug mode (from the profram buffer).
 [cols="^6,<4"]
 [options="header",grid="rows"]
 |=======================
-| Address                                 | Description
-| `dm_exc_entry_c`  (`base_io_dm_c` +  0) | Exception entry address
-| `dm_park_entry_c` (`base_io_dm_c` + 16) | Normal entry address (halt request)
+| Address                                | Description
+| `dm_exc_entry_c`  (`base_io_dm_c` + 0) | Exception entry address
+| `dm_park_entry_c` (`base_io_dm_c` + 4) | Normal entry address (halt request)
 |=======================
 
 When the CPU enters (via an explicit halt request from the debugger) or re-enters debug mode (for example via an
@@ -687,8 +687,6 @@ asynchronous interrupts) that are handled transparently by the control logic.
 **When the CPU is in debug-mode:**
 
 * while in debug mode, the CPU executes the parking loop and - if requested by the DM - the program buffer
-* all **caches are bypassed** when in debug-mode; hence, a <<_memory_coherence>> has to be re-established when entering debug-mode
-and when leaving debug-mode
 * effective CPU privilege level is `machine` mode; any active physical memory protection (PMP) configuration is bypassed
 * the `wfi` instruction acts as a `nop` (also during single-stepping)
 * if an exception occurs while being in debug mode:
