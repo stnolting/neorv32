@@ -29,6 +29,7 @@
 char access_size;
 
 // Prototypes
+void set_memory(uint32_t address, uint32_t num, int data);
 void read_memory(uint32_t address);
 void setup_access(void);
 void write_memory(uint32_t address, uint32_t data);
@@ -87,31 +88,47 @@ int main() {
     char* command;
     char* arg0;
     char* arg1;
+    char* arg2;
 
     command = strtok(buffer, strtok_delimiter);
     arg0 = strtok(NULL, strtok_delimiter);
     arg1 = strtok(NULL, strtok_delimiter);
+    arg2 = strtok(NULL, strtok_delimiter);
 
     // decode input and execute command
     if ((!strcmp(command, "help")) || (command == NULL)) {
       neorv32_uart0_printf(
         "Available commands:\n"
-        " help                   - show this text\n"
-        " setup                  - configure memory access width (byte,half,word)\n"
-        " read <address>         - read from address (byte,half,word)\n"
-        " write <address> <data> - write data to address (byte,half,word)\n"
-        " dump <address>         - dump several bytes/halfs/words from base address\n"
-        " hex <address>          - hex dump (bytes + ASCII) from base address\n"
-        " fence                  - synchronize with main memory\n"
+        " help                         - show this text\n"
+        " setup                        - configure memory access width (byte,half,word)\n"
+        " set [address] [num] [value]  - write [value] [num] times to memory starting at [address]\n"
+        " read [address]               - read data from [address]\n"
+        " write [address] [data]       - write [data] to [address]\n"
+        " dump [address]               - dump several bytes/halfs/words starting at [address]\n"
+        " hex [address]                - hex dump (bytes + ASCII) starting at [address]\n"
+        " fence                        - synchronize with main memory\n"
         "\n"
-        "NOTE: <address> and <data> are hexadecimal numbers without prefix.\n"
-        "Example: write 80000020 feedcafe\n"
-        "Example: read 00000460\n"
+        "NOTE: [address], [data] and [num] are 32-bit hexadecimal numbers without prefix.\n"
+        "Examples:\n"
+        " write 80000020 feedcafe\n"
+        " Example: read 00000460\n"
+        " Example: set 80000100 100 deadc0de\n\n"
       );
     }
 
     else if (!strcmp(command, "setup")) {
       setup_access();
+    }
+
+    else if (!strcmp(command, "set")) {
+      if ((arg0 == NULL) || (arg1 == NULL) || (arg2 == NULL)) {
+        neorv32_uart0_printf("Insufficient arguments.\n");
+      }
+      else {
+        set_memory((uint32_t)neorv32_aux_hexstr2uint64(arg0, 8),
+                   (uint32_t)neorv32_aux_hexstr2uint64(arg1, 8),
+                   (uint32_t)neorv32_aux_hexstr2uint64(arg2, 8));
+      }
     }
 
     else if (!strcmp(command, "read")) {
@@ -128,7 +145,8 @@ int main() {
         neorv32_uart0_printf("Insufficient arguments.\n");
       }
       else {
-        write_memory((uint32_t)neorv32_aux_hexstr2uint64(arg0, 8), (uint32_t)neorv32_aux_hexstr2uint64(arg1, 8));
+        write_memory((uint32_t)neorv32_aux_hexstr2uint64(arg0, 8),
+                     (uint32_t)neorv32_aux_hexstr2uint64(arg1, 8));
       }
     }
 
@@ -190,6 +208,43 @@ void setup_access(void) {
     }
     else {
       neorv32_uart0_printf("\nInvalid selection!\n");
+    }
+  }
+}
+
+
+/**********************************************************************//**
+ * Fill memory range with specific value
+ **************************************************************************/
+void set_memory(uint32_t address, uint32_t num, int value) {
+
+  if (access_size == 0) {
+    neorv32_uart0_printf("Configure data size using 'setup' first.\n");
+    return;
+  }
+
+  neorv32_uart0_printf("Writing %u times '0x%x' starting at address 0x%x.\n", num, value, address);
+  neorv32_uart0_printf("Press any key to start. Then, press any key to abort.\n");
+  neorv32_uart0_getc(); // wait for key
+
+  uint32_t i = 0;
+  for (i=0; i<num; i++) {
+    if (access_size == 'b') {
+      neorv32_cpu_store_unsigned_byte(address, (uint8_t)value);
+      address += 1;
+    }
+    else if (access_size == 'h') {
+      neorv32_cpu_store_unsigned_half(address, (uint16_t)value);
+      address += 2;
+    }
+    else if (access_size == 'w') {
+      neorv32_cpu_store_unsigned_word(address, (uint32_t)value);
+      address += 4;
+    }
+    neorv32_uart0_printf("[0x%x] <= 0x%x\n", address, i);
+    if (neorv32_uart0_char_received()) {
+      neorv32_uart0_char_received_get();
+      return;
     }
   }
 }
@@ -285,7 +340,8 @@ void dump_memory(uint32_t address) {
     return;
   }
 
-  neorv32_uart0_printf("Press key to start dumping. Press any key to abort.\n");
+  neorv32_uart0_printf("Dumping bytes starting from address 0x%x.\n", address);
+  neorv32_uart0_printf("Press any key to start. Then, press any key to s.\n");
   neorv32_uart0_getc(); // wait for key
 
   // perform read accesses
