@@ -31,6 +31,7 @@ entity neorv32_xbus is
     xbus_adr_o : out std_ulogic_vector(31 downto 0); -- address
     xbus_dat_i : in  std_ulogic_vector(31 downto 0); -- read data
     xbus_dat_o : out std_ulogic_vector(31 downto 0); -- write data
+    xbus_cti_o : out std_ulogic_vector(2 downto 0); -- cycle type
     xbus_tag_o : out std_ulogic_vector(2 downto 0); -- access tag
     xbus_we_o  : out std_ulogic; -- read/write
     xbus_sel_o : out std_ulogic_vector(3 downto 0); -- byte enable
@@ -144,6 +145,11 @@ begin
   xbus_sel_o <= bus_req.ben;
   xbus_stb_o <= bus_req.stb;
   xbus_cyc_o <= bus_req.stb or pending;
+
+  -- cycle type identifier (for the ENTIRE access; no burst termination type supported!) --
+  xbus_cti_o <= "001" when (bus_req.amo = '1') else -- constant address burst
+                "010" when (bus_req.lock = '1') else -- incrementing address burst
+                "000"; -- single access
 
   -- access meta data (compatible to AXI4 "xPROT") --
   xbus_tag_o(2) <= bus_req.src; -- 0 = data access, 1 = instruction fetch
