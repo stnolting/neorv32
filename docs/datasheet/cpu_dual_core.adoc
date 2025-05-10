@@ -46,7 +46,7 @@ sections at boot-up.
 | **Cache layout** | If enabled, each CPU core has its own data and/or instruction cache.
 | **Cache coherency** | Be aware that there is no cache snooping available. If any CPU1 cache is enabled
 care must be taken to prevent access to outdated data - either by using cache synchronization (`fence` / `fence.i`
-instructions) or by using <<_atomic_memory_access>>. See <<_memory_coherence>> for more information.
+instructions) or by using atomic memory accesses. See <<_memory_coherence>> for more information.
 | **Inter-core communication** | See section <<_inter_core_communication_icc>>.
 | **Bootloader** | Only core 0 will boot and execute the bootloader while core 1 is held in standby.
 | **Booting** | See section <<_dual_core_boot>>.
