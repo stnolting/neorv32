@@ -372,6 +372,11 @@ signals always belong to a certain bus transaction and are valid between `stb` (
 `err` or `ack` (response) being set. In contrast, the out-of-band signals are not associated with any bus transaction
 and are always valid when set.
 
+.Adding Register Stages
+[TIP]
+Arbitrary pipeline stages can be added to the request and response buses at any point to relax timing (at the cost of
+additional latency). However, _all_ bus signals (request and response) need to be registered.
+
 .Bus Interface - Request Bus (`bus_req_t`)
 [cols="^1,^1,<6"]
 [options="header",grid="rows"]
@@ -386,8 +391,8 @@ and are always valid when set.
 | `src`   |     1 | Access source (`0` = instruction fetch, `1` = load/store).
 | `priv`  |     1 | Set if privileged (Machine-mode) access.
 | `debug` |     1 | Set if debug-mode access (access from the on-chip debugger).
-| `amo`   |     1 | Set if current access is an atomic memory operation (<<_atomic_memory_access>>).
-| `amoop` |     4 | Actual type of atomic memory operation (<<_atomic_memory_access>>). Irrelevant if `amo` is not set.
+| `amo`   |     1 | Set if current access is an atomic memory operation.
+| `amoop` |     4 | Actual type of atomic memory operation. Irrelevant if `amo` is not set.
 | `lock`  |     1 | Set if contiguous transfer; the current transfer is part of a group of transfers that should not be interleaved. This signal is relevant for the interconnect / bus system only.
 3+^| **Out-Of-Band Signals**
 | `fence` |     1 | Data (load/store; `fence`) or instruction (instruction-fetch; `fence.i`) fence request; single-shot; see <<_memory_coherence>>.
@@ -422,7 +427,7 @@ The figure below shows three exemplary single-access bus transactions:
 . A write access to address `B_addr` writing `wdata` (fastest response; `ACK` arrives right in the next cycle).
 . A failing read access to address `C_addr` (slow response; `ERR` arrives after several cycles).
 
-.Three Exemplary Bus Transactions (privileged non-locked non-debug non-atomic accesses)
+.Three Exemplary **Single-Access** Transactions
 [wavedrom, format="svg", align="center"]
 ----
 {signal: [
@@ -454,93 +459,73 @@ The figure below shows three exemplary single-access bus transactions:
 }
 ----
 
-.Adding Register Stages
-[TIP]
-Arbitrary pipeline stages can be added to the request and response buses at any point to relax timing (at the cost of
-additional latency). However, _all_ bus signals (request and response) need to be registered.
-
-
 :sectnums:
-==== Locked Bus Accesses
+==== Locked Bus Accesses and Bursts
 
-Access hosts like the CPU or the caches can request exclusive access to the downstream bus infrastructure using
-the "bus lock" mechanism. While the bus is locked the locking host has exclusive access and can issue an arbitrary
-number of transfers that cannot be interleaved by any other host.
+Bus hosts like the CPU or the caches can request exclusive access to the downstream bus system using
+the "bus lock" mechanism. When the bus is locked the locking host has exclusive access and can issue an arbitrary
+number of transfers that cannot be interleaved by any other host. This feature is used to implement
+atomic read-modify-write operations and for burst transfers.
 
 The following figure shows a simplified read-followed-by-write transaction implemented as uninterruptible
-exclusive bus access using the lock mechanism. Beyond others, the atomic read-modify-write operations use this concept.
+exclusive bus access and a 4-word incrementing-address read burst.
 
-[start=1]
-. The lock request is sent by setting `lock` together with the first `stb` ("a"). `lock` stays high until the end of the entire read-write transfer.
-. The bus is locked when the bus returns the first `ack` ("c").
-. Now the host can send further requests using `stb` ("d").
-. When the exclusive access is completed the host clears `lock` after receiving the last `ack` of the transfer ("f").
-. `lock` has to be low for at least one cycle after the last `ack` ("f"). This will release the bus lock.
-
-.Exemplary "Atomic" Read-followed-by-Write Operation using the Bus Locking Mechanism
+.**Atomic Access** Transfer (left) and 4-Word Incrementing-Address **Burst Read** Transfer (right)
 [wavedrom, format="svg", align="center"]
 ----
 {signal: [
-  {name: 'clk', wave: 'p......'},
+  {name: 'clk', wave: 'p................'},
   [
     "request",
-    {name: 'addr',  wave: 'x3.4.x.'},
-    {name: 'data',  wave: 'x..4.x.'},
-    {name: 'ben',   wave: 'x..4.x.'},
-    {name: 'stb',   wave: '01010..', node: '.a.d'},
-    {name: 'rw',    wave: 'x0.1.x.'},
-    {name: 'src',   wave: 'x0...x.'},
-    {name: 'priv',  wave: 'x1...x.'},
-    {name: 'debug', wave: 'x0...x.'},
-    {name: 'amo',   wave: 'x0...x.'},
-    {name: 'amoop', wave: 'x......'},
-    {name: 'lock',  wave: 'x1...0x', node: '.b...f'},
-    {name: 'fence', wave: '0......'},
+    {name: 'addr',  wave: 'x3...x.|.4.567x..', data: ['addr', '0', '4', '8', '12']},
+    {name: 'data',  wave: 'x..3.x.|.........', data: ['wdata', '0', '4', '8', '12']},
+    {name: 'ben',   wave: 'x..3.x.|.........'},
+    {name: 'stb',   wave: '01010..|.101..0..', node: '.a.d.....h.k.'},
+    {name: 'rw',    wave: 'x0.1.x.|.0....x..'},
+    {name: 'src',   wave: 'x......|.........'},
+    {name: 'priv',  wave: 'x......|.........'},
+    {name: 'debug', wave: 'x......|.........'},
+    {name: 'amo',   wave: 'x1...x.|.........'},
+    {name: 'amoop', wave: 'x3...x.|.........'},
+    {name: 'lock',  wave: 'x1...0x|.1.....0x', node: '.b...f...i.....m'},
+    {name: 'fence', wave: '0................'},
   ],
   {},
   [
     "response",
-    {name: 'ack',  wave: '0.1010.', node: '..c.eg'},
-    {name: 'err',  wave: 'x.0x0x.'},
-    {name: 'data', wave: 'x.3x...'},
+    {name: 'ack',  wave: '0.1010.|..101..0.', node: '..c.eg....j.l..n'},
+    {name: 'err',  wave: 'x......|x.0x0..x.'},
+    {name: 'data', wave: 'x......|x.3x456x.', data: ['[0]', '[4]', '[8]', '[12]']},
   ]
 ],
- edge: ['ab', 'a~>c', 'c~>d', 'd~>e', 'e~>f', 'fg']
+ edge: ['ab', 'a~>c', 'c~>d', 'd~>e', 'fg', 'hi', 'h~>j', 'j~>k', 'k~>l', 'mn']
 }
 ----
 
+**Atomic Access Transfer**
 
-:sectnums:
-==== Atomic Memory Access
+[start=1]
+. The lock request is sent by setting `lock` together with the first `stb` ("a").
+`lock` stays high until the end of the entire read-write transfer ("f").
+. The bus is locked when the host received the first `ack` ("c").
+. Now the host can send further requests using `stb` ("d").
+. When the exclusive access is completed the host clears `lock` after receiving the last `ack` of the transfer ("f").
+. `lock` has to be low for at least one cycle after the last `ack` ("f"). This will release the bus lock.
 
-As the <<_bus_interface_protocol>> only supports read-or-write operations, all atomic memory requests are
-handled by a dedicated module of the bus infrastructure - the <<_atomic_memory_operations_controller>>.
-For the CPU, the atomic memory accesses are handled as plain load/store operation but with the `amo` signal set.
-Read-modify-write operation from the <<_zaamo_isa_extension,`Zaamo`>> ISa extension will also force exclusive bus
-access by setting the `lock` signal. The `amoop` signal specifies the actual atomic processing operation:
+**Burst Read Transfer**
 
-.AMO Operation Type Encoding (Bus Interface Signals)
-[cols="<2,<4,<4"]
-[options="header",grid="rows"]
-|=======================
-| `amoop` | Description       | Required ISA Extension
-| `-000`  | swap              | <<_zaamo_isa_extension,`Zaamo`>>
-| `-001`  | unsigned ADD      | <<_zaamo_isa_extension,`Zaamo`>>
-| `-010`  | logical XOR       | <<_zaamo_isa_extension,`Zaamo`>>
-| `-011`  | logical AND       | <<_zaamo_isa_extension,`Zaamo`>>
-| `-100`  | logical OR        | <<_zaamo_isa_extension,`Zaamo`>>
-| `0110`  | unsigned minimum  | <<_zaamo_isa_extension,`Zaamo`>>
-| `0111`  | unsigned maximum  | <<_zaamo_isa_extension,`Zaamo`>>
-| `1110`  | signed minimum    | <<_zaamo_isa_extension,`Zaamo`>>
-| `1111`  | signed maximum    | <<_zaamo_isa_extension,`Zaamo`>>
-| `1000`  | load-reservate    | <<_zalrsc_isa_extension,`Zalrsc`>>
-| `1001`  | store-conditional | <<_zalrsc_isa_extension,`Zalrsc`>>
-|=======================
+[start=1]
+. The locked burst request is sent by setting `lock` together with the first `stb` ("h"). The address applied to `addr`
+defines the base/start address of the burst. `lock` stays high until the end of the burst ("m").
+. The bus is locked when the host received the first `ack` ("j"). Now the host has exclusive bus access and can
+request the remaining burst strobes ("k").
+. The burst is completed when all required `stb` pulses are sent and when all corresponding `ack` have been received ("n").
+`lock` is cleared and has to be low for at least one cycle to release the bus lock.
 
-.Cache Coherency
-[IMPORTANT]
-Atomic operations **always bypass** the caches using direct/uncached accesses. Care must be taken
-to maintain data synchronization. See section <<_memory_coherence>> for more information.
+.Fast Burst Response
+[TIP]
+The accessed device/memory can return all data words of the burst already after receiving the first strobe of
+the locked transfer ("j").
 
 
 <<<
@@ -752,7 +737,7 @@ RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 ==== `Zaamo` ISA Extension
 
 The `Zaamo` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension>> and compromises
-instructions for read-modify-write <<_atomic_memory_access>> operations. It is enabled by the top's
+instructions for atomic read-modify-write operations. It is enabled by the top's
 <<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>> generic.
 
 .Instructions and Timing
@@ -778,7 +763,7 @@ is raised, respectively.
 ==== `Zalrsc` ISA Extension
 
 The `Zalrsc` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension>> and compromises
-instructions for reservation-set <<_atomic_memory_access>> operations. It is enabled by the top's
+instructions for reservation-set operations. It is enabled by the top's
 <<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>> generic.
 
 .Instructions and Timing
