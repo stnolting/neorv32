@@ -20,6 +20,7 @@
 
 The processor features an optional CPU instruction cache. The cache is connected directly to the CPU's instruction
 fetch interface and provides full-transparent accesses. The cache is direct-mapped and read-only.
+The cache uses <<_locked_bus_accesses_and_bursts>> to download cache blocks/lines from main memory.
 In the <<_dual_core_configuration>> each CPU core is equipped with a private instruction cache.
 
 The instruction cache is implemented if `ICACHE_EN` it _true_. The total cache memory size in bytes is defined by
