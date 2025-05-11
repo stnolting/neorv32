@@ -234,6 +234,7 @@ begin
     -- External bus interface --
     xbus_adr_o     => xbus_core_req.addr,
     xbus_dat_o     => xbus_core_req.data,
+    xbus_cti_o     => xbus_core_req.cti,
     xbus_tag_o     => xbus_core_req.tag,
     xbus_we_o      => xbus_core_req.we,
     xbus_sel_o     => xbus_core_req.sel,

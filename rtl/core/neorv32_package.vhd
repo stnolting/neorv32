@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110403"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110404"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -190,6 +190,7 @@ package neorv32_package is
   type xbus_req_t is record
     addr : std_ulogic_vector(31 downto 0); -- access address
     data : std_ulogic_vector(31 downto 0); -- write data
+    cti  : std_ulogic_vector(2 downto 0); -- cycle type
     tag  : std_ulogic_vector(2 downto 0); -- access tag
     we   : std_ulogic; -- read/write
     sel  : std_ulogic_vector(3 downto 0); -- byte enable
@@ -201,6 +202,7 @@ package neorv32_package is
   constant xbus_req_terminate_c : xbus_req_t := (
     addr => (others => '0'),
     data => (others => '0'),
+    cti  => (others => '0'),
     tag  => (others => '0'),
     we   => '0',
     sel  => (others => '0'),
@@ -906,6 +908,7 @@ package neorv32_package is
       -- External bus interface (available if XBUS_EN = true) --
       xbus_adr_o     : out std_ulogic_vector(31 downto 0);
       xbus_dat_o     : out std_ulogic_vector(31 downto 0);
+      xbus_cti_o     : out std_ulogic_vector(2 downto 0);
       xbus_tag_o     : out std_ulogic_vector(2 downto 0);
       xbus_we_o      : out std_ulogic;
       xbus_sel_o     : out std_ulogic_vector(3 downto 0);

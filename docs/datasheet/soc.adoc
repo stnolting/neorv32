@@ -95,6 +95,7 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 5+^| **<<_processor_external_bus_interface_xbus>>**
 | `xbus_adr_o`     | 32 | out |   -   | destination address
 | `xbus_dat_o`     | 32 | out |   -   | read data
+| `xbus_cti_o`     |  3 | out |   -   | cycle type
 | `xbus_tag_o`     |  3 | out |   -   | access tag
 | `xbus_we_o`      |  1 | out |   -   | write enable ('0' = read transfer)
 | `xbus_sel_o`     |  4 | out |   -   | byte enable

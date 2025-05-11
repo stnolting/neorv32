@@ -6,9 +6,8 @@
 --                                                                                  --
 -- Uncached / direct accesses: Several bus transaction types will bypass the cache: --
 -- * atomic memory operations                                                       --
--- * accesses within debug-mode (on-chip debugger)                                  --
 -- * accesses to the explicit "uncached address space page" (or higher),            --
---   which is defined by the 4 most significant address bits (UC_BEGIN)              --
+--   which is defined by the 4 most significant address bits (UC_BEGIN)             --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -48,7 +47,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   constant block_size_c : natural := 2**index_size_f(BLOCK_SIZE);
 
   -- cache layout --
-  constant offset_size_c : natural := index_size_f(block_size_c/4); -- WORD offset!
+  constant offset_size_c : natural := index_size_f(block_size_c/4); -- word offset
   constant index_size_c  : natural := index_size_f(block_num_c);
   constant tag_size_c    : natural := 32 - (offset_size_c + index_size_c + 2);
 
@@ -93,7 +92,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   -- control arbiter --
   type state_t is (
     S_IDLE, S_LOOKUP, S_DIRECT_RSP, S_CLEAR,
-    S_DOWNLOAD_REQ, S_DOWNLOAD_RSP, S_DOWNLOAD_DONE
+    S_DOWNLOAD_START, S_DOWNLOAD_WAIT, S_DOWNLOAD_RUN, S_DOWNLOAD_DONE, WAITING
   );
   type ctrl_t is record
     state    : state_t; -- state machine
@@ -103,7 +102,8 @@ architecture neorv32_cache_rtl of neorv32_cache is
     buf_dir  : std_ulogic; -- direct/uncached access buffer
     tag      : std_ulogic_vector(tag_size_c-1 downto 0); -- tag
     idx      : std_ulogic_vector(index_size_c-1 downto 0); -- index
-    ofs      : std_ulogic_vector(offset_size_c-1 downto 0); -- cache offset
+    ofs_int  : std_ulogic_vector(offset_size_c-1 downto 0); -- cache address offset
+    ofs_ext  : std_ulogic_vector(offset_size_c downto 0); -- bus address offset
   end record;
   signal ctrl, ctrl_nxt : ctrl_t;
 
@@ -121,7 +121,8 @@ begin
       ctrl.buf_dir  <= '0';
       ctrl.tag      <= (others => '0');
       ctrl.idx      <= (others => '0');
-      ctrl.ofs      <= (others => '0');
+      ctrl.ofs_int  <= (others => '0');
+      ctrl.ofs_ext  <= (others => '0');
     elsif rising_edge(clk_i) then
       ctrl <= ctrl_nxt;
     end if;
@@ -140,7 +141,8 @@ begin
     ctrl_nxt.buf_dir  <= '0';
     ctrl_nxt.tag      <= ctrl.tag;
     ctrl_nxt.idx      <= ctrl.idx;
-    ctrl_nxt.ofs      <= ctrl.ofs;
+    ctrl_nxt.ofs_int  <= ctrl.ofs_int;
+    ctrl_nxt.ofs_ext  <= ctrl.ofs_ext;
 
     -- cache access defaults --
     cache_o.cmd_clr <= '0';
@@ -169,7 +171,7 @@ begin
           ctrl_nxt.state <= S_CLEAR;
         elsif (host_req_i.stb = '1') or (ctrl.buf_req = '1') then -- (pending) access request
           if (unsigned(host_req_i.addr(31 downto 28)) >= unsigned(UC_BEGIN)) or -- uncached address space
-             (host_req_i.amo = '1') or (host_req_i.debug = '1') then -- atomic or debug access
+             (host_req_i.amo = '1') then -- atomic access
             ctrl_nxt.buf_dir <= '1';
           end if;
           ctrl_nxt.state <= S_LOOKUP;
@@ -179,14 +181,14 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt.tag     <= host_req_i.addr(31 downto 32-tag_size_c);
         ctrl_nxt.idx     <= host_req_i.addr((offset_size_c+2+index_size_c)-1 downto offset_size_c+2);
-        ctrl_nxt.ofs     <= (others => '0');
-        ctrl_nxt.buf_err <= '0';
+        ctrl_nxt.ofs_ext <= (others => '0');
+        ctrl_nxt.ofs_int <= (others => '0');
         ctrl_nxt.buf_req <= '0'; -- access about to be completed
         --
         if (ctrl.buf_dir = '1') then -- direct/uncached access
           bus_req_o.stb  <= '1';
           ctrl_nxt.state <= S_DIRECT_RSP;
-        elsif (cache_i.sta_hit = '1') then -- cache access: hit
+        elsif (cache_i.sta_hit = '1') then -- cache HIT
           if (host_req_i.rw = '0') or (READ_ONLY = true) then -- read from cache
             host_rsp_o.ack <= '1';
             ctrl_nxt.state <= S_IDLE;
@@ -195,9 +197,9 @@ begin
             bus_req_o.stb  <= '1';
             ctrl_nxt.state <= S_DIRECT_RSP;
           end if;
-        else -- cache access: miss
+        else -- cache MISS
           if (host_req_i.rw = '0') or (READ_ONLY = true) then -- get block from main memory
-            ctrl_nxt.state <= S_DOWNLOAD_REQ;
+            ctrl_nxt.state <= S_DOWNLOAD_START;
           else -- write to main memory (write-through); no cache update
             bus_req_o.stb  <= '1';
             ctrl_nxt.state <= S_DIRECT_RSP;
@@ -210,6 +212,11 @@ begin
         if (bus_rsp_i.ack = '1') then
           ctrl_nxt.state <= S_IDLE;
         end if;
+        -- update cache on read-hit --
+--      cache_o.data <= bus_rsp_i.data;
+--      if (cache_i.sta_hit = '1') and (host_req_i.rw = '0') then -- cache read HIT
+--        cache_o.we <= (others => '1'); -- write read-data also to cache
+--      end if;
 
       when S_CLEAR => -- invalidate entire cache
       -- ------------------------------------------------------------
@@ -220,39 +227,58 @@ begin
         ctrl_nxt.buf_sync <= '0';
         ctrl_nxt.state    <= S_IDLE;
 
-      when S_DOWNLOAD_REQ => -- download block: send request
+      when S_DOWNLOAD_START => -- start download block transfer
       -- ------------------------------------------------------------
-        cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs & "00";
+        cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
         cache_o.cmd_new <= '1'; -- set new block (set tag and make valid)
-        bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs & "00";
+        bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
         bus_req_o.rw    <= '0'; -- read access
-        bus_req_o.stb   <= '1'; -- send request
-        bus_req_o.lock  <= '1'; -- this is a locked transfer
-        ctrl_nxt.state  <= S_DOWNLOAD_RSP;
+        bus_req_o.stb   <= '1'; -- send initial (burst/locking) request
+        bus_req_o.lock  <= '1'; -- this is a locked/burst transfer
+        ctrl_nxt.state  <= S_DOWNLOAD_WAIT;
 
-      when S_DOWNLOAD_RSP => -- download block: get response
+      when S_DOWNLOAD_WAIT => -- wait for exclusive (=locked) bus access
       -- ------------------------------------------------------------
-        cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs & "00";
+        cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
         cache_o.data   <= bus_rsp_i.data;
         cache_o.we     <= (others => '1'); -- just keep writing full words
-        bus_req_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs & "00";
+        bus_req_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
         bus_req_o.rw   <= '0'; -- read access
-        bus_req_o.lock <= '1'; -- this is a locked transfer
-        --
-        ctrl_nxt.buf_err <= ctrl.buf_err or bus_rsp_i.err; -- accumulate bus errors
+        bus_req_o.lock <= '1'; -- this is a locked/burst transfer
+        -- wait for initial ACK to start actual bursting --
         if (bus_rsp_i.ack = '1') then
-          ctrl_nxt.ofs <= std_ulogic_vector(unsigned(ctrl.ofs) + 1);
-          if (and_reduce_f(ctrl.ofs) = '1') then -- block completed
+          ctrl_nxt.buf_err <= bus_rsp_i.err; -- buffer bus error
+          ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1);
+          ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1);
+          ctrl_nxt.state   <= S_DOWNLOAD_RUN;
+        end if;
+
+      when S_DOWNLOAD_RUN => -- send read requests and get data responses
+      -- ------------------------------------------------------------
+        cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+        cache_o.data   <= bus_rsp_i.data;
+        cache_o.we     <= (others => '1'); -- just keep writing full words
+        bus_req_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
+        bus_req_o.rw   <= '0'; -- read access
+        bus_req_o.lock <= '1'; -- this is a locked/burst transfer
+        -- send requests --
+        if (ctrl.ofs_ext(offset_size_c) = '0') then
+          ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1); -- next cache word
+          bus_req_o.stb    <= '1'; -- request next transfer
+        end if;
+        -- receive responses --
+        if (bus_rsp_i.ack = '1') then
+          ctrl_nxt.buf_err <= ctrl.buf_err or bus_rsp_i.err; -- accumulate bus errors
+          ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1); -- next main memory location
+          if (and_reduce_f(ctrl.ofs_int) = '1') then -- block completed
             ctrl_nxt.state <= S_DOWNLOAD_DONE;
-          else -- get next word
-            ctrl_nxt.state <= S_DOWNLOAD_REQ;
           end if;
         end if;
 
       when S_DOWNLOAD_DONE => -- delay cycle for host cache access
       -- ------------------------------------------------------------
         if (ctrl.buf_err = '1') then -- any errors during the burst?
-          cache_o.cmd_inv <= '1';
+          cache_o.cmd_inv <= '1'; -- invalidate the downloaded cache block
           host_rsp_o.ack  <= '1';
           host_rsp_o.err  <= '1';
           ctrl_nxt.state  <= S_IDLE;
@@ -355,6 +381,7 @@ architecture neorv32_cache_memory_rtl of neorv32_cache_memory is
 
   -- cache access --
   signal acc_tag : std_ulogic_vector(tag_size_c-1 downto 0);
+  signal tag_ff  : std_ulogic_vector(tag_size_c-1 downto 0);
   signal acc_idx : std_ulogic_vector(index_size_c-1 downto 0);
   signal acc_off : std_ulogic_vector(offset_size_c-1 downto 0);
   signal acc_adr : std_ulogic_vector((index_size_c+offset_size_c)-1 downto 0);
@@ -367,6 +394,16 @@ begin
   acc_idx <= addr_i(31-tag_size_c downto 2+offset_size_c); -- index (cache block select)
   acc_off <= addr_i(2+(offset_size_c-1) downto 2); -- word offset within block
   acc_adr <= acc_idx & acc_off; -- RAM address
+
+  -- tag pipeline stage --
+  tag_buffer: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      tag_ff <= (others => '0');
+    elsif rising_edge(clk_i) then
+      tag_ff <= acc_tag;
+    end if;
+  end process tag_buffer;
 
 
   -- Status Memory --------------------------------------------------------------------------
@@ -402,7 +439,7 @@ begin
   end process tag_memory;
 
   -- access status (1 cycle latency due to sync memory read) --
-  hit_o <= '1' when (valid_mem_rd = '1') and (tag_mem_rd = acc_tag) else '0'; -- cache access hit
+  hit_o <= '1' when (valid_mem_rd = '1') and (tag_mem_rd = tag_ff) else '0'; -- cache access hit
 
 
   -- Data Memory ----------------------------------------------------------------------------
