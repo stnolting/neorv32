@@ -29,8 +29,12 @@
 
 The external bus interface provides a **Wishbone**-compatible on-chip bus interface. This bus interface
 can be used to attach processor-external modules like memories, custom hardware accelerators or additional
-peripheral devices. Architecture for Portable IP Cores". A copy of the official Wishbone bus specifications
-can be found in the `docs` folder.
+peripheral devices.
+
+.Wishbone Specs
+[TIP]
+The official Wishbone specification scan be found online:
+https://wishbone-interconnect.readthedocs.io/en/latest/index.html
 
 .Address Mapping
 [NOTE]
