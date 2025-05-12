@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110404"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110405"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -129,7 +129,8 @@ package neorv32_package is
     debug : std_ulogic; -- set if debug mode access
     amo   : std_ulogic; -- set if atomic memory operation
     amoop : std_ulogic_vector(3 downto 0); -- type of atomic memory operation
-    lock  : std_ulogic; -- set if contiguous transfer
+    burst : std_ulogic; -- set if part of burst access
+    lock  : std_ulogic; -- set if exclusive access request
     -- out-of-band signals --
     fence : std_ulogic; -- set if fence(.i) operation, single-shot
   end record;
@@ -146,6 +147,7 @@ package neorv32_package is
     debug => '0',
     amo   => '0',
     amoop => (others => '0'),
+    burst => '0',
     lock  => '0',
     fence => '0'
   );

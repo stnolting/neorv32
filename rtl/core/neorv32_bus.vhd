@@ -137,24 +137,22 @@ begin
 
   -- Request Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  x_req_o.addr  <= a_req_i.addr  when (sel = '0') else b_req_i.addr;
-  x_req_o.amo   <= a_req_i.amo   when (sel = '0') else b_req_i.amo;
-  x_req_o.amoop <= a_req_i.amoop when (sel = '0') else b_req_i.amoop;
-  x_req_o.lock  <= a_req_i.lock  when (sel = '0') else b_req_i.lock;
-  x_req_o.priv  <= a_req_i.priv  when (sel = '0') else b_req_i.priv;
-  x_req_o.debug <= a_req_i.debug when (sel = '0') else b_req_i.debug;
-  x_req_o.src   <= a_req_i.src   when (sel = '0') else b_req_i.src;
-  x_req_o.rw    <= a_req_i.rw    when (sel = '0') else b_req_i.rw;
-  x_req_o.fence <= a_req_i.fence or b_req_i.fence;
-
+  x_req_o.addr  <= a_req_i.addr  when (sel = '0')      else b_req_i.addr;
   x_req_o.data  <= b_req_i.data  when PORT_A_READ_ONLY else
                    a_req_i.data  when PORT_B_READ_ONLY else
                    a_req_i.data  when (sel = '0')      else b_req_i.data;
-
   x_req_o.ben   <= b_req_i.ben   when PORT_A_READ_ONLY else
                    a_req_i.ben   when PORT_B_READ_ONLY else
                    a_req_i.ben   when (sel = '0')      else b_req_i.ben;
-
+  x_req_o.rw    <= a_req_i.rw    when (sel = '0')      else b_req_i.rw;
+  x_req_o.src   <= a_req_i.src   when (sel = '0')      else b_req_i.src;
+  x_req_o.priv  <= a_req_i.priv  when (sel = '0')      else b_req_i.priv;
+  x_req_o.debug <= a_req_i.debug when (sel = '0')      else b_req_i.debug;
+  x_req_o.amo   <= a_req_i.amo   when (sel = '0')      else b_req_i.amo;
+  x_req_o.amoop <= a_req_i.amoop when (sel = '0')      else b_req_i.amoop;
+  x_req_o.burst <= a_req_i.burst when (sel = '0')      else b_req_i.burst;
+  x_req_o.lock  <= a_req_i.lock  when (sel = '0')      else b_req_i.lock;
+  x_req_o.fence <= a_req_i.fence or b_req_i.fence;
   x_req_o.stb   <= stb;
 
 
@@ -819,6 +817,7 @@ begin
   sys_req_o.debug <= core_req_i.debug;
   sys_req_o.amo   <= core_req_i.amo;
   sys_req_o.amoop <= core_req_i.amoop;
+  sys_req_o.burst <= core_req_i.burst;
   sys_req_o.lock  <= core_req_i.lock;
   sys_req_o.fence <= core_req_i.fence;
 
