@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 12.05.2025 | 1.11.4.5 | add excplicit "burst" signal to processor-internal bus; clean-up CPU "fence" decoding | [#1265](https://github.com/stnolting/neorv32/pull/1265) |
 | 10.05.2025 | 1.11.4.4 | :sparkles: add cache burst transfers (read-only) | [#1263](https://github.com/stnolting/neorv32/pull/1263) |
 | 10.05.2025 | 1.11.4.3 | minor edits and optimizations | [#1262](https://github.com/stnolting/neorv32/pull/1262) |
 | 09.05.2025 | 1.11.4.2 | rework locking of processor-internal bus; bus locking is now implemented for the entire bus infrastructure | [#1260](https://github.com/stnolting/neorv32/pull/1260) |
