@@ -108,7 +108,8 @@ begin
   end process mem_do_reg;
 
   -- hardwired signals --
-  dbus_req_o.src <= '0'; -- always data access
+  dbus_req_o.src   <= '0'; -- always data access
+  dbus_req_o.burst <= '0'; -- only single-access
 
   -- out-of-band signals --
   dbus_req_o.fence <= ctrl_i.lsu_fence;
