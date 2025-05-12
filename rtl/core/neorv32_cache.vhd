@@ -160,6 +160,7 @@ begin
     -- bus interface defaults --
     bus_req_o       <= host_req_i;
     bus_req_o.stb   <= '0'; -- no request by default
+    bus_req_o.burst <= '0'; -- no burst by default
     bus_req_o.fence <= '0'; -- no fence by default
 
     -- fsm --
@@ -234,17 +235,19 @@ begin
         bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
         bus_req_o.rw    <= '0'; -- read access
         bus_req_o.stb   <= '1'; -- send initial (burst/locking) request
-        bus_req_o.lock  <= '1'; -- this is a locked/burst transfer
+        bus_req_o.lock  <= '1'; -- this is a locked transfer
+        bus_req_o.burst <= '1'; -- this is a burst transfer
         ctrl_nxt.state  <= S_DOWNLOAD_WAIT;
 
       when S_DOWNLOAD_WAIT => -- wait for exclusive (=locked) bus access
       -- ------------------------------------------------------------
-        cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-        cache_o.data   <= bus_rsp_i.data;
-        cache_o.we     <= (others => '1'); -- just keep writing full words
-        bus_req_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
-        bus_req_o.rw   <= '0'; -- read access
-        bus_req_o.lock <= '1'; -- this is a locked/burst transfer
+        cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+        cache_o.data    <= bus_rsp_i.data;
+        cache_o.we      <= (others => '1'); -- just keep writing full words
+        bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
+        bus_req_o.rw    <= '0'; -- read access
+        bus_req_o.lock  <= '1'; -- this is a locked transfer
+        bus_req_o.burst <= '1'; -- this is a burst transfer
         -- wait for initial ACK to start actual bursting --
         if (bus_rsp_i.ack = '1') then
           ctrl_nxt.buf_err <= bus_rsp_i.err; -- buffer bus error
@@ -255,12 +258,13 @@ begin
 
       when S_DOWNLOAD_RUN => -- send read requests and get data responses
       -- ------------------------------------------------------------
-        cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-        cache_o.data   <= bus_rsp_i.data;
-        cache_o.we     <= (others => '1'); -- just keep writing full words
-        bus_req_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
-        bus_req_o.rw   <= '0'; -- read access
-        bus_req_o.lock <= '1'; -- this is a locked/burst transfer
+        cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+        cache_o.data    <= bus_rsp_i.data;
+        cache_o.we      <= (others => '1'); -- just keep writing full words
+        bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
+        bus_req_o.rw    <= '0'; -- read access
+        bus_req_o.lock  <= '1'; -- this is a locked transfer
+        bus_req_o.burst <= '1'; -- this is a burst transfer
         -- send requests --
         if (ctrl.ofs_ext(offset_size_c) = '0') then
           ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1); -- next cache word

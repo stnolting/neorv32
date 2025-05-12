@@ -468,15 +468,12 @@ begin
 
           -- memory fence operations --
           when opcode_fence_c =>
-            if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fencei_c) then -- instruction fence
-              ctrl_nxt.if_fence    <= '1';
-              exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB
-            elsif (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_fence_c) then -- data fence
-              ctrl_nxt.lsu_fence   <= '1'; -- load/store fence
-              exe_engine_nxt.state <= EX_DISPATCH;
-            else -- illegal
-              exe_engine_nxt.state <= EX_DISPATCH;
+            if (exe_engine.ir(instr_funct3_lsb_c) = '0') then -- data fence
+              ctrl_nxt.lsu_fence <= '1';
+            else -- instruction fence
+              ctrl_nxt.if_fence <= '1';
             end if;
+            exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
 
           -- FPU: floating-point operations --
           when opcode_fop_c =>

@@ -260,15 +260,16 @@ begin
   engine.busy <= '0' when (engine.state = S_IDLE) else '1';
 
   -- bus output --
+  dma_req_o.addr  <= engine.dst_addr when (engine.state = S_WRITE) else engine.src_addr;
   dma_req_o.stb   <= engine.stb;
   dma_req_o.rw    <= engine.rw;
-  dma_req_o.addr  <= engine.dst_addr when (engine.state = S_WRITE) else engine.src_addr;
   dma_req_o.src   <= '0'; -- source = data access
-  dma_req_o.lock  <= '0'; -- always single access
   dma_req_o.priv  <= priv_mode_m_c; -- DMA accesses are always privileged
   dma_req_o.debug <= '0'; -- can never ever be in debug mode
   dma_req_o.amo   <= '0'; -- no atomic memory operation possible
   dma_req_o.amoop <= (others => '0'); -- no atomic memory operation possible
+  dma_req_o.burst <= '0'; -- always single access
+  dma_req_o.lock  <= '0'; -- always unlocked access
   dma_req_o.fence <= '0';
 
   -- address increment --

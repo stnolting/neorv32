@@ -130,7 +130,8 @@ begin
   ibus_req_o.debug <= ctrl_i.cpu_debug; -- CPU is in debug mode
   ibus_req_o.amo   <= '0';              -- cannot be an atomic memory operation
   ibus_req_o.amoop <= (others => '0');  -- cannot be an atomic memory operation
-  ibus_req_o.lock  <= '0';              -- always unlocked/single access
+  ibus_req_o.burst <= '0';              -- only single-access
+  ibus_req_o.lock  <= '0';              -- always unlocked access
   ibus_req_o.fence <= ctrl_i.if_fence;  -- fence request, valid without STB being set ("out-of-band" signal)
 
   -- IPB instruction data and status --
