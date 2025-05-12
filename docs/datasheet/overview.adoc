@@ -228,7 +228,7 @@ rtl/core
 ├-neorv32_twi.vhd               - Two wire serial interface controller
 ├-neorv32_uart.vhd              - Universal async. receiver/transmitter
 ├-neorv32_wdt.vhd               - Watchdog timer
-└-neorv32_xbus.vhd              - External (Wishbone) bus interface gateways
+└-neorv32_xbus.vhd              - External bus interface gateways
 ...................................
 
 

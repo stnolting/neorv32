@@ -30,7 +30,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ two-wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
 * _optional_ two-wire serial device controller (<<_two_wire_serial_device_controller_twd,**TWD**>>), compatible to the I²C standard
 * _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 32 inputs (interrupt capable), 32 outputs
-* _optional_ 32-bit external bus interface, Wishbone b4 / AXI4 compatible (<<_processor_external_bus_interface_xbus,**XBUS**>>)
+* _optional_ 32-bit external bus interface, Wishbone-compatible (<<_processor_external_bus_interface_xbus,**XBUS**>>), AXI4-bridge available
 * _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
 * _optional_ PWM controller with up to 16 individual channels (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
 * _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**>>)
