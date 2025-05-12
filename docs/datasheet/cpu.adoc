@@ -393,7 +393,8 @@ additional latency). However, _all_ bus signals (request and response) need to b
 | `debug` |     1 | Set if debug-mode access (access from the on-chip debugger).
 | `amo`   |     1 | Set if current access is an atomic memory operation.
 | `amoop` |     4 | Actual type of atomic memory operation. Irrelevant if `amo` is not set.
-| `lock`  |     1 | Set if contiguous transfer; the current transfer is part of a group of transfers that should not be interleaved. This signal is relevant for the interconnect / bus system only.
+| `burst` |     1 | Set during a burst transaction (always set together with `lock`).
+| `lock`  |     1 | Set if locked access; allow exclusive access to the bus system.
 3+^| **Out-Of-Band Signals**
 | `fence` |     1 | Data (load/store; `fence`) or instruction (instruction-fetch; `fence.i`) fence request; single-shot; see <<_memory_coherence>>.
 |=======================
@@ -445,6 +446,7 @@ The figure below shows three exemplary single-access bus transactions:
     {name: 'amo',   wave: 'x0.|.x0.x0.|.x'},
     {name: 'amoop', wave: 'x..|.......|..'},
     {name: 'lock',  wave: 'x0.|.......|.x'},
+    {name: 'burst', wave: 'x0.|.......|.x'},
     {name: 'fence', wave: '0..|.......|..'},
   ],
   {},
@@ -474,7 +476,7 @@ exclusive bus access and a 4-word incrementing-address read burst.
 [wavedrom, format="svg", align="center"]
 ----
 {signal: [
-  {name: 'clk', wave: 'p................'},
+  {name: 'clk', wave: 'p.................'},
   [
     "request",
     {name: 'addr',  wave: 'x3...x.|.4.567x..', data: ['addr', '0', '4', '8', '12']},
@@ -487,6 +489,7 @@ exclusive bus access and a 4-word incrementing-address read burst.
     {name: 'debug', wave: 'x......|.........'},
     {name: 'amo',   wave: 'x1...x.|.........'},
     {name: 'amoop', wave: 'x3...x.|.........'},
+    {name: 'burst', wave: 'x0....x|.1.....0x'},
     {name: 'lock',  wave: 'x1...0x|.1.....0x', node: '.b...f...i.....m'},
     {name: 'fence', wave: '0................'},
   ],
@@ -515,12 +518,12 @@ exclusive bus access and a 4-word incrementing-address read burst.
 **Burst Read Transfer**
 
 [start=1]
-. The locked burst request is sent by setting `lock` together with the first `stb` ("h"). The address applied to `addr`
-defines the base/start address of the burst. `lock` stays high until the end of the burst ("m").
+. The locked burst request is sent by setting `lock` and `burst` together with the first `stb` ("h"). The address applied to `addr`
+defines the base/start address of the burst. `lock` and `burst` stay high until the end of the burst ("m").
 . The bus is locked when the host received the first `ack` ("j"). Now the host has exclusive bus access and can
 request the remaining burst strobes ("k").
 . The burst is completed when all required `stb` pulses are sent and when all corresponding `ack` have been received ("n").
-`lock` is cleared and has to be low for at least one cycle to release the bus lock.
+`burst` is cleared. `lock` is cleared and has to be low for at least one cycle to release the bus lock.
 
 .Fast Burst Response
 [TIP]
