@@ -219,9 +219,12 @@ begin
         if (host_req_i.stb = '1') then -- reduce switching activity on downstream bus system
           device_req_o <= host_req_i;
         end if;
-        device_req_o.stb   <= host_req_i.stb; -- access control signal
-        device_req_o.lock  <= host_req_i.lock; -- access control signal
-        device_req_o.fence <= host_req_i.fence; -- out-of-band signal
+        -- pass-through access control signals --
+        device_req_o.stb   <= host_req_i.stb;
+        device_req_o.burst <= host_req_i.burst;
+        device_req_o.lock  <= host_req_i.lock;
+        -- pass-through out-of-band signals --
+        device_req_o.fence <= host_req_i.fence;
       end if;
     end process request_reg;
   end generate;
