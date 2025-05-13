@@ -40,7 +40,6 @@ MEMORY
 
 /* ************************************************************************************************* */
 /* Section ".text" - program code                                                                    */
-/* This is the first part of the actual/final executable                                             */
 /* ************************************************************************************************* */
 SECTIONS
 {
@@ -91,7 +90,6 @@ SECTIONS
 
 /* ************************************************************************************************* */
 /* Section ".rodata" - read-only constants and ".data" initialization                                */
-/* This is the second part of the actual/final executable the will be places right after ".text"     */
 /* ************************************************************************************************* */
   .rodata __etext : ALIGN(4)
   {
@@ -106,7 +104,7 @@ SECTIONS
 
 /* ************************************************************************************************* */
 /* Section ".data" - pre-initialized variables                                                       */
-/* The start-up code will initialize this RAM section from the executable's ".rodata" section        */
+/* crt0 will initialize this RAM section from the executable's ".data" section during boot-up        */
 /* ************************************************************************************************* */
   .data : ALIGN(4)
   {
@@ -139,8 +137,7 @@ SECTIONS
   } > ram AT > rom
 
 /* ************************************************************************************************* */
-/* Section ".bss" - non-initialized variables                                                        */
-/* The start-up code will clear this section during boot-up                                          */
+/* Section ".bss" - non-initialized variables; cleared by crt0 during boot-up                        */
 /* ************************************************************************************************* */
   .bss (NOLOAD): ALIGN(4)
   {

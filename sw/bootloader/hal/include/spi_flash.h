@@ -16,8 +16,8 @@
 
 #include <stdint.h>
 
-int spi_flash_check(void) ;
-int spi_flash_read_word(uint32_t addr, uint32_t* rdata) ;
+int spi_flash_check(void);
+int spi_flash_read_word(uint32_t addr, uint32_t* rdata);
 int spi_flash_write_word(uint32_t addr, uint32_t wdata);
 int spi_flash_erase_sector(uint32_t addr);
 
