@@ -73,8 +73,31 @@ The SPI module supports all standard SPI clock modes (0, 1, 2, 3), which are con
 `SPI_CTRL_CPHA` and `SPI_CTRL_CPOL`. The `SPI_CTRL_CPHA` bit defines the _clock phase_ and the `SPI_CTRL_CPOL`
 bit defines the _clock polarity_.
 
-.SPI clock modes; image from https://en.wikipedia.org/wiki/File:SPI_timing_diagram2.svg (license: (Wikimedia) https://en.wikipedia.org/wiki/Creative_Commons[Creative Commons] https://creativecommons.org/licenses/by-sa/3.0/deed.en[Attribution-Share Alike 3.0 Unported])
-image::SPI_timing_diagram2.wikimedia.png[]
+.SPI clock modes
+[wavedrom, format="svg", align="center"]
+----
+{signal: [
+  [
+    "SCK",
+    {name: 'CPOL=0', wave: 'l.hlhlhlhlhlhlhlhl.'},
+    {name: 'CPOL=1', wave: 'h.lhlhlhlhlhlhlhlh.'},
+  ],
+  {},
+  [
+    "CPHA=0",
+    {name: 'Host in',  wave: 'x2.3.4.5.6.7.8.9.x.', data: ['1', '2', '3', '4', '5', '6', '7', '8']},
+    {name: 'Host out', wave: 'x2.3.4.5.6.7.8.9.x.', data: ['1', '2', '3', '4', '5', '6', '7', '8']},
+  ],
+  {},
+  [
+    "CPHA=1",
+    {name: 'Host in',  wave: 'x.2.3.4.5.6.7.8.9.x', data: ['1', '2', '3', '4', '5', '6', '7', '8']},
+    {name: 'Host out', wave: 'x.2.3.4.5.6.7.8.9.x', data: ['1', '2', '3', '4', '5', '6', '7', '8']},
+  ]
+],
+ edge: ['ab', 'a~>c', 'c~>d', 'd~>e', 'fg', 'hi', 'h~>j', 'j~>k', 'k~>l', 'mn']
+}
+----
 
 The SPI clock frequency (`spi_clk_o`) is programmed by the 3-bit `SPI_CTRL_PRSCx` clock prescaler for a coarse clock selection
 and a 4-bit clock divider `SPI_CTRL_CDIVx` for a fine clock configuration.
