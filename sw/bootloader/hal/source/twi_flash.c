@@ -17,6 +17,26 @@
 
 
 /**********************************************************************//**
+ * Check if TWI is available.
+ *
+ * @return 0 if success, !=0 if error
+ **************************************************************************/
+int twi_flash_check(void) {
+
+#if (TWI_EN != 0)
+  if (neorv32_twi_available()) {
+    return 0;
+  }
+  else {
+    return 1;
+  }
+#else
+  return 1;
+#endif
+}
+
+
+/**********************************************************************//**
  * Read 32-bit word from word-aligned TWI flash address.
  *
  * @param[in] addr Word-aligned address.
@@ -30,11 +50,6 @@ int twi_flash_read_word(uint32_t addr, uint32_t* rdata) {
   int device_nack = 0;
   uint8_t transfer;
   subwords32_t data, address;
-
-  // TWI module available?
-  if (neorv32_twi_available() == 0) {
-    return 1;
-  }
 
   // start condition
   neorv32_twi_generate_start();
@@ -186,11 +201,6 @@ int twi_flash_write_word(uint32_t addr, uint32_t wdata) {
 #if (TWI_EN != 0)
   int device_nack = 0;
   subwords32_t data;
-
-  // TWI module available?
-  if (neorv32_twi_available() == 0) {
-    return 1;
-  }
 
   // write four bytes
   data.uint32 = wdata;

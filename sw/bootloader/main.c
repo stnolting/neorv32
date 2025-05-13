@@ -36,7 +36,7 @@
 #define str(a) #a
 
 // Global variables
-uint32_t exe_available = 0; // size of the loaded executable; 0 if no executable available
+uint32_t g_exe_size = 0; // size of the loaded executable; 0 if no executable available
 
 // Function prototypes
 void __attribute__((interrupt("machine"),aligned(4))) bootloader_trap_handler(void);
@@ -210,7 +210,7 @@ skip_auto_boot:
 #endif
     else if (cmd == 'e') { // start application program from memory
       // executable available?
-      if (exe_available == 0) {
+      if (g_exe_size == 0) {
         uart_puts("No executable.\n");
         uart_puts("Boot anyway (y/n)?\n");
         if (uart_getc() == 'y') {
@@ -362,7 +362,7 @@ int load_exe(int src) {
   uint32_t src_addr = 0;
 
   // no executable available yet
-  exe_available = 0;
+  g_exe_size = 0;
 
   // get image from UART?
 #if (UART_EN != 0)
@@ -391,23 +391,21 @@ int load_exe(int src) {
     uart_puts(" @");
     uart_puth(src_addr);
     uart_puts("... ");
+    rc |= twi_flash_check();
   }
 #endif
 
   // get image header
-  uint32_t exe_sign, exe_size, exe_check;
-  rc |= get_exe_word(src, src_addr + EXE_OFFSET_SIGNATURE, &exe_sign);
-  rc |= get_exe_word(src, src_addr + EXE_OFFSET_SIZE, &exe_size);
-  rc |= get_exe_word(src, src_addr + EXE_OFFSET_CHECKSUM, &exe_check);
-
-  // checks
-  if (rc) {
-    uart_puts("ERROR_DEVICE\n");
-    return 1;
-  }
-  if (exe_sign != EXE_SIGNATURE) {
-    uart_puts("ERROR_SIGNATURE\n");
-    return 1;
+  uint32_t exe_sign = 0, exe_size = 0, exe_check = 0;
+  if (rc == 0) {
+    rc |= get_exe_word(src, src_addr + EXE_OFFSET_SIGNATURE, &exe_sign);
+    rc |= get_exe_word(src, src_addr + EXE_OFFSET_SIZE, &exe_size);
+    rc |= get_exe_word(src, src_addr + EXE_OFFSET_CHECKSUM, &exe_check);
+    // signature OK?
+    if (exe_sign != EXE_SIGNATURE) {
+      uart_puts("ERROR_SIGNATURE\n");
+      return 1;
+    }
   }
 
   // transfer executable
@@ -415,10 +413,10 @@ int load_exe(int src) {
   uint32_t checksum = 0, tmp = 0, i = 0;
   src_addr = src_addr + EXE_OFFSET_DATA;
   while (i < (exe_size/4)) { // in words
-    if (get_exe_word(src, src_addr, &tmp)) {
-      rc |= 1;
+    if (rc) {
       break;
     }
+    rc |= get_exe_word(src, src_addr, &tmp);
     checksum += tmp;
     pnt[i++] = tmp;
     src_addr += 4;
@@ -435,7 +433,7 @@ int load_exe(int src) {
   }
 
   uart_puts("OK\n");
-  exe_available = exe_size;
+  g_exe_size = exe_size;
 
   // we might have caches so the executable might not yet have fully arrived in main memory yet
   asm volatile ("fence"); // flush data caches to main memory
@@ -456,15 +454,14 @@ void save_exe(int dst) {
   uint32_t dst_addr = 0;
 
   // size of last uploaded executable
-  uint32_t size = exe_available;
-  if (size == 0) {
+  if (g_exe_size == 0) {
     uart_puts("No executable.\n");
     return;
   }
 
   // info prompt and flash address setup
   uart_puts("Write ");
-  uart_puth(size);
+  uart_puth(g_exe_size);
   uart_puts(" bytes to ");
   if (dst == EXE_STREAM_SPI) {
     uart_puts("SPI");
@@ -491,7 +488,7 @@ void save_exe(int dst) {
     }
 
     // clear memory before writing
-    uint32_t num_sectors = (size / (SPI_FLASH_SECTOR_SIZE)) + 1; // clear at least 1 sector
+    uint32_t num_sectors = (g_exe_size / (SPI_FLASH_SECTOR_SIZE)) + 1; // clear at least 1 sector
     uint32_t sector_base_addr = dst_addr;
     while (num_sectors--) {
       rc |= spi_flash_erase_sector(sector_base_addr);
@@ -503,22 +500,24 @@ void save_exe(int dst) {
   uint32_t checksum = 0, tmp = 0, i = 0;
   uint32_t pnt = (uint32_t)EXE_BASE_ADDR;
   uint32_t addr = dst_addr + EXE_OFFSET_DATA;
-  while (i < size) { // in chunks of 4 bytes
+  while (i < g_exe_size) { // in chunks of 4 bytes
+    if (rc) {
+      break;
+    }
     tmp = neorv32_cpu_load_unsigned_word(pnt);
     pnt += 4;
     checksum += tmp;
-    if (put_exe_word(dst, addr, tmp)) {
-      rc |= 1;
-      break;
-    }
+    rc |= put_exe_word(dst, addr, tmp);
     addr += 4;
     i += 4;
   }
 
   // write header
-  rc |= put_exe_word(dst, dst_addr + EXE_OFFSET_SIGNATURE, EXE_SIGNATURE);
-  rc |= put_exe_word(dst, dst_addr + EXE_OFFSET_SIZE, size);
-  rc |= put_exe_word(dst, dst_addr + EXE_OFFSET_CHECKSUM, (~checksum)+1);
+  if (rc == 0) {
+    rc |= put_exe_word(dst, dst_addr + EXE_OFFSET_SIGNATURE, EXE_SIGNATURE);
+    rc |= put_exe_word(dst, dst_addr + EXE_OFFSET_SIZE, g_exe_size);
+    rc |= put_exe_word(dst, dst_addr + EXE_OFFSET_CHECKSUM, (~checksum)+1);
+  }
 
   // checks
   if (rc) {
