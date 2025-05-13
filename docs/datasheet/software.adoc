@@ -333,11 +333,29 @@ Memory sizes have to be a multiple of 4 bytes. Memory base addresses have to be 
 :sectnums:
 ==== RAM Layout
 
-The default NEORV32 linker script uses the defined RAM size to map several sections.
+The default NEORV32 linker script uses the defined RAM (**DMEM**) size to map several sections.
 Note that depending on the application some sections might have zero size.
 
 .Default RAM Layout
-image::ram_layout.png[400]
+[source]
+----
+End of RAM
++------------------------------+
+|             Stack            |
++------------------------------+
+.     stack grows downwards    .
+.                              .
+.                              .
+.      heap grows upwards      .
++------------------------------+
+|   Dynamic memory (".heap")   |
++------------------------------+
+| Uninitialized data (".data") |
++------------------------------+
+|  Initialized data (".data")  |
++------------------------------+
+Start of RAM
+----
 
 [start=1]
 . **Constant data (`.data`)**: The constant data section is placed right at the beginning of the RAM. For example, this
@@ -352,12 +370,39 @@ convention the stack is 128-bit-aligned before procedure entry. The stack grows 
 .Heap Size
 [IMPORTANT]
 The maximum size of the heap is defined by the `__neorv32_heap_size` variable. This variable has to be
-**explicitly defined** in order to define a heap size (and to use dynamic memory allocation at all) other than zero.
+**explicitly defined** in order to define a heap size (and to use dynamic memory allocation at all).
 
 .Heap-Stack Collision
 [WARNING]
 Take care when using dynamic memory to avoid collision of the heap and stack memory areas. There is no compile-time
 protection mechanism available as the actual heap and stack size are defined by _runtime_ data.
+The <<_smpmp_isa_extension,physical memory protection>> extension can be used to implement a guarding mechanism.
+
+
+:sectnums:
+==== ROM Layout
+
+The default NEORV32 linker script uses the defined ROM (**IMEM**) size to map several sections.
+Note that depending on the application some sections might have zero size.
+
+.Default ROM Layout
+[source]
+----
+End of ROM
++------------------------------+
+|   Initial data for ".data"   |
++------------------------------+
+|  Read-only data (".rodata")  |
++------------------------------+
+|    Program code (".text")    |
++------------------------------+
+Start of ROM
+----
+
+[start=1]
+. **Program code (`.text`)**: This section contains the actual instructions of the program.
+. **Read-only data (`.rodata`)**: Read-only data, for example for constants and strings.
+. **Heap (`.heap`)**: Initialization data that is copied at runtime to the RAM's `data` section by by the <<_start_up_code_crt0>>.
 
 
 <<<
