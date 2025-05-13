@@ -186,7 +186,7 @@ begin
         ctrl_nxt.ofs_int <= (others => '0');
         ctrl_nxt.buf_req <= '0'; -- access about to be completed
         --
-        if (ctrl.buf_dir = '1') then -- direct/uncached access
+        if (ctrl.buf_dir = '1') then -- direct/uncached access; no cache update
           bus_req_o.stb  <= '1';
           ctrl_nxt.state <= S_DIRECT_RSP;
         elsif (cache_i.sta_hit = '1') then -- cache HIT
@@ -213,11 +213,6 @@ begin
         if (bus_rsp_i.ack = '1') then
           ctrl_nxt.state <= S_IDLE;
         end if;
-        -- update cache on read-hit --
---      cache_o.data <= bus_rsp_i.data;
---      if (cache_i.sta_hit = '1') and (host_req_i.rw = '0') then -- cache read HIT
---        cache_o.we <= (others => '1'); -- write read-data also to cache
---      end if;
 
       when S_CLEAR => -- invalidate entire cache
       -- ------------------------------------------------------------
