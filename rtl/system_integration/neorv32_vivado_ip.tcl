@@ -169,7 +169,7 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Core Complex}]
   add_params $group {
-    { DUAL_CORE_EN {CPU core(s))} {} }
+    { DUAL_CORE_EN {CPU core(s)} {} }
   }
   set_property widget {comboBox} [ipgui::get_guiparamspec -name "DUAL_CORE_EN" -component [ipx::current_core] ]
   set_property value_validation_type pairs [ipx::get_user_parameters DUAL_CORE_EN -of_objects [ipx::current_core]]
@@ -192,6 +192,12 @@ proc setup_ip_gui {} {
     { OCD_JEDEC_ID       {JEDEC ID}            {JTAG tap identification}                         {$OCD_EN}}
   }
 
+
+  # **************************************************************
+  # GUI Page: AXI Connectivity
+  # **************************************************************
+  set page [add_page {AXI}]
+
   set group [add_group $page {External Bus Interface (XBUS / AXI4-MM Host)}]
   add_params $group {
     { XBUS_EN          {Enable XBUS} }
@@ -207,39 +213,57 @@ proc setup_ip_gui {} {
 
 
   # **************************************************************
-  # GUI Page: CPU
+  # GUI Page: CPU ISA
   # **************************************************************
-  set page [add_page {CPU}]
-  set isa_note "Make sure to set the same ISA configuration for the RISC-V GCC ISA string."
-  ipgui::add_static_text -name {ISA note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "CPU" -component [ipx::current_core] ] -text $isa_note
+  set page [add_page {CPU ISA}]
 
-  set group [add_group $page {RISC-V ISA Extensions}]
+  set group [add_group $page {Base}]
   add_params $group {
-    { RISCV_ISA_C      {C - 16-bit compressed instructions}                       {} }
-    { RISCV_ISA_E      {E - Reduced register file size (16 registers only)}       {} }
-    { RISCV_ISA_M      {M - Integer multiplication and division hardware}         {} }
-    { RISCV_ISA_U      {U - Less-privileged user-mode}                            {} }
-    { RISCV_ISA_Zaamo  {Zaamo - Atomic read-modify-write memory operations}       {} }
-    { RISCV_ISA_Zalrsc {Zalrsc - Atomic reservation-set operations}               {} }
-    { RISCV_ISA_Zba    {Zba - Shifted-add bit-manipulation instructions}          {} }
-    { RISCV_ISA_Zbb    {Zbb - Basic bit-manipulation instructions}                {} }
-    { RISCV_ISA_Zbkb   {Zbkb - Bit manipulation instructions for cryptography}    {} }
-    { RISCV_ISA_Zbkc   {Zbkc - Carry-less multiply instructions for cryptography} {} }
-    { RISCV_ISA_Zbkx   {Zbkx - Crossbar permutations for cryptography}            {} }
-    { RISCV_ISA_Zbs    {Zbs - Single-bit bit-manipulation instructions}           {} }
-    { RISCV_ISA_Zfinx  {Zfinx - Embedded FPU (using integer register file)}       {} }
-    { RISCV_ISA_Zicntr {Zicntr - Base counters (cycles and instructions)}         {} }
-    { RISCV_ISA_Zicond {Zicond - Conditional-move instructions}                   {} }
-    { RISCV_ISA_Zihpm  {Zihpm - Hardware performance monitors (HPMs)}             {} }
-    { HPM_CNT_WIDTH    {HPM width}                                                {Counter width in bits} {$RISCV_ISA_Zihpm} }
-    { HPM_NUM_CNTS     {HPM counters}                                             {Number of HPM counters} {$RISCV_ISA_Zihpm} }
-    { RISCV_ISA_Zknd   {Zknd - Scalar cryptographic - NIST AES decryption}        {} }
-    { RISCV_ISA_Zkne   {Zkne - Scalar cryptographic - NIST AES encryption}        {} }
-    { RISCV_ISA_Zknh   {Zknh - Scalar cryptographic - NIST hash functions}        {} }
-    { RISCV_ISA_Zksed  {Zksed - Scalar cryptographic - ShangMi block cyphers}     {} }
-    { RISCV_ISA_Zksh   {Zksh - Scalar cryptographic - ShangMi hash functions}     {} }
-    { RISCV_ISA_Zmmul  {Zmmul - Integer multiplication-only hardware}             {} {!$RISCV_ISA_M} {$RISCV_ISA_M ? false : $RISCV_ISA_Zksh} }
-    { RISCV_ISA_Zxcfu  {Zxcfu - Custom-instructions unit (user-defined)}          {} }
+    { RISCV_ISA_C     {C - 16-bit compressed instructions}                 {} }
+    { RISCV_ISA_E     {E - Reduced register file size (16 registers only)} {} }
+    { RISCV_ISA_M     {M - Integer multiplication and division hardware}   {} }
+    { RISCV_ISA_Zmmul {Zmmul - Integer multiplication-only hardware}       {} {!$RISCV_ISA_M} {$RISCV_ISA_M ? false : $RISCV_ISA_Zmmul} }
+    { RISCV_ISA_U     {U - Less-privileged user-mode}                      {} }
+  }
+
+  set group [add_group $page {Counters and Timers}]
+  add_params $group {
+    { RISCV_ISA_Zicntr {Zicntr - Base counters (cycles and instructions)} {} }
+    { RISCV_ISA_Zihpm  {Zihpm - Hardware performance monitors (HPMs)}     {} }
+    { HPM_CNT_WIDTH    {HPM width}                                        {Counter width in bits} {$RISCV_ISA_Zihpm} }
+    { HPM_NUM_CNTS     {HPM counters}                                     {Number of HPM counters} {$RISCV_ISA_Zihpm} }
+  }
+
+  set group [add_group $page {Bit-Manipulation}]
+  add_params $group {
+    { RISCV_ISA_Zba {Zba - Shifted-add bit-manipulation instructions} {} }
+    { RISCV_ISA_Zbb {Zbb - Basic bit-manipulation instructions}       {} }
+    { RISCV_ISA_Zbs {Zbs - Single-bit bit-manipulation instructions}  {} }
+  }
+
+  set group [add_group $page {Atomic Memory Access}]
+  add_params $group {
+    { RISCV_ISA_Zaamo  {Zaamo - Atomic read-modify-write memory operations} {} }
+    { RISCV_ISA_Zalrsc {Zalrsc - Atomic reservation-set operations}         {} }
+  }
+
+  set group [add_group $page {Cryptography}]
+  add_params $group {
+    { RISCV_ISA_Zbkb  {Zbkb - Bit manipulation instructions for cryptography}    {} }
+    { RISCV_ISA_Zbkc  {Zbkc - Carry-less multiply instructions for cryptography} {} }
+    { RISCV_ISA_Zbkx  {Zbkx - Crossbar permutations for cryptography}            {} }
+    { RISCV_ISA_Zknd  {Zknd - Scalar cryptographic - NIST AES decryption}        {} }
+    { RISCV_ISA_Zkne  {Zkne - Scalar cryptographic - NIST AES encryption}        {} }
+    { RISCV_ISA_Zknh  {Zknh - Scalar cryptographic - NIST hash functions}        {} }
+    { RISCV_ISA_Zksed {Zksed - Scalar cryptographic - ShangMi block cyphers}     {} }
+    { RISCV_ISA_Zksh  {Zksh - Scalar cryptographic - ShangMi hash functions}     {} }
+  }
+
+  set group [add_group $page {Miscelanous}]
+  add_params $group {
+    { RISCV_ISA_Zicond {Zicond - Conditional-move instructions}             {} }
+    { RISCV_ISA_Zfinx  {Zfinx - Embedded FPU (using integer register file)} {} }
+    { RISCV_ISA_Zxcfu  {Zxcfu - Custom-instructions unit (user-defined)}    {} }
   }
 
   set group [add_group $page {Physical Memory Protection (PMP)}]
@@ -253,9 +277,9 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Tuning Options}]
   add_params $group {
-    { CPU_FAST_MUL_EN   {DSP-based multiplier} }
-    { CPU_FAST_SHIFT_EN {Barrel shifter} }
-    { CPU_RF_HW_RST_EN  {Full HW reset for register file} {Implement register file with FFs instead of BRAM to allow full hardware reset} }
+    { CPU_FAST_MUL_EN   {DSP-based multiplier}                  {Use DSP block instead of bit-serial multipliers} }
+    { CPU_FAST_SHIFT_EN {Barrel shifter}                        {Use full-parallel shifters instead of of bit-serial shifters} }
+    { CPU_RF_HW_RST_EN  {Full hardware reset for register file} {Implement register file with FFs instead of BRAM to allow full hardware reset} }
   }
 
 
@@ -273,22 +297,36 @@ proc setup_ip_gui {} {
   set group [add_group $page {Internal Instruction Memory (IMEM)}]
   add_params $group {
     { MEM_INT_IMEM_EN   {Enable internal IMEM} }
-    { MEM_INT_IMEM_SIZE {IMEM size} {In bytes (use a power of two)} {$MEM_INT_IMEM_EN} }
+    { MEM_INT_IMEM_SIZE {IMEM size (bytes)} {Use a power of two} {$MEM_INT_IMEM_EN} }
   }
 
   set group [add_group $page {Internal Data Memory (DMEM)}]
   add_params $group {
     { MEM_INT_DMEM_EN   {Enable internal DMEM} }
-    { MEM_INT_DMEM_SIZE {DMEM size} {In bytes (use a power of two)} {$MEM_INT_DMEM_EN} }
+    { MEM_INT_DMEM_SIZE {DMEM size (bytes)} {Use a power of two} {$MEM_INT_DMEM_EN} }
   }
 
-  set group [add_group $page {CPU Caches}]
+
+  # **************************************************************
+  # GUI Page: Caches
+  # **************************************************************
+  set page [add_page {Caches}]
+
+  set group [add_group $page {Cache Line Size}]
   add_params $group {
-    { CACHE_BLOCK_SIZE  {Cache line size} {In bytes; has to be a power a power of two} }
-    { ICACHE_EN         {Enable instruction cache (I-cache)} }
-    { ICACHE_NUM_BLOCKS {Number of I-cache lines} {} {$ICACHE_EN} }
-    { DCACHE_EN         {Enable data cache (D-cache)} }
-    { DCACHE_NUM_BLOCKS {Number of D-cache lines}  {} {$DCACHE_EN} }
+    { CACHE_BLOCK_SIZE {Size in bytes} {Has to be a power a power of two} }
+  }
+
+  set group [add_group $page {Instruction Cache (I-Cache)}]
+  add_params $group {
+    { ICACHE_EN         {Enable I-Cache} }
+    { ICACHE_NUM_BLOCKS {Number of I-Cache lines} {Use a power of two} {$ICACHE_EN} }
+  }
+
+  set group [add_group $page {Data Cache (D-Cache)}]
+  add_params $group {
+    { DCACHE_EN         {Enable D-Cache} }
+    { DCACHE_NUM_BLOCKS {Number of D-Cache lines} {Use a power of two} {$DCACHE_EN} }
   }
 
 
@@ -300,8 +338,8 @@ proc setup_ip_gui {} {
   set group [add_group $page {General-Purpose Inputs/Outputs (GPIO)}]
   add_params $group {
     { IO_GPIO_EN      {Enable GPIO} }
-    { IO_GPIO_IN_NUM  {Number of inputs (IRQ capable)} {Interrupt-capable} {$IO_GPIO_EN} }
-    { IO_GPIO_OUT_NUM {Number of outputs}              {}                  {$IO_GPIO_EN} }
+    { IO_GPIO_IN_NUM  {Inputs (IRQ capable)} {Interrupt-capable} {$IO_GPIO_EN} }
+    { IO_GPIO_OUT_NUM {Outputs}              {}                  {$IO_GPIO_EN} }
   }
 
   set group [add_group $page {Core Local Interruptor (CLINT)}]
@@ -351,7 +389,7 @@ proc setup_ip_gui {} {
   set group [add_group $page {Pulse-Width Modulation Controller (PWM)}]
   add_params $group {
     { IO_PWM_EN     {Enable PWM} }
-    { IO_PWM_NUM_CH {Number of channels} {} {$IO_PWM_EN} }
+    { IO_PWM_NUM_CH {Channels} {} {$IO_PWM_EN} }
   }
 
   set group [add_group $page {Watchdog Timer (WDT)}]
