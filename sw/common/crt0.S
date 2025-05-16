@@ -11,7 +11,6 @@
 .file "crt0.S"
 .section .text.crt0
 .balign 4
-.option norvc // only 32-bit instructions
 .global _start
 .global __crt0_entry
 .global __crt0_main_exit
@@ -71,39 +70,35 @@ __crt0_entry:
 
 
 // ************************************************************************************************
-// SMP dual-core setup - wait for configuration if we are not core 0.
+// SMP setup - wait for configuration if we are not core 0.
 // ************************************************************************************************
-#ifndef DISABLE_DUALCORE
-__crt0_dualcore_check:
-  beqz  x1, __crt0_dualcore_primary         // proceed with normal boot-up if we are core 0
+__crt0_smp_check:
+  beqz  x1, __crt0_smp_primary              // proceed with normal boot-up if we are core 0
 
   // setup machine software interrupt
-  la    x15, __crt0_dualcore_wakeup
-  csrw  mtvec, x15                          // install interrupt handler
-  csrsi mie, 1 << 3                         // enable software interrupt source
+  la    x15,     __crt0_smp_wakeup
+  csrw  mtvec,   x15                        // install interrupt handler
+  csrsi mie,     1 << 3                     // only enable software interrupt source
   csrsi mstatus, 1 << 3                     // enable machine-level interrupts
   j     __crt0_sleep                        // wait for interrupt in sleep mode
 
   // machine software interrupt handler
-__crt0_dualcore_wakeup:
+__crt0_smp_wakeup:
+  li    x14, 0xfff44000                     // CLINT.MTIMECMP base address
+  slli  x15, x1, 3
+  add   x14, x14, x15                       // offset for _this_ hart
+  lw    x2,  0(x14)                         // MTIMECMP[this_core].lo = stack top (sp)
+  lw    x12, 4(x14)                         // MTIMECMP[this_core].hi = entry point
+
+  // acknowledge booting
   li    x14,  0xfff40000                    // CLINT.MSWI base address
-  sw    zero, 4(x14)                        // clear CLINT.MSWI[1]
+  slli  x15,  x1, 2
+  add   x14,  x14, x15                      // offset for _this_ hart
+  sw    zero, 0(x14)                        // clear MSWI[this_core]
 
-  // check launch configuration from core 0
-  csrr  x13, 0xbc1                          // ICC_DATA: signature
-  li    x14, 0xffab4321                     // expected signature
-  beq   x14, x13, __crt0_dualcore_launch
-  mret                                      // go back to sleep if incorrect signature
-
-  // get launch configuration from core 0
-__crt0_dualcore_launch:
-  csrr  x2,  0xbc1                          // ICC_DATA: stack top -> sp
-  csrr  x12, 0xbc1                          // ICC_DATA: entry point
-  csrw  0xbc1, x14                          // ICC_DATA: acknowledge start
   j     __crt0_main_entry                   // start at entry point
 
-__crt0_dualcore_primary:
-#endif
+__crt0_smp_primary:
 
 
 // ************************************************************************************************
