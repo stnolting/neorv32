@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 16.05.2025 | 1.11.4.7 | :warning: make `mcause` CSR read-only | [#1267](https://github.com/stnolting/neorv32/pull/1267) |
 | 12.05.2025 | 1.11.4.6 | :bug: fix missing burst signal in bus register stage (introduced in previous version / v1.11.4.5) | [#1266](https://github.com/stnolting/neorv32/pull/1266) |
 | 12.05.2025 | 1.11.4.5 | add explicit "burst" signal to processor-internal bus; clean-up CPU "fence" decoding | [#1265](https://github.com/stnolting/neorv32/pull/1265) |
 | 10.05.2025 | 1.11.4.4 | :sparkles: add cache burst transfers (read-only) | [#1263](https://github.com/stnolting/neorv32/pull/1263) |
