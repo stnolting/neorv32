@@ -1157,10 +1157,7 @@ begin
           end if;
         end if;
 
-        -- machine trap cause --
-        if (csr.addr = csr_mcause_c) then
-          csr.mcause <= csr.wdata(31) & csr.wdata(4 downto 0); -- type (exception/interrupt) & identifier
-        end if;
+        -- [NOTE] mtinst, mtval and mcause are read-only but won't raise any exception when being written
 
         -- --------------------------------------------------------------------
         -- machine counter setup
