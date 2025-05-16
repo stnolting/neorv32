@@ -133,8 +133,7 @@ entity neorv32_top is
     IO_SLINK_EN           : boolean                        := false;       -- implement stream link interface (SLINK)
     IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
     IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
-    IO_CRC_EN             : boolean                        := false;       -- implement cyclic redundancy check unit (CRC)
-    IO_HWSPINLOCK_EN      : boolean                        := false        -- implement hardware spinlocks (HWSPINLOCK)
+    IO_CRC_EN             : boolean                        := false        -- implement cyclic redundancy check unit (CRC)
   );
   port (
     -- Global control --
@@ -300,7 +299,7 @@ architecture neorv32_top_rtl of neorv32_top is
   type io_devices_enum_t is (
     IODEV_BOOTROM, IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG,
     IODEV_TWI, IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_CLINT, IODEV_ONEWIRE,
-    IODEV_GPTMR, IODEV_PWM, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_HWSPINLOCK, IODEV_TWD
+    IODEV_GPTMR, IODEV_PWM, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD
   );
   type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
   type iodev_rsp_t is array (io_devices_enum_t) of bus_rsp_t;
@@ -361,7 +360,6 @@ begin
       cond_sel_string_f(IO_ONEWIRE_EN,            "ONEWIRE ",    "") &
       cond_sel_string_f(IO_DMA_EN,                "DMA ",        "") &
       cond_sel_string_f(IO_SLINK_EN,              "SLINK ",      "") &
-      cond_sel_string_f(IO_HWSPINLOCK_EN,         "HWSPINLOCK ", "") &
       cond_sel_string_f(IO_CRC_EN,                "CRC ",        "") &
       cond_sel_string_f(io_sysinfo_en_c,          "SYSINFO ",    "") &
       cond_sel_string_f(OCD_EN,                   "OCD ",        "") &
@@ -919,7 +917,7 @@ begin
       DEV_16_EN => io_pwm_en_c,      DEV_16_BASE => base_io_pwm_c,
       DEV_17_EN => IO_GPTMR_EN,      DEV_17_BASE => base_io_gptmr_c,
       DEV_18_EN => IO_ONEWIRE_EN,    DEV_18_BASE => base_io_onewire_c,
-      DEV_19_EN => IO_HWSPINLOCK_EN, DEV_19_BASE => base_io_hwspinlock_c,
+      DEV_19_EN => false,            DEV_19_BASE => (others => '0'), -- reserved
       DEV_20_EN => IO_CLINT_EN,      DEV_20_BASE => base_io_clint_c,
       DEV_21_EN => IO_UART0_EN,      DEV_21_BASE => base_io_uart0_c,
       DEV_22_EN => IO_UART1_EN,      DEV_22_BASE => base_io_uart1_c,
@@ -957,7 +955,7 @@ begin
       dev_16_req_o => iodev_req(IODEV_PWM),        dev_16_rsp_i => iodev_rsp(IODEV_PWM),
       dev_17_req_o => iodev_req(IODEV_GPTMR),      dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
       dev_18_req_o => iodev_req(IODEV_ONEWIRE),    dev_18_rsp_i => iodev_rsp(IODEV_ONEWIRE),
-      dev_19_req_o => iodev_req(IODEV_HWSPINLOCK), dev_19_rsp_i => iodev_rsp(IODEV_HWSPINLOCK),
+      dev_19_req_o => open,                        dev_19_rsp_i => rsp_terminate_c, -- reserved
       dev_20_req_o => iodev_req(IODEV_CLINT),      dev_20_rsp_i => iodev_rsp(IODEV_CLINT),
       dev_21_req_o => iodev_req(IODEV_UART0),      dev_21_rsp_i => iodev_rsp(IODEV_UART0),
       dev_22_req_o => iodev_req(IODEV_UART1),      dev_22_rsp_i => iodev_rsp(IODEV_UART1),
@@ -1504,25 +1502,6 @@ begin
     end generate;
 
 
-    -- Hardware Spinlocks (HWSPINLOCK) --------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_hwspinlock_enabled:
-    if IO_HWSPINLOCK_EN generate
-      neorv32_hwspinlock_inst: entity neorv32.neorv32_hwspinlock
-        port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => iodev_req(IODEV_HWSPINLOCK),
-        bus_rsp_o => iodev_rsp(IODEV_HWSPINLOCK)
-      );
-    end generate;
-
-    neorv32_hwspinlock_disabled:
-    if not IO_HWSPINLOCK_EN generate
-      iodev_rsp(IODEV_HWSPINLOCK) <= rsp_terminate_c;
-    end generate;
-
-
     -- System Configuration Information Memory (SYSINFO) --------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_sysinfo_enabled:
@@ -1563,8 +1542,7 @@ begin
         IO_ONEWIRE_EN         => IO_ONEWIRE_EN,
         IO_DMA_EN             => IO_DMA_EN,
         IO_SLINK_EN           => IO_SLINK_EN,
-        IO_CRC_EN             => IO_CRC_EN,
-        IO_HWSPINLOCK_EN      => IO_HWSPINLOCK_EN
+        IO_CRC_EN             => IO_CRC_EN
       )
       port map (
         clk_i     => clk_i,
