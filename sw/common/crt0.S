@@ -85,16 +85,12 @@ __crt0_smp_check:
   // machine software interrupt handler
 __crt0_smp_wakeup:
   li    x14, 0xfff44000                     // CLINT.MTIMECMP base address
-  slli  x15, x1, 3
-  add   x14, x14, x15                       // offset for _this_ hart
-  lw    x2,  0(x14)                         // MTIMECMP[this_core].lo = stack top (sp)
-  lw    x12, 4(x14)                         // MTIMECMP[this_core].hi = entry point
+  lw    x2,  8(x14)                         // MTIMECMP[1].lo = stack top (sp)
+  lw    x12, 12(x14)                        // MTIMECMP[1].hi = entry point
 
   // acknowledge booting
   li    x14,  0xfff40000                    // CLINT.MSWI base address
-  slli  x15,  x1, 2
-  add   x14,  x14, x15                      // offset for _this_ hart
-  sw    zero, 0(x14)                        // clear MSWI[this_core]
+  sw    zero, 4(x14)                        // clear MSWI[1]
 
   j     __crt0_main_entry                   // start at entry point
 
