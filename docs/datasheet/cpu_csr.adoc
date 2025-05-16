@@ -9,16 +9,20 @@ The "Access" column shows the minimal required privilege mode required for acces
 `U` = user-mode, `D` = debug-mode) and the read/write capabilities (`RW` = read-write, `RO` = read-only)
 
 .Unused, Reserved, Unimplemented and Disabled CSRs
-[IMPORTANT]
+[NOTE]
 All CSRs and CSR bits that are not listed in the table below are _unimplemented_ and are _hardwired to zero_. Additionally,
 CSRs that are unavailable ("disabled") because the according ISA extension is not enabled are also considered _unimplemented_
 and are also hardwired to zero. Any access to such a CSR will raise an illegal instruction exception. All writable CSRs provide
 **WARL** behavior (write all values; read only legal values). Application software should always read back a CSR after writing
 to check if the targeted bits can actually be modified.
 
+.Read-Only RW CSRs
+[WARNING]
+Some CSRs are listed with "read-write" capabilities but will ignore any value written to them.
+In the following table these CSRs are highlighted with "⚠️".
 
 .NEORV32 Control and Status Registers (CSRs)
-[cols="<2,<4,<5,^1,<11"]
+[cols="<3,<5,<6,^3,<12"]
 [options="header"]
 |=======================
 | Address | Name [ASM] | Name [C] | Access | Description
@@ -41,10 +45,10 @@ to check if the targeted bits can actually be modified.
 5+^| **<<_machine_trap_handling_csrs>>**
 | 0x340 | <<_mscratch>> | `CSR_MSCRATCH` | MRW | Machine scratch register
 | 0x341 | <<_mepc>>     | `CSR_MEPC`     | MRW | Machine exception program counter
-| 0x342 | <<_mcause>>   | `CSR_MCAUSE`   | MRW | Machine trap cause
-| 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW | Machine trap value
+| 0x342 | <<_mcause>>   | `CSR_MCAUSE`   | MRW ⚠️| Machine trap cause
+| 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW ⚠️ | Machine trap value
 | 0x344 | <<_mip>>      | `CSR_MIP`      | MRW | Machine interrupt pending register
-| 0x34a | <<_mtinst>>   | `CSR_MTINST`   | MRW | Machine trap instruction
+| 0x34a | <<_mtinst>>   | `CSR_MTINST`   | MRW ⚠️ | Machine trap instruction
 5+^| **<<_machine_physical_memory_protection_csrs>>**
 | 0x3a0 .. 0x303 | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg3`>>      | `CSR_PMPCFG0` .. `CSR_PMPCFG3`    | MRW | Physical memory protection configuration registers
 | 0x3b0 .. 0x3bf | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr15`>> | `CSR_PMPADDR0` .. `CSR_PMPADDR15` | MRW | Physical memory protection address registers
@@ -382,6 +386,11 @@ The `mret` instruction will return to the address stored in `mepc` by automatica
 | Description | The `mcause` CSRs shows the exact cause of a trap. See section <<_traps_exceptions_and_interrupts>> for a list of all legal values.
 |=======================
 
+.Read-Only
+[IMPORTANT]
+Note that the NEORV32 `mcause` CSR is updated by the hardware only and cannot be written from software.
+However, any write-access will be ignored and will not cause any exception to maintain RISC-V compatibility.
+
 
 .`mcause` CSR bits
 [cols="^1,^1,<10"]
@@ -410,7 +419,7 @@ The `mret` instruction will return to the address stored in `mepc` by automatica
 .Read-Only
 [IMPORTANT]
 Note that the NEORV32 `mtval` CSR is updated by the hardware only and cannot be written from software.
-However, any write-access will be ignored and will not cause an exception to maintain RISC-V compatibility.
+However, any write-access will be ignored and will not cause any exception to maintain RISC-V compatibility.
 
 
 {empty} +
@@ -461,7 +470,7 @@ interrupt-triggering processor module.
 .Read-Only
 [IMPORTANT]
 Note that the NEORV32 `mtinst` CSR is updated by the hardware only and cannot be written from software.
-However, any write-access will be ignored and will not cause an exception to maintain RISC-V compatibility.
+However, any write-access will be ignored and will not cause any exception to maintain RISC-V compatibility.
 
 .Instruction Transformation
 [IMPORTANT]
