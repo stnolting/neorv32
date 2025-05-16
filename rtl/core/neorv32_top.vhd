@@ -286,10 +286,6 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dci_ndmrstn : std_ulogic;
   signal dci_haltreq : std_ulogic_vector(num_cores_c-1 downto 0);
 
-  -- CPU ICC links --
-  type core_complex_icc_t is array (0 to num_cores_c-1) of icc_t;
-  signal icc_tx, icc_rx : core_complex_icc_t;
-
   -- bus: CPU core complex --
   type core_complex_req_t is array (0 to num_cores_c-1) of bus_req_t;
   type core_complex_rsp_t is array (0 to num_cores_c-1) of bus_rsp_t;
@@ -471,7 +467,7 @@ begin
   cpu_firq(14) <= firq(FIRQ_SLINK_RX);
   cpu_firq(15) <= firq(FIRQ_SLINK_TX); -- lowest priority
 
-  -- CPU core(s) + optional L1 caches + bus switch --
+  -- CPU core(s) + optional caches + bus switch --
   core_complex_gen:
   for i in 0 to num_cores_c-1 generate
 
@@ -484,7 +480,6 @@ begin
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
-      ICC_EN              => DUAL_CORE_EN,
       -- RISC-V ISA Extensions --
       RISCV_ISA_C         => RISCV_ISA_C,
       RISCV_ISA_E         => RISCV_ISA_E,
@@ -535,9 +530,6 @@ begin
       mti_i      => mtime_irq(i),
       firq_i     => cpu_firq,
       dbi_i      => dci_haltreq(i),
-      -- inter-core communication links --
-      icc_tx_o   => icc_tx(i),
-      icc_rx_i   => icc_rx(i),
       -- instruction bus interface --
       ibus_req_o => cpu_i_req(i),
       ibus_rsp_i => cpu_i_rsp(i),
@@ -547,7 +539,7 @@ begin
     );
 
 
-    -- CPU L1 Instruction Cache ---------------------------------------------------------------
+    -- CPU Instruction Cache ------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_icache_enabled:
     if ICACHE_EN generate
@@ -575,7 +567,7 @@ begin
     end generate;
 
 
-    -- CPU L1 Data Cache ----------------------------------------------------------------------
+    -- CPU Data Cache -------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_dcache_enabled:
     if DCACHE_EN generate
@@ -623,15 +615,6 @@ begin
     );
 
   end generate; -- /core_complex
-
-
-  -- Inter-Core Communication (ICC) Links - Cross-Connect -----------------------------------
-  -- -------------------------------------------------------------------------------------------
-  icc_connect: process(icc_tx)
-  begin
-    icc_rx(icc_rx'left)  <= icc_tx(icc_tx'right);
-    icc_rx(icc_rx'right) <= icc_tx(icc_tx'left);
-  end process icc_connect;
 
 
   -- Core Complex Bus Arbiter ---------------------------------------------------------------

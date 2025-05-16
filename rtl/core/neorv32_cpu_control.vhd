@@ -667,7 +667,7 @@ begin
       when csr_mstatus_c  | csr_mstatush_c      | csr_misa_c      | csr_mie_c       | csr_mtvec_c  |
            csr_mscratch_c | csr_mepc_c          | csr_mcause_c    | csr_mip_c       | csr_mtval_c  |
            csr_mtinst_c   | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c   | csr_mimpid_c |
-           csr_mhartid_c  | csr_mconfigptr_c    | csr_mxisa_c     | csr_mxiccsreg_c | csr_mxiccdata_c =>
+           csr_mhartid_c  | csr_mconfigptr_c    | csr_mxisa_c =>
         csr_valid(2) <= '1'; -- always implemented
 
       -- machine-controlled user-mode CSRs --
@@ -1372,12 +1372,6 @@ begin
             if RISCV_ISA_Zxcfu then
               csr.rdata <= xcsr_rdata_i; -- implemented externally
             end if;
-
-          -- --------------------------------------------------------------------
-          -- inter-core communication (NEORV32-specific)
-          -- --------------------------------------------------------------------
-          when csr_mxiccsreg_c | csr_mxiccdata_c =>
-            csr.rdata <= xcsr_rdata_i; -- implemented externally
 
           -- --------------------------------------------------------------------
           -- machine trap setup
