@@ -41,7 +41,6 @@ image::neorv32_processor.png[align=center]
 * _optional_ autonomous direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
 * _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream compatible
 * _optional_ cyclic redundancy check unit (<<_cyclic_redundancy_check_crc,**CRC**>>)
-* _optional_ hardware spinlocks (32x) (<<_hardware_spinlocks_hwspinlock,**HWSPINLOCK**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>), optional authentication and hardware breakpoint
 * _optional_ system configuration information memory to determine hardware configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
@@ -303,7 +302,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_SLINK_RX_FIFO`      | natural   | 1             | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_SLINK_TX_FIFO`      | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_CRC_EN`             | boolean   | false         | Implement the <<_cyclic_redundancy_check_crc>> unit.
-| `IO_HWSPINLOCK_EN`      | boolean   | false         | Implement the <<_hardware_spinlocks_hwspinlock>> module.
 |=======================
 
 
@@ -858,7 +856,5 @@ include::soc_cfs.adoc[]
 include::soc_neoled.adoc[]
 
 include::soc_gptmr.adoc[]
-
-include::soc_hwspinlock.adoc[]
 
 include::soc_sysinfo.adoc[]
