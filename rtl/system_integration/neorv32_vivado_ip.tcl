@@ -1,5 +1,5 @@
 # -- ================================================================================ --
-# -- NEORV32 - Vivado IP Packaging + Customization GUI Setup                          --
+# -- NEORV32 - Vivado IP Packaging & Customization GUI Setup                          --
 # -- -------------------------------------------------------------------------------- --
 # -- This scripts packages the entire processor as Vivado IP module including a fancy --
 # -- customization GUI. See the NEORV32 Datasheet & User Guide for more information.  --
@@ -215,7 +215,7 @@ proc setup_ip_gui {} {
   # **************************************************************
   # GUI Page: CPU ISA
   # **************************************************************
-  set page [add_page {CPU ISA}]
+  set page [add_page {ISA}]
 
   set group [add_group $page {Base}]
   add_params $group {
@@ -230,7 +230,7 @@ proc setup_ip_gui {} {
   add_params $group {
     { RISCV_ISA_Zicntr {Zicntr - Base counters (cycles and instructions)} {} }
     { RISCV_ISA_Zihpm  {Zihpm - Hardware performance monitors (HPMs)}     {} }
-    { HPM_CNT_WIDTH    {HPM width}                                        {Counter width in bits} {$RISCV_ISA_Zihpm} }
+    { HPM_CNT_WIDTH    {HPM width}                                        {Counter width in bits}  {$RISCV_ISA_Zihpm} }
     { HPM_NUM_CNTS     {HPM counters}                                     {Number of HPM counters} {$RISCV_ISA_Zihpm} }
   }
 
@@ -290,7 +290,7 @@ proc setup_ip_gui {} {
   set mem_note "The memory sizes need to be exported to the linker via dedicated symbols. Example:"
   set imem_note "IMEM size (32kB): -Wl,--defsym,__neorv32_rom_size=32k"
   set dmem_note "DMEM size (16kB): -Wl,--defsym,__neorv32_ram_size=16k"
-  ipgui::add_static_text -name {MEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory" -component [ipx::current_core] ] -text $mem_note
+  ipgui::add_static_text -name {MEM note}  -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory" -component [ipx::current_core] ] -text $mem_note
   ipgui::add_static_text -name {IMEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory" -component [ipx::current_core] ] -text $imem_note
   ipgui::add_static_text -name {DMEM note} -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory" -component [ipx::current_core] ] -text $dmem_note
 
@@ -338,8 +338,8 @@ proc setup_ip_gui {} {
   set group [add_group $page {General-Purpose Inputs/Outputs (GPIO)}]
   add_params $group {
     { IO_GPIO_EN      {Enable GPIO} }
-    { IO_GPIO_IN_NUM  {Inputs (IRQ capable)} {Interrupt-capable} {$IO_GPIO_EN} }
-    { IO_GPIO_OUT_NUM {Outputs}              {}                  {$IO_GPIO_EN} }
+    { IO_GPIO_IN_NUM  {Inputs (IRQ-capable)} {} {$IO_GPIO_EN} }
+    { IO_GPIO_OUT_NUM {Outputs}              {} {$IO_GPIO_EN} }
   }
 
   set group [add_group $page {Core Local Interruptor (CLINT)}]
@@ -350,40 +350,40 @@ proc setup_ip_gui {} {
   set group [add_group $page {Primary UART (UART0)}]
   add_params $group {
     { IO_UART0_EN      {Enable UART0} }
-    { IO_UART0_RX_FIFO {RX FIFO depth} {Number of entries (use a power of two)}  {$IO_UART0_EN} }
-    { IO_UART0_TX_FIFO {TX FIFO depth} {Number of entries (use a power of two)}  {$IO_UART0_EN} }
+    { IO_UART0_RX_FIFO {RX FIFO depth} {Number of entries (use a power of two)} {$IO_UART0_EN} }
+    { IO_UART0_TX_FIFO {TX FIFO depth} {Number of entries (use a power of two)} {$IO_UART0_EN} }
   }
 
   set group [add_group $page {Secondary UART (UART1)}]
   add_params $group {
     { IO_UART1_EN      {Enable UART1} }
-    { IO_UART1_RX_FIFO {RX FIFO depth} {Number of entries (use a power of two)}  {$IO_UART1_EN} }
-    { IO_UART1_TX_FIFO {TX FIFO depth} {Number of entries (use a power of two)}  {$IO_UART1_EN} }
+    { IO_UART1_RX_FIFO {RX FIFO depth} {Number of entries (use a power of two)} {$IO_UART1_EN} }
+    { IO_UART1_TX_FIFO {TX FIFO depth} {Number of entries (use a power of two)} {$IO_UART1_EN} }
   }
 
   set group [add_group $page {SPI Host Controller (SPI)}]
   add_params $group {
     { IO_SPI_EN   {Enable SPI} }
-    { IO_SPI_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_SPI_EN} }
+    { IO_SPI_FIFO {FIFO depth} {Number of entries (use a power of two)} {$IO_SPI_EN} }
   }
 
   set group [add_group $page {SPI Device Controller (SDI)}]
   add_params $group {
     { IO_SDI_EN   {Enable SDI} }
-    { IO_SDI_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_SDI_EN} }
+    { IO_SDI_FIFO {FIFO depth} {Number of entries (use a power of two)} {$IO_SDI_EN} }
   }
 
   set group [add_group $page {Two-Wire/I2C Host (TWI)}]
   add_params $group {
     { IO_TWI_EN   {Enable TWI} }
-    { IO_TWI_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_TWI_EN} }
+    { IO_TWI_FIFO {FIFO depth} {Number of entries (use a power of two)} {$IO_TWI_EN} }
   }
 
   set group [add_group $page {Two-Wire/I2C Device (TWD)}]
   add_params $group {
-    { IO_TWD_EN         {Enable TWD} }
-    { IO_TWD_RX_FIFO    {RX FIFO depth}            {Number of entries (use a power of two)}  {$IO_TWD_EN} }
-    { IO_TWD_TX_FIFO    {TX FIFO depth}            {Number of entries (use a power of two)}  {$IO_TWD_EN} }
+    { IO_TWD_EN      {Enable TWD} }
+    { IO_TWD_RX_FIFO {RX FIFO depth} {Number of entries (use a power of two)} {$IO_TWD_EN} }
+    { IO_TWD_TX_FIFO {TX FIFO depth} {Number of entries (use a power of two)} {$IO_TWD_EN} }
   }
 
   set group [add_group $page {Pulse-Width Modulation Controller (PWM)}]
@@ -400,7 +400,7 @@ proc setup_ip_gui {} {
   set group [add_group $page {True Random-Number Generator (TRNG)}]
   add_params $group {
     { IO_TRNG_EN   {Enable TRNG} }
-    { IO_TRNG_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_TRNG_EN} }
+    { IO_TRNG_FIFO {FIFO depth} {Number of entries (use a power of two)} {$IO_TRNG_EN} }
   }
 
   set group [add_group $page {Custom Functions Subsystem (CFS)}]
@@ -414,7 +414,7 @@ proc setup_ip_gui {} {
   set group [add_group $page {Smart LED Interface (NEOLED)}]
   add_params $group {
     { IO_NEOLED_EN      {Enable NEOLED} }
-    { IO_NEOLED_TX_FIFO {FIFO depth} {Number of entries (use a power of two)}  {$IO_NEOLED_EN} }
+    { IO_NEOLED_TX_FIFO {FIFO depth} {Number of entries (use a power of two)} {$IO_NEOLED_EN} }
   }
 
   set group [add_group $page {General Purpose Timer (GPTMR)}]
@@ -435,11 +435,6 @@ proc setup_ip_gui {} {
   set group [add_group $page {Cyclic Redundancy Check Unit (CRC)}]
   add_params $group {
     { IO_CRC_EN {Enable CRC} }
-  }
-
-  set group [add_group $page {Hardware Spinlocks (HWSPINLOCK)}]
-  add_params $group {
-    { IO_HWSPINLOCK_EN {Implement 32 HW-based spinlocks} }
   }
 }
 
