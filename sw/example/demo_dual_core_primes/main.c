@@ -18,6 +18,8 @@
 
 /** Global variables */
 volatile uint8_t __attribute__ ((aligned (16))) core1_stack[2048]; // stack memory for core1
+volatile _Atomic int shared_arg[2]; // shared variable to pass data between core
+volatile _Atomic int shared_run = 0; // shared variable to pass status between core
 
 
 /**********************************************************************//**
@@ -71,9 +73,11 @@ int core1_entry(void) {
   neorv32_rte_setup();
 
   // get range and find all prime numbers within
-  uint32_t range_begin = neorv32_smp_icc_pop();
-  uint32_t range_end = neorv32_smp_icc_pop();
-  neorv32_smp_icc_push(count_primes(range_begin, range_end));
+  while (shared_run == 0);
+  uint32_t range_begin = shared_arg[0];
+  uint32_t range_end = shared_arg[1];
+  shared_arg[0] = count_primes(range_begin, range_end);
+  shared_run = 0;
 
   return 0;
 }
@@ -143,12 +147,16 @@ int main(void) {
   time_delta = neorv32_clint_time_get();
 
   // execute second half of workload on core 1
-  neorv32_smp_icc_push(NUM_MAX/2);
-  neorv32_smp_icc_push(NUM_MAX);
+  shared_arg[0] = NUM_MAX/2;
+  shared_arg[1] = NUM_MAX;
+  shared_run = 1;
 
   // execute first half of workload on core 0
   result = count_primes(0, NUM_MAX/2);
-  result += neorv32_smp_icc_pop(); // this will block until core 1 provides a result
+
+  // wait for core 1 to finish
+  while (shared_run);
+  result += shared_arg[0];
 
   time_delta = neorv32_clint_time_get() - time_delta;
 
