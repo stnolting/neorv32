@@ -381,7 +381,7 @@ additional latency). However, _all_ bus signals (request and response) need to b
 3+^| **In-Band Signals**
 | `addr`  |    32 | Access address using byte-wise addressing. Half-word (16-bit) and word (32-bit) addresses are aligned accordingly (e.g. LSB = 0 for half-word accesses).
 | `data`  |    32 | Write data. Writing individual bytes is controlled via `ben`.
-| `ben`   |     4 | Byte-enable for each byte in `data`.
+| `ben`   |     4 | Byte-enable for each byte in `data`. This signal is used for the write-data as well as for the read-data.
 | `stb`   |     1 | Request trigger ("strobe"). This signal is high for exactly one cycle starting a bus request. All other _in-band_ signals are valid only if `stb` is set.
 | `rw`    |     1 | Access direction (`0` = read, `1` = write).
 | `src`   |     1 | Access source (`0` = instruction fetch, `1` = load/store).
@@ -433,7 +433,7 @@ The figure below shows three exemplary single-access bus transactions:
     "request",
     {name: 'addr',  wave: 'x3.|.x4.x5.|.x', data: ['A_addr', 'B_addr', 'C_addr']},
     {name: 'data',  wave: 'x..|..4.x..|..', data: ['wdata']},
-    {name: 'ben',   wave: 'x..|..4.x..|..', data: ['ben']},
+    {name: 'ben',   wave: 'x3.|.x4.x5.|.x', data: ['ben', 'ben', 'ben']},
     {name: 'stb',   wave: '010|..10.10|..', node: '.a....c..e....'},
     {name: 'rw',    wave: 'x0.|.x1.x0.|.x', node: '..............'},
     {name: 'src',   wave: 'x0.|.x0.x0.|.x'},
@@ -475,16 +475,16 @@ exclusive bus access and a 4-word incrementing-address read burst.
   {name: 'clk', wave: 'p.................'},
   [
     "request",
-    {name: 'addr',  wave: 'x3...x.|.4.567x..', data: ['addr', '0', '4', '8', '12']},
-    {name: 'data',  wave: 'x..3.x.|.........', data: ['wdata', '0', '4', '8', '12']},
-    {name: 'ben',   wave: 'x..3.x.|.........'},
+    {name: 'addr',  wave: 'x2...x.|.3.456x..', data: ['addr', '0', '4', '8', '12']},
+    {name: 'data',  wave: 'x..2.x.|.........', data: ['wdata', '0', '4', '8', '12']},
+    {name: 'ben',   wave: 'x2.2.x.|.2....x..', data: ['1111', '1111', '1111']},
     {name: 'stb',   wave: '01010..|.101..0..', node: '.a.d.....h.k.'},
     {name: 'rw',    wave: 'x0.1.x.|.0....x..'},
     {name: 'src',   wave: 'x......|.........'},
     {name: 'priv',  wave: 'x......|.........'},
     {name: 'debug', wave: 'x......|.........'},
     {name: 'amo',   wave: 'x1...x.|.........'},
-    {name: 'amoop', wave: 'x3...x.|.........'},
+    {name: 'amoop', wave: 'x2...x.|.........'},
     {name: 'burst', wave: 'x0....x|.1.....0x'},
     {name: 'lock',  wave: 'x1...0x|.1.....0x', node: '.b...f...i.....m'},
     {name: 'fence', wave: '0................'},
