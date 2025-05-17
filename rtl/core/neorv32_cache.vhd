@@ -232,6 +232,7 @@ begin
         bus_req_o.stb   <= '1'; -- send initial (burst/locking) request
         bus_req_o.lock  <= '1'; -- this is a locked transfer
         bus_req_o.burst <= '1'; -- this is a burst transfer
+        bus_req_o.ben   <= (others => '1'); -- full-word access
         ctrl_nxt.state  <= S_DOWNLOAD_WAIT;
 
       when S_DOWNLOAD_WAIT => -- wait for exclusive (=locked) bus access
@@ -243,6 +244,7 @@ begin
         bus_req_o.rw    <= '0'; -- read access
         bus_req_o.lock  <= '1'; -- this is a locked transfer
         bus_req_o.burst <= '1'; -- this is a burst transfer
+        bus_req_o.ben   <= (others => '1'); -- full-word access
         -- wait for initial ACK to start actual bursting --
         if (bus_rsp_i.ack = '1') then
           ctrl_nxt.buf_err <= bus_rsp_i.err; -- buffer bus error
@@ -260,6 +262,7 @@ begin
         bus_req_o.rw    <= '0'; -- read access
         bus_req_o.lock  <= '1'; -- this is a locked transfer
         bus_req_o.burst <= '1'; -- this is a burst transfer
+        bus_req_o.ben   <= (others => '1'); -- full-word access
         -- send requests --
         if (ctrl.ofs_ext(offset_size_c) = '0') then
           ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1); -- next cache word
