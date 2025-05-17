@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 17.05.2025 | 1.11.4.9 | :bug: fix CPU's `lock` being cleared too early during atomic read-modify-write operations; :bug: fix cache's `ben` signal generation | [#1270](https://github.com/stnolting/neorv32/pull/1270) |
 | 16.05.2025 | 1.11.4.8 | :warning: remove hardware spinlocks and CPU's inter-core communication links | [#1268](https://github.com/stnolting/neorv32/pull/1268) |
 | 16.05.2025 | 1.11.4.7 | :warning: make `mcause` CSR read-only | [#1267](https://github.com/stnolting/neorv32/pull/1267) |
 | 12.05.2025 | 1.11.4.6 | :bug: fix missing burst signal in bus register stage (introduced in previous version / v1.11.4.5) | [#1266](https://github.com/stnolting/neorv32/pull/1266) |
