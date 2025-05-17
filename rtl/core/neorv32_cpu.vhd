@@ -26,7 +26,6 @@ entity neorv32_cpu is
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
-    ICC_EN              : boolean; -- implement inter-core communication (ICC) links
     -- RISC-V ISA Extensions --
     RISCV_ISA_C         : boolean; -- implement compressed extension
     RISCV_ISA_E         : boolean; -- implement embedded RF extension
@@ -77,9 +76,6 @@ entity neorv32_cpu is
     mti_i      : in  std_ulogic; -- risc-v machine timer interrupt
     firq_i     : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
     dbi_i      : in  std_ulogic; -- risc-v debug halt request interrupt
-    -- inter-core communication links --
-    icc_tx_o   : out icc_t; -- TX link
-    icc_rx_i   : in  icc_t; -- RX link
     -- instruction bus interface --
     ibus_req_o : out bus_req_t; -- request bus
     ibus_rsp_i : in  bus_rsp_t; -- response bus
@@ -102,7 +98,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
                                     RISCV_ISA_Zksh and RISCV_ISA_Zksed; -- Zks: ShangMi suite
 
   -- external CSR interface read-back --
-  signal xcsr_cnt, xcsr_pmp, xcsr_alu, xcsr_res, xcsr_icc : std_ulogic_vector(XLEN-1 downto 0);
+  signal xcsr_cnt, xcsr_pmp, xcsr_alu, xcsr_res : std_ulogic_vector(XLEN-1 downto 0);
 
   -- local signals --
   signal ctrl        : ctrl_bus_t;                         -- main control bus
@@ -276,7 +272,7 @@ begin
   irq_machine <= mti_i & mei_i & msi_i;
 
   -- control-external CSR read-back --
-  xcsr_res <= xcsr_cnt or xcsr_alu or xcsr_pmp or xcsr_icc;
+  xcsr_res <= xcsr_cnt or xcsr_alu or xcsr_pmp;
 
 
   -- Hardware Counters ----------------------------------------------------------------------
@@ -425,34 +421,6 @@ begin
   if not RISCV_ISA_Smpmp generate
     xcsr_pmp  <= (others => '0');
     pmp_fault <= '0';
-  end generate;
-
-
-  -- Inter-Core Communication (ICC) ---------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  icc_enabled:
-  if ICC_EN generate
-    neorv32_cpu_icc_inst: entity neorv32.neorv32_cpu_icc
-    port map (
-      -- global control --
-      clk_i       => clk_i,          -- global clock, rising edge
-      rstn_i      => rstn_i,         -- global reset, low-active, async
-      -- CSR interface --
-      csr_we_i    => ctrl.csr_we,    -- global write enable
-      csr_re_i    => ctrl.csr_re,    -- global read enable
-      csr_addr_i  => ctrl.csr_addr,  -- address
-      csr_wdata_i => ctrl.csr_wdata, -- write data
-      csr_rdata_o => xcsr_icc,       -- read data
-      -- ICC links --
-      icc_tx_o    => icc_tx_o,       -- TX link
-      icc_rx_i    => icc_rx_i        -- RX link
-    );
-  end generate;
-
-  icc_disabled:
-  if not ICC_EN generate
-    xcsr_icc <= (others => '0');
-    icc_tx_o <= icc_terminate_c;
   end generate;
 
 

@@ -68,7 +68,7 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_SDI        = 24, /**< SYSINFO_SOC (24) (r/-): Serial data interface implemented when 1 (via IO_SDI_EN generic) */
   SYSINFO_SOC_IO_UART1      = 25, /**< SYSINFO_SOC (25) (r/-): Secondary universal asynchronous receiver/transmitter 1 implemented when 1 (via IO_UART1_EN generic) */
   SYSINFO_SOC_IO_NEOLED     = 26, /**< SYSINFO_SOC (26) (r/-): NeoPixel-compatible smart LED interface implemented when 1 (via IO_NEOLED_EN generic) */
-  SYSINFO_SOC_IO_HWSPINLOCK = 27, /**< SYSINFO_SOC (27) (r/-): Hardware spinlocks implemented when 1 (via IO_HWSPINLOCK_EN generic) */
+//SYSINFO_SOC_reserved      = 27, /**< SYSINFO_SOC (27) (r/-): reserved */
   SYSINFO_SOC_IO_GPTMR      = 28, /**< SYSINFO_SOC (28) (r/-): General purpose timer implemented when 1 (via IO_GPTMR_EN generic) */
   SYSINFO_SOC_IO_SLINK      = 29, /**< SYSINFO_SOC (29) (r/-): Stream link interface implemented when 1 (via IO_SLINK_EN generic) */
   SYSINFO_SOC_IO_ONEWIRE    = 30, /**< SYSINFO_SOC (30) (r/-): 1-wire interface controller implemented when 1 (via IO_ONEWIRE_EN generic) */

@@ -68,23 +68,20 @@ direction as seen from the CPU.
 |=======================
 | Signal | Width/Type | Dir | Description
 4+^| **Clock and reset**
-| `clk_i`        | 1           | in  | Global clock line, all registers triggering on rising edge.
-| `rstn_i`       | 1           | in  | Global reset, low-active.
+| `clk_i`      | 1           | in  | Global clock line, all registers triggering on rising edge.
+| `rstn_i`     | 1           | in  | Global reset, low-active.
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
-| `msi_i`        | 1           | in  | RISC-V machine software interrupt.
-| `mei_i`        | 1           | in  | RISC-V machine external interrupt.
-| `mti_i`        | 1           | in  | RISC-V machine timer interrupt.
-| `firq_i`       | 16          | in  | Custom fast interrupt request signals.
-| `dbi_i`        | 1           | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>).
-4+^| **<<_inter_core_communication_icc>> links**
-| `icc_tx_o` | `icc_t`         | out | TX link
-| `icc_rx_i` | `icc_t`         | in  | RX link
+| `msi_i`      | 1           | in  | RISC-V machine software interrupt.
+| `mei_i`      | 1           | in  | RISC-V machine external interrupt.
+| `mti_i`      | 1           | in  | RISC-V machine timer interrupt.
+| `firq_i`     | 16          | in  | Custom fast interrupt request signals.
+| `dbi_i`      | 1           | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>).
 4+^| **Instruction <<_bus_interface>>**
-| `ibus_req_o`   | `bus_req_t` | out | Instruction fetch bus request.
-| `ibus_rsp_i`   | `bus_rsp_t` | in  | Instruction fetch bus response.
+| `ibus_req_o` | `bus_req_t` | out | Instruction fetch bus request.
+| `ibus_rsp_i` | `bus_rsp_t` | in  | Instruction fetch bus response.
 4+^| **Data <<_bus_interface>>**
-| `dbus_req_o`   | `bus_req_t` | out | Data access (load/store) bus request.
-| `dbus_rsp_i`   | `bus_rsp_t` | in  | Data access (load/store) bus response.
+| `dbus_req_o` | `bus_req_t` | out | Data access (load/store) bus request.
+| `dbus_rsp_i` | `bus_rsp_t` | in  | Data access (load/store) bus response.
 |=======================
 
 .Bus Interface Protocol
@@ -118,7 +115,6 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 | `BOOT_ADDR`        | suv(31:0) | CPU reset address. See section <<_address_space>>.
 | `DEBUG_PARK_ADDR`  | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
 | `DEBUG_EXC_ADDR`   | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
-| `ICC_EN`           | boolean   | Implement <<_inter_core_communication_icc>> module. Automatically enabled for the SMP <<_dual_core_configuration>>.
 | `RISCV_ISA_Sdext`  | boolean   | Implement RISC-V-compatible "debug" CPU operation mode required for the <<_on_chip_debugger_ocd>>.
 | `RISCV_ISA_Sdtrig` | boolean   | Implement RISC-V-compatible <<_trigger_module>>. See section <<_on_chip_debugger_ocd>>.
 | `RISCV_ISA_Smpmp`  | boolean   | Implement RISC-V-compatible physical memory protection (PMP). See section <<_smpmp_isa_extension>>.
@@ -615,15 +611,6 @@ extension is shorthand for the following set of other extensions:
 [NOTE]
 The C `_Atomic` specifier should be used for atomic variables.
 See section <<_coherence_example>> for more information.
-
-.Hardware-Based Spinlocks
-[TIP]
-The `A` ISA extension and the according sub-extensions require a lot of additional logic that increases
-the size of the processor. Furthermore, the `A` instructions require special attention to maintain
-<<_memory_coherence>>. Alternatively (or as a further addition), hardware-based spinlocks can be enabled,
-which can be used to build more complex synchronization structures without the need for the complex `A`
-ISA extension or special attention to memory coherence. See the <<_hardware_spinlocks_hwspinlock>> module
-description for more information.
 
 
 ==== `B` ISA Extension

@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110407"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110408"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -77,7 +77,7 @@ package neorv32_package is
   constant base_io_pwm_c        : std_ulogic_vector(31 downto 0) := x"fff00000";
   constant base_io_gptmr_c      : std_ulogic_vector(31 downto 0) := x"fff10000";
   constant base_io_onewire_c    : std_ulogic_vector(31 downto 0) := x"fff20000";
-  constant base_io_hwspinlock_c : std_ulogic_vector(31 downto 0) := x"fff30000";
+--constant base_io_???_c        : std_ulogic_vector(31 downto 0) := x"fff30000"; -- reserved
   constant base_io_clint_c      : std_ulogic_vector(31 downto 0) := x"fff40000";
   constant base_io_uart0_c      : std_ulogic_vector(31 downto 0) := x"fff50000";
   constant base_io_uart1_c      : std_ulogic_vector(31 downto 0) := x"fff60000";
@@ -224,21 +224,6 @@ package neorv32_package is
     data => (others => '0'),
     ack  => '0',
     err  => '0'
-  );
-
-  -- Inter-Core Communication (ICC) Link ----------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  type icc_t is record
-    rdy : std_ulogic; -- data available
-    ack : std_ulogic; -- read-enable
-    dat : std_ulogic_vector(31 downto 0); -- data word
-  end record;
-
-  -- endpoint termination --
-  constant icc_terminate_c : icc_t := (
-    rdy => '0',
-    ack => '0',
-    dat => (others => '0')
   );
 
 -- **********************************************************************************************************
@@ -481,9 +466,6 @@ package neorv32_package is
   constant csr_mhpmcounter13h_c : std_ulogic_vector(11 downto 0) := x"b8d";
   constant csr_mhpmcounter14h_c : std_ulogic_vector(11 downto 0) := x"b8e";
   constant csr_mhpmcounter15h_c : std_ulogic_vector(11 downto 0) := x"b8f";
-  -- NEORV32-specific read/write machine registers --
-  constant csr_mxiccsreg_c      : std_ulogic_vector(11 downto 0) := x"bc0";
-  constant csr_mxiccdata_c      : std_ulogic_vector(11 downto 0) := x"bc1";
   -- user counters/timers --
   constant csr_cycle_c          : std_ulogic_vector(11 downto 0) := x"c00";
   constant csr_time_c           : std_ulogic_vector(11 downto 0) := x"c01";
@@ -893,8 +875,7 @@ package neorv32_package is
       IO_SLINK_EN           : boolean                        := false;
       IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;
       IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;
-      IO_CRC_EN             : boolean                        := false;
-      IO_HWSPINLOCK_EN      : boolean                        := false
+      IO_CRC_EN             : boolean                        := false
     );
     port (
       -- Global control --

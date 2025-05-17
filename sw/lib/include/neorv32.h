@@ -27,39 +27,39 @@ extern "C" {
  * @name IO Address Space Map - Peripheral/IO Devices
  **************************************************************************/
 /**@{*/
-#define IO_BASE_ADDRESS         (0XFFE00000U)
-#define NEORV32_BOOTROM_BASE    (0xFFE00000U) /**< Bootloader ROM (BOOTROM) */
-//#define NEORV32_???_BASE      (0xFFE10000U) /**< reserved */
-//#define NEORV32_???_BASE      (0xFFE20000U) /**< reserved */
-//#define NEORV32_???_BASE      (0xFFE30000U) /**< reserved */
-//#define NEORV32_???_BASE      (0xFFE40000U) /**< reserved */
-//#define NEORV32_???_BASE      (0xFFE50000U) /**< reserved */
-//#define NEORV32_???_BASE      (0xFFE60000U) /**< reserved */
-//#define NEORV32_???_BASE      (0xFFE70000U) /**< reserved */
-//#define NEORV32_???_BASE      (0xFFE80000U) /**< reserved */
-//#define NEORV32_???_BASE      (0xFFE90000U) /**< reserved */
-#define NEORV32_TWD_BASE        (0xFFEA0000U) /**< Two-Wire Device (TWD) */
-#define NEORV32_CFS_BASE        (0xFFEB0000U) /**< Custom Functions Subsystem (CFS) */
-#define NEORV32_SLINK_BASE      (0xFFEC0000U) /**< Stream Link Interface (SLINK) */
-#define NEORV32_DMA_BASE        (0xFFED0000U) /**< Direct Memory Access Controller (DMA) */
-#define NEORV32_CRC_BASE        (0xFFEE0000U) /**< Cyclic Redundancy Check Unit (DMA) */
-//#define NEORV32_???_BASE      (0xFFEF0000U) /**< reserved */
-#define NEORV32_PWM_BASE        (0xFFF00000U) /**< Pulse Width Modulation Controller (PWM) */
-#define NEORV32_GPTMR_BASE      (0xFFF10000U) /**< General Purpose Timer (GPTMR) */
-#define NEORV32_ONEWIRE_BASE    (0xFFF20000U) /**< 1-Wire Interface Controller (ONEWIRE) */
-#define NEORV32_HWSPINLOCK_BASE (0xFFF30000U) /**< Hardware spinlocks (HWSPINLOCK) */
-#define NEORV32_CLINT_BASE      (0xFFF40000U) /**< Core Local Interruptor (CLINT) */
-#define NEORV32_UART0_BASE      (0xFFF50000U) /**< Primary Universal Asynchronous Receiver and Transmitter (UART0) */
-#define NEORV32_UART1_BASE      (0xFFF60000U) /**< Secondary Universal Asynchronous Receiver and Transmitter (UART1) */
-#define NEORV32_SDI_BASE        (0xFFF70000U) /**< Serial Data Interface (SDI) */
-#define NEORV32_SPI_BASE        (0xFFF80000U) /**< Serial Peripheral Interface Controller (SPI) */
-#define NEORV32_TWI_BASE        (0xFFF90000U) /**< Two-Wire Interface Controller (TWI) */
-#define NEORV32_TRNG_BASE       (0xFFFA0000U) /**< True Random Number Generator (TRNG) */
-#define NEORV32_WDT_BASE        (0xFFFB0000U) /**< Watchdog Timer (WDT) */
-#define NEORV32_GPIO_BASE       (0xFFFC0000U) /**< General Purpose Input/Output Port Controller (GPIO) */
-#define NEORV32_NEOLED_BASE     (0xFFFD0000U) /**< Smart LED Hardware Interface (NEOLED) */
-#define NEORV32_SYSINFO_BASE    (0xFFFE0000U) /**< System Information Memory (SYSINFO) */
-#define NEORV32_DM_BASE         (0xFFFF0000U) /**< On-Chip Debugger - Debug Module (OCD) */
+#define IO_BASE_ADDRESS      (0XFFE00000U)
+#define NEORV32_BOOTROM_BASE (0xFFE00000U) /**< Bootloader ROM (BOOTROM) */
+//#define NEORV32_???_BASE   (0xFFE10000U) /**< reserved */
+//#define NEORV32_???_BASE   (0xFFE20000U) /**< reserved */
+//#define NEORV32_???_BASE   (0xFFE30000U) /**< reserved */
+//#define NEORV32_???_BASE   (0xFFE40000U) /**< reserved */
+//#define NEORV32_???_BASE   (0xFFE50000U) /**< reserved */
+//#define NEORV32_???_BASE   (0xFFE60000U) /**< reserved */
+//#define NEORV32_???_BASE   (0xFFE70000U) /**< reserved */
+//#define NEORV32_???_BASE   (0xFFE80000U) /**< reserved */
+//#define NEORV32_???_BASE   (0xFFE90000U) /**< reserved */
+#define NEORV32_TWD_BASE     (0xFFEA0000U) /**< Two-Wire Device (TWD) */
+#define NEORV32_CFS_BASE     (0xFFEB0000U) /**< Custom Functions Subsystem (CFS) */
+#define NEORV32_SLINK_BASE   (0xFFEC0000U) /**< Stream Link Interface (SLINK) */
+#define NEORV32_DMA_BASE     (0xFFED0000U) /**< Direct Memory Access Controller (DMA) */
+#define NEORV32_CRC_BASE     (0xFFEE0000U) /**< Cyclic Redundancy Check Unit (DMA) */
+//#define NEORV32_???_BASE   (0xFFEF0000U) /**< reserved */
+#define NEORV32_PWM_BASE     (0xFFF00000U) /**< Pulse Width Modulation Controller (PWM) */
+#define NEORV32_GPTMR_BASE   (0xFFF10000U) /**< General Purpose Timer (GPTMR) */
+#define NEORV32_ONEWIRE_BASE (0xFFF20000U) /**< 1-Wire Interface Controller (ONEWIRE) */
+//#define NEORV32_???_BASE   (0xFFF30000U) /**< reserved */
+#define NEORV32_CLINT_BASE   (0xFFF40000U) /**< Core Local Interruptor (CLINT) */
+#define NEORV32_UART0_BASE   (0xFFF50000U) /**< Primary Universal Asynchronous Receiver and Transmitter (UART0) */
+#define NEORV32_UART1_BASE   (0xFFF60000U) /**< Secondary Universal Asynchronous Receiver and Transmitter (UART1) */
+#define NEORV32_SDI_BASE     (0xFFF70000U) /**< Serial Data Interface (SDI) */
+#define NEORV32_SPI_BASE     (0xFFF80000U) /**< Serial Peripheral Interface Controller (SPI) */
+#define NEORV32_TWI_BASE     (0xFFF90000U) /**< Two-Wire Interface Controller (TWI) */
+#define NEORV32_TRNG_BASE    (0xFFFA0000U) /**< True Random Number Generator (TRNG) */
+#define NEORV32_WDT_BASE     (0xFFFB0000U) /**< Watchdog Timer (WDT) */
+#define NEORV32_GPIO_BASE    (0xFFFC0000U) /**< General Purpose Input/Output Port Controller (GPIO) */
+#define NEORV32_NEOLED_BASE  (0xFFFD0000U) /**< Smart LED Hardware Interface (NEOLED) */
+#define NEORV32_SYSINFO_BASE (0xFFFE0000U) /**< System Information Memory (SYSINFO) */
+#define NEORV32_DM_BASE      (0xFFFF0000U) /**< On-Chip Debugger - Debug Module (OCD) */
 /**@}*/
 
 
@@ -232,7 +232,7 @@ typedef union {
 
 
 // ----------------------------------------------------------------------------
-// Include all system header files
+// Include all processor header files
 // ----------------------------------------------------------------------------
 // intrinsics
 #include "neorv32_intrinsics.h"
@@ -256,7 +256,6 @@ typedef union {
 #include "neorv32_dma.h"
 #include "neorv32_gpio.h"
 #include "neorv32_gptmr.h"
-#include "neorv32_hwspinlock.h"
 #include "neorv32_neoled.h"
 #include "neorv32_onewire.h"
 #include "neorv32_pwm.h"

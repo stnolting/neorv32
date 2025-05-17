@@ -1,6 +1,6 @@
 /**
  * @file spinlock.c
- * @brief Single simple spinlock based on atomic memory operations.
+ * @brief Single simple spinlock based on atomic reservation-set operations.
  */
 #include <neorv32.h>
 

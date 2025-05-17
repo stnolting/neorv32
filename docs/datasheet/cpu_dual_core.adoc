@@ -47,49 +47,9 @@ sections at boot-up.
 | **Cache coherency** | Be aware that there is no cache snooping available. If any CPU1 cache is enabled
 care must be taken to prevent access to outdated data - either by using cache synchronization (`fence` / `fence.i`
 instructions) or by using atomic memory accesses. See <<_memory_coherence>> for more information.
-| **Inter-core communication** | See section <<_inter_core_communication_icc>>.
 | **Bootloader** | Only core 0 will boot and execute the bootloader while core 1 is held in standby.
 | **Booting** | See section <<_dual_core_boot>>.
 |=======================
-
-
-==== SMP Software Library
-
-An SMP library provides basic functions for launching the secondary core and for performing direct
-core-to-core communication:
-
-[cols="<1,<8"]
-[grid="none"]
-|=======================
-| neorv32_smp.c | link:https://stnolting.github.io/neorv32/sw/neorv32__smp_8c.html[Online software reference (Doxygen)]
-| neorv32_smp.h | link:https://stnolting.github.io/neorv32/sw/neorv32__smp_8h.html[Online software reference (Doxygen)]
-|=======================
-
-
-==== Inter-Core Communication (ICC)
-
-Both cores can communicate with each other via a direct point-to-point connection based on FIFO-like message
-queues. These direct communication links are faster (in terms of latency) compared to a memory-mapped or
-shared-memory communication. Additionally, communication using these links is guaranteed to be atomic.
-
-The inter-core communication (ICC) module is implemented as dedicated hardware module within each CPU core
-(VHDL file `rtl/core/neorv32_cpu_icc.vhd`). This module is automatically included if the dual-core option
-is enabled. Each core provides a **32-bit wide** and **4 entries deep** FIFO for sending data to the other core.
-Hence, there are two FIFOs: one for sending data from core 0 to core 1 and another one for sending data the
-opposite way.
-
-The ICC communication links are accessed via two NEORV32-specific CSRs. Hence, those FIFOs are accessible only
-by the CPU core itself and cannot be accessed by the DMA or any other CPU core.
-
-The <<_mxiccsreg>> provides read-only status information about the core's ICC links: bit 0 becomes set if
-there is RX data available for _this_ core (send from the other core). Bit 1 is set as long there is
-free space in _this_ core's TX data FIFO. The <<_mxiccdata>> CSR is used for actual data send/receive operations.
-Writing this register will put the according data word into the TX link FIFO of _this_ core. Reading this CSR
-will return a data word from the RX FIFO of _this_ core.
-
-The ICC FIFOs do not provide any interrupt capabilities. Software is expected to use the machine-software
-interrupt of the receiving core (provided by the <<_core_local_interruptor_clint>>) to inform it about
-available messages.
 
 
 ==== Dual-Core Boot
@@ -101,20 +61,23 @@ booting, executing either the <<_bootloader>> or the pre-installed image from th
 
 To boot-up core 1, the primary core has to use a special library function provided by the NEORV32 software framework:
 
-.CPU Core 1 launch function prototype (note that this function can only be executed on core 0)
+.CPU Core 1 Launch Function Prototype (note that this function can only be executed on core 0)
 [source,c]
 ----
 int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes);
 ----
 
-When executed, core 0 uses the <<_inter_core_communication_icc>> to send launch data that includes the entry point
-for core 1 (via `entry_point`) and the actual stack configuration (via `stack_memory` and `stack_size_bytes`).
-Note that the main function for core 1 has to use a specific type (return `int`, no arguments):
+When executed, core 0 uses the two 32-bit `MTIMECMP` registers of the <<_core_local_interruptor_clint>> to
+store the _launch configuration_ at a defined address location. This launch configuration consists of the stack
+configuration (via `stack_memory` and `stack_size_bytes`) and the actual entry point for core 1. After these
+registers have been populated, core 1 will trigger core 1's software interrupt (also via the CLINT) to wake it
+from sleep mode. After that, core 1 will fetch the launch configuration and will start execution at the configured
+entry point.
 
 .CPU Core 1 Main Function
 [source,c]
 ----
-int core1_main(void) {
+int core1_main(void) { // return `int`, no arguments
   return 0; // return to crt0 and go to sleep mode
 }
 ----
