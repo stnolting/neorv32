@@ -58,7 +58,7 @@ Basically, three types of bus transfer are implemented which are illustrated in 
 . **Single-access** transfers perform a single read or write operation.
 . **Atomic-access** transfers perform a read followed by a write operation. The bus is locked during the entire transfer
 to maintain exclusive bus access. This transfer type is used by the CPU to perform atomic read-modify-write operations.
-* **Burst read** transfers perform several consecutive read accesses. This transfer type is used by cache block operations.
+. **Burst read** transfers perform several consecutive read accesses. This transfer type is used by cache block operations.
 
 .XBUS **Single Access** Transfers: Write (left) and Read (right)
 [wavedrom, format="svg", align="center"]
@@ -70,7 +70,7 @@ to maintain exclusive bus access. This transfer type is used by the CPU to perfo
   {name: 'xbus_cti_o',  wave: 'x3...|.x4...|.x.', data: ['000 (classic cycle)', '000 (classic cycle)']},
   {name: 'xbus_tag_o',  wave: 'x3...|.x4...|.x.', data: ['tag', 'tag']},
   {name: 'xbus_we_o',   wave: 'x1...|.x0...|.x.'},
-  {name: 'xbus_sel_o',  wave: 'x3...|.x....|.x.', data: ['byte_enable']},
+  {name: 'xbus_sel_o',  wave: 'x3...|.x4...|.x.', data: ['byte_enable', 'byte_enable']},
   {name: 'xbus_stb_o',  wave: '010..|..10..|...', node: '.a......d.....'},
   {name: 'xbus_cyc_o',  wave: '01...|.01...|.0.', node: '.b......e.....'},
   {},
@@ -92,7 +92,7 @@ to maintain exclusive bus access. This transfer type is used by the CPU to perfo
   {name: 'xbus_cti_o',  wave: 'x7.....x', data: ['001 (constant address burst)']},
   {name: 'xbus_tag_o',  wave: 'x2.....x'},
   {name: 'xbus_we_o',   wave: 'x0..1..x'},
-  {name: 'xbus_sel_o',  wave: 'x...2..x'},
+  {name: 'xbus_sel_o',  wave: 'x2.....x'},
   {name: 'xbus_stb_o',  wave: '010.10..', node: '.a..c'},
   {name: 'xbus_cyc_o',  wave: '01.....0'},
   {},
@@ -114,7 +114,7 @@ to maintain exclusive bus access. This transfer type is used by the CPU to perfo
   {name: 'xbus_cti_o',  wave: 'x7.....x.', data: ['111 (incrementing address burst)']},
   {name: 'xbus_tag_o',  wave: 'x2.....x.'},
   {name: 'xbus_we_o',   wave: 'x0.....x.'},
-  {name: 'xbus_sel_o',  wave: 'x........'},
+  {name: 'xbus_sel_o',  wave: 'x2.....x.'},
   {name: 'xbus_stb_o',  wave: '0101..0..', node: '.a.c'},
   {name: 'xbus_cyc_o',  wave: '01.....0.', node: '.......d'},
   {},
