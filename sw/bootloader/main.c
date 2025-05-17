@@ -49,9 +49,9 @@ int  put_exe_word(int dst, uint32_t addr, uint32_t wdata);
 
 
 /**********************************************************************//**
- * Bootloader main.
+ * Bootloader main. "naked" because this is free-standing.
  **************************************************************************/
-int main(void) {
+int __attribute__((naked)) main(void) {
 
   // ------------------------------------------------
   // Hardware setup
@@ -432,8 +432,8 @@ int load_exe(int src) {
     return 1;
   }
 
-  uart_puts("OK\n");
   g_exe_size = exe_size;
+  uart_puts("OK\n");
 
   // we might have caches so the executable might not yet have fully arrived in main memory yet
   asm volatile ("fence"); // flush data caches to main memory
