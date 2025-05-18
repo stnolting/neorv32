@@ -311,7 +311,6 @@ begin
   inc <= (others => inc_i);
   nxt <= std_ulogic_vector(unsigned('0' & lo_q) + unsigned(inc));
 
-
   -- counter high-word --
   high_word_enabled:
   if (CNT_WIDTH > 32) generate
@@ -337,7 +336,6 @@ begin
     hi_q <= (others => '0');
   end generate;
 
-
   -- output selected sub-word --
   output_select: process(re_i, sel_i, lo_q, hi_q)
   begin
@@ -352,4 +350,3 @@ begin
   end process output_select;
 
 end neorv32_cpu_counters_cnt_rtl;
-

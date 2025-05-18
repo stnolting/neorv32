@@ -60,7 +60,6 @@ begin
     end if;
   end process sequencer;
 
-
   -- Processor Reset Output Synchronizer ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   synchronizer: process(rstn_ext_i, clk_i)
@@ -73,7 +72,6 @@ begin
       xrstn_ocd_o <= rstn_dbg_i;
     end if;
   end process synchronizer;
-
 
 end neorv32_sys_reset_rtl;
 
@@ -145,6 +143,5 @@ begin
   clk_en_o(clk_div1024_c) <= cnt(9)  and (not cnt2(9));  -- clk_i / 1024
   clk_en_o(clk_div2048_c) <= cnt(10) and (not cnt2(10)); -- clk_i / 2048
   clk_en_o(clk_div4096_c) <= cnt(11) and (not cnt2(11)); -- clk_i / 4096
-
 
 end neorv32_sys_clock_rtl;

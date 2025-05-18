@@ -229,9 +229,9 @@ begin
 
       -- pwm output --
       if (cfg_en = '0') or (unsigned(cnt_duty) >= unsigned(cfg_duty)) then
-        pwm_o <= cfg_pol; -- deasserted
+        pwm_o <= cfg_pol;
       else
-        pwm_o <= not cfg_pol; -- asserted
+        pwm_o <= not cfg_pol;
       end if;
 
     end if;
