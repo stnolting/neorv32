@@ -142,7 +142,7 @@ begin
     elsif rising_edge(clk_i) then
       if (ctrl_i.lsu_mo_we = '1') and (ctrl_i.lsu_amo = '1') and (ctrl_i.ir_funct12(8) = '0') then
         dbus_req_o.lock <= '1'; -- set if Zaamo instruction
-      elsif (pending = '0') then
+      elsif (dbus_rsp_i.ack = '1') or (ctrl_i.cpu_trap = '1') then
         dbus_req_o.lock <= '0'; -- clear at the end of the bus access
       end if;
     end if;

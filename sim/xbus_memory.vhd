@@ -85,6 +85,7 @@ architecture xbus_memory_rtl of xbus_memory is
   end function init_mem8bv_from_hexfile_f;
 
   -- memory access --
+  signal addr  : unsigned(addr_bits_c-1 downto 0);
   signal rdata : std_ulogic_vector(31 downto 0);
   signal ack   : std_ulogic;
 
@@ -109,26 +110,36 @@ begin
       if (xbus_req_i.cyc = '1') and (xbus_req_i.stb = '1') then
         if (xbus_req_i.we = '1') then
           if (xbus_req_i.sel(0) = '1') then
-            mem8bv_b0_v(to_integer(unsigned(xbus_req_i.addr(addr_bits_c+1 downto 2)))) := to_bitvector(xbus_req_i.data(07 downto 00));
+            mem8bv_b0_v(to_integer(addr)) := to_bitvector(xbus_req_i.data(07 downto 00));
           end if;
           if (xbus_req_i.sel(1) = '1') then
-            mem8bv_b1_v(to_integer(unsigned(xbus_req_i.addr(addr_bits_c+1 downto 2)))) := to_bitvector(xbus_req_i.data(15 downto 08));
+            mem8bv_b1_v(to_integer(addr)) := to_bitvector(xbus_req_i.data(15 downto 08));
           end if;
           if (xbus_req_i.sel(2) = '1') then
-            mem8bv_b2_v(to_integer(unsigned(xbus_req_i.addr(addr_bits_c+1 downto 2)))) := to_bitvector(xbus_req_i.data(23 downto 16));
+            mem8bv_b2_v(to_integer(addr)) := to_bitvector(xbus_req_i.data(23 downto 16));
           end if;
           if (xbus_req_i.sel(3) = '1') then
-            mem8bv_b3_v(to_integer(unsigned(xbus_req_i.addr(addr_bits_c+1 downto 2)))) := to_bitvector(xbus_req_i.data(31 downto 24));
+            mem8bv_b3_v(to_integer(addr)) := to_bitvector(xbus_req_i.data(31 downto 24));
           end if;
         else
-          rdata(07 downto 00) <= to_stdulogicvector(mem8bv_b0_v(to_integer(unsigned(xbus_req_i.addr(addr_bits_c+1 downto 2)))));
-          rdata(15 downto 08) <= to_stdulogicvector(mem8bv_b1_v(to_integer(unsigned(xbus_req_i.addr(addr_bits_c+1 downto 2)))));
-          rdata(23 downto 16) <= to_stdulogicvector(mem8bv_b2_v(to_integer(unsigned(xbus_req_i.addr(addr_bits_c+1 downto 2)))));
-          rdata(31 downto 24) <= to_stdulogicvector(mem8bv_b3_v(to_integer(unsigned(xbus_req_i.addr(addr_bits_c+1 downto 2)))));
+          if (xbus_req_i.sel(0) = '1') then
+            rdata(07 downto 00) <= to_stdulogicvector(mem8bv_b0_v(to_integer(addr)));
+          end if;
+          if (xbus_req_i.sel(1) = '1') then
+            rdata(15 downto 08) <= to_stdulogicvector(mem8bv_b1_v(to_integer(addr)));
+          end if;
+          if (xbus_req_i.sel(2) = '1') then
+            rdata(23 downto 16) <= to_stdulogicvector(mem8bv_b2_v(to_integer(addr)));
+          end if;
+          if (xbus_req_i.sel(3) = '1') then
+            rdata(31 downto 24) <= to_stdulogicvector(mem8bv_b3_v(to_integer(addr)));
+          end if;
         end if;
       end if;
     end if;
   end process memory_data;
+
+  addr <= unsigned(xbus_req_i.addr(addr_bits_c+1 downto 2));
 
   memory_ack: process(rstn_i, clk_i)
   begin
