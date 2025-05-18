@@ -27,6 +27,8 @@
 
 // prototypes
 void print_random_data(void);
+void print_hex(void);
+void aux_print_hex_byte(uint8_t byte);
 void repetition_count_test(void);
 void adaptive_proportion_test(void);
 void generate_histogram(void);
@@ -91,6 +93,7 @@ int main(void) {
     // main menu
     neorv32_uart0_printf("\nCommands:\n"
                          " n: Print 8-bit random numbers (abort by pressing any key)\n"
+                         " x: Print random numbers as HEX data (abort by pressing any key\n"
                          " h: Generate histogram and analyze data\n"
                          " t: Compute average random generation rate\n"
                          " 1: Run repetition count test (NIST SP 800-90B)\n"
@@ -103,6 +106,9 @@ int main(void) {
 
     if (cmd == 'n') {
       print_random_data();
+    }
+    else if (cmd == 'x') {
+      print_hex();
     }
     else if (cmd == 't') {
       compute_rate();
@@ -147,6 +153,67 @@ void print_random_data(void) {
     }
   }
   neorv32_uart0_printf("\nPrinted samples: %u\n", num_samples);
+}
+
+
+/**********************************************************************//**
+ * Print random numbers as HEX dump.
+ **************************************************************************/
+void print_hex(void) {
+
+  uint8_t tmp;
+  uint8_t line[16];
+  uint32_t i;
+  uint8_t trng_data;
+
+  neorv32_trng_fifo_clear();
+
+  while (1) {
+
+    // get 16 bytes
+    for (i=0; i<16; i++) {
+      while(neorv32_trng_get(&trng_data) == 0);
+      line[i] = trng_data;
+    }
+
+    // print 16 bytes as hexadecimal
+    for (i=0; i<16; i++) {
+      aux_print_hex_byte(line[i]);
+      neorv32_uart0_putc(' ');
+    }
+
+    neorv32_uart0_printf("| ");
+
+    // print 16 bytes as ASCII
+    for (i=0; i<16; i++) {
+      tmp = line[i];
+      if ((tmp < 32) || (tmp > 126)) { // not printable?
+        tmp = '.';
+      }
+      neorv32_uart0_putc((char)tmp);
+    }
+
+    neorv32_uart0_printf("\n");
+
+    if (neorv32_uart0_char_received()) {
+      neorv32_uart0_char_received_get();
+      return;
+    }
+  }
+}
+
+
+/**********************************************************************//**
+ * Print HEX byte.
+ *
+ * @param[in] byte Byte to be printed as 2-char hex value.
+ **************************************************************************/
+void aux_print_hex_byte(uint8_t byte) {
+
+  static const char symbols[] = "0123456789abcdef";
+
+  neorv32_uart0_putc(symbols[(byte >> 4) & 0x0f]);
+  neorv32_uart0_putc(symbols[(byte >> 0) & 0x0f]);
 }
 
 
