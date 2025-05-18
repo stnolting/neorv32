@@ -70,12 +70,12 @@ int  core1_main(void);
 void goto_user_mode(void);
 
 // trap value that will be NEVER set by the hardware
-const uint32_t trap_never_c = 0x80000000UL; // = reserved
+const uint32_t trap_never_c = 0x80000000U;
 
 // Global variables
 volatile uint32_t trap_cause = trap_never_c;
 volatile int cnt_fail = 0; // global counter for failing tests
-volatile int cnt_ok   = 0; // global counter for successful tests
+volatile int cnt_ok = 0; // global counter for successful tests
 volatile int cnt_test = 0; // global counter for total number of tests
 volatile uint32_t num_hpm_cnts_global = 0; // global number of available hpms
 volatile int vectored_mei_handler_ack = 0; // vectored mei trap handler acknowledge
@@ -90,6 +90,7 @@ volatile unsigned char constr_src[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 
 volatile uint32_t constr_res = 0; // for constructor test
 volatile uint32_t amo_var = 0; // atomic memory access test
 volatile _Atomic int atomic_cnt = 0; // dual core atomic test
+
 
 /**********************************************************************//**
  * Constructor; should be called before entering main.
