@@ -624,7 +624,7 @@ and will return a "failed" state (`rd` = 1).
 
 .Reservation Set and Granule
 [NOTE]
-The reservation set controller supports only **single global`` reservation set. Hence, the entire physical address
+The reservation set controller supports only **single global** reservation set. Hence, the entire physical address
 space is treated as single granule.
 
 The reservation-set controller implements the _strong semnatics_. An active reservation is invalidated if...
