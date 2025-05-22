@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 22.05.2025 | 1.11.5.1 | :bug: fix instruction fetch `ben`/`stb` signaling (has to be all-one -> always request full 32-bit words) | [#1272](https://github.com/stnolting/neorv32/pull/1272) |
 | 22.05.2025 | [**:rocket:1.11.5**](https://github.com/stnolting/neorv32/releases/tag/v1.11.5) | **New release** | |
 | 17.05.2025 | 1.11.4.9 | :bug: fix CPU's `lock` being cleared too early during atomic read-modify-write operations; :bug: fix cache's `ben` signal generation | [#1270](https://github.com/stnolting/neorv32/pull/1270) |
 | 16.05.2025 | 1.11.4.8 | :warning: remove hardware spinlocks and CPU's inter-core communication links | [#1268](https://github.com/stnolting/neorv32/pull/1268) |
