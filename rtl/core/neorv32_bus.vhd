@@ -141,9 +141,7 @@ begin
   x_req_o.data  <= b_req_i.data  when PORT_A_READ_ONLY else
                    a_req_i.data  when PORT_B_READ_ONLY else
                    a_req_i.data  when (sel = '0')      else b_req_i.data;
-  x_req_o.ben   <= b_req_i.ben   when PORT_A_READ_ONLY else
-                   a_req_i.ben   when PORT_B_READ_ONLY else
-                   a_req_i.ben   when (sel = '0')      else b_req_i.ben;
+  x_req_o.ben   <= a_req_i.ben   when (sel = '0')      else b_req_i.ben;
   x_req_o.rw    <= a_req_i.rw    when (sel = '0')      else b_req_i.rw;
   x_req_o.src   <= a_req_i.src   when (sel = '0')      else b_req_i.src;
   x_req_o.priv  <= a_req_i.priv  when (sel = '0')      else b_req_i.priv;
