@@ -31,16 +31,23 @@ The external bus interface provides a **Wishbone**-compatible on-chip bus interf
 can be used to attach processor-external modules like memories, custom hardware accelerators or additional
 peripheral devices.
 
-.Wishbone Specs
-[TIP]
-The official Wishbone specification scan be found online:
-https://wishbone-interconnect.readthedocs.io/en/latest/index.html
+.Burst Transfers
+[IMPORTANT]
+If any cache (<<_processor_internal_instruction_cache_icache>>, <<_processor_internal_data_cache_dcache>>) is
+enabled, this also means that cache block transfers are **always executed as burst transfers**. There is no
+possibility to execute the cache block transfers as single bus transactions. Therefore, all devices,
+memories and endpoints that can be accessed by the cache must also be able to process bursts.
 
 .Address Mapping
 [NOTE]
 The external interface is **not** mapped to a specific address range. Instead, all CPU memory accesses that
 do not target a specific (and actually implemented) processor-internal address region (hence, accessing the "void";
 see section <<_address_space>>) are **redirected** to the external bus interface.
+
+.Wishbone Specs
+[TIP]
+The official Wishbone specification scan be found online:
+https://wishbone-interconnect.readthedocs.io/en/latest/index.html
 
 .AXI4 Interface Bridge
 [TIP]
