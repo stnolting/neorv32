@@ -1,12 +1,12 @@
 -- ================================================================================ --
--- NEORV32 SoC - RISC-V Core Local Interruptor (CLINT)                              --
+-- NEORV32 SoC - RISC-V Core-Local Interruptor (CLINT)                              --
 -- -------------------------------------------------------------------------------- --
--- Compatible to the RISC-V & SiFive CLINT specification. Supports machine software --
--- interrupts and machine timer interrupts for up to 4095 harts.                    --
+-- Compatible to the RISC-V & SiFive(R) CLINT specifications. Supports machine      --
+-- software interrupts and machine timer interrupts for up to 4095 harts.           --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -49,7 +49,7 @@ architecture neorv32_clint_rtl of neorv32_clint is
   );
   end component;
 
-  -- time interrupt generator --
+  -- timer interrupt generator --
   component neorv32_clint_mtimecmp
   port (
     clk_i   : in  std_ulogic;
@@ -78,9 +78,9 @@ architecture neorv32_clint_rtl of neorv32_clint is
   end component;
 
   -- device offsets --
-  constant clic_mswi_base_c     : unsigned(15 downto 0) := x"0000";
-  constant clic_mtimecmp_base_c : unsigned(15 downto 0) := x"4000";
-  constant clic_mtime_base_c    : unsigned(15 downto 0) := x"bff8";
+  constant base_mswi_c     : unsigned(15 downto 0) := x"0000";
+  constant base_mtimecmp_c : unsigned(15 downto 0) := x"4000";
+  constant base_mtime_c    : unsigned(15 downto 0) := x"bff8";
 
   -- device access --
   signal mtime_en    : std_ulogic;
@@ -114,7 +114,7 @@ begin
   );
 
   -- device access --
-  mtime_en <= '1' when (bus_req_i.stb = '1') and (unsigned(bus_req_i.addr(15 downto 3)) = clic_mtime_base_c(15 downto 3)) else '0';
+  mtime_en <= '1' when (bus_req_i.stb = '1') and (unsigned(bus_req_i.addr(15 downto 3)) = base_mtime_c(15 downto 3)) else '0';
 
   -- system time output: synchronize low and high words --
   time_output: process(rstn_i, clk_i)
@@ -148,7 +148,7 @@ begin
     );
 
     -- device access --
-    mtimecmp_en(i) <= '1' when (bus_req_i.stb = '1') and (unsigned(bus_req_i.addr(15 downto 3)) = (clic_mtimecmp_base_c(15 downto 3) + i)) else '0';
+    mtimecmp_en(i) <= '1' when (bus_req_i.stb = '1') and (unsigned(bus_req_i.addr(15 downto 3)) = (base_mtimecmp_c(15 downto 3) + i)) else '0';
 
   end generate;
 
@@ -170,7 +170,7 @@ begin
     );
 
     -- device access --
-    mswi_en(i) <= '1' when (bus_req_i.stb = '1') and (unsigned(bus_req_i.addr(15 downto 2)) = (clic_mswi_base_c(15 downto 2) + i)) else '0';
+    mswi_en(i) <= '1' when (bus_req_i.stb = '1') and (unsigned(bus_req_i.addr(15 downto 2)) = (base_mswi_c(15 downto 2) + i)) else '0';
 
   end generate;
 
