@@ -34,9 +34,6 @@ end neorv32_imem;
 
 architecture neorv32_imem_rtl of neorv32_imem is
 
-  -- alternative memory description style --
-  constant alt_style_c : boolean := false; -- [TIP] enable this if synthesis fails to infer block RAM
-
   -- highest address bit --
   constant addr_hi_c : natural := index_size_f(IMEM_SIZE/4)+1;
 
@@ -44,9 +41,9 @@ architecture neorv32_imem_rtl of neorv32_imem is
   constant mem_rom_c : mem32_t(0 to IMEM_SIZE/4-1) := mem32_init_f(application_init_image_c, IMEM_SIZE/4);
 
   -- local signals --
-  signal rdata         : std_ulogic_vector(31 downto 0);
-  signal rden          : std_ulogic;
-  signal addr, addr_ff : unsigned(index_size_f(IMEM_SIZE/4)-1 downto 0);
+  signal rdata : std_ulogic_vector(31 downto 0);
+  signal rden  : std_ulogic;
+  signal addr  : unsigned(index_size_f(IMEM_SIZE/4)-1 downto 0);
 
   -- [NOTE] The memory (RAM) is built from 4 individual byte-wide memories as some synthesis tools
   --        have issues inferring 32-bit memories with individual byte-enable signals.
@@ -72,29 +69,14 @@ begin
   -- -------------------------------------------------------------------------------------------
   imem_rom:
   if IMEM_INIT generate
-
-    imem_rom_default: -- default memory HDL style
-    if not alt_style_c generate
-      mem_access: process(clk_i)
-      begin
-        if rising_edge(clk_i) then
+    mem_access: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        if (bus_req_i.stb = '1') then -- reduce switching activity when not accessed
           rdata <= mem_rom_c(to_integer(addr));
         end if;
-      end process mem_access;
-      addr_ff <= (others => '0'); -- unused
-    end generate;
-
-    imem_rom_alternative: -- alternative memory HDL style
-    if alt_style_c generate
-      mem_access: process(clk_i)
-      begin
-        if rising_edge(clk_i) then
-          addr_ff <= addr;
-        end if;
-      end process mem_access;
-      rdata <= mem_rom_c(to_integer(addr_ff));
-    end generate;
-
+      end if;
+    end process mem_access;
   end generate;
 
   -- word aligned access address --
@@ -105,63 +87,31 @@ begin
   -- -------------------------------------------------------------------------------------------
   imem_ram:
   if not IMEM_INIT generate
-
-    imem_ram_default: -- default memory HDL style
-    if not alt_style_c generate
-      mem_access: process(clk_i)
-      begin
-        if rising_edge(clk_i) then
-          if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-            if (bus_req_i.ben(0) = '1') then -- byte 0
-              mem_ram_b0(to_integer(addr)) <= bus_req_i.data(7 downto 0);
-            end if;
-            if (bus_req_i.ben(1) = '1') then -- byte 1
-              mem_ram_b1(to_integer(addr)) <= bus_req_i.data(15 downto 8);
-            end if;
-            if (bus_req_i.ben(2) = '1') then -- byte 2
-              mem_ram_b2(to_integer(addr)) <= bus_req_i.data(23 downto 16);
-            end if;
-            if (bus_req_i.ben(3) = '1') then -- byte 3
-              mem_ram_b3(to_integer(addr)) <= bus_req_i.data(31 downto 24);
-            end if;
+    mem_access: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
+          if (bus_req_i.ben(0) = '1') then -- byte 0
+            mem_ram_b0(to_integer(addr)) <= bus_req_i.data(7 downto 0);
           end if;
+          if (bus_req_i.ben(1) = '1') then -- byte 1
+            mem_ram_b1(to_integer(addr)) <= bus_req_i.data(15 downto 8);
+          end if;
+          if (bus_req_i.ben(2) = '1') then -- byte 2
+            mem_ram_b2(to_integer(addr)) <= bus_req_i.data(23 downto 16);
+          end if;
+          if (bus_req_i.ben(3) = '1') then -- byte 3
+            mem_ram_b3(to_integer(addr)) <= bus_req_i.data(31 downto 24);
+          end if;
+        end if;
+        if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
           rdata(7  downto 0)  <= mem_ram_b0(to_integer(addr));
           rdata(15 downto 8)  <= mem_ram_b1(to_integer(addr));
           rdata(23 downto 16) <= mem_ram_b2(to_integer(addr));
           rdata(31 downto 24) <= mem_ram_b3(to_integer(addr));
         end if;
-      end process mem_access;
-      addr_ff <= (others => '0'); -- unused
-    end generate;
-
-    imem_ram_alternative: -- alternative memory HDL style
-    if alt_style_c generate
-      mem_access: process(clk_i)
-      begin
-        if rising_edge(clk_i) then
-          addr_ff <= addr;
-          if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-            if (bus_req_i.ben(0) = '1') then -- byte 0
-              mem_ram_b0(to_integer(addr)) <= bus_req_i.data(7 downto 0);
-            end if;
-            if (bus_req_i.ben(1) = '1') then -- byte 1
-              mem_ram_b1(to_integer(addr)) <= bus_req_i.data(15 downto 8);
-            end if;
-            if (bus_req_i.ben(2) = '1') then -- byte 2
-              mem_ram_b2(to_integer(addr)) <= bus_req_i.data(23 downto 16);
-            end if;
-            if (bus_req_i.ben(3) = '1') then -- byte 3
-              mem_ram_b3(to_integer(addr)) <= bus_req_i.data(31 downto 24);
-            end if;
-          end if;
-        end if;
-      end process mem_access;
-      rdata(7  downto 0)  <= mem_ram_b0(to_integer(addr_ff));
-      rdata(15 downto 8)  <= mem_ram_b1(to_integer(addr_ff));
-      rdata(23 downto 16) <= mem_ram_b2(to_integer(addr_ff));
-      rdata(31 downto 24) <= mem_ram_b3(to_integer(addr_ff));
-    end generate;
-
+      end if;
+    end process mem_access;
   end generate;
 
 
