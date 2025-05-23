@@ -16,9 +16,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_switch is
   generic (
-    ROUND_ROBIN_EN   : boolean := false; -- enable round-robin arbitration
-    PORT_A_READ_ONLY : boolean := false; -- set if port A is read-only
-    PORT_B_READ_ONLY : boolean := false  -- set if port B is read-only
+    ROUND_ROBIN_EN : boolean := false; -- enable round-robin arbitration
+    A_READ_ONLY    : boolean := false; -- set if port A is read-only
+    B_READ_ONLY    : boolean := false  -- set if port B is read-only
   );
   port (
     clk_i   : in  std_ulogic; -- global clock, rising edge
@@ -137,19 +137,19 @@ begin
 
   -- Request Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  x_req_o.addr  <= a_req_i.addr  when (sel = '0')      else b_req_i.addr;
-  x_req_o.data  <= b_req_i.data  when PORT_A_READ_ONLY else
-                   a_req_i.data  when PORT_B_READ_ONLY else
-                   a_req_i.data  when (sel = '0')      else b_req_i.data;
-  x_req_o.ben   <= a_req_i.ben   when (sel = '0')      else b_req_i.ben;
-  x_req_o.rw    <= a_req_i.rw    when (sel = '0')      else b_req_i.rw;
-  x_req_o.src   <= a_req_i.src   when (sel = '0')      else b_req_i.src;
-  x_req_o.priv  <= a_req_i.priv  when (sel = '0')      else b_req_i.priv;
-  x_req_o.debug <= a_req_i.debug when (sel = '0')      else b_req_i.debug;
-  x_req_o.amo   <= a_req_i.amo   when (sel = '0')      else b_req_i.amo;
-  x_req_o.amoop <= a_req_i.amoop when (sel = '0')      else b_req_i.amoop;
-  x_req_o.burst <= a_req_i.burst when (sel = '0')      else b_req_i.burst;
-  x_req_o.lock  <= a_req_i.lock  when (sel = '0')      else b_req_i.lock;
+  x_req_o.addr  <= a_req_i.addr  when (sel = '0') else b_req_i.addr;
+  x_req_o.data  <= b_req_i.data  when A_READ_ONLY else
+                   a_req_i.data  when B_READ_ONLY else
+                   a_req_i.data  when (sel = '0') else b_req_i.data;
+  x_req_o.ben   <= a_req_i.ben   when (sel = '0') else b_req_i.ben;
+  x_req_o.rw    <= a_req_i.rw    when (sel = '0') else b_req_i.rw;
+  x_req_o.src   <= a_req_i.src   when (sel = '0') else b_req_i.src;
+  x_req_o.priv  <= a_req_i.priv  when (sel = '0') else b_req_i.priv;
+  x_req_o.debug <= a_req_i.debug when (sel = '0') else b_req_i.debug;
+  x_req_o.amo   <= a_req_i.amo   when (sel = '0') else b_req_i.amo;
+  x_req_o.amoop <= a_req_i.amoop when (sel = '0') else b_req_i.amoop;
+  x_req_o.burst <= a_req_i.burst when (sel = '0') else b_req_i.burst;
+  x_req_o.lock  <= a_req_i.lock  when (sel = '0') else b_req_i.lock;
   x_req_o.fence <= a_req_i.fence or b_req_i.fence;
   x_req_o.stb   <= stb;
 

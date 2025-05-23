@@ -122,8 +122,8 @@ entity neorv32_top is
     IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;           -- data FIFO depth, has to be a power of two, min 1
     IO_CFS_EN             : boolean                        := false;       -- implement custom functions subsystem (CFS)
     IO_CFS_CONFIG         : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
-    IO_CFS_IN_SIZE        : natural                        := 32;          -- size of CFS input conduit in bits
-    IO_CFS_OUT_SIZE       : natural                        := 32;          -- size of CFS output conduit in bits
+    IO_CFS_IN_SIZE        : natural range 0 to 4096        := 32;          -- size of CFS input conduit in bits
+    IO_CFS_OUT_SIZE       : natural range 0 to 4096        := 32;          -- size of CFS output conduit in bits
     IO_NEOLED_EN          : boolean                        := false;       -- implement NeoPixel-compatible smart LED interface (NEOLED)
     IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;           -- NEOLED FIFO depth, has to be a power of two, min 1
     IO_GPTMR_EN           : boolean                        := false;       -- implement general purpose timer (GPTMR)
@@ -597,9 +597,9 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_core_bus_switch_inst: entity neorv32.neorv32_bus_switch
     generic map (
-      ROUND_ROBIN_EN   => false, -- use prioritizing arbitration
-      PORT_A_READ_ONLY => false,
-      PORT_B_READ_ONLY => true -- instruction fetch is read-only
+      ROUND_ROBIN_EN => false, -- use prioritizing arbitration
+      A_READ_ONLY    => false,
+      B_READ_ONLY    => true -- instruction fetch is read-only
     )
     port map (
       clk_i   => clk_i,
@@ -621,9 +621,9 @@ begin
   if num_cores_c = 2 generate
     neorv32_complex_arbiter_inst: entity neorv32.neorv32_bus_switch
     generic map (
-      ROUND_ROBIN_EN   => true, -- fair (and lockable) scheduling
-      PORT_A_READ_ONLY => false,
-      PORT_B_READ_ONLY => false
+      ROUND_ROBIN_EN => true, -- fair (and lockable) scheduling
+      A_READ_ONLY    => false,
+      B_READ_ONLY    => false
     )
     port map (
       clk_i   => clk_i,
@@ -669,9 +669,9 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_dma_bus_switch_inst: entity neorv32.neorv32_bus_switch
     generic map (
-      ROUND_ROBIN_EN   => false, -- use prioritizing arbitration
-      PORT_A_READ_ONLY => false,
-      PORT_B_READ_ONLY => false
+      ROUND_ROBIN_EN => false, -- use prioritizing arbitration
+      A_READ_ONLY    => false,
+      B_READ_ONLY    => false
     )
     port map (
       clk_i   => clk_i,
