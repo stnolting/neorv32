@@ -168,7 +168,7 @@ begin
 
       when S_IDLE => -- wait for request
       -- ------------------------------------------------------------
-        if (host_req_i.fence = '1') or (ctrl.buf_sync = '1') then -- (pending) sync request
+        if (ctrl.buf_sync = '1') then -- pending sync request
           ctrl_nxt.state <= S_CLEAR;
         elsif (host_req_i.stb = '1') or (ctrl.buf_req = '1') then -- (pending) access request
           if (unsigned(host_req_i.addr(31 downto 28)) >= unsigned(UC_BEGIN)) or -- uncached address space
