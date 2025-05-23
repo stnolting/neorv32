@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -16,16 +16,16 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_gpio is
   generic (
-    GPIO_NUM : natural range 0 to 32 -- number of GPIO input/output pairs (0..32)
+    GPIO_NUM : natural range 0 to 32 -- number of GPIO input/output pairs
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
     rstn_i    : in  std_ulogic; -- global reset line, low-active, async
     bus_req_i : in  bus_req_t;  -- bus request
     bus_rsp_o : out bus_rsp_t;  -- bus response
-    gpio_o    : out std_ulogic_vector(31 downto 0); -- general purpose input port
-    gpio_i    : in  std_ulogic_vector(31 downto 0); -- general purpose output port
-    cpu_irq_o : out std_ulogic -- CPU interrupt
+    gpio_o    : out std_ulogic_vector(31 downto 0); -- input port
+    gpio_i    : in  std_ulogic_vector(31 downto 0); -- output port
+    cpu_irq_o : out std_ulogic  -- CPU interrupt
   );
 end neorv32_gpio;
 
@@ -34,16 +34,13 @@ architecture neorv32_gpio_rtl of neorv32_gpio is
   -- register addresses --
   constant addr_in_c  : std_ulogic_vector(2 downto 0) := "000"; -- r/-: input port
   constant addr_out_c : std_ulogic_vector(2 downto 0) := "001"; -- r/w: output port
-  --
   constant addr_tt_c  : std_ulogic_vector(2 downto 0) := "100"; -- r/w: trigger type (level/edge)
   constant addr_tp_c  : std_ulogic_vector(2 downto 0) := "101"; -- r/w: trigger polarity (high/low or rising/falling)
   constant addr_ie_c  : std_ulogic_vector(2 downto 0) := "110"; -- r/w: interrupt enable
   constant addr_ip_c  : std_ulogic_vector(2 downto 0) := "111"; -- r/c: interrupt pending
 
   -- interface registers --
-  signal port_in, port_out : std_ulogic_vector(GPIO_NUM-1 downto 0);
-  signal irq_typ, irq_pol  : std_ulogic_vector(GPIO_NUM-1 downto 0);
-  signal irq_en, irq_clrn  : std_ulogic_vector(GPIO_NUM-1 downto 0);
+  signal port_in, port_out, irq_typ, irq_pol, irq_en, irq_clrn : std_ulogic_vector(GPIO_NUM-1 downto 0);
 
   -- interrupt generator --
   signal port_in2, irq_trig, irq_pend : std_ulogic_vector(GPIO_NUM-1 downto 0);
@@ -80,13 +77,12 @@ begin
           end case;
         else -- read access
           case bus_req_i.addr(4 downto 2) is
-            when addr_in_c  => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= port_in;  -- input port
             when addr_out_c => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= port_out; -- output port
             when addr_tt_c  => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= irq_typ;  -- trigger type
             when addr_tp_c  => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= irq_pol;  -- trigger polarity
             when addr_ie_c  => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= irq_en;   -- interrupt enable
             when addr_ip_c  => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= irq_pend; -- interrupt pending
-            when others     => NULL;
+            when others     => bus_rsp_o.data(GPIO_NUM-1 downto 0) <= port_in;  -- input port
           end case;
         end if;
       end if;
