@@ -123,7 +123,7 @@ begin
   ibus_req_o.addr  <= fetch.pc(XLEN-1 downto 2) & "00"; -- word aligned
   ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
   ibus_req_o.data  <= (others => '0');  -- read-only
-  ibus_req_o.ben   <= (others => '0');  -- read-only
+  ibus_req_o.ben   <= (others => '1');  -- always full-word access
   ibus_req_o.rw    <= '0';              -- read-only
   ibus_req_o.src   <= '1';              -- always "instruction fetch" access
   ibus_req_o.priv  <= fetch.priv;       -- current effective privilege level
