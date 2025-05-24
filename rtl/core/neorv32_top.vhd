@@ -121,9 +121,6 @@ entity neorv32_top is
     IO_TRNG_EN            : boolean                        := false;       -- implement true random number generator (TRNG)
     IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;           -- data FIFO depth, has to be a power of two, min 1
     IO_CFS_EN             : boolean                        := false;       -- implement custom functions subsystem (CFS)
-    IO_CFS_CONFIG         : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CFS configuration generic
-    IO_CFS_IN_SIZE        : natural range 0 to 4096        := 32;          -- size of CFS input conduit in bits
-    IO_CFS_OUT_SIZE       : natural range 0 to 4096        := 32;          -- size of CFS output conduit in bits
     IO_NEOLED_EN          : boolean                        := false;       -- implement NeoPixel-compatible smart LED interface (NEOLED)
     IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;           -- NEOLED FIFO depth, has to be a power of two, min 1
     IO_GPTMR_EN           : boolean                        := false;       -- implement general purpose timer (GPTMR)
@@ -221,8 +218,8 @@ entity neorv32_top is
     pwm_o          : out std_ulogic_vector(15 downto 0);                    -- pwm channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => 'L'); -- custom CFS inputs conduit
-    cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);     -- custom CFS outputs conduit
+    cfs_in_i       : in  std_ulogic_vector(511 downto 0) := (others => 'L'); -- custom CFS inputs conduit
+    cfs_out_o      : out std_ulogic_vector(511 downto 0);                    -- custom CFS outputs conduit
 
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_ulogic;                                        -- async serial data line
@@ -272,10 +269,10 @@ architecture neorv32_top_rtl of neorv32_top is
   -- clock system --
   signal clk_gen : std_ulogic_vector(7 downto 0); -- scaled clock-enables
   --
-  type clk_gen_en_enum_t is (CG_CFS, CG_UART0, CG_UART1, CG_SPI, CG_TWI, CG_TWD, CG_PWM, CG_WDT, CG_NEOLED, CG_GPTMR, CG_ONEWIRE);
+  type clk_gen_en_enum_t is (CG_UART0, CG_UART1, CG_SPI, CG_TWI, CG_TWD, CG_PWM, CG_WDT, CG_NEOLED, CG_GPTMR, CG_ONEWIRE);
   type clk_gen_en_t is array (clk_gen_en_enum_t) of std_ulogic;
   signal clk_gen_en  : clk_gen_en_t;
-  signal clk_gen_en2 : std_ulogic_vector(10 downto 0);
+  signal clk_gen_en2 : std_ulogic_vector(9 downto 0);
 
   -- debug module interface (DMI) --
   signal dmi_req : dmi_req_t;
@@ -436,9 +433,9 @@ begin
     );
 
     -- fresh clocks anyone? --
-    clk_gen_en2 <= clk_gen_en(CG_CFS)    & clk_gen_en(CG_UART0) & clk_gen_en(CG_UART1) & clk_gen_en(CG_SPI) &
-                   clk_gen_en(CG_TWI)    & clk_gen_en(CG_TWD)   & clk_gen_en(CG_PWM)   & clk_gen_en(CG_WDT) &
-                   clk_gen_en(CG_NEOLED) & clk_gen_en(CG_GPTMR) & clk_gen_en(CG_ONEWIRE);
+    clk_gen_en2 <= clk_gen_en(CG_UART0) & clk_gen_en(CG_UART1) & clk_gen_en(CG_SPI) & clk_gen_en(CG_TWI)    &
+                   clk_gen_en(CG_TWD)   & clk_gen_en(CG_PWM)   & clk_gen_en(CG_WDT) & clk_gen_en(CG_NEOLED) &
+                   clk_gen_en(CG_GPTMR) & clk_gen_en(CG_ONEWIRE);
 
   end generate; -- /soc_generators
 
@@ -995,18 +992,11 @@ begin
     neorv32_cfs_enabled:
     if IO_CFS_EN generate
       neorv32_cfs_inst: entity neorv32.neorv32_cfs
-      generic map (
-        CFS_CONFIG   => IO_CFS_CONFIG,
-        CFS_IN_SIZE  => IO_CFS_IN_SIZE,
-        CFS_OUT_SIZE => IO_CFS_OUT_SIZE
-      )
       port map (
         clk_i       => clk_i,
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_CFS),
         bus_rsp_o   => iodev_rsp(IODEV_CFS),
-        clkgen_en_o => clk_gen_en(CG_CFS),
-        clkgen_i    => clk_gen,
         irq_o       => firq(FIRQ_CFS),
         cfs_in_i    => cfs_in_i,
         cfs_out_o   => cfs_out_o
@@ -1016,7 +1006,6 @@ begin
     neorv32_cfs_disabled:
     if not IO_CFS_EN generate
       iodev_rsp(IODEV_CFS) <= rsp_terminate_c;
-      clk_gen_en(CG_CFS)   <= '0';
       firq(FIRQ_CFS)       <= '0';
       cfs_out_o            <= (others => '0');
     end generate;

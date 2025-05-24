@@ -77,15 +77,15 @@ clock domain also using registers. However, for ASIC implementations it is recom
 to all inputs and output so the synthesis tool can insert an explicit IO (boundary) scan chain.
 
 .NEORV32 Processor Signal List
-[cols="<3,^3,^2,^2,<7"]
+[cols="<4,^2,^2,^2,<8"]
 [options="header",grid="rows"]
 |=======================
 | Name | Width | Direction | Default | Description
 5+^| **Global Control (<<_processor_clocking>> and <<_processor_reset>>)**
-| `clk_i`          |  1 |  in |   -   | global clock line, all registers triggering on rising edge
-| `rstn_i`         |  1 |  in |   -   | global reset, asynchronous, **low-active**
-| `rstn_ocd_o`     |  1 | out |   -   | <<_on_chip_debugger_ocd>> reset output, synchronous, **low-active**
-| `rstn_wdt_o`     |  1 | out |   -   | <<_watchdog_timer_wdt>> reset output, synchronous, **low-active**
+| `clk_i`          |  1 |  in | none  | global clock line, all registers triggering on rising edge
+| `rstn_i`         |  1 |  in | none  | global reset, asynchronous, **low-active**
+| `rstn_ocd_o`     |  1 | out | none  | <<_on_chip_debugger_ocd>> reset output, synchronous, **low-active**
+| `rstn_wdt_o`     |  1 | out | none  | <<_watchdog_timer_wdt>> reset output, synchronous, **low-active**
 5+^| **JTAG Access Port for <<_on_chip_debugger_ocd>>**
 | `jtag_tck_i`     |  1 |  in | `'L'` | serial clock
 | `jtag_tdi_i`     |  1 |  in | `'L'` | serial data input
@@ -153,8 +153,8 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 5+^| **<<_pulse_width_modulation_controller_pwm>>**
 | `pwm_o`          | 16 | out |   -   | pulse-width modulated channels
 5+^| **<<_custom_functions_subsystem_cfs>>**
-| `cfs_in_i`       | `IO_CFS_IN_SIZE`  |  in | `'L'` | custom CFS input signal conduit
-| `cfs_out_o`      | `IO_CFS_OUT_SIZE` | out |   -   | custom CFS output signal conduit
+| `cfs_in_i`       | 512 |  in | `'L'` | custom CFS input signal conduit
+| `cfs_out_o`      | 512 | out |   -   | custom CFS output signal conduit
 5+^| **<<_smart_led_interface_neoled>>**
 | `neoled_o`       |  1 | out |   -   | asynchronous serial data output
 5+^| **<<_core_local_interruptor_clint>>**
@@ -289,9 +289,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_TRNG_EN`            | boolean   | false         | Implement the <<_true_random_number_generator_trng>>.
 | `IO_TRNG_FIFO`          | natural   | 1             | Depth of the TRNG data FIFO. Has to be a power of two, min 1, max 32768.
 | `IO_CFS_EN`             | boolean   | false         | Implement the <<_custom_functions_subsystem_cfs>>.
-| `IO_CFS_CONFIG`         | suv(31:0) | x"00000000"   | "Conduit" generic to pass user-defined flags to the <<_custom_functions_subsystem_cfs>>.
-| `IO_CFS_IN_SIZE`        | natural   | 32            | Size of the <<_custom_functions_subsystem_cfs>> input signal conduit (`cfs_in_i`), max 4096.
-| `IO_CFS_OUT_SIZE`       | natural   | 32            | Size of the <<_custom_functions_subsystem_cfs>> output signal conduit (`cfs_out_o`), max 4096.
 | `IO_NEOLED_EN`          | boolean   | false         | Implement the <<_smart_led_interface_neoled>>.
 | `IO_NEOLED_TX_FIFO`     | natural   | 1             | TX FIFO depth of the <<_smart_led_interface_neoled>>. Has to be a power of two, min 1, max 32768.
 | `IO_GPTMR_EN`           | boolean   | false         | Implement the <<_general_purpose_timer_gptmr>>.
