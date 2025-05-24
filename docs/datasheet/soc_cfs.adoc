@@ -8,8 +8,8 @@
 | Hardware source files:  | neorv32_cfs.vhd |
 | Software driver files:  | neorv32_cfs.c | link:https://stnolting.github.io/neorv32/sw/neorv32__cfs_8c.html[Online software reference (Doxygen)]
 |                         | neorv32_cfs.h | link:https://stnolting.github.io/neorv32/sw/neorv32__cfs_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `cfs_in_i`  | custom input conduit, 512-bit
-|                         | `cfs_out_o` | custom output conduit, 512-bit
+| Top entity ports:       | `cfs_in_i`  | custom input conduit, 256-bit
+|                         | `cfs_out_o` | custom output conduit, 256-bit
 | Configuration generics: | `IO_CFS_EN`        | implement CFS when `true`
 | CPU interrupts:         | fast IRQ channel 1 | CFS interrupt (see <<_processor_interrupts>>)
 |=======================
@@ -20,8 +20,8 @@
 The custom functions subsystem is meant for implementing custom tightly-coupled co-processors or interfaces.
 It provides up to 16384 32-bit memory-mapped read/write registers (`REG`, see register map below) that can be
 accessed by the CPU via normal load/store operations. The actual functionality of these register has to be
-defined by the hardware designer. Furthermore, the CFS provides two IO conduits to implement custom on-chip
-or off-chip interfaces.
+defined by the hardware designer. Furthermore, the CFS provides two input/output conduits to implement custom
+on-chip or off-chip interfaces.
 
 Just like any other externally-connected IP, logic implemented within the custom functions subsystem can operate
 _independently_ of the CPU providing true parallel processing capabilities. Potential use cases might include

@@ -153,8 +153,8 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 5+^| **<<_pulse_width_modulation_controller_pwm>>**
 | `pwm_o`          | 16 | out |   -   | pulse-width modulated channels
 5+^| **<<_custom_functions_subsystem_cfs>>**
-| `cfs_in_i`       | 512 |  in | `'L'` | custom CFS input signal conduit
-| `cfs_out_o`      | 512 | out |   -   | custom CFS output signal conduit
+| `cfs_in_i`       | 256 |  in | `'L'` | custom CFS input signal conduit
+| `cfs_out_o`      | 256 | out |   -   | custom CFS output signal conduit
 5+^| **<<_smart_led_interface_neoled>>**
 | `neoled_o`       |  1 | out |   -   | asynchronous serial data output
 5+^| **<<_core_local_interruptor_clint>>**

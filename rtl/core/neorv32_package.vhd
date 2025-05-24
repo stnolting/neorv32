@@ -945,8 +945,8 @@ package neorv32_package is
       -- PWM (available if IO_PWM_NUM_CH > 0) --
       pwm_o          : out std_ulogic_vector(15 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
-      cfs_in_i       : in  std_ulogic_vector(511 downto 0) := (others => 'L');
-      cfs_out_o      : out std_ulogic_vector(511 downto 0);
+      cfs_in_i       : in  std_ulogic_vector(255 downto 0) := (others => 'L');
+      cfs_out_o      : out std_ulogic_vector(255 downto 0);
       -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
       neoled_o       : out std_ulogic;
       -- Machine timer system time (available if IO_CLINT_EN = true) --

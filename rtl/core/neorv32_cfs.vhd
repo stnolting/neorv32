@@ -26,8 +26,8 @@ entity neorv32_cfs is
     -- CPU interrupt --
     irq_o     : out std_ulogic; -- interrupt request
     -- external IO --
-    cfs_in_i  : in  std_ulogic_vector(511 downto 0); -- custom inputs conduit
-    cfs_out_o : out std_ulogic_vector(511 downto 0) -- custom outputs conduit
+    cfs_in_i  : in  std_ulogic_vector(255 downto 0); -- custom inputs conduit
+    cfs_out_o : out std_ulogic_vector(255 downto 0) -- custom outputs conduit
   );
 end neorv32_cfs;
 
