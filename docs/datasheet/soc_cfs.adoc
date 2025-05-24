@@ -8,12 +8,9 @@
 | Hardware source files:  | neorv32_cfs.vhd |
 | Software driver files:  | neorv32_cfs.c | link:https://stnolting.github.io/neorv32/sw/neorv32__cfs_8c.html[Online software reference (Doxygen)]
 |                         | neorv32_cfs.h | link:https://stnolting.github.io/neorv32/sw/neorv32__cfs_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `cfs_in_i`  | custom input conduit
-|                         | `cfs_out_o` | custom output conduit
+| Top entity ports:       | `cfs_in_i`  | custom input conduit, 256-bit
+|                         | `cfs_out_o` | custom output conduit, 256-bit
 | Configuration generics: | `IO_CFS_EN`        | implement CFS when `true`
-|                         | `IO_CFS_CONFIG`    | custom generic conduit
-|                         | `IO_CFS_IN_SIZE`   | size of `cfs_in_i`, max 4096
-|                         | `IO_CFS_OUT_SIZE`  | size of `cfs_out_o``, max 4096
 | CPU interrupts:         | fast IRQ channel 1 | CFS interrupt (see <<_processor_interrupts>>)
 |=======================
 
@@ -21,27 +18,26 @@
 **Overview**
 
 The custom functions subsystem is meant for implementing custom tightly-coupled co-processors or interfaces.
-IT provides up to 16384 32-bit memory-mapped read/write registers (`REG`, see register map below) that can be
+It provides up to 16384 32-bit memory-mapped read/write registers (`REG`, see register map below) that can be
 accessed by the CPU via normal load/store operations. The actual functionality of these register has to be
-defined by the hardware designer. Furthermore, the CFS provides two IO conduits to implement custom on-chip
-or off-chip interfaces.
+defined by the hardware designer. Furthermore, the CFS provides two input/output conduits to implement custom
+on-chip or off-chip interfaces.
 
 Just like any other externally-connected IP, logic implemented within the custom functions subsystem can operate
 _independently_ of the CPU providing true parallel processing capabilities. Potential use cases might include
 dedicated hardware accelerators for en-/decryption (AES), signal processing (FFT) or AI applications
 (CNNs) as well as custom IO systems like fast memory interfaces (DDR) and mass storage (SDIO), networking (CAN)
-or real-time data transport (I2S).
+real-time data transport (I2S) or just replication of existent NEORV32 peripherals.
 
+.Custom ISA Instructions
 [TIP]
 If you like to implement _custom instructions_ that are executed right within the CPU's ALU
 see the <<_zxcfu_isa_extension>> and the according <<_custom_functions_unit_cfu>>.
 
+.CFS Template
 [TIP]
 Take a look at the template CFS VHDL source file (`rtl/core/neorv32_cfs.vhd`). The file is highly
 commented to illustrate all aspects that are relevant for implementing custom CFS-based co-processor designs.
-
-[TIP]
-The CFS can also be used to _replicate_ existing NEORV32 modules - for example to implement several TWI controllers.
 
 
 **CFS Software Access**
@@ -58,32 +54,17 @@ int temp = (int)NEORV32_CFS->REG[20]; // read from CFS register 20
 ----
 
 
+**CFS Custom IOs**
+
+The CFS provides two unidirectional input and output conduits `cfs_in_i` and `cfs_out_o`. Both signals
+are 512 bit wide and are are directly propagated to the processor's top entity. These conduits can be used
+to implement application-specific interfaces like memory or peripheral connections. The actual use case of
+these signals has to be defined by the hardware designer.
+
+
 **CFS Interrupt**
 
 The CFS provides a single high-level-triggered interrupt request signal mapped to the CPU's fast interrupt channel 1.
-
-
-**CFS Configuration Generic**
-
-By default, the CFS provides a single 32-bit `std_ulogic_vector` configuration generic `IO_CFS_CONFIG`
-that is available in the processor's top entity. This generic can be used to pass custom configuration options
-from the top entity directly down to the CFS. The actual definition of the generic and it's usage inside the
-CFS is left to the hardware designer.
-
-
-**CFS Custom IOs**
-
-By default, the CFS also provides two unidirectional input and output conduits `cfs_in_i` and `cfs_out_o`.
-These signals are directly propagated to the processor's top entity. These conduits can be used to implement
-application-specific interfaces like memory or peripheral connections. The actual use case of these signals
-has to be defined by the hardware designer.
-
-The size of the input signal conduit `cfs_in_i` is defined via the top's `IO_CFS_IN_SIZE` configuration
-generic (default = 32-bit). The size of the output signal conduit `cfs_out_o` is defined via the top's
-`IO_CFS_OUT_SIZE` configuration generic (default = 32-bit). If the custom function subsystem is not implemented
-(`IO_CFS_EN` = false) the `cfs_out_o` signal is tied to all-zero.
-
-If the CFU output signals are to be used outside the chip, it is recommended to register these signals.
 
 
 **Register Map**

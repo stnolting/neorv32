@@ -420,7 +420,10 @@ begin
   end generate;
 
   -- reversal.8 (byte swap) --
-  res_int(op_rev8_c) <= bswap_f(rs1_reg);
+  byte_swap_gen:
+  for i in 0 to (XLEN/8)-1 generate -- byte loop
+    res_int(op_rev8_c)(i*8+7 downto i*8) <= rs1_reg((XLEN-i*8)-1 downto XLEN-(i+1)*8);
+  end generate;
 
   -- address generation instructions --
   res_int(op_shadd_c) <= adder_res;

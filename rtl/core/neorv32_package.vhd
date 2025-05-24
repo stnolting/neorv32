@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110502"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110503"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -760,7 +760,6 @@ package neorv32_package is
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
-  function bswap_f(input : std_ulogic_vector) return std_ulogic_vector;
   function popcount_f(input : std_ulogic_vector) return natural;
   function leading_zeros_f(input : std_ulogic_vector) return natural;
   function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector;
@@ -862,9 +861,6 @@ package neorv32_package is
       IO_TRNG_EN            : boolean                        := false;
       IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
       IO_CFS_EN             : boolean                        := false;
-      IO_CFS_CONFIG         : std_ulogic_vector(31 downto 0) := x"00000000";
-      IO_CFS_IN_SIZE        : natural range 0 to 4096        := 32;
-      IO_CFS_OUT_SIZE       : natural range 0 to 4096        := 32;
       IO_NEOLED_EN          : boolean                        := false;
       IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;
       IO_GPTMR_EN           : boolean                        := false;
@@ -949,8 +945,8 @@ package neorv32_package is
       -- PWM (available if IO_PWM_NUM_CH > 0) --
       pwm_o          : out std_ulogic_vector(15 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
-      cfs_in_i       : in  std_ulogic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => 'L');
-      cfs_out_o      : out std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
+      cfs_in_i       : in  std_ulogic_vector(255 downto 0) := (others => 'L');
+      cfs_out_o      : out std_ulogic_vector(255 downto 0);
       -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
       neoled_o       : out std_ulogic;
       -- Machine timer system time (available if IO_CLINT_EN = true) --
@@ -1130,19 +1126,6 @@ package body neorv32_package is
       end if;
     end if;
   end function is_power_of_two_f;
-
-  -- Swap all bytes of a N*8-bit word (endianness conversion) -------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function bswap_f(input : std_ulogic_vector) return std_ulogic_vector is
-    variable output_v : std_ulogic_vector(input'range);
-    variable j        : natural range 0 to input'length/8;
-  begin
-    for i in 0 to (input'length/8)-1 loop
-      j := ((input'length/8) - 1) - i;
-      output_v(i*8+7 downto i*8+0) := input(j*8+7 downto j*8+0);
-    end loop;
-    return output_v;
-  end function bswap_f;
 
   -- Population count (number of set bits) --------------------------------------------------
   -- -------------------------------------------------------------------------------------------

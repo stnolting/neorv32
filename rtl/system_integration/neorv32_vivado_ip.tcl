@@ -405,10 +405,7 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Custom Functions Subsystem (CFS)}]
   add_params $group {
-    { IO_CFS_EN       {Enable CFS} }
-    { IO_CFS_CONFIG   {Custom configuration word} {} {$IO_CFS_EN} }
-    { IO_CFS_IN_SIZE  {Input conduit width}       {} {$IO_CFS_EN} }
-    { IO_CFS_OUT_SIZE {Output conduit width}      {} {$IO_CFS_EN} }
+    { IO_CFS_EN {Enable CFS} }
   }
 
   set group [add_group $page {Smart LED Interface (NEOLED)}]
