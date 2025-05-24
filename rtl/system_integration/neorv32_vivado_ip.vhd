@@ -114,9 +114,6 @@ entity neorv32_vivado_ip is
     IO_TRNG_EN            : boolean                        := false;
     IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
     IO_CFS_EN             : boolean                        := false;
-    IO_CFS_CONFIG         : std_logic_vector(31 downto 0)  := x"00000000";
-    IO_CFS_IN_SIZE        : natural range 1 to 4096        := 32; -- variable-sized ports must be at least 0 downto 0; #974
-    IO_CFS_OUT_SIZE       : natural range 1 to 4096        := 32; -- variable-sized ports must be at least 0 downto 0; #974
     IO_NEOLED_EN          : boolean                        := false;
     IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;
     IO_GPTMR_EN           : boolean                        := false;
@@ -242,8 +239,8 @@ entity neorv32_vivado_ip is
     -- PWM (available if IO_PWM_NUM_CH > 0) --
     pwm_o          : out std_logic_vector(IO_PWM_NUM_CH-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
-    cfs_in_i       : in  std_logic_vector(IO_CFS_IN_SIZE-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
-    cfs_out_o      : out std_logic_vector(IO_CFS_OUT_SIZE-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
+    cfs_in_i       : in  std_logic_vector(511 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
+    cfs_out_o      : out std_logic_vector(511 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
     neoled_o       : out std_logic;
     -- Machine timer system time (available if IO_CLINT_EN = true) --
@@ -333,7 +330,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal twi_sda_o_aux, twi_scl_o_aux : std_ulogic;
   signal twd_sda_o_aux, twd_scl_o_aux : std_ulogic;
   signal onewire_o_aux : std_ulogic;
-  signal cfs_out_aux : std_ulogic_vector(IO_CFS_OUT_SIZE-1 downto 0);
+  signal cfs_out_aux : std_ulogic_vector(511 downto 0);
   signal neoled_aux : std_ulogic;
   signal mtime_time_aux : std_ulogic_vector(63 downto 0);
 
@@ -440,9 +437,6 @@ begin
     IO_TRNG_EN          => IO_TRNG_EN,
     IO_TRNG_FIFO        => IO_TRNG_FIFO,
     IO_CFS_EN           => IO_CFS_EN,
-    IO_CFS_CONFIG       => std_ulogic_vector(IO_CFS_CONFIG),
-    IO_CFS_IN_SIZE      => IO_CFS_IN_SIZE,
-    IO_CFS_OUT_SIZE     => IO_CFS_OUT_SIZE,
     IO_NEOLED_EN        => IO_NEOLED_EN,
     IO_NEOLED_TX_FIFO   => IO_NEOLED_TX_FIFO,
     IO_GPTMR_EN         => IO_GPTMR_EN,
