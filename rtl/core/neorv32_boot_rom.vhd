@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - Processor-internal bootloader ROM (BOOTROM)                        --
+-- NEORV32 SoC - Processor-Internal Bootloader ROM (BOOTROM)                        --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -45,7 +45,9 @@ begin
   mem_access: process(clk_i)
   begin
     if rising_edge(clk_i) then -- no reset to infer block RAM
-      rdata <= mem_rom_c(to_integer(unsigned(bus_req_i.addr(boot_rom_size_index_c+1 downto 2))));
+      if (bus_req_i.stb = '1') then -- reduce switching activity when not accessed
+        rdata <= mem_rom_c(to_integer(unsigned(bus_req_i.addr(boot_rom_size_index_c+1 downto 2))));
+      end if;
     end if;
   end process mem_access;
 

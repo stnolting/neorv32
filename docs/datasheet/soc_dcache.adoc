@@ -27,9 +27,11 @@ The data cache is implemented if `DCACHE_EN` it _true_. The total cache memory s
 `DCACHE_NUM_BLOCKS x CACHE_BLOCK_SIZE`. `DCACHE_NUM_BLOCKS` defines the number of cache blocks (or "cache lines")
 and `CACHE_BLOCK_SIZE` defines the block size in bytes; note that this configuration is global for all caches.
 
-.Retrieve Cache Configuration from Software
-[TIP]
-Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_configuration>> register.
+.Burst Transfers
+[IMPORTANT]
+If the cache is activated, this also means that cache block transfers are **always executed as burst transfers**.
+There is no possibility to execute the cache block transfers as single bus transactions. Therefore, all devices,
+memories and endpoints that can be accessed by the cache must also be able to process bursts.
 
 .Uncached Accesses
 [NOTE]
@@ -48,3 +50,7 @@ See section <<_memory_coherence>> for more information.
 If the cache encounters a bus error when uploading a modified block to main memory or when
 downloading a new block from main memory, the entire block is invalidated and a bus access
 error exception is raised.
+
+.Retrieve Cache Configuration from Software
+[TIP]
+Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_configuration>> register.

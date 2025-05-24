@@ -12,8 +12,8 @@
 |                         | `cfs_out_o` | custom output conduit
 | Configuration generics: | `IO_CFS_EN`        | implement CFS when `true`
 |                         | `IO_CFS_CONFIG`    | custom generic conduit
-|                         | `IO_CFS_IN_SIZE`   | size of `cfs_in_i`
-|                         | `IO_CFS_OUT_SIZE`  | size of `cfs_out_o`
+|                         | `IO_CFS_IN_SIZE`   | size of `cfs_in_i`, max 4096
+|                         | `IO_CFS_OUT_SIZE`  | size of `cfs_out_o``, max 4096
 | CPU interrupts:         | fast IRQ channel 1 | CFS interrupt (see <<_processor_interrupts>>)
 |=======================
 
