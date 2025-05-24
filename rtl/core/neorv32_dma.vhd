@@ -293,7 +293,11 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- endianness conversion --
-  align_end <= dma_rsp_i.data when (cfg.endian = '0') else bswap_f(dma_rsp_i.data);
+  byte_swap_gen:
+  for i in 0 to (XLEN/8)-1 generate -- byte loop
+    align_end(i*8+7 downto i*8) <= dma_rsp_i.data(i*8+7 downto i*8) when (cfg.endian = '0') else
+                                   dma_rsp_i.data((XLEN-i*8)-1 downto XLEN-(i+1)*8);
+  end generate;
 
   -- source data alignment --
   src_align: process(rstn_i, clk_i)
