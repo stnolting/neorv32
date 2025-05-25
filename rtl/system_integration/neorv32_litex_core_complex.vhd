@@ -29,7 +29,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -146,32 +145,32 @@ begin
     HPM_CNT_WIDTH         => 64,                             -- total size of HPM counters (0..64)
     -- External bus interface (XBUS) --
     XBUS_EN               => true,                           -- implement external memory bus interface?
-    XBUS_TIMEOUT          => 1023,                           -- cycles after a pending bus access auto-terminates (0 = disabled)
+    XBUS_TIMEOUT          => 1024,                           -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_REGSTAGE_EN      => false,                          -- add XBUS register stage
     -- Processor peripherals --
     IO_CLINT_EN           => configs_c.clint(CONFIG)         -- implement core local interruptor (CLINT)?
   )
   port map (
     -- Global control --
-    clk_i       => clk_i,      -- global clock, rising edge
-    rstn_i      => rstn_i,     -- global reset, low-active, async
+    clk_i      => clk_i,      -- global clock, rising edge
+    rstn_i     => rstn_i,     -- global reset, low-active, async
     -- JTAG on-chip debugger interface --
-    jtag_tck_i  => jtag_tck_i, -- serial clock
-    jtag_tdi_i  => jtag_tdi_i, -- serial data input
-    jtag_tdo_o  => jtag_tdo_o, -- serial data output
-    jtag_tms_i  => jtag_tms_i, -- mode select
+    jtag_tck_i => jtag_tck_i, -- serial clock
+    jtag_tdi_i => jtag_tdi_i, -- serial data input
+    jtag_tdo_o => jtag_tdo_o, -- serial data output
+    jtag_tms_i => jtag_tms_i, -- mode select
     -- External bus interface --
-    xbus_adr_o  => wb_adr_o,   -- address
-    xbus_dat_o  => wb_dat_o,   -- write data
-    xbus_we_o   => wb_we_o,    -- read/write
-    xbus_sel_o  => wb_sel_o,   -- byte enable
-    xbus_stb_o  => wb_stb_o,   -- strobe
-    xbus_cyc_o  => wb_cyc_o,   -- valid cycle
-    xbus_dat_i  => wb_dat_i,   -- read data
-    xbus_ack_i  => wb_ack_i,   -- transfer acknowledge
-    xbus_err_i  => wb_err_i,   -- transfer error
+    xbus_adr_o => wb_adr_o,   -- address
+    xbus_dat_o => wb_dat_o,   -- write data
+    xbus_we_o  => wb_we_o,    -- read/write
+    xbus_sel_o => wb_sel_o,   -- byte enable
+    xbus_stb_o => wb_stb_o,   -- strobe
+    xbus_cyc_o => wb_cyc_o,   -- valid cycle
+    xbus_dat_i => wb_dat_i,   -- read data
+    xbus_ack_i => wb_ack_i,   -- transfer acknowledge
+    xbus_err_i => wb_err_i,   -- transfer error
     -- CPU Interrupts --
-    mext_irq_i  => mext_irq_i  -- machine external interrupt
+    mext_irq_i => mext_irq_i  -- machine external interrupt
   );
 
 
