@@ -17,22 +17,17 @@ build/
 # logs
 *.gdb_history
 *.log
-*.jou
 
 # host executables
 sw/image_gen/image_gen
 *.exe
+*.cf
 
 # temporary files and folders
+*.bak
 *.tmp
-*.temp
 ~*
 
 # generated documentation stuff
 /docs/doxygen_build/
-/docs/.asciidoctor/
 /docs/public/
-/docs/figures/diag-*.svg
-
-# compiled ghdl stuff
-*.cf
