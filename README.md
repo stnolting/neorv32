@@ -135,9 +135,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 [[`Sdext`](https://stnolting.github.io/neorv32/#_sdext_isa_extension)]
 [[`Sdtrig`](https://stnolting.github.io/neorv32/#_sdtrig_isa_extension)]
 [[`Smpmp`](https://stnolting.github.io/neorv32/#_smpmp_isa_extension)]
-* compatible to subsets of the RISC-V
-*Unprivileged ISA Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-spec.pdf))
-and *Privileged Architecture Specification* ([pdf](https://github.com/stnolting/neorv32/blob/main/docs/references/riscv-privileged.pdf)).
+* compatible to subsets of the RISC-V "Unprivileged ISA Specification" and "Privileged Architecture Specification"
 * `machine` and `user` privilege modes
 * implements **all** standard RISC-V exceptions and interrupts + 16 fast interrupt request channels as NEORV32-specific extension
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as `Zxcfu` ISA extension)
@@ -162,12 +160,12 @@ allows booting application code via UART, TWI or from external SPI flash
 **Input / Output**
 
 * standard serial interfaces
-([UART](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0),
-[SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi) (SPI host),
-[SDI](https://stnolting.github.io/neorv32/#_serial_data_interface_controller_sdi) (SPI device),
-[TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi) (I²C host),
-[TWD](https://stnolting.github.io/neorv32/#_two_wire_serial_device_controller_twd) (I²C device),
-[ONEWIRE/1-Wire](https://stnolting.github.io/neorv32/#_one_wire_serial_interface_controller_onewire))
+  * [UART](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0) (2x)
+  * [SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi) (SPI host)
+  * [SDI](https://stnolting.github.io/neorv32/#_serial_data_interface_controller_sdi) (SPI device)
+  * [TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi) (I²C host)
+  * [TWD](https://stnolting.github.io/neorv32/#_two_wire_serial_device_controller_twd) (I²C device)
+  * [ONEWIRE/1-Wire](https://stnolting.github.io/neorv32/#_one_wire_serial_interface_controller_onewire) (host)
 * interrupt-capable general purpose IOs ([GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio)) and
 [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
 * smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly control NeoPixel(TM) LEDs
