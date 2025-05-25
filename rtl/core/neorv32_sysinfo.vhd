@@ -17,41 +17,41 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_sysinfo is
   generic (
-    NUM_HARTS             : natural; -- number of physical CPU cores
-    CLOCK_FREQUENCY       : natural; -- clock frequency of clk_i in Hz
-    BOOT_MODE_SELECT      : natural; -- boot configuration select (default = 0 = bootloader)
-    INT_BOOTLOADER_EN     : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-    MEM_INT_IMEM_EN       : boolean; -- implement processor-internal instruction memory
-    MEM_INT_IMEM_ROM      : boolean; -- implement processor-internal instruction memory as pre-initialized ROM
-    MEM_INT_IMEM_SIZE     : natural; -- size of processor-internal instruction memory in bytes
-    MEM_INT_DMEM_EN       : boolean; -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE     : natural; -- size of processor-internal data memory in bytes
-    ICACHE_EN             : boolean; -- implement instruction cache
-    ICACHE_NUM_BLOCKS     : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
-    DCACHE_EN             : boolean; -- implement data cache
-    DCACHE_NUM_BLOCKS     : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
-    CACHE_BLOCK_SIZE      : natural; -- i-cache/d-cache: block size in bytes (min 4), has to be a power of 2
-    XBUS_EN               : boolean; -- implement external memory bus interface
-    OCD_EN                : boolean; -- implement OCD
-    OCD_AUTH              : boolean; -- implement OCD authenticator
-    IO_GPIO_EN            : boolean; -- implement general purpose IO port (GPIO)
-    IO_CLINT_EN           : boolean; -- implement machine local interruptor (CLINT)
-    IO_UART0_EN           : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)
-    IO_UART1_EN           : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)
-    IO_SPI_EN             : boolean; -- implement serial peripheral interface (SPI)
-    IO_SDI_EN             : boolean; -- implement serial data interface (SDI)
-    IO_TWI_EN             : boolean; -- implement two-wire interface (TWI)
-    IO_TWD_EN             : boolean; -- implement two-wire device (TWD)
-    IO_PWM_EN             : boolean; -- implement pulse-width modulation controller (PWM)
-    IO_WDT_EN             : boolean; -- implement watch dog timer (WDT)
-    IO_TRNG_EN            : boolean; -- implement true random number generator (TRNG)
-    IO_CFS_EN             : boolean; -- implement custom functions subsystem (CFS)
-    IO_NEOLED_EN          : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)
-    IO_GPTMR_EN           : boolean; -- implement general purpose timer (GPTMR)
-    IO_ONEWIRE_EN         : boolean; -- implement 1-wire interface (ONEWIRE)
-    IO_DMA_EN             : boolean; -- implement direct memory access controller (DMA)
-    IO_SLINK_EN           : boolean; -- implement stream link interface (SLINK)
-    IO_CRC_EN             : boolean  -- implement cyclic redundancy check unit (CRC)
+    NUM_HARTS         : natural; -- number of physical CPU cores
+    CLOCK_FREQUENCY   : natural; -- clock frequency of clk_i in Hz
+    BOOT_MODE_SELECT  : natural; -- boot configuration select (default = 0 = bootloader)
+    INT_BOOTLOADER_EN : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
+    MEM_INT_IMEM_EN   : boolean; -- implement processor-internal instruction memory
+    MEM_INT_IMEM_ROM  : boolean; -- implement processor-internal instruction memory as pre-initialized ROM
+    MEM_INT_IMEM_SIZE : natural; -- size of processor-internal instruction memory in bytes
+    MEM_INT_DMEM_EN   : boolean; -- implement processor-internal data memory
+    MEM_INT_DMEM_SIZE : natural; -- size of processor-internal data memory in bytes
+    ICACHE_EN         : boolean; -- implement instruction cache
+    ICACHE_NUM_BLOCKS : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
+    DCACHE_EN         : boolean; -- implement data cache
+    DCACHE_NUM_BLOCKS : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
+    CACHE_BLOCK_SIZE  : natural; -- i-cache/d-cache: block size in bytes (min 4), has to be a power of 2
+    XBUS_EN           : boolean; -- implement external memory bus interface
+    OCD_EN            : boolean; -- implement OCD
+    OCD_AUTH          : boolean; -- implement OCD authenticator
+    IO_GPIO_EN        : boolean; -- implement general purpose IO port (GPIO)
+    IO_CLINT_EN       : boolean; -- implement machine local interruptor (CLINT)
+    IO_UART0_EN       : boolean; -- implement primary universal asynchronous receiver/transmitter (UART0)
+    IO_UART1_EN       : boolean; -- implement secondary universal asynchronous receiver/transmitter (UART1)
+    IO_SPI_EN         : boolean; -- implement serial peripheral interface (SPI)
+    IO_SDI_EN         : boolean; -- implement serial data interface (SDI)
+    IO_TWI_EN         : boolean; -- implement two-wire interface (TWI)
+    IO_TWD_EN         : boolean; -- implement two-wire device (TWD)
+    IO_PWM_EN         : boolean; -- implement pulse-width modulation controller (PWM)
+    IO_WDT_EN         : boolean; -- implement watch dog timer (WDT)
+    IO_TRNG_EN        : boolean; -- implement true random number generator (TRNG)
+    IO_CFS_EN         : boolean; -- implement custom functions subsystem (CFS)
+    IO_NEOLED_EN      : boolean; -- implement NeoPixel-compatible smart LED interface (NEOLED)
+    IO_GPTMR_EN       : boolean; -- implement general purpose timer (GPTMR)
+    IO_ONEWIRE_EN     : boolean; -- implement 1-wire interface (ONEWIRE)
+    IO_DMA_EN         : boolean; -- implement direct memory access controller (DMA)
+    IO_SLINK_EN       : boolean; -- implement stream link interface (SLINK)
+    IO_CRC_EN         : boolean  -- implement cyclic redundancy check unit (CRC)
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
