@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <device schemaVersion="1.1" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd" >
-  <vendor>stnolting</vendor>
+  <vendor>github.com/stnolting/neorv32</vendor>
   <name>neorv32</name>
   <series>RISC-V</series>
   <version>1.11.5</version>
@@ -677,6 +677,7 @@
             <field>
               <name>GPTMR_CTRL_IRQ_CLR</name>
               <bitRange>[30:30]</bitRange>
+              <access>write-only</access>
               <description>Set to clear timer-match interrupt</description>
             </field>
             <field>
@@ -730,6 +731,7 @@
             <field>
               <name>ONEWIRE_CTRL_CLEAR</name>
               <bitRange>[1:1]</bitRange>
+              <access>write-only</access>
               <description>Clear RXT FIFO, auto-clears</description>
             </field>
             <field>
@@ -788,6 +790,7 @@
             <field>
               <name>ONEWIRE_DCMD_CMD</name>
               <bitRange>[9:8]</bitRange>
+              <access>write-only</access>
               <description>Operation command</description>
             </field>
             <field>
@@ -1130,6 +1133,7 @@
             <field>
               <name>SPI_DATA_CMD</name>
               <bitRange>[31:31]</bitRange>
+              <access>write-only</access>
               <description>SPI TX data (0) / command (1) select</description>
             </field>
           </fields>
@@ -1271,11 +1275,13 @@
             <field>
               <name>TWD_CTRL_CLR_RX</name>
               <bitRange>[1:1]</bitRange>
+              <access>write-only</access>
               <description>Clear RX FIFO, flag auto-clears</description>
             </field>
             <field>
               <name>TWD_CTRL_CLR_TX</name>
               <bitRange>[2:2]</bitRange>
+              <access>write-only</access>
               <description>Clear TX FIFO, flag auto-clears</description>
             </field>
             <field>
@@ -1412,10 +1418,11 @@
             <field>
               <name>TRNG_CTRL_FIFO_CLR</name>
               <bitRange>[1:1]</bitRange>
+              <access>write-only</access>
               <description>Clear data FIFO when set (flag auto clears)</description>
             </field>
             <field>
-              <name>ONEWIRE_CTRL_FIFO_SIZE</name>
+              <name>TRNG_CTRL_FIFO_SIZE</name>
               <bitRange>[5:2]</bitRange>
               <access>read-only</access>
               <description>log2(TRNG FIFO size)</description>
@@ -1506,6 +1513,7 @@
             <field>
               <name>WDT_RESET</name>
               <bitRange>[31:0]</bitRange>
+              <access>write-only</access>
               <description>Write password to reset/feed the watchdog (0x709D1AB3)</description>
             </field>
           </fields>
@@ -1659,6 +1667,7 @@
         <register>
           <name>DATA</name>
           <description>Data register</description>
+          <access>write-only</access>
           <addressOffset>0x04</addressOffset>
         </register>
       </registers>
