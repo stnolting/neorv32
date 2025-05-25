@@ -223,6 +223,6 @@ controller is idle (again) and the data/command FIFO is empty, the interrupt bec
                                   <|`31`    `ONEWIRE_CTRL_BUSY`                             ^| r/- <| operation in progress when set or TX FIFO not empty
 .4+<| `0xfff20004` .4+<| `DCMD` <|`7:0`  `ONEWIRE_DCMD_DATA_MSB : ONEWIRE_DCMD_DATA_LSB` ^| r/w <| receive/transmit data
                                 <|`9:8`  `ONEWIRE_DCMD_CMD_HI : ONEWIRE_DCMD_CMD_LO`     ^| -/w <| operation command LSBs
-                                <|`10`   `ONEWIRE_DCMD_PRESENCE`                         ^| -/w <| bus presence detected
+                                <|`10`   `ONEWIRE_DCMD_PRESENCE`                         ^| r/- <| bus presence detected
                                 <|`31:11` -                                              ^| r/- <| _reserved_, read as zero
 |=======================
