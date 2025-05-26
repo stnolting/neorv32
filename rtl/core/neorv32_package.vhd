@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110503"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110504"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -72,7 +72,7 @@ package neorv32_package is
   constant base_io_cfs_c        : std_ulogic_vector(31 downto 0) := x"ffeb0000";
   constant base_io_slink_c      : std_ulogic_vector(31 downto 0) := x"ffec0000";
   constant base_io_dma_c        : std_ulogic_vector(31 downto 0) := x"ffed0000";
-  constant base_io_crc_c        : std_ulogic_vector(31 downto 0) := x"ffee0000";
+--constant base_io_???_c        : std_ulogic_vector(31 downto 0) := x"ffee0000"; -- reserved
 --constant base_io_???_c        : std_ulogic_vector(31 downto 0) := x"ffef0000"; -- reserved
   constant base_io_pwm_c        : std_ulogic_vector(31 downto 0) := x"fff00000";
   constant base_io_gptmr_c      : std_ulogic_vector(31 downto 0) := x"fff10000";
@@ -869,8 +869,7 @@ package neorv32_package is
       IO_DMA_EN             : boolean                        := false;
       IO_SLINK_EN           : boolean                        := false;
       IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;
-      IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;
-      IO_CRC_EN             : boolean                        := false
+      IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1
     );
     port (
       -- Global control --

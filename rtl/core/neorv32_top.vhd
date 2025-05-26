@@ -129,8 +129,7 @@ entity neorv32_top is
     IO_DMA_EN             : boolean                        := false;       -- implement direct memory access controller (DMA)
     IO_SLINK_EN           : boolean                        := false;       -- implement stream link interface (SLINK)
     IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
-    IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
-    IO_CRC_EN             : boolean                        := false        -- implement cyclic redundancy check unit (CRC)
+    IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1            -- TX FIFO depth, has to be a power of two, min 1
   );
   port (
     -- Global control --
@@ -296,7 +295,7 @@ architecture neorv32_top_rtl of neorv32_top is
   type io_devices_enum_t is (
     IODEV_BOOTROM, IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG,
     IODEV_TWI, IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_CLINT, IODEV_ONEWIRE,
-    IODEV_GPTMR, IODEV_PWM, IODEV_CRC, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD
+    IODEV_GPTMR, IODEV_PWM, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD
   );
   type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
   type iodev_rsp_t is array (io_devices_enum_t) of bus_rsp_t;
@@ -357,7 +356,6 @@ begin
       cond_sel_string_f(IO_ONEWIRE_EN,            "ONEWIRE ",    "") &
       cond_sel_string_f(IO_DMA_EN,                "DMA ",        "") &
       cond_sel_string_f(IO_SLINK_EN,              "SLINK ",      "") &
-      cond_sel_string_f(IO_CRC_EN,                "CRC ",        "") &
       cond_sel_string_f(io_sysinfo_en_c,          "SYSINFO ",    "") &
       cond_sel_string_f(OCD_EN,                   "OCD ",        "") &
       cond_sel_string_f(OCD_EN,                   "OCD-AUTH ",   "") &
@@ -909,7 +907,7 @@ begin
       DEV_11_EN => IO_CFS_EN,       DEV_11_BASE => base_io_cfs_c,
       DEV_12_EN => IO_SLINK_EN,     DEV_12_BASE => base_io_slink_c,
       DEV_13_EN => IO_DMA_EN,       DEV_13_BASE => base_io_dma_c,
-      DEV_14_EN => IO_CRC_EN,       DEV_14_BASE => base_io_crc_c,
+      DEV_14_EN => false,           DEV_14_BASE => (others => '0'), -- reserved
       DEV_15_EN => false,           DEV_15_BASE => (others => '0'), -- reserved
       DEV_16_EN => io_pwm_en_c,     DEV_16_BASE => base_io_pwm_c,
       DEV_17_EN => IO_GPTMR_EN,     DEV_17_BASE => base_io_gptmr_c,
@@ -947,7 +945,7 @@ begin
       dev_11_req_o => iodev_req(IODEV_CFS),     dev_11_rsp_i => iodev_rsp(IODEV_CFS),
       dev_12_req_o => iodev_req(IODEV_SLINK),   dev_12_rsp_i => iodev_rsp(IODEV_SLINK),
       dev_13_req_o => iodev_req(IODEV_DMA),     dev_13_rsp_i => iodev_rsp(IODEV_DMA),
-      dev_14_req_o => iodev_req(IODEV_CRC),     dev_14_rsp_i => iodev_rsp(IODEV_CRC),
+      dev_14_req_o => open,                     dev_14_rsp_i => rsp_terminate_c, -- reserved
       dev_15_req_o => open,                     dev_15_rsp_i => rsp_terminate_c, -- reserved
       dev_16_req_o => iodev_req(IODEV_PWM),     dev_16_rsp_i => iodev_rsp(IODEV_PWM),
       dev_17_req_o => iodev_req(IODEV_GPTMR),   dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
@@ -1472,25 +1470,6 @@ begin
     end generate;
 
 
-    -- Cyclic Redundancy Check Unit (CRC) -----------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
-    neorv32_crc_enabled:
-    if IO_CRC_EN generate
-      neorv32_crc_inst: entity neorv32.neorv32_crc
-        port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => iodev_req(IODEV_CRC),
-        bus_rsp_o => iodev_rsp(IODEV_CRC)
-      );
-    end generate;
-
-    neorv32_crc_disabled:
-    if not IO_CRC_EN generate
-      iodev_rsp(IODEV_CRC) <= rsp_terminate_c;
-    end generate;
-
-
     -- System Configuration Information Memory (SYSINFO) --------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_sysinfo_enabled:
@@ -1530,8 +1509,7 @@ begin
         IO_GPTMR_EN       => IO_GPTMR_EN,
         IO_ONEWIRE_EN     => IO_ONEWIRE_EN,
         IO_DMA_EN         => IO_DMA_EN,
-        IO_SLINK_EN       => IO_SLINK_EN,
-        IO_CRC_EN         => IO_CRC_EN
+        IO_SLINK_EN       => IO_SLINK_EN
       )
       port map (
         clk_i     => clk_i,
