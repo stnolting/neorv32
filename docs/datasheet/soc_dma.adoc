@@ -85,12 +85,6 @@ bit is set.
 Make sure to align the source and destination base addresses to the according transfer data quantities. For instance,
 word-to-word transfers require that the two LSB of `SRC_BASE` and `DST_BASE` are cleared.
 
-.Accessing IO Device
-[IMPORTANT]
-When writing data to IO / peripheral devices (for example to the <<_cyclic_redundancy_check_crc>>) the destination
-data quantity has to be set to **word** (32-bit) since all IO registers can only be written in full 32-bit word mode.
-In contrast, read accesses to IO / peripheral devices can also be executed on a byte granule.
-
 
 **DMA Interrupt**
 

@@ -40,7 +40,6 @@ image::neorv32_processor.png[align=center]
 * _optional_ 1-wire serial interface controller (<<_one_wire_serial_interface_controller_onewire,**ONEWIRE**>>), compatible to the 1-wire standard
 * _optional_ autonomous direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
 * _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream compatible
-* _optional_ cyclic redundancy check unit (<<_cyclic_redundancy_check_crc,**CRC**>>)
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>), optional authentication and hardware breakpoint
 * _optional_ system configuration information memory to determine hardware configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
@@ -298,7 +297,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_SLINK_EN`           | boolean   | false         | Implement the <<_stream_link_interface_slink>> (AXI4-Stream).
 | `IO_SLINK_RX_FIFO`      | natural   | 1             | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_SLINK_TX_FIFO`      | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_CRC_EN`             | boolean   | false         | Implement the <<_cyclic_redundancy_check_crc>> unit.
 |=======================
 
 
@@ -825,8 +823,6 @@ include::soc_xbus.adoc[]
 include::soc_slink.adoc[]
 
 include::soc_gpio.adoc[]
-
-include::soc_crc.adoc[]
 
 include::soc_wdt.adoc[]
 
