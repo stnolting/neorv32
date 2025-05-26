@@ -482,43 +482,6 @@
       </registers>
     </peripheral>
 
-    <!-- CRC -->
-    <!-- **************************************************************** -->
-    <peripheral>
-      <name>CRC</name>
-      <description>Cyclic redundancy check unit</description>
-      <baseAddress>0xFFEE0000</baseAddress>
-
-      <addressBlock>
-        <offset>0</offset>
-        <size>0x10</size>
-        <usage>registers</usage>
-      </addressBlock>
-
-      <registers>
-        <register>
-          <name>MODE</name>
-          <description>CRC mode control (CRC8, CRC16, CRC32)</description>
-          <addressOffset>0x00</addressOffset>
-        </register>
-        <register>
-          <name>POLY</name>
-          <description>CRC polynomial</description>
-          <addressOffset>0x04</addressOffset>
-        </register>
-        <register>
-          <name>DATA</name>
-          <description>LSB-aligned data input (bytes)</description>
-          <addressOffset>0x08</addressOffset>
-        </register>
-        <register>
-          <name>SREG</name>
-          <description>CRC shift register</description>
-          <addressOffset>0x0c</addressOffset>
-        </register>
-      </registers>
-    </peripheral>
-
     <!-- PWM -->
     <!-- **************************************************************** -->
     <peripheral>
@@ -1766,7 +1729,6 @@
             <field><name>SYSINFO_SOC_IO_GPTMR</name><bitRange>[28:28]</bitRange><description>General purpose timer implemented</description></field>
             <field><name>SYSINFO_SOC_IO_SLINK</name><bitRange>[29:29]</bitRange><description>Stream link interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_ONEWIRE</name><bitRange>[30:30]</bitRange><description>1-wire interface controller implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_CRC</name><bitRange>[31:31]</bitRange><description>Cyclic redundancy check unit implemented</description></field>
           </fields>
         </register>
         <register>

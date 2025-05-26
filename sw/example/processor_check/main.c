@@ -1451,58 +1451,11 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 10 (DMA) + CRC
+  // Fast interrupt channel 10 (DMA)
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] FIRQ10 (DMA) ", cnt_test);
-
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_DMA)) {
-    trap_cause = trap_never_c;
-    cnt_test++;
-
-    // enable DMA and according FIRQ channel
-    neorv32_dma_enable();
-    neorv32_cpu_csr_write(CSR_MIE, 1 << DMA_FIRQ_ENABLE);
-
-    // setup source data
-    dma_src = 0x7788ee11;
-
-    // flush/reload d-cache
-    asm volatile ("fence");
-
-    // setup CRC unit
-    neorv32_crc_setup(CRC_MODE32, 0x04C11DB7, 0xFFFFFFFF);
-
-    // configure and trigger DMA transfer
-    neorv32_dma_desc_t dma_desc;
-    dma_desc.src = (uint32_t)(&dma_src);
-    dma_desc.dst = (uint32_t)(&NEORV32_CRC->DATA);
-    dma_desc.num = 4;
-    dma_desc.cmd = DMA_CMD_B2UW | DMA_CMD_SRC_INC | DMA_CMD_DST_CONST | DMA_CMD_ENDIAN;
-    neorv32_dma_transfer(&dma_desc);
-
-    // sleep until interrupt
-    neorv32_cpu_sleep();
-
-    neorv32_cpu_csr_write(CSR_MIE, 0);
-
-    // flush/reload d-cache
-    asm volatile ("fence");
-
-    if ((trap_cause == DMA_TRAP_CODE) && // correct interrupt source
-        (neorv32_crc_get() == 0x31DC476E) && // correct CRC sum
-        (neorv32_dma_status() == DMA_STATUS_DONE)) { // DMA transfer completed without errors
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-
-    // disable DMA
-    neorv32_dma_disable();
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
+  trap_cause = trap_never_c;
+  PRINT_STANDARD("[n.a.]\n"); // TODO
 
 
   // ----------------------------------------------------------
