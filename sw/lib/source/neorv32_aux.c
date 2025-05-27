@@ -500,7 +500,6 @@ void neorv32_aux_print_hw_config(void) {
   tmp = NEORV32_SYSINFO->SOC;
   if (tmp & (1 << SYSINFO_SOC_IO_CFS))     { neorv32_uart0_printf("CFS ");        }
   if (tmp & (1 << SYSINFO_SOC_IO_CLINT))   { neorv32_uart0_printf("CLINT ");      }
-  if (tmp & (1 << SYSINFO_SOC_IO_CRC))     { neorv32_uart0_printf("CRC ");        }
   if (tmp & (1 << SYSINFO_SOC_IO_DMA))     { neorv32_uart0_printf("DMA ");        }
   if (tmp & (1 << SYSINFO_SOC_IO_GPIO))    { neorv32_uart0_printf("GPIO ");       }
   if (tmp & (1 << SYSINFO_SOC_IO_GPTMR))   { neorv32_uart0_printf("GPTMR ");      }

@@ -50,8 +50,7 @@ entity neorv32_sysinfo is
     IO_GPTMR_EN       : boolean; -- implement general purpose timer (GPTMR)
     IO_ONEWIRE_EN     : boolean; -- implement 1-wire interface (ONEWIRE)
     IO_DMA_EN         : boolean; -- implement direct memory access controller (DMA)
-    IO_SLINK_EN       : boolean; -- implement stream link interface (SLINK)
-    IO_CRC_EN         : boolean  -- implement cyclic redundancy check unit (CRC)
+    IO_SLINK_EN       : boolean  -- implement stream link interface (SLINK)
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -136,7 +135,7 @@ begin
   sysinfo(2)(28) <= '1' when IO_GPTMR_EN       else '0'; -- general purpose timer (GPTMR) implemented
   sysinfo(2)(29) <= '1' when IO_SLINK_EN       else '0'; -- stream link interface (SLINK) implemented
   sysinfo(2)(30) <= '1' when IO_ONEWIRE_EN     else '0'; -- 1-wire interface (ONEWIRE) implemented
-  sysinfo(2)(31) <= '1' when IO_CRC_EN         else '0'; -- cyclic redundancy check unit (CRC) implemented
+  sysinfo(2)(31) <= '0';                                 -- reserved
 
   -- SYSINFO(4): Cache Configuration --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

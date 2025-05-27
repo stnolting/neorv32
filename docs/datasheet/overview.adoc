@@ -78,7 +78,6 @@ include::rationale.adoc[]
 * optional embedded memories and caches for data, instructions and bootloader
 * optional external memory interface for custom connectivity
 * optional DMA controller for CPU-independent data transfers
-* optional CRC module to check data integrity
 * on-chip debugger compatible with OpenOCD and GDB including hardware trigger module and optional authentication
 
 **Software framework**
@@ -201,7 +200,6 @@ rtl/core
 ├-neorv32_cpu_lsu.vhd           - Load/store unit
 ├-neorv32_cpu_pmp.vhd           - Physical memory protection unit (Smpmp ext.)
 ├-neorv32_cpu_regfile.vhd       - Data register file
-├-neorv32_crc.vhd               - Cyclic redundancy check unit
 ├-neorv32_debug_auth.vhd        - On-chip debugger: authentication module
 ├-neorv32_debug_dm.vhd          - On-chip debugger: debug module
 ├-neorv32_debug_dtm.vhd         - On-chip debugger: debug transfer module

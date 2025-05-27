@@ -42,7 +42,7 @@ extern "C" {
 #define NEORV32_CFS_BASE     (0xFFEB0000U) /**< Custom Functions Subsystem (CFS) */
 #define NEORV32_SLINK_BASE   (0xFFEC0000U) /**< Stream Link Interface (SLINK) */
 #define NEORV32_DMA_BASE     (0xFFED0000U) /**< Direct Memory Access Controller (DMA) */
-#define NEORV32_CRC_BASE     (0xFFEE0000U) /**< Cyclic Redundancy Check Unit (DMA) */
+//#define NEORV32_???_BASE   (0xFFEE0000U) /**< reserved */
 //#define NEORV32_???_BASE   (0xFFEF0000U) /**< reserved */
 #define NEORV32_PWM_BASE     (0xFFF00000U) /**< Pulse Width Modulation Controller (PWM) */
 #define NEORV32_GPTMR_BASE   (0xFFF10000U) /**< General Purpose Timer (GPTMR) */
@@ -252,7 +252,6 @@ typedef union {
 // IO/peripheral devices
 #include "neorv32_cfs.h"
 #include "neorv32_clint.h"
-#include "neorv32_crc.h"
 #include "neorv32_dma.h"
 #include "neorv32_gpio.h"
 #include "neorv32_gptmr.h"

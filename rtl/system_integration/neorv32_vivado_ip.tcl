@@ -428,11 +428,6 @@ proc setup_ip_gui {} {
   add_params $group {
     { IO_DMA_EN {Enable DMA} }
   }
-
-  set group [add_group $page {Cyclic Redundancy Check Unit (CRC)}]
-  add_params $group {
-    { IO_CRC_EN {Enable CRC} }
-  }
 }
 
 setup_ip_gui
