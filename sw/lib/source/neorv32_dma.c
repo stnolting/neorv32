@@ -31,6 +31,40 @@ int neorv32_dma_available(void) {
 
 
 /**********************************************************************//**
+ * Get DMA descriptor FIFO depth.
+ *
+ * @return FIFO depth (number of entries)
+ **************************************************************************/
+int neorv32_dma_get_descriptor_fifo_depth(void) {
+
+  uint32_t tmp = (NEORV32_DMA->CTRL >> DMA_CTRL_DFIFO_LSB) & 0xf;
+  return (int)(1 << tmp);
+}
+
+
+/**********************************************************************//**
+ * Check if descriptor FIFO is full.
+ *
+ * @return Non-zero if FIFO is full, zero otherwise.
+ **************************************************************************/
+int neorv32_dma_descriptor_fifo_full(void) {
+
+  return (int)(NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL));
+}
+
+
+/**********************************************************************//**
+ * Check if descriptor FIFO is empty.
+ *
+ * @return Non-zero if FIFO is empty, zero otherwise.
+ **************************************************************************/
+int neorv32_dma_descriptor_fifo_empty(void) {
+
+  return (int)(NEORV32_DMA->CTRL & (1 << DMA_CTRL_DEMPTY));
+}
+
+
+/**********************************************************************//**
  * Enable DMA.
  **************************************************************************/
 void neorv32_dma_enable(void) {
@@ -49,19 +83,52 @@ void neorv32_dma_disable(void) {
 
 
 /**********************************************************************//**
- * Trigger manual DMA transfer.
- *
- * @param[in] base_src Source base address (has to be aligned to source data type!).
- * @param[in] base_dst Destination base address (has to be aligned to destination data type!).
- * @param[in] num Number of elements to transfer (24-bit).
- * @param[in] config Transfer type configuration/commands.
+ * Clear transfer-error status.
  **************************************************************************/
-void neorv32_dma_transfer(neorv32_dma_desc_t *desc) {
+void neorv32_dma_err_ack(void) {
 
-  NEORV32_DMA->SRC_BASE = desc->src;
-  NEORV32_DMA->DST_BASE = desc->dst;
-  NEORV32_DMA->TTYPE    = (desc->num & 0x00ffffffUL) | (desc->cmd & 0xff000000UL);
-  NEORV32_DMA->CTRL    |= 1<<DMA_CTRL_START;
+  NEORV32_DMA->CTRL |= (uint32_t)(1 << DMA_CTRL_ERROR);
+}
+
+
+/**********************************************************************//**
+ * Clear transfer-done status/interrupt.
+ **************************************************************************/
+void neorv32_dma_done_ack(void) {
+
+  NEORV32_DMA->CTRL |= (uint32_t)(1 << DMA_CTRL_DONE);
+}
+
+
+/**********************************************************************//**
+ * Program DMA descriptor.
+ *
+ * @param[in] base_src Source data base address.
+ * @param[in] base_dst Destination data base address.
+ * @param[in] config Transfer type configuration (#NEORV32_DMA_CONF_enum).
+ *
+ * @return 0 if programming was successful; if the descriptor FIFO does not
+ * provide enough space for the entire descriptor, a negative value is returned
+ * that represents the number of missing FIFO entries.
+ **************************************************************************/
+int neorv32_dma_program(uint32_t src_addr, uint32_t dst_addr, uint32_t config) {
+
+  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -3; }
+  NEORV32_DMA->DESC = src_addr;
+  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -2; }
+  NEORV32_DMA->DESC = dst_addr;
+  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -1; }
+  NEORV32_DMA->DESC = config & 0xf8ffffffU;
+  return 0;
+}
+
+
+/**********************************************************************//**
+ * Trigger pre-programmed DMA transfer(s)
+ **************************************************************************/
+void neorv32_dma_start(void) {
+
+  NEORV32_DMA->CTRL |= 1 << DMA_CTRL_START;
 }
 
 
@@ -74,11 +141,8 @@ int neorv32_dma_status(void) {
 
   uint32_t tmp = NEORV32_DMA->CTRL;
 
-  if (tmp & (1 << DMA_CTRL_ERROR_WR)) {
-    return DMA_STATUS_ERR_WR; // error during write access
-  }
-  else if (tmp & (1 << DMA_CTRL_ERROR_RD)) {
-    return DMA_STATUS_ERR_RD; // error during read access
+  if (tmp & (1 << DMA_CTRL_ERROR)) {
+    return DMA_STATUS_ERROR; // error during transfer
   }
   else if (tmp & (1 << DMA_CTRL_BUSY)) {
     return DMA_STATUS_BUSY; // transfer in progress

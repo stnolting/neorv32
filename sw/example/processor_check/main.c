@@ -80,7 +80,7 @@ volatile int cnt_test = 0; // global counter for total number of tests
 volatile uint32_t num_hpm_cnts_global = 0; // global number of available hpms
 volatile int vectored_mei_handler_ack = 0; // vectored mei trap handler acknowledge
 volatile uint32_t gpio_trap_handler_ack = 0; // gpio trap handler acknowledge
-volatile uint32_t dma_src; // dma source & destination data
+volatile uint32_t dma_src[2], dma_dst[2]; // dma source & destination data
 volatile uint32_t store_access_addr[2]; // variable to test store accesses
 volatile uint32_t __attribute__((aligned(8*4))) pmp_access[8]; // variable to test pmp
 volatile uint32_t trap_cnt; // number of triggered traps
@@ -612,8 +612,8 @@ int main() {
   asm volatile (".word 0xfe000033"); // illegal add funct7
   asm volatile (".word 0xf0a01013"); // illegal slli funct7
   asm volatile (".word 0xde000033"); // illegal mul funct7
-  asm volatile (".word 0x80002163"); // illegal branch funct3 (misaligned DST if C not available)
-  asm volatile (".word 0x00001067"); // illegal jalr funct3
+  asm volatile (".word 0x8f002163"); // illegal branch funct3
+  asm volatile (".word 0x8f001067"); // illegal jalr funct3
   asm volatile (".word 0x0000200f"); // illegal fence funct3
   asm volatile (".word 0xfe002fe3"); // illegal store funct3
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
@@ -1060,7 +1060,7 @@ int main() {
     neorv32_twi_send_nonblocking(0x47, 0);
     neorv32_twi_generate_stop_nonblocking();
 
-    // sleep until interrupt
+    // wait for interrupt
     neorv32_cpu_sleep();
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -1297,7 +1297,7 @@ int main() {
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << SPI_FIRQ_ENABLE);
 
-    // sleep until interrupt
+    // wait for interrupt
     neorv32_cpu_sleep();
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -1339,7 +1339,7 @@ int main() {
     // enable TWI FIRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << TWI_FIRQ_ENABLE);
 
-    // sleep until interrupt
+    // wait for interrupt
     neorv32_cpu_sleep();
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
@@ -1432,7 +1432,7 @@ int main() {
     neorv32_neoled_write_nonblocking(0);
     neorv32_neoled_write_nonblocking(0);
 
-    // sleep until interrupt
+    // wait until interrupt
     asm volatile ("nop");
     asm volatile ("nop");
 
@@ -1454,8 +1454,62 @@ int main() {
   // Fast interrupt channel 10 (DMA)
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] FIRQ10 (DMA) ", cnt_test);
-  trap_cause = trap_never_c;
-  PRINT_STANDARD("[n.a.]\n"); // TODO
+
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_DMA)) {
+    trap_cause = trap_never_c;
+    cnt_test++;
+
+    // enable DMA and according FIRQ channel
+    neorv32_dma_enable();
+    neorv32_cpu_csr_write(CSR_MIE, 1 << DMA_FIRQ_ENABLE);
+
+    // setup DMA data
+    dma_src[0] = 0x7788ee11;
+    dma_src[1] = 0xaabbccdd;
+    dma_dst[0] = 0;
+    dma_dst[1] = 0;
+
+    // flush d-cache
+    asm volatile ("fence");
+
+    // configure and trigger DMA transfers
+    tmp_a = 0;
+    tmp_a += neorv32_dma_program(
+               (uint32_t)(&dma_src[0]),
+               (uint32_t)(&dma_dst[0]),
+               DMA_SRC_INC_BYTE | DMA_DST_INC_BYTE | DMA_BSWAP | 4
+             );
+    tmp_a += neorv32_dma_program(
+               (uint32_t)(&dma_src[1]),
+               (uint32_t)(&dma_dst[1]),
+               DMA_SRC_CONST_WORD | DMA_DST_CONST_WORD | 1
+             );
+    neorv32_dma_start();
+
+    // sleep until interrupt
+    neorv32_cpu_sleep();
+
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    // reload d-cache
+    asm volatile ("fence");
+
+    if ((tmp_a == 0) && // no error during descriptor programming
+        (trap_cause == DMA_TRAP_CODE) && // correct interrupt source
+        (neorv32_dma_status() == DMA_STATUS_DONE) && // DMA transfer completed without errors
+        (dma_dst[0] == 0x11ee8877) && (dma_dst[1] == 0xaabbccdd)) { // correct destination data?
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    // disable DMA
+    neorv32_dma_disable();
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------

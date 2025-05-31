@@ -426,7 +426,8 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Direct Memory Access Controller (DMA)}]
   add_params $group {
-    { IO_DMA_EN {Enable DMA} }
+    { IO_DMA_EN       {Enable DMA} }
+    { IO_DMA_DSC_FIFO {Descriptor FIFO depth} {Number of entries (use a power of two)} {$IO_DMA_EN} }
   }
 }
 

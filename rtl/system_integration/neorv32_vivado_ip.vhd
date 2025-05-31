@@ -119,6 +119,7 @@ entity neorv32_vivado_ip is
     IO_GPTMR_EN           : boolean                        := false;
     IO_ONEWIRE_EN         : boolean                        := false;
     IO_DMA_EN             : boolean                        := false;
+    IO_DMA_DSC_FIFO       : natural range 4 to 512         := 4;
     IO_SLINK_EN           : boolean                        := false;
     IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;
     IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1
@@ -441,6 +442,7 @@ begin
     IO_GPTMR_EN         => IO_GPTMR_EN,
     IO_ONEWIRE_EN       => IO_ONEWIRE_EN,
     IO_DMA_EN           => IO_DMA_EN,
+    IO_DMA_DSC_FIFO     => IO_DMA_DSC_FIFO,
     IO_SLINK_EN         => IO_SLINK_EN,
     IO_SLINK_RX_FIFO    => IO_SLINK_RX_FIFO,
     IO_SLINK_TX_FIFO    => IO_SLINK_TX_FIFO

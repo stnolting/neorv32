@@ -294,6 +294,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_ONEWIRE_EN`         | boolean   | false         | Implement the <<_one_wire_serial_interface_controller_onewire>>.
 | `IO_ONEWIRE_FIFO`       | natural   | 1             | Depth of the <<_one_wire_serial_interface_controller_onewire>> FIFO. Has to be a power of two, min 1, max 32768.
 | `IO_DMA_EN`             | boolean   | false         | Implement the <<_direct_memory_access_controller_dma>>.
+| `IO_DMA_DSC_FIFO`       | natural   | 4             | Depth of the DMA transfer descriptor FIFO. Has to be a power of two, min 4, max 512.
 | `IO_SLINK_EN`           | boolean   | false         | Implement the <<_stream_link_interface_slink>> (AXI4-Stream).
 | `IO_SLINK_RX_FIFO`      | natural   | 1             | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_SLINK_TX_FIFO`      | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.

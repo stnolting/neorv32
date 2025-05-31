@@ -127,6 +127,7 @@ entity neorv32_top is
     IO_ONEWIRE_EN         : boolean                        := false;       -- implement 1-wire interface (ONEWIRE)
     IO_ONEWIRE_FIFO       : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
     IO_DMA_EN             : boolean                        := false;       -- implement direct memory access controller (DMA)
+    IO_DMA_DSC_FIFO       : natural range 4 to 512         := 4;           -- DMA descriptor FIFO depth, has to be a power of two, min 4
     IO_SLINK_EN           : boolean                        := false;       -- implement stream link interface (SLINK)
     IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
     IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1            -- TX FIFO depth, has to be a power of two, min 1
@@ -649,6 +650,9 @@ begin
     -- DMA Controller -------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_dma_inst: entity neorv32.neorv32_dma
+    generic map (
+      DSC_FIFO => IO_DMA_DSC_FIFO
+    )
     port map (
       clk_i     => clk_i,
       rstn_i    => rstn_sys,
