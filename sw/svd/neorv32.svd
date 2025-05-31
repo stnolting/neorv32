@@ -399,7 +399,7 @@
       <registers>
         <register>
           <name>CTRL</name>
-          <description>Control register</description>
+          <description>Control and status register</description>
           <addressOffset>0x00</addressOffset>
           <fields>
             <field>
@@ -410,74 +410,50 @@
             <field>
               <name>DMA_CTRL_START</name>
               <bitRange>[1:1]</bitRange>
-              <description>Start programmed DMA transfer</description>
+              <access>write-only</access>
+              <description>Start programmed DMA transfer(s)</description>
             </field>
             <field>
-              <name>DMA_CTRL_ERROR_RD</name>
+              <name>DMA_CTRL_FIFO</name>
+              <bitRange>[19:16]</bitRange>
+              <access>read-only</access>
+              <description>log2(descriptor FIFO depth)</description>
+            </field>
+            <field>
+              <name>DMA_CTRL_DEMPTY</name>
+              <bitRange>[27:27]</bitRange>
+              <access>read-only</access>
+              <description>Descriptor FIFO is empty</description>
+            </field>
+            <field>
+              <name>DMA_CTRL_DFULL</name>
               <bitRange>[28:28]</bitRange>
               <access>read-only</access>
-              <description>Error during last read access</description>
+              <description>Descriptor FIFO is full</description>
             </field>
             <field>
-              <name>DMA_CTRL_ERROR_WR</name>
+              <name>DMA_CTRL_ERROR</name>
               <bitRange>[29:29]</bitRange>
-              <access>read-only</access>
-              <description>Error during last write access</description>
+              <description>Error during last transfer; clear by writing one</description>
             </field>
             <field>
               <name>DMA_CTRL_DONE</name>
               <bitRange>[30:30]</bitRange>
-              <description>Transfer done; auto-clears on write access</description>
+              <description>Transfer(s) done; clear by writing one</description>
             </field>
             <field>
               <name>DMA_CTRL_BUSY</name>
               <bitRange>[31:31]</bitRange>
               <access>read-only</access>
-              <description>Transfer in progress</description>
+              <description>Transfer(s) in progress</description>
             </field>
           </fields>
         </register>
         <register>
-          <name>SRC_BASE</name>
-          <description>Source base address; shows the last accessed read address on read access</description>
+          <name>DESC</name>
+          <description>Descriptor FIFO</description>
+          <access>write-only</access>
           <addressOffset>0x04</addressOffset>
-        </register>
-        <register>
-          <name>DST_BASE</name>
-          <description>Destination base address; shows the last accessed write address on read access</description>
-          <addressOffset>0x08</addressOffset>
-        </register>
-        <register>
-          <name>TTYPE</name>
-          <description>Destination base address; shows the last accessed write address on read access</description>
-          <addressOffset>0x0c</addressOffset>
-          <fields>
-            <field>
-              <name>DMA_TTYPE_NUM</name>
-              <bitRange>[23:0]</bitRange>
-              <description>Number of elements to transfer</description>
-            </field>
-            <field>
-              <name>DMA_TTYPE_QSEL</name>
-              <bitRange>[28:27]</bitRange>
-              <description>Data quantity select</description>
-            </field>
-            <field>
-              <name>DMA_TTYPE_SRC_INC</name>
-              <bitRange>[29:29]</bitRange>
-              <description>Source constant (0) or incrementing (1) address</description>
-            </field>
-            <field>
-              <name>DMA_TTYPE_DST_INC</name>
-              <bitRange>[30:30]</bitRange>
-              <description>Destination constant (0) or incrementing (1) address</description>
-            </field>
-            <field>
-              <name>DMA_TTYPE_ENDIAN</name>
-              <bitRange>[31:31]</bitRange>
-              <description>Convert Endianness when set</description>
-            </field>
-          </fields>
         </register>
       </registers>
     </peripheral>
