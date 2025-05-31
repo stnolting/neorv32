@@ -53,21 +53,21 @@ begin
   mem_access: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
-        if (bus_req_i.ben(0) = '1') then -- byte 0
+      if (bus_req_i.stb = '1') then
+        -- write access --
+        if (bus_req_i.ben(0) = '1') and (bus_req_i.rw = '1') then -- byte 0
           mem_ram_b0(to_integer(addr)) <= bus_req_i.data(7 downto 0);
         end if;
-        if (bus_req_i.ben(1) = '1') then -- byte 1
+        if (bus_req_i.ben(1) = '1') and (bus_req_i.rw = '1') then -- byte 1
           mem_ram_b1(to_integer(addr)) <= bus_req_i.data(15 downto 8);
         end if;
-        if (bus_req_i.ben(2) = '1') then -- byte 2
+        if (bus_req_i.ben(2) = '1') and (bus_req_i.rw = '1') then -- byte 2
           mem_ram_b2(to_integer(addr)) <= bus_req_i.data(23 downto 16);
         end if;
-        if (bus_req_i.ben(3) = '1') then -- byte 3
+        if (bus_req_i.ben(3) = '1') and (bus_req_i.rw = '1') then -- byte 3
           mem_ram_b3(to_integer(addr)) <= bus_req_i.data(31 downto 24);
         end if;
-      end if;
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
+        -- read access --
         rdata(7  downto 0)  <= mem_ram_b0(to_integer(addr));
         rdata(15 downto 8)  <= mem_ram_b1(to_integer(addr));
         rdata(23 downto 16) <= mem_ram_b2(to_integer(addr));
@@ -76,7 +76,7 @@ begin
     end if;
   end process mem_access;
 
-  -- word aligned access address --
+  -- word access address --
   addr <= unsigned(bus_req_i.addr(addr_hi_c downto 2));
 
 
