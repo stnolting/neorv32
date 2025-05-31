@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 31.05.2025 | 1.11.5.5 | rework IMEM/DMEM RAM HDL style to prevent DRC errors on Vivado 24.1 when cascading many BRAM blocks | [#1277](https://github.com/stnolting/neorv32/pull/1277) |
 | 26.05.2025 | 1.11.5.4 | :warning: remove cyclic redundancy check unit (CRC) | [#1275](https://github.com/stnolting/neorv32/pull/1275) |
 | 24.05.2025 | 1.11.5.3 | :warning: rework CFS IO conduits; remove CFS generics | [#1274](https://github.com/stnolting/neorv32/pull/1274) |
 | 23.05.2025 | 1.11.5.2 | minor rtl edits and cleanups | [#1273](https://github.com/stnolting/neorv32/pull/1273) |
