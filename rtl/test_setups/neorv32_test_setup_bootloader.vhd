@@ -18,9 +18,9 @@ use neorv32.neorv32_package.all;
 entity neorv32_test_setup_bootloader is
   generic (
     -- adapt these for your setup --
-    CLOCK_FREQUENCY   : natural := 100000000; -- clock frequency of clk_i in Hz
-    MEM_INT_IMEM_SIZE : natural := 16*1024;   -- size of processor-internal instruction memory in bytes
-    MEM_INT_DMEM_SIZE : natural := 8*1024     -- size of processor-internal data memory in bytes
+    CLOCK_FREQUENCY : natural := 100000000; -- clock frequency of clk_i in Hz
+    IMEM_SIZE       : natural := 16*1024;   -- size of processor-internal instruction memory in bytes
+    DMEM_SIZE       : natural := 8*1024     -- size of processor-internal data memory in bytes
   );
   port (
     -- Global control --
@@ -45,23 +45,23 @@ begin
   neorv32_top_inst: neorv32_top
   generic map (
     -- Clocking --
-    CLOCK_FREQUENCY   => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
+    CLOCK_FREQUENCY  => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
     -- Boot Configuration --
-    BOOT_MODE_SELECT  => 0,                 -- boot via internal bootloader
+    BOOT_MODE_SELECT => 0,                 -- boot via internal bootloader
     -- RISC-V CPU Extensions --
-    RISCV_ISA_C       => true,              -- implement compressed extension?
-    RISCV_ISA_M       => true,              -- implement mul/div extension?
-    RISCV_ISA_Zicntr  => true,              -- implement base counters?
+    RISCV_ISA_C      => true,              -- implement compressed extension?
+    RISCV_ISA_M      => true,              -- implement mul/div extension?
+    RISCV_ISA_Zicntr => true,              -- implement base counters?
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN   => true,              -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
+    IMEM_EN          => true,              -- implement processor-internal instruction memory
+    IMEM_SIZE        => IMEM_SIZE, -- size of processor-internal instruction memory in bytes
     -- Internal Data memory --
-    MEM_INT_DMEM_EN   => true,              -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
+    DMEM_EN          => true,              -- implement processor-internal data memory
+    DMEM_SIZE        => DMEM_SIZE, -- size of processor-internal data memory in bytes
     -- Processor peripherals --
-    IO_GPIO_NUM       => 8,                 -- number of GPIO input/output pairs (0..32)
-    IO_CLINT_EN       => true,              -- implement core local interruptor (CLINT)?
-    IO_UART0_EN       => true               -- implement primary universal asynchronous receiver/transmitter (UART0)?
+    IO_GPIO_NUM      => 8,                 -- number of GPIO input/output pairs (0..32)
+    IO_CLINT_EN      => true,              -- implement core local interruptor (CLINT)?
+    IO_UART0_EN      => true               -- implement primary universal asynchronous receiver/transmitter (UART0)?
   )
   port map (
     -- Global control --

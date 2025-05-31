@@ -249,11 +249,11 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `HPM_NUM_CNTS`          | natural   | 0             | Number of implemented hardware performance monitor counters (0..13).
 | `HPM_CNT_WIDTH`         | natural   | 40            | Total LSB-aligned size of each HPM counter. Min 0, max 64.
 4+^| **Internal <<_instruction_memory_imem>>**
-| `MEM_INT_IMEM_EN`       | boolean   | false         | Implement the processor-internal instruction memory.
-| `MEM_INT_IMEM_SIZE`     | natural   | 16*1024       | Size in bytes of the processor internal instruction memory (use a power of 2).
+| `IMEM_EN`               | boolean   | false         | Implement the processor-internal instruction memory.
+| `IMEM_SIZE`             | natural   | 16*1024       | Size in bytes of the processor internal instruction memory (use a power of 2).
 4+^| **Internal <<_data_memory_dmem>>**
-| `MEM_INT_DMEM_EN`       | boolean   | false         | Implement the processor-internal data memory.
-| `MEM_INT_DMEM_SIZE`     | natural   | 8*1024        | Size in bytes of the processor-internal data memory (use a power of 2).
+| `DMEM_EN`               | boolean   | false         | Implement the processor-internal data memory.
+| `DMEM_SIZE`             | natural   | 8*1024        | Size in bytes of the processor-internal data memory (use a power of 2).
 4+^| **CPU Caches (<<_processor_internal_instruction_cache_icache, instruction-cache>> & <<_processor_internal_data_cache_dcache, data-cache>>)**
 | `ICACHE_EN`             | boolean   | false         | Implement the instruction cache (I$).
 | `ICACHE_NUM_BLOCKS`     | natural   | 4             | Number of blocks ("lines") Has to be a power of two.
@@ -759,7 +759,7 @@ The <<_bootloader_rom_bootrom>> is not enabled / implement at all.
 
 .Internal IMEM is Required
 [IMPORTANT]
-This boot configuration requires the IMEM to be enabled (`MEM_INT_IMEM_EN` = true).
+This boot configuration requires the IMEM to be enabled (`IMEM_EN` = true).
 
 .Simulation Setup
 [TIP]

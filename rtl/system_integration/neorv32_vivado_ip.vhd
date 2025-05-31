@@ -74,11 +74,11 @@ entity neorv32_vivado_ip is
     HPM_NUM_CNTS          : natural range 0 to 13          := 0;
     HPM_CNT_WIDTH         : natural range 0 to 64          := 40;
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN       : boolean                        := false;
-    MEM_INT_IMEM_SIZE     : natural                        := 16384;
+    IMEM_EN               : boolean                        := false;
+    IMEM_SIZE             : natural                        := 16384;
     -- Internal Data memory --
-    MEM_INT_DMEM_EN       : boolean                        := false;
-    MEM_INT_DMEM_SIZE     : natural                        := 8192;
+    DMEM_EN               : boolean                        := false;
+    DMEM_SIZE             : natural                        := 8192;
     -- CPU Caches --
     ICACHE_EN             : boolean                        := false;
     ICACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
@@ -398,11 +398,11 @@ begin
     HPM_NUM_CNTS        => HPM_NUM_CNTS,
     HPM_CNT_WIDTH       => HPM_CNT_WIDTH,
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN     => MEM_INT_IMEM_EN,
-    MEM_INT_IMEM_SIZE   => MEM_INT_IMEM_SIZE,
+    IMEM_EN             => IMEM_EN,
+    IMEM_SIZE           => IMEM_SIZE,
     -- Internal Data memory --
-    MEM_INT_DMEM_EN     => MEM_INT_DMEM_EN,
-    MEM_INT_DMEM_SIZE   => MEM_INT_DMEM_SIZE,
+    DMEM_EN             => DMEM_EN,
+    DMEM_SIZE           => DMEM_SIZE,
     -- CPU Caches --
     ICACHE_EN           => ICACHE_EN,
     ICACHE_NUM_BLOCKS   => ICACHE_NUM_BLOCKS,

@@ -44,9 +44,9 @@ to be adapted to match your FPGA and board:
 ----
 generic (
   -- adapt these for your setup --
-  CLOCK_FREQUENCY   : natural := 100000000; <1>
-  MEM_INT_IMEM_SIZE : natural := 16*1024;   <2>
-  MEM_INT_DMEM_SIZE : natural := 8*1024     <3>
+  CLOCK_FREQUENCY : natural := 100000000; <1>
+  IMEM_SIZE       : natural := 16*1024;   <2>
+  DMEM_SIZE       : natural := 8*1024     <3>
 );
 ----
 <1> Clock frequency of `clk_i` signal in Hertz
@@ -55,14 +55,14 @@ generic (
 
 [start=6]
 . If you want to or if your FPGA does not provide sufficient resources you can modify the
-_memory sizes_ (`MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE`).
+_memory sizes_ (`IMEM_SIZE` and `DMEM_SIZE`).
 . There is one generic that has to be set according to your FPGA board setup: the actual clock frequency
 of the top's clock input signal (`clk_i`). Use the `CLOCK_FREQUENCY` generic to specify your clock source's
 frequency in Hertz (Hz).
 
 .Memory Layout
 [NOTE]
-If you have changed the default memory configuration (`MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE` generics)
+If you have changed the default memory configuration (`IMEM_SIZE` and `DMEM_SIZE` generics)
 keep those new sizes in mind - these values are required for setting up the software framework in the next
 section <<_general_software_framework_setup>>.
 

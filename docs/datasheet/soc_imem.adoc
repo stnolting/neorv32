@@ -9,8 +9,8 @@
 |                         | neorv32_application_image.vhd | initialization image (a VHDL package)
 | Software driver files:  | none                          | _implicitly used_
 | Top entity ports:       | none                          |
-| Configuration generics: | `MEM_INT_IMEM_EN`             | implement processor-internal IMEM when `true`
-|                         | `MEM_INT_IMEM_SIZE`           | IMEM size in bytes (use a power of 2)
+| Configuration generics: | `IMEM_EN`                     | implement processor-internal IMEM when `true`
+|                         | `IMEM_SIZE`                   | IMEM size in bytes (use a power of 2)
 |                         | `BOOT_MODE_SELECT`            | implement IMEM as ROM when `BOOT_MODE_SELECT` = 2; see <<_boot_configuration>>
 | CPU interrupts:         | none                          |
 |=======================
@@ -19,7 +19,7 @@
 **Overview**
 
 Implementation of the processor-internal instruction memory is enabled by the processor's
-`MEM_INT_IMEM_EN` generic. The total memory size in bytes is defined via the `MEM_INT_IMEM_SIZE` generic.
+`IMEM_EN` generic. The total memory size in bytes is defined via the `IMEM_SIZE` generic.
 Note that this size should be a power of two to optimize physical implementation. If enabled,
 the IMEM is mapped to base address `0x00000000` (see section <<_address_space>>).
 
@@ -41,7 +41,7 @@ optimize area utilization, timing and power consumption.
 
 .Memory Size
 [NOTE]
-If the configured memory size (via the `MEM_INT_IMEM_SIZE` generic) is not a power of two the actual memory
+If the configured memory size (via the `IMEM_SIZE` generic) is not a power of two the actual memory
 size will be auto-adjusted to the next power of two (e.g. configuring a memory size of 60kB will result in a
 physical memory size of 64kB).
 

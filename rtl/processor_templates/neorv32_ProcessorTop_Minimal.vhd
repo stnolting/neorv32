@@ -1,9 +1,9 @@
 -- ================================================================================ --
--- NEORV32 - Minimal setup without a bootloader                                     --
+-- NEORV32 Templates - Minimal setup without a bootloader                           --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -17,15 +17,15 @@ library neorv32;
 entity neorv32_ProcessorTop_Minimal is
   generic (
     -- Clocking --
-    CLOCK_FREQUENCY   : natural := 0;       -- clock frequency of clk_i in Hz
+    CLOCK_FREQUENCY : natural := 0;       -- clock frequency of clk_i in Hz
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN   : boolean := true;    -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE : natural := 8*1024;  -- size of processor-internal instruction memory in bytes
+    IMEM_EN         : boolean := true;    -- implement processor-internal instruction memory
+    IMEM_SIZE       : natural := 8*1024;  -- size of processor-internal instruction memory in bytes
     -- Internal Data memory --
-    MEM_INT_DMEM_EN   : boolean := true;    -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE : natural := 64*1024; -- size of processor-internal data memory in bytes
+    DMEM_EN         : boolean := true;    -- implement processor-internal data memory
+    DMEM_SIZE       : natural := 64*1024; -- size of processor-internal data memory in bytes
     -- Processor peripherals --
-    IO_PWM_NUM_CH     : natural := 3        -- number of PWM channels to implement (0..16)
+    IO_PWM_NUM_CH   : natural := 3        -- number of PWM channels to implement (0..16)
   );
   port (
     -- Global control --
@@ -48,20 +48,20 @@ begin
   neorv32_inst: entity neorv32.neorv32_top
   generic map (
     -- Clocking --
-    CLOCK_FREQUENCY              => CLOCK_FREQUENCY,   -- clock frequency of clk_i in Hz
+    CLOCK_FREQUENCY  => CLOCK_FREQUENCY, -- clock frequency of clk_i in Hz
     -- Boot Configuration --
-    BOOT_MODE_SELECT             => 2,                 -- boot from pre-initialized interal IMEM
+    BOOT_MODE_SELECT => 2,               -- boot from pre-initialized internal IMEM
     -- RISC-V CPU Extensions --
-    RISCV_ISA_Zicntr  => true,                         -- implement base counters?
+    RISCV_ISA_Zicntr => true,            -- implement base counters?
     -- Internal Instruction memory --
-    MEM_INT_IMEM_EN              => MEM_INT_IMEM_EN,   -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE            => MEM_INT_IMEM_SIZE, -- size of processor-internal instruction memory in bytes
+    IMEM_EN          => IMEM_EN,         -- implement processor-internal instruction memory
+    IMEM_SIZE        => IMEM_SIZE,       -- size of processor-internal instruction memory in bytes
     -- Internal Data memory --
-    MEM_INT_DMEM_EN              => MEM_INT_DMEM_EN,   -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE            => MEM_INT_DMEM_SIZE, -- size of processor-internal data memory in bytes
+    DMEM_EN          => DMEM_EN,         -- implement processor-internal data memory
+    DMEM_SIZE        => DMEM_SIZE,       -- size of processor-internal data memory in bytes
     -- Processor peripherals --
-    IO_CLINT_EN                  => true,              -- implement core local interruptor (CLINT)?
-    IO_PWM_NUM_CH                => IO_PWM_NUM_CH      -- number of PWM channels to implement (0..12); 0 = disabled
+    IO_CLINT_EN      => true,            -- implement core local interruptor (CLINT)?
+    IO_PWM_NUM_CH    => IO_PWM_NUM_CH    -- number of PWM channels to implement (0..12); 0 = disabled
   )
   port map (
     -- Global control --

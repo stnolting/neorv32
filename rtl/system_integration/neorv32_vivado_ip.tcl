@@ -296,14 +296,14 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Internal Instruction Memory (IMEM)}]
   add_params $group {
-    { MEM_INT_IMEM_EN   {Enable internal IMEM} }
-    { MEM_INT_IMEM_SIZE {IMEM size (bytes)} {Use a power of two} {$MEM_INT_IMEM_EN} }
+    { IMEM_EN   {Enable internal IMEM} }
+    { IMEM_SIZE {IMEM size (bytes)} {Use a power of two} {$IMEM_EN} }
   }
 
   set group [add_group $page {Internal Data Memory (DMEM)}]
   add_params $group {
-    { MEM_INT_DMEM_EN   {Enable internal DMEM} }
-    { MEM_INT_DMEM_SIZE {DMEM size (bytes)} {Use a power of two} {$MEM_INT_DMEM_EN} }
+    { DMEM_EN   {Enable internal DMEM} }
+    { DMEM_SIZE {DMEM size (bytes)} {Use a power of two} {$DMEM_EN} }
   }
 
 

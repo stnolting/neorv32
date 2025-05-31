@@ -5,19 +5,19 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_dmem.vhd    | default platform-agnostic data memory
-| Software driver files:  | none                | _implicitly used_
-| Top entity ports:       | none                |
-| Configuration generics: | `MEM_INT_DMEM_EN`   | implement processor-internal DMEM when `true`
-|                         | `MEM_INT_DMEM_SIZE` | DMEM size in bytes (use a power of 2)
-| CPU interrupts:         | none                |
+| Hardware source files:  | neorv32_dmem.vhd | default platform-agnostic data memory
+| Software driver files:  | none             | _implicitly used_
+| Top entity ports:       | none             |
+| Configuration generics: | `DMEM_EN`        | implement processor-internal DMEM when `true`
+|                         | `DMEM_SIZE`      | DMEM size in bytes (use a power of 2)
+| CPU interrupts:         | none             |
 |=======================
 
 
 **Overview**
 
-Implementation of the processor-internal data memory is enabled by the processor's `MEM_INT_DMEM_EN`
-generic. The total memory size in bytes is defined via the `MEM_INT_DMEM_SIZE` generic. Note that this
+Implementation of the processor-internal data memory is enabled by the processor's `DMEM_EN`
+generic. The total memory size in bytes is defined via the `DMEM_SIZE` generic. Note that this
 size should be a power of two to optimize physical implementation. If the DMEM is implemented,
 it is mapped to base address `0x80000000` by default (see section <<_address_space>>).
 The DMEM is always implemented as true RAM.
@@ -29,7 +29,7 @@ optimize area utilization, timing and power consumption.
 
 .Memory Size
 [NOTE]
-If the configured memory size (via the `MEM_INT_DMEM_SIZE` generic) is not a power of two the actual memory
+If the configured memory size (via the `DMEM_SIZE` generic) is not a power of two the actual memory
 size will be auto-adjusted to the next power of two (e.g. configuring a memory size of 60kB will result in a
 physical memory size of 64kB).
 
