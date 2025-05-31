@@ -363,7 +363,7 @@ begin
           exe_engine_nxt.state <= EX_DISPATCH; -- stay here another round until hwtrig_start arrives in trap_ctrl.env_pending
         elsif (frontend_i.valid = '1') then -- new instruction word available
           if_ack               <= '1'; -- instruction data is about to be consumed
-          trap_ctrl.instr_be   <= frontend_i.fault; -- access fault during instruction fetch
+          trap_ctrl.instr_be   <= frontend_i.fault or pmp_fault_i; -- access fault during instruction fetch
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
           exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
@@ -408,7 +408,6 @@ begin
       when EX_EXECUTE => -- decode and execute instruction (control will be here for exactly 1 cycle in any case)
       -- ------------------------------------------------------------
         exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0'; -- next PC (= PC + immediate)
-        trap_ctrl.instr_be <= pmp_fault_i; -- did this instruction fetch cause a PMP-execute violation?
 
         -- decode instruction class/type; [NOTE] register file is read in THIS stage; due to the sync read data will be available in the NEXT state --
         case opcode is
@@ -499,7 +498,7 @@ begin
       when EX_ALU_WAIT => -- wait for multi-cycle ALU co-processor operation to finish or trap
       -- ------------------------------------------------------------
         ctrl_nxt.alu_op <= alu_op_cp_c;
-        if (alu_cp_done_i = '1') or (trap_ctrl.exc_buf(exc_illegal_c) = '1') then
+        if (alu_cp_done_i = '1') or (or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '1') then
           ctrl_nxt.rf_wb_en    <= '1'; -- valid RF write-back (won't happen if exception)
           exe_engine_nxt.state <= EX_DISPATCH;
         end if;
@@ -509,7 +508,7 @@ begin
         exe_engine_nxt.ra  <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- output return address
         ctrl_nxt.rf_wb_en  <= opcode(2); -- save return address if link operation (won't happen if exception)
         trap_ctrl.instr_ma <= alu_add_i(1) and branch_taken and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination misaligned?
-        if (trap_ctrl.exc_buf(exc_illegal_c) = '0') and (branch_taken = '1') then -- valid taken branch / jump
+        if (branch_taken = '1') then -- taken/unconditional branch
           if_reset             <= '1'; -- reset instruction fetch to restart at modified PC
           exe_engine_nxt.pc2   <= alu_add_i(XLEN-1 downto 1) & '0';
           exe_engine_nxt.state <= EX_BRANCHED; -- shortcut (faster than going to EX_RESTART)
@@ -523,17 +522,17 @@ begin
 
       when EX_MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
-        if (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- memory request only if not an illegal instruction
-          ctrl_nxt.lsu_req <= '1'; -- memory access request
+        if (or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- memory request if no instruction exception
+          ctrl_nxt.lsu_req     <= '1';
+          exe_engine_nxt.state <= EX_MEM_RSP;
+        else
+          exe_engine_nxt.state <= EX_DISPATCH;
         end if;
-        exe_engine_nxt.state <= EX_MEM_RSP;
 
       when EX_MEM_RSP => -- wait for memory response
       -- ------------------------------------------------------------
         if (lsu_wait_i = '0') or -- bus system has completed the transaction (if there was any)
-           (trap_ctrl.exc_buf(exc_saccess_c) = '1') or (trap_ctrl.exc_buf(exc_laccess_c) = '1') or -- access exception
-           (trap_ctrl.exc_buf(exc_salign_c)  = '1') or (trap_ctrl.exc_buf(exc_lalign_c)  = '1') or -- alignment exception
-           (trap_ctrl.exc_buf(exc_illegal_c) = '1') then -- illegal instruction exception
+           (or_reduce_f(trap_ctrl.exc_buf(exc_laccess_c downto exc_salign_c)) = '1') then -- load/store exception
           ctrl_nxt.rf_wb_en    <= (not ctrl.lsu_rw) or ctrl.lsu_amo; -- write-back to register file if read operation (won't happen in case of exception)
           exe_engine_nxt.state <= EX_DISPATCH;
         end if;
@@ -547,7 +546,7 @@ begin
       when others => -- EX_SYSTEM - CSR/ENVIRONMENT operation; no effect if illegal instruction
       -- ------------------------------------------------------------
         exe_engine_nxt.state <= EX_DISPATCH; -- default
-        if (funct3_v = funct3_env_c) and (trap_ctrl.exc_buf(exc_illegal_c) = '0') then -- non-illegal ENVIRONMENT
+        if (funct3_v = funct3_env_c) and (or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- non-illegal ENVIRONMENT instruction
           case exe_engine.ir(instr_funct12_lsb_c+2 downto instr_funct12_lsb_c) is -- three LSBs are sufficient here
             when "000"  => trap_ctrl.ecall      <= '1'; -- ecall
             when "001"  => trap_ctrl.ebreak     <= '1'; -- ebreak
@@ -558,7 +557,7 @@ begin
         end if;
         -- always write to CSR (if CSR instruction); ENVIRONMENT operations have rs1/imm5 = zero so this won't happen then --
         if (funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or (exe_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000") then
-          csr.we_nxt <= '1'; -- CSRRW[I]: always write CSR; CSRR[S/C][I]: write CSR if rs1/imm5 is NOT zero
+          csr.we_nxt <= '1'; -- CSRRW[I]: always write CSR; CSRR[S/C][I]: write CSR if rs1/imm5 is NOT zero; won't happen if exception
         end if;
         -- always write to RF (even if csr.re = 0, but then we have rd = 0); ENVIRONMENT operations have rd = zero so this does not hurt --
         ctrl_nxt.rf_wb_en <= '1'; -- won't happen if exception
@@ -1098,8 +1097,8 @@ begin
       csr.tdata2         <= (others => '0');
     elsif rising_edge(clk_i) then
 
-      -- write if not an illegal instruction --
-      csr.we <= csr.we_nxt and (not trap_ctrl.exc_buf(exc_illegal_c));
+      -- write if no instruction exception --
+      csr.we <= csr.we_nxt and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)));
 
       -- ********************************************************************************
       -- Software CSR access
@@ -1352,7 +1351,7 @@ begin
       csr.re    <= '0';
       csr.rdata <= (others => '0');
     elsif rising_edge(clk_i) then
-      csr.re    <= csr.re_nxt and (not trap_ctrl.exc_buf(exc_illegal_c)); -- read if not an illegal instruction
+      csr.re    <= csr.re_nxt and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c))); -- read if no instruction exception
       csr.rdata <= (others => '0'); -- default; output all-zero if there is no explicit CSR read operation
       if (csr.re = '1') then
         case csr.addr is
