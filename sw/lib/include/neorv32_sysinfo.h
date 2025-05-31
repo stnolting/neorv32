@@ -33,8 +33,8 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** NEORV32_SYSINFO.MISC (r/-): Miscellaneous system configurations */
 enum NEORV32_SYSINFO_MISC_enum {
-  SYSINFO_MISC_IMEM = 0, /**< SYSINFO_MISC byte 0 (r/-): log2(internal IMEM size in bytes) (via MEM_INT_IMEM_SIZE generic) */
-  SYSINFO_MISC_DMEM = 1, /**< SYSINFO_MISC byte 1 (r/-): log2(internal DMEM size in bytes) (via MEM_INT_DMEM_SIZE generic) */
+  SYSINFO_MISC_IMEM = 0, /**< SYSINFO_MISC byte 0 (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic) */
+  SYSINFO_MISC_DMEM = 1, /**< SYSINFO_MISC byte 1 (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic) */
   SYSINFO_MISC_HART = 2, /**< SYSINFO_MISC byte 2 (r/-): number of physical CPU cores ("harts") */
   SYSINFO_MISC_BOOT = 3  /**< SYSINFO_MISC byte 3 (r/-): boot mode configuration (via BOOT_MODE_SELECT generic) */
 };
@@ -43,8 +43,8 @@ enum NEORV32_SYSINFO_MISC_enum {
 enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_BOOTLOADER    =  0, /**< SYSINFO_SOC  (0) (r/-): Bootloader implemented when 1 (via BOOT_MODE_SELECT generic) */
   SYSINFO_SOC_XBUS          =  1, /**< SYSINFO_SOC  (1) (r/-): External bus interface implemented when 1 (via XBUS_EN generic) */
-  SYSINFO_SOC_MEM_INT_IMEM  =  2, /**< SYSINFO_SOC  (2) (r/-): Processor-internal instruction memory implemented when 1 (via MEM_INT_IMEM_EN generic) */
-  SYSINFO_SOC_MEM_INT_DMEM  =  3, /**< SYSINFO_SOC  (3) (r/-): Processor-internal data memory implemented when 1 (via MEM_INT_DMEM_EN generic) */
+  SYSINFO_SOC_IMEM          =  2, /**< SYSINFO_SOC  (2) (r/-): Processor-internal instruction memory implemented when 1 (via IMEM_EN generic) */
+  SYSINFO_SOC_DMEM          =  3, /**< SYSINFO_SOC  (3) (r/-): Processor-internal data memory implemented when 1 (via DMEM_EN generic) */
   SYSINFO_SOC_OCD           =  4, /**< SYSINFO_SOC  (4) (r/-): On-chip debugger implemented when 1 (via OCD_EN generic) */
   SYSINFO_SOC_ICACHE        =  5, /**< SYSINFO_SOC  (5) (r/-): Processor-internal instruction cache implemented when 1 (via ICACHE_EN generic) */
   SYSINFO_SOC_DCACHE        =  6, /**< SYSINFO_SOC  (6) (r/-): Processor-internal instruction cache implemented when 1 (via DCACHE_EN generic) */

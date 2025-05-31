@@ -437,7 +437,7 @@ void neorv32_aux_print_hw_config(void) {
 
   // internal IMEM
   neorv32_uart0_printf("Internal IMEM:       ");
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_IMEM)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IMEM)) {
     neorv32_uart0_printf("%u bytes\n", neorv32_sysinfo_get_imemsize());
   }
   else {
@@ -446,7 +446,7 @@ void neorv32_aux_print_hw_config(void) {
 
   // internal DMEM
   neorv32_uart0_printf("Internal DMEM:       ");
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_MEM_INT_DMEM)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_DMEM)) {
     neorv32_uart0_printf("%u bytes\n", neorv32_sysinfo_get_dmemsize());
   }
   else {

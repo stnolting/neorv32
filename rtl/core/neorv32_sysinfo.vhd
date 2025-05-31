@@ -21,11 +21,11 @@ entity neorv32_sysinfo is
     CLOCK_FREQUENCY   : natural; -- clock frequency of clk_i in Hz
     BOOT_MODE_SELECT  : natural; -- boot configuration select (default = 0 = bootloader)
     INT_BOOTLOADER_EN : boolean; -- boot configuration: true = boot explicit bootloader; false = boot from int/ext (I)MEM
-    MEM_INT_IMEM_EN   : boolean; -- implement processor-internal instruction memory
-    MEM_INT_IMEM_ROM  : boolean; -- implement processor-internal instruction memory as pre-initialized ROM
-    MEM_INT_IMEM_SIZE : natural; -- size of processor-internal instruction memory in bytes
-    MEM_INT_DMEM_EN   : boolean; -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE : natural; -- size of processor-internal data memory in bytes
+    IMEM_EN           : boolean; -- implement processor-internal instruction memory
+    IMEM_ROM          : boolean; -- implement processor-internal instruction memory as pre-initialized ROM
+    IMEM_SIZE         : natural; -- size of processor-internal instruction memory in bytes
+    DMEM_EN           : boolean; -- implement processor-internal data memory
+    DMEM_SIZE         : natural; -- size of processor-internal data memory in bytes
     ICACHE_EN         : boolean; -- implement instruction cache
     ICACHE_NUM_BLOCKS : natural; -- i-cache: number of blocks (min 2), has to be a power of 2
     DCACHE_EN         : boolean; -- implement data cache
@@ -63,11 +63,11 @@ end neorv32_sysinfo;
 architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
 
   -- helpers --
-  constant int_imem_en_c    : boolean := MEM_INT_IMEM_EN and boolean(MEM_INT_IMEM_SIZE > 0);
-  constant int_dmem_en_c    : boolean := MEM_INT_DMEM_EN and boolean(MEM_INT_DMEM_SIZE > 0);
-  constant int_imem_rom_c   : boolean := int_imem_en_c and MEM_INT_IMEM_ROM;
-  constant log2_imem_size_c : natural := index_size_f(MEM_INT_IMEM_SIZE);
-  constant log2_dmem_size_c : natural := index_size_f(MEM_INT_DMEM_SIZE);
+  constant int_imem_en_c    : boolean := IMEM_EN and boolean(IMEM_SIZE > 0);
+  constant int_dmem_en_c    : boolean := DMEM_EN and boolean(DMEM_SIZE > 0);
+  constant int_imem_rom_c   : boolean := int_imem_en_c and IMEM_ROM;
+  constant log2_imem_size_c : natural := index_size_f(IMEM_SIZE);
+  constant log2_dmem_size_c : natural := index_size_f(DMEM_SIZE);
   constant log2_ic_bnum_c   : natural := index_size_f(ICACHE_NUM_BLOCKS);
   constant log2_dc_bnum_c   : natural := index_size_f(DCACHE_NUM_BLOCKS);
   constant log2_c_bsize_c   : natural := index_size_f(CACHE_BLOCK_SIZE);
