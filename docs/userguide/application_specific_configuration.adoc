@@ -20,9 +20,7 @@ The following points show some concepts to optimize the processor for performanc
 of emulating operations entirely in software:  `M`, `C`, `Zfinx`
 * Enable mapping of compleX CPU operations to dedicated hardware: `FAST_MUL_EN => true` to use DSP slices for
 multiplications, `FAST_SHIFT_EN => true` use a fast barrel shifter for shift operations.
-* Implement the instruction cache: `ICACHE_EN => true`
-* Use as many _internal_ memory as possible to reduce memory access latency: `MEM_INT_IMEM_EN => true` and
-`MEM_INT_DMEM_EN => true`, maximize `MEM_INT_IMEM_SIZE` and `MEM_INT_DMEM_SIZE`
+* Implement the CPU caches.
 * _To be continued..._
 
 

@@ -54,7 +54,7 @@ __neorv32_ram_base = DEFINED(__neorv32_ram_base) ? __neorv32_ram_base : 0x800000
 <5> Default base address of the data memory address space (right-most value): `0x80000000`
 
 [start=2]
-. Only the the `neorv32_ram_size` variable needs to modified! If you have changed the default DMEM (_MEM_INT_DMEM_SIZE_ generic)
+. Only the the `neorv32_ram_size` variable needs to modified! If you have changed the default DMEM (`DMEM_SIZE` generic)
 size then change the right-most parameter (here: `8kB`) so it is equal to your DMEM hardware configuration. The `neorv32_rom_size`
 does not need to be modified even if you have changed the default IMEM size.
 For more information see https://stnolting.github.io/neorv32/#_linker_script

@@ -78,12 +78,12 @@ entity neorv32_top is
     HPM_CNT_WIDTH         : natural range 0 to 64          := 40;          -- total size of HPM counters (0..64)
 
     -- Internal Instruction memory (IMEM) --
-    MEM_INT_IMEM_EN       : boolean                        := false;       -- implement processor-internal instruction memory
-    MEM_INT_IMEM_SIZE     : natural                        := 16*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
+    IMEM_EN               : boolean                        := false;       -- implement processor-internal instruction memory
+    IMEM_SIZE             : natural                        := 16*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
 
     -- Internal Data memory (DMEM) --
-    MEM_INT_DMEM_EN       : boolean                        := false;       -- implement processor-internal data memory
-    MEM_INT_DMEM_SIZE     : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
+    DMEM_EN               : boolean                        := false;       -- implement processor-internal data memory
+    DMEM_SIZE             : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
 
     -- CPU Caches --
     ICACHE_EN             : boolean                        := false;       -- implement instruction cache (i-cache)
@@ -260,8 +260,8 @@ architecture neorv32_top_rtl of neorv32_top is
   constant ocd_hwbp_en_c   : boolean := OCD_EN and OCD_HW_BREAKPOINT;
 
   -- make sure physical memory sizes are a power of two --
-  constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_IMEM_SIZE), MEM_INT_IMEM_SIZE, 2**index_size_f(MEM_INT_IMEM_SIZE));
-  constant dmem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(MEM_INT_DMEM_SIZE), MEM_INT_DMEM_SIZE, 2**index_size_f(MEM_INT_DMEM_SIZE));
+  constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(IMEM_SIZE), IMEM_SIZE, 2**index_size_f(IMEM_SIZE));
+  constant dmem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(DMEM_SIZE), DMEM_SIZE, 2**index_size_f(DMEM_SIZE));
 
   -- reset nets --
   signal rstn_wdt, rstn_sys, rstn_ext : std_ulogic;
@@ -334,42 +334,42 @@ begin
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
       cond_sel_string_f(boolean(num_cores_c = 1), "(single-core) ",   "") &
       cond_sel_string_f(boolean(num_cores_c = 2), "(smp-dual-core) ", "") &
-      cond_sel_string_f(MEM_INT_IMEM_EN,          cond_sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
-      cond_sel_string_f(MEM_INT_DMEM_EN,          "DMEM ",       "") &
-      cond_sel_string_f(bootrom_en_c,             "BOOTROM ",    "") &
-      cond_sel_string_f(ICACHE_EN,                "I-CACHE ",    "") &
-      cond_sel_string_f(DCACHE_EN,                "D-CACHE ",    "") &
-      cond_sel_string_f(XBUS_EN,                  "XBUS ",       "") &
-      cond_sel_string_f(IO_CLINT_EN,              "CLINT ",      "") &
-      cond_sel_string_f(io_gpio_en_c,             "GPIO ",       "") &
-      cond_sel_string_f(IO_UART0_EN,              "UART0 ",      "") &
-      cond_sel_string_f(IO_UART1_EN,              "UART1 ",      "") &
-      cond_sel_string_f(IO_SPI_EN,                "SPI ",        "") &
-      cond_sel_string_f(IO_SDI_EN,                "SDI ",        "") &
-      cond_sel_string_f(IO_TWI_EN,                "TWI ",        "") &
-      cond_sel_string_f(IO_TWD_EN,                "TWD ",        "") &
-      cond_sel_string_f(io_pwm_en_c,              "PWM ",        "") &
-      cond_sel_string_f(IO_WDT_EN,                "WDT ",        "") &
-      cond_sel_string_f(IO_TRNG_EN,               "TRNG ",       "") &
-      cond_sel_string_f(IO_CFS_EN,                "CFS ",        "") &
-      cond_sel_string_f(IO_NEOLED_EN,             "NEOLED ",     "") &
-      cond_sel_string_f(IO_GPTMR_EN,              "GPTMR ",      "") &
-      cond_sel_string_f(IO_ONEWIRE_EN,            "ONEWIRE ",    "") &
-      cond_sel_string_f(IO_DMA_EN,                "DMA ",        "") &
-      cond_sel_string_f(IO_SLINK_EN,              "SLINK ",      "") &
-      cond_sel_string_f(io_sysinfo_en_c,          "SYSINFO ",    "") &
-      cond_sel_string_f(OCD_EN,                   "OCD ",        "") &
-      cond_sel_string_f(OCD_EN,                   "OCD-AUTH ",   "") &
-      cond_sel_string_f(OCD_EN,                   "OCD-HWBP ",   "") &
+      cond_sel_string_f(IMEM_EN,         cond_sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
+      cond_sel_string_f(DMEM_EN,         "DMEM ",       "") &
+      cond_sel_string_f(bootrom_en_c,    "BOOTROM ",    "") &
+      cond_sel_string_f(ICACHE_EN,       "I-CACHE ",    "") &
+      cond_sel_string_f(DCACHE_EN,       "D-CACHE ",    "") &
+      cond_sel_string_f(XBUS_EN,         "XBUS ",       "") &
+      cond_sel_string_f(IO_CLINT_EN,     "CLINT ",      "") &
+      cond_sel_string_f(io_gpio_en_c,    "GPIO ",       "") &
+      cond_sel_string_f(IO_UART0_EN,     "UART0 ",      "") &
+      cond_sel_string_f(IO_UART1_EN,     "UART1 ",      "") &
+      cond_sel_string_f(IO_SPI_EN,       "SPI ",        "") &
+      cond_sel_string_f(IO_SDI_EN,       "SDI ",        "") &
+      cond_sel_string_f(IO_TWI_EN,       "TWI ",        "") &
+      cond_sel_string_f(IO_TWD_EN,       "TWD ",        "") &
+      cond_sel_string_f(io_pwm_en_c,     "PWM ",        "") &
+      cond_sel_string_f(IO_WDT_EN,       "WDT ",        "") &
+      cond_sel_string_f(IO_TRNG_EN,      "TRNG ",       "") &
+      cond_sel_string_f(IO_CFS_EN,       "CFS ",        "") &
+      cond_sel_string_f(IO_NEOLED_EN,    "NEOLED ",     "") &
+      cond_sel_string_f(IO_GPTMR_EN,     "GPTMR ",      "") &
+      cond_sel_string_f(IO_ONEWIRE_EN,   "ONEWIRE ",    "") &
+      cond_sel_string_f(IO_DMA_EN,       "DMA ",        "") &
+      cond_sel_string_f(IO_SLINK_EN,     "SLINK ",      "") &
+      cond_sel_string_f(io_sysinfo_en_c, "SYSINFO ",    "") &
+      cond_sel_string_f(OCD_EN,          "OCD ",        "") &
+      cond_sel_string_f(OCD_EN,          "OCD-AUTH ",   "") &
+      cond_sel_string_f(OCD_EN,          "OCD-HWBP ",   "") &
       ""
       severity note;
 
     -- IMEM size was not a power of two --
-    assert not ((MEM_INT_IMEM_SIZE /= imem_size_c) and (MEM_INT_IMEM_EN = true)) report
+    assert not ((IMEM_SIZE /= imem_size_c) and (IMEM_EN = true)) report
       "[NEORV32] Auto-adjusting invalid IMEM size configuration." severity warning;
 
     -- DMEM size was not a power of two --
-    assert not ((MEM_INT_DMEM_SIZE /= dmem_size_c) and (MEM_INT_DMEM_EN = true)) report
+    assert not ((DMEM_SIZE /= dmem_size_c) and (DMEM_EN = true)) report
       "[NEORV32] Auto-adjusting invalid DMEM size configuration." severity warning;
 
     -- SYSINFO disabled --
@@ -386,7 +386,7 @@ begin
     assert not (BOOT_MODE_SELECT = 2) report "[NEORV32] BOOT_MODE_SELECT = 2: booting IMEM image" severity note;
 
     -- Boot configuration: boot from initialized IMEM requires the IMEM to be enabled --
-    assert not ((BOOT_MODE_SELECT = 2) and (MEM_INT_IMEM_EN = false)) report
+    assert not ((BOOT_MODE_SELECT = 2) and (IMEM_EN = false)) report
       "[NEORV32] ERROR: BOOT_MODE_SELECT = 2 (boot IMEM image) requires the internal instruction memory (IMEM) to be enabled!" severity error;
 
     -- The SMP dual-core configuration requires the CLINT --
@@ -755,11 +755,11 @@ begin
   generic map (
     TIMEOUT  => bus_timeout_c,
     -- port A: internal IMEM --
-    A_EN   => MEM_INT_IMEM_EN,
+    A_EN   => IMEM_EN,
     A_BASE => mem_imem_base_c,
     A_SIZE => imem_size_c,
     -- port B: internal DMEM --
-    B_EN   => MEM_INT_DMEM_EN,
+    B_EN   => DMEM_EN,
     B_BASE => mem_dmem_base_c,
     B_SIZE => dmem_size_c,
     -- port C: IO --
@@ -798,7 +798,7 @@ begin
     -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_int_imem_enabled:
-    if MEM_INT_IMEM_EN generate
+    if IMEM_EN generate
       neorv32_int_imem_inst: entity neorv32.neorv32_imem
       generic map (
         IMEM_SIZE => imem_size_c,
@@ -813,7 +813,7 @@ begin
     end generate;
 
     neorv32_int_imem_disabled:
-    if not MEM_INT_IMEM_EN generate
+    if not IMEM_EN generate
       imem_rsp <= rsp_terminate_c;
     end generate;
 
@@ -821,7 +821,7 @@ begin
     -- Processor-Internal Data Memory (DMEM) --------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_int_dmem_enabled:
-    if MEM_INT_DMEM_EN generate
+    if DMEM_EN generate
       neorv32_int_dmem_inst: entity neorv32.neorv32_dmem
       generic map (
         DMEM_SIZE => dmem_size_c
@@ -835,7 +835,7 @@ begin
     end generate;
 
     neorv32_int_dmem_disabled:
-    if not MEM_INT_DMEM_EN generate
+    if not DMEM_EN generate
       dmem_rsp <= rsp_terminate_c;
     end generate;
 
@@ -1484,11 +1484,11 @@ begin
         CLOCK_FREQUENCY   => CLOCK_FREQUENCY,
         BOOT_MODE_SELECT  => BOOT_MODE_SELECT,
         INT_BOOTLOADER_EN => bootrom_en_c,
-        MEM_INT_IMEM_EN   => MEM_INT_IMEM_EN,
-        MEM_INT_IMEM_ROM  => imem_as_rom_c,
-        MEM_INT_IMEM_SIZE => imem_size_c,
-        MEM_INT_DMEM_EN   => MEM_INT_DMEM_EN,
-        MEM_INT_DMEM_SIZE => dmem_size_c,
+        IMEM_EN           => IMEM_EN,
+        IMEM_ROM          => imem_as_rom_c,
+        IMEM_SIZE         => imem_size_c,
+        DMEM_EN           => DMEM_EN,
+        DMEM_SIZE         => dmem_size_c,
         ICACHE_EN         => ICACHE_EN,
         ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
         DCACHE_EN         => DCACHE_EN,

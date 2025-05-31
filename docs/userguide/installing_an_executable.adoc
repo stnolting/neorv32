@@ -21,13 +21,13 @@ Using the IMEM as ROM:
 * make sure that the memory components (like block RAM) the IMEM is mapped to support an initialization via the bitstream
 
 [start=1]
-. At first, make sure your processor setup actually implements the internal IMEM: the `MEM_INT_IMEM_EN` generics has to be set to `true`:
+. At first, make sure your processor setup actually implements the internal IMEM: the `IMEM_EN` generics has to be set to `true`:
 
 .Processor top entity configuration - enable internal IMEM
 [source,vhdl]
 ----
   -- Internal Instruction memory --
-  MEM_INT_IMEM_EN => true, -- implement processor-internal instruction memory
+  IMEM_EN => true, -- implement processor-internal instruction memory
 ----
 
 [start=2]

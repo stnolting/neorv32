@@ -133,8 +133,8 @@ begin
     CPU_FAST_MUL_EN       => configs_c.fast_ops(CONFIG),     -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN     => configs_c.fast_ops(CONFIG),     -- use barrel shifter for shift operations
     -- Internal memories --
-    MEM_INT_DMEM_EN       => configs_c.dmem(CONFIG),
-    MEM_INT_IMEM_EN       => configs_c.imem(CONFIG),
+    DMEM_EN               => configs_c.dmem(CONFIG),
+    IMEM_EN               => configs_c.imem(CONFIG),
     DCACHE_EN             => configs_c.dcache(CONFIG),
     ICACHE_EN             => configs_c.icache(CONFIG),
     -- Physical Memory Protection (PMP) --

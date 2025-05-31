@@ -22,8 +22,8 @@ Each setup provides three elementary generics that can/should be adapted to fit
 your FPGA/board.
 
 * The clock speed in Hz **has to be specified** via the `CLOCK_SPEED` generic to fit your clock source.
-* The processor-internal instruction memory (IMEM) size _can be modified_ via the `MEM_INT_IMEM_SIZE` generic.
-* The processor-internal data memory (DMEM) size _can be modified_ via the `MEM_INT_DMEM_SIZE` generic.
+* The processor-internal instruction memory (IMEM) size _can be modified_ via the `IMEM_SIZE` generic.
+* The processor-internal data memory (DMEM) size _can be modified_ via the `DMEM_SIZE` generic.
 
 > [!WARNING]
 > Modifying the memory sizes might require adaption of the NEORV32 linker script.

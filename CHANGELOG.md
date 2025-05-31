@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 31.05.2025 | 1.11.5.8 | :warning: rename IMEM/DMEM configuration generics | [#1280](https://github.com/stnolting/neorv32/pull/1280) |
 | 31.05.2025 | 1.11.5.7 | :test_tube: rework DMA controller | [#1279](https://github.com/stnolting/neorv32/pull/1279) |
 | 31.05.2025 | 1.11.5.6 | rework instruction exception logic; fix: no execution of instruction words that returned as bus access exception | [#1278](https://github.com/stnolting/neorv32/pull/1278) |
 | 31.05.2025 | 1.11.5.5 | rework IMEM/DMEM RAM HDL style to prevent DRC errors on Vivado 24.1 when cascading many BRAM blocks | [#1277](https://github.com/stnolting/neorv32/pull/1277) |
