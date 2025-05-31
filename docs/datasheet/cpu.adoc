@@ -52,6 +52,11 @@ will raise an exception to allow a _software-based_ emulation provided by the ap
 access can be **emulated** using the NEORV32 runtime environment. See section <<_application_context_handling>>
 for more information.
 
+.AMO PMP Rule Violation
+[NOTE]
+The RISC-V specification requires that read-modify-write AMO operations raise a _store access exception_ when
+they violate a PMP rule. However, NEORV32 will always raise a **load access violation** in this case.
+
 
 <<<
 // ####################################################################################################################
