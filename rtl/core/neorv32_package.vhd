@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110504"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110505"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -684,7 +684,7 @@ package neorv32_package is
 
   -- Trap System ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- exception source list --
+  -- exception source list (do not change order!) --
   constant exc_iaccess_c  : natural :=  0; -- instruction access fault
   constant exc_illegal_c  : natural :=  1; -- illegal instruction
   constant exc_ialign_c   : natural :=  2; -- instruction address misaligned
