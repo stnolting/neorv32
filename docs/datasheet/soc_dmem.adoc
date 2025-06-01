@@ -10,6 +10,7 @@
 | Top entity ports:       | none             |
 | Configuration generics: | `DMEM_EN`        | implement processor-internal DMEM when `true`
 |                         | `DMEM_SIZE`      | DMEM size in bytes (use a power of 2)
+|                         | `DMEM_OUTREG_EN` | add DMEM output register stage
 | CPU interrupts:         | none             |
 |=======================
 
@@ -33,10 +34,11 @@ If the configured memory size (via the `DMEM_SIZE` generic) is not a power of tw
 size will be auto-adjusted to the next power of two (e.g. configuring a memory size of 60kB will result in a
 physical memory size of 64kB).
 
-.Legacy HDL Style
+.Output Register Stage
 [TIP]
-If synthesis fails to infer block RAM for the DMEM, turn on the `alt_style_c` option inside
-the memory's VHDL source file. When enabled, a different HDL style is used to describe the memory core.
+An optional output register stage can be enabled via `DMEM_OUTREG_EN`. For FPGA targets this might improve
+mapping/timing results. Note that this option will increase the read latency by one clock cycle. Write accesses
+are not affected by this at all.
 
 .Execute from RAM
 [TIP]

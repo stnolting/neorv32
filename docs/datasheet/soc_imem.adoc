@@ -11,6 +11,7 @@
 | Top entity ports:       | none                          |
 | Configuration generics: | `IMEM_EN`                     | implement processor-internal IMEM when `true`
 |                         | `IMEM_SIZE`                   | IMEM size in bytes (use a power of 2)
+|                         | `IMEM_OUTREG_EN`              | add IMEM output register stage
 |                         | `BOOT_MODE_SELECT`            | implement IMEM as ROM when `BOOT_MODE_SELECT` = 2; see <<_boot_configuration>>
 | CPU interrupts:         | none                          |
 |=======================
@@ -45,10 +46,11 @@ If the configured memory size (via the `IMEM_SIZE` generic) is not a power of tw
 size will be auto-adjusted to the next power of two (e.g. configuring a memory size of 60kB will result in a
 physical memory size of 64kB).
 
-.Legacy HDL Style
+.Output Register Stage
 [TIP]
-If synthesis fails to infer block RAM for the IMEM, turn on the `alt_style_c` option inside
-the memory's VHDL source file. When enabled, a different HDL style is used to describe the memory core.
+An optional output register stage can be enabled via `IMEM_OUTREG_EN`. For FPGA targets this might improve
+mapping/timing results. Note that this option will increase the read latency by one clock cycle. Write accesses
+are not affected by this at all.
 
 .Read-Only Access
 [NOTE]
