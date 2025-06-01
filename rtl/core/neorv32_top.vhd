@@ -80,10 +80,12 @@ entity neorv32_top is
     -- Internal Instruction memory (IMEM) --
     IMEM_EN               : boolean                        := false;       -- implement processor-internal instruction memory
     IMEM_SIZE             : natural                        := 16*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
+    IMEM_OUTREG_EN        : boolean                        := false;       -- enable IMEM output register stage (for improved mapping/timing)
 
     -- Internal Data memory (DMEM) --
     DMEM_EN               : boolean                        := false;       -- implement processor-internal data memory
     DMEM_SIZE             : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
+    DMEM_OUTREG_EN        : boolean                        := false;       -- enable DMEM output register stage (for improved mapping/timing)
 
     -- CPU Caches --
     ICACHE_EN             : boolean                        := false;       -- implement instruction cache (i-cache)
@@ -802,7 +804,8 @@ begin
       neorv32_int_imem_inst: entity neorv32.neorv32_imem
       generic map (
         IMEM_SIZE => imem_size_c,
-        IMEM_INIT => imem_as_rom_c
+        IMEM_INIT => imem_as_rom_c,
+        OUTREG_EN => IMEM_OUTREG_EN
       )
       port map (
         clk_i     => clk_i,
@@ -824,7 +827,8 @@ begin
     if DMEM_EN generate
       neorv32_int_dmem_inst: entity neorv32.neorv32_dmem
       generic map (
-        DMEM_SIZE => dmem_size_c
+        DMEM_SIZE => dmem_size_c,
+        OUTREG_EN => DMEM_OUTREG_EN
       )
       port map (
         clk_i     => clk_i,

@@ -169,9 +169,11 @@ begin
     -- Internal Instruction memory --
     IMEM_EN             => IMEM_EN,
     IMEM_SIZE           => IMEM_SIZE,
+    IMEM_OUTREG_EN      => true,
     -- Internal Data memory --
     DMEM_EN             => DMEM_EN,
     DMEM_SIZE           => DMEM_SIZE,
+    DMEM_OUTREG_EN      => true,
     -- CPU Caches --
     ICACHE_EN           => ICACHE_EN,
     ICACHE_NUM_BLOCKS   => ICACHE_NUM_BLOCKS,
