@@ -20,7 +20,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_dmem is
   generic (
-    DMEM_SIZE : natural -- memory size in bytes, has to be a power of 2, min 4
+    DMEM_SIZE : natural; -- memory size in bytes, has to be a power of 2, min 4
+    OUTREG_EN : boolean  -- implement output register stage
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -37,7 +38,9 @@ architecture neorv32_dmem_rtl of neorv32_dmem is
 
   -- local signals --
   signal rdata : std_ulogic_vector(31 downto 0);
-  signal rden  : std_ulogic;
+  signal dout  : std_ulogic_vector(31 downto 0);
+  signal wack  : std_ulogic;
+  signal rden  : std_ulogic_vector(1 downto 0);
   signal addr  : unsigned(index_size_f(DMEM_SIZE/4)-1 downto 0);
 
   -- [NOTE] The memory (RAM) is built from 4 individual byte-wide memories as some synthesis tools
@@ -54,24 +57,25 @@ begin
   begin
     if rising_edge(clk_i) then
       if (bus_req_i.stb = '1') then
-        -- write access --
-        if (bus_req_i.ben(0) = '1') and (bus_req_i.rw = '1') then -- byte 0
-          mem_ram_b0(to_integer(addr)) <= bus_req_i.data(7 downto 0);
+        if (bus_req_i.rw = '1') then -- write access
+          if (bus_req_i.ben(0) = '1') then -- byte 0
+            mem_ram_b0(to_integer(addr)) <= bus_req_i.data(7 downto 0);
+          end if;
+          if (bus_req_i.ben(1) = '1') then -- byte 1
+            mem_ram_b1(to_integer(addr)) <= bus_req_i.data(15 downto 8);
+          end if;
+          if (bus_req_i.ben(2) = '1') then -- byte 2
+            mem_ram_b2(to_integer(addr)) <= bus_req_i.data(23 downto 16);
+          end if;
+          if (bus_req_i.ben(3) = '1') then -- byte 3
+            mem_ram_b3(to_integer(addr)) <= bus_req_i.data(31 downto 24);
+          end if;
+        else -- read access
+          rdata(7  downto 0)  <= mem_ram_b0(to_integer(addr));
+          rdata(15 downto 8)  <= mem_ram_b1(to_integer(addr));
+          rdata(23 downto 16) <= mem_ram_b2(to_integer(addr));
+          rdata(31 downto 24) <= mem_ram_b3(to_integer(addr));
         end if;
-        if (bus_req_i.ben(1) = '1') and (bus_req_i.rw = '1') then -- byte 1
-          mem_ram_b1(to_integer(addr)) <= bus_req_i.data(15 downto 8);
-        end if;
-        if (bus_req_i.ben(2) = '1') and (bus_req_i.rw = '1') then -- byte 2
-          mem_ram_b2(to_integer(addr)) <= bus_req_i.data(23 downto 16);
-        end if;
-        if (bus_req_i.ben(3) = '1') and (bus_req_i.rw = '1') then -- byte 3
-          mem_ram_b3(to_integer(addr)) <= bus_req_i.data(31 downto 24);
-        end if;
-        -- read access --
-        rdata(7  downto 0)  <= mem_ram_b0(to_integer(addr));
-        rdata(15 downto 8)  <= mem_ram_b1(to_integer(addr));
-        rdata(23 downto 16) <= mem_ram_b2(to_integer(addr));
-        rdata(31 downto 24) <= mem_ram_b3(to_integer(addr));
       end if;
     end if;
   end process mem_access;
@@ -80,21 +84,43 @@ begin
   addr <= unsigned(bus_req_i.addr(addr_hi_c downto 2));
 
 
-  -- Bus Response ---------------------------------------------------------------------------
+  -- Bus Handshake --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_feedback: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      rden          <= '0';
-      bus_rsp_o.ack <= '0';
+      wack <= '0';
+      rden <= (others => '0');
     elsif rising_edge(clk_i) then
-      rden          <= bus_req_i.stb and (not bus_req_i.rw);
-      bus_rsp_o.ack <= bus_req_i.stb;
+      wack <= bus_req_i.stb and bus_req_i.rw;
+      rden <= rden(0) & (bus_req_i.stb and (not bus_req_i.rw));
     end if;
-  end process bus_feedback;
+  end process bus_handshake;
 
-  bus_rsp_o.data <= rdata when (rden = '1') else (others => '0'); -- output gate
-  bus_rsp_o.err  <= '0'; -- no access error possible
+
+  -- Output Register Stage ------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  output_register_enabled:
+  if OUTREG_EN generate -- might improve FPGA mapping/timing results
+    ram_outreg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset required due to output gate
+        dout <= rdata;
+      end if;
+    end process ram_outreg;
+    bus_rsp_o.data <= dout when (rden(1) = '1') else (others => '0'); -- output gate
+    bus_rsp_o.err  <= '0'; -- no access error possible
+    bus_rsp_o.ack  <= rden(1) or wack;
+  end generate;
+
+  -- no output register stage --
+  output_register_disabled:
+  if not OUTREG_EN generate
+    dout           <= rdata;
+    bus_rsp_o.data <= dout when (rden(0) = '1') else (others => '0'); -- output gate
+    bus_rsp_o.err  <= '0'; -- no access error possible
+    bus_rsp_o.ack  <= rden(0) or wack;
+  end generate;
 
 
 end neorv32_dmem_rtl;

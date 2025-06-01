@@ -76,9 +76,11 @@ entity neorv32_vivado_ip is
     -- Internal Instruction memory --
     IMEM_EN               : boolean                        := false;
     IMEM_SIZE             : natural                        := 16384;
+    IMEM_OUTREG_EN        : boolean                        := false;
     -- Internal Data memory --
     DMEM_EN               : boolean                        := false;
     DMEM_SIZE             : natural                        := 8192;
+    DMEM_OUTREG_EN        : boolean                        := false;
     -- CPU Caches --
     ICACHE_EN             : boolean                        := false;
     ICACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
@@ -400,9 +402,11 @@ begin
     -- Internal Instruction memory --
     IMEM_EN             => IMEM_EN,
     IMEM_SIZE           => IMEM_SIZE,
+    IMEM_OUTREG_EN      => IMEM_OUTREG_EN,
     -- Internal Data memory --
     DMEM_EN             => DMEM_EN,
     DMEM_SIZE           => DMEM_SIZE,
+    DMEM_OUTREG_EN      => DMEM_OUTREG_EN,
     -- CPU Caches --
     ICACHE_EN           => ICACHE_EN,
     ICACHE_NUM_BLOCKS   => ICACHE_NUM_BLOCKS,
