@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 02.06.2025 | [**:rocket:1.11.6**](https://github.com/stnolting/neorv32/releases/tag/v1.11.6) | **New release** | |
 | 01.06.2025 | 1.11.5.9 | :test_tube: add optional output registers for IMEM & DMEM to improve FPGA mapping/timing results | [#1281](https://github.com/stnolting/neorv32/pull/1281) |
 | 31.05.2025 | 1.11.5.8 | :warning: rename IMEM/DMEM configuration generics | [#1280](https://github.com/stnolting/neorv32/pull/1280) |
 | 31.05.2025 | 1.11.5.7 | :test_tube: rework DMA controller | [#1279](https://github.com/stnolting/neorv32/pull/1279) |
