@@ -18,7 +18,7 @@ The default toolchain prefix for this project is **`riscv-none-elf-`** (`RISCV_P
 
 [start=1]
 .The toolchain must be able to emit code for a 32-bit architecture (i.e. `mabi=rv32`).
-.A "bare metal" / stand-alone C standard library should be used (i.e. the no-Linux version; for example "Newlib").
+.An _embedded_ C standard library should be used (for example "Newlib").
 
 .Library/ISA Considerations
 [IMPORTANT]
@@ -64,7 +64,6 @@ $ export PATH=$PATH:/opt/riscv/bin
 [TIP]
 This command can be added to `.bashrc` (or similar) to automatically add the RISC-V
 toolchain at every console start.
-
 
 To make sure everything works fine, navigate to an example project in the NEORV32 `sw/example` folder and
 execute the following command:

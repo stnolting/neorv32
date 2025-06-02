@@ -14,7 +14,7 @@ are used for verifying the functionality of the various peripherals from a hardw
 
 .AMD Vivado / ISIM - Incremental Compilation
 [IMPORTANT]
-When using AMD Vivado (ISIM for simulation) make sure to **TURN OFF** "incremental compilation" (_Project Setting_
+When using AMD Vivado (ISIM for simulation) make sure to **TURN OFF** "incremental compilation" (_Project Settings_
 -> _Simulation_ -> _Advanced_ -> _Enable incremental compilation). This will slow down simulation relaunch but will
 ensure that all application images (`*_image.vhd`) are reanalyzed when recompiling the NEORV32 application or bootloader.
 
@@ -113,34 +113,33 @@ makefile's `GHDL_RUN_FLAGS` variable. E.g.: `make GHDL_RUN_FLAGS+="-gBOOT_MODE_S
 ==== Hello World!
 
 To do a quick test of the NEORV32 make and the required tools navigate to the project's `sw/example/hello_world`
-folder and run `make USER_FLAGS+=-DUART0_SIM_MODE clean_all install sim`:
+folder and run `make USER_FLAGS+=-DUART0_SIM_MODE clean install sim`:
 
 [source, bash]
 ----
-neorv32/sw/example/hello_world$ make USER_FLAGS+=-DUART0_SIM_MODE clean_all install sim
+neorv32/sw/example/hello_world$ make USER_FLAGS+=-DUART0_SIM_MODE clean install sim
 ../../../sw/lib/source/neorv32_uart.c: In function 'neorv32_uart_setup':
-../../../sw/lib/source/neorv32_uart.c:109:2: warning: #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulation only! [-Wcpp]
-  109 | #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulation only! <1>
+../../../sw/lib/source/neorv32_uart.c:80:2: warning: #warning UART0_SIM_MODE (primary UART) enabled! Sending all UART0.TX data to text.io simulation output instead of real UART0 transmitter. Use this for simulation only! [-Wcpp] <1>
+   80 | #warning UART0_SIM_MODE (primary UART) enabled! \
       |  ^~~~~~~
 Memory utilization:
    text    data     bss     dec     hex filename
-   5540       0     116    5656    1618 main.elf <2>
+   5596       0     116    5712    1650 main.elf <2>
 Compiling image generator...
 Generating neorv32_application_image.vhd
 Installing application image to ../../../rtl/core/neorv32_application_image.vhd <3>
 Simulating processor using default testbench...
 GHDL simulation run parameters: --stop-time=10ms <4>
-../rtl/core/neorv32_top.vhd:351:5:@0ms:(assertion note): [NEORV32] The NEORV32 RISC-V Processor (v1.10.7.6), github.com/stnolting/neorv32
-../rtl/core/neorv32_top.vhd:357:5:@0ms:(assertion note): [NEORV32] Processor Configuration: CPU IMEM-ROM DMEM I-CACHE D-CACHE XBUS XBUS-CACHE CLINT GPIO UART0 UART1 SPI SDI TWI TWD PWM WDT TRNG CFS NEOLED XIRQ GPTMR ONEWIRE DMA SLINK SYSINFO OCD-AUTH
-../rtl/core/neorv32_top.vhd:411:5:@0ms:(assertion note): [NEORV32] BOOT_MODE_SELECT = 2: booting IMEM image
-../rtl/core/neorv32_clockgate.vhd:38:3:@0ms:(assertion warning): [NEORV32] Clock gating enabled (using default/generic clock switch).
-../rtl/core/neorv32_cpu.vhd:135:3:@0ms:(assertion note): [NEORV32] CPU ISA: rv32ibmux_zalrsc_zba_zbb_zbkb_zbkc_zbkx_zbs_zicntr_zicond_zicsr_zifencei_zihpm_zfinx_zkn_zknd_zkne_zknh_zks_zksed_zksh_zkt_zmmul_zxcfu_sdext_sdtrig_smpmp
-../rtl/core/neorv32_cpu.vhd:171:3:@0ms:(assertion note): [NEORV32] CPU tuning options: fast_mul fast_shift rf_hw_rst
-../rtl/core/neorv32_cpu.vhd:178:3:@0ms:(assertion warning): [NEORV32] Assuming this is a simulation.
-../rtl/core/neorv32_imem.vhd:59:3:@0ms:(assertion note): [NEORV32] Implementing processor-internal IMEM as pre-initialized ROM.
-../rtl/core/neorv32_trng.vhd:277:3:@0ms:(assertion note): [neoTRNG] The neoTRNG (v3.2) - A Tiny and Platform-Independent True Random Number Generator, https://github.com/stnolting/neoTRNG
-../rtl/core/neorv32_trng.vhd:284:3:@0ms:(assertion warning): [neoTRNG] Simulation-mode enabled (NO TRUE/PHYSICAL RANDOM)!
-../rtl/core/neorv32_debug_auth.vhd:48:3:@0ms:(assertion warning): [NEORV32] using DEFAULT on-chip debugger authenticator. Replace by custom module.
+../rtl/core/neorv32_top.vhd:329:5:@0ms:(assertion note): [NEORV32] The NEORV32 RISC-V Processor (v1.11.6.0), github.com/stnolting/neorv32
+../rtl/core/neorv32_top.vhd:335:5:@0ms:(assertion note): [NEORV32] Processor Configuration: CPU (smp-dual-core) IMEM-ROM DMEM I-CACHE D-CACHE XBUS CLINT GPIO UART0 UART1 SPI SDI TWI TWD PWM WDT TRNG CFS NEOLED GPTMR ONEWIRE DMA SLINK SYSINFO OCD OCD-AUTH OCD-HWBP
+../rtl/core/neorv32_top.vhd:388:5:@0ms:(assertion note): [NEORV32] BOOT_MODE_SELECT = 2: booting IMEM image
+../rtl/core/neorv32_cpu.vhd:130:5:@0ms:(assertion note): [NEORV32] CPU ISA: rv32iabmux_zaamo_zalrsc_zba_zbb_zbkb_zbkc_zbkx_zbs_zicntr_zicond_zicsr_zifencei_zihpm_zfinx_zkn_zknd_zkne_zknh_zks_zksed_zksh_zkt_zmmul_zxcfu_sdext_sdtrig_smpmp
+../rtl/core/neorv32_cpu.vhd:168:5:@0ms:(assertion note): [NEORV32] CPU tuning options: fast_mul fast_shift
+../rtl/core/neorv32_cpu.vhd:175:5:@0ms:(assertion warning): [NEORV32] Assuming this is a simulation.
+../rtl/core/neorv32_imem.vhd:61:3:@0ms:(assertion note): [NEORV32] Implementing processor-internal IMEM as pre-initialized ROM.
+../rtl/core/neorv32_trng.vhd:298:3:@0ms:(assertion note): [neoTRNG] The neoTRNG (v3.3) - A Tiny and Platform-Independent True Random Number Generator, https://github.com/stnolting/neoTRNG
+../rtl/core/neorv32_trng.vhd:308:3:@0ms:(assertion warning): [neoTRNG] Simulation-mode enabled (NO TRUE/PHYSICAL RANDOM)!
+../rtl/core/neorv32_debug_auth.vhd:44:3:@0ms:(assertion warning): [NEORV32] using DEFAULT on-chip debugger authenticator. Replace by custom module.
 <5>
                                                                                       ##        ##   ##   ##
  ##     ##   #########   ########    ########   ##      ##   ########    ########     ##      ################

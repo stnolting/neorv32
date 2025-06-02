@@ -6,7 +6,7 @@ include::../attrs.adoc[]
 // ####################################################################################################################
 .**Documentation**
 [TIP]
-The online documentation of the project (a.k.a. the **data sheet**) is available on GitHub-pages: https://stnolting.github.io/neorv32/
+The online documentation of the project (the **data sheet**) is available on GitHub-pages: https://stnolting.github.io/neorv32/
 The online documentation of the **software framework** is also available on GitHub-pages: https://stnolting.github.io/neorv32/sw/files.html
 
 

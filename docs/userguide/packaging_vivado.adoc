@@ -4,19 +4,20 @@
 
 Packaging the entire processor as IP module allows easy integration of the core (or even several cores)
 into a block-design-based Vivado project. The NEORV32 repository provides a full-scale TCL script that
-automatically packages the processor as Vivado IP block. For this, a specialized wrapper for the processor's
-top entity is provided (`rtl/system_integration/neorv32_vivado_ip.vhd`) that features AXI4 (via XBUS)
+automatically packages the processor as Vivado IP block including an interactive configuration GUI.
+For this, a specialized wrapper for the processor's top entity is provided
+(`rtl/system_integration/neorv32_vivado_ip.vhd`) that features AXI4 (via XBUS)
 and AXI4-Stream (via SLINK) compatible interfaces.
 
 .General AXI Wrapper
 [NOTE]
-The provided AXI wrapper can also be used for custom (AXI) setups outside of Vivado and/or IP block designs.
+The provided AXI4-bridge can also be used for custom (AXI) setups outside of Vivado and/or IP block designs.
 
 .Example Vivado SoC using the NEORV32 IP Block
 image::vivado_ip_soc.png[]
 
-Besides packaging the HDL modules, the TCL script also generates a simplified customization GUI that allows an easy
-and intuitive configuration of the processor. The rather complex VHDL configuration generics are renamed and provided
+Besides packaging the HDL modules, the TCL script also generates an interactive customization GUI that allows an easy
+and intuitive configuration of the processor. The rather complex VHDL configuration generics are abstracted and provided
 with tool tips to make it easier to understand the different configuration options.
 
 .NEORV32 IP Customization GUI
@@ -27,16 +28,13 @@ the generated IP block into the Vivado IP repository.
 
 [start=1]
 . Open the Vivado GUI.
-. In GUI mode select either "Tools -> Run TCL Script" to directly execute the script or open the TCL
-shell ("Window -> Tcl Console") to manually invoke the script.
+. In GUI mode select either "Tools -> Run TCL Script" to directly execute the script or open the TCL shell ("Window -> Tcl Console") to manually invoke the script.
 . Use `cd` in the TCL console to navigate to the project's `neorv32/rtl/system_integration` folder.
 . Execute `source neorv32_vivado_ip.tcl` in the TCL console.
-. A second Vivado instance will open automatically packaging the IP module. After this process is completed,
-the second Vivado instance will automatically close again.
-. A new folder `neorv32_vivado_ip_work` is created in `neorv32/rtl/system_integration` which contains the IP-packaging
-Vivado project.
-. Inside, the `packaged_ip` folder provides the actual IP module.
-. Open your design project in Vivado.
+. A second Vivado instance will open automatically packaging the IP module. After this process is completed, the second Vivado instance will automatically close again.
+. A new folder `neorv32_vivado_ip_work` is created in `neorv32/rtl/system_integration` which contains the IP-packaging Vivado project.
+. The `packaged_ip` sub-folder provides the actual IP module.
+. Open your custom design where you want to integrate the NEORV32 IP module.
 . Click on "Settings" in the "Project Manager" on the left side.
 . Under "Project Settings" expand the "IP" section and click on "Repository".
 . Click the large plus button and select the previously generated IP folder (`path/to/neorv32/rtl/system_integration/neorv32_vivado_ip_work/packaged_ip`).
@@ -58,14 +56,13 @@ set_property ALLOW_COMBINATORIAL_LOOPS TRUE
 
 .Re-Packaging the IP Core
 [NOTE]
-For every change that is made right to the hardware (excluding configuration made via the customization GUI!)
+For every change that is made to the hardware RTL code (excluding configuration made via the customization GUI)
 the NEORV32 IP module needs to be re-packaged by re-executing the packing script (`neorv32_vivado_ip.tcl`). +
  +
-This also applies if an executable installed right into the IMEM (see section <<_installing_an_executable_directly_into_memory>>)
-shall be updated. It is **not** not possible to replace the IMEM image (`neorv32_application_image.vhd`) file
-in the packaged_ip folder. For the Vivado design suite, the new program to be executed must be compiled and installed using the
-`install` makefile target. Next, the `neorv32_vivado_ip.tcl` script has to be executed again. Finally, Vivado will prompt to upgrade
-the NEORV32 IP.
+This also applies if an executable installed right into the IMEM shall be updated. It is **not** possible to replace the IMEM image
+(`neorv32_application_image.vhd`) file in the packaged_ip folder. For the Vivado design suite, the new program to be executed must
+be compiled and installed using the `install` makefile target. Next, the `neorv32_vivado_ip.tcl` script has to be executed again.
+Finally, Vivado will prompt to upgrade the NEORV32 IP.
 
 .AMD Vivado / ISIM - Incremental Compilation of Simulation Sources
 [IMPORTANT]

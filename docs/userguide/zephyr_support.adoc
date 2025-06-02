@@ -10,4 +10,4 @@ so the Zephyr build system can generate executables and memory-initialization im
 
 [NOTE]
 Zephyr OS port provided by GitHub user https://github.com/henrikbrixandersen[henrikbrixandersen]
-(see https://github.com/stnolting/neorv32/discussions/172). ❤️
+(see https://github.com/stnolting/neorv32/discussions/172).
