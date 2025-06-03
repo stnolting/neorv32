@@ -325,21 +325,13 @@ like blockRAM. Note that these primitives do not provide any kind of hardware re
 The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing
 dynamic power consumption. Sleep mode is entered by executing the RISC-V `wfi` ("wait for interrupt") instruction.
 
-.Execution Details
-[NOTE]
-When executed in debug-mode or during single-stepping, `wfi` will behave as simple `nop` without entering sleep mode.
-
-After executing the `wfi` instruction the `sleep` signal of the CPU's request buses (<<_bus_interface>> will become set
-as soon as the CPU has fully halted:
-
-[start=1]
-. The front-end (instruction fetch) has stopped. There is no pending instruction fetch bus access.
-. The back-end (instruction execution) has stopped. There is no pending data bus access.
-. There is no enabled interrupt being pending.
-
 CPU-external modules like memories, timers and peripheral interfaces are not affected by this. Furthermore, the CPU will
 continue to buffer/enqueue incoming interrupts. The CPU will leave sleep mode as soon as any _enabled_ interrupt (via <<_mie>>)
 source becomes _pending_ or if a debug session is started.
+
+.Sleep during Debugging
+[NOTE]
+When executed in debug-mode or during single-stepping, `wfi` will behave as simple `nop` without entering sleep mode.
 
 
 ==== Full Virtualization
