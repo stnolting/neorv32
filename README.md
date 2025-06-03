@@ -101,7 +101,8 @@ setup according to your needs. Note that all of the following SoC modules are en
 * configurable [instruction sets and extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions):
 \
 `RV32`
-[`I`](https://stnolting.github.io/neorv32/#_i_isa_extension)/[`E`](https://stnolting.github.io/neorv32/#_e_isa_extension)
+[`I`](https://stnolting.github.io/neorv32/#_i_isa_extension)
+[`E`](https://stnolting.github.io/neorv32/#_e_isa_extension)
 [`M`](https://stnolting.github.io/neorv32/#_m_isa_extension)
 [`A`](https://stnolting.github.io/neorv32/#_a_isa_extension)
 [`C`](https://stnolting.github.io/neorv32/#_c_isa_extension)
@@ -274,13 +275,7 @@ This overview provides some *quick links* to the most important sections of the
 
 * [Toolchain Setup](https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup) - install and set up the RISC-V GCC toolchain
 * [General Hardware Setup](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) - set up a new NEORV32 FPGA project
-* [General Software Setup](https://stnolting.github.io/neorv32/ug/#_general_software_framework_setup) - configure the software framework
-* [Application Compilation](https://stnolting.github.io/neorv32/ug/#_application_program_compilation) - compile an application using _make_
-* [Upload via Bootloader](https://stnolting.github.io/neorv32/ug/#_uploading_and_starting_of_a_binary_executable_image_via_uart) - upload and execute executables
 * [Adding Custom Hardware Modules](https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules) - add _your_ custom hardware
-* [Debugging via the On-Chip Debugger](https://stnolting.github.io/neorv32/ug/#_debugging_using_the_on_chip_debugger) - step through code *online* and *in-system*
-* [Simulation](https://stnolting.github.io/neorv32/ug/#_simulating_the_processor) - simulate the whole SoC
-* [LiteX Integration](https://stnolting.github.io/neorv32/ug/#_litex_soc_builder_support) - build a SoC using NEORV32 + [LiteX](https://github.com/enjoy-digital/litex)
 * [Convert to Verilog](https://stnolting.github.io/neorv32/ug/#_neorv32_in_verilog) - turn the NEORV32 into an all-Verilog design
 * [Package as Vivado IP block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block) - turn the entire processor into an interactive AMD Vivado IP block
 * [Using Eclipse](https://stnolting.github.io/neorv32/ug/#_eclipse_ide) - use the Eclipse IDE for developing and debugging
