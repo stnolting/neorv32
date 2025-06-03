@@ -2,30 +2,21 @@
 :sectnums:
 == Adding Custom Hardware Modules
 
-In resemblance to the RISC-V ISA, the NEORV32 processor was designed to ease customization and _extensibility_.
+In resemblance to the RISC-V ISA, the NEORV32 processor was designed to ease customization and extensibility.
 The processor provides several predefined options to add application-specific custom hardware modules and accelerators.
-A <<_comparative_summary>> is given at the end of this section.
-
-.Debugging/Testing Custom Hardware Modules
-[TIP]
-Custom hardware IP modules connected via the external bus interface or integrated as CFU can be debugged "in-system" using the
-"bus explorer" example program (`sw/example_bus_explorer`). This program provides an interactive console (via UART0)
-that allows to perform arbitrary read and write access from/to any memory-mapped register.
+A coarse <<_comparative_summary>> is given at the end of this section.
 
 
 === Standard (_External_) Interfaces
 
 The processor already provides a set of standard interfaces that are intended to connect _chip-external_ devices.
 However, these interfaces can also be used chip-internally. The most suitable interfaces are
-https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio[GPIO],
-https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0[UART],
-https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi[SPI] and
-https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi[TWI].
+GPIO, UART, SPI and TWI.
 
 The SPI and especially the GPIO interfaces might be the most straightforward approaches since they
-have a minimal  protocol overhead.
-Beyond simplicity, these interface only provide a very limited bandwidth and require more sophisticated
-software handling ("bit-banging" for the GPIO). Hence, it is not recommend to use them for _chip-internal_ communication.
+have a minimal protocol overhead. Beyond simplicity, these interface only provide a very limited bandwidth
+and require more sophisticated software handling ("bit-banging" for the GPIO). Hence, it is not recommend
+to use them for _chip-internal_ communication.
 
 
 === External Bus Interface
@@ -38,12 +29,19 @@ including several modules and even multi-core architectures. Many FPGA EDA tools
 and customize whole SoC architectures and even include pre-defined IP libraries.
 
 Custom hardware modules attached to the processor's bus interface have no limitations regarding their functionality.
-User-defined interfaces (like DDR memory access) can be implemented and the hardware module can operate completely
-independent of the CPU.
+User-defined interfaces (like DDR memory access) can be implemented and the according hardware module can operate
+completely independent of the CPU.
 
 The bus interface uses a memory-mapped approach. All data transfers are handled by simple load/store operations since the
 external bus interface is mapped into the processor's https://stnolting.github.io/neorv32/#_address_space[address space].
-This allows a very simple still high-bandwidth communications. However, high bus traffic may increase access latencies.
+This allows a very simple still high-bandwidth communications. However, high bus traffic may increase access latency.
+In addition, the processor's DMA controller can also used to/from transfer data to processor-external modules.
+
+.Debugging/Testing Custom Hardware Modules
+[TIP]
+Custom hardware IP modules connected via the external bus interface or integrated as CFU can be debugged "in-system" using the
+"bus explorer" example program (`sw/example_bus_explorer`). This program provides an interactive console (via UART0)
+that allows to perform arbitrary read and write access from/to any memory-mapped register.
 
 
 === Custom Functions Subsystem
@@ -57,7 +55,7 @@ CPU/software and the design logic. Note that the CFS does not have direct access
 instruction) have to be send by the CPU.
 
 The use-cases for the CFS include medium-scale hardware accelerators that need to be tightly-coupled to the CPU.
-Potential use cases could be DSP modules like CORDIC, cryptographic accelerators or custom interfaces (like IIS).
+Potential use cases could be DSP modules like CORDIC, cryptography accelerators or custom interfaces (like IIS).
 
 
 === Custom Functions Unit
@@ -78,7 +76,7 @@ chip-internal extension options:
 * https://stnolting.github.io/neorv32/#_custom_functions_subsystem_cfs[Custom Functions Subsystem (CFS)] for tightly-coupled processor-internal co-processors
 * https://stnolting.github.io/neorv32/#_processor_external_memory_interface_wishbone[External Bus Interface (WISHBONE)] for processor-external memory-mapped modules
 
-.Comparison of On-Chip Extension Options
+.Comparison of Predefined On-Chip Extension Options
 [cols="<1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
@@ -88,7 +86,7 @@ chip-internal extension options:
 | **CPU-independent operation**  | no                          | yes                              | yes
 | **CPU interface**              | register file access        | memory-mapped                    | memory-mapped
 | **Low-level access mechanism** | custom instructions         | load/store                       | load/store
-| **Access latency**             | minimal                     | low                              | medium to high
+| **Access latency**             | low                         | medium                           | medium to high
 | **External IO interfaces**     | not supported               | yes, but limited                 | yes, user-defined
 | **Exception capability**       | yes                         | no                               | no
 | **Interrupt capability**       | no                          | yes                              | user-defined

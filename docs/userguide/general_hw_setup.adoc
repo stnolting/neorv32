@@ -2,15 +2,16 @@
 :sectnums:
 == General Hardware Setup
 
-This guide shows the basics of setting up a NEORV32 project for simulation or synthesis
-_from scratch_. It uses a simple, exemplary test "SoC" setup of the processor to keep things simple at the beginning.
-This simple setup is intended for a first test / evaluation of the NEORV32.
+This guide shows the basics of setting up a NEORV32 project for simulation or synthesis from scratch.
+It uses a simple, exemplary test "SoC" setup of the processor to keep things simple at the beginning.
+This simple setup is intended for a first test / evaluation of the processor.
 
-The NEORV32 project features three minimalistic pre-configured test setups in
+The NEORV32 project features three minimalist pre-configured test setups in
 https://github.com/stnolting/neorv32/blob/main/rtl/test_setups[`rtl/test_setups`].
-These test setups only implement very basic processor and CPU features and mainly differ in the actual boot configuration.
+These test setups only implement very basic processor and CPU features and mainly
+differ in the actual boot configuration.
 
-.NEORV32 "hello world" test setup (`rtl/test_setups/neorv32_test_setup_bootloader.vhd`)
+.NEORV32 "hello world" Test Setup (`rtl/test_setups/neorv32_test_setup_bootloader.vhd`)
 image::neorv32_test_setup.png[align=center]
 
 [start=1]
@@ -21,15 +22,16 @@ provide a field to enter the library name, check out the "properties" menu of th
 
 .Compile Order and File-List Files
 [TIP]
-Some tools (like Lattice Radiant) might require a _manual compile order_ of the VHDL source files to
+Some tools (like Lattice Radiant) might require a manual compile order of the VHDL source files to
 identify the dependencies. The `rtl` folder features file-list files that list all required HDL files in
 their recommended compilation order (see https://stnolting.github.io/neorv32/#_file_list_files).
 
 [start=3]
 . The `rtl/core/neorv32_top.vhd` VHDL file is the top entity of the NEORV32 processor, which can be
-instantiated within the actual project. However, in this tutorial we will use one of the pre-defined
-test setups from `rtl/test_setups` (see above).
+instantiated within a user project. However, in this tutorial we will use one of the pre-defined
+test setups from `rtl/test_setups` as top entity.
 
+.NEORV32 VHDL Package
 [IMPORTANT]
 Make sure to include the `neorv32` package into your design when instantiating the processor: add
 `library neorv32;` and `use neorv32.neorv32_package.all;` to your design unit.
@@ -54,17 +56,8 @@ generic (
 <3> Default size of internal data memory: 8kB
 
 [start=6]
-. If you want to or if your FPGA does not provide sufficient resources you can modify the
-_memory sizes_ (`IMEM_SIZE` and `DMEM_SIZE`).
-. There is one generic that has to be set according to your FPGA board setup: the actual clock frequency
-of the top's clock input signal (`clk_i`). Use the `CLOCK_FREQUENCY` generic to specify your clock source's
-frequency in Hertz (Hz).
-
-.Memory Layout
-[NOTE]
-If you have changed the default memory configuration (`IMEM_SIZE` and `DMEM_SIZE` generics)
-keep those new sizes in mind - these values are required for setting up the software framework in the next
-section <<_general_software_framework_setup>>.
+. If your FPGA does not provide sufficient resources you can modify the memory sizes (`IMEM_SIZE` and `DMEM_SIZE`).
+. The actual clock frequency (Hz) of the top's clock input signal (`clk_i`) needs to be defined using the `CLOCK_FREQUENCY` generic.
 
 [start=8]
 . Assign the signals of the test setup top entity to the according pins of your FPGA board.
@@ -86,7 +79,7 @@ port (
 ----
 
 .Signal Polarity
-[NOTE]
+[IMPORTANT]
 If your FPGA board has inverse polarity for certain input/output you need to add inverters. Example: The reset signal
 `rstn_i` is low-active by default; the LEDs connected to `gpio_o` are high-active by default.
 
@@ -100,4 +93,4 @@ to the host interface (e.g. a USB-UART converter).
 . If you are using the on-chip debugger setup connect the processor's JTAG signal `jtag_*` to a suitable JTAG adapter.
 . Perform the project HDL compilation (synthesis, mapping, placement, routing, bitstream generation).
 . Program the generated bitstream into your FPGA and press the button connected to the reset signal.
-. Done! The LED(s) connected to `gpio_o` should be flashing now.
+. The LED(s) connected to `gpio_o` should be flashing now.

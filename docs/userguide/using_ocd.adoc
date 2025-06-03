@@ -1,0 +1,176 @@
+<<<
+:sectnums:
+== Using the On-Chip Debugger
+
+The NEORV32 on-chip debugger ("OCD") allows online in-system debugging via an external JTAG access port.
+The general flow is independent of the host machine's operating system. However, this tutorial uses
+Windows and Linux (Ubuntu on Windows / WSL) in parallel running the upstream version of OpenOCD and the
+RISC-V GNU debugger `gdb`.
+
+.TLDR
+[TIP]
+You can start a pre-configured debug session (using default `main.elf` as executable and
+`target extended-remote localhost:3333` as GDB connection configuration) by using the **GDB**
+makefile target: `make gdb`
+
+.OCD CPU Requirements
+[NOTE]
+The on-chip debugger is only implemented if the `OCD_EN` generic is set _true_.
+
+
+:sectnums:
+=== Hardware Requirements
+
+Connect a JTAG adapter to the NEORV32 `jtag_*` interface signals. If you do not have a full-scale JTAG adapter, you can
+also use a FTDI-based breakout adapter.
+
+.JTAG pin mapping
+[cols="^3,^2,^2"]
+[options="header",grid="rows"]
+|=======================
+| NEORV32 top signal | JTAG signal | Default FTDI port
+| `jtag_tck_i`       | TCK         | D0
+| `jtag_tdi_i`       | TDI         | D1
+| `jtag_tdo_o`       | TDO         | D2
+| `jtag_tms_i`       | TMS         | D3
+|=======================
+
+.JTAG TAP Reset
+[NOTE]
+The NEORV32 JTAG TAP does not provide a dedicated reset signal ("TRST"). However, this
+is not a problem since JTAG-level resets can be triggered using TMS signaling.
+
+
+:sectnums:
+=== OpenOCD
+
+The NEORV32 on-chip debugger can be accessed using the upstream version of OpenOCD.
+A pre-configured OpenOCD configuration file is provided: `sw/openocd/openocd_neorv32.*.cfg`
+
+.Interface Configuration
+[NOTE]
+You might need to adapt the default interface configuration in `sw/openocd/interface.cfg`
+according to your JTAG adapter and your operating system.
+
+To access the processor using OpenOCD, open a terminal and start OpenOCD with the pre-configured configuration file.
+
+.Connecting via OpenOCD (on Windows) using the default `openocd_neorv32.cfg` script
+[source, bash]
+--------------------------
+neorv32\sw\openocd>openocd.exe -f openocd_neorv32.cfg
+xPack Open On-Chip Debugger 0.12.0+dev-01850-geb6f2745b-dirty (2025-02-07-10:08)
+Licensed under GNU GPL v2
+For bug reports, read
+        http://openocd.org/doc/doxygen/bugs.html
+*****************************************
+NEORV32 single-core openOCD configuration
+*****************************************
+Error: libusb_open() failed with LIBUSB_ERROR_NOT_FOUND
+Info : clock speed 2000 kHz
+Info : JTAG tap: neorv32.cpu tap/device found: 0x00000001 (mfg: 0x000 (<invalid>), part: 0x0000, ver: 0x0)
+Error: Debugger is not authenticated to target Debug Module. (dmstatus=0x3). Use `riscv authdata_read` and `riscv authdata_write` commands to authenticate.
+Info : [neorv32.cpu] Examination succeed
+Info : [neorv32.cpu] starting gdb server on 3333
+Info : Listening on port 3333 for gdb connections
+Info : authdata_write resulted in successful authentication
+Info : datacount=1 progbufsize=2
+Info : Disabling abstract command reads from CSRs.
+Info : Examined RISC-V core; found 2 harts
+Info :  hart 0: XLEN=32, misa=0x40901107
+Authentication passed.
+Info : JTAG tap: neorv32.cpu tap/device found: 0x00000001 (mfg: 0x000 (<invalid>), part: 0x0000, ver: 0x0)
+Target RESET and HALTED. Ready for remote connections.
+Info : Listening on port 6666 for tcl connections
+Info : Listening on port 4444 for telnet connections
+--------------------------
+
+Now the processor should be reset, halted and openOCD is waiting for connections.
+
+
+:sectnums:
+=== Debugging with GDB
+
+.System View Description (SVD)
+[TIP]
+Together with a third-party plugin the processor's SVD file can be imported right into GDB to allow comfortable
+debugging of peripheral/IO devices (see https://github.com/stnolting/neorv32/discussions/656).
+
+This guide uses the simple "blink example" from `sw/example/demo_blink_led` as test application to
+show the basics of in-system debugging.
+
+At first, the application needs to be compiled.
+Navigate to `sw/example/demo_blink_led` and compile the application:
+
+.Compile the test application
+[source, bash]
+--------------------------
+neorv32/sw/example/demo_blink_led$ make clean_all all
+--------------------------
+
+Beyond others, this will generate an ELF file `main.elf` that contains all the symbols required for debugging.
+Open another terminal in `sw/example/demo_blink_led` and start `gdb`.
+
+.Starting GDB (on Linux (Ubuntu on Windows))
+[source, bash]
+--------------------------
+.../neorv32/sw/example/demo_blink_led$ riscv32-unknown-elf-gdb
+GNU gdb (GDB) 10.1
+Copyright (C) 2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "--host=x86_64-pc-linux-gnu --target=riscv32-unknown-elf".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<https://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word".
+(gdb)
+--------------------------
+
+Now connect to OpenOCD using the default port 3333 on your machine.
+We will use the previously generated ELF file `main.elf` from the `demo_blink_led` example.
+Finally, upload the program to the processor and start execution.
+
+.Running GDB
+[source, bash]
+--------------------------
+(gdb) target extended-remote localhost:3333 <1>
+Remote debugging using localhost:3333
+warning: No executable has been specified and target does not support
+determining executable automatically.  Try using the "file" command.
+0xffff0c94 in ?? () <2>
+(gdb) file main.elf <3>
+A program is being debugged already.
+Are you sure you want to change the file? (y or n) y
+Reading symbols from main.elf...
+(gdb) load <4>
+Loading section .text, size 0xd0c lma 0x0
+Loading section .rodata, size 0x39c lma 0xd0c
+Start address 0x00000000, load size 4264
+Transfer rate: 43 KB/sec, 2132 bytes/write.
+(gdb) c <5>
+--------------------------
+<1> Connect to OpenOCD
+<2> The CPU was still executing code from the bootloader ROM - but that does not matter here
+<3> Select `mail.elf` from the `demo_blink_led` example
+<4> Upload the executable
+<5> Start execution
+
+You can halt execution at any time by `CTRL+c`. Then you can inspect the code, dump and alter variables,
+set breakpoints, step through the code, etc.
+
+
+:sectnums:
+=== Segger Embedded Studio
+
+Software for the NEORV32 processor can also be developed and debugged _in-system_ using Segger Embedded Studio
+and a Segger J-Link probe. The following links provide further information as well as an excellent tutorial.
+
+* Segger Embedded Studio: https://www.segger.com/products/development-tools/embedded-studio
+* Segger notes regarding NEORV32: https://wiki.segger.com/J-Link_NEORV32
+* Excellent tutorial: https://www.emb4fun.com/riscv/ses4rv/index.html

@@ -2,12 +2,12 @@
 :sectnums:
 == Eclipse IDE
 
-Eclipse (https://www.eclipse.org/) is an interactive development environment that can be used to develop, debug and profile
-application code for the NEORV32 RISC-V Processor. This chapter shows how to import the provided **example setup**
-from the NEORV32 project repository. Additionally, all the required steps to create a compatible project from
-scratch are illustrated in this chapter.
+Eclipse (https://www.eclipse.org/) is a free and open-source interactive development environment that can be used
+to develop, debug and profile application code for the NEORV32 RISC-V Processor. This chapter shows how to import
+the provided **example setup** from the NEORV32 project repository. Additionally, all the required steps to create
+a compatible project from scratch are illustrated in this chapter.
 
-.This is a Makefile-Based Project!
+.This is a Makefile-Based Eclipse Project!
 [IMPORTANT]
 Note that the provided Eclipse example project (as well as the setup tutorial in this section) implements a
 **makefile-based project**. Hence, the makefile in the example folder is used for building the application
@@ -26,12 +26,13 @@ The following tools are required:
 * Eclipse IDE (**Eclipse IDE for Embedded C/C++ Developers**): https://www.eclipse.org/downloads/
 * Precompiled RISC-V GCC toolchain: e.g. https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack
 * Precompiled OpenOCD binaries: e.g. https://github.com/xpack-dev-tools/openocd-xpack
-* Build tools like make and busybox: e.g. https://github.com/xpack-dev-tools/windows-build-tools-xpack
+* Build tools like `make` and busybox: e.g. https://github.com/xpack-dev-tools/windows-build-tools-xpack
 
 .XPack Windows Build Tools
 [TIP]
-The NEORV32 makefile relies on the `basename` command which might not be part of the default XPack Windows Build Tools.
-However, you can just open the according `bin` folder, copy `busybox.exe` and rename that copy to `basename.exe`.
+Some NEORV32 makefile targets relies on the `basename` command which might not be part of the default
+XPack Windows Build Tools. However, you can just open the according `bin` folder, copy `busybox.exe`
+and rename that copy to `basename.exe`.
 
 
 :sectnums:

@@ -1,51 +1,29 @@
-**Let's Get It Started!**
-
-This user guide uses the NEORV32 project _as is_ from the official `neorv32` repository.
-To make your first NEORV32 project run, follow the guides from the upcoming sections. It is recommended to
-follow these guides step by step and eventually in the presented order.
-
-[TIP]
-This guide uses the minimalist and platform/toolchain agnostic SoC **test setups** from
-`rtl/test_setups` for illustration. You can use one of the provided test setups for
-your first FPGA tests. +
- +
-For more sophisticated example setups have a look at the
-https://github.com/stnolting/neorv32-setups[neorv32-setups] repository,
-which provides **SoC setups** for various FPGAs, boards and toolchains.
-
 **Quick Links**
 
-* <<_software_toolchain_setup, Toolchain>>, <<_general_hardware_setup, hardware>> and <<_general_software_framework_setup, general software framework>> setup
-* <<_application_program_compilation, compile>> an application and <<_uploading_and_starting_of_a_binary_executable_image_via_uart, upload>> it or making it
-<<_installing_an_executable_directly_into_memory, persistent>> in internal memory
-* setup a new <<_setup_of_a_new_application_program_project, application project>>
-* <<_application_specific_processor_configuration, optimizing>> the core for your application
-* add <<_adding_custom_hardware_modules, custom hardware extensions>>
+* <<_software_toolchain_setup>>
+* <<_general_hardware_setup>>
+* <<_application_program_compilation>>
+* <<_installing_an_executable_directly_into_memory>>
+* <<_adding_custom_hardware_modules>>
 * <<_using_the_neorv32_bootloader>>
-* generate an AMD Vivado <<_packaging_the_processor_as_vivado_ip_block, IP block>>
-* <<_simulating_the_processor, simulate>> the processor and <<_building_the_documentation, build the documentation>>
-* RTOS support for <<_zephyr_rtos_support, Zephyr>> and <<_freertos_support, FreeRTOS>>
-* build SoCs using <<_litex_soc_builder_support, LiteX>>
-* run Python code using the <<_micropython_port>>
-* in-system <<_debugging_using_the_on_chip_debugger, debugging>> of the whole processor
-* <<_neorv32_in_verilog>> - an all-Verilog "version" of the processor
-* use the <<_eclipse_ide>> to develop and debug code for the NEORV32
+* <<_packaging_the_processor_as_vivado_ip_block>>
+* <<_simulating_the_processor>>
+* <<_building_the_documentation>>
+* <<_zephyr_rtos_support>>
+* <<_freertos_support>>
+* <<_litex_soc_builder_support>>
+* <<_micropython_port>>
+* <<_using_the_on_chip_debugger>>
+* <<_neorv32_in_verilog>>
+* <<_eclipse_ide>>
 
 include::sw_toolchain_setup.adoc[]
 
 include::general_hw_setup.adoc[]
 
-include::general_sw_framework_setup.adoc[]
-
 include::application_program_compilation.adoc[]
 
-include::executable_upload.adoc[]
-
 include::installing_an_executable.adoc[]
-
-include::new_application_project.adoc[]
-
-include::application_specific_configuration.adoc[]
 
 include::adding_custom_hw_modules.adoc[]
 
@@ -65,7 +43,7 @@ include::litex_support.adoc[]
 
 include::micropython_port.adoc[]
 
-include::debugging_with_ocd.adoc[]
+include::using_ocd.adoc[]
 
 include::neorv32_in_verilog.adoc[]
 
