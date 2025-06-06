@@ -144,12 +144,15 @@ void portable_init(core_portable *p, int *argc, char *argv[]) {
   // setup UART at default baud rate, no interrupts
   neorv32_uart0_setup(BAUD_RATE, 0);
 
+  // get number of available HPM counters
   num_hpm_cnts_global = neorv32_cpu_hpm_get_num_counters();
 
   // stop all counters for now
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1);
 
-  neorv32_cpu_set_mcycle(0);
+  // setup base counters
+  neorv32_cpu_csr_write(CSR_MCYCLE, 0);
+  neorv32_cpu_csr_write(CSR_MINSTRET, 0);
 
   // try to setup as many HPMs as possible
   if (num_hpm_cnts_global > 0)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_COMPR);    }
