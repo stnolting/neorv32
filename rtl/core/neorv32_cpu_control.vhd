@@ -121,7 +121,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     env_enter   : std_ulogic; -- enter trap environment
     env_entered : std_ulogic; -- trap environment has just been entered
     env_exit    : std_ulogic; -- leave trap environment
-    wakeup      : std_ulogic; -- wakeup from sleep due to an enabled pending IRQ
     --
     instr_be    : std_ulogic; -- instruction fetch bus error
     instr_ma    : std_ulogic; -- instruction fetch misaligned address
@@ -197,7 +196,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal opcode       : std_ulogic_vector(6 downto 0); -- simplified opcode (2 LSBs hardwired to "11" to indicate rv32)
   signal immediate    : std_ulogic_vector(XLEN-1 downto 0); -- instruction's immediate
   signal illegal_cmd  : std_ulogic; -- illegal instruction check
-  signal sleep_mode   : std_ulogic; -- CPU is in sleep-mode
   signal csr_valid    : std_ulogic_vector(2 downto 0); -- CSR access: [2] implemented, [1] r/w access, [0] privilege
   signal cnt_event    : std_ulogic_vector(11 downto 0); -- counter events
   signal hwtrig_match : std_ulogic; -- hardware trigger matches programmed address
@@ -539,7 +537,7 @@ begin
 
       when EX_SLEEP => -- sleep mode
       -- ------------------------------------------------------------
-        if (trap_ctrl.wakeup = '1') then
+        if (or_reduce_f(trap_ctrl.irq_buf) = '1') or (debug_ctrl.run = '1') or (csr.dcsr_step = '1') then -- enabled pending IRQ, debug-mode, single-stepping
           exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
@@ -613,7 +611,6 @@ begin
   ctrl_o.ir_opcode    <= opcode;
   -- cpu status --
   ctrl_o.cpu_priv     <= csr.prv_level_eff;
-  ctrl_o.cpu_sleep    <= sleep_mode;
   ctrl_o.cpu_trap     <= trap_ctrl.env_enter;
   ctrl_o.cpu_debug    <= debug_ctrl.run;
 
@@ -1009,27 +1006,6 @@ begin
     ((exe_engine.state = EX_EXECUTE) or -- trigger single-step in EX_EXECUTE state
      ((trap_ctrl.env_entered = '1') and (exe_engine.state = EX_BRANCHED))) and -- also allow triggering when entering a system trap (#887)
     (trap_ctrl.irq_buf(irq_db_step_c) = '1') else '0'; -- pending single-step halt
-
-
-  -- CPU Sleep Mode Control -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  sleep_control: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      sleep_mode <= '0';
-    elsif rising_edge(clk_i) then
-      if (exe_engine.state = EX_SLEEP) and -- instruction execution has halted
-         (frontend_i.halted = '1') and -- instruction fetch has halted
-         (trap_ctrl.wakeup = '0') then -- no wake-up request
-        sleep_mode <= '1';
-      else
-        sleep_mode <= '0';
-      end if;
-    end if;
-  end process sleep_control;
-
-  -- wake-up from / do not enter sleep mode: during debugging or on pending IRQ --
-  trap_ctrl.wakeup <= or_reduce_f(trap_ctrl.irq_buf) or debug_ctrl.run or csr.dcsr_step;
 
 
   -- ****************************************************************************************************************************
@@ -1587,7 +1563,7 @@ begin
   -- ****************************************************************************************************************************
 
   -- RISC-V-compliant counter events --
-  cnt_event(cnt_event_cy_c) <= '1' when (sleep_mode = '0') else '0'; -- active cycle
+  cnt_event(cnt_event_cy_c) <= '1' when (exe_engine.state /= EX_SLEEP) else '0'; -- active cycle
   cnt_event(cnt_event_tm_c) <= '0'; -- time: not available
   cnt_event(cnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) else '0'; -- retired (=executed) instruction
 

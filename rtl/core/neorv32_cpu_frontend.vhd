@@ -58,15 +58,10 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   signal ipb : ipb_t;
 
   -- instruction issue engine --
-  type issue_t is record
-    algn  : std_ulogic;
-    aset  : std_ulogic;
-    aclr  : std_ulogic;
-    ack   : std_ulogic_vector(1 downto 0);
-    cmd16 : std_ulogic_vector(15 downto 0);
-    cmd32 : std_ulogic_vector(31 downto 0);
-  end record;
-  signal issue : issue_t;
+  signal align_q, align_set, align_clr : std_ulogic;
+  signal ipb_ack : std_ulogic_vector(1 downto 0);
+  signal cmd16 : std_ulogic_vector(15 downto 0);
+  signal cmd32 : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -142,9 +137,6 @@ begin
   ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.pc(1) = '0') or (not RVC_EN)) else '0';
   ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') else '0';
 
-  -- instruction fetch has halted --
-  frontend_o.halted <= '1' when (fetch.state = S_REQUEST) and (ipb.free /= "11") else '0';
-
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -188,12 +180,12 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
     port map (
-      instr_i => issue.cmd16,
-      instr_o => issue.cmd32
+      instr_i => cmd16,
+      instr_o => cmd32
     );
 
     -- half-word select --
-    issue.cmd16 <= ipb.rdata(0)(15 downto 0) when (issue.algn = '0') else ipb.rdata(1)(15 downto 0);
+    cmd16 <= ipb.rdata(0)(15 downto 0) when (align_q = '0') else ipb.rdata(1)(15 downto 0);
 
 
     -- Issue Engine FSM -----------------------------------------------------------------------
@@ -201,32 +193,32 @@ begin
     issue_fsm_sync: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        issue.algn <= '0'; -- start aligned after reset
+        align_q <= '0'; -- start aligned after reset
       elsif rising_edge(clk_i) then
         if (fetch.restart = '1') then
-          issue.algn <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
+          align_q <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
         elsif (ctrl_i.if_ack = '1') then
-          issue.algn <= (issue.algn and (not issue.aclr)) or issue.aset; -- alignment "RS flip-flop"
+          align_q <= (align_q and (not align_clr)) or align_set; -- alignment "RS flip-flop"
         end if;
       end if;
     end process issue_fsm_sync;
 
-    issue_fsm_comb: process(issue, ipb)
+    issue_fsm_comb: process(align_q, ipb, cmd32)
     begin
       -- defaults --
-      issue.aset <= '0';
-      issue.aclr <= '0';
+      align_set <= '0';
+      align_clr <= '0';
       -- start at LOW half-word --
-      if (issue.algn = '0') then
+      if (align_q = '0') then
         frontend_o.fault <= ipb.rdata(0)(16);
         if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
-          issue.aset       <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
-          issue.ack        <= "01";
+          align_set        <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
+          ipb_ack          <= "01";
           frontend_o.valid <= ipb.avail(0);
-          frontend_o.instr <= issue.cmd32;
+          frontend_o.instr <= cmd32;
           frontend_o.compr <= '1';
         else -- aligned uncompressed, consume both IPB entries
-          issue.ack        <= "11";
+          ipb_ack          <= "11";
           frontend_o.valid <= ipb.avail(1) and ipb.avail(0);
           frontend_o.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
           frontend_o.compr <= '0';
@@ -235,13 +227,13 @@ begin
       else
         frontend_o.fault <= ipb.rdata(1)(16);
         if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
-          issue.aclr       <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
-          issue.ack        <= "10";
+          align_clr        <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
+          ipb_ack          <= "10";
           frontend_o.valid <= ipb.avail(1);
-          frontend_o.instr <= issue.cmd32;
+          frontend_o.instr <= cmd32;
           frontend_o.compr <= '1';
         else -- unaligned uncompressed, consume both IPB entries
-          issue.ack        <= "11";
+          ipb_ack          <= "11";
           frontend_o.valid <= ipb.avail(0) and ipb.avail(1);
           frontend_o.instr <= ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
           frontend_o.compr <= '0';
@@ -250,8 +242,8 @@ begin
     end process issue_fsm_comb;
 
     -- IPB read access --
-    ipb.re(0) <= issue.ack(0) and ctrl_i.if_ack;
-    ipb.re(1) <= issue.ack(1) and ctrl_i.if_ack;
+    ipb.re(0) <= ipb_ack(0) and ctrl_i.if_ack;
+    ipb.re(1) <= ipb_ack(1) and ctrl_i.if_ack;
 
   end generate; -- /issue_enabled
 
@@ -259,11 +251,12 @@ begin
   -- issue engine disabled --
   issue_disabled:
   if not RVC_EN generate
-    issue.algn       <= '0';
-    issue.aset       <= '0';
-    issue.aclr       <= '0';
-    issue.cmd16      <= (others => '0');
-    issue.cmd32      <= (others => '0');
+    align_q          <= '0';
+    align_set        <= '0';
+    align_clr        <= '0';
+    ipb_ack          <= (others => '0');
+    cmd16            <= (others => '0');
+    cmd32            <= (others => '0');
     ipb.re           <= (others => ctrl_i.if_ack);
     frontend_o.valid <= ipb.avail(0);
     frontend_o.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
