@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110600"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110601"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -560,7 +560,6 @@ package neorv32_package is
     ir_opcode    : std_ulogic_vector(6 downto 0);  -- opcode bit field
     -- cpu status --
     cpu_priv     : std_ulogic;                     -- effective privilege mode
-    cpu_sleep    : std_ulogic;                     -- set when CPU is in sleep mode
     cpu_trap     : std_ulogic;                     -- set when CPU is entering trap exec
     cpu_debug    : std_ulogic;                     -- set when CPU is in debug mode
   end record;
@@ -603,7 +602,6 @@ package neorv32_package is
     ir_funct12   => (others => '0'),
     ir_opcode    => (others => '0'),
     cpu_priv     => '0',
-    cpu_sleep    => '0',
     cpu_trap     => '0',
     cpu_debug    => '0'
   );
@@ -615,7 +613,6 @@ package neorv32_package is
     instr  : std_ulogic_vector(31 downto 0); -- instruction word
     compr  : std_ulogic;                     -- instruction is decompressed
     fault  : std_ulogic;                     -- instruction-fetch error
-    halted : std_ulogic;                     -- instruction fetch has halted
   end record;
 
   -- Comparator Bus -------------------------------------------------------------------------
