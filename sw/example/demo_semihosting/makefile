@@ -10,7 +10,7 @@ EFFORT = -Os
 # Add extended debug symbols
 USER_FLAGS += -ggdb -gdwarf-3
 
-# Enable semihosting
+# Forward stdio calls to the host computer
 USER_FLAGS += -DSTDIO_SEMIHOSTING
 
 # Adjust processor IMEM size and base address
