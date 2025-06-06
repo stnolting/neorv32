@@ -116,6 +116,10 @@ For example, with semihosting you can
 * read and write files on the host system
 * ...
 
+.Semihosting Example Program
+[TIP]
+A simple semihosting example program can be found in `sw/example/demo_semihosting`.
+
 The RISC-V semihosting builds upon the ARM standard. Hence, semihosting has to be enabled on the host side (in `GDB`)
 using the ARM command set:
 
@@ -135,6 +139,10 @@ defined and the application firmware needs to be recompiled.
 ----
 USER_FLAGS += -DSTDIO_SEMIHOSTING
 ----
+
+.Semihosting Services Without a Host
+[NOTE]
+If any semihosting request is issued without a host being connected, a breakpoint exception is raised.
 
 Further references:
 
