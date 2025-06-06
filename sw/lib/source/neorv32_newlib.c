@@ -113,6 +113,9 @@ int _lseek(int file, int ptr, int dir) {
  **************************************************************************/
 int _read(int file, char *ptr, int len) {
 
+#ifdef STDIO_SEMIHOSTING
+  return neorv32_semihosting_read(file, ptr, len);
+#else
   char c = 0;
   int read_cnt = 0;
 
@@ -144,6 +147,7 @@ int _read(int file, char *ptr, int len) {
     errno = ENOSYS;
     return -1;
   }
+#endif
 }
 
 
@@ -153,6 +157,9 @@ int _read(int file, char *ptr, int len) {
  **************************************************************************/
 int _write(int file, char *ptr, int len) {
 
+#ifdef STDIO_SEMIHOSTING
+  return neorv32_semihosting_write(file, ptr, len);
+#else
   int write_cnt = 0;
 
   // write STDOUT and STDERR streams to NEORV32.UART0 (if available)
@@ -182,6 +189,7 @@ int _write(int file, char *ptr, int len) {
     errno = ENOSYS;
     return -1;
   }
+#endif
 }
 
 
