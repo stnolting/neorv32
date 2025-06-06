@@ -113,10 +113,11 @@ For example, with semihosting you can
 * read from the host's `stdin` console
 * execute arbitrary command in the host's shell
 * retrieve the host's system time
-* and much more
+* read and write files on the host system
+* ...
 
 The RISC-V semihosting builds upon the ARM standard. Hence, semihosting has to be enabled on the host side (in `GDB`)
-using the ARM command set: 
+using the ARM command set:
 
 [source,gdb]
 ----
