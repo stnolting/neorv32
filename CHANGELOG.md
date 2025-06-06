@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 06.06.2025 | 1.11.6.2 | upgrade neoTRNG to version 3.3 | [#1284](https://github.com/stnolting/neorv32/pull/1284) |
 | 06.06.2025 | 1.11.6.1 | minor rtl optimizations and cleanups | [#1283](https://github.com/stnolting/neorv32/pull/1283) |
 | 02.06.2025 | [**:rocket:1.11.6**](https://github.com/stnolting/neorv32/releases/tag/v1.11.6) | **New release** | |
 | 01.06.2025 | 1.11.5.9 | :test_tube: add optional output registers for IMEM & DMEM to improve FPGA mapping/timing results | [#1281](https://github.com/stnolting/neorv32/pull/1281) |
