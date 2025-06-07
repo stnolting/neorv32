@@ -21,8 +21,7 @@
 | Configuration generics: | `IO_SLINK_EN`       | implement SLINK when _true_
 |                         | `IO_SLINK_RX_FIFO`  | RX FIFO depth (1..32k), has to be a power of two, min 1
 |                         | `IO_SLINK_TX_FIFO`  | TX FIFO depth (1..32k), has to be a power of two, min 1
-| CPU interrupts:         | fast IRQ channel 14 | RX SLINK IRQ (see <<_processor_interrupts>>)
-|                         | fast IRQ channel 15 | TX SLINK IRQ (see <<_processor_interrupts>>)
+| CPU interrupts:         | fast IRQ channel 14 | SLINK IRQ (see <<_processor_interrupts>>)
 |=======================
 
 
@@ -110,14 +109,14 @@ fully buffered by the internal RX/TX FIFOs. RX routing information has to be rea
 data. Vice versa, TX routing information has to be set **before** writing the according TX data.
 
 
-**Interrupts**
+**Interrupt**
 
-The SLINK module provides two independent interrupt channels: one for RX events and one for TX events.
-The interrupt conditions are based on the according link's FIFO status flags and are configured via the control
-register's `SLINK_CTRL_IRQ_*` flags. The according interrupt will fire when the module is enabled (`SLINK_CTRL_EN`)
-and the selected interrupt conditions are met. Note that all enabled interrupt conditions are logically OR-ed per
-channel. If any enable interrupt conditions becomes active the interrupt will become pending until the
-interrupt-causing condition is resolved (e.g. by reading from the RX FIFO).
+The SLINK module provides a single interrupt request that can be used to signal certain RX/TX data FIFO conditions.
+The according interrupt conditions are based on the RX/TX link FIFO status flags and are configured via the control
+register's `SLINK_CTRL_IRQ_*` bits. The SLINK interrupt will fire when the module is enabled (`SLINK_CTRL_EN`)
+and **any** of the selected interrupt conditions are met. Hence, all enabled interrupt conditions are logically OR-ed.
+If any enable interrupt conditions becomes active the interrupt will become pending until the interrupt-causing
+condition is resolved (e.g. by reading from the RX FIFO).
 
 
 **Register Map**
@@ -140,12 +139,12 @@ interrupt-causing condition is resolved (e.g. by reading from the RX FIFO).
                                   <| `12`   `SLINK_CTRL_TX_HALF`                               ^| r/- <| TX FIFO at least half full
                                   <| `13`   `SLINK_CTRL_TX_FULL`                               ^| r/- <| TX FIFO full
                                   <| `15:14` _reserved_                                        ^| r/- <| _reserved_, read as zero
-                                  <| `16`   `SLINK_CTRL_IRQ_RX_NEMPTY`                         ^| r/w <| RX interrupt if RX FIFO not empty
-                                  <| `17`   `SLINK_CTRL_IRQ_RX_HALF`                           ^| r/w <| RX interrupt if RX FIFO at least half full
-                                  <| `18`   `SLINK_CTRL_IRQ_RX_FULL`                           ^| r/w <| RX interrupt if RX FIFO full
-                                  <| `19`   `SLINK_CTRL_IRQ_TX_EMPTY`                          ^| r/w <| TX interrupt if TX FIFO empty
-                                  <| `20`   `SLINK_CTRL_IRQ_TX_NHALF`                          ^| r/w <| TX interrupt if TX FIFO not at least half full
-                                  <| `21`   `SLINK_CTRL_IRQ_TX_NFULL`                          ^| r/w <| TX interrupt if TX FIFO not full
+                                  <| `16`   `SLINK_CTRL_IRQ_RX_NEMPTY`                         ^| r/w <| Interrupt if RX FIFO not empty
+                                  <| `17`   `SLINK_CTRL_IRQ_RX_HALF`                           ^| r/w <| Interrupt if RX FIFO at least half full
+                                  <| `18`   `SLINK_CTRL_IRQ_RX_FULL`                           ^| r/w <| Interrupt if RX FIFO full
+                                  <| `19`   `SLINK_CTRL_IRQ_TX_EMPTY`                          ^| r/w <| Interrupt if TX FIFO empty
+                                  <| `20`   `SLINK_CTRL_IRQ_TX_NHALF`                          ^| r/w <| Interrupt if TX FIFO not at least half full
+                                  <| `21`   `SLINK_CTRL_IRQ_TX_NFULL`                          ^| r/w <| Interrupt if TX FIFO not full
                                   <| `23:22` _reserved_                                        ^| r/- <| _reserved_, read as zero
                                   <| `27:24` `SLINK_CTRL_RX_FIFO_MSB : SLINK_CTRL_RX_FIFO_LSB` ^| r/- <| log2(RX FIFO size)
                                   <| `31:28` `SLINK_CTRL_TX_FIFO_MSB : SLINK_CTRL_TX_FIFO_LSB` ^| r/- <| log2(TX FIFO size)

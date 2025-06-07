@@ -307,32 +307,32 @@
             <field>
               <name>SLINK_CTRL_IRQ_RX_NEMPTY</name>
               <bitRange>[16:16]</bitRange>
-              <description>RX interrupt if RX FIFO not empty</description>
+              <description>Interrupt if RX FIFO not empty</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_RX_HALF</name>
               <bitRange>[17:17]</bitRange>
-              <description>RX interrupt if RX FIFO at least half full</description>
+              <description>Interrupt if RX FIFO at least half full</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_RX_FULL</name>
               <bitRange>[18:18]</bitRange>
-              <description>RX interrupt if RX FIFO full</description>
+              <description>Interrupt if RX FIFO full</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_TX_EMPTY</name>
               <bitRange>[19:19]</bitRange>
-              <description>TX interrupt if TX FIFO empty</description>
+              <description>Interrupt if TX FIFO empty</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_TX_NHALF</name>
               <bitRange>[20:20]</bitRange>
-              <description>TX interrupt if TX FIFO not at least half full</description>
+              <description>Interrupt if TX FIFO not at least half full</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_TX_NFULL</name>
               <bitRange>[21:21]</bitRange>
-              <description>TX interrupt if TX FIFO not full</description>
+              <description>Interrupt if TX FIFO not full</description>
             </field>
             <field>
               <name>SLINK_CTRL_RX_FIFO</name>

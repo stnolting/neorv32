@@ -2,8 +2,7 @@
 -- NEORV32 SoC - Stream Link Interface (SLINK)                                      --
 -- -------------------------------------------------------------------------------- --
 -- Two independent stream links for RX and TX each equipped with a configurable     --
--- FIFO and individually programmable interrupt conditions (based on the FIFO       --
--- status flags).                                                                   --
+-- FIFO and programmable interrupt conditions (based on the FIFO status flags).     --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -30,8 +29,7 @@ entity neorv32_slink is
     rstn_i           : in  std_ulogic; -- global reset line, low-active, async
     bus_req_i        : in  bus_req_t;  -- bus request
     bus_rsp_o        : out bus_rsp_t;  -- bus response
-    rx_irq_o         : out std_ulogic; -- RX interrupt
-    tx_irq_o         : out std_ulogic; -- TX interrupt
+    irq_o            : out std_ulogic; -- interrupt
     -- RX stream interface --
     slink_rx_data_i  : in  std_ulogic_vector(31 downto 0); -- input data
     slink_rx_src_i   : in  std_ulogic_vector(3 downto 0); -- routing information
@@ -63,12 +61,12 @@ architecture neorv32_slink_rtl of neorv32_slink is
   constant ctrl_tx_half_c       : natural := 12; -- r/-: TX FIFO at least half full
   constant ctrl_tx_full_c       : natural := 13; -- r/-: TX FIFO full
   --
-  constant ctrl_irq_rx_nempty_c : natural := 16; -- r/w: RX interrupt if RX FIFO not empty
-  constant ctrl_irq_rx_half_c   : natural := 17; -- r/w: RX interrupt if RX FIFO at least half full
-  constant ctrl_irq_rx_full_c   : natural := 18; -- r/w: RX interrupt if RX FIFO full
-  constant ctrl_irq_tx_empty_c  : natural := 19; -- r/w: TX interrupt if TX FIFO empty
-  constant ctrl_irq_tx_nhalf_c  : natural := 20; -- r/w: TX interrupt if TX FIFO not at least half full
-  constant ctrl_irq_tx_nfull_c  : natural := 21; -- r/w: TX interrupt if TX FIFO not full
+  constant ctrl_irq_rx_nempty_c : natural := 16; -- r/w: interrupt if RX FIFO not empty
+  constant ctrl_irq_rx_half_c   : natural := 17; -- r/w: interrupt if RX FIFO at least half full
+  constant ctrl_irq_rx_full_c   : natural := 18; -- r/w: interrupt if RX FIFO full
+  constant ctrl_irq_tx_empty_c  : natural := 19; -- r/w: interrupt if TX FIFO empty
+  constant ctrl_irq_tx_nhalf_c  : natural := 20; -- r/w: interrupt if TX FIFO not at least half full
+  constant ctrl_irq_tx_nfull_c  : natural := 21; -- r/w: interrupt if TX FIFO not full
   --
   constant ctrl_rx_fifo_size0_c : natural := 24; -- r/-: log2(RX fifo size), bit 0 (lsb)
   constant ctrl_rx_fifo_size1_c : natural := 25; -- r/-: log2(RX fifo size), bit 1
@@ -223,14 +221,11 @@ begin
     avail_o => rx_fifo.avail
   );
 
-  rx_fifo.clear <= (not ctrl.enable) or ctrl.rx_clr;
-  rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3) = '1') else '0';
-
-  rx_fifo.we                  <= slink_rx_valid_i;
-  rx_fifo.wdata(31 downto 0)  <= slink_rx_data_i;
-  rx_fifo.wdata(35 downto 32) <= slink_rx_src_i;
-  rx_fifo.wdata(36)           <= slink_rx_last_i;
-  slink_rx_ready_o            <= rx_fifo.free;
+  rx_fifo.clear    <= (not ctrl.enable) or ctrl.rx_clr;
+  rx_fifo.re       <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3) = '1') else '0';
+  rx_fifo.we       <= slink_rx_valid_i;
+  rx_fifo.wdata    <= slink_rx_last_i & slink_rx_src_i & slink_rx_data_i;
+  slink_rx_ready_o <= rx_fifo.free;
 
   -- backup RX attributes for current access --
   rx_attributes: process(rstn_i, clk_i)
@@ -249,19 +244,6 @@ begin
       end if;
     end if;
   end process rx_attributes;
-
-  -- interrupt generator --
-  rx_interrupt: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      rx_irq_o <= '0';
-    elsif rising_edge(clk_i) then
-      rx_irq_o <= ctrl.enable and ( -- IRQ if enabled and ...
-                  (ctrl.irq_rx_nempty and (    rx_fifo.avail)) or -- RX FIFO is not empty
-                  (ctrl.irq_rx_half   and (    rx_fifo.half))  or -- RX FIFO is at least half full
-                  (ctrl.irq_rx_full   and (not rx_fifo.free)));   -- RX FIFO is full
-    end if;
-  end process rx_interrupt;
 
 
   -- TX Data FIFO ---------------------------------------------------------------------------
@@ -291,28 +273,32 @@ begin
     avail_o => tx_fifo.avail
   );
 
-  tx_fifo.clear <= (not ctrl.enable) or ctrl.tx_clr;
-  tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3) = '1') else '0';
-  tx_fifo.wdata <= bus_req_i.addr(2) & route_dst & bus_req_i.data; -- last-flag is set implicitly via access address (RTX_LAST register)
-
+  tx_fifo.clear    <= (not ctrl.enable) or ctrl.tx_clr;
+  tx_fifo.we       <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(3) = '1') else '0';
+  tx_fifo.wdata    <= bus_req_i.addr(2) & route_dst & bus_req_i.data; -- last-flag is set implicitly via access address
   tx_fifo.re       <= slink_tx_ready_i;
   slink_tx_data_o  <= tx_fifo.rdata(31 downto 0);
   slink_tx_dst_o   <= tx_fifo.rdata(35 downto 32);
   slink_tx_last_o  <= tx_fifo.rdata(36);
   slink_tx_valid_o <= tx_fifo.avail;
 
-  -- interrupt generator --
-  tx_interrupt: process(rstn_i, clk_i)
+
+  -- Interrupt Generator --------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  irq_gen: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      tx_irq_o <= '0';
+      irq_o <= '0';
     elsif rising_edge(clk_i) then
-      tx_irq_o <= ctrl.enable and ( -- IRQ if enabled and ...
-                  (ctrl.irq_tx_empty  and (not tx_fifo.avail)) or -- TX FIFO is empty
-                  (ctrl.irq_tx_nhalf  and (not tx_fifo.half))  or -- TX FIFO is not at least half full
-                  (ctrl.irq_tx_nfull  and (    tx_fifo.free)));   -- TX FIFO is not full
+      irq_o <= ctrl.enable and (
+               (ctrl.irq_rx_nempty and (    rx_fifo.avail)) or -- RX FIFO not empty
+               (ctrl.irq_rx_half   and (    rx_fifo.half))  or -- RX FIFO at least half full
+               (ctrl.irq_rx_full   and (not rx_fifo.free))  or -- RX FIFO full
+               (ctrl.irq_tx_empty  and (not tx_fifo.avail)) or -- TX FIFO empty
+               (ctrl.irq_tx_nhalf  and (not tx_fifo.half))  or -- TX FIFO not at least half full
+               (ctrl.irq_tx_nfull  and (    tx_fifo.free)));   -- TX FIFO not full
     end if;
-  end process tx_interrupt;
+  end process irq_gen;
 
 
 end neorv32_slink_rtl;

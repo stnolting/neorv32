@@ -1648,11 +1648,11 @@ int main() {
     cnt_test++;
 
     // fire RX interrupt when RX FIFO is at least half full
-    neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_HALF, 0);
+    neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_HALF);
     tmp_a = neorv32_slink_get_rx_fifo_depth();
 
     // enable SLINK RX FIRQ
-    neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_RX_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_FIRQ_ENABLE);
 
     // send RX_FIFO/2 data words
     neorv32_slink_set_dst(0b1010);
@@ -1667,7 +1667,7 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
     // check if IRQ
-    if ((trap_cause == SLINK_RX_TRAP_CODE) && // correct trap code
+    if ((trap_cause == SLINK_TRAP_CODE) && // correct trap code
         (neorv32_slink_rx_status() == SLINK_FIFO_HALF) && // RX FIFO is at least half full
         (neorv32_slink_get() == 0xAABBCCDD) && // correct RX data
         (neorv32_slink_get_src() == 0b1010) && // correct routing information
@@ -1684,46 +1684,11 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 15 (SLINK TX)
+  // Fast interrupt channel 15 (reserved)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ15 (SLINK_TX) ", cnt_test);
-
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SLINK)) {
-    trap_cause = trap_never_c;
-    cnt_test++;
-
-    // fire TX interrupt when TX FIFO is empty
-    neorv32_slink_setup(0, 1 << SLINK_CTRL_IRQ_TX_EMPTY);
-    tmp_a = neorv32_slink_get_rx_fifo_depth();
-
-    // enable SLINK TX FIRQ
-    neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_TX_FIRQ_ENABLE);
-
-    // send single data word
-    neorv32_slink_set_dst(0b1100);
-    neorv32_slink_put(0x11223344);
-
-    // wait for interrupt
-    asm volatile ("nop");
-    asm volatile ("nop");
-
-    neorv32_cpu_csr_write(CSR_MIE, 0);
-
-    // check if IRQ
-    if ((trap_cause == SLINK_TX_TRAP_CODE) && // correct trap code
-        (neorv32_slink_tx_status() == SLINK_FIFO_EMPTY) && // TX FIFO is empty
-        (neorv32_slink_get() == 0x11223344) && // correct RX data
-        (neorv32_slink_get_src() == 0b1100) && // correct routing information
-        (neorv32_slink_check_last() == 0)) { // is NOT marked as "end of stream"
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
+  PRINT_STANDARD("[%i] FIRQ15 ", cnt_test);
+  trap_cause = trap_never_c;
+  PRINT_STANDARD("[n.a.]\n");
 
 
   // ----------------------------------------------------------
