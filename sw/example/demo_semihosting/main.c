@@ -16,6 +16,9 @@
 #include <neorv32.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h> // for open
+#include <unistd.h> // for close
+
 
 // UART0 baud rate
 #define BAUD_RATE 19200
@@ -46,7 +49,14 @@ int main() {
   neorv32_uart0_setup(BAUD_RATE, 0);
 
   // say hello via UART0
-  neorv32_uart0_puts("NEORV32 semihosting example.\n");
+  neorv32_uart0_puts("NEORV32 semihosting example\n\n");
+
+  // semihosting enabled at all?
+#ifndef STDIO_SEMIHOSTING
+  neorv32_uart0_printf("[WARNING] stdio semihosting not enabled!\n");
+  neorv32_uart0_printf("Recompile with 'USER_FLAGS+=-DSTDIO_SEMIHOSTING'\n");
+#endif
+
 
   // ------------------------------------------------------
   // Semihosting demo
@@ -78,9 +88,33 @@ int main() {
 
   // ------------------------------------------------------
   // Semihosting demo
+  // Read file from host
+  // ------------------------------------------------------
+  char rdata[128];
+  char file[] = "test.data"; // set base directory: (gdb) monitor arm semihosting_basedir path/to/neorv32/sw/example/demo_semihosting
+  neorv32_uart0_printf("Opening file '%s'...\n", file);
+  int file_handle = open(file, O_RDONLY); // open file as read-only
+  if (file_handle <= 0) {
+    neorv32_uart0_printf("Opening file 'failed (%i)\n", file_handle);
+    neorv32_uart0_printf("Enable file-IO in GDB: (gdb) monitor arm semihosting_fileio enable\n");
+    neorv32_uart0_printf("Set base director in GDB: (gdb) monitor arm semihosting_basedir path/to/neorv32/sw/example/demo_semihosting\n");
+  }
+  else {
+    neorv32_uart0_printf("File handle: %i\n", file_handle);
+    int read_rc = read(file_handle, rdata, 32);
+    rdata[sizeof(rdata)-1] = 0; // make sure string is zero-terminated
+    neorv32_uart0_printf("Data read (%u): %s\n", read_rc, rdata);
+    neorv32_semihosting_puts(rdata);
+    int close_rc = close(file_handle);
+    neorv32_uart0_printf("Closing file (%i)\n", close_rc);
+  }
+
+
+  // ------------------------------------------------------
+  // Semihosting demo
   // Endless console echo loop (STDIN -> STDOUT)
   // ------------------------------------------------------
-#ifdef STDIO_SEMIHOSTING
+#if 0 // demo disabled by default
   char buf[128];
   while(1) {
     // read from host's STDIN
@@ -95,9 +129,6 @@ int main() {
     // also write to NEORV32 UART0
     neorv32_uart0_puts(buf);
   }
-#else
-  neorv32_uart0_printf("[NOTE] STDIN/STDOUT semihosting not enabled.\n");
-  neorv32_uart0_printf("Recompile with 'USER_FLAGS+=-DSTDIO_SEMIHOSTING'\n");
 #endif
 
   return 0;
