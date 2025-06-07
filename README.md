@@ -270,6 +270,7 @@ This overview provides some *quick links* to the most important sections of the
 * [Application Makefile](https://stnolting.github.io/neorv32/#_application_makefile) - turning _your_ application into an executable
 * [Bootloader](https://stnolting.github.io/neorv32/#_bootloader) - the build-in NEORV32 bootloader
 * [Image Generator](https://stnolting.github.io/neorv32/#_executable_image_format) - create (FPGA) memory initialization files from your application
+* [Semihosting](https://stnolting.github.io/neorv32/#_semihosting) - access files and system services on the host computer
 
 ### :rocket: [User Guide](https://stnolting.github.io/neorv32/ug/) - Let's Get It Started
 
