@@ -308,7 +308,7 @@ architecture neorv32_top_rtl of neorv32_top is
   -- IRQs --
   type firq_enum_t is (
     FIRQ_TWD, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
-    FIRQ_CFS, FIRQ_NEOLED, FIRQ_GPIO, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK_RX, FIRQ_SLINK_TX
+    FIRQ_CFS, FIRQ_NEOLED, FIRQ_GPIO, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK
   );
   type firq_t is array (firq_enum_t) of std_ulogic;
   signal firq      : firq_t;
@@ -460,8 +460,8 @@ begin
   cpu_firq(11) <= firq(FIRQ_SDI);
   cpu_firq(12) <= firq(FIRQ_GPTMR);
   cpu_firq(13) <= firq(FIRQ_ONEWIRE);
-  cpu_firq(14) <= firq(FIRQ_SLINK_RX);
-  cpu_firq(15) <= firq(FIRQ_SLINK_TX); -- lowest priority
+  cpu_firq(14) <= firq(FIRQ_SLINK);
+  cpu_firq(15) <= '0'; -- lowest priority
 
   -- CPU core(s) + optional caches + bus switch --
   core_complex_gen:
@@ -1450,8 +1450,7 @@ begin
         rstn_i           => rstn_sys,
         bus_req_i        => iodev_req(IODEV_SLINK),
         bus_rsp_o        => iodev_rsp(IODEV_SLINK),
-        rx_irq_o         => firq(FIRQ_SLINK_RX),
-        tx_irq_o         => firq(FIRQ_SLINK_TX),
+        irq_o            => firq(FIRQ_SLINK),
         slink_rx_data_i  => slink_rx_dat_i,
         slink_rx_src_i   => slink_rx_src_i,
         slink_rx_valid_i => slink_rx_val_i,
@@ -1468,13 +1467,12 @@ begin
     neorv32_slink_disabled:
     if not IO_SLINK_EN generate
       iodev_rsp(IODEV_SLINK) <= rsp_terminate_c;
-      firq(FIRQ_SLINK_RX)    <= '0';
-      firq(FIRQ_SLINK_TX)    <= '0';
-      slink_rx_rdy_o         <= '0';
-      slink_tx_dat_o         <= (others => '0');
-      slink_tx_dst_o         <= (others => '0');
-      slink_tx_val_o         <= '0';
-      slink_tx_lst_o         <= '0';
+      firq(FIRQ_SLINK) <= '0';
+      slink_rx_rdy_o   <= '0';
+      slink_tx_dat_o   <= (others => '0');
+      slink_tx_dst_o   <= (others => '0');
+      slink_tx_val_o   <= '0';
+      slink_tx_lst_o   <= '0';
     end generate;
 
 
