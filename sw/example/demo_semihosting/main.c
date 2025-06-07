@@ -60,7 +60,7 @@ int main() {
   // Print host's system time (no localization)
   // ------------------------------------------------------
   date_t date;
-  uint32_t timestamp = neorv32_semihosting_time();
+  uint32_t timestamp = (uint32_t)neorv32_semihosting_time();
   neorv32_aux_unixtime2date(timestamp, &date);
   neorv32_uart0_printf("Host time: ");
   neorv32_uart0_printf("%u.%u.%u ", date.day, date.month, date.year);
@@ -72,7 +72,7 @@ int main() {
   // Execute a command on the host system (be careful!)
   // ----------------------------------------
   char cmd[] = "dir"; // DIR is available on Linux and Windows and should cause no harm
-  int cmd_rc = neorv32_semihosting_cmd(cmd);
+  int cmd_rc = neorv32_semihosting_system(cmd);
   neorv32_uart0_printf("`%s` exit status: %i\n", cmd, cmd_rc);
 
 
