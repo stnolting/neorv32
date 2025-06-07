@@ -431,6 +431,10 @@ by core 0 (primary core) in the SMP <<_dual_core_configuration>>.
 A simple test and demo program that uses some of newlib's system functions (like `malloc`/`free` and `read`/`write`)
 is available in `sw/example/demo_newlib`.
 
+.Executing System Functions on a Host Computer
+[TIP]
+The NEORV32 on-chip debugger supports <<_semihosting>> which allow to use the input/output facilities on a host computer.
+
 
 <<<
 // ####################################################################################################################

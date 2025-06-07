@@ -27,6 +27,19 @@
 extern int errno;
 
 
+/**********************************************************************//**
+ * Issue a warning when semihosting is enabled.
+ **************************************************************************/
+/**@{*/
+#ifdef STDIO_SEMIHOSTING
+  #warning Newlib/stdio.h semihosting enabled.
+#endif
+#ifdef TIME_SEMIHOSTING
+  #warning Newlib/time.h semihosting enabled.
+#endif
+/**@}*/
+
+
  /**********************************************************************//**
  * Exit a program without cleaning up anything.
  **************************************************************************/
@@ -48,11 +61,29 @@ void _exit(int status) {
 
 
  /**********************************************************************//**
+ * Open file handle.
+ **************************************************************************/
+int _open(char *pathname, int flags) {
+#ifdef STDIO_SEMIHOSTING
+  return neorv32_semihosting_open(pathname, flags);
+#else
+  (void)pathname;
+  (void)flags;
+  return -1; // no files available
+#endif
+}
+
+
+ /**********************************************************************//**
  * Close file handle.
  **************************************************************************/
 int _close(int file) {
+#ifdef STDIO_SEMIHOSTING
+  return neorv32_semihosting_close(file);
+#else
   (void)file;
   return -1; // no files available
+#endif
 }
 
 
@@ -80,8 +111,12 @@ int _getpid() {
  * We only support terminal outputs here.
  **************************************************************************/
 int _isatty(int file) {
+#ifdef STDIO_SEMIHOSTING
+  return neorv32_semihosting_istty(file);
+#else
   (void)file;
   return 1;
+#endif
 }
 
 
@@ -100,10 +135,14 @@ int _kill(int pid, int sig) {
  * Set position in a file.
  **************************************************************************/
 int _lseek(int file, int ptr, int dir) {
+#ifdef STDIO_SEMIHOSTING
+  return neorv32_semihosting_seek(file, ptr);
+#else
   (void)file;
   (void)ptr;
   (void)dir;
   return 0;
+#endif
 }
 
 
@@ -113,6 +152,9 @@ int _lseek(int file, int ptr, int dir) {
  **************************************************************************/
 int _read(int file, char *ptr, int len) {
 
+#ifdef STDIO_SEMIHOSTING
+  return neorv32_semihosting_read(file, ptr, len);
+#else
   char c = 0;
   int read_cnt = 0;
 
@@ -144,6 +186,7 @@ int _read(int file, char *ptr, int len) {
     errno = ENOSYS;
     return -1;
   }
+#endif
 }
 
 
@@ -153,6 +196,9 @@ int _read(int file, char *ptr, int len) {
  **************************************************************************/
 int _write(int file, char *ptr, int len) {
 
+#ifdef STDIO_SEMIHOSTING
+  return neorv32_semihosting_write(file, ptr, len);
+#else
   int write_cnt = 0;
 
   // write STDOUT and STDERR streams to NEORV32.UART0 (if available)
@@ -182,6 +228,7 @@ int _write(int file, char *ptr, int len) {
     errno = ENOSYS;
     return -1;
   }
+#endif
 }
 
 
@@ -227,7 +274,11 @@ void *_sbrk(int incr) {
  * Get Unix time. Used by "time", among others.
  **************************************************************************/
 int _gettimeofday(struct timeval *tv) {
-
+#ifdef TIME_SEMIHOSTING
+  tv->tv_sec  = (time_t)neorv32_semihosting_time();
+  tv->tv_usec = (suseconds_t)(tv->tv_sec * 1000000);
+  return 0;
+#else
   // use MTIME as system time (if available)
   if (neorv32_clint_available()) {
     tv->tv_sec  = (time_t)neorv32_clint_unixtime_get();
@@ -238,4 +289,5 @@ int _gettimeofday(struct timeval *tv) {
     errno = ENOSYS;
     return -1;
   }
+#endif
 }

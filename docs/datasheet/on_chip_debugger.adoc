@@ -7,6 +7,16 @@ implementing the **execution-based debugging** scheme. A copy of the specificati
 The on-chip debugger is implemented if the <<_processor_top_entity_generics, `OCD_EN`>> processor top generic is set
 to `true`.
 
+**Section Structure**
+
+* <<_openocd>>
+* <<_semihosting>>
+* <<_debug_transport_module_dtm>>
+* <<_debug_module_dm>>
+* <<_debug_authentication>>
+* <<_cpu_debug_mode>>
+* <<_trigger_module>>
+
 **Key Features**
 
 * standard 4-wire JTAG access port
@@ -84,6 +94,71 @@ for a simple FTDI USB converter; **adjust this for your specific JTAG adapter**
 is implemented as example; **adjust this when using a custom authentication mechanism**
 | `target.cfg`                    | main NEORV32 target configuration; end users should not alter this file
 |=======================
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Semihosting
+
+Semihosting is a mechanism developed by ARM that enables code running on the NEORV32 to communicate and use the
+input/output facilities on a host computer that is running a debugger. Examples of these facilities include keyboard
+input, screen output, and disk I/O. For example, you can use this mechanism to enable functions in the C library,
+such as `printf()` and `scanf()`, to use the screen and keyboard of the host instead of having a screen and keyboard
+on the target system. (source: https://developer.arm.com/documentation/dui0471/i/semihosting/what-is-semihosting-?lang=en)
+
+For example, with semihosting you can
+
+* print to the host's `stdout` console
+* read from the host's `stdin` console
+* execute arbitrary command in the host's shell
+* retrieve the host's system time
+* read and write files on the host system
+* ...
+
+.Semihosting Example Program
+[TIP]
+A simple semihosting example program can be found in `sw/example/demo_semihosting`.
+
+The RISC-V semihosting builds upon the ARM standard. Hence, semihosting has to be **explicitly enabled** on the host
+side (in `GDB`) using the ARM command set:
+
+[source,gdb]
+----
+(gdb) monitor arm semihosting enable
+semihosting is enabled
+----
+
+File accesses need to be explicitly enabled. Additionally, the base folder for accessing those
+file should be defined:
+
+[source,gdb]
+----
+(gdb) monitor arm semihosting_fileio enable
+(gdb) monitor arm semihosting_basedir path/to/neorv32/sw/example/demo_semihosting
+----
+
+The NEORV32 software framework provides a build-in library for semihosting primitive (`sw/lib/include/neorv32_semihosting.h`).
+Additionally, accesses to the standard IO streams (`stdin` and `stdout`) can be automatically mapped to the host's console.
+Functions such as `printf` and `puts` can then print right to the host's `stdout` console. Vice versa, functions like `scanf`
+and `fgets` will read from the host's `stdin`. To enable this automatic mapping, the _define_ `STDIO_SEMIHOSTING` needs to be
+defined and the application firmware needs to be recompiled.
+
+.Forward `stdio` Calls to Host Computer
+[source,makefile]
+----
+USER_FLAGS += -DSTDIO_SEMIHOSTING
+----
+
+.Semihosting Services Without a Host
+[NOTE]
+If any semihosting request is issued without a host being connected, a breakpoint exception is raised.
+
+Further references:
+
+* A great overview: https://interrupt.memfault.com/blog/arm-semihosting
+* Implementing semihosting on RISC-V: https://embeddedinn.com/articles/tutorial/understanding-riscv-semihosting/
+* Description of the service calls by ARM: https://developer.arm.com/documentation/dui0203/j/semihosting/semihosting-operations?lang=en
 
 
 <<<

@@ -248,6 +248,7 @@ typedef union {
 // NEORV32 runtime environment
 #include "neorv32_rte.h"
 #include "neorv32_smp.h"
+#include "neorv32_semihosting.h"
 
 // IO/peripheral devices
 #include "neorv32_cfs.h"

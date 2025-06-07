@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 06.06.2025 | 1.11.6.3 | :sparkles: :test_tube: add semihosting support for the on-chip debugger | [#]1285(https://github.com/stnolting/neorv32/pull/1285) |
 | 06.06.2025 | 1.11.6.2 | upgrade neoTRNG to version 3.3 | [#1284](https://github.com/stnolting/neorv32/pull/1284) |
 | 06.06.2025 | 1.11.6.1 | minor rtl optimizations and cleanups | [#1283](https://github.com/stnolting/neorv32/pull/1283) |
 | 02.06.2025 | [**:rocket:1.11.6**](https://github.com/stnolting/neorv32/releases/tag/v1.11.6) | **New release** | |
