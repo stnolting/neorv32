@@ -11,7 +11,7 @@
 | Top entity ports:       | none |
 | Configuration generics: | `IO_TRNG_EN`   | implement TRNG when `true`
 |                         | `IO_TRNG_FIFO` | data FIFO depth, min 1, has to be a power of two
-| CPU interrupts:         | none
+| CPU interrupts:         | fast IRQ channel 15 | Data available interrupt (see <<_processor_interrupts>>)
 |=======================
 
 
@@ -30,7 +30,7 @@ neoTRNG repository: https://github.com/stnolting/neoTRNG
 .Inferring Latches
 [NOTE]
 The synthesis tool might emit warnings regarding **inferred latches** or **combinatorial loops**. However, this
-is not design flaw as this is exactly what we want. ;)
+is not design flaw as this is exactly what we want.
 
 
 **Theory of Operation**
@@ -55,6 +55,12 @@ entropy sources (the ring oscillators) are replaced by a simple **pseudo RNG** b
 mode is active.
 
 
+**Interrupt**
+
+The TRNG provides a single interrupt request signal that gets triggered when the TRNG is enabled and the
+data FIFO is completely full (indicating that at least `IO_TRNG_FIFO` bytes of random data are available).
+
+
 **Register Map**
 
 .TRNG register map (`struct NEORV32_TRNG`)
@@ -63,7 +69,7 @@ mode is active.
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
 .5+<| `0xfffa0000` .5+<| `CTRL` <|`0`    `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
-                                <|`1`    `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set; flag auto-clears
+                                <|`1`    `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set; auto-clears
                                 <|`5:2`  `TRNG_CTRL_FIFO_MSB : TRNG_CTRL_FIFO_LSB` ^| r/- <| FIFO depth, log2(`IO_TRNG_FIFO`)
                                 <|`6`    `TRNG_CTRL_SIM_MODE`                      ^| r/- <| simulation mode (PRNG!)
                                 <|`7`    `TRNG_CTRL_AVAIL`                         ^| r/- <| random data available when set
