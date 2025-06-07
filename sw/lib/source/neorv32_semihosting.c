@@ -47,9 +47,36 @@ char neorv32_semihosting_getc(void) {
 
 
 /**********************************************************************//**
- * Write buffer to host's file ID.
+ * Open file on host system.
  *
- * @param[in] file File descriptor (stream; should be 1 = STDOUT).
+ * @param[in] path Path/file name (zero-terminated string).
+ * @param[in] mode File access mode (ISO C).
+ * @return File handle.
+ **************************************************************************/
+int neorv32_semihosting_open(char *path, int mode) {
+  uint32_t args[3];
+  args[0] = (uint32_t)path;
+  args[1] = (uint32_t)mode;
+  args[1] = (uint32_t)strlen(path);
+  return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_OPEN, (void*)args);
+}
+
+
+/**********************************************************************//**
+ * Close file on host system.
+ *
+ * @param[in] file File handle.
+ * @return  0 if the call is successful, -1 if the call is not successful.
+ **************************************************************************/
+int neorv32_semihosting_close(int file) {
+  return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_CLOSE, (void*)file);
+}
+
+
+/**********************************************************************//**
+ * Write data buffer to host's file handle.
+ *
+ * @param[in] file File handle (stream; should be 1 = STDOUT).
  * @param[in] buffer Pointer to data buffer.
  * @param[in] len Length of data to write.
  * @return Number of characters NOT send.
@@ -64,9 +91,9 @@ int neorv32_semihosting_write(int file, char *buffer, int len) {
 
 
 /**********************************************************************//**
- * Read buffer from host's file ID.
+ * Read data buffer from host's file handle.
  *
- * @param[in] file File descriptor (stream; should be 0 = STDIN).
+ * @param[in] file File handle (stream; should be 0 = STDIN).
  * @param[in] buffer Pointer to data buffer.
  * @param[in] len Length of data to read.
  * @return Number of characters NOT read.
@@ -81,26 +108,53 @@ int neorv32_semihosting_read(int file, char *buffer, int len) {
 
 
 /**********************************************************************//**
- * Get host's current system time.
+ * Checks if a host file is connected to an interactive device.
  *
- * @return Unix timestamp (time in seconds since Jan 1st 1970)
+ * @param[in] file File handle.
+ * @return 1 if the handle identifies an interactive device, 0 if the handle
+ * identifies a file, a value other than 1 or 0 if an error occurs.
  **************************************************************************/
-uint32_t neorv32_semihosting_time(void) {
-  return (uint32_t)neorv32_semihosting_req(SEMIHOSTING_SYS_TIME, NULL);
+int neorv32_semihosting_istty(int file) {
+  return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_ISTTY, (void*)file);
+}
+
+
+/**********************************************************************//**
+ * Seeks to a specified position in a file.
+ *
+ * @param[in] file File handle.
+ * @param[in] pos Offset specified from the start of the file
+ * @return 0 if the request is successful.
+ **************************************************************************/
+int neorv32_semihosting_seek(int file, int pos) {
+  uint32_t args[2];
+  args[0] = (uint32_t)file;
+  args[1] = (uint32_t)pos;
+  return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_SEEK, (void*)args);
 }
 
 
 /**********************************************************************//**
  * Get host's current system time.
  *
+ * @return Unix timestamp (time in seconds since Jan 1st 1970)
+ **************************************************************************/
+int neorv32_semihosting_time(void) {
+  return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_TIME, NULL);
+}
+
+
+/**********************************************************************//**
+ * Execute command in host's console.
+ *
  * @warning Be careful!
  *
- * @param[in] buffer Pointer to data buffer.
+ * @param[in] cmd Pointer to zero-terminated command string.
  * @return Host command's exit status.
  **************************************************************************/
-int neorv32_semihosting_cmd(char *buffer) {
+int neorv32_semihosting_system(char *cmd) {
   uint32_t args[2];
-  args[0] = (uint32_t)buffer;
-  args[1] = (uint32_t)strlen(buffer);
+  args[0] = (uint32_t)cmd;
+  args[1] = (uint32_t)strlen(cmd);
   return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_SYSTEM, (void*)args);
 }

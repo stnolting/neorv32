@@ -57,10 +57,15 @@ enum NEORV32_SEMIHOSTING_SYS_enum {
 void neorv32_semihosting_putc(char c);
 void neorv32_semihosting_puts(const char* pnt);
 char neorv32_semihosting_getc(void);
+//
+int neorv32_semihosting_open(char *path, int mode);
+int neorv32_semihosting_close(int file);
 int neorv32_semihosting_write(int file, char *buffer, int len);
 int neorv32_semihosting_read(int file, char *buffer, int len);
-uint32_t neorv32_semihosting_time(void);
-int neorv32_semihosting_cmd(char *buffer);
+int neorv32_semihosting_istty(int file);
+int neorv32_semihosting_seek(int file, int pos);
+int neorv32_semihosting_time(void);
+int neorv32_semihosting_system(char *cmd);
 /**@}*/
 
 
