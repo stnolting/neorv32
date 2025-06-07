@@ -57,7 +57,7 @@ int neorv32_semihosting_open(char *path, int mode) {
   uint32_t args[3];
   args[0] = (uint32_t)path;
   args[1] = (uint32_t)mode;
-  args[1] = (uint32_t)strlen(path);
+  args[2] = (uint32_t)strlen(path);
   return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_OPEN, (void*)args);
 }
 
@@ -69,7 +69,9 @@ int neorv32_semihosting_open(char *path, int mode) {
  * @return  0 if the call is successful, -1 if the call is not successful.
  **************************************************************************/
 int neorv32_semihosting_close(int file) {
-  return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_CLOSE, (void*)file);
+  uint32_t args[1];
+  args[0] = (uint32_t)file;
+  return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_CLOSE, (void*)args);
 }
 
 
@@ -115,7 +117,9 @@ int neorv32_semihosting_read(int file, char *buffer, int len) {
  * identifies a file, a value other than 1 or 0 if an error occurs.
  **************************************************************************/
 int neorv32_semihosting_istty(int file) {
-  return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_ISTTY, (void*)file);
+  uint32_t args[1];
+  args[0] = (uint32_t)file;
+  return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_ISTTY, (void*)args);
 }
 
 
