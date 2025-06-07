@@ -25,7 +25,8 @@ entity neorv32_trng is
     clk_i     : in  std_ulogic; -- global clock line
     rstn_i    : in  std_ulogic; -- global reset line, low-active, async
     bus_req_i : in  bus_req_t;  -- bus request
-    bus_rsp_o : out bus_rsp_t   -- bus response
+    bus_rsp_o : out bus_rsp_t;  -- bus response
+    irq_o     : out std_ulogic  -- FIFO full interrupt
   );
 end neorv32_trng;
 
@@ -147,31 +148,41 @@ begin
   -- -------------------------------------------------------------------------------------------
   rnd_pool_fifo_inst: entity neorv32.neorv32_fifo
   generic map (
-    FIFO_DEPTH => TRNG_FIFO, -- number of FIFO entries; has to be a power of two; min 1
-    FIFO_WIDTH => 8,         -- size of data elements in FIFO
-    FIFO_RSYNC => true,      -- sync read
-    FIFO_SAFE  => true,      -- safe access
-    FULL_RESET => false      -- no HW reset, try to infer BRAM
+    FIFO_DEPTH => TRNG_FIFO,
+    FIFO_WIDTH => 8,
+    FIFO_RSYNC => true,
+    FIFO_SAFE  => true,
+    FULL_RESET => false
   )
   port map (
     -- control and status --
-    clk_i   => clk_i,      -- clock, rising edge
-    rstn_i  => rstn_i,     -- async reset, low-active
-    clear_i => fifo.clear, -- sync reset, high-active
-    half_o  => fifo.half,  -- at least half full
-    level_o => open,       -- fill level, zero-extended
+    clk_i   => clk_i,
+    rstn_i  => rstn_i,
+    clear_i => fifo.clear,
+    half_o  => fifo.half,
+    level_o => open,
     -- write port --
-    wdata_i => fifo.wdata, -- write data
-    we_i    => fifo.we,    -- write enable
-    free_o  => fifo.free,  -- at least one entry is free when set
+    wdata_i => fifo.wdata,
+    we_i    => fifo.we,
+    free_o  => fifo.free,
     -- read port --
-    re_i    => fifo.re,    -- read enable
-    rdata_o => fifo.rdata, -- read data
-    avail_o => fifo.avail  -- data available when set
+    re_i    => fifo.re,
+    rdata_o => fifo.rdata,
+    avail_o => fifo.avail
   );
 
   fifo.clear <= '1' when (enable = '0') or (fifo_clr = '1') else '0';
   fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
+
+  -- interrupt generator --
+  irq_gen: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      irq_o <= '0';
+    elsif rising_edge(clk_i) then
+      irq_o <= enable and (not fifo.free); -- FIFO full
+    end if;
+  end process irq_gen;
 
 end neorv32_trng_rtl;
 
