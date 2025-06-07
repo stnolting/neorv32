@@ -31,7 +31,7 @@ int neorv32_trng_available(void) {
 
 
 /**********************************************************************//**
- * Reset, configure and enable TRNG.
+ * Reset and enable TRNG.
  **************************************************************************/
 void neorv32_trng_enable(void) {
 
@@ -39,7 +39,7 @@ void neorv32_trng_enable(void) {
 
   // wait for all internal components to reset
   int i = 0;
-  for (i=0; i<256; i++) {
+  for (i=0; i<64; i++) {
     asm volatile ("nop");
   }
 
@@ -78,20 +78,25 @@ int neorv32_trng_get_fifo_depth(void) {
 
 
 /**********************************************************************//**
- * Get random data byte from TRNG.
+ * Check if at least one byte of random is available.
  *
- * @param[in,out] data uint8_t pointer for storing random data byte. Will be set to zero if no valid data available.
- * @return Data is valid when 0 and invalid otherwise.
+ * @return 0 if no data available, non-zero if at least one byte is available.
  **************************************************************************/
-int neorv32_trng_get(uint8_t *data) {
+int neorv32_trng_data_avail(void) {
 
-  if (NEORV32_TRNG->CTRL & (1<<TRNG_CTRL_AVAIL)) { // random data available?
-    *data = (uint8_t)NEORV32_TRNG->DATA;
-    return 0;
-  }
-  else {
-    return -1;
-  }
+  return (int)(NEORV32_TRNG->CTRL & (1<<TRNG_CTRL_AVAIL));
+}
+
+
+/**********************************************************************//**
+ * Get random data byte from TRNG (non-blocking).
+ * Check before if data is available using neorv32_trng_data_avail().
+ *
+ * @return Random data byte.
+ **************************************************************************/
+uint8_t neorv32_trng_data_get(void) {
+
+  return (uint8_t)NEORV32_TRNG->DATA;
 }
 
 
@@ -104,10 +109,5 @@ int neorv32_trng_get(uint8_t *data) {
  **************************************************************************/
 int neorv32_trng_check_sim_mode(void) {
 
-  if (NEORV32_TRNG->CTRL & (1<<TRNG_CTRL_SIM_MODE)) {
-    return -1; // simulation mode (PRNG)
-  }
-  else {
-    return 0; // real TRUE random number generator mode
-  }
+  return (int)(NEORV32_TRNG->CTRL & (1<<TRNG_CTRL_SIM_MODE));
 }

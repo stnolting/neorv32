@@ -52,13 +52,14 @@ enum NEORV32_TRNG_DATA_enum {
  * @name Prototypes
  **************************************************************************/
 /**@{*/
-int  neorv32_trng_available(void);
-void neorv32_trng_enable(void);
-void neorv32_trng_disable(void);
-void neorv32_trng_fifo_clear(void);
-int  neorv32_trng_get_fifo_depth(void);
-int  neorv32_trng_get(uint8_t *data);
-int  neorv32_trng_check_sim_mode(void);
+int     neorv32_trng_available(void);
+void    neorv32_trng_enable(void);
+void    neorv32_trng_disable(void);
+void    neorv32_trng_fifo_clear(void);
+int     neorv32_trng_get_fifo_depth(void);
+int     neorv32_trng_data_avail(void);
+uint8_t neorv32_trng_data_get(void);
+int     neorv32_trng_check_sim_mode(void);
 /**@}*/
 
 
