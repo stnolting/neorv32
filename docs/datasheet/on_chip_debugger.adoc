@@ -120,8 +120,8 @@ For example, with semihosting you can
 [TIP]
 A simple semihosting example program can be found in `sw/example/demo_semihosting`.
 
-The RISC-V semihosting builds upon the ARM standard. Hence, semihosting has to be enabled on the host side (in `GDB`)
-using the ARM command set:
+The RISC-V semihosting builds upon the ARM standard. Hence, semihosting has to be **explicitly enabled** on the host
+side (in `GDB`) using the ARM command set:
 
 [source,gdb]
 ----
@@ -135,7 +135,7 @@ Functions such as `printf` and `puts` can then print right to the host's `stdout
 and `fgets` will read from the host's `stdin`. To enable this automatic mapping, the _define_ `STDIO_SEMIHOSTING` needs to be
 defined and the application firmware needs to be recompiled.
 
-.Forward `stdio` Calls to a Host Computer
+.Forward `stdio` Calls to Host Computer
 [source,makefile]
 ----
 USER_FLAGS += -DSTDIO_SEMIHOSTING
