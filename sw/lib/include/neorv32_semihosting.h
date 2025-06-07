@@ -64,6 +64,7 @@ int neorv32_semihosting_write(int file, char *buffer, int len);
 int neorv32_semihosting_read(int file, char *buffer, int len);
 int neorv32_semihosting_istty(int file);
 int neorv32_semihosting_seek(int file, int pos);
+int neorv32_semihosting_flen(int file);
 int neorv32_semihosting_time(void);
 int neorv32_semihosting_system(char *cmd);
 /**@}*/

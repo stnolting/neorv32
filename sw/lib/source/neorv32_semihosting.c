@@ -139,6 +139,19 @@ int neorv32_semihosting_seek(int file, int pos) {
 
 
 /**********************************************************************//**
+ * Returns the length of a specified file.
+ *
+ * @param[in] file File handle.
+ * @return The current length of the file object, -1 if call fails.
+ **************************************************************************/
+int neorv32_semihosting_flen(int file) {
+  uint32_t args[1];
+  args[0] = (uint32_t)file;
+  return (int)neorv32_semihosting_req(SEMIHOSTING_SYS_FLEN, (void*)args);
+}
+
+
+/**********************************************************************//**
  * Get host's current system time.
  *
  * @return Unix timestamp (time in seconds since Jan 1st 1970)
