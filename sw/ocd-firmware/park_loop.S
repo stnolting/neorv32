@@ -1,6 +1,8 @@
 // ================================================================================ //
 // NEORV32 CPU - park_loop.S - Execution-Based On-Chip Debugger (OCD) Firmware      //
 // -------------------------------------------------------------------------------- //
+// [NOTE] compile this code with minimal ISA configuration: rv32e_zicsr_zifencei    //
+// -------------------------------------------------------------------------------- //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
 // Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
@@ -15,8 +17,6 @@
 .global _ocd_start
 .global entry_exception
 .global entry_park
-
-// [NOTE] compile this code with minimal ISA configuration: rv32e_zicsr_zifencei
 
 // debug module (DM) address map
 .equ DM_CODE_BASE, 0xFFFFFE00 // base address of code ROM (park loop)
@@ -40,7 +40,7 @@ _ocd_start:
 entry_exception:
   sw      zero, (DM_SREG_BASE+ACK_EXC)(zero)  // send exception-acknowledge (no need for a hart ID)
 
-// BASE + 4: normal entry - halt CPU: ebreak in debug-mode, halt request or return from single-stepped instruction
+// BASE + 4: normal entry - halt CPU: ebreak, halt request or return from single-stepped instruction
 entry_park:
   csrw    dscratch0, x8                       // backup x8 to dscratch0 so we have a GPR available
   csrr    x8, mhartid                         // get hart ID
@@ -74,15 +74,8 @@ exit_execute:
   csrr    x8, dscratch0                       // restore x8 from dscratch0
   jalr    zero, zero, %lo(DM_PBUF_BASE)       // jump to beginning of program buffer (PBUF)
 
-// fill remaining ROM space with instructions that cause a debug-mode-internal exception; this should never be reached
+// fill remaining ROM space with instructions that cause a debug-mode-internal exception
 terminate:
+.rept 10
   ecall
-  ecall
-  ecall
-  ecall
-  ecall
-  ecall
-  ecall
-  ecall
-  ecall
-  ecall
+.endr
