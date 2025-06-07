@@ -1684,11 +1684,40 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 15 (reserved)
+  // Fast interrupt channel 15 (TRNG)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ15 ", cnt_test);
-  trap_cause = trap_never_c;
-  PRINT_STANDARD("[n.a.]\n");
+  PRINT_STANDARD("[%i] FIRQ15 (TRNG) ", cnt_test);
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
+    trap_cause = trap_never_c;
+    cnt_test++;
+
+    // enable TRNG
+    neorv32_trng_enable();
+    neorv32_trng_fifo_clear();
+
+    // enable TRNG interrupt
+    neorv32_cpu_csr_write(CSR_MIE, 1 << TRNG_FIRQ_ENABLE);
+
+    // wait for interrupt
+    neorv32_cpu_sleep();
+
+    // disable TRNG interrupt
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    if ((trap_cause == TRNG_TRAP_CODE) && // is marked as "end of stream"
+        (neorv32_trng_data_avail() != 0) && // TRNG data available
+        (neorv32_trng_data_get() != neorv32_trng_data_get())) { // different "random" bytes?
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    neorv32_trng_disable();
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------

@@ -166,12 +166,12 @@ extern "C" {
 #define SLINK_RTE_ID           RTE_TRAP_FIRQ_14  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
 #define SLINK_TRAP_CODE        TRAP_CODE_FIRQ_14 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
-/** @name Stream Link Interface (SLINK) */
+/** @name True-Random Number Generator (TRNG) */
 /**@{*/
-// #define SLINK_TX_FIRQ_ENABLE   CSR_MIE_FIRQ15E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
-// #define SLINK_TX_FIRQ_PENDING  CSR_MIP_FIRQ15P   /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
-// #define SLINK_TX_RTE_ID        RTE_TRAP_FIRQ_15  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
-// #define SLINK_TX_TRAP_CODE     TRAP_CODE_FIRQ_15 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+#define TRNG_FIRQ_ENABLE       CSR_MIE_FIRQ15E   /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
+#define TRNG_FIRQ_PENDING      CSR_MIP_FIRQ15P   /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
+#define TRNG_RTE_ID            RTE_TRAP_FIRQ_15  /**< RTE entry code (#NEORV32_RTE_TRAP_enum) */
+#define TRNG_TRAP_CODE         TRAP_CODE_FIRQ_15 /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
 /**@}*/
 
@@ -197,14 +197,14 @@ extern char __crt0_entry[];    /**< crt0 entry point */
  **************************************************************************/
 /**@{*/
 enum NEORV32_CLOCK_PRSC_enum {
-  CLK_PRSC_2    = 0, /**< CPU_CLK / 2 */
-  CLK_PRSC_4    = 1, /**< CPU_CLK / 4 */
-  CLK_PRSC_8    = 2, /**< CPU_CLK / 8 */
-  CLK_PRSC_64   = 3, /**< CPU_CLK / 64 */
-  CLK_PRSC_128  = 4, /**< CPU_CLK / 128 */
-  CLK_PRSC_1024 = 5, /**< CPU_CLK / 1024 */
-  CLK_PRSC_2048 = 6, /**< CPU_CLK / 2048 */
-  CLK_PRSC_4096 = 7  /**< CPU_CLK / 4096 */
+  CLK_PRSC_2    = 0, /**< 0 = CPU_CLK / 2 */
+  CLK_PRSC_4    = 1, /**< 1 = CPU_CLK / 4 */
+  CLK_PRSC_8    = 2, /**< 2 = CPU_CLK / 8 */
+  CLK_PRSC_64   = 3, /**< 3 = CPU_CLK / 64 */
+  CLK_PRSC_128  = 4, /**< 4 = CPU_CLK / 128 */
+  CLK_PRSC_1024 = 5, /**< 5 = CPU_CLK / 1024 */
+  CLK_PRSC_2048 = 6, /**< 6 = CPU_CLK / 2048 */
+  CLK_PRSC_4096 = 7  /**< 7 = CPU_CLK / 4096 */
 };
 /**@}*/
 
