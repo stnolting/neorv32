@@ -129,6 +129,15 @@ side (in `GDB`) using the ARM command set:
 semihosting is enabled
 ----
 
+File accesses need to be explicitly enabled. Additionally, the base folder for accessing those
+file should be defined:
+
+[source,gdb]
+----
+(gdb) monitor arm semihosting_fileio enable
+(gdb) monitor arm semihosting_basedir path/to/neorv32/sw/example/demo_semihosting
+----
+
 The NEORV32 software framework provides a build-in library for semihosting primitive (`sw/lib/include/neorv32_semihosting.h`).
 Additionally, accesses to the standard IO streams (`stdin` and `stdout`) can be automatically mapped to the host's console.
 Functions such as `printf` and `puts` can then print right to the host's `stdout` console. Vice versa, functions like `scanf`
