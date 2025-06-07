@@ -12,6 +12,7 @@
  * @note Sources:
  * https://www.sourceware.org/newlib/libc.html#Syscalls
  * https://interrupt.memfault.com/blog/boostrapping-libc-with-newlib
+ * https://www.embecosm.com/appnotes/ean9/ean9-howto-newlib-1.0.pdf
  */
 
 #include <neorv32.h>
@@ -25,6 +26,10 @@
 #include <errno.h>
 #undef errno
 extern int errno;
+
+// global environment
+char *__env[1] = { 0 };
+char **environ = __env;
 
 
 /**********************************************************************//**
@@ -98,6 +103,15 @@ int _fstat(int file, struct stat *st) {
 
 
  /**********************************************************************//**
+ * Create new process.
+ **************************************************************************/
+int _fork(void) {
+  errno = EAGAIN;
+  return -1;
+}
+
+
+ /**********************************************************************//**
  * Process-ID; this is sometimes used to generate strings unlikely to
  * conflict with other processes.
  **************************************************************************/
@@ -108,14 +122,13 @@ int _getpid() {
 
  /**********************************************************************//**
  * Query whether output stream is a terminal.
- * We only support terminal outputs here.
  **************************************************************************/
 int _isatty(int file) {
 #ifdef STDIO_SEMIHOSTING
   return neorv32_semihosting_istty(file);
 #else
   (void)file;
-  return 1;
+  return 1; // all streams are terminals
 #endif
 }
 
@@ -132,6 +145,17 @@ int _kill(int pid, int sig) {
 
 
  /**********************************************************************//**
+ * Rename existing file.
+ **************************************************************************/
+int _link(char *old_name, char *new_name) {
+  (void)old_name;
+  (void)new_name;
+  errno = EMLINK;
+  return -1;
+}
+
+
+ /**********************************************************************//**
  * Set position in a file.
  **************************************************************************/
 int _lseek(int file, int ptr, int dir) {
@@ -143,6 +167,36 @@ int _lseek(int file, int ptr, int dir) {
   (void)dir;
   return 0;
 #endif
+}
+
+
+ /**********************************************************************//**
+ * Status of a file.
+ **************************************************************************/
+int _stat(char *file, struct stat *st) {
+  (void)file;
+  st->st_mode = S_IFCHR; // all files are character special devices
+  return 0;
+}
+
+
+ /**********************************************************************//**
+ * Wait for child process.
+ **************************************************************************/
+int _wait(int status) {
+  (void)status;
+  errno = ECHILD;
+  return -1;
+}
+
+
+ /**********************************************************************//**
+ * Remove a file's directory entry.
+ **************************************************************************/
+int _unlink(char *name) {
+  (void)name;
+  errno = ENOENT;
+  return -1;
 }
 
 
