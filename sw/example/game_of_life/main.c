@@ -9,7 +9,6 @@
 
 /**********************************************************************//**
  * @file game_of_life/main.c
- * @author Stephan Nolting
  * @brief Conway's game of life in a UART terminal.
  **************************************************************************/
 
@@ -89,7 +88,6 @@ int main(void) {
     int u = 0, cell = 0, n = 0;
     int x, y;
     int trng_available = 0;
-    uint8_t trng_data;
 
 
     // initialize universe
@@ -119,19 +117,12 @@ int main(void) {
     neorv32_uart0_char_received_get(); // discard received char
 
 
-    // initialize universe using random data
+    // initialize universe using true random data
     for (x=0; x<NUM_CELLS_X/8; x++) {
       for (y=0; y<NUM_CELLS_Y; y++) {
         if (trng_available) {
-          while (1) {
-            if (neorv32_trng_get(&trng_data)) {
-              continue;
-            }
-            else {
-              break;
-            }
-          }
-          universe[0][x][y] = trng_data; // use data from TRNG
+          while (neorv32_trng_data_avail() == 0);
+          universe[0][x][y] = neorv32_trng_data_get(); // use data from TRNG
         }
         else {
           universe[0][x][y] = (uint8_t)neorv32_aux_xorshift32(); // use data from PRNG
