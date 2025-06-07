@@ -37,24 +37,21 @@ int neorv32_slink_available(void) {
 /**********************************************************************//**
  * Reset, enable and configure SLINK.
  *
- * @param[in] rx_irq Configure RX interrupt conditions (#NEORV32_SLINK_CTRL_enum).
- * @param[in] tx_irq Configure TX interrupt conditions (#NEORV32_SLINK_CTRL_enum).
+ * @param[in] irq Interrupt conditions (#NEORV32_SLINK_CTRL_enum).
  **************************************************************************/
-void neorv32_slink_setup(uint32_t rx_irq, uint32_t tx_irq) {
+void neorv32_slink_setup(uint32_t irq) {
 
   NEORV32_SLINK->CTRL = 0; // reset and disable
 
-  const uint32_t rx_irq_mask = (1 << SLINK_CTRL_IRQ_RX_NEMPTY) |
-                               (1 << SLINK_CTRL_IRQ_RX_HALF) |
-                               (1 << SLINK_CTRL_IRQ_RX_FULL);
-  const uint32_t tx_irq_mask = (1 << SLINK_CTRL_IRQ_TX_EMPTY) |
-                               (1 << SLINK_CTRL_IRQ_TX_NHALF) |
-                               (1 << SLINK_CTRL_IRQ_TX_NFULL);
+  const uint32_t irq_mask = (1 << SLINK_CTRL_IRQ_RX_NEMPTY) |
+                            (1 << SLINK_CTRL_IRQ_RX_HALF)   |
+                            (1 << SLINK_CTRL_IRQ_RX_FULL)   |
+                            (1 << SLINK_CTRL_IRQ_TX_EMPTY)  |
+                            (1 << SLINK_CTRL_IRQ_TX_NHALF)  |
+                            (1 << SLINK_CTRL_IRQ_TX_NFULL);
 
   uint32_t tmp = (uint32_t)(1 << SLINK_CTRL_EN);
-  tmp |= rx_irq & rx_irq_mask;
-  tmp |= tx_irq & tx_irq_mask;
-
+  tmp |= irq & irq_mask;
   NEORV32_SLINK->CTRL = tmp;
 }
 

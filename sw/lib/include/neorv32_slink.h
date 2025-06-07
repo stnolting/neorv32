@@ -23,10 +23,10 @@
 /**@{*/
 /** SLINK module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t CTRL;      /**< offset 0: control register (#NEORV32_SLINK_CTRL_enum) */
-  uint32_t ROUTE;     /**< offset 4: routing information (#NEORV32_SLINK_ROUTE_enum) */
-  uint32_t DATA;      /**< offset 8: RX/TX data register */
-  uint32_t DATA_LAST; /**< offset 12: RX/TX data register (+ TX end-of-stream) */
+  uint32_t CTRL;      /**< control register (#NEORV32_SLINK_CTRL_enum) */
+  uint32_t ROUTE;     /**< routing information (#NEORV32_SLINK_ROUTE_enum) */
+  uint32_t DATA;      /**< RX/TX data register */
+  uint32_t DATA_LAST; /**< RX/TX data register (+ TX end-of-stream) */
 } neorv32_slink_t;
 
 /** SLINK module hardware handle (#neorv32_slink_t) */
@@ -47,12 +47,12 @@ enum NEORV32_SLINK_CTRL_enum {
   SLINK_CTRL_TX_HALF       = 12, /**< SLINK control register(12) (r/-): TX FIFO at least half full */
   SLINK_CTRL_TX_FULL       = 13, /**< SLINK control register(13) (r/-): TX FIFO full */
 
-  SLINK_CTRL_IRQ_RX_NEMPTY = 16, /**< SLINK control register(16) (r/w): RX interrupt if RX FIFO not empty */
-  SLINK_CTRL_IRQ_RX_HALF   = 17, /**< SLINK control register(17) (r/w): RX interrupt if RX FIFO at least half full */
-  SLINK_CTRL_IRQ_RX_FULL   = 18, /**< SLINK control register(18) (r/w): RX interrupt if RX FIFO full */
-  SLINK_CTRL_IRQ_TX_EMPTY  = 19, /**< SLINK control register(19) (r/w): TX interrupt if TX FIFO empty */
-  SLINK_CTRL_IRQ_TX_NHALF  = 20, /**< SLINK control register(20) (r/w): TX interrupt if TX FIFO not at least half full */
-  SLINK_CTRL_IRQ_TX_NFULL  = 21, /**< SLINK control register(21) (r/w): TX interrupt if TX FIFO not full */
+  SLINK_CTRL_IRQ_RX_NEMPTY = 16, /**< SLINK control register(16) (r/w): interrupt if RX FIFO not empty */
+  SLINK_CTRL_IRQ_RX_HALF   = 17, /**< SLINK control register(17) (r/w): interrupt if RX FIFO at least half full */
+  SLINK_CTRL_IRQ_RX_FULL   = 18, /**< SLINK control register(18) (r/w): interrupt if RX FIFO full */
+  SLINK_CTRL_IRQ_TX_EMPTY  = 19, /**< SLINK control register(19) (r/w): interrupt if TX FIFO empty */
+  SLINK_CTRL_IRQ_TX_NHALF  = 20, /**< SLINK control register(20) (r/w): interrupt if TX FIFO not at least half full */
+  SLINK_CTRL_IRQ_TX_NFULL  = 21, /**< SLINK control register(21) (r/w): interrupt if TX FIFO not full */
 
   SLINK_CTRL_RX_FIFO_LSB   = 24, /**< SLINK control register(24) (r/-): log2(RX FIFO size) LSB */
   SLINK_CTRL_RX_FIFO_MSB   = 27, /**< SLINK control register(27) (r/-): log2(RX FIFO size) MSB */
@@ -81,7 +81,7 @@ enum NEORV32_SLINK_STATUS_enum {
  **************************************************************************/
 /**@{*/
 int      neorv32_slink_available(void);
-void     neorv32_slink_setup(uint32_t rx_irq, uint32_t tx_irq);
+void     neorv32_slink_setup(uint32_t irq);
 void     neorv32_slink_rx_clear(void);
 void     neorv32_slink_tx_clear(void);
 int      neorv32_slink_get_rx_fifo_depth(void);
