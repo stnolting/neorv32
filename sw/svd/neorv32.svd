@@ -791,8 +791,7 @@
       <description>Primary universal asynchronous receiver and transmitter</description>
       <baseAddress>0xFFF50000</baseAddress>
 
-      <interrupt><name>UART0_RX_FIRQ</name><value>2</value></interrupt>
-      <interrupt><name>UART0_TX_FIRQ</name><value>3</value></interrupt>
+      <interrupt><name>UART0_FIRQ</name><value>2</value></interrupt>
 
       <addressBlock>
         <offset>0</offset>
@@ -937,8 +936,7 @@
       <description>Secondary universal asynchronous receiver and transmitter</description>
       <baseAddress>0xFFF60000</baseAddress>
 
-      <interrupt><name>UART1_RX_FIRQ</name><value>4</value></interrupt>
-      <interrupt><name>UART1_TX_FIRQ</name><value>5</value></interrupt>
+      <interrupt><name>UART1_FIRQ</name><value>3</value></interrupt>
 
       <addressBlock>
         <offset>0</offset>
