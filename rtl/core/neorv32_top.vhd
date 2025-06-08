@@ -307,8 +307,8 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- IRQs --
   type firq_enum_t is (
-    FIRQ_TWD, FIRQ_UART0_RX, FIRQ_UART0_TX, FIRQ_UART1_RX, FIRQ_UART1_TX, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI,
-    FIRQ_CFS, FIRQ_NEOLED, FIRQ_GPIO, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK, FIRQ_TRNG
+    FIRQ_TWD, FIRQ_UART0, FIRQ_UART1, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI, FIRQ_CFS,
+    FIRQ_NEOLED, FIRQ_GPIO, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK, FIRQ_TRNG
   );
   type firq_t is array (firq_enum_t) of std_ulogic;
   signal firq      : firq_t;
@@ -448,10 +448,10 @@ begin
   -- fast interrupt requests (FIRQs) --
   cpu_firq(0)  <= firq(FIRQ_TWD); -- highest priority
   cpu_firq(1)  <= firq(FIRQ_CFS);
-  cpu_firq(2)  <= firq(FIRQ_UART0_RX);
-  cpu_firq(3)  <= firq(FIRQ_UART0_TX);
-  cpu_firq(4)  <= firq(FIRQ_UART1_RX);
-  cpu_firq(5)  <= firq(FIRQ_UART1_TX);
+  cpu_firq(2)  <= firq(FIRQ_UART0);
+  cpu_firq(3)  <= firq(FIRQ_UART1);
+  cpu_firq(4)  <= '0'; -- reserved
+  cpu_firq(5)  <= '0'; -- reserved
   cpu_firq(6)  <= firq(FIRQ_SPI);
   cpu_firq(7)  <= firq(FIRQ_TWI);
   cpu_firq(8)  <= firq(FIRQ_GPIO);
@@ -1149,8 +1149,7 @@ begin
         uart_rxd_i  => uart0_rxd_i,
         uart_rtsn_o => uart0_rtsn_o,
         uart_ctsn_i => uart0_ctsn_i,
-        irq_rx_o    => firq(FIRQ_UART0_RX),
-        irq_tx_o    => firq(FIRQ_UART0_TX)
+        irq_o       => firq(FIRQ_UART0)
       );
     end generate;
 
@@ -1160,8 +1159,7 @@ begin
       uart0_txd_o            <= '0';
       uart0_rtsn_o           <= '1';
       clk_gen_en(CG_UART0)   <= '0';
-      firq(FIRQ_UART0_RX)    <= '0';
-      firq(FIRQ_UART0_TX)    <= '0';
+      firq(FIRQ_UART0)       <= '0';
     end generate;
 
 
@@ -1187,8 +1185,7 @@ begin
         uart_rxd_i  => uart1_rxd_i,
         uart_rtsn_o => uart1_rtsn_o,
         uart_ctsn_i => uart1_ctsn_i,
-        irq_rx_o    => firq(FIRQ_UART1_RX),
-        irq_tx_o    => firq(FIRQ_UART1_TX)
+        irq_o       => firq(FIRQ_UART1)
       );
     end generate;
 
@@ -1198,8 +1195,7 @@ begin
       uart1_txd_o            <= '0';
       uart1_rtsn_o           <= '1';
       clk_gen_en(CG_UART1)   <= '0';
-      firq(FIRQ_UART1_RX)    <= '0';
-      firq(FIRQ_UART1_TX)    <= '0';
+      firq(FIRQ_UART1)       <= '0';
     end generate;
 
 
