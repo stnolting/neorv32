@@ -233,8 +233,7 @@
       <description>Stream Link Interface</description>
       <baseAddress>0xFFEC0000</baseAddress>
 
-      <interrupt><name>SLINK_RX_FIRQ</name><value>14</value></interrupt>
-      <interrupt><name>SLINK_TX_FIRQ</name><value>15</value></interrupt>
+      <interrupt><name>SLINK_FIRQ</name><value>14</value></interrupt>
 
       <addressBlock>
         <offset>0</offset>
@@ -863,10 +862,10 @@
               <description>TX FIFO not at least half full</description>
             </field>
             <field>
-              <name>UART_CTRL_TX_FULL</name>
+              <name>UART_CTRL_TX_NFULL</name>
               <bitRange>[21:21]</bitRange>
               <access>read-only</access>
-              <description>TX FIFO full</description>
+              <description>TX FIFO not full</description>
             </field>
             <field>
               <name>UART_CTRL_IRQ_RX_NEMPTY</name>
@@ -892,6 +891,11 @@
               <name>UART_CTRL_IRQ_TX_NHALF</name>
               <bitRange>[26:26]</bitRange>
               <description>Fire IRQ if TX FIFO not at least half-full</description>
+            </field>
+            <field>
+              <name>UART_CTRL_IRQ_TX_NFULL</name>
+              <bitRange>[27:27]</bitRange>
+              <description>Fire IRQ if TX FIFO not full</description>
             </field>
             <field>
               <name>UART_CTRL_RX_CLR</name>
@@ -1336,6 +1340,8 @@
       <name>TRNG</name>
       <description>True random number generator</description>
       <baseAddress>0xFFFA0000</baseAddress>
+
+      <interrupt><name>TRNG_FIRQ</name><value>15</value></interrupt>
 
       <addressBlock>
         <offset>0</offset>

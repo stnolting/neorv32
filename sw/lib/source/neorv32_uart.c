@@ -180,8 +180,7 @@ void neorv32_uart_rtscts_disable(neorv32_uart_t *UARTx) {
  **************************************************************************/
 void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {
 
-  // wait for previous transfer to finish
-  while ((UARTx->CTRL & (1<<UART_CTRL_TX_FULL))); // wait for free space in TX FIFO
+  while ((UARTx->CTRL & (1<<UART_CTRL_TX_NFULL)) == 0); // wait for free space in TX FIFO
   UARTx->DATA = (uint32_t)c << UART_DATA_RTX_LSB;
 }
 
@@ -212,16 +211,11 @@ void neorv32_uart_tx_clear(neorv32_uart_t *UARTx) {
  * Check if UART TX is busy (transmitter busy or data left in TX buffer).
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
- * @return 0 if idle, 1 if busy
+ * @return 0 if idle, non-zero if busy
  **************************************************************************/
 int neorv32_uart_tx_busy(neorv32_uart_t *UARTx) {
 
-  if (UARTx->CTRL & (1 << UART_CTRL_TX_BUSY)) {  // TX engine busy
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(UARTx->CTRL & (1 << UART_CTRL_TX_BUSY));
 }
 
 
@@ -233,12 +227,7 @@ int neorv32_uart_tx_busy(neorv32_uart_t *UARTx) {
  **************************************************************************/
 int neorv32_uart_tx_free(neorv32_uart_t *UARTx) {
 
-  if (UARTx->CTRL & (1<<UART_CTRL_TX_FULL)) {
-    return 0;
-  }
-  else {
-    return 1;
-  }
+  return (int)(UARTx->CTRL & (1<<UART_CTRL_TX_NFULL));
 }
 
 
@@ -264,11 +253,8 @@ void neorv32_uart_tx_put(neorv32_uart_t *UARTx, char c) {
  **************************************************************************/
 char neorv32_uart_getc(neorv32_uart_t *UARTx) {
 
-  while (1) {
-    if (UARTx->CTRL & (1<<UART_CTRL_RX_NEMPTY)) { // data available?
-      return (char)(UARTx->DATA >> UART_DATA_RTX_LSB);
-    }
-  }
+  while ((UARTx->CTRL & (1<<UART_CTRL_RX_NEMPTY)) == 0); // wait until data available
+  return (char)(UARTx->DATA >> UART_DATA_RTX_LSB);
 }
 
 
@@ -279,16 +265,11 @@ char neorv32_uart_getc(neorv32_uart_t *UARTx) {
  * @note Use neorv32_uart_char_received_get(void) to get the char.
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
- * @return 1 when a char has been received, 0 otherwise.
+ * @return non-zero when a char has been received, 0 otherwise.
  **************************************************************************/
 int neorv32_uart_char_received(neorv32_uart_t *UARTx) {
 
-  if (UARTx->CTRL & (1<<UART_CTRL_RX_NEMPTY)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(UARTx->CTRL & (1<<UART_CTRL_RX_NEMPTY));
 }
 
 
