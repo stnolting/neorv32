@@ -52,20 +52,18 @@ enum NEORV32_UART_CTRL_enum {
   UART_CTRL_BAUD7         = 13, /**< UART control register(13) (r/w): BAUD rate divisor, bit 7 */
   UART_CTRL_BAUD8         = 14, /**< UART control register(14) (r/w): BAUD rate divisor, bit 8 */
   UART_CTRL_BAUD9         = 15, /**< UART control register(15) (r/w): BAUD rate divisor, bit 9 */
-
   UART_CTRL_RX_NEMPTY     = 16, /**< UART control register(16) (r/-): RX FIFO not empty */
   UART_CTRL_RX_HALF       = 17, /**< UART control register(17) (r/-): RX FIFO at least half-full */
   UART_CTRL_RX_FULL       = 18, /**< UART control register(18) (r/-): RX FIFO full */
   UART_CTRL_TX_EMPTY      = 19, /**< UART control register(19) (r/-): TX FIFO empty */
   UART_CTRL_TX_NHALF      = 20, /**< UART control register(20) (r/-): TX FIFO not at least half-full */
-  UART_CTRL_TX_FULL       = 21, /**< UART control register(21) (r/-): TX FIFO full */
-
+  UART_CTRL_TX_NFULL      = 21, /**< UART control register(21) (r/-): TX FIFO not full */
   UART_CTRL_IRQ_RX_NEMPTY = 22, /**< UART control register(22) (r/w): Fire IRQ if RX FIFO not empty */
   UART_CTRL_IRQ_RX_HALF   = 23, /**< UART control register(23) (r/w): Fire IRQ if RX FIFO at least half-full */
   UART_CTRL_IRQ_RX_FULL   = 24, /**< UART control register(24) (r/w): Fire IRQ if RX FIFO full */
   UART_CTRL_IRQ_TX_EMPTY  = 25, /**< UART control register(25) (r/w): Fire IRQ if TX FIFO empty */
   UART_CTRL_IRQ_TX_NHALF  = 26, /**< UART control register(26) (r/w): Fire IRQ if TX FIFO not at least half-full */
-
+  UART_CTRL_IRQ_TX_NFULL  = 27, /**< UART control register(27) (r/w): Fire IRQ if TX FIFO not full */
   UART_CTRL_RX_CLR        = 28, /**< UART control register(28) (r/w): Clear RX FIFO, flag auto-clears */
   UART_CTRL_TX_CLR        = 29, /**< UART control register(29) (r/w): Clear TX FIFO, flag auto-clears */
   UART_CTRL_RX_OVER       = 30, /**< UART control register(30) (r/-): RX FIFO overflow */
