@@ -63,7 +63,7 @@ enum NEORV32_UART_CTRL_enum {
   UART_CTRL_IRQ_RX_FULL   = 24, /**< UART control register(24) (r/w): Fire IRQ if RX FIFO full */
   UART_CTRL_IRQ_TX_EMPTY  = 25, /**< UART control register(25) (r/w): Fire IRQ if TX FIFO empty */
   UART_CTRL_IRQ_TX_NHALF  = 26, /**< UART control register(26) (r/w): Fire IRQ if TX FIFO not at least half-full */
-  UART_CTRL_IRQ_TX_nfUll  = 27, /**< UART control register(27) (r/w): Fire IRQ if TX FIFO not full */
+  UART_CTRL_IRQ_TX_NFULL  = 27, /**< UART control register(27) (r/w): Fire IRQ if TX FIFO not full */
   UART_CTRL_RX_CLR        = 28, /**< UART control register(28) (r/w): Clear RX FIFO, flag auto-clears */
   UART_CTRL_TX_CLR        = 29, /**< UART control register(29) (r/w): Clear TX FIFO, flag auto-clears */
   UART_CTRL_RX_OVER       = 30, /**< UART control register(30) (r/-): RX FIFO overflow */
