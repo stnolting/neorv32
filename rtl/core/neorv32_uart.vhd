@@ -25,8 +25,8 @@ entity neorv32_uart is
   generic (
     SIM_MODE_EN  : boolean; -- enable simulation-mode option
     SIM_LOG_FILE : string;  -- name of SIM mode log file
-    UART_RX_FIFO : natural range 1 to 2**15; -- RX fifo depth, has to be a power of two, min 1
-    UART_TX_FIFO : natural range 1 to 2**15  -- TX fifo depth, has to be a power of two, min 1
+    UART_RX_FIFO : natural range 1 to 2**15; -- RX FIFO depth, has to be a power of two, min 1
+    UART_TX_FIFO : natural range 1 to 2**15  -- TX FIFO depth, has to be a power of two, min 1
   );
   port (
     clk_i       : in  std_ulogic; -- global clock line
@@ -57,19 +57,18 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant ctrl_prsc2_c         : natural :=  5; -- r/w: baud prescaler bit 2
   constant ctrl_baud0_c         : natural :=  6; -- r/w: baud divisor bit 0
   constant ctrl_baud9_c         : natural := 15; -- r/w: baud divisor bit 9
-  --
   constant ctrl_rx_nempty_c     : natural := 16; -- r/-: RX FIFO not empty
   constant ctrl_rx_half_c       : natural := 17; -- r/-: RX FIFO at least half-full
   constant ctrl_rx_full_c       : natural := 18; -- r/-: RX FIFO full
   constant ctrl_tx_empty_c      : natural := 19; -- r/-: TX FIFO empty
   constant ctrl_tx_nhalf_c      : natural := 20; -- r/-: TX FIFO not at least half-full
-  constant ctrl_tx_full_c       : natural := 21; -- r/-: TX FIFO full
+  constant ctrl_tx_nfull_c      : natural := 21; -- r/-: TX FIFO not full
   constant ctrl_irq_rx_nempty_c : natural := 22; -- r/w: RX FIFO not empty
   constant ctrl_irq_rx_half_c   : natural := 23; -- r/w: RX FIFO at least half-full
   constant ctrl_irq_rx_full_c   : natural := 24; -- r/w: RX FIFO full
   constant ctrl_irq_tx_empty_c  : natural := 25; -- r/w: TX FIFO empty
   constant ctrl_irq_tx_nhalf_c  : natural := 26; -- r/w: TX FIFO not at least half-full
-  --
+  constant ctrl_irq_tx_nfull_c  : natural := 27; -- r/w: TX FIFO not full
   constant ctrl_rx_clr_c        : natural := 28; -- r/w: Clear RX FIFO, flag auto-clears
   constant ctrl_tx_clr_c        : natural := 29; -- r/w: Clear TX FIFO, flag auto-clears
   constant ctrl_rx_over_c       : natural := 30; -- r/-: RX FIFO overflow
@@ -78,10 +77,10 @@ architecture neorv32_uart_rtl of neorv32_uart is
   -- data register bits --
   constant data_rtx_lsb_c        : natural :=  0; -- r/w: RX/TX data LSB
   constant data_rtx_msb_c        : natural :=  7; -- r/w: RX/TX data MSB
-  constant data_rx_fifo_size_lsb : natural :=  8; -- r/-: log2(RX fifo size) LSB
-  constant data_rx_fifo_size_msb : natural := 11; -- r/-: log2(RX fifo size) MSB
-  constant data_tx_fifo_size_lsb : natural := 12; -- r/-: log2(TX fifo size) LSB
-  constant data_tx_fifo_size_msb : natural := 15; -- r/-: log2(TX fifo size) MSB
+  constant data_rx_fifo_size_lsb : natural :=  8; -- r/-: log2(RX FIFO size) LSB
+  constant data_rx_fifo_size_msb : natural := 11; -- r/-: log2(RX FIFO size) MSB
+  constant data_tx_fifo_size_lsb : natural := 12; -- r/-: log2(TX FIFO size) LSB
+  constant data_tx_fifo_size_msb : natural := 15; -- r/-: log2(TX FIFO size) MSB
 
   -- helpers --
   constant log2_rx_fifo_c : natural := index_size_f(UART_RX_FIFO);
@@ -102,6 +101,7 @@ architecture neorv32_uart_rtl of neorv32_uart is
     irq_rx_full   : std_ulogic;
     irq_tx_empty  : std_ulogic;
     irq_tx_nhalf  : std_ulogic;
+    irq_tx_nfull  : std_ulogic;
     clr_rx        : std_ulogic;
     clr_tx        : std_ulogic;
   end record;
@@ -163,6 +163,7 @@ begin
       ctrl.irq_rx_full   <= '0';
       ctrl.irq_tx_empty  <= '0';
       ctrl.irq_tx_nhalf  <= '0';
+      ctrl.irq_tx_nfull  <= '0';
       ctrl.clr_rx        <= '0';
       ctrl.clr_tx        <= '0';
     elsif rising_edge(clk_i) then
@@ -181,12 +182,12 @@ begin
             ctrl.hwfc_en       <= bus_req_i.data(ctrl_hwfc_en_c);
             ctrl.prsc          <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
             ctrl.baud          <= bus_req_i.data(ctrl_baud9_c downto ctrl_baud0_c);
-            --
             ctrl.irq_rx_nempty <= bus_req_i.data(ctrl_irq_rx_nempty_c);
             ctrl.irq_rx_half   <= bus_req_i.data(ctrl_irq_rx_half_c);
             ctrl.irq_rx_full   <= bus_req_i.data(ctrl_irq_rx_full_c);
             ctrl.irq_tx_empty  <= bus_req_i.data(ctrl_irq_tx_empty_c);
             ctrl.irq_tx_nhalf  <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
+            ctrl.irq_tx_nfull  <= bus_req_i.data(ctrl_irq_tx_nfull_c);
             ctrl.clr_rx        <= bus_req_i.data(ctrl_rx_clr_c);
             ctrl.clr_tx        <= bus_req_i.data(ctrl_tx_clr_c);
           end if;
@@ -197,20 +198,18 @@ begin
             bus_rsp_o.data(ctrl_hwfc_en_c)                   <= ctrl.hwfc_en;
             bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
             bus_rsp_o.data(ctrl_baud9_c downto ctrl_baud0_c) <= ctrl.baud;
-            --
             bus_rsp_o.data(ctrl_rx_nempty_c)                 <= rx_fifo.avail;
             bus_rsp_o.data(ctrl_rx_half_c)                   <= rx_fifo.half;
             bus_rsp_o.data(ctrl_rx_full_c)                   <= not rx_fifo.free;
             bus_rsp_o.data(ctrl_tx_empty_c)                  <= not tx_fifo.avail;
             bus_rsp_o.data(ctrl_tx_nhalf_c)                  <= not tx_fifo.half;
-            bus_rsp_o.data(ctrl_tx_full_c)                   <= not tx_fifo.free;
-            --
+            bus_rsp_o.data(ctrl_tx_nfull_c)                  <= tx_fifo.free;
             bus_rsp_o.data(ctrl_irq_rx_nempty_c)             <= ctrl.irq_rx_nempty;
             bus_rsp_o.data(ctrl_irq_rx_half_c)               <= ctrl.irq_rx_half;
             bus_rsp_o.data(ctrl_irq_rx_full_c)               <= ctrl.irq_rx_full;
             bus_rsp_o.data(ctrl_irq_tx_empty_c)              <= ctrl.irq_tx_empty;
             bus_rsp_o.data(ctrl_irq_tx_nhalf_c)              <= ctrl.irq_tx_nhalf;
-            --
+            bus_rsp_o.data(ctrl_irq_tx_nfull_c)              <= ctrl.irq_tx_nfull;
             bus_rsp_o.data(ctrl_rx_over_c)                   <= rx_engine.over;
             bus_rsp_o.data(ctrl_tx_busy_c)                   <= tx_engine.busy or tx_fifo.avail;
           else -- data register
@@ -219,7 +218,6 @@ begin
             bus_rsp_o.data(data_tx_fifo_size_msb downto data_tx_fifo_size_lsb) <= std_ulogic_vector(to_unsigned(log2_tx_fifo_c, 4));
           end if;
         end if;
-
       end if;
     end if;
   end process bus_access;
@@ -268,8 +266,9 @@ begin
       irq_tx_o <= '0';
     elsif rising_edge(clk_i) then
       irq_tx_o <= ctrl.enable and (
-                  (ctrl.irq_tx_empty and (not tx_fifo.avail)) or -- fire IRQ if TX FIFO empty
-                  (ctrl.irq_tx_nhalf and (not tx_fifo.half)));   -- fire IRQ if TX FIFO not at least half full
+                  (ctrl.irq_tx_empty and (not tx_fifo.avail)) or -- IRQ if TX FIFO empty
+                  (ctrl.irq_tx_nhalf and (not tx_fifo.half))  or -- IRQ if TX FIFO not at least half full
+                  (ctrl.irq_tx_nfull and tx_fifo.free));         -- IRQ if TX FIFO not full
     end if;
   end process tx_irq_generator;
 
@@ -313,9 +312,9 @@ begin
       irq_rx_o <= '0';
     elsif rising_edge(clk_i) then
       irq_rx_o <= ctrl.enable and (
-                  (ctrl.irq_rx_nempty and rx_fifo.avail) or     -- fire IRQ if RX FIFO not empty
-                  (ctrl.irq_rx_half   and rx_fifo.half)  or     -- fire IRQ if RX FIFO at least half full
-                  (ctrl.irq_rx_full   and (not rx_fifo.free))); -- fire IRQ if RX FIFO full
+                  (ctrl.irq_rx_nempty and rx_fifo.avail) or     -- IRQ if RX FIFO not empty
+                  (ctrl.irq_rx_half   and rx_fifo.half)  or     -- IRQ if RX FIFO at least half full
+                  (ctrl.irq_rx_full   and (not rx_fifo.free))); -- IRQ if RX FIFO full
     end if;
   end process rx_irq_generator;
 
