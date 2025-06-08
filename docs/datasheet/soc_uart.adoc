@@ -5,16 +5,16 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_uart.vhd |
-| Software driver files:  | neorv32_uart.c | link:https://stnolting.github.io/neorv32/sw/neorv32__uart_8c.html[Online software reference (Doxygen)]
-|                         | neorv32_uart.h | link:https://stnolting.github.io/neorv32/sw/neorv32__uart_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `uart0_txd_o`  | serial transmitter output
-|                         | `uart0_rxd_i`  | serial receiver input
-|                         | `uart0_rtsn_o` | flow control: RX ready to receive, low-active
-|                         | `uart0_ctsn_i` | flow control: RX ready to receive, low-active
-| Configuration generics: | `IO_UART0_EN`   | implement UART0 when `true`
-|                         | `UART0_RX_FIFO` | RX FIFO depth (power of 2, min 1)
-|                         | `UART0_TX_FIFO` | TX FIFO depth (power of 2, min 1)
+| Hardware source files:  | neorv32_uart.vhd   |
+| Software driver files:  | neorv32_uart.c     | link:https://stnolting.github.io/neorv32/sw/neorv32__uart_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_uart.h     | link:https://stnolting.github.io/neorv32/sw/neorv32__uart_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | `uart0_txd_o`      | serial transmitter output
+|                         | `uart0_rxd_i`      | serial receiver input
+|                         | `uart0_rtsn_o`     | flow control: RX ready to receive, low-active
+|                         | `uart0_ctsn_i`     | flow control: RX ready to receive, low-active
+| Configuration generics: | `IO_UART0_EN`      | implement UART0 when `true`
+|                         | `UART0_RX_FIFO`    | RX FIFO depth (power of 2, min 1)
+|                         | `UART0_TX_FIFO`    | TX FIFO depth (power of 2, min 1)
 | CPU interrupts:         | fast IRQ channel 2 | RX interrupt
 |                         | fast IRQ channel 3 | TX interrupt (see <<_processor_interrupts>>)
 |=======================
@@ -40,6 +40,11 @@ The UART provides individual data FIFOs for RX and TX to allow data transmission
 The sizes of these FIFOs can be configured via the according configuration generics (`UART0_RX_FIFO` and `UART0_TX_FIFO`).
 Both FIFOs a re automatically cleared when disabling the module via the `UART_CTRL_EN` flag. However, the FIFOs can
 also be cleared individually by setting the `UART_CTRL_RX_CLR` / `UART_CTRL_TX_CLR` flags.
+
+.RX/TX FIFO Size
+[TIP]
+Software can retrieve the configured sizes of the RX and TX FIFO via the according `UART_DATA_RX_FIFO_SIZE` and
+`UART_DATA_TX_FIFO_SIZE` bits from the `DATA` register.
 
 
 **Theory of Operation**
@@ -71,23 +76,10 @@ is cleared only by disabling the module via `UART_CTRL_EN`.
 
 The UART module provides independent interrupt channels for RX and TX. These interrupts are triggered by certain RX and TX
 FIFO levels. The actual configuration is programmed independently for the RX and TX interrupt channel via the control register's
-`UART_CTRL_IRQ_RX_*` and `UART_CTRL_IRQ_TX_*` bits:
-
-. **RX IRQ** The RX interrupt can be triggered by three different RX FIFO level states: If `UART_CTRL_IRQ_RX_NEMPTY` is set the
-interrupt fires if the RX FIFO is _not_ empty (e.g. when incoming data is available). If `UART_CTRL_IRQ_RX_HALF` is set the RX IRQ
-fires if the RX FIFO is at least half-full. If `UART_CTRL_IRQ_RX_FULL` the interrupt fires if the RX FIFO is full. Note that all
-these programmable conditions are logically OR-ed (interrupt fires if any enabled conditions is true).
-. **TX IRQ** The TX interrupt can be triggered by two different TX FIFO level states: If `UART_CTRL_IRQ_TX_EMPTY` is set the
-interrupt fires if the TX FIFO is empty. If `UART_CTRL_IRQ_TX_NHALF` is set the interrupt fires if the TX FIFO is _not_ at least
-half full. Note that all these programmable conditions are logically OR-ed (interrupt fires if any enabled conditions is true).
-
-Once an UART interrupt has fired it remains pending until the actual cause of the interrupt is resolved; for
-example if just the `UART_CTRL_IRQ_RX_NEMPTY` bit is set, the RX interrupt will keep firing until the RX FIFO is empty again.
-
-.RX/TX FIFO Size
-[TIP]
-Software can retrieve the configured sizes of the RX and TX FIFO via the according `UART_DATA_RX_FIFO_SIZE` and
-`UART_DATA_TX_FIFO_SIZE` bits from the `DATA` register.
+`UART_CTRL_IRQ_RX_*` and `UART_CTRL_IRQ_TX_*` bits, respectively. The available interrupt conditions correspond to the RX and TX
+FIFO status flags `UART_CTRL_RX_*` and `UART_CTRL_TX_*`. Note that all these programmable conditions are logically OR-ed
+(according interrupt fires if any enabled conditions is met). The according interupt will keep triggering until all enabled
+trigger causes are resolved.
 
 
 **RTS/CTS Hardware Flow Control**
@@ -137,13 +129,13 @@ Both file are created in the simulation's home folder.
                                   <|`18`    `UART_CTRL_RX_FULL`                 ^| r/- <| RX FIFO full
                                   <|`19`    `UART_CTRL_TX_EMPTY`                ^| r/- <| TX FIFO empty
                                   <|`20`    `UART_CTRL_TX_NHALF`                ^| r/- <| TX FIFO not at least half-full
-                                  <|`21`    `UART_CTRL_TX_FULL`                 ^| r/- <| TX FIFO full
-                                  <|`22`    `UART_CTRL_IRQ_RX_NEMPTY`           ^| r/w <| fire IRQ if RX FIFO not empty
-                                  <|`23`    `UART_CTRL_IRQ_RX_HALF`             ^| r/w <| fire IRQ if RX FIFO at least half-full
-                                  <|`24`    `UART_CTRL_IRQ_RX_FULL`             ^| r/w <| fire IRQ if RX FIFO full
-                                  <|`25`    `UART_CTRL_IRQ_TX_EMPTY`            ^| r/w <| fire IRQ if TX FIFO empty
-                                  <|`26`    `UART_CTRL_IRQ_TX_NHALF`            ^| r/w <| fire IRQ if TX not at least half full
-                                  <|`27`    -                                   ^| r/- <| _reserved_ read as zero
+                                  <|`21`    `UART_CTRL_TX_NFULL`                ^| r/- <| TX FIFO not full
+                                  <|`22`    `UART_CTRL_IRQ_RX_NEMPTY`           ^| r/w <| fire RX-IRQ if RX FIFO not empty
+                                  <|`23`    `UART_CTRL_IRQ_RX_HALF`             ^| r/w <| fire RX-IRQ if RX FIFO at least half-full
+                                  <|`24`    `UART_CTRL_IRQ_RX_FULL`             ^| r/w <| fire RX-IRQ if RX FIFO full
+                                  <|`25`    `UART_CTRL_IRQ_TX_EMPTY`            ^| r/w <| fire TX-IRQ if TX FIFO empty
+                                  <|`26`    `UART_CTRL_IRQ_TX_NHALF`            ^| r/w <| fire TX-IRQ if TX not at least half full
+                                  <|`27`    `UART_CTRL_IRQ_TX_NHALF`            ^| r/w <| fire TX-IRQ if TX not full
                                   <|`28`    `UART_CTRL_RX_CLR`                  ^| r/w <| Clear RX FIFO, flag auto-clears
                                   <|`29`    `UART_CTRL_TX_CLR`                  ^| r/w <| Clear TX FIFO, flag auto-clears
                                   <|`30`    `UART_CTRL_RX_OVER`                 ^| r/- <| RX FIFO overflow; cleared by disabling the module
@@ -164,19 +156,18 @@ Both file are created in the simulation's home folder.
 [cols="<3,<3,<4"]
 [frame="topbot",grid="none"]
 |=======================
-| Hardware source files:  | neorv32_uart.vhd |
-| Software driver files:  | neorv32_uart.c |
-|                         | neorv32_uart.h |
-| Top entity ports:       | `uart1_txd_o`  | serial transmitter output
-|                         | `uart1_rxd_i`  | serial receiver input
-|                         | `uart1_rtsn_o` | flow control: RX ready to receive, low-active
-|                         | `uart1_ctsn_i` | flow control: RX ready to receive, low-active
-| Configuration generics: | `IO_UART1_EN`   | implement UART1 when `true`
-|                         | `UART1_RX_FIFO` | RX FIFO depth (power of 2, min 1)
-|                         | `UART1_TX_FIFO` | TX FIFO depth (power of 2, min 1)
+| Hardware source files:  | neorv32_uart.vhd   |
+| Software driver files:  | neorv32_uart.c     |
+|                         | neorv32_uart.h     |
+| Top entity ports:       | `uart1_txd_o`      | serial transmitter output
+|                         | `uart1_rxd_i`      | serial receiver input
+|                         | `uart1_rtsn_o`     | flow control: RX ready to receive, low-active
+|                         | `uart1_ctsn_i`     | flow control: RX ready to receive, low-active
+| Configuration generics: | `IO_UART1_EN`      | implement UART1 when `true`
+|                         | `UART1_RX_FIFO`    | RX FIFO depth (power of 2, min 1)
+|                         | `UART1_TX_FIFO`    | TX FIFO depth (power of 2, min 1)
 | CPU interrupts:         | fast IRQ channel 4 | RX interrupt
 |                         | fast IRQ channel 5 | TX interrupt (see <<_processor_interrupts>>)
-| Access restrictions:  2+| privileged access only, non-32-bit write accesses are ignored
 |=======================
 
 
