@@ -15,8 +15,7 @@
 | Configuration generics: | `IO_UART0_EN`      | implement UART0 when `true`
 |                         | `UART0_RX_FIFO`    | RX FIFO depth (power of 2, min 1)
 |                         | `UART0_TX_FIFO`    | TX FIFO depth (power of 2, min 1)
-| CPU interrupts:         | fast IRQ channel 2 | RX interrupt
-|                         | fast IRQ channel 3 | TX interrupt (see <<_processor_interrupts>>)
+| CPU interrupts:         | fast IRQ channel 2 | Programmable FIFO status interrupt (see <<_processor_interrupts>>)
 |=======================
 
 
@@ -72,14 +71,13 @@ the `UART_CTRL_RX_NEMPTY` flag becomes set. The `UART_CTRL_RX_OVER` will be set 
 is cleared only by disabling the module via `UART_CTRL_EN`.
 
 
-**UART Interrupts**
+**UART Interrupt**
 
-The UART module provides independent interrupt channels for RX and TX. These interrupts are triggered by certain RX and TX
-FIFO levels. The actual configuration is programmed independently for the RX and TX interrupt channel via the control register's
-`UART_CTRL_IRQ_RX_*` and `UART_CTRL_IRQ_TX_*` bits, respectively. The available interrupt conditions correspond to the RX and TX
-FIFO status flags `UART_CTRL_RX_*` and `UART_CTRL_TX_*`. Note that all these programmable conditions are logically OR-ed
-(according interrupt fires if any enabled conditions is met). The according interupt will keep triggering until all enabled
-trigger causes are resolved.
+The UART module provides a single interrupt request that can be used to signal certain RX/TX data FIFO conditions.
+The interrupt conditions are based on the RX/TX FIFO status flags `UART_CTRL_RX_*` / `UART_CTRL_TX_*` and are
+configured via the according `UART_CTRL_IRQ_RX_*` / `UART_CTRL_IRQ_TX_*` bits. The UART interrupt will fire when the
+module is enabled (`SLINK_CTRL_EN`) and **any** of the selected interrupt conditions is met. Hence, all enabled interrupt
+conditions are logically OR-ed. The interrupt remains active until all interrupt-causing conditions are resolved.
 
 
 **RTS/CTS Hardware Flow Control**
@@ -166,8 +164,7 @@ Both file are created in the simulation's home folder.
 | Configuration generics: | `IO_UART1_EN`      | implement UART1 when `true`
 |                         | `UART1_RX_FIFO`    | RX FIFO depth (power of 2, min 1)
 |                         | `UART1_TX_FIFO`    | TX FIFO depth (power of 2, min 1)
-| CPU interrupts:         | fast IRQ channel 4 | RX interrupt
-|                         | fast IRQ channel 5 | TX interrupt (see <<_processor_interrupts>>)
+| CPU interrupts:         | fast IRQ channel 3 | Programmable FIFO status interrupt (see <<_processor_interrupts>>)
 |=======================
 
 
