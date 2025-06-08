@@ -257,14 +257,14 @@ begin
     gpio_i         => gpio,
     -- primary UART0 --
     uart0_txd_o    => uart0_txd,
-    uart0_rxd_i    => uart0_txd,
+    uart0_rxd_i    => uart1_txd,
     uart0_rtsn_o   => uart0_ctsn,
-    uart0_ctsn_i   => uart0_ctsn,
+    uart0_ctsn_i   => uart1_ctsn,
     -- secondary UART1 --
     uart1_txd_o    => uart1_txd,
-    uart1_rxd_i    => uart1_txd,
+    uart1_rxd_i    => uart0_txd,
     uart1_rtsn_o   => uart1_ctsn,
-    uart1_ctsn_i   => uart1_ctsn,
+    uart1_ctsn_i   => uart0_ctsn,
     -- SPI --
     spi_clk_o      => spi_clk,
     spi_dat_o      => spi_do,
