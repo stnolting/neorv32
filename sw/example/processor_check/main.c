@@ -1084,48 +1084,58 @@ int main() {
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] FIRQ1 (CFS) ", cnt_test);
-  trap_cause = trap_never_c;
   PRINT_STANDARD("[n.a.]\n");
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 2 (UART0.RX)
+  // Fast interrupt channel 2 (UART0)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ2 (UART0.RX) ", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ2 (UART0) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART0)) {
+  if (neorv32_uart_available(NEORV32_UART0) && neorv32_uart_available(NEORV32_UART1)) {
     trap_cause = trap_never_c;
     cnt_test++;
 
     // wait for UART to finish transmitting
-    while(neorv32_uart0_tx_busy());
+    while (neorv32_uart_tx_busy(NEORV32_UART0));
 
-    // backup current UART configuration
+    // backup current UART configurations
     tmp_a = NEORV32_UART0->CTRL;
-    // enable IRQ if RX FIFO not empty
-    neorv32_uart0_setup(BAUD_RATE, 1 << UART_CTRL_IRQ_RX_NEMPTY);
-    // make sure sim mode is disabled
-    NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
+    tmp_b = NEORV32_UART1->CTRL;
+
+    // setup UARTs, UART0: IRQ if RX FIFO not empty
+    neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, 1 << UART_CTRL_IRQ_RX_NEMPTY);
+    NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE); // make sure sim mode is disabled
+    neorv32_uart_rtscts_enable(NEORV32_UART0);
+    NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
+
     // clear FIFOs
-    neorv32_uart0_rx_clear();
-    neorv32_uart0_tx_clear();
+    neorv32_uart_rx_clear(NEORV32_UART0);
+    neorv32_uart_tx_clear(NEORV32_UART0);
+    neorv32_uart_rx_clear(NEORV32_UART1);
+    neorv32_uart_tx_clear(NEORV32_UART1);
 
     // enable fast interrupt
-    neorv32_cpu_csr_write(CSR_MIE, 1 << UART0_RX_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << UART0_FIRQ_ENABLE);
 
-    neorv32_uart0_putc(0);
-    while(neorv32_uart0_tx_busy());
+    // send a char to trigger interrupt
+    neorv32_uart_putc(NEORV32_UART1, 0x18);
+    while (neorv32_uart_tx_busy(NEORV32_UART0));
 
     // wait for interrupt
-    asm volatile ("nop");
-    asm volatile ("nop");
+    neorv32_cpu_sleep();
 
+    // disable interrupts
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    // restore original configuration
-    NEORV32_UART0->CTRL = tmp_a;
+    int uart0_test_avail = neorv32_uart_char_received(NEORV32_UART0);
+    char uart0_test_data = neorv32_uart_char_received_get(NEORV32_UART0);
 
-    if (trap_cause == UART0_RX_TRAP_CODE) {
+    // restore original configurations
+    NEORV32_UART0->CTRL = tmp_a;
+    NEORV32_UART1->CTRL = tmp_b;
+
+    if ((trap_cause == UART0_TRAP_CODE) && (uart0_test_avail) && (uart0_test_data == 0x18)) {
       test_ok();
     }
     else {
@@ -1138,43 +1148,54 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 3 (UART0.TX)
+  // Fast interrupt channel 3 (UART1)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ3 (UART0.TX) ", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ3 (UART1) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART0)) {
+  if (neorv32_uart_available(NEORV32_UART0) && neorv32_uart_available(NEORV32_UART1)) {
     trap_cause = trap_never_c;
     cnt_test++;
 
     // wait for UART to finish transmitting
-    while(neorv32_uart0_tx_busy());
+    while (neorv32_uart_tx_busy(NEORV32_UART1));
 
-    // backup current UART configuration
+    // backup current UART configurations
     tmp_a = NEORV32_UART0->CTRL;
-    // enable IRQ if TX FIFO empty
-    neorv32_uart0_setup(BAUD_RATE, 1 << UART_CTRL_IRQ_TX_EMPTY);
-    // make sure sim mode is disabled
-    NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
-    // clear FIFOs
-    neorv32_uart0_rx_clear();
-    neorv32_uart0_tx_clear();
+    tmp_b = NEORV32_UART1->CTRL;
 
-    neorv32_uart0_putc(0);
-    while(neorv32_uart0_tx_busy());
+    // setup UARTs, UART1: IRQ if TX FIFO empty
+    neorv32_uart_setup(NEORV32_UART1, BAUD_RATE, 1 << UART_CTRL_IRQ_TX_EMPTY);
+    NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_SIM_MODE); // make sure sim mode is disabled
+    neorv32_uart_rtscts_enable(NEORV32_UART1);
+    NEORV32_UART0->CTRL = NEORV32_UART1->CTRL;
+
+    // clear FIFOs
+    neorv32_uart_rx_clear(NEORV32_UART0);
+    neorv32_uart_tx_clear(NEORV32_UART0);
+    neorv32_uart_rx_clear(NEORV32_UART1);
+    neorv32_uart_tx_clear(NEORV32_UART1);
+
+    // send a char to trigger interrupt
+    neorv32_uart_putc(NEORV32_UART1, 0x81);
+    while (neorv32_uart_tx_busy(NEORV32_UART1));
 
     // UART0 TX interrupt enable
-    neorv32_cpu_csr_write(CSR_MIE, 1 << UART0_TX_FIRQ_ENABLE);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << UART1_FIRQ_ENABLE);
 
     // wait for interrupt
-    asm volatile ("nop");
-    asm volatile ("nop");
+    neorv32_cpu_sleep();
 
+    int uart1_test_avail = neorv32_uart_char_received(NEORV32_UART0);
+    char uart1_test_data = neorv32_uart_char_received_get(NEORV32_UART0);
+
+    // disable interrupts
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    // restore original configuration
+    // restore original configurations
     NEORV32_UART0->CTRL = tmp_a;
+    NEORV32_UART1->CTRL = tmp_b;
 
-    if (trap_cause == UART0_TX_TRAP_CODE) {
+    if ((trap_cause == UART1_TRAP_CODE) && (uart1_test_avail) && (uart1_test_data == 0x81)) {
       test_ok();
     }
     else {
@@ -1187,95 +1208,17 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 4 (UART1.RX)
+  // Fast interrupt channel 4 (reserved)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ4 (UART1.RX) ", cnt_test);
-
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1)) {
-    trap_cause = trap_never_c;
-    cnt_test++;
-
-    // backup current UART1 configuration
-    tmp_a = NEORV32_UART1->CTRL;
-    // enable IRQ if RX FIFO not empty
-    neorv32_uart1_setup(BAUD_RATE, 1 << UART_CTRL_IRQ_RX_NEMPTY);
-    // make sure sim mode is disabled
-    NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
-    // clear FIFOs
-    neorv32_uart1_rx_clear();
-    neorv32_uart1_tx_clear();
-
-    // UART1 RX interrupt enable
-    neorv32_cpu_csr_write(CSR_MIE, 1 << UART1_RX_FIRQ_ENABLE);
-
-    neorv32_uart1_putc(0);
-    while(neorv32_uart1_tx_busy());
-
-    // wait for interrupt
-    asm volatile ("nop");
-    asm volatile ("nop");
-
-    neorv32_cpu_csr_write(CSR_MIE, 0);
-
-    // restore original configuration
-    NEORV32_UART1->CTRL = tmp_a;
-
-    if (trap_cause == UART1_RX_TRAP_CODE) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
+  PRINT_STANDARD("[%i] FIRQ4 (reserved) ", cnt_test);
+  PRINT_STANDARD("[n.a.]\n");
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 5 (UART1.TX)
+  // Fast interrupt channel 5 (reserved)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ5 (UART1.TX) ", cnt_test);
-
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1)) {
-    trap_cause = trap_never_c;
-    cnt_test++;
-
-    // backup current UART1 configuration
-    tmp_a = NEORV32_UART1->CTRL;
-    // enable IRQ if TX FIFO empty
-    neorv32_uart1_setup(BAUD_RATE, 1 << UART_CTRL_IRQ_TX_EMPTY);
-    // make sure sim mode is disabled
-    NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
-    // clear FIFOs
-    neorv32_uart1_rx_clear();
-    neorv32_uart1_tx_clear();
-
-    neorv32_uart1_putc(0);
-    while(neorv32_uart1_tx_busy());
-
-    // UART0 TX interrupt enable
-    neorv32_cpu_csr_write(CSR_MIE, 1 << UART1_TX_FIRQ_ENABLE);
-
-    // wait for interrupt
-    asm volatile ("nop");
-    asm volatile ("nop");
-
-    neorv32_cpu_csr_write(CSR_MIE, 0);
-
-    // restore original configuration
-    NEORV32_UART1->CTRL = tmp_a;
-
-    if (trap_cause == UART1_TX_TRAP_CODE) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT_STANDARD("[n.a.]\n");
-  }
+  PRINT_STANDARD("[%i] FIRQ5 (reserved) ", cnt_test);
+  PRINT_STANDARD("[n.a.]\n");
 
 
   // ----------------------------------------------------------

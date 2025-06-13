@@ -422,10 +422,10 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | Channel | Source | Description
 | 0       | <<_two_wire_serial_device_controller_twd,TWD>> | TWD FIFO level interrupt
 | 1       | <<_custom_functions_subsystem_cfs,CFS>> | Custom functions subsystem (CFS) interrupt (user-defined)
-| 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 RX FIFO level interrupt
-| 3       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 TX FIFO level interrupt
-| 4       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 RX FIFO level interrupt
-| 5       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 TX FIFO level interrupt
+| 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 FIFO level interrupt
+| 3       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 FIFO level interrupt
+| 4       | - | _reserved_
+| 5       | - | _reserved_
 | 6       | <<_serial_peripheral_interface_controller_spi,SPI>> | SPI FIFO level interrupt
 | 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI FIFO level interrupt
 | 8       | <<_general_purpose_input_and_output_port_gpio,GPIO>> | GPIO input pin(s) interrupt
@@ -435,7 +435,7 @@ table (the channel number also corresponds to the according FIRQ priority: 0 = h
 | 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
 | 13      | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire idle interrupt
 | 14      | <<_stream_link_interface_slink,SLINK>> | SLINK FIFO level interrupt
-| 15      | <<_true_random_number_generator_trng,TRNG>> | TRNG data available interrupt
+| 15      | <<_true_random_number_generator_trng,TRNG>> | TRNG FIFO level interrupt
 |=======================
 
 

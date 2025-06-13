@@ -39,14 +39,13 @@ entity neorv32_uart is
     uart_rxd_i  : in  std_ulogic; -- serial RX line
     uart_rtsn_o : out std_ulogic; -- ready to receive ("RTR"), low-active, optional
     uart_ctsn_i : in  std_ulogic; -- allowed to transmit, low-active, optional
-    irq_rx_o    : out std_ulogic; -- RX interrupt
-    irq_tx_o    : out std_ulogic  -- TX interrupt
+    irq_o       : out std_ulogic  -- interrupt
   );
 end neorv32_uart;
 
 architecture neorv32_uart_rtl of neorv32_uart is
 
-  -- simulation mode available? --
+  -- simulation mode? --
   constant sim_mode_en_c : boolean := SIM_MODE_EN and is_simulation_c;
 
   -- control register bits --
@@ -63,12 +62,12 @@ architecture neorv32_uart_rtl of neorv32_uart is
   constant ctrl_tx_empty_c      : natural := 19; -- r/-: TX FIFO empty
   constant ctrl_tx_nhalf_c      : natural := 20; -- r/-: TX FIFO not at least half-full
   constant ctrl_tx_nfull_c      : natural := 21; -- r/-: TX FIFO not full
-  constant ctrl_irq_rx_nempty_c : natural := 22; -- r/w: RX FIFO not empty
-  constant ctrl_irq_rx_half_c   : natural := 23; -- r/w: RX FIFO at least half-full
-  constant ctrl_irq_rx_full_c   : natural := 24; -- r/w: RX FIFO full
-  constant ctrl_irq_tx_empty_c  : natural := 25; -- r/w: TX FIFO empty
-  constant ctrl_irq_tx_nhalf_c  : natural := 26; -- r/w: TX FIFO not at least half-full
-  constant ctrl_irq_tx_nfull_c  : natural := 27; -- r/w: TX FIFO not full
+  constant ctrl_irq_rx_nempty_c : natural := 22; -- r/w: IRQ if RX FIFO not empty
+  constant ctrl_irq_rx_half_c   : natural := 23; -- r/w: IRQ if RX FIFO at least half-full
+  constant ctrl_irq_rx_full_c   : natural := 24; -- r/w: IRQ if RX FIFO full
+  constant ctrl_irq_tx_empty_c  : natural := 25; -- r/w: IRQ if TX FIFO empty
+  constant ctrl_irq_tx_nhalf_c  : natural := 26; -- r/w: IRQ if TX FIFO not at least half-full
+  constant ctrl_irq_tx_nfull_c  : natural := 27; -- r/w: IRQ if TX FIFO not full
   constant ctrl_rx_clr_c        : natural := 28; -- r/w: Clear RX FIFO, flag auto-clears
   constant ctrl_tx_clr_c        : natural := 29; -- r/w: Clear TX FIFO, flag auto-clears
   constant ctrl_rx_over_c       : natural := 30; -- r/-: RX FIFO overflow
@@ -259,19 +258,6 @@ begin
   tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.re    <= '1' when (tx_engine.state = "100") else '0';
 
-  -- TX interrupt generator --
-  tx_irq_generator: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      irq_tx_o <= '0';
-    elsif rising_edge(clk_i) then
-      irq_tx_o <= ctrl.enable and (
-                  (ctrl.irq_tx_empty and (not tx_fifo.avail)) or -- IRQ if TX FIFO empty
-                  (ctrl.irq_tx_nhalf and (not tx_fifo.half))  or -- IRQ if TX FIFO not at least half full
-                  (ctrl.irq_tx_nfull and tx_fifo.free));         -- IRQ if TX FIFO not full
-    end if;
-  end process tx_irq_generator;
-
 
   -- RX FIFO --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -305,18 +291,23 @@ begin
   rx_fifo.we    <= rx_engine.done;
   rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
 
-  -- RX interrupt generator --
-  rx_irq_generator: process(rstn_i, clk_i)
+
+  -- Interrupt Generator --------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  irq_gen: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      irq_rx_o <= '0';
+      irq_o <= '0';
     elsif rising_edge(clk_i) then
-      irq_rx_o <= ctrl.enable and (
-                  (ctrl.irq_rx_nempty and rx_fifo.avail) or     -- IRQ if RX FIFO not empty
-                  (ctrl.irq_rx_half   and rx_fifo.half)  or     -- IRQ if RX FIFO at least half full
-                  (ctrl.irq_rx_full   and (not rx_fifo.free))); -- IRQ if RX FIFO full
+      irq_o <= ctrl.enable and (
+               (ctrl.irq_tx_empty  and (not tx_fifo.avail)) or -- TX FIFO empty
+               (ctrl.irq_tx_nhalf  and (not tx_fifo.half))  or -- TX FIFO not at least half full
+               (ctrl.irq_tx_nfull  and tx_fifo.free)        or -- TX FIFO not full
+               (ctrl.irq_rx_nempty and rx_fifo.avail)       or -- RX FIFO not empty
+               (ctrl.irq_rx_half   and rx_fifo.half)        or -- RX FIFO at least half full
+               (ctrl.irq_rx_full   and (not rx_fifo.free)));   -- RX FIFO full
     end if;
-  end process rx_irq_generator;
+  end process irq_gen;
 
 
   -- Transmit Engine ------------------------------------------------------------------------

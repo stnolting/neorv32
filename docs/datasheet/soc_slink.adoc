@@ -112,11 +112,10 @@ data. Vice versa, TX routing information has to be set **before** writing the ac
 **Interrupt**
 
 The SLINK module provides a single interrupt request that can be used to signal certain RX/TX data FIFO conditions.
-The according interrupt conditions are based on the RX/TX link FIFO status flags and are configured via the control
-register's `SLINK_CTRL_IRQ_*` bits. The SLINK interrupt will fire when the module is enabled (`SLINK_CTRL_EN`)
-and **any** of the selected interrupt conditions are met. Hence, all enabled interrupt conditions are logically OR-ed.
-If any enable interrupt conditions becomes active the interrupt will become pending until the interrupt-causing
-condition is resolved (e.g. by reading from the RX FIFO).
+The interrupt conditions are based on the RX/TX FIFO status flags `SLINK_CTRL_RX_*` / `SLINK_CTRL_TX_*` and are
+configured via the according `SLINK_CTRL_IRQ_RX_*` / `SLINK_CTRL_IRQ_TX_*` bits. The SLINK interrupt will fire when the
+module is enabled (`SLINK_CTRL_EN`) and **any** of the selected interrupt conditions is met. Hence, all enabled interrupt
+conditions are logically OR-ed. The interrupt remains active until all interrupt-causing conditions are resolved.
 
 
 **Register Map**
