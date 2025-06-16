@@ -95,7 +95,7 @@ int main() {
   neorv32_uart0_printf("Opening file '%s'...\n", file);
   int file_handle = open(file, O_RDONLY); // open file as read-only
   if (file_handle <= 0) {
-    neorv32_uart0_printf("Opening file 'failed (%i)\n", file_handle);
+    neorv32_uart0_printf("Opening file '%s' failed (%i)\n", file, file_handle);
     neorv32_uart0_printf("Enable file-IO in GDB: (gdb) monitor arm semihosting_fileio enable\n");
     neorv32_uart0_printf("Set base director in GDB: (gdb) monitor arm semihosting_basedir path/to/neorv32/sw/example/demo_semihosting\n");
   }
