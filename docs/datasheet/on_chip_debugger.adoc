@@ -144,11 +144,14 @@ Functions such as `printf` and `puts` can then print right to the host's `stdout
 and `fgets` will read from the host's `stdin`. To enable this automatic mapping, the _define_ `STDIO_SEMIHOSTING` needs to be
 defined and the application firmware needs to be recompiled.
 
-.Forward `stdio` Calls to Host Computer
+.Forward `stdio.h` Calls to Host Computer
 [source,makefile]
 ----
 USER_FLAGS += -DSTDIO_SEMIHOSTING
 ----
+
+When `STDIO_SEMIHOSTING` is defined _all_ file accesses provided by `stdio.h` (via Newlib) will be redirected to the host
+computer via semihosting services.
 
 .Semihosting Services Without a Host
 [NOTE]
