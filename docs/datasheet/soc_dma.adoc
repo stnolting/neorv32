@@ -50,9 +50,9 @@ register's `DMA_CTRL_START` bit. Setting this bit while the descriptor FIFO is e
 of the FIFO can be checked via the `DMA_CTRL_D*` flags.
 
 The DMA uses an atomic read-modify-write transfer process. Data is read from the current source address, modified/aligned
-internally and then written back to the current destination address. If the DMA controller detects a bus error during operation,
-it will set the `DMA_CTRL_ERROR` and terminate the current transfer waiting in idle state for the user to acknowledge/clear
-`DMA_CTRL_ERROR`. This also happens if there are further descriptor in the FIFO that have not yet been executed.
+internally and then written back to the current destination address. If the DMA controller encounters a bus error during
+operation, it will set the `DMA_CTRL_ERROR` flag and will terminate the current transfer. An new transfer can only start
+if the `DMA_CTRL_ERROR` flag is cleared manually.
 
 When the `DMA_CTRL_DONE` flag is set the DMA has completed all programmed transfers, i.e. all descriptors from the FIFO
 were executed. This flag also triggers the DMA controller's interrupt request signal. The application software has to
@@ -82,8 +82,7 @@ The descriptor FIFO has a minimal size of 4 entries. This can be extended by the
 .Incomplete Descriptors
 [NOTE]
 The DMA controller consumes 3 entries from the FIFO for each transfer. If the FIFO does not provide a complete
-DMA descriptor, the controller will remove the incomplete descriptor and will set the `DMA_CTRL_ERROR` status flag
-without executing the incomplete transfer descriptor.
+DMA descriptor, the controller will wait until a complete descriptor is available.
 
 The source and destination data addresses can target any memory location in the entire 32-bit address space including
 memory-mapped peripherals. The number of elements to transfer as well as incrementing or constant byte- or word-level
@@ -108,7 +107,7 @@ Source and destination data accesses are configured by a 2-bit selector individu
 * `10`: Incrementing byte - transfer data as byte (8-bit); increment the source address by 1
 * `11`: Incrementing word - transfer data as word (32-bit); increment the source address by 4
 
-optionally, the controller automatically swaps the logical byte order ("Endianness") of the transferred data
+Optionally, the controller can automatically swap the logical byte order ("Endianness") of the transferred data
 when the `DMA_CONF_BSWAP` bit is set.
 
 
@@ -119,15 +118,16 @@ when the `DMA_CONF_BSWAP` bit is set.
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.10+<| `0xffed0000` .10+<| `CTRL` <|`0`     `DMA_CTRL_EN`                             ^| r/w <| DMA module enable; reset module when cleared
+.11+<| `0xffed0000` .11+<| `CTRL` <|`0`     `DMA_CTRL_EN`                             ^| r/w <| DMA module enable; reset module when cleared
                                   <|`1`     `DMA_CTRL_START`                          ^| -/w <| Start programmed DMA transfer(s)
                                   <|`15:2`  _reserved_                                ^| r/- <| _reserved_, read as zero
-                                  <|`19:16` `DMA_CTRL_DFIFO_MSB : DMA_CTRL_DFIFO_LSB` ^| r/- <|
+                                  <|`19:16` `DMA_CTRL_DFIFO_MSB : DMA_CTRL_DFIFO_LSB` ^| r/- <| Descriptor FIFO depth, log2(`IO_DMA_DSC_FIFO`)
                                   <|`26:20` _reserved_                                ^| r/- <| _reserved_, read as zero
-                                  <|`27`    `DMA_CTRL_DEMPTY``                        ^| r/- <| Descriptor FIFO is empty
+                                  <|`27`    `DMA_CTRL_ACK`                            ^| -/w <| Write `1` to clear DMA interrupt (also clears `DMA_CTRL_ERROR` and `DMA_CTRL_DONE`)
+                                  <|`27`    `DMA_CTRL_DEMPTY`                         ^| r/- <| Descriptor FIFO is empty
                                   <|`28`    `DMA_CTRL_DFULL`                          ^| r/- <| Descriptor FIFO is full
-                                  <|`29`    `DMA_CTRL_ERROR`                          ^| r/c <| Bus access error during transfer or incomplete descriptor data; clear by writing `1`
-                                  <|`30`    `DMA_CTRL_DONE`                           ^| r/c <| All transfers executed; clear by writing `1`
+                                  <|`29`    `DMA_CTRL_ERROR`                          ^| r/- <| Bus access error during transfer or incomplete descriptor data
+                                  <|`30`    `DMA_CTRL_DONE`                           ^| r/1 <| All transfers executed
                                   <|`31`    `DMA_CTRL_BUSY`                           ^| r/- <| DMA transfer(s) in progress
 | `0xffed0004` | `DESC` |`31:0` | -/w | Descriptor FIFO write access
 |=======================
