@@ -189,7 +189,8 @@ begin
     FIFO_WIDTH => 9,           -- size of data elements in fifo (cmd/data select + cmd/data byte)
     FIFO_RSYNC => true,        -- sync read
     FIFO_SAFE  => true,        -- safe access
-    FULL_RESET => false        -- no HW reset, try to infer BRAM
+    FULL_RESET => false,       -- no HW reset, try to infer BRAM
+    OUT_GATE   => false        -- no output gate required
   )
   port map (
     -- control and status --
@@ -221,7 +222,8 @@ begin
     FIFO_WIDTH => 9,           -- size of data elements in fifo (data byte + dummy bit)
     FIFO_RSYNC => true,        -- sync read
     FIFO_SAFE  => true,        -- safe access
-    FULL_RESET => false        -- no HW reset, try to infer BRAM
+    FULL_RESET => false,       -- no HW reset, try to infer BRAM
+    OUT_GATE   => false        -- no output gate required
   )
   port map (
     -- control and status --

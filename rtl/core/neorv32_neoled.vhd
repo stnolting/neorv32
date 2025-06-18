@@ -164,11 +164,12 @@ begin
   -- -------------------------------------------------------------------------------------------
   data_buffer: entity neorv32.neorv32_fifo
   generic map (
-    FIFO_DEPTH => FIFO_DEPTH, -- number of fifo entries; has to be a power of two; min 1
-    FIFO_WIDTH => 32+2,       -- size of data elements in fifo
+    FIFO_DEPTH => FIFO_DEPTH, -- number of FIFO entries; has to be a power of two; min 1
+    FIFO_WIDTH => 32+2,       -- size of data elements in FIFO
     FIFO_RSYNC => true,       -- sync read
     FIFO_SAFE  => true,       -- safe access
-    FULL_RESET => false       -- no HW reset, try to infer BRAM
+    FULL_RESET => false,      -- no HW reset, try to infer BRAM
+    OUT_GATE   => false       -- no output-gating required
   )
   port map (
     -- control and status --

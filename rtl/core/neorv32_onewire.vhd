@@ -177,7 +177,8 @@ begin
     FIFO_WIDTH => 10, -- 2-bit command + 8-bit data
     FIFO_RSYNC => true,
     FIFO_SAFE  => true,
-    FULL_RESET => false
+    FULL_RESET => false,
+    OUT_GATE   => false
   )
   port map (
     -- control and status --
@@ -209,7 +210,8 @@ begin
     FIFO_WIDTH => 9, -- 1-bit presence status + 8-bit data
     FIFO_RSYNC => true,
     FIFO_SAFE  => true,
-    FULL_RESET => false
+    FULL_RESET => false,
+    OUT_GATE   => false
   )
   port map (
     -- control --
