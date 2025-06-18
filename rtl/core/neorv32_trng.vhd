@@ -114,11 +114,7 @@ begin
             bus_rsp_o.data(ctrl_sim_mode_c)                            <= bool_to_ulogic_f(is_simulation_c);
             bus_rsp_o.data(ctrl_avail_c)                               <= fifo.avail;
           else -- data register
-            if (fifo.avail = '0') then -- output zero if no data available
-              bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= (others => '0');
-            else
-              bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
-            end if;
+            bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
           end if;
         end if;
       end if;
@@ -152,7 +148,8 @@ begin
     FIFO_WIDTH => 8,
     FIFO_RSYNC => true,
     FIFO_SAFE  => true,
-    FULL_RESET => false
+    FULL_RESET => false,
+    OUT_GATE   => true -- output zero if no data available
   )
   port map (
     -- control and status --
