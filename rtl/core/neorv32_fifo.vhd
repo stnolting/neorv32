@@ -19,9 +19,10 @@ entity neorv32_fifo is
   generic (
     FIFO_DEPTH : natural := 4;     -- number of FIFO entries; has to be a power of two; min 1
     FIFO_WIDTH : natural := 32;    -- size of data elements in FIFO
-    FIFO_RSYNC : boolean := false; -- false = async read; true = sync read
+    FIFO_RSYNC : boolean := false; -- true = sync read; false = async read
     FIFO_SAFE  : boolean := false; -- true = allow read/write only if data/space available
-    FULL_RESET : boolean := false  -- true = reset all memory cells (cannot be mapped to BRAM)
+    FULL_RESET : boolean := false; -- true = reset all memory cells
+    OUT_GATE   : boolean := false  -- true = output zero if no data is available
   );
   port (
     -- control and status --
@@ -46,13 +47,16 @@ architecture neorv32_fifo_rtl of neorv32_fifo is
   -- make sure FIFO depth is a power of two --
   constant fifo_depth_c : natural := cond_sel_natural_f(is_power_of_two_f(FIFO_DEPTH), FIFO_DEPTH, 2**index_size_f(FIFO_DEPTH));
 
-  -- FIFO storage --
+  -- memory core --
   type fifo_mem_t is array (0 to fifo_depth_c-1) of std_ulogic_vector(FIFO_WIDTH-1 downto 0);
   signal fifo_mem : fifo_mem_t; -- for fifo_depth_c > 1
   signal fifo_reg : std_ulogic_vector(FIFO_WIDTH-1 downto 0); -- for fifo_depth_c = 1
 
-  -- FIFO control and status --
-  signal we, re, match, empty, full, half, free, avail : std_ulogic;
+  -- direct output data --
+  signal rdata : std_ulogic_vector(FIFO_WIDTH-1 downto 0);
+
+  -- control and status --
+  signal we, re, match, empty, full, half, half_ff, free, free_ff, avail, avail_ff : std_ulogic;
 
   -- write/read pointers --
   signal w_pnt, w_nxt, r_pnt, r_nxt, r_pnt_ff, level : std_ulogic_vector(index_size_f(fifo_depth_c) downto 0);
@@ -198,7 +202,7 @@ begin
     -- just 1 FIFO entry --
     fifo_read_async_small:
     if (fifo_depth_c = 1) generate
-      rdata_o <= fifo_reg;
+      rdata <= fifo_reg;
     end generate;
 
     -- more than 1 FIFO entry --
@@ -210,13 +214,16 @@ begin
           r_pnt_ff <= r_nxt; -- individual read address register; allows mapping "async" FIFOs to memory primitives
         end if;
       end process async_r_pnt_reg;
-      rdata_o <= fifo_mem(to_integer(unsigned(r_pnt_ff(r_pnt_ff'left-1 downto 0))));
+      rdata <= fifo_mem(to_integer(unsigned(r_pnt_ff(r_pnt_ff'left-1 downto 0))));
     end generate;
 
     -- status --
-    free_o  <= free;
-    avail_o <= avail;
-    half_o  <= half;
+    free_ff  <= free;
+    avail_ff <= avail;
+    half_ff  <= half;
+    free_o   <= free_ff;
+    avail_o  <= avail_ff;
+    half_o   <= half_ff;
 
   end generate;
 
@@ -229,7 +236,7 @@ begin
     -- just 1 FIFO entry --
     fifo_read_sync_small:
     if (fifo_depth_c = 1) generate
-      rdata_o <= fifo_reg;
+      rdata <= fifo_reg;
     end generate;
 
     -- more than 1 FIFO entry --
@@ -238,7 +245,7 @@ begin
       sync_read_large: process(clk_i)
       begin
         if rising_edge(clk_i) then
-          rdata_o <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0))));
+          rdata <= fifo_mem(to_integer(unsigned(r_pnt(r_pnt'left-1 downto 0))));
         end if;
       end process sync_read_large;
     end generate;
@@ -247,16 +254,34 @@ begin
     sync_status: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        free_o  <= '0';
-        avail_o <= '0';
-        half_o  <= '0';
+        free_ff  <= '0';
+        avail_ff <= '0';
+        half_ff  <= '0';
       elsif rising_edge(clk_i) then
-        free_o  <= free;
-        avail_o <= avail;
-        half_o  <= half;
+        free_ff  <= free;
+        avail_ff <= avail;
+        half_ff  <= half;
       end if;
     end process sync_status;
 
+    free_o  <= free_ff;
+    avail_o <= avail_ff;
+    half_o  <= half_ff;
+
+  end generate;
+
+
+  -- Output Gate (output zero if no data available) -----------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  out_gate_enabled:
+  if OUT_GATE generate
+    rdata_o <= rdata when (avail_ff = '1') else (others => '0');
+  end generate;
+
+  -- direct output --
+  out_gate_disabled:
+  if not OUT_GATE generate
+    rdata_o <= rdata;
   end generate;
 
 
