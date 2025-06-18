@@ -83,20 +83,12 @@ void neorv32_dma_disable(void) {
 
 
 /**********************************************************************//**
- * Clear transfer-error status.
+ * Manually clear pending DMA interrupt. This will also clear the
+ * transfer-error and transfer-done status flags.
  **************************************************************************/
-void neorv32_dma_err_ack(void) {
+void neorv32_dma_irq_ack(void) {
 
-  NEORV32_DMA->CTRL |= (uint32_t)(1 << DMA_CTRL_ERROR);
-}
-
-
-/**********************************************************************//**
- * Clear transfer-done status/interrupt.
- **************************************************************************/
-void neorv32_dma_done_ack(void) {
-
-  NEORV32_DMA->CTRL |= (uint32_t)(1 << DMA_CTRL_DONE);
+  NEORV32_DMA->CTRL |= (uint32_t)(1 << CMA_CTRL_ACK);
 }
 
 
