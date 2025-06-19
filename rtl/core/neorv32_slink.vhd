@@ -202,7 +202,8 @@ begin
     FIFO_WIDTH => 1+4+32, -- last + routing + data
     FIFO_RSYNC => false,  -- "async" read - update FIFO status RIGHT after write access (for slink_rx_ready_o)
     FIFO_SAFE  => true,   -- safe access
-    FULL_RESET => false   -- no HW reset, try to infer BRAM
+    FULL_RESET => false,  -- no HW reset, try to infer BRAM
+    OUT_GATE   => false   -- no output gate required
   )
   port map (
     -- control and status --
@@ -254,7 +255,8 @@ begin
     FIFO_WIDTH => 1+4+32, -- last + routing + data
     FIFO_RSYNC => false,  -- "async" read - update FIFO status RIGHT after read access (for slink_tx_valid_o)
     FIFO_SAFE  => true,   -- safe access
-    FULL_RESET => false   -- no HW reset, try to infer BRAM
+    FULL_RESET => false,  -- no HW reset, try to infer BRAM
+    OUT_GATE   => false   -- no output gate required
   )
   port map (
     -- control and status --

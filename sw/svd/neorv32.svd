@@ -419,6 +419,12 @@
               <description>log2(descriptor FIFO depth)</description>
             </field>
             <field>
+              <name>DMA_CTRL_ACK</name>
+              <bitRange>[26:26]</bitRange>
+             <access>write-only</access>
+              <description>Write 1 to clear ERROR and DONE flags</description>
+            </field>
+            <field>
               <name>DMA_CTRL_DEMPTY</name>
               <bitRange>[27:27]</bitRange>
               <access>read-only</access>
@@ -433,12 +439,14 @@
             <field>
               <name>DMA_CTRL_ERROR</name>
               <bitRange>[29:29]</bitRange>
-              <description>Error during last transfer; clear by writing one</description>
+              <access>read-only</access>
+              <description>Error during last transfer</description>
             </field>
             <field>
               <name>DMA_CTRL_DONE</name>
               <bitRange>[30:30]</bitRange>
-              <description>Transfer(s) done; clear by writing one</description>
+              <access>read-only</access>
+              <description>Transfer(s) done</description>
             </field>
             <field>
               <name>DMA_CTRL_BUSY</name>

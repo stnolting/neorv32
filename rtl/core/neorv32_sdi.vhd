@@ -177,7 +177,8 @@ begin
     FIFO_WIDTH => 8,        -- size of data elements in FIFO (32-bit only for simulation)
     FIFO_RSYNC => true,     -- sync read
     FIFO_SAFE  => true,     -- safe access
-    FULL_RESET => false     -- no HW reset, try to infer BRAM
+    FULL_RESET => false,    -- no HW reset, try to infer BRAM
+    OUT_GATE   => true      -- output zero if no data available
   )
   port map (
     -- control and status --
@@ -212,7 +213,8 @@ begin
     FIFO_WIDTH => 8,        -- size of data elements in FIFO (32-bit only for simulation)
     FIFO_RSYNC => true,     -- sync read
     FIFO_SAFE  => true,     -- safe access
-    FULL_RESET => false     -- no HW reset, try to infer BRAM
+    FULL_RESET => false,    -- no HW reset, try to infer BRAM
+    OUT_GATE   => false     -- no output gate required
   )
   port map (
     -- control --
@@ -298,12 +300,8 @@ begin
 
         when "100" => -- enabled but idle, waiting for new transmission trigger
         -- ------------------------------------------------------------
-          serial.cnt <= (others => '0');
-          if (tx_fifo.avail = '0') then -- send zero if no RX data available
-            serial.sreg <= (others => '0');
-          else
-            serial.sreg <= tx_fifo.rdata;
-          end if;
+          serial.cnt  <= (others => '0');
+          serial.sreg <= tx_fifo.rdata;
           if (sync.csn = '0') then -- start new transmission on falling edge of chip-select
             serial.start             <= '1';
             serial.state(1 downto 0) <= "10";

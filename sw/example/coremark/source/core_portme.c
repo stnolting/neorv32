@@ -38,27 +38,27 @@ volatile ee_s32 seed3_volatile = 0x8;
 #endif
 volatile ee_s32 seed4_volatile = ITERATIONS;
 volatile ee_s32 seed5_volatile = 0;
+
 /* Porting : Timing functions
-        How to capture time and convert to seconds must be ported to whatever is
-   supported by the platform. e.g. Read value from on board RTC, read value from
-   cpu clock cycles performance counter etc. Sample implementation for standard
-   time.h and windows.h definitions included.
-*/
+ * How to capture time and convert to seconds must be ported to whatever is
+ * supported by the platform. e.g. Read value from on board RTC, read value from
+ * cpu clock cycles performance counter etc. Sample implementation for standard
+ * time.h and windows.h definitions included.
+ */
 CORETIMETYPE barebones_clock() {
 /*
-#error \
-    "You must implement a method to measure time in barebones_clock()! This function should return current time.\n"
+#error "You must implement a method to measure time in barebones_clock()! This function should return current time.\n"
 */
   return 1;
 }
-/* Define : TIMER_RES_DIVIDER
-        Divider to trade off timer resolution and total time that can be
-   measured.
 
-        Use lower values to increase resolution, but make sure that overflow
-   does not occur. If there are issues with the return value overflowing,
-   increase this value.
-        */
+/* Define : TIMER_RES_DIVIDER
+ * Divider to trade off timer resolution and total time that can be measured.
+ *
+ * Use lower values to increase resolution, but make sure that overflow
+ * does not occur. If there are issues with the return value overflowing,
+ * increase this value.
+ */
 #define GETMYTIME(_t)              (*_t = (CORETIMETYPE)neorv32_cpu_get_cycle())
 #define MYTIMEDIFF(fin, ini)       ((fin) - (ini))
 #define TIMER_RES_DIVIDER          1
@@ -69,66 +69,64 @@ CORETIMETYPE barebones_clock() {
 static CORETIMETYPE start_time_val, stop_time_val;
 
 /* Function : start_time
-        This function will be called right before starting the timed portion of
-   the benchmark.
-
-        Implementation may be capturing a system timer (as implemented in the
-   example code) or zeroing some system parameters - e.g. setting the cpu clocks
-   cycles to 0.
+ * This function will be called right before starting the timed portion of the benchmark.
+ *
+ * Implementation may be capturing a system timer (as implemented in the
+ * example code) or zeroing some system parameters - e.g. setting the cpu clocks cycles to 0.
 */
 void start_time(void) {
     GETMYTIME(&start_time_val);
     neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // start all counters
 }
-/* Function : stop_time
-        This function will be called right after ending the timed portion of the
-   benchmark.
 
-        Implementation may be capturing a system timer (as implemented in the
-   example code) or other system parameters - e.g. reading the current value of
-   cpu cycles counter.
-*/
+/* Function : stop_time
+ * This function will be called right after ending the timed portion of the benchmark.
+ *
+ * Implementation may be capturing a system timer (as implemented in the example code) or
+ * other system parameters - e.g. reading the current value of cpu cycles counter.
+ */
 void stop_time(void) {
     neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
     GETMYTIME(&stop_time_val);
 }
-/* Function : get_time
-        Return an abstract "ticks" number that signifies time on the system.
 
-        Actual value returned may be cpu cycles, milliseconds or any other
-   value, as long as it can be converted to seconds by <time_in_secs>. This
-   methodology is taken to accommodate any hardware or simulated platform. The
-   sample implementation returns milliseconds by default, and the resolution is
-   controlled by <TIMER_RES_DIVIDER>
-*/
+/* Function : get_time
+ * Return an abstract "ticks" number that signifies time on the system.
+ *
+ * Actual value returned may be cpu cycles, milliseconds or any other
+ * value, as long as it can be converted to seconds by <time_in_secs>. This
+ * methodology is taken to accommodate any hardware or simulated platform. The
+ * sample implementation returns milliseconds by default, and the resolution is
+ * controlled by <TIMER_RES_DIVIDER>
+ */
 CORE_TICKS get_time(void) {
     CORE_TICKS elapsed
         = (CORE_TICKS)(MYTIMEDIFF(stop_time_val, start_time_val));
     return elapsed;
 }
-/* Function : time_in_secs
-        Convert the value returned by get_time to seconds.
 
-        The <secs_ret> type is used to accomodate systems with no support for
-   floating point. Default implementation implemented by the EE_TICKS_PER_SEC
-   macro above.
-*/
+/* Function : time_in_secs
+ * Convert the value returned by get_time to seconds.
+ *
+ * The <secs_ret> type is used to accommodate systems with no support for floating point.
+ * Default implementation implemented by the EE_TICKS_PER_SEC macro above.
+ */
 secs_ret time_in_secs(CORE_TICKS ticks) {
     /* NEORV32-specific */
     secs_ret retval = (secs_ret)(((CORE_TICKS)ticks) / ((CORE_TICKS)neorv32_sysinfo_get_clk()));
     return retval;
 }
 
-ee_u32 default_num_contexts = 1;
+int default_num_contexts = (int)(MULTITHREAD);
 
 /* Number of available hardware performance monitors */
 uint32_t num_hpm_cnts_global = 0;
 
 
 /* Function : portable_init
-        Target specific initialization code
-        Test for some common mistakes.
-*/
+ * Target specific initialization code
+ * Test for some common mistakes.
+ */
 void portable_init(core_portable *p, int *argc, char *argv[]) {
 
   /* NEORV32-specific */
@@ -166,11 +164,13 @@ void portable_init(core_portable *p, int *argc, char *argv[]) {
   if (num_hpm_cnts_global > 8)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_TRAP);     }
 
   neorv32_uart0_printf("NEORV32: Processor running at %u Hz\n", (uint32_t)neorv32_sysinfo_get_clk());
+#if MULTITHREAD == 2
+  neorv32_uart0_printf("NEORV32: SMP dual-core version (HIGHLY EXPERIMENTAL!)\n");
+#endif
   neorv32_uart0_printf("NEORV32: Executing coremark (%u iterations). This may take some time...\n\n", (uint32_t)ITERATIONS);
 
 /*
-#error \
-    "Call board initialization routines in portable init (if needed), in particular initialize UART!\n"
+#error "Call board initialization routines in portable init (if needed), in particular initialize UART!\n"
 */
     if (sizeof(ee_ptr_int) != sizeof(ee_u8 *))
     {
@@ -187,8 +187,8 @@ void portable_init(core_portable *p, int *argc, char *argv[]) {
 
 
 /* Function : portable_fini
-   Target specific final code
-*/
+ * Target specific final code
+ */
 void portable_fini(core_portable *p) {
 
     p->portable_id = 0;
@@ -209,13 +209,100 @@ void portable_fini(core_portable *p) {
     neorv32_uart0_printf("\n");
 }
 
-
-/* Function : portable_malloc */
+/* Function : portable_malloc
+ * Allocate dynamic memory.
+ */
 void *portable_malloc(size_t size) {
-  return malloc(size);
+
+  void *pnt;
+  pnt = malloc(size);
+
+  if (pnt <= 0) {
+    neorv32_uart0_printf("Malloc failed!\n");
+    asm volatile ("ebreak");
+    while(1);
+  }
+  return pnt;
 }
 
-/* Function : portable_free */
+/* Function : portable_free
+ * Free dynamic memory.
+ */
 void portable_free(void *p) {
   free(p);
 }
+
+
+// ------------------------------------------------------------
+// SMP Dual-Core Multi-Threading
+// ------------------------------------------------------------
+#if MULTITHREAD != 2
+ee_u8 core_start_parallel(core_results *res) { return -1; }
+ee_u8 core_stop_parallel(core_results *res)  { return -1; }
+#else
+
+volatile uint8_t core1_stack[16*1024];
+volatile core_results *res_core0;
+volatile core_results *res_core1;
+volatile int core1_done = 0;
+volatile int core_idx = 0;
+
+/******************************************************
+ * Execute CoreMark processing on core1
+ ******************************************************/
+int iterate_core1(void) {
+
+  asm volatile ("fence");
+  iterate((core_results*)res_core1);
+  core1_done = 1;
+  asm volatile ("fence");
+  neorv32_cpu_sleep();
+
+  return 0;
+}
+
+/******************************************************
+ * Prepare result data addresses
+ ******************************************************/
+ee_u8 core_start_parallel(core_results *res) {
+
+  if (core_idx == 0) {
+    res_core0 = res; // results buffer for core0
+    core_idx++;
+  }
+  else {
+    res_core1 = res; // results buffer for core1
+  }
+  asm volatile ("fence");
+
+  return 0;
+}
+
+/******************************************************
+ * Start actual execution
+ ******************************************************/
+ee_u8 core_stop_parallel(core_results *res) {
+
+  // start core 1 execution
+  core1_done = 0;
+  int rc = neorv32_smp_launch(iterate_core1, (uint8_t*)core1_stack, sizeof(core1_stack));
+  if (rc) {
+    neorv32_uart0_printf("SMP failed %d\n", rc);
+    exit(-1);
+    while(1);
+  }
+
+  // start core 0 execution
+  iterate((core_results*)res_core0);
+
+  // wait for core 1
+  while (1) {
+    asm volatile ("fence");
+    if (core1_done == 1) {
+      break;
+    }
+  }
+
+  return 0;
+}
+#endif

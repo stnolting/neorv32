@@ -208,7 +208,8 @@ begin
     FIFO_WIDTH => 8,
     FIFO_RSYNC => true,
     FIFO_SAFE  => true,
-    FULL_RESET => false
+    FULL_RESET => false,
+    OUT_GATE   => false
   )
   port map (
     -- control and status --
@@ -259,7 +260,8 @@ begin
     FIFO_WIDTH => 8,
     FIFO_RSYNC => true,
     FIFO_SAFE  => true,
-    FULL_RESET => false
+    FULL_RESET => false,
+    OUT_GATE   => false
   )
   port map (
     -- control and status --

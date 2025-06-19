@@ -39,9 +39,9 @@ end neorv32_cpu_frontend;
 architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
   -- instruction fetch engine --
-  type fetch_state_t is (S_RESTART, S_REQUEST, S_PENDING);
+  type state_t is (S_RESTART, S_REQUEST, S_PENDING);
   type fetch_t is record
-    state   : fetch_state_t;
+    state   : state_t;
     restart : std_ulogic; -- buffered restart request (after branch)
     pc      : std_ulogic_vector(XLEN-1 downto 0);
     priv    : std_ulogic; -- fetch privilege level
@@ -148,7 +148,8 @@ begin
       FIFO_WIDTH => 17,    -- error status & instruction half-word data
       FIFO_RSYNC => false, -- we NEED to read data asynchronously
       FIFO_SAFE  => false, -- no safe access required (ensured by FIFO-external logic)
-      FULL_RESET => false  -- no need for a full hardware reset
+      FULL_RESET => false, -- no need for a full hardware reset,
+      OUT_GATE   => false  -- no output gate required
     )
     port map (
       -- control and status --
