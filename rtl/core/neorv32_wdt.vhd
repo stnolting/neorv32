@@ -23,7 +23,6 @@ entity neorv32_wdt is
     rstn_sys_i  : in  std_ulogic; -- system reset, low-active
     bus_req_i   : in  bus_req_t;  -- bus request
     bus_rsp_o   : out bus_rsp_t;  -- bus response
-    clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(7 downto 0);
     rstn_o      : out std_ulogic  -- timeout reset, low_active, sync
   );
@@ -136,9 +135,8 @@ begin
     end if;
   end process wdt_counter;
 
-  -- clock generator --
-  clkgen_en_o <= ctrl.enable; -- enable clock generator
-  prsc_tick   <= clkgen_i(clk_div4096_c); -- clock enable tick
+  -- clock-enable tick --
+  prsc_tick <= clkgen_i(clk_div4096_c);
 
   -- timeout detector --
   cnt_timeout <= '1' when (cnt_started = '1') and (cnt = ctrl.timeout) else '0';

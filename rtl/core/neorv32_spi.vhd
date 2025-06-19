@@ -20,17 +20,16 @@ entity neorv32_spi is
     IO_SPI_FIFO : natural range 1 to 2**15 -- SPI RTX fifo depth, has to be a power of two, min 1
   );
   port (
-    clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active, async
-    bus_req_i   : in  bus_req_t;  -- bus request
-    bus_rsp_o   : out bus_rsp_t;  -- bus response
-    clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(7 downto 0);
-    spi_clk_o   : out std_ulogic; -- SPI serial clock
-    spi_dat_o   : out std_ulogic; -- controller data out, peripheral data in
-    spi_dat_i   : in  std_ulogic; -- controller data in, peripheral data out
-    spi_csn_o   : out std_ulogic_vector(7 downto 0); -- SPI CS
-    irq_o       : out std_ulogic -- transmission done interrupt
+    clk_i     : in  std_ulogic; -- global clock line
+    rstn_i    : in  std_ulogic; -- global reset line, low-active, async
+    bus_req_i : in  bus_req_t;  -- bus request
+    bus_rsp_o : out bus_rsp_t;  -- bus response
+    clkgen_i  : in  std_ulogic_vector(7 downto 0);
+    spi_clk_o : out std_ulogic; -- SPI serial clock
+    spi_dat_o : out std_ulogic; -- controller data out, peripheral data in
+    spi_dat_i : in  std_ulogic; -- controller data in, peripheral data out
+    spi_csn_o : out std_ulogic_vector(7 downto 0); -- SPI CS
+    irq_o     : out std_ulogic -- transmission done interrupt
   );
 end neorv32_spi;
 
@@ -380,9 +379,6 @@ begin
       end if;
     end if;
   end process clock_generator;
-
-  -- clock generator enable --
-  clkgen_en_o <= ctrl.enable;
 
 
 end neorv32_spi_rtl;

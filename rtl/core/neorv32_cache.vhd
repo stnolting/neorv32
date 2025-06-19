@@ -91,7 +91,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
 
   -- control arbiter --
   type state_t is (
-    S_IDLE, S_LOOKUP, S_DIRECT_RSP, S_CLEAR,
+    S_IDLE, S_CHECK, S_DIRECT_RSP, S_CLEAR,
     S_DOWNLOAD_START, S_DOWNLOAD_WAIT, S_DOWNLOAD_RUN, S_DOWNLOAD_DONE, WAITING
   );
   type ctrl_t is record
@@ -175,10 +175,10 @@ begin
              (host_req_i.amo = '1') then -- atomic access
             ctrl_nxt.buf_dir <= '1';
           end if;
-          ctrl_nxt.state <= S_LOOKUP;
+          ctrl_nxt.state <= S_CHECK;
         end if;
 
-      when S_LOOKUP => -- check access request
+      when S_CHECK => -- check access request
       -- ------------------------------------------------------------
         ctrl_nxt.tag     <= host_req_i.addr(31 downto 32-tag_size_c);
         ctrl_nxt.idx     <= host_req_i.addr((offset_size_c+2+index_size_c)-1 downto offset_size_c+2);
@@ -285,7 +285,7 @@ begin
           host_rsp_o.err  <= '1';
           ctrl_nxt.state  <= S_IDLE;
         else
-          ctrl_nxt.state <= S_LOOKUP;
+          ctrl_nxt.state <= S_CHECK;
         end if;
 
       when others => -- undefined

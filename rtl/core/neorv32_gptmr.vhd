@@ -17,13 +17,12 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_gptmr is
   port (
-    clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
-    bus_req_i   : in  bus_req_t;  -- bus request
-    bus_rsp_o   : out bus_rsp_t;  -- bus response
-    clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(7 downto 0);
-    irq_o       : out std_ulogic -- timer match interrupt
+    clk_i     : in  std_ulogic; -- global clock line
+    rstn_i    : in  std_ulogic; -- global reset line, low-active
+    bus_req_i : in  bus_req_t;  -- bus request
+    bus_rsp_o : out bus_rsp_t;  -- bus response
+    clkgen_i  : in  std_ulogic_vector(7 downto 0);
+    irq_o     : out std_ulogic -- timer match interrupt
   );
 end neorv32_gptmr;
 
@@ -101,9 +100,6 @@ begin
       end if;
     end if;
   end process bus_access;
-
-  -- clock generator enable --
-  clkgen_en_o <= ctrl(ctrl_en_c);
 
 
   -- Timer Core -----------------------------------------------------------------------------
