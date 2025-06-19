@@ -20,15 +20,14 @@ entity neorv32_onewire is
     ONEWIRE_FIFO : natural range 1 to 2**15 -- RTX fifo depth, has to be a power of two, min 1
   );
   port (
-    clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
-    bus_req_i   : in  bus_req_t;  -- bus request
-    bus_rsp_o   : out bus_rsp_t;  -- bus response
-    clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(7 downto 0);
-    onewire_i   : in  std_ulogic; -- 1-wire line state
-    onewire_o   : out std_ulogic; -- 1-wire line pull-down
-    irq_o       : out std_ulogic  -- transfer done IRQ
+    clk_i     : in  std_ulogic; -- global clock line
+    rstn_i    : in  std_ulogic; -- global reset line, low-active
+    bus_req_i : in  bus_req_t;  -- bus request
+    bus_rsp_o : out bus_rsp_t;  -- bus response
+    clkgen_i  : in  std_ulogic_vector(7 downto 0);
+    onewire_i : in  std_ulogic; -- 1-wire line state
+    onewire_o : out std_ulogic; -- 1-wire line pull-down
+    irq_o     : out std_ulogic  -- transfer done IRQ
   );
 end neorv32_onewire;
 
@@ -270,9 +269,6 @@ begin
       clk_tick2 <= clk_tick; -- tick delayed by one clock cycle (for precise bus state sampling)
     end if;
   end process clock_generator;
-
-  -- enable SoC clock generator --
-  clkgen_en_o <= ctrl.enable;
 
   -- only use the lowest 4 clocks of the system clock generator --
   clk_src <= clkgen_i(3 downto 0);

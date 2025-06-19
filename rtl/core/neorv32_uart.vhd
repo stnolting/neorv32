@@ -33,7 +33,6 @@ entity neorv32_uart is
     rstn_i      : in  std_ulogic; -- global reset line, low-active, async
     bus_req_i   : in  bus_req_t;  -- bus request
     bus_rsp_o   : out bus_rsp_t;  -- bus response
-    clkgen_en_o : out std_ulogic; -- enable clock generator
     clkgen_i    : in  std_ulogic_vector(7 downto 0);
     uart_txd_o  : out std_ulogic; -- serial TX line
     uart_rxd_i  : in  std_ulogic; -- serial RX line
@@ -222,8 +221,7 @@ begin
   end process bus_access;
 
   -- UART clock enable --
-  clkgen_en_o <= ctrl.enable;
-  uart_clk    <= clkgen_i(to_integer(unsigned(ctrl.prsc)));
+  uart_clk <= clkgen_i(to_integer(unsigned(ctrl.prsc)));
 
 
   -- TX FIFO --------------------------------------------------------------------------------

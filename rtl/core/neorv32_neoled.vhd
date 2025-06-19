@@ -20,14 +20,13 @@ entity neorv32_neoled is
     FIFO_DEPTH : natural range 1 to 2**15 -- NEOLED FIFO depth, has to be a power of two, min 1
   );
   port (
-    clk_i       : in  std_ulogic; -- global clock line
-    rstn_i      : in  std_ulogic; -- global reset line, low-active
-    bus_req_i   : in  bus_req_t;  -- bus request
-    bus_rsp_o   : out bus_rsp_t;  -- bus response
-    clkgen_en_o : out std_ulogic; -- enable clock generator
-    clkgen_i    : in  std_ulogic_vector(7 downto 0);
-    irq_o       : out std_ulogic; -- interrupt request
-    neoled_o    : out std_ulogic -- serial async data line
+    clk_i     : in  std_ulogic; -- global clock line
+    rstn_i    : in  std_ulogic; -- global reset line, low-active
+    bus_req_i : in  bus_req_t;  -- bus request
+    bus_rsp_o : out bus_rsp_t;  -- bus response
+    clkgen_i  : in  std_ulogic_vector(7 downto 0);
+    irq_o     : out std_ulogic; -- interrupt request
+    neoled_o  : out std_ulogic -- serial async data line
   );
 end neorv32_neoled;
 
@@ -155,9 +154,6 @@ begin
       end if;
     end if;
   end process bus_access;
-
-  -- enable external clock generator --
-  clkgen_en_o <= ctrl.enable;
 
 
   -- TX Buffer (FIFO) -----------------------------------------------------------------------
