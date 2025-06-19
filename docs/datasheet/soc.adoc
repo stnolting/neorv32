@@ -334,12 +334,6 @@ processor main clock from the top entity's `clk_i` signal.
 | Resulting clock: | _f/2_   | _f/4_   | _f/8_   | _f/64_  | _f/128_ | _f/1024_| _f/2048_| _f/4096_
 |=======================
 
-.Power Saving
-[TIP]
-If no peripheral modules requires a clock signal from the internal clock generator (all according modules are disabled by
-clearing the enable bit in the according module's control register) the generator is automatically deactivated to reduce
-dynamic power consumption.
-
 
 <<<
 // ####################################################################################################################

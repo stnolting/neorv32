@@ -78,14 +78,14 @@ to maintain exclusive bus access. This transfer type is used by the CPU to perfo
   {name: 'xbus_tag_o',  wave: 'x3...|.x4...|.x.', data: ['tag', 'tag']},
   {name: 'xbus_we_o',   wave: 'x1...|.x0...|.x.'},
   {name: 'xbus_sel_o',  wave: 'x3...|.x4...|.x.', data: ['byte_enable', 'byte_enable']},
-  {name: 'xbus_stb_o',  wave: '010..|..10..|...', node: '.a......d.....'},
-  {name: 'xbus_cyc_o',  wave: '01...|.01...|.0.', node: '.b......e.....'},
+  {name: 'xbus_stb_o',  wave: '010..|..10..|...', node: '.a......e......'},
+  {name: 'xbus_cyc_o',  wave: '01...|.01...|.0.', node: '.b... .df.....h'},
   {},
-  {name: 'xbus_ack_i',  wave: 'x0...|1x0...|1x.', node: '......c......f'},
+  {name: 'xbus_ack_i',  wave: 'x0...|1x0...|1x.', node: '......c......g.'},
   {name: 'xbus_err_i',  wave: 'x0...|.x0...|.x.'},
   {name: 'xbus_dat_i',  wave: 'x....|.x....|4x.', data: ['rdata']},
 ],
- edge: ['a~>c', 'b~>c', 'd~>f', 'e~>f']
+ edge: ['a~>c', 'b~>c', 'c~>d', 'e~>g', 'f~>g', 'g~>h']
 }
 ----
 
@@ -100,14 +100,14 @@ to maintain exclusive bus access. This transfer type is used by the CPU to perfo
   {name: 'xbus_tag_o',  wave: 'x2.....x'},
   {name: 'xbus_we_o',   wave: 'x0..1..x'},
   {name: 'xbus_sel_o',  wave: 'x2.....x'},
-  {name: 'xbus_stb_o',  wave: '010.10..', node: '.a..c'},
-  {name: 'xbus_cyc_o',  wave: '01.....0'},
+  {name: 'xbus_stb_o',  wave: '010.10..', node: '.a..c...'},
+  {name: 'xbus_cyc_o',  wave: '01.....0', node: '.......e'},
   {},
-  {name: 'xbus_ack_i',  wave: '0..10.10', node: '...b..d'},
+  {name: 'xbus_ack_i',  wave: '0..10.10', node: '...b..df'},
   {name: 'xbus_err_i',  wave: '0.......'},
   {name: 'xbus_dat_i',  wave: 'x..2x...', data: ['rdata']},
 ],
- edge: ['a~>b', 'b~>c', 'c~>d']
+ edge: ['a~>b', 'b~>c', 'c~>d', 'ef']
 }
 ----
 
@@ -122,14 +122,14 @@ to maintain exclusive bus access. This transfer type is used by the CPU to perfo
   {name: 'xbus_tag_o',  wave: 'x2.....x.'},
   {name: 'xbus_we_o',   wave: 'x0.....x.'},
   {name: 'xbus_sel_o',  wave: 'x2.....x.'},
-  {name: 'xbus_stb_o',  wave: '0101..0..', node: '.a.c'},
-  {name: 'xbus_cyc_o',  wave: '01.....0.', node: '.......d'},
+  {name: 'xbus_stb_o',  wave: '0101..0..', node: '.a.cegi.'},
+  {name: 'xbus_cyc_o',  wave: '01.....0.', node: '.......k'},
   {},
-  {name: 'xbus_ack_i',  wave: '0.101..0.', node: '..b....e'},
+  {name: 'xbus_ack_i',  wave: '0.101..0.', node: '..b.dfhj'},
   {name: 'xbus_err_i',  wave: '0........'},
   {name: 'xbus_dat_i',  wave: 'x.3x456x.', data: ['[0]', '[4]', '[8]', '[12]']},
 ],
- edge: ['a~>b', 'b~>c', 'de']
+ edge: ['a~>b', 'b~>c', 'c~>d', 'e~>f', 'g~>h', 'i~>j', 'kj']
 }
 ----
 

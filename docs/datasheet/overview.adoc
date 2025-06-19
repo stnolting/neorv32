@@ -119,35 +119,35 @@ The root directory of the repository is considered the NEORV32 base or home fold
 
 .Folder Structure
 ...................................
-neorv32                 - Project home folder
+neorv32                    - Project home folder
 │
-├-docs                  - Project documentation
-│ ├-datasheet           - AsciiDoc sources for the NEORV32 data sheet
-│ ├-figures             - Figures and logos
-│ ├-references          - Data sheets and RISC-V specs
-│ └-userguide           - AsciiDoc sources for the NEORV32 user guide
+├─ docs                    - Project documentation
+│  ├─ datasheet            - AsciiDoc sources for the NEORV32 data sheet
+│  ├─ figures              - Figures and logos
+│  ├─ references           - Data sheets and RISC-V specs
+│  └─ userguide            - AsciiDoc sources for the NEORV32 user guide
 │
-├-rtl                   - VHDL sources
-│ ├-core                - Core sources of the CPU & SoC
-│ ├-processor_templates - Pre-configured SoC wrappers
-│ ├-system_integration  - System wrappers and bridges for advanced connectivity
-│ └-test_setups         - Minimal test setup "SoCs" used in the User Guide
+├─ rtl                     - VHDL sources
+│  ├─ core                 - Core sources of the CPU & SoC
+│  ├─ processor_templates  - Pre-configured SoC wrappers
+│  ├─ system_integration   - System wrappers and bridges for advanced connectivity
+│  └─ test_setups          - Minimal test setup "SoCs" used in the User Guide
 │
-├-sim                   - Simulation files
+├─ sim                     - Simulation files
 │
-└-sw                    - Software framework
-  ├-bootloader          - Sources of the processor-internal bootloader
-  ├-common              - Linker script, crt0.S start-up code and central makefile
-  ├-example             - Example programs for the core and the SoC modules
-  │ ├-eclipse           - Pre-configured Eclipse IDE project
-  │ └-...               - Several example programs
-  ├-lib                 - Processor core library
-  │ ├-include           - NEORV32 core library header files (*.h)
-  │ └-source            - NEORV32 core library source files (*.c)
-  ├-image_gen           - Helper program to generate executables & memory images
-  ├-ocd_firmware        - Firmware for the on-chip debugger's "park loop"
-  ├-openocd             - OpenOCD configuration files
-  └-svd                 - Processor system view description file (CMSIS-SVD)
+└─ sw                      - Software framework
+   ├─ bootloader           - Sources of the processor-internal bootloader
+   ├─ common               - Linker script, crt0.S start-up code and central makefile
+   ├─ example              - Example programs for the core and the SoC modules
+   │  ├─ eclipse           - Pre-configured Eclipse IDE project
+   │  └─ ...               - Several example programs
+   ├─ lib                  - Processor core library
+   │  ├─ include           - NEORV32 core library header files (*.h)
+   │  └─ source            - NEORV32 core library source files (*.c)
+   ├─ image_gen            - Helper program to generate executables & memory images
+   ├─ ocd_firmware         - Firmware for the on-chip debugger "park loop"
+   ├─ openocd              - OpenOCD configuration files
+   └─ svd                  - Processor system view description file (CMSIS-SVD)
 ...................................
 
 
@@ -177,54 +177,55 @@ user-defined modules to implement application-specific functionality.
 .RTL File List (in alphabetical order)
 ...................................
 rtl/core
-├-neorv32_application_image.vhd - IMEM application initialization image (package)
-├-neorv32_boot_rom.vhd          - Bootloader ROM
-├-neorv32_bootloader_image.vhd  - Bootloader ROM memory image (package)
-├-neorv32_bus.vhd               - SoC bus infrastructure modules
-├-neorv32_cache.vhd             - Generic cache module
-├-neorv32_clint.vhd             - Core local interruptor
-├-neorv32_cfs.vhd               - Custom functions subsystem
-├-neorv32_cpu.vhd               - NEORV32 CPU TOP ENTITY
-├-neorv32_cpu_alu.vhd           - Arithmetic/logic unit
-├-neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
-├-neorv32_cpu_counters.vhd      - Hardware counters (Zicntr & Zihpm ext.)
-├-neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
-├-neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
-├-neorv32_cpu_cp_cond.vhd       - Integer conditional co-processor (Zicond ext.)
-├-neorv32_cpu_cp_crypto.vhd     - Scalar cryptography co-processor (Zk*/Zbk* ext.)
-├-neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
-├-neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M ext.)
-├-neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
-├-neorv32_cpu_decompressor.vhd  - Compressed instructions decoder (C ext.)
-├-neorv32_cpu_frontend.vhd      - Instruction fetch and issue
-├-neorv32_cpu_lsu.vhd           - Load/store unit
-├-neorv32_cpu_pmp.vhd           - Physical memory protection unit (Smpmp ext.)
-├-neorv32_cpu_regfile.vhd       - Data register file
-├-neorv32_debug_auth.vhd        - On-chip debugger: authentication module
-├-neorv32_debug_dm.vhd          - On-chip debugger: debug module
-├-neorv32_debug_dtm.vhd         - On-chip debugger: debug transfer module
-├-neorv32_dma.vhd               - Direct memory access controller
-├-neorv32_dmem.vhd              - Generic processor-internal data memory
-├-neorv32_fifo.vhd              - Generic FIFO component
-├-neorv32_gpio.vhd              - General purpose input/output port unit
-├-neorv32_gptmr.vhd             - General purpose 32-bit timer
-├-neorv32_imem.vhd              - Generic processor-internal instruction memory
-├-neorv32_neoled.vhd            - NeoPixel (TM) compatible smart LED interface
-├-neorv32_onewire.vhd           - One-Wire serial interface controller
-├-neorv32_package.vhd           - Main VHDL package file
-├-neorv32_pwm.vhd               - Pulse-width modulation controller
-├-neorv32_sdi.vhd               - Serial data interface controller (SPI device)
-├-neorv32_slink.vhd             - Stream link interface
-├-neorv32_spi.vhd               - Serial peripheral interface controller (SPI host)
-├-neorv32_sys.vhd               - System infrastructure modules
-├-neorv32_sysinfo.vhd           - System configuration information memory
-├-neorv32_top.vhd               - NEORV32 PROCESSOR/SOC TOP ENTITY
-├-neorv32_trng.vhd              - True random number generator
-├-neorv32_twd.vhd               - Two wire serial device controller
-├-neorv32_twi.vhd               - Two wire serial interface controller
-├-neorv32_uart.vhd              - Universal async. receiver/transmitter
-├-neorv32_wdt.vhd               - Watchdog timer
-└-neorv32_xbus.vhd              - External bus interface gateways
+│
+├─ neorv32_application_image.vhd - IMEM application initialization image (package)
+├─ neorv32_boot_rom.vhd          - Bootloader ROM
+├─ neorv32_bootloader_image.vhd  - Bootloader ROM memory image (package)
+├─ neorv32_bus.vhd               - SoC bus infrastructure modules
+├─ neorv32_cache.vhd             - Generic cache module
+├─ neorv32_clint.vhd             - Core local interruptor
+├─ neorv32_cfs.vhd               - Custom functions subsystem
+├─ neorv32_cpu.vhd               - NEORV32 CPU TOP ENTITY
+├─ neorv32_cpu_alu.vhd           - Arithmetic/logic unit
+├─ neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
+├─ neorv32_cpu_counters.vhd      - Hardware counters (Zicntr & Zihpm ext.)
+├─ neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
+├─ neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
+├─ neorv32_cpu_cp_cond.vhd       - Integer conditional co-processor (Zicond ext.)
+├─ neorv32_cpu_cp_crypto.vhd     - Scalar cryptography co-processor (Zk*/Zbk* ext.)
+├─ neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
+├─ neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M ext.)
+├─ neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
+├─ neorv32_cpu_decompressor.vhd  - Compressed instructions decoder (C ext.)
+├─ neorv32_cpu_frontend.vhd      - Instruction fetch and issue
+├─ neorv32_cpu_lsu.vhd           - Load/store unit
+├─ neorv32_cpu_pmp.vhd           - Physical memory protection unit (Smpmp ext.)
+├─ neorv32_cpu_regfile.vhd       - Data register file
+├─ neorv32_debug_auth.vhd        - On-chip debugger: authentication module
+├─ neorv32_debug_dm.vhd          - On-chip debugger: debug module
+├─ neorv32_debug_dtm.vhd         - On-chip debugger: debug transfer module
+├─ neorv32_dma.vhd               - Direct memory access controller
+├─ neorv32_dmem.vhd              - Generic processor-internal data memory
+├─ neorv32_fifo.vhd              - Generic FIFO component
+├─ neorv32_gpio.vhd              - General purpose input/output port unit
+├─ neorv32_gptmr.vhd             - General purpose 32-bit timer
+├─ neorv32_imem.vhd              - Generic processor-internal instruction memory
+├─ neorv32_neoled.vhd            - NeoPixel (TM) compatible smart LED interface
+├─ neorv32_onewire.vhd           - One-Wire serial interface controller
+├─ neorv32_package.vhd           - Main VHDL package file
+├─ neorv32_pwm.vhd               - Pulse-width modulation controller
+├─ neorv32_sdi.vhd               - Serial data interface controller (SPI device)
+├─ neorv32_slink.vhd             - Stream link interface
+├─ neorv32_spi.vhd               - Serial peripheral interface controller (SPI host)
+├─ neorv32_sys.vhd               - System infrastructure modules
+├─ neorv32_sysinfo.vhd           - System configuration information memory
+├─ neorv32_top.vhd               - NEORV32 PROCESSOR/SOC TOP ENTITY
+├─ neorv32_trng.vhd              - True random number generator
+├─ neorv32_twd.vhd               - Two wire serial device controller
+├─ neorv32_twi.vhd               - Two wire serial interface controller
+├─ neorv32_uart.vhd              - Universal async. receiver/transmitter
+├─ neorv32_wdt.vhd               - Watchdog timer
+└─ neorv32_xbus.vhd              - External bus interface gateways
 ...................................
 
 
