@@ -268,13 +268,8 @@ architecture neorv32_top_rtl of neorv32_top is
   -- reset nets --
   signal rstn_wdt, rstn_sys, rstn_ext : std_ulogic;
 
-  -- clock system --
-  signal clk_gen : std_ulogic_vector(7 downto 0); -- scaled clock-enables
-  --
-  type clk_gen_en_enum_t is (CG_UART0, CG_UART1, CG_SPI, CG_TWI, CG_TWD, CG_PWM, CG_WDT, CG_NEOLED, CG_GPTMR, CG_ONEWIRE);
-  type clk_gen_en_t is array (clk_gen_en_enum_t) of std_ulogic;
-  signal clk_gen_en  : clk_gen_en_t;
-  signal clk_gen_en2 : std_ulogic_vector(9 downto 0);
+  -- pre-scaled clocks (clock enables) --
+  signal clk_gen : std_ulogic_vector(7 downto 0);
 
   -- debug module interface (DMI) --
   signal dmi_req : dmi_req_t;
@@ -405,8 +400,7 @@ begin
   soc_generators:
   if true generate
 
-    -- Reset Sequencer ------------------------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
+    -- Reset Sequencer --
     neorv32_sys_reset_inst: entity neorv32.neorv32_sys_reset
     port map (
       clk_i       => clk_i,
@@ -419,24 +413,14 @@ begin
       xrstn_ocd_o => rstn_ocd_o
     );
 
-
-    -- Clock Divider / Pulse Generator --------------------------------------------------------
-    -- -------------------------------------------------------------------------------------------
+    -- Clock Divider / Pulse Generator --
     neorv32_sys_clock_inst: entity neorv32.neorv32_sys_clock
-    generic map (
-      NUM_EN => clk_gen_en2'length
-    )
     port map (
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
-      enable_i => clk_gen_en2,
+      enable_i => '1',
       clk_en_o => clk_gen
     );
-
-    -- fresh clocks anyone? --
-    clk_gen_en2 <= clk_gen_en(CG_UART0) & clk_gen_en(CG_UART1) & clk_gen_en(CG_SPI) & clk_gen_en(CG_TWI)    &
-                   clk_gen_en(CG_TWD)   & clk_gen_en(CG_PWM)   & clk_gen_en(CG_WDT) & clk_gen_en(CG_NEOLED) &
-                   clk_gen_en(CG_GPTMR) & clk_gen_en(CG_ONEWIRE);
 
   end generate; -- /soc_generators
 
@@ -1079,22 +1063,20 @@ begin
     if IO_WDT_EN generate
       neorv32_wdt_inst: entity neorv32.neorv32_wdt
       port map (
-        clk_i       => clk_i,
-        rstn_ext_i  => rstn_ext,
-        rstn_dbg_i  => dci_ndmrstn,
-        rstn_sys_i  => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_WDT),
-        bus_rsp_o   => iodev_rsp(IODEV_WDT),
-        clkgen_en_o => clk_gen_en(CG_WDT),
-        clkgen_i    => clk_gen,
-        rstn_o      => rstn_wdt
+        clk_i      => clk_i,
+        rstn_ext_i => rstn_ext,
+        rstn_dbg_i => dci_ndmrstn,
+        rstn_sys_i => rstn_sys,
+        bus_req_i  => iodev_req(IODEV_WDT),
+        bus_rsp_o  => iodev_rsp(IODEV_WDT),
+        clkgen_i   => clk_gen,
+        rstn_o     => rstn_wdt
       );
     end generate;
 
     neorv32_wdt_disabled:
     if not IO_WDT_EN generate
       iodev_rsp(IODEV_WDT) <= rsp_terminate_c;
-      clk_gen_en(CG_WDT)   <= '0';
       rstn_wdt             <= '1';
     end generate;
 
@@ -1143,7 +1125,6 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_UART0),
         bus_rsp_o   => iodev_rsp(IODEV_UART0),
-        clkgen_en_o => clk_gen_en(CG_UART0),
         clkgen_i    => clk_gen,
         uart_txd_o  => uart0_txd_o,
         uart_rxd_i  => uart0_rxd_i,
@@ -1158,7 +1139,6 @@ begin
       iodev_rsp(IODEV_UART0) <= rsp_terminate_c;
       uart0_txd_o            <= '0';
       uart0_rtsn_o           <= '1';
-      clk_gen_en(CG_UART0)   <= '0';
       firq(FIRQ_UART0)       <= '0';
     end generate;
 
@@ -1179,7 +1159,6 @@ begin
         rstn_i      => rstn_sys,
         bus_req_i   => iodev_req(IODEV_UART1),
         bus_rsp_o   => iodev_rsp(IODEV_UART1),
-        clkgen_en_o => clk_gen_en(CG_UART1),
         clkgen_i    => clk_gen,
         uart_txd_o  => uart1_txd_o,
         uart_rxd_i  => uart1_rxd_i,
@@ -1194,7 +1173,6 @@ begin
       iodev_rsp(IODEV_UART1) <= rsp_terminate_c;
       uart1_txd_o            <= '0';
       uart1_rtsn_o           <= '1';
-      clk_gen_en(CG_UART1)   <= '0';
       firq(FIRQ_UART1)       <= '0';
     end generate;
 
@@ -1208,17 +1186,16 @@ begin
         IO_SPI_FIFO => IO_SPI_FIFO
       )
       port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_SPI),
-        bus_rsp_o   => iodev_rsp(IODEV_SPI),
-        clkgen_en_o => clk_gen_en(CG_SPI),
-        clkgen_i    => clk_gen,
-        spi_clk_o   => spi_clk_o,
-        spi_dat_o   => spi_dat_o,
-        spi_dat_i   => spi_dat_i,
-        spi_csn_o   => spi_csn_o,
-        irq_o       => firq(FIRQ_SPI)
+        clk_i     => clk_i,
+        rstn_i    => rstn_sys,
+        bus_req_i => iodev_req(IODEV_SPI),
+        bus_rsp_o => iodev_rsp(IODEV_SPI),
+        clkgen_i  => clk_gen,
+        spi_clk_o => spi_clk_o,
+        spi_dat_o => spi_dat_o,
+        spi_dat_i => spi_dat_i,
+        spi_csn_o => spi_csn_o,
+        irq_o     => firq(FIRQ_SPI)
       );
     end generate;
 
@@ -1228,7 +1205,6 @@ begin
       spi_clk_o            <= '0';
       spi_dat_o            <= '0';
       spi_csn_o            <= (others => '1');
-      clk_gen_en(CG_SPI)   <= '0';
       firq(FIRQ_SPI)       <= '0';
     end generate;
 
@@ -1242,17 +1218,16 @@ begin
         IO_TWI_FIFO => IO_TWI_FIFO
       )
       port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_TWI),
-        bus_rsp_o   => iodev_rsp(IODEV_TWI),
-        clkgen_en_o => clk_gen_en(CG_TWI),
-        clkgen_i    => clk_gen,
-        twi_sda_i   => twi_sda_i,
-        twi_sda_o   => twi_sda_o,
-        twi_scl_i   => twi_scl_i,
-        twi_scl_o   => twi_scl_o,
-        irq_o       => firq(FIRQ_TWI)
+        clk_i     => clk_i,
+        rstn_i    => rstn_sys,
+        bus_req_i => iodev_req(IODEV_TWI),
+        bus_rsp_o => iodev_rsp(IODEV_TWI),
+        clkgen_i  => clk_gen,
+        twi_sda_i => twi_sda_i,
+        twi_sda_o => twi_sda_o,
+        twi_scl_i => twi_scl_i,
+        twi_scl_o => twi_scl_o,
+        irq_o     => firq(FIRQ_TWI)
       );
     end generate;
 
@@ -1261,7 +1236,6 @@ begin
       iodev_rsp(IODEV_TWI) <= rsp_terminate_c;
       twi_sda_o            <= '1';
       twi_scl_o            <= '1';
-      clk_gen_en(CG_TWI)   <= '0';
       firq(FIRQ_TWI)       <= '0';
     end generate;
 
@@ -1276,17 +1250,16 @@ begin
         TWD_TX_FIFO => IO_TWD_TX_FIFO
       )
       port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_TWD),
-        bus_rsp_o   => iodev_rsp(IODEV_TWD),
-        clkgen_en_o => clk_gen_en(CG_TWD),
-        clkgen_i    => clk_gen,
-        twd_sda_i   => twd_sda_i,
-        twd_sda_o   => twd_sda_o,
-        twd_scl_i   => twd_scl_i,
-        twd_scl_o   => twd_scl_o,
-        irq_o       => firq(FIRQ_TWD)
+        clk_i     => clk_i,
+        rstn_i    => rstn_sys,
+        bus_req_i => iodev_req(IODEV_TWD),
+        bus_rsp_o => iodev_rsp(IODEV_TWD),
+        clkgen_i  => clk_gen,
+        twd_sda_i => twd_sda_i,
+        twd_sda_o => twd_sda_o,
+        twd_scl_i => twd_scl_i,
+        twd_scl_o => twd_scl_o,
+        irq_o     => firq(FIRQ_TWD)
       );
     end generate;
 
@@ -1295,7 +1268,6 @@ begin
       iodev_rsp(IODEV_TWD) <= rsp_terminate_c;
       twd_sda_o            <= '1';
       twd_scl_o            <= '1';
-      clk_gen_en(CG_TWD)   <= '0';
       firq(FIRQ_TWD)       <= '0';
     end generate;
 
@@ -1309,20 +1281,18 @@ begin
         NUM_CHANNELS => IO_PWM_NUM_CH
       )
       port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_PWM),
-        bus_rsp_o   => iodev_rsp(IODEV_PWM),
-        clkgen_en_o => clk_gen_en(CG_PWM),
-        clkgen_i    => clk_gen,
-        pwm_o       => pwm_o
+        clk_i     => clk_i,
+        rstn_i    => rstn_sys,
+        bus_req_i => iodev_req(IODEV_PWM),
+        bus_rsp_o => iodev_rsp(IODEV_PWM),
+        clkgen_i  => clk_gen,
+        pwm_o     => pwm_o
       );
     end generate;
 
     neorv32_pwm_disabled:
     if not io_pwm_en_c generate
       iodev_rsp(IODEV_PWM) <= rsp_terminate_c;
-      clk_gen_en(CG_PWM)   <= '0';
       pwm_o                <= (others => '0');
     end generate;
 
@@ -1360,21 +1330,19 @@ begin
         FIFO_DEPTH => IO_NEOLED_TX_FIFO
       )
       port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_NEOLED),
-        bus_rsp_o   => iodev_rsp(IODEV_NEOLED),
-        clkgen_en_o => clk_gen_en(CG_NEOLED),
-        clkgen_i    => clk_gen,
-        irq_o       => firq(FIRQ_NEOLED),
-        neoled_o    => neoled_o
+        clk_i     => clk_i,
+        rstn_i    => rstn_sys,
+        bus_req_i => iodev_req(IODEV_NEOLED),
+        bus_rsp_o => iodev_rsp(IODEV_NEOLED),
+        clkgen_i  => clk_gen,
+        irq_o     => firq(FIRQ_NEOLED),
+        neoled_o  => neoled_o
       );
     end generate;
 
     neorv32_neoled_disabled:
     if not IO_NEOLED_EN generate
       iodev_rsp(IODEV_NEOLED) <= rsp_terminate_c;
-      clk_gen_en(CG_NEOLED)   <= '0';
       firq(FIRQ_NEOLED)       <= '0';
       neoled_o                <= '0';
     end generate;
@@ -1386,20 +1354,18 @@ begin
     if IO_GPTMR_EN generate
       neorv32_gptmr_inst: entity neorv32.neorv32_gptmr
       port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_GPTMR),
-        bus_rsp_o   => iodev_rsp(IODEV_GPTMR),
-        clkgen_en_o => clk_gen_en(CG_GPTMR),
-        clkgen_i    => clk_gen,
-        irq_o       => firq(FIRQ_GPTMR)
+        clk_i     => clk_i,
+        rstn_i    => rstn_sys,
+        bus_req_i => iodev_req(IODEV_GPTMR),
+        bus_rsp_o => iodev_rsp(IODEV_GPTMR),
+        clkgen_i  => clk_gen,
+        irq_o     => firq(FIRQ_GPTMR)
       );
     end generate;
 
     neorv32_gptmr_disabled:
     if not IO_GPTMR_EN generate
       iodev_rsp(IODEV_GPTMR) <= rsp_terminate_c;
-      clk_gen_en(CG_GPTMR)   <= '0';
       firq(FIRQ_GPTMR)       <= '0';
     end generate;
 
@@ -1413,15 +1379,14 @@ begin
         ONEWIRE_FIFO => IO_ONEWIRE_FIFO
       )
       port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_ONEWIRE),
-        bus_rsp_o   => iodev_rsp(IODEV_ONEWIRE),
-        clkgen_en_o => clk_gen_en(CG_ONEWIRE),
-        clkgen_i    => clk_gen,
-        onewire_i   => onewire_i,
-        onewire_o   => onewire_o,
-        irq_o       => firq(FIRQ_ONEWIRE)
+        clk_i     => clk_i,
+        rstn_i    => rstn_sys,
+        bus_req_i => iodev_req(IODEV_ONEWIRE),
+        bus_rsp_o => iodev_rsp(IODEV_ONEWIRE),
+        clkgen_i  => clk_gen,
+        onewire_i => onewire_i,
+        onewire_o => onewire_o,
+        irq_o     => firq(FIRQ_ONEWIRE)
       );
     end generate;
 
@@ -1429,7 +1394,6 @@ begin
     if not IO_ONEWIRE_EN generate
       iodev_rsp(IODEV_ONEWIRE) <= rsp_terminate_c;
       onewire_o                <= '1';
-      clk_gen_en(CG_ONEWIRE)   <= '0';
       firq(FIRQ_ONEWIRE)       <= '0';
     end generate;
 
