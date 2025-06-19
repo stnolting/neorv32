@@ -9,7 +9,6 @@
 /**
  * @file neorv32_gpio.c
  * @brief General purpose input/output port unit (GPIO) HW driver source file.
-#include <neorv32.h>
  */
 
 #include <neorv32.h>
@@ -18,16 +17,11 @@
 /**********************************************************************//**
  * Check if GPIO unit was synthesized.
  *
- * @return 0 if GPIO was not synthesized, 1 if GPIO is available.
+ * @return 0 if GPIO was not synthesized, non-zero if GPIO is available.
  **************************************************************************/
 int neorv32_gpio_available(void) {
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPIO)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPIO));
 }
 
 

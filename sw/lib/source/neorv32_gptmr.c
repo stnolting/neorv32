@@ -17,16 +17,11 @@
 /**********************************************************************//**
  * Check if general purpose timer unit was synthesized.
  *
- * @return 0 if GPTMR was not synthesized, 1 if GPTMR is available.
+ * @return 0 if GPTMR was not synthesized, non-zero if GPTMR is available.
  **************************************************************************/
 int neorv32_gptmr_available(void) {
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPTMR)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPTMR));
 }
 
 

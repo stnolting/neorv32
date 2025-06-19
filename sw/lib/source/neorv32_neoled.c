@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,10 +9,6 @@
 /**
  * @file neorv32_neoled.c
  * @brief Smart LED Interface (NEOLED) HW driver source file.
- *
- * @note These functions should only be used if the NEOLED unit was synthesized (IO_NEOLED_EN = true).
- *
- * @see https://stnolting.github.io/neorv32/sw/files.html
  */
 
 #include <neorv32.h>
@@ -21,16 +17,11 @@
 /**********************************************************************//**
  * Check if NEOLED unit was synthesized.
  *
- * @return 0 if NEOLED was not synthesized, 1 if NEOLED is available.
+ * @return 0 if NEOLED was not synthesized, non-zero if NEOLED is available.
  **************************************************************************/
 int neorv32_neoled_available(void) {
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_NEOLED)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_NEOLED));
 }
 
 

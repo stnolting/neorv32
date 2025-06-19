@@ -21,17 +21,19 @@
  * Check if UART unit was synthesized.
  *
  * @param[in,out] Hardware handle to UART register struct, #neorv32_uart_t.
- * @return 0 if UART0/1 was not synthesized, 1 if UART0/1 is available.
+ * @return 0 if UART0/1 was not synthesized, non-zero if UART0/1 is available.
  **************************************************************************/
 int neorv32_uart_available(neorv32_uart_t *UARTx) {
 
-  if ((UARTx == NEORV32_UART0) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART0))) {
-    return 1;
+  if (UARTx == NEORV32_UART0) {
+    return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART0));
   }
-  if ((UARTx == NEORV32_UART1) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1))) {
-    return 1;
+  else if (UARTx == NEORV32_UART1) {
+    return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_UART1));
   }
-  return 0;
+  else {
+    return 0;
+  }
 }
 
 

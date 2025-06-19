@@ -17,16 +17,11 @@
 /**********************************************************************//**
  * Check if SDI unit was synthesized.
  *
- * @return 0 if SDI was not synthesized, 1 if SPI is available.
+ * @return 0 if SDI was not synthesized, non-zero if SPI is available.
  **************************************************************************/
 int neorv32_sdi_available(void) {
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SDI)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SDI));
 }
 
 

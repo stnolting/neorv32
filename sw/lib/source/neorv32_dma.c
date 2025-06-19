@@ -17,16 +17,11 @@
 /**********************************************************************//**
  * Check if DMA controller was synthesized.
  *
- * @return 0 if DMA was not synthesized, 1 if DMA is available.
+ * @return 0 if DMA was not synthesized, non-zero if DMA is available.
  **************************************************************************/
 int neorv32_dma_available(void) {
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_DMA)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_DMA));
 }
 
 

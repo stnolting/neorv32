@@ -17,16 +17,11 @@
 /**********************************************************************//**
  * Check if TWI unit was synthesized.
  *
- * @return 0 if TWI was not synthesized, 1 if TWI is available.
+ * @return 0 if TWI was not synthesized, non-zero if TWI is available.
  **************************************************************************/
 int neorv32_twi_available(void) {
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWI)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWI));
 }
 
 

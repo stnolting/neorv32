@@ -208,7 +208,7 @@ uint64_t neorv32_aux_hexstr2uint64(char *buffer, unsigned int length) {
     }
 
     res <<= 4;
-    res |= (uint64_t)(d & 0xf);
+    res += (uint64_t)d;
   }
 
   return res;

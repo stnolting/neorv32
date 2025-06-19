@@ -17,16 +17,11 @@
 /**********************************************************************//**
  * Check if TRNG unit was synthesized.
  *
- * @return 0 if TRNG was not synthesized, 1 if TRNG is available.
+ * @return 0 if TRNG was not synthesized, non-zero if TRNG is available.
  **************************************************************************/
 int neorv32_trng_available(void) {
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG));
 }
 
 
