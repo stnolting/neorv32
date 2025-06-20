@@ -36,10 +36,8 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   -- Control register bits --
   constant ctrl_enable_c      : natural :=  0; -- r/w: WDT enable
   constant ctrl_lock_c        : natural :=  1; -- r/w: lock write access to control register when set
-  constant ctrl_strict_c      : natural :=  2; -- r/w: force hardware reset if reset password is incorrect or if access to locked config
-  constant ctrl_rcause_lo_c   : natural :=  3; -- r/-: cause of last system reset - low
-  constant ctrl_rcause_hi_c   : natural :=  4; -- r/-: cause of last system reset - high
-  --
+  constant ctrl_rcause_lo_c   : natural :=  2; -- r/-: cause of last system reset - low
+  constant ctrl_rcause_hi_c   : natural :=  3; -- r/-: cause of last system reset - high
   constant ctrl_timeout_lsb_c : natural :=  8; -- r/w: timeout value LSB
   constant ctrl_timeout_msb_c : natural := 31; -- r/w: timeout value MSB
 
@@ -47,7 +45,6 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   type ctrl_t is record
     enable  : std_ulogic;
     lock    : std_ulogic;
-    strict  : std_ulogic;
     timeout : std_ulogic_vector(23 downto 0);
   end record;
   signal ctrl : ctrl_t;
@@ -73,7 +70,6 @@ begin
       bus_rsp_o    <= rsp_terminate_c;
       ctrl.enable  <= '0'; -- disable WDT after reset
       ctrl.lock    <= '0'; -- unlock after reset
-      ctrl.strict  <= '0';
       ctrl.timeout <= (others => '0');
       reset_wdt    <= '0';
       reset_force  <= '0';
@@ -92,7 +88,6 @@ begin
             if (ctrl.lock = '0') then -- update configuration only if not locked
               ctrl.enable  <= bus_req_i.data(ctrl_enable_c);
               ctrl.lock    <= bus_req_i.data(ctrl_lock_c) and ctrl.enable; -- lock only if already enabled
-              ctrl.strict  <= bus_req_i.data(ctrl_strict_c);
               ctrl.timeout <= bus_req_i.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c);
             else -- write access attempt to locked CTRL register
               reset_force <= '1';
@@ -108,7 +103,6 @@ begin
           bus_rsp_o.data(ctrl_enable_c)                                <= ctrl.enable;
           bus_rsp_o.data(ctrl_lock_c)                                  <= ctrl.lock;
           bus_rsp_o.data(ctrl_rcause_hi_c downto ctrl_rcause_lo_c)     <= reset_cause;
-          bus_rsp_o.data(ctrl_strict_c)                                <= ctrl.strict;
           bus_rsp_o.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c) <= ctrl.timeout;
         end if;
       end if;
@@ -151,7 +145,7 @@ begin
       hw_rst_access  <= '0';
     elsif rising_edge(clk_i) then
       hw_rst_timeout <= ctrl.enable and cnt_timeout and prsc_tick; -- timeout
-      hw_rst_access  <= ctrl.enable and ctrl.strict and reset_force; -- strict mode and incorrect password
+      hw_rst_access  <= ctrl.enable and ctrl.lock and reset_force; -- locked and incorrect password
     end if;
   end process reset_generator;
 

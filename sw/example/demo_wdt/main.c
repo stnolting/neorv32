@@ -27,7 +27,7 @@
 
 
 /**********************************************************************//**
- * Simple bus-wait helper.
+ * Simple busy-wait helper.
  *
  * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
  **************************************************************************/
@@ -41,7 +41,7 @@ void delay_ms(uint32_t time_ms) {
  *
  * @note This program requires the WDT and UART0 to be synthesized.
  *
- * @return 0 if execution was successful
+ * @return Should never return.
  **************************************************************************/
 int main() {
 
@@ -51,14 +51,15 @@ int main() {
   // setup UART at default baud rate, no interrupts
   neorv32_uart0_setup(BAUD_RATE, 0);
 
-  // check if WDT is implemented at all
-  if (neorv32_wdt_available() == 0) {
-    return 1; // WDT not synthesized
-  }
-
   // check if UART0 is implemented at all
   if (neorv32_uart0_available() == 0) {
-    return 1; // UART0 not synthesized
+    return -1; // UART0 not synthesized
+  }
+
+  // check if WDT is implemented at all
+  if (neorv32_wdt_available() == 0) {
+    neorv32_uart0_puts("\nWDT not synthesized!\n");
+    return -1;
   }
 
 
@@ -92,9 +93,9 @@ int main() {
     return -1;
   }
 
-  // setup watchdog: no lock, enable strict mode
+  // setup watchdog: no lock
   neorv32_uart0_puts("Starting WDT...\n");
-  neorv32_wdt_setup(timeout, 0, 1);
+  neorv32_wdt_setup(timeout, 0);
 
 
   // feed the watchdog

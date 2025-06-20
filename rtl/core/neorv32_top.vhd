@@ -332,32 +332,32 @@ begin
       cond_sel_string_f(boolean(num_cores_c = 1), "(single-core) ",   "") &
       cond_sel_string_f(boolean(num_cores_c = 2), "(smp-dual-core) ", "") &
       cond_sel_string_f(IMEM_EN,         cond_sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
-      cond_sel_string_f(DMEM_EN,         "DMEM ",       "") &
-      cond_sel_string_f(bootrom_en_c,    "BOOTROM ",    "") &
-      cond_sel_string_f(ICACHE_EN,       "I-CACHE ",    "") &
-      cond_sel_string_f(DCACHE_EN,       "D-CACHE ",    "") &
-      cond_sel_string_f(XBUS_EN,         "XBUS ",       "") &
-      cond_sel_string_f(IO_CLINT_EN,     "CLINT ",      "") &
-      cond_sel_string_f(io_gpio_en_c,    "GPIO ",       "") &
-      cond_sel_string_f(IO_UART0_EN,     "UART0 ",      "") &
-      cond_sel_string_f(IO_UART1_EN,     "UART1 ",      "") &
-      cond_sel_string_f(IO_SPI_EN,       "SPI ",        "") &
-      cond_sel_string_f(IO_SDI_EN,       "SDI ",        "") &
-      cond_sel_string_f(IO_TWI_EN,       "TWI ",        "") &
-      cond_sel_string_f(IO_TWD_EN,       "TWD ",        "") &
-      cond_sel_string_f(io_pwm_en_c,     "PWM ",        "") &
-      cond_sel_string_f(IO_WDT_EN,       "WDT ",        "") &
-      cond_sel_string_f(IO_TRNG_EN,      "TRNG ",       "") &
-      cond_sel_string_f(IO_CFS_EN,       "CFS ",        "") &
-      cond_sel_string_f(IO_NEOLED_EN,    "NEOLED ",     "") &
-      cond_sel_string_f(IO_GPTMR_EN,     "GPTMR ",      "") &
-      cond_sel_string_f(IO_ONEWIRE_EN,   "ONEWIRE ",    "") &
-      cond_sel_string_f(IO_DMA_EN,       "DMA ",        "") &
-      cond_sel_string_f(IO_SLINK_EN,     "SLINK ",      "") &
-      cond_sel_string_f(io_sysinfo_en_c, "SYSINFO ",    "") &
-      cond_sel_string_f(OCD_EN,          "OCD ",        "") &
-      cond_sel_string_f(OCD_EN,          "OCD-AUTH ",   "") &
-      cond_sel_string_f(OCD_EN,          "OCD-HWBP ",   "") &
+      cond_sel_string_f(DMEM_EN,         "DMEM ",     "") &
+      cond_sel_string_f(bootrom_en_c,    "BOOTROM ",  "") &
+      cond_sel_string_f(ICACHE_EN,       "I-CACHE ",  "") &
+      cond_sel_string_f(DCACHE_EN,       "D-CACHE ",  "") &
+      cond_sel_string_f(XBUS_EN,         "XBUS ",     "") &
+      cond_sel_string_f(IO_CLINT_EN,     "CLINT ",    "") &
+      cond_sel_string_f(io_gpio_en_c,    "GPIO ",     "") &
+      cond_sel_string_f(IO_UART0_EN,     "UART0 ",    "") &
+      cond_sel_string_f(IO_UART1_EN,     "UART1 ",    "") &
+      cond_sel_string_f(IO_SPI_EN,       "SPI ",      "") &
+      cond_sel_string_f(IO_SDI_EN,       "SDI ",      "") &
+      cond_sel_string_f(IO_TWI_EN,       "TWI ",      "") &
+      cond_sel_string_f(IO_TWD_EN,       "TWD ",      "") &
+      cond_sel_string_f(io_pwm_en_c,     "PWM ",      "") &
+      cond_sel_string_f(IO_WDT_EN,       "WDT ",      "") &
+      cond_sel_string_f(IO_TRNG_EN,      "TRNG ",     "") &
+      cond_sel_string_f(IO_CFS_EN,       "CFS ",      "") &
+      cond_sel_string_f(IO_NEOLED_EN,    "NEOLED ",   "") &
+      cond_sel_string_f(IO_GPTMR_EN,     "GPTMR ",    "") &
+      cond_sel_string_f(IO_ONEWIRE_EN,   "ONEWIRE ",  "") &
+      cond_sel_string_f(IO_DMA_EN,       "DMA ",      "") &
+      cond_sel_string_f(IO_SLINK_EN,     "SLINK ",    "") &
+      cond_sel_string_f(io_sysinfo_en_c, "SYSINFO ",  "") &
+      cond_sel_string_f(OCD_EN,          "OCD ",      "") &
+      cond_sel_string_f(OCD_EN,          "OCD-AUTH ", "") &
+      cond_sel_string_f(OCD_EN,          "OCD-HWBP ", "") &
       ""
       severity note;
 
