@@ -108,6 +108,7 @@ void neorv32_dma_enable(void);
 void neorv32_dma_disable(void);
 void neorv32_dma_irq_ack(void);
 int  neorv32_dma_program(uint32_t src_addr, uint32_t dst_addr, uint32_t config);
+void neorv32_dma_program_nocheck(uint32_t src_addr, uint32_t dst_addr, uint32_t config);
 void neorv32_dma_start(void);
 int  neorv32_dma_status(void);
 /**@}*/

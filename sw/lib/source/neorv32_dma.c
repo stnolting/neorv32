@@ -100,13 +100,30 @@ void neorv32_dma_irq_ack(void) {
  **************************************************************************/
 int neorv32_dma_program(uint32_t src_addr, uint32_t dst_addr, uint32_t config) {
 
-  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -3; }
+  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -3; } // three free entries too few
   NEORV32_DMA->DESC = src_addr;
-  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -2; }
+  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -2; } // two free entries too few
   NEORV32_DMA->DESC = dst_addr;
-  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -1; }
-  NEORV32_DMA->DESC = config & 0xf8ffffffU;
+  if (NEORV32_DMA->CTRL & (1 << DMA_CTRL_DFULL)) { return -1; } // one free entry too few
+  NEORV32_DMA->DESC = config;
   return 0;
+}
+
+
+/**********************************************************************//**
+ * Program DMA descriptor (without checking FIFO level).
+ *
+ * @warning Descriptor FIFO might overflow. Use with care.
+ *
+ * @param[in] base_src Source data base address.
+ * @param[in] base_dst Destination data base address.
+ * @param[in] config Transfer type configuration (#NEORV32_DMA_CONF_enum).
+ **************************************************************************/
+void neorv32_dma_program_nocheck(uint32_t src_addr, uint32_t dst_addr, uint32_t config) {
+
+  NEORV32_DMA->DESC = src_addr;
+  NEORV32_DMA->DESC = dst_addr;
+  NEORV32_DMA->DESC = config;
 }
 
 
