@@ -29,7 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 19.06.2025 | 1.11.6.9 | remove SoC clock generator enable logic | [#1292](https://github.com/stnolting/neorv32/pull/1292) |
+| 20.06.2025 | [**:rocket:1.11.7**](https://github.com/stnolting/neorv32/releases/tag/v1.11.7) | **New release** | |
 | 18.06.2025 | 1.11.6.8 | minor rtl edits and optimizations | [#1291](https://github.com/stnolting/neorv32/pull/1291) |
 | 08.06.2025 | 1.11.6.7 | :warning: combine individual UART RX/TX interrupt requests into a single (programmable) interrupt request | [#1289](https://github.com/stnolting/neorv32/pull/1289) |
 | 08.06.2025 | 1.11.6.6 | :warning: invert "TX FIFO full" status flag; add interrupt option for "TX FIFO not full" status | [#1288](https://github.com/stnolting/neorv32/pull/1288) |
