@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -31,8 +31,7 @@ end neorv32_cpu_cp_cond;
 
 architecture neorv32_cpu_cp_cond_rtl of neorv32_cpu_cp_cond is
 
-  constant zero_c : std_ulogic_vector(XLEN-1 downto 0) := (others => '0');
-  signal valid_cmd, rs2_zero, condition : std_ulogic;
+  signal valid_cmd, condition : std_ulogic;
 
 begin
 
@@ -50,7 +49,7 @@ begin
     if (rstn_i = '0') then
       res_o <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (valid_cmd = '1') and (condition = '1') then -- unit triggered and condition true
+      if (valid_cmd = '1') and (condition = '1') then -- unit triggered and move-condition is true
         res_o <= rs1_i;
       else
         res_o <= (others => '0');
@@ -58,9 +57,8 @@ begin
     end if;
   end process cond_out;
 
-  -- condition check --
-  rs2_zero  <= '1' when (rs2_i = zero_c) else '0';
-  condition <= rs2_zero xnor ctrl_i.ir_funct3(1); -- equal zero / non equal zero
+  -- condition check: equal zero / non equal zero --
+  condition <= or_reduce_f(rs2_i) xor ctrl_i.ir_funct3(1);
 
   -- processing done --
   valid_o <= valid_cmd;

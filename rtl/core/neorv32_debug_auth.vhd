@@ -46,7 +46,7 @@ begin
 
   -- Exemplary Authentication Mechanism -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dm_controller: process(rstn_i, clk_i)
+  auth_ctrl: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       authenticated_q <= '0';
@@ -57,7 +57,7 @@ begin
         authenticated_q <= wdata_i(0); -- just write a "1" to authenticate
       end if;
     end if;
-  end process dm_controller;
+  end process auth_ctrl;
 
   -- authenticator busy --
   busy_o <= '0'; -- this simple authenticator is always ready
