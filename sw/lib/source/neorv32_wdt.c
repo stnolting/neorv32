@@ -17,43 +17,35 @@
 /**********************************************************************//**
  * Check if WDT unit was synthesized.
  *
- * @return 0 if WDT was not synthesized, 1 if WDT is available.
+ * @return 0 if WDT was not synthesized, non-zero if WDT is available.
  **************************************************************************/
 int neorv32_wdt_available(void) {
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_WDT)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_WDT));
 }
 
 
 /**********************************************************************//**
- * Configure and enable watchdog timer. The WDT control register bits are listed in #NEORV32_WDT_CTRL_enum.
+ * Configure and enable watchdog timer.
  *
- * @warning Once the lock bit is set it can only be removed by a hardware reset!
+ * @warning Once the lock bit is set it can only be removed by a hardware reset.
  *
- * @param[in] timeout 24-bit timeout value. A WDT IRQ is triggered when the internal counter reaches
- * 'timeout/2'. A system hardware reset is triggered when the internal counter reaches 'timeout'.
- * @param[in] lock Control register will be locked when 1 (until next reset).
- * @param[in] strict Force hardware reset if reset password is incorrect or if trying to alter a locked configuration.
+ * @param[in] timeout 24-bit timeout value
+ * @param[in] lock Control register will be locked when 1 (until next HW reset).
  **************************************************************************/
-void neorv32_wdt_setup(uint32_t timeout, int lock, int strict) {
+void neorv32_wdt_setup(uint32_t timeout, int lock) {
 
   NEORV32_WDT->CTRL = 0; // reset and disable
 
-  // update configuration
+  // set configuration
   uint32_t ctrl = 0;
-  ctrl |= ((uint32_t)(1))                   << WDT_CTRL_EN;
-  ctrl |= ((uint32_t)(timeout & 0xffffffU)) << WDT_CTRL_TIMEOUT_LSB;
-  ctrl |= ((uint32_t)(strict & 0x1U))       << WDT_CTRL_STRICT;
+  ctrl |= ((uint32_t)(1))                    << WDT_CTRL_EN;
+  ctrl |= ((uint32_t)(timeout & 0x00ffffff)) << WDT_CTRL_TIMEOUT_LSB;
   NEORV32_WDT->CTRL = ctrl;
 
   // lock configuration?
   if (lock) {
-    NEORV32_WDT->CTRL |= 1 << WDT_CTRL_LOCK;
+    NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_LOCK);
   }
 }
 
@@ -95,9 +87,12 @@ void neorv32_wdt_feed(uint32_t password) {
  **************************************************************************/
 void neorv32_wdt_force_hwreset(void) {
 
-  // enable strict mode; if strict mode is already enabled and the WDT
-  // is locked this will already trigger a hardware reset
-  NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_STRICT);
+  // make sure the WDT is enabled
+  NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_EN);
+
+  // lock the WDT configuration
+  // if it is already locked this will trigger a hardware reset
+  NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_LOCK);
 
   // try to reset the WDT using an incorrect password;
   // this will finally trigger a hardware reset

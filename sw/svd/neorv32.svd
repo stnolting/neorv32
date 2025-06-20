@@ -4,7 +4,7 @@
   <vendor>github.com/stnolting/neorv32</vendor>
   <name>neorv32</name>
   <series>RISC-V</series>
-  <version>1.11.6</version>
+  <version>1.11.7</version>
   <description>The NEORV32 RISC-V Processor</description>
 
   <!-- CPU core -->
@@ -1439,13 +1439,8 @@
               <description>Lock write access to control register, clears on reset (HW or WDT) only</description>
             </field>
             <field>
-              <name>WDT_CTRL_STRICT</name>
-              <bitRange>[2:2]</bitRange>
-              <description>Force hardware reset if reset password is incorrect or if write attempt to locked CTRL register</description>
-            </field>
-            <field>
               <name>WDT_CTRL_RCAUSE</name>
-              <bitRange>[4:3]</bitRange>
+              <bitRange>[3:2]</bitRange>
               <access>read-only</access>
               <description>Cause of last system reset: 0=external reset, 1=OCD reset, 2=WDT reset, 3=WDT access violation</description>
             </field>
