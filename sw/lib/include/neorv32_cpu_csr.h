@@ -135,10 +135,6 @@ enum NEORV32_CSR_enum {
   CSR_MHPMCOUNTER14H = 0xb8e, /**< 0xb8e - mhpmcounter14h: Machine hardware performance monitor 14 counter high word */
   CSR_MHPMCOUNTER15H = 0xb8f, /**< 0xb8f - mhpmcounter15h: Machine hardware performance monitor 15 counter high word */
 
-  /* inter-core communication */
-  CSR_MXICCSREG      = 0xbc0, /**< 0xbc0 - mxiccsreg: Machine ICC status register (#)*/
-  CSR_MXICCDATA      = 0xbc1, /**< 0xbc1 - mxiccdata: Machine ICC RX/TX data register */
-
   /* user counters and timers */
   CSR_CYCLE          = 0xc00, /**< 0xc00 - cycle:        User cycle counter low word */
   CSR_INSTRET        = 0xc02, /**< 0xc02 - instret:      User instructions-retired counter low word */
@@ -178,7 +174,7 @@ enum NEORV32_CSR_MCOUNTEREN_enum {
 
 
 /**********************************************************************//**
- * CPU mstatus CSR (r/w): Machine status
+ * CPU mstatus CSR (r/w): Machine status - low word
  **************************************************************************/
 enum NEORV32_CSR_MSTATUS_enum {
   CSR_MSTATUS_MIE   =  3, /**< CPU mstatus CSR  (3): MIE - Machine interrupt enable bit (r/w) */
@@ -187,6 +183,14 @@ enum NEORV32_CSR_MSTATUS_enum {
   CSR_MSTATUS_MPP_H = 12, /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
   CSR_MSTATUS_MPRV  = 17, /**< CPU mstatus CSR (17): MPRV - Use MPP as effective privilege for M-mode load/stores when set (r/w) */
   CSR_MSTATUS_TW    = 21  /**< CPU mstatus CSR (21): TW - Disallow execution of wfi instruction in user mode when set (r/w) */
+};
+
+
+/**********************************************************************//**
+ * CPU mstatush CSR (r/w): Machine status - high word
+ **************************************************************************/
+enum NEORV32_CSR_MSTATUSH_enum {
+  CSR_MSTATUSH_MDT = 10 /**< CPU mstatush CSR (10): MDT - M-mode disable trap (r/w) */
 };
 
 
@@ -344,15 +348,6 @@ enum NEORV32_CSR_MXISA_enum {
 
 
 /**********************************************************************//**
- * CPU mxiccsreg CSR (r/w): Inter-core communication status register (NEORV32-specific)
- **************************************************************************/
-enum NEORV32_CSR_MXICCSREG_enum {
-  CSR_MXICCSREG_RX_AVAIL = 0, /**< CPU mxiccsreg CSR (0): Data available in link's RX FIFO (r/-)*/
-  CSR_MXICCSREG_TX_FREE  = 1  /**< CPU mxiccsreg CSR (1): Free space in link's TX FIFO (r/-)*/
-};
-
-
-/**********************************************************************//**
  * CPU mhpmevent hardware performance monitor events
  **************************************************************************/
 enum NEORV32_HPMCNT_EVENT_enum {
@@ -408,6 +403,7 @@ enum NEORV32_EXCEPTION_CODES_enum {
   TRAP_CODE_S_ACCESS     = 0x00000007U, /**< 0.7:  Store (bus) access fault */
   TRAP_CODE_UENV_CALL    = 0x00000008U, /**< 0.8:  Environment call from user mode (ECALL instruction) */
   TRAP_CODE_MENV_CALL    = 0x0000000bU, /**< 0.11: Environment call from machine mode (ECALL instruction) */
+  TRAP_CODE_DOUBLE_TRAP  = 0x00000010U, /**< 0.16: Double-trap */
   TRAP_CODE_MSI          = 0x80000003U, /**< 1.3:  Machine software interrupt */
   TRAP_CODE_MTI          = 0x80000007U, /**< 1.7:  Machine timer interrupt */
   TRAP_CODE_MEI          = 0x8000000bU, /**< 1.11: Machine external interrupt */
