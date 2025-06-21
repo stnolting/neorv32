@@ -127,6 +127,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     instr_il    : std_ulogic; -- illegal instruction
     ecall       : std_ulogic; -- ecall instruction
     ebreak      : std_ulogic; -- ebreak instruction
+    dbtrap      : std_ulogic; -- double-trap
   end record;
   signal trap_ctrl : trap_ctrl_t;
 
@@ -147,6 +148,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mstatus_mpp    : std_ulogic; -- machine previous privilege mode
     mstatus_mprv   : std_ulogic; -- effective privilege level for load/stores
     mstatus_tw     : std_ulogic; -- do not allow user mode to execute WFI instruction when set
+    mstatush_mdt   : std_ulogic; -- m-mode double trap
     --
     mie_msi        : std_ulogic; -- machine software interrupt enable
     mie_mei        : std_ulogic; -- machine external interrupt enable
@@ -887,9 +889,10 @@ begin
       trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or lsu_err_i(3))       and (not trap_ctrl.env_enter);
       trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_enter);
 
-      -- illegal instruction & environment call --
+      -- illegal instruction, environment call, double-trap --
       trap_ctrl.exc_buf(exc_ecall_c)   <= (trap_ctrl.exc_buf(exc_ecall_c)   or trap_ctrl.ecall)    and (not trap_ctrl.env_enter);
       trap_ctrl.exc_buf(exc_illegal_c) <= (trap_ctrl.exc_buf(exc_illegal_c) or trap_ctrl.instr_il) and (not trap_ctrl.env_enter);
+      trap_ctrl.exc_buf(exc_doublet_c) <= (trap_ctrl.exc_buf(exc_doublet_c) or trap_ctrl.dbtrap)   and (not trap_ctrl.env_enter);
 
       -- break point --
       if RISCV_ISA_Sdext then
@@ -917,6 +920,7 @@ begin
       trap_ctrl.cause <= (others => '0'); -- default
       -- standard RISC-V exceptions --
       if    (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
+      elsif (trap_ctrl.exc_buf(exc_doublet_c)  = '1') then trap_ctrl.cause <= trap_dbt_c; -- double-trap
       elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c; -- illegal instruction
       elsif (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c; -- instruction address misaligned
       elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & replicate_f(csr.prv_level, 2); -- environment call (U/M)
@@ -969,8 +973,10 @@ begin
     elsif rising_edge(clk_i) then
       -- pending trap environment --
       if (trap_ctrl.env_pending = '0') then -- no pending trap environment yet
-        if (trap_ctrl.exc_fire = '1') or (or_reduce_f(trap_ctrl.irq_fire) = '1') then
-          trap_ctrl.env_pending <= '1'; -- execute engine can start trap handling
+        if (trap_ctrl.exc_fire = '1') or (or_reduce_f(trap_ctrl.irq_fire) = '1') then -- trap triggered
+          if (csr.mstatush_mdt = '0') or (trap_ctrl.exc_buf(exc_doublet_c) = '1') then -- wait for double trap if nested
+            trap_ctrl.env_pending <= '1'; -- execute engine can start trap handling
+          end if;
         end if;
       else -- trap waiting to be served
         if (trap_ctrl.env_enter = '1') then -- start of trap environment acknowledged by execute engine
@@ -1006,6 +1012,9 @@ begin
     ((exe_engine.state = EX_EXECUTE) or -- trigger single-step in EX_EXECUTE state
      ((trap_ctrl.env_entered = '1') and (exe_engine.state = EX_BRANCHED))) and -- also allow triggering when entering a system trap (#887)
     (trap_ctrl.irq_buf(irq_db_step_c) = '1') else '0'; -- pending single-step halt
+
+  -- trap-in-trap exception? --
+  trap_ctrl.dbtrap <= csr.mstatush_mdt and (trap_ctrl.exc_fire or trap_ctrl.irq_fire(0));
 
 
   -- ****************************************************************************************************************************
@@ -1049,6 +1058,7 @@ begin
       csr.mstatus_mpp    <= priv_mode_m_c;
       csr.mstatus_mprv   <= '0';
       csr.mstatus_tw     <= '0';
+      csr.mstatush_mdt   <= '0';
       csr.mie_msi        <= '0';
       csr.mie_mei        <= '0';
       csr.mie_mti        <= '0';
@@ -1085,7 +1095,7 @@ begin
         -- machine trap setup
         -- --------------------------------------------------------------------
 
-        -- machine status register --
+        -- machine status register - low word --
         if (csr.addr = csr_mstatus_c) then
           csr.mstatus_mie  <= csr.wdata(3);
           csr.mstatus_mpie <= csr.wdata(7);
@@ -1094,6 +1104,11 @@ begin
             csr.mstatus_mprv <= csr.wdata(17);
             csr.mstatus_tw   <= csr.wdata(21);
           end if;
+        end if;
+
+        -- machine status register - high word --
+        if (csr.addr = csr_mstatush_c) then
+          csr.mstatush_mdt <= csr.wdata(10);
         end if;
 
         -- machine interrupt enable register --
@@ -1219,6 +1234,7 @@ begin
             csr.mtinst <= (others => '0');
           end if;
           -- update privilege level and interrupt-enable stack --
+          csr.mstatush_mdt <= '1';
           csr.prv_level    <= priv_mode_m_c; -- execute trap in machine mode
           csr.mstatus_mie  <= '0'; -- disable interrupts
           csr.mstatus_mpie <= csr.mstatus_mie; -- backup previous mie state
@@ -1254,6 +1270,7 @@ begin
               csr.mstatus_mprv <= '0'; -- clear if return to priv. level less than M
             end if;
           end if;
+          csr.mstatush_mdt <= '0';
           csr.mstatus_mie  <= csr.mstatus_mpie; -- restore machine-mode IRQ enable flag
           csr.mstatus_mpie <= '1';
         end if;
@@ -1358,7 +1375,8 @@ begin
             csr.rdata(17) <= csr.mstatus_mprv;
             csr.rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(RISCV_ISA_U);
 
---        when csr_mstatush_c => csr.rdata <= (others => '0'); -- machine status register, high word - hardwired to zero
+          when csr_mstatush_c => -- machine status register - high word
+            csr.rdata(10) <= csr.mstatush_mdt;
 
           when csr_misa_c => -- ISA and extensions
             csr.rdata(0)  <= bool_to_ulogic_f(RISCV_ISA_A);
