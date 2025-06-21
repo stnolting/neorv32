@@ -29,7 +29,7 @@ __crt0_entry:
 
   la    x4, __crt0_ram_last             // last address of RAM, stack pointer (sp) starts here
   andi  x2, x4, 0xfffffff0              // align stack to 16-bytes according to the RISC-V ABI (#1021)
-  la    x3, __global_pointer$           // global pointer (gp)
+  la    x3, __global_pointer            // global pointer "gp"
 
   li    x5, 0x00001800                  // mstatus.mpp = machine-mode
   csrw  mstatus, x5
@@ -147,20 +147,21 @@ __crt0_constructors_end:
 // ************************************************************************************************
 // Setup arguments and call main function.
 // ************************************************************************************************
-  la    x12, main        // primary core's (core0) entry point (#1169)
+  la    x12, main             // primary core's (core0) entry point (#1169)
 __crt0_main_entry:
-  fence                  // synchronize loads/stores
-  fence.i                // synchronize instruction fetch
+  la    x3, __global_pointer  // re-initialize global pointer "gp" (to prevent a race condition during SMP boot)
+  fence                       // synchronize loads/stores
+  fence.i                     // synchronize instruction fetch
 
-  csrw  mstatus, x5      // re-initialize
-  addi  x10, zero, 0     // x10 = a0 = argc = 0
-  addi  x11, zero, 0     // x11 = a1 = argv = 0
-  jalr  x1, x12          // call actual main function; put return address in ra
+  csrw  mstatus, x5           // re-initialize
+  addi  x10, zero, 0          // x10 = a0 = argc = 0
+  addi  x11, zero, 0          // x11 = a1 = argv = 0
+  jalr  x1, x12               // call actual main function; put return address in ra
 
-__crt0_main_exit:        // main's "return" and "exit" will arrive here
-  csrw  mie, zero        // disable all interrupt sources
-  csrw  mscratch, x10    // backup main's return code to mscratch (for debugger or destructors)
-  la    x10, __crt0_trap // re-install the crt0 trap handler
+__crt0_main_exit:             // main's "return" and "exit" will arrive here
+  csrw  mie, zero             // disable all interrupt sources
+  csrw  mscratch, x10         // backup main's return code to mscratch (for debugger or destructors)
+  la    x10, __crt0_trap      // re-install the crt0 trap handler
   csrw  mtvec, x10
 
 
