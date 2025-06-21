@@ -288,7 +288,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amolr(uint32_t addr)
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Data word to-be-written conditionally (32-bit).
- * @return Status: 0 = ok, 1 = failed (32-bit).
+ * @return Status: zero = ok, non-zero = failed (32-bit).
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amosc(uint32_t addr, uint32_t wdata) {
 
