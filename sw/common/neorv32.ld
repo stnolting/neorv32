@@ -46,24 +46,11 @@ SECTIONS
   .text : ALIGN(4)
   {
     PROVIDE(__text_start = .);
-    PROVIDE(__textstart = .);
 
-    KEEP(*(.text.crt0)); /* keep start-up code crt0 right at the beginning of rom */
+    /* keep start-up code crt0 right at the beginning of rom */
+    KEEP(*(.text.crt0));
 
-    *(.text.unlikely .text.*_unlikely .text.unlikely.*)
-    *(.text.exit .text.exit.*)
-    *(.text.startup .text.startup.*)
-    *(.text.hot .text.hot.*)
-    *(SORT(.text.sorted.*))
-    *(.text .stub .text.* .gnu.linkonce.t.*)
-    /* .gnu.warning sections are handled specially by elf.em.  */
-    *(.gnu.warning)
-
-    /* these are a list of 32-bit pointers that point to functions
-     * that are called before/after executing "main". */
-
-    /* The following defines an array with constructors, which are called
-     * from crt0.s before "main", but of course after data init / bss clear. */
+    *(.text .text* .text.* .gnu.linkonce.t.*)
 
     . = ALIGN(4);
     PROVIDE_HIDDEN(__init_array_start = .);
@@ -83,23 +70,22 @@ SECTIONS
 
     /* finish section on WORD boundary */
     . = ALIGN(4);
-    PROVIDE (__etext = .);
-    PROVIDE (_etext = .);
-    PROVIDE (etext = .);
+    PROVIDE(__text_end = .);
   } > rom
 
 /* ************************************************************************************************* */
 /* Section ".rodata" - read-only constants and ".data" initialization                                */
 /* ************************************************************************************************* */
-  .rodata __etext : ALIGN(4)
+  .rodata : ALIGN(4)
   {
+    PROVIDE(__rodata_start = .);
+
     /* constant data like strings */
-    *(.rodata .rodata.* .gnu.linkonce.r.*)
-    *(.rodata1)
+    *(.rodata .rodata* .rodata.* .gnu.linkonce.r.*)
 
     /* finish section on WORD boundary */
     . = ALIGN(4);
-    __RODATA_END__ = .;
+    PROVIDE(__rodata_end = .);
   } > rom
 
 /* ************************************************************************************************* */
@@ -108,32 +94,17 @@ SECTIONS
 /* ************************************************************************************************* */
   .data : ALIGN(4)
   {
-    __DATA_BEGIN__ = .;
-    __SDATA_BEGIN__ = .;
-    *(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
-    *(.data1)
-    *(.data .data.* .gnu.linkonce.d.*)
-    SORT(CONSTRUCTORS)
+    PROVIDE(__data_start = .);
+    __global_pointer = . + 0x800;
 
-    *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*) *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*)
-    *(.dynamic)
-
-    /* We want the small data sections together, so single-instruction offsets
-       can access them all, and initialized data all before uninitialized, so
-       we can shorten the on-disk segment size.  */
-
-    *(.srodata.cst16) *(.srodata.cst8) *(.srodata.cst4) *(.srodata.cst2) *(.srodata .srodata.*)
+    *(.data .data.* .data* .gnu.linkonce.d.*)
+    *(.srodata .srodata.*)
     *(.sdata .sdata.* .gnu.linkonce.s.*)
-
-    PROVIDE_HIDDEN (__tdata_start = .);
     *(.tdata .tdata.* .gnu.linkonce.td.*)
 
     /* finish section on WORD boundary */
     . = ALIGN(4);
-    _edata = .;
-    PROVIDE (edata = .);
-    __DATA_END__ = .;
-    __global_pointer$ = __DATA_END__ + 0x800;
+    PROVIDE(__data_end = .);
   } > ram AT > rom
 
 /* ************************************************************************************************* */
@@ -141,16 +112,15 @@ SECTIONS
 /* ************************************************************************************************* */
   .bss (NOLOAD): ALIGN(4)
   {
-    __BSS_START__ = .;
-    /* start section on WORD boundary */
-    . = ALIGN(4);
-    *(.dynsbss)
-    *(.sbss .sbss.* .gnu.linkonce.sb.*)
-    *(.sbss2 .sbss2.* .gnu.linkonce.sb2.*)
+    PROVIDE(__bss_start = .);
+
+    *(.sbss .sbss* .sbss.* .gnu.linkonce.sb.*)
     *(.tbss .tbss.* .gnu.linkonce.tb.*) *(.tcommon)
     *(.scommon)
+    *(.dynamic)
+    *(.dynsbss)
     *(.dynbss)
-    *(.bss .bss.* .gnu.linkonce.b.*)
+    *(.bss .bss* .bss.* .gnu.linkonce.b.*)
 
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array))
@@ -159,7 +129,7 @@ SECTIONS
     *(COMMON)
     /* finish section on WORD boundary */
     . = ALIGN(4);
-    __BSS_END__ = .;
+    PROVIDE(__bss_end = .);
   } > ram
 
 /* ************************************************************************************************* */
@@ -168,9 +138,9 @@ SECTIONS
   .heap : ALIGN(4)
   {
     PROVIDE(__heap_start = .);
-    /* start section on WORD boundary */
-    . = ALIGN(4);
+
     . += __neorv32_heap_size;
+
     /* finish section on WORD boundary */
     . = ALIGN(4);
     PROVIDE(__heap_end = .);
@@ -253,8 +223,8 @@ SECTIONS
 /* ************************************************************************************************* */
   PROVIDE(__crt0_max_heap            = __neorv32_heap_size);
   PROVIDE(__crt0_ram_last            = (ORIGIN(ram) + LENGTH(ram)) - 1);
-  PROVIDE(__crt0_bss_start           = __BSS_START__);
-  PROVIDE(__crt0_bss_end             = __BSS_END__);
+  PROVIDE(__crt0_bss_start           = ADDR(.bss));
+  PROVIDE(__crt0_bss_end             = ADDR(.bss) + SIZEOF(.bss));
   PROVIDE(__crt0_copy_data_src_begin = LOADADDR(.data));
   PROVIDE(__crt0_copy_data_dst_begin = ADDR(.data));
   PROVIDE(__crt0_copy_data_dst_end   = ADDR(.data) + SIZEOF(.data));
