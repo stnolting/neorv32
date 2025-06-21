@@ -31,12 +31,12 @@ In the following table these CSRs are highlighted with "⚠️".
 | 0x002 | <<_frm>>    | `CSR_FRM`    | URW | Floating-point dynamic rounding mode
 | 0x003 | <<_fcsr>>   | `CSR_FCSR`   | URW | Floating-point control and status
 5+^| **<<_machine_trap_setup_csrs>>**
-| 0x300 | <<_mstatus>>    | `CSR_MSTATUS`    | MRW | Machine status register - low word
-| 0x301 | <<_misa>>       | `CSR_MISA`       | MRW | Machine CPU ISA and extensions
-| 0x304 | <<_mie>>        | `CSR_MIE`        | MRW | Machine interrupt enable register
-| 0x305 | <<_mtvec>>      | `CSR_MTVEC`      | MRW | Machine trap-handler base address for ALL traps
-| 0x306 | <<_mcounteren>> | `CSR_MCOUNTEREN` | MRW | Machine counter-enable register
-| 0x310 | <<_mstatush>>   | `CSR_MSTATUSH`   | MRW | Machine status register - high word
+| 0x300 | <<_mstatush, `mstatus`>>  | `CSR_MSTATUS`    | MRW | Machine status register - low word
+| 0x301 | <<_misa>>                 | `CSR_MISA`       | MRW | Machine CPU ISA and extensions
+| 0x304 | <<_mie>>                  | `CSR_MIE`        | MRW | Machine interrupt enable register
+| 0x305 | <<_mtvec>>                | `CSR_MTVEC`      | MRW | Machine trap-handler base address for ALL traps
+| 0x306 | <<_mcounteren>>           | `CSR_MCOUNTEREN` | MRW | Machine counter-enable register
+| 0x310 | <<_mstatush, `mstatush`>> | `CSR_MSTATUSH`   | MRW | Machine status register - high word
 5+^| **<<_machine_configuration_csrs>>**
 | 0x30a | <<_menvcfg>>  | `CSR_MENVCFG`  | MRW | Machine environment configuration register - low word
 | 0x31a | <<_menvcfgh>> | `CSR_MENVCFGH` | MRW | Machine environment configuration register - high word
@@ -169,28 +169,32 @@ In the following table these CSRs are highlighted with "⚠️".
 ==== Machine Trap Setup CSRs
 
 [discrete]
-===== **`mstatus`**
+===== **`mstatus[h]`**
 
 [cols="<1,<8"]
 [grid="none"]
 |=======================
 | Name        | Machine status register - low word
-| Address     | `0x300`
-| Reset value | `0x00001800`
+| Address     | `0x300` (`mstatus`)
+|             | `0x310` (`mstatush`)
+| Reset value | `0x00000000_00001800`
 | ISA         | `Zicsr`
-| Description | The `mstatus` CSR is used to configure general machine environment parameters.
+| Description | The `mstatus[h]` CSRs are used to configure general machine environment parameters.
 |=======================
 
-.`mstatus` CSR bits
+.`mstatus[h]` CSR bits
 [cols="^1,^3,^1,<9"]
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
+4+^| `mstatus`
 | 3     | `CSR_MSTATUS_MIE`  | r/w | **MIE**: Machine-mode interrupt enable flag
 | 7     | `CSR_MSTATUS_MPIE` | r/w | **MPIE**: Previous machine-mode interrupt enable flag state
 | 12:11 | `CSR_MSTATUS_MPP_H` : `CSR_MSTATUS_MPP_L` | r/w | **MPP**: Previous machine privilege mode, `11` = machine-mode "M", `00` = user-mode "U"; other values will fall-back to machine-mode
 | 17    | `CSR_MSTATUS_MPRV` | r/w | **MPRV**: Effective privilege mode for load/stores; use `MPP` as effective privilege mode when set; hardwired to zero if user-mode not implemented
 | 21    | `CSR_MSTATUS_TW`   | r/w | **TW**: Trap on execution of `wfi` instruction in user mode when set; hardwired to zero if user-mode not implemented
+4+^| **statush`
+| 10    | `CSR_MSTATUSH_MDT` | r/w | **MDT**: Machine-mode disable trap; see <<_double_trap_exception>>
 |=======================
 
 
@@ -313,21 +317,6 @@ As software does not need to determine the interrupt cause the reduction in late
 | 1    | -                   | r/- | **TM**: not implemented, hardwired to zero
 | 2    | `CSR_MCOUNTEREN_IR` | r/w | **IR**: User-mode is allowed to read <<_instreth>> CSRs when set
 | 31:3 | -                   | r/- | **HPM**: hardwired to zero; hardware performance monitors are accessible by machine-mode software only
-|=======================
-
-
-{empty} +
-[discrete]
-===== **`mstatush`**
-
-[cols="<1,<8"]
-[grid="none"]
-|=======================
-| Name        | Machine status register - high word
-| Address     | `0x310`
-| Reset value | `0x00000000`
-| ISA         | `Zicsr`
-| Description | The features of this CSR are not implemented yet. The register is read-only and always returns zero.
 |=======================
 
 
@@ -537,7 +526,7 @@ See section <<_smpmp_isa_extension>> for more information.
 |             | `0x3a1` (`pmpcfg1`)
 |             | `0x3a2` (`pmpcfg2`)
 |             | `0x3a3` (`pmpcfg3`)
-| Reset value | `0x00000000`
+| Reset value | all `0x00000000`
 | ISA         | `Zicsr` & `Smpmp`
 | Description | Configuration of physical memory protection regions. Each region provides an individual 8-bit array in these CSRs.
 |=======================
@@ -584,7 +573,7 @@ implementation of the according modes.
 |             | `0x3bd` (`pmpaddr13`)
 |             | `0x3be` (`pmpaddr14`)
 |             | `0x3bf` (`pmpaddr15`)
-| Reset value | `0x00000000`
+| Reset value | all `0x00000000`
 | ISA         | `Zicsr` & `Smpmp`
 | Description | Region address/boundaries configuration.
 |=======================
@@ -625,7 +614,7 @@ if this instruction is actually going to retire or if it causes an exception.
 | Name        | Cycle counter
 | Address     | `0xc00` (`cycle`)
 |             | `0xc80` (`cycleh`)
-| Reset value | `0x00000000`
+| Reset value | `0x00000000_00000000`
 | ISA         | `Zicsr` & `Zicntr`
 | Description | The `cycle[h]` CSRs are user-mode shadow copies of the according <<_mcycleh>> CSRs. The user-mode
 counter are read-only. Any write access will raise an illegal instruction exception.
@@ -642,7 +631,7 @@ counter are read-only. Any write access will raise an illegal instruction except
 | Name        | Instructions-retired counter
 | Address     | `0xc02` (`instret`)
 |             | `0xc82` (`instreth`)
-| Reset value | `0x00000000`
+| Reset value | `0x00000000_00000000`
 | ISA         | `Zicsr` & `Zicntr`
 | Description | The `instret[h]` CSRs are user-mode shadow copies of the according <<_minstreth>> CSRs. The user-mode
 counter are read-only. Any write access will raise an illegal instruction exception.
@@ -659,7 +648,7 @@ counter are read-only. Any write access will raise an illegal instruction except
 | Name        | Machine cycle counter
 | Address     | `0xb00` (`mcycle`)
 |             | `0xb80` (`mcycleh`)
-| Reset value | `0x00000000`
+| Reset value | `0x00000000_00000000`
 | ISA         | `Zicsr` & `Zicntr`
 | Description | If not halted via the <<_mcountinhibit>> CSR the `cycle[h]` CSRs will increment with every active CPU clock
 cycle (CPU not in <<_sleep_mode>>). These registers are read/write only for machine-mode software.
@@ -676,7 +665,7 @@ cycle (CPU not in <<_sleep_mode>>). These registers are read/write only for mach
 | Name        | Machine instructions-retired counter
 | Address     | `0xb02` (`minstret`)
 |             | `0xb82` (`minstreth`)
-| Reset value | `0x00000000`
+| Reset value | `0x00000000_00000000`
 | ISA         | `Zicsr` & `Zicntr`
 | Description | If not halted via the <<_mcountinhibit>> CSR the `minstret[h]` CSRs will increment with every retired instruction.
 These registers are read/write only for machine-mode software
@@ -728,7 +717,7 @@ If `HPM_NUM_CNTS` is less than 64, all remaining MSB-aligned bits are hardwired 
 |             | `0x23d` (`mhpmevent13`)
 |             | `0x23e` (`mhpmevent14`)
 |             | `0x23f` (`mhpmevent15`)
-| Reset value | `0x00000000`
+| Reset value | all `0x00000000`
 | ISA         | `Zicsr` & `Zihpm`
 | Description | The value in these CSRs define the architectural events that cause an increment of the according `mhpmcounter*[h]` counter(s).
 All available events are listed in the table below. If more than one event is selected, the according counter will increment if _any_ of
@@ -790,7 +779,7 @@ Hence, they will only trigger `HPMCNT_EVENT_LOAD` and only once.
 |             | `0xb0d`, `0xb8d` (`mhpmcounter13`, `mhpmcounter13h`)
 |             | `0xb0e`, `0xb8e` (`mhpmcounter14`, `mhpmcounter14h`)
 |             | `0xb0f`, `0xb8f` (`mhpmcounter15`, `mhpmcounter15h`)
-| Reset value | `0x00000000`
+| Reset value | all `0x00000000_00000000`
 | ISA         | `Zicsr` & `Zihpm`
 | Description | If not halted via the <<_mcountinhibit>> CSR the HPM counter CSR(s) increment whenever the
 configured event from the according <<_mhpmevent>> CSR occurs. The counter registers are read/write for machine mode
