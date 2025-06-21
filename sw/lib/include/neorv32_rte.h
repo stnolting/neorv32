@@ -22,6 +22,7 @@
 /**@{*/
 /**< Trap ID enumeration */
 enum NEORV32_RTE_TRAP_enum {
+  // --- synchronous exceptions ---
   RTE_TRAP_I_ACCESS     =  0, /**< Instruction access fault */
   RTE_TRAP_I_ILLEGAL    =  1, /**< Illegal instruction */
   RTE_TRAP_I_MISALIGNED =  2, /**< Instruction address misaligned */
@@ -32,28 +33,30 @@ enum NEORV32_RTE_TRAP_enum {
   RTE_TRAP_S_ACCESS     =  7, /**< Store access fault */
   RTE_TRAP_UENV_CALL    =  8, /**< Environment call from user mode (ECALL instruction) */
   RTE_TRAP_MENV_CALL    =  9, /**< Environment call from machine mode (ECALL instruction) */
-  RTE_TRAP_MSI          = 10, /**< Machine software interrupt */
-  RTE_TRAP_MTI          = 11, /**< Machine timer interrupt */
-  RTE_TRAP_MEI          = 12, /**< Machine external interrupt */
-  RTE_TRAP_FIRQ_0       = 13, /**< Fast interrupt channel 0 */
-  RTE_TRAP_FIRQ_1       = 14, /**< Fast interrupt channel 1 */
-  RTE_TRAP_FIRQ_2       = 15, /**< Fast interrupt channel 2 */
-  RTE_TRAP_FIRQ_3       = 16, /**< Fast interrupt channel 3 */
-  RTE_TRAP_FIRQ_4       = 17, /**< Fast interrupt channel 4 */
-  RTE_TRAP_FIRQ_5       = 18, /**< Fast interrupt channel 5 */
-  RTE_TRAP_FIRQ_6       = 19, /**< Fast interrupt channel 6 */
-  RTE_TRAP_FIRQ_7       = 20, /**< Fast interrupt channel 7 */
-  RTE_TRAP_FIRQ_8       = 21, /**< Fast interrupt channel 8 */
-  RTE_TRAP_FIRQ_9       = 22, /**< Fast interrupt channel 9 */
-  RTE_TRAP_FIRQ_10      = 23, /**< Fast interrupt channel 10 */
-  RTE_TRAP_FIRQ_11      = 24, /**< Fast interrupt channel 11 */
-  RTE_TRAP_FIRQ_12      = 25, /**< Fast interrupt channel 12 */
-  RTE_TRAP_FIRQ_13      = 26, /**< Fast interrupt channel 13 */
-  RTE_TRAP_FIRQ_14      = 27, /**< Fast interrupt channel 14 */
-  RTE_TRAP_FIRQ_15      = 28  /**< Fast interrupt channel 15 */
+  RTE_TRAP_DOUBLE_TRAP  = 10,/**< Double-trap */
+  // --- asynchronous exceptions ---
+  RTE_TRAP_MSI          = 11, /**< Machine software interrupt */
+  RTE_TRAP_MTI          = 12, /**< Machine timer interrupt */
+  RTE_TRAP_MEI          = 13, /**< Machine external interrupt */
+  RTE_TRAP_FIRQ_0       = 14, /**< Fast interrupt channel 0 */
+  RTE_TRAP_FIRQ_1       = 15, /**< Fast interrupt channel 1 */
+  RTE_TRAP_FIRQ_2       = 16, /**< Fast interrupt channel 2 */
+  RTE_TRAP_FIRQ_3       = 17, /**< Fast interrupt channel 3 */
+  RTE_TRAP_FIRQ_4       = 18, /**< Fast interrupt channel 4 */
+  RTE_TRAP_FIRQ_5       = 19, /**< Fast interrupt channel 5 */
+  RTE_TRAP_FIRQ_6       = 20, /**< Fast interrupt channel 6 */
+  RTE_TRAP_FIRQ_7       = 21, /**< Fast interrupt channel 7 */
+  RTE_TRAP_FIRQ_8       = 22, /**< Fast interrupt channel 8 */
+  RTE_TRAP_FIRQ_9       = 23, /**< Fast interrupt channel 9 */
+  RTE_TRAP_FIRQ_10      = 24, /**< Fast interrupt channel 10 */
+  RTE_TRAP_FIRQ_11      = 25, /**< Fast interrupt channel 11 */
+  RTE_TRAP_FIRQ_12      = 26, /**< Fast interrupt channel 12 */
+  RTE_TRAP_FIRQ_13      = 27, /**< Fast interrupt channel 13 */
+  RTE_TRAP_FIRQ_14      = 28, /**< Fast interrupt channel 14 */
+  RTE_TRAP_FIRQ_15      = 29  /**< Fast interrupt channel 15 */
 };
 /**< Total number of trap IDs */
-#define NEORV32_RTE_NUM_TRAPS 29
+#define NEORV32_RTE_NUM_TRAPS 30
 /**@}*/
 
 /**********************************************************************//**

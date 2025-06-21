@@ -450,7 +450,7 @@ The `crt0.S` start-up performs the following operations:
 
 [start=1]
 . Setup the stack pointer and the global pointer according to the <<_ram_layout>> provided by the <<_linker_script>> symbols.
-. Initialize <<_mstatus>> CSR disabling machine-level interrupts.
+. Initialize <<_mstatush>> CSR disabling machine-level interrupts.
 . Install an <<_early_trap_handler>> to <<_mtvec>> CSR.
 . Clear <<_mie>> CSR disabling all interrupt sources.
 . Initialize all integer register `x1` - `x31` (only `x1` - `x15` if the `E` CPU extension is enabled).

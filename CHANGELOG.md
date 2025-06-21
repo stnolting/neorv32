@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 21.06.2025 | 1.11.7.2 | :sparkles: add double-trap exception (loosely based on the RISC-V `Smdbltrp` ISA extension) | [#1294](https://github.com/stnolting/neorv32/pull/1294) |
 | 20.06.2025 | 1.11.7.1 | remove WDT's "strict" configuration bit; minor rtl cleanups | [#1293](https://github.com/stnolting/neorv32/pull/1293) |
 | 20.06.2025 | [**:rocket:1.11.7**](https://github.com/stnolting/neorv32/releases/tag/v1.11.7) | **New release** | |
 | 18.06.2025 | 1.11.6.8 | minor rtl edits and optimizations | [#1291](https://github.com/stnolting/neorv32/pull/1291) |

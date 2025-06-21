@@ -90,6 +90,7 @@ volatile unsigned char constr_src[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 
 volatile uint32_t constr_res = 0; // for constructor test
 volatile uint32_t amo_var = 0; // atomic memory access test
 volatile _Atomic int atomic_cnt = 0; // dual core atomic test
+volatile uint32_t trap_mstatush = 0; // mstatush CSR right after trap entry
 
 
 /**********************************************************************//**
@@ -810,6 +811,35 @@ int main() {
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Double-trap exception
+  // ----------------------------------------------------------
+  PRINT_STANDARD("[%i] Double-trap EXC ", cnt_test);
+
+  trap_cause = trap_never_c;
+  cnt_test++;
+
+  // any trap will set MDT (but mret will clear it)
+  neorv32_cpu_csr_clr(CSR_MSTATUSH, 1 << CSR_MSTATUSH_MDT);
+  asm volatile ("ecall");
+  tmp_a = trap_mstatush & (1 << CSR_MSTATUSH_MDT); // mstatush right after trap entry
+
+  // set MDT and trigger any trap to raise a double-trap exception
+  neorv32_cpu_csr_set(CSR_MSTATUSH, 1 << CSR_MSTATUSH_MDT);
+  asm volatile ("ecall");
+  tmp_b = trap_mstatush & (1 << CSR_MSTATUSH_MDT); // mstatush right after trap entry
+
+  // no more double-traps (hopefully...)
+  neorv32_cpu_csr_clr(CSR_MSTATUSH, 1 << CSR_MSTATUSH_MDT);
+
+  if ((tmp_a) && (tmp_b) && (trap_cause == TRAP_CODE_DOUBLE_TRAP)) {
+    test_ok();
+  }
+  else {
+    test_fail();
   }
 
 
@@ -1904,9 +1934,9 @@ int main() {
     tmp_a = neorv32_cpu_amolr((uint32_t)&amo_var);
     amo_var = 0x10cafe00; // break reservation
     asm volatile ("fence"); // flush/reload d-cache
-    tmp_b = neorv32_cpu_amosc((uint32_t)&amo_var, 0xaaaaaaaa);
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc); // another SC: must fail
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0); // another SC: must fail; no bus exception!
+    tmp_b = (neorv32_cpu_amosc((uint32_t)&amo_var, 0xaaaaaaaa) & 1);
+    tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc) & 1); // another SC: must fail
+    tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0) & 1); // another SC: must fail; no bus exception!
     asm volatile ("fence"); // flush/reload d-cache
 
     if ((tmp_a   == 0x00cafe00) && // correct LR.W result
@@ -2220,6 +2250,8 @@ void global_trap_handler(void) {
     neorv32_cpu_csr_write(CSR_MEPC, neorv32_rte_context_get(1)); // x1 = ra = return address
   }
 
+  trap_mstatush = neorv32_cpu_csr_read(CSR_MSTATUSH);
+
   // hack: always come back in MACHINE MODE
   neorv32_cpu_csr_set(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
 }
@@ -2305,7 +2337,7 @@ void __attribute__((interrupt("machine"))) vectored_mei_handler(void) {
 
 
 /**********************************************************************//**
- * GPIO input interrupt handler .
+ * GPIO input interrupt handler
  **************************************************************************/
 void gpio_trap_handler(void) {
 
