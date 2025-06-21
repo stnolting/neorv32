@@ -974,8 +974,8 @@ begin
       -- pending trap environment --
       if (trap_ctrl.env_pending = '0') then -- no pending trap environment yet
         if (trap_ctrl.exc_fire = '1') or (or_reduce_f(trap_ctrl.irq_fire) = '1') then -- trap triggered
-          if (csr.mstatush_mdt = '0') or (trap_ctrl.exc_buf(exc_doublet_c) = '1') then -- wait for double trap if nested
-            trap_ctrl.env_pending <= '1'; -- execute engine can start trap handling
+          if (trap_ctrl.dbtrap = '0') or (trap_ctrl.exc_buf(exc_doublet_c) = '1') then -- wait for double trap if nested
+            trap_ctrl.env_pending <= '1';
           end if;
         end if;
       else -- trap waiting to be served
@@ -1013,8 +1013,8 @@ begin
      ((trap_ctrl.env_entered = '1') and (exe_engine.state = EX_BRANCHED))) and -- also allow triggering when entering a system trap (#887)
     (trap_ctrl.irq_buf(irq_db_step_c) = '1') else '0'; -- pending single-step halt
 
-  -- trap-in-trap exception? --
-  trap_ctrl.dbtrap <= csr.mstatush_mdt and (trap_ctrl.exc_fire or trap_ctrl.irq_fire(0));
+  -- trap-in-trap (only check non-debug traps) --
+  trap_ctrl.dbtrap <= csr.mstatush_mdt and (or_reduce_f(trap_ctrl.exc_buf(exc_laccess_c downto exc_iaccess_c)) or trap_ctrl.irq_fire(0));
 
 
   -- ****************************************************************************************************************************

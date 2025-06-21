@@ -682,7 +682,7 @@ package neorv32_package is
 
   -- Trap System ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- exception source list (do not change order!) --
+  -- exception source list (do not change order, only append!) --
   constant exc_iaccess_c  : natural :=  0; -- instruction access fault
   constant exc_illegal_c  : natural :=  1; -- illegal instruction
   constant exc_ialign_c   : natural :=  2; -- instruction address misaligned
