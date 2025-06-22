@@ -1263,7 +1263,7 @@ the second highest priority will get serviced and so on until no further interru
 .Interrupts when in User-Mode
 [IMPORTANT]
 If the core is currently operating in less privileged user-mode, interrupts are globally enabled
-even if <<_mstatush>>.mie is cleared.
+even if <<_mstatus>>.mie is cleared.
 
 .Interrupt Signal Requirements - Standard RISC-V Interrupts
 [IMPORTANT]
@@ -1291,13 +1291,36 @@ instruction exception at all.
 :sectnums:
 ==== Double-Trap Exception
 
-The NEORV32 CPU features a mechanism to detect unintended nested traps which is derived from the RISC-V `Smdbltrp`
-specification. When a trap is to be taken into M-mode, if the `MDT` bit (machine-mode disable trap) in <<_mstatush>>
-is currently 0, it is then set to 1, and the trap is delivered as expected. However, if `MDT` is already set to 1,
-then this is an unexpected _double trap_ exception (a nested trap). The RISC-V-compliant "double-trap" exception code
-16 (see <<_neorv32_trap_listing>>) is used to signal this event. `MDT` can be cleared manually to allow nesting of
-traps. However, _unexpected_ nested / double traps lead to a loss of the trap context (`mcause`, `mepc`, `mtval`,
-stack frame, etc.) and can therefore not be resumed.
+The NEORV32 CPU features a mechanism to detect **unintended nested traps**.
+This mechanism is loosely based on the RISC-V `Smdbltrp` specification.
+
+Whenever any trap (synchronous or asynchronous) is taken into M-mode an internal status flag is set. This flag gets set
+only if the triggering trap does not cause a debug-mode entry. It is cleared again when executing an `mret` instruction.
+Hence, this flag indicates "_inside trap_" status when set. If a second _synchronous_ trap occurs while this flag is set,
+a double-trap exception is raised. The RISC-V-compliant "double-trap" exception code 16 (see <<_neorv32_trap_listing>>)
+is used to identify this event. In summary, an trap that is followed by a synchronous trap (without an `mret` in between)
+causes a double-trap exception:
+
+.Double-Trap Scenarios
+[cols="<3,<3,<4"]
+[options="header", grid="rows"]
+|=======================
+| First Trap | Second Trap | Resulting State
+| Synchronous (e.g. `ecall`) | Synchronous (e.g. `ecall`) | **Double-trap**
+| Synchronous (e.g. `ecall`) | Asynchronous (interrupt)   | Second trap is not triggered; IRQs are automatically disabled upon trap entry (<<_mstatus>>.`MIE` automatically clears)
+| Asynchronous (interrupt)   | Synchronous (e.g. `ecall`) | **Double-trap**
+| Asynchronous (interrupt)   | Asynchronous (interrupt)   | Second trap is not triggered; IRQs are automatically disabled upon trap entry (<<_mstatus>>.`MIE` automatically clears); see <<_nested_interrupts>>
+|=======================
+
+
+:sectnums:
+==== Nested Interrupts
+
+The CPU supports nested interrupt handling in software. It automatically disables interrupts upon entering any trap
+handler by clearing <<_mstatus>>.`MIE`. Otherwise, further interrupts during the critical part of the handler (i.e.
+before saving the context: `mcause`, `mepc`, stack frame, etc.) would cause a context loss. However, software can
+explicitly enable interrupts again by manually setting <<_mstatus>>.`MIE` from within the handler to allow another
+interrupt to trigger.
 
 
 :sectnums:
@@ -1339,7 +1362,7 @@ can be used to output debug information, to bring the system into a safe state o
 [options="header",grid="rows"]
 |=======================
 | Prio. | `mcause`     | RTE Trap ID              | Cause                                | `mepc` | `mtval` | `mtinst` | Note
-8+^| **Exceptions** (_synchronous_ to instruction execution)                                                           
+8+^| **Exceptions** (_synchronous_ to instruction execution)
 | 1     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction access fault             | I-PC   | 0       | INS      | **fatal**
 | 2     | `0x00000010` | `TRAP_CODE_DOUBLE_TRAP`  | <<_double_trap_exception>>           | I-PC   | 0       | INS      | **fatal**
 | 3     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                  | PC     | 0       | INS      |
@@ -1351,7 +1374,7 @@ can be used to output debug information, to bring the system into a safe state o
 | 9     | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned              | PC     | ADR     | INS      |
 | 10    | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store access fault                   | PC     | ADR     | INS      |
 | 11    | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load access fault                    | PC     | ADR     | INS      |
-8+^| **Interrupts** (_asynchronous_ to instruction execution)                                                          
+8+^| **Interrupts** (_asynchronous_ to instruction execution)
 | 12    | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0     | I-PC   | 0       | 0        |
 | 13    | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1     | I-PC   | 0       | 0        |
 | 14    | `0x80000012` | `TRAP_CODE_FIRQ_2`       | fast interrupt request channel 2     | I-PC   | 0       | 0        |
