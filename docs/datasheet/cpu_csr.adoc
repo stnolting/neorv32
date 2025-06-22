@@ -918,8 +918,7 @@ core's hart ID is unique starting at 0 for the first core.
 
 .RISC-V-Compliant Mapping
 [NOTE]
-All NEORV32-specific CSRs are mapped to addresses that are explicitly reserved for
-custom/implementation-specific use (assured by the RISC-V privileged specifications).
+All NEORV32-specific CSRs are mapped to addresses that are explicitly reserved for custom/implementation-specific use.
 
 
 [discrete]
@@ -950,7 +949,7 @@ custom/implementation-specific use (assured by the RISC-V privileged specificati
 | Address     | `0xfc0`
 | Reset value | `DEFINED`
 | ISA         | `Zicsr` & `X`
-| Description | The `mxisa` CSRs is a NEORV32-specific read-only CSR that helps machine-mode software to
+| Description | The `mxisa` CSRs is a custom/NEORV32-specific read-only CSR that helps machine-mode software to
 discover additional ISA (sub-)extensions and CPU configuration options.
 |=======================
 
