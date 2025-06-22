@@ -31,12 +31,12 @@ In the following table these CSRs are highlighted with "⚠️".
 | 0x002 | <<_frm>>    | `CSR_FRM`    | URW | Floating-point dynamic rounding mode
 | 0x003 | <<_fcsr>>   | `CSR_FCSR`   | URW | Floating-point control and status
 5+^| **<<_machine_trap_setup_csrs>>**
-| 0x300 | <<_mstatush, `mstatus`>>  | `CSR_MSTATUS`    | MRW | Machine status register - low word
-| 0x301 | <<_misa>>                 | `CSR_MISA`       | MRW | Machine CPU ISA and extensions
-| 0x304 | <<_mie>>                  | `CSR_MIE`        | MRW | Machine interrupt enable register
-| 0x305 | <<_mtvec>>                | `CSR_MTVEC`      | MRW | Machine trap-handler base address for ALL traps
-| 0x306 | <<_mcounteren>>           | `CSR_MCOUNTEREN` | MRW | Machine counter-enable register
-| 0x310 | <<_mstatush, `mstatush`>> | `CSR_MSTATUSH`   | MRW | Machine status register - high word
+| 0x300 | <<_mstatus>>    | `CSR_MSTATUS`    | MRW | Machine status register - low word
+| 0x301 | <<_misa>>       | `CSR_MISA`       | MRW | Machine CPU ISA and extensions
+| 0x304 | <<_mie>>        | `CSR_MIE`        | MRW | Machine interrupt enable register
+| 0x305 | <<_mtvec>>      | `CSR_MTVEC`      | MRW | Machine trap-handler base address for ALL traps
+| 0x306 | <<_mcounteren>> | `CSR_MCOUNTEREN` | MRW | Machine counter-enable register
+| 0x310 | <<_mstatush>>   | `CSR_MSTATUSH`   | MRW | Machine status register - high word
 5+^| **<<_machine_configuration_csrs>>**
 | 0x30a | <<_menvcfg>>  | `CSR_MENVCFG`  | MRW | Machine environment configuration register - low word
 | 0x31a | <<_menvcfgh>> | `CSR_MENVCFGH` | MRW | Machine environment configuration register - high word
@@ -169,32 +169,28 @@ In the following table these CSRs are highlighted with "⚠️".
 ==== Machine Trap Setup CSRs
 
 [discrete]
-===== **`mstatus[h]`**
+===== **`mstatus`**
 
 [cols="<1,<8"]
 [grid="none"]
 |=======================
 | Name        | Machine status register - low word
-| Address     | `0x300` (`mstatus`)
-|             | `0x310` (`mstatush`)
-| Reset value | `0x00000000_00001800`
+| Address     | `0x300`
+| Reset value | `0x00001800`
 | ISA         | `Zicsr`
-| Description | The `mstatus[h]` CSRs are used to configure general machine environment parameters.
+| Description | The `mstatus` CSR is used to configure general machine environment parameters.
 |=======================
 
-.`mstatus[h]` CSR bits
+.`mstatus` CSR bits
 [cols="^1,^3,^1,<9"]
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-4+^| `mstatus`
 | 3     | `CSR_MSTATUS_MIE`  | r/w | **MIE**: Machine-mode interrupt enable flag
 | 7     | `CSR_MSTATUS_MPIE` | r/w | **MPIE**: Previous machine-mode interrupt enable flag state
 | 12:11 | `CSR_MSTATUS_MPP_H` : `CSR_MSTATUS_MPP_L` | r/w | **MPP**: Previous machine privilege mode, `11` = machine-mode "M", `00` = user-mode "U"; other values will fall-back to machine-mode
 | 17    | `CSR_MSTATUS_MPRV` | r/w | **MPRV**: Effective privilege mode for load/stores; use `MPP` as effective privilege mode when set; hardwired to zero if user-mode not implemented
 | 21    | `CSR_MSTATUS_TW`   | r/w | **TW**: Trap on execution of `wfi` instruction in user mode when set; hardwired to zero if user-mode not implemented
-4+^| **statush`
-| 10    | `CSR_MSTATUSH_MDT` | r/w | **MDT**: Machine-mode disable trap; see <<_double_trap_exception>>
 |=======================
 
 
@@ -317,6 +313,21 @@ As software does not need to determine the interrupt cause the reduction in late
 | 1    | -                   | r/- | **TM**: not implemented, hardwired to zero
 | 2    | `CSR_MCOUNTEREN_IR` | r/w | **IR**: User-mode is allowed to read <<_instreth>> CSRs when set
 | 31:3 | -                   | r/- | **HPM**: hardwired to zero; hardware performance monitors are accessible by machine-mode software only
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`mstatush`**
+
+[cols="<1,<8"]
+[grid="none"]
+|=======================
+| Name        | Machine status register - high word
+| Address     | `0x310`
+| Reset value | `0x00000000`
+| ISA         | `Zicsr`
+| Description | The features of this CSR are not implemented yet. The register is read-only and always returns zero.
 |=======================
 
 

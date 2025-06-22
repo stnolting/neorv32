@@ -824,7 +824,7 @@ is in debug mode. If these CSRs are accessed outside of debug mode an illegal in
 | 9     | `stoptime`    | r/- | `0`: timers increment as usual
 | 8:6   | `cause`       | r/- | cause identifier: why debug mode was entered (see below)
 | 5     | -             | r/- | `0`: _reserved_
-| 4     | `mprven`      | r/- | `1`: `mprv` in <<_mstatush>> is also evaluated when in debug mode
+| 4     | `mprven`      | r/- | `1`: `mprv` in <<_mstatus>> is also evaluated when in debug mode
 | 3     | `nmip`        | r/- | `0`: non-maskable interrupt is pending
 | 2     | `step`        | r/w | enable single-stepping when set
 | 1:0   | `prv`         | r/w | CPU privilege level before/after debug mode
