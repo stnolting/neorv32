@@ -187,14 +187,6 @@ enum NEORV32_CSR_MSTATUS_enum {
 
 
 /**********************************************************************//**
- * CPU mstatush CSR (r/w): Machine status - high word
- **************************************************************************/
-enum NEORV32_CSR_MSTATUSH_enum {
-  CSR_MSTATUSH_MDT = 10 /**< CPU mstatush CSR (10): MDT - M-mode disable trap (r/w) */
-};
-
-
-/**********************************************************************//**
  * CPU mcountinhibitCSR (r/w): Machine counter-inhibit
  **************************************************************************/
 enum NEORV32_CSR_MCOUNTINHIBIT_enum {
