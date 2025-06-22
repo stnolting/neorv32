@@ -260,7 +260,7 @@ begin
     xcsr_rdata_i  => xcsr_res,    -- external CSR read data
     -- interrupts --
     irq_dbg_i     => dbi_i,       -- debug mode (halt) request
-    irq_machine_i => irq_machine, -- risc-v mti, mei, msi
+    irq_machine_i => irq_machine, -- risc-v mei, mti, msi
     irq_fast_i    => firq_i,      -- fast interrupts
     -- load/store unit interface --
     lsu_wait_i    => lsu_wait,    -- wait for data bus
@@ -269,7 +269,7 @@ begin
   );
 
   -- RISC-V machine interrupts --
-  irq_machine <= mti_i & mei_i & msi_i;
+  irq_machine <= mei_i & mti_i & msi_i;
 
   -- control-external CSR read-back --
   xcsr_res <= xcsr_cnt or xcsr_alu or xcsr_pmp;

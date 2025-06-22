@@ -758,7 +758,7 @@ asynchronous interrupts) that are handled transparently by the control logic.
 * move the current program counter to <<_dpc>>
 * copy the hart's current privilege level to the `prv` flags in <<_dcsr>>
 * set `cause` in <<_dcsr>> according to the cause why debug mode is entered
-* **no update** of `mtval`, `mcause`, `mtval` and `mstatus` CSRs
+* **no update** of `mtval`, `mcause`, `mtval` and `mstatus[h]` CSRs
 * load the address configured via the CPU's (<<_cpu_top_entity_generics, `CPU_DEBUG_PARK_ADDR`>>) generic to the program counter jumping to the
 "debugger park loop" code stored in the debug module (DM)
 

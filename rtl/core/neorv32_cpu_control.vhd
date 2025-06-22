@@ -83,7 +83,7 @@ entity neorv32_cpu_control is
     xcsr_rdata_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- external CSR read data
     -- interrupts --
     irq_dbg_i     : in  std_ulogic; -- debug mode (halt) request
-    irq_machine_i : in  std_ulogic_vector(2 downto 0); -- risc-v mti, mei, msi
+    irq_machine_i : in  std_ulogic_vector(2 downto 0); -- risc-v mei, mti, msi
     irq_fast_i    : in  std_ulogic_vector(15 downto 0); -- fast interrupts
     -- load/store unit interface --
     lsu_wait_i    : in  std_ulogic; -- wait for data bus
@@ -109,6 +109,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- trap controller --
   type trap_ctrl_t is record
+    exc_trig    : std_ulogic_vector(exc_width_c-1 downto 0); -- sync. exception trigger list
     exc_buf     : std_ulogic_vector(exc_width_c-1 downto 0); -- synchronous exception buffer (one bit per exception)
     exc_fire    : std_ulogic; -- set if there is a valid source in the exception buffer
     irq_pnd     : std_ulogic_vector(irq_width_c-1 downto 0); -- pending interrupt
@@ -120,6 +121,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     env_pending : std_ulogic; -- start of trap environment if pending
     env_enter   : std_ulogic; -- enter trap environment
     env_entered : std_ulogic; -- trap environment has just been entered
+    env_running : std_ulogic; -- trap environment active
     env_exit    : std_ulogic; -- leave trap environment
     --
     instr_be    : std_ulogic; -- instruction fetch bus error
@@ -201,6 +203,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal hwtrig_match : std_ulogic; -- hardware trigger matches programmed address
   signal hwtrig_fired : std_ulogic; -- hardware trigger has fired
   signal hwtrig_start : std_ulogic; -- hardware trigger causes debug-mode entry
+  signal ebreak_trig  : std_ulogic; -- "ebreak" exception trigger
+  signal dbtrap_trig  : std_ulogic; -- "double-trap" exception trigger
 
 begin
 
@@ -837,18 +841,9 @@ begin
       -- Once triggered the interrupt line should stay active until explicitly
       -- cleared by a mechanism specific to the interrupt-causing source.
       -- ----------------------------------------------------------------------
-
-      -- RISC-V machine interrupts --
-      trap_ctrl.irq_pnd(irq_msi_irq_c) <= irq_machine_i(0);
-      trap_ctrl.irq_pnd(irq_mei_irq_c) <= irq_machine_i(1);
-      trap_ctrl.irq_pnd(irq_mti_irq_c) <= irq_machine_i(2);
-
-      -- NEORV32-specific fast interrupts --
-      trap_ctrl.irq_pnd(irq_firq_15_c downto irq_firq_0_c) <= irq_fast_i(15 downto 0);
-
-      -- debug-mode entry --
-      trap_ctrl.irq_pnd(irq_db_halt_c) <= '0'; -- unused
-      trap_ctrl.irq_pnd(irq_db_step_c) <= '0'; -- unused
+      trap_ctrl.irq_pnd(irq_mei_irq_c downto irq_msi_irq_c) <= irq_machine_i; -- RISC-V machine interrupts
+      trap_ctrl.irq_pnd(irq_firq_15_c downto irq_firq_0_c)  <= irq_fast_i(15 downto 0); -- NEORV32-specific fast interrupts
+      trap_ctrl.irq_pnd(irq_db_step_c downto irq_db_halt_c) <= "00"; -- unused debug-mode entry
 
       -- Interrupt Buffer -----------------------------------------------------
       -- Masking of interrupt request lines. Additionally, this buffer ensures
@@ -871,40 +866,36 @@ begin
       trap_ctrl.irq_buf(irq_db_step_c) <= debug_ctrl.trig_step or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_db_step_c));
 
       -- Exception Buffer -----------------------------------------------------
-      -- If several exception sources trigger at once, all the requests will
-      -- stay active until the trap environment is started. Only the exception
-      -- with highest priority will be used to update the MCAUSE CSR. All
-      -- remaining ones will be discarded.
+      -- All requests stay pending until the trap environment is started. Only
+      -- the highest-priority exception will kick in; others are discarded.
       -- ----------------------------------------------------------------------
+      for i in 0 to exc_width_c-1 loop
+        trap_ctrl.exc_buf(i) <= (trap_ctrl.exc_buf(i) or trap_ctrl.exc_trig(i)) and (not trap_ctrl.env_enter);
+      end loop;
 
-      -- misaligned load/store/instruction address --
-      trap_ctrl.exc_buf(exc_lalign_c) <= (trap_ctrl.exc_buf(exc_lalign_c) or lsu_err_i(0))       and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_salign_c) <= (trap_ctrl.exc_buf(exc_salign_c) or lsu_err_i(2))       and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_ialign_c) <= (trap_ctrl.exc_buf(exc_ialign_c) or trap_ctrl.instr_ma) and (not trap_ctrl.env_enter);
-
-      -- load/store/instruction access fault --
-      trap_ctrl.exc_buf(exc_laccess_c) <= (trap_ctrl.exc_buf(exc_laccess_c) or lsu_err_i(1))       and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_saccess_c) <= (trap_ctrl.exc_buf(exc_saccess_c) or lsu_err_i(3))       and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_iaccess_c) <= (trap_ctrl.exc_buf(exc_iaccess_c) or trap_ctrl.instr_be) and (not trap_ctrl.env_enter);
-
-      -- illegal instruction & environment call --
-      trap_ctrl.exc_buf(exc_ecall_c)   <= (trap_ctrl.exc_buf(exc_ecall_c)   or trap_ctrl.ecall)    and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_illegal_c) <= (trap_ctrl.exc_buf(exc_illegal_c) or trap_ctrl.instr_il) and (not trap_ctrl.env_enter);
-
-      -- break point --
-      if RISCV_ISA_Sdext then
-        trap_ctrl.exc_buf(exc_ebreak_c) <= (not trap_ctrl.env_enter) and (trap_ctrl.exc_buf(exc_ebreak_c) or
-          (trap_ctrl.ebreak and (    csr.prv_level) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- enter M-mode handler on ebreak in M-mode
-          (trap_ctrl.ebreak and (not csr.prv_level) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run)));  -- enter M-mode handler on ebreak in U-mode
-      else
-        trap_ctrl.exc_buf(exc_ebreak_c) <= (trap_ctrl.exc_buf(exc_ebreak_c) or trap_ctrl.ebreak) and (not trap_ctrl.env_enter);
-      end if;
-
-      -- debug-mode entry --
-      trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_enter);
-      trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_enter);
     end if;
   end process trap_buffer;
+
+  -- synchronous exception trigger --
+  trap_ctrl.exc_trig(exc_iaccess_c)  <= trap_ctrl.instr_be;    -- instruction fetch bus access error
+  trap_ctrl.exc_trig(exc_illegal_c)  <= trap_ctrl.instr_il;    -- illegal instruction
+  trap_ctrl.exc_trig(exc_ialign_c)   <= trap_ctrl.instr_ma;    -- instruction fetch address misaligned
+  trap_ctrl.exc_trig(exc_ecall_c)    <= trap_ctrl.ecall;       -- environment call instruction
+  trap_ctrl.exc_trig(exc_ebreak_c)   <= ebreak_trig;           -- environment break instruction
+  trap_ctrl.exc_trig(exc_salign_c)   <= lsu_err_i(2);          -- LSU store address misaligned
+  trap_ctrl.exc_trig(exc_lalign_c)   <= lsu_err_i(0);          -- LSU load address misaligned
+  trap_ctrl.exc_trig(exc_saccess_c)  <= lsu_err_i(3);          -- LSU store bus access error
+  trap_ctrl.exc_trig(exc_laccess_c)  <= lsu_err_i(1);          -- LSU load bus access error
+  trap_ctrl.exc_trig(exc_doublet_c)  <= dbtrap_trig;           -- double-trap exception
+  trap_ctrl.exc_trig(exc_db_break_c) <= debug_ctrl.trig_break; -- debug-mode-entry upon environment break instruction
+  trap_ctrl.exc_trig(exc_db_hw_c)    <= debug_ctrl.trig_hw;    -- debug-mode-entry upon hardware trigger
+
+  -- environment break exception helper --
+  ebreak_trig <= (trap_ctrl.ebreak and (    csr.prv_level) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- [M]: M-mode trap on ebreak
+                 (trap_ctrl.ebreak and (not csr.prv_level) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run));   -- [U]: M-mode trap on ebreak
+
+  -- double-trap exception helper --
+  dbtrap_trig <= trap_ctrl.env_running and or_reduce_f(trap_ctrl.exc_trig(exc_laccess_c downto exc_iaccess_c));
 
 
   -- Trap Priority Logic --------------------------------------------------------------------
@@ -917,6 +908,7 @@ begin
       trap_ctrl.cause <= (others => '0'); -- default
       -- standard RISC-V exceptions --
       if    (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
+      elsif (trap_ctrl.exc_buf(exc_doublet_c)  = '1') then trap_ctrl.cause <= trap_dbt_c; -- double-trap
       elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c; -- illegal instruction
       elsif (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c; -- instruction address misaligned
       elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & replicate_f(csr.prv_level, 2); -- environment call (U/M)
@@ -966,22 +958,25 @@ begin
     if (rstn_i = '0') then
       trap_ctrl.env_pending <= '0';
       trap_ctrl.env_entered <= '0';
+      trap_ctrl.env_running <= '0';
     elsif rising_edge(clk_i) then
       -- pending trap environment --
-      if (trap_ctrl.env_pending = '0') then -- no pending trap environment yet
-        if (trap_ctrl.exc_fire = '1') or (or_reduce_f(trap_ctrl.irq_fire) = '1') then
-          trap_ctrl.env_pending <= '1'; -- execute engine can start trap handling
-        end if;
-      else -- trap waiting to be served
-        if (trap_ctrl.env_enter = '1') then -- start of trap environment acknowledged by execute engine
-          trap_ctrl.env_pending <= '0';
-        end if;
+      if ((trap_ctrl.env_pending = '0') and ((trap_ctrl.exc_fire = '1') or (or_reduce_f(trap_ctrl.irq_fire) = '1'))) then -- trap triggered
+        trap_ctrl.env_pending <= '1';
+      elsif (trap_ctrl.env_pending = '1') and (trap_ctrl.env_enter = '1') then -- start of trap environment acknowledged by execute engine
+        trap_ctrl.env_pending <= '0';
       end if;
       -- trap environment has just been entered --
-      if (exe_engine.state = EX_EXECUTE) then -- first instruction of trap environment is executing
+      if (exe_engine.state = EX_EXECUTE) then -- first instruction of trap handler is executing
         trap_ctrl.env_entered <= '0';
       elsif (trap_ctrl.env_enter = '1') then
         trap_ctrl.env_entered <= '1';
+      end if;
+      -- trap environment active (we are "inside a trap handler") --
+      if (trap_ctrl.env_exit = '1') and (debug_ctrl.run = '0') then -- exit from non-debug-mode trap handler
+        trap_ctrl.env_running <= '0';
+      elsif (trap_ctrl.env_enter = '1') then
+        trap_ctrl.env_running <= '1';
       end if;
     end if;
   end process trap_controller;
@@ -1085,7 +1080,7 @@ begin
         -- machine trap setup
         -- --------------------------------------------------------------------
 
-        -- machine status register --
+        -- machine status register - low word --
         if (csr.addr = csr_mstatus_c) then
           csr.mstatus_mie  <= csr.wdata(3);
           csr.mstatus_mpie <= csr.wdata(7);
@@ -1351,7 +1346,7 @@ begin
           -- --------------------------------------------------------------------
           -- machine trap setup
           -- --------------------------------------------------------------------
-          when csr_mstatus_c => -- machine status register - low word
+          when csr_mstatus_c => -- machine status register, low word
             csr.rdata(3)  <= csr.mstatus_mie;
             csr.rdata(7)  <= csr.mstatus_mpie;
             csr.rdata(12 downto 11) <= (others => csr.mstatus_mpp);

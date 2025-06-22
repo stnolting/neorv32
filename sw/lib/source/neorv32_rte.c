@@ -79,16 +79,14 @@ void neorv32_rte_setup(void) {
 int neorv32_rte_handler_install(int id, void (*handler)(void)) {
 
   // check if invalid trap ID
-  uint32_t index = (uint32_t)id;
-  if (index >= NEORV32_RTE_NUM_TRAPS) {
+  if ((uint32_t)id < NEORV32_RTE_NUM_TRAPS) {
+    __neorv32_rte_vector_lut[id] = (uint32_t)handler; // install handler
+    asm volatile ("fence"); // flush updated handler table to main memory
+    return 0;
+  }
+  else {
     return -1;
   }
-
-  // install handler
-  __neorv32_rte_vector_lut[index] = (uint32_t)handler;
-  asm volatile ("fence"); // flush updated handler table to main memory
-
-  return 0;
 }
 
 
@@ -109,11 +107,11 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
     "addi sp, sp, -16*4 \n"
 #endif
 
-    "sw x0, 0*4(sp) \n" // is always zero, but backup to have a "complete" indexable register frame
+    "sw x0, 0*4(sp) \n" // is always zero, but backup to have a "complete" register frame
     "sw x1, 1*4(sp) \n"
 
     "csrrw x1, mscratch, sp \n" // mscratch = base address of original context
-    "sw    x1, 2*4(sp)      \n" // store original stack pointer
+    "sw    x1, 2*4(sp)      \n" // store original stack pointer "at x2 frame position"
 
     "sw x3,   3*4(sp) \n"
     "sw x4,   4*4(sp) \n"
@@ -165,6 +163,7 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
     case TRAP_CODE_S_ACCESS:     handler_base = __neorv32_rte_vector_lut[RTE_TRAP_S_ACCESS];     break;
     case TRAP_CODE_UENV_CALL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_UENV_CALL];    break;
     case TRAP_CODE_MENV_CALL:    handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MENV_CALL];    break;
+    case TRAP_CODE_DOUBLE_TRAP:  handler_base = __neorv32_rte_vector_lut[RTE_TRAP_DOUBLE_TRAP];  break;
     case TRAP_CODE_MSI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MSI];          break;
     case TRAP_CODE_MTI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MTI];          break;
     case TRAP_CODE_MEI:          handler_base = __neorv32_rte_vector_lut[RTE_TRAP_MEI];          break;
@@ -217,7 +216,7 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
   asm volatile (
 //  "lw x0,   0*4(sp) \n" // hardwired to zero
     "lw x1,   1*4(sp) \n"
-//  restore 2x at the very end
+//  restore x2 at the very end
     "lw x3,   3*4(sp) \n"
     "lw x4,   4*4(sp) \n"
     "lw x5,   5*4(sp) \n"
@@ -348,6 +347,7 @@ void neorv32_rte_debug_handler(void) {
     case TRAP_CODE_S_ACCESS:     neorv32_uart0_puts("Store access fault"); break;
     case TRAP_CODE_UENV_CALL:    neorv32_uart0_puts("Environment call from U-mode"); break;
     case TRAP_CODE_MENV_CALL:    neorv32_uart0_puts("Environment call from M-mode"); break;
+    case TRAP_CODE_DOUBLE_TRAP:  neorv32_uart0_puts("Double-trap"); break;
     case TRAP_CODE_MSI:          neorv32_uart0_puts("Machine software IRQ"); break;
     case TRAP_CODE_MTI:          neorv32_uart0_puts("Machine timer IRQ"); break;
     case TRAP_CODE_MEI:          neorv32_uart0_puts("Machine external IRQ"); break;
@@ -389,7 +389,9 @@ void neorv32_rte_debug_handler(void) {
   }
 
   // halt if fatal exception
-  if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_I_MISALIGNED)) {
+  if ((trap_cause == TRAP_CODE_I_ACCESS) ||
+      (trap_cause == TRAP_CODE_I_MISALIGNED) ||
+      (trap_cause == TRAP_CODE_DOUBLE_TRAP)) {
     neorv32_uart0_puts(" !!FATAL EXCEPTION!! Halting CPU </NEORV32-RTE>\n");
     neorv32_cpu_csr_write(CSR_MIE, 0);
     while(1) {

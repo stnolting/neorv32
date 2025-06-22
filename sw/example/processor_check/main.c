@@ -40,16 +40,14 @@
  * @name UART print macros
  **************************************************************************/
 /**@{*/
-//** for simulation only! */
-#ifdef SUPPRESS_OPTIONAL_UART_PRINT
-//** print standard output to UART0 */
+#if defined(SUPPRESS_OPTIONAL_UART_PRINT)
 #define PRINT_STANDARD(...)
-//** print critical output to UART1 */
 #define PRINT_CRITICAL(...) neorv32_uart1_printf(__VA_ARGS__)
+#elif defined(STDIO_SEMIHOSTING)
+#define PRINT_STANDARD(...) printf(__VA_ARGS__)
+#define PRINT_CRITICAL(...) printf(__VA_ARGS__)
 #else
-//** print standard output to UART0 */
 #define PRINT_STANDARD(...) neorv32_uart0_printf(__VA_ARGS__)
-//** print critical output to UART0 */
 #define PRINT_CRITICAL(...) neorv32_uart0_printf(__VA_ARGS__)
 #endif
 /**@}*/
@@ -64,6 +62,8 @@ void vectored_global_handler(void);
 void vectored_mei_handler(void);
 void hw_breakpoint_handler(void);
 void gpio_trap_handler(void);
+void double_trap0_handler(void);
+void double_trap1_handler(void);
 void test_ok(void);
 void test_fail(void);
 int  core1_main(void);
@@ -90,6 +90,7 @@ volatile unsigned char constr_src[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 
 volatile uint32_t constr_res = 0; // for constructor test
 volatile uint32_t amo_var = 0; // atomic memory access test
 volatile _Atomic int atomic_cnt = 0; // dual core atomic test
+volatile uint32_t backup[2]; // backup stuff
 
 
 /**********************************************************************//**
@@ -650,6 +651,7 @@ int main() {
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
 
+
   // ----------------------------------------------------------
   // Breakpoint instruction
   // ----------------------------------------------------------
@@ -810,6 +812,34 @@ int main() {
   }
   else {
     PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Double-trap exception
+  // ----------------------------------------------------------
+  PRINT_STANDARD("[%i] Double-trap EXC ", cnt_test);
+  cnt_test++;
+
+  // install double-trap exception "cascade" handlers
+  neorv32_rte_handler_install(RTE_TRAP_MENV_CALL, double_trap0_handler);
+  neorv32_rte_handler_install(RTE_TRAP_DOUBLE_TRAP, double_trap1_handler);
+
+  // trigger first exception (-> double_trap0_handler)
+  asm volatile ("ecall");
+
+  // restore original handlers
+  neorv32_rte_handler_install(RTE_TRAP_MENV_CALL, global_trap_handler);
+  neorv32_rte_handler_install(RTE_TRAP_DOUBLE_TRAP, global_trap_handler);
+
+  // re-enable machine-mode interrupts (MIE and MPIE were cleared by calling the two handlers)
+  neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_DOUBLE_TRAP) {
+    test_ok();
+  }
+  else {
+    test_fail();
   }
 
 
@@ -1904,9 +1934,9 @@ int main() {
     tmp_a = neorv32_cpu_amolr((uint32_t)&amo_var);
     amo_var = 0x10cafe00; // break reservation
     asm volatile ("fence"); // flush/reload d-cache
-    tmp_b = neorv32_cpu_amosc((uint32_t)&amo_var, 0xaaaaaaaa);
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc); // another SC: must fail
-    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0); // another SC: must fail; no bus exception!
+    tmp_b = (neorv32_cpu_amosc((uint32_t)&amo_var, 0xaaaaaaaa) & 1);
+    tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc) & 1); // another SC: must fail
+    tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0) & 1); // another SC: must fail; no bus exception!
     asm volatile ("fence"); // flush/reload d-cache
 
     if ((tmp_a   == 0x00cafe00) && // correct LR.W result
@@ -2305,7 +2335,7 @@ void __attribute__((interrupt("machine"))) vectored_mei_handler(void) {
 
 
 /**********************************************************************//**
- * GPIO input interrupt handler .
+ * GPIO input interrupt handler
  **************************************************************************/
 void gpio_trap_handler(void) {
 
@@ -2314,6 +2344,36 @@ void gpio_trap_handler(void) {
   gpio_trap_handler_ack = neorv32_gpio_irq_get(); // get currently pending pin interrupts
   neorv32_gpio_irq_clr(gpio_trap_handler_ack); // clear currently pending pin interrupts
   neorv32_gpio_irq_disable(-1); // disable all input pin interrupts
+}
+
+
+/**********************************************************************//**
+ * Double trap handler 0: Triggered by ecall
+ **************************************************************************/
+void double_trap0_handler(void) {
+
+  // backup the original stack pointer (from MSCRATCH)
+  // and the original return address (from MEPC)
+
+  backup[0] = neorv32_cpu_csr_read(CSR_MSCRATCH); // original stack pointer
+  backup[1] = neorv32_cpu_csr_read(CSR_MEPC) + 4; // actual return address (ecall + 4)
+
+  asm volatile ("ecall"); // trigger second exception (-> double_trap1_handler)
+}
+
+
+/**********************************************************************//**
+ * Double trap handler 1: Actual double-trap handler
+ **************************************************************************/
+void double_trap1_handler(void) {
+
+  // restore the original stack pointer (from MSCRATCH)
+  // and the original return address (from MEPC)
+
+  // don't do this at home, kids
+  register uint32_t stackpointer = backup[0];
+  asm volatile ("mv sp, %0\n" : : "r"(stackpointer) : "t0");
+  neorv32_cpu_csr_write(CSR_MEPC, backup[1]);
 }
 
 
