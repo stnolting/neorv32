@@ -1,13 +1,9 @@
-# Application makefile.
-# Use this makefile to configure all relevant CPU / compiler options.
+# Processor-check program makefile
 
-# Override the default CPU ISA
+# Maximum ISA configuration (but without C)
 override MARCH = rv32ima_zba_zbb_zbs_zbkb_zbkc_zbkx_zknd_zkne_zknh_zksh_zksed_zicsr_zfinx_zifencei_zicond
 
-# Override the default RISC-V GCC prefix
-#RISCV_PREFIX ?= riscv-none-elf-
-
-# Override default optimization goal
+# Optimization goal
 EFFORT = -Os
 
 # Add extended debug symbols
@@ -23,14 +19,10 @@ override USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=32k
 override USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=8k
 
 # Adjust maximum heap size
-override USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=3096
+override USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=3k
 
 # Simulation arguments
 override GHDL_RUN_FLAGS ?= --stop-time=15ms
-
-# Additional sources
-#APP_SRC += $(wildcard ./*.c)
-#APP_INC += -I .
 
 # Set path to NEORV32 root directory
 NEORV32_HOME ?= ../../..
