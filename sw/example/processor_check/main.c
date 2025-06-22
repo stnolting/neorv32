@@ -126,7 +126,6 @@ void __attribute__((constructor)) neorv32_constructor() {
 int main() {
 
   uint32_t tmp_a, tmp_b;
-  uint8_t id;
 
   // disable machine-mode interrupts
   neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
@@ -145,10 +144,38 @@ int main() {
   // -----------------------------------------------
   neorv32_rte_setup(); // this will install a full-detailed debug handler for ALL traps
   int install_err = 0;
-  // initialize ALL provided trap handler (overriding the default debug handlers)
-  for (id=0; id<NEORV32_RTE_NUM_TRAPS; id++) {
-    install_err += neorv32_rte_handler_install(id, global_trap_handler);
-  }
+  // synchronous exceptions
+  install_err += neorv32_rte_handler_install(RTE_TRAP_I_ACCESS,     global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_I_ILLEGAL,    global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_I_MISALIGNED, global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_BREAKPOINT,   global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_L_MISALIGNED, global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_L_ACCESS,     global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_S_MISALIGNED, global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_S_ACCESS,     global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_UENV_CALL,    global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_MENV_CALL,    global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_DOUBLE_TRAP,  global_trap_handler);
+  // asynchronous exceptions (interrupts)
+  install_err += neorv32_rte_handler_install(RTE_TRAP_MSI,     global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_MTI,     global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_MEI,     global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_0,  global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_1,  global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_2,  global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_3,  global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_4,  global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_5,  global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_6,  global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_7,  global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_8,  global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_9,  global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_10, global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_11, global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_12, global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_13, global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_14, global_trap_handler);
+  install_err += neorv32_rte_handler_install(RTE_TRAP_FIRQ_15, global_trap_handler);
   if (install_err) {
     PRINT_CRITICAL("RTE fail!\n");
     return 1;
