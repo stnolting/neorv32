@@ -346,7 +346,8 @@ begin
     FIFO_WIDTH => 32+4+1,
     FIFO_RSYNC => false,
     FIFO_SAFE  => true,
-    FULL_RESET => true
+    FULL_RESET => true,
+    OUT_GATE   => false
   )
   port map (
     -- control --
