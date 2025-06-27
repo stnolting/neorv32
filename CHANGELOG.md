@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 27.06.2025 | 1.11.7.3 | RTE cleanups; double-trap exception now has highest priority | [#1299](https://github.com/stnolting/neorv32/pull/1299) |
 | 21.06.2025 | 1.11.7.2 | :test_tube: add double-trap exception (loosely based on the RISC-V `Smdbltrp` ISA extension) | [#1294](https://github.com/stnolting/neorv32/pull/1294) |
 | 20.06.2025 | 1.11.7.1 | remove WDT's "strict" configuration bit; minor rtl cleanups | [#1293](https://github.com/stnolting/neorv32/pull/1293) |
 | 20.06.2025 | [**:rocket:1.11.7**](https://github.com/stnolting/neorv32/releases/tag/v1.11.7) | **New release** | |
