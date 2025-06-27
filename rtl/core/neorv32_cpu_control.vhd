@@ -907,8 +907,8 @@ begin
     elsif rising_edge(clk_i) then
       trap_ctrl.cause <= (others => '0'); -- default
       -- standard RISC-V exceptions --
-      if    (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
-      elsif (trap_ctrl.exc_buf(exc_doublet_c)  = '1') then trap_ctrl.cause <= trap_dbt_c; -- double-trap
+      if    (trap_ctrl.exc_buf(exc_doublet_c)  = '1') then trap_ctrl.cause <= trap_dbt_c; -- double-trap
+      elsif (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
       elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c; -- illegal instruction
       elsif (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c; -- instruction address misaligned
       elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & replicate_f(csr.prv_level, 2); -- environment call (U/M)

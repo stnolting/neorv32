@@ -1298,7 +1298,7 @@ Whenever any trap (synchronous or asynchronous) is taken into M-mode an internal
 only if the triggering trap does not cause a debug-mode entry. It is cleared again when executing an `mret` instruction.
 Hence, this flag indicates "_inside trap_" status when set. If a second _synchronous_ trap occurs while this flag is set,
 a double-trap exception is raised. The RISC-V-compliant "double-trap" exception code 16 (see <<_neorv32_trap_listing>>)
-is used to identify this event. In summary, an trap that is followed by a synchronous trap (without an `mret` in between)
+is used to identify this event. In summary, a trap that is followed by a synchronous trap (without an `mret` in between)
 causes a double-trap exception:
 
 .Double-Trap Scenarios
@@ -1306,9 +1306,9 @@ causes a double-trap exception:
 [options="header", grid="rows"]
 |=======================
 | First Trap | Second Trap | Resulting State
-| Synchronous (e.g. `ecall`) | Synchronous (e.g. `ecall`) | **Double-trap**
+| Synchronous (e.g. `ecall`) | Synchronous (e.g. `ecall`) | **Double-trap exception**
 | Synchronous (e.g. `ecall`) | Asynchronous (interrupt)   | Second trap is not triggered; IRQs are automatically disabled upon trap entry (<<_mstatus>>.`MIE` automatically clears)
-| Asynchronous (interrupt)   | Synchronous (e.g. `ecall`) | **Double-trap**
+| Asynchronous (interrupt)   | Synchronous (e.g. `ecall`) | **Double-trap exception**
 | Asynchronous (interrupt)   | Asynchronous (interrupt)   | Second trap is not triggered; IRQs are automatically disabled upon trap entry (<<_mstatus>>.`MIE` automatically clears); see <<_nested_interrupts>>
 |=======================
 
@@ -1363,8 +1363,8 @@ can be used to output debug information, to bring the system into a safe state o
 |=======================
 | Prio. | `mcause`     | RTE Trap ID              | Cause                                | `mepc` | `mtval` | `mtinst` | Note
 8+^| **Exceptions** (_synchronous_ to instruction execution)
-| 1     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction access fault             | I-PC   | 0       | INS      | **fatal**
-| 2     | `0x00000010` | `TRAP_CODE_DOUBLE_TRAP`  | <<_double_trap_exception>>           | I-PC   | 0       | INS      | **fatal**
+| 1     | `0x00000010` | `TRAP_CODE_DOUBLE_TRAP`  | <<_double_trap_exception>>           | I-PC   | 0       | INS      | **fatal**
+| 2     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction access fault             | I-PC   | 0       | INS      | **fatal**
 | 3     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                  | PC     | 0       | INS      |
 | 4     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned       | PC     | 0       | INS      | **fatal**
 | 5     | `0x0000000b` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode         | PC     | 0       | INS      |
