@@ -15,29 +15,34 @@
 /** User configuration */
 #define BAUD_RATE 19200
 
+volatile uint32_t timestamp = 0;
+
+
+
+static void puth(uint32_t num) {
+
+  int i = 0;
+  const char hex_symbols[] = "0123456789ABCDEF";
+  for (i=0; i<8; i++) {
+    uint32_t index = (num >> (28 - 4*i)) & 0xF;
+    neorv32_uart_tx_put(NEORV32_UART0, hex_symbols[index]);
+  }
+  neorv32_uart_tx_put(NEORV32_UART0, '\n');
+}
+
+
 
 /**********************************************************************//**
  * GPIO input pin(s) interrupt handler.
  **************************************************************************/
 void gpio_interrupt_handler(void) {
 
-  // get bit mask of all those input pin that caused this interrupt
-  uint32_t active = neorv32_gpio_irq_get();
-
-  // clear the active pins that we are "handling" here
-  neorv32_gpio_irq_clr(active);
-
-  // "handle" the individual pin interrupts:
-  // we just print the pin number of the triggering inputs
-  int i;
-  neorv32_uart0_printf("\nGPIO interrupt from pin(s): ");
-  for (i=0; i<32; i++) {
-    if (active & 1) {
-      neorv32_uart0_printf("%u ", i);
-    }
-    active = active >> 1;
-  }
-  neorv32_uart0_printf("\n");
+  neorv32_gpio_irq_clr(-1);
+  uint32_t current = (uint32_t)neorv32_clint_time_get();
+  uint32_t delta = current - timestamp;
+  //neorv32_uart0_printf("0x%x 0x%x 0x%x\n", current, timestamp, delta);
+  puth(delta);
+  timestamp = current;
 }
 
 
@@ -68,17 +73,17 @@ int main(void) {
   }
 
   // configure CPU's GPIO controller interrupt
-  neorv32_rte_handler_install(GPIO_RTE_ID, gpio_interrupt_handler); // install GPIO trap handler
+  neorv32_rte_handler_install(GPIO_TRAP_CODE, gpio_interrupt_handler); // install GPIO trap handler
   neorv32_cpu_csr_set(CSR_MIE, 1 << GPIO_FIRQ_ENABLE); // enable GPIO FIRQ channel
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 
   // configure GPIO input's IRQ trigger
   int i;
   for (i=0; i<32; i+=4) {
-    neorv32_gpio_irq_setup(i+0, GPIO_TRIG_LEVEL_LOW);    // this pin's interrupt fires on low-level
-    neorv32_gpio_irq_setup(i+1, GPIO_TRIG_LEVEL_HIGH);   // this pin's interrupt fires on high-level
-    neorv32_gpio_irq_setup(i+2, GPIO_TRIG_EDGE_FALLING); // this pin's interrupt fires on a falling edge
-    neorv32_gpio_irq_setup(i+3, GPIO_TRIG_EDGE_RISING);  // this pin's interrupt fires on a rising edge
+    neorv32_gpio_irq_setup(i+0, GPIO_TRIG_LEVEL_HIGH);    // this pin's interrupt fires on low-level
+    //neorv32_gpio_irq_setup(i+1, GPIO_TRIG_LEVEL_HIGH);   // this pin's interrupt fires on high-level
+    //neorv32_gpio_irq_setup(i+2, GPIO_TRIG_EDGE_FALLING); // this pin's interrupt fires on a falling edge
+    //neorv32_gpio_irq_setup(i+3, GPIO_TRIG_EDGE_RISING);  // this pin's interrupt fires on a rising edge
   }
 
   // enable all GPIO input pin interrupts

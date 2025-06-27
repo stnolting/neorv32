@@ -63,7 +63,7 @@ int main() {
   neorv32_uart0_printf("Descriptor FIFO depth: %u\n", neorv32_dma_get_descriptor_fifo_depth());
 
   // install DMA interrupt handler
-  neorv32_rte_handler_install(DMA_RTE_ID, dma_firq_handler);
+  neorv32_rte_handler_install(DMA_TRAP_CODE, dma_firq_handler);
 
   // enable DMA
   neorv32_dma_enable();

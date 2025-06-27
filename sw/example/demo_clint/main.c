@@ -77,8 +77,8 @@ int main() {
   neorv32_clint_mtimecmp_set(-1);
 
   // install CLINT handlers to RTE
-  neorv32_rte_handler_install(RTE_TRAP_MTI, mti_irq_handler);
-  neorv32_rte_handler_install(RTE_TRAP_MSI, msi_irq_handler);
+  neorv32_rte_handler_install(TRAP_CODE_MTI, mti_irq_handler);
+  neorv32_rte_handler_install(TRAP_CODE_MSI, msi_irq_handler);
 
   // start real time clock
   neorv32_uart0_printf("\nStarting real-time clock demo...\n");

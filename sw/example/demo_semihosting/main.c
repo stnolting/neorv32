@@ -45,7 +45,7 @@ int main() {
 
   // hardware setup
   neorv32_rte_setup();
-  neorv32_rte_handler_install(RTE_TRAP_BREAKPOINT, ebreak_trap_handler);
+  neorv32_rte_handler_install(TRAP_CODE_BREAKPOINT, ebreak_trap_handler);
   neorv32_uart0_setup(BAUD_RATE, 0);
 
   // say hello via UART0

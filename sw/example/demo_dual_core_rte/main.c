@@ -115,15 +115,15 @@ int app_main(void) {
 
   // setup machine timer interrupt for ALL cores
   neorv32_clint_mtimecmp_set(0); // initialize core-specific MTIMECMP
-  neorv32_rte_handler_install(RTE_TRAP_MTI, trap_handler_mtmi); // install trap handler
+  neorv32_rte_handler_install(TRAP_CODE_MTI, trap_handler_mtmi); // install trap handler
   neorv32_cpu_csr_set(CSR_MIE, 1 << CSR_MIE_MTIE); // enable interrupt source
 
   // setup machine software interrupt for ALL cores
-  neorv32_rte_handler_install(RTE_TRAP_MSI, trap_handler_mswi); // install trap handler
+  neorv32_rte_handler_install(TRAP_CODE_MSI, trap_handler_mswi); // install trap handler
   neorv32_cpu_csr_set(CSR_MIE, 1 << CSR_MIE_MSIE); // enable interrupt source
 
   // setup machine environment call trap for ALL cores
-  neorv32_rte_handler_install(RTE_TRAP_MENV_CALL, trap_handler_ecall); // install trap handler
+  neorv32_rte_handler_install(TRAP_CODE_MENV_CALL, trap_handler_ecall); // install trap handler
 
 
   // trigger environment call exception (just to test the according handler)

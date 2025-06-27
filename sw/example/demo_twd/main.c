@@ -65,13 +65,13 @@ int main() {
     neorv32_uart0_printf("TWD available with rx fifo depth of %i and tx fifo depth of %i\n",
                          neorv32_twd_get_rx_fifo_depth(), neorv32_twd_get_tx_fifo_depth());
   }
-  
+
   // setup TWD
-  neorv32_rte_handler_install(TWD_RTE_ID, isr_twd);
+  neorv32_rte_handler_install(TWD_TRAP_CODE, isr_twd);
   neorv32_twd_set_tx_dummy(status);
   neorv32_twd_setup(TWD_DEVICE_ID, 0, 1, 0, 0, 1, 0);
   neorv32_cpu_csr_set(CSR_MIE,
-                      1 << TWD_FIRQ_ENABLE); 
+                      1 << TWD_FIRQ_ENABLE);
   neorv32_cpu_csr_set(CSR_MSTATUS,
                       1 << CSR_MSTATUS_MIE);
 
