@@ -118,7 +118,7 @@ int main() {
   neorv32_slink_tx_clear();
 
   // NEORV32 runtime environment: install SLINK FIRQ handler
-  neorv32_rte_handler_install(SLINK_RTE_ID, slink_firq_handler);
+  neorv32_rte_handler_install(SLINK_TRAP_CODE, slink_firq_handler);
   neorv32_cpu_csr_set(CSR_MIE, 1 << SLINK_FIRQ_ENABLE); // enable SLINK FIRQ
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 

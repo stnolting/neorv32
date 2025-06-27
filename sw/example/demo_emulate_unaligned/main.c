@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -135,7 +135,7 @@ int main() {
   neorv32_uart0_printf("\nUnaligned load with emulation:\n");
 
   // install trap handler for "unaligned load address" exception
-  neorv32_rte_handler_install(RTE_TRAP_L_MISALIGNED, trap_handler_emulate_unaligned_lw);
+  neorv32_rte_handler_install(TRAP_CODE_L_MISALIGNED, trap_handler_emulate_unaligned_lw);
 
   addr = ((uint32_t)&data_block[0]) + 1; // = unaligned address
   neorv32_uart0_printf("MEM[0x%x] = ", addr);

@@ -49,7 +49,7 @@ void neorv32_rte_setup(void) {
       __neorv32_rte_vector_lut[1][index] = (uint32_t)(&neorv32_rte_debug_handler);
     }
   }
-  asm volatile ("fence"); // flush handler table to main memory
+  asm volatile ("fence"); // flush vector table to main memory
 }
 
 
@@ -60,8 +60,8 @@ void neorv32_rte_setup(void) {
  * @note Trap handler installation applies to both cores. Hence, both
  * cores will execute the same handler for the same trap.
  *
- * @param[in] code Identifier (type) of the targeted trap
- * See #NEORV32_RTE_TRAP_enum.
+ * @param[in] code Trap code (MCAUSE CSR value) of the targeted trap.
+ * See #NEORV32_EXCEPTION_CODES_enum.
  *
  * @param[in] handler The actual handler function for the specified trap
  * (function must be of type "void function(void);").
@@ -97,7 +97,7 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
     "addi sp, sp, -16*4 \n"
 #endif
 
-    "sw x0, 0*4(sp) \n" // is always zero, but backup to have a "complete" register frame
+//  "sw x0, 0*4(sp) \n" // x0 is hardwired to zero; but add a blank slot here to have a complete stack frame
     "sw x1, 1*4(sp) \n"
 
     "csrrw x1, mscratch, sp \n" // mscratch = base address of original context
@@ -136,39 +136,27 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
 #endif
   );
 
-  // flush context (stack frame) to main memory
-  // reload trap table from main memory
-  asm volatile ("fence");
-
-  // get trap handler base address
+  // get trap cause
   uint32_t mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  uint32_t handler_base = 0;
-  handler_base = __neorv32_rte_vector_lut[mcause >> 31][mcause & 31];
 
-  // call handler
-  if (handler_base != 0) {
-    typedef void handler_t();
-    handler_t* handler = (handler_t*)handler_base;
-    handler();
-  }
-
-  // compute return address (for exceptions only)
-  // do not alter return address if instruction access exception (fatal?)
-  if (((mcause >> 31) == 0) && (mcause != TRAP_CODE_I_ACCESS)) {
-
-    uint32_t mepc = neorv32_cpu_csr_read(CSR_MEPC);
-    mepc += 4; // default: faulting instruction is uncompressed
-
+  // compute return address (for synchronous exceptions only)
+  if ((mcause >> 31) == 0) {
+    uint32_t mepc = neorv32_cpu_csr_read(CSR_MEPC) + 4; // default: faulting instruction is uncompressed
 #ifdef __riscv_c
-    // adjust return address if compressed instruction
-    if ((neorv32_cpu_csr_read(CSR_MTINST) & 3) != 3) { // faulting instruction is compressed instruction
-      mepc -= 2;
+    if ((neorv32_cpu_csr_read(CSR_MTINST) & 3) != 3) {
+      mepc -= 2; // faulting instruction is compressed 16-bit instruction
     }
 #endif
-
-    // update return address
     neorv32_cpu_csr_write(CSR_MEPC, mepc);
   }
+
+  // flush context (stack frame) to main memory and reload trap vector table from main memory
+  asm volatile ("fence");
+
+  // call handler
+  typedef void handler_t();
+  handler_t* handler = (handler_t*)__neorv32_rte_vector_lut[mcause >> 31][mcause & 31];
+  handler();
 
   // restore context
   asm volatile (
@@ -232,7 +220,12 @@ uint32_t neorv32_rte_context_get(int x) {
 #else
   tmp += (x & 31) << 2;
 #endif
-  return neorv32_cpu_load_unsigned_word(tmp);
+  if (x) {
+    return neorv32_cpu_load_unsigned_word(tmp);
+  }
+  else { // return zero if x = x0 (hardwired to zero)
+    return 0;
+  }
 }
 
 
@@ -256,7 +249,9 @@ void neorv32_rte_context_put(int x, uint32_t data) {
 #else
   tmp += (x & 31) << 2;
 #endif
-  neorv32_cpu_store_unsigned_word(tmp, data);
+  if (x) { // no store if x = x0 (hardwired to zero)
+    neorv32_cpu_store_unsigned_word(tmp, data);
+  }
 }
 
 
@@ -386,4 +381,3 @@ static void __neorv32_rte_print_hex(uint32_t num, int digits) {
     }
   }
 }
-

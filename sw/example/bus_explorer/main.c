@@ -62,10 +62,10 @@ int main() {
 
   // capture all exceptions and give debug info via UART
   neorv32_rte_setup();
-  neorv32_rte_handler_install(RTE_TRAP_L_MISALIGNED, memory_trap_handler);
-  neorv32_rte_handler_install(RTE_TRAP_L_ACCESS, memory_trap_handler);
-  neorv32_rte_handler_install(RTE_TRAP_S_MISALIGNED, memory_trap_handler);
-  neorv32_rte_handler_install(RTE_TRAP_S_ACCESS, memory_trap_handler);
+  neorv32_rte_handler_install(TRAP_CODE_L_MISALIGNED, memory_trap_handler);
+  neorv32_rte_handler_install(TRAP_CODE_L_ACCESS, memory_trap_handler);
+  neorv32_rte_handler_install(TRAP_CODE_S_MISALIGNED, memory_trap_handler);
+  neorv32_rte_handler_install(TRAP_CODE_S_ACCESS, memory_trap_handler);
 
   // disable all interrupt sources
   neorv32_cpu_csr_write(CSR_MIE, 0);

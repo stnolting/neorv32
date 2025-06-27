@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -78,7 +78,7 @@ int main()
   }
 
   // enable IRQ system
-  neorv32_rte_handler_install(SPI_RTE_ID, spi_irq_handler); // SPI to RTE
+  neorv32_rte_handler_install(SPI_TRAP_CODE, spi_irq_handler); // SPI to RTE
   neorv32_cpu_csr_set(CSR_MIE, 1 << SPI_FIRQ_ENABLE); // enable SPI FIRQ
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
 

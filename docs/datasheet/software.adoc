@@ -74,6 +74,7 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_gpio.c`    | `neorv32_gpio.h`       | <<_general_purpose_input_and_output_port_gpio>> HAL
 | `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | <<_general_purpose_timer_gptmr>> HAL
 | -                   | `neorv32_intrinsics.h` | Macros for intrinsics and custom instructions
+| -                   | `neorv32_legacy.h`     | Legacy / backwards-compatibility wrappers (**do not use for new designs**)
 | `neorv32_neoled.c`  | `neorv32_neoled.h`     | <<_smart_led_interface_neoled>> HAL
 | `neorv32_onewire.c` | `neorv32_onewire.h`    | <<_one_wire_serial_interface_controller_onewire>> HAL
 | `neorv32_pwm.c`     | `neorv32_pwm.h`        | <<_pulse_width_modulation_controller_pwm>> HAL

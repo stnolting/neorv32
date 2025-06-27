@@ -66,7 +66,7 @@ int main(void) {
 
   // setup NEORV32 runtime environment
   neorv32_rte_setup();
-  neorv32_rte_handler_install(TRNG_RTE_ID, trng_firq_handler);
+  neorv32_rte_handler_install(TRNG_TRAP_CODE, trng_firq_handler);
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
   // setup UART at default baud rate, no interrupts
