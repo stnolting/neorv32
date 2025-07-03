@@ -1,6 +1,6 @@
 # Exporting core neorv32_mchp_ip_wrapper to TCL
 # Exporting Create HDL core command for module neorv32_mchp_ip_wrapper
-create_hdl_core -file {hdl/neorv32_libero_ip.vhd} -module {neorv32_libero_ip} -library {work} -package {}
+create_hdl_core -file {hdl/rtl/system_integration/neorv32_libero_ip.vhd} -module {neorv32_libero_ip} -library {neorv32} -package {}
 # Exporting BIF information of  HDL core command for module neorv32_mchp_ip_wrapper
 hdl_core_add_bif -hdl_core_name {neorv32_libero_ip} -bif_definition {AXI:AMBA:AMBA3:master} -bif_name {AXI4_M} -signal_map {\
 "AWADDR:m_axi_awaddr" \

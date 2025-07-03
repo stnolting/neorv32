@@ -29,7 +29,8 @@ entity neorv32_libero_ip is
     DUAL_CORE_EN_INT      : integer range 0 to 1           := 0;
     -- Boot Configuration --
     BOOT_MODE_SELECT      : natural range 0 to 2           := 1;
-    BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"D0000000";
+    BOOT_ADDR_CUSTOM_UPPER : natural range 0 to 65_535 := 53248;
+    BOOT_ADDR_CUSTOM_LOWER : natural range 0 to 65_535 := 53248;
     -- On-Chip Debugger (OCD) --
     OCD_EN_INT            : integer range 0 to 1           := 0;
     OCD_HW_BREAKPOINT_INT : integer range 0 to 1           := 0;
@@ -306,6 +307,8 @@ architecture neorv32_libero_ip_rtl of neorv32_libero_ip is
   constant io_onewire_en_c     : boolean := (IO_ONEWIRE_EN_INT = 1);
   constant io_dma_en_c         : boolean := (IO_DMA_EN_INT = 1);
   constant io_slink_en_c       : boolean := (IO_SLINK_EN_INT = 1);
+  constant BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(to_unsigned(BOOT_ADDR_CUSTOM_UPPER * 2**16 + BOOT_ADDR_CUSTOM_LOWER, 32));
+
 
   -- auto-configuration --
   constant num_gpio_c : natural := cond_sel_natural_f(io_gpio_en_c, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
