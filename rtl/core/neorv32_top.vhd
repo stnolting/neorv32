@@ -323,7 +323,12 @@ begin
     -- say hello --
     assert false report
       "[NEORV32] The NEORV32 RISC-V Processor " &
-      "(v" & print_version_f(hw_version_c) & "), " &
+      "(v" &
+      print_hex_f(hw_version_c(31 downto 24)) & "." &
+      print_hex_f(hw_version_c(23 downto 16)) & "." &
+      print_hex_f(hw_version_c(15 downto 8)) & "." &
+      print_hex_f(hw_version_c(7 downto 0)) &
+      "), " &
       "github.com/stnolting/neorv32" severity note;
 
     -- show SoC configuration --
@@ -677,6 +682,8 @@ begin
     sys2_req             <= sys1_req;
     sys1_rsp             <= sys2_rsp;
     firq(FIRQ_DMA)       <= '0';
+    dma_req              <= req_terminate_c;
+    dma_rsp              <= rsp_terminate_c;
   end generate;
 
 
@@ -861,6 +868,7 @@ begin
       xbus_rsp   <= rsp_terminate_c;
       xbus_adr_o <= (others => '0');
       xbus_dat_o <= (others => '0');
+      xbus_cti_o <= (others => '0');
       xbus_tag_o <= (others => '0');
       xbus_we_o  <= '0';
       xbus_sel_o <= (others => '0');
@@ -1545,6 +1553,8 @@ begin
   neorv32_debug_ocd_disabled:
   if not OCD_EN generate
     iodev_rsp(IODEV_OCD) <= rsp_terminate_c;
+    dmi_req              <= dmi_req_terminate_c;
+    dmi_rsp              <= dmi_rsp_terminate_c;
     jtag_tdo_o           <= jtag_tdi_i; -- JTAG pass-through
     dci_ndmrstn          <= '1';
     dci_haltreq          <= (others => '0');
