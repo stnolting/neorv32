@@ -110,6 +110,11 @@ begin
     valid_o      <= shifter.busy and shifter.done;
     res_o        <= shifter.sreg when (shifter.done_ff = '1') else (others => '0');
 
+    -- unused --
+    bs_level  <= (others => (others => '0'));
+    bs_sign   <= '0';
+    bs_result <= (others => '0');
+
   end generate;
 
 
@@ -142,6 +147,14 @@ begin
     -- output layer: re-convert original left shifts --
     res_o   <= bit_rev_f(bs_result) when (ctrl_i.ir_funct3(2) = '0') else bs_result;
     valid_o <= valid_cmd;
+
+    -- unused --
+    shifter.busy    <= '0';
+    shifter.run     <= '0';
+    shifter.done    <= '0';
+    shifter.done_ff <= '0';
+    shifter.cnt     <= (others => '0');
+    shifter.sreg    <= (others => '0');
 
   end generate;
 

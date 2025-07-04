@@ -279,6 +279,7 @@ begin
   if not RISCV_ISA_Zfinx generate
     fpu_csr_en    <= '0';
     fpu_csr_we    <= '0';
+    fpu_csr_rd    <= (others => '0');
     csr_rdata_fpu <= (others => '0');
     cp_result(3)  <= (others => '0');
     cp_valid(3)   <= '0';
@@ -347,6 +348,9 @@ begin
   if not RISCV_ISA_Zxcfu generate
     cfu_csr_en    <= '0';
     cfu_csr_we    <= '0';
+    cfu_done      <= '0';
+    cfu_res       <= (others => '0');
+    cfu_csr_rd    <= (others => '0');
     csr_rdata_cfu <= (others => '0');
     cfu_busy      <= '0';
     cfu_active    <= '0';

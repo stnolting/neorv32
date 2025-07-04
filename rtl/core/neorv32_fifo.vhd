@@ -140,6 +140,7 @@ begin
           end if;
         end if;
       end process write_reset_small;
+      fifo_mem <= (others => (others => '0')); -- unused
     end generate;
 
     -- more than 1 FIFO entry --
@@ -155,6 +156,7 @@ begin
           end if;
         end if;
       end process write_reset_large;
+      fifo_reg <= (others => '0'); -- unused
     end generate;
 
   end generate;
@@ -176,6 +178,7 @@ begin
           end if;
         end if;
       end process write_small;
+      fifo_mem <= (others => (others => '0')); -- unused
     end generate;
 
     -- more than 1 FIFO entry --
@@ -189,6 +192,7 @@ begin
           end if;
         end if;
       end process write_large;
+      fifo_reg <= (others => '0'); -- unused
     end generate;
 
   end generate;
@@ -202,7 +206,8 @@ begin
     -- just 1 FIFO entry --
     fifo_read_async_small:
     if (fifo_depth_c = 1) generate
-      rdata <= fifo_reg;
+      rdata    <= fifo_reg;
+      r_pnt_ff <= (others => '0'); -- unused
     end generate;
 
     -- more than 1 FIFO entry --
@@ -267,6 +272,9 @@ begin
     free_o  <= free_ff;
     avail_o <= avail_ff;
     half_o  <= half_ff;
+
+    -- unused --
+    r_pnt_ff <= (others => '0');
 
   end generate;
 

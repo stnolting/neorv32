@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110703"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110704"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -175,6 +175,13 @@ package neorv32_package is
     data : std_ulogic_vector(31 downto 0);
   end record;
 
+  -- source (request) termination --
+  constant dmi_req_terminate_c : dmi_req_t := (
+    addr => (others => '0'),
+    op   => (others => '0'),
+    data => (others => '0')
+  );
+
   -- request operation --
   constant dmi_req_nop_c : std_ulogic_vector(1 downto 0) := "00"; -- no operation
   constant dmi_req_rd_c  : std_ulogic_vector(1 downto 0) := "01"; -- read access
@@ -185,6 +192,12 @@ package neorv32_package is
     data : std_ulogic_vector(31 downto 0);
     ack  : std_ulogic;
   end record;
+
+  -- endpoint (response) termination --
+  constant dmi_rsp_terminate_c : dmi_rsp_t := (
+    data => (others => '0'),
+    ack  => '0'
+  );
 
   -- External Bus Interface (XBUS / Wishbone) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -763,7 +776,7 @@ package neorv32_package is
   function leading_zeros_f(input : std_ulogic_vector) return natural;
   function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector;
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
-  function print_version_f(version : std_ulogic_vector(31 downto 0)) return string;
+  function print_hex_f(data : std_ulogic_vector) return string;
 
 -- **********************************************************************************************************
 -- NEORV32 Processor Top Entity (component prototype)
@@ -1119,12 +1132,10 @@ package body neorv32_package is
       return false;
     elsif (input = 1) then
       return true;
+    elsif ((tmp_v and (tmp_v - 1)) = 0) then
+      return true;
     else
-      if ((tmp_v and (tmp_v - 1)) = 0) then
-        return true;
-      else
-        return false;
-      end if;
+      return false;
     end if;
   end function is_power_of_two_f;
 
@@ -1181,26 +1192,16 @@ package body neorv32_package is
     return mem_v;
   end function mem32_init_f;
 
-  -- Print hardware version in human-readable format (xx.xx.xx.xx) --------------------------
+  -- Print hex value ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function print_version_f(version : std_ulogic_vector(31 downto 0)) return string is
-    variable res_v : string(1 to 11);
-    variable idx_v : natural;
+  function print_hex_f(data : std_ulogic_vector) return string is
+    variable nibb_v : natural := data'length/4;
+    variable res_v  : string(1 to nibb_v);
   begin
-    idx_v := 1;
-    for i in 4 downto 1 loop
-      if (version((i*8)-1 downto (i*8)-4) /= x"0") then -- print only if not trailing zero
-        res_v(idx_v) := to_hexchar_f(version((i*8)-1 downto (i*8)-4)); -- high nibble
-        idx_v := idx_v + 1;
-      end if;
-      res_v(idx_v) := to_hexchar_f(version((i*8)-5 downto (i*8)-8)); -- low nibble
-      idx_v := idx_v + 1;
-      if (i /= 1) then -- separator
-        res_v(idx_v) := '.';
-        idx_v := idx_v + 1;
-      end if;
+    for i in 0 to nibb_v-1 loop
+      res_v(i+1) := to_hexchar_f(data(data'high - i*4 downto data'high - i*4 - 3));
     end loop;
     return res_v;
-  end function print_version_f;
+  end function print_hex_f;
 
 end neorv32_package;

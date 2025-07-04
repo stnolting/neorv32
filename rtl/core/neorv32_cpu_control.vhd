@@ -644,7 +644,7 @@ begin
 
   -- CSR Access Check -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_check: process(exe_engine.ir, debug_ctrl.run, csr)
+  csr_check: process(exe_engine.ir)
     variable csr_addr_v : std_ulogic_vector(11 downto 0);
   begin
     -- shortcut: CSR address right from the instruction word --

@@ -141,13 +141,15 @@ begin
         rs3_o <= reg_file(to_integer(unsigned(rs3_addr(addr_bits_c-1 downto 0))));
       end if;
     end process rs3_read;
-    rs3_addr <= ctrl_i.ir_funct12(11 downto 7); -- RISC-V compliant
   end generate;
 
   rs3_disabled:
   if not RS3_EN generate
     rs3_o <= (others => '0');
   end generate;
+
+  -- RISC-V rs3 operand --
+  rs3_addr <= ctrl_i.ir_funct12(11 downto 7);
 
 
 end neorv32_cpu_regfile_rtl;
