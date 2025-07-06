@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110704"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110705"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -565,13 +565,14 @@ package neorv32_package is
     csr_re       : std_ulogic;                     -- global read-enable
     csr_addr     : std_ulogic_vector(11 downto 0); -- address
     csr_wdata    : std_ulogic_vector(31 downto 0); -- write data
+    -- counters --
     cnt_halt     : std_ulogic_vector(15 downto 0); -- counter inhibit
     cnt_event    : std_ulogic_vector(11 downto 0); -- counter increment events
     -- instruction word --
     ir_funct3    : std_ulogic_vector(2 downto 0);  -- funct3 bit field
     ir_funct12   : std_ulogic_vector(11 downto 0); -- funct12 bit field
     ir_opcode    : std_ulogic_vector(6 downto 0);  -- opcode bit field
-    -- cpu status --
+    -- status --
     cpu_priv     : std_ulogic;                     -- effective privilege mode
     cpu_trap     : std_ulogic;                     -- set when CPU is entering trap exec
     cpu_debug    : std_ulogic;                     -- set when CPU is in debug mode
@@ -653,8 +654,7 @@ package neorv32_package is
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- MSB:   1 = interrupt, 0 = sync. exception
-  -- MSB-1: 1 = entry to debug mode, 0 = normal trapping
+  -- [MSB] 1 = interrupt, 0 = sync. exception; [MSB-1] 1 = entry to debug mode, 0 = normal trapping
   -- RISC-V compliant synchronous exceptions --
   constant trap_ima_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0: instruction misaligned
   constant trap_iaf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 1: instruction access fault
@@ -687,9 +687,9 @@ package neorv32_package is
   constant trap_firq13_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11101"; -- 29: fast interrupt 13
   constant trap_firq14_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11110"; -- 30: fast interrupt 14
   constant trap_firq15_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11111"; -- 31: fast interrupt 15
-  -- entering debug mode (sync./async. exceptions) --
+  -- debug-mode-entry exceptions --
   constant trap_db_break_c : std_ulogic_vector(6 downto 0) := "0" & "1" & "00001"; -- 1: break instruction (sync)
-  constant trap_db_trig_c  : std_ulogic_vector(6 downto 0) := "0" & "1" & "00010"; -- 2: hardware trigger (sync)
+  constant trap_db_trig_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00010"; -- 2: hardware trigger (async)
   constant trap_db_halt_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00011"; -- 3: external halt request (async)
   constant trap_db_step_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00100"; -- 4: single-stepping (async)
 
