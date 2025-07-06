@@ -18,7 +18,7 @@ entity neorv32_cpu_lsu is
   port (
     -- global control --
     clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic := '0'; -- global reset, low-active, async
+    rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  ctrl_bus_t; -- main control bus
     -- cpu data access interface --
     addr_i      : in  std_ulogic_vector(XLEN-1 downto 0); -- access address
