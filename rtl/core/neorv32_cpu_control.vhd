@@ -74,6 +74,8 @@ entity neorv32_cpu_control is
     frontend_i    : in  if_bus_t;   -- front-end status and data
     -- pmp fault --
     pmp_fault_i   : in  std_ulogic; -- instruction fetch / execute pmp fault
+    -- trigger module --
+    hwtrig_i      : in  std_ulogic; -- hardware trigger
     -- data path interface --
     alu_cp_done_i : in  std_ulogic; -- ALU iterative operation done
     alu_cmp_i     : in  std_ulogic_vector(1 downto 0); -- comparator status
@@ -176,10 +178,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     dcsr_rd        : std_ulogic_vector(XLEN-1 downto 0); -- debug mode control and status register
     dpc            : std_ulogic_vector(XLEN-1 downto 0); -- mode program counter
     dscratch0      : std_ulogic_vector(XLEN-1 downto 0); -- debug mode scratch register 0
-    --
-    tdata1_execute : std_ulogic; -- enable instruction address match trigger
-    tdata1_rd      : std_ulogic_vector(XLEN-1 downto 0); -- trigger register read-back
-    tdata2         : std_ulogic_vector(XLEN-1 downto 0); -- address-match register
   end record;
   signal csr : csr_t;
 
@@ -200,9 +198,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal illegal_cmd  : std_ulogic; -- illegal instruction check
   signal csr_valid    : std_ulogic_vector(2 downto 0); -- CSR access: [2] implemented, [1] r/w access, [0] privilege
   signal cnt_event    : std_ulogic_vector(11 downto 0); -- counter events
-  signal hwtrig_match : std_ulogic; -- hardware trigger matches programmed address
-  signal hwtrig_fired : std_ulogic; -- hardware trigger has fired
-  signal hwtrig_start : std_ulogic; -- hardware trigger causes debug-mode entry
   signal ebreak_trig  : std_ulogic; -- "ebreak" exception trigger
   signal dbtrap_trig  : std_ulogic; -- "double-trap" exception trigger
 
@@ -285,7 +280,7 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hwtrig_match, opcode, frontend_i, csr,
+  execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
                                    ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
@@ -312,7 +307,6 @@ begin
     csr.we_nxt           <= '0';
     csr.re_nxt           <= '0';
     ctrl_nxt             <= ctrl_bus_zero_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
-    hwtrig_start         <= '0';
 
     -- ALU sign control --
     if (opcode(4) = '1') then -- ALU ops
@@ -359,11 +353,7 @@ begin
         --
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           exe_engine_nxt.state <= EX_TRAP_ENTER;
-        elsif RISCV_ISA_Sdtrig and (hwtrig_match = '1') then -- hardware breakpoint
-          exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC; intercept BEFORE executing the instruction
-          hwtrig_start         <= '1';
-          exe_engine_nxt.state <= EX_DISPATCH; -- stay here another round until hwtrig_start arrives in trap_ctrl.env_pending
-        elsif (frontend_i.valid = '1') then -- new instruction word available
+        elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
           if_ack               <= '1'; -- instruction data is about to be consumed
           trap_ctrl.instr_be   <= frontend_i.fault or pmp_fault_i; -- access fault during instruction fetch
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
@@ -570,7 +560,6 @@ begin
 
   -- CPU Control Bus Output -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
   -- instruction fetch --
   ctrl_o.if_fence     <= ctrl.if_fence;
   ctrl_o.if_reset     <= if_reset;
@@ -607,13 +596,14 @@ begin
   ctrl_o.csr_re       <= csr.re;
   ctrl_o.csr_addr     <= csr.addr;
   ctrl_o.csr_wdata    <= csr.wdata;
+  -- counters --
   ctrl_o.cnt_halt     <= csr.mcountinhibit;
   ctrl_o.cnt_event    <= cnt_event;
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
   ctrl_o.ir_funct12   <= exe_engine.ir(instr_funct12_msb_c downto instr_funct12_lsb_c);
   ctrl_o.ir_opcode    <= opcode;
-  -- cpu status --
+  -- status --
   ctrl_o.cpu_priv     <= csr.prv_level_eff;
   ctrl_o.cpu_trap     <= trap_ctrl.env_enter;
   ctrl_o.cpu_debug    <= debug_ctrl.run;
@@ -891,8 +881,8 @@ begin
   trap_ctrl.exc_trig(exc_db_hw_c)    <= debug_ctrl.trig_hw;    -- debug-mode-entry upon hardware trigger
 
   -- environment break exception helper --
-  ebreak_trig <= (trap_ctrl.ebreak and (    csr.prv_level) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- [M]: M-mode trap on ebreak
-                 (trap_ctrl.ebreak and (not csr.prv_level) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run));   -- [U]: M-mode trap on ebreak
+  ebreak_trig <= (trap_ctrl.ebreak and (    csr.prv_level) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- M-mode trap when in M-mode
+                 (trap_ctrl.ebreak and (not csr.prv_level) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run));   -- M-mode trap when in U-mode
 
   -- double-trap exception helper --
   dbtrap_trig <= trap_ctrl.env_running and or_reduce_f(trap_ctrl.exc_trig(exc_laccess_c downto exc_iaccess_c));
@@ -1064,8 +1054,6 @@ begin
       csr.dcsr_cause     <= (others => '0');
       csr.dpc            <= (others => '0');
       csr.dscratch0      <= (others => '0');
-      csr.tdata1_execute <= '0';
-      csr.tdata2         <= (others => '0');
     elsif rising_edge(clk_i) then
 
       -- write if no instruction exception --
@@ -1169,24 +1157,6 @@ begin
         -- debug mode scratch register 0 --
         if (csr.addr = csr_dscratch0_c) and RISCV_ISA_Sdext then
           csr.dscratch0 <= csr.wdata;
-        end if;
-
-        -- --------------------------------------------------------------------
-        -- trigger module CSRs
-        -- --------------------------------------------------------------------
-
-        -- match control --
-        if (csr.addr = csr_tdata1_c) and RISCV_ISA_Sdtrig then
-          if (debug_ctrl.run = '1') then -- only accept write-access from debug-mode (DMODE = 1)
-            csr.tdata1_execute <= csr.wdata(2);
-          end if;
-        end if;
-
-        -- address compare --
-        if (csr.addr = csr_tdata2_c) and RISCV_ISA_Sdtrig then
-          if (debug_ctrl.run = '1') then -- only accept write-access from debug-mode (DMODE = 1)
-            csr.tdata2 <= csr.wdata(XLEN-1 downto 1) & '0';
-          end if;
         end if;
 
       -- ********************************************************************************
@@ -1299,12 +1269,6 @@ begin
         csr.dcsr_cause   <= (others => '0');
         csr.dpc          <= (others => '0');
         csr.dscratch0    <= (others => '0');
-      end if;
-
-      -- no trigger module --
-      if not RISCV_ISA_Sdtrig then
-        csr.tdata1_execute <= '0';
-        csr.tdata2         <= (others => '0');
       end if;
 
     end if;
@@ -1493,10 +1457,10 @@ begin
           -- --------------------------------------------------------------------
           -- trigger module CSRs
           -- --------------------------------------------------------------------
---        when csr_tselect_c => if RISCV_ISA_Sdtrig then csr.rdata <= (others => '0'); end if; -- hardwired to zero = only 1 trigger available
-          when csr_tdata1_c  => if RISCV_ISA_Sdtrig then csr.rdata <= csr.tdata1_rd;   end if; -- match control
-          when csr_tdata2_c  => if RISCV_ISA_Sdtrig then csr.rdata <= csr.tdata2;      end if; -- address-compare
-          when csr_tinfo_c   => if RISCV_ISA_Sdtrig then csr.rdata <= x"01000006";     end if; -- trigger information (Sdtrig v1.0; mcontrol6-type only)
+          when csr_tselect_c | csr_tdata1_c | csr_tdata2_c | csr_tinfo_c =>
+            if RISCV_ISA_Sdtrig then
+              csr.rdata <= xcsr_rdata_i; -- implemented externally
+            end if;
 
           -- --------------------------------------------------------------------
           -- NEORV32-specific read-only machine-mode CSRs
@@ -1601,7 +1565,7 @@ begin
     end process debug_control;
 
     -- debug mode entry triggers --
-    debug_ctrl.trig_hw    <= hwtrig_start and (not debug_ctrl.run); -- enter debug mode by HW trigger module (dmode = action = 1)
+    debug_ctrl.trig_hw    <= hwtrig_i and (not debug_ctrl.run); -- enter debug-mode by HW trigger module
     debug_ctrl.trig_break <= trap_ctrl.ebreak and (debug_ctrl.run or -- re-enter debug mode
                              ((    csr.prv_level) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
                              ((not csr.prv_level) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
@@ -1638,67 +1602,6 @@ begin
   csr.dcsr_rd(3)            <= '0'; -- nmip: no pending non-maskable interrupt
   csr.dcsr_rd(2)            <= csr.dcsr_step; -- step: single-step mode
   csr.dcsr_rd(1 downto 0)   <= (others => csr.dcsr_prv); -- prv: privilege level when debug mode was entered
-
-
-  -- ****************************************************************************************************************************
-  -- Hardware Trigger Module
-  -- ****************************************************************************************************************************
-
-  trigger_module_enable:
-  if RISCV_ISA_Sdtrig generate
-
-    -- trigger on instruction address match (trigger right BEFORE execution) --
-    hwtrig_match <= '1' when (csr.tdata1_execute = '1') and -- trigger enabled to match on instruction address
-                             (hwtrig_fired = '0') and -- trigger has not fired yet
-                             (csr.tdata2(XLEN-1 downto 1) = exe_engine.pc2(XLEN-1 downto 1)) -- address match
-                             else '0';
-
-    -- status flag - set when trigger has fired --
-    hwtrig_exception: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        hwtrig_fired <= '0';
-      elsif rising_edge(clk_i) then
-        if (hwtrig_fired = '0') then
-          hwtrig_fired <= hwtrig_match and trap_ctrl.exc_buf(exc_ebreak_c); -- trigger has fired and breakpoint exception is pending
-        elsif (csr.we = '1') and (csr.addr = csr_tdata1_c) and (csr.wdata(22) = '0') then -- tdata1 write access
-          hwtrig_fired <= '0';
-        end if;
-      end if;
-    end process hwtrig_exception;
-
-  end generate;
-
-  -- Sdtrig ISA extension not enabled --
-  trigger_module_disable:
-  if not RISCV_ISA_Sdtrig generate
-    hwtrig_match <= '0';
-    hwtrig_fired <= '0';
-  end generate;
-
-
-  -- Match Control CSR (mcontrol6 @ tdata1) - Read-Back -------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  csr.tdata1_rd(31 downto 28) <= x"6"; -- type: address match trigger (mcontrol6)
-  csr.tdata1_rd(27)           <= '1'; -- dmode: ignore machine-mode write accesses
-  csr.tdata1_rd(26)           <= '0'; -- uncertain: trigger satisfies the configured conditions
-  csr.tdata1_rd(25)           <= '0'; -- hit1: hardwired to zero
-  csr.tdata1_rd(24)           <= '0'; -- vs: VS-mode not implemented
-  csr.tdata1_rd(23)           <= '0'; -- vu: VU-mode not implemented
-  csr.tdata1_rd(22)           <= hwtrig_fired; -- hit0: set when trigger has fired
-  csr.tdata1_rd(21)           <= '0'; -- select: only address matching is supported
-  csr.tdata1_rd(20 downto 19) <= "00"; -- reserved
-  csr.tdata1_rd(18 downto 16) <= "000"; -- size: match accesses of any size
-  csr.tdata1_rd(15 downto 12) <= x"1"; -- action = 1: enter debug mode on trigger
-  csr.tdata1_rd(11)           <= '0'; -- chain: chaining not supported - there is only one trigger
-  csr.tdata1_rd(10 downto 7)  <= "0000"; -- match: equal-match only
-  csr.tdata1_rd(6)            <= '1'; -- m: trigger always enabled when in machine-mode
-  csr.tdata1_rd(5)            <= '0'; -- uncertainen: hardwired to zero
-  csr.tdata1_rd(4)            <= '0'; -- s: supervisor-mode not supported
-  csr.tdata1_rd(3)            <= bool_to_ulogic_f(RISCV_ISA_U); -- u: trigger always enabled when in user-mode (if implemented)
-  csr.tdata1_rd(2)            <= csr.tdata1_execute; -- execute: enable trigger on instruction match
-  csr.tdata1_rd(1)            <= '0'; -- store: store address or data matching not supported
-  csr.tdata1_rd(0)            <= '0'; -- load: load address or data matching not supported
 
 
 end neorv32_cpu_control_rtl;
