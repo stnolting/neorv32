@@ -523,10 +523,12 @@ begin
 
       when EX_MEM_RSP => -- wait for memory response
       -- ------------------------------------------------------------
-        if (lsu_wait_i = '0') or -- bus system has completed the transaction (if there was any)
-           (or_reduce_f(trap_ctrl.exc_buf(exc_laccess_c downto exc_salign_c)) = '1') then -- load/store exception
+        if (lsu_wait_i = '0') then -- bus system has completed the transaction (if there was any)
           ctrl_nxt.rf_wb_en    <= (not ctrl.lsu_rw) or ctrl.lsu_amo; -- write-back to register file if read operation (won't happen in case of exception)
           exe_engine_nxt.state <= EX_DISPATCH;
+
+         elsif  (or_reduce_f(trap_ctrl.exc_buf(exc_laccess_c downto exc_salign_c)) = '1') then -- load/store exception
+          exe_engine_nxt.state <= EX_TRAP_ENTER;
         end if;
 
       when EX_SLEEP => -- sleep mode
