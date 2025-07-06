@@ -193,7 +193,7 @@ data transfers and conversions
 * on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) accessible via standard JTAG interface
 * compatible to the "Minimal RISC-V Debug Specification Version 1.0"
 * compatible with **OpenOCD**, **GDB** and **Segger Embedded Studio**
-* RISC-V [trigger module](https://stnolting.github.io/neorv32/#_trigger_module) for hardware-assisted breakpoints
+* RISC-V [trigger module](https://stnolting.github.io/neorv32/#_trigger_module) for hardware-assisted break- and watchpoints
 * optional authentication module to implement custom security mechanisms
 
 
