@@ -188,6 +188,7 @@ rtl/core
 ├─ neorv32_cpu.vhd               - NEORV32 CPU TOP ENTITY
 ├─ neorv32_cpu_alu.vhd           - Arithmetic/logic unit
 ├─ neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
+├─ neorv32_cpu_hwtrig.vhd        - Hardware trigger module (Sdtrig ext.)
 ├─ neorv32_cpu_counters.vhd      - Hardware counters (Zicntr & Zihpm ext.)
 ├─ neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
 ├─ neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
@@ -301,7 +302,7 @@ This section shows **exemplary** FPGA implementation results for the NEORV32 CPU
 
 .NEORV32 Setups
 [TIP]
-The processor has been successfully ported to AMD/Xilinx, Altera/Intel, Lattice, Microchip/Microsemi, Gowin, Cologne Chip
+The processor has been successfully ported to AMD, Altera, Lattice, Microchip, Gowin, Cologne Chip
 and NanoXplore FPGAs. Some pre-configured example setup are available online: https://github.com/stnolting/neorv32-setups
 
 .Synthesis Results
