@@ -687,7 +687,7 @@ begin
       end if;
     end loop;
     main_rsp <= tmp_v;
-  end process;
+  end process bus_response;
 
 
 end neorv32_bus_io_switch_rtl;
