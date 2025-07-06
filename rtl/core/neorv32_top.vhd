@@ -33,7 +33,7 @@ entity neorv32_top is
 
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                        := false;       -- implement on-chip debugger
-    OCD_NUM_HW_TRIGGERS   : natural range 0 to 16          := 0;           -- number of hardware break-/watchpoint
+    OCD_NUM_HW_TRIGGERS   : natural range 0 to 16          := 0;           -- number of hardware break-/watchpoints
     OCD_AUTHENTICATION    : boolean                        := false;       -- implement on-chip debugger authentication
     OCD_JEDEC_ID          : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
 
