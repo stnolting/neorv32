@@ -5,7 +5,7 @@
 The NEORV32 Processor features an _on-chip debugger_ (OCD) compatible to the **Minimal RISC-V Debug Specification**
 implementing the **execution-based debugging** scheme. A copy of the specification is available in `docs/references`.
 The on-chip debugger is implemented if the <<_processor_top_entity_generics, `OCD_EN`>> processor top generic is set
-to `true`. Optionally, a single hardware trigger can be implemented (<<_sdtrig_isa_extension>>) to support
+to `true`. Optionally, a up to 16 hardware triggers can be implemented (<<_sdtrig_isa_extension>>) to support
 hardware-assisted break- and watchpoints. Furthermore, the OCD supports an optional <<_debug_authentication>>
 module to constrain OCD access to authorized parties.
 
@@ -33,7 +33,7 @@ of the User Guide.
 * indirect access to all core registers and the entire processor address space (via program buffer)
 * execution of arbitrary programs via the program buffer
 * compatible with upstream OpenOCD and GDB
-* optional trigger module for hardware break- and watchpoints
+* optional trigger module for up to 16 hardware break- and watchpoints
 * optional authentication for advanced security
 
 **Configuration Options**
@@ -43,10 +43,10 @@ of the User Guide.
 [options="header",grid="rows"]
 |=======================
 | Name | Type | Default | Description
-| `OCD_EN`             | boolean   | false         | Implement the on-chip debugger and the CPU debug mode..
-| `OCD_HW_BREAKPOINT`  | boolean   | false         | Implement optional debug <<_trigger_module>> module (<<_sdtrig_isa_extension>>).
-| `OCD_AUTHENTICATION` | boolean   | false         | Implement optional <<_debug_authentication>> module.
-| `OCD_JEDEC_ID`       | suv(10:0) | "00000000000" | JEDEC ID; continuation codes plus vendor ID (passed to the JTAG <<_debug_transport_module_dtm>>).
+| `OCD_EN`              | boolean   | false         | Implement the on-chip debugger and the CPU debug mode..
+| `OCD_NUM_HW_TRIGGERS` | natural   | 0             | Number of implemented HW triggers (<<_trigger_module>> / <<_sdtrig_isa_extension>>) for hardware break-/watchpoints (0..16).
+| `OCD_AUTHENTICATION`  | boolean   | false         | Implement optional <<_debug_authentication>> module.
+| `OCD_JEDEC_ID`        | suv(10:0) | "00000000000" | JEDEC ID; continuation codes plus vendor ID (passed to the JTAG <<_debug_transport_module_dtm>>).
 |=======================
 
 **Overview**
@@ -67,8 +67,8 @@ very simple authentication mechanism as example. Users can modify/replace this d
 authentication mechanism.
 . <<_cpu_debug_mode>> ISA extension: This ISA extension provides the "debug execution mode" as another CPU operation mode
 that is used to execute the park loop code from the DM. This mode also provides additional CSRs and instructions.
-. CPU <<_trigger_module>>: This module provides a single hardware trigger that can be used as hardware-assisted break- or
-watchpoint.
+. CPU <<_trigger_module>>: This module provides up to 16 hardware triggers that can be used as hardware-assisted break- or
+watchpoints.
 
 **Theory of Operation**
 
@@ -891,34 +891,34 @@ return to the address stored in `dpc` by automatically moving `dpc` to the progr
 :sectnums:
 === Trigger Module
 
-The RISC-V `Sdtrig` ISA extension adds a programmable _trigger module_ to the CPU core that is enabled via the top's
-<<_processor_top_entity_generics, `OCD_HW_BREAKPOINT`>> generic, which enables the <<_sdtrig_isa_extension>>. The trigger
+The RISC-V `Sdtrig` ISA extension adds a _trigger module_ to the CPU core. The number of hardware triggers is configured
+via the <<_processor_top_entity_generics, `OCD_NUM_HW_TRIGGERS`>> top generic. Up to 16 hardware triggers can be implemented.
+If `OCD_NUM_HW_TRIGGERS` is set to a value greater than 0 the <<_sdtrig_isa_extension>> is automatically enabled. The trigger
 module implements a subset of the features described in the "RISC-V Debug Specification / Trigger Module (`Sdtrig`)" and
-complies to version v1.0 of that spec. Note that the NEORV32 trigger module features only a **single** hardware trigger
-that provides a "type 6 - instruction address match" trigger. This trigger module can be used as hardware-assisted
-breakpoint or as hardware-assisted watchpoint.
+complies to version v1.0 of that spec. Note that the NEORV32 trigger module only supports "type 6 - instruction address match"
+triggers. These triggers can be used as hardware-assisted breakpoints or as hardware-assisted watchpoints.
 
-* A **breakpoint** stops the program whenever a particular point in the program is reached (i.e. executing the instruction
-at the specified address).
-* A **watchpoint** stops the program whenever the value of a variable or expression changes (i.e. a load and/or store
-operation accesses data at the specified address).
+* A **breakpoint** stops the program whenever a particular point in the program is reached (i.e. after executing the
+instruction at the specified address): GDB's `hbreak` command.
+* A **watchpoint** stops the program whenever the value of a variable or expression changes (i.e. after a load and/or
+store operation has accessed data at the specified address): GDB's `[a|r]watch` commands.
 
 From a hardware point of view the trigger modules raises an _asynchronous_ exception right after the triggering
-operation has been retired. The <<_dpc>> CSR `dpc` shows the instruction address where normal execution must be
-resumed to to preserve the program flow
+operation has been retired. The <<_dpc>> CSR shows the instruction address where normal execution must be resumed
+to preserve the program flow
 
 .Debug-Mode Only
 [NOTE]
-The trigger module can be used by debug-mode only. Write accesses from machine-mode are constrained as <<_tdata1>>.`dmode`
-is hardwired to one. However, the <<_smpmp_isa_extension,`Smpmp`>> ISA extension can be used for machine-mode instruction
-or data address traps.
+The trigger module can be used by debug-mode only. Write accesses from machine-mode are
+constrained as <<_tdata1>>.`dmode` is hardwired to one. However, the <<_smpmp_isa_extension>>
+can be used for machine-mode instruction or data address traps.
 
 
 :sectnums:
 ==== Trigger Module CSRs
 
 The `Sdtrig` ISA extension adds 4 additional CSRs. These CSRs can also be read from machine-mode, but
-write-accesses are restricted (because `tdata1.dmode` is hardwired to one).
+write-accesses are restricted because `tdata1.dmode` is hardwired to one.
 
 :sectnums!:
 ===== **`tselect`**
@@ -930,8 +930,9 @@ write-accesses are restricted (because `tdata1.dmode` is hardwired to one).
 | Address     | `0x7a0`
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `Sdtrig`
-| Description | Only the lowest bit of this register is writable which is required for trigger enumeration.
-However, only one trigger at `tselect = 0` is available.
+| Description | This CSR is used to select which hardware trigger is available via the <<_tdata1>>, <<_tdata2>> and
+<<_tinfo>> CSRs. Only the lowest `log2(OCD_NUM_HW_TRIGGERS)+1` bit are writable. However, software should check if
+<<_tinfo>> is non-zero for the written `tselect` value to determine if the selected trigger exists.
 |=======================
 
 
@@ -945,11 +946,12 @@ However, only one trigger at `tselect = 0` is available.
 | Address     | `0x7a1`
 | Reset value | `0x60000048`
 | ISA         | `Zicsr` & `Sdtrig`
-| Description | This CSR is used to configure the address match trigger using "type 6" format which is illustrated
-in the table below. Write accesses from machine-mode are ignored (because `tdata1.dmode` is hardwired to one).
+| Description | This CSR provides access to the configuration bits of the currently selected trigger (via <<_tselect>>).
+Note that only "type 6" triggers are supported. The according configuration bits are listed below.
+Write accesses from machine-mode are ignored (because `tdata1.dmode` is hardwired to one).
 |=======================
 
-.Match Control CSR (`tdata1`) Bits
+.Match control CSR (`tdata1`) bits of the trigger selected via `tselect`
 [cols="^1,^2,^1,<8"]
 [options="header",grid="rows"]
 |=======================
@@ -973,9 +975,9 @@ but before any subsequent instructions were executed; the debugger has to write 
 | 5     | `uncertainen` | r/- | `0`: feature not supported, hardwired to zero
 | 4     | `s`           | r/- | `0`: S-mode not supported
 | 3     | `u`           | r/- | trigger enabled when in user-mode, set if `U` ISA extension is enabled
-| 2     | `execute`     | r/w | set to enable trigger on instruction address match (i.e. "breakpoint")
-| 1     | `store`       | r/w | set to enable trigger on data store address match (i.e. "watchpoint")
-| 0     | `load`        | r/w | set to enable trigger on data load address match (i.e. "watchpoint")
+| 2     | `execute`     | r/w | set to enable this trigger to fire on instruction address match (i.e. "breakpoint")
+| 1     | `store`       | r/w | set to enable this trigger to fire on data store address match (i.e. "watchpoint")
+| 0     | `load`        | r/w | set to enable this trigger to fire on data load address match (i.e. "watchpoint")
 |=======================
 
 
@@ -989,8 +991,9 @@ but before any subsequent instructions were executed; the debugger has to write 
 | Address     | `0x7a2`
 | Reset value | `0x00000000`
 | ISA         | `Zicsr` & `Sdtrig`
-| Description | This 32-bit r/w CSRs provides the address for the hardware trigger (instruction address for breakpoints;
-data access address for watchpoints). Write accesses from machine-mode are ignored (because `tdata1.dmode` is hardwired to one).
+| Description | This CSR provides access to the address bits (instruction address for breakpoints;
+data access address for watchpoints) of the currently selected trigger (via <<_tselect>>).
+Write accesses from machine-mode are ignored (because `tdata1.dmode` is hardwired to one).
 |=======================
 
 
@@ -1004,10 +1007,11 @@ data access address for watchpoints). Write accesses from machine-mode are ignor
 | Address     | `0x7a4`
 | Reset value | `0x01000006`
 | ISA         | `Zicsr` & `Sdtrig`
-| Description | The CSR shows additional trigger information (see below). Any write access is ignored.
+| Description | The CSR shows additional trigger information of the currently selected trigger (via <<_tselect>>).
+This CSR is read-only, all write access is ignored.
 |=======================
 
-.Trigger Info CSR (`tinfo`) Bits
+.Trigger info CSR (`tinfo`) bits of the trigger selected via `tselect`
 [cols="^1,^2,^1,<8"]
 [options="header",grid="rows"]
 |=======================
