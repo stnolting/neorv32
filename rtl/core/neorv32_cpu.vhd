@@ -64,7 +64,9 @@ entity neorv32_cpu is
     PMP_NAP_MODE_EN     : boolean; -- implement NAPOT/NA4 modes
     -- Hardware Performance Monitors (HPM) --
     HPM_NUM_CNTS        : natural range 0 to 13; -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH       : natural range 0 to 64  -- total size of HPM counters (0..64)
+    HPM_CNT_WIDTH       : natural range 0 to 64; -- total size of HPM counters (0..64)
+    -- Trigger Module (TM) --
+    NUM_HW_TRIGGERS     : natural range 0 to 16 -- number of hardware triggers
   );
   port (
     -- global control --
@@ -281,11 +283,11 @@ begin
   -- Hardware Trigger Module (Sdtrig) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   trigger_module_enabled:
-  if (RISCV_ISA_Sdtrig = true) generate
+  if (RISCV_ISA_Sdtrig = true) and (NUM_HW_TRIGGERS > 0) generate
     neorv32_cpu_hwtrig_inst: entity neorv32.neorv32_cpu_hwtrig
     generic map (
-      NUM_TRIGGERS => 1,          -- number of implemented hardware triggers
-      RISCV_ISA_U  => RISCV_ISA_U -- RISC-V user-mode available
+      NUM_TRIGGERS => NUM_HW_TRIGGERS, -- number of implemented hardware triggers
+      RISCV_ISA_U  => RISCV_ISA_U      -- RISC-V user-mode available
     )
     port map (
     -- global control --
@@ -301,7 +303,7 @@ begin
   end generate;
 
   trigger_module_disabled:
-  if (RISCV_ISA_Sdtrig = false) generate
+  if (RISCV_ISA_Sdtrig = false) or (NUM_HW_TRIGGERS = 0) generate
     xcsr_tm <= (others => '0');
     hwtrig  <= '0';
   end generate;

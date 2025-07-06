@@ -33,7 +33,7 @@ entity neorv32_top is
 
     -- On-Chip Debugger (OCD) --
     OCD_EN                : boolean                        := false;       -- implement on-chip debugger
-    OCD_HW_BREAKPOINT     : boolean                        := false;       -- implement on-chip-debugger hardware breakpoint
+    OCD_NUM_HW_TRIGGERS   : natural range 0 to 16          := 0;           -- number of hardware break-/watchpoints
     OCD_AUTHENTICATION    : boolean                        := false;       -- implement on-chip debugger authentication
     OCD_JEDEC_ID          : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
 
@@ -259,7 +259,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant cpu_smpmp_en_c  : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
   constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
-  constant ocd_hwbp_en_c   : boolean := OCD_EN and OCD_HW_BREAKPOINT;
+  constant cpu_sdtrig_en_c : boolean := OCD_EN and boolean(OCD_NUM_HW_TRIGGERS > 0);
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(IMEM_SIZE), IMEM_SIZE, 2**index_size_f(IMEM_SIZE));
@@ -490,7 +490,7 @@ begin
       RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
       RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
       RISCV_ISA_Sdext     => OCD_EN,
-      RISCV_ISA_Sdtrig    => ocd_hwbp_en_c,
+      RISCV_ISA_Sdtrig    => cpu_sdtrig_en_c,
       RISCV_ISA_Smpmp     => cpu_smpmp_en_c,
       -- Tuning Options --
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
@@ -503,7 +503,9 @@ begin
       PMP_NAP_MODE_EN     => PMP_NAP_MODE_EN,
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS        => HPM_NUM_CNTS,
-      HPM_CNT_WIDTH       => HPM_CNT_WIDTH
+      HPM_CNT_WIDTH       => HPM_CNT_WIDTH,
+      -- Trigger Module (TM) --
+      NUM_HW_TRIGGERS     => OCD_NUM_HW_TRIGGERS
     )
     port map (
       -- global control --

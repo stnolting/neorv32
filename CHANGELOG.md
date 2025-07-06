@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 06.07.2025 | 1.11.7.6 | :sparkles: add configurable number of HW triggers (break-/watchpoints) | [#1304](https://github.com/stnolting/neorv32/pull/1304) |
 | 06.07.2025 | 1.11.7.5 | :sparkles: OCD: add support for hardware-assisted watchpoints | [#1303](https://github.com/stnolting/neorv32/pull/1303) |
 | 04.07.2025 | 1.11.7.4 | minor rtl edits and cleanups | [#1302](https://github.com/stnolting/neorv32/pull/1302) |
 | 27.06.2025 | 1.11.7.3 | RTE cleanups; double-trap exception now has highest priority | [#1299](https://github.com/stnolting/neorv32/pull/1299) |

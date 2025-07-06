@@ -1,7 +1,7 @@
 -- ================================================================================ --
 -- NEORV32 - Processor Wrapper with AXI4 & AXI4-Stream Compatible Interfaces        --
 -- -------------------------------------------------------------------------------- --
--- Dedicated for IP packaging/integration using Microchip.                          --
+-- Dedicated for IP packaging/integration using Microchip Libero.                   --
 -- See the NEORV32 Datasheet and User Guide for more information.                   --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
@@ -24,106 +24,106 @@ entity neorv32_libero_ip is
     -- Configuration Generics
     -- ------------------------------------------------------------
     -- Clocking --
-    CLOCK_FREQUENCY       : natural                        := 100_000_000;
+    CLOCK_FREQUENCY        : natural                        := 100_000_000;
     -- Dual-Core Configuration --
-    DUAL_CORE_EN_INT      : integer range 0 to 1           := 0;
+    DUAL_CORE_EN_INT       : integer range 0 to 1           := 0;
     -- Boot Configuration --
-    BOOT_MODE_SELECT      : natural range 0 to 2           := 1;
-    BOOT_ADDR_CUSTOM_UPPER : natural range 0 to 65_535 := 53248;
-    BOOT_ADDR_CUSTOM_LOWER : natural range 0 to 65_535 := 53248;
+    BOOT_MODE_SELECT       : natural range 0 to 2           := 1;
+    BOOT_ADDR_CUSTOM_UPPER : natural range 0 to 65_535      := 53248;
+    BOOT_ADDR_CUSTOM_LOWER : natural range 0 to 65_535      := 53248;
     -- On-Chip Debugger (OCD) --
-    OCD_EN_INT            : integer range 0 to 1           := 0;
-    OCD_HW_BREAKPOINT_INT : integer range 0 to 1           := 0;
-    OCD_AUTHENTICATION_INT: integer range 0 to 1           := 0;
-    OCD_JEDEC_ID          : std_logic_vector(10 downto 0)  := "00000000000";
+    OCD_EN_INT             : integer range 0 to 1           := 0;
+    OCD_NUM_HW_TRIGGERS    : integer range 0 to 16          := 0;
+    OCD_AUTHENTICATION_INT : integer range 0 to 1           := 0;
+    OCD_JEDEC_ID           : std_logic_vector(10 downto 0)  := "00000000000";
     -- RISC-V CPU Extensions --
-    RISCV_ISA_C_INT       : integer range 0 to 1           := 0;
-    RISCV_ISA_E_INT       : integer range 0 to 1           := 0;
-    RISCV_ISA_M_INT       : integer range 0 to 1           := 0;
-    RISCV_ISA_U_INT       : integer range 0 to 1           := 0;
-    RISCV_ISA_Zaamo_INT   : integer range 0 to 1           := 0;
-    RISCV_ISA_Zalrsc_INT  : integer range 0 to 1           := 0;
-    RISCV_ISA_Zba_INT     : integer range 0 to 1           := 0;
-    RISCV_ISA_Zbb_INT     : integer range 0 to 1           := 0;
-    RISCV_ISA_Zbkb_INT    : integer range 0 to 1           := 0;
-    RISCV_ISA_Zbkc_INT    : integer range 0 to 1           := 0;
-    RISCV_ISA_Zbkx_INT    : integer range 0 to 1           := 0;
-    RISCV_ISA_Zbs_INT     : integer range 0 to 1           := 0;
-    RISCV_ISA_Zfinx_INT   : integer range 0 to 1           := 0;
-    RISCV_ISA_Zicntr_INT  : integer range 0 to 1           := 0;
-    RISCV_ISA_Zicond_INT  : integer range 0 to 1           := 0;
-    RISCV_ISA_Zihpm_INT   : integer range 0 to 1           := 0;
-    RISCV_ISA_Zmmul_INT   : integer range 0 to 1           := 0;
-    RISCV_ISA_Zknd_INT    : integer range 0 to 1           := 0;
-    RISCV_ISA_Zkne_INT    : integer range 0 to 1           := 0;
-    RISCV_ISA_Zknh_INT    : integer range 0 to 1           := 0;
-    RISCV_ISA_Zksed_INT   : integer range 0 to 1           := 0;
-    RISCV_ISA_Zksh_INT    : integer range 0 to 1           := 0;
-    RISCV_ISA_Zxcfu_INT   : integer range 0 to 1           := 0;
+    RISCV_ISA_C_INT        : integer range 0 to 1           := 0;
+    RISCV_ISA_E_INT        : integer range 0 to 1           := 0;
+    RISCV_ISA_M_INT        : integer range 0 to 1           := 0;
+    RISCV_ISA_U_INT        : integer range 0 to 1           := 0;
+    RISCV_ISA_Zaamo_INT    : integer range 0 to 1           := 0;
+    RISCV_ISA_Zalrsc_INT   : integer range 0 to 1           := 0;
+    RISCV_ISA_Zba_INT      : integer range 0 to 1           := 0;
+    RISCV_ISA_Zbb_INT      : integer range 0 to 1           := 0;
+    RISCV_ISA_Zbkb_INT     : integer range 0 to 1           := 0;
+    RISCV_ISA_Zbkc_INT     : integer range 0 to 1           := 0;
+    RISCV_ISA_Zbkx_INT     : integer range 0 to 1           := 0;
+    RISCV_ISA_Zbs_INT      : integer range 0 to 1           := 0;
+    RISCV_ISA_Zfinx_INT    : integer range 0 to 1           := 0;
+    RISCV_ISA_Zicntr_INT   : integer range 0 to 1           := 0;
+    RISCV_ISA_Zicond_INT   : integer range 0 to 1           := 0;
+    RISCV_ISA_Zihpm_INT    : integer range 0 to 1           := 0;
+    RISCV_ISA_Zmmul_INT    : integer range 0 to 1           := 0;
+    RISCV_ISA_Zknd_INT     : integer range 0 to 1           := 0;
+    RISCV_ISA_Zkne_INT     : integer range 0 to 1           := 0;
+    RISCV_ISA_Zknh_INT     : integer range 0 to 1           := 0;
+    RISCV_ISA_Zksed_INT    : integer range 0 to 1           := 0;
+    RISCV_ISA_Zksh_INT     : integer range 0 to 1           := 0;
+    RISCV_ISA_Zxcfu_INT    : integer range 0 to 1           := 0;
     -- Tuning Options --
-    CPU_FAST_MUL_EN_INT   : integer range 0 to 1           := 0;
-    CPU_FAST_SHIFT_EN_INT : integer range 0 to 1           := 0;
-    CPU_RF_HW_RST_EN_INT  : integer range 0 to 1           := 0;
+    CPU_FAST_MUL_EN_INT    : integer range 0 to 1           := 0;
+    CPU_FAST_SHIFT_EN_INT  : integer range 0 to 1           := 0;
+    CPU_RF_HW_RST_EN_INT   : integer range 0 to 1           := 0;
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS       : natural range 0 to 16          := 0;
-    PMP_MIN_GRANULARITY   : natural                        := 4;
-    PMP_TOR_MODE_EN_INT   : integer range 0 to 1           := 0;
-    PMP_NAP_MODE_EN_INT   : integer range 0 to 1           := 0;
+    PMP_NUM_REGIONS        : natural range 0 to 16          := 0;
+    PMP_MIN_GRANULARITY    : natural                        := 4;
+    PMP_TOR_MODE_EN_INT    : integer range 0 to 1           := 0;
+    PMP_NAP_MODE_EN_INT    : integer range 0 to 1           := 0;
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS          : natural range 0 to 13          := 0;
-    HPM_CNT_WIDTH         : natural range 0 to 64          := 40;
+    HPM_NUM_CNTS           : natural range 0 to 13          := 0;
+    HPM_CNT_WIDTH          : natural range 0 to 64          := 40;
     -- Internal Instruction memory --
-    IMEM_EN_INT           : integer range 0 to 1           := 0;
-    IMEM_SIZE             : natural                        := 16384;
-    IMEM_OUTREG_EN_INT    : integer range 0 to 1           := 0;
+    IMEM_EN_INT            : integer range 0 to 1           := 0;
+    IMEM_SIZE              : natural                        := 16384;
+    IMEM_OUTREG_EN_INT     : integer range 0 to 1           := 0;
     -- Internal Data memory --
-    DMEM_EN_INT           : integer range 0 to 1           := 0;
-    DMEM_SIZE             : natural                        := 8192;
-    DMEM_OUTREG_EN_INT    : integer range 0 to 1           := 0;
+    DMEM_EN_INT            : integer range 0 to 1           := 0;
+    DMEM_SIZE              : natural                        := 8192;
+    DMEM_OUTREG_EN_INT     : integer range 0 to 1           := 0;
     -- CPU Caches --
-    ICACHE_EN_INT         : integer range 0 to 1           := 0;
-    ICACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
-    DCACHE_EN_INT         : integer range 0 to 1           := 0;
-    DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
-    CACHE_BLOCK_SIZE      : natural range 4 to 1024        := 64;
+    ICACHE_EN_INT          : integer range 0 to 1           := 0;
+    ICACHE_NUM_BLOCKS      : natural range 1 to 4096        := 4;
+    DCACHE_EN_INT          : integer range 0 to 1           := 0;
+    DCACHE_NUM_BLOCKS      : natural range 1 to 4096        := 4;
+    CACHE_BLOCK_SIZE       : natural range 4 to 1024        := 64;
     -- External Bus Interface --
-    XBUS_EN_INT           : integer range 0 to 1           := 1;
-    XBUS_REGSTAGE_EN_INT  : integer range 0 to 1           := 1;
+    XBUS_EN_INT            : integer range 0 to 1           := 1;
+    XBUS_REGSTAGE_EN_INT   : integer range 0 to 1           := 1;
     -- Processor peripherals --
-    IO_GPIO_EN_INT        : integer range 0 to 1           := 0;
-    IO_GPIO_IN_NUM        : natural range 1 to 32          := 1;
-    IO_GPIO_OUT_NUM       : natural range 1 to 32          := 1;
-    IO_CLINT_EN_INT       : integer range 0 to 1           := 0;
-    IO_UART0_EN_INT       : integer range 0 to 1           := 0;
-    IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;
-    IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;
-    IO_UART1_EN_INT       : integer range 0 to 1           := 0;
-    IO_UART1_RX_FIFO      : natural range 1 to 2**15       := 1;
-    IO_UART1_TX_FIFO      : natural range 1 to 2**15       := 1;
-    IO_SPI_EN_INT         : integer range 0 to 1           := 0;
-    IO_SPI_FIFO           : natural range 1 to 2**15       := 1;
-    IO_SDI_EN_INT         : integer range 0 to 1           := 0;
-    IO_SDI_FIFO           : natural range 1 to 2**15       := 1;
-    IO_TWI_EN_INT         : integer range 0 to 1           := 0;
-    IO_TWI_FIFO           : natural range 1 to 2**15       := 1;
-    IO_TWD_EN_INT         : integer range 0 to 1           := 0;
-    IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;
-    IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;
-    IO_PWM_EN_INT         : integer range 0 to 1           := 0;
-    IO_PWM_NUM_CH         : natural range 1 to 16          := 1;
-    IO_WDT_EN_INT         : integer range 0 to 1           := 0;
-    IO_TRNG_EN_INT        : integer range 0 to 1           := 0;
-    IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
-    IO_CFS_EN_INT         : integer range 0 to 1           := 0;
-    IO_NEOLED_EN_INT      : integer range 0 to 1           := 0;
-    IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;
-    IO_GPTMR_EN_INT       : integer range 0 to 1           := 0;
-    IO_ONEWIRE_EN_INT     : integer range 0 to 1           := 0;
-    IO_DMA_EN_INT         : integer range 0 to 1           := 0;
-    IO_DMA_DSC_FIFO       : natural range 4 to 512         := 4;
-    IO_SLINK_EN_INT       : integer range 0 to 1           := 0;
-    IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;
-    IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1
+    IO_GPIO_EN_INT         : integer range 0 to 1           := 0;
+    IO_GPIO_IN_NUM         : natural range 1 to 32          := 1;
+    IO_GPIO_OUT_NUM        : natural range 1 to 32          := 1;
+    IO_CLINT_EN_INT        : integer range 0 to 1           := 0;
+    IO_UART0_EN_INT        : integer range 0 to 1           := 0;
+    IO_UART0_RX_FIFO       : natural range 1 to 2**15       := 1;
+    IO_UART0_TX_FIFO       : natural range 1 to 2**15       := 1;
+    IO_UART1_EN_INT        : integer range 0 to 1           := 0;
+    IO_UART1_RX_FIFO       : natural range 1 to 2**15       := 1;
+    IO_UART1_TX_FIFO       : natural range 1 to 2**15       := 1;
+    IO_SPI_EN_INT          : integer range 0 to 1           := 0;
+    IO_SPI_FIFO            : natural range 1 to 2**15       := 1;
+    IO_SDI_EN_INT          : integer range 0 to 1           := 0;
+    IO_SDI_FIFO            : natural range 1 to 2**15       := 1;
+    IO_TWI_EN_INT          : integer range 0 to 1           := 0;
+    IO_TWI_FIFO            : natural range 1 to 2**15       := 1;
+    IO_TWD_EN_INT          : integer range 0 to 1           := 0;
+    IO_TWD_RX_FIFO         : natural range 1 to 2**15       := 1;
+    IO_TWD_TX_FIFO         : natural range 1 to 2**15       := 1;
+    IO_PWM_EN_INT          : integer range 0 to 1           := 0;
+    IO_PWM_NUM_CH          : natural range 1 to 16          := 1;
+    IO_WDT_EN_INT          : integer range 0 to 1           := 0;
+    IO_TRNG_EN_INT         : integer range 0 to 1           := 0;
+    IO_TRNG_FIFO           : natural range 1 to 2**15       := 1;
+    IO_CFS_EN_INT          : integer range 0 to 1           := 0;
+    IO_NEOLED_EN_INT       : integer range 0 to 1           := 0;
+    IO_NEOLED_TX_FIFO      : natural range 1 to 2**15       := 1;
+    IO_GPTMR_EN_INT        : integer range 0 to 1           := 0;
+    IO_ONEWIRE_EN_INT      : integer range 0 to 1           := 0;
+    IO_DMA_EN_INT          : integer range 0 to 1           := 0;
+    IO_DMA_DSC_FIFO        : natural range 4 to 512         := 4;
+    IO_SLINK_EN_INT        : integer range 0 to 1           := 0;
+    IO_SLINK_RX_FIFO       : natural range 1 to 2**15       := 1;
+    IO_SLINK_TX_FIFO       : natural range 1 to 2**15       := 1
   );
   port (
     -- ------------------------------------------------------------
@@ -250,65 +250,63 @@ end entity;
 architecture neorv32_libero_ip_rtl of neorv32_libero_ip is
 
   -- boolean conversions for generics --
-  constant dual_core_en_c      : boolean := (DUAL_CORE_EN_INT = 1);
-  constant ocd_en_c            : boolean := (OCD_EN_INT = 1);
-  constant ocd_hw_breakpoint_c : boolean := (OCD_HW_BREAKPOINT_INT = 1);
-  constant ocd_authentication_c: boolean := (OCD_AUTHENTICATION_INT = 1);
-  constant riscv_isa_c_c       : boolean := (RISCV_ISA_C_INT = 1);
-  constant riscv_isa_e_c       : boolean := (RISCV_ISA_E_INT = 1);
-  constant riscv_isa_m_c       : boolean := (RISCV_ISA_M_INT = 1);
-  constant riscv_isa_u_c       : boolean := (RISCV_ISA_U_INT = 1);
-  constant riscv_isa_zaamo_c   : boolean := (RISCV_ISA_Zaamo_INT = 1);
-  constant riscv_isa_zalrsc_c  : boolean := (RISCV_ISA_Zalrsc_INT = 1);
-  constant riscv_isa_zba_c     : boolean := (RISCV_ISA_Zba_INT = 1);
-  constant riscv_isa_zbb_c     : boolean := (RISCV_ISA_Zbb_INT = 1);
-  constant riscv_isa_zbkb_c    : boolean := (RISCV_ISA_Zbkb_INT = 1);
-  constant riscv_isa_zbkc_c    : boolean := (RISCV_ISA_Zbkc_INT = 1);
-  constant riscv_isa_zbkx_c    : boolean := (RISCV_ISA_Zbkx_INT = 1);
-  constant riscv_isa_zbs_c     : boolean := (RISCV_ISA_Zbs_INT = 1);
-  constant riscv_isa_zfinx_c   : boolean := (RISCV_ISA_Zfinx_INT = 1);
-  constant riscv_isa_zicntr_c  : boolean := (RISCV_ISA_Zicntr_INT = 1);
-  constant riscv_isa_zicond_c  : boolean := (RISCV_ISA_Zicond_INT = 1);
-  constant riscv_isa_zihpm_c   : boolean := (RISCV_ISA_Zihpm_INT = 1);
-  constant riscv_isa_zmmul_c   : boolean := (RISCV_ISA_Zmmul_INT = 1);
-  constant riscv_isa_zknd_c    : boolean := (RISCV_ISA_Zknd_INT = 1);
-  constant riscv_isa_zkne_c    : boolean := (RISCV_ISA_Zkne_INT = 1);
-  constant riscv_isa_zknh_c    : boolean := (RISCV_ISA_Zknh_INT = 1);
-  constant riscv_isa_zksed_c   : boolean := (RISCV_ISA_Zksed_INT = 1);
-  constant riscv_isa_zksh_c    : boolean := (RISCV_ISA_Zksh_INT = 1);
-  constant riscv_isa_zxcfu_c   : boolean := (RISCV_ISA_Zxcfu_INT = 1);
-  constant cpu_fast_mul_en_c   : boolean := (CPU_FAST_MUL_EN_INT = 1);
-  constant cpu_fast_shift_en_c : boolean := (CPU_FAST_SHIFT_EN_INT = 1);
-  constant cpu_rf_hw_rst_en_c  : boolean := (CPU_RF_HW_RST_EN_INT = 1);
-  constant pmp_tor_mode_en_c   : boolean := (PMP_TOR_MODE_EN_INT = 1);
-  constant pmp_nap_mode_en_c   : boolean := (PMP_NAP_MODE_EN_INT = 1);
-  constant imem_en_c           : boolean := (IMEM_EN_INT = 1);
-  constant imem_outreg_en_c    : boolean := (IMEM_OUTREG_EN_INT = 1);
-  constant dmem_en_c           : boolean := (DMEM_EN_INT = 1);
-  constant dmem_outreg_en_c    : boolean := (DMEM_OUTREG_EN_INT = 1);
-  constant icache_en_c         : boolean := (ICACHE_EN_INT = 1);
-  constant dcache_en_c         : boolean := (DCACHE_EN_INT = 1);
-  constant xbus_en_c           : boolean := (XBUS_EN_INT = 1);
-  constant xbus_regstage_en_c  : boolean := (XBUS_REGSTAGE_EN_INT = 1);
-  constant io_gpio_en_c        : boolean := (IO_GPIO_EN_INT = 1);
-  constant io_clint_en_c       : boolean := (IO_CLINT_EN_INT = 1);
-  constant io_uart0_en_c       : boolean := (IO_UART0_EN_INT = 1);
-  constant io_uart1_en_c       : boolean := (IO_UART1_EN_INT = 1);
-  constant io_spi_en_c         : boolean := (IO_SPI_EN_INT = 1);
-  constant io_sdi_en_c         : boolean := (IO_SDI_EN_INT = 1);
-  constant io_twi_en_c         : boolean := (IO_TWI_EN_INT = 1);
-  constant io_twd_en_c         : boolean := (IO_TWD_EN_INT = 1);
-  constant io_pwm_en_c         : boolean := (IO_PWM_EN_INT = 1);
-  constant io_wdt_en_c         : boolean := (IO_WDT_EN_INT = 1);
-  constant io_trng_en_c        : boolean := (IO_TRNG_EN_INT = 1);
-  constant io_cfs_en_c         : boolean := (IO_CFS_EN_INT = 1);
-  constant io_neoled_en_c      : boolean := (IO_NEOLED_EN_INT = 1);
-  constant io_gptmr_en_c       : boolean := (IO_GPTMR_EN_INT = 1);
-  constant io_onewire_en_c     : boolean := (IO_ONEWIRE_EN_INT = 1);
-  constant io_dma_en_c         : boolean := (IO_DMA_EN_INT = 1);
-  constant io_slink_en_c       : boolean := (IO_SLINK_EN_INT = 1);
-  constant BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(to_unsigned(BOOT_ADDR_CUSTOM_UPPER * 2**16 + BOOT_ADDR_CUSTOM_LOWER, 32));
-
+  constant dual_core_en_c       : boolean := (DUAL_CORE_EN_INT = 1);
+  constant ocd_en_c             : boolean := (OCD_EN_INT = 1);
+  constant ocd_authentication_c : boolean := (OCD_AUTHENTICATION_INT = 1);
+  constant riscv_isa_c_c        : boolean := (RISCV_ISA_C_INT = 1);
+  constant riscv_isa_e_c        : boolean := (RISCV_ISA_E_INT = 1);
+  constant riscv_isa_m_c        : boolean := (RISCV_ISA_M_INT = 1);
+  constant riscv_isa_u_c        : boolean := (RISCV_ISA_U_INT = 1);
+  constant riscv_isa_zaamo_c    : boolean := (RISCV_ISA_Zaamo_INT = 1);
+  constant riscv_isa_zalrsc_c   : boolean := (RISCV_ISA_Zalrsc_INT = 1);
+  constant riscv_isa_zba_c      : boolean := (RISCV_ISA_Zba_INT = 1);
+  constant riscv_isa_zbb_c      : boolean := (RISCV_ISA_Zbb_INT = 1);
+  constant riscv_isa_zbkb_c     : boolean := (RISCV_ISA_Zbkb_INT = 1);
+  constant riscv_isa_zbkc_c     : boolean := (RISCV_ISA_Zbkc_INT = 1);
+  constant riscv_isa_zbkx_c     : boolean := (RISCV_ISA_Zbkx_INT = 1);
+  constant riscv_isa_zbs_c      : boolean := (RISCV_ISA_Zbs_INT = 1);
+  constant riscv_isa_zfinx_c    : boolean := (RISCV_ISA_Zfinx_INT = 1);
+  constant riscv_isa_zicntr_c   : boolean := (RISCV_ISA_Zicntr_INT = 1);
+  constant riscv_isa_zicond_c   : boolean := (RISCV_ISA_Zicond_INT = 1);
+  constant riscv_isa_zihpm_c    : boolean := (RISCV_ISA_Zihpm_INT = 1);
+  constant riscv_isa_zmmul_c    : boolean := (RISCV_ISA_Zmmul_INT = 1);
+  constant riscv_isa_zknd_c     : boolean := (RISCV_ISA_Zknd_INT = 1);
+  constant riscv_isa_zkne_c     : boolean := (RISCV_ISA_Zkne_INT = 1);
+  constant riscv_isa_zknh_c     : boolean := (RISCV_ISA_Zknh_INT = 1);
+  constant riscv_isa_zksed_c    : boolean := (RISCV_ISA_Zksed_INT = 1);
+  constant riscv_isa_zksh_c     : boolean := (RISCV_ISA_Zksh_INT = 1);
+  constant riscv_isa_zxcfu_c    : boolean := (RISCV_ISA_Zxcfu_INT = 1);
+  constant cpu_fast_mul_en_c    : boolean := (CPU_FAST_MUL_EN_INT = 1);
+  constant cpu_fast_shift_en_c  : boolean := (CPU_FAST_SHIFT_EN_INT = 1);
+  constant cpu_rf_hw_rst_en_c   : boolean := (CPU_RF_HW_RST_EN_INT = 1);
+  constant pmp_tor_mode_en_c    : boolean := (PMP_TOR_MODE_EN_INT = 1);
+  constant pmp_nap_mode_en_c    : boolean := (PMP_NAP_MODE_EN_INT = 1);
+  constant imem_en_c            : boolean := (IMEM_EN_INT = 1);
+  constant imem_outreg_en_c     : boolean := (IMEM_OUTREG_EN_INT = 1);
+  constant dmem_en_c            : boolean := (DMEM_EN_INT = 1);
+  constant dmem_outreg_en_c     : boolean := (DMEM_OUTREG_EN_INT = 1);
+  constant icache_en_c          : boolean := (ICACHE_EN_INT = 1);
+  constant dcache_en_c          : boolean := (DCACHE_EN_INT = 1);
+  constant xbus_en_c            : boolean := (XBUS_EN_INT = 1);
+  constant xbus_regstage_en_c   : boolean := (XBUS_REGSTAGE_EN_INT = 1);
+  constant io_gpio_en_c         : boolean := (IO_GPIO_EN_INT = 1);
+  constant io_clint_en_c        : boolean := (IO_CLINT_EN_INT = 1);
+  constant io_uart0_en_c        : boolean := (IO_UART0_EN_INT = 1);
+  constant io_uart1_en_c        : boolean := (IO_UART1_EN_INT = 1);
+  constant io_spi_en_c          : boolean := (IO_SPI_EN_INT = 1);
+  constant io_sdi_en_c          : boolean := (IO_SDI_EN_INT = 1);
+  constant io_twi_en_c          : boolean := (IO_TWI_EN_INT = 1);
+  constant io_twd_en_c          : boolean := (IO_TWD_EN_INT = 1);
+  constant io_pwm_en_c          : boolean := (IO_PWM_EN_INT = 1);
+  constant io_wdt_en_c          : boolean := (IO_WDT_EN_INT = 1);
+  constant io_trng_en_c         : boolean := (IO_TRNG_EN_INT = 1);
+  constant io_cfs_en_c          : boolean := (IO_CFS_EN_INT = 1);
+  constant io_neoled_en_c       : boolean := (IO_NEOLED_EN_INT = 1);
+  constant io_gptmr_en_c        : boolean := (IO_GPTMR_EN_INT = 1);
+  constant io_onewire_en_c      : boolean := (IO_ONEWIRE_EN_INT = 1);
+  constant io_dma_en_c          : boolean := (IO_DMA_EN_INT = 1);
+  constant io_slink_en_c        : boolean := (IO_SLINK_EN_INT = 1);
+  constant BOOT_ADDR_CUSTOM     : std_ulogic_vector(31 downto 0) := std_ulogic_vector(to_unsigned(BOOT_ADDR_CUSTOM_UPPER * 2**16 + BOOT_ADDR_CUSTOM_LOWER, 32));
 
   -- auto-configuration --
   constant num_gpio_c : natural := cond_sel_natural_f(io_gpio_en_c, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
@@ -414,7 +412,7 @@ begin
     BOOT_ADDR_CUSTOM    => BOOT_ADDR_CUSTOM,
     -- On-Chip Debugger --
     OCD_EN              => ocd_en_c,
-    OCD_HW_BREAKPOINT   => ocd_hw_breakpoint_c,
+    OCD_NUM_HW_TRIGGERS => OCD_NUM_HW_TRIGGERS,
     OCD_AUTHENTICATION  => ocd_authentication_c,
     OCD_JEDEC_ID        => std_ulogic_vector(OCD_JEDEC_ID),
     -- RISC-V CPU Extensions --

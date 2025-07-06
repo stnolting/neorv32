@@ -186,10 +186,10 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {On-Chip Debugger (OCD)}]
   add_params $group {
-    { OCD_EN             {Enable OCD}          {Implement JTAG-based on-chip debugger} }
-    { OCD_HW_BREAKPOINT  {Hardware breakpoint} {Implement a single hardware-assistet breakpoint} {$OCD_EN} {$OCD_EN ? $OCD_HW_BREAKPOINT  : false} }
-    { OCD_AUTHENTICATION {OCD authentication}  {Implement debug authentication module}           {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false} }
-    { OCD_JEDEC_ID       {JEDEC ID}            {JTAG tap identification}                         {$OCD_EN}}
+    { OCD_EN              {Enable OCD}         {Implement JTAG-based on-chip debugger} }
+    { OCD_AUTHENTICATION  {OCD authentication} {Implement debug authentication module} {$OCD_EN} {$OCD_EN ? $OCD_AUTHENTICATION : false} }
+    { OCD_NUM_HW_TRIGGERS {Hardware triggers}  {Number of hardware break-/watchpoints} {$OCD_EN} {$OCD_EN ? $OCD_NUM_HW_TRIGGERS : 0} }
+    { OCD_JEDEC_ID        {JEDEC ID}           {JTAG tap identification}               {$OCD_EN}}
   }
 
 
