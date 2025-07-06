@@ -98,11 +98,12 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
                                     RISCV_ISA_Zksh and RISCV_ISA_Zksed; -- Zks: ShangMi suite
 
   -- external CSR interface read-back --
-  signal xcsr_cnt, xcsr_pmp, xcsr_alu, xcsr_res : std_ulogic_vector(XLEN-1 downto 0);
+  signal xcsr_tm, xcsr_cnt, xcsr_pmp, xcsr_alu, xcsr_res : std_ulogic_vector(XLEN-1 downto 0);
 
   -- local signals --
   signal ctrl        : ctrl_bus_t;                         -- main control bus
   signal frontend    : if_bus_t;                           -- instruction-fetch interface
+  signal hwtrig      : std_ulogic;                         -- hardware trigger firing
   signal rf_wdata    : std_ulogic_vector(XLEN-1 downto 0); -- register file write data
   signal rs1         : std_ulogic_vector(XLEN-1 downto 0); -- source register 1
   signal rs2         : std_ulogic_vector(XLEN-1 downto 0); -- source register 2
@@ -126,7 +127,7 @@ begin
   hello_neorv32:
   if HART_ID = 0 generate -- print only for core 0
 
-    -- CPU ISA configuration (in alphabetical order - not in canonical order!) --
+    -- CPU ISA configuration (in alphabetical order - not in canonical order) --
     assert false report "[NEORV32] CPU ISA: rv32" &
       cond_sel_string_f(RISCV_ISA_E,      "e",         "i") &
       cond_sel_string_f(riscv_a_c,        "a",         "" ) &
@@ -251,6 +252,8 @@ begin
     frontend_i    => frontend,    -- front-end status and data
     -- pmp fault --
     pmp_fault_i   => pmp_fault,   -- instruction fetch / execute pmp fault
+    -- trigger module --
+    hwtrig_i      => hwtrig,      -- hardware trigger
     -- data path interface --
     alu_cp_done_i => alu_cp_done, -- ALU iterative operation done
     alu_cmp_i     => alu_cmp,     -- comparator status
@@ -272,7 +275,36 @@ begin
   irq_machine <= mei_i & mti_i & msi_i;
 
   -- control-external CSR read-back --
-  xcsr_res <= xcsr_cnt or xcsr_alu or xcsr_pmp;
+  xcsr_res <= xcsr_tm or xcsr_cnt or xcsr_alu or xcsr_pmp;
+
+
+  -- Hardware Trigger Module (Sdtrig) -------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  trigger_module_enabled:
+  if (RISCV_ISA_Sdtrig = true) generate
+    neorv32_cpu_hwtrig_inst: entity neorv32.neorv32_cpu_hwtrig
+    generic map (
+      NUM_TRIGGERS => 1,          -- number of implemented hardware triggers
+      RISCV_ISA_U  => RISCV_ISA_U -- RISC-V user-mode available
+    )
+    port map (
+    -- global control --
+      clk_i  => clk_i,   -- global clock, rising edge
+      rstn_i => rstn_i,  -- global reset, low-active, async
+      ctrl_i => ctrl,    -- main control bus
+      -- data path --
+      mar_i  => lsu_mar, -- memory address register
+      csr_o  => xcsr_tm, -- CSR read data
+      -- trigger firing --
+      hit_o  => hwtrig   -- high until debug-mode is entered
+    );
+  end generate;
+
+  trigger_module_disabled:
+  if (RISCV_ISA_Sdtrig = false) generate
+    xcsr_tm <= (others => '0');
+    hwtrig  <= '0';
+  end generate;
 
 
   -- Hardware Counters ----------------------------------------------------------------------
