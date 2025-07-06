@@ -209,7 +209,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `BOOT_ADDR_CUSTOM`      | suv(31:0) | x"00000000"   | Custom CPU boot address (available if `BOOT_MODE_SELECT` = 1).
 4+^| **<<_on_chip_debugger_ocd>>**
 | `OCD_EN`                | boolean   | false         | Implement the on-chip debugger and the CPU debug mode (<<_sdext_isa_extension>>).
-| `OCD_HW_BREAKPOINT `    | boolean   | false         | Implement debug <<_trigger_module>> module (<<_sdtrig_isa_extension>>).
+| `OCD_HW_BREAKPOINT`     | boolean   | false         | Implement debug <<_trigger_module>> module (<<_sdtrig_isa_extension>>).
 | `OCD_AUTHENTICATION`    | boolean   | false         | Implement <<_debug_authentication>> module.
 | `OCD_JEDEC_ID`          | suv(10:0) | "00000000000" | JEDEC ID; continuation codes plus vendor ID (passed to the JTAG <<_debug_transport_module_dtm>>).
 4+^| **CPU <<_instruction_sets_and_extensions>>**
