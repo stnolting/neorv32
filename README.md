@@ -83,7 +83,7 @@ The processor passes the official RISC-V architecture tests to ensure compatibil
 [neorv32-riscof](https://github.com/stnolting/neorv32-riscof) repository. It can successfully run _any_ C program
 (for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example) folder) including CoreMark
 and FreeRTOS and can be synthesized for _any_ target technology - [tested](https://github.com/stnolting/neorv32-setups)
-on AMD, Intel, Lattice, Gowin and Cologne Chip FPGAs. The conversion into a single, plain-Verilog module file is automatically
+on AMD, Intel, Lattice, Microchip, Gowin and Cologne Chip FPGAs. The conversion into a single, plain-Verilog module file is automatically
 checked by the [neorv32-verilog](https://github.com/stnolting/neorv32-verilog) repository.
 
 

@@ -58,6 +58,7 @@ POSSIBILITY OF SUCH DAMAGE.
 * "ARM", "AMBA", "AXI", "AXI4", "AXI4-Lite" and "AXI4-Stream" are trademarks of Arm Holdings plc.
 * "ModelSim" is a trademark of Mentor Graphics – A Siemens Business.
 * "Quartus [Prime]" and "Cyclone" are trademarks of Intel Corporation.
+* "Libero" and "PolarFire" are trademarks of Microchip Technology Incorporated.
 * "iCE40", "UltraPlus" and "Radiant" are trademarks of Lattice Semiconductor Corporation.
 * "GateMate" is a trademark of Cologne Chip AG.
 * "Windows" is a trademark of Microsoft Corporation.
