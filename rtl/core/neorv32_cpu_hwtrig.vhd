@@ -54,7 +54,7 @@ architecture neorv32_cpu_hwtrig_rtl of neorv32_cpu_hwtrig is
   -- trigger select --
   signal tselect : std_ulogic_vector(log2_num_triggers_c downto 0); -- +1 to detect invalid selection
   signal sel     : std_ulogic_vector(NUM_TRIGGERS-1 downto 0); -- decoded one-hot trigger select
-  signal sel_inv : std_ulogic; -- invalid tselect value
+  signal invalid : std_ulogic; -- invalid tselect value
 
   -- match logic --
   signal cmp_inst, cmp_data, match : std_ulogic_vector(NUM_TRIGGERS-1 downto 0);
@@ -80,7 +80,7 @@ begin
   for i in 0 to NUM_TRIGGERS-1 generate
     sel(i) <= '1' when (tselect = std_ulogic_vector(to_unsigned(i, log2_num_triggers_c+1))) or (NUM_TRIGGERS = 1) else '0';
   end generate;
-  sel_inv <= '1' when (unsigned(tselect) >= NUM_TRIGGERS) else '0'; -- invalid trigger selection
+  invalid <= '1' when (unsigned(tselect) >= NUM_TRIGGERS) else '0'; -- invalid trigger selection
 
   -- trigger control and address --
   csr_tdata_write: process(rstn_i, clk_i)
@@ -163,10 +163,10 @@ begin
   tdata1_rb(0)            <= or_reduce_f(tdata1_load and sel); -- load: enable trigger on load address match
 
   -- valid trigger select? --
-  tdata1_rb2 <= tdata1_rb when (sel_inv = '0') else (others => '0');
+  tdata1_rb2 <= tdata1_rb when (invalid = '0') else (others => '0');
 
   -- trigger info --
-  tinfo_rb <= x"01000006" when (sel_inv = '0') else (others => '0'); -- Sdtrig version 1.0, mcontrol6-type only
+  tinfo_rb <= x"01000006" when (invalid = '0') else (others => '0'); -- Sdtrig version 1.0, type-6 only
 
 
   -- Trigger Logic --------------------------------------------------------------------------

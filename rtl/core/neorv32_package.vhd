@@ -984,7 +984,7 @@ package body neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function index_size_f(input : natural) return natural is
   begin
-    for i in 0 to natural'high loop
+    for i in 0 to 31 loop
       if (2**i >= input) then
         return i;
       end if;
