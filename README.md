@@ -283,16 +283,14 @@ This overview provides some *quick links* to the most important sections of the
 
 ### :copyright: Legal
 
-[![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat)](https://github.com/stnolting/neorv32/blob/main/LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg)](https://doi.org/10.5281/zenodo.5018888)
-
 * [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, limitation of liability for external links, proprietary notice, etc.
 * [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information
 
-This is an open-source project that is free of charge. Use this project in any way you like
-(as long as it complies to the permissive [license](https://github.com/stnolting/neorv32/blob/main/LICENSE)).
-Please cite it appropriately. :+1:
+[![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat)](https://github.com/stnolting/neorv32/blob/main/LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg)](https://doi.org/10.5281/zenodo.5018888)
 
+This is an open-source project that is free of charge and provided under an
+permissive [license](https://github.com/stnolting/neorv32/blob/main/LICENSE).
 
 ---------------------------------------
 
