@@ -46,10 +46,6 @@ architecture neorv32_trng_rtl of neorv32_trng is
   constant ctrl_sim_mode_c   : natural := 6; -- r/-: TRNG implemented in pseudo-RNG simulation mode
   constant ctrl_avail_c      : natural := 7; -- r/-: Random data available
 
-  -- data register bits --
-  constant ctrl_data_lsb_c : natural := 0; -- r/-: random data bit 0, LSB
-  constant ctrl_data_msb_c : natural := 7; -- r/-: random data bit 7, MSB
-
   -- helpers --
   constant log2_fifo_size_c : natural := index_size_f(TRNG_FIFO);
 
@@ -73,22 +69,18 @@ architecture neorv32_trng_rtl of neorv32_trng is
   -- control register --
   signal enable, fifo_clr : std_ulogic;
 
-  -- data FIFO interface --
+  -- FIFO interface --
   type fifo_t is record
-    we    : std_ulogic; -- write enable
-    re    : std_ulogic; -- read enable
-    clear : std_ulogic; -- sync reset, high-active
-    wdata : std_ulogic_vector(7 downto 0); -- write data
-    rdata : std_ulogic_vector(7 downto 0); -- read data
-    avail : std_ulogic; -- data available?
-    half  : std_ulogic; -- at least half full?
-    free  : std_ulogic; -- space left?
+    we,    re    : std_ulogic; -- write/read enable
+    wdata, rdata : std_ulogic_vector(7 downto 0); -- write/read data
+    avail, free  : std_ulogic; -- FIFO level
+    clear, half  : std_ulogic; -- control and status
   end record;
   signal fifo : fifo_t;
 
 begin
 
-  -- Bus Access ----------------------------------------------------------------------------
+  -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_access: process(rstn_i, clk_i)
   begin
@@ -114,7 +106,7 @@ begin
             bus_rsp_o.data(ctrl_sim_mode_c)                            <= bool_to_ulogic_f(is_simulation_c);
             bus_rsp_o.data(ctrl_avail_c)                               <= fifo.avail;
           else -- data register
-            bus_rsp_o.data(ctrl_data_msb_c downto ctrl_data_lsb_c) <= fifo.rdata;
+            bus_rsp_o.data(7 downto 0) <= fifo.rdata;
           end if;
         end if;
       end if;
