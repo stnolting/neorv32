@@ -53,14 +53,14 @@ architecture neorv32_xbus_rtl of neorv32_xbus is
   signal locked  : std_ulogic;
 
   -- no-response timeout --
+  constant log2_timeout_c : natural := index_size_f(TIMEOUT_VAL);
+  constant timeout_c : unsigned(log2_timeout_c downto 0) := to_unsigned(TIMEOUT_VAL, log2_timeout_c+1);
+  signal timecnt : unsigned(log2_timeout_c downto 0);
   signal timeout : std_ulogic;
-  signal timecnt : std_ulogic_vector(index_size_f(TIMEOUT_VAL)-1 downto 0);
-  constant timeout_c : std_ulogic_vector(index_size_f(TIMEOUT_VAL)-1 downto 0) :=
-                       std_ulogic_vector(to_unsigned(TIMEOUT_VAL-1, index_size_f(TIMEOUT_VAL)));
 
 begin
 
-  -- Optional Register Stage ----------------------------------------------------------------
+  -- Optional Register Stage(s) -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   reg_stage_inst: entity neorv32.neorv32_bus_reg
   generic map (
@@ -106,7 +106,7 @@ begin
   -- Bus Timeout ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   timeout_enabled:
-  if TIMEOUT_VAL /= 0 generate
+  if TIMEOUT_VAL > 0 generate
     timeout_counter: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
@@ -117,8 +117,8 @@ begin
           timecnt <= timeout_c;
           timeout <= '0';
         else
-          if (or_reduce_f(timecnt) = '1') then
-            timecnt <= std_ulogic_vector(unsigned(timecnt) - 1);
+          if (or_reduce_f(std_ulogic_vector(timecnt)) = '1') then
+            timecnt <= timecnt - 1;
           else
             timeout <= '1';
           end if;
