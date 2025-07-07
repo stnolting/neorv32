@@ -1473,14 +1473,14 @@ begin
             csr.rdata(0)  <= '1';                                 -- Zicsr: CSR access (always enabled)
             csr.rdata(1)  <= '1';                                 -- Zifencei: instruction stream sync. (always enabled)
             csr.rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_Zmmul);   -- Zmmul: mul/div
-            csr.rdata(3)  <= bool_to_ulogic_f(RISCV_ISA_Zxcfu);   -- Zxcfu: custom RISC-V instructions
+            csr.rdata(3)  <= bool_to_ulogic_f(RISCV_ISA_Zxcfu);   -- Zxcfu: custom instructions
             csr.rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_Zkt);     -- Zkt: data independent execution latency
             csr.rdata(5)  <= bool_to_ulogic_f(RISCV_ISA_Zfinx);   -- Zfinx: FPU using x registers
             csr.rdata(6)  <= bool_to_ulogic_f(RISCV_ISA_Zicond);  -- Zicond: integer conditional operations
             csr.rdata(7)  <= bool_to_ulogic_f(RISCV_ISA_Zicntr);  -- Zicntr: base counters
             csr.rdata(8)  <= bool_to_ulogic_f(RISCV_ISA_Smpmp);   -- Smpmp: physical memory protection
             csr.rdata(9)  <= bool_to_ulogic_f(RISCV_ISA_Zihpm);   -- Zihpm: hardware performance monitors
-            csr.rdata(10) <= bool_to_ulogic_f(RISCV_ISA_Sdext);   -- Sdext: RISC-V external debug
+            csr.rdata(10) <= bool_to_ulogic_f(RISCV_ISA_Sdext);   -- Sdext: external debug
             csr.rdata(11) <= bool_to_ulogic_f(RISCV_ISA_Sdtrig);  -- Sdtrig: trigger module
             csr.rdata(12) <= bool_to_ulogic_f(RISCV_ISA_Zbkx);    -- Zbkx: cryptography crossbar permutation
             csr.rdata(13) <= bool_to_ulogic_f(RISCV_ISA_Zknd);    -- Zknd: cryptography NIST AES decryption

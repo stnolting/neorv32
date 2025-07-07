@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110706"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110707"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -984,7 +984,7 @@ package body neorv32_package is
   -- -------------------------------------------------------------------------------------------
   function index_size_f(input : natural) return natural is
   begin
-    for i in 0 to natural'high loop
+    for i in 0 to 31 loop
       if (2**i >= input) then
         return i;
       end if;

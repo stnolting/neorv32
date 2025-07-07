@@ -54,10 +54,13 @@ architecture neorv32_cpu_hwtrig_rtl of neorv32_cpu_hwtrig is
   -- trigger select --
   signal tselect : std_ulogic_vector(log2_num_triggers_c downto 0); -- +1 to detect invalid selection
   signal sel     : std_ulogic_vector(NUM_TRIGGERS-1 downto 0); -- decoded one-hot trigger select
-  signal sel_inv : std_ulogic; -- invalid tselect value
+  signal invalid : std_ulogic; -- invalid tselect value
 
   -- match logic --
   signal cmp_inst, cmp_data, match : std_ulogic_vector(NUM_TRIGGERS-1 downto 0);
+
+  -- trigger module CSR access --
+  signal csr_en : std_ulogic;
 
 begin
 
@@ -69,7 +72,7 @@ begin
     if (rstn_i = '0') then
       tselect <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (ctrl_i.csr_addr = csr_tselect_c) and (ctrl_i.csr_we = '1') then
+      if (csr_en = '1') and (ctrl_i.csr_we = '1') and (ctrl_i.csr_addr(2 downto 0) = csr_tselect_c(2 downto 0)) then
         tselect <= ctrl_i.csr_wdata(log2_num_triggers_c downto 0);
       end if;
     end if;
@@ -80,7 +83,7 @@ begin
   for i in 0 to NUM_TRIGGERS-1 generate
     sel(i) <= '1' when (tselect = std_ulogic_vector(to_unsigned(i, log2_num_triggers_c+1))) or (NUM_TRIGGERS = 1) else '0';
   end generate;
-  sel_inv <= '1' when (unsigned(tselect) >= NUM_TRIGGERS) else '0'; -- invalid trigger selection
+  invalid <= '1' when (unsigned(tselect) >= NUM_TRIGGERS) else '0'; -- invalid trigger selection
 
   -- trigger control and address --
   csr_tdata_write: process(rstn_i, clk_i)
@@ -93,15 +96,15 @@ begin
     elsif rising_edge(clk_i) then
       for i in 0 to NUM_TRIGGERS-1 loop
         if (ctrl_i.cpu_debug = '1') then -- only accept write-accesses from debug-mode (DMODE = 1)
-          if (sel(i) = '1') and (ctrl_i.csr_we = '1') then
+          if (sel(i) = '1') and (csr_en = '1') and (ctrl_i.csr_we = '1') then
             -- match control --
-            if (ctrl_i.csr_addr = csr_tdata1_c) then
+            if (ctrl_i.csr_addr(2 downto 0) = csr_tdata1_c(2 downto 0)) then
               tdata1_exec(i)  <= ctrl_i.csr_wdata(2);
               tdata1_store(i) <= ctrl_i.csr_wdata(1);
               tdata1_load(i)  <= ctrl_i.csr_wdata(0);
             end if;
             -- address compare --
-            if (ctrl_i.csr_addr = csr_tdata2_c) then
+            if (ctrl_i.csr_addr(2 downto 0) = csr_tdata2_c(2 downto 0)) then
               tdata2_addr(i) <= ctrl_i.csr_wdata;
             end if;
           end if;
@@ -110,13 +113,16 @@ begin
     end if;
   end process csr_tdata_write;
 
+  -- valid trigger module CSR access? --
+  csr_en <= '1' when (ctrl_i.csr_addr(11 downto 3) = csr_tselect_c(11 downto 3)) else '0';
+
 
   -- CSR Read Access ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_read: process(ctrl_i.csr_addr, tselect, tdata1_rb2, tdata2_addr_rb, tinfo_rb)
+  csr_read: process(csr_en, ctrl_i.csr_addr, tselect, tdata1_rb2, tdata2_addr_rb, tinfo_rb)
   begin
     csr_o <= (others => '0');
-    if (ctrl_i.csr_addr(11 downto 3) = csr_tselect_c(11 downto 3)) then -- trigger module CSRs
+    if (csr_en = '1') then
       case ctrl_i.csr_addr(2 downto 0) is
         when "000"  => csr_o(log2_num_triggers_c downto 0) <= tselect; -- csr_tselect_c
         when "001"  => csr_o <= tdata1_rb2; -- csr_tdata1_c
@@ -163,10 +169,10 @@ begin
   tdata1_rb(0)            <= or_reduce_f(tdata1_load and sel); -- load: enable trigger on load address match
 
   -- valid trigger select? --
-  tdata1_rb2 <= tdata1_rb when (sel_inv = '0') else (others => '0');
+  tdata1_rb2 <= tdata1_rb when (invalid = '0') else (others => '0');
 
   -- trigger info --
-  tinfo_rb <= x"01000006" when (sel_inv = '0') else (others => '0'); -- Sdtrig version 1.0, mcontrol6-type only
+  tinfo_rb <= x"01000006" when (invalid = '0') else (others => '0'); -- Sdtrig version 1.0, type-6 only
 
 
   -- Trigger Logic --------------------------------------------------------------------------
@@ -204,7 +210,8 @@ begin
       for i in 0 to NUM_TRIGGERS-1 loop
         if (tdata1_hit(i) = '0') then
           tdata1_hit(i) <= match(i); -- any match?
-        elsif (sel(i) = '1') and (ctrl_i.csr_we = '1') and (ctrl_i.csr_addr = csr_tdata1_c) and
+        elsif (sel(i) = '1') and (ctrl_i.csr_we = '1') and (csr_en = '1') and
+              (ctrl_i.csr_addr(2 downto 0) = csr_tdata1_c(2 downto 0)) and
               (ctrl_i.csr_wdata(22) = '0') then -- clear currently selected tdata2.hit0 by debugger
           tdata1_hit(i) <= '0';
         end if;

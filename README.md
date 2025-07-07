@@ -1,5 +1,3 @@
-[![NEORV32](docs/figures/neorv32_logo_riscv.png)](https://github.com/stnolting/neorv32)
-
 # The NEORV32 RISC-V Processor
 
 [![datasheet (pdf)](https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor&colorA=273274)](https://github.com/stnolting/neorv32/releases/tag/nightly)
@@ -7,19 +5,6 @@
 [![userguide (pdf)](https://img.shields.io/badge/user%20guide-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor&colorA=273274)](https://github.com/stnolting/neorv32/releases/tag/nightly)
 [![userguide (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat-square)](https://stnolting.github.io/neorv32/ug)
 [![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen&colorA=273274)](https://stnolting.github.io/neorv32/sw/files.html)
-
-1. [Overview](#1-overview)
-   * [Key Features](#key-features)
-   * [Project Status](#project-status)
-2. [Features](#2-features)
-3. [FPGA Implementation Results](#3-fpga-implementation-results)
-4. [Performance](#4-performance)
-5. [**Getting Started**](#5-getting-started) :rocket:
-
-
-## 1. Overview
-
-![neorv32 Overview](docs/figures/neorv32_processor.png)
 
 The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
 [RISC-V](https://riscv.org/) CPU that is written in **platform-independent VHDL**. The processor is intended as auxiliary
@@ -32,36 +17,37 @@ For example, the CPU ensures _all_ memory accesses are properly acknowledged and
 instructions are always detected as such. Whenever an unexpected state occurs the application software is
 informed via _precise_ and resumable hardware exceptions.
 
-* :recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
-* :heavy_check_mark: [Continuous integration](#project-status) to check for regressions (including RISC-V ISA compatibility check using **RISCOF**).
-* :open_file_folder: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
-[community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
-targeting various FPGA boards and toolchains to get started.
-* :package: The entire processor is also available as [Vivado IP Block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block).
-* :kite: Support for [FreeRTOS](https://github.com/stnolting/neorv32-freertos),
-[Zephyr OS](https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html) and
-[LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC Builder Framework.
-* :snake: [MicroPython](https://github.com/stnolting/neorv32-micropython) port available.
-* :desktop_computer: Pre-configured [Eclipse project](https://stnolting.github.io/neorv32/ug/#_eclipse_ide) for developing and debugging code using an IDE.
-* :label: The project's change log is available in [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
-* :rocket: Check out the [quick links below](#5-getting-started) and the
-[User Guide](https://stnolting.github.io/neorv32/ug/) to get started setting up _your_ NEORV32 processor!
-* :books: For detailed information see the [NEORV32 online documentation](https://stnolting.github.io/neorv32/).
-* :interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
-* :clipboard: File an [issue](https://github.com/stnolting/neorv32/issues)/[discussion](https://github.com/stnolting/neorv32/discussions)/
-[PR](https://github.com/stnolting/neorv32/pulls) for questions, comments, ideas, feedback or if something isn't working as expected.
-* :handshake: Find out how to [contribute](https://github.com/stnolting/neorv32/blob/main/CONTRIBUTING.md).
+![neorv32 Overview](docs/figures/neorv32_processor.png)
 
 ### Key Features
 
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework** + **Tooling**
-- [x] completely described in behavioral, platform-independent VHDL - **no** platform-specific primitives, macros, attributes, etc.; an all-Verilog "version" is also [available](https://github.com/stnolting/neorv32-verilog)
+- [x] completely described in behavioral, platform-independent VHDL - **no** platform-specific primitives, macros, attributes, etc.
 - [x] extensive configuration options for adapting the processor to the requirements of the application (on CPU, processor and system level)
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
 - [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the CPU's register file)
 - [x] optimized for high clock frequencies to ease integration / timing closure
 - [x] from zero to _"hello world!"_ - completely open source and documented (on software and hardware side)
 - [x] easy to use even for digital logic / FPGA / RISC-V newcomers – intended to work _out of the box_
+
+* :recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
+* :mag: [Continuous integration](#project-status) to check for regressions (including RISC-V ISA compatibility check using RISCOF).
+* :open_file_folder: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
+[community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
+targeting various FPGA boards and toolchains to get started.
+* :package: The entire processor is also available as [Vivado IP Block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block).
+* :kite: Support for [FreeRTOS](https://github.com/stnolting/neorv32-freertos),
+[Zephyr OS](https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html),
+[MicroPython](https://github.com/stnolting/neorv32-micropython) and
+[LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC Builder Framework.
+* :desktop_computer: Pre-configured [Eclipse project](https://stnolting.github.io/neorv32/ug/#_eclipse_ide) for developing and debugging code using an IDE.
+* :label: The project's change log is available in [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
+* :rocket: Check out the [quick links below](#getting-started) and the
+[User Guide](https://stnolting.github.io/neorv32/ug/) to get started.
+* :books: For detailed information see the [online documentation](https://stnolting.github.io/neorv32/).
+* :interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
+* :clipboard: File an [issue](https://github.com/stnolting/neorv32/issues)/[discussion](https://github.com/stnolting/neorv32/discussions)/
+[PR](https://github.com/stnolting/neorv32/pulls) for questions, comments, ideas or if something isn't working as expected.
 
 ### Project Status
 
@@ -87,7 +73,7 @@ on AMD, Intel, Lattice, Microchip, Gowin and Cologne Chip FPGAs. The conversion 
 checked by the [neorv32-verilog](https://github.com/stnolting/neorv32-verilog) repository.
 
 
-## 2. Features
+## Features
 
 The NEORV32 Processor provides a full-featured microcontroller-like SoC build around the NEORV32 CPU.
 By using generics the design is highly configurable and allows a flexible customization to tailor the
@@ -197,7 +183,7 @@ data transfers and conversions
 * optional authentication module to implement custom security mechanisms
 
 
-## 3. FPGA Implementation Results
+## FPGA Implementation Results
 
 Implementation results for **exemplary CPU configurations** generated for an Intel Cyclone IV `EP4CE22F17C6` FPGA
 using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimization_, f_max from _Slow 1200mV 0C Model_).
@@ -211,7 +197,7 @@ using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimizatio
 An incremental list of CPU extensions and processor modules can be found in the [Data Sheet: FPGA Implementation Results](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
 
 
-## 4. Performance
+## Performance
 
 The NEORV32 CPU is based on a two-stages pipelined/multi-cycle architecture (fetch and execute).
 The following table shows the performance results (scores and average CPI) for exemplary CPU configurations (no caches) executing
@@ -231,7 +217,7 @@ maximum clock speed, minimal area or minimal power consumption:
 [User Guide: Application-Specific Processor Configuration](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration)
 
 
-## 5. Getting Started
+## Getting Started
 
 This overview provides some *quick links* to the most important sections of the
 [online Data Sheet](https://stnolting.github.io/neorv32) and the [online User Guide](https://stnolting.github.io/neorv32/ug).
@@ -283,18 +269,16 @@ This overview provides some *quick links* to the most important sections of the
 
 ### :copyright: Legal
 
-[![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat)](https://github.com/stnolting/neorv32/blob/main/LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg)](https://doi.org/10.5281/zenodo.5018888)
-
 * [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, limitation of liability for external links, proprietary notice, etc.
 * [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information
 
-This is an open-source project that is free of charge. Use this project in any way you like
-(as long as it complies to the permissive [license](https://github.com/stnolting/neorv32/blob/main/LICENSE)).
-Please cite it appropriately. :+1:
+[![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat)](https://github.com/stnolting/neorv32/blob/main/LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg)](https://doi.org/10.5281/zenodo.5018888)
 
+This is an open-source project that is free of charge and provided under an
+permissive [license](https://github.com/stnolting/neorv32/blob/main/LICENSE).
 
 ---------------------------------------
 
-**:heart: A big shout-out to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors) -
-this project would not be where it is without them!**
+:heart: A big shout-out to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors) -
+this project would not be where it is without them!
