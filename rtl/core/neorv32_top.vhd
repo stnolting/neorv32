@@ -367,15 +367,15 @@ begin
       severity note;
 
     -- IMEM size was not a power of two --
-    assert not ((IMEM_SIZE /= imem_size_c) and (IMEM_EN = true)) report
+    assert not ((IMEM_SIZE /= imem_size_c) and IMEM_EN) report
       "[NEORV32] Auto-adjusting invalid IMEM size configuration." severity warning;
 
     -- DMEM size was not a power of two --
-    assert not ((DMEM_SIZE /= dmem_size_c) and (DMEM_EN = true)) report
+    assert not ((DMEM_SIZE /= dmem_size_c) and DMEM_EN) report
       "[NEORV32] Auto-adjusting invalid DMEM size configuration." severity warning;
 
     -- SYSINFO disabled --
-    assert not (io_sysinfo_en_c = false) report
+    assert not (not io_sysinfo_en_c) report
       "[NEORV32] SYSINFO module disabled - some parts of the NEORV32 software framework will no longer work!" severity warning;
 
     -- Clock speed not defined --
@@ -388,12 +388,20 @@ begin
     assert not (BOOT_MODE_SELECT = 2) report "[NEORV32] BOOT_MODE_SELECT = 2: booting IMEM image" severity note;
 
     -- Boot configuration: boot from initialized IMEM requires the IMEM to be enabled --
-    assert not ((BOOT_MODE_SELECT = 2) and (IMEM_EN = false)) report
+    assert not ((BOOT_MODE_SELECT = 2) and (not IMEM_EN)) report
       "[NEORV32] ERROR: BOOT_MODE_SELECT = 2 (boot IMEM image) requires the internal instruction memory (IMEM) to be enabled!" severity error;
 
     -- The SMP dual-core configuration requires the CLINT --
-    assert not ((DUAL_CORE_EN = true) and (IO_CLINT_EN = false)) report
+    assert not (DUAL_CORE_EN and (not IO_CLINT_EN)) report
       "[NEORV32] ERROR: The SMP dual-core configuration requires the CLINT to be enabled!" severity error;
+
+    -- HART_BASE has to be even for the dual-core configuration --
+    assert not (DUAL_CORE_EN and ((HART_BASE mod 2) /= 0)) report
+      "[NEORV32] ERROR: HART_BASE has to be even for the dual-core configuration!" severity error;
+
+    -- XBUS interface might generate burst transfers --
+    assert not (XBUS_EN and (ICACHE_EN or DCACHE_EN)) report
+      "[NEORV32] WARNING: XBUS will emit burst transfers for cached addresses!" severity warning;
 
   end generate; -- /sanity_checks
 
@@ -461,7 +469,7 @@ begin
     neorv32_cpu_inst: entity neorv32.neorv32_cpu
     generic map (
       -- General --
-      HART_ID             => i+HART_BASE,
+      HART_ID             => HART_BASE + i,
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
