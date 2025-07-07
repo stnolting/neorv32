@@ -35,7 +35,7 @@ entity neorv32_libero_ip is
     OCD_EN_INT            : integer range 0 to 1           := 0;
     OCD_HW_BREAKPOINT_INT : integer range 0 to 1           := 0;
     OCD_AUTHENTICATION_INT: integer range 0 to 1           := 0;
-    OCD_JEDEC_ID          : std_logic_vector(10 downto 0)  := "00000000000";
+    OCD_JEDEC_ID_VAL      : natural range 0 to 2**11 - 1   := 0;
     -- RISC-V CPU Extensions --
     RISCV_ISA_C_INT       : integer range 0 to 1           := 0;
     RISCV_ISA_E_INT       : integer range 0 to 1           := 0;
@@ -170,6 +170,22 @@ entity neorv32_libero_ip is
     m_axi_bresp    : in  std_logic_vector(1 downto 0); -- no default here (#1067)
     m_axi_bvalid   : in  std_logic := '0';
     m_axi_bready   : out std_logic;
+	-- Unused Signals (to keep tools happy) --
+	m_axi_awid     : out std_logic := '0';
+	m_axi_awlock   : out std_logic_vector(1 downto 0) := x"0";
+	m_axi_awqos   : out std_logic_vector(3 downto 0) := x"0";
+	m_axi_awregion   : out std_logic_vector(3 downto 0) := x"0";
+	m_axi_arid   : out std_logic := '0';
+	m_axi_arlock   : out std_logic_vector(1 downto 0) := x"0";
+	m_axi_arqos   : out std_logic_vector(3 downto 0) := x"0";
+	m_axi_arregion   : out std_logic_vector(3 downto 0) := x"0";
+	m_axi_awuser   : out std_logic := '0';
+	m_axi_wuser   : out std_logic := '0';
+	m_axi_aruser   : out std_logic := '0';
+	m_axi_bid   : in  std_logic := '0';
+	m_axi_rid   : in  std_logic := '0';
+	m_axi_buser   : in  std_logic := '0';
+	m_axi_ruser   : in  std_logic := '0';
     -- ------------------------------------------------------------
     -- AXI4-Stream Interfaces (available if IO_SLINK_EN_INT = 1)
     -- ------------------------------------------------------------
@@ -308,6 +324,7 @@ architecture neorv32_libero_ip_rtl of neorv32_libero_ip is
   constant io_dma_en_c         : boolean := (IO_DMA_EN_INT = 1);
   constant io_slink_en_c       : boolean := (IO_SLINK_EN_INT = 1);
   constant BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := std_ulogic_vector(to_unsigned(BOOT_ADDR_CUSTOM_UPPER * 2**16 + BOOT_ADDR_CUSTOM_LOWER, 32));
+  constant OCD_JEDEC_ID : std_logic_vector(10 downto 0) := std_logic_vector(to_unsigned(OCD_JEDEC_ID_VAL, 11));
 
 
   -- auto-configuration --
