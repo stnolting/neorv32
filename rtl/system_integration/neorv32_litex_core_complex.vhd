@@ -35,9 +35,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_litex_core_complex is
   generic (
-    CONFIG  : natural; -- configuration select (0=minimal, 1=lite, 2=standard, 3=full)
-    DEBUG   : boolean; -- enable on-chip debugger, valid for all configurations
-    HART_ID : natural  -- the hardware thread ID for this core
+    CONFIG : natural; -- configuration select (0=minimal, 1=lite, 2=standard, 3=full)
+    DEBUG  : boolean  -- enable on-chip debugger, valid for all configurations
   );
   port (
     -- Global control --
@@ -116,7 +115,6 @@ begin
   generic map (
     -- General --
     CLOCK_FREQUENCY       => 0,                              -- clock frequency of clk_i in Hz [not required by the core complex]
-    HART_BASE             => HART_ID,
     BOOT_MODE_SELECT      => 1,
     BOOT_ADDR_CUSTOM      => x"00000000",
     -- On-Chip Debugger (OCD) --

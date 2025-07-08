@@ -280,5 +280,4 @@ permissive [license](https://github.com/stnolting/neorv32/blob/main/LICENSE).
 
 ---------------------------------------
 
-:heart: A big shout-out to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors) -
-this project would not be where it is without them!
+:heart: A big shout-out to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors)!

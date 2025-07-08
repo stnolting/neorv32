@@ -22,7 +22,6 @@ entity neorv32_top is
   generic (
     -- Processor Clocking --
     CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
-    HART_BASE             : natural                        := 0;           -- offset in HART_IDs
 
     -- Dual-Core Configuration --
     DUAL_CORE_EN          : boolean                        := false;       -- enable dual-core homogeneous SMP
@@ -395,10 +394,6 @@ begin
     assert not (DUAL_CORE_EN and (not IO_CLINT_EN)) report
       "[NEORV32] ERROR: The SMP dual-core configuration requires the CLINT to be enabled!" severity error;
 
-    -- HART_BASE has to be even for the dual-core configuration --
-    assert not (DUAL_CORE_EN and ((HART_BASE mod 2) /= 0)) report
-      "[NEORV32] ERROR: HART_BASE has to be even for the dual-core configuration!" severity error;
-
     -- XBUS interface might generate burst transfers --
     assert not (XBUS_EN and (ICACHE_EN or DCACHE_EN)) report
       "[NEORV32] WARNING: XBUS will emit burst transfers for cached addresses!" severity warning;
@@ -469,7 +464,7 @@ begin
     neorv32_cpu_inst: entity neorv32.neorv32_cpu
     generic map (
       -- General --
-      HART_ID             => HART_BASE + i,
+      HART_ID             => i,
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
