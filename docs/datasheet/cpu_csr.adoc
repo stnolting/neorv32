@@ -844,7 +844,7 @@ and are not accessible for lower-privileged software.
 | Address     | `0xf11`
 | Reset value | `0x00000000`
 | ISA         | `Zicsr`
-| Description | Hardwired to zero; read accesses are ignored.
+| Description | Read-only and hardwired to zero.
 |=======================
 
 
@@ -891,8 +891,8 @@ NEORV32 as BCD-coded number (example: `mimpid = 0x01020312` → 01.02.03.12 → 
 | Address     | `0xf14`
 | Reset value | `DEFINED`
 | ISA         | `Zicsr`
-| Description | The `mhartid` CSR is read-only and provides the core's hart ID. For a multi-core system each
-core's hart ID is unique starting at 0 for the first core.
+| Description | The `mhartid` CSR is read-only and provides the core's hart ID. In a multi-core system, the hard
+ID of each core is unique and starts at 0 and is incremented continuously.
 |=======================
 
 
