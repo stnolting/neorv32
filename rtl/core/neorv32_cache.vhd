@@ -26,7 +26,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cache is
   generic (
     NUM_BLOCKS : natural range 2 to 1024;       -- number of cache blocks (min 2), has to be a power of 2
-    BLOCK_SIZE : natural range 4 to 32768;      -- cache block size in bytes (min 4), has to be a power of 2
+    BLOCK_SIZE : natural range 8 to 32768;      -- cache block size in bytes (min 8), has to be a power of 2
     UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (page number / 4 MSBs of address)
     READ_ONLY  : boolean                        -- read-only accesses for host
   );

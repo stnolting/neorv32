@@ -261,7 +261,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `ICACHE_NUM_BLOCKS`     | natural   | 4             | Number of blocks ("lines") Has to be a power of two.
 | `DCACHE_EN`             | boolean   | false         | Implement the data cache (D$)
 | `DCACHE_NUM_BLOCKS`     | natural   | 4             | Number of blocks ("lines"). Has to be a power of two.
-| `CACHE_BLOCK_SIZE`      | natural   | 64            | Size in bytes of each block (I$ and D$). Has to be a power of two.
+| `CACHE_BLOCK_SIZE`      | natural   | 64            | Size in bytes of each block (I$ and D$). Has to be a power of two, min 8.
 4+^| **<<_processor_external_bus_interface_xbus>> (Wishbone / AXI4)**
 | `XBUS_EN`               | boolean   | false         | Implement the external bus interface.
 | `XBUS_TIMEOUT`          | natural   | 255           | Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.

@@ -85,7 +85,7 @@ entity neorv32_libero_ip is
     ICACHE_NUM_BLOCKS      : natural range 1 to 4096        := 4;
     DCACHE_EN_INT          : integer range 0 to 1           := 0;
     DCACHE_NUM_BLOCKS      : natural range 1 to 4096        := 4;
-    CACHE_BLOCK_SIZE       : natural range 4 to 1024        := 64;
+    CACHE_BLOCK_SIZE       : natural range 8 to 1024        := 64;
     -- External Bus Interface --
     XBUS_EN_INT            : integer range 0 to 1           := 1;
     XBUS_REGSTAGE_EN_INT   : integer range 0 to 1           := 1;
