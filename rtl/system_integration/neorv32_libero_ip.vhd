@@ -172,13 +172,13 @@ entity neorv32_libero_ip is
     m_axi_bready   : out std_logic;
 	-- Unused Signals (to keep tools happy) --
 	m_axi_awid     : out std_logic := '0';
-	m_axi_awlock   : out std_logic_vector(1 downto 0) := x"0";
-	m_axi_awqos   : out std_logic_vector(3 downto 0) := x"0";
-	m_axi_awregion   : out std_logic_vector(3 downto 0) := x"0";
+	m_axi_awlock   : out std_logic_vector(1 downto 0) := "00";
+	m_axi_awqos   : out std_logic_vector(1 downto 0) := "00";
+	m_axi_awregion   : out std_logic_vector(1 downto 0) := "00";
 	m_axi_arid   : out std_logic := '0';
-	m_axi_arlock   : out std_logic_vector(1 downto 0) := x"0";
-	m_axi_arqos   : out std_logic_vector(3 downto 0) := x"0";
-	m_axi_arregion   : out std_logic_vector(3 downto 0) := x"0";
+	m_axi_arlock   : out std_logic_vector(1 downto 0) := "00";
+	m_axi_arqos   : out std_logic_vector(1 downto 0) := "00";
+	m_axi_arregion   : out std_logic_vector(1 downto 0) := "00";
 	m_axi_awuser   : out std_logic := '0';
 	m_axi_wuser   : out std_logic := '0';
 	m_axi_aruser   : out std_logic := '0';
@@ -486,7 +486,7 @@ begin
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
     -- External bus interface --
     XBUS_EN             => xbus_en_c,
-    XBUS_TIMEOUT        => 0, -- AXI does not allow any timeouts
+    XBUS_TIMEOUT        => 255, -- AXI does not allow any timeouts
     XBUS_REGSTAGE_EN    => xbus_regstage_en_c,
     -- Processor peripherals --
     IO_DISABLE_SYSINFO  => false,
