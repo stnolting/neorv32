@@ -59,7 +59,7 @@ build_design_hierarchy
 create_hdl_core -file {hdl/neorv32_libero_ip.vhd} -module {neorv32_libero_ip} -library {neorv32} -package {}
 
 # Exporting BIF information of  HDL core command for module neorv32_mchp_ip_wrapper
-hdl_core_add_bif -hdl_core_name {neorv32_libero_ip} -bif_definition {AXI4:AMBA:AMBA4:master} -bif_name {MASTER} -signal_map {\
+hdl_core_add_bif -hdl_core_name {neorv32_libero_ip} -bif_definition {AXI4:AMBA:AMBA4:master} -bif_name {axi4_m} -signal_map {\
 "AWID:m_axi_awid" \
 "AWADDR:m_axi_awaddr" \
 "AWLEN:m_axi_awlen" \
@@ -105,14 +105,14 @@ hdl_core_add_bif -hdl_core_name {neorv32_libero_ip} -bif_definition {AXI4:AMBA:A
 "ARUSER:m_axi_aruser" \
 "RUSER:m_axi_ruser" }
 
-hdl_core_add_bif -hdl_core_name {neorv32_libero_ip} -bif_definition {AXI4Stream:AMBA:AMBA4:master} -bif_name {AXI4_STREAM_M} -signal_map {\
+hdl_core_add_bif -hdl_core_name {neorv32_libero_ip} -bif_definition {AXI4Stream:AMBA:AMBA4:master} -bif_name {axi4_stream_m} -signal_map {\
 "TDATA:s0_axis_tdata" \
 "TVALID:s0_axis_tvalid" \
 "TREADY:s0_axis_tready" \
 "TLAST:s0_axis_tlast" \
 "TDEST:s0_axis_tdest" }
 
-hdl_core_add_bif -hdl_core_name {neorv32_libero_ip} -bif_definition {AXI4Stream:AMBA:AMBA4:slave} -bif_name {AXI4_STREAM_S} -signal_map {\
+hdl_core_add_bif -hdl_core_name {neorv32_libero_ip} -bif_definition {AXI4Stream:AMBA:AMBA4:slave} -bif_name {axi4_stream_s} -signal_map {\
 "TVALID:s1_axis_tvalid" \
 "TREADY:s1_axis_tready" \
 "TDATA:s1_axis_tdata" \
