@@ -963,9 +963,9 @@ begin
         trap_ctrl.env_entered <= '1';
       end if;
       -- trap environment active (we are "inside a trap handler") --
-      if (trap_ctrl.env_exit = '1') and (debug_ctrl.run = '0') then -- exit from non-debug-mode trap handler
+      if (trap_ctrl.env_exit = '1') and (debug_ctrl.run = '0') then -- exit non-debug-mode trap
         trap_ctrl.env_running <= '0';
-      elsif (trap_ctrl.env_enter = '1') then
+      elsif (trap_ctrl.env_enter = '1') and (trap_ctrl.cause(5) = '0') then -- enter non-debug-mode trap
         trap_ctrl.env_running <= '1';
       end if;
     end if;
