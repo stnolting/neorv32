@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 11.07.2025 | 1.11.8.1 | :bug: fix bug in double-trap monitoring logic | [#1312](https://github.com/stnolting/neorv32/pull/1312) |
 | 10.07.2025 | [**1.11.8**](https://github.com/stnolting/neorv32/releases/tag/v1.11.8) | :rocket: **New release** | |
 | 09.07.2025 | 1.11.7.9 | :bug: fix minimal cache block size (has to be at least 8 bytes / 2 words) | [#](https://github.com/stnolting/neorv32/pull/1310) |
 | 08.07.2025 | 1.11.7.8 | :warning: remove top `HART_BASE` generic | [#1308](https://github.com/stnolting/neorv32/pull/1308) |
