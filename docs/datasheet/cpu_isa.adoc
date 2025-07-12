@@ -44,7 +44,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_zxcfu_isa_extension,`Zcfu`>>        | Custom / user-defined instructions                           | <<_processor_top_entity_generics, `RISCV_ISA_Zxcfu`>>
 | <<_smpmp_isa_extension,`Smpmp`>>       | Physical memory protection (PMP) extension                   | <<_processor_top_entity_generics, `RISCV_ISA_Smpmp`>>
 | <<_sdext_isa_extension,`Sdext`>>       | External debug support extension (on-chip debugger)          | <<_processor_top_entity_generics, `OCD_EN`>>
-| <<_sdtrig_isa_extension,`Sdtrig`>>     | Debug trigger module extension (hardware breakpoint)         | <<_processor_top_entity_generics, `OCD_HW_BREAKPOINT`>>
+| <<_sdtrig_isa_extension,`Sdtrig`>>     | Debug trigger module extension (hardware breakpoint)         | <<_processor_top_entity_generics, `OCD_NUM_HW_TRIGGERS`>>
 |=======================
 
 .RISC-V ISA Specification

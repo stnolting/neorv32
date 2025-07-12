@@ -40,7 +40,7 @@ that provides hands-on tutorials to get you started.
 include::rationale.adoc[]
 
 
-
+<<<
 // ####################################################################################################################
 :sectnums:
 === Project Key Features
@@ -121,13 +121,13 @@ The root directory of the repository is considered the NEORV32 base or home fold
 ...................................
 neorv32                    - Project home folder
 │
-├─ docs                    - Project documentation
+├─ docs                    - Documentation
 │  ├─ datasheet            - AsciiDoc sources for the NEORV32 data sheet
 │  ├─ figures              - Figures and logos
 │  ├─ references           - Data sheets and RISC-V specs
 │  └─ userguide            - AsciiDoc sources for the NEORV32 user guide
 │
-├─ rtl                     - VHDL sources
+├─ rtl                     - HDL sources
 │  ├─ core                 - Core sources of the CPU & SoC
 │  ├─ processor_templates  - Pre-configured SoC wrappers
 │  ├─ system_integration   - System wrappers and bridges for advanced connectivity
@@ -141,10 +141,10 @@ neorv32                    - Project home folder
    ├─ example              - Example programs for the core and the SoC modules
    │  ├─ eclipse           - Pre-configured Eclipse IDE project
    │  └─ ...               - Several example programs
+   ├─ image_gen            - Helper program to generate executables & memory images
    ├─ lib                  - Processor core library
    │  ├─ include           - NEORV32 core library header files (*.h)
    │  └─ source            - NEORV32 core library source files (*.c)
-   ├─ image_gen            - Helper program to generate executables & memory images
    ├─ ocd_firmware         - Firmware for the on-chip debugger "park loop"
    ├─ openocd              - OpenOCD configuration files
    └─ svd                  - Processor system view description file (CMSIS-SVD)
@@ -269,28 +269,6 @@ set file_list [string map [list "NEORV32_RTL_PATH_PLACEHOLDER" "$neorv32_home/rt
 puts "NEORV32 source files:"
 puts $file_list
 ----
-
-
-<<<
-// ####################################################################################################################
-:sectnums:
-=== VHDL Coding Style
-
-* The entire processor including the CPU core is written in platform-/technology-independent VHDL.
-The code makes minimal use of VHDL 2008 features to provide compatibility even for older EDA tools.
-* A single package / library file (`neorv32_package.vhd`) is used to provide global defines and helper
-functions. The specific user-defined configuration is done entirely by the generics of the top entity.
-* Internally, the generics are checked to ensure a correct configuration. Asserts and "sanity checks" are used
-to inform the user about the actual processor configuration and potential illegal setting.
-* The code uses _entity instation_ for all internal modules. However, if several "submodules" are specified
-within the same file _component instantiation_ is used for those.
-* When instantiating the processor top module (`neorv32_top.vhd`) in a custom design either entity instantiation or
-component instantiation can be used as the NEORV32 package file / library already provides an according component declaration.
-
-.Verilog Version
-[TIP]
-A GHDL-generated all-Verilog version of the processor is available at https://github.com/stnolting/neorv32-verilog.
-The provided setup generates a synthesizable Verilog netlist for a custom processor configuration.
 
 
 <<<
