@@ -510,6 +510,7 @@ void neorv32_aux_print_hw_config(void) {
   if (tmp & (1 << SYSINFO_SOC_IO_SLINK))   { neorv32_uart0_printf("SLINK ");      }
   if (tmp & (1 << SYSINFO_SOC_IO_SPI))     { neorv32_uart0_printf("SPI ");        }
                                              neorv32_uart0_printf("SYSINFO "); // always enabled
+  if (tmp & (1 << SYSINFO_SOC_IO_TRACER))  { neorv32_uart0_printf("TRACER ");     }
   if (tmp & (1 << SYSINFO_SOC_IO_TRNG))    { neorv32_uart0_printf("TRNG ");       }
   if (tmp & (1 << SYSINFO_SOC_IO_TWD))     { neorv32_uart0_printf("TWD ");        }
   if (tmp & (1 << SYSINFO_SOC_IO_TWI))     { neorv32_uart0_printf("TWI ");        }

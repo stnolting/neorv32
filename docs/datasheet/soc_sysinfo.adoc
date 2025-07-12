@@ -98,8 +98,8 @@ Bit fields in this register are set to all-zero if the according memory system i
 | `23`    | `SYSINFO_SOC_IO_TRNG`    | set if TRNG is implemented (via top's `IO_TRNG_EN` generic)
 | `24`    | `SYSINFO_SOC_IO_SDI`     | set if SDI is implemented (via top's `IO_SDI_EN` generic)
 | `25`    | `SYSINFO_SOC_IO_UART1`   | set if secondary UART1 is implemented (via top's `IO_UART1_EN` generic)
-| `26`    | `SYSINFO_SOC_IO_NEOLED`  | set if NEOLED is implemented (via top's `IO_NEOLED_EN` generic)
-| `27`    | -                        | _reserved_, read as zero
+| `26`    | `SYSINFO_SOC_IO_NEOLED`  | set if smart LED interface is implemented (via top's `IO_NEOLED_EN` generic)
+| `27`    | `SYSINFO_SOC_IO_TRACER`  | set if execution tracer is implemented (via top's `IO_TRACER_EN` generic)
 | `28`    | `SYSINFO_SOC_IO_GPTMR`   | set if GPTMR is implemented (via top's `IO_GPTMR_EN` generic)
 | `29`    | `SYSINFO_SOC_IO_SLINK`   | set if stream link interface is implemented (via top's `IO_SLINK_EN` generic)
 | `30`    | `SYSINFO_SOC_IO_ONEWIRE` | set if ONEWIRE interface is implemented (via top's `IO_ONEWIRE_EN` generic)
