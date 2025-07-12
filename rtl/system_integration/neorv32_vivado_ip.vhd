@@ -124,7 +124,9 @@ entity neorv32_vivado_ip is
     IO_DMA_DSC_FIFO       : natural range 4 to 512         := 4;
     IO_SLINK_EN           : boolean                        := false;
     IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;
-    IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1
+    IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;
+    IO_TRACER_EN          : boolean                        := false;
+    IO_TRACER_BUFFER      : natural range 1 to 2**15       := 1
 
   );
   port (
@@ -449,7 +451,9 @@ begin
     IO_DMA_DSC_FIFO     => IO_DMA_DSC_FIFO,
     IO_SLINK_EN         => IO_SLINK_EN,
     IO_SLINK_RX_FIFO    => IO_SLINK_RX_FIFO,
-    IO_SLINK_TX_FIFO    => IO_SLINK_TX_FIFO
+    IO_SLINK_TX_FIFO    => IO_SLINK_TX_FIFO,
+    IO_TRACER_EN        => IO_TRACER_EN,
+    IO_TRACER_BUFFER    => IO_TRACER_BUFFER
   )
   port map (
     -- Global control --
