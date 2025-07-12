@@ -55,7 +55,7 @@ extern "C" {
 #define NEORV32_PWM_BASE     (0xFFF00000U) /**< Pulse Width Modulation Controller (PWM) */
 #define NEORV32_GPTMR_BASE   (0xFFF10000U) /**< General Purpose Timer (GPTMR) */
 #define NEORV32_ONEWIRE_BASE (0xFFF20000U) /**< 1-Wire Interface Controller (ONEWIRE) */
-//#define NEORV32_???_BASE   (0xFFF30000U) /**< reserved */
+#define NEORV32_TRACER_BASE  (0xFFF30000U) /**< Execution tracer (TRACER) */
 #define NEORV32_CLINT_BASE   (0xFFF40000U) /**< Core Local Interruptor (CLINT) */
 #define NEORV32_UART0_BASE   (0xFFF50000U) /**< Primary Universal Asynchronous Receiver and Transmitter (UART0) */
 #define NEORV32_UART1_BASE   (0xFFF60000U) /**< Secondary Universal Asynchronous Receiver and Transmitter (UART1) */
@@ -72,7 +72,7 @@ extern "C" {
 
 
 /**********************************************************************//**
- * @name Fast Interrupt Requests (FIRQ) device aliases
+ * @name Fast Interrupt Requests (FIRQ) Aliases
  **************************************************************************/
 /**@{*/
 /** @name Two-Wire Device (TWD) */
@@ -98,6 +98,12 @@ extern "C" {
 #define UART1_FIRQ_ENABLE      CSR_MIE_FIRQ3E    /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
 #define UART1_FIRQ_PENDING     CSR_MIP_FIRQ3P    /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
 #define UART1_TRAP_CODE        TRAP_CODE_FIRQ_3  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+/**@}*/
+/** @name Execution Trace Buffer (TRACER) */
+/**@{*/
+#define TRACER_FIRQ_ENABLE     CSR_MIE_FIRQ5E    /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
+#define TRACER_FIRQ_PENDING    CSR_MIP_FIRQ5P    /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
+#define TRACER_TRAP_CODE       TRAP_CODE_FIRQ_5  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
 /** @name Serial Peripheral Interface (SPI) */
 /**@{*/
@@ -252,6 +258,7 @@ typedef union {
 #include "neorv32_slink.h"
 #include "neorv32_spi.h"
 #include "neorv32_sysinfo.h"
+#include "neorv32_tracer.h"
 #include "neorv32_trng.h"
 #include "neorv32_twd.h"
 #include "neorv32_twi.h"
