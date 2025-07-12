@@ -192,6 +192,12 @@ proc setup_ip_gui {} {
     { OCD_JEDEC_ID        {JEDEC ID}           {JTAG tap identification}               {$OCD_EN}}
   }
 
+  set group [add_group $page {Execution Trace Buffer (TRACER)}]
+  add_params $group {
+    { IO_TRACER_EN     {Enable tracer}      {Implement execution tracer module} }
+    { IO_TRACER_BUFFER {Trace buffer depth} {Maximum number of logged execution deltas} {$IO_TRACER_EN} {$IO_TRACER_EN ? $IO_TRACER_BUFFER : 1} }
+  }
+
 
   # **************************************************************
   # GUI Page: AXI Connectivity

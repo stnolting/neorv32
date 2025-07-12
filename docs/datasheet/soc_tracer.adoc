@@ -1,0 +1,109 @@
+<<<
+:sectnums:
+==== Execution Trace Buffer (TRACER)
+
+[cols="<3,<3,<6"]
+[grid="none"]
+|=======================
+| Hardware source files:  | neorv32_tracer.vhd |
+| Software driver files:  | neorv32_tracer.c   | link:https://stnolting.github.io/neorv32/sw/neorv32__tracer_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_tracer.h   | link:https://stnolting.github.io/neorv32/sw/neorv32__tracer_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | none               |
+| Configuration generics: | `IO_TRACER_EN`     | implement TRACER module when `true`
+|                         | `IO_TRACER_BUFFER` | trace buffer depth, has to be zero or a power of two, min 1
+| CPU interrupts:         | fast IRQ channel 5 | tracing stop-address match interrupt (see <<_processor_interrupts>>)
+|=======================
+
+
+**Overview**
+
+The NEORV32 tracer module allows to record program execution in order to find out how the CPU
+arrived at a certain code point. To keep the data rate low, so-called _instruction delta tracing_ is used:
+
+[quote, RISC-V Trace Specification, github.com/riscv-non-isa/riscv-trace-spec]
+____
+Instruction delta tracing, also known as branch tracing, works by tracking execution from a known
+start address by sending information about the deltas taken by the program. Deltas are typically
+introduced by jump, call, return and branch type instructions, although interrupts and exceptions are
+also types of deltas. Instruction delta tracing provides an efficient encoding of an instruction sequence
+by exploiting the deterministic way the processor behaves based on the program it is executing.
+____
+
+This means that only non-linear changes of the program counter are recorded. These _deltas_ are stored in a
+a local memory (the trace buffer) and can be read by the debugger (e.g. GDB). The size of this trace buffer
+is configurable via the `IO_TRACER_BUFFER` generic.
+
+The program being executed can also read the trace buffer itself (stand-alone-mode, not debugger required).
+In the dual-core configuration, for example, one CPU core can analyze the trace of the other CPU core.
+
+.TRACER Demo Program
+[TIP]
+A demo program for the tracer can be found in `sw/example/demo_tracer`.
+
+
+**Theory of Operation**
+
+The tracer module provides four memory mapped registers: the status and control register `CTRL`, a "stop-tracing"
+address register `STOP_ADDR` and two read-only registers to read trace data (`DELTA_SRC` and `DELTA_DST`).
+
+The trace module is enabled by setting the `TRACER_CTRL_EN` bit in the control register. If this bit is cleared,
+the module i enabled and the internal trace buffer is cleared. Bit `TRACER_CTRL_HSEL` selects the hart / CPU core
+that shall be traced. This bit is read-only zero for the single-core configuration.
+
+Tracing is started by writing `1` to the `TRACER_CTRL_START` control register bit. Tracing can be stopped at any
+time by manually writing `1` to the `TRACER_CTRL_START` control register bit. Software can check if tracing is
+in progress by reading the `TRACER_CTRL_RUN`. Tracing is _automatically stopped_ when program execution reaches
+the address in the `STOP_ADDR` register. Automatic trace stopping can be disabled by writing -1 to this register.
+
+During tracing, the module writes the instruction deltas to the internal buffer. The buffer is implemented as FIFO,
+so that only the last _IO_TRACER_BUFFER_ instruction deltas are kept. At least one instruction delta is available
+in the trace buffer when `TRACER_CTRL_AVAIL` is set. A single entry ("packet") of the trace buffer data can be read
+via the two registers `DELTA_SRC` and `DELTA_DST`:
+
+* `DELTA_SRC` provides the 31-bit instruction address of the branch source.
+Bit 0 is set if this branch was caused by a trap; it is cleared if this branch was caused by a jump/call/branch instruction.
+* `DELTA_DST` provides the 31-bit instruction address of the branch destination.
+Bit 0 is set if this trace packet is the very first after trace start; it is cleared for all further packets.
+
+.Trace Buffer Read Access
+[IMPORTANT]
+The trace buffer's FIFO read-pointer automatically increments when reading `DELTA_DST`,
+so make sure to read `DELTA_SRC` before `DELTA_DST`. The implementation as FIFO also
+means that the **trace data can only be read once**.
+
+
+**Tracer Interrupt**
+
+The tracer module features a single interrupt that gets triggered when the traced program reached the address
+stored in the module's `STOP_ADDR` register. The pending interrupt needs to be explicitly acknowledged/cleared
+by writing `1` to the `TRACER_CTRL_IRQ_CLR` control register bit.
+
+
+**Evaluating Trace Data from GDB**
+
+[NOTE]
+Coming soon...
+
+
+**Register Map**
+
+.TRACER register map (`struct NEORV32_TRACER`)
+[cols="<4,<2,<6,^2,<8"]
+[options="header",grid="all"]
+|=======================
+| Address | Name [C] | Bit(s), Name [C] | R/W | Function
+.9+<| `0xfff30000` .9+<| `CTRL` <| `0`    `TRACER_CTRL_EN`                            ^| r/w <| TRACER enable, reset module when 0
+                                <| `1`    `TRACER_CTRL_HSEL`                          ^| r/w <| Hart select for tracing (`0` = CPU0, `1` = CPU1)
+                                <| `2`    `TRACER_CTRL_START`                         ^| r/w <| Start tracing, flag always reads as zero
+                                <| `3`    `TRACER_CTRL_STOP`                          ^| r/w <| Manually stop tracing, flag always reads as zero
+                                <| `4`    `TRACER_CTRL_RUN`                           ^| r/- <| Tracing in progress when set
+                                <| `5`    `TRACER_CTRL_AVAIL`                         ^| r/- <| Trace data available when set
+                                <| `6`    `TRACER_CTRL_IRQ_CLR`                       ^| r/w <| Clear pending interrupt when writing `1`, flag always reads as zero
+                                <| `10:7` `TRACER_CTRL_TBM_MSB : TRACER_CTRL_TBM_LSB` ^| r/- <| `log2(IO_TRACER_BUFFER)`: trace buffer depth
+                                <| `31:11` _reserved_                                 ^| r/- <| _reserved_, hardwired to zero
+| `0xfff30004` | `STOP_ADDR` | `31:0` | r/w | Stop-tracing-address register
+.2+<| `0xfff30008` .2+<| `DELTA_SRC` <| `31:1` ^| r/- | Branch source address, set to `-1` to disable automatic stopping
+                                     <| `0`    ^| r/- | `1` = branch due trap entry (interrupt or synchronous exception); `0` = branch due to jump/call/branch instruction
+.2+<| `0xfff3000c` .2+<| `DELTA_DST` <| `31:1` ^| r/- | Branch destination address
+                                     <| `0`    ^| r/- | `1` = very first instruction delta in current trace; `0` = any further instruction delta
+|=======================

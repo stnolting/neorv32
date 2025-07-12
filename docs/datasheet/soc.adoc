@@ -41,6 +41,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ autonomous direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
 * _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream compatible
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>), optional authentication and hardware breakpoint
+* _optional_ execution trace buffer to debug program flow (<<_execution_trace_buffer_tracer,**TRACER**>>) via branch tracing
 * _optional_ system configuration information memory to determine hardware configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
 
@@ -300,6 +301,8 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_SLINK_EN`           | boolean   | false         | Implement the <<_stream_link_interface_slink>> (AXI4-Stream).
 | `IO_SLINK_RX_FIFO`      | natural   | 1             | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_SLINK_TX_FIFO`      | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
+| `IO_TRACER_EN`          | boolean   | false         | Implement the <<_execution_trace_buffer_tracer>>.
+| `IO_TRACER_BUFFER`      | natural   | 1             | Depth of the <<_execution_trace_buffer_tracer>>. Has to be a power of two, min 1, max 32768.
 |=======================
 
 
@@ -410,26 +413,26 @@ The mapping of the 16 FIRQ channels to the according processor-internal modules 
 table (the channel number also corresponds to the according FIRQ priority: 0 = highest, 15 = lowest):
 
 .NEORV32 Fast Interrupt Request (FIRQ) Mapping
-[cols="^2,<2,<6"]
+[cols="^2,^2,<6"]
 [options="header",grid="rows"]
 |=======================
-| Channel | Source | Description
-| 0       | <<_two_wire_serial_device_controller_twd,TWD>> | TWD FIFO level interrupt
-| 1       | <<_custom_functions_subsystem_cfs,CFS>> | Custom functions subsystem (CFS) interrupt (user-defined)
-| 2       | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 FIFO level interrupt
-| 3       | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 FIFO level interrupt
-| 4       | - | _reserved_
-| 5       | - | _reserved_
-| 6       | <<_serial_peripheral_interface_controller_spi,SPI>> | SPI FIFO level interrupt
-| 7       | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI FIFO level interrupt
-| 8       | <<_general_purpose_input_and_output_port_gpio,GPIO>> | GPIO input pin(s) interrupt
-| 9       | <<_smart_led_interface_neoled,NEOLED>> | NEOLED TX FIFO level interrupt
-| 10      | <<_direct_memory_access_controller_dma,DMA>> | DMA transfer done interrupt
-| 11      | <<_serial_data_interface_controller_sdi,SDI>> | SDI FIFO level interrupt
-| 12      | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
-| 13      | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire idle interrupt
-| 14      | <<_stream_link_interface_slink,SLINK>> | SLINK FIFO level interrupt
-| 15      | <<_true_random_number_generator_trng,TRNG>> | TRNG FIFO level interrupt
+| Channel / priority | Source | Description
+| 0  | <<_two_wire_serial_device_controller_twd,TWD>> | TWD FIFO level interrupt
+| 1  | <<_custom_functions_subsystem_cfs,CFS>> | Custom functions subsystem (CFS) interrupt (user-defined)
+| 2  | <<_primary_universal_asynchronous_receiver_and_transmitter_uart0,UART0>> | UART0 FIFO level interrupt
+| 3  | <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1,UART1>> | UART1 FIFO level interrupt
+| 4  | - | _reserved_
+| 5  | <<_execution_trace_buffer_tracer,TRACER>> | Tracing stop-address match interrupt
+| 6  | <<_serial_peripheral_interface_controller_spi,SPI>> | SPI FIFO level interrupt
+| 7  | <<_two_wire_serial_interface_controller_twi,TWI>> | TWI FIFO level interrupt
+| 8  | <<_general_purpose_input_and_output_port_gpio,GPIO>> | GPIO input pin(s) interrupt
+| 9  | <<_smart_led_interface_neoled,NEOLED>> | NEOLED TX FIFO level interrupt
+| 10 | <<_direct_memory_access_controller_dma,DMA>> | DMA transfer done interrupt
+| 11 | <<_serial_data_interface_controller_sdi,SDI>> | SDI FIFO level interrupt
+| 12 | <<_general_purpose_timer_gptmr,GPTMR>> | General purpose timer interrupt
+| 13 | <<_one_wire_serial_interface_controller_onewire,ONEWIRE>> | 1-wire idle interrupt
+| 14 | <<_stream_link_interface_slink,SLINK>> | SLINK FIFO level interrupt
+| 15 | <<_true_random_number_generator_trng,TRNG>> | TRNG FIFO level interrupt
 |=======================
 
 
@@ -846,5 +849,7 @@ include::soc_cfs.adoc[]
 include::soc_neoled.adoc[]
 
 include::soc_gptmr.adoc[]
+
+include::soc_tracer.adoc[]
 
 include::soc_sysinfo.adoc[]

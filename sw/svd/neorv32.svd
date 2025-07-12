@@ -1619,31 +1619,91 @@
       </registers>
     </peripheral>
 
-    <!-- HWSPINLOCK -->
+    <!-- TRACER -->
     <!-- **************************************************************** -->
     <peripheral>
-      <name>HWSPINLOCK</name>
-      <description>Hardware spinlocks</description>
+      <name>TRACER</name>
+      <description>Execution Trace Buffer</description>
       <baseAddress>0xFFF30000</baseAddress>
+
+      <interrupt><name>TRACER_FIRQ</name><value>5</value></interrupt>
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x84</size>
+        <size>0x10</size>
         <usage>registers</usage>
       </addressBlock>
 
       <registers>
         <register>
-          <name>LOCK</name>
-          <description>32 locks, one binary spinlock per word</description>
+          <name>CTRL</name>
+          <description>Control and status register</description>
           <addressOffset>0x00</addressOffset>
-          <access>read-only</access>
+          <fields>
+            <field>
+              <name>TRACER_CTRL_EN</name>
+              <bitRange>[0:0]</bitRange>
+              <description>TRACER enable, reset module when 0</description>
+            </field>
+            <field>
+              <name>TRACER_CTRL_HSEL</name>
+              <bitRange>[1:1]</bitRange>
+              <description>Hart select for tracing</description>
+            </field>
+            <field>
+              <name>TRACER_CTRL_START</name>
+              <bitRange>[2:2]</bitRange>
+              <access>write-only</access>
+              <description>Start tracing, flag always reads as zero</description>
+            </field>
+            <field>
+              <name>TRACER_CTRL_STOP</name>
+              <bitRange>[3:3]</bitRange>
+              <access>write-only</access>
+              <description>Manually stop tracing, flag always reads as zero</description>
+            </field>
+            <field>
+              <name>TRACER_CTRL_RUN</name>
+              <bitRange>[4:4]</bitRange>
+              <access>read-only</access>
+              <description>Tracing in progress when set</description>
+            </field>
+            <field>
+              <name>TRACER_CTRL_AVAIL</name>
+              <bitRange>[5:5]</bitRange>
+              <access>read-only</access>
+              <description>Trace data available when set</description>
+            </field>
+            <field>
+              <name>TRACER_CTRL_IRQ_CLR</name>
+              <bitRange>[6:6]</bitRange>
+              <access>write-only</access>
+              <description>Clear pending interrupt when writing 1</description>
+            </field>
+            <field>
+              <name>TRACER_CTRL_TBM</name>
+              <bitRange>[10:7]</bitRange>
+              <access>read-only</access>
+              <description>log2 of trace buffer depth</description>
+            </field>
+          </fields>
         </register>
         <register>
-          <name>STATUS</name>
-          <description>Status of all 32 spinlocks</description>
-          <addressOffset>0x80</addressOffset>
+          <name>STOP_ADDR</name>
+          <description>Stop tracing when reaching this address, set to all-zero to disable auto-stopping</description>
+          <addressOffset>0x04</addressOffset>
+        </register>
+        <register>
+          <name>DELTA_SRC</name>
           <access>read-only</access>
+          <description>Trace data: delta source address + trap-entry bit</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>DELTA_DST</name>
+          <access>read-only</access>
+          <description>Trace data: delta destination address + frist-packet bit</description>
+          <addressOffset>0x0C</addressOffset>
         </register>
       </registers>
     </peripheral>
@@ -1707,8 +1767,8 @@
             <field><name>SYSINFO_SOC_IO_TRNG</name><bitRange>[23:23]</bitRange><description>True random number generator implemented</description></field>
             <field><name>SYSINFO_SOC_IO_SDI</name><bitRange>[24:24]</bitRange><description>Serial data interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_UART1</name><bitRange>[25:25]</bitRange><description>Secondary universal asynchronous receiver/transmitter implemented</description></field>
-            <field><name>SYSINFO_SOC_IO_HWSPINLOCK</name><bitRange>[27:27]</bitRange><description>Hardware spinlocks module implemented</description></field>
             <field><name>SYSINFO_SOC_IO_NEOLED</name><bitRange>[26:26]</bitRange><description>NeoPixel-compatible smart LED interface implemented</description></field>
+            <field><name>SYSINFO_SOC_IO_TRACER</name><bitRange>[27:27]</bitRange><description>Execution tracer implemented</description></field>
             <field><name>SYSINFO_SOC_IO_GPTMR</name><bitRange>[28:28]</bitRange><description>General purpose timer implemented</description></field>
             <field><name>SYSINFO_SOC_IO_SLINK</name><bitRange>[29:29]</bitRange><description>Stream link interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_ONEWIRE</name><bitRange>[30:30]</bitRange><description>1-wire interface controller implemented</description></field>

@@ -72,6 +72,8 @@ entity neorv32_cpu is
     -- global control --
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
+    -- trace port --
+    trace_o    : out trace_port_t;
     -- interrupts --
     msi_i      : in  std_ulogic; -- risc-v machine software interrupt
     mei_i      : in  std_ulogic; -- risc-v machine external interrupt
@@ -456,6 +458,17 @@ begin
     xcsr_pmp  <= (others => '0');
     pmp_fault <= '0';
   end generate;
+
+
+  -- Trace Port -----------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  trace_o.valid <= ctrl.cnt_event(cnt_event_ir_c);
+  trace_o.pc    <= ctrl.pc_cur(XLEN-1 downto 1) & '0';
+  trace_o.inst  <= ctrl.ir_funct12 & ctrl.rf_rs1 & ctrl.ir_funct3 & ctrl.rf_rd & ctrl.ir_opcode;
+  trace_o.rvc   <= ctrl.cnt_event(cnt_event_compr_c);
+  trace_o.mode  <= ctrl.cpu_debug & ctrl.cpu_priv;
+  trace_o.delta <= ctrl.cnt_event(cnt_event_branched_c);
+  trace_o.trap  <= ctrl.cpu_trap;
 
 
 end neorv32_cpu_rtl;

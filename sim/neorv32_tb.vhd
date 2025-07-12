@@ -216,7 +216,9 @@ begin
     IO_DMA_DSC_FIFO     => 8,
     IO_SLINK_EN         => true,
     IO_SLINK_RX_FIFO    => 4,
-    IO_SLINK_TX_FIFO    => 4
+    IO_SLINK_TX_FIFO    => 4,
+    IO_TRACER_EN        => true,
+    IO_TRACER_BUFFER    => 32
   )
   port map (
     -- Global control --

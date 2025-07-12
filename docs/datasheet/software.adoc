@@ -84,6 +84,7 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_smp.c`     | `neorv32_smp.h`        | HAL for the SMP <<_dual_core_configuration>>
 | `neorv32_spi.c`     | `neorv32_spi.h`        | <<_serial_peripheral_interface_controller_spi>> HAL
 |                     | `neorv32_sysinfo.h`    | <<_system_configuration_information_memory_sysinfo>> HAL
+| `neorv32_tracer.c`  | `neorv32_tracer.h`     | <<_execution_trace_buffer_tracer>> HAL
 | `neorv32_trng.c`    | `neorv32_trng.h`       | <<_true_random_number_generator_trng>> HAL
 | `neorv32_twd.c`     | `neorv32_twd.h`        | <<_two_wire_serial_device_controller_twd>> HAL
 | `neorv32_twi.c`     | `neorv32_twi.h`        | <<_two_wire_serial_interface_controller_twi>> HAL
