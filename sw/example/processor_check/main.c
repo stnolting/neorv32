@@ -68,6 +68,8 @@ void test_ok(void);
 void test_fail(void);
 int  core1_main(void);
 void goto_user_mode(void);
+void trace_test_1(void);
+void trace_test_2(void);
 
 // trap value that will be NEVER set by the hardware
 const uint32_t trap_never_c = 0x80000000U;
@@ -1272,10 +1274,46 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 5 (reserved)
+  // Fast interrupt channel 5 (TRACER)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ5 (reserved) ", cnt_test);
-  PRINT_STANDARD("[n.a.]\n");
+  PRINT_STANDARD("[%i] FIRQ5 (TRACER) ", cnt_test);
+
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRACER)) {
+    trap_cause = trap_never_c;
+    cnt_test++;
+
+    // setup tracer for hart 0
+    neorv32_tracer_enable(0, (uint32_t)&trace_test_2);
+    neorv32_cpu_csr_write(CSR_MIE, 1 << TRACER_FIRQ_ENABLE);
+
+    // start tracing
+    neorv32_tracer_start();
+    trace_test_1();
+
+    // clear tracer interrupt
+    neorv32_tracer_irq_ack();
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    // discard first instruction delta (calling "trace_test_1()")
+    tmp_a = neorv32_tracer_data_get_src();
+    tmp_a = neorv32_tracer_data_get_dst();
+    // get second instruction delta (calling "trace_test_2()" from "trace_test_1()")
+    tmp_b = neorv32_tracer_data_get_src();
+    tmp_b = neorv32_tracer_data_get_dst();
+
+    if ((trap_cause == TRACER_TRAP_CODE) && // correct trap code (tracer interrupt)
+        (neorv32_tracer_run() == 0) && // trace has auto-stopped
+        (tmp_b == (uint32_t)&trace_test_2) && // tracing has stopped at the correct point
+        (tmp_a & 1)) { // first packet was the first packet of tracing
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------
@@ -2454,4 +2492,24 @@ void __attribute__((naked,noinline)) goto_user_mode(void) {
     "csrs mstatus, ra  \n" // set MPIE if MIE is set
     "mret              \n" // return and switch to user mode
   );
+}
+
+
+/**********************************************************************//**
+ * Test code for tracer, part 1, no-inline to have actual branches when calling
+ **************************************************************************/
+void __attribute__((noinline)) trace_test_1(void) {
+
+  asm volatile ("nop");
+  trace_test_2();
+  asm volatile ("nop");
+}
+
+
+/**********************************************************************//**
+ * Test code for tracer, part 2, no-inline to have actual branches when calling
+ **************************************************************************/
+void __attribute__((noinline)) trace_test_2(void) {
+
+  asm volatile ("nop");
 }
