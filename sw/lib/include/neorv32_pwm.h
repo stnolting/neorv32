@@ -24,14 +24,14 @@
 /**@{*/
 /** PWM module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-  uint32_t CHANNEL_CFG[16]; /**< offset 0..64: channel configuration 0..15 (#CHANNEL_CFG_enum) */
+  uint32_t CHANNEL_CFG[16]; /**< offset 0..64: channel configuration 0..15 (#NEORV32_PWM_CHANNEL_CFG_enum) */
 } neorv32_pwm_t;
 
 /** PWM module hardware handle (#neorv32_pwm_t) */
 #define NEORV32_PWM ((neorv32_pwm_t*) (NEORV32_PWM_BASE))
 
 /** PWM channel configuration bits */
-enum CHANNEL_CFG_enum {
+enum NEORV32_PWM_CHANNEL_CFG_enum {
   PWM_CFG_DUTY_LSB =  0, /**< PWM configuration register(0)  (r/w): Duty cycle (8-bit), LSB */
   PWM_CFG_DUTY_MSB =  7, /**< PWM configuration register(7)  (r/w): Duty cycle (8-bit), MSB */
   PWM_CFG_CDIV_LSB =  8, /**< PWM configuration register(8)  (r/w): Clock divider (10-bit), LSB */
