@@ -26,6 +26,3 @@ NEORV32_HOME ?= ../../..
 
 # Include the main NEORV32 makefile
 include $(NEORV32_HOME)/sw/common/common.mk
-
-sim-check: sim
-	cat $(NEORV32_HOME)/sim/neorv32.uart0_sim_mode.out | grep "Hello world! :)"
