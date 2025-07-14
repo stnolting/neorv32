@@ -44,9 +44,6 @@ end neorv32_uart;
 
 architecture neorv32_uart_rtl of neorv32_uart is
 
-  -- simulation mode? --
-  constant sim_mode_en_c : boolean := SIM_MODE_EN and is_simulation_c;
-
   -- control register bits --
   constant ctrl_en_c            : natural :=  0; -- r/w: UART enable
   constant ctrl_sim_en_c        : natural :=  1; -- r/w: simulation-mode enable
@@ -176,7 +173,7 @@ begin
         if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(2) = '0') then -- control register
             ctrl.enable        <= bus_req_i.data(ctrl_en_c);
-            ctrl.sim_mode      <= bus_req_i.data(ctrl_sim_en_c) and bool_to_ulogic_f(sim_mode_en_c);
+            ctrl.sim_mode      <= bus_req_i.data(ctrl_sim_en_c) and bool_to_ulogic_f(SIM_MODE_EN);
             ctrl.hwfc_en       <= bus_req_i.data(ctrl_hwfc_en_c);
             ctrl.prsc          <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
             ctrl.baud          <= bus_req_i.data(ctrl_baud9_c downto ctrl_baud0_c);
@@ -192,7 +189,7 @@ begin
         else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
-            bus_rsp_o.data(ctrl_sim_en_c)                    <= ctrl.sim_mode and bool_to_ulogic_f(sim_mode_en_c);
+            bus_rsp_o.data(ctrl_sim_en_c)                    <= ctrl.sim_mode and bool_to_ulogic_f(SIM_MODE_EN);
             bus_rsp_o.data(ctrl_hwfc_en_c)                   <= ctrl.hwfc_en;
             bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
             bus_rsp_o.data(ctrl_baud9_c downto ctrl_baud0_c) <= ctrl.baud;
@@ -478,7 +475,7 @@ begin
 -- pragma translate_off
 -- RTL_SYNTHESIS OFF
   simulation_transmitter:
-  if sim_mode_en_c generate -- for simulation only!
+  if SIM_MODE_EN generate -- for simulation only!
     sim_tx: process(clk_i)
       file file_out          : text open write_mode is SIM_LOG_FILE;
       variable char_v        : integer;
