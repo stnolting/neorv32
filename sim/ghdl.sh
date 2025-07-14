@@ -5,14 +5,6 @@ set -e
 cd $(dirname "$0")
 GHDL="${GHDL:-ghdl}"
 
-# Prepare UART SIM_MODE output files
-touch neorv32.uart0_sim_mode.out neorv32.uart1_sim_mode.out
-chmod 777 neorv32.uart0_sim_mode.out neorv32.uart1_sim_mode.out
-
-# Prepare testbench UART log files
-touch neorv32_tb.uart0_rx.out neorv32_tb.uart1_rx.out
-chmod 777 neorv32_tb.uart0_rx.out neorv32_tb.uart1_rx.out
-
 # GHDL build directory
 mkdir -p build
 

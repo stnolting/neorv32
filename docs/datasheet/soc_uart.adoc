@@ -105,7 +105,7 @@ unconnected. If the CTS handshake is not required it has to be tied to zero.
 The UART provides a _simulation-only_ mode to dump console data as well as raw data directly to a file. When the simulation
 mode is enabled (by setting the `UART_CTRL_SIM_MODE` bit) there will be **no** physical transaction on the `uart0_txd_o` signal.
 Instead, all data written to the `DATA` register is immediately dumped to a file. Data written to `DATA[7:0]` will be dumped as
-ASCII chars to a file named `neorv32.uart0_sim_mode.out`. Additionally, the ASCII data is printed to the simulator console.
+ASCII chars to a file named `neorv32.uart0_sim_mode.log`. Additionally, the ASCII data is printed to the simulator console.
 
 Both file are created in the simulation's home folder.
 
@@ -179,7 +179,7 @@ as for the primary UART. The RX and TX interrupts of UART1 are mapped to differe
 **Simulation Mode**
 
 The secondary UART (UART1) provides the same simulation options as the primary UART (UART0). However, output data is
-written to UART1-specific file `neorv32.uart1_sim_mode.out`. This data is also printed to the simulator console.
+written to UART1-specific file `neorv32.uart1_sim_mode.log`. This data is also printed to the simulator console.
 
 
 **Register Map**
