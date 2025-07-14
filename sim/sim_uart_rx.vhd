@@ -52,7 +52,7 @@ begin
     if rising_edge(clk) then
       -- synchronizer --
       sync <= sync(3 downto 0) & rxd;
-      -- arbiter --
+      -- start trigger --
       if (busy = '0') then -- idle
         busy    <= '0';
         baudcnt <= round(0.5 * baud_val_c);
@@ -60,39 +60,32 @@ begin
         if (sync(4 downto 1) = "1100") then -- start bit (falling edge)
           busy <= '1';
         end if;
-      else -- receiving
-
-        if (baudcnt <= 0.0) then
-          if (bitcnt = 1) then
-            baudcnt <= round(0.5 * baud_val_c);
-          else
-            baudcnt <= round(baud_val_c);
-          end if;
-
-          if (bitcnt = 0) then
-            busy <= '0'; -- done
-            char_v := to_integer(unsigned(sreg(8 downto 1)));
-
-            if (char_v < 32) or (char_v > 32+95) then -- non-printable character?
-              report NAME & ": (" & integer'image(char_v) & ")";
-            else
-              report NAME & ": " & character'val(char_v);
-            end if;
-
-            if (char_v = 10) then -- LF line break
-              writeline(file_out, l);
-            elsif (char_v /= 13) then -- no additional CR
-              write(line_v, character'val(char_v));
-            end if;
-
-          else
-            sreg   <= sync(4) & sreg(8 downto 1);
-            bitcnt <= bitcnt - 1;
-          end if;
-
+      -- receiving --
+      elsif (baudcnt <= 0.0) then
+        if (bitcnt = 1) then
+          baudcnt <= round(0.5 * baud_val_c);
         else
-          baudcnt <= baudcnt - 1.0;
+          baudcnt <= round(baud_val_c);
         end if;
+        if (bitcnt = 0) then
+          busy <= '0'; -- done
+          char_v := to_integer(unsigned(sreg(8 downto 1)));
+          if (char_v < 32) or (char_v > 32+95) then -- non-printable character?
+            report NAME & ": (" & integer'image(char_v) & ")";
+          else
+            report NAME & ": " & character'val(char_v);
+          end if;
+          if (char_v = 10) then -- LF line break
+            writeline(file_out, line_v);
+          elsif (char_v /= 13) then -- no additional CR
+            write(line_v, character'val(char_v));
+          end if;
+        else
+          sreg   <= sync(4) & sreg(8 downto 1);
+          bitcnt <= bitcnt - 1;
+        end if;
+      else
+        baudcnt <= baudcnt - 1.0;
       end if;
     end if;
   end process sim_receiver;
