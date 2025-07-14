@@ -136,6 +136,11 @@ For example, with semihosting you can
 [TIP]
 A simple semihosting example program can be found in `sw/example/demo_semihosting`.
 
+.RISC-V Semihosting Specification
+[NOTE]
+A copy of the implemented RISC-V semihosting specification is available in the
+documentation references folder: `docs/references/riscv-semihosting.pdf`
+
 The RISC-V semihosting builds upon the ARM standard. Hence, semihosting has to be **explicitly enabled** on the host
 side (in `GDB`) using the ARM command set:
 
