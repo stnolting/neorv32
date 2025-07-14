@@ -12,7 +12,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
+
+-- pragma translate_off
+-- RTL_SYNTHESIS OFF
 use std.textio.all;
+-- RTL_SYNTHESIS ON
+-- pragma translate_on
 
 entity sim_uart_rx is
   generic (
@@ -34,13 +39,15 @@ architecture sim_uart_rx_rtl of sim_uart_rx is
   signal baudcnt : real;
   signal bitcnt : integer;
   constant baud_val_c : real := FCLK / BAUD;
-  file file_out : text open write_mode is NAME & "_rx.log";
 
 begin
 
+-- pragma translate_off
+-- RTL_SYNTHESIS OFF
   sim_receiver: process(clk)
-    variable c : integer;
-    variable l : line;
+    file file_out   : text open write_mode is NAME & ".log";
+    variable char_v : integer;
+    variable line_v : line;
   begin
     if rising_edge(clk) then
       -- synchronizer --
@@ -64,18 +71,18 @@ begin
 
           if (bitcnt = 0) then
             busy <= '0'; -- done
-            c := to_integer(unsigned(sreg(8 downto 1)));
+            char_v := to_integer(unsigned(sreg(8 downto 1)));
 
-            if (c < 32) or (c > 32+95) then -- non-printable character?
-              report NAME & ".rx: (" & integer'image(c) & ")";
+            if (char_v < 32) or (char_v > 32+95) then -- non-printable character?
+              report NAME & ": (" & integer'image(char_v) & ")";
             else
-              report NAME & ".rx: " & character'val(c);
+              report NAME & ": " & character'val(char_v);
             end if;
 
-            if (c = 10) then -- LF line break
+            if (char_v = 10) then -- LF line break
               writeline(file_out, l);
-            elsif (c /= 13) then -- no additional CR
-              write(l, character'val(c));
+            elsif (char_v /= 13) then -- no additional CR
+              write(line_v, character'val(char_v));
             end if;
 
           else
@@ -89,5 +96,7 @@ begin
       end if;
     end if;
   end process sim_receiver;
+-- RTL_SYNTHESIS ON
+-- pragma translate_on
 
 end architecture sim_uart_rx_rtl;
