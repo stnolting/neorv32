@@ -38,8 +38,8 @@ Basically, these configuration generics represent most of the processor's **top 
 .UART output during simulation
 [IMPORTANT]
 Data written to the NEORV32 UART0 / UART1 transmitter is send to a virtual UART receiver implemented as part of the default
-testbench. The received chars are send to the simulator console and are also stored to a log file (`neorv32_tb.uart0_rx.out`
-for UART0, `neorv32_tb.uart1_rx.out` for UART1) inside the simulator's home folder. **Please note that printing via the
+testbench. The received chars are send to the simulator console and are also stored to a log file (`tb.uart0_rx.log`
+for UART0, `tb.uart1_rx.log` for UART1) inside the simulator's home folder. **Please note that printing via the
 native UART receiver takes a lot of time.** For faster simulation console output see section <<_faster_simulation_console_output>>.
 
 
@@ -53,8 +53,8 @@ section https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_rec
 ASCII data sent to UART0 / UART1 will be immediately printed to the simulator console and logged to files in the
 simulator's home directory.
 
-* `neorv32.uart0_sim_mode.out`: ASCII data send via UART0
-* `neorv32.uart1_sim_mode.out`: ASCII data send via UART1
+* `neorv32.uart0_sim_mode.log`: ASCII data send via UART0
+* `neorv32.uart1_sim_mode.log`: ASCII data send via UART1
 
 .Automatic Simulation Mode
 [TIP]
