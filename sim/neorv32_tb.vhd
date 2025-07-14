@@ -377,7 +377,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   sim_rx_uart0: entity work.sim_uart_rx
   generic map (
-    NAME => "uart0",
+    NAME => "tb.uart0",
     FCLK => real(CLOCK_FREQUENCY),
     BAUD => real(19200)
   )
@@ -388,7 +388,7 @@ begin
 
   sim_rx_uart1: entity work.sim_uart_rx
   generic map (
-    NAME => "uart1",
+    NAME => "tb.uart1",
     FCLK => real(CLOCK_FREQUENCY),
     BAUD => real(19200)
   )

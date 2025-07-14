@@ -1,9 +1,9 @@
 -- ================================================================================ --
--- NEORV32 - Simulation UART Receiver (print to simulator console)                  --
+-- NEORV32 - Simulation UART Receiver (print to simulator console and log to file)  --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -16,7 +16,7 @@ use std.textio.all;
 
 entity sim_uart_rx is
   generic (
-    NAME : string; -- receiver name (for log file)
+    NAME : string; -- receiver name
     FCLK : real; -- clock speed of clk_i in Hz
     BAUD : real -- baud rate
   );
@@ -32,9 +32,9 @@ architecture sim_uart_rx_rtl of sim_uart_rx is
   signal busy : std_ulogic := '0';
   signal sreg : std_ulogic_vector(8 downto 0) := (others => '0');
   signal baudcnt : real;
-  signal bitcnt  : natural;
+  signal bitcnt : integer;
   constant baud_val_c : real := FCLK / BAUD;
-  file file_out : text open write_mode is "neorv32_tb." & NAME & "_rx.out";
+  file file_out : text open write_mode is NAME & "_rx.log";
 
 begin
 
