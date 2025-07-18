@@ -55,6 +55,11 @@ time by manually writing `1` to the `TRACER_CTRL_START` control register bit. So
 in progress by reading the `TRACER_CTRL_RUN`. Tracing is _automatically stopped_ when program execution reaches
 the address in the `STOP_ADDR` register. Automatic trace stopping can be disabled by writing -1 to this register.
 
+.Halt Tracing during Debug-Mode
+[NOTE]
+Whenever the CPU enters debug mode, either by a halt request from the debugger or by a (hard-coded) breakpoint or
+watchpoint, tracing is paused until the CPU resumes normal operation.
+
 During tracing, the module writes the instruction deltas to the internal buffer. The buffer is implemented as FIFO,
 so that only the last _IO_TRACER_BUFFER_ instruction deltas are kept. At least one instruction delta is available
 in the trace buffer when `TRACER_CTRL_AVAIL` is set. A single entry ("packet") of the trace buffer data can be read
@@ -81,8 +86,43 @@ by writing `1` to the `TRACER_CTRL_IRQ_CLR` control register bit.
 
 **Evaluating Trace Data from GDB**
 
-[NOTE]
-Coming soon...
+Two simple functions for handling the tracer are implemented as GDB script. The script is located in the tracer
+example program and can be imported into GDB using the `source` command:
+
+.Importing the Tracer GDB Script
+[source, gdb]
+----
+(gdb) source path/to/neorv32/sw/example/demo_tracer/neorv32_tracer.gdb
+----
+
+After sourcing, two additional commands are available that can be executed from the GDB command line:
+
+* `tracer_get`: read-out the data from the trace buffer and print the execution history
+* `tracer_start arg`: restart the tracer; the CPU ID has to be provided as argument (`arg`, 0 or 1)
+
+Using the tracer from GDB is briefly illustrated in the following example:
+
+.Using the Tracer from GDB (GDB started in `neorv32/sw/example/demo_tracer`)
+[source, gdb]
+----
+(gdb) make clean elf <1>
+...
+(gdb) load <2>
+...
+(gdb) c <3>
+...
+(gdb) source neorv32_tracer.gdb <4>
+(gdb) tracer_get <5>
+[0] SRC: 0x3b0 -> DST: 0x2cc <TRACE_START>
+Line 128 of "main.c" starts at address 0x3b0 <main+212> and ends at 0x3b4 <main+216>.
+Line 68 of "main.c" starts at address 0x2cc <test_code> and ends at 0x2d0 <test_code+4>.
+...
+----
+<1> Compile the demo program.
+<2> Upload the compiled ELF.
+<3> Start executing. The program will stop re-entering debug-mode when reaching main's `return` statement.
+<4> Import the tracer helper functions script.
+<5> Get trace log and print.
 
 
 **Register Map**
