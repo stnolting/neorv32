@@ -1,5 +1,9 @@
 -- ================================================================================ --
--- NEORV32 CPU - Compressed Instructions Decoder (RISC-V 'C' ISA Extension)         --
+-- NEORV32 CPU - Compressed Instructions Decoder (RISC-V 'C' ISA Extensions)        --
+-- -------------------------------------------------------------------------------- --
+-- Only the non floating-point 'Zca' ISA subset is supported by default.            --
+-- The optional 'Zcb' sub-extension can emit 32-bit instructions that depend        --
+-- on the 'M'/'Zmmul' and 'B'/'Zbb' ISA extensions.                                 --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -15,9 +19,12 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_decompressor is
+  generic (
+    ZCB_EN : boolean -- enable Zcb ISA extension
+  );
   port (
     instr_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction
-    instr_o : out std_ulogic_vector(31 downto 0)  -- decompressed instruction
+    instr_o : out std_ulogic_vector(31 downto 0) -- decompressed instruction
   );
 end neorv32_cpu_decompressor;
 
@@ -95,7 +102,43 @@ begin
             decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= "01" & instr_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
             decoded(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= "01" & instr_i(ci_rs2_3_msb_c downto ci_rs2_3_lsb_c); -- x8 - x15
 
-          when others => -- "011": C.FLW, "111": C.FSW, "001": C.FLS / C.LQ, "100": reserved, "101": C.FSD / C.SQ
+          when "100" => -- reserved / Zcb
+          -- --------------------------------------------------------------------------------------
+            if ZCB_EN and (instr_i(12) = '0') then
+              decoded(instr_rs1_msb_c downto instr_rs1_lsb_c) <= "01" & instr_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c); -- x8 - x15
+              case instr_i(11 downto 10) is
+                when "00" => -- C.LBU
+                  decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_c;
+                  decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= "0000000000" & instr_i(5) & instr_i(6);
+                  decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_lbu_c;
+                  decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & instr_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c); -- x8 - x15
+                when "01" => -- C.LH[U]
+                  decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_load_c;
+                  decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= "0000000000" & instr_i(5) & '0';
+                  decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= "01" & instr_i(ci_rd_3_msb_c downto ci_rd_3_lsb_c); -- x8 - x15
+                  if (instr_i(6) = '0') then -- C.LHU
+                    decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_lhu_c;
+                  else -- C.LH
+                    decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_lh_c;
+                  end if;
+                when others => -- "10" = C.SB, "11" = C.SH
+                  decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_store_c;
+                  decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= (others => '0'); -- immediate
+                  decoded(instr_rs2_msb_c downto instr_rs2_lsb_c)       <= "01" & instr_i(ci_rs2_3_msb_c downto ci_rs2_3_lsb_c); -- x8 - x15
+                  if (instr_i(10) = '0') then -- C.SB
+                    decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= "000" & instr_i(5) & instr_i(6); -- immediate
+                    decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sb_c;
+                  else -- C.SH
+                    decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= "000" & instr_i(5) & '0'; -- immediate
+                    decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sh_c;
+                    illegal <= instr_i(6);
+                  end if;
+              end case;
+            else
+              illegal <= '1';
+            end if;
+
+          when others => -- "011": C.FLW, "111": C.FSW, "001": C.FLS / C.LQ, "101": C.FSD / C.SQ
           -- --------------------------------------------------------------------------------------
             illegal <= '1';
 
@@ -162,7 +205,7 @@ begin
             decoded(instr_rd_msb_c downto instr_rd_lsb_c)         <= instr_i(ci_rd_5_msb_c downto ci_rd_5_lsb_c);
             decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= replicate_f(instr_i(12),7) & instr_i(6 downto 2);
 
-          when others => -- 100: C.SRLI, C.SRAI, C.ANDI, C.SUB, C.XOR, C.OR, C.AND, reserved
+          when others => -- 100: C.SRLI, C.SRAI, C.ANDI, C.SUB, C.XOR, C.OR, C.AND, reserved/Zcb
           -- --------------------------------------------------------------------------------------
             decoded(instr_rd_msb_c downto instr_rd_lsb_c)   <= "01" & instr_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c);
             decoded(instr_rs1_msb_c downto instr_rs1_lsb_c) <= "01" & instr_i(ci_rs1_3_msb_c downto ci_rs1_3_lsb_c);
@@ -190,24 +233,59 @@ begin
                   when "00" => -- C.SUB
                     decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sadd_c;
                     decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0100000";
+                    illegal <= instr_i(12);
                   when "01" => -- C.XOR
                     decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_xor_c;
                     decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000000";
-                  when "10" => -- C.OR
-                    decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_or_c;
-                    decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000000";
-                  when others => -- C.AND
-                    decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_and_c;
-                    decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000000";
+                    illegal <= instr_i(12);
+                  when "10" => -- C.OR / Zcb (C.MUL)
+                    if (instr_i(12) = '0') then -- C.OR
+                      decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_or_c;
+                      decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000000";
+                    elsif ZCB_EN then -- C.MUL
+                      decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= "000";
+                      decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000001";
+                    else
+                      illegal <= '1';
+                    end if;
+                  when others => -- C.AND / Zcb
+                    if (instr_i(12) = '0') then -- C.AND
+                      decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_and_c;
+                      decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000000";
+                    elsif ZCB_EN then
+                      case instr_i(4 downto 2) is
+                        when "000" => -- C.ZEXT.B (ANDI 255)
+                          decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
+                          decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_and_c;
+                          decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= "000011111111"; -- "255"
+                        when "001" => -- C.SEXT.B
+                          decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
+                          decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= "001";
+                          decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= "011000000100";
+                        when "010" => -- C.ZEXT.H
+                          decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alu_c;
+                          decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= "100";
+                          decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= "000010000000";
+                        when "011" => -- C.SEXT.H
+                          decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
+                          decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= "001";
+                          decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= "011000000101";
+                        when "101" => -- C.NOT (XORI -1)
+                          decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
+                          decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_xor_c;
+                          decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= "111111111111"; -- "-1"
+                        when others =>
+                          illegal <= '1';
+                      end case;
+                    else
+                      illegal <= '1';
+                    end if;
                 end case;
-                if (instr_i(12) = '1') then -- reserved
-                  illegal <= '1';
-                end if;
             end case;
 
         end case;
 
-      when others => -- C2: stack-pointer-based loads and stores, control transfer instructions (or c3 which is not rvc)
+      when others => -- C2: stack-pointer-based loads and stores, control transfer instructions (or C3 which is not RVC)
         case instr_i(ci_funct3_msb_c downto ci_funct3_lsb_c) is
 
           when "000" => -- C.SLLI
@@ -296,9 +374,7 @@ begin
   end process decompressor;
 
   -- output illegal instruction in its pre-decoded 32-bit form --
-  instr_o(31 downto 2) <= decoded(31 downto 2);
-  instr_o(1) <= decoded(1) when (illegal = '0') else '0'; -- force OPCODE[1] to zero if illegal
-  instr_o(0) <= decoded(0);
+  instr_o <= decoded(31 downto 2) & (decoded(1) and (not illegal)) & decoded(0); -- force OPCODE[1] to zero if illegal
 
 
 end neorv32_cpu_decompressor_rtl;
