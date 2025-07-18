@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110804"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110805"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -815,6 +815,7 @@ package neorv32_package is
       RISCV_ISA_U           : boolean                        := false;
       RISCV_ISA_Zaamo       : boolean                        := false;
       RISCV_ISA_Zalrsc      : boolean                        := false;
+      RISCV_ISA_Zcb         : boolean                        := false;
       RISCV_ISA_Zba         : boolean                        := false;
       RISCV_ISA_Zbb         : boolean                        := false;
       RISCV_ISA_Zbkb        : boolean                        := false;
@@ -1039,7 +1040,7 @@ package body neorv32_package is
     end if;
   end function cond_sel_string_f;
 
-  -- Select minimal natural value -----------------------------------------------------------
+  -- Select maximal natural value -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function max_natural_f(a : natural; b : natural) return natural is
   begin
@@ -1050,7 +1051,7 @@ package body neorv32_package is
     end if;
   end function max_natural_f;
 
-  -- Select maximal natural value -----------------------------------------------------------
+  -- Select minimal natural value -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function min_natural_f(a : natural; b : natural) return natural is
   begin
