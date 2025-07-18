@@ -119,8 +119,8 @@ int main(void) {
 
   // enable tracer interrupt
   // the complete trace log will be printed in the according interrupt handler
-  // [note] disable this if you want to process the trace log via GDB
-#if 1
+  // [note] enable this if you want to use the tracer stand-alone without GDB
+#if 0
   neorv32_cpu_csr_set(CSR_MIE, 1 << TRACER_FIRQ_ENABLE);
 #endif
 
