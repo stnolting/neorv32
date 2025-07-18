@@ -474,6 +474,11 @@ begin
   -- -------------------------------------------------------------------------------------------
 -- pragma translate_off
 -- RTL_SYNTHESIS OFF
+
+  -- notification --
+  assert false report "[NEORV32] UART logging enabled: " & SIM_LOG_FILE severity note;
+
+  -- write to simulator console and to log file --
   simulation_transmitter:
   if SIM_MODE_EN generate -- for simulation only!
     sim_tx: process(clk_i)
@@ -501,6 +506,7 @@ begin
       end if;
     end process sim_tx;
   end generate;
+
 -- RTL_SYNTHESIS ON
 -- pragma translate_on
 
