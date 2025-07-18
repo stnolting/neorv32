@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 18.07.2025 | 1.11.8.4 | :sparkles: TRACER: write full trace log to file (simulation-only) | [#1318](https://github.com/stnolting/neorv32/pull/1318) |
 | 14.07.2025 | 1.11.8.3 | cleanup UART simulation logging | [#1314](https://github.com/stnolting/neorv32/pull/1314) |
 | 12.07.2025 | 1.11.8.2 | :sparkles: add new module: execution trace buffer (TRACER) | [#1313](https://github.com/stnolting/neorv32/pull/1313) |
 | 11.07.2025 | 1.11.8.1 | :bug: fix bug in double-trap monitoring logic | [#1312](https://github.com/stnolting/neorv32/pull/1312) |

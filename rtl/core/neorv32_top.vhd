@@ -133,7 +133,8 @@ entity neorv32_top is
     IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
     IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
     IO_TRACER_EN          : boolean                        := false;       -- implement instruction tracer
-    IO_TRACER_BUFFER      : natural range 1 to 2**15       := 1            -- trace buffer depth, has to be a power of two, min 1
+    IO_TRACER_BUFFER      : natural range 1 to 2**15       := 1;           -- trace buffer depth, has to be a power of two, min 1
+    IO_TRACER_SIMLOG_EN   : boolean                        := false        -- write full trace log to file (simulation-only)
   );
   port (
     -- Global control --
@@ -261,6 +262,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
   constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
   constant cpu_sdtrig_en_c : boolean := OCD_EN and boolean(OCD_NUM_HW_TRIGGERS > 0);
+  constant tracer_log_en_c : boolean := IO_TRACER_SIMLOG_EN and is_simulation_c;
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(IMEM_SIZE), IMEM_SIZE, 2**index_size_f(IMEM_SIZE));
@@ -1138,7 +1140,7 @@ begin
       neorv32_uart0_inst: entity neorv32.neorv32_uart
       generic map (
         SIM_MODE_EN  => is_simulation_c,
-        SIM_LOG_FILE => "neorv32.uart0_sim_mode.log",
+        SIM_LOG_FILE => "neorv32.uart0.log",
         UART_RX_FIFO => IO_UART0_RX_FIFO,
         UART_TX_FIFO => IO_UART0_TX_FIFO
       )
@@ -1172,7 +1174,7 @@ begin
       neorv32_uart1_inst: entity neorv32.neorv32_uart
       generic map (
         SIM_MODE_EN  => is_simulation_c,
-        SIM_LOG_FILE => "neorv32.uart1_sim_mode.log",
+        SIM_LOG_FILE => "neorv32.uart1.log",
         UART_RX_FIFO => IO_UART1_RX_FIFO,
         UART_TX_FIFO => IO_UART1_TX_FIFO
       )
@@ -1466,8 +1468,11 @@ begin
     if IO_TRACER_EN generate
       neorv32_tracer_inst: entity neorv32.neorv32_tracer
       generic map (
-        TRACE_DEPTH  => IO_TRACER_BUFFER,
-        DUAL_CORE_EN => DUAL_CORE_EN
+        TRACE_DEPTH   => IO_TRACER_BUFFER,
+        DUAL_CORE_EN  => DUAL_CORE_EN,
+        SIM_LOG_EN    => tracer_log_en_c,
+        SIM_LOG_FILE0 => "neorv32.tracer0.log",
+        SIM_LOG_FILE1 => "neorv32.tracer1.log"
       )
       port map (
         clk_i     => clk_i,
