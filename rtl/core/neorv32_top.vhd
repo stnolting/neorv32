@@ -282,7 +282,7 @@ architecture neorv32_top_rtl of neorv32_top is
 
   -- CPU trace interface --
   type trace_t is array (0 to num_cores_c-1) of trace_port_t;
-  signal trace : trace_t;
+  signal trace_s : trace_t;
 
   -- bus: CPU core complex --
   type core_complex_req_t is array (0 to num_cores_c-1) of bus_req_t;
@@ -522,7 +522,7 @@ begin
       clk_i      => clk_i,
       rstn_i     => rstn_sys,
       -- trace port --
-      trace_o    => trace(i),
+      trace_o    => trace_s(i),
       -- interrupts --
       msi_i      => msw_irq(i),
       mei_i      => mext_irq_i,
@@ -1472,8 +1472,8 @@ begin
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
-        trace0_i  => trace(trace'left),
-        trace1_i  => trace(trace'right),
+        trace0_i  => trace_s(trace_s'left),
+        trace1_i  => trace_s(trace_s'right),
         bus_req_i => iodev_req(IODEV_TRACER),
         bus_rsp_o => iodev_rsp(IODEV_TRACER),
         irq_o     => firq(FIRQ_TRACER)
