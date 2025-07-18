@@ -37,6 +37,7 @@ entity neorv32_cpu_control is
     RISCV_ISA_U       : boolean; -- implement user mode extension
     RISCV_ISA_Zaamo   : boolean; -- implement atomic read-modify-write extension
     RISCV_ISA_Zalrsc  : boolean; -- implement atomic reservation-set operations extension
+    RISCV_ISA_Zcb     : boolean; -- implement additional code size reduction instructions
     RISCV_ISA_Zba     : boolean; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb     : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb    : boolean; -- implement bit-manipulation instructions for cryptography
@@ -1495,7 +1496,7 @@ begin
             csr.rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);     -- Zbs: single-bit bit-manipulation
             csr.rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);   -- Zaamo: atomic memory operations
             csr.rdata(26) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc);  -- Zalrsc: reservation-set operations
-            csr.rdata(27) <= '0';                                 -- reserved
+            csr.rdata(27) <= bool_to_ulogic_f(RISCV_ISA_Zcb);     -- Zcb: additional code size reduction instructions
             -- tuning options --
             csr.rdata(28) <= bool_to_ulogic_f(CPU_RF_HW_RST_EN);  -- full hardware reset of register file
             csr.rdata(29) <= bool_to_ulogic_f(CPU_FAST_MUL_EN);   -- DSP-based multiplication (M extensions only)
