@@ -167,7 +167,7 @@ The column structure is explained here using the first line:
 . `f14020f3`: 32-bit instruction word; compressed 16-bit instructions are shown in their decompressed 32-bit format; printed as hexadecimal 32-bit value
 . `M`: Current operating mode / privilege level (`M` = machine-mode, `U` = user-mode, `D` = debug-mode); printed as single character
 
-.Instruction Execution Timer
+.Instruction Execution Time
 [TIP]
 The execution time of instruction _i_ (number of cycles required for retiring) can be calculated by
 subtracting the current time stamp _i_ from the next time stamp _i+1_.
