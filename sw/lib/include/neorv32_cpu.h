@@ -34,9 +34,10 @@ uint32_t neorv32_cpu_hpm_get_size(void);
 
 
 /**********************************************************************//**
- * Restart CPU core (jump to boot address).
+ * Restart CPU core (jump to application boot address).
  *
- * @warning This is just a "software reset" that uses the in-code reset/boot/entry address linked at compile time.
+ * @warning This is just a "software reset" that uses the in-code
+ * reset/boot/entry address linked at compile time.
  **************************************************************************/
 inline void __attribute__ ((always_inline)) neorv32_cpu_soft_restart(void) {
 

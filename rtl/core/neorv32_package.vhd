@@ -1205,7 +1205,7 @@ package body neorv32_package is
     return mem_v;
   end function mem32_init_f;
 
-  -- Print hex value ------------------------------------------------------------------------
+  -- Print hex value as string --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function print_hex_f(data : std_ulogic_vector) return string is
     variable nibb_v : natural := data'length/4;
