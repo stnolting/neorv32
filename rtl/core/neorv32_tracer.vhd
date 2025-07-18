@@ -17,8 +17,11 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_tracer is
   generic (
-    TRACE_DEPTH  : natural range 1 to 2**15; -- trace buffer depth (has to be a power of two)
-    DUAL_CORE_EN : boolean := false -- trace the dual-core configuration
+    TRACE_DEPTH   : natural range 1 to 2**15; -- trace buffer depth (has to be a power of two)
+    DUAL_CORE_EN  : boolean; -- trace the dual-core configuration
+    SIM_LOG_EN    : boolean; -- enable simulation trace logging
+    SIM_LOG_FILE0 : string;  -- trace log file CPU 0
+    SIM_LOG_FILE1 : string   -- trace log file CPU 1
   );
   port (
     clk_i     : in  std_ulogic;   -- global clock line
@@ -47,21 +50,16 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
   -- helpers --
   constant log2_tbm_c : natural := index_size_f(TRACE_DEPTH);
 
-  -- trace buffer --
-  component neorv32_tracer_buffer
-  generic (
-    TRACE_DEPTH : natural
-  );
-  port (
-    clk_i   : in  std_ulogic;
-    rstn_i  : in  std_ulogic;
-    trace_i : in  trace_port_t;
-    en_i    : in  std_ulogic;
-    run_i   : in  std_ulogic;
-    re_i    : in  std_ulogic;
-    src_o   : out std_ulogic_vector(31 downto 0);
-    dst_o   : out std_ulogic_vector(31 downto 0)
-  );
+  -- simulation trace logger --
+  component neorv32_tracer_simlog
+    generic (
+      LOG_FILE : string -- trace log file
+    );
+    port (
+      clk_i   : in std_ulogic;  -- global clock line
+      rstn_i  : in std_ulogic;  -- global reset line, low-active, async
+      trace_i : in trace_port_t -- CPU trace port
+    );
   end component;
 
   -- control registers --
@@ -94,7 +92,7 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
   -- misc --
   signal over_check : std_ulogic; -- FIFO overflow checker
   signal over_trash : std_ulogic; -- discard data from trace buffer
-  signal trace      : trace_port_t; -- trace input stream
+  signal trace_src  : trace_port_t; -- trace input stream
   signal irq_pend   : std_ulogic; -- interrupt generator
 
 begin
@@ -172,7 +170,7 @@ begin
       -- stop tracing at address --
       if (ctrl_en = '0') or (arbiter.run = '0') then
         arbiter.astop <= '0';
-      elsif (trace.valid = '1') and (trace.pc(31 downto 1) = stop_addr) then
+      elsif (trace_src.valid = '1') and (trace_src.pc(31 downto 1) = stop_addr) then
         arbiter.astop <= '1';
       end if;
 
@@ -191,12 +189,12 @@ begin
         -- ------------------------------------------------------------
           if (ctrl_en = '0') or (ctrl_stop = '1') or (arbiter.astop = '1') then
             arbiter.state <= S_OFFLINE;
-          elsif (trace.mode(1) = '0') then -- halt tracing when we are in debug-mode
-            arbiter.trap <= arbiter.trap or trace.trap;
-            if (trace.valid = '1') or (trace.trap = '1') then
-              arbiter.src(31 downto 1) <= trace.pc(31 downto 1);
+          elsif (trace_src.mode(1) = '0') then -- halt tracing when we are in debug-mode
+            arbiter.trap <= arbiter.trap or trace_src.trap;
+            if (trace_src.valid = '1') or (trace_src.trap = '1') then
+              arbiter.src(31 downto 1) <= trace_src.pc(31 downto 1);
             end if;
-            if (trace.delta = '1') then -- non-linear PC change
+            if (trace_src.delta = '1') then -- non-linear PC change
               arbiter.state <= S_GET_DST;
             end if;
           end if;
@@ -204,12 +202,12 @@ begin
         when S_GET_DST => -- get delta destination address
         -- ------------------------------------------------------------
           arbiter.src(0) <= arbiter.trap;
-          arbiter.dst    <= trace.pc(31 downto 1) & arbiter.first;
+          arbiter.dst    <= trace_src.pc(31 downto 1) & arbiter.first;
           if (ctrl_en = '0') or (ctrl_stop = '1') or (arbiter.astop = '1') then
             arbiter.state <= S_OFFLINE;
-          elsif (trace.mode(1) = '1') then -- discard this packet if we have entered debug-mode
+          elsif (trace_src.mode(1) = '1') then -- discard this packet if we have entered debug-mode
             arbiter.state <= S_GET_SRC;
-          elsif (trace.valid = '1') then -- first instruction of branch destination
+          elsif (trace_src.valid = '1') then -- first instruction of branch destination
             arbiter.push  <= '1';
             arbiter.trap  <= '0';
             arbiter.first <= '0';
@@ -227,8 +225,8 @@ begin
   -- tracing in process --
   arbiter.run <= '0' when (arbiter.state = S_OFFLINE) else '1';
 
-  -- trace select --
-  trace <= trace0_i when (ctrl_hsel = '0') or (DUAL_CORE_EN = false) else trace1_i;
+  -- trace source (CPU0 or CPU1) --
+  trace_src <= trace0_i when (ctrl_hsel = '0') or (DUAL_CORE_EN = false) else trace1_i;
 
 
   -- Interrupt Generator --------------------------------------------------------------------
@@ -304,4 +302,135 @@ begin
     end if;
   end process discard;
 
+
+  -- Simulation Trace Logging ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+-- pragma translate_off
+-- RTL_SYNTHESIS OFF
+
+  -- CPU 0 --
+  sim_trace0_enabled:
+  if SIM_LOG_EN generate
+    assert false report "[NEORV32] CPU 0 trace logging enabled: " & SIM_LOG_FILE0 severity note;
+    neorv32_tracer_simlog0_inst: neorv32_tracer_simlog
+    generic map (
+      LOG_FILE => SIM_LOG_FILE0
+    )
+    port map (
+      clk_i   => clk_i,
+      rstn_i  => rstn_i,
+      trace_i => trace0_i
+    );
+  end generate;
+
+  -- CPU 1 --
+  sim_trace1_enabled:
+  if SIM_LOG_EN and DUAL_CORE_EN generate
+    assert false report "[NEORV32] CPU 1 trace logging enabled: " & SIM_LOG_FILE1 severity note;
+    neorv32_tracer_simlog1_inst: neorv32_tracer_simlog
+    generic map (
+      LOG_FILE => SIM_LOG_FILE1
+    )
+    port map (
+      clk_i   => clk_i,
+      rstn_i  => rstn_i,
+      trace_i => trace1_i
+    );
+  end generate;
+
+-- RTL_SYNTHESIS ON
+-- pragma translate_on
+
 end neorv32_tracer_rtl;
+
+
+-- ================================================================================ --
+-- NEORV32 SoC - Simulation-Only Trace Logger                                       --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+-- pragma translate_off
+-- RTL_SYNTHESIS OFF
+use std.textio.all;
+-- RTL_SYNTHESIS ON
+-- pragma translate_on
+
+library neorv32;
+use neorv32.neorv32_package.all;
+
+entity neorv32_tracer_simlog is
+  generic (
+    LOG_FILE : string -- trace log file
+  );
+  port (
+    clk_i   : in std_ulogic;  -- global clock line
+    rstn_i  : in std_ulogic;  -- global reset line, low-active, async
+    trace_i : in trace_port_t -- CPU trace port
+  );
+end neorv32_tracer_simlog;
+
+architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
+
+  -- cycle and index counters --
+  signal cycle_q, order_q : unsigned(31 downto 0);
+
+begin
+
+-- pragma translate_off
+-- RTL_SYNTHESIS OFF
+
+  -- Write Trace to Log File (SIMULATION ONLY) ----------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  sim_trace_gen:
+  if is_simulation_c generate
+    sim_trace: process(rstn_i, clk_i)
+      file     file_v : text open write_mode is LOG_FILE;
+      variable line_v : line;
+    begin
+      if (rstn_i = '0') then
+        cycle_q <= (others => '0');
+        order_q <= (others => '0');
+      elsif rising_edge(clk_i) then
+        cycle_q <= cycle_q + 1;
+        if (trace_i.valid = '1') then
+          order_q <= order_q + 1;
+          -- index --
+          write(line_v, integer'(to_integer(order_q)));
+          write(line_v, string'(" "));
+          -- timestamp --
+          write(line_v, integer'(to_integer(cycle_q)));
+          write(line_v, string'(" "));
+          -- instruction address --
+          write(line_v, string'(print_hex_f(trace_i.pc)));
+          write(line_v, string'(" "));
+          -- instruction word --
+          write(line_v, string'(print_hex_f(trace_i.inst)));
+          write(line_v, string'(" "));
+          -- privilege level --
+          if (trace_i.mode(1) = '1') then
+            write(line_v, string'("D"));
+          elsif (trace_i.mode(0) = '1') then
+            write(line_v, string'("M"));
+          else
+            write(line_v, string'("U"));
+          end if;
+          --
+          writeline(file_v, line_v);
+        end if;
+      end if;
+    end process sim_trace;
+  end generate;
+
+-- RTL_SYNTHESIS ON
+-- pragma translate_on
+
+end neorv32_tracer_simlog_rtl;

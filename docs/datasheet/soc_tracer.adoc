@@ -5,13 +5,14 @@
 [cols="<3,<3,<6"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_tracer.vhd |
-| Software driver files:  | neorv32_tracer.c   | link:https://stnolting.github.io/neorv32/sw/neorv32__tracer_8c.html[Online software reference (Doxygen)]
-|                         | neorv32_tracer.h   | link:https://stnolting.github.io/neorv32/sw/neorv32__tracer_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | none               |
-| Configuration generics: | `IO_TRACER_EN`     | implement TRACER module when `true`
-|                         | `IO_TRACER_BUFFER` | trace buffer depth, has to be zero or a power of two, min 1
-| CPU interrupts:         | fast IRQ channel 5 | tracing stop-address match interrupt (see <<_processor_interrupts>>)
+| Hardware source files:  | neorv32_tracer.vhd    |
+| Software driver files:  | neorv32_tracer.c      | link:https://stnolting.github.io/neorv32/sw/neorv32__tracer_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_tracer.h      | link:https://stnolting.github.io/neorv32/sw/neorv32__tracer_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | none                  |
+| Configuration generics: | `IO_TRACER_EN`        | implement TRACER module when `true`
+|                         | `IO_TRACER_BUFFER`    | trace buffer depth, has to be zero or a power of two, min 1
+|                         | `IO_TRACER_SIMLOG_EN` | write full trace log to file when `true` (simulation-only)
+| CPU interrupts:         | fast IRQ channel 5    | tracing stop-address match interrupt (see <<_processor_interrupts>>)
 |=======================
 
 
@@ -124,6 +125,52 @@ Line 68 of "main.c" starts at address 0x2cc <test_code> and ends at 0x2d0 <test_
 <4> Import the tracer helper functions script.
 <5> Get trace log and print.
 
+
+**Tracer Simulation Logging**
+
+.Simulation-Only
+[IMPORTANT]
+This feature is available in simulation only.
+
+The NEORV32 tracer module can also be used to generate a complete log of all executed instructions. Simulation
+trace logging is enabled by the `IO_TRACER_SIMLOG_EN` top generic. This also requires the tracer is implemented
+(`IO_TRACER_EN` = true). However, no specific configuration of the control register `CTRL` is required. During
+simulation, all traced instructions are written to log files in the simulator's home folder:
+
+* `neorv32.tracer0.log` for CPU 0
+* `neorv32.tracer1.log` for CPU 1 (only if the <<_dual_core_configuration>> is enabled)
+
+The trace log is structured line by line where each line describes an executed instruction.
+The start of an exemplary trace log might look like this:
+
+.Exemplary cut-out from a trace log
+[source, log]
+----
+0 31 00000000 f14020f3 M
+1 34 00000004 80002217 M
+2 36 00000008 ffb20213 M
+3 38 0000000c ff027113 M
+4 40 00000010 80000197 M
+5 42 00000014 7f018193 M
+6 44 00000018 000022b7 M
+7 46 0000001c 80028293 M
+8 61 00000020 30029073 M
+9 64 00000024 00000317 M
+----
+
+The column structure is explained here using the first line:
+
+[start=1]
+. `0`: Instruction index ("order"); a linearly increasing counter that starts at zero; printed as decimal integer
+. `31`: Time stamp; a linearly increasing counter that is set to zero by the hardware reset and increments with each clock cycle; printed as decimal integer
+. `00000000`: Instruction address (program counter); printed as hexadecimal 32-bit value
+. `f14020f3`: 32-bit instruction word; compressed 16-bit instructions are shown in their decompressed 32-bit format; printed as hexadecimal 32-bit value
+. `M`: Current operating mode / privilege level (`M` = machine-mode, `U` = user-mode, `D` = debug-mode); printed as single character
+
+.Instruction Execution Timer
+[TIP]
+The execution time of instruction _i_ (number of cycles required for retiring) can be calculated by
+subtracting the current time stamp _i_ from the next time stamp _i+1_.
 
 **Register Map**
 
