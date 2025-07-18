@@ -330,6 +330,7 @@ enum NEORV32_CSR_MXISA_enum {
   CSR_MXISA_ZBS       = 24, /**< CPU mxisa CSR (24): single-bit bit-manipulation operations (r/-)*/
   CSR_MXISA_ZAAMO     = 25, /**< CPU mxisa CSR (25): atomic read-modify-write operations (r/-)*/
   CSR_MXISA_ZALRSC    = 26, /**< CPU mxisa CSR (26): atomic reservation-set operations (r/-)*/
+  CSR_MXISA_ZCB       = 27, /**< CPU mxisa CSR (27): additional code size reduction instruction (r/-)*/
   // Tuning options
   CSR_MXISA_RFHWRST   = 28, /**< CPU mxisa CSR (28): register file has full hardware reset (r/-)*/
   CSR_MXISA_FASTMUL   = 29, /**< CPU mxisa CSR (29): DSP-based multiplication (M extensions only) (r/-)*/

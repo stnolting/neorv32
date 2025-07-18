@@ -20,6 +20,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_x_isa_extension,`X`>>               | Platform-specific / NEORV32-specific extension               | Always enabled
 | <<_zaamo_isa_extension,`Zaamo`>>       | Atomic read-modify-write memory operations                   | <<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>>
 | <<_zalrsc_isa_extension,`Zalrsc`>>     | Atomic reservation-set memory operations                     | <<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>>
+| <<_zcb_isa_extension,`Zcb`>>           | Additional code size reduction instructions (build upon `C`) | <<_processor_top_entity_generics, `RISCV_ISA_Zcb`>>
 | <<_zba_isa_extension,`Zba`>>           | Shifted-add bit manipulation instructions                    | <<_processor_top_entity_generics, `RISCV_ISA_Zba`>>
 | <<_zbb_isa_extension,`Zbb`>>           | Basic bit manipulation instructions                          | <<_processor_top_entity_generics, `RISCV_ISA_Zbb`>>
 | <<_zbkb_isa_extension,`Zbkb`>>         | Scalar cryptography bit manipulation instructions            | <<_processor_top_entity_generics, `RISCV_ISA_Zbkb`>>
@@ -132,6 +133,9 @@ taken 5 + `T_inst_latency`
 | Load/store | `c.lw` `c.sw` `c.lwsp` `c.swsp`                                                                      | 4 + `T_data_latency`
 | System     | `c.break`                                                                                            | 7 + `T_inst_latency`
 |=======================
+
+Note that the NEORV32 `C` ISA extension only includes the `Zca` instructions; i.e. all instructions from `C`
+excluding the single-precision (`F`) and double-precision (`D`) floating-point instructions.
 
 
 ==== `E` ISA Extension
@@ -255,6 +259,29 @@ instructions for reservation-set operations. It is enabled by the top's
 [NOTE]
 The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
 
+
+==== `Zcb` ISA Extension
+
+This ISA extension is part of the "code size reduction" ISA extension `Zc*` and adds additional
+compressed instruction for common operation. `Zcb` requires the <<_c_isa_extension>> to be enabled.
+Some instructions may require additional ISA (sub-) extensions.
+
+.Instructions and Timing
+[cols="<2,<4,<3,<3"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Depends on ISA Ext. | Execution cycles
+| Memory     | `c.lbu` `c.lh` `c.lhu` `c.sb` `c.sh` | -              | 4 + `T_data_latency`
+| Logic      | `c.not` `c.zext.b`                   | -              | 2
+| Logic      | `c.sext.b` `c.zext.h` `c.zext.h`     | `B` or `Zbb`   | 3
+| Arithmetic | `c.mul`                              | `M` or `Zmmul` | 3 + `T_mul_latency`
+|=======================
+
+.RISC-V GCC ISA String
+[IMPORTANT]
+Technically, `Zbc` required the `Zca` extension which is `C` but excluding the floating-point operations.
+Therefore, `Zca` and `Zbc` must be contained in the ISA string so that the compiler generates `Zbc` instructions..
+Example: `MARCH=rv32imc_zca_zcb_...`
 
 ==== `Zifencei` ISA Extension
 

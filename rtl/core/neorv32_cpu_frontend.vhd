@@ -21,7 +21,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_frontend is
   generic (
-    RVC_EN : boolean -- implement compressed extension
+    RISCV_C   : boolean; -- implement C ISA extension
+    RISCV_ZCB : boolean  -- implement Zcb ISA sub-extension
   );
   port (
     -- global control --
@@ -134,7 +135,7 @@ begin
   ipb.wdata(1) <= ibus_rsp_i.err & ibus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
-  ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.pc(1) = '0') or (not RVC_EN)) else '0';
+  ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.pc(1) = '0') or (not RISCV_C)) else '0';
   ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') else '0';
 
 
@@ -175,11 +176,14 @@ begin
   -- ******************************************************************************************************************
 
   issue_enabled:
-  if RVC_EN generate
+  if RISCV_C generate
 
     -- Compressed Instructions Decoder --------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
+    generic map (
+      ZCB_EN => RISCV_ZCB
+    )
     port map (
       instr_i => cmd16,
       instr_o => cmd32
@@ -251,7 +255,7 @@ begin
 
   -- issue engine disabled --
   issue_disabled:
-  if not RVC_EN generate
+  if not RISCV_C generate
     align_q          <= '0';
     align_set        <= '0';
     align_clr        <= '0';

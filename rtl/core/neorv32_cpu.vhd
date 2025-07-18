@@ -33,6 +33,7 @@ entity neorv32_cpu is
     RISCV_ISA_U         : boolean; -- implement user mode extension
     RISCV_ISA_Zaamo     : boolean; -- implement atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc    : boolean; -- implement atomic reservation-set operations extension
+    RISCV_ISA_Zcb       : boolean; -- implement additional code size reduction instructions
     RISCV_ISA_Zba       : boolean; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean; -- implement bit-manipulation instructions for cryptography
@@ -95,6 +96,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant rf_rs3_en_c : boolean := RISCV_ISA_Zxcfu or RISCV_ISA_Zfinx; -- 3rd register file read port
   constant riscv_a_c   : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
   constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
+  constant riscv_zca_c : boolean := RISCV_ISA_C and RISCV_ISA_Zcb; -- Zcb requires "Zca" in the ISA string
   constant riscv_zkt_c : boolean := CPU_FAST_SHIFT_EN; -- Zkt: data-independent execution time for cryptographic operations
   constant riscv_zkn_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
                                     RISCV_ISA_Zkne and RISCV_ISA_Zknd and RISCV_ISA_Zknh; -- Zkn: NIST suite
@@ -142,6 +144,8 @@ begin
       cond_sel_string_f(true,             "x",         "" ) & -- always enabled
       cond_sel_string_f(RISCV_ISA_Zaamo,  "_zaamo",    "" ) &
       cond_sel_string_f(RISCV_ISA_Zalrsc, "_zalrsc",   "" ) &
+      cond_sel_string_f(riscv_zca_c,      "_zca",      "" ) & -- just an information
+      cond_sel_string_f(RISCV_ISA_Zcb,    "_zcb",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zba,    "_zba",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zbb,    "_zbb",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zbkb,   "_zbkb",     "" ) &
@@ -186,7 +190,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_frontend_inst: entity neorv32.neorv32_cpu_frontend
   generic map (
-    RVC_EN => RISCV_ISA_C -- implement compressed extension
+    RISCV_C   => RISCV_ISA_C,  -- implement C ISA extension
+    RISCV_ZCB => RISCV_ISA_Zcb -- implement Zcb ISA sub-extension
   )
   port map (
     -- global control --
@@ -219,6 +224,7 @@ begin
     RISCV_ISA_U       => RISCV_ISA_U,         -- implement user mode extension
     RISCV_ISA_Zaamo   => RISCV_ISA_Zaamo,     -- implement atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc  => RISCV_ISA_Zalrsc,    -- implement atomic reservation-set operations extension
+    RISCV_ISA_Zcb     => RISCV_ISA_Zcb,       -- implement additional code size reduction instructions
     RISCV_ISA_Zba     => RISCV_ISA_Zba,       -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb     => RISCV_ISA_Zbb,       -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb    => RISCV_ISA_Zbkb,      -- implement bit-manipulation instructions for cryptography
