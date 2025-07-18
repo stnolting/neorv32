@@ -53,8 +53,8 @@ section https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_rec
 ASCII data sent to UART0 / UART1 will be immediately printed to the simulator console and logged to files in the
 simulator's home directory.
 
-* `neorv32.uart0_sim_mode.log`: ASCII data send via UART0
-* `neorv32.uart1_sim_mode.log`: ASCII data send via UART1
+* `neorv32.uart0.log`: ASCII data send via UART0
+* `neorv32.uart1.log`: ASCII data send via UART1
 
 .Automatic Simulation Mode
 [TIP]
