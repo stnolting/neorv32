@@ -303,6 +303,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_SLINK_TX_FIFO`      | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_TRACER_EN`          | boolean   | false         | Implement the <<_execution_trace_buffer_tracer>>.
 | `IO_TRACER_BUFFER`      | natural   | 1             | Depth of the <<_execution_trace_buffer_tracer>>. Has to be a power of two, min 1, max 32768.
+| `IO_TRACER_SIMLOG_EN`   | boolean   | false         | Write full trace log to file (simulation-only).
 |=======================
 
 
