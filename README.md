@@ -45,9 +45,6 @@ targeting various FPGA boards and toolchains to get started.
 * :rocket: Check out the [quick links below](#getting-started) and the
 [User Guide](https://stnolting.github.io/neorv32/ug/) to get started.
 * :books: For detailed information see the [online documentation](https://stnolting.github.io/neorv32/).
-* :interrobang: Want to know more? Check out the [project's rationale](https://stnolting.github.io/neorv32/#_rationale).
-* :clipboard: File an [issue](https://github.com/stnolting/neorv32/issues)/[discussion](https://github.com/stnolting/neorv32/discussions)/
-[PR](https://github.com/stnolting/neorv32/pulls) for questions, comments, ideas or if something isn't working as expected.
 
 ### Project Status
 
@@ -84,7 +81,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 * [![RISCV-ARCHID](https://img.shields.io/badge/RISC--V%20Architecture%20ID-19-000000.svg?longCache=true&style=flat-square&logo=riscv&colorA=273274&colorB=fbb517)](https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
 * RISC-V 32-bit little-endian pipelined/multi-cycle modified Harvard architecture
 * Single-core or SMP dual-core configuration (including low-latency inter-core communication)
-* configurable [instruction sets and extensions](https://stnolting.github.io/neorv32/#_instruction_sets_and_extensions):
+* configurable instruction sets and extensions:
 \
 `RV32`
 [`I`](https://stnolting.github.io/neorv32/#_i_isa_extension)
@@ -132,9 +129,9 @@ for **custom RISC-V instructions**;
 
 **Memories**
 
-* processor-internal data and instruction memories ([DMEM](https://stnolting.github.io/neorv32/#_data_memory_dmem) /
-[IMEM](https://stnolting.github.io/neorv32/#_instruction_memory_imem)) &
-caches ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruction_cache_icache) and
+* processor-internal data and instruction memories ([DMEM](https://stnolting.github.io/neorv32/#_data_memory_dmem) &
+[IMEM](https://stnolting.github.io/neorv32/#_instruction_memory_imem)) and
+caches ([iCACHE](https://stnolting.github.io/neorv32/#_processor_internal_instruction_cache_icache) &
 [dCACHE](https://stnolting.github.io/neorv32/#_processor_internal_data_cache_dcache))
 * pre-installed bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with serial user interface;
 allows booting application code via UART, TWI or from external SPI flash
@@ -259,7 +256,7 @@ This overview provides some *quick links* to the most important sections of the
 * [Image Generator](https://stnolting.github.io/neorv32/#_executable_image_format) - create (FPGA) memory initialization files from your application
 * [Semihosting](https://stnolting.github.io/neorv32/#_semihosting) - access files and system services on the host computer
 
-### :rocket: [User Guide](https://stnolting.github.io/neorv32/ug/) - Let's Get It Started
+### :rocket: [User Guide](https://stnolting.github.io/neorv32/ug/) - Getting Started
 
 * [Toolchain Setup](https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup) - install and set up the RISC-V GCC toolchain
 * [General Hardware Setup](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) - set up a new NEORV32 FPGA project
