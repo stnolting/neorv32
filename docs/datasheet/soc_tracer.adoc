@@ -19,7 +19,8 @@
 **Overview**
 
 The NEORV32 tracer module allows to record program execution in order to find out how the CPU
-arrived at a certain code point. To keep the data rate low, so-called _instruction delta tracing_ is used:
+arrived at a certain code point. It is fed by the CPU's <<_execution_trace_port>>.
+In order to keep the data rate low, so-called _instruction delta tracing_ is used:
 
 [quote, RISC-V Trace Specification, github.com/riscv-non-isa/riscv-trace-spec]
 ____
@@ -44,7 +45,7 @@ A demo program for the tracer can be found in `sw/example/demo_tracer`.
 
 **Theory of Operation**
 
-The tracer module provides four memory mapped registers: the status and control register `CTRL`, a "stop-tracing"
+The tracer module provides four memory-mapped registers: the status and control register `CTRL`, a "stop-tracing"
 address register `STOP_ADDR` and two read-only registers to read trace data (`DELTA_SRC` and `DELTA_DST`).
 
 The trace module is enabled by setting the `TRACER_CTRL_EN` bit in the control register. If this bit is cleared,

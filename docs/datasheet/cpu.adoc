@@ -72,21 +72,23 @@ direction as seen from the CPU.
 [options="header", grid="rows"]
 |=======================
 | Signal | Width/Type | Dir | Description
-4+^| **Clock and reset**
-| `clk_i`      | 1           | in  | Global clock line, all registers triggering on rising edge.
-| `rstn_i`     | 1           | in  | Global reset, low-active.
+4+^| **Clock and Reset**
+| `clk_i`      | 1              | in  | Global clock line, all registers triggering on rising edge.
+| `rstn_i`     | 1              | in  | Global reset, low-active.
+4+^| **Status**
+| `trace_o`    | `trace_port_t` | out | <<_execution_trace_port>>.
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
-| `msi_i`      | 1           | in  | RISC-V machine software interrupt.
-| `mei_i`      | 1           | in  | RISC-V machine external interrupt.
-| `mti_i`      | 1           | in  | RISC-V machine timer interrupt.
-| `firq_i`     | 16          | in  | Custom fast interrupt request signals.
-| `dbi_i`      | 1           | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>).
+| `msi_i`      | 1              | in  | RISC-V machine software interrupt.
+| `mei_i`      | 1              | in  | RISC-V machine external interrupt.
+| `mti_i`      | 1              | in  | RISC-V machine timer interrupt.
+| `firq_i`     | 16             | in  | Custom fast interrupt request signals.
+| `dbi_i`      | 1              | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>).
 4+^| **Instruction <<_bus_interface>>**
-| `ibus_req_o` | `bus_req_t` | out | Instruction fetch bus request.
-| `ibus_rsp_i` | `bus_rsp_t` | in  | Instruction fetch bus response.
+| `ibus_req_o` | `bus_req_t`    | out | Instruction fetch bus request.
+| `ibus_rsp_i` | `bus_rsp_t`    | in  | Instruction fetch bus response.
 4+^| **Data <<_bus_interface>>**
-| `dbus_req_o` | `bus_req_t` | out | Data access (load/store) bus request.
-| `dbus_rsp_i` | `bus_rsp_t` | in  | Data access (load/store) bus response.
+| `dbus_req_o` | `bus_req_t`    | out | Data access (load/store) bus request.
+| `dbus_rsp_i` | `bus_rsp_t`    | in  | Data access (load/store) bus response.
 |=======================
 
 .Bus Interface Protocol
@@ -100,11 +102,10 @@ according interface types (`bus_req_t` and `bus_rsp_t`).
 :sectnums:
 === CPU Top Entity - Generics
 
-Most of the CPU configuration generics are a subset of the actual Processor configuration generics
-(see section <<_processor_top_entity_generics>>). and are not listed here. However, the CPU provides
-some _specific_ generics that are used to configure the CPU for the NEORV32 processor setup. These generics
-are assigned by the processor setup only and are not available for user defined configuration.
-The specific generics are listed below.
+Most of the CPU configuration generics are a subset of the <<_processor_top_entity_generics>> and are not
+listed here. However, the CPU provides some _specific_ generics that are used to configure the CPU for the
+NEORV32 processor setup. These generics are assigned by the processor setup only and are not available for
+user defined configuration. The specific generics are listed below.
 
 .Table Abbreviations
 [NOTE]
@@ -123,6 +124,7 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 | `RISCV_ISA_Sdext`  | boolean   | Implement RISC-V-compatible "debug" CPU operation mode required for the <<_on_chip_debugger_ocd>>.
 | `RISCV_ISA_Sdtrig` | boolean   | Implement RISC-V-compatible <<_trigger_module>>. See section <<_on_chip_debugger_ocd>>.
 | `RISCV_ISA_Smpmp`  | boolean   | Implement RISC-V-compatible physical memory protection (PMP). See section <<_smpmp_isa_extension>>.
+| `NUM_HW_TRIGGERS`  | natural   | Number of hardware triggers for the <<_trigger_module>>
 |=======================
 
 .Tuning Option Generics
@@ -230,7 +232,6 @@ See the NEORV32 Runtime Environment's <<_application_context_handling>> section 
 The CPU control unit is responsible for generating all the control signals for the different CPU modules.
 The control unit is split into a "front-end" and a "back-end".
 
-
 **Front-End**
 
 The front-end is responsible for fetching instructions in chunks of 32-bits. This can be a single aligned 32-bit instruction,
@@ -242,14 +243,36 @@ The FIFO allows the front-end to do "speculative" instruction fetches, as it kee
 all the time. This also allows to decouple front-end (instruction fetch) and back-end (instruction execution) so both modules
 can operate in parallel to increase performance. However, all potential side effects that are caused by this "speculative"
 instruction fetch are already handled by the CPU front-end ensuring a defined execution stage while preventing security
-side attacks.
-
+side-channel attacks.
 
 **Back-End**
 
 Instruction data from the instruction prefetch buffer is decompressed (if the `C` ISA extension is enabled) and sent to the
 CPU back-end for actual execution. Execution is conducted by a state-machine that controls all of the CPU modules. The back-end also
 includes the <<_control_and_status_registers_csrs>> as well as the trap controller.
+
+
+:sectnums:
+==== Execution Trace Port
+
+This output port provides all the required information to make a full trace of the CPU's instruction execution.
+It is connected to the <<_execution_trace_buffer_tracer>> module.
+
+.Trace Port Signals
+[cols="^1,^1,<6"]
+[options="header",grid="rows"]
+|=======================
+| Signal  | Width | Description
+3+^| **In-Band: Signals are valid if `valid` is set**
+| `valid` |     1 | All in-band signals are valid when set; high for one cycle
+| `pc`    |    32 | Instruction address (PC)
+| `inst`  |    32 | Instruction word; compressed instructions are shown in their decompressed 32-bit format
+| `rvc`   |     1 | Current instruction is a de-compressed instruction
+| `mode`  |     2 | Operation / privilege mode; `00` = user-mode, `01` = machine-mode, `1-` = debug-mode
+3+^| **Out-of-Band: Signals are valid without `valid` being set**
+| `delta` |     1 | Branch operation (i.e. non-linear PC change); high for one cycle
+| `trap`  |     1 | Trap entry; high until trap handler is started
+|=======================
 
 
 :sectnums:
