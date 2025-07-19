@@ -223,13 +223,26 @@ proc setup_ip_gui {} {
   # **************************************************************
   set page [add_page {ISA}]
 
-  set group [add_group $page {Base}]
+  set group [add_group $page {Embedded-Class ISA}]
   add_params $group {
-    { RISCV_ISA_C     {C - 16-bit compressed instructions}                 {} }
-    { RISCV_ISA_E     {E - Reduced register file size (16 registers only)} {} }
-    { RISCV_ISA_M     {M - Integer multiplication and division hardware}   {} }
-    { RISCV_ISA_Zmmul {Zmmul - Integer multiplication-only hardware}       {} {!$RISCV_ISA_M} {$RISCV_ISA_M ? false : $RISCV_ISA_Zmmul} }
-    { RISCV_ISA_U     {U - Less-privileged user-mode}                      {} }
+    { RISCV_ISA_E {E - Reduced register file size (16 registers only)} {} }
+  }
+
+  set group [add_group $page {Additional Privilege Mode}]
+  add_params $group {
+    { RISCV_ISA_U {U - Less-privileged user-mode} {} }
+  }
+
+  set group [add_group $page {Hardware Multiplication and Division}]
+  add_params $group {
+    { RISCV_ISA_M     {M - Integer multiplication and division hardware} {} }
+    { RISCV_ISA_Zmmul {Zmmul - Integer multiplication-only hardware}     {} {!$RISCV_ISA_M} {$RISCV_ISA_M ? false : $RISCV_ISA_Zmmul} }
+  }
+
+  set group [add_group $page {Compressed Instructions}]
+  add_params $group {
+    { RISCV_ISA_C   {C - 16-bit compressed base instructions}           {} }
+    { RISCV_ISA_Zcb {Zcb - Additional code size reduction instructions} {} {$RISCV_ISA_C} {$RISCV_ISA_C ? $RISCV_ISA_Zcb : false} }
   }
 
   set group [add_group $page {Counters and Timers}]
