@@ -525,8 +525,9 @@ begin
       -- global control --
       clk_i      => clk_i,
       rstn_i     => rstn_sys,
-      -- trace port --
+      -- status --
       trace_o    => trace_s(i),
+      sleep_o    => open,
       -- interrupts --
       msi_i      => msw_irq(i),
       mei_i      => mext_irq_i,
