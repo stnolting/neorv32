@@ -77,6 +77,7 @@ direction as seen from the CPU.
 | `rstn_i`     | 1              | in  | Global reset, low-active.
 4+^| **Status**
 | `trace_o`    | `trace_port_t` | out | <<_execution_trace_port>>.
+| `sleep_o`    | 1              | out | Set while the CPU is in <<_sleep_mode>>.
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
 | `msi_i`      | 1              | in  | RISC-V machine software interrupt.
 | `mei_i`      | 1              | in  | RISC-V machine external interrupt.

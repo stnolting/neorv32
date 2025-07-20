@@ -73,8 +73,9 @@ entity neorv32_cpu is
     -- global control --
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
-    -- trace port --
-    trace_o    : out trace_port_t;
+    -- status --
+    trace_o    : out trace_port_t; -- execution trace port
+    sleep_o    : out std_ulogic; -- CPU is in sleep mode
     -- interrupts --
     msi_i      : in  std_ulogic; -- risc-v machine software interrupt
     mei_i      : in  std_ulogic; -- risc-v machine external interrupt
@@ -286,6 +287,9 @@ begin
 
   -- control-external CSR read-back --
   xcsr_res <= xcsr_tm or xcsr_cnt or xcsr_alu or xcsr_pmp;
+
+  -- CPU is sleeping --
+  sleep_o <= not ctrl.cnt_event(cnt_event_cy_c);
 
 
   -- Hardware Trigger Module (Sdtrig) -------------------------------------------------------

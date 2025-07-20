@@ -23,7 +23,7 @@
  * for the description.
  **************************************************************************/
 /**@{*/
-enum NEORV32_SEMIHOSTING_SYS_enum {
+enum SEMIHOSTING_SYS_enum {
   SEMIHOSTING_SYS_OPEN        = 0x01, /**< open a file */
   SEMIHOSTING_SYS_CLOSE       = 0x02, /**< close a file */
   SEMIHOSTING_SYS_WRITEC      = 0x03, /**< write a character byte, pointed */
@@ -51,6 +51,28 @@ enum NEORV32_SEMIHOSTING_SYS_enum {
 
 
 /**********************************************************************//**
+ * @name Semihosting "open" modes
+ * Source: https://docs.zephyrproject.org/apidoc/latest/group__semihost.html
+ **************************************************************************/
+/**@{*/
+enum SEMIHOST_OPEN_MODE_enum {
+  SEMIHOSTING_OPEN_R       = 0,
+  SEMIHOSTING_OPEN_RB      = 1,
+  SEMIHOSTING_OPEN_R_PLUS  = 2,
+  SEMIHOSTING_OPEN_RB_PLUS = 3,
+  SEMIHOSTING_OPEN_W       = 4,
+  SEMIHOSTING_OPEN_WB      = 5,
+  SEMIHOSTING_OPEN_W_PLUS  = 6,
+  SEMIHOSTING_OPEN_WB_PLUS = 7,
+  SEMIHOSTING_OPEN_A       = 8,
+  SEMIHOSTING_OPEN_AB      = 9,
+  SEMIHOSTING_OPEN_A_PLUS  = 10,
+  SEMIHOSTING_OPEN_AB_PLUS = 11
+};
+/**@}*/
+
+
+/**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
 /**@{*/
@@ -73,7 +95,7 @@ int neorv32_semihosting_system(char *cmd);
 /**********************************************************************//**
  * Send a semihosting request to the host.
  *
- * @param[in] id Service request ID (#NEORV32_SEMIHOSTING_SYS_enum).
+ * @param[in] id Service request ID (#SEMIHOSTING_SYS_enum).
  * @param[in] arg Argument / pointer to data array.
  * @return Host return value.
  **************************************************************************/
