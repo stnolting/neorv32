@@ -59,14 +59,12 @@ int main() {
 
 
   // ------------------------------------------------------
-  // Semihosting demo
   // Print string to host's STDOUT
   // ------------------------------------------------------
   neorv32_semihosting_puts("Hello semihosting!\r\n");
 
 
   // ------------------------------------------------------
-  // Semihosting demo
   // Print host's system time (no localization)
   // ------------------------------------------------------
   date_t date;
@@ -78,7 +76,6 @@ int main() {
 
 
   // ------------------------------------------------------
-  // Semihosting demo
   // Execute a command on the host system (be careful!)
   // ----------------------------------------
   char cmd[] = "dir"; // DIR is available on Linux and Windows and should cause no harm
@@ -87,31 +84,56 @@ int main() {
 
 
   // ------------------------------------------------------
-  // Semihosting demo
   // Read file from host
   // ------------------------------------------------------
   char rdata[128];
-  char file[] = "test.data"; // set base directory: (gdb) monitor arm semihosting_basedir path/to/neorv32/sw/example/demo_semihosting
-  neorv32_uart0_printf("Opening file '%s'...\n", file);
-  int file_handle = open(file, O_RDONLY); // open file as read-only
-  if (file_handle <= 0) {
-    neorv32_uart0_printf("Opening file '%s' failed (%i)\n", file, file_handle);
+  memset(rdata, 0, sizeof(rdata));
+  char file_read[] = "test.data"; // set base directory: (gdb) monitor arm semihosting_basedir path/to/neorv32/sw/example/demo_semihosting
+
+  neorv32_uart0_printf("Opening file (read-only) '%s'...\n", file_read);
+  int handle_read = open(file_read, SEMIHOSTING_OPEN_R); // open file with mode = "read"
+  if (handle_read <= 0) {
+    neorv32_uart0_printf("Opening file '%s' failed (%i)\n", file_read, handle_read);
     neorv32_uart0_printf("Enable file-IO in GDB: (gdb) monitor arm semihosting_fileio enable\n");
     neorv32_uart0_printf("Set base director in GDB: (gdb) monitor arm semihosting_basedir path/to/neorv32/sw/example/demo_semihosting\n");
   }
   else {
-    neorv32_uart0_printf("File handle: %i\n", file_handle);
-    int read_rc = read(file_handle, rdata, 32);
+    neorv32_uart0_printf("file handle: %i\n", handle_read);
+    int read_rc = read(handle_read, rdata, 32);
     rdata[sizeof(rdata)-1] = 0; // make sure string is zero-terminated
     neorv32_uart0_printf("Data read (%u): %s\n", read_rc, rdata);
     neorv32_semihosting_puts(rdata);
-    int close_rc = close(file_handle);
-    neorv32_uart0_printf("Closing file (%i)\n", close_rc);
+    int close_rc = close(handle_read);
+    neorv32_uart0_printf("Closing file (%i)\n\n", close_rc);
   }
 
 
   // ------------------------------------------------------
-  // Semihosting demo
+  // Write file on host system
+  // ------------------------------------------------------
+  char wdata[] = "Hello from NEORV32!\r\n\0";
+  char file_write[] = "hello.txt"; // set base directory: (gdb) monitor arm semihosting_basedir path/to/neorv32/sw/example/demo_semihosting
+
+  neorv32_uart0_printf("Opening file (write-only) '%s'...\n", file_write);
+  int handle_write = open(file_write, SEMIHOSTING_OPEN_W); // open file with mode = "write" (this will also create the file if it does not exist)
+  if (handle_write <= 0) {
+    neorv32_uart0_printf("Opening file '%s' failed (%i)\n", file_write, handle_write);
+    neorv32_uart0_printf("Enable file-IO in GDB: (gdb) monitor arm semihosting_fileio enable\n");
+    neorv32_uart0_printf("Set base director in GDB: (gdb) monitor arm semihosting_basedir path/to/neorv32/sw/example/demo_semihosting\n");
+  }
+  else {
+    neorv32_uart0_printf("file handle: %i\n", handle_write);
+    neorv32_uart0_printf("Writing data: %s\n", wdata);
+    int write_rc = write(handle_write, wdata, sizeof(wdata));
+    if (write_rc != sizeof(wdata)) {
+      neorv32_uart0_printf("write failed with exit code %d\n", write_rc);
+    }
+    int close_rc = close(handle_write);
+    neorv32_uart0_printf("Closing file (%i)\n\n", close_rc);
+  }
+
+
+  // ------------------------------------------------------
   // Endless console echo loop (STDIN -> STDOUT)
   // ------------------------------------------------------
 #if 0 // demo disabled by default
