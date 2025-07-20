@@ -380,8 +380,169 @@ end neorv32_tracer_simlog;
 
 architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
 
-  -- cycle and index counters --
-  signal cycle_q, order_q : unsigned(31 downto 0);
+  -- decode instruction mnemonic --
+  function decode_mnemonic_f(inst : std_ulogic_vector(31 downto 0)) return string is
+  begin
+    case inst(instr_opcode_msb_c downto instr_opcode_lsb_c) is
+      -- ALU: register with immediate --
+      when opcode_alui_c =>
+        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          when "000"  => return "addi";
+          when "001"  =>
+            if (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000") then
+              return "slli";
+            else
+              return "ALUI?";
+            end if;
+          when "010" => return "slti";
+          when "011" => return "sltiu";
+          when "100" => return "xori";
+          when "101" =>
+            if (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000") then
+              return "srli";
+            elsif (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100000") then
+              return "srai";
+            else
+              return "ALUI?";
+            end if;
+          when "110"  => return "ori";
+          when others => return "andi";
+        end case;
+      -- ALU: register with register --
+      when opcode_alu_c =>
+        if (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000") then -- base ISA
+          case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+            when "000"  => return "add";
+            when "001"  => return "sll";
+            when "010"  => return "slt";
+            when "011"  => return "sltu";
+            when "100"  => return "xor";
+            when "101"  => return "srl";
+            when "110"  => return "or";
+            when others => return "and";
+          end case;
+        elsif (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100000") then -- base ISA
+          case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+            when "000"  => return "sub";
+            when "101"  => return "sra";
+            when others => return "ALU?";
+          end case;
+        elsif (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000111") then -- Zicond
+          case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+            when "101"  => return "czero.eqz";
+            when "111"  => return "czero.nez";
+            when others => return "CZERO?";
+          end case;
+        elsif (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then -- M/Zmmul
+          case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+            when "000"  => return "mul";
+            when "001"  => return "mulh";
+            when "010"  => return "mulhsu";
+            when "011"  => return "mulhu";
+            when "100"  => return "div";
+            when "101"  => return "divu";
+            when "110"  => return "rem";
+            when others => return "remu";
+          end case;
+        else
+          return "ALU?";
+        end if;
+      -- upper-immediates --
+      when opcode_lui_c   => return "lui";
+      when opcode_auipc_c => return "auipc";
+      -- jump-and-link --
+      when opcode_jal_c  => return "jal";
+      when opcode_jalr_c => return "jalr";
+      -- conditional branches --
+      when opcode_branch_c =>
+        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          when "000"  => return "bew";
+          when "001"  => return "bne";
+          when "100"  => return "blt";
+          when "101"  => return "bge";
+          when "110"  => return "bltu";
+          when "111"  => return "bgeu";
+          when others => return "BRANCH?";
+        end case;
+      -- memory load --
+      when opcode_load_c =>
+        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          when "000"  => return "lb";
+          when "001"  => return "lh";
+          when "010"  => return "lw";
+          when "100"  => return "lbu";
+          when "101"  => return "lhu";
+          when others => return "LOAD?";
+        end case;
+      -- memory store --
+      when opcode_store_c =>
+        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          when "000"  => return "sb";
+          when "001"  => return "sh";
+          when "010"  => return "sw";
+          when others => return "STORE?";
+        end case;
+      -- atomic memory operations --
+      when opcode_amo_c =>
+        if (inst(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then
+          case inst(instr_funct5_msb_c downto instr_funct5_lsb_c) is
+            when "00010" => return "lr.w";
+            when "00011" => return "sc.w";
+            when "00001" => return "amoswap.w ";
+            when "00000" => return "amoadd.w";
+            when "00100" => return "amoxor.w";
+            when "01100" => return "amoand.w";
+            when "01000" => return "amoor.w";
+            when "10000" => return "amomin.w";
+            when "10100" => return "amomax.w";
+            when "11000" => return "amominu.w";
+            when "11100" => return "amomaxu.w";
+            when others  => return "AMO.W?";
+          end case;
+        else
+          return "AMO?";
+        end if;
+      -- fences --
+      when opcode_fence_c =>
+        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          when "000"  => return "fence";
+          when "001"  => return "fence.i";
+          when others => return "FENCE?";
+        end case;
+      -- system / environment --
+      when opcode_system_c =>
+        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
+          when "000" =>
+            case inst(instr_imm12_msb_c downto instr_imm12_lsb_c) is
+              when x"000" => return "ecall";
+              when x"001" => return "ebreak";
+              when x"105" => return "wfi";
+              when x"302" => return "mret";
+              when x"7b2" => return "dret";
+              when others => return "ENV?";
+            end case;
+          when "001"  => return "csrrw";
+          when "010"  => return "csrrs";
+          when "011"  => return "csrrc";
+          when "101"  => return "csrrwi";
+          when "110"  => return "csrrsi";
+          when "111"  => return "csrrci";
+          when others => return "CSR?";
+        end case;
+      -- floating-point --
+      when opcode_fop_c => return "FPU?";
+      -- custom instructions --
+      when opcode_cust0_c => return "custom0";
+      when opcode_cust1_c => return "custom1";
+      when opcode_cust2_c => return "custom2";
+      when opcode_cust3_c => return "custom3";
+      -- undefined --
+      when others => return "UNKNOWN?";
+    end case;
+  end function decode_mnemonic_f;
+
+  signal trap_q : std_ulogic; -- trap entry
+  signal cycle_q, order_q : unsigned(31 downto 0); -- cycle and index counters
 
 begin
 
@@ -397,9 +558,11 @@ begin
       variable line_v : line;
     begin
       if (rstn_i = '0') then
+        trap_q  <= '0';
         cycle_q <= (others => '0');
         order_q <= (others => '0');
       elsif rising_edge(clk_i) then
+        trap_q  <= trap_q or trace_i.trap;
         cycle_q <= cycle_q + 1;
         if (trace_i.valid = '1') then
           order_q <= order_q + 1;
@@ -417,11 +580,21 @@ begin
           write(line_v, string'(" "));
           -- privilege level --
           if (trace_i.mode(1) = '1') then
-            write(line_v, string'("D"));
+            write(line_v, string'("D "));
           elsif (trace_i.mode(0) = '1') then
-            write(line_v, string'("M"));
+            write(line_v, string'("M "));
           else
-            write(line_v, string'("U"));
+            write(line_v, string'("U "));
+          end if;
+          -- decoded instruction --
+          if (trace_i.rvc = '1') then -- de-compressed instruction?
+            write(line_v, string'("c."));
+          end if;
+          write(line_v, string'(decode_mnemonic_f(trace_i.inst)));
+          -- trap entry --
+          if (trap_q = '1') then
+            trap_q <= '0';
+            write(line_v, string'(" <TRAP_ENTRY>"));
           end if;
           --
           writeline(file_v, line_v);
