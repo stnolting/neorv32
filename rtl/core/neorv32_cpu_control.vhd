@@ -1523,7 +1523,7 @@ begin
   -- ****************************************************************************************************************************
 
   -- RISC-V-compliant counter events --
-  cnt_event(cnt_event_cy_c) <= '1' when (exe_engine.state /= EX_SLEEP) else '0'; -- active cycle
+  cnt_event(cnt_event_cy_c) <= '0' when (exe_engine.state = EX_SLEEP) else '1'; -- active cycle
   cnt_event(cnt_event_tm_c) <= '0'; -- time: not available
   cnt_event(cnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) else '0'; -- retired (=executed) instruction
 
