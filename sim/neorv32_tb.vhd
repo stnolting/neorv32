@@ -59,6 +59,7 @@ entity neorv32_tb is
     DCACHE_EN           : boolean                        := true;        -- implement data cache
     DCACHE_NUM_BLOCKS   : natural range 1 to 4096        := 32;          -- d-cache: number of blocks (min 1), has to be a power of 2
     CACHE_BLOCK_SIZE    : natural range 8 to 1024        := 32;          -- i-cache/d-cache: block size in bytes (min 8), has to be a power of 2
+    CACHE_BURSTS_EN     : boolean                        := true;        -- enable issuing of burst transfer for cache update
     TRACE_LOG_EN        : boolean                        := true;        -- write full trace log to file
     -- external memory A --
     EXT_MEM_A_EN        : boolean                        := false;       -- enable memory
@@ -183,6 +184,7 @@ begin
     DCACHE_EN           => DCACHE_EN,
     DCACHE_NUM_BLOCKS   => DCACHE_NUM_BLOCKS,
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
+    CACHE_BURSTS_EN     => CACHE_BURSTS_EN,
     -- External bus interface --
     XBUS_EN             => true,
     XBUS_TIMEOUT        => 64,
