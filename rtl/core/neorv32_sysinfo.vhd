@@ -31,6 +31,7 @@ entity neorv32_sysinfo is
     DCACHE_EN         : boolean; -- implement data cache
     DCACHE_NUM_BLOCKS : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
     CACHE_BLOCK_SIZE  : natural; -- i-cache/d-cache: block size in bytes (min 4), has to be a power of 2
+    CACHE_BURSTS_EN   : boolean; -- i-cache/d-cache: enable issuing of burst transfer for cache update
     XBUS_EN           : boolean; -- implement external memory bus interface
     OCD_EN            : boolean; -- implement OCD
     OCD_AUTH          : boolean; -- implement OCD authenticator
@@ -146,7 +147,11 @@ begin
   sysinfo(3)(11 downto 8)  <= std_ulogic_vector(to_unsigned(log2_c_bsize_c, 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(block_size)
   sysinfo(3)(15 downto 12) <= std_ulogic_vector(to_unsigned(log2_dc_bnum_c, 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(num_blocks)
   --
-  sysinfo(3)(31 downto 16) <= (others => '0'); -- reserved
+  sysinfo(3)(16) <= '1' when (ICACHE_EN and CACHE_BURSTS_EN) else '0'; -- i-cache: enable burst transfers
+  sysinfo(3)(23 downto 17) <= (others => '0'); -- reserved
+  --
+  sysinfo(3)(24) <= '1' when (DCACHE_EN and CACHE_BURSTS_EN) else '0'; -- d-cache: enable burst transfers
+  sysinfo(3)(31 downto 25) <= (others => '0'); -- reserved
 
   -- Bus Response ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

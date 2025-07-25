@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110806"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110807"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -859,6 +859,7 @@ package neorv32_package is
       DCACHE_EN             : boolean                        := false;
       DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
       CACHE_BLOCK_SIZE      : natural range 8 to 1024        := 64;
+      CACHE_BURSTS_EN       : boolean                        := true;
       -- External bus interface (XBUS) --
       XBUS_EN               : boolean                        := false;
       XBUS_TIMEOUT          : natural                        := 255;

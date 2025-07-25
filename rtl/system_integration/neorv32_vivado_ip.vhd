@@ -88,6 +88,7 @@ entity neorv32_vivado_ip is
     DCACHE_EN             : boolean                        := false;
     DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
     CACHE_BLOCK_SIZE      : natural range 8 to 1024        := 64;
+    CACHE_BURSTS_EN       : boolean                        := true;
     -- External Bus Interface --
     XBUS_EN               : boolean                        := false;
     XBUS_REGSTAGE_EN      : boolean                        := false;
@@ -262,7 +263,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   -- auto-configuration --
   constant num_gpio_c : natural := cond_sel_natural_f(IO_GPIO_EN, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
   constant num_pwm_c  : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM_CH, 0);
-  constant burst_en_c : boolean := ICACHE_EN or DCACHE_EN; -- any cache bursts?
+  constant burst_en_c : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN); -- any cache bursts?
 
   -- AXI4 bridge --
   component xbus2axi4_bridge
@@ -417,6 +418,7 @@ begin
     DCACHE_EN           => DCACHE_EN,
     DCACHE_NUM_BLOCKS   => DCACHE_NUM_BLOCKS,
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
+    CACHE_BURSTS_EN     => burst_en_c,
     -- External bus interface --
     XBUS_EN             => XBUS_EN,
     XBUS_TIMEOUT        => 0, -- AXI does not allow any timeouts

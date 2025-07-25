@@ -93,6 +93,7 @@ entity neorv32_top is
     DCACHE_EN             : boolean                        := false;       -- implement data cache (d-cache)
     DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;           -- d-cache: number of blocks (min 1), has to be a power of 2
     CACHE_BLOCK_SIZE      : natural range 8 to 1024        := 64;          -- i-cache/d-cache: block size in bytes (min 8), has to be a power of 2
+    CACHE_BURSTS_EN       : boolean                        := true;        -- i-cache/d-cache: enable issuing of burst transfer for cache update
 
     -- External bus interface (XBUS) --
     XBUS_EN               : boolean                        := false;       -- implement external memory bus interface
@@ -552,7 +553,8 @@ begin
         NUM_BLOCKS => ICACHE_NUM_BLOCKS,
         BLOCK_SIZE => CACHE_BLOCK_SIZE,
         UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
-        READ_ONLY  => true
+        READ_ONLY  => true,
+        BURSTS_EN  => CACHE_BURSTS_EN
       )
       port map (
         clk_i      => clk_i,
@@ -580,7 +582,8 @@ begin
         NUM_BLOCKS => DCACHE_NUM_BLOCKS,
         BLOCK_SIZE => CACHE_BLOCK_SIZE,
         UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
-        READ_ONLY  => false
+        READ_ONLY  => false,
+        BURSTS_EN  => CACHE_BURSTS_EN
       )
       port map (
         clk_i      => clk_i,
@@ -1515,6 +1518,7 @@ begin
         DCACHE_EN         => DCACHE_EN,
         DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
         CACHE_BLOCK_SIZE  => CACHE_BLOCK_SIZE,
+        CACHE_BURSTS_EN   => CACHE_BURSTS_EN,
         XBUS_EN           => XBUS_EN,
         OCD_EN            => OCD_EN,
         OCD_AUTH          => ocd_auth_en_c,
