@@ -2,7 +2,8 @@
 -- NEORV32 SoC - Generic Cache                                                      --
 -- -------------------------------------------------------------------------------- --
 -- Configurable generic cache module. The cache is direct-mapped and implements     --
--- "write-through" write strategy. Cached read accesses are implemented as bursts.  --
+-- "write-through" write strategy. Locked bursts operations are used if BURSTS_EN is --
+-- true; otherwise only single-transfers are issued.                                --
 --                                                                                  --
 -- Uncached / direct accesses: Several bus transaction types will bypass the cache: --
 -- * atomic memory operations                                                       --
@@ -28,7 +29,8 @@ entity neorv32_cache is
     NUM_BLOCKS : natural range 2 to 1024;       -- number of cache blocks (min 2), has to be a power of 2
     BLOCK_SIZE : natural range 8 to 32768;      -- cache block size in bytes (min 8), has to be a power of 2
     UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (page number / 4 MSBs of address)
-    READ_ONLY  : boolean                        -- read-only accesses for host
+    READ_ONLY  : boolean;                       -- read-only accesses for host
+    BURSTS_EN  : boolean                        -- enable issuing of burst transfers
   );
   port (
     clk_i      : in  std_ulogic; -- global clock, rising edge
@@ -185,6 +187,7 @@ begin
         ctrl_nxt.ofs_ext <= (others => '0');
         ctrl_nxt.ofs_int <= (others => '0');
         ctrl_nxt.buf_req <= '0'; -- access about to be completed
+        ctrl_nxt.buf_err <= '0';
         --
         if (ctrl.buf_dir = '1') then -- direct/uncached access; no cache update
           bus_req_o.stb  <= '1';
@@ -223,7 +226,7 @@ begin
         ctrl_nxt.buf_sync <= '0';
         ctrl_nxt.state    <= S_IDLE;
 
-      when S_DOWNLOAD_START => -- start download block transfer
+      when S_DOWNLOAD_START => -- start download block / send single request (if no bursts)
       -- ------------------------------------------------------------
         cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
         cache_o.cmd_new <= '1'; -- set new block (set tag and make valid)
@@ -231,11 +234,11 @@ begin
         bus_req_o.rw    <= '0'; -- read access
         bus_req_o.stb   <= '1'; -- send initial (burst/locking) request
         bus_req_o.lock  <= '1'; -- this is a locked transfer
-        bus_req_o.burst <= '1'; -- this is a burst transfer
+        bus_req_o.burst <= bool_to_ulogic_f(BURSTS_EN); -- this is a burst transfer
         bus_req_o.ben   <= (others => '1'); -- full-word access
         ctrl_nxt.state  <= S_DOWNLOAD_WAIT;
 
-      when S_DOWNLOAD_WAIT => -- wait for exclusive (=locked) bus access
+      when S_DOWNLOAD_WAIT => -- wait for exclusive (=locked) bus access / response
       -- ------------------------------------------------------------
         cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
         cache_o.data    <= bus_rsp_i.data;
@@ -243,38 +246,48 @@ begin
         bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
         bus_req_o.rw    <= '0'; -- read access
         bus_req_o.lock  <= '1'; -- this is a locked transfer
-        bus_req_o.burst <= '1'; -- this is a burst transfer
+        bus_req_o.burst <= bool_to_ulogic_f(BURSTS_EN); -- this is a burst transfer
         bus_req_o.ben   <= (others => '1'); -- full-word access
         -- wait for initial ACK to start actual bursting --
         if (bus_rsp_i.ack = '1') then
-          ctrl_nxt.buf_err <= bus_rsp_i.err; -- buffer bus error
+          ctrl_nxt.buf_err <= ctrl.buf_err or bus_rsp_i.err; -- buffer bus error
           ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1);
           ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1);
-          ctrl_nxt.state   <= S_DOWNLOAD_RUN;
+          if BURSTS_EN then -- burst transfer
+            ctrl_nxt.state <= S_DOWNLOAD_RUN;
+          elsif (and_reduce_f(ctrl.ofs_int) = '1') then -- block completed
+            ctrl_nxt.state <= S_DOWNLOAD_DONE;
+          else
+            ctrl_nxt.state <= S_DOWNLOAD_START;
+          end if;
         end if;
 
-      when S_DOWNLOAD_RUN => -- send read requests and get data responses
+      when S_DOWNLOAD_RUN => -- bursts enabled: send read requests and get data responses
       -- ------------------------------------------------------------
-        cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-        cache_o.data    <= bus_rsp_i.data;
-        cache_o.we      <= (others => '1'); -- just keep writing full words
-        bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
-        bus_req_o.rw    <= '0'; -- read access
-        bus_req_o.lock  <= '1'; -- this is a locked transfer
-        bus_req_o.burst <= '1'; -- this is a burst transfer
-        bus_req_o.ben   <= (others => '1'); -- full-word access
-        -- send requests --
-        if (ctrl.ofs_ext(offset_size_c) = '0') then
-          ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1); -- next cache word
-          bus_req_o.stb    <= '1'; -- request next transfer
-        end if;
-        -- receive responses --
-        if (bus_rsp_i.ack = '1') then
-          ctrl_nxt.buf_err <= ctrl.buf_err or bus_rsp_i.err; -- accumulate bus errors
-          ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1); -- next main memory location
-          if (and_reduce_f(ctrl.ofs_int) = '1') then -- block completed
-            ctrl_nxt.state <= S_DOWNLOAD_DONE;
+        if BURSTS_EN then -- burst transfer
+          cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+          cache_o.data    <= bus_rsp_i.data;
+          cache_o.we      <= (others => '1'); -- just keep writing full words
+          bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
+          bus_req_o.rw    <= '0'; -- read access
+          bus_req_o.lock  <= '1'; -- this is a locked transfer
+          bus_req_o.burst <= '1'; -- this is a burst transfer
+          bus_req_o.ben   <= (others => '1'); -- full-word access
+          -- send requests --
+          if (ctrl.ofs_ext(offset_size_c) = '0') then
+            ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1); -- next cache word
+            bus_req_o.stb    <= '1'; -- request next transfer
           end if;
+          -- receive responses --
+          if (bus_rsp_i.ack = '1') then
+            ctrl_nxt.buf_err <= ctrl.buf_err or bus_rsp_i.err; -- accumulate bus errors
+            ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1); -- next main memory location
+            if (and_reduce_f(ctrl.ofs_int) = '1') then -- block completed
+              ctrl_nxt.state <= S_DOWNLOAD_DONE;
+            end if;
+          end if;
+        else -- single transfers only
+          ctrl_nxt.state <= S_IDLE;
         end if;
 
       when S_DOWNLOAD_DONE => -- delay cycle for host cache access
