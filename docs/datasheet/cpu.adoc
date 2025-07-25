@@ -542,6 +542,11 @@ request the remaining burst strobes ("k").
 . The burst is completed when all required `stb` pulses are sent and when all corresponding `ack` have been received ("n").
 `burst` is cleared. `lock` is cleared and has to be low for at least one cycle to release the bus lock.
 
+.Burst Generators
+[NOTE]
+Only the caches (<<_processor_internal_instruction_cache_icache,i-cache>> / <<_processor_internal_data_cache_dcache, d-cache>>)
+can generate burst transfers (and only if explicitly enabled via `CACHE_BURSTS_EN`).
+
 .Fast Burst Response
 [TIP]
 The accessed device/memory can return all data words of the burst already after receiving the first strobe of

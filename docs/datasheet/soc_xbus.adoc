@@ -5,23 +5,25 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_xbus.vhd   | External bus gateway
-| Software driver files:  | none               |
-| Top entity ports:       | `xbus_adr_o`       | address output (32-bit)
-|                         | `xbus_dat_i`       | data input (32-bit)
-|                         | `xbus_dat_o`       | data output (32-bit)
-|                         | `xbus_cti_o`       | cycle type (3-bit)
-|                         | `xbus_tag_o`       | access tag (3-bit)
-|                         | `xbus_we_o`        | write enable (1-bit)
-|                         | `xbus_sel_o`       | byte enable (4-bit)
-|                         | `xbus_stb_o`       | bus strobe (1-bit)
-|                         | `xbus_cyc_o`       | valid cycle (1-bit)
-|                         | `xbus_ack_i`       | acknowledge (1-bit)
-|                         | `xbus_err_i`       | bus error (1-bit)
-| Configuration generics: | `XBUS_EN`          | enable external bus interface when `true`
-|                         | `XBUS_TIMEOUT`     | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
-|                         | `XBUS_REGSTAGE_EN` | implement XBUS register stages
-| CPU interrupts:         | none               |
+| Hardware source files:  | neorv32_xbus.vhd     | External bus gateway
+| Software driver files:  | none                 |
+| Top entity ports:       | `xbus_adr_o`         | address output (32-bit)
+|                         | `xbus_dat_i`         | data input (32-bit)
+|                         | `xbus_dat_o`         | data output (32-bit)
+|                         | `xbus_cti_o`         | cycle type (3-bit)
+|                         | `xbus_tag_o`         | access tag (3-bit)
+|                         | `xbus_we_o`          | write enable (1-bit)
+|                         | `xbus_sel_o`         | byte enable (4-bit)
+|                         | `xbus_stb_o`         | bus strobe (1-bit)
+|                         | `xbus_cyc_o`         | valid cycle (1-bit)
+|                         | `xbus_ack_i`         | acknowledge (1-bit)
+|                         | `xbus_err_i`         | bus error (1-bit)
+| Configuration generics: | `XBUS_EN`            | enable external bus interface when `true`
+|                         | `XBUS_TIMEOUT`       | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
+|                         | `XBUS_REGSTAGE_EN`   | implement XBUS register stages
+|                         | (`CACHE_BLOCK_SIZE`) | burst size
+|                         | (`CACHE_BURSTS_EN`)  | enable burst transfers for cache update
+| CPU interrupts:         | none                 |
 |=======================
 
 
@@ -33,10 +35,10 @@ peripheral devices.
 
 .Burst Transfers
 [IMPORTANT]
-If any cache (<<_processor_internal_instruction_cache_icache>>, <<_processor_internal_data_cache_dcache>>) is
-enabled, this also means that cache block transfers are **always executed as burst transfers**. There is no
-possibility to execute the cache block transfers as single bus transactions. Therefore, all devices,
-memories and endpoints that can be accessed by the cache must also be able to process bursts.
+If any cache (<<_processor_internal_instruction_cache_icache,i-cache>> or <<_processor_internal_data_cache_dcache, d-cache>>)
+is implemented and bursts are globally enabled (by the `CACHE_BURSTS_EN` top generic) all cache block transfers are
+**always executed as burst transfers** with a burst size equal to the cache block size (`CACHE_BLOCK_SIZE` top generic).
+Burst transfers should **not** be enabled if any external module mapped to _cached_ <<_address_space>> does not support bursts.
 
 .Address Mapping
 [NOTE]

@@ -12,7 +12,8 @@
 | Configuration generics: | `ICACHE_EN`         | implement processor-internal, CPU-exclusive instruction cache (I$) when `true`
 |                         | `ICACHE_NUM_BLOCKS` | number of cache blocks ("cache lines"); has to be a power of two
 |                         | `CACHE_BLOCK_SIZE`  | size of a cache block in bytes; has to be a power of two (global configuration for I$ and D$), min 8
-| CPU interrupts:         | none |
+|                         | `CACHE_BURSTS_EN`   | enable burst transfers for cache update
+| CPU interrupts:         | none                |
 |=======================
 
 
@@ -29,9 +30,11 @@ and `CACHE_BLOCK_SIZE` defines the block size in bytes; note that this configura
 
 .Burst Transfers
 [IMPORTANT]
-If the cache is activated, this also means that cache block transfers are **always executed as burst transfers**.
-There is no possibility to execute the cache block transfers as single bus transactions. Therefore, all devices,
-memories and endpoints that can be accessed by the cache must also be able to process bursts.
+Cache update operations (e.g. to resolve a cache miss) can use <<_locked_bus_accesses_and_bursts,burst transfers>> to
+increase performance. Burst operations are enabled (for all caches) by the `CACHE_BURSTS_EN` top generic. Note that
+when bursts are enabled all cache block transfers are **always executed as burst transfers**. Hence, all devices,
+memories and endpoints that can be accessed by the cache must also be able to process bursts
+(including the <<_processor_external_bus_interface_xbus>>).
 
 .Uncached Accesses
 [NOTE]
