@@ -106,13 +106,17 @@ begin
 
         when S_BURST_RUN => -- burst read transfer in progress
         -- ------------------------------------------------------------
-          if (m_axi_rlast = '1') then -- burst completed by device
+          if not BURST_EN then -- burst not supported
+            state <= S_IDLE;
+          elsif (m_axi_rlast = '1') then -- burst completed by device
             state <= S_BURST_END;
           end if;
 
         when S_BURST_END => -- end of burst
         -- ------------------------------------------------------------
-          if (xbus_cti_i = "000") then -- burst completed by host
+          if not BURST_EN then -- burst not supported
+            state <= S_IDLE;
+          elsif (xbus_cti_i = "000") then -- burst completed by host
             state <= S_IDLE;
           end if;
 
