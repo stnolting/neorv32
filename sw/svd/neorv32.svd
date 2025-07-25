@@ -1784,6 +1784,8 @@
             <field><name>SYSINFO_CACHE_INST_NUM_BLOCKS</name><bitRange>[7:4]</bitRange><description>i-cache: log2(Number of cache blocks)</description></field>
             <field><name>SYSINFO_CACHE_DATA_BLOCK_SIZE</name><bitRange>[11:8]</bitRange><description>d-cache: log2(Block size in bytes)</description></field>
             <field><name>SYSINFO_CACHE_DATA_NUM_BLOCKS</name><bitRange>[15:12]</bitRange><description>d-cache: log2(Number of cache blocks)</description></field>
+            <field><name>SYSINFO_CACHE_INST_BURSTS_EN</name><bitRange>[16:16]</bitRange><description>i-cache: burst transfers enabled</description></field>
+            <field><name>SYSINFO_CACHE_DATA_BURSTS_EN</name><bitRange>[24:24]</bitRange><description>d-cache: burst transfers enabled</description></field>
           </fields>
         </register>
       </registers>

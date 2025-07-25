@@ -123,8 +123,8 @@ The SYSINFO cache register provides information about the configuration of the p
 | `7:4`   | `SYSINFO_CACHE_INST_NUM_BLOCKS_3 : SYSINFO_CACHE_INST_NUM_BLOCKS_0` | _log2_(i-cache number of cache blocks), via top's `ICACHE_NUM_BLOCKS` generic
 | `11:8`  | `SYSINFO_CACHE_DATA_BLOCK_SIZE_3 : SYSINFO_CACHE_DATA_BLOCK_SIZE_0` | _log2_(d-cache block size in bytes), via top's `DCACHE_BLOCK_SIZE` generic
 | `15:12` | `SYSINFO_CACHE_DATA_NUM_BLOCKS_3 : SYSINFO_CACHE_DATA_NUM_BLOCKS_0` | _log2_(d-cache number of cache blocks), via top's `DCACHE_NUM_BLOCKS` generic
-| `19:16` | `0000`                                                              | _reserved_
-| `23:20` | `0000`                                                              | _reserved_
-| `27:24` | `0000`                                                              | _reserved_
-| `31:28` | `0000`                                                              | _reserved_
+| `16`    | `SYSINFO_CACHE_INST_BURSTS_EN`                                      | i-cache burst transfers enabled, via top's `CACHE_BURSTS_EN` generic
+| `23:17` | `0000000`                                                           | _reserved_
+| `24`    | `SYSINFO_CACHE_DATA_BURSTS_EN`                                      | d-cache burst transfers enabled, via top's `CACHE_BURSTS_EN` generic
+| `31:25` | `0000000`                                                           | _reserved_
 |=======================
