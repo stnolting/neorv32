@@ -2,8 +2,8 @@
 -- NEORV32 SoC - Generic Cache                                                      --
 -- -------------------------------------------------------------------------------- --
 -- Configurable generic cache module. The cache is direct-mapped and implements     --
--- "write-through" write strategy. Locked bursts operations are used if BURSTS_EN is --
--- true; otherwise only single-transfers are issued.                                --
+-- "write-through" write strategy. Locked bursts operations are used if BURSTS_EN   --
+-- is true; otherwise block transfers are split into single-transfers.              --
 --                                                                                  --
 -- Uncached / direct accesses: Several bus transaction types will bypass the cache: --
 -- * atomic memory operations                                                       --
@@ -44,6 +44,9 @@ end neorv32_cache;
 
 architecture neorv32_cache_rtl of neorv32_cache is
 
+  -- work-in-progress / TODO --
+  constant WRITE_THROUGH : boolean := true; -- only write-through cache strategy is supported yet
+
   -- make sure cache sizes are a power of two --
   constant block_num_c  : natural := 2**index_size_f(NUM_BLOCKS);
   constant block_size_c : natural := 2**index_size_f(BLOCK_SIZE);
@@ -66,6 +69,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
       inv_i   : in  std_ulogic;
       new_i   : in  std_ulogic;
       hit_o   : out std_ulogic;
+      dir_o   : out std_ulogic;
       addr_i  : in  std_ulogic_vector(31 downto 0);
       we_i    : in  std_ulogic_vector(3 downto 0);
       wdata_i : in  std_ulogic_vector(31 downto 0);
@@ -87,6 +91,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   -- cache -> control interface --
   type cache_i_t is record
     sta_hit : std_ulogic;
+    sta_dir : std_ulogic;
     data    : std_ulogic_vector(31 downto 0);
   end record;
   signal cache_i : cache_i_t;
@@ -94,7 +99,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   -- control arbiter --
   type state_t is (
     S_IDLE, S_CHECK, S_DIRECT_RSP, S_CLEAR,
-    S_DOWNLOAD_START, S_DOWNLOAD_WAIT, S_DOWNLOAD_RUN, S_DOWNLOAD_DONE, WAITING
+    S_DOWNLOAD_START, S_DOWNLOAD_WAIT, S_DOWNLOAD_RUN, S_DONE
   );
   type ctrl_t is record
     state    : state_t; -- state machine
@@ -196,17 +201,26 @@ begin
           if (host_req_i.rw = '0') or (READ_ONLY = true) then -- read from cache
             host_rsp_o.ack <= '1';
             ctrl_nxt.state <= S_IDLE;
-          else -- write to main memory and also to the cache (write-through)
+          elsif (WRITE_THROUGH = true) then -- write-through: write to main memory and also to the cache
             cache_o.we     <= host_req_i.ben;
             bus_req_o.stb  <= '1';
             ctrl_nxt.state <= S_DIRECT_RSP;
+          else -- write to cache only
+            cache_o.we     <= host_req_i.ben;
+            host_rsp_o.ack <= '1';
+            ctrl_nxt.state <= S_IDLE;
           end if;
         else -- cache MISS
           if (host_req_i.rw = '0') or (READ_ONLY = true) then -- get block from main memory
             ctrl_nxt.state <= S_DOWNLOAD_START;
-          else -- write to main memory (write-through); no cache update
+          elsif (WRITE_THROUGH = true) then -- write-through: write to main memory, no cache update
             bus_req_o.stb  <= '1';
             ctrl_nxt.state <= S_DIRECT_RSP;
+          elsif (cache_i.sta_dir = '0') then -- allocate block: current block is clean, just replace
+            ctrl_nxt.state <= S_DOWNLOAD_START;
+          else -- allocate block: upload modified block; then download new block
+            host_rsp_o.err <= '1'; -- TODO - error as feature not implemented yet
+            ctrl_nxt.state <= S_IDLE; -- TODO
           end if;
         end if;
 
@@ -219,14 +233,12 @@ begin
 
       when S_CLEAR => -- invalidate entire cache
       -- ------------------------------------------------------------
-        if (READ_ONLY = false) then
-          bus_req_o.fence <= '1';
-        end if;
+        bus_req_o.fence   <= bool_to_ulogic_f(not READ_ONLY);
         cache_o.cmd_clr   <= '1';
         ctrl_nxt.buf_sync <= '0';
         ctrl_nxt.state    <= S_IDLE;
 
-      when S_DOWNLOAD_START => -- start download block / send single request (if no bursts)
+      when S_DOWNLOAD_START => -- start block download / send single request (if no bursts)
       -- ------------------------------------------------------------
         cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
         cache_o.cmd_new <= '1'; -- set new block (set tag and make valid)
@@ -250,13 +262,13 @@ begin
         bus_req_o.ben   <= (others => '1'); -- full-word access
         -- wait for initial ACK to start actual bursting --
         if (bus_rsp_i.ack = '1') then
-          ctrl_nxt.buf_err <= ctrl.buf_err or bus_rsp_i.err; -- buffer bus error
+          ctrl_nxt.buf_err <= ctrl.buf_err or bus_rsp_i.err; -- accumulate bus errors
           ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1);
           ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1);
           if BURSTS_EN then -- burst transfer
             ctrl_nxt.state <= S_DOWNLOAD_RUN;
           elsif (and_reduce_f(ctrl.ofs_int) = '1') then -- block completed
-            ctrl_nxt.state <= S_DOWNLOAD_DONE;
+            ctrl_nxt.state <= S_DONE;
           else
             ctrl_nxt.state <= S_DOWNLOAD_START;
           end if;
@@ -283,14 +295,14 @@ begin
             ctrl_nxt.buf_err <= ctrl.buf_err or bus_rsp_i.err; -- accumulate bus errors
             ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1); -- next main memory location
             if (and_reduce_f(ctrl.ofs_int) = '1') then -- block completed
-              ctrl_nxt.state <= S_DOWNLOAD_DONE;
+              ctrl_nxt.state <= S_DONE;
             end if;
           end if;
         else -- single transfers only
           ctrl_nxt.state <= S_IDLE;
         end if;
 
-      when S_DOWNLOAD_DONE => -- delay cycle for host cache access
+      when S_DONE => -- delay cycle for host cache access
       -- ------------------------------------------------------------
         if (ctrl.buf_err = '1') then -- any errors during the burst?
           cache_o.cmd_inv <= '1'; -- invalidate the downloaded cache block
@@ -325,6 +337,7 @@ begin
     inv_i   => cache_o.cmd_inv, -- invalidate accessed block
     new_i   => cache_o.cmd_new, -- make accessed block valid and set tag
     hit_o   => cache_i.sta_hit, -- cache hit
+    dir_o   => cache_i.sta_dir, -- cache dirty
     -- cache access --
     addr_i  => cache_o.addr,    -- access address
     we_i    => cache_o.we,      -- byte-wide data write enable
@@ -364,8 +377,9 @@ entity neorv32_cache_memory is
     -- management --
     clr_i   : in  std_ulogic;                     -- clear entire cache
     inv_i   : in  std_ulogic;                     -- invalidate accessed block
-    new_i   : in  std_ulogic;                     -- make accessed block valid and set tag
+    new_i   : in  std_ulogic;                     -- make accessed block valid & clean and set tag
     hit_o   : out std_ulogic;                     -- cache hit
+    dir_o   : out std_ulogic;                     -- accessed block is dirty
     -- cache access --
     addr_i  : in  std_ulogic_vector(31 downto 0); -- access address
     we_i    : in  std_ulogic_vector(3 downto 0);  -- byte-wide data write enable
@@ -382,8 +396,8 @@ architecture neorv32_cache_memory_rtl of neorv32_cache_memory is
   constant tag_size_c    : natural := 32 - (offset_size_c + index_size_c + 2); -- +2 bits for byte offset
 
   -- status flag memory --
-  signal valid_mem : std_ulogic_vector(NUM_BLOCKS-1 downto 0);
-  signal valid_mem_rd : std_ulogic;
+  signal valid_mem, dirty_mem : std_ulogic_vector(NUM_BLOCKS-1 downto 0);
+  signal valid_mem_rd, dirty_mem_rd : std_ulogic;
 
   -- tag memory --
   type tag_mem_t is array (0 to NUM_BLOCKS-1) of std_ulogic_vector(tag_size_c-1 downto 0);
@@ -427,8 +441,11 @@ begin
   begin
     if (rstn_i = '0') then
       valid_mem    <= (others => '0');
+      dirty_mem    <= (others => '0');
       valid_mem_rd <= '0';
+      dirty_mem_rd <= '0';
     elsif rising_edge(clk_i) then
+      -- valid flags --
       if (clr_i = '1') then -- invalidate entire cache
         valid_mem <= (others => '0');
       elsif (inv_i = '1') then -- invalidate accessed block
@@ -436,9 +453,22 @@ begin
       elsif (new_i = '1') then -- make accessed block valid
         valid_mem(to_integer(unsigned(acc_idx))) <= '1';
       end if;
+      -- dirty flags --
+      if (clr_i = '1') then -- invalidate entire cache
+        dirty_mem <= (others => '0');
+      elsif (we_i /= "0000") then -- modify cache content
+        dirty_mem(to_integer(unsigned(acc_idx))) <= '1';
+      elsif (new_i = '1') then -- make accessed block clean
+        dirty_mem(to_integer(unsigned(acc_idx))) <= '0';
+      end if;
+      -- syn flag read --
       valid_mem_rd <= valid_mem(to_integer(unsigned(acc_idx)));
+      dirty_mem_rd <= dirty_mem(to_integer(unsigned(acc_idx)));
     end if;
   end process status_memory;
+
+  -- modified cache --
+  dir_o <= valid_mem_rd and dirty_mem_rd;
 
 
   -- Tag Memory -----------------------------------------------------------------------------
