@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110807"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110808"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -297,7 +297,7 @@ package neorv32_package is
   -- system/csr --
   constant opcode_system_c : std_ulogic_vector(6 downto 0) := "1110011"; -- system/csr access
   -- floating point operations --
-  constant opcode_fop_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single operand instruction
+  constant opcode_fpu_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single operand instruction
   -- official custom RISC-V opcodes - free for custom instructions --
   constant opcode_cust0_c  : std_ulogic_vector(6 downto 0) := "0001011"; -- custom-0 (NEORV32 CFU)
   constant opcode_cust1_c  : std_ulogic_vector(6 downto 0) := "0101011"; -- custom-1 (NEORV32 CFU)
