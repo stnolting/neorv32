@@ -389,18 +389,19 @@ the interrupt request is explicitly acknowledged (e.g. writing to a memory-mappe
 :sectnums:
 ==== RISC-V Standard Interrupts
 
-The processor setup features the standard machine-level RISC-V interrupt lines for "machine timer interrupt", "machine
+The processor supports the standard RISC-V machine-level interrupts for "machine timer interrupt", "machine
 software interrupt" and "machine external interrupt". Their usage is defined by the RISC-V privileged architecture
-specifications. However, bare-metal system can also repurpose these interrupts. See CPU section
+specifications. However, these interrupt could also be re-purposed for custom applications. See CPU section
 <<_traps_exceptions_and_interrupts>> for more information.
 
+.Processor Top RISC-V Machine-Level Interrupts
 [cols="<4,<10"]
 [options="header",grid="rows"]
 |=======================
 | Top signal | Description
 | `mtime_irq_i` | Machine timer interrupt from _processor-external_ CLINT (`MTI`). This IRQ is only available if the processor-internal <<_core_local_interruptor_clint>> unit is not implemented.
 | `msw_irq_i`   | Machine software interrupt from _processor-external_ CLINT (`MSI`). This IRQ is only available if the processor-internal <<_core_local_interruptor_clint>> unit is not implemented.
-| `mext_irq_i`  | Machine external interrupt (`MEI`). This interrupt is used for any processor-external interrupt source (like a platform interrupt controller).
+| `mext_irq_i`  | Machine external interrupt from _processor-external_ PLIC (`MEI`). This interrupt is always available as top-entity port.
 |=======================
 
 
