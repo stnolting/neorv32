@@ -34,7 +34,7 @@ and peripheral/IO modules can be found in `sw/example`.
 === Compiler Toolchain
 
 The toolchain for this project is based on the free and open RISC-V GCC-port. You can find the compiler sources and
-build instructions in the official RISC-V GNU toolchain GitHub repository: https://github.com/riscv/riscv-gnutoolchain.
+build instructions in the official RISC-V GNU toolchain GitHub repository: https://github.com/riscv-collab/riscv-gnu-toolchain.
 
 .Toolchain Installation
 [TIP]
