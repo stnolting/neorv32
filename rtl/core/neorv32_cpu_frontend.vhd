@@ -82,6 +82,13 @@ begin
     elsif rising_edge(clk_i) then
       case fetch.state is
 
+        when S_RESTART => -- set new start address
+        -- ------------------------------------------------------------
+          fetch.restart <= '0'; -- restart done
+          fetch.pc      <= ctrl_i.pc_nxt; -- initialize from PC
+          fetch.priv    <= ctrl_i.cpu_priv; -- set new privilege level
+          fetch.state   <= S_REQUEST;
+
         when S_REQUEST => -- request next 32-bit-aligned instruction word
         -- ------------------------------------------------------------
           fetch.restart <= fetch.restart or ctrl_i.if_reset; -- buffer restart request
@@ -104,12 +111,9 @@ begin
             end if;
           end if;
 
-        when others => -- S_RESTART: set new start address
+        when others => -- undefined
         -- ------------------------------------------------------------
-          fetch.restart <= '0'; -- restart done
-          fetch.pc      <= ctrl_i.pc_nxt; -- initialize from PC
-          fetch.priv    <= ctrl_i.cpu_priv; -- set new privilege level
-          fetch.state   <= S_REQUEST;
+          fetch.state <= S_RESTART;
 
       end case;
     end if;

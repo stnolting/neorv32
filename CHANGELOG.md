@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 28.07.2025 | 1.11.8.8 | minor rtl edits and cleanups | [#1325](https://github.com/stnolting/neorv32/pull/1325) |
 | 25.07.2025 | 1.11.8.7 | make cache burst support optional | [#1324](https://github.com/stnolting/neorv32/pull/1324) |
 | 20.07.2025 | 1.11.8.6 | extend tracer simulation log; refine semihosting file (write) access; minor rtl edits | [#1322](https://github.com/stnolting/neorv32/pull/1322) |
 | 18.07.2025 | 1.11.8.5 | :sparkles: add support for the RISC-V `Zcb` ISA extension (further code size reduction instructions; "add-on" for the `C` ISA extension) | [#1320](https://github.com/stnolting/neorv32/pull/1320) |

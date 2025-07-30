@@ -400,7 +400,7 @@ begin
 
       when EX_EXECUTE => -- decode and execute instruction (control will be here for exactly 1 cycle in any case)
       -- ------------------------------------------------------------
-        exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0'; -- next PC (= PC + immediate)
+        exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0'; -- next PC = PC + immediate
 
         -- decode instruction class/type; [NOTE] register file is read in THIS stage; due to the sync read data will be available in the NEXT state --
         case opcode is
@@ -468,7 +468,7 @@ begin
             exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
 
           -- FPU: floating-point operations --
-          when opcode_fop_c =>
+          when opcode_fpu_c =>
             ctrl_nxt.alu_cp_fpu  <= '1'; -- trigger FPU co-processor
             exe_engine_nxt.state <= EX_ALU_WAIT; -- will be aborted via monitor timeout if FPU is not implemented
 
@@ -490,19 +490,19 @@ begin
 
       when EX_ALU_WAIT => -- wait for multi-cycle ALU co-processor operation to finish or trap
       -- ------------------------------------------------------------
-        ctrl_nxt.alu_op <= alu_op_cp_c;
+        ctrl_nxt.alu_op   <= alu_op_cp_c;
+        ctrl_nxt.rf_wb_en <= alu_cp_done_i; -- valid RF write-back (won't happen if exception)
         if (alu_cp_done_i = '1') or (or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '1') then
-          ctrl_nxt.rf_wb_en    <= '1'; -- valid RF write-back (won't happen if exception)
           exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
       when EX_BRANCH => -- update next PC on taken branches and jumps
       -- ------------------------------------------------------------
-        exe_engine_nxt.ra  <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- output return address
-        ctrl_nxt.rf_wb_en  <= opcode(2); -- save return address if link operation (won't happen if exception)
-        trap_ctrl.instr_ma <= alu_add_i(1) and branch_taken and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination misaligned?
+        exe_engine_nxt.ra <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- output return address
+        ctrl_nxt.rf_wb_en <= opcode(2); -- save return address if link operation (won't happen if exception)
         if (branch_taken = '1') then -- taken/unconditional branch
           if_reset             <= '1'; -- reset instruction fetch to restart at modified PC
+          trap_ctrl.instr_ma   <= alu_add_i(1) and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination misaligned?
           exe_engine_nxt.pc2   <= alu_add_i(XLEN-1 downto 1) & '0';
           exe_engine_nxt.state <= EX_BRANCHED; -- shortcut (faster than going to EX_RESTART)
         else
@@ -536,7 +536,7 @@ begin
           exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
-      when others => -- EX_SYSTEM - CSR/ENVIRONMENT operation; no effect if illegal instruction
+      when EX_SYSTEM => -- CSR/ENVIRONMENT operation; no effect if illegal instruction
       -- ------------------------------------------------------------
         exe_engine_nxt.state <= EX_DISPATCH; -- default
         if (funct3_v = funct3_env_c) and (or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- non-illegal ENVIRONMENT instruction
@@ -554,6 +554,10 @@ begin
         end if;
         -- always write to RF (even if csr.re = 0, but then we have rd = 0); ENVIRONMENT operations have rd = zero so this does not hurt --
         ctrl_nxt.rf_wb_en <= '1'; -- won't happen if exception
+
+      when others => -- undefined
+      -- ------------------------------------------------------------
+        exe_engine_nxt.state <= EX_RESTART;
 
     end case;
   end process execute_engine_fsm_comb;
@@ -777,7 +781,7 @@ begin
           end case;
         end if;
 
-      when opcode_alu_c | opcode_alui_c | opcode_fop_c | opcode_cust0_c | opcode_cust1_c => -- ALU[I] / FPU / custom operations
+      when opcode_alu_c | opcode_alui_c | opcode_fpu_c | opcode_cust0_c | opcode_cust1_c => -- ALU[I] / FPU / custom operations
         illegal_cmd <= '0'; -- [NOTE] valid if not terminated/invalidated by the "instruction execution monitor"
 
       when opcode_fence_c => -- memory ordering

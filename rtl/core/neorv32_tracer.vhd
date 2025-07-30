@@ -530,7 +530,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
           when others => return "CSR?";
         end case;
       -- floating-point --
-      when opcode_fop_c => return "FPU?";
+      when opcode_fpu_c => return "FPU?";
       -- custom instructions --
       when opcode_cust0_c => return "custom0";
       when opcode_cust1_c => return "custom1";
