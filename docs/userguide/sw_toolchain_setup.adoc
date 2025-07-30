@@ -11,7 +11,8 @@ Basically, there are two options to obtain such a toolchain:
 
 .Default GCC Prefix
 [NOTE]
-The default toolchain prefix for this project is **`riscv-none-elf-`** (`RISCV_PREFIX` variable).
+The default toolchain prefix for this project is `riscv-none-elf-`.
+This default prefix can be chanced by the `RISCV_PREFIX` variable in the NEORV32 application makefile(s).
 
 
 **Toolchain Requirements**
@@ -40,6 +41,9 @@ $ cd riscv-gnu-toolchain
 $ riscv-gnu-toolchain$ ./configure --prefix=/opt/riscv --with-arch=rv32i --with-abi=ilp32
 $ riscv-gnu-toolchain$ make
 ----
+
+Note that this configuration will build a GCC toolchain with `riscv32-unknown-elf-` as prefix / GCC triplet.
+Hence, you need to adjust the `RISCV_PREFIX` variable accordingly before running any NEORV32 makefiles.
 
 
 **Downloading and Installing a Prebuilt Toolchain**
