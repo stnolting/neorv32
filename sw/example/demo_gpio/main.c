@@ -64,7 +64,7 @@ int main(void) {
     return -1;
   }
   neorv32_uart0_setup(BAUD_RATE, 0);
-  neorv32_uart0_printf("\n<< NEORV32 Simple SMP Dual-Core Demo >>\n\n");
+  neorv32_uart0_printf("\n<< NEORV32 GPIO IRQ Demo >>\n\n");
 
   // check hardware/software configuration
   if (neorv32_gpio_available() == 0) { // GPIO available?
