@@ -134,7 +134,7 @@ begin
           if ((mode_v = mode_tor_c)   and (not TOR_EN)) or -- TOR mode not implemented
              ((mode_v = mode_na4_c)   and (not NAP_EN)) or -- NA4 mode not implemented
              ((mode_v = mode_napot_c) and (not NAP_EN)) or -- NAPOT mode not implemented
-             ((mode_v = mode_na4_c)   and (g_c > 4)) then -- NA4 not available
+             ((mode_v = mode_na4_c)   and (g_c > 4)) then  -- NA4 not available
             pmpcfg(i)(cfg_ah_c downto cfg_al_c) <= mode_off_c;
           else -- valid configuration
             pmpcfg(i)(cfg_ah_c downto cfg_al_c) <= mode_v;
@@ -286,8 +286,8 @@ begin
     -- TOR region 0 --
     addr_match_r0_gen:
     if (r = 0) generate -- first entry: use ZERO as base and current entry as bound
-      cmp_ge(r) <= '1' when TOR_EN else '0'; -- address is always greater than or equal to zero (and TOR mode enabled)
-      cmp_lt(r) <= '0'; -- unused
+      cmp_ge(r) <= '1'; -- address is always greater than or equal to zero
+      cmp_lt(r) <= '0'; -- cannot be less then zero
     end generate;
     -- TOR region any --
     addr_match_rn_gen:

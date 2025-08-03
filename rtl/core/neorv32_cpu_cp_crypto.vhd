@@ -257,7 +257,7 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   signal aes : aes_t;
 
   -- permutation core, sha core, sm3 core --
-  signal xperm_res, xperm4_res, xperm8_res, sha_res, sm3_res : std_ulogic_vector(31 downto 0);
+  signal xperm_res, xperm4_res, xperm8_res, sha_res, sm3_res, hash_res : std_ulogic_vector(31 downto 0);
 
   -- ShangMi core --
   type sm4_t is record
@@ -353,16 +353,9 @@ begin
       res_o <= (others => '0'); -- default
       if (done = '1') then
         case out_sel is
-          when "100" =>
-            res_o <= xperm_res;
-          when "101" | "110" =>
-            res_o <= blk_res;
-          when others =>
-            if EN_ZKSH and (ctrl_i.ir_opcode(5) = '0') and (funct12(3) = '1') then
-              res_o <= sm3_res;
-            else
-              res_o <= sha_res;
-            end if;
+          when "100"         => res_o <= xperm_res;
+          when "101" | "110" => res_o <= blk_res;
+          when others        => res_o <= hash_res;
         end case;
       end if;
     end if;
@@ -402,8 +395,22 @@ begin
   end generate;
 
 
-  -- NIST Hash Functions --------------------------------------------------------------------
+  -- Hash Functions -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  hash_res <= sm3_res when (EN_ZKSH and (ctrl_i.ir_opcode(5) = '0') and (funct12(3) = '1')) else sha_res;
+
+  -- ShangMi Hash --
+  sm3_enabled:
+  if EN_ZKSH generate
+    sm3_res <= (rs1 xor rol_f(rs1, 9) xor rol_f(rs1, 17)) when (funct12(0) = '0') else (rs1 xor rol_f(rs1, 15) xor rol_f(rs1, 23));
+  end generate;
+
+  sm3_disabled:
+  if not EN_ZKSH generate
+    sm3_res <= (others => '0');
+  end generate;
+
+  -- NIST SHA --
   sha_enabled:
   if EN_ZKNH generate
     sha_core: process(funct12, rs1, rs2)
@@ -431,19 +438,6 @@ begin
   sha_disabled:
   if not EN_ZKNH generate
     sha_res <= (others => '0');
-  end generate;
-
-
-  -- ShangMi Hash Functions -----------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  sm3_enabled:
-  if EN_ZKSH generate
-    sm3_res <= (rs1 xor rol_f(rs1, 9) xor rol_f(rs1, 17)) when (funct12(0) = '0') else (rs1 xor rol_f(rs1, 15) xor rol_f(rs1, 23));
-  end generate;
-
-  sm3_disabled:
-  if not EN_ZKSH generate
-    sm3_res <= (others => '0');
   end generate;
 
 

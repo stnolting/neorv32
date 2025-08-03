@@ -41,6 +41,16 @@ end neorv32_cpu_cp_muldiv;
 
 architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
 
+  -- absolute value --
+  function abs_f(input: std_ulogic_vector; is_signed: std_ulogic) return std_ulogic_vector is
+  begin
+    if (input(input'left) = '1') and (is_signed = '1') then
+      return std_ulogic_vector(0 - unsigned(input));
+    else
+      return input;
+    end if;
+  end function abs_f;
+
   -- operations --
   constant op_mul_c    : std_ulogic_vector(2 downto 0) := "000"; -- mul
   constant op_mulh_c   : std_ulogic_vector(2 downto 0) := "001"; -- mulh
@@ -219,13 +229,15 @@ begin
     -- multiply by 0/-1/+1 via shift and subtraction/addition --
     mul_update: process(mul.prod, ctrl, rs2_i)
       variable sign_v : std_ulogic;
+      variable opb_v  : unsigned(32 downto 0);
     begin
       sign_v := mul.prod(mul.prod'left) and ctrl.rs2_is_signed; -- product sign extension bit
+      opb_v  := unsigned((rs2_i(rs2_i'left) and ctrl.rs2_is_signed) & rs2_i);
       if (mul.prod(0) = '1') then -- multiply by 1
         if (ctrl.state = S_DONE) and (ctrl.rs1_is_signed = '1') then -- take care of negative weighted MSB -> multiply by -1
-          mul.add <= std_ulogic_vector(unsigned(sign_v & mul.prod(63 downto 32)) - unsigned((rs2_i(rs2_i'left) and ctrl.rs2_is_signed) & rs2_i));
+          mul.add <= std_ulogic_vector(unsigned(sign_v & mul.prod(63 downto 32)) - opb_v);
         else -- multiply by +1
-          mul.add <= std_ulogic_vector(unsigned(sign_v & mul.prod(63 downto 32)) + unsigned((rs2_i(rs2_i'left) and ctrl.rs2_is_signed) & rs2_i));
+          mul.add <= std_ulogic_vector(unsigned(sign_v & mul.prod(63 downto 32)) + opb_v);
         end if;
       else -- multiply by 0
         mul.add <= sign_v & mul.prod(63 downto 32);
@@ -257,26 +269,14 @@ begin
       elsif rising_edge(clk_i) then
         if (div.start = '1') then -- start new division
           div.remainder <= (others => '0');
-          -- abs(rs1) --
-          if ((rs1_i(rs1_i'left) and ctrl.rs1_is_signed) = '1') then -- signed division?
-            div.quotient <= std_ulogic_vector(0 - unsigned(rs1_i)); -- make positive
-          else
-            div.quotient <= rs1_i;
-          end if;
-          -- abs(rs2) --
-          if ((rs2_i(rs2_i'left) and ctrl.rs2_is_signed) = '1') then -- signed division?
-            div.rs2_abs <= std_ulogic_vector(0 - unsigned(rs2_i)); -- make positive
-          else
-            div.rs2_abs <= rs2_i;
-          end if;
+          div.quotient  <= abs_f(rs1_i, ctrl.rs1_is_signed);
+          div.rs2_abs   <= abs_f(rs2_i, ctrl.rs2_is_signed);
           -- check relevant input signs for result sign compensation --
-          if (ctrl_i.ir_funct3(1 downto 0) = op_div_c(1 downto 0)) then -- signed div operation
-            div.sign_mod <= (rs1_i(rs1_i'left) xor rs2_i(rs2_i'left)) and or_reduce_f(rs2_i); -- different signs AND divisor not zero
-          elsif (ctrl_i.ir_funct3(1 downto 0) = op_rem_c(1 downto 0)) then -- signed rem operation
-            div.sign_mod <= rs1_i(rs1_i'left);
-          else
-            div.sign_mod <= '0';
-          end if;
+          case ctrl_i.ir_funct3(1 downto 0) is
+            when "00"   => div.sign_mod <= or_reduce_f(rs2_i) and (rs1_i(rs1_i'left) xor rs2_i(rs2_i'left)); -- signed div
+            when "10"   => div.sign_mod <= rs1_i(rs1_i'left); -- signed rem
+            when others => div.sign_mod <= '0';
+          end case;
         elsif (ctrl.state = S_BUSY) or (ctrl.state = S_DONE) then -- running?
           div.quotient <= div.quotient(30 downto 0) & (not div.sub(32));
           if (div.sub(32) = '0') then -- implicit shift
