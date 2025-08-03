@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 03.08.2025 | 1.11.8.9 | minor rtl edits and cleanups | [#1331](https://github.com/stnolting/neorv32/pull/1331) |
 | 28.07.2025 | 1.11.8.8 | minor rtl edits and cleanups | [#1325](https://github.com/stnolting/neorv32/pull/1325) |
 | 25.07.2025 | 1.11.8.7 | make cache burst support optional | [#1324](https://github.com/stnolting/neorv32/pull/1324) |
 | 20.07.2025 | 1.11.8.6 | extend tracer simulation log; refine semihosting file (write) access; minor rtl edits | [#1322](https://github.com/stnolting/neorv32/pull/1322) |
