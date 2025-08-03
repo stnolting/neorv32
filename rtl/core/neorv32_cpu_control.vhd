@@ -68,37 +68,35 @@ entity neorv32_cpu_control is
   );
   port (
     -- global control --
-    clk_i         : in  std_ulogic; -- global clock, rising edge
-    rstn_i        : in  std_ulogic; -- global reset, low-active, async
-    ctrl_o        : out ctrl_bus_t; -- main control bus
-    -- instruction fetch (front-end) interface --
-    frontend_i    : in  if_bus_t;   -- front-end status and data
-    -- pmp fault --
-    pmp_fault_i   : in  std_ulogic; -- instruction fetch / execute pmp fault
-    -- trigger module --
-    hwtrig_i      : in  std_ulogic; -- hardware trigger
+    clk_i         : in  std_ulogic;                         -- global clock, rising edge
+    rstn_i        : in  std_ulogic;                         -- global reset, low-active, async
+    ctrl_o        : out ctrl_bus_t;                         -- main control bus
+    -- misc --
+    frontend_i    : in  if_bus_t;                           -- front-end status and data
+    pmp_fault_i   : in  std_ulogic;                         -- instruction fetch / execute pmp fault
+    hwtrig_i      : in  std_ulogic;                         -- hardware trigger
     -- data path interface --
-    alu_cp_done_i : in  std_ulogic; -- ALU iterative operation done
-    alu_cmp_i     : in  std_ulogic_vector(1 downto 0); -- comparator status
+    alu_cp_done_i : in  std_ulogic;                         -- ALU iterative operation done
+    alu_cmp_i     : in  std_ulogic_vector(1 downto 0);      -- comparator status
     alu_add_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- ALU address result
     rf_rs1_i      : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     csr_rdata_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
     xcsr_rdata_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- external CSR read data
     -- interrupts --
-    irq_dbg_i     : in  std_ulogic; -- debug mode (halt) request
-    irq_machine_i : in  std_ulogic_vector(2 downto 0); -- risc-v mei, mti, msi
-    irq_fast_i    : in  std_ulogic_vector(15 downto 0); -- fast interrupts
+    irq_dbg_i     : in  std_ulogic;                         -- debug mode (halt) request
+    irq_machine_i : in  std_ulogic_vector(2 downto 0);      -- risc-v mei, mti, msi
+    irq_fast_i    : in  std_ulogic_vector(15 downto 0);     -- fast interrupts
     -- load/store unit interface --
-    lsu_wait_i    : in  std_ulogic; -- wait for data bus
+    lsu_wait_i    : in  std_ulogic;                         -- wait for data bus
     lsu_mar_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-    lsu_err_i     : in  std_ulogic_vector(3 downto 0) -- alignment/access errors
+    lsu_err_i     : in  std_ulogic_vector(3 downto 0)       -- alignment/access errors
   );
 end neorv32_cpu_control;
 
 architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- instruction execution engine --
-  type exe_engine_state_t is (EX_DISPATCH, EX_TRAP_ENTER, EX_TRAP_EXIT, EX_RESTART, EX_SLEEP, EX_EXECUTE,
+  type exe_engine_state_t is (EX_RESTART, EX_DISPATCH, EX_TRAP_ENTER, EX_TRAP_EXIT, EX_SLEEP, EX_EXECUTE,
                               EX_ALU_WAIT, EX_BRANCH, EX_BRANCHED, EX_SYSTEM, EX_MEM_REQ, EX_MEM_RSP);
   type exe_engine_t is record
     state : exe_engine_state_t;
@@ -347,6 +345,12 @@ begin
     -- state machine --
     case exe_engine.state is
 
+      when EX_RESTART => -- reset and restart instruction fetch at next PC
+      -- ------------------------------------------------------------
+        ctrl_nxt.rf_zero_we  <= not bool_to_ulogic_f(CPU_RF_HW_RST_EN); -- house keeping: force writing zero to x0 if it's a phys. register
+        if_reset             <= '1';
+        exe_engine_nxt.state <= EX_BRANCHED; -- delay cycle to restart front-end
+
       when EX_DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
       -- ------------------------------------------------------------
         ctrl_nxt.alu_opa_mux <= '1'; -- prepare update of next PC in EX_EXECUTE (opa = current PC)
@@ -391,12 +395,6 @@ begin
         end if;
         trap_ctrl.env_exit   <= '1';
         exe_engine_nxt.state <= EX_RESTART; -- restart instruction fetch
-
-      when EX_RESTART => -- reset and restart instruction fetch at next PC
-      -- ------------------------------------------------------------
-        ctrl_nxt.rf_zero_we  <= not bool_to_ulogic_f(CPU_RF_HW_RST_EN); -- house keeping: force writing zero to x0 if it's a phys. register
-        if_reset             <= '1';
-        exe_engine_nxt.state <= EX_BRANCHED; -- delay cycle to restart front-end
 
       when EX_EXECUTE => -- decode and execute instruction (control will be here for exactly 1 cycle in any case)
       -- ------------------------------------------------------------
