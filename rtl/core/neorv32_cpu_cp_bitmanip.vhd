@@ -50,6 +50,34 @@ end neorv32_cpu_cp_bitmanip;
 
 architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
 
+  -- count leading zeros --
+  function leading_zeros_f(input : std_ulogic_vector) return natural is
+    variable cnt_v : natural range 0 to input'length;
+  begin
+    cnt_v := 0;
+    for i in input'length-1 downto 0 loop
+      if (input(i) = '0') then
+        cnt_v := cnt_v + 1;
+      else
+        exit;
+      end if;
+    end loop;
+    return cnt_v;
+  end function leading_zeros_f;
+
+  -- population count (number of set bits) --
+  function popcount_f(input : std_ulogic_vector) return natural is
+    variable cnt_v : natural range 0 to input'length;
+  begin
+    cnt_v := 0;
+    for i in 0 to input'length-1 loop
+      if (input(i) = '1') then
+        cnt_v := cnt_v + 1;
+      end if;
+    end loop;
+    return cnt_v;
+  end function popcount_f;
+
   -- Zbb --
   constant op_andn_c  : natural := 0; -- logic with negate
   constant op_orn_c   : natural := 1; -- logic with negate
@@ -117,11 +145,9 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   signal bs_level : bs_level_t;
   signal bs_shift : std_ulogic_vector(index_size_f(XLEN)-1 downto 0);
 
-  -- operation results --
+  -- operation/intermediate results --
   type res_t is array (0 to op_width_c-1) of std_ulogic_vector(XLEN-1 downto 0);
   signal res_int, res_out : res_t;
-
-  -- intermediate results --
   signal adder_res, one_hot_res, zip_res, unzip_res : std_ulogic_vector(XLEN-1 downto 0);
 
 begin
