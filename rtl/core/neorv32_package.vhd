@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110808"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110809"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -530,7 +530,8 @@ package neorv32_package is
   constant csr_mimpid_c         : std_ulogic_vector(11 downto 0) := x"f13";
   constant csr_mhartid_c        : std_ulogic_vector(11 downto 0) := x"f14";
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
-  -- NEORV32-specific read-only machine registers --
+  -- NEORV32-specific machine registers --
+--constant csr_mxctrl_c         : std_ulogic_vector(11 downto 0) := x"bc0"; -- to be implemented...
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
 --constant csr_mxisah_c         : std_ulogic_vector(11 downto 0) := x"fc1"; -- to be implemented...
 
@@ -784,8 +785,6 @@ package neorv32_package is
   function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
-  function popcount_f(input : std_ulogic_vector) return natural;
-  function leading_zeros_f(input : std_ulogic_vector) return natural;
   function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector;
   impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
   function print_hex_f(data : std_ulogic_vector) return string;
@@ -1154,36 +1153,6 @@ package body neorv32_package is
       return false;
     end if;
   end function is_power_of_two_f;
-
-  -- Population count (number of set bits) --------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function popcount_f(input : std_ulogic_vector) return natural is
-    variable cnt_v : natural range 0 to input'length;
-  begin
-    cnt_v := 0;
-    for i in 0 to input'length-1 loop
-      if (input(i) = '1') then
-        cnt_v := cnt_v + 1;
-      end if;
-    end loop;
-    return cnt_v;
-  end function popcount_f;
-
-  -- Count leading zeros --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function leading_zeros_f(input : std_ulogic_vector) return natural is
-    variable cnt_v : natural range 0 to input'length;
-  begin
-    cnt_v := 0;
-    for i in input'length-1 downto 0 loop
-      if (input(i) = '0') then
-        cnt_v := cnt_v + 1;
-      else
-        exit;
-      end if;
-    end loop;
-    return cnt_v;
-  end function leading_zeros_f;
 
   -- Replicate input bit num times ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
