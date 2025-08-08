@@ -96,7 +96,7 @@ enum NEORV32_CSR_enum {
   CSR_DPC            = 0x7b1, /**< 0x7b1 - dpc:       Debug program counter */
   CSR_DSCRATCH0      = 0x7b2, /**< 0x7b2 - dscratch0: Debug scratch register */
 
-  /* custom functions unit (CFU) registers */
+  /* custom functions unit (CFU) */
   CSR_CFUREG0        = 0x800, /**< 0x800 - cfureg0: custom CFU CSR 0 */
   CSR_CFUREG1        = 0x801, /**< 0x801 - cfureg1: custom CFU CSR 1 */
   CSR_CFUREG2        = 0x802, /**< 0x802 - cfureg2: custom CFU CSR 2 */
@@ -142,13 +142,15 @@ enum NEORV32_CSR_enum {
   CSR_CYCLEH         = 0xc80, /**< 0xc80 - cycleh:        User cycle counter high word */
   CSR_INSTRETH       = 0xc82, /**< 0xc82 - instreth:      User instructions-retired counter high word */
 
-  /* machine information registers */
+  /* machine information */
   CSR_MVENDORID      = 0xf11, /**< 0xf11 - mvendorid:  Machine vendor ID */
   CSR_MARCHID        = 0xf12, /**< 0xf12 - marchid:    Machine architecture ID */
   CSR_MIMPID         = 0xf13, /**< 0xf13 - mimpid:     Machine implementation ID */
   CSR_MHARTID        = 0xf14, /**< 0xf14 - mhartid:    Machine hardware thread ID */
   CSR_MCONFIGPTR     = 0xf15, /**< 0xf15 - mconfigptr: Machine configuration pointer register */
-  CSR_MXISA          = 0xfc0  /**< 0xfc0 - mxisa:      Machine extended ISA and extensions (#NEORV32_CSR_MXISA_enum) */
+
+  /* NEORV32-specific */
+  CSR_MXISA          = 0xfc0  /**< 0xfc0 - mxisa: Machine extended ISA and extensions (#NEORV32_CSR_MXISA_enum) */
 };
 
 
@@ -396,7 +398,6 @@ enum NEORV32_EXCEPTION_CODES_enum {
   TRAP_CODE_S_ACCESS     = 0x00000007U, /**< 0.7:  Store (bus) access fault */
   TRAP_CODE_UENV_CALL    = 0x00000008U, /**< 0.8:  Environment call from user mode (ECALL instruction) */
   TRAP_CODE_MENV_CALL    = 0x0000000bU, /**< 0.11: Environment call from machine mode (ECALL instruction) */
-  TRAP_CODE_DOUBLE_TRAP  = 0x00000010U, /**< 0.16: Double-trap */
   TRAP_CODE_MSI          = 0x80000003U, /**< 1.3:  Machine software interrupt */
   TRAP_CODE_MTI          = 0x80000007U, /**< 1.7:  Machine timer interrupt */
   TRAP_CODE_MEI          = 0x8000000bU, /**< 1.11: Machine external interrupt */

@@ -17,6 +17,7 @@
 static volatile uint32_t __attribute__((aligned(4))) __neorv32_rte_vector_lut[2][32];
 
 // private helper functions
+static void __neorv32_rte_print_string(const char *s);
 static void __neorv32_rte_print_hex(uint32_t num, int digits);
 
 
@@ -269,41 +270,40 @@ void neorv32_rte_debug_handler(void) {
   }
 
   // intro
-  neorv32_uart0_puts("<NEORV32-RTE> ");
+  __neorv32_rte_print_string("<NEORV32-RTE> ");
 
   // CPU ID
   if (neorv32_cpu_csr_read(CSR_MHARTID) & 1) {
-    neorv32_uart0_puts("[cpu1|");
+    __neorv32_rte_print_string("[cpu1|");
   }
   else {
-    neorv32_uart0_puts("[cpu0|");
+    __neorv32_rte_print_string("[cpu0|");
   }
 
   // privilege level of the CPU when the trap occurred
   if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3 << CSR_MSTATUS_MPP_L)) {
-    neorv32_uart0_puts("M] "); // machine-mode
+    __neorv32_rte_print_string("M] "); // machine-mode
   }
   else {
-    neorv32_uart0_puts("U] "); // user-mode
+    __neorv32_rte_print_string("U] "); // user-mode
   }
 
   // cause
   uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
   switch (trap_cause) {
-    case TRAP_CODE_I_ACCESS:     neorv32_uart0_puts("Instruction access fault"); break;
-    case TRAP_CODE_I_ILLEGAL:    neorv32_uart0_puts("Illegal instruction"); break;
-    case TRAP_CODE_I_MISALIGNED: neorv32_uart0_puts("Instruction address misaligned"); break;
-    case TRAP_CODE_BREAKPOINT:   neorv32_uart0_puts("Environment breakpoint"); break;
-    case TRAP_CODE_L_MISALIGNED: neorv32_uart0_puts("Load address misaligned"); break;
-    case TRAP_CODE_L_ACCESS:     neorv32_uart0_puts("Load access fault"); break;
-    case TRAP_CODE_S_MISALIGNED: neorv32_uart0_puts("Store address misaligned"); break;
-    case TRAP_CODE_S_ACCESS:     neorv32_uart0_puts("Store access fault"); break;
-    case TRAP_CODE_UENV_CALL:    neorv32_uart0_puts("Environment call from U-mode"); break;
-    case TRAP_CODE_MENV_CALL:    neorv32_uart0_puts("Environment call from M-mode"); break;
-    case TRAP_CODE_DOUBLE_TRAP:  neorv32_uart0_puts("Double-trap"); break;
-    case TRAP_CODE_MSI:          neorv32_uart0_puts("Machine software IRQ"); break;
-    case TRAP_CODE_MTI:          neorv32_uart0_puts("Machine timer IRQ"); break;
-    case TRAP_CODE_MEI:          neorv32_uart0_puts("Machine external IRQ"); break;
+    case TRAP_CODE_I_ACCESS:     __neorv32_rte_print_string("Instruction access fault"); break;
+    case TRAP_CODE_I_ILLEGAL:    __neorv32_rte_print_string("Illegal instruction"); break;
+    case TRAP_CODE_I_MISALIGNED: __neorv32_rte_print_string("Instruction address misaligned"); break;
+    case TRAP_CODE_BREAKPOINT:   __neorv32_rte_print_string("Environment breakpoint"); break;
+    case TRAP_CODE_L_MISALIGNED: __neorv32_rte_print_string("Load address misaligned"); break;
+    case TRAP_CODE_L_ACCESS:     __neorv32_rte_print_string("Load access fault"); break;
+    case TRAP_CODE_S_MISALIGNED: __neorv32_rte_print_string("Store address misaligned"); break;
+    case TRAP_CODE_S_ACCESS:     __neorv32_rte_print_string("Store access fault"); break;
+    case TRAP_CODE_UENV_CALL:    __neorv32_rte_print_string("Environment call from U-mode"); break;
+    case TRAP_CODE_MENV_CALL:    __neorv32_rte_print_string("Environment call from M-mode"); break;
+    case TRAP_CODE_MSI:          __neorv32_rte_print_string("Machine software IRQ"); break;
+    case TRAP_CODE_MTI:          __neorv32_rte_print_string("Machine timer IRQ"); break;
+    case TRAP_CODE_MEI:          __neorv32_rte_print_string("Machine external IRQ"); break;
     case TRAP_CODE_FIRQ_0:
     case TRAP_CODE_FIRQ_1:
     case TRAP_CODE_FIRQ_2:
@@ -319,33 +319,31 @@ void neorv32_rte_debug_handler(void) {
     case TRAP_CODE_FIRQ_12:
     case TRAP_CODE_FIRQ_13:
     case TRAP_CODE_FIRQ_14:
-    case TRAP_CODE_FIRQ_15:      neorv32_uart0_puts("Fast IRQ "); __neorv32_rte_print_hex(trap_cause, 1); break;
-    default:                     neorv32_uart0_puts("Unknown trap cause "); __neorv32_rte_print_hex(trap_cause, 8); break;
+    case TRAP_CODE_FIRQ_15:      __neorv32_rte_print_string("Fast IRQ "); __neorv32_rte_print_hex(trap_cause, 1); break;
+    default:                     __neorv32_rte_print_string("Unknown trap cause "); __neorv32_rte_print_hex(trap_cause, 8); break;
   }
 
   // instruction address
-  neorv32_uart0_puts(" @ PC=");
+  __neorv32_rte_print_string(" MEPC=");
   __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MEPC), 8);
 
   // trapping instruction
-  neorv32_uart0_puts(", MTINST=");
+  __neorv32_rte_print_string(" MTINST=");
   __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MTINST), 8);
 
   // trap value
-  neorv32_uart0_puts(", MTVAL=");
+  __neorv32_rte_print_string(" MTVAL=");
   __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MTVAL), 8);
 
   // unhandled IRQ - disable interrupt channel
   if (((int32_t)trap_cause) < 0) { // is interrupt
-    neorv32_uart0_puts(" Disabling IRQ source");
+    __neorv32_rte_print_string(" Disabling IRQ source");
     neorv32_cpu_csr_clr(CSR_MIE, 1 << (trap_cause & 0x1f));
   }
 
   // halt if fatal exception
-  if ((trap_cause == TRAP_CODE_I_ACCESS) ||
-      (trap_cause == TRAP_CODE_I_MISALIGNED) ||
-      (trap_cause == TRAP_CODE_DOUBLE_TRAP)) {
-    neorv32_uart0_puts(" !!FATAL EXCEPTION!! Halting CPU </NEORV32-RTE>\n");
+  if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_I_MISALIGNED)) {
+    __neorv32_rte_print_string(" [FATAL!] Halting CPU </NEORV32-RTE>\n");
     neorv32_cpu_csr_write(CSR_MIE, 0);
     while(1) {
       asm volatile ("wfi");
@@ -353,16 +351,30 @@ void neorv32_rte_debug_handler(void) {
   }
 
   // outro
-  neorv32_uart0_puts(" </NEORV32-RTE>\n");
+  __neorv32_rte_print_string(" </NEORV32-RTE>\n");
+}
+
+
+/**********************************************************************//**
+ * NEORV32 runtime environment (RTE):
+ * Private function to print a simple string via UART0.
+ *
+ * @param[in] s Pointer to string.
+ **************************************************************************/
+static void __neorv32_rte_print_string(const char *s) {
+
+  if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
+    neorv32_uart_puts(NEORV32_UART0, s);
+  }
 }
 
 
 /**********************************************************************//**
  * NEORV32 runtime environment (RTE):
  * Private function to print the lowest 0 to 8 hex characters of a
- * 32-bit number as hexadecimal value (with "0x" suffix).
+ * 32-bit number as hexadecimal value (with "0x" suffix) via UART0.
  *
- * @param[in] num Number to print as hexadecimal via UART0.
+ * @param[in] num Number to print as hexadecimal.
  *
  * @param[in] digits Number of hexadecimal digits to print (0..8).
  **************************************************************************/
@@ -372,12 +384,11 @@ static void __neorv32_rte_print_hex(uint32_t num, int digits) {
   const char hex_symbols[] = "0123456789ABCDEF";
 
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
-    neorv32_uart0_putc('0');
-    neorv32_uart0_putc('x');
-
+    neorv32_uart_putc(NEORV32_UART0, '0');
+    neorv32_uart_putc(NEORV32_UART0, 'x');
     for (i=(digits-8); i<8; i++) {
       uint32_t index = (num >> (28 - 4*i)) & 0xF;
-      neorv32_uart0_putc(hex_symbols[index]);
+      neorv32_uart_putc(NEORV32_UART0, hex_symbols[index]);
     }
   }
 }
