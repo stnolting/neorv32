@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110900"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110901"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -269,8 +269,6 @@ package neorv32_package is
   constant instr_rs2_msb_c     : natural := 24; -- source register 2 address bit 4
   constant instr_funct7_lsb_c  : natural := 25; -- funct7 bit 0
   constant instr_funct7_msb_c  : natural := 31; -- funct7 bit 6
-  constant instr_funct12_lsb_c : natural := 20; -- funct12 bit 0
-  constant instr_funct12_msb_c : natural := 31; -- funct12 bit 11
   constant instr_imm12_lsb_c   : natural := 20; -- immediate12 bit 0
   constant instr_imm12_msb_c   : natural := 31; -- immediate12 bit 11
   constant instr_imm20_lsb_c   : natural := 12; -- immediate20 bit 0
@@ -531,7 +529,7 @@ package neorv32_package is
   constant csr_mhartid_c        : std_ulogic_vector(11 downto 0) := x"f14";
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
   -- NEORV32-specific machine registers --
---constant csr_mxctrl_c         : std_ulogic_vector(11 downto 0) := x"bc0"; -- to be implemented...
+--constant csr_mxcsr_c          : std_ulogic_vector(11 downto 0) := x"bc0"; -- to be implemented...
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
 --constant csr_mxisah_c         : std_ulogic_vector(11 downto 0) := x"fc1"; -- to be implemented...
 
@@ -678,7 +676,6 @@ package neorv32_package is
   constant trap_sma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00110"; -- 6: store address misaligned
   constant trap_saf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00111"; -- 7: store access fault
   constant trap_env_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01000"; -- 8..11: environment call
-  constant trap_dbt_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "10000"; -- 16: double-trap
   -- RISC-V compliant asynchronous exceptions (interrupts) --
   constant trap_msi_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00011"; -- 3:  machine software interrupt
   constant trap_mti_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00111"; -- 7:  machine timer interrupt
@@ -718,10 +715,9 @@ package neorv32_package is
   constant exc_lalign_c   : natural :=  6; -- load address misaligned
   constant exc_saccess_c  : natural :=  7; -- store access fault
   constant exc_laccess_c  : natural :=  8; -- load access fault
-  constant exc_doublet_c  : natural :=  9; -- double-trap
-  constant exc_db_break_c : natural := 10; -- enter debug mode via ebreak instruction
-  constant exc_db_hw_c    : natural := 11; -- enter debug mode via hw trigger
-  constant exc_width_c    : natural := 12; -- length of this list in bits
+  constant exc_db_break_c : natural :=  9; -- enter debug mode via ebreak instruction
+  constant exc_db_hw_c    : natural := 10; -- enter debug mode via hw trigger
+  constant exc_width_c    : natural := 11; -- length of this list in bits
   -- interrupt source list --
   constant irq_msi_irq_c  : natural :=  0; -- machine software interrupt
   constant irq_mti_irq_c  : natural :=  1; -- machine timer interrupt

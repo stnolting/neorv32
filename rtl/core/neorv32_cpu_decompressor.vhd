@@ -348,8 +348,8 @@ begin
             else -- C.EBREAK, C.JALR, C.ADD
               if (instr_i(6 downto 2) = "00000") then -- C.EBREAK, C.JALR
                 if (instr_i(11 downto 7) = "00000") then -- C.EBREAK
-                  decoded(instr_opcode_msb_c downto instr_opcode_lsb_c)   <= opcode_system_c;
-                  decoded(instr_funct12_msb_c downto instr_funct12_lsb_c) <= funct12_ebreak_c;
+                  decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_system_c;
+                  decoded(instr_imm12_msb_c downto instr_imm12_lsb_c)   <= funct12_ebreak_c;
                 else -- C.JALR
                   decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_jalr_c;
                   decoded(instr_rs1_msb_c downto instr_rs1_lsb_c)       <= instr_i(ci_rs1_5_msb_c downto ci_rs1_5_lsb_c);
