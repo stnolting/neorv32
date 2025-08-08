@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 08.08.2025 | 1.11.9.1 | :warning: remove double-trap exception | [#1332](https://github.com/stnolting/neorv32/pull/1332) |
 | 03.08.2025 | [**1.11.9**](https://github.com/stnolting/neorv32/releases/tag/v1.11.9) | :rocket: **New release** | |
 | 03.08.2025 | 1.11.8.9 | minor rtl edits and cleanups | [#1331](https://github.com/stnolting/neorv32/pull/1331) |
 | 28.07.2025 | 1.11.8.8 | minor rtl edits and cleanups | [#1325](https://github.com/stnolting/neorv32/pull/1325) |
