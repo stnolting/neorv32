@@ -137,11 +137,17 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
 #endif
   );
 
-  // get trap cause
+  // flush context (stack frame) to main memory and reload trap vector table from main memory
+  asm volatile ("fence");
+
+  // call handler
   uint32_t mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
+  typedef void handler_t();
+  handler_t* handler = (handler_t*)__neorv32_rte_vector_lut[mcause >> 31][mcause & 31];
+  handler();
 
   // compute return address (for synchronous exceptions only)
-  if ((mcause >> 31) == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MCAUSE) >> 31) == 0) {
     uint32_t mepc = neorv32_cpu_csr_read(CSR_MEPC) + 4; // default: faulting instruction is uncompressed
 #ifdef __riscv_c
     if ((neorv32_cpu_csr_read(CSR_MTINST) & 3) != 3) {
@@ -150,14 +156,6 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
 #endif
     neorv32_cpu_csr_write(CSR_MEPC, mepc);
   }
-
-  // flush context (stack frame) to main memory and reload trap vector table from main memory
-  asm volatile ("fence");
-
-  // call handler
-  typedef void handler_t();
-  handler_t* handler = (handler_t*)__neorv32_rte_vector_lut[mcause >> 31][mcause & 31];
-  handler();
 
   // restore context
   asm volatile (

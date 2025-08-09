@@ -860,9 +860,7 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if ((trap_cause == TRAP_CODE_MTI) &&
-        (neorv32_cpu_csr_read(CSR_MTVAL)  == 0) && // has to be zero for interrupts
-        (neorv32_cpu_csr_read(CSR_MTINST) == 0)) { // has to be zero for interrupts
+    if ((trap_cause == TRAP_CODE_MTI) && (neorv32_cpu_csr_read(CSR_MTVAL)  == 0)) {
       test_ok();
     }
     else {
@@ -2279,7 +2277,14 @@ void global_trap_handler(void) {
   // hack: make "instruction access fault" exception resumable as we *exactly* know how to handle it in this case
   // -> as this is triggered by a JAL instruction we return to calling program at [context.ra]
   if (trap_cause == TRAP_CODE_I_ACCESS) {
-    neorv32_cpu_csr_write(CSR_MEPC, neorv32_rte_context_get(1)); // x1 = ra = return address
+    uint32_t return_addr = neorv32_rte_context_get(1); // x1 = ra = return address
+    if ((neorv32_cpu_csr_read(CSR_MTINST) & 3) != 3) {
+      return_addr -= 2;
+    }
+    else {
+      return_addr -= 4;
+    }
+    neorv32_cpu_csr_write(CSR_MEPC, return_addr);
   }
 
   // hack: always come back in MACHINE MODE
