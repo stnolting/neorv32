@@ -29,7 +29,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110901"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01110902"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -698,10 +698,10 @@ package neorv32_package is
   constant trap_firq14_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11110"; -- 30: fast interrupt 14
   constant trap_firq15_c   : std_ulogic_vector(6 downto 0) := "1" & "0" & "11111"; -- 31: fast interrupt 15
   -- debug-mode-entry exceptions --
-  constant trap_db_break_c : std_ulogic_vector(6 downto 0) := "0" & "1" & "00001"; -- 1: break instruction (sync)
-  constant trap_db_trig_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00010"; -- 2: hardware trigger (async)
-  constant trap_db_halt_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00011"; -- 3: external halt request (async)
-  constant trap_db_step_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00100"; -- 4: single-stepping (async)
+  constant trap_db_break_c : std_ulogic_vector(6 downto 0) := "0" & "1" & "00001"; -- 1: break instruction
+  constant trap_db_trig_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00010"; -- 2: hardware trigger
+  constant trap_db_halt_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00011"; -- 3: external halt request
+  constant trap_db_step_c  : std_ulogic_vector(6 downto 0) := "1" & "1" & "00100"; -- 4: single-stepping
 
   -- Trap System ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -715,9 +715,10 @@ package neorv32_package is
   constant exc_lalign_c   : natural :=  6; -- load address misaligned
   constant exc_saccess_c  : natural :=  7; -- store access fault
   constant exc_laccess_c  : natural :=  8; -- load access fault
-  constant exc_db_break_c : natural :=  9; -- enter debug mode via ebreak instruction
-  constant exc_db_hw_c    : natural := 10; -- enter debug mode via hw trigger
-  constant exc_width_c    : natural := 11; -- length of this list in bits
+  constant exc_db_break_c : natural :=  9; -- enter debug mode via break instruction
+  constant exc_db_trig_c  : natural := 10; -- enter debug mode via hardware trigger
+  constant exc_db_step_c  : natural := 11; -- enter debug mode via single-stepping
+  constant exc_width_c    : natural := 12; -- length of this list in bits
   -- interrupt source list --
   constant irq_msi_irq_c  : natural :=  0; -- machine software interrupt
   constant irq_mti_irq_c  : natural :=  1; -- machine timer interrupt
@@ -739,8 +740,7 @@ package neorv32_package is
   constant irq_firq_14_c  : natural := 17; -- fast interrupt channel 14
   constant irq_firq_15_c  : natural := 18; -- fast interrupt channel 15
   constant irq_db_halt_c  : natural := 19; -- enter debug mode via external halt request
-  constant irq_db_step_c  : natural := 20; -- enter debug mode via single-stepping
-  constant irq_width_c    : natural := 21; -- length of this list in bits
+  constant irq_width_c    : natural := 20; -- length of this list in bits
 
   -- Privilege Modes ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

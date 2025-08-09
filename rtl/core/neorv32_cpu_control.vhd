@@ -114,13 +114,12 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     exc_fire    : std_ulogic; -- set if there is a valid source in the exception buffer
     irq_pnd     : std_ulogic_vector(irq_width_c-1 downto 0); -- pending interrupt
     irq_buf     : std_ulogic_vector(irq_width_c-1 downto 0); -- asynchronous exception/interrupt buffer (one bit per interrupt source)
-    irq_fire    : std_ulogic_vector(2 downto 0); -- set if an interrupt is actually kicking in
+    irq_fire    : std_ulogic_vector(1 downto 0); -- set if an interrupt is actually kicking in
     cause       : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR & debug-mode entry identifier
     pc          : std_ulogic_vector(XLEN-1 downto 0); -- trap program counter
     --
     env_pending : std_ulogic; -- start of trap environment if pending
     env_enter   : std_ulogic; -- enter trap environment
-    env_entered : std_ulogic; -- trap environment has just been entered
     env_exit    : std_ulogic; -- leave trap environment
     --
     instr_be    : std_ulogic; -- instruction fetch bus error
@@ -525,14 +524,14 @@ begin
 
       when EX_SLEEP => -- sleep mode
       -- ------------------------------------------------------------
-        if (or_reduce_f(trap_ctrl.irq_buf) = '1') or (debug_ctrl.run = '1') or (csr.dcsr_step = '1') then -- enabled pending IRQ, debug-mode, single-stepping
+        if (or_reduce_f(trap_ctrl.irq_buf) = '1') or (debug_ctrl.run = '1') or (csr.dcsr_step = '1') then -- enabled pending IRQ, debug-mode, single-step
           exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
       when EX_SYSTEM => -- CSR/ENVIRONMENT operation; no effect if illegal instruction
       -- ------------------------------------------------------------
         exe_engine_nxt.state <= EX_DISPATCH; -- default
-        if (funct3_v = funct3_env_c) and (or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- non-illegal ENVIRONMENT instruction
+        if (funct3_v = funct3_env_c) and (or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- non-illegal ENV instruction
           case exe_engine.ir(instr_imm12_lsb_c+2 downto instr_imm12_lsb_c) is -- three LSBs are sufficient here
             when "000"  => trap_ctrl.ecall      <= '1'; -- ecall
             when "001"  => trap_ctrl.ebreak     <= '1'; -- ebreak
@@ -567,7 +566,9 @@ begin
   ctrl_o.pc_nxt       <= exe_engine.pc2(XLEN-1 downto 1) & '0';
   ctrl_o.pc_ret       <= exe_engine.ra(XLEN-1 downto 1) & '0';
   -- register file --
-  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and (not trap_ctrl.exc_fire); -- inhibit write-back if exception
+  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and -- write-back only if ...
+                         (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c))) and -- no instruction exception
+                         (not or_reduce_f(trap_ctrl.exc_buf(exc_laccess_c downto exc_salign_c)));    -- no data exception
   ctrl_o.rf_rs1       <= exe_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c);
   ctrl_o.rf_rs2       <= exe_engine.ir(instr_rs2_msb_c downto instr_rs2_lsb_c);
   ctrl_o.rf_rd        <= exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c);
@@ -831,7 +832,7 @@ begin
       -- ----------------------------------------------------------------------
       trap_ctrl.irq_pnd(irq_mei_irq_c downto irq_msi_irq_c) <= irq_machine_i; -- RISC-V machine interrupts
       trap_ctrl.irq_pnd(irq_firq_15_c downto irq_firq_0_c)  <= irq_fast_i(15 downto 0); -- NEORV32-specific fast interrupts
-      trap_ctrl.irq_pnd(irq_db_step_c downto irq_db_halt_c) <= "00"; -- unused debug-mode entry
+      trap_ctrl.irq_pnd(irq_db_halt_c)                      <= '0'; -- unused debug-mode entry
 
       -- Interrupt Buffer -----------------------------------------------------
       -- Masking of interrupt request lines. Additionally, this buffer ensures
@@ -849,9 +850,8 @@ begin
         trap_ctrl.irq_buf(irq_firq_0_c+i) <= (trap_ctrl.irq_pnd(irq_firq_0_c+i) and csr.mie_firq(i)) or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_firq_0_c+i));
       end loop;
 
-      -- debug-mode entry --
+      -- debug-mode entry (external halt request) --
       trap_ctrl.irq_buf(irq_db_halt_c) <= debug_ctrl.trig_halt or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_db_halt_c));
-      trap_ctrl.irq_buf(irq_db_step_c) <= debug_ctrl.trig_step or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_db_step_c));
 
       -- Exception Buffer -----------------------------------------------------
       -- All requests stay pending until the trap environment is started. Only
@@ -866,8 +866,9 @@ begin
       trap_ctrl.exc_buf(exc_lalign_c)   <= (trap_ctrl.exc_buf(exc_lalign_c)   or lsu_err_i(0))          and (not trap_ctrl.env_enter); -- load address misaligned
       trap_ctrl.exc_buf(exc_saccess_c)  <= (trap_ctrl.exc_buf(exc_saccess_c)  or lsu_err_i(3))          and (not trap_ctrl.env_enter); -- store access error
       trap_ctrl.exc_buf(exc_laccess_c)  <= (trap_ctrl.exc_buf(exc_laccess_c)  or lsu_err_i(1))          and (not trap_ctrl.env_enter); -- load access error
-      trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_enter); -- debug-mode-entry: break
-      trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_enter); -- debug-mode-entry: trigger
+      trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_enter); -- debug-entry: break
+      trap_ctrl.exc_buf(exc_db_trig_c)  <= (trap_ctrl.exc_buf(exc_db_trig_c)  or debug_ctrl.trig_hw)    and (not trap_ctrl.env_enter); -- debug-entry: trigger
+      trap_ctrl.exc_buf(exc_db_step_c)  <= (trap_ctrl.exc_buf(exc_db_step_c)  or debug_ctrl.trig_step)  and (not trap_ctrl.env_enter); -- debug-entry: single step
 
     end if;
   end process trap_buffer;
@@ -889,17 +890,17 @@ begin
       if    (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
       elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c; -- illegal instruction
       elsif (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c; -- instruction address misaligned
-      elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & replicate_f(csr.prv_level, 2); -- environment call (U/M)
+      elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & replicate_f(csr.prv_level, 2); -- environment call
       elsif (trap_ctrl.exc_buf(exc_ebreak_c)   = '1') then trap_ctrl.cause <= trap_brk_c; -- environment breakpoint
       elsif (trap_ctrl.exc_buf(exc_salign_c)   = '1') then trap_ctrl.cause <= trap_sma_c; -- store address misaligned
       elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c; -- load address misaligned
       elsif (trap_ctrl.exc_buf(exc_saccess_c)  = '1') then trap_ctrl.cause <= trap_saf_c; -- store access fault
       elsif (trap_ctrl.exc_buf(exc_laccess_c)  = '1') then trap_ctrl.cause <= trap_laf_c; -- load access fault
       -- standard RISC-V debug mode synchronous exceptions and interrupts --
-      elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request (async)
-      elsif (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') then trap_ctrl.cause <= trap_db_trig_c;  -- hardware trigger (sync)
-      elsif (trap_ctrl.exc_buf(exc_db_break_c) = '1') then trap_ctrl.cause <= trap_db_break_c; -- breakpoint (sync)
-      elsif (trap_ctrl.irq_buf(irq_db_step_c)  = '1') then trap_ctrl.cause <= trap_db_step_c;  -- single stepping (async)
+      elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request
+      elsif (trap_ctrl.exc_buf(exc_db_trig_c)  = '1') then trap_ctrl.cause <= trap_db_trig_c;  -- hardware trigger
+      elsif (trap_ctrl.exc_buf(exc_db_break_c) = '1') then trap_ctrl.cause <= trap_db_break_c; -- breakpoint
+      elsif (trap_ctrl.exc_buf(exc_db_step_c)  = '1') then trap_ctrl.cause <= trap_db_step_c;  -- single stepping
       -- NEORV32-specific fast interrupts --
       elsif (trap_ctrl.irq_buf(irq_firq_0_c)   = '1') then trap_ctrl.cause <= trap_firq0_c;  -- fast interrupt channel 0
       elsif (trap_ctrl.irq_buf(irq_firq_1_c)   = '1') then trap_ctrl.cause <= trap_firq1_c;  -- fast interrupt channel 1
@@ -935,19 +936,11 @@ begin
   begin
     if (rstn_i = '0') then
       trap_ctrl.env_pending <= '0';
-      trap_ctrl.env_entered <= '0';
     elsif rising_edge(clk_i) then
-      -- pending trap environment --
       if ((trap_ctrl.env_pending = '0') and ((trap_ctrl.exc_fire = '1') or (or_reduce_f(trap_ctrl.irq_fire) = '1'))) then -- trap triggered
         trap_ctrl.env_pending <= '1';
       elsif (trap_ctrl.env_pending = '1') and (trap_ctrl.env_enter = '1') then -- start of trap environment acknowledged by execute engine
         trap_ctrl.env_pending <= '0';
-      end if;
-      -- trap environment has just been entered --
-      if (exe_engine.state = EX_EXECUTE) then -- first instruction of trap handler is executing
-        trap_ctrl.env_entered <= '0';
-      elsif (trap_ctrl.env_enter = '1') then
-        trap_ctrl.env_entered <= '1';
       end if;
     end if;
   end process trap_controller;
@@ -955,7 +948,7 @@ begin
   -- any exception? --
   trap_ctrl.exc_fire <= '1' when (or_reduce_f(trap_ctrl.exc_buf) = '1') else '0'; -- sync. exceptions CANNOT be masked
 
-  -- system interrupt? --
+  -- any system interrupt? --
   trap_ctrl.irq_fire(0) <= '1' when
     (exe_engine.state = EX_EXECUTE) and -- trigger system IRQ only in EX_EXECUTE state
     (or_reduce_f(trap_ctrl.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
@@ -963,15 +956,8 @@ begin
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
 
   -- debug-entry halt interrupt? --
-  trap_ctrl.irq_fire(1) <= '1' when
-    ((exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_BRANCHED)) and -- allow halt also after "reset" (#879)
-    (trap_ctrl.irq_buf(irq_db_halt_c) = '1') else '0'; -- pending external halt
-
-  -- debug-entry single-step interrupt? --
-  trap_ctrl.irq_fire(2) <= '1' when
-    ((exe_engine.state = EX_EXECUTE) or -- trigger single-step in EX_EXECUTE state
-     ((trap_ctrl.env_entered = '1') and (exe_engine.state = EX_BRANCHED))) and -- also allow triggering when entering a system trap (#887)
-    (trap_ctrl.irq_buf(irq_db_step_c) = '1') else '0'; -- pending single-step halt
+  trap_ctrl.irq_fire(1) <= trap_ctrl.irq_buf(irq_db_halt_c) when
+    (exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_BRANCHED) else '0'; -- allow halt also after "reset" (#879)
 
 
   -- ****************************************************************************************************************************
@@ -1305,7 +1291,7 @@ begin
             csr.rdata(1)  <= bool_to_ulogic_f(RISCV_ISA_B);
             csr.rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_C);
             csr.rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_E);
-            csr.rdata(8)  <= bool_to_ulogic_f(not RISCV_ISA_E); -- I = not E
+            csr.rdata(8)  <= bool_to_ulogic_f(not RISCV_ISA_E);
             csr.rdata(12) <= bool_to_ulogic_f(RISCV_ISA_M);
             csr.rdata(20) <= bool_to_ulogic_f(RISCV_ISA_U);
             csr.rdata(23) <= '1'; -- X CPU extension (non-standard / NEORV32-specific)
@@ -1551,7 +1537,7 @@ begin
                              ((    csr.prv_level) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
                              ((not csr.prv_level) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
     debug_ctrl.trig_halt  <= irq_dbg_i     and (not debug_ctrl.run); -- external halt request (if not halted already)
-    debug_ctrl.trig_step  <= csr.dcsr_step and (not debug_ctrl.run); -- single-step mode (trigger when NOT CURRENTLY in debug mode)
+    debug_ctrl.trig_step  <= csr.dcsr_step and (not debug_ctrl.run) and cnt_event(cnt_event_ir_c); -- single-step mode
 
   end generate;
 
