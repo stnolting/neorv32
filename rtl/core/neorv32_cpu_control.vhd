@@ -1023,108 +1023,92 @@ begin
       csr.dscratch0      <= (others => '0');
     elsif rising_edge(clk_i) then
 
-      -- write if no instruction exception --
-      csr.we <= csr.we_nxt and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)));
-
       -- ********************************************************************************
       -- Software CSR access
       -- ********************************************************************************
+      csr.we <= csr.we_nxt and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c))); -- write if no instruction exception
       if (csr.we = '1') then
+        case csr.addr is
 
-        -- --------------------------------------------------------------------
-        -- machine trap setup
-        -- --------------------------------------------------------------------
+          -- machine status register --
+          when csr_mstatus_c =>
+            csr.mstatus_mie  <= csr.wdata(3);
+            csr.mstatus_mpie <= csr.wdata(7);
+            if RISCV_ISA_U then
+              csr.mstatus_mpp  <= csr.wdata(11) or csr.wdata(12); -- everything /= U will fall back to M
+              csr.mstatus_mprv <= csr.wdata(17);
+              csr.mstatus_tw   <= csr.wdata(21);
+            end if;
 
-        -- machine status register - low word --
-        if (csr.addr = csr_mstatus_c) then
-          csr.mstatus_mie  <= csr.wdata(3);
-          csr.mstatus_mpie <= csr.wdata(7);
-          if RISCV_ISA_U then
-            csr.mstatus_mpp  <= csr.wdata(11) or csr.wdata(12); -- everything /= U will fall back to M
-            csr.mstatus_mprv <= csr.wdata(17);
-            csr.mstatus_tw   <= csr.wdata(21);
-          end if;
-        end if;
+          -- machine interrupt enable register --
+          when csr_mie_c =>
+            csr.mie_msi  <= csr.wdata(3);
+            csr.mie_mti  <= csr.wdata(7);
+            csr.mie_mei  <= csr.wdata(11);
+            csr.mie_firq <= csr.wdata(31 downto 16);
 
-        -- machine interrupt enable register --
-        if (csr.addr = csr_mie_c) then
-          csr.mie_msi  <= csr.wdata(3);
-          csr.mie_mti  <= csr.wdata(7);
-          csr.mie_mei  <= csr.wdata(11);
-          csr.mie_firq <= csr.wdata(31 downto 16);
-        end if;
+          -- machine trap-handler base address --
+          when csr_mtvec_c =>
+            csr.mtvec <= csr.wdata(XLEN-1 downto 2) & '0' & csr.wdata(0); -- base + mode (vectored/direct)
 
-        -- machine trap-handler base address --
-        if (csr.addr = csr_mtvec_c) then
-          csr.mtvec <= csr.wdata(XLEN-1 downto 2) & '0' & csr.wdata(0); -- base + mode (vectored/direct)
-        end if;
+          -- machine counter access enable --
+          when csr_mcounteren_c =>
+            if RISCV_ISA_U and RISCV_ISA_Zicntr then
+              csr.mcounteren_cy <= csr.wdata(0);
+              csr.mcounteren_ir <= csr.wdata(2);
+            end if;
 
-        -- machine counter access enable --
-        if (csr.addr = csr_mcounteren_c) and RISCV_ISA_U and RISCV_ISA_Zicntr then
-          csr.mcounteren_cy <= csr.wdata(0);
-          csr.mcounteren_ir <= csr.wdata(2);
-        end if;
+          -- machine scratch register --
+          when csr_mscratch_c =>
+            csr.mscratch <= csr.wdata;
 
-        -- --------------------------------------------------------------------
-        -- machine trap handling
-        -- --------------------------------------------------------------------
+          -- machine exception program counter --
+          when csr_mepc_c =>
+            csr.mepc <= csr.wdata(XLEN-1 downto 1) & '0';
+            if not RISCV_ISA_C then -- RISC-V priv. spec.: MEPC[1] is masked when IALIGN = 32
+              csr.mepc(1) <= '0';
+            end if;
 
-        -- machine scratch register --
-        if (csr.addr = csr_mscratch_c) then
-          csr.mscratch <= csr.wdata;
-        end if;
+          -- machine counter-inhibit register --
+          when csr_mcountinhibit_c =>
+            if RISCV_ISA_Zicntr then
+              csr.mcountinhibit(0) <= csr.wdata(0);
+              csr.mcountinhibit(2) <= csr.wdata(2);
+            end if;
+            if RISCV_ISA_Zihpm then
+              csr.mcountinhibit(15 downto 3) <= csr.wdata(15 downto 3);
+            end if;
 
-        -- machine exception program counter --
-        if (csr.addr = csr_mepc_c) then
-          csr.mepc <= csr.wdata(XLEN-1 downto 1) & '0';
-          if not RISCV_ISA_C then -- RISC-V priv. spec.: MEPC[1] is masked when IALIGN = 32
-            csr.mepc(1) <= '0';
-          end if;
-        end if;
+          -- debug mode control and status register --
+          when csr_dcsr_c =>
+            if (csr.addr = csr_dcsr_c) and RISCV_ISA_Sdext then
+              csr.dcsr_step    <= csr.wdata(2);
+              csr.dcsr_ebreakm <= csr.wdata(15);
+              if RISCV_ISA_U then
+                csr.dcsr_prv     <= csr.wdata(1) or csr.wdata(0); -- everything /= U will fall back to M
+                csr.dcsr_ebreaku <= csr.wdata(12);
+              end if;
+            end if;
 
-        -- [NOTE] mtinst, mtval and mcause are read-only but won't raise any exception when being written
+          -- debug mode program counter --
+          when csr_dpc_c =>
+            if RISCV_ISA_Sdext then
+              csr.dpc <= csr.wdata(XLEN-1 downto 1) & '0';
+              if not RISCV_ISA_C then -- RISC-V priv. spec.: DPC[1] is masked when IALIGN = 32
+                csr.dpc(1) <= '0';
+              end if;
+            end if;
 
-        -- --------------------------------------------------------------------
-        -- machine counter setup
-        -- --------------------------------------------------------------------
+          -- debug mode scratch register 0 --
+          when csr_dscratch0_c =>
+            if (csr.addr = csr_dscratch0_c) and RISCV_ISA_Sdext then
+              csr.dscratch0 <= csr.wdata;
+            end if;
 
-        -- machine counter-inhibit register --
-        if (csr.addr = csr_mcountinhibit_c) then
-          if RISCV_ISA_Zicntr then
-            csr.mcountinhibit(0) <= csr.wdata(0);
-            csr.mcountinhibit(2) <= csr.wdata(2);
-          end if;
-          if RISCV_ISA_Zihpm then
-            csr.mcountinhibit(15 downto 3) <= csr.wdata(15 downto 3);
-          end if;
-        end if;
+          -- undefined or implemented somewhere else --
+          when others => NULL;
 
-        -- --------------------------------------------------------------------
-        -- debug mode CSRs
-        -- --------------------------------------------------------------------
-
-        -- debug mode control and status register --
-        if (csr.addr = csr_dcsr_c) and RISCV_ISA_Sdext then
-          csr.dcsr_ebreakm <= csr.wdata(15);
-          csr.dcsr_step    <= csr.wdata(2);
-          if RISCV_ISA_U then
-            csr.dcsr_ebreaku <= csr.wdata(12);
-            csr.dcsr_prv     <= csr.wdata(1) or csr.wdata(0); -- everything /= U will fall back to M
-          end if;
-        end if;
-
-        -- debug mode program counter --
-        if (csr.addr = csr_dpc_c) and RISCV_ISA_Sdext then
-          csr.dpc <= csr.wdata(XLEN-1 downto 1) & '0';
-          if not RISCV_ISA_C then -- RISC-V priv. spec.: DPC[1] is masked when IALIGN = 32
-            csr.dpc(1) <= '0';
-          end if;
-        end if;
-
-        -- debug mode scratch register 0 --
-        if (csr.addr = csr_dscratch0_c) and RISCV_ISA_Sdext then
-          csr.dscratch0 <= csr.wdata;
-        end if;
+        end case;
 
       -- ********************************************************************************
       -- Hardware CSR access: TRAP ENTER
