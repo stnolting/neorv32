@@ -1142,13 +1142,9 @@ begin
             csr.mtval <= (others => '0');
           end if;
           -- trap instruction --
-          if (trap_ctrl.cause(6) = '0') then -- exception
-            csr.mtinst <= exe_engine.ir;
-            if (exe_engine.ci = '1') and RISCV_ISA_C then
-              csr.mtinst(1) <= '0'; -- RISC-V priv. spec: clear bit 1 if compressed instruction
-            end if;
-          else -- interrupt
-            csr.mtinst <= (others => '0');
+          csr.mtinst <= exe_engine.ir;
+          if (exe_engine.ci = '1') and RISCV_ISA_C then
+            csr.mtinst(1) <= '0'; -- RISC-V priv. spec: clear bit 1 if compressed instruction
           end if;
           -- update privilege level and interrupt-enable stack --
           csr.prv_level    <= priv_mode_m_c; -- execute trap in machine mode
