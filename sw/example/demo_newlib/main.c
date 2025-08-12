@@ -127,7 +127,7 @@ int main() {
 
   // STDx tests using read() and write()
   // do not test read & write in simulation as there would be no UART RX input
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
+  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
     neorv32_uart0_printf("Skipping read() & write() tests as this seems to be a simulation.\n");
   }
   else {

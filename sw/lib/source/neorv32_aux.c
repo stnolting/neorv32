@@ -299,7 +299,7 @@ void neorv32_aux_print_hw_config(void) {
 
   // general
   neorv32_uart0_printf("Is simulation:       ");
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) { neorv32_uart0_printf("yes\n"); }
+  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) { neorv32_uart0_printf("yes\n"); }
   else { neorv32_uart0_printf("no\n"); }
 
   neorv32_uart0_printf("CPU cores (harts):   %u\n", neorv32_sysinfo_get_numcores());
@@ -383,11 +383,13 @@ void neorv32_aux_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_ZKT))       { neorv32_uart0_printf("Zkt ");       }
   if (tmp & (1<<CSR_MXISA_ZMMUL))     { neorv32_uart0_printf("Zmmul ");     }
   if (tmp & (1<<CSR_MXISA_ZXCFU))     { neorv32_uart0_printf("Zxcfu ");     }
+
   // CPU tuning options
+  tmp = neorv32_cpu_csr_read(CSR_MXCSR);
   neorv32_uart0_printf("\nTuning options:      ");
-  if (tmp & (1<<CSR_MXISA_FASTMUL))   { neorv32_uart0_printf("fast_mul ");   }
-  if (tmp & (1<<CSR_MXISA_FASTSHIFT)) { neorv32_uart0_printf("fast_shift "); }
-  if (tmp & (1<<CSR_MXISA_RFHWRST))   { neorv32_uart0_printf("rf_hw_rst ");  }
+  if (tmp & (1<<CSR_MXCSR_FASTMUL))   { neorv32_uart0_printf("fast_mul ");   }
+  if (tmp & (1<<CSR_MXCSR_FASTSHIFT)) { neorv32_uart0_printf("fast_shift "); }
+  if (tmp & (1<<CSR_MXCSR_RFHWRST))   { neorv32_uart0_printf("rf_hw_rst ");  }
 
   // check physical memory protection
   neorv32_uart0_printf("\nPhys. Memory Prot.:  ");
