@@ -9,9 +9,6 @@ EFFORT = -Os
 # Add extended debug symbols
 override USER_FLAGS += -ggdb -gdwarf-3
 
-# Enable link time optimization
-override USER_FLAGS += -flto
-
 # Adjust processor IMEM size
 override USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=32k
 
