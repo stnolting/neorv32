@@ -82,6 +82,7 @@ In the following table these CSRs are highlighted with "⚠️".
 | 0xf15 | <<_mconfigptr>> | `CSR_MCONFIGPTR` | MRO | Machine configuration pointer register
 5+^| **<<_neorv32_specific_csrs>>**
 | 0x800 .. 0x803 | <<_cfureg, `cfureg0`>> .. <<_cfureg, `cfureg3`>> | `CSR_CFUCREG0` .. `CSR_CFUCREG3` | URW | Custom CFU registers 0 to 3
+| 0xbc0 | <<_mxcsr>> | `CSR_MXCSR` | MRW | Machine status and control register
 | 0xfc0 | <<_mxisa>> | `CSR_MXISA` | MRO | Extended machine CPU ISA and extensions
 |=======================
 
@@ -182,7 +183,7 @@ In the following table these CSRs are highlighted with "⚠️".
 |=======================
 
 .`mstatus` CSR bits
-[cols="^1,^3,^1,<9"]
+[cols="^1,<3,^1,<9"]
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
@@ -214,7 +215,7 @@ and cannot be switched on/off during runtime. For compatibility reasons any writ
 will _not_ cause an illegal instruction exception.
 
 .`misa` CSR bits
-[cols="^1,^3,^1,<9"]
+[cols="^1,<3,^1,<9"]
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
@@ -249,7 +250,7 @@ Machine-mode software can discover available `Z*` sub-extensions (like `Zicsr` o
 |=======================
 
 .`mie` CSR bits
-[cols="^1,^3,^1,<9"]
+[cols="^1,<3,^1,<9"]
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
@@ -305,7 +306,7 @@ As software does not need to determine the interrupt cause the reduction in late
 |=======================
 
 .`mcounteren` CSR bits
-[cols="^1,^3,^1,<8"]
+[cols="^1,<3,^1,<8"]
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
@@ -435,7 +436,7 @@ However, any write-access will be ignored and will not cause any exception to ma
 |=======================
 
 .`mip` CSR bits
-[cols="^1,^3,^1,<9"]
+[cols="^1,<3,^1,<9"]
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
@@ -543,7 +544,7 @@ See section <<_smpmp_isa_extension>> for more information.
 |=======================
 
 .`pmpcfg*` CSR Bits
-[cols="^1,^2,^1,<11"]
+[cols="^1,<2,^1,<11"]
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
@@ -737,7 +738,7 @@ cycle even if more than one trigger event is observed.
 |=======================
 
 .`mhpmevent*` CSR Bits
-[cols="^1,^3,^1,<9"]
+[cols="^1,<3,^1,<9"]
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C]                | R/W | Event Description
@@ -818,7 +819,7 @@ and are not accessible for lower-privileged software.
 |=======================
 
 .`mcountinhibit` CSR Bits
-[cols="^1,^3,^1,<9"]
+[cols="^1,<3,^1,<9"]
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Description
@@ -940,6 +941,34 @@ All NEORV32-specific CSRs are mapped to addresses that are explicitly reserved f
 
 {empty} +
 [discrete]
+===== **`mxcsr`**
+
+[cols="<1,<8"]
+[grid="none"]
+|=======================
+| Name        | Machine status and control register
+| Address     | `0xbc0`
+| Reset value | `DEFINED`
+| ISA         | `Zicsr` & `X`
+| Description | The `mxcsr` CSR is a NEORV32-specific read/write CSR that provides additional
+machine configurations and status information.
+|=======================
+
+.`mxcsr` CSR Bits
+[cols="^1,<2,^1,<6"]
+[options="header",grid="rows"]
+|=======================
+| Bit   | Name [C] | R/W | Description
+| 27:0  | -                     | r/- | _reserved_, read as zero
+| 28    | `CSR_MXCSR_RFHWRST`   | r/- | <<_cpu_tuning_options>>: full hardware reset of register file available when set (`CPU_RF_HW_RST_EN`)
+| 29    | `CSR_MXCSR_FASTMUL`   | r/- | <<_cpu_tuning_options>>: fast multiplication available when set (`CPU_FAST_MUL_EN`)
+| 30    | `CSR_MXCSR_FASTSHIFT` | r/- | <<_cpu_tuning_options>>: fast shifts available when set (`CPU_FAST_SHIFT_EN`)
+| 31    | `CSR_MXCSR_IS_SIM`    | r/- | set if CPU is being _simulated_ (not guaranteed)
+|=======================
+
+
+{empty} +
+[discrete]
 ===== **`mxisa`**
 
 [cols="<1,<8"]
@@ -949,48 +978,42 @@ All NEORV32-specific CSRs are mapped to addresses that are explicitly reserved f
 | Address     | `0xfc0`
 | Reset value | `DEFINED`
 | ISA         | `Zicsr` & `X`
-| Description | The `mxisa` CSR is a custom NEORV32-specific read-only CSR that helps machine-mode software to
+| Description | The `mxisa` CSR is a NEORV32-specific read-only CSR that helps machine-mode software to
 discover additional ISA (sub-)extensions and CPU configuration options.
 |=======================
 
 .`mxisa` CSR Bits
-[cols="^1,^3,^1,<5"]
+[cols="^1,<2,^1,<6"]
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Description
-4+^| **<<_instruction_sets_and_extensions>>**
-|  0    | `CSR_MXISA_ZICSR`     | r/- | <<_zicsr_isa_extension>> available
-|  1    | `CSR_MXISA_ZIFENCEI`  | r/- | <<_zifencei_isa_extension>> available
-|  2    | `CSR_MXISA_ZMMUL`     | r/- | <<_zmmul_isa_extension>> available
-|  3    | `CSR_MXISA_ZXCFU`     | r/- | <<_zxcfu_isa_extension>> available
-|  4    | `CSR_MXISA_ZKT`       | r/- | <<_zkt_isa_extension>> available
-|  5    | `CSR_MXISA_ZFINX`     | r/- | <<_zfinx_isa_extension>> available
-|  6    | `CSR_MXISA_ZICOND`    | r/- | <<_zicond_isa_extension>> available
-|  7    | `CSR_MXISA_ZICNTR`    | r/- | <<_zicntr_isa_extension>> available
-|  8    | `CSR_MXISA_SMPMP`     | r/- | <<_smpmp_isa_extension>> available
-|  9    | `CSR_MXISA_ZIHPM`     | r/- | <<_zihpm_isa_extension>> available
-| 10    | `CSR_MXISA_SDEXT`     | r/- | <<_sdext_isa_extension>> available
-| 11    | `CSR_MXISA_SDTRIG`    | r/- | <<_sdtrig_isa_extension>> available
-| 12    | `CSR_MXISA_ZBKX`      | r/- | <<_zbkx_isa_extension>> available
-| 13    | `CSR_MXISA_ZKND`      | r/- | <<_zknd_isa_extension>> available
-| 14    | `CSR_MXISA_ZKNE`      | r/- | <<_zkne_isa_extension>> available
-| 15    | `CSR_MXISA_ZKNH`      | r/- | <<_zknh_isa_extension>> available
-| 16    | `CSR_MXISA_ZBKB`      | r/- | <<_zbkb_isa_extension>> available
-| 17    | `CSR_MXISA_ZBKC`      | r/- | <<_zbkc_isa_extension>> available
-| 18    | `CSR_MXISA_ZKN`       | r/- | <<_zkn_isa_extension>> available
-| 19    | `CSR_MXISA_ZKSH`      | r/- | <<_zksh_isa_extension>> available
-| 20    | `CSR_MXISA_ZKSED`     | r/- | <<_zksed_isa_extension>> available
-| 21    | `CSR_MXISA_ZKS`       | r/- | <<_zks_isa_extension>> available
-| 22    | `CSR_MXISA_ZBA`       | r/- | <<_zba_isa_extension>> available
-| 23    | `CSR_MXISA_ZBB`       | r/- | <<_zbb_isa_extension>> available
-| 24    | `CSR_MXISA_ZBS`       | r/- | <<_zbs_isa_extension>> available
-| 25    | `CSR_MXISA_ZAAMO`     | r/- | <<_zaamo_isa_extension>> available
-| 26    | `CSR_MXISA_ZALRSC`    | r/- | <<_zalrsc_isa_extension>> available
-| 27    | `CSR_MXISA_ZCB`       | r/- | <<_zcb_isa_extension>> available
-4+^| **<<_cpu_tuning_options>>**
-| 28    | `CSR_MXISA_RFHWRST`   | r/- | full hardware reset of register file available when set (`CPU_RF_HW_RST_EN`)
-| 29    | `CSR_MXISA_FASTMUL`   | r/- | fast multiplication available when set (`CPU_FAST_MUL_EN`)
-| 30    | `CSR_MXISA_FASTSHIFT` | r/- | fast shifts available when set (`CPU_FAST_SHIFT_EN`)
-4+^| **Miscellaneous**
-| 31    | `CSR_MXISA_IS_SIM`    | r/- | set if CPU is being **simulated**
+|  0    | `CSR_MXISA_ZICSR`    | r/- | <<_zicsr_isa_extension>> available
+|  1    | `CSR_MXISA_ZIFENCEI` | r/- | <<_zifencei_isa_extension>> available
+|  2    | `CSR_MXISA_ZMMUL`    | r/- | <<_zmmul_isa_extension>> available
+|  3    | `CSR_MXISA_ZXCFU`    | r/- | <<_zxcfu_isa_extension>> available
+|  4    | `CSR_MXISA_ZKT`      | r/- | <<_zkt_isa_extension>> available
+|  5    | `CSR_MXISA_ZFINX`    | r/- | <<_zfinx_isa_extension>> available
+|  6    | `CSR_MXISA_ZICOND`   | r/- | <<_zicond_isa_extension>> available
+|  7    | `CSR_MXISA_ZICNTR`   | r/- | <<_zicntr_isa_extension>> available
+|  8    | `CSR_MXISA_SMPMP`    | r/- | <<_smpmp_isa_extension>> available
+|  9    | `CSR_MXISA_ZIHPM`    | r/- | <<_zihpm_isa_extension>> available
+| 10    | `CSR_MXISA_SDEXT`    | r/- | <<_sdext_isa_extension>> available
+| 11    | `CSR_MXISA_SDTRIG`   | r/- | <<_sdtrig_isa_extension>> available
+| 12    | `CSR_MXISA_ZBKX`     | r/- | <<_zbkx_isa_extension>> available
+| 13    | `CSR_MXISA_ZKND`     | r/- | <<_zknd_isa_extension>> available
+| 14    | `CSR_MXISA_ZKNE`     | r/- | <<_zkne_isa_extension>> available
+| 15    | `CSR_MXISA_ZKNH`     | r/- | <<_zknh_isa_extension>> available
+| 16    | `CSR_MXISA_ZBKB`     | r/- | <<_zbkb_isa_extension>> available
+| 17    | `CSR_MXISA_ZBKC`     | r/- | <<_zbkc_isa_extension>> available
+| 18    | `CSR_MXISA_ZKN`      | r/- | <<_zkn_isa_extension>> available
+| 19    | `CSR_MXISA_ZKSH`     | r/- | <<_zksh_isa_extension>> available
+| 20    | `CSR_MXISA_ZKSED`    | r/- | <<_zksed_isa_extension>> available
+| 21    | `CSR_MXISA_ZKS`      | r/- | <<_zks_isa_extension>> available
+| 22    | `CSR_MXISA_ZBA`      | r/- | <<_zba_isa_extension>> available
+| 23    | `CSR_MXISA_ZBB`      | r/- | <<_zbb_isa_extension>> available
+| 24    | `CSR_MXISA_ZBS`      | r/- | <<_zbs_isa_extension>> available
+| 25    | `CSR_MXISA_ZAAMO`    | r/- | <<_zaamo_isa_extension>> available
+| 26    | `CSR_MXISA_ZALRSC`   | r/- | <<_zalrsc_isa_extension>> available
+| 27    | `CSR_MXISA_ZCB`      | r/- | <<_zcb_isa_extension>> available
+| 31:28 | -                    | r/- | _reserved_, read as zero
 |=======================
