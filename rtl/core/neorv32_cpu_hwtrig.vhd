@@ -41,10 +41,8 @@ architecture neorv32_cpu_hwtrig_rtl of neorv32_cpu_hwtrig is
   -- log2(NUM_TRIGGERS) --
   constant log2_num_triggers_c : natural := index_size_f(NUM_TRIGGERS);
 
-  -- match control CSRs (tdata1[tselect]) --
+  -- match control CSRs: tdata1[tselect] and tdata2[tselect] --
   signal tdata1_exec, tdata1_store, tdata1_load, tdata1_hit : std_ulogic_vector(NUM_TRIGGERS-1 downto 0);
-
-  -- match address CSRs (tdata2[tselect]) --
   type tdata2_addr_t is array (0 to NUM_TRIGGERS-1) of std_ulogic_vector(XLEN-1 downto 0);
   signal tdata2_addr : tdata2_addr_t;
 
@@ -191,9 +189,10 @@ begin
       match <= (others => '0');
     elsif rising_edge(clk_i) then
       for i in 0 to NUM_TRIGGERS-1 loop
-        match(i) <= (tdata1_exec(i)  and cmp_inst(i) and ctrl_i.cnt_event(cnt_event_ir_c))    or -- execute
+        match(i) <= (not ctrl_i.cpu_debug) and (match(i) or -- keep active until we are in debug-mode
+                    (tdata1_exec(i)  and cmp_inst(i) and ctrl_i.cnt_event(cnt_event_ir_c))    or -- execute
                     (tdata1_store(i) and cmp_data(i) and ctrl_i.cnt_event(cnt_event_store_c)) or -- store
-                    (tdata1_load(i)  and cmp_data(i) and ctrl_i.cnt_event(cnt_event_load_c));    -- load
+                    (tdata1_load(i)  and cmp_data(i) and ctrl_i.cnt_event(cnt_event_load_c)));   -- load
       end loop;
     end if;
   end process match_buffer;

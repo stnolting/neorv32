@@ -656,48 +656,49 @@ defined by the NEORV32 core library (the runtime environment _RTE_) and can be u
 with the pre-defined RTE function. The <<_mcause>>, <<_mepc>>, <<_mtval>> and <<_mtinst>> columns show the value being
 written to the according CSRs when a trap is triggered:
 
-* **I-PC** - address of intercepted instruction (instruction has _not_ been executed yet)
+* **I-PC** - address of intercepted instruction (next instruction in program flow; instruction has _not_ been executed yet)
 * **PC** - address of instruction that caused the trap (instruction has been executed)
-* **ADR** - bad data memory access address that caused the trap
-* **INS** - the transformed/decompressed instruction word that caused the trap
+* **ADDR** - bad data memory access address that caused the trap
+* **INST** - the actual transformed/decompressed instruction word that caused the trap
+* **LAST** - the last transformed/decompressed instruction word that was executed before the trap
 * **0** - zero
 
 .NEORV32 Trap Listing
 [cols="1,4,8,10,2,2,2"]
 [options="header",grid="rows"]
 |=======================
-| Prio. | `mcause`     | RTE Trap ID              | Cause                                | `mepc` | `mtval` | `mtinst`
+| Prio. | `mcause`     | RTE Trap ID              | Cause                             | `mepc` | `mtval` | `mtinst`
 8+^| **Exceptions** (_synchronous_ to instruction execution)
-| 1     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction access fault             | I-PC   | 0       | INS
-| 2     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction                  | PC     | 0       | INS
-| 3     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned       | PC     | 0       | INS
-| 4     | `0x0000000b` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode         | PC     | 0       | INS
-| 5     | `0x00000008` | `TRAP_CODE_UENV_CALL`    | environment call from U-mode         | PC     | 0       | INS
-| 6     | `0x00000003` | `TRAP_CODE_BREAKPOINT`   | software breakpoint / trigger firing | PC     | 0       | INS
-| 7     | `0x00000006` | `TRAP_CODE_S_MISALIGNED` | store address misaligned             | PC     | ADR     | INS
-| 8     | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned              | PC     | ADR     | INS
-| 9     | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store access fault                   | PC     | ADR     | INS
-| 10    | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load access fault                    | PC     | ADR     | INS
+| 1     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction access fault          | I-PC   | 0       | _undefined_
+| 2     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction               | PC     | 0       | INST
+| 3     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned    | PC     | 0       | INST
+| 4     | `0x0000000b` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode      | PC     | 0       | INST
+| 5     | `0x00000008` | `TRAP_CODE_UENV_CALL`    | environment call from U-mode      | PC     | 0       | INST
+| 6     | `0x00000003` | `TRAP_CODE_BREAKPOINT`   | software breakpoint / HW trigger  | PC     | 0       | INST
+| 7     | `0x00000006` | `TRAP_CODE_S_MISALIGNED` | store address misaligned          | PC     | ADDR    | INST
+| 8     | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned           | PC     | ADDR    | INST
+| 9     | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store access fault                | PC     | ADDR    | INST
+| 10    | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load access fault                 | PC     | ADDR    | INST
 8+^| **Interrupts** (_asynchronous_ to instruction execution)
-| 11    | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0     | I-PC   | 0       | 0
-| 12    | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1     | I-PC   | 0       | 0
-| 13    | `0x80000012` | `TRAP_CODE_FIRQ_2`       | fast interrupt request channel 2     | I-PC   | 0       | 0
-| 14    | `0x80000013` | `TRAP_CODE_FIRQ_3`       | fast interrupt request channel 3     | I-PC   | 0       | 0
-| 15    | `0x80000014` | `TRAP_CODE_FIRQ_4`       | fast interrupt request channel 4     | I-PC   | 0       | 0
-| 16    | `0x80000015` | `TRAP_CODE_FIRQ_5`       | fast interrupt request channel 5     | I-PC   | 0       | 0
-| 17    | `0x80000016` | `TRAP_CODE_FIRQ_6`       | fast interrupt request channel 6     | I-PC   | 0       | 0
-| 18    | `0x80000017` | `TRAP_CODE_FIRQ_7`       | fast interrupt request channel 7     | I-PC   | 0       | 0
-| 19    | `0x80000018` | `TRAP_CODE_FIRQ_8`       | fast interrupt request channel 8     | I-PC   | 0       | 0
-| 20    | `0x80000019` | `TRAP_CODE_FIRQ_9`       | fast interrupt request channel 9     | I-PC   | 0       | 0
-| 21    | `0x8000001a` | `TRAP_CODE_FIRQ_10`      | fast interrupt request channel 10    | I-PC   | 0       | 0
-| 22    | `0x8000001b` | `TRAP_CODE_FIRQ_11`      | fast interrupt request channel 11    | I-PC   | 0       | 0
-| 23    | `0x8000001c` | `TRAP_CODE_FIRQ_12`      | fast interrupt request channel 12    | I-PC   | 0       | 0
-| 24    | `0x8000001d` | `TRAP_CODE_FIRQ_13`      | fast interrupt request channel 13    | I-PC   | 0       | 0
-| 25    | `0x8000001e` | `TRAP_CODE_FIRQ_14`      | fast interrupt request channel 14    | I-PC   | 0       | 0
-| 26    | `0x8000001f` | `TRAP_CODE_FIRQ_15`      | fast interrupt request channel 15    | I-PC   | 0       | 0
-| 27    | `0x8000000b` | `TRAP_CODE_MEI`          | machine external interrupt (MEI)     | I-PC   | 0       | 0
-| 28    | `0x80000003` | `TRAP_CODE_MSI`          | machine software interrupt (MSI)     | I-PC   | 0       | 0
-| 29    | `0x80000007` | `TRAP_CODE_MTI`          | machine timer interrupt (MTI)        | I-PC   | 0       | 0
+| 11    | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0  | I-PC   | 0       | LAST
+| 12    | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1  | I-PC   | 0       | LAST
+| 13    | `0x80000012` | `TRAP_CODE_FIRQ_2`       | fast interrupt request channel 2  | I-PC   | 0       | LAST
+| 14    | `0x80000013` | `TRAP_CODE_FIRQ_3`       | fast interrupt request channel 3  | I-PC   | 0       | LAST
+| 15    | `0x80000014` | `TRAP_CODE_FIRQ_4`       | fast interrupt request channel 4  | I-PC   | 0       | LAST
+| 16    | `0x80000015` | `TRAP_CODE_FIRQ_5`       | fast interrupt request channel 5  | I-PC   | 0       | LAST
+| 17    | `0x80000016` | `TRAP_CODE_FIRQ_6`       | fast interrupt request channel 6  | I-PC   | 0       | LAST
+| 18    | `0x80000017` | `TRAP_CODE_FIRQ_7`       | fast interrupt request channel 7  | I-PC   | 0       | LAST
+| 19    | `0x80000018` | `TRAP_CODE_FIRQ_8`       | fast interrupt request channel 8  | I-PC   | 0       | LAST
+| 20    | `0x80000019` | `TRAP_CODE_FIRQ_9`       | fast interrupt request channel 9  | I-PC   | 0       | LAST
+| 21    | `0x8000001a` | `TRAP_CODE_FIRQ_10`      | fast interrupt request channel 10 | I-PC   | 0       | LAST
+| 22    | `0x8000001b` | `TRAP_CODE_FIRQ_11`      | fast interrupt request channel 11 | I-PC   | 0       | LAST
+| 23    | `0x8000001c` | `TRAP_CODE_FIRQ_12`      | fast interrupt request channel 12 | I-PC   | 0       | LAST
+| 24    | `0x8000001d` | `TRAP_CODE_FIRQ_13`      | fast interrupt request channel 13 | I-PC   | 0       | LAST
+| 25    | `0x8000001e` | `TRAP_CODE_FIRQ_14`      | fast interrupt request channel 14 | I-PC   | 0       | LAST
+| 26    | `0x8000001f` | `TRAP_CODE_FIRQ_15`      | fast interrupt request channel 15 | I-PC   | 0       | LAST
+| 27    | `0x8000000b` | `TRAP_CODE_MEI`          | machine external interrupt (MEI)  | I-PC   | 0       | LAST
+| 28    | `0x80000003` | `TRAP_CODE_MSI`          | machine software interrupt (MSI)  | I-PC   | 0       | LAST
+| 29    | `0x80000007` | `TRAP_CODE_MTI`          | machine timer interrupt (MTI)     | I-PC   | 0       | LAST
 |=======================
 
 .NEORV32 Trap Description

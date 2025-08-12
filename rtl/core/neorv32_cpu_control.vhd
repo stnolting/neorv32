@@ -114,13 +114,12 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     exc_fire    : std_ulogic; -- set if there is a valid source in the exception buffer
     irq_pnd     : std_ulogic_vector(irq_width_c-1 downto 0); -- pending interrupt
     irq_buf     : std_ulogic_vector(irq_width_c-1 downto 0); -- asynchronous exception/interrupt buffer (one bit per interrupt source)
-    irq_fire    : std_ulogic_vector(2 downto 0); -- set if an interrupt is actually kicking in
+    irq_fire    : std_ulogic_vector(1 downto 0); -- set if an interrupt is actually kicking in
     cause       : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR & debug-mode entry identifier
     pc          : std_ulogic_vector(XLEN-1 downto 0); -- trap program counter
     --
     env_pending : std_ulogic; -- start of trap environment if pending
     env_enter   : std_ulogic; -- enter trap environment
-    env_entered : std_ulogic; -- trap environment has just been entered
     env_exit    : std_ulogic; -- leave trap environment
     --
     instr_be    : std_ulogic; -- instruction fetch bus error
@@ -525,14 +524,14 @@ begin
 
       when EX_SLEEP => -- sleep mode
       -- ------------------------------------------------------------
-        if (or_reduce_f(trap_ctrl.irq_buf) = '1') or (debug_ctrl.run = '1') or (csr.dcsr_step = '1') then -- enabled pending IRQ, debug-mode, single-stepping
+        if (or_reduce_f(trap_ctrl.irq_buf) = '1') or (debug_ctrl.run = '1') or (csr.dcsr_step = '1') then -- enabled pending IRQ, debug-mode, single-step
           exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
       when EX_SYSTEM => -- CSR/ENVIRONMENT operation; no effect if illegal instruction
       -- ------------------------------------------------------------
         exe_engine_nxt.state <= EX_DISPATCH; -- default
-        if (funct3_v = funct3_env_c) and (or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- non-illegal ENVIRONMENT instruction
+        if (funct3_v = funct3_env_c) and (or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- non-illegal ENV instruction
           case exe_engine.ir(instr_imm12_lsb_c+2 downto instr_imm12_lsb_c) is -- three LSBs are sufficient here
             when "000"  => trap_ctrl.ecall      <= '1'; -- ecall
             when "001"  => trap_ctrl.ebreak     <= '1'; -- ebreak
@@ -567,7 +566,9 @@ begin
   ctrl_o.pc_nxt       <= exe_engine.pc2(XLEN-1 downto 1) & '0';
   ctrl_o.pc_ret       <= exe_engine.ra(XLEN-1 downto 1) & '0';
   -- register file --
-  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and (not trap_ctrl.exc_fire); -- inhibit write-back if exception
+  ctrl_o.rf_wb_en     <= ctrl.rf_wb_en and -- write-back only if ...
+                         (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c))) and -- no instruction exception
+                         (not or_reduce_f(trap_ctrl.exc_buf(exc_laccess_c downto exc_salign_c)));    -- no data exception
   ctrl_o.rf_rs1       <= exe_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c);
   ctrl_o.rf_rs2       <= exe_engine.ir(instr_rs2_msb_c downto instr_rs2_lsb_c);
   ctrl_o.rf_rd        <= exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c);
@@ -831,7 +832,7 @@ begin
       -- ----------------------------------------------------------------------
       trap_ctrl.irq_pnd(irq_mei_irq_c downto irq_msi_irq_c) <= irq_machine_i; -- RISC-V machine interrupts
       trap_ctrl.irq_pnd(irq_firq_15_c downto irq_firq_0_c)  <= irq_fast_i(15 downto 0); -- NEORV32-specific fast interrupts
-      trap_ctrl.irq_pnd(irq_db_step_c downto irq_db_halt_c) <= "00"; -- unused debug-mode entry
+      trap_ctrl.irq_pnd(irq_db_halt_c)                      <= '0'; -- unused debug-mode entry
 
       -- Interrupt Buffer -----------------------------------------------------
       -- Masking of interrupt request lines. Additionally, this buffer ensures
@@ -849,9 +850,8 @@ begin
         trap_ctrl.irq_buf(irq_firq_0_c+i) <= (trap_ctrl.irq_pnd(irq_firq_0_c+i) and csr.mie_firq(i)) or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_firq_0_c+i));
       end loop;
 
-      -- debug-mode entry --
+      -- debug-mode entry (external halt request) --
       trap_ctrl.irq_buf(irq_db_halt_c) <= debug_ctrl.trig_halt or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_db_halt_c));
-      trap_ctrl.irq_buf(irq_db_step_c) <= debug_ctrl.trig_step or (trap_ctrl.env_pending and trap_ctrl.irq_buf(irq_db_step_c));
 
       -- Exception Buffer -----------------------------------------------------
       -- All requests stay pending until the trap environment is started. Only
@@ -866,8 +866,9 @@ begin
       trap_ctrl.exc_buf(exc_lalign_c)   <= (trap_ctrl.exc_buf(exc_lalign_c)   or lsu_err_i(0))          and (not trap_ctrl.env_enter); -- load address misaligned
       trap_ctrl.exc_buf(exc_saccess_c)  <= (trap_ctrl.exc_buf(exc_saccess_c)  or lsu_err_i(3))          and (not trap_ctrl.env_enter); -- store access error
       trap_ctrl.exc_buf(exc_laccess_c)  <= (trap_ctrl.exc_buf(exc_laccess_c)  or lsu_err_i(1))          and (not trap_ctrl.env_enter); -- load access error
-      trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_enter); -- debug-mode-entry: break
-      trap_ctrl.exc_buf(exc_db_hw_c)    <= (trap_ctrl.exc_buf(exc_db_hw_c)    or debug_ctrl.trig_hw)    and (not trap_ctrl.env_enter); -- debug-mode-entry: trigger
+      trap_ctrl.exc_buf(exc_db_break_c) <= (trap_ctrl.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap_ctrl.env_enter); -- debug-entry: break
+      trap_ctrl.exc_buf(exc_db_trig_c)  <= (trap_ctrl.exc_buf(exc_db_trig_c)  or debug_ctrl.trig_hw)    and (not trap_ctrl.env_enter); -- debug-entry: trigger
+      trap_ctrl.exc_buf(exc_db_step_c)  <= (trap_ctrl.exc_buf(exc_db_step_c)  or debug_ctrl.trig_step)  and (not trap_ctrl.env_enter); -- debug-entry: single step
 
     end if;
   end process trap_buffer;
@@ -889,17 +890,17 @@ begin
       if    (trap_ctrl.exc_buf(exc_iaccess_c)  = '1') then trap_ctrl.cause <= trap_iaf_c; -- instruction access fault
       elsif (trap_ctrl.exc_buf(exc_illegal_c)  = '1') then trap_ctrl.cause <= trap_iil_c; -- illegal instruction
       elsif (trap_ctrl.exc_buf(exc_ialign_c)   = '1') then trap_ctrl.cause <= trap_ima_c; -- instruction address misaligned
-      elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & replicate_f(csr.prv_level, 2); -- environment call (U/M)
+      elsif (trap_ctrl.exc_buf(exc_ecall_c)    = '1') then trap_ctrl.cause <= trap_env_c(6 downto 2) & replicate_f(csr.prv_level, 2); -- environment call
       elsif (trap_ctrl.exc_buf(exc_ebreak_c)   = '1') then trap_ctrl.cause <= trap_brk_c; -- environment breakpoint
       elsif (trap_ctrl.exc_buf(exc_salign_c)   = '1') then trap_ctrl.cause <= trap_sma_c; -- store address misaligned
       elsif (trap_ctrl.exc_buf(exc_lalign_c)   = '1') then trap_ctrl.cause <= trap_lma_c; -- load address misaligned
       elsif (trap_ctrl.exc_buf(exc_saccess_c)  = '1') then trap_ctrl.cause <= trap_saf_c; -- store access fault
       elsif (trap_ctrl.exc_buf(exc_laccess_c)  = '1') then trap_ctrl.cause <= trap_laf_c; -- load access fault
       -- standard RISC-V debug mode synchronous exceptions and interrupts --
-      elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request (async)
-      elsif (trap_ctrl.exc_buf(exc_db_hw_c)    = '1') then trap_ctrl.cause <= trap_db_trig_c;  -- hardware trigger (sync)
-      elsif (trap_ctrl.exc_buf(exc_db_break_c) = '1') then trap_ctrl.cause <= trap_db_break_c; -- breakpoint (sync)
-      elsif (trap_ctrl.irq_buf(irq_db_step_c)  = '1') then trap_ctrl.cause <= trap_db_step_c;  -- single stepping (async)
+      elsif (trap_ctrl.irq_buf(irq_db_halt_c)  = '1') then trap_ctrl.cause <= trap_db_halt_c;  -- external halt request
+      elsif (trap_ctrl.exc_buf(exc_db_trig_c)  = '1') then trap_ctrl.cause <= trap_db_trig_c;  -- hardware trigger
+      elsif (trap_ctrl.exc_buf(exc_db_break_c) = '1') then trap_ctrl.cause <= trap_db_break_c; -- breakpoint
+      elsif (trap_ctrl.exc_buf(exc_db_step_c)  = '1') then trap_ctrl.cause <= trap_db_step_c;  -- single stepping
       -- NEORV32-specific fast interrupts --
       elsif (trap_ctrl.irq_buf(irq_firq_0_c)   = '1') then trap_ctrl.cause <= trap_firq0_c;  -- fast interrupt channel 0
       elsif (trap_ctrl.irq_buf(irq_firq_1_c)   = '1') then trap_ctrl.cause <= trap_firq1_c;  -- fast interrupt channel 1
@@ -935,19 +936,11 @@ begin
   begin
     if (rstn_i = '0') then
       trap_ctrl.env_pending <= '0';
-      trap_ctrl.env_entered <= '0';
     elsif rising_edge(clk_i) then
-      -- pending trap environment --
       if ((trap_ctrl.env_pending = '0') and ((trap_ctrl.exc_fire = '1') or (or_reduce_f(trap_ctrl.irq_fire) = '1'))) then -- trap triggered
         trap_ctrl.env_pending <= '1';
       elsif (trap_ctrl.env_pending = '1') and (trap_ctrl.env_enter = '1') then -- start of trap environment acknowledged by execute engine
         trap_ctrl.env_pending <= '0';
-      end if;
-      -- trap environment has just been entered --
-      if (exe_engine.state = EX_EXECUTE) then -- first instruction of trap handler is executing
-        trap_ctrl.env_entered <= '0';
-      elsif (trap_ctrl.env_enter = '1') then
-        trap_ctrl.env_entered <= '1';
       end if;
     end if;
   end process trap_controller;
@@ -955,7 +948,7 @@ begin
   -- any exception? --
   trap_ctrl.exc_fire <= '1' when (or_reduce_f(trap_ctrl.exc_buf) = '1') else '0'; -- sync. exceptions CANNOT be masked
 
-  -- system interrupt? --
+  -- any system interrupt? --
   trap_ctrl.irq_fire(0) <= '1' when
     (exe_engine.state = EX_EXECUTE) and -- trigger system IRQ only in EX_EXECUTE state
     (or_reduce_f(trap_ctrl.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
@@ -963,15 +956,8 @@ begin
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
 
   -- debug-entry halt interrupt? --
-  trap_ctrl.irq_fire(1) <= '1' when
-    ((exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_BRANCHED)) and -- allow halt also after "reset" (#879)
-    (trap_ctrl.irq_buf(irq_db_halt_c) = '1') else '0'; -- pending external halt
-
-  -- debug-entry single-step interrupt? --
-  trap_ctrl.irq_fire(2) <= '1' when
-    ((exe_engine.state = EX_EXECUTE) or -- trigger single-step in EX_EXECUTE state
-     ((trap_ctrl.env_entered = '1') and (exe_engine.state = EX_BRANCHED))) and -- also allow triggering when entering a system trap (#887)
-    (trap_ctrl.irq_buf(irq_db_step_c) = '1') else '0'; -- pending single-step halt
+  trap_ctrl.irq_fire(1) <= trap_ctrl.irq_buf(irq_db_halt_c) when
+    (exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_BRANCHED) else '0'; -- allow halt also after "reset" (#879)
 
 
   -- ****************************************************************************************************************************
@@ -1037,108 +1023,92 @@ begin
       csr.dscratch0      <= (others => '0');
     elsif rising_edge(clk_i) then
 
-      -- write if no instruction exception --
-      csr.we <= csr.we_nxt and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c)));
-
       -- ********************************************************************************
       -- Software CSR access
       -- ********************************************************************************
+      csr.we <= csr.we_nxt and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c))); -- write if no instruction exception
       if (csr.we = '1') then
+        case csr.addr is
 
-        -- --------------------------------------------------------------------
-        -- machine trap setup
-        -- --------------------------------------------------------------------
+          -- machine status register --
+          when csr_mstatus_c =>
+            csr.mstatus_mie  <= csr.wdata(3);
+            csr.mstatus_mpie <= csr.wdata(7);
+            if RISCV_ISA_U then
+              csr.mstatus_mpp  <= csr.wdata(11) or csr.wdata(12); -- everything /= U will fall back to M
+              csr.mstatus_mprv <= csr.wdata(17);
+              csr.mstatus_tw   <= csr.wdata(21);
+            end if;
 
-        -- machine status register - low word --
-        if (csr.addr = csr_mstatus_c) then
-          csr.mstatus_mie  <= csr.wdata(3);
-          csr.mstatus_mpie <= csr.wdata(7);
-          if RISCV_ISA_U then
-            csr.mstatus_mpp  <= csr.wdata(11) or csr.wdata(12); -- everything /= U will fall back to M
-            csr.mstatus_mprv <= csr.wdata(17);
-            csr.mstatus_tw   <= csr.wdata(21);
-          end if;
-        end if;
+          -- machine interrupt enable register --
+          when csr_mie_c =>
+            csr.mie_msi  <= csr.wdata(3);
+            csr.mie_mti  <= csr.wdata(7);
+            csr.mie_mei  <= csr.wdata(11);
+            csr.mie_firq <= csr.wdata(31 downto 16);
 
-        -- machine interrupt enable register --
-        if (csr.addr = csr_mie_c) then
-          csr.mie_msi  <= csr.wdata(3);
-          csr.mie_mti  <= csr.wdata(7);
-          csr.mie_mei  <= csr.wdata(11);
-          csr.mie_firq <= csr.wdata(31 downto 16);
-        end if;
+          -- machine trap-handler base address --
+          when csr_mtvec_c =>
+            csr.mtvec <= csr.wdata(XLEN-1 downto 2) & '0' & csr.wdata(0); -- base + mode (vectored/direct)
 
-        -- machine trap-handler base address --
-        if (csr.addr = csr_mtvec_c) then
-          csr.mtvec <= csr.wdata(XLEN-1 downto 2) & '0' & csr.wdata(0); -- base + mode (vectored/direct)
-        end if;
+          -- machine counter access enable --
+          when csr_mcounteren_c =>
+            if RISCV_ISA_U and RISCV_ISA_Zicntr then
+              csr.mcounteren_cy <= csr.wdata(0);
+              csr.mcounteren_ir <= csr.wdata(2);
+            end if;
 
-        -- machine counter access enable --
-        if (csr.addr = csr_mcounteren_c) and RISCV_ISA_U and RISCV_ISA_Zicntr then
-          csr.mcounteren_cy <= csr.wdata(0);
-          csr.mcounteren_ir <= csr.wdata(2);
-        end if;
+          -- machine scratch register --
+          when csr_mscratch_c =>
+            csr.mscratch <= csr.wdata;
 
-        -- --------------------------------------------------------------------
-        -- machine trap handling
-        -- --------------------------------------------------------------------
+          -- machine exception program counter --
+          when csr_mepc_c =>
+            csr.mepc <= csr.wdata(XLEN-1 downto 1) & '0';
+            if not RISCV_ISA_C then -- RISC-V priv. spec.: MEPC[1] is masked when IALIGN = 32
+              csr.mepc(1) <= '0';
+            end if;
 
-        -- machine scratch register --
-        if (csr.addr = csr_mscratch_c) then
-          csr.mscratch <= csr.wdata;
-        end if;
+          -- machine counter-inhibit register --
+          when csr_mcountinhibit_c =>
+            if RISCV_ISA_Zicntr then
+              csr.mcountinhibit(0) <= csr.wdata(0);
+              csr.mcountinhibit(2) <= csr.wdata(2);
+            end if;
+            if RISCV_ISA_Zihpm then
+              csr.mcountinhibit(15 downto 3) <= csr.wdata(15 downto 3);
+            end if;
 
-        -- machine exception program counter --
-        if (csr.addr = csr_mepc_c) then
-          csr.mepc <= csr.wdata(XLEN-1 downto 1) & '0';
-          if not RISCV_ISA_C then -- RISC-V priv. spec.: MEPC[1] is masked when IALIGN = 32
-            csr.mepc(1) <= '0';
-          end if;
-        end if;
+          -- debug mode control and status register --
+          when csr_dcsr_c =>
+            if (csr.addr = csr_dcsr_c) and RISCV_ISA_Sdext then
+              csr.dcsr_step    <= csr.wdata(2);
+              csr.dcsr_ebreakm <= csr.wdata(15);
+              if RISCV_ISA_U then
+                csr.dcsr_prv     <= csr.wdata(1) or csr.wdata(0); -- everything /= U will fall back to M
+                csr.dcsr_ebreaku <= csr.wdata(12);
+              end if;
+            end if;
 
-        -- [NOTE] mtinst, mtval and mcause are read-only but won't raise any exception when being written
+          -- debug mode program counter --
+          when csr_dpc_c =>
+            if RISCV_ISA_Sdext then
+              csr.dpc <= csr.wdata(XLEN-1 downto 1) & '0';
+              if not RISCV_ISA_C then -- RISC-V priv. spec.: DPC[1] is masked when IALIGN = 32
+                csr.dpc(1) <= '0';
+              end if;
+            end if;
 
-        -- --------------------------------------------------------------------
-        -- machine counter setup
-        -- --------------------------------------------------------------------
+          -- debug mode scratch register 0 --
+          when csr_dscratch0_c =>
+            if (csr.addr = csr_dscratch0_c) and RISCV_ISA_Sdext then
+              csr.dscratch0 <= csr.wdata;
+            end if;
 
-        -- machine counter-inhibit register --
-        if (csr.addr = csr_mcountinhibit_c) then
-          if RISCV_ISA_Zicntr then
-            csr.mcountinhibit(0) <= csr.wdata(0);
-            csr.mcountinhibit(2) <= csr.wdata(2);
-          end if;
-          if RISCV_ISA_Zihpm then
-            csr.mcountinhibit(15 downto 3) <= csr.wdata(15 downto 3);
-          end if;
-        end if;
+          -- undefined or implemented somewhere else --
+          when others => NULL;
 
-        -- --------------------------------------------------------------------
-        -- debug mode CSRs
-        -- --------------------------------------------------------------------
-
-        -- debug mode control and status register --
-        if (csr.addr = csr_dcsr_c) and RISCV_ISA_Sdext then
-          csr.dcsr_ebreakm <= csr.wdata(15);
-          csr.dcsr_step    <= csr.wdata(2);
-          if RISCV_ISA_U then
-            csr.dcsr_ebreaku <= csr.wdata(12);
-            csr.dcsr_prv     <= csr.wdata(1) or csr.wdata(0); -- everything /= U will fall back to M
-          end if;
-        end if;
-
-        -- debug mode program counter --
-        if (csr.addr = csr_dpc_c) and RISCV_ISA_Sdext then
-          csr.dpc <= csr.wdata(XLEN-1 downto 1) & '0';
-          if not RISCV_ISA_C then -- RISC-V priv. spec.: DPC[1] is masked when IALIGN = 32
-            csr.dpc(1) <= '0';
-          end if;
-        end if;
-
-        -- debug mode scratch register 0 --
-        if (csr.addr = csr_dscratch0_c) and RISCV_ISA_Sdext then
-          csr.dscratch0 <= csr.wdata;
-        end if;
+        end case;
 
       -- ********************************************************************************
       -- Hardware CSR access: TRAP ENTER
@@ -1156,13 +1126,9 @@ begin
             csr.mtval <= (others => '0');
           end if;
           -- trap instruction --
-          if (trap_ctrl.cause(6) = '0') then -- exception
-            csr.mtinst <= exe_engine.ir;
-            if (exe_engine.ci = '1') and RISCV_ISA_C then
-              csr.mtinst(1) <= '0'; -- RISC-V priv. spec: clear bit 1 if compressed instruction
-            end if;
-          else -- interrupt
-            csr.mtinst <= (others => '0');
+          csr.mtinst <= exe_engine.ir;
+          if (exe_engine.ci = '1') and RISCV_ISA_C then
+            csr.mtinst(1) <= '0'; -- RISC-V priv. spec: clear bit 1 if compressed instruction
           end if;
           -- update privilege level and interrupt-enable stack --
           csr.prv_level    <= priv_mode_m_c; -- execute trap in machine mode
@@ -1273,22 +1239,6 @@ begin
         case csr.addr is
 
           -- --------------------------------------------------------------------
-          -- floating-point unit
-          -- --------------------------------------------------------------------
-          when csr_fflags_c | csr_frm_c | csr_fcsr_c =>
-            if RISCV_ISA_Zfinx then
-              csr.rdata <= xcsr_rdata_i; -- implemented externally
-            end if;
-
-          -- --------------------------------------------------------------------
-          -- custom functions unit (NEORV32-specific)
-          -- --------------------------------------------------------------------
-          when csr_cfureg0_c | csr_cfureg1_c | csr_cfureg2_c | csr_cfureg3_c =>
-            if RISCV_ISA_Zxcfu then
-              csr.rdata <= xcsr_rdata_i; -- implemented externally
-            end if;
-
-          -- --------------------------------------------------------------------
           -- machine trap setup
           -- --------------------------------------------------------------------
           when csr_mstatus_c => -- machine status register, low word
@@ -1298,14 +1248,12 @@ begin
             csr.rdata(17) <= csr.mstatus_mprv;
             csr.rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(RISCV_ISA_U);
 
---        when csr_mstatush_c => csr.rdata <= (others => '0'); -- machine status register, high word - hardwired to zero
-
           when csr_misa_c => -- ISA and extensions
             csr.rdata(0)  <= bool_to_ulogic_f(RISCV_ISA_A);
             csr.rdata(1)  <= bool_to_ulogic_f(RISCV_ISA_B);
             csr.rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_C);
             csr.rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_E);
-            csr.rdata(8)  <= bool_to_ulogic_f(not RISCV_ISA_E); -- I = not E
+            csr.rdata(8)  <= bool_to_ulogic_f(not RISCV_ISA_E);
             csr.rdata(12) <= bool_to_ulogic_f(RISCV_ISA_M);
             csr.rdata(20) <= bool_to_ulogic_f(RISCV_ISA_U);
             csr.rdata(23) <= '1'; -- X CPU extension (non-standard / NEORV32-specific)
@@ -1325,12 +1273,6 @@ begin
               csr.rdata(0) <= csr.mcounteren_cy;
               csr.rdata(2) <= csr.mcounteren_ir;
             end if;
-
-          -- --------------------------------------------------------------------
-          -- machine configuration
-          -- --------------------------------------------------------------------
---        when csr_menvcfg_c  => csr.rdata <= (others => '0'); -- hardwired to zero
---        when csr_menvcfgh_c => csr.rdata <= (others => '0'); -- hardwired to zero
 
           -- --------------------------------------------------------------------
           -- machine trap handling
@@ -1358,18 +1300,6 @@ begin
             csr.rdata <= csr.mtinst;
 
           -- --------------------------------------------------------------------
-          -- physical memory protection
-          -- --------------------------------------------------------------------
-          when csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   |
-               csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  |
-               csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  |
-               csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c |
-               csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c =>
-            if RISCV_ISA_Smpmp then
-              csr.rdata <= xcsr_rdata_i; -- implemented externally
-            end if;
-
-          -- --------------------------------------------------------------------
           -- machine counter setup
           -- --------------------------------------------------------------------
           when csr_mcountinhibit_c => -- machine counter-inhibit register
@@ -1381,52 +1311,12 @@ begin
               csr.rdata(15 downto 3) <= csr.mcountinhibit(15 downto 3); -- [m]hpmcounter*[h]
             end if;
 
-          -- HPM event configuration --
-          when csr_mhpmevent3_c  | csr_mhpmevent4_c  | csr_mhpmevent5_c  | csr_mhpmevent6_c  |
-               csr_mhpmevent7_c  | csr_mhpmevent8_c  | csr_mhpmevent9_c  | csr_mhpmevent10_c |
-               csr_mhpmevent11_c | csr_mhpmevent12_c | csr_mhpmevent13_c | csr_mhpmevent14_c |
-               csr_mhpmevent15_c =>
-            if RISCV_ISA_Zihpm then
-              csr.rdata <= xcsr_rdata_i; -- implemented externally
-            end if;
-
-          -- --------------------------------------------------------------------
-          -- counters and timers
-          -- --------------------------------------------------------------------
-          -- base counters --
-          when csr_cycle_c   | csr_cycleh_c   | csr_mcycle_c   | csr_mcycleh_c   |
-               csr_time_c    | csr_timeh_c    | csr_mtime_c    | csr_mtimeh_c    |
-               csr_instret_c | csr_instreth_c | csr_minstret_c | csr_minstreth_c =>
-            if RISCV_ISA_Zicntr then
-              csr.rdata <= xcsr_rdata_i; -- implemented externally
-            end if;
-
-          -- hardware performance monitors --
-          when csr_hpmcounter3_c  | csr_hpmcounter3h_c  | csr_mhpmcounter3_c  | csr_mhpmcounter3h_c  |
-               csr_hpmcounter4_c  | csr_hpmcounter4h_c  | csr_mhpmcounter4_c  | csr_mhpmcounter4h_c  |
-               csr_hpmcounter5_c  | csr_hpmcounter5h_c  | csr_mhpmcounter5_c  | csr_mhpmcounter5h_c  |
-               csr_hpmcounter6_c  | csr_hpmcounter6h_c  | csr_mhpmcounter6_c  | csr_mhpmcounter6h_c  |
-               csr_hpmcounter7_c  | csr_hpmcounter7h_c  | csr_mhpmcounter7_c  | csr_mhpmcounter7h_c  |
-               csr_hpmcounter8_c  | csr_hpmcounter8h_c  | csr_mhpmcounter8_c  | csr_mhpmcounter8h_c  |
-               csr_hpmcounter9_c  | csr_hpmcounter9h_c  | csr_mhpmcounter9_c  | csr_mhpmcounter9h_c  |
-               csr_hpmcounter10_c | csr_hpmcounter10h_c | csr_mhpmcounter10_c | csr_mhpmcounter10h_c |
-               csr_hpmcounter11_c | csr_hpmcounter11h_c | csr_mhpmcounter11_c | csr_mhpmcounter11h_c |
-               csr_hpmcounter12_c | csr_hpmcounter12h_c | csr_mhpmcounter12_c | csr_mhpmcounter12h_c |
-               csr_hpmcounter13_c | csr_hpmcounter13h_c | csr_mhpmcounter13_c | csr_mhpmcounter13h_c |
-               csr_hpmcounter14_c | csr_hpmcounter14h_c | csr_mhpmcounter14_c | csr_mhpmcounter14h_c |
-               csr_hpmcounter15_c | csr_hpmcounter15h_c | csr_mhpmcounter15_c | csr_mhpmcounter15h_c =>
-            if RISCV_ISA_Zihpm then
-              csr.rdata <= xcsr_rdata_i; -- implemented externally
-            end if;
-
           -- --------------------------------------------------------------------
           -- machine information
           -- --------------------------------------------------------------------
---        when csr_mvendorid_c  => csr.rdata <= (others => '0'); -- vendor's JEDEC ID
-          when csr_marchid_c    => csr.rdata(4 downto 0) <= "10011"; -- architecture ID - official RISC-V open-source arch ID
-          when csr_mimpid_c     => csr.rdata <= hw_version_c; -- implementation ID -- NEORV32 hardware version
-          when csr_mhartid_c    => csr.rdata(9 downto 0) <= std_ulogic_vector(to_unsigned(HART_ID, 10)); -- hardware thread ID
---        when csr_mconfigptr_c => csr.rdata <= (others => '0'); -- machine configuration pointer register - hardwired to zero
+          when csr_marchid_c => csr.rdata(4 downto 0) <= "10011"; -- architecture ID - official RISC-V open-source arch ID
+          when csr_mimpid_c  => csr.rdata <= hw_version_c; -- implementation ID -- NEORV32 hardware version
+          when csr_mhartid_c => csr.rdata(9 downto 0) <= std_ulogic_vector(to_unsigned(HART_ID, 10)); -- hardware thread ID
 
           -- --------------------------------------------------------------------
           -- debug-mode
@@ -1434,14 +1324,6 @@ begin
           when csr_dcsr_c      => if RISCV_ISA_Sdext then csr.rdata <= csr.dcsr_rd;   end if; -- debug mode control and status
           when csr_dpc_c       => if RISCV_ISA_Sdext then csr.rdata <= csr.dpc;       end if; -- debug mode program counter
           when csr_dscratch0_c => if RISCV_ISA_Sdext then csr.rdata <= csr.dscratch0; end if; -- debug mode scratch register 0
-
-          -- --------------------------------------------------------------------
-          -- trigger module
-          -- --------------------------------------------------------------------
-          when csr_tselect_c | csr_tdata1_c | csr_tdata2_c | csr_tinfo_c =>
-            if RISCV_ISA_Sdtrig then
-              csr.rdata <= xcsr_rdata_i; -- implemented externally
-            end if;
 
           -- --------------------------------------------------------------------
           -- NEORV32-specific
@@ -1485,9 +1367,10 @@ begin
             csr.rdata(31) <= bool_to_ulogic_f(is_simulation_c);   -- is this a simulation?
 
           -- --------------------------------------------------------------------
-          -- undefined/unavailable
+          -- undefined/unavailable or implemented externally
           -- --------------------------------------------------------------------
-          when others => NULL; -- use default: read as zero
+          when others => -- FPU, CFU, PMP, HPM, base counters, trigger module
+            csr.rdata <= xcsr_rdata_i; -- return zero if accessing invalid external CSR
 
         end case;
       end if;
@@ -1551,7 +1434,7 @@ begin
                              ((    csr.prv_level) and csr.dcsr_ebreakm) or -- enabled goto-debug-mode in machine mode on "ebreak"
                              ((not csr.prv_level) and csr.dcsr_ebreaku));  -- enabled goto-debug-mode in user mode on "ebreak"
     debug_ctrl.trig_halt  <= irq_dbg_i     and (not debug_ctrl.run); -- external halt request (if not halted already)
-    debug_ctrl.trig_step  <= csr.dcsr_step and (not debug_ctrl.run); -- single-step mode (trigger when NOT CURRENTLY in debug mode)
+    debug_ctrl.trig_step  <= csr.dcsr_step and (not debug_ctrl.run) and cnt_event(cnt_event_ir_c); -- single-step mode
 
   end generate;
 
