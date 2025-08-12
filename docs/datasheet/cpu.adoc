@@ -668,7 +668,7 @@ written to the according CSRs when a trap is triggered:
 [options="header",grid="rows"]
 |=======================
 | Prio. | `mcause`     | RTE Trap ID              | Cause                             | `mepc` | `mtval` | `mtinst`
-8+^| **Exceptions** (_synchronous_ to instruction execution)
+7+^| **Exceptions** (_synchronous_ to instruction execution)
 | 1     | `0x00000001` | `TRAP_CODE_I_ACCESS`     | instruction access fault          | I-PC   | 0       | _undefined_
 | 2     | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction               | PC     | 0       | INST
 | 3     | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned    | PC     | 0       | INST
@@ -679,7 +679,7 @@ written to the according CSRs when a trap is triggered:
 | 8     | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned           | PC     | ADDR    | INST
 | 9     | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store access fault                | PC     | ADDR    | INST
 | 10    | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load access fault                 | PC     | ADDR    | INST
-8+^| **Interrupts** (_asynchronous_ to instruction execution)
+7+^| **Interrupts** (_asynchronous_ to instruction execution)
 | 11    | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0  | I-PC   | 0       | LAST
 | 12    | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1  | I-PC   | 0       | LAST
 | 13    | `0x80000012` | `TRAP_CODE_FIRQ_2`       | fast interrupt request channel 2  | I-PC   | 0       | LAST
