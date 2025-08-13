@@ -473,7 +473,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] Ext. memory (@0x%x) ", cnt_test, (uint32_t)EXT_MEM_BASE);
 
-  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) && (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM))) {
+  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) && (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM))) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -591,7 +591,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] IF access EXC ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
+  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -682,7 +682,7 @@ int main() {
   PRINT_STANDARD("[%i] BREAK EXC ", cnt_test);
 
   // skip on real hardware since ebreak will make problems when running this test program via gdb
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
+  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -914,7 +914,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] MEI (sim) IRQ ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
+  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1019,7 +1019,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] Vectored IRQ (sim) ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_IS_SIM)) {
+  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
     trap_cause = trap_never_c;
     cnt_test++;
 

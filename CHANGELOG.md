@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 12.08.2025 | 1.11.9.3 | add NEORV32-specific "machine control and status register" `mxcsr`; :warning: move tuning options flags from `mxisa` to `mxcsr` | [#1355](https://github.com/stnolting/neorv32/pull/1335) |
 | 09.08.2025 | 1.11.9.2 | minor fixes and optimizations | [#1333](https://github.com/stnolting/neorv32/pull/1333) |
 | 08.08.2025 | 1.11.9.1 | :warning: remove double-trap exception | [#1332](https://github.com/stnolting/neorv32/pull/1332) |
 | 03.08.2025 | [**1.11.9**](https://github.com/stnolting/neorv32/releases/tag/v1.11.9) | :rocket: **New release** | |

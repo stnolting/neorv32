@@ -284,7 +284,7 @@ Note that these configuration options have no impact on the actual functionality
 
 .Software Tuning Options Discovery
 [TIP]
-Software can check for configured tuning options via specific flags in the <<_mxisa>> CSR.
+Software can check for configured tuning options via specific flags in the <<_mxcsr>> CSR.
 
 
 {empty} +
