@@ -289,7 +289,7 @@ proc setup_ip_gui {} {
   set group [add_group $page {Physical Memory Protection (PMP)}]
   add_params $group {
     { PMP_NUM_REGIONS     {PMP regions}                    {Number of physical memory protection regions} }
-    { PMP_MIN_GRANULARITY {PMP minimal granularity}        {Minimal region granularity in bytes. Has to be a power of two.}           {$PMP_NUM_REGIONS > 0} }
+    { PMP_MIN_GRANULARITY {PMP minimal granularity}        {Minimal region granularity in bytes. Has to be a power of two}            {$PMP_NUM_REGIONS > 0} }
     { PMP_TOR_MODE_EN     {Enable PMP TOR mode}            {Implement support for top-of-region (TOR) mode}                           {$PMP_NUM_REGIONS > 0} }
     { PMP_NAP_MODE_EN     {Enable PMP NAPOT and NA4 modes} {Implement support for naturally-aligned power-of-two (NAPOT & NA4) modes} {$PMP_NUM_REGIONS > 0} }
   }
@@ -297,6 +297,7 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Tuning Options}]
   add_params $group {
+    { CPU_CONSTT_BR_EN  {Constant-time branches}                {Identical execution times for taken and not-taken branches} }
     { CPU_FAST_MUL_EN   {DSP-based multiplier}                  {Use DSP block instead of bit-serial multipliers} }
     { CPU_FAST_SHIFT_EN {Barrel shifter}                        {Use full-parallel shifters instead of of bit-serial shifters} }
     { CPU_RF_HW_RST_EN  {Full hardware reset for register file} {Implement register file with FFs instead of BRAM to allow full hardware reset} }
