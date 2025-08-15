@@ -20,12 +20,12 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_xbus is
   generic (
-    TIMEOUT_VAL : natural; -- cycles after an UNACKNOWLEDGED bus access triggers a bus fault exception
-    REGSTAGE_EN : boolean  -- add XBUS register stage
+    REGSTAGE_EN : boolean  -- add XBUS register stages
   );
   port (
     clk_i      : in  std_ulogic; -- global clock line
     rstn_i     : in  std_ulogic; -- global reset line, low-active
+    bus_term_i : in  std_ulogic; -- terminate current bus access
     bus_req_i  : in  bus_req_t;  -- bus request
     bus_rsp_o  : out bus_rsp_t;  -- bus response
     xbus_adr_o : out std_ulogic_vector(31 downto 0); -- address
@@ -49,14 +49,7 @@ architecture neorv32_xbus_rtl of neorv32_xbus is
   signal bus_rsp : bus_rsp_t;
 
   -- bus arbiter --
-  signal pending : std_ulogic;
-  signal locked  : std_ulogic;
-
-  -- no-response timeout --
-  constant log2_timeout_c : natural := index_size_f(TIMEOUT_VAL);
-  constant timeout_c : unsigned(log2_timeout_c downto 0) := to_unsigned(TIMEOUT_VAL, log2_timeout_c+1);
-  signal timecnt : unsigned(log2_timeout_c downto 0);
-  signal timeout : std_ulogic;
+  signal pending, locked : std_ulogic;
 
 begin
 
@@ -90,51 +83,17 @@ begin
         pending <= bus_req.stb;
       else -- access in progress
         if (locked = '0') then -- single access
-          if (timeout = '1') or (xbus_err_i = '1') or (xbus_ack_i = '1') then
+          if (bus_term_i = '1') or (xbus_err_i = '1') or (xbus_ack_i = '1') then
             pending <= '0';
           end if;
         else -- locked access (multiple accesses)
-          if (timeout = '1') or (bus_req.lock = '0') then
+          if (bus_term_i = '1') or (bus_req.lock = '0') then
             pending <= '0';
           end if;
         end if;
       end if;
     end if;
   end process arbiter;
-
-
-  -- Bus Timeout ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  timeout_enabled:
-  if TIMEOUT_VAL > 0 generate
-    timeout_counter: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        timecnt <= (others => '0');
-        timeout <= '0';
-      elsif rising_edge(clk_i) then
-        if (pending = '0') then
-          timecnt <= timeout_c;
-          timeout <= '0';
-        else
-          if (or_reduce_f(std_ulogic_vector(timecnt)) = '1') then
-            timecnt <= timecnt - 1;
-          else
-            timeout <= '1';
-          end if;
-        end if;
-      end if;
-    end process timeout_counter;
-  end generate;
-
-  timeout_disabled:
-  if TIMEOUT_VAL = 0 generate
-    timecnt <= (others => '0');
-    timeout <= '0';
-  end generate;
-
-  -- no-timeout warning --
-  assert not (TIMEOUT_VAL = 0) report "[NEORV32] XBUS: no bus-timeout configured!" severity warning;
 
 
   -- XBUS Interface -------------------------------------------------------------------------
@@ -158,8 +117,8 @@ begin
 
   -- response gating --
   bus_rsp.data <= xbus_dat_i when (pending = '1') else (others => '0');
-  bus_rsp.ack  <= pending and (timeout or xbus_err_i or xbus_ack_i);
-  bus_rsp.err  <= pending and (timeout or xbus_err_i);
+  bus_rsp.ack  <= pending and (xbus_err_i or xbus_ack_i);
+  bus_rsp.err  <= pending and xbus_err_i;
 
 
 end neorv32_xbus_rtl;
