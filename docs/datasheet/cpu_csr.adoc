@@ -959,10 +959,11 @@ machine configurations and status information.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Description
-| 27:0  | -                     | r/- | _reserved_, read as zero
-| 28    | `CSR_MXCSR_RFHWRST`   | r/- | <<_cpu_tuning_options>>: full hardware reset of register file available when set (`CPU_RF_HW_RST_EN`)
-| 29    | `CSR_MXCSR_FASTMUL`   | r/- | <<_cpu_tuning_options>>: fast multiplication available when set (`CPU_FAST_MUL_EN`)
-| 30    | `CSR_MXCSR_FASTSHIFT` | r/- | <<_cpu_tuning_options>>: fast shifts available when set (`CPU_FAST_SHIFT_EN`)
+| 26:0  | -                     | r/- | _reserved_, read as zero
+| 27    | `CSR_MXCSR_CONSTTBR`  | r/- | <<_cpu_tuning_options>>: constant-time branches enabled when set (`CPU_CONSTT_BR_EN` top generic)
+| 28    | `CSR_MXCSR_RFHWRST`   | r/- | <<_cpu_tuning_options>>: full hardware reset of register file available when set (`CPU_RF_HW_RST_EN` top generic)
+| 29    | `CSR_MXCSR_FASTMUL`   | r/- | <<_cpu_tuning_options>>: fast multiplication available when set (`CPU_FAST_MUL_EN` top generic)
+| 30    | `CSR_MXCSR_FASTSHIFT` | r/- | <<_cpu_tuning_options>>: fast shifts available when set (`CPU_FAST_SHIFT_EN` top generic)
 | 31    | `CSR_MXCSR_IS_SIM`    | r/- | set if CPU is being _simulated_ (not guaranteed)
 |=======================
 

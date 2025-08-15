@@ -63,6 +63,7 @@ entity neorv32_top is
     RISCV_ISA_Zxcfu       : boolean                        := false;       -- implement custom (instr.) functions unit
 
     -- Tuning Options --
+    CPU_CONSTT_BR_EN      : boolean                        := false;       -- implement constant-time branches
     CPU_FAST_MUL_EN       : boolean                        := false;       -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN     : boolean                        := false;       -- use barrel shifter for shift operations
     CPU_RF_HW_RST_EN      : boolean                        := false;       -- implement full hardware reset for register file
@@ -508,6 +509,7 @@ begin
       RISCV_ISA_Sdtrig    => cpu_sdtrig_en_c,
       RISCV_ISA_Smpmp     => cpu_smpmp_en_c,
       -- Tuning Options --
+      CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
       CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
       CPU_RF_HW_RST_EN    => CPU_RF_HW_RST_EN,
