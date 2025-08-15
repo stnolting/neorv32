@@ -2,7 +2,7 @@
 -- NEORV32 CPU - Hardware Counters                                                  --
 -- -------------------------------------------------------------------------------- --
 -- Implementing hardware counters for the following RISC-V ISA extensions:          --
--- + Zicntr: Base Counters -> [m]cycle[h] + [m]time[h] + [m]instret[h] CSRs         --
+-- + Zicntr: Base Counters -> [m]cycle[h] + [m]instret[h] CSRs                      --
 -- + Zihpm:  Hardware Performance Monitors -> [m]hpmcntx[h] + mhpmeventx CRSs       --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
@@ -136,7 +136,7 @@ begin
       rdata_o => cycle_rd
     );
 
-    -- time[h] CSR --
+    -- [m]time[h] CSR --
     time_rd <= (others => '0'); -- not implemented
 
     -- [m]instret[h] CSR --
@@ -155,7 +155,7 @@ begin
       rdata_o => instret_rd
     );
 
-  end generate; -- /base_enabled
+  end generate;
 
 
   base_disabled:
@@ -163,7 +163,7 @@ begin
     cycle_rd   <= (others => '0');
     time_rd    <= (others => '0');
     instret_rd <= (others => '0');
-  end generate; -- /base__disabled
+  end generate;
 
 
   -- Hardware Performance Monitors (Zihpm) --------------------------------------------------
@@ -174,7 +174,7 @@ begin
     hpm_gen:
     for i in 3 to (HPM_NUM+3)-1 generate
 
-       -- [m]hpmcntx[h] CSRs --
+      -- [m]hpmcntx[h] CSRs --
       hpmcnt_inst: neorv32_cpu_counters_cnt
       generic map (
         CNT_WIDTH => HPM_WIDTH
@@ -203,7 +203,7 @@ begin
         end if;
       end process hpmevent_reg;
 
-    end generate; -- /hpm_gen
+    end generate;
 
     -- terminate unused entries --
     hpm_terminate_gen:
@@ -227,7 +227,7 @@ begin
       hpm_rd <= cnt_v or cfg_v;
     end process hpm_read_back;
 
-  end generate; -- /hpm_enabled
+  end generate;
 
 
   hpm_disabled:
@@ -235,7 +235,7 @@ begin
     hpmcnt   <= (others => (others => '0'));
     hpmevent <= (others => (others => '0'));
     hpm_rd   <= (others => '0');
-  end generate; -- /hpm_disabled
+  end generate;
 
 end neorv32_cpu_counters_rtl;
 

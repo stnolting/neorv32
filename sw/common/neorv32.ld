@@ -228,4 +228,8 @@ SECTIONS
   PROVIDE(__crt0_copy_data_src_begin = LOADADDR(.data));
   PROVIDE(__crt0_copy_data_dst_begin = ADDR(.data));
   PROVIDE(__crt0_copy_data_dst_end   = ADDR(.data) + SIZEOF(.data));
+  PROVIDE(__crt0_rom_base            = ORIGIN(rom));
+  PROVIDE(__crt0_rom_size            = LENGTH(rom));
+  PROVIDE(__crt0_ram_base            = ORIGIN(ram));
+  PROVIDE(__crt0_ram_size            = LENGTH(ram));
 }
