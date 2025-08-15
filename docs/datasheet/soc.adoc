@@ -521,22 +521,25 @@ constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffe00000";
 constant mem_io_size_c   : natural := 32*64*1024; -- = 32 * iodev_size_c
 ----
 
-Besides the redirecting of bus requests the gateway also implements a bus monitor (aka "the bus keeper") that tracks all
-active bus transactions to ensure _safe_ and _deterministic_ operations. Whenever a memory-mapped device is accessed (a
-real memory, a memory-mapped IO or some processor-external module) the bus monitor starts an internal countdown. The
-accessed module has to respond ("ACK") to the bus request within a bound **time window**. This time window is defined
-by a global constant in the processor's VHDL package file (`rtl/core/neorv323_package.vhd`).
+===== Bus Monitor and Timeout
 
-.Internal Bus Timeout Configuration
+Besides the redirecting of bus requests the gateway also implements a **bus monitor** (aka "the bus keeper") that
+tracks all bus transactions to ensure _safe_ and _deterministic_ operations. Whenever a memory-mapped device is
+accessed the bus monitor starts an internal countdown. The accessed module has to respond ("ACK") to the bus request
+within a bound **time window**. This time window is defined by a global constant in the processor's VHDL package
+file (`rtl/core/neorv323_package.vhd`):
+
+.Global Bus Timeout Configuration
 [source,vhdl]
 ----
-constant bus_timeout_c : natural := 16;
+constant bus_timeout_c : natural := 1024;
 ----
 
-This constant defines the _maximum_ number of cycles after which a non-responding bus request (i.e. no `ack`
-and no `err` signal) will time out raising a bus access fault exception. For example this can happen when accessing
-"address space holes" - addresses that are not mapped to any physical module. The resulting exception type corresponds
-to the according access type, i.e. instruction fetch access exception, load access exception or store access exception.
+This constant defines the _maximum_ number of cycles after which a non-responding bus request (i.e. no `ACK`) will
+time out raising a bus access fault exception. For example this can happen when accessing "address space holes"
+(aka _the void_) - addresses that are not mapped to any physical module. The specific bus access exception type
+corresponds to the according access type, i.e. instruction fetch bus fault, load bus fault or store bus fault.
+Note that this time window is also enforced for accesses via the <<_processor_external_bus_interface_xbus>>.
 
 
 :sectnums:
