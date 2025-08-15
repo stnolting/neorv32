@@ -176,11 +176,19 @@ extern char __heap_start[];    /**< heap start address */
 extern char __heap_end[];      /**< heap last address */
 extern char __crt0_max_heap[]; /**< heap size in bytes */
 extern char __crt0_entry[];    /**< crt0 entry point */
+extern char __crt0_rom_base[]; /**< ROM base address */
+extern char __crt0_rom_size[]; /**< ROM size in bytes */
+extern char __crt0_ram_base[]; /**< ROM base address */
+extern char __crt0_ram_size[]; /**< ROM size in bytes */
 // aliases
 #define NEORV32_HEAP_BEGIN ((uint32_t)&__heap_start[0])
 #define NEORV32_HEAP_END   ((uint32_t)&__heap_end[0])
 #define NEORV32_HEAP_SIZE  ((uint32_t)&__crt0_max_heap[0])
 #define NEORV32_CRT0_ENTRY ((uint32_t)&__crt0_entry[0])
+#define NEORV32_ROM_BASE   ((uint32_t)&__crt0_rom_base[0])
+#define NEORV32_ROM_SIZE   ((uint32_t)&__crt0_rom_size[0])
+#define NEORV32_RAM_BASE   ((uint32_t)&__crt0_ram_base[0])
+#define NEORV32_RAM_SIZE   ((uint32_t)&__crt0_ram_size[0])
 /**@}*/
 
 
