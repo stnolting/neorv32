@@ -297,6 +297,7 @@ architecture neorv32_top_rtl of neorv32_top is
   -- bus: system --
   signal sys1_req, sys2_req, dma_req, amo_req, sys3_req, imem_req, dmem_req, io_req, xbus_req : bus_req_t;
   signal sys1_rsp, sys2_rsp, dma_rsp, amo_rsp, sys3_rsp, imem_rsp, dmem_rsp, io_rsp, xbus_rsp : bus_rsp_t;
+  signal xbus_terminate : std_ulogic;
 
   -- bus: IO devices --
   type io_devices_enum_t is (
@@ -769,26 +770,27 @@ begin
 
   neorv32_bus_gateway_inst: entity neorv32.neorv32_bus_gateway
   generic map (
-    TIMEOUT  => bus_timeout_c,
+    TIMEOUT => bus_timeout_c,
     -- port A: internal IMEM --
-    A_EN   => IMEM_EN,
-    A_BASE => mem_imem_base_c,
-    A_SIZE => imem_size_c,
+    A_EN    => IMEM_EN,
+    A_BASE  => mem_imem_base_c,
+    A_SIZE  => imem_size_c,
     -- port B: internal DMEM --
-    B_EN   => DMEM_EN,
-    B_BASE => mem_dmem_base_c,
-    B_SIZE => dmem_size_c,
+    B_EN    => DMEM_EN,
+    B_BASE  => mem_dmem_base_c,
+    B_SIZE  => dmem_size_c,
     -- port C: IO --
-    C_EN   => true, -- always enabled (but will be trimmed if no IO devices are implemented)
-    C_BASE => mem_io_base_c,
-    C_SIZE => mem_io_size_c,
+    C_EN    => true, -- always enabled (but will be trimmed if no IO devices are implemented)
+    C_BASE  => mem_io_base_c,
+    C_SIZE  => mem_io_size_c,
     -- port X (the void): XBUS --
-    X_EN   => XBUS_EN
+    X_EN    => XBUS_EN
   )
   port map (
     -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_sys,
+    term_o  => xbus_terminate,
     -- host port --
     req_i   => sys3_req,
     rsp_o   => sys3_rsp,
@@ -869,6 +871,7 @@ begin
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
+        bus_term_i => xbus_terminate,
         bus_req_i  => xbus_req,
         bus_rsp_o  => xbus_rsp,
         xbus_adr_o => xbus_adr_o,
