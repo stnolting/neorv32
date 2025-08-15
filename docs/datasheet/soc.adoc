@@ -268,7 +268,6 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `CACHE_BURSTS_EN`       | boolean   | true          | Enable burst transfers for cache updates.
 4+^| **<<_processor_external_bus_interface_xbus>> (Wishbone / AXI4)**
 | `XBUS_EN`               | boolean   | false         | Implement the external bus interface.
-| `XBUS_TIMEOUT`          | natural   | 255           | Clock cycles after which a pending external bus access will auto-terminate and raise a bus fault exception.
 | `XBUS_REGSTAGE_EN`      | boolean   | false         | Implement XBUS register stages to ease timing closure.
 4+^| **Peripheral/IO Modules**
 | `IO_DISABLE_SYSINFO`    | boolean   | false         | Disable <<_system_configuration_information_memory_sysinfo>> module; not recommended - for advanced users only!
@@ -538,11 +537,6 @@ This constant defines the _maximum_ number of cycles after which a non-respondin
 and no `err` signal) will time out raising a bus access fault exception. For example this can happen when accessing
 "address space holes" - addresses that are not mapped to any physical module. The resulting exception type corresponds
 to the according access type, i.e. instruction fetch access exception, load access exception or store access exception.
-
-.External Bus Interface Timeout
-[NOTE]
-Accesses that are delegated to the external bus interface have a different maximum timeout value that is defined by an
-explicit specific processor generic. See section <<_processor_external_bus_interface_xbus>> for more information.
 
 
 :sectnums:
