@@ -47,6 +47,7 @@ entity neorv32_tb is
     RISCV_ISA_Zksh      : boolean                        := true;        -- implement ShangMi hash extension
     RISCV_ISA_Zmmul     : boolean                        := true;        -- implement multiply-only M sub-extension
     RISCV_ISA_Zxcfu     : boolean                        := true;        -- implement custom (instr.) functions unit
+    CPU_CONSTT_BR_EN    : boolean                        := false;       -- constant-time branches
     CPU_FAST_MUL_EN     : boolean                        := true;        -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   : boolean                        := true;        -- use barrel shifter for shift operations
     CPU_RF_HW_RST_EN    : boolean                        := false;       -- implement full hardware reset for register file
@@ -159,6 +160,7 @@ begin
     RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
     RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
     -- Extension Options --
+    CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
     CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
     CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
     CPU_RF_HW_RST_EN    => CPU_RF_HW_RST_EN,
