@@ -423,7 +423,6 @@ begin
     CACHE_BURSTS_EN     => burst_en_c,
     -- External bus interface --
     XBUS_EN             => XBUS_EN,
-    XBUS_TIMEOUT        => 0, -- AXI does not allow any timeouts
     XBUS_REGSTAGE_EN    => XBUS_REGSTAGE_EN,
     -- Processor peripherals --
     IO_DISABLE_SYSINFO  => false,
