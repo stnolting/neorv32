@@ -297,11 +297,11 @@ Software can check for configured tuning options via specific flags in the <<_mx
 | Name        | Constant-time branches (data-independent timing)
 | Type        | `boolean`
 | Default     | `false` (disabled)
-| Description | When **enabled** all conditional branch instruction will have identical execution times for taken and not-taken
-branch conditions. Thus, all branches behave as they are always taken (including a full CPU pipeline flush). Enabling this feature
-makes execution times more predictable while making timing side-channel attacks more difficult.
-|             | When **disabled** not-taken conditional branches will execute faster without flushing the CPU pipeline. For highest
-performance this feature should be disabled.
+| Description | When this option is **enabled**, all conditional branch instructions have identical execution times for taken and not
+taken branch conditions. Thus, all branches behave as if they were always taken (including a complete CPU pipeline flush). Enabling
+this feature makes execution times more predictable and makes timing side-channel attacks more difficult.
+|             | When **disabled**, not-taken conditional branches are executed faster without clearing the CPU pipeline. Hence, for maximum
+performance, this feature should be disabled.
 |=======================
 
 
