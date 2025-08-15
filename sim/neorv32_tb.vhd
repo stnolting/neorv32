@@ -189,7 +189,6 @@ begin
     CACHE_BURSTS_EN     => CACHE_BURSTS_EN,
     -- External bus interface --
     XBUS_EN             => true,
-    XBUS_TIMEOUT        => 64,
     XBUS_REGSTAGE_EN    => true,
     -- Processor peripherals --
     IO_GPIO_NUM         => 32,
@@ -413,12 +412,10 @@ begin
     -- device address size in bytes and base address --
     DEV_0_EN => EXT_MEM_A_EN, DEV_0_SIZE => EXT_MEM_A_SIZE, DEV_0_BASE => EXT_MEM_A_BASE,
     DEV_1_EN => EXT_MEM_B_EN, DEV_1_SIZE => EXT_MEM_B_SIZE, DEV_1_BASE => EXT_MEM_B_BASE,
-    DEV_2_EN => true,         DEV_2_SIZE =>             64, DEV_2_BASE => x"F0000000",
+    DEV_2_EN => true,         DEV_2_SIZE =>              8, DEV_2_BASE => x"A0000000",
     DEV_3_EN => true,         DEV_3_SIZE =>              4, DEV_3_BASE => x"FF000000"
   )
   port map (
-    clk_i       => clk_gen,
-    rstn_i      => rst_gen,
     -- host port --
     host_req_i  => xbus_core_req,
     host_rsp_o  => xbus_core_rsp,
@@ -478,7 +475,7 @@ begin
   end generate;
 
 
-  -- XBUS: External Memory-Mapped IO --------------------------------------------------------
+  -- XBUS: External Memory-Mapped IO (cached) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xbus_mmio: entity work.xbus_memory
   generic map (
