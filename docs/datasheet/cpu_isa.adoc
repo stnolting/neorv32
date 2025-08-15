@@ -650,6 +650,11 @@ core does implement must adhere to the requirements of `Zkt`.
             <| `ror[i]` `rol` <| yes if `CPU_FAST_SHIFT_EN` enabled
 |=======================
 
+.Data-Independent Timing of Branches
+[TIP]
+To further reduce the possibility of timing side-channel attacks, conditional branches can be executed with constant time
+(i.e. data-independent execution times). See the <<_cpu_constt_br_en>> <<_cpu_tuning_options>> for more information.
+
 
 ==== `Zmmul` - ISA Extension
 

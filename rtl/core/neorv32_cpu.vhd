@@ -55,6 +55,7 @@ entity neorv32_cpu is
     RISCV_ISA_Sdtrig    : boolean; -- implement trigger module extension
     RISCV_ISA_Smpmp     : boolean; -- implement physical memory protection
     -- Tuning Options --
+    CPU_CONSTT_BR_EN    : boolean; -- implement constant-time branches
     CPU_FAST_MUL_EN     : boolean; -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   : boolean; -- use barrel shifter for shift operations
     CPU_RF_HW_RST_EN    : boolean; -- implement full hardware reset for register file
@@ -176,6 +177,7 @@ begin
 
     -- CPU tuning options --
     assert false report "[NEORV32] CPU tuning options: " &
+      cond_sel_string_f(CPU_CONSTT_BR_EN,  "constt_br ",  "") &
       cond_sel_string_f(CPU_FAST_MUL_EN,   "fast_mul ",   "") &
       cond_sel_string_f(CPU_FAST_SHIFT_EN, "fast_shift ", "") &
       cond_sel_string_f(CPU_RF_HW_RST_EN,  "rf_hw_rst ",  "")
@@ -250,6 +252,7 @@ begin
     RISCV_ISA_Sdtrig  => RISCV_ISA_Sdtrig,    -- implement trigger module extension
     RISCV_ISA_Smpmp   => RISCV_ISA_Smpmp,     -- implement physical memory protection
     -- Tuning Options --
+    CPU_CONSTT_BR_EN  => CPU_CONSTT_BR_EN,    -- implement constant-time branches
     CPU_FAST_MUL_EN   => CPU_FAST_MUL_EN,     -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN => CPU_FAST_SHIFT_EN,   -- use barrel shifter for shift operations
     CPU_RF_HW_RST_EN  => CPU_RF_HW_RST_EN     -- implement full hardware reset for register file

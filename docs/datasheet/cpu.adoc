@@ -279,12 +279,30 @@ It is connected to the <<_execution_trace_buffer_tracer>> module.
 :sectnums:
 ==== CPU Tuning Options
 
-The top module provides several tuning options to optimize the CPU for a specific goal.
+The top module provides several tuning options to optimize the CPU for performance, size and even security.
 Note that these configuration options have no impact on the actual functionality (e.g. ISA compatibility).
 
-.Software Tuning Options Discovery
+.Tuning Options Discovery
 [TIP]
 Software can check for configured tuning options via specific flags in the <<_mxcsr>> CSR.
+
+
+{empty} +
+[discrete]
+===== **`CPU_CONSTT_BR_EN`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Constant-time branches (data-independent timing)
+| Type        | `boolean`
+| Default     | `false` (disabled)
+| Description | When **enabled** all conditional branch instruction will have identical execution times for taken and not-taken
+branch conditions. Thus, all branches behave as they are always taken (including a full CPU pipeline flush). Enabling this feature
+makes execution times more predictable while making timing side-channel attacks more difficult.
+|             | When **disabled** not-taken conditional branches will execute faster without flushing the CPU pipeline. For highest
+performance this feature should be disabled.
+|=======================
 
 
 {empty} +
@@ -514,8 +532,8 @@ exclusive bus access and a 4-word incrementing-address read burst.
   [
     "response",
     {name: 'ack',  wave: '0.1010.|..101..0.', node: '..c.eg....j.l..n'},
-    {name: 'err',  wave: 'x......|x.0x0..x.'},
-    {name: 'data', wave: 'x......|x.3x456x.', data: ['[0]', '[4]', '[8]', '[12]']},
+    {name: 'err',  wave: 'x.0x0x.|x.0x0..x.'},
+    {name: 'data', wave: 'x.2x...|x.3x456x.', data: ['rdata', '[0]', '[4]', '[8]', '[12]']},
   ]
 ],
  edge: ['ab', 'a~>c', 'c~>d', 'd~>e', 'fg', 'hi', 'h~>j', 'j~>k', 'k~>l', 'mn']
