@@ -9,6 +9,7 @@
 *.out
 *.hex
 *_image.vhd
+*.ghw
 build/
 
 # keep default VHDL memory images
