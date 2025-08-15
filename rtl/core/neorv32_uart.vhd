@@ -24,7 +24,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_uart is
   generic (
     SIM_MODE_EN  : boolean; -- enable simulation-mode option
-    SIM_LOG_FILE : string;  -- name of SIM mode log file
+    SIM_LOG_FILE : string := "";  -- name of SIM mode log file
     UART_RX_FIFO : natural range 1 to 2**15; -- RX FIFO depth, has to be a power of two, min 1
     UART_TX_FIFO : natural range 1 to 2**15  -- TX FIFO depth, has to be a power of two, min 1
   );
