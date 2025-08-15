@@ -387,6 +387,7 @@ void neorv32_aux_print_hw_config(void) {
   // CPU tuning options
   tmp = neorv32_cpu_csr_read(CSR_MXCSR);
   neorv32_uart0_printf("\nTuning options:      ");
+  if (tmp & (1<<CSR_MXCSR_CONSTTBR))  { neorv32_uart0_printf("constt_br ");  }
   if (tmp & (1<<CSR_MXCSR_FASTMUL))   { neorv32_uart0_printf("fast_mul ");   }
   if (tmp & (1<<CSR_MXCSR_FASTSHIFT)) { neorv32_uart0_printf("fast_shift "); }
   if (tmp & (1<<CSR_MXCSR_RFHWRST))   { neorv32_uart0_printf("rf_hw_rst ");  }
