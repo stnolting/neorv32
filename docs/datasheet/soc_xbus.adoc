@@ -19,7 +19,6 @@
 |                         | `xbus_ack_i`         | acknowledge (1-bit)
 |                         | `xbus_err_i`         | bus error (1-bit)
 | Configuration generics: | `XBUS_EN`            | enable external bus interface when `true`
-|                         | `XBUS_TIMEOUT`       | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
 |                         | `XBUS_REGSTAGE_EN`   | implement XBUS register stages
 |                         | (`CACHE_BLOCK_SIZE`) | burst size
 |                         | (`CACHE_BURSTS_EN`)  | enable burst transfers for cache update
@@ -140,10 +139,9 @@ to maintain exclusive bus access. This transfer type is used by the CPU to perfo
 
 An accessed XBUS device does not have to respond immediately to a bus request by sending an `ACK`.
 Instead, there is a **time window** where the device has to acknowledge the transfer. This time window
-is configured by the `XBUS_TIMEOUT` generic and it defines the maximum time (in clock cycles) a bus access can
-be pending before it is automatically terminated raising an bus fault exception. If `XBUS_TIMEOUT` is set to zero,
-the timeout is disabled and a bus access can take an arbitrary number of cycles to complete. Note that this is not
-recommended as a missing ACK will permanently stall the entire processor!
+is enforced by the _bus monitors_ of the processor's central <<_bus_gateway>>: all XBUS transactions
+have to be acknowledged within this time window. Otherwise the transfer is terminated and a bus fault
+exception is raised.
 
 Furthermore, an accesses XBUS device can signal an error condition at any time by setting the `ERR` signal
 high for one cycle. This will also terminate the current bus transaction before raising a CPU bus fault exception.

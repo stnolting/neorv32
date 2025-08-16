@@ -24,8 +24,6 @@ entity xbus_gateway is
     DEV_3_EN : boolean := false; DEV_3_SIZE : natural := 0; DEV_3_BASE : std_ulogic_vector(31 downto 0) := (others => '0')
   );
   port (
-    clk_i       : in  std_ulogic;
-    rstn_i      : in  std_ulogic;
     -- host port --
     host_req_i  : in  xbus_req_t;
     host_rsp_o  : out xbus_rsp_t;
@@ -56,9 +54,8 @@ architecture xbus_gateway_rtl of xbus_gateway is
   signal dev_req : dev_req_t;
   signal dev_rsp : dev_rsp_t;
 
-  -- device access --
-  signal acc_en  : std_ulogic_vector(num_devs_c-1 downto 0);
-  signal acc_err : std_ulogic;
+  -- device access-enable --
+  signal acc_en : std_ulogic_vector(num_devs_c-1 downto 0);
 
 begin
 
@@ -76,17 +73,7 @@ begin
                           (unsigned(host_req_i.addr) < (unsigned(dev_base_list_c(i)) + dev_size_list_c(i))) else '0';
   end generate;
 
-  -- invalid access address --
-  err_gen: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      acc_err <= '0';
-    elsif rising_edge(clk_i) then
-      acc_err <= host_req_i.stb and host_req_i.cyc and (not or_reduce_f(acc_en));
-    end if;
-  end process err_gen;
-
-  -- request --
+  -- request ("fire and forget") --
   bus_request_gen:
   for i in 0 to num_devs_c-1 generate
     bus_request: process(host_req_i, acc_en)
@@ -101,14 +88,14 @@ begin
   end generate;
 
   -- response --
-  bus_response: process(acc_err, dev_rsp, acc_en)
+  bus_response: process(dev_rsp, acc_en)
     variable tmp_v : xbus_rsp_t;
   begin
     tmp_v.data := (others => '0');
     tmp_v.ack  := '0';
-    tmp_v.err  := acc_err;
+    tmp_v.err  := '0';
     for i in 0 to num_devs_c-1 loop -- OR all enabled response buses
-      if (acc_en(i) = '1') and dev_en_list_c(i) then
+      if dev_en_list_c(i) then
         tmp_v.data := tmp_v.data or dev_rsp(i).data;
         tmp_v.ack  := tmp_v.ack  or dev_rsp(i).ack;
         tmp_v.err  := tmp_v.err  or dev_rsp(i).err;

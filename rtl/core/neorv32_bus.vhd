@@ -262,9 +262,8 @@ end neorv32_bus_reg_rtl;
 -- Bus gateway to distribute accesses to 3 non-overlapping address sub-spaces       --
 -- (A to C). Note that the sub-spaces have to be aligned to their individual sizes. --
 -- All accesses that do not match any of these sections are redirected to the "X"   --
--- port. The gateway-internal bus monitor ensures that all accesses are completed   --
--- within a bound time window. Otherwise, a bus error exception is raised. Note     --
--- that the X-port does not provide such a timeout.                                 --
+-- port. The gateway-internal bus monitor ensures that ALL accesses are completed   --
+-- within a bound time window. Otherwise, a bus error exception is raised.          --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -282,7 +281,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_gateway is
   generic (
-    TIMEOUT : natural; -- internal bus timeout cycles
+    TIMEOUT : natural; -- bus timeout cycles
     -- port A --
     A_EN    : boolean; -- port enable
     A_BASE  : std_ulogic_vector(31 downto 0); -- port address space base address
@@ -302,6 +301,7 @@ entity neorv32_bus_gateway is
     -- global control --
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
+    term_o  : out std_ulogic; -- terminate current bus access
     -- host port --
     req_i   : in  bus_req_t;  -- host request
     rsp_o   : out bus_rsp_t;  -- host response
@@ -340,11 +340,10 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
 
   -- bus monitor --
   type keeper_t is record
-    busy : std_ulogic;
-    lock : std_ulogic;
-    cnt  : std_ulogic_vector(index_size_f(TIMEOUT) downto 0);
-    err  : std_ulogic;
-    halt : std_ulogic;
+    state : std_ulogic_vector(1 downto 0);
+    lock  : std_ulogic;
+    cnt   : std_ulogic_vector(index_size_f(TIMEOUT) downto 0);
+    err   : std_ulogic;
   end record;
   signal keeper : keeper_t;
 
@@ -405,29 +404,52 @@ begin
   bus_monitor: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      keeper.busy <= '0';
-      keeper.lock <= '0';
-      keeper.cnt  <= (others => '0');
-      keeper.err  <= '0';
-      keeper.halt <= '0';
+      keeper.state <= (others => '0');
+      keeper.lock  <= '0';
+      keeper.cnt   <= (others => '0');
     elsif rising_edge(clk_i) then
-      keeper.err  <= '0'; -- default
-      keeper.halt <= port_sel(port_sel'left); -- no timeout if x-port access
-      if (keeper.busy = '0') then -- bus idle
-        keeper.cnt  <= (others => '0');
-        keeper.busy <= req_i.stb;
-        keeper.lock <= req_i.lock;
-      else -- bus access in progress
-        keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1);
-        if ((keeper.cnt(keeper.cnt'left) = '1') and (keeper.halt = '0')) then -- timeout
-          keeper.err  <= '1';
-          keeper.busy <= '0';
-        elsif (int_rsp.ack = '1') or ((keeper.lock = '1') and (req_i.lock = '0')) then -- normal access termination
-          keeper.busy <= '0';
-        end if;
-      end if;
+      case keeper.state is
+
+        when "00" => -- idle, waiting for new access request
+        -- ------------------------------------------------------------
+          keeper.lock <= req_i.lock;
+          keeper.cnt  <= (others => '0');
+          if (req_i.stb = '1') then
+            keeper.state <= "01";
+          end if;
+
+        when "01" => -- busy, transfer in progress
+        -- ------------------------------------------------------------
+          -- timeout counter --
+          if (int_rsp.ack = '1') then
+            keeper.cnt <= (others => '0');
+          else
+            keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1);
+          end if;
+          -- bus status --
+          if (keeper.cnt(keeper.cnt'left) = '1') then -- timeout
+            keeper.state <= "11";
+          elsif (keeper.lock = '1') then -- locked / burst transfer
+            if (req_i.lock = '0') then
+              keeper.state <= "00";
+            end if;
+          elsif (int_rsp.ack = '1') then -- end of single transfer
+            keeper.state <= "00";
+          end if;
+
+        when others => -- return error response until end of (locked) transfer
+        -- ------------------------------------------------------------
+          if (keeper.lock = '0') or (req_i.lock = '0') then
+            keeper.state <= "00";
+          end if;
+
+      end case;
     end if;
   end process bus_monitor;
+
+  -- bus keeper error --
+  keeper.err <= keeper.state(1); -- send error to host
+  term_o     <= keeper.state(1); -- terminate pending (external) bus access
 
 
 end neorv32_bus_gateway_rtl;

@@ -48,10 +48,11 @@ the atomic memory operations of the <<_zaamo_isa_extension>> will always **bypas
 By executing the `fence.i` instruction the instruction cache is cleared and reloaded.
 See section <<_memory_coherence>> for more information.
 
-.Cache Block Update Fault Handling
+.Cache Block Update Bus Error Handling
 [NOTE]
-If the cache encounters a bus error when downloading a new block from main memory, the
-entire block is invalidated and a bus access error exception is raised.
+If the cache encounters a bus error while downloading a new block from main memory, only the according
+data word is marked as faulty (instead of invalidating the entire cache block). A bus access fault exception
+is only raised if the CPU accesses a cached word that has actually been marked as faulty.
 
 .Retrieve Cache Configuration from Software
 [TIP]

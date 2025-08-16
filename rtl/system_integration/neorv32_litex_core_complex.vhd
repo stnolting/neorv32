@@ -143,7 +143,6 @@ begin
     HPM_CNT_WIDTH         => 64,                             -- total size of HPM counters (0..64)
     -- External bus interface (XBUS) --
     XBUS_EN               => true,                           -- implement external memory bus interface?
-    XBUS_TIMEOUT          => 1024,                           -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_REGSTAGE_EN      => false,                          -- add XBUS register stage
     -- Processor peripherals --
     IO_CLINT_EN           => configs_c.clint(CONFIG)         -- implement core local interruptor (CLINT)?

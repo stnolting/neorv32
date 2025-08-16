@@ -30,7 +30,7 @@
 //** Unreachable word-aligned cached address */
 #define ADDR_UNREACHABLE (0x70000000U)
 //** External memory base address */
-#define EXT_MEM_BASE     (0xF0000000U)
+#define EXT_MEM_BASE     (0xA0000000U)
 //** External IRQ trigger base address */
 #define SIM_TRIG_BASE    (0xFF000000U)
 /**@}*/
@@ -111,6 +111,11 @@ void __attribute__((constructor)) neorv32_constructor() {
   constr_res = 0;
   for (i=0; i<16; i++) {
     constr_res = (31 * constr_res) + tmp[i];
+  }
+
+  // clear top of stack (to make sure variables on the stack are initialized)
+  for (i=0; i<64; i++) {
+    neorv32_cpu_store_unsigned_word((NEORV32_RAM_BASE + (NEORV32_RAM_SIZE-4)) - 4*i, 0);
   }
 }
 

@@ -470,7 +470,6 @@ begin
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
     -- External bus interface --
     XBUS_EN             => xbus_en_c,
-    XBUS_TIMEOUT        => 0, -- AXI does not allow any timeouts
     XBUS_REGSTAGE_EN    => xbus_regstage_en_c,
     -- Processor peripherals --
     IO_DISABLE_SYSINFO  => false,
