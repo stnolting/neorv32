@@ -68,6 +68,7 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant int_imem_en_c    : boolean := IMEM_EN and boolean(IMEM_SIZE > 0);
   constant int_dmem_en_c    : boolean := DMEM_EN and boolean(DMEM_SIZE > 0);
   constant int_imem_rom_c   : boolean := int_imem_en_c and IMEM_ROM;
+  constant log2_btimeout_c  : natural := index_size_f(bus_timeout_c);
   constant log2_imem_size_c : natural := index_size_f(IMEM_SIZE);
   constant log2_dmem_size_c : natural := index_size_f(DMEM_SIZE);
   constant log2_ic_bnum_c   : natural := index_size_f(ICACHE_NUM_BLOCKS);
@@ -101,8 +102,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   sysinfo(1)(7  downto 0)  <= std_ulogic_vector(to_unsigned(log2_imem_size_c, 8)) when int_imem_en_c else (others => '0'); -- log2(IMEM size)
   sysinfo(1)(15 downto 8)  <= std_ulogic_vector(to_unsigned(log2_dmem_size_c, 8)) when int_dmem_en_c else (others => '0'); -- log2(DMEM size)
-  sysinfo(1)(23 downto 16) <= std_ulogic_vector(to_unsigned(NUM_HARTS, 8)); -- number of physical CPU cores
-  sysinfo(1)(31 downto 24) <= std_ulogic_vector(to_unsigned(BOOT_MODE_SELECT, 8)); -- boot configuration
+  sysinfo(1)(19 downto 16) <= std_ulogic_vector(to_unsigned(NUM_HARTS,        4)); -- number of physical CPU cores
+  sysinfo(1)(23 downto 20) <= std_ulogic_vector(to_unsigned(BOOT_MODE_SELECT, 4)); -- boot configuration
+  sysinfo(1)(31 downto 24) <= std_ulogic_vector(to_unsigned(log2_btimeout_c,  8)); -- bus timeout
 
   -- SYSINFO(2): SoC Configuration ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

@@ -50,18 +50,16 @@ to take into account a dynamic frequency scaling of the processor.
 
 ===== SYSINFO - Miscellaneous Configuration
 
-[NOTE]
-Bit fields in this register are set to all-zero if the according memory system is not implemented.
-
-.SYSINFO `MEM` Bytes
-[cols="^1,<2,<7"]
+.SYSINFO `MEM` Bits
+[cols="^2,<6,<10"]
 [options="header",grid="all"]
 |=======================
 | Byte | Name [C] | Description
-| `0`  | `SYSINFO_MISC_IMEM` | _log2_(internal IMEM size in bytes), via top's `IMEM_SIZE` generic
-| `1`  | `SYSINFO_MISC_DMEM` | _log2_(internal DMEM size in bytes), via top's `DMEM_SIZE` generic
-| `2`  | `SYSINFO_MISC_HART` | number of physical CPU cores ("harts")
-| `3`  | `SYSINFO_MISC_BOOT` | boot mode configuration, via top's `BOOT_MODE_SELECT` generic (see <<_boot_configuration>>))
+| `7:0`   | `SYSINFO_MISC_IMEM_MBS : SYSINFO_MISC_IMEM_LSB` | _log2_(internal IMEM size in bytes), via top's `IMEM_SIZE` generic
+| `15:8`  | `SYSINFO_MISC_DMEM_MSB : SYSINFO_MISC_DMEM_LSB` | _log2_(internal DMEM size in bytes), via top's `DMEM_SIZE` generic
+| `19:16` | `SYSINFO_MISC_HART_MSB : SYSINFO_MISC_HART_LSB` | number of physical CPU cores ("harts")
+| `23:20` | `SYSINFO_MISC_BOOT_MSB : SYSINFO_MISC_BOOT_LSB` | boot mode configuration, via top's `BOOT_MODE_SELECT` generic (see <<_boot_configuration>>))
+| `31:24` | `SYSINFO_MISC_BTMO_MSB : SYSINFO_MISC_BTMO_LSB` | _log2_(bus timeout cycles), see <<_bus_monitor_and_timeout>>
 |=======================
 
 

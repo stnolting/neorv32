@@ -1735,8 +1735,9 @@
           <fields>
             <field><name>SYSINFO_MISC_IMEM</name><bitRange>[7:0]</bitRange><description>log2(IMEM size in bytes)</description></field>
             <field><name>SYSINFO_MISC_DMEM</name><bitRange>[15:8]</bitRange><description>log2(DMEM size in bytes)</description></field>
-            <field><name>SYSINFO_MISC_HART</name><bitRange>[23:16]</bitRange><description>Number of physical CPU cores</description></field>
-            <field><name>SYSINFO_MISC_BOOT</name><bitRange>[31:24]</bitRange><description>Boot mode configuration select</description></field>
+            <field><name>SYSINFO_MISC_HART</name><bitRange>[19:16]</bitRange><description>Number of physical CPU cores</description></field>
+            <field><name>SYSINFO_MISC_BOOT</name><bitRange>[23:20]</bitRange><description>Boot mode configuration select</description></field>
+            <field><name>SYSINFO_MISC_BTMO</name><bitRange>[31:24]</bitRange><description>log2(bus timeout cycles)</description></field>
           </fields>
         </register>
         <register>

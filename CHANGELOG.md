@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 16.08.2025 | 1.11.9.6 | :warning: rework layout of `SYSINFO.MISC` information register | [#1342](https://github.com/stnolting/neorv32/pull/1342) |
 | 16.08.2025 | 1.11.9.5 | rework bus access error logic; add per-word cache status bits; :warning: remove top's `XBUS_TIMEOUT` generic; extend _global_ bus timeout to 1024 cycles | [#1339](https://github.com/stnolting/neorv32/pull/1339) |
 | 15.08.2025 | 1.11.9.4 | :lock: add new CPU tuning option: constant-time branches | [#1338](https://github.com/stnolting/neorv32/pull/1338) |
 | 12.08.2025 | 1.11.9.3 | add NEORV32-specific "machine control and status register" `mxcsr`; :warning: move tuning options flags from `mxisa` to `mxcsr` | [#1355](https://github.com/stnolting/neorv32/pull/1335) |
