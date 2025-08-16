@@ -119,9 +119,9 @@ int __attribute__((naked)) main(void) {
   uart_puts("\nSOC:  ");
   uart_puth(NEORV32_SYSINFO->SOC);
   uart_puts("\nIMEM: ");
-  uart_puth((uint32_t)(1 << NEORV32_SYSINFO->MISC[SYSINFO_MISC_IMEM]) & 0xFFFFFFFCU);
+  uart_puth(neorv32_sysinfo_get_imemsize());
   uart_puts("\nDMEM: ");
-  uart_puth((uint32_t)(1 << NEORV32_SYSINFO->MISC[SYSINFO_MISC_DMEM]) & 0xFFFFFFFCU);
+  uart_puth(neorv32_sysinfo_get_dmemsize());
   uart_puts("\n\n");
 #endif
 
