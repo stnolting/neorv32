@@ -22,10 +22,10 @@
 /**@{*/
 /** SYSINFO module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-        uint32_t CLK;     /**< offset 0:  Clock speed in Hz */
-  const uint8_t  MISC[4]; /**< offset 4:  Miscellaneous system configurations (#NEORV32_SYSINFO_MISC_enum) */
-  const uint32_t SOC;     /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
-  const uint32_t CACHE;   /**< offset 12: Cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
+        uint32_t CLK;   /**< offset 0:  Clock speed in Hz */
+  const uint32_t MISC;  /**< offset 4:  Miscellaneous system configurations (#NEORV32_SYSINFO_MISC_enum) */
+  const uint32_t SOC;   /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
+  const uint32_t CACHE; /**< offset 12: Cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
 } neorv32_sysinfo_t;
 
 /** SYSINFO module hardware handle (#neorv32_sysinfo_t) */
@@ -33,10 +33,20 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** NEORV32_SYSINFO.MISC (r/-): Miscellaneous system configurations */
 enum NEORV32_SYSINFO_MISC_enum {
-  SYSINFO_MISC_IMEM = 0, /**< SYSINFO_MISC byte 0 (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic) */
-  SYSINFO_MISC_DMEM = 1, /**< SYSINFO_MISC byte 1 (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic) */
-  SYSINFO_MISC_HART = 2, /**< SYSINFO_MISC byte 2 (r/-): number of physical CPU cores ("harts") */
-  SYSINFO_MISC_BOOT = 3  /**< SYSINFO_MISC byte 3 (r/-): boot mode configuration (via BOOT_MODE_SELECT generic) */
+  SYSINFO_MISC_IMEM_LSB =  0, /**< SYSINFO_MISC  (0) (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic), LSB */
+  SYSINFO_MISC_IMEM_MBS =  7, /**< SYSINFO_MISC  (7) (r/-): log2(internal IMEM size in bytes) (via IMEM_SIZE generic), MSB */
+
+  SYSINFO_MISC_DMEM_LSB =  8, /**< SYSINFO_MISC  (8) (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic), LSB */
+  SYSINFO_MISC_DMEM_MSB = 15, /**< SYSINFO_MISC (15) (r/-): log2(internal DMEM size in bytes) (via DMEM_SIZE generic), MSB */
+
+  SYSINFO_MISC_HART_LSB = 16, /**< SYSINFO_MISC (16) (r/-): number of physical CPU cores ("harts"), LSB */
+  SYSINFO_MISC_HART_MSB = 19, /**< SYSINFO_MISC (19) (r/-): number of physical CPU cores ("harts"), MSB */
+
+  SYSINFO_MISC_BOOT_LSB = 20, /**< SYSINFO_MISC (20) (r/-): boot mode configuration (via BOOT_MODE_SELECT generic), LSB */
+  SYSINFO_MISC_BOOT_MSB = 23, /**< SYSINFO_MISC (23) (r/-): boot mode configuration (via BOOT_MODE_SELECT generic), MSB */
+
+  SYSINFO_MISC_BTMO_LSB = 24, /**< SYSINFO_MISC (24) (r/-): log2(bus timeout cycles), LSB */
+  SYSINFO_MISC_BTMO_MSB = 31  /**< SYSINFO_MISC (31) (r/-): log2(bus timeout cycles), MSB */
 };
 
 /** NEORV32_SYSINFO.SOC (r/-): Implemented processor devices/features */
@@ -97,7 +107,7 @@ enum NEORV32_SYSINFO_SOC_enum {
  * @return Number of physical CPU cores / harts.
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_numcores(void) {
-  return (uint32_t)(NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART]);
+  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_HART_LSB) & 0x0fu);
 }
 
 /**********************************************************************//**
@@ -105,7 +115,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_numcores(voi
  * @return IMEM size in bytes.
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imemsize(void) {
-  return (uint32_t)(1 << NEORV32_SYSINFO->MISC[SYSINFO_MISC_IMEM]);
+  return (uint32_t)(1u << ((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_IMEM_LSB) & 0xffu));
 }
 
 /**********************************************************************//**
@@ -113,7 +123,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imemsize(voi
  * @return DMEM size in bytes.
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmemsize(void) {
-  return (uint32_t)(1 << NEORV32_SYSINFO->MISC[SYSINFO_MISC_DMEM]);
+  return (uint32_t)(1u << ((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_DMEM_LSB) & 0xffu));
 }
 
 /**********************************************************************//**
@@ -121,7 +131,15 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmemsize(voi
  * @return Boot configuration ID.
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bootmode(void) {
-  return (uint32_t)(NEORV32_SYSINFO->MISC[SYSINFO_MISC_BOOT]);
+  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_BOOT_LSB) & 0x0fu);
+}
+
+/**********************************************************************//**
+ * Get bus timeout cycles.
+ * @return Bus timeout cycles.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bustimeout(void) {
+  return (uint32_t)(1u << ((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_BTMO_LSB) & 0xffu));
 }
 
 /**********************************************************************//**
