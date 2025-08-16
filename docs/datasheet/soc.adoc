@@ -539,7 +539,7 @@ This constant defines the _maximum_ number of cycles after which a non-respondin
 time out raising a bus access fault exception. For example this can happen when accessing "address space holes"
 (aka _the void_) - addresses that are not mapped to any physical module. The specific bus access exception type
 corresponds to the according access type, i.e. instruction fetch bus fault, load bus fault or store bus fault.
-Note that this time window is also enforced for accesses via the <<_processor_external_bus_interface_xbus>>.
+**Note that this timeout window is also enforced for accesses via the <<_processor_external_bus_interface_xbus>>.**
 
 
 :sectnums:
