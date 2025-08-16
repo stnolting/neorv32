@@ -15,11 +15,12 @@
 # **************************************************************
 # Global configuration
 # **************************************************************
-set neorv32_home ../..
+set script_path [file normalize [info script]]
+set script_dir [file dirname $script_path]
+set neorv32_home $script_dir/../..
+set ip_logo $neorv32_home/docs/figures/neorv32_logo_riscv_small.png
+set outputdir $script_dir/neorv32_vivado_ip_work
 set ip_top neorv32_vivado_ip
-set ip_logo docs/figures/neorv32_logo_riscv_small.png
-set outputdir neorv32_vivado_ip_work
-set cur_dir [file normalize .]
 
 
 # **************************************************************
@@ -458,17 +459,42 @@ setup_ip_gui
 
 
 # **************************************************************
+# Helper function to compute the relative path from one
+# absolute location to another.
+# **************************************************************
+proc relativePath {from to} {
+  set from [file normalize $from]
+  set to [file normalize $to]
+
+  set fromList [file split $from]
+  set toList [file split $to]
+
+  set i 0
+  set minlen [expr { [llength $fromList] < [llength $toList] ? [llength $fromList] : [llength $toList] }]
+  while { $i < $minlen && [lindex $fromList $i] eq [lindex $toList $i] } {
+    incr i
+  }
+
+  set relList [lrepeat [expr {[llength $fromList] - $i}] ".."]
+  set relList [concat $relList [lrange $toList $i end]]
+  return [eval file join $relList]
+}
+
+
+# **************************************************************
 # Configuration GUI: IP logo
 # **************************************************************
+set logo_relative_path [relativePath $outputdir/packaged_ip $ip_logo]
+
 ipx::add_file_group -type utility {} [ipx::current_core]
-ipx::add_file ../../$neorv32_home/$ip_logo [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]
-set_property type image [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]]
-set_property type LOGO  [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]]
+ipx::add_file $logo_relative_path [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]
+set_property type image [ipx::get_files $logo_relative_path -of_objects [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]]
+set_property type LOGO  [ipx::get_files $logo_relative_path -of_objects [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]]
 
 ipx::add_file_group -type gui_icon {} [ipx::current_core]
-ipx::add_file ../../$neorv32_home/$ip_logo [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]
-set_property type image [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
-set_property type LOGO  [ipx::get_files ../../$neorv32_home/$ip_logo -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
+ipx::add_file $logo_relative_path [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]
+set_property type image [ipx::get_files $logo_relative_path -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
+set_property type LOGO  [ipx::get_files $logo_relative_path -of_objects [ipx::get_file_groups xilinx_coreguiicon -of_objects [ipx::current_core]]]
 
 ipx::add_file_group -type product_guide {} [ipx::current_core]
 ipx::add_file {https://stnolting.github.io/neorv32/} [ipx::get_file_groups xilinx_productguide -of_objects [ipx::current_core]]
@@ -481,7 +507,7 @@ ipx::create_xgui_files [ipx::current_core]
 ipx::update_checksums [ipx::current_core]
 ipx::save_core [ipx::current_core]
 
-set_property ip_repo_paths $cur_dir/$outputdir/packaged_ip [current_project]
+set_property ip_repo_paths $outputdir/packaged_ip [current_project]
 update_ip_catalog
 
 close_project
