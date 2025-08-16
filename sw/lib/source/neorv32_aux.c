@@ -439,6 +439,8 @@ void neorv32_aux_print_hw_config(void) {
     default: neorv32_uart0_printf("unknown (%u)\n", boot_config); break;
   }
 
+  neorv32_uart0_printf("Bus timeout window:  %u cycles\n", neorv32_sysinfo_get_bustimeout());
+
   // internal IMEM
   neorv32_uart0_printf("Internal IMEM:       ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IMEM)) {

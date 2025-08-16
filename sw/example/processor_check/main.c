@@ -2167,7 +2167,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT_STANDARD("[%i] SMP dual-core test ", cnt_test);
 
-  if ((NEORV32_SYSINFO->MISC[SYSINFO_MISC_HART] > 1) && // we need two cores
+  if ((neorv32_sysinfo_get_numcores() > 1) && // we need two cores
       (neorv32_clint_available() != 0)) { // we need the CLINT
     trap_cause = trap_never_c;
     cnt_test++;
