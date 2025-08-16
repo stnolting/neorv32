@@ -66,24 +66,25 @@ architecture neorv32_cache_rtl of neorv32_cache is
       rstn_i  : in  std_ulogic;
       clk_i   : in  std_ulogic;
       clr_i   : in  std_ulogic;
-      inv_i   : in  std_ulogic;
       new_i   : in  std_ulogic;
       hit_o   : out std_ulogic;
       dir_o   : out std_ulogic;
       addr_i  : in  std_ulogic_vector(31 downto 0);
       we_i    : in  std_ulogic_vector(3 downto 0);
       wdata_i : in  std_ulogic_vector(31 downto 0);
-      rdata_o : out std_ulogic_vector(31 downto 0)
+      wstat_i : in  std_ulogic;
+      rdata_o : out std_ulogic_vector(31 downto 0);
+      rstat_o : out std_ulogic
     );
   end component;
 
   -- control -> cache interface --
   type cache_o_t is record
     cmd_clr : std_ulogic;
-    cmd_inv : std_ulogic;
     cmd_new : std_ulogic;
     addr    : std_ulogic_vector(31 downto 0);
     data    : std_ulogic_vector(31 downto 0);
+    stat    : std_ulogic;
     we      : std_ulogic_vector(3 downto 0);
   end record;
   signal cache_o : cache_o_t;
@@ -93,19 +94,18 @@ architecture neorv32_cache_rtl of neorv32_cache is
     sta_hit : std_ulogic;
     sta_dir : std_ulogic;
     data    : std_ulogic_vector(31 downto 0);
+    stat    : std_ulogic;
   end record;
   signal cache_i : cache_i_t;
 
   -- control arbiter --
   type state_t is (
-    S_IDLE, S_CHECK, S_DIRECT_RSP, S_CLEAR,
-    S_DOWNLOAD_START, S_DOWNLOAD_WAIT, S_DOWNLOAD_RUN, S_DONE
+    S_IDLE, S_CHECK, S_DIRECT_RSP, S_CLEAR, S_DOWNLOAD_START, S_DOWNLOAD_WAIT, S_DOWNLOAD_RUN, S_DONE
   );
   type ctrl_t is record
     state    : state_t; -- state machine
     buf_req  : std_ulogic; -- access request buffer
     buf_sync : std_ulogic; -- synchronization request buffer
-    buf_err  : std_ulogic; -- bus access error buffer
     buf_dir  : std_ulogic; -- direct/uncached access buffer
     tag      : std_ulogic_vector(tag_size_c-1 downto 0); -- tag
     idx      : std_ulogic_vector(index_size_c-1 downto 0); -- index
@@ -124,7 +124,6 @@ begin
       ctrl.state    <= S_IDLE;
       ctrl.buf_req  <= '0';
       ctrl.buf_sync <= '0';
-      ctrl.buf_err  <= '0';
       ctrl.buf_dir  <= '0';
       ctrl.tag      <= (others => '0');
       ctrl.idx      <= (others => '0');
@@ -144,7 +143,6 @@ begin
     ctrl_nxt.state    <= ctrl.state;
     ctrl_nxt.buf_req  <= ctrl.buf_req or host_req_i.stb;
     ctrl_nxt.buf_sync <= ctrl.buf_sync or host_req_i.fence;
-    ctrl_nxt.buf_err  <= ctrl.buf_err;
     ctrl_nxt.buf_dir  <= '0';
     ctrl_nxt.tag      <= ctrl.tag;
     ctrl_nxt.idx      <= ctrl.idx;
@@ -153,11 +151,11 @@ begin
 
     -- cache access defaults --
     cache_o.cmd_clr <= '0';
-    cache_o.cmd_inv <= '0';
     cache_o.cmd_new <= '0';
     cache_o.addr    <= host_req_i.addr;
     cache_o.we      <= (others => '0');
     cache_o.data    <= host_req_i.data;
+    cache_o.stat    <= '0';
 
     -- host response defaults --
     host_rsp_o.ack  <= '0';
@@ -192,7 +190,6 @@ begin
         ctrl_nxt.ofs_ext <= (others => '0');
         ctrl_nxt.ofs_int <= (others => '0');
         ctrl_nxt.buf_req <= '0'; -- access about to be completed
-        ctrl_nxt.buf_err <= '0';
         --
         if (ctrl.buf_dir = '1') then -- direct/uncached access; no cache update
           bus_req_o.stb  <= '1';
@@ -200,6 +197,7 @@ begin
         elsif (cache_i.sta_hit = '1') then -- cache HIT
           if (host_req_i.rw = '0') or (READ_ONLY = true) then -- read from cache
             host_rsp_o.ack <= '1';
+            host_rsp_o.err <= cache_i.stat;
             ctrl_nxt.state <= S_IDLE;
           elsif (WRITE_THROUGH = true) then -- write-through: write to main memory and also to the cache
             cache_o.we     <= host_req_i.ben;
@@ -254,6 +252,7 @@ begin
       -- ------------------------------------------------------------
         cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
         cache_o.data    <= bus_rsp_i.data;
+        cache_o.stat    <= bus_rsp_i.err;
         cache_o.we      <= (others => '1'); -- just keep writing full words
         bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
         bus_req_o.rw    <= '0'; -- read access
@@ -262,7 +261,6 @@ begin
         bus_req_o.ben   <= (others => '1'); -- full-word access
         -- wait for initial ACK to start actual bursting --
         if (bus_rsp_i.ack = '1') then
-          ctrl_nxt.buf_err <= ctrl.buf_err or bus_rsp_i.err; -- accumulate bus errors
           ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1);
           ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1);
           if BURSTS_EN then -- burst transfer
@@ -279,6 +277,7 @@ begin
         if BURSTS_EN then -- burst transfer
           cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
           cache_o.data    <= bus_rsp_i.data;
+          cache_o.stat    <= bus_rsp_i.err;
           cache_o.we      <= (others => '1'); -- just keep writing full words
           bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
           bus_req_o.rw    <= '0'; -- read access
@@ -292,7 +291,6 @@ begin
           end if;
           -- receive responses --
           if (bus_rsp_i.ack = '1') then
-            ctrl_nxt.buf_err <= ctrl.buf_err or bus_rsp_i.err; -- accumulate bus errors
             ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1); -- next main memory location
             if (and_reduce_f(ctrl.ofs_int) = '1') then -- block completed
               ctrl_nxt.state <= S_DONE;
@@ -304,14 +302,7 @@ begin
 
       when S_DONE => -- delay cycle for host cache access
       -- ------------------------------------------------------------
-        if (ctrl.buf_err = '1') then -- any errors during the burst?
-          cache_o.cmd_inv <= '1'; -- invalidate the downloaded cache block
-          host_rsp_o.ack  <= '1';
-          host_rsp_o.err  <= '1';
-          ctrl_nxt.state  <= S_IDLE;
-        else
-          ctrl_nxt.state <= S_CHECK;
-        end if;
+        ctrl_nxt.state <= S_CHECK;
 
       when others => -- undefined
       -- ------------------------------------------------------------
@@ -334,7 +325,6 @@ begin
     clk_i   => clk_i,           -- global clock, rising edge
     -- management --
     clr_i   => cache_o.cmd_clr, -- clear entire cache
-    inv_i   => cache_o.cmd_inv, -- invalidate accessed block
     new_i   => cache_o.cmd_new, -- make accessed block valid and set tag
     hit_o   => cache_i.sta_hit, -- cache hit
     dir_o   => cache_i.sta_dir, -- cache dirty
@@ -342,7 +332,9 @@ begin
     addr_i  => cache_o.addr,    -- access address
     we_i    => cache_o.we,      -- byte-wide data write enable
     wdata_i => cache_o.data,    -- write data
-    rdata_o => cache_i.data     -- read data
+    wstat_i => cache_o.stat,    -- write status
+    rdata_o => cache_i.data,    -- read data
+    rstat_o => cache_i.stat     -- read status
   );
 
 end neorv32_cache_rtl;
@@ -376,7 +368,6 @@ entity neorv32_cache_memory is
     clk_i   : in  std_ulogic;                     -- global clock, rising edge
     -- management --
     clr_i   : in  std_ulogic;                     -- clear entire cache
-    inv_i   : in  std_ulogic;                     -- invalidate accessed block
     new_i   : in  std_ulogic;                     -- make accessed block valid & clean and set tag
     hit_o   : out std_ulogic;                     -- cache hit
     dir_o   : out std_ulogic;                     -- accessed block is dirty
@@ -384,7 +375,9 @@ entity neorv32_cache_memory is
     addr_i  : in  std_ulogic_vector(31 downto 0); -- access address
     we_i    : in  std_ulogic_vector(3 downto 0);  -- byte-wide data write enable
     wdata_i : in  std_ulogic_vector(31 downto 0); -- write data
-    rdata_o : out std_ulogic_vector(31 downto 0)  -- read data
+    wstat_i : in  std_ulogic;                     -- write status
+    rdata_o : out std_ulogic_vector(31 downto 0); -- read data
+    rstat_o : out std_ulogic                      -- read status
   );
 end neorv32_cache_memory;
 
@@ -404,9 +397,14 @@ architecture neorv32_cache_memory_rtl of neorv32_cache_memory is
   signal tag_mem : tag_mem_t;
   signal tag_mem_rd : std_ulogic_vector(tag_size_c-1 downto 0);
 
-  -- data memory --
-  type data_mem_t is array (0 to (NUM_BLOCKS * (BLOCK_SIZE/4))-1) of std_ulogic_vector(7 downto 0);
-  signal data_mem_b0, data_mem_b1, data_mem_b2, data_mem_b3 : data_mem_t; -- byte-wide sub-memories
+  -- data memory including single-bit status per word --
+  type data8_mem_t is array (0 to (NUM_BLOCKS * (BLOCK_SIZE/4))-1) of std_ulogic_vector(7 downto 0);
+  type data9_mem_t is array (0 to (NUM_BLOCKS * (BLOCK_SIZE/4))-1) of std_ulogic_vector(8 downto 0);
+  signal data_mem_b0  : data8_mem_t;
+  signal data_mem_b1  : data8_mem_t;
+  signal data_mem_b2  : data8_mem_t;
+  signal data_mem_b3  : data9_mem_t;
+  signal wdata, rdata : std_ulogic_vector(32 downto 0);
 
   -- cache access --
   signal acc_tag : std_ulogic_vector(tag_size_c-1 downto 0);
@@ -448,8 +446,6 @@ begin
       -- valid flags --
       if (clr_i = '1') then -- invalidate entire cache
         valid_mem <= (others => '0');
-      elsif (inv_i = '1') then -- invalidate accessed block
-        valid_mem(to_integer(unsigned(acc_idx))) <= '0';
       elsif (new_i = '1') then -- make accessed block valid
         valid_mem(to_integer(unsigned(acc_idx))) <= '1';
       end if;
@@ -493,23 +489,27 @@ begin
   begin
     if rising_edge(clk_i) then
       if (we_i(0) = '1') then
-        data_mem_b0(to_integer(unsigned(acc_adr))) <= wdata_i(7 downto 0);
+        data_mem_b0(to_integer(unsigned(acc_adr))) <= wdata(7 downto 0);
       end if;
       if (we_i(1) = '1') then
-        data_mem_b1(to_integer(unsigned(acc_adr))) <= wdata_i(15 downto 8);
+        data_mem_b1(to_integer(unsigned(acc_adr))) <= wdata(15 downto 8);
       end if;
       if (we_i(2) = '1') then
-        data_mem_b2(to_integer(unsigned(acc_adr))) <= wdata_i(23 downto 16);
+        data_mem_b2(to_integer(unsigned(acc_adr))) <= wdata(23 downto 16);
       end if;
       if (we_i(3) = '1') then
-        data_mem_b3(to_integer(unsigned(acc_adr))) <= wdata_i(31 downto 24);
+        data_mem_b3(to_integer(unsigned(acc_adr))) <= wdata(32 downto 24);
       end if;
-      rdata_o( 7 downto  0) <= data_mem_b0(to_integer(unsigned(acc_adr)));
-      rdata_o(15 downto  8) <= data_mem_b1(to_integer(unsigned(acc_adr)));
-      rdata_o(23 downto 16) <= data_mem_b2(to_integer(unsigned(acc_adr)));
-      rdata_o(31 downto 24) <= data_mem_b3(to_integer(unsigned(acc_adr)));
+      rdata( 7 downto  0) <= data_mem_b0(to_integer(unsigned(acc_adr)));
+      rdata(15 downto  8) <= data_mem_b1(to_integer(unsigned(acc_adr)));
+      rdata(23 downto 16) <= data_mem_b2(to_integer(unsigned(acc_adr)));
+      rdata(32 downto 24) <= data_mem_b3(to_integer(unsigned(acc_adr)));
     end if;
   end process data_memory;
 
+  -- memory data --
+  wdata   <= wstat_i & wdata_i;
+  rdata_o <= rdata(31 downto 0);
+  rstat_o <= rdata(32);
 
 end neorv32_cache_memory_rtl;
