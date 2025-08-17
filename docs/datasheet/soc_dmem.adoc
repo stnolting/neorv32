@@ -5,8 +5,8 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_dmem.vhd | default platform-agnostic data memory
-| Software driver files:  | none             | _implicitly used_
+| Hardware source files:  | neorv32_mem.vhd  | generic platform-agnostic memory (RAM)
+| Software driver files:  | none             |
 | Top entity ports:       | none             |
 | Configuration generics: | `DMEM_EN`        | implement processor-internal DMEM when `true`
 |                         | `DMEM_SIZE`      | DMEM size in bytes (use a power of 2)
