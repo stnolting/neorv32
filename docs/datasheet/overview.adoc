@@ -274,6 +274,28 @@ puts $file_list
 <<<
 // ####################################################################################################################
 :sectnums:
+=== VHDL Coding Style
+
+* The entire processor, including the CPU core, is written in platform-/technology-independent VHDL.
+The code makes minimal use of VHDL 2008 features in order to remain compatible with older EDA tools.
+* A single package/library file (`neorv32_package.vhd`) is used to provide global definitions and auxiliary functions.
+The specific user-defined configuration is done entirely via the generics of the top entity.
+* Internally, all generics are checked to ensure correct configuration.
+Asserts and sanity checks are used to inform the user about the actual processor configuration and possible invalid settings.
+* The code uses entity instantiation for all internal modules. However, if multiple submodules are specified within the
+same source file, component instantiation is used for them.
+* When instantiating the top-level processor module (`neorv32_top.vhd`) in a user-defined design, either entity instantiation
+or component instantiation can be used, as the NEORV32 package file/library file already provides a corresponding component declaration.
+
+.Verilog Version
+[TIP]
+A GHDL-generated all-Verilog version of the processor is available at https://github.com/stnolting/neorv32-verilog.
+The provided setup generates a single plain Verilog netlist for a given processor configuration.
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
 === FPGA Implementation Results
 
 This section shows **exemplary** FPGA implementation results for the NEORV32 CPU and NEORV32 Processor modules.
