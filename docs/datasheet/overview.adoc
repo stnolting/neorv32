@@ -206,11 +206,10 @@ rtl/core
 ├─ neorv32_debug_dm.vhd          - On-chip debugger: debug module
 ├─ neorv32_debug_dtm.vhd         - On-chip debugger: debug transfer module
 ├─ neorv32_dma.vhd               - Direct memory access controller
-├─ neorv32_dmem.vhd              - Generic processor-internal data memory
 ├─ neorv32_fifo.vhd              - Generic FIFO component
 ├─ neorv32_gpio.vhd              - General purpose input/output port unit
 ├─ neorv32_gptmr.vhd             - General purpose 32-bit timer
-├─ neorv32_imem.vhd              - Generic processor-internal instruction memory
+├─ neorv32_mem.vhd               - Generic processor-internal memory component
 ├─ neorv32_neoled.vhd            - NeoPixel (TM) compatible smart LED interface
 ├─ neorv32_onewire.vhd           - One-Wire serial interface controller
 ├─ neorv32_package.vhd           - Main VHDL package file

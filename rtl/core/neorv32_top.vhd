@@ -815,12 +815,12 @@ begin
 
     -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_int_imem_enabled:
+    neorv32_imem_enabled:
     if IMEM_EN generate
-      neorv32_int_imem_inst: entity neorv32.neorv32_imem
+      neorv32_imem_inst: entity neorv32.neorv32_mem
       generic map (
-        IMEM_SIZE => imem_size_c,
-        IMEM_INIT => imem_as_rom_c,
+        MEM_SIZE  => imem_size_c,
+        MEM_INIT  => imem_as_rom_c,
         OUTREG_EN => IMEM_OUTREG_EN
       )
       port map (
@@ -831,7 +831,7 @@ begin
       );
     end generate;
 
-    neorv32_int_imem_disabled:
+    neorv32_imem_disabled:
     if not IMEM_EN generate
       imem_rsp <= rsp_terminate_c;
     end generate;
@@ -839,11 +839,12 @@ begin
 
     -- Processor-Internal Data Memory (DMEM) --------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_int_dmem_enabled:
+    neorv32_dmem_enabled:
     if DMEM_EN generate
-      neorv32_int_dmem_inst: entity neorv32.neorv32_dmem
+      neorv32_dmem_inst: entity neorv32.neorv32_mem
       generic map (
-        DMEM_SIZE => dmem_size_c,
+        MEM_SIZE  => dmem_size_c,
+        MEM_INIT  => false, -- plain RAM
         OUTREG_EN => DMEM_OUTREG_EN
       )
       port map (
@@ -854,7 +855,7 @@ begin
       );
     end generate;
 
-    neorv32_int_dmem_disabled:
+    neorv32_dmem_disabled:
     if not DMEM_EN generate
       dmem_rsp <= rsp_terminate_c;
     end generate;

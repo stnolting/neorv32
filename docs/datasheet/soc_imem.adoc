@@ -5,9 +5,9 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_imem.vhd              | default platform-agnostic instruction memory (RAM or ROM)
+| Hardware source files:  | neorv32_mem.vhd               | generic platform-agnostic memory (RAM or ROM)
 |                         | neorv32_application_image.vhd | initialization image (a VHDL package)
-| Software driver files:  | none                          | _implicitly used_
+| Software driver files:  | none                          |
 | Top entity ports:       | none                          |
 | Configuration generics: | `IMEM_EN`                     | implement processor-internal IMEM when `true`
 |                         | `IMEM_SIZE`                   | IMEM size in bytes (use a power of 2)
