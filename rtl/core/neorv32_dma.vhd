@@ -75,7 +75,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
   signal fifo : fifo_t;
 
   -- bus access engine --
-  type state_t is (S_CHECK, S_GET_0, S_GET_1, S_GET_2, S_READ_REQ, S_READ_RSP, S_WRITE_REQ, S_WRITE_RSP);
+  type state_t is (S_CHECK, S_GET_0, S_GET_1, S_GET_2, S_GET_3, S_READ_REQ, S_READ_RSP, S_WRITE_REQ, S_WRITE_RSP);
   type engine_t is record
     state    : state_t;
     run      : std_ulogic;
@@ -205,7 +205,7 @@ begin
               engine.state <= S_GET_0;
             end if;
           else -- transfer in progress
-            if (fifo.avail = '1') and (engine.err = '0') and (ctrl.err = '0') then -- execute next descriptor if there was no error
+            if (fifo.avail = '1') and (engine.err = '0') and (ctrl.err = '0') then -- next descriptor?
               engine.run   <= '1';
               engine.state <= S_GET_0;
             else
@@ -214,29 +214,31 @@ begin
             end if;
           end if;
 
-        when S_GET_0 => -- get descriptor: source base address
+        when S_GET_0 => -- delay cycle for synchronous descriptor read
+        -- ------------------------------------------------------------
+          engine.state <= S_GET_1;
+
+        when S_GET_1 => -- get descriptor: source base address
         -- ------------------------------------------------------------
           engine.src_addr <= fifo.rdata;
-          if (fifo.avail = '1') then
-            engine.state <= S_GET_1;
-          end if;
-
-        when S_GET_1 => -- get descriptor: destination base address
-        -- ------------------------------------------------------------
-          engine.dst_addr <= fifo.rdata;
           if (fifo.avail = '1') then
             engine.state <= S_GET_2;
           end if;
 
-        when S_GET_2 => -- get descriptor: transfer configuration
+        when S_GET_2 => -- get descriptor: destination base address
+        -- ------------------------------------------------------------
+          engine.dst_addr <= fifo.rdata;
+          if (fifo.avail = '1') then
+            engine.state <= S_GET_3;
+          end if;
+
+        when S_GET_3 => -- get descriptor: transfer configuration
         -- ------------------------------------------------------------
           engine.num      <= fifo.rdata(conf_num_hi_c downto conf_num_lo_c);
           engine.bswap    <= fifo.rdata(conf_bswap_c);
           engine.src_type <= fifo.rdata(conf_src_hi_c downto conf_src_lo_c);
           engine.dst_type <= fifo.rdata(conf_dst_hi_c downto conf_dst_lo_c);
-          if (fifo.avail = '1') then
-            engine.state <= S_READ_REQ;
-          end if;
+          engine.state    <= S_READ_REQ;
 
         when S_READ_REQ => -- read request
         -- ------------------------------------------------------------
