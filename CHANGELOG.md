@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 19.08.2025 | 1.11.9.8 | simplify CPU front-end's IPB; code cleanups and logic optimization | [#1345](https://github.com/stnolting/neorv32/pull/1345) |
 | 17.08.2025 | 1.11.9.7 | replace IMEM and DMEM RTL modules by a generic memory component | [#1344](https://github.com/stnolting/neorv32/pull/1344) |
 | 16.08.2025 | 1.11.9.6 | :warning: rework layout of `SYSINFO.MISC` information register | [#1342](https://github.com/stnolting/neorv32/pull/1342) |
 | 16.08.2025 | 1.11.9.5 | rework bus access error logic; add per-word cache status bits; :warning: remove top's `XBUS_TIMEOUT` generic; extend _global_ bus timeout to 1024 cycles | [#1339](https://github.com/stnolting/neorv32/pull/1339) |

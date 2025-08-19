@@ -162,9 +162,7 @@ begin
   generic map (
     FIFO_DEPTH => FIFO_DEPTH, -- number of FIFO entries; has to be a power of two; min 1
     FIFO_WIDTH => 32+2,       -- size of data elements in FIFO
-    FIFO_RSYNC => true,       -- sync read
     FIFO_SAFE  => true,       -- safe access
-    FULL_RESET => false,      -- no HW reset, try to infer BRAM
     OUT_GATE   => false       -- no output-gating required
   )
   port map (
@@ -173,7 +171,6 @@ begin
     rstn_i  => rstn_i,        -- async reset, low-active
     clear_i => tx_fifo.clear, -- sync reset, high-active
     half_o  => tx_fifo.half,  -- FIFO is at least half full
-    level_o => open,          -- fill level, zero-extended
     -- write port --
     wdata_i => tx_fifo.wdata, -- write data
     we_i    => tx_fifo.we,    -- write enable

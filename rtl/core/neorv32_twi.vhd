@@ -172,9 +172,7 @@ begin
   generic map (
     FIFO_DEPTH => IO_TWI_FIFO,
     FIFO_WIDTH => 11, -- command, MACK, data
-    FIFO_RSYNC => true,
     FIFO_SAFE  => true,
-    FULL_RESET => false,
     OUT_GATE   => false
   )
   port map (
@@ -183,7 +181,6 @@ begin
     rstn_i  => rstn_i,
     clear_i => fifo.clear,
     half_o  => open,
-    level_o => open,
     -- write port --
     wdata_i => fifo.tx_wdata,
     we_i    => fifo.tx_we,
@@ -204,9 +201,7 @@ begin
   generic map (
     FIFO_DEPTH => IO_TWI_FIFO,
     FIFO_WIDTH => 9, -- ACK + data
-    FIFO_RSYNC => true,
     FIFO_SAFE  => true,
-    FULL_RESET => false,
     OUT_GATE   => false
   )
   port map (
@@ -215,7 +210,6 @@ begin
     rstn_i  => rstn_i,
     clear_i => fifo.clear,
     half_o  => open,
-    level_o => open,
     -- write port --
     wdata_i => fifo.rx_wdata,
     we_i    => fifo.rx_we,
