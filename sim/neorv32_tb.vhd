@@ -353,9 +353,7 @@ begin
   generic map (
     FIFO_DEPTH => 4,
     FIFO_WIDTH => 32+4+1,
-    FIFO_RSYNC => false,
     FIFO_SAFE  => true,
-    FULL_RESET => true,
     OUT_GATE   => false
   )
   port map (
@@ -364,7 +362,6 @@ begin
     rstn_i                => rst_gen,
     clear_i               => '0',
     half_o                => open,
-    level_o               => open,
     -- write port --
     wdata_i(31 downto  0) => slink_tx.data,
     wdata_i(35 downto 32) => slink_tx.addr,

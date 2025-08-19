@@ -200,9 +200,7 @@ begin
   generic map (
     FIFO_DEPTH => SLINK_RX_FIFO,
     FIFO_WIDTH => 1+4+32, -- last + routing + data
-    FIFO_RSYNC => false,  -- "async" read - update FIFO status RIGHT after write access (for slink_rx_ready_o)
     FIFO_SAFE  => true,   -- safe access
-    FULL_RESET => false,  -- no HW reset, try to infer BRAM
     OUT_GATE   => false   -- no output gate required
   )
   port map (
@@ -211,7 +209,6 @@ begin
     rstn_i  => rstn_i,
     clear_i => rx_fifo.clear,
     half_o  => rx_fifo.half,
-    level_o => open,
     -- write port --
     wdata_i => rx_fifo.wdata,
     we_i    => rx_fifo.we,
@@ -253,9 +250,7 @@ begin
   generic map (
     FIFO_DEPTH => SLINK_TX_FIFO,
     FIFO_WIDTH => 1+4+32, -- last + routing + data
-    FIFO_RSYNC => false,  -- "async" read - update FIFO status RIGHT after read access (for slink_tx_valid_o)
     FIFO_SAFE  => true,   -- safe access
-    FULL_RESET => false,  -- no HW reset, try to infer BRAM
     OUT_GATE   => false   -- no output gate required
   )
   port map (
@@ -264,7 +259,6 @@ begin
     rstn_i  => rstn_i,
     clear_i => tx_fifo.clear,
     half_o  => tx_fifo.half,
-    level_o => open,
     -- write port --
     wdata_i => tx_fifo.wdata,
     we_i    => tx_fifo.we,

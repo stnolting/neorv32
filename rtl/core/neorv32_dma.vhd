@@ -150,9 +150,7 @@ begin
   generic map (
     FIFO_DEPTH => fifo_size_c,
     FIFO_WIDTH => 32,
-    FIFO_RSYNC => false,
     FIFO_SAFE  => true,
-    FULL_RESET => false,
     OUT_GATE   => false
   )
   port map (
@@ -161,7 +159,6 @@ begin
     rstn_i  => rstn_i,
     clear_i => fifo.clr,
     half_o  => open,
-    level_o => open,
     -- write port --
     wdata_i => bus_req_i.data,
     we_i    => fifo.we,
