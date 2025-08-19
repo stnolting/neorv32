@@ -23,14 +23,28 @@ with tool tips to make it easier to understand the different configuration optio
 .NEORV32 IP Customization GUI
 image::vivado_ip_gui.png[]
 
-The following steps show how to package the processor using the provided TCL script and how to import
-the generated IP block into the Vivado IP repository.
+The following steps show how to package the processor using the provided TCL script
+(`neorv32/rtl/system_integration/neorv32_vivado_ip.tcl`)
+and how to import the generated IP block into the Vivado IP repository.
+
+**Packaging from within a Vivado Project** (recommended)
 
 [start=1]
-. Open the Vivado GUI.
-. In GUI mode select either "Tools -> Run TCL Script" to directly execute the script or open the TCL shell ("Window -> Tcl Console") to manually invoke the script.
+. Open your Vivado block design.
+. Open the TCL shell ("Window -> Tcl Console") to manually invoke the script.
 . Use `cd` in the TCL console to navigate to the project's `neorv32/rtl/system_integration` folder.
 . Execute `source neorv32_vivado_ip.tcl` in the TCL console.
+. A second Vivado instance will open automatically packaging the IP module. After this process is completed, the second Vivado instance will automatically close again.
+. A new folder `neorv32_vivado_ip_work` is created in `neorv32/rtl/system_integration` which contains the IP-packaging Vivado project.
+. The `packaged_ip` sub-folder provides the actual IP module which is automatically added to the project's IP repository.
+. You will find the NEORV32 in the "User Repository" section of the Vivado IP catalog.
+
+**Stand-Alone Packaging**
+
+[start=1]
+. Start Vivado.
+. On the splash screen select "Tools -> Run TCL Script".
+. Navigate to the `neorv32/rtl/system_integration` folder and select `neorv32_vivado_ip.tcl`.
 . A second Vivado instance will open automatically packaging the IP module. After this process is completed, the second Vivado instance will automatically close again.
 . A new folder `neorv32_vivado_ip_work` is created in `neorv32/rtl/system_integration` which contains the IP-packaging Vivado project.
 . The `packaged_ip` sub-folder provides the actual IP module.
