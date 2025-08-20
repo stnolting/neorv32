@@ -222,7 +222,7 @@ begin
     IO_DMA_DSC_FIFO     => 8,
     IO_SLINK_EN         => true,
     IO_SLINK_RX_FIFO    => 4,
-    IO_SLINK_TX_FIFO    => 4,
+    IO_SLINK_TX_FIFO    => 1,
     IO_TRACER_EN        => true,
     IO_TRACER_BUFFER    => 32,
     IO_TRACER_SIMLOG_EN => TRACE_LOG_EN
@@ -351,7 +351,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   slink_buffer: entity neorv32.neorv32_fifo
   generic map (
-    FIFO_DEPTH => 4,
+    FIFO_DEPTH => 1,
     FIFO_WIDTH => 32+4+1,
     FIFO_SAFE  => true,
     OUT_GATE   => false

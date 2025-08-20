@@ -1672,11 +1672,11 @@ int main() {
     asm volatile ("nop");
     asm volatile ("nop");
 
+    // disable SLINK interrupt
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    // check if IRQ
     if ((trap_cause == SLINK_TRAP_CODE) && // correct trap code
-        (neorv32_slink_rx_status() == SLINK_FIFO_HALF) && // RX FIFO is at least half full
+        (neorv32_slink_rx_status() >= SLINK_FIFO_HALF) && // RX FIFO is at least half full
         (neorv32_slink_get() == 0xAABBCCDD) && // correct RX data
         (neorv32_slink_get_src() == 0b1010) && // correct routing information
         (neorv32_slink_check_last())) { // is marked as "end of stream"
