@@ -183,12 +183,11 @@ rtl/core
 ├─ neorv32_bootloader_image.vhd  - Bootloader ROM memory image (package)
 ├─ neorv32_bus.vhd               - SoC bus infrastructure modules
 ├─ neorv32_cache.vhd             - Generic cache module
-├─ neorv32_clint.vhd             - Core local interruptor
 ├─ neorv32_cfs.vhd               - Custom functions subsystem
+├─ neorv32_clint.vhd             - Core local interruptor
 ├─ neorv32_cpu.vhd               - NEORV32 CPU TOP ENTITY
 ├─ neorv32_cpu_alu.vhd           - Arithmetic/logic unit
 ├─ neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
-├─ neorv32_cpu_hwtrig.vhd        - Hardware trigger module (Sdtrig ext.)
 ├─ neorv32_cpu_counters.vhd      - Hardware counters (Zicntr & Zihpm ext.)
 ├─ neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
 ├─ neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
@@ -199,6 +198,7 @@ rtl/core
 ├─ neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
 ├─ neorv32_cpu_decompressor.vhd  - Compressed instructions decoder (C ext.)
 ├─ neorv32_cpu_frontend.vhd      - Instruction fetch and issue
+├─ neorv32_cpu_hwtrig.vhd        - Hardware trigger module (Sdtrig ext.)
 ├─ neorv32_cpu_lsu.vhd           - Load/store unit
 ├─ neorv32_cpu_pmp.vhd           - Physical memory protection unit (Smpmp ext.)
 ├─ neorv32_cpu_regfile.vhd       - Data register file
@@ -206,13 +206,15 @@ rtl/core
 ├─ neorv32_debug_dm.vhd          - On-chip debugger: debug module
 ├─ neorv32_debug_dtm.vhd         - On-chip debugger: debug transfer module
 ├─ neorv32_dma.vhd               - Direct memory access controller
+├─ neorv32_dmem.vhd              - Processor-internal data memory
 ├─ neorv32_fifo.vhd              - Generic FIFO component
 ├─ neorv32_gpio.vhd              - General purpose input/output port unit
 ├─ neorv32_gptmr.vhd             - General purpose 32-bit timer
-├─ neorv32_mem.vhd               - Generic processor-internal memory component
+├─ neorv32_imem.vhd              - Processor-internal instruction memory
 ├─ neorv32_neoled.vhd            - NeoPixel (TM) compatible smart LED interface
 ├─ neorv32_onewire.vhd           - One-Wire serial interface controller
 ├─ neorv32_package.vhd           - Main VHDL package file
+├─ neorv32_prim.vhd              - Generic RTL primitives
 ├─ neorv32_pwm.vhd               - Pulse-width modulation controller
 ├─ neorv32_sdi.vhd               - Serial data interface controller (SPI device)
 ├─ neorv32_slink.vhd             - Stream link interface
@@ -220,6 +222,7 @@ rtl/core
 ├─ neorv32_sys.vhd               - System infrastructure modules
 ├─ neorv32_sysinfo.vhd           - System configuration information memory
 ├─ neorv32_top.vhd               - NEORV32 PROCESSOR/SOC TOP ENTITY
+├─ neorv32_tracer.vhd            - Instruction trace buffer
 ├─ neorv32_trng.vhd              - True random number generator
 ├─ neorv32_twd.vhd               - Two wire serial device controller
 ├─ neorv32_twi.vhd               - Two wire serial interface controller
