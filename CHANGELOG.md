@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 20.08.2025 | 1.12.0.1 | :sparkles: add generic RAM primitives that are used by all modules (cache, IMEM/DMEM, register file) | [#1347](https://github.com/stnolting/neorv32/pull/1347) |
 | 20.08.2025 | [**1.12.0**](https://github.com/stnolting/neorv32/releases/tag/v1.12.0) | :rocket: **New release** | |
 | 20.08.2025 | 1.11.9.9 | :bug: fix DMA's byte-enable signal generation during byte-accesses | [#1346](https://github.com/stnolting/neorv32/pull/1346) |
 | 19.08.2025 | 1.11.9.8 | simplify CPU front-end's IPB; code cleanups and logic optimization | [#1345](https://github.com/stnolting/neorv32/pull/1345) |

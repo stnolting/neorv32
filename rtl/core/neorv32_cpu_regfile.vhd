@@ -57,7 +57,7 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
 
   -- access logic --
   signal rf_we, rd_zero : std_ulogic;
-  signal opa_addr : std_ulogic_vector(4 downto 0);
+  signal opa_addr, opc_addr : std_ulogic_vector(4 downto 0);
 
 begin
 
@@ -67,13 +67,17 @@ begin
   -- Register zero (x0) is a "normal" physical register that is set to zero by the CPU control
   -- hardware. The register file uses synchronous read accesses and a *single* multiplexed
   -- address port for writing and reading rd/rs1 and a single read-only port for reading rs2.
-  -- Therefore, the whole register file can be mapped to a single true-dual-port block RAM.
+  -- Therefore, the whole register file can be mapped to a single true-dual-port RAM.
+  -- If rs3 is enabled, the register file is mirrored into an additional single-port RAM.
 
   rd_zero  <= '1' when (ctrl_i.rf_rd = "00000") else '0';
   rf_we    <= (ctrl_i.rf_wb_en and (not rd_zero)) or ctrl_i.rf_zero_we; -- never write to x0 unless forced
   opa_addr <= "00000" when (ctrl_i.rf_zero_we = '1') else -- force rd = zero
               ctrl_i.rf_rd when (ctrl_i.rf_wb_en = '1') else -- rd
               ctrl_i.rf_rs1; -- rs1
+  opc_addr <= "00000" when (ctrl_i.rf_zero_we = '1') else -- force rd = zero
+              ctrl_i.rf_rd when (ctrl_i.rf_wb_en = '1') else -- rd
+              ctrl_i.ir_funct12(11 downto 7); -- rs3
 
 
   -- FPGA-Style Register File (BlockRAM, no hardware reset at all) --------------------------
@@ -81,28 +85,48 @@ begin
   register_file_fpga:
   if not RST_EN generate
 
-    -- simple dual-port RAM --
-    register_file: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        if (rf_we = '1') then
-          reg_file(to_integer(unsigned(opa_addr(awidth_c-1 downto 0)))) <= rd_i;
-        else
-          rs1_o <= reg_file(to_integer(unsigned(opa_addr(awidth_c-1 downto 0))));
-        end if;
-        rs2_o <= reg_file(to_integer(unsigned(ctrl_i.rf_rs2(awidth_c-1 downto 0))));
-      end if;
-    end process register_file;
+    -- main register file --
+    reg_file_inst: entity neorv32.neorv32_prim_sdpram
+    generic map (
+      AWIDTH => awidth_c,
+      DWIDTH => XLEN,
+      OUTREG => false
+    )
+    port map (
+      -- global control --
+      clk_i    => clk_i,
+      -- write port --
+      a_en_i   => '1',
+      a_rw_i   => rf_we,
+      a_addr_i => opa_addr(awidth_c-1 downto 0),
+      a_data_i => rd_i,
+      a_data_o => rs1_o,
+      -- read port --
+      b_en_i   => '1',
+      b_addr_i => ctrl_i.rf_rs2(awidth_c-1 downto 0),
+      b_data_o => rs2_o
+    );
 
-    -- third read operand --
+    -- unused --
+    reg_file <= (others => (others => '0'));
+
+    -- register file replication for third read operand --
     rs3_enabled:
     if RS3_EN generate
-      register_file_rs3: process(clk_i)
-      begin
-        if rising_edge(clk_i) then
-          rs3_o <= reg_file(to_integer(unsigned(ctrl_i.ir_funct12((7+awidth_c)-1 downto 7))));
-        end if;
-      end process register_file_rs3;
+      reg_file2_inst: entity neorv32.neorv32_prim_spram
+      generic map (
+        AWIDTH => awidth_c,
+        DWIDTH => XLEN,
+        OUTREG => false
+      )
+      port map (
+        clk_i  => clk_i,
+        en_i   => '1',
+        rw_i   => rf_we,
+        addr_i => opc_addr(awidth_c-1 downto 0),
+        data_i => rd_i,
+        data_o => rs3_o
+      );
     end generate;
 
     -- no third read operand --
@@ -111,7 +135,7 @@ begin
       rs3_o <= (others => '0');
     end generate;
 
-  end generate; -- /register_file_fpga
+  end generate;
 
 
   -- ASIC-Style Register File (individual FFs, full hardware reset) -------------------------
@@ -168,7 +192,6 @@ begin
       rs3_o <= (others => '0');
     end generate;
 
-  end generate; -- /register_file_asic
-
+  end generate;
 
 end neorv32_cpu_regfile_rtl;

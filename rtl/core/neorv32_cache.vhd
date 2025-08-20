@@ -386,32 +386,22 @@ architecture neorv32_cache_memory_rtl of neorv32_cache_memory is
   -- cache layout --
   constant offset_size_c : natural := index_size_f(BLOCK_SIZE/4); -- offset addresses full 32-bit words
   constant index_size_c  : natural := index_size_f(NUM_BLOCKS); -- index size
+  constant adr_size_c    : natural := offset_size_c + index_size_c; -- RAM address size
   constant tag_size_c    : natural := 32 - (offset_size_c + index_size_c + 2); -- +2 bits for byte offset
 
   -- status flag memory --
   signal valid_mem, dirty_mem : std_ulogic_vector(NUM_BLOCKS-1 downto 0);
   signal valid_mem_rd, dirty_mem_rd : std_ulogic;
 
-  -- tag memory --
-  type tag_mem_t is array (0 to NUM_BLOCKS-1) of std_ulogic_vector(tag_size_c-1 downto 0);
-  signal tag_mem : tag_mem_t;
-  signal tag_mem_rd : std_ulogic_vector(tag_size_c-1 downto 0);
-
-  -- data memory including single-bit status per word --
-  type data8_mem_t is array (0 to (NUM_BLOCKS * (BLOCK_SIZE/4))-1) of std_ulogic_vector(7 downto 0);
-  type data9_mem_t is array (0 to (NUM_BLOCKS * (BLOCK_SIZE/4))-1) of std_ulogic_vector(8 downto 0);
-  signal data_mem_b0  : data8_mem_t;
-  signal data_mem_b1  : data8_mem_t;
-  signal data_mem_b2  : data8_mem_t;
-  signal data_mem_b3  : data9_mem_t;
-  signal wdata, rdata : std_ulogic_vector(32 downto 0);
-
   -- cache access --
   signal acc_tag : std_ulogic_vector(tag_size_c-1 downto 0);
+  signal tag_rd  : std_ulogic_vector(tag_size_c-1 downto 0);
   signal tag_ff  : std_ulogic_vector(tag_size_c-1 downto 0);
   signal acc_idx : std_ulogic_vector(index_size_c-1 downto 0);
   signal acc_off : std_ulogic_vector(offset_size_c-1 downto 0);
-  signal acc_adr : std_ulogic_vector((index_size_c+offset_size_c)-1 downto 0);
+  signal acc_adr : std_ulogic_vector(adr_size_c-1 downto 0);
+  signal wdata   : std_ulogic_vector(32 downto 0);
+  signal rdata   : std_ulogic_vector(32 downto 0);
 
 begin
 
@@ -469,43 +459,61 @@ begin
 
   -- Tag Memory -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  tag_memory: process(clk_i) -- no reset to allow inferring of blockRAM
-  begin
-    if rising_edge(clk_i) then
-      if (new_i = '1') then -- set new cache entry
-        tag_mem(to_integer(unsigned(acc_idx))) <= acc_tag;
-      end if;
-      tag_mem_rd <= tag_mem(to_integer(unsigned(acc_idx)));
-    end if;
-  end process tag_memory;
+  tag_memory: entity neorv32.neorv32_prim_spram
+  generic map (
+    AWIDTH => index_size_c,
+    DWIDTH => tag_size_c,
+    OUTREG => false
+  )
+  port map (
+    clk_i  => clk_i,
+    en_i   => '1',
+    rw_i   => new_i,
+    addr_i => acc_idx,
+    data_i => acc_tag,
+    data_o => tag_rd
+  );
 
   -- access status (1 cycle latency due to sync memory read) --
-  hit_o <= '1' when (valid_mem_rd = '1') and (tag_mem_rd = tag_ff) else '0'; -- cache access hit
+  hit_o <= '1' when (valid_mem_rd = '1') and (tag_rd = tag_ff) else '0'; -- cache access hit
 
 
   -- Data Memory ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  data_memory: process(clk_i) -- no reset to allow inferring of blockRAM
-  begin
-    if rising_edge(clk_i) then
-      if (we_i(0) = '1') then
-        data_mem_b0(to_integer(unsigned(acc_adr))) <= wdata(7 downto 0);
-      end if;
-      if (we_i(1) = '1') then
-        data_mem_b1(to_integer(unsigned(acc_adr))) <= wdata(15 downto 8);
-      end if;
-      if (we_i(2) = '1') then
-        data_mem_b2(to_integer(unsigned(acc_adr))) <= wdata(23 downto 16);
-      end if;
-      if (we_i(3) = '1') then
-        data_mem_b3(to_integer(unsigned(acc_adr))) <= wdata(32 downto 24);
-      end if;
-      rdata( 7 downto  0) <= data_mem_b0(to_integer(unsigned(acc_adr)));
-      rdata(15 downto  8) <= data_mem_b1(to_integer(unsigned(acc_adr)));
-      rdata(23 downto 16) <= data_mem_b2(to_integer(unsigned(acc_adr)));
-      rdata(32 downto 24) <= data_mem_b3(to_integer(unsigned(acc_adr)));
-    end if;
-  end process data_memory;
+  -- data memories for bytes 0 to 2 --
+  data_mem_gen:
+  for i in 0 to 2 generate
+    data_mem: entity neorv32.neorv32_prim_spram
+    generic map (
+      AWIDTH => adr_size_c,
+      DWIDTH => 8,
+      OUTREG => false
+    )
+    port map (
+      clk_i  => clk_i,
+      en_i   => '1',
+      rw_i   => we_i(i),
+      addr_i => acc_adr,
+      data_i => wdata(i*8+7 downto i*8),
+      data_o => rdata(i*8+7 downto i*8)
+    );
+  end generate;
+
+  -- data memory for byte 3 plus status flag --
+  data_stat_mem: entity neorv32.neorv32_prim_spram
+  generic map (
+    AWIDTH => adr_size_c,
+    DWIDTH => 9,
+    OUTREG => false
+  )
+  port map (
+    clk_i  => clk_i,
+    en_i   => '1',
+    rw_i   => we_i(3),
+    addr_i => acc_adr,
+    data_i => wdata(32 downto 24),
+    data_o => rdata(32 downto 24)
+  );
 
   -- memory data --
   wdata   <= wstat_i & wdata_i;
