@@ -207,7 +207,6 @@ rtl/core
 ├─ neorv32_debug_dtm.vhd         - On-chip debugger: debug transfer module
 ├─ neorv32_dma.vhd               - Direct memory access controller
 ├─ neorv32_dmem.vhd              - Processor-internal data memory
-├─ neorv32_fifo.vhd              - Generic FIFO component
 ├─ neorv32_gpio.vhd              - General purpose input/output port unit
 ├─ neorv32_gptmr.vhd             - General purpose 32-bit timer
 ├─ neorv32_imem.vhd              - Processor-internal instruction memory
