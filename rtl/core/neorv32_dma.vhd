@@ -34,7 +34,6 @@ architecture neorv32_dma_rtl of neorv32_dma is
 
   -- FIFO size helper --
   constant log2_fifo_size_c : natural := index_size_f(DSC_FIFO); -- extend to next power of two
-  constant fifo_size_c      : natural := 2**log2_fifo_size_c; -- actual FIFO size
 
   -- transfer configuration (part of the descriptor) --
   constant conf_num_lo_c : natural :=  0; -- r/w: number of elements to transfer, LSB
@@ -165,15 +164,14 @@ begin
 
   -- Descriptor Buffer (FIFO) ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  descriptor_buffer: entity neorv32.neorv32_fifo
+  descriptor_buffer: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => fifo_size_c,
-    FIFO_WIDTH => 32,
-    FIFO_SAFE  => true,
-    OUT_GATE   => false
+    AWIDTH  => log2_fifo_size_c,
+    DWIDTH  => 32,
+    OUTGATE => false
   )
   port map (
-    -- control and status --
+    -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => fifo.clr,

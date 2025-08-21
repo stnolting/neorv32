@@ -647,12 +647,12 @@ int main() {
   asm volatile (".word 0x0000200f"); // illegal fence funct3
   asm volatile (".word 0xfe002fe3"); // illegal store funct3
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
-    asm volatile (".align 4");
+    asm volatile (".balign 4");
     asm volatile (".half 0x0000"); // canonical compressed illegal instruction
     asm volatile (".half 0x66aa"); // c.flwsp (illegal since F ISA extension is not supported)
-    asm volatile (".align 4");
+    asm volatile (".balign 4");
   }
-  asm volatile (".align 4");
+  asm volatile (".balign 4");
 
   // number of traps we are expecting + expected instruction word of last illegal instruction
   uint32_t invalid_instr;
@@ -1295,22 +1295,26 @@ int main() {
     trap_cause = trap_never_c;
     cnt_test++;
 
-    // configure SPI
-    neorv32_spi_setup(CLK_PRSC_8, 0, 1, 1, 1<<SPI_CTRL_IRQ_IDLE); // IRQ when TX FIFO is empty and SPI bus engine is idle
+    // configure SPI, IRQ when data available
+    neorv32_spi_setup(CLK_PRSC_8, 0, 1, 1, 1<<SPI_CTRL_IRQ_RX_AVAIL);
+
+    // enable SPI interrupt
+    neorv32_cpu_csr_write(CSR_MIE, 1 << SPI_FIRQ_ENABLE);
 
     // trigger SPI transmissions
-    neorv32_spi_put_nonblocking(0xab); // non-blocking
-    neorv32_spi_put_nonblocking(0xcd); // non-blocking
-
-    // enable fast interrupt
-    neorv32_cpu_csr_write(CSR_MIE, 1 << SPI_FIRQ_ENABLE);
+    neorv32_spi_cs_en_nonblocking(0); // testbench -> local echo
+    neorv32_spi_put_nonblocking(0xa9); // non-blocking
+    neorv32_spi_cs_dis_nonblocking();
 
     // wait for interrupt
     neorv32_cpu_sleep();
 
+    // disable SPI interrupt
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if (trap_cause == SPI_TRAP_CODE) {
+    if ((trap_cause == SPI_TRAP_CODE) &&
+        (neorv32_spi_busy() == 0) &&
+        (neorv32_spi_get_nonblocking() == 0xa9)) {
       test_ok();
     }
     else {
@@ -1541,7 +1545,7 @@ int main() {
     neorv32_sdi_put(0xeb);
 
     // trigger SDI IRQ by sending data via SPI
-    neorv32_spi_cs_en(7); // select SDI
+    neorv32_spi_cs_en(7); // TB: select SDI-SPI connection
     tmp_a = neorv32_spi_transfer(0x83);
     neorv32_spi_cs_dis();
 

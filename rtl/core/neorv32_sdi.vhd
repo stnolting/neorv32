@@ -171,15 +171,14 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- TX --
-  tx_fifo_inst: entity neorv32.neorv32_fifo
+  tx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => RTX_FIFO, -- number of FIFO entries; has to be a power of two; min 1
-    FIFO_WIDTH => 8,        -- size of data elements in FIFO (32-bit only for simulation)
-    FIFO_SAFE  => true,     -- safe access
-    OUT_GATE   => true      -- output zero if no data available
+    AWIDTH  => log2_fifo_size_c, -- number of FIFO entries; has to be a power of two; min 1
+    DWIDTH  => 8,                -- size of data elements in FIFO (32-bit only for simulation)
+    OUTGATE => true              -- output zero if no data available
   )
   port map (
-    -- control and status --
+    -- global control --
     clk_i   => clk_i,         -- clock, rising edge
     rstn_i  => rstn_i,        -- async reset, low-active
     clear_i => tx_fifo.clear, -- sync reset, high-active
@@ -204,15 +203,14 @@ begin
 
 
   -- RX --
-  rx_fifo_inst: entity neorv32.neorv32_fifo
+  rx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => RTX_FIFO, -- number of FIFO entries; has to be a power of two; min 1
-    FIFO_WIDTH => 8,        -- size of data elements in FIFO (32-bit only for simulation)
-    FIFO_SAFE  => true,     -- safe access
-    OUT_GATE   => false     -- no output gate required
+    AWIDTH  => log2_fifo_size_c, -- number of FIFO entries; has to be a power of two; min 1
+    DWIDTH  => 8,                -- size of data elements in FIFO (32-bit only for simulation)
+    OUTGATE => false             -- no output gate required
   )
   port map (
-    -- control --
+    -- global control --
     clk_i   => clk_i,         -- clock, rising edge
     rstn_i  => rstn_i,        -- async reset, low-active
     clear_i => rx_fifo.clear, -- sync reset, high-active

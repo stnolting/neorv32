@@ -196,15 +196,14 @@ begin
 
   -- RX Data FIFO ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rx_fifo_inst: entity neorv32.neorv32_fifo
+  rx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => SLINK_RX_FIFO,
-    FIFO_WIDTH => 1+4+32, -- last + routing + data
-    FIFO_SAFE  => true,   -- safe access
-    OUT_GATE   => false   -- no output gate required
+    AWIDTH  => log2_rx_fifo_c,
+    DWIDTH  => 1+4+32, -- last + routing + data
+    OUTGATE => false   -- no output gate required
   )
   port map (
-    -- control and status --
+    -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => rx_fifo.clear,
@@ -246,15 +245,14 @@ begin
 
   -- TX Data FIFO ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  tx_fifo_inst: entity neorv32.neorv32_fifo
+  tx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => SLINK_TX_FIFO,
-    FIFO_WIDTH => 1+4+32, -- last + routing + data
-    FIFO_SAFE  => true,   -- safe access
-    OUT_GATE   => false   -- no output gate required
+    AWIDTH  => log2_tx_fifo_c,
+    DWIDTH  => 1+4+32, -- last + routing + data
+    OUTGATE => false   -- no output gate required
   )
   port map (
-    -- control and status --
+    -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => tx_fifo.clear,
