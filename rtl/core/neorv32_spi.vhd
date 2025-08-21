@@ -182,15 +182,14 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- TX FIFO --
-  tx_fifo_inst: entity neorv32.neorv32_fifo
+  tx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
-    FIFO_WIDTH => 9,           -- size of data elements in fifo (cmd/data select + cmd/data byte)
-    FIFO_SAFE  => true,        -- safe access
-    OUT_GATE   => false        -- no output gate required
+    AWIDTH  => log2_fifo_size_c, -- number of FIFO entries; has to be a power of two; min 1
+    DWIDTH  => 9,                -- size of data elements in FIFO (cmd/data select + cmd/data byte)
+    OUTGATE => false             -- no output gate required
   )
   port map (
-    -- control and status --
+    -- global control --
     clk_i   => clk_i,         -- clock, rising edge
     rstn_i  => rstn_i,        -- async reset, low-active
     clear_i => tx_fifo.clear, -- sync reset, high-active
@@ -212,15 +211,14 @@ begin
 
 
   -- RX FIFO --
-  rx_fifo_inst: entity neorv32.neorv32_fifo
+  rx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => IO_SPI_FIFO, -- number of fifo entries; has to be a power of two; min 1
-    FIFO_WIDTH => 9,           -- size of data elements in fifo (data byte + dummy bit)
-    FIFO_SAFE  => true,        -- safe access
-    OUT_GATE   => false        -- no output gate required
+    AWIDTH  => log2_fifo_size_c, -- number of FIFO entries; has to be a power of two; min 1
+    DWIDTH  => 9,                -- size of data elements in FIFO (data byte + dummy bit)
+    OUTGATE => false             -- no output gate required
   )
   port map (
-    -- control and status --
+    -- global control --
     clk_i   => clk_i,         -- clock, rising edge
     rstn_i  => rstn_i,        -- async reset, low-active
     clear_i => rx_fifo.clear, -- sync reset, high-active

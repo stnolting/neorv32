@@ -223,15 +223,14 @@ begin
 
   -- TX FIFO --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  tx_engine_fifo_inst: entity neorv32.neorv32_fifo
+  tx_engine_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => UART_TX_FIFO,
-    FIFO_WIDTH => 8,
-    FIFO_SAFE  => true,
-    OUT_GATE   => false
+    AWIDTH  => log2_tx_fifo_c,
+    DWIDTH  => 8,
+    OUTGATE => false
   )
   port map (
-    -- control and status --
+    -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => tx_fifo.clear,
@@ -254,15 +253,14 @@ begin
 
   -- RX FIFO --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rx_engine_fifo_inst: entity neorv32.neorv32_fifo
+  rx_engine_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => UART_RX_FIFO,
-    FIFO_WIDTH => 8,
-    FIFO_SAFE  => true,
-    OUT_GATE   => false
+    AWIDTH  => log2_rx_fifo_c,
+    DWIDTH  => 8,
+    OUTGATE => false
   )
   port map (
-    -- control and status --
+    -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => rx_fifo.clear,

@@ -48,7 +48,7 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
   constant data_tbm_msb_c : natural := 10; -- r/-: log2(RX FIFO size) MSB
 
   -- helpers --
-  constant log2_tbm_c : natural := index_size_f(TRACE_DEPTH);
+  constant log2_fifo_size_c : natural := index_size_f(TRACE_DEPTH);
 
   -- simulation trace logger --
   component neorv32_tracer_simlog
@@ -138,7 +138,7 @@ begin
             bus_rsp_o.data(ctrl_hsel_c)   <= ctrl_hsel and bool_to_ulogic_f(DUAL_CORE_EN);
             bus_rsp_o.data(ctrl_run_c)    <= arbiter.run;
             bus_rsp_o.data(ctrl_avail_c)  <= fifo.avail;
-            bus_rsp_o.data(data_tbm_msb_c downto data_tbm_lsb_c) <= std_ulogic_vector(to_unsigned(log2_tbm_c, 4));
+            bus_rsp_o.data(data_tbm_msb_c downto data_tbm_lsb_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
           when "01" => -- stop-address register
             bus_rsp_o.data <= stop_addr & '0';
           when "10" => -- trace data: source
@@ -252,15 +252,14 @@ begin
 
   -- Trace Buffer (implemented as FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trace_buffer_inst: entity neorv32.neorv32_fifo
+  trace_buffer_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => TRACE_DEPTH,
-    FIFO_WIDTH => 2*32,
-    FIFO_SAFE  => true,
-    OUT_GATE   => false
+    AWIDTH  => log2_fifo_size_c,
+    DWIDTH  => 2*32,
+    OUTGATE => false
   )
   port map (
-    -- control and status --
+    -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => fifo.clear,

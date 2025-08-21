@@ -134,15 +134,14 @@ begin
 
   -- Data FIFO ("Random Pool") --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rnd_pool_fifo_inst: entity neorv32.neorv32_fifo
+  rnd_pool_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => TRNG_FIFO,
-    FIFO_WIDTH => 8,
-    FIFO_SAFE  => true,
-    OUT_GATE   => true -- output zero if no data available
+    AWIDTH  => log2_fifo_size_c,
+    DWIDTH  => 8,
+    OUTGATE => true -- output zero if no data available
   )
   port map (
-    -- control and status --
+    -- global control --
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => fifo.clear,

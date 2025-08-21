@@ -158,15 +158,14 @@ begin
 
   -- TX Buffer (FIFO) -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  data_buffer: entity neorv32.neorv32_fifo
+  data_buffer: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => FIFO_DEPTH, -- number of FIFO entries; has to be a power of two; min 1
-    FIFO_WIDTH => 32+2,       -- size of data elements in FIFO
-    FIFO_SAFE  => true,       -- safe access
-    OUT_GATE   => false       -- no output-gating required
+    AWIDTH  => log2_fifo_size_c, -- number of FIFO entries; has to be a power of two; min 1
+    DWIDTH  => 32+2,             -- size of data elements in FIFO
+    OUTGATE => false             -- no output-gating required
   )
   port map (
-    -- control and status --
+    -- global control --
     clk_i   => clk_i,         -- clock, rising edge
     rstn_i  => rstn_i,        -- async reset, low-active
     clear_i => tx_fifo.clear, -- sync reset, high-active
