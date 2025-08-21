@@ -25,6 +25,13 @@
 | CPU interrupts:         | none                 |
 |=======================
 
+**Key Features**
+
+* Gateway for processor-external modules
+* Wishbone-compatible bus protocol
+* Optional burst support
+* Optional AXI4 bridging
+
 
 **Overview**
 

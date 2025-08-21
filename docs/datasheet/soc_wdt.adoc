@@ -13,6 +13,12 @@
 | CPU interrupts:         | none            |
 |=======================
 
+**Key Features**
+
+* 32-bit timeout counter with 3-bit clock divider
+* Password-protected; lockable configuration
+* Provides information about the cause of the last reset
+
 
 **Overview**
 

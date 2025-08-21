@@ -15,6 +15,12 @@
 | CPU interrupts:         | fast IRQ channel 5    | tracing stop-address match interrupt (see <<_processor_interrupts>>)
 |=======================
 
+**Key Features**
+
+* Delta-tracing of instruction execution
+* Auto-stop tracing (and issue interrupt) when reaching a programmable instruction address
+* Dump and inspect delta-trace directly from the firmware or via GDB
+
 
 **Overview**
 

@@ -1,6 +1,6 @@
 <<<
 :sectnums:
-==== Core Local Interruptor (CLINT)
+==== Core-Local Interruptor (CLINT)
 
 [cols="<3,<3,<4"]
 [grid="none"]
@@ -15,6 +15,12 @@
 | CPU interrupts:         | `MTI`             | machine timer interrupt (see <<_processor_interrupts>>)
 |                         | `MSI`             | machine software interrupt (see <<_processor_interrupts>>)
 |=======================
+
+**Key Features**
+
+* Compatible to the RISC-V CLINT specification
+* Global 64-bit system time
+* Timer and software interrupts for each CPU core
 
 
 **Overview**

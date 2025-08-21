@@ -18,19 +18,19 @@
 | CPU interrupts:         | fast IRQ channel 0 | FIFO status interrupt (see <<_processor_interrupts>>)
 |=======================
 
+**Key Features**
+
+* I2C-compatible device-side controller
+* Programmable 7-bit device address
+* Optional data FIFOs
+* Programmable interrupt conditions
+
 
 **Overview**
 
 The NEORV32 TWD implements a I2C-compatible **device-mode** controller. Processor-external hosts can communicate
 with this module by issuing I2C transactions. The TWD is entirely passive an only reacts on those external
 transmissions.
-
-Key features:
-
-* Programmable 7-bit device address
-* Programmable interrupt conditions
-* Configurable RX/TX data FIFO to "program" large TWD sequences without further involvement of the CPU
-* Optional dummy TX byte which gets send to the bus if the TX FIFO is drained
 
 .Device-Mode Only
 [NOTE]
@@ -200,8 +200,8 @@ twd_scl_i <= std_ulogic(scl_io); -- sense
                                   <|`11`    `TWD_CTRL_IRQ_RX_AVAIL`                         ^| r/w <| IRQ if RX FIFO data available
                                   <|`12`    `TWD_CTRL_IRQ_RX_FULL`                          ^| r/w <| IRQ if RX FIFO full
                                   <|`13`    `TWD_CTRL_IRQ_TX_EMPTY`                         ^| r/w <| IRQ if TX FIFO empty
-                                  <|`14`    `TWD_CTRL_TX_DUMMY_EN`                          ^| r/w <| enable sending tx_dummy (last sent byte) when fifo is empty
-                                  <|`15`    `TWD_CTRL_HIDE_READ`                            ^| r/w <| Generate NACK ony READ-access when TX FIFO is empty
+                                  <|`14`    `TWD_CTRL_TX_DUMMY_EN`                          ^| r/w <| enable sending tx_dummy (last sent byte) when FIFO is empty
+                                  <|`15`    `TWD_CTRL_HIDE_READ`                            ^| r/w <| Generate NACK on READ-access when TX FIFO is empty
                                   <|`19:16` `TWD_CTRL_RX_FIFO_MSB : TWD_CTRL_RX_FIFO_LSB`   ^| r/- <| FIFO depth; log2(`IO_TWD_RX_FIFO`)
                                   <|`23:20` `TWD_CTRL_TX_FIFO_MSB : TWD_CTRL_TX_FIFO_LSB`   ^| r/- <| FIFO depth; log2(`IO_TWD_TX_FIFO`)
                                   <|`24`    -                                               ^| r/- <| _reserved_, read as zero

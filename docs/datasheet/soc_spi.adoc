@@ -5,17 +5,26 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_spi.vhd |
-| Software driver files:  | neorv32_spi.c | link:https://stnolting.github.io/neorv32/sw/neorv32__spi_8c.html[Online software reference (Doxygen)]
-|                         | neorv32_spi.h | link:https://stnolting.github.io/neorv32/sw/neorv32__spi_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `spi_clk_o` | 1-bit serial clock output
-|                         | `spi_dat_o` | 1-bit serial data output
-|                         | `spi_dat_i` | 1-bit serial data input
-|                         | `spi_csn_o` | 8-bit dedicated chip select output (low-active)
-| Configuration generics: | `IO_SPI_EN`   | implement SPI controller when `true`
-|                         | `IO_SPI_FIFO` | FIFO depth, has to be a power of two, min 1
+| Hardware source files:  | neorv32_spi.vhd    |
+| Software driver files:  | neorv32_spi.c      | link:https://stnolting.github.io/neorv32/sw/neorv32__spi_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_spi.h      | link:https://stnolting.github.io/neorv32/sw/neorv32__spi_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | `spi_clk_o`        | 1-bit serial clock output
+|                         | `spi_dat_o`        | 1-bit serial data output
+|                         | `spi_dat_i`        | 1-bit serial data input
+|                         | `spi_csn_o`        | 8-bit dedicated chip select output (low-active)
+| Configuration generics: | `IO_SPI_EN`        | implement SPI controller when `true`
+|                         | `IO_SPI_FIFO`      | FIFO depth, has to be a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 6 | configurable SPI interrupt (see <<_processor_interrupts>>)
 |=======================
+
+**Key Features**
+
+* SPI-compatible host controller
+* Programmable clock phase and polarity
+* Fine-grained programmable clock
+* 8 dedicated chip-select lines
+* Optional data and command FIFO (ring-buffer)
+* Interrupt based in FIFO status
 
 
 **Overview**

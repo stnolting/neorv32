@@ -5,14 +5,21 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_trng.vhd |
-| Software driver files:  | neorv32_trng.c | link:https://stnolting.github.io/neorv32/sw/neorv32__trng_8c.html[Online software reference (Doxygen)]
-|                         | neorv32_trng.h | link:https://stnolting.github.io/neorv32/sw/neorv32__trng_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | none |
-| Configuration generics: | `IO_TRNG_EN`   | implement TRNG when `true`
-|                         | `IO_TRNG_FIFO` | data FIFO depth, min 1, has to be a power of two
-| CPU interrupts:         | fast IRQ channel 15 | Data available interrupt (see <<_processor_interrupts>>)
+| Hardware source files:  | neorv32_trng.vhd    |
+| Software driver files:  | neorv32_trng.c      | link:https://stnolting.github.io/neorv32/sw/neorv32__trng_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_trng.h      | link:https://stnolting.github.io/neorv32/sw/neorv32__trng_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | none                |
+| Configuration generics: | `IO_TRNG_EN`        | implement TRNG when `true`
+|                         | `IO_TRNG_FIFO`      | data FIFO depth, min 1, has to be a power of two
+| CPU interrupts:         | fast IRQ channel 15 | data available interrupt (see <<_processor_interrupts>>)
 |=======================
+
+**Key Features**
+
+* True random number generator based on phase noise
+* Completely technology-independent architecture
+* Optional random data FIFO
+* Interrupt based on FIFO status
 
 
 **Overview**

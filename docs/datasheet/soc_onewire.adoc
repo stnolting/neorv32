@@ -6,14 +6,22 @@
 [grid="none"]
 |=======================
 | Hardware source files:  | neorv32_onewire.vhd |
-| Software driver files:  | neorv32_onewire.c | link:https://stnolting.github.io/neorv32/sw/neorv32__onewire_8c.html[Online software reference (Doxygen)]
-|                         | neorv32_onewire.h | link:https://stnolting.github.io/neorv32/sw/neorv32__onewire_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `onewire_i` | 1-bit 1-wire bus sense input
-|                         | `onewire_o` | 1-bit 1-wire bus output (pull low only)
+| Software driver files:  | neorv32_onewire.c   | link:https://stnolting.github.io/neorv32/sw/neorv32__onewire_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_onewire.h   | link:https://stnolting.github.io/neorv32/sw/neorv32__onewire_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | `onewire_i`         | 1-bit 1-wire bus sense input
+|                         | `onewire_o`         | 1-bit 1-wire bus output (pull low only)
 | Configuration generics: | `IO_ONEWIRE_EN`     | implement ONEWIRE interface controller when `true`
-|                         | `IO_ONEWIRE_FIFO`   | RTX fifo depth, has to be zero or a power of two, min 1
+|                         | `IO_ONEWIRE_FIFO`   | RTX FIFO depth, has to be zero or a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 13 | operation done interrupt (see <<_processor_interrupts>>)
 |=======================
+
+**Key Features**
+
+* Dallas(R) 1-Wire(TM)-compatible host controller
+* Hardware-based protocol handling (RESET, presence, data, etc.)
+* Fine-grained programmable bus timings
+* Optional data/command FIFO
+* Interrupt based on FIFO status
 
 
 **Overview**

@@ -5,13 +5,20 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_gptmr.vhd |
-| Software driver files:  | neorv32_gptmr.c | link:https://stnolting.github.io/neorv32/sw/neorv32__gptmr_8c.html[Online software reference (Doxygen)]
-|                         | neorv32_gptmr.h | link:https://stnolting.github.io/neorv32/sw/neorv32__gptmr_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | none |
-| Configuration generics: | `IO_GPTMR_EN` | implement general purpose timer when `true`
+| Hardware source files:  | neorv32_gptmr.vhd   |
+| Software driver files:  | neorv32_gptmr.c     | link:https://stnolting.github.io/neorv32/sw/neorv32__gptmr_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_gptmr.h     | link:https://stnolting.github.io/neorv32/sw/neorv32__gptmr_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | none                |
+| Configuration generics: | `IO_GPTMR_EN`       | implement general purpose timer when `true`
 | CPU interrupts:         | fast IRQ channel 12 | timer interrupt (see <<_processor_interrupts>>)
 |=======================
+
+**Key Features**
+
+* 32-bit auto-reloading tick timer
+* 32-bit threshold value resolution
+* 3-bit clock divider
+* Tick interrupt
 
 
 **Overview**
@@ -20,10 +27,10 @@ The general purpose timer module implements a simple 32-bit interval timer. It i
 `IO_GPTMR_EN` top generic is set `true`. The timer provides a pre-scaled counter register that can trigger an interrupt
 when reaching a programmable threshold value.
 
-The GPTMR provides three interface registers : a control register (`CTRL`), a 32-bit counter register (`COUNT`) and a
+The GPTMR provides three interface registers: a control register (`CTRL`), a 32-bit counter register (`COUNT`) and a
 32-bit threshold register (`THRES`). The timer is globally enabled by setting the `GPTMR_CTRL_EN` bit in the module's
 control register. When the timer is enabled the `COUNT` register will start incrementing from zero at a programmable
-rate that scales the main processor clock. this pre-scaler is configured via the three `GPTMR_CTRL_PRSCx`
+rate that scales the main processor clock. This pre-scaler is configured via the three `GPTMR_CTRL_PRSCx`
 control register bits:
 
 .GPTMR prescaler configuration

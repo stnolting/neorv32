@@ -5,14 +5,22 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_neoled.vhd |
-| Software driver files:  | neorv32_neoled.c | link:https://stnolting.github.io/neorv32/sw/neorv32__neoled_8c.html[Online software reference (Doxygen)]
-|                         | neorv32_neoled.h | link:https://stnolting.github.io/neorv32/sw/neorv32__neoled_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `neoled_o` | 1-bit serial data output
+| Hardware source files:  | neorv32_neoled.vhd  |
+| Software driver files:  | neorv32_neoled.c    | link:https://stnolting.github.io/neorv32/sw/neorv32__neoled_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_neoled.h    | link:https://stnolting.github.io/neorv32/sw/neorv32__neoled_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | `neoled_o`          | 1-bit serial data output
 | Configuration generics: | `IO_NEOLED_EN`      | implement NEOLED controller when `true`
 |                         | `IO_NEOLED_TX_FIFO` | TX FIFO depth, has to be a power of 2, min 1
 | CPU interrupts:         | fast IRQ channel 9  | configurable NEOLED data FIFO interrupt (see <<_processor_interrupts>>)
 |=======================
+
+**Key Features**
+
+* WS2812/WS2811/etc-compatible host controller
+* Hardware-based protocol handling
+* Fine-grained programmable bus timings
+* Optional data/command FIFO
+* Interrupt based on FIFO status
 
 
 **Overview**

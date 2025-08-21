@@ -18,6 +18,15 @@
 | CPU interrupts:         | fast IRQ channel 2 | Programmable FIFO status interrupt (see <<_processor_interrupts>>)
 |=======================
 
+**Key Features**
+
+* Independent RX and TX lines
+* Fixed format: 8 data bits, 1 stop bit, no parity bit
+* Programmable baud rate
+* Optional RX and TX FIFO buffers
+* Optional support for hardware flow-control
+* Interrupt based on FIFO buffer status
+
 
 **Overview**
 
@@ -166,6 +175,11 @@ Both file are created in the simulation's home folder.
 |                         | `UART1_TX_FIFO`    | TX FIFO depth (power of 2, min 1)
 | CPU interrupts:         | fast IRQ channel 3 | Programmable FIFO status interrupt (see <<_processor_interrupts>>)
 |=======================
+
+
+**Key Features**
+
+See the key features of <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>.
 
 
 **Overview**

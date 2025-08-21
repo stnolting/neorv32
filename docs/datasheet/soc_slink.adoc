@@ -24,6 +24,14 @@
 | CPU interrupts:         | fast IRQ channel 14 | SLINK IRQ (see <<_processor_interrupts>>)
 |=======================
 
+**Key Features**
+
+* Compatible to the AXI-4 stream standard
+* Independent RX and TX channels
+* Optional per-channel FIFOs
+* Supports "last" and "source/destination" stream signals
+* Interrupt based on FIFO status
+
 
 **Overview**
 

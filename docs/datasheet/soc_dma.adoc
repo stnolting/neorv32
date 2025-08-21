@@ -14,6 +14,16 @@
 | CPU interrupts:         | fast IRQ channel 10 | DMA transfer(s) done (see <<_processor_interrupts>>)
 |=======================
 
+**Key Features**
+
+* CPU-independent data movement
+* Byte-wide or word-wide data transfers
+* Up to 16MB (bytes) or 64MB (words) per transfer
+* Optional Endianness conversion
+* Optional descriptor FIFO
+* Chaining of pre-programmed transfers
+* Transfer-done interrupt
+
 
 **Overview**
 

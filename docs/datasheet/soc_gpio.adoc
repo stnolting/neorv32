@@ -5,14 +5,20 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_gpio.vhd |
-| Software driver files:  | neorv32_gpio.c | link:https://stnolting.github.io/neorv32/sw/neorv32__gpio_8c.html[Online software reference (Doxygen)]
-|                         | neorv32_gpio.h | link:https://stnolting.github.io/neorv32/sw/neorv32__gpio_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `gpio_o` | 32-bit parallel output port
-|                         | `gpio_i` | 32-bit parallel input port
-| Configuration generics: | `IO_GPIO_NUM` | number of input/output pairs to implement (0..32)
+| Hardware source files:  | neorv32_gpio.vhd   |
+| Software driver files:  | neorv32_gpio.c     | link:https://stnolting.github.io/neorv32/sw/neorv32__gpio_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_gpio.h     | link:https://stnolting.github.io/neorv32/sw/neorv32__gpio_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | `gpio_o`           | 32-bit parallel output port
+|                         | `gpio_i`           | 32-bit parallel input port
+| Configuration generics: | `IO_GPIO_NUM`      | number of input/output pairs to implement (0..32)
 | CPU interrupts:         | fast IRQ channel 8 | input-pin change interrupt (see <<_processor_interrupts>>)
 |=======================
+
+**Key Features**
+
+* Up to 32 inputs and 32 outputs
+* Each input pin is interrupt-capable
+* Configurable interrupt triggers (positive/negative level or edge)
 
 
 **Overview**

@@ -5,14 +5,21 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_cfs.vhd |
-| Software driver files:  | neorv32_cfs.c | link:https://stnolting.github.io/neorv32/sw/neorv32__cfs_8c.html[Online software reference (Doxygen)]
-|                         | neorv32_cfs.h | link:https://stnolting.github.io/neorv32/sw/neorv32__cfs_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `cfs_in_i`  | custom input conduit, 256-bit
-|                         | `cfs_out_o` | custom output conduit, 256-bit
+| Hardware source files:  | neorv32_cfs.vhd    |
+| Software driver files:  | neorv32_cfs.c      | link:https://stnolting.github.io/neorv32/sw/neorv32__cfs_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_cfs.h      | link:https://stnolting.github.io/neorv32/sw/neorv32__cfs_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | `cfs_in_i`         | custom input conduit, 256-bit
+|                         | `cfs_out_o`        | custom output conduit, 256-bit
 | Configuration generics: | `IO_CFS_EN`        | implement CFS when `true`
 | CPU interrupts:         | fast IRQ channel 1 | CFS interrupt (see <<_processor_interrupts>>)
 |=======================
+
+**Key Features**
+
+* Tightly-coupled co-processor unit for custom hardware accelerators
+* Can operate independently of the CPU
+* CPU access via memory-mapped registers (16kB)
+* Custom 256-bit input and output conduits for custom IO
 
 
 **Overview**

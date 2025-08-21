@@ -16,6 +16,13 @@
 | CPU interrupts:         | none                |
 |=======================
 
+**Key Features**
+
+* Direct-mapped write-through cache
+* Configurable number of lines
+* Configurable line size
+* Allows bypassing for _uncached_ accesses
+
 
 **Overview**
 

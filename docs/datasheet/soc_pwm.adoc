@@ -6,12 +6,20 @@
 [grid="none"]
 |=======================
 | Hardware source files:  | neorv32_pwm.vhd |
-| Software driver files:  | neorv32_pwm.c | link:https://stnolting.github.io/neorv32/sw/neorv32__pwm_8c.html[Online software reference (Doxygen)]
-|                         | neorv32_pwm.h | link:https://stnolting.github.io/neorv32/sw/neorv32__pwm_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `pwm_o` | PWM output channels (16-bit)
+| Software driver files:  | neorv32_pwm.c   | link:https://stnolting.github.io/neorv32/sw/neorv32__pwm_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_pwm.h   | link:https://stnolting.github.io/neorv32/sw/neorv32__pwm_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | `pwm_o`         | PWM output channels (16-bit)
 | Configuration generics: | `IO_PWM_NUM_CH` | number of PWM channels to implement (0..16)
-| CPU interrupts:         | none |
+| CPU interrupts:         | none            |
 |=======================
+
+**Key Features**
+
+* Up to 16 independent channels
+* Per-channel configuration of duty cycle and carrier frequency
+* 8-bit duty cycle resolution
+* 3-bit (coarse) + 10-bit (fine) frequency resolution
+* Configurable PWM polarity
 
 
 **Overview**

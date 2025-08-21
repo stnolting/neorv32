@@ -13,10 +13,14 @@
 | CPU interrupts:         | none                         |
 |=======================
 
+**Key Features**
+
+* See section <<_bootloader>>.
+
 
 **Overview**
 
-The boot ROM contains the executable image of the default NEORV32 <<_bootloader>>. When the
+The boot ROM contains the pre-compiled executable image of the default NEORV32 <<_bootloader>>. When the
 <<_boot_configuration>> is set to _bootloader_ mode (0) via the `BOOT_MODE_SELECT` generic, the
 boot ROM is automatically enabled and the CPU boot address is adjusted to the base address of the boot ROM.
 Note that the entire boot ROM is read-only.

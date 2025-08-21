@@ -5,17 +5,24 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_sdi.vhd |
-| Software driver files:  | neorv32_sdi.c | link:https://stnolting.github.io/neorv32/sw/neorv32__sdi_8c.html[Online software reference (Doxygen)]
-|                         | neorv32_sdi.h | link:https://stnolting.github.io/neorv32/sw/neorv32__sdi_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `sdi_clk_i` | 1-bit serial clock input
-|                         | `sdi_dat_o` | 1-bit serial data output
-|                         | `sdi_dat_i` | 1-bit serial data input
-|                         | `sdi_csn_i` | 1-bit chip-select input (low-active)
-| Configuration generics: | `IO_SDI_EN`   | implement SDI controller when `true`
-|                         | `IO_SDI_FIFO` | data FIFO size, has to a power of two, min 1
+| Hardware source files:  | neorv32_sdi.vhd     |
+| Software driver files:  | neorv32_sdi.c       | link:https://stnolting.github.io/neorv32/sw/neorv32__sdi_8c.html[Online software reference (Doxygen)]
+|                         | neorv32_sdi.h       | link:https://stnolting.github.io/neorv32/sw/neorv32__sdi_8h.html[Online software reference (Doxygen)]
+| Top entity ports:       | `sdi_clk_i`         | 1-bit serial clock input
+|                         | `sdi_dat_o`         | 1-bit serial data output
+|                         | `sdi_dat_i`         | 1-bit serial data input
+|                         | `sdi_csn_i`         | 1-bit chip-select input (low-active)
+| Configuration generics: | `IO_SDI_EN`         | implement SDI controller when `true`
+|                         | `IO_SDI_FIFO`       | data FIFO size, has to a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 11 | configurable SDI interrupt (see <<_processor_interrupts>>)
 |=======================
+
+**Key Features**
+
+* SPI-compatible device-side controller
+* Clock mode 0 only
+* Optional RX/TX data FIFO
+* Interrupt based in FIFO status
 
 
 **Overview**

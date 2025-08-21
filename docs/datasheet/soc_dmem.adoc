@@ -14,6 +14,14 @@
 | CPU interrupts:         | none              |
 |=======================
 
+**Key Features**
+
+* Tightly-coupled on-chip data memory
+* Configurable RAM size
+* Accessible at the byte level
+* Can be mapped to blockRAM primitives
+* Optional output register for improved timing
+
 
 **Overview**
 
