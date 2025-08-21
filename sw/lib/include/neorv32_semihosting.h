@@ -106,7 +106,7 @@ inline int __attribute__ ((always_inline)) neorv32_semihosting_req(int id, void*
   asm volatile (
     " .option push      \n"
     " .option norvc     \n" // we need 32-bit instruction words here
-    " .align 4          \n" // this has to be aligned
+    " .balign 4         \n" // this has to be aligned
     " slli x0, x0, 0x1f \n" // magic triplet: entry NOP
     " ebreak            \n" // magic triplet: break to debugger
     " srai x0, x0, 0x07 \n" // magic triplet: exit NOP
