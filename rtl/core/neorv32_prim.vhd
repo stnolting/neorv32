@@ -164,6 +164,9 @@ end neorv32_prim_fifo_rtl;
 -- ================================================================================ --
 -- NEORV32 - Primitives - Generic Single-Port RAM (SPRAM)                           --
 -- -------------------------------------------------------------------------------- --
+-- Provides a single read/write port.                                               --
+-- Can be mapped to blockRAM primitives.                                            --
+-- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
 -- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
@@ -196,7 +199,7 @@ end neorv32_prim_spram;
 architecture neorv32_prim_spram_rtl of neorv32_prim_spram is
 
   type ram_t is array (0 to (2**AWIDTH)-1) of std_ulogic_vector(DWIDTH-1 downto 0);
-  signal ram : ram_t;
+  signal spram : ram_t;
   signal rdata : std_ulogic_vector(DWIDTH-1 downto 0);
 
 begin
@@ -208,9 +211,9 @@ begin
     if rising_edge(clk_i) then
       if (en_i = '1') then
         if (rw_i = '1') then
-          ram(to_integer(unsigned(addr_i))) <= data_i;
+          spram(to_integer(unsigned(addr_i))) <= data_i;
         else
-          rdata <= ram(to_integer(unsigned(addr_i)));
+          rdata <= spram(to_integer(unsigned(addr_i)));
         end if;
       end if;
     end if;
@@ -239,6 +242,9 @@ end neorv32_prim_spram_rtl;
 
 -- ================================================================================ --
 -- NEORV32 - Primitives - Generic Simple Dual-Port RAM (SDPRAM)                     --
+-- -------------------------------------------------------------------------------- --
+-- Provides a single read/write port and a read-only port.                          --
+-- Can be mapped to blockRAM primitives.                                            --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -276,7 +282,7 @@ end neorv32_prim_sdpram;
 architecture neorv32_prim_sdpram_rtl of neorv32_prim_sdpram is
 
   type ram_t is array (0 to (2**AWIDTH)-1) of std_ulogic_vector(DWIDTH-1 downto 0);
-  signal ram : ram_t;
+  signal sdpram : ram_t;
   signal a_rdata, b_rdata : std_ulogic_vector(DWIDTH-1 downto 0);
 
 begin
@@ -286,17 +292,17 @@ begin
   memory_core: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      -- port A --
+      -- port A: read/write --
       if (a_en_i = '1') then
         if (a_rw_i = '1') then
-          ram(to_integer(unsigned(a_addr_i))) <= a_data_i;
+          sdpram(to_integer(unsigned(a_addr_i))) <= a_data_i;
         else
-          a_rdata <= ram(to_integer(unsigned(a_addr_i)));
+          a_rdata <= sdpram(to_integer(unsigned(a_addr_i)));
         end if;
       end if;
-      -- port B --
+      -- port B: read-only --
       if (b_en_i = '1') then
-        b_rdata <= ram(to_integer(unsigned(b_addr_i)));
+        b_rdata <= sdpram(to_integer(unsigned(b_addr_i)));
       end if;
     end if;
   end process memory_core;
