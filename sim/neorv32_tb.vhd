@@ -349,15 +349,14 @@ begin
 
   -- Stream-Link FIFO Buffer ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  slink_buffer: entity neorv32.neorv32_fifo
+  slink_buffer: entity neorv32.neorv32_prim_fifo
   generic map (
-    FIFO_DEPTH => 1,
-    FIFO_WIDTH => 32+4+1,
-    FIFO_SAFE  => true,
-    OUT_GATE   => false
+    AWIDTH  => 0,
+    DWIDTH  => 32+4+1,
+    OUTGATE => true
   )
   port map (
-    -- control --
+    -- global control --
     clk_i                 => clk_gen,
     rstn_i                => rst_gen,
     clear_i               => '0',
