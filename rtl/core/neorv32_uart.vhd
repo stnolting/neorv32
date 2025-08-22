@@ -468,7 +468,7 @@ begin
 -- RTL_SYNTHESIS OFF
 
   -- notification --
-  assert false report "[NEORV32] UART logging enabled: " & SIM_LOG_FILE severity note;
+  assert false report "[NEORV32] UART simulation logging enabled: " & SIM_LOG_FILE severity note;
 
   -- write to simulator console and to log file --
   simulation_transmitter:
