@@ -74,7 +74,7 @@ architecture neorv32_trng_rtl of neorv32_trng is
     we,    re    : std_ulogic; -- write/read enable
     wdata, rdata : std_ulogic_vector(7 downto 0); -- write/read data
     avail, free  : std_ulogic; -- FIFO level
-    clear, half  : std_ulogic; -- control and status
+    clear        : std_ulogic; -- sync reset
   end record;
   signal fifo : fifo_t;
 
@@ -145,7 +145,7 @@ begin
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => fifo.clear,
-    half_o  => fifo.half,
+    half_o  => open,
     -- write port --
     wdata_i => fifo.wdata,
     we_i    => fifo.we,

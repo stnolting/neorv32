@@ -87,7 +87,6 @@ architecture neorv32_neoled_rtl of neorv32_neoled is
     -- state control --
     state      : std_ulogic_vector(2 downto 0);
     mode       : std_ulogic;
-    done       : std_ulogic;
     busy       : std_ulogic;
     bit_cnt    : std_ulogic_vector(5 downto 0);
     -- shift register --
@@ -204,7 +203,6 @@ begin
   begin
     if (rstn_i = '0') then
       serial.pulse_clk  <= '0';
-      serial.done       <= '0';
       serial.state      <= (others => '0');
       serial.pulse_cnt  <= (others => '0');
       serial.strobe_cnt <= (others => '0');
@@ -216,9 +214,6 @@ begin
     elsif rising_edge(clk_i) then
       -- clock generator --
       serial.pulse_clk <= clkgen_i(to_integer(unsigned(ctrl.clk_prsc)));
-
-      -- defaults --
-      serial.done <= '0';
 
       -- FSM --
       serial.state(2) <= ctrl.enable;
@@ -257,8 +252,7 @@ begin
           end if;
           if (serial.bit_cnt = "000000") then -- all done?
             neoled_o                 <= '0';
-            serial.done              <= '1'; -- done sending data
-            serial.state(1 downto 0) <= "00";
+            serial.state(1 downto 0) <= "00"; -- done sending data
           else -- send current data MSB
             neoled_o                 <= '1';
             serial.state(1 downto 0) <= "10"; -- transmit single pulse
@@ -294,7 +288,6 @@ begin
           end if;
           -- number of LOW periods reached for RESET? --
           if (and_reduce_f(serial.strobe_cnt) = '1') then
-            serial.done              <= '1'; -- done sending RESET
             serial.state(1 downto 0) <= "00";
           end if;
 
