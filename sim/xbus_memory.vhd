@@ -50,6 +50,9 @@ architecture xbus_memory_rtl of xbus_memory is
   begin
     mem_v := (others => (others => '0'));
     if (file_name /= "") then
+      if (byte_sel = 0) then -- only print once
+        report "[xbus_memory] Initializing memory from file '" & file_name & "'" severity warning;
+      end if;
       file_open(hex_file, file_name, read_mode);
       index_v := 0;
       while (endfile(hex_file) = false) and (index_v < num_words) loop -- not end of file / end of memory
@@ -93,6 +96,8 @@ architecture xbus_memory_rtl of xbus_memory is
   type late_data_t is array (MEM_LATE downto 0) of std_ulogic_vector(31 downto 0);
   signal late_data : late_data_t;
   signal late_ack  : std_ulogic_vector(MEM_LATE downto 0);
+  signal dout      : std_ulogic_vector(31 downto 0);
+  signal aout      : std_ulogic;
 
 begin
 
@@ -168,9 +173,13 @@ begin
     end if;
   end process latency_gen;
 
+  -- delay select --
+  dout <= rdata when (MEM_LATE = 1) else late_data(MEM_LATE-1);
+  aout <= ack   when (MEM_LATE = 1) else late_ack(MEM_LATE-1);
+
   -- bus response --
-  xbus_rsp_o.data <= rdata when (MEM_LATE = 1) else late_data(MEM_LATE-1);
-  xbus_rsp_o.ack  <= ack   when (MEM_LATE = 1) else late_ack(MEM_LATE-1);
+  xbus_rsp_o.data <= dout when (aout = '1') else (others => '0'); -- output gate
+  xbus_rsp_o.ack  <= aout;
   xbus_rsp_o.err  <= '0';
 
 
