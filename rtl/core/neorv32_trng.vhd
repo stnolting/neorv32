@@ -145,7 +145,6 @@ begin
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => fifo.clear,
-    half_o  => open,
     -- write port --
     wdata_i => fifo.wdata,
     we_i    => fifo.we,

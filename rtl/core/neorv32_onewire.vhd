@@ -181,7 +181,6 @@ begin
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => fifo.tx_clr,
-    half_o  => open,
     -- write port --
     wdata_i => fifo.tx_wdata,
     we_i    => fifo.tx_we,
@@ -210,7 +209,6 @@ begin
     clk_i   => clk_i,
     rstn_i  => rstn_i,
     clear_i => fifo.rx_clr,
-    half_o  => open,
     -- write port --
     wdata_i => fifo.rx_wdata,
     we_i    => fifo.rx_we,
