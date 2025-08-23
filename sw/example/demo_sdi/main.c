@@ -108,18 +108,17 @@ void sdi_put(void) {
 
   char terminal_buffer[3];
 
+  if (neorv32_sdi_tx_full()) {
+    neorv32_uart0_printf("FAILED! TX buffer is full.\n");
+    return;
+  }
+
   neorv32_uart0_printf("Enter TX data (2 hex chars): 0x");
   neorv32_uart0_scan(terminal_buffer, sizeof(terminal_buffer), 1);
   uint32_t tx_data = (uint32_t)neorv32_aux_hexstr2uint64(terminal_buffer, strlen(terminal_buffer));
 
-  neorv32_uart0_printf("\nWriting 0x%x to SDI TX buffer... ", tx_data);
-
-  if (neorv32_sdi_put((uint8_t)tx_data)) {
-    neorv32_uart0_printf("FAILED! TX buffer is full.\n");
-  }
-  else {
-    neorv32_uart0_printf("ok\n");
-  }
+  neorv32_uart0_printf("\nWriting 0x%x to SDI TX buffer...\n", tx_data);
+  neorv32_sdi_put_nonblocking(tx_data);
 }
 
 
@@ -128,12 +127,10 @@ void sdi_put(void) {
  **************************************************************************/
 void sdi_get(void) {
 
-  uint8_t rx_data;
-
-  if (neorv32_sdi_get(&rx_data)) {
+  if (neorv32_sdi_rx_empty()) {
     neorv32_uart0_printf("No RX data available (RX buffer is empty).\n");
   }
   else {
-    neorv32_uart0_printf("Read data: 0x%x\n", (uint32_t)rx_data);
+    neorv32_uart0_printf("Read data: 0x%x\n", (uint32_t)neorv32_sdi_get_nonblocking());
   }
 }
