@@ -1295,8 +1295,8 @@ int main() {
     trap_cause = trap_never_c;
     cnt_test++;
 
-    // configure SPI, IRQ when data available
-    neorv32_spi_setup(CLK_PRSC_8, 0, 1, 1, 1<<SPI_CTRL_IRQ_RX_AVAIL);
+    // configure SPI
+    neorv32_spi_setup(CLK_PRSC_8, 0, 1, 1);
 
     // enable SPI interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << SPI_FIRQ_ENABLE);
@@ -1437,12 +1437,12 @@ int main() {
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << NEOLED_FIRQ_ENABLE);
 
-    // configure NEOLED, IRQ if FIFO  empty
-    neorv32_neoled_setup(CLK_PRSC_4, 0, 0, 0, 0);
+    // configure NEOLED
+    neorv32_neoled_setup(CLK_PRSC_4, 0, 0, 0);
 
     // send dummy data
-    neorv32_neoled_write_nonblocking(0);
-    neorv32_neoled_write_nonblocking(0);
+    neorv32_neoled_write24_nonblocking(0x00123456);
+    neorv32_neoled_write32_nonblocking(0xab12cd78);
 
     // wait until interrupt
     asm volatile ("nop");
@@ -1450,7 +1450,9 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if (trap_cause == NEOLED_TRAP_CODE) {
+    if ((trap_cause == NEOLED_TRAP_CODE) &&
+        (neorv32_neoled_fifo_empty() != 0) &&
+        (neorv32_neoled_busy() == 0)) {
       test_ok();
     }
     else {
@@ -1536,7 +1538,7 @@ int main() {
     // configure and enable SDI + SPI
     // SDI input clock (= SPI output clock) must be less than 1/4 of the processor clock
     neorv32_sdi_setup(1 << SDI_CTRL_IRQ_RX_AVAIL);
-    neorv32_spi_setup(CLK_PRSC_2, 1, 0, 0, 0);
+    neorv32_spi_setup(CLK_PRSC_2, 1, 0, 0);
 
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << SDI_FIRQ_ENABLE);
