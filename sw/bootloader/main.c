@@ -63,7 +63,7 @@ int __attribute__((naked)) main(void) {
   // setup SPI, clock mode 0
 #if (SPI_EN != 0)
   if (neorv32_spi_available()) {
-    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0, 0);
+    neorv32_spi_setup(SPI_FLASH_CLK_PRSC, 0, 0, 0);
   }
 #endif
 
