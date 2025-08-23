@@ -74,9 +74,9 @@ void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_m
 
   uint32_t tmp = 0;
   tmp |= (uint32_t)(1              & 1U)     << UART_CTRL_EN;
-  tmp |= (uint32_t)(prsc_sel       & 3U)     << UART_CTRL_PRSC0;
-  tmp |= (uint32_t)((baud_div - 1) & 0x3ffU) << UART_CTRL_BAUD0;
-  tmp |= (uint32_t)(irq_mask & (0x1fU << UART_CTRL_IRQ_RX_NEMPTY));
+  tmp |= (uint32_t)(prsc_sel       & 3U)     << UART_CTRL_PRSC_LSB;
+  tmp |= (uint32_t)((baud_div - 1) & 0x3ffU) << UART_CTRL_BAUD_LSB;
+  tmp |= (uint32_t)(irq_mask       & (0xfu   << UART_CTRL_IRQ_RX_NEMPTY));
 
 #ifdef UART0_SIM_MODE
 #warning UART0_SIM_MODE (primary UART) enabled! \
@@ -184,28 +184,6 @@ void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {
 
   while ((UARTx->CTRL & (1<<UART_CTRL_TX_NFULL)) == 0); // wait for free space in TX FIFO
   UARTx->DATA = (uint32_t)c << UART_DATA_RTX_LSB;
-}
-
-
-/**********************************************************************//**
- * Clear RX FIFO.
- *
- * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
- **************************************************************************/
-void neorv32_uart_rx_clear(neorv32_uart_t *UARTx) {
-
-  UARTx->CTRL |= (uint32_t)(1 << UART_CTRL_RX_CLR);
-}
-
-
-/**********************************************************************//**
- * Clear TX FIFO.
- *
- * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
- **************************************************************************/
-void neorv32_uart_tx_clear(neorv32_uart_t *UARTx) {
-
-  UARTx->CTRL |= (uint32_t)(1 << UART_CTRL_TX_CLR);
 }
 
 

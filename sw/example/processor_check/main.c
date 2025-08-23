@@ -1136,13 +1136,8 @@ int main() {
     neorv32_uart_setup(NEORV32_UART0, BAUD_RATE, 1 << UART_CTRL_IRQ_RX_NEMPTY);
     NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE); // make sure sim mode is disabled
     neorv32_uart_rtscts_enable(NEORV32_UART0);
+    NEORV32_UART1->CTRL = 0; // reset
     NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
-
-    // clear FIFOs
-    neorv32_uart_rx_clear(NEORV32_UART0);
-    neorv32_uart_tx_clear(NEORV32_UART0);
-    neorv32_uart_rx_clear(NEORV32_UART1);
-    neorv32_uart_tx_clear(NEORV32_UART1);
 
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << UART0_FIRQ_ENABLE);
@@ -1196,13 +1191,8 @@ int main() {
     neorv32_uart_setup(NEORV32_UART1, BAUD_RATE, 1 << UART_CTRL_IRQ_TX_EMPTY);
     NEORV32_UART1->CTRL &= ~(1 << UART_CTRL_SIM_MODE); // make sure sim mode is disabled
     neorv32_uart_rtscts_enable(NEORV32_UART1);
+    NEORV32_UART0->CTRL = 0; // reset
     NEORV32_UART0->CTRL = NEORV32_UART1->CTRL;
-
-    // clear FIFOs
-    neorv32_uart_rx_clear(NEORV32_UART0);
-    neorv32_uart_tx_clear(NEORV32_UART0);
-    neorv32_uart_rx_clear(NEORV32_UART1);
-    neorv32_uart_tx_clear(NEORV32_UART1);
 
     // send a char to trigger interrupt
     neorv32_uart_putc(NEORV32_UART1, 0x81);

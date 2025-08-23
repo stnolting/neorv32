@@ -785,74 +785,42 @@
               <description>RX FIFO not empty</description>
             </field>
             <field>
-              <name>UART_CTRL_RX_HALF</name>
-              <bitRange>[17:17]</bitRange>
-              <access>read-only</access>
-              <description>RX FIFO at least half full</description>
-            </field>
-            <field>
               <name>UART_CTRL_RX_FULL</name>
-              <bitRange>[18:18]</bitRange>
+              <bitRange>[17:17]</bitRange>
               <access>read-only</access>
               <description>RX FIFO full</description>
             </field>
             <field>
               <name>UART_CTRL_TX_EMPTY</name>
-              <bitRange>[19:19]</bitRange>
+              <bitRange>[18:18]</bitRange>
               <access>read-only</access>
               <description>TX FIFO empty</description>
             </field>
             <field>
-              <name>UART_CTRL_TX_NHALF</name>
-              <bitRange>[20:20]</bitRange>
-              <access>read-only</access>
-              <description>TX FIFO not at least half full</description>
-            </field>
-            <field>
               <name>UART_CTRL_TX_NFULL</name>
-              <bitRange>[21:21]</bitRange>
+              <bitRange>[19:19]</bitRange>
               <access>read-only</access>
               <description>TX FIFO not full</description>
             </field>
             <field>
               <name>UART_CTRL_IRQ_RX_NEMPTY</name>
-              <bitRange>[22:22]</bitRange>
+              <bitRange>[20:20]</bitRange>
               <description>Fire IRQ if RX FIFO not empty</description>
             </field>
             <field>
-              <name>UART_CTRL_IRQ_RX_HALF</name>
-              <bitRange>[23:23]</bitRange>
-              <description>Fire IRQ if RX FIFO at least half-full</description>
-            </field>
-            <field>
               <name>UART_CTRL_IRQ_RX_FULL</name>
-              <bitRange>[24:24]</bitRange>
+              <bitRange>[21:21]</bitRange>
               <description>Fire IRQ if RX FIFO full</description>
             </field>
             <field>
               <name>UART_CTRL_IRQ_TX_EMPTY</name>
-              <bitRange>[25:25]</bitRange>
+              <bitRange>[22:22]</bitRange>
               <description>Fire IRQ if TX FIFO empty</description>
             </field>
             <field>
-              <name>UART_CTRL_IRQ_TX_NHALF</name>
-              <bitRange>[26:26]</bitRange>
-              <description>Fire IRQ if TX FIFO not at least half-full</description>
-            </field>
-            <field>
               <name>UART_CTRL_IRQ_TX_NFULL</name>
-              <bitRange>[27:27]</bitRange>
+              <bitRange>[23:23]</bitRange>
               <description>Fire IRQ if TX FIFO not full</description>
-            </field>
-            <field>
-              <name>UART_CTRL_RX_CLR</name>
-              <bitRange>[28:28]</bitRange>
-              <description>Clear RX FIFO, flag auto-clears</description>
-            </field>
-            <field>
-              <name>UART_CTRL_TX_CLR</name>
-              <bitRange>[29:29]</bitRange>
-              <description>Clear TX FIFO, flag auto-clears</description>
             </field>
             <field>
               <name>UART_CTRL_RX_OVER</name>

@@ -39,33 +39,19 @@ enum NEORV32_UART_CTRL_enum {
   UART_CTRL_EN            =  0, /**< UART control register(0)  (r/w): UART global enable */
   UART_CTRL_SIM_MODE      =  1, /**< UART control register(1)  (r/w): Simulation output override enable */
   UART_CTRL_HWFC_EN       =  2, /**< UART control register(2)  (r/w): Enable RTS/CTS hardware flow-control */
-  UART_CTRL_PRSC0         =  3, /**< UART control register(3)  (r/w): clock prescaler select bit 0 */
-  UART_CTRL_PRSC1         =  4, /**< UART control register(4)  (r/w): clock prescaler select bit 1 */
-  UART_CTRL_PRSC2         =  5, /**< UART control register(5)  (r/w): clock prescaler select bit 2 */
-  UART_CTRL_BAUD0         =  6, /**< UART control register(6)  (r/w): BAUD rate divisor, bit 0 */
-  UART_CTRL_BAUD1         =  7, /**< UART control register(7)  (r/w): BAUD rate divisor, bit 1 */
-  UART_CTRL_BAUD2         =  8, /**< UART control register(8)  (r/w): BAUD rate divisor, bit 2 */
-  UART_CTRL_BAUD3         =  9, /**< UART control register(9)  (r/w): BAUD rate divisor, bit 3 */
-  UART_CTRL_BAUD4         = 10, /**< UART control register(10) (r/w): BAUD rate divisor, bit 4 */
-  UART_CTRL_BAUD5         = 11, /**< UART control register(11) (r/w): BAUD rate divisor, bit 5 */
-  UART_CTRL_BAUD6         = 12, /**< UART control register(12) (r/w): BAUD rate divisor, bit 6 */
-  UART_CTRL_BAUD7         = 13, /**< UART control register(13) (r/w): BAUD rate divisor, bit 7 */
-  UART_CTRL_BAUD8         = 14, /**< UART control register(14) (r/w): BAUD rate divisor, bit 8 */
-  UART_CTRL_BAUD9         = 15, /**< UART control register(15) (r/w): BAUD rate divisor, bit 9 */
+  UART_CTRL_PRSC_LSB      =  3, /**< UART control register(3)  (r/w): clock prescaler select, bit 0 (LSB) */
+  UART_CTRL_PRSC_MSB      =  5, /**< UART control register(5)  (r/w): clock prescaler select, bit 2 (MSB) */
+  UART_CTRL_BAUD_LSB      =  6, /**< UART control register(6)  (r/w): BAUD rate divisor, bit 0 (LSB) */
+  UART_CTRL_BAUD_MSB      = 15, /**< UART control register(15) (r/w): BAUD rate divisor, bit 9 (MSB) */
   UART_CTRL_RX_NEMPTY     = 16, /**< UART control register(16) (r/-): RX FIFO not empty */
-  UART_CTRL_RX_HALF       = 17, /**< UART control register(17) (r/-): RX FIFO at least half-full */
-  UART_CTRL_RX_FULL       = 18, /**< UART control register(18) (r/-): RX FIFO full */
-  UART_CTRL_TX_EMPTY      = 19, /**< UART control register(19) (r/-): TX FIFO empty */
-  UART_CTRL_TX_NHALF      = 20, /**< UART control register(20) (r/-): TX FIFO not at least half-full */
-  UART_CTRL_TX_NFULL      = 21, /**< UART control register(21) (r/-): TX FIFO not full */
-  UART_CTRL_IRQ_RX_NEMPTY = 22, /**< UART control register(22) (r/w): Fire IRQ if RX FIFO not empty */
-  UART_CTRL_IRQ_RX_HALF   = 23, /**< UART control register(23) (r/w): Fire IRQ if RX FIFO at least half-full */
-  UART_CTRL_IRQ_RX_FULL   = 24, /**< UART control register(24) (r/w): Fire IRQ if RX FIFO full */
-  UART_CTRL_IRQ_TX_EMPTY  = 25, /**< UART control register(25) (r/w): Fire IRQ if TX FIFO empty */
-  UART_CTRL_IRQ_TX_NHALF  = 26, /**< UART control register(26) (r/w): Fire IRQ if TX FIFO not at least half-full */
-  UART_CTRL_IRQ_TX_NFULL  = 27, /**< UART control register(27) (r/w): Fire IRQ if TX FIFO not full */
-  UART_CTRL_RX_CLR        = 28, /**< UART control register(28) (r/w): Clear RX FIFO, flag auto-clears */
-  UART_CTRL_TX_CLR        = 29, /**< UART control register(29) (r/w): Clear TX FIFO, flag auto-clears */
+  UART_CTRL_RX_FULL       = 17, /**< UART control register(17) (r/-): RX FIFO full */
+  UART_CTRL_TX_EMPTY      = 18, /**< UART control register(18) (r/-): TX FIFO empty */
+  UART_CTRL_TX_NFULL      = 19, /**< UART control register(19) (r/-): TX FIFO not full */
+  UART_CTRL_IRQ_RX_NEMPTY = 20, /**< UART control register(20) (r/w): Fire IRQ if RX FIFO not empty */
+  UART_CTRL_IRQ_RX_FULL   = 21, /**< UART control register(21) (r/w): Fire IRQ if RX FIFO full */
+  UART_CTRL_IRQ_TX_EMPTY  = 22, /**< UART control register(22) (r/w): Fire IRQ if TX FIFO empty */
+  UART_CTRL_IRQ_TX_NFULL  = 23, /**< UART control register(23) (r/w): Fire IRQ if TX FIFO not full */
+
   UART_CTRL_RX_OVER       = 30, /**< UART control register(30) (r/-): RX FIFO overflow */
   UART_CTRL_TX_BUSY       = 31  /**< UART control register(31) (r/-): Transmitter busy or TX FIFO not empty */
 };
@@ -97,8 +83,6 @@ void neorv32_uart_disable(neorv32_uart_t *UARTx);
 void neorv32_uart_rtscts_enable(neorv32_uart_t *UARTx);
 void neorv32_uart_rtscts_disable(neorv32_uart_t *UARTx);
 void neorv32_uart_putc(neorv32_uart_t *UARTx, char c);
-void neorv32_uart_rx_clear(neorv32_uart_t *UARTx);
-void neorv32_uart_tx_clear(neorv32_uart_t *UARTx);
 int  neorv32_uart_tx_busy(neorv32_uart_t *UARTx);
 int  neorv32_uart_tx_free(neorv32_uart_t *UARTx);
 void neorv32_uart_tx_put(neorv32_uart_t *UARTx, char c);
@@ -125,8 +109,6 @@ int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ec
 #define neorv32_uart0_rtscts_disable()             neorv32_uart_rtscts_disable(NEORV32_UART0)
 #define neorv32_uart0_rtscts_enable()              neorv32_uart_rtscts_enable(NEORV32_UART0)
 #define neorv32_uart0_putc(c)                      neorv32_uart_putc(NEORV32_UART0, c)
-#define neorv32_uart0_rx_clear()                   neorv32_uart_rx_clear(NEORV32_UART0)
-#define neorv32_uart0_tx_clear()                   neorv32_uart_tx_clear(NEORV32_UART0)
 #define neorv32_uart0_tx_busy()                    neorv32_uart_tx_busy(NEORV32_UART0)
 #define neorv32_uart0_tx_free()                    neorv32_uart_tx_free(NEORV32_UART0)
 #define neorv32_uart0_tx_put(c)                    neorv32_uart_tx_put(NEORV32_UART0, c)
@@ -146,8 +128,6 @@ int  neorv32_uart_scan(neorv32_uart_t *UARTx, char *buffer, int max_size, int ec
 #define neorv32_uart1_rtscts_disable()             neorv32_uart_rtscts_disable(NEORV32_UART1)
 #define neorv32_uart1_rtscts_enable()              neorv32_uart_rtscts_enable(NEORV32_UART1)
 #define neorv32_uart1_putc(c)                      neorv32_uart_putc(NEORV32_UART1, c)
-#define neorv32_uart1_rx_clear()                   neorv32_uart_rx_clear(NEORV32_UART1)
-#define neorv32_uart1_tx_clear()                   neorv32_uart_tx_clear(NEORV32_UART1)
 #define neorv32_uart1_tx_busy()                    neorv32_uart_tx_busy(NEORV32_UART1)
 #define neorv32_uart1_tx_free()                    neorv32_uart_tx_free(NEORV32_UART1)
 #define neorv32_uart1_tx_put(c)                    neorv32_uart_tx_put(NEORV32_UART1, c)
