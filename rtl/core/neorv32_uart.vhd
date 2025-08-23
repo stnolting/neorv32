@@ -93,30 +93,17 @@ architecture neorv32_uart_rtl of neorv32_uart is
   end record;
   signal ctrl : ctrl_t;
 
-  -- UART transmitter --
-  type tx_engine_t is record
-    state   : std_ulogic_vector(2 downto 0);
-    sreg    : std_ulogic_vector(8 downto 0);
-    bitcnt  : std_ulogic_vector(3 downto 0);
-    baudcnt : std_ulogic_vector(9 downto 0);
-    done    : std_ulogic;
-    busy    : std_ulogic;
-    cts     : std_ulogic_vector(1 downto 0);
-    txd     : std_ulogic;
+  -- serial engines --
+  type serial_engine_t is record
+    state   : std_ulogic_vector(1 downto 0); -- FSM state
+    sreg    : std_ulogic_vector(8 downto 0); -- data shift register
+    bitcnt  : std_ulogic_vector(3 downto 0); -- frame bit counter
+    baudcnt : std_ulogic_vector(9 downto 0); -- baud rate counter
+    sync    : std_ulogic_vector(2 downto 0); -- input synchronizer
+    done    : std_ulogic; -- operation done
   end record;
-  signal tx_engine : tx_engine_t;
-
-  -- UART receiver --
-  type rx_engine_t is record
-    state   : std_ulogic_vector(1 downto 0);
-    sreg    : std_ulogic_vector(8 downto 0);
-    bitcnt  : std_ulogic_vector(3 downto 0);
-    baudcnt : std_ulogic_vector(9 downto 0);
-    done    : std_ulogic;
-    sync    : std_ulogic_vector(2 downto 0);
-    over    : std_ulogic;
-  end record;
-  signal rx_engine : rx_engine_t;
+  signal tx_engine, rx_engine : serial_engine_t;
+  signal rx_overrun : std_ulogic;
 
   -- FIFO interface --
   type fifo_t is record
@@ -177,8 +164,8 @@ begin
             bus_rsp_o.data(ctrl_irq_rx_full_c)               <= ctrl.irq_rx_full;
             bus_rsp_o.data(ctrl_irq_tx_empty_c)              <= ctrl.irq_tx_empty;
             bus_rsp_o.data(ctrl_irq_tx_nfull_c)              <= ctrl.irq_tx_nfull;
-            bus_rsp_o.data(ctrl_rx_over_c)                   <= rx_engine.over;
-            bus_rsp_o.data(ctrl_tx_busy_c)                   <= tx_engine.busy or tx_fifo.avail;
+            bus_rsp_o.data(ctrl_rx_over_c)                   <= rx_overrun;
+            bus_rsp_o.data(ctrl_tx_busy_c)                   <= tx_engine.state(0) or tx_fifo.avail;
           else -- data register
             bus_rsp_o.data(data_rtx_msb_c   downto data_rtx_lsb_c)   <= rx_fifo.rdata;
             bus_rsp_o.data(data_rx_fifo_msb downto data_rx_fifo_lsb) <= std_ulogic_vector(to_unsigned(log2_rx_fifo_c, 4));
@@ -219,7 +206,7 @@ begin
   tx_fifo.clr   <= '1' when (ctrl.enable = '0') or (ctrl.sim_mode = '1') else '0';
   tx_fifo.wdata <= bus_req_i.data(data_rtx_msb_c downto data_rtx_lsb_c);
   tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
-  tx_fifo.re    <= '1' when (tx_engine.state = "100") else '0';
+  tx_fifo.re    <= tx_engine.done;
 
 
   -- RX FIFO --------------------------------------------------------------------------------
@@ -272,46 +259,39 @@ begin
   transmitter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      tx_engine.cts     <= (others => '0');
-      tx_engine.done    <= '0';
       tx_engine.state   <= (others => '0');
-      tx_engine.baudcnt <= (others => '0');
-      tx_engine.bitcnt  <= (others => '0');
       tx_engine.sreg    <= (others => '0');
-      tx_engine.txd     <= '1';
+      tx_engine.bitcnt  <= (others => '0');
+      tx_engine.baudcnt <= (others => '0');
+      tx_engine.sync    <= (others => '0');
+      tx_engine.done    <= '0';
+      uart_txd_o        <= '1';
     elsif rising_edge(clk_i) then
-      -- synchronize clear-to-send --
-      tx_engine.cts <= tx_engine.cts(0) & uart_ctsn_i;
-
-      -- defaults --
-      tx_engine.done <= '0';
-      tx_engine.txd  <= '1';
-
-      -- FSM --
-      tx_engine.state(2) <= ctrl.enable;
+      if (uart_clk = '1') then
+        tx_engine.sync <= tx_engine.sync(1 downto 0) & uart_ctsn_i; -- CTS synchronizer
+      end if;
+      uart_txd_o         <= '1'; -- default
+      tx_engine.done     <= '0'; -- default
+      tx_engine.state(1) <= ctrl.enable; -- disable-override
       case tx_engine.state is
 
-        when "100" => -- IDLE: wait for new data to send
+        when "10" => -- wait for new data to send
         -- ------------------------------------------------------------
           tx_engine.baudcnt <= ctrl.baud;
           tx_engine.bitcnt  <= "1011"; -- 1 start-bit + 8 data-bits + 1 stop-bit + 1 pause-bit
           tx_engine.sreg    <= tx_fifo.rdata & '0'; -- data & start-bit
-          if (tx_fifo.avail = '1') then
-            tx_engine.state(1 downto 0) <= "01";
+          if (tx_fifo.avail = '1') and (tx_engine.done = '0') then -- data available and previous transfer done
+            if (uart_clk = '1') and -- start with next clock tick
+               ((tx_engine.sync(1) = '0') or (ctrl.hwfc_en = '0')) then -- allowed to send OR flow-control disabled
+              tx_engine.state(0) <= '1';
+            end if;
           end if;
 
-        when "101" => -- WAIT: check if we can start sending
+        when "11" => -- transmit data
         -- ------------------------------------------------------------
-          if (uart_clk = '1') and -- start with next clock tick
-             ((tx_engine.cts(1) = '0') or (ctrl.hwfc_en = '0')) then -- allowed to send OR flow-control disabled
-            tx_engine.state(1 downto 0) <= "11";
-          end if;
-
-        when "111" => -- SEND: transmit data
-        -- ------------------------------------------------------------
-          tx_engine.txd <= tx_engine.sreg(0);
+          uart_txd_o <= tx_engine.sreg(0);
           if (uart_clk = '1') then
-            if (tx_engine.baudcnt = "0000000000") then -- bit done?
+            if (tx_engine.baudcnt = "0000000000") then -- bit done
               tx_engine.baudcnt <= ctrl.baud;
               tx_engine.bitcnt  <= std_ulogic_vector(unsigned(tx_engine.bitcnt) - 1);
               tx_engine.sreg    <= '1' & tx_engine.sreg(tx_engine.sreg'left downto 1);
@@ -319,24 +299,18 @@ begin
               tx_engine.baudcnt <= std_ulogic_vector(unsigned(tx_engine.baudcnt) - 1);
             end if;
           end if;
-          if (tx_engine.bitcnt = "0000") then -- all bits send?
-            tx_engine.done              <= '1';
-            tx_engine.state(1 downto 0) <= "00";
+          if (tx_engine.bitcnt = "0000") then -- all bits send
+            tx_engine.done     <= '1';
+            tx_engine.state(0) <= '0';
           end if;
 
-        when others => -- "0--": disabled
+        when others => -- "0-": disabled
         -- ------------------------------------------------------------
-          tx_engine.state(1 downto 0) <= "00";
+          tx_engine.state(0) <= '0';
 
       end case;
     end if;
   end process transmitter;
-
-  -- transmitter busy --
-  tx_engine.busy <= '0' when (tx_engine.state(1 downto 0) = "00") else '1';
-
-  -- serial data output --
-  uart_txd_o <= tx_engine.txd;
 
 
   -- Receive Engine -------------------------------------------------------------------------
@@ -344,35 +318,31 @@ begin
   receiver: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      rx_engine.state   <= (others => '0');
+      rx_engine.sreg    <= (others => '0');
+      rx_engine.bitcnt  <= (others => '0');
+      rx_engine.baudcnt <= (others => '0');
       rx_engine.sync    <= (others => '0');
       rx_engine.done    <= '0';
-      rx_engine.state   <= (others => '0');
-      rx_engine.baudcnt <= (others => '0');
-      rx_engine.bitcnt  <= (others => '0');
-      rx_engine.sreg    <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- input synchronizer --
-      rx_engine.sync(2) <= uart_rxd_i;
       if (uart_clk = '1') then
-        rx_engine.sync(1 downto 0) <= rx_engine.sync(2 downto 1);
+        rx_engine.sync <= rx_engine.sync(1 downto 0) & uart_rxd_i; -- RXD synchronizer
       end if;
-
-      -- defaults --
-      rx_engine.done <= '0';
-
-      -- FSM --
-      rx_engine.state(1) <= ctrl.enable;
+      rx_engine.done     <= '0'; -- default
+      rx_engine.state(1) <= ctrl.enable; -- disable-override
       case rx_engine.state is
 
-        when "10" => -- IDLE: wait for incoming transmission
+        when "10" => -- wait for incoming transmission
         -- ------------------------------------------------------------
           rx_engine.baudcnt <= '0' & ctrl.baud(9 downto 1); -- half baud delay at the beginning to sample in the middle of each bit
           rx_engine.bitcnt  <= "1010"; -- 1 start-bit + 8 data-bits + 1 stop-bit
-          if (rx_engine.sync(1 downto 0) = "01") then -- start bit detected (falling edge)?
-            rx_engine.state(0) <= '1';
+          if (rx_engine.sync(2 downto 1) = "10") then -- start bit detected (falling edge)?
+            if (uart_clk = '1') then -- start with next clock tick
+              rx_engine.state(0) <= '1';
+            end if;
           end if;
 
-        when "11" => -- RECEIVE: sample receive data
+        when "11" => -- receive data
         -- ------------------------------------------------------------
           if (uart_clk = '1') then
             if (rx_engine.baudcnt = "0000000000") then -- bit done
@@ -383,8 +353,8 @@ begin
               rx_engine.baudcnt <= std_ulogic_vector(unsigned(rx_engine.baudcnt) - 1);
             end if;
           end if;
-          if (rx_engine.bitcnt = "0000") then -- all bits received?
-            rx_engine.done     <= '1'; -- receiving done
+          if (rx_engine.bitcnt = "0000") then -- all bits received
+            rx_engine.done     <= '1';
             rx_engine.state(0) <= '0';
           end if;
 
@@ -396,37 +366,21 @@ begin
     end if;
   end process receiver;
 
-  -- RX overrun flag --
-  fifo_overrun: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      rx_engine.over <= '0';
-    elsif rising_edge(clk_i) then
-      if (ctrl.enable = '0') then -- clear when disabled
-        rx_engine.over <= '0';
-      elsif (rx_fifo.we = '1') and (rx_fifo.free = '0') then -- writing to full FIFO
-        rx_engine.over <= '1';
-      end if;
-    end if;
-  end process fifo_overrun;
-
-  -- HW flow-control: ready to receive? --
-  rtr_control: process(rstn_i, clk_i)
+  -- RX flow monitor --
+  rx_flow: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       uart_rtsn_o <= '0';
+      rx_overrun  <= '0';
     elsif rising_edge(clk_i) then
-      if (ctrl.hwfc_en = '1') then
-        if (ctrl.enable = '0') or (rx_fifo.free = '0') then
-          uart_rtsn_o <= '1'; -- NOT allowed to send
-        else
-          uart_rtsn_o <= '0'; -- ready to receive
-        end if;
-      else
-        uart_rtsn_o <= '0'; -- always ready to receive when HW flow-control is disabled
+      uart_rtsn_o <= ctrl.hwfc_en and ((not ctrl.enable) or (not rx_fifo.free)); -- allowed to send?
+      if (ctrl.enable = '0') then
+        rx_overrun <= '0';
+      elsif (rx_fifo.we = '1') and (rx_fifo.free = '0') then -- writing to full FIFO
+        rx_overrun <= '1';
       end if;
     end if;
-  end process rtr_control;
+  end process rx_flow;
 
 
   -- SIMULATION Transmitter -----------------------------------------------------------------
@@ -448,7 +402,7 @@ begin
     begin
       if rising_edge(clk_i) then -- no reset required
         if (ctrl.enable = '1') and (ctrl.sim_mode = '1') and (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') then
-          -- convert lowest byte to ASCII char --
+          -- convert to ASCII char --
           char_v := to_integer(unsigned(bus_req_i.data(7 downto 0)));
           if (char_v >= 128) then -- out of printable range?
             char_v := 0;
