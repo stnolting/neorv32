@@ -253,55 +253,33 @@
               <description>SLINK enable flag</description>
             </field>
             <field>
-              <name>SLINK_CTRL_RX_CLR</name>
-              <bitRange>[1:1]</bitRange>
-              <description>Clear RX FIFO (auto-clears)</description>
-            </field>
-            <field>
-              <name>SLINK_CTRL_TX_CLR</name>
-              <bitRange>[2:2]</bitRange>
-              <description>Clear TX FIFO (auto-clears)</description>
-            </field>
-            <field>
-              <name>SLINK_CTRL_RX_LAST</name>
-              <bitRange>[4:4]</bitRange>
-              <description>RX link end-of-stream delimiter</description>
-            </field>
-            <field>
               <name>SLINK_CTRL_RX_EMPTY</name>
               <bitRange>[8:8]</bitRange>
               <access>read-only</access>
               <description>RX FIFO empty</description>
             </field>
             <field>
-              <name>SLINK_CTRL_RX_HALF</name>
-              <bitRange>[9:9]</bitRange>
-              <access>read-only</access>
-              <description>RX FIFO at least half full</description>
-            </field>
-            <field>
               <name>SLINK_CTRL_RX_FULL</name>
-              <bitRange>[10:10]</bitRange>
+              <bitRange>[9:9]</bitRange>
               <access>read-only</access>
               <description>RX FIFO full</description>
             </field>
             <field>
               <name>SLINK_CTRL_TX_EMPTY</name>
-              <bitRange>[11:11]</bitRange>
+              <bitRange>[10:10]</bitRange>
               <access>read-only</access>
               <description>TX FIFO empty</description>
             </field>
             <field>
-              <name>SLINK_CTRL_TX_HALF</name>
-              <bitRange>[12:12]</bitRange>
-              <access>read-only</access>
-              <description>TX FIFO at least half full</description>
-            </field>
-            <field>
               <name>SLINK_CTRL_TX_FULL</name>
-              <bitRange>[13:13]</bitRange>
+              <bitRange>[11:11]</bitRange>
               <access>read-only</access>
               <description>TX FIFO full</description>
+            </field>
+            <field>
+              <name>SLINK_CTRL_RX_LAST</name>
+              <bitRange>[12:12]</bitRange>
+              <description>RX link end-of-stream delimiter</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_RX_NEMPTY</name>
@@ -309,28 +287,18 @@
               <description>Interrupt if RX FIFO not empty</description>
             </field>
             <field>
-              <name>SLINK_CTRL_IRQ_RX_HALF</name>
-              <bitRange>[17:17]</bitRange>
-              <description>Interrupt if RX FIFO at least half full</description>
-            </field>
-            <field>
               <name>SLINK_CTRL_IRQ_RX_FULL</name>
-              <bitRange>[18:18]</bitRange>
+              <bitRange>[17:17]</bitRange>
               <description>Interrupt if RX FIFO full</description>
             </field>
             <field>
               <name>SLINK_CTRL_IRQ_TX_EMPTY</name>
-              <bitRange>[19:19]</bitRange>
+              <bitRange>[18:18]</bitRange>
               <description>Interrupt if TX FIFO empty</description>
             </field>
             <field>
-              <name>SLINK_CTRL_IRQ_TX_NHALF</name>
-              <bitRange>[20:20]</bitRange>
-              <description>Interrupt if TX FIFO not at least half full</description>
-            </field>
-            <field>
               <name>SLINK_CTRL_IRQ_TX_NFULL</name>
-              <bitRange>[21:21]</bitRange>
+              <bitRange>[19:19]</bitRange>
               <description>Interrupt if TX FIFO not full</description>
             </field>
             <field>
@@ -353,15 +321,9 @@
           <addressOffset>0x04</addressOffset>
           <fields>
             <field>
-              <name>SLINK_ROUTE_DST</name>
+              <name>SLINK_ROUTE</name>
               <bitRange>[3:0]</bitRange>
-              <description>TX stream destination address/ID (TDEST)</description>
-            </field>
-            <field>
-              <name>SLINK_ROUTE_SRC</name>
-              <bitRange>[7:4]</bitRange>
-              <access>read-only</access>
-              <description>RX stream source address/ID (TID)</description>
+              <description>RX/TX stream source/destination address/ID</description>
             </field>
           </fields>
         </register>
@@ -373,7 +335,7 @@
         </register>
         <register>
           <name>DATA_LAST</name>
-          <description>RX/TX data register (plus TX end-of-stream delimiter)</description>
+          <description>TX data register (plus TX end-of-stream delimiter)</description>
           <addressOffset>0x0c</addressOffset>
           <readAction>modify</readAction>
         </register>
@@ -1000,11 +962,6 @@
               <description>SPI clock divider</description>
             </field>
             <field>
-              <name>SPI_CTRL_HIGHSPEED</name>
-              <bitRange>[10:10]</bitRange>
-              <description>SPI high-speed mode</description>
-            </field>
-            <field>
               <name>SPI_CTRL_RX_AVAIL</name>
               <bitRange>[16:16]</bitRange>
               <access>read-only</access>
@@ -1017,36 +974,10 @@
               <description>TX FIFO is empty</description>
             </field>
             <field>
-              <name>SPI_CTRL_TX_NHALF</name>
+              <name>SPI_CTRL_TX_FULL</name>
               <bitRange>[18:18]</bitRange>
               <access>read-only</access>
-              <description>TX FIFO not at least half full</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_TX_FULL</name>
-              <bitRange>[19:19]</bitRange>
-              <access>read-only</access>
               <description>TX FIFO is full</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_IRQ_RX_AVAIL</name>
-              <bitRange>[20:20]</bitRange>
-              <description>Fire interrupt if RX FIFO is not empty</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_IRQ_TX_EMPTY</name>
-              <bitRange>[21:21]</bitRange>
-              <description>Fire interrupt if TX FIFO is empty</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_IRQ_TX_NHALF</name>
-              <bitRange>[22:22]</bitRange>
-              <description>Fire interrupt if TX FIFO is not at least half full</description>
-            </field>
-            <field>
-              <name>SPI_CTRL_IRQ_IDLE</name>
-              <bitRange>[23:23]</bitRange>
-              <description>Fire interrupt if TX FIFO is empty and SPI bus engine is idle</description>
             </field>
             <field>
               <name>SPI_CTRL_FIFO</name>
@@ -1058,13 +989,13 @@
               <name>SPI_CS_ACTIVE</name>
               <bitRange>[30:30]</bitRange>
               <access>read-only</access>
-              <description>Set if any chip-select line is active</description>
+              <description>Set if a chip-select line is active</description>
             </field>
             <field>
               <name>SPI_CTRL_BUSY</name>
               <bitRange>[31:31]</bitRange>
               <access>read-only</access>
-              <description>SPI busy flag (transmission in progress and TX FIFO not empty yet)</description>
+              <description>SPI busy flag (transmission in progress and TX FIFO not empty)</description>
             </field>
           </fields>
         </register>
@@ -1077,7 +1008,7 @@
             <field>
               <name>SPI_DATA</name>
               <bitRange>[7:0]</bitRange>
-              <description>RX/TX data (via FIFOs)</description>
+              <description>RX data / TX data/command (via FIFOs)</description>
             </field>
             <field>
               <name>SPI_DATA_CMD</name>
@@ -1528,7 +1459,7 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x08</size>
+        <size>0x10</size>
         <usage>registers</usage>
       </addressBlock>
 
@@ -1544,57 +1475,36 @@
               <description>NEOLED enable flag</description>
             </field>
             <field>
-              <name>NEOLED_CTRL_MODE</name>
-              <bitRange>[1:1]</bitRange>
-              <description>TX mode (0=24-bit, 1=32-bit)</description>
-            </field>
-            <field>
-              <name>NEOLED_CTRL_STROBE</name>
-              <bitRange>[2:2]</bitRange>
-              <description>Strobe (0=send normal data, 1=send RESET command on data write)</description>
-            </field>
-            <field>
               <name>NEOLED_CTRL_PRSC</name>
-              <bitRange>[5:3]</bitRange>
+              <bitRange>[3:1]</bitRange>
               <description>Clock prescaler select</description>
             </field>
             <field>
-              <name>NEOLED_CTRL_BUFS</name>
-              <bitRange>[9:6]</bitRange>
-              <access>read-only</access>
-              <description>log2(tx buffer size)</description>
-            </field>
-            <field>
               <name>NEOLED_CTRL_T_TOT</name>
-              <bitRange>[14:10]</bitRange>
+              <bitRange>[8:4]</bitRange>
               <description>pulse-clock ticks per total period bit</description>
             </field>
             <field>
-              <name>NEOLED_CTRL_T_ZERO_H</name>
-              <bitRange>[19:15]</bitRange>
+              <name>NEOLED_CTRL_T_0H</name>
+              <bitRange>[13:9]</bitRange>
               <description>pulse-clock ticks per ZERO high-time</description>
             </field>
             <field>
-              <name>NEOLED_CTRL_T_ONE_H</name>
-              <bitRange>[24:20]</bitRange>
+              <name>NEOLED_CTRL_T_1H</name>
+              <bitRange>[18:14]</bitRange>
               <description>pulse-clock ticks per ONE high-time</description>
             </field>
             <field>
-              <name>NEOLED_CTRL_IRQ_CONF</name>
-              <bitRange>[27:27]</bitRange>
-              <description>TX FIFO interrupt: 0=IRQ if FIFO is less than half-full, 1=IRQ if FIFO is empty</description>
+              <name>NEOLED_CTRL_FIFO</name>
+              <bitRange>[28:25]</bitRange>
+              <access>read-only</access>
+              <description>log2(TX FIFO size)</description>
             </field>
             <field>
               <name>NEOLED_CTRL_TX_EMPTY</name>
-              <bitRange>[28:28]</bitRange>
-              <access>read-only</access>
-              <description>TX FIFO is empty</description>
-            </field>
-            <field>
-              <name>NEOLED_CTRL_TX_HALF</name>
               <bitRange>[29:29]</bitRange>
               <access>read-only</access>
-              <description>TX FIFO is at least half-full</description>
+              <description>TX FIFO is empty</description>
             </field>
             <field>
               <name>NEOLED_CTRL_TX_FULL</name>
@@ -1611,10 +1521,22 @@
           </fields>
         </register>
         <register>
-          <name>DATA</name>
-          <description>Data register</description>
+          <name>DATA24</name>
+          <description>Send 24-bit data</description>
           <access>write-only</access>
           <addressOffset>0x04</addressOffset>
+        </register>
+        <register>
+          <name>DATA32</name>
+          <description>Send 32-bit data</description>
+          <access>write-only</access>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>STROBE</name>
+          <description>Write any value to send STROBE command</description>
+          <access>write-only</access>
+          <addressOffset>0x0C</addressOffset>
         </register>
       </registers>
     </peripheral>
