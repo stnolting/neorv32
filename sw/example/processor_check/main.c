@@ -1295,8 +1295,8 @@ int main() {
     trap_cause = trap_never_c;
     cnt_test++;
 
-    // configure SPI, IRQ when data available
-    neorv32_spi_setup(CLK_PRSC_8, 0, 1, 1, 1<<SPI_CTRL_IRQ_RX_AVAIL);
+    // configure SPI
+    neorv32_spi_setup(CLK_PRSC_8, 0, 1, 1);
 
     // enable SPI interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << SPI_FIRQ_ENABLE);
@@ -1437,12 +1437,12 @@ int main() {
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << NEOLED_FIRQ_ENABLE);
 
-    // configure NEOLED, IRQ if FIFO  empty
-    neorv32_neoled_setup(CLK_PRSC_4, 0, 0, 0, 0);
+    // configure NEOLED
+    neorv32_neoled_setup(CLK_PRSC_4, 0, 0, 0);
 
     // send dummy data
-    neorv32_neoled_write_nonblocking(0);
-    neorv32_neoled_write_nonblocking(0);
+    neorv32_neoled_write24_nonblocking(0x00123456);
+    neorv32_neoled_write32_nonblocking(0xab12cd78);
 
     // wait until interrupt
     asm volatile ("nop");
@@ -1450,7 +1450,9 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if (trap_cause == NEOLED_TRAP_CODE) {
+    if ((trap_cause == NEOLED_TRAP_CODE) &&
+        (neorv32_neoled_fifo_empty() != 0) &&
+        (neorv32_neoled_busy() == 0)) {
       test_ok();
     }
     else {
@@ -1536,7 +1538,7 @@ int main() {
     // configure and enable SDI + SPI
     // SDI input clock (= SPI output clock) must be less than 1/4 of the processor clock
     neorv32_sdi_setup(1 << SDI_CTRL_IRQ_RX_AVAIL);
-    neorv32_spi_setup(CLK_PRSC_2, 1, 0, 0, 0);
+    neorv32_spi_setup(CLK_PRSC_2, 1, 0, 0);
 
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << SDI_FIRQ_ENABLE);
@@ -1651,26 +1653,23 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 14 (SLINK RX)
+  // Fast interrupt channel 14 (SLINK)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ14 (SLINK_RX) ", cnt_test);
+  PRINT_STANDARD("[%i] FIRQ14 (SLINK) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SLINK)) {
     trap_cause = trap_never_c;
     cnt_test++;
 
-    // fire RX interrupt when RX FIFO is at least half full
-    neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_HALF);
-    tmp_a = neorv32_slink_get_rx_fifo_depth();
+    // fire RX interrupt when RX data is available
+    neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_NEMPTY);
 
     // enable SLINK RX FIRQ
     neorv32_cpu_csr_write(CSR_MIE, 1 << SLINK_FIRQ_ENABLE);
 
-    // send RX_FIFO/2 data words
+    // send data word
     neorv32_slink_set_dst(0b1010);
-    for (tmp_b=0; tmp_b<(tmp_a/2); tmp_b++) {
-      neorv32_slink_put_last(0xAABBCCDD); // mark as end-of-stream
-    }
+    neorv32_slink_put_last(0xAABBCCDD); // mark as end-of-stream
 
     // wait for interrupt
     asm volatile ("nop");
@@ -1680,9 +1679,10 @@ int main() {
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
     if ((trap_cause == SLINK_TRAP_CODE) && // correct trap code
-        (neorv32_slink_rx_status() >= SLINK_FIFO_HALF) && // RX FIFO is at least half full
         (neorv32_slink_get() == 0xAABBCCDD) && // correct RX data
         (neorv32_slink_get_src() == 0b1010) && // correct routing information
+        (neorv32_slink_rx_empty()) && // RX FIFO empty
+        (neorv32_slink_tx_empty()) && // TX FIFO empty
         (neorv32_slink_check_last())) { // is marked as "end of stream"
       test_ok();
     }

@@ -26,12 +26,13 @@ void slink_firq_handler(void);
  * Simple SLINK demo program.
  *
  * @note This program requires the UART0 and the SLINK to be synthesized.
+ * This program assumes a direct loop-back: TX-link -> RX-link.
  *
  * @return =! 0 if execution failed.
  **************************************************************************/
 int main() {
 
-  int i, slink_rc;
+  int i;
   uint32_t slink_data;
 
 
@@ -70,8 +71,7 @@ int main() {
     slink_data = neorv32_aux_xorshift32();
     neorv32_uart0_printf("[%i] Sending 0x%x... ", i, slink_data);
 
-    slink_rc = neorv32_slink_tx_status();
-    if (slink_rc == SLINK_FIFO_FULL) {
+    if (neorv32_slink_tx_full()) {
       neorv32_uart0_printf("ERROR! TX FIFO full!\n");
       break;
     }
@@ -94,8 +94,7 @@ int main() {
   for (i=0; i<(rx_depth+tx_depth+1); i++) {
     neorv32_uart0_printf("[%i] Reading RX data... ", i);
 
-    slink_rc = neorv32_slink_rx_status();
-    if (slink_rc == SLINK_FIFO_EMPTY) {
+    if (neorv32_slink_rx_empty()) {
       neorv32_uart0_printf("ERROR! RX FIFO empty!\n");
       break;
     }
@@ -114,8 +113,6 @@ int main() {
 
   // reconfigure SLINK module
   neorv32_slink_setup(1 << SLINK_CTRL_IRQ_RX_NEMPTY); // interrupt if RX data available
-  neorv32_slink_rx_clear();
-  neorv32_slink_tx_clear();
 
   // NEORV32 runtime environment: install SLINK FIRQ handler
   neorv32_rte_handler_install(SLINK_TRAP_CODE, slink_firq_handler);
@@ -126,8 +123,7 @@ int main() {
     slink_data = neorv32_aux_xorshift32();
     neorv32_uart0_printf("[%i] Sending 0x%x... ", i, slink_data);
 
-    slink_rc = neorv32_slink_tx_status();
-    if (slink_rc == SLINK_FIFO_FULL) {
+    if (neorv32_slink_tx_full()) {
       neorv32_uart0_printf("FAILED! TX FIFO full!\n");
       break;
     }

@@ -69,45 +69,44 @@ int main() {
 
 
   // illustrate setup
-  neorv32_uart0_printf("<<< NEORV32 NeoPixel (WS2812) Controller (NEOLED) Demo Program >>>\n"
+  neorv32_uart0_printf("\n\n<<< NEORV32 NeoPixel Controller (NEOLED) Demo Program >>>\n"
                        "(TM) 'NeoPixel' is a trademark of Adafruit Industries.\n\n"
                        "This demo uses the following LED setup:\n"
-                       "NEORV32.neoled_o -> %u RGB-LEDs (24-bit)\n\n", (uint32_t)NUM_LEDS_24BIT);
+                       "NEORV32.neoled_o -> %u RGB-LEDs (WS2812, 24-bit)\n\n", (uint32_t)NUM_LEDS_24BIT);
 
 
   // use the "neorv32_neoled_setup_ws2812()" setup function here instead the raw "neorv32_neoled_setup()"
-  // neorv32_neoled_setup_ws2812() will configure all timing parameters according to the WS2812 specs. for the current processor clock speed
-  neorv32_neoled_setup_ws2812(0); // interrupt configuration = fire IRQ if TX FIFO is empty (not used here)
-  neorv32_neoled_set_mode(0); // mode = 0 = 24-bit
+  // neorv32_neoled_setup_ws2812() will configure all timing parameters according to the WS2812 specs.
+  // for the current processor clock speed
+  neorv32_neoled_setup_ws2812();
 
 
   // check NEOLED configuration
-  neorv32_uart0_printf("Checking NEOLED configuration:\n"
-                       " Hardware FIFO size: %u entries\n"
-                       " Control register:   0x%x\n\n", neorv32_neoled_get_buffer_size(), NEORV32_NEOLED->CTRL);
+  neorv32_uart0_printf("Hardware FIFO size: %u entries\n\n", neorv32_neoled_get_fifo_depth());
 
 
   // clear all LEDs
   neorv32_uart0_printf("Clearing all LEDs...\n");
   int i;
   for (i=0; i<NUM_LEDS_24BIT; i++) {
-    neorv32_neoled_write_blocking(0);
+    neorv32_neoled_write24_blocking(0);
   }
   delay_ms(500);
 
 
   // a simple animation example: rotating rainbow
   // this example uses BLOCKING NEOLED functions that check the FIFO flags before writing new data
-  // non-blocking functions should only be used when checking the FIFO flags (half-full) in advance (for example using the NEOLED interrupt)
+  // non-blocking functions should only be used when checking the FIFO flags (half-full) in advance
+  // (for example using the NEOLED interrupt)
   neorv32_uart0_printf("Starting animation...\n");
 
   int angle = 0, led_id = 0;
   while (1) {
     for (led_id=0; led_id<NUM_LEDS_24BIT; led_id++) {
       // give every LED a different color
-      neorv32_neoled_write_blocking(hsv2rgb(angle + (360/NUM_LEDS_24BIT) * led_id, MAX_INTENSITY));
+      neorv32_neoled_write24_blocking(hsv2rgb(angle + (360/NUM_LEDS_24BIT) * led_id, MAX_INTENSITY));
     }
-    angle += 1; // rotation increment per frame
+    angle++; // rotation increment per frame
 
     neorv32_neoled_strobe_blocking(); // send strobe ("RESET") command
     delay_ms(10); // delay between frames

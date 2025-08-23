@@ -235,7 +235,7 @@ void spi_setup(void) {
   }
   neorv32_uart0_printf("\n+ New SPI clock mode = %u\n\n", tmp);
 
-  neorv32_spi_setup(spi_prsc, clk_div, clk_phase, clk_pol, 0);
+  neorv32_spi_setup(spi_prsc, clk_div, clk_phase, clk_pol);
   spi_configured = 1; // SPI is configured now
 }
 

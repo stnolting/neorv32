@@ -32,9 +32,8 @@ int neorv32_spi_available(void) {
  * @prama[in] cdiv Clock divider (0..15).
  * @param[in] clk_phase Clock phase (0=sample on rising edge, 1=sample on falling edge).
  * @param[in] clk_polarity Clock polarity (when idle).
- * @param[in] irq_mask Interrupt configuration bit mask (CTRL's irq_* bits).
  **************************************************************************/
-void neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, uint32_t irq_mask) {
+void neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity) {
 
   NEORV32_SPI->CTRL = 0; // reset
 
@@ -44,27 +43,8 @@ void neorv32_spi_setup(int prsc, int cdiv, int clk_phase, int clk_polarity, uint
   tmp |= (uint32_t)(clk_polarity & 0x01) << SPI_CTRL_CPOL;
   tmp |= (uint32_t)(prsc         & 0x07) << SPI_CTRL_PRSC0;
   tmp |= (uint32_t)(cdiv         & 0x0f) << SPI_CTRL_CDIV0;
-  tmp |= (uint32_t)(irq_mask     & (0x0f << SPI_CTRL_IRQ_RX_AVAIL));
 
   NEORV32_SPI->CTRL = tmp;
-}
-
-
-/**********************************************************************//**
- * Enable high-speed mode.
- **************************************************************************/
-void neorv32_spi_highspeed_enable(void) {
-
-  NEORV32_SPI->CTRL |= ((uint32_t)(1 << SPI_CTRL_HIGHSPEED));
-}
-
-
-/**********************************************************************//**
- * Disable high-speed mode.
- **************************************************************************/
-void neorv32_spi_highspeed_disable(void) {
-
-  NEORV32_SPI->CTRL &= ~((uint32_t)(1 << SPI_CTRL_HIGHSPEED));
 }
 
 
@@ -81,15 +61,7 @@ uint32_t neorv32_spi_get_clock_speed(void) {
   uint32_t prsc_sel  = (ctrl >> SPI_CTRL_PRSC0) & 0x7;
   uint32_t clock_div = (ctrl >> SPI_CTRL_CDIV0) & 0xf;
 
-  uint32_t tmp = 0;
-
-  if (ctrl & (1 << SPI_CTRL_HIGHSPEED)) { // high-speed mode enabled?
-    tmp = 2 * 1 * (1 + clock_div);
-  }
-  else {
-    tmp = 2 * PRSC_LUT[prsc_sel] * (1 + clock_div);
-  }
-
+  uint32_t tmp = 2 * PRSC_LUT[prsc_sel] * (1 + clock_div);
   return neorv32_sysinfo_get_clk() / tmp;
 }
 
