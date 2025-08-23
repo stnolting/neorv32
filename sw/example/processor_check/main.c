@@ -1537,31 +1537,29 @@ int main() {
 
     // configure and enable SDI + SPI
     // SDI input clock (= SPI output clock) must be less than 1/4 of the processor clock
-    neorv32_sdi_setup(1 << SDI_CTRL_IRQ_RX_AVAIL);
+    neorv32_sdi_setup(1 << SDI_CTRL_IRQ_RX_NEMPTY);
     neorv32_spi_setup(CLK_PRSC_2, 1, 0, 0);
 
     // enable fast interrupt
     neorv32_cpu_csr_write(CSR_MIE, 1 << SDI_FIRQ_ENABLE);
 
     // write test data to SDI
-    neorv32_sdi_put(0xeb);
+    neorv32_sdi_put_nonblocking(0xe1);
 
     // trigger SDI IRQ by sending data via SPI
-    neorv32_spi_cs_en(7); // TB: select SDI-SPI connection
-    tmp_a = neorv32_spi_transfer(0x83);
-    neorv32_spi_cs_dis();
+    neorv32_spi_cs_en_nonblocking(7); // TB: select SDI-SPI connection
+    neorv32_spi_put_nonblocking(0x83);
+    neorv32_spi_cs_dis_nonblocking();
 
     // wait for interrupt
-    asm volatile ("nop");
-    asm volatile ("nop");
-
+    neorv32_cpu_sleep();
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    uint8_t sdi_read_data;
     if ((trap_cause == SDI_TRAP_CODE) && // correct trap code
-        (neorv32_sdi_get(&sdi_read_data) == 0) && // correct SDI read data status
-        (sdi_read_data == 0x83) && // correct SDI read data
-        ((tmp_a & 0xff) == 0xeb)) { // correct SPI read data
+        (neorv32_sdi_get() == 0x83) && // correct SDI read data
+        (neorv32_sdi_tx_empty()) && // TX buffer empty
+        (neorv32_sdi_rx_empty()) && // RX buffer empty
+        (neorv32_spi_get_nonblocking() == 0xe1)) { // correct SPI read data
       test_ok();
     }
     else {

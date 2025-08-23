@@ -141,22 +141,17 @@
             <field>
               <name>SDI_CTRL_EN</name>
               <bitRange>[0:0]</bitRange>
-              <description>SDI enable flag</description>
+              <description>SDI enable</description>
             </field>
             <field>
               <name>SDI_CTRL_FIFO</name>
               <bitRange>[7:4]</bitRange>
-              <description>Log2 of SDI FIFO size</description>
+              <description>log2(FIFO size)</description>
             </field>
             <field>
-              <name>SDI_CTRL_IRQ_RX_AVAIL</name>
-              <bitRange>[15:15]</bitRange>
-              <description>Fire interrupt if RX FIFO is not empty</description>
-            </field>
-            <field>
-              <name>SDI_CTRL_IRQ_RX_HALF</name>
+              <name>SDI_CTRL_IRQ_RX_NEMPTY</name>
               <bitRange>[16:16]</bitRange>
-              <description>Fire interrupt if RX FIFO is at least half full</description>
+              <description>Fire interrupt if RX FIFO is not empty</description>
             </field>
             <field>
               <name>SDI_CTRL_IRQ_RX_FULL</name>
@@ -169,21 +164,10 @@
               <description>Fire interrupt if TX FIFO is empty</description>
             </field>
             <field>
-              <name>SDI_CTRL_IRQ_TX_NHALF</name>
-              <bitRange>[19:19]</bitRange>
-              <description>Fire interrupt if TX FIFO is not at least half full</description>
-            </field>
-            <field>
-              <name>SDI_CTRL_RX_AVAIL</name>
-              <bitRange>[23:23]</bitRange>
-              <access>read-only</access>
-              <description>RX FIFO not empty (data available)</description>
-            </field>
-            <field>
-              <name>SDI_CTRL_RX_HALF</name>
+              <name>SDI_CTRL_RX_EMPTY</name>
               <bitRange>[24:24]</bitRange>
               <access>read-only</access>
-              <description>RX FIFO at least half full</description>
+              <description>RX FIFO empty </description>
             </field>
             <field>
               <name>SDI_CTRL_RX_FULL</name>
@@ -196,12 +180,6 @@
               <bitRange>[26:26]</bitRange>
               <access>read-only</access>
               <description>TX FIFO empty</description>
-            </field>
-            <field>
-              <name>SDI_CTRL_TX_NHALF</name>
-              <bitRange>[27:27]</bitRange>
-              <access>read-only</access>
-              <description>TX FIFO not at least half full</description>
             </field>
             <field>
               <name>SDI_CTRL_TX_FULL</name>

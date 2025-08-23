@@ -19,24 +19,23 @@
 
 **Key Features**
 
-* SPI-compatible device-side controller
-* Clock mode 0 only
-* Optional RX/TX data FIFO
-* Interrupt based in FIFO status
+* SPI-compatible device-side controller for byte-level transfers
+* SPI clock mode 0 & 2 only
+* Optional data ring-buffer (FIFO)
+* Interrupt based on FIFO status
 
 
 **Overview**
 
-The serial data interface module provides a **device-class** SPI interface and allows to connect the processor
-to an **external SPI host**, which is responsible of performing the actual transmission - the SDI is entirely
-passive. An optional receive/transmit ring buffer (FIFOs) can be configured via the `IO_SDI_FIFO` generic to
-support block-based transmissions without CPU interaction.
+The serial data interface module provides a **device-side** SPI interface to connect the processor to an
+**external SPI host**, which is responsible of performing the actual transmission. An optional receive/transmit
+ring buffer (FIFOs) can be configured via the `IO_SDI_FIFO` generic to support block-based transmissions
+without CPU interaction.
 
 .Device-Mode Only
 [NOTE]
-The NEORV32 SDI module only supports _device mode_. Transmission is initiated by an external host and not by
-the processor itself. If you are looking for a _host-mode_ serial peripheral interface (transactions
-performed by the NEORV32) check out the <<_serial_peripheral_interface_controller_spi>>.
+The NEORV32 SDI module only supports _device mode_. If you are looking for a _host-mode_ serial peripheral
+interface (transactions performed by the NEORV32) check out the <<_serial_peripheral_interface_controller_spi>>.
 
 The SDI module provides a single control register `CTRL` to configure the module and to check it's status
 and a single data register `DATA` for receiving/transmitting data. Any access to the `DATA` register
@@ -48,13 +47,11 @@ actually accesses the internal ring buffer.
 The SDI module is enabled by setting the `SDI_CTRL_EN` bit in the `CTRL` control register. Clearing this bit
 resets the entire module and will also clear the entire RX/TX ring buffer.
 
-The SDI operates on byte-level only. Data written to the `DATA` register will be pushed to the TX FIFO. Received
-data can be retrieved by reading the RX FIFO via the `DATA` register. The current state of these FIFOs is available
-via the control register's `SDI_CTRL_RX_*` and `SDI_CTRL_TX_*` flags. If no data is available in the TX FIFO while
-an external device performs a transmission the external device will read all-zero from the SDI controller.
-
-Application software can check the current state of the SDI chip-select input via the control register's
-`SDI_CTRL_CS_ACTIVE` flag (the flag is set when the chip-select line is active (pulled low)).
+The SDI operates on byte-level. Data bytes written to the `DATA` register will be pushed to the internal TX FIFO.
+This TX data will be sent to the external host during an SPI transfer. If no data is available in the TX FIFO,
+all-zero is sent. Received bytes are pushed to the RX FIFO and can be retrieved by reading the RX FIFO via the
+`DATA` register. The current state of these FIFOs is available via the control register's `SDI_CTRL_RX_*` and
+`SDI_CTRL_TX_*` status flags.
 
 .MSB-first Only
 [NOTE]
@@ -62,14 +59,15 @@ The NEORV32 SDI module only supports MSB-first mode.
 
 .In-Transmission Abort
 [NOTE]
-If the external SPI controller aborts the transmission by setting the chip-select signal high again _before_
-8 data bits have been transferred, no data is written to the RX FIFO.
+If the external SPI host aborts the transmission by setting the chip-select signal high again _before_
+8 data bits have been transferred, no data is written to the RX FIFO and no data is retrieved from the TX FIFO.
 
 
 **SDI Clocking**
 
-The SDI module supports both SPI clock polarity modes ("CPOL") but only "CPHA=0"-clock-phase is _officially_ supported
-yet. However, experiments have shown that the SDI module can also deal with both clock phase modes (for slow SDI clock speeds).
+The SDI module supports both SPI clock polarity modes ("CPOL"), but only "CPHA=0"-clock-phase is _officially_
+supported yet. However, experiments have shown that the SDI module can also deal with both clock phase modes
+(for slow SDI clock speeds).
 
 All SDI operations are clocked by the external `sdi_clk_i` signal. This signal is synchronized to the processor's
 clock domain to simplify timing behavior. This clock synchronization requires the external SDI clock
@@ -78,12 +76,12 @@ clock domain to simplify timing behavior. This clock synchronization requires th
 
 **SDI Interrupt**
 
-The SDI module provides a set of programmable interrupt conditions based on the level of the RX & TX FIFOs. The different
-interrupt sources are enabled by setting the according control register's `SDI_CTRL_IRQ_*` bits. All enabled interrupt
-conditions are logically OR-ed so any enabled interrupt source will trigger the module's interrupt signal.
-
-Once the SDI interrupt has fired it will remain active until the actual cause of the interrupt is resolved; for
-example if just the `SDI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep firing until the RX FIFO is empty again.
+The SDI module provides a single interrupt that is triggered by a set of programmable interrupt conditions that are
+based on the status of the RX & TX FIFOs. The different interrupt sources are enabled by setting the according
+`SDI_CTRL_IRQ_*` bits. All enabled interrupt conditions are logically OR-ed - so any enabled interrupt source will
+trigger the module's interrupt signal. Once the SDI interrupt has fired it will remain active until the actual cause
+of the interrupt is resolved; for example if just the `SDI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep
+firing until the RX FIFO is empty again.
 
 
 **Register Map**
@@ -93,24 +91,20 @@ example if just the `SDI_CTRL_IRQ_RX_AVAIL` bit is set, the interrupt will keep 
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.18+<| `0xfff70000` .18+<| `CTRL` <|`0`     `SDI_CTRL_EN`                           ^| r/w <| SDI module enable
-                                  <|`3:1`   _reserved_                              ^| r/- <| reserved, read as zero
+.14+<| `0xfff70000` .14+<| `CTRL` <|`0`     `SDI_CTRL_EN`                           ^| r/w <| SDI module enable
+                                  <|`3:1`   -                                       ^| r/- <| _reserved_, read as zero
                                   <|`7:4`   `SDI_CTRL_FIFO_MSB : SDI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(_IO_SDI_FIFO_)
-                                  <|`14:8`  _reserved_                              ^| r/- <| reserved, read as zero
-                                  <|`15`    `SDI_CTRL_IRQ_RX_AVAIL`                 ^| r/w <| fire interrupt if RX FIFO is not empty
-                                  <|`16`    `SDI_CTRL_IRQ_RX_HALF`                  ^| r/w <| fire interrupt if RX FIFO is at least half full
+                                  <|`15:8`  -                                       ^| r/- <| reserved, read as zero
+                                  <|`16`    `SDI_CTRL_IRQ_RX_NEMPTY`                ^| r/w <| fire interrupt if RX FIFO is not empty
                                   <|`17`    `SDI_CTRL_IRQ_RX_FULL`                  ^| r/w <| fire interrupt if if RX FIFO is full
                                   <|`18`    `SDI_CTRL_IRQ_TX_EMPTY`                 ^| r/w <| fire interrupt if TX FIFO is empty
-                                  <|`19`    `SDI_CTRL_IRQ_TX_NHALF`                 ^| r/w <| fire interrupt if TX FIFO is not at least half full
-                                  <|`22:20` _reserved_                              ^| r/- <| reserved, read as zero
-                                  <|`23`    `SDI_CTRL_RX_AVAIL`                     ^| r/- <| RX FIFO data available (RX FIFO not empty)
-                                  <|`24`    `SDI_CTRL_RX_HALF`                      ^| r/- <| RX FIFO at least half full
+                                  <|`23:19` -                                       ^| r/- <| _reserved_, read as zero
+                                  <|`24`    `SDI_CTRL_RX_EMPTY`                     ^| r/- <| RX FIFO empty
                                   <|`25`    `SDI_CTRL_RX_FULL`                      ^| r/- <| RX FIFO full
                                   <|`26`    `SDI_CTRL_TX_EMPTY`                     ^| r/- <| TX FIFO empty
-                                  <|`27`    `SDI_CTRL_TX_NHALF`                     ^| r/- <| TX FIFO not at least half full
-                                  <|`28`    `SDI_CTRL_TX_FULL`                      ^| r/- <| TX FIFO full
-                                  <|`30:29` _reserved_                              ^| r/- <| reserved, read as zero
+                                  <|`27`    `SDI_CTRL_TX_FULL`                      ^| r/- <| TX FIFO full
+                                  <|`30:28` -                                       ^| r/- <| _reserved_, read as zero
                                   <|`31`    `SDI_CTRL_CS_ACTIVE`                    ^| r/- <| Chip-select is active when set
-.2+<| `0xfff70004` .2+<| `DATA` <|`7:0`             ^| r/w <| receive/transmit data (FIFO)
-                                <|`31:8` _reserved_ ^| r/- <| reserved, read as zero
+.2+<| `0xfff70004` .2+<| `DATA` <|`7:0`    ^| r/w <| receive/transmit data (FIFO)
+                                <|`31:8` - ^| r/- <| _reserved_, read as zero
 |=======================
