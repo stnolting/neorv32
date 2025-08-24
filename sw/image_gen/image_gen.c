@@ -35,14 +35,14 @@ int main(int argc, char *argv[]) {
     printf("NEORV32 executable image generator\n"
            "Three arguments are required.\n"
            "1st: Operation\n"
-           " -app_bin : Generate application executable binary (binary file, little-endian, with header) \n"
-           " -app_vhd : Generate application raw executable memory image (vhdl package body file, no header)\n"
-           " -bld_vhd : Generate bootloader raw executable memory image (vhdl package body file, no header)\n"
-           " -raw_hex : Generate application raw executable (ASCII hex file, no header)\n"
-           " -raw_bin : Generate application raw executable (binary file, no header)\n"
-           " -raw_coe : Generate application raw executable (COE file, no header)\n"
-           " -raw_mem : Generate application raw executable (MEM file, no header)\n"
-           " -raw_mif : Generate application raw executable (MIF file, no header)\n"
+           " -app_bin : Generate application executable for bootloader upload (binary file with header) \n"
+           " -app_vhd : Generate application raw executable memory image (vhdl package file)\n"
+           " -bld_vhd : Generate bootloader raw executable memory image (vhdl package file)\n"
+           " -raw_hex : Generate application raw executable (ASCII hex file)\n"
+           " -raw_bin : Generate application raw executable (binary file)\n"
+           " -raw_coe : Generate application raw executable (COE file)\n"
+           " -raw_mem : Generate application raw executable (MEM file)\n"
+           " -raw_mif : Generate application raw executable (MIF file)\n"
            "2nd: Input file (raw binary image)\n"
            "3rd: Output file\n"
            "4th: Project name or folder (optional)\n");
@@ -55,7 +55,8 @@ int main(int argc, char *argv[]) {
   uint32_t tmp = 0, size = 0, checksum = 0;
   unsigned int i = 0;
   int operation = 0;
-  unsigned long raw_exe_size = 0;
+  unsigned int raw_exe_size = 0;
+  unsigned int ext_exe_size = 0;
 
   if      (strcmp(argv[1], "-app_bin") == 0) { operation = OP_APP_BIN; }
   else if (strcmp(argv[1], "-app_vhd") == 0) { operation = OP_APP_VHD; }
@@ -66,14 +67,14 @@ int main(int argc, char *argv[]) {
   else if (strcmp(argv[1], "-raw_mem") == 0) { operation = OP_RAW_MEM; }
   else if (strcmp(argv[1], "-raw_mif") == 0) { operation = OP_RAW_MIF; }
   else {
-    printf("Invalid operation '%s'!\n", argv[1]);
+    printf("[ERROR] Invalid operation '%s'!\n", argv[1]);
     return -1;
   }
 
   // open input file
   input = fopen(argv[2], "rb");
   if(input == NULL) {
-    printf("Input file error (%s)!\n", argv[2]);
+    printf("[ERROR] Input file error (%s)!\n", argv[2]);
     return -2;
   }
 
@@ -84,12 +85,12 @@ int main(int argc, char *argv[]) {
   rewind(input);
 
   if ((input_size % 4) != 0) {
-    printf("WARNING - image size is not a multiple of 4 bytes!\n");
+    printf("[WARNING] Input image size is not a multiple of 4 bytes!\n");
   }
 
   // input file empty?
   if(input_size == 0) {
-    printf("Input file is empty (%s)!\n", argv[2]);
+    printf("[ERROR] Input file is empty (%s)!\n", argv[2]);
     fclose(input);
     return -3;
   }
@@ -97,14 +98,14 @@ int main(int argc, char *argv[]) {
   // open output file
   output = fopen(argv[3], "wb");
   if(output == NULL) {
-    printf("Output file error (%s)!\n", argv[3]);
+    printf("[ERROR] Output file error!\n");
     fclose(input);
     return -4;
   }
 
 
   // --------------------------------------------------------------------------
-  // Image's compilation date and time
+  // Image compilation date and time
   // --------------------------------------------------------------------------
   time_t time_current;
   time(&time_current);
@@ -122,19 +123,27 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Size of application (in bytes)
+  // Application image size and memory array size
   // --------------------------------------------------------------------------
   fseek(input, 0L, SEEK_END);
 
   // get file size (raw executable)
-  raw_exe_size = (unsigned long)ftell(input);
+  raw_exe_size = (unsigned int)ftell(input);
 
-  // go back to beginning
+  // make sure memory array is a power of two
+  if (raw_exe_size > 0) {
+    ext_exe_size = 1;
+    while (ext_exe_size < raw_exe_size) {
+      ext_exe_size = 2*ext_exe_size;
+    }
+  }
+
+  // back to beginning
   rewind(input);
 
 
   // --------------------------------------------------------------------------
-  // Generate BINARY executable for bootloader upload (with header)
+  // Generate APPLICATION executable for bootloader upload (including header)
   // --------------------------------------------------------------------------
   if (operation == OP_APP_BIN) {
 
@@ -207,18 +216,15 @@ int main(int argc, char *argv[]) {
       "library ieee;\n"
       "use ieee.std_logic_1164.all;\n"
       "\n"
-      "library neorv32;\n"
-      "use neorv32.neorv32_package.all;\n"
-      "\n"
       "package neorv32_application_image is\n"
       "\n"
-      "constant application_init_size_c  : natural := %lu; -- bytes\n"
-      "constant application_init_image_c : mem32_t := (\n",
-      argv[4], argv[2], compile_time, raw_exe_size);
+      "constant application_image_size_c : natural := %u*1024; -- %u bytes\n"
+      "type rom_t is array (0 to (application_image_size_c/4)-1) of std_ulogic_vector(31 downto 0);\n"
+      "constant application_image_data_c : rom_t := (\n",
+      argv[4], argv[2], compile_time, ext_exe_size/1024, raw_exe_size);
     fputs(tmp_string, output);
 
-    i = 0;
-    while (i < (input_words-1)) {
+    for (i=0; i<input_words; i++) {
       if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
         tmp  = (uint32_t)(buffer[0] << 0);
         tmp |= (uint32_t)(buffer[1] << 8);
@@ -226,29 +232,16 @@ int main(int argc, char *argv[]) {
         tmp |= (uint32_t)(buffer[3] << 24);
         snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\",\n", (unsigned int)tmp);
         fputs(tmp_string, output);
-        i++;
       }
       else {
-        printf("Unexpected input file end!\n");
+        printf("[WARNING] Unexpected input file end!\n");
         break;
       }
     }
 
-    if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
-      tmp  = (uint32_t)(buffer[0] << 0);
-      tmp |= (uint32_t)(buffer[1] << 8);
-      tmp |= (uint32_t)(buffer[2] << 16);
-      tmp |= (uint32_t)(buffer[3] << 24);
-      snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\"\n", (unsigned int)tmp);
-      fputs(tmp_string, output);
-      i++;
-    }
-    else {
-      printf("Unexpected input file end!\n");
-    }
-
     // end
     snprintf(tmp_string, sizeof(tmp_string),
+      "others => (others => '0')\n"
       ");\n"
       "\n"
       "end neorv32_application_image;\n");
@@ -271,18 +264,15 @@ int main(int argc, char *argv[]) {
       "library ieee;\n"
       "use ieee.std_logic_1164.all;\n"
       "\n"
-      "library neorv32;\n"
-      "use neorv32.neorv32_package.all;\n"
-      "\n"
       "package neorv32_bootloader_image is\n"
       "\n"
-      "constant bootloader_init_size_c  : natural := %lu; -- bytes\n"
-      "constant bootloader_init_image_c : mem32_t := (\n",
-      argv[4], argv[2], compile_time, raw_exe_size);
+      "constant bootloader_image_size_c : natural := %u*1024; -- %u bytes\n"
+      "type rom_t is array (0 to (bootloader_image_size_c/4)-1) of std_ulogic_vector(31 downto 0);\n"
+      "constant bootloader_image_data_c : rom_t := (\n",
+      argv[4], argv[2], compile_time, ext_exe_size/1024, raw_exe_size);
     fputs(tmp_string, output);
 
-    i = 0;
-    while (i < (input_words-1)) {
+    for (i=0; i<input_words; i++) {
       if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
         tmp  = (uint32_t)(buffer[0] << 0);
         tmp |= (uint32_t)(buffer[1] << 8);
@@ -290,29 +280,16 @@ int main(int argc, char *argv[]) {
         tmp |= (uint32_t)(buffer[3] << 24);
         snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\",\n", (unsigned int)tmp);
         fputs(tmp_string, output);
-        i++;
       }
       else {
-        printf("Unexpected input file end!\n");
+        printf("[WARNING] Unexpected input file end!\n");
         break;
       }
     }
 
-    if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
-      tmp  = (uint32_t)(buffer[0] << 0);
-      tmp |= (uint32_t)(buffer[1] << 8);
-      tmp |= (uint32_t)(buffer[2] << 16);
-      tmp |= (uint32_t)(buffer[3] << 24);
-      snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\"\n", (unsigned int)tmp);
-      fputs(tmp_string, output);
-      i++;
-    }
-    else {
-      printf("Unexpected input file end!\n");
-    }
-
     // end
     snprintf(tmp_string, sizeof(tmp_string),
+      "others => (others => '0')\n"
       ");\n"
       "\n"
       "end neorv32_bootloader_image;\n");
@@ -321,7 +298,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate RAW APPLICATION's executable ASCII hex file
+  // Generate APPLICATION executable ASCII hex file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_HEX) {
 
@@ -337,7 +314,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate RAW APPLICATION's executable binary file
+  // Generate APPLICATION executable binary file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_BIN) {
 
@@ -348,7 +325,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate RAW APPLICATION's executable COE file
+  // Generate APPLICATION executable COE file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_COE) {
 
@@ -377,7 +354,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate RAW APPLICATION's executable MEM file
+  // Generate APPLICATION executable MEM file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_MEM) {
 
@@ -395,12 +372,12 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate RAW APPLICATION's executable MIF file
+  // Generate APPLICATION executable MIF file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_MIF) {
 
     // header
-    snprintf(tmp_string, sizeof(tmp_string), "DEPTH = %lu;\n", raw_exe_size/4); // memory depth in words
+    snprintf(tmp_string, sizeof(tmp_string), "DEPTH = %u;\n", raw_exe_size/4); // memory depth in words
     fputs(tmp_string, output);
     snprintf(tmp_string, sizeof(tmp_string), "WIDTH = 32;\n"); // bits per data word
     fputs(tmp_string, output);
@@ -434,7 +411,7 @@ int main(int argc, char *argv[]) {
   // Invalid operation
   // --------------------------------------------------------------------------
   else {
-    printf("Invalid operation!\n");
+    printf("[ERROR] Invalid operation!\n");
     fclose(input);
     fclose(output);
     return -1;
