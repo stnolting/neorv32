@@ -38,7 +38,7 @@ enum NEORV32_DMA_CTRL_enum {
   DMA_CTRL_DFIFO_LSB = 16, /**< DMA control register(16) (r/-): log2(descriptor FIFO size), LSB */
   DMA_CTRL_DFIFO_MSB = 19, /**< DMA control register(19) (r/-): log2(descriptor FIFO size), MSB */
 
-  CMA_CTRL_ACK       = 26, /**< DMA control register(26) (-/w): Set to clear ERROR and DONE flags */
+  DMA_CTRL_ACK       = 26, /**< DMA control register(26) (-/w): Set to clear ERROR and DONE flags */
   DMA_CTRL_DEMPTY    = 27, /**< DMA control register(27) (r/-): Descriptor FIFO is empty */
   DMA_CTRL_DFULL     = 28, /**< DMA control register(28) (r/-): Descriptor FIFO is full */
   DMA_CTRL_ERROR     = 29, /**< DMA control register(29) (r/-): Bus access error during transfer */

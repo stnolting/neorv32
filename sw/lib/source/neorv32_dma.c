@@ -83,7 +83,7 @@ void neorv32_dma_disable(void) {
  **************************************************************************/
 void neorv32_dma_irq_ack(void) {
 
-  NEORV32_DMA->CTRL |= (uint32_t)(1 << CMA_CTRL_ACK);
+  NEORV32_DMA->CTRL |= (uint32_t)(1 << DMA_CTRL_ACK);
 }
 
 
