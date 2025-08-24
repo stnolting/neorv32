@@ -1,15 +1,15 @@
--- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32
--- Auto-generated memory initialization image (for internal BOOTROM)
+-- The NEORV32 RISC-V Processor
+-- Auto-generated memory image for internal BOOTROM
 -- Source: bootloader/build/main.bin
--- Built: 24.08.2025 15:36:59
+-- Built: 24.08.2025 16:10:57
 
 library ieee;
 use ieee.std_logic_1164.all;
 
 package neorv32_bootloader_image is
 
-constant bootloader_image_size_c : natural := 4*1024; -- 3964 bytes
-type rom_t is array (0 to (bootloader_image_size_c/4)-1) of std_ulogic_vector(31 downto 0);
+constant bootloader_image_size_c : natural := 3964;
+type rom_t is array (0 to 4095) of std_ulogic_vector(31 downto 0);
 constant bootloader_image_data_c : rom_t := (
 x"f14020f3",
 x"80200217",

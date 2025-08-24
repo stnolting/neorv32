@@ -56,7 +56,6 @@ int main(int argc, char *argv[]) {
   unsigned int i = 0;
   int operation = 0;
   unsigned int raw_exe_size = 0;
-  unsigned int ext_exe_size = 0;
 
   if      (strcmp(argv[1], "-app_bin") == 0) { operation = OP_APP_BIN; }
   else if (strcmp(argv[1], "-app_vhd") == 0) { operation = OP_APP_VHD; }
@@ -89,7 +88,7 @@ int main(int argc, char *argv[]) {
   }
 
   // input file empty?
-  if(input_size == 0) {
+  if (input_size == 0) {
     printf("[ERROR] Input file is empty (%s)!\n", argv[2]);
     fclose(input);
     return -3;
@@ -97,7 +96,7 @@ int main(int argc, char *argv[]) {
 
   // open output file
   output = fopen(argv[3], "wb");
-  if(output == NULL) {
+  if (output == NULL) {
     printf("[ERROR] Output file error!\n");
     fclose(input);
     return -4;
@@ -131,8 +130,8 @@ int main(int argc, char *argv[]) {
   raw_exe_size = (unsigned int)ftell(input);
 
   // make sure memory array is a power of two
+  unsigned int ext_exe_size = 1;
   if (raw_exe_size > 0) {
-    ext_exe_size = 1;
     while (ext_exe_size < raw_exe_size) {
       ext_exe_size = 2*ext_exe_size;
     }
@@ -208,8 +207,8 @@ int main(int argc, char *argv[]) {
 
     // header
     snprintf(tmp_string, sizeof(tmp_string),
-      "-- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32\n"
-      "-- Auto-generated memory initialization image (for internal IMEM)\n"
+      "-- The NEORV32 RISC-V Processor\n"
+      "-- Auto-generated memory image for internal IMEM\n"
       "-- Source: %s/%s\n"
       "-- Built: %s\n"
       "\n"
@@ -218,10 +217,10 @@ int main(int argc, char *argv[]) {
       "\n"
       "package neorv32_application_image is\n"
       "\n"
-      "constant application_image_size_c : natural := %u*1024; -- %u bytes\n"
-      "type rom_t is array (0 to (application_image_size_c/4)-1) of std_ulogic_vector(31 downto 0);\n"
+      "constant application_image_size_c : natural := %u;\n"
+      "type rom_t is array (0 to %u) of std_ulogic_vector(31 downto 0);\n"
       "constant application_image_data_c : rom_t := (\n",
-      argv[4], argv[2], compile_time, ext_exe_size/1024, raw_exe_size);
+      argv[4], argv[2], compile_time, raw_exe_size, ext_exe_size-1);
     fputs(tmp_string, output);
 
     for (i=0; i<input_words; i++) {
@@ -256,8 +255,8 @@ int main(int argc, char *argv[]) {
 
     // header
     snprintf(tmp_string, sizeof(tmp_string),
-      "-- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32\n"
-      "-- Auto-generated memory initialization image (for internal BOOTROM)\n"
+      "-- The NEORV32 RISC-V Processor\n"
+      "-- Auto-generated memory image for internal BOOTROM\n"
       "-- Source: %s/%s\n"
       "-- Built: %s\n"
       "\n"
@@ -266,10 +265,10 @@ int main(int argc, char *argv[]) {
       "\n"
       "package neorv32_bootloader_image is\n"
       "\n"
-      "constant bootloader_image_size_c : natural := %u*1024; -- %u bytes\n"
-      "type rom_t is array (0 to (bootloader_image_size_c/4)-1) of std_ulogic_vector(31 downto 0);\n"
+      "constant bootloader_image_size_c : natural := %u;\n"
+      "type rom_t is array (0 to %u) of std_ulogic_vector(31 downto 0);\n"
       "constant bootloader_image_data_c : rom_t := (\n",
-      argv[4], argv[2], compile_time, ext_exe_size/1024, raw_exe_size);
+      argv[4], argv[2], compile_time, raw_exe_size, ext_exe_size-1);
     fputs(tmp_string, output);
 
     for (i=0; i<input_words; i++) {

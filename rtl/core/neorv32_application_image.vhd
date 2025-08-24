@@ -1,15 +1,15 @@
--- The NEORV32 RISC-V Processor - github.com/stnolting/neorv32
--- Auto-generated memory initialization image (for internal IMEM)
+-- The NEORV32 RISC-V Processor
+-- Auto-generated memory image for internal IMEM
 -- Source: demo_blink_led/build/main.bin
--- Built: 24.08.2025 15:36:27
+-- Built: 24.08.2025 16:16:04
 
 library ieee;
 use ieee.std_logic_1164.all;
 
 package neorv32_application_image is
 
-constant application_image_size_c : natural := 1*1024; -- 824 bytes
-type rom_t is array (0 to (application_image_size_c/4)-1) of std_ulogic_vector(31 downto 0);
+constant application_image_size_c : natural := 824;
+type rom_t is array (0 to 1023) of std_ulogic_vector(31 downto 0);
 constant application_image_data_c : rom_t := (
 x"f14020f3",
 x"80002217",
