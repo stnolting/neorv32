@@ -35,39 +35,28 @@ end neorv32_sdi;
 architecture neorv32_sdi_rtl of neorv32_sdi is
 
   -- control register --
-  constant ctrl_en_c           : natural :=  0; -- r/w: SDI enable
+  constant ctrl_en_c            : natural :=  0; -- r/w: SDI enable
   --
-  constant ctrl_fifo_size0_c   : natural :=  4; -- r/-: log2(FIFO size), bit 0 (LSB)
-  constant ctrl_fifo_size1_c   : natural :=  5; -- r/-: log2(FIFO size), bit 1
-  constant ctrl_fifo_size2_c   : natural :=  6; -- r/-: log2(FIFO size), bit 2
-  constant ctrl_fifo_size3_c   : natural :=  7; -- r/-: log2(FIFO size), bit 3 (MSB)
+  constant ctrl_fifo0_c         : natural :=  4; -- r/-: log2(FIFO size), bit 0 (LSB)
+  constant ctrl_fifo3_c         : natural :=  7; -- r/-: log2(FIFO size), bit 3 (MSB)
   --
-  constant ctrl_irq_rx_avail_c : natural := 15; -- r/w: interrupt if RX FIFO not empty
-  constant ctrl_irq_rx_half_c  : natural := 16; -- r/w: interrupt if RX FIFO at least half full
-  constant ctrl_irq_rx_full_c  : natural := 17; -- r/w: interrupt if RX FIFO full
-  constant ctrl_irq_tx_empty_c : natural := 18; -- r/w: interrupt if TX FIFO empty
-  constant ctrl_irq_tx_nhalf_c : natural := 19; -- r/w: interrupt if TX FIFO not at least half full
+  constant ctrl_irq_rx_nempty_c : natural := 16; -- r/w: interrupt if RX FIFO not empty
+  constant ctrl_irq_rx_full_c   : natural := 17; -- r/w: interrupt if RX FIFO full
+  constant ctrl_irq_tx_empty_c  : natural := 18; -- r/w: interrupt if TX FIFO empty
   --
-  constant ctrl_rx_avail_c     : natural := 23; -- r/-: RX FIFO not empty
-  constant ctrl_rx_half_c      : natural := 24; -- r/-: RX FIFO at least half full
-  constant ctrl_rx_full_c      : natural := 25; -- r/-: RX FIFO full
-  constant ctrl_tx_empty_c     : natural := 26; -- r/-: TX FIFO empty
-  constant ctrl_tx_nhalf_c     : natural := 27; -- r/-: TX FIFO not at least half-full
-  constant ctrl_tx_full_c      : natural := 28; -- r/-: TX FIFO full
+  constant ctrl_rx_empty_c      : natural := 24; -- r/-: RX FIFO empty
+  constant ctrl_rx_full_c       : natural := 25; -- r/-: RX FIFO full
+  constant ctrl_tx_empty_c      : natural := 26; -- r/-: TX FIFO empty
+  constant ctrl_tx_full_c       : natural := 27; -- r/-: TX FIFO full
   --
-  constant ctrl_cs_active_c    : natural := 31; -- r/-: chip-select is active when set
+  constant ctrl_cs_active_c     : natural := 31; -- r/-: chip-select is active when set
 
   -- helpers --
   constant log2_fifo_size_c : natural := index_size_f(RTX_FIFO);
 
   -- control register (see bit definitions above) --
   type ctrl_t is record
-    enable       : std_ulogic;
-    irq_rx_avail : std_ulogic;
-    irq_rx_half  : std_ulogic;
-    irq_rx_full  : std_ulogic;
-    irq_tx_empty : std_ulogic;
-    irq_tx_nhalf : std_ulogic;
+    enable, irq_rx_nempty, irq_rx_full, irq_tx_empty : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
 
@@ -88,21 +77,15 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
     cnt    : std_ulogic_vector(3 downto 0);
     sreg   : std_ulogic_vector(7 downto 0);
     sdi_ff : std_ulogic;
-    start  : std_ulogic;
     done   : std_ulogic;
   end record;
   signal serial : serial_t;
 
   -- RX/TX FIFO interface --
   type fifo_t is record
-    we    : std_ulogic; -- write enable
-    re    : std_ulogic; -- read enable
-    clear : std_ulogic; -- sync reset, high-active
-    wdata : std_ulogic_vector(7 downto 0); -- write data
-    rdata : std_ulogic_vector(7 downto 0); -- read data
-    avail : std_ulogic; -- data available?
-    free  : std_ulogic; -- free entry available?
-    half  : std_ulogic; -- half full
+    we, re, clr  : std_ulogic;
+    wdata, rdata : std_ulogic_vector(7 downto 0);
+    avail, free  : std_ulogic;
   end record;
   signal tx_fifo, rx_fifo : fifo_t;
 
@@ -113,48 +96,39 @@ begin
   bus_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o         <= rsp_terminate_c;
-      ctrl.enable       <= '0';
-      ctrl.irq_rx_avail <= '0';
-      ctrl.irq_rx_half  <= '0';
-      ctrl.irq_rx_full  <= '0';
-      ctrl.irq_tx_empty <= '0';
-      ctrl.irq_tx_nhalf <= '0';
+      bus_rsp_o          <= rsp_terminate_c;
+      ctrl.enable        <= '0';
+      ctrl.irq_rx_nempty <= '0';
+      ctrl.irq_rx_full   <= '0';
+      ctrl.irq_tx_empty  <= '0';
     elsif rising_edge(clk_i) then
       -- bus handshake --
       bus_rsp_o.ack  <= bus_req_i.stb;
       bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-
       -- read/write access --
       if (bus_req_i.stb = '1') then
         if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(2) = '0') then -- control register
             ctrl.enable <= bus_req_i.data(ctrl_en_c);
             --
-            ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
-            ctrl.irq_rx_half  <= bus_req_i.data(ctrl_irq_rx_half_c);
-            ctrl.irq_rx_full  <= bus_req_i.data(ctrl_irq_rx_full_c);
-            ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
-            ctrl.irq_tx_nhalf <= bus_req_i.data(ctrl_irq_tx_nhalf_c);
+            ctrl.irq_rx_nempty <= bus_req_i.data(ctrl_irq_rx_nempty_c);
+            ctrl.irq_rx_full   <= bus_req_i.data(ctrl_irq_rx_full_c);
+            ctrl.irq_tx_empty  <= bus_req_i.data(ctrl_irq_tx_empty_c);
           end if;
         else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
             --
-            bus_rsp_o.data(ctrl_fifo_size3_c downto ctrl_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+            bus_rsp_o.data(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
             --
-            bus_rsp_o.data(ctrl_irq_rx_avail_c) <= ctrl.irq_rx_avail;
-            bus_rsp_o.data(ctrl_irq_rx_half_c)  <= ctrl.irq_rx_half;
-            bus_rsp_o.data(ctrl_irq_rx_full_c)  <= ctrl.irq_rx_full;
-            bus_rsp_o.data(ctrl_irq_tx_empty_c) <= ctrl.irq_tx_empty;
-            bus_rsp_o.data(ctrl_irq_tx_nhalf_c) <= ctrl.irq_tx_nhalf;
+            bus_rsp_o.data(ctrl_irq_rx_nempty_c) <= ctrl.irq_rx_nempty;
+            bus_rsp_o.data(ctrl_irq_rx_full_c)   <= ctrl.irq_rx_full;
+            bus_rsp_o.data(ctrl_irq_tx_empty_c)  <= ctrl.irq_tx_empty;
             --
-            bus_rsp_o.data(ctrl_rx_avail_c) <= rx_fifo.avail;
-            bus_rsp_o.data(ctrl_rx_half_c)  <= rx_fifo.half;
+            bus_rsp_o.data(ctrl_rx_empty_c) <= not rx_fifo.avail;
             bus_rsp_o.data(ctrl_rx_full_c)  <= not rx_fifo.free;
             bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
-            bus_rsp_o.data(ctrl_tx_nhalf_c) <= not tx_fifo.half;
             bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
             --
             bus_rsp_o.data(ctrl_cs_active_c) <= not sync.csn;
@@ -173,79 +147,69 @@ begin
   -- TX --
   tx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    AWIDTH  => log2_fifo_size_c, -- number of FIFO entries; has to be a power of two; min 1
-    DWIDTH  => 8,                -- size of data elements in FIFO (32-bit only for simulation)
-    OUTGATE => true              -- output zero if no data available
+    AWIDTH  => log2_fifo_size_c,
+    DWIDTH  => 8,
+    OUTGATE => true -- send zero if no TX data available
   )
   port map (
     -- global control --
-    clk_i   => clk_i,         -- clock, rising edge
-    rstn_i  => rstn_i,        -- async reset, low-active
-    clear_i => tx_fifo.clear, -- sync reset, high-active
-    half_o  => tx_fifo.half,  -- FIFO at least half-full
+    clk_i   => clk_i,
+    rstn_i  => rstn_i,
+    clear_i => tx_fifo.clr,
     -- write port --
-    wdata_i => tx_fifo.wdata, -- write data
-    we_i    => tx_fifo.we,    -- write enable
-    free_o  => tx_fifo.free,  -- at least one entry is free when set
+    wdata_i => tx_fifo.wdata,
+    we_i    => tx_fifo.we,
+    free_o  => tx_fifo.free,
     -- read port --
-    re_i    => tx_fifo.re,    -- read enable
-    rdata_o => tx_fifo.rdata, -- read data
-    avail_o => tx_fifo.avail  -- data available when set
+    re_i    => tx_fifo.re,
+    rdata_o => tx_fifo.rdata,
+    avail_o => tx_fifo.avail
   );
 
-  -- write access (CPU) --
-  tx_fifo.clear <= not ctrl.enable;
+  tx_fifo.clr   <= not ctrl.enable;
   tx_fifo.wdata <= bus_req_i.data(7 downto 0);
   tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
-
-  -- read access (SDI) --
-  tx_fifo.re <= serial.start;
+  tx_fifo.re    <= serial.done;
 
 
   -- RX --
   rx_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
-    AWIDTH  => log2_fifo_size_c, -- number of FIFO entries; has to be a power of two; min 1
-    DWIDTH  => 8,                -- size of data elements in FIFO (32-bit only for simulation)
-    OUTGATE => false             -- no output gate required
+    AWIDTH  => log2_fifo_size_c,
+    DWIDTH  => 8,
+    OUTGATE => false
   )
   port map (
     -- global control --
-    clk_i   => clk_i,         -- clock, rising edge
-    rstn_i  => rstn_i,        -- async reset, low-active
-    clear_i => rx_fifo.clear, -- sync reset, high-active
-    half_o  => rx_fifo.half,  -- FIFO at least half-full
+    clk_i   => clk_i,
+    rstn_i  => rstn_i,
+    clear_i => rx_fifo.clr,
     -- write port --
-    wdata_i => rx_fifo.wdata, -- write data
-    we_i    => rx_fifo.we,    -- write enable
-    free_o  => rx_fifo.free,  -- at least one entry is free when set
+    wdata_i => rx_fifo.wdata,
+    we_i    => rx_fifo.we,
+    free_o  => rx_fifo.free,
     -- read port --
-    re_i    => rx_fifo.re,    -- read enable
-    rdata_o => rx_fifo.rdata, -- read data
-    avail_o => rx_fifo.avail  -- data available when set
+    re_i    => rx_fifo.re,
+    rdata_o => rx_fifo.rdata,
+    avail_o => rx_fifo.avail
   );
 
-  -- write access (SDI) --
+  rx_fifo.clr   <= not ctrl.enable;
   rx_fifo.wdata <= serial.sreg;
   rx_fifo.we    <= serial.done;
-
-  -- read access (CPU) --
-  rx_fifo.clear <= not ctrl.enable;
   rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
 
 
-  -- Interrupt Generator --
+  -- interrupt generator --
   irq_generator: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       irq_o <= '0';
     elsif rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
-               (ctrl.irq_rx_avail and      rx_fifo.avail)  or -- RX FIFO not empty
-               (ctrl.irq_rx_half  and      rx_fifo.half)   or -- RX FIFO at least half full
-               (ctrl.irq_rx_full  and (not rx_fifo.free))  or -- RX FIFO full
-               (ctrl.irq_tx_empty and (not tx_fifo.avail)) or -- TX FIFO empty
-               (ctrl.irq_tx_nhalf and (not tx_fifo.half)));   -- TX FIFO not at least half full
+               (ctrl.irq_rx_nempty and      rx_fifo.avail) or -- RX FIFO not empty
+               (ctrl.irq_rx_full   and (not rx_fifo.free)) or -- RX FIFO full
+               (ctrl.irq_tx_empty  and (not tx_fifo.avail))); -- TX FIFO empty
     end if;
   end process irq_generator;
 
@@ -275,29 +239,28 @@ begin
   serial_engine: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      serial.start  <= '0';
       serial.done   <= '0';
       serial.state  <= (others => '0');
       serial.cnt    <= (others => '0');
       serial.sreg   <= (others => '0');
       serial.sdi_ff <= '0';
     elsif rising_edge(clk_i) then
-      -- defaults --
-      serial.start <= '0';
-      serial.done  <= '0';
-
-      -- FSM --
+      serial.done     <= '0'; -- default
       serial.state(2) <= ctrl.enable;
       case serial.state is
 
         when "100" => -- enabled but idle, waiting for new transmission trigger
         -- ------------------------------------------------------------
+          serial.cnt <= (others => '0');
+          if (sync.csn = '0') and (serial.done = '0') then -- start new transmission on falling edge of CS
+            serial.state(1 downto 0) <= "01";
+          end if;
+
+        when "101" => -- get TX data
+        -- ------------------------------------------------------------
           serial.cnt  <= (others => '0');
           serial.sreg <= tx_fifo.rdata;
-          if (sync.csn = '0') then -- start new transmission on falling edge of chip-select
-            serial.start             <= '1';
-            serial.state(1 downto 0) <= "10";
-          end if;
+          serial.state(1 downto 0) <= "10";
 
         when "110" => -- bit phase A: sample
         -- ------------------------------------------------------------
@@ -316,7 +279,7 @@ begin
           elsif (sync.sck = '1') then
             serial.sreg <= serial.sreg(serial.sreg'left-1 downto 0) & serial.sdi_ff;
             if (serial.cnt(3) = '1') then -- done?
-              serial.done              <= '1';
+              serial.done              <= '1'; -- push RX byte to FIFO and get next TX byte
               serial.state(1 downto 0) <= "00";
             else
               serial.state(1 downto 0) <= "10";

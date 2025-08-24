@@ -82,6 +82,9 @@ uint8_t  neorv32_spi_get_nonblocking(void);
 void     neorv32_spi_cs_en_nonblocking(int cs);
 void     neorv32_spi_cs_dis_nonblocking(void);
 int      neorv32_spi_check_cs(void);
+int      neorv32_spi_rx_avail(void);
+int      neorv32_spi_tx_empty(void);
+int      neorv32_spi_tx_full(void);
 int      neorv32_spi_busy(void);
 /**@}*/
 

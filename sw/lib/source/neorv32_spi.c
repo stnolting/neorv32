@@ -189,30 +189,53 @@ void neorv32_spi_cs_dis_nonblocking(void) {
 /**********************************************************************//**
  * Check if any chip-select line is active.
  *
- * @return 0 if no CS lines are active, 1 if at least one CS line is active.
+ * @return Zero if no CS lines are active, non-zero if a CS line is active.
  **************************************************************************/
 int neorv32_spi_check_cs(void) {
 
-  if (NEORV32_SPI->CTRL & (1<<SPI_CS_ACTIVE)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_SPI->CTRL & (1 << SPI_CS_ACTIVE));
+}
+
+
+/**********************************************************************//**
+ * Check if RX FIFO data is available.
+ *
+ * @return Zero if no data available, non-zero if RX FIFO data is available.
+ **************************************************************************/
+int neorv32_spi_rx_avail(void) {
+
+  return (int)(NEORV32_SPI->CTRL & (1 << SPI_CTRL_RX_AVAIL));
+}
+
+
+/**********************************************************************//**
+ * Check if TX FIFO is empty.
+ *
+ * @return Zero if RX FIFO is not empty, non-zero if RX FIFO is empty.
+ **************************************************************************/
+int neorv32_spi_tx_empty(void) {
+
+  return (int)(NEORV32_SPI->CTRL & (1 << SPI_CTRL_TX_EMPTY));
+}
+
+
+/**********************************************************************//**
+ * Check if TX FIFO is full.
+ *
+ * @return Zero if TX FIFO is not full, non-zero if TX FIFO is full.
+ **************************************************************************/
+int neorv32_spi_tx_full(void) {
+
+  return (int)(NEORV32_SPI->CTRL & (1 << SPI_CTRL_TX_FULL));
 }
 
 
 /**********************************************************************//**
  * Check if SPI transceiver is busy or TX FIFO not empty.
  *
- * @return 0 if idle, 1 if busy
+ * @return 0 if idle, non-zero if busy
  **************************************************************************/
 int neorv32_spi_busy(void) {
 
-  if ((NEORV32_SPI->CTRL & (1<<SPI_CTRL_BUSY)) != 0) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_SPI->CTRL & (1 << SPI_CTRL_BUSY));
 }

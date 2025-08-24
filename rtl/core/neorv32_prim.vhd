@@ -5,9 +5,8 @@
 -- word appears directly at the output (after the synchronous-read delay) without   --
 -- any explicit read access.                                                        --
 --                                                                                  --
--- The status signals "at least half full" (half_o), "free space left" (free_o),    --
--- and "data available" (avail_o) are synchronized to the according ports:          --
--- - half_o  -> read port                                                           --
+-- The status signals "free space left" (free_o) and "data available" (avail_o)     --
+-- are synchronized to the according ports:                                         --
 -- - free_o  -> write port                                                          --
 -- - avail_o -> read port                                                           --
 -- -------------------------------------------------------------------------------- --
@@ -33,7 +32,6 @@ entity neorv32_prim_fifo is
     clk_i   : in  std_ulogic;                           -- clock, rising edge
     rstn_i  : in  std_ulogic;                           -- async reset, low-active
     clear_i : in  std_ulogic;                           -- sync reset, high-active
-    half_o  : out std_ulogic;                           -- FIFO is at least half full
     -- write port --
     wdata_i : in  std_ulogic_vector(DWIDTH-1 downto 0); -- write data
     we_i    : in  std_ulogic;                           -- write enable
@@ -53,8 +51,8 @@ architecture neorv32_prim_fifo_rtl of neorv32_prim_fifo is
 
   -- local signals --
   signal rdata : std_ulogic_vector(DWIDTH-1 downto 0);
-  signal we, re, ram_re, match, full, empty, half, avail : std_ulogic;
-  signal w_pnt, w_nxt, r_pnt, r_nxt, level : std_ulogic_vector(AWIDTH downto 0);
+  signal we, re, ram_re, match, full, empty, avail : std_ulogic;
+  signal w_pnt, w_nxt, r_pnt, r_nxt : std_ulogic_vector(AWIDTH downto 0);
 
 begin
 
@@ -84,43 +82,32 @@ begin
   -- more than 1 FIFO entry --
   fifo_status_large:
   if (AWIDTH > 0) generate
-    -- status logic --
     match <= '1' when (r_pnt(AWIDTH-1 downto 0) = w_pnt(AWIDTH-1 downto 0)) else '0';
     full  <= '1' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '0';
     empty <= '1' when (r_pnt(AWIDTH)  = w_pnt(AWIDTH)) and (match = '1') else '0';
-    level <= std_ulogic_vector(unsigned(w_pnt) - unsigned(r_pnt));
-    half  <= level(level'left-1) or full;
-    -- status output --
-    -- [important] 'avail' and 'half' status signals are synchronized to the read port --
+    -- [important] 'avail' is synchronized to the read port --
     status_reg: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        avail  <= '0';
-        half_o <= '0';
+        avail <= '0';
       elsif rising_edge(clk_i) then
-        avail  <= not empty;
-        half_o <= half;
+        avail <= not empty;
       end if;
     end process status_reg;
-    free_o  <= not full;
-    avail_o <= avail;
   end generate;
 
   -- just 1 FIFO entry --
   fifo_status_small:
   if (AWIDTH = 0) generate
-    -- status logic --
     match <= '1' when (r_pnt(0) = w_pnt(0)) else '0';
     full  <= not match;
     empty <= match;
-    level <= (others => '0');
-    half  <= full;
-    -- status output --
-    avail   <= not empty;
-    half_o  <= half;
-    free_o  <= not full;
-    avail_o <= avail;
+    avail <= not empty;
   end generate;
+
+  -- status output --
+  free_o  <= not full;
+  avail_o <= avail;
 
 
   -- Memory Core ----------------------------------------------------------------------------
