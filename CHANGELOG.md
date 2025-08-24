@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 24.08.2025 | 1.12.0.6 | simplify ROM images (VHDL packages for IMEM/BOOTROM) | [#1355](https://github.com/stnolting/neorv32/pull/1355) |
 | 23.08.2025 | 1.12.0.5 | :warning: simplify UART and SDI modules; remove "at least half full" FIFO status flags and according interrupts | [#1354](https://github.com/stnolting/neorv32/pull/1354) |
 | 23.08.2025 | 1.12.0.4 | :warning: simplify SLINK, SPI and NEOLED modules; remove "at least half full" FIFO status flags and according interrupts | [#1353](https://github.com/stnolting/neorv32/pull/1353) |
 | 22.08.2025 | 1.12.0.3 | :bug: fix output gating of simulation memory model; minor rtl cleanups | [#1352](https://github.com/stnolting/neorv32/pull/1352) |
