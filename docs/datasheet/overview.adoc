@@ -169,10 +169,9 @@ See section <<_file_list_files>> for more information.
 
 .Replacing Modules for Customization or Optimization
 [TIP]
-Any module of the core can be replaced by the user for customization purpose. For example, the default IMEM and DMEM
-modules as well as the CPU's register file can be replaced by technology-specific primitives to optimize energy, speed
-and area utilization. The module, which are dedicated for customization, i.e. CFS and CFU can be replaced by
-user-defined modules to implement application-specific functionality.
+Any module of the core can be replaced for customization purpose. For example, the default IMEM and DMEM
+modules or the CPU's register file can be replaced by technology-specific primitives to optimize energy, speed
+and area utilization.
 
 .RTL File List (in alphabetical order)
 ...................................

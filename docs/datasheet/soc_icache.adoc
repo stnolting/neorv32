@@ -18,7 +18,7 @@
 
 **Key Features**
 
-* Direct-mapped write-through cache
+* Direct-mapped read-only cache
 * Configurable number of lines
 * Configurable line size
 * Allows bypassing for _uncached_ accesses
