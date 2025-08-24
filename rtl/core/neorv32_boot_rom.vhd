@@ -28,11 +28,7 @@ end neorv32_boot_rom;
 architecture neorv32_boot_rom_rtl of neorv32_boot_rom is
 
   -- auto-configuration --
-  constant awidth_c  : natural := index_size_f(bootloader_init_size_c/4); -- word address width
-  constant romsize_c : natural := 2**awidth_c;
-
-  -- ROM initialized with executable code --
-  constant mem_rom_c : mem32_t(0 to romsize_c-1) := mem32_init_f(bootloader_init_image_c, romsize_c);
+  constant awidth_c : natural := index_size_f(bootloader_image_size_c/4); -- word address width
 
   -- local signals --
   signal rden  : std_ulogic;
@@ -40,40 +36,37 @@ architecture neorv32_boot_rom_rtl of neorv32_boot_rom is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
+  -- ROM Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  assert not (bootloader_init_size_c > iodev_size_c) report
-    "[NEORV32] Bootloader image (" & natural'image(bootloader_init_size_c) &
-    " bytes) does not fit into processor-internal BOOTROM (" &
-    natural'image(iodev_size_c) & " bytes)!" severity error;
-
-
-  -- Memory Access --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  mem_access: process(clk_i)
+  rom_access: process(clk_i)
   begin
-    if rising_edge(clk_i) then -- no reset to infer blockRAM
-      if (bus_req_i.stb = '1') then -- reduce switching activity when not accessed
-        rdata <= mem_rom_c(to_integer(unsigned(bus_req_i.addr(awidth_c+1 downto 2))));
+    if rising_edge(clk_i) then
+      if (bus_req_i.stb = '1') then
+        rdata <= bootloader_image_data_c(to_integer(unsigned(bus_req_i.addr(awidth_c+1 downto 2))));
       end if;
     end if;
-  end process mem_access;
+  end process rom_access;
+
+  -- size check --
+  assert (bootloader_image_size_c <= iodev_size_c) report
+    "[NEORV32] Bootloader image (" & natural'image(bootloader_image_size_c) & " bytes) " &
+    "overflows processor-internal BOOTROM (" & natural'image(iodev_size_c) & " bytes)!" severity error;
 
 
-  -- Bus Feedback ---------------------------------------------------------------------------
+  -- Bus Handshake --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_feedback: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       rden <= '0';
     elsif rising_edge(clk_i) then
       rden <= bus_req_i.stb and (not bus_req_i.rw); -- read-only
     end if;
-  end process bus_feedback;
+  end process bus_handshake;
 
-  bus_rsp_o.data <= rdata when (rden = '1') else (others => '0'); -- output gate
+  -- output gate --
+  bus_rsp_o.data <= rdata when (rden = '1') else (others => '0');
   bus_rsp_o.ack  <= rden;
-  bus_rsp_o.err  <= '0'; -- no access error possible
-
+  bus_rsp_o.err  <= '0';
 
 end neorv32_boot_rom_rtl;
