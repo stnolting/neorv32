@@ -36,9 +36,6 @@ architecture neorv32_imem_rtl of neorv32_imem is
   constant awidth_c  : natural := index_size_f(MEM_SIZE/4); -- word address width
   constant latency_c : natural := cond_sel_natural_f(OUTREG_EN, 2, 1); -- memory latency
 
-  -- ROM - initialized with executable code --
-  constant mem_rom_c : mem32_t(0 to (MEM_SIZE/4)-1) := mem32_init_f(application_init_image_c, MEM_SIZE/4);
-
   -- local signals --
   signal romrd : std_ulogic_vector(31 downto 0);
   signal rdata : std_ulogic_vector(31 downto 0);
@@ -48,26 +45,24 @@ architecture neorv32_imem_rtl of neorv32_imem is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert not ((MEM_INIT = true) and (application_init_size_c > MEM_SIZE)) report
-    "[NEORV32] Application image (" & natural'image(application_init_size_c) &
-    " bytes) does not fit into processor-internal IMEM (" &
-    natural'image(MEM_SIZE) & " bytes)!" severity error;
-
-
   -- IMEM as pre-initialized ROM ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   imem_rom:
   if MEM_INIT generate
-    mem_access: process(clk_i)
+    -- size check --
+    assert (application_image_size_c <= MEM_SIZE) report
+      "[NEORV32] Application image (" & natural'image(application_image_size_c) & " bytes) " &
+      "overflows processor-internal IMEM (" & natural'image(MEM_SIZE) & " bytes)!" severity error;
+
+    -- ROM --
+    rom_access: process(clk_i)
     begin
-      if rising_edge(clk_i) then -- no reset to infer blockRAM
-        if (bus_req_i.stb = '1') then -- reduce switching activity when not accessed
-          romrd <= mem_rom_c(to_integer(unsigned(bus_req_i.addr(awidth_c+1 downto 2))));
+      if rising_edge(clk_i) then
+        if (bus_req_i.stb = '1') then
+          romrd <= application_image_data_c(to_integer(unsigned(bus_req_i.addr(awidth_c+1 downto 2))));
         end if;
       end if;
-    end process mem_access;
+    end process rom_access;
 
     -- output register stage --
     rom_output_register_enabled:
@@ -129,7 +124,8 @@ begin
     end if;
   end process bus_handshake;
 
-  bus_rsp_o.data <= rdata when (rden(latency_c-1) = '1') else (others => '0'); -- output gate
+  -- output gate --
+  bus_rsp_o.data <= rdata when (rden(latency_c-1) = '1') else (others => '0');
   bus_rsp_o.err  <= '0'; -- no access error possible
   bus_rsp_o.ack  <= rden(latency_c-1) when MEM_INIT else (rden(latency_c-1) or wack); -- read-only?
 

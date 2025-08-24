@@ -28,7 +28,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01120005"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01120006"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -108,10 +108,6 @@ package neorv32_package is
   constant clk_div1024_c : natural := 5;
   constant clk_div2048_c : natural := 6;
   constant clk_div4096_c : natural := 7;
-
-  -- Memory Helper Types --------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  type mem32_t is array (natural range <>) of std_ulogic_vector(31 downto 0); -- memory with 32-bit entries
 
   -- Internal Bus Interface -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -780,7 +776,6 @@ package neorv32_package is
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
   function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector;
-  impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t;
   function print_hex_f(data : std_ulogic_vector) return string;
 
 -- **********************************************************************************************************
@@ -1148,7 +1143,7 @@ package body neorv32_package is
     end if;
   end function is_power_of_two_f;
 
-  -- Replicate input bit num times ----------------------------------------------------------
+  -- Replicate bit --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector is
     variable tmp_v : std_ulogic_vector(num-1 downto 0);
@@ -1156,18 +1151,6 @@ package body neorv32_package is
     tmp_v := (others => input);
     return tmp_v;
   end function replicate_f;
-
-  -- Initialize mem32_t array from another mem32_t array ------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  impure function mem32_init_f(init : mem32_t; depth : natural) return mem32_t is
-    variable mem_v : mem32_t(0 to depth-1);
-  begin
-    mem_v := (others => (others => '0'));
-    if (init'length <= depth) then
-      mem_v(0 to init'length-1) := init(0 to init'length-1);
-    end if;
-    return mem_v;
-  end function mem32_init_f;
 
   -- Print hex value as string --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
