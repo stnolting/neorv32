@@ -22,13 +22,13 @@ informed via _precise_ and resumable hardware exceptions.
 ### Key Features
 
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework** + **Tooling**
-- [x] completely described in behavioral, platform-independent VHDL - **no** platform-specific primitives, macros, attributes, etc.
-- [x] extensive configuration options for adapting the processor to the requirements of the application (on CPU, processor and system level)
-- [x] aims to be as small as possible while being as RISC-V-compliant as possible - with a reasonable area-vs-performance trade-off
-- [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM - including the CPU's register file)
-- [x] optimized for high clock frequencies to ease integration / timing closure
-- [x] from zero to _"hello world!"_ - completely open source and documented (on software and hardware side)
-- [x] easy to use even for digital logic / FPGA / RISC-V newcomers – intended to work _out of the box_
+- [x] completely described in behavioral, platform-independent VHDL - **no** primitives, macros, attributes, etc.
+- [x] extensive CPU & SoC configuration options for adapting to application requirements
+- [x] aims to be as small as possible while being as RISC-V-compliant as possible
+- [x] FPGA friendly (e.g. _all_ internal memories can be mapped to block RAM)
+- [x] optimized for high clock frequencies to ease integration and timing closure
+- [x] from zero to `printf("hello world");` - completely open-source and documented
+- [x] easy to use – intended to work _out of the box_
 
 * :recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
 * :mag: [Continuous integration](#project-status) to check for regressions (including RISC-V ISA compatibility check using RISCOF).

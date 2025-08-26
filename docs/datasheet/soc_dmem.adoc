@@ -16,7 +16,7 @@
 
 **Key Features**
 
-* Tightly-coupled on-chip data memory
+* Burst-capable tightly-coupled on-chip data memory
 * Configurable RAM size
 * Accessible at the byte level
 * Can be mapped to blockRAM primitives

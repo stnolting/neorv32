@@ -20,7 +20,7 @@
 
 **Key Features**
 
-* I2C-compatible device-side controller
+* Philips I²C-compatible device-side controller
 * Programmable 7-bit device address
 * Optional data FIFOs
 * Programmable interrupt conditions

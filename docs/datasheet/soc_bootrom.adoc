@@ -6,7 +6,7 @@
 [grid="none"]
 |=======================
 | Hardware source files:  | neorv32_boot_rom.vhd         | default platform-agnostic bootloader ROM
-|                         | neorv32_bootloader_image.vhd | initialization image (a VHDL package)
+|                         | neorv32_bootloader_image.vhd | memory image (VHDL package)
 | Software driver files:  | none                         | _implicitly used_
 | Top entity ports:       | none                         |
 | Configuration generics: | `BOOT_MODE_SELECT`           | implement BOOTROM when `BOOT_MODE_SELECT` = 0; see <<_boot_configuration>>
@@ -15,7 +15,10 @@
 
 **Key Features**
 
-* See section <<_bootloader>>.
+* Burst-capable tightly-coupled on-chip ROM
+* Accessible at the byte level
+* Can be mapped to blockRAM primitives
+* Pre-initialized with default NEORV32 bootloader
 
 
 **Overview**
