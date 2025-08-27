@@ -93,7 +93,6 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
   signal over_check : std_ulogic; -- FIFO overflow checker
   signal over_trash : std_ulogic; -- discard data from trace buffer
   signal trace_src  : trace_port_t; -- trace input stream
-  signal irq_pend   : std_ulogic; -- interrupt generator
 
 begin
 
@@ -234,20 +233,17 @@ begin
   irq_generator: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      irq_pend <= '0';
+      irq_o <= '0';
     elsif rising_edge(clk_i) then
       if (ctrl_en = '0') then
-        irq_pend <= '0';
+        irq_o <= '0';
       elsif (arbiter.astop = '1') then
-        irq_pend <= '1';
+        irq_o <= '1';
       elsif (ctrl_iclr = '1') then
-        irq_pend <= '0';
+        irq_o <= '0';
       end if;
     end if;
   end process irq_generator;
-
-  -- output to CPU --
-  irq_o <= irq_pend;
 
 
   -- Trace Buffer (implemented as FIFO) -----------------------------------------------------

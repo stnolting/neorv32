@@ -76,8 +76,7 @@ begin
             ctrl(ctrl_prsc0_c) <= bus_req_i.data(ctrl_prsc0_c);
             ctrl(ctrl_prsc1_c) <= bus_req_i.data(ctrl_prsc1_c);
             ctrl(ctrl_prsc2_c) <= bus_req_i.data(ctrl_prsc2_c);
-            --
-            irq_clr <= bus_req_i.data(ctrl_irq_clr_c);
+            irq_clr            <= bus_req_i.data(ctrl_irq_clr_c);
           end if;
           if (bus_req_i.addr(3 downto 2) = "01") then -- threshold register
             timer.thres <= bus_req_i.data;
@@ -89,8 +88,7 @@ begin
               bus_rsp_o.data(ctrl_prsc0_c) <= ctrl(ctrl_prsc0_c);
               bus_rsp_o.data(ctrl_prsc1_c) <= ctrl(ctrl_prsc1_c);
               bus_rsp_o.data(ctrl_prsc2_c) <= ctrl(ctrl_prsc2_c);
-              --
-              bus_rsp_o.data(ctrl_irq_c) <= irq_pnd;
+              bus_rsp_o.data(ctrl_irq_c)   <= irq_pnd;
             when "01" => -- threshold register
               bus_rsp_o.data <= timer.thres;
             when others => -- counter register
@@ -134,14 +132,10 @@ begin
     if (rstn_i = '0') then
       irq_pnd <= '0';
     elsif rising_edge(clk_i) then
-      if (ctrl(ctrl_en_c) = '1') then
-        if (timer.match = '1') then
-          irq_pnd <= '1';
-        elsif (irq_clr = '1') then
-          irq_pnd <= '0';
-        end if;
-      else
+      if (ctrl(ctrl_en_c) = '0') or (irq_clr = '1') then -- disabled or IRQ acknowledge
         irq_pnd <= '0';
+      elsif (timer.match = '1') then
+        irq_pnd <= '1';
       end if;
     end if;
   end process irq_generator;

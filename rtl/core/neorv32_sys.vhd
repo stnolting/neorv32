@@ -37,8 +37,7 @@ architecture neorv32_sys_reset_rtl of neorv32_sys_reset is
 
 begin
 
-  -- Reset Sequencer ------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- reset sequencer --
   sequencer: process(rstn_ext_i, clk_i)
   begin
     if (rstn_ext_i = '0') then
@@ -60,8 +59,7 @@ begin
     end if;
   end process sequencer;
 
-  -- Processor Reset Output Synchronizer ----------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- output synchronizer --
   synchronizer: process(rstn_ext_i, clk_i)
   begin
     if (rstn_ext_i = '0') then
@@ -111,8 +109,7 @@ architecture neorv32_sys_clock_rtl of neorv32_sys_clock is
 
 begin
 
-  -- Clock Tick Generator -------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- tick generator --
   ticker: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
