@@ -36,6 +36,8 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
 
   -- control register --
   constant ctrl_en_c            : natural :=  0; -- r/w: SDI enable
+  constant ctrl_clr_rx_c        : natural :=  1; -- -/w: clear RX FIFO (flag auto-clears)
+  constant ctrl_clr_tx_c        : natural :=  2; -- -/w: clear TX FIFO (flag auto-clears)
   --
   constant ctrl_fifo0_c         : natural :=  4; -- r/-: log2(FIFO size), bit 0 (LSB)
   constant ctrl_fifo3_c         : natural :=  7; -- r/-: log2(FIFO size), bit 3 (MSB)
@@ -56,7 +58,7 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
 
   -- control register (see bit definitions above) --
   type ctrl_t is record
-    enable, irq_rx_nempty, irq_rx_full, irq_tx_empty : std_ulogic;
+    enable, clr_rx, clr_tx, irq_rx_nempty, irq_rx_full, irq_tx_empty : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
 
@@ -98,6 +100,8 @@ begin
     if (rstn_i = '0') then
       bus_rsp_o          <= rsp_terminate_c;
       ctrl.enable        <= '0';
+      ctrl.clr_rx        <= '0';
+      ctrl.clr_tx        <= '0';
       ctrl.irq_rx_nempty <= '0';
       ctrl.irq_rx_full   <= '0';
       ctrl.irq_tx_empty  <= '0';
@@ -107,31 +111,30 @@ begin
       bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
       -- read/write access --
+      ctrl.clr_rx <= '0';
+      ctrl.clr_tx <= '0';
       if (bus_req_i.stb = '1') then
         if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(2) = '0') then -- control register
-            ctrl.enable <= bus_req_i.data(ctrl_en_c);
-            --
+            ctrl.enable        <= bus_req_i.data(ctrl_en_c);
+            ctrl.clr_rx        <= bus_req_i.data(ctrl_clr_rx_c);
+            ctrl.clr_tx        <= bus_req_i.data(ctrl_clr_tx_c);
             ctrl.irq_rx_nempty <= bus_req_i.data(ctrl_irq_rx_nempty_c);
             ctrl.irq_rx_full   <= bus_req_i.data(ctrl_irq_rx_full_c);
             ctrl.irq_tx_empty  <= bus_req_i.data(ctrl_irq_tx_empty_c);
           end if;
         else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
-            bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
-            --
+            bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
             bus_rsp_o.data(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-            --
-            bus_rsp_o.data(ctrl_irq_rx_nempty_c) <= ctrl.irq_rx_nempty;
-            bus_rsp_o.data(ctrl_irq_rx_full_c)   <= ctrl.irq_rx_full;
-            bus_rsp_o.data(ctrl_irq_tx_empty_c)  <= ctrl.irq_tx_empty;
-            --
-            bus_rsp_o.data(ctrl_rx_empty_c) <= not rx_fifo.avail;
-            bus_rsp_o.data(ctrl_rx_full_c)  <= not rx_fifo.free;
-            bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
-            bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
-            --
-            bus_rsp_o.data(ctrl_cs_active_c) <= not sync.csn;
+            bus_rsp_o.data(ctrl_irq_rx_nempty_c)             <= ctrl.irq_rx_nempty;
+            bus_rsp_o.data(ctrl_irq_rx_full_c)               <= ctrl.irq_rx_full;
+            bus_rsp_o.data(ctrl_irq_tx_empty_c)              <= ctrl.irq_tx_empty;
+            bus_rsp_o.data(ctrl_rx_empty_c)                  <= not rx_fifo.avail;
+            bus_rsp_o.data(ctrl_rx_full_c)                   <= not rx_fifo.free;
+            bus_rsp_o.data(ctrl_tx_empty_c)                  <= not tx_fifo.avail;
+            bus_rsp_o.data(ctrl_tx_full_c)                   <= not tx_fifo.free;
+            bus_rsp_o.data(ctrl_cs_active_c)                 <= not sync.csn;
           else -- data register
             bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
           end if;
@@ -166,7 +169,7 @@ begin
     avail_o => tx_fifo.avail
   );
 
-  tx_fifo.clr   <= not ctrl.enable;
+  tx_fifo.clr   <= (not ctrl.enable) or ctrl.clr_tx;
   tx_fifo.wdata <= bus_req_i.data(7 downto 0);
   tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.re    <= serial.done;
@@ -194,7 +197,7 @@ begin
     avail_o => rx_fifo.avail
   );
 
-  rx_fifo.clr   <= not ctrl.enable;
+  rx_fifo.clr   <= (not ctrl.enable) or ctrl.clr_rx;
   rx_fifo.wdata <= serial.sreg;
   rx_fifo.we    <= serial.done;
   rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
@@ -229,7 +232,7 @@ begin
     end if;
   end process synchronizer;
 
-  sync.sck <= sync.sck_ff(1) xor sync.sck_ff(2); -- edge detect
+  sync.sck <= sync.sck_ff(1) xor sync.sck_ff(2); -- edge detect (rising or falling)
   sync.csn <= sync.csn_ff(1);
   sync.sdi <= sync.sdi_ff(1);
 

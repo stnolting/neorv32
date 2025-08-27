@@ -144,6 +144,16 @@
               <description>SDI enable</description>
             </field>
             <field>
+              <name>SDI_CTRL_CLR_RX</name>
+              <bitRange>[1:1]</bitRange>
+              <description>Clear RX FIFO, flag auto-clears</description>
+            </field>
+            <field>
+              <name>SDI_CTRL_CLR_TX</name>
+              <bitRange>[2:2]</bitRange>
+              <description>Clear TX FIFO, flag auto-clears</description>
+            </field>
+            <field>
               <name>SDI_CTRL_FIFO</name>
               <bitRange>[7:4]</bitRange>
               <description>log2(FIFO size)</description>

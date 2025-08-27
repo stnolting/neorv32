@@ -165,6 +165,24 @@ int neorv32_sdi_tx_full(void) {
 
 
 /**********************************************************************//**
+ * Clear RX FIFO.
+ **************************************************************************/
+void neorv32_sdi_rx_clear(void) {
+
+  NEORV32_SDI->CTRL |= (uint32_t)(1 << SDR_CTRL_CLR_RX);
+}
+
+
+/**********************************************************************//**
+ * Clear TX FIFO.
+ **************************************************************************/
+void neorv32_sdi_tx_clear(void) {
+
+  NEORV32_SDI->CTRL |= (uint32_t)(1 << SDR_CTRL_CLR_TX);
+}
+
+
+/**********************************************************************//**
  * Get status of chip-select line.
  *
  * @return Non-zero if chip-select line is enabled/active (driven low), zero otherwise.
