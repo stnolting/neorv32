@@ -124,19 +124,16 @@ begin
         else -- read access
           case bus_req_i.addr(3 downto 2) is
             when "00" => -- control register
-              bus_rsp_o.data(ctrl_en_c) <= ctrl.enable;
-              --
-              bus_rsp_o.data(ctrl_rx_empty_c) <= not rx_fifo.avail;
-              bus_rsp_o.data(ctrl_rx_full_c)  <= not rx_fifo.free;
-              bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
-              bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
-              bus_rsp_o.data(ctrl_rx_last_c)  <= rx_last;
-              --
-              bus_rsp_o.data(ctrl_irq_rx_nempty_c) <= ctrl.irq_rx_nempty;
-              bus_rsp_o.data(ctrl_irq_rx_full_c)   <= ctrl.irq_rx_full;
-              bus_rsp_o.data(ctrl_irq_tx_empty_c)  <= ctrl.irq_tx_empty;
-              bus_rsp_o.data(ctrl_irq_tx_nfull_c)  <= ctrl.irq_tx_nfull;
-              --
+              bus_rsp_o.data(ctrl_en_c)                              <= ctrl.enable;
+              bus_rsp_o.data(ctrl_rx_empty_c)                        <= not rx_fifo.avail;
+              bus_rsp_o.data(ctrl_rx_full_c)                         <= not rx_fifo.free;
+              bus_rsp_o.data(ctrl_tx_empty_c)                        <= not tx_fifo.avail;
+              bus_rsp_o.data(ctrl_tx_full_c)                         <= not tx_fifo.free;
+              bus_rsp_o.data(ctrl_rx_last_c)                         <= rx_last;
+              bus_rsp_o.data(ctrl_irq_rx_nempty_c)                   <= ctrl.irq_rx_nempty;
+              bus_rsp_o.data(ctrl_irq_rx_full_c)                     <= ctrl.irq_rx_full;
+              bus_rsp_o.data(ctrl_irq_tx_empty_c)                    <= ctrl.irq_tx_empty;
+              bus_rsp_o.data(ctrl_irq_tx_nfull_c)                    <= ctrl.irq_tx_nfull;
               bus_rsp_o.data(ctrl_rx_fifo3_c downto ctrl_rx_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_rx_fifo_c, 4));
               bus_rsp_o.data(ctrl_tx_fifo3_c downto ctrl_tx_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_tx_fifo_c, 4));
             when "01" => -- routing information

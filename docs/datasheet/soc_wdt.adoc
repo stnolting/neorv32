@@ -45,8 +45,7 @@ debugged via the <<_on_chip_debugger_ocd>>.
 **Configuration Lock**
 
 The watchdog control register can be _locked_ to protect the current configuration from being modified. The lock is
-activated by setting the `WDT_CTRL_LOCK` bit. The lock bit can only be set if the WDT is already enabled (`WDT_CTRL_EN`
-has to be set). Furthermore, the lock bit can only be cleared by a _hardware_ reset
+activated by setting the `WDT_CTRL_LOCK` bit. The lock bit can only be cleared by a _hardware_ reset
 
 In the locked state any write access to the control register will trigger an immediate hardware reset (read accesses
 are still possible and have no side effects). Additionally, writing an incorrect password to the `RESET` register will
@@ -79,7 +78,7 @@ processor's main reset signal is active (even if the watchdog is deactivated or 
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Reset value | Writable if locked | Function
 .5+<| `0xfffb0000` .5+<| `CTRL` <|`0`    `WDT_CTRL_EN`                                 ^| r/w ^| `0` ^| no  <| Watchdog enable
-                                <|`1`    `WDT_CTRL_LOCK`                               ^| r/w ^| `0` ^| no  <| Lock configuration when set, clears only on system reset, can only be set if enable bit is set already
+                                <|`1`    `WDT_CTRL_LOCK`                               ^| r/w ^| `0` ^| no  <| Lock configuration when set, clears only on system reset
                                 <|`3:2`  `WDT_CTRL_RCAUSE_HI : WDT_CTRL_RCAUSE_LO`     ^| r/- ^| `0` ^| -   <| Cause of last system reset
                                 <|`7:4`  -                                             ^| r/- ^| -   ^| -   <| _reserved_, reads as zero
                                 <|`31:8` `WDT_CTRL_TIMEOUT_MSB : WDT_CTRL_TIMEOUT_LSB` ^| r/w ^| 0   ^| no  <| Timeout value (24-bit)

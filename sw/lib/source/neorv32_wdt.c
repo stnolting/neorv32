@@ -30,7 +30,7 @@ int neorv32_wdt_available(void) {
  *
  * @warning Once the lock bit is set it can only be removed by a hardware reset.
  *
- * @param[in] timeout 24-bit timeout value
+ * @param[in] timeout LSB-aligned 24-bit timeout value (number of clock cycles).
  * @param[in] lock Control register will be locked when 1 (until next HW reset).
  **************************************************************************/
 void neorv32_wdt_setup(uint32_t timeout, int lock) {
@@ -41,33 +41,20 @@ void neorv32_wdt_setup(uint32_t timeout, int lock) {
   uint32_t ctrl = 0;
   ctrl |= ((uint32_t)(1))                    << WDT_CTRL_EN;
   ctrl |= ((uint32_t)(timeout & 0x00ffffff)) << WDT_CTRL_TIMEOUT_LSB;
+  ctrl |= ((uint32_t)(lock & 1))             << WDT_CTRL_LOCK;
   NEORV32_WDT->CTRL = ctrl;
-
-  // lock configuration?
-  if (lock) {
-    NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_LOCK);
-  }
 }
 
 
 /**********************************************************************//**
  * Disable watchdog timer.
  *
- * @return Returns 0 if WDT is really deactivated, -1 otherwise.
+ * @return Returns 0 if WDT is deactivated, non-zero otherwise.
  **************************************************************************/
 int neorv32_wdt_disable(void) {
 
-  const uint32_t en_mask_c = (uint32_t)(1 << WDT_CTRL_EN);
-
-  NEORV32_WDT->CTRL &= en_mask_c; // try to disable
-
-  // check if WDT is really off
-  if (NEORV32_WDT->CTRL & en_mask_c) {
-    return -1; // still active
-  }
-  else {
-    return 0; // WDT is disabled
-  }
+  NEORV32_WDT->CTRL &= (uint32_t)(1 << WDT_CTRL_EN); // try to disable
+  return (int)(NEORV32_WDT->CTRL & (1 << WDT_CTRL_EN));
 }
 
 
@@ -88,14 +75,11 @@ void neorv32_wdt_feed(uint32_t password) {
 void neorv32_wdt_force_hwreset(void) {
 
   // make sure the WDT is enabled
-  NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_EN);
+  // if it is locked this will trigger a hardware reset
+  NEORV32_WDT->CTRL = (uint32_t)(1 << WDT_CTRL_EN);
 
-  // lock the WDT configuration
-  // if it is already locked this will trigger a hardware reset
-  NEORV32_WDT->CTRL |= (uint32_t)(1 << WDT_CTRL_LOCK);
-
-  // try to reset the WDT using an incorrect password;
-  // this will finally trigger a hardware reset
+  // reset the WDT using an incorrect password;
+  // this will trigger a hardware reset
   NEORV32_WDT->RESET = 0;
 }
 

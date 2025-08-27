@@ -79,10 +79,6 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
   signal sysinfo : sysinfo_t;
 
-  -- bus access --
-  signal buf_adr : std_ulogic_vector(1 downto 0);
-  signal buf_ack : std_ulogic;
-
 begin
 
   -- SYSINFO(0): Processor Clock Frequency in Hz --------------------------------------------
@@ -157,22 +153,20 @@ begin
 
   -- Bus Response ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  access_buffer: process(rstn_i, clk_i)
+  bus_response: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      buf_ack <= '0';
-      buf_adr <= (others => '0');
+      bus_rsp_o <= rsp_terminate_c;
     elsif rising_edge(clk_i) then
-      buf_ack <= bus_req_i.stb;
+      bus_rsp_o <= rsp_terminate_c; -- default
       if (bus_req_i.stb = '1') then
-        buf_adr <= bus_req_i.addr(3 downto 2);
+        bus_rsp_o.data <= sysinfo(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
+        bus_rsp_o.ack  <= '1';
+        if (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) /= "00") then
+          bus_rsp_o.err <= '1'; -- error if write access to any address other than zero
+        end if;
       end if;
     end if;
-  end process access_buffer;
-
-  -- output gate and SYSINFO lookup --
-  bus_rsp_o.data <= sysinfo(to_integer(unsigned(buf_adr))) when (buf_ack = '1') else (others => '0');
-  bus_rsp_o.ack  <= buf_ack;
-  bus_rsp_o.err  <= '0'; -- no bus errors
+  end process bus_response;
 
 end neorv32_sysinfo_rtl;
