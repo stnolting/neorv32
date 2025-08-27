@@ -1313,7 +1313,7 @@
             <field>
               <name>WDT_CTRL_LOCK</name>
               <bitRange>[1:1]</bitRange>
-              <description>Lock write access to control register, clears on reset (HW or WDT) only</description>
+              <description>Lock write access to control register, clears on reset only</description>
             </field>
             <field>
               <name>WDT_CTRL_RCAUSE</name>

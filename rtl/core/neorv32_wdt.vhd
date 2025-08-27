@@ -34,12 +34,12 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   constant reset_pwd_c : std_ulogic_vector(31 downto 0) := x"709d1ab3";
 
   -- Control register bits --
-  constant ctrl_enable_c      : natural :=  0; -- r/w: WDT enable
-  constant ctrl_lock_c        : natural :=  1; -- r/w: lock write access to control register when set
-  constant ctrl_rcause_lo_c   : natural :=  2; -- r/-: cause of last system reset - low
-  constant ctrl_rcause_hi_c   : natural :=  3; -- r/-: cause of last system reset - high
-  constant ctrl_timeout_lsb_c : natural :=  8; -- r/w: timeout value LSB
-  constant ctrl_timeout_msb_c : natural := 31; -- r/w: timeout value MSB
+  constant ctrl_enable_c     : natural :=  0; -- r/w: WDT enable
+  constant ctrl_lock_c       : natural :=  1; -- r/w: lock write access to control register when set
+  constant ctrl_rcause_lo_c  : natural :=  2; -- r/-: cause of last system reset, bit 0, LSB
+  constant ctrl_rcause_hi_c  : natural :=  3; -- r/-: cause of last system reset, bit 1, MSB
+  constant ctrl_timeout_lo_c : natural :=  8; -- r/w: timeout value, bit 0, LSB
+  constant ctrl_timeout_hi_c : natural := 31; -- r/w: timeout value, bit 23, MSB
 
   -- control register --
   type ctrl_t is record
@@ -87,8 +87,8 @@ begin
           if (bus_req_i.addr(2) = '0') then -- control register
             if (ctrl.lock = '0') then -- update configuration only if not locked
               ctrl.enable  <= bus_req_i.data(ctrl_enable_c);
-              ctrl.lock    <= bus_req_i.data(ctrl_lock_c) and ctrl.enable; -- lock only if already enabled
-              ctrl.timeout <= bus_req_i.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c);
+              ctrl.lock    <= bus_req_i.data(ctrl_lock_c);
+              ctrl.timeout <= bus_req_i.data(ctrl_timeout_hi_c downto ctrl_timeout_lo_c);
             else -- write access attempt to locked CTRL register
               reset_force <= '1';
             end if;
@@ -100,10 +100,10 @@ begin
             end if;
           end if;
         else -- read access
-          bus_rsp_o.data(ctrl_enable_c)                                <= ctrl.enable;
-          bus_rsp_o.data(ctrl_lock_c)                                  <= ctrl.lock;
-          bus_rsp_o.data(ctrl_rcause_hi_c downto ctrl_rcause_lo_c)     <= reset_cause;
-          bus_rsp_o.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c) <= ctrl.timeout;
+          bus_rsp_o.data(ctrl_enable_c)                              <= ctrl.enable;
+          bus_rsp_o.data(ctrl_lock_c)                                <= ctrl.lock;
+          bus_rsp_o.data(ctrl_rcause_hi_c downto ctrl_rcause_lo_c)   <= reset_cause;
+          bus_rsp_o.data(ctrl_timeout_hi_c downto ctrl_timeout_lo_c) <= ctrl.timeout;
         end if;
       end if;
     end if;
@@ -165,7 +165,7 @@ begin
       elsif (hw_rst_timeout = '1') then
         reset_cause <= "10"; -- reset from watchdog timer
       elsif (hw_rst_access = '1') then
-        reset_cause <= "11"; -- reset from invalid watchdog access (incorrect password)
+        reset_cause <= "11"; -- reset from invalid watchdog access (locked or incorrect password)
       end if;
     end if;
   end process reset_identifier;
