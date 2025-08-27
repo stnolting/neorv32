@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 27.08.2025 | 1.12.0.8 | add two new write-only flags to the SDI control register to clear the RX and TX FIFOs | [#1358](https://github.com/stnolting/neorv32/pull/1358) |
 | 27.08.2025 | 1.12.0.7 | minor rtl code-cleanups and optimizations | [#1357](https://github.com/stnolting/neorv32/pull/1357) |
 | 24.08.2025 | 1.12.0.6 | simplify ROM images (VHDL packages for IMEM/BOOTROM) | [#1355](https://github.com/stnolting/neorv32/pull/1355) |
 | 23.08.2025 | 1.12.0.5 | :warning: simplify UART and SDI modules; remove "at least half full" FIFO status flags and according interrupts | [#1354](https://github.com/stnolting/neorv32/pull/1354) |
