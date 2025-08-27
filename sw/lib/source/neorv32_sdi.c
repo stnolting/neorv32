@@ -169,7 +169,7 @@ int neorv32_sdi_tx_full(void) {
  **************************************************************************/
 void neorv32_sdi_rx_clear(void) {
 
-  NEORV32_SDI->CTRL |= (uint32_t)(1 << SDR_CTRL_CLR_RX);
+  NEORV32_SDI->CTRL |= (uint32_t)(1 << SDI_CTRL_CLR_RX);
 }
 
 
@@ -178,7 +178,7 @@ void neorv32_sdi_rx_clear(void) {
  **************************************************************************/
 void neorv32_sdi_tx_clear(void) {
 
-  NEORV32_SDI->CTRL |= (uint32_t)(1 << SDR_CTRL_CLR_TX);
+  NEORV32_SDI->CTRL |= (uint32_t)(1 << SDI_CTRL_CLR_TX);
 }
 
 

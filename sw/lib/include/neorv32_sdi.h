@@ -33,8 +33,8 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 /** SDI control register bits */
 enum NEORV32_SDI_CTRL_enum {
   SDI_CTRL_EN            =  0, /**< SDI control register(0) (r/w): SID module enable */
-  SDR_CTRL_CLR_RX        =  1, /**< SDI control register(1) (r/w): Clear RX FIFO, flag auto-clears */
-  SDR_CTRL_CLR_TX        =  2, /**< SDI control register(2) (r/w): Clear TX FIFO, flag auto-clears */
+  SDI_CTRL_CLR_RX        =  1, /**< SDI control register(1) (r/w): Clear RX FIFO, flag auto-clears */
+  SDI_CTRL_CLR_TX        =  2, /**< SDI control register(2) (r/w): Clear TX FIFO, flag auto-clears */
 
   SDI_CTRL_FIFO_LSB      =  4, /**< SDI control register(4) (r/-): log2 of SDI FIFO size, LSB */
   SDI_CTRL_FIFO_MSB      =  7, /**< SDI control register(7) (r/-): log2 of SDI FIFO size, MSB */
