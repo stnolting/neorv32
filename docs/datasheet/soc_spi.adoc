@@ -19,7 +19,7 @@
 
 **Key Features**
 
-* SPI-compatible host controller for byte-level transfers
+* SPI-compatible host controller
 * Programmable clock phase and polarity
 * Fine-grained programmable clock
 * 8 dedicated chip-select lines
@@ -29,10 +29,10 @@
 
 **Overview**
 
-The NEORV32 SPI module provides a **host-mode** serial peripheral interface. The module operates on a byte-wide data
-granularity, supports all 4 standard clock modes, provides a precise SPI clock generator and implements 8 dedicated chip
-select signals via the top entity's `spi_csn_o` signal. An optional receive/transmit ring-buffer/FIFO can be configured
-via the `IO_SPI_FIFO` generic to support block-based transmissions without CPU interaction.
+The NEORV32 SPI module provides a **host-mode** serial peripheral interface. The module operates on byte-wide data,
+supports all 4 standard SPI clock modes, provides a precise SPI clock generator and implements 8 dedicated chip select
+signals via the top entity's `spi_csn_o` signal. An optional receive/transmit ring-buffer/FIFO can be configured
+via the `IO_SPI_FIFO` generic to support programming of complete SPI transmissions without CPU interaction.
 
 .Host-Mode Only
 [NOTE]
@@ -43,28 +43,28 @@ initiated by an external host) check out the <<_serial_data_interface_controller
 
 **Theory of Operation**
 
-The SPI module provides a single control register `CTRL` to configure the module and to check it's status
-and a single data register `DATA` for receiving/transmitting data and for issuing chip-select commands.
+The SPI module provides a single control register `CTRL` to configure the module and to check it's status and a single
+data register `DATA` for receiving/transmitting data and for issuing chip-select commands.
 
 The SPI module is enabled by setting the `SPI_CTRL_EN` bit in the `CTRL` control register. No transfer can be initiated
 and no interrupt request will be triggered if this bit is cleared. Clearing this bit resets the entire module, clears
-the FIFO and terminates any transfer being in process.
+the RX/TX FIFO and terminates any transfer being in process.
 
-The actual SPI transfer (receiving one byte while sending one byte) as well as control of the chip-select lines is handled
-via the module's `DATA` register. Note that this register will access the TX FIFO of the ring-buffer when writing and will
-access the RX FIFO of the ring-buffer when reading.
+The actual SPI transfer (receiving one byte while also sending one byte) as well as control of the chip-select lines is
+handled by the module's `DATA` register. Note that this register will access the TX FIFO of the ring-buffer when writing
+to it and will access the RX FIFO of the ring-buffer when reading from it.
 
 The most significant bit of the `DATA` register (`SPI_DATA_CMD`) is used to select the purpose of the data being written.
 When the `SPI_DATA_CMD` is cleared, the lowest 8-bit represent the actual SPI TX data that will be transmitted by the
-SPI engine. After completion, the received data is pushed to the RX FIFO.
+SPI engine. After completion, the according receive data is pushed to the RX FIFO.
 
 If `SPI_DATA_CMD` is set, the lowest 4-bit control the chip-select lines. In this case, bits `2:0` select one of the eight
 chip-select lines. The selected line will become enabled when bit `3` is set. If bit `3` is cleared, all chip-select
 lines will be disabled at once. Note that the bits of the `spi_csn_o` port are low-active. Only one chip-select can be
 active at a time.
 
-Since all SPI operations are controlled via the FIFO, entire SPI sequences (chip-enable, data transmissions, chip-disable)
-can be "programmed". Thus, SPI operations can be executed without any CPU interaction at all and can also be coordinated by
+Since all SPI operations are controlled via the FIFOs, entire SPI sequences (chip-enable, data transmission(s), chip-disable)
+can be _programmed_. Thus, SPI operations can be executed without any CPU interaction at all and can also be coordinated by
 the system's DMA controller.
 
 
@@ -100,9 +100,9 @@ bit defines the _clock polarity_.
 }
 ----
 
-The SPI clock frequency (`spi_clk_o`) is programmed by the 3-bit `SPI_CTRL_PRSCx` clock prescaler for a coarse clock selection
-and a 4-bit clock divider `SPI_CTRL_CDIVx` for a fine clock configuration.
-The following clock prescalers (`SPI_CTRL_PRSCx`) are available:
+The SPI clock frequency (`spi_clk_o`) is programmed by the 3-bit `SPI_CTRL_PRSCx` clock prescaler for a coarse clock
+selection and a 4-bit clock divider `SPI_CTRL_CDIVx` for a fine clock configuration. The following clock prescalers
+(`SPI_CTRL_PRSCx`) are available:
 
 .SPI prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
@@ -117,14 +117,14 @@ from the processor's main clock f~main~ according to the following equation:
 
 _**f~SPI~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler` * (1 + `SPI_CTRL_CDIVx`))
 
-Hence, the maximum SPI clock is f~main~ / 4 and the lowest SPI clock is f~main~ / 131072. The SPI clock is always
-symmetric having a duty cycle of exactly 50%.
+Hence, the maximum SPI clock is f~main~ / 4 and the lowest SPI clock is f~main~ / 131072.
+The SPI clock is always symmetric having a duty cycle of exactly 50%.
 
 
 **SPI Interrupt**
 
-The SPI module provides a single interrupt that gets triggered when the programmed SPI sequence has completed (i.e.
-the TX FIFO part of the ring buffer is empty and the SPI engine is idle).
+The SPI module provides a single interrupt that gets triggered when the programmed SPI sequence
+has completed (i.e. the TX FIFO is empty and the SPI engine is idle).
 
 
 **Register Map**
