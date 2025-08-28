@@ -25,10 +25,10 @@ entity neorv32_spi is
     bus_req_i : in  bus_req_t;                     -- bus request
     bus_rsp_o : out bus_rsp_t;                     -- bus response
     clkgen_i  : in  std_ulogic_vector(7 downto 0); -- pre-scaled clocks
-    spi_clk_o : out std_ulogic;                    -- SPI serial clock
+    spi_clk_o : out std_ulogic;                    -- serial clock
     spi_dat_o : out std_ulogic;                    -- controller data out, peripheral data in
     spi_dat_i : in  std_ulogic;                    -- controller data in, peripheral data out
-    spi_csn_o : out std_ulogic_vector(7 downto 0); -- SPI CS
+    spi_csn_o : out std_ulogic_vector(7 downto 0); -- chip-select, low-active
     irq_o     : out std_ulogic                     -- CPU interrupt
   );
 end neorv32_spi;
@@ -36,11 +36,11 @@ end neorv32_spi;
 architecture neorv32_spi_rtl of neorv32_spi is
 
   -- control register --
-  constant ctrl_en_c       : natural :=  0; -- r/w: SPI enable
-  constant ctrl_cpha_c     : natural :=  1; -- r/w: SPI clock phase
-  constant ctrl_cpol_c     : natural :=  2; -- r/w: SPI clock polarity
-  constant ctrl_prsc0_c    : natural :=  3; -- r/w: SPI prescaler select, bit 0 (LSB)
-  constant ctrl_prsc2_c    : natural :=  5; -- r/w: SPI prescaler select, bit 2 (MSB)
+  constant ctrl_en_c       : natural :=  0; -- r/w: module enable
+  constant ctrl_cpha_c     : natural :=  1; -- r/w: clock phase
+  constant ctrl_cpol_c     : natural :=  2; -- r/w: clock polarity
+  constant ctrl_prsc0_c    : natural :=  3; -- r/w: prescaler select, bit 0 (LSB)
+  constant ctrl_prsc2_c    : natural :=  5; -- r/w: prescaler select, bit 2 (MSB)
   constant ctrl_cdiv0_c    : natural :=  6; -- r/w: clock divider, bit 0 (LSB)
   constant ctrl_cdiv3_c    : natural :=  9; -- r/w: clock divider, bit 3 (MSB)
   --
@@ -136,16 +136,13 @@ begin
             bus_rsp_o.data(ctrl_cpol_c)                      <= ctrl.cpol;
             bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
             bus_rsp_o.data(ctrl_cdiv3_c downto ctrl_cdiv0_c) <= ctrl.cdiv;
-            --
-            bus_rsp_o.data(ctrl_rx_avail_c) <= rx_fifo.avail;
-            bus_rsp_o.data(ctrl_tx_empty_c) <= not tx_fifo.avail;
-            bus_rsp_o.data(ctrl_tx_full_c)  <= not tx_fifo.free;
-            --
+            bus_rsp_o.data(ctrl_rx_avail_c)                  <= rx_fifo.avail;
+            bus_rsp_o.data(ctrl_tx_empty_c)                  <= not tx_fifo.avail;
+            bus_rsp_o.data(ctrl_tx_full_c)                   <= not tx_fifo.free;
             bus_rsp_o.data(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-            --
-            bus_rsp_o.data(ctrl_cs_en_c) <= rtx_engine.cs_ctrl(3);
-            bus_rsp_o.data(ctrl_busy_c)  <= rtx_engine.busy or tx_fifo.avail;
-          else
+            bus_rsp_o.data(ctrl_cs_en_c)                     <= rtx_engine.cs_ctrl(3);
+            bus_rsp_o.data(ctrl_busy_c)                      <= rtx_engine.busy or tx_fifo.avail;
+          else -- RX data
             bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
           end if;
         end if;
@@ -237,10 +234,7 @@ begin
       rtx_engine.sck      <= '0';
       rtx_engine.cs_ctrl  <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- defaults --
-      rtx_engine.done <= '0';
-
-      -- serial engine --
+      rtx_engine.done     <= '0';
       rtx_engine.state(2) <= ctrl.enable;
       case rtx_engine.state is
 
@@ -289,7 +283,7 @@ begin
             end if;
           end if;
 
-        when others => -- "0--": SPI deactivated
+        when others => -- "0--": deactivated
         -- ------------------------------------------------------------
           rtx_engine.sck               <= ctrl.cpol;
           rtx_engine.cs_ctrl           <= (others => '0');
