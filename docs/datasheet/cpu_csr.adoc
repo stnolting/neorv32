@@ -177,7 +177,7 @@ In the following table these CSRs are highlighted with "⚠️".
 |=======================
 | Name        | Machine status register - low word
 | Address     | `0x300`
-| Reset value | `0x00001800`
+| Reset value | `0x00000000`
 | ISA         | `Zicsr`
 | Description | The `mstatus` CSR is used to configure general machine environment parameters.
 |=======================

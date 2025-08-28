@@ -1002,7 +1002,7 @@ begin
       csr.prv_level      <= priv_mode_m_c;
       csr.mstatus_mie    <= '0';
       csr.mstatus_mpie   <= '0';
-      csr.mstatus_mpp    <= priv_mode_m_c;
+      csr.mstatus_mpp    <= '0';
       csr.mstatus_mprv   <= '0';
       csr.mstatus_tw     <= '0';
       csr.mie_msi        <= '0';
