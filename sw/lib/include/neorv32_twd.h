@@ -41,8 +41,7 @@ enum NEORV32_TWD_CTRL_enum {
   TWD_CTRL_IRQ_RX_AVAIL = 11, /**< TWD control register(11) (r/w): IRQ if RX FIFO data available */
   TWD_CTRL_IRQ_RX_FULL  = 12, /**< TWD control register(12) (r/w): IRQ if RX FIFO full */
   TWD_CTRL_IRQ_TX_EMPTY = 13, /**< TWD control register(13) (r/w): IRQ if TX FIFO empty */
-  TWD_CTRL_TX_DUMMY_EN  = 14, /**< TWD control register(14) (r/w): enable sending tx_dummy (last sent byte) when FIFO is empty */
-  TWD_CTRL_HIDE_READ    = 15, /**< TWD control register(15) (r/w): Generate NACK on READ-access when TX FIFO is empty */
+  
   TWD_CTRL_RX_FIFO_LSB  = 16, /**< TWD control register(16) (r/-): log2(RX_FIFO size), LSB */
   TWD_CTRL_RX_FIFO_MSB  = 19, /**< TWD control register(19) (r/-): log2(RX_FIFO size), MSB */
   TWD_CTRL_TX_FIFO_LSB  = 20, /**< TWD control register(20) (r/-): log2(TX_FIFO size), LSB */
@@ -70,13 +69,11 @@ enum NEORV32_TWD_DATA_enum {
  **************************************************************************/
 /**@{*/
 int     neorv32_twd_available(void);
-void    neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int tx_dummy_en, int hide_read);
+void    neorv32_twd_setup(int device_addr, int fsel, uint32_t irq_mask);
 int     neorv32_twd_get_rx_fifo_depth(void);
 int     neorv32_twd_get_tx_fifo_depth(void);
 void    neorv32_twd_disable(void);
 void    neorv32_twd_enable(void);
-void    neorv32_twd_disable_tx_dummy(void);
-void    neorv32_twd_enable_tx_dummy(void);
 void    neorv32_twd_clear_rx(void);
 void    neorv32_twd_clear_tx(void);
 int     neorv32_twd_sense_scl(void);

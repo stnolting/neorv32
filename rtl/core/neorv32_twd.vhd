@@ -46,8 +46,7 @@ architecture neorv32_twd_rtl of neorv32_twd is
   constant ctrl_irq_rx_avail_c  : natural := 11; -- r/w: IRQ if RX FIFO data available
   constant ctrl_irq_rx_full_c   : natural := 12; -- r/w: IRQ if RX FIFO full
   constant ctrl_irq_tx_empty_c  : natural := 13; -- r/w: IRQ if TX FIFO empty
-  constant ctrl_tx_dummy_en_c   : natural := 14; -- r/w: enable sending tx_dummy (last sent byte) when FIFO is empty
-  constant ctrl_hide_read_c     : natural := 15; -- r/w: generate NACK on READ-access when TX FIFO is empty
+  --
   constant ctrl_rx_fifo_size0_c : natural := 16; -- r/-: log2(RX_FIFO size), bit 0 (LSB)
   constant ctrl_rx_fifo_size3_c : natural := 19; -- r/-: log2(RX_FIFO size), bit 3 (MSB)
   constant ctrl_tx_fifo_size0_c : natural := 20; -- r/-: log2(TX_FIFO size), bit 0 (LSB)
@@ -75,13 +74,8 @@ architecture neorv32_twd_rtl of neorv32_twd is
     irq_rx_avail : std_ulogic;
     irq_rx_full  : std_ulogic;
     irq_tx_empty : std_ulogic;
-    tx_dummy_en  : std_ulogic;
-    hide_read    : std_ulogic;
   end record;
   signal ctrl : ctrl_t;
-
-  -- tx_dummy register --
-  signal tx_dummy : std_ulogic_vector(7 downto 0);
 
   -- bus sample logic --
   type smp_t is record
@@ -111,18 +105,15 @@ architecture neorv32_twd_rtl of neorv32_twd is
   signal rx_fifo, tx_fifo : fifo_t;
 
   -- bus engine --
-  type state_t is (S_IDLE, S_INIT, S_ADDR, S_RESP, S_RTX, S_ACK);
+  type state_t is (S_IDLE, S_INIT, S_ADDR, S_RESP, S_PREP, S_RTX, S_ACK);
   type engine_t is record
     state : state_t; -- FSM state
     cnt   : unsigned(3 downto 0); -- bit counter
     sreg  : std_ulogic_vector(7 downto 0); -- shift register
     cmd   : std_ulogic; -- 0 = write, 1 = read
-    rdata : std_ulogic_vector(7 downto 0); -- read-access data
-    dout  : std_ulogic; -- output bit
-    ack   : std_ulogic; -- ACK/NACK after transmission
+    rx_we : std_ulogic; -- write write-enable
+    tx_re : std_ulogic; -- read read-enable
     busy  : std_ulogic; -- bus operation in progress
-    wr_we : std_ulogic; -- write write-enable
-    rd_re : std_ulogic; -- read read-enable
   end record;
   signal engine : engine_t;
 
@@ -142,8 +133,6 @@ begin
       ctrl.irq_rx_avail <= '0';
       ctrl.irq_rx_full  <= '0';
       ctrl.irq_tx_empty <= '0';
-      ctrl.tx_dummy_en  <= '0';
-      ctrl.hide_read    <= '0';
     elsif rising_edge(clk_i) then
       -- bus handshake defaults --
       bus_rsp_o.ack  <= bus_req_i.stb;
@@ -163,8 +152,6 @@ begin
             ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
             ctrl.irq_rx_full  <= bus_req_i.data(ctrl_irq_rx_full_c);
             ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
-            ctrl.tx_dummy_en  <= bus_req_i.data(ctrl_tx_dummy_en_c);
-            ctrl.hide_read    <= bus_req_i.data(ctrl_hide_read_c);
           end if;
         else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
@@ -174,8 +161,6 @@ begin
             bus_rsp_o.data(ctrl_irq_rx_avail_c)                              <= ctrl.irq_rx_avail;
             bus_rsp_o.data(ctrl_irq_rx_full_c)                               <= ctrl.irq_rx_full;
             bus_rsp_o.data(ctrl_irq_tx_empty_c)                              <= ctrl.irq_tx_empty;
-            bus_rsp_o.data(ctrl_tx_dummy_en_c)                               <= ctrl.tx_dummy_en;
-            bus_rsp_o.data(ctrl_hide_read_c)                                 <= ctrl.hide_read;
             bus_rsp_o.data(ctrl_rx_fifo_size3_c downto ctrl_rx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_rx_fifo_size_c, 4));
             bus_rsp_o.data(ctrl_tx_fifo_size3_c downto ctrl_tx_fifo_size0_c) <= std_ulogic_vector(to_unsigned(log2_tx_fifo_size_c, 4));
             bus_rsp_o.data(ctrl_rx_avail_c)                                  <= rx_fifo.avail;
@@ -194,7 +179,7 @@ begin
   end process bus_access;
 
 
-  -- Data FIFO ("Ring Buffer") --------------------------------------------------------------
+  -- Data FIFOs ("Ring Buffer") -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
   -- TX FIFO --
@@ -222,26 +207,7 @@ begin
   tx_fifo.clr   <= '1' when (ctrl.enable = '0') or (ctrl.clr_tx = '1') else '0';
   tx_fifo.we    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') else '0';
   tx_fifo.wdata <= bus_req_i.data(7 downto 0);
-  tx_fifo.re    <= engine.rd_re;
-
-  -- Backup last TX byte in case FIFO runs empty --
-  tx_backup: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      tx_dummy <= (others => '0');
-    elsif rising_edge(clk_i) then
-      if (tx_fifo.avail = '1') and (engine.rd_re = '1') then
-        tx_dummy <= tx_fifo.rdata;
-      else
-        tx_dummy <= tx_dummy;
-      end if;
-    end if;
-  end process tx_backup;
-
-  -- TX Data
-  engine.rdata <= tx_fifo.rdata when (tx_fifo.avail = '1') else -- read TX FIFO when available
-                  tx_dummy when (ctrl.tx_dummy_en = '1') else   -- read 'tx_dummy' when TX FIFO is drained and tx_dummy_en enabled
-                  (others => '1');                              -- read '1' when TX FIFO is drained and tx_dummy_en disabled
+  tx_fifo.re    <= engine.tx_re;
 
 
   -- RX FIFO --
@@ -268,7 +234,7 @@ begin
 
   rx_fifo.clr   <= '1' when (ctrl.enable = '0') or (ctrl.clr_rx = '1') else '0';
   rx_fifo.wdata <= engine.sreg;
-  rx_fifo.we    <= engine.wr_we;
+  rx_fifo.we    <= engine.rx_we;
   rx_fifo.re    <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(2) = '1') else '0';
 
 
@@ -316,25 +282,13 @@ begin
   -- sample clock for input "filtering" --
   smp.clk_en <= clkgen_i(clk_div64_c) when (ctrl.fsel = '1') else clkgen_i(clk_div8_c);
 
-  -- bus event detector (event signals are "single-shot") --
-  bus_event: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      smp.sda      <= '1';
-      smp.scl      <= '1';
-      smp.scl_rise <= '0';
-      smp.scl_fall <= '0';
-      smp.start    <= '0';
-      smp.stop     <= '0';
-    elsif rising_edge(clk_i) then
-      smp.sda      <= smp.sda_sreg(2) or smp.sda_sreg(1);
-      smp.scl      <= smp.sda_sreg(2) or smp.sda_sreg(1);
-      smp.scl_rise <= smp.valid and (not smp.scl_sreg(2)) and (    smp.scl_sreg(1)); -- rising edge
-      smp.scl_fall <= smp.valid and (    smp.scl_sreg(2)) and (not smp.scl_sreg(1)); -- falling edge
-      smp.start    <= smp.valid and smp.scl_sreg(2) and smp.scl_sreg(1) and (    smp.sda_sreg(2)) and (not smp.sda_sreg(1));
-      smp.stop     <= smp.valid and smp.scl_sreg(2) and smp.scl_sreg(1) and (not smp.sda_sreg(2)) and (    smp.sda_sreg(1));
-    end if;
-  end process bus_event;
+  -- bus event detectors (event signals are "single-shot") --
+  smp.sda      <= smp.sda_sreg(2) or smp.sda_sreg(1);
+  smp.scl      <= smp.sda_sreg(2) or smp.sda_sreg(1);
+  smp.scl_rise <= smp.valid and (not smp.scl_sreg(2)) and (    smp.scl_sreg(1));
+  smp.scl_fall <= smp.valid and (    smp.scl_sreg(2)) and (not smp.scl_sreg(1));
+  smp.start    <= smp.valid and smp.scl_sreg(2) and smp.scl_sreg(1) and (    smp.sda_sreg(2)) and (not smp.sda_sreg(1));
+  smp.stop     <= smp.valid and smp.scl_sreg(2) and smp.scl_sreg(1) and (not smp.sda_sreg(2)) and (    smp.sda_sreg(1));
 
 
   -- Bus Engine -----------------------------------------------------------------------------
@@ -342,30 +296,20 @@ begin
   bus_engine: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      twd_sda_o    <= '1';
-      twd_scl_o    <= '1';
       engine.state <= S_IDLE;
       engine.cnt   <= (others => '0');
       engine.sreg  <= (others => '1');
       engine.cmd   <= '0';
-      engine.dout  <= '0';
-      engine.ack   <= '0';
-      engine.wr_we <= '0';
-      engine.rd_re <= '0';
+      engine.rx_we <= '0';
+      engine.tx_re <= '0';
     elsif rising_edge(clk_i) then
-      -- keep bus idle by default --
-      twd_sda_o <= '1';
-      twd_scl_o <= '1';
-
-      -- defaults --
-      engine.wr_we <= '0';
-      engine.rd_re <= '0';
-
-      -- fsm --
+      engine.rx_we <= '0';
+      engine.tx_re <= '0';
       case engine.state is
 
         when S_IDLE => -- idle, wait for start condition
         -- ------------------------------------------------------------
+          twd_sda_o <= '1'; -- idle
           if (ctrl.enable = '1') and (smp.start = '1') then
             engine.state <= S_INIT;
           end if;
@@ -388,11 +332,9 @@ begin
             engine.state <= S_INIT;
           elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
             if (ctrl.device_addr = engine.sreg(7 downto 1)) then -- address match?
-              if (engine.sreg(0) = '1' and (ctrl.hide_read = '1' and (tx_fifo.free = '0'))) then -- READ but TX FIFO is empty and hide_read is enabled
-                engine.state <= S_IDLE; -- ignore access, no ACK
-              else
-                engine.state <= S_RESP; -- access device
-              end if;
+              engine.state <= S_RESP;
+            else -- no access, go back to idle
+              engine.state <= S_IDLE;
             end if;
           end if;
           -- sample bus on rising edge --
@@ -404,74 +346,64 @@ begin
         when S_RESP => -- send device address match ACK
         -- ------------------------------------------------------------
           twd_sda_o  <= '0'; -- ACK
-          engine.cnt <= (others => '0');
-          engine.cmd <= engine.sreg(0);
+          engine.cmd <= engine.sreg(0); -- READ/WRITE operation request
           if (ctrl.enable = '0') then -- disabled?
             engine.state <= S_IDLE;
-          elsif (smp.scl_fall = '1') then
-            engine.state <= S_RTX;
+          elsif (smp.scl_fall = '1') then -- end of bit slot
+            engine.state <= S_PREP;
           end if;
-          -- get FIFO TX data (required for read access only) --
-          if (smp.scl_fall = '1') then
-            engine.sreg <= engine.rdata; -- FIFO TX data
-            engine.dout <= engine.rdata(7); -- FIFO TX data (first bit)
+
+        when S_PREP => -- prepare data transmission
+        -- ------------------------------------------------------------
+          if (tx_fifo.avail = '1') and (engine.cmd = '1') then -- data available for read?
+            engine.sreg  <= tx_fifo.rdata;
+            twd_sda_o    <= tx_fifo.rdata(7);
+          else -- no TX data or write operation
+            engine.sreg <= (others => '1');
+            twd_sda_o   <= '1';
           end if;
+          engine.cnt   <= (others => '0');
+          engine.state <= S_RTX;
 
         when S_RTX => -- receive/transmit 8 data bits
         -- ------------------------------------------------------------
           if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
           elsif (smp.start = '1') then -- start-condition
-            engine.state <= S_INIT; -- restart transaction
+            engine.state <= S_INIT;
           elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
-            if (engine.cmd = '0' and rx_fifo.free = '0') then -- WRITE command but RX FIFO full
-              engine.wr_we <= '0';      -- Don't write into RX FIFO
-              engine.state <= S_IDLE; -- Don't acknowledge (NACK)
-            else
-              engine.wr_we <= not engine.cmd; -- write byte to RX FIFO (only if WRITE command)
-              engine.state <= S_ACK;
-            end if;
+            engine.state <= S_ACK;
           end if;
           -- sample bus on rising edge --
           if (smp.scl_rise = '1') then
             engine.sreg <= engine.sreg(6 downto 0) & smp.sda;
             engine.cnt  <= engine.cnt + 1;
           end if;
-          -- set bus output only if READ operation --
-          if (engine.cmd = '1') then
-            twd_sda_o <= engine.dout;
-            if (smp.scl_fall = '1') then -- get next bit
-              engine.dout <= engine.sreg(7);
-            end if;
+          -- update bus at falling edge --
+          if (smp.scl_fall = '1') then  -- end of bit slot
+            twd_sda_o <= engine.sreg(7);
           end if;
 
         when S_ACK => -- receive/transmit ACK/NACK
         -- ------------------------------------------------------------
-          engine.cnt  <= (others => '0');
-          engine.sreg <= engine.rdata; -- FIFO TX data
-          engine.dout <= engine.rdata(7); -- FIFO TX data (first bit)
           if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
-          elsif (smp.scl_fall = '1') then -- end of this time slot
-            if (engine.cmd = '0') or ((engine.cmd = '1') and (engine.ack = '0')) then -- WRITE or READ-with-ACK
-              engine.state <= S_RTX;
+          else
+            if (engine.cmd = '0') then -- WRITE operation
+              twd_sda_o    <= not rx_fifo.free; -- ACK if RX FIFO is not full; NACK if RX FIFO is full
+              engine.rx_we <= smp.scl_fall; -- push to RX FIFO at end of bit slot (if FIFO not full)
+            else -- READ operation
+              twd_sda_o    <= '1'; -- keep high-Z so we can sample the ACK/NACK from the host
+              engine.tx_re <= smp.scl_rise and (not smp.sda); -- pop from RX FIFO if ACK at sample point
             end if;
-          end if;
-          -- sample bus on rising edge --
-          if (smp.scl_rise = '1') then
-            engine.ack <= smp.sda;
-          end if;
-          -- [READ] advance to next data byte if ACK is send by host --
-          if (engine.cmd = '1') and (smp.scl_rise = '1') and (smp.sda = '0') then
-            engine.rd_re <= '1'; -- get next TX data byte
-          end if;
-          -- [WRITE] transmit ACK --
-          if (engine.cmd = '0') then
-            twd_sda_o <= '0';
+            if (smp.scl_fall = '1') then -- end of bit slot
+              engine.state <= S_PREP;
+            end if;
           end if;
 
         when others => -- undefined
         -- ------------------------------------------------------------
+          twd_sda_o    <= '1'; -- idle
           engine.state <= S_IDLE;
 
       end case;
@@ -480,6 +412,9 @@ begin
 
   -- transaction in progress --
   engine.busy <= '0' when (engine.state = S_IDLE) else '1';
+
+  -- SCL is always used as input --
+  twd_scl_o <= '1';
 
 
 end neorv32_twd_rtl;

@@ -1146,16 +1146,6 @@
               <description>IRQ if TX FIFO empty</description>
             </field>
             <field>
-              <name>TWD_CTRL_TX_DUMMY_EN</name>
-              <bitRange>[14:14]</bitRange>
-              <description>Repeat sending last sent byte if TY FIFO is empty</description>
-            </field>
-            <field>
-              <name>TWD_CTRL_HIDE_READ</name>
-              <bitRange>[15:15]</bitRange>
-              <description>Send no ACK on READ access if TX FIFO is empty</description>
-            </field>
-            <field>
               <name>TWD_CTRL_RX_FIFO</name>
               <bitRange>[19:16]</bitRange>
               <access>read-only</access>
