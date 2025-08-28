@@ -30,25 +30,20 @@ int neorv32_twd_available(void) {
  *
  * @param[in] device_addr 7-bit device address.
  * @param[in] fsel Bus sample clock / filter select.
- * @param[in] irq_rx_avail IRQ if RX FIFO data available.
- * @param[in] irq_rx_full IRQ if RX FIFO full.
- * @param[in] irq_tx_empty IRQ if TX FIFO empty.
- * @param[in] tx_dummy_en enable sending tx_dummy (last sent byte) when fifo is empty
- * @param[in] hide_read generate NACK ony READ-access when TX FIFO is empty
+ * @param[in] irq_mask Interrupt configuration bit mask (CTRL's irq_* bits).
  **************************************************************************/
-void neorv32_twd_setup(int device_addr, int fsel, int irq_rx_avail, int irq_rx_full, int irq_tx_empty, int tx_dummy_en, int hide_read) {
+void neorv32_twd_setup(int device_addr, int fsel, uint32_t irq_mask) {
 
   NEORV32_TWD->CTRL = 0; // reset
 
-  uint32_t ctrl = 0;
+  const uint32_t mask = (1 << TWD_CTRL_IRQ_RX_AVAIL) |
+                        (1 << TWD_CTRL_IRQ_RX_FULL)  |
+                        (1 << TWD_CTRL_IRQ_TX_EMPTY);
+
+  uint32_t ctrl = irq_mask & mask;
   ctrl |= ((uint32_t)(               0x01) << TWD_CTRL_EN);
   ctrl |= ((uint32_t)(device_addr  & 0x7f) << TWD_CTRL_DEV_ADDR0);
   ctrl |= ((uint32_t)(fsel         & 0x01) << TWD_CTRL_FSEL);
-  ctrl |= ((uint32_t)(irq_rx_avail & 0x01) << TWD_CTRL_IRQ_RX_AVAIL);
-  ctrl |= ((uint32_t)(irq_rx_full  & 0x01) << TWD_CTRL_IRQ_RX_FULL);
-  ctrl |= ((uint32_t)(irq_tx_empty & 0x01) << TWD_CTRL_IRQ_TX_EMPTY);
-  ctrl |= ((uint32_t)(tx_dummy_en  & 0x01) << TWD_CTRL_TX_DUMMY_EN);
-  ctrl |= ((uint32_t)(hide_read    & 0x01) << TWD_CTRL_HIDE_READ);
   NEORV32_TWD->CTRL = ctrl;
 }
 
@@ -92,24 +87,6 @@ void neorv32_twd_disable(void) {
 void neorv32_twd_enable(void) {
 
   NEORV32_TWD->CTRL |= (uint32_t)(1 << TWD_CTRL_EN);
-}
-
-
-/**********************************************************************//**
- * Disable TWD tx_dummy byte.
- **************************************************************************/
-void neorv32_twd_disable_tx_dummy(void) {
-
-  NEORV32_TWD->CTRL &= ~((uint32_t)(1 << TWD_CTRL_TX_DUMMY_EN));
-}
-
-
-/**********************************************************************//**
- * Enable TWD tx_dummy byte.
- **************************************************************************/
-void neorv32_twd_enable_tx_dummy(void) {
-
-  NEORV32_TWD->CTRL |= (uint32_t)(1 << TWD_CTRL_TX_DUMMY_EN);
 }
 
 

@@ -29,8 +29,8 @@
 
 **Overview**
 
-The NEORV32 TWI implements a I²C-compatible host controller to communicate with arbitrary I2C-devices.
-Note that peripheral-mode (controller acts as a device) and multi-controller mode are not supported yet.
+The NEORV32 TWI implements an I2C-compatible host controller to communicate with arbitrary I2C-devices.
+Note that multi-controller mode and bus arbitration are not supported.
 
 .Host-Mode Only
 [NOTE]
@@ -38,24 +38,19 @@ The NEORV32 TWI controller only supports **host mode**. Transmission are initiat
 and not by an external I²C module. If you are looking for a _device-mode_ module (transactions
 initiated by an external host) check out the <<_two_wire_serial_device_controller_twd>>.
 
-The TWI controller provides two memory-mapped registers that are used for configuring the module and
-for triggering operations: the control and status register `CTRL` and the command and data register `DCMD`.
+The TWI controller provides two memory-mapped registers that are used for configuration & status check (`CTRL`) and
+for accessing transmission data (`DATA`). The `DATA` register is transparently buffered by separate RX and TX FIFOs.
+The size of those FIFOs can be configured by the `IO_TWI_RX_FIFO` and `IO_TWI_TX_FIFO` generics. Software can determine
+the FIFO size via the control register's `TWI_CTRL_FIFO_*` bits. The current status of the RX and TX FIFO can be polled
+by software via the `TWD_CTRL_RX_*` and `TWI_CTRL_TX_*` flags.
 
+The module is globally enabled by setting the control register's `TWI_CTRL_EN` bit. Clearing this bit will disable
+and reset the entire module also clearing the internal RX and TX FIFOs.
 
-**Tristate Drivers**
-
-The TWI module requires two tristate drivers (actually: open-drain drivers - signals can only be actively driven low) for
-the SDA and SCL lines, which have to be implemented by the user in the setup's top module / IO ring. A generic VHDL example
-is shown below (here, `sda_io` and `scl_io` are the actual I²C bus lines, which are of type `std_logic`).
-
-.TWI VHDL Tristate Driver Example
-[source,VHDL]
-----
-sda_io    <= '0' when (twi_sda_o = '0') else 'Z'; -- drive
-scl_io    <= '0' when (twi_scl_o = '0') else 'Z'; -- drive
-twi_sda_i <= std_ulogic(sda_io); -- sense
-twi_scl_i <= std_ulogic(scl_io); -- sense
-----
+.Current Bus State
+[TIP]
+The current state of the I2C bus lines (SCL and SDA) can be checked by software via the `TWI_CTRL_SENSE_*` control
+register bits. Note that the TWI module needs to be enabled in order to sample the bus state.
 
 
 **TWI Clock Speed**
@@ -89,37 +84,40 @@ SCL line low). The controller will halt operation in this case. Clock stretching
 
 **TWI Transfers**
 
-The TWI is enabled via the `TWI_CTRL_EN` bit in the `CTRL` control register. All TWI operations are controlled by
-the `DCMD` register. The actual operation is selected by a 2-bit value that is written to the register's `TWI_DCMD_CMD_*`
-bit-field:
+All TWI operations are controlled by the `DCMD` register, which is buffered by a FIFO. This command/data FIFO is internally
+split into a TX FIFO and a RX FIFO. Writing to `DCMD` will write to the TX FIFO while reading from `DCMD` will read from the
+RX FIFO. Thus, complete TWI sequences can be programmed and executed without further CPU intervention. The actual operation
+is selected by a 2-bit value that is written to the register's `TWI_DCMD_CMD_*` bit-field:
 
-* `00`: NOP (no-operation); all further bit-fields in `DCMD` are ignored
-* `01`: Generate a (repeated) START conditions; all further bit-fields in `DCMD` are ignored
-* `10`: Generate a STOP conditions; all further bit-fields in `DCMD` are ignored
-* `11`: Trigger a data transmission; the data to be send has to be written to the register's `TWI_DCMD_MSB : TWI_DCMD_LSB`
-bit-field; if `TWI_DCMD_ACK` is set the controller will send a host-ACK in the ACK/NACK time slot; after the transmission
-is completed `TWI_DCMD_MSB : TWI_DCMD_LSB` contains the RX data and `TWI_DCMD_ACK` the device's response if no host-ACK was
-configured (`0` = ACK, `1` = ACK)
+* `00`: NOP (no-operation); all further bit-fields in `DCMD` are ignored; no bus operation is executed
+* `01`: Generate a (repeated) START condition; all further bit-fields in `DCMD` are ignored
+* `10`: Generate a STOP condition; all further bit-fields in `DCMD` are ignored
+* `11`: Trigger a data transmission; see below
 
-All operations/data written to the `DCMD` register are buffered by a configurable data/command FIFO. The depth of the FIFO is
-configured by the `IO_TWI_FIFO` top generic. Software can retrieve this size by reading the control register's `TWI_CTRL_FIFO` bits.
+For any transmission the data to be send has to be written to the register's `TWI_DCMD_MSB : TWI_DCMD_LSB` bit-field.
+If `TWI_DCMD_ACK` is set the controller will generate an ACK by it's own. If `TWI_DCMD_ACK` is cleared the controller will
+sample ACK/NACK from the accessed device. Vice versa, the device's data response can be read from `TWI_DCMD_MSB : TWI_DCMD_LSB`
+bit-field. The ACK/NACK generated by the device can be read from the `TWI_DCMD_ACK` bit.
 
-The command/data FIFO is internally split into a TX FIFO and a RX FIFO. Writing to `DCMD` will write to the TX FIFO while reading from
-`DCMD` will read from the RX FIFO. The TX FIFO is full when the `TWI_CTRL_TX_FULL` flag is set. Accordingly, the RX FIFO contains valid
-data when the `TWI_CTRL_RX_AVAIL` flag is set.
+The control register's busy flag `TWI_CTRL_BUSY` is set as long as the TX FIFO contains data (i.e. programmed TWI operations
+that have not been executed yet) or if the TWI bus engine is still processing an operation. An active transmission can be
+terminated at any time by disabling the TWI module. This will also clear the data/command FIFO.
 
-The control register's busy flag `TWI_CTRL_BUSY` is set as long as the TX FIFO contains valid data (i.e. programmed TWI operations
-that have not been executed yet) or of the TWI bus engine is still processing an operation.
 
-[TIP]
-An active transmission can be terminated at any time by disabling the TWI module. This will also clear the data/command FIFO.
+**Tristate Drivers**
 
-[TIP]
-The current state of the I²C bus lines (SCL and SDA) can be checked by software via the `TWI_CTRL_SENSE_*` control register bits.
+The TWI module requires two tristate drivers (actually: open-drain drivers - signals can only be actively driven low) for
+the SDA and SCL lines, which have to be implemented by the user in the setup's top module / IO ring. A generic VHDL example
+is shown below (here, `sda_io` and `scl_io` are the actual I²C bus lines, which are of type `std_logic`).
 
-[NOTE]
-When reading data from a device, an all-one byte (`0xFF`) has to be written to TWI data register `NEORV32_TWI.DATA`
-so the accessed device can actively pull-down SDA when required.
+.TWI VHDL Tristate Driver Example
+[source,VHDL]
+----
+sda_io    <= '0' when (twi_sda_o = '0') else 'Z'; -- drive
+scl_io    <= '0' when (twi_scl_o = '0') else 'Z'; -- drive
+twi_sda_i <= std_ulogic(sda_io); -- sense
+twi_scl_i <= std_ulogic(scl_io); -- sense
+----
 
 
 **TWI Interrupt**
@@ -147,7 +145,8 @@ TWI module is enabled (`TWI_CTRL_EN` = `1`) and the TX FIFO is empty and the TWI
                                   <|`29`    `TWI_CTRL_TX_FULL`                      ^| r/- <| set if the TWI bus is claimed by any controller
                                   <|`30`    `TWI_CTRL_RX_AVAIL`                     ^| r/- <| RX FIFO data available
                                   <|`31`    `TWI_CTRL_BUSY`                         ^| r/- <| TWI bus engine busy or TX FIFO not empty
-.3+<| `0xfff90004` .3+<| `DCMD`   <|`7:0`   `TWI_DCMD_MSB : TWI_DCMD_LSB`           ^| r/w <| RX/TX data byte
-                                  <|`8`     `TWI_DCMD_ACK`                          ^| r/w <| write: ACK bit sent by controller; read: `1` = device NACK, `0` = device ACK
-                                  <|`10:9`  `TWI_DCMD_CMD_HI : TWI_DCMD_CMD_LO`     ^| r/w <| TWI operation (`00` = NOP, `01` = START conditions, `10` = STOP condition, `11` = data transmission)
+.4+<| `0xfff90004` .4+<| `DCMD`   <|`7:0`   `TWI_DCMD_MSB : TWI_DCMD_LSB`           ^| r/w <| write: TX data byte; read: RX data byte
+                                  <|`8`     `TWI_DCMD_ACK`                          ^| r/w <| write: ACK issued by controller; read: `1` = device NACK, `0` = device ACK
+                                  <|`10:9`  `TWI_DCMD_CMD_HI : TWI_DCMD_CMD_LO`     ^| -/w <| TWI operation (`00` = NOP, `01` = START conditions, `10` = STOP condition, `11` = data transmission)
+                                  <|`31:11`  -                                      ^| r/- <| _reserved_, read as zero
 |=======================
