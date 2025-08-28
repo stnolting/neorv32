@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 28.08.2025 | 1.12.0.10 | fix minor RISC-V incompatibilities (reset `mstatus.mpp` to all-zero; AMO memory faults have to raise store exceptions) | [#1360](https://github.com/stnolting/neorv32/pull/1360) |
 | 28.08.2025 | 1.12.0.9 | :warning: rework TWD module due do to several minor design flaws | [#1359](https://github.com/stnolting/neorv32/pull/1359) |
 | 27.08.2025 | 1.12.0.8 | add two new write-only flags to the SDI control register to clear the RX and TX FIFOs | [#1358](https://github.com/stnolting/neorv32/pull/1358) |
 | 27.08.2025 | 1.12.0.7 | minor rtl code-cleanups and optimizations | [#1357](https://github.com/stnolting/neorv32/pull/1357) |
