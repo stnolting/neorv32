@@ -41,6 +41,8 @@ architecture neorv32_cpu_lsu_rtl of neorv32_cpu_lsu is
   signal pending    : std_ulogic; -- pending bus request
   signal pmp_err    : std_ulogic; -- PMP access violation
   signal amo_cmd    : std_ulogic_vector(3 downto 0); -- atomic memory operation type
+  signal exc_rd     : std_ulogic; -- for exceptions: this is a read operation
+  signal exc_wr     : std_ulogic; -- for exceptions: this is a write operation
 
 begin
 
@@ -86,7 +88,7 @@ begin
         dbus_req_o.rw    <= ctrl_i.lsu_rw; -- read/write
         dbus_req_o.priv  <= ctrl_i.lsu_priv; -- privilege level
         dbus_req_o.debug <= ctrl_i.cpu_debug; -- debug-mode access
-        dbus_req_o.amo   <= ctrl_i.lsu_amo; -- atomic memory operation
+        dbus_req_o.amo   <= ctrl_i.lsu_rmw or ctrl_i.lsu_rvs; -- atomic memory operation
         dbus_req_o.amoop <= amo_cmd;
         -- data alignment + byte-enable --
         case ctrl_i.ir_funct3(1 downto 0) is
@@ -140,7 +142,7 @@ begin
     if (rstn_i = '0') then
       dbus_req_o.lock <= '0';
     elsif rising_edge(clk_i) then
-      if (ctrl_i.lsu_mo_we = '1') and (ctrl_i.lsu_amo = '1') and (ctrl_i.ir_funct12(8) = '0') then
+      if (ctrl_i.lsu_mo_we = '1') and (ctrl_i.lsu_rmw = '1') and (ctrl_i.ir_funct12(8) = '0') then
         dbus_req_o.lock <= '1'; -- set if Zaamo instruction
       elsif (dbus_rsp_i.ack = '1') or (ctrl_i.cpu_trap = '1') then
         dbus_req_o.lock <= '0'; -- clear at the end of the bus access
@@ -200,11 +202,15 @@ begin
   -- wait for bus response --
   wait_o <= not dbus_rsp_i.ack;
 
+  -- filter exceptions: RMW-AMOs only cause STORE exceptions --
+  exc_rd <= '0' when (ctrl_i.lsu_rmw = '1') else not ctrl_i.lsu_rw;
+  exc_wr <= '1' when (ctrl_i.lsu_rmw = '1') else     ctrl_i.lsu_rw;
+
   -- output access/alignment errors to control unit --
-  err_o(0) <= pending and (not ctrl_i.lsu_rw) and misaligned; -- misaligned load
-  err_o(1) <= pending and (not ctrl_i.lsu_rw) and (dbus_rsp_i.err or pmp_err); -- load bus error
-  err_o(2) <= pending and (    ctrl_i.lsu_rw) and misaligned; -- misaligned store
-  err_o(3) <= pending and (    ctrl_i.lsu_rw) and (dbus_rsp_i.err or pmp_err); -- store bus error
+  err_o(0) <= pending and exc_rd and misaligned; -- misaligned load
+  err_o(1) <= pending and exc_rd and (dbus_rsp_i.err or pmp_err); -- load bus access error
+  err_o(2) <= pending and exc_wr and misaligned; -- misaligned store
+  err_o(3) <= pending and exc_wr and (dbus_rsp_i.err or pmp_err); -- store bus access error
 
   -- access request (all source signals are driven by registers) --
   dbus_req_o.stb <= ctrl_i.lsu_req and (not misaligned) and (not pmp_fault_i);

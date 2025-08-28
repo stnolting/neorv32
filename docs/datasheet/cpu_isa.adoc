@@ -102,6 +102,11 @@ extension is shorthand for the following set of other extensions:
 The C `_Atomic` specifier should be used for atomic variables.
 See section <<_coherence_example>> for more information.
 
+.`A` ISA Extension Exceptions
+[NOTE]
+Note that load and load-reserved instructions generate load exceptions,
+whereas store, store-conditional, and AMO instructions generate store exceptions.
+
 
 ==== `B` ISA Extension
 
