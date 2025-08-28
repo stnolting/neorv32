@@ -731,13 +731,12 @@ If `HPM_NUM_CNTS` is less than 64, all remaining MSB-aligned bits are hardwired 
 |             | `0x23f` (`mhpmevent15`)
 | Reset value | all `0x00000000`
 | ISA         | `Zicsr` & `Zihpm`
-| Description | The value in these CSRs define the architectural events that cause an increment of the according `mhpmcounter*[h]` counter(s).
-All available events are listed in the table below. If more than one event is selected, the according counter will increment if _any_ of
-the enabled events is observed (logical OR). Note that the counter will only increment by 1 step per clock
-cycle even if more than one trigger event is observed.
+| Description | The value in these CSRs define the micro-architectural events that cause an increment of the according `mhpmcounter*[h]` counter(s).
+All available events are listed in the table below. If more than one event is enabled, the according counter will increment if _any_ of the enabled
+events is observed (logical OR). Note that the counter will only increment by 1 step per clock cycle even if more than one trigger event is observed.
 |=======================
 
-.`mhpmevent*` CSR Bits
+.`mhpmevent*` CSR Bits (Micro-Architectural Counter Events)
 [cols="^1,<3,^1,<9"]
 [options="header",grid="rows"]
 |=======================
@@ -753,8 +752,8 @@ caused by a fence instruction, a control flow transfer or a instruction fetch bu
 | 5   | `HPMCNT_EVENT_WAIT_ALU` | r/w | any delay/wait cycle caused by a _multi-cycle_ <<_cpu_arithmetic_logic_unit>> operation
 | 6   | `HPMCNT_EVENT_BRANCH`   | r/w | any executed branch instruction (unconditional, conditional-taken or conditional-not-taken)
 | 7   | `HPMCNT_EVENT_BRANCHED` | r/w | any control transfer operation (unconditional jump, taken conditional branch or trap entry/exit)
-| 8   | `HPMCNT_EVENT_LOAD`     | r/w | any executed load operation (including any atomic memory operations)
-| 9   | `HPMCNT_EVENT_STORE`    | r/w | any executed store operation (including any atomic memory operations)
+| 8   | `HPMCNT_EVENT_LOAD`     | r/w | any executed load operation (read-modify-write AMOs are counted as one load and one store operation)
+| 9   | `HPMCNT_EVENT_STORE`    | r/w | any executed store operation (read-modify-write AMOs are counted as one load and one store operation)
 | 10  | `HPMCNT_EVENT_WAIT_LSU` | r/w | any memory/bus/cache/etc. delay/wait cycle while executing any load or store operation (caused by a data bus wait cycle))
 | 11  | `HPMCNT_EVENT_TRAP`     | r/w | starting processing of any trap (<<_traps_exceptions_and_interrupts>>)
 |=======================
@@ -793,9 +792,9 @@ Hence, they will only trigger `HPMCNT_EVENT_LOAD` and only once.
 |             | `0xb0f`, `0xb8f` (`mhpmcounter15`, `mhpmcounter15h`)
 | Reset value | all `0x00000000_00000000`
 | ISA         | `Zicsr` & `Zihpm`
-| Description | If not halted via the <<_mcountinhibit>> CSR the HPM counter CSR(s) increment whenever the
-configured event from the according <<_mhpmevent>> CSR occurs. The counter registers are read/write for machine mode
-and are not accessible for lower-privileged software.
+| Description | If not halted via the <<_mcountinhibit>> CSR the HPM counter CSRs increment whenever the
+configured events from the according <<_mhpmevent>> CSR occur. The HPM counter registers are read/write for machine mode
+software and are not accessible for lower-privileged software.
 |=======================
 
 
