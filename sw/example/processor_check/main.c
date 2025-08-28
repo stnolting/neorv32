@@ -1980,6 +1980,38 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Test atomic read-modify-write accesses
+  // ----------------------------------------------------------
+  PRINT_STANDARD("[%i] AMO RMW ", cnt_test);
+
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
+    trap_cause = trap_never_c;
+    cnt_test++;
+
+    amo_var = 0xcafe1234; // initialize
+    asm volatile ("fence"); // flush/reload d-cache
+
+    tmp_a = trap_cnt + 1; // we expect only a single exception here
+    tmp_b = neorv32_cpu_amoadd((uint32_t)&amo_var, 0x00001234); // modify data
+    neorv32_cpu_amoadd(((uint32_t)&amo_var)+1, 0x00001234); // cause an AMO alignment exception
+    asm volatile ("fence"); // flush/reload d-cache
+
+    if ((tmp_a      == trap_cnt)               && // we had only a single exception
+        (trap_cause == TRAP_CODE_S_MISALIGNED) && // store exception due to unaligned address of second AMO
+        (tmp_b      == 0xcafe1234)             && // old AMO data correct
+        (amo_var    == 0xcafe2468)) {             // new AMO data correct
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
   // Test physical memory protection
   // ----------------------------------------------------------
 
