@@ -29,6 +29,8 @@
 #define ADDR_UNALIGNED_3 (0x00000003U)
 //** Unreachable word-aligned cached address */
 #define ADDR_UNREACHABLE (0x70000000U)
+//** Word-aligned address that returns a bus error on write-request */
+#define ADDR_WRERR       (0xFFFE0004U)
 //** External memory base address */
 #define EXT_MEM_BASE     (0xA0000000U)
 //** External IRQ trigger base address */
@@ -783,11 +785,11 @@ int main() {
   trap_cause = trap_never_c;
   cnt_test++;
 
-  // store to unreachable aligned address
-  neorv32_cpu_store_unsigned_word(ADDR_UNREACHABLE, 0);
+  // store to erroneous aligned address
+  neorv32_cpu_store_unsigned_word(ADDR_WRERR, 0);
 
   if ((trap_cause == TRAP_CODE_S_ACCESS) && // store bus access error exception
-      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNREACHABLE)) {
+      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_WRERR)) {
     test_ok();
   }
   else {
@@ -1945,15 +1947,11 @@ int main() {
   // ----------------------------------------------------------
   // Test atomic lr/sc memory access - failing access
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
-  PRINT_STANDARD("failing) ");
+  PRINT_STANDARD("[%i] AMO LR/SC (failing) ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
     trap_cause = trap_never_c;
     cnt_test++;
-
-    // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
-    //        it before/after making "normal" load/store operations
 
     amo_var = 0x00cafe00; // initialize
     asm volatile ("fence"); // flush/reload d-cache
