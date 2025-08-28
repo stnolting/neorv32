@@ -329,13 +329,16 @@ begin
 
     -- (atomic) memory read/write access --
     if RISCV_ISA_Zaamo and (opcode(2) = opcode_amo_c(2)) and (exe_engine.ir(instr_funct5_lsb_c+1) = '0') then -- atomic read-modify-write operation
-      ctrl_nxt.lsu_amo <= '1';
+      ctrl_nxt.lsu_rmw <= '1'; -- read-modify-write
+      ctrl_nxt.lsu_rvs <= '0';
       ctrl_nxt.lsu_rw  <= '0'; -- executed as single load for the CPU
     elsif RISCV_ISA_Zalrsc and (opcode(2) = opcode_amo_c(2)) and (exe_engine.ir(instr_funct5_lsb_c+1) = '1') then -- atomic reservation-set operation
-      ctrl_nxt.lsu_amo <= '1';
+      ctrl_nxt.lsu_rmw <= '0';
+      ctrl_nxt.lsu_rvs <= '1'; -- reservation-set
       ctrl_nxt.lsu_rw  <= exe_engine.ir(instr_funct5_lsb_c);
     else -- normal load/store
-      ctrl_nxt.lsu_amo <= '0';
+      ctrl_nxt.lsu_rmw <= '0';
+      ctrl_nxt.lsu_rvs <= '0';
       ctrl_nxt.lsu_rw  <= exe_engine.ir(instr_opcode_lsb_c+5);
     end if;
 
@@ -522,7 +525,7 @@ begin
       -- ------------------------------------------------------------
         if (lsu_wait_i = '0') or -- bus system has completed the transaction (if there was any)
            (or_reduce_f(trap_ctrl.exc_buf(exc_laccess_c downto exc_salign_c)) = '1') then -- load/store exception
-          ctrl_nxt.rf_wb_en    <= (not ctrl.lsu_rw) or ctrl.lsu_amo; -- write-back to register file if read operation (won't happen in case of exception)
+          ctrl_nxt.rf_wb_en    <= (not ctrl.lsu_rw) or ctrl.lsu_rvs or ctrl.lsu_rmw; -- write-back to RF if read operation (won't happen in case of exception)
           exe_engine_nxt.state <= EX_DISPATCH;
         end if;
 
@@ -590,7 +593,8 @@ begin
   -- load/store unit --
   ctrl_o.lsu_req      <= ctrl.lsu_req;
   ctrl_o.lsu_rw       <= ctrl.lsu_rw;
-  ctrl_o.lsu_amo      <= ctrl.lsu_amo;
+  ctrl_o.lsu_rmw      <= ctrl.lsu_rmw;
+  ctrl_o.lsu_rvs      <= ctrl.lsu_rvs;
   ctrl_o.lsu_mo_we    <= '1' when (exe_engine.state = EX_MEM_REQ) else '0'; -- write memory output registers (data & address)
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.prv_level_eff; -- effective privilege level for loads/stores in M-mode
@@ -1002,7 +1006,7 @@ begin
       csr.prv_level      <= priv_mode_m_c;
       csr.mstatus_mie    <= '0';
       csr.mstatus_mpie   <= '0';
-      csr.mstatus_mpp    <= priv_mode_m_c;
+      csr.mstatus_mpp    <= '0';
       csr.mstatus_mprv   <= '0';
       csr.mstatus_tw     <= '0';
       csr.mie_msi        <= '0';
@@ -1396,15 +1400,15 @@ begin
   cnt_event(cnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) else '0'; -- retired (=executed) instruction
 
   -- NEORV32-specific counter events --
-  cnt_event(cnt_event_compr_c)    <= '1' when (exe_engine.state = EX_EXECUTE)  and (exe_engine.ci = '1')        else '0'; -- executed compressed instruction
-  cnt_event(cnt_event_wait_dis_c) <= '1' when (exe_engine.state = EX_DISPATCH) and (frontend_i.valid = '0')     else '0'; -- instruction dispatch wait cycle
-  cnt_event(cnt_event_wait_alu_c) <= '1' when (exe_engine.state = EX_ALU_WAIT)                                  else '0'; -- multi-cycle ALU wait cycle
-  cnt_event(cnt_event_branch_c)   <= '1' when (exe_engine.state = EX_BRANCH)                                    else '0'; -- executed branch instruction
-  cnt_event(cnt_event_branched_c) <= '1' when (exe_engine.state = EX_BRANCHED)                                  else '0'; -- control flow transfer
-  cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and ((opcode(5) = '0') or (opcode(2) = '1')) else '0'; -- executed load operation
-  cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and ((opcode(5) = '1') or (opcode(2) = '1')) else '0'; -- executed store operation
-  cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exe_engine.state = EX_MEM_RSP)          else '0'; -- load/store memory wait cycle
-  cnt_event(cnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1')                                       else '0'; -- entered trap
+  cnt_event(cnt_event_compr_c)    <= '1' when (exe_engine.state = EX_EXECUTE)  and (exe_engine.ci = '1')             else '0'; -- executed compressed instruction
+  cnt_event(cnt_event_wait_dis_c) <= '1' when (exe_engine.state = EX_DISPATCH) and (frontend_i.valid = '0')          else '0'; -- instruction dispatch wait cycle
+  cnt_event(cnt_event_wait_alu_c) <= '1' when (exe_engine.state = EX_ALU_WAIT)                                       else '0'; -- multi-cycle ALU wait cycle
+  cnt_event(cnt_event_branch_c)   <= '1' when (exe_engine.state = EX_BRANCH)                                         else '0'; -- executed branch instruction
+  cnt_event(cnt_event_branched_c) <= '1' when (exe_engine.state = EX_BRANCHED)                                       else '0'; -- control flow transfer
+  cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '0') or (ctrl.lsu_rmw = '1')) else '0'; -- executed load operation
+  cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '1') or (ctrl.lsu_rmw = '1')) else '0'; -- executed store operation
+  cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exe_engine.state = EX_MEM_RSP)               else '0'; -- load/store memory wait cycle
+  cnt_event(cnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1')                                            else '0'; -- entered trap
 
 
   -- ****************************************************************************************************************************

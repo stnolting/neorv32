@@ -29,6 +29,8 @@
 #define ADDR_UNALIGNED_3 (0x00000003U)
 //** Unreachable word-aligned cached address */
 #define ADDR_UNREACHABLE (0x70000000U)
+//** Word-aligned address that returns a bus error on write-request */
+#define ADDR_WRERR       (0xFFFE0004U)
 //** External memory base address */
 #define EXT_MEM_BASE     (0xA0000000U)
 //** External IRQ trigger base address */
@@ -783,11 +785,11 @@ int main() {
   trap_cause = trap_never_c;
   cnt_test++;
 
-  // store to unreachable aligned address
-  neorv32_cpu_store_unsigned_word(ADDR_UNREACHABLE, 0);
+  // store to erroneous aligned address
+  neorv32_cpu_store_unsigned_word(ADDR_WRERR, 0);
 
   if ((trap_cause == TRAP_CODE_S_ACCESS) && // store bus access error exception
-      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNREACHABLE)) {
+      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_WRERR)) {
     test_ok();
   }
   else {
@@ -1945,15 +1947,11 @@ int main() {
   // ----------------------------------------------------------
   // Test atomic lr/sc memory access - failing access
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] AMO LR/SC (", cnt_test);
-  PRINT_STANDARD("failing) ");
+  PRINT_STANDARD("[%i] AMO LR/SC (failing) ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
     trap_cause = trap_never_c;
     cnt_test++;
-
-    // [NOTE] LR/SC operations bypass the data cache so we need to flush/reload
-    //        it before/after making "normal" load/store operations
 
     amo_var = 0x00cafe00; // initialize
     asm volatile ("fence"); // flush/reload d-cache
@@ -1970,6 +1968,38 @@ int main() {
         (amo_var == 0x10cafe00) && // atomic variable NOT updates by SC.W
         (tmp_b   == 0x00000007) && // SC.W[2] failed, SC.W[1] failed, SC.W[0] failed
         (trap_cause == trap_never_c)) { // no exception
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT_STANDARD("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Test atomic read-modify-write accesses
+  // ----------------------------------------------------------
+  PRINT_STANDARD("[%i] AMO RMW ", cnt_test);
+
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
+    trap_cause = trap_never_c;
+    cnt_test++;
+
+    amo_var = 0xcafe1234; // initialize
+    asm volatile ("fence"); // flush/reload d-cache
+
+    tmp_a = trap_cnt + 1; // we expect only a single exception here
+    tmp_b = neorv32_cpu_amoadd((uint32_t)&amo_var, 0x00001234); // modify data
+    neorv32_cpu_amoadd(((uint32_t)&amo_var)+1, 0x00001234); // cause an AMO alignment exception
+    asm volatile ("fence"); // flush/reload d-cache
+
+    if ((tmp_a      == trap_cnt)               && // we had only a single exception
+        (trap_cause == TRAP_CODE_S_MISALIGNED) && // store exception due to unaligned address of second AMO
+        (tmp_b      == 0xcafe1234)             && // old AMO data correct
+        (amo_var    == 0xcafe2468)) {             // new AMO data correct
       test_ok();
     }
     else {

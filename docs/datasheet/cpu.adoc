@@ -14,48 +14,13 @@ RISC-V _User_ and _Privileged Architecture_ specifications.
 
 **Section Structure**
 
-* <<_risc_v_compatibility>>
 * <<_cpu_top_entity_signals>> and <<_cpu_top_entity_generics>>
+* <<_risc_v_compatibility>>
 * <<_architecture>> and <<_full_virtualization>>
 * <<_instruction_sets_and_extensions>> and <<_custom_functions_unit_cfu>>
 * <<_control_and_status_registers_csrs>>
 * <<_traps_exceptions_and_interrupts>>
 * <<_bus_interface>>
-
-
-// ####################################################################################################################
-:sectnums:
-=== RISC-V Compatibility
-
-The NEORV32 CPU passes the tests of the **official RISCOF RISC-V Architecture Test Framework**. This framework is used to check
-RISC-V implementations for compatibility to the official RISC-V user/privileged ISA specifications. The NEORV32 port of this
-test framework is available in a separate repository at GitHub: https://github.com/stnolting/neorv32-riscof
-
-.Unsupported ISA Extensions
-[TIP]
-Executing instructions or accessing CSRs from yet unsupported ISA extensions will raise an illegal
-instruction exception (see section <<_full_virtualization>>).
-
-**Incompatibility Issues and Limitations**
-
-.`time[h]` CSRs (Wall Clock Time)
-[IMPORTANT]
-The NEORV32 does not implement the `time[h]` registers. Any access to these registers will trap. It is
-recommended that the trap handler software provides a means of accessing the machine timer of the
-<<_core_local_interruptor_clint>>.
-
-.No Hardware Support of Misaligned Memory Accesses
-[IMPORTANT]
-The CPU does not support resolving unaligned memory access by the hardware (this is not a
-RISC-V-incompatibility issue but an important thing to know!). Any kind of unaligned memory access
-will raise an exception to allow a _software-based_ emulation provided by the application. However, unaligned memory
-access can be **emulated** using the NEORV32 runtime environment. See section <<_application_context_handling>>
-for more information.
-
-.AMO PMP Rule Violation
-[NOTE]
-The RISC-V specification requires that read-modify-write AMO operations raise a _store access exception_ when
-they violate a PMP rule. However, NEORV32 will always raise a **load access violation** in this case.
 
 
 <<<
@@ -131,6 +96,37 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 .Tuning Option Generics
 [TIP]
 Additional generics that are related to certain _tuning options_ are listed in section <<_cpu_tuning_options>>.
+
+
+// ####################################################################################################################
+:sectnums:
+=== RISC-V Compatibility
+
+The NEORV32 CPU passes the tests of the **official RISCOF RISC-V Architecture Test Framework**. This framework is used to check
+RISC-V implementations for compatibility to the official RISC-V user/privileged ISA specifications. The NEORV32 port of this
+test framework is available in a separate repository at GitHub: https://github.com/stnolting/neorv32-riscof
+
+.Unsupported ISA Extensions
+[TIP]
+Executing instructions or accessing CSRs from yet unsupported ISA extensions will raise an illegal
+instruction exception (see section <<_full_virtualization>>).
+
+
+**Incompatibility Issues and Limitations**
+
+.`time[h]` CSRs (Wall Clock Time)
+[IMPORTANT]
+The NEORV32 does not implement the `time[h]` registers. Any access to these registers will trap. It is
+recommended that the trap handler software provides a means of accessing the machine timer of the
+<<_core_local_interruptor_clint>>.
+
+.No Hardware Support of Misaligned Memory Accesses
+[IMPORTANT]
+The CPU does not support resolving unaligned memory access by the hardware (this is not a
+RISC-V-incompatibility issue but an important thing to know!). Any kind of unaligned memory access
+will raise an exception to allow a _software-based_ emulation provided by the application. However, unaligned memory
+access can be **emulated** using the NEORV32 runtime environment. See section <<_application_context_handling>>
+for more information.
 
 
 <<<
