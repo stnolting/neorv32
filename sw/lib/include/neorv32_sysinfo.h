@@ -115,7 +115,11 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_numcores(voi
  * @return IMEM size in bytes.
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imemsize(void) {
-  return (uint32_t)(1u << ((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_IMEM_LSB) & 0xffu));
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_IMEM_LSB) & 0xffu;
+  if (tmp) {
+    return (uint32_t)(1u << tmp);
+  }
+  return 0;
 }
 
 /**********************************************************************//**
@@ -123,7 +127,11 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_imemsize(voi
  * @return DMEM size in bytes.
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmemsize(void) {
-  return (uint32_t)(1u << ((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_DMEM_LSB) & 0xffu));
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_DMEM_LSB) & 0xffu;
+  if (tmp) {
+    return (uint32_t)(1u << tmp);
+  }
+  return 0;
 }
 
 /**********************************************************************//**

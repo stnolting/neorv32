@@ -152,19 +152,10 @@ int neorv32_twi_get(uint8_t *data) {
  **************************************************************************/
 int neorv32_twi_transfer(uint8_t *data, int mack) {
 
-  uint8_t rx_data = 0;
-  int device_ack = 0;
-
   while (NEORV32_TWI->CTRL & (1<<TWI_CTRL_TX_FULL)); // wait for free TX entry
-
   neorv32_twi_send_nonblocking(*data, mack); // send address + R/W (+ host ACK)
-
-  do {
-    device_ack = neorv32_twi_get(&rx_data);
-  } while (device_ack == -1); // wait until data available
-
-  *data = rx_data;
-  return device_ack;
+  while (NEORV32_TWI->CTRL & (1 << TWI_CTRL_BUSY)); // wait until idle again
+  return neorv32_twi_get(data);
 }
 
 
