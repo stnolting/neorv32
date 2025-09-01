@@ -20,6 +20,7 @@ char uart_getc(void);
 void uart_putc(char c);
 void uart_puts(const char *s);
 void uart_puth(uint32_t num);
-int  uart_getw(uint32_t* rdata);
+int  uart_setup(void);
+int  uart_stream_get(uint32_t* rdata);
 
 #endif // UART_H

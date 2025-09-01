@@ -12,243 +12,228 @@
  */
 
 #include <neorv32.h>
+#include <system.h>
 #include <config.h>
 #include <twi_flash.h>
+#include <uart.h>
+
+// global variables
+uint32_t g_twi_flash_addr;
+extern uint32_t g_exe_size;
 
 
 /**********************************************************************//**
- * Check if TWI is available.
+ * Read or write single byte from/to TWI flash.
  *
- * @return 0 if success, !=0 if error
+ * @param write Set for write access.
+ * @param[in,out] data Pointer for read/write data byte.
+ * @return 0 if success, non-zero if error
  **************************************************************************/
-int twi_flash_check(void) {
+static int twi_transfer_byte(int write, uint8_t* data) {
 
-#if (TWI_EN != 0)
-  if (neorv32_twi_available()) {
-    return 0;
-  }
-  else {
-    return 1;
-  }
-#else
-  return 1;
-#endif
-}
-
-
-/**********************************************************************//**
- * Read 32-bit word from word-aligned TWI flash address.
- *
- * @param[in] addr Word-aligned address.
- * @param[in,out] rdata Pointer for returned data (uint32_t).
- * @return 0 if success, != 0 if error
- **************************************************************************/
-int twi_flash_read_word(uint32_t addr, uint32_t* rdata) {
-
-#if (TWI_EN != 0)
-  int i;
-  int device_nack = 0;
-  uint8_t transfer;
-  subwords32_t data, address;
+  int rc;
+  uint8_t tmp;
+  subwords32_t addr;
 
   // start condition
   neorv32_twi_generate_start();
 
-  // send device address
-  transfer = TWI_DEVICE_ID | 0; // TWI WRITE
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
+  // send device ID
+  tmp = (uint8_t)TWI_FLASH_ID | 0;
+  if (neorv32_twi_transfer(&tmp, 0)) { // abort if NACK
+    return 1;
+  }
 
-  // send access address
-  address.uint32 = addr;
+  // send address
+  rc = 0;
+  addr.uint32 = g_twi_flash_addr;
 #if (TWI_FLASH_ADDR_BYTES == 1)
-  transfer = address.uint8[0];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
+  rc |= neorv32_twi_transfer(&addr.uint8[0], 0);
 #elif (TWI_FLASH_ADDR_BYTES == 2)
-  transfer = address.uint8[1];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[0];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
+  rc |= neorv32_twi_transfer(&addr.uint8[1], 0);
+  rc |= neorv32_twi_transfer(&addr.uint8[0], 0);
 #elif (TWI_FLASH_ADDR_BYTES == 3)
-  transfer = address.uint8[2];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[1];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[0];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
+  rc |= neorv32_twi_transfer(&addr.uint8[2], 0);
+  rc |= neorv32_twi_transfer(&addr.uint8[1], 0);
+  rc |= neorv32_twi_transfer(&addr.uint8[0], 0);
 #elif (TWI_FLASH_ADDR_BYTES == 4)
-  transfer = address.uint8[3];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[2];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[1];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[0];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
+  rc |= neorv32_twi_transfer(&addr.uint8[3], 0);
+  rc |= neorv32_twi_transfer(&addr.uint8[2], 0);
+  rc |= neorv32_twi_transfer(&addr.uint8[1], 0);
+  rc |= neorv32_twi_transfer(&addr.uint8[0], 0);
 #else
   #error "Invalid TWI_FLASH_ADDR_BYTES configuration!"
 #endif
-
-  // repeated-start condition
-  neorv32_twi_generate_start();
-
-  // send device address
-  transfer = TWI_DEVICE_ID | 1; // TWI READ
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-
-  // read four bytes
-  for (i = 0; i < 4; i++) {
-    transfer = 0xFF;
-    if (i == 3) {
-      neorv32_twi_transfer(&transfer, 0); // NACK by host
-    }
-    else {
-      neorv32_twi_transfer(&transfer, 1); // ACK by Host
-    }
-    data.uint8[i] = transfer;
+  if (rc) { // abort if NACK
+    return 1;
   }
-  *rdata = data.uint32;
 
-  // send stop condition
+  // repeated start + ID if read
+  if (write == 0) {
+    neorv32_twi_generate_start();
+    tmp = (uint8_t)TWI_FLASH_ID | 1;
+    if (neorv32_twi_transfer(&tmp, 0)) { // abort if NACK
+      return 1;
+    }
+  }
+
+  // transfer data byte
+  if (write) {
+    tmp = *data;
+    if (neorv32_twi_transfer(data, 0)) { // abort if NACK
+      return 1;
+    }
+  }
+  else {
+    tmp = 0xff;
+    neorv32_twi_transfer(&tmp, 0);
+    *data = tmp;
+  }
+
+  // generate stop condition
   neorv32_twi_generate_stop();
 
-  // delay next read
-  twi_flash_delay_twi_tick(1000);
-
-  return device_nack;
-#else
-  return 1;
-#endif
-}
-
-
-/**********************************************************************//**
- * Write single byte to TWI flash.
- *
- * @param addr TWI flash write address.
- * @param wdata TWI flash write data.
- * @param stop Send TWI stop command at end of transmission
- * @return 0 if success, !=0 if error
- **************************************************************************/
-int twi_flash_write_byte(uint32_t addr, uint8_t wdata, int stop) {
-
-  int device_nack = 0;
-  uint8_t transfer;
-  subwords32_t address;
-
-  // start condition
-  neorv32_twi_generate_start();
-
-  // send device address
-  transfer = TWI_DEVICE_ID | 0; // TWI WRITE
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-
-  // send read access address
-  address.uint32 = addr;
-#if (TWI_FLASH_ADDR_BYTES == 1)
-  transfer = address.uint8[0];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-#elif (TWI_FLASH_ADDR_BYTES == 2)
-  transfer = address.uint8[1];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[0];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-#elif (TWI_FLASH_ADDR_BYTES == 3)
-  transfer = address.uint8[2];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[1];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[0];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-#elif (TWI_FLASH_ADDR_BYTES == 4)
-  transfer = address.uint8[3];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[2];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[1];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-  transfer = address.uint8[0];
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-#else
-  #error "Invalid TWI_FLASH_ADDR_BYTES configuration!"
-#endif
-
-  // send write data
-  transfer = wdata;
-  device_nack |= neorv32_twi_transfer(&transfer, 0);
-
-  // send stop condition
-  if (stop) {
-    neorv32_twi_generate_stop();
-
-    // delay next send for EEPROM write cycle
-    neorv32_aux_delay_ms(NEORV32_SYSINFO->CLK,5); // t_wr(max) = 5ms
+  // wait for write completion
+  if (write) {
+    while(1) {
+      neorv32_twi_generate_start();
+      tmp = (uint8_t)TWI_FLASH_ID | 0;
+      rc = neorv32_twi_transfer(&tmp, 0);
+      neorv32_twi_generate_stop();
+      if (rc == 0) {
+        break;
+      }
+    }
   }
 
-
-  return device_nack;
+  return 0;
 }
 
 
 /**********************************************************************//**
- * Write word to TWI flash.
+ * Write 32-bit word to TWI flash.
  *
- * @param addr TWI flash write address.
  * @param wdata TWI flash write data.
+ **************************************************************************/
+static int twi_flash_write_word(uint32_t wdata) {
+
+  subwords32_t tmp;
+  tmp.uint32 = wdata;
+  int rc = 0;
+  int i;
+
+  for (i=0; i<4; i++) {
+    rc |= twi_transfer_byte(1, &tmp.uint8[i]);
+    g_twi_flash_addr++; // next destination byte address
+  }
+
+  return rc;
+}
+
+
+/**********************************************************************//**
+ * Setup TWI flash.
+ *
  * @return 0 if success, !=0 if error
  **************************************************************************/
-int twi_flash_write_word(uint32_t addr, uint32_t wdata) {
+int twi_flash_setup(void) {
 
-#if (TWI_EN != 0)
-  int device_nack = 0;
-  subwords32_t data;
-
-  // write four bytes
-  data.uint32 = wdata;
-  #if(TWI_FLASH_BULK_WRITE_EN != 0)
-    // send data
-    uint8_t transfer = 0;
-    device_nack += twi_flash_write_byte(addr, data.uint8[0], 0);  // Start + addr + first byte
-    transfer = data.uint8[1];
-    device_nack += neorv32_twi_transfer(&transfer, 0);
-    transfer = data.uint8[2];
-    device_nack += neorv32_twi_transfer(&transfer, 0);
-    transfer = data.uint8[3];
-    device_nack += neorv32_twi_transfer(&transfer, 0);
-
-    // send stop condition
-    neorv32_twi_generate_stop();
-
-    // delay next send for EEPROM write cycle
-    neorv32_aux_delay_ms(NEORV32_SYSINFO->CLK,5); // t_wr(max) = 5ms
-  #else
-    device_nack += twi_flash_write_byte(addr+0, data.uint8[0], 1);
-    device_nack += twi_flash_write_byte(addr+1, data.uint8[1], 1);
-    device_nack += twi_flash_write_byte(addr+2, data.uint8[2], 1);
-    device_nack += twi_flash_write_byte(addr+3, data.uint8[3], 1);
-  #endif
-  if (device_nack) {
+  // abort if TWI module not available
+  if (!neorv32_twi_available()) {
     return 1;
   }
-  else {
-    return 0;
+
+  // (re)set base address
+  g_twi_flash_addr = (uint32_t)TWI_FLASH_BASE_ADDR;
+
+  // setup TWI, no clock-stretching
+  neorv32_twi_setup(TWI_FLASH_CLK_PRSC, TWI_FLASH_CLK_DIV, 0);
+
+  // try to access flash
+  neorv32_twi_generate_start();
+  uint8_t tmp = (uint8_t)TWI_FLASH_ID | 0;
+  int rc = neorv32_twi_transfer(&tmp, 0);
+  neorv32_twi_generate_stop();
+  if (rc) {
+    return 1; // abort if NACK
   }
-#else
-  return 1;
-#endif
+
+  return 0;
 }
 
-/**
-* @brief Keeps TWI Peripheral in IDLE for 'tick_count' TWI clock ticks
-*
-* @param tick_count Amount of TWI NOP ticks to wait
-*
-*/
-void twi_flash_delay_twi_tick(int tick_count){
 
-  for(int i = 0; i < tick_count; i++)
-  {
-    while (NEORV32_TWI->CTRL & (1<<TWI_CTRL_TX_FULL)); // wait for free TX entry
-    NEORV32_TWI->DCMD = (uint32_t)(TWI_CMD_NOP << TWI_DCMD_CMD_LO); // IDLE for 1 twi tick
+/**********************************************************************//**
+ * Read stream word from TWI flash.
+ *
+ * @param[in,out] rdata Pointer for returned data (uint32_t).
+ * @return 0 if success, !=0 if error
+ **************************************************************************/
+int twi_stream_get(uint32_t* rdata) {
+
+  subwords32_t tmp;
+  tmp.uint32 = 0;
+  int rc = 0;
+  int i;
+
+  for (i=0; i<4; i++) {
+    rc |= twi_transfer_byte(0, &tmp.uint8[i]);
+    g_twi_flash_addr++; // next destination byte address
   }
-  while (NEORV32_TWI->CTRL & (1 << TWI_CTRL_BUSY)); // wait until FIFO empty
+
+  *rdata = tmp.uint32;
+  return rc;
+}
+
+/**********************************************************************//**
+ * Copy executable from main memory to TWI flash
+ *
+ * @return 0 if success, !=0 if error
+ **************************************************************************/
+void twi_flash_program(void) {
+
+  // executable available at all?
+  if (g_exe_size == 0) {
+    uart_puts("No executable.\n");
+    return;
+  }
+
+  // confirmation prompt
+  uart_puts("Write ");
+  uart_puth(g_exe_size);
+  uart_puts(" bytes to TWI flash "xstr(TWI_FLASH_ID)" @"xstr(TWI_FLASH_BASE_ADDR)" (y/n)?\n");
+  if (uart_getc() != 'y') {
+    return;
+  }
+
+  // setup flash
+  if (twi_flash_setup()) {
+    uart_puts("ERROR_DEVICE\n");
+    return;
+  }
+  uart_puts("Flashing... ");
+
+  // write executable
+  int rc = 0;
+  uint32_t checksum = 0, tmp = 0, i = 0, pnt = (uint32_t)EXE_BASE_ADDR;
+  g_twi_flash_addr = (uint32_t)TWI_FLASH_BASE_ADDR + (uint32_t)BIN_OFFSET_DATA;
+  while (i < g_exe_size) { // in chunks of 4 bytes
+    tmp = neorv32_cpu_load_unsigned_word(pnt);
+    pnt += 4;
+    checksum += tmp;
+    rc |= twi_flash_write_word(tmp);
+    i += 4;
+  }
+
+  // write header
+  g_twi_flash_addr = (uint32_t)TWI_FLASH_BASE_ADDR;
+  rc |= twi_flash_write_word(BIN_SIGNATURE);
+  rc |= twi_flash_write_word(g_exe_size);
+  rc |= twi_flash_write_word(~checksum);
+
+  if (rc) {
+    uart_puts("ERROR_DEVICE\n");
+    return;
+  }
+
+  uart_puts("OK\n");
 }

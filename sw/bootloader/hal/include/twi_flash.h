@@ -16,9 +16,8 @@
 
 #include <stdint.h>
 
-int twi_flash_check(void);
-int twi_flash_read_word(uint32_t addr, uint32_t* rdata);
-int twi_flash_write_word(uint32_t addr, uint32_t wdata);
-void twi_flash_delay_twi_tick(int tick_count);
+int  twi_flash_setup(void);
+int  twi_stream_get(uint32_t* rdata);
+void twi_flash_program(void);
 
 #endif // TWI_FLASH_H
