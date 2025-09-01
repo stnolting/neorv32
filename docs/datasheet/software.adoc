@@ -511,7 +511,7 @@ The sources of the image generator are automatically compiled when invoking the 
 [NOTE]
 for the `app_bin` option the image generator adds a small header to the executable. This header is required by the
 <<_bootloader>> to identify and manage the executable. The header consists of three 32-bit words located right
-at the beginning of the file. The first word of the executable is the signature word and is always `0x4788cafe`.
+at the beginning of the file. The first word of the executable is the signature word and is always `0xB007C0DE`.
 Based on this word the bootloader can identify a valid image file. The next word represents the size in bytes of the
 actual program image in bytes. A simple complement checksum of the actual program image is given by the third word.
 This provides a simple protection against data transmission or storage errors.
