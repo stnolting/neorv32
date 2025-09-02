@@ -47,6 +47,10 @@ begin
     end if;
   end process rom_access;
 
+  -- size notifier --
+  assert false report
+    "[NEORV32] Implementing boot ROM (" & natural'image(4*(2**awidth_c)) & " bytes)." severity note;
+
   -- size check --
   assert (bootloader_image_size_c <= iodev_size_c) report
     "[NEORV32] Bootloader image (" & natural'image(bootloader_image_size_c) & " bytes) " &
