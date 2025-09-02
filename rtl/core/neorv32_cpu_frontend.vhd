@@ -84,11 +84,15 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   signal cmd16 : std_ulogic_vector(15 downto 0);
   signal cmd32 : std_ulogic_vector(31 downto 0);
 
-  type state_type is (S_INSTR_ISSUE, S_ZCMP_SETUP, S_ZCMP);
+  signal frontend_bus_zcmp : if_bus_t;
+
+  type state_type is (S_IDLE, S_ZCMP_UOP_SEQ);
   signal state_reg, state_nxt : state_type;
 
   signal zcmp_instr_reg, zcmp_instr_nxt : std_ulogic_vector(15 downto 0) := (others => '0');
-  signal uop_ctr, uop_ctr_next : integer range 0 to 15;
+
+  signal uop_ctr, uop_ctr_next, uop_ctr_nxt_in_seq : integer range 0 to 15;
+  signal uop_ctr_clr : std_ulogic;
 
   signal zcmp_stack_sw_offset : signed(11 downto 0);
   signal zcmp_reg_list : std_ulogic_vector(3 downto 0);
@@ -97,6 +101,7 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   signal zcmp_stack_adj_base : integer range 0 to 127;
   signal zcmp_stack_adj : integer range 0 to 255;
   signal zcmp_push : std_ulogic;
+  signal zcmp_in_uop_seq : std_ulogic;
 
   signal zcmp_sw_instr : std_ulogic_vector(31 downto 0);
   constant zcmp_strw_instr_opcode : std_ulogic_vector(6 downto 0) := "0100011";
@@ -105,28 +110,74 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
 begin
 
+  zcmp_reg_list <= zcmp_instr_reg(7 downto 4);
+  zcmp_num_regs <= 13 when to_integer(unsigned(zcmp_reg_list)) = 15 else
+                   0 when to_integer(unsigned(zcmp_reg_list)) < 4 else
+                   to_integer(unsigned(zcmp_reg_list)) - 3;
 
-    zcmp_reg_list <= zcmp_instr_reg(7 downto 4);
-    zcmp_num_regs <= 13 when to_integer(unsigned(zcmp_reg_list)) = 15 else
-                     0 when to_integer(unsigned(zcmp_reg_list)) < 4 else
-                     to_integer(unsigned(zcmp_reg_list)) - 3;
+  zcmp_stack_adj_base <= 64 when to_integer(unsigned(zcmp_reg_list)) = 15 else
+                         48 when to_integer(unsigned(zcmp_reg_list)) >= 12 else
+                         32 when to_integer(unsigned(zcmp_reg_list)) >= 8 else
+                         16;
 
-    zcmp_stack_adj_base <= 64 when to_integer(unsigned(zcmp_reg_list)) = 15 else
-                           48 when to_integer(unsigned(zcmp_reg_list)) >= 12 else
-                           32 when to_integer(unsigned(zcmp_reg_list)) >= 8 else
-                           16;
+  zcmp_stack_adj <= zcmp_stack_adj_base + ((to_integer(unsigned(zcmp_instr_reg(3 downto 2))) * 16));
 
-    zcmp_stack_adj <= zcmp_stack_adj_base + ((to_integer(unsigned(zcmp_instr_reg(3 downto 2))) * 16));
+  zcmp_stack_sw_offset <= TO_SIGNED(-((zcmp_num_regs - uop_ctr) * 4), zcmp_stack_sw_offset'length);
 
-    zcmp_stack_sw_offset <= TO_SIGNED(-((zcmp_num_regs - uop_ctr) * 4), zcmp_stack_sw_offset'length);
+  zcmp_ls_reg <= "00001" when uop_ctr = 0 else -- ra
+                 "01000" when uop_ctr = 1 else -- s0
+                 "01001" when uop_ctr = 2 else -- s1
+                 std_ulogic_vector(to_unsigned(uop_ctr + 15, zcmp_ls_reg'length)); -- s2-s11 (s2 == x18)
 
-    zcmp_ls_reg <= "00001" when uop_ctr = 0 else -- ra
-                   "01000" when uop_ctr = 1 else -- s0
-                   "01001" when uop_ctr = 2 else -- s1
-                   std_ulogic_vector(to_unsigned(uop_ctr + 15, zcmp_ls_reg'length)); -- s2-s11 (s2 == x18)
+  zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_strw_instr_rs1 & zcmp_strw_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_strw_instr_opcode;
 
-    zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_strw_instr_rs1 & zcmp_strw_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_strw_instr_opcode;
+  uop_ctr_clr <= '0';
 
+  uop_ctr_next <= 0 when uop_ctr_clr else
+                  uop_ctr_nxt_in_seq;
+
+  uop_fsm_sync : process (rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      uop_ctr <= 0;
+      state_reg <= S_IDLE;
+    elsif rising_edge(clk_i) then
+      uop_ctr <= uop_ctr_next;
+      state_reg <= state_nxt;
+    end if;
+  end process uop_fsm_sync;
+
+  process (state_reg, uop_ctr, zcmp_push, uop_ctr_nxt_in_seq, zcmp_num_regs, zcmp_sw_instr)
+  begin
+    uop_ctr_nxt_in_seq <= uop_ctr;
+    state_nxt <= state_reg;
+    zcmp_in_uop_seq <= '0';
+    frontend_bus_zcmp.valid <= '0';
+    frontend_bus_zcmp.compr <= '0';
+    frontend_bus_zcmp.fault <= '0';
+    frontend_bus_zcmp.instr <= (others => '0');
+
+    case state_reg is
+      when S_IDLE =>
+        if (zcmp_push = '1') then
+          state_nxt <= S_ZCMP_UOP_SEQ;
+        end if;
+
+      when S_ZCMP_UOP_SEQ =>
+        zcmp_in_uop_seq <= '1';
+        if (uop_ctr = 15) then
+          uop_ctr_nxt_in_seq <= 0;
+          state_nxt <= S_IDLE;
+        else
+          uop_ctr_nxt_in_seq <= uop_ctr + 1;
+          frontend_bus_zcmp.instr <= zcmp_sw_instr;
+          if (uop_ctr_nxt_in_seq = zcmp_num_regs) then
+            uop_ctr_nxt_in_seq <= 15;
+          end if;
+        end if;
+    end case;
+
+  end process;
 
   -- ******************************************************************************************************************
   -- Instruction Fetch (always fetch 32-bit-aligned 32-bit chunks of data)
