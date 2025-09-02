@@ -108,6 +108,11 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   constant zcmp_strw_instr_funct3 : std_ulogic_vector(2 downto 0) := "010";
   constant zcmp_strw_instr_rs1 : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
 
+  signal zcmp_push_stack_adj_instr : std_ulogic_vector(31 downto 0);
+  constant zcmp_addi_instr_opcode : std_ulogic_vector(6 downto 0) := "0010011";
+  constant zcmp_addi_instr_funct3 : std_ulogic_vector(2 downto 0) := "000";
+  constant zcmp_addi_instr_rs1 : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
+
 begin
 
   zcmp_reg_list <= zcmp_instr_reg(7 downto 4);
@@ -131,6 +136,12 @@ begin
 
   zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_strw_instr_rs1 & zcmp_strw_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_strw_instr_opcode;
 
+  zcmp_push_stack_adj_instr <= std_ulogic_vector(-to_signed(zcmp_stack_adj, 12)) &
+                               zcmp_addi_instr_rs1 & -- rs1 = sp 
+                               zcmp_addi_instr_funct3 &
+                               zcmp_addi_instr_rs1 & -- rd = rs1 = sp 
+                               zcmp_addi_instr_opcode; -- addi 
+
   uop_ctr_clr <= '0';
 
   uop_ctr_next <= 0 when uop_ctr_clr else
@@ -147,7 +158,7 @@ begin
     end if;
   end process uop_fsm_sync;
 
-  process (state_reg, uop_ctr, zcmp_push, uop_ctr_nxt_in_seq, zcmp_num_regs, zcmp_sw_instr)
+  uop_fsm_comb : process (state_reg, uop_ctr, zcmp_push, zcmp_num_regs, zcmp_sw_instr, zcmp_push_stack_adj_instr)
   begin
     uop_ctr_nxt_in_seq <= uop_ctr;
     state_nxt <= state_reg;
@@ -167,11 +178,12 @@ begin
         zcmp_in_uop_seq <= '1';
         if (uop_ctr = 15) then
           uop_ctr_nxt_in_seq <= 0;
+          frontend_bus_zcmp.instr <= zcmp_push_stack_adj_instr;
           state_nxt <= S_IDLE;
         else
           uop_ctr_nxt_in_seq <= uop_ctr + 1;
           frontend_bus_zcmp.instr <= zcmp_sw_instr;
-          if (uop_ctr_nxt_in_seq = zcmp_num_regs) then
+          if (uop_ctr + 1 = zcmp_num_regs) then
             uop_ctr_nxt_in_seq <= 15;
           end if;
         end if;
@@ -321,26 +333,33 @@ begin
       end if;
     end process issue_fsm_sync;
 
-    issue_fsm_comb : process (zcmp_instr_reg, align_q, ipb, cmd32)
+    issue_fsm_comb : process (zcmp_instr_reg, align_q, ipb, cmd32, zcmp_in_uop_seq)
     begin
       -- defaults --
       align_set <= '0';
       align_clr <= '0';
       zcmp_instr_nxt <= zcmp_instr_reg;
       zcmp_push <= '0';
+
+      ipb_ack <= "00";
+      frontend_o.valid <= '0';
+      frontend_o.instr <= (others => '0');
+      frontend_o.compr <= '0';
+
       -- start at LOW half-word --
-      if (align_q = '0') then
+      if (align_q = '0' and zcmp_in_uop_seq = '0') then
         frontend_o.fault <= ipb.rdata(0)(16);
         if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
-          align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
-          ipb_ack <= "01";
-          frontend_o.valid <= ipb.avail(0);
-          frontend_o.instr <= cmd32;
-          frontend_o.compr <= '1';
 
           if (ipb.rdata(0)(15 downto 8) = "10111000") then
             zcmp_instr_nxt <= ipb.rdata(0)(15 downto 0);
             zcmp_push <= '1';
+          else
+            align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
+            ipb_ack <= "01";
+            frontend_o.valid <= ipb.avail(0);
+            frontend_o.instr <= cmd32;
+            frontend_o.compr <= '1';
           end if;
 
         else -- aligned uncompressed, consume both IPB entries
@@ -350,18 +369,19 @@ begin
           frontend_o.compr <= '0';
         end if;
         -- start at HIGH half-word --
-      else
+      elsif (zcmp_in_uop_seq = '0') then
         frontend_o.fault <= ipb.rdata(1)(16);
         if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
-          align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
-          ipb_ack <= "10";
-          frontend_o.valid <= ipb.avail(1);
-          frontend_o.instr <= cmd32;
-          frontend_o.compr <= '1';
 
           if (ipb.rdata(1)(15 downto 8) = "10111000") then
             zcmp_instr_nxt <= ipb.rdata(1)(15 downto 0);
             zcmp_push <= '1';
+          else
+            align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
+            ipb_ack <= "10";
+            frontend_o.valid <= ipb.avail(1);
+            frontend_o.instr <= cmd32;
+            frontend_o.compr <= '1';
           end if;
 
         else -- unaligned uncompressed, consume both IPB entries
