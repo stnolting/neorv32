@@ -33,7 +33,7 @@ BUILD_DIR ?= build
 EFFORT ?= -Os
 
 # Compiler toolchain prefix
-RISCV_PREFIX ?= riscv-none-elf-
+RISCV_PREFIX ?= riscv32-unknown-elf-
 
 # CPU architecture and ABI
 MARCH ?= rv32i_zicsr_zifencei

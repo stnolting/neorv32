@@ -20,7 +20,7 @@ entity neorv32_tb is
   generic (
     -- processor --
     CLOCK_FREQUENCY : natural := 100_000_000; -- clock frequency of clk_i in Hz
-    DUAL_CORE_EN : boolean := false; -- enable dual-core homogeneous SMP
+    DUAL_CORE_EN : boolean := true; -- enable dual-core homogeneous SMP
     BOOT_MODE_SELECT : natural range 0 to 2 := 2; -- boot from pre-initialized IMEM
     BOOT_ADDR_CUSTOM : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
     RISCV_ISA_C : boolean := true; -- implement compressed extension
@@ -30,7 +30,6 @@ entity neorv32_tb is
     RISCV_ISA_Zaamo : boolean := true; -- implement atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc : boolean := true; -- implement atomic reservation-set operations extension
     RISCV_ISA_Zcb : boolean := true; -- implement additional code size reduction instructions
-    RISCV_ISA_Zcmp : boolean := true; -- implement additional code size reduction instructions
     RISCV_ISA_Zba : boolean := true; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb : boolean := true; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb : boolean := true; -- implement bit-manipulation instructions for cryptography
@@ -351,19 +350,17 @@ begin
 
   -- Stream-Link FIFO Buffer ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  slink_buffer : entity neorv32.neorv32_fifo
+  slink_buffer : entity neorv32.neorv32_prim_fifo
     generic map(
-      FIFO_DEPTH => 1,
-      FIFO_WIDTH => 32 + 4 + 1,
-      FIFO_SAFE => true,
-      OUT_GATE => false
+      AWIDTH => 0,
+      DWIDTH => 32 + 4 + 1,
+      OUTGATE => true
     )
     port map(
-      -- control --
+      -- global control --
       clk_i => clk_gen,
       rstn_i => rst_gen,
       clear_i => '0',
-      half_o => open,
       -- write port --
       wdata_i(31 downto 0) => slink_tx.data,
       wdata_i(35 downto 32) => slink_tx.addr,

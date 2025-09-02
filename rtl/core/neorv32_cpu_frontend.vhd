@@ -22,8 +22,8 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_frontend is
   generic (
     RISCV_C : boolean; -- implement C ISA extension
-    RISCV_ZCB : boolean; -- implement Zcb ISA sub-extension
-    RISCV_ZCMP : boolean -- implement Zcmp ISA sub-extension
+    RISCV_ZCB : boolean -- implement Zcb ISA sub-extension
+    -- RISCV_ZCMP : boolean -- implement Zcmp ISA sub-extension
   );
   port (
     -- global control --
@@ -105,7 +105,6 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
 begin
 
-  if RISCV_ZCMP generate
 
     zcmp_reg_list <= zcmp_instr_reg(7 downto 4);
     zcmp_num_regs <= 13 when to_integer(unsigned(zcmp_reg_list)) = 15 else
@@ -128,7 +127,6 @@ begin
 
     zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_strw_instr_rs1 & zcmp_strw_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_strw_instr_opcode;
 
-  end generate;
 
   -- ******************************************************************************************************************
   -- Instruction Fetch (always fetch 32-bit-aligned 32-bit chunks of data)
