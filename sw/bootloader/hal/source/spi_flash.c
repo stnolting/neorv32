@@ -18,7 +18,7 @@
 #include <uart.h>
 
 // global variables
-uint32_t g_spi_flash_addr;
+extern uint32_t g_flash_addr;
 extern uint32_t g_exe_size;
 
 // SPI flash commands
@@ -76,7 +76,7 @@ static uint8_t spi_flash_read_status(void) {
 static void spi_flash_send_addr(void) {
 
   subwords32_t addr;
-  addr.uint32 = g_spi_flash_addr;
+  addr.uint32 = g_flash_addr;
 
 #if (SPI_FLASH_ADDR_BYTES == 1)
   neorv32_spi_transfer(addr.uint8[0]);
@@ -99,68 +99,6 @@ static void spi_flash_send_addr(void) {
 
 
 /**********************************************************************//**
- * Write 32-bit word to SPI flash.
- *
- * @param wdata SPI flash write data.
- **************************************************************************/
-static void spi_flash_write_word(uint32_t wdata) {
-
-  subwords32_t tmp;
-  tmp.uint32 = wdata;
-  int i;
-
-  for (i=0; i<4; i++) {
-    spi_flash_cmd(SPI_FLASH_CMD_WRITE_ENABLE); // allow write-access
-
-    neorv32_spi_cs_en(SPI_FLASH_CS);
-
-    neorv32_spi_transfer(SPI_FLASH_CMD_PAGE_PROGRAM);
-    spi_flash_send_addr();
-    neorv32_spi_transfer(tmp.uint8[i]);
-
-    neorv32_spi_cs_dis();
-
-    while(1) {
-      if ((spi_flash_read_status() & (1 << FLASH_SREG_BUSY)) == 0) { // write in progress flag cleared?
-        break;
-      }
-    }
-
-    g_spi_flash_addr++; // next destination byte address
-  }
-}
-
-
-/**********************************************************************//**
- * Erase flash. Call spi_flash_setup() before.
- **************************************************************************/
-static void spi_flash_erase() {
-
-  uint32_t num_sectors = (g_exe_size / (SPI_FLASH_SECTOR_SIZE)) + 1; // clear at least 1 sector
-  while (num_sectors--) {
-    spi_flash_cmd(SPI_FLASH_CMD_WRITE_ENABLE); // allow write-access
-
-    neorv32_spi_cs_en(SPI_FLASH_CS);
-
-    neorv32_spi_transfer(SPI_FLASH_CMD_SECTOR_ERASE);
-    spi_flash_send_addr();
-
-    neorv32_spi_cs_dis();
-
-    // write-in-progress flag cleared?
-    while(1) {
-      if ((spi_flash_read_status() & (1 << FLASH_SREG_BUSY)) == 0) {
-        break;
-      }
-    }
-
-    // next sector
-    g_spi_flash_addr += SPI_FLASH_SECTOR_SIZE;
-  }
-}
-
-
-/**********************************************************************//**
  * Setup SPI flash.
  *
  * @return 0 if success, !=0 if error
@@ -175,8 +113,8 @@ int spi_flash_setup(void) {
   // setup SPI, clock mode 0
   neorv32_spi_setup(SPI_FLASH_CLK_PRSC, SPI_FLASH_CLK_DIV, 0, 0);
 
-  // (re)set base address
-  g_spi_flash_addr = (uint32_t)SPI_FLASH_BASE_ADDR;
+  // set base address
+  g_flash_addr = (uint32_t)SPI_FLASH_BASE_ADDR;
 
   // the flash may have been set to sleep prior to reaching this point. Make sure it's alive
   spi_flash_cmd(SPI_FLASH_CMD_WAKE);
@@ -198,77 +136,100 @@ int spi_flash_setup(void) {
 
 
 /**********************************************************************//**
+ * Erase flash. Call spi_flash_setup() before.
+ *
+ * @return 0 if success, !=0 if error
+ **************************************************************************/
+int spi_flash_erase(void) {
+
+  // set base address
+  g_flash_addr = (uint32_t)SPI_FLASH_BASE_ADDR;
+
+  uint32_t num_sectors = (g_exe_size / (SPI_FLASH_SECTOR_SIZE)) + 1; // clear at least 1 sector
+  while (num_sectors--) {
+    spi_flash_cmd(SPI_FLASH_CMD_WRITE_ENABLE); // allow write-access
+
+    neorv32_spi_cs_en(SPI_FLASH_CS);
+
+    neorv32_spi_transfer(SPI_FLASH_CMD_SECTOR_ERASE);
+    spi_flash_send_addr();
+
+    neorv32_spi_cs_dis();
+
+    // write-in-progress flag cleared?
+    while(1) {
+      if ((spi_flash_read_status() & (1 << FLASH_SREG_BUSY)) == 0) {
+        break;
+      }
+    }
+
+    // next sector
+    g_flash_addr += SPI_FLASH_SECTOR_SIZE;
+  }
+
+  // reset base address
+  g_flash_addr = (uint32_t)SPI_FLASH_BASE_ADDR;
+
+  return 0;
+}
+
+
+/**********************************************************************//**
  * Read stream word from SPI flash.
  *
  * @param[in,out] rdata Pointer for returned data (uint32_t).
  * @return 0 if success, !=0 if error
  **************************************************************************/
-int spi_stream_get(uint32_t* rdata) {
+int spi_flash_stream_get(uint32_t* rdata) {
 
   neorv32_spi_cs_en(SPI_FLASH_CS);
 
   neorv32_spi_transfer(SPI_FLASH_CMD_READ);
   spi_flash_send_addr();
 
+  int i;
   subwords32_t tmp;
-  tmp.uint8[0] = neorv32_spi_transfer(0);
-  tmp.uint8[1] = neorv32_spi_transfer(1);
-  tmp.uint8[2] = neorv32_spi_transfer(2);
-  tmp.uint8[3] = neorv32_spi_transfer(3);
+  for (i=0; i<4; i++) {
+    tmp.uint8[i] = neorv32_spi_transfer(0);
+  }
 
   neorv32_spi_cs_dis();
 
   *rdata = tmp.uint32;
-  g_spi_flash_addr += 4; // next source word address
+  g_flash_addr += 4; // next source word address
 
   return 0;
 }
 
+
 /**********************************************************************//**
- * Copy executable from main memory to SPI flash
+ * Write stream word to SPI flash.
  *
+ * @param wdata SPI flash write data.
  * @return 0 if success, !=0 if error
  **************************************************************************/
-void spi_flash_program(void) {
+int spi_flash_stream_put(uint32_t wdata) {
 
-  // executable available at all?
-  if (g_exe_size == 0) {
-    uart_puts("No executable.\n");
-    return;
+  subwords32_t tmp;
+  tmp.uint32 = wdata;
+  int i;
+
+  for (i=0; i<4; i++) {
+    spi_flash_cmd(SPI_FLASH_CMD_WRITE_ENABLE); // allow write-access
+
+    neorv32_spi_cs_en(SPI_FLASH_CS);
+
+    neorv32_spi_transfer(SPI_FLASH_CMD_PAGE_PROGRAM);
+    spi_flash_send_addr();
+    neorv32_spi_transfer(tmp.uint8[i]);
+
+    neorv32_spi_cs_dis();
+
+    // wait for write-in-progress flag to clear
+    while ((spi_flash_read_status() & (1 << FLASH_SREG_BUSY)));
+
+    g_flash_addr++; // next destination byte address
   }
 
-  // confirmation prompt
-  uart_puts("Write ");
-  uart_puth(g_exe_size);
-  uart_puts(" bytes to SPI flash @"xstr(SPI_FLASH_BASE_ADDR)" (y/n)?\n");
-  if (uart_getc() != 'y') {
-    return;
-  }
-
-  // setup and clear flash
-  if (spi_flash_setup()) {
-    uart_puts("ERROR_DEVICE\n");
-    return;
-  }
-  uart_puts("Flashing... ");
-  spi_flash_erase();
-
-  // write executable
-  uint32_t checksum = 0, tmp = 0, i = 0, pnt = (uint32_t)EXE_BASE_ADDR;
-  g_spi_flash_addr = (uint32_t)SPI_FLASH_BASE_ADDR + (uint32_t)BIN_OFFSET_DATA;
-  while (i < g_exe_size) { // in chunks of 4 bytes
-    tmp = neorv32_cpu_load_unsigned_word(pnt);
-    pnt += 4;
-    checksum += tmp;
-    spi_flash_write_word(tmp);
-    i += 4;
-  }
-
-  // write header
-  g_spi_flash_addr = (uint32_t)SPI_FLASH_BASE_ADDR;
-  spi_flash_write_word(BIN_SIGNATURE);
-  spi_flash_write_word(g_exe_size);
-  spi_flash_write_word(~checksum);
-
-  uart_puts("OK\n");
+  return 0;
 }

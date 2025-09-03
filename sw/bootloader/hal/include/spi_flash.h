@@ -16,8 +16,9 @@
 
 #include <stdint.h>
 
-int  spi_flash_setup(void);
-int  spi_stream_get(uint32_t* rdata);
-void spi_flash_program(void);
+int spi_flash_setup(void);
+int spi_flash_erase(void);
+int spi_flash_stream_get(uint32_t* rdata);
+int spi_flash_stream_put(uint32_t wdata);
 
 #endif // SPI_FLASH_H

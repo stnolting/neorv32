@@ -16,8 +16,9 @@
 
 #include <stdint.h>
 
-int  twi_flash_setup(void);
-int  twi_stream_get(uint32_t* rdata);
-void twi_flash_program(void);
+int twi_flash_setup(void);
+int twi_flash_erase(void);
+int twi_flash_stream_get(uint32_t* rdata);
+int twi_flash_stream_put(uint32_t wdata);
 
 #endif // TWI_FLASH_H

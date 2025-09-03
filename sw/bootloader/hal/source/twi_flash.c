@@ -18,8 +18,7 @@
 #include <uart.h>
 
 // global variables
-uint32_t g_twi_flash_addr;
-extern uint32_t g_exe_size;
+extern uint32_t g_flash_addr;
 
 
 /**********************************************************************//**
@@ -46,7 +45,7 @@ static int twi_transfer_byte(int write, uint8_t* data) {
 
   // send address
   rc = 0;
-  addr.uint32 = g_twi_flash_addr;
+  addr.uint32 = g_flash_addr;
 #if (TWI_FLASH_ADDR_BYTES == 1)
   rc |= neorv32_twi_transfer(&addr.uint8[0], 0);
 #elif (TWI_FLASH_ADDR_BYTES == 2)
@@ -111,27 +110,6 @@ static int twi_transfer_byte(int write, uint8_t* data) {
 
 
 /**********************************************************************//**
- * Write 32-bit word to TWI flash.
- *
- * @param wdata TWI flash write data.
- **************************************************************************/
-static int twi_flash_write_word(uint32_t wdata) {
-
-  subwords32_t tmp;
-  tmp.uint32 = wdata;
-  int rc = 0;
-  int i;
-
-  for (i=0; i<4; i++) {
-    rc |= twi_transfer_byte(1, &tmp.uint8[i]);
-    g_twi_flash_addr++; // next destination byte address
-  }
-
-  return rc;
-}
-
-
-/**********************************************************************//**
  * Setup TWI flash.
  *
  * @return 0 if success, !=0 if error
@@ -144,7 +122,7 @@ int twi_flash_setup(void) {
   }
 
   // (re)set base address
-  g_twi_flash_addr = (uint32_t)TWI_FLASH_BASE_ADDR;
+  g_flash_addr = (uint32_t)TWI_FLASH_BASE_ADDR;
 
   // setup TWI, no clock-stretching
   neorv32_twi_setup(TWI_FLASH_CLK_PRSC, TWI_FLASH_CLK_DIV, 0);
@@ -163,12 +141,23 @@ int twi_flash_setup(void) {
 
 
 /**********************************************************************//**
+ * Erase flash. Not required for EEPROM-style TWI memories.
+ *
+ * @return 0 if success, !=0 if error
+ **************************************************************************/
+int twi_flash_erase(void) {
+
+  return 0;
+}
+
+
+/**********************************************************************//**
  * Read stream word from TWI flash.
  *
  * @param[in,out] rdata Pointer for returned data (uint32_t).
  * @return 0 if success, !=0 if error
  **************************************************************************/
-int twi_stream_get(uint32_t* rdata) {
+int twi_flash_stream_get(uint32_t* rdata) {
 
   subwords32_t tmp;
   tmp.uint32 = 0;
@@ -177,63 +166,31 @@ int twi_stream_get(uint32_t* rdata) {
 
   for (i=0; i<4; i++) {
     rc |= twi_transfer_byte(0, &tmp.uint8[i]);
-    g_twi_flash_addr++; // next destination byte address
+    g_flash_addr++; // next destination byte address
   }
 
   *rdata = tmp.uint32;
   return rc;
 }
 
+
 /**********************************************************************//**
- * Copy executable from main memory to TWI flash
+ * Write stream word to SPI flash.
  *
+ * @param wdata TWI flash write data.
  * @return 0 if success, !=0 if error
  **************************************************************************/
-void twi_flash_program(void) {
+int twi_flash_stream_put(uint32_t wdata) {
 
-  // executable available at all?
-  if (g_exe_size == 0) {
-    uart_puts("No executable.\n");
-    return;
-  }
-
-  // confirmation prompt
-  uart_puts("Write ");
-  uart_puth(g_exe_size);
-  uart_puts(" bytes to TWI flash "xstr(TWI_FLASH_ID)" @"xstr(TWI_FLASH_BASE_ADDR)" (y/n)?\n");
-  if (uart_getc() != 'y') {
-    return;
-  }
-
-  // setup flash
-  if (twi_flash_setup()) {
-    uart_puts("ERROR_DEVICE\n");
-    return;
-  }
-  uart_puts("Flashing... ");
-
-  // write executable
+  subwords32_t tmp;
+  tmp.uint32 = wdata;
   int rc = 0;
-  uint32_t checksum = 0, tmp = 0, i = 0, pnt = (uint32_t)EXE_BASE_ADDR;
-  g_twi_flash_addr = (uint32_t)TWI_FLASH_BASE_ADDR + (uint32_t)BIN_OFFSET_DATA;
-  while (i < g_exe_size) { // in chunks of 4 bytes
-    tmp = neorv32_cpu_load_unsigned_word(pnt);
-    pnt += 4;
-    checksum += tmp;
-    rc |= twi_flash_write_word(tmp);
-    i += 4;
+  int i;
+
+  for (i=0; i<4; i++) {
+    rc |= twi_transfer_byte(1, &tmp.uint8[i]);
+    g_flash_addr++; // next destination byte address
   }
 
-  // write header
-  g_twi_flash_addr = (uint32_t)TWI_FLASH_BASE_ADDR;
-  rc |= twi_flash_write_word(BIN_SIGNATURE);
-  rc |= twi_flash_write_word(g_exe_size);
-  rc |= twi_flash_write_word(~checksum);
-
-  if (rc) {
-    uart_puts("ERROR_DEVICE\n");
-    return;
-  }
-
-  uart_puts("OK\n");
+  return rc;
 }
