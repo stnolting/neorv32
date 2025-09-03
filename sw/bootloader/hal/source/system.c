@@ -18,6 +18,7 @@
 
 // global variables
 uint32_t g_exe_size = 0; // size of the loaded executable; 0 if no executable available
+uint32_t g_flash_addr = 0; // current flash/stream address
 
 // private function prototypes
 static void __attribute__((interrupt("machine"),aligned(4))) system_trap_handler(void);
@@ -81,7 +82,7 @@ static void __attribute__((interrupt("machine"),aligned(4))) system_trap_handler
   // unexpected trap
 #if (UART_EN == 1)
   if (neorv32_uart0_available()) {
-    uart_puts("\a\nERROR_EXCEPTION ");
+    uart_puts("\n\aERROR_EXCEPTION ");
     uart_puth(mcause);
     uart_putc(' ');
     uart_puth(neorv32_cpu_csr_read(CSR_MEPC));
@@ -112,10 +113,10 @@ static void __attribute__((interrupt("machine"),aligned(4))) system_trap_handler
 
 
 /**********************************************************************//**
- * Load executable: get data from stream device and store to main memory.
+ * Load executable: get data from device stream and store to main memory.
  *
- * @param dev_init Function pointer ("int stuff(void)") for device setup.
- * @param stream_get Function pointer ("int stuff(uint32_t* rdata)") to get
+ * @param dev_init Function pointer ("int foo(void)") for device setup.
+ * @param stream_get Function pointer ("int bar(uint32_t* rdata)") to get
  * the next consecutive 32-bit word from an application source stream.
  * @return 0 if success, non-zero 0 if error.
  **************************************************************************/
@@ -126,7 +127,7 @@ int system_exe_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata)) {
 
   // initialize stream device
   if (dev_init()) {
-    uart_puts("ERROR_DEVICE\n");
+    uart_puts("\aERROR_DEVICE\n");
     return 1;
   }
 
@@ -139,39 +140,118 @@ int system_exe_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata)) {
 
   // signature OK?
   if (exe_signature != (uint32_t)BIN_SIGNATURE) {
-    uart_puts("ERROR_SIGNATURE\n");
+    uart_puts("\aERROR_SIGNATURE\n");
     return 1;
   }
 
   // transfer executable
-  uint32_t *pnt = (uint32_t*)EXE_BASE_ADDR;
-  uint32_t tmp = 0, i = 0;
-  while (i < (exe_size/4)) { // in words
+  uint32_t tmp = 0;
+  uint32_t i = 0;
+  while (i < exe_size) { // in chunks of 4 bytes
     if (rc) {
       break;
     }
     rc |= stream_get(&tmp);
     exe_checksum += tmp;
-    pnt[i++] = tmp;
+    neorv32_cpu_store_unsigned_word((uint32_t)EXE_BASE_ADDR + i, tmp);
+    i += 4;
   }
 
   // checks
   if (rc) {
-    uart_puts("ERROR_DEVICE\n");
+    uart_puts("\aERROR_DEVICE\n");
     return 1;
   }
   if ((exe_checksum + 1) != 0) {
-    uart_puts("ERROR_CHECKSUM\n");
+    uart_puts("\aERROR_CHECKSUM\n");
     return 1;
   }
 
   g_exe_size = exe_size;
   uart_puts("OK\n");
 
-  // we might have caches so the executable might not yet have fully arrived in main memory yet
-  asm volatile ("fence"); // flush data caches to main memory
-  asm volatile ("fence.i"); // re-sync instruction fetch to updated main memory
+  // sync caches
+  asm volatile ("fence");
+  asm volatile ("fence.i");
 
+  return 0;
+}
+
+
+/**********************************************************************//**
+ * Store executable: copy data from main memory to device stream.
+ *
+ * @param dev_init Function pointer ("int foo(void)") for device setup.
+ * @param dev_erase Function pointer ("int tmp(void)") for device erasure.
+ * @param stream_put Function pointer ("int bar(uint32_t wdata)") to put
+ * the next consecutive 32-bit word to an application source stream.
+ * @return 0 if success, non-zero 0 if error.
+ **************************************************************************/
+int system_exe_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream_put)(uint32_t wdata)) {
+
+  // executable available at all?
+  if (g_exe_size == 0) {
+    uart_puts("No executable.\n");
+    return 1;
+  }
+
+  // setup flash
+  if (dev_init()) {
+    uart_puts("\aERROR_DEVICE\n");
+    return 1;
+  }
+
+  // confirmation prompt
+  uart_puts("Write ");
+  uart_puth(g_exe_size);
+  uart_puts(" bytes to flash @");
+  uart_puth(g_flash_addr);
+  uart_puts("? (y/n)\n");
+  if (uart_getc() != 'y') {
+    return 1;
+  }
+  uart_puts("Flashing... ");
+
+  // erase flash
+  if (dev_erase()) {
+    uart_puts("\aERROR_DEVICE\n");
+    return 1;
+  }
+
+  // sync caches
+  asm volatile ("fence");
+  asm volatile ("fence.i");
+
+  // write executable
+  int rc = 0;
+  uint32_t checksum = 0;
+  uint32_t tmp = 0;
+  uint32_t i = 0;
+  uint32_t addr_backup = g_flash_addr; // backup initial start address
+
+  g_flash_addr += (uint32_t)BIN_OFFSET_DATA;
+  while (i < g_exe_size) { // in chunks of 4 bytes
+    tmp = neorv32_cpu_load_unsigned_word((uint32_t)EXE_BASE_ADDR + i);
+    checksum += tmp;
+    rc |= stream_put(tmp);
+    i += 4;
+    if (rc) {
+      break;
+    }
+  }
+
+  // write header
+  g_flash_addr = addr_backup;
+  rc |= stream_put(BIN_SIGNATURE);
+  rc |= stream_put(g_exe_size);
+  rc |= stream_put(~checksum);
+
+  if (rc) {
+    uart_puts("\aERROR_DEVICE\n");
+    return 1;
+  }
+
+  uart_puts("OK\n");
   return 0;
 }
 
@@ -183,7 +263,7 @@ void system_boot_app(void) {
 
   // executable available?
   if (g_exe_size == 0) {
-    uart_puts("No executable. Boot anyway (y/n)?\n");
+    uart_puts("No executable. Boot anyway? (y/n)\n");
     if (uart_getc() != 'y') {
       return;
     }
