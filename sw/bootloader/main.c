@@ -38,7 +38,7 @@ int __attribute__((naked)) main(void) {
   // Auto boot sequence
   // ------------------------------------------------
 
-#if (AUTO_BOOT_EN != 0)
+#if (AUTO_BOOT_EN == 1)
   uart_puts("Auto-boot");
 
   // wait for timeout or user abort
@@ -64,21 +64,21 @@ int __attribute__((naked)) main(void) {
   }
 
   // try booting from TWI flash
-#if (TWI_FLASH_EN != 0)
+#if (TWI_FLASH_EN == 1)
   uart_putc('\n');
   uart_puts("Loading from TWI flash "xstr(TWI_FLASH_ID)" @"xstr(TWI_FLASH_BASE_ADDR)"... ");
   if (system_exe_load(twi_flash_setup, twi_flash_stream_get) == 0) { system_boot_app(); }
 #endif
 
   // try booting from SPI flash
-#if (SPI_FLASH_EN != 0)
+#if (SPI_FLASH_EN == 1)
   uart_putc('\n');
   uart_puts("Loading from SPI flash @"xstr(SPI_FLASH_BASE_ADDR)"... ");
   if (system_exe_load(spi_flash_setup, spi_flash_stream_get) == 0) { system_boot_app(); }
 #endif
 
   // try booting from SD card
-#if (SPI_SDCARD_EN != 0)
+#if (SPI_SDCARD_EN == 1)
   uart_putc('\n');
   uart_puts("Loading SD card file "SPI_SDCARD_FILE"... ");
   if (system_exe_load(sdcard_setup, sdcard_stream_get) == 0) { system_boot_app(); }
@@ -91,7 +91,7 @@ skip_auto_boot:
   // User console
   // ------------------------------------------------
 
-#if (UART_EN != 0)
+#if (UART_EN == 1)
   uart_puts("Type 'h' for help.\n");
   while (1) {
 
@@ -133,15 +133,19 @@ skip_auto_boot:
         "i: System info\n"
         "r: Restart\n"
         "u: Upload via UART\n"
-#if (TWI_FLASH_EN != 0)
+#if (TWI_FLASH_EN == 1)
         "t: TWI flash - load\n"
+#if (TWI_FLASH_PROG_EN == 1)
         "w: TWI flash - program\n"
 #endif
-#if (SPI_FLASH_EN != 0)
+#endif
+#if (SPI_FLASH_EN == 1)
         "l: SPI flash - load\n"
+#if (SPI_FLASH_PROG_EN == 1)
         "s: SPI flash - program\n"
 #endif
-#if (SPI_SDCARD_EN != 0)
+#endif
+#if (SPI_SDCARD_EN == 1)
         "c: SD card - load\n"
 #endif
         "e: Start executable\n"
@@ -167,10 +171,12 @@ skip_auto_boot:
     }
 
     /**** TWI flash access ****/
-#if (TWI_FLASH_EN != 0)
+#if (TWI_FLASH_EN == 1)
+#if (TWI_FLASH_PROG_EN == 1)
     if (cmd == 'w') { // program TWI flash
       system_exe_store(twi_flash_setup, twi_flash_erase, twi_flash_stream_put);
     }
+#endif
     if (cmd == 't') { // get executable from TWI flash
       uart_puts("Loading from TWI flash "xstr(TWI_FLASH_ID)" @"xstr(TWI_FLASH_BASE_ADDR)"... ");
       system_exe_load(twi_flash_setup, twi_flash_stream_get);
@@ -178,10 +184,12 @@ skip_auto_boot:
 #endif
 
     /**** SPI flash access ****/
-#if (SPI_FLASH_EN != 0)
+#if (SPI_FLASH_EN == 1)
+#if (SPI_FLASH_PROG_EN == 1)
     if (cmd == 's') { // program SPI flash
       system_exe_store(spi_flash_setup, spi_flash_erase, spi_flash_stream_put);
     }
+#endif
     if (cmd == 'l') { // get executable from SPI flash
       uart_puts("Loading from SPI flash @"xstr(SPI_FLASH_BASE_ADDR)"... ");
       system_exe_load(spi_flash_setup, spi_flash_stream_get);
@@ -189,7 +197,7 @@ skip_auto_boot:
 #endif
 
     /**** load from SD card ****/
-#if (SPI_SDCARD_EN != 0)
+#if (SPI_SDCARD_EN == 1)
     if (cmd == 'c') {
       uart_puts("Loading SD card file "SPI_SDCARD_FILE"... ");
       system_exe_load(sdcard_setup, sdcard_stream_get);

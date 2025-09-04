@@ -69,9 +69,14 @@
  * TWI flash
  **********************************************************************/
 
-// Enable TWI flash boot (0,1)
+// Enable TWI flash options (0,1)
 #ifndef TWI_FLASH_EN
 #define TWI_FLASH_EN 0
+#endif
+
+// Enable TWI flash programming
+#ifndef TWI_FLASH_PROG_EN
+#define TWI_FLASH_PROG_EN 1
 #endif
 
 // TWI flash clock prescaler (#NEORV32_CLOCK_PRSC_enum)
@@ -103,9 +108,14 @@
  * SPI flash
  **********************************************************************/
 
-// Enable SPI flash boot (0,1)
+// Enable SPI flash options (0,1)
 #ifndef SPI_FLASH_EN
 #define SPI_FLASH_EN 1
+#endif
+
+// Enable SPI flash programming
+#ifndef SPI_FLASH_PROG_EN
+#define SPI_FLASH_PROG_EN 1
 #endif
 
 // SPI flash chip select (0..7)
@@ -142,7 +152,7 @@
  * SD card (via SPI; FAT32 file system)
  **********************************************************************/
 
-// Enable SD card boot (0,1)
+// Enable SD card options (0,1)
 #ifndef SPI_SDCARD_EN
 #define SPI_SDCARD_EN 0
 #endif
