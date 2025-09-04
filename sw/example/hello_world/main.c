@@ -56,17 +56,19 @@ int main() {
   // neorv32_aux_print_logo();
 
   // say hello
-  // neorv32_uart0_puts("Hello world! :)\n");
+
 
   // Test the assembly functions
   int a = 42;
   int b = 58;
-  int result1 = zcmp_test(a, b);
-  
-  neorv32_uart0_printf("Testing zcmp_test(%d, %d) = %d\n", a, b, result1);
+  // int result1 = zcmp_test(a, b);
+  // 
+  // neorv32_uart0_printf("Testing zcmp_test(%d, %d) = %d\n", a, b, result1);
 
-  // int result2 = zcmp_test_push(a, b);
-  // neorv32_uart0_printf("Testing zcmp_test_push(%d, %d) = %d\n", a, b, result2);
+  int result2 = zcmp_test_push(a, b);
+  neorv32_uart0_printf("Testing zcmp_test_push(%d, %d) = %d\n", a, b, result2);
+  neorv32_uart0_puts("Hello world! :)\n");
+  neorv32_aux_print_logo();
 
   return 0;
 }

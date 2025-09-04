@@ -481,19 +481,22 @@ begin
       xbus_rsp_o => xbus_mmio_rsp
     );
 
-  monitor_blk : block
-    -- Declare the external-name alias here, AFTER the DUT exists
-    alias zcmp_push is << signal .neorv32_tb.neorv32_top_inst.core_complex_gen(0).neorv32_cpu_inst.neorv32_cpu_frontend_inst.zcmp_push : std_ulogic >> ;
+  -- monitor_blk : block
+  --   -- Declare the external-name alias here, AFTER the DUT exists
+  --   alias zcmp_push is << signal .neorv32_tb.neorv32_top_inst.core_complex_gen(0).neorv32_cpu_inst.neorv32_cpu_frontend_inst.zcmp_push : std_ulogic >> ;
 
-  begin
-    monitor : process
-    begin
-      wait until zcmp_push = '1';
-      report "zcmp push detected";
-      wait for 300 ns;
-      std.env.finish;
-    end process;
-  end block monitor_blk;
+  -- begin
+  --   monitor : process
+  --   begin
+  --     wait until zcmp_push = '1';
+  --     report "zcmp push detected";
+
+  --     wait until zcmp_push = '1';
+  --     report "zcmp push detected";
+  --     wait for 1000 ns;
+  --     std.env.finish;
+  --   end process;
+  -- end block monitor_blk;
 
   -- XBUS: External IRQ Trigger -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
