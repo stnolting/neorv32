@@ -15,7 +15,7 @@
 #include <time.h>
 
 // executable signature ("magic word")
-const uint32_t signature = 0x4788CAFE;
+const uint32_t signature = 0xB007C0DE;
 
 // output file types (operation select)
 enum operation_enum {
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
     fputc((unsigned char)((size >> 16) & 0xFF), output);
     fputc((unsigned char)((size >> 24) & 0xFF), output);
     // header: checksum (sum complement)
-    checksum = (~checksum) + 1;
+    checksum = ~checksum;
     fputc((unsigned char)((checksum >>  0) & 0xFF), output);
     fputc((unsigned char)((checksum >>  8) & 0xFF), output);
     fputc((unsigned char)((checksum >> 16) & 0xFF), output);

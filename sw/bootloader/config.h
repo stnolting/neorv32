@@ -8,7 +8,7 @@
 
 /**
  * @file config.h
- * @brief Default NEORV32 bootloader configuration.
+ * @brief Bootloader configuration.
  */
 
 #ifndef CONFIG_H
@@ -18,54 +18,44 @@
  * Processor memory layout
  **********************************************************************/
 
-// Memory base address for the executable
+// Main memory base address for executable (32-bit, has to be 4-byte-aligned)
 #ifndef EXE_BASE_ADDR
-#define EXE_BASE_ADDR 0x00000000U
+#define EXE_BASE_ADDR 0x00000000
 #endif
 
 /**********************************************************************
- * UART configuration
+ * Serial console
  **********************************************************************/
 
-// Set to 0 to disable UART
+// Enable UART0 (0,1)
 #ifndef UART_EN
 #define UART_EN 1
 #endif
 
-// UART BAUD rate for serial
+// UART0 baud rate
 #ifndef UART_BAUD
 #define UART_BAUD 19200
 #endif
 
-// Set to 1 to enable UART RTS/CTS hardware flow control
-#ifndef UART_HW_HANDSHAKE_EN
-#define UART_HW_HANDSHAKE_EN 0
-#endif
-
-// Print splash screen
-#ifndef UART_PRINT_SPLASH_EN
-#define UART_PRINT_SPLASH_EN 1
-#endif
-
 /**********************************************************************
- * Status LED
+ * Status LED (high-active)
  **********************************************************************/
 
-// Set to 0 to disable bootloader status LED at GPIO.gpio_o(STATUS_LED_PIN)
+// Enable status LED (0,1)
 #ifndef STATUS_LED_EN
 #define STATUS_LED_EN 1
 #endif
 
-// GPIO output pin for high-active bootloader status LED
+// GPIO output pin for status LED (0..31)
 #ifndef STATUS_LED_PIN
 #define STATUS_LED_PIN 0
 #endif
 
 /**********************************************************************
- * Auto-boot configuration
+ * Auto-boot
  **********************************************************************/
 
-// Enable auto-boot
+// Enable auto-boot (0,1)
 #ifndef AUTO_BOOT_EN
 #define AUTO_BOOT_EN 1
 #endif
@@ -76,81 +66,119 @@
 #endif
 
 /**********************************************************************
- * SPI configuration
+ * TWI flash
  **********************************************************************/
 
-// Enable SPI (default) including SPI flash boot options
-#ifndef SPI_EN
-#define SPI_EN 1
+// Enable TWI flash boot (0,1)
+#ifndef TWI_FLASH_EN
+#define TWI_FLASH_EN 0
 #endif
 
-// SPI flash chip select
+// TWI flash clock prescaler (#NEORV32_CLOCK_PRSC_enum)
+#ifndef TWI_FLASH_CLK_PRSC
+#define TWI_FLASH_CLK_PRSC CLK_PRSC_1024
+#endif
+
+// TWI flash clock divider (0..15)
+#ifndef TWI_FLASH_CLK_DIV
+#define TWI_FLASH_CLK_DIV 0
+#endif
+
+// TWI flash device ID (8-bit; R/W-bit cleared)
+#ifndef TWI_FLASH_ID
+#define TWI_FLASH_ID 0xA0
+#endif
+
+// TWI flash base address (32-bit, has to be 4-byte-aligned)
+#ifndef TWI_FLASH_BASE_ADDR
+#define TWI_FLASH_BASE_ADDR 0x00000000
+#endif
+
+// TWI flash address bytes (1..4)
+#ifndef TWI_FLASH_ADDR_BYTES
+#define TWI_FLASH_ADDR_BYTES 2
+#endif
+
+/**********************************************************************
+ * SPI flash
+ **********************************************************************/
+
+// Enable SPI flash boot (0,1)
+#ifndef SPI_FLASH_EN
+#define SPI_FLASH_EN 1
+#endif
+
+// SPI flash chip select (0..7)
 #ifndef SPI_FLASH_CS
 #define SPI_FLASH_CS 0
 #endif
 
-// SPI flash clock prescaler, see #NEORV32_CLOCK_PRSC_enum
+// SPI flash clock prescaler (#NEORV32_CLOCK_PRSC_enum)
 #ifndef SPI_FLASH_CLK_PRSC
 #define SPI_FLASH_CLK_PRSC CLK_PRSC_64
 #endif
 
-// SPI flash base address (hast to be aligned to the sector size)
-#ifndef SPI_FLASH_BASE_ADDR
-#define SPI_FLASH_BASE_ADDR 0x00400000U
+// SPI flash clock divider (0..15)
+#ifndef SPI_FLASH_CLK_DIV
+#define SPI_FLASH_CLK_DIV 0
 #endif
 
-// SPI flash address bytes (1,2,3,4)
+// SPI flash base address (should be aligned to the sector size)
+#ifndef SPI_FLASH_BASE_ADDR
+#define SPI_FLASH_BASE_ADDR 0x00400000
+#endif
+
+// SPI flash address bytes (1..4)
 #ifndef SPI_FLASH_ADDR_BYTES
 #define SPI_FLASH_ADDR_BYTES 3
 #endif
 
 // SPI flash sector size in bytes
 #ifndef SPI_FLASH_SECTOR_SIZE
-#define SPI_FLASH_SECTOR_SIZE 65536
+#define SPI_FLASH_SECTOR_SIZE (64*1024)
 #endif
 
 /**********************************************************************
- * TWI configuration
+ * SD card (via SPI; FAT32 file system)
  **********************************************************************/
 
-// Enable TWI for copying to RAM
-#ifndef TWI_EN
-#define TWI_EN 0
+// Enable SD card boot (0,1)
+#ifndef SPI_SDCARD_EN
+#define SPI_SDCARD_EN 0
 #endif
 
-// TWI clock prescaler, see #NEORV32_CLOCK_PRSC_enum
-#ifndef TWI_CLK_PRSC
-#define TWI_CLK_PRSC CLK_PRSC_1024
+// SD card SPI chip select (0..7)
+#ifndef SPI_SDCARD_CS
+#define SPI_SDCARD_CS 1
 #endif
 
-// TWI clock divider
-#ifndef TWI_CLK_DIV
-#define TWI_CLK_DIV 3
+// SD card SPI clock prescaler (#NEORV32_CLOCK_PRSC_enum)
+#ifndef SPI_SDCARD_CLK_PRSC
+#define SPI_SDCARD_CLK_PRSC CLK_PRSC_64
 #endif
 
-// TWI allow clock stretching
-#ifndef TWI_CLK_STRECH_EN
-#define TWI_CLK_STRECH_EN 0
+// SD card SPI clock divider (0..15)
+#ifndef SPI_SDCARD_CLK_DIV
+#define SPI_SDCARD_CLK_DIV 0
 #endif
 
-// TWI device ID (write address; R/W cleared)
-#ifndef TWI_DEVICE_ID
-#define TWI_DEVICE_ID 0xA0
+// Binary executable file name (must be located in root directory, 8.3-DOS-names only)
+#ifndef SPI_SDCARD_FILE
+#define SPI_SDCARD_FILE "boot.bin"
 #endif
 
-// TWI flash base address (has to 4-byte aligned)
-#ifndef TWI_FLASH_BASE_ADDR
-#define TWI_FLASH_BASE_ADDR 0x00000000U
+/**********************************************************************
+ * Console text (for branding)
+ **********************************************************************/
+
+// Intro text
+#ifndef THEME_INTRO
+#define THEME_INTRO "NEORV32 Bootloader"
 #endif
 
-// TWI flash address bytes (1,2,3,4)
-#ifndef TWI_FLASH_ADDR_BYTES
-#define TWI_FLASH_ADDR_BYTES 2
-#endif
-
-// TWI flash bulk write enable
-#ifndef TWI_FLASH_BULK_WRITE_EN
-#define TWI_FLASH_BULK_WRITE_EN 0
+// Name of executable that is shown in the console menu
+#ifndef THEME_EXE
+#define THEME_EXE "neorv32_exe.bin"
 #endif
 
 #endif // CONFIG_H

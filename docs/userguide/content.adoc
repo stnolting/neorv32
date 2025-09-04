@@ -5,7 +5,6 @@
 * <<_application_program_compilation>>
 * <<_installing_an_executable_directly_into_memory>>
 * <<_adding_custom_hardware_modules>>
-* <<_using_the_neorv32_bootloader>>
 * <<_packaging_the_processor_as_vivado_ip_block>>
 * <<_simulating_the_processor>>
 * <<_building_the_documentation>>
@@ -26,8 +25,6 @@ include::application_program_compilation.adoc[]
 include::installing_an_executable.adoc[]
 
 include::adding_custom_hw_modules.adoc[]
-
-include::using_the_neorv32_bootloader.adoc[]
 
 include::packaging_vivado.adoc[]
 

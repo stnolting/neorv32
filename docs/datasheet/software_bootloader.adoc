@@ -2,17 +2,23 @@
 :sectnums:
 === Bootloader
 
-The NEORV32 bootloader (`sw/bootloader/bootloader.c`) provides an optional built-in firmware that allows to upload
-new application firmware at any time without the need to re-synthesize the FPGA's bitstream. A UART connection
-is used to provide an interactive user interface that allows to upload executables. Furthermore, the bootloader
-provides a programmer to write an executable to a processor-external serial flash. The bootloader's auto-boot feature
-can optionally load and boot this executable right after reset. The NEORV32 bootloader is enabled via the
-<<_boot_configuration>> `BOOT_MODE_SELECT` generic.
+The NEORV32 bootloader provides an optional built-in firmware that allows to upload new application firmware at
+any time without the need to re-synthesize the FPGA's bitstream. The bootloader is automatically executed after
+reset when enabled via the <<_boot_configuration>> `BOOT_MODE_SELECT` generic. The bootloader provides the
+following key features:
+
+* interactive user console via UART
+* upload executable via UART
+* load executable from SPI flash; store executable to SPI flash
+* load executable from TWI flash; store executable to TWI flash (_option disabled by default_)
+* load executable from SD card (_option disabled by default_)
+* automatic boot sequence: automatically boot from TWI/SPI flash / SD card
+* highly configurable to adapt to application requirements
 
 .Pre-Built Bootloader Image
 [NOTE]
 This section refers to the **default** NEORV32 bootloader. The <<_bootloader_rom_bootrom>> image file
-(`rtl/core/neorv32_bootloader_image.vhd`) already contains the pre-compiled bootloader in its default configuration.
+already contains the pre-compiled bootloader (`sw/bootloader/bootloader.c`) in its default configuration.
 
 .Minimal Hardware Requirements
 [NOTE]
@@ -21,160 +27,260 @@ RAM (DMEM) size of at least 256 bytes. These constraints ensure that the bootloa
 CPU/processor configuration. It is recommended to enable at least
 <<_primary_universal_asynchronous_receiver_and_transmitter_uart0, UART0>>,
 the <<_core_local_interruptor_clint, CLINT>> and the <<_general_purpose_input_and_output_port_gpio, GPIO>> controller.
+See <<_customizing_the_internal_bootloader>> for more information.
 
 
 :sectnums:
 ==== Bootloader Console
 
 The default bootloader provides a serial console via UART0 for user interaction using the following terminal
-settings (`19200-8-N-1`):
+settings:
 
-* 19200 Baud
-* 8 data bits
-* no parity bit
-* 1 stop bit
-* newlines are `\r\n`
-* no transfer/control protocol
+* 19200 Baud, 8 data bits, no parity bit, 1 stop bit (`19200-8-N-1`)
+* line breaks: carriage return + newline (`\r\n`)
 
 .Terminal Program
 [TIP]
-Any terminal program that can connect to a serial port should work. However, make sure the program can transfer data
-in _raw_ byte mode without any protocol overhead (e.g. XMODEM). Some terminal programs struggle with transmitting files
-larger than 4kB (see https://github.com/stnolting/neorv32/pull/215). Try a different terminal program if uploading of
-a binary does not work.
+Any terminal program that can connect to a serial port should work. However, make sure the program can transfer
+data in _raw_ byte mode without any protocol overhead (e.g. XMODEM). Note that some terminal programs struggle
+with transmitting files larger than 4kB (see https://github.com/stnolting/neorv32/pull/215).
 
-The bootloader uses the LSB of the top entity's GPIO output port (`gpio_o(0)`) for an high-active status LED. All other
-output pins are set to low. After reset, the status LED will start blinking at 2Hz and the splash screen shows up and
-<<_auto_boot_sequence>> is started. This auto-boot sequence can be skipped within 10s by pressing any key (i.e. sending
-any char).
+By default the bootloader uses the LSB of the top entity's GPIO output port (`gpio_o(0)`) for an high-active
+status LED. All other output pins are set to low. After reset, the status LED will start blinking at 2Hz and the
+<<_auto_boot_sequence>> is started. This auto-boot sequence can be skipped within 10s by pressing any key.
 
-.Bootloader Console (with annotations)
+.Default Bootloader Console
 [source]
 ----
 NEORV32 Bootloader
+build: Sep  3 2025 <1>
 
-BLDV: Mar 30 2025 <1>
-HWV:  0x01110202  <2>
-CLK:  0x017d7840  <3>
-MISA: 0x40801104  <4>
-XISA: 0x00000083  <5>
-SOC:  0x000f800d  <6>
-IMEM: 0x00004000  <7>
-DMEM: 0x00002000  <8>
+Auto-boot in 10s. Press any key to abort. <2>
+Aborted. <3>
 
-Autoboot in 10s. Press any key to abort. <9>
-Aborted. <10>
-
-Available CMDs:         <11>
- h: Help                <12>
- r: Restart             <13>
- u: Upload via UART     <14>
- s: Store to SPI flash  <15>
- l: Load from SPI flash <16>
- e: Start executable    <17>
-CMD:> <18>
+Type 'h' for help.
+CMD:> <4>
 ----
-<1> Bootloader version (built date).
-<2> Processor hardware version in BCD format (<<_mimpid>> CSR).
-<3> Processor clock speed in Hz (`CLK` register of <<_system_configuration_information_memory_sysinfo>>.
-<4> RISC-V CPU extensions (<<_misa>> CSR).
-<5> NEORV32-specific CPU extensions (<<_mxisa>> CSR).
-<6> Processor configuration (`SOC` register of <<_system_configuration_information_memory_sysinfo>>.
-<7> Internal IMEM size in byte (`MEM` register of <<_system_configuration_information_memory_sysinfo>>.
-<8> Internal DMEM size in byte (`MEM` register of <<_system_configuration_information_memory_sysinfo>>.
-<9> Start of <<_auto_boot_sequence>>.
-<10> Auto-boot sequence aborted due to user console input.
-<11> List of all commands.
-<12> Show "Available CMDs" help text again.
-<13> Restart bootloader and auto-boot sequence.
-<14> Upload new program executable (`neorv32_exe.bin`) via UART.
-<15> Store previously-uploaded executable to SPI flash.
-<16> Load executable from SPI flash.
-<17> Start the (up)loaded executable.
-<18> Command prompt.
+<1> Bootloader version (compile date).
+<2> Start of auto-boot sequence.
+<3> Auto-boot sequence aborted due to user console input.
+<4> Command prompt.
 
-If the auto-boot countdown is stopped the interactive user console starts. A new executable (`neorv32_exe.bin`) can be
-uploaded via UART by executing the `u` command. After that the executable can be booted via the `e` command. To program
-the recently uploaded executable to an attached SPI flash press `s`. To load an executable from the SPI flash press `l`.
-The bootloader including the auto-boot sequence can be manually restarted at any time via the `r` command.
+To see a list of all available commands press `h` to see the help menu:
+
+.Bootloader Help Menu
+[source]
+----
+CMD:> h
+Available CMDs:
+h: Help                <1>
+i: System info         <2>
+r: Restart             <3>
+u: Upload via UART     <4>
+t: TWI flash - load    <5>
+w: TWI flash - program <6>
+l: SPI flash - load    <7>
+s: SPI flash - program <8>
+c: SD card - load      <9>
+e: Start executable    <10>
+x: Exit                <11>
+CMD:>
+----
+<1> Show "Available CMDs" help text again.
+<2> Show hardware configuration information.
+<3> Restart bootloader and auto-boot sequence.
+<4> Upload new executable (`neorv32_exe.bin`) via UART.
+<5> Load executable from TWI flash (_this option is disabled by default_).
+<6> Store executable to TWI flash (_this option is disabled by default_).
+<7> Load executable from SPI flash.
+<8> Program previously-uploaded executable to SPI flash.
+<9> Load executable from SD card (_this option is disabled by default_).
+<10> Start the (up)loaded executable.
+<11> Raise a breakpoint exception: If a debugger is connected this will transfer control to the debugger.
+If no debugger is connected this will print an exception error (<<_bootloader_error_codes>>)
+shutting down the processor.
+
+.Unavailable Commands
+[NOTE]
+Note that not all options are enabled in the default bootloader configuration in order to keep the bootloader
+ROM size below 4kB. However, these options can be enabled in `config.h` (see <<_customizing_the_internal_bootloader>>).
+
+Available commands can be executed by typing the according letter. For example, when executing the `i` command
+the general system configuration is printed:
+
+.System Configuration Information
+[source]
+----
+CMD:> i
+HWV:  0x01120101 <1>
+CLK:  0x05f5e100 <2>
+MISA: 0x40901107 <3>
+XISA: 0x0fc06fd3 <4>
+SOC:  0x38efc87b <5>
+MISC: 0x0a010d00 <6>
+CMD:>
+----
+<1> Processor hardware version in BCD format (<<_mimpid>> CSR).
+<2> Processor clock speed in Hz (`CLK` register of <<_system_configuration_information_memory_sysinfo>>.
+<3> RISC-V CPU extensions (<<_misa>> CSR).
+<4> NEORV32-specific CPU extensions (<<_mxisa>> CSR).
+<5> Processor configuration (`SOC` register of <<_system_configuration_information_memory_sysinfo>>.
+<6> Miscellaneous memory and SoC configuration (`MISC` register of <<_system_configuration_information_memory_sysinfo>>.
 
 
 :sectnums:
 ==== Auto Boot Sequence
 
-After a reset, the bootloader waits 10 seconds for a UART console input before it starts the automatic boot sequence:
+After reset, the bootloader waits 10 seconds for a UART console input before it starts the automatic boot sequence.
+Depending on the configuration (<<_customizing_the_internal_bootloader>>) the bootloader will try to fetch a valid
+executable from different sources:
 
 [start=1]
-. Try to load an executable from an external SPI flash using chip select `spi_csn_o(0)`.
-. If 1 fails, try to load an executable from an external TWI flash at device address `0x50`. Note that this
-auto-boot option is disabled by default.
-. IF 2 fails, start user console.
+. Try to load an executable from TWI flash (default device ID is `0xA0`).
+. Try to load an executable from SPI flash (default SPI chip select line is `spi_csn_o(0)`).
+. Try to load file `boot.bin` from SD flash (default SPI chip select line is `spi_csn_o(1)`).
 
-If a valid boot image is loaded it will be immediately started.
+If a valid boot image is loaded it will be immediately started. If no valid executable can be fetched the interactive
+bootloader console is started.
+
+
+:sectnums:
+==== Uploading an Executable
+
+[start=1]
+. Connect the primary UART (UART0) interface of the processor to a serial port of your host computer.
+. Start a serial terminal program.
+. Open a connection to the the serial port your UART is connected to.
+. Press the NEORV32 reset button to restart the bootloader. The status LED starts blinking and the
+bootloader intro screen appears in the console. Press any key to abort the automatic boot sequence
+and to start the actual bootloader user interface console.
+. Execute the "Upload" command by typing `u`. Now the bootloader is waiting for a binary executable to be send:
+`Awaiting neorv32_exe.bin...`
+. Use the "send file" option of your terminal program to send a valid NEORV32 executable (`neorv32_exe.bin`).
+Make sure the terminal sends the executable in raw binary mode.
+. If everything went fine, `Awaiting neorv32_exe.bin... OK` is printed in the terminal.
+. The executable is now in the instruction memory of the processor. To execute the program right
+now run the "start executable" command by typing `e`.
+
+
+:sectnums:
+==== Programming an SPI (/TWI) Flash
+
+This guide shows how to write an executable to the SPI flash via the bootloader so it can be automatically
+fetched and executed after processor reset. If the TWI flash option is enabled, an according command for
+programming the TWI flash is available.
+
+[start=1]
+. Reset the NEORV32 processor and wait until the bootloader start screen appears.
+. Abort the auto boot sequence and start the user console by pressing any key.
+. Press `u` to upload the executable that shall be programmed to the flash.
+. Send the binary via the terminal program. When the upload is completed and "OK"
+appears, press `s` to trigger the SPI flash programming:
+
+[source]
+----
+CMD:> u
+Awaiting neorv32_exe.bin... OK
+CMD:> s
+Write 0x00001614 bytes to SPI flash @0x00400000 (y/n)?
+----
+
+[start=5]
+. The bootloader shows the size of the executable and the base address of the SPI flash where the
+executable will be stored. A prompt appears: type `y` to start the programming or type `n` to abort.
+
+[source]
+----
+CMD:> u
+Awaiting neorv32_exe.bin... OK
+CMD:> s
+Write 0x00001614 bytes to SPI flash @0x00400000 (y/n)?
+Flashing... OK
+CMD:>
+----
+
+[start=6]
+. Note that flash programming can take some time (depending on the TWI/SPI clock configuration in `config.h`).
+If "OK" appears, the programming process was successful and the flash can be used for the auto-boot sequence.
+
+
+:sectnums:
+==== Booting from SD Card
+
+The SD card is accessed in SPI mode. The card has to be formatted using the **FAT32** file system with
+a sector size of at least 512 bytes. The executable has to be placed in the card's root directory.
+By default the bootloader will fetch the `boot.bin` file, which is just a renamed copy of the
+default `neorv32_exe.bin` file that is generated by the application compilation flow. The name of the
+SD card's boot file can be changed to a custom file name (see <<_customizing_the_internal_bootloader>>),
+but it has to use the 8.3 DOS format (max 8 character for the name plus dot plus 3 characters suffix).
+
+SD-card and FAT32 support is provided by the great **Petit FatFs** library by Elm-Chan:
+https://elm-chan.org/fsw/ff/00index_p.html
 
 
 :sectnums:
 ==== Customizing the Internal Bootloader
 
-The NEORV32 bootloader provides several options to configure it for a custom setup.
-It configured via set of C-language `defines` in `sw/bootloader/config.h`. All defines
-provide default value that can be altered or overridden by Makefile directives.
+The NEORV32 bootloader provides several options to configure it for a custom setup. It configured via set of
+C-language `defines` in `sw/bootloader/config.h`. All defines provide default value that can be edited or
+overridden by Makefile directives.
 
-.Software Documentation
-[TIP]
-The Doxygen-based documentation of the bootloader's software is available online:
-https://stnolting.github.io/neorv32/sw/bootloader_8c.html
-
-.Bootloader configuration parameters
+.Bootloader Configuration Parameters
 [cols="<2,^1,^2,<6"]
 [options="header", grid="rows"]
 |=======================
 | Parameter | Default | Legal values | Description
-4+^| Memory layout
-| `EXE_BASE_ADDR`         | `0x00000000` | _any_ | Memory base address for the executable; also the boot address for the application.
-4+^| Serial console interface
-| `UART_EN`               | `1`     | `0,1` | Set to `0` to disable UART0 (no serial console at all).
-| `UART_BAUD`             | `19200` | _any_    | Baud rate of UART0.
-| `UART_HW_HANDSHAKE_EN`  | `0`     | `0,1` | Set to `1` to enable UART0 hardware flow control.
-4+^| Status LED
-| `STATUS_LED_EN`         | `1` | `0,1`   | Enable bootloader status led ("heart beat") at `GPIO` output port pin `STATUS_LED_PIN` when `1`.
+4+^| **Memory layout**
+| `EXE_BASE_ADDR`         | `0x00000000` | any 4-byte-aligned address | Memory base address for the executable; also the boot address for the application.
+4+^| **Serial console**
+| `UART_EN`               | `1`     | `0,1` | Set to `1` to enable the serial console (requires UART0 module).
+| `UART_BAUD`             | `19200` | any   | Baud rate of UART0.
+4+^| **Status LED**
+| `STATUS_LED_EN`         | `1` | `0,1`   | Enable bootloader status led ("heart beat") at `GPIO` output port pin `STATUS_LED_PIN` when `1` (requires GPIO module).
 | `STATUS_LED_PIN`        | `0` | `0..31` | `GPIO` output pin used for the high-active status LED.
-4+^| Auto-boot configuration
-| `AUTO_BOOT_EN`          | `1`  | `0,1` | Auto-boot enabled when `1`.
-| `AUTO_BOOT_TIMEOUT`     | `10` | _any_ | Time in seconds after the auto-boot sequence starts (if there is no UART input by the user).
-4+^| SPI configuration
-| `SPI_EN`                | `1`          | `0,1`     | Set `1` to enable usage of the SPI module.
-| `SPI_FLASH_CS`          | `0`          | `0..7`    | SPI chip select line (port `spi_csn_o`) for selecting flash.
-| `SPI_FLASH_CLK_PRSC`    | `CLK_PRSC_8` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock pre-scaler.
-| `SPI_FLASH_BASE_ADDR`   | `0x00400000` | _any_     | Defines the SPI flash base address for the executable.
-| `SPI_FLASH_ADDR_BYTES`  | `3`          | `1,2,3,4` | SPI flash address size in number of bytes.
-| `SPI_FLASH_SECTOR_SIZE` | `65536`      | _any_     | SPI flash sector size in bytes.
-4+^| TWI configuration
-| `TWI_EN`                | `0`             | `0,1`     | Set `1` to enable usage of the TWI module.
-| `TWI_CLK_PRSC`          | `CLK_PRSC_1024` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | TWI clock pre-scaler.
-| `TWI_CLK_DIV`           | `1`             | `1..31`   | TWI clock divider.
-| `TWI_DEVICE_ID`         | `0xA0`          | _any_     | TWI flash I2C address ("write address" with R/W bit cleared).
-| `TWI_FLASH_BASE_ADDR`   | `0x00000000`    | _any_     | Defines the TWI flash base address for the executable.
-| `TWI_FLASH_ADDR_BYTES`  | `2`             | `1,2,3,4` | TWI flash address size in number of bytes.
+4+^| **Auto-boot**
+| `AUTO_BOOT_EN`          | `1`  | `0,1` | Auto-boot enabled when `1` (requires CLINT module).
+| `AUTO_BOOT_TIMEOUT`     | `10` | any   | Timeout in seconds after which the auto-boot sequence starts (if there is no UART input by the user).
+4+^| **TWI flash**
+| `TWI_FLASH_EN`          | `1`             | `0,1`     | Set to `1` to enable booting from TWI flash and TWI flash programming (requires the TWI module).
+| `TWI_FLASH_CLK_PRSC`    | `CLK_PRSC_1024` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | TWI clock prescaler.
+| `TWI_FLASH_CLK_DIV`     | `0`             | `0..15`   | TWI clock divider value.
+| `TWI_FLASH_ID`          | `0xA0`          | any       | 8-bit TWI device address (with R/W bit cleared).
+| `TWI_FLASH_BASE_ADDR`   | `0x00000000`    | 32-bit    | Defines the TWI flash base address for the executable.
+| `TWI_FLASH_ADDR_BYTES`  | `2`             | `1,2,3,4` | Number of TWI flash address bytes.
+4+^| **SPI flash**
+| `SPI_FLASH_EN`          | `1`           | `0,1`     | Set to `1` to enable booting from SPI flash and SPI flash programming (requires SPI module).
+| `SPI_FLASH_CS`          | `0`           | `0..7`    | SPI chip select line (port `spi_csn_o`) for selecting the SPI flash.
+| `SPI_FLASH_CLK_PRSC`    | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock prescaler.
+| `SPI_FLASH_CLK_DIV`     | `0`           | `0..15`   | SPI clock divider value.
+| `SPI_FLASH_BASE_ADDR`   | `0x00400000`  | 32-bit    | Defines the SPI flash base address for the executable.
+| `SPI_FLASH_ADDR_BYTES`  | `3`           | `1,2,3,4` | SPI flash address size in number of bytes.
+| `SPI_FLASH_SECTOR_SIZE` | `16*1024`     | any       | Number of SPI flash address bytes.
+4+^| **SPI SD card (FAT32 file system)**
+| `SPI_SDCARD_EN`         | `0`           | `0,1`          | Set to `1` to enable booting from SD card (requires SPI module).
+| `SPI_SDCARD_CS`         | `1`           | `0..7`         | SPI chip select line (port `spi_csn_o`) for selecting the SD card.
+| `SPI_SDCARD_CLK_PRSC`   | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock prescaler.
+| `SPI_SDCARD_CLK_DIV`    | `0`           | `0..15`        | SPI clock divider value.
+| `SPI_SDCARD_FILE`       | `"boot.bin"`  | 8.3 DOS format | File name of the boot image. Has to be located in the root directory.
+4+^| **Branding**
+| `THEME_INTRO`           | `"NEORV32 Bootloader"` | any string | Intro text that is shown in the bootloader console.
+| `THEME_EXE`             | `"neorv32_exe.bin"`    | any string | Name of executable that is shown in the console menu.
 |=======================
 
 
 :sectnums:
 ==== Bootloader Error Codes
 
-If something goes wrong an error code is shown. In this case the bootloader status LED stops blinking, an error code is printed
-to the console and the processor is halted by entering <<_sleep_mode>>.
-
 [cols="<2,<8"]
 [grid="rows"]
 |=======================
-| **`ERROR_DEVICE`**    | A device/flash-accessing function returned an error code. Make sure that the device is properly
-connected and that all required processor modules are actually enabled (by the according <<_processor_top_entity_generics>>).
-| **`ERROR_SIGNATURE`** | The signature that indicates a valid NEORV32 executable of the loaded executable is incorrect.
+| **`ERROR_DEVICE`**    | A device-accessing function returned an error code. Make sure that the device is properly
+connected and that all required processor modules/interface are actually enabled (by the according <<_processor_top_entity_generics>>).
+| **`ERROR_SIGNATURE`** | The signature that indicates a valid NEORV32 executable of the accessed executable is incorrect.
 This can be caused by a temporary transmission error or by an invalid or corrupted executable.
 | **`ERROR_CHECKSUM`**  | The checksum of the loaded executable is incorrect. This can be caused by a temporary transmission
 error or by an invalid or corrupted executable.
-| **`ERROR_EXCEPTION`** | An unexpected trap (synchronous exception or interrupt) has occurred. This can be caused by an
-invalid bootloader configuration (actually available processor modules, memory layout, ...). For debugging purpose the error
-message will also display the
+| **`ERROR_EXCEPTION`** | An unexpected exception has occurred. This can be caused by an invalid bootloader configuration (non-available
+processor modules, memory layout, ...). For debugging purpose the error message will also display the content of the <<_mcause>>, <<_mepc>>,
+<<_mtinst>> and <<_mtval>> CSRs. Example: `ERROR_EXCEPTION 0x00000003 0xffe00cb4 0x00100073 0x00000000`
 |=======================
