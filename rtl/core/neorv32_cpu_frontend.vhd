@@ -81,13 +81,17 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   -- instruction issue engine --
   signal align_q, align_set, align_clr : std_ulogic;
   signal ipb_ack : std_ulogic_vector(1 downto 0);
+  signal ipb_ack_zcmp : std_ulogic_vector(1 downto 0);
   signal cmd16 : std_ulogic_vector(15 downto 0);
   signal cmd32 : std_ulogic_vector(31 downto 0);
 
-  signal frontend_bus_zcmp : if_bus_t;
+  type issue_state_type is (S_NORMAL_ISSUE, S_ZCMP);
+  signal issue_state_reg, issue_state_nxt : issue_state_type;
 
-  type state_type is (S_IDLE, S_ZCMP_UOP_SEQ);
-  signal state_reg, state_nxt : state_type;
+  signal frontend_bus_zcmp, frontend_bus_issue : if_bus_t;
+
+  type uop_state_type is (S_IDLE, S_ZCMP_UOP_SEQ, S_ZCMP_UOP_LAST);
+  signal uop_state_reg, uop_state_nxt : uop_state_type;
 
   signal zcmp_instr_reg, zcmp_instr_nxt : std_ulogic_vector(15 downto 0) := (others => '0');
 
@@ -114,82 +118,6 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   constant zcmp_addi_instr_rs1 : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
 
 begin
-
-  zcmp_reg_list <= zcmp_instr_reg(7 downto 4);
-  zcmp_num_regs <= 13 when to_integer(unsigned(zcmp_reg_list)) = 15 else
-                   0 when to_integer(unsigned(zcmp_reg_list)) < 4 else
-                   to_integer(unsigned(zcmp_reg_list)) - 3;
-
-  zcmp_stack_adj_base <= 64 when to_integer(unsigned(zcmp_reg_list)) = 15 else
-                         48 when to_integer(unsigned(zcmp_reg_list)) >= 12 else
-                         32 when to_integer(unsigned(zcmp_reg_list)) >= 8 else
-                         16;
-
-  zcmp_stack_adj <= zcmp_stack_adj_base + ((to_integer(unsigned(zcmp_instr_reg(3 downto 2))) * 16));
-
-  zcmp_stack_sw_offset <= TO_SIGNED(-((zcmp_num_regs - uop_ctr) * 4), zcmp_stack_sw_offset'length);
-
-  zcmp_ls_reg <= "00001" when uop_ctr = 0 else -- ra
-                 "01000" when uop_ctr = 1 else -- s0
-                 "01001" when uop_ctr = 2 else -- s1
-                 std_ulogic_vector(to_unsigned(uop_ctr + 15, zcmp_ls_reg'length)); -- s2-s11 (s2 == x18)
-
-  zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_strw_instr_rs1 & zcmp_strw_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_strw_instr_opcode;
-
-  zcmp_push_stack_adj_instr <= std_ulogic_vector(-to_signed(zcmp_stack_adj, 12)) &
-                               zcmp_addi_instr_rs1 & -- rs1 = sp 
-                               zcmp_addi_instr_funct3 &
-                               zcmp_addi_instr_rs1 & -- rd = rs1 = sp 
-                               zcmp_addi_instr_opcode; -- addi 
-
-  uop_ctr_clr <= '0';
-
-  uop_ctr_next <= 0 when uop_ctr_clr else
-                  uop_ctr_nxt_in_seq;
-
-  uop_fsm_sync : process (rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      uop_ctr <= 0;
-      state_reg <= S_IDLE;
-    elsif rising_edge(clk_i) then
-      uop_ctr <= uop_ctr_next;
-      state_reg <= state_nxt;
-    end if;
-  end process uop_fsm_sync;
-
-  uop_fsm_comb : process (state_reg, uop_ctr, zcmp_push, zcmp_num_regs, zcmp_sw_instr, zcmp_push_stack_adj_instr)
-  begin
-    uop_ctr_nxt_in_seq <= uop_ctr;
-    state_nxt <= state_reg;
-    zcmp_in_uop_seq <= '0';
-    frontend_bus_zcmp.valid <= '0';
-    frontend_bus_zcmp.compr <= '0';
-    frontend_bus_zcmp.fault <= '0';
-    frontend_bus_zcmp.instr <= (others => '0');
-
-    case state_reg is
-      when S_IDLE =>
-        if (zcmp_push = '1') then
-          state_nxt <= S_ZCMP_UOP_SEQ;
-        end if;
-
-      when S_ZCMP_UOP_SEQ =>
-        zcmp_in_uop_seq <= '1';
-        if (uop_ctr = 15) then
-          uop_ctr_nxt_in_seq <= 0;
-          frontend_bus_zcmp.instr <= zcmp_push_stack_adj_instr;
-          state_nxt <= S_IDLE;
-        else
-          uop_ctr_nxt_in_seq <= uop_ctr + 1;
-          frontend_bus_zcmp.instr <= zcmp_sw_instr;
-          if (uop_ctr + 1 = zcmp_num_regs) then
-            uop_ctr_nxt_in_seq <= 15;
-          end if;
-        end if;
-    end case;
-
-  end process;
 
   -- ******************************************************************************************************************
   -- Instruction Fetch (always fetch 32-bit-aligned 32-bit chunks of data)
@@ -325,6 +253,7 @@ begin
         align_q <= '0'; -- start aligned after reset
       elsif rising_edge(clk_i) then
         zcmp_instr_reg <= zcmp_instr_nxt;
+        issue_state_reg <= issue_state_nxt;
         if (fetch.restart = '1') then
           align_q <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
         elsif (ctrl_i.if_ack = '1') then
@@ -333,7 +262,7 @@ begin
       end if;
     end process issue_fsm_sync;
 
-    issue_fsm_comb : process (zcmp_instr_reg, align_q, ipb, cmd32, zcmp_in_uop_seq)
+    issue_fsm_comb : process (zcmp_instr_reg, issue_state_reg, align_q, ipb, cmd32, zcmp_in_uop_seq)
     begin
       -- defaults --
       align_set <= '0';
@@ -341,63 +270,175 @@ begin
       zcmp_instr_nxt <= zcmp_instr_reg;
       zcmp_push <= '0';
 
+      issue_state_nxt <= issue_state_reg;
+
+      ipb_ack_zcmp <= "00";
       ipb_ack <= "00";
-      frontend_o.valid <= '0';
-      frontend_o.instr <= (others => '0');
-      frontend_o.compr <= '0';
+      frontend_bus_issue.valid <= '0';
+      frontend_bus_issue.instr <= (others => '0');
+      frontend_bus_issue.compr <= '0';
 
-      -- start at LOW half-word --
-      if (align_q = '0' and zcmp_in_uop_seq = '0') then
-        frontend_o.fault <= ipb.rdata(0)(16);
-        if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
+      case issue_state_reg is
+        when S_NORMAL_ISSUE =>
+          -- start at LOW half-word --
+          if (align_q = '0') then
+            frontend_bus_issue.fault <= ipb.rdata(0)(16);
+            if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
 
-          if (ipb.rdata(0)(15 downto 8) = "10111000") then
-            zcmp_instr_nxt <= ipb.rdata(0)(15 downto 0);
-            zcmp_push <= '1';
+              if (ipb.rdata(0)(15 downto 8) = "10111000") then
+                zcmp_instr_nxt <= ipb.rdata(0)(15 downto 0);
+                issue_state_nxt <= S_ZCMP;
+                zcmp_push <= '1';
+              else
+                align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
+                ipb_ack <= "01";
+                frontend_bus_issue.valid <= ipb.avail(0);
+                frontend_bus_issue.instr <= cmd32;
+                frontend_bus_issue.compr <= '1';
+              end if;
+
+            else -- aligned uncompressed, consume both IPB entries
+              ipb_ack <= "11";
+              frontend_bus_issue.valid <= ipb.avail(1) and ipb.avail(0);
+              frontend_bus_issue.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
+              frontend_bus_issue.compr <= '0';
+            end if;
+            -- start at HIGH half-word --
           else
-            align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
-            ipb_ack <= "01";
-            frontend_o.valid <= ipb.avail(0);
-            frontend_o.instr <= cmd32;
-            frontend_o.compr <= '1';
+            frontend_bus_issue.fault <= ipb.rdata(1)(16);
+            if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
+
+              if (ipb.rdata(1)(15 downto 8) = "10111000") then
+                zcmp_instr_nxt <= ipb.rdata(1)(15 downto 0);
+                issue_state_nxt <= S_ZCMP;
+                zcmp_push <= '1';
+              else
+                align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
+                ipb_ack <= "10";
+                frontend_bus_issue.valid <= ipb.avail(1);
+                frontend_bus_issue.instr <= cmd32;
+                frontend_bus_issue.compr <= '1';
+              end if;
+
+            else -- unaligned uncompressed, consume both IPB entries
+              ipb_ack <= "11";
+              frontend_bus_issue.valid <= ipb.avail(0) and ipb.avail(1);
+              frontend_bus_issue.instr <= ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
+              frontend_bus_issue.compr <= '0';
+            end if;
           end if;
+        when S_ZCMP =>
+          if not zcmp_in_uop_seq then
 
-        else -- aligned uncompressed, consume both IPB entries
-          ipb_ack <= "11";
-          frontend_o.valid <= ipb.avail(1) and ipb.avail(0);
-          frontend_o.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
-          frontend_o.compr <= '0';
-        end if;
-        -- start at HIGH half-word --
-      elsif (zcmp_in_uop_seq = '0') then
-        frontend_o.fault <= ipb.rdata(1)(16);
-        if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
+            issue_state_nxt <= S_NORMAL_ISSUE;
 
-          if (ipb.rdata(1)(15 downto 8) = "10111000") then
-            zcmp_instr_nxt <= ipb.rdata(1)(15 downto 0);
-            zcmp_push <= '1';
-          else
-            align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
-            ipb_ack <= "10";
-            frontend_o.valid <= ipb.avail(1);
-            frontend_o.instr <= cmd32;
-            frontend_o.compr <= '1';
+            if (align_q = '0') then
+              align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
+              ipb_ack_zcmp <= "01";
+            else
+              align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
+              ipb_ack_zcmp <= "10";
+            end if;
+
           end if;
-
-        else -- unaligned uncompressed, consume both IPB entries
-          ipb_ack <= "11";
-          frontend_o.valid <= ipb.avail(0) and ipb.avail(1);
-          frontend_o.instr <= ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
-          frontend_o.compr <= '0';
-        end if;
-      end if;
+      end case;
     end process issue_fsm_comb;
 
     -- IPB read access --
-    ipb.re(0) <= ipb_ack(0) and ctrl_i.if_ack;
-    ipb.re(1) <= ipb_ack(1) and ctrl_i.if_ack;
-
+    ipb.re(0) <= (ipb_ack(0) and ctrl_i.if_ack) or ipb_ack_zcmp(0);
+    ipb.re(1) <= (ipb_ack(1) and ctrl_i.if_ack) or ipb_ack_zcmp(1);
   end generate; -- /issue_enabled
+
+  frontend_o <= frontend_bus_zcmp when zcmp_in_uop_seq = '1' else
+                frontend_bus_issue;
+
+  zcmp_reg_list <= zcmp_instr_reg(7 downto 4);
+  zcmp_num_regs <= 13 when to_integer(unsigned(zcmp_reg_list)) = 15 else
+                   0 when to_integer(unsigned(zcmp_reg_list)) < 4 else
+                   to_integer(unsigned(zcmp_reg_list)) - 3;
+
+  zcmp_stack_adj_base <= 64 when to_integer(unsigned(zcmp_reg_list)) = 15 else
+                         48 when to_integer(unsigned(zcmp_reg_list)) >= 12 else
+                         32 when to_integer(unsigned(zcmp_reg_list)) >= 8 else
+                         16;
+
+  zcmp_stack_adj <= zcmp_stack_adj_base + ((to_integer(unsigned(zcmp_instr_reg(3 downto 2))) * 16));
+
+  zcmp_stack_sw_offset <= TO_SIGNED(-((zcmp_num_regs - uop_ctr) * 4), zcmp_stack_sw_offset'length);
+
+  zcmp_ls_reg <= "00001" when uop_ctr = 0 else -- ra
+                 "01000" when uop_ctr = 1 else -- s0
+                 "01001" when uop_ctr = 2 else -- s1
+                 std_ulogic_vector(to_unsigned(uop_ctr + 15, zcmp_ls_reg'length)); -- s2-s11 (s2 == x18)
+
+  zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_strw_instr_rs1 & zcmp_strw_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_strw_instr_opcode;
+
+  zcmp_push_stack_adj_instr <= std_ulogic_vector(-to_signed(zcmp_stack_adj, 12)) &
+                               zcmp_addi_instr_rs1 & -- rs1 = sp 
+                               zcmp_addi_instr_funct3 &
+                               zcmp_addi_instr_rs1 & -- rd = rs1 = sp 
+                               zcmp_addi_instr_opcode; -- addi 
+
+  uop_ctr_clr <= '0';
+
+  uop_ctr_next <= 0 when uop_ctr_clr else
+                  uop_ctr_nxt_in_seq;
+
+  uop_fsm_sync : process (rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      uop_ctr <= 0;
+      uop_state_reg <= S_IDLE;
+    elsif rising_edge(clk_i) then
+      uop_ctr <= uop_ctr_next;
+      uop_state_reg <= uop_state_nxt;
+    end if;
+  end process uop_fsm_sync;
+
+  uop_fsm_comb : process (uop_state_reg, uop_ctr, ctrl_i, zcmp_push, zcmp_num_regs, zcmp_sw_instr, zcmp_push_stack_adj_instr)
+  begin
+    uop_ctr_nxt_in_seq <= uop_ctr;
+    uop_state_nxt <= uop_state_reg;
+    zcmp_in_uop_seq <= '0';
+    frontend_bus_zcmp.valid <= '0';
+    frontend_bus_zcmp.compr <= '0';
+    frontend_bus_zcmp.fault <= '0';
+    frontend_bus_zcmp.instr <= (others => '0');
+
+    case uop_state_reg is
+      when S_IDLE =>
+        if (zcmp_push = '1') then
+          uop_state_nxt <= S_ZCMP_UOP_SEQ;
+        end if;
+
+      when S_ZCMP_UOP_SEQ =>
+        zcmp_in_uop_seq <= '1';
+        if (uop_ctr = 15) then --last instruction?
+          frontend_bus_zcmp.instr <= zcmp_push_stack_adj_instr;
+          frontend_bus_zcmp.valid <= '1';
+          if (ctrl_i.if_ack = '1') then
+            uop_ctr_nxt_in_seq <= 0;
+            uop_state_nxt <= S_IDLE;
+          end if;
+
+        else
+
+          if (ctrl_i.if_ack = '1') then
+            uop_ctr_nxt_in_seq <= uop_ctr + 1;
+          end if;
+          frontend_bus_zcmp.instr <= zcmp_sw_instr;
+          frontend_bus_zcmp.valid <= '1';
+          if (uop_ctr + 1 = zcmp_num_regs) then
+            uop_ctr_nxt_in_seq <= 15;
+          end if;
+
+        end if;
+
+      when S_ZCMP_UOP_LAST =>
+        null;
+    end case;
+
+  end process;
 
   -- issue engine disabled --
   issue_disabled :
@@ -409,10 +450,10 @@ begin
     cmd16 <= (others => '0');
     cmd32 <= (others => '0');
     ipb.re <= (others => ctrl_i.if_ack);
-    frontend_o.valid <= ipb.avail(0);
-    frontend_o.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
-    frontend_o.compr <= '0';
-    frontend_o.fault <= ipb.rdata(0)(16);
+    frontend_bus_issue.valid <= ipb.avail(0);
+    frontend_bus_issue.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
+    frontend_bus_issue.compr <= '0';
+    frontend_bus_issue.fault <= ipb.rdata(0)(16);
   end generate;
 
 end neorv32_cpu_frontend_rtl;
