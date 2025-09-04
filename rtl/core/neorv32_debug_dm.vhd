@@ -260,9 +260,10 @@ begin
           -- ------------------------------------------------------------
             if (dm_reg.command(31 downto 24) = x"00") and -- cmdtype: register access
                (dm_reg.command(23) = '0') and -- reserved
-               (dm_reg.command(22 downto 20) = "010") and -- aarsize: has to be 32-bit
                (dm_reg.command(19) = '0') and -- aarpostincrement: not supported
-               ((dm_reg.command(17) = '0') or (dm_reg.command(15 downto 5) = "00010000000")) then -- regno: only GPRs are supported: 0x1000..0x101f if transfer is set
+               ((dm_reg.command(17) = '0') or -- ignore aarsize and regno if transfer = 0
+                ((dm_reg.command(15 downto 5) = "00010000000") and -- aarsize: has to be 32-bit
+                 (dm_reg.command(22 downto 20) = "010"))) then -- regno: only GPRs are supported: 0x1000..0x101f if transfer is set
               if (or_reduce_f(dm_ctrl.hart_halted and dm_reg.hartsel_dec) = '1') then -- selected CPU is halted
                 dm_ctrl.state <= CMD_PREPARE;
               else -- error! CPU is still running
