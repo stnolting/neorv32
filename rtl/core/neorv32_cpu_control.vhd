@@ -1002,33 +1002,33 @@ begin
   csr_write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      csr.we             <= '0';
-      csr.prv_level      <= priv_mode_m_c;
-      csr.mstatus_mie    <= '0';
-      csr.mstatus_mpie   <= '0';
-      csr.mstatus_mpp    <= '0';
-      csr.mstatus_mprv   <= '0';
-      csr.mstatus_tw     <= '0';
-      csr.mie_msi        <= '0';
-      csr.mie_mei        <= '0';
-      csr.mie_mti        <= '0';
-      csr.mie_firq       <= (others => '0');
-      csr.mtvec          <= (others => '0');
-      csr.mscratch       <= (others => '0');
-      csr.mepc           <= (others => '0');
-      csr.mcause         <= (others => '0');
-      csr.mtval          <= (others => '0');
-      csr.mtinst         <= (others => '0');
-      csr.mcounteren_cy  <= '0';
-      csr.mcounteren_ir  <= '0';
-      csr.mcountinhibit  <= (others => '0');
-      csr.dcsr_ebreakm   <= '0';
-      csr.dcsr_ebreaku   <= '0';
-      csr.dcsr_step      <= '0';
-      csr.dcsr_prv       <= '0';
-      csr.dcsr_cause     <= (others => '0');
-      csr.dpc            <= (others => '0');
-      csr.dscratch0      <= (others => '0');
+      csr.we            <= '0';
+      csr.prv_level     <= priv_mode_m_c;
+      csr.mstatus_mie   <= '0';
+      csr.mstatus_mpie  <= '0';
+      csr.mstatus_mpp   <= '0';
+      csr.mstatus_mprv  <= '0';
+      csr.mstatus_tw    <= '0';
+      csr.mie_msi       <= '0';
+      csr.mie_mei       <= '0';
+      csr.mie_mti       <= '0';
+      csr.mie_firq      <= (others => '0');
+      csr.mtvec         <= (others => '0');
+      csr.mscratch      <= (others => '0');
+      csr.mepc          <= (others => '0');
+      csr.mcause        <= (others => '0');
+      csr.mtval         <= (others => '0');
+      csr.mtinst        <= (others => '0');
+      csr.mcounteren_cy <= '0';
+      csr.mcounteren_ir <= '0';
+      csr.mcountinhibit <= (others => '0');
+      csr.dcsr_ebreakm  <= '0';
+      csr.dcsr_ebreaku  <= '0';
+      csr.dcsr_step     <= '0';
+      csr.dcsr_prv      <= '0';
+      csr.dcsr_cause    <= (others => '0');
+      csr.dpc           <= (others => '0');
+      csr.dscratch0     <= (others => '0');
     elsif rising_edge(clk_i) then
 
       -- ********************************************************************************
