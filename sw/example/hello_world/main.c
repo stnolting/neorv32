@@ -52,12 +52,6 @@ int main() {
   // setup UART at default baud rate, no interrupts
   neorv32_uart0_setup(BAUD_RATE, 0);
 
-  // print project logo via UART
-  // neorv32_aux_print_logo();
-
-  // say hello
-
-
   // Test the assembly functions
   int a = 42;
   int b = 58;

@@ -256,7 +256,7 @@ begin
         issue_state_reg <= issue_state_nxt;
         if (fetch.restart = '1') then
           align_q <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
-        elsif (ctrl_i.if_ack = '1') then
+        elsif ((ctrl_i.if_ack = '1') or (ipb_ack_zcmp /= "00")) then
           align_q <= (align_q and (not align_clr)) or align_set; -- alignment "RS flip-flop"
         end if;
       end if;
@@ -331,7 +331,7 @@ begin
           if not zcmp_in_uop_seq then
 
             issue_state_nxt <= S_NORMAL_ISSUE;
-
+            zcmp_instr_nxt <= (others => '0');
             if (align_q = '0') then
               align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
               ipb_ack_zcmp <= "01";
