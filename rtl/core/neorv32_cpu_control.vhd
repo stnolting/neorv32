@@ -958,14 +958,14 @@ begin
 
   -- any system interrupt? --
   trap_ctrl.irq_fire(0) <= '1' when
-    (exe_engine.state = EX_EXECUTE) and -- trigger system IRQ only in EX_EXECUTE state
+    ((exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_SLEEP)) and -- trigger system IRQ only in EX_EXECUTE state or in sleep mode
     (or_reduce_f(trap_ctrl.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
     ((csr.mstatus_mie = '1') or (csr.prv_level = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
 
   -- debug-entry halt interrupt? --
   trap_ctrl.irq_fire(1) <= trap_ctrl.irq_buf(irq_db_halt_c) when
-    (exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_BRANCHED) else '0'; -- allow halt also after "reset" (#879)
+    (exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_SLEEP) or (exe_engine.state = EX_BRANCHED) else '0'; -- allow halt also after "reset" (#879)
 
 
   -- ****************************************************************************************************************************

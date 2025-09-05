@@ -92,6 +92,7 @@ architecture neorv32_clint_rtl of neorv32_clint is
   signal mtime_rd    : std_ulogic_vector(31 downto 0);
   signal mtimecmp_rd : rb32_t;
   signal mswi_rd     : rb32_t;
+  signal rdata       : std_ulogic_vector(31 downto 0);
 
   -- misc --
   signal mtime : std_ulogic_vector(63 downto 0);
@@ -99,7 +100,7 @@ architecture neorv32_clint_rtl of neorv32_clint is
 
 begin
 
-  -- MTIME - Machine Timer ------------------------------------------------------------------
+  -- MTIME - Global Machine Timer -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_clint_mtime_inst: neorv32_clint_mtime
   port map (
@@ -178,31 +179,30 @@ begin
   -- Data Read-Back (OR all device read-backs) ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   read_back: process(mtime_rd, mtimecmp_rd, mswi_rd)
-    variable mti_v, msi_v : std_ulogic_vector(31 downto 0);
+    variable tmp_v : std_ulogic_vector(31 downto 0);
   begin
-    mti_v := (others => '0');
-    msi_v := (others => '0');
+    tmp_v := (others => '0');
     for i in 0 to NUM_HARTS-1 loop
-      mti_v := mti_v or mtimecmp_rd(i);
-      msi_v := msi_v or mswi_rd(i);
+      tmp_v := tmp_v or mtimecmp_rd(i) or mswi_rd(i);
     end loop;
-    bus_rsp_o.data <= mtime_rd or mti_v or msi_v;
+    rdata <= mtime_rd or tmp_v;
   end process read_back;
 
 
-  -- Bus Handshake --------------------------------------------------------------------------
+  -- Bus Response ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_response: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       ack_q <= '0';
     elsif rising_edge(clk_i) then
       ack_q <= mtime_en or or_reduce_f(mtimecmp_en) or or_reduce_f(mswi_en);
     end if;
-  end process bus_access;
+  end process bus_response;
 
-  bus_rsp_o.ack <= ack_q;
-  bus_rsp_o.err <= '0';
+  bus_rsp_o.ack  <= ack_q;
+  bus_rsp_o.err  <= '0';
+  bus_rsp_o.data <= rdata;
 
 
 end neorv32_clint_rtl;
