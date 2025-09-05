@@ -528,10 +528,12 @@ begin
 
         -- debug module status register --
         when addr_dmstatus_c =>
-          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
-            dmi_rsp_o.data(31 downto 23) <= (others => '0'); -- reserved (r/-)
-            dmi_rsp_o.data(22)           <= '1'; -- impebreak (r/-): there is an implicit ebreak instruction after the visible program buffer
-            dmi_rsp_o.data(21 downto 20) <= (others => '0'); -- reserved (r/-)
+          if (auth.valid = '1') then -- authenticated?
+            dmi_rsp_o.data(31 downto 25) <= (others => '0');                                             -- reserved (r/-)
+            dmi_rsp_o.data(24)           <= dm_reg.dmcontrol_ndmreset;                                   -- ndmresetpending(r/-): DM in reset
+            dmi_rsp_o.data(23)           <= '0';                                                         -- stickyunavail (r/-): unavail bits reflect the current state
+            dmi_rsp_o.data(22)           <= '1';                                                         -- impebreak (r/-): implicit ebreak after visible program buffer
+            dmi_rsp_o.data(21 downto 20) <= (others => '0');                                             -- reserved (r/-)
             dmi_rsp_o.data(19)           <= or_reduce_f(dm_ctrl.hart_reset and dm_reg.hartsel_dec);      -- allhavereset (r/-): selected hart in reset
             dmi_rsp_o.data(18)           <= or_reduce_f(dm_ctrl.hart_reset and dm_reg.hartsel_dec);      -- anyhavereset (r/-): selected hart in reset
             dmi_rsp_o.data(17)           <= or_reduce_f(dm_ctrl.hart_resume_ack and dm_reg.hartsel_dec); -- allresumeack (r/-): selected hart is resuming

@@ -408,7 +408,9 @@ are configured as "zero" and are read-only. Writing '1' to these bits/fields wil
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [RISC-V]     | Description
-| 31:23 | _reserved_        | reserved; zero
+| 31:25 | _reserved_        | reserved; zero
+| 24    | `ndmresetpending` | DM in reset state
+| 23    | `stickyunavail`   | `*unavail` bits reflect the current state
 | 22    | `impebreak`       | `1`: indicates an implicit `ebreak` instruction after the last program buffer entry
 | 21:20 | _reserved_        | reserved; zero
 | 19    | `allhavereset`    .2+| `1` when the selected hart is in reset state
