@@ -670,7 +670,7 @@ defined by the NEORV32 core library (the runtime environment _RTE_) and can be u
 with the pre-defined RTE function. The <<_mcause>>, <<_mepc>>, <<_mtval>> and <<_mtinst>> columns show the value being
 written to the according CSRs when a trap is triggered:
 
-* **I-PC** - address of intercepted instruction (next instruction in program flow; instruction has _not_ been executed yet)
+* **I-PC** - address of intercepted instruction (i.e. the next instruction that has to be executed to maintain program flow; instruction has _not_ been executed yet)
 * **PC** - address of instruction that caused the trap (instruction has been executed)
 * **ADDR** - bad data memory access address that caused the trap
 * **INST** - the actual transformed/decompressed instruction word that caused the trap
