@@ -44,6 +44,7 @@ settings:
 Any terminal program that can connect to a serial port should work. However, make sure the program can transfer
 data in _raw_ byte mode without any protocol overhead (e.g. XMODEM). Note that some terminal programs struggle
 with transmitting files larger than 4kB (see https://github.com/stnolting/neorv32/pull/215).
+**For Windows I can recommend TeraTerm (GUI) and SimplySerial (Window terminal). For Linux I can recommend `picocom`.**
 
 By default the bootloader uses the LSB of the top entity's GPIO output port (`gpio_o(0)`) for an high-active
 status LED. All other output pins are set to low. After reset, the status LED will start blinking at 2Hz and the
