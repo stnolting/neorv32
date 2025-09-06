@@ -650,6 +650,7 @@ core does implement must adhere to the requirements of `Zkt`.
 | `RVM` | `mul[h]` `mulh[s]u` | yes
 .2+<| `RVC` <| `c.nop` `c.addi` `c.lui` `c.andi` `c.sub` `c.xor` `c.and` `c.mv` `c.add` <| yes
             <| `c.srli` `c.srai` `c.slli` <| yes if `CPU_FAST_SHIFT_EN` enabled
+.2+<| `Zcb` <| `c.mul`, `c.not`, `c.zext.b` <| yes
 | `RVK` | `aes32ds[m]i` `aes32es[m]i` `sha256sig*` `sha512sig*` `sha512sum*` `sm3p0` `sm3p1` `sm4ed` `sm4ks` | yes
 .2+<| `RVB` <| `xperm4` `xperm8` `andn` `orn` `xnor` `pack[h]` `brev8` `rev8` <| yes
             <| `ror[i]` `rol` <| yes if `CPU_FAST_SHIFT_EN` enabled
