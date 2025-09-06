@@ -177,9 +177,9 @@ Column structure:
 . `0xfff44737`: 32-bit instruction word; printed as hexadecimal 32-bit value (with `0x` prefix); compressed 16-bit instructions are shown in their decompressed 32-bit format
 . `M`: Current operating mode / privilege level (`M` = machine-mode, `U` = user-mode, `D` = debug-mode); printed as single character
 . `lui x14, 0xfff44000`: The decoded instruction mnemonic plus operands. For unknown/unsupported instructions the instruction class is printed in capital letters
-together with a question mark. Decompressed 16-bit instructions have a prefixed `c.` before the mnemonic.
-. If the processor encounters a trap (synchronous exception or interrupt) `<TRAP_ENTRY>` gets printed at the end of the line that corresponds
-to the first instruction of the trap handler.
+together with a prefixed `illegal_` (e.g. `illegal_ALU`). Decompressed 16-bit instructions have a prefixed `c.` (e.g. `c.lw`).
+. If the processor encounters a trap (synchronous exception or interrupt) `<TRAP_ENTRY>` is printed at the end of the line that corresponds
+to the first instruction of the according trap handler.
 
 .Instruction Execution Time
 [TIP]

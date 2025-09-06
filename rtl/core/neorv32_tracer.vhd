@@ -383,7 +383,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
             if (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000") then
               return "slli";
             else
-              return "ALUI?";
+              return "illegal_ALUI";
             end if;
           when "010" => return "slti";
           when "011" => return "sltiu";
@@ -394,7 +394,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
             elsif (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100000") then
               return "srai";
             else
-              return "ALUI?";
+              return "illegal_ALUI";
             end if;
           when "110"  => return "ori";
           when others => return "andi";
@@ -416,13 +416,13 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
           case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
             when "000"  => return "sub";
             when "101"  => return "sra";
-            when others => return "ALU?";
+            when others => return "illegal_ALU";
           end case;
         elsif (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000111") then -- Zicond
           case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
             when "101"  => return "czero.eqz";
             when "111"  => return "czero.nez";
-            when others => return "CZERO?";
+            when others => return "illegal_CZERO";
           end case;
         elsif (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then -- M/Zmmul
           case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
@@ -436,7 +436,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
             when others => return "remu";
           end case;
         else
-          return "ALU?";
+          return "illegal_ALU";
         end if;
       -- upper-immediates --
       when opcode_lui_c   => return "lui";
@@ -453,7 +453,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
           when "101"  => return "bge";
           when "110"  => return "bltu";
           when "111"  => return "bgeu";
-          when others => return "BRANCH?";
+          when others => return "illegal_BRANCH";
         end case;
       -- memory load --
       when opcode_load_c =>
@@ -463,7 +463,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
           when "010"  => return "lw";
           when "100"  => return "lbu";
           when "101"  => return "lhu";
-          when others => return "LOAD?";
+          when others => return "illegal_LOAD";
         end case;
       -- memory store --
       when opcode_store_c =>
@@ -471,7 +471,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
           when "000"  => return "sb";
           when "001"  => return "sh";
           when "010"  => return "sw";
-          when others => return "STORE?";
+          when others => return "illegal_STORE";
         end case;
       -- atomic memory operations --
       when opcode_amo_c =>
@@ -488,17 +488,17 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
             when "10100" => return "amomax.w";
             when "11000" => return "amominu.w";
             when "11100" => return "amomaxu.w";
-            when others  => return "AMO.W?";
+            when others  => return "illegal_AMO.W";
           end case;
         else
-          return "AMO?";
+          return "illegal_AMO";
         end if;
       -- fences --
       when opcode_fence_c =>
         case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
           when "000"  => return "fence";
           when "001"  => return "fence.i";
-          when others => return "FENCE?";
+          when others => return "illegal_FENCE";
         end case;
       -- system / environment --
       when opcode_system_c =>
@@ -510,7 +510,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
               when x"105" => return "wfi";
               when x"302" => return "mret";
               when x"7b2" => return "dret";
-              when others => return "ENV?";
+              when others => return "illegal_ENV";
             end case;
           when "001"  => return "csrrw";
           when "010"  => return "csrrs";
@@ -518,17 +518,17 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
           when "101"  => return "csrrwi";
           when "110"  => return "csrrsi";
           when "111"  => return "csrrci";
-          when others => return "CSR?";
+          when others => return "illegal_CSR";
         end case;
       -- floating-point --
-      when opcode_fpu_c => return "FPU?";
+      when opcode_fpu_c => return "FPU";
       -- custom instructions --
       when opcode_cust0_c => return "custom0";
       when opcode_cust1_c => return "custom1";
       when opcode_cust2_c => return "custom2";
       when opcode_cust3_c => return "custom3";
       -- undefined --
-      when others => return "UNKNOWN?";
+      when others => return "illegal_OPCODE";
     end case;
   end function decode_mnemonic_f;
 
@@ -788,7 +788,7 @@ begin
             write(line_v, string'("U "));
           end if;
           -- decoded instruction --
-          if (trace_i.rvc = '1') then -- de-compressed instruction?
+          if (trace_i.rvc = '1') then -- de-compressed instruction
             write(line_v, string'("c."));
           end if;
           write(line_v, string'(decode_mnemonic_f(trace_i.inst)));
