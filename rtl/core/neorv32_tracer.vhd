@@ -75,7 +75,7 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
     src   : std_ulogic_vector(31 downto 0); -- source address
     dst   : std_ulogic_vector(31 downto 0); -- destination address
     trap  : std_ulogic; -- trap entry
-    first : std_ulogic; -- first trap packet
+    first : std_ulogic; -- first trace entry
     push  : std_ulogic; -- push SRC + DST to trace buffer
   end record;
   signal arbiter : arbiter_t;
@@ -188,7 +188,7 @@ begin
         -- ------------------------------------------------------------
           if (ctrl_en = '0') or (ctrl_stop = '1') or (arbiter.astop = '1') then
             arbiter.state <= S_OFFLINE;
-          elsif (trace_src.mode(1) = '0') then -- halt tracing when we are in debug-mode
+          elsif (trace_src.mode(1) = '0') then -- halt tracing if we are in debug-mode
             arbiter.trap <= arbiter.trap or trace_src.trap;
             if (trace_src.valid = '1') or (trace_src.trap = '1') then
               arbiter.src(31 downto 1) <= trace_src.pc(31 downto 1);
@@ -447,7 +447,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
       -- conditional branches --
       when opcode_branch_c =>
         case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when "000"  => return "bew";
+          when "000"  => return "beq";
           when "001"  => return "bne";
           when "100"  => return "blt";
           when "101"  => return "bge";
@@ -532,6 +532,214 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
     end case;
   end function decode_mnemonic_f;
 
+  -- decode CSR name --
+  function decode_csr_f(addr : std_ulogic_vector(11 downto 0)) return string is
+  begin
+    case addr is
+      -- user floating-point CSRs --
+      when csr_fflags_c         => return "fflags";
+      when csr_frm_c            => return "frm";
+      when csr_fcsr_c           => return "fcsr";
+      -- machine trap setup --
+      when csr_mstatus_c        => return "mstatus";
+      when csr_misa_c           => return "misa";
+      when csr_mie_c            => return "mie";
+      when csr_mtvec_c          => return "mtvec";
+      when csr_mcounteren_c     => return "mcounteren";
+      when csr_mstatush_c       => return "mstatush";
+      -- machine configuration --
+      when csr_menvcfg_c        => return "menvcfg";
+      when csr_menvcfgh_c       => return "menvcfgh";
+      -- machine counter setup --
+      when csr_mcountinhibit_c  => return "mcountinhibit";
+      when csr_mhpmevent3_c     => return "mhpmevent3";
+      when csr_mhpmevent4_c     => return "mhpmevent4";
+      when csr_mhpmevent5_c     => return "mhpmevent5";
+      when csr_mhpmevent6_c     => return "mhpmevent6";
+      when csr_mhpmevent7_c     => return "mhpmevent7";
+      when csr_mhpmevent8_c     => return "mhpmevent8";
+      when csr_mhpmevent9_c     => return "mhpmevent9";
+      when csr_mhpmevent10_c    => return "mhpmevent10";
+      when csr_mhpmevent11_c    => return "mhpmevent11";
+      when csr_mhpmevent12_c    => return "mhpmevent12";
+      when csr_mhpmevent13_c    => return "mhpmevent13";
+      when csr_mhpmevent14_c    => return "mhpmevent14";
+      when csr_mhpmevent15_c    => return "mhpmevent15";
+      -- machine trap handling --
+      when csr_mscratch_c       => return "mscratch";
+      when csr_mepc_c           => return "mepc";
+      when csr_mcause_c         => return "mcause";
+      when csr_mtval_c          => return "mtval";
+      when csr_mip_c            => return "mip";
+      when csr_mtinst_c         => return "mtinst";
+      -- physical memory protection - configuration --
+      when csr_pmpcfg0_c        => return "pmpcfg0";
+      when csr_pmpcfg1_c        => return "pmpcfg1";
+      when csr_pmpcfg2_c        => return "pmpcfg2";
+      when csr_pmpcfg3_c        => return "pmpcfg3";
+      -- physical memory protection - address --
+      when csr_pmpaddr0_c       => return "pmpaddr0";
+      when csr_pmpaddr1_c       => return "pmpaddr1";
+      when csr_pmpaddr2_c       => return "pmpaddr2";
+      when csr_pmpaddr3_c       => return "pmpaddr3";
+      when csr_pmpaddr4_c       => return "pmpaddr4";
+      when csr_pmpaddr5_c       => return "pmpaddr5";
+      when csr_pmpaddr6_c       => return "pmpaddr6";
+      when csr_pmpaddr7_c       => return "pmpaddr7";
+      when csr_pmpaddr8_c       => return "pmpaddr8";
+      when csr_pmpaddr9_c       => return "pmpaddr9";
+      when csr_pmpaddr10_c      => return "pmpaddr10";
+      when csr_pmpaddr11_c      => return "pmpaddr11";
+      when csr_pmpaddr12_c      => return "pmpaddr12";
+      when csr_pmpaddr13_c      => return "pmpaddr13";
+      when csr_pmpaddr14_c      => return "pmpaddr14";
+      when csr_pmpaddr15_c      => return "pmpaddr15";
+      -- trigger module registers --
+      when csr_tselect_c        => return "tselect";
+      when csr_tdata1_c         => return "tdata1";
+      when csr_tdata2_c         => return "tdata2";
+      when csr_tinfo_c          => return "tinfo";
+      -- debug registers --
+      when csr_dcsr_c           => return "dcsr";
+      when csr_dpc_c            => return "dpc";
+      when csr_dscratch0_c      => return "dscratch0";
+      -- NEORV32-specific read/write user registers --
+      when csr_cfureg0_c        => return "cfureg0";
+      when csr_cfureg1_c        => return "cfureg1";
+      when csr_cfureg2_c        => return "cfureg2";
+      when csr_cfureg3_c        => return "cfureg3";
+      -- machine counters/timers --
+      when csr_mcycle_c         => return "mcycle";
+      when csr_mtime_c          => return "mtime";
+      when csr_minstret_c       => return "minstret";
+      when csr_mhpmcounter3_c   => return "mhpmcounter3_";
+      when csr_mhpmcounter4_c   => return "mhpmcounter4_";
+      when csr_mhpmcounter5_c   => return "mhpmcounter5_";
+      when csr_mhpmcounter6_c   => return "mhpmcounter6_";
+      when csr_mhpmcounter7_c   => return "mhpmcounter7_";
+      when csr_mhpmcounter8_c   => return "mhpmcounter8_";
+      when csr_mhpmcounter9_c   => return "mhpmcounter9_";
+      when csr_mhpmcounter10_c  => return "mhpmcounter10";
+      when csr_mhpmcounter11_c  => return "mhpmcounter11";
+      when csr_mhpmcounter12_c  => return "mhpmcounter12";
+      when csr_mhpmcounter13_c  => return "mhpmcounter13";
+      when csr_mhpmcounter14_c  => return "mhpmcounter14";
+      when csr_mhpmcounter15_c  => return "mhpmcounter15";
+      when csr_mcycleh_c        => return "mcycleh";
+      when csr_mtimeh_c         => return "mtimeh";
+      when csr_minstreth_c      => return "minstreth";
+      when csr_mhpmcounter3h_c  => return "mhpmcounter3h";
+      when csr_mhpmcounter4h_c  => return "mhpmcounter4h";
+      when csr_mhpmcounter5h_c  => return "mhpmcounter5h";
+      when csr_mhpmcounter6h_c  => return "mhpmcounter6h";
+      when csr_mhpmcounter7h_c  => return "mhpmcounter7h";
+      when csr_mhpmcounter8h_c  => return "mhpmcounter8h";
+      when csr_mhpmcounter9h_c  => return "mhpmcounter9h";
+      when csr_mhpmcounter10h_c => return "mhpmcounter10h";
+      when csr_mhpmcounter11h_c => return "mhpmcounter11h";
+      when csr_mhpmcounter12h_c => return "mhpmcounter12h";
+      when csr_mhpmcounter13h_c => return "mhpmcounter13h";
+      when csr_mhpmcounter14h_c => return "mhpmcounter14h";
+      when csr_mhpmcounter15h_c => return "mhpmcounter15h";
+      -- user counters/timers --
+      when csr_cycle_c          => return "cycle";
+      when csr_time_c           => return "time";
+      when csr_instret_c        => return "instret";
+      when csr_hpmcounter3_c    => return "hpmcounter3";
+      when csr_hpmcounter4_c    => return "hpmcounter4";
+      when csr_hpmcounter5_c    => return "hpmcounter5";
+      when csr_hpmcounter6_c    => return "hpmcounter6";
+      when csr_hpmcounter7_c    => return "hpmcounter7";
+      when csr_hpmcounter8_c    => return "hpmcounter8";
+      when csr_hpmcounter9_c    => return "hpmcounter9";
+      when csr_hpmcounter10_c   => return "hpmcounter10";
+      when csr_hpmcounter11_c   => return "hpmcounter11";
+      when csr_hpmcounter12_c   => return "hpmcounter12";
+      when csr_hpmcounter13_c   => return "hpmcounter13";
+      when csr_hpmcounter14_c   => return "hpmcounter14";
+      when csr_hpmcounter15_c   => return "hpmcounter15";
+      when csr_cycleh_c         => return "cycleh";
+      when csr_timeh_c          => return "timeh";
+      when csr_instreth_c       => return "instreth";
+      when csr_hpmcounter3h_c   => return "hpmcounter3h";
+      when csr_hpmcounter4h_c   => return "hpmcounter4h";
+      when csr_hpmcounter5h_c   => return "hpmcounter5h";
+      when csr_hpmcounter6h_c   => return "hpmcounter6h";
+      when csr_hpmcounter7h_c   => return "hpmcounter7h";
+      when csr_hpmcounter8h_c   => return "hpmcounter8h";
+      when csr_hpmcounter9h_c   => return "hpmcounter9h";
+      when csr_hpmcounter10h_c  => return "hpmcounter10h";
+      when csr_hpmcounter11h_c  => return "hpmcounter11h";
+      when csr_hpmcounter12h_c  => return "hpmcounter12h";
+      when csr_hpmcounter13h_c  => return "hpmcounter13h";
+      when csr_hpmcounter14h_c  => return "hpmcounter14h";
+      when csr_hpmcounter15h_c  => return "hpmcounter15h";
+      -- machine information registers --
+      when csr_mvendorid_c      => return "mvendorid";
+      when csr_marchid_c        => return "marchid";
+      when csr_mimpid_c         => return "mimpid";
+      when csr_mhartid_c        => return "mhartid";
+      when csr_mconfigptr_c     => return "mconfigptr";
+      -- NEORV32-specific machine registers --
+      when csr_mxcsr_c          => return "mxcsr";
+      when csr_mxisa_c          => return "mxisa";
+      -- unknown; just print address --
+      when others               => return "x" & print_hex_f(addr);
+    end case;
+  end function decode_csr_f;
+
+  -- decode instruction operands --
+  function decode_operands_f(inst : std_ulogic_vector(31 downto 0)) return string is
+    variable rs1_iv, rs2_iv, rd_iv : integer;
+    variable is_v, ib_v, iu_v, ij_v, ii_v : std_ulogic_vector(31 downto 0);
+    variable is_iv, ib_iv, iu_iv, ij_iv, ii_iv : integer;
+  begin
+    -- registers --
+    rs1_iv := to_integer(unsigned(inst(instr_rs1_msb_c downto instr_rs1_lsb_c)));
+    rs2_iv := to_integer(unsigned(inst(instr_rs2_msb_c downto instr_rs2_lsb_c)));
+    rd_iv  := to_integer(unsigned(inst(instr_rd_msb_c downto instr_rd_lsb_c)));
+    -- immediates --
+    is_v := replicate_f(inst(31), 21) & inst(30 downto 25) & inst(11 downto 7);
+    ib_v := replicate_f(inst(31), 20) & inst(7) & inst(30 downto 25) & inst(11 downto 8) & '0';
+    iu_v := inst(31 downto 12) & x"000";
+    ij_v := replicate_f(inst(31), 12) & inst(19 downto 12) & inst(20) & inst(30 downto 21) & '0';
+    ii_v := replicate_f(inst(31), 21) & inst(30 downto 21) & inst(20);
+    is_iv := to_integer(signed(is_v));
+    ib_iv := to_integer(signed(ib_v));
+    iu_iv := to_integer(signed(iu_v));
+    ij_iv := to_integer(signed(ij_v));
+    ii_iv := to_integer(signed(ii_v));
+    -- instruction types --
+    case inst(instr_opcode_msb_c downto instr_opcode_lsb_c) is
+      when opcode_alui_c   => return "x" & integer'image(rd_iv)  & ", x"  & integer'image(rs2_iv) & ", "  & integer'image(ii_iv);
+      when opcode_alu_c    => return "x" & integer'image(rd_iv)  & ", x"  & integer'image(rs2_iv) & ", x" & integer'image(rs1_iv);
+      when opcode_lui_c    => return "x" & integer'image(rd_iv)  & ", 0x" & print_hex_f(iu_v);
+      when opcode_auipc_c  => return "x" & integer'image(rd_iv)  & ", 0x" & print_hex_f(iu_v);
+      when opcode_jal_c    => return "x" & integer'image(rd_iv)  & ", "   & integer'image(ij_iv);
+      when opcode_jalr_c   => return "x" & integer'image(rd_iv)  & ", x"  & integer'image(rs2_iv) & ", "  & integer'image(ii_iv);
+      when opcode_branch_c => return "x" & integer'image(rs2_iv) & ", x"  & integer'image(rs1_iv) & ", "  & integer'image(is_iv);
+      when opcode_load_c   => return "x" & integer'image(rd_iv)  & ", "   & integer'image(is_iv)  & "(x"  & integer'image(rs1_iv) & ")";
+      when opcode_store_c  => return "x" & integer'image(rs1_iv) & ", "   & integer'image(is_iv)  & "(x"  & integer'image(rs2_iv) & ")";
+      when opcode_fence_c  => return "";
+      when opcode_amo_c    =>
+        if (inst(28) = '1') then -- zalrsc
+          return "x" & integer'image(rd_iv) & ", (x" & integer'image(rs1_iv) & ")";
+        else -- zaamo
+          return "x" & integer'image(rd_iv) & ", x" & integer'image(rs2_iv) & ", (x" & integer'image(rs1_iv) & ")";
+        end if;
+      when opcode_system_c =>
+        if (inst(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) or
+           (inst(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csril_c) then -- environment
+          return "";
+        elsif (inst(instr_funct3_msb_c) = '0') then -- csr-register
+          return "x" & integer'image(rd_iv) & ", " & decode_csr_f(inst(31 downto 20)) & ", x" & integer'image(rs1_iv);
+        else -- csr-immediate
+          return "x" & integer'image(rd_iv) & ", " & decode_csr_f(inst(31 downto 20)) & ", " & integer'image(rs1_iv);
+        end if;
+      when others => return "";
+    end case;
+  end function decode_operands_f;
+
   signal trap_q : std_ulogic; -- trap entry
   signal cycle_q, order_q : unsigned(31 downto 0); -- cycle and index counters
 
@@ -564,9 +772,11 @@ begin
           write(line_v, integer'(to_integer(cycle_q)));
           write(line_v, string'(" "));
           -- instruction address --
+          write(line_v, string'("0x"));
           write(line_v, string'(print_hex_f(trace_i.pc)));
           write(line_v, string'(" "));
           -- instruction word --
+          write(line_v, string'("0x"));
           write(line_v, string'(print_hex_f(trace_i.inst)));
           write(line_v, string'(" "));
           -- privilege level --
@@ -582,6 +792,8 @@ begin
             write(line_v, string'("c."));
           end if;
           write(line_v, string'(decode_mnemonic_f(trace_i.inst)));
+          write(line_v, string'(" "));
+          write(line_v, string'(decode_operands_f(trace_i.inst)));
           -- trap entry --
           if (trap_q = '1') then
             trap_q <= '0';
