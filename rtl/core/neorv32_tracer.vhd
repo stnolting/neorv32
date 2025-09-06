@@ -75,7 +75,7 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
     src   : std_ulogic_vector(31 downto 0); -- source address
     dst   : std_ulogic_vector(31 downto 0); -- destination address
     trap  : std_ulogic; -- trap entry
-    first : std_ulogic; -- first trap packet
+    first : std_ulogic; -- first trace entry
     push  : std_ulogic; -- push SRC + DST to trace buffer
   end record;
   signal arbiter : arbiter_t;
@@ -188,7 +188,7 @@ begin
         -- ------------------------------------------------------------
           if (ctrl_en = '0') or (ctrl_stop = '1') or (arbiter.astop = '1') then
             arbiter.state <= S_OFFLINE;
-          elsif (trace_src.mode(1) = '0') then -- halt tracing when we are in debug-mode
+          elsif (trace_src.mode(1) = '0') then -- halt tracing if we are in debug-mode
             arbiter.trap <= arbiter.trap or trace_src.trap;
             if (trace_src.valid = '1') or (trace_src.trap = '1') then
               arbiter.src(31 downto 1) <= trace_src.pc(31 downto 1);
