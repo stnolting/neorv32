@@ -150,36 +150,36 @@ simulation, all traced instructions are written to log files in the simulator's 
 The trace log is structured line by line where each line describes an executed instruction.
 The start of an exemplary trace log might look like this:
 
-.Exemplary cut-out from a trace log
+.Exemplary cut-out from a simulation trace log (here: `neorv32.tracer1.log` showing boot of core 1)
 [source, log]
 ----
-50 242 00000150 10500073 M wfi
-51 871239 00000154 ffdff06f M c.jal
-52 871250 0000009c fff44737 M lui <TRAP_ENTRY> <1>
-53 871252 000000a0 00872103 M lw
-54 871270 000000a4 00c72603 M c.lw
-55 871278 000000a6 fff40737 M lui
-56 871281 000000aa 00072223 M sw
-57 871289 000000ae 04a0006f M c_jal
-58 871309 000000f8 80000197 M auipc
-59 871311 000000fc 0807c7b3 M ALU?
+50 226 0x0000019c 0x10500073 M wfi
+51 890622 0x000000c8 0xfff44737 M lui x14, 0xfff44000 <TRAP_ENTRY> <1>
+52 890624 0x000000cc 0x00872103 M lw x2, 2(x14)
+53 890632 0x000000d0 0x00c72603 M lw x12, 12(x14)
+54 890650 0x000000d4 0xfff40737 M lui x14, 0xfff40000
+55 890652 0x000000d8 0x00072223 M sw x14, 4(x0)
+56 890676 0x000000dc 0x05c0006f M jal x0, 92
+57 890703 0x00000138 0x80000197 M auipc x3, 0x80000000
+58 890705 0x0000013c 0x6c818193 M addi x3, x8, 1736
+59 890721 0x00000140 0x0ff0000f M fence
+60 890728 0x00000144 0x0000100f M fence.i
+61 890750 0x00000148 0x30029073 M csrrw x0, mstatus, x5
 ----
-<1> This line is used for explanation.
+<1> This line is used for explanation (see below).
 
 Column structure:
 
 [start=1]
-. `52`: Instruction index ("order"); a linearly increasing counter that starts at zero; printed as decimal integer
-. `871250`: Time stamp; a linearly increasing counter that is set to zero by the hardware reset and increments with each clock cycle; printed as decimal integer
-. `0000009c`: Instruction address (program counter); printed as hexadecimal 32-bit value
-. `fff44737`: 32-bit instruction word; compressed 16-bit instructions are shown in their decompressed 32-bit format; printed as hexadecimal 32-bit value
+. `51`: Instruction index ("order"); a linear increasing counter that starts at zero and increments with each executed instruction; printed as decimal integer
+. `890622`: Time stamp; a linear increasing counter that starts at zero and increments with each clock cycle; printed as decimal integer
+. `0x000000c8`: Instruction address (program counter); printed as hexadecimal 32-bit value (with `0x` prefix)
+. `0xfff44737`: 32-bit instruction word; printed as hexadecimal 32-bit value (with `0x` prefix); compressed 16-bit instructions are shown in their decompressed 32-bit format
 . `M`: Current operating mode / privilege level (`M` = machine-mode, `U` = user-mode, `D` = debug-mode); printed as single character
-. `lui`: The decoded instruction mnemonic. Please note that the tracer cannot yet decode all instructions. For unknown/unsupported instructions
-the instruction class is printed in capital letters together with a question mark (see index 59 in the example above: `ALU?`). Decompressed
-16-bit instruction have a prefixed `c.` before the mnemonic (see index 51 in the example above: `c.jal`).
-
-If the processor encounters a trap (synchronous exception or interrupt) `<TRAP_ENTRY>` gets printed at the end of the line that corresponds
-to the first instruction of the trap handler.
+. `lui x14, 0xfff44000`: The decoded instruction mnemonic plus operands. For unknown/unsupported instructions the instruction class is printed in capital letters
+together with a prefixed `illegal_` (e.g. `illegal_ALU`). Decompressed 16-bit instructions have a prefixed `c.` (e.g. `c.lw`).
+. If the processor encounters a trap (synchronous exception or interrupt) `<TRAP_ENTRY>` is printed at the end of the line that corresponds
+to the first instruction of the according trap handler.
 
 .Instruction Execution Time
 [TIP]

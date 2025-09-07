@@ -16,7 +16,6 @@
 #include <uart.h>
 
 
-
 /**********************************************************************//**
  * Read single char from UART0.
  *
@@ -24,7 +23,7 @@
  **************************************************************************/
 char uart_getc(void) {
 
-#if (UART_EN != 0)
+#if (UART_EN == 1)
   if (neorv32_uart_available(NEORV32_UART0)) {
     return neorv32_uart_getc(NEORV32_UART0);
   }
@@ -42,7 +41,7 @@ char uart_getc(void) {
  **************************************************************************/
 void uart_putc(char c) {
 
-#if (UART_EN != 0)
+#if (UART_EN == 1)
   if (neorv32_uart_available(NEORV32_UART0)) {
     if (c == '\n') {
       neorv32_uart_putc(NEORV32_UART0, '\r');
@@ -60,7 +59,7 @@ void uart_putc(char c) {
  **************************************************************************/
 void uart_puts(const char *s) {
 
-#if (UART_EN != 0)
+#if (UART_EN == 1)
   char c = 0;
   while ((c = *s++)) {
     uart_putc(c);
@@ -76,7 +75,7 @@ void uart_puts(const char *s) {
  **************************************************************************/
 void uart_puth(uint32_t num) {
 
-#if (UART_EN != 0)
+#if (UART_EN == 1)
   static const char hex_symbols[16] = "0123456789abcdef";
   uart_putc('0');
   uart_putc('x');
@@ -90,14 +89,29 @@ void uart_puth(uint32_t num) {
 
 
 /**********************************************************************//**
+ * Setup UART device.
+ *
+ * @return 0 if success, !=0 if error
+ **************************************************************************/
+int uart_setup(void) {
+
+#if (UART_EN == 1)
+  return 0; // nothing to do here
+#else
+  return 1;
+#endif
+}
+
+
+/**********************************************************************//**
  * Read 32-bit binary word from UART0.
  *
  * @param[in,out] rdata Pointer for returned data (uint32_t).
  * @return 0 if success, != 0 if error
  **************************************************************************/
-int uart_getw(uint32_t* rdata) {
+int uart_stream_get(uint32_t* rdata) {
 
-#if (UART_EN != 0)
+#if (UART_EN == 1)
   int i;
   subwords32_t tmp;
   for (i=0; i<4; i++) {

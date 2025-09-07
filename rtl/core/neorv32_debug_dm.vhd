@@ -209,8 +209,8 @@ begin
   dmi_wren <= '1' when (dmi_req_i.op = dmi_req_wr_c) else '0';
   dmi_rden <= '1' when (dmi_req_i.op = dmi_req_rd_c) else '0';
   -- authenticated access --
-  dmi_wren_auth <= dmi_wren when (not AUTHENTICATOR) or (auth.valid = '1') else '0';
-  dmi_rden_auth <= dmi_rden when (not AUTHENTICATOR) or (auth.valid = '1') else '0';
+  dmi_wren_auth <= dmi_wren and auth.valid;
+  dmi_rden_auth <= dmi_rden and auth.valid;
 
 
   -- Debug Module Command Controller --------------------------------------------------------
@@ -260,9 +260,10 @@ begin
           -- ------------------------------------------------------------
             if (dm_reg.command(31 downto 24) = x"00") and -- cmdtype: register access
                (dm_reg.command(23) = '0') and -- reserved
-               (dm_reg.command(22 downto 20) = "010") and -- aarsize: has to be 32-bit
                (dm_reg.command(19) = '0') and -- aarpostincrement: not supported
-               ((dm_reg.command(17) = '0') or (dm_reg.command(15 downto 5) = "00010000000")) then -- regno: only GPRs are supported: 0x1000..0x101f if transfer is set
+               ((dm_reg.command(17) = '0') or -- ignore aarsize and regno if transfer = 0
+                ((dm_reg.command(15 downto 5) = "00010000000") and -- regno: only GPRs are supported: 0x1000..0x101f
+                 (dm_reg.command(22 downto 20) = "010"))) then -- aarsize: has to be 32-bit
               if (or_reduce_f(dm_ctrl.hart_halted and dm_reg.hartsel_dec) = '1') then -- selected CPU is halted
                 dm_ctrl.state <= CMD_PREPARE;
               else -- error! CPU is still running
@@ -363,7 +364,7 @@ begin
         -- resume REQ --
         if (dm_reg.dmcontrol_ndmreset = '1') then -- DM reset
           dm_ctrl.hart_resume_req(i) <= '0';
-        elsif (dm_reg.req_res = '1') and (dm_reg.hartsel_dec(i) = '1') then
+        elsif (dm_reg.req_res = '1') and (dm_reg.halt_req = '0') and (dm_reg.hartsel_dec(i) = '1') then -- ignore resume if halt is requested
           dm_ctrl.hart_resume_req(i) <= '1';
         elsif (dci.ack_res(i) = '1') then
           dm_ctrl.hart_resume_req(i) <= '0';
@@ -497,12 +498,12 @@ begin
   -- CPU halt/resume requests --
   request_gen:
   for i in 0 to NUM_HARTS-1 generate
-    halt_req_o(i)  <= dm_reg.halt_req and dm_reg.hartsel_dec(i) and dm_reg.dmcontrol_dmactive when ((not AUTHENTICATOR) or (auth.valid = '1')) else '0';
+    halt_req_o(i)  <= dm_reg.halt_req and dm_reg.hartsel_dec(i) and dm_reg.dmcontrol_dmactive when (auth.valid = '1') else '0';
     dci.req_res(i) <= dm_ctrl.hart_resume_req(i); -- active until explicitly cleared
   end generate;
 
   -- SoC reset --
-  ndmrstn_o <= '0' when (dm_reg.dmcontrol_ndmreset = '1') and (dm_reg.dmcontrol_dmactive = '1') and ((not AUTHENTICATOR) or (auth.valid = '1')) else '1';
+  ndmrstn_o <= '0' when (dm_reg.dmcontrol_ndmreset = '1') and (dm_reg.dmcontrol_dmactive = '1') and (auth.valid = '1') else '1';
 
   -- construct program buffer array for CPU access --
   cpu_progbuf(0) <= dm_ctrl.ldsw_progbuf; -- pseudo program buffer for GPR<->DM.data0 transfer
@@ -527,10 +528,12 @@ begin
 
         -- debug module status register --
         when addr_dmstatus_c =>
-          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
-            dmi_rsp_o.data(31 downto 23) <= (others => '0'); -- reserved (r/-)
-            dmi_rsp_o.data(22)           <= '1'; -- impebreak (r/-): there is an implicit ebreak instruction after the visible program buffer
-            dmi_rsp_o.data(21 downto 20) <= (others => '0'); -- reserved (r/-)
+          if (auth.valid = '1') then -- authenticated?
+            dmi_rsp_o.data(31 downto 25) <= (others => '0');                                             -- reserved (r/-)
+            dmi_rsp_o.data(24)           <= dm_reg.dmcontrol_ndmreset;                                   -- ndmresetpending(r/-): DM in reset
+            dmi_rsp_o.data(23)           <= '0';                                                         -- stickyunavail (r/-): unavail bits reflect the current state
+            dmi_rsp_o.data(22)           <= '1';                                                         -- impebreak (r/-): implicit ebreak after visible program buffer
+            dmi_rsp_o.data(21 downto 20) <= (others => '0');                                             -- reserved (r/-)
             dmi_rsp_o.data(19)           <= or_reduce_f(dm_ctrl.hart_reset and dm_reg.hartsel_dec);      -- allhavereset (r/-): selected hart in reset
             dmi_rsp_o.data(18)           <= or_reduce_f(dm_ctrl.hart_reset and dm_reg.hartsel_dec);      -- anyhavereset (r/-): selected hart in reset
             dmi_rsp_o.data(17)           <= or_reduce_f(dm_ctrl.hart_resume_ack and dm_reg.hartsel_dec); -- allresumeack (r/-): selected hart is resuming
@@ -552,7 +555,7 @@ begin
 
         -- debug module control --
         when addr_dmcontrol_c =>
-          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+          if (auth.valid = '1') then -- authenticated?
             dmi_rsp_o.data(31)           <= '0';                        -- haltreq (-/w): write-only
             dmi_rsp_o.data(30)           <= '0';                        -- resumereq (-/w1): write-only
             dmi_rsp_o.data(29)           <= '0';                        -- hartreset (r/w): not supported
@@ -570,7 +573,7 @@ begin
 
         -- hart info --
         when addr_hartinfo_c =>
-          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+          if (auth.valid = '1') then -- authenticated?
             dmi_rsp_o.data(31 downto 24) <= (others => '0');         -- reserved (r/-)
             dmi_rsp_o.data(23 downto 20) <= "0001";                  -- nscratch (r/-): number of dscratch CSRs = 1
             dmi_rsp_o.data(19 downto 17) <= (others => '0');         -- reserved (r/-)
@@ -581,7 +584,7 @@ begin
 
         -- abstract control and status --
         when addr_abstractcs_c =>
-          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+          if (auth.valid = '1') then -- authenticated?
             dmi_rsp_o.data(31 downto 24) <= (others => '0'); -- reserved (r/-)
             dmi_rsp_o.data(28 downto 24) <= "00010";         -- progbufsize (r/-): number of words in program buffer = 2
             dmi_rsp_o.data(12)           <= dm_ctrl.busy;    -- busy (r/-): abstract command in progress (1) / idle (0)
@@ -593,7 +596,7 @@ begin
 
         -- abstract command autoexec --
         when addr_abstractauto_c =>
-          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+          if (auth.valid = '1') then -- authenticated?
             dmi_rsp_o.data(0)  <= dm_reg.abstractauto_autoexecdata;       -- autoexecdata(0):    read/write access to data0 triggers execution of program buffer
             dmi_rsp_o.data(16) <= dm_reg.abstractauto_autoexecprogbuf(0); -- autoexecprogbuf(0): read/write access to progbuf0 triggers execution of program buffer
             dmi_rsp_o.data(17) <= dm_reg.abstractauto_autoexecprogbuf(1); -- autoexecprogbuf(1): read/write access to progbuf1 triggers execution of program buffer
@@ -601,7 +604,7 @@ begin
 
         -- abstract data 0 --
         when addr_data0_c =>
-          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+          if (auth.valid = '1') then -- authenticated?
             dmi_rsp_o.data <= dci.data_reg;
           end if;
 
@@ -611,7 +614,7 @@ begin
 
         -- halt summary 0 --
         when addr_haltsum0_c => -- haltsum0
-          if (not AUTHENTICATOR) or (auth.valid = '1') then -- authenticated?
+          if (auth.valid = '1') then -- authenticated?
             dmi_rsp_o.data(NUM_HARTS-1 downto 0) <= dm_ctrl.hart_halted(NUM_HARTS-1 downto 0); -- hart i is halted
           end if;
 

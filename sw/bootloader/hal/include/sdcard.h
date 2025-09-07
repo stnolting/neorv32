@@ -7,18 +7,16 @@
 // ================================================================================ //
 
 /**
- * @file twi_flash.h
- * @brief TWI flash driver.
+ * @file sdcard.h
+ * @brief SD card driver.
  */
 
-#ifndef TWI_FLASH_H
-#define TWI_FLASH_H
+#ifndef SD_CARD_H
+#define SD_CARD_H
 
 #include <stdint.h>
 
-int twi_flash_setup(void);
-int twi_flash_erase(void);
-int twi_flash_stream_get(uint32_t* rdata);
-int twi_flash_stream_put(uint32_t wdata);
+int sdcard_setup(void);
+int sdcard_stream_get(uint32_t* rdata);
 
-#endif // TWI_FLASH_H
+#endif // SDCARD_H

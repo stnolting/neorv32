@@ -958,14 +958,14 @@ begin
 
   -- any system interrupt? --
   trap_ctrl.irq_fire(0) <= '1' when
-    (exe_engine.state = EX_EXECUTE) and -- trigger system IRQ only in EX_EXECUTE state
+    ((exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_SLEEP)) and -- trigger system IRQ only in EX_EXECUTE state or in sleep mode
     (or_reduce_f(trap_ctrl.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
     ((csr.mstatus_mie = '1') or (csr.prv_level = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
 
   -- debug-entry halt interrupt? --
   trap_ctrl.irq_fire(1) <= trap_ctrl.irq_buf(irq_db_halt_c) when
-    (exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_BRANCHED) else '0'; -- allow halt also after "reset" (#879)
+    (exe_engine.state = EX_EXECUTE) or (exe_engine.state = EX_SLEEP) or (exe_engine.state = EX_BRANCHED) else '0'; -- allow halt also after "reset" (#879)
 
 
   -- ****************************************************************************************************************************
@@ -1002,33 +1002,33 @@ begin
   csr_write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      csr.we             <= '0';
-      csr.prv_level      <= priv_mode_m_c;
-      csr.mstatus_mie    <= '0';
-      csr.mstatus_mpie   <= '0';
-      csr.mstatus_mpp    <= '0';
-      csr.mstatus_mprv   <= '0';
-      csr.mstatus_tw     <= '0';
-      csr.mie_msi        <= '0';
-      csr.mie_mei        <= '0';
-      csr.mie_mti        <= '0';
-      csr.mie_firq       <= (others => '0');
-      csr.mtvec          <= (others => '0');
-      csr.mscratch       <= (others => '0');
-      csr.mepc           <= (others => '0');
-      csr.mcause         <= (others => '0');
-      csr.mtval          <= (others => '0');
-      csr.mtinst         <= (others => '0');
-      csr.mcounteren_cy  <= '0';
-      csr.mcounteren_ir  <= '0';
-      csr.mcountinhibit  <= (others => '0');
-      csr.dcsr_ebreakm   <= '0';
-      csr.dcsr_ebreaku   <= '0';
-      csr.dcsr_step      <= '0';
-      csr.dcsr_prv       <= '0';
-      csr.dcsr_cause     <= (others => '0');
-      csr.dpc            <= (others => '0');
-      csr.dscratch0      <= (others => '0');
+      csr.we            <= '0';
+      csr.prv_level     <= priv_mode_m_c;
+      csr.mstatus_mie   <= '0';
+      csr.mstatus_mpie  <= '0';
+      csr.mstatus_mpp   <= '0';
+      csr.mstatus_mprv  <= '0';
+      csr.mstatus_tw    <= '0';
+      csr.mie_msi       <= '0';
+      csr.mie_mei       <= '0';
+      csr.mie_mti       <= '0';
+      csr.mie_firq      <= (others => '0');
+      csr.mtvec         <= (others => '0');
+      csr.mscratch      <= (others => '0');
+      csr.mepc          <= (others => '0');
+      csr.mcause        <= (others => '0');
+      csr.mtval         <= (others => '0');
+      csr.mtinst        <= (others => '0');
+      csr.mcounteren_cy <= '0';
+      csr.mcounteren_ir <= '0';
+      csr.mcountinhibit <= (others => '0');
+      csr.dcsr_ebreakm  <= '0';
+      csr.dcsr_ebreaku  <= '0';
+      csr.dcsr_step     <= '0';
+      csr.dcsr_prv      <= '0';
+      csr.dcsr_cause    <= (others => '0');
+      csr.dpc           <= (others => '0');
+      csr.dscratch0     <= (others => '0');
     elsif rising_edge(clk_i) then
 
       -- ********************************************************************************
