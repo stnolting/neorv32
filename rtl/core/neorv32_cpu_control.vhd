@@ -134,6 +134,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- CPU control bus --
   signal ctrl, ctrl_nxt : ctrl_bus_t;
 
+  signal trap_me : std_ulogic;
+
   -- control and status registers (CSRs) --
   type csr_t is record
     addr           : std_ulogic_vector(11 downto 0); -- physical access address
@@ -178,6 +180,14 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal csr : csr_t;
 
+signal zcmp_prev      : std_ulogic;  -- previous cycle of zcmp_in_uop_seq
+signal zcmp_active,zcmp_active_nxt    : std_ulogic;  -- = zcmp_in_uop_seq registered (or use it directly)
+signal zcmp_rise      : std_ulogic;  -- 0->1
+signal zcmp_fall      : std_ulogic;  -- 1->0
+signal zcmp_npc_hold,zcmp_npc_nxt  : std_ulogic_vector(XLEN-1 downto 0); -- cm.push PC + 2
+
+
+
   -- debug-mode controller --
   type debug_ctrl_t is record
     run, trig_hw, trig_break, trig_halt, trig_step : std_ulogic;
@@ -198,6 +208,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ebreak_trig  : std_ulogic; -- "ebreak" exception trigger
 
 begin
+
+  trap_me <= trap_ctrl.instr_il;
 
   -- ****************************************************************************************************************************
   -- Instruction Execution
@@ -267,6 +279,7 @@ begin
     elsif rising_edge(clk_i) then
       ctrl       <= ctrl_nxt;
       exe_engine <= exe_engine_nxt;
+      zcmp_npc_hold <= zcmp_npc_nxt;
     end if;
   end process execute_engine_fsm_sync;
 
@@ -276,7 +289,7 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
+  execute_engine_fsm_comb: process(exe_engine,zcmp_rise, zcmp_npc_hold, debug_ctrl, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
                                    ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
@@ -284,7 +297,6 @@ begin
     -- shortcuts --
     funct3_v := exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
     funct7_v := exe_engine.ir(instr_funct7_msb_c downto instr_funct7_lsb_c);
-
     -- arbiter defaults --
     exe_engine_nxt.state <= exe_engine.state;
     exe_engine_nxt.ir    <= exe_engine.ir;
@@ -303,6 +315,8 @@ begin
     csr.we_nxt           <= '0';
     csr.re_nxt           <= '0';
     ctrl_nxt             <= ctrl_bus_zero_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
+
+    zcmp_npc_nxt <= zcmp_npc_hold;
 
     -- ALU sign control --
     if (opcode(4) = '1') then -- ALU ops
@@ -363,7 +377,23 @@ begin
           trap_ctrl.instr_be   <= frontend_i.fault or pmp_fault_i; -- access fault during instruction fetch
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
-          exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
+          
+
+          -- in simulation prüfen warum nach jalr am ende der testfunktion ein store ausgeführt wird
+          -- und warum in der simulation Testing zcmp_push_s0s6(42, 58) = 720185 das falsche ergebnis liefert (in a0?)
+          -- zcmp wird mehrfach aufgerufen wenn zwei zcmp funktionen in main aktiv sind.
+
+
+          if(zcmp_rise='1') then -- muss außerhalb state passieren
+            zcmp_npc_nxt <= exe_engine.pc2;
+          end if;
+
+          if(zcmp_active='1') then 
+            exe_engine_nxt.pc    <= zcmp_npc_hold;
+          else
+            exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
+          end if;
+
           exe_engine_nxt.state <= EX_EXECUTE; -- start executing new instruction
         end if;
 
@@ -560,6 +590,22 @@ begin
 
     end case;
   end process execute_engine_fsm_comb;
+
+  zcmp_rise_fsm_sync: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      zcmp_prev <= '0';
+      zcmp_active <= '0';
+    elsif rising_edge(clk_i) then
+      zcmp_prev <= frontend_i.zcmp_in_uop_seq;
+      zcmp_active <= zcmp_active_nxt;
+    end if;
+  end process;
+
+  zcmp_rise <= frontend_i.zcmp_in_uop_seq and (not zcmp_prev);
+  zcmp_fall <= (not frontend_i.zcmp_in_uop_seq) and zcmp_prev;
+
+  zcmp_active_nxt <= '1' when zcmp_rise else '0' when zcmp_fall else zcmp_active;
 
 
   -- CPU Control Bus Output -----------------------------------------------------------------

@@ -21,7 +21,7 @@
  **************************************************************************/
 // Assembly function declarations
 
-extern int zcmp_test(int a, int b);
+extern int zcmp_push_s0s6(int a, int b);
 
 extern int zcmp_test_push(int a, int b);
 
@@ -55,14 +55,14 @@ int main() {
   // Test the assembly functions
   int a = 42;
   int b = 58;
-  // int result1 = zcmp_test(a, b);
+  int result1 = zcmp_push_s0s6(a, b);
   // 
-  // neorv32_uart0_printf("Testing zcmp_test(%d, %d) = %d\n", a, b, result1);
+  neorv32_uart0_printf("Testing zcmp_push_s0s6(%d, %d) = %d\n", a, b, result1);
 
   int result2 = zcmp_test_push(a, b);
   neorv32_uart0_printf("Testing zcmp_test_push(%d, %d) = %d\n", a, b, result2);
-  neorv32_uart0_puts("Hello world! :)\n");
-  neorv32_aux_print_logo();
+  // neorv32_uart0_puts("Hello world! :)\n");
+  // neorv32_aux_print_logo();
 
   return 0;
 }

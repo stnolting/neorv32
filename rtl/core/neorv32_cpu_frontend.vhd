@@ -119,6 +119,8 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
 begin
 
+  frontend_bus_issue.zcmp_in_uop_seq <= '0';
+  frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq;
   -- ******************************************************************************************************************
   -- Instruction Fetch (always fetch 32-bit-aligned 32-bit chunks of data)
   -- ******************************************************************************************************************
@@ -416,6 +418,8 @@ begin
         if (uop_ctr = 15) then --last instruction?
           frontend_bus_zcmp.instr <= zcmp_push_stack_adj_instr;
           frontend_bus_zcmp.valid <= '1';
+          -- frontend_bus_zcmp.compr <= '1';
+
           if (ctrl_i.if_ack = '1') then
             uop_ctr_nxt_in_seq <= 0;
             uop_state_nxt <= S_IDLE;
@@ -428,6 +432,8 @@ begin
           end if;
           frontend_bus_zcmp.instr <= zcmp_sw_instr;
           frontend_bus_zcmp.valid <= '1';
+          -- frontend_bus_zcmp.compr <= '1';
+
           if (uop_ctr + 1 = zcmp_num_regs) then
             uop_ctr_nxt_in_seq <= 15;
           end if;

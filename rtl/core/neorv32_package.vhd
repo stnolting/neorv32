@@ -630,10 +630,11 @@ package neorv32_package is
   -- Instruction Fetch Interface ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   type if_bus_t is record
-    valid  : std_ulogic;                     -- bus signals are valid
-    instr  : std_ulogic_vector(31 downto 0); -- instruction word
-    compr  : std_ulogic;                     -- instruction is decompressed
-    fault  : std_ulogic;                     -- instruction-fetch error
+    valid           : std_ulogic;                     -- bus signals are valid
+    instr           : std_ulogic_vector(31 downto 0); -- instruction word
+    compr           : std_ulogic;                     -- instruction is decompressed
+    fault           : std_ulogic;                     -- instruction-fetch error
+    zcmp_in_uop_seq : std_ulogic;                     -- zcmp micro-op sequence running
   end record;
 
   -- Comparator Bus -------------------------------------------------------------------------

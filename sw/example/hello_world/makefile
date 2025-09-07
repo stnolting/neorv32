@@ -11,7 +11,7 @@ MARCH_ZCMP = rv32imac_zicsr_zifencei_zcmp
 #RISCV_PREFIX ?= riscv-none-elf-
 
 # Override default optimization goal
-EFFORT = -O3
+EFFORT = -O2
 
 # Add extended debug symbols
 USER_FLAGS += -ggdb -gdwarf-3
