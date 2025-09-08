@@ -34,6 +34,7 @@ entity neorv32_cpu is
     RISCV_ISA_Zaamo     : boolean; -- implement atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc    : boolean; -- implement atomic reservation-set operations extension
     RISCV_ISA_Zcb       : boolean; -- implement additional code size reduction instructions
+    RISCV_ISA_Zcmp      : boolean; -- implement additional code size reduction instructions
     RISCV_ISA_Zba       : boolean; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean; -- implement bit-manipulation instructions for cryptography
@@ -194,7 +195,8 @@ begin
   neorv32_cpu_frontend_inst: entity neorv32.neorv32_cpu_frontend
   generic map (
     RISCV_C   => RISCV_ISA_C,  -- implement C ISA extension
-    RISCV_ZCB => RISCV_ISA_Zcb -- implement Zcb ISA sub-extension
+    RISCV_ZCB => RISCV_ISA_Zcb, -- implement Zcb ISA sub-extension
+    RISCV_ZCMP => RISCV_ISA_Zcmp -- implement Zcmp ISA sub-extension
   )
   port map (
     -- global control --

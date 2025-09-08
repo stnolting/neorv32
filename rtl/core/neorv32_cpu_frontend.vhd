@@ -22,8 +22,8 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_frontend is
   generic (
     RISCV_C : boolean; -- implement C ISA extension
-    RISCV_ZCB : boolean -- implement Zcb ISA sub-extension
-    -- RISCV_ZCMP : boolean -- implement Zcmp ISA sub-extension
+    RISCV_ZCB : boolean; -- implement Zcb ISA sub-extension
+    RISCV_ZCMP : boolean -- implement Zcmp ISA sub-extension
   );
   port (
     -- global control --
@@ -85,7 +85,7 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   signal cmd16 : std_ulogic_vector(15 downto 0);
   signal cmd32 : std_ulogic_vector(31 downto 0);
 
-  type issue_state_type is (S_NORMAL_ISSUE, S_ZCMP);
+  type issue_state_type is (S_ISSUE, S_ZCMP);
   signal issue_state_reg, issue_state_nxt : issue_state_type;
 
   signal frontend_bus_zcmp, frontend_bus_issue : if_bus_t;
@@ -262,7 +262,7 @@ begin
       end if;
     end process issue_fsm_sync;
 
-    issue_fsm_comb : process (zcmp_instr_reg,fetch, issue_state_reg, align_q, ipb, cmd32, zcmp_in_uop_seq)
+    issue_fsm_comb : process (zcmp_instr_reg, fetch, issue_state_reg, align_q, ipb, cmd32, zcmp_in_uop_seq)
     begin
       -- defaults --
       align_set <= '0';
@@ -282,7 +282,7 @@ begin
       frontend_bus_issue.zcmp_in_uop_seq <= '0';
 
       case issue_state_reg is
-        when S_NORMAL_ISSUE =>
+        when S_ISSUE =>
           -- start at LOW half-word --
           if (align_q = '0') then
             frontend_bus_issue.fault <= ipb.rdata(0)(16);
@@ -334,7 +334,7 @@ begin
         when S_ZCMP =>
           if not zcmp_in_uop_seq = '1' then
 
-            issue_state_nxt <= S_NORMAL_ISSUE;
+            issue_state_nxt <= S_ISSUE;
             zcmp_instr_nxt <= (others => '0');
             if (align_q = '0') then
               align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
@@ -346,9 +346,9 @@ begin
 
           end if;
 
-          if (fetch.restart = '1') then
+          if (fetch.restart = '1') then -- on branch ipb's must not be acknowledged as they contain old instructions 
             ipb_ack_zcmp <= "00";
-            issue_state_nxt <= S_NORMAL_ISSUE;
+            issue_state_nxt <= S_ISSUE;
           end if;
       end case;
     end process issue_fsm_comb;
@@ -356,112 +356,130 @@ begin
     -- IPB read access --
     ipb.re(0) <= (ipb_ack(0) and ctrl_i.if_ack) or ipb_ack_zcmp(0);
     ipb.re(1) <= (ipb_ack(1) and ctrl_i.if_ack) or ipb_ack_zcmp(1);
+
+    zcmp_enabled :
+    if RISCV_ZCMP generate
+      zcmp_reg_list <= zcmp_instr_reg(7 downto 4);
+      zcmp_num_regs <= 13 when to_integer(unsigned(zcmp_reg_list)) = 15 else
+                       0 when to_integer(unsigned(zcmp_reg_list)) < 4 else
+                       to_integer(unsigned(zcmp_reg_list)) - 3;
+
+      zcmp_stack_adj_base <= 64 when to_integer(unsigned(zcmp_reg_list)) = 15 else
+                             48 when to_integer(unsigned(zcmp_reg_list)) >= 12 else
+                             32 when to_integer(unsigned(zcmp_reg_list)) >= 8 else
+                             16;
+
+      zcmp_stack_adj <= zcmp_stack_adj_base + ((to_integer(unsigned(zcmp_instr_reg(3 downto 2))) * 16));
+
+      zcmp_stack_sw_offset <= TO_SIGNED(-((zcmp_num_regs - uop_ctr) * 4), zcmp_stack_sw_offset'length);
+
+      zcmp_ls_reg <= "00001" when uop_ctr = 0 else -- ra
+                     "01000" when uop_ctr = 1 else -- s0
+                     "01001" when uop_ctr = 2 else -- s1
+                     std_ulogic_vector(to_unsigned(uop_ctr + 15, zcmp_ls_reg'length)); -- s2-s11 (s2 == x18)
+
+      zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_strw_instr_rs1 & zcmp_strw_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_strw_instr_opcode;
+
+      zcmp_push_stack_adj_instr <= std_ulogic_vector(-to_signed(zcmp_stack_adj, 12)) &
+                                   zcmp_addi_instr_rs1 & -- rs1 = sp 
+                                   zcmp_addi_instr_funct3 &
+                                   zcmp_addi_instr_rs1 & -- rd = rs1 = sp 
+                                   zcmp_addi_instr_opcode; -- addi 
+
+      uop_ctr_clr <= '0';
+
+      uop_ctr_next <= 0 when uop_ctr_clr = '1' else
+                      uop_ctr_nxt_in_seq;
+
+      uop_fsm_sync : process (rstn_i, clk_i)
+      begin
+        if (rstn_i = '0') then
+          uop_ctr <= 0;
+          uop_state_reg <= S_IDLE;
+        elsif rising_edge(clk_i) then
+          uop_ctr <= uop_ctr_next;
+          uop_state_reg <= uop_state_nxt;
+        end if;
+      end process uop_fsm_sync;
+
+      uop_fsm_comb : process (uop_state_reg, uop_ctr, fetch, ipb, zcmp_in_uop_seq, ctrl_i, zcmp_push, zcmp_num_regs, zcmp_sw_instr, zcmp_push_stack_adj_instr)
+      begin
+        uop_ctr_nxt_in_seq <= uop_ctr;
+        uop_state_nxt <= uop_state_reg;
+        zcmp_in_uop_seq <= '0';
+        frontend_bus_zcmp.valid <= '0';
+        frontend_bus_zcmp.compr <= '0';
+        frontend_bus_zcmp.fault <= '0';
+        frontend_bus_zcmp.instr <= (others => '0');
+        frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq;
+
+        case uop_state_reg is
+          when S_IDLE =>
+            if (zcmp_push = '1') then
+              uop_state_nxt <= S_ZCMP_UOP_SEQ;
+            end if;
+
+          when S_ZCMP_UOP_SEQ =>
+            zcmp_in_uop_seq <= '1';
+            if (uop_ctr = 15) then --last instruction?
+              frontend_bus_zcmp.instr <= zcmp_push_stack_adj_instr;
+              frontend_bus_zcmp.valid <= '1';
+              -- frontend_bus_zcmp.compr <= '1';
+
+              if (ctrl_i.if_ack = '1') then
+                uop_ctr_nxt_in_seq <= 0;
+                uop_state_nxt <= S_IDLE;
+              end if;
+
+            else
+
+              if (ctrl_i.if_ack = '1') then
+                uop_ctr_nxt_in_seq <= uop_ctr + 1;
+              end if;
+              frontend_bus_zcmp.instr <= zcmp_sw_instr;
+              frontend_bus_zcmp.valid <= '1';
+              -- frontend_bus_zcmp.compr <= '1';
+
+              if (uop_ctr + 1 = zcmp_num_regs) then
+                uop_ctr_nxt_in_seq <= 15;
+              end if;
+
+            end if;
+
+            if (fetch.restart = '1') then
+              uop_state_nxt <= S_ZCMP_UOP_LAST;
+              zcmp_in_uop_seq <= '0';
+              frontend_bus_zcmp.valid <= '0';
+              frontend_bus_zcmp.instr <= (others => '0');
+            end if;
+
+          when S_ZCMP_UOP_LAST =>
+            if (ipb.avail /= "00") then
+              uop_state_nxt <= S_IDLE;
+            end if;
+        end case;
+      end process;
+    end generate; -- /zcmp_enabled
+
+    zcmp_disabled :
+    if not RISCV_ZCMP generate
+      zcmp_reg_list <= (others => '0');
+      zcmp_num_regs <= 0;
+      zcmp_stack_adj_base <= 0;
+      zcmp_stack_adj <= 0;
+      zcmp_stack_sw_offset <= (others => '0');
+      zcmp_ls_reg <= (others => '0');
+      zcmp_sw_instr <= (others => '0');
+      zcmp_push_stack_adj_instr <= (others => '0');
+      uop_ctr_clr <= '0';
+      zcmp_in_uop_seq <= '0';
+      -- ipb_ack_zcmp <= (others => '0');
+    end generate; -- /zcmp_disabled
+
   end generate; -- /issue_enabled
 
   frontend_o <= frontend_bus_zcmp when zcmp_in_uop_seq = '1' else
                 frontend_bus_issue;
-
-  zcmp_reg_list <= zcmp_instr_reg(7 downto 4);
-  zcmp_num_regs <= 13 when to_integer(unsigned(zcmp_reg_list)) = 15 else
-                   0 when to_integer(unsigned(zcmp_reg_list)) < 4 else
-                   to_integer(unsigned(zcmp_reg_list)) - 3;
-
-  zcmp_stack_adj_base <= 64 when to_integer(unsigned(zcmp_reg_list)) = 15 else
-                         48 when to_integer(unsigned(zcmp_reg_list)) >= 12 else
-                         32 when to_integer(unsigned(zcmp_reg_list)) >= 8 else
-                         16;
-
-  zcmp_stack_adj <= zcmp_stack_adj_base + ((to_integer(unsigned(zcmp_instr_reg(3 downto 2))) * 16));
-
-  zcmp_stack_sw_offset <= TO_SIGNED(-((zcmp_num_regs - uop_ctr) * 4), zcmp_stack_sw_offset'length);
-
-  zcmp_ls_reg <= "00001" when uop_ctr = 0 else -- ra
-                 "01000" when uop_ctr = 1 else -- s0
-                 "01001" when uop_ctr = 2 else -- s1
-                 std_ulogic_vector(to_unsigned(uop_ctr + 15, zcmp_ls_reg'length)); -- s2-s11 (s2 == x18)
-
-  zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_strw_instr_rs1 & zcmp_strw_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_strw_instr_opcode;
-
-  zcmp_push_stack_adj_instr <= std_ulogic_vector(-to_signed(zcmp_stack_adj, 12)) &
-                               zcmp_addi_instr_rs1 & -- rs1 = sp 
-                               zcmp_addi_instr_funct3 &
-                               zcmp_addi_instr_rs1 & -- rd = rs1 = sp 
-                               zcmp_addi_instr_opcode; -- addi 
-
-  uop_ctr_clr <= '0';
-
-  uop_ctr_next <= 0 when uop_ctr_clr='1' else
-                  uop_ctr_nxt_in_seq;
-
-  uop_fsm_sync : process (rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      uop_ctr <= 0;
-      uop_state_reg <= S_IDLE;
-    elsif rising_edge(clk_i) then
-      uop_ctr <= uop_ctr_next;
-      uop_state_reg <= uop_state_nxt;
-    end if;
-  end process uop_fsm_sync;
-
-  uop_fsm_comb : process (uop_state_reg, uop_ctr,fetch,ipb,  zcmp_in_uop_seq, ctrl_i, zcmp_push, zcmp_num_regs, zcmp_sw_instr, zcmp_push_stack_adj_instr)
-  begin
-    uop_ctr_nxt_in_seq <= uop_ctr;
-    uop_state_nxt <= uop_state_reg;
-    zcmp_in_uop_seq <= '0';
-    frontend_bus_zcmp.valid <= '0';
-    frontend_bus_zcmp.compr <= '0';
-    frontend_bus_zcmp.fault <= '0';
-    frontend_bus_zcmp.instr <= (others => '0');
-    frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq;
-
-    case uop_state_reg is
-      when S_IDLE =>
-        if (zcmp_push = '1') then
-          uop_state_nxt <= S_ZCMP_UOP_SEQ;
-        end if;
-
-      when S_ZCMP_UOP_SEQ =>
-        zcmp_in_uop_seq <= '1';
-        if (uop_ctr = 15) then --last instruction?
-          frontend_bus_zcmp.instr <= zcmp_push_stack_adj_instr;
-          frontend_bus_zcmp.valid <= '1';
-          -- frontend_bus_zcmp.compr <= '1';
-
-          if (ctrl_i.if_ack = '1') then
-            uop_ctr_nxt_in_seq <= 0;
-            uop_state_nxt <= S_IDLE;
-          end if;
-
-        else
-
-          if (ctrl_i.if_ack = '1') then
-            uop_ctr_nxt_in_seq <= uop_ctr + 1;
-          end if;
-          frontend_bus_zcmp.instr <= zcmp_sw_instr;
-          frontend_bus_zcmp.valid <= '1';
-          -- frontend_bus_zcmp.compr <= '1';
-
-          if (uop_ctr + 1 = zcmp_num_regs) then
-            uop_ctr_nxt_in_seq <= 15;
-          end if;
-
-        end if;
-
-        if (fetch.restart = '1') then
-          uop_state_nxt <= S_ZCMP_UOP_LAST;
-          zcmp_in_uop_seq <= '0';
-          frontend_bus_zcmp.valid <= '0';
-          frontend_bus_zcmp.instr <= (others => '0');
-        end if;
-
-      when S_ZCMP_UOP_LAST =>
-        if (ipb.avail /= "00") then
-          uop_state_nxt <= S_IDLE;
-        end if;
-    end case;
-
-  end process;
 
   -- issue engine disabled --
   issue_disabled :
