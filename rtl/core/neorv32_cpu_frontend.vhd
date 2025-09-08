@@ -285,7 +285,7 @@ begin
           -- start at LOW half-word --
           if (align_q = '0') then
             frontend_bus_issue.fault <= ipb.rdata(0)(16);
-            if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
+            if (ipb.rdata(0)(1 downto 0) /= "11") and (ipb.avail(0) = '1') then -- compressed, consume IPB(0) entry
 
               if (ipb.rdata(0)(15 downto 8) = "10111000") then
                 zcmp_instr_nxt <= ipb.rdata(0)(15 downto 0);
@@ -299,14 +299,15 @@ begin
                 frontend_bus_issue.compr <= '1';
               end if;
 
-            else -- aligned uncompressed, consume both IPB entries
+            elsif (ipb.avail = "11") then
+              -- aligned uncompressed, consume both IPB entries
               ipb_ack <= "11";
               frontend_bus_issue.valid <= ipb.avail(1) and ipb.avail(0);
               frontend_bus_issue.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
               frontend_bus_issue.compr <= '0';
             end if;
             -- start at HIGH half-word --
-          else
+          elsif (ipb.avail(1) = '1') then
             frontend_bus_issue.fault <= ipb.rdata(1)(16);
             if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
 
@@ -322,7 +323,7 @@ begin
                 frontend_bus_issue.compr <= '1';
               end if;
 
-            else -- unaligned uncompressed, consume both IPB entries
+            elsif (ipb.avail = "11") then -- unaligned uncompressed, consume both IPB entries
               ipb_ack <= "11";
               frontend_bus_issue.valid <= ipb.avail(0) and ipb.avail(1);
               frontend_bus_issue.instr <= ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
@@ -342,6 +343,11 @@ begin
               ipb_ack_zcmp <= "10";
             end if;
 
+          end if;
+
+          if (fetch.restart = '1') then
+            ipb_ack_zcmp <= "00";
+            issue_state_nxt <= S_NORMAL_ISSUE;
           end if;
       end case;
     end process issue_fsm_comb;
@@ -440,8 +446,17 @@ begin
 
         end if;
 
+        if (fetch.restart = '1') then
+          uop_state_nxt <= S_ZCMP_UOP_LAST;
+          zcmp_in_uop_seq <= '0';
+          frontend_bus_zcmp.valid <= '0';
+          frontend_bus_zcmp.instr <= (others => '0');
+        end if;
+
       when S_ZCMP_UOP_LAST =>
-        null;
+        if (ipb.avail /= "00") then
+          uop_state_nxt <= S_IDLE;
+        end if;
     end case;
 
   end process;

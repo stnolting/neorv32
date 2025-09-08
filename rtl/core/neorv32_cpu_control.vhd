@@ -383,6 +383,8 @@ begin
           -- und warum in der simulation Testing zcmp_push_s0s6(42, 58) = 720185 das falsche ergebnis liefert (in a0?)
           -- zcmp wird mehrfach aufgerufen wenn zwei zcmp funktionen in main aktiv sind.
 
+          -- wenn in main beide functionen drin sind, wird zcmp from frontend wieder ausgegeben.
+          -- die beiden cm.push functionen liegen direkt hintereinander. cm.push fsm aus dem frontend spring sofort an. Branch erkennung fehlt.
 
           if(zcmp_rise='1') then -- muss auﬂerhalb state passieren
             zcmp_npc_nxt <= exe_engine.pc2;

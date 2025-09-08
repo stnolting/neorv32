@@ -61,7 +61,7 @@ int main() {
 
   int result2 = zcmp_test_push(a, b);
   neorv32_uart0_printf("Testing zcmp_test_push(%d, %d) = %d\n", a, b, result2);
-  // neorv32_uart0_puts("Hello world! :)\n");
+  neorv32_uart0_puts("Hello world! :)\n");
   // neorv32_aux_print_logo();
 
   return 0;
