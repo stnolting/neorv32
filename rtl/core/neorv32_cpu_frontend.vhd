@@ -119,8 +119,6 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
 begin
 
-  frontend_bus_issue.zcmp_in_uop_seq <= '0';
-  frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq;
   -- ******************************************************************************************************************
   -- Instruction Fetch (always fetch 32-bit-aligned 32-bit chunks of data)
   -- ******************************************************************************************************************
@@ -264,7 +262,7 @@ begin
       end if;
     end process issue_fsm_sync;
 
-    issue_fsm_comb : process (zcmp_instr_reg, issue_state_reg, align_q, ipb, cmd32, zcmp_in_uop_seq)
+    issue_fsm_comb : process (zcmp_instr_reg,fetch, issue_state_reg, align_q, ipb, cmd32, zcmp_in_uop_seq)
     begin
       -- defaults --
       align_set <= '0';
@@ -279,6 +277,9 @@ begin
       frontend_bus_issue.valid <= '0';
       frontend_bus_issue.instr <= (others => '0');
       frontend_bus_issue.compr <= '0';
+      frontend_bus_issue.fault <= '0';
+
+      frontend_bus_issue.zcmp_in_uop_seq <= '0';
 
       case issue_state_reg is
         when S_NORMAL_ISSUE =>
@@ -331,7 +332,7 @@ begin
             end if;
           end if;
         when S_ZCMP =>
-          if not zcmp_in_uop_seq then
+          if not zcmp_in_uop_seq = '1' then
 
             issue_state_nxt <= S_NORMAL_ISSUE;
             zcmp_instr_nxt <= (others => '0');
@@ -389,7 +390,7 @@ begin
 
   uop_ctr_clr <= '0';
 
-  uop_ctr_next <= 0 when uop_ctr_clr else
+  uop_ctr_next <= 0 when uop_ctr_clr='1' else
                   uop_ctr_nxt_in_seq;
 
   uop_fsm_sync : process (rstn_i, clk_i)
@@ -403,7 +404,7 @@ begin
     end if;
   end process uop_fsm_sync;
 
-  uop_fsm_comb : process (uop_state_reg, uop_ctr, ctrl_i, zcmp_push, zcmp_num_regs, zcmp_sw_instr, zcmp_push_stack_adj_instr)
+  uop_fsm_comb : process (uop_state_reg, uop_ctr,fetch,ipb,  zcmp_in_uop_seq, ctrl_i, zcmp_push, zcmp_num_regs, zcmp_sw_instr, zcmp_push_stack_adj_instr)
   begin
     uop_ctr_nxt_in_seq <= uop_ctr;
     uop_state_nxt <= uop_state_reg;
@@ -412,6 +413,7 @@ begin
     frontend_bus_zcmp.compr <= '0';
     frontend_bus_zcmp.fault <= '0';
     frontend_bus_zcmp.instr <= (others => '0');
+    frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq;
 
     case uop_state_reg is
       when S_IDLE =>

@@ -289,7 +289,7 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(exe_engine,zcmp_rise, zcmp_npc_hold, debug_ctrl, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
+  execute_engine_fsm_comb: process(exe_engine,zcmp_rise,zcmp_active, zcmp_npc_hold, debug_ctrl, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
                                    ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
@@ -378,15 +378,7 @@ begin
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
           
-
-          -- in simulation prüfen warum nach jalr am ende der testfunktion ein store ausgeführt wird
-          -- und warum in der simulation Testing zcmp_push_s0s6(42, 58) = 720185 das falsche ergebnis liefert (in a0?)
-          -- zcmp wird mehrfach aufgerufen wenn zwei zcmp funktionen in main aktiv sind.
-
-          -- wenn in main beide functionen drin sind, wird zcmp from frontend wieder ausgegeben.
-          -- die beiden cm.push functionen liegen direkt hintereinander. cm.push fsm aus dem frontend spring sofort an. Branch erkennung fehlt.
-
-          if(zcmp_rise='1') then -- muss außerhalb state passieren
+          if(zcmp_rise='1') then -- muss auï¿½erhalb state passieren
             zcmp_npc_nxt <= exe_engine.pc2;
           end if;
 
@@ -607,7 +599,7 @@ begin
   zcmp_rise <= frontend_i.zcmp_in_uop_seq and (not zcmp_prev);
   zcmp_fall <= (not frontend_i.zcmp_in_uop_seq) and zcmp_prev;
 
-  zcmp_active_nxt <= '1' when zcmp_rise else '0' when zcmp_fall else zcmp_active;
+  zcmp_active_nxt <= '1' when zcmp_rise='1' else '0' when zcmp_fall='1' else zcmp_active;
 
 
   -- CPU Control Bus Output -----------------------------------------------------------------
