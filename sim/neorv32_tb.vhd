@@ -494,14 +494,14 @@ begin
   --     -- if (zcmp_push = '1') then
   --     --   report "zcmp push detected";
   --     -- end if;
-  --     -- wait until zcmp_push = '1';
+  --     wait until zcmp_push = '1';
   --     -- wait until instr_il = '1';
   --     -- report "illegal instruction";
   --     -- wait until zcmp_push = '1';
   --     -- report "zcmp push detected";
   --     -- wait until zcmp_push = '1';
-  --     -- report "zcmp push detected";
-  --     wait for 200000 ns;
+  --     report "zcmp push detected";
+  --     wait for 1000 ns;
   --     std.env.finish;
   --   end process;
   -- end block monitor_blk;

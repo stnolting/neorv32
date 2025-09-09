@@ -44,7 +44,7 @@ entity neorv32_top is
     RISCV_ISA_Zaamo       : boolean                        := false;       -- implement atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc      : boolean                        := false;       -- implement atomic reservation-set operations extension
     RISCV_ISA_Zcb         : boolean                        := false;       -- implement additional code size reduction instructions
-    RISCV_ISA_Zcmp        : boolean                        := false;       -- implement additional code size reduction instructions
+    RISCV_ISA_Zcmp        : boolean                        := true;       -- implement additional code size reduction instructions
     RISCV_ISA_Zba         : boolean                        := false;       -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb         : boolean                        := false;       -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb        : boolean                        := false;       -- implement bit-manipulation instructions for cryptography
