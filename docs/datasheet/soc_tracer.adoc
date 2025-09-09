@@ -145,7 +145,7 @@ trace logging is enabled by the `IO_TRACER_SIMLOG_EN` top generic. This also req
 simulation, all traced instructions are written to log files in the simulator's home folder:
 
 * `neorv32.tracer0.log` for CPU 0
-* `neorv32.tracer1.log` for CPU 1 (only if the <<_dual_core_configuration>> is enabled)
+* `neorv32.tracer1.log` for CPU 1 (only if <<_dual_core_configuration>> is enabled)
 
 The trace log is structured line by line where each line describes an executed instruction.
 The start of an exemplary trace log might look like this:
@@ -153,33 +153,31 @@ The start of an exemplary trace log might look like this:
 .Exemplary cut-out from a simulation trace log (here: `neorv32.tracer1.log` showing boot of core 1)
 [source, log]
 ----
-50 226 0x0000019c 0x10500073 M wfi
-51 890622 0x000000c8 0xfff44737 M lui x14, 0xfff44000 <TRAP_ENTRY> <1>
-52 890624 0x000000cc 0x00872103 M lw x2, 2(x14)
-53 890632 0x000000d0 0x00c72603 M lw x12, 12(x14)
-54 890650 0x000000d4 0xfff40737 M lui x14, 0xfff40000
-55 890652 0x000000d8 0x00072223 M sw x14, 4(x0)
-56 890676 0x000000dc 0x05c0006f M jal x0, 92
-57 890703 0x00000138 0x80000197 M auipc x3, 0x80000000
-58 890705 0x0000013c 0x6c818193 M addi x3, x8, 1736
-59 890721 0x00000140 0x0ff0000f M fence
-60 890728 0x00000144 0x0000100f M fence.i
-61 890750 0x00000148 0x30029073 M csrrw x0, mstatus, x5
+51 929749 0x0000009c 0xfff44737 M lui           x14, 0xfff44000 <TRAP_ENTRY> <1>
+52 929751 0x000000a0 0x00872103 M lw            x2, 2(x14)
+53 929759 0x000000a4 0x00c72603 M c.lw          x12, 12(x14)
+54 929767 0x000000a6 0xfff40737 M lui           x14, 0xfff40000
+55 929770 0x000000aa 0x00072223 M sw            x14, 4(x0)
+56 929778 0x000000ae 0x04a0006f M c.jal         x0, 74
+57 929798 0x000000f8 0x80000197 M auipc         x3, 0x80000000
+58 929800 0x000000fc 0x70818193 M addi          x3, x8, 1800
+59 929824 0x00000100 0x0ff0000f M fence
+60 929831 0x00000104 0x0000100f M fence.i
+61 929853 0x00000108 0x30029073 M csrrw         x0, mstatus, x5
 ----
 <1> This line is used for explanation (see below).
 
 Column structure:
 
 [start=1]
-. `51`: Instruction index ("order"); a linear increasing counter that starts at zero and increments with each executed instruction; printed as decimal integer
-. `890622`: Time stamp; a linear increasing counter that starts at zero and increments with each clock cycle; printed as decimal integer
-. `0x000000c8`: Instruction address (program counter); printed as hexadecimal 32-bit value (with `0x` prefix)
-. `0xfff44737`: 32-bit instruction word; printed as hexadecimal 32-bit value (with `0x` prefix); compressed 16-bit instructions are shown in their decompressed 32-bit format
+. `51`: Instruction index ("order"); a linear increasing counter that starts at zero and increments with each executed instruction; printed as decimal integer.
+. `890622`: Time stamp; a linear increasing counter that starts at zero and increments with each clock cycle; printed as decimal integer.
+. `0x000000c8`: Instruction address (program counter); printed as hexadecimal 32-bit value (`0x` prefix).
+. `0xfff44737`: 32-bit instruction word; printed as hexadecimal 32-bit value (`0x` prefix); compressed 16-bit instructions are shown in their decompressed 32-bit format.
 . `M`: Current operating mode / privilege level (`M` = machine-mode, `U` = user-mode, `D` = debug-mode); printed as single character
-. `lui x14, 0xfff44000`: The decoded instruction mnemonic plus operands. For unknown/unsupported instructions the instruction class is printed in capital letters
-together with a prefixed `illegal_` (e.g. `illegal_ALU`). Decompressed 16-bit instructions have a prefixed `c.` (e.g. `c.lw`).
-. If the processor encounters a trap (synchronous exception or interrupt) `<TRAP_ENTRY>` is printed at the end of the line that corresponds
-to the first instruction of the according trap handler.
+. `lui`: The decoded instruction mnemonic. For unknown instructions `INVALID` is printed instead. Decompressed 16-bit instructions have a prefixed `c.` (e.g. `c.lw`).
+. `x14, 0xfff44000`: Operands of the decoded instruction.
+. If the CPU encounters a trap (synchronous exception or interrupt) `<TRAP_ENTRY>` is printed at the end of the line corresponding to the first instruction of the trap handler.
 
 .Instruction Execution Time
 [TIP]
