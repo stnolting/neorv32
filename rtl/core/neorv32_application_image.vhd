@@ -1,7 +1,7 @@
 -- The NEORV32 RISC-V Processor
 -- Auto-generated memory image for internal IMEM
 -- Source: hello_world/build/main.bin
--- Built: 09.09.2025 12:05:35
+-- Built: 09.09.2025 12:07:20
 
 library ieee;
 use ieee.std_logic_1164.all;
