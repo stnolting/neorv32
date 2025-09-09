@@ -485,7 +485,7 @@ begin
 
   -- monitor_blk : block
   --   -- Declare the external-name alias here, AFTER the DUT exists
-  --   alias zcmp_push is << signal .neorv32_tb.neorv32_top_inst.core_complex_gen(0).neorv32_cpu_inst.neorv32_cpu_frontend_inst.zcmp_push : std_ulogic >> ;
+  --   alias zcmp_push is << signal .neorv32_tb.neorv32_top_inst.core_complex_gen(0).neorv32_cpu_inst.neorv32_cpu_frontend_inst.zcmp_detect : std_ulogic >> ;
   --   alias instr_il is << signal .neorv32_tb.neorv32_top_inst.core_complex_gen(0).neorv32_cpu_inst.neorv32_cpu_control_inst.trap_me : std_ulogic >> ;
 
   -- begin
@@ -498,8 +498,8 @@ begin
   --     -- wait until instr_il = '1';
   --     -- report "illegal instruction";
   --     -- wait until zcmp_push = '1';
-  --     -- report "zcmp push detected";
-  --     -- wait until zcmp_push = '1';
+  --     report "zcmp push detected";
+  --     wait until zcmp_push = '1';
   --     report "zcmp push detected";
   --     wait for 1000 ns;
   --     std.env.finish;

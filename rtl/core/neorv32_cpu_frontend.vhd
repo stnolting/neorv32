@@ -98,21 +98,23 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   signal uop_ctr, uop_ctr_next, uop_ctr_nxt_in_seq : integer range 0 to 15;
   signal uop_ctr_clr : std_ulogic;
 
-  signal zcmp_stack_sw_offset : signed(11 downto 0);
+  signal zcmp_stack_sw_offset, zcmp_stack_lw_offset : signed(11 downto 0);
   signal zcmp_reg_list : std_ulogic_vector(3 downto 0);
   signal zcmp_ls_reg : std_ulogic_vector(4 downto 0);
   signal zcmp_num_regs : integer range 0 to 15;
   signal zcmp_stack_adj_base : integer range 0 to 127;
   signal zcmp_stack_adj : integer range 0 to 255;
-  signal zcmp_push : std_ulogic;
+  signal zcmp_detect : std_ulogic;
   signal zcmp_in_uop_seq : std_ulogic;
 
-  signal zcmp_sw_instr : std_ulogic_vector(31 downto 0);
-  constant zcmp_strw_instr_opcode : std_ulogic_vector(6 downto 0) := "0100011";
-  constant zcmp_strw_instr_funct3 : std_ulogic_vector(2 downto 0) := "010";
-  constant zcmp_strw_instr_rs1 : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
+  signal zcmp_instr, zcmp_sw_instr, zcmp_lw_instr : std_ulogic_vector(31 downto 0);
+  constant zcmp_sw_instr_opcode : std_ulogic_vector(6 downto 0) := "0100011";
+  constant zcmp_lw_instr_opcode : std_ulogic_vector(6 downto 0) := "0000011";
 
-  signal zcmp_push_stack_adj_instr : std_ulogic_vector(31 downto 0);
+  constant zcmp_instr_funct3 : std_ulogic_vector(2 downto 0) := "010";
+  constant zcmp_instr_rs1 : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
+
+  signal zcmp_stack_adj_instr, zcmp_push_stack_adj_instr, zcmp_pop_stack_adj_instr : std_ulogic_vector(31 downto 0);
   constant zcmp_addi_instr_opcode : std_ulogic_vector(6 downto 0) := "0010011";
   constant zcmp_addi_instr_funct3 : std_ulogic_vector(2 downto 0) := "000";
   constant zcmp_addi_instr_rs1 : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
@@ -268,7 +270,7 @@ begin
       align_set <= '0';
       align_clr <= '0';
       zcmp_instr_nxt <= zcmp_instr_reg;
-      zcmp_push <= '0';
+      zcmp_detect <= '0';
 
       issue_state_nxt <= issue_state_reg;
 
@@ -288,10 +290,10 @@ begin
             frontend_bus_issue.fault <= ipb.rdata(0)(16);
             if (ipb.rdata(0)(1 downto 0) /= "11") and (ipb.avail(0) = '1') then -- compressed, consume IPB(0) entry
 
-              if (ipb.rdata(0)(15 downto 8) = "10111000") then
+              if (ipb.rdata(0)(15 downto 8) = "10111000") or (ipb.rdata(0)(15 downto 8) = "10111010") then
                 zcmp_instr_nxt <= ipb.rdata(0)(15 downto 0);
                 issue_state_nxt <= S_ZCMP;
-                zcmp_push <= '1';
+                zcmp_detect <= '1';
               else
                 align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
                 ipb_ack <= "01";
@@ -312,10 +314,10 @@ begin
             frontend_bus_issue.fault <= ipb.rdata(1)(16);
             if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
 
-              if (ipb.rdata(1)(15 downto 8) = "10111000") then
+              if (ipb.rdata(1)(15 downto 8) = "10111000") or (ipb.rdata(1)(15 downto 8) = "10111010") then
                 zcmp_instr_nxt <= ipb.rdata(1)(15 downto 0);
                 issue_state_nxt <= S_ZCMP;
-                zcmp_push <= '1';
+                zcmp_detect <= '1';
               else
                 align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
                 ipb_ack <= "10";
@@ -332,8 +334,8 @@ begin
             end if;
           end if;
         when S_ZCMP =>
-          if not zcmp_in_uop_seq = '1' then
 
+          if not zcmp_in_uop_seq = '1' then
             issue_state_nxt <= S_ISSUE;
             zcmp_instr_nxt <= (others => '0');
             if (align_q = '0') then
@@ -343,7 +345,6 @@ begin
               align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
               ipb_ack_zcmp <= "10";
             end if;
-
           end if;
 
           if (fetch.restart = '1') then -- on branch ipb's must not be acknowledged as they contain old instructions 
@@ -371,20 +372,33 @@ begin
 
       zcmp_stack_adj <= zcmp_stack_adj_base + ((to_integer(unsigned(zcmp_instr_reg(3 downto 2))) * 16));
 
-      zcmp_stack_sw_offset <= TO_SIGNED(-((zcmp_num_regs - uop_ctr) * 4), zcmp_stack_sw_offset'length);
+      zcmp_stack_sw_offset <= to_signed(-((zcmp_num_regs - uop_ctr) * 4), zcmp_stack_sw_offset'length);
+      zcmp_stack_lw_offset <= to_signed(-((zcmp_num_regs - uop_ctr) * 4) + zcmp_stack_adj, zcmp_stack_lw_offset'length);
 
       zcmp_ls_reg <= "00001" when uop_ctr = 0 else -- ra
                      "01000" when uop_ctr = 1 else -- s0
                      "01001" when uop_ctr = 2 else -- s1
                      std_ulogic_vector(to_unsigned(uop_ctr + 15, zcmp_ls_reg'length)); -- s2-s11 (s2 == x18)
 
-      zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_strw_instr_rs1 & zcmp_strw_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_strw_instr_opcode;
+      zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_instr_rs1 & zcmp_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_sw_instr_opcode;
+      zcmp_lw_instr <= std_ulogic_vector(zcmp_stack_lw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_instr_rs1 & zcmp_instr_funct3 & std_ulogic_vector(zcmp_stack_lw_offset(4 downto 0)) & zcmp_lw_instr_opcode;
+      zcmp_instr <= zcmp_sw_instr when zcmp_instr_reg(10) = '0' else
+                    zcmp_lw_instr;
 
       zcmp_push_stack_adj_instr <= std_ulogic_vector(-to_signed(zcmp_stack_adj, 12)) &
                                    zcmp_addi_instr_rs1 & -- rs1 = sp 
                                    zcmp_addi_instr_funct3 &
                                    zcmp_addi_instr_rs1 & -- rd = rs1 = sp 
                                    zcmp_addi_instr_opcode; -- addi 
+
+      zcmp_pop_stack_adj_instr <= std_ulogic_vector(to_signed(zcmp_stack_adj, 12)) &
+                                  zcmp_addi_instr_rs1 & -- rs1 = sp 
+                                  zcmp_addi_instr_funct3 &
+                                  zcmp_addi_instr_rs1 & -- rd = rs1 = sp 
+                                  zcmp_addi_instr_opcode; -- addi 
+
+      zcmp_stack_adj_instr <= zcmp_push_stack_adj_instr when zcmp_instr_reg(10) = '0' else
+                              zcmp_pop_stack_adj_instr;
 
       uop_ctr_clr <= '0';
 
@@ -402,7 +416,7 @@ begin
         end if;
       end process uop_fsm_sync;
 
-      uop_fsm_comb : process (uop_state_reg, uop_ctr, fetch, ipb, zcmp_in_uop_seq, ctrl_i, zcmp_push, zcmp_num_regs, zcmp_sw_instr, zcmp_push_stack_adj_instr)
+      uop_fsm_comb : process (uop_state_reg, uop_ctr, fetch, ipb, zcmp_in_uop_seq, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
       begin
         uop_ctr_nxt_in_seq <= uop_ctr;
         uop_state_nxt <= uop_state_reg;
@@ -415,16 +429,15 @@ begin
 
         case uop_state_reg is
           when S_IDLE =>
-            if (zcmp_push = '1') then
+            if (zcmp_detect = '1') then
               uop_state_nxt <= S_ZCMP_UOP_SEQ;
             end if;
 
           when S_ZCMP_UOP_SEQ =>
             zcmp_in_uop_seq <= '1';
-            if (uop_ctr = 15) then --last instruction?
-              frontend_bus_zcmp.instr <= zcmp_push_stack_adj_instr;
+            if (uop_ctr = 15) then --last instruction
+              frontend_bus_zcmp.instr <= zcmp_stack_adj_instr;
               frontend_bus_zcmp.valid <= '1';
-              -- frontend_bus_zcmp.compr <= '1';
 
               if (ctrl_i.if_ack = '1') then
                 uop_ctr_nxt_in_seq <= 0;
@@ -436,9 +449,9 @@ begin
               if (ctrl_i.if_ack = '1') then
                 uop_ctr_nxt_in_seq <= uop_ctr + 1;
               end if;
-              frontend_bus_zcmp.instr <= zcmp_sw_instr;
+
+              frontend_bus_zcmp.instr <= zcmp_instr;
               frontend_bus_zcmp.valid <= '1';
-              -- frontend_bus_zcmp.compr <= '1';
 
               if (uop_ctr + 1 = zcmp_num_regs) then
                 uop_ctr_nxt_in_seq <= 15;

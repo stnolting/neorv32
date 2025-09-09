@@ -19,18 +19,22 @@
                                                                           **************************************************************************/
 // Assembly function declarations
 
-extern int zcmp_push(int a, int b);
-extern int zcmp_push_s0(int a, int b);
-extern int zcmp_push_s0s1(int a, int b);
-extern int zcmp_push_s0s2(int a, int b);
-extern int zcmp_push_s0s3(int a, int b);
-extern int zcmp_push_s0s4(int a, int b);
-extern int zcmp_push_s0s5(int a, int b);
-extern int zcmp_push_s0s6(int a, int b);
-extern int zcmp_push_s0s7(int a, int b);
-extern int zcmp_push_s0s8(int a, int b);
-extern int zcmp_push_s0s9(int a, int b);
-extern int zcmp_push_s0s11(int a, int b);
+// extern int zcmp_push(int a, int b);
+// extern int zcmp_push_s0(int a, int b);
+// extern int zcmp_push_s0s1(int a, int b);
+// extern int zcmp_push_s0s2(int a, int b);
+// extern int zcmp_push_s0s3(int a, int b);
+// extern int zcmp_push_s0s4(int a, int b);
+// extern int zcmp_push_s0s5(int a, int b);
+// extern int zcmp_push_s0s6(int a, int b);
+// extern int zcmp_push_s0s7(int a, int b);
+// extern int zcmp_push_s0s8(int a, int b);
+// extern int zcmp_push_s0s9(int a, int b);
+// extern int zcmp_push_s0s11(int a, int b);
+
+
+
+extern int zcmp_push_pop(int a, int b);
 
 /**********************************************************************/ /**
                                                                           * @name User configuration
@@ -94,8 +98,8 @@ int main()
   // int result10 = zcmp_push_s0s9(a, b);
   // neorv32_uart0_printf("zcmp_push_s0s9 = %d\n", result10);
 
-  int result11 = zcmp_push_s0s11(a, b);
-  neorv32_uart0_printf("zcmp_push_s0s11 = %d\n", result11);
+  int result11 = zcmp_push_pop(a, b);
+  neorv32_uart0_printf("zcmp_push_pop = %d\n", result11);
   neorv32_aux_print_logo();
 
   return 0;
