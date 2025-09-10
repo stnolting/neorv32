@@ -371,165 +371,178 @@ end neorv32_tracer_simlog;
 
 architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
 
+-- pragma translate_off
+-- RTL_SYNTHESIS OFF
+
+  -- list of all currently supported instructions --
+  type inst_touple_c is record
+    machine  : std_ulogic_vector(31 downto 0); -- instruction word
+    mnemonic : string(1 to 11); -- according assembly mnemonic
+  end record;
+  type inst_t is array (0 to 150) of inst_touple_c;
+  constant inst_c : inst_t := (
+    ("-------------------------0110111", "lui        "), -- base ISA
+    ("-------------------------0010111", "auipc      "),
+    ("-------------------------1101111", "jal        "),
+    ("-------------------------1100111", "jalr       "),
+    ("-----------------000-----1100011", "beq        "),
+    ("-----------------001-----1100011", "bne        "),
+    ("-----------------100-----1100011", "blt        "),
+    ("-----------------101-----1100011", "bge        "),
+    ("-----------------110-----1100011", "bltu       "),
+    ("-----------------111-----1100011", "bgeu       "),
+    ("-----------------000-----0000011", "lb         "),
+    ("-----------------001-----0000011", "lh         "),
+    ("-----------------010-----0000011", "lw         "),
+    ("-----------------100-----0000011", "lbu        "),
+    ("-----------------101-----0000011", "lhu        "),
+    ("-----------------000-----0100011", "sb         "),
+    ("-----------------001-----0100011", "sh         "),
+    ("-----------------010-----0100011", "sw         "),
+    ("-----------------000-----0010011", "addi       "),
+    ("-----------------010-----0010011", "slti       "),
+    ("-----------------011-----0010011", "sltiu      "),
+    ("-----------------100-----0010011", "xori       "),
+    ("-----------------110-----0010011", "ori        "),
+    ("-----------------111-----0010011", "andi       "),
+    ("0000000----------001-----0010011", "slli       "),
+    ("0000000----------101-----0010011", "srli       "),
+    ("0100000----------101-----0010011", "srai       "),
+    ("0000000----------000-----0110011", "add        "),
+    ("0100000----------000-----0110011", "sub        "),
+    ("0000000----------001-----0110011", "sll        "),
+    ("0000000----------010-----0110011", "slt        "),
+    ("0000000----------011-----0110011", "sltu       "),
+    ("0000000----------100-----0110011", "xor        "),
+    ("0000000----------101-----0110011", "srl        "),
+    ("0100000----------101-----0110011", "sra        "),
+    ("0000000----------110-----0110011", "or         "),
+    ("0000000----------111-----0110011", "and        "),
+    ("-----------------000-----0001111", "fence      "),
+    ("00000000000000000000000001110011", "ecall      "),
+    ("00000000000100000000000001110011", "ebreak     "),
+    ("00010000010100000000000001110011", "wfi        "),
+    ("00110000001000000000000001110011", "mret       "),
+    ("01111011001000000000000001110011", "dret       "),
+    ("-------------------------0001011", "custom0    "), -- custom instructions
+    ("-------------------------0101011", "custom1    "),
+    ("-------------------------1011011", "custom2    "),
+    ("-------------------------1111011", "custom3    "),
+    ("-----------------001-----0001111", "fence.i    "), -- Zifencei
+    ("-----------------001-----1110011", "csrrw      "), -- Zicsr
+    ("-----------------010-----1110011", "csrrs      "),
+    ("-----------------011-----1110011", "csrrc      "),
+    ("-----------------101-----1110011", "csrrwi     "),
+    ("-----------------110-----1110011", "csrrsi     "),
+    ("-----------------111-----1110011", "csrrci     "),
+    ("0000111----------101-----0110011", "czero.eqz  "), -- Zicond
+    ("0000111----------111-----0110011", "czero.nez  "),
+    ("0000001----------000-----0110011", "mul        "), -- M / Zm*
+    ("0000001----------001-----0110011", "mulh       "),
+    ("0000001----------010-----0110011", "mulhsu     "),
+    ("0000001----------011-----0110011", "mulh       "),
+    ("0000001----------100-----0110011", "div        "),
+    ("0000001----------101-----0110011", "divu       "),
+    ("0000001----------110-----0110011", "rem        "),
+    ("0000001----------111-----0110011", "remu       "),
+    ("00010--00000-----010-----0101111", "lr.w       "), -- A / Za*
+    ("00011------------010-----0101111", "sc.w       "),
+    ("00001------------010-----0101111", "amoswap.w  "),
+    ("00000------------010-----0101111", "amoadd.w   "),
+    ("00100------------010-----0101111", "amoxor.w   "),
+    ("01100------------010-----0101111", "amoand.w   "),
+    ("01000------------010-----0101111", "amoor.w    "),
+    ("10000------------010-----0101111", "amomin.w   "),
+    ("10100------------010-----0101111", "amomax.w   "),
+    ("11000------------010-----0101111", "amominu.w  "),
+    ("11100------------010-----0101111", "amomaxu.w  "),
+    ("0100000----------111-----0110011", "andn       "), -- B / Zb*
+    ("011000000000-----001-----0010011", "clz        "),
+    ("011000000010-----001-----0010011", "cpop       "),
+    ("011000000001-----001-----0010011", "ctz        "),
+    ("0000101----------110-----0110011", "max        "),
+    ("0000101----------111-----0110011", "maxu       "),
+    ("0000101----------100-----0110011", "min        "),
+    ("0000101----------101-----0110011", "minu       "),
+    ("001010000111-----101-----0010011", "orc.b      "),
+    ("0100000----------110-----0110011", "orn        "),
+    ("0000100----------100-----0110011", "pack       "),
+    ("0000100----------111-----0110011", "packh      "),
+    ("011010011000-----101-----0010011", "rev8       "),
+    ("011010000111-----101-----0010011", "brev8      "),
+    ("0110000----------001-----0110011", "rol        "),
+    ("0110000----------101-----0110011", "ror        "),
+    ("0110000----------101-----0010011", "rori       "),
+    ("011000000100-----001-----0010011", "sext.b     "),
+    ("011000000101-----001-----0010011", "sext.j     "),
+    ("0010000----------010-----0110011", "sh1add     "),
+    ("0010000----------100-----0110011", "sh2add     "),
+    ("0010000----------110-----0110011", "sh3add     "),
+    ("000010001111-----101-----0010011", "unzip      "),
+    ("0100000----------100-----0110011", "xnor       "),
+    ("000010000000-----100-----0110011", "zext.h     "),
+    ("000010001111-----001-----0010011", "zip        "),
+    ("0100100----------001-----0110011", "bclr       "),
+    ("0100100----------001-----0010011", "bclri      "),
+    ("0100100----------101-----0110011", "bext       "),
+    ("0100100----------101-----0010011", "bexti      "),
+    ("0110100----------001-----0110011", "binv       "),
+    ("0110100----------001-----0010011", "binvi      "),
+    ("0010100----------001-----0110011", "bset       "),
+    ("0010100----------001-----0010011", "bseti      "),
+    ("0000101----------001-----0110011", "clmul      "),
+    ("0000101----------011-----0110011", "clmulh     "),
+    ("0000101----------010-----0110011", "clmulr     "),
+    ("--10101----------000-----0110011", "aes32dsi   "), -- Zk*
+    ("--10111----------000-----0110011", "aes32dsmi  "),
+    ("--10001----------000-----0110011", "aes32esi   "),
+    ("--10011----------000-----0110011", "aes32esmi  "),
+    ("000100000010-----001-----0010011", "sha256sig0 "),
+    ("000100000011-----001-----0010011", "sha256sig1 "),
+    ("000100000000-----001-----0010011", "sha256sum0 "),
+    ("000100000001-----001-----0010011", "sha256sum1 "),
+    ("0101110----------000-----0110011", "sha512sig0h"),
+    ("0101010----------000-----0110011", "sha512sig0l"),
+    ("0101111----------000-----0110011", "sha512sig1h"),
+    ("0101011----------000-----0110011", "sha512sig1l"),
+    ("0101000----------000-----0110011", "sha512sum0r"),
+    ("0101001----------000-----0110011", "sha512sum1r"),
+    ("000100001000-----001-----0010011", "sm3p0      "),
+    ("000100001001-----001-----0010011", "sm3p1      "),
+    ("--11000----------000-----0110011", "sm4ed      "),
+    ("--11010----------000-----0110011", "sm4ks      "),
+    ("0010100----------100-----0110011", "xperm8     "),
+    ("0010100----------010-----0110011", "xperm4     "),
+    ("0000000------------------1010011", "fadd.s     "), -- Zfinx
+    ("0000100------------------1010011", "fsub.s     "),
+    ("0001000------------------1010011", "fmul.s     "),
+    ("0001100------------------1010011", "fdiv.s     "),
+    ("010110000000-------------1010011", "fsqrt.s    "),
+    ("0010000----------000-----1010011", "fsgnj.s    "),
+    ("0010000----------001-----1010011", "fsgnjn.s   "),
+    ("0010000----------010-----1010011", "fsgnjx.s   "),
+    ("0010100----------000-----1010011", "fmin.s     "),
+    ("0010100----------001-----1010011", "fmax.s     "),
+    ("110000000000-------------1010011", "fcvt.w.s   "),
+    ("110000000001-------------1010011", "fcvt.wu.s  "),
+    ("1010000----------010-----1010011", "feq.s      "),
+    ("1010000----------001-----1010011", "flt.s      "),
+    ("1010000----------000-----1010011", "fle.s      "),
+    ("111000000000-----001-----1010011", "fclass.s   "),
+    ("110100000000-------------1010011", "fcvt.s.w   "),
+    ("110100000001-------------1010011", "fcvt.s.wu  "),
+    ("--------------------------------", "INVALID    ") -- last entry: no match found
+  );
+
   -- decode instruction mnemonic --
   function decode_mnemonic_f(inst : std_ulogic_vector(31 downto 0)) return string is
   begin
-    case inst(instr_opcode_msb_c downto instr_opcode_lsb_c) is
-      -- ALU: register with immediate --
-      when opcode_alui_c =>
-        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when "000"  => return "addi";
-          when "001"  =>
-            if (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000") then
-              return "slli";
-            else
-              return "illegal_ALUI";
-            end if;
-          when "010" => return "slti";
-          when "011" => return "sltiu";
-          when "100" => return "xori";
-          when "101" =>
-            if (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000") then
-              return "srli";
-            elsif (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100000") then
-              return "srai";
-            else
-              return "illegal_ALUI";
-            end if;
-          when "110"  => return "ori";
-          when others => return "andi";
-        end case;
-      -- ALU: register with register --
-      when opcode_alu_c =>
-        if (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000000") then -- base ISA
-          case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-            when "000"  => return "add";
-            when "001"  => return "sll";
-            when "010"  => return "slt";
-            when "011"  => return "sltu";
-            when "100"  => return "xor";
-            when "101"  => return "srl";
-            when "110"  => return "or";
-            when others => return "and";
-          end case;
-        elsif (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0100000") then -- base ISA
-          case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-            when "000"  => return "sub";
-            when "101"  => return "sra";
-            when others => return "illegal_ALU";
-          end case;
-        elsif (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000111") then -- Zicond
-          case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-            when "101"  => return "czero.eqz";
-            when "111"  => return "czero.nez";
-            when others => return "illegal_CZERO";
-          end case;
-        elsif (inst(instr_funct7_msb_c downto instr_funct7_lsb_c) = "0000001") then -- M/Zmmul
-          case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-            when "000"  => return "mul";
-            when "001"  => return "mulh";
-            when "010"  => return "mulhsu";
-            when "011"  => return "mulhu";
-            when "100"  => return "div";
-            when "101"  => return "divu";
-            when "110"  => return "rem";
-            when others => return "remu";
-          end case;
-        else
-          return "illegal_ALU";
-        end if;
-      -- upper-immediates --
-      when opcode_lui_c   => return "lui";
-      when opcode_auipc_c => return "auipc";
-      -- jump-and-link --
-      when opcode_jal_c  => return "jal";
-      when opcode_jalr_c => return "jalr";
-      -- conditional branches --
-      when opcode_branch_c =>
-        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when "000"  => return "beq";
-          when "001"  => return "bne";
-          when "100"  => return "blt";
-          when "101"  => return "bge";
-          when "110"  => return "bltu";
-          when "111"  => return "bgeu";
-          when others => return "illegal_BRANCH";
-        end case;
-      -- memory load --
-      when opcode_load_c =>
-        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when "000"  => return "lb";
-          when "001"  => return "lh";
-          when "010"  => return "lw";
-          when "100"  => return "lbu";
-          when "101"  => return "lhu";
-          when others => return "illegal_LOAD";
-        end case;
-      -- memory store --
-      when opcode_store_c =>
-        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when "000"  => return "sb";
-          when "001"  => return "sh";
-          when "010"  => return "sw";
-          when others => return "illegal_STORE";
-        end case;
-      -- atomic memory operations --
-      when opcode_amo_c =>
-        if (inst(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then
-          case inst(instr_funct5_msb_c downto instr_funct5_lsb_c) is
-            when "00010" => return "lr.w";
-            when "00011" => return "sc.w";
-            when "00001" => return "amoswap.w ";
-            when "00000" => return "amoadd.w";
-            when "00100" => return "amoxor.w";
-            when "01100" => return "amoand.w";
-            when "01000" => return "amoor.w";
-            when "10000" => return "amomin.w";
-            when "10100" => return "amomax.w";
-            when "11000" => return "amominu.w";
-            when "11100" => return "amomaxu.w";
-            when others  => return "illegal_AMO.W";
-          end case;
-        else
-          return "illegal_AMO";
-        end if;
-      -- fences --
-      when opcode_fence_c =>
-        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when "000"  => return "fence";
-          when "001"  => return "fence.i";
-          when others => return "illegal_FENCE";
-        end case;
-      -- system / environment --
-      when opcode_system_c =>
-        case inst(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when "000" =>
-            case inst(instr_imm12_msb_c downto instr_imm12_lsb_c) is
-              when x"000" => return "ecall";
-              when x"001" => return "ebreak";
-              when x"105" => return "wfi";
-              when x"302" => return "mret";
-              when x"7b2" => return "dret";
-              when others => return "illegal_ENV";
-            end case;
-          when "001"  => return "csrrw";
-          when "010"  => return "csrrs";
-          when "011"  => return "csrrc";
-          when "101"  => return "csrrwi";
-          when "110"  => return "csrrsi";
-          when "111"  => return "csrrci";
-          when others => return "illegal_CSR";
-        end case;
-      -- floating-point --
-      when opcode_fpu_c => return "FPU";
-      -- custom instructions --
-      when opcode_cust0_c => return "custom0";
-      when opcode_cust1_c => return "custom1";
-      when opcode_cust2_c => return "custom2";
-      when opcode_cust3_c => return "custom3";
-      -- undefined --
-      when others => return "illegal_OPCODE";
-    end case;
+    for i in inst_c'range loop
+      if match_f(inst, inst_c(i).machine) then
+        return inst_c(i).mnemonic;
+      end if;
+    end loop;
+    return "";
   end function decode_mnemonic_f;
 
   -- decode CSR name --
@@ -684,7 +697,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
       when csr_mxcsr_c          => return "mxcsr";
       when csr_mxisa_c          => return "mxisa";
       -- unknown; just print address --
-      when others               => return "x" & print_hex_f(addr);
+      when others               => return "0x" & print_hex_f(addr);
     end case;
   end function decode_csr_f;
 
@@ -720,7 +733,6 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
       when opcode_branch_c => return "x" & integer'image(rs2_iv) & ", x"  & integer'image(rs1_iv) & ", "  & integer'image(is_iv);
       when opcode_load_c   => return "x" & integer'image(rd_iv)  & ", "   & integer'image(is_iv)  & "(x"  & integer'image(rs1_iv) & ")";
       when opcode_store_c  => return "x" & integer'image(rs1_iv) & ", "   & integer'image(is_iv)  & "(x"  & integer'image(rs2_iv) & ")";
-      when opcode_fence_c  => return "";
       when opcode_amo_c    =>
         if (inst(28) = '1') then -- zalrsc
           return "x" & integer'image(rd_iv) & ", (x" & integer'image(rs1_iv) & ")";
@@ -742,6 +754,9 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
 
   signal trap_q : std_ulogic; -- trap entry
   signal cycle_q, order_q : unsigned(31 downto 0); -- cycle and index counters
+
+-- RTL_SYNTHESIS ON
+-- pragma translate_on
 
 begin
 
@@ -790,8 +805,11 @@ begin
           -- decoded instruction --
           if (trace_i.rvc = '1') then -- de-compressed instruction
             write(line_v, string'("c."));
+            write(line_v, string'(decode_mnemonic_f(trace_i.inst)));
+          else
+            write(line_v, string'(decode_mnemonic_f(trace_i.inst)));
+            write(line_v, string'("  "));
           end if;
-          write(line_v, string'(decode_mnemonic_f(trace_i.inst)));
           write(line_v, string'(" "));
           write(line_v, string'(decode_operands_f(trace_i.inst)));
           -- trap entry --
