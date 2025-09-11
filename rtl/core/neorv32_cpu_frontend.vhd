@@ -90,7 +90,7 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
   signal frontend_bus_zcmp, frontend_bus_issue : if_bus_t;
 
-  type uop_state_type is (S_IDLE, S_ZCMP_UOP_SEQ, S_ZCMP_UOP_LAST);
+  type uop_state_type is (S_IDLE, S_ZCMP_UOP_SEQ, S_POPRET, S_POPRETZ, S_ZCMP_BRANCH_ABORT);
   signal uop_state_reg, uop_state_nxt : uop_state_type;
 
   signal zcmp_instr_reg, zcmp_instr_nxt : std_ulogic_vector(15 downto 0) := (others => '0');
@@ -106,6 +106,11 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   signal zcmp_stack_adj : integer range 0 to 255;
   signal zcmp_detect : std_ulogic;
   signal zcmp_in_uop_seq : std_ulogic;
+
+  -- decompressor signal for Zcmp
+  signal instr_is_zcmp : std_ulogic;
+  signal zcmp_is_popret : std_ulogic;
+  signal zcmp_is_popretz : std_ulogic;
 
   signal zcmp_instr, zcmp_sw_instr, zcmp_lw_instr : std_ulogic_vector(31 downto 0);
   constant zcmp_sw_instr_opcode : std_ulogic_vector(6 downto 0) := "0100011";
@@ -236,11 +241,15 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_cpu_decompressor_inst : entity neorv32.neorv32_cpu_decompressor
       generic map(
-        ZCB_EN => RISCV_ZCB
+        ZCB_EN => RISCV_ZCB,
+        ZCMP_EN => RISCV_ZCMP
       )
       port map(
         instr_i => cmd16,
-        instr_o => cmd32
+        instr_o => cmd32,
+        instr_is_zcmp => instr_is_zcmp,
+        zcmp_is_popret => zcmp_is_popret,
+        zcmp_is_popretz => zcmp_is_popretz
       );
 
     -- half-word select --
@@ -264,7 +273,7 @@ begin
       end if;
     end process issue_fsm_sync;
 
-    issue_fsm_comb : process (zcmp_instr_reg, fetch, issue_state_reg, align_q, ipb, cmd32, zcmp_in_uop_seq)
+    issue_fsm_comb : process (zcmp_instr_reg, fetch, instr_is_zcmp, issue_state_reg, align_q, ipb, cmd32, zcmp_in_uop_seq)
     begin
       -- defaults --
       align_set <= '0';
@@ -290,7 +299,7 @@ begin
             frontend_bus_issue.fault <= ipb.rdata(0)(16);
             if (ipb.rdata(0)(1 downto 0) /= "11") and (ipb.avail(0) = '1') then -- compressed, consume IPB(0) entry
 
-              if (ipb.rdata(0)(15 downto 8) = "10111000") or (ipb.rdata(0)(15 downto 8) = "10111010") then
+              if (instr_is_zcmp = '1') then
                 zcmp_instr_nxt <= ipb.rdata(0)(15 downto 0);
                 issue_state_nxt <= S_ZCMP;
                 zcmp_detect <= '1';
@@ -314,7 +323,7 @@ begin
             frontend_bus_issue.fault <= ipb.rdata(1)(16);
             if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
 
-              if (ipb.rdata(1)(15 downto 8) = "10111000") or (ipb.rdata(1)(15 downto 8) = "10111010") then
+              if (instr_is_zcmp = '1') then
                 zcmp_instr_nxt <= ipb.rdata(1)(15 downto 0);
                 issue_state_nxt <= S_ZCMP;
                 zcmp_detect <= '1';
@@ -381,9 +390,14 @@ begin
                      std_ulogic_vector(to_unsigned(uop_ctr + 15, zcmp_ls_reg'length)); -- s2-s11 (s2 == x18)
 
       zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_instr_rs1 & zcmp_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_sw_instr_opcode;
-      zcmp_lw_instr <= std_ulogic_vector(zcmp_stack_lw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_instr_rs1 & zcmp_instr_funct3 & std_ulogic_vector(zcmp_stack_lw_offset(4 downto 0)) & zcmp_lw_instr_opcode;
-      zcmp_instr <= zcmp_sw_instr when zcmp_instr_reg(10) = '0' else
+      -- zcmp_lw_instr <= std_ulogic_vector(zcmp_stack_lw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_instr_rs1 & zcmp_instr_funct3 & std_ulogic_vector(zcmp_stack_lw_offset(4 downto 0)) & zcmp_lw_instr_opcode;
+      
+      zcmp_lw_instr <= std_ulogic_vector(zcmp_stack_lw_offset) & zcmp_instr_rs1 & zcmp_instr_funct3 & zcmp_ls_reg & zcmp_lw_instr_opcode; 
+      
+      zcmp_instr <= zcmp_sw_instr when zcmp_instr_reg(9) = '0' else
                     zcmp_lw_instr;
+
+      -- lw instruction bei cm.pop ist falsch 
 
       zcmp_push_stack_adj_instr <= std_ulogic_vector(-to_signed(zcmp_stack_adj, 12)) &
                                    zcmp_addi_instr_rs1 & -- rs1 = sp 
@@ -416,7 +430,7 @@ begin
         end if;
       end process uop_fsm_sync;
 
-      uop_fsm_comb : process (uop_state_reg, uop_ctr, fetch, ipb, zcmp_in_uop_seq, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
+      uop_fsm_comb : process (uop_state_reg, uop_ctr, fetch, ipb, zcmp_in_uop_seq,zcmp_is_popret, zcmp_is_popretz, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
       begin
         uop_ctr_nxt_in_seq <= uop_ctr;
         uop_state_nxt <= uop_state_reg;
@@ -441,7 +455,12 @@ begin
 
               if (ctrl_i.if_ack = '1') then
                 uop_ctr_nxt_in_seq <= 0;
-                uop_state_nxt <= S_IDLE;
+
+                if (zcmp_is_popret = '1') then
+                  uop_state_nxt <= S_POPRET;
+                else
+                  uop_state_nxt <= S_IDLE;
+                end if;
               end if;
 
             else
@@ -460,16 +479,32 @@ begin
             end if;
 
             if (fetch.restart = '1') then
-              uop_state_nxt <= S_ZCMP_UOP_LAST;
+              uop_state_nxt <= S_ZCMP_BRANCH_ABORT;
               zcmp_in_uop_seq <= '0';
               frontend_bus_zcmp.valid <= '0';
               frontend_bus_zcmp.instr <= (others => '0');
             end if;
 
-          when S_ZCMP_UOP_LAST =>
+          when S_POPRET =>
+            zcmp_in_uop_seq <= '1';
+
+            if (zcmp_is_popretz = '1') then
+              uop_state_nxt <= S_POPRETZ;
+            else
+              uop_state_nxt <= S_IDLE;
+            end if;
+
+          when S_POPRETZ =>
+            zcmp_in_uop_seq <= '1';
+            uop_state_nxt <= S_IDLE;
+
+            -- Fehler bei cm.pop? Generiert 
+
+          when S_ZCMP_BRANCH_ABORT =>
             if (ipb.avail /= "00") then
               uop_state_nxt <= S_IDLE;
             end if;
+
         end case;
       end process;
     end generate; -- /zcmp_enabled
@@ -486,7 +521,6 @@ begin
       zcmp_push_stack_adj_instr <= (others => '0');
       uop_ctr_clr <= '0';
       zcmp_in_uop_seq <= '0';
-      -- ipb_ack_zcmp <= (others => '0');
     end generate; -- /zcmp_disabled
 
   end generate; -- /issue_enabled
