@@ -332,14 +332,12 @@ begin
 
     -- say hello --
     assert false report
-      "[NEORV32] The NEORV32 RISC-V Processor " &
-      "(v" &
+      "[NEORV32] The NEORV32 RISC-V Processor (v" &
       print_hex_f(hw_version_c(31 downto 24)) & "." &
       print_hex_f(hw_version_c(23 downto 16)) & "." &
       print_hex_f(hw_version_c(15 downto 8)) & "." &
       print_hex_f(hw_version_c(7 downto 0)) &
-      "), " &
-      "github.com/stnolting/neorv32" severity note;
+      "), github.com/stnolting/neorv32" severity note;
 
     -- show SoC configuration --
     assert false report

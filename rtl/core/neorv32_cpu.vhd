@@ -146,7 +146,7 @@ begin
       cond_sel_string_f(true,             "x",         "" ) & -- always enabled
       cond_sel_string_f(RISCV_ISA_Zaamo,  "_zaamo",    "" ) &
       cond_sel_string_f(RISCV_ISA_Zalrsc, "_zalrsc",   "" ) &
-      cond_sel_string_f(riscv_zcb_c,      "_zca",      "" ) & -- Zcb requires Zca in the ISA string
+      cond_sel_string_f(RISCV_ISA_C,      "_zca",      "" ) & -- Zcb requires Zca (=C) in the ISA string
       cond_sel_string_f(riscv_zcb_c,      "_zcb",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zba,    "_zba",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zbb,    "_zbb",      "" ) &
