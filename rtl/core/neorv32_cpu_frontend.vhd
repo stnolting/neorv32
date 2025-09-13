@@ -232,31 +232,33 @@ begin
       align_clr <= '0';
       -- start at LOW half-word --
       if (align_q = '0') then
-        frontend_o.fault <= ipb.rdata(0)(16);
         if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
           align_set        <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
           ipb_ack          <= "01";
           frontend_o.valid <= ipb.avail(0);
+          frontend_o.fault <= ipb.rdata(0)(16);
           frontend_o.instr <= cmd32;
           frontend_o.compr <= '1';
         else -- aligned uncompressed, consume both IPB entries
           ipb_ack          <= "11";
           frontend_o.valid <= ipb.avail(1) and ipb.avail(0);
+          frontend_o.fault <= ipb.rdata(1)(16) or ipb.rdata(0)(16);
           frontend_o.instr <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
           frontend_o.compr <= '0';
         end if;
       -- start at HIGH half-word --
       else
-        frontend_o.fault <= ipb.rdata(1)(16);
         if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
           align_clr        <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
           ipb_ack          <= "10";
           frontend_o.valid <= ipb.avail(1);
+          frontend_o.fault <= ipb.rdata(1)(16);
           frontend_o.instr <= cmd32;
           frontend_o.compr <= '1';
         else -- unaligned uncompressed, consume both IPB entries
           ipb_ack          <= "11";
           frontend_o.valid <= ipb.avail(0) and ipb.avail(1);
+          frontend_o.fault <= ipb.rdata(0)(16) or ipb.rdata(1)(16);
           frontend_o.instr <= ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
           frontend_o.compr <= '0';
         end if;

@@ -23,7 +23,7 @@ entity neorv32_tb is
     DUAL_CORE_EN        : boolean                        := true;        -- enable dual-core homogeneous SMP
     BOOT_MODE_SELECT    : natural range 0 to 2           := 2;           -- boot from pre-initialized IMEM
     BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
-    RISCV_ISA_C         : boolean                        := false;       -- implement compressed extension
+    RISCV_ISA_C         : boolean                        := true;        -- implement compressed extension
     RISCV_ISA_E         : boolean                        := false;       -- implement embedded RF extension
     RISCV_ISA_M         : boolean                        := true;        -- implement mul/div extension
     RISCV_ISA_U         : boolean                        := true;        -- implement user mode extension
@@ -109,6 +109,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- XBUS --
   signal xbus_core_req, xbus_ext_mem_a_req, xbus_ext_mem_b_req, xbus_mmio_req, xbus_trig_req : xbus_req_t;
   signal xbus_core_rsp, xbus_ext_mem_a_rsp, xbus_ext_mem_b_rsp, xbus_mmio_rsp, xbus_trig_rsp : xbus_rsp_t;
+  signal xbus_fmem_data_req, xbus_fmem_tag_req : xbus_req_t;
+  signal xbus_fmem_data_rsp, xbus_fmem_tag_rsp : xbus_rsp_t;
 
 begin
 
@@ -407,10 +409,10 @@ begin
     -- device address size in bytes and base address --
     DEV_0_EN => EXT_MEM_A_EN, DEV_0_SIZE => EXT_MEM_A_SIZE, DEV_0_BASE => EXT_MEM_A_BASE,
     DEV_1_EN => EXT_MEM_B_EN, DEV_1_SIZE => EXT_MEM_B_SIZE, DEV_1_BASE => EXT_MEM_B_BASE,
-    DEV_2_EN => true,         DEV_2_SIZE =>              8, DEV_2_BASE => x"A0000000",
+    DEV_2_EN => true,         DEV_2_SIZE =>              8, DEV_2_BASE => x"F0000000",
     DEV_3_EN => true,         DEV_3_SIZE =>              4, DEV_3_BASE => x"FF000000",
-    DEV_4_EN => false,        DEV_4_SIZE =>              0, DEV_4_BASE => (others => '0'), -- unused
-    DEV_5_EN => false,        DEV_5_SIZE =>              0, DEV_5_BASE => (others => '0'), -- unused
+    DEV_4_EN => true,         DEV_4_SIZE =>             16, DEV_4_BASE => x"B0000000",
+    DEV_5_EN => true,         DEV_5_SIZE =>             16, DEV_5_BASE => x"FF100000",
     DEV_6_EN => false,        DEV_6_SIZE =>              0, DEV_6_BASE => (others => '0'), -- unused
     DEV_7_EN => false,        DEV_7_SIZE =>              0, DEV_7_BASE => (others => '0')  -- unused
   )
@@ -423,14 +425,14 @@ begin
     dev_1_req_o => xbus_ext_mem_b_req, dev_1_rsp_i => xbus_ext_mem_b_rsp,
     dev_2_req_o => xbus_mmio_req,      dev_2_rsp_i => xbus_mmio_rsp,
     dev_3_req_o => xbus_trig_req,      dev_3_rsp_i => xbus_trig_rsp,
-    dev_4_req_o => open,               dev_4_rsp_i => xbus_rsp_terminate_c, -- unused
-    dev_5_req_o => open,               dev_5_rsp_i => xbus_rsp_terminate_c, -- unused
+    dev_4_req_o => xbus_fmem_data_req, dev_4_rsp_i => xbus_fmem_data_rsp,
+    dev_5_req_o => xbus_fmem_tag_req,  dev_5_rsp_i => xbus_fmem_tag_rsp,
     dev_6_req_o => open,               dev_6_rsp_i => xbus_rsp_terminate_c, -- unused
     dev_7_req_o => open,               dev_7_rsp_i => xbus_rsp_terminate_c  -- unused
   );
 
 
-  -- XBUS: External Memory A ----------------------------------------------------------------
+  -- XBUS: External Memory A (cached) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xbus_external_memory_a_enable:
   if EXT_MEM_A_EN generate
@@ -454,7 +456,7 @@ begin
   end generate;
 
 
-  -- XBUS: External Memory B ----------------------------------------------------------------
+  -- XBUS: External Memory B (cached) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xbus_external_memory_b_enable:
   if EXT_MEM_B_EN generate
@@ -478,7 +480,7 @@ begin
   end generate;
 
 
-  -- XBUS: External Memory-Mapped IO (cached) -----------------------------------------------
+  -- XBUS: External Memory-Mapped IO (uncached) ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xbus_mmio: entity work.xbus_memory
   generic map (
@@ -516,6 +518,22 @@ begin
       end if;
     end if;
   end process xbus_irq_trigger;
+
+
+  -- XBUS: Bus-Error-Test-Memory ------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  xbus_fmem_inst: entity work.xbus_fmem
+  generic map (
+    MEM_SIZE => 16
+  )
+  port map (
+    clk_i     => clk_gen,
+    rstn_i    => rst_gen,
+    tag_req_i => xbus_fmem_tag_req,
+    tag_rsp_o => xbus_fmem_tag_rsp,
+    mem_req_i => xbus_fmem_data_req,
+    mem_rsp_o => xbus_fmem_data_rsp
+  );
 
 
 end neorv32_tb_rtl;

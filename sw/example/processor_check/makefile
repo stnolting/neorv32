@@ -1,7 +1,7 @@
 # Processor-check program makefile
 
 # Maximum ISA configuration (but without C)
-override MARCH = rv32ima_zba_zbb_zbs_zbkb_zbkc_zbkx_zknd_zkne_zknh_zksh_zksed_zicsr_zfinx_zifencei_zicond
+override MARCH = rv32imac_zba_zbb_zbs_zbkb_zbkc_zbkx_zknd_zkne_zknh_zksh_zksed_zicsr_zfinx_zifencei_zicond
 
 # Optimization goal
 EFFORT = -Os
@@ -19,7 +19,7 @@ override USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=8k
 override USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=3k
 
 # Simulation arguments
-override GHDL_RUN_FLAGS ?= --stop-time=15ms
+override GHDL_RUN_FLAGS ?= --stop-time=12ms
 
 # Set path to NEORV32 root directory
 NEORV32_HOME ?= ../../..

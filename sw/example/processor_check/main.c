@@ -22,19 +22,20 @@
  **************************************************************************/
 /**@{*/
 //** UART BAUD rate */
-#define BAUD_RATE        (19200)
+#define BAUD_RATE          (19200)
 //** Reachable but unaligned cached address */
-#define ADDR_UNALIGNED_1 (0x00000001U)
+#define ADDR_UNALIGNED_1   (0x00000001U)
 //** Reachable but unaligned cached address */
-#define ADDR_UNALIGNED_3 (0x00000003U)
+#define ADDR_UNALIGNED_3   (0x00000003U)
 //** Unreachable word-aligned cached address */
-#define ADDR_UNREACHABLE (0x70000000U)
+#define ADDR_UNREACHABLE   (0x70000000U)
 //** Word-aligned address that returns a bus error on write-request */
-#define ADDR_WRERR       (0xFFFE0004U)
+#define ADDR_WRERR         (0xFFFE0004U)
 //** External memory base address */
-#define EXT_MEM_BASE     (0xA0000000U)
+#define EXT_FMEM_DATA_BASE (0xB0000000U)
+#define EXT_FMEM_TAG_BASE  (0xFF100000U)
 //** External IRQ trigger base address */
-#define SIM_TRIG_BASE    (0xFF000000U)
+#define SIM_TRIG_BASE      (0xFF000000U)
 /**@}*/
 
 
@@ -42,15 +43,10 @@
  * @name UART print macros
  **************************************************************************/
 /**@{*/
-#if defined(SUPPRESS_OPTIONAL_UART_PRINT)
-#define PRINT_STANDARD(...)
-#define PRINT_CRITICAL(...) neorv32_uart1_printf(__VA_ARGS__)
-#elif defined(STDIO_SEMIHOSTING)
-#define PRINT_STANDARD(...) printf(__VA_ARGS__)
-#define PRINT_CRITICAL(...) printf(__VA_ARGS__)
+#if defined(STDIO_SEMIHOSTING)
+#define PRINT(...) printf(__VA_ARGS__)
 #else
-#define PRINT_STANDARD(...) neorv32_uart0_printf(__VA_ARGS__)
-#define PRINT_CRITICAL(...) neorv32_uart0_printf(__VA_ARGS__)
+#define PRINT(...) neorv32_uart0_printf(__VA_ARGS__)
 #endif
 /**@}*/
 
@@ -76,6 +72,7 @@ const uint32_t trap_never_c = 0x80000000U;
 
 // Global variables
 volatile uint32_t trap_cause = trap_never_c;
+volatile uint32_t trap_mepc = 0;
 volatile int cnt_fail = 0; // global counter for failing tests
 volatile int cnt_ok = 0; // global counter for successful tests
 volatile int cnt_test = 0; // global counter for total number of tests
@@ -142,10 +139,6 @@ int main() {
   NEORV32_UART1->CTRL = 0;
   NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
 
-#ifdef SUPPRESS_OPTIONAL_UART_PRINT
-  neorv32_uart0_disable(); // do not generate any UART0 output
-#endif
-
 
   // setup RTE
   // -----------------------------------------------
@@ -181,7 +174,7 @@ int main() {
   install_err += neorv32_rte_handler_install(TRAP_CODE_FIRQ_14,      global_trap_handler);
   install_err += neorv32_rte_handler_install(TRAP_CODE_FIRQ_15,      global_trap_handler);
   if (install_err) {
-    PRINT_CRITICAL("RTE fail!\n");
+    PRINT("RTE fail!\n");
     return 1;
   }
 
@@ -207,7 +200,7 @@ int main() {
   // -----------------------------------------------
   neorv32_aux_print_logo(); // show NEORV32 ASCII logo
   neorv32_aux_print_about(); // show project credits
-  PRINT_STANDARD("Build: "__DATE__" "__TIME__"\n");
+  PRINT("Build: "__DATE__" "__TIME__"\n");
   neorv32_aux_print_hw_config(); // show full hardware configuration report
 
 
@@ -216,7 +209,7 @@ int main() {
   // **********************************************************************************************
 
   // tests intro
-  PRINT_STANDARD("\nStarting tests...\n\n");
+  PRINT("\nStarting tests...\n\n");
 
   // clear testbench IRQ triggers
   sim_irq_trigger(0);
@@ -234,7 +227,7 @@ int main() {
   // ----------------------------------------------------------
   // Setup HPMs
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] HPM setup ", cnt_test);
+  PRINT("[%i] HPM setup ", cnt_test);
   trap_cause = trap_never_c;
 
   num_hpm_cnts_global = neorv32_cpu_hpm_get_num_counters();
@@ -261,7 +254,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0); // enable all counters
@@ -270,7 +263,7 @@ int main() {
   // ----------------------------------------------------------
   // Setup PMP for tests
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] PMP setup ", cnt_test);
+  PRINT("[%i] PMP setup ", cnt_test);
   trap_cause = trap_never_c;
 
   if (pmp_num_regions >= 3) { // sufficient regions for tests
@@ -280,19 +273,19 @@ int main() {
     tmp_b = ((1 << PMPCFG_L) << 0) | ((1 << PMPCFG_L) << 8) | ((1 << PMPCFG_L) << 16);
 
     if (tmp_a & tmp_b) {
-      PRINT_CRITICAL("\nERROR! PMP LOCKED!\n");
+      PRINT("\nERROR! PMP LOCKED!\n");
       return 1;
     }
 
     // check if NAPOT and TOR modes are supported
     neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_TOR << PMPCFG_A_LSB)); // try to set mode "TOR"
     if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) != (PMP_TOR << PMPCFG_A_LSB)) {
-      PRINT_CRITICAL("\nERROR! PMP TOR mode not supported!\n");
+      PRINT("\nERROR! PMP TOR mode not supported!\n");
       return 1;
     }
     neorv32_cpu_csr_write(CSR_PMPCFG0, (PMP_NAPOT << PMPCFG_A_LSB)); // try to set mode "NAPOT"
     if ((neorv32_cpu_csr_read(CSR_PMPCFG0) & 0xff) != (PMP_NAPOT << PMPCFG_A_LSB)) {
-      PRINT_CRITICAL("\nERROR! PMP NAPOT mode not supported!\n");
+      PRINT("\nERROR! PMP NAPOT mode not supported!\n");
       return 1;
     }
     neorv32_cpu_csr_write(CSR_PMPCFG0, 0); // disable test entry again
@@ -311,14 +304,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Test fence instructions
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Fences ", cnt_test);
+  PRINT("[%i] Fences ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -343,7 +336,7 @@ int main() {
   // ----------------------------------------------------------
   // Test standard RISC-V counters
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Zicntr CNTs ", cnt_test);
+  PRINT("[%i] Zicntr CNTs ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -374,7 +367,7 @@ int main() {
   // ----------------------------------------------------------
   // Test mcounteren: constrain user-level access to counter CSRs
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] mcounteren CSR ", cnt_test);
+  PRINT("[%i] mcounteren CSR ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
     trap_cause = trap_never_c;
@@ -411,14 +404,14 @@ int main() {
     neorv32_cpu_csr_set(CSR_MCOUNTINHIBIT, 0);
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Test mcountinhibit: inhibit counter auto-inc
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] mcountinhibit CSR ", cnt_test);
+  PRINT("[%i] mcountinhibit CSR ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -451,7 +444,7 @@ int main() {
   // ----------------------------------------------------------
   // Execute MRET in U-mode (has to trap!)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] MRET in U-mode ", cnt_test);
+  PRINT("[%i] MRET in U-mode ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
     trap_cause = trap_never_c;
@@ -471,14 +464,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // External memory interface test (and I-cache block-/word-wise error check)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Ext. memory (@0x%x) ", cnt_test, (uint32_t)EXT_MEM_BASE);
+  PRINT("[%i] Ext. memory (@0x%x) ", cnt_test, (uint32_t)EXT_FMEM_DATA_BASE);
 
   if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) && (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM))) {
     trap_cause = trap_never_c;
@@ -487,13 +480,19 @@ int main() {
     // clear scratch CSR
     neorv32_cpu_csr_write(CSR_MSCRATCH, 0);
 
+    // set tags (= error response) for the external memory
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x0, 0); // no error when accessing EXT_FMEM_DATA_BASE+0
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x4, 0); // no error when accessing EXT_FMEM_DATA_BASE+4
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x8, 1); // ERROR when accessing EXT_FMEM_DATA_BASE+8
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0xC, 1); // ERROR when accessing EXT_FMEM_DATA_BASE+12
+
     // setup test program in external memory
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+0, 0x3407D073); // csrwi mscratch, 15 (32-bit)
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_MEM_BASE+4, 0x00008067); // ret (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0, 0x3407D073); // csrwi mscratch, 15 (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+4, 0x00008067); // ret (32-bit)
 
     // execute program
     asm volatile ("fence.i"); // flush i-cache
-    tmp_a = (uint32_t)EXT_MEM_BASE; // call the dummy sub program
+    tmp_a = (uint32_t)EXT_FMEM_DATA_BASE; // call the dummy sub program
     asm volatile ("jalr ra, %[input_i]" : : [input_i] "r" (tmp_a));
 
     if ((trap_cause == trap_never_c) && // make sure there was no exception
@@ -505,14 +504,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Illegal CSR access
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Illegal CSR ", cnt_test);
+  PRINT("[%i] Illegal CSR ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -531,7 +530,7 @@ int main() {
   // ----------------------------------------------------------
   // Write-access to read-only CSR
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Read-only CSR ", cnt_test);
+  PRINT("[%i] Read-only CSR ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -548,7 +547,7 @@ int main() {
   // ----------------------------------------------------------
   // No "real" CSR write access (because rs1 = r0)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Read-only CSR (no-write) ", cnt_test);
+  PRINT("[%i] Read-only CSR (no-write) ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -567,7 +566,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned instruction address
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] IF align EXC ", cnt_test);
+  PRINT("[%i] IF align EXC ", cnt_test);
 
   // skip if C-mode is implemented
   if ((neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) == 0) {
@@ -589,14 +588,14 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Instruction access fault
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] IF access EXC ", cnt_test);
+  PRINT("[%i] IF access EXC ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
     trap_cause = trap_never_c;
@@ -616,14 +615,60 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Unaligned instruction fetch bus error
+  // ----------------------------------------------------------
+  PRINT("[%i] IF unaligned access EXC ", cnt_test);
+
+  // skip if C-mode is implemented
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) &&
+      (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) &&
+      (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM))) {
+    trap_cause = trap_never_c;
+    cnt_test++;
+
+    // clear scratch CSR
+    neorv32_cpu_csr_write(CSR_MSCRATCH, 0);
+
+    // set tags (= error response) for the external memory
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x0, 0); // no error when accessing EXT_FMEM_DATA_BASE+0
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x4, 0); // no error when accessing EXT_FMEM_DATA_BASE+4
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x8, 1); // ERROR when accessing EXT_FMEM_DATA_BASE+8
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0xC, 0); // no error when accessing EXT_FMEM_DATA_BASE+12
+
+    // setup test program in external memory
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x0, 0x00010001); // c.nop + c.nop
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x4, 0xD0730001); // csrwi mscratch, 15 (32-bit) + c.nop
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x8, 0x00013407); // c.nop + csrwi mscratch, 15 (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0xC, 0x00008067); // ret (32-bit)
+
+    // execute program
+    asm volatile ("fence.i"); // flush i-cache
+    tmp_a = (uint32_t)EXT_FMEM_DATA_BASE+6; // call the dummy sub program starting at "csrwi mscratch, 15 (32-bit)"
+    asm volatile ("jalr ra, %[input_i]" : : [input_i] "r" (tmp_a));
+
+    if ((trap_cause == TRAP_CODE_I_ACCESS) && // correct exception cause
+        (trap_mepc == tmp_a)) { // correct exception address
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+  }
+  else {
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Illegal instruction
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Illegal instr. EXC ", cnt_test);
+  PRINT("[%i] Illegal instr. EXC ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -681,11 +726,10 @@ int main() {
   neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
 
 
-
   // ----------------------------------------------------------
   // Breakpoint instruction
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] BREAK EXC ", cnt_test);
+  PRINT("[%i] BREAK EXC ", cnt_test);
 
   // skip on real hardware since ebreak will make problems when running this test program via gdb
   if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
@@ -702,14 +746,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Unaligned load address
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] LD align EXC ", cnt_test);
+  PRINT("[%i] LD align EXC ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -731,7 +775,7 @@ int main() {
   // ----------------------------------------------------------
   // Load access fault
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] LD access EXC ", cnt_test);
+  PRINT("[%i] LD access EXC ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -753,7 +797,7 @@ int main() {
   // ----------------------------------------------------------
   // Unaligned store address
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] ST align EXC ", cnt_test);
+  PRINT("[%i] ST align EXC ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -780,7 +824,7 @@ int main() {
   // ----------------------------------------------------------
   // Store access fault
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] ST access EXC ", cnt_test);
+  PRINT("[%i] ST access EXC ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -799,7 +843,7 @@ int main() {
   // ----------------------------------------------------------
   // Environment call from M-mode
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] ENVCALL M EXC ", cnt_test);
+  PRINT("[%i] ENVCALL M EXC ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -821,7 +865,7 @@ int main() {
   // ----------------------------------------------------------
   // Environment call from U-mode
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] ENVCALL U EXC ", cnt_test);
+  PRINT("[%i] ENVCALL U EXC ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
     trap_cause = trap_never_c;
@@ -841,14 +885,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // CLINT machine time interrupt
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] CLINT.MTI ", cnt_test);
+  PRINT("[%i] CLINT.MTI ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     trap_cause = trap_never_c;
@@ -877,14 +921,14 @@ int main() {
     neorv32_clint_mtimecmp_set(-1);
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // CLINT machine software interrupt
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] CLINT.MSI ", cnt_test);
+  PRINT("[%i] CLINT.MSI ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     trap_cause = trap_never_c;
@@ -911,14 +955,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Machine external interrupt (MEI) via testbench
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] MEI (sim) IRQ ", cnt_test);
+  PRINT("[%i] MEI (sim) IRQ ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
     trap_cause = trap_never_c;
@@ -945,14 +989,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Permanent IRQ (make sure interrupted program proceeds)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Permanent IRQ (MTI) ", cnt_test);
+  PRINT("[%i] Permanent IRQ (MTI) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     trap_cause = trap_never_c;
@@ -978,14 +1022,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Test pending interrupt
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Pending IRQ (MTI) ", cnt_test);
+  PRINT("[%i] Pending IRQ (MTI) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     trap_cause = trap_never_c;
@@ -1016,14 +1060,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Test vectored interrupt via testbench external interrupt
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Vectored IRQ (sim) ", cnt_test);
+  PRINT("[%i] Vectored IRQ (sim) ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
     trap_cause = trap_never_c;
@@ -1062,14 +1106,14 @@ int main() {
     neorv32_cpu_csr_write(CSR_MTVEC, tmp_a);
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 0 (TWD)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ0 (TWD) ", cnt_test);
+  PRINT("[%i] FIRQ0 (TWD) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWD)) {
     trap_cause = trap_never_c;
@@ -1106,21 +1150,21 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 1 (CFS)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ1 (CFS) ", cnt_test);
-  PRINT_STANDARD("[n.a.]\n");
+  PRINT("[%i] FIRQ1 (CFS) ", cnt_test);
+  PRINT("[n.a.]\n");
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 2 (UART0)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ2 (UART0) ", cnt_test);
+  PRINT("[%i] FIRQ2 (UART0) ", cnt_test);
 
   if (neorv32_uart_available(NEORV32_UART0) && neorv32_uart_available(NEORV32_UART1)) {
     trap_cause = trap_never_c;
@@ -1168,14 +1212,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 3 (UART1)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ3 (UART1) ", cnt_test);
+  PRINT("[%i] FIRQ3 (UART1) ", cnt_test);
 
   if (neorv32_uart_available(NEORV32_UART0) && neorv32_uart_available(NEORV32_UART1)) {
     trap_cause = trap_never_c;
@@ -1223,21 +1267,21 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 4 (reserved)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ4 (reserved) ", cnt_test);
-  PRINT_STANDARD("[n.a.]\n");
+  PRINT("[%i] FIRQ4 (reserved) ", cnt_test);
+  PRINT("[n.a.]\n");
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 5 (TRACER)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ5 (TRACER) ", cnt_test);
+  PRINT("[%i] FIRQ5 (TRACER) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRACER)) {
     trap_cause = trap_never_c;
@@ -1273,14 +1317,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 6 (SPI)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ6 (SPI) ", cnt_test);
+  PRINT("[%i] FIRQ6 (SPI) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SPI)) {
     trap_cause = trap_never_c;
@@ -1313,14 +1357,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 7 (TWI)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ7 (TWI) ", cnt_test);
+  PRINT("[%i] FIRQ7 (TWI) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWI)) {
     trap_cause = trap_never_c;
@@ -1363,14 +1407,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 8 (GPIO)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ8 (GPIO) ", cnt_test);
+  PRINT("[%i] FIRQ8 (GPIO) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPIO)) {
     trap_cause = trap_never_c;
@@ -1412,14 +1456,14 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 9 (NEOLED)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ9 (NEOLED) ", cnt_test);
+  PRINT("[%i] FIRQ9 (NEOLED) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_NEOLED)) {
     trap_cause = trap_never_c;
@@ -1451,14 +1495,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 10 (DMA)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ10 (DMA) ", cnt_test);
+  PRINT("[%i] FIRQ10 (DMA) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_DMA)) {
     trap_cause = trap_never_c;
@@ -1513,14 +1557,14 @@ int main() {
     neorv32_dma_disable();
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 11 (SDI)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ11 (SDI) ", cnt_test);
+  PRINT("[%i] FIRQ11 (SDI) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SDI)) {
     trap_cause = trap_never_c;
@@ -1558,14 +1602,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 12 (GPTMR)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ12 (GPTMR) ", cnt_test);
+  PRINT("[%i] FIRQ12 (GPTMR) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPTMR)) {
     trap_cause = trap_never_c;
@@ -1596,14 +1640,14 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 13 (ONEWIRE)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ13 (ONEWIRE) ", cnt_test);
+  PRINT("[%i] FIRQ13 (ONEWIRE) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_ONEWIRE)) {
     trap_cause = trap_never_c;
@@ -1637,14 +1681,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 14 (SLINK)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ14 (SLINK) ", cnt_test);
+  PRINT("[%i] FIRQ14 (SLINK) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SLINK)) {
     trap_cause = trap_never_c;
@@ -1680,14 +1724,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Fast interrupt channel 15 (TRNG)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] FIRQ15 (TRNG) ", cnt_test);
+  PRINT("[%i] FIRQ15 (TRNG) ", cnt_test);
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
     trap_cause = trap_never_c;
     cnt_test++;
@@ -1717,7 +1761,7 @@ int main() {
     neorv32_trng_disable();
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
@@ -1725,7 +1769,7 @@ int main() {
   // RTE context modification
   // implemented as "system service call"
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] RTE context ", cnt_test);
+  PRINT("[%i] RTE context ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -1768,7 +1812,7 @@ int main() {
   // ----------------------------------------------------------
   // Check dynamic memory allocation
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Heap/malloc ", cnt_test);
+  PRINT("[%i] Heap/malloc ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -1795,7 +1839,7 @@ int main() {
   // ----------------------------------------------------------
   // Constructor test
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Constructor ", cnt_test);
+  PRINT("[%i] Constructor ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -1811,7 +1855,7 @@ int main() {
   // Test WFI ("sleep") instruction (executed in user mode), wakeup via CLINT.MTIMER
   // mstatus.mie is cleared before to check if machine-mode IRQ still trigger in user-mode
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] User-mode WFI (wake-up via MTI) ", cnt_test);
+  PRINT("[%i] User-mode WFI (wake-up via MTI) ", cnt_test);
 
   if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) &&
       (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U))) {
@@ -1843,14 +1887,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Test if CPU wakes-up from WFI if m-mode interrupts are disabled globally
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] WFI (wakeup on pending MTI) ", cnt_test);
+  PRINT("[%i] WFI (wakeup on pending MTI) ", cnt_test);
 
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
     trap_cause = trap_never_c;
@@ -1880,14 +1924,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Test un-allowed WFI ("sleep") instruction (executed in user mode)
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] WFI (not allowed in u-mode) ", cnt_test);
+  PRINT("[%i] WFI (not allowed in u-mode) ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
     trap_cause = trap_never_c;
@@ -1910,14 +1954,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Test invalid CSR access in user mode
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] Invalid CSR access from U-mode ", cnt_test);
+  PRINT("[%i] Invalid CSR access from U-mode ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U)) {
     trap_cause = trap_never_c;
@@ -1939,14 +1983,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Test atomic lr/sc memory access - failing access
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] AMO LR/SC (failing) ", cnt_test);
+  PRINT("[%i] AMO LR/SC (failing) ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
     trap_cause = trap_never_c;
@@ -1974,14 +2018,14 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
   // ----------------------------------------------------------
   // Test atomic read-modify-write accesses
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] AMO RMW ", cnt_test);
+  PRINT("[%i] AMO RMW ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
     trap_cause = trap_never_c;
@@ -2006,7 +2050,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
@@ -2026,7 +2070,7 @@ int main() {
     // General memory access from user mode - has to
     // fail as u-mode has no permissions by default
     // ---------------------------------------------
-    PRINT_STANDARD("[%i] PMP U-mode read (denied) ", cnt_test);
+    PRINT("[%i] PMP U-mode read (denied) ", cnt_test);
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -2052,7 +2096,7 @@ int main() {
 
     // Create PMP protected region
     // ---------------------------------------------
-    PRINT_STANDARD("[%i] PMP config ", cnt_test);
+    PRINT("[%i] PMP config ", cnt_test);
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -2060,10 +2104,10 @@ int main() {
     uint32_t pmp_base  = (uint32_t)(&pmp_access[0]);
     uint32_t pmp_bound = (pmp_base + sizeof(pmp_access)) - 4;
 
-    PRINT_STANDARD("[0]: OFF @ 0x%x, ", pmp_base); // base
+    PRINT("[0]: OFF @ 0x%x, ", pmp_base); // base
     tmp_a = neorv32_cpu_pmp_configure_region(0, pmp_base >> 2, 0);
 
-    PRINT_STANDARD("[1]: TOR (!L,!X,!W,R) @ 0x%x ", pmp_bound); // bound
+    PRINT("[1]: TOR (!L,!X,!W,R) @ 0x%x ", pmp_bound); // bound
     tmp_a += neorv32_cpu_pmp_configure_region(1, pmp_bound >> 2, (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_R)); // read-only
 
     if ((tmp_a == 0) && (trap_cause == trap_never_c)) {
@@ -2076,7 +2120,7 @@ int main() {
 
     // LOAD from U-mode: should succeed
     // ---------------------------------------------
-    PRINT_STANDARD("[%i] PMP U-mode R (granted) ", cnt_test);
+    PRINT("[%i] PMP U-mode R (granted) ", cnt_test);
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -2098,7 +2142,7 @@ int main() {
 
     // STORE from U-mode: should fail
     // ---------------------------------------------
-    PRINT_STANDARD("[%i] PMP U-mode W (denied) ", cnt_test);
+    PRINT("[%i] PMP U-mode W (denied) ", cnt_test);
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -2118,7 +2162,7 @@ int main() {
 
     // EXECUTE from U-mode: should fail
     // ---------------------------------------------
-    PRINT_STANDARD("[%i] PMP U-mode X (denied) ", cnt_test);
+    PRINT("[%i] PMP U-mode X (denied) ", cnt_test);
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -2139,7 +2183,7 @@ int main() {
 
     // STORE from M mode using U mode permissions: should fail
     // ---------------------------------------------
-    PRINT_STANDARD("[%i] PMP M-mode (U-mode perm.) W (denied) ", cnt_test);
+    PRINT("[%i] PMP M-mode (U-mode perm.) W (denied) ", cnt_test);
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -2161,7 +2205,7 @@ int main() {
 
     // STORE from M mode with LOCKED: should fail
     // ---------------------------------------------
-    PRINT_STANDARD("[%i] PMP M-mode (LOCKED) W (denied) ", cnt_test);
+    PRINT("[%i] PMP M-mode (LOCKED) W (denied) ", cnt_test);
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -2179,14 +2223,14 @@ int main() {
 
   }
   else {
-    PRINT_STANDARD("[%i] PMP [n.a.]\n", cnt_test);
+    PRINT("[%i] PMP [n.a.]\n", cnt_test);
   }
 
 
   // ----------------------------------------------------------
   // SMP dual-core test
   // ----------------------------------------------------------
-  PRINT_STANDARD("[%i] SMP dual-core test ", cnt_test);
+  PRINT("[%i] SMP dual-core test ", cnt_test);
 
   if ((neorv32_sysinfo_get_numcores() > 1) && // we need two cores
       (neorv32_clint_available() != 0)) { // we need the CLINT
@@ -2219,7 +2263,7 @@ int main() {
     }
   }
   else {
-    PRINT_STANDARD("[n.a.]\n");
+    PRINT("[n.a.]\n");
   }
 
 
@@ -2228,7 +2272,7 @@ int main() {
   // ----------------------------------------------------------
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all HPM counters
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIHPM)) {
-    PRINT_STANDARD(
+    PRINT(
       "\n\nHPMs:\n"
       "#00 clock cycles  : %u\n"
       "#02 instructions  : %u\n"
@@ -2259,14 +2303,14 @@ int main() {
   // ----------------------------------------------------------
   // Final test reports
   // ----------------------------------------------------------
-  PRINT_CRITICAL("\n\nTest results:\nPASS: %i/%i\nFAIL: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
+  PRINT("\n\nTest results:\nPASS: %i/%i\nFAIL: %i/%i\n\n", cnt_ok, cnt_test, cnt_fail, cnt_test);
 
   // final result
   if (cnt_fail == 0) {
-    PRINT_STANDARD("%c[1m[PROCESSOR TEST COMPLETED SUCCESSFULLY!]%c[0m\n", 27, 27);
+    PRINT("%c[1m[PROCESSOR TEST COMPLETED SUCCESSFULLY!]%c[0m\n", 27, 27);
   }
   else {
-    PRINT_STANDARD("%c[1m[PROCESSOR TEST FAILED!]%c[0m\n", 27, 27);
+    PRINT("%c[1m[PROCESSOR TEST FAILED!]%c[0m\n", 27, 27);
   }
 
   // make sure sim mode is disabled and UARTs are actually enabled
@@ -2275,7 +2319,7 @@ int main() {
   NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
 
   // minimal result report
-  PRINT_CRITICAL("%u/%u\n", (uint32_t)cnt_fail, (uint32_t)cnt_test);
+  PRINT("%u/%u\n", (uint32_t)cnt_fail, (uint32_t)cnt_test);
 
   return 0;
 }
@@ -2297,6 +2341,7 @@ void sim_irq_trigger(uint32_t sel) {
  **************************************************************************/
 void global_trap_handler(void) {
 
+  trap_mepc  = neorv32_cpu_csr_read(CSR_MEPC);
   trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
   trap_cnt++;
 
@@ -2415,17 +2460,17 @@ void gpio_trap_handler(void) {
  **************************************************************************/
 void test_ok(void) {
 
-  PRINT_STANDARD("%c[1m[ok]%c[0m\n", 27, 27);
+  PRINT("%c[1m[ok]%c[0m\n", 27, 27);
   cnt_ok++;
 }
 
 
 /**********************************************************************//**
- * Test results helper function: Shows "[FAIL]" and increments global cnt_fail
+ * Test results helper function: Shows "[fail]" and increments global cnt_fail
  **************************************************************************/
 void test_fail(void) {
 
-  PRINT_CRITICAL("%c[1m[fail(%u)]%c[0m\n", 27, cnt_test-1, 27);
+  PRINT("%c[1m[fail]%c[0m\n", 27, 27);
   cnt_fail++;
 }
 
