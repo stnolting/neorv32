@@ -162,13 +162,13 @@ int main() {
 
   // check if the CFU is implemented (the CFU is wrapped in the core's "Zxcfu" ISA extension)
   if (neorv32_cpu_cfu_available() == 0) {
-    neorv32_uart0_printf("ERROR! CFU ('Zxcfu' ISA extensions) not implemented!\n");
+    neorv32_uart0_printf("ERROR! CFU ('Zxcfu' ISA extension) not implemented!\n");
     return -1;
   }
 
   // check if the CPU base counters are implemented
   if ((neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZICNTR)) == 0) {
-    neorv32_uart0_printf("ERROR! Base counters ('Zicntr' ISA extensions) not implemented!\n");
+    neorv32_uart0_printf("ERROR! Base counters ('Zicntr' ISA extension) not implemented!\n");
     return -1;
   }
 
