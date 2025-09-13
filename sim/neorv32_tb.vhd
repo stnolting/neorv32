@@ -408,7 +408,11 @@ begin
     DEV_0_EN => EXT_MEM_A_EN, DEV_0_SIZE => EXT_MEM_A_SIZE, DEV_0_BASE => EXT_MEM_A_BASE,
     DEV_1_EN => EXT_MEM_B_EN, DEV_1_SIZE => EXT_MEM_B_SIZE, DEV_1_BASE => EXT_MEM_B_BASE,
     DEV_2_EN => true,         DEV_2_SIZE =>              8, DEV_2_BASE => x"A0000000",
-    DEV_3_EN => true,         DEV_3_SIZE =>              4, DEV_3_BASE => x"FF000000"
+    DEV_3_EN => true,         DEV_3_SIZE =>              4, DEV_3_BASE => x"FF000000",
+    DEV_4_EN => false,        DEV_4_SIZE =>              0, DEV_4_BASE => (others => '0'), -- unused
+    DEV_5_EN => false,        DEV_5_SIZE =>              0, DEV_5_BASE => (others => '0'), -- unused
+    DEV_6_EN => false,        DEV_6_SIZE =>              0, DEV_6_BASE => (others => '0'), -- unused
+    DEV_7_EN => false,        DEV_7_SIZE =>              0, DEV_7_BASE => (others => '0')  -- unused
   )
   port map (
     -- host port --
@@ -418,7 +422,11 @@ begin
     dev_0_req_o => xbus_ext_mem_a_req, dev_0_rsp_i => xbus_ext_mem_a_rsp,
     dev_1_req_o => xbus_ext_mem_b_req, dev_1_rsp_i => xbus_ext_mem_b_rsp,
     dev_2_req_o => xbus_mmio_req,      dev_2_rsp_i => xbus_mmio_rsp,
-    dev_3_req_o => xbus_trig_req,      dev_3_rsp_i => xbus_trig_rsp
+    dev_3_req_o => xbus_trig_req,      dev_3_rsp_i => xbus_trig_rsp,
+    dev_4_req_o => open,               dev_4_rsp_i => xbus_rsp_terminate_c, -- unused
+    dev_5_req_o => open,               dev_5_rsp_i => xbus_rsp_terminate_c, -- unused
+    dev_6_req_o => open,               dev_6_rsp_i => xbus_rsp_terminate_c, -- unused
+    dev_7_req_o => open,               dev_7_rsp_i => xbus_rsp_terminate_c  -- unused
   );
 
 
