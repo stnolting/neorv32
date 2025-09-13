@@ -196,8 +196,10 @@ requiring only a single cycle to complete. More sophisticated instructions like 
 by so-called "ALU co-processors".
 
 The co-processors are implemented as iterative units that require several cycles to complete processing. Besides the base ISA's
-shift instructions, the co-processors are used to implement all further processing-based ISA extensions (e.g. <<_m_isa_extension>>
-and <<_b_isa_extension>>).
+shift instructions, the co-processors are used to implement all further unprivileged ISA extensions (e.g. <<_m_isa_extension>>,
+<<_zfinx_isa_extension>> and also custom instructions implemented within the <<_custom_functions_unit_cfu>>). If the CPU logic
+detects an illegal instruction or an instruction fetch alignment or bus error no co-processor will be triggered to prevent
+corruption of the co-processor's internal state (like FPU CSRs).
 
 .Multi-Cycle Execution Monitor
 [NOTE]
