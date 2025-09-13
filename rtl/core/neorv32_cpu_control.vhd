@@ -587,9 +587,9 @@ begin
   ctrl_o.alu_opb_mux  <= ctrl.alu_opb_mux;
   ctrl_o.alu_unsigned <= ctrl.alu_unsigned;
   ctrl_o.alu_imm      <= immediate;
-  ctrl_o.alu_cp_alu   <= ctrl.alu_cp_alu;
-  ctrl_o.alu_cp_cfu   <= ctrl.alu_cp_cfu;
-  ctrl_o.alu_cp_fpu   <= ctrl.alu_cp_fpu;
+  ctrl_o.alu_cp_alu   <= ctrl.alu_cp_alu and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c))); -- trigger if no instruction exception
+  ctrl_o.alu_cp_cfu   <= ctrl.alu_cp_cfu and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c))); -- trigger if no instruction exception
+  ctrl_o.alu_cp_fpu   <= ctrl.alu_cp_fpu and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c))); -- trigger if no instruction exception
   -- load/store unit --
   ctrl_o.lsu_req      <= ctrl.lsu_req;
   ctrl_o.lsu_rw       <= ctrl.lsu_rw;
