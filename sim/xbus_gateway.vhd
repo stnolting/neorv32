@@ -21,7 +21,11 @@ entity xbus_gateway is
     DEV_0_EN : boolean := false; DEV_0_SIZE : natural := 0; DEV_0_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
     DEV_1_EN : boolean := false; DEV_1_SIZE : natural := 0; DEV_1_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
     DEV_2_EN : boolean := false; DEV_2_SIZE : natural := 0; DEV_2_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
-    DEV_3_EN : boolean := false; DEV_3_SIZE : natural := 0; DEV_3_BASE : std_ulogic_vector(31 downto 0) := (others => '0')
+    DEV_3_EN : boolean := false; DEV_3_SIZE : natural := 0; DEV_3_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
+    DEV_4_EN : boolean := false; DEV_4_SIZE : natural := 0; DEV_4_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
+    DEV_5_EN : boolean := false; DEV_5_SIZE : natural := 0; DEV_5_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
+    DEV_6_EN : boolean := false; DEV_6_SIZE : natural := 0; DEV_6_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
+    DEV_7_EN : boolean := false; DEV_7_SIZE : natural := 0; DEV_7_BASE : std_ulogic_vector(31 downto 0) := (others => '0')
   );
   port (
     -- host port --
@@ -31,22 +35,26 @@ entity xbus_gateway is
     dev_0_req_o : out xbus_req_t; dev_0_rsp_i : in xbus_rsp_t;
     dev_1_req_o : out xbus_req_t; dev_1_rsp_i : in xbus_rsp_t;
     dev_2_req_o : out xbus_req_t; dev_2_rsp_i : in xbus_rsp_t;
-    dev_3_req_o : out xbus_req_t; dev_3_rsp_i : in xbus_rsp_t
+    dev_3_req_o : out xbus_req_t; dev_3_rsp_i : in xbus_rsp_t;
+    dev_4_req_o : out xbus_req_t; dev_4_rsp_i : in xbus_rsp_t;
+    dev_5_req_o : out xbus_req_t; dev_5_rsp_i : in xbus_rsp_t;
+    dev_6_req_o : out xbus_req_t; dev_6_rsp_i : in xbus_rsp_t;
+    dev_7_req_o : out xbus_req_t; dev_7_rsp_i : in xbus_rsp_t
   );
 end xbus_gateway;
 
 architecture xbus_gateway_rtl of xbus_gateway is
 
   -- module configuration --
-  constant num_devs_c : natural := 4; -- number of device ports
+  constant num_devs_c : natural := 8; -- number of device ports
 
   -- list of device base address and address size --
   type dev_en_list_t   is array (0 to num_devs_c-1) of boolean;
   type dev_base_list_t is array (0 to num_devs_c-1) of std_ulogic_vector(31 downto 0);
   type dev_size_list_t is array (0 to num_devs_c-1) of natural;
-  constant dev_en_list_c   : dev_en_list_t   := (DEV_0_EN, DEV_1_EN, DEV_2_EN, DEV_3_EN);
-  constant dev_base_list_c : dev_base_list_t := (DEV_0_BASE, DEV_1_BASE, DEV_2_BASE, DEV_3_BASE);
-  constant dev_size_list_c : dev_size_list_t := (DEV_0_SIZE, DEV_1_SIZE, DEV_2_SIZE, DEV_3_SIZE);
+  constant dev_en_list_c   : dev_en_list_t   := (DEV_0_EN, DEV_1_EN, DEV_2_EN, DEV_3_EN, DEV_4_EN, DEV_5_EN, DEV_6_EN, DEV_7_EN);
+  constant dev_base_list_c : dev_base_list_t := (DEV_0_BASE, DEV_1_BASE, DEV_2_BASE, DEV_3_BASE, DEV_4_BASE, DEV_5_BASE, DEV_6_BASE, DEV_7_BASE);
+  constant dev_size_list_c : dev_size_list_t := (DEV_0_SIZE, DEV_1_SIZE, DEV_2_SIZE, DEV_3_SIZE, DEV_4_SIZE, DEV_5_SIZE, DEV_6_SIZE, DEV_7_SIZE);
 
   -- device ports combined as arrays --
   type dev_req_t is array (0 to num_devs_c-1) of xbus_req_t;
@@ -64,6 +72,10 @@ begin
   dev_1_req_o <= dev_req(1); dev_rsp(1) <= dev_1_rsp_i;
   dev_2_req_o <= dev_req(2); dev_rsp(2) <= dev_2_rsp_i;
   dev_3_req_o <= dev_req(3); dev_rsp(3) <= dev_3_rsp_i;
+  dev_4_req_o <= dev_req(4); dev_rsp(4) <= dev_4_rsp_i;
+  dev_5_req_o <= dev_req(5); dev_rsp(5) <= dev_5_rsp_i;
+  dev_6_req_o <= dev_req(6); dev_rsp(6) <= dev_6_rsp_i;
+  dev_7_req_o <= dev_req(7); dev_rsp(7) <= dev_7_rsp_i;
 
   -- device select --
   acc_en_gen:
