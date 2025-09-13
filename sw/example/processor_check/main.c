@@ -72,6 +72,7 @@ const uint32_t trap_never_c = 0x80000000U;
 
 // Global variables
 volatile uint32_t trap_cause = trap_never_c;
+volatile uint32_t trap_mepc = 0;
 volatile int cnt_fail = 0; // global counter for failing tests
 volatile int cnt_ok = 0; // global counter for successful tests
 volatile int cnt_test = 0; // global counter for total number of tests
@@ -612,6 +613,52 @@ int main() {
     else {
       test_fail();
     }
+  }
+  else {
+    PRINT("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // Unaligned instruction fetch bus error
+  // ----------------------------------------------------------
+  PRINT("[%i] IF unaligned access EXC ", cnt_test);
+
+  // skip if C-mode is implemented
+  if ((neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) &&
+      (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) &&
+      (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM))) {
+    trap_cause = trap_never_c;
+    cnt_test++;
+
+    // clear scratch CSR
+    neorv32_cpu_csr_write(CSR_MSCRATCH, 0);
+
+    // set tags (= error response) for the external memory
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x0, 0); // no error when accessing EXT_FMEM_DATA_BASE+0
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x4, 0); // no error when accessing EXT_FMEM_DATA_BASE+4
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x8, 1); // ERROR when accessing EXT_FMEM_DATA_BASE+8
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0xC, 0); // no error when accessing EXT_FMEM_DATA_BASE+12
+
+    // setup test program in external memory
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x0, 0x00010001); // c.nop + c.nop
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x4, 0xD0730001); // csrwi mscratch, 15 (32-bit) + c.nop
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x8, 0x00013407); // c.nop + csrwi mscratch, 15 (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0xC, 0x00008067); // ret (32-bit)
+
+    // execute program
+    asm volatile ("fence.i"); // flush i-cache
+    tmp_a = (uint32_t)EXT_FMEM_DATA_BASE+6; // call the dummy sub program starting at "csrwi mscratch, 15 (32-bit)"
+    asm volatile ("jalr ra, %[input_i]" : : [input_i] "r" (tmp_a));
+
+    if ((trap_cause == TRAP_CODE_I_ACCESS) && // correct exception cause
+        (trap_mepc == tmp_a)) { // correct exception address
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
   }
   else {
     PRINT("[n.a.]\n");
@@ -2294,6 +2341,7 @@ void sim_irq_trigger(uint32_t sel) {
  **************************************************************************/
 void global_trap_handler(void) {
 
+  trap_mepc  = neorv32_cpu_csr_read(CSR_MEPC);
   trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
   trap_cnt++;
 
