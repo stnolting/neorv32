@@ -2466,11 +2466,11 @@ void test_ok(void) {
 
 
 /**********************************************************************//**
- * Test results helper function: Shows "[FAIL]" and increments global cnt_fail
+ * Test results helper function: Shows "[fail]" and increments global cnt_fail
  **************************************************************************/
 void test_fail(void) {
 
-  PRINT("%c[1m[fail(%u)]%c[0m\n", 27, cnt_test-1, 27);
+  PRINT("%c[1m[fail]%c[0m\n", 27, 27);
   cnt_fail++;
 }
 
