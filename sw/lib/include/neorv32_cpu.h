@@ -33,6 +33,11 @@ uint32_t neorv32_cpu_hpm_get_size(void);
 /**@}*/
 
 
+// ================================================================================================
+// Inline Load/Store
+// ================================================================================================
+
+
 /**********************************************************************//**
  * Store unsigned word to address space.
  *
@@ -160,6 +165,11 @@ inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint3
 }
 
 
+// ================================================================================================
+// Inline CSR Access
+// ================================================================================================
+
+
 /**********************************************************************//**
  * Read data from CPU control and status register (CSR).
  *
@@ -213,6 +223,11 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int csr_id
 }
 
 
+// ================================================================================================
+// Inline Atomic Memory Access
+// ================================================================================================
+
+
 /**********************************************************************//**
  * Atomic write-after-read CSR operation.
  *
@@ -225,18 +240,6 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_swap(const int c
   uint32_t tmp;
   asm volatile ("csrrw %[dst], %[id], %[src]" : [dst] "=r" (tmp) : [id] "i" (csr_id), [src] "r" (wdata));
   return tmp;
-}
-
-
-/**********************************************************************//**
- * Put CPU into sleep / power-down mode.
- *
- * @note The WFI (wait for interrupt) instruction will make the CPU halt until
- * any enabled interrupt source becomes pending.
- **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
-
-  asm volatile ("wfi");
 }
 
 
@@ -553,6 +556,23 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomaxu(uint32_t add
 
   return 0;
 #endif
+}
+
+
+// ================================================================================================
+// Inline Misc
+// ================================================================================================
+
+
+/**********************************************************************//**
+ * Put CPU into sleep / power-down mode.
+ *
+ * @note The WFI (wait for interrupt) instruction will make the CPU halt until
+ * any enabled interrupt source becomes pending.
+ **************************************************************************/
+inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
+
+  asm volatile ("wfi");
 }
 
 

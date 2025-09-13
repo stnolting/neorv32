@@ -344,7 +344,8 @@ enum NEORV32_CSR_MXISA_enum {
   CSR_MXISA_ZBS      = 24, /**< CPU mxisa CSR (24): single-bit bit-manipulation operations (r/-)*/
   CSR_MXISA_ZAAMO    = 25, /**< CPU mxisa CSR (25): atomic read-modify-write operations (r/-)*/
   CSR_MXISA_ZALRSC   = 26, /**< CPU mxisa CSR (26): atomic reservation-set operations (r/-)*/
-  CSR_MXISA_ZCB      = 27  /**< CPU mxisa CSR (27): additional code size reduction instruction (r/-)*/
+  CSR_MXISA_ZCB      = 27, /**< CPU mxisa CSR (27): additional code size reduction instruction (r/-)*/
+  CSR_MXISA_ZCA      = 28  /**< CPU mxisa CSR (28): compressed instructions without floating-point (r/-)*/
 };
 
 

@@ -1373,7 +1373,8 @@ begin
             csr.rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);  -- Zaamo: atomic memory operations
             csr.rdata(26) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc); -- Zalrsc: reservation-set operations
             csr.rdata(27) <= bool_to_ulogic_f(RISCV_ISA_Zcb);    -- Zcb: additional code size reduction instructions
-            csr.rdata(31 downto 28) <= (others => '0');          -- reserved
+            csr.rdata(28) <= bool_to_ulogic_f(RISCV_ISA_C);      -- Zca: C without floating-point
+            csr.rdata(31 downto 29) <= (others => '0');          -- reserved
 
           -- --------------------------------------------------------------------
           -- undefined/unavailable or implemented externally

@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 13.09.2025 | 1.12.1.6 | minor RTL edits; add `Zca` ISA extension flag to `mxisa` CSR | [#1375](https://github.com/stnolting/neorv32/pull/1375) |
 | 09.09.2025 | 1.12.1.5 | TRACER: rework instruction decoding logic and add all remaining ISA extensions | [#1368](https://github.com/stnolting/neorv32/pull/1368) |
 | 05.09.2025 | 1.12.1.4 | improve TRACER's simulation-mode instruction decoding | [#1366](https://github.com/stnolting/neorv32/pull/1366) |
 | 05.09.2025 | 1.12.1.3 | minor rtl edits: add `ndmresetpending` & `stickyunavail` bits to DM's `dmstatus` register; fix interrupt-entry after `wfi` | [#1364](https://github.com/stnolting/neorv32/pull/1364) |
