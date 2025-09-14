@@ -62,7 +62,7 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
   -- comparator --
   signal cmp_rs1 : std_ulogic_vector(XLEN downto 0);
   signal cmp_rs2 : std_ulogic_vector(XLEN downto 0);
-  signal cmp     : std_ulogic_vector(1 downto 0); -- comparator status
+  signal cmp     : std_ulogic_vector(1 downto 0);
 
   -- operands --
   signal opa,   opb   : std_ulogic_vector(XLEN-1 downto 0);
@@ -74,21 +74,17 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
 
   -- co-processor interface --
   type cp_data_t  is array (0 to 6) of std_ulogic_vector(XLEN-1 downto 0);
-  signal cp_result : cp_data_t; -- co-processor result
-  signal cp_valid  : std_ulogic_vector(6 downto 0); -- co-processor done
-  signal cp_shamt  : std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
+  signal cp_result : cp_data_t;
+  signal cp_valid  : std_ulogic_vector(6 downto 0);
+  signal cp_shamt  : std_ulogic_vector(index_size_f(XLEN)-1 downto 0);
 
-  -- CSR proxy --
-  signal fpu_csr_en, cfu_csr_en : std_ulogic;
-  signal fpu_csr_we, cfu_csr_we : std_ulogic;
-  signal fpu_csr_rd, cfu_csr_rd : std_ulogic_vector(XLEN-1 downto 0);
+  -- FPU proxy --
+  signal fpu_csr_en, fpu_csr_we : std_ulogic;
+  signal fpu_csr_rd : std_ulogic_vector(XLEN-1 downto 0);
 
   -- CFU proxy --
   signal cfu_active, cfu_done, cfu_busy : std_ulogic;
   signal cfu_res : std_ulogic_vector(XLEN-1 downto 0);
-
-  -- CSR read-backs --
-  signal csr_rdata_fpu, csr_rdata_cfu : std_ulogic_vector(XLEN-1 downto 0);
 
 begin
 
@@ -149,10 +145,6 @@ begin
   -- co-processor result --
   -- > "cp_result" data has to be always zero unless the specific co-processor has been actually triggered
   cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5) or cp_result(6);
-
-  -- co-processor CSR read-back --
-  -- > "csr_rdata_*" data has to be always zero unless the specific co-processor is actually being accessed
-  csr_o <= csr_rdata_fpu or csr_rdata_cfu;
 
   -- shift amount --
   cp_shamt <= opb(cp_shamt'left downto 0);
@@ -270,19 +262,19 @@ begin
     );
 
     -- CSR proxy --
-    fpu_csr_en    <= '1' when (ctrl_i.csr_addr(11 downto 2) = csr_fflags_c(11 downto 2)) else '0';
-    fpu_csr_we    <= fpu_csr_en and ctrl_i.csr_we;
-    csr_rdata_fpu <= fpu_csr_rd when (fpu_csr_en = '1') else (others => '0');
+    fpu_csr_en <= '1' when (ctrl_i.csr_addr(11 downto 2) = csr_fflags_c(11 downto 2)) else '0';
+    fpu_csr_we <= fpu_csr_en and ctrl_i.csr_we;
+    csr_o      <= fpu_csr_rd when (fpu_csr_en = '1') else (others => '0');
   end generate;
 
   neorv32_cpu_cp_fpu_inst_false:
   if not RISCV_ISA_Zfinx generate
-    fpu_csr_en    <= '0';
-    fpu_csr_we    <= '0';
-    fpu_csr_rd    <= (others => '0');
-    csr_rdata_fpu <= (others => '0');
-    cp_result(3)  <= (others => '0');
-    cp_valid(3)   <= '0';
+    fpu_csr_en   <= '0';
+    fpu_csr_we   <= '0';
+    fpu_csr_rd   <= (others => '0');
+    csr_o        <= (others => '0');
+    cp_result(3) <= (others => '0');
+    cp_valid(3)  <= '0';
   end generate;
 
 
@@ -293,32 +285,22 @@ begin
     neorv32_cpu_cp_cfu_inst: entity neorv32.neorv32_cpu_cp_cfu
     port map (
       -- global control --
-      clk_i       => clk_i,                          -- global clock, rising edge
-      rstn_i      => rstn_i,                         -- global reset, low-active, async
+      clk_i    => clk_i,                          -- global clock, rising edge
+      rstn_i   => rstn_i,                         -- global reset, low-active, async
       -- operation control --
-      start_i     => ctrl_i.alu_cp_cfu,              -- operation trigger/strobe
-      active_i    => cfu_active,                     -- operation in progress, CPU is waiting for CFU
-      -- CSR interface --
-      csr_we_i    => cfu_csr_we,                     -- write enable
-      csr_addr_i  => ctrl_i.csr_addr(1 downto 0),    -- address
-      csr_wdata_i => ctrl_i.csr_wdata,               -- write data
-      csr_rdata_o => cfu_csr_rd,                     -- read data
+      start_i  => ctrl_i.alu_cp_cfu,              -- operation trigger/strobe
+      active_i => cfu_active,                     -- operation in progress, CPU is waiting for CFU
       -- operands --
-      rtype_i     => ctrl_i.ir_opcode(5),            -- instruction type (R3-type or R4-type)
-      funct3_i    => ctrl_i.ir_funct3,               -- "funct3" bit-field from custom instruction word
-      funct7_i    => ctrl_i.ir_funct12(11 downto 5), -- "funct7" bit-field from custom instruction word
-      rs1_i       => rs1_i,                          -- rf source 1
-      rs2_i       => rs2_i,                          -- rf source 2
-      rs3_i       => rs3_i,                          -- rf source 3
+      rtype_i  => ctrl_i.ir_opcode(5),            -- instruction type (R3-type or R4-type)
+      funct3_i => ctrl_i.ir_funct3,               -- "funct3" bit-field from custom instruction word
+      funct7_i => ctrl_i.ir_funct12(11 downto 5), -- "funct7" bit-field from custom instruction word
+      rs1_i    => rs1_i,                          -- rf source 1
+      rs2_i    => rs2_i,                          -- rf source 2
+      rs3_i    => rs3_i,                          -- rf source 3
       -- result and status --
-      result_o    => cfu_res,                        -- operation result
-      valid_o     => cfu_done                        -- result valid, operation done; set one cycle before result_o is valid
+      result_o => cfu_res,                        -- operation result
+      valid_o  => cfu_done                        -- result valid, operation done; set one cycle before result_o is valid
     );
-
-    -- CSR proxy --
-    cfu_csr_en    <= '1' when (ctrl_i.csr_addr(11 downto 2) = csr_cfureg0_c(11 downto 2)) else '0';
-    cfu_csr_we    <= cfu_csr_en and ctrl_i.csr_we;
-    csr_rdata_cfu <= cfu_csr_rd when (cfu_csr_en = '1') else (others => '0');
 
     -- response proxy --
     cfu_arbiter: process(rstn_i, clk_i)
@@ -346,16 +328,12 @@ begin
 
   neorv32_cpu_cp_cfu_inst_false:
   if not RISCV_ISA_Zxcfu generate
-    cfu_csr_en    <= '0';
-    cfu_csr_we    <= '0';
-    cfu_done      <= '0';
-    cfu_res       <= (others => '0');
-    cfu_csr_rd    <= (others => '0');
-    csr_rdata_cfu <= (others => '0');
-    cfu_busy      <= '0';
-    cfu_active    <= '0';
-    cp_result(4)  <= (others => '0');
-    cp_valid(4)   <= '0';
+    cfu_done     <= '0';
+    cfu_res      <= (others => '0');
+    cfu_busy     <= '0';
+    cfu_active   <= '0';
+    cp_result(4) <= (others => '0');
+    cp_valid(4)  <= '0';
   end generate;
 
 
