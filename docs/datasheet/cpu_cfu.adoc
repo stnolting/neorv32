@@ -10,14 +10,14 @@ program memory requirements when implemented entirely in software. Some potentia
 use-cases might include:
 
 * **AI:** sub-word / vertical vector/SIMD operations like processing all four sub-bytes of a 32-bit data word individually
-* **Cryptographic:** bit substitution and permutation
+* **Cryptography:** bit substitution and permutation
 * **Communication:** data conversions like binary to gray-code
 * **Arithmetic:** BCD (binary-coded decimal) operations; multiply-add operations; shift-and-add algorithms like CORDIC or BKM
 * **Image processing:** look-up-tables for color space transformations
 * implementing instructions from **other RISC-V ISA extensions** that are not yet supported by NEORV32
 
-The NEORV32 CFU supports two different instruction formats (R3-type and R4-type; see <<_cfu_instruction_formats>>) and also
-allows to implement up to 4 CFU-internal custom control and status registers (see <<_cfu_control_and_status_registers_cfu_csrs>>).
+The NEORV32 CFU supports two different instruction formats: RISC-V R3-type (up to two source operands) and RISC-V R4-type
+(up to three source operands) instructions. See <<_cfu_instruction_formats>> for more information.
 
 .CFU Complexity
 [NOTE]
@@ -30,7 +30,7 @@ https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules[Adding C
 .Default CFU Hardware Example
 [TIP]
 The default CFU module (`rtl/core/neorv32_cpu_cp_cfu.vhd`) implements the _Extended Tiny Encryption Algorithm (XTEA)_
-as "real world" application example.
+as application example.
 
 
 :sectnums:
@@ -45,8 +45,8 @@ The NEORV32 CFU utilizes these two opcodes to support user-defined **R3-type** i
 1 destination register) and **R4-type** instructions (3 source registers, 1 destination register). Both instruction
 formats are compliant to the RISC-V specification.
 
-* `custom-0`: `0001011` RISC-V standard, used for NEORV32 <<_cfu_r3_type_instructions>> (3x register addresses)
-* `custom-1`: `0101011` RISC-V standard, used for NEORV32 <<_cfu_r4_type_instructions>> (4x register addresses)
+* `custom-0`: `0001011` RISC-V standard, used for NEORV32 <<_cfu_r3_type_instructions>> (3 register addresses)
+* `custom-1`: `0101011` RISC-V standard, used for NEORV32 <<_cfu_r4_type_instructions>> (4 register addresses)
 
 [TIP]
 The provided instructions formats are _predefined_ to allow an easy integration framework.
@@ -182,34 +182,6 @@ neorv32_cfu_r3_instr(0b0100100, 0b001, tmp, foo); // discard result
 [TIP]
 There is an example program for the CFU, which shows how to use the _default_ CFU hardware module.
 This example program is located in `sw/example/demo_cfu`.
-
-
-:sectnums:
-==== CFU Control and Status Registers (CFU-CSRs)
-
-The CPU provides up to four control and status registers (<<_cfureg, `cfureg*`>>) to be used within the CFU.
-These CSRs are mapped to the "custom user-mode read/write" CSR address space, which is explicitly reserved for
-platform-specific application by the RISC-V spec. For example, these CSRs can be used to pass additional operands
-to the CFU, to obtain additional results, to check processing status or to configure operation modes.
-
-.CFU CSR Access Example
-[source,c]
-----
-neorv32_cpu_csr_write(CSR_CFUREG0, 0xabcdabcd); // write data to CFU CSR 0
-uint32_t tmp = neorv32_cpu_csr_read(CSR_CFUREG3); // read data from CFU CSR 3
-----
-
-.Additional CFU-internal CSRs
-[TIP]
-If more than four CFU-internal CSRs are required the designer can implement an "indirect access mechanism" based
-on just two of the default CSRs: one CSR is used to configure the index while the other is used as alias to exchange
-data with the indexed CFU-internal CSR - this concept is similar to the RISC-V Indirect CSR Access Extension
-Specification (`Smcsrind`).
-
-.Security Considerations
-[NOTE]
-The CFU CSRs are mapped to the user-mode CSR space so software running at _any privilege level_ can access these
-CSRs.
 
 
 :sectnums:
