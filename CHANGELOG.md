@@ -29,7 +29,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 14.09.2025 | 1.12.1.7 | :bug: fix unaligned instruction fetch bus error; do not trigger co-processors if pending instruction-related exception | [#1367](https://github.com/stnolting/neorv32/pull/1376) |
+| 14.09.2025 | 1.12.1.8 | :warning: remove CFU CSRs (`cfureg[0..3]`) | [#1377](https://github.com/stnolting/neorv32/pull/1377) |
+| 13.09.2025 | 1.12.1.7 | :bug: fix unaligned instruction fetch bus error; do not trigger co-processors if pending instruction-related exception | [#1367](https://github.com/stnolting/neorv32/pull/1376) |
 | 13.09.2025 | 1.12.1.6 | minor RTL edits; add `Zca` ISA extension flag to `mxisa` CSR | [#1375](https://github.com/stnolting/neorv32/pull/1375) |
 | 09.09.2025 | 1.12.1.5 | TRACER: rework instruction decoding logic and add all remaining ISA extensions | [#1368](https://github.com/stnolting/neorv32/pull/1368) |
 | 05.09.2025 | 1.12.1.4 | improve TRACER's simulation-mode instruction decoding | [#1366](https://github.com/stnolting/neorv32/pull/1366) |

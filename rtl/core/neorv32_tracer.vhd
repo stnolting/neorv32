@@ -616,11 +616,6 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
       when csr_dcsr_c           => return "dcsr";
       when csr_dpc_c            => return "dpc";
       when csr_dscratch0_c      => return "dscratch0";
-      -- NEORV32-specific read/write user registers --
-      when csr_cfureg0_c        => return "cfureg0";
-      when csr_cfureg1_c        => return "cfureg1";
-      when csr_cfureg2_c        => return "cfureg2";
-      when csr_cfureg3_c        => return "cfureg3";
       -- machine counters/timers --
       when csr_mcycle_c         => return "mcycle";
       when csr_mtime_c          => return "mtime";
