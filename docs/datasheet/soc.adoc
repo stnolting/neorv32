@@ -548,7 +548,7 @@ corresponds to the according access type, i.e. instruction fetch bus fault, load
 The IO switch further decodes the address when accessing the processor-internal IO/peripheral devices and forwards
 the access request to the according module. Note that a total address space size of 256 bytes is assigned to each
 IO module in order to simplify address decoding. The IO-specific address map is also defined in the main VHDL
-package file (`rtl/core/neorv323_package.vhd`).
+package file (`rtl/core/neorv32_package.vhd`).
 
 .Exemplary Cut-Out from the IO Address Map
 [source,vhdl]
