@@ -509,7 +509,7 @@ See section <<_dual_core_configuration>> for more information.
 
 The central bus gateway serves two purposes: it **redirects** accesses to the according modules (e.g. memory accesses
 vs. memory-mapped IO accesses) and also **monitors** all bus transactions. The redirection of access request is based on a
-customizable memory map implemented via VHDL constants in the main package file (`rtl/core/neorv323_package.vhd`):
+customizable memory map implemented via VHDL constants in the main package file (`rtl/core/neorv32_package.vhd`):
 
 .Main Address Regions Configuration in the VHDL Package File
 [source,vhdl]
@@ -527,7 +527,7 @@ Besides the redirecting of bus requests the gateway also implements a **bus moni
 tracks all bus transactions to ensure _safe_ and _deterministic_ operations. Whenever a memory-mapped device is
 accessed the bus monitor starts an internal countdown. The accessed module has to respond ("ACK") to the bus request
 within a bound **time window**. This time window is defined by a global constant in the processor's VHDL package
-file (`rtl/core/neorv323_package.vhd`):
+file (`rtl/core/neorv32_package.vhd`):
 
 .Global Bus Timeout Configuration
 [source,vhdl]
