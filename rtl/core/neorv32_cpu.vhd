@@ -99,7 +99,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant riscv_a_c   : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
   constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
   constant riscv_zcb_c : boolean := RISCV_ISA_C and RISCV_ISA_Zcb; -- Zcb: additional compressed instructions
-  constant riscv_zkt_c : boolean := CPU_FAST_SHIFT_EN; -- Zkt: data-independent execution time for cryptographic operations
+  constant riscv_zkt_c : boolean := CPU_FAST_SHIFT_EN; -- Zkt: data-independent execution time for cryptography operations
   constant riscv_zkn_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
                                     RISCV_ISA_Zkne and RISCV_ISA_Zknd and RISCV_ISA_Zknh; -- Zkn: NIST suite
   constant riscv_zks_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
@@ -245,7 +245,7 @@ begin
     RISCV_ISA_Zks     => riscv_zks_c,         -- ShangMi algorithm suite available
     RISCV_ISA_Zksed   => RISCV_ISA_Zksed,     -- implement ShangMi block cipher extension
     RISCV_ISA_Zksh    => RISCV_ISA_Zksh,      -- implement ShangMi hash extension
-    RISCV_ISA_Zkt     => riscv_zkt_c,         -- data-independent execution time available (for cryptographic operations)
+    RISCV_ISA_Zkt     => riscv_zkt_c,         -- data-independent execution time for cryptography operations available
     RISCV_ISA_Zmmul   => RISCV_ISA_Zmmul,     -- implement multiply-only M sub-extension
     RISCV_ISA_Zxcfu   => RISCV_ISA_Zxcfu,     -- implement custom (instr.) functions unit
     RISCV_ISA_Sdext   => RISCV_ISA_Sdext,     -- implement external debug mode extension
@@ -390,7 +390,7 @@ begin
     RISCV_ISA_Zknd   => RISCV_ISA_Zknd,   -- implement cryptography NIST AES decryption extension
     RISCV_ISA_Zkne   => RISCV_ISA_Zkne,   -- implement cryptography NIST AES encryption extension
     RISCV_ISA_Zknh   => RISCV_ISA_Zknh,   -- implement cryptography NIST hash extension
-    RISCV_ISA_Zksed  => RISCV_ISA_Zksed,  -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksed  => RISCV_ISA_Zksed,  -- implement ShangMi block cipher extension
     RISCV_ISA_Zksh   => RISCV_ISA_Zksh,   -- implement ShangMi hash extension
     RISCV_ISA_Zmmul  => RISCV_ISA_Zmmul,  -- implement multiply-only M sub-extension
     RISCV_ISA_Zxcfu  => RISCV_ISA_Zxcfu,  -- implement custom (instr.) functions unit
