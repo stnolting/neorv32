@@ -255,7 +255,6 @@ begin
       cmp_i       => cmp,                         -- comparator status
       rs1_i       => rs1_i,                       -- rf source 1
       rs2_i       => rs2_i,                       -- rf source 2
-      rs3_i       => rs3_i,                       -- rf source 3
       -- result and status --
       res_o       => cp_result(3),                -- operation result
       valid_o     => cp_valid(3)                  -- data output valid

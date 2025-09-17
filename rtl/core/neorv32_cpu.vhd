@@ -95,7 +95,7 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
-  constant rf_rs3_en_c : boolean := RISCV_ISA_Zxcfu or RISCV_ISA_Zfinx; -- 3rd register file read port
+  constant rf_rs3_en_c : boolean := RISCV_ISA_Zxcfu; -- 3rd register file read port
   constant riscv_a_c   : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
   constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
   constant riscv_zcb_c : boolean := RISCV_ISA_C and RISCV_ISA_Zcb; -- Zcb: additional compressed instructions
