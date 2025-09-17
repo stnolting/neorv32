@@ -28,7 +28,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01120108"; -- hardware version
+  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01120109"; -- hardware version
   constant archid_c     : natural := 19; -- official RISC-V architecture ID
   constant XLEN         : natural := 32; -- native data path width
 
@@ -532,7 +532,7 @@ package neorv32_package is
     -- instruction fetch --
     if_fence     : std_ulogic;                     -- fence.i operation
     if_reset     : std_ulogic;                     -- restart instruction fetch
-    if_ack       : std_ulogic;                     -- consume data from instruction fetch
+    if_ready     : std_ulogic;                     -- ready for next instruction
     -- program counter --
     pc_cur       : std_ulogic_vector(31 downto 0); -- address of current instruction
     pc_nxt       : std_ulogic_vector(31 downto 0); -- address of next instruction
@@ -579,11 +579,11 @@ package neorv32_package is
     cpu_debug    : std_ulogic;                     -- set when CPU is in debug mode
   end record;
 
-  -- control bus reset initializer --
+  -- control bus reset termination --
   constant ctrl_bus_zero_c : ctrl_bus_t := (
     if_fence     => '0',
     if_reset     => '0',
-    if_ack       => '0',
+    if_ready     => '0',
     pc_cur       => (others => '0'),
     pc_nxt       => (others => '0'),
     pc_ret       => (others => '0'),

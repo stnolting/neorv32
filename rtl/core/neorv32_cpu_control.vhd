@@ -185,7 +185,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal debug_ctrl : debug_ctrl_t;
 
   -- misc/helpers --
-  signal if_ack       : std_ulogic; -- acknowledge instruction data from instruction fetch (front-end)
   signal if_reset     : std_ulogic; -- reset instruction fetch (front-end)
   signal branch_taken : std_ulogic; -- fulfilled branch condition or unconditional jump
   signal monitor_cnt  : std_ulogic_vector(monitor_mc_tmo_c downto 0); -- execution monitor cycle counter
@@ -292,7 +291,6 @@ begin
     exe_engine_nxt.pc    <= exe_engine.pc;
     exe_engine_nxt.pc2   <= exe_engine.pc2;
     exe_engine_nxt.ra    <= (others => '0'); -- output zero if not a branch instruction
-    if_ack               <= '0';
     if_reset             <= '0';
     trap_ctrl.env_enter  <= '0';
     trap_ctrl.env_exit   <= '0';
@@ -358,8 +356,7 @@ begin
         --
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           exe_engine_nxt.state <= EX_TRAP_ENTER;
-        elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
-          if_ack               <= '1'; -- instruction data is about to be consumed
+        elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW
           trap_ctrl.instr_be   <= frontend_i.fault or pmp_fault_i; -- access fault during instruction fetch
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
@@ -461,7 +458,7 @@ begin
             else -- instruction fence
               ctrl_nxt.if_fence <= '1';
             end if;
-            exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
+            exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB via branch to PC+4 (actually only required for fence.i)
 
           -- FPU: floating-point operations --
           when opcode_fpu_c =>
@@ -567,7 +564,7 @@ begin
   -- instruction fetch --
   ctrl_o.if_fence     <= ctrl.if_fence;
   ctrl_o.if_reset     <= if_reset;
-  ctrl_o.if_ack       <= if_ack;
+  ctrl_o.if_ready     <= '1' when (exe_engine.state = EX_DISPATCH) else '0';
   -- program counter --
   ctrl_o.pc_cur       <= exe_engine.pc(XLEN-1 downto 1) & '0';
   ctrl_o.pc_nxt       <= exe_engine.pc2(XLEN-1 downto 1) & '0';

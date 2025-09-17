@@ -261,7 +261,7 @@ be altered. However, experienced users can modify them to further tune compilati
 | `-mstrict-align`      | Unaligned memory accesses cannot be resolved by the hardware and require emulation.
 | `-mbranch-cost=10`    | Branching costs a lot of cycles.
 | `-Wl,--gc-sections`   | Make the linker perform dead code elimination.
-| `-ffp-contract=off`   | Disable floating-point expression contraction.
+| `-ffp-contract=off`   | Disable floating-point expression contraction (fused multiply-add/sub; not supported by the NEORV32 FPU).
 | `-g`                  | Add (simple) debug information.
 |=======================
 
