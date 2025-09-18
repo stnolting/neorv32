@@ -384,29 +384,32 @@ begin
       "[NEORV32] Auto-adjusting invalid DMEM size configuration." severity warning;
 
     -- SYSINFO disabled --
-    assert not (not io_sysinfo_en_c) report
-      "[NEORV32] SYSINFO module disabled - some parts of the NEORV32 software framework will no longer work!" severity warning;
+    assert io_sysinfo_en_c report
+      "[NEORV32] SYSINFO module disabled - NEORV32 software framework will not function properly!" severity warning;
 
     -- Clock speed not defined --
-    assert not (CLOCK_FREQUENCY = 0) report
-      "[NEORV32] CLOCK_FREQUENCY must be configured according to the frequency of clk_i port." severity warning;
+    assert (CLOCK_FREQUENCY > 0) report
+      "[NEORV32] CLOCK_FREQUENCY must be configured according to the frequency of clk_i port!" severity warning;
 
     -- Boot configuration notifier --
-    assert not (BOOT_MODE_SELECT = 0) report "[NEORV32] BOOT_MODE_SELECT = 0: booting via bootloader" severity note;
-    assert not (BOOT_MODE_SELECT = 1) report "[NEORV32] BOOT_MODE_SELECT = 1: booting from custom address" severity note;
-    assert not (BOOT_MODE_SELECT = 2) report "[NEORV32] BOOT_MODE_SELECT = 2: booting IMEM image" severity note;
+    assert not (BOOT_MODE_SELECT = 0) report "[NEORV32] BOOT_MODE_SELECT 0 - booting via bootloader" severity note;
+    assert not (BOOT_MODE_SELECT = 1) report "[NEORV32] BOOT_MODE_SELECT 1 - booting from custom address" severity note;
+    assert not (BOOT_MODE_SELECT = 2) report "[NEORV32] BOOT_MODE_SELECT 2 - booting IMEM image" severity note;
 
     -- Boot configuration: boot from initialized IMEM requires the IMEM to be enabled --
     assert not ((BOOT_MODE_SELECT = 2) and (not IMEM_EN)) report
-      "[NEORV32] ERROR: BOOT_MODE_SELECT = 2 (boot IMEM image) requires the internal instruction memory (IMEM) to be enabled!" severity error;
+      "[NEORV32] BOOT_MODE_SELECT = 2 (boot IMEM image) requires the internal instruction memory (IMEM) to be enabled!" severity error;
 
     -- The SMP dual-core configuration requires the CLINT --
     assert not (DUAL_CORE_EN and (not IO_CLINT_EN)) report
-      "[NEORV32] ERROR: The SMP dual-core configuration requires the CLINT to be enabled!" severity error;
+      "[NEORV32] The SMP dual-core configuration requires the CLINT to be enabled!" severity error;
 
     -- XBUS interface might generate burst transfers --
     assert not (XBUS_EN and (ICACHE_EN or DCACHE_EN)) report
-      "[NEORV32] WARNING: XBUS will emit burst transfers for cached addresses!" severity warning;
+      "[NEORV32] XBUS will emit burst transfers for cached addresses!" severity warning;
+
+    -- simulation notifier --
+    assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
 
   end generate; -- /sanity_checks
 

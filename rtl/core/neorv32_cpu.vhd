@@ -183,10 +183,7 @@ begin
       cond_sel_string_f(CPU_RF_HW_RST_EN,  "rf_hw_rst ",  "")
       severity note;
 
-    -- simulation notifier --
-    assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
-
-  end generate; -- /hello_neorv32
+  end generate;
 
 
   -- Front-End (Instruction Fetch) ----------------------------------------------------------
