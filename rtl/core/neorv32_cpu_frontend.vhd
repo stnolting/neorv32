@@ -112,17 +112,19 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   signal zcmp_is_popret : std_ulogic;
   signal zcmp_is_popretz : std_ulogic;
 
-  signal zcmp_instr, zcmp_sw_instr, zcmp_lw_instr : std_ulogic_vector(31 downto 0);
+  signal zcmp_instr, zcmp_sw_instr, zcmp_lw_instr, zcmp_jalr_instr : std_ulogic_vector(31 downto 0);
   constant zcmp_sw_instr_opcode : std_ulogic_vector(6 downto 0) := "0100011";
   constant zcmp_lw_instr_opcode : std_ulogic_vector(6 downto 0) := "0000011";
+  constant zcmp_jalr_instr_opcode : std_ulogic_vector(6 downto 0) := "1100111";
 
   constant zcmp_instr_funct3 : std_ulogic_vector(2 downto 0) := "010";
-  constant zcmp_instr_rs1 : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
+  constant zcmp_instr_rs1_sp : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
+  constant zcmp_instr_rs1_ra : std_ulogic_vector(4 downto 0) := "00001"; -- return address 
 
-  signal zcmp_stack_adj_instr, zcmp_push_stack_adj_instr, zcmp_pop_stack_adj_instr : std_ulogic_vector(31 downto 0);
+  signal zcmp_stack_adj_instr, zcmp_push_stack_adj_instr, zcmp_pop_stack_adj_instr, zcmp_li_a0_instr : std_ulogic_vector(31 downto 0);
   constant zcmp_addi_instr_opcode : std_ulogic_vector(6 downto 0) := "0010011";
   constant zcmp_addi_instr_funct3 : std_ulogic_vector(2 downto 0) := "000";
-  constant zcmp_addi_instr_rs1 : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
+  constant zcmp_addi_rs1_sp : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
 
 begin
 
@@ -389,30 +391,39 @@ begin
                      "01001" when uop_ctr = 2 else -- s1
                      std_ulogic_vector(to_unsigned(uop_ctr + 15, zcmp_ls_reg'length)); -- s2-s11 (s2 == x18)
 
-      zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_instr_rs1 & zcmp_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_sw_instr_opcode;
+      zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_instr_rs1_sp & zcmp_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_sw_instr_opcode;
       -- zcmp_lw_instr <= std_ulogic_vector(zcmp_stack_lw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_instr_rs1 & zcmp_instr_funct3 & std_ulogic_vector(zcmp_stack_lw_offset(4 downto 0)) & zcmp_lw_instr_opcode;
-      
-      zcmp_lw_instr <= std_ulogic_vector(zcmp_stack_lw_offset) & zcmp_instr_rs1 & zcmp_instr_funct3 & zcmp_ls_reg & zcmp_lw_instr_opcode; 
-      
+
+      zcmp_lw_instr <= std_ulogic_vector(zcmp_stack_lw_offset) & zcmp_instr_rs1_sp & zcmp_instr_funct3 & zcmp_ls_reg & zcmp_lw_instr_opcode;
+
       zcmp_instr <= zcmp_sw_instr when zcmp_instr_reg(9) = '0' else
                     zcmp_lw_instr;
 
       -- lw instruction bei cm.pop ist falsch 
 
       zcmp_push_stack_adj_instr <= std_ulogic_vector(-to_signed(zcmp_stack_adj, 12)) &
-                                   zcmp_addi_instr_rs1 & -- rs1 = sp 
+                                   zcmp_addi_rs1_sp & -- rs1 = sp 
                                    zcmp_addi_instr_funct3 &
-                                   zcmp_addi_instr_rs1 & -- rd = rs1 = sp 
+                                   zcmp_addi_rs1_sp & -- rd = rs1 = sp 
                                    zcmp_addi_instr_opcode; -- addi 
 
       zcmp_pop_stack_adj_instr <= std_ulogic_vector(to_signed(zcmp_stack_adj, 12)) &
-                                  zcmp_addi_instr_rs1 & -- rs1 = sp 
+                                  zcmp_addi_rs1_sp & -- rs1 = sp 
                                   zcmp_addi_instr_funct3 &
-                                  zcmp_addi_instr_rs1 & -- rd = rs1 = sp 
+                                  zcmp_addi_rs1_sp & -- rd = rs1 = sp 
                                   zcmp_addi_instr_opcode; -- addi 
 
       zcmp_stack_adj_instr <= zcmp_push_stack_adj_instr when zcmp_instr_reg(10) = '0' else
                               zcmp_pop_stack_adj_instr;
+
+      zcmp_li_a0_instr <= (31 downto 12 => '0',
+                          11 downto 7 => "01010",
+                          6 downto 0 => zcmp_addi_instr_opcode);
+
+      zcmp_jalr_instr <= (31 downto 20 => '0',
+                         19 downto 15 => zcmp_instr_rs1_ra,
+                         14 downto 7 => '0',
+                         6 downto 0 => zcmp_jalr_instr_opcode);
 
       uop_ctr_clr <= '0';
 
@@ -430,7 +441,7 @@ begin
         end if;
       end process uop_fsm_sync;
 
-      uop_fsm_comb : process (uop_state_reg, uop_ctr, fetch, ipb, zcmp_in_uop_seq,zcmp_is_popret, zcmp_is_popretz, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
+      uop_fsm_comb : process (uop_state_reg, uop_ctr, fetch, ipb, zcmp_in_uop_seq, zcmp_is_popret, zcmp_is_popretz, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
       begin
         uop_ctr_nxt_in_seq <= uop_ctr;
         uop_state_nxt <= uop_state_reg;
