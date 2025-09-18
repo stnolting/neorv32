@@ -43,10 +43,13 @@ enum NEORV32_SYSINFO_MISC_enum {
   SYSINFO_MISC_HART_MSB = 19, /**< SYSINFO_MISC (19) (r/-): number of physical CPU cores ("harts"), MSB */
 
   SYSINFO_MISC_BOOT_LSB = 20, /**< SYSINFO_MISC (20) (r/-): boot mode configuration (via BOOT_MODE_SELECT generic), LSB */
-  SYSINFO_MISC_BOOT_MSB = 23, /**< SYSINFO_MISC (23) (r/-): boot mode configuration (via BOOT_MODE_SELECT generic), MSB */
+  SYSINFO_MISC_BOOT_MSB = 21, /**< SYSINFO_MISC (21) (r/-): boot mode configuration (via BOOT_MODE_SELECT generic), MSB */
 
-  SYSINFO_MISC_BTMO_LSB = 24, /**< SYSINFO_MISC (24) (r/-): log2(bus timeout cycles), LSB */
-  SYSINFO_MISC_BTMO_MSB = 31  /**< SYSINFO_MISC (31) (r/-): log2(bus timeout cycles), MSB */
+  SYSINFO_MISC_ITMO_LSB = 22, /**< SYSINFO_MISC (22) (r/-): log2(internal bus timeout cycles), LSB */
+  SYSINFO_MISC_ITMO_MSB = 26, /**< SYSINFO_MISC (26) (r/-): log2(internal bus timeout cycles), MSB */
+
+  SYSINFO_MISC_ETMO_LSB = 27, /**< SYSINFO_MISC (27) (r/-): log2(external bus timeout cycles), LSB */
+  SYSINFO_MISC_ETMO_MSB = 31  /**< SYSINFO_MISC (31) (r/-): log2(external bus timeout cycles), MSB */
 };
 
 /** NEORV32_SYSINFO.SOC (r/-): Implemented processor devices/features */
@@ -139,15 +142,31 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_dmemsize(voi
  * @return Boot configuration ID.
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bootmode(void) {
-  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_BOOT_LSB) & 0x0fu);
+  return (uint32_t)((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_BOOT_LSB) & 0x03u);
 }
 
 /**********************************************************************//**
- * Get bus timeout cycles.
+ * Get internal bus timeout cycles.
  * @return Bus timeout cycles.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_bustimeout(void) {
-  return (uint32_t)(1u << ((NEORV32_SYSINFO->MISC >> SYSINFO_MISC_BTMO_LSB) & 0xffu));
+inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_intbustimeout(void) {
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ITMO_LSB) & 0x1fu;
+  if (tmp) {
+    return (uint32_t)(1u << tmp);
+  }
+  return 0;
+}
+
+/**********************************************************************//**
+ * Get external bus timeout cycles.
+ * @return Bus timeout cycles.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_get_extbustimeout(void) {
+  uint32_t tmp = (NEORV32_SYSINFO->MISC >> SYSINFO_MISC_ETMO_LSB) & 0x1fu;
+  if (tmp) {
+    return (uint32_t)(1u << tmp);
+  }
+  return 0;
 }
 
 /**********************************************************************//**
