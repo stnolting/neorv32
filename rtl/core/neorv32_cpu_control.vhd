@@ -187,7 +187,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- misc/helpers --
   signal if_reset     : std_ulogic; -- reset instruction fetch (front-end)
   signal branch_taken : std_ulogic; -- fulfilled branch condition or unconditional jump
-  signal monitor_cnt  : std_ulogic_vector(monitor_mc_tmo_c downto 0); -- execution monitor cycle counter
+  signal monitor_cnt  : std_ulogic_vector(alu_cp_tmo_c downto 0); -- execution monitor cycle counter
   signal monitor_exc  : std_ulogic; -- execution monitor timeout exception
   signal opcode       : std_ulogic_vector(6 downto 0); -- simplified opcode (2 LSBs hardwired to "11" to indicate rv32)
   signal immediate    : std_ulogic_vector(XLEN-1 downto 0); -- instruction's immediate

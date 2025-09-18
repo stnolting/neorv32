@@ -18,19 +18,13 @@ package neorv32_package is
 -- Architecture Configuration and Constants
 -- **********************************************************************************************************
 
-  -- Architecture Configuration -------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- max response time for ALL bus transactions --
-  constant bus_timeout_c : natural := 1024; -- has to be a power of two
-
-  -- instruction monitor: raise exception if multi-cycle operation times out --
-  constant monitor_mc_tmo_c : natural := 9; -- = log2 of max execution cycles; default = 2^9 = 512 cycles
-
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c : std_ulogic_vector(31 downto 0) := x"01120200"; -- hardware version
-  constant archid_c     : natural := 19; -- official RISC-V architecture ID
-  constant XLEN         : natural := 32; -- native data path width
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120201"; -- hardware version
+  constant archid_c      : natural := 19; -- official RISC-V architecture ID
+  constant XLEN          : natural := 32; -- native data path width
+  constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
+  constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
   -- Check if we're inside the Matrix -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
