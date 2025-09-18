@@ -148,9 +148,11 @@ to maintain exclusive bus access. This transfer type is used by the CPU to perfo
 
 An accessed XBUS device does not have to respond immediately to a bus request by sending an `ACK`.
 Instead, there is a **time window** where the device has to acknowledge the transfer. This time window
-is configured by the `XBUS_TIMEOUT` generic. All XBUS transactions have to be acknowledged within this
-time window. Otherwise the transfer is terminated and a bus fault exception is raised. See section
-<<_bus_monitor_and_timeout>> for more information.
+is configured by the `XBUS_TIMEOUT` generic. Note that the value provided by this generic is internally
+extended to the next power of two.
+
+All XBUS transactions have to be acknowledged within this time window. Otherwise the transfer is terminated
+and a bus fault exception is raised. See section <<_bus_monitor_and_timeout>> for more information.
 
 Furthermore, an accesses XBUS device can signal an error condition at any time by setting the `ERR` signal
 high for one cycle. This will also terminate the current bus transaction raising a CPU bus fault exception.
