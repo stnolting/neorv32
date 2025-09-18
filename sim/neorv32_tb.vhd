@@ -191,6 +191,7 @@ begin
     CACHE_BURSTS_EN     => CACHE_BURSTS_EN,
     -- External bus interface --
     XBUS_EN             => true,
+    XBUS_TIMEOUT        => 2048,
     XBUS_REGSTAGE_EN    => true,
     -- Processor peripherals --
     IO_GPIO_NUM         => 32,

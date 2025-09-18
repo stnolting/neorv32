@@ -208,8 +208,9 @@ proc setup_ip_gui {} {
   set group [add_group $page {External Bus Interface (XBUS / AXI4-MM Host)}]
   add_params $group {
     { XBUS_EN          {Enable XBUS} }
-    { XBUS_REGSTAGE_EN {Add register stages} {In/out register stages; relaxes timing, but will increase latency} {$XBUS_EN} }
-    { CACHE_BURSTS_EN  {Enable AXI bursts}   {For I-/D-cache accesses only}                                      {$XBUS_EN} }
+    { XBUS_REGSTAGE_EN {Add register stages}   {In/out register stages; relaxes timing, but will increase latency} {$XBUS_EN} }
+    { CACHE_BURSTS_EN  {Enable AXI bursts}     {For I-/D-cache accesses only}                                      {$XBUS_EN} }
+    { XBUS_TIMEOUT     {Access timeout window} {Should be a power of two; timeout disabled when zero}              {$XBUS_EN} }
   }
 
   set group [add_group $page {Stream Link Interface (SLINK / AXI4-Stream Source & Sink)}]

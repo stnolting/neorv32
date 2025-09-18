@@ -98,6 +98,7 @@ entity neorv32_top is
 
     -- External bus interface (XBUS) --
     XBUS_EN               : boolean                        := false;       -- implement external memory bus interface
+    XBUS_TIMEOUT          : natural                        := 2048;        -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_REGSTAGE_EN      : boolean                        := false;       -- add XBUS register stage
 
     -- Processor peripherals --
@@ -771,7 +772,8 @@ begin
 
   neorv32_bus_gateway_inst: entity neorv32.neorv32_bus_gateway
   generic map (
-    TIMEOUT => bus_timeout_c,
+    TMO_INT => int_bus_tmo_c,
+    TMO_EXT => XBUS_TIMEOUT,
     -- port A: internal IMEM --
     A_EN    => IMEM_EN,
     A_BASE  => mem_imem_base_c,
@@ -1508,6 +1510,8 @@ begin
     if io_sysinfo_en_c generate
       neorv32_sysinfo_inst: entity neorv32.neorv32_sysinfo
       generic map (
+        BUS_TMO_INT       => int_bus_tmo_c,
+        BUS_TMO_EXT       => XBUS_TIMEOUT,
         NUM_HARTS         => num_cores_c,
         CLOCK_FREQUENCY   => CLOCK_FREQUENCY,
         BOOT_MODE_SELECT  => BOOT_MODE_SELECT,

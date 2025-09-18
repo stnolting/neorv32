@@ -19,6 +19,7 @@
 |                         | `xbus_ack_i`         | acknowledge (1-bit)
 |                         | `xbus_err_i`         | bus error (1-bit)
 | Configuration generics: | `XBUS_EN`            | enable external bus interface when `true`
+|                         | `XBUS_TIMEOUT`       | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
 |                         | `XBUS_REGSTAGE_EN`   | implement XBUS register stages
 |                         | (`CACHE_BLOCK_SIZE`) | burst size
 |                         | (`CACHE_BURSTS_EN`)  | enable burst transfers for cache update
@@ -45,6 +46,7 @@ If any cache (<<_processor_internal_instruction_cache_icache,i-cache>> or <<_pro
 is implemented and bursts are globally enabled (by the `CACHE_BURSTS_EN` top generic) all cache block transfers are
 **always executed as burst transfers** with a burst size equal to the cache block size (`CACHE_BLOCK_SIZE` top generic).
 Burst transfers should **not** be enabled if any external module mapped to _cached_ <<_address_space>> does not support bursts.
+Note that burst transactions need to set `ACK` or `ERR` for each burst element.
 
 .Address Mapping
 [NOTE]
@@ -146,13 +148,13 @@ to maintain exclusive bus access. This transfer type is used by the CPU to perfo
 
 An accessed XBUS device does not have to respond immediately to a bus request by sending an `ACK`.
 Instead, there is a **time window** where the device has to acknowledge the transfer. This time window
-is enforced by the _bus monitors_ of the processor's central <<_bus_gateway>>: all XBUS transactions
-have to be acknowledged within this time window. Otherwise the transfer is terminated and a bus fault
-exception is raised.
+is configured by the `XBUS_TIMEOUT` generic. All XBUS transactions have to be acknowledged within this
+time window. Otherwise the transfer is terminated and a bus fault exception is raised. See section
+<<_bus_monitor_and_timeout>> for more information.
 
 Furthermore, an accesses XBUS device can signal an error condition at any time by setting the `ERR` signal
-high for one cycle. This will also terminate the current bus transaction before raising a CPU bus fault exception.
-Burst transactions need to set `ACK`/`ERR` for each burst element.
+high for one cycle. This will also terminate the current bus transaction raising a CPU bus fault exception.
+
 
 .Register Stage
 [TIP]

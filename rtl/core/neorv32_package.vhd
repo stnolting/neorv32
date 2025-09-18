@@ -843,6 +843,7 @@ package neorv32_package is
       CACHE_BURSTS_EN       : boolean                        := true;
       -- External bus interface (XBUS) --
       XBUS_EN               : boolean                        := false;
+      XBUS_TIMEOUT          : natural                        := 2048;
       XBUS_REGSTAGE_EN      : boolean                        := false;
       -- Processor peripherals --
       IO_DISABLE_SYSINFO    : boolean                        := false;
