@@ -55,6 +55,7 @@ entity neorv32_cpu is
     RISCV_ISA_Sdtrig    : boolean; -- implement trigger module extension
     RISCV_ISA_Smpmp     : boolean; -- implement physical memory protection
     -- Tuning Options --
+    CPU_TRACE_EN        : boolean; -- implement CPU execution trace generator
     CPU_CONSTT_BR_EN    : boolean; -- implement constant-time branches
     CPU_FAST_MUL_EN     : boolean; -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   : boolean; -- use barrel shifter for shift operations
@@ -75,7 +76,7 @@ entity neorv32_cpu is
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     -- status --
-    trace_o    : out trace_port_t; -- execution trace port
+    trace_o    : out trace_port_t; -- execution trace port (enabled when CPU_TRACE_EN = true)
     sleep_o    : out std_ulogic; -- CPU is in sleep mode
     -- interrupts --
     msi_i      : in  std_ulogic; -- risc-v machine software interrupt
@@ -178,6 +179,7 @@ begin
 
     -- CPU tuning options --
     assert false report "[NEORV32] CPU tuning options: " &
+      cond_sel_string_f(CPU_TRACE_EN,      "trace ",      "") &
       cond_sel_string_f(CPU_CONSTT_BR_EN,  "constt_br ",  "") &
       cond_sel_string_f(CPU_FAST_MUL_EN,   "fast_mul ",   "") &
       cond_sel_string_f(CPU_FAST_SHIFT_EN, "fast_shift ", "") &
@@ -250,6 +252,7 @@ begin
     RISCV_ISA_Sdtrig  => RISCV_ISA_Sdtrig,    -- implement trigger module extension
     RISCV_ISA_Smpmp   => RISCV_ISA_Smpmp,     -- implement physical memory protection
     -- Tuning Options --
+    CPU_TRACE_EN      => CPU_TRACE_EN,        -- implement CPU execution trace generator
     CPU_CONSTT_BR_EN  => CPU_CONSTT_BR_EN,    -- implement constant-time branches
     CPU_FAST_MUL_EN   => CPU_FAST_MUL_EN,     -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN => CPU_FAST_SHIFT_EN,   -- use barrel shifter for shift operations
@@ -472,7 +475,7 @@ begin
   -- Trace Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   trace_enabled:
-  if true generate
+  if CPU_TRACE_EN generate
     neorv32_cpu_trace_inst: entity neorv32.neorv32_cpu_trace
     port map (
       -- global control --
@@ -485,7 +488,7 @@ begin
   end generate;
 
   trace_disabled:
-  if false generate
+  if not CPU_TRACE_EN generate
     trace_o <= trace_port_terminate_c;
   end generate;
 
