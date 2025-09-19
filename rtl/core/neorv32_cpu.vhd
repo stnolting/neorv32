@@ -469,15 +469,25 @@ begin
   end generate;
 
 
-  -- Trace Port -----------------------------------------------------------------------------
+  -- Trace Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trace_o.valid <= ctrl.cnt_event(cnt_event_ir_c);
-  trace_o.pc    <= ctrl.pc_cur(XLEN-1 downto 1) & '0';
-  trace_o.inst  <= ctrl.ir_funct12 & ctrl.rf_rs1 & ctrl.ir_funct3 & ctrl.rf_rd & ctrl.ir_opcode;
-  trace_o.rvc   <= ctrl.cnt_event(cnt_event_compr_c);
-  trace_o.mode  <= ctrl.cpu_debug & ctrl.cpu_priv;
-  trace_o.delta <= ctrl.cnt_event(cnt_event_branched_c);
-  trace_o.trap  <= ctrl.cpu_trap;
+  trace_enabled:
+  if true generate
+    neorv32_cpu_trace_inst: entity neorv32.neorv32_cpu_trace
+    port map (
+      -- global control --
+      clk_i   => clk_i,  -- global clock, rising edge
+      rstn_i  => rstn_i, -- global reset, low-active, async
+      ctrl_i  => ctrl,   -- main control bus
+      -- trace port --
+      trace_o => trace_o -- execution trace port
+    );
+  end generate;
+
+  trace_disabled:
+  if false generate
+    trace_o <= trace_port_terminate_c;
+  end generate;
 
 
 end neorv32_cpu_rtl;
