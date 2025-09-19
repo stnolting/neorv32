@@ -119,12 +119,13 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal alu_res     : std_ulogic_vector(XLEN-1 downto 0); -- alu result
   signal alu_add     : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0);      -- comparator result
-  signal lsu_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory read data
   signal alu_cp_done : std_ulogic;                         -- alu co-processor operation done
-  signal lsu_wait    : std_ulogic;                         -- wait for current data bus access
-  signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
+  signal lsu_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory read data
   signal lsu_mar     : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory address register
   signal lsu_err     : std_ulogic_vector(3 downto 0);      -- lsu alignment/access errors
+  signal lsu_wait    : std_ulogic;                         -- wait for current data bus access
+  signal dbus_req    : bus_req_t;                          -- data bus request
+  signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
   signal pmp_fault   : std_ulogic;                         -- pmp permission violation
   signal irq_machine : std_ulogic_vector(2 downto 0);      -- risc-v standard machine-level interrupts
 
