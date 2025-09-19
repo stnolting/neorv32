@@ -606,7 +606,7 @@ begin
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
   ctrl_o.ir_funct12   <= exe_engine.ir(instr_imm12_msb_c downto instr_imm12_lsb_c);
-  ctrl_o.ir_opcode    <= opcode;
+  ctrl_o.ir_opcode    <= exe_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c);
   -- status --
   ctrl_o.cpu_priv     <= csr.prv_level_eff;
   ctrl_o.cpu_trap     <= trap_ctrl.env_enter;
