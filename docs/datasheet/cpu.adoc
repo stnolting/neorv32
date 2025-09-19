@@ -204,7 +204,7 @@ corruption of the co-processor's internal state (like FPU CSRs).
 .Multi-Cycle Execution Monitor
 [NOTE]
 The CPU control will raise an illegal instruction exception if a multi-cycle functional unit (like the <<_custom_functions_unit_cfu>>)
-does not complete processing in a bound amount of time (configured via the package's `monitor_mc_tmo_c` constant; default = 512 clock cycles).
+does not complete processing in a bound amount of time (configured via the package's `alu_cp_tmo_c` constant; default = 512 clock cycles).
 
 
 :sectnums:

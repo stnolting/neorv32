@@ -62,8 +62,9 @@ to take into account a dynamic frequency scaling of the processor.
 | `7:0`   | `SYSINFO_MISC_IMEM_MBS : SYSINFO_MISC_IMEM_LSB` | _log2_(internal IMEM size in bytes), via top's `IMEM_SIZE` generic
 | `15:8`  | `SYSINFO_MISC_DMEM_MSB : SYSINFO_MISC_DMEM_LSB` | _log2_(internal DMEM size in bytes), via top's `DMEM_SIZE` generic
 | `19:16` | `SYSINFO_MISC_HART_MSB : SYSINFO_MISC_HART_LSB` | number of physical CPU cores ("harts")
-| `23:20` | `SYSINFO_MISC_BOOT_MSB : SYSINFO_MISC_BOOT_LSB` | boot mode configuration, via top's `BOOT_MODE_SELECT` generic (see <<_boot_configuration>>))
-| `31:24` | `SYSINFO_MISC_BTMO_MSB : SYSINFO_MISC_BTMO_LSB` | _log2_(bus timeout cycles), see <<_bus_monitor_and_timeout>>
+| `21:20` | `SYSINFO_MISC_BOOT_MSB : SYSINFO_MISC_BOOT_LSB` | boot mode configuration, via top's `BOOT_MODE_SELECT` generic (see <<_boot_configuration>>))
+| `26:22` | `SYSINFO_MISC_ITMO_MSB : SYSINFO_MISC_ITMO_LSB` | _log2_(internal bus timeout cycles), see <<_bus_monitor_and_timeout>>
+| `31:27` | `SYSINFO_MISC_ETMO_MSB : SYSINFO_MISC_ETMO_LSB` | _log2_(external bus timeout cycles), see <<_bus_monitor_and_timeout>>
 |=======================
 
 

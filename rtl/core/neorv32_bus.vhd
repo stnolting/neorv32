@@ -281,7 +281,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_gateway is
   generic (
-    TIMEOUT : natural; -- bus timeout cycles
+    TMO_INT : natural; -- internal bus timeout cycles (0 = timeout disabled)
+    TMO_EXT : natural; -- external bus timeout cycles (0 = timeout disabled)
     -- port A --
     A_EN    : boolean; -- port enable
     A_BASE  : std_ulogic_vector(31 downto 0); -- port address space base address
@@ -339,10 +340,15 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   signal int_rsp : bus_rsp_t;
 
   -- bus monitor --
+  constant tmo_int_log2_c : natural := index_size_f(TMO_INT);
+  constant tmo_ext_log2_c : natural := index_size_f(TMO_EXT);
+  constant tmo_int_en_c   : boolean := boolean(TMO_INT > 0);
+  constant tmo_ext_en_c   : boolean := boolean(TMO_EXT > 0);
   type keeper_t is record
     state : std_ulogic_vector(1 downto 0);
     lock  : std_ulogic;
-    cnt   : std_ulogic_vector(index_size_f(TIMEOUT) downto 0);
+    ext   : std_ulogic;
+    cnt   : std_ulogic_vector(max_natural_f(tmo_int_log2_c, tmo_ext_log2_c) downto 0);
     err   : std_ulogic;
   end record;
   signal keeper : keeper_t;
@@ -406,6 +412,7 @@ begin
     if (rstn_i = '0') then
       keeper.state <= (others => '0');
       keeper.lock  <= '0';
+      keeper.ext   <= '0';
       keeper.cnt   <= (others => '0');
     elsif rising_edge(clk_i) then
       case keeper.state is
@@ -413,6 +420,7 @@ begin
         when "00" => -- idle, waiting for new access request
         -- ------------------------------------------------------------
           keeper.lock <= req_i.lock;
+          keeper.ext  <= port_sel(port_sel'left); -- external bus access?
           keeper.cnt  <= (others => '0');
           if (req_i.stb = '1') then
             keeper.state <= "01";
@@ -427,7 +435,8 @@ begin
             keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1);
           end if;
           -- bus status --
-          if (keeper.cnt(keeper.cnt'left) = '1') then -- timeout
+          if ((keeper.ext = '0') and tmo_int_en_c and (keeper.cnt(tmo_int_log2_c) = '1')) or -- int timeout
+             ((keeper.ext = '1') and tmo_ext_en_c and (keeper.cnt(tmo_ext_log2_c) = '1')) then -- ext timeout
             keeper.state <= "11";
           elsif (keeper.lock = '1') then -- locked / burst transfer
             if (req_i.lock = '0') then
@@ -450,6 +459,10 @@ begin
   -- bus keeper error --
   keeper.err <= keeper.state(1); -- send error to host
   term_o     <= keeper.state(1); -- terminate pending (external) bus access
+
+  -- timeout notifications --
+  assert tmo_int_en_c report "[NEORV32] Internal bus timeout disabled! Can cause permanent CPU stall!" severity warning;
+  assert tmo_ext_en_c report "[NEORV32] External bus timeout disabled! Can cause permanent CPU stall!" severity warning;
 
 
 end neorv32_bus_gateway_rtl;
