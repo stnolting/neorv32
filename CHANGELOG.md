@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 19.09.2025 | 1.12.2.2 | rework CPU trace port and trace buffer module (TRACER) | [#1384](https://github.com/stnolting/neorv32/pull/1384) |
 | 18.09.2025 | 1.12.2.1 | re-add `XBUS_TIMEOUT` configuration option (timeout window for processor-external bus accesses) | [#1383](https://github.com/stnolting/neorv32/pull/1383) |
 | 18.09.2025 | [**1.12.2**](https://github.com/stnolting/neorv32/releases/tag/v1.12.2) | :rocket: **New release** | |
 | 17.09.2025 | 1.12.1.9 | minor CPU logic optimizations | [#1381](https://github.com/stnolting/neorv32/pull/1381) |
