@@ -25,8 +25,8 @@
 typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t       CTRL;      /**< control register (#NEORV32_TRACER_CTRL_enum) */
   uint32_t       STOP_ADDR; /**< stop tracing at this address */
-  const uint32_t DELTA_SRC; /**< trace data: delta source */
-  const uint32_t DELTA_DST; /**< trace data: delta destination */
+  const uint32_t DELTA_SRC; /**< trace data: delta source + first-packet flag */
+  const uint32_t DELTA_DST; /**< trace data: delta destination + trap-entry flag */
 } neorv32_tracer_t;
 
 /** TRACER module hardware handle (#neorv32_tracer_t) */

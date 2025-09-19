@@ -1299,12 +1299,11 @@ int main() {
     neorv32_tracer_irq_ack();
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    // discard first instruction delta (calling "trace_test_1()")
-    tmp_a = neorv32_tracer_data_get_src();
-    tmp_a = neorv32_tracer_data_get_dst();
-    // get second instruction delta (calling "trace_test_2()" from "trace_test_1()")
-    tmp_b = neorv32_tracer_data_get_src();
-    tmp_b = neorv32_tracer_data_get_dst();
+    // get trace log
+    tmp_a = neorv32_tracer_data_get_src(); // start of first delta
+    neorv32_tracer_data_get_dst(); // discard
+    neorv32_tracer_data_get_src(); // discard
+    tmp_b = neorv32_tracer_data_get_dst(); // destination address (auto-stopping here)
 
     if ((trap_cause == TRACER_TRAP_CODE) && // correct trap code (tracer interrupt)
         (neorv32_tracer_run() == 0) && // trace has auto-stopped

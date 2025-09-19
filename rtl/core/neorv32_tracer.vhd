@@ -67,16 +67,19 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
   signal stop_addr : std_ulogic_vector(30 downto 0);
 
   -- trace arbiter --
-  type state_t is (S_OFFLINE, S_GET_SRC, S_GET_DST);
+  type state_t is (S_OFFLINE, S_TRACING);
   type arbiter_t is record
     state : state_t; -- FSM state
-    astop : std_ulogic; -- auto-stop tracing at given address
-    run   : std_ulogic; -- tracing in progress
+    first : std_ulogic; -- first trace entry
+    valid : std_ulogic_vector(1 downto 0); -- valid-sample shift register
+    compr : std_ulogic_vector(1 downto 0); -- is-decompressed shift register
     src   : std_ulogic_vector(31 downto 0); -- source address
     dst   : std_ulogic_vector(31 downto 0); -- destination address
-    trap  : std_ulogic; -- trap entry
-    first : std_ulogic; -- first trace entry
+    add   : std_ulogic_vector(31 downto 0); -- offset for next linear address
+    nxt   : std_ulogic_vector(31 downto 0); -- next linear address
     push  : std_ulogic; -- push SRC + DST to trace buffer
+    astop : std_ulogic; -- auto-stop tracing
+    run   : std_ulogic; -- tracing in progress
   end record;
   signal arbiter : arbiter_t;
 
@@ -149,6 +152,9 @@ begin
     end if;
   end process bus_access;
 
+  -- trace source select (CPU0 or CPU1) --
+  trace_src <= trace0_i when (ctrl_hsel = '0') or (DUAL_CORE_EN = false) else trace1_i;
+
 
   -- Trace Control Arbiter ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -156,61 +162,41 @@ begin
   begin
     if (rstn_i = '0') then
       arbiter.state <= S_OFFLINE;
-      arbiter.astop <= '0';
+      arbiter.first <= '0';
+      arbiter.valid <= (others => '0');
+      arbiter.compr <= (others => '0');
       arbiter.src   <= (others => '0');
       arbiter.dst   <= (others => '0');
-      arbiter.trap  <= '0';
-      arbiter.first <= '0';
-      arbiter.push  <= '0';
     elsif rising_edge(clk_i) then
-      -- defaults --
-      arbiter.push <= '0';
-
-      -- stop tracing at address --
-      if (ctrl_en = '0') or (arbiter.run = '0') then
-        arbiter.astop <= '0';
-      elsif (trace_src.valid = '1') and (trace_src.pc(31 downto 1) = stop_addr) then
-        arbiter.astop <= '1';
-      end if;
-
-      -- fsm --
       case arbiter.state is
 
         when S_OFFLINE => -- tracing disabled
         -- ------------------------------------------------------------
-          arbiter.trap  <= '0'; -- no trap yet
           arbiter.first <= '1'; -- this will be the first trace packet
+          arbiter.valid <= (others => '0'); -- no valid data sampled yet
           if (ctrl_en = '1') and (ctrl_start = '1') then
-            arbiter.state <= S_GET_SRC;
+            arbiter.state <= S_TRACING;
           end if;
 
-        when S_GET_SRC => -- get delta source address
+        when S_TRACING => -- tracing in progress
         -- ------------------------------------------------------------
-          if (ctrl_en = '0') or (ctrl_stop = '1') or (arbiter.astop = '1') then
+          arbiter.valid(0) <= '0'; -- default
+          if (ctrl_en = '0') or (ctrl_stop = '1') or (arbiter.astop = '1') then -- tracing still running
             arbiter.state <= S_OFFLINE;
-          elsif (trace_src.mode(1) = '0') then -- halt tracing if we are in debug-mode
-            arbiter.trap <= arbiter.trap or trace_src.trap;
-            if (trace_src.valid = '1') or (trace_src.trap = '1') then
-              arbiter.src(31 downto 1) <= trace_src.pc(31 downto 1);
-            end if;
-            if (trace_src.delta = '1') then -- non-linear PC change
-              arbiter.state <= S_GET_DST;
-            end if;
+          elsif (trace_src.valid = '1') and (trace_src.debug = '0') then -- valid trace packet and not in debug-mode
+            arbiter.valid(0) <= '1';
+            arbiter.compr(0) <= trace_src.compr;
+            arbiter.dst      <= trace_src.pc(31 downto 1) & trace_src.intr;
           end if;
-
-        when S_GET_DST => -- get delta destination address
-        -- ------------------------------------------------------------
-          arbiter.src(0) <= arbiter.trap;
-          arbiter.dst    <= trace_src.pc(31 downto 1) & arbiter.first;
-          if (ctrl_en = '0') or (ctrl_stop = '1') or (arbiter.astop = '1') then
-            arbiter.state <= S_OFFLINE;
-          elsif (trace_src.mode(1) = '1') then -- discard this packet if we have entered debug-mode
-            arbiter.state <= S_GET_SRC;
-          elsif (trace_src.valid = '1') then -- first instruction of branch destination
-            arbiter.push  <= '1';
-            arbiter.trap  <= '0';
+          -- sample shift register --
+          if (arbiter.valid(0) = '1') then
+            arbiter.valid(1) <= '1';
+            arbiter.compr(1) <= arbiter.compr(0);
+            arbiter.src      <= arbiter.dst(31 downto 1) & arbiter.first;
+          end if;
+          -- clear first-packet flag on first push
+          if (arbiter.push = '1') then
             arbiter.first <= '0';
-            arbiter.state <= S_GET_SRC;
           end if;
 
         when others => -- undefined
@@ -221,11 +207,18 @@ begin
     end if;
   end process trace_arbiter;
 
+  -- compute next linear address --
+  arbiter.add <= x"00000002" when (arbiter.compr(1) = '1') else x"00000004";
+  arbiter.nxt <= std_ulogic_vector(unsigned(arbiter.src) + unsigned(arbiter.add));
+
+  -- push to trace buffer if address delta (new PC != next linear address) --
+  arbiter.push <= '1' when (arbiter.dst(31 downto 1) /= arbiter.nxt(31 downto 1)) and (arbiter.valid = "11") else '0';
+
+  -- automatic stop if reaching stop address --
+  arbiter.astop <= '1' when (arbiter.src(31 downto 1) = stop_addr) and (arbiter.valid(0) = '1') else '0';
+
   -- tracing in process --
   arbiter.run <= '0' when (arbiter.state = S_OFFLINE) else '1';
-
-  -- trace source (CPU0 or CPU1) --
-  trace_src <= trace0_i when (ctrl_hsel = '0') or (DUAL_CORE_EN = false) else trace1_i;
 
 
   -- Interrupt Generator --------------------------------------------------------------------
@@ -237,7 +230,7 @@ begin
     elsif rising_edge(clk_i) then
       if (ctrl_en = '0') then
         irq_o <= '0';
-      elsif (arbiter.astop = '1') then
+      elsif (arbiter.astop = '1') then -- trigger interrupt when reaching auto-stop-address
         irq_o <= '1';
       elsif (ctrl_iclr = '1') then
         irq_o <= '0';
@@ -747,8 +740,8 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
     end case;
   end function decode_operands_f;
 
-  signal trap_q : std_ulogic; -- trap entry
-  signal cycle_q, order_q : unsigned(31 downto 0); -- cycle and index counters
+  -- time stamp counter --
+  signal cycle_cnt : std_ulogic_vector(31 downto 0);
 
 -- RTL_SYNTHESIS ON
 -- pragma translate_on
@@ -767,19 +760,15 @@ begin
       variable line_v : line;
     begin
       if (rstn_i = '0') then
-        trap_q  <= '0';
-        cycle_q <= (others => '0');
-        order_q <= (others => '0');
+        cycle_cnt <= (others => '0');
       elsif rising_edge(clk_i) then
-        trap_q  <= trap_q or trace_i.trap;
-        cycle_q <= cycle_q + 1;
+        cycle_cnt <= std_ulogic_vector(unsigned(cycle_cnt) + 1);
         if (trace_i.valid = '1') then
-          order_q <= order_q + 1;
           -- index --
-          write(line_v, integer'(to_integer(order_q)));
+          write(line_v, integer'(to_integer(unsigned(trace_i.order))));
           write(line_v, string'(" "));
           -- timestamp --
-          write(line_v, integer'(to_integer(cycle_q)));
+          write(line_v, integer'(to_integer(unsigned(cycle_cnt))));
           write(line_v, string'(" "));
           -- instruction address --
           write(line_v, string'("0x"));
@@ -787,29 +776,28 @@ begin
           write(line_v, string'(" "));
           -- instruction word --
           write(line_v, string'("0x"));
-          write(line_v, string'(print_hex_f(trace_i.inst)));
+          write(line_v, string'(print_hex_f(trace_i.insn)));
           write(line_v, string'(" "));
           -- privilege level --
-          if (trace_i.mode(1) = '1') then
+          if (trace_i.debug = '1') then
             write(line_v, string'("D "));
-          elsif (trace_i.mode(0) = '1') then
+          elsif (trace_i.mode = '1') then
             write(line_v, string'("M "));
           else
             write(line_v, string'("U "));
           end if;
           -- decoded instruction --
-          if (trace_i.rvc = '1') then -- de-compressed instruction
+          if (trace_i.compr = '1') then -- de-compressed instruction
             write(line_v, string'("c."));
-            write(line_v, string'(decode_mnemonic_f(trace_i.inst)));
+            write(line_v, string'(decode_mnemonic_f(trace_i.insn)));
           else
-            write(line_v, string'(decode_mnemonic_f(trace_i.inst)));
+            write(line_v, string'(decode_mnemonic_f(trace_i.insn)));
             write(line_v, string'("  "));
           end if;
           write(line_v, string'(" "));
-          write(line_v, string'(decode_operands_f(trace_i.inst)));
+          write(line_v, string'(decode_operands_f(trace_i.insn)));
           -- trap entry --
-          if (trap_q = '1') then
-            trap_q <= '0';
+          if (trace_i.intr = '1') then
             write(line_v, string'(" <TRAP_ENTRY>"));
           end if;
           --
