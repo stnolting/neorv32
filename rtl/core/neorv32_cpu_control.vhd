@@ -62,6 +62,7 @@ entity neorv32_cpu_control is
     RISCV_ISA_Sdtrig  : boolean; -- implement trigger module extension
     RISCV_ISA_Smpmp   : boolean; -- implement physical memory protection
     -- Tuning Options --
+    CPU_TRACE_EN      : boolean; -- implement CPU execution trace generator
     CPU_CONSTT_BR_EN  : boolean; -- implement constant-time branches
     CPU_FAST_MUL_EN   : boolean; -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN : boolean; -- use barrel shifter for shift operations
@@ -606,7 +607,7 @@ begin
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
   ctrl_o.ir_funct12   <= exe_engine.ir(instr_imm12_msb_c downto instr_imm12_lsb_c);
-  ctrl_o.ir_opcode    <= opcode;
+  ctrl_o.ir_opcode    <= exe_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c);
   -- status --
   ctrl_o.cpu_priv     <= csr.prv_level_eff;
   ctrl_o.cpu_trap     <= trap_ctrl.env_enter;
@@ -1330,7 +1331,8 @@ begin
           -- NEORV32-specific
           -- --------------------------------------------------------------------
           when csr_mxcsr_c => -- machine control and status register
-            csr.rdata(26 downto 0) <= (others => '0');            -- reserved
+            csr.rdata(25 downto 0) <= (others => '0');            -- reserved
+            csr.rdata(26) <= bool_to_ulogic_f(CPU_TRACE_EN);      -- execution trace generator
             csr.rdata(27) <= bool_to_ulogic_f(CPU_CONSTT_BR_EN);  -- constant-time branches
             csr.rdata(28) <= bool_to_ulogic_f(CPU_RF_HW_RST_EN);  -- full hardware reset of register file
             csr.rdata(29) <= bool_to_ulogic_f(CPU_FAST_MUL_EN);   -- DSP-based multiplication (M extensions only)

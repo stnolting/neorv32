@@ -286,8 +286,8 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dci_haltreq : std_ulogic_vector(num_cores_c-1 downto 0);
 
   -- CPU trace interface --
-  type trace_t is array (0 to num_cores_c-1) of trace_port_t;
-  signal trace_s : trace_t;
+  type cpu_trace_t is array (0 to num_cores_c-1) of trace_port_t;
+  signal cpu_trace : cpu_trace_t;
 
   -- bus: CPU core complex --
   type core_complex_req_t is array (0 to num_cores_c-1) of bus_req_t;
@@ -511,6 +511,7 @@ begin
       RISCV_ISA_Sdtrig    => cpu_sdtrig_en_c,
       RISCV_ISA_Smpmp     => cpu_smpmp_en_c,
       -- Tuning Options --
+      CPU_TRACE_EN        => IO_TRACER_EN,
       CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
       CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
@@ -531,7 +532,7 @@ begin
       clk_i      => clk_i,
       rstn_i     => rstn_sys,
       -- status --
-      trace_o    => trace_s(i),
+      trace_o    => cpu_trace(i),
       sleep_o    => open,
       -- interrupts --
       msi_i      => msw_irq(i),
@@ -1489,8 +1490,8 @@ begin
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
-        trace0_i  => trace_s(trace_s'left),
-        trace1_i  => trace_s(trace_s'right),
+        trace0_i  => cpu_trace(cpu_trace'left),
+        trace1_i  => cpu_trace(cpu_trace'right),
         bus_req_i => iodev_req(IODEV_TRACER),
         bus_rsp_o => iodev_rsp(IODEV_TRACER),
         irq_o     => firq(FIRQ_TRACER)

@@ -29,13 +29,13 @@ define tracer_get
       printf "[%d] SRC: 0x%x -> DST: 0x%x", $i, $src , $dst
       set $i = $i + 1
 
-      # check if branch was caused by a trap
-      if ($delta_src & 1)
-        printf " <TRAP_ENTRY>"
-      end
       # check if this is the very first trace packet
-      if ($delta_dst & 1)
+      if ($delta_src & 1)
         printf " <TRACE_START>"
+      end
+      # check if branch was caused by a trap
+      if ($delta_dst & 1)
+        printf " <TRAP_ENTRY>"
       end
       printf "\n"
 

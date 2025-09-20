@@ -299,6 +299,7 @@ enum NEORV32_CSR_MISA_enum {
  * CPU mxcsr CSR (r/w): Machine control and status register (NEORV32-specific)
  **************************************************************************/
 enum NEORV32_CSR_MXCSR_enum {
+  CSR_MXCSR_TRACE     = 26, /**< CPU mxcsr CSR (26): trace port implemented (r/-)*/
   CSR_MXCSR_CONSTTBR  = 27, /**< CPU mxcsr CSR (27): constant-time branches implemented (r/-)*/
   CSR_MXCSR_RFHWRST   = 28, /**< CPU mxcsr CSR (28): register file has full hardware reset (r/-)*/
   CSR_MXCSR_FASTMUL   = 29, /**< CPU mxcsr CSR (29): DSP-based multiplication (M extensions only) (r/-)*/

@@ -55,6 +55,7 @@ entity neorv32_cpu is
     RISCV_ISA_Sdtrig    : boolean; -- implement trigger module extension
     RISCV_ISA_Smpmp     : boolean; -- implement physical memory protection
     -- Tuning Options --
+    CPU_TRACE_EN        : boolean; -- implement CPU execution trace generator
     CPU_CONSTT_BR_EN    : boolean; -- implement constant-time branches
     CPU_FAST_MUL_EN     : boolean; -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   : boolean; -- use barrel shifter for shift operations
@@ -75,7 +76,7 @@ entity neorv32_cpu is
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     -- status --
-    trace_o    : out trace_port_t; -- execution trace port
+    trace_o    : out trace_port_t; -- execution trace port (enabled when CPU_TRACE_EN = true)
     sleep_o    : out std_ulogic; -- CPU is in sleep mode
     -- interrupts --
     msi_i      : in  std_ulogic; -- risc-v machine software interrupt
@@ -119,12 +120,13 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal alu_res     : std_ulogic_vector(XLEN-1 downto 0); -- alu result
   signal alu_add     : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0);      -- comparator result
-  signal lsu_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory read data
   signal alu_cp_done : std_ulogic;                         -- alu co-processor operation done
-  signal lsu_wait    : std_ulogic;                         -- wait for current data bus access
-  signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
+  signal lsu_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory read data
   signal lsu_mar     : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory address register
   signal lsu_err     : std_ulogic_vector(3 downto 0);      -- lsu alignment/access errors
+  signal lsu_wait    : std_ulogic;                         -- wait for current data bus access
+  signal dbus_req    : bus_req_t;                          -- data bus request
+  signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
   signal pmp_fault   : std_ulogic;                         -- pmp permission violation
   signal irq_machine : std_ulogic_vector(2 downto 0);      -- risc-v standard machine-level interrupts
 
@@ -177,6 +179,7 @@ begin
 
     -- CPU tuning options --
     assert false report "[NEORV32] CPU tuning options: " &
+      cond_sel_string_f(CPU_TRACE_EN,      "trace ",      "") &
       cond_sel_string_f(CPU_CONSTT_BR_EN,  "constt_br ",  "") &
       cond_sel_string_f(CPU_FAST_MUL_EN,   "fast_mul ",   "") &
       cond_sel_string_f(CPU_FAST_SHIFT_EN, "fast_shift ", "") &
@@ -249,6 +252,7 @@ begin
     RISCV_ISA_Sdtrig  => RISCV_ISA_Sdtrig,    -- implement trigger module extension
     RISCV_ISA_Smpmp   => RISCV_ISA_Smpmp,     -- implement physical memory protection
     -- Tuning Options --
+    CPU_TRACE_EN      => CPU_TRACE_EN,        -- implement CPU execution trace generator
     CPU_CONSTT_BR_EN  => CPU_CONSTT_BR_EN,    -- implement constant-time branches
     CPU_FAST_MUL_EN   => CPU_FAST_MUL_EN,     -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN => CPU_FAST_SHIFT_EN,   -- use barrel shifter for shift operations
@@ -468,15 +472,25 @@ begin
   end generate;
 
 
-  -- Trace Port -----------------------------------------------------------------------------
+  -- Trace Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trace_o.valid <= ctrl.cnt_event(cnt_event_ir_c);
-  trace_o.pc    <= ctrl.pc_cur(XLEN-1 downto 1) & '0';
-  trace_o.inst  <= ctrl.ir_funct12 & ctrl.rf_rs1 & ctrl.ir_funct3 & ctrl.rf_rd & ctrl.ir_opcode;
-  trace_o.rvc   <= ctrl.cnt_event(cnt_event_compr_c);
-  trace_o.mode  <= ctrl.cpu_debug & ctrl.cpu_priv;
-  trace_o.delta <= ctrl.cnt_event(cnt_event_branched_c);
-  trace_o.trap  <= ctrl.cpu_trap;
+  trace_enabled:
+  if CPU_TRACE_EN generate
+    neorv32_cpu_trace_inst: entity neorv32.neorv32_cpu_trace
+    port map (
+      -- global control --
+      clk_i   => clk_i,  -- global clock, rising edge
+      rstn_i  => rstn_i, -- global reset, low-active, async
+      ctrl_i  => ctrl,   -- main control bus
+      -- trace port --
+      trace_o => trace_o -- execution trace port
+    );
+  end generate;
+
+  trace_disabled:
+  if not CPU_TRACE_EN generate
+    trace_o <= trace_port_terminate_c;
+  end generate;
 
 
 end neorv32_cpu_rtl;

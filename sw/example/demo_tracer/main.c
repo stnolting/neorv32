@@ -33,15 +33,15 @@ void tracer_irq_handler(void) {
     delta_src = neorv32_tracer_data_get_src();
     delta_dst = neorv32_tracer_data_get_dst();
     // print branch source and destination (same format as the GDB output)
-    neorv32_uart0_printf("[%d] SRC: 0x%x -> DST: 0x%x ", i, delta_src & 0xFFFFFFFE, delta_dst & 0xFFFFFFFE);
+    neorv32_uart0_printf("[%d] SRC: 0x%x -> DST: 0x%x", i, delta_src & 0xFFFFFFFE, delta_dst & 0xFFFFFFFE);
     i++;
-    // branch due to exception?
-    if (delta_src & 1) {
-      neorv32_uart0_printf("<TRAP_ENTRY> ");
-    }
     // first trace packet?
+    if (delta_src & 1) {
+      neorv32_uart0_printf(" <TRACE_START>");
+    }
+    // branch due to exception?
     if (delta_dst & 1) {
-      neorv32_uart0_printf("<TRACE_START> ");
+      neorv32_uart0_printf(" <TRAP_ENTRY>");
     }
     neorv32_uart0_printf("\n");
   }

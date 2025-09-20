@@ -74,9 +74,9 @@ in the trace buffer when `TRACER_CTRL_AVAIL` is set. A single entry ("packet") o
 via the two registers `DELTA_SRC` and `DELTA_DST`:
 
 * `DELTA_SRC` provides the 31-bit instruction address of the branch source.
-Bit 0 is set if this branch was caused by a trap; it is cleared if this branch was caused by a jump/call/branch instruction.
-* `DELTA_DST` provides the 31-bit instruction address of the branch destination.
 Bit 0 is set if this trace packet is the very first after trace start; it is cleared for all further packets.
+* `DELTA_DST` provides the 31-bit instruction address of the branch destination.
+Bit 0 is set if this branch was caused by a trap-entry; it is cleared if this branch was caused by a jump/call/branch instruction.
 
 .Trace Buffer Read Access
 [IMPORTANT]
@@ -202,7 +202,7 @@ subtracting the current time stamp _i_ from the next time stamp _i+1_.
                                 <| `31:11` _reserved_                                 ^| r/- <| _reserved_, hardwired to zero
 | `0xfff30004` | `STOP_ADDR` | `31:0` | r/w | Stop-tracing-address register
 .2+<| `0xfff30008` .2+<| `DELTA_SRC` <| `31:1` ^| r/- | Branch source address, set to `-1` to disable automatic stopping
-                                     <| `0`    ^| r/- | `1` = branch due trap entry (interrupt or synchronous exception); `0` = branch due to jump/call/branch instruction
-.2+<| `0xfff3000c` .2+<| `DELTA_DST` <| `31:1` ^| r/- | Branch destination address
                                      <| `0`    ^| r/- | `1` = very first instruction delta in current trace; `0` = any further instruction delta
+.2+<| `0xfff3000c` .2+<| `DELTA_DST` <| `31:1` ^| r/- | Branch destination address
+                                     <| `0`    ^| r/- | `1` = branch due trap entry (interrupt or synchronous exception); `0` = branch due to jump/call/branch instruction
 |=======================

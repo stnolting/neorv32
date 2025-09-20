@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120201"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120202"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
   constant XLEN          : natural := 32; -- native data path width
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
@@ -230,14 +230,27 @@ package neorv32_package is
   -- CPU Trace Port -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   type trace_port_t is record
-    valid : std_ulogic; -- set when all signals are valid
+    valid : std_ulogic; -- all other signals are valid when set
+    order : std_ulogic_vector(31 downto 0); -- instruction index
     pc    : std_ulogic_vector(31 downto 0); -- instruction address
-    inst  : std_ulogic_vector(31 downto 0); -- instruction word
-    rvc   : std_ulogic; -- is decompressed instruction
-    mode  : std_ulogic_vector(1 downto 0); -- [1] = debug; [0] = privilege level
-    delta : std_ulogic; -- non-linear PC change; valid without "valid" being set
-    trap  : std_ulogic; -- trap-entry; valid without "valid" being set
+    insn  : std_ulogic_vector(31 downto 0); -- instruction word
+    intr  : std_ulogic; -- set if executing the first instruction of a trap handler
+    mode  : std_ulogic; -- 0 = user mode, 1 = machine mode
+    debug : std_ulogic; -- set if instruction is executed in debug-mode
+    compr : std_ulogic; -- set if instruction is a decompressed instruction
   end record;
+
+  -- trace source termination --
+  constant trace_port_terminate_c : trace_port_t := (
+    valid => '0',
+    order => (others => '0'),
+    pc    => (others => '0'),
+    insn  => (others => '0'),
+    intr  => '0',
+    mode  => '0',
+    debug => '0',
+    compr => '0'
+  );
 
 -- **********************************************************************************************************
 -- RISC-V ISA Definitions

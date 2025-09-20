@@ -201,6 +201,7 @@ rtl/core
 ├─ neorv32_cpu_lsu.vhd           - Load/store unit
 ├─ neorv32_cpu_pmp.vhd           - Physical memory protection unit (Smpmp ext.)
 ├─ neorv32_cpu_regfile.vhd       - Data register file
+├─ neorv32_cpu_trace.vhd         - Trace generator
 ├─ neorv32_debug_auth.vhd        - On-chip debugger: authentication module
 ├─ neorv32_debug_dm.vhd          - On-chip debugger: debug module
 ├─ neorv32_debug_dtm.vhd         - On-chip debugger: debug transfer module
@@ -226,7 +227,7 @@ rtl/core
 ├─ neorv32_twi.vhd               - Two wire serial interface controller
 ├─ neorv32_uart.vhd              - Universal async. receiver/transmitter
 ├─ neorv32_wdt.vhd               - Watchdog timer
-└─ neorv32_xbus.vhd              - External bus interface gateways
+└─ neorv32_xbus.vhd              - External bus interface gateway
 ...................................
 
 

@@ -1564,13 +1564,14 @@
         <register>
           <name>DELTA_SRC</name>
           <access>read-only</access>
-          <description>Trace data: delta source address + trap-entry bit</description>
+          <description>Trace data: delta source address + first-packet bit</description>
           <addressOffset>0x08</addressOffset>
         </register>
         <register>
           <name>DELTA_DST</name>
           <access>read-only</access>
-          <description>Trace data: delta destination address + frist-packet bit</description>
+          <readAction>modify</readAction>
+          <description>Trace data: delta destination address + trap-entry bit</description>
           <addressOffset>0x0C</addressOffset>
         </register>
       </registers>

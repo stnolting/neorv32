@@ -939,7 +939,8 @@ machine configurations and status information.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Description
-| 26:0  | -                     | r/- | _reserved_, read as zero
+| 25:0  | -                     | r/- | _reserved_, read as zero
+| 26    | `CSR_MXCSR_TRACE`     | r/- | <<_cpu_tuning_options>>: CPU trace generator and <<_execution_trace_port>> enabled (implicitly enabled when enabling <<_execution_trace_buffer_tracer>>)
 | 27    | `CSR_MXCSR_CONSTTBR`  | r/- | <<_cpu_tuning_options>>: constant-time branches enabled when set (`CPU_CONSTT_BR_EN` top generic)
 | 28    | `CSR_MXCSR_RFHWRST`   | r/- | <<_cpu_tuning_options>>: full hardware reset of register file available when set (`CPU_RF_HW_RST_EN` top generic)
 | 29    | `CSR_MXCSR_FASTMUL`   | r/- | <<_cpu_tuning_options>>: fast multiplication available when set (`CPU_FAST_MUL_EN` top generic)
