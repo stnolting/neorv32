@@ -475,7 +475,7 @@ begin
           when others =>
             if (funct3_v = funct3_env_c) or
                (((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) and (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000")) then
-              csr.re_nxt <= '0'; -- no read if CSRRW[I] and rd = 0 OR if environment instruction 
+              csr.re_nxt <= '0'; -- no read if CSRRW[I] and rd = 0 OR if environment instruction
             else
               csr.re_nxt <= '1';
             end if;
