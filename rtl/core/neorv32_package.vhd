@@ -582,7 +582,8 @@ package neorv32_package is
     ir_opcode    : std_ulogic_vector(6 downto 0);  -- opcode bit field
     -- status --
     cpu_priv     : std_ulogic;                     -- effective privilege mode
-    cpu_trap     : std_ulogic;                     -- set when CPU is entering trap exec
+    cpu_trap     : std_ulogic;                     -- set when CPU is entering trap
+    cpu_sync_exc : std_ulogic;                     -- set when CPU encounters a synchronous exceptions
     cpu_debug    : std_ulogic;                     -- set when CPU is in debug mode
   end record;
 
@@ -626,6 +627,7 @@ package neorv32_package is
     ir_opcode    => (others => '0'),
     cpu_priv     => '0',
     cpu_trap     => '0',
+    cpu_sync_exc => '0',
     cpu_debug    => '0'
   );
 
