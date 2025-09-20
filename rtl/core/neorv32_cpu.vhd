@@ -423,21 +423,24 @@ begin
   neorv32_cpu_lsu_inst: entity neorv32.neorv32_cpu_lsu
   port map (
     -- global control --
-    clk_i       => clk_i,      -- global clock, rising edge
-    rstn_i      => rstn_i,     -- global reset, low-active, async
-    ctrl_i      => ctrl,       -- main control bus
+    clk_i       => clk_i,     -- global clock, rising edge
+    rstn_i      => rstn_i,    -- global reset, low-active, async
+    ctrl_i      => ctrl,      -- main control bus
     -- cpu data access interface --
-    addr_i      => alu_add,    -- access address
-    wdata_i     => rs2,        -- write data
-    rdata_o     => lsu_rdata,  -- read data
-    mar_o       => lsu_mar,    -- memory address register
-    wait_o      => lsu_wait,   -- wait for access to complete
-    err_o       => lsu_err,    -- alignment/access errors
-    pmp_fault_i => pmp_fault,  -- PMP read/write access fault
+    addr_i      => alu_add,   -- access address
+    wdata_i     => rs2,       -- write data
+    rdata_o     => lsu_rdata, -- read data
+    mar_o       => lsu_mar,   -- memory address register
+    wait_o      => lsu_wait,  -- wait for access to complete
+    err_o       => lsu_err,   -- alignment/access errors
+    pmp_fault_i => pmp_fault, -- PMP read/write access fault
     -- data bus --
-    dbus_req_o  => dbus_req_o, -- request
-    dbus_rsp_i  => dbus_rsp_i  -- response
+    dbus_req_o  => dbus_req,  -- request
+    dbus_rsp_i  => dbus_rsp_i -- response
   );
+
+  -- memory request --
+  dbus_req_o <= dbus_req;
 
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------
@@ -479,11 +482,18 @@ begin
     neorv32_cpu_trace_inst: entity neorv32.neorv32_cpu_trace
     port map (
       -- global control --
-      clk_i   => clk_i,  -- global clock, rising edge
-      rstn_i  => rstn_i, -- global reset, low-active, async
-      ctrl_i  => ctrl,   -- main control bus
+      clk_i       => clk_i,         -- global clock, rising edge
+      rstn_i      => rstn_i,        -- global reset, low-active, async
+      ctrl_i      => ctrl,          -- main control bus
+      -- operands --
+      rs1_rdata_i => rs1,           -- rs1 read data
+      rs2_rdata_i => rs2,           -- rs2 read data
+      rd_wdata_i  => rf_wdata,      -- rd write data
+      mem_ben_i   => dbus_req.ben,  -- memory byte-enable
+      mem_addr_i  => dbus_req.addr, -- memory address
+      mem_wdata_i => dbus_req.data, -- memory write data
       -- trace port --
-      trace_o => trace_o -- execution trace port
+      trace_o     => trace_o        -- execution trace port
     );
   end generate;
 

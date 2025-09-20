@@ -127,6 +127,8 @@ begin
   generic map (
     -- Clocking --
     CLOCK_FREQUENCY     => CLOCK_FREQUENCY,
+    -- External Trace Port --
+    TRACE_PORT_EN       => true,
     -- Dual-Core Configuration --
     DUAL_CORE_EN        => DUAL_CORE_EN,
     -- Boot Configuration --
@@ -236,6 +238,9 @@ begin
     rstn_i         => rst_gen,
     rstn_ocd_o     => open,
     rstn_wdt_o     => open,
+    -- Execution trace --
+    trace_cpu0_o   => open,
+    trace_cpu1_o   => open,
     -- JTAG on-chip debugger interface --
     jtag_tck_i     => '0',
     jtag_tdi_i     => '0',

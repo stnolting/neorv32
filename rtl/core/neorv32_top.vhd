@@ -23,6 +23,9 @@ entity neorv32_top is
     -- Processor Clocking --
     CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
 
+    -- External Trace Port --
+    TRACE_PORT_EN         : boolean                        := false;       -- enable CPU execution trace port
+
     -- Dual-Core Configuration --
     DUAL_CORE_EN          : boolean                        := false;       -- enable dual-core homogeneous SMP
 
@@ -146,6 +149,10 @@ entity neorv32_top is
     rstn_ocd_o     : out std_ulogic;                                        -- on-chip debugger reset output, low-active, sync
     rstn_wdt_o     : out std_ulogic;                                        -- watchdog reset output, low-active, sync
 
+    -- Execution trace (available if TRACE_PORT_EN = true) --
+    trace_cpu0_o   : out trace_port_t;                                      -- CPU 0 trace port
+    trace_cpu1_o   : out trace_port_t;                                      -- CPU 1 trace port
+
     -- JTAG on-chip debugger interface (available if OCD_EN = true) --
     jtag_tck_i     : in  std_ulogic := 'L';                                 -- serial clock
     jtag_tdi_i     : in  std_ulogic := 'L';                                 -- serial data input
@@ -265,6 +272,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
   constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
   constant cpu_sdtrig_en_c : boolean := OCD_EN and boolean(OCD_NUM_HW_TRIGGERS > 0);
+  constant trace_en_c      : boolean := TRACE_PORT_EN or IO_TRACER_EN;
   constant tracer_log_en_c : boolean := IO_TRACER_SIMLOG_EN and is_simulation_c;
 
   -- make sure physical memory sizes are a power of two --
@@ -511,7 +519,7 @@ begin
       RISCV_ISA_Sdtrig    => cpu_sdtrig_en_c,
       RISCV_ISA_Smpmp     => cpu_smpmp_en_c,
       -- Tuning Options --
-      CPU_TRACE_EN        => IO_TRACER_EN,
+      CPU_TRACE_EN        => trace_en_c,
       CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
       CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
@@ -627,6 +635,10 @@ begin
     );
 
   end generate; -- /core_complex
+
+  -- CPU execution trace ports --
+  trace_cpu0_o <= cpu_trace(core_req'left);
+  trace_cpu1_o <= cpu_trace(core_req'right) when (num_cores_c = 2) else trace_port_terminate_c;
 
 
   -- Core Complex Bus Arbiter ---------------------------------------------------------------

@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120202"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120203"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
   constant XLEN          : natural := 32; -- native data path width
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
@@ -230,26 +230,67 @@ package neorv32_package is
   -- CPU Trace Port -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   type trace_port_t is record
-    valid : std_ulogic; -- all other signals are valid when set
-    order : std_ulogic_vector(31 downto 0); -- instruction index
-    pc    : std_ulogic_vector(31 downto 0); -- instruction address
-    insn  : std_ulogic_vector(31 downto 0); -- instruction word
-    intr  : std_ulogic; -- set if executing the first instruction of a trap handler
-    mode  : std_ulogic; -- 0 = user mode, 1 = machine mode
-    debug : std_ulogic; -- set if instruction is executed in debug-mode
-    compr : std_ulogic; -- set if instruction is a decompressed instruction
+    valid     : std_ulogic; -- all other signals are valid when set
+    -- instruction metadata --
+    order     : std_ulogic_vector(31 downto 0); -- instruction index
+    insn      : std_ulogic_vector(31 downto 0); -- instruction word
+    trap      : std_ulogic; -- set if the current instruction causes a sync exception
+    halt      : std_ulogic; -- set if last instruction before halting
+    intr      : std_ulogic; -- set if executing the first instruction of a trap handler
+    mode      : std_ulogic_vector(1 downto 0); -- 00 = user mode, 11 = machine mode
+    ixl       : std_ulogic_vector(1 downto 0); -- XLEN; 01 = 32-bit
+    debug     : std_ulogic; -- set if instruction is executed in debug-mode
+    compr     : std_ulogic; -- set if instruction is a decompressed instruction
+    -- integer register --
+    rs1_addr  : std_ulogic_vector(4 downto 0);  -- rs1 address
+    rs2_addr  : std_ulogic_vector(4 downto 0);  -- rs2 address
+    rs1_rdata : std_ulogic_vector(31 downto 0); -- rs1 read data
+    rs2_rdata : std_ulogic_vector(31 downto 0); -- rs2 read data
+    rd_addr   : std_ulogic_vector(4 downto 0);  -- rd address
+    rd_rdata  : std_ulogic_vector(31 downto 0); -- rd write data
+    -- program counter --
+    pc_rdata  : std_ulogic_vector(31 downto 0); -- current instruction address
+    pc_wdata  : std_ulogic_vector(31 downto 0); -- next instruction address
+    -- control and status register --
+    csr_addr  : std_ulogic_vector(11 downto 0); -- csr address
+    csr_rdata : std_ulogic_vector(31 downto 0); -- csr read data
+    csr_wdata : std_ulogic_vector(31 downto 0); -- csr write data
+    -- memory access --
+    mem_addr  : std_ulogic_vector(31 downto 0); -- address
+    mem_rmask : std_ulogic_vector(3 downto 0);  -- read-enable
+    mem_wmask : std_ulogic_vector(3 downto 0);  -- write-enable
+    mem_rdata : std_ulogic_vector(31 downto 0); -- read data
+    mem_wdata : std_ulogic_vector(31 downto 0); -- write data
   end record;
 
   -- trace source termination --
   constant trace_port_terminate_c : trace_port_t := (
-    valid => '0',
-    order => (others => '0'),
-    pc    => (others => '0'),
-    insn  => (others => '0'),
-    intr  => '0',
-    mode  => '0',
-    debug => '0',
-    compr => '0'
+    valid     => '0',
+    order     => (others => '0'),
+    insn      => (others => '0'),
+    trap      => '0',
+    halt      => '0',
+    intr      => '0',
+    mode      => (others => '0'),
+    ixl       => "01",
+    debug     => '0',
+    compr     => '0',
+    rs1_addr  => (others => '0'),
+    rs2_addr  => (others => '0'),
+    rs1_rdata => (others => '0'),
+    rs2_rdata => (others => '0'),
+    rd_addr   => (others => '0'),
+    rd_rdata  => (others => '0'),
+    pc_rdata  => (others => '0'),
+    pc_wdata  => (others => '0'),
+    csr_addr  => (others => '0'),
+    csr_rdata => (others => '0'),
+    csr_wdata => (others => '0'),
+    mem_addr  => (others => '0'),
+    mem_rmask => (others => '0'),
+    mem_wmask => (others => '0'),
+    mem_rdata => (others => '0'),
+    mem_wdata => (others => '0')
   );
 
 -- **********************************************************************************************************
@@ -582,7 +623,8 @@ package neorv32_package is
     ir_opcode    : std_ulogic_vector(6 downto 0);  -- opcode bit field
     -- status --
     cpu_priv     : std_ulogic;                     -- effective privilege mode
-    cpu_trap     : std_ulogic;                     -- set when CPU is entering trap exec
+    cpu_trap     : std_ulogic;                     -- set when CPU is entering trap
+    cpu_sync_exc : std_ulogic;                     -- set when CPU encounters a synchronous exceptions
     cpu_debug    : std_ulogic;                     -- set when CPU is in debug mode
   end record;
 
@@ -626,6 +668,7 @@ package neorv32_package is
     ir_opcode    => (others => '0'),
     cpu_priv     => '0',
     cpu_trap     => '0',
+    cpu_sync_exc => '0',
     cpu_debug    => '0'
   );
 
@@ -791,6 +834,8 @@ package neorv32_package is
     generic (
       -- Processor Clocking --
       CLOCK_FREQUENCY       : natural                        := 0;
+      -- External Trace Port --
+      TRACE_PORT_EN         : boolean                        := false;
       -- Dual-Core Configuration --
       DUAL_CORE_EN          : boolean                        := false;
       -- Boot Configuration --
@@ -902,6 +947,9 @@ package neorv32_package is
       rstn_i         : in  std_ulogic;
       rstn_ocd_o     : out std_ulogic;
       rstn_wdt_o     : out std_ulogic;
+      -- Execution trace (available if TRACE_PORT_EN = true) --
+      trace_cpu0_o   : out trace_port_t;
+      trace_cpu1_o   : out trace_port_t;
       -- JTAG on-chip debugger interface (available if OCD_EN = true) --
       jtag_tck_i     : in  std_ulogic := 'L';
       jtag_tdi_i     : in  std_ulogic := 'L';

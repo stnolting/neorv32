@@ -170,6 +170,8 @@ on the [neoTRNG](https://github.com/stnolting/neoTRNG)
 for custom tightly-coupled co-processors, accelerators or interfaces
 * direct memory access controller ([DMA](https://stnolting.github.io/neorv32/#_direct_memory_access_controller_dma)) for CPU-independent
 data transfers and conversions
+* RVFI-compatible [trace port](https://stnolting.github.io/neorv32/#_execution_trace_port)
+ for advanced debugging, profiling or verification
 
 **Debugging**
 

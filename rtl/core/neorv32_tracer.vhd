@@ -186,7 +186,7 @@ begin
           elsif (trace_src.valid = '1') and (trace_src.debug = '0') then -- valid trace packet and not in debug-mode
             arbiter.valid(0) <= '1';
             arbiter.compr(0) <= trace_src.compr;
-            arbiter.dst      <= trace_src.pc(31 downto 1) & trace_src.intr;
+            arbiter.dst      <= trace_src.pc_rdata(31 downto 1) & trace_src.intr;
           end if;
           -- sample shift register --
           if (arbiter.valid(0) = '1') then
@@ -372,7 +372,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
     machine  : std_ulogic_vector(31 downto 0); -- instruction word
     mnemonic : string(1 to 11); -- according assembly mnemonic
   end record;
-  type inst_t is array (0 to 150) of inst_touple_c;
+  type inst_t is array (0 to 149) of inst_touple_c;
   constant inst_c : inst_t := (
     ("-------------------------0110111", "lui        "), -- base ISA
     ("-------------------------0010111", "auipc      "),
@@ -523,8 +523,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
     ("1010000----------000-----1010011", "fle.s      "),
     ("111000000000-----001-----1010011", "fclass.s   "),
     ("110100000000-------------1010011", "fcvt.s.w   "),
-    ("110100000001-------------1010011", "fcvt.s.wu  "),
-    ("--------------------------------", "INVALID    ") -- last entry: no match found
+    ("110100000001-------------1010011", "fcvt.s.wu  ")
   );
 
   -- decode instruction mnemonic --
@@ -535,7 +534,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
         return inst_c(i).mnemonic;
       end if;
     end loop;
-    return "";
+    return "INVALID";
   end function decode_mnemonic_f;
 
   -- decode CSR name --
@@ -772,7 +771,7 @@ begin
           write(line_v, string'(" "));
           -- instruction address --
           write(line_v, string'("0x"));
-          write(line_v, string'(print_hex_f(trace_i.pc)));
+          write(line_v, string'(print_hex_f(trace_i.pc_rdata)));
           write(line_v, string'(" "));
           -- instruction word --
           write(line_v, string'("0x"));
@@ -781,10 +780,12 @@ begin
           -- privilege level --
           if (trace_i.debug = '1') then
             write(line_v, string'("D "));
-          elsif (trace_i.mode = '1') then
+          elsif (trace_i.mode = "11") then
             write(line_v, string'("M "));
-          else
+          elsif (trace_i.mode = "00") then
             write(line_v, string'("U "));
+          else
+            write(line_v, string'("? "));
           end if;
           -- decoded instruction --
           if (trace_i.compr = '1') then -- de-compressed instruction
