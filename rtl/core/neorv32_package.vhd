@@ -834,6 +834,8 @@ package neorv32_package is
     generic (
       -- Processor Clocking --
       CLOCK_FREQUENCY       : natural                        := 0;
+      -- External Trace Port --
+      TRACE_PORT_EN         : boolean                        := false;
       -- Dual-Core Configuration --
       DUAL_CORE_EN          : boolean                        := false;
       -- Boot Configuration --
@@ -945,6 +947,9 @@ package neorv32_package is
       rstn_i         : in  std_ulogic;
       rstn_ocd_o     : out std_ulogic;
       rstn_wdt_o     : out std_ulogic;
+      -- Execution trace (available if TRACE_PORT_EN = true) --
+      trace_cpu0_o   : out trace_port_t;
+      trace_cpu1_o   : out trace_port_t;
       -- JTAG on-chip debugger interface (available if OCD_EN = true) --
       jtag_tck_i     : in  std_ulogic := 'L';
       jtag_tdi_i     : in  std_ulogic := 'L';
