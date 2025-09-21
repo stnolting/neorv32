@@ -473,8 +473,9 @@ begin
 
           -- environment/CSR operation or ILLEGAL opcode --
           when others =>
-            if ((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) and (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000") then
-              csr.re_nxt <= '0'; -- no read if CSRRW[I] and rd = 0
+            if (funct3_v = funct3_env_c) or
+               (((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) and (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000")) then
+              csr.re_nxt <= '0'; -- no read if CSRRW[I] and rd = 0 OR if environment instruction
             else
               csr.re_nxt <= '1';
             end if;
@@ -611,6 +612,7 @@ begin
   -- status --
   ctrl_o.cpu_priv     <= csr.prv_level_eff;
   ctrl_o.cpu_trap     <= trap_ctrl.env_enter;
+  ctrl_o.cpu_sync_exc <= trap_ctrl.exc_fire;
   ctrl_o.cpu_debug    <= debug_ctrl.run;
 
 

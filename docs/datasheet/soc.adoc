@@ -42,6 +42,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream compatible
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>), optional authentication and hardware breakpoint
 * _optional_ execution trace buffer to debug program flow (<<_execution_trace_buffer_tracer,**TRACER**>>) via branch tracing
+* _optional_ RVFI-compatible <<_execution_trace_port>> for advanced debugging, profiling and verification
 * _optional_ system configuration information memory to determine hardware configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
 
@@ -51,7 +52,7 @@ image::neorv32_processor.png[align=center]
 === Processor Top Entity - Signals
 
 The following table shows all interface signals of the processor top entity (`rtl/core/neorv32_top.vhd`).
-All signals are of type `std_ulogic` or `std_ulogic_vector`, respectively.
+All signals are of type `std_ulogic` or `std_ulogic_vector`, respectively (except for the `trace_*` ports).
 
 .Default Values of Inputs
 [NOTE]
@@ -86,6 +87,9 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `rstn_i`         |  1 |  in | none  | global reset, asynchronous, **low-active**
 | `rstn_ocd_o`     |  1 | out | none  | <<_on_chip_debugger_ocd>> reset output, synchronous, **low-active**
 | `rstn_wdt_o`     |  1 | out | none  | <<_watchdog_timer_wdt>> reset output, synchronous, **low-active**
+5+^| **<<_execution_trace_port>>**
+| `trace_cpu0_o`   |  * | out |   -   | CPU core 0 trace port (type `trace_port_t`).
+| `trace_cpu1_o`   |  * | out |   -   | CPU core 1 trace port (type `trace_port_t`).
 5+^| **JTAG Access Port for <<_on_chip_debugger_ocd>>**
 | `jtag_tck_i`     |  1 |  in | `'L'` | serial clock
 | `jtag_tdi_i`     |  1 |  in | `'L'` | serial data input
@@ -203,6 +207,8 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | Name | Type | Default | Description
 4+^| **<<_processor_clocking>>**
 | `CLOCK_FREQUENCY`       | natural   | 0             | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
+4+^| **<<_execution_trace_port>>**
+| `TRACE_PORT_EN`         | boolean   | false         | Enable external CPU execution trace port(s).
 4+^| **<<_dual_core_configuration>>**
 | `DUAL_CORE_EN`          | boolean   | false         | Enable the SMP dual-core configuration.
 4+^| **<<_boot_configuration>>**
