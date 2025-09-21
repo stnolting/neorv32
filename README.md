@@ -224,7 +224,6 @@ This overview provides some *quick links* to the most important sections of the
 
 ### :mag: [NEORV32 Project](https://stnolting.github.io/neorv32/#_overview) - An Introduction
 
-* [Rationale](https://stnolting.github.io/neorv32/#_rationale) - why? how come? what for?
 * [Key Features](https://stnolting.github.io/neorv32/#_project_key_features) - what makes it special
 * [Structure](https://stnolting.github.io/neorv32/#_project_folder_structure) - folders, RTL files and compile order
 * [File-List Files](https://stnolting.github.io/neorv32/#_file_list_files) - to simplify HDL setup
