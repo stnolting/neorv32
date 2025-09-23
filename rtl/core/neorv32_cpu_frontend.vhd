@@ -399,8 +399,6 @@ begin
       zcmp_instr <= zcmp_sw_instr when zcmp_instr_reg(9) = '0' else
                     zcmp_lw_instr;
 
-      -- lw instruction bei cm.pop ist falsch 
-
       zcmp_push_stack_adj_instr <= std_ulogic_vector(-to_signed(zcmp_stack_adj, 12)) &
                                    zcmp_addi_rs1_sp & -- rs1 = sp 
                                    zcmp_addi_instr_funct3 &
@@ -413,7 +411,7 @@ begin
                                   zcmp_addi_rs1_sp & -- rd = rs1 = sp 
                                   zcmp_addi_instr_opcode; -- addi 
 
-      zcmp_stack_adj_instr <= zcmp_push_stack_adj_instr when zcmp_instr_reg(10) = '0' else
+      zcmp_stack_adj_instr <= zcmp_push_stack_adj_instr when zcmp_instr_reg(9) = '0' else
                               zcmp_pop_stack_adj_instr;
 
       zcmp_li_a0_instr <= (31 downto 12 => '0',
