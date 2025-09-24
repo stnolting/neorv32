@@ -56,6 +56,7 @@ entity neorv32_cpu is
     RISCV_ISA_Sdtrig    : boolean; -- implement trigger module extension
     RISCV_ISA_Smpmp     : boolean; -- implement physical memory protection
     -- Tuning Options --
+    CPU_TRACE_EN        : boolean; -- implement CPU execution trace generator
     CPU_CONSTT_BR_EN    : boolean; -- implement constant-time branches
     CPU_FAST_MUL_EN     : boolean; -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   : boolean; -- use barrel shifter for shift operations
@@ -76,7 +77,7 @@ entity neorv32_cpu is
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     -- status --
-    trace_o    : out trace_port_t; -- execution trace port
+    trace_o    : out trace_port_t; -- execution trace port (enabled when CPU_TRACE_EN = true)
     sleep_o    : out std_ulogic; -- CPU is in sleep mode
     -- interrupts --
     msi_i      : in  std_ulogic; -- risc-v machine software interrupt
@@ -96,11 +97,11 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
-  constant rf_rs3_en_c : boolean := RISCV_ISA_Zxcfu or RISCV_ISA_Zfinx; -- 3rd register file read port
+  constant rf_rs3_en_c : boolean := RISCV_ISA_Zxcfu; -- 3rd register file read port
   constant riscv_a_c   : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
   constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
   constant riscv_zcb_c : boolean := RISCV_ISA_C and RISCV_ISA_Zcb; -- Zcb: additional compressed instructions
-  constant riscv_zkt_c : boolean := CPU_FAST_SHIFT_EN; -- Zkt: data-independent execution time for cryptographic operations
+  constant riscv_zkt_c : boolean := CPU_FAST_SHIFT_EN; -- Zkt: data-independent execution time for cryptography operations
   constant riscv_zkn_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
                                     RISCV_ISA_Zkne and RISCV_ISA_Zknd and RISCV_ISA_Zknh; -- Zkn: NIST suite
   constant riscv_zks_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
@@ -120,12 +121,13 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal alu_res     : std_ulogic_vector(XLEN-1 downto 0); -- alu result
   signal alu_add     : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0);      -- comparator result
-  signal lsu_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory read data
   signal alu_cp_done : std_ulogic;                         -- alu co-processor operation done
-  signal lsu_wait    : std_ulogic;                         -- wait for current data bus access
-  signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
+  signal lsu_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory read data
   signal lsu_mar     : std_ulogic_vector(XLEN-1 downto 0); -- lsu memory address register
   signal lsu_err     : std_ulogic_vector(3 downto 0);      -- lsu alignment/access errors
+  signal lsu_wait    : std_ulogic;                         -- wait for current data bus access
+  signal dbus_req    : bus_req_t;                          -- data bus request
+  signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
   signal pmp_fault   : std_ulogic;                         -- pmp permission violation
   signal irq_machine : std_ulogic_vector(2 downto 0);      -- risc-v standard machine-level interrupts
 
@@ -147,7 +149,7 @@ begin
       cond_sel_string_f(true,             "x",         "" ) & -- always enabled
       cond_sel_string_f(RISCV_ISA_Zaamo,  "_zaamo",    "" ) &
       cond_sel_string_f(RISCV_ISA_Zalrsc, "_zalrsc",   "" ) &
-      cond_sel_string_f(riscv_zcb_c,      "_zca",      "" ) & -- Zcb requires Zca in the ISA string
+      cond_sel_string_f(RISCV_ISA_C,      "_zca",      "" ) & -- Zcb requires Zca (=C) in the ISA string
       cond_sel_string_f(riscv_zcb_c,      "_zcb",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zba,    "_zba",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zbb,    "_zbb",      "" ) &
@@ -178,16 +180,14 @@ begin
 
     -- CPU tuning options --
     assert false report "[NEORV32] CPU tuning options: " &
+      cond_sel_string_f(CPU_TRACE_EN,      "trace ",      "") &
       cond_sel_string_f(CPU_CONSTT_BR_EN,  "constt_br ",  "") &
       cond_sel_string_f(CPU_FAST_MUL_EN,   "fast_mul ",   "") &
       cond_sel_string_f(CPU_FAST_SHIFT_EN, "fast_shift ", "") &
       cond_sel_string_f(CPU_RF_HW_RST_EN,  "rf_hw_rst ",  "")
       severity note;
 
-    -- simulation notifier --
-    assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
-
-  end generate; -- /hello_neorv32
+  end generate;
 
 
   -- Front-End (Instruction Fetch) ----------------------------------------------------------
@@ -247,13 +247,14 @@ begin
     RISCV_ISA_Zks     => riscv_zks_c,         -- ShangMi algorithm suite available
     RISCV_ISA_Zksed   => RISCV_ISA_Zksed,     -- implement ShangMi block cipher extension
     RISCV_ISA_Zksh    => RISCV_ISA_Zksh,      -- implement ShangMi hash extension
-    RISCV_ISA_Zkt     => riscv_zkt_c,         -- data-independent execution time available (for cryptographic operations)
+    RISCV_ISA_Zkt     => riscv_zkt_c,         -- data-independent execution time for cryptography operations available
     RISCV_ISA_Zmmul   => RISCV_ISA_Zmmul,     -- implement multiply-only M sub-extension
     RISCV_ISA_Zxcfu   => RISCV_ISA_Zxcfu,     -- implement custom (instr.) functions unit
     RISCV_ISA_Sdext   => RISCV_ISA_Sdext,     -- implement external debug mode extension
     RISCV_ISA_Sdtrig  => RISCV_ISA_Sdtrig,    -- implement trigger module extension
     RISCV_ISA_Smpmp   => RISCV_ISA_Smpmp,     -- implement physical memory protection
     -- Tuning Options --
+    CPU_TRACE_EN      => CPU_TRACE_EN,        -- implement CPU execution trace generator
     CPU_CONSTT_BR_EN  => CPU_CONSTT_BR_EN,    -- implement constant-time branches
     CPU_FAST_MUL_EN   => CPU_FAST_MUL_EN,     -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN => CPU_FAST_SHIFT_EN,   -- use barrel shifter for shift operations
@@ -392,7 +393,7 @@ begin
     RISCV_ISA_Zknd   => RISCV_ISA_Zknd,   -- implement cryptography NIST AES decryption extension
     RISCV_ISA_Zkne   => RISCV_ISA_Zkne,   -- implement cryptography NIST AES encryption extension
     RISCV_ISA_Zknh   => RISCV_ISA_Zknh,   -- implement cryptography NIST hash extension
-    RISCV_ISA_Zksed  => RISCV_ISA_Zksed,  -- implement ShangMi block cypher extension
+    RISCV_ISA_Zksed  => RISCV_ISA_Zksed,  -- implement ShangMi block cipher extension
     RISCV_ISA_Zksh   => RISCV_ISA_Zksh,   -- implement ShangMi hash extension
     RISCV_ISA_Zmmul  => RISCV_ISA_Zmmul,  -- implement multiply-only M sub-extension
     RISCV_ISA_Zxcfu  => RISCV_ISA_Zxcfu,  -- implement custom (instr.) functions unit
@@ -424,21 +425,24 @@ begin
   neorv32_cpu_lsu_inst: entity neorv32.neorv32_cpu_lsu
   port map (
     -- global control --
-    clk_i       => clk_i,      -- global clock, rising edge
-    rstn_i      => rstn_i,     -- global reset, low-active, async
-    ctrl_i      => ctrl,       -- main control bus
+    clk_i       => clk_i,     -- global clock, rising edge
+    rstn_i      => rstn_i,    -- global reset, low-active, async
+    ctrl_i      => ctrl,      -- main control bus
     -- cpu data access interface --
-    addr_i      => alu_add,    -- access address
-    wdata_i     => rs2,        -- write data
-    rdata_o     => lsu_rdata,  -- read data
-    mar_o       => lsu_mar,    -- memory address register
-    wait_o      => lsu_wait,   -- wait for access to complete
-    err_o       => lsu_err,    -- alignment/access errors
-    pmp_fault_i => pmp_fault,  -- PMP read/write access fault
+    addr_i      => alu_add,   -- access address
+    wdata_i     => rs2,       -- write data
+    rdata_o     => lsu_rdata, -- read data
+    mar_o       => lsu_mar,   -- memory address register
+    wait_o      => lsu_wait,  -- wait for access to complete
+    err_o       => lsu_err,   -- alignment/access errors
+    pmp_fault_i => pmp_fault, -- PMP read/write access fault
     -- data bus --
-    dbus_req_o  => dbus_req_o, -- request
-    dbus_rsp_i  => dbus_rsp_i  -- response
+    dbus_req_o  => dbus_req,  -- request
+    dbus_rsp_i  => dbus_rsp_i -- response
   );
+
+  -- memory request --
+  dbus_req_o <= dbus_req;
 
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------
@@ -473,15 +477,32 @@ begin
   end generate;
 
 
-  -- Trace Port -----------------------------------------------------------------------------
+  -- Trace Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trace_o.valid <= ctrl.cnt_event(cnt_event_ir_c);
-  trace_o.pc    <= ctrl.pc_cur(XLEN-1 downto 1) & '0';
-  trace_o.inst  <= ctrl.ir_funct12 & ctrl.rf_rs1 & ctrl.ir_funct3 & ctrl.rf_rd & ctrl.ir_opcode;
-  trace_o.rvc   <= ctrl.cnt_event(cnt_event_compr_c);
-  trace_o.mode  <= ctrl.cpu_debug & ctrl.cpu_priv;
-  trace_o.delta <= ctrl.cnt_event(cnt_event_branched_c);
-  trace_o.trap  <= ctrl.cpu_trap;
+  trace_enabled:
+  if CPU_TRACE_EN generate
+    neorv32_cpu_trace_inst: entity neorv32.neorv32_cpu_trace
+    port map (
+      -- global control --
+      clk_i       => clk_i,         -- global clock, rising edge
+      rstn_i      => rstn_i,        -- global reset, low-active, async
+      ctrl_i      => ctrl,          -- main control bus
+      -- operands --
+      rs1_rdata_i => rs1,           -- rs1 read data
+      rs2_rdata_i => rs2,           -- rs2 read data
+      rd_wdata_i  => rf_wdata,      -- rd write data
+      mem_ben_i   => dbus_req.ben,  -- memory byte-enable
+      mem_addr_i  => dbus_req.addr, -- memory address
+      mem_wdata_i => dbus_req.data, -- memory write data
+      -- trace port --
+      trace_o     => trace_o        -- execution trace port
+    );
+  end generate;
+
+  trace_disabled:
+  if not CPU_TRACE_EN generate
+    trace_o <= trace_port_terminate_c;
+  end generate;
 
 
 end neorv32_cpu_rtl;

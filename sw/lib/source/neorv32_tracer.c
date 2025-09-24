@@ -100,7 +100,7 @@ int neorv32_tracer_data_avail(void) {
  * Get trace data: delta-source.
  * @important Check if data is available before with #neorv32_tracer_data_avail().
  *
- * @return 32-bit delta-source address + trap-entry flag (in LSB).
+ * @return 32-bit delta-source address + first-packet flag (in LSB).
  **************************************************************************/
 uint32_t neorv32_tracer_data_get_src(void) {
 
@@ -112,7 +112,7 @@ uint32_t neorv32_tracer_data_get_src(void) {
  * Get trace data: delta-destination.
  * @important Use AFTER #neorv32_tracer_data_get_src().
  *
- * @return 32-bit delta-destination address + first-packet flag (in LSB).
+ * @return 32-bit delta-destination address + trap-entry flag (in LSB).
  **************************************************************************/
 uint32_t neorv32_tracer_data_get_dst(void) {
 

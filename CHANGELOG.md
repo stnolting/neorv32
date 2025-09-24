@@ -29,6 +29,15 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 20.09.2025 | 1.12.2.3 | :test_tube: extend CPU trace port to support (subsets) of **RVVI** and **RVFI** | [#1385](https://github.com/stnolting/neorv32/pull/1385) |
+| 19.09.2025 | 1.12.2.2 | rework CPU trace port and trace buffer module (TRACER) | [#1384](https://github.com/stnolting/neorv32/pull/1384) |
+| 18.09.2025 | 1.12.2.1 | re-add `XBUS_TIMEOUT` configuration option (timeout window for processor-external bus accesses) | [#1383](https://github.com/stnolting/neorv32/pull/1383) |
+| 18.09.2025 | [**1.12.2**](https://github.com/stnolting/neorv32/releases/tag/v1.12.2) | :rocket: **New release** | |
+| 17.09.2025 | 1.12.1.9 | minor CPU logic optimizations | [#1381](https://github.com/stnolting/neorv32/pull/1381) |
+| 14.09.2025 | 1.12.1.8 | :warning: remove CFU CSRs (`cfureg[0..3]`) | [#1377](https://github.com/stnolting/neorv32/pull/1377) |
+| 13.09.2025 | 1.12.1.7 | :bug: fix unaligned instruction fetch bus error; do not trigger co-processors if pending instruction-related exception | [#1367](https://github.com/stnolting/neorv32/pull/1376) |
+| 13.09.2025 | 1.12.1.6 | minor RTL edits; add `Zca` ISA extension flag to `mxisa` CSR | [#1375](https://github.com/stnolting/neorv32/pull/1375) |
+| 09.09.2025 | 1.12.1.5 | TRACER: rework instruction decoding logic and add all remaining ISA extensions | [#1368](https://github.com/stnolting/neorv32/pull/1368) |
 | 05.09.2025 | 1.12.1.4 | improve TRACER's simulation-mode instruction decoding | [#1366](https://github.com/stnolting/neorv32/pull/1366) |
 | 05.09.2025 | 1.12.1.3 | minor rtl edits: add `ndmresetpending` & `stickyunavail` bits to DM's `dmstatus` register; fix interrupt-entry after `wfi` | [#1364](https://github.com/stnolting/neorv32/pull/1364) |
 | 04.09.2025 | 1.12.1.2 | :bug: fix debug module's `command.transfer` bit logic (ignore `aarsize` & `regno` if `transfer=0`) | [#1363](https://github.com/stnolting/neorv32/pull/1363) |

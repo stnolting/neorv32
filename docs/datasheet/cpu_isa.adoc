@@ -20,6 +20,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_x_isa_extension,`X`>>               | Platform-specific / NEORV32-specific extension               | Always enabled
 | <<_zaamo_isa_extension,`Zaamo`>>       | Atomic read-modify-write memory operations                   | <<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>>
 | <<_zalrsc_isa_extension,`Zalrsc`>>     | Atomic reservation-set memory operations                     | <<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>>
+| `Zca` (_just an alias_)                | Compressed instruction without floating-point operations     | Implicitly enabled via <<_processor_top_entity_generics, `RISCV_ISA_C`>>
 | <<_zcb_isa_extension,`Zcb`>>           | Additional code size reduction instructions (build upon `C`) | <<_processor_top_entity_generics, `RISCV_ISA_Zcb`>>
 | <<_zba_isa_extension,`Zba`>>           | Shifted-add bit manipulation instructions                    | <<_processor_top_entity_generics, `RISCV_ISA_Zba`>>
 | <<_zbb_isa_extension,`Zbb`>>           | Basic bit manipulation instructions                          | <<_processor_top_entity_generics, `RISCV_ISA_Zbb`>>

@@ -20,7 +20,7 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: '🛠️ Modifying Doxyfile'
       run: |
@@ -28,7 +28,7 @@ jobs:
         sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' ./docs/Doxyfile
 
     - name: '📚 Generate Doxygen Documentation'
-      uses: mattnotmitt/doxygen-action@v1.2.1
+      uses: mattnotmitt/doxygen-action@v1.12.0
       with:
         working-directory: '.'
         doxyfile-path: 'docs/Doxyfile'
@@ -47,7 +47,7 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -72,10 +72,10 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: '📥 Download Artifacts'
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
 
     - name: '🛠️ Organize public subdir and create a tarball'
       run: |

@@ -92,6 +92,7 @@ entity neorv32_vivado_ip is
     CACHE_BURSTS_EN       : boolean                        := true;
     -- External Bus Interface --
     XBUS_EN               : boolean                        := false;
+    XBUS_TIMEOUT          : natural                        := 2048;
     XBUS_REGSTAGE_EN      : boolean                        := false;
     -- Processor peripherals --
     IO_GPIO_EN            : boolean                        := false;
@@ -423,6 +424,7 @@ begin
     CACHE_BURSTS_EN     => burst_en_c,
     -- External bus interface --
     XBUS_EN             => XBUS_EN,
+    XBUS_TIMEOUT        => XBUS_TIMEOUT,
     XBUS_REGSTAGE_EN    => XBUS_REGSTAGE_EN,
     -- Processor peripherals --
     IO_DISABLE_SYSINFO  => false,

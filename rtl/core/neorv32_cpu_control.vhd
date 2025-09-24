@@ -62,6 +62,7 @@ entity neorv32_cpu_control is
     RISCV_ISA_Sdtrig  : boolean; -- implement trigger module extension
     RISCV_ISA_Smpmp   : boolean; -- implement physical memory protection
     -- Tuning Options --
+    CPU_TRACE_EN      : boolean; -- implement CPU execution trace generator
     CPU_CONSTT_BR_EN  : boolean; -- implement constant-time branches
     CPU_FAST_MUL_EN   : boolean; -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN : boolean; -- use barrel shifter for shift operations
@@ -195,10 +196,9 @@ signal zcmp_npc_hold,zcmp_npc_nxt  : std_ulogic_vector(XLEN-1 downto 0); -- cm.p
   signal debug_ctrl : debug_ctrl_t;
 
   -- misc/helpers --
-  signal if_ack       : std_ulogic; -- acknowledge instruction data from instruction fetch (front-end)
   signal if_reset     : std_ulogic; -- reset instruction fetch (front-end)
   signal branch_taken : std_ulogic; -- fulfilled branch condition or unconditional jump
-  signal monitor_cnt  : std_ulogic_vector(monitor_mc_tmo_c downto 0); -- execution monitor cycle counter
+  signal monitor_cnt  : std_ulogic_vector(alu_cp_tmo_c downto 0); -- execution monitor cycle counter
   signal monitor_exc  : std_ulogic; -- execution monitor timeout exception
   signal opcode       : std_ulogic_vector(6 downto 0); -- simplified opcode (2 LSBs hardwired to "11" to indicate rv32)
   signal immediate    : std_ulogic_vector(XLEN-1 downto 0); -- instruction's immediate
@@ -304,7 +304,6 @@ begin
     exe_engine_nxt.pc    <= exe_engine.pc;
     exe_engine_nxt.pc2   <= exe_engine.pc2;
     exe_engine_nxt.ra    <= (others => '0'); -- output zero if not a branch instruction
-    if_ack               <= '0';
     if_reset             <= '0';
     trap_ctrl.env_enter  <= '0';
     trap_ctrl.env_exit   <= '0';
@@ -372,8 +371,7 @@ begin
         --
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           exe_engine_nxt.state <= EX_TRAP_ENTER;
-        elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
-          if_ack               <= '1'; -- instruction data is about to be consumed
+        elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW
           trap_ctrl.instr_be   <= frontend_i.fault or pmp_fault_i; -- access fault during instruction fetch
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
@@ -485,7 +483,7 @@ begin
             else -- instruction fence
               ctrl_nxt.if_fence <= '1';
             end if;
-            exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB (actually only required for fence.i)
+            exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB via branch to PC+4 (actually only required for fence.i)
 
           -- FPU: floating-point operations --
           when opcode_fpu_c =>
@@ -499,8 +497,9 @@ begin
 
           -- environment/CSR operation or ILLEGAL opcode --
           when others =>
-            if ((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) and (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000") then
-              csr.re_nxt <= '0'; -- no read if CSRRW[I] and rd = 0
+            if (funct3_v = funct3_env_c) or
+               (((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) and (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000")) then
+              csr.re_nxt <= '0'; -- no read if CSRRW[I] and rd = 0 OR if environment instruction
             else
               csr.re_nxt <= '1';
             end if;
@@ -607,7 +606,7 @@ begin
   -- instruction fetch --
   ctrl_o.if_fence     <= ctrl.if_fence;
   ctrl_o.if_reset     <= if_reset;
-  ctrl_o.if_ack       <= if_ack;
+  ctrl_o.if_ready     <= '1' when (exe_engine.state = EX_DISPATCH) else '0';
   -- program counter --
   ctrl_o.pc_cur       <= exe_engine.pc(XLEN-1 downto 1) & '0';
   ctrl_o.pc_nxt       <= exe_engine.pc2(XLEN-1 downto 1) & '0';
@@ -627,9 +626,9 @@ begin
   ctrl_o.alu_opb_mux  <= ctrl.alu_opb_mux;
   ctrl_o.alu_unsigned <= ctrl.alu_unsigned;
   ctrl_o.alu_imm      <= immediate;
-  ctrl_o.alu_cp_alu   <= ctrl.alu_cp_alu;
-  ctrl_o.alu_cp_cfu   <= ctrl.alu_cp_cfu;
-  ctrl_o.alu_cp_fpu   <= ctrl.alu_cp_fpu;
+  ctrl_o.alu_cp_alu   <= ctrl.alu_cp_alu and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c))); -- trigger if no instruction exception
+  ctrl_o.alu_cp_cfu   <= ctrl.alu_cp_cfu and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c))); -- trigger if no instruction exception
+  ctrl_o.alu_cp_fpu   <= ctrl.alu_cp_fpu and (not or_reduce_f(trap_ctrl.exc_buf(exc_ialign_c downto exc_iaccess_c))); -- trigger if no instruction exception
   -- load/store unit --
   ctrl_o.lsu_req      <= ctrl.lsu_req;
   ctrl_o.lsu_rw       <= ctrl.lsu_rw;
@@ -649,10 +648,11 @@ begin
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
   ctrl_o.ir_funct12   <= exe_engine.ir(instr_imm12_msb_c downto instr_imm12_lsb_c);
-  ctrl_o.ir_opcode    <= opcode;
+  ctrl_o.ir_opcode    <= exe_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c);
   -- status --
   ctrl_o.cpu_priv     <= csr.prv_level_eff;
   ctrl_o.cpu_trap     <= trap_ctrl.env_enter;
+  ctrl_o.cpu_sync_exc <= trap_ctrl.exc_fire;
   ctrl_o.cpu_debug    <= debug_ctrl.run;
 
 
@@ -691,10 +691,6 @@ begin
     -- Available at all
     -- ------------------------------------------------------------
     case csr_addr_v is
-
-      -- NEORV32-specific user-mode CFU CSRs --
-      when csr_cfureg0_c | csr_cfureg1_c | csr_cfureg2_c | csr_cfureg3_c =>
-        csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zxcfu); -- available if CFU implemented
 
       -- floating-point-unit CSRs --
       when csr_fflags_c | csr_frm_c | csr_fcsr_c =>
@@ -1377,7 +1373,8 @@ begin
           -- NEORV32-specific
           -- --------------------------------------------------------------------
           when csr_mxcsr_c => -- machine control and status register
-            csr.rdata(26 downto 0) <= (others => '0');            -- reserved
+            csr.rdata(25 downto 0) <= (others => '0');            -- reserved
+            csr.rdata(26) <= bool_to_ulogic_f(CPU_TRACE_EN);      -- execution trace generator
             csr.rdata(27) <= bool_to_ulogic_f(CPU_CONSTT_BR_EN);  -- constant-time branches
             csr.rdata(28) <= bool_to_ulogic_f(CPU_RF_HW_RST_EN);  -- full hardware reset of register file
             csr.rdata(29) <= bool_to_ulogic_f(CPU_FAST_MUL_EN);   -- DSP-based multiplication (M extensions only)
@@ -1413,7 +1410,8 @@ begin
             csr.rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);  -- Zaamo: atomic memory operations
             csr.rdata(26) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc); -- Zalrsc: reservation-set operations
             csr.rdata(27) <= bool_to_ulogic_f(RISCV_ISA_Zcb);    -- Zcb: additional code size reduction instructions
-            csr.rdata(31 downto 28) <= (others => '0');          -- reserved
+            csr.rdata(28) <= bool_to_ulogic_f(RISCV_ISA_C);      -- Zca: C without floating-point
+            csr.rdata(31 downto 29) <= (others => '0');          -- reserved
 
           -- --------------------------------------------------------------------
           -- undefined/unavailable or implemented externally

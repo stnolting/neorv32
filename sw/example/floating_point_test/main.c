@@ -84,8 +84,8 @@ void print_report(uint32_t num_err);
 
 /**********************************************************************//**
  * Main function; test all available operations of the NEORV32 'Zfinx'
- * extensions using floating-point  * hardware intrinsics and software-only
- * reference functions (emulation).
+ * extensions using floating-point hardware intrinsics and software-only
+ * reference functions.
  *
  * @note This program requires the Zfinx CPU extension.
  *
@@ -114,17 +114,6 @@ int main() {
     neorv32_uart0_puts("Error! <Zfinx> extension not synthesized!\n");
     return 1;
   }
-
-
-// Disable compilation by default
-#ifndef RUN_CHECK
-  #warning Program HAS NOT BEEN COMPILED! Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.
-
-  // inform the user if you are actually executing this
-  neorv32_uart0_printf("ERROR! Program has not been compiled. Use >>make USER_FLAGS+=-DRUN_CHECK clean_all exe<< to compile it.\n");
-
-  return 1;
-#endif
 
 
   // intro

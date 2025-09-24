@@ -19,26 +19,21 @@ use ieee.numeric_std.all;
 entity neorv32_cpu_cp_cfu is
   port (
     -- global control --
-    clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic; -- global reset, low-active, async
+    clk_i    : in  std_ulogic; -- global clock, rising edge
+    rstn_i   : in  std_ulogic; -- global reset, low-active, async
     -- operation control --
-    start_i     : in  std_ulogic; -- operation trigger/strobe
-    active_i    : in  std_ulogic; -- operation in progress, CPU is waiting for CFU
-    -- CSR interface --
-    csr_we_i    : in  std_ulogic; -- write enable
-    csr_addr_i  : in  std_ulogic_vector(1 downto 0); -- address (CSR address 0x800 to 0x803)
-    csr_wdata_i : in  std_ulogic_vector(31 downto 0); -- write data
-    csr_rdata_o : out std_ulogic_vector(31 downto 0); -- read data
+    start_i  : in  std_ulogic; -- operation trigger/strobe
+    active_i : in  std_ulogic; -- operation in progress, CPU is waiting for CFU
     -- operands (from/via custom instruction word) --
-    rtype_i     : in  std_ulogic; -- instruction type (0 = R3-type, 1 = R4-type); from instruction word's "opcode[5]" bit
-    funct3_i    : in  std_ulogic_vector(2 downto 0); -- "funct3" bit-field from custom instruction word
-    funct7_i    : in  std_ulogic_vector(6 downto 0); -- "funct7" bit-field from custom instruction word
-    rs1_i       : in  std_ulogic_vector(31 downto 0); -- rf source 1 via "rs1" bit-field from custom instruction word
-    rs2_i       : in  std_ulogic_vector(31 downto 0); -- rf source 2 via "rs2" bit-field from custom instruction word
-    rs3_i       : in  std_ulogic_vector(31 downto 0); -- rf source 3 via "rs3" bit-field from custom instruction word
+    rtype_i  : in  std_ulogic; -- instruction type (0 = R3-type, 1 = R4-type); from instruction word's "opcode[5]" bit
+    funct3_i : in  std_ulogic_vector(2 downto 0); -- "funct3" bit-field from custom instruction word
+    funct7_i : in  std_ulogic_vector(6 downto 0); -- "funct7" bit-field from custom instruction word
+    rs1_i    : in  std_ulogic_vector(31 downto 0); -- rf source 1 via "rs1" bit-field from custom instruction word
+    rs2_i    : in  std_ulogic_vector(31 downto 0); -- rf source 2 via "rs2" bit-field from custom instruction word
+    rs3_i    : in  std_ulogic_vector(31 downto 0); -- rf source 3 via "rs3" bit-field from custom instruction word
     -- result and status --
-    result_o    : out std_ulogic_vector(31 downto 0); -- operation result
-    valid_o     : out std_ulogic -- result valid, operation done; set one cycle before result_o is valid
+    result_o : out std_ulogic_vector(31 downto 0); -- operation result
+    valid_o  : out std_ulogic -- result valid, operation done; set one cycle before result_o is valid
   );
 end neorv32_cpu_cp_cfu;
 
@@ -92,7 +87,7 @@ end neorv32_cpu_cp_cfu;
   -- completion the <valid_o> signal has to be set when <result_o> is valid. Otherwise, <valid_o> should be cleared.
   -- However, the CPU execution logic will evaluate <valid_o> only while <active_i> is high.
   --
-  -- Example interface timing for a multi-cycle CFU operation (with 2 cycles processing latency):
+  -- Example interface timing for a multi-cycle CFU operation:
   -- clk_i    ____/----\____/----\____/----\____/----\____
   -- start_i  ____/---------\_____________________________ trigger is high for one cycle
   -- active_i ____/-----------------------------\_________ cease processing when low
@@ -103,33 +98,16 @@ end neorv32_cpu_cp_cfu;
   --        (default = 512 cycles; see "monitor_mc_tmo_c" constant in the main NEORV32 package file) the CFU operation
   --        is automatically terminated by the hardware (clearing <active_i>) and an illegal instruction exception is raised.
 
-  -- ----------------------------------------------------------------------------------------
-  -- CFU-Internal Control and Status Registers (CFU-CSRs)
-  -- ----------------------------------------------------------------------------------------
-  -- > csr_we_i    (input,   1-bit): set to indicate a valid CFU CSR write access, high for one cycle
-  -- > csr_addr_i  (input,   2-bit): CSR address
-  -- > csr_wdata_i (input,  32-bit): CSR write data
-  -- > csr_rdata_i (output, 32-bit): CSR read data
-  --
-  -- The CFU provides four directly accessible CSR addresses for implementing custom control and status register inside the CFU.
-  -- These are accessed via the global CSR addresses 0x800 to 0x803. The CFU-exclusive CSRs can be used to pass further operands,
-  -- to check the unit's status or to configure additional operation modes.
-  --
-  -- [TIP] If more than four CFU-internal CSRs are required the designer can implement an "indirect access mechanism" based
-  --       on just two of the default CSRs: one CSR is used to configure the index while the other is used as an alias to
-  --       exchange data with the indexed CFU-internal CSR (similar to the RISC-V "Smcsrind" ISA extension).
-
 
   -- **************************************************************************************************************************
   -- Actual CFU User Logic Example: XTEA - Extended Tiny Encryption Algorithm (replace this with your custom logic)
   -- **************************************************************************************************************************
 
   -- This CFU example implements the Extended Tiny Encryption Algorithm (XTEA).
-  -- The CFU provides 5 custom instructions to accelerate encryption and decryption using dedicated hardware.
-  -- Furthermore, 4 CFU-internal control and status registers (CSRs) are implemented for key storage.
+  -- The CFU provides five r3-type instructions for encryption and decryption.
+  -- Furthermore, four r4-type instruction are used for reading/writing the XTEA key registers.
 
-  -- The RTL code is not optimized at all (not for area, not for clock speed, not for performance) and was
-  -- implemented according to an open-source software C reference:
+  -- The RTL code was implemented according to an open-source software C reference:
   -- https://de.wikipedia.org/wiki/Extended_Tiny_Encryption_Algorithm
 
 architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
@@ -148,7 +126,7 @@ architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
   -- round-key update --
   constant xtea_delta_c : std_ulogic_vector(31 downto 0) := x"9e3779b9";
 
-  -- key storage (accessed via CFU CSRs) --
+  -- key storage (accessed via special r4-type instructions) --
   type key_mem_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
   signal key_mem : key_mem_t;
 
@@ -167,24 +145,6 @@ architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
 
 begin
 
-  -- CFU-Internal Control and Status Registers (CFU-CSRs): 128-Bit Key Storage --------------
-  -- -------------------------------------------------------------------------------------------
-  -- synchronous write access --
-  csr_write_access: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      key_mem <= (others => (others => '0'));
-    elsif rising_edge(clk_i) then
-      if (csr_we_i = '1') then -- CSR write enable
-        key_mem(to_integer(unsigned(csr_addr_i))) <= csr_wdata_i; -- write to CSR address
-      end if;
-    end if;
-  end process csr_write_access;
-
-  -- asynchronous read access --
-  csr_rdata_o <= key_mem(to_integer(unsigned(csr_addr_i)));
-
-
   -- XTEA Processing Core ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xtea_core: process(rstn_i, clk_i)
@@ -195,16 +155,23 @@ begin
       xtea.opb  <= (others => '0');
       xtea.sum  <= (others => '0');
       xtea.res  <= (others => '0');
+      key_mem   <= (others => (others => '0'));
     elsif rising_edge(clk_i) then
       -- "operation-done" shift register: module has 2 cycles latency --
       xtea.done(0) <= '0'; -- default: no operation trigger
-      xtea.done(1) <= xtea.done(0);
+      xtea.done(1) <= xtea.done(0); -- arbitration shift register
 
       -- trigger new operation --
-      if (start_i = '1') and (rtype_i = r3type_c) then -- execution trigger and correct instruction type
-        xtea.opa     <= rs1_i; -- buffer input operand rs1 (for improved physical timing)
-        xtea.opb     <= rs2_i; -- buffer input operand rs2 (for improved physical timing)
-        xtea.done(0) <= '1'; -- trigger operation
+      if (start_i = '1') then
+        if (rtype_i = r3type_c) then -- execution trigger for processing operations
+          xtea.opa     <= rs1_i; -- buffer input operand rs1
+          xtea.opb     <= rs2_i; -- buffer input operand rs2
+          xtea.done(0) <= '1'; -- start data processing
+        else -- r4type_c is used for key access
+          if (funct3_i(2) = '1') then -- used as write-enable
+            key_mem(to_integer(unsigned(funct3_i(1 downto 0)))) <= rs1_i; -- write key data at funct3(1:0)
+          end if;
+        end if;
       end if;
 
       -- data processing --
@@ -240,7 +207,7 @@ begin
 
   -- Function Result Select -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  result_select: process(rtype_i, funct3_i, xtea)
+  result_select: process(rtype_i, funct3_i, xtea, key_mem)
   begin
     if (rtype_i = r3type_c) then -- R3-type instructions; function select via "funct3" and ""funct7
     -- ----------------------------------------------------------------------
@@ -253,13 +220,13 @@ begin
           valid_o  <= '1'; -- pure-combinatorial, so we are done "immediately"
         when others => -- all unspecified operations
           result_o <= (others => '0'); -- no logic implemented
-          valid_o  <= '0'; -- this will cause an illegal instruction exception after timeout
+          valid_o  <= '0'; -- this will cause an illegal instruction exception
       end case;
 
-    else -- R4-type instructions; function select via "funct3" (but ignored here)
+    else -- R4-type instructions; used for key access
     -- ----------------------------------------------------------------------
-      result_o <= (others => '0'); -- no logic implemented
-      valid_o  <= '0'; -- this will cause an illegal instruction exception after timeout
+      result_o <= key_mem(to_integer(unsigned(funct3_i(1 downto 0))));
+      valid_o  <= '1'; -- pure-combinatorial, so we are done "immediately"
 
     end if;
   end process result_select;

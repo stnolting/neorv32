@@ -360,6 +360,7 @@ void neorv32_aux_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_SMPMP))     { neorv32_uart0_printf("Smpmp ");     }
   if (tmp & (1<<CSR_MXISA_ZAAMO))     { neorv32_uart0_printf("Zaamo ");     }
   if (tmp & (1<<CSR_MXISA_ZALRSC))    { neorv32_uart0_printf("Zalrsc ");    }
+  if (tmp & (1<<CSR_MXISA_ZCA))       { neorv32_uart0_printf("Zca ");       }
   if (tmp & (1<<CSR_MXISA_ZCB))       { neorv32_uart0_printf("Zcb ");       }
   if (tmp & (1<<CSR_MXISA_ZBA))       { neorv32_uart0_printf("Zba ");       }
   if (tmp & (1<<CSR_MXISA_ZBB))       { neorv32_uart0_printf("Zbb ");       }
@@ -387,6 +388,7 @@ void neorv32_aux_print_hw_config(void) {
   // CPU tuning options
   tmp = neorv32_cpu_csr_read(CSR_MXCSR);
   neorv32_uart0_printf("\nTuning options:      ");
+  if (tmp & (1<<CSR_MXCSR_TRACE))     { neorv32_uart0_printf("trace ");      }
   if (tmp & (1<<CSR_MXCSR_CONSTTBR))  { neorv32_uart0_printf("constt_br ");  }
   if (tmp & (1<<CSR_MXCSR_FASTMUL))   { neorv32_uart0_printf("fast_mul ");   }
   if (tmp & (1<<CSR_MXCSR_FASTSHIFT)) { neorv32_uart0_printf("fast_shift "); }
@@ -438,8 +440,6 @@ void neorv32_aux_print_hw_config(void) {
     case 2:  neorv32_uart0_printf("boot from pre-initialized IMEM (2)\n"); break;
     default: neorv32_uart0_printf("unknown (%u)\n", boot_config); break;
   }
-
-  neorv32_uart0_printf("Bus timeout window:  %u cycles\n", neorv32_sysinfo_get_bustimeout());
 
   // internal IMEM
   neorv32_uart0_printf("Internal IMEM:       ");
@@ -518,6 +518,10 @@ void neorv32_aux_print_hw_config(void) {
   else {
     neorv32_uart0_printf("\n");
   }
+
+  // bus timeouts
+  neorv32_uart0_printf("Bus timeout (int):   %u cycles\n", neorv32_sysinfo_get_extbustimeout());
+  neorv32_uart0_printf("Bus timeout (ext):   %u cycles\n", neorv32_sysinfo_get_extbustimeout());
 
   // peripherals
   neorv32_uart0_printf("Peripherals:         ");

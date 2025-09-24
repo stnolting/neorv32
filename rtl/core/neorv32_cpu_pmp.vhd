@@ -247,37 +247,30 @@ begin
   region_gen:
   for r in 0 to NUM_REGIONS-1 generate
 
-    -- NAPOT address mask --
-    nap_mode_enable:
-    if NAP_EN generate
-      -- compute address masks for NAPOT mode --
-      addr_mask_napot(r)(pmp_lsb_c) <= '0';
-      addr_mask_napot_gen:
-      for i in pmp_lsb_c+1 to XLEN-1 generate
-        addr_mask_napot(r)(i) <= addr_mask_napot(r)(i-1) or (not pmpaddr(r)(i-3));
-      end generate;
+    -- NAPOT address mask generator --
+    addr_mask_napot(r)(pmp_lsb_c) <= '0';
+    addr_mask_napot_gen:
+    for i in pmp_lsb_c+1 to XLEN-1 generate
+      addr_mask_napot(r)(i) <= addr_mask_napot(r)(i-1) or (not pmpaddr(r)(i-3));
+    end generate;
 
-      -- address mask select --
-      addr_masking: process(rstn_i, clk_i)
-      begin
-        if (rstn_i = '0') then
-          addr_mask(r) <= (others => '0');
-        elsif rising_edge(clk_i) then
+    -- NAPOT address mask select --
+    addr_masking: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        addr_mask(r) <= (others => '0');
+      elsif rising_edge(clk_i) then
+        if NAP_EN then
           if (pmpcfg(r)(cfg_al_c) = '1') then -- NAPOT
             addr_mask(r) <= addr_mask_napot(r);
           else -- NA4
             addr_mask(r) <= (others => '1');
           end if;
+        else
+          addr_mask(r) <= (others => '0');
         end if;
-      end process addr_masking;
-    end generate; -- /nap_mode_enable
-
-    -- NAPOT disabled --
-    nap_mode_disable:
-    if not NAP_EN generate
-      addr_mask_napot(r) <= (others => '0');
-      addr_mask(r)       <= (others => '0');
-    end generate;
+      end if;
+    end process addr_masking;
 
 
     -- check region address match --

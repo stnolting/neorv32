@@ -170,6 +170,8 @@ on the [neoTRNG](https://github.com/stnolting/neoTRNG)
 for custom tightly-coupled co-processors, accelerators or interfaces
 * direct memory access controller ([DMA](https://stnolting.github.io/neorv32/#_direct_memory_access_controller_dma)) for CPU-independent
 data transfers and conversions
+* RVFI-compatible [trace port](https://stnolting.github.io/neorv32/#_execution_trace_port)
+ for advanced debugging, profiling or verification
 
 **Debugging**
 
@@ -222,7 +224,6 @@ This overview provides some *quick links* to the most important sections of the
 
 ### :mag: [NEORV32 Project](https://stnolting.github.io/neorv32/#_overview) - An Introduction
 
-* [Rationale](https://stnolting.github.io/neorv32/#_rationale) - why? how come? what for?
 * [Key Features](https://stnolting.github.io/neorv32/#_project_key_features) - what makes it special
 * [Structure](https://stnolting.github.io/neorv32/#_project_folder_structure) - folders, RTL files and compile order
 * [File-List Files](https://stnolting.github.io/neorv32/#_file_list_files) - to simplify HDL setup

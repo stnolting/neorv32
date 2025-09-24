@@ -96,12 +96,6 @@ enum NEORV32_CSR_enum {
   CSR_DPC            = 0x7b1, /**< 0x7b1 - dpc:       Debug program counter */
   CSR_DSCRATCH0      = 0x7b2, /**< 0x7b2 - dscratch0: Debug scratch register */
 
-  /* custom functions unit (CFU) */
-  CSR_CFUREG0        = 0x800, /**< 0x800 - cfureg0: custom CFU CSR 0 */
-  CSR_CFUREG1        = 0x801, /**< 0x801 - cfureg1: custom CFU CSR 1 */
-  CSR_CFUREG2        = 0x802, /**< 0x802 - cfureg2: custom CFU CSR 2 */
-  CSR_CFUREG3        = 0x803, /**< 0x803 - cfureg3: custom CFU CSR 3 */
-
   /* machine counters and timers */
   CSR_MCYCLE         = 0xb00, /**< 0xb00 - mcycle:        Machine cycle counter low word */
   CSR_MINSTRET       = 0xb02, /**< 0xb02 - minstret:      Machine instructions-retired counter low word */
@@ -305,6 +299,7 @@ enum NEORV32_CSR_MISA_enum {
  * CPU mxcsr CSR (r/w): Machine control and status register (NEORV32-specific)
  **************************************************************************/
 enum NEORV32_CSR_MXCSR_enum {
+  CSR_MXCSR_TRACE     = 26, /**< CPU mxcsr CSR (26): trace port implemented (r/-)*/
   CSR_MXCSR_CONSTTBR  = 27, /**< CPU mxcsr CSR (27): constant-time branches implemented (r/-)*/
   CSR_MXCSR_RFHWRST   = 28, /**< CPU mxcsr CSR (28): register file has full hardware reset (r/-)*/
   CSR_MXCSR_FASTMUL   = 29, /**< CPU mxcsr CSR (29): DSP-based multiplication (M extensions only) (r/-)*/
@@ -344,7 +339,8 @@ enum NEORV32_CSR_MXISA_enum {
   CSR_MXISA_ZBS      = 24, /**< CPU mxisa CSR (24): single-bit bit-manipulation operations (r/-)*/
   CSR_MXISA_ZAAMO    = 25, /**< CPU mxisa CSR (25): atomic read-modify-write operations (r/-)*/
   CSR_MXISA_ZALRSC   = 26, /**< CPU mxisa CSR (26): atomic reservation-set operations (r/-)*/
-  CSR_MXISA_ZCB      = 27  /**< CPU mxisa CSR (27): additional code size reduction instruction (r/-)*/
+  CSR_MXISA_ZCB      = 27, /**< CPU mxisa CSR (27): additional code size reduction instruction (r/-)*/
+  CSR_MXISA_ZCA      = 28  /**< CPU mxisa CSR (28): compressed instructions without floating-point (r/-)*/
 };
 
 

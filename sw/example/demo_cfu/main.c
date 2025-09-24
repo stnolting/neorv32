@@ -34,6 +34,8 @@
  * @name Define macros for easy CFU instruction wrapping
  **************************************************************************/
 /**@{*/
+#define xtea_key_write(i, data)     neorv32_cfu_r4_instr(0b100 | i, data, 0, 0)
+#define xtea_key_read(i)            neorv32_cfu_r4_instr(0b000 | i, 0,    0, 0)
 #define xtea_hw_init(sum)           neorv32_cfu_r3_instr(0b0000000, 0b100, sum, 0 )
 #define xtea_hw_enc_v0_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b000, v0,  v1)
 #define xtea_hw_enc_v1_step(v0, v1) neorv32_cfu_r3_instr(0b0000000, 0b001, v0,  v1)
@@ -162,13 +164,13 @@ int main() {
 
   // check if the CFU is implemented (the CFU is wrapped in the core's "Zxcfu" ISA extension)
   if (neorv32_cpu_cfu_available() == 0) {
-    neorv32_uart0_printf("ERROR! CFU ('Zxcfu' ISA extensions) not implemented!\n");
+    neorv32_uart0_printf("ERROR! CFU ('Zxcfu' ISA extension) not implemented!\n");
     return -1;
   }
 
   // check if the CPU base counters are implemented
   if ((neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZICNTR)) == 0) {
-    neorv32_uart0_printf("ERROR! Base counters ('Zicntr' ISA extensions) not implemented!\n");
+    neorv32_uart0_printf("ERROR! Base counters ('Zicntr' ISA extension) not implemented!\n");
     return -1;
   }
 
@@ -191,17 +193,17 @@ int main() {
   // ----------------------------------------------------------
 
   // set XTEA-CFU key storage (via CFU CSRs)
-  neorv32_cpu_csr_write(CSR_CFUREG0, key[0]);
-  neorv32_cpu_csr_write(CSR_CFUREG1, key[1]);
-  neorv32_cpu_csr_write(CSR_CFUREG2, key[2]);
-  neorv32_cpu_csr_write(CSR_CFUREG3, key[3]);
+  xtea_key_write(0, key[0]);
+  xtea_key_write(1, key[1]);
+  xtea_key_write(2, key[2]);
+  xtea_key_write(3, key[3]);
 
   // read-back CSRs and print key
   neorv32_uart0_printf("XTEA key: 0x%x%x%x%x\n\n",
-                       neorv32_cpu_csr_read(CSR_CFUREG0),
-                       neorv32_cpu_csr_read(CSR_CFUREG1),
-                       neorv32_cpu_csr_read(CSR_CFUREG2),
-                       neorv32_cpu_csr_read(CSR_CFUREG3));
+                       xtea_key_read(0),
+                       xtea_key_read(1),
+                       xtea_key_read(2),
+                       xtea_key_read(3));
 
   // generate "random" data for the plain text
   for (i=0; i<DATA_NUM; i++) {
@@ -312,7 +314,6 @@ int main() {
   neorv32_uart0_printf("ENC HW = %u cycles\n", time_enc_hw);
   neorv32_uart0_printf("DEC SW = %u cycles\n", time_dec_sw);
   neorv32_uart0_printf("DEC HW = %u cycles\n", time_dec_hw);
-  neorv32_uart0_printf("Average speedup: ~%ux\n", (time_enc_sw + time_dec_sw) / (time_enc_hw + time_dec_hw));
 
 
   // ----------------------------------------------------------

@@ -19,50 +19,49 @@ use neorv32.neorv32_package.all;
 entity neorv32_tb is
   generic (
     -- processor --
-    CLOCK_FREQUENCY : natural := 100_000_000; -- clock frequency of clk_i in Hz
-    DUAL_CORE_EN : boolean := false; -- enable dual-core homogeneous SMP
-    BOOT_MODE_SELECT : natural range 0 to 2 := 2; -- boot from pre-initialized IMEM
-    BOOT_ADDR_CUSTOM : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
-    RISCV_ISA_C : boolean := true; -- implement compressed extension
-    RISCV_ISA_E : boolean := false; -- implement embedded RF extension
-    RISCV_ISA_M : boolean := true; -- implement mul/div extension
-    RISCV_ISA_U : boolean := true; -- implement user mode extension
-    RISCV_ISA_Zaamo : boolean := true; -- implement atomic read-modify-write operations extension
-    RISCV_ISA_Zalrsc : boolean := true; -- implement atomic reservation-set operations extension
-    RISCV_ISA_Zcb : boolean := true; -- implement additional code size reduction instructions
-    RISCV_ISA_Zcmp : boolean := true; -- implement additional code size reduction instructions
-    RISCV_ISA_Zba : boolean := true; -- implement shifted-add bit-manipulation extension
-    RISCV_ISA_Zbb : boolean := true; -- implement basic bit-manipulation extension
-    RISCV_ISA_Zbkb : boolean := true; -- implement bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc : boolean := true; -- implement carry-less multiplication instructions
-    RISCV_ISA_Zbkx : boolean := true; -- implement cryptography crossbar permutation extension
-    RISCV_ISA_Zbs : boolean := true; -- implement single-bit bit-manipulation extension
-    RISCV_ISA_Zfinx : boolean := true; -- implement 32-bit floating-point extension
-    RISCV_ISA_Zicntr : boolean := true; -- implement base counters
-    RISCV_ISA_Zicond : boolean := true; -- implement integer conditional operations
-    RISCV_ISA_Zihpm : boolean := true; -- implement hardware performance monitors
-    RISCV_ISA_Zknd : boolean := true; -- implement cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne : boolean := true; -- implement cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh : boolean := true; -- implement cryptography NIST hash extension
-    RISCV_ISA_Zksed : boolean := true; -- implement ShangMi block cipher extension
-    RISCV_ISA_Zksh : boolean := true; -- implement ShangMi hash extension
-    RISCV_ISA_Zmmul : boolean := true; -- implement multiply-only M sub-extension
-    RISCV_ISA_Zxcfu : boolean := true; -- implement custom (instr.) functions unit
-    CPU_CONSTT_BR_EN : boolean := false; -- constant-time branches
-    CPU_FAST_MUL_EN : boolean := true; -- use DSPs for M extension's multiplier
-    CPU_FAST_SHIFT_EN : boolean := true; -- use barrel shifter for shift operations
-    CPU_RF_HW_RST_EN : boolean := false; -- implement full hardware reset for register file
-    IMEM_EN : boolean := true; -- implement processor-internal instruction memory
-    IMEM_SIZE : natural := 32 * 1024; -- size of processor-internal instruction memory in bytes (use a power of 2)
-    DMEM_EN : boolean := true; -- implement processor-internal data memory
-    DMEM_SIZE : natural := 8 * 1024; -- size of processor-internal data memory in bytes (use a power of 2)
-    ICACHE_EN : boolean := true; -- implement instruction cache
-    ICACHE_NUM_BLOCKS : natural range 1 to 4096 := 64; -- i-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_EN : boolean := true; -- implement data cache
-    DCACHE_NUM_BLOCKS : natural range 1 to 4096 := 32; -- d-cache: number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE : natural range 8 to 1024 := 32; -- i-cache/d-cache: block size in bytes (min 8), has to be a power of 2
-    CACHE_BURSTS_EN : boolean := true; -- enable issuing of burst transfer for cache update
-    TRACE_LOG_EN : boolean := true; -- write full trace log to file
+    CLOCK_FREQUENCY     : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
+    DUAL_CORE_EN        : boolean                        := true;        -- enable dual-core homogeneous SMP
+    BOOT_MODE_SELECT    : natural range 0 to 2           := 2;           -- boot from pre-initialized IMEM
+    BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
+    RISCV_ISA_C         : boolean                        := true;        -- implement compressed extension
+    RISCV_ISA_E         : boolean                        := false;       -- implement embedded RF extension
+    RISCV_ISA_M         : boolean                        := true;        -- implement mul/div extension
+    RISCV_ISA_U         : boolean                        := true;        -- implement user mode extension
+    RISCV_ISA_Zaamo     : boolean                        := true;        -- implement atomic read-modify-write operations extension
+    RISCV_ISA_Zalrsc    : boolean                        := true;        -- implement atomic reservation-set operations extension
+    RISCV_ISA_Zcb       : boolean                        := false;       -- implement additional code size reduction instructions
+    RISCV_ISA_Zba       : boolean                        := true;        -- implement shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb       : boolean                        := true;        -- implement basic bit-manipulation extension
+    RISCV_ISA_Zbkb      : boolean                        := true;        -- implement bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc      : boolean                        := true;        -- implement carry-less multiplication instructions
+    RISCV_ISA_Zbkx      : boolean                        := true;        -- implement cryptography crossbar permutation extension
+    RISCV_ISA_Zbs       : boolean                        := true;        -- implement single-bit bit-manipulation extension
+    RISCV_ISA_Zfinx     : boolean                        := true;        -- implement 32-bit floating-point extension
+    RISCV_ISA_Zicntr    : boolean                        := true;        -- implement base counters
+    RISCV_ISA_Zicond    : boolean                        := true;        -- implement integer conditional operations
+    RISCV_ISA_Zihpm     : boolean                        := true;        -- implement hardware performance monitors
+    RISCV_ISA_Zknd      : boolean                        := true;        -- implement cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne      : boolean                        := true;        -- implement cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh      : boolean                        := true;        -- implement cryptography NIST hash extension
+    RISCV_ISA_Zksed     : boolean                        := true;        -- implement ShangMi block cipher extension
+    RISCV_ISA_Zksh      : boolean                        := true;        -- implement ShangMi hash extension
+    RISCV_ISA_Zmmul     : boolean                        := true;        -- implement multiply-only M sub-extension
+    RISCV_ISA_Zxcfu     : boolean                        := true;        -- implement custom (instr.) functions unit
+    CPU_CONSTT_BR_EN    : boolean                        := false;       -- constant-time branches
+    CPU_FAST_MUL_EN     : boolean                        := true;        -- use DSPs for M extension's multiplier
+    CPU_FAST_SHIFT_EN   : boolean                        := true;        -- use barrel shifter for shift operations
+    CPU_RF_HW_RST_EN    : boolean                        := false;       -- implement full hardware reset for register file
+    IMEM_EN             : boolean                        := true;        -- implement processor-internal instruction memory
+    IMEM_SIZE           : natural                        := 32*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
+    DMEM_EN             : boolean                        := true;        -- implement processor-internal data memory
+    DMEM_SIZE           : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
+    ICACHE_EN           : boolean                        := true;        -- implement instruction cache
+    ICACHE_NUM_BLOCKS   : natural range 1 to 4096        := 64;          -- i-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_EN           : boolean                        := true;        -- implement data cache
+    DCACHE_NUM_BLOCKS   : natural range 1 to 4096        := 32;          -- d-cache: number of blocks (min 1), has to be a power of 2
+    CACHE_BLOCK_SIZE    : natural range 8 to 1024        := 32;          -- i-cache/d-cache: block size in bytes (min 8), has to be a power of 2
+    CACHE_BURSTS_EN     : boolean                        := true;        -- enable issuing of burst transfer for cache update
+    TRACE_LOG_EN        : boolean                        := true;        -- write full trace log to file
     -- external memory A --
     EXT_MEM_A_EN : boolean := false; -- enable memory
     EXT_MEM_A_BASE : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address, has to be word-aligned
@@ -110,6 +109,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- XBUS --
   signal xbus_core_req, xbus_ext_mem_a_req, xbus_ext_mem_b_req, xbus_mmio_req, xbus_trig_req : xbus_req_t;
   signal xbus_core_rsp, xbus_ext_mem_a_rsp, xbus_ext_mem_b_rsp, xbus_mmio_rsp, xbus_trig_rsp : xbus_rsp_t;
+  signal xbus_fmem_data_req, xbus_fmem_tag_req : xbus_req_t;
+  signal xbus_fmem_data_rsp, xbus_fmem_tag_rsp : xbus_rsp_t;
 
 begin
 
@@ -124,7 +125,9 @@ begin
   neorv32_top_inst : neorv32_top
   generic map(
     -- Clocking --
-    CLOCK_FREQUENCY => CLOCK_FREQUENCY,
+    CLOCK_FREQUENCY     => CLOCK_FREQUENCY,
+    -- External Trace Port --
+    TRACE_PORT_EN       => true,
     -- Dual-Core Configuration --
     DUAL_CORE_EN => DUAL_CORE_EN,
     -- Boot Configuration --
@@ -189,8 +192,9 @@ begin
     CACHE_BLOCK_SIZE => CACHE_BLOCK_SIZE,
     CACHE_BURSTS_EN => CACHE_BURSTS_EN,
     -- External bus interface --
-    XBUS_EN => true,
-    XBUS_REGSTAGE_EN => true,
+    XBUS_EN             => true,
+    XBUS_TIMEOUT        => 2048,
+    XBUS_REGSTAGE_EN    => true,
     -- Processor peripherals --
     IO_GPIO_NUM => 32,
     IO_CLINT_EN => true,
@@ -230,10 +234,13 @@ begin
   )
   port map(
     -- Global control --
-    clk_i => clk_gen,
-    rstn_i => rst_gen,
-    rstn_ocd_o => open,
-    rstn_wdt_o => open,
+    clk_i          => clk_gen,
+    rstn_i         => rst_gen,
+    rstn_ocd_o     => open,
+    rstn_wdt_o     => open,
+    -- Execution trace --
+    trace_cpu0_o   => open,
+    trace_cpu1_o   => open,
     -- JTAG on-chip debugger interface --
     jtag_tck_i => '0',
     jtag_tdi_i => '0',
@@ -403,26 +410,35 @@ begin
 
   -- XBUS / Wishbone Interconnect -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  xbus_interconnect : entity work.xbus_gateway
-    generic map(
-      -- device address size in bytes and base address --
-      DEV_0_EN => EXT_MEM_A_EN, DEV_0_SIZE => EXT_MEM_A_SIZE, DEV_0_BASE => EXT_MEM_A_BASE,
-      DEV_1_EN => EXT_MEM_B_EN, DEV_1_SIZE => EXT_MEM_B_SIZE, DEV_1_BASE => EXT_MEM_B_BASE,
-      DEV_2_EN => true, DEV_2_SIZE => 8, DEV_2_BASE => x"A0000000",
-      DEV_3_EN => true, DEV_3_SIZE => 4, DEV_3_BASE => x"FF000000"
-    )
-    port map(
-      -- host port --
-      host_req_i => xbus_core_req,
-      host_rsp_o => xbus_core_rsp,
-      -- device ports --
-      dev_0_req_o => xbus_ext_mem_a_req, dev_0_rsp_i => xbus_ext_mem_a_rsp,
-      dev_1_req_o => xbus_ext_mem_b_req, dev_1_rsp_i => xbus_ext_mem_b_rsp,
-      dev_2_req_o => xbus_mmio_req, dev_2_rsp_i => xbus_mmio_rsp,
-      dev_3_req_o => xbus_trig_req, dev_3_rsp_i => xbus_trig_rsp
-    );
+  xbus_interconnect: entity work.xbus_gateway
+  generic map (
+    -- device address size in bytes and base address --
+    DEV_0_EN => EXT_MEM_A_EN, DEV_0_SIZE => EXT_MEM_A_SIZE, DEV_0_BASE => EXT_MEM_A_BASE,
+    DEV_1_EN => EXT_MEM_B_EN, DEV_1_SIZE => EXT_MEM_B_SIZE, DEV_1_BASE => EXT_MEM_B_BASE,
+    DEV_2_EN => true,         DEV_2_SIZE =>              8, DEV_2_BASE => x"F0000000",
+    DEV_3_EN => true,         DEV_3_SIZE =>              4, DEV_3_BASE => x"FF000000",
+    DEV_4_EN => true,         DEV_4_SIZE =>             16, DEV_4_BASE => x"B0000000",
+    DEV_5_EN => true,         DEV_5_SIZE =>             16, DEV_5_BASE => x"FF100000",
+    DEV_6_EN => false,        DEV_6_SIZE =>              0, DEV_6_BASE => (others => '0'), -- unused
+    DEV_7_EN => false,        DEV_7_SIZE =>              0, DEV_7_BASE => (others => '0')  -- unused
+  )
+  port map (
+    -- host port --
+    host_req_i  => xbus_core_req,
+    host_rsp_o  => xbus_core_rsp,
+    -- device ports --
+    dev_0_req_o => xbus_ext_mem_a_req, dev_0_rsp_i => xbus_ext_mem_a_rsp,
+    dev_1_req_o => xbus_ext_mem_b_req, dev_1_rsp_i => xbus_ext_mem_b_rsp,
+    dev_2_req_o => xbus_mmio_req,      dev_2_rsp_i => xbus_mmio_rsp,
+    dev_3_req_o => xbus_trig_req,      dev_3_rsp_i => xbus_trig_rsp,
+    dev_4_req_o => xbus_fmem_data_req, dev_4_rsp_i => xbus_fmem_data_rsp,
+    dev_5_req_o => xbus_fmem_tag_req,  dev_5_rsp_i => xbus_fmem_tag_rsp,
+    dev_6_req_o => open,               dev_6_rsp_i => xbus_rsp_terminate_c, -- unused
+    dev_7_req_o => open,               dev_7_rsp_i => xbus_rsp_terminate_c  -- unused
+  );
 
-  -- XBUS: External Memory A ----------------------------------------------------------------
+
+  -- XBUS: External Memory A (cached) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xbus_external_memory_a_enable :
   if EXT_MEM_A_EN generate
@@ -445,7 +461,8 @@ begin
     xbus_ext_mem_a_rsp <= xbus_rsp_terminate_c;
   end generate;
 
-  -- XBUS: External Memory B ----------------------------------------------------------------
+
+  -- XBUS: External Memory B (cached) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xbus_external_memory_b_enable :
   if EXT_MEM_B_EN generate
@@ -468,7 +485,8 @@ begin
     xbus_ext_mem_b_rsp <= xbus_rsp_terminate_c;
   end generate;
 
-  -- XBUS: External Memory-Mapped IO (cached) -----------------------------------------------
+
+  -- XBUS: External Memory-Mapped IO (uncached) ---------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xbus_mmio : entity work.xbus_memory
     generic map(
@@ -528,5 +546,22 @@ begin
       end if;
     end if;
   end process xbus_irq_trigger;
+
+
+  -- XBUS: Bus-Error-Test-Memory ------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  xbus_fmem_inst: entity work.xbus_fmem
+  generic map (
+    MEM_SIZE => 16
+  )
+  port map (
+    clk_i     => clk_gen,
+    rstn_i    => rst_gen,
+    tag_req_i => xbus_fmem_tag_req,
+    tag_rsp_o => xbus_fmem_tag_rsp,
+    mem_req_i => xbus_fmem_data_req,
+    mem_rsp_o => xbus_fmem_data_rsp
+  );
+
 
 end neorv32_tb_rtl;
