@@ -503,6 +503,8 @@ begin
 
           when S_POPRET =>
             zcmp_in_uop_seq <= '1';
+            frontend_bus_zcmp.instr <= zcmp_jalr_instr;
+            frontend_bus_zcmp.valid <= '1';
 
             if (zcmp_is_popretz = '1') then
               uop_state_nxt <= S_POPRETZ;
@@ -513,8 +515,6 @@ begin
           when S_POPRETZ =>
             zcmp_in_uop_seq <= '1';
             uop_state_nxt <= S_IDLE;
-
-            -- Fehler bei cm.pop? Generiert 
 
           when S_ZCMP_BRANCH_ABORT =>
             if (ipb.avail /= "00") then

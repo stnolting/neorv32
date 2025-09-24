@@ -181,14 +181,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal csr : csr_t;
 
-signal zcmp_prev      : std_ulogic;  -- previous cycle of zcmp_in_uop_seq
-signal zcmp_active,zcmp_active_nxt    : std_ulogic;  -- = zcmp_in_uop_seq registered (or use it directly)
-signal zcmp_rise      : std_ulogic;  -- 0->1
-signal zcmp_fall      : std_ulogic;  -- 1->0
-signal zcmp_npc_hold,zcmp_npc_nxt  : std_ulogic_vector(XLEN-1 downto 0); -- cm.push PC + 2
-
-
-
   -- debug-mode controller --
   type debug_ctrl_t is record
     run, trig_hw, trig_break, trig_halt, trig_step : std_ulogic;
@@ -225,6 +217,8 @@ begin
       if (exe_engine.state = EX_DISPATCH) then -- prepare update of next PC (using ALU's PC + IMM in EX_EXECUTE state)
         if RISCV_ISA_C and (frontend_i.compr = '1') then -- is decompressed C instruction?
           immediate <= x"00000002";
+        elsif (frontend_i.zcmp_in_uop_seq='1') then
+          immediate <= (others => '0');
         else
           immediate <= x"00000004";
         end if;
@@ -279,7 +273,6 @@ begin
     elsif rising_edge(clk_i) then
       ctrl       <= ctrl_nxt;
       exe_engine <= exe_engine_nxt;
-      zcmp_npc_hold <= zcmp_npc_nxt;
     end if;
   end process execute_engine_fsm_sync;
 
@@ -289,7 +282,7 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(exe_engine,zcmp_rise,zcmp_active, zcmp_npc_hold, debug_ctrl, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
+  execute_engine_fsm_comb: process(exe_engine,frontend_i, debug_ctrl, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
                                    ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
@@ -314,8 +307,6 @@ begin
     csr.we_nxt           <= '0';
     csr.re_nxt           <= '0';
     ctrl_nxt             <= ctrl_bus_zero_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
-
-    zcmp_npc_nxt <= zcmp_npc_hold;
 
     -- ALU sign control --
     if (opcode(4) = '1') then -- ALU ops
@@ -375,16 +366,8 @@ begin
           trap_ctrl.instr_be   <= frontend_i.fault or pmp_fault_i; -- access fault during instruction fetch
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
-          
-          if(zcmp_rise='1') then -- muss au�erhalb state passieren
-            zcmp_npc_nxt <= exe_engine.pc2;
-          end if;
 
-          if(zcmp_active='1') then 
-            exe_engine_nxt.pc    <= zcmp_npc_hold;
-          else
-            exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
-          end if;
+          exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
 
           exe_engine_nxt.state <= EX_EXECUTE; -- start executing new instruction
         end if;
@@ -583,23 +566,6 @@ begin
 
     end case;
   end process execute_engine_fsm_comb;
-
-  zcmp_rise_fsm_sync: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      zcmp_prev <= '0';
-      zcmp_active <= '0';
-    elsif rising_edge(clk_i) then
-      zcmp_prev <= frontend_i.zcmp_in_uop_seq;
-      zcmp_active <= zcmp_active_nxt;
-    end if;
-  end process;
-
-  zcmp_rise <= frontend_i.zcmp_in_uop_seq and (not zcmp_prev);
-  zcmp_fall <= (not frontend_i.zcmp_in_uop_seq) and zcmp_prev;
-
-  zcmp_active_nxt <= '1' when zcmp_rise='1' else '0' when zcmp_fall='1' else zcmp_active;
-
 
   -- CPU Control Bus Output -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
