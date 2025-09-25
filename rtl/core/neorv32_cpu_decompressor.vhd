@@ -28,7 +28,9 @@ entity neorv32_cpu_decompressor is
     instr_o : out std_ulogic_vector(31 downto 0); -- decompressed instruction
     instr_is_zcmp : out std_ulogic; -- instruction is part of Zcmp extension
     zcmp_is_popret : out std_ulogic; -- instruction is popret
-    zcmp_is_popretz : out std_ulogic -- instruction is popretz
+    zcmp_is_popretz : out std_ulogic; -- instruction is popretz
+    zcmp_is_mvsa01 : out std_ulogic;
+    zcmp_is_mvsa01s : out std_ulogic
   );
 end neorv32_cpu_decompressor;
 
@@ -74,6 +76,8 @@ begin
     instr_is_zcmp <= '0';
     zcmp_is_popret <= '0';
     zcmp_is_popretz <= '0';
+    zcmp_is_mvsa01 <= '0';
+    zcmp_is_mvsa01s <= '0';
 
     -- decoder --
     case instr_i(ci_opcode_msb_c downto ci_opcode_lsb_c) is
@@ -388,6 +392,15 @@ begin
               when others =>
                illegal <= '1';
             end case;
+            if (instr_i(12 downto 10) = "011")  then -- double moves
+                if (instr_i(6 downto 5) = "01") then -- mvsa01
+                  instr_is_zcmp <= '1';
+                  zcmp_is_mvsa01 <= '1';
+                elsif (instr_i(6 downto 5) = "11") then -- mvsa01s
+                  instr_is_zcmp <= '1';
+                  zcmp_is_mvsa01s <= '1';
+                end if;
+            end if;
           end if;
           when others => -- "001"/"101": C.FLDSP / C.LQSP, C.FSDSP / C.SQSP -> illegal
           -- --------------------------------------------------------------------------------------
