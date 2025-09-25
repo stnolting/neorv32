@@ -90,7 +90,10 @@ begin
     if (rstn_i = '0') then
       trace_buf <= trace_port_terminate_c;
     elsif rising_edge(clk_i) then
+
+      -- trace data is valid --
       trace_buf.valid <= arbiter.valid;
+
       -- instruction metadata --
       trace_buf.order <= arbiter.order;
       trace_buf.insn  <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
@@ -103,6 +106,7 @@ begin
         trace_buf.debug <= ctrl_i.cpu_debug;
         trace_buf.compr <= ctrl_i.cnt_event(cnt_event_compr_c);
       end if;
+
       -- integer register --
       trace_buf.rs1_addr  <= ctrl_i.rf_rs1;
       trace_buf.rs2_addr  <= ctrl_i.rf_rs2;
@@ -114,9 +118,11 @@ begin
         trace_buf.rd_addr <= (others => '0');
       end if;
       trace_buf.rd_rdata <= rd_wdata_i;
+
       -- program counter --
       trace_buf.pc_rdata <= ctrl_i.pc_cur;
       trace_buf.pc_wdata <= ctrl_i.pc_nxt;
+
       -- control and status register --
       if (ctrl_i.csr_we = '1') or (ctrl_i.csr_re = '1') then
         trace_buf.csr_addr <= ctrl_i.csr_addr;
@@ -125,6 +131,7 @@ begin
       end if;
       trace_buf.csr_rdata <= rd_wdata_i;
       trace_buf.csr_wdata <= ctrl_i.csr_wdata;
+
       -- memory access --
       if (ctrl_i.lsu_req = '1') then
         if (ctrl_i.lsu_rw = '0') or (ctrl_i.lsu_rmw = '1') then
@@ -140,6 +147,7 @@ begin
       trace_buf.mem_addr  <= mem_addr_i;
       trace_buf.mem_rdata <= rd_wdata_i;
       trace_buf.mem_wdata <= mem_wdata_i;
+
     end if;
   end process trace_buffer;
 
