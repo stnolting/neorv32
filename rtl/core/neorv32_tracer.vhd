@@ -50,18 +50,6 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
   -- helpers --
   constant log2_fifo_size_c : natural := index_size_f(TRACE_DEPTH);
 
-  -- simulation trace logger --
-  component neorv32_tracer_simlog
-    generic (
-      LOG_FILE : string -- trace log file
-    );
-    port (
-      clk_i   : in std_ulogic;  -- global clock line
-      rstn_i  : in std_ulogic;  -- global reset line, low-active, async
-      trace_i : in trace_port_t -- CPU trace port
-    );
-  end component;
-
   -- control registers --
   signal ctrl_en, ctrl_hsel, ctrl_start, ctrl_stop, ctrl_iclr : std_ulogic;
   signal stop_addr : std_ulogic_vector(30 downto 0);
@@ -296,7 +284,7 @@ begin
   sim_trace0_enabled:
   if SIM_LOG_EN generate
     assert false report "[NEORV32] CPU 0 trace logging enabled: " & SIM_LOG_FILE0 severity note;
-    neorv32_tracer_simlog0_inst: neorv32_tracer_simlog
+    neorv32_tracer_simlog0_inst: entity neorv32.neorv32_tracer_simlog
     generic map (
       LOG_FILE => SIM_LOG_FILE0
     )
@@ -311,7 +299,7 @@ begin
   sim_trace1_enabled:
   if SIM_LOG_EN and DUAL_CORE_EN generate
     assert false report "[NEORV32] CPU 1 trace logging enabled: " & SIM_LOG_FILE1 severity note;
-    neorv32_tracer_simlog1_inst: neorv32_tracer_simlog
+    neorv32_tracer_simlog1_inst: entity neorv32.neorv32_tracer_simlog
     generic map (
       LOG_FILE => SIM_LOG_FILE1
     )

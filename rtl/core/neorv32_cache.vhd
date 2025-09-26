@@ -56,28 +56,6 @@ architecture neorv32_cache_rtl of neorv32_cache is
   constant index_size_c  : natural := index_size_f(block_num_c);
   constant tag_size_c    : natural := 32 - (offset_size_c + index_size_c + 2);
 
-  -- cache memory component --
-  component neorv32_cache_memory
-    generic (
-      NUM_BLOCKS : natural;
-      BLOCK_SIZE : natural
-    );
-    port (
-      rstn_i  : in  std_ulogic;
-      clk_i   : in  std_ulogic;
-      clr_i   : in  std_ulogic;
-      new_i   : in  std_ulogic;
-      hit_o   : out std_ulogic;
-      dir_o   : out std_ulogic;
-      addr_i  : in  std_ulogic_vector(31 downto 0);
-      we_i    : in  std_ulogic_vector(3 downto 0);
-      wdata_i : in  std_ulogic_vector(31 downto 0);
-      wstat_i : in  std_ulogic;
-      rdata_o : out std_ulogic_vector(31 downto 0);
-      rstat_o : out std_ulogic
-    );
-  end component;
-
   -- control -> cache interface --
   type cache_o_t is record
     cmd_clr : std_ulogic;
@@ -195,11 +173,11 @@ begin
           bus_req_o.stb  <= '1';
           ctrl_nxt.state <= S_DIRECT_RSP;
         elsif (cache_i.sta_hit = '1') then -- cache HIT
-          if (host_req_i.rw = '0') or (READ_ONLY = true) then -- read from cache
+          if (host_req_i.rw = '0') or READ_ONLY then -- read from cache
             host_rsp_o.ack <= '1';
             host_rsp_o.err <= cache_i.stat;
             ctrl_nxt.state <= S_IDLE;
-          elsif (WRITE_THROUGH = true) then -- write-through: write to main memory and also to the cache
+          elsif WRITE_THROUGH  then -- write-through: write to main memory and also to the cache
             cache_o.we     <= host_req_i.ben;
             bus_req_o.stb  <= '1';
             ctrl_nxt.state <= S_DIRECT_RSP;
@@ -209,9 +187,9 @@ begin
             ctrl_nxt.state <= S_IDLE;
           end if;
         else -- cache MISS
-          if (host_req_i.rw = '0') or (READ_ONLY = true) then -- get block from main memory
+          if (host_req_i.rw = '0') or READ_ONLY then -- get block from main memory
             ctrl_nxt.state <= S_DOWNLOAD_START;
-          elsif (WRITE_THROUGH = true) then -- write-through: write to main memory, no cache update
+          elsif WRITE_THROUGH then -- write-through: write to main memory, no cache update
             bus_req_o.stb  <= '1';
             ctrl_nxt.state <= S_DIRECT_RSP;
           elsif (cache_i.sta_dir = '0') then -- allocate block: current block is clean, just replace
@@ -314,7 +292,7 @@ begin
 
   -- Cache Memory Core ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cache_memory_inst: neorv32_cache_memory
+  neorv32_cache_memory_inst: entity neorv32.neorv32_cache_memory
   generic map (
     NUM_BLOCKS => block_num_c, -- number of blocks (min 2), has to be a power of 2
     BLOCK_SIZE => block_size_c -- block size in bytes (min 4), has to be a power of 2
@@ -442,10 +420,10 @@ begin
       -- dirty flags --
       if (clr_i = '1') then -- invalidate entire cache
         dirty_mem <= (others => '0');
-      elsif (we_i /= "0000") then -- modify cache content
-        dirty_mem(to_integer(unsigned(acc_idx))) <= '1';
       elsif (new_i = '1') then -- make accessed block clean
         dirty_mem(to_integer(unsigned(acc_idx))) <= '0';
+      elsif (we_i /= "0000") then -- modify cache content
+        dirty_mem(to_integer(unsigned(acc_idx))) <= '1';
       end if;
       -- syn flag read --
       valid_mem_rd <= valid_mem(to_integer(unsigned(acc_idx)));

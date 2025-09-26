@@ -35,20 +35,6 @@ end neorv32_pwm;
 
 architecture neorv32_pwm_rtl of neorv32_pwm is
 
-  -- pwm channel controller --
-  component neorv32_pwm_channel
-  port (
-    clk_i    : in  std_ulogic; -- global clock line
-    rstn_i   : in  std_ulogic; -- global reset line, low-active, async
-    en_i     : in  std_ulogic; -- access enable
-    rw_i     : in  std_ulogic; -- read/write access
-    wdata_i  : in  std_ulogic_vector(31 downto 0); -- write data
-    rdata_o  : out std_ulogic_vector(31 downto 0); -- read data
-    clkgen_i : in  std_ulogic_vector(7 downto 0); -- clock divider input
-    pwm_o    : out std_ulogic -- PWM output
-  );
-  end component;
-
   -- wiring --
   type rdata_t is array (0 to NUM_CHANNELS-1) of std_ulogic_vector(31 downto 0);
   signal rdata     : rdata_t;
@@ -87,7 +73,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   pwm_channel_gen:
   for i in 0 to NUM_CHANNELS-1 generate
-    neorv32_pwm_channel_inst: neorv32_pwm_channel
+    neorv32_pwm_channel_inst: entity neorv32.neorv32_pwm_channel
     port map (
       clk_i    => clk_i,
       rstn_i   => rstn_i,

@@ -39,25 +39,6 @@ end neorv32_cpu_frontend;
 
 architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
-  -- instruction prefetch buffer --
-  component neorv32_cpu_frontend_ipb
-  generic (
-    AWIDTH : natural;
-    DWIDTH : natural
-  );
-  port (
-    clk_i   : in  std_ulogic;
-    rstn_i  : in  std_ulogic;
-    clear_i : in  std_ulogic;
-    wdata_i : in  std_ulogic_vector(DWIDTH-1 downto 0);
-    we_i    : in  std_ulogic;
-    free_o  : out std_ulogic;
-    re_i    : in  std_ulogic;
-    rdata_o : out std_ulogic_vector(DWIDTH-1 downto 0);
-    avail_o : out std_ulogic
-  );
-  end component;
-
   -- instruction fetch engine --
   type state_t is (S_RESTART, S_REQUEST, S_PENDING);
   type fetch_t is record
@@ -166,7 +147,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   prefetch_buffer:
   for i in 0 to 1 generate
-    ipb_inst: neorv32_cpu_frontend_ipb
+    ipb_inst: entity neorv32.neorv32_cpu_frontend_ipb
     generic map (
       AWIDTH => 1, -- 1 address bit = 2 entries
       DWIDTH => 17 -- error status & instruction half-word data

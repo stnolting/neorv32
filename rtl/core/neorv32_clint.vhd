@@ -35,48 +35,6 @@ end neorv32_clint;
 
 architecture neorv32_clint_rtl of neorv32_clint is
 
-  -- global machine timer --
-  component neorv32_clint_mtime
-  port (
-    clk_i   : in  std_ulogic;
-    rstn_i  : in  std_ulogic;
-    en_i    : in  std_ulogic;
-    rw_i    : in  std_ulogic;
-    addr_i  : in  std_ulogic;
-    wdata_i : in  std_ulogic_vector(31 downto 0);
-    rdata_o : out std_ulogic_vector(31 downto 0);
-    mtime_o : out std_ulogic_vector(63 downto 0)
-  );
-  end component;
-
-  -- timer interrupt generator --
-  component neorv32_clint_mtimecmp
-  port (
-    clk_i   : in  std_ulogic;
-    rstn_i  : in  std_ulogic;
-    en_i    : in  std_ulogic;
-    rw_i    : in  std_ulogic;
-    addr_i  : in  std_ulogic;
-    wdata_i : in  std_ulogic_vector(31 downto 0);
-    rdata_o : out std_ulogic_vector(31 downto 0);
-    mtime_i : in  std_ulogic_vector(63 downto 0);
-    mti_o   : out std_ulogic
-  );
-  end component;
-
-  -- software interrupt trigger --
-  component neorv32_clint_swi
-  port (
-    clk_i   : in  std_ulogic;
-    rstn_i  : in  std_ulogic;
-    en_i    : in  std_ulogic;
-    rw_i    : in  std_ulogic;
-    wdata_i : in  std_ulogic_vector(31 downto 0);
-    rdata_o : out std_ulogic_vector(31 downto 0);
-    swi_o   : out std_ulogic
-  );
-  end component;
-
   -- device offsets --
   constant base_mswi_c     : unsigned(15 downto 0) := x"0000";
   constant base_mtimecmp_c : unsigned(15 downto 0) := x"4000";
@@ -102,7 +60,7 @@ begin
 
   -- MTIME - Global Machine Timer -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_clint_mtime_inst: neorv32_clint_mtime
+  neorv32_clint_mtime_inst: entity neorv32.neorv32_clint_mtime
   port map (
     clk_i   => clk_i,
     rstn_i  => rstn_i,
@@ -135,7 +93,7 @@ begin
   neorv32_clint_mtimecmp_gen:
   for i in 0 to NUM_HARTS-1 generate
 
-    neorv32_clint_mtimecmp_inst: neorv32_clint_mtimecmp
+    neorv32_clint_mtimecmp_inst: entity neorv32.neorv32_clint_mtimecmp
     port map (
       clk_i   => clk_i,
       rstn_i  => rstn_i,
@@ -159,7 +117,7 @@ begin
   neorv32_clint_swi_gen:
   for i in 0 to NUM_HARTS-1 generate
 
-    neorv32_clint_swi_inst: neorv32_clint_swi
+    neorv32_clint_swi_inst: entity neorv32.neorv32_clint_swi
     port map (
       clk_i   => clk_i,
       rstn_i  => rstn_i,

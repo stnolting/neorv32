@@ -277,8 +277,7 @@ The code makes minimal use of VHDL 2008 features in order to remain compatible w
 The specific user-defined configuration is done entirely via the generics of the top entity.
 * Internally, all generics are checked to ensure correct configuration.
 Asserts and sanity checks are used to inform the user about the actual processor configuration and possible invalid settings.
-* The code uses entity instantiation for all internal modules. However, if multiple submodules are specified within the
-same source file, component instantiation is used for them.
+* The code uses entity instantiation for all internal modules.
 * When instantiating the top-level processor module (`neorv32_top.vhd`) in a user-defined design, either entity instantiation
 or component instantiation can be used, as the NEORV32 package file/library file already provides a corresponding component declaration.
 

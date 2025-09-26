@@ -459,7 +459,7 @@ begin
             else -- instruction fence
               ctrl_nxt.if_fence <= '1';
             end if;
-            exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB via branch to PC+4 (actually only required for fence.i)
+            exe_engine_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB via branch to next_PC (actually only required for fence.i)
 
           -- FPU: floating-point operations --
           when opcode_fpu_c =>

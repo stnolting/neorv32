@@ -38,25 +38,6 @@ end neorv32_cpu_counters;
 
 architecture neorv32_cpu_counters_rtl of neorv32_cpu_counters is
 
-  -- generic counter module --
-  component neorv32_cpu_counters_cnt
-  generic (
-    CNT_WIDTH : natural range 0 to 64 -- counter width (0..64)
-  );
-  port (
-    -- global control --
-    clk_i   : in  std_ulogic; -- global clock, rising edge
-    rstn_i  : in  std_ulogic; -- global reset, low-active, async
-    inc_i   : in  std_ulogic; -- enable counter increment
-    -- read/write access --
-    sel_i   : in  std_ulogic; -- high word / low word select
-    we_i    : in  std_ulogic; -- write enable
-    re_i    : in  std_ulogic; -- read enable
-    wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
-    rdata_o : out std_ulogic_vector(XLEN-1 downto 0) -- read data
-  );
-  end component;
-
   -- global access decoder --
   signal cnt_acc, cfg_acc : std_ulogic;
   signal sel, cnt_we, cnt_re, cfg_we, cfg_re : std_ulogic_vector(15 downto 0);
@@ -121,7 +102,7 @@ begin
   if ZICNTR_EN generate
 
     -- [m]cycle[h] CSR --
-    cycle_inst: neorv32_cpu_counters_cnt
+    cycle_inst: entity neorv32.neorv32_cpu_counters_cnt
     generic map (
       CNT_WIDTH => 2*XLEN
     )
@@ -140,7 +121,7 @@ begin
     time_rd <= (others => '0'); -- not implemented
 
     -- [m]instret[h] CSR --
-    instret_inst: neorv32_cpu_counters_cnt
+    instret_inst: entity neorv32.neorv32_cpu_counters_cnt
     generic map (
       CNT_WIDTH => 2*XLEN
     )
@@ -175,7 +156,7 @@ begin
     for i in 3 to (HPM_NUM+3)-1 generate
 
       -- [m]hpmcntx[h] CSRs --
-      hpmcnt_inst: neorv32_cpu_counters_cnt
+      hpmcnt_inst: entity neorv32.neorv32_cpu_counters_cnt
       generic map (
         CNT_WIDTH => HPM_WIDTH
       )

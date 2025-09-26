@@ -72,60 +72,6 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
   signal csr_fflags : std_ulogic_vector(4 downto 0); -- FPU exception flags
   signal fflags     : std_ulogic_vector(4 downto 0); -- exception flags
 
-  -- float-to-integer unit --
-  component neorv32_cpu_cp_fpu_f2i
-  generic (
-    -- FPU-specific options --
-    FPU_SUBNORMAL_SUPPORT : boolean := false -- Implemented sub-normal support, default false
-  );
-  port (
-    -- control --
-    clk_i      : in  std_ulogic; -- global clock, rising edge
-    rstn_i     : in  std_ulogic; -- global reset, low-active, async
-    start_i    : in  std_ulogic; -- trigger operation
-    abort_i    : in  std_ulogic; -- abort current operation
-    rmode_i    : in  std_ulogic_vector(2 downto 0); -- rounding mode
-    funct_i    : in  std_ulogic; -- 0=signed, 1=unsigned
-    -- input --
-    sign_i     : in  std_ulogic; -- sign
-    exponent_i : in  std_ulogic_vector(7 downto 0); -- exponent
-    mantissa_i : in  std_ulogic_vector(22 downto 0); -- mantissa
-    class_i    : in  std_ulogic_vector(9 downto 0); -- operand class
-    -- output --
-    result_o   : out std_ulogic_vector(31 downto 0); -- integer result
-    flags_o    : out std_ulogic_vector(4 downto 0); -- exception flags
-    done_o     : out std_ulogic -- operation done
-  );
-  end component;
-
-  -- normalizer + rounding unit --
-  component neorv32_cpu_cp_fpu_normalizer
-  generic (
-    -- FPU-specific options --
-    FPU_SUBNORMAL_SUPPORT : boolean := false -- Implemented sub-normal support, default false
-  );
-  port (
-    -- control --
-    clk_i      : in  std_ulogic; -- global clock, rising edge
-    rstn_i     : in  std_ulogic; -- global reset, low-active, async
-    start_i    : in  std_ulogic; -- trigger operation
-    abort_i    : in  std_ulogic; -- abort current operation
-    rmode_i    : in  std_ulogic_vector(2 downto 0); -- rounding mode
-    funct_i    : in  std_ulogic; -- operating mode (0=norm&round, 1=int-to-float)
-    -- input --
-    sign_i     : in  std_ulogic; -- sign
-    exponent_i : in  std_ulogic_vector(8 downto 0); -- extended exponent
-    mantissa_i : in  std_ulogic_vector(47 downto 0); -- extended mantissa
-    integer_i  : in  std_ulogic_vector(31 downto 0); -- integer input
-    class_i    : in  std_ulogic_vector(9 downto 0); -- input number class
-    flags_i    : in  std_ulogic_vector(4 downto 0); -- exception flags input
-    -- output --
-    result_o   : out std_ulogic_vector(31 downto 0); -- result (float or int)
-    flags_o    : out std_ulogic_vector(4 downto 0); -- exception flags
-    done_o     : out std_ulogic -- operation done
-  );
-  end component;
-
   -- commands (one-hot) --
   type cmd_t is record
     instr_class  : std_ulogic;
@@ -682,7 +628,7 @@ begin
 
   -- Convert: Float to [unsigned] Integer (FCVT.S.W) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_fpu_f2i_inst: neorv32_cpu_cp_fpu_f2i
+  neorv32_cpu_cp_fpu_f2i_inst: entity neorv32.neorv32_cpu_cp_fpu_f2i
   generic map (
     -- FPU-specific options --
     FPU_SUBNORMAL_SUPPORT => FPU_SUBNORMAL_SUPPORT -- Implemented sub-normal support, default false
@@ -1450,7 +1396,7 @@ begin
 
   -- Normalizer & Rounding Unit -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_fpu_normalizer_inst: neorv32_cpu_cp_fpu_normalizer
+  neorv32_cpu_cp_fpu_normalizer_inst: entity neorv32.neorv32_cpu_cp_fpu_normalizer
   generic map (
     -- FPU-specific options --
     FPU_SUBNORMAL_SUPPORT => FPU_SUBNORMAL_SUPPORT -- Implemented sub-normal support, default false
