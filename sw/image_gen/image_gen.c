@@ -1,5 +1,5 @@
 // ================================================================================ //
-// Executable memory image generator                                                //
+// NEORV32 executable image generator                                               //
 // -------------------------------------------------------------------------------- //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 // executable signature ("magic word")
 const uint32_t signature = 0xB007C0DE;
@@ -29,96 +28,110 @@ enum operation_enum {
   OP_RAW_MIF
 };
 
+void print_help(void){
+  printf(
+    "NEORV32 executable image generator\n"
+    "\n"
+    "Usage:    image_gen [options]\n"
+    "Example:  image_gen -i main.elf -o main_exe.bin -t app_bin\n"
+    "\n"
+    "Options:\n"
+    "  -h             Show this help text and exit\n"
+    "  -i file_name   Input ELF file name, mandatory\n"
+    "  -o file_name   Output file name, mandatory\n"
+    "  -t type        Type of image to generate, default is 'app_bin'\n"
+    "\n"
+    "Image type:\n"
+    "  app_bin   Application executable for bootloader upload (binary file with header) \n"
+    "  app_vhd   Application memory image (IMEM VHDL package file)\n"
+    "  bld_vhd   Bootloader memory image (BOOTROM VHDL package file)\n"
+    "  raw_hex   ASCII hex file (raw executable)\n"
+    "  raw_bin   Binary file (raw executable)\n"
+    "  raw_coe   COE file (raw executable)\n"
+    "  raw_mem   MEM file (raw executable)\n"
+    "  raw_mif   MIF file (raw executable)\n"
+  );
+}
+
 int main(int argc, char *argv[]) {
 
-  if ((argc != 4) && (argc != 5)) {
-    printf("NEORV32 executable image generator\n"
-           "Three arguments are required.\n"
-           "1st: Operation\n"
-           " -app_bin : Generate application executable for bootloader upload (binary file with header) \n"
-           " -app_vhd : Generate application raw executable memory image (vhdl package file)\n"
-           " -bld_vhd : Generate bootloader raw executable memory image (vhdl package file)\n"
-           " -raw_hex : Generate application raw executable (ASCII hex file)\n"
-           " -raw_bin : Generate application raw executable (binary file)\n"
-           " -raw_coe : Generate application raw executable (COE file)\n"
-           " -raw_mem : Generate application raw executable (MEM file)\n"
-           " -raw_mif : Generate application raw executable (MIF file)\n"
-           "2nd: Input file (raw binary image)\n"
-           "3rd: Output file\n"
-           "4th: Project name or folder (optional)\n");
+  FILE *input = NULL, *output = NULL;
+  char *input_file = NULL, *output_file = NULL, tmp_string[1024];
+  uint32_t u32 = 0, checksum = 0;
+  unsigned int i = 0, operation = OP_APP_BIN, raw_exe_size = 0, ext_exe_size = 0, input_size = 0;
+  unsigned char byte = 0;
+
+  // show help menu if there are no arguments
+  if (argc <= 1) {
+    print_help();
     return 0;
   }
 
-  FILE *input, *output;
-  unsigned char buffer[4];
-  char tmp_string[1024];
-  uint32_t tmp = 0, size = 0, checksum = 0;
-  unsigned int i = 0;
-  int operation = 0;
-  unsigned int raw_exe_size = 0;
-
-  if      (strcmp(argv[1], "-app_bin") == 0) { operation = OP_APP_BIN; }
-  else if (strcmp(argv[1], "-app_vhd") == 0) { operation = OP_APP_VHD; }
-  else if (strcmp(argv[1], "-bld_vhd") == 0) { operation = OP_BLD_VHD; }
-  else if (strcmp(argv[1], "-raw_hex") == 0) { operation = OP_RAW_HEX; }
-  else if (strcmp(argv[1], "-raw_bin") == 0) { operation = OP_RAW_BIN; }
-  else if (strcmp(argv[1], "-raw_coe") == 0) { operation = OP_RAW_COE; }
-  else if (strcmp(argv[1], "-raw_mem") == 0) { operation = OP_RAW_MEM; }
-  else if (strcmp(argv[1], "-raw_mif") == 0) { operation = OP_RAW_MIF; }
-  else {
-    printf("[ERROR] Invalid operation '%s'!\n", argv[1]);
-    return -1;
+  // parse arguments
+  for (int i = 1; i < argc; i++) {
+    // show help
+    if (strcmp(argv[i], "-h") == 0) {
+      print_help();
+      return 0;
+    }
+    // input ELF file
+    else if (strcmp(argv[i], "-i") == 0) {
+      input_file = argv[++i];
+    }
+    // output file
+    else if (strcmp(argv[i], "-o") == 0) {
+      output_file = argv[++i];
+    }
+    // type
+    else if (strcmp(argv[i], "-t") == 0) {
+      i++;
+      if      (strcmp(argv[i], "app_bin") == 0) { operation = OP_APP_BIN; }
+      else if (strcmp(argv[i], "app_vhd") == 0) { operation = OP_APP_VHD; }
+      else if (strcmp(argv[i], "bld_vhd") == 0) { operation = OP_BLD_VHD; }
+      else if (strcmp(argv[i], "raw_hex") == 0) { operation = OP_RAW_HEX; }
+      else if (strcmp(argv[i], "raw_bin") == 0) { operation = OP_RAW_BIN; }
+      else if (strcmp(argv[i], "raw_coe") == 0) { operation = OP_RAW_COE; }
+      else if (strcmp(argv[i], "raw_mem") == 0) { operation = OP_RAW_MEM; }
+      else if (strcmp(argv[i], "raw_mif") == 0) { operation = OP_RAW_MIF; }
+      else {
+        printf("[ERROR] Invalid type '%s'!\n", argv[i]);
+        return -1;
+      }
+    }
+    // unknown
+    else {
+      printf("[ERROR] Unknown flag '%s'!\n", argv[i]);
+      return -1;
+    }
   }
 
-  // open input file
-  input = fopen(argv[2], "rb");
+  // open input ELF file
+  input = fopen(input_file, "rb");
   if(input == NULL) {
-    printf("[ERROR] Input file error (%s)!\n", argv[2]);
+    printf("[ERROR] Input ELF file error (%s)!\n", input_file);
     return -2;
   }
 
   // get input file size
   fseek(input, 0L, SEEK_END);
-  unsigned int input_size = (unsigned int)ftell(input);
-  unsigned int input_words = input_size / 4;
+  input_size = (unsigned int)ftell(input);
   rewind(input);
-
+  if (input_size == 0) {// input file empty?
+    printf("[ERROR] Input file is empty (%s)!\n", input_file);
+    fclose(input);
+    return -2;
+  }
   if ((input_size % 4) != 0) {
     printf("[WARNING] Input image size is not a multiple of 4 bytes!\n");
   }
 
-  // input file empty?
-  if (input_size == 0) {
-    printf("[ERROR] Input file is empty (%s)!\n", argv[2]);
-    fclose(input);
-    return -3;
-  }
-
   // open output file
-  output = fopen(argv[3], "wb");
+  output = fopen(output_file, "wb");
   if (output == NULL) {
-    printf("[ERROR] Output file error!\n");
-    fclose(input);
-    return -4;
+    printf("[ERROR] Output file error (%s)!\n", output_file);
+    fclose(output);
+    return -2;
   }
-
-
-  // --------------------------------------------------------------------------
-  // Image compilation date and time
-  // --------------------------------------------------------------------------
-  time_t time_current;
-  time(&time_current);
-  struct tm *time_local = localtime(&time_current);
-  char compile_time[64];
-
-  snprintf(compile_time, 64, "%02d.%02d.%d %02d:%02d:%02d",
-    time_local->tm_mday,
-    time_local->tm_mon + 1,
-    time_local->tm_year + 1900,
-    time_local->tm_hour,
-    time_local->tm_min,
-    time_local->tm_sec
-  );
 
 
   // --------------------------------------------------------------------------
@@ -130,7 +143,7 @@ int main(int argc, char *argv[]) {
   raw_exe_size = (unsigned int)ftell(input);
 
   // make sure memory array is a power of two
-  unsigned int ext_exe_size = 1;
+  ext_exe_size = 1;
   if (raw_exe_size > 0) {
     while (ext_exe_size < raw_exe_size) {
       ext_exe_size = 2*ext_exe_size;
@@ -142,42 +155,24 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate APPLICATION executable for bootloader upload (including header)
+  // Generate application executable for bootloader upload (including header)
   // --------------------------------------------------------------------------
   if (operation == OP_APP_BIN) {
 
-    // reserve header space for signature
-    fputc(0, output);
-    fputc(0, output);
-    fputc(0, output);
-    fputc(0, output);
+    // reserve header space
+    for (i=0; i<12; i++) {
+      fputc(0, output);
+    }
 
-    // reserve header space for size
-    fputc(0, output);
-    fputc(0, output);
-    fputc(0, output);
-    fputc(0, output);
-
-    // reserve header space for checksum
-    fputc(0, output);
-    fputc(0, output);
-    fputc(0, output);
-    fputc(0, output);
-
+    // actual data
     checksum = 0;
-    size = 0;
     rewind(input);
-    while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
-      tmp  = (uint32_t)(buffer[0] << 0);
-      tmp |= (uint32_t)(buffer[1] << 8);
-      tmp |= (uint32_t)(buffer[2] << 16);
-      tmp |= (uint32_t)(buffer[3] << 24);
-      checksum += tmp; // checksum: sum complement
-      fputc(buffer[0], output);
-      fputc(buffer[1], output);
-      fputc(buffer[2], output);
-      fputc(buffer[3], output);
-      size += 4;
+    while(fread(&u32, sizeof(uint32_t), 1, input) != 0) {
+      checksum += u32; // checksum: sum complement
+      fputc((unsigned char)((u32 >>  0) & 0xFF), output);
+      fputc((unsigned char)((u32 >>  8) & 0xFF), output);
+      fputc((unsigned char)((u32 >> 16) & 0xFF), output);
+      fputc((unsigned char)((u32 >> 24) & 0xFF), output);
     }
 
     rewind(output);
@@ -187,10 +182,10 @@ int main(int argc, char *argv[]) {
     fputc((unsigned char)((signature >> 16) & 0xFF), output);
     fputc((unsigned char)((signature >> 24) & 0xFF), output);
     // header: size
-    fputc((unsigned char)((size >>  0) & 0xFF), output);
-    fputc((unsigned char)((size >>  8) & 0xFF), output);
-    fputc((unsigned char)((size >> 16) & 0xFF), output);
-    fputc((unsigned char)((size >> 24) & 0xFF), output);
+    fputc((unsigned char)((input_size >>  0) & 0xFF), output);
+    fputc((unsigned char)((input_size >>  8) & 0xFF), output);
+    fputc((unsigned char)((input_size >> 16) & 0xFF), output);
+    fputc((unsigned char)((input_size >> 24) & 0xFF), output);
     // header: checksum (sum complement)
     checksum = ~checksum;
     fputc((unsigned char)((checksum >>  0) & 0xFF), output);
@@ -201,7 +196,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate APPLICATION executable memory initialization image package (IMEM)
+  // Generate application executable memory initialization image package
   // --------------------------------------------------------------------------
   else if (operation == OP_APP_VHD) {
 
@@ -209,8 +204,6 @@ int main(int argc, char *argv[]) {
     snprintf(tmp_string, sizeof(tmp_string),
       "-- The NEORV32 RISC-V Processor\n"
       "-- Auto-generated memory image for internal IMEM\n"
-      "-- Source: %s/%s\n"
-      "-- Built: %s\n"
       "\n"
       "library ieee;\n"
       "use ieee.std_logic_1164.all;\n"
@@ -220,16 +213,12 @@ int main(int argc, char *argv[]) {
       "constant application_image_size_c : natural := %u;\n"
       "type rom_t is array (0 to %u) of std_ulogic_vector(31 downto 0);\n"
       "constant application_image_data_c : rom_t := (\n",
-      argv[4], argv[2], compile_time, raw_exe_size, ext_exe_size-1);
+      raw_exe_size, ext_exe_size-1);
     fputs(tmp_string, output);
 
-    for (i=0; i<input_words; i++) {
-      if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
-        tmp  = (uint32_t)(buffer[0] << 0);
-        tmp |= (uint32_t)(buffer[1] << 8);
-        tmp |= (uint32_t)(buffer[2] << 16);
-        tmp |= (uint32_t)(buffer[3] << 24);
-        snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\",\n", (unsigned int)tmp);
+    for (i=0; i<(input_size/4); i++) {
+      if (fread(&u32, sizeof(uint32_t), 1, input) != 0) {
+        snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\",\n", (unsigned int)u32);
         fputs(tmp_string, output);
       }
       else {
@@ -249,7 +238,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate BOOTLOADER executable memory initialization image package (BOOTROM)
+  // Generate bootloader executable memory initialization image package
   // --------------------------------------------------------------------------
   else if (operation == OP_BLD_VHD) {
 
@@ -257,8 +246,6 @@ int main(int argc, char *argv[]) {
     snprintf(tmp_string, sizeof(tmp_string),
       "-- The NEORV32 RISC-V Processor\n"
       "-- Auto-generated memory image for internal BOOTROM\n"
-      "-- Source: %s/%s\n"
-      "-- Built: %s\n"
       "\n"
       "library ieee;\n"
       "use ieee.std_logic_1164.all;\n"
@@ -268,16 +255,12 @@ int main(int argc, char *argv[]) {
       "constant bootloader_image_size_c : natural := %u;\n"
       "type rom_t is array (0 to %u) of std_ulogic_vector(31 downto 0);\n"
       "constant bootloader_image_data_c : rom_t := (\n",
-      argv[4], argv[2], compile_time, raw_exe_size, ext_exe_size-1);
+      raw_exe_size, ext_exe_size-1);
     fputs(tmp_string, output);
 
-    for (i=0; i<input_words; i++) {
-      if (fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
-        tmp  = (uint32_t)(buffer[0] << 0);
-        tmp |= (uint32_t)(buffer[1] << 8);
-        tmp |= (uint32_t)(buffer[2] << 16);
-        tmp |= (uint32_t)(buffer[3] << 24);
-        snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\",\n", (unsigned int)tmp);
+    for (i=0; i<(input_size/4); i++) {
+      if (fread(&u32, sizeof(uint32_t), 1, input) != 0) {
+        snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\",\n", (unsigned int)u32);
         fputs(tmp_string, output);
       }
       else {
@@ -297,34 +280,30 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate APPLICATION executable ASCII hex file
+  // Generate application executable ASCII hex file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_HEX) {
 
-    while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
-      tmp  = (uint32_t)(buffer[0] << 0);
-      tmp |= (uint32_t)(buffer[1] << 8);
-      tmp |= (uint32_t)(buffer[2] << 16);
-      tmp |= (uint32_t)(buffer[3] << 24);
-      snprintf(tmp_string, sizeof(tmp_string), "%08x\n", (unsigned int)tmp);
+    while(fread(&u32, sizeof(uint32_t), 1, input) != 0) {
+      snprintf(tmp_string, sizeof(tmp_string), "%08x\n", (unsigned int)u32);
       fputs(tmp_string, output);
     }
   }
 
 
   // --------------------------------------------------------------------------
-  // Generate APPLICATION executable binary file
+  // Generate application executable binary file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_BIN) {
 
-    while(fread(&buffer, sizeof(unsigned char), 1, input) != 0) {
-      fputc(buffer[0], output);
+    while(fread(&byte, sizeof(unsigned char), 1, input) != 0) {
+      fputc(byte, output);
     }
   }
 
 
   // --------------------------------------------------------------------------
-  // Generate APPLICATION executable COE file
+  // Generate application executable COE file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_COE) {
 
@@ -335,16 +314,12 @@ int main(int argc, char *argv[]) {
     fputs(tmp_string, output);
 
     i = 0;
-    while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
-      tmp  = (uint32_t)(buffer[0] << 0);
-      tmp |= (uint32_t)(buffer[1] << 8);
-      tmp |= (uint32_t)(buffer[2] << 16);
-      tmp |= (uint32_t)(buffer[3] << 24);
-      if (i == (input_words-1)) {
-        snprintf(tmp_string, sizeof(tmp_string), "%08x;\n", (unsigned int)tmp);
+    while(fread(&u32, sizeof(uint32_t), 1, input) != 0) {
+      if (i == ((input_size/4)-1)) {
+        snprintf(tmp_string, sizeof(tmp_string), "%08x;\n", (unsigned int)u32);
       }
       else {
-        snprintf(tmp_string, sizeof(tmp_string), "%08x,\n", (unsigned int)tmp);
+        snprintf(tmp_string, sizeof(tmp_string), "%08x,\n", (unsigned int)u32);
       }
       fputs(tmp_string, output);
       i++;
@@ -353,17 +328,13 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate APPLICATION executable MEM file
+  // Generate application executable MEM file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_MEM) {
 
     i = 0;
-    while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
-      tmp  = (uint32_t)(buffer[0] << 0);
-      tmp |= (uint32_t)(buffer[1] << 8);
-      tmp |= (uint32_t)(buffer[2] << 16);
-      tmp |= (uint32_t)(buffer[3] << 24);
-      snprintf(tmp_string, sizeof(tmp_string), "@%08x %08x\n", (unsigned int)i, (unsigned int)tmp);
+    while(fread(&u32, sizeof(uint32_t), 1, input) != 0) {
+      snprintf(tmp_string, sizeof(tmp_string), "@%08x %08x\n", (unsigned int)i, (unsigned int)u32);
       fputs(tmp_string, output);
       i++;
     }
@@ -371,7 +342,7 @@ int main(int argc, char *argv[]) {
 
 
   // --------------------------------------------------------------------------
-  // Generate APPLICATION executable MIF file
+  // Generate application executable MIF file
   // --------------------------------------------------------------------------
   else if (operation == OP_RAW_MIF) {
 
@@ -390,12 +361,8 @@ int main(int argc, char *argv[]) {
     snprintf(tmp_string, sizeof(tmp_string), "BEGIN\n");
     fputs(tmp_string, output);
     i = 0;
-    while(fread(&buffer, sizeof(unsigned char), 4, input) != 0) {
-      tmp  = (uint32_t)(buffer[0] << 0);
-      tmp |= (uint32_t)(buffer[1] << 8);
-      tmp |= (uint32_t)(buffer[2] << 16);
-      tmp |= (uint32_t)(buffer[3] << 24);
-      snprintf(tmp_string, sizeof(tmp_string), "%08x : %08x;\n", (unsigned int)i, (unsigned int)tmp);
+    while(fread(&u32, sizeof(uint32_t), 1, input) != 0) {
+      snprintf(tmp_string, sizeof(tmp_string), "%08x : %08x;\n", (unsigned int)i, (unsigned int)u32);
       fputs(tmp_string, output);
       i++;
     }
