@@ -76,7 +76,7 @@ that provides hands-on tutorials to get you started.
 
 **Software framework**
 
-* GCC-based toolchain - https://github.com/stnolting/riscv-gcc-prebuilt[prebuilt toolchains available]; application compilation based on GNU makefiles
+* written in C and based on GCC
 * internal bootloader with serial user interface (via UART)
 * core libraries and HAL for high-level usage of the provided functions and peripherals
 * processor-specific runtime environment and several example programs

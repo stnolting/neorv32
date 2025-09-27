@@ -1,10 +1,12 @@
 # The NEORV32 RISC-V Processor
 
-[![datasheet (pdf)](https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor&colorA=273274)](https://github.com/stnolting/neorv32/releases/tag/nightly)
-[![datasheet (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat-square)](https://stnolting.github.io/neorv32)
-[![userguide (pdf)](https://img.shields.io/badge/user%20guide-PDF-ffbd00?longCache=true&style=flat-square&logo=asciidoctor&colorA=273274)](https://github.com/stnolting/neorv32/releases/tag/nightly)
-[![userguide (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat-square)](https://stnolting.github.io/neorv32/ug)
-[![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat-square&logo=Doxygen&colorA=273274)](https://stnolting.github.io/neorv32/sw/files.html)
+[![datasheet (pdf)](https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat&logo=asciidoctor&colorA=273274)](https://github.com/stnolting/neorv32/releases/tag/nightly)
+[![datasheet (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat)](https://stnolting.github.io/neorv32)
+[![userguide (pdf)](https://img.shields.io/badge/user%20guide-PDF-ffbd00?longCache=true&style=flat&logo=asciidoctor&colorA=273274)](https://github.com/stnolting/neorv32/releases/tag/nightly)
+[![userguide (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat)](https://stnolting.github.io/neorv32/ug)
+[![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat&logo=Doxygen&colorA=273274)](https://stnolting.github.io/neorv32/sw/files.html)
+[![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat&logo=bsd)](https://github.com/stnolting/neorv32/blob/main/LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg)](https://doi.org/10.5281/zenodo.5018888)
 
 The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
 [RISC-V](https://riscv.org/) CPU that is written in **platform-independent VHDL**. The processor is intended as auxiliary
@@ -48,8 +50,8 @@ targeting various FPGA boards and toolchains to get started.
 
 ### Project Status
 
-[![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
-[![commits-since-latest-release](https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat-square&logo=GitHub)](https://github.com/stnolting/neorv32/activity)
+[![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
+[![commits-since-latest-release](https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat&logo=GitHub)](https://github.com/stnolting/neorv32/activity)
 
 | Task / Subproject | Repository | CI Status |
 |:------------------|:-----------|:----------|
@@ -124,8 +126,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 * `machine` and `user` privilege modes
 * implements **all** standard RISC-V exceptions and interrupts + 16 fast interrupt request channels as NEORV32-specific extension
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as `Zxcfu` ISA extension)
-for **custom RISC-V instructions**;
-* _intrinsic_ libraries for CPU extensions that are not yet supported by GCC
+for **custom RISC-V instructions**
 
 **Memories**
 
@@ -144,13 +145,13 @@ allows booting application code via UART, TWI or SPI flash or from an SD card
 
 **Input / Output**
 
-* standard serial interfaces: [UART](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0) (2x),
+* standard serial interfaces: 2x [UART](https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0),
 [SPI](https://stnolting.github.io/neorv32/#_serial_peripheral_interface_controller_spi) (SPI host),
 [SDI](https://stnolting.github.io/neorv32/#_serial_data_interface_controller_sdi) (SPI device),
 [TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi) (I²C host),
 [TWD](https://stnolting.github.io/neorv32/#_two_wire_serial_device_controller_twd) (I²C device),
 [ONEWIRE](https://stnolting.github.io/neorv32/#_one_wire_serial_interface_controller_onewire) (1-wire host)
-* interrupt-capable general purpose IOs ([GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio)) and
+* general purpose IOs ([GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio), interrupt-capable) and
 [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
 * smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly control NeoPixel(TM) LEDs
 
@@ -201,8 +202,7 @@ An incremental list of CPU extensions and processor modules can be found in the 
 
 The NEORV32 CPU is based on a two-stages pipelined/multi-cycle architecture (fetch and execute).
 The following table shows the performance results (scores and average CPI) for exemplary CPU configurations (no caches) executing
-2000 iterations of the [CoreMark](https://github.com/stnolting/neorv32/blob/main/sw/example/coremark) CPU benchmark
-(using plain GCC10 rv32i built-in libraries only!).
+2000 iterations of the [CoreMark](https://github.com/stnolting/neorv32/blob/main/sw/example/coremark) CPU benchmark.
 
 | CPU Configuration (version [1.5.7.10](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | CoreMark Score |
 |:---------------------------------------------------------|:-----:|
@@ -236,7 +236,7 @@ This overview provides some *quick links* to the most important sections of the
 * [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory layout and address mapping
 * [Boot Configuration](https://stnolting.github.io/neorv32/#_boot_configuration) - how to make the processor start executing
 * [SoC Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - IO/peripheral modules and memories
-* [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - in-system debugging of the processor via JTAG
+* [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - in-system debugging via JTAG
 
 ### :abacus: [NEORV32 CPU](https://stnolting.github.io/neorv32/#_neorv32_central_processing_unit_cpu) - The Core
 
@@ -266,16 +266,9 @@ This overview provides some *quick links* to the most important sections of the
 * [Package as Vivado IP block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block) - turn the entire processor into an interactive AMD Vivado IP block
 * [Using Eclipse](https://stnolting.github.io/neorv32/ug/#_eclipse_ide) - use the Eclipse IDE for developing and debugging
 
-### :copyright: Legal
-
-* [Overview](https://stnolting.github.io/neorv32/#_legal) - license, disclaimer, limitation of liability for external links, proprietary notice, etc.
-* [Citing](https://stnolting.github.io/neorv32/#_citing) - citing information
-
-[![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat)](https://github.com/stnolting/neorv32/blob/main/LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg)](https://doi.org/10.5281/zenodo.5018888)
-
 This is an open-source project that is free of charge and provided under an
 permissive [license](https://github.com/stnolting/neorv32/blob/main/LICENSE).
+See the [legal](https://stnolting.github.io/neorv32/#_legal) section for more information.
 
 ---------------------------------------
 

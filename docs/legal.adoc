@@ -14,6 +14,11 @@ Stephan Nolting, M.Sc. +
 stnolting@gmail.com
 ==========================
 
+.DOI
+[NOTE]
+This project provides a _digital object identifier_ provided by https://zenodo.org[zenodo]:
+https://doi.org/10.5281/zenodo.5018888[image:https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg[title='zenodo']]
+
 
 // ####################################################################################################################
 :sectnums!:
@@ -87,23 +92,6 @@ is not under our control, we cannot assume any liability for such external conte
 information of the linked websites is liable for the content and accuracy of the information provided. At the
 point in time when the links were placed, no infringements of the law were recognizable to us. As soon as an
 infringement of the law becomes known to us, we will immediately remove the link in question.
-
-:sectnums!:
-=== Citing
-
-[NOTE]
-This is an open-source project that is free of charge. Use this project in any way you like
-(as long as it complies to the permissive license). Please cite it appropriately. 👍
-
-.Contributors & Community 🤝
-[NOTE]
-Please add as many https://github.com/stnolting/neorv32/graphs/contributors[contributors] as possible to the `author` field. +
-This project would not be where it is without them.
-
-.DOI
-[NOTE]
-This project provides a _digital object identifier_ provided by https://zenodo.org[zenodo]:
-https://doi.org/10.5281/zenodo.5018888[image:https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg[title='zenodo']]
 
 :sectnums!:
 === Acknowledgments
