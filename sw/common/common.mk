@@ -236,7 +236,7 @@ $(BIN_MAIN): $(APP_ELF) | $(BUILD_DIR)
 $(APP_EXE): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_EXE)"
-	$(Q)$(IMAGE_GEN) -app_bin $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -t app_bin -i $< -o $@
 	$(ECHO) "Executable size in bytes:"
 	$(Q)$(WC) -c < $(APP_EXE)
 
@@ -244,37 +244,37 @@ $(APP_EXE): $(BIN_MAIN) $(IMAGE_GEN)
 $(APP_VHD): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_VHD)"
-	$(Q)$(IMAGE_GEN) -app_vhd $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -t app_vhd -i $< -o $@
 
 # Generate NEORV32 RAW executable image in plain hex format
 $(APP_HEX): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_HEX)"
-	$(Q)$(IMAGE_GEN) -raw_hex $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -t raw_hex -i $< -o $@
 
 # Generate NEORV32 RAW executable image in binary format
 $(APP_BIN): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_BIN)"
-	$(Q)$(IMAGE_GEN) -raw_bin $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -t raw_bin -i $< -o $@
 
 # Generate NEORV32 RAW executable image in COE format
 $(APP_COE): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_COE)"
-	$(Q)$(IMAGE_GEN) -raw_coe $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -t raw_coe -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MIF format
 $(APP_MIF): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_MIF)"
-	$(Q)$(IMAGE_GEN) -raw_mif $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -t raw_mif -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MEM format
 $(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_MEM)"
-	$(Q)$(IMAGE_GEN) -raw_mem $< $@ $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -t raw_mem -i $< -o $@
 
 # -----------------------------------------------------------------------------
 # BOOTROM / bootloader image targets
@@ -284,7 +284,7 @@ $(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
 bl_image: $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(BOOT_VHD)"
-	$(Q)$(IMAGE_GEN) -bld_vhd $< $(BOOT_VHD) $(shell basename $(CURDIR))
+	$(Q)$(IMAGE_GEN) -t bld_vhd -i $< -o $(BOOT_VHD)
 
 # Install BOOTROM image to VHDL source directory
 bootloader: bl_image
@@ -361,7 +361,7 @@ check: $(IMAGE_GEN)
 	$(ECHO) "---------------- $(SIZE) ----------------"
 	$(Q)$(SIZE) -V
 	$(ECHO) "---------------- NEORV32 image_gen ----------------"
-	$(Q)$(IMAGE_GEN) -help
+	$(Q)$(IMAGE_GEN) -h
 	$(ECHO) "---------------- Native GCC ----------------"
 	$(Q)$(CC_HOST) -v
 	$(ECHO) ""
@@ -375,7 +375,6 @@ info:
 	$(ECHO) "******************************************************"
 	$(ECHO) "Project / Makefile Configuration"
 	$(ECHO) "******************************************************"
-	$(ECHO) "Project folder: $(shell basename $(CURDIR))"
 	$(ECHO) "Source files: $(APP_SRC)"
 	$(ECHO) "Include folder(s): $(APP_INC)"
 	$(ECHO) "ASM include folder(s): $(ASM_INC)"

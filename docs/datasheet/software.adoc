@@ -484,22 +484,21 @@ using the <<_mscratch>> CSR.
 :sectnums:
 === Executable Image Formats
 
-The compiled and linked executable (ELF file) is further processed by the NEORV32 image generator (`sw/image_gen`) to
-generate the final executable file. The image generator can generate several types of executable file formats selected
-by a flag when calling the generator.
-**Note that all these options are managed by the makefile (see <<_makefile_targets>>).**
+The final ELF file is further processed by the NEORV32 image generator (`sw/image_gen`) to generate the final
+executable file. The image generator can generate several types of executable file formats selected by a flag
+when calling the generator. **Note that all these options are managed by the makefile (see <<_makefile_targets>>).**
 
 [cols="<2,<8"]
 [grid="none"]
 |=======================
-| `-app_bin` | Generates an executable binary file (including a bootloader header) for upload via the bootloader.
-| `-app_vhd` | Generates an executable VHDL memory initialization image for the processor-internal IMEM.
-| `-bld_vhd` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM.
-| `-raw_hex` | Generates a raw 8x ASCII hex-char file for custom purpose.
-| `-raw_bin` | Generates a raw binary file `for custom purpose.
-| `-raw_coe` | Generates a raw COE file for FPGA memory initialization.
-| `-raw_mem` | Generates a raw MEM file for FPGA memory initialization.
-| `-raw_mif` | Generates a raw MIF file for FPGA memory initialization.
+| `app_bin` | Generates an executable binary file (including a bootloader header) for upload via the bootloader.
+| `app_vhd` | Generates an executable VHDL memory initialization image for the processor-internal IMEM.
+| `bld_vhd` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM.
+| `raw_hex` | Generates a raw 8x ASCII hex-char file for custom purpose.
+| `raw_bin` | Generates a raw binary file for custom purpose.
+| `raw_coe` | Generates a raw COE file for FPGA memory initialization.
+| `raw_mem` | Generates a raw MEM file for FPGA memory initialization.
+| `raw_mif` | Generates a raw MIF file for FPGA memory initialization.
 |=======================
 
 .Image Generator Compilation
@@ -516,6 +515,33 @@ Based on this word the bootloader can identify a valid image file. The next word
 actual program image in bytes. A simple complement checksum of the actual program image is given by the third word.
 This provides a simple protection against data transmission or storage errors.
 **Note that this executable format cannot be used for _direct_ execution.**
+
+Optionally, the NEORV32 image generator can also be used stand-alone:
+
+[source,bash]
+----
+neorv32/sw/image_gen$ ./image_gen
+NEORV32 executable image generator
+
+Usage:    image_gen [options]
+Example:  image_gen -i main.elf -o main_exe.bin -t app_bin
+
+Options:
+  -h             Show this help text and exit
+  -i file_name   Input ELF file name, mandatory
+  -o file_name   Output file name, mandatory
+  -t type        Type of image to generate, default is 'app_bin'
+
+Image type:
+  app_bin   Application executable for bootloader upload (binary file with header)
+  app_vhd   Application memory image (IMEM VHDL package file)
+  bld_vhd   Bootloader memory image (BOOTROM VHDL package file)
+  raw_hex   ASCII hex file (raw executable)
+  raw_bin   Binary file (raw executable)
+  raw_coe   COE file (raw executable)
+  raw_mem   MEM file (raw executable)
+  raw_mif   MIF file (raw executable)
+----
 
 
 <<<
