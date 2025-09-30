@@ -333,10 +333,10 @@ architecture neorv32_top_rtl of neorv32_top is
 begin
 
   -- **************************************************************************************************************************
-  -- Sanity Checks
+  -- Configuration Checks
   -- **************************************************************************************************************************
 
-  sanity_checks:
+  config_checks:
   if true generate
 
     -- say hello --
@@ -420,7 +420,7 @@ begin
     -- simulation notifier --
     assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
 
-  end generate; -- /sanity_checks
+  end generate; -- /config_checks
 
 
   -- **************************************************************************************************************************
