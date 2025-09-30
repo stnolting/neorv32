@@ -335,7 +335,7 @@ architecture neorv32_cpu_frontend_ipb_rtl of neorv32_cpu_frontend_ipb is
 
   -- pointers and status --
   signal w_pnt, r_pnt : std_ulogic_vector(AWIDTH downto 0);
-  signal match, empty, full : std_ulogic;
+  signal match : std_ulogic;
 
   -- memory core --
   type ipb_t is array (0 to (2**AWIDTH)-1) of std_ulogic_vector(DWIDTH-1 downto 0);
@@ -366,10 +366,8 @@ begin
 
   -- status --
   match   <= '1' when (r_pnt(AWIDTH-1 downto 0) = w_pnt(AWIDTH-1 downto 0)) else '0';
-  full    <= '1' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '0';
-  empty   <= '1' when (r_pnt(AWIDTH)  = w_pnt(AWIDTH)) and (match = '1') else '0';
-  free_o  <= not full;
-  avail_o <= not empty;
+  free_o  <= '0' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '1';
+  avail_o <= '0' when (r_pnt(AWIDTH)  = w_pnt(AWIDTH)) and (match = '1') else '1';
 
   -- Memory Core ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

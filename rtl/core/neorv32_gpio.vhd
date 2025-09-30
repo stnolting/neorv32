@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - Interrupt-Capable General Purpose Input/Output Port (GPIO) Module  --
+-- NEORV32 SoC - Interrupt-Capable General Purpose Input/Output Port (GPIO)         --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --

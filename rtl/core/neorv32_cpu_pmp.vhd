@@ -99,7 +99,7 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
+  -- Configuration Checks -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert (GRANULARITY = g_c) report
     "[NEORV32] Auto-adjusting invalid PMP granularity configuration." severity warning;

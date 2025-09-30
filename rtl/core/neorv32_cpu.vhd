@@ -132,7 +132,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
 begin
 
-  -- Configuration Info and Sanity Checks ---------------------------------------------------
+  -- Configuration Info and Checks ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   hello_neorv32:
   if HART_ID = 0 generate -- print only for core 0
