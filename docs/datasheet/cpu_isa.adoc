@@ -166,7 +166,7 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 taken 5 + `T_inst_latency`
 | Jump/call      | `jal[r]`                                                                  | 5 + `T_inst_latency`
 | Load/store     | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 4 + `T_data_latency`
-| Data fence     | `fence`                                                                   | 6 + `T_data_latency`
+| Data fence     | `fence`                                                                   | 2
 | System         | `ecall` `ebreak` `mret`                                                   | 7 + `T_inst_latency`
 | System         | `wfi`                                                                     | 3
 |=======================
@@ -300,7 +300,7 @@ instruction cache (if enabled). See section <<_memory_coherence>> for more infor
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Instruction fence | `fence.i` | 6 + `T_data_latency`
+| Instruction fence | `fence.i` | 2
 |=======================
 
 
