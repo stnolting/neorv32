@@ -90,26 +90,35 @@ request or to signal that an exception has been raised while being in debug mode
 === openOCD
 
 By default, the free and open-source openOCD (https://openocd.org/) is used to establish a debugger connection.
-However, other interfaces can be used (like Segger or Lauterbach tools) if they support the RISC-V debug specification.
+However, other interfaces can be used (like Segger or Lauterbach tools) if they provide RISC-V support.
 
 openOCD is configured by a set of configuration scripts which are located in `neorv32/sw/openocd`.
-Two top scripts are provided (`openocd_neorv32.*`) - one for the single-core processor configuration
-and another one for the SMP dual-core configuration. Several helper files are included that can be modified by
-the user:
+Two top scripts are provided: one for the single-core processor configuration (`neorv32.cfg`)
+and another one for the SMP dual-core configuration (`neorv32.dual-core.cfg`).
+Both scripts have the same format and include several helper scripts.
 
-.NEORV32 openOCD Configuration Files
-[cols="<4,<7"]
-[options="header",grid="rows"]
-|=======================
-| File                            | Description
-| `openocd_neorv32.cfg`           | main openOCD file for the **single-core** setup
-| `openocd_neorv32.dual-core.cfg` | main openOCD file for the **dual-core** setup
-| `interface.cfg`                 | physical JTAG adapter configuration; by default this is configured
-for a simple FTDI USB converter; **adjust this for your specific JTAG adapter**
-| `authentication.cfg`            | optional authentication process; the <<_default_authentication_mechanism>>
-is implemented as example; **adjust this when using a custom authentication mechanism**
-| `target.cfg`                    | main NEORV32 target configuration; end users should not alter this file
-|=======================
+.NEORV32 openOCD single-core CFG file (`neorv32.cfg`)
+[source,tcl]
+----
+# configuration
+set PATH [file dirname [file normalize [info script]]] <1>
+set CORENAME neorv32 <2>
+set NUMCORES 1 <3>
+
+# configure JTAG interface, setup target, authenticate and start
+source [file join $PATH lib/interface.cfg] <4>
+source [file join $PATH lib/target.cfg] <5>
+source [file join $PATH lib/authenticate.cfg] <6>
+source [file join $PATH lib/start.cfg] <7>
+----
+<1> Get the absolute path of the script.
+<2> Set the core name that will show up in openOCD and GDB. This can be changed to any custom name.
+<3> Number of CPU cores (1 for the single-core setup, 2 for the dual-core setup).
+<4> Interface adapter (JTAG) configuration script. Replace by custom adapter setup.
+<5> NEORV32-specific target configuration and initialization.
+<6> Optional authentication process; the <<_default_authentication_mechanism>> is implemented as example;
+Replace this when using a custom authentication mechanism.
+<7> Reset and halt the target.
 
 
 <<<
