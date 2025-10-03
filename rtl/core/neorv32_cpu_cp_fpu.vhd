@@ -197,9 +197,8 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
 
   -- multiplier unit --
   type multiplier_t is record
-    opa       : unsigned(23 downto 0); -- mantissa A plus hidden one
-    opb       : unsigned(23 downto 0); -- mantissa B plus hidden one
-    buf_ff    : unsigned(47 downto 0); -- product buffer
+    opa       : std_ulogic_vector(23 downto 0); -- mantissa A plus hidden one
+    opb       : std_ulogic_vector(23 downto 0); -- mantissa B plus hidden one
     sign      : std_ulogic; -- resulting sign
     product   : std_ulogic_vector(47 downto 0); -- product
     exp_sum   : std_ulogic_vector(8 downto 0);  -- incl 1x overflow/underflow bit
@@ -209,7 +208,7 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     flags     : std_ulogic_vector(4 downto 0);  -- exception flags
     --
     start     : std_ulogic;
-    latency   : std_ulogic_vector(2 downto 0);  -- unit latency
+    latency   : std_ulogic_vector(1 downto 0);  -- unit latency
     done      : std_ulogic;
   end record;
   signal multiplier : multiplier_t;
@@ -759,36 +758,20 @@ begin
   multiplier_core: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      multiplier.opa     <= (others => '0');
-      multiplier.opb     <= (others => '0');
-      multiplier.buf_ff  <= (others => '0');
-      multiplier.product <= (others => '0');
       multiplier.sign    <= '0';
       multiplier.exp_res <= (others => '0');
       multiplier.flags   <= (others => '0');
       multiplier.latency <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- multiplier core --
-      -- if the inputs to the multiplier is +/- zero or +/- denorm the result will always be +/- zero
+      multiplier.sign <= fpu_operands.rs1(31) xor fpu_operands.rs2(31); -- resulting sign
       if ((fpu_operands.rs1_class(fp_class_pos_zero_c)   or fpu_operands.rs1_class(fp_class_neg_zero_c)   or
            fpu_operands.rs2_class(fp_class_pos_zero_c)   or fpu_operands.rs2_class(fp_class_neg_zero_c)   or
            fpu_operands.rs1_class(fp_class_pos_denorm_c) or fpu_operands.rs1_class(fp_class_neg_denorm_c) or
            fpu_operands.rs2_class(fp_class_pos_denorm_c) or fpu_operands.rs2_class(fp_class_neg_denorm_c)) = '1') then
-        if (multiplier.start = '1') then
-          -- the result will be 0 so force it to be 0
-          multiplier.product <= (others => '0');
-          multiplier.exp_res <= (others => '0');
-        end if;
+        multiplier.exp_res <= (others => '0'); -- if the input to the multiplier is +/- zero or +/- denorm the result will always be +/- zero
       else
-        if (multiplier.start = '1') then -- remove buffer?
-          multiplier.opa <= unsigned('1' & fpu_operands.rs1(22 downto 0)); -- append hidden one
-          multiplier.opb <= unsigned('1' & fpu_operands.rs2(22 downto 0)); -- append hidden one
-        end if;
-        multiplier.buf_ff  <= multiplier.opa * multiplier.opb;
-        multiplier.product <= std_ulogic_vector(multiplier.buf_ff(47 downto 0)); -- let the register balancing do the magic here
         multiplier.exp_res <= std_ulogic_vector(unsigned('0' & multiplier.exp_sum) - 127);
       end if;
-      multiplier.sign <= fpu_operands.rs1(31) xor fpu_operands.rs2(31); -- resulting sign
 
       -- exponent computation --
       -- assume we are exact and the operation hasn't over/under flown
@@ -845,6 +828,26 @@ begin
       multiplier.latency <= multiplier.latency(multiplier.latency'left-1 downto 0) & multiplier.start;
     end if;
   end process multiplier_core;
+
+  -- integer multiplier (unsigned only) --
+  multiplier_core_inst: entity neorv32.neorv32_prim_mul
+  generic map (
+    DWIDTH => 24
+  )
+  port map (
+    -- global control --
+    clk_i    => clk_i,
+    rstn_i   => rstn_i,
+    -- data path --
+    en_i     => multiplier.start,
+    opa_i    => multiplier.opa,
+    opa_sn_i => '0',
+    opb_i    => multiplier.opb,
+    opb_sn_i => '0',
+    res_o    => multiplier.product
+  );
+  multiplier.opa <= '1' & fpu_operands.rs1(22 downto 0); -- append hidden one to mantissa
+  multiplier.opb <= '1' & fpu_operands.rs2(22 downto 0); -- append hidden one to mantissa
 
   -- exponent sum --
   multiplier.exp_sum <= std_ulogic_vector(unsigned('0' & fpu_operands.rs1(30 downto 23)) + unsigned('0' & fpu_operands.rs2(30 downto 23)));
