@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,7 +9,7 @@
 
 /**********************************************************************//**
  * @file floating_point_test/main.c
- * @author Stephan Nolting
+ * @author Stephan Nolting, Mikael Mortensen
  * @brief Verification program for the NEORV32 'Zfinx' extension (floating-point in x registers) using
  * pseudo-random data as input; compares results from hardware against pure-sw reference functions.
  **************************************************************************/
@@ -59,10 +59,12 @@
 #define RUN_SGNINJ_TESTS   (1)
 //** Run classify tests when != 0 */
 #define RUN_CLASSIFY_TESTS (1)
+//** Run corner case tests when != 0 */
+#define RUN_CORNER_TESTS   (1)
 //** Run unsupported instructions tests when != 0 */
 #define RUN_UNAVAIL_TESTS  (1)
 //** Run average instruction execution time test when != 0 */
-#define RUN_TIMING_TESTS   (0)
+#define RUN_TIMING_TESTS   (1)
 /**@}*/
 
 
@@ -117,7 +119,7 @@ int main() {
 
 
   // intro
-  neorv32_uart0_printf("<<< Zfinx extension test >>>\n");
+  neorv32_uart0_printf("NEORV32 Zfinx ISA extension (FPU) test\n\n");
 #if (SILENT_MODE != 0)
   neorv32_uart0_printf("SILENT_MODE enabled (only showing actual errors)\n");
 #endif
@@ -213,7 +215,6 @@ int main() {
 // ----------------------------------------------------------------------------
 // Conversion Tests
 // ----------------------------------------------------------------------------
-
 #if (RUN_CONV_TESTS != 0)
   neorv32_uart0_printf("\n#%u: FCVT.S.WU (unsigned integer to float)...\n", test_cnt);
   err_cnt = 0;
@@ -268,7 +269,6 @@ int main() {
 // ----------------------------------------------------------------------------
 // Add/Sub Tests
 // ----------------------------------------------------------------------------
-
 #if (RUN_ADDSUB_TESTS != 0)
   neorv32_uart0_printf("\n#%u: FADD.S (addition)...\n", test_cnt);
   err_cnt = 0;
@@ -301,7 +301,6 @@ int main() {
 // ----------------------------------------------------------------------------
 // Multiplication Tests
 // ----------------------------------------------------------------------------
-
 #if (RUN_MUL_TESTS != 0)
   neorv32_uart0_printf("\n#%u: FMUL.S (multiplication)...\n", test_cnt);
   err_cnt = 0;
@@ -321,7 +320,6 @@ int main() {
 // ----------------------------------------------------------------------------
 // Min/Max Tests
 // ----------------------------------------------------------------------------
-
 #if (RUN_MINMAX_TESTS != 0)
   neorv32_uart0_printf("\n#%u: FMIN.S (select minimum)...\n", test_cnt);
   err_cnt = 0;
@@ -354,7 +352,6 @@ int main() {
 // ----------------------------------------------------------------------------
 // Comparison Tests
 // ----------------------------------------------------------------------------
-
 #if (RUN_COMPARE_TESTS != 0)
   neorv32_uart0_printf("\n#%u: FEQ.S (compare if equal)...\n", test_cnt);
   err_cnt = 0;
@@ -400,7 +397,6 @@ int main() {
 // ----------------------------------------------------------------------------
 // Sign-Injection Tests
 // ----------------------------------------------------------------------------
-
 #if (RUN_SGNINJ_TESTS != 0)
   neorv32_uart0_printf("\n#%u: FSGNJ.S (sign-injection)...\n", test_cnt);
   err_cnt = 0;
@@ -446,7 +442,6 @@ int main() {
 // ----------------------------------------------------------------------------
 // Classify Tests
 // ----------------------------------------------------------------------------
-
 #if (RUN_CLASSIFY_TESTS != 0)
   neorv32_uart0_printf("\n#%u: FCLASS.S (classify)...\n", test_cnt);
   err_cnt = 0;
@@ -463,9 +458,143 @@ int main() {
 
 
 // ----------------------------------------------------------------------------
+// corner case tests by author Mikael Mortensen
+// ----------------------------------------------------------------------------
+#if (RUN_CORNER_TESTS != 0)
+
+  // ********************************************
+  // Floating point add/sub Instruction Time-out test
+  // ********************************************
+  neorv32_uart0_printf("\n#%u: Corner-case FADD.S...\n", test_cnt);
+
+  // Test the addition of 1.0 + (-1.0) to trigger long normalizer times
+  // +1.0 e0
+  // 0_011 1111 1_000 0000 0000 0000 0000 0000
+  // sign 0, exp 0111_1111/0x7F, mant 0 => 1.0
+  // 0x3F80_0000
+
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  opa.binary_value = 0x3F800000;
+
+  // -1.0 e0
+  // 1_011 1111 1_000 0000 0000 0000 0000 0000
+  // sign 1, exp 0111_1111/0x7F, mant 0 => 1.0
+  // 0xBF80_0000
+
+  opb.binary_value = 0xBF800000;
+  riscv_intrinsic_fadds(opa.float_value,opb.float_value);
+
+  if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+    neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+    neorv32_uart0_printf("Addition of 1.0 + (-1.0) timed out\n");
+    err_cnt_total++;
+  }
+  print_report(err_cnt);
+  test_cnt++;
+
+  // ********************************************
+  // Conversion Tests Instruction Time-out test
+  // ********************************************
+  neorv32_uart0_printf("\n#%u: Corner-case FCVT.WU.S...\n", test_cnt);
+
+  // Test large exponent conversion to trigger long normalizer times
+  // Max positive number
+  // 1.0 e127
+  // 0_111 1111 0_000 0000 0000 0000 0000 0000
+  // sign 0, exp 1111_1110/254, mant 0
+  // 0x7F00_0000
+
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  opa.binary_value = 0x7F000000;
+  for (i=0;i<254; i++) {
+    riscv_intrinsic_fcvt_wus(opa.float_value);
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+      neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+      neorv32_uart0_printf("Conversion of opa with %d exponent timed out\n",opa.binary_value>>23);
+      err_cnt_total++;
+    }
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    // decrease opa exponent by 1
+    opa.binary_value = opa.binary_value - 0x00800000;
+  }
+  print_report(err_cnt);
+  test_cnt++;
+
+
+  neorv32_uart0_printf("\n#%u: Corner-case FCVT.W.S...\n", test_cnt);
+
+  neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+  opa.binary_value = 0x7F000000;
+  for (i=0;i<254; i++) {
+    riscv_intrinsic_fcvt_ws(opa.float_value);
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+      neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+      neorv32_uart0_printf("Conversion of opa with %d exponent timed out\n",opa.binary_value>>23);
+      err_cnt_total++;
+    }
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    // decrease opa exponent by 1
+    opa.binary_value = opa.binary_value - 0x00800000;
+  }
+  print_report(err_cnt);
+  test_cnt++;
+
+
+  // ********************************************
+  // Add/Sub Tests
+  // ********************************************
+  neorv32_uart0_printf("\n#%u: Corner-case FADD.S...\n", test_cnt);
+
+  // Test large differences in exponent to trigger long cross normalizer times
+  // Max exponent positive number
+  // 1.0 e127
+  // 0_111 1111 0_000 0000 0000 0000 0000 0000
+  // sign 0, exp 1111_1110/254, mant 0
+  // 0x7F00_0000
+  opa.binary_value = 0x7F000000;
+
+  // Min exponent positive number
+  // 1.0 e-126
+  // 0_000 0000 1_000 0000 0000 0000 0000 0000
+  // sign 0, exp 0000_0001/001, mant 0
+  // 0x0080_0000
+  opb.binary_value = 0x00800000;
+
+  for (i=0;i<253; i++) {
+    riscv_intrinsic_fadds(opa.float_value, opb.float_value);
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+      neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+      neorv32_uart0_printf("Addition using opa with %d exponent and opb with %d exponent timed out\n",opa.binary_value>>23,opb.binary_value>>23);
+      err_cnt_total++;
+    }
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    // increment opb exponent by 1
+    opb.binary_value = opb.binary_value + 0x00800000;
+  }
+  print_report(err_cnt);
+  test_cnt++;
+
+  opb.binary_value = 0x00800000;
+  neorv32_uart0_printf("\n#%u: Corner-case FSUB.S...\n", test_cnt);
+  for (i=0;i<253; i++) {
+    riscv_intrinsic_fsubs(opa.float_value, opb.float_value);
+    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
+      neorv32_uart0_printf("%c[1m[FAILED]%c[0m\n", 27, 27);
+      neorv32_uart0_printf("Subtraction using opa with %d exponent and opb with %d exponent timed out\n",opa.binary_value>>23,opb.binary_value>>23);
+      err_cnt_total++;
+    }
+    neorv32_cpu_csr_write(CSR_MCAUSE, 0);
+    // increment opb exponent by 1
+    opb.binary_value = opb.binary_value + 0x00800000;
+  }
+  print_report(err_cnt);
+  test_cnt++;
+#endif
+
+
+// ----------------------------------------------------------------------------
 // UNSUPPORTED Instructions Tests - Execution should raise illegal instruction exception
 // ----------------------------------------------------------------------------
-
 #if (RUN_UNAVAIL_TESTS != 0)
   neorv32_uart0_printf("\n# unsupported FDIV.S (division) [illegal instruction]...\n");
   neorv32_cpu_csr_write(CSR_MCAUSE, 0);
@@ -550,11 +679,10 @@ int main() {
 // ----------------------------------------------------------------------------
 // Instruction execution timing test
 // ----------------------------------------------------------------------------
-
 #if (RUN_TIMING_TESTS != 0)
 
   uint32_t time_start, time_sw, time_hw;
-  const uint32_t num_runs = 4096;
+  const uint32_t num_runs = 16*1024;
 
   neorv32_uart0_printf("\nAverage execution time tests (%u runs)\n", num_runs);
 
@@ -875,7 +1003,6 @@ int main() {
     neorv32_uart0_printf("\n%c[1m[Zfinx extension verification successful!]%c[0m\n", 27, 27);
     return 0;
   }
-
 }
 
 
