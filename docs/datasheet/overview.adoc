@@ -273,10 +273,12 @@ puts $file_list
 
 * The entire processor, including the CPU core, is written in platform-/technology-independent VHDL.
 The code makes minimal use of VHDL 2008 features in order to remain compatible with older EDA tools.
+* A specific VHDL library `neorv32` is used for all sources.
 * All registers / flip-flops provide an _asynchronous_ reset (see <<_processor_reset>>).
-* The entire setup uses a single clock domain. External "clock" signals are synchronized into this clock domain.
+* The entire setup uses a single clock domain. External "clock" signals are synchronized into this
+clock domain using 2-stage shift registers.
 * A single package/library file (`neorv32_package.vhd`) is used to provide global definitions and auxiliary functions.
-The specific user-defined configuration is done entirely via the generics of the top entity.
+The user-defined configuration is done entirely via the generics of the top entity.
 * Internally, all generics are checked to ensure correct configuration.
 Asserts are used to inform the user about the actual processor configuration and possible invalid settings.
 * The code uses entity instantiation for all internal modules. However, if multiple submodules are specified within the
