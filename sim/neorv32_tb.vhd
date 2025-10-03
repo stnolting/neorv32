@@ -20,7 +20,7 @@ entity neorv32_tb is
   generic (
     -- processor --
     CLOCK_FREQUENCY     : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
-    DUAL_CORE_EN        : boolean                        := true;        -- enable dual-core homogeneous SMP
+    DUAL_CORE_EN        : boolean                        := false;        -- enable dual-core homogeneous SMP
     BOOT_MODE_SELECT    : natural range 0 to 2           := 2;           -- boot from pre-initialized IMEM
     BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
     RISCV_ISA_C         : boolean                        := true;        -- implement compressed extension
@@ -515,11 +515,12 @@ begin
   --     wait until zcmp_push = '1';
   --     -- wait until instr_il = '1';
   --     -- report "illegal instruction";
-  --     -- wait until zcmp_push = '1';
   --     report "zcmp push detected";
+
   --     wait until zcmp_push = '1';
   --     report "zcmp push detected";
-  --     wait for 1000 ns;
+
+  --     wait for 100000 ns;
   --     std.env.finish;
   --   end process;
   -- end block monitor_blk;
