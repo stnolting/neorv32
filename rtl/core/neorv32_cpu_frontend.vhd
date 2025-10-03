@@ -544,10 +544,13 @@ begin
 
           when S_ZCMP_BRANCH_ABORT =>
             if (ipb.avail /= "00") then
-              if(zcmp_detect='1') then 
-                uop_state_nxt <= S_ZCMP_UOP_SEQ;
-              else
-                uop_state_nxt <= S_IDLE;
+              uop_state_nxt <= S_IDLE;
+              if (zcmp_detect = '1') then
+                if (zcmp_is_mvsa01 = '1' or zcmp_is_mvsa01s = '1') then
+                  uop_state_nxt <= S_ZCMP_DOUBLE_MOVE_1;
+                else
+                  uop_state_nxt <= S_ZCMP_UOP_SEQ;
+                end if;
               end if;
             end if;
 
