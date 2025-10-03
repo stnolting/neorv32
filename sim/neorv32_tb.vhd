@@ -125,11 +125,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_top_inst: neorv32_top
   generic map (
-    -- Clocking --
+    -- General --
     CLOCK_FREQUENCY     => CLOCK_FREQUENCY,
-    -- External Trace Port --
     TRACE_PORT_EN       => true,
-    -- Dual-Core Configuration --
     DUAL_CORE_EN        => DUAL_CORE_EN,
     -- Boot Configuration --
     BOOT_MODE_SELECT    => BOOT_MODE_SELECT,

@@ -832,11 +832,9 @@ package neorv32_package is
 
   component neorv32_top
     generic (
-      -- Processor Clocking --
+      -- General --
       CLOCK_FREQUENCY       : natural                        := 0;
-      -- External Trace Port --
       TRACE_PORT_EN         : boolean                        := false;
-      -- Dual-Core Configuration --
       DUAL_CORE_EN          : boolean                        := false;
       -- Boot Configuration --
       BOOT_MODE_SELECT      : natural range 0 to 2           := 0;

@@ -25,9 +25,8 @@ entity neorv32_vivado_ip is
     -- ------------------------------------------------------------
     -- Configuration Generics
     -- ------------------------------------------------------------
-    -- Clocking --
+    -- General --
     CLOCK_FREQUENCY       : natural                        := 100_000_000;
-    -- Dual-Core Configuration --
     DUAL_CORE_EN          : boolean                        := false;
     -- Boot Configuration --
     BOOT_MODE_SELECT      : natural range 0 to 2           := 0;
@@ -357,9 +356,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_top_inst: neorv32_top
   generic map (
-    -- Clocking --
+    -- General --
     CLOCK_FREQUENCY     => CLOCK_FREQUENCY,
-    -- Dual-Core Configuration --
     DUAL_CORE_EN        => DUAL_CORE_EN,
     -- Boot Configuration --
     BOOT_MODE_SELECT    => BOOT_MODE_SELECT,
