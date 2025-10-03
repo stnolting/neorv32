@@ -25,7 +25,7 @@
  **************************************************************************/
 int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes) {
 
-  // sanity checks
+  // processor configuration check
   if ((neorv32_smp_whoami() != 0) || // this can be executed on core0 only
       (neorv32_sysinfo_get_numcores() < 2) || // core not available
       (neorv32_clint_available() == 0)) { // we need the CLINT
