@@ -205,12 +205,10 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 [options="header",grid="rows"]
 |=======================
 | Name | Type | Default | Description
-4+^| **<<_processor_clocking>>**
-| `CLOCK_FREQUENCY`       | natural   | 0             | The clock frequency of the processor's `clk_i` input port in Hertz (Hz).
-4+^| **<<_execution_trace_port>>**
-| `TRACE_PORT_EN`         | boolean   | false         | Enable external CPU execution trace port(s).
-4+^| **<<_dual_core_configuration>>**
-| `DUAL_CORE_EN`          | boolean   | false         | Enable the SMP dual-core configuration.
+4+^| **General**
+| `CLOCK_FREQUENCY`       | natural   | 0             | The clock frequency of the processor's `clk_i` input port in Hertz (Hz). See <<_processor_clocking>>.
+| `TRACE_PORT_EN`         | boolean   | false         | Enable external CPU execution <<_execution_trace_port>>.
+| `DUAL_CORE_EN`          | boolean   | false         | Enable the SMP <<_dual_core_configuration>>.
 4+^| **<<_boot_configuration>>**
 | `BOOT_MODE_SELECT`      | natural   | 0             | Boot mode select; see <<_boot_configuration>>.
 | `BOOT_ADDR_CUSTOM`      | suv(31:0) | x"00000000"   | Custom CPU boot address (available if `BOOT_MODE_SELECT` = 1).
