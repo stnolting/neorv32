@@ -199,6 +199,9 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal cnt_event    : std_ulogic_vector(11 downto 0); -- counter events
   signal ebreak_trig  : std_ulogic; -- "ebreak" exception trigger
 
+  signal zcmp_in_uop_seq_q, zcmp_finished : std_ulogic;
+  signal zcmp_pc_reg, zcmp_pc_nxt : std_ulogic_vector(31 downto 0);
+
 begin
 
   trap_me <= trap_ctrl.instr_il;
@@ -273,11 +276,14 @@ begin
     elsif rising_edge(clk_i) then
       ctrl       <= ctrl_nxt;
       exe_engine <= exe_engine_nxt;
+      zcmp_in_uop_seq_q <= frontend_i.zcmp_in_uop_seq;
     end if;
   end process execute_engine_fsm_sync;
 
   -- simplified rv32 opcode --
   opcode <= exe_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
+
+  zcmp_finished <= (not frontend_i.zcmp_in_uop_seq) and zcmp_in_uop_seq_q;
 
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
@@ -401,8 +407,15 @@ begin
 
       when EX_EXECUTE => -- decode and prepare execution (FSM will be here for exactly 1 cycle in any case)
       -- ------------------------------------------------------------
-        exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0'; -- next PC = PC + immediate
 
+        if(frontend_i.zcmp_in_uop_seq='1') then 
+          exe_engine_nxt.pc2 <= exe_engine.pc(XLEN-1 downto 1) & '0';
+        elsif (zcmp_finished='1') then
+          exe_engine_nxt.pc2 <= std_ulogic_vector(unsigned(exe_engine.pc(XLEN-1 downto 1) & '0') + 2);
+        else
+          exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0'; -- next PC = PC + immediate
+        end if;
+        
         -- decode instruction class/type; [NOTE] register file is read in THIS stage; due to the sync read data will be available in the NEXT state --
         case opcode is
 

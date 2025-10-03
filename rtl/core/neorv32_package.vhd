@@ -680,6 +680,8 @@ package neorv32_package is
     compr           : std_ulogic;                     -- instruction is decompressed
     fault           : std_ulogic;                     -- instruction-fetch error
     zcmp_in_uop_seq : std_ulogic;                     -- zcmp micro-op sequence running
+    zcmp_finished : std_ulogic;                     
+    zcmp_pc         : std_ulogic_vector(31 downto 0);
   end record;
 
   -- Comparator Bus -------------------------------------------------------------------------

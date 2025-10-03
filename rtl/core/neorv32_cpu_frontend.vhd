@@ -124,7 +124,7 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   constant zcmp_instr_rs1_sp : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
   constant zcmp_instr_rs1_ra : std_ulogic_vector(4 downto 0) := "00001"; -- return address 
 
-  signal zcmp_stack_adj_instr, zcmp_push_stack_adj_instr, zcmp_pop_stack_adj_instr, zcmp_li_a0_instr, zcmp_mvsa01s_instr, zcmp_mvsa01_instr : std_ulogic_vector(31 downto 0);
+  signal zcmp_stack_adj_instr, zcmp_push_stack_adj_instr, zcmp_pop_stack_adj_instr, zcmp_li_a0_instr : std_ulogic_vector(31 downto 0);
   constant zcmp_addi_instr_opcode : std_ulogic_vector(6 downto 0) := "0010011";
   constant zcmp_addi_instr_funct3 : std_ulogic_vector(2 downto 0) := "000";
   constant zcmp_addi_rs1_sp : std_ulogic_vector(4 downto 0) := "00010"; -- stack pointer 
@@ -385,6 +385,7 @@ begin
 
     zcmp_enabled :
     if RISCV_ZCMP generate
+
       zcmp_reg_list <= zcmp_instr_reg(7 downto 4);
       zcmp_num_regs <= 13 when to_integer(unsigned(zcmp_reg_list)) = 15 else
                        0 when to_integer(unsigned(zcmp_reg_list)) < 4 else
@@ -461,7 +462,7 @@ begin
         end if;
       end process uop_fsm_sync;
 
-      uop_fsm_comb : process (uop_state_reg, zcmp_jalr_instr, zcmp_is_mvsa01, zcmp_is_mvsa01s, uop_ctr, fetch, ipb, zcmp_in_uop_seq, zcmp_is_popret, zcmp_is_popretz, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
+      uop_fsm_comb : process (uop_state_reg, zcmp_jalr_instr, zcmp_sa01_r1s, zcmp_sa01_r2s, zcmp_is_mvsa01, zcmp_is_mvsa01s, uop_ctr, fetch, ipb, zcmp_in_uop_seq, zcmp_is_popret, zcmp_is_popretz, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
       begin
         uop_ctr_nxt_in_seq <= uop_ctr;
         uop_state_nxt <= uop_state_reg;
@@ -509,7 +510,7 @@ begin
               frontend_bus_zcmp.instr <= zcmp_instr;
               frontend_bus_zcmp.valid <= '1';
 
-              if (uop_ctr + 1 = zcmp_num_regs) then
+              if (uop_ctr + 1 = zcmp_num_regs and ctrl_i.if_ready = '1') then
                 uop_ctr_nxt_in_seq <= 15;
               end if;
 
@@ -543,7 +544,11 @@ begin
 
           when S_ZCMP_BRANCH_ABORT =>
             if (ipb.avail /= "00") then
-              uop_state_nxt <= S_IDLE;
+              if(zcmp_detect='1') then 
+                uop_state_nxt <= S_ZCMP_UOP_SEQ;
+              else
+                uop_state_nxt <= S_IDLE;
+              end if;
             end if;
 
           when S_ZCMP_DOUBLE_MOVE_1 =>
