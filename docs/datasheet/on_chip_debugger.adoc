@@ -266,7 +266,7 @@ shows all available data registers and their addresses:
 | 16     | `dmireset`     | r/w | setting this bit will clear the sticky error state; this bit auto-clears
 | 15     | -              | r/- | _reserved_, hardwired to zero
 | 14:12  | `idle`         | r/- | recommended idle states (= 0, no idle states required)
-| 11:10  | `dmistat`      | r/- | read-only alias of `DMI.op`
+| 11:10  | `dmistat`      | r/- | read-only alias of `DMI.op`; hardwired to `00` (NOP)
 | 9:4    | `abits`        | r/- | number of address bits in `DMI` register (= 6)
 | 3:0    | `version`      | r/- | `0001` = DTM is compatible to RISC-V debug spec. versions v0.13 and v1.0
 |=======================
