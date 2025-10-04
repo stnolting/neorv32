@@ -246,13 +246,8 @@ begin
 
           when CMD_IDLE => -- wait for new abstract command
           -- ------------------------------------------------------------
-            if (dmi_wren_auth = '1') then -- valid and authenticated DM write access
-              if (dmi_req_i.addr = addr_command_c) then
-                if (dm_ctrl.cmderr = "000") then -- only execute if no error
-                  dm_ctrl.state <= CMD_CHECK;
-                end if;
-              end if;
-            elsif (dm_reg.autoexec_rd = '1') or (dm_reg.autoexec_wr = '1') then -- auto execution trigger
+            if ((dmi_wren_auth = '1') and (dmi_req_i.addr = addr_command_c) and (dm_ctrl.cmderr = "000")) or -- manual execute if no error
+               (dm_reg.autoexec_rd = '1') or (dm_reg.autoexec_wr = '1') then -- auto execution trigger
               dm_ctrl.state <= CMD_CHECK;
             end if;
 
@@ -522,8 +517,10 @@ begin
       dm_reg.rd_acc_err  <= '0';
       dm_reg.autoexec_rd <= '0';
     elsif rising_edge(clk_i) then
-      dmi_rsp_o.ack  <= dmi_wren or dmi_rden; -- always ACK any request
-      dmi_rsp_o.data <= (others => '0'); -- default
+      dmi_rsp_o.ack      <= dmi_wren or dmi_rden; -- always ACK any request
+      dmi_rsp_o.data     <= (others => '0');
+      dm_reg.rd_acc_err  <= '0';
+      dm_reg.autoexec_rd <= '0';
       case dmi_req_i.addr is
 
         -- debug module status register --
@@ -629,8 +626,6 @@ begin
       if (dmi_rden_auth = '1') and (dm_ctrl.busy = '1') and -- write while busy
          ((dmi_req_i.addr = addr_data0_c) or (dmi_req_i.addr = addr_progbuf0_c) or (dmi_req_i.addr = addr_progbuf1_c)) then
         dm_reg.rd_acc_err <= '1';
-      else
-        dm_reg.rd_acc_err <= '0';
       end if;
 
       -- auto execution trigger --
@@ -640,8 +635,6 @@ begin
           ((dmi_req_i.addr = addr_progbuf0_c) and (dm_reg.abstractauto_autoexecprogbuf(0) = '1')) or
           ((dmi_req_i.addr = addr_progbuf1_c) and (dm_reg.abstractauto_autoexecprogbuf(1) = '1'))) then
         dm_reg.autoexec_rd <= '1';
-      else
-        dm_reg.autoexec_rd <= '0';
       end if;
 
     end if;

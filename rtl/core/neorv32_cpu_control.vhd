@@ -238,7 +238,7 @@ begin
 
   -- Branch Condition Check -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  branch_check: process(exe_engine.ir, alu_cmp_i)
+  branch_check: process(exe_engine, alu_cmp_i)
   begin
     if (exe_engine.ir(instr_opcode_lsb_c+2) = '0') then -- conditional branch
       if (exe_engine.ir(instr_funct3_msb_c) = '0') then -- beq / bne
@@ -638,7 +638,7 @@ begin
 
   -- CSR Access Check -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_check: process(exe_engine.ir, csr, debug_ctrl.run)
+  csr_check: process(exe_engine, csr, debug_ctrl)
     variable csr_addr_v : std_ulogic_vector(11 downto 0);
   begin
     -- shortcut: CSR address right from the instruction word --

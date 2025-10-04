@@ -54,7 +54,7 @@ begin
       if (enable_i = '0') then
         authenticated_q <= '0'; -- clear authentication when disabled
       elsif (we_i = '1') then
-        authenticated_q <= wdata_i(0); -- just write a "1" to authenticate
+        authenticated_q <= wdata_i(0); -- just write 1 to authenticate
       end if;
     end if;
   end process auth_ctrl;
