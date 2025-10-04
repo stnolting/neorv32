@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120207"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120208"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
   constant XLEN          : natural := 32; -- native data path width
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
@@ -158,7 +158,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- request --
   type dmi_req_t is record
-    op   : std_ulogic_vector(1 downto 0);
+    op   : std_ulogic_vector(1 downto 0); -- single-shot
     addr : std_ulogic_vector(6 downto 0);
     data : std_ulogic_vector(31 downto 0);
   end record;
@@ -178,7 +178,7 @@ package neorv32_package is
   -- response --
   type dmi_rsp_t is record
     data : std_ulogic_vector(31 downto 0);
-    ack  : std_ulogic;
+    ack  : std_ulogic; -- single-shot
   end record;
 
   -- endpoint (response) termination --

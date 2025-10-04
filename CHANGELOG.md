@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 04.10.2025 | 1.12.2.8 | :bug: fix broken DTM bypass register; further DTM logic optimization | [#1393](https://github.com/stnolting/neorv32/pull/1393) |
 | 03.10.2025 | 1.12.2.7 | :bug: FPU: code cleanups and minor bug fix in "float to int" conversion (incorrect sign for if negative overflow) | [#1392](https://github.com/stnolting/neorv32/pull/1392) |
 | 03.10.2025 | 1.12.2.6 | add generic multiplier primitive (used by `M` and `Zicsr` ALU co-processors) | [#1391](https://github.com/stnolting/neorv32/pull/1391) |
 | 03.10.2025 | 1.12.2.5 | :warning: rename and rework openOCD scripts ; optimize debug transfer module (DTM) | [#1390](https://github.com/stnolting/neorv32/pull/1390) |
