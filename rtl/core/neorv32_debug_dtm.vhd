@@ -39,13 +39,12 @@ end neorv32_debug_dtm;
 
 architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
 
-  -- TAP data register addresses --
-  constant addr_idcode_c : std_ulogic_vector(4 downto 0) := "00001"; -- identifier
-  constant addr_dtmcs_c  : std_ulogic_vector(4 downto 0) := "10000"; -- DTM status and control
-  constant addr_dmi_c    : std_ulogic_vector(4 downto 0) := "10001"; -- debug module interface
-
-  -- TAP register widths --
-  constant size_ireg_c   : natural := 5;
+  -- TAP data registers --
+  constant addr_idcode_c : std_ulogic_vector(4 downto 0) := "00001";
+  constant addr_dtmcs_c  : std_ulogic_vector(4 downto 0) := "10000";
+  constant addr_dmi_c    : std_ulogic_vector(4 downto 0) := "10001";
+  constant addr_bypass_c : std_ulogic_vector(4 downto 0) := "11111";
+  --
   constant size_idcode_c : natural := 32;
   constant size_dtmcs_c  : natural := 32;
   constant size_dmi_c    : natural := 7+32+2; -- 7-bit address + 32-bit data + 2-bit operation/status
@@ -59,32 +58,18 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
   -- TAP controller --
   type state_t is (LOGIC_RESET, DR_SCAN, DR_CAPTURE, DR_SHIFT, DR_EXIT1, DR_PAUSE, DR_EXIT2, DR_UPDATE,
                       RUN_IDLE, IR_SCAN, IR_CAPTURE, IR_SHIFT, IR_EXIT1, IR_PAUSE, IR_EXIT2, IR_UPDATE);
-  signal state : state_t;
+  signal state, state2 : state_t;
 
   -- TAP registers --
-  signal ireg : std_ulogic_vector(size_ireg_c-1 downto 0);
-  signal dreg : std_ulogic_vector(size_dmi_c-1 downto 0); -- max size (= dmi)
+  signal ireg : std_ulogic_vector(4 downto 0);
+  signal dreg : std_ulogic_vector(size_dmi_c-1 downto 0); -- max size (= dmi size)
 
-  -- dtmcs read-back --
-  signal dtmcs : std_ulogic_vector(31 downto 0);
-
-  -- update trigger --
-  signal dr_update_sreg : std_ulogic_vector(1 downto 0);
-  signal dr_update_trig : std_ulogic;
-
-  -- reset control --
-  signal dmihardreset, dmireset : std_ulogic;
+  -- misc --
+  signal update, dmihardreset, dmireset : std_ulogic;
 
   -- debug module interface controller --
-  type dmi_ctrl_t is record
-    busy  : std_ulogic;
-    op    : std_ulogic_vector(1 downto 0);
-    err   : std_ulogic;
-    rdata : std_ulogic_vector(31 downto 0);
-    wdata : std_ulogic_vector(31 downto 0);
-    addr  : std_ulogic_vector(6 downto 0);
-  end record;
-  signal dmi_ctrl : dmi_ctrl_t;
+  signal dmi : dmi_req_t;
+  signal busy, err : std_ulogic;
 
 begin
 
@@ -117,8 +102,10 @@ begin
   tap_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      state <= LOGIC_RESET;
+      state2 <= LOGIC_RESET;
+      state  <= LOGIC_RESET;
     elsif rising_edge(clk_i) then
+      state2 <= state;
       if (tck_rise = '1') then -- clock pulse (evaluate TMS on the rising edge of TCK)
         case state is -- JTAG state machine
           when LOGIC_RESET => if (tms = '0') then state <= RUN_IDLE;   else state <= LOGIC_RESET; end if;
@@ -143,23 +130,8 @@ begin
     end if;
   end process tap_control;
 
-  -- trigger for UPDATE state --
-  update_trigger: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      dr_update_sreg <= (others => '0');
-    elsif rising_edge(clk_i) then
-      dr_update_sreg(1) <= dr_update_sreg(0);
-      if (state = DR_UPDATE) then
-        dr_update_sreg(0) <= '1';
-      else
-        dr_update_sreg(0) <= '0';
-      end if;
-    end if;
-  end process update_trigger;
-
-  -- edge detector --
-  dr_update_trig <= '1' when (dr_update_sreg = "01") else '0';
+  -- DR_UPDATE edge detector --
+  update <= '1' when (state = DR_UPDATE) and (state2 /= DR_UPDATE) else '0';
 
 
   -- Tap Register Access --------------------------------------------------------------------
@@ -182,8 +154,8 @@ begin
         dreg <= (others => '0');
         case ireg is -- make data MSB-aligned
           when addr_idcode_c => dreg(dreg'left downto dreg'left-(size_idcode_c-1)) <= IDCODE_VERSION & IDCODE_PARTID & IDCODE_MANID & '1';
-          when addr_dtmcs_c  => dreg(dreg'left downto dreg'left-(size_dtmcs_c-1))  <= dtmcs;
-          when addr_dmi_c    => dreg(dreg'left downto dreg'left-(size_dmi_c-1))    <= dmi_ctrl.addr & dmi_ctrl.rdata & dmi_ctrl.err & dmi_ctrl.err;
+          when addr_dtmcs_c  => dreg(dreg'left downto dreg'left-(size_dtmcs_c-1))  <= x"00000071";
+          when addr_dmi_c    => dreg(dreg'left downto dreg'left-(size_dmi_c-1))    <= dmi.addr & dmi.data & err & err;
           when others        => dreg(dreg'left downto dreg'left-(size_bypass_c-1)) <= (others => '0');
         end case;
       elsif (state = DR_SHIFT) and (tck_rise = '1') then -- access phase; [JTAG-SYNC] evaluate TDI on rising edge of TCK
@@ -205,20 +177,9 @@ begin
     end if;
   end process reg_access;
 
-  -- assemble dtmcs read-back --
-  dtmcs(31 downto 21) <= (others => '0'); -- reserved
-  dtmcs(20 downto 18) <= (others => '0'); -- errinfo: not implemented
-  dtmcs(17)           <= '0';             -- dmihardreset, write-only
-  dtmcs(16)           <= '0';             -- dmireset, write-only
-  dtmcs(15)           <= '0';             -- reserved
-  dtmcs(14 downto 12) <= (others => '0'); -- idle: minimum number of idle cycles = 0
-  dtmcs(11 downto 10) <= dmi_ctrl.op;     -- dmistat: read-only alias of dmi.op
-  dtmcs(09 downto 04) <= "000111";        -- abits: number of DMI address bits = 7
-  dtmcs(03 downto 00) <= "0001";          -- version: compatible to spec. v0.13 & v1.0
-
   -- reset control --
-  dmihardreset <= '1' when (dr_update_trig = '1') and (ireg = addr_dtmcs_c) and (dreg(17) = '1') else '0';
-  dmireset     <= '1' when (dr_update_trig = '1') and (ireg = addr_dtmcs_c) and (dreg(16) = '1') else '0';
+  dmihardreset <= '1' when (update = '1') and (ireg = addr_dtmcs_c) and (dreg(17) = '1') else '0';
+  dmireset     <= '1' when (update = '1') and (ireg = addr_dtmcs_c) and (dreg(16) = '1') else '0';
 
 
   -- Debug Module Interface -----------------------------------------------------------------
@@ -226,43 +187,34 @@ begin
   dmi_controller: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      dmi_ctrl.busy  <= '0';
-      dmi_ctrl.op    <= "00";
-      dmi_ctrl.err   <= '0';
-      dmi_ctrl.rdata <= (others => '0');
-      dmi_ctrl.wdata <= (others => '0');
-      dmi_ctrl.addr  <= (others => '0');
+      busy <= '0';
+      err  <= '0';
+      dmi  <= dmi_req_terminate_c;
     elsif rising_edge(clk_i) then
-      -- sticky error --
+      -- sticky error: access attempt while DMI is busy --
       if (dmireset = '1') or (dmihardreset = '1') then
-        dmi_ctrl.err <= '0';
-      elsif (dmi_ctrl.busy = '1') and (dr_update_trig = '1') and (ireg = addr_dmi_c) then -- access attempt while DMI is busy
-        dmi_ctrl.err <= '1';
+        err <= '0';
+      elsif (update = '1') and (ireg = addr_dmi_c) and (busy = '1') then
+        err <= '1';
       end if;
-      -- DMI interface arbiter --
-      dmi_ctrl.op <= dmi_req_nop_c; -- default
-      if (dmi_ctrl.busy = '0') then -- idle: waiting for new request
-        if (dr_update_trig = '1') and (ireg = addr_dmi_c) then -- valid non-reset access
-          dmi_ctrl.wdata <= dreg(33 downto 2);
-          dmi_ctrl.addr  <= dreg(40 downto 34);
-          if (dreg(1 downto 0) = dmi_req_rd_c) or (dreg(1 downto 0) = dmi_req_wr_c) then
-            dmi_ctrl.op   <= dreg(1 downto 0);
-            dmi_ctrl.busy <= '1';
-          end if;
+      -- interface arbiter --
+      dmi.op <= dmi_req_nop_c; -- default
+      if (busy = '0') then -- idle: waiting for new request
+        if (update = '1') and (ireg = addr_dmi_c) then
+          dmi.addr <= dreg(40 downto 34);
+          dmi.data <= dreg(33 downto 2);
+          dmi.op   <= dreg(1 downto 0);
+          busy     <= or_reduce_f(dreg(1 downto 0));
         end if;
-      else -- busy: access in progress
-        dmi_ctrl.rdata <= dmi_rsp_i.data;
-        if (dmi_rsp_i.ack = '1') or (dmihardreset = '1') then
-          dmi_ctrl.busy <= '0';
-        end if;
+      elsif (dmi_rsp_i.ack = '1') or (dmihardreset = '1') then -- busy: wait for access termination
+        dmi.data <= dmi_rsp_i.data;
+        busy     <= '0';
       end if;
     end if;
   end process dmi_controller;
 
   -- DMI output --
-  dmi_req_o.op   <= dmi_ctrl.op;
-  dmi_req_o.data <= dmi_ctrl.wdata;
-  dmi_req_o.addr <= dmi_ctrl.addr;
+  dmi_req_o <= dmi;
 
 
 end neorv32_debug_dtm_rtl;
