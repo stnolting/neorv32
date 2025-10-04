@@ -183,38 +183,15 @@ data transfers and conversions
 * optional JTAG authentication module to implement custom security mechanisms
 * execution trace buffer ([TRACER](https://stnolting.github.io/neorv32/#_execution_trace_buffer_tracer))
 
+### Size ad Performance
 
-## FPGA Implementation Results
-
-Implementation results for **exemplary CPU configurations** generated for an Intel Cyclone IV `EP4CE22F17C6` FPGA
-using Intel Quartus Prime Lite 21.1 (no timing constrains, _balanced optimization_, f_max from _Slow 1200mV 0C Model_).
-
-| CPU Configuration (version [1.7.8.5](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | LEs | FFs | Memory bits | DSPs | f_max |
-|:-----------------------|:----:|:----:|:----:|:-:|:-------:|
-| `rv32i_Zicsr`          | 1223 |  607 | 1024 | 0 | 130 MHz |
-| `rv32i_Zicsr_Zicntr`   | 1578 |  773 | 1024 | 0 | 130 MHz |
-| `rv32imc_Zicsr_Zicntr` | 2338 |  992 | 1024 | 0 | 130 MHz |
-
-An incremental list of CPU extensions and processor modules can be found in the [Data Sheet: FPGA Implementation Results](https://stnolting.github.io/neorv32/#_fpga_implementation_results).
-
-
-## Performance
-
-The NEORV32 CPU is based on a two-stages pipelined/multi-cycle architecture (fetch and execute).
-The following table shows the performance results (scores and average CPI) for exemplary CPU configurations (no caches) executing
-2000 iterations of the [CoreMark](https://github.com/stnolting/neorv32/blob/main/sw/example/coremark) CPU benchmark.
-
-| CPU Configuration (version [1.5.7.10](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md)) | CoreMark Score |
-|:---------------------------------------------------------|:-----:|
-| _small_ (`rv32i_Zicsr_Zifencei`)                         | 33.89 |
-| _medium_ (`rv32imc_Zicsr_Zifencei`)                      | 62.50 |
-| _performance_ (`rv32imc_Zicsr_Zifencei` + perf. options) | 95.23 |
+The NEORV32 processor is optimized for minimal size. However, the actual size (silicon area or FPGA resources)
+depends on the specific configuration. For example, an RTOS-capable setup based on a `rv32imc_Zicsr_Zicntr` CPU
+configuration requires about 2300 LUTs and 1000 FFs and can run at up to 130 MHz (implementation results for a
+Altera Cyclone IV E `EP4CE22F17C6` FPGA). This configuration provides a CoreMark score of 95.23 (0.9523 CoreMarks/MHz).
 
 More information regarding the CPU performance can be found in the
-[Data Sheet: CPU Performance](https://stnolting.github.io/neorv32/#_cpu_performance).
-The CPU & SoC provide further "tuning" options to optimize the design for maximum performance,
-maximum clock speed, minimal area or minimal power consumption:
-[User Guide: Application-Specific Processor Configuration](https://stnolting.github.io/neorv32/ug/#_application_specific_processor_configuration)
+[Data Sheet: Performance](https://stnolting.github.io/neorv32/#_performance).
 
 
 ## Getting Started
@@ -227,7 +204,7 @@ This overview provides some *quick links* to the most important sections of the
 * [Key Features](https://stnolting.github.io/neorv32/#_project_key_features) - what makes it special
 * [Structure](https://stnolting.github.io/neorv32/#_project_folder_structure) - folders, RTL files and compile order
 * [File-List Files](https://stnolting.github.io/neorv32/#_file_list_files) - to simplify HDL setup
-* [Metrics](https://stnolting.github.io/neorv32/#_fpga_implementation_results) - FPGA implementation and performance evaluation
+* [Metrics](https://stnolting.github.io/neorv32/#_performance) - FPGA implementation and performance evaluation
 
 ### :desktop_computer: [NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - The SoC
 
