@@ -51,20 +51,17 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
   constant size_dmi_c    : natural := 7+32+2; -- 7-bit address + 32-bit data + 2-bit operation/status
   constant size_bypass_c : natural := 1;
 
-  -- tap JTAG signal synchronizer --
-  type tap_sync_t is record
-    tck_ff : std_ulogic_vector(2 downto 0);
-    tdi_ff, tms_ff : std_ulogic_vector(1 downto 0);
-    tck_rise, tck_fall, tdi, tms : std_ulogic;
-  end record;
-  signal tap_sync : tap_sync_t;
+  -- JTAG signal synchronizer --
+  signal tck_ff : std_ulogic_vector(2 downto 0);
+  signal tdi_ff, tms_ff : std_ulogic_vector(1 downto 0);
+  signal tck_rise, tck_fall, tdi, tms : std_ulogic;
 
-  -- tap controller --
+  -- TAP controller --
   type state_t is (LOGIC_RESET, DR_SCAN, DR_CAPTURE, DR_SHIFT, DR_EXIT1, DR_PAUSE, DR_EXIT2, DR_UPDATE,
                       RUN_IDLE, IR_SCAN, IR_CAPTURE, IR_SHIFT, IR_EXIT1, IR_PAUSE, IR_EXIT2, IR_UPDATE);
   signal state : state_t;
 
-  -- tap registers --
+  -- TAP registers --
   signal ireg : std_ulogic_vector(size_ireg_c-1 downto 0);
   signal dreg : std_ulogic_vector(size_dmi_c-1 downto 0); -- max size (= dmi)
 
@@ -72,8 +69,8 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
   signal dtmcs : std_ulogic_vector(31 downto 0);
 
   -- update trigger --
-  signal dr_update_sreg  : std_ulogic_vector(1 downto 0);
-  signal dr_update_valid : std_ulogic;
+  signal dr_update_sreg : std_ulogic_vector(1 downto 0);
+  signal dr_update_trig : std_ulogic;
 
   -- reset control --
   signal dmihardreset, dmireset : std_ulogic;
@@ -96,23 +93,23 @@ begin
   tap_synchronizer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      tap_sync.tck_ff <= (others => '0');
-      tap_sync.tdi_ff <= (others => '0');
-      tap_sync.tms_ff <= (others => '0');
+      tck_ff <= (others => '0');
+      tdi_ff <= (others => '0');
+      tms_ff <= (others => '0');
     elsif rising_edge(clk_i) then
-      tap_sync.tck_ff <= tap_sync.tck_ff(1 downto 0) & jtag_tck_i;
-      tap_sync.tdi_ff <= tap_sync.tdi_ff(0) & jtag_tdi_i;
-      tap_sync.tms_ff <= tap_sync.tms_ff(0) & jtag_tms_i;
+      tck_ff <= tck_ff(1 downto 0) & jtag_tck_i;
+      tdi_ff <= tdi_ff(0) & jtag_tdi_i;
+      tms_ff <= tms_ff(0) & jtag_tms_i;
     end if;
   end process tap_synchronizer;
 
   -- JTAG clock edges --
-  tap_sync.tck_rise <= '1' when (tap_sync.tck_ff(2 downto 1) = "01") else '0';
-  tap_sync.tck_fall <= '1' when (tap_sync.tck_ff(2 downto 1) = "10") else '0';
+  tck_rise <= '1' when (tck_ff(2 downto 1) = "01") else '0';
+  tck_fall <= '1' when (tck_ff(2 downto 1) = "10") else '0';
 
   -- JTAG inputs --
-  tap_sync.tms <= tap_sync.tms_ff(1);
-  tap_sync.tdi <= tap_sync.tdi_ff(1);
+  tms <= tms_ff(1);
+  tdi <= tdi_ff(1);
 
 
   -- JTAG Tap Control FSM -------------------------------------------------------------------
@@ -122,24 +119,24 @@ begin
     if (rstn_i = '0') then
       state <= LOGIC_RESET;
     elsif rising_edge(clk_i) then
-      if (tap_sync.tck_rise = '1') then -- clock pulse (evaluate TMS on the rising edge of TCK)
+      if (tck_rise = '1') then -- clock pulse (evaluate TMS on the rising edge of TCK)
         case state is -- JTAG state machine
-          when LOGIC_RESET => if (tap_sync.tms = '0') then state <= RUN_IDLE;   else state <= LOGIC_RESET; end if;
-          when RUN_IDLE    => if (tap_sync.tms = '0') then state <= RUN_IDLE;   else state <= DR_SCAN;     end if;
-          when DR_SCAN     => if (tap_sync.tms = '0') then state <= DR_CAPTURE; else state <= IR_SCAN;     end if;
-          when DR_CAPTURE  => if (tap_sync.tms = '0') then state <= DR_SHIFT;   else state <= DR_EXIT1;    end if;
-          when DR_SHIFT    => if (tap_sync.tms = '0') then state <= DR_SHIFT;   else state <= DR_EXIT1;    end if;
-          when DR_EXIT1    => if (tap_sync.tms = '0') then state <= DR_PAUSE;   else state <= DR_UPDATE;   end if;
-          when DR_PAUSE    => if (tap_sync.tms = '0') then state <= DR_PAUSE;   else state <= DR_EXIT2;    end if;
-          when DR_EXIT2    => if (tap_sync.tms = '0') then state <= DR_SHIFT;   else state <= DR_UPDATE;   end if;
-          when DR_UPDATE   => if (tap_sync.tms = '0') then state <= RUN_IDLE;   else state <= DR_SCAN;     end if;
-          when IR_SCAN     => if (tap_sync.tms = '0') then state <= IR_CAPTURE; else state <= LOGIC_RESET; end if;
-          when IR_CAPTURE  => if (tap_sync.tms = '0') then state <= IR_SHIFT;   else state <= IR_EXIT1;    end if;
-          when IR_SHIFT    => if (tap_sync.tms = '0') then state <= IR_SHIFT;   else state <= IR_EXIT1;    end if;
-          when IR_EXIT1    => if (tap_sync.tms = '0') then state <= IR_PAUSE;   else state <= IR_UPDATE;   end if;
-          when IR_PAUSE    => if (tap_sync.tms = '0') then state <= IR_PAUSE;   else state <= IR_EXIT2;    end if;
-          when IR_EXIT2    => if (tap_sync.tms = '0') then state <= IR_SHIFT;   else state <= IR_UPDATE;   end if;
-          when IR_UPDATE   => if (tap_sync.tms = '0') then state <= RUN_IDLE;   else state <= DR_SCAN;     end if;
+          when LOGIC_RESET => if (tms = '0') then state <= RUN_IDLE;   else state <= LOGIC_RESET; end if;
+          when RUN_IDLE    => if (tms = '0') then state <= RUN_IDLE;   else state <= DR_SCAN;     end if;
+          when DR_SCAN     => if (tms = '0') then state <= DR_CAPTURE; else state <= IR_SCAN;     end if;
+          when DR_CAPTURE  => if (tms = '0') then state <= DR_SHIFT;   else state <= DR_EXIT1;    end if;
+          when DR_SHIFT    => if (tms = '0') then state <= DR_SHIFT;   else state <= DR_EXIT1;    end if;
+          when DR_EXIT1    => if (tms = '0') then state <= DR_PAUSE;   else state <= DR_UPDATE;   end if;
+          when DR_PAUSE    => if (tms = '0') then state <= DR_PAUSE;   else state <= DR_EXIT2;    end if;
+          when DR_EXIT2    => if (tms = '0') then state <= DR_SHIFT;   else state <= DR_UPDATE;   end if;
+          when DR_UPDATE   => if (tms = '0') then state <= RUN_IDLE;   else state <= DR_SCAN;     end if;
+          when IR_SCAN     => if (tms = '0') then state <= IR_CAPTURE; else state <= LOGIC_RESET; end if;
+          when IR_CAPTURE  => if (tms = '0') then state <= IR_SHIFT;   else state <= IR_EXIT1;    end if;
+          when IR_SHIFT    => if (tms = '0') then state <= IR_SHIFT;   else state <= IR_EXIT1;    end if;
+          when IR_EXIT1    => if (tms = '0') then state <= IR_PAUSE;   else state <= IR_UPDATE;   end if;
+          when IR_PAUSE    => if (tms = '0') then state <= IR_PAUSE;   else state <= IR_EXIT2;    end if;
+          when IR_EXIT2    => if (tms = '0') then state <= IR_SHIFT;   else state <= IR_UPDATE;   end if;
+          when IR_UPDATE   => if (tms = '0') then state <= RUN_IDLE;   else state <= DR_SCAN;     end if;
           when others      => state <= LOGIC_RESET;
         end case;
       end if;
@@ -150,7 +147,7 @@ begin
   update_trigger: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      dr_update_sreg <= "00";
+      dr_update_sreg <= (others => '0');
     elsif rising_edge(clk_i) then
       dr_update_sreg(1) <= dr_update_sreg(0);
       if (state = DR_UPDATE) then
@@ -162,7 +159,7 @@ begin
   end process update_trigger;
 
   -- edge detector --
-  dr_update_valid <= '1' when (dr_update_sreg = "01") else '0';
+  dr_update_trig <= '1' when (dr_update_sreg = "01") else '0';
 
 
   -- Tap Register Access --------------------------------------------------------------------
@@ -177,8 +174,8 @@ begin
       -- instruction register input --
       if (state = LOGIC_RESET) or (state = IR_CAPTURE) then -- capture phase
         ireg <= addr_idcode_c;
-      elsif (state = IR_SHIFT) and (tap_sync.tck_rise = '1') then -- access phase; [JTAG-SYNC] evaluate TDI on rising edge of TCK
-        ireg <= tap_sync.tdi & ireg(ireg'left downto 1);
+      elsif (state = IR_SHIFT) and (tck_rise = '1') then -- access phase; [JTAG-SYNC] evaluate TDI on rising edge of TCK
+        ireg <= tdi & ireg(ireg'left downto 1);
       end if;
       -- data register input --
       if (state = DR_CAPTURE) then -- capture phase
@@ -189,11 +186,11 @@ begin
           when addr_dmi_c    => dreg(dreg'left downto dreg'left-(size_dmi_c-1))    <= dmi_ctrl.addr & dmi_ctrl.rdata & dmi_ctrl.err & dmi_ctrl.err;
           when others        => dreg(dreg'left downto dreg'left-(size_bypass_c-1)) <= (others => '0');
         end case;
-      elsif (state = DR_SHIFT) and (tap_sync.tck_rise = '1') then -- access phase; [JTAG-SYNC] evaluate TDI on rising edge of TCK
-        dreg <= tap_sync.tdi & dreg(dreg'left downto 1);
+      elsif (state = DR_SHIFT) and (tck_rise = '1') then -- access phase; [JTAG-SYNC] evaluate TDI on rising edge of TCK
+        dreg <= tdi & dreg(dreg'left downto 1);
       end if;
       -- output --
-      if (tap_sync.tck_fall = '1') then -- [JTAG-SYNC] update TDO on falling edge of TCK
+      if (tck_fall = '1') then -- [JTAG-SYNC] update TDO on falling edge of TCK
         if (state = IR_SHIFT) then
           jtag_tdo_o <= ireg(0);
         elsif (state = DR_SHIFT) then
@@ -220,8 +217,8 @@ begin
   dtmcs(03 downto 00) <= "0001";          -- version: compatible to spec. v0.13 & v1.0
 
   -- reset control --
-  dmihardreset <= '1' when (dr_update_valid = '1') and (ireg = addr_dtmcs_c) and (dreg(17) = '1') else '0';
-  dmireset     <= '1' when (dr_update_valid = '1') and (ireg = addr_dtmcs_c) and (dreg(16) = '1') else '0';
+  dmihardreset <= '1' when (dr_update_trig = '1') and (ireg = addr_dtmcs_c) and (dreg(17) = '1') else '0';
+  dmireset     <= '1' when (dr_update_trig = '1') and (ireg = addr_dtmcs_c) and (dreg(16) = '1') else '0';
 
 
   -- Debug Module Interface -----------------------------------------------------------------
@@ -239,13 +236,13 @@ begin
       -- sticky error --
       if (dmireset = '1') or (dmihardreset = '1') then
         dmi_ctrl.err <= '0';
-      elsif (dmi_ctrl.busy = '1') and (dr_update_valid = '1') and (ireg = addr_dmi_c) then -- access attempt while DMI is busy
+      elsif (dmi_ctrl.busy = '1') and (dr_update_trig = '1') and (ireg = addr_dmi_c) then -- access attempt while DMI is busy
         dmi_ctrl.err <= '1';
       end if;
       -- DMI interface arbiter --
       dmi_ctrl.op <= dmi_req_nop_c; -- default
       if (dmi_ctrl.busy = '0') then -- idle: waiting for new request
-        if (dr_update_valid = '1') and (ireg = addr_dmi_c) then -- valid non-reset access
+        if (dr_update_trig = '1') and (ireg = addr_dmi_c) then -- valid non-reset access
           dmi_ctrl.wdata <= dreg(33 downto 2);
           dmi_ctrl.addr  <= dreg(40 downto 34);
           if (dreg(1 downto 0) = dmi_req_rd_c) or (dreg(1 downto 0) = dmi_req_wr_c) then
