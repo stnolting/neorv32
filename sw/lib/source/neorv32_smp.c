@@ -43,7 +43,7 @@ int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t s
   neorv32_clint_msi_set(1);
 
   // wait for core start acknowledge
-  int timeout = 2048;
+  uint32_t timeout = neorv32_sysinfo_get_clk() >> 8; // enough time for cache misses and bus latency
   while (timeout--) {
     if (neorv32_clint_msi_get(1) == 0) {
       return 0;
