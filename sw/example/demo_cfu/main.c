@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -163,7 +163,7 @@ int main() {
   neorv32_uart0_setup(BAUD_RATE, 0);
 
   // check if the CFU is implemented (the CFU is wrapped in the core's "Zxcfu" ISA extension)
-  if (neorv32_cpu_cfu_available() == 0) {
+  if (neorv32_cfu_available() == 0) {
     neorv32_uart0_printf("ERROR! CFU ('Zxcfu' ISA extension) not implemented!\n");
     return -1;
   }

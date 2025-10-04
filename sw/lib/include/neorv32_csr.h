@@ -7,12 +7,12 @@
 // ================================================================================ //
 
 /**
- * @file neorv32_cpu_csr.h
+ * @file neorv32_csr.h
  * @brief Control and Status Registers (CSR) definitions.
  */
 
-#ifndef NEORV32_CPU_CSR_H
-#define NEORV32_CPU_CSR_H
+#ifndef NEORV32_CSR_H
+#define NEORV32_CSR_H
 
 #include <stdint.h>
 
@@ -422,4 +422,4 @@ enum NEORV32_EXCEPTION_CODES_enum {
 };
 
 
-#endif // NEORV32_CPU_CSR_H
+#endif // NEORV32_CSR_H

@@ -68,8 +68,8 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_cfs.c`     | `neorv32_cfs.h`        | <<_custom_functions_subsystem_cfs>> HAL
 | `neorv32_clint.c`   | `neorv32_clint.h`      | <<_core_local_interruptor_clint>> HAL
 | `neorv32_cpu.c`     | `neorv32_cpu.h`        | <<_neorv32_central_processing_unit_cpu>> HAL
-|                     | `neorv32_cpu_csr.h`    | <<_control_and_status_registers_csrs>> definitions
-| `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | <<_custom_functions_unit_cfu>> HAL
+|                     | `neorv32_csr.h`        | <<_control_and_status_registers_csrs>> definitions
+| `neorv32_cfu.c`     | `neorv32_cfu.h`        | <<_custom_functions_unit_cfu>> HAL
 | `neorv32_dma.c`     | `neorv32_dma.h`        | <<_direct_memory_access_controller_dma>> HAL
 | `neorv32_gpio.c`    | `neorv32_gpio.h`       | <<_general_purpose_input_and_output_port_gpio>> HAL
 | `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | <<_general_purpose_timer_gptmr>> HAL
