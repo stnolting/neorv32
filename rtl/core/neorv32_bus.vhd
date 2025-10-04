@@ -461,8 +461,8 @@ begin
   term_o     <= keeper.state(1); -- terminate pending (external) bus access
 
   -- timeout notifications --
-  assert tmo_int_en_c report "[NEORV32] Internal bus timeout disabled! Can cause permanent CPU stall!" severity warning;
-  assert tmo_ext_en_c report "[NEORV32] External bus timeout disabled! Can cause permanent CPU stall!" severity warning;
+  assert tmo_int_en_c report "[NEORV32] Internal bus timeout disabled! Can cause permanent system stall!" severity warning;
+  assert tmo_ext_en_c report "[NEORV32] External bus timeout disabled! Can cause permanent system stall!" severity warning;
 
 
 end neorv32_bus_gateway_rtl;
@@ -572,24 +572,6 @@ end neorv32_bus_io_switch;
 
 architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
 
-  -- bus register --
-  component neorv32_bus_reg
-  generic (
-    REQ_REG_EN : boolean := false;
-    RSP_REG_EN : boolean := false
-  );
-  port (
-    -- global control --
-    clk_i        : in  std_ulogic;
-    rstn_i       : in  std_ulogic;
-    -- bus ports --
-    host_req_i   : in  bus_req_t;
-    host_rsp_o   : out bus_rsp_t;
-    device_req_o : out bus_req_t;
-    device_rsp_i : in  bus_rsp_t
-  );
-  end component;
-
   -- module configuration --
   constant num_devs_c : natural := 32; -- number of device ports
 
@@ -629,7 +611,7 @@ begin
 
   -- Register Stages ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_bus_reg_inst: neorv32_bus_reg
+  neorv32_bus_reg_inst: entity neorv32.neorv32_bus_reg
   generic map (
     REQ_REG_EN => INREG_EN,
     RSP_REG_EN => OUTREG_EN

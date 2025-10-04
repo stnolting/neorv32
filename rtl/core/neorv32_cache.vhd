@@ -341,7 +341,7 @@ end neorv32_cache_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 SoC - Generic Cache: Data and Status Memory (direct-mapped)              --
+-- NEORV32 SoC - Generic Cache - Data and Status Memory (direct-mapped)             --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
