@@ -158,7 +158,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- request --
   type dmi_req_t is record
-    op   : std_ulogic_vector(1 downto 0);
+    op   : std_ulogic_vector(1 downto 0); -- single-shot
     addr : std_ulogic_vector(6 downto 0);
     data : std_ulogic_vector(31 downto 0);
   end record;
@@ -178,7 +178,7 @@ package neorv32_package is
   -- response --
   type dmi_rsp_t is record
     data : std_ulogic_vector(31 downto 0);
-    ack  : std_ulogic;
+    ack  : std_ulogic; -- single-shot
   end record;
 
   -- endpoint (response) termination --
