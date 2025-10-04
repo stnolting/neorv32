@@ -260,12 +260,13 @@ shows all available data registers and their addresses:
 [options="header",grid="rows"]
 |=======================
 | Bit(s) | Name           | R/W | Description
-| 31:18  | -              | r/- | _reserved_, hardwired to zero
+| 31:21  | -              | r/- | _reserved_, hardwired to zero
+| 20:18  | `errinfo`      | r/- | not implemented; hardwired to zero
 | 17     | `dmihardreset` | r/w | setting this bit will reset the debug module interface; this bit auto-clears
 | 16     | `dmireset`     | r/w | setting this bit will clear the sticky error state; this bit auto-clears
 | 15     | -              | r/- | _reserved_, hardwired to zero
 | 14:12  | `idle`         | r/- | recommended idle states (= 0, no idle states required)
-| 11:10  | `dmistat`      | r/- | DMI status: `00` = no error, `01` = reserved, `10` = operation failed, `11` = failed operation during pending DMI operation
+| 11:10  | `dmistat`      | r/- | read-only alias of `DMI.op`
 | 9:4    | `abits`        | r/- | number of address bits in `DMI` register (= 6)
 | 3:0    | `version`      | r/- | `0001` = DTM is compatible to RISC-V debug spec. versions v0.13 and v1.0
 |=======================
@@ -274,10 +275,10 @@ shows all available data registers and their addresses:
 [cols="^2,^3,^1,<8"]
 [options="header",grid="rows"]
 |=======================
-| Bit(s) | Name           | R/W | Description
-| 40:34  | `address`      | r/w | 7-bit address, see <<_dm_registers>>
-| 33:2   | `data`         | r/w | 32-bit to write/read to/from the addresses DM register
-| 1:0    | `command`      | r/w | 2-bit operation (`00` = NOP; `10` = write; `01` = read)
+| Bit(s) | Name   | R/W | Description
+| 40:34  | `addr` | r/w | 7-bit address, see <<_dm_registers>>
+| 33:2   | `data` | r/w | 32-bit data to write/read to/from the addresses DM register
+| 1:0    | `op`   | r/w | 2-bit operation (`00` = NOP; `10` = write; `01` = read)
 |=======================
 
 
