@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 05.10.2025 | 1.12.3.1 | rework debug module | [#1396](https://github.com/stnolting/neorv32/pull/1396) |
 | 05.10.2025 | [**1.12.3**](https://github.com/stnolting/neorv32/releases/tag/v1.12.3) | :rocket: **New release** | |
 | 04.10.2025 | 1.12.2.9 | minor rtl edits and cleanups | [#1395](https://github.com/stnolting/neorv32/pull/1395) |
 | 04.10.2025 | 1.12.2.8 | :bug: fix broken DTM bypass register; further DTM logic optimization | [#1393](https://github.com/stnolting/neorv32/pull/1393) |
