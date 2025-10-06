@@ -29,7 +29,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 05.10.2025 | 1.12.3.1 | rework debug module | [#1396](https://github.com/stnolting/neorv32/pull/1396) |
+| 06.10.2025 | 1.12.3.2 | :bug: fix `clz` and `ctz` instructions; bug introduced in #1395 (v1.12.2.9) | [#1397](https://github.com/stnolting/neorv32/pull/1397) |
+| 05.10.2025 | 1.12.3.1 | rework debug module (DM) - slightly faster response, less hardware utilization, cleaner code | [#1396](https://github.com/stnolting/neorv32/pull/1396) |
 | 05.10.2025 | [**1.12.3**](https://github.com/stnolting/neorv32/releases/tag/v1.12.3) | :rocket: **New release** | |
 | 04.10.2025 | 1.12.2.9 | minor rtl edits and cleanups | [#1395](https://github.com/stnolting/neorv32/pull/1395) |
 | 04.10.2025 | 1.12.2.8 | :bug: fix broken DTM bypass register; further DTM logic optimization | [#1393](https://github.com/stnolting/neorv32/pull/1393) |
@@ -560,4 +561,4 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 29.06.2022 | 1.7.3.2 | :test_tube: add experimental core complex wrapper for integration into the [**LiteX**](https://github.com/enjoy-digital/litex) SoC builder framework | [#353](https://github.com/stnolting/neorv32/pull/353) |
 | 28.06.2022 | 1.7.3.1 | :bug: fix bug that caused permanent CPU stall if illegal load/store instruction | [#356](https://github.com/stnolting/neorv32/pull/356) |
 | 23.06.2022 | [**1.7.3**](https://github.com/stnolting/neorv32/releases/tag/v1.7.3) | :rocket: **New release** | |
-| ...        | ...     | Changelog trimmed. See [`CHANGELOG.md` in v1.7.3](https://github.com/stnolting/neorv32/blob/v1.7.3/CHANGELOG.md) to see older logs. | ... |
+| ...        | ...     | Changelog trimmed. See [`CHANGELOG.md` in v1.7.3](https://github.com/stnolting/neorv32/blob/v1.7.3/CHANGELOG.md) for older logs. | ... |
