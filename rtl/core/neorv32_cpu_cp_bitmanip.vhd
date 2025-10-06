@@ -59,10 +59,10 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
       if (input(i) = '0') then
         cnt_v := cnt_v + 1;
       else
-        return cnt_v;
+        exit;
       end if;
     end loop;
-    return 0;
+    return cnt_v;
   end function leading_zeros_f;
 
   -- population count (number of set bits) --
