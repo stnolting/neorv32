@@ -27,6 +27,7 @@ entity neorv32_cpu_decompressor is
     instr_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction
     instr_o : out std_ulogic_vector(31 downto 0); -- decompressed instruction
     instr_is_zcmp : out std_ulogic; -- instruction is part of Zcmp extension
+    zcmp_is_push : out std_ulogic;
     zcmp_is_popret : out std_ulogic; -- instruction is popret
     zcmp_is_popretz : out std_ulogic; -- instruction is popretz
     zcmp_is_mvsa01 : out std_ulogic;
@@ -78,6 +79,7 @@ begin
     zcmp_is_popretz <= '0';
     zcmp_is_mvsa01 <= '0';
     zcmp_is_mvsa01s <= '0';
+    zcmp_is_push <= '0';
 
     -- decoder --
     case instr_i(ci_opcode_msb_c downto ci_opcode_lsb_c) is
@@ -381,6 +383,7 @@ begin
             case instr_i(12 downto 8) is
               when "11000" => -- cm.push
                instr_is_zcmp <= '1';
+               zcmp_is_push <= '1';
               when "11010" => -- cm.pop
                instr_is_zcmp <= '1';
               when "11110" => -- cm.popret
