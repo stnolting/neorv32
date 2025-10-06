@@ -9,7 +9,7 @@ or as PDF documents.
 
 .Pre-Built PDFs
 [TIP]
-Pre-rendered PDFs are available online as _nightly pre-releases_: https://github.com/stnolting/neorv32/releases.
+Pre-rendered PDFs are available online as nightly pre-releases: https://github.com/stnolting/neorv32/releases/tag/nightly_release
 The HTML-based documentation is also available online at the project's https://stnolting.github.io/neorv32/[GitHub Page].
 
 The makefile provides a help target to show all available build options and their according outputs.
