@@ -170,7 +170,7 @@ begin
   tdata1_rb2 <= tdata1_rb when (invalid = '0') else (others => '0');
 
   -- trigger info --
-  tinfo_rb <= x"01000006" when (invalid = '0') else (others => '0'); -- Sdtrig version 1.0, type-6 only
+  tinfo_rb <= x"01000040" when (invalid = '0') else x"01000001"; -- Sdtrig version 1.0, type-6 / type-0 only
 
 
   -- Trigger Logic --------------------------------------------------------------------------
