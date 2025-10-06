@@ -110,6 +110,7 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
   -- decompressor signal for Zcmp
   signal instr_is_zcmp : std_ulogic;
+  signal zcmp_is_push : std_ulogic;
   signal zcmp_is_popret : std_ulogic;
   signal zcmp_is_popretz : std_ulogic;
   signal zcmp_is_mvsa01 : std_ulogic;
@@ -257,6 +258,7 @@ begin
         instr_i => cmd16,
         instr_o => cmd32,
         instr_is_zcmp => instr_is_zcmp,
+        zcmp_is_push => zcmp_is_push,
         zcmp_is_popret => zcmp_is_popret,
         zcmp_is_popretz => zcmp_is_popretz,
         zcmp_is_mvsa01 => zcmp_is_mvsa01,
@@ -284,7 +286,7 @@ begin
       end if;
     end process issue_fsm_sync;
 
-    issue_fsm_comb : process (align_q, ipb, cmd32, zcmp_instr_reg, instr_is_zcmp, issue_state_reg, zcmp_in_uop_seq)
+    issue_fsm_comb : process (align_q, fetch, ipb, cmd32, zcmp_instr_reg, instr_is_zcmp, issue_state_reg, zcmp_in_uop_seq)
     begin
       -- defaults --
       align_set <= '0';
@@ -298,6 +300,7 @@ begin
       frontend_bus_issue.compr <= '0';
       frontend_bus_issue.fault <= '0';
 
+      frontend_bus_issue.zcmp_finished <= '0';
       frontend_bus_issue.zcmp_in_uop_seq <= '0';
 
       zcmp_instr_nxt <= zcmp_instr_reg;
@@ -354,7 +357,8 @@ begin
           end if;
         when S_ZCMP =>
 
-          if not zcmp_in_uop_seq = '1' then
+          if zcmp_in_uop_seq = '0' then
+            frontend_bus_issue.zcmp_finished <= '1';
             issue_state_nxt <= S_ISSUE;
             zcmp_instr_nxt <= (others => '0');
             if (align_q = '0') then
@@ -411,7 +415,7 @@ begin
 
       zcmp_lw_instr <= std_ulogic_vector(zcmp_stack_lw_offset) & zcmp_instr_rs1_sp & zcmp_instr_funct3 & zcmp_ls_reg & zcmp_lw_instr_opcode;
 
-      zcmp_instr <= zcmp_sw_instr when zcmp_instr_reg(9) = '0' else
+      zcmp_instr <= zcmp_sw_instr when zcmp_is_push = '1' else
                     zcmp_lw_instr;
 
       zcmp_push_stack_adj_instr <= std_ulogic_vector(-to_signed(zcmp_stack_adj, 12)) &
@@ -426,7 +430,7 @@ begin
                                   zcmp_addi_rs1_sp & -- rd = rs1 = sp 
                                   zcmp_addi_instr_opcode; -- addi 
 
-      zcmp_stack_adj_instr <= zcmp_push_stack_adj_instr when zcmp_instr_reg(9) = '0' else
+      zcmp_stack_adj_instr <= zcmp_push_stack_adj_instr when zcmp_is_push = '1' else
                               zcmp_pop_stack_adj_instr;
 
       zcmp_li_a0_instr <= (31 downto 12 => '0',
@@ -471,6 +475,7 @@ begin
         frontend_bus_zcmp.compr <= '0';
         frontend_bus_zcmp.fault <= '0';
         frontend_bus_zcmp.instr <= (others => '0');
+        frontend_bus_zcmp.zcmp_finished <= '0';
         frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq;
 
         case uop_state_reg is
