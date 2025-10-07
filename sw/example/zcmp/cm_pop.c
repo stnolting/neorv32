@@ -22,16 +22,164 @@ volatile uint32_t test_sp;
 #define n_regs(instr) (rlist(instr) == 0xf ? 13 : rlist(instr) - 3)
 #define spimm(instr) ((instr & 0x0c) >> 2)
 
-
 #define stack_adj(instr) ((                                                         \
 							  n_regs(instr) > 12 ? 0x40 : n_regs(instr) > 8 ? 0x30  \
 													  : n_regs(instr) > 4	? 0x20  \
 																			: 0x10) + \
 						  spimm(instr) * 0x10)
 
-#define test_zcmp_pop(instr_bits, instr_name)                                                           \
+// Test output extracted from spike:
+uint32_t pop_ra_16[14] = {0xa5000008, 0xa5000009, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_16[14] = {0xa5000008, 0xa5000009, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_16[14] = {0xa5000008, 0xa5000009, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_32[14] = {0xa5000008, 0xa5000009, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_32[14] = {0xa5000008, 0xa5000009, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_32[14] = {0xa5000008, 0xa5000009, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_48[14] = {0xa5000008, 0xa5000009, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_48[14] = {0xa5000008, 0xa5000009, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_48[14] = {0xa5000008, 0xa5000009, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_64[14] = {0xa5000008, 0xa5000009, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_64[14] = {0xa5000008, 0xa5000009, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_64[14] = {0xa5000008, 0xa5000009, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ras0_16[14] = {0xdead0003, 0xa5000009, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_16[14] = {0xdead0003, 0xa5000009, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_16[14] = {0xdead0003, 0xa5000009, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_32[14] = {0xdead0007, 0xa5000009, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_32[14] = {0xdead0007, 0xa5000009, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_32[14] = {0xdead0007, 0xa5000009, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_48[14] = {0xdead000b, 0xa5000009, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_48[14] = {0xdead000b, 0xa5000009, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_48[14] = {0xdead000b, 0xa5000009, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_64[14] = {0xdead000f, 0xa5000009, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_64[14] = {0xdead000f, 0xa5000009, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_64[14] = {0xdead000f, 0xa5000009, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s1_16[14] = {0xdead0002, 0xdead0003, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s1_16[14] = {0xdead0002, 0xdead0003, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s1_16[14] = {0xdead0002, 0xdead0003, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s1_32[14] = {0xdead0006, 0xdead0007, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s1_32[14] = {0xdead0006, 0xdead0007, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s1_32[14] = {0xdead0006, 0xdead0007, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s1_48[14] = {0xdead000a, 0xdead000b, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s1_48[14] = {0xdead000a, 0xdead000b, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s1_48[14] = {0xdead000a, 0xdead000b, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s1_64[14] = {0xdead000e, 0xdead000f, 0xa500000a, 0x0000007b, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s1_64[14] = {0xdead000e, 0xdead000f, 0x00000000, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s1_64[14] = {0xdead000e, 0xdead000f, 0xa500000a, 0x000001c8, 0xa5000012, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s2_16[14] = {0xdead0001, 0xdead0002, 0xa500000a, 0x0000007b, 0xdead0003, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s2_16[14] = {0xdead0001, 0xdead0002, 0x00000000, 0x000001c8, 0xdead0003, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s2_16[14] = {0xdead0001, 0xdead0002, 0xa500000a, 0x000001c8, 0xdead0003, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s2_32[14] = {0xdead0005, 0xdead0006, 0xa500000a, 0x0000007b, 0xdead0007, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s2_32[14] = {0xdead0005, 0xdead0006, 0x00000000, 0x000001c8, 0xdead0007, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s2_32[14] = {0xdead0005, 0xdead0006, 0xa500000a, 0x000001c8, 0xdead0007, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s2_48[14] = {0xdead0009, 0xdead000a, 0xa500000a, 0x0000007b, 0xdead000b, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s2_48[14] = {0xdead0009, 0xdead000a, 0x00000000, 0x000001c8, 0xdead000b, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s2_48[14] = {0xdead0009, 0xdead000a, 0xa500000a, 0x000001c8, 0xdead000b, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s2_64[14] = {0xdead000d, 0xdead000e, 0xa500000a, 0x0000007b, 0xdead000f, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s2_64[14] = {0xdead000d, 0xdead000e, 0x00000000, 0x000001c8, 0xdead000f, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s2_64[14] = {0xdead000d, 0xdead000e, 0xa500000a, 0x000001c8, 0xdead000f, 0xa5000013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s3_32[14] = {0xdead0004, 0xdead0005, 0xa500000a, 0x0000007b, 0xdead0006, 0xdead0007, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s3_32[14] = {0xdead0004, 0xdead0005, 0x00000000, 0x000001c8, 0xdead0006, 0xdead0007, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s3_32[14] = {0xdead0004, 0xdead0005, 0xa500000a, 0x000001c8, 0xdead0006, 0xdead0007, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s3_48[14] = {0xdead0008, 0xdead0009, 0xa500000a, 0x0000007b, 0xdead000a, 0xdead000b, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s3_48[14] = {0xdead0008, 0xdead0009, 0x00000000, 0x000001c8, 0xdead000a, 0xdead000b, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s3_48[14] = {0xdead0008, 0xdead0009, 0xa500000a, 0x000001c8, 0xdead000a, 0xdead000b, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s3_64[14] = {0xdead000c, 0xdead000d, 0xa500000a, 0x0000007b, 0xdead000e, 0xdead000f, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s3_64[14] = {0xdead000c, 0xdead000d, 0x00000000, 0x000001c8, 0xdead000e, 0xdead000f, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s3_64[14] = {0xdead000c, 0xdead000d, 0xa500000a, 0x000001c8, 0xdead000e, 0xdead000f, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s3_80[14] = {0xdead0010, 0xdead0011, 0xa500000a, 0x0000007b, 0xdead0012, 0xdead0013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s3_80[14] = {0xdead0010, 0xdead0011, 0x00000000, 0x000001c8, 0xdead0012, 0xdead0013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s3_80[14] = {0xdead0010, 0xdead0011, 0xa500000a, 0x000001c8, 0xdead0012, 0xdead0013, 0xa5000014, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s4_32[14] = {0xdead0003, 0xdead0004, 0xa500000a, 0x0000007b, 0xdead0005, 0xdead0006, 0xdead0007, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s4_32[14] = {0xdead0003, 0xdead0004, 0x00000000, 0x000001c8, 0xdead0005, 0xdead0006, 0xdead0007, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s4_32[14] = {0xdead0003, 0xdead0004, 0xa500000a, 0x000001c8, 0xdead0005, 0xdead0006, 0xdead0007, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s4_48[14] = {0xdead0007, 0xdead0008, 0xa500000a, 0x0000007b, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s4_48[14] = {0xdead0007, 0xdead0008, 0x00000000, 0x000001c8, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s4_48[14] = {0xdead0007, 0xdead0008, 0xa500000a, 0x000001c8, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s4_64[14] = {0xdead000b, 0xdead000c, 0xa500000a, 0x0000007b, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s4_64[14] = {0xdead000b, 0xdead000c, 0x00000000, 0x000001c8, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s4_64[14] = {0xdead000b, 0xdead000c, 0xa500000a, 0x000001c8, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s4_80[14] = {0xdead000f, 0xdead0010, 0xa500000a, 0x0000007b, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s4_80[14] = {0xdead000f, 0xdead0010, 0x00000000, 0x000001c8, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s4_80[14] = {0xdead000f, 0xdead0010, 0xa500000a, 0x000001c8, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000015, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s5_32[14] = {0xdead0002, 0xdead0003, 0xa500000a, 0x0000007b, 0xdead0004, 0xdead0005, 0xdead0006, 0xdead0007, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s5_32[14] = {0xdead0002, 0xdead0003, 0x00000000, 0x000001c8, 0xdead0004, 0xdead0005, 0xdead0006, 0xdead0007, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s5_32[14] = {0xdead0002, 0xdead0003, 0xa500000a, 0x000001c8, 0xdead0004, 0xdead0005, 0xdead0006, 0xdead0007, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s5_48[14] = {0xdead0006, 0xdead0007, 0xa500000a, 0x0000007b, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s5_48[14] = {0xdead0006, 0xdead0007, 0x00000000, 0x000001c8, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s5_48[14] = {0xdead0006, 0xdead0007, 0xa500000a, 0x000001c8, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s5_64[14] = {0xdead000a, 0xdead000b, 0xa500000a, 0x0000007b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s5_64[14] = {0xdead000a, 0xdead000b, 0x00000000, 0x000001c8, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s5_64[14] = {0xdead000a, 0xdead000b, 0xa500000a, 0x000001c8, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s5_80[14] = {0xdead000e, 0xdead000f, 0xa500000a, 0x0000007b, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s5_80[14] = {0xdead000e, 0xdead000f, 0x00000000, 0x000001c8, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s5_80[14] = {0xdead000e, 0xdead000f, 0xa500000a, 0x000001c8, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000016, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s6_32[14] = {0xdead0001, 0xdead0002, 0xa500000a, 0x0000007b, 0xdead0003, 0xdead0004, 0xdead0005, 0xdead0006, 0xdead0007, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s6_32[14] = {0xdead0001, 0xdead0002, 0x00000000, 0x000001c8, 0xdead0003, 0xdead0004, 0xdead0005, 0xdead0006, 0xdead0007, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s6_32[14] = {0xdead0001, 0xdead0002, 0xa500000a, 0x000001c8, 0xdead0003, 0xdead0004, 0xdead0005, 0xdead0006, 0xdead0007, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s6_48[14] = {0xdead0005, 0xdead0006, 0xa500000a, 0x0000007b, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s6_48[14] = {0xdead0005, 0xdead0006, 0x00000000, 0x000001c8, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s6_48[14] = {0xdead0005, 0xdead0006, 0xa500000a, 0x000001c8, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s6_64[14] = {0xdead0009, 0xdead000a, 0xa500000a, 0x0000007b, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s6_64[14] = {0xdead0009, 0xdead000a, 0x00000000, 0x000001c8, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s6_64[14] = {0xdead0009, 0xdead000a, 0xa500000a, 0x000001c8, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s6_80[14] = {0xdead000d, 0xdead000e, 0xa500000a, 0x0000007b, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s6_80[14] = {0xdead000d, 0xdead000e, 0x00000000, 0x000001c8, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s6_80[14] = {0xdead000d, 0xdead000e, 0xa500000a, 0x000001c8, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s7_48[14] = {0xdead0004, 0xdead0005, 0xa500000a, 0x0000007b, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s7_48[14] = {0xdead0004, 0xdead0005, 0x00000000, 0x000001c8, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s7_48[14] = {0xdead0004, 0xdead0005, 0xa500000a, 0x000001c8, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s7_64[14] = {0xdead0008, 0xdead0009, 0xa500000a, 0x0000007b, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s7_64[14] = {0xdead0008, 0xdead0009, 0x00000000, 0x000001c8, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s7_64[14] = {0xdead0008, 0xdead0009, 0xa500000a, 0x000001c8, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s7_80[14] = {0xdead000c, 0xdead000d, 0xa500000a, 0x0000007b, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s7_80[14] = {0xdead000c, 0xdead000d, 0x00000000, 0x000001c8, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s7_80[14] = {0xdead000c, 0xdead000d, 0xa500000a, 0x000001c8, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s7_96[14] = {0xdead0010, 0xdead0011, 0xa500000a, 0x0000007b, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s7_96[14] = {0xdead0010, 0xdead0011, 0x00000000, 0x000001c8, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s7_96[14] = {0xdead0010, 0xdead0011, 0xa500000a, 0x000001c8, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xa5000018, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s8_48[14] = {0xdead0003, 0xdead0004, 0xa500000a, 0x0000007b, 0xdead0005, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s8_48[14] = {0xdead0003, 0xdead0004, 0x00000000, 0x000001c8, 0xdead0005, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s8_48[14] = {0xdead0003, 0xdead0004, 0xa500000a, 0x000001c8, 0xdead0005, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s8_64[14] = {0xdead0007, 0xdead0008, 0xa500000a, 0x0000007b, 0xdead0009, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s8_64[14] = {0xdead0007, 0xdead0008, 0x00000000, 0x000001c8, 0xdead0009, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s8_64[14] = {0xdead0007, 0xdead0008, 0xa500000a, 0x000001c8, 0xdead0009, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s8_80[14] = {0xdead000b, 0xdead000c, 0xa500000a, 0x0000007b, 0xdead000d, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s8_80[14] = {0xdead000b, 0xdead000c, 0x00000000, 0x000001c8, 0xdead000d, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s8_80[14] = {0xdead000b, 0xdead000c, 0xa500000a, 0x000001c8, 0xdead000d, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s8_96[14] = {0xdead000f, 0xdead0010, 0xa500000a, 0x0000007b, 0xdead0011, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s8_96[14] = {0xdead000f, 0xdead0010, 0x00000000, 0x000001c8, 0xdead0011, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s8_96[14] = {0xdead000f, 0xdead0010, 0xa500000a, 0x000001c8, 0xdead0011, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xa5000019, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s9_48[14] = {0xdead0002, 0xdead0003, 0xa500000a, 0x0000007b, 0xdead0004, 0xdead0005, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s9_48[14] = {0xdead0002, 0xdead0003, 0x00000000, 0x000001c8, 0xdead0004, 0xdead0005, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s9_48[14] = {0xdead0002, 0xdead0003, 0xa500000a, 0x000001c8, 0xdead0004, 0xdead0005, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s9_64[14] = {0xdead0006, 0xdead0007, 0xa500000a, 0x0000007b, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s9_64[14] = {0xdead0006, 0xdead0007, 0x00000000, 0x000001c8, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s9_64[14] = {0xdead0006, 0xdead0007, 0xa500000a, 0x000001c8, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s9_80[14] = {0xdead000a, 0xdead000b, 0xa500000a, 0x0000007b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s9_80[14] = {0xdead000a, 0xdead000b, 0x00000000, 0x000001c8, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s9_80[14] = {0xdead000a, 0xdead000b, 0xa500000a, 0x000001c8, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s9_96[14] = {0xdead000e, 0xdead000f, 0xa500000a, 0x0000007b, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xa500001a, 0xa500001b};
+uint32_t popretz_ra_s0_s9_96[14] = {0xdead000e, 0xdead000f, 0x00000000, 0x000001c8, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xa500001a, 0xa500001b};
+uint32_t popret_ra_s0_s9_96[14] = {0xdead000e, 0xdead000f, 0xa500000a, 0x000001c8, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xa500001a, 0xa500001b};
+uint32_t pop_ra_s0_s11_64[14] = {0xdead0004, 0xdead0005, 0xa500000a, 0x0000007b, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f};
+uint32_t popretz_ra_s0_s11_64[14] = {0xdead0004, 0xdead0005, 0x00000000, 0x000001c8, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f};
+uint32_t popret_ra_s0_s11_64[14] = {0xdead0004, 0xdead0005, 0xa500000a, 0x000001c8, 0xdead0006, 0xdead0007, 0xdead0008, 0xdead0009, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f};
+uint32_t pop_ra_s0_s11_80[14] = {0xdead0008, 0xdead0009, 0xa500000a, 0x0000007b, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013};
+uint32_t popretz_ra_s0_s11_80[14] = {0xdead0008, 0xdead0009, 0x00000000, 0x000001c8, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013};
+uint32_t popret_ra_s0_s11_80[14] = {0xdead0008, 0xdead0009, 0xa500000a, 0x000001c8, 0xdead000a, 0xdead000b, 0xdead000c, 0xdead000d, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013};
+uint32_t pop_ra_s0_s11_96[14] = {0xdead000c, 0xdead000d, 0xa500000a, 0x0000007b, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017};
+uint32_t popretz_ra_s0_s11_96[14] = {0xdead000c, 0xdead000d, 0x00000000, 0x000001c8, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017};
+uint32_t popret_ra_s0_s11_96[14] = {0xdead000c, 0xdead000d, 0xa500000a, 0x000001c8, 0xdead000e, 0xdead000f, 0xdead0010, 0xdead0011, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017};
+uint32_t pop_ra_s0_s11_112[14] = {0xdead0010, 0xdead0011, 0xa500000a, 0x0000007b, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xdead0018, 0xdead0019, 0xdead001a, 0xdead001b};
+uint32_t popretz_ra_s0_s11_112[14] = {0xdead0010, 0xdead0011, 0x00000000, 0x000001c8, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xdead0018, 0xdead0019, 0xdead001a, 0xdead001b};
+uint32_t popret_ra_s0_s11_112[14] = {0xdead0010, 0xdead0011, 0xa500000a, 0x000001c8, 0xdead0012, 0xdead0013, 0xdead0014, 0xdead0015, 0xdead0016, 0xdead0017, 0xdead0018, 0xdead0019, 0xdead001a, 0xdead001b};
+
+uint8_t local_result_pop = 0;
+uint8_t global_result_pop = 0;
+
+#define test_zcmp_pop(instr_bits, instr_name, arr)                                                      \
 	test_sp = (uint32_t)&test_frame[0];                                                                 \
-	neorv32_uart0_printf("Test: " instr_name "\n");                                                     \
+	neorv32_uart0_printf(instr_name);                                                                   \
 	for (int i = 0; i < FRAME_SIZE_WORDS; ++i)                                                          \
 		test_frame[i] = 0xdead0000 + i;                                                                 \
 	asm volatile(/* Save all clobbered registers on the real stack */                                   \
@@ -118,217 +266,170 @@ volatile uint32_t test_sp;
 				 "lw s11, 60(sp)\n"                                                                     \
 				 "addi sp, sp, 64\n"                                                                    \
 				 : : "i"(stack_adj(instr_bits) - 4 * n_regs(instr_bits)));                              \
-	neorv32_uart0_printf("SP diff: %x\n", (uint32_t)test_sp - (uint32_t)&test_frame[0]);              \
-	neorv32_uart0_printf("s0:  %x\n", test_results[1]);                                                  \
-	neorv32_uart0_printf("s1:  %x\n", test_results[2]);                                                  \
-	neorv32_uart0_printf("a0:  %x\n", test_results[3]);                                                  \
-	neorv32_uart0_printf("s2:  %x\n", test_results[5]);                                                  \
-	neorv32_uart0_printf("s3:  %x\n", test_results[6]);                                                  \
-	neorv32_uart0_printf("s4:  %x\n", test_results[7]);                                                  \
-	neorv32_uart0_printf("s5:  %x\n", test_results[8]);                                                  \
-	neorv32_uart0_printf("s6:  %x\n", test_results[9]);                                                  \
-	neorv32_uart0_printf("s7:  %x\n", test_results[10]);                                                 \
-	neorv32_uart0_printf("s8:  %x\n", test_results[11]);                                                 \
-	neorv32_uart0_printf("s9:  %x\n", test_results[12]);                                                 \
-	neorv32_uart0_printf("s10: %x\n", test_results[13]);                                                \
-	neorv32_uart0_printf("s11: %x\n", test_results[14]);                                                \
-	neorv32_uart0_printf("\n");
+	for (int i = 1; i < 14; i++)                                                                        \
+	{                                                                                                   \
+		if (test_results[i] != arr[i - 1])                                                              \
+		{                                                                                               \
+			local_result_pop = 1;                                                                       \
+			global_result_pop = 1;                                                                      \
+		}                                                                                               \
+	}                                                                                                   \
+	if (local_result_pop == 0)                                                                          \
+	{                                                                                                   \
+		neorv32_uart0_printf(" - OK\n");                                                                \
+	}                                                                                                   \
+	else                                                                                                \
+	{                                                                                                   \
+		neorv32_uart0_printf(" - FAIL\n");                                                              \
+	}
 
 int cm_pop()
 {
 
-
-	test_zcmp_pop(0xba42, "cm.pop     {ra},16");
-	test_zcmp_pop(0xbc42, "cm.popretz {ra},16");
-	test_zcmp_pop(0xbe42, "cm.popret  {ra},16");
-
-	test_zcmp_pop(0xba46, "cm.pop     {ra},32");
-	test_zcmp_pop(0xbc46, "cm.popretz {ra},32");
-	test_zcmp_pop(0xbe46, "cm.popret  {ra},32");
-
-	test_zcmp_pop(0xba4a, "cm.pop     {ra},48");
-	test_zcmp_pop(0xbc4a, "cm.popretz {ra},48");
-	test_zcmp_pop(0xbe4a, "cm.popret  {ra},48");
-
-	test_zcmp_pop(0xba4e, "cm.pop     {ra},64");
-	test_zcmp_pop(0xbc4e, "cm.popretz {ra},64");
-	test_zcmp_pop(0xbe4e, "cm.popret  {ra},64");
-
-	test_zcmp_pop(0xba52, "cm.pop     {ra,s0},16");
-	test_zcmp_pop(0xbc52, "cm.popretz {ra,s0},16");
-	test_zcmp_pop(0xbe52, "cm.popret  {ra,s0},16");
-
-	test_zcmp_pop(0xba56, "cm.pop     {ra,s0},32");
-	test_zcmp_pop(0xbc56, "cm.popretz {ra,s0},32");
-	test_zcmp_pop(0xbe56, "cm.popret  {ra,s0},32");
-
-	test_zcmp_pop(0xba5a, "cm.pop     {ra,s0},48");
-	test_zcmp_pop(0xbc5a, "cm.popretz {ra,s0},48");
-	test_zcmp_pop(0xbe5a, "cm.popret  {ra,s0},48");
-
-	test_zcmp_pop(0xba5e, "cm.pop     {ra,s0},64");
-	test_zcmp_pop(0xbc5e, "cm.popretz {ra,s0},64");
-	test_zcmp_pop(0xbe5e, "cm.popret  {ra,s0},64");
-
-	test_zcmp_pop(0xba62, "cm.pop     {ra,s0-s1},16");
-	test_zcmp_pop(0xbc62, "cm.popretz {ra,s0-s1},16");
-	test_zcmp_pop(0xbe62, "cm.popret  {ra,s0-s1},16");
-
-	test_zcmp_pop(0xba66, "cm.pop     {ra,s0-s1},32");
-	test_zcmp_pop(0xbc66, "cm.popretz {ra,s0-s1},32");
-	test_zcmp_pop(0xbe66, "cm.popret  {ra,s0-s1},32");
-
-	test_zcmp_pop(0xba6a, "cm.pop     {ra,s0-s1},48");
-	test_zcmp_pop(0xbc6a, "cm.popretz {ra,s0-s1},48");
-	test_zcmp_pop(0xbe6a, "cm.popret  {ra,s0-s1},48");
-
-	test_zcmp_pop(0xba6e, "cm.pop     {ra,s0-s1},64");
-	test_zcmp_pop(0xbc6e, "cm.popretz {ra,s0-s1},64");
-	test_zcmp_pop(0xbe6e, "cm.popret  {ra,s0-s1},64");
-
-	test_zcmp_pop(0xba72, "cm.pop     {ra,s0-s2},16");
-	test_zcmp_pop(0xbc72, "cm.popretz {ra,s0-s2},16");
-	test_zcmp_pop(0xbe72, "cm.popret  {ra,s0-s2},16");
-
-	test_zcmp_pop(0xba76, "cm.pop     {ra,s0-s2},32");
-	test_zcmp_pop(0xbc76, "cm.popretz {ra,s0-s2},32");
-	test_zcmp_pop(0xbe76, "cm.popret  {ra,s0-s2},32");
-
-	test_zcmp_pop(0xba7a, "cm.pop     {ra,s0-s2},48");
-	test_zcmp_pop(0xbc7a, "cm.popretz {ra,s0-s2},48");
-	test_zcmp_pop(0xbe7a, "cm.popret  {ra,s0-s2},48");
-
-	test_zcmp_pop(0xba7e, "cm.pop     {ra,s0-s2},64");
-	test_zcmp_pop(0xbc7e, "cm.popretz {ra,s0-s2},64");
-	test_zcmp_pop(0xbe7e, "cm.popret  {ra,s0-s2},64");
-
-	test_zcmp_pop(0xba82, "cm.pop     {ra,s0-s3},32");
-	test_zcmp_pop(0xbc82, "cm.popretz {ra,s0-s3},32");
-	test_zcmp_pop(0xbe82, "cm.popret  {ra,s0-s3},32");
-
-	test_zcmp_pop(0xba86, "cm.pop     {ra,s0-s3},48");
-	test_zcmp_pop(0xbc86, "cm.popretz {ra,s0-s3},48");
-	test_zcmp_pop(0xbe86, "cm.popret  {ra,s0-s3},48");
-
-	test_zcmp_pop(0xba8a, "cm.pop     {ra,s0-s3},64");
-	test_zcmp_pop(0xbc8a, "cm.popretz {ra,s0-s3},64");
-	test_zcmp_pop(0xbe8a, "cm.popret  {ra,s0-s3},64");
-
-	test_zcmp_pop(0xba8e, "cm.pop     {ra,s0-s3},80");
-	test_zcmp_pop(0xbc8e, "cm.popretz {ra,s0-s3},80");
-	test_zcmp_pop(0xbe8e, "cm.popret  {ra,s0-s3},80");
-
-	test_zcmp_pop(0xba92, "cm.pop     {ra,s0-s4},32");
-	test_zcmp_pop(0xbc92, "cm.popretz {ra,s0-s4},32");
-	test_zcmp_pop(0xbe92, "cm.popret  {ra,s0-s4},32");
-
-	test_zcmp_pop(0xba96, "cm.pop     {ra,s0-s4},48");
-	test_zcmp_pop(0xbc96, "cm.popretz {ra,s0-s4},48");
-	test_zcmp_pop(0xbe96, "cm.popret  {ra,s0-s4},48");
-
-	test_zcmp_pop(0xba9a, "cm.pop     {ra,s0-s4},64");
-	test_zcmp_pop(0xbc9a, "cm.popretz {ra,s0-s4},64");
-	test_zcmp_pop(0xbe9a, "cm.popret  {ra,s0-s4},64");
-
-	test_zcmp_pop(0xba9e, "cm.pop     {ra,s0-s4},80");
-	test_zcmp_pop(0xbc9e, "cm.popretz {ra,s0-s4},80");
-	test_zcmp_pop(0xbe9e, "cm.popret  {ra,s0-s4},80");
-
-	test_zcmp_pop(0xbaa2, "cm.pop     {ra,s0-s5},32");
-	test_zcmp_pop(0xbca2, "cm.popretz {ra,s0-s5},32");
-	test_zcmp_pop(0xbea2, "cm.popret  {ra,s0-s5},32");
-
-	test_zcmp_pop(0xbaa6, "cm.pop     {ra,s0-s5},48");
-	test_zcmp_pop(0xbca6, "cm.popretz {ra,s0-s5},48");
-	test_zcmp_pop(0xbea6, "cm.popret  {ra,s0-s5},48");
-
-	test_zcmp_pop(0xbaaa, "cm.pop     {ra,s0-s5},64");
-	test_zcmp_pop(0xbcaa, "cm.popretz {ra,s0-s5},64");
-	test_zcmp_pop(0xbeaa, "cm.popret  {ra,s0-s5},64");
-
-	test_zcmp_pop(0xbaae, "cm.pop     {ra,s0-s5},80");
-	test_zcmp_pop(0xbcae, "cm.popretz {ra,s0-s5},80");
-	test_zcmp_pop(0xbeae, "cm.popret  {ra,s0-s5},80");
-
-	test_zcmp_pop(0xbab2, "cm.pop     {ra,s0-s6},32");
-	test_zcmp_pop(0xbcb2, "cm.popretz {ra,s0-s6},32");
-	test_zcmp_pop(0xbeb2, "cm.popret  {ra,s0-s6},32");
-
-	test_zcmp_pop(0xbab6, "cm.pop     {ra,s0-s6},48");
-	test_zcmp_pop(0xbcb6, "cm.popretz {ra,s0-s6},48");
-	test_zcmp_pop(0xbeb6, "cm.popret  {ra,s0-s6},48");
-
-	test_zcmp_pop(0xbaba, "cm.pop     {ra,s0-s6},64");
-	test_zcmp_pop(0xbcba, "cm.popretz {ra,s0-s6},64");
-	test_zcmp_pop(0xbeba, "cm.popret  {ra,s0-s6},64");
-
-	test_zcmp_pop(0xbabe, "cm.pop     {ra,s0-s6},80");
-	test_zcmp_pop(0xbcbe, "cm.popretz {ra,s0-s6},80");
-	test_zcmp_pop(0xbebe, "cm.popret  {ra,s0-s6},80");
-
-	test_zcmp_pop(0xbac2, "cm.pop     {ra,s0-s7},48");
-	test_zcmp_pop(0xbcc2, "cm.popretz {ra,s0-s7},48");
-	test_zcmp_pop(0xbec2, "cm.popret  {ra,s0-s7},48");
-
-	test_zcmp_pop(0xbac6, "cm.pop     {ra,s0-s7},64");
-	test_zcmp_pop(0xbcc6, "cm.popretz {ra,s0-s7},64");
-	test_zcmp_pop(0xbec6, "cm.popret  {ra,s0-s7},64");
-
-	test_zcmp_pop(0xbaca, "cm.pop     {ra,s0-s7},80");
-	test_zcmp_pop(0xbcca, "cm.popretz {ra,s0-s7},80");
-	test_zcmp_pop(0xbeca, "cm.popret  {ra,s0-s7},80");
-
-	test_zcmp_pop(0xbace, "cm.pop     {ra,s0-s7},96");
-	test_zcmp_pop(0xbcce, "cm.popretz {ra,s0-s7},96");
-	test_zcmp_pop(0xbece, "cm.popret  {ra,s0-s7},96");
-
-	test_zcmp_pop(0xbad2, "cm.pop     {ra,s0-s8},48");
-	test_zcmp_pop(0xbcd2, "cm.popretz {ra,s0-s8},48");
-	test_zcmp_pop(0xbed2, "cm.popret  {ra,s0-s8},48");
-
-	test_zcmp_pop(0xbad6, "cm.pop     {ra,s0-s8},64");
-	test_zcmp_pop(0xbcd6, "cm.popretz {ra,s0-s8},64");
-	test_zcmp_pop(0xbed6, "cm.popret  {ra,s0-s8},64");
-
-	test_zcmp_pop(0xbada, "cm.pop     {ra,s0-s8},80");
-	test_zcmp_pop(0xbcda, "cm.popretz {ra,s0-s8},80");
-	test_zcmp_pop(0xbeda, "cm.popret  {ra,s0-s8},80");
-
-	test_zcmp_pop(0xbade, "cm.pop     {ra,s0-s8},96");
-	test_zcmp_pop(0xbcde, "cm.popretz {ra,s0-s8},96");
-	test_zcmp_pop(0xbede, "cm.popret  {ra,s0-s8},96");
-
-	test_zcmp_pop(0xbae2, "cm.pop     {ra,s0-s9},48");
-	test_zcmp_pop(0xbce2, "cm.popretz {ra,s0-s9},48");
-	test_zcmp_pop(0xbee2, "cm.popret  {ra,s0-s9},48");
-
-	test_zcmp_pop(0xbae6, "cm.pop     {ra,s0-s9},64");
-	test_zcmp_pop(0xbce6, "cm.popretz {ra,s0-s9},64");
-	test_zcmp_pop(0xbee6, "cm.popret  {ra,s0-s9},64");
-
-	test_zcmp_pop(0xbaea, "cm.pop     {ra,s0-s9},80");
-	test_zcmp_pop(0xbcea, "cm.popretz {ra,s0-s9},80");
-	test_zcmp_pop(0xbeea, "cm.popret  {ra,s0-s9},80");
-
-	test_zcmp_pop(0xbaee, "cm.pop     {ra,s0-s9},96");
-	test_zcmp_pop(0xbcee, "cm.popretz {ra,s0-s9},96");
-	test_zcmp_pop(0xbeee, "cm.popret  {ra,s0-s9},96");
-
-	test_zcmp_pop(0xbaf2, "cm.pop     {ra,s0-s11},64");
-	test_zcmp_pop(0xbcf2, "cm.popretz {ra,s0-s11},64");
-	test_zcmp_pop(0xbef2, "cm.popret  {ra,s0-s11},64");
-
-	test_zcmp_pop(0xbaf6, "cm.pop     {ra,s0-s11},80");
-	test_zcmp_pop(0xbcf6, "cm.popretz {ra,s0-s11},80");
-	test_zcmp_pop(0xbef6, "cm.popret  {ra,s0-s11},80");
-
-	test_zcmp_pop(0xbafa, "cm.pop     {ra,s0-s11},96");
-	test_zcmp_pop(0xbcfa, "cm.popretz {ra,s0-s11},96");
-	test_zcmp_pop(0xbefa, "cm.popret  {ra,s0-s11},96");
-
-	test_zcmp_pop(0xbafe, "cm.pop     {ra,s0-s11},112");
-	test_zcmp_pop(0xbcfe, "cm.popretz {ra,s0-s11},112");
-	test_zcmp_pop(0xbefe, "cm.popret  {ra,s0-s11},112");
+	test_zcmp_pop(0xba42, "cm.pop     {ra},16", pop_ra_16);
+	test_zcmp_pop(0xbc42, "cm.popretz {ra},16", popretz_ra_16);
+	test_zcmp_pop(0xbe42, "cm.popret  {ra},16", popret_ra_16);
+	test_zcmp_pop(0xba46, "cm.pop     {ra},32", pop_ra_32);
+	test_zcmp_pop(0xbc46, "cm.popretz {ra},32", popretz_ra_32);
+	test_zcmp_pop(0xbe46, "cm.popret  {ra},32", popret_ra_32);
+	test_zcmp_pop(0xba4a, "cm.pop     {ra},48", pop_ra_48);
+	test_zcmp_pop(0xbc4a, "cm.popretz {ra},48", popretz_ra_48);
+	test_zcmp_pop(0xbe4a, "cm.popret  {ra},48", popret_ra_48);
+	test_zcmp_pop(0xba4e, "cm.pop     {ra},64", pop_ra_64);
+	test_zcmp_pop(0xbc4e, "cm.popretz {ra},64", popretz_ra_64);
+	test_zcmp_pop(0xbe4e, "cm.popret  {ra},64", popret_ra_64);
+	test_zcmp_pop(0xba52, "cm.pop     {ra,s0},16", pop_ras0_16);
+	test_zcmp_pop(0xbc52, "cm.popretz {ra,s0},16", popretz_ra_s0_16);
+	test_zcmp_pop(0xbe52, "cm.popret  {ra,s0},16", popret_ra_s0_16);
+	test_zcmp_pop(0xba56, "cm.pop     {ra,s0},32", pop_ra_s0_32);
+	test_zcmp_pop(0xbc56, "cm.popretz {ra,s0},32", popretz_ra_s0_32);
+	test_zcmp_pop(0xbe56, "cm.popret  {ra,s0},32", popret_ra_s0_32);
+	test_zcmp_pop(0xba5a, "cm.pop     {ra,s0},48", pop_ra_s0_48);
+	test_zcmp_pop(0xbc5a, "cm.popretz {ra,s0},48", popretz_ra_s0_48);
+	test_zcmp_pop(0xbe5a, "cm.popret  {ra,s0},48", popret_ra_s0_48);
+	test_zcmp_pop(0xba5e, "cm.pop     {ra,s0},64", pop_ra_s0_64);
+	test_zcmp_pop(0xbc5e, "cm.popretz {ra,s0},64", popretz_ra_s0_64);
+	test_zcmp_pop(0xbe5e, "cm.popret  {ra,s0},64", popret_ra_s0_64);
+	test_zcmp_pop(0xba62, "cm.pop     {ra,s0-s1},16", pop_ra_s0_s1_16);
+	test_zcmp_pop(0xbc62, "cm.popretz {ra,s0-s1},16", popretz_ra_s0_s1_16);
+	test_zcmp_pop(0xbe62, "cm.popret  {ra,s0-s1},16", popret_ra_s0_s1_16);
+	test_zcmp_pop(0xba66, "cm.pop     {ra,s0-s1},32", pop_ra_s0_s1_32);
+	test_zcmp_pop(0xbc66, "cm.popretz {ra,s0-s1},32", popretz_ra_s0_s1_32);
+	test_zcmp_pop(0xbe66, "cm.popret  {ra,s0-s1},32", popret_ra_s0_s1_32);
+	test_zcmp_pop(0xba6a, "cm.pop     {ra,s0-s1},48", pop_ra_s0_s1_48);
+	test_zcmp_pop(0xbc6a, "cm.popretz {ra,s0-s1},48", popretz_ra_s0_s1_48);
+	test_zcmp_pop(0xbe6a, "cm.popret  {ra,s0-s1},48", popret_ra_s0_s1_48);
+	test_zcmp_pop(0xba6e, "cm.pop     {ra,s0-s1},64", pop_ra_s0_s1_64);
+	test_zcmp_pop(0xbc6e, "cm.popretz {ra,s0-s1},64", popretz_ra_s0_s1_64);
+	test_zcmp_pop(0xbe6e, "cm.popret  {ra,s0-s1},64", popret_ra_s0_s1_64);
+	test_zcmp_pop(0xba72, "cm.pop     {ra,s0-s2},16", pop_ra_s0_s2_16);
+	test_zcmp_pop(0xbc72, "cm.popretz {ra,s0-s2},16", popretz_ra_s0_s2_16);
+	test_zcmp_pop(0xbe72, "cm.popret  {ra,s0-s2},16", popret_ra_s0_s2_16);
+	test_zcmp_pop(0xba76, "cm.pop     {ra,s0-s2},32", pop_ra_s0_s2_32);
+	test_zcmp_pop(0xbc76, "cm.popretz {ra,s0-s2},32", popretz_ra_s0_s2_32);
+	test_zcmp_pop(0xbe76, "cm.popret  {ra,s0-s2},32", popret_ra_s0_s2_32);
+	test_zcmp_pop(0xba7a, "cm.pop     {ra,s0-s2},48", pop_ra_s0_s2_48);
+	test_zcmp_pop(0xbc7a, "cm.popretz {ra,s0-s2},48", popretz_ra_s0_s2_48);
+	test_zcmp_pop(0xbe7a, "cm.popret  {ra,s0-s2},48", popret_ra_s0_s2_48);
+	test_zcmp_pop(0xba7e, "cm.pop     {ra,s0-s2},64", pop_ra_s0_s2_64);
+	test_zcmp_pop(0xbc7e, "cm.popretz {ra,s0-s2},64", popretz_ra_s0_s2_64);
+	test_zcmp_pop(0xbe7e, "cm.popret  {ra,s0-s2},64", popret_ra_s0_s2_64);
+	test_zcmp_pop(0xba82, "cm.pop     {ra,s0-s3},32", pop_ra_s0_s3_32);
+	test_zcmp_pop(0xbc82, "cm.popretz {ra,s0-s3},32", popretz_ra_s0_s3_32);
+	test_zcmp_pop(0xbe82, "cm.popret  {ra,s0-s3},32", popret_ra_s0_s3_32);
+	test_zcmp_pop(0xba86, "cm.pop     {ra,s0-s3},48", pop_ra_s0_s3_48);
+	test_zcmp_pop(0xbc86, "cm.popretz {ra,s0-s3},48", popretz_ra_s0_s3_48);
+	test_zcmp_pop(0xbe86, "cm.popret  {ra,s0-s3},48", popret_ra_s0_s3_48);
+	test_zcmp_pop(0xba8a, "cm.pop     {ra,s0-s3},64", pop_ra_s0_s3_64);
+	test_zcmp_pop(0xbc8a, "cm.popretz {ra,s0-s3},64", popretz_ra_s0_s3_64);
+	test_zcmp_pop(0xbe8a, "cm.popret  {ra,s0-s3},64", popret_ra_s0_s3_64);
+	test_zcmp_pop(0xba8e, "cm.pop     {ra,s0-s3},80", pop_ra_s0_s3_80);
+	test_zcmp_pop(0xbc8e, "cm.popretz {ra,s0-s3},80", popretz_ra_s0_s3_80);
+	test_zcmp_pop(0xbe8e, "cm.popret  {ra,s0-s3},80", popret_ra_s0_s3_80);
+	test_zcmp_pop(0xba92, "cm.pop     {ra,s0-s4},32", pop_ra_s0_s4_32);
+	test_zcmp_pop(0xbc92, "cm.popretz {ra,s0-s4},32", popretz_ra_s0_s4_32);
+	test_zcmp_pop(0xbe92, "cm.popret  {ra,s0-s4},32", popret_ra_s0_s4_32);
+	test_zcmp_pop(0xba96, "cm.pop     {ra,s0-s4},48", pop_ra_s0_s4_48);
+	test_zcmp_pop(0xbc96, "cm.popretz {ra,s0-s4},48", popretz_ra_s0_s4_48);
+	test_zcmp_pop(0xbe96, "cm.popret  {ra,s0-s4},48", popret_ra_s0_s4_48);
+	test_zcmp_pop(0xba9a, "cm.pop     {ra,s0-s4},64", pop_ra_s0_s4_64);
+	test_zcmp_pop(0xbc9a, "cm.popretz {ra,s0-s4},64", popretz_ra_s0_s4_64);
+	test_zcmp_pop(0xbe9a, "cm.popret  {ra,s0-s4},64", popret_ra_s0_s4_64);
+	test_zcmp_pop(0xba9e, "cm.pop     {ra,s0-s4},80", pop_ra_s0_s4_80);
+	test_zcmp_pop(0xbc9e, "cm.popretz {ra,s0-s4},80", popretz_ra_s0_s4_80);
+	test_zcmp_pop(0xbe9e, "cm.popret  {ra,s0-s4},80", popret_ra_s0_s4_80);
+	test_zcmp_pop(0xbaa2, "cm.pop     {ra,s0-s5},32", pop_ra_s0_s5_32);
+	test_zcmp_pop(0xbca2, "cm.popretz {ra,s0-s5},32", popretz_ra_s0_s5_32);
+	test_zcmp_pop(0xbea2, "cm.popret  {ra,s0-s5},32", popret_ra_s0_s5_32);
+	test_zcmp_pop(0xbaa6, "cm.pop     {ra,s0-s5},48", pop_ra_s0_s5_48);
+	test_zcmp_pop(0xbca6, "cm.popretz {ra,s0-s5},48", popretz_ra_s0_s5_48);
+	test_zcmp_pop(0xbea6, "cm.popret  {ra,s0-s5},48", popret_ra_s0_s5_48);
+	test_zcmp_pop(0xbaaa, "cm.pop     {ra,s0-s5},64", pop_ra_s0_s5_64);
+	test_zcmp_pop(0xbcaa, "cm.popretz {ra,s0-s5},64", popretz_ra_s0_s5_64);
+	test_zcmp_pop(0xbeaa, "cm.popret  {ra,s0-s5},64", popret_ra_s0_s5_64);
+	test_zcmp_pop(0xbaae, "cm.pop     {ra,s0-s5},80", pop_ra_s0_s5_80);
+	test_zcmp_pop(0xbcae, "cm.popretz {ra,s0-s5},80", popretz_ra_s0_s5_80);
+	test_zcmp_pop(0xbeae, "cm.popret  {ra,s0-s5},80", popret_ra_s0_s5_80);
+	test_zcmp_pop(0xbab2, "cm.pop     {ra,s0-s6},32", pop_ra_s0_s6_32);
+	test_zcmp_pop(0xbcb2, "cm.popretz {ra,s0-s6},32", popretz_ra_s0_s6_32);
+	test_zcmp_pop(0xbeb2, "cm.popret  {ra,s0-s6},32", popret_ra_s0_s6_32);
+	test_zcmp_pop(0xbab6, "cm.pop     {ra,s0-s6},48", pop_ra_s0_s6_48);
+	test_zcmp_pop(0xbcb6, "cm.popretz {ra,s0-s6},48", popretz_ra_s0_s6_48);
+	test_zcmp_pop(0xbeb6, "cm.popret  {ra,s0-s6},48", popret_ra_s0_s6_48);
+	test_zcmp_pop(0xbaba, "cm.pop     {ra,s0-s6},64", pop_ra_s0_s6_64);
+	test_zcmp_pop(0xbcba, "cm.popretz {ra,s0-s6},64", popretz_ra_s0_s6_64);
+	test_zcmp_pop(0xbeba, "cm.popret  {ra,s0-s6},64", popret_ra_s0_s6_64);
+	test_zcmp_pop(0xbabe, "cm.pop     {ra,s0-s6},80", pop_ra_s0_s6_80);
+	test_zcmp_pop(0xbcbe, "cm.popretz {ra,s0-s6},80", popretz_ra_s0_s6_80);
+	test_zcmp_pop(0xbebe, "cm.popret  {ra,s0-s6},80", popret_ra_s0_s6_80);
+	test_zcmp_pop(0xbac2, "cm.pop     {ra,s0-s7},48", pop_ra_s0_s7_48);
+	test_zcmp_pop(0xbcc2, "cm.popretz {ra,s0-s7},48", popretz_ra_s0_s7_48);
+	test_zcmp_pop(0xbec2, "cm.popret  {ra,s0-s7},48", popret_ra_s0_s7_48);
+	test_zcmp_pop(0xbac6, "cm.pop     {ra,s0-s7},64", pop_ra_s0_s7_64);
+	test_zcmp_pop(0xbcc6, "cm.popretz {ra,s0-s7},64", popretz_ra_s0_s7_64);
+	test_zcmp_pop(0xbec6, "cm.popret  {ra,s0-s7},64", popret_ra_s0_s7_64);
+	test_zcmp_pop(0xbaca, "cm.pop     {ra,s0-s7},80", pop_ra_s0_s7_80);
+	test_zcmp_pop(0xbcca, "cm.popretz {ra,s0-s7},80", popretz_ra_s0_s7_80);
+	test_zcmp_pop(0xbeca, "cm.popret  {ra,s0-s7},80", popret_ra_s0_s7_80);
+	test_zcmp_pop(0xbace, "cm.pop     {ra,s0-s7},96", pop_ra_s0_s7_96);
+	test_zcmp_pop(0xbcce, "cm.popretz {ra,s0-s7},96", popretz_ra_s0_s7_96);
+	test_zcmp_pop(0xbece, "cm.popret  {ra,s0-s7},96", popret_ra_s0_s7_96);
+	test_zcmp_pop(0xbad2, "cm.pop     {ra,s0-s8},48", pop_ra_s0_s8_48);
+	test_zcmp_pop(0xbcd2, "cm.popretz {ra,s0-s8},48", popretz_ra_s0_s8_48);
+	test_zcmp_pop(0xbed2, "cm.popret  {ra,s0-s8},48", popret_ra_s0_s8_48);
+	test_zcmp_pop(0xbad6, "cm.pop     {ra,s0-s8},64", pop_ra_s0_s8_64);
+	test_zcmp_pop(0xbcd6, "cm.popretz {ra,s0-s8},64", popretz_ra_s0_s8_64);
+	test_zcmp_pop(0xbed6, "cm.popret  {ra,s0-s8},64", popret_ra_s0_s8_64);
+	test_zcmp_pop(0xbada, "cm.pop     {ra,s0-s8},80", pop_ra_s0_s8_80);
+	test_zcmp_pop(0xbcda, "cm.popretz {ra,s0-s8},80", popretz_ra_s0_s8_80);
+	test_zcmp_pop(0xbeda, "cm.popret  {ra,s0-s8},80", popret_ra_s0_s8_80);
+	test_zcmp_pop(0xbade, "cm.pop     {ra,s0-s8},96", pop_ra_s0_s8_96);
+	test_zcmp_pop(0xbcde, "cm.popretz {ra,s0-s8},96", popretz_ra_s0_s8_96);
+	test_zcmp_pop(0xbede, "cm.popret  {ra,s0-s8},96", popret_ra_s0_s8_96);
+	test_zcmp_pop(0xbae2, "cm.pop     {ra,s0-s9},48", pop_ra_s0_s9_48);
+	test_zcmp_pop(0xbce2, "cm.popretz {ra,s0-s9},48", popretz_ra_s0_s9_48);
+	test_zcmp_pop(0xbee2, "cm.popret  {ra,s0-s9},48", popret_ra_s0_s9_48);
+	test_zcmp_pop(0xbae6, "cm.pop     {ra,s0-s9},64", pop_ra_s0_s9_64);
+	test_zcmp_pop(0xbce6, "cm.popretz {ra,s0-s9},64", popretz_ra_s0_s9_64);
+	test_zcmp_pop(0xbee6, "cm.popret  {ra,s0-s9},64", popret_ra_s0_s9_64);
+	test_zcmp_pop(0xbaea, "cm.pop     {ra,s0-s9},80", pop_ra_s0_s9_80);
+	test_zcmp_pop(0xbcea, "cm.popretz {ra,s0-s9},80", popretz_ra_s0_s9_80);
+	test_zcmp_pop(0xbeea, "cm.popret  {ra,s0-s9},80", popret_ra_s0_s9_80);
+	test_zcmp_pop(0xbaee, "cm.pop     {ra,s0-s9},96", pop_ra_s0_s9_96);
+	test_zcmp_pop(0xbcee, "cm.popretz {ra,s0-s9},96", popretz_ra_s0_s9_96);
+	test_zcmp_pop(0xbeee, "cm.popret  {ra,s0-s9},96", popret_ra_s0_s9_96);
+	test_zcmp_pop(0xbaf2, "cm.pop     {ra,s0-s11},64", pop_ra_s0_s11_64);
+	test_zcmp_pop(0xbcf2, "cm.popretz {ra,s0-s11},64", popretz_ra_s0_s11_64);
+	test_zcmp_pop(0xbef2, "cm.popret  {ra,s0-s11},64", popret_ra_s0_s11_64);
+	test_zcmp_pop(0xbaf6, "cm.pop     {ra,s0-s11},80", pop_ra_s0_s11_80);
+	test_zcmp_pop(0xbcf6, "cm.popretz {ra,s0-s11},80", popretz_ra_s0_s11_80);
+	test_zcmp_pop(0xbef6, "cm.popret  {ra,s0-s11},80", popret_ra_s0_s11_80);
+	test_zcmp_pop(0xbafa, "cm.pop     {ra,s0-s11},96", pop_ra_s0_s11_96);
+	test_zcmp_pop(0xbcfa, "cm.popretz {ra,s0-s11},96", popretz_ra_s0_s11_96);
+	test_zcmp_pop(0xbefa, "cm.popret  {ra,s0-s11},96", popret_ra_s0_s11_96);
+	test_zcmp_pop(0xbafe, "cm.pop     {ra,s0-s11},112", pop_ra_s0_s11_112);
+	test_zcmp_pop(0xbcfe, "cm.popretz {ra,s0-s11},112", popretz_ra_s0_s11_112);
+	test_zcmp_pop(0xbefe, "cm.popret  {ra,s0-s11},112", popret_ra_s0_s11_112);
 
 	return 0;
 }
