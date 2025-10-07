@@ -247,7 +247,7 @@ begin
 
   -- Branch Condition Check -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  branch_check: process(exe_engine.ir, alu_cmp_i)
+  branch_check: process(exe_engine, alu_cmp_i)
   begin
     if (exe_engine.ir(instr_opcode_lsb_c+2) = '0') then -- conditional branch
       if (exe_engine.ir(instr_funct3_msb_c) = '0') then -- beq / bne
@@ -368,7 +368,7 @@ begin
         --
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           exe_engine_nxt.state <= EX_TRAP_ENTER;
-        elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW
+        elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
           trap_ctrl.instr_be   <= frontend_i.fault or pmp_fault_i; -- access fault during instruction fetch
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
@@ -384,16 +384,13 @@ begin
           exe_engine_nxt.pc2 <= DEBUG_PARK_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter; start at "parking loop" <normal_entry>
         elsif (debug_ctrl.run = '1') and RISCV_ISA_Sdext then -- any other trap INSIDE debug mode
           exe_engine_nxt.pc2 <= DEBUG_EXC_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter: start at "parking loop" <exception_entry>
-        elsif (csr.mtvec(0) = '1') and (trap_ctrl.cause(6) = '1') then -- normal trap: vectored mode + interrupt
+        elsif (csr.mtvec(0) = '1') and (trap_ctrl.cause(6) = '1') then -- normal trap: vectored mode and interrupt
           exe_engine_nxt.pc2 <= csr.mtvec(XLEN-1 downto 7) & trap_ctrl.cause(4 downto 0) & "00"; -- PC = mtvec + 4 * mcause
         else -- normal trap: direct mode
           exe_engine_nxt.pc2 <= csr.mtvec(XLEN-1 downto 2) & "00"; -- PC = mtvec
         end if;
-        --
-        if (trap_ctrl.env_pending = '1') then -- wait for sync. exceptions to become pending
-          trap_ctrl.env_enter  <= '1';
-          exe_engine_nxt.state <= EX_RESTART; -- restart instruction fetch
-        end if;
+        trap_ctrl.env_enter  <= '1';
+        exe_engine_nxt.state <= EX_RESTART; -- restart instruction fetch
 
       when EX_TRAP_EXIT => -- return from trap environment and jump to trap PC
       -- ------------------------------------------------------------
@@ -514,7 +511,7 @@ begin
       when EX_BRANCH => -- update next PC on taken branches and jumps
       -- ------------------------------------------------------------
         exe_engine_nxt.ra <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- output return address
-        ctrl_nxt.rf_wb_en <= opcode(2); -- save return address if link operation (won't happen if exception)
+        ctrl_nxt.rf_wb_en <= exe_engine.ir(instr_opcode_lsb_c+2); -- save return address if link operation (won't happen if exception)
         if (branch_taken = '1') then -- taken/unconditional branch
           if_reset             <= '1'; -- reset instruction fetch to restart at modified PC
           trap_ctrl.instr_ma   <= alu_add_i(1) and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination misaligned?
@@ -660,7 +657,7 @@ begin
 
   -- CSR Access Check -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_check: process(exe_engine.ir, csr, debug_ctrl.run)
+  csr_check: process(exe_engine, csr, debug_ctrl)
     variable csr_addr_v : std_ulogic_vector(11 downto 0);
   begin
     -- shortcut: CSR address right from the instruction word --
@@ -960,7 +957,7 @@ begin
     if (rstn_i = '0') then
       trap_ctrl.env_pending <= '0';
     elsif rising_edge(clk_i) then
-      if ((trap_ctrl.env_pending = '0') and ((trap_ctrl.exc_fire = '1') or (or_reduce_f(trap_ctrl.irq_fire) = '1'))) then -- trap triggered
+      if (trap_ctrl.env_pending = '0') and ((trap_ctrl.exc_fire = '1') or (or_reduce_f(trap_ctrl.irq_fire) = '1')) then -- trap triggered
         trap_ctrl.env_pending <= '1';
       elsif (trap_ctrl.env_pending = '1') and (trap_ctrl.env_enter = '1') then -- start of trap environment acknowledged by execute engine
         trap_ctrl.env_pending <= '0';

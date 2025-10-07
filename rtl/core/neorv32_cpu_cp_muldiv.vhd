@@ -91,11 +91,8 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   -- multiplier core --
   type mul_t is record
     start : std_ulogic; -- start new multiplication
-    prod  : std_ulogic_vector((2*XLEN)-1 downto 0); -- product
-    add   : std_ulogic_vector(XLEN downto 0); -- addition step
-    dsp_x : signed(XLEN downto 0); -- input for using DSPs
-    dsp_y : signed(XLEN downto 0); -- input for using DSPs
-    dsp_z : signed(2*XLEN+1 downto 0);
+    res   : std_ulogic_vector((2*XLEN)-1 downto 0); -- result
+    add   : std_ulogic_vector(XLEN downto 0); -- iterative addition step
   end record;
   signal mul : mul_t;
 
@@ -168,40 +165,21 @@ begin
   -- -------------------------------------------------------------------------------------------
   multiplier_core_parallel:
   if FAST_MUL_EN generate
-
-    -- input registers --
-    multiplier_core_in_reg: process(rstn_i, clk_i)
-    begin
-      if (rstn_i = '0') then
-        mul.dsp_x <= (others => '0');
-        mul.dsp_y <= (others => '0');
-      elsif rising_edge(clk_i) then
-        if (mul.start = '1') then
-          mul.dsp_x <= signed((rs1_i(rs1_i'left) and ctrl.rs1_is_signed) & rs1_i);
-          mul.dsp_y <= signed((rs2_i(rs2_i'left) and ctrl.rs2_is_signed) & rs2_i);
-        end if;
-      end if;
-    end process multiplier_core_in_reg;
-
-    -- actual multiplication --
-    mul.dsp_z <= mul.dsp_x * mul.dsp_y;
-
-    -- output register --
-    multiplier_core_out_reg: process(clk_i)
-    begin
-      if rising_edge(clk_i) then -- no reset to improve DSP mapping
-        mul.prod <= std_ulogic_vector(mul.dsp_z(63 downto 0));
-      end if;
-    end process multiplier_core_out_reg;
-
-  end generate;
-
-  -- no parallel multiplier --
-  multiplier_core_parallel_none:
-  if not FAST_MUL_EN generate
-    mul.dsp_x <= (others => '0');
-    mul.dsp_y <= (others => '0');
-    mul.dsp_z <= (others => '0');
+    multiplier_inst: entity neorv32.neorv32_prim_mul
+    generic map (
+      DWIDTH => XLEN
+    )
+    port map (
+      clk_i    => clk_i,
+      rstn_i   => rstn_i,
+      en_i     => mul.start,
+      opa_i    => rs1_i,
+      opa_sn_i => ctrl.rs1_is_signed,
+      opb_i    => rs2_i,
+      opb_sn_i => ctrl.rs2_is_signed,
+      res_o    => mul.res
+    );
+    mul.add <= (others => '0'); -- unused
   end generate;
 
 
@@ -214,42 +192,36 @@ begin
     multiplier_core: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        mul.prod <= (others => '0');
+        mul.res <= (others => '0');
       elsif rising_edge(clk_i) then
         if (mul.start = '1') then -- start new multiplication
-          mul.prod(63 downto 32) <= (others => '0');
-          mul.prod(31 downto 0)  <= rs1_i;
+          mul.res(63 downto 32) <= (others => '0');
+          mul.res(31 downto 0)  <= rs1_i;
         elsif (ctrl.state /= S_IDLE) then -- processing steps or sign-finalization step
-          mul.prod(63 downto 31) <= mul.add(32 downto 0);
-          mul.prod(30 downto 0)  <= mul.prod(31 downto 1);
+          mul.res(63 downto 31) <= mul.add(32 downto 0);
+          mul.res(30 downto 0)  <= mul.res(31 downto 1);
         end if;
       end if;
     end process multiplier_core;
 
     -- multiply by 0/-1/+1 via shift and subtraction/addition --
-    mul_update: process(mul.prod, ctrl, rs2_i)
+    mul_update: process(mul.res, ctrl, rs2_i)
       variable sign_v : std_ulogic;
       variable opb_v  : unsigned(32 downto 0);
     begin
-      sign_v := mul.prod(mul.prod'left) and ctrl.rs2_is_signed; -- product sign extension bit
+      sign_v := mul.res(mul.res'left) and ctrl.rs2_is_signed; -- product sign extension bit
       opb_v  := unsigned((rs2_i(rs2_i'left) and ctrl.rs2_is_signed) & rs2_i);
-      if (mul.prod(0) = '1') then -- multiply by 1
+      if (mul.res(0) = '1') then -- multiply by 1
         if (ctrl.state = S_DONE) and (ctrl.rs1_is_signed = '1') then -- take care of negative weighted MSB -> multiply by -1
-          mul.add <= std_ulogic_vector(unsigned(sign_v & mul.prod(63 downto 32)) - opb_v);
+          mul.add <= std_ulogic_vector(unsigned(sign_v & mul.res(63 downto 32)) - opb_v);
         else -- multiply by +1
-          mul.add <= std_ulogic_vector(unsigned(sign_v & mul.prod(63 downto 32)) + opb_v);
+          mul.add <= std_ulogic_vector(unsigned(sign_v & mul.res(63 downto 32)) + opb_v);
         end if;
       else -- multiply by 0
-        mul.add <= sign_v & mul.prod(63 downto 32);
+        mul.add <= sign_v & mul.res(63 downto 32);
       end if;
     end process mul_update;
 
-  end generate;
-
-  -- no serial multiplier --
-  multiplier_core_serial_none:
-  if FAST_MUL_EN generate
-    mul.add <= (others => '0');
   end generate;
 
 
@@ -312,15 +284,15 @@ begin
 
   -- Data Output ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  operation_result: process(ctrl, ctrl_i.ir_funct3, mul.prod, div.res)
+  operation_result: process(ctrl, ctrl_i.ir_funct3, mul.res, div.res)
   begin
     res_o <= (others => '0'); -- default
     if (ctrl.out_en = '1') then
       case ctrl_i.ir_funct3 is
         when op_mul_c =>
-          res_o <= mul.prod(31 downto 0);
+          res_o <= mul.res(31 downto 0);
         when op_mulh_c | op_mulhsu_c | op_mulhu_c =>
-          res_o <= mul.prod(63 downto 32);
+          res_o <= mul.res(63 downto 32);
         when others => -- op_div_c | op_rem_c | op_divu_c | op_remu_c
           res_o <= div.res;
       end case;

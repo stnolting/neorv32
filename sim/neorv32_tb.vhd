@@ -122,14 +122,12 @@ begin
 
   -- The Core of the Problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_top_inst : neorv32_top
-  generic map(
-    -- Clocking --
+  neorv32_top_inst: neorv32_top
+  generic map (
+    -- General --
     CLOCK_FREQUENCY     => CLOCK_FREQUENCY,
-    -- External Trace Port --
     TRACE_PORT_EN       => true,
-    -- Dual-Core Configuration --
-    DUAL_CORE_EN => DUAL_CORE_EN,
+    DUAL_CORE_EN        => DUAL_CORE_EN,
     -- Boot Configuration --
     BOOT_MODE_SELECT => BOOT_MODE_SELECT,
     BOOT_ADDR_CUSTOM => BOOT_ADDR_CUSTOM,

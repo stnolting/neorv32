@@ -110,7 +110,7 @@ begin
   avail_o <= avail;
 
 
-  -- Memory Core ----------------------------------------------------------------------------
+  -- Memory ---------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- more than 1 FIFO entry --
   fifo_memory_large:
@@ -208,8 +208,8 @@ begin
 
   -- Output Register ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  output_register_enabled: -- might improve FPGA mapping and/or timing results
-  if OUTREG generate
+  output_register_enabled:
+  if OUTREG generate -- might improve FPGA mapping and/or timing results
     read_outreg: process(clk_i)
     begin
       if rising_edge(clk_i) then
@@ -296,8 +296,8 @@ begin
 
   -- Output Register ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  output_register_enabled: -- might improve FPGA mapping and/or timing results
-  if OUTREG generate
+  output_register_enabled:
+  if OUTREG generate -- might improve FPGA mapping and/or timing results
     read_outreg: process(clk_i)
     begin
       if rising_edge(clk_i) then
@@ -315,3 +315,72 @@ begin
   end generate;
 
 end neorv32_prim_sdpram_rtl;
+
+
+-- ================================================================================ --
+-- NEORV32 - Primitives - Generic 2-Cycle Signed/Unsigned Integer Multiplier (MUL)  --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity neorv32_prim_mul is
+  generic (
+    DWIDTH : natural -- operand width
+  );
+  port (
+    -- global control --
+    clk_i    : in  std_ulogic;                              -- global clock
+    rstn_i   : in  std_ulogic;                              -- global reset, low-active, async
+    -- data path --
+    en_i     : in  std_ulogic;                              -- enable input operand registers
+    opa_i    : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand A
+    opa_sn_i : in  std_ulogic;                              -- operand A is a signed number
+    opb_i    : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand B
+    opb_sn_i : in  std_ulogic;                              -- operand B is a signed number
+    res_o    : out std_ulogic_vector((2*DWIDTH)-1 downto 0) -- resulting product
+  );
+end neorv32_prim_mul;
+
+architecture neorv32_prim_mul_rtl of neorv32_prim_mul is
+
+  signal opa, opb : signed(DWIDTH downto 0);
+  signal res : signed((2*DWIDTH)+1 downto 0);
+
+begin
+
+  -- Input Registers ------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  in_reg: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      opa <= (others => '0');
+      opb <= (others => '0');
+    elsif rising_edge(clk_i) then
+      if (en_i = '1') then
+        opa <= signed((opa_i(opa_i'left) and opa_sn_i) & opa_i);
+        opb <= signed((opb_i(opb_i'left) and opb_sn_i) & opb_i);
+      end if;
+    end if;
+  end process in_reg;
+
+  -- Output Register ------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  out_reg: process(clk_i)
+  begin
+    if rising_edge(clk_i) then -- no reset to improve DSP mapping
+      res <= opa * opb;
+    end if;
+  end process out_reg;
+
+  -- result --
+  res_o <= std_ulogic_vector(res((2*DWIDTH)-1 downto 0));
+
+end neorv32_prim_mul_rtl;

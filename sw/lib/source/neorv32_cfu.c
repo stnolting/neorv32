@@ -7,7 +7,7 @@
 // ================================================================================ //
 
 /**
- * @file neorv32_cpu_cfu.c
+ * @file neorv32_cfu.c
  * @brief CPU Core custom functions unit HW driver source file.
  */
 
@@ -19,7 +19,7 @@
  *
  * @return 0 if CFU was not synthesized, non-zero if CFU is available.
  **************************************************************************/
-int neorv32_cpu_cfu_available(void) {
+int neorv32_cfu_available(void) {
 
   // this is an ISA extension - not a SoC module
   return (int)(neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZXCFU));

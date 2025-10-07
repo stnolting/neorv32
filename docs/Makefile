@@ -63,7 +63,7 @@ doxygen: $(DOXYGEN_IMG_DIR)
 
 # Generate revnumber.txt for overriding the revnumber attribute in 'pdf' and/or 'html'
 revnumber:
-	if [ `git tag -l | grep nightly` ]; then git tag -d nightly; fi
+	if [ `git tag -l | grep nightly_release` ]; then git tag -d nightly_release; fi
 	git describe --long --tags | sed 's#\([^-]*-g\)#r\1#;' > revnumber.txt
 	cat revnumber.txt
 

@@ -20,13 +20,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_top is
   generic (
-    -- Processor Clocking --
+    -- General --
     CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
-
-    -- External Trace Port --
     TRACE_PORT_EN         : boolean                        := false;       -- enable CPU execution trace port
-
-    -- Dual-Core Configuration --
     DUAL_CORE_EN          : boolean                        := false;       -- enable dual-core homogeneous SMP
 
     -- Boot Configuration --
@@ -334,10 +330,10 @@ architecture neorv32_top_rtl of neorv32_top is
 begin
 
   -- **************************************************************************************************************************
-  -- Sanity Checks
+  -- Configuration Checks
   -- **************************************************************************************************************************
 
-  sanity_checks:
+  config_checks:
   if true generate
 
     -- say hello --
@@ -345,8 +341,8 @@ begin
       "[NEORV32] The NEORV32 RISC-V Processor (v" &
       print_hex_f(hw_version_c(31 downto 24)) & "." &
       print_hex_f(hw_version_c(23 downto 16)) & "." &
-      print_hex_f(hw_version_c(15 downto 8)) & "." &
-      print_hex_f(hw_version_c(7 downto 0)) &
+      print_hex_f(hw_version_c(15 downto 8))  & "." &
+      print_hex_f(hw_version_c(7 downto 0))   &
       "), github.com/stnolting/neorv32" severity note;
 
     -- show SoC configuration --
@@ -421,7 +417,7 @@ begin
     -- simulation notifier --
     assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
 
-  end generate; -- /sanity_checks
+  end generate; -- /config_checks
 
 
   -- **************************************************************************************************************************

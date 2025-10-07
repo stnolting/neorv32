@@ -33,7 +33,7 @@ end neorv32_sys_reset;
 
 architecture neorv32_sys_reset_rtl of neorv32_sys_reset is
 
-  signal sreg_sys, sreg_ext : std_ulogic_vector(3 downto 0);
+  signal sreg_ext, sreg_sys : std_ulogic_vector(3 downto 0);
 
 begin
 

@@ -166,7 +166,7 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 taken 5 + `T_inst_latency`
 | Jump/call      | `jal[r]`                                                                  | 5 + `T_inst_latency`
 | Load/store     | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 4 + `T_data_latency`
-| Data fence     | `fence`                                                                   | 6 + `T_data_latency`
+| Data fence     | `fence`                                                                   | 2
 | System         | `ecall` `ebreak` `mret`                                                   | 7 + `T_inst_latency`
 | System         | `wfi`                                                                     | 3
 |=======================
@@ -300,7 +300,7 @@ instruction cache (if enabled). See section <<_memory_coherence>> for more infor
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Instruction fence | `fence.i` | 6 + `T_data_latency`
+| Instruction fence | `fence.i` | 2
 |=======================
 
 
@@ -314,32 +314,30 @@ register file-related load/store or move instructions. The `Zfinx` extension'S f
 via dedicated <<_floating_point_csrs>>.
 This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_fpu.vhd`).
 
-.Fused / Multiply-Add Instructions
+.Fused / Multiply-Add and Division / Square Root Instructions
 [WARNING]
-Fused multiply-add instructions `f[n]m[add/sub].s` are not supported. A special GCC switch is used to prevent the
-compiler from emitting contracted/fused floating-point operations (see <<_default_compiler_flags>>).
+Fused multiply-add instructions `f[n]m[add/sub].s` and division `fdiv.s` and square root `fsqrt.s` instructions
+are not supported yet. are not supported. Special GCC flags are used to prevent the compiler from emitting these
+operations (see <<_default_compiler_flags>>).
 
-.Division and Square Root Instructions
-[WARNING]
-Division `fdiv.s` and square root `fsqrt.s` instructions are not supported yet.
-
-.Subnormal Number
+.Subnormal Numbers
 [WARNING]
 Subnormal numbers ("de-normalized" numbers, i.e. exponent = 0) are not supported by the NEORV32 FPU.
 Subnormal numbers are _flushed to zero_ setting them to +/- 0 before being processed by **any** FPU operation.
 If a computational instruction generates a subnormal result it is also flushed to zero during normalization.
 
 .Instructions and Timing
-[cols="<2,<5,<4"]
+[cols="<3,<4,<2"]
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Artihmetic | `fadd.s`                                      | 110
-| Artihmetic | `fsub.s`                                      | 112
-| Artihmetic | `fmul.s`                                      | 22
-| Compare    | `fmin.s` `fmax.s` `feq.s` `flt.s` `fle.s`     | 13
-| Conversion | `fcvt.w.s` `fcvt.wu.s` `fcvt.s.w` `fcvt.s.wu` | 48
-| Misc       | `fsgnj.s` `fsgnjn.s` `fsgnjx.s` `fclass.s`    | 12
+| Add/sub                | `fadd.s` `fsub.s`                         | 21
+| Multiply               | `fmul.s`                                  | 13
+| Compare                | `fmin.s` `fmax.s` `feq.s` `flt.s` `fle.s` | 5
+| Convert (float -> int) | `fcvt.w.s` `fcvt.wu.s`                    | 10
+| Convert (int -> float) | `fcvt.s.w` `fcvt.s.wu`                    | 42
+| Sign-injection         | `fsgnj.s` `fsgnjn.s` `fsgnjx.s`           | 4
+| Classify               | `fclass.s`                                | 4
 |=======================
 
 

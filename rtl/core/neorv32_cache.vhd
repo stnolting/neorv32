@@ -195,11 +195,11 @@ begin
           bus_req_o.stb  <= '1';
           ctrl_nxt.state <= S_DIRECT_RSP;
         elsif (cache_i.sta_hit = '1') then -- cache HIT
-          if (host_req_i.rw = '0') or (READ_ONLY = true) then -- read from cache
+          if (host_req_i.rw = '0') or READ_ONLY then -- read from cache
             host_rsp_o.ack <= '1';
             host_rsp_o.err <= cache_i.stat;
             ctrl_nxt.state <= S_IDLE;
-          elsif (WRITE_THROUGH = true) then -- write-through: write to main memory and also to the cache
+          elsif WRITE_THROUGH  then -- write-through: write to main memory and also to the cache
             cache_o.we     <= host_req_i.ben;
             bus_req_o.stb  <= '1';
             ctrl_nxt.state <= S_DIRECT_RSP;
@@ -209,9 +209,9 @@ begin
             ctrl_nxt.state <= S_IDLE;
           end if;
         else -- cache MISS
-          if (host_req_i.rw = '0') or (READ_ONLY = true) then -- get block from main memory
+          if (host_req_i.rw = '0') or READ_ONLY then -- get block from main memory
             ctrl_nxt.state <= S_DOWNLOAD_START;
-          elsif (WRITE_THROUGH = true) then -- write-through: write to main memory, no cache update
+          elsif WRITE_THROUGH then -- write-through: write to main memory, no cache update
             bus_req_o.stb  <= '1';
             ctrl_nxt.state <= S_DIRECT_RSP;
           elsif (cache_i.sta_dir = '0') then -- allocate block: current block is clean, just replace
@@ -341,7 +341,7 @@ end neorv32_cache_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 SoC - Generic Cache: Data and Status Memory (direct-mapped)              --
+-- NEORV32 SoC - Generic Cache - Data and Status Memory (direct-mapped)             --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -442,10 +442,10 @@ begin
       -- dirty flags --
       if (clr_i = '1') then -- invalidate entire cache
         dirty_mem <= (others => '0');
-      elsif (we_i /= "0000") then -- modify cache content
-        dirty_mem(to_integer(unsigned(acc_idx))) <= '1';
       elsif (new_i = '1') then -- make accessed block clean
         dirty_mem(to_integer(unsigned(acc_idx))) <= '0';
+      elsif (we_i /= "0000") then -- modify cache content
+        dirty_mem(to_integer(unsigned(acc_idx))) <= '1';
       end if;
       -- syn flag read --
       valid_mem_rd <= valid_mem(to_integer(unsigned(acc_idx)));

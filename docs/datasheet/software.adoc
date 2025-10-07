@@ -68,8 +68,8 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_cfs.c`     | `neorv32_cfs.h`        | <<_custom_functions_subsystem_cfs>> HAL
 | `neorv32_clint.c`   | `neorv32_clint.h`      | <<_core_local_interruptor_clint>> HAL
 | `neorv32_cpu.c`     | `neorv32_cpu.h`        | <<_neorv32_central_processing_unit_cpu>> HAL
-|                     | `neorv32_cpu_csr.h`    | <<_control_and_status_registers_csrs>> definitions
-| `neorv32_cpu_cfu.c` | `neorv32_cpu_cfu.h`    | <<_custom_functions_unit_cfu>> HAL
+|                     | `neorv32_csr.h`        | <<_control_and_status_registers_csrs>> definitions
+| `neorv32_cfu.c`     | `neorv32_cfu.h`        | <<_custom_functions_unit_cfu>> HAL
 | `neorv32_dma.c`     | `neorv32_dma.h`        | <<_direct_memory_access_controller_dma>> HAL
 | `neorv32_gpio.c`    | `neorv32_gpio.h`       | <<_general_purpose_input_and_output_port_gpio>> HAL
 | `neorv32_gptmr.c`   | `neorv32_gptmr.h`      | <<_general_purpose_timer_gptmr>> HAL
@@ -119,12 +119,13 @@ A CMSIS-SVD-compatible **System View Description (SVD)** file including all peri
 Application compilation is based on a centralized GNU makefile (`sw/common/common.mk`). Each software project
 (for example the ones in `sw/example` folder) should provide a local makefile that just includes the central makefile:
 
-```makefile
+[source,makefile]
+----
 # Set path to NEORV32 root directory
 NEORV32_HOME ?= ../../..
 # Include the main NEORV32 makefile
 include $(NEORV32_HOME)/sw/common/common.mk
-```
+----
 
 Thus, the functionality of the central makefile (including all targets) becomes available for the project.
 A project-local makefile should be used to define all setup-relevant configuration options instead of changing the
@@ -133,7 +134,8 @@ configuration. Most example projects already provide a makefile that list all re
 
 The following example shows the configuration of a local Makefile:
 
-```makefile
+[source,makefile]
+----
 # Override the default CPU ISA
 MARCH = rv32imc_zicsr_zifencei
 
@@ -166,7 +168,7 @@ NEORV32_HOME ?= ../../..
 
 # Include the main NEORV32 makefile
 include $(NEORV32_HOME)/sw/common/common.mk
-```
+----
 
 .Setup of a New Project
 [TIP]
@@ -484,22 +486,21 @@ using the <<_mscratch>> CSR.
 :sectnums:
 === Executable Image Formats
 
-The compiled and linked executable (ELF file) is further processed by the NEORV32 image generator (`sw/image_gen`) to
-generate the final executable file. The image generator can generate several types of executable file formats selected
-by a flag when calling the generator.
-**Note that all these options are managed by the makefile (see <<_makefile_targets>>).**
+The final ELF file is further processed by the NEORV32 image generator (`sw/image_gen`) to generate the final
+executable file. The image generator can generate several types of executable file formats selected by a flag
+when calling the generator. **Note that all these options are managed by the makefile (see <<_makefile_targets>>).**
 
 [cols="<2,<8"]
 [grid="none"]
 |=======================
-| `-app_bin` | Generates an executable binary file (including a bootloader header) for upload via the bootloader.
-| `-app_vhd` | Generates an executable VHDL memory initialization image for the processor-internal IMEM.
-| `-bld_vhd` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM.
-| `-raw_hex` | Generates a raw 8x ASCII hex-char file for custom purpose.
-| `-raw_bin` | Generates a raw binary file `for custom purpose.
-| `-raw_coe` | Generates a raw COE file for FPGA memory initialization.
-| `-raw_mem` | Generates a raw MEM file for FPGA memory initialization.
-| `-raw_mif` | Generates a raw MIF file for FPGA memory initialization.
+| `app_bin` | Generates an executable binary file (including a bootloader header) for upload via the bootloader.
+| `app_vhd` | Generates an executable VHDL memory initialization image for the processor-internal IMEM.
+| `bld_vhd` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM.
+| `raw_hex` | Generates a raw 8x ASCII hex-char file for custom purpose.
+| `raw_bin` | Generates a raw binary file for custom purpose.
+| `raw_coe` | Generates a raw COE file for FPGA memory initialization.
+| `raw_mem` | Generates a raw MEM file for FPGA memory initialization.
+| `raw_mif` | Generates a raw MIF file for FPGA memory initialization.
 |=======================
 
 .Image Generator Compilation
@@ -516,6 +517,33 @@ Based on this word the bootloader can identify a valid image file. The next word
 actual program image in bytes. A simple complement checksum of the actual program image is given by the third word.
 This provides a simple protection against data transmission or storage errors.
 **Note that this executable format cannot be used for _direct_ execution.**
+
+Optionally, the NEORV32 image generator can also be used stand-alone:
+
+[source,bash]
+----
+neorv32/sw/image_gen$ ./image_gen
+NEORV32 executable image generator
+
+Usage:    image_gen [options]
+Example:  image_gen -i main.elf -o main_exe.bin -t app_bin
+
+Options:
+  -h             Show this help text and exit
+  -i file_name   Input ELF file name, mandatory
+  -o file_name   Output file name, mandatory
+  -t type        Type of image to generate, default is 'app_bin'
+
+Image type:
+  app_bin   Application executable for bootloader upload (binary file with header)
+  app_vhd   Application memory image (IMEM VHDL package file)
+  bld_vhd   Bootloader memory image (BOOTROM VHDL package file)
+  raw_hex   ASCII hex file (raw executable)
+  raw_bin   Binary file (raw executable)
+  raw_coe   COE file (raw executable)
+  raw_mem   MEM file (raw executable)
+  raw_mif   MIF file (raw executable)
+----
 
 
 <<<

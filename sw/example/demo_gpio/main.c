@@ -21,11 +21,17 @@
  **************************************************************************/
 void gpio_interrupt_handler(void) {
 
-  // clear all GPIO pin interrupts
+  // get pending GPIO pin interrupts
+  uint32_t tmp = neorv32_gpio_irq_get();
+
+  // clear all pending GPIO pin interrupts
   neorv32_gpio_irq_clr(-1);
 
+  // show all currently pending GPIO input interrupts
   neorv32_uart0_printf("\n[IRQ] ");
-  neorv32_uart0_printf("source pin mask = 0x%x, ", neorv32_gpio_irq_get());
+  neorv32_uart0_printf("triggering pins = 0x%x, ", tmp);
+
+  // show current GPIO input state
   neorv32_uart0_printf("GPIO.input = 0x%x", neorv32_gpio_port_get());
 }
 
@@ -68,10 +74,10 @@ int main(void) {
   neorv32_gpio_irq_setup(0, GPIO_TRIG_EDGE_RISING);  // input pin 0: interrupt on a rising edge
   neorv32_gpio_irq_setup(1, GPIO_TRIG_EDGE_FALLING); // input pin 1: interrupt on a falling edge
   neorv32_gpio_irq_setup(2, GPIO_TRIG_LEVEL_HIGH);   // input pin 2: interrupt on high-level
-  //neorv32_gpio_irq_setup(3, GPIO_TRIG_LEVEL_HIGH); // input pin 3: interrupt on low-level
+//neorv32_gpio_irq_setup(3, GPIO_TRIG_LEVEL_LOW);    // input pin 3: interrupt on low-level
 
-  // enable all GPIO input pin interrupts
-  neorv32_gpio_irq_enable(0x00000007); // argument is an "enable bit mask" - one bit for each input pin
+  // enable GPIO input pin interrupts; argument is an "enable bit mask" - one bit for each input pin
+  neorv32_gpio_irq_enable((1<<0) | (1<<1) | (1<<2));
 
   // wait in sleep mode for interrupts
   while(1) {

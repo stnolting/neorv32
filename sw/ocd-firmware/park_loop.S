@@ -51,7 +51,7 @@ park_loop:
   csrr    x8, mhartid                         // get hart ID
   lbu     x8, DM_SREG_BASE(x8)                // read hart-specific byte from request register
   andi    x8, x8, 1 << REQ_EXE                // execute-request bit set?
-  bnez    x8, exit_execute
+  bnez    x8, execute
 
   csrr    x8, mhartid                         // get hart ID
   lbu     x8, DM_SREG_BASE(x8)                // read hart-specific byte from request register
@@ -59,7 +59,7 @@ park_loop:
   beqz    x8, park_loop
 
 // resume normal operation (exit debug mode)
-exit_resume:
+resume:
   csrr    x8, mhartid                         // get hart ID
   sw      x8, (DM_SREG_BASE+ACK_RES)(zero)    // send resume-acknowledge
   csrr    x8, dscratch0                       // restore x8 from dscratch0
@@ -68,7 +68,7 @@ exit_resume:
   dret                                        // exit debug mode
 
 // execute program buffer (implicit ebreak at the end of the buffer will bring us back to "entry_park")
-exit_execute:
+execute:
   csrr    x8, mhartid                         // get hart ID
   sw      x8, (DM_SREG_BASE+ACK_EXE)(zero)    // send execute-acknowledge
   csrr    x8, dscratch0                       // restore x8 from dscratch0

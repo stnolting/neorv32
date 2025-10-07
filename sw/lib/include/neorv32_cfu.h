@@ -1,18 +1,18 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
 
 /**
- * @file neorv32_cpu_cfu.h
+ * @file neorv32_cfu.h
  * @brief CPU Core custom functions unit HW driver header file.
  */
 
-#ifndef NEORV32_CPU_CFU_H
-#define NEORV32_CPU_CFU_H
+#ifndef NEORV32_CFU_H
+#define NEORV32_CFU_H
 
 #include <stdint.h>
 
@@ -20,7 +20,7 @@
 /**********************************************************************//**
  * @name Prototypes
  **************************************************************************/
-int neorv32_cpu_cfu_available(void);
+int neorv32_cfu_available(void);
 
 
 /**********************************************************************//**
@@ -35,4 +35,4 @@ int neorv32_cpu_cfu_available(void);
 /**@}*/
 
 
-#endif // NEORV32_CPU_CFU_H
+#endif // NEORV32_CFU_H

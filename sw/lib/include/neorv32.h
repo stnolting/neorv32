@@ -237,33 +237,25 @@ typedef union {
 // ----------------------------------------------------------------------------
 // Include all processor header files
 // ----------------------------------------------------------------------------
-// intrinsics
-#include "neorv32_intrinsics.h"
-
-// helper functions
 #include "neorv32_aux.h"
-
-// CPU core
-#include "neorv32_cpu.h"
-#include "neorv32_cpu_csr.h"
-#include "neorv32_cpu_cfu.h"
-
-// NEORV32 runtime environment
-#include "neorv32_rte.h"
-#include "neorv32_smp.h"
-#include "neorv32_semihosting.h"
-
-// IO/peripheral devices
 #include "neorv32_cfs.h"
+#include "neorv32_cfu.h"
 #include "neorv32_clint.h"
+#include "neorv32_cpu.h"
+#include "neorv32_csr.h"
 #include "neorv32_dma.h"
 #include "neorv32_gpio.h"
 #include "neorv32_gptmr.h"
+#include "neorv32_intrinsics.h"
+#include "neorv32_legacy.h"
 #include "neorv32_neoled.h"
 #include "neorv32_onewire.h"
 #include "neorv32_pwm.h"
+#include "neorv32_rte.h"
+#include "neorv32_semihosting.h"
 #include "neorv32_sdi.h"
 #include "neorv32_slink.h"
+#include "neorv32_smp.h"
 #include "neorv32_spi.h"
 #include "neorv32_sysinfo.h"
 #include "neorv32_tracer.h"
@@ -272,9 +264,6 @@ typedef union {
 #include "neorv32_twi.h"
 #include "neorv32_uart.h"
 #include "neorv32_wdt.h"
-
-// Legacy wrappers
-#include "neorv32_legacy.h"
 
 #ifdef __cplusplus
 }
