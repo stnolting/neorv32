@@ -1,3 +1,3 @@
 #include <zcmp.h>
 
-int cm_mva01s();
+int cm_mvsa01();
