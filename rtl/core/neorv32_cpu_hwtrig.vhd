@@ -158,9 +158,8 @@ begin
   tdata1(2)            <= or_reduce_f(tdata1_exec and sel); -- execute: enable trigger on instruction address match
   tdata1(1)            <= or_reduce_f(tdata1_store and sel); -- store: enable trigger on store address match
   tdata1(0)            <= or_reduce_f(tdata1_load and sel); -- load: enable trigger on load address match
-
-  -- tdata1 = all-zero if invalid trigger selection --
-  tdata1_rb <= tdata1 when (sel_invalid = '0') else (others => '0');
+  --
+  tdata1_rb <= tdata1 when (sel_invalid = '0') else (others => '0'); -- all-zero if invalid trigger selection
 
   -- trigger info --
   tinfo_rb <= x"01000040" when (sel_invalid = '0') else x"01000001"; -- Sdtrig version 1.0, type-6 / type-0 only
