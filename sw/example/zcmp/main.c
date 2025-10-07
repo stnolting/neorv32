@@ -2,6 +2,7 @@
 
 
 #include "zcmp.h"
+#include "cm_mva01s.h"
 #include "cm_push.h"
 #include "cm_pop.h"
 
@@ -17,7 +18,8 @@ int main()
 
 	neorv32_uart0_printf("\n");
 
-	cm_push();
+	// cm_push();
+	cm_mva01s();
 
 
 	return 0;

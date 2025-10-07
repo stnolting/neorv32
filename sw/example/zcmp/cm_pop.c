@@ -16,8 +16,6 @@
 #define BAUD_RATE 19200
 
 #define FRAME_SIZE_WORDS 64
-#define N_RESULTS 15
-volatile uint32_t test_results[N_RESULTS];
 volatile uint32_t test_sp;
 
 #define rlist(instr) ((instr & 0xf0) >> 4)
