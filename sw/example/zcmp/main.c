@@ -20,7 +20,10 @@ int main()
 	neorv32_uart0_printf("\n");
 
 	// cm_push();
-	// cm_mva01s();
+	cm_mva01s();
+
+	neorv32_uart0_printf("\n");
+
 	cm_mvsa01();
 
 
