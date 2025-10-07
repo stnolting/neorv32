@@ -62,6 +62,7 @@
 		"lw ra, 40(sp)\n" \
 		"addi sp, sp, 48\n" \
 	); \
+	neorv32_uart0_printf("a0: %x\n", test_results[0]); \
 	neorv32_uart0_printf("a1: %x\n", test_results[1]); \
 	neorv32_uart0_printf("s0: %x\n", test_results[2]); \
 	neorv32_uart0_printf("s1: %x\n", test_results[3]); \
