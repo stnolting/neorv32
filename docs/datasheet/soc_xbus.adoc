@@ -46,7 +46,8 @@ If any cache (<<_processor_internal_instruction_cache_icache,i-cache>> or <<_pro
 is implemented and bursts are globally enabled (by the `CACHE_BURSTS_EN` top generic) all cache block transfers are
 **always executed as burst transfers** with a burst size equal to the cache block size (`CACHE_BLOCK_SIZE` top generic).
 Burst transfers should **not** be enabled if any external module mapped to _cached_ <<_address_space>> does not support bursts.
-Note that burst transactions need to set `ACK` or `ERR` for each burst element.
+Note that burst transactions need to set `ACK` or `ERR` for each burst element. Note that the cycle type identifier signal
+(`xbus_cti_o`) does not support the end-of-burst identifier.
 
 .Address Mapping
 [NOTE]
@@ -69,13 +70,16 @@ https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_bl
 **XBUS Bus Protocol**
 
 The external bus interface implements a subset of the **pipelined Wishbone** protocol.
-Basically, three types of bus transfer are implemented which are illustrated in the following figures:
+Basically, three types of bus transfer are implemented which are illustrated in the following figures.
+The actual transfer type is indicated via the _cycle type identifier_ (`xbus_cti_o`) signal.
 
 [start=1]
-. **Single-access** transfers perform a single read or write operation.
-. **Atomic-access** transfers perform a read followed by a write operation. The bus is locked during the entire transfer
-to maintain exclusive bus access. This transfer type is used by the CPU to perform atomic read-modify-write operations.
-. **Burst read** transfers perform several consecutive read accesses. This transfer type is used by cache block operations.
+. **Single-access** transfers perform a single read or write operation (`xbus_cti_o = 000`).
+. **Atomic-access** transfers perform a read followed by a write operation. The bus is locked
+during the entire transfer to maintain exclusive bus access. This transfer type is used by the
+CPU to perform atomic read-modify-write operations (`xbus_cti_o = 001`).
+. **Burst read** transfers perform several consecutive read accesses. This transfer type is used
+by cache block operations (`xbus_cti_o = 010`).
 
 .XBUS **Single Access** Transfers: Write (left) and Read (right)
 [wavedrom, format="svg", align="center"]
@@ -128,7 +132,7 @@ to maintain exclusive bus access. This transfer type is used by the CPU to perfo
   {name: 'clk',         wave: 'p........'},
   {name: 'xbus_adr_o',  wave: 'x3.456.x.', data: ['0', '4', '8', '12']},
   {name: 'xbus_dat_o',  wave: 'x........'},
-  {name: 'xbus_cti_o',  wave: 'x7.....x.', data: ['111 (incrementing address burst)']},
+  {name: 'xbus_cti_o',  wave: 'x7.....x.', data: ['010 (incrementing address burst)']},
   {name: 'xbus_tag_o',  wave: 'x2.....x.'},
   {name: 'xbus_we_o',   wave: 'x0.....x.'},
   {name: 'xbus_sel_o',  wave: 'x2.....x.'},
