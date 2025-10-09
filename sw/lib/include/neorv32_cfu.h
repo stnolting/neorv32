@@ -28,10 +28,10 @@ int neorv32_cfu_available(void);
  * Note that each instruction provides a uint32_t return value.
  **************************************************************************/
 /**@{*/
-/** R3-type CFU custom instruction (CUSTOM-0 opcode) */
-#define neorv32_cfu_r3_instr(funct7, funct3, rs1, rs2) CUSTOM_INSTR_R3_TYPE(funct7, rs2, rs1, funct3, 0b0001011)
-/** R4-type CFU custom instruction (CUSTOM-1 opcode) */
-#define neorv32_cfu_r4_instr(funct3, rs1, rs2, rs3) CUSTOM_INSTR_R4_TYPE(rs3, rs2, rs1, funct3, 0b0101011)
+/** R-type CFU custom instruction (CUSTOM-0 opcode) */
+#define neorv32_cfu_r_instr(funct7, funct3, rs1, rs2) CUSTOM_INSTR_R_TYPE(funct7, rs2, rs1, funct3, 0b0001011)
+/** I-type CFU custom instruction (CUSTOM-1 opcode) */
+#define neorv32_cfu_i_instr(funct3, imm12, rs1) CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, 0b0101011)
 /**@}*/
 
 
