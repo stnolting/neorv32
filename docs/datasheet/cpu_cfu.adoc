@@ -4,26 +4,24 @@
 
 The Custom Functions Unit (CFU) is the central part of the NEORV32-specific <<_zxcfu_isa_extension>> and
 represents the actual hardware module that can be used to implement **custom RISC-V instructions**.
-
-The CFU is intended for operations that are inefficient in terms of performance, latency, energy consumption or
+These are intended for operations that are inefficient in terms of performance, latency, energy consumption or
 program memory requirements when implemented entirely in software. Some potential application fields and exemplary
 use-cases might include:
 
-* **AI:** sub-word / vertical vector/SIMD operations like processing all four sub-bytes of a 32-bit data word individually
+* **AI:** vector/SIMD operations
 * **Cryptography:** bit substitution and permutation
 * **Communication:** data conversions like binary to gray-code
 * **Arithmetic:** BCD (binary-coded decimal) operations; multiply-add operations; shift-and-add algorithms like CORDIC or BKM
 * **Image processing:** look-up-tables for color space transformations
 * implementing instructions from **other RISC-V ISA extensions** that are not yet supported by NEORV32
 
-The NEORV32 CFU supports two different instruction formats: RISC-V R3-type (up to two source operands) and RISC-V R4-type
-(up to three source operands) instructions. See <<_cfu_instruction_formats>> for more information.
+The NEORV32 CFU supports two different instruction formats: RISC-V R-type and RISC-V I-type instructions.
 
 .CFU Complexity
 [NOTE]
 The CFU is not intended for complex and **CPU-independent** functional units that implement complete accelerators
-(like block-based AES encryption). These kind of accelerators should be implemented as memory-mapped co-processor via the
-<<_custom_functions_subsystem_cfs>> to allow CPU-independent operation. A comparative survey of all NEORV32-specific
+(like full block-based AES encryption). These kind of accelerators should be implemented as memory-mapped co-processor
+via the <<_custom_functions_subsystem_cfs>> to allow CPU-independent operation. A comparative survey of all NEORV32-specific
 hardware extension/customization options is provided in the user guide section
 https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules[Adding Custom Hardware Modules].
 
@@ -39,14 +37,12 @@ as application example.
 The custom instructions executed by the CFU utilize a specific opcode space in the `rv32` 32-bit instruction
 encoding space that has been explicitly reserved for user-defined extensions by the RISC-V specifications ("Guaranteed
 Non-Standard Encoding Space"). The NEORV32 CFU uses the `custom-0` and `custom-1` opcodes to identify the instruction
-implemented by the CFU and to differentiate between the predefined instruction formats.
+implemented by the CFU and to differentiate between the predefined instruction formats. The NEORV32 CFU utilizes these
+two opcodes to support user-defined **R-type** instructions and **I-type** instructions. Both instruction formats are
+compliant to the RISC-V specification.
 
-The NEORV32 CFU utilizes these two opcodes to support user-defined **R3-type** instructions (2 source registers,
-1 destination register) and **R4-type** instructions (3 source registers, 1 destination register). Both instruction
-formats are compliant to the RISC-V specification.
-
-* `custom-0`: `0001011` RISC-V standard, used for NEORV32 <<_cfu_r3_type_instructions>> (3 register addresses)
-* `custom-1`: `0101011` RISC-V standard, used for NEORV32 <<_cfu_r4_type_instructions>> (4 register addresses)
+* `custom-0`: `0001011`, used for <<_cfu_r_type_instructions>>
+* `custom-1`: `0101011`, used for <<_cfu_i_type_instructions>>
 
 [TIP]
 The provided instructions formats are _predefined_ to allow an easy integration framework.
@@ -54,9 +50,9 @@ However, system designers are free to ignore these and use their own instruction
 
 
 :sectnums:
-===== CFU R3-Type Instructions
+===== CFU R-Type Instructions
 
-The R3-type CFU instructions operate on two source registers `rs1` and `rs2` and return the processing result to
+The R-type CFU instructions operate on two source registers `rs1` and `rs2` and return the processing result to
 the destination register `rd`. The actual operation can be defined by using the `funct7` and `funct3` bit fields.
 These immediates can also be used to pass additional data to the CFU like offsets, look-up-tables addresses or
 shift-amounts. However, the actual functionality is entirely user-defined. Note that all immediate values are
@@ -64,15 +60,15 @@ always compile-time-static.
 
 Example operation: `rd <= rs1 xnor rs2` (bit-wise logical XNOR)
 
-.CFU R3-type instruction format
+.CFU R-type instruction format
 [wavedrom, format="svg", align="center"]
 ----
 {reg: [
     {bits: 7, name: 11,       attr: 'Opcode: Custom-0'},
-    {bits: 5, name: 'rd',     attr: 'Destination'},
+    {bits: 5, name: 'rd'      },
     {bits: 3, name: 'funct3', type: 1},
-    {bits: 5, name: 'rs1',    attr: 'Source 1'},
-    {bits: 5, name: 'rs2',    attr: 'Source 2'},
+    {bits: 5, name: 'rs1'     },
+    {bits: 5, name: 'rs2'     },
     {bits: 7, name: 'funct7', type: 1}
 ]}
 ----
@@ -87,52 +83,42 @@ Example operation: `rd <= rs1 xnor rs2` (bit-wise logical XNOR)
 .Instruction encoding space
 [NOTE]
 By using the `funct7` and `funct3` bit fields entirely for selecting the actual operation a total of 1024 custom
-R3-type instructions can be implemented (7-bit + 3-bit = 10 bit -> 1024 different values).
+R-type instructions can be implemented (7-bit + 3-bit = 10 bit -> 1024 different values).
 
 
 :sectnums:
-===== CFU R4-Type Instructions
+===== CFU I-Type Instructions
 
-The R4-type CFU instructions operate on three source registers `rs1`, `rs2` and `rs2` and return the processing
-result to the destination register `rd`. The actual operation can be defined by using the `funct3` bit field.
-Alternatively, this immediate can also be used to pass additional data to the CFU like offsets, look-up-tables
-addresses or shift-amounts. However, the actual functionality is entirely user-defined. Note that all immediate
-values are always compile-time-static.
+The I-type CFU instructions operate on one source registers `rs1` and a 12-bit immediate value `im12` and return
+the processing result to the destination register `rd`. The actual operation can be defined by using the `funct3`
+bit field. Alternatively, this immediate can also be used to pass additional data to the CFU like offsets,
+look-up-tables addresses or shift-amounts. However, the actual functionality is entirely user-defined. Note that
+all immediate values are always compile-time-static.
 
-Example operation: `rd <= (rs1 * rs2 + rs3)[31:0]` (multiply-and-accumulate; "MAC")
+Example operation: `rd <= rs1 * imm12` (multiply with immediate)
 
-.CFU R4-type instruction format
+.CFU I-type instruction format
 [wavedrom, format="svg", align="center"]
 ----
 {reg: [
-    {bits: 7, name: 43,       attr: 'Opcode: Custom-1'},
-    {bits: 5, name: 'rd',     attr: 'Destination'},
-    {bits: 3, name: 'funct3', type: 1},
-    {bits: 5, name: 'rs1',    attr: 'Source 1'},
-    {bits: 5, name: 'rs2',    attr: 'Source 2'},
-    {bits: 2, name: 4,        attr: '-'},
-    {bits: 5, name: 'rs3',    attr: 'Source 3'}
+    {bits:  7, name: 43,       attr: 'Opcode: Custom-1'},
+    {bits:  5, name: 'rd'      },
+    {bits:  3, name: 'funct3', type: 1},
+    {bits:  5, name: 'rs1'     },
+    {bits: 12, name: 'imm12'   }
 ]}
 ----
 
-* `rs3`: address of third source register (providing 32-bit source data)
-* `rs2`: address of second source register (providing 32-bit source data)
+* `imm12`: 12-bit immediate
 * `rs1`: address of first source register (providing 32-bit source data)
 * `funct3`: 3-bit immediate (immediate data or function select)
 * `rd`: address of destination register (32-bit processing result)
 * `opcode`: `0101011` (RISC-V `custom-1` opcode)
-* ⚠️ bits [26:25] of the R4-type instruction word are unused. However, these bits are ignored
-by CPU's instruction decoder and can be retrieved via the CFU's `funct7_i(6 downto 5)` signal.
 
 .Instruction encoding space
 [NOTE]
-By using the `funct3` bit field entirely for selecting the actual operation a total of 8 custom R4-type
+By using the `funct3` bit field entirely for selecting the actual operation a total of 8 custom I-type
 instructions can be implemented (3-bit -> 8 different values).
-
-.Re-purposing R4-type instructions as additional R3-type instructions
-[TIP]
-Advanced user can use the custom-1 opcode to implement additional R3-type instructions instead of the
-predefined r4-type instructions.
 
 
 :sectnums:
@@ -144,18 +130,18 @@ assembly, which is used to construct the custom 32-bit instruction words. Using 
 modify the compiler, built-in libraries or the assembler when using custom instructions. Each intrinsic will be
 compiled into a single 32-bit instruction word without any overhead providing maximum code efficiency.
 
-The NEORV32 software framework provides two pre-defined prototypes for custom instructions, which are defined in
-`sw/lib/include/neorv32_cpu_cfu.h`:
+The NEORV32 software framework provides two pre-defined prototypes for custom instructions, which are defined
+in `sw/lib/include/neorv32_cfu.h`:
 
 .CFU instruction prototypes
 [source,c]
 ----
-uint32_t neorv32_cfu_r3_instr(funct7, funct3, rs1, rs2); // R3-type instructions
-uint32_t neorv32_cfu_r4_instr(funct3, rs1, rs2, rs3);    // R4-type instructions
+uint32_t neorv32_cfu_r_instr(funct7, funct3, rs1, rs2); // R-type instructions
+uint32_t neorv32_cfu_i_instr(funct3, imm12 rs1);        // I-type instructions
 ----
 
-The intrinsic functions always return a 32-bit value of type `uint32_t` (the processing result), which can be
-discarded if not needed. Each intrinsic function requires several arguments depending on the instruction type/format:
+The intrinsic functions always return a 32-bit value of type `uint32_t` (the processing result) which can be
+discarded if not needed. Each intrinsic function requires several arguments depending on the instruction type:
 
 * `funct7` - 7-bit immediate (R3-type)
 * `funct3` - 3-bit immediate (R3-type, R4-type)
@@ -168,19 +154,17 @@ The `funct3` and `funct7` bit-fields are used to pass 3-bit or 7-bit literals to
 with variables or literals; the compiler will add the required code to move the data into a register before
 passing it to the CFU. The following examples shows how to pass arguments:
 
-.CFU instruction usage example
+.CFU instruction usage examples
 [source,c]
 ----
-uint32_t tmp = some_function();
-...
-uint32_t res = neorv32_cfu_r3_instr(0b0000000, 0b101, tmp, 123);
-uint32_t foo = neorv32_cfu_r4_instr(0b011, tmp, res, (uint32_t)some_array[i]);
-neorv32_cfu_r3_instr(0b0100100, 0b001, tmp, foo); // discard result
+uint32_t res = neorv32_cfu_r_instr(0b0000000, 0b101, 8, 123);
+uint32_t tmp = neorv32_cfu_i_instr(0b011, 0x47a, res);
+neorv32_cfu_r_instr(0b0100100, 0b001, res, tmp);
 ----
 
 .CFU Example Program
 [TIP]
-There is an example program for the CFU, which shows how to use the _default_ CFU hardware module.
+There is an example program for the CFU, which shows how to use the _default_ XTEA CFU hardware module.
 This example program is located in `sw/example/demo_cfu`.
 
 
@@ -191,24 +175,18 @@ The actual functionality of the CFU's custom instructions is defined by the user
 hardware module (`rtl/core/neorv32_cpu_cp_cfu.vhd`). This file is highly commented to explain the interface and
 to illustrate hardware design considerations.
 
-CFU operations can be entirely combinatorial (like bit-reversal) so the result is available at the end of the
-current clock cycle. However, operations can also take several clock cycles to complete (like multiplications)
-and may also include internal states and memories.
-
-.CFU Hardware Resource Requirements
-[NOTE]
-Enabling the CFU and actually implementing R4-type instructions (or more precisely, using the third register
-source `rs3`) will add an additional read port to the core's register file increasing resource requirements
-of the register file by 50%.
+CFU operations can be entirely combinatorial (e.g. for a bit-reversal operation) so the result is available at
+the end of the current clock cycle. However, operations can also take several clock cycles to complete (like
+multiplications) and may also include internal states and memories.
 
 .CFU Execution Time
 [NOTE]
 The CFU has to complete computation within a **bound time window** (default = 512 clock cycles). Otherwise,
-the CFU operation is terminated by the CPU execution logic and an illegal instruction exception is raised. See section
-<<_cpu_arithmetic_logic_unit>> for more information.
+the CFU operation is terminated by the CPU execution logic and an illegal instruction exception is raised. See
+section <<_cpu_arithmetic_logic_unit>> for more information.
 
 .CFU Exception
 [NOTE]
-The CFU can intentionally raise an illegal instruction exception by not asserting the `done` at all causing an
-execution timeout. For example this can be used to signal invalid configurations/operations to the runtime
-environment. See the documentation in the CFU's VHDL source file for more information.
+The CFU can intentionally raise an illegal instruction exception by not asserting the `done` signal at all which
+will cause an execution timeout. For example this can be used to signal invalid configurations/operations to the
+runtime environment. See the documentation in the CFU's VHDL source file for more information.
