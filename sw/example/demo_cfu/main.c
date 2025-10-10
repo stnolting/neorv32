@@ -22,9 +22,9 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE   19200
-/** Number XTEA rounds */
+/** Number of XTEA rounds */
 #define XTEA_ROUNDS 20
-/** Input data size (in number of 32-bit words), has to be even */
+/** Input data size (number of 32-bit words), has to be even */
 #define DATA_NUM    64
 /**@}*/
 
@@ -45,17 +45,17 @@
 
 /*
  * The CFU custom instructions can be used as plain C functions as they are simple "intrinsics".
- * There are two "prototype primitives" for the CFU instructions (defined in sw/lib/include/neorv32_cfu.h):
+ * There are two prototype primitives"for the CFU instructions (defined in sw/lib/include/neorv32_cfu.h):
  *
  * > neorv32_cfu_r_instr(funct7, funct3, rs1, rs2) - for r-type CFU instructions (custom-0 opcode)
  * > neorv32_cfu_i_instr(funct3, imm12, rs1)       - for i-type CFU instructions (custom-1 opcode)
  *
  * Each instance of these intrinsics is converted into a single 32-bit RISC-V instruction word
- * without any calling overhead at all.
+ * without any calling overhead.
  *
  * The "rs*" source operands can be literals, variables, function return values, etc. The 7-bit
  * immediate ("funct7"), the 3-bit immediate ("funct3") and the 12-bit immediate ("imm12") values
- * can be used to pass compile-time static literals to the CFU or to do a fine-grained function selection.
+ * can be used to pass compile-time static literals to the CFU or for fine-grained function selection.
  *
  * Each "neorv32_cfu_*" intrinsic returns a 32-bit data word of type uint32_t that represents
  * the processing result of the according instruction.
@@ -250,7 +250,7 @@ int main() {
   neorv32_uart0_printf("Comparing results... ");
   for (i=0; i<DATA_NUM; i++) {
     if (cypher_data_sw[i] != cypher_data_hw[i]) {
-      neorv32_uart0_printf("FAILED at byte %d\n", i);
+      neorv32_uart0_printf("FAILED at byte index %d\n", i);
       return -1;
     }
   }
@@ -298,7 +298,7 @@ int main() {
   neorv32_uart0_printf("Comparing results... ");
   for (i=0; i<DATA_NUM; i++) {
     if ((plain_data_sw[i] != plain_data_hw[i]) || (plain_data_sw[i] != input_data[i])) {
-      neorv32_uart0_printf("FAILED at byte %d\n", i);
+      neorv32_uart0_printf("FAILED at byte index %d\n", i);
       return -1;
     }
   }
@@ -318,7 +318,7 @@ int main() {
   // ----------------------------------------------------------
   // Execute an unimplemented CFU instruction word
   // ----------------------------------------------------------
-  neorv32_uart0_printf("\nExecuting non-implemented CFU instruction (raise ILLEGAL INSTRUCTION exception)...\n");
+  neorv32_uart0_printf("\nExecuting not-implemented CFU instruction (raise ILLEGAL INSTRUCTION exception)...\n");
   xtea_hw_illegal_inst();
 
 

@@ -96,21 +96,21 @@ asm (
  **************************************************************************/
 #define CUSTOM_INSTR_R_TYPE(funct7, rs2, rs1, funct3, opcode) \
 ({                                                            \
-    uint32_t __return;                                        \
-    asm volatile (                                            \
-      ".word (                                                \
-        (((" #funct7 ") & 0x7f) << 25) |                      \
-        (((  reg_%2   ) & 0x1f) << 20) |                      \
-        (((  reg_%1   ) & 0x1f) << 15) |                      \
-        (((" #funct3 ") & 0x07) << 12) |                      \
-        (((  reg_%0   ) & 0x1f) <<  7) |                      \
-        (((" #opcode ") & 0x7f) <<  0)                        \
-      );"                                                     \
-      : [rd] "=r" (__return)                                  \
-      : "r" (rs1),                                            \
-        "r" (rs2)                                             \
-    );                                                        \
-    __return;                                                 \
+  uint32_t __return;                                          \
+  asm volatile (                                              \
+    ".word (                                                  \
+      (((" #funct7 ") & 0x7f) << 25) |                        \
+      (((  reg_%2   ) & 0x1f) << 20) |                        \
+      (((  reg_%1   ) & 0x1f) << 15) |                        \
+      (((" #funct3 ") & 0x07) << 12) |                        \
+      (((  reg_%0   ) & 0x1f) <<  7) |                        \
+      (((" #opcode ") & 0x7f) <<  0)                          \
+    );"                                                       \
+    : [rd] "=r" (__return)                                    \
+    : "r" (rs1),                                              \
+      "r" (rs2)                                               \
+  );                                                          \
+  __return;                                                   \
 })
 
 
@@ -119,19 +119,19 @@ asm (
  **************************************************************************/
 #define CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, opcode) \
 ({                                                      \
-    uint32_t __return;                                  \
-    asm volatile (                                      \
-      ".word (                                          \
-        (((" #imm12  ") & 0xfff) << 20) |               \
-        (((  reg_%1   ) &  0x1f) << 15) |               \
-        (((" #funct3 ") &  0x07) << 12) |               \
-        (((  reg_%0   ) &  0x1f) <<  7) |               \
-        (((" #opcode ") &  0x7f) <<  0)                 \
-      );"                                               \
-      : [rd] "=r" (__return)                            \
-      : "r" (rs1)                                       \
-    );                                                  \
-    __return;                                           \
+  uint32_t __return;                                    \
+  asm volatile (                                        \
+    ".word (                                            \
+      (((" #imm12  ") & 0xfff) << 20) |                 \
+      (((  reg_%1   ) &  0x1f) << 15) |                 \
+      (((" #funct3 ") &  0x07) << 12) |                 \
+      (((  reg_%0   ) &  0x1f) <<  7) |                 \
+      (((" #opcode ") &  0x7f) <<  0)                   \
+    );"                                                 \
+    : [rd] "=r" (__return)                              \
+    : "r" (rs1)                                         \
+  );                                                    \
+  __return;                                             \
 })
 
 
