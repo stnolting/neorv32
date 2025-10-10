@@ -288,19 +288,19 @@ begin
       -- operation trigger --
       start_i  => ctrl_i.alu_cp_cfu,              -- start trigger, single-shot
       -- operands --
-      type_i   => ctrl_i.ir_opcode(5),            -- instruction type (0 = R-type, 1 = I-type)
-      funct3_i => ctrl_i.ir_funct3,               -- "funct3" bit-field from custom instruction word
-      funct7_i => ctrl_i.ir_funct12(11 downto 5), -- "funct7" bit-field from custom instruction word
-      imm12_i  => ctrl_i.ir_funct12(11 downto 0), -- "imm12" bit-field from custom instruction word
+      type_i   => ctrl_i.ir_opcode(5),            -- instruction type
+      funct3_i => ctrl_i.ir_funct3,               -- "funct3" bit-field
+      funct7_i => ctrl_i.ir_funct12(11 downto 5), -- "funct7" bit-field
+      imm12_i  => ctrl_i.ir_funct12(11 downto 0), -- "imm12" bit-field
       rs1_i    => rs1_i,                          -- rf source 1
       rs2_i    => rs2_i,                          -- rf source 2
       -- result and status --
       result_o => cfu_res,                        -- operation result
-      valid_o  => cfu_done                        -- result valid, operation done; set one cycle before result_o is valid
+      valid_o  => cfu_done                        -- result valid, operation done
     );
 
     -- response proxy --
-    cfu_arbiter: process(rstn_i, clk_i)
+    cfu_proxy: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
         cfu_busy     <= '0';
@@ -311,13 +311,13 @@ begin
         elsif (ctrl_i.alu_cp_cfu = '1') then
           cfu_busy <= '1';
         end if;
-        if (cfu_done = '1') and ((ctrl_i.alu_cp_cfu = '1') or (cfu_busy = '1')) then
+        if (cp_valid(4) = '1') then
           cp_result(4) <= cfu_res;
         else -- output zero if there is no CFU operation
           cp_result(4) <= (others => '0');
         end if;
       end if;
-    end process cfu_arbiter;
+    end process cfu_proxy;
     cp_valid(4) <= cfu_done and (ctrl_i.alu_cp_cfu or cfu_busy);
   end generate;
 

@@ -1,9 +1,8 @@
 -- ================================================================================ --
 -- NEORV32 CPU - Co-Processor: Custom (RISC-V Instructions) Functions Unit (CFU)    --
 -- -------------------------------------------------------------------------------- --
--- For custom/user-defined RISC-V instructions. See the CPU's documentation for     --
--- more information. Also take a look at the "software-counterpart" of this default --
--- CFU hardware example in 'sw/example/demo_cfu'.                                   --
+-- See the CPU's data sheet for more information. Also take a look at the "software --
+-- counterpart" of this CFU example in sw/example/demo_cfu.                         --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -32,74 +31,24 @@ entity neorv32_cpu_cp_cfu is
     rs2_i    : in  std_ulogic_vector(31 downto 0); -- rf source 2 via "rs2" bit-field from instruction word
     -- result and status --
     result_o : out std_ulogic_vector(31 downto 0); -- operation result
-    valid_o  : out std_ulogic -- result valid, operation done; set one cycle before result_o is valid
+    valid_o  : out std_ulogic -- operation done
   );
 end neorv32_cpu_cp_cfu;
 
-  -- **************************************************************************************************************************
-  -- CFU Interface Documentation
-  -- **************************************************************************************************************************
-
-  -- ----------------------------------------------------------------------------------------
-  -- Input Operands
-  -- ----------------------------------------------------------------------------------------
-  -- > type_i   (input,  1-bit): instruction R-type (R-type or I-type); driven by the instruction word's OPCODE bit 5
-  -- > funct3_i (input,  3-bit): 3-bit function select / immediate value; driven by instruction word's <funct3> bit-field
-  -- > funct7_i (input,  7-bit): 7-bit function select / immediate value; driven by instruction word's <funct7> bit-field, R-type only
-  -- > imm12_i  (input, 12-bit): 12-bit immediate value; driven by instruction word's <imm12> bit-field, I-type only
-  -- > rs1_i    (input, 32-bit): source register 1; selected by instruction word's <rs1> bit-field
-  -- > rs2_i    (input, 32-bit): source register 2; selected by instruction word's <rs2> bit-field, R-type only
-  --
-  -- The general instruction type is identified by the <type_i> input.
-  -- r_type_c (= 0): R-type instruction (RISC-V custom-0 opcode); 'rs1', 'rs2', 'funct7' and 'funct3'
-  -- i_type_c (= 1): I-type instruction (RISC-V custom-1 opcode); 'rs1', 'imm12' and 'funct3'
-  --
-  -- The signals <rs1_i> and <rs2_i> provide the actual source operand data read from the CPU's register
-  -- file. These register operands are addressed by the custom instruction word's 'rs1' and 'rs2' bit-fields.
-  -- The actual CFU operation can be defined by using the <funct3_i> and/or <funct7_i> signals.
-  -- Both signals are driven by the according bit-fields of the custom instruction word.
-  --
-  -- [NOTE] All input operands/signals remain stable until the CFU operation has completed.
-
-  -- ----------------------------------------------------------------------------------------
-  -- Operation Control, Result and Status
-  -- ----------------------------------------------------------------------------------------
-  -- > start_i  (input,   1-bit): operation trigger (start CFU operation, high for one cycle)
-  -- > result_o (output, 32-bit): processing result
-  -- > valid_o  (output,  1-bit): set high (for one cycle) when processing is done
-  --
-  -- The start of a new CFU operation is indicated by <start_i> being high for exactly one cycle. When the CFU has completed
-  -- processing, the data returned via <result_o> will be written to the CPU's register file (indexed by the 'rd' bit-field).
-  --
-  -- The <valid_o> signal is used to signal the completion of the CFU operation. For pure-combinatorial instructions
-  -- (completing within 1 clock cycle) <valid_o> can be hardwired to 1. If the CFU requires several clock cycles for
-  -- completion the <valid_o> signal has to be set when <result_o> is valid. Otherwise, <valid_o> should be cleared.
-  --
-  -- Example interface timing for a multi-cycle CFU operation:
-  -- clk_i    ____/----\____/----\____/----\____/----\____
-  -- start_i  ____/---------\_____________________________ trigger is high for one cycle
-  -- valid_o  ________________________/---------\_________ set for one cycle when operation is done / result is valid
-  -- result_o ........................|DDDDDDDDD|......... don't care ('.') except for valid-output phase ('D')
-  --
-  -- [NOTE] If the <valid_o> signal is not set within a bound time after the CFU has been triggered via <start_i>
-  --        (default = 512 cycles; see "monitor_mc_tmo_c" constant in the main NEORV32 package file) the CFU operation
-  --        is automatically terminated by the hardware and an illegal instruction exception is raised.
-
-
-  -- **************************************************************************************************************************
-  -- Actual CFU User Logic Example: XTEA - Extended Tiny Encryption Algorithm (replace this with your custom logic)
-  -- **************************************************************************************************************************
+  -- **********************************************************
+  -- CFU Example: XTEA - Extended Tiny Encryption Algorithm
+  -- **********************************************************
 
   -- This CFU example implements the Extended Tiny Encryption Algorithm (XTEA).
-  -- The CFU provides five r3-type instructions for encryption and decryption.
-  -- Furthermore, four r4-type instruction are used for reading/writing the XTEA key registers.
+  -- The CFU provides five R-type instructions for encryption and decryption.
+  -- andfour I-type instruction are used for reading/writing the XTEA key registers.
 
-  -- The RTL code was implemented according to an open-source software C reference:
+  -- The RTL code was implemented according to an open-source C reference:
   -- https://de.wikipedia.org/wiki/Extended_Tiny_Encryption_Algorithm
 
 architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
 
-  -- CFU instruction type formats --
+  -- instruction type identifiers --
   constant r_type_c : std_ulogic := '0'; -- R-type CFU instructions (custom-0 opcode)
   constant i_type_c : std_ulogic := '1'; -- I-type CFU instructions (custom-1 opcode)
 
