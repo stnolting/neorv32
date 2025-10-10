@@ -144,7 +144,7 @@ begin
   -- Function Result Select -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   result_select: process(type_i, funct3_i, imm12_i, xtea, key_mem)
-  begin
+  begin -- no need for a register stage here; the CFU output is registered inside the ALU module anyway
     if (type_i = r_type_c) then -- R-type instructions; function select via "funct3" and ""funct7
     -- ----------------------------------------------------------------------
       case funct3_i is -- just check "funct3" here; "funct7" bit-field is ignored in this example
@@ -158,12 +158,10 @@ begin
           result_o <= (others => '0'); -- no logic implemented
           valid_o  <= '0'; -- this will cause an illegal instruction exception
       end case;
-
     else -- I-type instructions; used for key access
     -- ----------------------------------------------------------------------
       result_o <= key_mem(to_integer(unsigned(imm12_i(1 downto 0))));
       valid_o  <= '1'; -- pure-combinatorial, so we are done "immediately"
-
     end if;
   end process result_select;
 
