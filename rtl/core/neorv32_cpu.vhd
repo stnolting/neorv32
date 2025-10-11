@@ -96,7 +96,6 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
-  constant rf_rs3_en_c : boolean := RISCV_ISA_Zxcfu; -- 3rd register file read port
   constant riscv_a_c   : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
   constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
   constant riscv_zcb_c : boolean := RISCV_ISA_C and RISCV_ISA_Zcb; -- Zcb: additional compressed instructions
@@ -116,7 +115,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal rf_wdata    : std_ulogic_vector(XLEN-1 downto 0); -- register file write data
   signal rs1         : std_ulogic_vector(XLEN-1 downto 0); -- source register 1
   signal rs2         : std_ulogic_vector(XLEN-1 downto 0); -- source register 2
-  signal rs3         : std_ulogic_vector(XLEN-1 downto 0); -- source register 3
   signal alu_res     : std_ulogic_vector(XLEN-1 downto 0); -- alu result
   signal alu_add     : std_ulogic_vector(XLEN-1 downto 0); -- alu address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0);      -- comparator result
@@ -355,8 +353,7 @@ begin
   neorv32_cpu_regfile_inst: entity neorv32.neorv32_cpu_regfile
   generic map (
     RST_EN => CPU_RF_HW_RST_EN, -- enable dedicated hardware reset ("ASIC style")
-    RVE_EN => RISCV_ISA_E,      -- implement embedded RF extension
-    RS3_EN => rf_rs3_en_c       -- enable 3rd read port
+    RVE_EN => RISCV_ISA_E       -- implement embedded RF extension
   )
   port map (
     -- global control --
@@ -366,8 +363,7 @@ begin
     -- operands --
     rd_i   => rf_wdata, -- destination operand rd
     rs1_o  => rs1,      -- source operand rs1
-    rs2_o  => rs2,      -- source operand rs2
-    rs3_o  => rs3       -- source operand rs3
+    rs2_o  => rs2       -- source operand rs2
   );
 
   -- all buses are zero unless there is an according operation --
@@ -407,7 +403,6 @@ begin
     -- data input --
     rs1_i  => rs1,        -- rf source 1
     rs2_i  => rs2,        -- rf source 2
-    rs3_i  => rs3,        -- rf source 3
     -- data output --
     cmp_o  => alu_cmp,    -- comparator status
     res_o  => alu_res,    -- ALU result

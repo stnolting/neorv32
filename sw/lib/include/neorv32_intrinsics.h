@@ -8,7 +8,7 @@
 
 /**
  * @file neorv32_intrinsics.h
- * @brief Helper macros for custom "intrinsics" / instructions.
+ * @brief Helper macros for custom instructions / "intrinsics".
  */
 
 #ifndef NEORV32_INTRINSICS_H
@@ -92,71 +92,25 @@ asm (
 
 
 /**********************************************************************//**
- * @name R2-type instruction format, RISC-V-standard
+ * @name R-type instruction format, RISC-V-standard
  **************************************************************************/
-#define CUSTOM_INSTR_R2_TYPE(funct7, funct5, rs1, funct3, opcode) \
-({                                                                \
-    uint32_t __return;                                            \
-    asm volatile(                                                 \
-      ".word (                                                    \
-        (((" #funct7 ") & 0x7f) << 25) |                          \
-        (((" #funct5 ") & 0x1f) << 20) |                          \
-        (((  reg_%1   ) & 0x1f) << 15) |                          \
-        (((" #funct3 ") & 0x07) << 12) |                          \
-        (((  reg_%0   ) & 0x1f) <<  7) |                          \
-        (((" #opcode ") & 0x7f) <<  0)                            \
-      );"                                                         \
-      : [rd] "=r" (__return)                                      \
-      : "r" (rs1)                                                 \
-    );                                                            \
-    __return;                                                     \
-})
-
-
-/**********************************************************************//**
- * @name R3-type instruction format, RISC-V-standard
- **************************************************************************/
-#define CUSTOM_INSTR_R3_TYPE(funct7, rs2, rs1, funct3, opcode) \
-({                                                             \
-    uint32_t __return;                                         \
-    asm volatile (                                             \
-      ".word (                                                 \
-        (((" #funct7 ") & 0x7f) << 25) |                       \
-        (((  reg_%2   ) & 0x1f) << 20) |                       \
-        (((  reg_%1   ) & 0x1f) << 15) |                       \
-        (((" #funct3 ") & 0x07) << 12) |                       \
-        (((  reg_%0   ) & 0x1f) <<  7) |                       \
-        (((" #opcode ") & 0x7f) <<  0)                         \
-      );"                                                      \
-      : [rd] "=r" (__return)                                   \
-      : "r" (rs1),                                             \
-        "r" (rs2)                                              \
-    );                                                         \
-    __return;                                                  \
-})
-
-
-/**********************************************************************//**
- * @name R4-type instruction format, RISC-V-standard
- **************************************************************************/
-#define CUSTOM_INSTR_R4_TYPE(rs3, rs2, rs1, funct3, opcode) \
-({                                                          \
-    uint32_t __return;                                      \
-    asm volatile (                                          \
-      ".word (                                              \
-        (((  reg_%3   ) & 0x1f) << 27) |                    \
-        (((  reg_%2   ) & 0x1f) << 20) |                    \
-        (((  reg_%1   ) & 0x1f) << 15) |                    \
-        (((" #funct3 ") & 0x07) << 12) |                    \
-        (((  reg_%0   ) & 0x1f) <<  7) |                    \
-        (((" #opcode ") & 0x7f) <<  0)                      \
-      );"                                                   \
-      : [rd] "=r" (__return)                                \
-      : "r" (rs1),                                          \
-        "r" (rs2),                                          \
-        "r" (rs3)                                           \
-    );                                                      \
-    __return;                                               \
+#define CUSTOM_INSTR_R_TYPE(funct7, rs2, rs1, funct3, opcode) \
+({                                                            \
+  uint32_t __return;                                          \
+  asm volatile (                                              \
+    ".word (                                                  \
+      (((" #funct7 ") & 0x7f) << 25) |                        \
+      (((  reg_%2   ) & 0x1f) << 20) |                        \
+      (((  reg_%1   ) & 0x1f) << 15) |                        \
+      (((" #funct3 ") & 0x07) << 12) |                        \
+      (((  reg_%0   ) & 0x1f) <<  7) |                        \
+      (((" #opcode ") & 0x7f) <<  0)                          \
+    );"                                                       \
+    : [rd] "=r" (__return)                                    \
+    : "r" (rs1),                                              \
+      "r" (rs2)                                               \
+  );                                                          \
+  __return;                                                   \
 })
 
 
@@ -165,40 +119,19 @@ asm (
  **************************************************************************/
 #define CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, opcode) \
 ({                                                      \
-    uint32_t __return;                                  \
-    asm volatile (                                      \
-      ".word (                                          \
-        (((" #imm12  ") & 0xfff) << 20) |               \
-        (((  reg_%1   ) &  0x1f) << 15) |               \
-        (((" #funct3 ") &  0x07) << 12) |               \
-        (((  reg_%0   ) &  0x1f) <<  7) |               \
-        (((" #opcode ") &  0x7f) <<  0)                 \
-      );"                                               \
-      : [rd] "=r" (__return)                            \
-      : "r" (rs1)                                       \
-    );                                                  \
-    __return;                                           \
-})
-
-
-/**********************************************************************//**
- * @name S-type instruction format, RISC-V-standard
- **************************************************************************/
-#define CUSTOM_INSTR_S_TYPE(imm12, rs2, rs1, funct3, opcode) \
-({                                                           \
-    asm volatile (                                           \
-      ".word (                                               \
-        ((((" #imm12 ") >> 5) & 0x7f) << 25) |               \
-        (((   reg_%1   )      & 0x1f) << 20) |               \
-        (((   reg_%0   )      & 0x1f) << 15) |               \
-        ((("  #funct3 ")      & 0x07) << 12) |               \
-        ((("  #imm12  ")      & 0x1f) <<  7) |               \
-        ((("  #opcode ")      & 0x7f) <<  0)                 \
-      );"                                                    \
-      :                                                      \
-      : "r" (rs1),                                           \
-        "r" (rs2)                                            \
-    );                                                       \
+  uint32_t __return;                                    \
+  asm volatile (                                        \
+    ".word (                                            \
+      (((" #imm12  ") & 0xfff) << 20) |                 \
+      (((  reg_%1   ) &  0x1f) << 15) |                 \
+      (((" #funct3 ") &  0x07) << 12) |                 \
+      (((  reg_%0   ) &  0x1f) <<  7) |                 \
+      (((" #opcode ") &  0x7f) <<  0)                   \
+    );"                                                 \
+    : [rd] "=r" (__return)                              \
+    : "r" (rs1)                                         \
+  );                                                    \
+  __return;                                             \
 })
 
 
