@@ -306,7 +306,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amosc(uint32_t addr,
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
- * @return Status: Pre-operation memory content
+ * @return Pre-operation memory content
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoswap(uint32_t addr, uint32_t wdata) {
 
@@ -335,7 +335,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoswap(uint32_t add
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
- * @return Status: Pre-operation memory content
+ * @return Pre-operation memory content
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoadd(uint32_t addr, uint32_t wdata) {
 
@@ -364,7 +364,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoadd(uint32_t addr
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
- * @return Status: Pre-operation memory content
+ * @return Pre-operation memory content
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoxor(uint32_t addr, uint32_t wdata) {
 
@@ -393,7 +393,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoxor(uint32_t addr
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
- * @return Status: Pre-operation memory content
+ * @return Pre-operation memory content
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoand(uint32_t addr, uint32_t wdata) {
 
@@ -422,7 +422,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoand(uint32_t addr
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
- * @return Status: Pre-operation memory content
+ * @return Pre-operation memory content
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoor(uint32_t addr, uint32_t wdata) {
 
@@ -451,7 +451,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoor(uint32_t addr,
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
- * @return Status: Pre-operation memory content
+ * @return Pre-operation memory content
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomin(uint32_t addr, uint32_t wdata) {
 
@@ -480,7 +480,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomin(uint32_t addr
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
- * @return Status: Pre-operation memory content
+ * @return Pre-operation memory content
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomax(uint32_t addr, uint32_t wdata) {
 
@@ -509,7 +509,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomax(uint32_t addr
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
- * @return Status: Pre-operation memory content
+ * @return Pre-operation memory content
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amominu(uint32_t addr, uint32_t wdata) {
 
@@ -538,7 +538,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amominu(uint32_t add
  *
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
- * @return Status: Pre-operation memory content
+ * @return Pre-operation memory content
  **************************************************************************/
 inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomaxu(uint32_t addr, uint32_t wdata) {
 
