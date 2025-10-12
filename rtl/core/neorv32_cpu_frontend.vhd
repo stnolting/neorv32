@@ -302,6 +302,8 @@ begin
 
       frontend_bus_issue.zcmp_finished <= '0';
       frontend_bus_issue.zcmp_in_uop_seq <= '0';
+      frontend_bus_issue.zcmp_atomic_tail <= '0';
+      frontend_bus_issue.zcmp_start <= '0';
 
       zcmp_instr_nxt <= zcmp_instr_reg;
       zcmp_detect <= '0';
@@ -315,6 +317,7 @@ begin
               if (instr_is_zcmp = '1') then
                 zcmp_instr_nxt <= ipb.rdata(0)(15 downto 0);
                 issue_state_nxt <= S_ZCMP;
+                frontend_bus_issue.zcmp_start <= '1';
                 zcmp_detect <= '1';
               else
                 align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
@@ -338,6 +341,7 @@ begin
               if (instr_is_zcmp = '1') then
                 zcmp_instr_nxt <= ipb.rdata(1)(15 downto 0);
                 issue_state_nxt <= S_ZCMP;
+                frontend_bus_issue.zcmp_start <= '1';
                 zcmp_detect <= '1';
               else
                 align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
@@ -477,6 +481,8 @@ begin
         frontend_bus_zcmp.instr <= (others => '0');
         frontend_bus_zcmp.zcmp_finished <= '0';
         frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq;
+        frontend_bus_zcmp.zcmp_atomic_tail <= '0';
+        frontend_bus_zcmp.zcmp_start <= '0';
 
         case uop_state_reg is
           when S_IDLE =>
@@ -489,6 +495,7 @@ begin
             end if;
 
           when S_ZCMP_UOP_SEQ =>
+            frontend_bus_zcmp.compr <= '1';
             zcmp_in_uop_seq <= '1';
             if (uop_ctr = 15) then --last instruction
               frontend_bus_zcmp.instr <= zcmp_stack_adj_instr;
@@ -498,8 +505,10 @@ begin
                 uop_ctr_nxt_in_seq <= 0;
 
                 if (zcmp_is_popret = '1') then
+                  frontend_bus_zcmp.zcmp_atomic_tail <= '1';
                   uop_state_nxt <= S_POPRET;
                 elsif (zcmp_is_popretz = '1') then
+                  frontend_bus_zcmp.zcmp_atomic_tail <= '1';
                   uop_state_nxt <= S_POPRETZ;
                 else
                   uop_state_nxt <= S_IDLE;
@@ -521,7 +530,7 @@ begin
 
             end if;
 
-            if (fetch.restart = '1') then
+            if (fetch.restart = '1' or ctrl_i.cpu_trap = '1') then
               uop_state_nxt <= S_ZCMP_BRANCH_ABORT;
               zcmp_in_uop_seq <= '0';
               uop_ctr_nxt_in_seq <= 0;
@@ -530,6 +539,8 @@ begin
             end if;
 
           when S_POPRET =>
+            frontend_bus_zcmp.compr <= '1';
+            frontend_bus_zcmp.zcmp_atomic_tail <= '1';
             zcmp_in_uop_seq <= '1';
             frontend_bus_zcmp.instr <= zcmp_jalr_instr;
             frontend_bus_zcmp.valid <= '1';
@@ -539,6 +550,8 @@ begin
             end if;
 
           when S_POPRETZ =>
+            frontend_bus_zcmp.compr <= '1';
+            frontend_bus_zcmp.zcmp_atomic_tail <= '1';
             zcmp_in_uop_seq <= '1';
             frontend_bus_zcmp.instr <= zcmp_zero_a0_instr; --zero a0
             frontend_bus_zcmp.valid <= '1';
@@ -560,6 +573,8 @@ begin
             end if;
 
           when S_ZCMP_DOUBLE_MOVE_1 =>
+            frontend_bus_zcmp.compr <= '1';
+            frontend_bus_zcmp.zcmp_atomic_tail <= '1';
             zcmp_in_uop_seq <= '1';
 
             if (zcmp_is_mvsa01s = '1') then
@@ -575,6 +590,8 @@ begin
             end if;
 
           when S_ZCMP_DOUBLE_MOVE_2 =>
+            frontend_bus_zcmp.compr <= '1';
+            frontend_bus_zcmp.zcmp_atomic_tail <= '1';
             zcmp_in_uop_seq <= '1';
 
             if (zcmp_is_mvsa01s = '1') then
@@ -698,9 +715,12 @@ begin
   end process pointer_reg;
 
   -- status --
-  match   <= '1' when (r_pnt(AWIDTH-1 downto 0) = w_pnt(AWIDTH-1 downto 0)) else '0';
-  free_o  <= '0' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '1';
-  avail_o <= '0' when (r_pnt(AWIDTH)  = w_pnt(AWIDTH)) and (match = '1') else '1';
+  match <= '1' when (r_pnt(AWIDTH - 1 downto 0) = w_pnt(AWIDTH - 1 downto 0)) else
+           '0';
+  free_o <= '0' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else
+            '1';
+  avail_o <= '0' when (r_pnt(AWIDTH) = w_pnt(AWIDTH)) and (match = '1') else
+             '1';
 
   -- Memory Core ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

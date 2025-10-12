@@ -199,8 +199,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal cnt_event    : std_ulogic_vector(11 downto 0); -- counter events
   signal ebreak_trig  : std_ulogic; -- "ebreak" exception trigger
 
-  signal zcmp_in_uop_seq_q, zcmp_finished : std_ulogic;
-  signal zcmp_pc_reg, zcmp_pc_nxt : std_ulogic_vector(31 downto 0);
+  signal zcmp_event, zcmp_event_nxt, zcmp_event_reset : std_ulogic; 
+  signal zcmp_pc2, zcmp_pc2_nxt,zcmp_pc, zcmp_pc_nxt : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -220,8 +220,6 @@ begin
       if (exe_engine.state = EX_DISPATCH) then -- prepare update of next PC (using ALU's PC + IMM in EX_EXECUTE state)
         if RISCV_ISA_C and (frontend_i.compr = '1') then -- is decompressed C instruction?
           immediate <= x"00000002";
-        elsif (frontend_i.zcmp_in_uop_seq='1') then
-          immediate <= (others => '0');
         else
           immediate <= x"00000004";
         end if;
@@ -276,19 +274,18 @@ begin
     elsif rising_edge(clk_i) then
       ctrl       <= ctrl_nxt;
       exe_engine <= exe_engine_nxt;
-      zcmp_in_uop_seq_q <= frontend_i.zcmp_in_uop_seq;
+      zcmp_pc <= zcmp_pc_nxt;
+      zcmp_pc2 <= zcmp_pc2_nxt;
     end if;
   end process execute_engine_fsm_sync;
 
   -- simplified rv32 opcode --
   opcode <= exe_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
 
-  zcmp_finished <= (not frontend_i.zcmp_in_uop_seq) and zcmp_in_uop_seq_q;
-
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(exe_engine,frontend_i,zcmp_finished, debug_ctrl, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
+  execute_engine_fsm_comb: process(exe_engine,frontend_i, debug_ctrl,zcmp_pc2,zcmp_pc,zcmp_event,  trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
                                    ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
@@ -313,6 +310,11 @@ begin
     csr.we_nxt           <= '0';
     csr.re_nxt           <= '0';
     ctrl_nxt             <= ctrl_bus_zero_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
+
+    zcmp_pc2_nxt <= zcmp_pc2;
+    zcmp_pc_nxt <= zcmp_pc;
+    zcmp_event_reset <= '0';
+
 
     -- ALU sign control --
     if (opcode(4) = '1') then -- ALU ops
@@ -366,16 +368,28 @@ begin
         ctrl_nxt.alu_opa_mux <= '1'; -- prepare update of next PC in EX_EXECUTE (opa = current PC)
         ctrl_nxt.alu_opb_mux <= '1'; -- prepare update of next PC in EX_EXECUTE (opb = imm = +2/4)
         --
-        if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
+        if (((trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1')) and (frontend_i.zcmp_atomic_tail='0')) then -- pending trap or pending exception (fast), only taken when zcmp not in atomic section
           exe_engine_nxt.state <= EX_TRAP_ENTER;
         elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
           trap_ctrl.instr_be   <= frontend_i.fault or pmp_fault_i; -- access fault during instruction fetch
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
 
-          exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
 
-          exe_engine_nxt.state <= EX_EXECUTE; -- start executing new instruction
+        if(zcmp_event = '1') then 
+          zcmp_pc2_nxt <= std_ulogic_vector(unsigned(exe_engine.pc2) + 2);
+          zcmp_pc_nxt <= std_ulogic_vector(unsigned(exe_engine.pc2));
+          zcmp_event_reset<='1';
+        end if;
+
+        if(frontend_i.zcmp_in_uop_seq = '1' and zcmp_event='0') then 
+          exe_engine_nxt.pc    <= zcmp_pc;
+          exe_engine_nxt.pc2    <= zcmp_pc2;
+        else
+          exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
+        end if; 
+
+        exe_engine_nxt.state <= EX_EXECUTE; -- start executing new instruction
         end if;
 
       when EX_TRAP_ENTER => -- enter trap environment and jump to trap vector
@@ -406,9 +420,7 @@ begin
       -- ------------------------------------------------------------
 
         if(frontend_i.zcmp_in_uop_seq='1') then 
-          exe_engine_nxt.pc2 <= exe_engine.pc(XLEN-1 downto 1) & '0';
-        elsif (zcmp_finished='1') then
-          exe_engine_nxt.pc2 <= std_ulogic_vector(unsigned(exe_engine.pc(XLEN-1 downto 1) & '0') + 2);
+          exe_engine_nxt.pc2 <= zcmp_pc2;
         else
           exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0'; -- next PC = PC + immediate
         end if;
@@ -631,6 +643,17 @@ begin
   ctrl_o.cpu_sync_exc <= trap_ctrl.exc_fire;
   ctrl_o.cpu_debug    <= debug_ctrl.run;
 
+
+  zcmp_event_sync : process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      zcmp_event <= '0';
+    elsif rising_edge(clk_i) then
+      zcmp_event <= zcmp_event_nxt;
+    end if;
+  end process zcmp_event_sync;
+
+  zcmp_event_nxt <= '1' when frontend_i.zcmp_start else '0' when zcmp_event_reset ='1' else zcmp_event;
 
   -- ****************************************************************************************************************************
   -- Illegal Instruction Detection
@@ -1411,7 +1434,7 @@ begin
   -- RISC-V-compliant counter events --
   cnt_event(cnt_event_cy_c) <= '0' when (exe_engine.state = EX_SLEEP) else '1'; -- active cycle
   cnt_event(cnt_event_tm_c) <= '0'; -- time: not available
-  cnt_event(cnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) else '0'; -- retired (=executed) instruction
+  cnt_event(cnt_event_ir_c) <= '1' when (exe_engine.state = EX_EXECUTE) and ((frontend_i.zcmp_in_uop_seq='0') or (frontend_i.zcmp_start='1')) else '0'; -- retired (=executed) instruction
 
   -- NEORV32-specific counter events --
   cnt_event(cnt_event_compr_c)    <= '1' when (exe_engine.state = EX_EXECUTE)  and (exe_engine.ci = '1')             else '0'; -- executed compressed instruction
