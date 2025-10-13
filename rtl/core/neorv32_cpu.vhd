@@ -101,6 +101,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant riscv_a_c   : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
   constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
   constant riscv_zcb_c : boolean := RISCV_ISA_C and RISCV_ISA_Zcb; -- Zcb: additional compressed instructions
+  constant riscv_zcmp_c : boolean := RISCV_ISA_C and RISCV_ISA_Zcmp; -- Zcmp: additional compressed instructions
   constant riscv_zkt_c : boolean := CPU_FAST_SHIFT_EN; -- Zkt: data-independent execution time for cryptography operations
   constant riscv_zkn_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
                                     RISCV_ISA_Zkne and RISCV_ISA_Zknd and RISCV_ISA_Zknh; -- Zkn: NIST suite
@@ -149,8 +150,9 @@ begin
       cond_sel_string_f(true,             "x",         "" ) & -- always enabled
       cond_sel_string_f(RISCV_ISA_Zaamo,  "_zaamo",    "" ) &
       cond_sel_string_f(RISCV_ISA_Zalrsc, "_zalrsc",   "" ) &
-      cond_sel_string_f(RISCV_ISA_C,      "_zca",      "" ) & -- Zcb requires Zca (=C) in the ISA string
-      cond_sel_string_f(riscv_zcb_c,      "_zcb",      "" ) &
+      cond_sel_string_f(RISCV_ISA_C,      "_zca",      "" ) & 
+      cond_sel_string_f(riscv_zcb_c,      "_zcb",      "" ) & -- Zcb requires Zca (=C) in the ISA string
+      cond_sel_string_f(riscv_zcmp_c,     "_zcmp",     "" ) & -- Zcb requires Zca (=C) in the ISA string
       cond_sel_string_f(RISCV_ISA_Zba,    "_zba",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zbb,    "_zbb",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zbkb,   "_zbkb",     "" ) &
@@ -195,8 +197,8 @@ begin
   neorv32_cpu_frontend_inst: entity neorv32.neorv32_cpu_frontend
   generic map (
     RISCV_C   => RISCV_ISA_C,  -- implement C ISA extension
-    RISCV_ZCB => RISCV_ISA_Zcb, -- implement Zcb ISA sub-extension
-    RISCV_ZCMP => RISCV_ISA_Zcmp -- implement Zcmp ISA sub-extension
+    RISCV_ZCB => riscv_zcb_c, -- implement Zcb ISA sub-extension
+    RISCV_ZCMP => riscv_zcmp_c -- implement Zcmp ISA sub-extension
   )
   port map (
     -- global control --
@@ -229,7 +231,8 @@ begin
     RISCV_ISA_U       => RISCV_ISA_U,       -- implement user mode extension
     RISCV_ISA_Zaamo   => RISCV_ISA_Zaamo,   -- implement atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc  => RISCV_ISA_Zalrsc,  -- implement atomic reservation-set operations extension
-    RISCV_ISA_Zcb     => riscv_zcb_c,       -- implement additional code size reduction instructions
+    RISCV_ISA_Zcb     => riscv_zcb_c,       -- implement additional code size reduction instructions (Zcb)
+    RISCV_ISA_Zcmp    => riscv_zcmp_c,     -- implement additional code size reduction instructions (Zcmp)
     RISCV_ISA_Zba     => RISCV_ISA_Zba,     -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb     => RISCV_ISA_Zbb,     -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb    => RISCV_ISA_Zbkb,    -- implement bit-manipulation instructions for cryptography

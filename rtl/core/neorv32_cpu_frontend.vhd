@@ -114,7 +114,7 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   signal zcmp_is_popret : std_ulogic;
   signal zcmp_is_popretz : std_ulogic;
   signal zcmp_is_mvsa01 : std_ulogic;
-  signal zcmp_is_mvsa01s : std_ulogic;
+  signal zcmp_is_mva01s : std_ulogic;
 
   signal zcmp_instr, zcmp_sw_instr, zcmp_lw_instr, zcmp_jalr_instr : std_ulogic_vector(31 downto 0);
   constant zcmp_sw_instr_opcode : std_ulogic_vector(6 downto 0) := "0100011";
@@ -262,7 +262,7 @@ begin
         zcmp_is_popret => zcmp_is_popret,
         zcmp_is_popretz => zcmp_is_popretz,
         zcmp_is_mvsa01 => zcmp_is_mvsa01,
-        zcmp_is_mvsa01s => zcmp_is_mvsa01s
+        zcmp_is_mva01s => zcmp_is_mva01s
       );
 
     -- half-word select --
@@ -437,27 +437,21 @@ begin
       zcmp_stack_adj_instr <= zcmp_push_stack_adj_instr when zcmp_is_push = '1' else
                               zcmp_pop_stack_adj_instr;
 
-      zcmp_li_a0_instr <= (31 downto 12 => '0',
-                          11 downto 7 => "01010",
-                          6 downto 0 => zcmp_addi_instr_opcode);
-
-      zcmp_jalr_instr <= (31 downto 20 => '0',
-                         19 downto 15 => zcmp_instr_rs1_ra,
-                         14 downto 7 => '0',
-                         6 downto 0 => zcmp_jalr_instr_opcode);
+      zcmp_li_a0_instr <= "00000000000000000000" & "01010" & zcmp_addi_instr_opcode;
+      zcmp_jalr_instr <= "000000000000" & zcmp_instr_rs1_ra & "00000000" & zcmp_jalr_instr_opcode;
 
       uop_ctr_clr <= '0';
 
       uop_ctr_next <= 0 when uop_ctr_clr = '1' else
                       uop_ctr_nxt_in_seq;
 
-      zcmp_sa01_r1s <= (zcmp_instr_reg(9) or zcmp_instr_reg(8),
-                       not (zcmp_instr_reg(9) or zcmp_instr_reg(8)),
-                       zcmp_instr_reg(9 downto 7));
+      zcmp_sa01_r1s <= (zcmp_instr_reg(9) or zcmp_instr_reg(8)) &
+                       (not (zcmp_instr_reg(9) or zcmp_instr_reg(8))) &
+                       zcmp_instr_reg(9 downto 7);
 
-      zcmp_sa01_r2s <= (zcmp_instr_reg(4) or zcmp_instr_reg(3),
-                       not (zcmp_instr_reg(4) or zcmp_instr_reg(3)),
-                       zcmp_instr_reg(4 downto 2));
+      zcmp_sa01_r2s <= (zcmp_instr_reg(4) or zcmp_instr_reg(3)) &
+                       (not (zcmp_instr_reg(4) or zcmp_instr_reg(3))) &
+                       zcmp_instr_reg(4 downto 2);
 
       uop_fsm_sync : process (rstn_i, clk_i)
       begin
@@ -470,7 +464,7 @@ begin
         end if;
       end process uop_fsm_sync;
 
-      uop_fsm_comb : process (uop_state_reg, zcmp_jalr_instr, zcmp_sa01_r1s, zcmp_sa01_r2s, zcmp_is_mvsa01, zcmp_is_mvsa01s, uop_ctr, fetch, ipb, zcmp_in_uop_seq, zcmp_is_popret, zcmp_is_popretz, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
+      uop_fsm_comb : process (uop_state_reg, zcmp_jalr_instr, zcmp_sa01_r1s, zcmp_sa01_r2s, zcmp_is_mvsa01, zcmp_is_mva01s, uop_ctr, fetch, ipb, zcmp_in_uop_seq, zcmp_is_popret, zcmp_is_popretz, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
       begin
         uop_ctr_nxt_in_seq <= uop_ctr;
         uop_state_nxt <= uop_state_reg;
@@ -487,7 +481,7 @@ begin
         case uop_state_reg is
           when S_IDLE =>
             if (zcmp_detect = '1') then
-              if (zcmp_is_mvsa01 = '1' or zcmp_is_mvsa01s = '1') then
+              if (zcmp_is_mvsa01 = '1' or zcmp_is_mva01s = '1') then
                 uop_state_nxt <= S_ZCMP_DOUBLE_MOVE_1;
               else
                 uop_state_nxt <= S_ZCMP_UOP_SEQ;
@@ -564,7 +558,7 @@ begin
             if (ipb.avail /= "00") then
               uop_state_nxt <= S_IDLE;
               if (zcmp_detect = '1') then
-                if (zcmp_is_mvsa01 = '1' or zcmp_is_mvsa01s = '1') then
+                if (zcmp_is_mvsa01 = '1' or zcmp_is_mva01s = '1') then
                   uop_state_nxt <= S_ZCMP_DOUBLE_MOVE_1;
                 else
                   uop_state_nxt <= S_ZCMP_UOP_SEQ;
@@ -577,10 +571,10 @@ begin
             frontend_bus_zcmp.zcmp_atomic_tail <= '1';
             zcmp_in_uop_seq <= '1';
 
-            if (zcmp_is_mvsa01s = '1') then
-              frontend_bus_zcmp.instr <= (x"000", zcmp_sa01_r1s, zcmp_addi_instr_funct3, "01010", zcmp_addi_instr_opcode);
+            if (zcmp_is_mva01s = '1') then
+              frontend_bus_zcmp.instr <= x"000" & zcmp_sa01_r1s & zcmp_addi_instr_funct3 & "01010" & zcmp_addi_instr_opcode;
             else
-              frontend_bus_zcmp.instr <= (x"000", "01010", zcmp_addi_instr_funct3, zcmp_sa01_r1s, zcmp_addi_instr_opcode);
+              frontend_bus_zcmp.instr <= x"000" & "01010" & zcmp_addi_instr_funct3 & zcmp_sa01_r1s & zcmp_addi_instr_opcode;
             end if;
 
             frontend_bus_zcmp.valid <= '1';
@@ -594,11 +588,12 @@ begin
             frontend_bus_zcmp.zcmp_atomic_tail <= '1';
             zcmp_in_uop_seq <= '1';
 
-            if (zcmp_is_mvsa01s = '1') then
-              frontend_bus_zcmp.instr <= (x"000", zcmp_sa01_r2s, zcmp_addi_instr_funct3, "01011", zcmp_addi_instr_opcode);
+            if (zcmp_is_mva01s = '1') then
+              frontend_bus_zcmp.instr <= x"000" & zcmp_sa01_r2s & zcmp_addi_instr_funct3 & "01011" & zcmp_addi_instr_opcode;
             else
-              frontend_bus_zcmp.instr <= (x"000", "01011", zcmp_addi_instr_funct3, zcmp_sa01_r2s, zcmp_addi_instr_opcode);
+              frontend_bus_zcmp.instr <= x"000" & "01011" & zcmp_addi_instr_funct3 & zcmp_sa01_r2s & zcmp_addi_instr_opcode;
             end if;
+            
             frontend_bus_zcmp.valid <= '1';
 
             if (ctrl_i.if_ready = '1') then

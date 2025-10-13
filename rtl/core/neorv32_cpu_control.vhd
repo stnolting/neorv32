@@ -38,6 +38,7 @@ entity neorv32_cpu_control is
     RISCV_ISA_Zaamo   : boolean; -- implement atomic read-modify-write extension
     RISCV_ISA_Zalrsc  : boolean; -- implement atomic reservation-set operations extension
     RISCV_ISA_Zcb     : boolean; -- implement additional code size reduction instructions
+    RISCV_ISA_Zcmp    : boolean; -- implement additional code size reduction instructions
     RISCV_ISA_Zba     : boolean; -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb     : boolean; -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb    : boolean; -- implement bit-manipulation instructions for cryptography
@@ -200,7 +201,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ebreak_trig  : std_ulogic; -- "ebreak" exception trigger
 
   signal zcmp_event, zcmp_event_nxt, zcmp_event_reset : std_ulogic; 
-  signal zcmp_pc2, zcmp_pc2_nxt,zcmp_pc, zcmp_pc_nxt : std_ulogic_vector(31 downto 0);
+  signal zcmp_pc, zcmp_pc_nxt : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -275,7 +276,6 @@ begin
       ctrl       <= ctrl_nxt;
       exe_engine <= exe_engine_nxt;
       zcmp_pc <= zcmp_pc_nxt;
-      zcmp_pc2 <= zcmp_pc2_nxt;
     end if;
   end process execute_engine_fsm_sync;
 
@@ -285,7 +285,7 @@ begin
 
   -- Execute Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(exe_engine,frontend_i, debug_ctrl,zcmp_pc2,zcmp_pc,zcmp_event,  trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
+  execute_engine_fsm_comb: process(exe_engine,frontend_i, debug_ctrl, zcmp_pc, zcmp_event, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
                                    ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
@@ -311,7 +311,6 @@ begin
     csr.re_nxt           <= '0';
     ctrl_nxt             <= ctrl_bus_zero_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
 
-    zcmp_pc2_nxt <= zcmp_pc2;
     zcmp_pc_nxt <= zcmp_pc;
     zcmp_event_reset <= '0';
 
@@ -376,16 +375,14 @@ begin
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
 
 
-        if(zcmp_event = '1') then 
-          zcmp_pc2_nxt <= std_ulogic_vector(unsigned(exe_engine.pc2) + 2);
-          zcmp_pc_nxt <= std_ulogic_vector(unsigned(exe_engine.pc2));
-          zcmp_event_reset<='1';
+        if(zcmp_event = '1') then -- zcmp instruction is detected in frontend  
+          zcmp_pc_nxt <= std_ulogic_vector(unsigned(exe_engine.pc2)); -- save current pc2 value (program counter will be held at this value during zcmp uop sequence)
+          zcmp_event_reset <= '1';
         end if;
 
-        if(frontend_i.zcmp_in_uop_seq = '1' and zcmp_event='0') then 
-          exe_engine_nxt.pc    <= zcmp_pc;
-          exe_engine_nxt.pc2    <= zcmp_pc2;
-        else
+        if(frontend_i.zcmp_in_uop_seq = '1' and zcmp_event='0') then -- currently executing zcmp uop instructions?
+          exe_engine_nxt.pc    <= zcmp_pc; -- hold program counter at zcmp instruction
+        else -- normal instruction dispatch
           exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
         end if; 
 
@@ -419,9 +416,9 @@ begin
       when EX_EXECUTE => -- decode and prepare execution (FSM will be here for exactly 1 cycle in any case)
       -- ------------------------------------------------------------
 
-        if(frontend_i.zcmp_in_uop_seq='1') then 
-          exe_engine_nxt.pc2 <= zcmp_pc2;
-        else
+        if(frontend_i.zcmp_in_uop_seq = '1') then -- currently executing zcmp uop instruction?
+          exe_engine_nxt.pc2 <= std_ulogic_vector(unsigned(zcmp_pc)+2);
+        else -- normal instruction execution
           exe_engine_nxt.pc2 <= alu_add_i(XLEN-1 downto 1) & '0'; -- next PC = PC + immediate
         end if;
         
@@ -644,17 +641,38 @@ begin
   ctrl_o.cpu_debug    <= debug_ctrl.run;
 
 
-  zcmp_event_sync : process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      zcmp_event <= '0';
-    elsif rising_edge(clk_i) then
-      zcmp_event <= zcmp_event_nxt;
-    end if;
-  end process zcmp_event_sync;
+  zcmp_enabled: 
+  if RISCV_ISA_Zcmp generate
 
-  zcmp_event_nxt <= '1' when frontend_i.zcmp_start else '0' when zcmp_event_reset ='1' else zcmp_event;
+  -- ****************************************************************************************************************************
+  -- Zcmp micro op detection
+  -- ****************************************************************************************************************************
 
+  -- single bit register saves the zcmp_start signal from the frontend 
+    zcmp_event_sync : process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        zcmp_event <= '0';
+      elsif rising_edge(clk_i) then
+        zcmp_event <= zcmp_event_nxt;
+      end if;
+    end process zcmp_event_sync;
+
+    -- if the frontend sends the start signal of the zcmp uop instruction sequence, the signal will be saved until the execution engine reaches the next DISPATCH state.
+    zcmp_event_nxt <= '1' when frontend_i.zcmp_start = '1' else '0' when zcmp_event_reset = '1' else zcmp_event;
+
+  end generate;
+
+  zcmp_disabled: 
+  if not RISCV_ISA_Zcmp generate
+
+    zcmp_event <= '0';
+    zcmp_event_nxt <= '0';
+
+  end generate;
+
+
+  
   -- ****************************************************************************************************************************
   -- Illegal Instruction Detection
   -- ****************************************************************************************************************************

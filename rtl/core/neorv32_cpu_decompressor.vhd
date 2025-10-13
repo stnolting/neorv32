@@ -31,7 +31,7 @@ entity neorv32_cpu_decompressor is
     zcmp_is_popret : out std_ulogic; -- instruction is popret
     zcmp_is_popretz : out std_ulogic; -- instruction is popretz
     zcmp_is_mvsa01 : out std_ulogic;
-    zcmp_is_mvsa01s : out std_ulogic
+    zcmp_is_mva01s : out std_ulogic
   );
 end neorv32_cpu_decompressor;
 
@@ -78,7 +78,7 @@ begin
     zcmp_is_popret <= '0';
     zcmp_is_popretz <= '0';
     zcmp_is_mvsa01 <= '0';
-    zcmp_is_mvsa01s <= '0';
+    zcmp_is_mva01s <= '0';
     zcmp_is_push <= '0';
 
     -- decoder --
@@ -401,7 +401,7 @@ begin
                   zcmp_is_mvsa01 <= '1';
                 elsif (instr_i(6 downto 5) = "11") then -- mvsa01s
                   instr_is_zcmp <= '1';
-                  zcmp_is_mvsa01s <= '1';
+                  zcmp_is_mva01s <= '1';
                 end if;
             end if;
           end if;
