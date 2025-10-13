@@ -300,7 +300,6 @@ begin
       frontend_bus_issue.compr <= '0';
       frontend_bus_issue.fault <= '0';
 
-      frontend_bus_issue.zcmp_finished <= '0';
       frontend_bus_issue.zcmp_in_uop_seq <= '0';
       frontend_bus_issue.zcmp_atomic_tail <= '0';
       frontend_bus_issue.zcmp_start <= '0';
@@ -341,7 +340,7 @@ begin
               if (instr_is_zcmp = '1') then
                 zcmp_instr_nxt <= ipb.rdata(1)(15 downto 0);
                 issue_state_nxt <= S_ZCMP;
-                frontend_bus_issue.zcmp_start <= '1';
+                frontend_bus_issue.zcmp_start <= '1'; -- zcmp sequence is about to start
                 zcmp_detect <= '1';
               else
                 align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
@@ -362,7 +361,6 @@ begin
         when S_ZCMP =>
 
           if zcmp_in_uop_seq = '0' then
-            frontend_bus_issue.zcmp_finished <= '1';
             issue_state_nxt <= S_ISSUE;
             zcmp_instr_nxt <= (others => '0');
             if (align_q = '0') then
@@ -473,7 +471,6 @@ begin
         frontend_bus_zcmp.compr <= '0';
         frontend_bus_zcmp.fault <= '0';
         frontend_bus_zcmp.instr <= (others => '0');
-        frontend_bus_zcmp.zcmp_finished <= '0';
         frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq;
         frontend_bus_zcmp.zcmp_atomic_tail <= '0';
         frontend_bus_zcmp.zcmp_start <= '0';
