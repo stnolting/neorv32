@@ -14,11 +14,6 @@ controller in larger SoC designs or as tiny and customized microcontroller that 
 Lattice iCE40 UltraPlus low-power & low-density FPGA. The project is intended to work _out of the box_ and targets
 FPGA / RISC-V beginners as well as advanced users.
 
-Special focus is paid on **execution safety** to provide defined and predictable behavior at any time.
-For example, the CPU ensures _all_ memory accesses are properly acknowledged and _all_ invalid/malformed
-instructions are always detected as such. Whenever an unexpected state occurs the application software is
-informed via _precise_ and resumable hardware exceptions.
-
 ![neorv32 Overview](docs/figures/neorv32_processor.png)
 
 ### Key Features

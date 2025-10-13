@@ -19,7 +19,7 @@ entity neorv32_cfs is
   port (
     -- global control --
     clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- global reset line, low-active, use as async
+    rstn_i    : in  std_ulogic; -- global reset line, low-active, async
     -- CPU access --
     bus_req_i : in  bus_req_t; -- bus request
     bus_rsp_o : out bus_rsp_t; -- bus response
@@ -34,40 +34,18 @@ end neorv32_cfs;
 architecture neorv32_cfs_rtl of neorv32_cfs is
 
   -- exemplary CFS interface registers --
-  type cfs_regs_t is array (0 to 3) of std_ulogic_vector(31 downto 0); -- implement 4 registers for this example
+  type cfs_regs_t is array (0 to 3) of std_ulogic_vector(31 downto 0); -- implement 4 read/write registers
   signal cfs_reg_wr : cfs_regs_t; -- for WRITE accesses
   signal cfs_reg_rd : cfs_regs_t; -- for READ accesses
 
 begin
 
-  -- CFS Generics ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- In it's default version the CFS provides three configuration generics:
-  -- > CFS_IN_SIZE  - configures the size (in bits) of the CFS input conduit cfs_in_i
-  -- > CFS_OUT_SIZE - configures the size (in bits) of the CFS output conduit cfs_out_o
-  -- > CFS_CONFIG   - is a blank 32-bit generic. It is intended as a "generic conduit" to propagate
-  --                  custom configuration flags from the top entity down to this module.
-
-
   -- CFS IOs --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- By default, the CFS provides two IO signals (cfs_in_i and cfs_out_o) that are available at the processor's top entity.
-  -- These are intended as "conduits" to propagate custom signals from this module and the processor top entity.
-  --
-  -- If the CFU output signals are to be used outside the chip, it is recommended to register these signals.
+  -- By default, the CFS provides two IO ports (cfs_in_i and cfs_out_o) that are available at the processor's top entity.
+  -- These are intended as "conduits" to propagate custom CFS signals between the CFS and the processor top entity.
 
   cfs_out_o <= (others => '0'); -- not used for this minimal example
-
-
-  -- Reset System ---------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- The CFS can be reset using the global rstn_i signal. This signal should be used as asynchronous reset and is active-low.
-  -- Note that rstn_i can be asserted by a processor-external reset, the on-chip debugger and also by the watchdog.
-  --
-  -- Most default peripheral devices of the NEORV32 do NOT use a dedicated hardware reset at all. Instead, these units are
-  -- reset by writing ZERO to a specific "control register" located right at the beginning of the device's address space
-  -- (so this register is cleared at first). The crt0 start-up code writes ZERO to every single address in the processor's
-  -- IO space - including the CFS. Make sure that this initial clearing does not cause any unintended CFS actions.
 
 
   -- Interrupt ------------------------------------------------------------------------------
@@ -80,29 +58,17 @@ begin
 
   -- Read/Write Access ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- Here we are reading/writing from/to the interface registers of the module and generate the CPU access handshake (bus response).
+  -- The CFS provides up to 64kB of memory-mapped address space (16 address bits, byte-addressing) that can be used
+  -- for custom memories and interface registers. According to the CPU's bus protocol, each read or write access has
+  -- to be acknowledged in the following cycle using the <bus_rsp_o.ack_o> signal (or even later if the module needs
+  -- additional time to complete the access). If no ACK is generated, the bus access will time out causing a bus access
+  -- fault exception.
   --
-  -- The CFS provides up to 64kB of memory-mapped address space (16 address bits, byte-addressing) that can be used for custom
-  -- memories and interface registers. If the complete 16-bit address space is not required, only the minimum LSBs required for
-  -- address decoding can be used. In this case, however, the implemented registers are replicated (several times) across the CFS
-  -- address space.
-  --
-  -- Following the interface protocol, each read or write access has to be acknowledged in the following cycle using the ack_o
-  -- signal (or even later if the module needs additional time). If no ACK is generated at all, the bus access will time out
-  -- and cause a bus access fault exception. The current CPU privilege level is available via the 'priv_i' signal (0 = user mode,
-  -- 1 = machine mode), which can be used to constrain access to certain registers or features to privileged software only.
-  --
-  -- This module also provides an optional ERROR signal to indicate a faulty access operation (for example when accessing an
-  -- unused, read-only or "locked" CFS register address). This signal may only be set when the module is actually accessed
-  -- and is set INSTEAD of the ACK signal. Setting the ERR signal will raise a bus access exception with a "Device Error" qualifier
-  -- that can be handled by the application software. Note that the current privilege level should not be exposed to software to
-  -- maintain full virtualization. Hence, CFS-based "privilege escalation" should trigger a bus access exception (e.g. by setting 'err_o').
-  --
-  -- Host access example: Read and write access to the interface registers + bus transfer acknowledge. This example only
-  -- implements four physical r/w register (the four lowest CFS registers). The remaining addresses of the CFS are not associated
-  -- with any physical registers - any access to those is simply ignored but still acknowledged. Only full-word write accesses are
-  -- supported (and acknowledged) by this example. Sub-word write access will not alter any CFS register state and will cause
-  -- a "bus store access" exception (with a "Device Timeout" qualifier as not ACK is generated in that case).
+  -- [EXAMPLE] Read and write access to the interface registers and bus transfer acknowledge. This example only four
+  -- physical 32-bit read/write register (using the four lowest CFS address bits). The remaining addresses of the CFS
+  -- are not associated with any physical registers - any access to those is simply ignored but still acknowledged;
+  -- read accesses will return zero. Only full-word write accesses are supported (and acknowledged) by this example.
+  -- Sub-word write accesses are ignored.
 
   bus_access: process(rstn_i, clk_i)
   begin
@@ -114,16 +80,12 @@ begin
       bus_rsp_o     <= rsp_terminate_c;
     elsif rising_edge(clk_i) then -- synchronous interface for read and write accesses
       -- transfer/access acknowledge --
-      bus_rsp_o.ack <= bus_req_i.stb;
-
-      -- tie to zero if not explicitly used --
+      bus_rsp_o.ack <= bus_req_i.stb; -- send ACK right after the access request
       bus_rsp_o.err <= '0'; -- set high together with bus_rsp_o.ack if there is an access error
 
-      -- defaults --
-      bus_rsp_o.data <= (others => '0'); -- the output HAS TO BE ZERO if there is no actual (read) access
-
       -- bus access --
-      if (bus_req_i.stb = '1') then -- valid access cycle, STB is high for one cycle
+      bus_rsp_o.data <= (others => '0'); -- the output HAS TO BE ZERO if there is no actual (read) access
+      if (bus_req_i.stb = '1') then -- valid access cycle, STB is high for exactly one cycle
 
         -- write access (word-wise) --
         if (bus_req_i.rw = '1') then
@@ -158,10 +120,8 @@ begin
 
   -- CFS Function Core ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-
-  -- This is where the actual functionality can be implemented.
-  -- The logic below is just a very simple example that transforms data
-  -- from an input register into data in an output register.
+  -- This is where the actual functionality can be implemented. The logic below is just a very
+  -- simple example that transforms data from an input register into data in an output register.
 
   cfs_reg_rd(0) <= x"0000000" & "000" & or_reduce_f(cfs_reg_wr(0)); -- OR all bits
   cfs_reg_rd(1) <= x"0000000" & "000" & xor_reduce_f(cfs_reg_wr(1)); -- XOR all bits
