@@ -616,6 +616,15 @@ begin
       zcmp_push_stack_adj_instr <= (others => '0');
       uop_ctr_clr <= '0';
       zcmp_in_uop_seq <= '0';
+      zcmp_sa01_r1s <= (others => '0');
+      zcmp_sa01_r2s <= (others => '0');
+      zcmp_instr <= (others => '0'); 
+      zcmp_jalr_instr <= (others => '0'); 
+      zcmp_li_a0_instr <= (others => '0'); 
+      zcmp_stack_adj_instr <= (others => '0'); 
+      zcmp_stack_lw_offset <= (others => '0'); 
+      zcmp_lw_instr <= (others => '0'); 
+      zcmp_pop_stack_adj_instr <= (others => '0'); 
     end generate; -- /zcmp_disabled
 
   end generate; -- /issue_enabled

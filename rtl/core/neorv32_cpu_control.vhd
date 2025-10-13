@@ -275,7 +275,6 @@ begin
     elsif rising_edge(clk_i) then
       ctrl       <= ctrl_nxt;
       exe_engine <= exe_engine_nxt;
-      zcmp_pc <= zcmp_pc_nxt;
     end if;
   end process execute_engine_fsm_sync;
 
@@ -310,10 +309,6 @@ begin
     csr.we_nxt           <= '0';
     csr.re_nxt           <= '0';
     ctrl_nxt             <= ctrl_bus_zero_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
-
-    zcmp_pc_nxt <= zcmp_pc;
-    zcmp_event_reset <= '0';
-
 
     -- ALU sign control --
     if (opcode(4) = '1') then -- ALU ops
@@ -375,12 +370,7 @@ begin
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
 
 
-        if(zcmp_event = '1') then -- zcmp instruction is detected in frontend  
-          zcmp_pc_nxt <= std_ulogic_vector(unsigned(exe_engine.pc2)); -- save current pc2 value (program counter will be held at this value during zcmp uop sequence)
-          zcmp_event_reset <= '1';
-        end if;
-
-        if(frontend_i.zcmp_in_uop_seq = '1' and zcmp_event='0') then -- currently executing zcmp uop instructions?
+        if(frontend_i.zcmp_in_uop_seq = '1' and zcmp_event = '0') then -- currently executing zcmp uop instructions?
           exe_engine_nxt.pc    <= zcmp_pc; -- hold program counter at zcmp instruction
         else -- normal instruction dispatch
           exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
@@ -655,11 +645,30 @@ begin
         zcmp_event <= '0';
       elsif rising_edge(clk_i) then
         zcmp_event <= zcmp_event_nxt;
+        zcmp_pc <= zcmp_pc_nxt;
       end if;
     end process zcmp_event_sync;
 
-    -- if the frontend sends the start signal of the zcmp uop instruction sequence, the signal will be saved until the execution engine reaches the next DISPATCH state.
-    zcmp_event_nxt <= '1' when frontend_i.zcmp_start = '1' else '0' when zcmp_event_reset = '1' else zcmp_event;
+    zcmp_event_comb : process(zcmp_pc, frontend_i, zcmp_event_reset, zcmp_event,exe_engine)
+    begin
+      zcmp_pc_nxt <= zcmp_pc;
+      zcmp_event_nxt <= zcmp_event;
+      zcmp_event_reset <= '0';
+
+      if(zcmp_event = '1' and exe_engine.state = EX_DISPATCH) then -- zcmp instruction is detected in frontend  
+        zcmp_pc_nxt <= std_ulogic_vector(unsigned(exe_engine.pc2)); -- save current pc2 value (program counter will be held at this value during zcmp uop sequence)
+        zcmp_event_reset <= '1';
+      end if;
+
+      if(frontend_i.zcmp_start = '1') then
+        zcmp_event_nxt <= '1';
+      elsif (zcmp_event_reset = '1') then
+        zcmp_event_nxt <= '0';
+      else
+        zcmp_event_nxt <= zcmp_event;
+      end if;
+
+    end process;
 
   end generate;
 
@@ -668,6 +677,9 @@ begin
 
     zcmp_event <= '0';
     zcmp_event_nxt <= '0';
+    zcmp_pc <= (others => '0');
+    zcmp_pc_nxt <= (others => '0');
+    zcmp_event_reset <= '0';
 
   end generate;
 
