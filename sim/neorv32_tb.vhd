@@ -30,6 +30,7 @@ entity neorv32_tb is
     RISCV_ISA_Zaamo     : boolean                        := true;        -- implement atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc    : boolean                        := true;        -- implement atomic reservation-set operations extension
     RISCV_ISA_Zcb       : boolean                        := false;       -- implement additional code size reduction instructions
+    RISCV_ISA_Zcmp      : boolean                        := true;        -- implement additional code size reduction instructions
     RISCV_ISA_Zba       : boolean                        := true;        -- implement shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean                        := true;        -- implement basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean                        := true;        -- implement bit-manipulation instructions for cryptography
@@ -143,7 +144,7 @@ begin
     RISCV_ISA_Zaamo => RISCV_ISA_Zaamo,
     RISCV_ISA_Zalrsc => RISCV_ISA_Zalrsc,
     RISCV_ISA_Zcb => RISCV_ISA_Zcb,
-    -- RISCV_ISA_Zcmp => RISCV_ISA_Zcmp,
+    RISCV_ISA_Zcmp => RISCV_ISA_Zcmp,
     RISCV_ISA_Zba => RISCV_ISA_Zba,
     RISCV_ISA_Zbb => RISCV_ISA_Zbb,
     RISCV_ISA_Zbkb => RISCV_ISA_Zbkb,
@@ -499,29 +500,6 @@ begin
       xbus_rsp_o => xbus_mmio_rsp
     );
 
-  -- monitor_blk : block
-  --   -- Declare the external-name alias here, AFTER the DUT exists
-  --   alias zcmp_push is << signal .neorv32_tb.neorv32_top_inst.core_complex_gen(0).neorv32_cpu_inst.neorv32_cpu_frontend_inst.zcmp_detect : std_ulogic >> ;
-  --   alias instr_il is << signal .neorv32_tb.neorv32_top_inst.core_complex_gen(0).neorv32_cpu_inst.neorv32_cpu_control_inst.trap_me : std_ulogic >> ;
-
-  -- begin
-  --   monitor : process
-  --   begin
-  --     -- if (zcmp_push = '1') then
-  --     --   report "zcmp push detected";
-  --     -- end if;
-  --     wait until zcmp_push = '1';
-  --     -- wait until instr_il = '1';
-  --     -- report "illegal instruction";
-  --     report "zcmp push detected";
-
-  --     wait until zcmp_push = '1';
-  --     report "zcmp push detected";
-
-  --     wait for 100000 ns;
-  --     std.env.finish;
-  --   end process;
-  -- end block monitor_blk;
 
   -- XBUS: External IRQ Trigger -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
