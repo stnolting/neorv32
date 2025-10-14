@@ -760,7 +760,7 @@ int main() {
   // load from unaligned address
   asm volatile ("li %[da], 0xcafe1230 \n" // initialize destination register with known value
                 "lw %[da], 0(%[ad])   \n" // must not update destination register to to exception
-                : [da] "=r" (tmp_b) : [ad] "r" (ADDR_UNALIGNED_1));
+                : [da] "=&r" (tmp_b) : [ad] "r" (ADDR_UNALIGNED_1));
 
   if ((trap_cause == TRAP_CODE_L_MISALIGNED) &&
       (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNALIGNED_1) &&
