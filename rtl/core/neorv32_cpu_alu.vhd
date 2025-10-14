@@ -46,7 +46,6 @@ entity neorv32_cpu_alu is
     -- data input --
     rs1_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
-    rs3_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 3
     -- data output --
     cmp_o  : out std_ulogic_vector(1 downto 0); -- comparator status
     res_o  : out std_ulogic_vector(XLEN-1 downto 0); -- ALU result
@@ -83,7 +82,7 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
   signal fpu_csr_rd : std_ulogic_vector(XLEN-1 downto 0);
 
   -- CFU proxy --
-  signal cfu_active, cfu_done, cfu_busy : std_ulogic;
+  signal cfu_done, cfu_busy : std_ulogic;
   signal cfu_res : std_ulogic_vector(XLEN-1 downto 0);
 
 begin
@@ -286,23 +285,22 @@ begin
       -- global control --
       clk_i    => clk_i,                          -- global clock, rising edge
       rstn_i   => rstn_i,                         -- global reset, low-active, async
-      -- operation control --
-      start_i  => ctrl_i.alu_cp_cfu,              -- operation trigger/strobe
-      active_i => cfu_active,                     -- operation in progress, CPU is waiting for CFU
+      -- operation trigger --
+      start_i  => ctrl_i.alu_cp_cfu,              -- start trigger, single-shot
       -- operands --
-      rtype_i  => ctrl_i.ir_opcode(5),            -- instruction type (R3-type or R4-type)
-      funct3_i => ctrl_i.ir_funct3,               -- "funct3" bit-field from custom instruction word
-      funct7_i => ctrl_i.ir_funct12(11 downto 5), -- "funct7" bit-field from custom instruction word
+      type_i   => ctrl_i.ir_opcode(5),            -- instruction type
+      funct3_i => ctrl_i.ir_funct3,               -- "funct3" bit-field
+      funct7_i => ctrl_i.ir_funct12(11 downto 5), -- "funct7" bit-field
+      imm12_i  => ctrl_i.ir_funct12(11 downto 0), -- "imm12" bit-field
       rs1_i    => rs1_i,                          -- rf source 1
       rs2_i    => rs2_i,                          -- rf source 2
-      rs3_i    => rs3_i,                          -- rf source 3
       -- result and status --
       result_o => cfu_res,                        -- operation result
-      valid_o  => cfu_done                        -- result valid, operation done; set one cycle before result_o is valid
+      valid_o  => cfu_done                        -- result valid, operation done
     );
 
     -- response proxy --
-    cfu_arbiter: process(rstn_i, clk_i)
+    cfu_proxy: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
         cfu_busy     <= '0';
@@ -313,15 +311,13 @@ begin
         elsif (ctrl_i.alu_cp_cfu = '1') then
           cfu_busy <= '1';
         end if;
-        if (cfu_done = '1') and ((ctrl_i.alu_cp_cfu = '1') or (cfu_busy = '1')) then
+        if (cp_valid(4) = '1') then
           cp_result(4) <= cfu_res;
         else -- output zero if there is no CFU operation
           cp_result(4) <= (others => '0');
         end if;
       end if;
-    end process cfu_arbiter;
-
-    cfu_active  <= ctrl_i.alu_cp_cfu or cfu_busy; -- CFU operation in progress
+    end process cfu_proxy;
     cp_valid(4) <= cfu_done and (ctrl_i.alu_cp_cfu or cfu_busy);
   end generate;
 
@@ -330,7 +326,6 @@ begin
     cfu_done     <= '0';
     cfu_res      <= (others => '0');
     cfu_busy     <= '0';
-    cfu_active   <= '0';
     cp_result(4) <= (others => '0');
     cp_valid(4)  <= '0';
   end generate;
