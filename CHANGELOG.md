@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 10.10.2025 | 1.12.3.4 | :warning: CFU: remove R4-type instruction support (three source registers); add support for I-type instructions | [#1402](https://github.com/stnolting/neorv32/pull/1402) |
 | 06.10.2025 | 1.12.3.3 | fix `Sdext` trigger type enumeration (change from legacy `mcontrol` to `mcontrol6`) | [#1400](https://github.com/stnolting/neorv32/pull/1400) |
 | 06.10.2025 | 1.12.3.2 | :bug: fix `clz` and `ctz` instructions; bug introduced in #1395 (v1.12.2.9) | [#1397](https://github.com/stnolting/neorv32/pull/1397) |
 | 05.10.2025 | 1.12.3.1 | rework debug module (DM) - slightly faster response, less hardware utilization, cleaner code | [#1396](https://github.com/stnolting/neorv32/pull/1396) |
