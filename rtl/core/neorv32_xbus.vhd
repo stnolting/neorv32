@@ -20,36 +20,34 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_xbus is
   generic (
-    REGSTAGE_EN : boolean  -- add XBUS register stages
+    REGSTAGE_EN : boolean -- add XBUS register stages
   );
   port (
-    clk_i      : in  std_ulogic; -- global clock line
-    rstn_i     : in  std_ulogic; -- global reset line, low-active
-    bus_term_i : in  std_ulogic; -- terminate current bus access
-    bus_req_i  : in  bus_req_t;  -- bus request
-    bus_rsp_o  : out bus_rsp_t;  -- bus response
+    clk_i      : in  std_ulogic;                     -- global clock line
+    rstn_i     : in  std_ulogic;                     -- global reset line, low-active
+    bus_term_i : in  std_ulogic;                     -- terminate current bus access
+    bus_req_i  : in  bus_req_t;                      -- bus request
+    bus_rsp_o  : out bus_rsp_t;                      -- bus response
     xbus_adr_o : out std_ulogic_vector(31 downto 0); -- address
     xbus_dat_i : in  std_ulogic_vector(31 downto 0); -- read data
     xbus_dat_o : out std_ulogic_vector(31 downto 0); -- write data
-    xbus_cti_o : out std_ulogic_vector(2 downto 0); -- cycle type
-    xbus_tag_o : out std_ulogic_vector(2 downto 0); -- access tag
-    xbus_we_o  : out std_ulogic; -- read/write
-    xbus_sel_o : out std_ulogic_vector(3 downto 0); -- byte enable
-    xbus_stb_o : out std_ulogic; -- strobe
-    xbus_cyc_o : out std_ulogic; -- valid cycle
-    xbus_ack_i : in  std_ulogic; -- transfer acknowledge
-    xbus_err_i : in  std_ulogic  -- transfer error
+    xbus_cti_o : out std_ulogic_vector(2 downto 0);  -- cycle type
+    xbus_tag_o : out std_ulogic_vector(2 downto 0);  -- access tag
+    xbus_we_o  : out std_ulogic;                     -- read/write
+    xbus_sel_o : out std_ulogic_vector(3 downto 0);  -- byte enable
+    xbus_stb_o : out std_ulogic;                     -- strobe
+    xbus_cyc_o : out std_ulogic;                     -- valid cycle
+    xbus_ack_i : in  std_ulogic;                     -- transfer acknowledge
+    xbus_err_i : in  std_ulogic                      -- transfer error
   );
 end neorv32_xbus;
 
 architecture neorv32_xbus_rtl of neorv32_xbus is
 
-  -- register stage --
   signal bus_req : bus_req_t;
   signal bus_rsp : bus_rsp_t;
-
-  -- bus arbiter --
-  signal pending, locked : std_ulogic;
+  signal pending : std_ulogic;
+  signal locked  : std_ulogic;
 
 begin
 
@@ -105,7 +103,7 @@ begin
   xbus_stb_o <= bus_req.stb;
   xbus_cyc_o <= bus_req.stb or pending;
 
-  -- cycle type identifier (for the ENTIRE access; no burst termination type supported!) --
+  -- cycle type identifier (for the ENTIRE access - burst-termination type is not supported!) --
   xbus_cti_o <= "001" when (bus_req.amo = '1') else -- constant address burst
                 "010" when (bus_req.burst = '1') else -- incrementing address burst
                 "000"; -- single access

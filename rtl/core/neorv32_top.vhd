@@ -792,7 +792,7 @@ begin
     B_BASE  => mem_dmem_base_c,
     B_SIZE  => dmem_size_c,
     -- port C: IO --
-    C_EN    => true, -- always enabled (but will be trimmed if no IO devices are implemented)
+    C_EN    => true,
     C_BASE  => mem_io_base_c,
     C_SIZE  => mem_io_size_c,
     -- port X (the void): XBUS --
