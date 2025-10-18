@@ -175,6 +175,6 @@ being initiated.
 The XBUS tag signal `xbus_tag_o` provides additional information about the current access cycle.
 The encoding is compatible to the AXI4 `xPROT` signal.
 
-* `xbus_tag_o(0)` **P**: access is performed from **privileged** mode (machine-mode) when set
-* `xbus_tag_o(1)` **NS**: this bit is hardwired to `0` indicating a **secure** access
 * `xbus_tag_o(2)` **I**: access is an **instruction** fetch when set; access is a data access when cleared
+* `xbus_tag_o(1)` **NS**: this bit is hardwired to `0` indicating a **secure** access
+* `xbus_tag_o(0)` **P**: access is performed from **privileged** mode (machine-mode) when set
