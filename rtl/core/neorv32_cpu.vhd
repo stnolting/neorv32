@@ -23,9 +23,9 @@ entity neorv32_cpu is
   generic (
     -- General --
     HART_ID             : natural range 0 to 1023;        -- hardware thread ID
-    BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
-    DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
-    DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
+    BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- CPU boot address
+    DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- CPU debug mode parking loop entry address
+    DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- CPU debug mode exception entry address
     -- RISC-V ISA Extensions --
     RISCV_ISA_C         : boolean;                        -- implement compressed extension
     RISCV_ISA_E         : boolean;                        -- implement embedded RF extension
@@ -79,11 +79,11 @@ entity neorv32_cpu is
     trace_o    : out trace_port_t;                   -- execution trace port (enabled when CPU_TRACE_EN = true)
     sleep_o    : out std_ulogic;                     -- CPU is in sleep mode
     -- interrupts --
-    msi_i      : in  std_ulogic;                     -- risc-v machine software interrupt
-    mei_i      : in  std_ulogic;                     -- risc-v machine external interrupt
-    mti_i      : in  std_ulogic;                     -- risc-v machine timer interrupt
+    msi_i      : in  std_ulogic;                     -- RISC-V machine software interrupt
+    mei_i      : in  std_ulogic;                     -- RISC-V machine external interrupt
+    mti_i      : in  std_ulogic;                     -- RISC-V machine timer interrupt
     firq_i     : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
-    dbi_i      : in  std_ulogic;                     -- risc-v debug halt request interrupt
+    dbi_i      : in  std_ulogic;                     -- RISC-V debug halt request interrupt
     -- instruction bus interface --
     ibus_req_o : out bus_req_t;                      -- request bus
     ibus_rsp_i : in  bus_rsp_t;                      -- response bus
