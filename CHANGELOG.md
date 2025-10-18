@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 18.10.2025 | 1.12.3.6 | improve PMP logic (shortening of critical path) | [#1408](https://github.com/stnolting/neorv32/pull/1408) |
 | 18.10.2025 | 1.12.3.5 | add `meta` signal to internal bus replacing individual `debug`, `priv` and `src` signals; refine reservation-set controller; minor RTL edits | [#1407](https://github.com/stnolting/neorv32/pull/1407) |
 | 10.10.2025 | 1.12.3.4 | :warning: CFU: remove R4-type instruction support (three source registers); add support for I-type instructions | [#1402](https://github.com/stnolting/neorv32/pull/1402) |
 | 06.10.2025 | 1.12.3.3 | fix `Sdext` trigger type enumeration (change from legacy `mcontrol` to `mcontrol6`) | [#1400](https://github.com/stnolting/neorv32/pull/1400) |
