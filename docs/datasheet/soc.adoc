@@ -623,24 +623,30 @@ an atomic way.
 
 ===== Atomic Reservation-Set Controller
 
-A "reservation" defines an address or address range that provides a guarding mechanism to support atomic accesses. A new
-reservation is registered by the `LR` instruction. The address provided by this instruction defines the memory location
-that is now monitored for atomic accesses. The according `SC` instruction evaluates the state of this reservation. If
-the reservation is still valid the write access triggered by the SC instruction is finally executed and the instruction
-return a "success" state (`rd` = 0). If the reservation has been invalidated the SC instruction will not write to memory
-and will return a "failed" state (`rd` = 1).
+A "reservation" defines an address or address range that provides a guarding mechanism to support atomic
+accesses. A new reservation is registered by the `LR` instruction. The address provided by this instruction
+defines the memory location that is now monitored for atomic accesses. The according `SC` instruction
+evaluates the state of this reservation. If the reservation is still valid the write access triggered by
+the SC instruction is finally executed and the instruction return a "success" state (`rd` = 0). If the
+reservation has been invalidated the SC instruction will not write to memory and will return a "failed"
+state (`rd` = 1).
 
-.Reservation Set and Granule
-[NOTE]
-The reservation set controller supports only **single global** reservation set. Hence, the entire physical address
-space is treated as single granule.
+The reservation-set controller implements the _strong semnatics_. A reservation is created when executing
+the `LR` instruction. Any other data memory access (for example by the DMA) will invalidate any active
+reservation (instruction fetches do not affect the reservations at all). Furthermore, executing a `fence[.i]`
+instruction will also invalidate any reservation.
 
-The reservation-set controller implements the _strong semnatics_. An active reservation is invalidated if...
+The controller implements a **single, global reservation set only**, which is used by both cores in the
+SMP <<_dual_core_configuration>>. Since the reservation is global, no access address is stored or compared.
+Furthermore, no CPU IDs are used at all. The `LR` operation of one CPU generates a reservation (for the
+entire address space, since it is global) that is also used by the other CPU. However, only one CPU will
+receive a success state for the according `SC` operation, which invalidates the reservation.
+This guarantees mutually exclusive access.
 
-* an `SC` instruction is executed. If there is **no** previous `LR` instruction, the `SC` instruction will **fail** (not writing to memory).
-* an `SC` instruction is executed. If there **is** a previous `LR` instruction, the `SC` instruction will **succeed** (finally writing to memory).
-* a normal store operation is executed (by a CPU / CPU cache, the DMA or the on-chip debugger).
-* a hardware reset is triggered.
+.External Reservations
+[IMPORTANT]
+Note that the reservation-set controller cannot track memory accesses outside
+of the NEORV32 processor that are executed by processor-external agents.
 
 
 :sectnums:
