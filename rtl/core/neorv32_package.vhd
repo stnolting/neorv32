@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120304"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120305"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
   constant XLEN          : natural := 32; -- native data path width
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
@@ -107,14 +107,12 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- bus request --
   type bus_req_t is record
+    meta  : std_ulogic_vector(2 downto 0); -- access meta information
     addr  : std_ulogic_vector(31 downto 0); -- access address
     data  : std_ulogic_vector(31 downto 0); -- write data
     ben   : std_ulogic_vector(3 downto 0); -- byte enable
     stb   : std_ulogic; -- request strobe, single-shot
     rw    : std_ulogic; -- 0 = read, 1 = write
-    src   : std_ulogic; -- 0 = data access, 1 = instruction fetch
-    priv  : std_ulogic; -- set if privileged (machine-mode) access
-    debug : std_ulogic; -- set if debug mode access
     amo   : std_ulogic; -- set if atomic memory operation
     amoop : std_ulogic_vector(3 downto 0); -- type of atomic memory operation
     burst : std_ulogic; -- set if part of burst access
@@ -125,14 +123,12 @@ package neorv32_package is
 
   -- bus source (request) termination --
   constant req_terminate_c : bus_req_t := (
+    meta  => (others => '0'),
     addr  => (others => '0'),
     data  => (others => '0'),
     ben   => (others => '0'),
     stb   => '0',
     rw    => '0',
-    src   => '0',
-    priv  => '0',
-    debug => '0',
     amo   => '0',
     amoop => (others => '0'),
     burst => '0',

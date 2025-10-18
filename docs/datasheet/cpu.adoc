@@ -122,10 +122,10 @@ The NEORV32 does not implement the `time[h]` registers. Any access to these regi
 recommended that the trap handler software provides a means of accessing the machine timer of the
 <<_core_local_interruptor_clint>>.
 
-.No Hardware Support of Misaligned Memory Accesses
+.No Hardware Support for Misaligned Memory Accesses
 [IMPORTANT]
 The CPU does not support resolving unaligned memory access by the hardware (this is not a
-RISC-V-incompatibility issue but an important thing to know!). Any kind of unaligned memory access
+RISC-V-incompatibility issue but an important thing to know). Any kind of unaligned memory access
 will raise an exception to allow a _software-based_ emulation provided by the application. However, unaligned memory
 access can be **emulated** using the NEORV32 runtime environment. See section <<_application_context_handling>>
 for more information.
@@ -470,14 +470,15 @@ additional latency). However, _all_ bus signals (request and response) need to b
 |=======================
 | Signal  | Width | Description
 3+^| **In-Band Signals**
+| `meta`  |     3 | Access meta information. +
+`meta(2)`: set when CPU is in debug-mode +
+`meta(1)`: current privilege mode, `0` = user-mode, `1` = machine-mode +
+`meta(0)`: access source, `0` = data access, `1` = instruction fetch
 | `addr`  |    32 | Access address using byte-wise addressing. Half-word (16-bit) and word (32-bit) addresses are aligned accordingly (e.g. LSB = 0 for half-word accesses).
 | `data`  |    32 | Write data. Writing individual bytes is controlled via `ben`.
 | `ben`   |     4 | Byte-enable for each byte in `data`. This signal is used for the write-data as well as for the read-data.
 | `stb`   |     1 | Request trigger ("strobe"). This signal is high for exactly one cycle starting a bus request. All other _in-band_ signals are valid only if `stb` is set.
 | `rw`    |     1 | Access direction (`0` = read, `1` = write).
-| `src`   |     1 | Access source (`0` = instruction fetch, `1` = load/store).
-| `priv`  |     1 | Set if privileged (Machine-mode) access.
-| `debug` |     1 | Set if debug-mode access (access from the on-chip debugger).
 | `amo`   |     1 | Set if current access is an atomic memory operation.
 | `amoop` |     4 | Actual type of atomic memory operation. Irrelevant if `amo` is not set.
 | `burst` |     1 | Set during a burst transaction (always set together with `lock`).
@@ -522,14 +523,12 @@ The figure below shows three exemplary single-access bus transactions:
   {name: 'clk', wave: 'p..|.......|..'},
   [
     "request",
+    {name: 'meta',  wave: 'x3.|.x4.x5.|.x'},
     {name: 'addr',  wave: 'x3.|.x4.x5.|.x', data: ['A_addr', 'B_addr', 'C_addr']},
     {name: 'data',  wave: 'x..|..4.x..|..', data: ['wdata']},
     {name: 'ben',   wave: 'x3.|.x4.x5.|.x', data: ['ben', 'ben', 'ben']},
     {name: 'stb',   wave: '010|..10.10|..', node: '.a....c..e....'},
     {name: 'rw',    wave: 'x0.|.x1.x0.|.x', node: '..............'},
-    {name: 'src',   wave: 'x0.|.x0.x0.|.x'},
-    {name: 'priv',  wave: 'x1.|.x1.x1.|.x'},
-    {name: 'debug', wave: 'x0.|.x0.x0.|.x'},
     {name: 'amo',   wave: 'x0.|.x0.x0.|.x'},
     {name: 'amoop', wave: 'x..|.......|..'},
     {name: 'lock',  wave: 'x0.|.......|.x'},
@@ -566,14 +565,12 @@ exclusive bus access and a 4-word incrementing-address read burst.
   {name: 'clk', wave: 'p.................'},
   [
     "request",
+    {name: 'meta',  wave: 'x2...x.|.2....x..'},
     {name: 'addr',  wave: 'x2...x.|.3.456x..', data: ['addr', '0', '4', '8', '12']},
     {name: 'data',  wave: 'x..2.x.|.........', data: ['wdata', '0', '4', '8', '12']},
     {name: 'ben',   wave: 'x2.2.x.|.2....x..', data: ['1111', '1111', '1111']},
     {name: 'stb',   wave: '01010..|.101..0..', node: '.a.d.....h.k.'},
     {name: 'rw',    wave: 'x0.1.x.|.0....x..'},
-    {name: 'src',   wave: 'x......|.........'},
-    {name: 'priv',  wave: 'x......|.........'},
-    {name: 'debug', wave: 'x......|.........'},
     {name: 'amo',   wave: 'x1...x.|.........'},
     {name: 'amoop', wave: 'x2...x.|.........'},
     {name: 'burst', wave: 'x0....x|.1.....0x'},

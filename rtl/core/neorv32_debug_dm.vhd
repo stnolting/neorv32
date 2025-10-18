@@ -602,7 +602,7 @@ begin
       -- bus handshake --
       bus_rsp_o.ack <= accen;
       bus_rsp_o.err <= '0';
-      -- data buffer access --
+      -- data buffer write access --
       if (dci.data_reg_we = '1') then -- DM write access
         dci.data_reg <= dmi_req_i.data;
       elsif (wren = '1') and (bus_req_i.addr(8 downto 7) = dm_data_base_c(8 downto 7)) then -- CPU write access
@@ -615,13 +615,11 @@ begin
       dci.ack_exc <= '0';
       if (wren = '1') and (bus_req_i.addr(8 downto 7) = dm_sreg_base_c(8 downto 7)) then
         for i in 0 to NUM_HARTS-1 loop
-          case bus_req_i.addr(3 downto 2) is
-            when "00"   => dci.ack_hlt(i) <= cpu_rsp_dec(i); -- CPU is HALTED in debug mode and waits in park loop
-            when "01"   => dci.ack_res(i) <= cpu_rsp_dec(i); -- CPU starts RESUMING
-            when "10"   => dci.ack_exe(i) <= cpu_rsp_dec(i); -- CPU starts to EXECUTE program buffer
-            when others => dci.ack_exc    <= '1';            -- CPU has detected an EXCEPTION (can only be caused by the currently selected hart)
-          end case;
+          if (bus_req_i.addr(3 downto 2) = "00") then dci.ack_hlt(i) <= cpu_rsp_dec(i); end if; -- CPU is HALTED
+          if (bus_req_i.addr(3 downto 2) = "01") then dci.ack_res(i) <= cpu_rsp_dec(i); end if; -- CPU starts RESUMING
+          if (bus_req_i.addr(3 downto 2) = "10") then dci.ack_exe(i) <= cpu_rsp_dec(i); end if; -- CPU starts to EXECUTE program buffer
         end loop;
+        if (bus_req_i.addr(3 downto 2) = "11") then dci.ack_exc <= '1'; end if; -- currently selected CPU has encountered an EXCEPTION
       end if;
       -- CPU read access --
       bus_rsp_o.data <= (others => '0'); -- default
@@ -644,7 +642,7 @@ begin
   end process bus_access;
 
   -- access helpers --
-  accen <= bus_req_i.debug and bus_req_i.stb; -- access only when in debug-mode
+  accen <= bus_req_i.stb and bus_req_i.meta(2); -- access only when hart is in debug mode
   rden  <= accen and (not bus_req_i.rw);
   wren  <= accen and (    bus_req_i.rw) and and_reduce_f(bus_req_i.ben);
 

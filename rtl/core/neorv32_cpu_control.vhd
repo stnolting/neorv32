@@ -252,7 +252,7 @@ begin
   end process branch_check;
 
 
-  -- Execute Engine FSM Sync ----------------------------------------------------------------
+  -- Execute Engine FSM (Micro Sequencer) Sync ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_sync: process(rstn_i, clk_i)
   begin
@@ -274,7 +274,7 @@ begin
   opcode <= exe_engine.ir(instr_opcode_msb_c downto instr_opcode_lsb_c+2) & "11";
 
 
-  -- Execute Engine FSM Comb ----------------------------------------------------------------
+  -- Execute Engine FSM (Micro Sequencer) Comb ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
                                    ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)

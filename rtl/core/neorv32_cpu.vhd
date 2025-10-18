@@ -22,74 +22,74 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu is
   generic (
     -- General --
-    HART_ID             : natural range 0 to 1023; -- hardware thread ID
-    BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- cpu boot address
-    DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- cpu debug mode parking loop entry address
-    DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- cpu debug mode exception entry address
+    HART_ID             : natural range 0 to 1023;        -- hardware thread ID
+    BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- CPU boot address
+    DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- CPU debug mode parking loop entry address
+    DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- CPU debug mode exception entry address
     -- RISC-V ISA Extensions --
-    RISCV_ISA_C         : boolean; -- implement compressed extension
-    RISCV_ISA_E         : boolean; -- implement embedded RF extension
-    RISCV_ISA_M         : boolean; -- implement mul/div extension
-    RISCV_ISA_U         : boolean; -- implement user mode extension
-    RISCV_ISA_Zaamo     : boolean; -- implement atomic read-modify-write operations extension
-    RISCV_ISA_Zalrsc    : boolean; -- implement atomic reservation-set operations extension
-    RISCV_ISA_Zcb       : boolean; -- implement additional code size reduction instructions
-    RISCV_ISA_Zba       : boolean; -- implement shifted-add bit-manipulation extension
-    RISCV_ISA_Zbb       : boolean; -- implement basic bit-manipulation extension
-    RISCV_ISA_Zbkb      : boolean; -- implement bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc      : boolean; -- implement carry-less multiplication instructions
-    RISCV_ISA_Zbkx      : boolean; -- implement cryptography crossbar permutation extension
-    RISCV_ISA_Zbs       : boolean; -- implement single-bit bit-manipulation extension
-    RISCV_ISA_Zfinx     : boolean; -- implement 32-bit floating-point extension
-    RISCV_ISA_Zicntr    : boolean; -- implement base counters
-    RISCV_ISA_Zicond    : boolean; -- implement integer conditional operations
-    RISCV_ISA_Zihpm     : boolean; -- implement hardware performance monitors
-    RISCV_ISA_Zknd      : boolean; -- implement cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne      : boolean; -- implement cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh      : boolean; -- implement cryptography NIST hash extension
-    RISCV_ISA_Zksed     : boolean; -- implement ShangMi hash extension
-    RISCV_ISA_Zksh      : boolean; -- implement ShangMi block cipher extension
-    RISCV_ISA_Zmmul     : boolean; -- implement multiply-only M sub-extension
-    RISCV_ISA_Zxcfu     : boolean; -- implement custom (instr.) functions unit
-    RISCV_ISA_Sdext     : boolean; -- implement external debug mode extension
-    RISCV_ISA_Sdtrig    : boolean; -- implement trigger module extension
-    RISCV_ISA_Smpmp     : boolean; -- implement physical memory protection
+    RISCV_ISA_C         : boolean;                        -- implement compressed extension
+    RISCV_ISA_E         : boolean;                        -- implement embedded RF extension
+    RISCV_ISA_M         : boolean;                        -- implement mul/div extension
+    RISCV_ISA_U         : boolean;                        -- implement user mode extension
+    RISCV_ISA_Zaamo     : boolean;                        -- implement atomic read-modify-write operations extension
+    RISCV_ISA_Zalrsc    : boolean;                        -- implement atomic reservation-set operations extension
+    RISCV_ISA_Zcb       : boolean;                        -- implement additional code size reduction instructions
+    RISCV_ISA_Zba       : boolean;                        -- implement shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb       : boolean;                        -- implement basic bit-manipulation extension
+    RISCV_ISA_Zbkb      : boolean;                        -- implement bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc      : boolean;                        -- implement carry-less multiplication instructions
+    RISCV_ISA_Zbkx      : boolean;                        -- implement cryptography crossbar permutation extension
+    RISCV_ISA_Zbs       : boolean;                        -- implement single-bit bit-manipulation extension
+    RISCV_ISA_Zfinx     : boolean;                        -- implement 32-bit floating-point extension
+    RISCV_ISA_Zicntr    : boolean;                        -- implement base counters
+    RISCV_ISA_Zicond    : boolean;                        -- implement integer conditional operations
+    RISCV_ISA_Zihpm     : boolean;                        -- implement hardware performance monitors
+    RISCV_ISA_Zknd      : boolean;                        -- implement cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne      : boolean;                        -- implement cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh      : boolean;                        -- implement cryptography NIST hash extension
+    RISCV_ISA_Zksed     : boolean;                        -- implement ShangMi hash extension
+    RISCV_ISA_Zksh      : boolean;                        -- implement ShangMi block cipher extension
+    RISCV_ISA_Zmmul     : boolean;                        -- implement multiply-only M sub-extension
+    RISCV_ISA_Zxcfu     : boolean;                        -- implement custom (instr.) functions unit
+    RISCV_ISA_Sdext     : boolean;                        -- implement external debug mode extension
+    RISCV_ISA_Sdtrig    : boolean;                        -- implement trigger module extension
+    RISCV_ISA_Smpmp     : boolean;                        -- implement physical memory protection
     -- Tuning Options --
-    CPU_TRACE_EN        : boolean; -- implement CPU execution trace generator
-    CPU_CONSTT_BR_EN    : boolean; -- implement constant-time branches
-    CPU_FAST_MUL_EN     : boolean; -- use DSPs for M extension's multiplier
-    CPU_FAST_SHIFT_EN   : boolean; -- use barrel shifter for shift operations
-    CPU_RF_HW_RST_EN    : boolean; -- implement full hardware reset for register file
+    CPU_TRACE_EN        : boolean;                        -- implement CPU execution trace generator
+    CPU_CONSTT_BR_EN    : boolean;                        -- implement constant-time branches
+    CPU_FAST_MUL_EN     : boolean;                        -- use DSPs for M extension's multiplier
+    CPU_FAST_SHIFT_EN   : boolean;                        -- use barrel shifter for shift operations
+    CPU_RF_HW_RST_EN    : boolean;                        -- implement full hardware reset for register file
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS     : natural range 0 to 16; -- number of regions (0..16)
-    PMP_MIN_GRANULARITY : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
-    PMP_TOR_MODE_EN     : boolean; -- implement TOR mode
-    PMP_NAP_MODE_EN     : boolean; -- implement NAPOT/NA4 modes
+    PMP_NUM_REGIONS     : natural range 0 to 16;          -- number of regions (0..16)
+    PMP_MIN_GRANULARITY : natural;                        -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_TOR_MODE_EN     : boolean;                        -- implement TOR mode
+    PMP_NAP_MODE_EN     : boolean;                        -- implement NAPOT/NA4 modes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS        : natural range 0 to 13; -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH       : natural range 0 to 64; -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS        : natural range 0 to 13;          -- number of implemented HPM counters (0..13)
+    HPM_CNT_WIDTH       : natural range 0 to 64;          -- total size of HPM counters (0..64)
     -- Trigger Module (TM) --
-    NUM_HW_TRIGGERS     : natural range 0 to 16 -- number of hardware triggers
+    NUM_HW_TRIGGERS     : natural range 0 to 16           -- number of hardware triggers
   );
   port (
     -- global control --
-    clk_i      : in  std_ulogic; -- global clock, rising edge
-    rstn_i     : in  std_ulogic; -- global reset, low-active, async
+    clk_i      : in  std_ulogic;                     -- global clock, rising edge
+    rstn_i     : in  std_ulogic;                     -- global reset, low-active, async
     -- status --
-    trace_o    : out trace_port_t; -- execution trace port (enabled when CPU_TRACE_EN = true)
-    sleep_o    : out std_ulogic; -- CPU is in sleep mode
+    trace_o    : out trace_port_t;                   -- execution trace port (enabled when CPU_TRACE_EN = true)
+    sleep_o    : out std_ulogic;                     -- CPU is in sleep mode
     -- interrupts --
-    msi_i      : in  std_ulogic; -- risc-v machine software interrupt
-    mei_i      : in  std_ulogic; -- risc-v machine external interrupt
-    mti_i      : in  std_ulogic; -- risc-v machine timer interrupt
+    msi_i      : in  std_ulogic;                     -- RISC-V machine software interrupt
+    mei_i      : in  std_ulogic;                     -- RISC-V machine external interrupt
+    mti_i      : in  std_ulogic;                     -- RISC-V machine timer interrupt
     firq_i     : in  std_ulogic_vector(15 downto 0); -- custom fast interrupts
-    dbi_i      : in  std_ulogic; -- risc-v debug halt request interrupt
+    dbi_i      : in  std_ulogic;                     -- RISC-V debug halt request interrupt
     -- instruction bus interface --
-    ibus_req_o : out bus_req_t; -- request bus
-    ibus_rsp_i : in  bus_rsp_t; -- response bus
+    ibus_req_o : out bus_req_t;                      -- request bus
+    ibus_rsp_i : in  bus_rsp_t;                      -- response bus
     -- data bus interface --
-    dbus_req_o : out bus_req_t; -- request bus
-    dbus_rsp_i : in  bus_rsp_t  -- response bus
+    dbus_req_o : out bus_req_t;                      -- request bus
+    dbus_rsp_i : in  bus_rsp_t                       -- response bus
   );
 end neorv32_cpu;
 
