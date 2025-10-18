@@ -644,7 +644,7 @@ begin
   end process bus_access;
 
   -- access helpers --
-  accen <= bus_req_i.debug and bus_req_i.stb; -- access only when in debug-mode
+  accen <= bus_req_i.stb and bus_req_i.meta(2); -- access only when hart is in debug mode
   rden  <= accen and (not bus_req_i.rw);
   wren  <= accen and (    bus_req_i.rw) and and_reduce_f(bus_req_i.ben);
 

@@ -111,9 +111,9 @@ begin
                 "000"; -- single access
 
   -- access meta data (compatible to AXI4 "xPROT") --
-  xbus_tag_o(2) <= bus_req.src; -- 0 = data access, 1 = instruction fetch
+  xbus_tag_o(2) <= bus_req.meta(0); -- 0 = data access, 1 = instruction fetch
   xbus_tag_o(1) <= '0'; -- always "secure" access
-  xbus_tag_o(0) <= bus_req.priv or bus_req.debug; -- 0 = unprivileged access, 1 = privileged access
+  xbus_tag_o(0) <= bus_req.meta(2) or bus_req.meta(1); -- 0 = unprivileged access, 1 = privileged access
 
   -- response gating --
   bus_rsp.data <= xbus_dat_i when (pending = '1') else (others => '0');
