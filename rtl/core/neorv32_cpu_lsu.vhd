@@ -75,19 +75,17 @@ begin
   mem_do_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      dbus_req_o.meta  <= (others => '0');
       dbus_req_o.rw    <= '0';
-      dbus_req_o.priv  <= '0';
-      dbus_req_o.debug <= '0';
       dbus_req_o.amo   <= '0';
       dbus_req_o.amoop <= (others => '0');
       dbus_req_o.data  <= (others => '0');
       dbus_req_o.ben   <= (others => '0');
     elsif rising_edge(clk_i) then
       if (ctrl_i.lsu_mo_we = '1') then
-        -- type identifiers --
+        -- access identifiers --
+        dbus_req_o.meta  <= ctrl_i.cpu_debug & ctrl_i.lsu_priv & '0'; -- LSB: data access
         dbus_req_o.rw    <= ctrl_i.lsu_rw; -- read/write
-        dbus_req_o.priv  <= ctrl_i.lsu_priv; -- privilege level
-        dbus_req_o.debug <= ctrl_i.cpu_debug; -- debug-mode access
         dbus_req_o.amo   <= ctrl_i.lsu_rmw or ctrl_i.lsu_rvs; -- atomic memory operation
         dbus_req_o.amoop <= amo_cmd;
         -- data alignment + byte-enable --
@@ -110,7 +108,6 @@ begin
   end process mem_do_reg;
 
   -- hardwired signals --
-  dbus_req_o.src   <= '0'; -- always data access
   dbus_req_o.burst <= '0'; -- only single-access
 
   -- out-of-band signals --

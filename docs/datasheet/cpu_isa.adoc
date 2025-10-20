@@ -225,7 +225,8 @@ RISC-V specs. Also, custom trap codes for <<_mcause>> are implemented.
 
 The `Zaamo` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension>> and compromises
 instructions for atomic read-modify-write operations. It is enabled by the top's
-<<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>> generic.
+<<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>> generic. Atomic read-modify-write operations
+are handled by the processor's <<_atomic_memory_operations_controller>>.
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -239,19 +240,13 @@ instructions for atomic read-modify-write operations. It is enabled by the top's
 [NOTE]
 The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
 
-.RMW Operations Execute as "Loads" for the CPU
-[IMPORTANT]
-For the CPU hardware, all atomic read-modify-write operations are treated as **load** operations. Hence, any `amo*.w`
-instruction will trigger the `HPMCNT_EVENT_LOAD` HPM event (see <<_mhpmevent>>). If any `amo*.w` instruction causes
-a bus access error or tries to access an unaligned address, a _load access error_ or _load address misaligned_ exception
-is raised, respectively.
-
 
 ==== `Zalrsc` ISA Extension
 
 The `Zalrsc` ISA extension is a sub-extension of the RISC-V <<_a_isa_extension>> and compromises
 instructions for reservation-set operations. It is enabled by the top's
-<<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>> generic.
+<<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>> generic. Atomic reservation-set operations
+are handled by the processor's <<_atomic_reservation_set_controller>>.
 
 .Instructions and Timing
 [cols="<2,<5,<4"]

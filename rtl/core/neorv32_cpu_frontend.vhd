@@ -64,8 +64,9 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   type fetch_t is record
     state : state_t;
     restart : std_ulogic; -- buffered restart request (after branch)
-    pc : std_ulogic_vector(XLEN - 1 downto 0);
-    priv : std_ulogic; -- fetch privilege level
+    pc      : std_ulogic_vector(XLEN-1 downto 0);
+    priv    : std_ulogic; -- fetch privilege level
+    debug   : std_ulogic; -- debug-mode access
   end record;
   signal fetch : fetch_t;
 
@@ -147,17 +148,19 @@ begin
     if (rstn_i = '0') then
       fetch.state <= S_RESTART;
       fetch.restart <= '1'; -- reset IPB and issue engine
-      fetch.pc <= (others => '0');
-      fetch.priv <= priv_mode_m_c;
+      fetch.pc      <= (others => '0');
+      fetch.priv    <= priv_mode_m_c;
+      fetch.debug   <= '0';
     elsif rising_edge(clk_i) then
       case fetch.state is
 
         when S_RESTART => -- set new start address
           -- ------------------------------------------------------------
           fetch.restart <= '0'; -- restart done
-          fetch.pc <= ctrl_i.pc_nxt; -- initialize from PC
-          fetch.priv <= ctrl_i.cpu_priv; -- set new privilege level
-          fetch.state <= S_REQUEST;
+          fetch.pc      <= ctrl_i.pc_nxt; -- initialize from PC
+          fetch.priv    <= ctrl_i.cpu_priv; -- set new privilege level
+          fetch.debug   <= ctrl_i.cpu_debug; -- access from debug-mode
+          fetch.state   <= S_REQUEST;
 
         when S_REQUEST => -- request next 32-bit-aligned instruction word
           -- ------------------------------------------------------------
@@ -190,20 +193,17 @@ begin
   end process fetch_fsm;
 
   -- instruction bus request --
-  ibus_req_o.addr <= fetch.pc(XLEN - 1 downto 2) & "00"; -- word aligned
-  ibus_req_o.stb <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else
-                    '0';
-  ibus_req_o.data <= (others => '0'); -- read-only
-  ibus_req_o.ben <= (others => '1'); -- always full-word access
-  ibus_req_o.rw <= '0'; -- read-only
-  ibus_req_o.src <= '1'; -- always "instruction fetch" access
-  ibus_req_o.priv <= fetch.priv; -- current effective privilege level
-  ibus_req_o.debug <= ctrl_i.cpu_debug; -- CPU is in debug mode
-  ibus_req_o.amo <= '0'; -- cannot be an atomic memory operation
-  ibus_req_o.amoop <= (others => '0'); -- cannot be an atomic memory operation
-  ibus_req_o.burst <= '0'; -- only single-access
-  ibus_req_o.lock <= '0'; -- always unlocked access
-  ibus_req_o.fence <= ctrl_i.if_fence; -- fence request, valid without STB being set ("out-of-band" signal)
+  ibus_req_o.meta  <= fetch.debug & fetch.priv & '1'; -- LSB: instruction access
+  ibus_req_o.addr  <= fetch.pc(XLEN-1 downto 2) & "00";    -- word aligned
+  ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
+  ibus_req_o.data  <= (others => '0');  -- read-only
+  ibus_req_o.ben   <= (others => '1');  -- always full-word access
+  ibus_req_o.rw    <= '0';              -- read-only
+  ibus_req_o.amo   <= '0';              -- cannot be an atomic memory operation
+  ibus_req_o.amoop <= (others => '0');  -- cannot be an atomic memory operation
+  ibus_req_o.burst <= '0';              -- only single-access
+  ibus_req_o.lock  <= '0';              -- always unlocked access
+  ibus_req_o.fence <= ctrl_i.if_fence;  -- fence request, valid without STB being set ("out-of-band" signal)
 
   -- IPB instruction data and status --
   ipb.wdata(0) <= ibus_rsp_i.err & ibus_rsp_i.data(15 downto 0);

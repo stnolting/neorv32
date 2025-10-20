@@ -348,9 +348,8 @@ begin
   bus_control: process(engine, data_buf)
   begin
     dma_req_o <= req_terminate_c; -- all-zero by default
-    -- meta data --
-    dma_req_o.priv  <= priv_mode_m_c; -- transfers execute with highest privilege level
-    dma_req_o.src   <= '0'; -- "data" transfer
+    -- access type --
+    dma_req_o.meta  <= '0' & priv_mode_m_c & '0'; -- non-debug, privileged, data
     dma_req_o.amo   <= '0'; -- no atomic operations
     dma_req_o.burst <= '0'; -- no burst transfers
     dma_req_o.lock  <= '0'; -- no locked accesses

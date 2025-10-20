@@ -124,19 +124,6 @@ begin
     end if;
   end process csr_read;
 
-  -- tdata2 read-back select --
-  tdata2_readback: process(sel, sel_invalid, tdata2)
-    variable res_v : std_ulogic_vector(XLEN-1 downto 0);
-  begin
-    res_v := (others => '0');
-    for i in 0 to NUM_TRIGGERS-1 loop
-      if (sel(i) = '1') and (sel_invalid = '0') then
-        res_v := res_v or tdata2(i);
-      end if;
-    end loop;
-    tdata2_rb <= res_v;
-  end process tdata2_readback;
-
   -- match control (mcontrol6 @ tdata1 selected by tselect) read-back --
   tdata1(31 downto 28) <= x"6"; -- type: address match trigger (mcontrol6)
   tdata1(27)           <= '1'; -- dmode: ignore machine-mode write accesses
@@ -160,6 +147,19 @@ begin
   tdata1(0)            <= or_reduce_f(tdata1_load and sel); -- load: enable trigger on load address match
   --
   tdata1_rb <= tdata1 when (sel_invalid = '0') else (others => '0'); -- all-zero if invalid trigger selection
+
+  -- tdata2 read-back select --
+  tdata2_readback: process(sel, sel_invalid, tdata2)
+    variable res_v : std_ulogic_vector(XLEN-1 downto 0);
+  begin
+    res_v := (others => '0');
+    for i in 0 to NUM_TRIGGERS-1 loop
+      if (sel(i) = '1') and (sel_invalid = '0') then
+        res_v := res_v or tdata2(i);
+      end if;
+    end loop;
+    tdata2_rb <= res_v;
+  end process tdata2_readback;
 
   -- trigger info --
   tinfo_rb <= x"01000040" when (sel_invalid = '0') else x"01000001"; -- Sdtrig version 1.0, type-6 / type-0 only

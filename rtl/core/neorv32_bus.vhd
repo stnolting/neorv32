@@ -137,15 +137,13 @@ begin
 
   -- Request Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  x_req_o.meta  <= a_req_i.meta  when (sel = '0') else b_req_i.meta;
   x_req_o.addr  <= a_req_i.addr  when (sel = '0') else b_req_i.addr;
   x_req_o.data  <= b_req_i.data  when A_READ_ONLY else
                    a_req_i.data  when B_READ_ONLY else
                    a_req_i.data  when (sel = '0') else b_req_i.data;
   x_req_o.ben   <= a_req_i.ben   when (sel = '0') else b_req_i.ben;
   x_req_o.rw    <= a_req_i.rw    when (sel = '0') else b_req_i.rw;
-  x_req_o.src   <= a_req_i.src   when (sel = '0') else b_req_i.src;
-  x_req_o.priv  <= a_req_i.priv  when (sel = '0') else b_req_i.priv;
-  x_req_o.debug <= a_req_i.debug when (sel = '0') else b_req_i.debug;
   x_req_o.amo   <= a_req_i.amo   when (sel = '0') else b_req_i.amo;
   x_req_o.amoop <= a_req_i.amoop when (sel = '0') else b_req_i.amoop;
   x_req_o.burst <= a_req_i.burst when (sel = '0') else b_req_i.burst;
@@ -825,14 +823,12 @@ begin
   end process arbiter_comb;
 
   -- request switch --
+  sys_req_o.meta  <= core_req_i.meta;
   sys_req_o.addr  <= core_req_i.addr;
   sys_req_o.data  <= alu_res when (arbiter.state = S_WRITE) or (arbiter.state = S_WRITE_WAIT) else core_req_i.data;
   sys_req_o.ben   <= core_req_i.ben;
   sys_req_o.stb   <= '1' when (arbiter.state = S_WRITE) else core_req_i.stb;
   sys_req_o.rw    <= '1' when (arbiter.state = S_WRITE) or (arbiter.state = S_WRITE_WAIT) else core_req_i.rw;
-  sys_req_o.src   <= core_req_i.src;
-  sys_req_o.priv  <= core_req_i.priv;
-  sys_req_o.debug <= core_req_i.debug;
   sys_req_o.amo   <= core_req_i.amo;
   sys_req_o.amoop <= core_req_i.amoop;
   sys_req_o.burst <= core_req_i.burst;
@@ -908,8 +904,7 @@ end neorv32_bus_amo_rvs;
 
 architecture neorv32_bus_amo_rvs_rtl of neorv32_bus_amo_rvs is
 
-  signal state : std_ulogic_vector(1 downto 0);
-  signal rvso, sc_fail : std_ulogic;
+  signal valid, lr, sc, sc_fail : std_ulogic;
 
 begin
 
@@ -918,67 +913,52 @@ begin
   rvs_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      state <= (others => '0');
+      valid <= '0';
     elsif rising_edge(clk_i) then
-      case state is
-
-        when "10" => -- active reservation: wait for condition to invalidate reservation
-        -- --------------------------------------------------------------------
-          if (core_req_i.stb = '1') and (core_req_i.rw = '1') then -- write access
-            if (rvso = '1') then -- SC operation
-              state <= "11"; -- execute SC
-            else -- normal store
-              state <= "00"; -- invalidate reservation
-            end if;
-          end if;
-
-        when "11" => -- active reservation: invalidate reservation at the end of bus access
-        -- --------------------------------------------------------------------
-          if (sys_rsp_i.ack = '1') then
-            state <= "00";
-          end if;
-
-        when others => -- "0-" no active reservation: wait for new reservation request
-        -- --------------------------------------------------------------------
-          if (core_req_i.stb = '1') and (core_req_i.rw = '0') and (rvso = '1') then -- LR operation
-            state <= "10";
-          end if;
-
-      end case;
+      if (core_req_i.fence = '1') then
+        valid <= '0';
+      elsif (core_req_i.stb = '1') and (core_req_i.meta(0) = '0') then -- data memory access?
+        if (lr = '1') then -- load-reservate operation
+          valid <= '1';
+        else -- any other data memory operation
+          valid <= '0';
+        end if;
+      end if;
     end if;
   end process rvs_control;
 
   -- check if reservation-set operation --
-  rvso <= '1' when (core_req_i.amo = '1') and (core_req_i.amoop(3 downto 2) = "10") else '0';
+  lr <= '1' when (core_req_i.amo = '1') and (core_req_i.amoop(3 downto 2) = "10") and (core_req_i.rw = '0') else '0';
+  sc <= '1' when (core_req_i.amo = '1') and (core_req_i.amoop(3 downto 2) = "10") and (core_req_i.rw = '1') else '0';
 
 
   -- System Bus Interface -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_request: process(core_req_i, rvso, state)
+  bus_request: process(core_req_i, sc, valid)
   begin
     sys_req_o <= core_req_i; -- pass-through everything except STB
-    if (rvso = '1') and (core_req_i.rw = '1') then -- SC operation
-      sys_req_o.stb <= core_req_i.stb and state(1); -- write allowed if reservation still valid
-    else -- normal memory request or LR
+    if (sc = '1') then -- store-conditional operation
+      sys_req_o.stb <= core_req_i.stb and valid; -- write allowed if reservation still valid
+    else -- normal memory request or load-reservate operation
       sys_req_o.stb <= core_req_i.stb;
     end if;
   end process bus_request;
 
-  -- if a SC instruction fails there will be no write-request being send to the bus system
-  -- so we need to provide a local ACK to complete the host's bus access
+  -- if the store-conditional instruction fails there will be no write-request being send
+  -- to the bus system so we need to provide a local ACK to complete the bus access
   sc_result: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       sc_fail <= '0';
     elsif rising_edge(clk_i) then
-      sc_fail <= rvso and core_req_i.stb and core_req_i.rw and (not state(1));
+      sc_fail <= core_req_i.stb and sc and (not valid);
     end if;
   end process sc_result;
 
   -- response --
   core_rsp_o.err  <= sys_rsp_i.err;
   core_rsp_o.ack  <= sys_rsp_i.ack or sc_fail; -- generate local ACK if SC fails
-  core_rsp_o.data <= sys_rsp_i.data(31 downto 1) & (sys_rsp_i.data(0) or sc_fail); -- set LSB=1 if SC fails
+  core_rsp_o.data <= sys_rsp_i.data(31 downto 1) & (sys_rsp_i.data(0) or sc_fail); -- set LSB=1 if SC failes
 
 
 end neorv32_bus_amo_rvs_rtl;
