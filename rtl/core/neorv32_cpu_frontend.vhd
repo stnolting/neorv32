@@ -90,13 +90,12 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
   signal frontend_bus_zcmp, frontend_bus_issue : if_bus_t;
 
-  type uop_state_type is (S_IDLE, S_ZCMP_UOP_SEQ, S_POPRET, S_POPRETZ, S_ZCMP_DOUBLE_MOVE_1, S_ZCMP_DOUBLE_MOVE_2, S_ZCMP_BRANCH_ABORT);
+  type uop_state_type is (S_IDLE, S_ZCMP_UOP_SEQ, S_POPRET, S_POPRETZ, S_ZCMP_DOUBLE_MOVE_1, S_ZCMP_DOUBLE_MOVE_2, S_ZCMP_ABORT);
   signal uop_state_reg, uop_state_nxt : uop_state_type;
 
   signal zcmp_instr_reg, zcmp_instr_nxt : std_ulogic_vector(15 downto 0) := (others => '0');
 
   signal uop_ctr, uop_ctr_next, uop_ctr_nxt_in_seq : integer range 0 to 15;
-  signal uop_ctr_clr : std_ulogic;
 
   signal zcmp_stack_sw_offset, zcmp_stack_lw_offset : signed(11 downto 0);
   signal zcmp_reg_list : std_ulogic_vector(3 downto 0);
@@ -302,7 +301,6 @@ begin
 
       frontend_bus_issue.zcmp_in_uop_seq <= '0';
       frontend_bus_issue.zcmp_atomic_tail <= '0';
-      frontend_bus_issue.zcmp_start <= '0';
 
       zcmp_instr_nxt <= zcmp_instr_reg;
       zcmp_detect <= '0';
@@ -313,10 +311,9 @@ begin
           if (align_q = '0') then
             if (ipb.rdata(0)(1 downto 0) /= "11") and (ipb.avail(0) = '1') then -- compressed, consume IPB(0) entry
 
-              if (instr_is_zcmp = '1') then
-                zcmp_instr_nxt <= ipb.rdata(0)(15 downto 0);
+              if (instr_is_zcmp = '1') then -- following instruction is part of zcmp extension
+                zcmp_instr_nxt <= ipb.rdata(0)(15 downto 0); -- save zcmp instruction
                 issue_state_nxt <= S_ZCMP;
-                frontend_bus_issue.zcmp_start <= '1';
                 zcmp_detect <= '1';
               else
                 align_set <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
@@ -337,11 +334,10 @@ begin
           elsif (ipb.avail(1) = '1') then
             if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
 
-              if (instr_is_zcmp = '1') then
-                zcmp_instr_nxt <= ipb.rdata(1)(15 downto 0);
+              if (instr_is_zcmp = '1') then -- following instruction is part of zcmp extension
+                zcmp_instr_nxt <= ipb.rdata(1)(15 downto 0); -- save zcmp instruction
                 issue_state_nxt <= S_ZCMP;
-                frontend_bus_issue.zcmp_start <= '1'; -- zcmp sequence is about to start
-                zcmp_detect <= '1';
+                zcmp_detect <= '1'; -- signal that zcmp sequence is about to start
               else
                 align_clr <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
                 issue_valid(0) <= '0';
@@ -359,7 +355,7 @@ begin
             end if;
           end if;
         when S_ZCMP =>
-
+          -- during zcmp micro-op issuing this fsm is not active. uop_fsm takes over 
           if zcmp_in_uop_seq = '0' then
             issue_state_nxt <= S_ISSUE;
             zcmp_instr_nxt <= (others => '0');
@@ -382,6 +378,9 @@ begin
     -- issue valid instruction word to execution stage --
     frontend_bus_issue.valid <= issue_valid(1) or issue_valid(0);
 
+    frontend_bus_issue.zcmp_start <= zcmp_detect; -- zcmp sequence is about to start
+ 
+    -- small bus switch, if zcmp uop sequence is being issued, a separate bus is wired to the control unit
     frontend_o <= frontend_bus_zcmp when zcmp_in_uop_seq = '1' else
                   frontend_bus_issue;
 
@@ -393,56 +392,63 @@ begin
     if RISCV_ZCMP generate
 
       zcmp_reg_list <= zcmp_instr_reg(7 downto 4);
+
+      -- number of registers which are pushed/popped from/to the stack
       zcmp_num_regs <= 13 when to_integer(unsigned(zcmp_reg_list)) = 15 else
                        0 when to_integer(unsigned(zcmp_reg_list)) < 4 else
                        to_integer(unsigned(zcmp_reg_list)) - 3;
 
+      -- minimum value by which the stack pointer has to be adjusted
       zcmp_stack_adj_base <= 64 when to_integer(unsigned(zcmp_reg_list)) = 15 else
                              48 when to_integer(unsigned(zcmp_reg_list)) >= 12 else
                              32 when to_integer(unsigned(zcmp_reg_list)) >= 8 else
                              16;
 
+      -- total stack pointer adjustmend value = base + immediate
       zcmp_stack_adj <= zcmp_stack_adj_base + ((to_integer(unsigned(zcmp_instr_reg(3 downto 2))) * 16));
 
+      -- the stack pointer update is at the end of a push/pop sequence. Therefore we need to use offset values based on the current uop counter value when accessing the stack
       zcmp_stack_sw_offset <= to_signed(-((zcmp_num_regs - uop_ctr) * 4), zcmp_stack_sw_offset'length);
       zcmp_stack_lw_offset <= to_signed(-((zcmp_num_regs - uop_ctr) * 4) + zcmp_stack_adj, zcmp_stack_lw_offset'length);
 
+      -- register selection for push/pop uop sequence
       zcmp_ls_reg <= "00001" when uop_ctr = 0 else -- ra
                      "01000" when uop_ctr = 1 else -- s0
                      "01001" when uop_ctr = 2 else -- s1
                      std_ulogic_vector(to_unsigned(uop_ctr + 15, zcmp_ls_reg'length)); -- s2-s11 (s2 == x18)
 
+      -- the instruction opcodes for the stores and loads to/from stack during a push/pop sequence
       zcmp_sw_instr <= std_ulogic_vector(zcmp_stack_sw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_instr_rs1_sp & zcmp_instr_funct3 & std_ulogic_vector(zcmp_stack_sw_offset(4 downto 0)) & zcmp_sw_instr_opcode;
-      -- zcmp_lw_instr <= std_ulogic_vector(zcmp_stack_lw_offset(11 downto 5)) & zcmp_ls_reg & zcmp_instr_rs1 & zcmp_instr_funct3 & std_ulogic_vector(zcmp_stack_lw_offset(4 downto 0)) & zcmp_lw_instr_opcode;
-
       zcmp_lw_instr <= std_ulogic_vector(zcmp_stack_lw_offset) & zcmp_instr_rs1_sp & zcmp_instr_funct3 & zcmp_ls_reg & zcmp_lw_instr_opcode;
 
-      zcmp_instr <= zcmp_sw_instr when zcmp_is_push = '1' else
-                    zcmp_lw_instr;
-
+      -- the 32-bit addi instruction that adjusts the stack pointer after a push sequence. The immediate value is generated with the zcmp_stack_adj signal
       zcmp_push_stack_adj_instr <= std_ulogic_vector(-to_signed(zcmp_stack_adj, 12)) &
                                    zcmp_addi_rs1_sp & -- rs1 = sp 
                                    zcmp_addi_instr_funct3 &
                                    zcmp_addi_rs1_sp & -- rd = rs1 = sp 
                                    zcmp_addi_instr_opcode; -- addi 
 
+      -- the 32-bit addi instruction that adjusts the stack pointer after a pop sequence. The immediate value is generated with the zcmp_stack_adj signal
       zcmp_pop_stack_adj_instr <= std_ulogic_vector(to_signed(zcmp_stack_adj, 12)) &
                                   zcmp_addi_rs1_sp & -- rs1 = sp 
                                   zcmp_addi_instr_funct3 &
                                   zcmp_addi_rs1_sp & -- rd = rs1 = sp 
                                   zcmp_addi_instr_opcode; -- addi 
 
+      -- use either the addi instruction with negative offset (push) or positive (pop)
       zcmp_stack_adj_instr <= zcmp_push_stack_adj_instr when zcmp_is_push = '1' else
                               zcmp_pop_stack_adj_instr;
 
+      -- stack instruction is either a load or store depending on push/pop sequence
+      zcmp_instr <= zcmp_sw_instr when zcmp_is_push = '1' else zcmp_lw_instr;
+
+      -- li a0, 0 opcode                              
       zcmp_li_a0_instr <= "00000000000000000000" & "01010" & zcmp_addi_instr_opcode;
       zcmp_jalr_instr <= "000000000000" & zcmp_instr_rs1_ra & "00000000" & zcmp_jalr_instr_opcode;
 
-      uop_ctr_clr <= '0';
+      uop_ctr_next <= uop_ctr_nxt_in_seq;
 
-      uop_ctr_next <= 0 when uop_ctr_clr = '1' else
-                      uop_ctr_nxt_in_seq;
-
+      -- cm.mv* instructions use sreg number specifiers, these two signals map them to xreg specifiers
       zcmp_sa01_r1s <= (zcmp_instr_reg(9) or zcmp_instr_reg(8)) &
                        (not (zcmp_instr_reg(9) or zcmp_instr_reg(8))) &
                        zcmp_instr_reg(9 downto 7);
@@ -464,11 +470,13 @@ begin
 
       uop_fsm_comb : process (uop_state_reg, zcmp_jalr_instr, zcmp_sa01_r1s, zcmp_sa01_r2s, zcmp_is_mvsa01, zcmp_is_mva01s, uop_ctr, fetch, ipb, zcmp_in_uop_seq, zcmp_is_popret, zcmp_is_popretz, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
       begin
+
+        -- defaults
         uop_ctr_nxt_in_seq <= uop_ctr;
         uop_state_nxt <= uop_state_reg;
         zcmp_in_uop_seq <= '0';
         frontend_bus_zcmp.valid <= '0';
-        frontend_bus_zcmp.compr <= '0';
+        frontend_bus_zcmp.compr <= '1';
         frontend_bus_zcmp.fault <= '0';
         frontend_bus_zcmp.instr <= (others => '0');
         frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq;
@@ -477,7 +485,7 @@ begin
 
         case uop_state_reg is
           when S_IDLE =>
-            if (zcmp_detect = '1') then
+            if (zcmp_detect = '1') then -- 
               if (zcmp_is_mvsa01 = '1' or zcmp_is_mva01s = '1') then
                 uop_state_nxt <= S_ZCMP_DOUBLE_MOVE_1;
               else
@@ -486,52 +494,52 @@ begin
             end if;
 
           when S_ZCMP_UOP_SEQ =>
-            frontend_bus_zcmp.compr <= '1';
             zcmp_in_uop_seq <= '1';
-            if (uop_ctr = 15) then --last instruction
-              frontend_bus_zcmp.instr <= zcmp_stack_adj_instr;
+            if (uop_ctr = 15) then -- last instruction
+              frontend_bus_zcmp.instr <= zcmp_stack_adj_instr; -- issue stack pointer adjustment instruction
               frontend_bus_zcmp.valid <= '1';
 
-              if (ctrl_i.if_ready = '1') then
+              if (ctrl_i.if_ready = '1') then -- only advance if the uop has been acknowledged by control unit 
                 uop_ctr_nxt_in_seq <= 0;
 
                 if (zcmp_is_popret = '1') then
                   frontend_bus_zcmp.zcmp_atomic_tail <= '1';
-                  uop_state_nxt <= S_POPRET;
+                  uop_state_nxt <= S_POPRET; -- issue return instruction
                 elsif (zcmp_is_popretz = '1') then
                   frontend_bus_zcmp.zcmp_atomic_tail <= '1';
-                  uop_state_nxt <= S_POPRETZ;
+                  uop_state_nxt <= S_POPRETZ; -- zero a0 before returning  
                 else
-                  uop_state_nxt <= S_IDLE;
+                  uop_state_nxt <= S_IDLE; -- cm.push is finished after stack adjustment
                 end if;
               end if;
 
             else
 
-              if (ctrl_i.if_ready = '1') then
+              if (ctrl_i.if_ready = '1') then -- advance to next uop if control unit has acknowledged the current one
                 uop_ctr_nxt_in_seq <= uop_ctr + 1;
               end if;
 
               frontend_bus_zcmp.instr <= zcmp_instr;
               frontend_bus_zcmp.valid <= '1';
 
-              if (uop_ctr + 1 = zcmp_num_regs and ctrl_i.if_ready = '1') then
+              if (uop_ctr + 1 = zcmp_num_regs and ctrl_i.if_ready = '1') then -- is next register the last one?
                 uop_ctr_nxt_in_seq <= 15;
               end if;
 
             end if;
 
-            if (fetch.restart = '1' or ctrl_i.cpu_trap = '1') then
-              uop_state_nxt <= S_ZCMP_BRANCH_ABORT;
+            -- during the issuing of load or store instructions of a push/pop sequence, the sequence can be aborted if a trap occurs
+            -- because cm.push is often the first instruction after a branch instruction, this fsm begins to run before the frontend receives the restart signal. We abort on fetch.restart  
+            if (fetch.restart = '1' or ctrl_i.cpu_trap = '1') then 
+              uop_state_nxt <= S_ZCMP_ABORT;
               zcmp_in_uop_seq <= '0';
               uop_ctr_nxt_in_seq <= 0;
               frontend_bus_zcmp.valid <= '0';
               frontend_bus_zcmp.instr <= (others => '0');
             end if;
 
-          when S_POPRET =>
-            frontend_bus_zcmp.compr <= '1';
-            frontend_bus_zcmp.zcmp_atomic_tail <= '1';
+          when S_POPRET => 
+            frontend_bus_zcmp.zcmp_atomic_tail <= '1'; -- no pending traps will be handled
             zcmp_in_uop_seq <= '1';
             frontend_bus_zcmp.instr <= zcmp_jalr_instr;
             frontend_bus_zcmp.valid <= '1';
@@ -541,7 +549,6 @@ begin
             end if;
 
           when S_POPRETZ =>
-            frontend_bus_zcmp.compr <= '1';
             frontend_bus_zcmp.zcmp_atomic_tail <= '1';
             zcmp_in_uop_seq <= '1';
             frontend_bus_zcmp.instr <= zcmp_zero_a0_instr; --zero a0
@@ -551,20 +558,8 @@ begin
               uop_state_nxt <= S_POPRET; -- issue ret instruction
             end if;
 
-          when S_ZCMP_BRANCH_ABORT =>
-            if (ipb.avail /= "00") then
-              uop_state_nxt <= S_IDLE;
-              if (zcmp_detect = '1') then
-                if (zcmp_is_mvsa01 = '1' or zcmp_is_mva01s = '1') then
-                  uop_state_nxt <= S_ZCMP_DOUBLE_MOVE_1;
-                else
-                  uop_state_nxt <= S_ZCMP_UOP_SEQ;
-                end if;
-              end if;
-            end if;
-
+          -- double move instruction, first uop
           when S_ZCMP_DOUBLE_MOVE_1 =>
-            frontend_bus_zcmp.compr <= '1';
             frontend_bus_zcmp.zcmp_atomic_tail <= '1';
             zcmp_in_uop_seq <= '1';
 
@@ -580,8 +575,8 @@ begin
               uop_state_nxt <= S_ZCMP_DOUBLE_MOVE_2;
             end if;
 
+          -- double move instruction, second uop
           when S_ZCMP_DOUBLE_MOVE_2 =>
-            frontend_bus_zcmp.compr <= '1';
             frontend_bus_zcmp.zcmp_atomic_tail <= '1';
             zcmp_in_uop_seq <= '1';
 
@@ -595,6 +590,19 @@ begin
 
             if (ctrl_i.if_ready = '1') then
               uop_state_nxt <= S_IDLE;
+            end if;
+
+          when S_ZCMP_ABORT =>
+            if (ipb.avail /= "00") then
+              uop_state_nxt <= S_IDLE;
+
+              if (zcmp_detect = '1') then -- it is possible that the next instruction in one of the ipbs is from the zcmp extension 
+                if (zcmp_is_mvsa01 = '1' or zcmp_is_mva01s = '1') then
+                  uop_state_nxt <= S_ZCMP_DOUBLE_MOVE_1;
+                else
+                  uop_state_nxt <= S_ZCMP_UOP_SEQ;
+                end if;
+              end if;
             end if;
 
         end case;
@@ -611,7 +619,6 @@ begin
       zcmp_ls_reg <= (others => '0');
       zcmp_sw_instr <= (others => '0');
       zcmp_push_stack_adj_instr <= (others => '0');
-      uop_ctr_clr <= '0';
       zcmp_in_uop_seq <= '0';
       zcmp_sa01_r1s <= (others => '0');
       zcmp_sa01_r2s <= (others => '0');
