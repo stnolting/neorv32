@@ -58,11 +58,11 @@ architecture neorv32_cpu_counters_rtl of neorv32_cpu_counters is
   end component;
 
   -- global access decoder --
-  signal cnt_acc, cfg_acc : std_ulogic;
+  signal cnt_acc, cfg_acc, inh_acc : std_ulogic;
   signal sel, cnt_we, cnt_re, cfg_we, cfg_re : std_ulogic_vector(15 downto 0);
 
   -- counter increment control --
-  signal cnt_en : std_ulogic_vector(15 downto 0);
+  signal inhibit, cnt_en : std_ulogic_vector(15 downto 0);
 
   -- individual HPM read-backs --
   type hpmevent_t is array (3 to 15) of std_ulogic_vector(11 downto 0);
@@ -71,7 +71,7 @@ architecture neorv32_cpu_counters_rtl of neorv32_cpu_counters is
   signal hpmcnt   : hpmcnt_t;
 
   -- global read-backs --
-  signal cycle_rd, time_rd, instret_rd, hpm_rd : std_ulogic_vector(XLEN-1 downto 0);
+  signal cycle_rd, time_rd, instret_rd, hpm_rd, inhibit_rd : std_ulogic_vector(XLEN-1 downto 0);
 
 begin
 
@@ -86,15 +86,16 @@ begin
     cfg_re(i) <= cfg_acc and sel(i) and ctrl_i.csr_re;
   end generate;
 
-  -- global access --
+  -- CSR access --
   cnt_acc <= '1' when ZICNTR_EN and ((ctrl_i.csr_addr(11 downto 5) = csr_cycle_c(11 downto 5)) or
                                      (ctrl_i.csr_addr(11 downto 5) = csr_mcycle_c(11 downto 5)) or
                                      (ctrl_i.csr_addr(11 downto 5) = csr_cycleh_c(11 downto 5)) or
                                      (ctrl_i.csr_addr(11 downto 5) = csr_mcycleh_c(11 downto 5))) else '0';
   cfg_acc <= '1' when ZIHPM_EN and (ctrl_i.csr_addr(11 downto 5) = csr_mhpmevent3_c(11 downto 5)) else '0';
+  inh_acc <= '1' when (ctrl_i.csr_addr = csr_mcountinhibit_c) else '0';
 
   -- global data read-back --
-  rdata_o <= cycle_rd or time_rd or instret_rd or hpm_rd;
+  rdata_o <= cycle_rd or time_rd or instret_rd or hpm_rd or inhibit_rd;
 
 
   -- Counter Increment Control --------------------------------------------------------------
@@ -102,17 +103,33 @@ begin
   cnt_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cnt_en <= (others => '0');
+      inhibit <= (others => '0');
+      cnt_en  <= (others => '0');
     elsif rising_edge(clk_i) then
+      -- mcountinhibit CSR write access --
+      if (inh_acc = '1') and (ctrl_i.csr_we = '1') then
+        if ZICNTR_EN then
+          inhibit(0) <= ctrl_i.csr_wdata(0); -- [m]cycle[h]
+          inhibit(2) <= ctrl_i.csr_wdata(2); -- [m]instret[h]
+        end if;
+        if ZIHPM_EN then
+          inhibit((3+HPM_NUM)-1 downto 3) <= ctrl_i.csr_wdata((3+HPM_NUM)-1 downto 3); -- [m]hpmcounter*[h]
+        end if;
+      end if;
+      -- counter (increment) enable --
       -- increment if an (enabled) event fires; do not increment if CPU is in debug mode or if counter is inhibited
-      cnt_en(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not ctrl_i.cpu_debug) and (not ctrl_i.cnt_halt(0));
+      cnt_en(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not ctrl_i.cpu_debug) and (not inhibit(0));
       cnt_en(1) <= '0'; -- time: not available
-      cnt_en(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not ctrl_i.cpu_debug) and (not ctrl_i.cnt_halt(2));
+      cnt_en(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not ctrl_i.cpu_debug) and (not inhibit(2));
       for i in 3 to 15 loop
-        cnt_en(i) <= or_reduce_f(ctrl_i.cnt_event and hpmevent(i)) and (not ctrl_i.cpu_debug) and (not ctrl_i.cnt_halt(i));
+        cnt_en(i) <= or_reduce_f(ctrl_i.cnt_event and hpmevent(i)) and (not ctrl_i.cpu_debug) and (not inhibit(i));
       end loop;
     end if;
   end process cnt_control;
+
+  -- mcountinhibit read-back --
+  inhibit_rd(XLEN-1 downto 16) <= (others => '0');
+  inhibit_rd(15 downto 0)      <= inhibit when (inh_acc = '1') and (ctrl_i.csr_re = '1') else (others => '0');
 
 
   -- Base Counters (Zicntr) -----------------------------------------------------------------
