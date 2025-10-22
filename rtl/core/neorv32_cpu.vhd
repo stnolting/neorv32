@@ -15,7 +15,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -127,7 +126,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal dbus_req    : bus_req_t;                          -- data bus request
   signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
   signal pmp_fault   : std_ulogic;                         -- pmp permission violation
-  signal pmp_daddr   : std_ulogic_vector(XLEN-1 downto 0); -- data address for PMP check (shortcut)
   signal irq_machine : std_ulogic_vector(2 downto 0);      -- risc-v standard machine-level interrupts
 
 begin
@@ -453,24 +451,20 @@ begin
     )
     port map (
       -- global control --
-      clk_i     => clk_i,     -- global clock, rising edge
-      rstn_i    => rstn_i,    -- global reset, low-active, async
-      ctrl_i    => ctrl,      -- main control bus
-      -- CSR interface --
-      csr_o     => xcsr_pmp,  -- read data
-      -- address input --
-      addr_ls_i => pmp_daddr, -- load/store address
+      clk_i   => clk_i,    -- global clock, rising edge
+      rstn_i  => rstn_i,   -- global reset, low-active, async
+      ctrl_i  => ctrl,     -- main control bus
+      -- operands --
+      csr_o   => xcsr_pmp, -- CSR read data
+      rs1_i   => rs1,      -- data access base address
       -- access error --
-      fault_o   => pmp_fault  -- permission violation
+      fault_o => pmp_fault -- permission violation
     );
-    -- data access address - extra adder (so we do NOT have to use "alu_add") to improve timing --
-    pmp_daddr <= std_ulogic_vector(unsigned(rs1) + unsigned(ctrl.alu_imm));
   end generate;
 
   pmp_disabled:
   if not RISCV_ISA_Smpmp generate
     xcsr_pmp  <= (others => '0');
-    pmp_daddr <= (others => '0');
     pmp_fault <= '0';
   end generate;
 
