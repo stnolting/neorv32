@@ -610,8 +610,7 @@ package neorv32_package is
     csr_re       : std_ulogic;                     -- global read-enable
     csr_addr     : std_ulogic_vector(11 downto 0); -- address
     csr_wdata    : std_ulogic_vector(31 downto 0); -- write data
-    -- counters --
-    cnt_halt     : std_ulogic_vector(15 downto 0); -- counter inhibit
+    -- counter events --
     cnt_event    : std_ulogic_vector(11 downto 0); -- counter increment events
     -- instruction word --
     ir_funct3    : std_ulogic_vector(2 downto 0);  -- funct3 bit field
@@ -657,7 +656,6 @@ package neorv32_package is
     csr_re       => '0',
     csr_addr     => (others => '0'),
     csr_wdata    => (others => '0'),
-    cnt_halt     => (others => '0'),
     cnt_event    => (others => '0'),
     ir_funct3    => (others => '0'),
     ir_funct12   => (others => '0'),
