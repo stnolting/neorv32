@@ -136,8 +136,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   -- CPU control bus --
   signal ctrl, ctrl_nxt : ctrl_bus_t;
 
-  signal trap_me : std_ulogic;
-
   -- control and status registers (CSRs) --
   type csr_t is record
     addr           : std_ulogic_vector(11 downto 0); -- physical access address
@@ -204,8 +202,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal zcmp_pc, zcmp_pc_nxt : std_ulogic_vector(31 downto 0);
 
 begin
-
-  trap_me <= trap_ctrl.instr_il;
 
   -- ****************************************************************************************************************************
   -- Instruction Execution
