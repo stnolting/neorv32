@@ -63,12 +63,12 @@ int main() {
 
   // setup date and time for the Unix time of CLINT.MTIMER
   date_t date;
-  date.year    = 2024; // current year (absolute)
-  date.month   = 12;   // 1..12
-  date.day     = 26;   // 1..31
-  date.hours   = 21;   // 0..23
-  date.minutes = 18;   // 0..59
-  date.seconds = 36;   // 0..59
+  date.year    = 2025; // current year (absolute)
+  date.month   = 10;   // 1..12
+  date.day     = 24;   // 1..31
+  date.hours   = 23;   // 0..23
+  date.minutes = 01;   // 0..59
+  date.seconds = 17;   // 0..59
 
   neorv32_clint_unixtime_set(neorv32_aux_date2unixtime(&date));
   neorv32_uart0_printf("Unix timestamp: %u\n", (uint32_t)neorv32_clint_unixtime_get());
