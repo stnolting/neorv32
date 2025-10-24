@@ -54,7 +54,7 @@ int main() {
   }
 
   // Intro
-  neorv32_uart0_puts("RISC-V Core Local Interruptor (CLINT) demo Program.\n"
+  neorv32_uart0_puts("RISC-V Core-Local Interruptor (CLINT) demo Program.\n"
                      "Real-time clock using the RISC-V MTIMER interrupt.\n"
                      "Also toggles GPIO.output(0) at 1Hz.\n\n");
 
@@ -71,7 +71,7 @@ int main() {
   date.seconds = 36;   // 0..59
 
   neorv32_clint_unixtime_set(neorv32_aux_date2unixtime(&date));
-  neorv32_uart0_printf("Unix timestamp: %u\n", (uint32_t)neorv32_clint_unixtime_get);
+  neorv32_uart0_printf("Unix timestamp: %u\n", (uint32_t)neorv32_clint_unixtime_get());
 
   // configure MTIME timer to not trigger
   neorv32_clint_mtimecmp_set(-1);
@@ -106,7 +106,7 @@ int main() {
  **************************************************************************/
 void mti_irq_handler(void) {
 
-  // configure MTIME timer's next interrupt to trigger after 1 second starting from now
+  // configure MTIME timer's next interrupt to trigger after 1 second MTIMECMP delta
   neorv32_clint_mtimecmp_set(neorv32_clint_mtimecmp_get() + neorv32_sysinfo_get_clk());
 
   // toggle output port bit 0
