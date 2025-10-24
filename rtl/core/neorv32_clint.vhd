@@ -158,11 +158,14 @@ begin
       end if;
     end process mswi_reg;
 
+    -- interrupt output --
+    msi_o(i) <= mswi(i);
+
     -- device access --
     mswi_en(i) <= '1' when (bus_req_i.stb = '1') and (unsigned(bus_req_i.addr(15 downto 2)) = (base_mswi_c(15 downto 2) + i)) else '0';
 
     -- read-back --
-    mswi_rd(i) <= (others => '0') when (mtime_en = '0') else (x"0000000" & "000" & mswi(i));
+    mswi_rd(i) <= (others => '0') when (mswi_en(i) = '0') else (x"0000000" & "000" & mswi(i));
 
   end generate;
 
