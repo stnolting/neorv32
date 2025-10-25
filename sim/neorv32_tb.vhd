@@ -134,7 +134,7 @@ begin
     BOOT_ADDR_CUSTOM    => BOOT_ADDR_CUSTOM,
     -- On-Chip Debugger (OCD) --
     OCD_EN              => true,
-    OCD_NUM_HW_TRIGGERS => 2,
+    OCD_NUM_HW_TRIGGERS => 3,
     OCD_AUTHENTICATION  => true,
     -- RISC-V CPU Extensions --
     RISCV_ISA_C         => RISCV_ISA_C,
