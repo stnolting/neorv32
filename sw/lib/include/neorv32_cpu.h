@@ -30,6 +30,7 @@ uint32_t neorv32_cpu_pmp_get_granularity(void);
 int      neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config);
 uint32_t neorv32_cpu_hpm_get_num_counters(void);
 uint32_t neorv32_cpu_hpm_get_size(void);
+int      neorv32_cpu_hwtrig_get_number(void);
 /**@}*/
 
 

@@ -364,3 +364,32 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
 
   return cnt;
 }
+
+
+/**********************************************************************//**
+ * Hardware trigger module: get number of implemented triggers.
+ *
+ * @return Number of HW triggers (0 if not implemented at all).
+ **************************************************************************/
+int neorv32_cpu_hwtrig_get_number(void) {
+
+  int cnt = 0, sel = 0;
+
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_SDTRIG)) == 0) {
+    return 0;
+  }
+
+  while (1) {
+    neorv32_cpu_csr_write(CSR_TSELECT, sel);
+    if ((neorv32_cpu_csr_read(CSR_TSELECT) == sel) &&
+       ((neorv32_cpu_csr_read(CSR_TINFO) & 0x0000FFFF) != 1)) {
+      cnt++;
+    }
+    else {
+      break;
+    }
+    sel++;
+  }
+
+  return cnt;
+}
