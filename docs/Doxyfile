@@ -42,7 +42,7 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = "NEORV32 Software Framework Documentation"
+PROJECT_NAME           = "NEORV32 API Reference"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
@@ -933,12 +933,9 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = $(PWD)/../README.md \
-                         $(PWD)/doxygen_main.md \
+INPUT                  = $(PWD)/doxygen_main.md \
                          $(PWD)/../sw/lib/source \
-                         $(PWD)/../sw/lib/include \
-                         $(PWD)/../sw/bootloader \
-                         $(PWD)/../sw/example
+                         $(PWD)/../sw/lib/include
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1010,8 +1007,7 @@ EXCLUDE_SYMLINKS       = NO
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories for example use the pattern */test/*
 
-EXCLUDE_PATTERNS       = ~* \
-                         */example/coremark/*
+EXCLUDE_PATTERNS       =
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the
