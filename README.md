@@ -153,8 +153,8 @@ allows booting application code via UART, TWI or SPI flash or from an SD card
 
 * 32-bit external bus interface - Wishbone-compatible
 ([XBUS](https://stnolting.github.io/neorv32/#_processor_external_bus_interface_xbus));
-[wrapper](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration) for AXI4 interfaces
-* stream link interface with independent RX and TX channels - AXI4-Stream compatible
+[wrapper](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration) for AXI4-compatible interfaces
+* stream link interface with independent RX and TX channels - AXI4-Stream-compatible
 ([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink))
 
 **Advanced**

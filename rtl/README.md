@@ -22,7 +22,7 @@ These templates can be instantiated directly within a FPGA-specific board wrappe
 NEORV32 Processor wrappers dedicated for complex system integration:
 
 * LiteX SoC builder
-* Vivado IP integrator providing AXI4-lite and AXI4-stream interfaces
+* Vivado IP integrator providing AXI4-compatible and AXI4-stream-compatible interfaces
 
 > [!NOTE]
 > These pre-defined top entity wrappers can also be used for custom setups outside of LiteX and Vivado IP designs.
