@@ -124,7 +124,7 @@ neorv32                    - Project home folder
 ├─ rtl                     - HDL sources
 │  ├─ core                 - Core sources of the CPU & SoC
 │  ├─ processor_templates  - Pre-configured SoC wrappers
-│  ├─ system_integration   - System wrappers and bridges for advanced connectivity
+│  ├─ system_integration   - System wrappers and bridges for advanced SoC connectivity
 │  └─ test_setups          - Minimal test setup "SoCs" used in the User Guide
 │
 ├─ sim                     - Simulation files

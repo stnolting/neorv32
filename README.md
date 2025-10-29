@@ -10,9 +10,8 @@
 
 The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
 [RISC-V](https://riscv.org/) CPU that is written in **platform-independent VHDL**. The processor is intended as auxiliary
-controller in larger SoC designs or as tiny and customized microcontroller that even fits into a
-Lattice iCE40 UltraPlus low-power & low-density FPGA. The project is intended to work _out of the box_ and targets
-FPGA / RISC-V beginners as well as advanced users.
+controller in larger SoC designs or as tiny and customized microcontroller. The project is intended to work _out of the box_
+and targets FPGA / RISC-V beginners as well as experienced users.
 
 ![neorv32 Overview](docs/figures/neorv32_processor.png)
 
@@ -154,8 +153,8 @@ allows booting application code via UART, TWI or SPI flash or from an SD card
 
 * 32-bit external bus interface - Wishbone-compatible
 ([XBUS](https://stnolting.github.io/neorv32/#_processor_external_bus_interface_xbus));
-[wrapper](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration) for AXI4 interfaces
-* stream link interface with independent RX and TX channels - AXI4-Stream compatible
+[wrapper](https://github.com/stnolting/neorv32/blob/main/rtl/system_integration) for AXI4-compatible interfaces
+* stream link interface with independent RX and TX channels - AXI4-Stream-compatible
 ([SLINK](https://stnolting.github.io/neorv32/#_stream_link_interface_slink))
 
 **Advanced**

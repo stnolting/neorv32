@@ -30,7 +30,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ two-wire serial interface controller (<<_two_wire_serial_interface_controller_twi,**TWI**>>), compatible to the I²C standard
 * _optional_ two-wire serial device controller (<<_two_wire_serial_device_controller_twd,**TWD**>>), compatible to the I²C standard
 * _optional_ general purpose parallel IO port (<<_general_purpose_input_and_output_port_gpio,**GPIO**>>), 32 inputs (interrupt capable), 32 outputs
-* _optional_ 32-bit external bus interface, Wishbone-compatible (<<_processor_external_bus_interface_xbus,**XBUS**>>), AXI4-bridge available
+* _optional_ 32-bit external bus interface, Wishbone-compatible (<<_processor_external_bus_interface_xbus,**XBUS**>>), AXI4-compatible bridge available
 * _optional_ watchdog timer (<<_watchdog_timer_wdt,**WDT**>>)
 * _optional_ PWM controller with up to 16 individual channels (<<_pulse_width_modulation_controller_pwm,**PWM**>>)
 * _optional_ ring-oscillator-based true random number generator (<<_true_random_number_generator_trng,**TRNG**>>)
@@ -39,7 +39,7 @@ image::neorv32_processor.png[align=center]
 * _optional_ general purpose 32-bit timer (<<_general_purpose_timer_gptmr,**GPTMR**>>)
 * _optional_ 1-wire serial interface controller (<<_one_wire_serial_interface_controller_onewire,**ONEWIRE**>>), compatible to the 1-wire standard
 * _optional_ autonomous direct memory access controller (<<_direct_memory_access_controller_dma,**DMA**>>)
-* _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream compatible
+* _optional_ stream link interface (<<_stream_link_interface_slink,**SLINK**>>), AXI4-Stream-compatible
 * _optional_ on-chip debugger with JTAG TAP (<<_on_chip_debugger_ocd,**OCD**>>), optional authentication and hardware breakpoint
 * _optional_ execution trace buffer to debug program flow (<<_execution_trace_buffer_tracer,**TRACER**>>) via branch tracing
 * _optional_ RVFI-compatible <<_execution_trace_port>> for advanced debugging, profiling and verification
@@ -270,7 +270,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `DCACHE_NUM_BLOCKS`     | natural   | 4             | Number of blocks ("lines"). Has to be a power of two.
 | `CACHE_BLOCK_SIZE`      | natural   | 64            | Size in bytes of each block (I$ and D$). Has to be a power of two, min 8.
 | `CACHE_BURSTS_EN`       | boolean   | true          | Enable burst transfers for cache updates.
-4+^| **<<_processor_external_bus_interface_xbus>> (Wishbone / AXI4)**
+4+^| **<<_processor_external_bus_interface_xbus>> (Wishbone / AXI4-Compatible Bridging)**
 | `XBUS_EN`               | boolean   | false         | Implement the external bus interface.
 | `XBUS_TIMEOUT`          | natural   | 2048          | Number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled).
 | `XBUS_REGSTAGE_EN`      | boolean   | false         | Implement XBUS register stages to ease timing closure.
@@ -305,7 +305,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `IO_ONEWIRE_FIFO`       | natural   | 1             | Depth of the <<_one_wire_serial_interface_controller_onewire>> FIFO. Has to be a power of two, min 1, max 32768.
 | `IO_DMA_EN`             | boolean   | false         | Implement the <<_direct_memory_access_controller_dma>>.
 | `IO_DMA_DSC_FIFO`       | natural   | 4             | Depth of the DMA transfer descriptor FIFO. Has to be a power of two, min 4, max 512.
-| `IO_SLINK_EN`           | boolean   | false         | Implement the <<_stream_link_interface_slink>> (AXI4-Stream).
+| `IO_SLINK_EN`           | boolean   | false         | Implement the <<_stream_link_interface_slink>> (AXI4-Stream-Compatible).
 | `IO_SLINK_RX_FIFO`      | natural   | 1             | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_SLINK_TX_FIFO`      | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_TRACER_EN`          | boolean   | false         | Implement the <<_execution_trace_buffer_tracer>>.

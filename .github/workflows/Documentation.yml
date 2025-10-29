@@ -34,7 +34,7 @@ jobs:
         doxyfile-path: 'docs/Doxyfile'
 
     - name: '📤 Upload Artifact'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: NEORV32-Doxygen
         path: doxygen_build/html
@@ -55,7 +55,7 @@ jobs:
       run: make -C docs container
 
     - name: '📤 Upload Artifact: HTML'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: NEORV32
         path: docs/public
@@ -75,7 +75,7 @@ jobs:
       uses: actions/checkout@v5
 
     - name: '📥 Download Artifacts'
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v6
 
     - name: '🛠️ Organize public subdir and create a tarball'
       run: |

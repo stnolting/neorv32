@@ -29,15 +29,14 @@ entity neorv32_cpu_pmp is
   );
   port (
     -- global control --
-    clk_i     : in  std_ulogic; -- global clock, rising edge
-    rstn_i    : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i    : in  ctrl_bus_t; -- main control bus
-    -- CSR interface --
-    csr_o     : out std_ulogic_vector(XLEN-1 downto 0); -- read data
-    -- address input --
-    addr_ls_i : in  std_ulogic_vector(XLEN-1 downto 0); -- load/store address
+    clk_i   : in  std_ulogic; -- global clock, rising edge
+    rstn_i  : in  std_ulogic; -- global reset, low-active, async
+    ctrl_i  : in  ctrl_bus_t; -- main control bus
+    -- operands --
+    csr_o   : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
+    rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- data access base address
     -- access error --
-    fault_o   : out std_ulogic -- permission violation
+    fault_o : out std_ulogic -- permission violation
   );
 end neorv32_cpu_pmp;
 
@@ -241,7 +240,8 @@ begin
   -- -------------------------------------------------------------------------------------------
 
   -- access switch (check I/D in time-multiplex) --
-  acc_addr <= ctrl_i.pc_nxt   when (ctrl_i.lsu_mo_we = '0') else addr_ls_i;
+  -- data access address: extra adder (so we do NOT have to use ALU.add) to improve timing --
+  acc_addr <= ctrl_i.pc_nxt   when (ctrl_i.lsu_mo_we = '0') else std_ulogic_vector(unsigned(rs1_i) + unsigned(ctrl_i.alu_imm));
   acc_priv <= ctrl_i.cpu_priv when (ctrl_i.lsu_mo_we = '0') else ctrl_i.lsu_priv;
 
   region_gen:

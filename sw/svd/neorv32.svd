@@ -1273,6 +1273,7 @@
           <name>DATA</name>
           <description>Random data</description>
           <addressOffset>0x04</addressOffset>
+          <access>read-only</access>
           <readAction>modify</readAction>
           <fields>
             <field>

@@ -167,7 +167,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mscratch       : std_ulogic_vector(XLEN-1 downto 0); -- machine scratch register
     mcounteren_cy  : std_ulogic; -- machine counter access enable: cycle counter
     mcounteren_ir  : std_ulogic; -- machine counter access enable: instruction counter
-    mcountinhibit  : std_ulogic_vector(15 downto 0); -- inhibit counter increment
     --
     dcsr_ebreakm   : std_ulogic; -- behavior of ebreak instruction in m-mode
     dcsr_ebreaku   : std_ulogic; -- behavior of ebreak instruction in u-mode
@@ -613,8 +612,7 @@ begin
   ctrl_o.csr_re       <= csr.re;
   ctrl_o.csr_addr     <= csr.addr;
   ctrl_o.csr_wdata    <= csr.wdata;
-  -- counters --
-  ctrl_o.cnt_halt     <= csr.mcountinhibit;
+  -- counter events --
   ctrl_o.cnt_event    <= cnt_event;
   -- instruction word bit fields --
   ctrl_o.ir_funct3    <= exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c);
@@ -1082,7 +1080,6 @@ begin
       csr.mtinst        <= (others => '0');
       csr.mcounteren_cy <= '0';
       csr.mcounteren_ir <= '0';
-      csr.mcountinhibit <= (others => '0');
       csr.dcsr_ebreakm  <= '0';
       csr.dcsr_ebreaku  <= '0';
       csr.dcsr_step     <= '0';
@@ -1136,16 +1133,6 @@ begin
             csr.mepc <= csr.wdata(XLEN-1 downto 1) & '0';
             if not RISCV_ISA_C then -- RISC-V priv. spec.: MEPC[1] is masked when IALIGN = 32
               csr.mepc(1) <= '0';
-            end if;
-
-          -- machine counter-inhibit register --
-          when csr_mcountinhibit_c =>
-            if RISCV_ISA_Zicntr then
-              csr.mcountinhibit(0) <= csr.wdata(0);
-              csr.mcountinhibit(2) <= csr.wdata(2);
-            end if;
-            if RISCV_ISA_Zihpm then
-              csr.mcountinhibit(15 downto 3) <= csr.wdata(15 downto 3);
             end if;
 
           -- debug mode control and status register --
@@ -1244,19 +1231,6 @@ begin
       -- ********************************************************************************
       -- Override - terminate unavailable registers and bits
       -- ********************************************************************************
-
-      -- hardwired bits --
-      csr.mcountinhibit(1) <= '0'; -- "time" not defined
-
-      -- no base counters --
-      if not RISCV_ISA_Zicntr then
-        csr.mcountinhibit(2 downto 0) <= (others => '0');
-      end if;
-
-      -- no hardware performance monitors --
-      if not RISCV_ISA_Zihpm then
-        csr.mcountinhibit(15 downto 3) <= (others => '0');
-      end if;
 
       -- no user-mode counters at all --
       if not RISCV_ISA_Zicntr then
@@ -1367,18 +1341,6 @@ begin
 
           when csr_mtinst_c => -- machine trap instruction
             csr.rdata <= csr.mtinst;
-
-          -- --------------------------------------------------------------------
-          -- machine counter setup
-          -- --------------------------------------------------------------------
-          when csr_mcountinhibit_c => -- machine counter-inhibit register
-            if RISCV_ISA_Zicntr then
-              csr.rdata(0) <= csr.mcountinhibit(0); -- [m]cycle[h]
-              csr.rdata(2) <= csr.mcountinhibit(2); -- [m]instret[h]
-            end if;
-            if RISCV_ISA_Zihpm then
-              csr.rdata(15 downto 3) <= csr.mcountinhibit(15 downto 3); -- [m]hpmcounter*[h]
-            end if;
 
           -- --------------------------------------------------------------------
           -- machine information

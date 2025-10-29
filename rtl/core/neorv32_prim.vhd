@@ -6,7 +6,7 @@
 -- any explicit read access.                                                        --
 --                                                                                  --
 -- The status signals "free space left" (free_o) and "data available" (avail_o)     --
--- are synchronized to the according ports:                                         --
+-- are synchronized to the according port:                                          --
 -- - free_o  -> write port                                                          --
 -- - avail_o -> read port                                                           --
 -- -------------------------------------------------------------------------------- --
@@ -384,3 +384,88 @@ begin
   res_o <= std_ulogic_vector(res((2*DWIDTH)-1 downto 0));
 
 end neorv32_prim_mul_rtl;
+
+
+-- ================================================================================ --
+-- NEORV32 - Primitives - Generic 64-Bit Counter Module                             --
+-- -------------------------------------------------------------------------------- --
+-- High and low words are split across two individual registers to improve timing   --
+-- by cutting the carry chain. The actual counter width can be trimmed via CWIDTH.  --
+-- [WARNING] High and low words of counter output cnt_o are _NOT_ synchronized!     --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity neorv32_prim_cnt is
+  generic (
+    CWIDTH : natural range 0 to 64 -- actual counter width (0..64)
+  );
+  port (
+    -- global control --
+    clk_i  : in  std_ulogic;                     -- global clock, rising edge
+    rstn_i : in  std_ulogic;                     -- global reset, low-active, async
+    inc_i  : in  std_ulogic;                     -- enable counter increment
+    -- read/write access --
+    we_i   : in  std_ulogic_vector(1 downto 0);  -- subword write enable
+    data_i : in  std_ulogic_vector(31 downto 0); -- subword write data
+    oe_i   : in  std_ulogic;                     -- output enable
+    cnt_o  : out std_ulogic_vector(63 downto 0)  -- trimmed counter output
+  );
+end neorv32_prim_cnt;
+
+architecture neorv32_prim_cnt_rtl of neorv32_prim_cnt is
+
+  signal count : std_ulogic_vector(63 downto 0);
+  signal carry, inc : std_ulogic_vector(0 downto 0);
+  signal inc_lo, inc_hi : std_ulogic_vector(32 downto 0);
+
+begin
+
+  -- 64-Bit Counter (split across two 32-bit registers) -------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  counter_core: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      count <= (others => '0');
+      carry <= (others => '0');
+    elsif rising_edge(clk_i) then
+      -- low-word --
+      if (we_i(0) = '1') then
+        count(31 downto 0) <= data_i;
+      else
+        count(31 downto 0) <= inc_lo(31 downto 0);
+      end if;
+      carry(0) <= inc_lo(32); -- low-to-high carry
+      -- high-word --
+      if (we_i(1) = '1') then
+        count(63 downto 32) <= data_i;
+      else
+        count(63 downto 32) <= inc_hi(31 downto 0);
+      end if;
+    end if;
+  end process counter_core;
+
+  -- increments --
+  inc(0) <= inc_i;
+  inc_lo <= std_ulogic_vector(unsigned('0' & count(31 downto  0)) + unsigned(inc));
+  inc_hi <= std_ulogic_vector(unsigned('0' & count(63 downto 32)) + unsigned(carry));
+
+  -- Output Gating and Trimming -------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  trim: process(oe_i, count)
+  begin
+    cnt_o <= (others => '0');
+    if (oe_i = '1') then
+      cnt_o(CWIDTH-1 downto 0) <= count(CWIDTH-1 downto 0); -- unconnected counter bit should be optimized away
+    end if;
+  end process trim;
+
+end neorv32_prim_cnt_rtl;

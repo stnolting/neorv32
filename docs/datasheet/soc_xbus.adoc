@@ -31,7 +31,7 @@
 * Gateway for processor-external modules
 * Wishbone-compatible bus protocol
 * Optional burst support
-* Optional AXI4 bridging
+* Optional AXI4-compatible bridging
 
 
 **Overview**
@@ -60,7 +60,7 @@ see section <<_address_space>>) are **redirected** to the external bus interface
 The official Wishbone specification scan be found online:
 https://wishbone-interconnect.readthedocs.io/en/latest/index.html
 
-.AXI4 Interface Bridge
+.AXI4-Compatible Interface Bridge
 [TIP]
 A bridge that converts the processor's XBUS interface into an AXI4-compatible host interface is available
 in `rtl/system_integration/xbus2axi4_bridge.vhd`. This bridge is also used for the ENORV32 Vivado IP block:

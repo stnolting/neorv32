@@ -17,7 +17,7 @@
 /**********************************************************************//**
  * Simple delay function using busy-wait.
  *
- * @warning Timing is imprecise! Use CLINT.MTIME or CSR.[M]CYCLE[H] for precise timing.
+ * @warning Timing is imprecise! Use CLINT.MTIME or CYCLE CSRs for precise timing.
  *
  * @param[in] clock_hz CPU clock speed in Hz.
  * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
@@ -309,15 +309,13 @@ void neorv32_aux_print_hw_config(void) {
   neorv32_uart0_printf("On-chip debugger:    ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD)) {
     neorv32_uart0_printf("enabled");
+    if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD_AUTH)) {
+      neorv32_uart0_printf(" + authentication");
+    }
+    neorv32_uart0_printf(", %u HW trigger(s)\n", neorv32_cpu_hwtrig_get_number());
   }
   else {
-    neorv32_uart0_printf("disabled");
-  }
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_OCD_AUTH)) {
-    neorv32_uart0_printf(" + authentication\n");
-  }
-  else {
-    neorv32_uart0_printf("\n");
+    neorv32_uart0_printf("disabled\n");
   }
 
   // IDs
