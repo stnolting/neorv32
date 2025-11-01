@@ -30,6 +30,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_zbs_isa_extension,`Zbs`>>           | Single-bit bit manipulation instructions                     | <<_processor_top_entity_generics, `RISCV_ISA_Zbs`>>
 | <<_zfinx_isa_extension,`Zfinx`>>       | Floating-point instructions using integer registers          | <<_processor_top_entity_generics, `RISCV_ISA_Zfinx`>>
 | <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction               | Always enabled
+| <<_zibi_isa_extension,`Zibi`>>         | Branches with immediate-comparison                           | <<_processor_top_entity_generics, `RISCV_ISA_Zibi`>>
 | <<_zicntr_isa_extension,`Zicntr`>>     | Base counters extension                                      | <<_processor_top_entity_generics, `RISCV_ISA_Zicntr`>>
 | <<_zicond_isa_extension,`Zicond`>>     | Integer conditional operations                               | <<_processor_top_entity_generics, `RISCV_ISA_Zicond`>>
 | <<_zicsr_isa_extension,`Zicsr`>>       | Control and status register access instructions              | Always enabled
@@ -134,7 +135,7 @@ The "compressed" ISA extension provides 16-bit encodings of commonly used instru
 | ALU        | `c.addi4spn` `c.nop` `c.add[i]` `c.li` `c.addi16sp` `c.lui` `c.and[i]` `c.sub` `c.xor` `c.or` `c.mv` | 2
 | ALU shifts | `c.srli` `c.srai` `c.slli`                                                                           | 2 + `T_shift_latency`
 | Branch     | `c.beqz` `c.bnez`                                                                                    | not taken: 3 +
-taken 5 + `T_inst_latency`
+taken: 5 + `T_inst_latency`
 | Jump/call  | `c.jal[r]` `c.j` `c.jr`                                                                              | 5 + `T_inst_latency`
 | Load/store | `c.lw` `c.sw` `c.lwsp` `c.swsp`                                                                      | 4 + `T_data_latency`
 | System     | `c.break`                                                                                            | 7 + `T_inst_latency`
@@ -163,7 +164,7 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 | ALU            | `add[i]` `slt[i]` `slt[i]u` `xor[i]` `or[i]` `and[i]` `sub` `lui` `auipc` | 2
 | ALU shifts     | `sll[i]` `srl[i]` `sra[i]`                                                | 3 + `T_shift_latency`
 | Branch         | `beq` `bne` `blt` `bge` `bltu` `bgeu`                                     | not taken: 3 +
-taken 5 + `T_inst_latency`
+taken: 5 + `T_inst_latency`
 | Jump/call      | `jal[r]`                                                                  | 5 + `T_inst_latency`
 | Load/store     | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 4 + `T_data_latency`
 | Data fence     | `fence`                                                                   | 2
@@ -333,6 +334,26 @@ If a computational instruction generates a subnormal result it is also flushed t
 | Convert (int -> float) | `fcvt.s.w` `fcvt.s.wu`                    | 42
 | Sign-injection         | `fsgnj.s` `fsgnjn.s` `fsgnjx.s`           | 4
 | Classify               | `fclass.s`                                | 4
+|=======================
+
+
+==== `Zibi` ISA Extension
+
+The RISC-V `Zibi` ISA extension adds two new "branch with immediate" instruction. The instruction's
+`rs2` address bits are used to select one out of 32 pre-defined immediate values which is used for
+the actual comparison.
+
+.Non-Ratified ISA Extension
+[WARNING]
+The RISC-V `Zibi` ISA extension has not been ratified yet!
+
+.Instructions and Timing
+[cols="<3,<2,<5"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| Branch with immediate | `beqi` `bnei` | not taken: 3 +
+taken: 5 + `T_inst_latency`
 |=======================
 
 
