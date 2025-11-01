@@ -232,6 +232,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `RISCV_ISA_Zbkx`        | boolean   | false         | Enable <<_zbkx_isa_extension>> (scalar cryptography crossbar permutations).
 | `RISCV_ISA_Zbs`         | boolean   | false         | Enable <<_zbs_isa_extension>> (single-bit bit-manipulation instructions).
 | `RISCV_ISA_Zfinx`       | boolean   | false         | Enable <<_zfinx_isa_extension>> (single-precision floating-point unit).
+| `RISCV_ISA_Zibi`        | boolean   | false         | Enable <<_zibi_isa_extension>> (CPU base counters).
 | `RISCV_ISA_Zicntr`      | boolean   | false         | Enable <<_zicntr_isa_extension>> (CPU base counters).
 | `RISCV_ISA_Zicond`      | boolean   | false         | Enable <<_zicond_isa_extension>> (integer conditional instructions).
 | `RISCV_ISA_Zihpm`       | boolean   | false         | Enable <<_zihpm_isa_extension>> (hardware performance monitors).
