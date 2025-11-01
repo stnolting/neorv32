@@ -688,10 +688,9 @@ int main() {
   asm volatile (".word 0xfe000033"); // illegal add funct7
   asm volatile (".word 0xf0a01013"); // illegal slli funct7
   asm volatile (".word 0xde000033"); // illegal mul funct7
-  asm volatile (".word 0x8f002163"); // illegal branch funct3
   asm volatile (".word 0x8f001067"); // illegal jalr funct3
   asm volatile (".word 0x0000200f"); // illegal fence funct3
-  asm volatile (".word 0xfe002fe3"); // illegal store funct3
+  asm volatile (".word 0xfe003023"); // illegal store funct3
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
     asm volatile (".balign 4");
     asm volatile (".half 0x0000"); // canonical compressed illegal instruction
@@ -703,12 +702,12 @@ int main() {
   // number of traps we are expecting + expected instruction word of last illegal instruction
   uint32_t invalid_instr;
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
-    tmp_a += 17;
+    tmp_a += 16;
     invalid_instr = 0x08812681; // mtinst: pre-decompressed; clear bit 1 if compressed instruction
   }
   else { // C extension disabled
-    tmp_a += 15;
-    invalid_instr = 0xfe002fe3;
+    tmp_a += 14;
+    invalid_instr = 0xfe003023;
   }
 
   tmp_b = trap_cnt; // number of traps we have seen here
@@ -910,7 +909,10 @@ int main() {
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
-    if ((trap_cause == TRAP_CODE_MTI) && (neorv32_cpu_csr_read(CSR_MTVAL)  == 0)) {
+    if ((trap_cause == TRAP_CODE_MTI) &&
+        (neorv32_cpu_csr_read(CSR_MTVAL) == 0) &&
+        (NEORV32_CLINT->MTIME.uint32[1] == 0x00000001) &&
+        neorv32_clint_mtimecmp_get() == 0x0000000100000000ULL) {
       test_ok();
     }
     else {
