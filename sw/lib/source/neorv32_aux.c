@@ -367,6 +367,7 @@ void neorv32_aux_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_ZBKX))      { neorv32_uart0_printf("Zbkx ");      }
   if (tmp & (1<<CSR_MXISA_ZBS))       { neorv32_uart0_printf("Zbs ");       }
   if (tmp & (1<<CSR_MXISA_ZFINX))     { neorv32_uart0_printf("Zfinx ");     }
+  if (tmp & (1<<CSR_MXISA_ZIBI))      { neorv32_uart0_printf("Zibi ");      }
   if (tmp & (1<<CSR_MXISA_ZICNTR))    { neorv32_uart0_printf("Zicntr ");    }
   if (tmp & (1<<CSR_MXISA_ZICOND))    { neorv32_uart0_printf("Zicond ");    }
   if (tmp & (1<<CSR_MXISA_ZICSR))     { neorv32_uart0_printf("Zicsr ");     }
