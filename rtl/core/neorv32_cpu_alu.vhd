@@ -18,22 +18,23 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_alu is
   generic (
     -- RISC-V CPU Extensions --
-    RISCV_ISA_M      : boolean; -- implement mul/div extension
-    RISCV_ISA_Zba    : boolean; -- implement address-generation instruction
-    RISCV_ISA_Zbb    : boolean; -- implement basic bit-manipulation instruction
-    RISCV_ISA_Zbkb   : boolean; -- implement bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc   : boolean; -- implement carry-less multiplication instructions
-    RISCV_ISA_Zbkx   : boolean; -- implement cryptography crossbar permutation extension
-    RISCV_ISA_Zbs    : boolean; -- implement single-bit instructions
-    RISCV_ISA_Zfinx  : boolean; -- implement 32-bit floating-point extension
-    RISCV_ISA_Zicond : boolean; -- implement integer conditional operations
-    RISCV_ISA_Zknd   : boolean; -- implement cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne   : boolean; -- implement cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh   : boolean; -- implement cryptography NIST hash extension
-    RISCV_ISA_Zksed  : boolean; -- implement ShangMi block cypher extension
-    RISCV_ISA_Zksh   : boolean; -- implement ShangMi hash extension
-    RISCV_ISA_Zmmul  : boolean; -- implement multiply-only M sub-extension
-    RISCV_ISA_Zxcfu  : boolean; -- implement custom (instr.) functions unit
+    RISCV_ISA_M      : boolean; -- mul/div extension
+    RISCV_ISA_Zba    : boolean; -- address-generation instruction
+    RISCV_ISA_Zbb    : boolean; -- basic bit-manipulation instruction
+    RISCV_ISA_Zbkb   : boolean; -- bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc   : boolean; -- carry-less multiplication instructions
+    RISCV_ISA_Zbkx   : boolean; -- cryptography crossbar permutation extension
+    RISCV_ISA_Zbs    : boolean; -- single-bit instructions
+    RISCV_ISA_Zfinx  : boolean; -- 32-bit floating-point extension
+    RISCV_ISA_Zibi   : boolean; -- branch with immediate
+    RISCV_ISA_Zicond : boolean; -- integer conditional operations
+    RISCV_ISA_Zknd   : boolean; -- cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne   : boolean; -- cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh   : boolean; -- cryptography NIST hash extension
+    RISCV_ISA_Zksed  : boolean; -- ShangMi block cipher extension
+    RISCV_ISA_Zksh   : boolean; -- ShangMi hash extension
+    RISCV_ISA_Zmmul  : boolean; -- multiply-only M sub-extension
+    RISCV_ISA_Zxcfu  : boolean; -- custom (instr.) functions unit
     -- Tuning Options --
     FAST_MUL_EN      : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN    : boolean  -- use barrel shifter for shift operations
@@ -58,10 +59,28 @@ end neorv32_cpu_alu;
 
 architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
 
+  -- Zibi ISA extension: compare with immediate --
+  function zibi_cmp_f(sel : std_ulogic_vector(4 downto 0); cmp : std_ulogic_vector) return std_ulogic is
+    variable imm_v : std_ulogic_vector(cmp'length-1 downto 0);
+  begin
+    -- immediate selection --
+    if (sel = "00000") then
+      imm_v := (others => '1');
+    else
+      imm_v := (others => '0');
+      imm_v(4 downto 0) := sel;
+    end if;
+    -- equal? --
+    if (imm_v = cmp) then
+      return '1';
+    else
+      return '0';
+    end if;
+  end function zibi_cmp_f;
+
   -- comparator --
-  signal cmp_rs1 : std_ulogic_vector(XLEN downto 0);
-  signal cmp_rs2 : std_ulogic_vector(XLEN downto 0);
-  signal cmp     : std_ulogic_vector(1 downto 0);
+  signal cmp_rs1, cmp_rs2 : std_ulogic_vector(XLEN downto 0);
+  signal cmp_eq,  cmp_ls  : std_ulogic;
 
   -- operands --
   signal opa,   opb   : std_ulogic_vector(XLEN-1 downto 0);
@@ -77,24 +96,22 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
   signal cp_valid  : std_ulogic_vector(6 downto 0);
   signal cp_shamt  : std_ulogic_vector(index_size_f(XLEN)-1 downto 0);
 
-  -- FPU proxy --
-  signal fpu_csr_en, fpu_csr_we : std_ulogic;
-  signal fpu_csr_rd : std_ulogic_vector(XLEN-1 downto 0);
-
-  -- CFU proxy --
-  signal cfu_done, cfu_busy : std_ulogic;
-  signal cfu_res : std_ulogic_vector(XLEN-1 downto 0);
+  -- proxy logic --
+  signal fpu_csr_en, fpu_csr_we, cfu_done, cfu_busy : std_ulogic;
+  signal fpu_csr_rd, cfu_res : std_ulogic_vector(XLEN-1 downto 0);
 
 begin
 
-  -- Comparator Unit (for conditional branches) ---------------------------------------------
+  -- Comparator Unit ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   cmp_rs1 <= (rs1_i(rs1_i'left) and (not ctrl_i.alu_unsigned)) & rs1_i; -- sign-extend
   cmp_rs2 <= (rs2_i(rs2_i'left) and (not ctrl_i.alu_unsigned)) & rs2_i; -- sign-extend
 
-  cmp(cmp_equal_c) <= '1' when (rs1_i = rs2_i) else '0';
-  cmp(cmp_less_c)  <= '1' when (signed(cmp_rs1) < signed(cmp_rs2)) else '0'; -- signed or unsigned comparison
-  cmp_o            <= cmp;
+  cmp_eq <= '1' when (rs1_i = rs2_i) else '0';
+  cmp_ls <= '1' when (signed(cmp_rs1) < signed(cmp_rs2)) else '0'; -- signed or unsigned comparison
+
+  cmp_o(cmp_equal_c) <= zibi_cmp_f(ctrl_i.rf_rs2, rs1_i) when (ctrl_i.ir_funct3(2 downto 1) = "01") and RISCV_ISA_Zibi else cmp_eq;
+  cmp_o(cmp_less_c)  <= cmp_ls;
 
 
   -- ALU Input Operand Select ---------------------------------------------------------------
@@ -218,7 +235,7 @@ begin
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
       -- data input --
-      cmp_i   => cmp,          -- comparator status
+      less_i  => cmp_ls,       -- compare less
       rs1_i   => rs1_i,        -- rf source 1
       rs2_i   => rs2_i,        -- rf source 2
       shamt_i => cp_shamt,     -- shift amount
@@ -251,7 +268,8 @@ begin
       csr_wdata_i => ctrl_i.csr_wdata,            -- write data
       csr_rdata_o => fpu_csr_rd,                  -- read data
       -- data input --
-      cmp_i       => cmp,                         -- comparator status
+      equal_i     => cmp_eq,                      -- compare equal
+      less_i      => cmp_ls,                      -- compare less
       rs1_i       => rs1_i,                       -- rf source 1
       rs2_i       => rs2_i,                       -- rf source 2
       -- result and status --

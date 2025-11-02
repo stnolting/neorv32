@@ -998,5 +998,6 @@ discover additional ISA (sub-)extensions and CPU configuration options.
 | 26    | `CSR_MXISA_ZALRSC`   | r/- | <<_zalrsc_isa_extension>> available
 | 27    | `CSR_MXISA_ZCB`      | r/- | <<_zcb_isa_extension>> available
 | 28    | `CSR_MXISA_ZCA`      | r/- | "`C` without floating-point", available when <<_c_isa_extension>> is available
-| 31:29 | -                    | r/- | _reserved_, read as zero
+| 29    | `CSR_MXISA_ZIBI`     | r/- | <<_zibi_isa_extension>> available
+| 31:30 | -                    | r/- | _reserved_, read as zero
 |=======================

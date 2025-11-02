@@ -38,7 +38,7 @@ entity neorv32_cpu_cp_bitmanip is
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
     -- data input --
-    cmp_i   : in  std_ulogic_vector(1 downto 0); -- comparator status
+    less_i  : in  std_ulogic; -- compare less
     rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     shamt_i : in  std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
@@ -211,7 +211,7 @@ begin
 
       -- operand gating / buffering --
       if (ctrl_i.alu_cp_alu = '1') then
-        less_reg <= cmp_i(cmp_less_c);
+        less_reg <= less_i;
         rs1_reg  <= rs1_i;
         rs2_reg  <= rs2_i;
         sha_reg  <= shamt_i;

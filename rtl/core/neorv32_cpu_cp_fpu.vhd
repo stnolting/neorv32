@@ -46,7 +46,8 @@ entity neorv32_cpu_cp_fpu is
     csr_wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
     csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- data input --
-    cmp_i       : in  std_ulogic_vector(1 downto 0); -- comparator status
+    equal_i     : in  std_ulogic; -- compare equal
+    less_i      : in  std_ulogic; -- compare less
     rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     -- result and status --
@@ -158,7 +159,8 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
   signal fpu_operands : fpu_operands_t;
 
   -- floating-point comparator --
-  signal cmp_ff        : std_ulogic_vector(1 downto 0);
+  signal equal_ff      : std_ulogic;
+  signal less_ff       : std_ulogic;
   signal comp_equal_ff : std_ulogic;
   signal comp_less_ff  : std_ulogic;
 
@@ -394,7 +396,8 @@ begin
       fpu_operands.rs2       <= (others => '0');
       fpu_operands.rs2_class <= (others => '0');
       funct_ff               <= (others => '0');
-      cmp_ff                 <= (others => '0');
+      equal_ff               <= '0';
+      less_ff                <= '0';
     elsif rising_edge(clk_i) then
       -- arbiter defaults --
       ctrl_engine.valid <= '0';
@@ -406,7 +409,8 @@ begin
         when S_IDLE => -- waiting for operation trigger
         -- ------------------------------------------------------------
           funct_ff <= cmd.funct; -- actual operation to execute
-          cmp_ff   <= cmp_i; -- main ALU comparator
+          equal_ff <= equal_i;
+          less_ff  <= less_i;
           -- rounding mode --
           -- "round to nearest, ties to max magnitude" (0b100) is now supported
           if (ctrl_i.ir_funct3 = "111") then
@@ -491,7 +495,7 @@ begin
             ((fpu_operands.rs2_class(fp_class_pos_denorm_c) = '1') or (fpu_operands.rs2_class(fp_class_neg_denorm_c) = '1'))) or  -- +/-denorm == +/-denorm
            (((fpu_operands.rs1_class(fp_class_pos_zero_c)   = '1') or (fpu_operands.rs1_class(fp_class_neg_zero_c)   = '1'))  and
             ((fpu_operands.rs2_class(fp_class_pos_denorm_c) = '1') or (fpu_operands.rs2_class(fp_class_neg_denorm_c) = '1'))) or  -- +/-zero == +/-denorm
-           (cmp_ff(cmp_equal_c) = '1') then -- identical in every way (comparator result from main ALU)
+           (equal_ff = '1') then -- identical in every way (comparator result from main ALU)
           comp_equal_ff <= '1';
         else
           comp_equal_ff <= '0';
@@ -501,7 +505,7 @@ begin
            ((fpu_operands.rs1_class(fp_class_neg_inf_c)   = '1') and (fpu_operands.rs2_class(fp_class_neg_inf_c) = '1')) or -- -inf == -inf
            (((fpu_operands.rs1_class(fp_class_pos_zero_c) = '1') or (fpu_operands.rs1_class(fp_class_neg_zero_c) = '1')) and
             ((fpu_operands.rs2_class(fp_class_pos_zero_c) = '1') or (fpu_operands.rs2_class(fp_class_neg_zero_c) = '1'))) or  -- +/-zero == +/-zero
-           (cmp_ff(cmp_equal_c) = '1') then -- identical in every way (comparator result from main ALU)
+           (equal_ff = '1') then -- identical in every way (comparator result from main ALU)
           comp_equal_ff <= '1';
         else
           comp_equal_ff <= '0';
@@ -526,10 +530,10 @@ begin
           case cond_v is
             when "10"   => comp_less_ff <= '1'; -- rs1 negative, rs2 positive
             when "01"   => comp_less_ff <= '0'; -- rs1 positive, rs2 negative
-            when "00"   => comp_less_ff <= cmp_ff(cmp_less_c); -- both positive (comparator result from main ALU)
+            when "00"   => comp_less_ff <= less_ff; -- both positive (comparator result from main ALU)
             -- As we are just inverting cmp_less this statement would also flag true if the two numbers are equal
             -- Added a "and not equal" to prevent this corner case.
-            when "11"   => comp_less_ff <= (not cmp_ff(cmp_less_c)) and (not cmp_ff(cmp_equal_c)); -- both negative (comparator result from main ALU)
+            when "11"   => comp_less_ff <= (not less_ff) and (not equal_ff); -- both negative (comparator result from main ALU)
             when others => comp_less_ff <= '0'; -- undefined
           end case;
         end if;
@@ -544,10 +548,10 @@ begin
           case cond_v is
             when "10"   => comp_less_ff <= '1'; -- rs1 negative, rs2 positive
             when "01"   => comp_less_ff <= '0'; -- rs1 positive, rs2 negative
-            when "00"   => comp_less_ff <= cmp_ff(cmp_less_c); -- both positive (comparator result from main ALU)
+            when "00"   => comp_less_ff <= less_ff; -- both positive (comparator result from main ALU)
             -- As we are just inverting cmp_less this statement would also flag true if the two numbers are equal
             -- Added a "and not equal" to prevent this corner case.
-            when "11"   => comp_less_ff <= not cmp_ff(cmp_less_c) and (not cmp_ff(cmp_equal_c)); -- both negative (comparator result from main ALU)
+            when "11"   => comp_less_ff <= (not less_ff) and (not equal_ff); -- both negative (comparator result from main ALU)
             when others => comp_less_ff <= '0'; -- undefined
           end case;
         end if;
