@@ -101,13 +101,14 @@ begin
     sel(i) <= bus_req_i.stb when (bus_req_i.addr(5 downto 2) = std_ulogic_vector(to_unsigned(i, 4))) else '0';
   end generate;
 
-  pwm_channel_connect: process(pwm)
+  channel_output: process(pwm)
   begin
     pwm_o <= (others => '0');
-    pwm_o(pwm'range) <= pwm(pwm'range);
-  end process pwm_channel_connect;
+    pwm_o(NUM_CHANNELS-1 downto 0) <= pwm;
+  end process channel_output;
 
 end neorv32_pwm_rtl;
+
 
 -- ================================================================================ --
 -- NEORV32 SoC - PWM - Channel Controller                                           --
@@ -122,9 +123,6 @@ end neorv32_pwm_rtl;
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-
-library neorv32;
-use neorv32.neorv32_package.all;
 
 entity neorv32_pwm_channel is
   port (

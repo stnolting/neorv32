@@ -29,45 +29,46 @@ entity neorv32_cpu_control is
     DEBUG_PARK_ADDR   : std_ulogic_vector(31 downto 0); -- cpu debug-mode parking loop entry address, 4-byte aligned
     DEBUG_EXC_ADDR    : std_ulogic_vector(31 downto 0); -- cpu debug-mode exception entry address, 4-byte aligned
     -- RISC-V ISA Extensions --
-    RISCV_ISA_A       : boolean; -- implement atomic memory operations extension
-    RISCV_ISA_B       : boolean; -- implement bit-manipulation extension
-    RISCV_ISA_C       : boolean; -- implement compressed extension
-    RISCV_ISA_E       : boolean; -- implement embedded-class register file extension
-    RISCV_ISA_M       : boolean; -- implement mul/div extension
-    RISCV_ISA_U       : boolean; -- implement user mode extension
-    RISCV_ISA_Zaamo   : boolean; -- implement atomic read-modify-write extension
-    RISCV_ISA_Zalrsc  : boolean; -- implement atomic reservation-set operations extension
-    RISCV_ISA_Zcb     : boolean; -- implement additional code size reduction instructions
+    RISCV_ISA_A       : boolean; -- atomic memory operations extension
+    RISCV_ISA_B       : boolean; -- bit-manipulation extension
+    RISCV_ISA_C       : boolean; -- compressed extension
+    RISCV_ISA_E       : boolean; -- embedded-class register file extension
+    RISCV_ISA_M       : boolean; -- mul/div extension
+    RISCV_ISA_U       : boolean; -- user mode extension
+    RISCV_ISA_Zaamo   : boolean; -- atomic read-modify-write extension
+    RISCV_ISA_Zalrsc  : boolean; -- atomic reservation-set operations extension
+    RISCV_ISA_Zcb     : boolean; -- additional code size reduction instructions
     RISCV_ISA_Zcmp    : boolean; -- implement additional code size reduction instructions
-    RISCV_ISA_Zba     : boolean; -- implement shifted-add bit-manipulation extension
-    RISCV_ISA_Zbb     : boolean; -- implement basic bit-manipulation extension
-    RISCV_ISA_Zbkb    : boolean; -- implement bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc    : boolean; -- implement carry-less multiplication instructions
-    RISCV_ISA_Zbkx    : boolean; -- implement cryptography crossbar permutation extension
-    RISCV_ISA_Zbs     : boolean; -- implement single-bit bit-manipulation extension
-    RISCV_ISA_Zfinx   : boolean; -- implement 32-bit floating-point extension
-    RISCV_ISA_Zicntr  : boolean; -- implement base counters
-    RISCV_ISA_Zicond  : boolean; -- implement integer conditional operations
-    RISCV_ISA_Zihpm   : boolean; -- implement hardware performance monitors
-    RISCV_ISA_Zkn     : boolean; -- NIST algorithm suite available
-    RISCV_ISA_Zknd    : boolean; -- implement cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne    : boolean; -- implement cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh    : boolean; -- implement cryptography NIST hash extension
-    RISCV_ISA_Zks     : boolean; -- ShangMi algorithm suite available
-    RISCV_ISA_Zksed   : boolean; -- implement ShangMi block cipher extension
-    RISCV_ISA_Zksh    : boolean; -- implement ShangMi hash extension
-    RISCV_ISA_Zkt     : boolean; -- data-independent execution time available (for cryptography operations)
-    RISCV_ISA_Zmmul   : boolean; -- implement multiply-only M sub-extension
-    RISCV_ISA_Zxcfu   : boolean; -- implement custom (instr.) functions unit
-    RISCV_ISA_Sdext   : boolean; -- implement external debug mode extension
-    RISCV_ISA_Sdtrig  : boolean; -- implement trigger module extension
-    RISCV_ISA_Smpmp   : boolean; -- implement physical memory protection
+    RISCV_ISA_Zba     : boolean; -- shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb     : boolean; -- basic bit-manipulation extension
+    RISCV_ISA_Zbkb    : boolean; -- bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc    : boolean; -- carry-less multiplication instructions
+    RISCV_ISA_Zbkx    : boolean; -- cryptography crossbar permutation extension
+    RISCV_ISA_Zbs     : boolean; -- single-bit bit-manipulation extension
+    RISCV_ISA_Zfinx   : boolean; -- 32-bit floating-point extension
+    RISCV_ISA_Zibi    : boolean; -- branch with immediate
+    RISCV_ISA_Zicntr  : boolean; -- base counters
+    RISCV_ISA_Zicond  : boolean; -- integer conditional operations
+    RISCV_ISA_Zihpm   : boolean; -- hardware performance monitors
+    RISCV_ISA_Zkn     : boolean; -- NIST algorithm suite
+    RISCV_ISA_Zknd    : boolean; -- cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne    : boolean; -- cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh    : boolean; -- cryptography NIST hash extension
+    RISCV_ISA_Zks     : boolean; -- ShangMi algorithm suite
+    RISCV_ISA_Zksed   : boolean; -- ShangMi block cipher extension
+    RISCV_ISA_Zksh    : boolean; -- ShangMi hash extension
+    RISCV_ISA_Zkt     : boolean; -- data-independent execution time (for cryptography operations)
+    RISCV_ISA_Zmmul   : boolean; -- multiply-only M sub-extension
+    RISCV_ISA_Zxcfu   : boolean; -- custom (instr.) functions unit
+    RISCV_ISA_Sdext   : boolean; -- external debug mode extension
+    RISCV_ISA_Sdtrig  : boolean; -- trigger module extension
+    RISCV_ISA_Smpmp   : boolean; -- physical memory protection
     -- Tuning Options --
-    CPU_TRACE_EN      : boolean; -- implement CPU execution trace generator
-    CPU_CONSTT_BR_EN  : boolean; -- implement constant-time branches
+    CPU_TRACE_EN      : boolean; -- enable CPU execution trace generator
+    CPU_CONSTT_BR_EN  : boolean; -- constant-time branches
     CPU_FAST_MUL_EN   : boolean; -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN : boolean; -- use barrel shifter for shift operations
-    CPU_RF_HW_RST_EN  : boolean  -- implement full hardware reset for register file
+    CPU_RF_HW_RST_EN  : boolean  -- enable full hardware reset for register file
   );
   port (
     -- global control --
@@ -816,10 +817,9 @@ begin
         end if;
 
       when opcode_branch_c => -- conditional branch
-        case exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
-          when funct3_beq_c | funct3_bne_c | funct3_blt_c | funct3_bge_c | funct3_bltu_c | funct3_bgeu_c => illegal_cmd <= '0';
-          when others => illegal_cmd <= '1';
-        end case;
+        if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c+1) /= "01") or RISCV_ISA_Zibi then
+          illegal_cmd <= '0';
+        end if;
 
       when opcode_load_c => -- memory load
         case exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) is
@@ -1398,7 +1398,8 @@ begin
             csr.rdata(26) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc); -- Zalrsc: reservation-set operations
             csr.rdata(27) <= bool_to_ulogic_f(RISCV_ISA_Zcb);    -- Zcb: additional code size reduction instructions
             csr.rdata(28) <= bool_to_ulogic_f(RISCV_ISA_C);      -- Zca: C without floating-point
-            csr.rdata(31 downto 29) <= (others => '0');          -- reserved
+            csr.rdata(29) <= bool_to_ulogic_f(RISCV_ISA_Zibi);   -- Zibi: branch with immediate-comparison
+            csr.rdata(31 downto 30) <= (others => '0');          -- reserved
 
           -- --------------------------------------------------------------------
           -- undefined/unavailable or implemented externally

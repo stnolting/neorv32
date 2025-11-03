@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120308"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120309"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
   constant XLEN          : natural := 32; -- native data path width
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
@@ -342,9 +342,11 @@ package neorv32_package is
 
   -- RISC-V Funct3 --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- control flow --
+  -- conditional branch --
   constant funct3_beq_c    : std_ulogic_vector(2 downto 0) := "000"; -- branch if equal
   constant funct3_bne_c    : std_ulogic_vector(2 downto 0) := "001"; -- branch if not equal
+  constant funct3_beqi_c   : std_ulogic_vector(2 downto 0) := "010"; -- branch if equal immediate (Zibi ISA ext.)
+  constant funct3_bnei_c   : std_ulogic_vector(2 downto 0) := "011"; -- branch if not equal immediate (Zibi ISA ext.)
   constant funct3_blt_c    : std_ulogic_vector(2 downto 0) := "100"; -- branch if less than
   constant funct3_bge_c    : std_ulogic_vector(2 downto 0) := "101"; -- branch if greater than or equal
   constant funct3_bltu_c   : std_ulogic_vector(2 downto 0) := "110"; -- branch if less than (unsigned)
@@ -369,7 +371,7 @@ package neorv32_package is
   constant funct3_or_c     : std_ulogic_vector(2 downto 0) := "110"; -- logical or
   constant funct3_and_c    : std_ulogic_vector(2 downto 0) := "111"; -- logical and
   -- system/csr --
-  constant funct3_env_c    : std_ulogic_vector(2 downto 0) := "000"; -- ecall, ebreak, mret, wfi, ...
+  constant funct3_env_c    : std_ulogic_vector(2 downto 0) := "000"; -- ecall, ebreak, xret, wfi, etc.
   constant funct3_csrrw_c  : std_ulogic_vector(2 downto 0) := "001"; -- csr r/w
   constant funct3_csrrs_c  : std_ulogic_vector(2 downto 0) := "010"; -- csr read & set
   constant funct3_csrrc_c  : std_ulogic_vector(2 downto 0) := "011"; -- csr read & clear
@@ -857,6 +859,7 @@ package neorv32_package is
       RISCV_ISA_Zbkx        : boolean                        := false;
       RISCV_ISA_Zbs         : boolean                        := false;
       RISCV_ISA_Zfinx       : boolean                        := false;
+      RISCV_ISA_Zibi        : boolean                        := false;
       RISCV_ISA_Zicntr      : boolean                        := false;
       RISCV_ISA_Zicond      : boolean                        := false;
       RISCV_ISA_Zihpm       : boolean                        := false;
