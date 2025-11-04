@@ -33,6 +33,7 @@ and targets FPGA / RISC-V beginners as well as experienced users.
 targeting various FPGA boards and toolchains to get started.
 * :package: The entire processor is also available as [Vivado IP Block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block).
 * :kite: Support for [FreeRTOS](https://github.com/stnolting/neorv32-freertos),
+* :kite: Support for [Ada](https://github.com/GNAT-Academic-Program/neorv32-hal)
 [Zephyr OS](https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html),
 [MicroPython](https://github.com/stnolting/neorv32-micropython) and
 [LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC Builder Framework.
