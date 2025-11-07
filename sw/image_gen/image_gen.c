@@ -3,7 +3,7 @@
 // -------------------------------------------------------------------------------- //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -33,13 +33,13 @@ void print_help(void){
     "NEORV32 executable image generator\n"
     "\n"
     "Usage:    image_gen [options]\n"
-    "Example:  image_gen -i main.elf -o main_exe.bin -t app_bin\n"
+    "Example:  image_gen -i main.bin -o main_exe.bin -t app_bin\n"
     "\n"
     "Options:\n"
     "  -h             Show this help text and exit\n"
-    "  -i file_name   Input ELF file name, mandatory\n"
-    "  -o file_name   Output file name, mandatory\n"
-    "  -t type        Type of image to generate, default is 'app_bin'\n"
+    "  -i file_name   Input binary file name; mandatory\n"
+    "  -o file_name   Output file name; mandatory\n"
+    "  -t type        Type of image to generate; default is 'app_bin'\n"
     "\n"
     "Image type:\n"
     "  app_bin   Application executable for bootloader upload (binary file with header) \n"
