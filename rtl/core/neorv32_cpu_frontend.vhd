@@ -563,6 +563,17 @@ begin
             frontend_bus_zcmp.zcmp_atomic_tail <= '1';
             zcmp_in_uop_seq <= '1';
 
+            -- abort on previous branch
+            if (fetch.restart = '1') then 
+              uop_state_nxt <= S_ZCMP_ABORT;
+              frontend_bus_zcmp.zcmp_atomic_tail <= '0';
+              zcmp_in_uop_seq <= '0';
+              uop_ctr_nxt_in_seq <= 0;
+              frontend_bus_zcmp.valid <= '0';
+              frontend_bus_zcmp.instr <= (others => '0');
+            end if;
+
+
             if (zcmp_is_mva01s = '1') then
               frontend_bus_zcmp.instr <= x"000" & zcmp_sa01_r1s & zcmp_addi_instr_funct3 & "01010" & zcmp_addi_instr_opcode;
             else
@@ -579,6 +590,16 @@ begin
           when S_ZCMP_DOUBLE_MOVE_2 =>
             frontend_bus_zcmp.zcmp_atomic_tail <= '1';
             zcmp_in_uop_seq <= '1';
+
+                        -- abort on previous branch
+            if (fetch.restart = '1') then 
+              uop_state_nxt <= S_ZCMP_ABORT;
+              frontend_bus_zcmp.zcmp_atomic_tail <= '0';
+              zcmp_in_uop_seq <= '0';
+              uop_ctr_nxt_in_seq <= 0;
+              frontend_bus_zcmp.valid <= '0';
+              frontend_bus_zcmp.instr <= (others => '0');
+            end if;
 
             if (zcmp_is_mva01s = '1') then
               frontend_bus_zcmp.instr <= x"000" & zcmp_sa01_r2s & zcmp_addi_instr_funct3 & "01011" & zcmp_addi_instr_opcode;
