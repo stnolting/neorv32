@@ -488,9 +488,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_io_switch is
   generic (
-    INREG_EN  : boolean := false; -- enable main_req_i register stage
-    OUTREG_EN : boolean := false; -- enable main_rsp_o register stage
-    DEV_SIZE  : natural := 256; -- size of each single IO device, has to be a power of two
+    DEV_SIZE  : natural := 256; -- size of each IO device, has to be a power of two
     -- device port enable and base address; enabled ports do not have to be contiguous --
     DEV_00_EN : boolean := false; DEV_00_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
     DEV_01_EN : boolean := false; DEV_01_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
@@ -607,12 +605,12 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
 
 begin
 
-  -- Register Stages ------------------------------------------------------------------------
+  -- In/Out Register Stages -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_bus_reg_inst: entity neorv32.neorv32_bus_reg
   generic map (
-    REQ_REG_EN => INREG_EN,
-    RSP_REG_EN => OUTREG_EN
+    REQ_REG_EN => true,
+    RSP_REG_EN => true
   )
   port map (
     -- global control --

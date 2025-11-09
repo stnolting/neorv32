@@ -931,8 +931,6 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_bus_io_switch_inst: entity neorv32.neorv32_bus_io_switch
     generic map (
-      INREG_EN  => true,
-      OUTREG_EN => true,
       DEV_SIZE  => iodev_size_c,
       DEV_00_EN => bootrom_en_c,    DEV_00_BASE => base_io_bootrom_c,
       DEV_01_EN => false,           DEV_01_BASE => (others => '0'), -- reserved

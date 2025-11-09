@@ -44,8 +44,8 @@ architecture neorv32_cpu_counters_rtl of neorv32_cpu_counters is
   signal cnt_acc, cfg_acc, inh_acc : std_ulogic;
   signal sel, cnt_re, cfg_we, cfg_re : std_ulogic_vector(15 downto 0);
 
-  -- counter increment control --
-  signal inhibit, cnt_en : std_ulogic_vector(15 downto 0);
+  -- counter control --
+  signal inhibit, cnt_inc : std_ulogic_vector(15 downto 0);
 
   -- individual HPM read-backs --
   type hpmevent_t is array (3 to 15) of std_ulogic_vector(11 downto 0);
@@ -83,38 +83,53 @@ begin
   rdata_o <= rdata(63 downto 32) when (ctrl_i.csr_addr(7) = '1') else rdata(31 downto 0);
 
 
-  -- Counter Increment Control --------------------------------------------------------------
+  -- Counter-Inhibit CSR --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cnt_control: process(rstn_i, clk_i)
+  cnt_inhibit: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       inhibit <= (others => '0');
-      cnt_en  <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- mcountinhibit CSR write access --
-      if (inh_acc = '1') and (ctrl_i.csr_we = '1') then
-        if ZICNTR_EN then
-          inhibit(0) <= ctrl_i.csr_wdata(0); -- [m]cycle[h]
-          inhibit(2) <= ctrl_i.csr_wdata(2); -- [m]instret[h]
-        end if;
-        if ZIHPM_EN then
-          inhibit((3+HPM_NUM)-1 downto 3) <= ctrl_i.csr_wdata((3+HPM_NUM)-1 downto 3); -- [m]hpmcounter*[h]
-        end if;
+      -- base counters --
+      if not ZICNTR_EN then
+        inhibit(0) <= '0';
+        inhibit(2) <= '0';
+      elsif (inh_acc = '1') and (ctrl_i.csr_we = '1') then
+        inhibit(0) <= ctrl_i.csr_wdata(0); -- [m]cycle[h]
+        inhibit(2) <= ctrl_i.csr_wdata(2); -- [m]instret[h]
       end if;
-      -- counter (increment) enable --
-      -- increment if an (enabled) event fires; do not increment if CPU is in debug mode or if counter is inhibited
-      cnt_en(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not ctrl_i.cpu_debug) and (not inhibit(0));
-      cnt_en(1) <= '0'; -- time: not available
-      cnt_en(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not ctrl_i.cpu_debug) and (not inhibit(2));
-      for i in 3 to 15 loop
-        cnt_en(i) <= or_reduce_f(ctrl_i.cnt_event and hpmevent(i)) and (not ctrl_i.cpu_debug) and (not inhibit(i));
-      end loop;
+      -- hardware performance monitors --
+      if not ZIHPM_EN then
+        inhibit(15 downto 3) <= (others => '0');
+      elsif (inh_acc = '1') and (ctrl_i.csr_we = '1') then
+        inhibit(15 downto 3) <= ctrl_i.csr_wdata(15 downto 3); -- [m]hpmcounter*[h]
+      end if;
+      -- unused --
+      inhibit(1) <= '0'; -- [m]time[h] not implemented
     end if;
-  end process cnt_control;
+  end process cnt_inhibit;
 
   -- mcountinhibit read-back --
-  inhibit_rd(63 downto 16) <= (others => '0');
   inhibit_rd(15 downto 0)  <= inhibit when (inh_acc = '1') and (ctrl_i.csr_re = '1') else (others => '0');
+  inhibit_rd(63 downto 16) <= (others => '0');
+
+
+  -- Counter Increment Enable ---------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  cnt_increment: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      cnt_inc <= (others => '0');
+    elsif rising_edge(clk_i) then
+      -- increment if an (enabled) event fires; do not increment if CPU is in debug-mode or if counter is inhibited
+      cnt_inc(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not ctrl_i.cpu_debug) and (not inhibit(0));
+      cnt_inc(1) <= '0'; -- [m]time[h] not implemented
+      cnt_inc(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not ctrl_i.cpu_debug) and (not inhibit(2));
+      for i in 3 to 15 loop
+        cnt_inc(i) <= or_reduce_f(ctrl_i.cnt_event and hpmevent(i)) and (not ctrl_i.cpu_debug) and (not inhibit(i));
+      end loop;
+    end if;
+  end process cnt_increment;
 
 
   -- Base Counters (Zicntr) -----------------------------------------------------------------
@@ -130,7 +145,7 @@ begin
     port map (
       clk_i  => clk_i,
       rstn_i => rstn_i,
-      inc_i  => cnt_en(0),
+      inc_i  => cnt_inc(0),
       we_i   => cnt_we(0),
       data_i => ctrl_i.csr_wdata,
       oe_i   => cnt_re(0),
@@ -148,7 +163,7 @@ begin
     port map (
       clk_i  => clk_i,
       rstn_i => rstn_i,
-      inc_i  => cnt_en(2),
+      inc_i  => cnt_inc(2),
       we_i   => cnt_we(2),
       data_i => ctrl_i.csr_wdata,
       oe_i   => cnt_re(2),
@@ -182,7 +197,7 @@ begin
       port map (
         clk_i  => clk_i,
         rstn_i => rstn_i,
-        inc_i  => cnt_en(i),
+        inc_i  => cnt_inc(i),
         we_i   => cnt_we(i),
         data_i => ctrl_i.csr_wdata,
         oe_i   => cnt_re(i),

@@ -29,6 +29,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 07.11.2025 | 1.12.4.1 | minor rtl edits | [#1422](https://github.com/stnolting/neorv32/pull/1422) |
+| 03.11.2025 | [**1.12.4**](https://github.com/stnolting/neorv32/releases/tag/v1.12.4) | :rocket: **New release** | |
 | 01.11.2025 | 1.12.3.9 | :sparkles: add experimental support for the RISC-V `Zibi` ISA extension (branches with immediates) | [#1418](https://github.com/stnolting/neorv32/pull/1418) |
 | 25.10.2025 | 1.12.3.8 | :bug: fix CLINT register read-back (bug introduced in previous version / v1.12.3.7) | [#1411](https://github.com/stnolting/neorv32/pull/1411) |
 | 23.10.2025 | 1.12.3.7 | counter optimizations and PMP logic cleanup | [#1410](https://github.com/stnolting/neorv32/pull/1410) |

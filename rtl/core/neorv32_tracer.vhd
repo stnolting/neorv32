@@ -372,7 +372,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
     machine  : std_ulogic_vector(31 downto 0); -- instruction word
     mnemonic : string(1 to 11); -- according assembly mnemonic
   end record;
-  type inst_t is array (0 to 149) of inst_touple_c;
+  type inst_t is array (0 to 151) of inst_touple_c;
   constant inst_c : inst_t := (
     ("-------------------------0110111", "lui        "), -- base ISA
     ("-------------------------0010111", "auipc      "),
@@ -417,6 +417,8 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
     ("00010000010100000000000001110011", "wfi        "),
     ("00110000001000000000000001110011", "mret       "),
     ("01111011001000000000000001110011", "dret       "),
+    ("-----------------010-----1100011", "beqi       "), -- Zibi
+    ("-----------------011-----1100011", "bnei       "),
     ("-------------------------0001011", "custom0    "), -- custom instructions
     ("-------------------------0101011", "custom1    "),
     ("-------------------------1011011", "custom2    "),

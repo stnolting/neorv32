@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - XBUS to AXI4 Bridge                                                --
+-- NEORV32 SoC - XBUS to AXI4-Compatible Bridge                                     --
 -- -------------------------------------------------------------------------------- --
 -- This bridge supports single read/write transfers and read-bursts.                --
 -- [IMPORTANT] Write-bursts are not supported yet!                                  --

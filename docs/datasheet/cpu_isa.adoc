@@ -339,9 +339,9 @@ If a computational instruction generates a subnormal result it is also flushed t
 
 ==== `Zibi` ISA Extension
 
-The RISC-V `Zibi` ISA extension adds two new "branch with immediate" instruction. The instruction's
-`rs2` address bits are used to select one out of 32 pre-defined immediate values which is used for
-the actual comparison.
+The RISC-V `Zibi` ISA extension adds two new "branch with immediate" instructions. The instruction
+word's `rs2` bit-field selects one out of 32 pre-defined immediate values which is used for the
+actual comparison.
 
 .Non-Ratified ISA Extension
 [WARNING]

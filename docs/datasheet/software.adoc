@@ -19,13 +19,13 @@ is based on the C-language RISC-V GCC port and consists of the following parts:
 
 .Software Documentation
 [TIP]
-All core libraries and example programs are documented "in-code" using **Doxygen**.
-The documentation is automatically built and deployed to GitHub pages and is available online
-at https://stnolting.github.io/neorv32/sw/files.html.
+All core libraries and example programs are documented _in-code_ using **Doxygen**.
+The API documentation is automatically built and deployed to GitHub pages:
+https://stnolting.github.io/neorv32/sw/files.html.
 
 .Example Programs
 [TIP]
-A collection of annotated example programs illustrating how to use certain CPU functions
+A collection of annotated example programs illustrating how to use certain NEORV32 functions
 and peripheral/IO modules can be found in `sw/example`.
 
 
@@ -93,13 +93,9 @@ The NEORV32 HAL consists of the following files.
 | `neorv32_newlib.c`  | -                      | Platform-specific system calls for _newlib_
 |=======================
 
-.Defines and Macros
+.Doxygen API Documentation
 [TIP]
-Macros and defines provides by the NEORV32 software framework are written in capital letters.
-
-.Core Libraries Documentation
-[TIP]
-The Doxygen-based documentation of the software framework including all core libraries is available online at
+The Doxygen-based documentation of all core libraries is available online at
 https://stnolting.github.io/neorv32/sw/files.html.
 
 
@@ -353,7 +349,7 @@ End of RAM
 +------------------------------+
 |   Dynamic memory (".heap")   |
 +------------------------------+
-| Uninitialized data (".data") |
+| Uninitialized data (".bss")  |
 +------------------------------+
 |  Initialized data (".data")  |
 +------------------------------+
@@ -361,10 +357,10 @@ Start of RAM
 ----
 
 [start=1]
-. **Constant data (`.data`)**: The constant data section is placed right at the beginning of the RAM. For example, this
-section contains _explicitly initialized_ global variables. This section is initialized by the <<_start_up_code_crt0>>.
-. **Dynamic data (`.bss`)**: The constant data section is followed by the dynamic data section that contains _uninitialized_
-data like global variables without explicit initialization. This section is cleared by the <<_start_up_code_crt0>>.
+. **Initialized data (`.data`)**: The data section is placed right at the beginning of the RAM. For example, this
+contains _explicitly initialized_ global variables which are initialized by the <<_start_up_code_crt0>>.
+. **Non-initialized data (`.bss`)**: This dynamic data section contains data like global variables
+_without explicit initialization_. This memory section is cleared by the <<_start_up_code_crt0>>.
 . **Heap (`.heap`)**: The heap is used for dynamic memory that is managed by functions like `malloc()` and `free()`.
 The heap grows upwards. This section is not initialized at all.
 . **Stack**: The stack starts at the end of the RAM at the last 16-byte aligned address. According to the RISC-V ABI / calling
@@ -406,6 +402,13 @@ Start of ROM
 . **Program code (`.text`)**: This section contains the actual instructions of the program.
 . **Read-only data (`.rodata`)**: Read-only data, for example for constants and strings.
 . **Heap (`.heap`)**: Initialization data that is copied at runtime to the RAM's `data` section by by the <<_start_up_code_crt0>>.
+
+.Binary Executable Image
+[IMPORTANT]
+The main <<_application_makefile>> extracts the `.text`, `.rodata`, and `.data` sections from the final ELF
+and concatenates them in order to build the final binary executable image (`main.bin`). Once placed in memory,
+this image can be executed right away. Furthermore, this image is used by the image generator auxiliary tool
+to generate different <<_executable_image_formats>>.
 
 
 <<<
@@ -486,9 +489,9 @@ using the <<_mscratch>> CSR.
 :sectnums:
 === Executable Image Formats
 
-The final ELF file is further processed by the NEORV32 image generator (`sw/image_gen`) to generate the final
-executable file. The image generator can generate several types of executable file formats selected by a flag
-when calling the generator. **Note that all these options are managed by the makefile (see <<_makefile_targets>>).**
+The binary executable image (see <<_rom_layout>>) is further processed by the NEORV32 image generator (`sw/image_gen`)
+to generate a final executable file. The image generator can generate several types of executable file formats selected
+by a flag when calling the generator. **Note that all these options are managed by the makefile (see <<_makefile_targets>>).**
 
 [cols="<2,<8"]
 [grid="none"]
@@ -510,7 +513,7 @@ The sources of the image generator are automatically compiled when invoking the 
 
 .Executable Header
 [NOTE]
-for the `app_bin` option the image generator adds a small header to the executable. This header is required by the
+For the `app_bin` option the image generator adds a small header to the executable. This header is required by the
 <<_bootloader>> to identify and manage the executable. The header consists of three 32-bit words located right
 at the beginning of the file. The first word of the executable is the signature word and is always `0xB007C0DE`.
 Based on this word the bootloader can identify a valid image file. The next word represents the size in bytes of the
@@ -526,13 +529,13 @@ neorv32/sw/image_gen$ ./image_gen
 NEORV32 executable image generator
 
 Usage:    image_gen [options]
-Example:  image_gen -i main.elf -o main_exe.bin -t app_bin
+Example:  image_gen -i main.bin -o main_exe.bin -t app_bin
 
 Options:
   -h             Show this help text and exit
-  -i file_name   Input ELF file name, mandatory
-  -o file_name   Output file name, mandatory
-  -t type        Type of image to generate, default is 'app_bin'
+  -i file_name   Input binary file name; mandatory
+  -o file_name   Output file name; mandatory
+  -t type        Type of image to generate; default is 'app_bin'
 
 Image type:
   app_bin   Application executable for bootloader upload (binary file with header)
