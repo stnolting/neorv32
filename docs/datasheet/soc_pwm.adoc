@@ -15,75 +15,115 @@
 
 **Key Features**
 
-* Up to 16 independent channels
-* Per-channel configuration of duty cycle and carrier frequency
-* 8-bit duty cycle resolution
-* 3-bit (coarse) + 10-bit (fine) frequency resolution
-* Configurable PWM polarity
+* Up to 16 individual channels with 16-bit resolution
+* Fast-PWM mode operation with counter-compare and counter-wrap registers
+* Global clock prescaler
+* Programmable polarity
+* Toggle-free 0% and 100% duty cycle output rates
 
 
 **Overview**
 
-The PWM module implements a pulse-width modulation controller with up to 16 independent channels. Duty cycle and
-carrier frequency can be programmed individually for each channel.The total number of implemented channels is
-defined by the `IO_PWM_NUM_CH` generic. The PWM output signal `pwm_o` has a static size of 16-bit. Channel 0
-corresponds to bit 0, channel 1 to bit 1 and so on. If less than 16 channels are configured, only the LSB-aligned
-channel bits are connected while the remaining ones are hardwired to zero.
+The PWM module implements a fast-PWM mode pulse-width modulation controller with up to 16 independent channels.
+Period length (and thus, the carrier frequency), duty cycle, and polarity can be programmed individually for each
+channel. However, the clock for the PWM counter increment is defined by a single global clock prescaler. PWM
+operation is based on 16-bit wide period counters that are constrained by programmable wrapping values.
+
+The total number of implemented channels is defined by the `IO_PWM_NUM_CH` generic. The PWM output signal `pwm_o`
+has a static size of 16-bit. Channel 0 corresponds to bit 0, channel 1 to bit 1 and so on. If less than 16 channels
+are configured, only the LSB-aligned channel bits are connected while the remaining ones are hardwired to zero.
 
 
 **Theory of Operation**
 
-Depending on the configured number channels, the PWM module provides 16 configuration registers `CHANNEL_CFG[0]` to
-`CHANNEL_CFG[15]` - one for each channel. Regardless of the configuration of `IO_PWM_NUM_CH` all channel registers can
-be accessed without raising an exception. However, registers above `IO_PWM_NUM_CH-1` are read-only and hardwired to
-all-zero.
+The PWM module provides several interface registers: an `ENABLE` register, a `POLARITY` registers, a `CLKPRSC`
+register and up to 16 `CHANNEL[i]` registers.
 
-Each configuration provides a 1-bit enable flag to enable/disable the according channel, a 1-bit flag for setting the
-channel polarity, an 8-bit register for setting the duty cycle and a 3-bit clock prescaler select as well as a 10-bit clock
-diver for _coarse_ and _fine_ tuning of the carrier frequency, respectively.
+The `ENABLE` register is used to enable PWM channels. This can be done individually (only one channel) or by using
+bit-mask to enable several channels at once so they operate in perfect lockstep mode. Disabling a channel will clear
+the channel's PWM counter ans will also bring the according PWM output to the _idle polarity_. Note that only the
+lowest `IO_PWM_NUM_CH` bit are implemented.
 
-A channel is enabled by setting the `PWM_CFG_EN` bit. If this bit is cleared the according PWM output is deasserted
-(zero if channel polarity is not inverted, one if inverted). The duty cycle is programmed via the 8 `PWM_CFG_DUTY` bits.
-Based on the value programmed to these bits the resulting duty cycle of the according channel can be computed by the
-following formula:
+The `POLARITY` register defines the _idle polarity_ of the PWM channels. When a channel is disabled, this polarity
+also defines the logic level of the according `pwm_o` output. Note that only the lowest `IO_PWM_NUM_CH` bit are
+implemented.
 
-_Duty Cycle_[%] = `PWM_CFG_DUTY` / 2^8^
-
-The PWM period (carrier frequency) is derived from the processor's main clock (_f~main~_). The `PWM_CFG_PRSC` register
-bits allow to select one out of eight pre-defined clock prescalers for a coarse clock scaling. The 10 `PWM_CFG_CDIV` register
-bits can be used to apply another fine clock scaling.
+The `CLKPRSC` register configures the _global_ clock prescaler that is used for the PWM counter increment of each
+channel. Eight pre-defined prescaler values are available:
 
 .PWM prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
-| **`PWM_CFG_PRSC[2:0]`**     | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
+| **`CLKPRSC`**               | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-The resulting PWM carrier frequency is defined by:
+The duty cycle and period length of each channel are defined by the according `CHANNEL[i]` register (with `i` =
+`0 .. IO_PWM_NUM_CH`). This register is split in two half-words: the lowest half-word defines the counter-compare
+value (`CMP`) while the upper half-word defines the counter-wrap value (`TOP`).
 
-_f~PWM~_[Hz] = _f~main~_[Hz] / (2^8^ * `clock_prescaler` * (1 + `PWM_CFG_CDIV`))
+.`CHANNEL` Half-Word Access
+[TIP]
+In contrast to many other ENORV32 peripherals, the `CHANNEL[i]` registers can also be accessed using half-word
+load/store operation. This allows to update the `TOP` and `CMP` sub-registers with a single instruction.
+
+PWM operation is based on a 16-bit counter that increments with the globally pre-scaled processor clock resulting
+in a sawtooth-like waveform. The counter will wrap around to all-zero when reaching the value defined by the `TOP`
+sub-register. Whenever the counter value is less than the value defined by the `CMP` sub-register the PWM output
+is set to the _inverted_ idle polarity.
+
+.PWM Operation
+----
+TOP[i] --------------------/|--------------/|--------------/|--------------/|
+                         /  |            /  |            /  |            /  |
+                       /    |          /    |          /    |          /    |
+CMP[i] --------------/------|--------/------|--------/------|--------/------|
+                   / .      |      / .      |      / .      |      / .      |
+                 /   .      |    /   .      |    /   .      |    /   .      |
+               /     .      |  /     .      |  /     .      |  /     .      |
+         ___ /       .      |/       .      |/       .      |/       .      |
+            .        .      .        .      .        .      .        .      .
+            .        .      .        .      .        .      .        .      .
+            +--------+      +--------+      +--------+      +--------+      +
+pwm_o[i]    |        |      |        |      |        |      |        |      | (polarity = 0)
+         ---+        +------+        +------+        +------+        +------+
+            .        .      .        .      .        .      .        .      .
+            .        .      .        .      .        .      .        .      .
+         ---+        +------+        +------+        +------+        +------+
+pwm_o[i]    |        |      |        |      |        |      |        |      | (polarity = 1)
+            +--------+      +--------+      +--------+      +--------+      +
+----
+
+Hence, the duty cycle of a channel is defined by the `TOP` and `CMP` register values:
+
+_Duty Cycle[i]_ = 100% * (`CMP[i]` / (`TOP[i] + 1`))
+
+The NEORV32 PWM module supports toggle-free 0% and 100% duty cycle output rates. 0% duty cycle is achieved by
+setting `CMP = 0`. 100% duty cycle is achieved by setting `CMP = TOP + 1`.
+
+Based on the global clock prescaler and the `TOP` wrap value, the carrier frequency of a channel is defined by the
+following formula (_f~main~_ is the main clock frequency of the processor; `clock_prescaler` is the pre-scaling
+factor according to the selected `CLKPRSC` value):
+
+_f~PWM~[i]_ = _f~main~_ / (`clock_prescaler` * (`TOP[i]` + 1))
 
 
 **Register Map**
 
 .PWM register map (`struct NEORV32_PWM`)
-[cols="<4,<2,<6,^2,<8"]
+[cols="<4,<2,<3,^2,<8"]
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.6+<| `0xfff00000` .6+<| `CHANNEL_CFG[0]`  <|`31`    - `PWM_CFG_EN`                        ^| r/w <| Channel 0: channel enabled when set
-                                           <|`30:28` - `PWM_CFG_PRSC_MSB:PWM_CFG_PRSC_LSB` ^| r/w <| Channel 0: 3-bit clock prescaler select
-                                           <|`27`    - `PWM_CFG_POL`                       ^| r/w <| Channel 0: channel polarity, inverted when set
-                                           <|`26:18`                                       ^| r/- <| Channel 0: _reserved_, hardwired to zero
-                                           <|`17:8`  - `PWM_CFG_CDIV_MSB:PWM_CFG_CDIV_LSB` ^| r/w <| Channel 0: 10-bit clock divider
-                                           <|`7:0`   - `PWM_CFG_DUTY_MSB:PWM_CFG_DUTY_LSB` ^| r/w <| Channel 0: 8-bit duty cycle
-| `0xfff00004` ... `0xfff00038` | `CHANNEL_CFG[1]` ... `CHANNEL_CFG[14]` | ... | r/w <| Channels 1 to 14
-.6+<| `0xfff0003C` .6+<| `CHANNEL_CFG[15]` <|`31`    - `PWM_CFG_EN`                        ^| r/w <| Channel 15: channel enabled when set
-                                           <|`30:28` - `PWM_CFG_PRSC_MSB:PWM_CFG_PRSC_LSB` ^| r/w <| Channel 15: 3-bit clock prescaler select
-                                           <|`27`    - `PWM_CFG_POL`                       ^| r/w <| Channel 15: channel polarity, inverted when set
-                                           <|`26:18`                                       ^| r/- <| Channel 15: _reserved_, hardwired to zero
-                                           <|`17:8`  - `PWM_CFG_CDIV_MSB:PWM_CFG_CDIV_LSB` ^| r/w <| Channel 15: 10-bit clock divider
-                                           <|`7:0`   - `PWM_CFG_DUTY_MSB:PWM_CFG_DUTY_LSB` ^| r/w <| Channel 15: 8-bit duty cycle
+| `0xfff00000` | `ENABLE`   | `15:0` | r/w | Channel enable, one bit per channel
+| `0xfff00004` | `POLARITY` | `15:0` | r/w | Channel idle polarity level, one bit per channel
+| `0xfff00008` | `CLKPRSC`  | `2:0`  | r/w | Clock prescaler select
+.2+<| `0xfff00040` .2+<| `CHANNEL[0]`  <|`31:16` - `TOP` ^| r/w <| Channel 0 top/wrap value register
+                                       <|`15:0`  - `CMP` ^| r/w <| Channel 0 compare value register
+.2+<| `0xfff00044` .2+<| `CHANNEL[1]`  <|`31:16` - `TOP` ^| r/w <| Channel 1 top/wrap value register
+                                       <|`15:0`  - `CMP` ^| r/w <| Channel 1 compare value register
+| ... | ...  | ... | r/w | Channels 2 to 14
+.2+<| `0xfff0007c` .2+<| `CHANNEL[15]` <|`31:16` - `TOP` ^| r/w <| Channel 15 top/wrap value register
+                                       <|`15:0`  - `CMP` ^| r/w <| Channel 15 compare value register
 |=======================
