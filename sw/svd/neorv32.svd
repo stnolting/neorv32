@@ -424,117 +424,117 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x40</size>
+        <size>0x80</size>
         <usage>registers</usage>
       </addressBlock>
 
       <registers>
         <register>
-          <name>CHANNEL_CFG[0]</name>
-          <description>Channel 0 configuration register</description>
+          <name>ENABLE</name>
+          <description>Channel enable</description>
           <addressOffset>0x00</addressOffset>
+        </register>
+        <register>
+          <name>POLARITY</name>
+          <description>Channel polarity</description>
+          <addressOffset>0x04</addressOffset>
+        </register>
+        <register>
+          <name>CLKPRSC</name>
+          <description>Clock prescaler select</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
+          <name>CHANNEL[0]</name>
+          <description>Channel 0 configuration register</description>
+          <addressOffset>0x40</addressOffset>
           <fields>
             <field>
-              <name>PWM_CFG_DUTY</name>
-              <bitRange>[7:0]</bitRange>
-              <description>Duty cycle</description>
+              <name>CMP</name>
+              <bitRange>[15:0]</bitRange>
+              <description>Channel compare value</description>
             </field>
             <field>
-              <name>PWM_CFG_CDIV</name>
-              <bitRange>[17:8]</bitRange>
-              <description>Clock divider</description>
-            </field>
-            <field>
-              <name>PWM_CFG_POL</name>
-              <bitRange>[27:27]</bitRange>
-              <description>Channel polarity, inverted when set</description>
-            </field>
-            <field>
-              <name>PWM_CFG_PRSC</name>
-              <bitRange>[30:28]</bitRange>
-              <description>Clock prescaler select</description>
-            </field>
-            <field>
-              <name>PWM_CFG_EN</name>
-              <bitRange>[31:31]</bitRange>
-              <description>Channel enable</description>
+              <name>TOP</name>
+              <bitRange>[31:16]</bitRange>
+              <description>Channel top/wrap value</description>
             </field>
           </fields>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[1]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[1]</name>
           <description>Channel 1 configuration register</description>
-          <addressOffset>0x04</addressOffset>
+          <addressOffset>0x44</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[2]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[2]</name>
           <description>Channel 2 configuration register</description>
-          <addressOffset>0x08</addressOffset>
+          <addressOffset>0x48</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[3]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[3]</name>
           <description>Channel 3 configuration register</description>
-          <addressOffset>0x0C</addressOffset>
+          <addressOffset>0x4C</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[4]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[4]</name>
           <description>Channel 4 configuration register</description>
-          <addressOffset>0x10</addressOffset>
+          <addressOffset>0x50</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[5]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[5]</name>
           <description>Channel 5 configuration register</description>
-          <addressOffset>0x14</addressOffset>
+          <addressOffset>0x54</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[6]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[6]</name>
           <description>Channel 6 configuration register</description>
-          <addressOffset>0x18</addressOffset>
+          <addressOffset>0x58</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[7]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[7]</name>
           <description>Channel 7 configuration register</description>
-          <addressOffset>0x1C</addressOffset>
+          <addressOffset>0x5C</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[8]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[8]</name>
           <description>Channel 8 configuration register</description>
-          <addressOffset>0x20</addressOffset>
+          <addressOffset>0x60</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[9]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[9]</name>
           <description>Channel 9 configuration register</description>
-          <addressOffset>0x24</addressOffset>
+          <addressOffset>0x64</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[10]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[10]</name>
           <description>Channel 10 configuration register</description>
-          <addressOffset>0x28</addressOffset>
+          <addressOffset>0x68</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[11]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[11]</name>
           <description>Channel 11 configuration register</description>
-          <addressOffset>0x2C</addressOffset>
+          <addressOffset>0x6C</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[12]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[12]</name>
           <description>Channel 12 configuration register</description>
-          <addressOffset>0x30</addressOffset>
+          <addressOffset>0x70</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[13]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[13]</name>
           <description>Channel 13 configuration register</description>
-          <addressOffset>0x34</addressOffset>
+          <addressOffset>0x74</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[14]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[14]</name>
           <description>Channel 14 configuration register</description>
-          <addressOffset>0x38</addressOffset>
+          <addressOffset>0x78</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[15]</name>
+        <register derivedFrom="CHANNEL[0]">
+          <name>CHANNEL[15]</name>
           <description>Channel 15 configuration register</description>
-          <addressOffset>0x3C</addressOffset>
+          <addressOffset>0x7C</addressOffset>
         </register>
       </registers>
     </peripheral>
