@@ -22,8 +22,10 @@
 /**@{*/
 /** UART BAUD rate */
 #define BAUD_RATE 19200
-/** Maximum PWM output intensity (8-bit duty cycle) */
+/** Maximum PWM output intensity */
 #define MAX_DUTY 200
+/** Number of PWM channels to use */
+#define NUM_CHANNELS 6
 /**@}*/
 
 
@@ -68,26 +70,19 @@ int main() {
     return 1;
   }
 
-  int num_pwm_channels = neorv32_pmw_get_num_channels();
-
   // get number of implemented PWM channels
   if (neorv32_uart0_available()) {
-    neorv32_uart0_printf("Implemented PWM channels: %i\n\n", num_pwm_channels);
+    neorv32_uart0_printf("Implemented PWM channels: %i\n\n", neorv32_pmw_get_num_channels());
   }
 
-  // deactivate/clear all available channels
+  // setup PWM
   int i;
-  for (i=0; i<num_pwm_channels; i++) {
-    neorv32_pwm_ch_disable(i);
-    neorv32_pwm_ch_set_clock(i, 0, 0);
-    neorv32_pwm_ch_set_duty(i, 0);
+  neorv32_pwm_ch_disable_mask(-1); // disable all channels
+  neorv32_pwm_set_clock(CLK_PRSC_2); // fastest clock
+  for (i=0; i<16; i++) {
+    neorv32_pwm_ch_setup(i, 255, 0); // top = 256, idle polarity = low
   }
-
-  // configure all available channels
-  for (i=0; i<num_pwm_channels; i++) {
-    neorv32_pwm_ch_set_clock(i, CLK_PRSC_64, 0);
-    neorv32_pwm_ch_enable(i);
-  }
+  neorv32_pwm_ch_enable_mask((1<<NUM_CHANNELS)-1); // enable channels
 
   // simple animation: "pulse" channels one by one
   neorv32_uart0_printf("Starting animation...\n");
@@ -110,7 +105,7 @@ int main() {
     else {
       if (dc == 0) {
         // goto next channel
-        if ((ch + 1) >= num_pwm_channels) {
+        if ((ch + 1) >= (int)(NUM_CHANNELS)) {
           ch = 0;
         }
         else {
