@@ -713,18 +713,20 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
     ii_iv := to_integer(signed(ii_v));
     -- instruction types --
     case inst(instr_opcode_msb_c downto instr_opcode_lsb_c) is
-      when opcode_alui_c   => return "x" & integer'image(rd_iv)  & ", x"  & integer'image(rs2_iv) & ", "  & integer'image(ii_iv);
-      when opcode_alu_c    => return "x" & integer'image(rd_iv)  & ", x"  & integer'image(rs2_iv) & ", x" & integer'image(rs1_iv);
+      when opcode_alui_c   => return "x" & integer'image(rd_iv)  & ", x"  & integer'image(rs1_iv) & ", "  & integer'image(ii_iv);
+      when opcode_alu_c    => return "x" & integer'image(rd_iv)  & ", x"  & integer'image(rs1_iv) & ", x" & integer'image(rs2_iv);
       when opcode_lui_c    => return "x" & integer'image(rd_iv)  & ", 0x" & print_hex_f(iu_v);
       when opcode_auipc_c  => return "x" & integer'image(rd_iv)  & ", 0x" & print_hex_f(iu_v);
       when opcode_jal_c    => return "x" & integer'image(rd_iv)  & ", "   & integer'image(ij_iv);
-      when opcode_jalr_c   => return "x" & integer'image(rd_iv)  & ", x"  & integer'image(rs2_iv) & ", "  & integer'image(ii_iv);
-      when opcode_branch_c => return "x" & integer'image(rs2_iv) & ", x"  & integer'image(rs1_iv) & ", "  & integer'image(is_iv);
+      when opcode_jalr_c   => return "x" & integer'image(rd_iv)  & ", "   & integer'image(ii_iv)  & "(x"  & integer'image(rs1_iv) & ")";
+      when opcode_branch_c => return "x" & integer'image(rs1_iv) & ", x"  & integer'image(rs2_iv) & ", "  & integer'image(is_iv);
       when opcode_load_c   => return "x" & integer'image(rd_iv)  & ", "   & integer'image(is_iv)  & "(x"  & integer'image(rs1_iv) & ")";
-      when opcode_store_c  => return "x" & integer'image(rs1_iv) & ", "   & integer'image(is_iv)  & "(x"  & integer'image(rs2_iv) & ")";
+      when opcode_store_c  => return "x" & integer'image(rs2_iv) & ", "   & integer'image(is_iv)  & "(x"  & integer'image(rs1_iv) & ")";
       when opcode_amo_c    =>
-        if (inst(28) = '1') then -- zalrsc
+        if (inst(28 downto 27) = "10") then -- zalrsc LR
           return "x" & integer'image(rd_iv) & ", (x" & integer'image(rs1_iv) & ")";
+        elsif (inst(28 downto 27) = "11") then -- zalrsc SC
+          return "x" & integer'image(rd_iv) & ", x" & integer'image(rs2_iv) & ", (x" & integer'image(rs1_iv) & ")";
         else -- zaamo
           return "x" & integer'image(rd_iv) & ", x" & integer'image(rs2_iv) & ", (x" & integer'image(rs1_iv) & ")";
         end if;
