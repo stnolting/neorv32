@@ -81,6 +81,7 @@ that provides hands-on tutorials to get you started.
 * core libraries and HAL for high-level usage of the provided functions and peripherals
 * processor-specific runtime environment and several example programs
 * Doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
+* Ada support at https://github.com/GNAT-Academic-Program/neorv32-hal
 
 **OS Support**
 
