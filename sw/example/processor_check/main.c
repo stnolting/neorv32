@@ -89,7 +89,6 @@ volatile unsigned char constr_src[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 
 volatile uint32_t constr_res = 0; // for constructor test
 volatile uint32_t amo_var = 0; // atomic memory access test
 volatile _Atomic int atomic_cnt = 0; // dual core atomic test
-volatile uint32_t backup[2]; // backup stuff
 
 
 /**********************************************************************//**
@@ -174,7 +173,7 @@ int main() {
   install_err += neorv32_rte_handler_install(TRAP_CODE_FIRQ_14,      global_trap_handler);
   install_err += neorv32_rte_handler_install(TRAP_CODE_FIRQ_15,      global_trap_handler);
   if (install_err) {
-    PRINT("RTE fail!\n");
+    PRINT("RTE setup failed!\n");
     return 1;
   }
 
@@ -893,7 +892,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] CLINT.MTI ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
+  if (neorv32_clint_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -932,7 +931,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] CLINT.MSI ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
+  if (neorv32_clint_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1000,7 +999,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] Permanent IRQ (MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
+  if (neorv32_clint_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1033,7 +1032,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] Pending IRQ (MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
+  if (neorv32_clint_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1117,7 +1116,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ0 (TWD) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWD)) {
+  if (neorv32_twd_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1285,7 +1284,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ5 (TRACER) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRACER)) {
+  if (neorv32_tracer_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1327,7 +1326,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ6 (SPI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SPI)) {
+  if (neorv32_spi_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1367,7 +1366,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ7 (TWI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWI)) {
+  if (neorv32_twi_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1417,7 +1416,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ8 (GPIO) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPIO)) {
+  if (neorv32_gpio_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1466,7 +1465,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ9 (NEOLED) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_NEOLED)) {
+  if (neorv32_neoled_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1505,7 +1504,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ10 (DMA) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_DMA)) {
+  if (neorv32_dma_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1567,7 +1566,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ11 (SDI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SDI)) {
+  if ((neorv32_sdi_available()) && (neorv32_spi_available())) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1612,7 +1611,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ12 (GPTMR) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPTMR)) {
+  if (neorv32_gptmr_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1650,7 +1649,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ13 (ONEWIRE) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_ONEWIRE)) {
+  if (neorv32_onewire_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1691,7 +1690,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ14 (SLINK) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SLINK)) {
+  if (neorv32_slink_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1733,7 +1732,8 @@ int main() {
   // Fast interrupt channel 15 (TRNG)
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ15 (TRNG) ", cnt_test);
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
+
+  if (neorv32_trng_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1858,8 +1858,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] User-mode WFI (wake-up via MTI) ", cnt_test);
 
-  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) &&
-      (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U))) {
+  if ((neorv32_clint_available()) && (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U))) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1897,7 +1896,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] WFI (wakeup on pending MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
+  if (neorv32_clint_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
