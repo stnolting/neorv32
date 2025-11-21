@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 21.11.2025 | 1.12.4.4 | :test_tube: cleanup NEORV32 RTE code and rewrite core in plain inline-assembly | [#](https://github.com/stnolting/neorv32/pull/1427) |
 | 16.11.2025 | 1.12.4.3 | tracer: fix simulation log operand decoding | [#1425](https://github.com/stnolting/neorv32/pull/1425) |
 | 15.11.2025 | 1.12.4.2 | :warning: rework PWM module | [#1424](https://github.com/stnolting/neorv32/pull/1424) |
 | 07.11.2025 | 1.12.4.1 | minor rtl edits | [#1422](https://github.com/stnolting/neorv32/pull/1422) |
