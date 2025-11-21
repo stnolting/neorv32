@@ -24,12 +24,12 @@
   </cpu>
 
   <!-- defaults for all peripherals -->
-  <addressUnitBits>8</addressUnitBits>
+  <addressUnitBits>16</addressUnitBits>
   <width>32</width>
   <size>32</size>
   <access>read-write</access>
   <resetValue>0x00000000</resetValue>
-  <resetMask>0x00000000</resetMask> <!-- default IO devices do not have a dedicated reset -->
+  <resetMask>0xffffffff</resetMask>
 
   <!-- Peripherals -->
   <peripherals>
