@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 22.11.2025 | 1.12.4.6 | :warning: extend max number of PWM channels from 16 to 32; rename PWM configuration generic to `IO_PWM_NUM`; resize `pwm_o` port | [#1429](https://github.com/stnolting/neorv32/pull/1429) |
 | 22.11.2025 | 1.12.4.5 | :warning: rework/redesign general purpose timer (GPTMR) module | [#1428](https://github.com/stnolting/neorv32/pull/1428) |
 | 21.11.2025 | 1.12.4.4 | :test_tube: cleanup NEORV32 RTE code and rewrite core in plain inline-assembly | [#](https://github.com/stnolting/neorv32/pull/1427) |
 | 16.11.2025 | 1.12.4.3 | tracer: fix simulation log operand decoding | [#1425](https://github.com/stnolting/neorv32/pull/1425) |
