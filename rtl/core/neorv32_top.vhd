@@ -127,7 +127,7 @@ entity neorv32_top is
     IO_CFS_EN             : boolean                        := false;       -- implement custom functions subsystem (CFS)
     IO_NEOLED_EN          : boolean                        := false;       -- implement NeoPixel-compatible smart LED interface (NEOLED)
     IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;           -- NEOLED FIFO depth, has to be a power of two, min 1
-    IO_GPTMR_EN           : boolean                        := false;       -- implement general purpose timer (GPTMR)
+    IO_GPTMR_NUM          : natural range 0 to 16          := 0;           -- number of GPTMR timer slices to implement (0..16)
     IO_ONEWIRE_EN         : boolean                        := false;       -- implement 1-wire interface (ONEWIRE)
     IO_ONEWIRE_FIFO       : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
     IO_DMA_EN             : boolean                        := false;       -- implement direct memory access controller (DMA)
@@ -265,6 +265,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant num_cores_c     : natural := cond_sel_natural_f(DUAL_CORE_EN, 2, 1);
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
+  constant io_gptmr_en_c   : boolean := boolean(IO_GPTMR_NUM > 0);
   constant cpu_smpmp_en_c  : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
   constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
@@ -369,7 +370,7 @@ begin
       cond_sel_string_f(IO_TRNG_EN,      "TRNG ",     "") &
       cond_sel_string_f(IO_CFS_EN,       "CFS ",      "") &
       cond_sel_string_f(IO_NEOLED_EN,    "NEOLED ",   "") &
-      cond_sel_string_f(IO_GPTMR_EN,     "GPTMR ",    "") &
+      cond_sel_string_f(io_gptmr_en_c,   "GPTMR ",    "") &
       cond_sel_string_f(IO_ONEWIRE_EN,   "ONEWIRE ",  "") &
       cond_sel_string_f(IO_DMA_EN,       "DMA ",      "") &
       cond_sel_string_f(IO_SLINK_EN,     "SLINK ",    "") &
@@ -947,7 +948,7 @@ begin
       DEV_14_EN => false,           DEV_14_BASE => (others => '0'), -- reserved
       DEV_15_EN => false,           DEV_15_BASE => (others => '0'), -- reserved
       DEV_16_EN => io_pwm_en_c,     DEV_16_BASE => base_io_pwm_c,
-      DEV_17_EN => IO_GPTMR_EN,     DEV_17_BASE => base_io_gptmr_c,
+      DEV_17_EN => io_gptmr_en_c,   DEV_17_BASE => base_io_gptmr_c,
       DEV_18_EN => IO_ONEWIRE_EN,   DEV_18_BASE => base_io_onewire_c,
       DEV_19_EN => IO_TRACER_EN,    DEV_19_BASE => base_io_tracer_c,
       DEV_20_EN => IO_CLINT_EN,     DEV_20_BASE => base_io_clint_c,
@@ -1396,8 +1397,11 @@ begin
     -- General Purpose Timer (GPTMR) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_gptmr_enabled:
-    if IO_GPTMR_EN generate
+    if io_gptmr_en_c generate
       neorv32_gptmr_inst: entity neorv32.neorv32_gptmr
+      generic map (
+        NUM_SLICES => IO_GPTMR_NUM
+      )
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
@@ -1409,7 +1413,7 @@ begin
     end generate;
 
     neorv32_gptmr_disabled:
-    if not IO_GPTMR_EN generate
+    if not io_gptmr_en_c generate
       iodev_rsp(IODEV_GPTMR) <= rsp_terminate_c;
       firq(FIRQ_GPTMR)       <= '0';
     end generate;
@@ -1552,7 +1556,7 @@ begin
         IO_TRNG_EN        => IO_TRNG_EN,
         IO_CFS_EN         => IO_CFS_EN,
         IO_NEOLED_EN      => IO_NEOLED_EN,
-        IO_GPTMR_EN       => IO_GPTMR_EN,
+        IO_GPTMR_EN       => io_gptmr_en_c,
         IO_ONEWIRE_EN     => IO_ONEWIRE_EN,
         IO_DMA_EN         => IO_DMA_EN,
         IO_SLINK_EN       => IO_SLINK_EN,
