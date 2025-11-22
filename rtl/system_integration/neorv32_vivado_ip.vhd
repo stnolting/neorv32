@@ -123,6 +123,7 @@ entity neorv32_vivado_ip is
     IO_NEOLED_EN          : boolean                        := false;
     IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;
     IO_GPTMR_EN           : boolean                        := false;
+    IO_GPTMR_NUM          : natural range 1 to 16          := 1;
     IO_ONEWIRE_EN         : boolean                        := false;
     IO_DMA_EN             : boolean                        := false;
     IO_DMA_DSC_FIFO       : natural range 4 to 512         := 4;
@@ -263,9 +264,10 @@ end entity;
 architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
 
   -- auto-configuration --
-  constant num_gpio_c : natural := cond_sel_natural_f(IO_GPIO_EN, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
-  constant num_pwm_c  : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM_CH, 0);
-  constant burst_en_c : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN); -- any cache bursts?
+  constant num_gpio_c  : natural := cond_sel_natural_f(IO_GPIO_EN, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
+  constant num_pwm_c   : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM_CH, 0);
+  constant num_gptmr_c : natural := cond_sel_natural_f(IO_GPTMR_EN, IO_GPTMR_NUM, 0);
+  constant burst_en_c  : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN); -- any cache bursts?
 
   -- AXI4 bridge --
   component xbus2axi4_bridge
@@ -452,7 +454,7 @@ begin
     IO_CFS_EN           => IO_CFS_EN,
     IO_NEOLED_EN        => IO_NEOLED_EN,
     IO_NEOLED_TX_FIFO   => IO_NEOLED_TX_FIFO,
-    IO_GPTMR_EN         => IO_GPTMR_EN,
+    IO_GPTMR_NUM        => num_gptmr_c,
     IO_ONEWIRE_EN       => IO_ONEWIRE_EN,
     IO_DMA_EN           => IO_DMA_EN,
     IO_DMA_DSC_FIFO     => IO_DMA_DSC_FIFO,

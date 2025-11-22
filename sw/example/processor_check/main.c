@@ -1615,29 +1615,36 @@ int main() {
     trap_cause = trap_never_c;
     cnt_test++;
 
-    // enable GPTMR FIRQ
+    // setup GPTMR and CPU interrupt
+    neorv32_gptmr_setup(CLK_PRSC_2);
     neorv32_cpu_csr_write(CSR_MIE, 1 << GPTMR_FIRQ_ENABLE);
 
-    // match-interrupt after CLK_PRSC_2*THRESHOLD = 2*2 = 8 clock cycles
-    neorv32_gptmr_setup(CLK_PRSC_2, 2);
+    // slice 0: single-shot match-interrupt after CLK_PRSC_2*THRESHOLD = 2*5 = 10 clock cycles
+    neorv32_gptmr_configure(0, 0, 5, 0);
+    neorv32_gptmr_enable_single(0);
 
     // wait for interrupt
-    asm volatile ("nop");
-    asm volatile ("nop");
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
     if ((trap_cause == GPTMR_TRAP_CODE) && // correct interrupt?
-        (NEORV32_GPTMR->CTRL & (1 << GPTMR_CTRL_IRQ_PND))) { // timer interrupt pending?
-      test_ok();
+        (NEORV32_GPTMR->SLICE[0].CNT == NEORV32_GPTMR->SLICE[0].THR) && // counter == threshold?
+        (neorv32_gptmr_irq_get() == 0)) { // slice 0 interrupt pending?
+      neorv32_gptmr_irq_ack(0);
+      if (neorv32_gptmr_irq_get() == -1) { // slice 0 interrupt no longer pending?
+        test_ok();
+      }
+      else {
+        test_fail();
+      }
     }
     else {
       test_fail();
     }
 
     // disable GPTMR
-    neorv32_gptmr_disable();
-
+    neorv32_gptmr_disable_mask(-1);
   }
   else {
     PRINT("[n.a.]\n");

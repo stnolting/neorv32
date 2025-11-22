@@ -220,7 +220,7 @@ begin
     IO_CFS_EN           => true,
     IO_NEOLED_EN        => true,
     IO_NEOLED_TX_FIFO   => 8,
-    IO_GPTMR_EN         => true,
+    IO_GPTMR_NUM        => 4,
     IO_ONEWIRE_EN       => true,
     IO_ONEWIRE_FIFO     => 8,
     IO_DMA_EN           => true,

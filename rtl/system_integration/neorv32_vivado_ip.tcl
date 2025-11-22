@@ -442,7 +442,8 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {General Purpose Timer (GPTMR)}]
   add_params $group {
-    { IO_GPTMR_EN {Enable GPTMR} }
+    { IO_GPTMR_EN  {Enable GPTMR} }
+    { IO_GPTMR_NUM {Number of independent timer slices} }
   }
 
   set group [add_group $page {One-Wire Interface Controller (ONEWIRE)}]
