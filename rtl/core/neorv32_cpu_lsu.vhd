@@ -25,9 +25,9 @@ entity neorv32_cpu_lsu is
     wdata_i     : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
     rdata_o     : out std_ulogic_vector(XLEN-1 downto 0); -- read data
     mar_o       : out std_ulogic_vector(XLEN-1 downto 0); -- current memory address register
-    wait_o      : out std_ulogic; -- wait for access to complete
-    err_o       : out std_ulogic_vector(3 downto 0); -- alignment/access errors
-    pmp_fault_i : in  std_ulogic; -- PMP read/write access fault
+    wait_o      : out std_ulogic;                         -- wait for access to complete
+    err_o       : out std_ulogic_vector(3 downto 0);      -- alignment/access errors
+    pmp_fault_i : in  std_ulogic;                         -- PMP read/write access fault
     -- data bus --
     dbus_req_o  : out bus_req_t; -- request
     dbus_rsp_i  : in  bus_rsp_t  -- response

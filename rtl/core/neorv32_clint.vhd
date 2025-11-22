@@ -23,13 +23,13 @@ entity neorv32_clint is
     NUM_HARTS : natural range 1 to 4095 -- number of physical CPU cores
   );
   port (
-    clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- global reset line, low-active, async
-    bus_req_i : in  bus_req_t; -- bus request
-    bus_rsp_o : out bus_rsp_t; -- bus response
-    time_o    : out std_ulogic_vector(63 downto 0); -- current system time
+    clk_i     : in  std_ulogic;                              -- global clock line
+    rstn_i    : in  std_ulogic;                              -- global reset line, low-active, async
+    bus_req_i : in  bus_req_t;                               -- bus request
+    bus_rsp_o : out bus_rsp_t;                               -- bus response
+    time_o    : out std_ulogic_vector(63 downto 0);          -- current system time
     mti_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0); -- machine timer interrupt
-    msi_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0) -- machine software interrupt
+    msi_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0)  -- machine software interrupt
   );
 end neorv32_clint;
 

@@ -18,10 +18,10 @@ use neorv32.neorv32_package.all;
 entity neorv32_tracer is
   generic (
     TRACE_DEPTH   : natural range 1 to 2**15; -- trace buffer depth (has to be a power of two)
-    DUAL_CORE_EN  : boolean; -- trace the dual-core configuration
-    SIM_LOG_EN    : boolean; -- enable simulation trace logging
-    SIM_LOG_FILE0 : string := "";  -- trace log file CPU 0
-    SIM_LOG_FILE1 : string := ""   -- trace log file CPU 1
+    DUAL_CORE_EN  : boolean;                  -- trace the dual-core configuration
+    SIM_LOG_EN    : boolean;                  -- enable simulation trace logging
+    SIM_LOG_FILE0 : string := "";             -- trace log file CPU 0
+    SIM_LOG_FILE1 : string := ""              -- trace log file CPU 1
   );
   port (
     clk_i     : in  std_ulogic;   -- global clock line

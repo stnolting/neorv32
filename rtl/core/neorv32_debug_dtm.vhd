@@ -32,8 +32,8 @@ entity neorv32_debug_dtm is
     jtag_tdo_o : out std_ulogic; -- serial data output
     jtag_tms_i : in  std_ulogic; -- mode select
     -- debug module interface (DMI) --
-    dmi_req_o  : out dmi_req_t; -- request
-    dmi_rsp_i  : in  dmi_rsp_t  -- response
+    dmi_req_o  : out dmi_req_t;  -- request
+    dmi_rsp_i  : in  dmi_rsp_t   -- response
   );
 end neorv32_debug_dtm;
 

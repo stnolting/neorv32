@@ -17,17 +17,17 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_onewire is
   generic (
-    ONEWIRE_FIFO : natural range 1 to 2**15 -- RTX fifo depth, has to be a power of two, min 1
+    ONEWIRE_FIFO : natural range 1 to 2**15 -- RTX FIFO depth, has to be a power of two, min 1
   );
   port (
-    clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- global reset line, low-active
-    bus_req_i : in  bus_req_t;  -- bus request
-    bus_rsp_o : out bus_rsp_t;  -- bus response
-    clkgen_i  : in  std_ulogic_vector(7 downto 0);
-    onewire_i : in  std_ulogic; -- 1-wire line state
-    onewire_o : out std_ulogic; -- 1-wire line pull-down
-    irq_o     : out std_ulogic  -- transfer done IRQ
+    clk_i     : in  std_ulogic;                    -- global clock line
+    rstn_i    : in  std_ulogic;                    -- global reset line, low-active
+    bus_req_i : in  bus_req_t;                     -- bus request
+    bus_rsp_o : out bus_rsp_t;                     -- bus response
+    clkgen_i  : in  std_ulogic_vector(7 downto 0); -- prescaled clock enables
+    onewire_i : in  std_ulogic;                    -- 1-wire line state
+    onewire_o : out std_ulogic;                    -- 1-wire line pull-down
+    irq_o     : out std_ulogic                     -- transfer done IRQ
   );
 end neorv32_onewire;
 
@@ -51,8 +51,8 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
   constant ctrl_clkdiv0_c    : natural :=  4; -- r/w: clock divider bit 0
   constant ctrl_clkdiv7_c    : natural := 11; -- r/w: clock divider bit 7
   --
-  constant ctrl_fifo_size0_c : natural := 15; -- r/-: log2(fifo size), bit 0 (lsb)
-  constant ctrl_fifo_size3_c : natural := 18; -- r/-: log2(fifo size), bit 3 (msb)
+  constant ctrl_fifo_size0_c : natural := 15; -- r/-: log2(FIFO size), bit 0 (LSB)
+  constant ctrl_fifo_size3_c : natural := 18; -- r/-: log2(FIFO size), bit 3 (MSB)
   --
   constant ctrl_tx_full_c    : natural := 28; -- r/-: TX FIFO full
   constant ctrl_rx_avail_c   : natural := 29; -- r/-: RX FIFO data available
