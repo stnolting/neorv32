@@ -8,44 +8,43 @@
 | Hardware source files:  | neorv32_pwm.vhd |
 | Software driver files:  | neorv32_pwm.c   | link:https://stnolting.github.io/neorv32/sw/neorv32__pwm_8c.html[Online software reference (Doxygen)]
 |                         | neorv32_pwm.h   | link:https://stnolting.github.io/neorv32/sw/neorv32__pwm_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `pwm_o`         | PWM output channels (16-bit)
-| Configuration generics: | `IO_PWM_NUM_CH` | number of PWM channels to implement (0..16)
+| Top entity ports:       | `pwm_o`         | PWM output channels (32-bit)
+| Configuration generics: | `IO_PWM_NUM`    | number of PWM channels to implement (0..32)
 | CPU interrupts:         | none            |
 |=======================
 
 **Key Features**
 
-* Up to 16 individual channels with 16-bit resolution
+* Up to 32 individual channels with up to 16-bit resolution and programmable polarity
 * Fast-PWM mode operation with counter-compare and counter-wrap registers
-* Global clock prescaler
-* Programmable polarity
 * Toggle-free 0% and 100% duty cycle output rates
+* Global clock prescaler
 
 
 **Overview**
 
-The PWM module implements a fast-PWM mode pulse-width modulation controller with up to 16 independent channels.
+The PWM module implements a fast-PWM mode pulse-width modulation controller with up to 32 independent channels.
 Period length (and thus, the carrier frequency), duty cycle, and polarity can be programmed individually for each
 channel. However, the clock for the PWM counter increment is defined by a single global clock prescaler. PWM
 operation is based on 16-bit wide period counters that are constrained by programmable wrapping values.
 
-The total number of implemented channels is defined by the `IO_PWM_NUM_CH` generic. The PWM output signal `pwm_o`
-has a static size of 16-bit. Channel 0 corresponds to bit 0, channel 1 to bit 1 and so on. If less than 16 channels
+The total number of implemented channels is defined by the `IO_PWM_NUM` generic. The PWM output signal `pwm_o` has
+a static size of 32 bit. Channel 0 corresponds to bit 0, channel 1 to bit 1 and so on. If less than 32 channels
 are configured, only the LSB-aligned channel bits are connected while the remaining ones are hardwired to zero.
 
 
 **Theory of Operation**
 
 The PWM module provides several interface registers: an `ENABLE` register, a `POLARITY` registers, a `CLKPRSC`
-register and up to 16 `CHANNEL[i]` registers.
+register and up to 32 `CHANNEL[i]` registers.
 
 The `ENABLE` register is used to enable PWM channels. This can be done individually (only one channel) or by using
 bit-mask to enable several channels at once so they operate in perfect lockstep mode. Disabling a channel will clear
 the channel's PWM counter ans will also bring the according PWM output to the _idle polarity_. Note that only the
-lowest `IO_PWM_NUM_CH` bit are implemented.
+lowest `IO_PWM_NUM` bit are implemented.
 
 The `POLARITY` register defines the _idle polarity_ of the PWM channels. When a channel is disabled, this polarity
-also defines the logic level of the according `pwm_o` output. Note that only the lowest `IO_PWM_NUM_CH` bit are
+also defines the logic level of the according `pwm_o` output. Note that only the lowest `IO_PWM_NUM` bit are
 implemented.
 
 The `CLKPRSC` register configures the _global_ clock prescaler that is used for the PWM counter increment of each
@@ -60,12 +59,12 @@ channel. Eight pre-defined prescaler values are available:
 |=======================
 
 The duty cycle and period length of each channel are defined by the according `CHANNEL[i]` register (with `i` =
-`0 .. IO_PWM_NUM_CH`). This register is split in two half-words: the lowest half-word defines the counter-compare
+`0 .. IO_PWM_NUM`). This register is split in two half-words: the lowest half-word defines the counter-compare
 value (`CMP`) while the upper half-word defines the counter-wrap value (`TOP`).
 
 .`CHANNEL` Half-Word Access
 [TIP]
-In contrast to many other ENORV32 peripherals, the `CHANNEL[i]` registers can also be accessed using half-word
+In contrast to many other NEORV32 peripherals, the PWM `CHANNEL[i]` registers can also be accessed using half-word
 load/store operation. This allows to update the `TOP` and `CMP` sub-registers with a single instruction.
 
 PWM operation is based on a 16-bit counter that increments with the globally pre-scaled processor clock resulting
@@ -73,7 +72,7 @@ in a sawtooth-like waveform. The counter will wrap around to all-zero when reach
 sub-register. Whenever the counter value is less than the value defined by the `CMP` sub-register the PWM output
 is set to the _inverted_ idle polarity.
 
-.PWM Operation
+.Fast-PWM Operation
 ----
 TOP[i] --------------------/|--------------/|--------------/|--------------/|
                          /  |            /  |            /  |            /  |
@@ -86,12 +85,12 @@ CMP[i] --------------/------|--------/------|--------/------|--------/------|
             .        .      .        .      .        .      .        .      .
             .        .      .        .      .        .      .        .      .
             +--------+      +--------+      +--------+      +--------+      +
-pwm_o[i]    |        |      |        |      |        |      |        |      | (polarity = 0)
+pwm_o[i]    |        |      |        |      |        |      |        |      | (POLARITY[i] = 0)
          ---+        +------+        +------+        +------+        +------+
             .        .      .        .      .        .      .        .      .
             .        .      .        .      .        .      .        .      .
          ---+        +------+        +------+        +------+        +------+
-pwm_o[i]    |        |      |        |      |        |      |        |      | (polarity = 1)
+pwm_o[i]    |        |      |        |      |        |      |        |      | (POLARITY[i] = 1)
             +--------+      +--------+      +--------+      +--------+      +
 ----
 
@@ -116,14 +115,14 @@ _f~PWM~[i]_ = _f~main~_ / (`clock_prescaler` * (`TOP[i]` + 1))
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-| `0xfff00000` | `ENABLE`   | `15:0` | r/w | Channel enable, one bit per channel
-| `0xfff00004` | `POLARITY` | `15:0` | r/w | Channel idle polarity level, one bit per channel
-| `0xfff00008` | `CLKPRSC`  | `2:0`  | r/w | Clock prescaler select
-.2+<| `0xfff00040` .2+<| `CHANNEL[0]`  <|`31:16` - `TOP` ^| r/w <| Channel 0 top/wrap value register
-                                       <|`15:0`  - `CMP` ^| r/w <| Channel 0 compare value register
-.2+<| `0xfff00044` .2+<| `CHANNEL[1]`  <|`31:16` - `TOP` ^| r/w <| Channel 1 top/wrap value register
-                                       <|`15:0`  - `CMP` ^| r/w <| Channel 1 compare value register
-| ... | ...  | ... | r/w | Channels 2 to 14
-.2+<| `0xfff0007c` .2+<| `CHANNEL[15]` <|`31:16` - `TOP` ^| r/w <| Channel 15 top/wrap value register
-                                       <|`15:0`  - `CMP` ^| r/w <| Channel 15 compare value register
+| `0xfff00000` | `ENABLE`             | `31:0` | r/w | Channel enable, one bit per channel
+| `0xfff00004` | `POLARITY`           | `31:0` | r/w | Channel idle polarity level, one bit per channel
+| `0xfff00008` | `CLKPRSC`            | `2:0`  | r/w | Global clock prescaler select
+| `0xfff00080` | `CHANNEL[0].TOPCMP`  | `31:0` | r/w | Channel 0 full word access
+| `0xfff00080` | `CHANNEL[0].CMP`     | `15:0` | r/w | Channel 0 top/wrap value register
+| `0xfff00082` | `CHANNEL[0].TOP`     | `15:0` | r/w | Channel 0 compare value register
+| ...          | ...                  |  ...   | r/w | ...
+| `0xfff000fc` | `CHANNEL[31].TOPCMP` | `31:0` | r/w | Channel 31 full word access
+| `0xfff000fc` | `CHANNEL[31].CMP`    | `15:0` | r/w | Channel 31 top/wrap value register
+| `0xfff000fe` | `CHANNEL[31].TOP`    | `15:0` | r/w | Channel 31 compare value register
 |=======================

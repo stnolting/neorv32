@@ -27,12 +27,12 @@ int neorv32_pwm_available(void) {
 
 /**********************************************************************//**
  * Get number of implemented PWM channels.
- * @warning This function overrides the POLARITY register.
  *
- * @return Number of implemented PWM channels.
+ * @return Number of implemented PWM channels (0..32).
  **************************************************************************/
 int neorv32_pmw_get_num_channels(void) {
 
+  uint32_t backup = NEORV32_PWM->POLARITY;
   NEORV32_PWM->POLARITY = -1;
   uint32_t tmp = NEORV32_PWM->POLARITY;
 
@@ -41,6 +41,8 @@ int neorv32_pmw_get_num_channels(void) {
     cnt += tmp & 1;
     tmp >>= 1;
   }
+
+  NEORV32_PWM->POLARITY = backup;
 
   return (int)cnt;
 }
@@ -60,7 +62,7 @@ void neorv32_pwm_set_clock(int prsc) {
 /**********************************************************************//**
  * Enable PWM channel using bit mask.
  *
- * @param[in] mask Channel bit mask (16 bits).
+ * @param[in] mask Channel bit mask.
  **************************************************************************/
 void neorv32_pwm_ch_enable_mask(uint32_t mask) {
 
@@ -71,7 +73,7 @@ void neorv32_pwm_ch_enable_mask(uint32_t mask) {
 /**********************************************************************//**
  * Disable PWM channel using bit mask.
  *
- * @param[in] mask Channel bit mask (16 bits).
+ * @param[in] mask Channel bit mask.
  **************************************************************************/
 void neorv32_pwm_ch_disable_mask(uint32_t mask) {
 
@@ -82,38 +84,38 @@ void neorv32_pwm_ch_disable_mask(uint32_t mask) {
 /**********************************************************************//**
  * Enable individual PWM channel.
  *
- * @param[in] ch Channel select (0..16).
+ * @param[in] ch Channel select (0..31).
  **************************************************************************/
 void neorv32_pwm_ch_enable_single(int ch) {
 
-  NEORV32_PWM->ENABLE |= (1 << (ch & 0xfu));
+  NEORV32_PWM->ENABLE |= (1 << (ch & 0x1fu));
 }
 
 
 /**********************************************************************//**
  * Disable individual PWM channel using bit mask.
  *
- * @param[in] ch Channel select (0..16).
+ * @param[in] ch Channel select (0..31).
  **************************************************************************/
 void neorv32_pwm_ch_disable_single(int ch) {
 
-  NEORV32_PWM->ENABLE &= ~(1 << (ch & 0xfu));
+  NEORV32_PWM->ENABLE &= ~(1 << (ch & 0x1fu));
 }
 
 
 /**********************************************************************//**
  * Configure a single channel's wrap value and polarity.
  *
- * @param[in] ch Channel select (0..15).
+ * @param[in] ch Channel select (0..31).
  * @param[in] top Wrap value for PWM counter (16-bit).
  * @param[in] pol Idle polarity of PWM output (0 or 1).
  **************************************************************************/
 void neorv32_pwm_ch_setup(int ch, int top, int pol) {
 
-  ch &= 0xfu;
+  ch &= 0x1fu;
 
   uint32_t mask = 1 << ch;
-  if (pol & 1) {
+  if (pol) {
     NEORV32_PWM->POLARITY |=  mask;
   } else {
     NEORV32_PWM->POLARITY &= ~mask;
@@ -126,10 +128,10 @@ void neorv32_pwm_ch_setup(int ch, int top, int pol) {
 /**********************************************************************//**
  * Set PWM channel's duty cycle.
  *
- * @param[in] ch Channel select (0..15).
+ * @param[in] ch Channel select (0..31).
  * @param[in] duty Duty cycle (16-bit).
  **************************************************************************/
 void neorv32_pwm_ch_set_duty(int ch, int duty) {
 
-  NEORV32_PWM->CHANNEL[ch & 0xf].CMP = duty;
+  NEORV32_PWM->CHANNEL[ch & 0x1f].CMP = duty;
 }

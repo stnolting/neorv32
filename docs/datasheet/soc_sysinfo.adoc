@@ -95,7 +95,7 @@ to take into account a dynamic frequency scaling of the processor.
 | `17`    | `SYSINFO_SOC_IO_UART0`   | set if primary UART0 is implemented (via top's `IO_UART0_EN` generic)
 | `18`    | `SYSINFO_SOC_IO_SPI`     | set if SPI is implemented (via top's `IO_SPI_EN` generic)
 | `19`    | `SYSINFO_SOC_IO_TWI`     | set if TWI is implemented (via top's `IO_TWI_EN` generic)
-| `20`    | `SYSINFO_SOC_IO_PWM`     | set if PWM is implemented (via top's `IO_PWM_NUM_CH` generic)
+| `20`    | `SYSINFO_SOC_IO_PWM`     | set if PWM is implemented (via top's `IO_PWM_NUM` generic)
 | `21`    | `SYSINFO_SOC_IO_WDT`     | set if WDT is implemented (via top's `IO_WDT_EN` generic)
 | `22`    | `SYSINFO_SOC_IO_CFS`     | set if custom functions subsystem is implemented (via top's `IO_CFS_EN` generic)
 | `23`    | `SYSINFO_SOC_IO_TRNG`    | set if TRNG is implemented (via top's `IO_TRNG_EN` generic)

@@ -120,7 +120,7 @@ entity neorv32_top is
     IO_TWD_EN             : boolean                        := false;       -- implement two-wire device (TWD)
     IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be zero or a power of two, min 1
     IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be zero or a power of two, min 1
-    IO_PWM_NUM_CH         : natural range 0 to 16          := 0;           -- number of PWM channels to implement (0..16)
+    IO_PWM_NUM            : natural range 0 to 32          := 0;           -- number of PWM channels to implement (0..32)
     IO_WDT_EN             : boolean                        := false;       -- implement watch dog timer (WDT)
     IO_TRNG_EN            : boolean                        := false;       -- implement true random number generator (TRNG)
     IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;           -- data FIFO depth, has to be a power of two, min 1
@@ -225,8 +225,8 @@ entity neorv32_top is
     onewire_i      : in  std_ulogic := 'H';                                 -- 1-wire bus sense input
     onewire_o      : out std_ulogic;                                        -- 1-wire bus output (pull low only)
 
-    -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o          : out std_ulogic_vector(15 downto 0);                    -- pwm channels
+    -- PWM (available if IO_PWM_NUM > 0) --
+    pwm_o          : out std_ulogic_vector(31 downto 0);                    -- pwm channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_ulogic_vector(255 downto 0) := (others => 'L'); -- custom CFS inputs conduit
@@ -264,7 +264,7 @@ architecture neorv32_top_rtl of neorv32_top is
   -- auto-configuration --
   constant num_cores_c     : natural := cond_sel_natural_f(DUAL_CORE_EN, 2, 1);
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
-  constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM_CH > 0);
+  constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM > 0);
   constant io_gptmr_en_c   : boolean := boolean(IO_GPTMR_NUM > 0);
   constant cpu_smpmp_en_c  : boolean := boolean(PMP_NUM_REGIONS > 0);
   constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
@@ -1324,7 +1324,7 @@ begin
     if io_pwm_en_c generate
       neorv32_pwm_inst: entity neorv32.neorv32_pwm
       generic map (
-        NUM_CHANNELS => IO_PWM_NUM_CH
+        NUM_CHANNELS => IO_PWM_NUM
       )
       port map (
         clk_i     => clk_i,

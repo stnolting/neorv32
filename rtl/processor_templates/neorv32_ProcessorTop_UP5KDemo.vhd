@@ -26,7 +26,7 @@ entity neorv32_ProcessorTop_UP5KDemo is
     DMEM_SIZE       : natural := 64*1024; -- size of processor-internal data memory in bytes
     -- Processor peripherals --
     IO_GPIO_NUM     : natural := 32;      -- number of GPIO input/output pairs (0..32)
-    IO_PWM_NUM_CH   : natural := 3        -- number of PWM channels to implement (0..16)
+    IO_PWM_NUM      : natural := 3        -- number of PWM channels to implement (0..32)
   );
   port (
     -- Global control --
@@ -51,7 +51,7 @@ entity neorv32_ProcessorTop_UP5KDemo is
     -- TWI (available if IO_TWI_EN = true) --
     twi_sda_io  : inout std_logic;
     twi_scl_io  : inout std_logic;
-    -- PWM (available if IO_PWM_NUM_CH > 0) --
+    -- PWM (available if IO_PWM_NUM > 0) --
     pwm_o       : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0)
   );
 end entity;
@@ -61,11 +61,11 @@ architecture neorv32_ProcessorTop_UP5KDemo_rtl of neorv32_ProcessorTop_UP5KDemo 
   -- internal IO connection --
   signal con_gpio_o    : std_ulogic_vector(31 downto 0);
   signal con_gpio_i    : std_ulogic_vector(31 downto 0);
-  signal con_pwm_o     : std_ulogic_vector(15 downto 0);
+  signal con_pwm_o     : std_ulogic_vector(31 downto 0);
   signal con_spi_sck   : std_ulogic;
   signal con_spi_sdi   : std_ulogic;
   signal con_spi_sdo   : std_ulogic;
-  signal con_spi_csn   : std_ulogic_vector(07 downto 0);
+  signal con_spi_csn   : std_ulogic_vector(7 downto 0);
   signal con_twi_sda_i : std_ulogic;
   signal con_twi_sda_o : std_ulogic;
   signal con_twi_scl_i : std_ulogic;
@@ -97,7 +97,7 @@ begin
     IO_UART0_EN      => true,           -- implement primary universal asynchronous receiver/transmitter (UART0)?
     IO_SPI_EN        => true,           -- implement serial peripheral interface (SPI)?
     IO_TWI_EN        => true,           -- implement two-wire interface (TWI)?
-    IO_PWM_NUM_CH    => IO_PWM_NUM_CH   -- number of PWM channels to implement (0..12); 0 = disabled
+    IO_PWM_NUM       => IO_PWM_NUM      -- number of PWM channels to implement (0..32); 0 = disabled
   )
   port map (
     -- Global control --
@@ -137,7 +137,7 @@ begin
 
   -- GPIO --
   gpio_o <= con_gpio_o(3 downto 0);
-  con_gpio_i(03 downto 0) <= gpio_i;
+  con_gpio_i(3 downto 0)  <= gpio_i;
   con_gpio_i(31 downto 4) <= (others => '0');
 
   -- PWM --

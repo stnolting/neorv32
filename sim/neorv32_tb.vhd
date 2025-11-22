@@ -213,7 +213,7 @@ begin
     IO_TWD_EN           => true,
     IO_TWD_RX_FIFO      => 4,
     IO_TWD_TX_FIFO      => 4,
-    IO_PWM_NUM_CH       => 8,
+    IO_PWM_NUM          => 8,
     IO_WDT_EN           => true,
     IO_TRNG_EN          => true,
     IO_TRNG_FIFO        => 4,

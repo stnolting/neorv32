@@ -115,7 +115,7 @@ entity neorv32_vivado_ip is
     IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;
     IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;
     IO_PWM_EN             : boolean                        := false;
-    IO_PWM_NUM_CH         : natural range 1 to 16          := 1; -- variable-sized ports must be at least 0 downto 0; #974
+    IO_PWM_NUM            : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
     IO_WDT_EN             : boolean                        := false;
     IO_TRNG_EN            : boolean                        := false;
     IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
@@ -245,8 +245,8 @@ entity neorv32_vivado_ip is
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      : in  std_logic := '0';
     onewire_o      : out std_logic;
-    -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o          : out std_logic_vector(IO_PWM_NUM_CH-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
+    -- PWM (available if IO_PWM_NUM > 0) --
+    pwm_o          : out std_logic_vector(IO_PWM_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_logic_vector(255 downto 0) := (others => '0');
     cfs_out_o      : out std_logic_vector(255 downto 0);
@@ -265,7 +265,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
 
   -- auto-configuration --
   constant num_gpio_c  : natural := cond_sel_natural_f(IO_GPIO_EN, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
-  constant num_pwm_c   : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM_CH, 0);
+  constant num_pwm_c   : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM, 0);
   constant num_gptmr_c : natural := cond_sel_natural_f(IO_GPTMR_EN, IO_GPTMR_NUM, 0);
   constant burst_en_c  : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN); -- any cache bursts?
 
@@ -345,9 +345,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal mtime_time_aux : std_ulogic_vector(63 downto 0);
 
   -- constrained size ports --
-  signal gpio_o_aux : std_ulogic_vector(31 downto 0);
-  signal gpio_i_aux : std_ulogic_vector(31 downto 0);
-  signal pwm_o_aux  : std_ulogic_vector(15 downto 0);
+  signal gpio_o_aux, gpio_i_aux, pwm_o_aux : std_ulogic_vector(31 downto 0);
 
   -- internal xbus --
   signal xbus_req : xbus_req_t;
@@ -447,7 +445,7 @@ begin
     IO_TWD_EN           => IO_TWD_EN,
     IO_TWD_RX_FIFO      => IO_TWD_RX_FIFO,
     IO_TWD_TX_FIFO      => IO_TWD_TX_FIFO,
-    IO_PWM_NUM_CH       => num_pwm_c,
+    IO_PWM_NUM          => num_pwm_c,
     IO_WDT_EN           => IO_WDT_EN,
     IO_TRNG_EN          => IO_TRNG_EN,
     IO_TRNG_FIFO        => IO_TRNG_FIFO,
@@ -534,7 +532,7 @@ begin
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      => std_ulogic(onewire_i),
     onewire_o      => onewire_o_aux,
-    -- PWM available if IO_PWM_NUM_CH > 0) --
+    -- PWM available if IO_PWM_NUM > 0) --
     pwm_o          => pwm_o_aux,
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       => std_ulogic_vector(cfs_in_i),
@@ -610,7 +608,7 @@ begin
 
   -- PWM --
   pwm_mapping:
-  for i in 0 to IO_PWM_NUM_CH-1 generate
+  for i in 0 to IO_PWM_NUM-1 generate
     pwm_o(i) <= std_logic(pwm_o_aux(i));
   end generate;
 

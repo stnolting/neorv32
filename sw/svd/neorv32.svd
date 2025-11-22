@@ -429,7 +429,7 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x80</size>
+        <size>0x100</size>
         <usage>registers</usage>
       </addressBlock>
 
@@ -449,98 +449,29 @@
           <description>Clock prescaler select</description>
           <addressOffset>0x08</addressOffset>
         </register>
-        <register>
-          <name>CHANNEL[0]</name>
-          <description>Channel 0 configuration register</description>
-          <addressOffset>0x40</addressOffset>
-          <fields>
-            <field>
-              <name>CMP</name>
-              <bitRange>[15:0]</bitRange>
-              <description>Channel compare value</description>
-            </field>
-            <field>
-              <name>TOP</name>
-              <bitRange>[31:16]</bitRange>
-              <description>Channel top/wrap value</description>
-            </field>
-          </fields>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[1]</name>
-          <description>Channel 1 configuration register</description>
-          <addressOffset>0x44</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[2]</name>
-          <description>Channel 2 configuration register</description>
-          <addressOffset>0x48</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[3]</name>
-          <description>Channel 3 configuration register</description>
-          <addressOffset>0x4C</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[4]</name>
-          <description>Channel 4 configuration register</description>
-          <addressOffset>0x50</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[5]</name>
-          <description>Channel 5 configuration register</description>
-          <addressOffset>0x54</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[6]</name>
-          <description>Channel 6 configuration register</description>
-          <addressOffset>0x58</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[7]</name>
-          <description>Channel 7 configuration register</description>
-          <addressOffset>0x5C</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[8]</name>
-          <description>Channel 8 configuration register</description>
-          <addressOffset>0x60</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[9]</name>
-          <description>Channel 9 configuration register</description>
-          <addressOffset>0x64</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[10]</name>
-          <description>Channel 10 configuration register</description>
-          <addressOffset>0x68</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[11]</name>
-          <description>Channel 11 configuration register</description>
-          <addressOffset>0x6C</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[12]</name>
-          <description>Channel 12 configuration register</description>
-          <addressOffset>0x70</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[13]</name>
-          <description>Channel 13 configuration register</description>
-          <addressOffset>0x74</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[14]</name>
-          <description>Channel 14 configuration register</description>
-          <addressOffset>0x78</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL[0]">
-          <name>CHANNEL[15]</name>
-          <description>Channel 15 configuration register</description>
-          <addressOffset>0x7C</addressOffset>
-        </register>
+        <cluster>
+          <dim>32</dim>
+          <dimIncrement>0x04</dimIncrement>
+          <addressOffset>0x80</addressOffset>
+          <name>CHANNEL[%s]</name>
+          <description>Channel configuration register</description>
+          <register>
+            <name>TOPCMP</name>
+            <addressOffset>0x0</addressOffset>
+            <fields>
+              <field>
+                <name>CMP</name>
+                <bitRange>[15:0]</bitRange>
+                <description>Channel counter compare value</description>
+              </field>
+              <field>
+                <name>TOP</name>
+                <bitRange>[31:16]</bitRange>
+                <description>Channel counter top/wrap value</description>
+              </field>
+            </fields>
+          </register>
+        </cluster>
       </registers>
     </peripheral>
 

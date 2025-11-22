@@ -24,7 +24,7 @@
 #define BAUD_RATE 19200
 /** Maximum PWM output intensity */
 #define MAX_DUTY 200
-/** Number of PWM channels to use */
+/** Number of PWM channels to use (1..32) */
 #define NUM_CHANNELS 6
 /**@}*/
 
