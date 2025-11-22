@@ -9,52 +9,65 @@
 | Software driver files:  | neorv32_gptmr.c     | link:https://stnolting.github.io/neorv32/sw/neorv32__gptmr_8c.html[Online software reference (Doxygen)]
 |                         | neorv32_gptmr.h     | link:https://stnolting.github.io/neorv32/sw/neorv32__gptmr_8h.html[Online software reference (Doxygen)]
 | Top entity ports:       | none                |
-| Configuration generics: | `IO_GPTMR_EN`       | implement general purpose timer when `true`
+| Configuration generics: | `IO_GPTMR_NUM`      | number of individual GPTMR timer slices (0..16)
 | CPU interrupts:         | fast IRQ channel 12 | timer interrupt (see <<_processor_interrupts>>)
 |=======================
 
 **Key Features**
 
-* 32-bit auto-reloading tick timer
-* 32-bit threshold value resolution
-* 3-bit clock divider
-* Tick interrupt
+* Up to 16 individual timer slices with 32-bit-wide timer and timer-match registers
+* Per-slice enable, mode and interrupt control/status
+* Single-shot or interval operation mode
+* Global clock prescaler
 
 
 **Overview**
 
-The general purpose timer module implements a simple 32-bit interval timer. It is implemented if the processor's
-`IO_GPTMR_EN` top generic is set `true`. The timer provides a pre-scaled counter register that can trigger an interrupt
-when reaching a programmable threshold value.
+The general purpose timer module provides up to 16 individual timers organized as slices (the number of
+implemented slices is configured by `IO_GPTMR_NUM`. Each slice can operate as single-shot timer or as
+continuous/interval timer and provides a 32-bit counter (`SLICE[i].CNT`) and a 32-bit threshold registers
+(`SLICE[i].THR`). Operation is controlled by two 32-bit control and status registers (`CSR0` and `CSR1`).
+An interrupt is triggered when a slice counter matches the according threshold value.
 
-The GPTMR provides three interface registers: a control register (`CTRL`), a 32-bit counter register (`COUNT`) and a
-32-bit threshold register (`THRES`). The timer is globally enabled by setting the `GPTMR_CTRL_EN` bit in the module's
-control register. When the timer is enabled the `COUNT` register will start incrementing from zero at a programmable
-rate that scales the main processor clock. This pre-scaler is configured via the three `GPTMR_CTRL_PRSCx`
-control register bits:
+.CSR Access
+[TIP]
+`CSR0` and `CSR1` can be accessed in full-word mode (`CSR[0/1].WORD`) and also in half-word
+mode (e.g. `CSR0.ENABLE`) to update configuration sub-words with a single memory operation.
+
+
+**Theory of Operation**
+
+A slice _i_ is enabled when the according bit of `CSR0.ENABLE` is set. Only the lowest `IO_GPTMR_NUM`
+bits are available. When enabled, the slice`s counter register `SLICE[i].CNT` starts incrementing at
+a prescaled clock frequency. This prescaler is globally configured (= for all slices) by the
+`CSR1.PRSC` register:
 
 .GPTMR prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
 [options="header",grid="rows"]
 |=======================
-| **`GPTMR_CTRL_PRSC[2:0]`**  | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
-| Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
+| **`CSR1.PRSC`**       | `0b000` | `0b001` | `0b010` | `0b011` | `0b100` | `0b101` | `0b110` | `0b111`
+| Resulting `prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-Whenever the counter register `COUNT` equals the programmable threshold value `THRES` the module's interrupt signal becomes
-pending (indicated by `GPTMR_CTRL_IRQ_PND` being set). In this case the `COUNT` register is automatically reset and restarts
-incrementing from zero. Note that a pending interrupt has to be cleared manually by writing a `1` to `GPTMR_CTRL_IRQ_CLR`.
+When `SLICE[i].CNT` matches the threshold value in `SLICE[i].THR` the according interrupt-pending bit in
+`CSR1.IRQ` becomes set. Disabled slices (`CSR0.ENABLE(i) = 0`) cannot generate any new interrupt requests.
+However, pending interrupt in `CSR1.IRQ` will remain pending even if the according slice is disabled via.
+Software can clear pending interrupts by writing zero to the according `CSR1.IRQ` bits. A CPU interrupt
+request is generates if any slice interrupt _i_ is pending and slice _i_ is enabled (`CSR0.ENABLE(i) = 1`
+and `CSR1.IRQ(i) = 1`).
 
+The time until a slice interrupt is triggered (_T[i]_) depends on the processor clock (_f~main~_) global
+clock prescaler (selected by `CSR1.PRSC`) and the slice threshold value (`SLICE[i].THR`):
 
-.Resetting the Counter
-[NOTE]
-Disabling the GPTMR will also clear the `COUNT` register.
+_T[i]_ = _f~main~_ / (`prescaler` * `SLICE[i].THR`)
 
-
-**Interrupt**
-
-The GPTRM provides a single interrupt line is triggered whenever `COUNT` equals `THRES`. Once triggered, the interrupt will
-stay pending until explicitly cleared by writing a 1 to `GPTMR_CTRL_IRQ_CLR`.
+Each slice can operate as single-shot timer or as continuous interval timer: If `CSR0.MODE(i) = 0`
+the according slice operates in **single-shot mode**: if the counter matches the programmed threshold
+(`SLICE[i].CNT == SLICE[i].THR`) the slice interrupt becomes pending and the counter stops at the
+threshold value. If `CSR0.MODE(i) = 1` the according slice operates in **continuous mode**: if the
+counter matches the programmed threshold (`SLICE[i].CNT == SLICE[i].THR`) the slice interrupt becomes
+pending and the counter is reset to zero and starts counting again up to the threshold value.
 
 
 **Register Map**
@@ -63,12 +76,16 @@ stay pending until explicitly cleared by writing a 1 to `GPTMR_CTRL_IRQ_CLR`.
 [cols="<4,<2,<4,^1,<7"]
 [options="header",grid="all"]
 |=======================
-| Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.5+<| `0xfff10000` .5+<| `CTRL` <|`0`   `GPTMR_CTRL_EN`                       ^| r/w <| Timer enable flag
-                                <|`3:1` `GPTMR_CTRL_PRSC2 : GPTMR_CTRL_PRSC0` ^| r/w <| 3-bit clock prescaler select
-                                <|`29:4` -                                    ^| r/- <| _reserved_, read as zero
-                                <|`30`  `GPTMR_CTRL_IRQ_CLR`                  ^| -/w <| Write `1` to clear timer-match interrupt; auto-clears
-                                <|`31`  `GPTMR_CTRL_IRQ_PND`                  ^| r/- <| Timer-match interrupt pending
-| `0xfff10004` | `THRES`   |`31:0` | r/w | Threshold value register
-| `0xfff10008` | `COUNT`   |`31:0` | r/- | Counter register
+| Address | Name [C] | Bit(s), Name [C] | R/W | Description
+| `0xfff10000` | `CSR0.WORD`     | `31:0` | r/w | Control and status register 0 (full-word access).
+| `0xfff10000` | `CSR0.ENABLE`   | `15:0` | r/w | Slice enable (one bit per implemented slice starting at LSB).
+| `0xfff10002` | `CSR0.MODE`     | `15:0` | r/w | Slice operation mode: 0 = single shot, 1 = continuous (one bit per implemented slice starting at LSB).
+| `0xfff10004` | `CSR1.WORD`     | `31:0` | r/w | Control and status register 1 (full-word access).
+| `0xfff10004` | `CSR1.IRQ`      | `15:0` | r/w | Slice interrupt pending (one bit per implemented slice starting at LSB); write 0 to bit to clear interrupt.
+| `0xfff10006` | `CSR1.PRSC`     |  `2:0` | r/w | Global clock prescaler select.
+| `0xfff10080` | `SLICE[0].CNT`  | `31:0` | r/w | Slice 0 counter register.
+| `0xfff10084` | `SLICE[0].THR`  | `31:0` | r/w | Slice 0 threshold register.
+| ...          | ...             | ...    | ... | ...
+| `0xfff10080` | `SLICE[15].CNT` | `31:0` | r/w | Slice 15 counter register.
+| `0xfff10084` | `SLICE[15].THR` | `31:0` | r/w | Slice 15 threshold register.
 |=======================
