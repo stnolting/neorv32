@@ -13,84 +13,157 @@
 
 #include <neorv32.h>
 
-// private trap vector look-up table (for all cores!)
+/**********************************************************************//**
+// global trap handler table (for all cores!)
+ **************************************************************************/
 static volatile uint32_t __attribute__((aligned(4))) __neorv32_rte_vector_lut[2][32];
 
-// private helper functions
-static void __neorv32_rte_print_string(const char *s);
-static void __neorv32_rte_print_hex(uint32_t num, int digits);
+
+/**********************************************************************//**
+ * Print a simple string via UART0.
+ *
+ * @param[in] s Pointer to string.
+ **************************************************************************/
+static void __neorv32_rte_print_string(const char *s) {
+
+  if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
+    neorv32_uart_puts(NEORV32_UART0, s);
+  }
+}
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * Setup RTE.
+ * Print the lowest 0 to 8 hex characters of a
+ * 32-bit number as hexadecimal value (with "0x" suffix) via UART0.
  *
- * @note This function must be called on all cores that wish to use the RTE.
+ * @param[in] num Number to print as hexadecimal.
  *
- * @note This function installs a debug handler for ALL trap sources, which
- * gives detailed information about the trap via UART0 (if available). Actual
- * handlers can be installed afterwards via #neorv32_rte_handler_install().
+ * @param[in] digits Number of hexadecimal digits to print (0..8).
  **************************************************************************/
-void neorv32_rte_setup(void) {
+static void __neorv32_rte_print_hex(uint32_t num, int digits) {
 
-  // clear mstatus, set previous privilege level to machine-mode
-  neorv32_cpu_csr_write(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
+  int i = 0;
+  const char hex[] = "0123456789ABCDEF";
 
-  // configure trap handler base address (direct mode)
-  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&neorv32_rte_core) & 0xfffffffcU);
-
-  // disable all IRQ channels
-  neorv32_cpu_csr_write(CSR_MIE, 0);
-
-  // install debug handler for all trap sources (executed only on core 0)
-  if (neorv32_cpu_csr_read(CSR_MHARTID) == 0) {
-    int index;
-    for (index = 0; index < 32; index++) {
-      __neorv32_rte_vector_lut[0][index] = (uint32_t)(&neorv32_rte_debug_handler);
-      __neorv32_rte_vector_lut[1][index] = (uint32_t)(&neorv32_rte_debug_handler);
+  if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
+    neorv32_uart_putc(NEORV32_UART0, '0');
+    neorv32_uart_putc(NEORV32_UART0, 'x');
+    for (i=(digits-8); i<8; i++) {
+      uint32_t index = (num >> (28 - 4*i)) & 0xF;
+      neorv32_uart_putc(NEORV32_UART0, hex[index]);
     }
   }
-  asm volatile ("fence"); // flush vector table to main memory
 }
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * Install trap handler function (second-level trap handler).
+ * Debug trap handler, printing information via UART0.
  *
- * @note Trap handler installation applies to both cores. Hence, both
- * cores will execute the same handler for the same trap.
- *
- * @param[in] code Trap code (MCAUSE CSR value) of the targeted trap.
- * See #NEORV32_EXCEPTION_CODES_enum.
- *
- * @param[in] handler The actual handler function for the specified trap
- * (function must be of type "void function(void);").
- *
- * @return 0 if success, -1 if invalid trap code.
+ * @note This function operates on the RTE instance of the
+ * core on which this function is executed.
  **************************************************************************/
-int neorv32_rte_handler_install(uint32_t code, void (*handler)(void)) {
+static void __neorv32_rte_debug_handler(void) {
 
-  if (code & (~0x8000001fU)) { // invalid trap code
-    return -1;
+  // intro
+  __neorv32_rte_print_string("<NEORV32-RTE> ");
+
+  // CPU ID
+  if (neorv32_cpu_csr_read(CSR_MHARTID) & 1) {
+    __neorv32_rte_print_string("[cpu1|");
   }
   else {
-    __neorv32_rte_vector_lut[code >> 31][code] = (uint32_t)handler;
-    return 0;
+    __neorv32_rte_print_string("[cpu0|");
   }
+
+  // privilege level of the CPU when the trap occurred
+  if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3 << CSR_MSTATUS_MPP_L)) {
+    __neorv32_rte_print_string("M] "); // machine-mode
+  }
+  else {
+    __neorv32_rte_print_string("U] "); // user-mode
+  }
+
+  // trap cause
+  uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
+  uint32_t fatal = 0;
+  switch (cause) {
+    case TRAP_CODE_I_ACCESS:     __neorv32_rte_print_string("Instruction access fault");  fatal = 1; break;
+    case TRAP_CODE_I_ILLEGAL:    __neorv32_rte_print_string("Illegal instruction"); break;
+    case TRAP_CODE_I_MISALIGNED: __neorv32_rte_print_string("Instruction address misaligned"); fatal = 1; break;
+    case TRAP_CODE_BREAKPOINT:   __neorv32_rte_print_string("Environment breakpoint"); break;
+    case TRAP_CODE_L_MISALIGNED: __neorv32_rte_print_string("Load address misaligned"); break;
+    case TRAP_CODE_L_ACCESS:     __neorv32_rte_print_string("Load access fault"); break;
+    case TRAP_CODE_S_MISALIGNED: __neorv32_rte_print_string("Store address misaligned"); break;
+    case TRAP_CODE_S_ACCESS:     __neorv32_rte_print_string("Store access fault"); break;
+    case TRAP_CODE_UENV_CALL:    __neorv32_rte_print_string("Environment call from U-mode"); break;
+    case TRAP_CODE_MENV_CALL:    __neorv32_rte_print_string("Environment call from M-mode"); break;
+    case TRAP_CODE_MSI:          __neorv32_rte_print_string("Machine software IRQ"); break;
+    case TRAP_CODE_MTI:          __neorv32_rte_print_string("Machine timer IRQ"); break;
+    case TRAP_CODE_MEI:          __neorv32_rte_print_string("Machine external IRQ"); break;
+    case TRAP_CODE_FIRQ_0:
+    case TRAP_CODE_FIRQ_1:
+    case TRAP_CODE_FIRQ_2:
+    case TRAP_CODE_FIRQ_3:
+    case TRAP_CODE_FIRQ_4:
+    case TRAP_CODE_FIRQ_5:
+    case TRAP_CODE_FIRQ_6:
+    case TRAP_CODE_FIRQ_7:
+    case TRAP_CODE_FIRQ_8:
+    case TRAP_CODE_FIRQ_9:
+    case TRAP_CODE_FIRQ_10:
+    case TRAP_CODE_FIRQ_11:
+    case TRAP_CODE_FIRQ_12:
+    case TRAP_CODE_FIRQ_13:
+    case TRAP_CODE_FIRQ_14:
+    case TRAP_CODE_FIRQ_15:      __neorv32_rte_print_string("Fast IRQ "); __neorv32_rte_print_hex(cause, 1); break;
+    default:                     __neorv32_rte_print_string("Unknown trap cause "); __neorv32_rte_print_hex(cause, 8); fatal = 1; break;
+  }
+
+  // instruction address
+  __neorv32_rte_print_string(" MEPC=");
+  __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MEPC), 8);
+
+  // trapping instruction (transformed/decompressed)
+  __neorv32_rte_print_string(" MTINST=");
+  __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MTINST), 8);
+
+  // trap value
+  __neorv32_rte_print_string(" MTVAL=");
+  __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MTVAL), 8);
+
+  // disable interrupt source if IRQ without handler
+  if (((int32_t)cause) < 0) { // is interrupt
+    __neorv32_rte_print_string(" Disabling IRQ source");
+    neorv32_cpu_csr_clr(CSR_MIE, 1 << (cause & 0x1f));
+  }
+
+  // halt if fatal exception
+  if (fatal) {
+    __neorv32_rte_print_string(" [FATAL!] Halting CPU </NEORV32-RTE>\n");
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+    while(1) {
+      asm volatile ("wfi");
+    }
+  }
+
+  // outro
+  __neorv32_rte_print_string(" </NEORV32-RTE>\n");
 }
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * This is the core of the NEORV32 RTE (first-level trap handler,
- * executed in machine mode).
+ * Core of the NEORV32 RTE (first-level trap handler).
  **************************************************************************/
-void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
+static void __attribute__((naked,aligned(4))) __neorv32_rte_core(void) {
 
-  // save context
   asm volatile (
-    "csrw mscratch, sp  \n" // backup original stack pointer
+    "fence.i \n" // reload vector table
+
+    // --------------------------------------------
+    // save all registers to stack
+    // --------------------------------------------
+
+    "csrw mscratch, sp \n" // backup original stack pointer
 
 #ifndef __riscv_32e
     "addi sp, sp, -32*4 \n"
@@ -98,12 +171,10 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
     "addi sp, sp, -16*4 \n"
 #endif
 
-//  "sw x0, 0*4(sp) \n" // x0 is hardwired to zero; but add a blank slot here to have a complete stack frame
-    "sw x1, 1*4(sp) \n"
-
-    "csrrw x1, mscratch, sp \n" // mscratch = base address of original context
-    "sw    x1, 2*4(sp)      \n" // store original stack pointer "at x2 frame position"
-
+//  "sw x0,   0*4(sp) \n"       // x0 is hardwired to zero; but add a blank slot here to have a complete stack frame
+    "sw x1,   1*4(sp) \n"
+    "csrrw x1, mscratch, sp \n" // MSCRATCH = base address of original stack frame
+    "sw x1,   2*4(sp) \n"       // store original stack pointer at x2/sp frame position
     "sw x3,   3*4(sp) \n"
     "sw x4,   4*4(sp) \n"
     "sw x5,   5*4(sp) \n"
@@ -135,33 +206,47 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
     "sw x30, 30*4(sp) \n"
     "sw x31, 31*4(sp) \n"
 #endif
-  );
 
-  // flush context (stack frame) to main memory and reload trap vector table from main memory
-  asm volatile ("fence");
+    // --------------------------------------------
+    // call handler
+    // --------------------------------------------
 
-  // call handler
-  uint32_t mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  typedef void handler_t();
-  handler_t* handler = (handler_t*)__neorv32_rte_vector_lut[mcause >> 31][mcause & 31];
-  handler();
+    "csrr x10, mcause     \n"
+    "srli x11, x10, 24    \n" // x10 = interrupt or sync. exception (as 256-byte offset)
+    "andi x12, x10, 0x1fu \n"
+    "slli x12, x12, 2     \n" // x12 = trap code * 4 to get word offset
+    "add  x12, x12, x11   \n"
+    "la   x10, %0         \n" // x10 = base address of vector table
+    "add  x12, x12, x10   \n"
+    "lw   x12, 0(x12)     \n"
+    "jalr ra,  0(x12)     \n"
 
-  // compute return address (for synchronous exceptions only)
-  if ((neorv32_cpu_csr_read(CSR_MCAUSE) >> 31) == 0) {
-    uint32_t mepc = neorv32_cpu_csr_read(CSR_MEPC) + 4; // default: faulting instruction is uncompressed
-#ifdef __riscv_c
-    if ((neorv32_cpu_csr_read(CSR_MTINST) & 3) != 3) {
-      mepc -= 2; // faulting instruction is compressed 16-bit instruction
-    }
-#endif
-    neorv32_cpu_csr_write(CSR_MEPC, mepc);
-  }
+    // --------------------------------------------
+    // adjust return address in MEPC
+    // --------------------------------------------
 
-  // restore context
-  asm volatile (
+    "csrr x10, mcause   \n" // skip if interrupt
+    "blt  x10, zero, 2f \n"
+    "csrr x10, mepc     \n"
+    "addi x10, x10, 4   \n"
+#ifdef __riscv_c        
+    "csrr x11, mtinst   \n" // check if trapping instruction is compressed
+    "andi x11, x11, 3   \n"
+    "addi x11, x11, -3  \n" // compressed if opcode[1:0] != 3
+    "beq  x11, zero, 1f \n"
+    "addi x10, x10, -2  \n"
+    "1:                 \n"
+#endif                  
+    "csrw mepc, x10     \n"
+    "2:                 \n"
+
+    // --------------------------------------------
+    // restore all registers from stack
+    // --------------------------------------------
+
 //  "lw x0,   0*4(sp) \n" // hardwired to zero
     "lw x1,   1*4(sp) \n"
-//  restore x2 at the very end
+//  "lw x2,   2*4(sp) \n" // restore x2/sp at the very end
     "lw x3,   3*4(sp) \n"
     "lw x4,   4*4(sp) \n"
     "lw x5,   5*4(sp) \n"
@@ -195,12 +280,96 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
 #endif
     "lw x2,   2*4(sp) \n" // restore original stack pointer
     "mret             \n"
-	);
+	:
+  : "i" (__neorv32_rte_vector_lut));
 }
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment (RTE):
+ * Setup NEORV32 runtime environment.
+ *
+ * @note This function must be called on all cores that wish to use the RTE.
+ *
+ * @note This function installs a debug handler for ALL trap sources, which
+ * gives detailed information about the trap via UART0 (if available). Actual
+ * handlers can be installed afterwards via #neorv32_rte_handler_install().
+ **************************************************************************/
+void neorv32_rte_setup(void) {
+
+  // clear mstatus, set previous privilege level to machine-mode
+  neorv32_cpu_csr_write(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
+
+  // configure trap handler base address (direct mode)
+  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&__neorv32_rte_core) & 0xfffffffcU);
+
+  // disable all IRQ channels
+  neorv32_cpu_csr_write(CSR_MIE, 0);
+
+  // install debug handler for all trap sources (executed only on core 0)
+  if (neorv32_cpu_csr_read(CSR_MHARTID) == 0) {
+    int i;
+    for (i=0; i<32; i++) {
+      __neorv32_rte_vector_lut[0][i] = (uint32_t)(&__neorv32_rte_debug_handler);
+      __neorv32_rte_vector_lut[1][i] = (uint32_t)(&__neorv32_rte_debug_handler);
+    }
+  }
+  asm volatile ("fence"); // flush vector table to main memory
+}
+
+
+/**********************************************************************//**
+ * Install trap handler function (second-level trap handler).
+ *
+ * @note Trap handler installation applies to both cores. Hence, both
+ * cores will execute the same handler for the same trap.
+ *
+ * @param[in] code Trap code (MCAUSE CSR value) of the targeted trap.
+ * See #NEORV32_EXCEPTION_CODES_enum.
+ *
+ * @param[in] handler The actual handler function for the specified trap
+ * (function must be of type "void function(void);").
+ *
+ * @return 0 if success, -1 if invalid trap code.
+ **************************************************************************/
+int neorv32_rte_handler_install(uint32_t code, void (*handler)(void)) {
+
+  if (code & (~0x8000001fU)) { // invalid trap code
+    return -1;
+  }
+
+  __neorv32_rte_vector_lut[code >> 31][code & 31] = (uint32_t)handler;
+  asm volatile ("fence"); // flush/reload trap vector table to/from main memory
+
+  return 0;
+}
+
+
+/**********************************************************************//**
+ * Uninstall trap handler (second-level trap handler) and restore original
+ * debug handler.
+ *
+ * @note Trap handler installation applies to both cores. Hence, both
+ * cores will execute the same handler for the same trap.
+ *
+ * @param[in] code Trap code (MCAUSE CSR value) of the targeted trap.
+ * See #NEORV32_EXCEPTION_CODES_enum.
+ *
+ * @return 0 if success, -1 if invalid trap code.
+ **************************************************************************/
+int neorv32_rte_handler_uninstall(uint32_t code) {
+
+  if (code & (~0x8000001fU)) { // invalid trap code
+    return -1;
+  }
+
+  __neorv32_rte_vector_lut[code >> 31][code & 31] = (uint32_t)(&__neorv32_rte_debug_handler);
+  asm volatile ("fence"); // flush/reload trap vector table to/from main memory
+
+  return 0;
+}
+
+
+/**********************************************************************//**
  * Read register from application context (on stack).
  *
  * @note This function operates on the RTE instance of the
@@ -212,14 +381,14 @@ void __attribute__((__naked__,aligned(4))) neorv32_rte_core(void) {
  **************************************************************************/
 uint32_t neorv32_rte_context_get(int x) {
 
-  // MSCRATCH CSR contains the stack pointer of the interrupted program
-  uint32_t tmp = neorv32_cpu_csr_read(CSR_MSCRATCH);
 #ifdef __riscv_32e
-  tmp += (x & 15) << 2;
+  uint32_t tmp = (x & 15) << 2;
 #else
-  tmp += (x & 31) << 2;
+  uint32_t tmp = (x & 31) << 2;
 #endif
-  if (x) {
+
+  if (tmp) {
+    tmp += neorv32_cpu_csr_read(CSR_MSCRATCH); // base address of original stack frame
     return neorv32_cpu_load_unsigned_word(tmp);
   }
   else { // return zero if x = x0 (hardwired to zero)
@@ -229,7 +398,6 @@ uint32_t neorv32_rte_context_get(int x) {
 
 
 /**********************************************************************//**
- * NEORV32 runtime environment (RTE):
  * Write register to application context (on stack).
  *
  * @note This function operates on the RTE instance of the
@@ -241,152 +409,14 @@ uint32_t neorv32_rte_context_get(int x) {
  **************************************************************************/
 void neorv32_rte_context_put(int x, uint32_t data) {
 
-  // MSCRATCH CSR contains the stack pointer of the interrupted program
-  uint32_t tmp = neorv32_cpu_csr_read(CSR_MSCRATCH);
 #ifdef __riscv_32e
-  tmp += (x & 15) << 2;
+  uint32_t tmp = (x & 15) << 2;
 #else
-  tmp += (x & 31) << 2;
+  uint32_t tmp = (x & 31) << 2;
 #endif
-  if (x) { // no store if x = x0 (hardwired to zero)
+
+  if (tmp) { // no store if x = x0 (hardwired to zero)
+    tmp += neorv32_cpu_csr_read(CSR_MSCRATCH); // base address of original stack frame
     neorv32_cpu_store_unsigned_word(tmp, data);
-  }
-}
-
-
-/**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * Debug trap handler, printing information via UART0.
- *
- * @note This function operates on the RTE instance of the
- * core on which this function is executed.
- **************************************************************************/
-void neorv32_rte_debug_handler(void) {
-
-  if (neorv32_uart0_available() == 0) {
-    return; // handler cannot output anything if UART0 is not implemented
-  }
-
-  // intro
-  __neorv32_rte_print_string("<NEORV32-RTE> ");
-
-  // CPU ID
-  if (neorv32_cpu_csr_read(CSR_MHARTID) & 1) {
-    __neorv32_rte_print_string("[cpu1|");
-  }
-  else {
-    __neorv32_rte_print_string("[cpu0|");
-  }
-
-  // privilege level of the CPU when the trap occurred
-  if (neorv32_cpu_csr_read(CSR_MSTATUS) & (3 << CSR_MSTATUS_MPP_L)) {
-    __neorv32_rte_print_string("M] "); // machine-mode
-  }
-  else {
-    __neorv32_rte_print_string("U] "); // user-mode
-  }
-
-  // cause
-  uint32_t trap_cause = neorv32_cpu_csr_read(CSR_MCAUSE);
-  switch (trap_cause) {
-    case TRAP_CODE_I_ACCESS:     __neorv32_rte_print_string("Instruction access fault"); break;
-    case TRAP_CODE_I_ILLEGAL:    __neorv32_rte_print_string("Illegal instruction"); break;
-    case TRAP_CODE_I_MISALIGNED: __neorv32_rte_print_string("Instruction address misaligned"); break;
-    case TRAP_CODE_BREAKPOINT:   __neorv32_rte_print_string("Environment breakpoint"); break;
-    case TRAP_CODE_L_MISALIGNED: __neorv32_rte_print_string("Load address misaligned"); break;
-    case TRAP_CODE_L_ACCESS:     __neorv32_rte_print_string("Load access fault"); break;
-    case TRAP_CODE_S_MISALIGNED: __neorv32_rte_print_string("Store address misaligned"); break;
-    case TRAP_CODE_S_ACCESS:     __neorv32_rte_print_string("Store access fault"); break;
-    case TRAP_CODE_UENV_CALL:    __neorv32_rte_print_string("Environment call from U-mode"); break;
-    case TRAP_CODE_MENV_CALL:    __neorv32_rte_print_string("Environment call from M-mode"); break;
-    case TRAP_CODE_MSI:          __neorv32_rte_print_string("Machine software IRQ"); break;
-    case TRAP_CODE_MTI:          __neorv32_rte_print_string("Machine timer IRQ"); break;
-    case TRAP_CODE_MEI:          __neorv32_rte_print_string("Machine external IRQ"); break;
-    case TRAP_CODE_FIRQ_0:
-    case TRAP_CODE_FIRQ_1:
-    case TRAP_CODE_FIRQ_2:
-    case TRAP_CODE_FIRQ_3:
-    case TRAP_CODE_FIRQ_4:
-    case TRAP_CODE_FIRQ_5:
-    case TRAP_CODE_FIRQ_6:
-    case TRAP_CODE_FIRQ_7:
-    case TRAP_CODE_FIRQ_8:
-    case TRAP_CODE_FIRQ_9:
-    case TRAP_CODE_FIRQ_10:
-    case TRAP_CODE_FIRQ_11:
-    case TRAP_CODE_FIRQ_12:
-    case TRAP_CODE_FIRQ_13:
-    case TRAP_CODE_FIRQ_14:
-    case TRAP_CODE_FIRQ_15:      __neorv32_rte_print_string("Fast IRQ "); __neorv32_rte_print_hex(trap_cause, 1); break;
-    default:                     __neorv32_rte_print_string("Unknown trap cause "); __neorv32_rte_print_hex(trap_cause, 8); break;
-  }
-
-  // instruction address
-  __neorv32_rte_print_string(" MEPC=");
-  __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MEPC), 8);
-
-  // trapping instruction
-  __neorv32_rte_print_string(" MTINST=");
-  __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MTINST), 8);
-
-  // trap value
-  __neorv32_rte_print_string(" MTVAL=");
-  __neorv32_rte_print_hex(neorv32_cpu_csr_read(CSR_MTVAL), 8);
-
-  // unhandled IRQ - disable interrupt channel
-  if (((int32_t)trap_cause) < 0) { // is interrupt
-    __neorv32_rte_print_string(" Disabling IRQ source");
-    neorv32_cpu_csr_clr(CSR_MIE, 1 << (trap_cause & 0x1f));
-  }
-
-  // halt if fatal exception
-  if ((trap_cause == TRAP_CODE_I_ACCESS) || (trap_cause == TRAP_CODE_I_MISALIGNED)) {
-    __neorv32_rte_print_string(" [FATAL!] Halting CPU </NEORV32-RTE>\n");
-    neorv32_cpu_csr_write(CSR_MIE, 0);
-    while(1) {
-      asm volatile ("wfi");
-    }
-  }
-
-  // outro
-  __neorv32_rte_print_string(" </NEORV32-RTE>\n");
-}
-
-
-/**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * Private function to print a simple string via UART0.
- *
- * @param[in] s Pointer to string.
- **************************************************************************/
-static void __neorv32_rte_print_string(const char *s) {
-
-  if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
-    neorv32_uart_puts(NEORV32_UART0, s);
-  }
-}
-
-
-/**********************************************************************//**
- * NEORV32 runtime environment (RTE):
- * Private function to print the lowest 0 to 8 hex characters of a
- * 32-bit number as hexadecimal value (with "0x" suffix) via UART0.
- *
- * @param[in] num Number to print as hexadecimal.
- *
- * @param[in] digits Number of hexadecimal digits to print (0..8).
- **************************************************************************/
-static void __neorv32_rte_print_hex(uint32_t num, int digits) {
-
-  int i = 0;
-  const char hex_symbols[] = "0123456789ABCDEF";
-
-  if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
-    neorv32_uart_putc(NEORV32_UART0, '0');
-    neorv32_uart_putc(NEORV32_UART0, 'x');
-    for (i=(digits-8); i<8; i++) {
-      uint32_t index = (num >> (28 - 4*i)) & 0xF;
-      neorv32_uart_putc(NEORV32_UART0, hex_symbols[index]);
-    }
   }
 }
