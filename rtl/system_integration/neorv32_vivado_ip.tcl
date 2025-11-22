@@ -414,8 +414,8 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Pulse-Width Modulation Controller (PWM)}]
   add_params $group {
-    { IO_PWM_EN     {Enable PWM} }
-    { IO_PWM_NUM_CH {Channels} {} {$IO_PWM_EN} }
+    { IO_PWM_EN  {Enable PWM} }
+    { IO_PWM_NUM {Number of PWM channels} {} {$IO_PWM_EN} }
   }
 
   set group [add_group $page {Watchdog Timer (WDT)}]

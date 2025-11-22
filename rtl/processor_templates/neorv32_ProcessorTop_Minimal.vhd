@@ -25,13 +25,13 @@ entity neorv32_ProcessorTop_Minimal is
     DMEM_EN         : boolean := true;    -- implement processor-internal data memory
     DMEM_SIZE       : natural := 64*1024; -- size of processor-internal data memory in bytes
     -- Processor peripherals --
-    IO_PWM_NUM_CH   : natural := 3        -- number of PWM channels to implement (0..16)
+    IO_PWM_NUM      : natural := 3        -- number of PWM channels to implement (0..32)
   );
   port (
     -- Global control --
     clk_i  : in  std_logic;
     rstn_i : in  std_logic;
-    -- PWM (available if IO_PWM_NUM_CH > 0) --
+    -- PWM (available if IO_PWM_NUM > 0) --
     pwm_o  : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0)
   );
 end entity;
@@ -39,7 +39,7 @@ end entity;
 architecture neorv32_ProcessorTop_Minimal_rtl of neorv32_ProcessorTop_Minimal is
 
   -- internal IO connection --
-  signal con_pwm_o  : std_ulogic_vector(15 downto 0);
+  signal con_pwm_o : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -61,18 +61,18 @@ begin
     DMEM_SIZE        => DMEM_SIZE,       -- size of processor-internal data memory in bytes
     -- Processor peripherals --
     IO_CLINT_EN      => true,            -- implement core local interruptor (CLINT)?
-    IO_PWM_NUM_CH    => IO_PWM_NUM_CH    -- number of PWM channels to implement (0..12); 0 = disabled
+    IO_PWM_NUM       => IO_PWM_NUM       -- number of PWM channels to implement (0..32); 0 = disabled
   )
   port map (
     -- Global control --
     clk_i  => clk_i,    -- global clock, rising edge
     rstn_i => rstn_i,   -- global reset, low-active, async
-    -- PWM (available if IO_PWM_NUM_CH > 0) --
+    -- PWM (available if IO_PWM_NUM > 0) --
     pwm_o  => con_pwm_o -- pwm channels
   );
 
   -- PWM --
-  pwm_o <= con_pwm_o(IO_PWM_NUM_CH-1 downto 0);
+  pwm_o <= con_pwm_o(IO_PWM_NUM-1 downto 0);
 
 
 end architecture;

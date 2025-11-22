@@ -26,7 +26,7 @@ entity neorv32_ProcessorTop_MinimalBoot is
     DMEM_SIZE       : natural := 64*1024; -- size of processor-internal data memory in bytes
     -- Processor peripherals --
     IO_GPIO_NUM     : natural := 4;       -- number of GPIO input/output pairs (0..32)
-    IO_PWM_NUM_CH   : natural := 3        -- number of PWM channels to implement (0..16)
+    IO_PWM_NUM      : natural := 3        -- number of PWM channels to implement (0..32)
   );
   port (
     -- Global control --
@@ -37,16 +37,15 @@ entity neorv32_ProcessorTop_MinimalBoot is
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart_txd_o : out std_ulogic; -- UART0 send data
     uart_rxd_i : in  std_ulogic := '0'; -- UART0 receive data
-    -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o      : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0)
+    -- PWM (available if IO_PWM_NUM > 0) --
+    pwm_o      : out std_ulogic_vector(IO_PWM_NUM-1 downto 0)
   );
 end entity;
 
 architecture neorv32_ProcessorTop_MinimalBoot_rtl of neorv32_ProcessorTop_MinimalBoot is
 
   -- internal IO connection --
-  signal con_gpio_o : std_ulogic_vector(31 downto 0);
-  signal con_pwm_o  : std_ulogic_vector(15 downto 0);
+  signal con_gpio_o, con_pwm_o : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -70,7 +69,7 @@ begin
     IO_GPIO_NUM      => IO_GPIO_NUM,     -- number of GPIO input/output pairs (0..32)
     IO_CLINT_EN      => true,            -- implement core local interruptor (CLINT)?
     IO_UART0_EN      => true,            -- implement primary universal asynchronous receiver/transmitter (UART0)?
-    IO_PWM_NUM_CH    => IO_PWM_NUM_CH    -- number of PWM channels to implement (0..12); 0 = disabled
+    IO_PWM_NUM       => IO_PWM_NUM       -- number of PWM channels to implement (0..32); 0 = disabled
   )
   port map (
     -- Global control --
@@ -82,7 +81,7 @@ begin
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart_txd_o,                   -- UART0 send data
     uart0_rxd_i => uart_rxd_i,                   -- UART0 receive data
-    -- PWM (available if IO_PWM_NUM_CH > 0) --
+    -- PWM (available if IO_PWM_NUM > 0) --
     pwm_o       => con_pwm_o                     -- pwm channels
   );
 
@@ -90,7 +89,7 @@ begin
   gpio_o <= con_gpio_o(IO_GPIO_NUM-1 downto 0);
 
   -- PWM --
-  pwm_o <= con_pwm_o(IO_PWM_NUM_CH-1 downto 0);
+  pwm_o <= con_pwm_o(IO_PWM_NUM-1 downto 0);
 
 
 end architecture;

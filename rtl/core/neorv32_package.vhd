@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120405"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120406"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
   constant XLEN          : natural := 32; -- native data path width
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
@@ -917,7 +917,7 @@ package neorv32_package is
       IO_TWD_EN             : boolean                        := false;
       IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;
       IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;
-      IO_PWM_NUM_CH         : natural range 0 to 16          := 0;
+      IO_PWM_NUM            : natural range 0 to 32          := 0;
       IO_WDT_EN             : boolean                        := false;
       IO_TRNG_EN            : boolean                        := false;
       IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
@@ -1009,8 +1009,8 @@ package neorv32_package is
       -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
       onewire_i      : in  std_ulogic := 'H';
       onewire_o      : out std_ulogic;
-      -- PWM (available if IO_PWM_NUM_CH > 0) --
-      pwm_o          : out std_ulogic_vector(15 downto 0); -- pwm channels
+      -- PWM (available if IO_PWM_NUM > 0) --
+      pwm_o          : out std_ulogic_vector(31 downto 0); -- pwm channels
       -- Custom Functions Subsystem IO --
       cfs_in_i       : in  std_ulogic_vector(255 downto 0) := (others => 'L');
       cfs_out_o      : out std_ulogic_vector(255 downto 0);
