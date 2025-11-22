@@ -26,14 +26,14 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t ENABLE;             /**< per-channel enable */
   uint32_t POLARITY;           /**< per-channel polarity */
   uint32_t CLKPRSC;            /**< global clock prescaler */
-  const uint32_t reserved[13]; /**< reserved */
+  const uint32_t reserved[29]; /**< reserved */
   union {
-    uint32_t TOPCMP; /**< CHANNEL[i].TOPCMP full 32-bit access */
+    uint32_t TOPCMP; /**< full 32-bit channel access */
     struct {
-      uint16_t CMP;  /**< CHANNEL[i].CMP per-channel counter compare value */
-      uint16_t TOP;  /**< CHANNEL[i].TOP per-channel counter wrap value */
+      uint16_t CMP;  /**< per-channel counter compare value */
+      uint16_t TOP;  /**< per-channel counter wrap value */
     };
-  } CHANNEL[16];
+  } CHANNEL[32];
 } neorv32_pwm_t;
 
 /** PWM module hardware handle (#neorv32_pwm_t) */
