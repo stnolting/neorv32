@@ -1,7 +1,7 @@
 -- ================================================================================ --
 -- NEORV32 SoC - Pulse Width Modulation Controller (PWM)                            --
 -- -------------------------------------------------------------------------------- --
--- Provides up to 16 individual fast-PWM channels with a resolution of 16-bit and   --
+-- Provides up to 32 individual fast-PWM channels with a resolution of 16-bit and   --
 -- programmable polarity. All counters use a single global clock-prescaler.         --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
@@ -20,7 +20,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_pwm is
   generic (
-    NUM_CHANNELS : natural range 0 to 16 -- number of PWM channels (0..16)
+    NUM_CHANNELS : natural range 0 to 32 -- number of PWM channels (0..16)
   );
   port (
     clk_i     : in  std_ulogic;                    -- global clock line
@@ -28,7 +28,7 @@ entity neorv32_pwm is
     bus_req_i : in  bus_req_t;                     -- bus request
     bus_rsp_o : out bus_rsp_t;                     -- bus response
     clkgen_i  : in  std_ulogic_vector(7 downto 0); -- clock divider input
-    pwm_o     : out std_ulogic_vector(15 downto 0) -- PWM output
+    pwm_o     : out std_ulogic_vector(31 downto 0) -- PWM output
   );
 end neorv32_pwm;
 
@@ -103,7 +103,7 @@ begin
   end process bus_access;
 
   -- access address helper --
-  addr <= bus_req_i.addr(6) & bus_req_i.addr(3 downto 2);
+  addr <= bus_req_i.addr(7) & bus_req_i.addr(3 downto 2);
 
   -- Channel Controllers --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -126,8 +126,8 @@ begin
       -- PWM output --
       pwm_o   => pwm(i)
     );
-    cs(i) <= bus_req_i.stb when (bus_req_i.addr(6) = '1') and
-                                (bus_req_i.addr(5 downto 2) = std_ulogic_vector(to_unsigned(i, 4))) else '0';
+    cs(i) <= bus_req_i.stb when (bus_req_i.addr(7) = '1') and
+                                (bus_req_i.addr(6 downto 2) = std_ulogic_vector(to_unsigned(i, 5))) else '0';
   end generate;
 
   -- clock generator --
@@ -162,7 +162,7 @@ end neorv32_pwm_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 SoC - PWM - Channel Controller                                           --
+-- NEORV32 SoC - Pulse Width Modulation Controller (PWM) - Channel Controller       --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
