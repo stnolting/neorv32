@@ -372,7 +372,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
     machine  : std_ulogic_vector(31 downto 0); -- instruction word
     mnemonic : string(1 to 11); -- according assembly mnemonic
   end record;
-  type inst_t is array (0 to 151) of inst_touple_c;
+  type inst_t is array (0 to 191) of inst_touple_c;
   constant inst_c : inst_t := (
     ("-------------------------0110111", "lui        "), -- base ISA
     ("-------------------------0010111", "auipc      "),
@@ -430,6 +430,46 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
     ("-----------------101-----1110011", "csrrwi     "),
     ("-----------------110-----1110011", "csrrsi     "),
     ("-----------------111-----1110011", "csrrci     "),
+    ("100000011100-----100-----1110011", "mop.r.0    "), -- Zimop
+    ("100000011101-----100-----1110011", "mop.r.1    "),
+    ("100000011110-----100-----1110011", "mop.r.2    "),
+    ("100000011111-----100-----1110011", "mop.r.3    "),
+    ("100001011100-----100-----1110011", "mop.r.4    "),
+    ("100001011101-----100-----1110011", "mop.r.5    "),
+    ("100001011110-----100-----1110011", "mop.r.6    "),
+    ("100001011111-----100-----1110011", "mop.r.7    "),
+    ("100010011100-----100-----1110011", "mop.r.8    "),
+    ("100010011101-----100-----1110011", "mop.r.9    "),
+    ("100010011110-----100-----1110011", "mop.r.10   "),
+    ("100010011111-----100-----1110011", "mop.r.11   "),
+    ("100011011100-----100-----1110011", "mop.r.12   "),
+    ("100011011101-----100-----1110011", "mop.r.13   "),
+    ("100011011110-----100-----1110011", "mop.r.14   "),
+    ("100011011111-----100-----1110011", "mop.r.15   "),
+    ("110000011100-----100-----1110011", "mop.r.16   "),
+    ("110000011101-----100-----1110011", "mop.r.17   "),
+    ("110000011110-----100-----1110011", "mop.r.18   "),
+    ("110000011111-----100-----1110011", "mop.r.19   "),
+    ("110001011100-----100-----1110011", "mop.r.20   "),
+    ("110001011101-----100-----1110011", "mop.r.21   "),
+    ("110001011110-----100-----1110011", "mop.r.22   "),
+    ("110001011111-----100-----1110011", "mop.r.23   "),
+    ("110010011100-----100-----1110011", "mop.r.24   "),
+    ("110010011101-----100-----1110011", "mop.r.25   "),
+    ("110010011110-----100-----1110011", "mop.r.26   "),
+    ("110010011111-----100-----1110011", "mop.r.27   "),
+    ("110011011100-----100-----1110011", "mop.r.28   "),
+    ("110011011101-----100-----1110011", "mop.r.29   "),
+    ("110011011110-----100-----1110011", "mop.r.30   "),
+    ("110011011111-----100-----1110011", "mop.r.31   "),
+    ("1000001----------100-----1110011", "mop.rr.0   "),
+    ("1000011----------100-----1110011", "mop.rr.1   "),
+    ("1000101----------100-----1110011", "mop.rr.2   "),
+    ("1000111----------100-----1110011", "mop.rr.3   "),
+    ("1100001----------100-----1110011", "mop.rr.4   "),
+    ("1100011----------100-----1110011", "mop.rr.5   "),
+    ("1100101----------100-----1110011", "mop.rr.6   "),
+    ("1100111----------100-----1110011", "mop.rr.7   "),
     ("0000111----------101-----0110011", "czero.eqz  "), -- Zicond
     ("0000111----------111-----0110011", "czero.nez  "),
     ("0000001----------000-----0110011", "mul        "), -- M / Zm*
@@ -692,20 +732,19 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
 
   -- decode instruction operands --
   function decode_operands_f(inst : std_ulogic_vector(31 downto 0)) return string is
-    variable rs1_iv, rs2_iv, rd_iv : integer;
     variable is_v, ib_v, iu_v, ij_v, ii_v : std_ulogic_vector(31 downto 0);
-    variable is_iv, ib_iv, iu_iv, ij_iv, ii_iv : integer;
+    variable rs1_iv, rs2_iv, rd_iv, is_iv, ib_iv, iu_iv, ij_iv, ii_iv : integer;
   begin
     -- registers --
     rs1_iv := to_integer(unsigned(inst(instr_rs1_msb_c downto instr_rs1_lsb_c)));
     rs2_iv := to_integer(unsigned(inst(instr_rs2_msb_c downto instr_rs2_lsb_c)));
     rd_iv  := to_integer(unsigned(inst(instr_rd_msb_c downto instr_rd_lsb_c)));
     -- immediates --
-    is_v := replicate_f(inst(31), 21) & inst(30 downto 25) & inst(11 downto 7);
-    ib_v := replicate_f(inst(31), 20) & inst(7) & inst(30 downto 25) & inst(11 downto 8) & '0';
-    iu_v := inst(31 downto 12) & x"000";
-    ij_v := replicate_f(inst(31), 12) & inst(19 downto 12) & inst(20) & inst(30 downto 21) & '0';
-    ii_v := replicate_f(inst(31), 21) & inst(30 downto 21) & inst(20);
+    is_v  := replicate_f(inst(31), 21) & inst(30 downto 25) & inst(11 downto 7);
+    ib_v  := replicate_f(inst(31), 20) & inst(7) & inst(30 downto 25) & inst(11 downto 8) & '0';
+    iu_v  := inst(31 downto 12) & x"000";
+    ij_v  := replicate_f(inst(31), 12) & inst(19 downto 12) & inst(20) & inst(30 downto 21) & '0';
+    ii_v  := replicate_f(inst(31), 21) & inst(30 downto 21) & inst(20);
     is_iv := to_integer(signed(is_v));
     ib_iv := to_integer(signed(ib_v));
     iu_iv := to_integer(signed(iu_v));
@@ -731,9 +770,14 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
           return "x" & integer'image(rd_iv) & ", x" & integer'image(rs2_iv) & ", (x" & integer'image(rs1_iv) & ")";
         end if;
       when opcode_system_c =>
-        if (inst(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) or
-           (inst(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_csril_c) then -- environment
+        if (inst(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- environment
           return "";
+        elsif (inst(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_zimop_c) then -- zimop may-be-operations
+          if (inst(25) = '0') then -- mop.r
+            return "x" & integer'image(rd_iv) & ", x" & integer'image(rs1_iv);
+          else -- mop.rr
+            return "x" & integer'image(rd_iv) & ", x" & integer'image(rs1_iv) & ", x" & integer'image(rs2_iv);
+          end if;
         elsif (inst(instr_funct3_msb_c) = '0') then -- csr-register
           return "x" & integer'image(rd_iv) & ", " & decode_csr_f(inst(31 downto 20)) & ", x" & integer'image(rs1_iv);
         else -- csr-immediate
@@ -794,12 +838,10 @@ begin
           -- decoded instruction --
           if (trace_i.compr = '1') then -- de-compressed instruction
             write(line_v, string'("c."));
-            write(line_v, string'(decode_mnemonic_f(trace_i.insn)));
           else
-            write(line_v, string'(decode_mnemonic_f(trace_i.insn)));
             write(line_v, string'("  "));
           end if;
-          write(line_v, string'(" "));
+          write(line_v, string'(decode_mnemonic_f(trace_i.insn)));
           write(line_v, string'(decode_operands_f(trace_i.insn)));
           -- trap entry --
           if (trace_i.intr = '1') then
