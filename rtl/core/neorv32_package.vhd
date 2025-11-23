@@ -859,6 +859,7 @@ package neorv32_package is
       RISCV_ISA_Zicntr      : boolean                        := false;
       RISCV_ISA_Zicond      : boolean                        := false;
       RISCV_ISA_Zihpm       : boolean                        := false;
+      RISCV_ISA_Zimop       : boolean                        := false;
       RISCV_ISA_Zmmul       : boolean                        := false;
       RISCV_ISA_Zknd        : boolean                        := false;
       RISCV_ISA_Zkne        : boolean                        := false;

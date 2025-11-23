@@ -283,9 +283,10 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Miscelanous}]
   add_params $group {
+    { RISCV_ISA_Zfinx  {Zfinx - Embedded FPU (using integer register file)} {} }
     { RISCV_ISA_Zibi   {Zibi - Branch with immediate-comparison}            {} }
     { RISCV_ISA_Zicond {Zicond - Conditional-move instructions}             {} }
-    { RISCV_ISA_Zfinx  {Zfinx - Embedded FPU (using integer register file)} {} }
+    { RISCV_ISA_Zimop  {Zimop - May-be-operation}                           {} }
     { RISCV_ISA_Zxcfu  {Zxcfu - Custom-instructions unit (user-defined)}    {} }
   }
 

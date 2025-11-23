@@ -54,6 +54,7 @@ entity neorv32_top is
     RISCV_ISA_Zicntr      : boolean                        := false;       -- base counters
     RISCV_ISA_Zicond      : boolean                        := false;       -- integer conditional operations
     RISCV_ISA_Zihpm       : boolean                        := false;       -- hardware performance monitors
+    RISCV_ISA_Zimop       : boolean                        := false;       -- may-be-operations
     RISCV_ISA_Zknd        : boolean                        := false;       -- cryptography NIST AES decryption extension
     RISCV_ISA_Zkne        : boolean                        := false;       -- cryptography NIST AES encryption extension
     RISCV_ISA_Zknh        : boolean                        := false;       -- cryptography NIST hash extension
@@ -507,6 +508,7 @@ begin
       RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
       RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
       RISCV_ISA_Zihpm     => RISCV_ISA_Zihpm,
+      RISCV_ISA_Zimop     => RISCV_ISA_Zimop,
       RISCV_ISA_Zknd      => RISCV_ISA_Zknd,
       RISCV_ISA_Zkne      => RISCV_ISA_Zkne,
       RISCV_ISA_Zknh      => RISCV_ISA_Zknh,
@@ -1091,7 +1093,7 @@ begin
         bus_rsp_o => iodev_rsp(IODEV_GPIO),
         gpio_o    => gpio_o,
         gpio_i    => gpio_i,
-        cpu_irq_o => firq(FIRQ_GPIO)
+        irq_o     => firq(FIRQ_GPIO)
       );
     end generate;
 

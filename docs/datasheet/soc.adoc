@@ -236,6 +236,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `RISCV_ISA_Zicntr`      | boolean   | false         | Enable <<_zicntr_isa_extension>> (CPU base counters).
 | `RISCV_ISA_Zicond`      | boolean   | false         | Enable <<_zicond_isa_extension>> (integer conditional instructions).
 | `RISCV_ISA_Zihpm`       | boolean   | false         | Enable <<_zihpm_isa_extension>> (hardware performance monitors).
+| `RISCV_ISA_Zimop`       | boolean   | false         | Enable <<_zimop_isa_extension>> (may-be-operations).
 | `RISCV_ISA_Zknd`        | boolean   | false         | Enable <<_zknd_isa_extension>> (scalar cryptography NIST AES decryption instructions).
 | `RISCV_ISA_Zkne`        | boolean   | false         | Enable <<_zkne_isa_extension>> (scalar cryptography NIST AES encryption instructions).
 | `RISCV_ISA_Zknh`        | boolean   | false         | Enable <<_zknh_isa_extension>> (scalar cryptography NIST hash instructions).
