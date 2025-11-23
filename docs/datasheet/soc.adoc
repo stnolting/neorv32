@@ -224,18 +224,19 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `RISCV_ISA_U`           | boolean   | false         | Enable <<_u_isa_extension>> (less-privileged user mode).
 | `RISCV_ISA_Zaamo`       | boolean   | false         | Enable <<_zaamo_isa_extension>> (atomic read-modify-write operations).
 | `RISCV_ISA_Zalrsc`      | boolean   | false         | Enable <<_zalrsc_isa_extension>> (atomic reservation-set operations).
-| `RISCV_ISA_Zcb`         | boolean   | false         | Enable <<_zcb_isa_extension>> (additional code size reduction instruction; builds upon `C`).
 | `RISCV_ISA_Zba`         | boolean   | false         | Enable <<_zba_isa_extension>> (shifted-add bit-manipulation instructions).
 | `RISCV_ISA_Zbb`         | boolean   | false         | Enable <<_zbb_isa_extension>> (basic bit-manipulation instructions).
 | `RISCV_ISA_Zbkb`        | boolean   | false         | Enable <<_zbkb_isa_extension>> (scalar cryptography bit manipulation instructions).
 | `RISCV_ISA_Zbkc`        | boolean   | false         | Enable <<_zbkc_isa_extension>> (scalar cryptography carry-less multiplication instructions).
 | `RISCV_ISA_Zbkx`        | boolean   | false         | Enable <<_zbkx_isa_extension>> (scalar cryptography crossbar permutations).
 | `RISCV_ISA_Zbs`         | boolean   | false         | Enable <<_zbs_isa_extension>> (single-bit bit-manipulation instructions).
+| `RISCV_ISA_Zcb`         | boolean   | false         | Enable <<_zcb_isa_extension>> (additional code size reduction instruction; builds upon `C`).
 | `RISCV_ISA_Zfinx`       | boolean   | false         | Enable <<_zfinx_isa_extension>> (single-precision floating-point unit).
 | `RISCV_ISA_Zibi`        | boolean   | false         | Enable <<_zibi_isa_extension>> (CPU base counters).
 | `RISCV_ISA_Zicntr`      | boolean   | false         | Enable <<_zicntr_isa_extension>> (CPU base counters).
 | `RISCV_ISA_Zicond`      | boolean   | false         | Enable <<_zicond_isa_extension>> (integer conditional instructions).
 | `RISCV_ISA_Zihpm`       | boolean   | false         | Enable <<_zihpm_isa_extension>> (hardware performance monitors).
+| `RISCV_ISA_Zimop`       | boolean   | false         | Enable <<_zimop_isa_extension>> (may-be-operations).
 | `RISCV_ISA_Zknd`        | boolean   | false         | Enable <<_zknd_isa_extension>> (scalar cryptography NIST AES decryption instructions).
 | `RISCV_ISA_Zkne`        | boolean   | false         | Enable <<_zkne_isa_extension>> (scalar cryptography NIST AES encryption instructions).
 | `RISCV_ISA_Zknh`        | boolean   | false         | Enable <<_zknh_isa_extension>> (scalar cryptography NIST hash instructions).

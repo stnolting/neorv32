@@ -42,18 +42,19 @@ entity neorv32_top is
     RISCV_ISA_U           : boolean                        := false;       -- user mode extension
     RISCV_ISA_Zaamo       : boolean                        := false;       -- atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc      : boolean                        := false;       -- atomic reservation-set operations extension
-    RISCV_ISA_Zcb         : boolean                        := false;       -- additional code size reduction instructions
     RISCV_ISA_Zba         : boolean                        := false;       -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb         : boolean                        := false;       -- basic bit-manipulation extension
     RISCV_ISA_Zbkb        : boolean                        := false;       -- bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc        : boolean                        := false;       -- carry-less multiplication instructions
     RISCV_ISA_Zbkx        : boolean                        := false;       -- cryptography crossbar permutation extension
     RISCV_ISA_Zbs         : boolean                        := false;       -- single-bit bit-manipulation extension
+    RISCV_ISA_Zcb         : boolean                        := false;       -- additional code size reduction instructions
     RISCV_ISA_Zfinx       : boolean                        := false;       -- 32-bit floating-point extension
     RISCV_ISA_Zibi        : boolean                        := false;       -- branch with immediate
     RISCV_ISA_Zicntr      : boolean                        := false;       -- base counters
     RISCV_ISA_Zicond      : boolean                        := false;       -- integer conditional operations
     RISCV_ISA_Zihpm       : boolean                        := false;       -- hardware performance monitors
+    RISCV_ISA_Zimop       : boolean                        := false;       -- may-be-operations
     RISCV_ISA_Zknd        : boolean                        := false;       -- cryptography NIST AES decryption extension
     RISCV_ISA_Zkne        : boolean                        := false;       -- cryptography NIST AES encryption extension
     RISCV_ISA_Zknh        : boolean                        := false;       -- cryptography NIST hash extension
@@ -495,18 +496,19 @@ begin
       RISCV_ISA_U         => RISCV_ISA_U,
       RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,
       RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
-      RISCV_ISA_Zcb       => RISCV_ISA_Zcb,
       RISCV_ISA_Zba       => RISCV_ISA_Zba,
       RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
       RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
       RISCV_ISA_Zbkc      => RISCV_ISA_Zbkc,
       RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,
       RISCV_ISA_Zbs       => RISCV_ISA_Zbs,
+      RISCV_ISA_Zcb       => RISCV_ISA_Zcb,
       RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
       RISCV_ISA_Zibi      => RISCV_ISA_Zibi,
       RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
       RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
       RISCV_ISA_Zihpm     => RISCV_ISA_Zihpm,
+      RISCV_ISA_Zimop     => RISCV_ISA_Zimop,
       RISCV_ISA_Zknd      => RISCV_ISA_Zknd,
       RISCV_ISA_Zkne      => RISCV_ISA_Zkne,
       RISCV_ISA_Zknh      => RISCV_ISA_Zknh,
@@ -1091,7 +1093,7 @@ begin
         bus_rsp_o => iodev_rsp(IODEV_GPIO),
         gpio_o    => gpio_o,
         gpio_i    => gpio_i,
-        cpu_irq_o => firq(FIRQ_GPIO)
+        irq_o     => firq(FIRQ_GPIO)
       );
     end generate;
 

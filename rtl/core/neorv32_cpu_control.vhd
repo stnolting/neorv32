@@ -49,6 +49,7 @@ entity neorv32_cpu_control is
     RISCV_ISA_Zicntr  : boolean; -- base counters
     RISCV_ISA_Zicond  : boolean; -- integer conditional operations
     RISCV_ISA_Zihpm   : boolean; -- hardware performance monitors
+    RISCV_ISA_Zimop   : boolean; -- may-be-operations
     RISCV_ISA_Zkn     : boolean; -- NIST algorithm suite
     RISCV_ISA_Zknd    : boolean; -- cryptography NIST AES decryption extension
     RISCV_ISA_Zkne    : boolean; -- cryptography NIST AES encryption extension
@@ -470,9 +471,9 @@ begin
 
           -- environment/CSR operation or ILLEGAL opcode --
           when others =>
-            if (funct3_v = funct3_env_c) or
+            if (funct3_v = funct3_env_c) or (funct3_v = funct3_zimop_c) or
                (((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) and (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000")) then
-              csr.re_nxt <= '0'; -- no read if CSRRW[I] and rd = 0 OR if environment instruction
+              csr.re_nxt <= '0'; -- no read if CSRRW[I] and rd = 0 OR if environment instruction OR if may-be-operation
             else
               csr.re_nxt <= '1';
             end if;
@@ -543,8 +544,9 @@ begin
             when others => exe_engine_nxt.state <= EX_DISPATCH; -- illegal or CSR operation
           end case;
         end if;
-        -- always write to CSR (if CSR instruction); ENVIRONMENT operations have rs1/imm5 = zero so this won't happen then --
-        if (funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or (exe_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000") then
+        -- write to CSR if not environment OR ma-be-operation --
+        if (funct3_v /= funct3_env_c) and (funct3_v /= funct3_zimop_c) and
+           (((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) or (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000")) then
           csr.we_nxt <= '1'; -- CSRRW[I]: always write CSR; CSRR[S/C][I]: write CSR if rs1/imm5 is NOT zero; won't happen if exception
         end if;
         -- always write to RF (even if csr.re = 0, but then we have rd = 0); ENVIRONMENT operations have rd = zero so this does not hurt --
@@ -798,7 +800,7 @@ begin
           illegal_cmd <= '0';
         end if;
 
-      when opcode_system_c => -- CSR / system instruction
+      when opcode_system_c => -- system instruction / may-be-operations / CSR access
         if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system environment
           if (exe_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") and (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000") then
             case exe_engine.ir(instr_imm12_msb_c downto instr_imm12_lsb_c) is
@@ -810,7 +812,9 @@ begin
               when others           => illegal_cmd <= '1'; -- undefined
             end case;
           end if;
-        elsif (csr_valid = "111") and (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) /= funct3_csril_c) then -- valid CSR operation
+        elsif (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_zimop_c) then
+          illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zimop);
+        elsif (csr_valid = "111") then -- valid CSR operation
           illegal_cmd <= '0';
         end if;
 
@@ -1348,7 +1352,8 @@ begin
             csr.rdata(27) <= bool_to_ulogic_f(RISCV_ISA_Zcb);    -- Zcb: additional code size reduction instructions
             csr.rdata(28) <= bool_to_ulogic_f(RISCV_ISA_C);      -- Zca: C without floating-point
             csr.rdata(29) <= bool_to_ulogic_f(RISCV_ISA_Zibi);   -- Zibi: branch with immediate-comparison
-            csr.rdata(31 downto 30) <= (others => '0');          -- reserved
+            csr.rdata(30) <= bool_to_ulogic_f(RISCV_ISA_Zimop);  -- Zimop: may-be-operations
+            csr.rdata(31) <= '0';                                -- reserved
 
           -- --------------------------------------------------------------------
           -- undefined/unavailable or implemented externally

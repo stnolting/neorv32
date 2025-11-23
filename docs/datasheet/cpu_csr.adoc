@@ -968,36 +968,37 @@ discover additional ISA (sub-)extensions and CPU configuration options.
 [cols="^1,<2,^1,<6"]
 [options="header",grid="rows"]
 |=======================
-| Bit   | Name [C] | R/W | Description
-|  0    | `CSR_MXISA_ZICSR`    | r/- | <<_zicsr_isa_extension>> available
-|  1    | `CSR_MXISA_ZIFENCEI` | r/- | <<_zifencei_isa_extension>> available
-|  2    | `CSR_MXISA_ZMMUL`    | r/- | <<_zmmul_isa_extension>> available
-|  3    | `CSR_MXISA_ZXCFU`    | r/- | <<_zxcfu_isa_extension>> available
-|  4    | `CSR_MXISA_ZKT`      | r/- | <<_zkt_isa_extension>> available
-|  5    | `CSR_MXISA_ZFINX`    | r/- | <<_zfinx_isa_extension>> available
-|  6    | `CSR_MXISA_ZICOND`   | r/- | <<_zicond_isa_extension>> available
-|  7    | `CSR_MXISA_ZICNTR`   | r/- | <<_zicntr_isa_extension>> available
-|  8    | `CSR_MXISA_SMPMP`    | r/- | <<_smpmp_isa_extension>> available
-|  9    | `CSR_MXISA_ZIHPM`    | r/- | <<_zihpm_isa_extension>> available
-| 10    | `CSR_MXISA_SDEXT`    | r/- | <<_sdext_isa_extension>> available
-| 11    | `CSR_MXISA_SDTRIG`   | r/- | <<_sdtrig_isa_extension>> available
-| 12    | `CSR_MXISA_ZBKX`     | r/- | <<_zbkx_isa_extension>> available
-| 13    | `CSR_MXISA_ZKND`     | r/- | <<_zknd_isa_extension>> available
-| 14    | `CSR_MXISA_ZKNE`     | r/- | <<_zkne_isa_extension>> available
-| 15    | `CSR_MXISA_ZKNH`     | r/- | <<_zknh_isa_extension>> available
-| 16    | `CSR_MXISA_ZBKB`     | r/- | <<_zbkb_isa_extension>> available
-| 17    | `CSR_MXISA_ZBKC`     | r/- | <<_zbkc_isa_extension>> available
-| 18    | `CSR_MXISA_ZKN`      | r/- | <<_zkn_isa_extension>> available
-| 19    | `CSR_MXISA_ZKSH`     | r/- | <<_zksh_isa_extension>> available
-| 20    | `CSR_MXISA_ZKSED`    | r/- | <<_zksed_isa_extension>> available
-| 21    | `CSR_MXISA_ZKS`      | r/- | <<_zks_isa_extension>> available
-| 22    | `CSR_MXISA_ZBA`      | r/- | <<_zba_isa_extension>> available
-| 23    | `CSR_MXISA_ZBB`      | r/- | <<_zbb_isa_extension>> available
-| 24    | `CSR_MXISA_ZBS`      | r/- | <<_zbs_isa_extension>> available
-| 25    | `CSR_MXISA_ZAAMO`    | r/- | <<_zaamo_isa_extension>> available
-| 26    | `CSR_MXISA_ZALRSC`   | r/- | <<_zalrsc_isa_extension>> available
-| 27    | `CSR_MXISA_ZCB`      | r/- | <<_zcb_isa_extension>> available
-| 28    | `CSR_MXISA_ZCA`      | r/- | "`C` without floating-point", available when <<_c_isa_extension>> is available
-| 29    | `CSR_MXISA_ZIBI`     | r/- | <<_zibi_isa_extension>> available
-| 31:30 | -                    | r/- | _reserved_, read as zero
+| Bit | Name [C] | R/W | Description
+|  0  | `CSR_MXISA_ZICSR`    | r/- | <<_zicsr_isa_extension>> available
+|  1  | `CSR_MXISA_ZIFENCEI` | r/- | <<_zifencei_isa_extension>> available
+|  2  | `CSR_MXISA_ZMMUL`    | r/- | <<_zmmul_isa_extension>> available
+|  3  | `CSR_MXISA_ZXCFU`    | r/- | <<_zxcfu_isa_extension>> available
+|  4  | `CSR_MXISA_ZKT`      | r/- | <<_zkt_isa_extension>> available
+|  5  | `CSR_MXISA_ZFINX`    | r/- | <<_zfinx_isa_extension>> available
+|  6  | `CSR_MXISA_ZICOND`   | r/- | <<_zicond_isa_extension>> available
+|  7  | `CSR_MXISA_ZICNTR`   | r/- | <<_zicntr_isa_extension>> available
+|  8  | `CSR_MXISA_SMPMP`    | r/- | <<_smpmp_isa_extension>> available
+|  9  | `CSR_MXISA_ZIHPM`    | r/- | <<_zihpm_isa_extension>> available
+| 10  | `CSR_MXISA_SDEXT`    | r/- | <<_sdext_isa_extension>> available
+| 11  | `CSR_MXISA_SDTRIG`   | r/- | <<_sdtrig_isa_extension>> available
+| 12  | `CSR_MXISA_ZBKX`     | r/- | <<_zbkx_isa_extension>> available
+| 13  | `CSR_MXISA_ZKND`     | r/- | <<_zknd_isa_extension>> available
+| 14  | `CSR_MXISA_ZKNE`     | r/- | <<_zkne_isa_extension>> available
+| 15  | `CSR_MXISA_ZKNH`     | r/- | <<_zknh_isa_extension>> available
+| 16  | `CSR_MXISA_ZBKB`     | r/- | <<_zbkb_isa_extension>> available
+| 17  | `CSR_MXISA_ZBKC`     | r/- | <<_zbkc_isa_extension>> available
+| 18  | `CSR_MXISA_ZKN`      | r/- | <<_zkn_isa_extension>> available
+| 19  | `CSR_MXISA_ZKSH`     | r/- | <<_zksh_isa_extension>> available
+| 20  | `CSR_MXISA_ZKSED`    | r/- | <<_zksed_isa_extension>> available
+| 21  | `CSR_MXISA_ZKS`      | r/- | <<_zks_isa_extension>> available
+| 22  | `CSR_MXISA_ZBA`      | r/- | <<_zba_isa_extension>> available
+| 23  | `CSR_MXISA_ZBB`      | r/- | <<_zbb_isa_extension>> available
+| 24  | `CSR_MXISA_ZBS`      | r/- | <<_zbs_isa_extension>> available
+| 25  | `CSR_MXISA_ZAAMO`    | r/- | <<_zaamo_isa_extension>> available
+| 26  | `CSR_MXISA_ZALRSC`   | r/- | <<_zalrsc_isa_extension>> available
+| 27  | `CSR_MXISA_ZCB`      | r/- | <<_zcb_isa_extension>> available
+| 28  | `CSR_MXISA_ZCA`      | r/- | "`C` without floating-point", available when <<_c_isa_extension>> is available
+| 29  | `CSR_MXISA_ZIBI`     | r/- | <<_zibi_isa_extension>> available
+| 30  | `CSR_MXISA_ZIMOP`    | r/- | <<_zimop_isa_extension>> available
+| 31  | -                    | r/- | _reserved_, read as zero
 |=======================

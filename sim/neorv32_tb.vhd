@@ -41,6 +41,7 @@ entity neorv32_tb is
     RISCV_ISA_Zicntr    : boolean                        := true;        -- base counters
     RISCV_ISA_Zicond    : boolean                        := true;        -- integer conditional operations
     RISCV_ISA_Zihpm     : boolean                        := true;        -- hardware performance monitors
+    RISCV_ISA_Zimop    : boolean                         := true;        -- may-be-operations
     RISCV_ISA_Zknd      : boolean                        := true;        -- cryptography NIST AES decryption extension
     RISCV_ISA_Zkne      : boolean                        := true;        -- cryptography NIST AES encryption extension
     RISCV_ISA_Zknh      : boolean                        := true;        -- cryptography NIST hash extension
@@ -156,6 +157,7 @@ begin
     RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
     RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
     RISCV_ISA_Zihpm     => RISCV_ISA_Zihpm,
+    RISCV_ISA_Zimop     => RISCV_ISA_Zimop,
     RISCV_ISA_Zknd      => RISCV_ISA_Zknd,
     RISCV_ISA_Zkne      => RISCV_ISA_Zkne,
     RISCV_ISA_Zknh      => RISCV_ISA_Zknh,

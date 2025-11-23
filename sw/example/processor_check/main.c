@@ -335,7 +335,7 @@ int main() {
   // ----------------------------------------------------------
   // Test standard RISC-V counters
   // ----------------------------------------------------------
-  PRINT("[%i] Zicntr CNTs ", cnt_test);
+  PRINT("[%i] Zicntr CSRs ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -438,6 +438,34 @@ int main() {
 
   // re-enable all counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, 0);
+
+
+  // ----------------------------------------------------------
+  // May-be-operation
+  // ----------------------------------------------------------
+  PRINT("[%i] May-be-operation ", cnt_test);
+  trap_cause = trap_never_c;
+  cnt_test++;
+
+  // execute "mop.r.16"
+  tmp_a = CUSTOM_INSTR_I_TYPE(0b110000011100, 123456, 0b100, 0b1110011);
+
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIMOP)) {
+    if ((trap_cause == trap_never_c) && (tmp_a == 0)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    if (trap_cause == TRAP_CODE_I_ILLEGAL) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
 
 
   // ----------------------------------------------------------
@@ -678,7 +706,6 @@ int main() {
   // try executing some illegal instructions
   asm volatile (".word 0x58007053"); // unsupported fsqrt.s x0, x0
   asm volatile (".word 0x0e00302f"); // unsupported amoswap.D x0, x0, (x0)
-  asm volatile (".word 0x34004073"); // illegal CSR access funct3 (using mscratch)
   asm volatile (".word 0x30200077"); // mret with illegal opcode
   asm volatile (".word 0x3020007f"); // mret with illegal opcode
   asm volatile (".word 0x7b200073"); // dret outside of debug mode
@@ -701,11 +728,11 @@ int main() {
   // number of traps we are expecting + expected instruction word of last illegal instruction
   uint32_t invalid_instr;
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
-    tmp_a += 16;
+    tmp_a += 15;
     invalid_instr = 0x08812681; // mtinst: pre-decompressed; clear bit 1 if compressed instruction
   }
   else { // C extension disabled
-    tmp_a += 14;
+    tmp_a += 13;
     invalid_instr = 0xfe003023;
   }
 

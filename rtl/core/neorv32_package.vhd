@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120406"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120407"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
   constant XLEN          : natural := 32; -- native data path width
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
@@ -375,7 +375,7 @@ package neorv32_package is
   constant funct3_csrrw_c  : std_ulogic_vector(2 downto 0) := "001"; -- csr r/w
   constant funct3_csrrs_c  : std_ulogic_vector(2 downto 0) := "010"; -- csr read & set
   constant funct3_csrrc_c  : std_ulogic_vector(2 downto 0) := "011"; -- csr read & clear
-  constant funct3_csril_c  : std_ulogic_vector(2 downto 0) := "100"; -- undefined/illegal csr command
+  constant funct3_zimop_c  : std_ulogic_vector(2 downto 0) := "100"; -- may-be-operation
   constant funct3_csrrwi_c : std_ulogic_vector(2 downto 0) := "101"; -- csr r/w immediate
   constant funct3_csrrsi_c : std_ulogic_vector(2 downto 0) := "110"; -- csr read & set immediate
   constant funct3_csrrci_c : std_ulogic_vector(2 downto 0) := "111"; -- csr read & clear immediate
@@ -847,18 +847,19 @@ package neorv32_package is
       RISCV_ISA_U           : boolean                        := false;
       RISCV_ISA_Zaamo       : boolean                        := false;
       RISCV_ISA_Zalrsc      : boolean                        := false;
-      RISCV_ISA_Zcb         : boolean                        := false;
       RISCV_ISA_Zba         : boolean                        := false;
       RISCV_ISA_Zbb         : boolean                        := false;
       RISCV_ISA_Zbkb        : boolean                        := false;
       RISCV_ISA_Zbkc        : boolean                        := false;
       RISCV_ISA_Zbkx        : boolean                        := false;
       RISCV_ISA_Zbs         : boolean                        := false;
+      RISCV_ISA_Zcb         : boolean                        := false;
       RISCV_ISA_Zfinx       : boolean                        := false;
       RISCV_ISA_Zibi        : boolean                        := false;
       RISCV_ISA_Zicntr      : boolean                        := false;
       RISCV_ISA_Zicond      : boolean                        := false;
       RISCV_ISA_Zihpm       : boolean                        := false;
+      RISCV_ISA_Zimop       : boolean                        := false;
       RISCV_ISA_Zmmul       : boolean                        := false;
       RISCV_ISA_Zknd        : boolean                        := false;
       RISCV_ISA_Zkne        : boolean                        := false;
