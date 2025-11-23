@@ -189,8 +189,8 @@ Use make V=1 or set BUILD_VERBOSE to increase build verbosity
 Targets:
 
   help          show this text
-  check         check toolchain
-  info          show makefile/toolchain configuration
+  check         check toolchain and list supported ISA extensions
+  info          show project/makefile configuration
   gdb           start GNU debugging session
   asm           compile and generate <main.asm> assembly listing file for manual debugging
   elf           compile and generate <main.elf> ELF file

@@ -354,6 +354,7 @@ check: $(IMAGE_GEN)
 	$(ECHO) $(CC)
 	$(ECHO) "******************************************************"
 	$(Q)$(CC) -v
+	$(Q)$(CC) -march=help
 	$(ECHO) "******************************************************"
 	$(ECHO) $(OBJDUMP)
 	$(ECHO) "******************************************************"
@@ -419,11 +420,6 @@ info:
 	$(ECHO) "GHDL_RUN_FLAGS: $(GHDL_RUN_FLAGS)"
 	$(ECHO) "USER_FLAGS: $(USER_FLAGS)"
 	$(ECHO) "CC_FLAGS: $(CC_FLAGS)"
-	$(ECHO) ""
-	$(ECHO) "******************************************************"
-	$(ECHO) "RISC-V GCC ISA extensions"
-	$(ECHO) "******************************************************"
-	$(Q)$(CC) -march=help
 
 # -----------------------------------------------------------------------------
 # Help
@@ -437,8 +433,8 @@ help:
 	$(ECHO) "Targets:"
 	$(ECHO) ""
 	$(ECHO) "  help          show this text"
-	$(ECHO) "  check         check toolchain"
-	$(ECHO) "  info          show makefile/toolchain configuration"
+	$(ECHO) "  check         check toolchain and list supported ISA extensions
+	$(ECHO) "  info          show project/makefile configuration"
 	$(ECHO) "  gdb           start GNU debugging session"
 	$(ECHO) "  asm           compile and generate <$(APP_ASM)> assembly listing file for manual debugging"
 	$(ECHO) "  elf           compile and generate <$(APP_ELF)> ELF file"
