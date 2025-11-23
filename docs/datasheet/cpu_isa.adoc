@@ -21,13 +21,13 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_zaamo_isa_extension,`Zaamo`>>       | Atomic read-modify-write memory operations                   | <<_processor_top_entity_generics, `RISCV_ISA_Zaamo`>>
 | <<_zalrsc_isa_extension,`Zalrsc`>>     | Atomic reservation-set memory operations                     | <<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>>
 | `Zca` (_just an alias_)                | Compressed instruction without floating-point operations     | Implicitly enabled via <<_processor_top_entity_generics, `RISCV_ISA_C`>>
-| <<_zcb_isa_extension,`Zcb`>>           | Additional code size reduction instructions (build upon `C`) | <<_processor_top_entity_generics, `RISCV_ISA_Zcb`>>
 | <<_zba_isa_extension,`Zba`>>           | Shifted-add bit manipulation instructions                    | <<_processor_top_entity_generics, `RISCV_ISA_Zba`>>
 | <<_zbb_isa_extension,`Zbb`>>           | Basic bit manipulation instructions                          | <<_processor_top_entity_generics, `RISCV_ISA_Zbb`>>
 | <<_zbkb_isa_extension,`Zbkb`>>         | Scalar cryptography bit manipulation instructions            | <<_processor_top_entity_generics, `RISCV_ISA_Zbkb`>>
 | <<_zbkc_isa_extension,`Zbkc`>>         | Scalar cryptography carry-less multiplication instructions   | <<_processor_top_entity_generics, `RISCV_ISA_Zbkc`>>
 | <<_zbkx_isa_extension,`Zbkx`>>         | Scalar cryptography crossbar permutation instructions        | <<_processor_top_entity_generics, `RISCV_ISA_Zbkx`>>
 | <<_zbs_isa_extension,`Zbs`>>           | Single-bit bit manipulation instructions                     | <<_processor_top_entity_generics, `RISCV_ISA_Zbs`>>
+| <<_zcb_isa_extension,`Zcb`>>           | Additional code size reduction instructions (build upon `C`) | <<_processor_top_entity_generics, `RISCV_ISA_Zcb`>>
 | <<_zfinx_isa_extension,`Zfinx`>>       | Floating-point instructions using integer registers          | <<_processor_top_entity_generics, `RISCV_ISA_Zfinx`>>
 | <<_zifencei_isa_extension,`Zifencei`>> | Instruction stream synchronization instruction               | Always enabled
 | <<_zibi_isa_extension,`Zibi`>>         | Branches with immediate-comparison                           | <<_processor_top_entity_generics, `RISCV_ISA_Zibi`>>
@@ -285,6 +285,7 @@ Some instructions may require additional ISA (sub-) extensions.
 Technically, `Zbc` required the `Zca` extension which is `C` but excluding the floating-point operations.
 Therefore, `Zca` and `Zbc` must be contained in the ISA string so that the compiler generates `Zbc` instructions..
 Example: `MARCH=rv32imc_zca_zcb_...`
+
 
 ==== `Zifencei` ISA Extension
 
