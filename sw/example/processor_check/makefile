@@ -1,7 +1,7 @@
 # Processor-check program makefile
 
 # Maximum ISA configuration
-override MARCH = rv32imac_zba_zbb_zbs_zbkb_zbkc_zbkx_zknd_zkne_zknh_zksh_zksed_zicsr_zfinx_zifencei_zicond
+override MARCH = rv32imac_zba_zbb_zbs_zbkb_zbkc_zbkx_zknd_zkne_zknh_zksh_zksed_zicsr_zfinx_zifencei_zicond_zimop
 
 # Optimization goal
 EFFORT = -Os
