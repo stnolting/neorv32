@@ -45,6 +45,7 @@ entity neorv32_cpu is
     RISCV_ISA_Zicntr    : boolean;                        -- base counters
     RISCV_ISA_Zicond    : boolean;                        -- integer conditional operations
     RISCV_ISA_Zihpm     : boolean;                        -- hardware performance monitors
+    RISCV_ISA_Zimop     : boolean;                        -- may-be-operations
     RISCV_ISA_Zknd      : boolean;                        -- cryptography NIST AES decryption extension
     RISCV_ISA_Zkne      : boolean;                        -- cryptography NIST AES encryption extension
     RISCV_ISA_Zknh      : boolean;                        -- cryptography NIST hash extension
@@ -155,13 +156,14 @@ begin
       cond_sel_string_f(RISCV_ISA_Zbkc,   "_zbkc",     "" ) &
       cond_sel_string_f(RISCV_ISA_Zbkx,   "_zbkx",     "" ) &
       cond_sel_string_f(RISCV_ISA_Zbs,    "_zbs",      "" ) &
+      cond_sel_string_f(RISCV_ISA_Zfinx,  "_zfinx",    "" ) &
       cond_sel_string_f(RISCV_ISA_Zibi,   "_zibi",     "" ) &
       cond_sel_string_f(RISCV_ISA_Zicntr, "_zicntr",   "" ) &
       cond_sel_string_f(RISCV_ISA_Zicond, "_zicond",   "" ) &
       cond_sel_string_f(true,             "_zicsr",    "" ) & -- always enabled
       cond_sel_string_f(true,             "_zifencei", "" ) & -- always enabled
       cond_sel_string_f(RISCV_ISA_Zihpm,  "_zihpm",    "" ) &
-      cond_sel_string_f(RISCV_ISA_Zfinx,  "_zfinx",    "" ) &
+      cond_sel_string_f(RISCV_ISA_Zimop,  "_zimop",    "" ) &
       cond_sel_string_f(riscv_zkn_c,      "_zkn",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zknd,   "_zknd",     "" ) &
       cond_sel_string_f(RISCV_ISA_Zkne,   "_zkne",     "" ) &
@@ -239,6 +241,7 @@ begin
     RISCV_ISA_Zicntr  => RISCV_ISA_Zicntr,  -- base counters
     RISCV_ISA_Zicond  => RISCV_ISA_Zicond,  -- integer conditional operations
     RISCV_ISA_Zihpm   => RISCV_ISA_Zihpm,   -- hardware performance monitors
+    RISCV_ISA_Zimop   => RISCV_ISA_Zimop,   -- may-be-operations
     RISCV_ISA_Zkn     => riscv_zkn_c,       -- NIST algorithm suite available
     RISCV_ISA_Zknd    => RISCV_ISA_Zknd,    -- cryptography NIST AES decryption extension
     RISCV_ISA_Zkne    => RISCV_ISA_Zkne,    -- cryptography NIST AES encryption extension
