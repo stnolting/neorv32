@@ -30,7 +30,7 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: '📦 Install xPack RISC-V GCC'
       run: |
