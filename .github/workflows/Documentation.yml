@@ -11,6 +11,10 @@ on:
     - '.github/workflows/Documentation.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pages: write
+
 jobs:
 
   doxygen:
@@ -99,10 +103,11 @@ jobs:
       run: |
         cd public
         git init
-        cp ../.git/config ./.git/config
+        # use authenticated remote (GITHUB_TOKEN is available as a secret)
+        git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
         touch .nojekyll
         git add .
         git config --local user.email "push@gha"
         git config --local user.name "GHA"
-        git commit -am 'update ${{ github.sha }}'
-        git push -u origin +HEAD:gh-pages
+        git commit -am "update ${{ github.sha }}"
+        git push -u origin +HEAD:gh-pages --force
