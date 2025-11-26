@@ -77,7 +77,6 @@ entity neorv32_cpu_control is
     ctrl_o        : out ctrl_bus_t;                         -- main control bus
     -- misc --
     frontend_i    : in  if_bus_t;                           -- front-end status and data
-    pmp_fault_i   : in  std_ulogic;                         -- instruction fetch / execute pmp fault
     hwtrig_i      : in  std_ulogic;                         -- hardware trigger
     -- data path interface --
     alu_cp_done_i : in  std_ulogic;                         -- ALU iterative operation done
@@ -277,8 +276,8 @@ begin
 
   -- Execute Engine FSM (Micro Sequencer) Comb ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
-                                   ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)
+  execute_engine_fsm_comb: process(exe_engine, debug_ctrl, trap_ctrl, hwtrig_i, opcode, frontend_i,
+                                   csr, ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
   begin
@@ -331,7 +330,7 @@ begin
     if RISCV_ISA_Zaamo and (opcode(2) = opcode_amo_c(2)) and (exe_engine.ir(instr_funct5_lsb_c+1) = '0') then -- atomic read-modify-write operation
       ctrl_nxt.lsu_rmw <= '1'; -- read-modify-write
       ctrl_nxt.lsu_rvs <= '0';
-      ctrl_nxt.lsu_rw  <= '0'; -- executed as single load for the CPU
+      ctrl_nxt.lsu_rw  <= '0'; -- executed as single load for the CPU control logic
     elsif RISCV_ISA_Zalrsc and (opcode(2) = opcode_amo_c(2)) and (exe_engine.ir(instr_funct5_lsb_c+1) = '1') then -- atomic reservation-set operation
       ctrl_nxt.lsu_rmw <= '0';
       ctrl_nxt.lsu_rvs <= '1'; -- reservation-set
@@ -359,7 +358,7 @@ begin
         if (trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1') then -- pending trap or pending exception (fast)
           exe_engine_nxt.state <= EX_TRAP_ENTER;
         elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
-          trap_ctrl.instr_be   <= frontend_i.fault or pmp_fault_i; -- access fault during instruction fetch
+          trap_ctrl.instr_be   <= frontend_i.fault; -- access fault during instruction fetch
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
           exe_engine_nxt.pc    <= exe_engine.pc2(XLEN-1 downto 1) & '0'; -- PC <= next PC
@@ -682,9 +681,9 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_U); -- available if U-mode implemented
 
       -- physical memory protection (PMP) --
-      when csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   | -- configuration
-           csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  |
-           csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  | -- address
+      when csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   | -- lowest 4 configuration registers only
+           csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | -- lowest 16 address registers only
+           csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  |
            csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c |
            csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Smpmp); -- available if PMP implemented
