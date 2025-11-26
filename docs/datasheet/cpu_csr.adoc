@@ -522,9 +522,9 @@ while all remaining bits represent the pre-decoded 32-bit instruction equivalent
 
 The physical memory protection system is configured via the `PMP_NUM_REGIONS` and `PMP_MIN_GRANULARITY` top entity
 generics. `PMP_NUM_REGIONS` defines the total number of implemented regions. Note that the maximum number of regions
-is constrained to 16. If trying to access a PMP-related CSR beyond `PMP_NUM_REGIONS` **no illegal instruction exception**
-is triggered. The according CSRs are read-only (writes are ignored) and always return zero.
-See section <<_smpmp_isa_extension>> for more information.
+is constrained to 16. If trying to access a PMP-related CSR beyond `PMP_NUM_REGIONS` (but below PMP configuration/address
+register 16) **no illegal instruction exception** is triggered. The according CSRs are read-only (writes are ignored) and
+always return zero. See section <<_smpmp_isa_extension>> for more information.
 
 [discrete]
 ===== **`pmpcfg`**
@@ -540,6 +540,8 @@ See section <<_smpmp_isa_extension>> for more information.
 | Reset value | all `0x00000000`
 | ISA         | `Zicsr` & `Smpmp`
 | Description | Configuration of physical memory protection regions. Each region provides an individual 8-bit array in these CSRs.
+Note that, depending on `PMP_NUM_REGIONS`, a **maximum** of the lowest 4 configuration registers are physically implemented (`pmpcfg0 .. pmpcfg3`).
+All remaining register are hardwired to zero.
 |=======================
 
 .`pmpcfg*` CSR Bits
@@ -587,6 +589,8 @@ implementation of the according modes.
 | Reset value | all `0x00000000`
 | ISA         | `Zicsr` & `Smpmp`
 | Description | Region address/boundaries configuration.
+Note that, depending on `PMP_NUM_REGIONS`, a **maximum** of the lowest 16 address registers are physically implemented (`pmpaddr0 .. pmpaddr15`).
+All remaining register are hardwired to zero.
 |=======================
 
 .`pmpaddr*` CSR Bits
