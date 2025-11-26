@@ -30,10 +30,14 @@ entity neorv32_cpu_frontend is
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
     ctrl_i     : in  ctrl_bus_t; -- main control bus
     -- instruction fetch interface --
-    ibus_req_o : out bus_req_t;
-    ibus_rsp_i : in  bus_rsp_t;
+    ibus_req_o : out bus_req_t; -- request
+    ibus_rsp_i : in  bus_rsp_t; -- response
+    -- PMP interface --
+    pmp_addr_o : out std_ulogic_vector(XLEN-1 downto 0); -- access address
+    pmp_priv_o : out std_ulogic; -- access privilege level
+    pmp_err_i  : in  std_ulogic; -- PMP access fault
     -- back-end interface --
-    frontend_o : out if_bus_t
+    frontend_o : out if_bus_t -- fetch data and status
   );
 end neorv32_cpu_frontend;
 
@@ -141,9 +145,13 @@ begin
     end if;
   end process fetch_fsm;
 
+  -- PMP interface --
+  pmp_addr_o <= fetch.pc(XLEN-1 downto 2) & "00"; -- word aligned
+  pmp_priv_o <= fetch.priv;
+
   -- instruction bus request --
-  ibus_req_o.meta  <= fetch.debug & fetch.priv & '1'; -- LSB: instruction access
-  ibus_req_o.addr  <= fetch.pc(XLEN-1 downto 2) & "00";    -- word aligned
+  ibus_req_o.meta  <= fetch.debug & fetch.priv & '1';   -- LSB: instruction access
+  ibus_req_o.addr  <= fetch.pc(XLEN-1 downto 2) & "00"; -- word aligned
   ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
   ibus_req_o.data  <= (others => '0');  -- read-only
   ibus_req_o.ben   <= (others => '1');  -- always full-word access
@@ -155,8 +163,8 @@ begin
   ibus_req_o.fence <= ctrl_i.if_fence;  -- fence request, valid without STB being set ("out-of-band" signal)
 
   -- IPB instruction data and status --
-  ipb.wdata(0) <= ibus_rsp_i.err & ibus_rsp_i.data(15 downto 0);
-  ipb.wdata(1) <= ibus_rsp_i.err & ibus_rsp_i.data(31 downto 16);
+  ipb.wdata(0) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(15 downto 0);
+  ipb.wdata(1) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
   ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.pc(1) = '0') or (not RISCV_C)) else '0';
