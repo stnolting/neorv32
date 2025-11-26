@@ -52,7 +52,7 @@ entity neorv32_ProcessorTop_UP5KDemo is
     twi_sda_io  : inout std_logic;
     twi_scl_io  : inout std_logic;
     -- PWM (available if IO_PWM_NUM > 0) --
-    pwm_o       : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0)
+    pwm_o       : out std_ulogic_vector(IO_PWM_NUM-1 downto 0)
   );
 end entity;
 
@@ -114,7 +114,7 @@ begin
     twi_sda_o   => con_twi_sda_o, -- serial data line output (pull low only)
     twi_scl_i   => con_twi_scl_i, -- serial clock line sense input
     twi_scl_o   => con_twi_scl_o, -- serial clock line output (pull low only)
-    -- PWM (available if IO_PWM_NUM_CH > 0) --
+    -- PWM (available if IO_PWM_NUM > 0) --
     pwm_o       => con_pwm_o,      -- pwm channels
 	-- SPI (available if IO_SPI_EN = true) --
     spi_clk_o   => con_spi_sck,	   -- SPI clock
@@ -141,7 +141,7 @@ begin
   con_gpio_i(31 downto 4) <= (others => '0');
 
   -- PWM --
-  pwm_o <= con_pwm_o(IO_PWM_NUM_CH-1 downto 0);
+  pwm_o <= con_pwm_o(IO_PWM_NUM-1 downto 0);
 
   -- TWI tri-state driver --
   twi_sda_io    <= '0' when (con_twi_sda_o = '0') else 'Z'; -- module can only pull the line low actively

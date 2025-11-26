@@ -32,7 +32,7 @@ entity neorv32_ProcessorTop_Minimal is
     clk_i  : in  std_logic;
     rstn_i : in  std_logic;
     -- PWM (available if IO_PWM_NUM > 0) --
-    pwm_o  : out std_ulogic_vector(IO_PWM_NUM_CH-1 downto 0)
+    pwm_o  : out std_ulogic_vector(IO_PWM_NUM-1 downto 0)
   );
 end entity;
 
