@@ -473,7 +473,7 @@ begin
       i_priv_i => if_pmp_priv,   -- access privilege
       i_err_o  => if_pmp_err,    -- PMP fault
       -- data access check --
-d_addr_i => alu_add,       -- access address
+      d_addr_i => alu_add,       -- access address [use "rs1 + ctrl.alu_imm" to improve timing?]
       d_priv_i => ctrl.lsu_priv, -- access privilege
       d_err_o  => rw_pmp_err     -- PMP fault
     );
