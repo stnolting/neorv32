@@ -259,7 +259,7 @@ end neorv32_bus_reg_rtl;
 -- -------------------------------------------------------------------------------- --
 -- Bus gateway to distribute accesses to 3 non-overlapping address sub-spaces       --
 -- (A to C). Note that the sub-spaces have to be aligned to their individual sizes. --
--- All accesses that do not match any of these sections are redirected to the "X"   --
+-- All accesses that do not match any of these sections are redirected to the X     --
 -- port. The gateway-internal bus monitor ensures that ALL accesses are completed   --
 -- within a bound time window. Otherwise, a bus error exception is raised.          --
 -- -------------------------------------------------------------------------------- --

@@ -367,13 +367,13 @@ begin
 
       when EX_TRAP_ENTER => -- enter trap environment and jump to trap vector
       -- ------------------------------------------------------------
-        if (trap_ctrl.cause(5) = '1') and RISCV_ISA_Sdext then -- debug mode (re-)entry
-          exe_engine_nxt.pc2 <= DEBUG_PARK_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter; start at "parking loop" <normal_entry>
+        if (trap_ctrl.cause(5) = '1') and RISCV_ISA_Sdext then -- debug mode entry
+          exe_engine_nxt.pc2 <= DEBUG_PARK_ADDR(XLEN-1 downto 2) & "00"; -- start at "parking loop" <normal_entry>
         elsif (debug_ctrl.run = '1') and RISCV_ISA_Sdext then -- any other trap INSIDE debug mode
-          exe_engine_nxt.pc2 <= DEBUG_EXC_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter: start at "parking loop" <exception_entry>
-        elsif (csr.mtvec(0) = '1') and (trap_ctrl.cause(6) = '1') then -- normal trap: vectored mode and interrupt
+          exe_engine_nxt.pc2 <= DEBUG_EXC_ADDR(XLEN-1 downto 2) & "00"; -- start at "parking loop" <exception_entry>
+        elsif (csr.mtvec(0) = '1') and (trap_ctrl.cause(6) = '1') then -- M-mode trap: vectored mode and interrupt
           exe_engine_nxt.pc2 <= csr.mtvec(XLEN-1 downto 7) & trap_ctrl.cause(4 downto 0) & "00"; -- PC = mtvec + 4 * mcause
-        else -- normal trap: direct mode
+        else -- M-mode trap: direct mode
           exe_engine_nxt.pc2 <= csr.mtvec(XLEN-1 downto 2) & "00"; -- PC = mtvec
         end if;
         trap_ctrl.env_enter  <= '1';
@@ -670,9 +670,9 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zfinx); -- available if FPU implemented
 
       -- machine trap setup/handling, environment/information registers, etc. --
-      when csr_mstatus_c  | csr_mstatush_c      | csr_misa_c      | csr_mie_c       | csr_mtvec_c  |
-           csr_mscratch_c | csr_mepc_c          | csr_mcause_c    | csr_mip_c       | csr_mtval_c  |
-           csr_mtinst_c   | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c   | csr_mimpid_c |
+      when csr_mstatus_c  | csr_mstatush_c      | csr_misa_c      | csr_mie_c     | csr_mtvec_c  |
+           csr_mscratch_c | csr_mepc_c          | csr_mcause_c    | csr_mip_c     | csr_mtval_c  |
+           csr_mtinst_c   | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c |
            csr_mhartid_c  | csr_mconfigptr_c    | csr_mxcsr_c     | csr_mxisa_c =>
         csr_valid(2) <= '1'; -- always implemented
 
