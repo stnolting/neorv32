@@ -25,6 +25,7 @@ __crt0_entry:
 // ************************************************************************************************
 .option push
 .option norelax
+.option norvc // make sure the trap setup code is uncompressed (if executing RVC on non-RVC core)
   csrr  x1, mhartid                     // get ID of this core
 
   la    x4, __crt0_ram_last             // last address of RAM, stack pointer (sp) starts here
@@ -33,15 +34,15 @@ __crt0_entry:
 
   li    x5, 0x00001800                  // mstatus.mpp = machine-mode
   csrw  mstatus, x5
-  la    x6, __crt0_trap                 // configure early-boot trap handler
+  la    x6, __crt0_panic                // configure early-boot trap handler
   csrw  mtvec, x6
   csrw  mie, zero                       // disable all interrupt sources
 
-  la    x7,  __crt0_copy_data_src_begin // .data: start of copy-source (in .rodata)
-  la    x8,  __crt0_copy_data_dst_begin // .data: start of actual data region
-  la    x9,  __crt0_copy_data_dst_end   // .data: end of actual data region
-  la    x10, __crt0_bss_start           // .bss: start address
-  la    x11, __crt0_bss_end             // .bss: end address (not part of bss)
+  la    x7,  __crt0_copy_data_src_begin // .data start of copy-source (in .rodata)
+  la    x8,  __crt0_copy_data_dst_begin // .data start of actual data region
+  la    x9,  __crt0_copy_data_dst_end   // .data end of actual data region
+  la    x10, __crt0_bss_start           // .bss start address
+  la    x11, __crt0_bss_end             // .bss end address (not part of bss)
 .option pop
 
   // initialize remaining registers
@@ -80,15 +81,22 @@ __crt0_smp_check:
   csrw  mtvec,   x15                        // install interrupt handler
   csrsi mie,     1 << 3                     // only enable software interrupt source
   csrsi mstatus, 1 << 3                     // enable machine-level interrupts
-  j     __crt0_sleep                        // wait for interrupt in sleep mode
+
+  // wait for interrupt in sleep mode
+__crt0_smp_sleep:
+  wfi
+  j __crt0_smp_sleep
 
   // machine software interrupt handler
+.balign 4
 __crt0_smp_wakeup:
+  la    x15, __crt0_panic                   // panic if we encounter another trap
+  csrw  mtvec, x15
+
   li    x14, 0xfff44000                     // CLINT.MTIMECMP base address
   lw    x2,  8(x14)                         // MTIMECMP[1].lo = stack top (sp)
   lw    x12, 12(x14)                        // MTIMECMP[1].hi = entry point
 
-  // acknowledge booting
   li    x14,  0xfff40000                    // CLINT.MSWI base address
   sw    zero, 4(x14)                        // clear MSWI[1]
 
@@ -161,8 +169,8 @@ __crt0_main_entry:
 __crt0_main_exit:             // main's "return" and "exit" will arrive here
   csrw  mie, zero             // disable all interrupt sources
   csrw  mscratch, x10         // backup main's return code to mscratch (for debugger or destructors)
-  la    x10, __crt0_trap      // re-install the crt0 trap handler
-  csrw  mtvec, x10
+  la    x11, __crt0_panic     // re-install default crt0 trap handler
+  csrw  mtvec, x11
 
 
 // ************************************************************************************************
@@ -171,7 +179,7 @@ __crt0_main_exit:             // main's "return" and "exit" will arrive here
 // ************************************************************************************************
 #ifndef MAKE_BOOTLOADER
   csrr  x8, mhartid
-  bnez  x8, __crt0_destructors_end   // execute destructors only on core 0
+  bnez  x8, __crt0_destructors_end  // execute destructors only on core 0
 
   la    x8, __fini_array_start
   la    x9, __fini_array_end
@@ -188,43 +196,22 @@ __crt0_destructors_end:
 
 
 // ************************************************************************************************
-// Go to endless sleep mode. This is the end if no interrupts are enabled.
+// Halt: go to endless sleep mode.
 // ************************************************************************************************
-__crt0_halt:
-  ebreak  // jump to debug-mode if an external debugger is connected
+#ifndef MAKE_BOOTLOADER
+  ebreak // jump to debug mode if possible; otherwise just halt in __crt0_panic
+#endif
 
-__crt0_sleep:
+
+// ************************************************************************************************
+// Early-boot trap handler: halt and catch fire.
+// ************************************************************************************************
+.balign 4     // trap handler has to be 32-bit aligned
+.option norvc // no compressed instruction to make this valid code on any platform configuration
+__crt0_panic:
   wfi
-  j __crt0_sleep
+  j __crt0_panic
 
-
-// ************************************************************************************************
-// Early-boot trap handler; does nothing but trying to move on to the next linear instruction.
-// ************************************************************************************************
-.balign 4 // the trap handler has to be 32-bit aligned
-__crt0_trap:
-  csrw  mscratch, x8         // backup x8 in mscratch - no need to use the stack
-
-  csrr  x8, mcause
-  srli  x8, x8, 31           // isolate MSB (set for interrupts)
-  bnez  x8, __crt0_trap_end  // exit if interrupt
-
-  csrr  x8, mepc
-  addi  x8, x8, +4           // mepc = mepc + 4 (for UNCOMPRESSED instruction)
-  csrw  mepc, x8
-
-  csrr  x8, mtinst           // get transformed exception-causing instruction
-  andi  x8, x8,  3           // isolate lowest 2 opcode bits (= 11 for uncompressed instructions)
-  addi  x8, x8, -3           // x8 is zero after this if uncompressed instruction
-  beqz  x8, __crt0_trap_end
-
-  csrr  x8, mepc
-  addi  x8, x8, -2           // mepc = mepc - 2 (making mepc_new = mepc_old + 2 for COMPRESSED instruction)
-  csrw  mepc, x8
-
-__crt0_trap_end:
-  csrr  x8, mscratch         // restore x8
-  mret
 
 .cfi_endproc
 .end

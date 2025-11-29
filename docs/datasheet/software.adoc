@@ -458,30 +458,21 @@ The `crt0.S` start-up performs the following operations:
 [start=1]
 . Setup the stack pointer and the global pointer according to the <<_ram_layout>> provided by the <<_linker_script>> symbols.
 . Initialize <<_mstatus>> CSR disabling machine-level interrupts.
-. Install an <<_early_trap_handler>> to <<_mtvec>> CSR.
+. Install an endless loop as trap handler to <<_mtvec>> CSR: the core will halt if any trap occurs.
 . Clear <<_mie>> CSR disabling all interrupt sources.
 . Initialize all integer register `x1` - `x31` (only `x1` - `x15` if the `E` CPU extension is enabled).
-. If the executing CPU core is not core 0 an SMP-specific code is executed and the CPU is halted in sleep mode. See section <<_dual_core_boot>> for more information.
+. If the executing CPU core is not core 0, an SMP-specific code is executed and the CPU is halted in sleep mode. See section <<_dual_core_boot>> for more information.
 . Setup `.data` section to configure initialized variables.
 . Clear the `.bss` section.
-. Call all _constructors_ (if there are any).
+. Call constructors (if there are any).
 . Call the application's `main()` function (with no arguments; `argc` = `argv` = 0).
 . If `main()` returns:
 ** All interrupt sources are disabled by clearing <<_mie>> CSR.
 ** The return value of `main()` is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
-** The <<_early_trap_handler>> is re-installed to <<_mtvec>> CSR.
+** The core will halt if any trap occurs.
 ** Call all _destructors_ (if there are any).
-** Execute an `ebreak` instruction to enter debug mode if an external debugger is connected.
-** The CPU enters sleep mode executing the `wfi` instruction in an endless loop.
-
-
-:sectnums:
-==== Early Trap Handler
-
-The start-up code provides a very basic trap handler for the early boot phase. This handler does nothing but
-trying to move on to the next linear instruction whenever an interrupt or synchronous exception is encountered.
-This simple trap handler does not interact with the stack at all as it just uses a single register that is backup-ed
-using the <<_mscratch>> CSR.
+** Execute an `ebreak` instruction to enter debug mode if an external debugger is connected; the core will just halt if this fails.
+** The CPU halts: enter sleep mode executing the `wfi` instruction in an endless loop.
 
 
 <<<
