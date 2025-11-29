@@ -2494,7 +2494,7 @@ void gpio_trap_handler(void) {
  **************************************************************************/
 void test_ok(void) {
 
-  PRINT("%c[1m[ok]%c[0m\n", 27, 27);
+  PRINT("%c[1;32m[ok]%c[0m\n", 27, 27);
   cnt_ok++;
 }
 
@@ -2504,7 +2504,7 @@ void test_ok(void) {
  **************************************************************************/
 void test_fail(void) {
 
-  PRINT("%c[1m[fail]%c[0m\n", 27, 27);
+  PRINT("%c[1;31m[fail]%c[0m\n", 27, 27);
   cnt_fail++;
 }
 
