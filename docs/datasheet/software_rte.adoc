@@ -126,17 +126,17 @@ a bus access fault exception, continuing execution will most likely fail making 
 .RTE Default Trap Handler UART0 Output Examples
 [source]
 ----
-<NEORV32-RTE> [cpu0] [M] Illegal instruction @ PC=0x000002d6, MTINST=0x000000FF, MTVAL=0x00000000 </NEORV32-RTE> <1>
-<NEORV32-RTE> [cpu0] [U] Illegal instruction @ PC=0x00000302, MTINST=0x00000000, MTVAL=0x00000000 </NEORV32-RTE> <2>
-<NEORV32-RTE> [cpu0] [U] Load address misaligned @ PC=0x00000440, MTINST=0x01052603, MTVAL=0x80000101 </NEORV32-RTE> <3>
-<NEORV32-RTE> [cpu1] [M] Fast IRQ 0x3 @ PC=0x00000820, MTINST=0x00000000, MTVAL=0x00000000 </NEORV32-RTE> <4>
-<NEORV32-RTE> [cpu1] [M] Instruction access fault @ PC=0x90000000, MTINST=0x42078b63, MTVAL=0x00000000 !!FATAL EXCEPTION!! Halting CPU. </NEORV32-RTE>\n <5>
+<NEORV32-RTE-PANIC> [cpu0|M] Illegal instruction MEPC=0x000002d6 MTINST=0x000000FF MTVAL=0x00000000 </NEORV32-RTE-PANIC> <1>
+<NEORV32-RTE-PANIC> [cpu0|U] Illegal instruction MEPC=0x00000302 MTINST=0x00000000 MTVAL=0x00000000 </NEORV32-RTE-PANIC> <2>
+<NEORV32-RTE-PANIC> [cpu0|U] Load address misaligned MEPC=0x00000440 MTINST=0x01052603 MTVAL=0x80000101 </NEORV32-RTE-PANIC> <3>
+<NEORV32-RTE-PANIC> [cpu1|M] FIRQ channel 0x3 MEPC=0x00000820 MTINST=0x00000000 MTVAL=0x00000000 </NEORV32-RTE-PANIC> <4>
+<NEORV32-RTE-PANIC> [cpu1|M] Instruction access fault MEPC=0x90000000 MTINST=0x42078b63 MTVAL=0x00000000 FATAL! HALTING CPU </NEORV32-RTE-PANIC>\n <5>
 ----
-<1> Illegal 32-bit instruction `MTINST=0x000000FF` at address `PC=0x000002d6` while the CPU 0 was in machine-mode (`[M]`).
-<2> Illegal 16-bit instruction `MTINST=0x00000000` at address `PC=0x00000302` while the CPU 0 was in user-mode (`[U]`).
-<3> Misaligned load access at address `PC=0x00000440` caused by instruction `MTINST=0x01052603` (trying to load a full 32-bit word from address `MTVAL=0x80000101`) while the CPU 0 was in user-mode (`[U]`).
-<4> Fast interrupt request from channel 3 before executing instruction at address `PC=0x00000820` while the CPU 1 was in machine-mode (`[M]`).
-<5> Instruction bus access fault at address `PC=0x90000000` while executing instruction `MTINST=0x42078b63` while the CPU 1 was in machine-mode (`[M]`).
+<1> Illegal 32-bit instruction `MTINST=0x000000FF` at address `MEPC=0x000002d6` while CPU 0 was in machine-mode (`[cpu0|M]`).
+<2> Illegal 16-bit instruction `MTINST=0x00000000` at address `MEPC=0x00000302` while CPU 0 was in user-mode (`[cpu0|U]`).
+<3> Misaligned load access at address `MEPC=0x00000440` caused by instruction `MTINST=0x01052603` (trying to load a full 32-bit word from address `MTVAL=0x80000101`) while CPU 0 was in user-mode (`[cpu0|U]`).
+<4> Fast interrupt request from channel 3 before executing instruction at address `MEPC=0x00000820` while CPU 1 was in machine-mode (`[cpu0|M]`).
+<5> Instruction bus access fault at address `MEPC=0x90000000` while executing instruction `MTINST=0x42078b63` while CPU 1 was in machine-mode (`[cpu0|M]`). This is a fatal/non-resumable exception halting the CPU.
 
 
 ==== Application Context Handling
