@@ -43,14 +43,11 @@ static void __neorv32_rte_puts(const char *s) {
 
 
 /**********************************************************************//**
- * Print the lowest 0 to 8 hex characters of a
- * 32-bit number as hexadecimal value (with "0x" suffix) via UART0.
+ * Print 32-bit value as 8-char hexadecimal number (with "0x" suffix) via UART0.
  *
- * @param[in] num Number to print as hexadecimal.
- *
- * @param[in] digits Number of hexadecimal digits to print (0..8).
+ * @param[in] num Value to print as hexadecimal.
  **************************************************************************/
-static void __neorv32_rte_puth(uint32_t num, int digits) {
+static void __neorv32_rte_puth(uint32_t num) {
 
   int i = 0;
   const char hex[] = "0123456789ABCDEF";
@@ -58,7 +55,7 @@ static void __neorv32_rte_puth(uint32_t num, int digits) {
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     neorv32_uart_putc(NEORV32_UART0, '0');
     neorv32_uart_putc(NEORV32_UART0, 'x');
-    for (i=(digits-8); i<8; i++) {
+    for (i=0; i<8; i++) {
       neorv32_uart_putc(NEORV32_UART0, hex[(num >> (28 - 4*i)) & 0xFu]);
     }
   }
@@ -66,7 +63,7 @@ static void __neorv32_rte_puth(uint32_t num, int digits) {
 
 
 /**********************************************************************//**
- * Default trap handler printing debug information via UART0.
+ * Default trap handler printing debug information.
  **************************************************************************/
 static void __neorv32_rte_panic(void) {
 
@@ -121,21 +118,21 @@ static void __neorv32_rte_panic(void) {
     case TRAP_CODE_FIRQ_12:
     case TRAP_CODE_FIRQ_13:
     case TRAP_CODE_FIRQ_14:
-    case TRAP_CODE_FIRQ_15:      __neorv32_rte_puts("FIRQ channel "); __neorv32_rte_puth(cause, 1); break;
-    default:                     __neorv32_rte_puts("Unknown trap cause "); __neorv32_rte_puth(cause, 8); fatal = 1; break;
+    case TRAP_CODE_FIRQ_15:      __neorv32_rte_puts("FIRQ channel "); __neorv32_rte_puth(cause); break;
+    default:                     __neorv32_rte_puts("Unknown trap cause "); __neorv32_rte_puth(cause); fatal = 1; break;
   }
 
   // instruction address
   __neorv32_rte_puts(" MEPC=");
-  __neorv32_rte_puth(neorv32_cpu_csr_read(CSR_MEPC), 8);
+  __neorv32_rte_puth(neorv32_cpu_csr_read(CSR_MEPC));
 
   // trapping instruction (transformed/decompressed)
   __neorv32_rte_puts(" MTINST=");
-  __neorv32_rte_puth(neorv32_cpu_csr_read(CSR_MTINST), 8);
+  __neorv32_rte_puth(neorv32_cpu_csr_read(CSR_MTINST));
 
   // trap value
   __neorv32_rte_puts(" MTVAL=");
-  __neorv32_rte_puth(neorv32_cpu_csr_read(CSR_MTVAL), 8);
+  __neorv32_rte_puth(neorv32_cpu_csr_read(CSR_MTVAL));
 
   // disable interrupt source if IRQ without handler
   if (((int32_t)cause) < 0) { // is interrupt
@@ -147,7 +144,7 @@ static void __neorv32_rte_panic(void) {
   if (fatal) {
     __neorv32_rte_puts(" FATAL! HALTING CPU </NEORV32-RTE-PANIC>" RTE_TERM_HL_OFF "\n");
     asm volatile (
-      "__neorv32_rte_panic_halt:   \n" // shutdown
+      "__neorv32_rte_panic_halt:   \n" // halt and catch fire
       " wfi                        \n"
       " j __neorv32_rte_panic_halt \n"
     );
@@ -298,8 +295,8 @@ static void __attribute__((naked,aligned(4))) __neorv32_rte_core(void) {
  * @note This function must be called on all cores that wish to use the RTE.
  *
  * @note This function installs a debug handler for ALL trap sources, which
- * gives detailed information about the trap via UART0 (if available). Actual
- * handlers can be installed afterwards via #neorv32_rte_handler_install().
+ * prints detailed information about the trap. Actual handlers can be
+ * installed afterwards via #neorv32_rte_handler_install().
  **************************************************************************/
 void neorv32_rte_setup(void) {
 
