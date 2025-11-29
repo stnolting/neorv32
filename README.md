@@ -17,6 +17,7 @@ and targets FPGA / RISC-V beginners as well as experienced users.
 ### Key Features
 
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework** + **Tooling**
+- [x] fully self-contained - no external source dependencies
 - [x] completely described in behavioral, platform-independent VHDL - **no** primitives, macros, attributes, etc.
 - [x] extensive CPU & SoC configuration options for adapting to application requirements
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible
