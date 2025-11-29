@@ -36,6 +36,10 @@
 #define EXT_FMEM_TAG_BASE  (0xFF100000U)
 //** External IRQ trigger base address */
 #define SIM_TRIG_BASE      (0xFF000000U)
+//** VT-style terminal highlighting */
+#define TERM_HL_GREEN      "\033[1;32m"
+#define TERM_HL_RED        "\033[1;31m"
+#define TERM_HL_RESET      "\033[0m"
 /**@}*/
 
 
@@ -2341,21 +2345,14 @@ int main() {
 
   // final result
   if (cnt_fail == 0) {
-    PRINT("%c[1m[PROCESSOR TEST COMPLETED SUCCESSFULLY!]%c[0m\n", 27, 27);
+    PRINT(TERM_HL_GREEN"[PROCESSOR TEST COMPLETED SUCCESSFULLY!]"TERM_HL_RESET"\n");
+    return 0;
   }
   else {
-    PRINT("%c[1m[PROCESSOR TEST FAILED!]%c[0m\n", 27, 27);
+    PRINT(TERM_HL_RED"[PROCESSOR TEST FAILED!]"TERM_HL_RESET"\n");
+    return -1;
   }
 
-  // make sure sim mode is disabled and UARTs are actually enabled
-  NEORV32_UART0->CTRL |=  (1 << UART_CTRL_EN);
-  NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
-  NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
-
-  // minimal result report
-  PRINT("%u/%u\n", (uint32_t)cnt_fail, (uint32_t)cnt_test);
-
-  return 0;
 }
 
 
@@ -2494,7 +2491,7 @@ void gpio_trap_handler(void) {
  **************************************************************************/
 void test_ok(void) {
 
-  PRINT("%c[1;32m[ok]%c[0m\n", 27, 27);
+  PRINT(TERM_HL_GREEN"[ok]"TERM_HL_RESET"\n");
   cnt_ok++;
 }
 
@@ -2504,7 +2501,7 @@ void test_ok(void) {
  **************************************************************************/
 void test_fail(void) {
 
-  PRINT("%c[1;31m[fail]%c[0m\n", 27, 27);
+  PRINT(TERM_HL_RED"[fail]"TERM_HL_RESET"\n");
   cnt_fail++;
 }
 
