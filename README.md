@@ -6,7 +6,6 @@
 [![userguide (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat)](https://stnolting.github.io/neorv32/ug)
 [![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat&logo=Doxygen&colorA=273274)](https://stnolting.github.io/neorv32/sw/files.html)
 [![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat&logo=bsd)](https://github.com/stnolting/neorv32/blob/main/LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg)](https://doi.org/10.5281/zenodo.5018888)
 
 The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
 [RISC-V](https://riscv.org/) CPU that is written in **platform-independent VHDL**. The processor is intended as auxiliary
