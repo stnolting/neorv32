@@ -7,7 +7,7 @@ use ieee.std_logic_1164.all;
 package neorv32_application_image is
 
 constant application_image_size_c : natural := 764;
-type rom_t is array (0 to 1023) of std_ulogic_vector(31 downto 0);
+type rom_t is array (0 to 255) of std_ulogic_vector(31 downto 0);
 constant application_image_data_c : rom_t := (
 x"f14020f3",
 x"80002217",

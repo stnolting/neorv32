@@ -7,7 +7,7 @@ use ieee.std_logic_1164.all;
 package neorv32_bootloader_image is
 
 constant bootloader_image_size_c : natural := 3852;
-type rom_t is array (0 to 4095) of std_ulogic_vector(31 downto 0);
+type rom_t is array (0 to 1023) of std_ulogic_vector(31 downto 0);
 constant bootloader_image_data_c : rom_t := (
 x"f14020f3",
 x"80200217",
@@ -859,7 +859,7 @@ x"6564616f",
 x"75620a72",
 x"3a646c69",
 x"766f4e20",
-x"20393220",
+x"20303320",
 x"35323032",
 x"00000a0a",
 x"6f747541",

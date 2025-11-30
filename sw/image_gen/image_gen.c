@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
       print_help();
       return 0;
     }
-    // input ELF file
+    // input file
     else if (strcmp(argv[i], "-i") == 0) {
       input_file = argv[++i];
     }
@@ -105,10 +105,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // open input ELF file
+  // open input file
   input = fopen(input_file, "rb");
   if(input == NULL) {
-    printf("[ERROR] Input ELF file error (%s)!\n", input_file);
+    printf("[ERROR] Input file error (%s)!\n", input_file);
     return -2;
   }
 
@@ -143,11 +143,9 @@ int main(int argc, char *argv[]) {
   raw_exe_size = (unsigned int)ftell(input);
 
   // make sure memory array is a power of two
-  ext_exe_size = 1;
-  if (raw_exe_size > 0) {
-    while (ext_exe_size < raw_exe_size) {
-      ext_exe_size = 2*ext_exe_size;
-    }
+  ext_exe_size = 4;
+  while (ext_exe_size < raw_exe_size) {
+    ext_exe_size *= 2;
   }
 
   // back to beginning
@@ -213,7 +211,7 @@ int main(int argc, char *argv[]) {
       "constant application_image_size_c : natural := %u;\n"
       "type rom_t is array (0 to %u) of std_ulogic_vector(31 downto 0);\n"
       "constant application_image_data_c : rom_t := (\n",
-      raw_exe_size, ext_exe_size-1);
+      raw_exe_size, (ext_exe_size/4)-1);
     fputs(tmp_string, output);
 
     for (i=0; i<(input_size/4); i++) {
@@ -255,7 +253,7 @@ int main(int argc, char *argv[]) {
       "constant bootloader_image_size_c : natural := %u;\n"
       "type rom_t is array (0 to %u) of std_ulogic_vector(31 downto 0);\n"
       "constant bootloader_image_data_c : rom_t := (\n",
-      raw_exe_size, ext_exe_size-1);
+      raw_exe_size, (ext_exe_size/4)-1);
     fputs(tmp_string, output);
 
     for (i=0; i<(input_size/4); i++) {

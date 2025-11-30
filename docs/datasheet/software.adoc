@@ -512,6 +512,11 @@ actual program image in bytes. A simple complement checksum of the actual progra
 This provides a simple protection against data transmission or storage errors.
 **Note that this executable format cannot be used for _direct_ execution.**
 
+.VHDL Memory Initialization Files
+[NOTE]
+The generated VHDL images are plain VHDL packages providing program data as constant array.
+Note that this array is always extended to a power of 2. Unused elements are set to zero.
+
 Optionally, the NEORV32 image generator can also be used stand-alone:
 
 [source,bash]
