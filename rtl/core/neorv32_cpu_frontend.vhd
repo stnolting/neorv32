@@ -21,6 +21,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_frontend is
   generic (
+    HART_ID   : natural; -- hardware thread ID
     RISCV_C   : boolean; -- implement C ISA extension
     RISCV_ZCB : boolean  -- implement Zcb ISA sub-extension
   );
@@ -150,7 +151,7 @@ begin
   pmp_priv_o <= fetch.priv;
 
   -- instruction bus request --
-  ibus_req_o.meta  <= fetch.debug & fetch.priv & '1';   -- LSB: instruction access
+  ibus_req_o.meta  <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & fetch.debug & fetch.priv & '1';
   ibus_req_o.addr  <= fetch.pc(XLEN-1 downto 2) & "00"; -- word aligned
   ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
   ibus_req_o.data  <= (others => '0');  -- read-only

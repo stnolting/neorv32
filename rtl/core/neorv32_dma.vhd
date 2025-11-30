@@ -349,7 +349,7 @@ begin
   begin
     dma_req_o <= req_terminate_c; -- all-zero by default
     -- access type --
-    dma_req_o.meta  <= '0' & priv_mode_m_c & '0'; -- non-debug, privileged, data
+    dma_req_o.meta  <= "11" & '0' & priv_mode_m_c & '0'; -- ID=3, non-debug, privileged, data
     dma_req_o.amo   <= '0'; -- no atomic operations
     dma_req_o.burst <= '0'; -- no burst transfers
     dma_req_o.lock  <= '0'; -- no locked accesses

@@ -726,7 +726,7 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
       when csr_mxcsr_c          => return "mxcsr";
       when csr_mxisa_c          => return "mxisa";
       -- unknown; just print address --
-      when others               => return "0x" & print_hex_f(addr);
+      when others               => return "0x" & to_hexstring_f(addr);
     end case;
   end function decode_csr_f;
 
@@ -754,8 +754,8 @@ architecture neorv32_tracer_simlog_rtl of neorv32_tracer_simlog is
     case inst(instr_opcode_msb_c downto instr_opcode_lsb_c) is
       when opcode_alui_c   => return "x" & integer'image(rd_iv)  & ", x"  & integer'image(rs1_iv) & ", "  & integer'image(ii_iv);
       when opcode_alu_c    => return "x" & integer'image(rd_iv)  & ", x"  & integer'image(rs1_iv) & ", x" & integer'image(rs2_iv);
-      when opcode_lui_c    => return "x" & integer'image(rd_iv)  & ", 0x" & print_hex_f(iu_v);
-      when opcode_auipc_c  => return "x" & integer'image(rd_iv)  & ", 0x" & print_hex_f(iu_v);
+      when opcode_lui_c    => return "x" & integer'image(rd_iv)  & ", 0x" & to_hexstring_f(iu_v);
+      when opcode_auipc_c  => return "x" & integer'image(rd_iv)  & ", 0x" & to_hexstring_f(iu_v);
       when opcode_jal_c    => return "x" & integer'image(rd_iv)  & ", "   & integer'image(ij_iv);
       when opcode_jalr_c   => return "x" & integer'image(rd_iv)  & ", "   & integer'image(ii_iv)  & "(x"  & integer'image(rs1_iv) & ")";
       when opcode_branch_c => return "x" & integer'image(rs1_iv) & ", x"  & integer'image(rs2_iv) & ", "  & integer'image(is_iv);
@@ -819,11 +819,11 @@ begin
           write(line_v, string'(" "));
           -- instruction address --
           write(line_v, string'("0x"));
-          write(line_v, string'(print_hex_f(trace_i.pc_rdata)));
+          write(line_v, string'(to_hexstring_f(trace_i.pc_rdata)));
           write(line_v, string'(" "));
           -- instruction word --
           write(line_v, string'("0x"));
-          write(line_v, string'(print_hex_f(trace_i.insn)));
+          write(line_v, string'(to_hexstring_f(trace_i.insn)));
           write(line_v, string'(" "));
           -- privilege level --
           if (trace_i.debug = '1') then

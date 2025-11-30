@@ -10,11 +10,15 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_lsu is
+  generic (
+    HART_ID : natural -- hardware thread ID
+  );
   port (
     -- global control --
     clk_i       : in  std_ulogic; -- global clock, rising edge
@@ -84,7 +88,7 @@ begin
     elsif rising_edge(clk_i) then
       if (ctrl_i.lsu_mo_we = '1') then
         -- access identifiers --
-        dbus_req_o.meta  <= ctrl_i.cpu_debug & ctrl_i.lsu_priv & '0'; -- LSB: data access
+        dbus_req_o.meta  <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & ctrl_i.cpu_debug & ctrl_i.lsu_priv & '0';
         dbus_req_o.rw    <= ctrl_i.lsu_rw; -- read/write
         dbus_req_o.amo   <= ctrl_i.lsu_rmw or ctrl_i.lsu_rvs; -- atomic memory operation
         dbus_req_o.amoop <= amo_cmd;
