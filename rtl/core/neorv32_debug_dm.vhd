@@ -42,10 +42,10 @@ end neorv32_debug_dm;
 architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
   -- memory map, 128 bytes per device; replicated throughout the entire device address space --
-  constant dm_code_base_c : std_ulogic_vector(31 downto 0) := x"fffffe00"; -- code ROM (park loop)
-  constant dm_pbuf_base_c : std_ulogic_vector(31 downto 0) := x"fffffe80"; -- program buffer (PBUF)
-  constant dm_data_base_c : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- abstract data buffer (DATA)
-  constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := x"ffffff80"; -- status register(s) (SREG)
+  constant dm_code_base_c : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- code ROM (park loop)
+  constant dm_pbuf_base_c : std_ulogic_vector(31 downto 0) := x"ffffff40"; -- program buffer (PBUF)
+  constant dm_data_base_c : std_ulogic_vector(31 downto 0) := x"ffffff80"; -- abstract data buffer (DATA)
+  constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := x"ffffffc0"; -- status register (SREG)
 
   -- rv32i instruction prototypes --
   constant instr_nop_c    : std_ulogic_vector(31 downto 0) := x"00000013"; -- nop
