@@ -819,7 +819,7 @@ package neorv32_package is
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
   function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector;
-  function print_hex_f(data : std_ulogic_vector) return string;
+  function to_hexstring_f(data : std_ulogic_vector) return string;
   function match_f(input : std_ulogic_vector; pattern : std_ulogic_vector) return boolean;
 
 -- **********************************************************************************************************
@@ -1202,17 +1202,17 @@ package body neorv32_package is
     return tmp_v;
   end function replicate_f;
 
-  -- Print hex value as string --------------------------------------------------------------
+  -- Convert to hex string ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function print_hex_f(data : std_ulogic_vector) return string is
-    variable nibb_v : natural := data'length/4;
-    variable res_v  : string(1 to nibb_v);
+  function to_hexstring_f(data : std_ulogic_vector) return string is
+    variable num_v : natural := data'length/4;
+    variable res_v : string(1 to num_v);
   begin
-    for i in 0 to nibb_v-1 loop
+    for i in 0 to num_v-1 loop
       res_v(i+1) := to_hexchar_f(data(data'high - i*4 downto data'high - i*4 - 3));
     end loop;
     return res_v;
-  end function print_hex_f;
+  end function to_hexstring_f;
 
   -- Check if vector matches binary pattern (skip elements compared with '-') ---------------
   -- -------------------------------------------------------------------------------------------
