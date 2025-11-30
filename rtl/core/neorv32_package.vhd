@@ -107,7 +107,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- bus request --
   type bus_req_t is record
-    meta  : std_ulogic_vector(2 downto 0); -- access meta information
+    meta  : std_ulogic_vector(4 downto 0); -- access meta data: core_ID[2], debug[1], priv[1], load/store[1]
     addr  : std_ulogic_vector(31 downto 0); -- access address
     data  : std_ulogic_vector(31 downto 0); -- write data
     ben   : std_ulogic_vector(3 downto 0); -- byte enable
