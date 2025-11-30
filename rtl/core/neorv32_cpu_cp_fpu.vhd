@@ -37,22 +37,22 @@ entity neorv32_cpu_cp_fpu is
   );
   port (
     -- global control --
-    clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i      : in  ctrl_bus_t; -- main control bus
+    clk_i       : in  std_ulogic;                         -- global clock, rising edge
+    rstn_i      : in  std_ulogic;                         -- global reset, low-active, async
+    ctrl_i      : in  ctrl_bus_t;                         -- main control bus
     -- CSR interface --
-    csr_we_i    : in  std_ulogic; -- write enable
-    csr_addr_i  : in  std_ulogic_vector(1 downto 0); -- address
+    csr_we_i    : in  std_ulogic;                         -- write enable
+    csr_addr_i  : in  std_ulogic_vector(1 downto 0);      -- address
     csr_wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
     csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
     -- data input --
-    equal_i     : in  std_ulogic; -- compare equal
-    less_i      : in  std_ulogic; -- compare less
+    equal_i     : in  std_ulogic;                         -- compare equal
+    less_i      : in  std_ulogic;                         -- compare less
     rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
     rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     -- result and status --
     res_o       : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-    valid_o     : out std_ulogic -- data output valid
+    valid_o     : out std_ulogic                          -- data output valid
   );
 end neorv32_cpu_cp_fpu;
 

@@ -464,7 +464,7 @@ begin
   begin
     cnt_o <= (others => '0');
     if (oe_i = '1') then
-      cnt_o(CWIDTH-1 downto 0) <= count(CWIDTH-1 downto 0); -- unconnected counter bit should be optimized away
+      cnt_o(CWIDTH-1 downto 0) <= count(CWIDTH-1 downto 0); -- unconnected counter bits should be optimized away
     end if;
   end process trim;
 

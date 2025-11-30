@@ -141,7 +141,7 @@ begin
   sysinfo(2)(30) <= '1' when IO_ONEWIRE_EN     else '0'; -- 1-wire interface (ONEWIRE) implemented
   sysinfo(2)(31) <= '0';                                 -- reserved
 
-  -- SYSINFO(4): Cache Configuration --------------------------------------------------------
+  -- SYSINFO(3): Cache Configuration --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   sysinfo(3)(3 downto 0)   <= std_ulogic_vector(to_unsigned(log2_c_bsize_c, 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(block_size_in_bytes)
   sysinfo(3)(7 downto 4)   <= std_ulogic_vector(to_unsigned(log2_ic_bnum_c, 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(number_of_block)

@@ -23,7 +23,7 @@ entity neorv32_cpu_cp_cfu is
     -- operation trigger --
     start_i  : in  std_ulogic; -- start trigger, single-shot
     -- operands --
-    type_i   : in  std_ulogic; -- instruction type (0 = R-type, 1 = I-type)
+    type_i   : in  std_ulogic;                     -- instruction type (0 = R-type, 1 = I-type)
     funct3_i : in  std_ulogic_vector(2 downto 0);  -- "funct3" bit-field from instruction word
     funct7_i : in  std_ulogic_vector(6 downto 0);  -- "funct7" bit-field from instruction word (R-type only)
     imm12_i  : in  std_ulogic_vector(11 downto 0); -- "imm12" bit-field from instruction word (I-type only)
@@ -31,7 +31,7 @@ entity neorv32_cpu_cp_cfu is
     rs2_i    : in  std_ulogic_vector(31 downto 0); -- rf source 2 via "rs2" bit-field from instruction word
     -- result and status --
     result_o : out std_ulogic_vector(31 downto 0); -- operation result
-    valid_o  : out std_ulogic -- operation done
+    valid_o  : out std_ulogic                      -- operation done
   );
 end neorv32_cpu_cp_cfu;
 

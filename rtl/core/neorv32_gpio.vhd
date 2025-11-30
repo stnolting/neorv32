@@ -19,13 +19,13 @@ entity neorv32_gpio is
     GPIO_NUM : natural range 0 to 32 -- number of GPIO input/output pairs
   );
   port (
-    clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- global reset line, low-active, async
-    bus_req_i : in  bus_req_t;  -- bus request
-    bus_rsp_o : out bus_rsp_t;  -- bus response
+    clk_i     : in  std_ulogic;                     -- global clock line
+    rstn_i    : in  std_ulogic;                     -- global reset line, low-active, async
+    bus_req_i : in  bus_req_t;                      -- bus request
+    bus_rsp_o : out bus_rsp_t;                      -- bus response
     gpio_o    : out std_ulogic_vector(31 downto 0); -- input port
     gpio_i    : in  std_ulogic_vector(31 downto 0); -- output port
-    cpu_irq_o : out std_ulogic  -- CPU interrupt
+    irq_o     : out std_ulogic                      -- CPU interrupt
   );
 end neorv32_gpio;
 
@@ -127,17 +127,17 @@ begin
     end process irq_trigger;
   end generate;
 
-  -- buffer pending interrupts until manually cleared --
+  -- buffer pending interrupts until cleared or disabled --
   irq_buffer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      irq_pend  <= (others => '0');
-      cpu_irq_o <= '0';
+      irq_pend <= (others => '0');
     elsif rising_edge(clk_i) then
-      irq_pend  <= irq_en and ((irq_pend and irq_clrn) or irq_trig);
-      cpu_irq_o <= or_reduce_f(irq_pend);
+      irq_pend <= irq_en and ((irq_pend and irq_clrn) or irq_trig);
     end if;
   end process irq_buffer;
 
+  -- CPU interrupt --
+  irq_o <= or_reduce_f(irq_pend);
 
 end neorv32_gpio_rtl;

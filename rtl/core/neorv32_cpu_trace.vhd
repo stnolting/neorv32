@@ -22,12 +22,12 @@ entity neorv32_cpu_trace is
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  ctrl_bus_t; -- main control bus
     -- operands --
-    rs1_rdata_i : std_ulogic_vector(XLEN-1 downto 0); -- rs1 read data
-    rs2_rdata_i : std_ulogic_vector(XLEN-1 downto 0); -- rs2 read data
-    rd_wdata_i  : std_ulogic_vector(XLEN-1 downto 0); -- rd write data
+    rs1_rdata_i : std_ulogic_vector(XLEN-1 downto 0);     -- rs1 read data
+    rs2_rdata_i : std_ulogic_vector(XLEN-1 downto 0);     -- rs2 read data
+    rd_wdata_i  : std_ulogic_vector(XLEN-1 downto 0);     -- rd write data
     mem_ben_i   : std_ulogic_vector((XLEN/8)-1 downto 0); -- memory byte-enable
-    mem_addr_i  : std_ulogic_vector(XLEN-1 downto 0); -- memory address
-    mem_wdata_i : std_ulogic_vector(XLEN-1 downto 0); -- memory write data
+    mem_addr_i  : std_ulogic_vector(XLEN-1 downto 0);     -- memory address
+    mem_wdata_i : std_ulogic_vector(XLEN-1 downto 0);     -- memory write data
     -- trace port --
     trace_o     : out trace_port_t -- execution trace port
   );

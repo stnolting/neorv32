@@ -41,11 +41,13 @@ entity neorv32_cpu is
     RISCV_ISA_Zbkc      : boolean;                        -- carry-less multiplication instructions
     RISCV_ISA_Zbkx      : boolean;                        -- cryptography crossbar permutation extension
     RISCV_ISA_Zbs       : boolean;                        -- single-bit bit-manipulation extension
+    RISCV_ISA_Zcb       : boolean;                        -- additional code size reduction instructions
     RISCV_ISA_Zfinx     : boolean;                        -- 32-bit floating-point extension
     RISCV_ISA_Zibi      : boolean;                        -- branch with immediate
     RISCV_ISA_Zicntr    : boolean;                        -- base counters
     RISCV_ISA_Zicond    : boolean;                        -- integer conditional operations
     RISCV_ISA_Zihpm     : boolean;                        -- hardware performance monitors
+    RISCV_ISA_Zimop     : boolean;                        -- may-be-operations
     RISCV_ISA_Zknd      : boolean;                        -- cryptography NIST AES decryption extension
     RISCV_ISA_Zkne      : boolean;                        -- cryptography NIST AES encryption extension
     RISCV_ISA_Zknh      : boolean;                        -- cryptography NIST hash extension
@@ -114,6 +116,10 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   -- local signals --
   signal ctrl        : ctrl_bus_t;                         -- main control bus
   signal frontend    : if_bus_t;                           -- instruction-fetch interface
+  signal if_pmp_addr : std_ulogic_vector(XLEN-1 downto 0); -- instruction fetch access address
+  signal if_pmp_priv : std_ulogic;                         -- instruction fetch access privilege level
+  signal if_pmp_err  : std_ulogic;                         -- instruction fetch PMP access fault
+  signal rw_pmp_err  : std_ulogic;                         -- data access PMP access fault
   signal hwtrig      : std_ulogic;                         -- hardware trigger firing
   signal rf_wdata    : std_ulogic_vector(XLEN-1 downto 0); -- register file write data
   signal rs1         : std_ulogic_vector(XLEN-1 downto 0); -- source register 1
@@ -128,7 +134,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal lsu_wait    : std_ulogic;                         -- wait for current data bus access
   signal dbus_req    : bus_req_t;                          -- data bus request
   signal csr_rdata   : std_ulogic_vector(XLEN-1 downto 0); -- csr read data
-  signal pmp_fault   : std_ulogic;                         -- pmp permission violation
   signal irq_machine : std_ulogic_vector(2 downto 0);      -- risc-v standard machine-level interrupts
 
 begin
@@ -158,13 +163,14 @@ begin
       cond_sel_string_f(RISCV_ISA_Zbkc,   "_zbkc",     "" ) &
       cond_sel_string_f(RISCV_ISA_Zbkx,   "_zbkx",     "" ) &
       cond_sel_string_f(RISCV_ISA_Zbs,    "_zbs",      "" ) &
+      cond_sel_string_f(RISCV_ISA_Zfinx,  "_zfinx",    "" ) &
       cond_sel_string_f(RISCV_ISA_Zibi,   "_zibi",     "" ) &
       cond_sel_string_f(RISCV_ISA_Zicntr, "_zicntr",   "" ) &
       cond_sel_string_f(RISCV_ISA_Zicond, "_zicond",   "" ) &
       cond_sel_string_f(true,             "_zicsr",    "" ) & -- always enabled
       cond_sel_string_f(true,             "_zifencei", "" ) & -- always enabled
       cond_sel_string_f(RISCV_ISA_Zihpm,  "_zihpm",    "" ) &
-      cond_sel_string_f(RISCV_ISA_Zfinx,  "_zfinx",    "" ) &
+      cond_sel_string_f(RISCV_ISA_Zimop,  "_zimop",    "" ) &
       cond_sel_string_f(riscv_zkn_c,      "_zkn",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zknd,   "_zknd",     "" ) &
       cond_sel_string_f(RISCV_ISA_Zkne,   "_zkne",     "" ) &
@@ -202,14 +208,18 @@ begin
   )
   port map (
     -- global control --
-    clk_i      => clk_i,      -- global clock, rising edge
-    rstn_i     => rstn_i,     -- global reset, low-active, async
-    ctrl_i     => ctrl,       -- main control bus
+    clk_i      => clk_i,       -- global clock, rising edge
+    rstn_i     => rstn_i,      -- global reset, low-active, async
+    ctrl_i     => ctrl,        -- main control bus
     -- instruction fetch interface --
-    ibus_req_o => ibus_req_o, -- request
-    ibus_rsp_i => ibus_rsp_i, -- response
+    ibus_req_o => ibus_req_o,  -- request
+    ibus_rsp_i => ibus_rsp_i,  -- response
+    -- PMP interface --
+    pmp_addr_o => if_pmp_addr, -- access address
+    pmp_priv_o => if_pmp_priv, -- access privilege level
+    pmp_err_i  => if_pmp_err,  -- PMP access fault
     -- back-end interface --
-    frontend_o => frontend
+    frontend_o => frontend     -- fetch data and status
   );
 
 
@@ -244,6 +254,7 @@ begin
     RISCV_ISA_Zicntr  => RISCV_ISA_Zicntr,  -- base counters
     RISCV_ISA_Zicond  => RISCV_ISA_Zicond,  -- integer conditional operations
     RISCV_ISA_Zihpm   => RISCV_ISA_Zihpm,   -- hardware performance monitors
+    RISCV_ISA_Zimop   => RISCV_ISA_Zimop,   -- may-be-operations
     RISCV_ISA_Zkn     => riscv_zkn_c,       -- NIST algorithm suite available
     RISCV_ISA_Zknd    => RISCV_ISA_Zknd,    -- cryptography NIST AES decryption extension
     RISCV_ISA_Zkne    => RISCV_ISA_Zkne,    -- cryptography NIST AES encryption extension
@@ -271,7 +282,6 @@ begin
     ctrl_o        => ctrl,        -- main control bus
     -- misc --
     frontend_i    => frontend,    -- front-end status and data
-    pmp_fault_i   => pmp_fault,   -- instruction fetch / execute pmp fault
     hwtrig_i      => hwtrig,      -- hardware trigger
     -- data path interface --
     alu_cp_done_i => alu_cp_done, -- ALU iterative operation done
@@ -427,20 +437,20 @@ begin
   neorv32_cpu_lsu_inst: entity neorv32.neorv32_cpu_lsu
   port map (
     -- global control --
-    clk_i       => clk_i,     -- global clock, rising edge
-    rstn_i      => rstn_i,    -- global reset, low-active, async
-    ctrl_i      => ctrl,      -- main control bus
+    clk_i       => clk_i,      -- global clock, rising edge
+    rstn_i      => rstn_i,     -- global reset, low-active, async
+    ctrl_i      => ctrl,       -- main control bus
     -- cpu data access interface --
-    addr_i      => alu_add,   -- access address
-    wdata_i     => rs2,       -- write data
-    rdata_o     => lsu_rdata, -- read data
-    mar_o       => lsu_mar,   -- memory address register
-    wait_o      => lsu_wait,  -- wait for access to complete
-    err_o       => lsu_err,   -- alignment/access errors
-    pmp_fault_i => pmp_fault, -- PMP read/write access fault
+    addr_i      => alu_add,    -- access address
+    wdata_i     => rs2,        -- write data
+    rdata_o     => lsu_rdata,  -- read data
+    mar_o       => lsu_mar,    -- memory address register
+    wait_o      => lsu_wait,   -- wait for access to complete
+    err_o       => lsu_err,    -- alignment/access errors
+    pmp_fault_i => rw_pmp_err, -- PMP read/write access fault
     -- data bus --
-    dbus_req_o  => dbus_req,  -- request
-    dbus_rsp_i  => dbus_rsp_i -- response
+    dbus_req_o  => dbus_req,   -- request
+    dbus_rsp_i  => dbus_rsp_i  -- response
   );
 
   -- memory request --
@@ -460,21 +470,26 @@ begin
     )
     port map (
       -- global control --
-      clk_i   => clk_i,    -- global clock, rising edge
-      rstn_i  => rstn_i,   -- global reset, low-active, async
-      ctrl_i  => ctrl,     -- main control bus
-      -- operands --
-      csr_o   => xcsr_pmp, -- CSR read data
-      rs1_i   => rs1,      -- data access base address
-      -- access error --
-      fault_o => pmp_fault -- permission violation
+      clk_i    => clk_i,         -- global clock, rising edge
+      rstn_i   => rstn_i,        -- global reset, low-active, async
+      ctrl_i   => ctrl,          -- main control bus
+      csr_o    => xcsr_pmp,      -- CSR read data
+      -- instruction access check --
+      i_addr_i => if_pmp_addr,   -- access address
+      i_priv_i => if_pmp_priv,   -- access privilege
+      i_err_o  => if_pmp_err,    -- PMP fault
+      -- data access check --
+      d_addr_i => alu_add,       -- access address [use "rs1 + ctrl.alu_imm" to improve timing?]
+      d_priv_i => ctrl.lsu_priv, -- access privilege
+      d_err_o  => rw_pmp_err     -- PMP fault
     );
   end generate;
 
   pmp_disabled:
   if not RISCV_ISA_Smpmp generate
-    xcsr_pmp  <= (others => '0');
-    pmp_fault <= '0';
+    xcsr_pmp   <= (others => '0');
+    if_pmp_err <= '0';
+    rw_pmp_err <= '0';
   end generate;
 
 

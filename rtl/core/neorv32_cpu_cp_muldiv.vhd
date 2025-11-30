@@ -35,7 +35,7 @@ entity neorv32_cpu_cp_muldiv is
     rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
     -- result and status --
     res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-    valid_o : out std_ulogic -- data output valid
+    valid_o : out std_ulogic                          -- data output valid
   );
 end neorv32_cpu_cp_muldiv;
 

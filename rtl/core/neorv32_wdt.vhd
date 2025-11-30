@@ -17,14 +17,14 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_wdt is
   port (
-    clk_i       : in  std_ulogic; -- global clock line
-    rstn_ext_i  : in  std_ulogic; -- external reset, low-active
-    rstn_dbg_i  : in  std_ulogic; -- debugger reset, low-active
-    rstn_sys_i  : in  std_ulogic; -- system reset, low-active
-    bus_req_i   : in  bus_req_t;  -- bus request
-    bus_rsp_o   : out bus_rsp_t;  -- bus response
-    clkgen_i    : in  std_ulogic_vector(7 downto 0);
-    rstn_o      : out std_ulogic  -- timeout reset, low_active, sync
+    clk_i       : in  std_ulogic;                    -- global clock line
+    rstn_ext_i  : in  std_ulogic;                    -- external reset, low-active
+    rstn_dbg_i  : in  std_ulogic;                    -- debugger reset, low-active
+    rstn_sys_i  : in  std_ulogic;                    -- system reset, low-active
+    bus_req_i   : in  bus_req_t;                     -- bus request
+    bus_rsp_o   : out bus_rsp_t;                     -- bus response
+    clkgen_i    : in  std_ulogic_vector(7 downto 0); -- prescaled clock enables
+    rstn_o      : out std_ulogic                     -- timeout reset, low_active, sync
   );
 end neorv32_wdt;
 

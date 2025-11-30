@@ -6,7 +6,6 @@
 [![userguide (html)](https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat)](https://stnolting.github.io/neorv32/ug)
 [![doxygen](https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat&logo=Doxygen&colorA=273274)](https://stnolting.github.io/neorv32/sw/files.html)
 [![license](https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat&logo=bsd)](https://github.com/stnolting/neorv32/blob/main/LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5018888.svg)](https://doi.org/10.5281/zenodo.5018888)
 
 The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
 [RISC-V](https://riscv.org/) CPU that is written in **platform-independent VHDL**. The processor is intended as auxiliary
@@ -18,6 +17,7 @@ and targets FPGA / RISC-V beginners as well as experienced users.
 ### Key Features
 
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework** + **Tooling**
+- [x] fully self-contained - no external source dependencies
 - [x] completely described in behavioral, platform-independent VHDL - **no** primitives, macros, attributes, etc.
 - [x] extensive CPU & SoC configuration options for adapting to application requirements
 - [x] aims to be as small as possible while being as RISC-V-compliant as possible
@@ -97,13 +97,14 @@ setup according to your needs. Note that all of the following SoC modules are en
 [`Zbkc`](https://stnolting.github.io/neorv32/#_zbkc_isa_extension)
 [`Zbkx`](https://stnolting.github.io/neorv32/#_zbkx_isa_extension)
 [`Zbs`](https://stnolting.github.io/neorv32/#_zbs_isa_extension)
+[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_isa_extension)
 [`Zibi`](https://stnolting.github.io/neorv32/#_zibi_isa_extension)
 [`Zicntr`](https://stnolting.github.io/neorv32/#_zicntr_isa_extension)
 [`Zicond`](https://stnolting.github.io/neorv32/#_zicond_isa_extension)
 [`Zicsr`](https://stnolting.github.io/neorv32/#_zicsr_isa_extension)
 [`Zifencei`](https://stnolting.github.io/neorv32/#_zifencei_isa_extension)
 [`Zihpm`](https://stnolting.github.io/neorv32/#_zihpm_isa_extension)
-[`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_isa_extension)
+[`Zimop`](https://stnolting.github.io/neorv32/#_zimop_isa_extension)
 [`Zkn`](https://stnolting.github.io/neorv32/#_zkn_isa_extension)
 [`Zknd`](https://stnolting.github.io/neorv32/#_zknd_isa_extension)
 [`Zkne`](https://stnolting.github.io/neorv32/#_zkne_isa_extension)
@@ -135,7 +136,7 @@ allows booting application code via UART, TWI or SPI flash or from an SD card
 **Timers and Counters**
 
 * core local interruptor ([CLINT](https://stnolting.github.io/neorv32/#_core_local_interruptor_clint)), RISC-V-compatible
-* 32-bit general purpose timer ([GPTMR](https://stnolting.github.io/neorv32/#_general_purpose_timer_gptmr))
+* 32-bit general purpose timer ([GPTMR](https://stnolting.github.io/neorv32/#_general_purpose_timer_gptmr)) with up to 16 individual timer slices
 * watchdog timer ([WDT](https://stnolting.github.io/neorv32/#_watchdog_timer_wdt))
 
 **Input / Output**
@@ -146,8 +147,8 @@ allows booting application code via UART, TWI or SPI flash or from an SD card
 [TWI](https://stnolting.github.io/neorv32/#_two_wire_serial_interface_controller_twi) (I²C host),
 [TWD](https://stnolting.github.io/neorv32/#_two_wire_serial_device_controller_twd) (I²C device),
 [ONEWIRE](https://stnolting.github.io/neorv32/#_one_wire_serial_interface_controller_onewire) (1-wire host)
-* general purpose IOs ([GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio), interrupt-capable) and
-[PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm)
+* up to 32 general purpose IOs ([GPIO](https://stnolting.github.io/neorv32/#_general_purpose_input_and_output_port_gpio), interrupt-capable)
+and up to 32 individual [PWM](https://stnolting.github.io/neorv32/#_pulse_width_modulation_controller_pwm) channels
 * smart LED interface ([NEOLED](https://stnolting.github.io/neorv32/#_smart_led_interface_neoled)) to directly control NeoPixel(TM) LEDs
 
 **SoC Connectivity**
@@ -244,4 +245,4 @@ See the [legal](https://stnolting.github.io/neorv32/#_legal) section for more in
 
 ---------------------------------------
 
-:heart: A big shout-out to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors)!
+**:heart: A big shout-out to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors)!**

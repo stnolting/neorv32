@@ -283,9 +283,10 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Miscelanous}]
   add_params $group {
+    { RISCV_ISA_Zfinx  {Zfinx - Embedded FPU (using integer register file)} {} }
     { RISCV_ISA_Zibi   {Zibi - Branch with immediate-comparison}            {} }
     { RISCV_ISA_Zicond {Zicond - Conditional-move instructions}             {} }
-    { RISCV_ISA_Zfinx  {Zfinx - Embedded FPU (using integer register file)} {} }
+    { RISCV_ISA_Zimop  {Zimop - May-be-operation}                           {} }
     { RISCV_ISA_Zxcfu  {Zxcfu - Custom-instructions unit (user-defined)}    {} }
   }
 
@@ -414,8 +415,8 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Pulse-Width Modulation Controller (PWM)}]
   add_params $group {
-    { IO_PWM_EN     {Enable PWM} }
-    { IO_PWM_NUM_CH {Channels} {} {$IO_PWM_EN} }
+    { IO_PWM_EN  {Enable PWM} }
+    { IO_PWM_NUM {Number of PWM channels} {} {$IO_PWM_EN} }
   }
 
   set group [add_group $page {Watchdog Timer (WDT)}]
@@ -442,7 +443,8 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {General Purpose Timer (GPTMR)}]
   add_params $group {
-    { IO_GPTMR_EN {Enable GPTMR} }
+    { IO_GPTMR_EN  {Enable GPTMR} }
+    { IO_GPTMR_NUM {Number of independent timer slices} }
   }
 
   set group [add_group $page {One-Wire Interface Controller (ONEWIRE)}]

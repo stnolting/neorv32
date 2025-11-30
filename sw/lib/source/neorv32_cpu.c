@@ -373,7 +373,8 @@ uint32_t neorv32_cpu_hpm_get_size(void) {
  **************************************************************************/
 int neorv32_cpu_hwtrig_get_number(void) {
 
-  int cnt = 0, sel = 0;
+  int cnt = 0;
+  uint32_t sel = 0;
 
   if ((neorv32_cpu_csr_read(CSR_MXISA) & (1<<CSR_MXISA_SDTRIG)) == 0) {
     return 0;

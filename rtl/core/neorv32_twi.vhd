@@ -20,16 +20,16 @@ entity neorv32_twi is
     IO_TWI_FIFO : natural range 1 to 2**15 -- TWI RTX FIFO depth, has to be a power of two, min 1
   );
   port (
-    clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- global reset line, low-active, async
-    bus_req_i : in  bus_req_t;  -- bus request
-    bus_rsp_o : out bus_rsp_t;  -- bus response
-    clkgen_i  : in  std_ulogic_vector(7 downto 0);
-    twi_sda_i : in  std_ulogic; -- serial data line input
-    twi_sda_o : out std_ulogic; -- serial data line output (0=GND, 1=high-Z)
-    twi_scl_i : in  std_ulogic; -- serial clock line input
-    twi_scl_o : out std_ulogic; -- serial clock line output (0=GND, 1=high-Z)
-    irq_o     : out std_ulogic  -- interrupt
+    clk_i     : in  std_ulogic;                    -- global clock line
+    rstn_i    : in  std_ulogic;                    -- global reset line, low-active, async
+    bus_req_i : in  bus_req_t;                     -- bus request
+    bus_rsp_o : out bus_rsp_t;                     -- bus response
+    clkgen_i  : in  std_ulogic_vector(7 downto 0); -- prescaled clock enables
+    twi_sda_i : in  std_ulogic;                    -- serial data line input
+    twi_sda_o : out std_ulogic;                    -- serial data line output (0=GND, 1=high-Z)
+    twi_scl_i : in  std_ulogic;                    -- serial clock line input
+    twi_scl_o : out std_ulogic;                    -- serial clock line output (0=GND, 1=high-Z)
+    irq_o     : out std_ulogic                     -- interrupt
   );
 end neorv32_twi;
 

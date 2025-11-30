@@ -50,6 +50,7 @@ entity neorv32_cpu_control is
     RISCV_ISA_Zicntr  : boolean; -- base counters
     RISCV_ISA_Zicond  : boolean; -- integer conditional operations
     RISCV_ISA_Zihpm   : boolean; -- hardware performance monitors
+    RISCV_ISA_Zimop   : boolean; -- may-be-operations
     RISCV_ISA_Zkn     : boolean; -- NIST algorithm suite
     RISCV_ISA_Zknd    : boolean; -- cryptography NIST AES decryption extension
     RISCV_ISA_Zkne    : boolean; -- cryptography NIST AES encryption extension
@@ -77,7 +78,6 @@ entity neorv32_cpu_control is
     ctrl_o        : out ctrl_bus_t;                         -- main control bus
     -- misc --
     frontend_i    : in  if_bus_t;                           -- front-end status and data
-    pmp_fault_i   : in  std_ulogic;                         -- instruction fetch / execute pmp fault
     hwtrig_i      : in  std_ulogic;                         -- hardware trigger
     -- data path interface --
     alu_cp_done_i : in  std_ulogic;                         -- ALU iterative operation done
@@ -122,7 +122,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     cause       : std_ulogic_vector(6 downto 0); -- trap ID for mcause CSR & debug-mode entry identifier
     pc          : std_ulogic_vector(XLEN-1 downto 0); -- trap program counter
     --
-    env_pending : std_ulogic; -- start of trap environment if pending
+    env_pending : std_ulogic; -- pending start of trap environment
     env_enter   : std_ulogic; -- enter trap environment
     env_exit    : std_ulogic; -- leave trap environment
     --
@@ -139,44 +139,44 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- control and status registers (CSRs) --
   type csr_t is record
-    addr           : std_ulogic_vector(11 downto 0); -- physical access address
-    we, we_nxt     : std_ulogic; -- write enable
-    re, re_nxt     : std_ulogic; -- read enable
-    operand        : std_ulogic_vector(XLEN-1 downto 0); -- write operand
-    wdata          : std_ulogic_vector(XLEN-1 downto 0); -- write data
-    rdata          : std_ulogic_vector(XLEN-1 downto 0); -- read data
+    addr          : std_ulogic_vector(11 downto 0); -- physical access address
+    we, we_nxt    : std_ulogic; -- write enable
+    re, re_nxt    : std_ulogic; -- read enable
+    operand       : std_ulogic_vector(XLEN-1 downto 0); -- write operand
+    wdata         : std_ulogic_vector(XLEN-1 downto 0); -- write data
+    rdata         : std_ulogic_vector(XLEN-1 downto 0); -- read data
     --
-    mstatus_mie    : std_ulogic; -- machine-mode IRQ enable
-    mstatus_mpie   : std_ulogic; -- previous machine-mode IRQ enable
-    mstatus_mpp    : std_ulogic; -- machine previous privilege mode
-    mstatus_mprv   : std_ulogic; -- effective privilege level for load/stores
-    mstatus_tw     : std_ulogic; -- do not allow user mode to execute WFI instruction when set
+    mstatus_mie   : std_ulogic; -- machine-mode IRQ enable
+    mstatus_mpie  : std_ulogic; -- previous machine-mode IRQ enable
+    mstatus_mpp   : std_ulogic; -- machine previous privilege mode
+    mstatus_mprv  : std_ulogic; -- effective privilege level for load/stores
+    mstatus_tw    : std_ulogic; -- do not allow user mode to execute WFI instruction when set
     --
-    mie_msi        : std_ulogic; -- machine software interrupt enable
-    mie_mei        : std_ulogic; -- machine external interrupt enable
-    mie_mti        : std_ulogic; -- machine timer interrupt enable
-    mie_firq       : std_ulogic_vector(15 downto 0); -- fast interrupt enable
+    mie_msi       : std_ulogic; -- machine software interrupt enable
+    mie_mei       : std_ulogic; -- machine external interrupt enable
+    mie_mti       : std_ulogic; -- machine timer interrupt enable
+    mie_firq      : std_ulogic_vector(15 downto 0); -- fast interrupt enable
     --
-    prv_level      : std_ulogic; -- current privilege level
-    prv_level_eff  : std_ulogic; -- current *effective* privilege level
+    prv_level     : std_ulogic; -- current privilege level
+    prv_level_eff : std_ulogic; -- current *effective* privilege level
     --
-    mepc           : std_ulogic_vector(XLEN-1 downto 0); -- machine exception PC
-    mcause         : std_ulogic_vector(5 downto 0); -- machine trap cause
-    mtvec          : std_ulogic_vector(XLEN-1 downto 0); -- machine trap-handler base address
-    mtval          : std_ulogic_vector(XLEN-1 downto 0); -- machine bad address or instruction
-    mtinst         : std_ulogic_vector(XLEN-1 downto 0); -- machine trap instruction
-    mscratch       : std_ulogic_vector(XLEN-1 downto 0); -- machine scratch register
-    mcounteren_cy  : std_ulogic; -- machine counter access enable: cycle counter
-    mcounteren_ir  : std_ulogic; -- machine counter access enable: instruction counter
+    mepc          : std_ulogic_vector(XLEN-1 downto 0); -- machine exception PC
+    mcause        : std_ulogic_vector(5 downto 0); -- machine trap cause
+    mtvec         : std_ulogic_vector(XLEN-1 downto 0); -- machine trap-handler base address
+    mtval         : std_ulogic_vector(XLEN-1 downto 0); -- machine bad address or instruction
+    mtinst        : std_ulogic_vector(XLEN-1 downto 0); -- machine trap instruction
+    mscratch      : std_ulogic_vector(XLEN-1 downto 0); -- machine scratch register
+    mcounteren_cy : std_ulogic; -- machine counter access enable: cycle counter
+    mcounteren_ir : std_ulogic; -- machine counter access enable: instruction counter
     --
-    dcsr_ebreakm   : std_ulogic; -- behavior of ebreak instruction in m-mode
-    dcsr_ebreaku   : std_ulogic; -- behavior of ebreak instruction in u-mode
-    dcsr_step      : std_ulogic; -- single-step mode
-    dcsr_prv       : std_ulogic; -- current privilege level when entering debug mode
-    dcsr_cause     : std_ulogic_vector(2 downto 0); -- why was debug mode entered
-    dcsr_rd        : std_ulogic_vector(XLEN-1 downto 0); -- debug mode control and status register
-    dpc            : std_ulogic_vector(XLEN-1 downto 0); -- mode program counter
-    dscratch0      : std_ulogic_vector(XLEN-1 downto 0); -- debug mode scratch register 0
+    dcsr_ebreakm  : std_ulogic; -- behavior of ebreak instruction in m-mode
+    dcsr_ebreaku  : std_ulogic; -- behavior of ebreak instruction in u-mode
+    dcsr_step     : std_ulogic; -- single-step mode
+    dcsr_prv      : std_ulogic; -- current privilege level when entering debug mode
+    dcsr_cause    : std_ulogic_vector(2 downto 0); -- why was debug mode entered
+    dcsr_rd       : std_ulogic_vector(XLEN-1 downto 0); -- debug mode control and status register
+    dpc           : std_ulogic_vector(XLEN-1 downto 0); -- mode program counter
+    dscratch0     : std_ulogic_vector(XLEN-1 downto 0); -- debug mode scratch register 0
   end record;
   signal csr : csr_t;
 
@@ -196,7 +196,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal illegal_cmd  : std_ulogic; -- illegal instruction check
   signal csr_valid    : std_ulogic_vector(2 downto 0); -- CSR access: [2] implemented, [1] r/w access, [0] privilege
   signal cnt_event    : std_ulogic_vector(11 downto 0); -- counter events
-  signal ebreak_trig  : std_ulogic; -- "ebreak" exception trigger
+  signal ebreak_trig  : std_ulogic; -- environment break exception trigger
 
   signal zcmp_event, zcmp_event_nxt, zcmp_event_reset : std_ulogic; 
   signal zcmp_pc, zcmp_pc_nxt : std_ulogic_vector(31 downto 0);
@@ -280,8 +280,8 @@ begin
 
   -- Execute Engine FSM (Micro Sequencer) Comb ----------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  execute_engine_fsm_comb: process(exe_engine,frontend_i, debug_ctrl, zcmp_pc, zcmp_event, trap_ctrl, hwtrig_i, opcode, frontend_i, csr,
-                                   ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, pmp_fault_i)
+  execute_engine_fsm_comb: process(exe_engine,frontend_i, debug_ctrl, zcmp_pc, zcmp_event, trap_ctrl, hwtrig_i, opcode, frontend_i,
+                                   csr, ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken)
     variable funct3_v : std_ulogic_vector(2 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
   begin
@@ -333,7 +333,7 @@ begin
     if RISCV_ISA_Zaamo and (opcode(2) = opcode_amo_c(2)) and (exe_engine.ir(instr_funct5_lsb_c+1) = '0') then -- atomic read-modify-write operation
       ctrl_nxt.lsu_rmw <= '1'; -- read-modify-write
       ctrl_nxt.lsu_rvs <= '0';
-      ctrl_nxt.lsu_rw  <= '0'; -- executed as single load for the CPU
+      ctrl_nxt.lsu_rw  <= '0'; -- executed as single load for the CPU control logic
     elsif RISCV_ISA_Zalrsc and (opcode(2) = opcode_amo_c(2)) and (exe_engine.ir(instr_funct5_lsb_c+1) = '1') then -- atomic reservation-set operation
       ctrl_nxt.lsu_rmw <= '0';
       ctrl_nxt.lsu_rvs <= '1'; -- reservation-set
@@ -361,7 +361,7 @@ begin
         if (((trap_ctrl.env_pending = '1') or (trap_ctrl.exc_fire = '1')) and (frontend_i.zcmp_atomic_tail='0')) then -- pending trap or pending exception (fast), only taken when zcmp not in atomic section
           exe_engine_nxt.state <= EX_TRAP_ENTER;
         elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
-          trap_ctrl.instr_be   <= frontend_i.fault or pmp_fault_i; -- access fault during instruction fetch
+          trap_ctrl.instr_be   <= frontend_i.fault; -- access fault during instruction fetch
           exe_engine_nxt.ci    <= frontend_i.compr; -- this is a de-compressed instruction
           exe_engine_nxt.ir    <= frontend_i.instr; -- instruction word
 
@@ -377,13 +377,13 @@ begin
 
       when EX_TRAP_ENTER => -- enter trap environment and jump to trap vector
       -- ------------------------------------------------------------
-        if (trap_ctrl.cause(5) = '1') and RISCV_ISA_Sdext then -- debug mode (re-)entry
-          exe_engine_nxt.pc2 <= DEBUG_PARK_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter; start at "parking loop" <normal_entry>
+        if (trap_ctrl.cause(5) = '1') and RISCV_ISA_Sdext then -- debug mode entry
+          exe_engine_nxt.pc2 <= DEBUG_PARK_ADDR(XLEN-1 downto 2) & "00"; -- start at "parking loop" <normal_entry>
         elsif (debug_ctrl.run = '1') and RISCV_ISA_Sdext then -- any other trap INSIDE debug mode
-          exe_engine_nxt.pc2 <= DEBUG_EXC_ADDR(XLEN-1 downto 2) & "00"; -- debug mode enter: start at "parking loop" <exception_entry>
-        elsif (csr.mtvec(0) = '1') and (trap_ctrl.cause(6) = '1') then -- normal trap: vectored mode and interrupt
+          exe_engine_nxt.pc2 <= DEBUG_EXC_ADDR(XLEN-1 downto 2) & "00"; -- start at "parking loop" <exception_entry>
+        elsif (csr.mtvec(0) = '1') and (trap_ctrl.cause(6) = '1') then -- M-mode trap: vectored mode and interrupt
           exe_engine_nxt.pc2 <= csr.mtvec(XLEN-1 downto 7) & trap_ctrl.cause(4 downto 0) & "00"; -- PC = mtvec + 4 * mcause
-        else -- normal trap: direct mode
+        else -- M-mode trap: direct mode
           exe_engine_nxt.pc2 <= csr.mtvec(XLEN-1 downto 2) & "00"; -- PC = mtvec
         end if;
         trap_ctrl.env_enter  <= '1';
@@ -485,9 +485,9 @@ begin
 
           -- environment/CSR operation or ILLEGAL opcode --
           when others =>
-            if (funct3_v = funct3_env_c) or
+            if (funct3_v = funct3_env_c) or (funct3_v = funct3_zimop_c) or
                (((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) and (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000")) then
-              csr.re_nxt <= '0'; -- no read if CSRRW[I] and rd = 0 OR if environment instruction
+              csr.re_nxt <= '0'; -- no read if CSRRW[I] and rd = 0 OR if environment instruction OR if may-be-operation
             else
               csr.re_nxt <= '1';
             end if;
@@ -558,8 +558,9 @@ begin
             when others => exe_engine_nxt.state <= EX_DISPATCH; -- illegal or CSR operation
           end case;
         end if;
-        -- always write to CSR (if CSR instruction); ENVIRONMENT operations have rs1/imm5 = zero so this won't happen then --
-        if (funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or (exe_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000") then
+        -- write to CSR if not environment OR ma-be-operation --
+        if (funct3_v /= funct3_env_c) and (funct3_v /= funct3_zimop_c) and
+           (((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) or (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000")) then
           csr.we_nxt <= '1'; -- CSRRW[I]: always write CSR; CSRR[S/C][I]: write CSR if rs1/imm5 is NOT zero; won't happen if exception
         end if;
         -- always write to RF (even if csr.re = 0, but then we have rd = 0); ENVIRONMENT operations have rd = zero so this does not hurt --
@@ -680,6 +681,22 @@ begin
 
 
   
+  -- CPU (Counter) Events -------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  cnt_event(cnt_event_cy_c)       <= '0' when (exe_engine.state = EX_SLEEP)                                          else '1'; -- active cycle
+  cnt_event(cnt_event_tm_c)       <= '0';                                                                                      -- time: not available
+  cnt_event(cnt_event_ir_c)       <= '1' when (exe_engine.state = EX_EXECUTE)                                        else '0'; -- retired (=executed) instruction
+  cnt_event(cnt_event_compr_c)    <= '1' when (exe_engine.state = EX_EXECUTE)  and (exe_engine.ci = '1')             else '0'; -- executed compressed instruction
+  cnt_event(cnt_event_wait_dis_c) <= '1' when (exe_engine.state = EX_DISPATCH) and (frontend_i.valid = '0')          else '0'; -- instruction dispatch wait cycle
+  cnt_event(cnt_event_wait_alu_c) <= '1' when (exe_engine.state = EX_ALU_WAIT)                                       else '0'; -- multi-cycle ALU wait cycle
+  cnt_event(cnt_event_branch_c)   <= '1' when (exe_engine.state = EX_BRANCH)                                         else '0'; -- executed branch instruction
+  cnt_event(cnt_event_branched_c) <= '1' when (exe_engine.state = EX_BRANCHED)                                       else '0'; -- control flow transfer
+  cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '0') or (ctrl.lsu_rmw = '1')) else '0'; -- executed load operation
+  cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '1') or (ctrl.lsu_rmw = '1')) else '0'; -- executed store operation
+  cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exe_engine.state = EX_MEM_RSP)               else '0'; -- load/store memory wait cycle
+  cnt_event(cnt_event_trap_c)     <= '1' when (trap_ctrl.env_enter = '1')                                            else '0'; -- entered trap
+
+
   -- ****************************************************************************************************************************
   -- Illegal Instruction Detection
   -- ****************************************************************************************************************************
@@ -721,9 +738,9 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zfinx); -- available if FPU implemented
 
       -- machine trap setup/handling, environment/information registers, etc. --
-      when csr_mstatus_c  | csr_mstatush_c      | csr_misa_c      | csr_mie_c       | csr_mtvec_c  |
-           csr_mscratch_c | csr_mepc_c          | csr_mcause_c    | csr_mip_c       | csr_mtval_c  |
-           csr_mtinst_c   | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c   | csr_mimpid_c |
+      when csr_mstatus_c  | csr_mstatush_c      | csr_misa_c      | csr_mie_c     | csr_mtvec_c  |
+           csr_mscratch_c | csr_mepc_c          | csr_mcause_c    | csr_mip_c     | csr_mtval_c  |
+           csr_mtinst_c   | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c |
            csr_mhartid_c  | csr_mconfigptr_c    | csr_mxcsr_c     | csr_mxisa_c =>
         csr_valid(2) <= '1'; -- always implemented
 
@@ -732,9 +749,9 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_U); -- available if U-mode implemented
 
       -- physical memory protection (PMP) --
-      when csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   | -- configuration
-           csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  |
-           csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  | -- address
+      when csr_pmpcfg0_c   | csr_pmpcfg1_c   | csr_pmpcfg2_c   | csr_pmpcfg3_c   | -- lowest 4 configuration registers only
+           csr_pmpaddr0_c  | csr_pmpaddr1_c  | csr_pmpaddr2_c  | csr_pmpaddr3_c  | -- lowest 16 address registers only
+           csr_pmpaddr4_c  | csr_pmpaddr5_c  | csr_pmpaddr6_c  | csr_pmpaddr7_c  |
            csr_pmpaddr8_c  | csr_pmpaddr9_c  | csr_pmpaddr10_c | csr_pmpaddr11_c |
            csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Smpmp); -- available if PMP implemented
@@ -850,7 +867,7 @@ begin
           illegal_cmd <= '0';
         end if;
 
-      when opcode_system_c => -- CSR / system instruction
+      when opcode_system_c => -- system instruction / may-be-operations / CSR access
         if (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_env_c) then -- system environment
           if (exe_engine.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) = "00000") and (exe_engine.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000") then
             case exe_engine.ir(instr_imm12_msb_c downto instr_imm12_lsb_c) is
@@ -862,7 +879,9 @@ begin
               when others           => illegal_cmd <= '1'; -- undefined
             end case;
           end if;
-        elsif (csr_valid = "111") and (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) /= funct3_csril_c) then -- valid CSR operation
+        elsif (exe_engine.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_zimop_c) then
+          illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zimop);
+        elsif (csr_valid = "111") then -- valid CSR operation
           illegal_cmd <= '0';
         end if;
 
@@ -940,7 +959,7 @@ begin
     end if;
   end process trap_buffer;
 
-  -- environment break exception helper --
+  -- environment break exception trigger --
   ebreak_trig <= (trap_ctrl.ebreak and (    csr.prv_level) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- M-mode trap when in M-mode
                  (trap_ctrl.ebreak and (not csr.prv_level) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run));   -- M-mode trap when in U-mode
 
@@ -1013,7 +1032,7 @@ begin
   end process trap_controller;
 
   -- any exception? --
-  trap_ctrl.exc_fire <= '1' when (or_reduce_f(trap_ctrl.exc_buf) = '1') else '0'; -- sync. exceptions CANNOT be masked
+  trap_ctrl.exc_fire <= '1' when (or_reduce_f(trap_ctrl.exc_buf) = '1') else '0'; -- sync. exceptions cannot be masked
 
   -- any system interrupt? --
   trap_ctrl.irq_fire(0) <= '1' when
@@ -1171,12 +1190,12 @@ begin
       -- ********************************************************************************
       elsif (trap_ctrl.env_enter = '1') then
 
-        -- NORMAL trap entry - no CSR update when in debug-mode! --
+        -- trap to machine-mode - no CSR update when in debug-mode! --
         if (not RISCV_ISA_Sdext) or ((trap_ctrl.cause(5) = '0') and (debug_ctrl.run = '0')) then
           csr.mcause <= trap_ctrl.cause(trap_ctrl.cause'left) & trap_ctrl.cause(4 downto 0); -- trap type & identifier
           csr.mepc   <= trap_ctrl.pc(XLEN-1 downto 1) & '0'; -- trap PC
           -- trap value (load/store trap address only, permitted by RISC-V priv. spec.) --
-          if (trap_ctrl.cause(6) = '0') and (trap_ctrl.cause(2) = '1') then -- load/store misaligned/access faults [hacky!]
+          if (trap_ctrl.cause(6) = '0') and (trap_ctrl.cause(2) = '1') then -- load/store misaligned/access fault
             csr.mtval <= lsu_mar_i; -- faulting data access address
           else -- everything else including all interrupts
             csr.mtval <= (others => '0');
@@ -1193,7 +1212,7 @@ begin
           csr.mstatus_mpp  <= csr.prv_level; -- backup previous privilege level
         end if;
 
-        -- DEBUG trap entry - no CSR update when already in debug-mode! --
+        -- trap to debug-mode - no CSR update when already in debug-mode! --
         if RISCV_ISA_Sdext and (trap_ctrl.cause(5) = '1') and (debug_ctrl.run = '0') then
           csr.dcsr_cause <= trap_ctrl.cause(2 downto 0); -- trap cause
           csr.dcsr_prv   <= csr.prv_level; -- current privilege level when debug mode was entered
@@ -1205,7 +1224,7 @@ begin
       -- ********************************************************************************
       elsif (trap_ctrl.env_exit = '1') then
 
-        -- return from debug mode --
+        -- return from debug-mode --
         if RISCV_ISA_Sdext and (debug_ctrl.run = '1') then
           if RISCV_ISA_U then
             csr.prv_level <= csr.dcsr_prv;
@@ -1213,7 +1232,7 @@ begin
               csr.mstatus_mprv <= '0'; -- clear if return to priv. level less than M
             end if;
           end if;
-        -- return from normal trap --
+        -- return from machine-mode trap --
         else
           if RISCV_ISA_U then
             csr.prv_level   <= csr.mstatus_mpp; -- restore previous privilege level
@@ -1229,10 +1248,10 @@ begin
       end if;
 
       -- ********************************************************************************
-      -- Override - terminate unavailable registers and bits
+      -- Override: terminate unavailable registers and bits
       -- ********************************************************************************
 
-      -- no user-mode counters at all --
+      -- no base counters --
       if not RISCV_ISA_Zicntr then
         csr.mcounteren_cy <= '0';
         csr.mcounteren_ir <= '0';
@@ -1287,7 +1306,8 @@ begin
           when csr_mstatus_c => -- machine status register, low word
             csr.rdata(3)  <= csr.mstatus_mie;
             csr.rdata(7)  <= csr.mstatus_mpie;
-            csr.rdata(12 downto 11) <= (others => csr.mstatus_mpp);
+            csr.rdata(11) <= csr.mstatus_mpp;
+            csr.rdata(12) <= csr.mstatus_mpp;
             csr.rdata(17) <= csr.mstatus_mprv;
             csr.rdata(21) <= csr.mstatus_tw and bool_to_ulogic_f(RISCV_ISA_U);
 
@@ -1399,7 +1419,8 @@ begin
             csr.rdata(27) <= bool_to_ulogic_f(RISCV_ISA_Zcb);    -- Zcb: additional code size reduction instructions
             csr.rdata(28) <= bool_to_ulogic_f(RISCV_ISA_C);      -- Zca: C without floating-point
             csr.rdata(29) <= bool_to_ulogic_f(RISCV_ISA_Zibi);   -- Zibi: branch with immediate-comparison
-            csr.rdata(31 downto 30) <= (others => '0');          -- reserved
+            csr.rdata(30) <= bool_to_ulogic_f(RISCV_ISA_Zimop);  -- Zimop: may-be-operations
+            csr.rdata(31) <= '0';                                -- reserved
 
           -- --------------------------------------------------------------------
           -- undefined/unavailable or implemented externally
