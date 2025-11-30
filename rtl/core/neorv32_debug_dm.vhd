@@ -605,8 +605,12 @@ begin
       -- data buffer write access --
       if (dci.data_reg_we = '1') then -- DM write access
         dci.data_reg <= dmi_req_i.data;
-      elsif (wren = '1') and (bus_req_i.addr(8 downto 7) = dm_data_base_c(8 downto 7)) then -- CPU write access
-        dci.data_reg <= bus_req_i.data;
+      elsif (wren = '1') and (bus_req_i.addr(7 downto 6) = dm_data_base_c(7 downto 6)) then -- CPU write access
+        for i in 0 to 3 loop
+          if (bus_req_i.ben(i) = '1') then
+            dci.data_reg(8*i+7 downto 8*i) <= bus_req_i.data(8*i+7 downto 8*i);
+          end if;
+        end loop;
       end if;
       -- CPU status register write access --
       dci.ack_hlt <= (others => '0'); -- all writable flags auto-clear
@@ -644,7 +648,7 @@ begin
   -- access helpers --
   accen <= bus_req_i.stb and bus_req_i.meta(2); -- access only when hart is in debug mode
   rden  <= accen and (not bus_req_i.rw);
-  wren  <= accen and (    bus_req_i.rw) and and_reduce_f(bus_req_i.ben);
+  wren  <= accen and (    bus_req_i.rw);
 
   -- CPU response (hart ID) decoder --
   hart_id_decode_gen:
