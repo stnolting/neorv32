@@ -198,6 +198,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_frontend_inst: entity neorv32.neorv32_cpu_frontend
   generic map (
+    HART_ID   => HART_ID,      -- hardware thread ID
     RISCV_C   => RISCV_ISA_C,  -- implement C ISA extension
     RISCV_ZCB => RISCV_ISA_Zcb -- implement Zcb ISA sub-extension
   )
@@ -429,6 +430,9 @@ begin
   -- Load/Store Unit (LSU) ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_lsu_inst: entity neorv32.neorv32_cpu_lsu
+  generic map (
+    HART_ID => HART_ID -- hardware thread ID
+  )
   port map (
     -- global control --
     clk_i       => clk_i,      -- global clock, rising edge

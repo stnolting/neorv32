@@ -20,8 +20,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_debug_dm is
   generic (
-    NUM_HARTS     : natural range 1 to 4 := 1; -- number of physical CPU cores
-    AUTHENTICATOR : boolean := false -- implement authentication module when true
+    NUM_HARTS     : natural range 1 to 4; -- number of physical CPU cores
+    AUTHENTICATOR : boolean -- implement authentication module when true
   );
   port (
     -- global control --
@@ -42,10 +42,10 @@ end neorv32_debug_dm;
 architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
   -- memory map, 128 bytes per device; replicated throughout the entire device address space --
-  constant dm_code_base_c : std_ulogic_vector(31 downto 0) := x"fffffe00"; -- code ROM (park loop)
-  constant dm_pbuf_base_c : std_ulogic_vector(31 downto 0) := x"fffffe80"; -- program buffer (PBUF)
-  constant dm_data_base_c : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- abstract data buffer (DATA)
-  constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := x"ffffff80"; -- status register(s) (SREG)
+  constant dm_code_base_c : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- code ROM (park loop)
+  constant dm_pbuf_base_c : std_ulogic_vector(31 downto 0) := x"ffffff40"; -- program buffer (PBUF)
+  constant dm_data_base_c : std_ulogic_vector(31 downto 0) := x"ffffff80"; -- abstract data buffer (DATA)
+  constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := x"ffffffc0"; -- status register (SREG)
 
   -- rv32i instruction prototypes --
   constant instr_nop_c    : std_ulogic_vector(31 downto 0) := x"00000013"; -- nop
@@ -141,47 +141,31 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
   -- code ROM containing "park loop" --
   -- copied manually from 'sw/ocd-firmware/neorv32_application_image.vhd' --
-  type code_rom_t is array (0 to 31) of std_ulogic_vector(31 downto 0);
+  type code_rom_t is array (0 to 15) of std_ulogic_vector(31 downto 0);
   constant code_rom_c : code_rom_t := (
-    00 => x"f8002623",
-    01 => x"7b241073",
-    02 => x"f1402473",
-    03 => x"f8802023",
-    04 => x"f1402473",
-    05 => x"f8044403",
-    06 => x"00247413",
-    07 => x"02041663",
-    08 => x"f1402473",
-    09 => x"f8044403",
-    10 => x"00147413",
-    11 => x"fe0402e3",
-    12 => x"f1402473",
-    13 => x"f8802223",
-    14 => x"7b202473",
-    15 => x"0ff0000f",
-    16 => x"0000100f",
-    17 => x"7b200073",
-    18 => x"f1402473",
-    19 => x"f8802423",
-    20 => x"7b202473",
-    21 => x"e8000067",
-    22 => x"00000073",
-    23 => x"00000073",
-    24 => x"00000073",
-    25 => x"00000073",
-    26 => x"00000073",
-    27 => x"00000073",
-    28 => x"00000073",
-    29 => x"00000073",
-    30 => x"00000073",
-    31 => x"00000073"
+    x"fc0001a3",
+    x"7b241073",
+    x"fc000023",
+    x"fc204403",
+    x"02041063",
+    x"fc104403",
+    x"fe040ae3",
+    x"fc0000a3",
+    x"7b202473",
+    x"0ff0000f",
+    x"0000100f",
+    x"7b200073",
+    x"fc000123",
+    x"7b202473",
+    x"f4000067",
+    x"00000073"
   );
 
   -- CPU access helpers --
   signal accen, rden, wren : std_ulogic;
 
-  -- CPU response (hart ID) decoder --
-  signal cpu_rsp_dec : std_ulogic_vector(NUM_HARTS-1 downto 0);
+  -- CPU ID decoder --
+  signal cpu_id_dec : std_ulogic_vector(NUM_HARTS-1 downto 0);
 
   -- Debug Core Interface --
   type dci_t is record
@@ -190,7 +174,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     ack_res     : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts resuming when set (single-shot)
     req_exe     : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants CPU to execute program buffer when set
     ack_exe     : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts executing program buffer when set (single-shot)
-    ack_exc     : std_ulogic; -- CPU has detected an exception (single-shot)
+    ack_exc     : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU has detected an exception (single-shot)
     data_reg_we : std_ulogic; -- write abstract data
     data_reg    : std_ulogic_vector(31 downto 0); -- memory-mapped data exchange register
   end record;
@@ -555,7 +539,7 @@ begin
 
           when CMD_PENDING => -- wait for CPU to finish
           -- ------------------------------------------------------------
-            if (dci.ack_exc = '1') then -- exception during execution (can only be caused by the currently selected hart)
+            if (or_reduce_f(dci.ack_exc) = '1') then -- exception during execution (can only be caused by the currently selected hart)
               cmd.err   <= "011";
               cmd.state <= CMD_IDLE;
             elsif (dm_reg.rd_acc_err = '1') or (dm_reg.wr_acc_err = '1') then -- invalid read/write while command is executing
@@ -597,7 +581,7 @@ begin
       dci.ack_hlt  <= (others => '0');
       dci.ack_res  <= (others => '0');
       dci.ack_exe  <= (others => '0');
-      dci.ack_exc  <= '0';
+      dci.ack_exc  <= (others => '0');
     elsif rising_edge(clk_i) then
       -- bus handshake --
       bus_rsp_o.ack <= accen;
@@ -605,37 +589,39 @@ begin
       -- data buffer write access --
       if (dci.data_reg_we = '1') then -- DM write access
         dci.data_reg <= dmi_req_i.data;
-      elsif (wren = '1') and (bus_req_i.addr(8 downto 7) = dm_data_base_c(8 downto 7)) then -- CPU write access
-        dci.data_reg <= bus_req_i.data;
+      elsif (wren = '1') and (bus_req_i.addr(7 downto 6) = dm_data_base_c(7 downto 6)) then -- CPU write access
+        for i in 0 to 3 loop
+          if (bus_req_i.ben(i) = '1') then
+            dci.data_reg(8*i+7 downto 8*i) <= bus_req_i.data(8*i+7 downto 8*i);
+          end if;
+        end loop;
       end if;
       -- CPU status register write access --
-      dci.ack_hlt <= (others => '0'); -- all writable flags auto-clear
+      dci.ack_hlt <= (others => '0'); -- all flags auto-clear
       dci.ack_res <= (others => '0');
       dci.ack_exe <= (others => '0');
-      dci.ack_exc <= '0';
-      if (wren = '1') and (bus_req_i.addr(8 downto 7) = dm_sreg_base_c(8 downto 7)) then
+      dci.ack_exc <= (others => '0');
+      if (wren = '1') and (bus_req_i.addr(7 downto 6) = dm_sreg_base_c(7 downto 6)) then
         for i in 0 to NUM_HARTS-1 loop
-          if (bus_req_i.addr(3 downto 2) = "00") then dci.ack_hlt(i) <= cpu_rsp_dec(i); end if; -- CPU is HALTED
-          if (bus_req_i.addr(3 downto 2) = "01") then dci.ack_res(i) <= cpu_rsp_dec(i); end if; -- CPU starts RESUMING
-          if (bus_req_i.addr(3 downto 2) = "10") then dci.ack_exe(i) <= cpu_rsp_dec(i); end if; -- CPU starts to EXECUTE program buffer
+          if (bus_req_i.ben(0) = '1') then dci.ack_hlt(i) <= cpu_id_dec(i); end if; -- CPU has HALTED
+          if (bus_req_i.ben(1) = '1') then dci.ack_res(i) <= cpu_id_dec(i); end if; -- CPU starts RESUMING
+          if (bus_req_i.ben(2) = '1') then dci.ack_exe(i) <= cpu_id_dec(i); end if; -- CPU starts to EXECUTE program buffer
+          if (bus_req_i.ben(3) = '1') then dci.ack_exc(i) <= cpu_id_dec(i); end if; -- CPU has encountered an EXCEPTION
         end loop;
-        if (bus_req_i.addr(3 downto 2) = "11") then dci.ack_exc <= '1'; end if; -- currently selected CPU has encountered an EXCEPTION
       end if;
       -- CPU read access --
       bus_rsp_o.data <= (others => '0'); -- default
       if (rden = '1') then -- output enable
-        case bus_req_i.addr(8 downto 7) is -- module select
+        case bus_req_i.addr(7 downto 6) is -- module select
           when "00" => -- dm_code_base_c: code ROM
-            bus_rsp_o.data <= code_rom_c(to_integer(unsigned(bus_req_i.addr(6 downto 2))));
+            bus_rsp_o.data <= code_rom_c(to_integer(unsigned(bus_req_i.addr(5 downto 2))));
           when "01" => -- dm_pbuf_base_c: program buffer
             bus_rsp_o.data <= cpu_progbuf(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
           when "10" => -- dm_data_base_c: data buffer
             bus_rsp_o.data <= dci.data_reg;
-          when others => -- dm_sreg_base_c: request register
-            for i in 0 to NUM_HARTS-1 loop
-              bus_rsp_o.data(i*8+0) <= dci.req_res(i); -- DM requests CPU to resume
-              bus_rsp_o.data(i*8+1) <= dci.req_exe(i); -- DM requests CPU to execute program buffer
-            end loop;
+          when others => -- dm_sreg_base_c: status register
+            bus_rsp_o.data(1*8) <= or_reduce_f(dci.req_res and cpu_id_dec); -- DM requests CPU to resume
+            bus_rsp_o.data(2*8) <= or_reduce_f(dci.req_exe and cpu_id_dec); -- DM requests CPU to execute program buffer
         end case;
       end if;
     end if;
@@ -644,12 +630,12 @@ begin
   -- access helpers --
   accen <= bus_req_i.stb and bus_req_i.meta(2); -- access only when hart is in debug mode
   rden  <= accen and (not bus_req_i.rw);
-  wren  <= accen and (    bus_req_i.rw) and and_reduce_f(bus_req_i.ben);
+  wren  <= accen and (    bus_req_i.rw);
 
-  -- CPU response (hart ID) decoder --
+  -- CPU ID decoder --
   hart_id_decode_gen:
   for i in 0 to NUM_HARTS-1 generate
-    cpu_rsp_dec(i) <= '1' when (bus_req_i.data(1 downto 0) = std_ulogic_vector(to_unsigned(i, 2))) or (NUM_HARTS = 1) else '0';
+    cpu_id_dec(i) <= '1' when (bus_req_i.meta(4 downto 3) = std_ulogic_vector(to_unsigned(i, 2))) or (NUM_HARTS = 1) else '0';
   end generate;
 
 

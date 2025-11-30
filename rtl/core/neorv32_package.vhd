@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120408"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120409"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
   constant XLEN          : natural := 32; -- native data path width
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
@@ -85,8 +85,8 @@ package neorv32_package is
   constant base_io_ocd_c     : std_ulogic_vector(31 downto 0) := x"ffff0000";
 
   -- On-Chip Debugger - debug module entry points (code ROM) --
-  constant dm_exc_entry_c  : std_ulogic_vector(31 downto 0) := x"fffffe00"; -- = base_io_ocd_c + code_rom_base + 0
-  constant dm_park_entry_c : std_ulogic_vector(31 downto 0) := x"fffffe04"; -- = base_io_ocd_c + code_rom_base + 4
+  constant dm_exc_entry_c  : std_ulogic_vector(31 downto 0) := x"ffffff00"; -- = base_io_ocd_c + code_rom_base + 0
+  constant dm_park_entry_c : std_ulogic_vector(31 downto 0) := x"ffffff04"; -- = base_io_ocd_c + code_rom_base + 4
 
 -- **********************************************************************************************************
 -- SoC Definitions
@@ -107,7 +107,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- bus request --
   type bus_req_t is record
-    meta  : std_ulogic_vector(2 downto 0); -- access meta information
+    meta  : std_ulogic_vector(4 downto 0); -- access meta data: core_ID[2], debug[1], priv[1], load/store[1]
     addr  : std_ulogic_vector(31 downto 0); -- access address
     data  : std_ulogic_vector(31 downto 0); -- write data
     ben   : std_ulogic_vector(3 downto 0); -- byte enable
@@ -819,7 +819,7 @@ package neorv32_package is
   function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
   function is_power_of_two_f(input : natural) return boolean;
   function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector;
-  function print_hex_f(data : std_ulogic_vector) return string;
+  function to_hexstring_f(data : std_ulogic_vector) return string;
   function match_f(input : std_ulogic_vector; pattern : std_ulogic_vector) return boolean;
 
 -- **********************************************************************************************************
@@ -1202,17 +1202,17 @@ package body neorv32_package is
     return tmp_v;
   end function replicate_f;
 
-  -- Print hex value as string --------------------------------------------------------------
+  -- Convert to hex string ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function print_hex_f(data : std_ulogic_vector) return string is
-    variable nibb_v : natural := data'length/4;
-    variable res_v  : string(1 to nibb_v);
+  function to_hexstring_f(data : std_ulogic_vector) return string is
+    variable num_v : natural := data'length/4;
+    variable res_v : string(1 to num_v);
   begin
-    for i in 0 to nibb_v-1 loop
+    for i in 0 to num_v-1 loop
       res_v(i+1) := to_hexchar_f(data(data'high - i*4 downto data'high - i*4 - 3));
     end loop;
     return res_v;
-  end function print_hex_f;
+  end function to_hexstring_f;
 
   -- Check if vector matches binary pattern (skip elements compared with '-') ---------------
   -- -------------------------------------------------------------------------------------------
