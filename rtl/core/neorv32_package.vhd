@@ -37,7 +37,7 @@ package neorv32_package is
   ;
 
 -- **********************************************************************************************************
--- Processor Address Space Layout
+-- SoC Address Space Layout
 -- **********************************************************************************************************
 
   -- Main Address Regions (base address must be aligned to the region's size) ---
@@ -121,7 +121,7 @@ package neorv32_package is
     fence : std_ulogic; -- set if fence(.i) operation, single-shot
   end record;
 
-  -- bus source (request) termination --
+  -- bus request termination --
   constant req_terminate_c : bus_req_t := (
     meta  => (others => '0'),
     addr  => (others => '0'),
@@ -143,7 +143,7 @@ package neorv32_package is
     data : std_ulogic_vector(31 downto 0); -- read data, valid if ack = 1
   end record;
 
-  -- bus endpoint (response) termination --
+  -- bus response termination --
   constant rsp_terminate_c : bus_rsp_t := (
     ack  => '0',
     err  => '0',
@@ -159,7 +159,7 @@ package neorv32_package is
     data : std_ulogic_vector(31 downto 0);
   end record;
 
-  -- source (request) termination --
+  -- request termination --
   constant dmi_req_terminate_c : dmi_req_t := (
     op   => (others => '0'),
     addr => (others => '0'),
@@ -177,7 +177,7 @@ package neorv32_package is
     ack  : std_ulogic; -- single-shot
   end record;
 
-  -- endpoint (response) termination --
+  -- response termination --
   constant dmi_rsp_terminate_c : dmi_rsp_t := (
     data => (others => '0'),
     ack  => '0'
@@ -185,7 +185,7 @@ package neorv32_package is
 
   -- External Bus Interface (XBUS / Wishbone) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- xbus request --
+  -- request --
   type xbus_req_t is record
     addr : std_ulogic_vector(31 downto 0); -- access address
     data : std_ulogic_vector(31 downto 0); -- write data
@@ -197,7 +197,7 @@ package neorv32_package is
     cyc  : std_ulogic; -- valid cycle
   end record;
 
-  -- source (request) termination --
+  -- request termination --
   constant xbus_req_terminate_c : xbus_req_t := (
     addr => (others => '0'),
     data => (others => '0'),
@@ -209,14 +209,14 @@ package neorv32_package is
     cyc  => '0'
   );
 
-  -- xbus response --
+  -- response --
   type xbus_rsp_t is record
     data : std_ulogic_vector(31 downto 0); -- read data, valid if ack=1
     ack  : std_ulogic; -- access acknowledge
     err  : std_ulogic; -- access error
   end record;
 
-  -- endpoint (response) termination --
+  -- response termination --
   constant xbus_rsp_terminate_c : xbus_rsp_t := (
     data => (others => '0'),
     ack  => '0',
@@ -259,7 +259,7 @@ package neorv32_package is
     mem_wdata : std_ulogic_vector(31 downto 0); -- write data
   end record;
 
-  -- trace source termination --
+  -- trace port termination --
   constant trace_port_terminate_c : trace_port_t := (
     valid     => '0',
     order     => (others => '0'),
@@ -703,7 +703,7 @@ package neorv32_package is
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- [MSB] 1 = interrupt, 0 = sync. exception; [MSB-1] 1 = entry to debug mode, 0 = normal trapping
-  -- RISC-V compliant synchronous exceptions --
+  -- RISC-V synchronous exceptions --
   constant trap_ima_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0: instruction misaligned
   constant trap_iaf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 1: instruction access fault
   constant trap_iil_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00010"; -- 2: illegal instruction
@@ -713,11 +713,11 @@ package neorv32_package is
   constant trap_sma_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00110"; -- 6: store address misaligned
   constant trap_saf_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "00111"; -- 7: store access fault
   constant trap_env_c      : std_ulogic_vector(6 downto 0) := "0" & "0" & "01000"; -- 8..11: environment call
-  -- RISC-V compliant asynchronous exceptions (interrupts) --
+  -- RISC-V asynchronous exceptions (interrupts) --
   constant trap_msi_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00011"; -- 3:  machine software interrupt
   constant trap_mti_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "00111"; -- 7:  machine timer interrupt
   constant trap_mei_c      : std_ulogic_vector(6 downto 0) := "1" & "0" & "01011"; -- 11: machine external interrupt
-  -- NEORV32-specific (RISC-V custom) asynchronous exceptions (interrupts) --
+  -- NEORV32-specific asynchronous exceptions (interrupts) --
   constant trap_firq0_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10000"; -- 16: fast interrupt 0
   constant trap_firq1_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10001"; -- 17: fast interrupt 1
   constant trap_firq2_c    : std_ulogic_vector(6 downto 0) := "1" & "0" & "10010"; -- 18: fast interrupt 2
