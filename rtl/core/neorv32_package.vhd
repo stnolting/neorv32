@@ -671,10 +671,13 @@ package neorv32_package is
   -- Instruction Fetch Interface ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   type if_bus_t is record
-    valid  : std_ulogic;                     -- bus signals are valid
-    instr  : std_ulogic_vector(31 downto 0); -- instruction word
-    compr  : std_ulogic;                     -- instruction is decompressed
-    fault  : std_ulogic;                     -- instruction-fetch error
+    valid            : std_ulogic;                     -- bus signals are valid
+    instr            : std_ulogic_vector(31 downto 0); -- instruction word
+    compr            : std_ulogic;                     -- instruction is decompressed
+    fault            : std_ulogic;                     -- instruction-fetch error
+    zcmp_in_uop_seq  : std_ulogic;                     -- zcmp micro-op sequence running
+    zcmp_start       : std_ulogic;                     -- zcmp micro-op sequence is starting next cycle
+    zcmp_atomic_tail : std_ulogic;                     -- zcmp micro-op sequence is in atomic tail section (no traps allowed)
   end record;
 
   -- Comparator Bus -------------------------------------------------------------------------
@@ -847,13 +850,14 @@ package neorv32_package is
       RISCV_ISA_U           : boolean                        := false;
       RISCV_ISA_Zaamo       : boolean                        := false;
       RISCV_ISA_Zalrsc      : boolean                        := false;
+      RISCV_ISA_Zcb         : boolean                        := false;
+      RISCV_ISA_Zcmp        : boolean                        := false;
       RISCV_ISA_Zba         : boolean                        := false;
       RISCV_ISA_Zbb         : boolean                        := false;
       RISCV_ISA_Zbkb        : boolean                        := false;
       RISCV_ISA_Zbkc        : boolean                        := false;
       RISCV_ISA_Zbkx        : boolean                        := false;
       RISCV_ISA_Zbs         : boolean                        := false;
-      RISCV_ISA_Zcb         : boolean                        := false;
       RISCV_ISA_Zfinx       : boolean                        := false;
       RISCV_ISA_Zibi        : boolean                        := false;
       RISCV_ISA_Zicntr      : boolean                        := false;
