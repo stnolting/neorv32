@@ -41,7 +41,6 @@ entity neorv32_cpu is
     RISCV_ISA_Zbkc      : boolean;                        -- carry-less multiplication instructions
     RISCV_ISA_Zbkx      : boolean;                        -- cryptography crossbar permutation extension
     RISCV_ISA_Zbs       : boolean;                        -- single-bit bit-manipulation extension
-    RISCV_ISA_Zcb       : boolean;                        -- additional code size reduction instructions
     RISCV_ISA_Zfinx     : boolean;                        -- 32-bit floating-point extension
     RISCV_ISA_Zibi      : boolean;                        -- branch with immediate
     RISCV_ISA_Zicntr    : boolean;                        -- base counters
