@@ -199,6 +199,7 @@ __crt0_destructors_end:
 // Halt: go to endless sleep mode.
 // ************************************************************************************************
 #ifndef MAKE_BOOTLOADER
+__crt0_halt:
   ebreak // jump to debug mode if possible; otherwise just halt in __crt0_panic
 #endif
 
