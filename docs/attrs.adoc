@@ -1,6 +1,6 @@
 :keywords: neorv32, risc-v, fpga, soft-core, microcontroller, cpu, soc, processor, asip
 :description: A size-optimized, customizable and highly extensible MCU-class 32-bit RISC-V soft-core CPU and microcontroller-like SoC written in platform-independent VHDL.
-:revnumber: v1.12.4
+:revnumber: v1.12.5
 :icons: font
 :source-highlighter: highlight.js
 :imagesdir: ../figures

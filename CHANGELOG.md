@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 01.12.2025 | [**1.12.5**](https://github.com/stnolting/neorv32/releases/tag/v1.12.5) | :rocket: **New release** | |
 | 31.11.2025 | 1.12.4.9 | optimize CPU-DM request/acknowledge communication interface; smaller hardware and faster debugging | [#1435](https://github.com/stnolting/neorv32/pull/1435) |
 | 26.11.2025 | 1.12.4.8 | :lock: :bug: fix PMP bugs: check `R+W` for atomic read-modify-write accesses; remove time multiplex to allow permanent bus access monitoring | [#1433](https://github.com/stnolting/neorv32/pull/1433) |
 | 23.11.2025 | 1.12.4.7 | :sparkles: add support for RISC-V `Zimop` ISA extension (may-be-operations) | [#1431](https://github.com/stnolting/neorv32/pull/1431) |
