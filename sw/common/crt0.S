@@ -13,8 +13,6 @@
 .balign 4
 .global _start
 .global __crt0_entry
-.global __crt0_main_exit
-
 _start:
 __crt0_entry:
 .cfi_startproc
@@ -79,7 +77,7 @@ __crt0_smp_check:
   // setup machine software interrupt
   la    x15,     __crt0_smp_wakeup
   csrw  mtvec,   x15                        // install interrupt handler
-  csrsi mie,     1 << 3                     // only enable software interrupt source
+  csrsi mie,     1 << 3                     // enable software interrupt source
   csrsi mstatus, 1 << 3                     // enable machine-level interrupts
 
   // wait for interrupt in sleep mode
@@ -166,6 +164,7 @@ __crt0_main_entry:
   addi  x11, zero, 0          // x11 = a1 = argv = 0
   jalr  x1, x12               // call actual main function; put return address in ra
 
+.global __crt0_main_exit
 __crt0_main_exit:             // main's "return" and "exit" will arrive here
   csrw  mie, zero             // disable all interrupt sources
   csrw  mscratch, x10         // backup main's return code to mscratch (for debugger or destructors)
@@ -198,17 +197,21 @@ __crt0_destructors_end:
 // ************************************************************************************************
 // Halt: go to endless sleep mode.
 // ************************************************************************************************
-#ifndef MAKE_BOOTLOADER
+#ifndef MAKE_BOOTLOADER // bootloader should never return; if it does -> panic
+.global __crt0_halt
 __crt0_halt:
-  ebreak // jump to debug mode if possible; otherwise just halt in __crt0_panic
+  wfi
+  j __crt0_halt
 #endif
 
 
 // ************************************************************************************************
-// Early-boot trap handler: halt and catch fire.
+// crt0 trap handler: halt and catch fire.
+// Same code as above, but at a different address to differentiate halt reason.
 // ************************************************************************************************
 .balign 4     // trap handler has to be 32-bit aligned
 .option norvc // no compressed instruction to make this valid code on any platform configuration
+.global __crt0_panic
 __crt0_panic:
   wfi
   j __crt0_panic

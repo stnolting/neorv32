@@ -471,7 +471,6 @@ The `crt0.S` start-up performs the following operations:
 ** The return value of `main()` is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
 ** The core will halt if any trap occurs.
 ** Call all _destructors_ (if there are any).
-** Execute an `ebreak` instruction to enter debug mode if an external debugger is connected; the core will just halt if this fails.
 ** The CPU halts: enter sleep mode executing the `wfi` instruction in an endless loop.
 
 
