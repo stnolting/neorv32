@@ -19,9 +19,9 @@
 #include <twi_flash.h>
 
 /**********************************************************************//**
- * Bootloader main. "naked" because this is free-standing.
+ * Bootloader main.
  **************************************************************************/
-int __attribute__((naked)) main(void) {
+int main(void) {
 
   // ------------------------------------------------
   // System setup
