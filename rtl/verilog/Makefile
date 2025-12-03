@@ -9,7 +9,7 @@
 # ================================================================================ #
 
 .DEFAULT_GOAL := help
-all: clean check convert sim
+all: clean check version convert sim
 
 # Executables
 GHDL      ?= ghdl
@@ -60,7 +60,7 @@ prototype: $(TOP).v
 	@sed -n "/module $(TOP)/,/);/p" $(TOP).v
 	@echo "-----------------------------------------------"
 
-convert: version $(TOP).v prototype
+convert: $(TOP).v prototype
 
 # -----------------------------------------------------------------------------
 # Run Verilog simulation
@@ -99,15 +99,16 @@ help:
 	@echo "  prototype  Show Verilog instantiation prototoype"
 	@echo "  sim        Run simulation with Icarus Verilog or Verilator"
 	@echo "  clean      Remove all artifacts"
-	@echo "  all        clean + check + convert + sim"
+	@echo "  all        clean + check + version + convert + sim"
 	@echo ""
 	@echo "Variables:"
-	@echo "  GHDL       GHDL executable; default = $(GHDL_EXE)"
+	@echo "  TOP        Conversion wrapper; default = $(TOP)"
+	@echo "  GHDL       GHDL executable; default = $(GHDL)"
 	@echo "  SIMULATOR  Verilog simulator executable; default = $(SIMULATOR)"
 	@echo "  DUMP_WAVE  Dump waveform data to 'wave.fst' when 1; default = $(DUMP_WAVE)"
 	@echo ""
 	@echo "Example:"
-	@echo "  make SIMULATOR=iverilog DUMP_WAVE=0 clean convert sim"
+	@echo "  make SIMULATOR=verilator DUMP_WAVE=1 clean convert sim"
 
 # -----------------------------------------------------------------------------
 # Clean up
