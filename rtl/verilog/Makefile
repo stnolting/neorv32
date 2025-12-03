@@ -72,10 +72,12 @@ ifeq ($(DUMP_WAVE), 1)
 endif
 ifeq ($(SIMULATOR), iverilog)
 	@echo "Running simulation with Icarus Verilog"
+	@mkdir -p $(BUILD)
 	@iverilog -DDUMP_WAVE=$(DUMP_WAVE) -o $(BUILD)/neorv32-iverilog $(SIM_SRC)
 	@vvp $(BUILD)/neorv32-iverilog
 else ifeq ($(SIMULATOR), verilator)
 	@echo "Running simulation with Verilator"
+	@mkdir -p $(BUILD)
 	@verilator -DDUMP_WAVE=$(DUMP_WAVE) $(VERILATOR_ARGS) $(SIM_SRC)
 	@./$(BUILD)/Vtestbench
 else
