@@ -37,7 +37,7 @@ jobs:
       uses: actions/upload-artifact@v5
       with:
         name: neorv32_verilog_wrapper
-        path: neorv32_verilog_wrapper.v
+        path: rtl/verilog/neorv32_verilog_wrapper.v
 
   sim_iverilog:
     name: '🖥️ Verilog simulation - Icarus Verilog'
@@ -53,6 +53,7 @@ jobs:
       uses: actions/download-artifact@v6
       with:
         name: neorv32_verilog_wrapper
+        path: rtl/verilog
 
     - name: '📦 Install Icarus Verilog'
       run: sudo apt install iverilog
@@ -76,6 +77,7 @@ jobs:
       uses: actions/download-artifact@v6
       with:
         name: neorv32_verilog_wrapper
+        path: rtl/verilog
 
     - name: '📦 Install Verilator'
       run: sudo apt install verilator
