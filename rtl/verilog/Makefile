@@ -9,7 +9,7 @@
 # ================================================================================ #
 
 .DEFAULT_GOAL := help
-all: version clean convert sim
+all: clean check convert sim
 
 # Executables
 GHDL      ?= ghdl
@@ -32,12 +32,15 @@ VERILATOR_ARGS += --trace --trace-fst
 endif
 
 # -----------------------------------------------------------------------------
-# Print NEORV32 version
+# Check framework
 # -----------------------------------------------------------------------------
 
 version:
 	@echo "NEORV32 Version:"
 	@grep -rni $(CORE_RTL)/neorv32_package.vhd -e 'hw_version_c'
+
+check:
+	@$(GHDL) -v
 
 # -----------------------------------------------------------------------------
 # Convert to Verilog and show instantiation prototype
@@ -46,7 +49,6 @@ version:
 $(TOP).v:
 	@echo "Converting to Verilog: $(TOP).vhd -> $(TOP).v"
 	@mkdir -p $(BUILD)
-	@$(GHDL) -v
 	@$(GHDL) -i --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild $(CORE_RTL)/*.vhd $(TOP).vhd
 	@$(GHDL) -m --std=08 --work=neorv32 --workdir=$(BUILD) $(TOP)
 	@$(GHDL) synth --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild --out=verilog $(TOP) > $(TOP).v
@@ -58,7 +60,7 @@ prototype: $(TOP).v
 	@sed -n "/module $(TOP)/,/);/p" $(TOP).v
 	@echo "-----------------------------------------------"
 
-convert: $(TOP).v prototype
+convert: version $(TOP).v prototype
 
 # -----------------------------------------------------------------------------
 # Run Verilog simulation
@@ -90,11 +92,12 @@ help:
 	@echo "Targets:"
 	@echo "  help       Show this text"
 	@echo "  version    Show NEORV32 version"
+	@echo "  check      Show GHDL version"
 	@echo "  convert    Convert NEORV32 to Verilog (generate '$(NEORV32_VERILOG)')"
 	@echo "  prototype  Show Verilog instantiation prototoype"
 	@echo "  sim        Run simulation with Icarus Verilog or Verilator"
 	@echo "  clean      Remove all artifacts"
-	@echo "  all        version + clean + convert + SIMULATOR"
+	@echo "  all        clean + check + convert + sim"
 	@echo ""
 	@echo "Variables:"
 	@echo "  GHDL       GHDL executable; default = $(GHDL_EXE)"
