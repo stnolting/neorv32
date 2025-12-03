@@ -30,7 +30,7 @@ jobs:
 
     - name: '⚙️ Run conversion'
       run: |
-        make clean check convert
+        make -C rtl/verilog clean convert
 
     - name: '📤 Archive generated Verilog code'
       if: always()
@@ -59,7 +59,7 @@ jobs:
 
     - name: '⚙️ Run Simulation'
       run: |
-        make SIMULATOR=iverilog sim | tee iverilog.log
+        make -C rtl/verilog SIMULATOR=iverilog sim | tee iverilog.log
         grep 'Simulation successful!' iverilog.log
 
   sim_verilator:
@@ -82,5 +82,5 @@ jobs:
 
     - name: '⚙️ Run Simulation'
       run: |
-        make sim SIMULATOR=verilator | tee verilator.log
+        make -C rtl/verilog SIMULATOR=verilator sim | tee verilator.log
         grep 'Simulation successful!' verilator.log
