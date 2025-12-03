@@ -15,7 +15,7 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_verilog_wrapper is
-  port ( -- [note] add ports as required; generics cannot be used
+  port ( -- [note] add ports as required; generics/parameters cannot be used
     -- Global control --
     clk_i       : in  std_ulogic; -- global clock, rising edge
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
@@ -113,7 +113,7 @@ begin
     -- Global control --
     clk_i       => clk_i,       -- global clock, rising edge
     rstn_i      => rstn_i,      -- global reset, low-active, async
-    -- primary UART0 (available if IO_UART0_EN = true) --
+    -- primary UART0 --
     uart0_txd_o => uart0_txd_o, -- UART0 send data
     uart0_rxd_i => uart0_rxd_i  -- UART0 receive data
   );
