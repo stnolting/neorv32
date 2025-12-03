@@ -32,3 +32,8 @@ NEORV32 Processor wrappers dedicated for complex system integration:
 Minimal processor test setups (FPGA- and board-independent) for checking out NEORV32.
 See the folder's README for more information. Note that these test setups are used in the
 [NEORV32 User Guide](https://stnolting.github.io/neorv32/ug).
+
+### > [`verilog`](verilog)
+
+Convert a pre-configured NEORV32 wrapper into an **all-Verilog** design and simulate it with
+Icarus Verilog and Verilator.
