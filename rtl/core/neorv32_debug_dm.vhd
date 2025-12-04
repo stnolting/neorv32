@@ -538,13 +538,13 @@ begin
 
           when CMD_PENDING => -- wait for CPU to complete execution
           -- ------------------------------------------------------------
-            if (or_reduce_f(dci.ack_exc) = '1') then -- exception during execution (can only be caused by the currently selected hart)
-              cmd.err   <= "011";
-              cmd.state <= CMD_IDLE;
-            elsif (dm_reg.rd_acc_err = '1') or (dm_reg.wr_acc_err = '1') then -- invalid read/write while command is executing
-              cmd.err   <= "001";
-              cmd.state <= CMD_IDLE;
-            elsif (or_reduce_f(dci.ack_hlt and hartselect) = '1') then -- selected CPU is parked (halted) again -> execution done
+            if (or_reduce_f(dci.ack_exc and hartselect) = '1') then -- exception during execution?
+              cmd.err <= "011";
+            elsif (cmd.err = "000") and ((dm_reg.rd_acc_err or dm_reg.wr_acc_err) = '1') then -- invalid read/write while command is executing?
+              cmd.err <= "001";
+            end if;
+            -- wait until selected CPU is halted again -> execution done --
+            if (or_reduce_f(dci.ack_hlt and hartselect) = '1') then
               cmd.state <= CMD_IDLE;
             end if;
 
