@@ -86,6 +86,6 @@ pending and the counter is reset to zero and starts counting again up to the thr
 | `0xfff10080` | `SLICE[0].CNT`  | `31:0` | r/w | Slice 0 counter register.
 | `0xfff10084` | `SLICE[0].THR`  | `31:0` | r/w | Slice 0 threshold register.
 | ...          | ...             | ...    | ... | ...
-| `0xfff10080` | `SLICE[15].CNT` | `31:0` | r/w | Slice 15 counter register.
-| `0xfff10084` | `SLICE[15].THR` | `31:0` | r/w | Slice 15 threshold register.
+| `0xfff100F8` | `SLICE[15].CNT` | `31:0` | r/w | Slice 15 counter register.
+| `0xfff100FC` | `SLICE[15].THR` | `31:0` | r/w | Slice 15 threshold register.
 |=======================
