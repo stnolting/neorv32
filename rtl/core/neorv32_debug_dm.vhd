@@ -110,7 +110,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant dataaddr_c : std_ulogic_vector(11 downto 0) := dm_data_base_c(11 downto 0);
 
   -- command execution arbiter --
-  type cmd_state_t is (CMD_IDLE, CMD_CHECK, CMD_PREPARE, CMD_TRIGGER, CMD_PENDING);
+  type cmd_state_t is (CMD_IDLE, CMD_CHECK, CMD_START, CMD_PENDING);
   type cmd_t is record
     state : cmd_state_t;
     busy  : std_ulogic;
@@ -505,7 +505,7 @@ begin
                 ((dm_reg.command(15 downto 5) = "00010000000") and -- regno: only GPRs are supported: 0x1000..0x101f
                  (dm_reg.command(22 downto 20) = "010"))) then -- aarsize: has to be 32-bit
               if (or_reduce_f(hart.halted and hartselect) = '1') then -- selected CPU is halted
-                cmd.state <= CMD_PREPARE;
+                cmd.state <= CMD_START;
               else -- cannot execute since hart is not in expected state
                 cmd.err   <= "100";
                 cmd.state <= CMD_IDLE;
@@ -515,7 +515,7 @@ begin
               cmd.state <= CMD_IDLE;
             end if;
 
-          when CMD_PREPARE => -- setup program buffer
+          when CMD_START => -- setup program buffer and trigger execution
           -- ------------------------------------------------------------
             if (dm_reg.command(17) = '1') then -- "transfer" (GPR <-> DM.data0)
               if (dm_reg.command(16) = '0') then -- "write" = 0 -> read from GPR
@@ -531,15 +531,12 @@ begin
             else
               cmd.ldsw <= instr_nop_c; -- NOP - do nothing
             end if;
-            cmd.state <= CMD_TRIGGER;
-
-          when CMD_TRIGGER => -- request CPU to execute command
-          -- ------------------------------------------------------------
-            if (or_reduce_f(dci.ack_exe and hartselect) = '1') then -- selected CPU starts execution
+            -- wait until selected CPU starts executing --
+            if (or_reduce_f(dci.ack_exe and hartselect) = '1') then
               cmd.state <= CMD_PENDING;
             end if;
 
-          when CMD_PENDING => -- wait for CPU to finish
+          when CMD_PENDING => -- wait for CPU to complete execution
           -- ------------------------------------------------------------
             if (or_reduce_f(dci.ack_exc) = '1') then -- exception during execution (can only be caused by the currently selected hart)
               cmd.err   <= "011";
@@ -570,7 +567,7 @@ begin
   cmd.busy <= '0' when (cmd.state = CMD_IDLE) else '1';
 
   -- request execution --
-  dci.req_exe <= hartselect when (cmd.state = CMD_TRIGGER) else (others => '0');
+  dci.req_exe <= hartselect when (cmd.state = CMD_START) else (others => '0');
 
 
   -- Bus Access (from CPU) ------------------------------------------------------------------
