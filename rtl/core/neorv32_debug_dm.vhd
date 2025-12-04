@@ -221,7 +221,9 @@ begin
             dm_reg.halt_req  <= dmi_req_i.data(31);           -- haltreq
             dm_reg.req_res   <= dmi_req_i.data(30);           -- resumereq
             dm_reg.reset_ack <= dmi_req_i.data(28);           -- ackhavereset
-            dm_reg.hartsel   <= dmi_req_i.data(18 downto 16); -- hartsello
+            if (cmd.busy = '0') then -- no update while abstract command is executing
+              dm_reg.hartsel <= dmi_req_i.data(18 downto 16); -- hartsello
+            end if;
             dm_reg.ndmreset  <= dmi_req_i.data(1);            -- ndmreset
 
           -- write abstract command (only when idle and no error yet) --
