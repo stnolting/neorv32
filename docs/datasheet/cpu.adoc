@@ -471,7 +471,7 @@ additional latency). However, _all_ bus signals (request and response) need to b
 | Signal  | Width | Description
 3+^| **In-Band Signals**
 | `meta`  |     5 | Access meta information. +
-`meta(4:3)`: core ID from the lowest two bits of the <<_mhartid>> CSR; the DMA has core ID `0b11` +
+`meta(4:3)`: core ID from the lowest two bits of the <<_mhartid>> CSR; the DMA has core ID `0b10` +
 `meta(2)`: set when CPU is in debug-mode +
 `meta(1)`: current privilege mode, `0` = user-mode, `1` = machine-mode +
 `meta(0)`: access source, `0` = data access, `1` = instruction fetch
