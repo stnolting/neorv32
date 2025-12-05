@@ -935,7 +935,8 @@ package neorv32_package is
       IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;
       IO_TRACER_EN          : boolean                        := false;
       IO_TRACER_BUFFER      : natural range 1 to 2**15       := 1;
-      IO_TRACER_SIMLOG_EN   : boolean                        := false
+      IO_TRACER_SIMLOG_EN   : boolean                        := false;
+      IO_TRACER_SIMLOG_DIR  : string                         := ""
     );
     port (
       -- Global control --

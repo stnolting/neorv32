@@ -138,7 +138,8 @@ entity neorv32_top is
     IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
     IO_TRACER_EN          : boolean                        := false;       -- implement instruction tracer
     IO_TRACER_BUFFER      : natural range 1 to 2**15       := 1;           -- trace buffer depth, has to be a power of two, min 1
-    IO_TRACER_SIMLOG_EN   : boolean                        := false        -- write full trace log to file (simulation-only)
+    IO_TRACER_SIMLOG_EN   : boolean                        := false;       -- write full trace log to file (simulation-only)
+    IO_TRACER_SIMLOG_DIR  : string                         := ""           -- directory for full trace log file (simulation-only)
   );
   port (
     -- Global control --
@@ -1498,8 +1499,8 @@ begin
         TRACE_DEPTH   => IO_TRACER_BUFFER,
         DUAL_CORE_EN  => DUAL_CORE_EN,
         SIM_LOG_EN    => tracer_log_en_c,
-        SIM_LOG_FILE0 => "neorv32.tracer0.log",
-        SIM_LOG_FILE1 => "neorv32.tracer1.log"
+        SIM_LOG_FILE0 => IO_TRACER_SIMLOG_DIR & "neorv32.tracer0.log",
+        SIM_LOG_FILE1 => IO_TRACER_SIMLOG_DIR & "neorv32.tracer1.log"
       )
       port map (
         clk_i     => clk_i,
