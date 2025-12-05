@@ -49,12 +49,8 @@ native UART receiver takes a lot of time.** For faster simulation console output
 When printing data via the physical UART the communication speed will always be based on the configured BAUD rate. For a
 simulation this might take some time. To have faster output you can enable the **simulation mode** for UART0/UART1 (see
 section https://stnolting.github.io/neorv32/#_primary_universal_asynchronous_receiver_and_transmitter_uart0).
-
-ASCII data sent to UART0 / UART1 will be immediately printed to the simulator console and logged to files in the
-simulator's home directory.
-
-* `neorv32.uart0.log`: ASCII data send via UART0
-* `neorv32.uart1.log`: ASCII data send via UART1
+TX data sent to UART0 / UART1 will be immediately printed to the simulator console instead of being transmitted via the
+physical UART TX line.
 
 .Automatic Simulation Mode
 [TIP]
