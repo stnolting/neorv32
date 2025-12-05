@@ -842,7 +842,7 @@ begin
           if (trace_i.intr = '1') then
             write(line_v, string'(" <TRAP_ENTRY>"));
           end if;
-          --
+          -- flush line --
           writeline(file_v, line_v);
         end if;
       end if;
