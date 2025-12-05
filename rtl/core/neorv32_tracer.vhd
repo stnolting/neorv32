@@ -293,7 +293,7 @@ begin
   -- CPU 0 --
   sim_trace0_enabled:
   if is_simulation_c and SIM_LOG_EN generate
-    assert false report "[NEORV32] CPU 0 trace logging enabled: " & SIM_LOG_FILE0 severity note;
+    assert false report "[NEORV32] CPU 0 trace logging enabled -> " & SIM_LOG_FILE0 severity note;
     neorv32_tracer_simlog0_inst: neorv32_tracer_simlog
     generic map (
       LOG_FILE => SIM_LOG_FILE0
@@ -308,7 +308,7 @@ begin
   -- CPU 1 --
   sim_trace1_enabled:
   if is_simulation_c and SIM_LOG_EN and DUAL_CORE_EN generate
-    assert false report "[NEORV32] CPU 1 trace logging enabled: " & SIM_LOG_FILE1 severity note;
+    assert false report "[NEORV32] CPU 1 trace logging enabled -> " & SIM_LOG_FILE1 severity note;
     neorv32_tracer_simlog1_inst: neorv32_tracer_simlog
     generic map (
       LOG_FILE => SIM_LOG_FILE1
