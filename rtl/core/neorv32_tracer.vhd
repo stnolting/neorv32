@@ -289,12 +289,10 @@ begin
 
   -- Simulation Trace Logging ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
--- pragma translate_off
--- RTL_SYNTHESIS OFF
 
   -- CPU 0 --
   sim_trace0_enabled:
-  if SIM_LOG_EN generate
+  if is_simulation_c and SIM_LOG_EN generate
     assert false report "[NEORV32] CPU 0 trace logging enabled: " & SIM_LOG_FILE0 severity note;
     neorv32_tracer_simlog0_inst: neorv32_tracer_simlog
     generic map (
@@ -309,7 +307,7 @@ begin
 
   -- CPU 1 --
   sim_trace1_enabled:
-  if SIM_LOG_EN and DUAL_CORE_EN generate
+  if is_simulation_c and SIM_LOG_EN and DUAL_CORE_EN generate
     assert false report "[NEORV32] CPU 1 trace logging enabled: " & SIM_LOG_FILE1 severity note;
     neorv32_tracer_simlog1_inst: neorv32_tracer_simlog
     generic map (
@@ -321,9 +319,6 @@ begin
       trace_i => trace1_i
     );
   end generate;
-
--- RTL_SYNTHESIS ON
--- pragma translate_on
 
 end neorv32_tracer_rtl;
 
