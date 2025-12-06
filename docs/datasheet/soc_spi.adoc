@@ -115,7 +115,9 @@ selection and a 4-bit clock divider `SPI_CTRL_CDIVx` for a fine clock configurat
 Based on the programmed clock configuration, the actual SPI clock frequency f~SPI~ is derived
 from the processor's main clock f~main~ according to the following equation:
 
+****
 _**f~SPI~**_ = _f~main~[Hz]_ / (2 * `clock_prescaler` * (1 + `SPI_CTRL_CDIVx`))
+****
 
 Hence, the maximum SPI clock is f~main~ / 4 and the lowest SPI clock is f~main~ / 131072.
 The SPI clock is always symmetric having a duty cycle of exactly 50%.

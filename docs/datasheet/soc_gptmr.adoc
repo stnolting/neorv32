@@ -60,7 +60,9 @@ and `CSR1.IRQ(i) = 1`).
 The time until a slice interrupt is triggered (_T[i]_) depends on the processor clock (_f~main~_) global
 clock prescaler (selected by `CSR1.PRSC`) and the slice threshold value (`SLICE[i].THR`):
 
+****
 _T[i]_ = _f~main~_ / (`prescaler` * `SLICE[i].THR`)
+****
 
 Each slice can operate as single-shot timer or as continuous interval timer: If `CSR0.MODE(i) = 0`
 the according slice operates in **single-shot mode**: if the counter matches the programmed threshold
