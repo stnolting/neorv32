@@ -115,10 +115,12 @@ begin
   wdt_counter: process(rstn_sys_i, clk_i)
   begin
     if (rstn_sys_i = '0') then
+      prsc_tick   <= '0';
       cnt_inc     <= '0';
       cnt_started <= '0';
       cnt         <= (others => '0');
     elsif rising_edge(clk_i) then
+      prsc_tick   <= clkgen_i(clk_div4096_c); -- clock-enable tick
       cnt_inc     <= prsc_tick and cnt_started; -- clock tick and started
       cnt_started <= ctrl.enable and (cnt_started or prsc_tick); -- start with next clock tick
       if (ctrl.enable = '0') or (reset_wdt = '1') then -- watchdog disabled or reset with correct password
@@ -128,9 +130,6 @@ begin
       end if;
     end if;
   end process wdt_counter;
-
-  -- clock-enable tick --
-  prsc_tick <= clkgen_i(clk_div4096_c);
 
   -- timeout detector --
   cnt_timeout <= '1' when (cnt_started = '1') and (cnt = ctrl.timeout) else '0';

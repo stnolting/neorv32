@@ -12,12 +12,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
-
--- pragma translate_off
--- RTL_SYNTHESIS OFF
 use std.textio.all;
--- RTL_SYNTHESIS ON
--- pragma translate_on
 
 entity sim_uart_rx is
   generic (
@@ -42,8 +37,6 @@ architecture sim_uart_rx_rtl of sim_uart_rx is
 
 begin
 
--- pragma translate_off
--- RTL_SYNTHESIS OFF
   sim_receiver: process(clk)
     file file_out   : text open write_mode is NAME & ".log";
     variable char_v : integer;
@@ -89,7 +82,5 @@ begin
       end if;
     end if;
   end process sim_receiver;
--- RTL_SYNTHESIS ON
--- pragma translate_on
 
 end architecture sim_uart_rx_rtl;
