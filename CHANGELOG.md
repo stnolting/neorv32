@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 06.12.2025 | 1.12.5.3 | minor rtl edits and cleanups | [#1444](https://github.com/stnolting/neorv32/pull/1444) |
 | 05.12.2025 | 1.12.5.2 | :warning: remove UART0/1 simulation-mode **file** logging | [#1443](https://github.com/stnolting/neorv32/pull/1443) |
 | 04.12.2025 | 1.12.5.1 | fix minor OCD/DM command-execution issue | [#1440](https://github.com/stnolting/neorv32/pull/1440) |
 | 01.12.2025 | [**1.12.5**](https://github.com/stnolting/neorv32/releases/tag/v1.12.5) | :rocket: **New release** | |
