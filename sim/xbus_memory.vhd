@@ -43,7 +43,7 @@ architecture xbus_memory_rtl of xbus_memory is
     file     hex_file   : text;
     variable hex_line_v : line;
     variable hex_char_v : character;
-    variable tmp_v      : natural;
+    variable byte_v     : bit_vector(3 downto 0);
     variable word_v     : bit_vector(31 downto 0);
     variable mem_v      : ram8bv_t(0 to num_words-1);
     variable index_v    : natural;
@@ -60,25 +60,25 @@ architecture xbus_memory_rtl of xbus_memory is
         for i in 7 downto 0 loop -- get full 32-bit word in 'word_v'; no VHDL2008 required
           read(hex_line_v, hex_char_v);
           case hex_char_v is
-            when '0'       => tmp_v := 0;
-            when '1'       => tmp_v := 1;
-            when '2'       => tmp_v := 2;
-            when '3'       => tmp_v := 3;
-            when '4'       => tmp_v := 4;
-            when '5'       => tmp_v := 5;
-            when '6'       => tmp_v := 6;
-            when '7'       => tmp_v := 7;
-            when '8'       => tmp_v := 8;
-            when '9'       => tmp_v := 9;
-            when 'a' | 'A' => tmp_v := 10;
-            when 'b' | 'B' => tmp_v := 11;
-            when 'c' | 'C' => tmp_v := 12;
-            when 'd' | 'D' => tmp_v := 13;
-            when 'e' | 'E' => tmp_v := 14;
-            when 'f' | 'F' => tmp_v := 15;
-            when others    => tmp_v := 0;
+            when '0'       => byte_v := x"0";
+            when '1'       => byte_v := x"1";
+            when '2'       => byte_v := x"2";
+            when '3'       => byte_v := x"3";
+            when '4'       => byte_v := x"4";
+            when '5'       => byte_v := x"5";
+            when '6'       => byte_v := x"6";
+            when '7'       => byte_v := x"7";
+            when '8'       => byte_v := x"8";
+            when '9'       => byte_v := x"9";
+            when 'a' | 'A' => byte_v := x"a";
+            when 'b' | 'B' => byte_v := x"b";
+            when 'c' | 'C' => byte_v := x"c";
+            when 'd' | 'D' => byte_v := x"d";
+            when 'e' | 'E' => byte_v := x"e";
+            when 'f' | 'F' => byte_v := x"f";
+            when others    => byte_v := x"0";
           end case;
-          word_v(i*4+3 downto i*4+0) := to_bitvector(std_ulogic_vector((to_unsigned(tmp_v, 4))));
+          word_v(i*4+3 downto i*4+0) := byte_v;
         end loop;
         mem_v(index_v) := word_v(byte_sel*8+7 downto byte_sel*8+0); -- extract desired byte
         index_v := index_v + 1;
