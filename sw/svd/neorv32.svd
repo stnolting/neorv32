@@ -449,6 +449,11 @@
           <description>Clock prescaler select</description>
           <addressOffset>0x08</addressOffset>
         </register>
+        <register>
+          <name>MODE</name>
+          <description>Channel operation mode (0 = fast-PWM; 1 = phase-correct PWM)</description>
+          <addressOffset>0x0C</addressOffset>
+        </register>
         <cluster>
           <dim>32</dim>
           <dimIncrement>0x04</dimIncrement>

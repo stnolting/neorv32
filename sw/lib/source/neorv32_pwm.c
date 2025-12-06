@@ -108,17 +108,24 @@ void neorv32_pwm_ch_disable_single(int ch) {
  *
  * @param[in] ch Channel select (0..31).
  * @param[in] top Wrap value for PWM counter (16-bit).
- * @param[in] pol Idle polarity of PWM output (0 or 1).
+ * @param[in] pol Polarity of PWM output (0 = normal, 1 = inverse).
+ * @param[in] mode Operation mode (0 = fast-PWM, 1 = phase-correct PWM).
  **************************************************************************/
-void neorv32_pwm_ch_setup(int ch, int top, int pol) {
+void neorv32_pwm_ch_setup(int ch, int top, int pol, int mode) {
 
   ch &= 0x1fu;
-
   uint32_t mask = 1 << ch;
+
   if (pol) {
-    NEORV32_PWM->POLARITY |=  mask;
+    NEORV32_PWM->POLARITY |= mask;
   } else {
     NEORV32_PWM->POLARITY &= ~mask;
+  }
+
+  if (mode) {
+    NEORV32_PWM->MODE |= mask;
+  } else {
+    NEORV32_PWM->MODE &= ~mask;
   }
 
   NEORV32_PWM->CHANNEL[ch].TOP = top;
