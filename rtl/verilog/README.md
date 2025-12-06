@@ -4,10 +4,10 @@ You can use [GHDL's synthesis feature](https://ghdl.github.io/ghdl/using/Synthes
 NEORV32 setup in to a single, synthesizable, **plain-Verilog** module. The resulting Verilog module can be instantiated
 within an all-Verilog design. The provided makefile is used for conversion and also for running all-Verilog simulation.
 
-:books: See the user guide section ["UG: NEORV32 in Verilog"](https://stnolting.github.io/neorv32/ug/#_neorv32_in_verilog)
+:books: See user guide section ["UG: NEORV32 in Verilog"](https://stnolting.github.io/neorv32/ug/#_neorv32_in_verilog)
 for more information.
 
-```bash
+```
 neorv32/rtl/verilog$ make help
 NEORV32 Verilog Conversion and Test
 
