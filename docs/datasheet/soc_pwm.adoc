@@ -16,15 +16,15 @@
 **Key Features**
 
 * Up to 32 individual channels with up to 16-bit resolution and programmable polarity
-* Fast-PWM mode operation with counter-compare and counter-wrap registers
+* Fast-PWM or phase-correct operation mode with counter-compare and counter-wrap registers
 * Toggle-free 0% and 100% duty cycle output rates
 * Global clock prescaler
 
 
 **Overview**
 
-The PWM module implements a fast-PWM mode pulse-width modulation controller with up to 32 independent channels.
-Period length (and thus, the carrier frequency), duty cycle, and polarity can be programmed individually for each
+The PWM module implements a pulse-width modulation controller with up to 32 independent channels. Period length
+(and thus, the carrier frequency), duty cycle, polarity and operation mode can be programmed individually for each
 channel. However, the clock for the PWM counter increment is defined by a single global clock prescaler. PWM
 operation is based on 16-bit wide period counters that are constrained by programmable wrapping values.
 
@@ -35,20 +35,17 @@ are configured, only the LSB-aligned channel bits are connected while the remain
 
 **Theory of Operation**
 
-The PWM module provides several interface registers: an `ENABLE` register, a `POLARITY` registers, a `CLKPRSC`
-register and up to 32 `CHANNEL[i]` registers.
+The PWM module provides several configuration registers: an `ENABLE` register, a `POLARITY` registers, a `CLKPRSC`
+register, and a `MODE` register. Each of these register provides one bit (LSB-aligned) for each available PWM channel.
+Additional, up to `IO_PWM_NUM` channel register `CHANNEL` are provided.
 
-The `ENABLE` register is used to enable PWM channels. This can be done individually (only one channel) or by using
-bit-mask to enable several channels at once so they operate in perfect lockstep mode. Disabling a channel will clear
-the channel's PWM counter ans will also bring the according PWM output to the _idle polarity_. Note that only the
-lowest `IO_PWM_NUM` bit are implemented.
+The `ENABLE` register is used to enable individual PWM channels. By using bit-masks several channels can be enabled
+at once so they operate in perfect lockstep. The PWM counter of a disabled channel is halted and reset to zero. The
+according PWM output (`pwm_o(i)`) is also reset to 0. The polarity of each channel's output can be inverted by setting
+the corresponding bit in the `POLARITY` register.
 
-The `POLARITY` register defines the _idle polarity_ of the PWM channels. When a channel is disabled, this polarity
-also defines the logic level of the according `pwm_o` output. Note that only the lowest `IO_PWM_NUM` bit are
-implemented.
-
-The `CLKPRSC` register configures the _global_ clock prescaler that is used for the PWM counter increment of each
-channel. Eight pre-defined prescaler values are available:
+The `CLKPRSC` register configures the _global_ clock prescaler that is used for the PWM counter increment of all
+channels. Eight pre-defined prescaler values are available:
 
 .PWM prescaler configuration
 [cols="<4,^1,^1,^1,^1,^1,^1,^1,^1"]
@@ -58,71 +55,133 @@ channel. Eight pre-defined prescaler values are available:
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
-The duty cycle and period length of each channel are defined by the according `CHANNEL[i]` register (with `i` =
-`0 .. IO_PWM_NUM`). This register is split in two half-words: the lowest half-word defines the counter-compare
-value (`CMP`) while the upper half-word defines the counter-wrap value (`TOP`).
+The `MODE` register defines the PWM operation mode of a channel. If bit _i_ is `0` channel _i_ operates in
+**fast-PWM** mode. If bit _i_ is `1` channel _i_ operates in **phase-correct PWM** mode.
+
+Duty cycle and period length of each channel are defined by the according `CHANNEL`. This register is split in
+two half-words: the lowest half-word defines the counter-compare value (`CMP`) while the upper half-word defines
+the counter-wrap value (`TOP`). Regardless of the configured PWM operation mode, the duty cycle of channel _i_ is
+defined by the following formula:
+
+****
+_Duty Cycle[i]_ = 100% * (`CMP[i]` / (`TOP[i] + 1`))
+****
+
+The NEORV32 PWM module supports toggle-free 0% and 100% duty cycle output rates. 0% duty cycle is achieved by
+setting `CMP = 0`. 100% duty cycle is achieved by setting `CMP = TOP + 1`.
 
 .`CHANNEL` Half-Word Access
 [TIP]
 In contrast to many other NEORV32 peripherals, the PWM `CHANNEL[i]` registers can also be accessed using half-word
 load/store operation. This allows to update the `TOP` and `CMP` sub-registers with a single instruction.
 
-PWM operation is based on a 16-bit counter that increments with the globally pre-scaled processor clock resulting
-in a sawtooth-like waveform. The counter will wrap around to all-zero when reaching the value defined by the `TOP`
-sub-register. Whenever the counter value is less than the value defined by the `CMP` sub-register the PWM output
-is set to the _inverted_ idle polarity.
+
+**Fast-PWM Mode**
+
+When in fast-PWM mode (`MODE[i] = 0`) the channel's PWM counter generates a sawtooth-like waveform. The counter
+automatically wraps to all-zero when reaching the programmed `TOP[i]` value. Whenever the counter value is less
+equal to or greater than the `CMP[i]` value the PWM output is set to the programmed polarity (`POLARITY[i]`)
+value; otherwise it is set to the inverse polarity.
 
 .Fast-PWM Operation
 ----
-TOP[i] --------------------/|--------------/|--------------/|--------------/|
-                         /  |            /  |            /  |            /  |
-                       /    |          /    |          /    |          /    |
-CMP[i] --------------/------|--------/------|--------/------|--------/------|
-                   / .      |      / .      |      / .      |      / .      |
-                 /   .      |    /   .      |    /   .      |    /   .      |
-               /     .      |  /     .      |  /     .      |  /     .      |
-         ___ /       .      |/       .      |/       .      |/       .      |
-            .        .      .        .      .        .      .        .      .
-            .        .      .        .      .        .      .        .      .
-            +--------+      +--------+      +--------+      +--------+      +
-pwm_o[i]    |        |      |        |      |        |      |        |      | (POLARITY[i] = 0)
-         ---+        +------+        +------+        +------+        +------+
-            .        .      .        .      .        .      .        .      .
-            .        .      .        .      .        .      .        .      .
-         ---+        +------+        +------+        +------+        +------+
-pwm_o[i]    |        |      |        |      |        |      |        |      | (POLARITY[i] = 1)
-            +--------+      +--------+      +--------+      +--------+      +
+MODE[i] = 0
+
+TOP[i] ---------------------/|--------------/|--------------/|--------------/|
+                          /  |            /  |            /  |            /  |
+                        /    |          /    |          /    |          /    |
+CMP[i] ---------------/------|--------/------|--------/------|--------/------|
+                    / .      |      / .      |      / .      |      / .      |
+                  /   .      |    /   .      |    /   .      |    /   .      |
+                /     .      |  /     .      |  /     .      |  /     .      |
+counter[i] ___/       .      |/       .      |/       .      |/       .      |
+                      .      .        .      .        .      .        .      .
+                      .      .        .      .        .      .        .      .
+         -------------+      +--------+      +--------+      +--------+      +
+pwm_o[i]              |      |        |      |        |      |        |      | (POLARITY[i] = 0)
+                      +------+        +------+        +------+        +------+
+                      .      .        .      .        .      .        .      .
+                      .      .        .      .        .      .        .      .
+                      +------+        +------+        +------+        +------+
+pwm_o[i]              |      |        |      |        |      |        |      | (POLARITY[i] = 1)
+         -------------+      +--------+      +--------+      +--------+      +
 ----
 
-Hence, the duty cycle of a channel is defined by the `TOP` and `CMP` register values:
+Based on the global clock prescaler and the `TOP` wrap value, the carrier frequency of a channel is defined by
+the following formula (_f~main~_ is the main clock frequency of the processor; `clock_prescaler` is the global
+pre-scaling factor according to the selected `CLKPRSC` value):
 
-_Duty Cycle[i]_ = 100% * (`CMP[i]` / (`TOP[i] + 1`))
-
-The NEORV32 PWM module supports toggle-free 0% and 100% duty cycle output rates. 0% duty cycle is achieved by
-setting `CMP = 0`. 100% duty cycle is achieved by setting `CMP = TOP + 1`.
-
-Based on the global clock prescaler and the `TOP` wrap value, the carrier frequency of a channel is defined by the
-following formula (_f~main~_ is the main clock frequency of the processor; `clock_prescaler` is the pre-scaling
-factor according to the selected `CLKPRSC` value):
-
+****
 _f~PWM~[i]_ = _f~main~_ / (`clock_prescaler` * (`TOP[i]` + 1))
+****
+
+
+**Phase-Correct PWM Mode**
+
+When in phase-correct PWM mode (`MODE[i] = 1`) the channel's PWM counter generates a triangle-like waveform.
+Phase-correct mode centers the pulse on the same point regardless of the duty cycle. After enabling, the PWM
+counters counts upward until it reaches the `TOP` value. After that the counter, the counter counts downward
+until it reaches 0 again. Whenever the counter value is equal to or greater than the `CMP[i]` value the PWM
+output is set to the programmed polarity (`POLARITY[i]`) value; otherwise it is set to the inverse polarity.
+
+.Phase-Correct PWM Operation
+----
+MODE[i] = 1
+
+TOP[i] ---------------------/\----------------------------/\
+                          /    \                        /    \
+                        /        \                    /        \
+CMP[i] ---------------/------------\----------------/------------\
+                    / .            . \            / .            . \
+                  /   .            .   \        /   .            .   \
+                /     .            .     \    /     .            .     \
+counter[i] ___/       .            .       \/       .            .       \___
+                      .            .                .            .
+                      .            .                .            .
+         -------------+            +----------------+            +-----------
+pwm_o[i]              |            |                |            |            (POLARITY[i] = 0)
+                      +------------+                +------------+
+                      .            .                .            .
+                      .            .                .            .
+                      +------------+                +------------+
+pwm_o[i]              |            |                |            |            (POLARITY[i] = 1)
+         -------------+            +----------------+            +-----------
+----
+
+Based on the global clock prescaler and the `TOP` wrap value, the carrier frequency of a channel is defined
+by the following formula (_f~main~_ is the main clock frequency of the processor; `clock_prescaler` is the
+global pre-scaling factor according to the selected `CLKPRSC` value):
+
+****
+_f~PWM~[i]_ = _f~main~_ / (`clock_prescaler` * 2 * `TOP[i]`)
+****
+
+.PWM Dead Time
+[TIP]
+The phase-correct PWM mode can also be used for controlling modules that require a certain dead time
+(e.g. H-bridges). This requires two PWM channels, both of which operate in phase-correct mode, but the
+second channel is configured with an inverse polarity. Both channels need to have the same `TOP` value
+and must be enabled at once to have a perfect phase and frequency match. The dead time is define by
+the difference of the channel's `CMP` values: +
+T~dead~ = 0.5 * T * (`CMP[i]` - `CMP[i+1]`)
 
 
 **Register Map**
 
 .PWM register map (`struct NEORV32_PWM`)
-[cols="<4,<2,<3,^2,<8"]
+[cols="<3,<3,^2,^2,<7"]
 [options="header",grid="all"]
 |=======================
-| Address | Name [C] | Bit(s), Name [C] | R/W | Function
+| Address | Name [C] | Bit(s) | R/W | Function
 | `0xfff00000` | `ENABLE`             | `31:0` | r/w | Channel enable, one bit per channel
-| `0xfff00004` | `POLARITY`           | `31:0` | r/w | Channel idle polarity level, one bit per channel
+| `0xfff00004` | `POLARITY`           | `31:0` | r/w | Channel polarity, one bit per channel
 | `0xfff00008` | `CLKPRSC`            | `2:0`  | r/w | Global clock prescaler select
-| `0xfff00080` | `CHANNEL[0].TOPCMP`  | `31:0` | r/w | Channel 0 full word access
+| `0xfff0000c` | `MODE`               | `31:0` | r/w | Channel operation mode (0 = fast-PWM, 1 = phase-correct PWM), one bit per channel
+| `0xfff00080` | `CHANNEL[0].TOPCMP`  | `31:0` | r/w | Channel 0 full word access alias (`TOP` and `CMP` together at 32-bit value)
 | `0xfff00080` | `CHANNEL[0].CMP`     | `15:0` | r/w | Channel 0 top/wrap value register
 | `0xfff00082` | `CHANNEL[0].TOP`     | `15:0` | r/w | Channel 0 compare value register
 | ...          | ...                  |  ...   | r/w | ...
-| `0xfff000fc` | `CHANNEL[31].TOPCMP` | `31:0` | r/w | Channel 31 full word access
+| `0xfff000fc` | `CHANNEL[31].TOPCMP` | `31:0` | r/w | Channel 31 full word access alias (`TOP` and `CMP` together at 32-bit value)
 | `0xfff000fc` | `CHANNEL[31].CMP`    | `15:0` | r/w | Channel 31 top/wrap value register
 | `0xfff000fe` | `CHANNEL[31].TOP`    | `15:0` | r/w | Channel 31 compare value register
 |=======================
