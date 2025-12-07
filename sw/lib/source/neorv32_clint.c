@@ -8,7 +8,7 @@
 
 /**
  * @file neorv32_clint.c
- * @brief Hardware Local Interruptor (CLINT) HW driver source file.
+ * @brief Core-Local Interruptor (CLINT) HW driver source file.
  */
 
 #include <neorv32.h>
