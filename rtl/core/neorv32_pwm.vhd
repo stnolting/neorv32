@@ -1,8 +1,8 @@
 -- ================================================================================ --
 -- NEORV32 SoC - Pulse Width Modulation Controller (PWM)                            --
 -- -------------------------------------------------------------------------------- --
--- Provides up to 32 individual fast-PWM channels with a resolution of 16-bit and   --
--- programmable polarity. All counters use a single global clock-prescaler.         --
+-- Provides up to 32 individual fast-PWM / phase-correct channels with a resolution --
+-- of 16-bit and programmable polarity. All counters use a global clock-prescaler.  --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -42,17 +42,19 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
     clken_i : in  std_ulogic;
     en_i    : in  std_ulogic;
     pol_i   : in  std_ulogic;
+    mode_i  : in  std_ulogic;
     cs_i    : in  std_ulogic;
     we_i    : in  std_ulogic;
     ben_i   : in  std_ulogic_vector(3 downto 0);
     wdata_i : in  std_ulogic_vector(31 downto 0);
     rdata_o : out std_ulogic_vector(31 downto 0);
+    wrap_o  : out std_ulogic;
     pwm_o   : out std_ulogic
   );
   end component;
 
   -- global control --
-  signal enable, polarity : std_ulogic_vector(NUM_CHANNELS-1 downto 0);
+  signal enable, polarity, mode : std_ulogic_vector(NUM_CHANNELS-1 downto 0);
   signal clkprsc, addr : std_ulogic_vector(2 downto 0);
 
   -- wiring --
@@ -73,6 +75,7 @@ begin
       enable    <= (others => '0');
       polarity  <= (others => '0');
       clkprsc   <= (others => '0');
+      mode      <= (others => '0');
     elsif rising_edge(clk_i) then
       -- handshake --
       bus_rsp_o.ack <= bus_req_i.stb;
@@ -88,6 +91,9 @@ begin
         if (addr = "010") then
           clkprsc <= bus_req_i.data(2 downto 0);
         end if;
+        if (addr = "011") then
+          mode <= bus_req_i.data(NUM_CHANNELS-1 downto 0);
+        end if;
       end if;
       -- read access --
       bus_rsp_o.data <= (others => '0');
@@ -96,6 +102,7 @@ begin
           when "000"  => bus_rsp_o.data(NUM_CHANNELS-1 downto 0) <= enable;
           when "001"  => bus_rsp_o.data(NUM_CHANNELS-1 downto 0) <= polarity;
           when "010"  => bus_rsp_o.data(2 downto 0) <= clkprsc;
+          when "011"  => bus_rsp_o.data(NUM_CHANNELS-1 downto 0) <= mode;
           when others => bus_rsp_o.data <= rdata_sum;
         end case;
       end if;
@@ -117,6 +124,7 @@ begin
       clken_i => clken,
       en_i    => enable(i),
       pol_i   => polarity(i),
+      mode_i  => mode(i),
       -- register access --
       cs_i    => cs(i),
       we_i    => bus_req_i.rw,
@@ -124,6 +132,7 @@ begin
       wdata_i => bus_req_i.data,
       rdata_o => rdata(i),
       -- PWM output --
+      wrap_o  => open, -- [TODO] use this as interrupt trigger?
       pwm_o   => pwm(i)
     );
     cs(i) <= bus_req_i.stb when (bus_req_i.addr(7) = '1') and
@@ -183,6 +192,7 @@ entity neorv32_pwm_channel is
     clken_i : in  std_ulogic;                     -- clock divider input
     en_i    : in  std_ulogic;                     -- channel enable
     pol_i   : in  std_ulogic;                     -- output polarity
+    mode_i  : in  std_ulogic;                     -- operation mode
     -- register access --
     cs_i    : in  std_ulogic;                     -- access enable
     we_i    : in  std_ulogic;                     -- write-enable
@@ -190,6 +200,7 @@ entity neorv32_pwm_channel is
     wdata_i : in  std_ulogic_vector(31 downto 0); -- write data
     rdata_o : out std_ulogic_vector(31 downto 0); -- read data
     -- PWM output --
+    wrap_o  : out std_ulogic;                     -- counter wrap
     pwm_o   : out std_ulogic                      -- PWM output
   );
 end neorv32_pwm_channel;
@@ -197,6 +208,7 @@ end neorv32_pwm_channel;
 architecture neorv32_pwm_channel_rtl of neorv32_pwm_channel is
 
   signal cnt, cmp, top : std_ulogic_vector(15 downto 0);
+  signal dir, cmp_zero, cmp_top : std_ulogic;
 
 begin
 
@@ -222,33 +234,52 @@ begin
   -- read-back --
   rdata_o <= (top & cmp) when (cs_i = '1') else (others => '0');
 
-  -- PWM Core -------------------------------------------------------------------------------
+  -- PWM Counter ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  pwm_core: process(rstn_i, clk_i)
+  pwm_counter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cnt   <= (others => '0');
-      pwm_o <= '0';
+      dir <= '0';
+      cnt <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- cycle counter --
       if (en_i = '0') then
+        dir <= '0';
         cnt <= (others => '0');
-      elsif (clken_i = '1') then
-        if (cnt = top) then -- wrap
-          cnt <= (others => '0');
-        else
-          cnt <= std_ulogic_vector(unsigned(cnt) + 1);
+      else
+        dir <= (dir or cmp_top) and (not cmp_zero) and mode_i; -- boolean magic
+        if (clken_i = '1') then
+          if (mode_i = '0') and (cmp_top = '1') then -- fast-PWM wrap
+            cnt <= (others => '0');
+          elsif (dir = '0') then
+            cnt <= std_ulogic_vector(unsigned(cnt) + 1);
+          else
+            cnt <= std_ulogic_vector(unsigned(cnt) - 1);
+          end if;
         end if;
       end if;
-      -- duty cycle --
+    end if;
+  end process pwm_counter;
+
+  -- comparators --
+  cmp_zero <= '1' when (cnt = x"0000") else '0';
+  cmp_top  <= '1' when (cnt = top)     else '0';
+  wrap_o   <= cmp_top;
+
+  -- Output / Duty Cycle Control ------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  pwm_drive: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      pwm_o <= '0';
+    elsif rising_edge(clk_i) then
       if (en_i = '0') then
-        pwm_o <= pol_i;
+        pwm_o <= '0';
       elsif (unsigned(cnt) < unsigned(cmp)) then
         pwm_o <= not pol_i;
       else
         pwm_o <= pol_i;
       end if;
     end if;
-  end process pwm_core;
+  end process pwm_drive;
 
 end neorv32_pwm_channel_rtl;

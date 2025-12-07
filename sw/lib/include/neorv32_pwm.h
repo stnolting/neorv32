@@ -26,7 +26,8 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
   uint32_t ENABLE;             /**< per-channel enable */
   uint32_t POLARITY;           /**< per-channel polarity */
   uint32_t CLKPRSC;            /**< global clock prescaler */
-  const uint32_t reserved[29]; /**< reserved */
+  uint32_t MODE;               /**< per-channel operation mode */
+  const uint32_t reserved[28]; /**< reserved */
   union {
     uint32_t TOPCMP; /**< full 32-bit channel access */
     struct {
@@ -52,7 +53,7 @@ void neorv32_pwm_ch_enable_mask(uint32_t mask);
 void neorv32_pwm_ch_disable_mask(uint32_t mask);
 void neorv32_pwm_ch_enable_single(int ch);
 void neorv32_pwm_ch_disable_single(int ch);
-void neorv32_pwm_ch_setup(int ch, int top, int pol);
+void neorv32_pwm_ch_setup(int ch, int top, int pol, int mode);
 void neorv32_pwm_ch_set_duty(int ch, int duty);
 /**@}*/
 
