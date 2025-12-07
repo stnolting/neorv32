@@ -431,7 +431,7 @@ help:
 	$(ECHO) "Targets:"
 	$(ECHO) ""
 	$(ECHO) "  help          show this text"
-	$(ECHO) "  check         check toolchain and list supported ISA extensions
+	$(ECHO) "  check         check toolchain and list supported ISA extensions"
 	$(ECHO) "  info          show project/makefile configuration"
 	$(ECHO) "  gdb           start GNU debugging session"
 	$(ECHO) "  asm           compile and generate <$(APP_ASM)> assembly listing file for manual debugging"
