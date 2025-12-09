@@ -22,7 +22,6 @@
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -33,7 +32,9 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_cp_fpu is
   generic (
     -- FPU-specific options --
-    FPU_SUBNORMAL_SUPPORT : boolean := false -- Implemented sub-normal support, default false
+    FPU_SUBNORMAL_SUPPORT : boolean := false; -- Implemented sub-normal support, default false
+    FP_BIAS               : natural := 128;
+    ILSB                  : natural := 1
   );
   port (
     -- global control --
