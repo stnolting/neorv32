@@ -110,7 +110,7 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
       funct_i    : in  std_ulogic;
       sign_i     : in  std_ulogic;
       exponent_i : in  std_ulogic_vector(8 downto 0);
-      mantissa_i : in  std_ulogic_vector(47 downto 0);
+      mantissa_i : in  std_ulogic_vector(47 + 2*ILSB downto 0);
       integer_i  : in  std_ulogic_vector(31 downto 0);
       class_i    : in  std_ulogic_vector(9 downto 0);
       flags_i    : in  std_ulogic_vector(4 downto 0);
@@ -192,10 +192,10 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
 
   -- multiplier unit --
   type multiplier_t is record
-    opa       : std_ulogic_vector(23 downto 0); -- mantissa A plus hidden one
-    opb       : std_ulogic_vector(23 downto 0); -- mantissa B plus hidden one
+    opa       : std_ulogic_vector(23 + ILSB downto 0); -- mantissa A plus hidden one
+    opb       : std_ulogic_vector(23 + ILSB downto 0); -- mantissa B plus hidden one
     sign      : std_ulogic; -- resulting sign
-    product   : std_ulogic_vector(47 downto 0); -- product
+    product   : std_ulogic_vector(47 + 2*ILSB downto 0); -- product
     exp_sum   : std_ulogic_vector(8 downto 0);  -- incl 1x overflow/underflow bit
     exp_res   : std_ulogic_vector(9 downto 0);  -- resulting exponent incl 2x overflow/underflow bit
     --
@@ -245,7 +245,7 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     mode      : std_ulogic;
     sign      : std_ulogic;
     xexp      : std_ulogic_vector(8 downto 0);
-    xmantissa : std_ulogic_vector(47 downto 0);
+    xmantissa : std_ulogic_vector(47 + 2*ILSB downto 0);
     result    : std_ulogic_vector(31 downto 0);
     class     : std_ulogic_vector(9 downto 0);
     flags_in  : std_ulogic_vector(4 downto 0);
@@ -749,7 +749,7 @@ begin
            fpu_operands.rs2_class(fp_class_pos_denorm_c) or fpu_operands.rs2_class(fp_class_neg_denorm_c)) = '1') then
         multiplier.exp_res <= (others => '0'); -- if the input to the multiplier is +/- zero or +/- denorm the result will always be +/- zero
       else
-        multiplier.exp_res <= std_ulogic_vector(unsigned('0' & multiplier.exp_sum) - 127);
+        multiplier.exp_res <= std_ulogic_vector(unsigned('0' & multiplier.exp_sum) - FP_BIAS);
       end if;
 
       -- exponent computation --
@@ -808,7 +808,7 @@ begin
   -- integer multiplier (unsigned only) --
   multiplier_core_inst: entity neorv32.neorv32_prim_mul
   generic map (
-    DWIDTH => 24
+    DWIDTH => 24 + ILSB
   )
   port map (
     -- global control --
@@ -822,8 +822,8 @@ begin
     opb_sn_i => '0',
     res_o    => multiplier.product
   );
-  multiplier.opa <= '1' & fpu_operands.rs1(22 downto 0); -- append hidden one to mantissa
-  multiplier.opb <= '1' & fpu_operands.rs2(22 downto 0); -- append hidden one to mantissa
+  multiplier.opa <= '1' & fpu_operands.rs1(22 downto 0) & '1'; -- append hidden one to mantissa
+  multiplier.opb <= '1' & fpu_operands.rs2(22 downto 0) & '1'; -- append hidden one to mantissa
 
   -- exponent sum --
   multiplier.exp_sum <= std_ulogic_vector(unsigned('0' & fpu_operands.rs1(30 downto 23)) + unsigned('0' & fpu_operands.rs2(30 downto 23)));
@@ -1396,13 +1396,14 @@ begin
   -- Normalizer Input -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   normalizer_input_select: process(funct_ff, addsub, multiplier, fu_conv_i2f)
+      constant PADDING_ZEROS : std_ulogic_vector(19 + 2*ILSB downto 0) := (others => '0');
   begin
     case funct_ff is
       when op_addsub_c => -- addition/subtraction
         normalizer.mode      <= '0'; -- normalization
         normalizer.sign      <= addsub.res_sign;
         normalizer.xexp      <= addsub.exp_cnt;
-        normalizer.xmantissa <= addsub.res_sum(27 downto 1) & x"00000" & addsub.res_sum(0);
+        normalizer.xmantissa <= addsub.res_sum(27 downto 1) & PADDING_ZEROS & addsub.res_sum(0);
         normalizer.class     <= addsub.res_class;
         normalizer.flags_in  <= addsub.flags;
         normalizer.start     <= addsub.done;
@@ -1417,7 +1418,7 @@ begin
       when others => -- op_i2f_c
         normalizer.mode      <= '1'; -- int_to_float
         normalizer.sign      <= fu_conv_i2f.sign;
-        normalizer.xexp      <= "001111111"; -- bias = 127
+        normalizer.xexp      <= "010000000"; -- bias = 128
         normalizer.xmantissa <= (others => '0'); -- don't care
         normalizer.class     <= (others => '0'); -- don't care
         normalizer.flags_in  <= (others => '0'); -- no flags yet
@@ -1521,7 +1522,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_fpu_normalizer is
   generic (
-    FPU_SUBNORMAL_SUPPORT : boolean := false -- implemented sub-normal support, default false
+    FPU_SUBNORMAL_SUPPORT : boolean := false; -- implemented sub-normal support, default false
+    ILSB                  : natural := 1
   );
   port (
     -- control --
@@ -1534,7 +1536,7 @@ entity neorv32_cpu_cp_fpu_normalizer is
     -- input --
     sign_i     : in  std_ulogic;                     -- sign
     exponent_i : in  std_ulogic_vector(8 downto 0);  -- extended exponent
-    mantissa_i : in  std_ulogic_vector(47 downto 0); -- extended mantissa
+    mantissa_i : in  std_ulogic_vector(47 + 2*ILSB downto 0); -- extended mantissa
     integer_i  : in  std_ulogic_vector(31 downto 0); -- integer input
     class_i    : in  std_ulogic_vector(9 downto 0);  -- input number class
     flags_i    : in  std_ulogic_vector(4 downto 0);  -- exception flags input
@@ -1681,7 +1683,8 @@ begin
         when S_PREPARE_NORM => -- prepare "normal" normalization & rounding
         -- ------------------------------------------------------------
           sreg.upper(31 downto 2) <= (others => '0');
-          sreg.upper(1 downto 0)  <= mantissa_i(47 downto 46);
+          -- Hacemos que el índice sea dinámico con el nuevo ILSB
+          sreg.upper(1 downto 0)  <= mantissa_i(47 + 2*ILSB downto 46 + 2*ILSB);
           sreg.lower <= mantissa_i(45 downto 23);
           sreg.ext_g <= mantissa_i(22);
           sreg.ext_r <= mantissa_i(21);
@@ -1876,44 +1879,45 @@ begin
     round.en  <= '0';
     round.sub <= '0';
     -- rounding mode --
-    case rmode_i(2 downto 0) is
-      when "000" => -- round to nearest, ties to even
-        if (sreg.ext_g = '0') then
-          round.en <= '0'; -- round down (do nothing)
-        else
-          if (sreg.ext_r = '0') and (sreg.ext_s = '0') then -- tie!
-            round.en <= sreg.lower(0); -- round up if LSB of mantissa is set
-          else
-            round.en <= '1'; -- round up
-          end if;
-        end if;
-        round.sub <= '0'; -- increment
-      when "001" => -- round towards zero
-        round.en <= '0'; -- no rounding -> just truncate
-      when "010" => -- round down (towards -infinity)
-        if (sign_i = '0') then -- if the number is positive truncate to round down towards -inf
-          round.en <= '0'; -- truncate
-        else -- if the number is negative and we have a remainder increment to round up towards -inf
-          round.en  <= sreg.ext_g or sreg.ext_r or sreg.ext_s;
-          round.sub <= '0'; -- decrement
-        end if;
-      when "011" => -- round up (towards +infinity)
-        if (sign_i = '1') then -- if the number is negative truncate to round down towards +inf
-          round.en <= '0'; -- truncate
-        else -- if the number is positive and we have a remainder increment to round up towards +inf
-          round.en  <= sreg.ext_g or sreg.ext_r or sreg.ext_s;
-          round.sub <= '0'; -- increment
-        end if;
-      when "100" => -- round to nearest, ties to max magnitude; similar to round to nearest, ties to even. This is basically "classic" round
-        if (sreg.ext_g = '0') then-- if the remainder is <0.5 (g = 0) we truncate
-          round.en <= '0'; -- round down (do nothing)
-        else -- the remaind is >= 0.5 (g = 1) we round up
-          round.en <= '1'; -- round up
-        end if;
-        round.sub <= '0'; -- increment
-      when others => -- undefined
-        round.en <= '0';
-    end case;
+    -- ELIMINAMOS LA SELECCIÓN DEL ROUNDING MODE, PUESTO QUE EN HUB SOLO SE TRUNCA EL ILSB
+    --case rmode_i(2 downto 0) is
+    --  when "000" => -- round to nearest, ties to even
+    --    if (sreg.ext_g = '0') then
+    --      round.en <= '0'; -- round down (do nothing)
+    --    else
+    --      if (sreg.ext_r = '0') and (sreg.ext_s = '0') then -- tie!
+    --        round.en <= sreg.lower(0); -- round up if LSB of mantissa is set
+    --      else
+    --        round.en <= '1'; -- round up
+    --      end if;
+    --    end if;
+    --    round.sub <= '0'; -- increment
+    --  when "001" => -- round towards zero
+    --    round.en <= '0'; -- no rounding -> just truncate
+    --  when "010" => -- round down (towards -infinity)
+    --    if (sign_i = '0') then -- if the number is positive truncate to round down towards -inf
+    --      round.en <= '0'; -- truncate
+    --    else -- if the number is negative and we have a remainder increment to round up towards -inf
+    --      round.en  <= sreg.ext_g or sreg.ext_r or sreg.ext_s;
+    --      round.sub <= '0'; -- decrement
+    --    end if;
+    --  when "011" => -- round up (towards +infinity)
+    --    if (sign_i = '1') then -- if the number is negative truncate to round down towards +inf
+    --      round.en <= '0'; -- truncate
+    --    else -- if the number is positive and we have a remainder increment to round up towards +inf
+    --      round.en  <= sreg.ext_g or sreg.ext_r or sreg.ext_s;
+    --      round.sub <= '0'; -- increment
+    --    end if;
+    --  when "100" => -- round to nearest, ties to max magnitude; similar to round to nearest, ties to even. This is basically "classic" round
+    --    if (sreg.ext_g = '0') then-- if the remainder is <0.5 (g = 0) we truncate
+    --      round.en <= '0'; -- round down (do nothing)
+    --    else -- the remaind is >= 0.5 (g = 1) we round up
+    --      round.en <= '1'; -- round up
+    --    end if;
+    --    round.sub <= '0'; -- increment
+    --  when others => -- undefined
+    --    round.en <= '0';
+    --end case;
   end process rounding_unit_ctrl;
 
 
@@ -1956,7 +1960,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_fpu_f2i is
   generic (
-    FPU_SUBNORMAL_SUPPORT : boolean := false -- Implemented sub-normal support, default false
+    FPU_SUBNORMAL_SUPPORT : boolean := false; -- Implemented sub-normal support, default false
+    FP_BIAS               : natural := 128;
+    ILSB                  : natural := 1
   );
   port (
     -- control --
@@ -2088,7 +2094,7 @@ begin
           else
             sreg.int    <= (others => '0');
             sreg.int(0) <= '1'; -- hidden one
-            ctrl.cnt    <= std_ulogic_vector(unsigned(ctrl.cnt) - 127); -- remove bias to get raw number of left shifts
+            ctrl.cnt    <= std_ulogic_vector(unsigned(ctrl.cnt) - FP_BIAS); -- remove bias to get raw number of left shifts
           end if;
           -- check terminal cases --
           if ((ctrl.class(fp_class_neg_inf_c)  or ctrl.class(fp_class_pos_inf_c) or
@@ -2106,7 +2112,7 @@ begin
             -- Catch: When the exponent is larger than XLEN + 1 set the overflow flag and go to the next stage.
             -- Note: We use 127 as that is an exponent of 0, XLEN for the integer width and + 1 for safety.
             -- In principle the +1 shouldn't be needed.
-            if (unsigned(ctrl.cnt) > (127+XLEN+1)) then -- 0 + 32 + 1 or 127 + 32 + 1
+            if (unsigned(ctrl.cnt) > (FP_BIAS+XLEN+1)) then -- 0 + 32 + 1 or 127 + 32 + 1
               ctrl.over <= '1';
               ctrl.state <= S_FINALIZE;
             else
