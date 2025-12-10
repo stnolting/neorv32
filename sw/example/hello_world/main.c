@@ -14,6 +14,9 @@
  **************************************************************************/
 
 #include <neorv32.h>
+#include <float.h>
+#include <math.h>
+#include "neorv32_zfinx_extension_intrinsics.h"
 
 
 /**********************************************************************//**
@@ -48,6 +51,23 @@ int main() {
   // say hello
   neorv32_uart0_puts("Hello world! :)\n");
 
+  // Prueba manual FPHUB
+  neorv32_uart0_puts("\n--- TEST MANUAL FPHUB ---\n");
+  float_conv_t a, b, res;
 
-  return 0;
+  // 2.0 * 1.0 en formato FPHUB (Bias 128)
+  a.binary_value = 0x40800000; // 2.0
+  b.binary_value = 0x40800000; // 1.0
+
+  // Ejecutar multiplicación en HW
+  res.float_value = riscv_intrinsic_fmuls(a.float_value, b.float_value);
+
+  neorv32_uart0_printf("OpA: 0x%x * OpB: 0x%x = Res: 0x%x\n", a.binary_value, b.binary_value, res.binary_value);
+
+  if (res.binary_value == 0x40800000) {
+      neorv32_uart0_puts("Result: SUCCESS (2.0)\n");
+  } else {
+      neorv32_uart0_puts("Result: FAIL\n");
+  }
+    return 0;
 }
