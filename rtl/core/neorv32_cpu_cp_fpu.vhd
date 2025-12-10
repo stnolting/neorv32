@@ -1685,10 +1685,11 @@ begin
           sreg.upper(31 downto 2) <= (others => '0');
           -- Hacemos que el índice sea dinámico con el nuevo ILSB
           sreg.upper(1 downto 0)  <= mantissa_i(47 + 2*ILSB downto 46 + 2*ILSB);
-          sreg.lower <= mantissa_i(45 downto 23);
-          sreg.ext_g <= mantissa_i(22);
-          sreg.ext_r <= mantissa_i(21);
-          if (or_reduce_f(mantissa_i(20 downto 0)) = '1') then
+          sreg.lower <= mantissa_i(45 + 2*ILSB downto 23 + 2*ILSB);
+
+          sreg.ext_g <= mantissa_i(22 + 2*ILSB);
+          sreg.ext_r <= mantissa_i(21 + 2*ILSB);
+          if (or_reduce_f(mantissa_i(20 + 2*ILSB downto 0)) = '1') then
             sreg.ext_s <= '1';
           else
             sreg.ext_s <= '0';
