@@ -68,6 +68,7 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
   constant op_minmax_c : std_ulogic_vector(2 downto 0) := "101";
   constant op_addsub_c : std_ulogic_vector(2 downto 0) := "110";
   constant op_mul_c    : std_ulogic_vector(2 downto 0) := "111";
+  constant ILSB_ZERO_PAD : std_ulogic_vector(ILSB-1 downto 0) := (others => '0');
 
   -- FPU CSRs --
   signal csr_frm    : std_ulogic_vector(2 downto 0);
@@ -213,23 +214,23 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
     -- input comparison --
     exp_comp  : std_ulogic_vector(1 downto 0);  -- equal & less
     small_exp : std_ulogic_vector(7 downto 0);
-    small_man : std_ulogic_vector(23 downto 0); -- mantissa + hidden one
+    small_man : std_ulogic_vector(23 + ILSB downto 0); -- mantissa + hidden one + ILSB
     large_exp : std_ulogic_vector(7 downto 0);
-    large_man : std_ulogic_vector(23 downto 0); -- mantissa + hidden one
+    large_man : std_ulogic_vector(23 + ILSB downto 0); -- mantissa + hidden one + ILSB
     -- smaller mantissa alignment --
-    man_sreg  : std_ulogic_vector(23 downto 0); -- mantissa + hidden one
+    man_sreg  : std_ulogic_vector(23 + ILSB downto 0); -- mantissa + hidden one
     man_g_ext : std_ulogic;
     man_r_ext : std_ulogic;
     man_s_ext : std_ulogic;
     exp_cnt   : std_ulogic_vector(8 downto 0);
     -- adder/subtractor stage --
     man_comp  : std_ulogic;
-    man_s     : std_ulogic_vector(26 downto 0); -- mantissa + hidden one + GRS
-    man_l     : std_ulogic_vector(26 downto 0); -- mantissa + hidden one + GRS
-    add_stage : std_ulogic_vector(27 downto 0); -- adder result incl. overflow
+    man_s     : std_ulogic_vector(26 + ILSB downto 0); -- mantissa + hidden one  + ILSB + GRS
+    man_l     : std_ulogic_vector(26 + ILSB downto 0); -- mantissa + hidden one  + ILSB + GRS
+    add_stage : std_ulogic_vector(27 + ILSB downto 0); -- adder result incl. overflow
     -- result --
     res_sign  : std_ulogic;
-    res_sum   : std_ulogic_vector(27 downto 0); -- mantissa sum (+1 bit) + GRS bits (for rounding)
+    res_sum   : std_ulogic_vector(27 + ILSB downto 0); -- mantissa sum (+1 bit) + ILSB + GRS bits (for rounding)
     res_class : std_ulogic_vector(9 downto 0);
     flags     : std_ulogic_vector(4 downto 0);  -- exception flags
     -- arbitration --
@@ -1085,7 +1086,7 @@ begin
         -- Catch: Set the smaller mantissa to 0 and the s_ext to '1' end go to next step.
         -- Note: The comparison is 24 mantissa bits 1.23 + 3 underflow bits.
         -- The +3 is to account for the grs underflow bits, could be set to +2 as we are always setting s to 1
-        if (unsigned(addsub.large_exp(7 downto 0)) - unsigned(addsub.small_exp(7 downto 0))) > 27 then
+        if (unsigned(addsub.large_exp(7 downto 0)) - unsigned(addsub.small_exp(7 downto 0))) > (27 + ILSB) then
           addsub.man_sreg  <= (others => '0');
           addsub.man_g_ext <= '0';
           addsub.man_r_ext <= '0';
@@ -1206,8 +1207,13 @@ begin
   -- exponent check: find smaller number (magnitude-only) --
   addsub.small_exp <=        fpu_operands.rs1(30 downto 23)  when (addsub.exp_comp(0) = '1') else        fpu_operands.rs2(30 downto 23);
   addsub.large_exp <=        fpu_operands.rs2(30 downto 23)  when (addsub.exp_comp(0) = '1') else        fpu_operands.rs1(30 downto 23);
-  addsub.small_man <= ('1' & fpu_operands.rs1(22 downto 0))  when (addsub.exp_comp(0) = '1') else ('1' & fpu_operands.rs2(22 downto 0));
-  addsub.large_man <= ('1' & fpu_operands.rs2(22 downto 0))  when (addsub.exp_comp(0) = '1') else ('1' & fpu_operands.rs1(22 downto 0));
+  --addsub.small_man <= ('1' & fpu_operands.rs1(22 downto 0)) when (addsub.exp_comp(0) = '1') else ('1' & fpu_operands.rs2(22 downto 0));
+  addsub.small_man <= ('1' & fpu_operands.rs1(22 downto 0) & ILSB_ZERO_PAD) when (addsub.exp_comp(0) = '1') else 
+                      ('1' & fpu_operands.rs2(22 downto 0) & ILSB_ZERO_PAD);
+  --addsub.large_man <= ('1' & fpu_operands.rs2(22 downto 0))  when (addsub.exp_comp(0) = '1') else ('1' & fpu_operands.rs1(22 downto 0));
+  addsub.large_man <= ('1' & fpu_operands.rs2(22 downto 0) & ILSB_ZERO_PAD) when (addsub.exp_comp(0) = '1') else 
+                      ('1' & fpu_operands.rs1(22 downto 0) & ILSB_ZERO_PAD);
+  
 
   -- mantissa check: find smaller number (magnitude-only) --
   addsub.man_s <= (addsub.man_sreg & addsub.man_g_ext & addsub.man_r_ext & addsub.man_s_ext) when (addsub.man_comp = '1') else (addsub.large_man & "000");
@@ -1219,7 +1225,7 @@ begin
   fu_addsub.done <= addsub.done;
 
   -- mantissa result --
-  addsub.res_sum <= addsub.add_stage(27 downto 0);
+  addsub.res_sum <= addsub.add_stage(27 + ILSB downto 0);
 
 
   -- result class --
@@ -1396,14 +1402,14 @@ begin
   -- Normalizer Input -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   normalizer_input_select: process(funct_ff, addsub, multiplier, fu_conv_i2f)
-      constant PADDING_ZEROS : std_ulogic_vector(19 + 2*ILSB downto 0) := (others => '0');
+      constant PADDING_ZEROS : std_ulogic_vector(19 + ILSB downto 0) := (others => '0');
   begin
     case funct_ff is
       when op_addsub_c => -- addition/subtraction
         normalizer.mode      <= '0'; -- normalization
         normalizer.sign      <= addsub.res_sign;
         normalizer.xexp      <= addsub.exp_cnt;
-        normalizer.xmantissa <= addsub.res_sum(27 downto 1) & PADDING_ZEROS & addsub.res_sum(0);
+        normalizer.xmantissa <= addsub.res_sum(27 + ILSB downto 1) & PADDING_ZEROS & addsub.res_sum(0);
         normalizer.class     <= addsub.res_class;
         normalizer.flags_in  <= addsub.flags;
         normalizer.start     <= addsub.done;
