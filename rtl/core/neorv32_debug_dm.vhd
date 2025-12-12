@@ -518,12 +518,12 @@ begin
           when CMD_START => -- setup program buffer and trigger execution
           -- ------------------------------------------------------------
             if (dm_reg.command(17) = '1') then -- "transfer" (GPR <-> DM.data0)
-              if (dm_reg.command(16) = '0') then -- "write" = 0 -> read from GPR
+              if (dm_reg.command(16) = '0') then -- "write" = 0: data0 <- GPR
                 cmd.ldsw <= instr_sw_c;
                 cmd.ldsw(31 downto 25) <= dataaddr_c(11 downto 5); -- destination address = DM.data0
                 cmd.ldsw(24 downto 20) <= dm_reg.command(4 downto 0); -- "regno" = source register
                 cmd.ldsw(11 downto 07) <= dataaddr_c(4 downto 0); -- destination address = DM.data0
-              else -- "write" = 1 -> write to GPR
+              else -- "write" = 1: data0 -> GPR
                 cmd.ldsw <= instr_lw_c;
                 cmd.ldsw(31 downto 20) <= dataaddr_c(11 downto 0); -- source address = DM.data0
                 cmd.ldsw(11 downto 07) <= dm_reg.command(4 downto 0); -- "regno" = destination register
