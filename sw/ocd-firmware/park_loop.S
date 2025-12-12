@@ -33,7 +33,7 @@
 
 ocd_start:
 
-// DM_CODE_BASE + 0: exception entry - exeption during program buffer execution
+// DM_CODE_BASE + 0: exception entry - exception during program buffer execution
 ocd_entry_exception:
   sb   zero, (DM_SREG_BASE+SREG_EXC)(zero) // send exception-acknowledge
 
