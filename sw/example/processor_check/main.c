@@ -451,11 +451,11 @@ int main() {
   trap_cause = trap_never_c;
   cnt_test++;
 
-  tmp_a  = CUSTOM_INSTR_I_TYPE(0b110000011100, 123456, 0b100, 0b1110011); // mop.r.16
-  tmp_a += CUSTOM_INSTR_R_TYPE(0b1100111, 789, 654321, 0b100, 0b1110011); // mop.rr.7
+  tmp_a = CUSTOM_INSTR_I_TYPE(0b110000011100, 123456, 0b100, 0b1110011); // mop.r.16
+  tmp_b = CUSTOM_INSTR_R_TYPE(0b1100111, 789, 654321, 0b100, 0b1110011); // mop.rr.7
 
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIMOP)) {
-    if ((trap_cause == trap_never_c) && (tmp_a == 0)) {
+    if ((trap_cause == trap_never_c) && (tmp_a == 0) && (tmp_b == 0)) {
       test_ok();
     }
     else {
