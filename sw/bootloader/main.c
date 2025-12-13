@@ -19,7 +19,7 @@
 #include <twi_flash.h>
 
 /**********************************************************************//**
- * Bootloader main.
+ * Bootloader main. Should never return.
  **************************************************************************/
 int main(void) {
 
@@ -31,7 +31,7 @@ int main(void) {
   system_setup();
 
   // intro screen
-  uart_puts("\n\n\n"THEME_INTRO"\n"
+  uart_puts("\n\n\n" THEME_INTRO "\n"
             "build: " __DATE__ "\n\n");
 
   // ------------------------------------------------
@@ -67,21 +67,27 @@ int main(void) {
 #if (TWI_FLASH_EN == 1)
   uart_putc('\n');
   uart_puts("Loading from TWI flash "xstr(TWI_FLASH_ID)" @"xstr(TWI_FLASH_BASE_ADDR)"... ");
-  if (system_exe_load(twi_flash_setup, twi_flash_stream_get) == 0) { system_boot_app(); }
+  if (system_app_load(twi_flash_setup, twi_flash_stream_get) == 0) {
+    system_app_boot((uint32_t)EXE_BASE_ADDR);
+  }
 #endif
 
   // try booting from SPI flash
 #if (SPI_FLASH_EN == 1)
   uart_putc('\n');
   uart_puts("Loading from SPI flash @"xstr(SPI_FLASH_BASE_ADDR)"... ");
-  if (system_exe_load(spi_flash_setup, spi_flash_stream_get) == 0) { system_boot_app(); }
+  if (system_app_load(spi_flash_setup, spi_flash_stream_get) == 0) {
+    system_app_boot((uint32_t)EXE_BASE_ADDR);
+  }
 #endif
 
   // try booting from SD card
 #if (SPI_SDCARD_EN == 1)
   uart_putc('\n');
   uart_puts("Loading SD card file "SPI_SDCARD_FILE"... ");
-  if (system_exe_load(sdcard_setup, sdcard_stream_get) == 0) { system_boot_app(); }
+  if (system_app_load(sdcard_setup, sdcard_stream_get) == 0) {
+    system_app_boot((uint32_t)EXE_BASE_ADDR);
+  }
 #endif
 
 skip_auto_boot:
@@ -110,14 +116,14 @@ skip_auto_boot:
     /**** get executable via UART ****/
     if (cmd == 'u') {
       uart_puts("Awaiting "THEME_EXE"... ");
-      if (system_exe_load(uart_setup, uart_stream_get)) {
+      if (system_app_load(uart_setup, uart_stream_get)) {
         break; // halt (to prevent garbage stream to trigger stuff)
       }
     }
 
     /**** start application program from main memory ****/
     if (cmd == 'e') {
-      system_boot_app();
+      system_app_boot((uint32_t)EXE_BASE_ADDR);
     }
 
     /**** exit while loop: shutdown ****/
@@ -174,12 +180,12 @@ skip_auto_boot:
 #if (TWI_FLASH_EN == 1)
 #if (TWI_FLASH_PROG_EN == 1)
     if (cmd == 'w') { // program TWI flash
-      system_exe_store(twi_flash_setup, twi_flash_erase, twi_flash_stream_put);
+      system_app_store(twi_flash_setup, twi_flash_erase, twi_flash_stream_put);
     }
 #endif
     if (cmd == 't') { // get executable from TWI flash
       uart_puts("Loading from TWI flash "xstr(TWI_FLASH_ID)" @"xstr(TWI_FLASH_BASE_ADDR)"... ");
-      system_exe_load(twi_flash_setup, twi_flash_stream_get);
+      system_app_load(twi_flash_setup, twi_flash_stream_get);
     }
 #endif
 
@@ -187,12 +193,12 @@ skip_auto_boot:
 #if (SPI_FLASH_EN == 1)
 #if (SPI_FLASH_PROG_EN == 1)
     if (cmd == 's') { // program SPI flash
-      system_exe_store(spi_flash_setup, spi_flash_erase, spi_flash_stream_put);
+      system_app_store(spi_flash_setup, spi_flash_erase, spi_flash_stream_put);
     }
 #endif
     if (cmd == 'l') { // get executable from SPI flash
       uart_puts("Loading from SPI flash @"xstr(SPI_FLASH_BASE_ADDR)"... ");
-      system_exe_load(spi_flash_setup, spi_flash_stream_get);
+      system_app_load(spi_flash_setup, spi_flash_stream_get);
     }
 #endif
 
@@ -200,7 +206,7 @@ skip_auto_boot:
 #if (SPI_SDCARD_EN == 1)
     if (cmd == 'c') {
       uart_puts("Loading SD card file "SPI_SDCARD_FILE"... ");
-      system_exe_load(sdcard_setup, sdcard_stream_get);
+      system_app_load(sdcard_setup, sdcard_stream_get);
     }
 #endif
 
@@ -211,7 +217,6 @@ skip_auto_boot:
   asm volatile ("ebreak");
   __builtin_unreachable();
 
-  // bootloader cannot return as main is "naked"
-  while(1);
-  return 0;
+  // bootloader should never return
+  return -1;
 }

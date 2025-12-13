@@ -17,20 +17,16 @@
 #include <stdint.h>
 
 // neorv32 executable layout
-#define BIN_OFFSET_SIGNATURE   0 // offset to signature
-#define BIN_OFFSET_SIZE        4 // offset to size
-#define BIN_OFFSET_CHECKSUM    8 // offset to checksum
-#define BIN_OFFSET_DATA       12 // offset to data start
+#define BIN_OFFSET_SIGNATURE   0 // byte offset to signature
+#define BIN_OFFSET_SIZE        4 // byte offset to size
+#define BIN_OFFSET_CHECKSUM    8 // byte offset to checksum
+#define BIN_OFFSET_DATA       12 // byte offset to data start
 #define BIN_SIGNATURE 0xB007C0DE // executable identifier
-
-// helper macros
-#define xstr(a) str(a)
-#define str(a) #a
 
 // prototypes
 void system_setup(void);
-int  system_exe_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata));
-int  system_exe_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream_put)(uint32_t wdata));
-void system_boot_app(void);
+int  system_app_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata));
+int  system_app_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream_put)(uint32_t wdata));
+void system_app_boot(uint32_t boot_addr);
 
 #endif // SYSTEM_H
