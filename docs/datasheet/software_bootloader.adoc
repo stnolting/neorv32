@@ -48,15 +48,15 @@ with transmitting files larger than 4kB (see https://github.com/stnolting/neorv3
 
 By default the bootloader uses the LSB of the top entity's GPIO output port (`gpio_o(0)`) for an high-active
 status LED. All other output pins are set to low. After reset, the status LED will start blinking at 2Hz and the
-<<_auto_boot_sequence>> is started. This auto-boot sequence can be skipped within 10s by pressing any key.
+<<_auto_boot_sequence>> is started. This auto-boot sequence can be skipped within 8s by pressing any key.
 
 .Default Bootloader Console
 [source]
 ----
 NEORV32 Bootloader
-build: Sep  3 2025 <1>
+build: Dec 13 2025 <1>
 
-Auto-boot in 10s. Press any key to abort. <2>
+Auto-boot in 8s. Press any key to abort. <2>
 Aborted. <3>
 
 Type 'h' for help.
@@ -109,7 +109,7 @@ ROM size below 4kB. However, these options can be enabled in `config.h` (see <<_
 Available commands can be executed by typing the according letter. For example, when executing the `i` command
 the general system configuration is printed:
 
-.System Configuration Information
+.System Configuration Information (Example)
 [source]
 ----
 CMD:> i
@@ -132,7 +132,7 @@ CMD:>
 :sectnums:
 ==== Auto Boot Sequence
 
-After reset, the bootloader waits 10 seconds for a UART console input before it starts the automatic boot sequence.
+After reset, the bootloader waits 8 seconds for UART console input before it starts the automatic boot sequence.
 Depending on the configuration (<<_customizing_the_internal_bootloader>>) the bootloader will try to fetch a valid
 executable from different sources:
 
@@ -241,7 +241,7 @@ overridden by Makefile directives.
 | `STATUS_LED_PIN`        | `0` | `0..31` | `GPIO` output pin used for the high-active status LED.
 4+<| **Auto-boot** - requires <<_core_local_interruptor_clint>>
 | `AUTO_BOOT_EN`          | `1`  | `0,1` | Auto-boot enabled when `1`.
-| `AUTO_BOOT_TIMEOUT`     | `10` | any   | Timeout in seconds after which the auto-boot sequence starts (if there is no UART input by the user).
+| `AUTO_BOOT_TIMEOUT`     | `8`  | any   | Timeout in seconds after which the auto-boot sequence starts (if there is no UART input by the user).
 4+<| **TWI flash** - requires <<_two_wire_serial_interface_controller_twi>>
 | `TWI_FLASH_EN`          | `1`             | `0,1`     | Set to `1` to enable the SPI flash (boot) options.
 | `TWI_FLASH_PROG_EN`     | `1`             | `0,1`     | Set to `1` to enable programming the TWI flash from the bootloader menu.
