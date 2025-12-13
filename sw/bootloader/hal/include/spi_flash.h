@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 
+// prototypes
 int spi_flash_setup(void);
 int spi_flash_erase(void);
 int spi_flash_stream_get(uint32_t* rdata);
