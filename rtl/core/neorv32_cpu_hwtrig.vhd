@@ -128,7 +128,7 @@ begin
   tdata1(31 downto 28) <= x"6"; -- type: address match trigger (mcontrol6)
   tdata1(27)           <= '1'; -- dmode: ignore machine-mode write accesses
   tdata1(26)           <= '0'; -- uncertain: trigger satisfies the configured conditions
-  tdata1(25)           <= or_reduce_f(tdata1_hit and sel); -- hit1: trigger fired IMMEDIATELY AFTER condition has retired
+  tdata1(25)           <= tdata1(22); -- hit1: see hit0
   tdata1(24)           <= '0'; -- vs: VS-mode not implemented
   tdata1(23)           <= '0'; -- vu: VU-mode not implemented
   tdata1(22)           <= or_reduce_f(tdata1_hit and sel); -- hit0: trigger fired IMMEDIATELY AFTER condition has retired
@@ -142,9 +142,9 @@ begin
   tdata1(5)            <= '0'; -- uncertainen: trigger satisfies the configured conditions
   tdata1(4)            <= '0'; -- s: supervisor-mode not supported
   tdata1(3)            <= bool_to_ulogic_f(RISCV_ISA_U); -- u: trigger always enabled when in user-mode (if implemented)
-  tdata1(2)            <= or_reduce_f(tdata1_exec and sel); -- execute: enable trigger on instruction address match
+  tdata1(2)            <= or_reduce_f(tdata1_exec  and sel); -- execute: enable trigger on instruction address match
   tdata1(1)            <= or_reduce_f(tdata1_store and sel); -- store: enable trigger on store address match
-  tdata1(0)            <= or_reduce_f(tdata1_load and sel); -- load: enable trigger on load address match
+  tdata1(0)            <= or_reduce_f(tdata1_load  and sel); -- load: enable trigger on load address match
   --
   tdata1_rb <= tdata1 when (sel_invalid = '0') else (others => '0'); -- all-zero if invalid trigger selection
 
