@@ -2318,7 +2318,7 @@ int main() {
       "#04 DISP waits    : %u\n"
       "#05 ALU waits     : %u\n"
       "#06 branch instr. : %u\n"
-      "#07 ctrl flow tr. : %u\n"
+      "#07 taken branch  : %u\n"
       "#08 MEM loads     : %u\n"
       "#09 MEM stores    : %u\n"
       "#10 MEM waits     : %u\n"
@@ -2363,7 +2363,7 @@ int main() {
  **************************************************************************/
 void sim_irq_trigger(uint32_t sel) {
 
-  *((volatile uint32_t*)SIM_TRIG_BASE) = sel;
+  neorv32_cpu_store_unsigned_word(SIM_TRIG_BASE, sel);
 }
 
 
