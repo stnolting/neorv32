@@ -90,7 +90,7 @@ begin
         -- access identifiers --
         dbus_req_o.meta  <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & ctrl_i.cpu_debug & ctrl_i.lsu_priv & '0';
         dbus_req_o.rw    <= ctrl_i.lsu_rw; -- read/write
-        dbus_req_o.amo   <= ctrl_i.lsu_rmw or ctrl_i.lsu_rvs; -- atomic memory operation
+        dbus_req_o.amo   <= ctrl_i.lsu_rmw or ctrl_i.lsu_rsv; -- atomic memory operation
         dbus_req_o.amoop <= amo_cmd;
         -- data alignment + byte-enable --
         case ctrl_i.ir_funct3(1 downto 0) is
