@@ -2,13 +2,15 @@ name: 'Verilog Conversion'
 
 on:
   push:
+    branches:
+      - main
     paths:
-    - 'rtl/**'
-    - '.github/workflows/Verilog.yml'
+      - 'rtl/**'
+      - '.github/workflows/Verilog.yml'
   pull_request:
     paths:
-    - 'rtl/**'
-    - '.github/workflows/Verilog.yml'
+      - 'rtl/**'
+      - '.github/workflows/Verilog.yml'
   workflow_dispatch:
 
 jobs:

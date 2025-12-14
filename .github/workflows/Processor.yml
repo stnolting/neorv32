@@ -2,17 +2,19 @@ name: Processor
 
 on:
   push:
+    branches:
+      - main
     paths:
-    - 'rtl/**'
-    - 'sw/**'
-    - 'sim/**'
-    - '.github/workflows/Processor.yml'
+      - 'rtl/**'
+      - 'sw/**'
+      - 'sim/**'
+      - '.github/workflows/Processor.yml'
   pull_request:
     paths:
-    - 'rtl/**'
-    - 'sw/**'
-    - 'sim/**'
-    - '.github/workflows/Processor.yml'
+      - 'rtl/**'
+      - 'sw/**'
+      - 'sim/**'
+      - '.github/workflows/Processor.yml'
   workflow_dispatch:
 
 jobs:

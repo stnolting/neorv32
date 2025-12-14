@@ -2,13 +2,15 @@ name: Documentation
 
 on:
   push:
+    branches:
+      - main
     paths:
-    - 'docs/**'
-    - '.github/workflows/Documentation.yml'
+      - 'docs/**'
+      - '.github/workflows/Documentation.yml'
   pull_request:
     paths:
-    - 'docs/**'
-    - '.github/workflows/Documentation.yml'
+      - 'docs/**'
+      - '.github/workflows/Documentation.yml'
   workflow_dispatch:
 
 permissions:

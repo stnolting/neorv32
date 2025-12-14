@@ -282,12 +282,12 @@ begin
     alu_cp_done_i => alu_cp_done, -- ALU iterative operation done
     alu_cmp_i     => alu_cmp,     -- comparator status
     alu_add_i     => alu_add,     -- ALU address result
-    rf_rs1_i      => rs1,         -- rf source 1
+    rf_rs1_i      => rs1,         -- register file source 1
     csr_rdata_o   => csr_rdata,   -- CSR read data
     xcsr_rdata_i  => xcsr_res,    -- external CSR read data
     -- interrupts --
     irq_dbg_i     => dbi_i,       -- debug mode (halt) request
-    irq_machine_i => irq_machine, -- risc-v mei, mti, msi
+    irq_machine_i => irq_machine, -- RISC-V interrupts
     irq_fast_i    => firq_i,      -- fast interrupts
     -- load/store unit interface --
     lsu_wait_i    => lsu_wait,    -- wait for data bus
