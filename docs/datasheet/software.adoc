@@ -464,10 +464,11 @@ The `crt0.S` start-up performs the following operations:
 2+^| install an endless loop as trap handler ("crt0 panic") to <<_mtvec>>: the core will halt if any trap occurs
 2+^| clear <<_mie>> disabling all interrupt sources
 2+^| initialize all integer register `x1..x31` (only `x1..x15` if `E` ISA extension is enabled)
-| initialize `.data` section .4+^| wait in SMP sleep mode for <<_dual_core_boot>>.
-| clear `.bss` section
-| call constructors
-| call the application's `main` function
+| initialize `.data` section | wait in SMP sleep mode for <<_dual_core_boot>>.
+| clear `.bss` section |
+| call constructors |
+| call core0's `main` function | call core1's `main` function
+2+^| _execute application_
 2+^| `main` returns
 2+^| clear <<_mie>> disabling all interrupt sources
 2+^| reinstall an endless loop as trap handler ("crt0 panic") to <<_mtvec>>.
