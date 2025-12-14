@@ -60,15 +60,16 @@ end neorv32_cpu_cp_fpu;
 architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
 
   -- FPU core functions --
-  constant op_class_c  : std_ulogic_vector(2 downto 0) := "000";
-  constant op_comp_c   : std_ulogic_vector(2 downto 0) := "001";
-  constant op_i2f_c    : std_ulogic_vector(2 downto 0) := "010";
-  constant op_f2i_c    : std_ulogic_vector(2 downto 0) := "011";
-  constant op_sgnj_c   : std_ulogic_vector(2 downto 0) := "100";
-  constant op_minmax_c : std_ulogic_vector(2 downto 0) := "101";
-  constant op_addsub_c : std_ulogic_vector(2 downto 0) := "110";
-  constant op_mul_c    : std_ulogic_vector(2 downto 0) := "111";
-  constant ILSB_ZERO_PAD : std_ulogic_vector(ILSB-1 downto 0) := (others => '0');
+  constant op_class_c     : std_ulogic_vector(2 downto 0)       := "000";
+  constant op_comp_c      : std_ulogic_vector(2 downto 0)       := "001";
+  constant op_i2f_c       : std_ulogic_vector(2 downto 0)       := "010";
+  constant op_f2i_c       : std_ulogic_vector(2 downto 0)       := "011";
+  constant op_sgnj_c      : std_ulogic_vector(2 downto 0)       := "100";
+  constant op_minmax_c    : std_ulogic_vector(2 downto 0)       := "101";
+  constant op_addsub_c    : std_ulogic_vector(2 downto 0)       := "110";
+  constant op_mul_c       : std_ulogic_vector(2 downto 0)       := "111";
+  constant ILSB_ZERO_PAD  : std_ulogic_vector(ILSB-1 downto 0)  := (others => '0');
+  constant ILSB_ONE_PAD   : std_ulogic_vector(ILSB-1 downto 0)  := (others => '1');
 
   -- FPU CSRs --
   signal csr_frm    : std_ulogic_vector(2 downto 0);
@@ -349,18 +350,19 @@ begin
   -- Number Classifier ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   number_classifier: process(op_data, rs1_i, rs2_i)
-    variable op_m_all_zero_v, op_e_all_zero_v, op_e_all_one_v : std_ulogic;
+    variable op_m_all_zero_v, op_m_all_one_v, op_e_all_zero_v, op_e_all_one_v : std_ulogic;
     variable op_is_zero_v,    op_is_inf_v                     : std_ulogic;
   begin
     for i in 0 to 1 loop -- for rs1 and rs2 inputs
       -- check for all-zero/all-one --
       op_m_all_zero_v := not or_reduce_f(op_data(i)(22 downto 0));
+      op_m_all_one_v  :=    and_reduce_f(op_data(i)(22 downto 0));
       op_e_all_zero_v := not or_reduce_f(op_data(i)(30 downto 23));
       op_e_all_one_v  :=    and_reduce_f(op_data(i)(30 downto 23));
 
       -- check special cases --
       op_is_zero_v := op_e_all_zero_v and op_m_all_zero_v;  -- zero
-      op_is_inf_v  := op_e_all_one_v  and op_m_all_zero_v;  -- infinity
+      op_is_inf_v  := op_e_all_one_v  and op_m_all_one_v;  -- infinity
 
       -- actual attributes --
       op_class(i)(fp_class_neg_inf_c)    <= op_data(i)(31) and op_is_inf_v; -- negative infinity
@@ -778,8 +780,11 @@ begin
     opb_sn_i => '0',
     res_o    => multiplier.product
   );
-  multiplier.opa <= '1' & fpu_operands.rs1(22 downto 0) & '1'; -- append hidden one to mantissa
-  multiplier.opb <= '1' & fpu_operands.rs2(22 downto 0) & '1'; -- append hidden one to mantissa
+
+  multiplier.opa <= '1' & fpu_operands.rs1(22 downto 0) & ILSB_ZERO_PAD when fpu_operands.rs1 = x"40000000" or fpu_operands.rs1 = x"C0000000" else
+                    '1' & fpu_operands.rs1(22 downto 0) & ILSB_ONE_PAD;-- append hidden one to mantissa
+  multiplier.opb <= '1' & fpu_operands.rs2(22 downto 0) & ILSB_ZERO_PAD when fpu_operands.rs2 = x"40000000" or fpu_operands.rs2 = x"C0000000" else
+                    '1' & fpu_operands.rs2(22 downto 0) & ILSB_ONE_PAD; -- append hidden one to mantissa
 
   -- exponent sum --
   multiplier.exp_sum <= std_ulogic_vector(unsigned('0' & fpu_operands.rs1(30 downto 23)) + unsigned('0' & fpu_operands.rs2(30 downto 23)));
@@ -1068,11 +1073,20 @@ begin
   addsub.small_exp <=        fpu_operands.rs1(30 downto 23)  when (addsub.exp_comp(0) = '1') else        fpu_operands.rs2(30 downto 23);
   addsub.large_exp <=        fpu_operands.rs2(30 downto 23)  when (addsub.exp_comp(0) = '1') else        fpu_operands.rs1(30 downto 23);
   --addsub.small_man <= ('1' & fpu_operands.rs1(22 downto 0)) when (addsub.exp_comp(0) = '1') else ('1' & fpu_operands.rs2(22 downto 0));
-  addsub.small_man <= ('1' & fpu_operands.rs1(22 downto 0) & ILSB_ZERO_PAD) when (addsub.exp_comp(0) = '1') else 
-                      ('1' & fpu_operands.rs2(22 downto 0) & ILSB_ZERO_PAD);
+  --addsub.small_man <= ('1' & fpu_operands.rs1(22 downto 0) & ILSB_ZERO_PAD) when (addsub.exp_comp(0) = '1') else 
+  --                    ('1' & fpu_operands.rs2(22 downto 0) & ILSB_ZERO_PAD);
+  
+  addsub.small_man <= ('1' & fpu_operands.rs1(22 downto 0) & ILSB_ZERO_PAD) when (addsub.exp_comp(0) = '1' and (fpu_operands.rs1=x"40000000" or fpu_operands.rs1=x"C0000000")) else
+                      ('1' & fpu_operands.rs1(22 downto 0) & ILSB_ONE_PAD)  when (addsub.exp_comp(0) = '1') else
+                      ('1' & fpu_operands.rs2(22 downto 0) & ILSB_ZERO_PAD) when (addsub.exp_comp(0) = '0' and (fpu_operands.rs2=x"40000000" or fpu_operands.rs2=x"C0000000")) else
+                      ('1' & fpu_operands.rs2(22 downto 0) & ILSB_ONE_PAD);
+  
+                      
   --addsub.large_man <= ('1' & fpu_operands.rs2(22 downto 0))  when (addsub.exp_comp(0) = '1') else ('1' & fpu_operands.rs1(22 downto 0));
-  addsub.large_man <= ('1' & fpu_operands.rs2(22 downto 0) & ILSB_ZERO_PAD) when (addsub.exp_comp(0) = '1') else 
-                      ('1' & fpu_operands.rs1(22 downto 0) & ILSB_ZERO_PAD);
+  addsub.large_man <= ('1' & fpu_operands.rs2(22 downto 0) & ILSB_ZERO_PAD) when (addsub.exp_comp(0) = '1' and (fpu_operands.rs2=x"40000000" or fpu_operands.rs2=x"C0000000")) else 
+                      ('1' & fpu_operands.rs2(22 downto 0) & ILSB_ONE_PAD)  when (addsub.exp_comp(0) = '1') else
+                      ('1' & fpu_operands.rs1(22 downto 0) & ILSB_ZERO_PAD) when (addsub.exp_comp(0) = '0' and (fpu_operands.rs1=x"40000000" or fpu_operands.rs1=x"C0000000")) else
+                      ('1' & fpu_operands.rs1(22 downto 0) & ILSB_ONE_PAD);
   
 
   -- mantissa check: find smaller number (magnitude-only) --
