@@ -44,6 +44,9 @@ float_conv_t fpu_operation(float_conv_t a, float_conv_t b, char operation) {
         case '*':
             res.float_value = riscv_intrinsic_fmuls(a.float_value, b.float_value);
             break;
+        case '-':
+            res.float_value = riscv_intrinsic_fsubs(a.float_value, b.float_value);
+            break;
         default:
             neorv32_uart0_puts("Operation not supported\n");
             break;
@@ -85,7 +88,8 @@ int main() {
         {0x40C00000, '+', 0x40400000, 0x41100000},
         {0x00400000, '+', 0x00400000, 0x00C00000},
         {0x7F800001, '*', 0x00000000, 0x00000000},
-        {0x7F800001, '+', 0x7F800001, 0x7FFFFFFF}
+        {0x7F800001, '+', 0x7F800001, 0x7FFFFFFF},
+        {0x7F800001, '-', 0x7F800001, 0x00000000}
     };
 
     int num_tests = sizeof(tests) / sizeof(TestCase);

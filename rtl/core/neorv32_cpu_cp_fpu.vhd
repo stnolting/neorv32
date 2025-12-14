@@ -1640,7 +1640,7 @@ begin
           elsif (ctrl.flags(fp_exc_uf_c) = '1') or (sreg.zero = '1') then-- underflow
             ctrl.res_exp <= (others => '0');
             ctrl.res_man <= (others => '0');
-            
+
           else -- result is fine as it is
             ctrl.res_exp <= ctrl.cnt(7 downto 0);
             ctrl.res_man <= sreg.lower;
@@ -1889,17 +1889,17 @@ begin
         when S_PREPARE_F2I => -- prepare float-to-integer conversion
         -- ------------------------------------------------------------
           -- if the exponent is small enough only S will be set, assuming the number is not 0
-          if (unsigned(ctrl.cnt) < 125) then -- less than 0.5
+          if (unsigned(ctrl.cnt) < 126) then -- less than 0.5
             sreg.int    <= (others => '0');
             sreg.mant   <= "001" & sreg.mant(sreg.mant'left downto 3);
             ctrl.under  <= '1'; -- this is an underflow!
             ctrl.cnt    <= (others => '0');
-          elsif (unsigned(ctrl.cnt) = 125) then -- less than 0.5
+          elsif (unsigned(ctrl.cnt) = 126) then -- less than 0.5
             sreg.int    <= (others => '0');
             sreg.mant   <= "01" & sreg.mant(sreg.mant'left downto 2);
             ctrl.under  <= '1'; -- this is an underflow!
             ctrl.cnt    <= (others => '0');
-          elsif (unsigned(ctrl.cnt) = 126) then -- num < 1.0 but num >= 0.5
+          elsif (unsigned(ctrl.cnt) = 127) then -- num < 1.0 but num >= 0.5
             sreg.int    <= (others => '0');
             sreg.mant   <= '1' & sreg.mant(sreg.mant'left downto 1);
             ctrl.under  <= '1'; -- as the number cannot be represented correctly it will be an underflow
@@ -1914,9 +1914,7 @@ begin
                ctrl.class(fp_class_neg_zero_c) or ctrl.class(fp_class_pos_zero_c)) = '1') then
             ctrl.state <= S_FINALIZE;
           -- check for denorm case if we do not support subnormals
-          elsif ((not FPU_SUBNORMAL_SUPPORT) and
-                ((ctrl.class(fp_class_neg_denorm_c) or ctrl.class(fp_class_pos_denorm_c)) = '1')) then
-            ctrl.state <= S_FINALIZE;
+          
           else
             -- Trip: If the float exponent is to large to fit in an integer we are
             -- shifting the float mantissa out of the integer causing an overflow.
@@ -1981,8 +1979,6 @@ begin
               ctrl.flags(fp_exc_nv_c) <= '1';
               ctrl.flags(fp_exc_nx_c) <= '0';
             elsif (ctrl.class(fp_class_neg_zero_c) = '1') or (ctrl.class(fp_class_pos_zero_c) = '1') then -- zero
-              ctrl.result <= x"00000000";
-            elsif (not FPU_SUBNORMAL_SUPPORT) and ((ctrl.class(fp_class_neg_denorm_c) = '1') or (ctrl.class(fp_class_pos_denorm_c) = '1')) then -- subnormal
               ctrl.result <= x"00000000";
             elsif (ctrl.under = '1') and (ctrl.result_tmp(0) = '0') then -- +/- underflow
               ctrl.result <= x"00000000";
@@ -2078,48 +2074,6 @@ begin
     round.en  <= '0';
     round.sub <= '0';
     -- rounding mode --
-    case rmode_i(2 downto 0) is
-      when "000" => -- round to nearest, ties to even
-        if (sreg.ext_g = '0') then
-          round.en <= '0'; -- round down (do nothing)
-        else
-          if (sreg.ext_r = '0') and (sreg.ext_s = '0') then -- tie!
-            round.en <= sreg.int(0); -- round up if LSB of integer is set
-          else
-            round.en <= '1'; -- round up
-          end if;
-        end if;
-        round.sub <= '0'; -- increment
-      when "001" => -- round towards zero
-        round.en <= '0'; -- no rounding -> just truncate
-      when "010" => -- round down (towards -infinity)
-        -- If the number is positive truncate to round down towards -inf
-        if (sign_i = '0') then
-          round.en <= '0'; -- truncate
-        else -- if the number is negative and we have a remainder increment to round up towards -inf
-          round.en  <= sreg.ext_g or sreg.ext_r or sreg.ext_s;
-          round.sub <= '0'; -- decrement
-        end if;
-      when "011" => -- round up (towards +infinity)
-        -- if the number is negative truncate to round down towards +inf
-        if (sign_i = '1') then
-          round.en <= '0'; -- truncate
-        else -- if the number is positive and we have a remainder increment to round up towards +inf
-          round.en  <= sreg.ext_g or sreg.ext_r or sreg.ext_s;
-          round.sub <= '0'; -- increment
-        end if;
-      when "100" => -- round to nearest, ties to max magnitude
-        -- similar to round to nearest, ties to even. This is basically "classic" round
-        -- if the remainder is <0.5 (g = 0) we truncate
-        if (sreg.ext_g = '0') then
-          round.en <= '0'; -- round down (do nothing)
-        else -- the remainder is >= 0.5 (g = 1) we round up
-          round.en <= '1'; -- round up
-        end if;
-        round.sub <= '0'; -- increment
-      when others => -- undefined
-        round.en <= '0';
-    end case;
   end process rounding_unit_ctrl;
 
   -- increment/decrement --
