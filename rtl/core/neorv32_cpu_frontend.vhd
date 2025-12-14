@@ -66,13 +66,16 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   -- instruction fetch engine --
   type state_t is (S_RESTART, S_REQUEST, S_PENDING);
   type fetch_t is record
-    state   : state_t;
-    restart : std_ulogic; -- buffered restart request (after branch)
-    pc      : std_ulogic_vector(XLEN-1 downto 0);
-    priv    : std_ulogic; -- fetch privilege level
-    debug   : std_ulogic; -- debug-mode access
+    state : state_t;
+    reset : std_ulogic; -- buffered restart request (after branch)
+    addr  : std_ulogic_vector(XLEN-1 downto 0); -- fetch address
+    priv  : std_ulogic; -- fetch privilege level
+    debug : std_ulogic; -- debug-mode access
   end record;
   signal fetch : fetch_t;
+
+  -- reset instruction fetch after branch --
+  signal restart : std_ulogic;
 
   -- instruction prefetch buffer (FIFO) interface --
   type ipb_data_t is array (0 to 1) of std_ulogic_vector(16 downto 0); -- bus_error & 16-bit instruction
@@ -100,38 +103,38 @@ begin
   fetch_fsm: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      fetch.state   <= S_RESTART;
-      fetch.restart <= '1'; -- reset IPB and issue engine
-      fetch.pc      <= (others => '0');
-      fetch.priv    <= priv_mode_m_c;
-      fetch.debug   <= '0';
+      fetch.state <= S_RESTART;
+      fetch.reset <= '1'; -- reset IPB and issue engine
+      fetch.addr  <= (others => '0');
+      fetch.priv  <= priv_mode_m_c;
+      fetch.debug <= '0';
     elsif rising_edge(clk_i) then
       case fetch.state is
 
         when S_RESTART => -- set new start address
         -- ------------------------------------------------------------
-          fetch.restart <= '0'; -- restart done
-          fetch.pc      <= ctrl_i.pc_nxt; -- initialize from PC
-          fetch.priv    <= ctrl_i.cpu_priv; -- set new privilege level
-          fetch.debug   <= ctrl_i.cpu_debug; -- access from debug-mode
-          fetch.state   <= S_REQUEST;
+          fetch.reset <= '0'; -- restart done
+          fetch.addr  <= ctrl_i.pc_nxt; -- initialize from PC
+          fetch.priv  <= ctrl_i.cpu_priv; -- set new privilege level
+          fetch.debug <= ctrl_i.cpu_debug; -- access from debug-mode
+          fetch.state <= S_REQUEST;
 
         when S_REQUEST => -- request next 32-bit-aligned instruction word
         -- ------------------------------------------------------------
-          fetch.restart <= fetch.restart or ctrl_i.if_reset; -- buffer restart request
+          fetch.reset <= restart; -- buffer restart request
           if (ipb.free = "11") then -- free IPB space?
             fetch.state <= S_PENDING;
-          elsif (fetch.restart = '1') or (ctrl_i.if_reset = '1') then -- restart because of branch
+          elsif (restart = '1') then -- restart request due to branch
             fetch.state <= S_RESTART;
           end if;
 
         when S_PENDING => -- wait for bus response and write instruction data to prefetch buffer
         -- ------------------------------------------------------------
-          fetch.restart <= fetch.restart or ctrl_i.if_reset; -- buffer restart request
+          fetch.reset <= restart; -- buffer restart request
           if (ibus_rsp_i.ack = '1') then -- wait for bus response
-            fetch.pc    <= std_ulogic_vector(unsigned(fetch.pc) + 4); -- next word
-            fetch.pc(1) <= '0'; -- (re-)align to 32-bit
-            if (fetch.restart = '1') or (ctrl_i.if_reset = '1') then -- restart request due to branch
+            fetch.addr    <= std_ulogic_vector(unsigned(fetch.addr) + 4); -- next word
+            fetch.addr(1) <= '0'; -- (re-)align to 32-bit
+            if (restart = '1') then -- restart request due to branch
               fetch.state <= S_RESTART;
             else -- request next linear instruction word
               fetch.state <= S_REQUEST;
@@ -146,13 +149,16 @@ begin
     end if;
   end process fetch_fsm;
 
+  -- reset instruction fetch after branch --
+  restart <= fetch.reset or ctrl_i.if_reset;
+
   -- PMP interface --
-  pmp_addr_o <= fetch.pc(XLEN-1 downto 2) & "00"; -- word aligned
+  pmp_addr_o <= fetch.addr(XLEN-1 downto 2) & "00"; -- word aligned
   pmp_priv_o <= fetch.priv;
 
   -- instruction bus request --
   ibus_req_o.meta  <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & fetch.debug & fetch.priv & '1';
-  ibus_req_o.addr  <= fetch.pc(XLEN-1 downto 2) & "00"; -- word aligned
+  ibus_req_o.addr  <= fetch.addr(XLEN-1 downto 2) & "00"; -- word aligned
   ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
   ibus_req_o.data  <= (others => '0');  -- read-only
   ibus_req_o.ben   <= (others => '1');  -- always full-word access
@@ -168,7 +174,7 @@ begin
   ipb.wdata(1) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
-  ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.pc(1) = '0') or (not RISCV_C)) else '0';
+  ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.addr(1) = '0') or (not RISCV_C)) else '0';
   ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') else '0';
 
 
@@ -183,17 +189,17 @@ begin
     )
     port map (
       -- global control --
-      clk_i   => clk_i,         -- clock, rising edge
-      rstn_i  => rstn_i,        -- async reset, low-active
-      clear_i => fetch.restart, -- sync reset, high-active
+      clk_i   => clk_i,        -- clock, rising edge
+      rstn_i  => rstn_i,       -- async reset, low-active
+      clear_i => restart,      -- sync reset, high-active
       -- write port --
-      wdata_i => ipb.wdata(i),  -- write data
-      we_i    => ipb.we(i),     -- write enable
-      free_o  => ipb.free(i),   -- at least one entry is free when set
+      wdata_i => ipb.wdata(i), -- write data
+      we_i    => ipb.we(i),    -- write enable
+      free_o  => ipb.free(i),  -- at least one entry is free when set
       -- read port --
-      re_i    => ipb.re(i),     -- read enable
-      rdata_o => ipb.rdata(i),  -- read data
-      avail_o => ipb.avail(i)   -- data available when set
+      re_i    => ipb.re(i),    -- read enable
+      rdata_o => ipb.rdata(i), -- read data
+      avail_o => ipb.avail(i)  -- data available when set
     );
   end generate;
 
@@ -227,7 +233,7 @@ begin
       if (rstn_i = '0') then
         align_q <= '0'; -- start aligned after reset
       elsif rising_edge(clk_i) then
-        if (fetch.restart = '1') then
+        if (fetch.reset = '1') then
           align_q <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
         elsif (ipb.re(0) = '1') or (ipb.re(1) = '1') then
           align_q <= (align_q and (not align_clr)) or align_set; -- alignment "RS flip-flop"
