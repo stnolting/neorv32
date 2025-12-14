@@ -1629,30 +1629,18 @@ begin
           -- generate result word (the ORDER of checks is important here!) --
           if (ctrl.class(fp_class_neg_inf_c) = '1') or (ctrl.class(fp_class_pos_inf_c) = '1') or -- infinity
                 (ctrl.flags(fp_exc_of_c) = '1') then -- overflow
-            -- if rounding mode is towards 0 we cannot generate an infinity instead we need to generate +MAX
-            if ((rmode_i = "001") and (ctrl.flags(fp_exc_of_c) = '1')) then
-              ctrl.res_exp <= fp_single_pos_max_c(30 downto 23); -- keep original sign
-              ctrl.res_man <= fp_single_pos_max_c(22 downto 0);
-            -- if rounding mode is towards -inf we cannot generate a positive infinity instead we need to generate +MAX
-            elsif ((rmode_i = "010") and (ctrl.flags(fp_exc_of_c) = '1') and (sign_i = '0')) then
-              ctrl.res_exp <= fp_single_pos_max_c(30 downto 23); -- keep original sign
-              ctrl.res_man <= fp_single_pos_max_c(22 downto 0);
-            -- if rounding mode is towards +inf we cannot generate a negative infinity instead we need to generate -MAX
-            elsif ((rmode_i = "011") and (ctrl.flags(fp_exc_of_c) = '1') and (sign_i = '1')) then
-              ctrl.res_exp <= fp_single_neg_max_c(30 downto 23); -- keep original sign
-              ctrl.res_man <= fp_single_neg_max_c(22 downto 0);
-            else
-              ctrl.res_exp <= fp_single_pos_inf_c(30 downto 23); -- keep original sign
-              ctrl.res_man <= fp_single_pos_inf_c(22 downto 0);
-            end if;
+            ctrl.res_exp <= (others => '1');
+            ctrl.res_man <= (others => '1');
+          
           elsif (ctrl.class(fp_class_neg_zero_c) = '1') or (ctrl.class(fp_class_pos_zero_c) = '1') then -- zero
             ctrl.res_sgn <= ctrl.class(fp_class_neg_zero_c);
-            ctrl.res_exp <= fp_single_pos_zero_c(30 downto 23);
-            ctrl.res_man <= fp_single_pos_zero_c(22 downto 0);
-          elsif (ctrl.flags(fp_exc_uf_c) = '1') or -- underflow
-                (sreg.zero = '1') or (ctrl.class(fp_class_neg_denorm_c) = '1') or (ctrl.class(fp_class_pos_denorm_c) = '1') then -- denormalized (flush-to-zero)
-            ctrl.res_exp <= fp_single_pos_zero_c(30 downto 23); -- keep original sign
-            ctrl.res_man <= fp_single_pos_zero_c(22 downto 0);
+            ctrl.res_exp <= (others => '0');
+            ctrl.res_man <= (others => '0');
+
+          elsif (ctrl.flags(fp_exc_uf_c) = '1') or (sreg.zero = '1') then-- underflow
+            ctrl.res_exp <= (others => '0');
+            ctrl.res_man <= (others => '0');
+            
           else -- result is fine as it is
             ctrl.res_exp <= ctrl.cnt(7 downto 0);
             ctrl.res_man <= sreg.lower;
