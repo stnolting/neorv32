@@ -1,8 +1,5 @@
 ## Contributor Covenant Code of Conduct
 
-> [!IMPORTANT]
-> Please note that we have a **Code of Conduct**. Please follow it in all your interactions with this project.
-
 ### Our Pledge
 
 In the interest of fostering an open and welcoming environment, we as

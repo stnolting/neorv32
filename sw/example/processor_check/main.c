@@ -451,11 +451,11 @@ int main() {
   trap_cause = trap_never_c;
   cnt_test++;
 
-  tmp_a  = CUSTOM_INSTR_I_TYPE(0b110000011100, 123456, 0b100, 0b1110011); // mop.r.16
-  tmp_a += CUSTOM_INSTR_R_TYPE(0b1100111, 789, 654321, 0b100, 0b1110011); // mop.rr.7
+  tmp_a = CUSTOM_INSTR_I_TYPE(0b110000011100, 123456, 0b100, 0b1110011); // mop.r.16
+  tmp_b = CUSTOM_INSTR_R_TYPE(0b1100111, 789, 654321, 0b100, 0b1110011); // mop.rr.7
 
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIMOP)) {
-    if ((trap_cause == trap_never_c) && (tmp_a == 0)) {
+    if ((trap_cause == trap_never_c) && (tmp_a == 0) && (tmp_b == 0)) {
       test_ok();
     }
     else {
@@ -2318,7 +2318,7 @@ int main() {
       "#04 DISP waits    : %u\n"
       "#05 ALU waits     : %u\n"
       "#06 branch instr. : %u\n"
-      "#07 ctrl flow tr. : %u\n"
+      "#07 taken branch  : %u\n"
       "#08 MEM loads     : %u\n"
       "#09 MEM stores    : %u\n"
       "#10 MEM waits     : %u\n"
@@ -2345,11 +2345,11 @@ int main() {
 
   // final result
   if (cnt_fail == 0) {
-    PRINT(TERM_HL_GREEN"[PROCESSOR TEST COMPLETED SUCCESSFULLY!]"TERM_HL_RESET"\n");
+    PRINT(TERM_HL_GREEN"[PROCESSOR CHECK COMPLETED SUCCESSFULLY!]"TERM_HL_RESET"\n");
     return 0;
   }
   else {
-    PRINT(TERM_HL_RED"[PROCESSOR TEST FAILED!]"TERM_HL_RESET"\n");
+    PRINT(TERM_HL_RED"[PROCESSOR CHECK FAILED!]"TERM_HL_RESET"\n");
     return -1;
   }
 
@@ -2363,7 +2363,7 @@ int main() {
  **************************************************************************/
 void sim_irq_trigger(uint32_t sel) {
 
-  *((volatile uint32_t*)SIM_TRIG_BASE) = sel;
+  neorv32_cpu_store_unsigned_word(SIM_TRIG_BASE, sel);
 }
 
 

@@ -16,7 +16,7 @@ and targets FPGA / RISC-V beginners as well as experienced users.
 
 ### Key Features
 
-- [x] all-in-one package: **CPU** + **SoC** + **Software Framework** + **Tooling**
+- [x] all-in-one package: **CPU** + **SoC** + **Software Framework** + **Test Infrastructure**
 - [x] fully self-contained - no external source dependencies
 - [x] completely described in behavioral, platform-independent VHDL - **no** primitives, macros, attributes, etc.
 - [x] extensive CPU & SoC configuration options for adapting to application requirements
@@ -26,7 +26,7 @@ and targets FPGA / RISC-V beginners as well as experienced users.
 - [x] from zero to `printf("hello world");` - completely open-source and documented
 - [x] easy to use – intended to work _out of the box_
 
-* :recycle: Looking for an **all-Verilog** version? Have a look at [neorv32-verilog](https://github.com/stnolting/neorv32-verilog).
+* :recycle: Looking for an **all-Verilog** version? Have a look at the [auto-conversion setup](rtl/verilog).
 * :mag: [Continuous integration](#project-status) to check for regressions (including RISC-V ISA compatibility check using RISCOF).
 * :open_file_folder: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
 [community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
@@ -34,6 +34,7 @@ targeting various FPGA boards and toolchains to get started.
 * :package: The entire processor is also available as [Vivado IP Block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block).
 * :kite: Support for [FreeRTOS](https://github.com/stnolting/neorv32-freertos),
 [Zephyr OS](https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html),
+[Ada](https://github.com/GNAT-Academic-Program/neorv32-hal),
 [MicroPython](https://github.com/stnolting/neorv32-micropython) and
 [LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC Builder Framework.
 * :desktop_computer: Pre-configured [Eclipse project](https://stnolting.github.io/neorv32/ug/#_eclipse_ide) for developing and debugging code using an IDE.
@@ -47,16 +48,13 @@ targeting various FPGA boards and toolchains to get started.
 [![release](https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat&logo=GitHub)](https://github.com/stnolting/neorv32/releases)
 [![commits-since-latest-release](https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat&logo=GitHub)](https://github.com/stnolting/neorv32/activity)
 
-| Task / Subproject | Repository | CI Status |
-|:------------------|:-----------|:----------|
-| GitHub pages (docs)      | [neorv32](https://github.com/stnolting/neorv32)                         | [![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32) |
-| Documentation build      | [neorv32](https://github.com/stnolting/neorv32)                         | [![Documentation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Documentation.yml?branch=main&longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation) |
-| Processor verification   | [neorv32](https://github.com/stnolting/neorv32)                         | [![Processor](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Processor.yml?branch=main&longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor) |
-| RISCOF core verification | [neorv32-riscof](https://github.com/stnolting/neorv32-riscof)           | [![neorv32-riscof](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-riscof/main.yml?branch=main&longCache=true&style=flat-square&label=neorv32-riscof&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-riscof/actions/workflows/main.yml) |
-| FPGA implementations     | [neorv32-setups](https://github.com/stnolting/neorv32-setups)           | [![Implementation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-setups/Implementation.yml?branch=main&longCache=true&style=flat-square&label=Implementation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-setups/actions?query=workflow%3AImplementation) |
-| All-Verilog version      | [neorv32-verilog](https://github.com/stnolting/neorv32-verilog)         | [![neorv32-verilog](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-verilog/main.yml?branch=main&longCache=true&style=flat-square&label=neorv32-verilog&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-verilog/actions/workflows/main.yml) |
-| FreeRTOS port            | [neorv32-freertos](https://github.com/stnolting/neorv32-freertos)       | [![neorv32-freertos](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-freertos/main.yml?branch=main&longCache=true&style=flat-square&label=neorv32-freertos%20sim&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-freertos/actions/workflows/main.yml) |
-| MicroPython port         | [neorv32-micropython](https://github.com/stnolting/neorv32-micropython) | [![neorv32-micropython](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-micropython/main.yml?branch=main&longCache=true&style=flat-square&label=neorv32-micropython%20build&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-micropython/actions/workflows/main.yml) |
+| Task | CI Status |
+|:-----|:----------|
+| GitHub pages (docs)      | [![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32) |
+| Documentation build      | [![Documentation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Documentation.yml?branch=main&longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3ADocumentation) |
+| Processor check          | [![Processor](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Processor.yml?branch=main&longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AProcessor) |
+| Verilog conversion       | [![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AVerilog)
+| RISCOF core verification | [![neorv32-riscof](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-riscof/main.yml?branch=main&longCache=true&style=flat-square&label=neorv32-riscof&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-riscof/actions/workflows/main.yml) |
 
 The processor passes the official RISC-V architecture tests to ensure compatibility with the RISC-V ISA specs., which is checked by the
 [neorv32-riscof](https://github.com/stnolting/neorv32-riscof) repository. It can successfully run _any_ C program

@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120500"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120505"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
   constant XLEN          : natural := 32; -- native data path width
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
@@ -603,13 +603,13 @@ package neorv32_package is
     lsu_req      : std_ulogic;                     -- trigger memory access request
     lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
     lsu_rmw      : std_ulogic;                     -- set if atomic read-modify-write operation
-    lsu_rvs      : std_ulogic;                     -- set if atomic reservation-set operation
+    lsu_rsv      : std_ulogic;                     -- set if atomic reservation-set operation
     lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
     lsu_fence    : std_ulogic;                     -- fence operation
     lsu_priv     : std_ulogic;                     -- effective privilege mode for load/store
     -- control and status registers --
-    csr_we       : std_ulogic;                     -- global write-enable
-    csr_re       : std_ulogic;                     -- global read-enable
+    csr_we       : std_ulogic;                     -- write-enable
+    csr_re       : std_ulogic;                     -- read-enable
     csr_addr     : std_ulogic_vector(11 downto 0); -- address
     csr_wdata    : std_ulogic_vector(31 downto 0); -- write data
     -- counter events --
@@ -621,7 +621,7 @@ package neorv32_package is
     -- status --
     cpu_priv     : std_ulogic;                     -- effective privilege mode
     cpu_trap     : std_ulogic;                     -- set when CPU is entering trap
-    cpu_sync_exc : std_ulogic;                     -- set when CPU encounters a synchronous exceptions
+    cpu_sync_exc : std_ulogic;                     -- set when CPU encounters a synchronous exception
     cpu_debug    : std_ulogic;                     -- set when CPU is in debug mode
   end record;
 
@@ -650,7 +650,7 @@ package neorv32_package is
     lsu_req      => '0',
     lsu_rw       => '0',
     lsu_rmw      => '0',
-    lsu_rvs      => '0',
+    lsu_rsv      => '0',
     lsu_mo_we    => '0',
     lsu_fence    => '0',
     lsu_priv     => '0',
@@ -742,7 +742,7 @@ package neorv32_package is
 
   -- Trap System ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- exception source list (do not change order, only append!) --
+  -- exception source list (do not change order, only append) --
   constant exc_iaccess_c  : natural :=  0; -- instruction access fault
   constant exc_illegal_c  : natural :=  1; -- illegal instruction
   constant exc_ialign_c   : natural :=  2; -- instruction address misaligned
@@ -756,7 +756,7 @@ package neorv32_package is
   constant exc_db_trig_c  : natural := 10; -- enter debug mode via hardware trigger
   constant exc_db_step_c  : natural := 11; -- enter debug mode via single-stepping
   constant exc_width_c    : natural := 12; -- length of this list in bits
-  -- interrupt source list --
+  -- interrupt source list (do not change order, only append) --
   constant irq_msi_irq_c  : natural :=  0; -- machine software interrupt
   constant irq_mti_irq_c  : natural :=  1; -- machine timer interrupt
   constant irq_mei_irq_c  : natural :=  2; -- machine external interrupt

@@ -33,4 +33,4 @@ NEORV32_HOME ?= ../../..
 include $(NEORV32_HOME)/sw/common/common.mk
 
 sim-check: sim
-	cat $(NEORV32_HOME)/sim/neorv32.uart0.log | grep "Hello world! :)"
+	cat $(NEORV32_HOME)/sim/ghdl.log | grep "Hello world! :)"

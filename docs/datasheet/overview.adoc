@@ -81,6 +81,7 @@ that provides hands-on tutorials to get you started.
 * core libraries and HAL for high-level usage of the provided functions and peripherals
 * processor-specific runtime environment and several example programs
 * Doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
+* Ada support at https://github.com/GNAT-Academic-Program/neorv32-hal
 
 **OS Support**
 
@@ -123,9 +124,9 @@ neorv32                    - Project home folder
 │
 ├─ rtl                     - HDL sources
 │  ├─ core                 - Core sources of the CPU & SoC
-│  ├─ processor_templates  - Pre-configured SoC wrappers
 │  ├─ system_integration   - System wrappers and bridges for advanced SoC connectivity
-│  └─ test_setups          - Minimal test setup "SoCs" used in the User Guide
+│  ├─ test_setups          - Minimal test setup "SoCs" used in the User Guide
+│  └─ verilog              - Scripts and examples for converting NEORV32 to Verilog
 │
 ├─ sim                     - Simulation files
 │
@@ -136,9 +137,7 @@ neorv32                    - Project home folder
    │  ├─ eclipse           - Pre-configured Eclipse IDE project
    │  └─ ...               - Several example programs
    ├─ image_gen            - Helper program to generate executables & memory images
-   ├─ lib                  - Processor core library
-   │  ├─ include           - NEORV32 core library header files (*.h)
-   │  └─ source            - NEORV32 core library source files (*.c)
+   ├─ lib                  - NEORV32 core library
    ├─ ocd_firmware         - Firmware for the on-chip debugger "park loop"
    ├─ openocd              - OpenOCD configuration files
    └─ svd                  - Processor system view description file (CMSIS-SVD)
@@ -286,10 +285,10 @@ same source file, component instantiation is used for them. * When instantiating
 (`neorv32_top.vhd`) in a user-defined design, either entity instantiation or component instantiation can be used,
 as the NEORV32 package file/library file already provides a corresponding component declaration.
 
-.Verilog Version
+.Verilog "Version"
 [TIP]
-A GHDL-generated all-Verilog version of the processor is available at https://github.com/stnolting/neorv32-verilog.
-The provided setup generates a single plain Verilog netlist for a given processor configuration.
+Scripts and instructions for an automatic to-Verilog conversion can be found in `rtl/verilog`. See
+https://stnolting.github.io/neorv32/ug/#_neorv32_in_verilog[UG: NEORV32 in Verilog] for more information.
 
 
 <<<
@@ -301,8 +300,8 @@ The provided setup generates a single plain Verilog netlist for a given processo
 
 The NEORV32 processor is optimized for minimal size. However, the actual size (silicon area or FPGA resources)
 depends on the specific configuration. For example, an RTOS-capable setup based on a `rv32imc_Zicsr_Zicntr` CPU
-configuration requires about 2300 LUTs and 1000 FFs and can run at up to 130 MHz (implementation results for an
-Altera Cyclone IV E `EP4CE22F17C6` FPGA).
+configuration including peripheral and memories requires about 2300 LUTs and 1000 FFs and can run at up to 130 MHz
+(implementation results for an Altera Cyclone IV E `EP4CE22F17C6` FPGA).
 
 .NEORV32 Setups
 [TIP]
@@ -323,6 +322,10 @@ The according sources can be found in the `sw/example/coremark` folder.
 | _medium_ (`rv32imc_Zicsr_Zifencei`)                      |          62.50 | **0.6250**    | **5.34**
 | _performance_ (`rv32imc_Zicsr_Zifencei` + perf. options) |          95.23 | **0.9523**    | **3.54**
 |=======================
+
+Performance can be further improved by enabling additional ISA extensions. Note that the compiler
+also needs to support these extensions (make sure to use a `multilib` GCC configuration for optimal
+code results).
 
 The NEORV32 CPU is based on a multi-cycle architecture. Each instruction is executed in a sequence of
 several consecutive micro operations. The average CPI (cycles per instruction) depends on the instruction

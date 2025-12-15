@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 
+// prototypes
 int twi_flash_setup(void);
 int twi_flash_erase(void);
 int twi_flash_stream_get(uint32_t* rdata);

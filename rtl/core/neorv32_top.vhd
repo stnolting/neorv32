@@ -272,7 +272,6 @@ architecture neorv32_top_rtl of neorv32_top is
   constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
   constant cpu_sdtrig_en_c : boolean := OCD_EN and boolean(OCD_NUM_HW_TRIGGERS > 0);
   constant trace_en_c      : boolean := TRACE_PORT_EN or IO_TRACER_EN;
-  constant tracer_log_en_c : boolean := IO_TRACER_SIMLOG_EN and is_simulation_c;
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(IMEM_SIZE), IMEM_SIZE, 2**index_size_f(IMEM_SIZE));
@@ -1163,8 +1162,6 @@ begin
     if IO_UART0_EN generate
       neorv32_uart0_inst: entity neorv32.neorv32_uart
       generic map (
-        SIM_MODE_EN  => is_simulation_c,
-        SIM_LOG_FILE => "neorv32.uart0.log",
         UART_RX_FIFO => IO_UART0_RX_FIFO,
         UART_TX_FIFO => IO_UART0_TX_FIFO
       )
@@ -1197,8 +1194,6 @@ begin
     if IO_UART1_EN generate
       neorv32_uart1_inst: entity neorv32.neorv32_uart
       generic map (
-        SIM_MODE_EN  => is_simulation_c,
-        SIM_LOG_FILE => "neorv32.uart1.log",
         UART_RX_FIFO => IO_UART1_RX_FIFO,
         UART_TX_FIFO => IO_UART1_TX_FIFO
       )
@@ -1497,7 +1492,7 @@ begin
       generic map (
         TRACE_DEPTH   => IO_TRACER_BUFFER,
         DUAL_CORE_EN  => DUAL_CORE_EN,
-        SIM_LOG_EN    => tracer_log_en_c,
+        SIM_LOG_EN    => IO_TRACER_SIMLOG_EN,
         SIM_LOG_FILE0 => "neorv32.tracer0.log",
         SIM_LOG_FILE1 => "neorv32.tracer1.log"
       )

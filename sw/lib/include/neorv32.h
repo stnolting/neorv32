@@ -193,7 +193,7 @@ extern char __crt0_ram_size[]; /**< ROM size in bytes */
 
 
 /**********************************************************************//**
- * Processor clock prescaler select (relative to processor's main clock)
+ * @name Processor clock prescaler select (relative to processor's main clock)
  **************************************************************************/
 /**@{*/
 enum NEORV32_CLOCK_PRSC_enum {
@@ -236,9 +236,19 @@ typedef union {
 /**@}*/
 
 
-// ----------------------------------------------------------------------------
-// Include all processor header files
-// ----------------------------------------------------------------------------
+/**********************************************************************//**
+ * @name Generic helper macros
+ **************************************************************************/
+/**@{*/
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+/**@}*/
+
+
+/**********************************************************************//**
+ * @name Include all processor header files
+ **************************************************************************/
+/**@{*/
 #include "neorv32_aux.h"
 #include "neorv32_cfs.h"
 #include "neorv32_cfu.h"
@@ -266,6 +276,7 @@ typedef union {
 #include "neorv32_twi.h"
 #include "neorv32_uart.h"
 #include "neorv32_wdt.h"
+/**@}*/
 
 #ifdef __cplusplus
 }

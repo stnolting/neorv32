@@ -169,7 +169,7 @@ Up to four individual synchronous read ports allow to fetch up to 4 register ope
 are mutually exclusive as they happen in separate cycles. Hence, there is no need to consider things like "read-during-write"
 behavior.
 
-.Memory Tuning Options
+.Memory Primitive Tuning Options
 [TIP]
 The physical implementation of the register file's memory core can be tuned for FPGA or ASIC implementation.
 See section <<_cpu_rf_hw_rst_en>> tuning option for more information.
@@ -351,7 +351,8 @@ if the `TRACE_PORT_EN` top generic is `true`.
 | Default     | `false` (disabled)
 | Description | When this option is **enabled**, all conditional branch instructions have identical execution times for taken and not
 taken branch conditions. Thus, all branches behave as if they were always taken (including a complete CPU pipeline flush). Enabling
-this feature makes execution times more predictable and makes timing side-channel attacks more difficult.
+this feature makes execution times more predictable and makes timing side-channel attacks more difficult. Futhermore, thic option can
+help to shorten the CPU's critical path simplifying timing closure.
 |             | When **disabled**, not-taken conditional branches are executed faster without clearing the CPU pipeline. Hence, for maximum
 performance, this feature should be disabled.
 |=======================
@@ -471,7 +472,7 @@ additional latency). However, _all_ bus signals (request and response) need to b
 | Signal  | Width | Description
 3+^| **In-Band Signals**
 | `meta`  |     5 | Access meta information. +
-`meta(4:3)`: core ID from the lowest two bits of the <<_mhartid>> CSR; the DMA has core ID `0b11` +
+`meta(4:3)`: core ID from the lowest two bits of the <<_mhartid>> CSR; the DMA has core ID `0b10` +
 `meta(2)`: set when CPU is in debug-mode +
 `meta(1)`: current privilege mode, `0` = user-mode, `1` = machine-mode +
 `meta(0)`: access source, `0` = data access, `1` = instruction fetch

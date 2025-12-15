@@ -458,20 +458,21 @@ The `crt0.S` start-up performs the following operations:
 [start=1]
 . Setup the stack pointer and the global pointer according to the <<_ram_layout>> provided by the <<_linker_script>> symbols.
 . Initialize <<_mstatus>> CSR disabling machine-level interrupts.
-. Install an endless loop as trap handler to <<_mtvec>> CSR: the core will halt if any trap occurs.
+. Install an endless loop as trap handler to <<_mtvec>> CSR: the core will **halt** if any trap occurs ("crt0 panic").
 . Clear <<_mie>> CSR disabling all interrupt sources.
-. Initialize all integer register `x1` - `x31` (only `x1` - `x15` if the `E` CPU extension is enabled).
+. Initialize all integer register `x1` to `x31` (only `x1` to `x15` if `E` ISA extension is enabled).
 . If the executing CPU core is not core 0, an SMP-specific code is executed and the CPU is halted in sleep mode. See section <<_dual_core_boot>> for more information.
 . Setup `.data` section to configure initialized variables.
-. Clear the `.bss` section.
+. Clear `.bss` section.
 . Call constructors (if there are any).
-. Call the application's `main()` function (with no arguments; `argc` = `argv` = 0).
-. If `main()` returns:
-** All interrupt sources are disabled by clearing <<_mie>> CSR.
-** The return value of `main()` is copied to the <<_mscratch>> CSR to allow inspection by the debugger.
-** The core will halt if any trap occurs.
+. Call the application's `main` function (with no arguments; `argc` = `argv` = 0).
+. If `main` returns (which is not expected):
+** Interrupts are disabled by clearing <<_mstatus>>.`MIE`.
+** Reinstall the endless loop as trap handler ("crt0 panic").
+** The return value of `main()` is copied to <<_mscratch>> CSR to allow inspection by the debugger.
 ** Call all _destructors_ (if there are any).
-** The CPU halts: enter sleep mode executing the `wfi` instruction in an endless loop.
+** CPU 0 will issue an `ebreak` instruction to try to transfer control to an external debugger; any other CPU will immediately halt (see next point).
+** **Halt**: CPU 0 enters sleep mode executing `wfi` instruction in an endless loop ("crt0 panic").
 
 
 <<<

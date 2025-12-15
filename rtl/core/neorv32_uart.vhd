@@ -23,8 +23,6 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_uart is
   generic (
-    SIM_MODE_EN  : boolean;                  -- enable simulation-mode option
-    SIM_LOG_FILE : string := "";             -- name of SIM mode log file
     UART_RX_FIFO : natural range 1 to 2**15; -- RX FIFO depth, has to be a power of two, min 1
     UART_TX_FIFO : natural range 1 to 2**15  -- TX FIFO depth, has to be a power of two, min 1
   );
@@ -140,7 +138,7 @@ begin
         if (bus_req_i.rw = '1') then -- write access
           if (bus_req_i.addr(2) = '0') then -- control register
             ctrl.enable        <= bus_req_i.data(ctrl_en_c);
-            ctrl.sim_mode      <= bus_req_i.data(ctrl_sim_en_c) and bool_to_ulogic_f(SIM_MODE_EN);
+            ctrl.sim_mode      <= bus_req_i.data(ctrl_sim_en_c) and bool_to_ulogic_f(is_simulation_c);
             ctrl.hwfc_en       <= bus_req_i.data(ctrl_hwfc_en_c);
             ctrl.prsc          <= bus_req_i.data(ctrl_prsc2_c downto ctrl_prsc0_c);
             ctrl.baud          <= bus_req_i.data(ctrl_baud9_c downto ctrl_baud0_c);
@@ -152,7 +150,7 @@ begin
         else -- read access
           if (bus_req_i.addr(2) = '0') then -- control register
             bus_rsp_o.data(ctrl_en_c)                        <= ctrl.enable;
-            bus_rsp_o.data(ctrl_sim_en_c)                    <= ctrl.sim_mode and bool_to_ulogic_f(SIM_MODE_EN);
+            bus_rsp_o.data(ctrl_sim_en_c)                    <= ctrl.sim_mode and bool_to_ulogic_f(is_simulation_c);
             bus_rsp_o.data(ctrl_hwfc_en_c)                   <= ctrl.hwfc_en;
             bus_rsp_o.data(ctrl_prsc2_c downto ctrl_prsc0_c) <= ctrl.prsc;
             bus_rsp_o.data(ctrl_baud9_c downto ctrl_baud0_c) <= ctrl.baud;
@@ -383,41 +381,33 @@ begin
   end process rx_flow;
 
 
-  -- SIMULATION Transmitter -----------------------------------------------------------------
+  -- UART Simulation-Mode: Print TX data to simulator console -------------------------------
   -- -------------------------------------------------------------------------------------------
 -- pragma translate_off
 -- RTL_SYNTHESIS OFF
 
-  -- notification --
-  assert not SIM_MODE_EN report "[NEORV32] UART simulation logging enabled: " & SIM_LOG_FILE severity note;
-
-  -- write to simulator console and to log file --
-  simulation_transmitter:
-  if SIM_MODE_EN generate -- for simulation only!
-    sim_tx: process(clk_i)
-      file file_out          : text open write_mode is SIM_LOG_FILE;
-      variable char_v        : integer;
-      variable line_screen_v : line;
-      variable line_file_v   : line;
+  sim_enable:
+  if is_simulation_c generate
+    sim_log: process(clk_i)
+      variable char_v : integer;
+      variable line_v : line;
     begin
       if rising_edge(clk_i) then -- no reset required
-        if (ctrl.enable = '1') and (ctrl.sim_mode = '1') and (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '1') then
-          -- convert to ASCII char --
-          char_v := to_integer(unsigned(bus_req_i.data(7 downto 0)));
-          if (char_v >= 128) then -- out of printable range?
+        if ((ctrl.enable and ctrl.sim_mode and tx_fifo.we) = '1') then
+          -- convert to printable ASCII char --
+          char_v := to_integer(unsigned(bus_req_i.data(data_rtx_msb_c downto data_rtx_lsb_c)));
+          if (char_v >= 128) then
             char_v := 0;
           end if;
-          -- ASCII output --
-          if (char_v /= 10) and (char_v /= 13) then -- skip line breaks - they are issued via "writeline"
-            write(line_screen_v, character'val(char_v)); -- console
-            write(line_file_v, character'val(char_v)); -- log file
-          elsif (char_v = 10) then -- line break: write to screen and text file
-            writeline(output, line_screen_v); -- console
-            writeline(file_out, line_file_v); -- log file
+          -- screen output --
+          if (char_v /= 10) and (char_v /= 13) then -- skip line breaks
+            write(line_v, character'val(char_v));
+          elsif (char_v = 10) then -- flush line to screen
+            writeline(output, line_v);
           end if;
         end if;
       end if;
-    end process sim_tx;
+    end process sim_log;
   end generate;
 
 -- RTL_SYNTHESIS ON

@@ -12,10 +12,8 @@
  */
 
 #include <neorv32.h>
-#include <system.h>
 #include <config.h>
 #include <spi_flash.h>
-#include <uart.h>
 
 // global variables
 extern uint32_t g_flash_addr;

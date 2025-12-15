@@ -20,8 +20,54 @@
 uint32_t g_exe_size = 0; // size of the loaded executable; 0 if no executable available
 uint32_t g_flash_addr = 0; // current flash/stream address
 
-// private function prototypes
-static void __attribute__((interrupt("machine"),aligned(4))) system_trap_handler(void);
+
+/**********************************************************************//**
+ * Bare-metal trap handler.
+ **************************************************************************/
+static void __attribute__((interrupt("machine"),aligned(4))) system_trap_handler(void) {
+
+  uint32_t mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
+
+  // machine timer interrupt
+  if (mcause == TRAP_CODE_MTI) { // raw exception code for MTI
+#if (STATUS_LED_EN == 1)
+    if (neorv32_gpio_available()) {
+      neorv32_gpio_pin_toggle(STATUS_LED_PIN); // toggle status LED
+    }
+#endif
+    if (neorv32_clint_available()) { // set time for next IRQ
+      neorv32_clint_mtimecmp_set(neorv32_clint_time_get() + (NEORV32_SYSINFO->CLK/4));
+    }
+    return;
+  }
+
+  // unexpected trap
+#if (UART_EN == 1)
+  if (neorv32_uart0_available()) {
+    uart_puts("\n\a" VT_TERM_HL_ON "ERROR_EXCEPTION ");
+    uart_puth(mcause);
+    uart_putc(' ');
+    uart_puth(neorv32_cpu_csr_read(CSR_MEPC));
+    uart_putc(' ');
+    uart_puth(neorv32_cpu_csr_read(CSR_MTINST));
+    uart_putc(' ');
+    uart_puth(neorv32_cpu_csr_read(CSR_MTVAL));
+    uart_puts(VT_TERM_HL_OFF "\n");
+  }
+#endif
+
+  // permanently light up status LED
+#if (STATUS_LED_EN == 1)
+  if (neorv32_gpio_available()) {
+    neorv32_gpio_port_set(1 << STATUS_LED_PIN);
+  }
+#endif
+
+  // halt and catch fire
+  asm volatile ("j __crt0_panic");
+  __builtin_unreachable();
+  while (1); // should never be reached
+}
 
 
 /**********************************************************************//**
@@ -49,78 +95,24 @@ void system_setup(void) {
   // configure CLINT timer interrupt
   if (neorv32_clint_available()) {
     NEORV32_CLINT->MTIME.uint32[0] = 0;
-    NEORV32_CLINT->MTIME.uint32[0] = 0;
+    NEORV32_CLINT->MTIME.uint32[1] = 0;
     NEORV32_CLINT->MTIMECMP[0].uint32[0] = NEORV32_SYSINFO->CLK/4;
     NEORV32_CLINT->MTIMECMP[0].uint32[1] = 0;
-    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // activate timer IRQ source
+    neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // enable timer IRQ source
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
   }
 }
 
 
 /**********************************************************************//**
- * Bare-metal trap handler.
- * Used for the CLINT timer tick and to capture any other traps.
- **************************************************************************/
-static void __attribute__((interrupt("machine"),aligned(4))) system_trap_handler(void) {
-
-  uint32_t mcause = neorv32_cpu_csr_read(CSR_MCAUSE);
-
-  // machine timer interrupt
-  if (mcause == TRAP_CODE_MTI) { // raw exception code for MTI
-#if (STATUS_LED_EN == 1)
-    if (neorv32_gpio_available()) {
-      neorv32_gpio_pin_toggle(STATUS_LED_PIN); // toggle status LED
-    }
-#endif
-    if (neorv32_clint_available()) { // set time for next IRQ
-      neorv32_clint_mtimecmp_set(neorv32_clint_time_get() + (NEORV32_SYSINFO->CLK/4));
-    }
-    return;
-  }
-
-  // unexpected trap
-#if (UART_EN == 1)
-  if (neorv32_uart0_available()) {
-    uart_puts("\n\aERROR_EXCEPTION ");
-    uart_puth(mcause);
-    uart_putc(' ');
-    uart_puth(neorv32_cpu_csr_read(CSR_MEPC));
-    uart_putc(' ');
-    uart_puth(neorv32_cpu_csr_read(CSR_MTINST));
-    uart_putc(' ');
-    uart_puth(neorv32_cpu_csr_read(CSR_MTVAL));
-    uart_putc('\n');
-  }
-#endif
-
-  // deactivate IRQs
-  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
-
-  // permanently light up status LED
-#if (STATUS_LED_EN == 1)
-  if (neorv32_gpio_available()) {
-    neorv32_gpio_port_set(1 << STATUS_LED_PIN);
-  }
-#endif
-
-  // endless sleep mode
-  while(1) {
-    asm volatile("wfi");
-  }
-  __builtin_unreachable();
-}
-
-
-/**********************************************************************//**
- * Load executable: get data from device stream and store to main memory.
+ * Load application executable: get data from device stream and store to main memory.
  *
  * @param dev_init Function pointer ("int foo(void)") for device setup.
  * @param stream_get Function pointer ("int bar(uint32_t* rdata)") to get
  * the next consecutive 32-bit word from an application source stream.
  * @return 0 if success, non-zero 0 if error.
  **************************************************************************/
-int system_exe_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata)) {
+int system_app_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata)) {
 
   // no executable available yet
   g_exe_size = 0;
@@ -170,16 +162,15 @@ int system_exe_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata)) {
   g_exe_size = exe_size;
   uart_puts("OK\n");
 
-  // sync caches
+  // sync data cache
   asm volatile ("fence");
-  asm volatile ("fence.i");
 
   return 0;
 }
 
 
 /**********************************************************************//**
- * Store executable: copy data from main memory to device stream.
+ * Store application executable: copy data from main memory to device stream.
  *
  * @param dev_init Function pointer ("int foo(void)") for device setup.
  * @param dev_erase Function pointer ("int tmp(void)") for device erasure.
@@ -187,7 +178,7 @@ int system_exe_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata)) {
  * the next consecutive 32-bit word to an application source stream.
  * @return 0 if success, non-zero 0 if error.
  **************************************************************************/
-int system_exe_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream_put)(uint32_t wdata)) {
+int system_app_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream_put)(uint32_t wdata)) {
 
   // executable available at all?
   if (g_exe_size == 0) {
@@ -218,9 +209,8 @@ int system_exe_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream
     return 1;
   }
 
-  // sync caches
+  // sync data cache
   asm volatile ("fence");
-  asm volatile ("fence.i");
 
   // write executable
   int rc = 0;
@@ -257,9 +247,11 @@ int system_exe_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream
 
 
 /**********************************************************************//**
- * Boot application program.
+ * Boot application executable.
+ *
+ * @param boot_addr Application boot address (32-bit, has to be 4-byte-aligned).
  **************************************************************************/
-void system_boot_app(void) {
+void system_app_boot(uint32_t boot_addr) {
 
   // executable available?
   if (g_exe_size == 0) {
@@ -269,8 +261,8 @@ void system_boot_app(void) {
     }
   }
 
-  // deactivate global IRQs
-  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+  // start application in machine mode; disable interrupts
+  neorv32_cpu_csr_write(CSR_MSTATUS, (1 << CSR_MSTATUS_MPP_H) + (1 << CSR_MSTATUS_MPP_L));
 
   // shut down heart beat LED
 #if (STATUS_LED_EN == 1)
@@ -279,22 +271,19 @@ void system_boot_app(void) {
   }
 #endif
 
-  uint32_t boot_addr = (uint32_t)EXE_BASE_ADDR;
-
 #if (UART_EN == 1)
   uart_puts("Booting from ");
   uart_puth(boot_addr);
   uart_puts("...\n\n");
-  while (neorv32_uart0_tx_busy()); // wait for UART0 to finish transmitting
+  while (neorv32_uart0_tx_busy()); // wait for UART0 to complete transmission
 #endif
 
-  // start application in machine mode
-  uint32_t mstatus_init = (1 << CSR_MSTATUS_MPP_H) + (1 << CSR_MSTATUS_MPP_L);
+  // start application
   asm volatile (
-    "csrw mstatus, %[msta] \n"
-    "csrw mepc,    %[addr] \n"
-    "mret                  \n"
-    : : [msta] "r" (mstatus_init), [addr] "r" (boot_addr)
+    "fence.i            \n"
+    "csrw mepc, %[addr] \n"
+    "mret               \n"
+    : : [addr] "r" (boot_addr)
   );
 
   __builtin_unreachable();

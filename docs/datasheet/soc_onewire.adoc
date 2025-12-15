@@ -45,8 +45,8 @@ actual 1-wire bus signal, which is of type `std_logic`; `onewire_o` and `onewire
 .ONEWIRE VHDL Tristate Driver Example
 [source,VHDL]
 ----
-onewire_io   <= '0' when (onewire_o = '0') else 'Z'; -- drive (low)
-onewire_i <= std_ulogic(onewire_io); -- sense
+onewire_io <= '0' when (onewire_o = '0') else 'Z'; -- drive (low)
+onewire_i  <= std_ulogic(onewire_io); -- sense
 ----
 
 
@@ -109,7 +109,9 @@ All bus operations are timed using multiples of this elementary base time.
 Together with the clock divider value (`ONEWIRE_CTRL_PRSCx` bits = `clock_divider`) the base time is defined by the
 following formula:
 
+****
 _**T~base~**_ = (1 / _f~main~[Hz]_) * `clock_prescaler` * (`clock_divider` + 1)
+****
 
 Example:
 
@@ -117,7 +119,9 @@ Example:
 * clock prescaler select = `0b01` -> `clock_prescaler` = 4
 * clock divider `clock_divider` = 249
 
+****
 _**T~base~**_ = (1 / 100000000Hz) * 4 * (249 + 1) = 10000ns = **10µs**
+****
 
 The base time is used to coordinate all bus interactions. Hence, all delays, time slots and points in time are
 quantized as multiples of the base time T~base~. The following images show the two basic operations of the ONEWIRE

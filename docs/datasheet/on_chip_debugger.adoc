@@ -937,7 +937,7 @@ can be used for machine-mode instruction or data address traps.
 ==== Trigger Module CSRs
 
 The `Sdtrig` ISA extension adds 4 additional CSRs. These CSRs can also be read from machine-mode, but
-write-accesses are restricted because `tdata1.dmode` is hardwired to one.
+write-accesses are restricted as `tdata1.dmode` is hardwired to one.
 
 :sectnums!:
 ===== **`tselect`**

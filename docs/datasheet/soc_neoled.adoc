@@ -97,9 +97,11 @@ Generate the base clock f~TX~ for the NEOLED TX engine:
 * processor clock f~main~ = 100 MHz
 * `NEOLED_CTRL_PRSCx` = `0b001` = f~main~ / 4
 
+****
 _**f~TX~**_ = _f~main~[Hz]_ / `clock_prescaler` = 100MHz / 4 = 25MHz
 
 _**T~TX~**_ = 1 / _**f~TX~**_ = 40ns
+****
 
 Generate carrier period (T~carrier~) and *high-times* (duty cycle) for sending `0` (T~0H~) and `1` (T~1H~) bits:
 
@@ -107,11 +109,13 @@ Generate carrier period (T~carrier~) and *high-times* (duty cycle) for sending `
 * `NEOLED_CTRL_T_0H`  = `0b01010` (= decimal 10)
 * `NEOLED_CTRL_T_1H`  = `0b10100` (= decimal 20)
 
+****
 _**T~carrier~**_ = _**T~TX~**_ * `NEOLED_CTRL_T_TOT` = 40ns * 30 = 1.4µs
 
 _**T~0H~**_ = _**T~TX~**_ * `NEOLED_CTRL_T_0H` = 40ns * 10 = 0.4µs
 
 _**T~1H~**_ = _**T~TX~**_ * `NEOLED_CTRL_T_1H` = 40ns * 20 = 0.8µs
+****
 
 [TIP]
 The NEOLED SW driver library (`neorv32_neoled.h`) provides a simplified configuration

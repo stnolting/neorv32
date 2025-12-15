@@ -2,34 +2,86 @@
 :sectnums:
 == NEORV32 in Verilog
 
-If you are more of a Verilog fan or if your EDA toolchain does not support VHDL or mixed-language designs
-you can use an **all-Verilog** version of the processor provided by the
-https://github.com/stnolting/neorv32-verilog[`neorv32-verilog`] repository.
-
-[IMPORTANT]
-Note that this is **not a manual re-implementation of the core in Verilog** but rather an automated conversion.
-
-GHDL's synthesis feature is used to convert a pre-configured NEORV32 setup - including all peripherals, memories
-and memory images - into a single, un-optimized plain-Verilog module file without any (technology-specific) primitives.
+If you are more of a Verilog fan or if your EDA toolchain does not support VHDL/mixed-language designs you can use
+GHDL to convert an **all-Verilog** version of NEORV32. GHDL's synthesis feature is used to convert a pre-configured
+NEORV32 setup - including all peripherals, memories and memory images - into a single plain-Verilog module.
 
 .GHDL Synthesis
 [TIP]
 More information regarding GHDL's synthesis option can be found at https://ghdl.github.io/ghdl/using/Synthesis.html.
 
-An intermediate VHDL wrapper is provided that can be used to configure the processor (using VHDL generics) and to
-customize the interface ports. After conversion, a single Verilog file is generated that contains the whole NEORV32
-processor. The original processor module hierarchy is preserved as well as most (all?) signal names, which allows
-easy inspection and debugging of simulation waveforms and synthesis results.
+An intermediate VHDL wrapper is provided neorv32_verilog_wrapper.vhd that is used to configure the processor
+(using VHDL generics) and to customize the interface ports. After conversion, a single Verilog file is generated
+neorv32_verilog_wrapper.v`) that contains the whole NEORV32 processor. The original processor module hierarchy is
+preserved as well as all module interface names, which allows inspection/debugging of simulation waveforms and
+synthesis results.
 
-.Example: interface of the resulting NEORV32 Verilog module (for a minimal SoC configuration)
-[source,verilog]
+The actual conversion is conducted by a single Makefile, which analyzes all the processor's sources and
+finally calls GHDL `synth` to create the final Verilog code. After conversion, the interface of the resulting
+`neorv32_verilog_wrapper` Verilog module is shown in the console which can be used as instantiation template.
+
+[source,bash]
 ----
+neorv32/rtl/verilog$ make convert
+Converting to Verilog: neorv32_verilog_wrapper.vhd -> neorv32_verilog_wrapper.v
+
+...
+
+-----------------------------------------------
+Verilog instantiation prototype
+-----------------------------------------------
 module neorv32_verilog_wrapper
   (input  clk_i,
    input  rstn_i,
    input  uart0_rxd_i,
    output uart0_txd_o);
+-----------------------------------------------
 ----
 
+**Conversion Notes**
+
+* GHDL synthesis generates an un-optimized plain Verilog code without any (technology-specific) primitives.
+However, optimizations will be performed by the technology-specific synthesis tool.
+* The output of the GHDL synthesis is a _post-elaboration_ result. Therefore, all the processor's configuration
+options (i.e. VHDL generics) are resolved **before** the actual output is generated. Hence, the entity of the
+conversion wrapper must not have any generic.
+* The interface of the resulting Verilog module lists all inputs first followed by all outputs.
+* The original module hierarchy is preserved as well as all module interface names and many internal signal names.
+* VHDL records are collapsed into linear arrays.
+
+
+=== Verilog Simulation
+
+A simple Verilog testbench is provided (`neorv32/rtl/verilog/testbench.v`) to simulate the default conversion
+output. The testbench includes a UART receiver connected to the processor's UART0; received characters are send
+to the simulator console. The simulation can be started right from the Makefile and it supports
+[Icarus Verilog](https://github.com/steveicarus/iverilog) and [Verilator](https://github.com/verilator/verilator)
+as simulators:
+
+* Icarus Verilog: `neorv32/rtl/verilog$ make SIMULATOR=iverilog sim`
+* Verilator: `neorv32/rtl/verilog$ make SIMULATOR=verilator sim`
+
+As the default VHDL wrapper enabled the build-in bootloader, the simulation UART receiver checks for the
+the bootloader intro string ("`NEORV32`"). As soon as this string has been received `Simulation successful!`
+is printed to the console.
+
+.All-Verilog simulation with Icarus Verilog
+[source,bash]
+----
+Running simulation with Icarus Verilog
+
+NEORV32 Verilog testbench
+
+
+
+
+NEORV32
+Simulation successful!
+testbench.v:83: $finish called at 81865950 (100ps)
+----
+
+.Generating Waveform Data
 [TIP]
-For detailed information check out the `neorv32-verilog` repository at https://github.com/stnolting/neorv32-verilog.
+The Verilog simulator will emit waveform data if the `DUMP_WAVE` variable is set to `1`. Example:
+`neorv32-verilog$ make SIMULATOR=verilator DUMP_WAVE=1 sim`
+Waveform data is stored as `wave.fst`.

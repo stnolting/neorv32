@@ -1,4 +1,5 @@
-# generated app files
+# build artifacts
+build/
 *.bin
 *.coe
 *.mem
@@ -9,20 +10,21 @@
 *.out
 *.hex
 *_image.vhd
-*.ghw
-build/
+*_wrapper.v
 
 # keep default VHDL memory images
 !rtl/core/*_image.vhd
 
-# logs
+# logs and dumps
 *.gdb_history
 *.log
+*.vcd
+*.fst
+*.ghw
 
 # host executables
 sw/image_gen/image_gen
 *.exe
-*.cf
 
 # temporary files and folders
 *.bak

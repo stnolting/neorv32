@@ -1,4 +1,4 @@
-# Default NEORV32 bootloader makefile
+# NEORV32 bootloader makefile
 
 # minimal RISC-V ISA
 MARCH = rv32e_zicsr_zifencei
@@ -23,7 +23,7 @@ USER_FLAGS += \
 -Wl,--defsym,__neorv32_rom_size=16k \
 -Wl,--defsym,__neorv32_rom_base=0xFFE00000
 
-# define MAKE_BOOTLOADER for SW library optimizations (reduces footprint) and enable link-time-optimization
+# define MAKE_BOOTLOADER for bootloader-specific library optimizations and enable link-time-optimization
 USER_FLAGS += -DMAKE_BOOTLOADER -flto
 
 # include the main NEORV32 makefile

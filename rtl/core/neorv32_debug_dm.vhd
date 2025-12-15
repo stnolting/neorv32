@@ -110,7 +110,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant dataaddr_c : std_ulogic_vector(11 downto 0) := dm_data_base_c(11 downto 0);
 
   -- command execution arbiter --
-  type cmd_state_t is (CMD_IDLE, CMD_CHECK, CMD_PREPARE, CMD_TRIGGER, CMD_PENDING);
+  type cmd_state_t is (CMD_IDLE, CMD_CHECK, CMD_START, CMD_PENDING);
   type cmd_t is record
     state : cmd_state_t;
     busy  : std_ulogic;
@@ -221,7 +221,9 @@ begin
             dm_reg.halt_req  <= dmi_req_i.data(31);           -- haltreq
             dm_reg.req_res   <= dmi_req_i.data(30);           -- resumereq
             dm_reg.reset_ack <= dmi_req_i.data(28);           -- ackhavereset
-            dm_reg.hartsel   <= dmi_req_i.data(18 downto 16); -- hartsello
+            if (cmd.busy = '0') then -- no update while abstract command is executing
+              dm_reg.hartsel <= dmi_req_i.data(18 downto 16); -- hartsello
+            end if;
             dm_reg.ndmreset  <= dmi_req_i.data(1);            -- ndmreset
 
           -- write abstract command (only when idle and no error yet) --
@@ -503,7 +505,7 @@ begin
                 ((dm_reg.command(15 downto 5) = "00010000000") and -- regno: only GPRs are supported: 0x1000..0x101f
                  (dm_reg.command(22 downto 20) = "010"))) then -- aarsize: has to be 32-bit
               if (or_reduce_f(hart.halted and hartselect) = '1') then -- selected CPU is halted
-                cmd.state <= CMD_PREPARE;
+                cmd.state <= CMD_START;
               else -- cannot execute since hart is not in expected state
                 cmd.err   <= "100";
                 cmd.state <= CMD_IDLE;
@@ -513,15 +515,15 @@ begin
               cmd.state <= CMD_IDLE;
             end if;
 
-          when CMD_PREPARE => -- setup program buffer
+          when CMD_START => -- setup program buffer and trigger execution
           -- ------------------------------------------------------------
             if (dm_reg.command(17) = '1') then -- "transfer" (GPR <-> DM.data0)
-              if (dm_reg.command(16) = '0') then -- "write" = 0 -> read from GPR
+              if (dm_reg.command(16) = '0') then -- "write" = 0: data0 <- GPR
                 cmd.ldsw <= instr_sw_c;
                 cmd.ldsw(31 downto 25) <= dataaddr_c(11 downto 5); -- destination address = DM.data0
                 cmd.ldsw(24 downto 20) <= dm_reg.command(4 downto 0); -- "regno" = source register
                 cmd.ldsw(11 downto 07) <= dataaddr_c(4 downto 0); -- destination address = DM.data0
-              else -- "write" = 1 -> write to GPR
+              else -- "write" = 1: data0 -> GPR
                 cmd.ldsw <= instr_lw_c;
                 cmd.ldsw(31 downto 20) <= dataaddr_c(11 downto 0); -- source address = DM.data0
                 cmd.ldsw(11 downto 07) <= dm_reg.command(4 downto 0); -- "regno" = destination register
@@ -529,23 +531,20 @@ begin
             else
               cmd.ldsw <= instr_nop_c; -- NOP - do nothing
             end if;
-            cmd.state <= CMD_TRIGGER;
-
-          when CMD_TRIGGER => -- request CPU to execute command
-          -- ------------------------------------------------------------
-            if (or_reduce_f(dci.ack_exe and hartselect) = '1') then -- selected CPU starts execution
+            -- wait until selected CPU starts executing --
+            if (or_reduce_f(dci.ack_exe and hartselect) = '1') then
               cmd.state <= CMD_PENDING;
             end if;
 
-          when CMD_PENDING => -- wait for CPU to finish
+          when CMD_PENDING => -- wait for CPU to complete execution
           -- ------------------------------------------------------------
-            if (or_reduce_f(dci.ack_exc) = '1') then -- exception during execution (can only be caused by the currently selected hart)
-              cmd.err   <= "011";
-              cmd.state <= CMD_IDLE;
-            elsif (dm_reg.rd_acc_err = '1') or (dm_reg.wr_acc_err = '1') then -- invalid read/write while command is executing
-              cmd.err   <= "001";
-              cmd.state <= CMD_IDLE;
-            elsif (or_reduce_f(dci.ack_hlt and hartselect) = '1') then -- selected CPU is parked (halted) again -> execution done
+            if (or_reduce_f(dci.ack_exc and hartselect) = '1') then -- exception during execution?
+              cmd.err <= "011";
+            elsif (cmd.err = "000") and ((dm_reg.rd_acc_err or dm_reg.wr_acc_err) = '1') then -- invalid read/write while command is executing?
+              cmd.err <= "001";
+            end if;
+            -- wait until selected CPU is halted again -> execution done --
+            if (or_reduce_f(dci.ack_hlt and hartselect) = '1') then
               cmd.state <= CMD_IDLE;
             end if;
 
@@ -568,7 +567,7 @@ begin
   cmd.busy <= '0' when (cmd.state = CMD_IDLE) else '1';
 
   -- request execution --
-  dci.req_exe <= hartselect when (cmd.state = CMD_TRIGGER) else (others => '0');
+  dci.req_exe <= hartselect when (cmd.state = CMD_START) else (others => '0');
 
 
   -- Bus Access (from CPU) ------------------------------------------------------------------

@@ -59,7 +59,7 @@ int main() {
     neorv32_uart0_setup(BAUD_RATE, 0);
 
     // say hello
-    neorv32_uart0_printf("<<< PWM demo program >>>\n");
+    neorv32_uart0_printf("\n<<< PWM demo program >>>\n");
   }
 
   // check if PWM unit is implemented at all
@@ -80,7 +80,7 @@ int main() {
   neorv32_pwm_ch_disable_mask(-1); // disable all channels
   neorv32_pwm_set_clock(CLK_PRSC_2); // fastest clock
   for (i=0; i<16; i++) {
-    neorv32_pwm_ch_setup(i, 255, 0); // top = 256, idle polarity = low
+    neorv32_pwm_ch_setup(i, 255, 0, 0); // top = 256, normal polarity, fast-PWM mode
   }
   neorv32_pwm_ch_enable_mask((1<<NUM_CHANNELS)-1); // enable channels
 

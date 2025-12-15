@@ -62,7 +62,7 @@
 
 // Time until the auto-boot sequence starts (in seconds)
 #ifndef AUTO_BOOT_TIMEOUT
-#define AUTO_BOOT_TIMEOUT 10
+#define AUTO_BOOT_TIMEOUT 8
 #endif
 
 /**********************************************************************
@@ -172,7 +172,7 @@
 #define SPI_SDCARD_CLK_DIV 0
 #endif
 
-// Binary executable file name (must be located in root directory, 8.3-DOS-names only)
+// Binary executable file name (must be located in root directory, string, 8.3-DOS-names only)
 #ifndef SPI_SDCARD_FILE
 #define SPI_SDCARD_FILE "boot.bin"
 #endif
@@ -181,12 +181,12 @@
  * Console text (for branding)
  **********************************************************************/
 
-// Intro text
+// Intro text (string)
 #ifndef THEME_INTRO
 #define THEME_INTRO "NEORV32 Bootloader"
 #endif
 
-// Name of executable that is shown in the console menu
+// Name of expected executable for UART upload (string)
 #ifndef THEME_EXE
 #define THEME_EXE "neorv32_exe.bin"
 #endif
