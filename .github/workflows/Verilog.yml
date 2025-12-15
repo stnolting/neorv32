@@ -52,7 +52,7 @@ jobs:
       uses: actions/checkout@v6
 
     - name: '📂 Checkout Conversion Artifact'
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: neorv32_verilog_wrapper
         path: rtl/verilog
@@ -76,7 +76,7 @@ jobs:
       uses: actions/checkout@v6
 
     - name: '📂 Checkout Conversion Artifact'
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: neorv32_verilog_wrapper
         path: rtl/verilog
