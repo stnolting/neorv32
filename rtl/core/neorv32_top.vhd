@@ -621,7 +621,7 @@ begin
     generic map (
       ROUND_ROBIN_EN => false, -- use prioritizing arbitration
       A_READ_ONLY    => false,
-      B_READ_ONLY    => true -- instruction fetch is read-only
+      B_READ_ONLY    => true   -- instruction fetch is read-only
     )
     port map (
       clk_i   => clk_i,
