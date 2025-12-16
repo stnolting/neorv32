@@ -452,27 +452,32 @@ The CPU and also the processor require a minimal start-up and initialization cod
 operational state. Furthermore, the C runtime requires an initialization before compiled code can be executed.
 This setup is done by the start-up code (`sw/common/crt0.S`) which is automatically linked with _every_ application
 program and gets mapped before the actual application code so it gets executed right after boot.
-
 The `crt0.S` start-up performs the following operations:
 
-[start=1]
-. Setup the stack pointer and the global pointer according to the <<_ram_layout>> provided by the <<_linker_script>> symbols.
-. Initialize <<_mstatus>> CSR disabling machine-level interrupts.
-. Install an endless loop as trap handler to <<_mtvec>> CSR: the core will **halt** if any trap occurs ("crt0 panic").
-. Clear <<_mie>> CSR disabling all interrupt sources.
-. Initialize all integer register `x1` to `x31` (only `x1` to `x15` if `E` ISA extension is enabled).
-. If the executing CPU core is not core 0, an SMP-specific code is executed and the CPU is halted in sleep mode. See section <<_dual_core_boot>> for more information.
-. Setup `.data` section to configure initialized variables.
-. Clear `.bss` section.
-. Call constructors (if there are any).
-. Call the application's `main` function (with no arguments; `argc` = `argv` = 0).
-. If `main` returns (which is not expected):
-** Interrupts are disabled by clearing <<_mstatus>>.`MIE`.
-** Reinstall the endless loop as trap handler ("crt0 panic").
-** The return value of `main()` is copied to <<_mscratch>> CSR to allow inspection by the debugger.
-** Call all _destructors_ (if there are any).
-** CPU 0 will issue an `ebreak` instruction to try to transfer control to an external debugger; any other CPU will immediately halt (see next point).
-** **Halt**: CPU 0 enters sleep mode executing `wfi` instruction in an endless loop ("crt0 panic").
+.CTR0 operations executed by each CPU core
+[cols="^5,^5"]
+[frame=ends]
+|=======================
+| **CPU 0 (primary core)** | **CPU 1 (secondary core)**
+2+^| setup the stack pointer (`sp`) and the global pointer (`gp`) according to the <<_ram_layout>>
+2+^| initialize <<_mstatus>> disabling machine-level interrupts
+2+^| install an endless loop as trap handler ("crt0 panic") to <<_mtvec>>: the core will halt if any trap occurs
+2+^| clear <<_mie>> disabling all interrupt sources
+2+^| initialize all integer register `x1..x31` (only `x1..x15` if `E` ISA extension is enabled)
+| initialize `.data` section | wait in SMP sleep mode for <<_dual_core_boot>>.
+| clear `.bss` section |
+| call constructors |
+| call core0's `main` function | call core1's `main` function
+2+^| _execute application_
+2+^| `main` returns
+2+^| clear <<_mie>> disabling all interrupt sources
+2+^| reinstall an endless loop as trap handler ("crt0 panic") to <<_mtvec>>.
+2+^| `main` return value is copied to <<_mscratch>> for inspection by a debugger
+| call destructors |
+| execute `ebreak` instruction to notify external debugger |
+2+^| halt: CPU enters sleep mode executing `wfi` in an endless loop
+| **CPU 0 (primary core)** | **CPU 1 (secondary core)**
+|=======================
 
 
 <<<

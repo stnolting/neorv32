@@ -93,18 +93,18 @@ int main(void) {
   // 2nd: Pointer to the core's stack memory array.
   // 3rd: Size of the core's stack memory array.
 
-  int smp_launch_rc = neorv32_smp_launch(main_core1, (uint8_t*)core1_stack, sizeof(core1_stack));
-
   // Here we are using a statically allocated array as stack memory. Alternatively, malloc
   // could be used (it is recommend to align the stack memory on a 16-byte boundary):
   // uint8_t *core1_stack = (uint8_t*)aligned_alloc(16, stack_size_bytes*sizeof(uint8_t));
+
+  int smp_launch_rc = neorv32_smp_launch(main_core1, (uint8_t*)core1_stack, sizeof(core1_stack));
 
   // check if launching was successful
   if (smp_launch_rc) {
     neorv32_uart0_printf("[ERROR] Launching core1 failed (%d)!\n", smp_launch_rc);
     return -1;
   }
-  // Core1 should be running now.
+  // core1 should be running now.
 
 
   // UART0 is used by both cores so it is a shared resource. We need to ensure exclusive
@@ -113,6 +113,8 @@ int main(void) {
   neorv32_uart0_printf("This is a message from core 0!\n");
   spin_unlock();
 
+  // wait for core 1 to remove lock so we know core1 is done
+  while(spin_check());
 
   return 0; // return to crt0 and halt
 }

@@ -23,7 +23,7 @@ __crt0_entry:
 // ************************************************************************************************
 .option push
 .option norelax
-.option norvc // make sure the trap setup code is uncompressed (if executing RVC on non-RVC core)
+.option norvc                           // make sure setup code is uncompressed (if executing RVC on non-RVC core)
   csrr  x1, mhartid                     // get ID of this core
 
   la    x4, __crt0_ram_last             // last address of RAM, stack pointer (sp) starts here
@@ -67,7 +67,6 @@ __crt0_entry:
   addi  x31, zero, 0
 #endif
 
-
 // ************************************************************************************************
 // SMP setup - wait for configuration if we are not core 0.
 // ************************************************************************************************
@@ -77,9 +76,9 @@ __crt0_smp_check:
   // setup machine software interrupt
 __crt0_smp_setup:
   la    x15,     __crt0_smp_wakeup
-  csrw  mtvec,   x15    // install interrupt handler
-  csrwi mie,     1 << 3 // only enable software interrupt source
-  csrsi mstatus, 1 << 3 // enable machine-level interrupts
+  csrw  mtvec,   x15           // install interrupt handler
+  csrwi mie,     1 << 3        // only enable software interrupt source
+  csrsi mstatus, 1 << 3        // enable machine-level interrupts
 
   // wait for interrupt in sleep mode
 __crt0_smp_sleep:
@@ -89,36 +88,35 @@ __crt0_smp_sleep:
   // machine software interrupt handler
 .balign 4
 __crt0_smp_wakeup:
-  la    x15, __crt0_panic // panic if we encounter another trap
+  la    x15, __crt0_panic      // panic if we encounter another trap
   csrw  mtvec, x15
 
-  li    x14, 0xfff44000   // CLINT.MTIMECMP base address
-  lw    x2,  8(x14)       // MTIMECMP[1].lo = stack top (sp)
-  lw    x12, 12(x14)      // MTIMECMP[1].hi = entry point
+  li    x14, 0xfff44000        // CLINT.MTIMECMP base address
+  lw    x2,  8(x14)            // MTIMECMP[1].lo = stack top (sp)
+  lw    x12, 12(x14)           // MTIMECMP[1].hi = entry point
 
-  li    x14,  0xfff40000  // CLINT.MSWI base address
-  sw    zero, 4(x14)      // clear MSWI[1]
+  li    x14,  0xfff40000       // CLINT.MSWI base address
+  sw    zero, 4(x14)           // clear MSWI[1]
 
-  j     __crt0_main_entry // start at entry point
+  j     __crt0_main_entry      // start at entry point
 
 __crt0_smp_primary:
-
 
 // ************************************************************************************************
 // Copy .data section from ROM to RAM.
 // ************************************************************************************************
-  beq   x7, x8, __crt0_data_copy_end // __crt0_copy_data_src_begin = __crt0_copy_data_dst_begin
+__crt0_data_init:
+  beq   x7, x8, __crt0_data_copy_end // __crt0_copy_data_src_begin == __crt0_copy_data_dst_begin
 
 __crt0_data_copy:
   bge   x8, x9,  __crt0_data_copy_end
   lw    x15, 0(x7)
   sw    x15, 0(x8)
-  addi  x7, x7, 4 // word-wise operations; section begins and ends on word boundary
+  addi  x7, x7, 4                    // word-wise operations; section begins and ends on word boundary
   addi  x8, x8, 4
   j     __crt0_data_copy
 
 __crt0_data_copy_end:
-
 
 // ************************************************************************************************
 // Clear .bss section.
@@ -130,7 +128,6 @@ __crt0_bss_clear:
   j     __crt0_bss_clear
 
 __crt0_bss_clear_end:
-
 
 // ************************************************************************************************
 // Call constructors (not supported for bootloader).
@@ -151,29 +148,24 @@ __crt0_constructors:
 __crt0_constructors_end:
 #endif
 
-
 // ************************************************************************************************
 // Setup arguments and call main function.
 // ************************************************************************************************
-  la    x12, main            // primary core's (core0) entry point (#1169)
+__crt0_main_primary:
+  la    x12, main         // primary core's (core0) entry point (#1169)
 __crt0_main_entry:
-  la    x3, __global_pointer // re-initialize global pointer "gp" (to prevent a race condition during SMP boot)
-  li    x10, 0x00001800      // mstatus.mpp = machine-mode
-  csrw  mstatus, x10
-  fence                      // synchronize loads/stores
-  fence.i                    // synchronize instruction fetch
-
-  li    x10, 0               // x10 = a0 = argc = 0
-  li    x11, 0               // x11 = a1 = argv = 0
-  jalr  x1, x12              // call actual main function; put return address in ra
+  fence                   // synchronize loads/stores
+  fence.i                 // synchronize instruction fetch
+  li    x10, 0            // x10 = a0 = argc = 0
+  li    x11, 0            // x11 = a1 = argv = 0
+  jalr  x1, x12           // call actual main function
 
 .global __crt0_main_exit
-__crt0_main_exit:            // main's "return" and "exit" will arrive here
-  csrci mstatus, 1 << 3      // disable machine-level interrupts
-  la    x11, __crt0_panic    // re-install default crt0 trap handler
+__crt0_main_exit:         // main's "return" and "exit" will arrive here
+  csrci mstatus, 1 << 3   // disable machine-level interrupts
+  la    x11, __crt0_panic // re-install default crt0 trap handler
   csrw  mtvec, x11
-  csrw  mscratch, x10        // backup main's return code to mscratch (for debugger or destructors)
-
+  csrw  mscratch, x10     // backup main's return code to mscratch (for debugger or destructors)
 
 // ************************************************************************************************
 // Call destructors (not supported for bootloader).
@@ -190,28 +182,30 @@ __crt0_destructors_primary:
 __crt0_destructors:
   bge   x8, x9, __crt0_destructors_end
   lw    x1, 0(x8)
-  jalr  x1, 0(x1) // call destructor function; put return address in ra
+  jalr  x1, 0(x1)                  // call destructor function; put return address in ra
   addi  x8, x8, 4
   j     __crt0_destructors
 
 __crt0_destructors_end:
 #endif
 
-
 // ************************************************************************************************
-// Main should not return; prepare CPU halt.
+// Halt CPU.
 // ************************************************************************************************
-#ifndef MAKE_BOOTLOADER  // bootloader should never return from main
-__crt0_halt:
-  csrr x11, mhartid
-  bnez x11, __crt0_panic // not core 0: just halt
+#ifndef MAKE_BOOTLOADER // bootloader should never return; if it does -> panic
+__crt0_halting:
+  csrr x8, mhartid
+  bnez x8, __crt0_halt
 __crt0_halt_primary:
-  ebreak                 // try to transfer control to debugger; otherwise -> panic
+  ebreak                // try to transfer control to external debugger; otherwise -> panic
+
+__crt0_halt:            // same code as trap handler but with different label/address to track origin
+  wfi
+  j __crt0_halt
 #endif
 
-
 // ************************************************************************************************
-// Halt and catch fire (this is also the _terminal_ crt0 trap handler).
+// CRT0 trap handler. Panic: halt and catch fire.
 // ************************************************************************************************
 .balign 4     // trap handler has to be 32-bit aligned
 .option norvc // no compressed instruction to make this valid code on any platform configuration
@@ -219,7 +213,6 @@ __crt0_halt_primary:
 __crt0_panic:
   wfi
   j __crt0_panic
-
 
 .cfi_endproc
 .end

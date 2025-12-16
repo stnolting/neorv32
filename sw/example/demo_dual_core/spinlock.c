@@ -34,3 +34,19 @@ void spin_unlock(void) {
     failed = neorv32_cpu_amosc((uint32_t)&__spin_locked, 0);
   }
 }
+
+
+/**********************************************************************//**
+ * Spinlock: check if locked.
+ *
+ * @return 0 if not locked, 1 if locked.
+ **************************************************************************/
+int spin_check(void) {
+
+  if (neorv32_cpu_amolr((uint32_t)&__spin_locked)) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
