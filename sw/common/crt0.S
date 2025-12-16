@@ -163,6 +163,7 @@ __crt0_main_entry:
 .global __crt0_main_exit
 __crt0_main_exit:         // main's "return" and "exit" will arrive here
   csrci mstatus, 1 << 3   // disable machine-level interrupts
+  csrw  mie, zero         // disable all interrupt sources
   la    x11, __crt0_panic // re-install default crt0 trap handler
   csrw  mtvec, x11
   csrw  mscratch, x10     // backup main's return code to mscratch (for debugger or destructors)

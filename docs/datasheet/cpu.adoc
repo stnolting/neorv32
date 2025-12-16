@@ -667,9 +667,9 @@ the second highest priority will get serviced and so on until no further interru
 If the core is currently operating in less privileged user-mode, interrupts are globally enabled
 even if <<_mstatus>>.mie is cleared.
 
-.Interrupt Signal Requirements - Standard RISC-V Interrupts
+.Interrupt Signal Requirements
 [IMPORTANT]
-All interrupt request signals are **high-active**. Once triggered, a interrupt request line should stay high
+All CPU interrupt request signals are **high-active**. Once triggered, the interrupt request line should stay high
 until it is explicitly acknowledged by a source-specific mechanism (for example by writing to a specific memory-mapped register).
 
 .Instruction Atomicity and Forward-Progress

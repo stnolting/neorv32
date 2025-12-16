@@ -774,7 +774,7 @@ begin
 
 
   -- ****************************************************************************************************************************
-  -- Trap Controller
+  -- Trap Control
   -- ****************************************************************************************************************************
 
   -- Trap Buffer ----------------------------------------------------------------------------
@@ -864,9 +864,9 @@ begin
   trap_ctrl.pc <= exe_engine.pc2 when (trap_ctrl.cause(trap_ctrl.cause'left) = '1') else exe_engine.pc;
 
 
-  -- Trap Controller ------------------------------------------------------------------------
+  -- Trap Trigger ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trap_controller: process(rstn_i, clk_i)
+  trap_trigger: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       trap_ctrl.env_pend <= '0';
@@ -877,7 +877,7 @@ begin
         trap_ctrl.env_pend <= '1';
       end if;
     end if;
-  end process trap_controller;
+  end process trap_trigger;
 
   -- any sync. exception? --
   trap_ctrl.exc_fire <= or_reduce_f(trap_ctrl.exc_buf); -- cannot be masked

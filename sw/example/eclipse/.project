@@ -29,5 +29,10 @@
 			<type>2</type>
 			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/lib/source</locationURI>
 		</link>
+		<link>
+			<name>common</name>
+			<type>2</type>
+			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/common</locationURI>
+		</link>
 	</linkedResources>
 </projectDescription>
