@@ -317,9 +317,9 @@ begin
     -- Machine timer system time --
     mtime_time_o   => open,
     -- CPU Interrupts --
-    mtime_irq_i    => mti,
-    msw_irq_i      => msi,
-    mext_irq_i     => mei
+    irq_msi_i      => msi,
+    irw_mti_i      => mti,
+    irq_mei_i      => mei
   );
 
 

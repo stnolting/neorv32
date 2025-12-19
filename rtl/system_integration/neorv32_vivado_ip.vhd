@@ -256,9 +256,9 @@ entity neorv32_vivado_ip is
     -- Machine timer system time (available if IO_CLINT_EN = true) --
     mtime_time_o   : out std_logic_vector(63 downto 0);
     -- CPU Interrupts --
-    mtime_irq_i    : in  std_logic := '0';
-    msw_irq_i      : in  std_logic := '0';
-    mext_irq_i     : in  std_logic := '0'
+    irq_msi_i      : in  std_logic := '0';
+    irw_mti_i      : in  std_logic := '0';
+    irq_mei_i      : in  std_logic := '0'
   );
 end entity;
 
@@ -544,9 +544,9 @@ begin
     -- Machine timer system time (available if IO_MTIME_EN = true) --
     mtime_time_o   => mtime_time_aux,
     -- CPU Interrupts --
-    mtime_irq_i    => std_ulogic(mtime_irq_i),
-    msw_irq_i      => std_ulogic(msw_irq_i),
-    mext_irq_i     => std_ulogic(mext_irq_i)
+    irq_msi_i      => std_ulogic(irq_msi_i),
+    irw_mti_i      => std_ulogic(irw_mti_i),
+    irq_mei_i      => std_ulogic(irq_mei_i)
   );
 
 

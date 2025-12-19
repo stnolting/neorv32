@@ -1018,9 +1018,9 @@ package neorv32_package is
       -- Machine timer system time (available if IO_CLINT_EN = true) --
       mtime_time_o   : out std_ulogic_vector(63 downto 0);
       -- CPU Interrupts --
-      mtime_irq_i    : in  std_ulogic := 'L';
-      msw_irq_i      : in  std_ulogic := 'L';
-      mext_irq_i     : in  std_ulogic := 'L'
+      irq_msi_i      : in  std_ulogic := 'L';
+      irw_mti_i      : in  std_ulogic := 'L';
+      irq_mei_i      : in  std_ulogic := 'L'
     );
   end component;
 

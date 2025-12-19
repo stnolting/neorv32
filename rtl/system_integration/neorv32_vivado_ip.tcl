@@ -137,8 +137,8 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_CFS_EN}     [ipx::get_ports cfs_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_NEOLED_EN}  [ipx::get_ports neoled_o         -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_CLINT_EN}   [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
-  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
-  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports msw_irq_i        -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports irw_mti_i        -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports irq_msi_i        -of_objects [ipx::current_core]]
 
 
   # **************************************************************
