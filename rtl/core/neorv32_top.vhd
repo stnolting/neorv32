@@ -239,7 +239,7 @@ entity neorv32_top is
     -- Machine timer system time (available if IO_CLINT_EN = true) --
     mtime_time_o   : out std_ulogic_vector(63 downto 0);                    -- current system time
 
-    -- CPU interrupts (for chip-internal usage only) --
+    -- CPU interrupts --
     mtime_irq_i    : in  std_ulogic := 'L';                                 -- machine timer interrupt, available if IO_CLINT_EN = false
     msw_irq_i      : in  std_ulogic := 'L';                                 -- machine software interrupt, available if IO_CLINT_EN = false
     mext_irq_i     : in  std_ulogic := 'L'                                  -- machine external interrupt
