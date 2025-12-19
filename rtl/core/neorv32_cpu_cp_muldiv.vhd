@@ -31,11 +31,11 @@ entity neorv32_cpu_cp_muldiv is
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
     -- data input --
-    rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+    rs1_i   : in  std_ulogic_vector(31 downto 0); -- rf source 1
+    rs2_i   : in  std_ulogic_vector(31 downto 0); -- rf source 2
     -- result and status --
-    res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-    valid_o : out std_ulogic                          -- data output valid
+    res_o   : out std_ulogic_vector(31 downto 0); -- operation result
+    valid_o : out std_ulogic                      -- data output valid
   );
 end neorv32_cpu_cp_muldiv;
 
@@ -68,7 +68,7 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   type state_t is (S_IDLE, S_BUSY, S_DONE);
   type ctrl_t is record
     state         : state_t;
-    cnt           : std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- iteration counter
+    cnt           : std_ulogic_vector(4 downto 0); -- iteration counter
     rs1_is_signed : std_ulogic;
     rs2_is_signed : std_ulogic;
     out_en        : std_ulogic;
@@ -79,20 +79,20 @@ architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
   type div_t is record
     start     : std_ulogic; -- start new division
     sign_mod  : std_ulogic; -- result sign correction
-    rs2_abs   : std_ulogic_vector(XLEN-1 downto 0);
-    remainder : std_ulogic_vector(XLEN-1 downto 0);
-    quotient  : std_ulogic_vector(XLEN-1 downto 0);
-    sub       : std_ulogic_vector(XLEN   downto 0); -- try subtraction (and restore if underflow)
-    res_u     : std_ulogic_vector(XLEN-1 downto 0); -- unsigned result
-    res       : std_ulogic_vector(XLEN-1 downto 0);
+    rs2_abs   : std_ulogic_vector(31 downto 0);
+    remainder : std_ulogic_vector(31 downto 0);
+    quotient  : std_ulogic_vector(31 downto 0);
+    sub       : std_ulogic_vector(32 downto 0); -- try subtraction (and restore if underflow)
+    res_u     : std_ulogic_vector(31 downto 0); -- unsigned result
+    res       : std_ulogic_vector(31 downto 0);
   end record;
   signal div : div_t;
 
   -- multiplier core --
   type mul_t is record
     start : std_ulogic; -- start new multiplication
-    res   : std_ulogic_vector((2*XLEN)-1 downto 0); -- result
-    add   : std_ulogic_vector(XLEN downto 0); -- iterative addition step
+    res   : std_ulogic_vector(63 downto 0); -- result
+    add   : std_ulogic_vector(32 downto 0); -- iterative addition step
   end record;
   signal mul : mul_t;
 
@@ -116,7 +116,7 @@ begin
     elsif rising_edge(clk_i) then
       -- defaults --
       ctrl.out_en <= '0';
-      ctrl.cnt    <= std_ulogic_vector(to_unsigned(XLEN-2, ctrl.cnt'length)); -- cycle counter initialization
+      ctrl.cnt    <= std_ulogic_vector(to_unsigned(30, ctrl.cnt'length)); -- cycle counter initialization
 
       -- fsm --
       case ctrl.state is
@@ -167,7 +167,7 @@ begin
   if FAST_MUL_EN generate
     multiplier_inst: entity neorv32.neorv32_prim_mul
     generic map (
-      DWIDTH => XLEN
+      DWIDTH => 32
     )
     port map (
       clk_i    => clk_i,

@@ -34,7 +34,7 @@ entity neorv32_cpu_frontend is
     ibus_req_o : out bus_req_t; -- request
     ibus_rsp_i : in  bus_rsp_t; -- response
     -- PMP interface --
-    pmp_addr_o : out std_ulogic_vector(XLEN-1 downto 0); -- access address
+    pmp_addr_o : out std_ulogic_vector(31 downto 0); -- access address
     pmp_priv_o : out std_ulogic; -- access privilege level
     pmp_err_i  : in  std_ulogic; -- PMP access fault
     -- back-end interface --
@@ -68,7 +68,7 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   type fetch_t is record
     state : state_t;
     reset : std_ulogic; -- buffered restart request (after branch)
-    addr  : std_ulogic_vector(XLEN-1 downto 0); -- fetch address
+    addr  : std_ulogic_vector(31 downto 0); -- fetch address
     priv  : std_ulogic; -- fetch privilege level
     debug : std_ulogic; -- debug-mode access
   end record;
@@ -153,12 +153,12 @@ begin
   restart <= fetch.reset or ctrl_i.if_reset;
 
   -- PMP interface --
-  pmp_addr_o <= fetch.addr(XLEN-1 downto 2) & "00"; -- word aligned
+  pmp_addr_o <= fetch.addr(31 downto 2) & "00"; -- word aligned
   pmp_priv_o <= fetch.priv;
 
   -- instruction bus request --
   ibus_req_o.meta  <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & fetch.debug & fetch.priv & '1';
-  ibus_req_o.addr  <= fetch.addr(XLEN-1 downto 2) & "00"; -- word aligned
+  ibus_req_o.addr  <= fetch.addr(31 downto 2) & "00"; -- word aligned
   ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
   ibus_req_o.data  <= (others => '0');  -- read-only
   ibus_req_o.ben   <= (others => '1');  -- always full-word access

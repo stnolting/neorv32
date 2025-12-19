@@ -32,7 +32,7 @@ entity neorv32_cpu_counters is
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
     -- read back --
-    rdata_o : out std_ulogic_vector(XLEN-1 downto 0) -- read data
+    rdata_o : out std_ulogic_vector(31 downto 0) -- read data
   );
 end neorv32_cpu_counters;
 

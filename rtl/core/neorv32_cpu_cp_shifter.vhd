@@ -28,11 +28,11 @@ entity neorv32_cpu_cp_shifter is
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
     -- data input --
-    rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    shamt_i : in  std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
+    rs1_i   : in  std_ulogic_vector(31 downto 0); -- rf source 1
+    shamt_i : in  std_ulogic_vector(4 downto 0);  -- shift amount
     -- result and status --
-    res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-    valid_o : out std_ulogic -- data output valid
+    res_o   : out std_ulogic_vector(31 downto 0); -- operation result
+    valid_o : out std_ulogic                      -- data output valid
   );
 end neorv32_cpu_cp_shifter;
 
@@ -47,16 +47,16 @@ architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
     run     : std_ulogic;
     done    : std_ulogic;
     done_ff : std_ulogic;
-    cnt     : std_ulogic_vector(index_size_f(XLEN)-1 downto 0);
-    sreg    : std_ulogic_vector(XLEN-1 downto 0);
+    cnt     : std_ulogic_vector(4 downto 0);
+    sreg    : std_ulogic_vector(31 downto 0);
   end record;
   signal shifter : shifter_t;
 
   -- barrel shifter --
-  type bs_level_t is array (index_size_f(XLEN) downto 0) of std_ulogic_vector(XLEN-1 downto 0);
+  type bs_level_t is array (5 downto 0) of std_ulogic_vector(31 downto 0);
   signal bs_level  : bs_level_t;
   signal bs_sign   : std_ulogic;
-  signal bs_result : std_ulogic_vector(XLEN-1 downto 0);
+  signal bs_result : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -125,13 +125,13 @@ begin
 
     -- input layer: operand gating and convert left shifts to right shifts by bit-reversal --
     bs_level(0) <= (others => '0') when (valid_cmd = '0') else bit_rev_f(rs1_i) when (ctrl_i.ir_funct3(2) = '0') else rs1_i;
-    bs_sign <= rs1_i(XLEN-1) and ctrl_i.ir_funct12(10) and valid_cmd; -- sign extension for arithmetic shifts
+    bs_sign <= rs1_i(31) and ctrl_i.ir_funct12(10) and valid_cmd; -- sign extension for arithmetic shifts
 
     -- mux layers: right-shifts only --
     barrel_shifter_core:
-    for i in 0 to index_size_f(XLEN)-1 generate
-      bs_level(i+1)(XLEN-1 downto XLEN-(2**i)) <= (others => bs_sign)             when (shamt_i(i) = '1') else bs_level(i)(XLEN-1 downto XLEN-(2**i));
-      bs_level(i+1)((XLEN-(2**i))-1 downto 0)  <= bs_level(i)(XLEN-1 downto 2**i) when (shamt_i(i) = '1') else bs_level(i)((XLEN-(2**i))-1 downto 0);
+    for i in 0 to 4 generate
+      bs_level(i+1)(31 downto 32-(2**i))    <= (others => bs_sign)         when (shamt_i(i) = '1') else bs_level(i)(31 downto 32-(2**i));
+      bs_level(i+1)((32-(2**i))-1 downto 0) <= bs_level(i)(31 downto 2**i) when (shamt_i(i) = '1') else bs_level(i)((32-(2**i))-1 downto 0);
     end generate;
 
     -- register layer (can be moved by the register balancing) --

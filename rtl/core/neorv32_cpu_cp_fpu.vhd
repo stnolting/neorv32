@@ -37,22 +37,22 @@ entity neorv32_cpu_cp_fpu is
   );
   port (
     -- global control --
-    clk_i       : in  std_ulogic;                         -- global clock, rising edge
-    rstn_i      : in  std_ulogic;                         -- global reset, low-active, async
-    ctrl_i      : in  ctrl_bus_t;                         -- main control bus
+    clk_i       : in  std_ulogic;                     -- global clock, rising edge
+    rstn_i      : in  std_ulogic;                     -- global reset, low-active, async
+    ctrl_i      : in  ctrl_bus_t;                     -- main control bus
     -- CSR interface --
-    csr_we_i    : in  std_ulogic;                         -- write enable
-    csr_addr_i  : in  std_ulogic_vector(1 downto 0);      -- address
-    csr_wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
-    csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
+    csr_we_i    : in  std_ulogic;                     -- write enable
+    csr_addr_i  : in  std_ulogic_vector(1 downto 0);  -- address
+    csr_wdata_i : in  std_ulogic_vector(31 downto 0); -- write data
+    csr_rdata_o : out std_ulogic_vector(31 downto 0); -- read data
     -- data input --
-    equal_i     : in  std_ulogic;                         -- compare equal
-    less_i      : in  std_ulogic;                         -- compare less
-    rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+    equal_i     : in  std_ulogic;                     -- compare equal
+    less_i      : in  std_ulogic;                     -- compare less
+    rs1_i       : in  std_ulogic_vector(31 downto 0); -- rf source 1
+    rs2_i       : in  std_ulogic_vector(31 downto 0); -- rf source 2
     -- result and status --
-    res_o       : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-    valid_o     : out std_ulogic                          -- data output valid
+    res_o       : out std_ulogic_vector(31 downto 0); -- operation result
+    valid_o     : out std_ulogic                      -- data output valid
   );
 end neorv32_cpu_cp_fpu;
 
@@ -2105,7 +2105,7 @@ begin
             -- Catch: When the exponent is larger than XLEN + 1 set the overflow flag and go to the next stage.
             -- Note: We use 127 as that is an exponent of 0, XLEN for the integer width and + 1 for safety.
             -- In principle the +1 shouldn't be needed.
-            if (unsigned(ctrl.cnt) > (127+XLEN+1)) then -- 0 + 32 + 1 or 127 + 32 + 1
+            if (unsigned(ctrl.cnt) > (127+32+1)) then -- 0 + 32 + 1 or 127 + 32 + 1
               ctrl.over <= '1';
               ctrl.state <= S_FINALIZE;
             else

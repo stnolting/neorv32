@@ -38,13 +38,13 @@ entity neorv32_cpu_cp_bitmanip is
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
     -- data input --
-    less_i  : in  std_ulogic; -- compare less
-    rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
-    shamt_i : in  std_ulogic_vector(index_size_f(XLEN)-1 downto 0); -- shift amount
+    less_i  : in  std_ulogic;                     -- compare less
+    rs1_i   : in  std_ulogic_vector(31 downto 0); -- rf source 1
+    rs2_i   : in  std_ulogic_vector(31 downto 0); -- rf source 2
+    shamt_i : in  std_ulogic_vector(4 downto 0);  -- shift amount
     -- result and status --
-    res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-    valid_o : out std_ulogic -- data output valid
+    res_o   : out std_ulogic_vector(31 downto 0); -- operation result
+    valid_o : out std_ulogic                      -- data output valid
   );
 end neorv32_cpu_cp_bitmanip;
 
@@ -114,9 +114,9 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   signal valid      : std_ulogic;
 
   -- operand buffers --
-  signal rs1_reg  : std_ulogic_vector(XLEN-1 downto 0);
-  signal rs2_reg  : std_ulogic_vector(XLEN-1 downto 0);
-  signal sha_reg  : std_ulogic_vector(index_size_f(XLEN)-1 downto 0);
+  signal rs1_reg  : std_ulogic_vector(31 downto 0);
+  signal rs2_reg  : std_ulogic_vector(31 downto 0);
+  signal sha_reg  : std_ulogic_vector(4 downto 0);
   signal less_reg : std_ulogic;
 
   -- serial shifter --
@@ -124,10 +124,10 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
     start   : std_ulogic;
     run     : std_ulogic;
     nxt     : std_ulogic;
-    bcnt    : std_ulogic_vector(index_size_f(XLEN) downto 0); -- bit counter
-    cnt     : std_ulogic_vector(index_size_f(XLEN) downto 0); -- iteration counter
-    cnt_max : std_ulogic_vector(index_size_f(XLEN) downto 0);
-    sreg    : std_ulogic_vector(XLEN-1 downto 0);
+    bcnt    : std_ulogic_vector(5 downto 0); -- bit counter
+    cnt     : std_ulogic_vector(5 downto 0); -- iteration counter
+    cnt_max : std_ulogic_vector(5 downto 0);
+    sreg    : std_ulogic_vector(31 downto 0);
   end record;
   signal shifter : shifter_t;
 
@@ -135,20 +135,20 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   type clmul_t is record
     start : std_ulogic;
     run   : std_ulogic;
-    cnt   : std_ulogic_vector(index_size_f(XLEN) downto 0);
-    res   : std_ulogic_vector(2*XLEN-1 downto 0);
+    cnt   : std_ulogic_vector(5 downto 0);
+    res   : std_ulogic_vector(63 downto 0);
   end record;
   signal clmul : clmul_t;
 
   -- barrel shifter --
-  type bs_level_t is array (index_size_f(XLEN) downto 0) of std_ulogic_vector(XLEN-1 downto 0);
+  type bs_level_t is array (5 downto 0) of std_ulogic_vector(31 downto 0);
   signal bs_level : bs_level_t;
-  signal bs_shift : std_ulogic_vector(index_size_f(XLEN)-1 downto 0);
+  signal bs_shift : std_ulogic_vector(4 downto 0);
 
   -- operation/intermediate results --
-  type res_t is array (0 to op_width_c-1) of std_ulogic_vector(XLEN-1 downto 0);
+  type res_t is array (0 to op_width_c-1) of std_ulogic_vector(31 downto 0);
   signal res_int, res_out : res_t;
-  signal adder_res, one_hot_res, zip_res, unzip_res : std_ulogic_vector(XLEN-1 downto 0);
+  signal adder_res, one_hot_res, zip_res, unzip_res : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -268,7 +268,7 @@ begin
           shifter.cnt  <= (others => '0');
           shifter.sreg <= rs1_reg;
           if (cmd(op_cpop_c) = '1') then -- population count
-            shifter.cnt_max <= std_ulogic_vector(to_unsigned(XLEN, shifter.cnt_max'length));
+            shifter.cnt_max <= std_ulogic_vector(to_unsigned(32, shifter.cnt_max'length));
           else
             shifter.cnt_max <= '0' & shamt_i;
           end if;
@@ -291,7 +291,7 @@ begin
     -- shifted-in bit --
     shifter.nxt <= '1' when (cmd(op_cz_c) = '1') else -- count zeros
                    shifter.sreg(0) when (ctrl_i.ir_funct3(2) = '1') else -- right shift
-                   shifter.sreg(XLEN-1); -- left shift
+                   shifter.sreg(31); -- left shift
 
     -- run control --
     serial_shifter_ctrl: process(cmd, ctrl_i, shifter)
@@ -299,7 +299,7 @@ begin
       -- keep shifting until all bits are processed --
       if (cmd(op_cz_c) = '1') then -- count zeros
         if (ctrl_i.ir_funct12(0) = '0') then -- leading zeros
-          shifter.run <= not shifter.sreg(XLEN-1);
+          shifter.run <= not shifter.sreg(31);
         else -- trailing zeros
           shifter.run <= not shifter.sreg(0);
         end if;
@@ -312,7 +312,7 @@ begin
       end if;
     end process serial_shifter_ctrl;
 
-  end generate; -- /serial_shifter
+  end generate;
 
 
   -- Shifter Function Core (parallel: fast but large) ---------------------------------------
@@ -320,15 +320,15 @@ begin
   barrel_shifter:
   if EN_FAST_SHIFT generate
 
-    -- rotator input layer: convert left-rotates to right-rotates (rotate by XLEN - N positions) --
+    -- rotator input layer: convert left-rotates to right-rotates (rotate by 32 - N positions) --
     bs_shift <= std_ulogic_vector(unsigned(not sha_reg) + 1) when (ctrl_i.ir_funct3(2) = '0') else sha_reg;
 
     -- rotator mux layers: right-rotates only --
     bs_level(0) <= rs1_reg;
     barrel_shifter_core:
-    for i in 0 to index_size_f(XLEN)-1 generate
-      bs_level(i+1)(XLEN-1 downto XLEN-(2**i)) <= bs_level(i)((2**i)-1 downto 0)  when (bs_shift(i) = '1') else bs_level(i)(XLEN-1 downto XLEN-(2**i));
-      bs_level(i+1)((XLEN-(2**i))-1 downto 0)  <= bs_level(i)(XLEN-1 downto 2**i) when (bs_shift(i) = '1') else bs_level(i)((XLEN-(2**i))-1 downto 0);
+    for i in 0 to 4 generate
+      bs_level(i+1)(31 downto 32-(2**i))    <= bs_level(i)((2**i)-1 downto 0) when (bs_shift(i) = '1') else bs_level(i)(31 downto 32-(2**i));
+      bs_level(i+1)((32-(2**i))-1 downto 0) <= bs_level(i)(31 downto 2**i)    when (bs_shift(i) = '1') else bs_level(i)((32-(2**i))-1 downto 0);
     end generate;
     shifter.sreg <= bs_level(bs_level'left); -- rol/ror[i]
 
@@ -344,13 +344,13 @@ begin
     shifter.nxt     <= '0';
     shifter.cnt_max <= (others => '0');
 
-  end generate; -- /barrel_shifter
+  end generate;
 
 
   -- Shifted-Add ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   shift_adder: process(rs1_reg, rs2_reg, ctrl_i)
-    variable tmp_v : std_ulogic_vector(XLEN-1 downto 0);
+    variable tmp_v : std_ulogic_vector(31 downto 0);
   begin
     case ctrl_i.ir_funct3(2 downto 1) is
       when "01"   => tmp_v := rs1_reg(rs1_reg'left-1 downto 0) & '0';   -- << 1
@@ -375,29 +375,29 @@ begin
   clmul_enable:
   if EN_ZBKC generate
 
-      clmul_core: process(rstn_i, clk_i)
-      begin
-        if (rstn_i = '0') then
-          clmul.cnt <= (others => '0');
-          clmul.res <= (others => '0');
-        elsif rising_edge(clk_i) then
-          if (clmul.start = '1') then -- start new multiplication
-            clmul.cnt <= std_ulogic_vector(to_unsigned(XLEN, clmul.cnt'length));
-            clmul.res <= replicate_f('0', XLEN) & rs1_reg;
-          elsif (clmul.run = '1') then -- operation in progress
-            clmul.cnt <= std_ulogic_vector(unsigned(clmul.cnt) - 1);
-            if (clmul.res(0) = '1') then
-              clmul.res(2*XLEN-2 downto XLEN-1) <= clmul.res(2*XLEN-1 downto XLEN) xor rs2_reg;
-            else
-              clmul.res(2*XLEN-2 downto XLEN-1) <= clmul.res(2*XLEN-1 downto XLEN);
-            end if;
-            clmul.res(XLEN-2 downto 0) <= clmul.res(XLEN-1 downto 1);
+    clmul_core: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        clmul.cnt <= (others => '0');
+        clmul.res <= (others => '0');
+      elsif rising_edge(clk_i) then
+        if (clmul.start = '1') then -- start new multiplication
+          clmul.cnt <= std_ulogic_vector(to_unsigned(32, clmul.cnt'length));
+          clmul.res <= replicate_f('0', 32) & rs1_reg;
+        elsif (clmul.run = '1') then -- operation in progress
+          clmul.cnt <= std_ulogic_vector(unsigned(clmul.cnt) - 1);
+          if (clmul.res(0) = '1') then
+            clmul.res(62 downto 31) <= clmul.res(63 downto 32) xor rs2_reg;
+          else
+            clmul.res(62 downto 31) <= clmul.res(63 downto 32);
           end if;
+          clmul.res(30 downto 0) <= clmul.res(31 downto 1);
         end if;
-      end process clmul_core;
+      end if;
+    end process clmul_core;
 
-      -- operation in progress --
-      clmul.run <= '1' when (or_reduce_f(clmul.cnt) = '1') else '0';
+    -- operation in progress --
+    clmul.run <= '1' when (or_reduce_f(clmul.cnt) = '1') else '0';
 
   end generate;
 
@@ -417,38 +417,38 @@ begin
   res_int(op_xnor_c) <= rs1_reg xor (not rs2_reg);
 
   -- count leading/trailing zeros --
-  res_int(op_cz_c)(XLEN-1 downto shifter.cnt'left+1) <= (others => '0');
+  res_int(op_cz_c)(31 downto shifter.cnt'left+1) <= (others => '0');
   res_int(op_cz_c)(shifter.cnt'left downto 0) <= shifter.cnt;
 
   -- population count --
-  res_int(op_cpop_c)(XLEN-1 downto shifter.bcnt'left+1) <= (others => '0');
+  res_int(op_cpop_c)(31 downto shifter.bcnt'left+1) <= (others => '0');
   res_int(op_cpop_c)(shifter.bcnt'left downto 0) <= shifter.bcnt;
 
   -- min/max select --
   res_int(op_max_c) <= rs1_reg when ((less_reg xor ctrl_i.ir_funct3(1)) = '1') else rs2_reg;
 
   -- sign-extension --
-  res_int(op_sext_c)(XLEN-1 downto 16) <= (others => rs1_reg(15)) when (ctrl_i.ir_funct12(0) = '1') else (others => rs1_reg(7));
-  res_int(op_sext_c)(15 downto 8)      <= rs1_reg(15 downto 8)    when (ctrl_i.ir_funct12(0) = '1') else (others => rs1_reg(7));
-  res_int(op_sext_c)(7 downto 0)       <= rs1_reg(7 downto 0);
+  res_int(op_sext_c)(31 downto 16) <= (others => rs1_reg(15)) when (ctrl_i.ir_funct12(0) = '1') else (others => rs1_reg(7));
+  res_int(op_sext_c)(15 downto 8)  <= rs1_reg(15 downto 8)    when (ctrl_i.ir_funct12(0) = '1') else (others => rs1_reg(7));
+  res_int(op_sext_c)(7 downto 0)   <= rs1_reg(7 downto 0);
 
   -- zero-extension --
-  res_int(op_zexth_c)(XLEN-1 downto XLEN/2) <= (others => '0');
-  res_int(op_zexth_c)(XLEN/2-1 downto 0)    <= rs1_reg(XLEN/2-1 downto 0);
+  res_int(op_zexth_c)(31 downto 16) <= (others => '0');
+  res_int(op_zexth_c)(15 downto 0)  <= rs1_reg(15 downto 0);
 
   -- rotate right/left --
   res_int(op_rot_c) <= shifter.sreg;
 
   -- or-combine.byte --
   or_combine_gen:
-  for i in 0 to (XLEN/8)-1 generate -- byte loop
+  for i in 0 to 3 generate -- byte loop
     res_int(op_orcb_c)(i*8+7 downto i*8) <= (others => or_reduce_f(rs1_reg(i*8+7 downto i*8)));
   end generate;
 
   -- reversal.8 (byte swap) --
   byte_swap_gen:
-  for i in 0 to (XLEN/8)-1 generate -- byte loop
-    res_int(op_rev8_c)(i*8+7 downto i*8) <= rs1_reg((XLEN-i*8)-1 downto XLEN-(i+1)*8);
+  for i in 0 to 3 generate -- byte loop
+    res_int(op_rev8_c)(i*8+7 downto i*8) <= rs1_reg((32-i*8)-1 downto 32-(i+1)*8);
   end generate;
 
   -- address generation instructions --
@@ -456,33 +456,33 @@ begin
 
   -- single-bit instructions --
   res_int(op_bclr_c) <= rs1_reg and (not one_hot_res);
-  res_int(op_bext_c)(XLEN-1 downto 1) <= (others => '0');
+  res_int(op_bext_c)(31 downto 1) <= (others => '0');
   res_int(op_bext_c)(0) <= '1' when (or_reduce_f(rs1_reg and one_hot_res) = '1') else '0';
   res_int(op_binv_c) <= rs1_reg xor one_hot_res;
   res_int(op_bset_c) <= rs1_reg or one_hot_res;
 
   -- pack --
-  res_int(op_pack_c) <= rs2_reg(XLEN/2-1 downto 0) & rs1_reg(XLEN/2-1 downto 0) when (ctrl_i.ir_funct3(0) = '0') else
-                        replicate_f('0', XLEN/2) & rs2_reg(7 downto 0) & rs1_reg(7 downto 0);
+  res_int(op_pack_c) <= rs2_reg(15 downto 0) & rs1_reg(15 downto 0) when (ctrl_i.ir_funct3(0) = '0') else
+                        replicate_f('0', 16) & rs2_reg(7 downto 0) & rs1_reg(7 downto 0);
 
   -- zip/unzip --
   interleave_gen:
-  for i in 0 to (XLEN/2)-1 generate
-    zip_res(2*i+0)      <= rs1_reg(i);
-    zip_res(2*i+1)      <= rs1_reg(XLEN/2+i);
-    unzip_res(i)        <= rs1_reg(2*i);
-    unzip_res(XLEN/2+i) <= rs1_reg(2*i+1);
+  for i in 0 to 15 generate
+    zip_res(2*i+0)  <= rs1_reg(i);
+    zip_res(2*i+1)  <= rs1_reg(16+i);
+    unzip_res(i)    <= rs1_reg(2*i);
+    unzip_res(16+i) <= rs1_reg(2*i+1);
   end generate;
   res_int(op_zip_c) <= zip_res when (ctrl_i.ir_funct3(2) = '0') else unzip_res;
 
   -- byte-wise bit-reversal --
   brev_gen:
-  for i in 0 to (XLEN/8)-1 generate -- byte loop
+  for i in 0 to 3 generate -- byte loop
     res_int(op_brev8_c)(i*8+7 downto i*8) <= bit_rev_f(rs1_reg(i*8+7 downto i*8));
   end generate;
 
   -- carry-less multiplication --
-  res_int(op_clmul_c) <= clmul.res(2*XLEN-1 downto XLEN) when (ctrl_i.ir_funct3(1) = '1') else clmul.res(XLEN-1 downto 0);
+  res_int(op_clmul_c) <= clmul.res(63 downto 32) when (ctrl_i.ir_funct3(1) = '1') else clmul.res(31 downto 0);
 
 
   -- Output Select --------------------------------------------------------------------------

@@ -21,11 +21,11 @@ entity neorv32_cpu_cp_cond is
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
     -- data input --
-    rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+    rs1_i   : in  std_ulogic_vector(31 downto 0); -- rf source 1
+    rs2_i   : in  std_ulogic_vector(31 downto 0); -- rf source 2
     -- result and status --
-    res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-    valid_o : out std_ulogic                          -- data output valid
+    res_o   : out std_ulogic_vector(31 downto 0); -- operation result
+    valid_o : out std_ulogic                      -- data output valid
   );
 end neorv32_cpu_cp_cond;
 

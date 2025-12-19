@@ -20,9 +20,8 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120505"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120506"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
-  constant XLEN          : natural := 32; -- native data path width
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -820,7 +819,6 @@ package neorv32_package is
   function is_power_of_two_f(input : natural) return boolean;
   function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector;
   function to_hexstring_f(data : std_ulogic_vector) return string;
-  function match_f(input : std_ulogic_vector; pattern : std_ulogic_vector) return boolean;
 
 -- **********************************************************************************************************
 -- NEORV32 Processor Top Entity (component prototype)
@@ -1213,23 +1211,5 @@ package body neorv32_package is
     end loop;
     return res_v;
   end function to_hexstring_f;
-
-  -- Check if vector matches binary pattern (skip elements compared with '-') ---------------
-  -- -------------------------------------------------------------------------------------------
-  function match_f(input : std_ulogic_vector; pattern : std_ulogic_vector) return boolean is
-    variable match_v : boolean;
-  begin
-    if (input'length /= pattern'length) then -- no match if different sizes
-      return false;
-    else
-      match_v := true;
-      for i in input'length-1 downto 0 loop
-        if (pattern(i) = '1') or (pattern(i) = '0') then -- valid pattern value, skip everything else
-          match_v := match_v and boolean(pattern(i) = input(i));
-        end if;
-      end loop;
-      return match_v;
-    end if;
-  end function match_f;
 
 end neorv32_package;
