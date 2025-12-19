@@ -40,6 +40,7 @@ version:
 	@grep -rni $(CORE_RTL)/neorv32_package.vhd -e 'hw_version_c'
 
 check:
+	@echo "GHDL version:"
 	@$(GHDL) -v
 
 # -----------------------------------------------------------------------------
