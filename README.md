@@ -58,10 +58,8 @@ targeting various FPGA boards and toolchains to get started.
 
 The processor passes the official RISC-V architecture tests to ensure compatibility with the RISC-V ISA specs., which is checked by the
 [neorv32-riscof](https://github.com/stnolting/neorv32-riscof) repository. It can successfully run _any_ C program
-(for example from the [`sw/example`](https://github.com/stnolting/neorv32/tree/main/sw/example) folder) including CoreMark
-and FreeRTOS and can be synthesized for _any_ target technology - [tested](https://github.com/stnolting/neorv32-setups)
-on AMD, Intel, Lattice, Microchip, Gowin and Cologne Chip FPGAs. The conversion into a single, plain-Verilog module file is automatically
-checked by the [neorv32-verilog](https://github.com/stnolting/neorv32-verilog) repository.
+including CoreMark and FreeRTOS and can be synthesized for _any_ target technology - [tested](https://github.com/stnolting/neorv32-setups)
+on AMD, Intel, Lattice, Microchip, Gowin and Cologne Chip FPGAs.
 
 
 ## Features
@@ -225,7 +223,7 @@ This overview provides some *quick links* to the most important sections of the
 * [Software Framework Documentation](https://stnolting.github.io/neorv32/sw/files.html) - _doxygen_-based
 * [Application Makefile](https://stnolting.github.io/neorv32/#_application_makefile) - turning _your_ application into an executable
 * [Bootloader](https://stnolting.github.io/neorv32/#_bootloader) - the build-in NEORV32 bootloader
-* [Image Generator](https://stnolting.github.io/neorv32/#_executable_image_format) - create (FPGA) memory initialization files from your application
+* [Image Generator](https://stnolting.github.io/neorv32/#_executable_image_formats) - create (FPGA) memory initialization files from your application
 * [Semihosting](https://stnolting.github.io/neorv32/#_semihosting) - access files and system services on the host computer
 
 ### :rocket: [User Guide](https://stnolting.github.io/neorv32/ug/) - Getting Started

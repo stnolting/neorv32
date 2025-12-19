@@ -1,15 +1,15 @@
 ## Hardware RTL Sources
 
+> [!TIP]
+> Two file-list files (`*.f`) are provided that list all required rtl files for the CPU core and
+for the entire processor including their recommended compile order.
+See the online documentation for more information: https://stnolting.github.io/neorv32/#_file_list_files
+
 ### > [`core`](core)
 
 This folder contains the core VHDL files for the NEORV32 CPU and the NEORV32 Processor.
 When creating a new synthesis/simulation project make sure to add all `*.vhd` files from this
 folder to a **new design library** called `neorv32`.
-
-> [!TIP]
-> Two file-list files (`*.f`) are provided that list all required rtl files for the CPU core and
-for the entire processor including their recommended compile order.
-See the online documentation for more information: https://stnolting.github.io/neorv32/#_file_list_files
 
 ### > [`system_integration`](system_integration)
 

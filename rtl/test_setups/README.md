@@ -1,15 +1,12 @@
-# Test Setups
+## Test Setups
 
 This folder contains very simple test setups that are intended for project beginners
 to setup a minimal NEORV32 SoC. These setups are used in the :books:
 [NEORV32 User Guide](https://stnolting.github.io/neorv32/ug/).
-Note that these setups provides a minimalistic configuration to keep
+Note that these setups provides a minimalist configuration to keep
 things at a simple level at first. Additional CPU ISA extensions, performance options and
 optional peripheral modules can be enabled by specifying the according :book:
 [configuration generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics).
-
-
-### Setup Top Entities
 
 #### Clocking and Reset
 
