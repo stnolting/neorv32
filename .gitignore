@@ -11,6 +11,8 @@ build/
 *.hex
 *_image.vhd
 *_wrapper.v
+*.json
+*.cf
 
 # keep default VHDL memory images
 !rtl/core/*_image.vhd
@@ -25,6 +27,10 @@ build/
 # host executables
 sw/image_gen/image_gen
 *.exe
+
+# riscv-arch-test artifacts
+__pycache__
+riscof_work
 
 # temporary files and folders
 *.bak
