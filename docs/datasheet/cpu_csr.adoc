@@ -610,8 +610,8 @@ All remaining register are hardwired to zero.
 
 .`time[h]` CSRs (Wall Clock Time)
 [IMPORTANT]
-The NEORV32 does not implement the user-mode `time[h]` registers. Any access to these registers will trap.
-It is recommended that the trap handler software provides a means of accessing the machine timer oft the
+The NEORV32 does not implement the `time[h]` CSRs. Any access to these registers will trap. It is
+recommended that the trap handler software provides a means of accessing the machine timer of the
 <<_core_local_interruptor_clint>>.
 
 .Instruction Retired Counter Increment
