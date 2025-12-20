@@ -111,6 +111,7 @@ class neorv32(pluginTemplate):
 
       # we will iterate over each entry in the testList. Each entry node will be referred to by the
       # variable testname.
+      test_cnt = 0;
       for testname in testList:
 
           logger.debug('Running Test: {0} on DUT'.format(testname))
@@ -158,7 +159,8 @@ class neorv32(pluginTemplate):
           utils.shellCommand(execute).run()
 
           # print current test
-          print(f"{test=}")
+          test_cnt = test_cnt + 1
+          print(f"[{test_cnt}/{len(testList)}] {os.path.basename(testname)}")
 
           # run GHDL simulation
           execute = f"{GHDLEXE} -r --std=08 --work=neorv32 {TESTBENCH} -gTEST_DIR={test_dir}/ "
