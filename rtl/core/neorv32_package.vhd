@@ -330,7 +330,7 @@ package neorv32_package is
   constant opcode_amo_c    : std_ulogic_vector(6 downto 0) := "0101111"; -- atomic memory access
   constant opcode_fence_c  : std_ulogic_vector(6 downto 0) := "0001111"; -- fence / fence.i
   -- system/csr --
-  constant opcode_system_c : std_ulogic_vector(6 downto 0) := "1110011"; -- system/csr access
+  constant opcode_system_c : std_ulogic_vector(6 downto 0) := "1110011"; -- environment/CSR access
   -- floating point operations --
   constant opcode_fpu_c    : std_ulogic_vector(6 downto 0) := "1010011"; -- dual/single operand instruction
   -- official custom RISC-V opcodes - free for custom instructions --
