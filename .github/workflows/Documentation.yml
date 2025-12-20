@@ -1,4 +1,4 @@
-name: Documentation
+name: 'Build Documentation'
 
 on:
   push:
