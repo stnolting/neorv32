@@ -93,8 +93,8 @@ end neorv32_cpu_control;
 architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
   -- execution micro sequencer --
-  type exec_state_t is (EX_RESTART, EX_DISPATCH, EX_TRAP_ENTER, EX_TRAP_EXIT, EX_SLEEP, EX_EXECUTE,
-                        EX_ALU_WAIT, EX_BRANCH, EX_SYSTEM, EX_MEM_REQ, EX_MEM_RSP);
+  type exec_state_t is (S_RESTART, S_DISPATCH, S_TRAP_ENTER, S_TRAP_EXIT, S_EXECUTE,
+                        S_ALU_WAIT, S_BRANCH, S_MEM_REQ, S_MEM_RSP, S_SYSTEM, S_SLEEP);
   type exec_t is record
     state : exec_state_t;
     ir    : std_ulogic_vector(31 downto 0); -- instruction word being executed right now
@@ -126,7 +126,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   end record;
   signal trap : trap_t;
 
-  -- control and status registers (CSRs) --
+  -- control and status registers (CSR) --
   type csr_t is record
     prv_level    : std_ulogic; -- current privilege level
     mstatus_mie  : std_ulogic; -- machine-mode IRQ enable
@@ -199,7 +199,7 @@ begin
   begin
     if (rstn_i = '0') then
       ctrl       <= ctrl_bus_zero_c;
-      exec.state <= EX_RESTART;
+      exec.state <= S_RESTART;
       exec.ir    <= (others => '0');
       exec.ci    <= '0';
       exec.tbr   <= '0';
@@ -226,7 +226,7 @@ begin
 
     -- defaults --
     exec_nxt          <= exec;
-    exec_nxt.tbr      <= '0'; -- no taken branch
+    exec_nxt.tbr      <= '0';
     trap.env_enter    <= '0';
     trap.env_exit     <= '0';
     trap.instr_be     <= '0';
@@ -238,18 +238,13 @@ begin
 
     -- immediate --
     case opcode_v is
-      when opcode_store_c => -- S-immediate
-        ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 21) & exec.ir(30 downto 25) & exec.ir(11 downto 7);
-      when opcode_branch_c => -- B-immediate
-        ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 20) & exec.ir(7) & exec.ir(30 downto 25) & exec.ir(11 downto 8) & '0';
-      when opcode_lui_c | opcode_auipc_c => -- U-immediate
-        ctrl_nxt.alu_imm <= exec.ir(31 downto 12) & x"000";
-      when opcode_jal_c => -- J-immediate
-        ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 12) & exec.ir(19 downto 12) & exec.ir(20) & exec.ir(30 downto 21) & '0';
-      when opcode_amo_c =>
-        ctrl_nxt.alu_imm <= (others => '0');
-      when others => -- I-immediate
-        ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 21) & exec.ir(30 downto 21) & exec.ir(20);
+      when opcode_store_c  => ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 21) & exec.ir(30 downto 25) & exec.ir(11 downto 7); -- S-type
+      when opcode_branch_c => ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 20) & exec.ir(7) & exec.ir(30 downto 25) & exec.ir(11 downto 8) & '0'; -- B-type
+      when opcode_lui_c |
+           opcode_auipc_c  => ctrl_nxt.alu_imm <= exec.ir(31 downto 12) & x"000"; -- U-type
+      when opcode_jal_c    => ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 12) & exec.ir(19 downto 12) & exec.ir(20) & exec.ir(30 downto 21) & '0'; -- J-type
+      when opcode_amo_c    => ctrl_nxt.alu_imm <= (others => '0'); -- atomic memory access
+      when others          => ctrl_nxt.alu_imm <= replicate_f(exec.ir(31), 21) & exec.ir(30 downto 21) & exec.ir(20); -- I-type
     end case;
 
     -- ALU sign control --
@@ -285,15 +280,15 @@ begin
     -- state machine --
     case exec.state is
 
-      when EX_RESTART => -- reset and restart instruction fetch at next PC
+      when S_RESTART => -- reset and restart instruction fetch at next-PC
       -- ------------------------------------------------------------
         ctrl_nxt.rf_zero_we <= not bool_to_ulogic_f(CPU_RF_HW_RST_EN); -- house keeping: force writing zero to x0 if it's a phys. register
         ctrl_nxt.if_reset   <= '1';
-        exec_nxt.state      <= EX_DISPATCH;
+        exec_nxt.state      <= S_DISPATCH;
 
-      when EX_DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
+      when S_DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
       -- ------------------------------------------------------------
-        -- prepare update of next-PC (=PC2) in EX_EXECUTE state --
+        -- prepare update of next-PC (pc2) in S_EXECUTE state --
         ctrl_nxt.alu_opa_mux <= '1'; -- opa = current PC
         ctrl_nxt.alu_opb_mux <= '1'; -- opb = immediate = +2/4
         if RISCV_ISA_C and (frontend_i.compr = '1') then
@@ -303,19 +298,19 @@ begin
         end if;
         -- dispatch instruction --
         if (trap.env_pend = '1') or (trap.exc_fire = '1') then -- pending trap or pending exception (fast)
-          exec_nxt.state <= EX_TRAP_ENTER;
+          exec_nxt.state <= S_TRAP_ENTER;
         elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
           trap.instr_be  <= frontend_i.fault; -- access fault during instruction fetch
           exec_nxt.ci    <= frontend_i.compr; -- this is a decompressed instruction
-          exec_nxt.ir    <= frontend_i.instr; -- instruction word
-          exec_nxt.pc    <= exec.pc2(31 downto 1) & '0'; -- PC <= next PC
-          exec_nxt.state <= EX_EXECUTE; -- start executing new instruction
+          exec_nxt.ir    <= frontend_i.instr; -- actual instruction word
+          exec_nxt.pc    <= exec.pc2(31 downto 1) & '0';
+          exec_nxt.state <= S_EXECUTE; -- start executing new instruction
           if (frontend_i.instr(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
             ctrl_nxt.csr_addr <= frontend_i.instr(instr_imm12_msb_c downto instr_imm12_lsb_c); -- reduce switching activity on csr_addr net
           end if;
         end if;
 
-      when EX_TRAP_ENTER => -- enter trap environment and jump to trap vector
+      when S_TRAP_ENTER => -- enter trap environment and jump to trap vector
       -- ------------------------------------------------------------
         if (trap.cause(5) = '1') and RISCV_ISA_Sdext then -- debug mode entry
           exec_nxt.pc2 <= DEBUG_PARK_ADDR(31 downto 2) & "00"; -- start at "parking loop" <normal_entry>
@@ -327,9 +322,9 @@ begin
           exec_nxt.pc2 <= csr.mtvec(31 downto 2) & "00"; -- PC = mtvec
         end if;
         trap.env_enter <= '1';
-        exec_nxt.state <= EX_RESTART; -- restart instruction fetch
+        exec_nxt.state <= S_RESTART; -- restart instruction fetch
 
-      when EX_TRAP_EXIT => -- return from trap environment and jump to trap PC
+      when S_TRAP_EXIT => -- return from trap environment and jump to trap PC
       -- ------------------------------------------------------------
         if (debug_ctrl.run = '1') and RISCV_ISA_Sdext then -- debug mode exit
           exec_nxt.pc2 <= csr.dpc(31 downto 1) & '0';
@@ -337,9 +332,9 @@ begin
           exec_nxt.pc2 <= csr.mepc(31 downto 1) & '0';
         end if;
         trap.env_exit  <= '1';
-        exec_nxt.state <= EX_RESTART; -- restart instruction fetch
+        exec_nxt.state <= S_RESTART; -- restart instruction fetch
 
-      when EX_EXECUTE => -- decode and prepare execution (FSM will be here for exactly 1 cycle in any case)
+      when S_EXECUTE => -- decode and prepare execution (FSM will be here for exactly 1 cycle in any case)
       -- ------------------------------------------------------------
         exec_nxt.pc2 <= alu_add_i(31 downto 1) & '0'; -- next PC = PC + immediate
         case opcode_v is
@@ -371,73 +366,70 @@ begin
                                          ((funct3_v = funct3_xor_c)  and (funct7_v = "0000000")) or ((funct3_v = funct3_or_c)   and (funct7_v = "0000000")) or
                                          ((funct3_v = funct3_and_c)  and (funct7_v = "0000000")))) then -- base ALU instruction (excluding SLL, SRL, SRA)
               ctrl_nxt.rf_wb_en <= '1'; -- valid RF write-back (won't happen if exception)
-              exec_nxt.state    <= EX_DISPATCH;
+              exec_nxt.state    <= S_DISPATCH;
             else -- [NOTE] illegal ALU[I] instructions are handled as multi-cycle operations that will time-out if no ALU co-processor responds
               ctrl_nxt.alu_cp_alu <= '1'; -- trigger ALU[I] opcode co-processor
-              exec_nxt.state      <= EX_ALU_WAIT;
+              exec_nxt.state      <= S_ALU_WAIT;
             end if;
 
           -- load upper immediate --
           when opcode_lui_c =>
             ctrl_nxt.alu_op   <= alu_op_movb_c; -- pass immediate
             ctrl_nxt.rf_wb_en <= '1'; -- valid RF write-back (won't happen if exception)
-            exec_nxt.state    <= EX_DISPATCH;
+            exec_nxt.state    <= S_DISPATCH;
 
           -- add upper immediate to PC --
           when opcode_auipc_c =>
             ctrl_nxt.alu_op   <= alu_op_add_c; -- add PC and immediate
             ctrl_nxt.rf_wb_en <= '1'; -- valid RF write-back (won't happen if exception)
-            exec_nxt.state    <= EX_DISPATCH;
+            exec_nxt.state    <= S_DISPATCH;
 
           -- memory access --
           when opcode_load_c | opcode_store_c | opcode_amo_c =>
-            exec_nxt.state <= EX_MEM_REQ;
+            exec_nxt.state <= S_MEM_REQ;
 
           -- branch / jump-and-link (with register) --
           when opcode_branch_c | opcode_jal_c | opcode_jalr_c =>
-            exec_nxt.state <= EX_BRANCH;
+            exec_nxt.state <= S_BRANCH;
 
           -- memory fence operations --
           when opcode_fence_c =>
-            if (funct3_v(0) = '0') then -- data fence
-              ctrl_nxt.lsu_fence <= '1';
-            else -- instruction fence
-              ctrl_nxt.if_fence <= '1';
-            end if;
-            exec_nxt.state <= EX_RESTART; -- reset instruction fetch + IPB via branch to PC+4 (actually only required for fence.i)
+            ctrl_nxt.lsu_fence <= not exec.ir(instr_funct3_lsb_c); -- data fence
+            ctrl_nxt.if_fence  <= exec.ir(instr_funct3_lsb_c); -- instruction fence
+            exec_nxt.state     <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC (actually only required for fence.i)
 
           -- FPU: floating-point operations --
           when opcode_fpu_c =>
             ctrl_nxt.alu_cp_fpu <= '1';
-            exec_nxt.state      <= EX_ALU_WAIT; -- will be aborted via monitor timeout if FPU is not implemented
+            exec_nxt.state      <= S_ALU_WAIT; -- will be aborted by monitor timeout if FPU is not implemented
 
           -- CFU: custom RISC-V instructions --
           when opcode_cust0_c | opcode_cust1_c =>
             ctrl_nxt.alu_cp_cfu <= '1';
-            exec_nxt.state      <= EX_ALU_WAIT; -- will be aborted via monitor timeout if CFU is not implemented
+            exec_nxt.state      <= S_ALU_WAIT; -- will be aborted by monitor timeout if CFU is not implemented
 
           -- environment/CSR operation or ILLEGAL opcode --
           when others =>
             if (funct3_v /= funct3_env_c) and (funct3_v /= funct3_zimop_c) then -- no CSR read if environment or may-be operation
               ctrl_nxt.csr_re <= '1';
             end if;
-            exec_nxt.state <= EX_SYSTEM;
+            exec_nxt.state <= S_SYSTEM;
 
         end case;
 
-      when EX_ALU_WAIT => -- wait for multi-cycle ALU co-processor operation to finish or trap
+      when S_ALU_WAIT => -- wait for multi-cycle ALU co-processor operation to finish or trap
       -- ------------------------------------------------------------
         ctrl_nxt.alu_op   <= alu_op_cp_c;
         ctrl_nxt.rf_wb_en <= alu_cp_done_i; -- valid RF write-back (won't happen if exception)
         if (alu_cp_done_i = '1') or (or_reduce_f(trap.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '1') then
-          exec_nxt.state <= EX_DISPATCH;
+          exec_nxt.state <= S_DISPATCH;
         end if;
 
-      when EX_BRANCH => -- update next PC on taken branches and jumps
+      when S_BRANCH => -- update next-PC on taken branches and jumps
       -- ------------------------------------------------------------
         if CPU_CONSTT_BR_EN or (branch_taken = '1') then
-          ctrl_nxt.if_reset  <= '1'; -- reset instruction fetch to restart at modified PC
-          exec_nxt.tbr <= '1'; -- this is a taken branch
+          ctrl_nxt.if_reset <= '1'; -- reset instruction fetch to restart at next-PC (pc2)
+          exec_nxt.tbr      <= '1'; -- this is a taken branch
         end if;
         if (branch_taken = '1') then -- taken/unconditional branch
           trap.instr_ma <= alu_add_i(1) and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination misaligned?
@@ -445,42 +437,35 @@ begin
         end if;
         ctrl_nxt.pc_ret   <= exec.pc2(31 downto 1) & '0'; -- output return address
         ctrl_nxt.rf_wb_en <= exec.ir(instr_opcode_lsb_c+2); -- save return address if link operation (won't happen if exception)
-        exec_nxt.state    <= EX_DISPATCH;
+        exec_nxt.state    <= S_DISPATCH;
 
-      when EX_MEM_REQ => -- trigger memory request
+      when S_MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
         if (or_reduce_f(trap.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- memory request if no instruction exception
           ctrl_nxt.lsu_req <= '1';
-          exec_nxt.state   <= EX_MEM_RSP;
+          exec_nxt.state   <= S_MEM_RSP;
         else
-          exec_nxt.state <= EX_DISPATCH;
+          exec_nxt.state <= S_DISPATCH;
         end if;
 
-      when EX_MEM_RSP => -- wait for memory response
+      when S_MEM_RSP => -- wait for memory response
       -- ------------------------------------------------------------
-        if (lsu_wait_i = '0') or -- bus system has completed the transaction (if there was any)
-           (or_reduce_f(trap.exc_buf(exc_laccess_c downto exc_salign_c)) = '1') then -- load/store exception
+        if (lsu_wait_i = '0') or (or_reduce_f(trap.exc_buf(exc_laccess_c downto exc_salign_c)) = '1') then -- bus response or load/store exception
           ctrl_nxt.rf_wb_en <= (not ctrl.lsu_rw) or ctrl.lsu_rsv or ctrl.lsu_rmw; -- write to RF if read operation (won't happen in case of exception)
-          exec_nxt.state    <= EX_DISPATCH;
+          exec_nxt.state    <= S_DISPATCH;
         end if;
 
-      when EX_SLEEP => -- sleep mode
+      when S_SYSTEM => -- CSR/ENVIRONMENT operation; no effect if illegal instruction
       -- ------------------------------------------------------------
-        if (or_reduce_f(trap.irq_buf) = '1') or (debug_ctrl.run = '1') or (csr.dcsr_step = '1') then -- enabled pending IRQ, debug-mode, single-step
-          exec_nxt.state <= EX_DISPATCH;
-        end if;
-
-      when EX_SYSTEM => -- CSR/ENVIRONMENT operation; no effect if illegal instruction
-      -- ------------------------------------------------------------
-        exec_nxt.state <= EX_DISPATCH; -- default
+        exec_nxt.state <= S_DISPATCH; -- default
         if (or_reduce_f(trap.exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- non-illegal instruction
           if (funct3_v = funct3_env_c) then -- environment instruction
             case exec.ir(instr_imm12_lsb_c+2 downto instr_imm12_lsb_c) is -- three LSBs are sufficient here
               when "000"  => trap.ecall     <= '1'; -- ecall
               when "001"  => trap.ebreak    <= '1'; -- ebreak
-              when "010"  => exec_nxt.state <= EX_TRAP_EXIT; -- xret
-              when "101"  => exec_nxt.state <= EX_SLEEP; -- wfi
-              when others => exec_nxt.state <= EX_DISPATCH; -- illegal or CSR operation
+              when "010"  => exec_nxt.state <= S_TRAP_EXIT; -- xret
+              when "101"  => exec_nxt.state <= S_SLEEP; -- wfi
+              when others => exec_nxt.state <= S_DISPATCH; -- illegal or CSR operation
             end case;
           elsif (funct3_v /= funct3_zimop_c) and -- write to CSR if not may-be-operation
                 (((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) or (exec.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000")) then
@@ -490,9 +475,11 @@ begin
         -- always write to register file; environment operations have rd = zero so this does not hurt --
         ctrl_nxt.rf_wb_en <= '1'; -- won't happen if exception
 
-      when others => -- undefined
+      when others => -- S_SLEEP / undefined state: halt CPU
       -- ------------------------------------------------------------
-        exec_nxt.state <= EX_RESTART;
+        if (or_reduce_f(trap.irq_buf) = '1') or (debug_ctrl.run = '1') or (csr.dcsr_step = '1') then -- enabled pending IRQ, debug-mode, single-step
+          exec_nxt.state <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC
+        end if;
 
     end case;
   end process exec_comb;
@@ -503,7 +490,7 @@ begin
   -- instruction fetch --
   ctrl_o.if_fence     <= ctrl.if_fence;
   ctrl_o.if_reset     <= ctrl_nxt.if_reset; -- this is an ASYNC control signal!
-  ctrl_o.if_ready     <= '1' when (exec.state = EX_DISPATCH) else '0';
+  ctrl_o.if_ready     <= '1' when (exec.state = S_DISPATCH) else '0';
   -- program counter --
   ctrl_o.pc_cur       <= exec.pc(31 downto 1) & '0';
   ctrl_o.pc_nxt       <= exec.pc2(31 downto 1) & '0';
@@ -529,7 +516,7 @@ begin
   ctrl_o.lsu_rw       <= ctrl.lsu_rw;
   ctrl_o.lsu_rmw      <= ctrl.lsu_rmw;
   ctrl_o.lsu_rsv      <= ctrl.lsu_rsv;
-  ctrl_o.lsu_mo_we    <= '1' when (exec.state = EX_MEM_REQ) else '0'; -- write memory output registers (data & address)
+  ctrl_o.lsu_mo_we    <= '1' when (exec.state = S_MEM_REQ) else '0'; -- write memory output registers (data & address)
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.prv_level; -- effective privilege level for loads/stores in M-mode
   -- control and status registers --
@@ -552,17 +539,17 @@ begin
 
   -- Counter Events -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cnt_event(cnt_event_cy_c)       <= '0' when (exec.state = EX_SLEEP)                                                else '1'; -- active cycle
+  cnt_event(cnt_event_cy_c)       <= '0' when (exec.state = S_SLEEP)                                                 else '1'; -- active cycle
   cnt_event(cnt_event_tm_c)       <= '0';
-  cnt_event(cnt_event_ir_c)       <= '1' when (exec.state = EX_EXECUTE)                                              else '0'; -- retired (=executed) instr.
-  cnt_event(cnt_event_compr_c)    <= '1' when (exec.state = EX_EXECUTE)  and (exec.ci = '1')                         else '0'; -- executed compressed instr.
-  cnt_event(cnt_event_wait_dis_c) <= '1' when (exec.state = EX_DISPATCH) and (frontend_i.valid = '0')                else '0'; -- instruction dispatch wait
-  cnt_event(cnt_event_wait_alu_c) <= '1' when (exec.state = EX_ALU_WAIT)                                             else '0'; -- multi-cycle ALU wait
-  cnt_event(cnt_event_branch_c)   <= '1' when (exec.state = EX_BRANCH)                                               else '0'; -- executed branch instruction
+  cnt_event(cnt_event_ir_c)       <= '1' when (exec.state = S_EXECUTE)                                               else '0'; -- retired (=executed) instr.
+  cnt_event(cnt_event_compr_c)    <= '1' when (exec.state = S_EXECUTE)  and (exec.ci = '1')                          else '0'; -- executed compressed instr.
+  cnt_event(cnt_event_wait_dis_c) <= '1' when (exec.state = S_DISPATCH) and (frontend_i.valid = '0')                 else '0'; -- instruction dispatch wait
+  cnt_event(cnt_event_wait_alu_c) <= '1' when (exec.state = S_ALU_WAIT)                                              else '0'; -- multi-cycle ALU wait
+  cnt_event(cnt_event_branch_c)   <= '1' when (exec.state = S_BRANCH)                                                else '0'; -- executed branch instruction
   cnt_event(cnt_event_branched_c) <= '1' when (exec.tbr = '1')                                                       else '0'; -- taken branch
   cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '0') or (ctrl.lsu_rmw = '1')) else '0'; -- executed load operation
   cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '1') or (ctrl.lsu_rmw = '1')) else '0'; -- executed store operation
-  cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exec.state = EX_MEM_RSP)                     else '0'; -- load/store memory wait
+  cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exec.state = S_MEM_RSP)                      else '0'; -- load/store memory wait
   cnt_event(cnt_event_trap_c)     <= '1' when (trap.env_enter = '1')                                                 else '0'; -- entered trap
 
 
@@ -674,7 +661,7 @@ begin
       when opcode_lui_c | opcode_auipc_c | opcode_jal_c =>
         illegal_cmd <= '0'; -- all encodings are valid
 
-      -- unconditional jump-and-link --
+      -- jump-and-link with register --
       when opcode_jalr_c =>
         if (exec.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "000") then
           illegal_cmd <= '0';
@@ -754,7 +741,7 @@ begin
     if (rstn_i = '0') then
       monitor_cnt <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (exec.state = EX_ALU_WAIT) then
+      if (exec.state = S_ALU_WAIT) then
         monitor_cnt <= std_ulogic_vector(unsigned(monitor_cnt) + 1);
       else
         monitor_cnt <= (others => '0');
@@ -765,7 +752,7 @@ begin
 
   -- Illegal Operation Check ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trap.instr_il <= '1' when ((exec.state = EX_EXECUTE) or (exec.state = EX_ALU_WAIT)) and -- check execution states
+  trap.instr_il <= '1' when ((exec.state = S_EXECUTE) or (exec.state = S_ALU_WAIT)) and -- check execution states
                             ((monitor_cnt(monitor_cnt'left) = '1') or (illegal_cmd = '1')) else '0'; -- timeout or illegal
 
 
@@ -785,7 +772,7 @@ begin
       -- interrupt pending: synchronize requests --
       trap.irq_pnd <= '0' & irq_fast_i & irq_machine_i;
       -- interrupt buffer: local feedback to ensure requests stay active until trap environment has started --
-      trap.irq_buf(irq_db_halt_c) <= debug_ctrl.trig_halt                               or (trap.env_pend and trap.irq_buf(irq_db_halt_c));
+      trap.irq_buf(irq_db_halt_c) <= debug_ctrl.trig_halt                          or (trap.env_pend and trap.irq_buf(irq_db_halt_c));
       trap.irq_buf(irq_msi_irq_c) <= (trap.irq_pnd(irq_msi_irq_c) and csr.mie_msi) or (trap.env_pend and trap.irq_buf(irq_msi_irq_c));
       trap.irq_buf(irq_mei_irq_c) <= (trap.irq_pnd(irq_mei_irq_c) and csr.mie_mei) or (trap.env_pend and trap.irq_buf(irq_mei_irq_c));
       trap.irq_buf(irq_mti_irq_c) <= (trap.irq_pnd(irq_mti_irq_c) and csr.mie_mti) or (trap.env_pend and trap.irq_buf(irq_mti_irq_c));
@@ -793,10 +780,10 @@ begin
         trap.irq_buf(irq_firq_0_c+i) <= (trap.irq_pnd(irq_firq_0_c+i) and csr.mie_firq(i)) or (trap.env_pend and trap.irq_buf(irq_firq_0_c+i));
       end loop;
       -- exception buffer: accumulate exception requests; clear all requests at once when trap environment starts --
-      trap.exc_buf(exc_iaccess_c)  <= (trap.exc_buf(exc_iaccess_c)  or trap.instr_be)    and (not trap.env_enter);
-      trap.exc_buf(exc_illegal_c)  <= (trap.exc_buf(exc_illegal_c)  or trap.instr_il)    and (not trap.env_enter);
-      trap.exc_buf(exc_ialign_c)   <= (trap.exc_buf(exc_ialign_c)   or trap.instr_ma)    and (not trap.env_enter);
-      trap.exc_buf(exc_ecall_c)    <= (trap.exc_buf(exc_ecall_c)    or trap.ecall)       and (not trap.env_enter);
+      trap.exc_buf(exc_iaccess_c)  <= (trap.exc_buf(exc_iaccess_c)  or trap.instr_be)         and (not trap.env_enter);
+      trap.exc_buf(exc_illegal_c)  <= (trap.exc_buf(exc_illegal_c)  or trap.instr_il)         and (not trap.env_enter);
+      trap.exc_buf(exc_ialign_c)   <= (trap.exc_buf(exc_ialign_c)   or trap.instr_ma)         and (not trap.env_enter);
+      trap.exc_buf(exc_ecall_c)    <= (trap.exc_buf(exc_ecall_c)    or trap.ecall)            and (not trap.env_enter);
       trap.exc_buf(exc_ebreak_c)   <= (trap.exc_buf(exc_ebreak_c)   or ebreak_trig)           and (not trap.env_enter);
       trap.exc_buf(exc_salign_c)   <= (trap.exc_buf(exc_salign_c)   or lsu_err_i(2))          and (not trap.env_enter);
       trap.exc_buf(exc_lalign_c)   <= (trap.exc_buf(exc_lalign_c)   or lsu_err_i(0))          and (not trap.env_enter);
@@ -809,8 +796,8 @@ begin
   end process trap_buffer;
 
   -- environment break exception trigger --
-  ebreak_trig <= (trap.ebreak and (    csr.prv_level) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- M-mode trap when in M-mode
-                 (trap.ebreak and (not csr.prv_level) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run));   -- M-mode trap when in U-mode
+  ebreak_trig <= (trap.ebreak and (    csr.prv_level) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- M-mode trap on M-ebreak
+                 (trap.ebreak and (not csr.prv_level) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run));   -- M-mode trap on U-ebreak
 
 
   -- Trap Priority Encoder ------------------------------------------------------------------
@@ -860,9 +847,9 @@ begin
   trap.pc <= exec.pc2 when (trap.cause(trap.cause'left) = '1') else exec.pc;
 
 
-  -- Trap Trigger ---------------------------------------------------------------------------
+  -- Trap Triggers --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trap_trigger: process(rstn_i, clk_i)
+  trap_pending: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       trap.env_pend <= '0';
@@ -873,21 +860,20 @@ begin
         trap.env_pend <= '1';
       end if;
     end if;
-  end process trap_trigger;
+  end process trap_pending;
 
   -- any sync. exception? --
   trap.exc_fire <= or_reduce_f(trap.exc_buf); -- cannot be masked
 
   -- any system interrupt? --
   trap.irq_fire(0) <= '1' when
-    ((exec.state = EX_EXECUTE) or (exec.state = EX_SLEEP)) and -- trigger system IRQ only in EX_EXECUTE state or in sleep mode
+    ((exec.state = S_EXECUTE) or (exec.state = S_SLEEP)) and -- trigger system IRQ only in S_EXECUTE state or in sleep mode
     (or_reduce_f(trap.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
     ((csr.mstatus_mie = '1') or (csr.prv_level = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
 
-  -- debug-entry halt interrupt? --
-  trap.irq_fire(1) <= trap.irq_buf(irq_db_halt_c) when
-    (exec.state = EX_EXECUTE) or (exec.state = EX_SLEEP) or (exec.state = EX_RESTART) else '0'; -- allow halt also after "reset" (#879)
+  -- debug-entry halt interrupt? allow halt also after "reset" (#879) --
+  trap.irq_fire(1) <= trap.irq_buf(irq_db_halt_c) when (exec.state = S_RESTART) or (exec.state = S_EXECUTE) or (exec.state = S_SLEEP) else '0';
 
 
   -- ****************************************************************************************************************************
@@ -915,7 +901,7 @@ begin
 
     -- debug mode entry triggers --
     debug_ctrl.trig_halt  <= irq_dbg_i and (not debug_ctrl.run); -- external halt request (if not halted already)
-    debug_ctrl.trig_step  <= (csr.dcsr_step and (not debug_ctrl.run)) when (exec.state = EX_EXECUTE) else '0'; -- single-step mode
+    debug_ctrl.trig_step  <= (csr.dcsr_step and (not debug_ctrl.run)) when (exec.state = S_EXECUTE) else '0'; -- single-step mode
     debug_ctrl.trig_hw    <= hwtrig_i and (not debug_ctrl.run); -- enter debug-mode by HW trigger module
     debug_ctrl.trig_break <= trap.ebreak and (debug_ctrl.run or ((    csr.prv_level) and csr.dcsr_ebreakm) or -- debug on M-ebreak
                                                                 ((not csr.prv_level) and csr.dcsr_ebreaku));  -- debug on U-ebreak
@@ -1057,16 +1043,13 @@ begin
       -- Hardware CSR access: trap enter
       -- ********************************************************************************
       elsif (trap.env_enter = '1') then
-
         if (debug_ctrl.run = '0') then -- no CSE update when in debug-mode
-          -- trap to debug-mode --
-          if RISCV_ISA_Sdext and (trap.cause(5) = '1') then
+          if RISCV_ISA_Sdext and (trap.cause(5) = '1') then -- trap to debug-mode
             csr.prv_level  <= priv_mode_m_c;
             csr.dcsr_cause <= trap.cause(2 downto 0);
             csr.dcsr_prv   <= csr.prv_level;
             csr.dpc        <= trap.pc(31 downto 1) & '0';
-          -- trap to machine-mode --
-          else
+          else -- trap to machine-mode
             csr.prv_level    <= priv_mode_m_c;
             csr.mstatus_mpp  <= csr.prv_level;
             csr.mstatus_mie  <= '0';
@@ -1089,15 +1072,12 @@ begin
       -- Hardware CSR access: trap exit
       -- ********************************************************************************
       elsif (trap.env_exit = '1') then
-
-        -- return from debug-mode --
-        if RISCV_ISA_Sdext and (debug_ctrl.run = '1') then
+        if RISCV_ISA_Sdext and (debug_ctrl.run = '1') then -- return from debug-mode
           csr.prv_level <= csr.dcsr_prv;
           if (csr.dcsr_prv /= priv_mode_m_c) then
             csr.mstatus_mprv <= '0'; -- clear if return to priv. level less than M
           end if;
-        -- return from machine-mode trap --
-        else
+        else -- return from machine-mode trap
           csr.prv_level <= csr.mstatus_mpp;
           if (csr.mstatus_mpp /= priv_mode_m_c) then
             csr.mstatus_mprv <= '0'; -- clear if return to priv. level less than M
@@ -1112,13 +1092,12 @@ begin
       -- ********************************************************************************
       -- Override: terminate unavailable registers and bits
       -- ********************************************************************************
-      csr.mcounteren(1) <= '0'; -- undefined
-
+      -- undefined --
+      csr.mcounteren(1) <= '0';
       -- no base counters --
       if not RISCV_ISA_Zicntr then
         csr.mcounteren <= (others => '0');
       end if;
-
       -- no user mode --
       if not RISCV_ISA_U then
         csr.prv_level    <= priv_mode_m_c;
@@ -1129,7 +1108,6 @@ begin
         csr.dcsr_prv     <= '0';
         csr.mcounteren   <= (others => '0');
       end if;
-
       -- no debug mode --
       if not RISCV_ISA_Sdext then
         csr.dcsr_ebreakm <= '0';
@@ -1140,10 +1118,9 @@ begin
         csr.dpc          <= (others => '0');
         csr.dscratch0    <= (others => '0');
       end if;
-
       -- no compressed instructions --
       if not RISCV_ISA_C then
-        csr.mepc(1) <= '0'; -- x*PC[1] is masked when IALIGN == 32
+        csr.mepc(1) <= '0'; -- xPC[1] is masked when IALIGN == 32
         csr.dpc(1)  <= '0';
       end if;
 
