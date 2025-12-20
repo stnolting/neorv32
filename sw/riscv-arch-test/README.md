@@ -1,6 +1,6 @@
 # RISC-V Architecture Compatibility Tests (ACT)
 
-[![riscv-arch-test](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/riscv-arch-test.yml?branch=main&longCache=true&style=flat-square&label=RISC-V%20Compatibility%20Test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3Ariscv-arch-test)
+[![riscv-arch-test](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/riscv-arch-test.yml?branch=main&longCache=true&style=flat-square&label=RISC-V%20Compatibility%20Test&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/riscv-arch-test.yml)
 
 This folder provides a port of the RISC-V Architecture Test Framework to test the NEORV32 for
 compatibility to the RISC-V ISA specifications. Currently, the following tests are supported:
