@@ -29,8 +29,8 @@ entity neorv32_cpu_hwtrig is
     rstn_i : in  std_ulogic; -- global reset, low-active, async
     ctrl_i : in  ctrl_bus_t; -- main control bus
     -- data path --
-    mar_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-    csr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
+    mar_i  : in  std_ulogic_vector(31 downto 0); -- memory address register
+    csr_o  : out std_ulogic_vector(31 downto 0); -- CSR read data
     -- trigger firing --
     hit_o  : out std_ulogic -- high until debug-mode is entered
   );
@@ -42,9 +42,9 @@ architecture neorv32_cpu_hwtrig_rtl of neorv32_cpu_hwtrig is
   constant log2_num_triggers_c : natural := index_size_f(NUM_TRIGGERS);
 
   -- match control CSRs: tdata1[tselect] and tdata2[tselect] --
-  type tdata2_t is array (0 to NUM_TRIGGERS-1) of std_ulogic_vector(XLEN-1 downto 0);
+  type tdata2_t is array (0 to NUM_TRIGGERS-1) of std_ulogic_vector(31 downto 0);
   signal tdata2 : tdata2_t;
-  signal tdata1, tdata1_rb, tdata2_rb, tinfo_rb : std_ulogic_vector(XLEN-1 downto 0);
+  signal tdata1, tdata1_rb, tdata2_rb, tinfo_rb : std_ulogic_vector(31 downto 0);
   signal tdata1_exec, tdata1_store, tdata1_load, tdata1_hit : std_ulogic_vector(NUM_TRIGGERS-1 downto 0);
 
   -- trigger select --
@@ -150,7 +150,7 @@ begin
 
   -- tdata2 read-back select --
   tdata2_readback: process(sel, sel_invalid, tdata2)
-    variable res_v : std_ulogic_vector(XLEN-1 downto 0);
+    variable res_v : std_ulogic_vector(31 downto 0);
   begin
     res_v := (others => '0');
     for i in 0 to NUM_TRIGGERS-1 loop

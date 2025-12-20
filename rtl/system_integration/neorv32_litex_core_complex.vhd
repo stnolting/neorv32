@@ -61,7 +61,7 @@ entity neorv32_litex_core_complex is
     wb_err_i   : in  std_ulogic; -- transfer error
 
     -- CPU interrupt --
-    mext_irq_i : in  std_ulogic  -- RISC-V machine external interrupt (MEI)
+    irq_mei_i  : in  std_ulogic  -- RISC-V machine external interrupt (MEI)
   );
 end neorv32_litex_core_complex;
 
@@ -167,7 +167,7 @@ begin
     xbus_ack_i => wb_ack_i,   -- transfer acknowledge
     xbus_err_i => wb_err_i,   -- transfer error
     -- CPU Interrupts --
-    mext_irq_i => mext_irq_i  -- machine external interrupt
+    irq_mei_i  => irq_mei_i   -- machine external interrupt
   );
 
 

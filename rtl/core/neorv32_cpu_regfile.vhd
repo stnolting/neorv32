@@ -38,9 +38,9 @@ entity neorv32_cpu_regfile is
     rstn_i : in  std_ulogic; -- global reset, low-active, async
     ctrl_i : in  ctrl_bus_t; -- main control bus
     -- operands --
-    rd_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- destination data rd
-    rs1_o  : out std_ulogic_vector(XLEN-1 downto 0); -- source data rs1
-    rs2_o  : out std_ulogic_vector(XLEN-1 downto 0)  -- source data rs2
+    rd_i   : in  std_ulogic_vector(31 downto 0); -- destination data rd
+    rs1_o  : out std_ulogic_vector(31 downto 0); -- source data rs1
+    rs2_o  : out std_ulogic_vector(31 downto 0)  -- source data rs2
   );
 end neorv32_cpu_regfile;
 
@@ -50,7 +50,7 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   constant awidth_c : natural := cond_sel_natural_f(RVE_EN, 4, 5); -- address width
 
   -- register file --
-  type   reg_file_t is array (0 to (2**awidth_c)-1) of std_ulogic_vector(XLEN-1 downto 0);
+  type   reg_file_t is array (0 to (2**awidth_c)-1) of std_ulogic_vector(31 downto 0);
   signal reg_file : reg_file_t;
 
   -- access logic --
@@ -81,7 +81,7 @@ begin
     reg_file_inst: entity neorv32.neorv32_prim_sdpram
     generic map (
       AWIDTH => awidth_c,
-      DWIDTH => XLEN,
+      DWIDTH => 32,
       OUTREG => false
     )
     port map (

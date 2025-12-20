@@ -164,9 +164,9 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 5+^| **<<_core_local_interruptor_clint>>**
 | `mtime_time_o`   | 64 | out |   -   | CLINT.MTIMER system time output
 5+^| **RISC-V Machine-Mode <<_processor_interrupts>>**
-| `mtime_irq_i`    |  1 |  in | `'L'` | machine timer interrupt (RISC-V), high-level-active; for chip-internal usage only
-| `msw_irq_i`      |  1 |  in | `'L'` | machine software interrupt (RISC-V), high-level-active; for chip-internal usage only
-| `mext_irq_i`     |  1 |  in | `'L'` | machine external interrupt (RISC-V), high-level-active; for chip-internal usage only
+| `irq_msi_i`      |  1 |  in | `'L'` | machine software interrupt (RISC-V), high-level-active; available only if CLINT is not enabled
+| `irw_mti_i`      |  1 |  in | `'L'` | machine timer interrupt (RISC-V), high-level-active; available only if CLINT is not enabled
+| `irq_mei_i`      |  1 |  in | `'L'` | machine external interrupt (RISC-V), high-level-active
 |=======================
 
 

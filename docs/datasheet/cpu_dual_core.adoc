@@ -30,8 +30,8 @@ debug both cores at once. SMP-debugging is fully supported by the RISC-V gdb por
 | **Clock and reset** | Both cores use the same global processor clock and reset.
 | **Address space** | Both cores have full access to the same physical <<_address_space>>.
 | **Interrupts** | All <<_processor_interrupts>> are routed to both cores. Hence, each core has access to
-all <<_neorv32_specific_fast_interrupt_requests>> (FIRQs). Additionally, the RISC-V machine-level _external
-interrupt_ (via the top `mext_irq_i` port) is also send to both cores. In contrast, the RISC-V machine level
+all <<_neorv32_specific_fast_interrupt_requests>> (FIRQs). Additionally, the RISC-V machine-level _external interrupt_
+(via the top `irq_mei_i` port) is also sent to both cores. In contrast, the RISC-V machine level
 _software_ and _timer_ interrupts are core-exclusive (provided by the <<_core_local_interruptor_clint>>).
 | **RTE** | The <<_neorv32_runtime_environment>> can be used for both cores. However, the RTE needs to be
 explicitly initialized on each core (executing `neorv32_rte_setup()`). Note that the installed trap handlers

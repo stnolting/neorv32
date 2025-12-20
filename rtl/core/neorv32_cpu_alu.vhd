@@ -45,13 +45,13 @@ entity neorv32_cpu_alu is
     rstn_i : in  std_ulogic; -- global reset, low-active, async
     ctrl_i : in  ctrl_bus_t; -- main control bus
     -- data input --
-    rs1_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    rs2_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+    rs1_i  : in  std_ulogic_vector(31 downto 0); -- rf source 1
+    rs2_i  : in  std_ulogic_vector(31 downto 0); -- rf source 2
     -- data output --
-    cmp_o  : out std_ulogic_vector(1 downto 0); -- comparator status
-    res_o  : out std_ulogic_vector(XLEN-1 downto 0); -- ALU result
-    add_o  : out std_ulogic_vector(XLEN-1 downto 0); -- address computation result
-    csr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
+    cmp_o  : out std_ulogic_vector(1 downto 0);  -- comparator status
+    res_o  : out std_ulogic_vector(31 downto 0); -- ALU result
+    add_o  : out std_ulogic_vector(31 downto 0); -- address computation result
+    csr_o  : out std_ulogic_vector(31 downto 0); -- CSR read data
     -- status --
     done_o : out std_ulogic -- co-processor operation done?
   );
@@ -79,26 +79,26 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
   end function zibi_cmp_f;
 
   -- comparator --
-  signal cmp_rs1, cmp_rs2 : std_ulogic_vector(XLEN downto 0);
+  signal cmp_rs1, cmp_rs2 : std_ulogic_vector(32 downto 0);
   signal cmp_eq,  cmp_ls  : std_ulogic;
 
   -- operands --
-  signal opa,   opb   : std_ulogic_vector(XLEN-1 downto 0);
-  signal opa_x, opb_x : std_ulogic_vector(XLEN downto 0);
+  signal opa,   opb   : std_ulogic_vector(31 downto 0);
+  signal opa_x, opb_x : std_ulogic_vector(32 downto 0);
 
   -- intermediate results --
-  signal addsub_res : std_ulogic_vector(XLEN downto 0);
-  signal cp_res     : std_ulogic_vector(XLEN-1 downto 0);
+  signal addsub_res : std_ulogic_vector(32 downto 0);
+  signal cp_res     : std_ulogic_vector(31 downto 0);
 
   -- co-processor interface --
-  type cp_data_t  is array (0 to 6) of std_ulogic_vector(XLEN-1 downto 0);
+  type cp_data_t  is array (0 to 6) of std_ulogic_vector(31 downto 0);
   signal cp_result : cp_data_t;
   signal cp_valid  : std_ulogic_vector(6 downto 0);
-  signal cp_shamt  : std_ulogic_vector(index_size_f(XLEN)-1 downto 0);
+  signal cp_shamt  : std_ulogic_vector(4 downto 0);
 
   -- proxy logic --
   signal fpu_csr_en, fpu_csr_we, cfu_done, cfu_busy : std_ulogic;
-  signal fpu_csr_rd, cfu_res : std_ulogic_vector(XLEN-1 downto 0);
+  signal fpu_csr_rd, cfu_res : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -128,7 +128,7 @@ begin
   addsub_res <= std_ulogic_vector(unsigned(opa_x) - unsigned(opb_x)) when (ctrl_i.alu_sub = '1') else
                 std_ulogic_vector(unsigned(opa_x) + unsigned(opb_x));
 
-  add_o <= addsub_res(XLEN-1 downto 0); -- direct output
+  add_o <= addsub_res(31 downto 0); -- direct output
 
 
   -- ALU Operation Select -------------------------------------------------------------------
@@ -138,7 +138,7 @@ begin
     res_o <= (others => '0');
     case ctrl_i.alu_op is
       when alu_op_zero_c => res_o <= (others => '0');
-      when alu_op_add_c  => res_o <= addsub_res(XLEN-1 downto 0);
+      when alu_op_add_c  => res_o <= addsub_res(31 downto 0);
       when alu_op_cp_c   => res_o <= cp_res;
       when alu_op_slt_c  => res_o(0) <= addsub_res(addsub_res'left); -- carry/borrow
       when alu_op_movb_c => res_o <= opb;

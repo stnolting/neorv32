@@ -239,10 +239,10 @@ entity neorv32_top is
     -- Machine timer system time (available if IO_CLINT_EN = true) --
     mtime_time_o   : out std_ulogic_vector(63 downto 0);                    -- current system time
 
-    -- CPU interrupts (for chip-internal usage only) --
-    mtime_irq_i    : in  std_ulogic := 'L';                                 -- machine timer interrupt, available if IO_CLINT_EN = false
-    msw_irq_i      : in  std_ulogic := 'L';                                 -- machine software interrupt, available if IO_CLINT_EN = false
-    mext_irq_i     : in  std_ulogic := 'L'                                  -- machine external interrupt
+    -- CPU interrupts --
+    irq_msi_i      : in  std_ulogic := 'L';                                 -- machine software interrupt, available if IO_CLINT_EN = false
+    irw_mti_i      : in  std_ulogic := 'L';                                 -- machine timer interrupt, available if IO_CLINT_EN = false
+    irq_mei_i      : in  std_ulogic := 'L'                                  -- machine external interrupt
   );
 end neorv32_top;
 
@@ -323,10 +323,9 @@ architecture neorv32_top_rtl of neorv32_top is
     FIRQ_GPIO, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK, FIRQ_TRNG, FIRQ_TRACER
   );
   type firq_t is array (firq_enum_t) of std_ulogic;
-  signal firq      : firq_t;
-  signal cpu_firq  : std_ulogic_vector(15 downto 0);
-  signal mtime_irq : std_ulogic_vector(num_cores_c-1 downto 0);
-  signal msw_irq   : std_ulogic_vector(num_cores_c-1 downto 0);
+  signal firq     : firq_t;
+  signal cpu_firq : std_ulogic_vector(15 downto 0);
+  signal mti, msi : std_ulogic_vector(num_cores_c-1 downto 0);
 
 begin
 
@@ -543,9 +542,9 @@ begin
       trace_o    => cpu_trace(i),
       sleep_o    => open,
       -- interrupts --
-      msi_i      => msw_irq(i),
-      mei_i      => mext_irq_i,
-      mti_i      => mtime_irq(i),
+      msi_i      => msi(i),
+      mei_i      => irq_mei_i,
+      mti_i      => mti(i),
       firq_i     => cpu_firq,
       dbi_i      => dci_haltreq(i),
       -- instruction bus interface --
@@ -1142,8 +1141,8 @@ begin
         bus_req_i => iodev_req(IODEV_CLINT),
         bus_rsp_o => iodev_rsp(IODEV_CLINT),
         time_o    => mtime_time_o,
-        mti_o     => mtime_irq,
-        msi_o     => msw_irq
+        mti_o     => mti,
+        msi_o     => msi
       );
     end generate;
 
@@ -1151,8 +1150,8 @@ begin
     if not IO_CLINT_EN generate
       iodev_rsp(IODEV_CLINT) <= rsp_terminate_c;
       mtime_time_o           <= (others => '0');
-      mtime_irq              <= (others => mtime_irq_i);
-      msw_irq                <= (others => msw_irq_i);
+      mti                    <= (others => irw_mti_i);
+      msi                    <= (others => irq_msi_i);
     end generate;
 
 

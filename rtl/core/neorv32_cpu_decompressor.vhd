@@ -376,5 +376,4 @@ begin
   -- output illegal instruction in its pre-decoded 32-bit form --
   instr_o <= decoded(31 downto 2) & (decoded(1) and (not illegal)) & decoded(0); -- force OPCODE[1] to zero if illegal
 
-
 end neorv32_cpu_decompressor_rtl;
