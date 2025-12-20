@@ -1,5 +1,7 @@
 # NEORV32 in Verilog
 
+[![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions?query=workflow%3AVerilog)
+
 You can use [GHDL's synthesis feature](https://ghdl.github.io/ghdl/using/Synthesis.html) to convert a preconfigured
 NEORV32 setup in to a single, synthesizable, **plain-Verilog** module. The resulting Verilog module can be instantiated
 within an all-Verilog design. The provided makefile is used for conversion and also for running all-Verilog simulation.

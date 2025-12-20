@@ -5,9 +5,8 @@ and helpers of the NEORV32 software framework.
 
 ### > [`bootloader`](bootloader)
 
-Source(s) of the default NEORV32 bootloader.
-A pre-built image is already installed into the rtl design via the
-`rtl/core/neorv32_bootloader_image.vhd` file.
+Source(s) of the default NEORV32 bootloader. A pre-built image is already installed
+by the default `rtl/core/neorv32_bootloader_image.vhd` file.
 
 ### > [`common`](common)
 
@@ -36,6 +35,10 @@ Firmware (debugger "park loop") for the on-chip debugger.
 ### > [`openocd`](openocd)
 
 Configuration files for openOCD to connect to the NEORV32 on-chip debugger via JTAG.
+
+### > [`riscv-arch-test`](riscv-arch-test)
+
+Test NEORV32 for compatibility using the official _RISC-V architecture compatibility tests_.
 
 ### > [`svd`](svd)
 

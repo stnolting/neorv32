@@ -55,7 +55,7 @@ that provides hands-on tutorials to get you started.
 **NEORV32 CPU (the core)**
 
 * 32-bit RISC-V CPU
-* fully compatible to the RISC-V ISA specs. - checked by the https://github.com/stnolting/neorv32-riscof[official RISCOF architecture tests]
+* fully compatible to the RISC-V ISA specs. - checked by the official RISC-V architecture compatibility tests
 * base ISA + privileged ISA + several optional standard and custom ISA extensions
 * option to add user-defined RISC-V instructions as custom ISA extension
 * rich set of customization options (ISA extensions, design goal: performance / area / energy, tuning options, ...)
@@ -114,33 +114,34 @@ The root directory of the repository is considered the NEORV32 base or home fold
 
 .Folder Structure
 ...................................
-neorv32                    - Project home folder
+neorv32                   - Project home folder
 │
-├─ docs                    - Documentation
-│  ├─ datasheet            - AsciiDoc sources for the NEORV32 data sheet
-│  ├─ figures              - Figures and logos
-│  ├─ references           - Data sheets and RISC-V specs
-│  └─ userguide            - AsciiDoc sources for the NEORV32 user guide
+├─ docs                   - Documentation
+│  ├─ datasheet           - AsciiDoc sources for the NEORV32 data sheet
+│  ├─ figures             - Figures and logos
+│  ├─ references          - Data sheets and RISC-V specs
+│  └─ userguide           - AsciiDoc sources for the NEORV32 user guide
 │
-├─ rtl                     - HDL sources
-│  ├─ core                 - Core sources of the CPU & SoC
-│  ├─ system_integration   - System wrappers and bridges for advanced SoC connectivity
-│  ├─ test_setups          - Minimal test setup "SoCs" used in the User Guide
-│  └─ verilog              - Scripts and examples for converting NEORV32 to Verilog
+├─ rtl                    - HDL sources
+│  ├─ core                - Core sources of the CPU & SoC
+│  ├─ system_integration  - System wrappers and bridges for advanced SoC connectivity
+│  ├─ test_setups         - Minimal test setup "SoCs" used in the User Guide
+│  └─ verilog             - Scripts and examples for converting NEORV32 to Verilog
 │
-├─ sim                     - Simulation files
+├─ sim                    - Simulation files
 │
-└─ sw                      - Software framework
-   ├─ bootloader           - Sources of the processor-internal bootloader
-   ├─ common               - Linker script, crt0.S start-up code and central makefile
-   ├─ example              - Example programs for the core and the SoC modules
-   │  ├─ eclipse           - Pre-configured Eclipse IDE project
-   │  └─ ...               - Several example programs
-   ├─ image_gen            - Helper program to generate executables & memory images
-   ├─ lib                  - NEORV32 core library
-   ├─ ocd_firmware         - Firmware for the on-chip debugger "park loop"
-   ├─ openocd              - OpenOCD configuration files
-   └─ svd                  - Processor system view description file (CMSIS-SVD)
+└─ sw                     - Software framework
+   ├─ bootloader          - Sources of the processor-internal bootloader
+   ├─ common              - Linker script, crt0.S start-up code and central makefile
+   ├─ example             - Example programs for the core and the SoC modules
+   │  ├─ eclipse          - Pre-configured Eclipse IDE project
+   │  └─ ...              - Several example programs
+   ├─ image_gen           - Helper program to generate executables & memory images
+   ├─ lib                 - NEORV32 core library
+   ├─ ocd_firmware        - Firmware for the on-chip debugger "park loop"
+   ├─ openocd             - OpenOCD configuration files
+   ├─ riscv-arch-test     - Test RISC-V compatibility using the official test framework
+   └─ svd                 - Processor system view description file (CMSIS-SVD)
 ...................................
 
 
@@ -330,3 +331,17 @@ code results).
 The NEORV32 CPU is based on a multi-cycle architecture. Each instruction is executed in a sequence of
 several consecutive micro operations. The average CPI (cycles per instruction) depends on the instruction
 mix of a specific applications and also on the available CPU extensions, tuning options and memory latency.
+
+
+// ####################################################################################################################
+:sectnums:
+=== RISC-V Compatibility
+
+The NEORV32 CPU passes the official **RISC-V Architecture Compatibility Tests**. This framework is used to check
+RISC-V implementations for compatibility to the official RISC-V user/privileged ISA specifications. The NEORV32 port
+of this test framework is available in `sw/riscv-arch-test`.
+
+.Unsupported ISA Extensions
+[TIP]
+Executing instructions or accessing CSRs from unsupported ISA extensions will raise a precise illegal
+instruction exception allowing full software emulation (see section <<_full_virtualization>>).
