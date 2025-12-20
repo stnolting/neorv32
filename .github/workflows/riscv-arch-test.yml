@@ -67,7 +67,7 @@ jobs:
         riscof --version
         ghdl -v
 
-    - name: '⚙️ Run verification framework'
+    - name: '⚙️ Run compatibility tests'
       run: /bin/bash -c "chmod u+x $GITHUB_WORKSPACE/sw/riscv-arch-test/run.sh && $GITHUB_WORKSPACE/sw/riscv-arch-test/run.sh"
 
     - name: '📤 Archive test report'

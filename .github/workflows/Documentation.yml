@@ -21,7 +21,7 @@ jobs:
 
   doxygen:
     runs-on: ubuntu-latest
-    name: 'SW Framework'
+    name: 'API Documentation'
 
     steps:
 
@@ -48,7 +48,7 @@ jobs:
 
   asciidoctor:
     runs-on: ubuntu-latest
-    name: 'Datasheet'
+    name: 'Datasheet & User Guide'
 
     steps:
 
