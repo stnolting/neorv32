@@ -290,12 +290,7 @@ package file (`neorv32_package.vhd`).
 The top module provides several tuning options to optimize the CPU for performance, size and even security.
 Note that these configuration options have no impact on the actual functionality (e.g. ISA compatibility).
 
-.Tuning Options Discovery
-[TIP]
-Software can check for configured tuning options via specific flags in the <<_mxcsr>> CSR.
 
-
-{empty} +
 [discrete]
 ===== **`CPU_TRACE_EN`**
 

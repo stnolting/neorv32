@@ -144,7 +144,6 @@ enum NEORV32_CSR_enum {
   CSR_MCONFIGPTR     = 0xf15, /**< 0xf15 - mconfigptr: Machine configuration pointer register */
 
   /* NEORV32-specific */
-  CSR_MXCSR          = 0xbc0, /**< 0xbc0 - mxcsr: Machine control and status register (#NEORV32_CSR_MXCSR_enum) */
   CSR_MXISA          = 0xfc0  /**< 0xfc0 - mxisa: Machine extended ISA and extensions (#NEORV32_CSR_MXISA_enum) */
 };
 
@@ -292,19 +291,6 @@ enum NEORV32_CSR_MISA_enum {
   CSR_MISA_X      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
   CSR_MISA_MXL_LO = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
   CSR_MISA_MXL_HI = 31  /**< CPU misa CSR (31): MXL.Hi: CPU data width (r/-) */
-};
-
-
-/**********************************************************************//**
- * CPU mxcsr CSR (r/w): Machine control and status register (NEORV32-specific)
- **************************************************************************/
-enum NEORV32_CSR_MXCSR_enum {
-  CSR_MXCSR_TRACE     = 26, /**< CPU mxcsr CSR (26): trace port implemented (r/-)*/
-  CSR_MXCSR_CONSTTBR  = 27, /**< CPU mxcsr CSR (27): constant-time branches implemented (r/-)*/
-  CSR_MXCSR_RFHWRST   = 28, /**< CPU mxcsr CSR (28): register file has full hardware reset (r/-)*/
-  CSR_MXCSR_FASTMUL   = 29, /**< CPU mxcsr CSR (29): DSP-based multiplication (M extensions only) (r/-)*/
-  CSR_MXCSR_FASTSHIFT = 30, /**< CPU mxcsr CSR (30): parallel logic for shifts (barrel shifters) (r/-)*/
-  CSR_MXCSR_ISSIM     = 31  /**< CPU mxcsr CSR (31): this might be a simulation when set (r/-)*/
 };
 
 

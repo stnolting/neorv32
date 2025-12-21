@@ -574,7 +574,7 @@ begin
       when csr_mstatus_c  | csr_mstatush_c      | csr_misa_c      | csr_mie_c     | csr_mtvec_c  |
            csr_mscratch_c | csr_mepc_c          | csr_mcause_c    | csr_mip_c     | csr_mtval_c  |
            csr_mtinst_c   | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c |
-           csr_mhartid_c  | csr_mconfigptr_c    | csr_mxcsr_c     | csr_mxisa_c =>
+           csr_mhartid_c  | csr_mconfigptr_c    | csr_mxisa_c =>
         csr_valid(2) <= '1';
 
       -- machine-controlled user-mode CSRs --
@@ -1217,15 +1217,6 @@ begin
           -- --------------------------------------------------------------------
           -- NEORV32-specific
           -- --------------------------------------------------------------------
-          when csr_mxcsr_c => -- machine control and status register
-            csr_rdata(25 downto 0) <= (others => '0');            -- reserved
-            csr_rdata(26) <= bool_to_ulogic_f(CPU_TRACE_EN);      -- execution trace generator
-            csr_rdata(27) <= bool_to_ulogic_f(CPU_CONSTT_BR_EN);  -- constant-time branches
-            csr_rdata(28) <= bool_to_ulogic_f(CPU_RF_HW_RST_EN);  -- full hardware reset of register file
-            csr_rdata(29) <= bool_to_ulogic_f(CPU_FAST_MUL_EN);   -- DSP-based multiplication (M extensions only)
-            csr_rdata(30) <= bool_to_ulogic_f(CPU_FAST_SHIFT_EN); -- parallel logic for shifts (barrel shifters)
-            csr_rdata(31) <= bool_to_ulogic_f(is_simulation_c);   -- is this a simulation?
-
           when csr_mxisa_c => -- machine extended ISA extensions information
             csr_rdata(0)  <= '1';                                -- Zicsr: CSR access (always enabled)
             csr_rdata(1)  <= '1';                                -- Zifencei: instruction stream sync. (always enabled)
