@@ -504,7 +504,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] Ext. memory (@0x%x) ", cnt_test, (uint32_t)EXT_FMEM_DATA_BASE);
 
-  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) && (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM))) {
+  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) && (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_SIM))) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -628,7 +628,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] IF access EXC ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_SIM)) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -658,7 +658,7 @@ int main() {
   // skip if C-mode is implemented
   if ((neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) &&
       (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) &&
-      (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM))) {
+      (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_SIM))) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -761,7 +761,7 @@ int main() {
   PRINT("[%i] BREAK EXC ", cnt_test);
 
   // skip on real hardware since ebreak will make problems when running this test program via gdb
-  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_SIM)) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -996,7 +996,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] MEI (sim) IRQ ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_SIM)) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1101,7 +1101,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] Vectored IRQ (sim) ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_SIM)) {
     trap_cause = trap_never_c;
     cnt_test++;
 
