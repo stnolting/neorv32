@@ -224,51 +224,47 @@ begin
   neorv32_cpu_control_inst: entity neorv32.neorv32_cpu_control
   generic map (
     -- General --
-    HART_ID           => HART_ID,           -- hardware thread ID
-    BOOT_ADDR         => BOOT_ADDR,         -- cpu boot address
-    DEBUG_PARK_ADDR   => DEBUG_PARK_ADDR,   -- cpu debug mode parking loop entry address
-    DEBUG_EXC_ADDR    => DEBUG_EXC_ADDR,    -- cpu debug mode exception entry address
+    HART_ID          => HART_ID,          -- hardware thread ID
+    BOOT_ADDR        => BOOT_ADDR,        -- CPU boot address
+    DEBUG_PARK_ADDR  => DEBUG_PARK_ADDR,  -- CPU debug mode parking loop entry address
+    DEBUG_EXC_ADDR   => DEBUG_EXC_ADDR,   -- CPU debug mode exception entry address
     -- RISC-V ISA Extensions --
-    RISCV_ISA_A       => riscv_a_c,         -- atomic memory operations extension
-    RISCV_ISA_B       => riscv_b_c,         -- bit-manipulation extension
-    RISCV_ISA_C       => RISCV_ISA_C,       -- compressed extension
-    RISCV_ISA_E       => RISCV_ISA_E,       -- embedded RF extension
-    RISCV_ISA_M       => RISCV_ISA_M,       -- mul/div extension
-    RISCV_ISA_U       => RISCV_ISA_U,       -- user mode extension
-    RISCV_ISA_Zaamo   => RISCV_ISA_Zaamo,   -- atomic read-modify-write operations extension
-    RISCV_ISA_Zalrsc  => RISCV_ISA_Zalrsc,  -- atomic reservation-set operations extension
-    RISCV_ISA_Zcb     => riscv_zcb_c,       -- additional code size reduction instructions
-    RISCV_ISA_Zba     => RISCV_ISA_Zba,     -- shifted-add bit-manipulation extension
-    RISCV_ISA_Zbb     => RISCV_ISA_Zbb,     -- basic bit-manipulation extension
-    RISCV_ISA_Zbkb    => RISCV_ISA_Zbkb,    -- bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc    => RISCV_ISA_Zbkc,    -- carry-less multiplication instructions
-    RISCV_ISA_Zbkx    => RISCV_ISA_Zbkx,    -- cryptography crossbar permutation extension
-    RISCV_ISA_Zbs     => RISCV_ISA_Zbs,     -- single-bit bit-manipulation extension
-    RISCV_ISA_Zfinx   => RISCV_ISA_Zfinx,   -- 32-bit floating-point extension
-    RISCV_ISA_Zibi    => RISCV_ISA_Zibi,    -- branch with immediate
-    RISCV_ISA_Zicntr  => RISCV_ISA_Zicntr,  -- base counters
-    RISCV_ISA_Zicond  => RISCV_ISA_Zicond,  -- integer conditional operations
-    RISCV_ISA_Zihpm   => RISCV_ISA_Zihpm,   -- hardware performance monitors
-    RISCV_ISA_Zimop   => RISCV_ISA_Zimop,   -- may-be-operations
-    RISCV_ISA_Zkn     => riscv_zkn_c,       -- NIST algorithm suite available
-    RISCV_ISA_Zknd    => RISCV_ISA_Zknd,    -- cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne    => RISCV_ISA_Zkne,    -- cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh    => RISCV_ISA_Zknh,    -- cryptography NIST hash extension
-    RISCV_ISA_Zks     => riscv_zks_c,       -- ShangMi algorithm suite available
-    RISCV_ISA_Zksed   => RISCV_ISA_Zksed,   -- ShangMi block cipher extension
-    RISCV_ISA_Zksh    => RISCV_ISA_Zksh,    -- ShangMi hash extension
-    RISCV_ISA_Zkt     => riscv_zkt_c,       -- data-independent execution time for cryptography operations available
-    RISCV_ISA_Zmmul   => RISCV_ISA_Zmmul,   -- multiply-only M sub-extension
-    RISCV_ISA_Zxcfu   => RISCV_ISA_Zxcfu,   -- custom (instr.) functions unit
-    RISCV_ISA_Sdext   => RISCV_ISA_Sdext,   -- external debug mode extension
-    RISCV_ISA_Sdtrig  => RISCV_ISA_Sdtrig,  -- trigger module extension
-    RISCV_ISA_Smpmp   => RISCV_ISA_Smpmp,   -- physical memory protection
+    RISCV_ISA_A      => riscv_a_c,        -- atomic memory operations extension
+    RISCV_ISA_B      => riscv_b_c,        -- bit-manipulation extension
+    RISCV_ISA_C      => RISCV_ISA_C,      -- compressed extension
+    RISCV_ISA_E      => RISCV_ISA_E,      -- embedded RF extension
+    RISCV_ISA_M      => RISCV_ISA_M,      -- mul/div extension
+    RISCV_ISA_U      => RISCV_ISA_U,      -- user mode extension
+    RISCV_ISA_Zaamo  => RISCV_ISA_Zaamo,  -- atomic read-modify-write operations extension
+    RISCV_ISA_Zalrsc => RISCV_ISA_Zalrsc, -- atomic reservation-set operations extension
+    RISCV_ISA_Zcb    => riscv_zcb_c,      -- additional code size reduction instructions
+    RISCV_ISA_Zba    => RISCV_ISA_Zba,    -- shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb    => RISCV_ISA_Zbb,    -- basic bit-manipulation extension
+    RISCV_ISA_Zbkb   => RISCV_ISA_Zbkb,   -- bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc   => RISCV_ISA_Zbkc,   -- carry-less multiplication instructions
+    RISCV_ISA_Zbkx   => RISCV_ISA_Zbkx,   -- cryptography crossbar permutation extension
+    RISCV_ISA_Zbs    => RISCV_ISA_Zbs,    -- single-bit bit-manipulation extension
+    RISCV_ISA_Zfinx  => RISCV_ISA_Zfinx,  -- 32-bit floating-point extension
+    RISCV_ISA_Zibi   => RISCV_ISA_Zibi,   -- branch with immediate
+    RISCV_ISA_Zicntr => RISCV_ISA_Zicntr, -- base counters
+    RISCV_ISA_Zicond => RISCV_ISA_Zicond, -- integer conditional operations
+    RISCV_ISA_Zihpm  => RISCV_ISA_Zihpm,  -- hardware performance monitors
+    RISCV_ISA_Zimop  => RISCV_ISA_Zimop,  -- may-be-operations
+    RISCV_ISA_Zkn    => riscv_zkn_c,      -- NIST algorithm suite available
+    RISCV_ISA_Zknd   => RISCV_ISA_Zknd,   -- cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne   => RISCV_ISA_Zkne,   -- cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh   => RISCV_ISA_Zknh,   -- cryptography NIST hash extension
+    RISCV_ISA_Zks    => riscv_zks_c,      -- ShangMi algorithm suite available
+    RISCV_ISA_Zksed  => RISCV_ISA_Zksed,  -- ShangMi block cipher extension
+    RISCV_ISA_Zksh   => RISCV_ISA_Zksh,   -- ShangMi hash extension
+    RISCV_ISA_Zkt    => riscv_zkt_c,      -- data-independent execution time for cryptography operations available
+    RISCV_ISA_Zmmul  => RISCV_ISA_Zmmul,  -- multiply-only M sub-extension
+    RISCV_ISA_Zxcfu  => RISCV_ISA_Zxcfu,  -- custom (instr.) functions unit
+    RISCV_ISA_Sdext  => RISCV_ISA_Sdext,  -- external debug mode extension
+    RISCV_ISA_Sdtrig => RISCV_ISA_Sdtrig, -- trigger module extension
+    RISCV_ISA_Smpmp  => RISCV_ISA_Smpmp,  -- physical memory protection
     -- Tuning Options --
-    CPU_TRACE_EN      => CPU_TRACE_EN,      -- enable CPU execution trace generator
-    CPU_CONSTT_BR_EN  => CPU_CONSTT_BR_EN,  -- constant-time branches
-    CPU_FAST_MUL_EN   => CPU_FAST_MUL_EN,   -- use DSPs for M extension's multiplier
-    CPU_FAST_SHIFT_EN => CPU_FAST_SHIFT_EN, -- use barrel shifter for shift operations
-    CPU_RF_HW_RST_EN  => CPU_RF_HW_RST_EN   -- enable full hardware reset for register file
+    CPU_CONSTT_BR_EN => CPU_CONSTT_BR_EN  -- constant-time branches
   )
   port map (
     -- global control --

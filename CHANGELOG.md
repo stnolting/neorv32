@@ -29,8 +29,9 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 21.12.2025 | 1.12.5.7 | :warning: remove `mxcsr` CSR | [#1459](https://github.com/stnolting/neorv32/pull/1459) |
 | 19.12.2025 | 1.12.5.6 | further CPU code cleanups | [#1456](https://github.com/stnolting/neorv32/pull/1456) |
-| 14.12.2025 | 1.12.5.5 | CPU control: massive code refactoring and optimization | [#1449](https://github.com/stnolting/neorv32/pull/1449)  <
+| 14.12.2025 | 1.12.5.5 | CPU control: massive code refactoring and optimization | [#1449](https://github.com/stnolting/neorv32/pull/1449) |
 | 07.12.2025 | 1.12.5.4 | :sparkles: PWM: add optional phase-correct operation mode | [#1445](https://github.com/stnolting/neorv32/pull/1445) |
 | 06.12.2025 | 1.12.5.3 | minor rtl edits and cleanups | [#1444](https://github.com/stnolting/neorv32/pull/1444) |
 | 05.12.2025 | 1.12.5.2 | :warning: remove UART0/1 simulation-mode **file** logging | [#1443](https://github.com/stnolting/neorv32/pull/1443) |

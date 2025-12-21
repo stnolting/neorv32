@@ -84,7 +84,7 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
 
 begin
 
-  -- SYSINFO(0): Processor Clock Frequency in Hz --------------------------------------------
+  -- SYSINFO(0): Processor Clock Frequency --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   sysinfo_clk: process(rstn_i, clk_i)
   begin
@@ -139,7 +139,7 @@ begin
   sysinfo(2)(28) <= '1' when IO_GPTMR_EN       else '0'; -- general purpose timer (GPTMR) implemented
   sysinfo(2)(29) <= '1' when IO_SLINK_EN       else '0'; -- stream link interface (SLINK) implemented
   sysinfo(2)(30) <= '1' when IO_ONEWIRE_EN     else '0'; -- 1-wire interface (ONEWIRE) implemented
-  sysinfo(2)(31) <= '0';                                 -- reserved
+  sysinfo(2)(31) <= '1' when is_simulation_c   else '0'; -- You ever have that feeling where you're not sure if you're awake or still dreaming? - Neo, The Matrix
 
   -- SYSINFO(3): Cache Configuration --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

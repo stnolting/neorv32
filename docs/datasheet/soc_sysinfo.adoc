@@ -106,7 +106,7 @@ to take into account a dynamic frequency scaling of the processor.
 | `28`    | `SYSINFO_SOC_IO_GPTMR`   | set if GPTMR is implemented (via top's `IO_GPTMR_NUM` generic)
 | `29`    | `SYSINFO_SOC_IO_SLINK`   | set if stream link interface is implemented (via top's `IO_SLINK_EN` generic)
 | `30`    | `SYSINFO_SOC_IO_ONEWIRE` | set if ONEWIRE interface is implemented (via top's `IO_ONEWIRE_EN` generic)
-| `31`    | -                        | _reserved_, read as zero
+| `31`    | `SYSINFO_SOC_SIM`        | set if NEORV32 is being simulated
 |=======================
 
 

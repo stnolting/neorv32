@@ -569,7 +569,6 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_mhartid_c        => return "mhartid";
       when csr_mconfigptr_c     => return "mconfigptr";
       -- NEORV32-specific machine registers --
-      when csr_mxcsr_c          => return "mxcsr";
       when csr_mxisa_c          => return "mxisa";
       -- unknown; just print address --
       when others               => return "0x" & to_hexstring_f(addr);

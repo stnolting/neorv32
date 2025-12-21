@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120506"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120507"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
@@ -563,7 +563,6 @@ package neorv32_package is
   constant csr_mhartid_c        : std_ulogic_vector(11 downto 0) := x"f14";
   constant csr_mconfigptr_c     : std_ulogic_vector(11 downto 0) := x"f15";
   -- NEORV32-specific machine registers --
-  constant csr_mxcsr_c          : std_ulogic_vector(11 downto 0) := x"bc0";
   constant csr_mxisa_c          : std_ulogic_vector(11 downto 0) := x"fc0";
 --constant csr_mxisah_c         : std_ulogic_vector(11 downto 0) := x"fc1"; -- to be implemented...
 
@@ -587,7 +586,7 @@ package neorv32_package is
     rf_rs1       : std_ulogic_vector(4 downto 0);  -- source register 1 address
     rf_rs2       : std_ulogic_vector(4 downto 0);  -- source register 2 address
     rf_rd        : std_ulogic_vector(4 downto 0);  -- destination register address
-    rf_zero_we   : std_ulogic;                     -- allow/force write access to x0
+    rf_zero      : std_ulogic;                     -- allow/force write access to x0
     -- alu --
     alu_op       : std_ulogic_vector(2 downto 0);  -- operation select
     alu_sub      : std_ulogic;                     -- addition/subtraction control
@@ -636,7 +635,7 @@ package neorv32_package is
     rf_rs1       => (others => '0'),
     rf_rs2       => (others => '0'),
     rf_rd        => (others => '0'),
-    rf_zero_we   => '0',
+    rf_zero      => '0',
     alu_op       => (others => '0'),
     alu_sub      => '0',
     alu_opa_mux  => '0',
