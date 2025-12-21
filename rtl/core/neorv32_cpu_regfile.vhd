@@ -68,8 +68,8 @@ begin
   -- Therefore, the whole register file can be mapped to a single true-dual-port RAM.
 
   rd_zero  <= '1' when (ctrl_i.rf_rd = "00000") else '0';
-  rf_we    <= (ctrl_i.rf_wb_en and (not rd_zero)) or ctrl_i.rf_zero_we; -- never write to x0 unless forced
-  opa_addr <= "00000" when (ctrl_i.rf_zero_we = '1') else -- force rd = zero
+  rf_we    <= (ctrl_i.rf_wb_en and (not rd_zero)) or ctrl_i.rf_zero; -- never write to x0 unless forced
+  opa_addr <= "00000" when (ctrl_i.rf_zero = '1') else -- force rd = zero
               ctrl_i.rf_rd when (ctrl_i.rf_wb_en = '1') else -- rd
               ctrl_i.rf_rs1; -- rs1
 

@@ -68,7 +68,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
       clr_i   : in  std_ulogic;
       new_i   : in  std_ulogic;
       hit_o   : out std_ulogic;
-      dir_o   : out std_ulogic;
+      drt_o   : out std_ulogic;
       tag_o   : out std_ulogic_vector(31 downto 0);
       addr_i  : in  std_ulogic_vector(31 downto 0);
       we_i    : in  std_ulogic_vector(3 downto 0);
@@ -93,7 +93,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   -- cache -> control interface --
   type cache_i_t is record
     sta_hit : std_ulogic;
-    sta_dir : std_ulogic;
+    sta_drt : std_ulogic;
     data    : std_ulogic_vector(31 downto 0);
     stat    : std_ulogic;
   end record;
@@ -210,14 +210,14 @@ begin
             ctrl_nxt.state <= S_IDLE;
           end if;
         elsif (host_req_i.rw = '0') or READ_ONLY then -- read MISS
-          if (cache_i.sta_dir = '1') and (not WRITE_THROUGH) and (not READ_ONLY) then
+          if (cache_i.sta_drt = '1') and (not WRITE_THROUGH) and (not READ_ONLY) then
             host_rsp_o.err <= '1';    -- [TODO] error as feature not implemented yet
             ctrl_nxt.state <= S_IDLE; -- [TODO] upload dirty block first
           else
-            ctrl_nxt.state <= S_DOWNLOAD_START; -- just get block from main memory
+            ctrl_nxt.state <= S_DOWNLOAD_START; -- get block from main memory
           end if;
         else -- write MISS
-          if (cache_i.sta_dir = '1') and (not WRITE_THROUGH) then
+          if (cache_i.sta_drt = '1') and (not WRITE_THROUGH) then
             host_rsp_o.err <= '1';    -- [TODO] error as feature not implemented yet
             ctrl_nxt.state <= S_IDLE; -- [TODO] upload dirty block first
           else -- write-through: write to main memory, no cache update
@@ -333,7 +333,7 @@ begin
     clr_i   => cache_o.cmd_clr, -- clear entire cache
     new_i   => cache_o.cmd_new, -- make accessed block valid and set tag
     hit_o   => cache_i.sta_hit, -- cache hit
-    dir_o   => cache_i.sta_dir, -- cache dirty
+    drt_o   => cache_i.sta_drt, -- cache dirty
     tag_o   => open,            -- tag of accessed block; MSB-aligned, zero-extended
     -- cache access --
     addr_i  => cache_o.addr,    -- access address
@@ -377,7 +377,7 @@ entity neorv32_cache_memory is
     clr_i   : in  std_ulogic;                     -- clear entire cache
     new_i   : in  std_ulogic;                     -- make accessed block valid & clean and set tag
     hit_o   : out std_ulogic;                     -- cache hit
-    dir_o   : out std_ulogic;                     -- accessed block is dirty
+    drt_o   : out std_ulogic;                     -- accessed block is dirty
     tag_o   : out std_ulogic_vector(31 downto 0); -- tag of accessed block; MSB-aligned, zero-extended
     -- cache access --
     addr_i  : in  std_ulogic_vector(31 downto 0); -- access address
@@ -465,7 +465,7 @@ begin
   end process status_memory;
 
   -- modified cache --
-  dir_o <= valid_mem_rd and dirty_mem_rd;
+  drt_o <= valid_mem_rd and dirty_mem_rd;
 
 
   -- Tag Memory -----------------------------------------------------------------------------
