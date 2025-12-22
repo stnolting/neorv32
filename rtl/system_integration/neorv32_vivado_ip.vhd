@@ -67,7 +67,7 @@ entity neorv32_vivado_ip is
     CPU_CONSTT_BR_EN      : boolean                        := false;
     CPU_FAST_MUL_EN       : boolean                        := false;
     CPU_FAST_SHIFT_EN     : boolean                        := false;
-    CPU_RF_ARCH_SEL       : natural range 0 to 3           := 0;
+    CPU_RF_ARCH_SEL       : natural range 0 to 3           := 1; -- map to distributed RAM
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       : natural range 0 to 16          := 0;
     PMP_MIN_GRANULARITY   : natural                        := 4;
