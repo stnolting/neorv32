@@ -67,7 +67,7 @@ entity neorv32_top is
     CPU_CONSTT_BR_EN      : boolean                        := false;       -- enable constant-time branches
     CPU_FAST_MUL_EN       : boolean                        := false;       -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN     : boolean                        := false;       -- use barrel shifter for shift operations
-    CPU_RF_HW_RST_EN      : boolean                        := false;       -- enable full hardware reset for register file
+    CPU_RF_ARCH_SEL       : natural range 0 to 2           := 0;           -- register file implementation style select
 
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       : natural range 0 to 16          := 0;           -- number of regions (0..16)
@@ -522,7 +522,7 @@ begin
       CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
       CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
-      CPU_RF_HW_RST_EN    => CPU_RF_HW_RST_EN,
+      CPU_RF_ARCH_SEL     => CPU_RF_ARCH_SEL,
       -- Physical Memory Protection (PMP) --
       PMP_NUM_REGIONS     => PMP_NUM_REGIONS,
       PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY,
