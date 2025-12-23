@@ -121,7 +121,7 @@ void neorv32_gptmr_disable_mask(uint16_t mask) {
  * @param[in] sel Timer slice to enable (0..15).
  * @param[in] cnt Initial counter value (32-bit).
  * @param[in] thr Counter threshold value (32-bit).
- * @param[in] Mode Operation mode: 0 = continuous mode, 1 = single-shot mode.
+ * @param[in] Mode Operation mode: 0 = single-shot mode, 1 = continuous mode.
  **************************************************************************/
 void neorv32_gptmr_configure(int sel, uint32_t cnt, uint32_t thr, int mode) {
 
