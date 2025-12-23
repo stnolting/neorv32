@@ -46,7 +46,7 @@ end neorv32_prim_fifo;
 architecture neorv32_prim_fifo_rtl of neorv32_prim_fifo is
 
   -- memory core --
-  type ram_t is array (0 to (2**AWIDTH)-1) of std_ulogic_vector(DWIDTH-1 downto 0);
+  type ram_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
   signal fifo : ram_t;
 
   -- local signals --
@@ -185,7 +185,7 @@ end neorv32_prim_spram;
 
 architecture neorv32_prim_spram_rtl of neorv32_prim_spram is
 
-  type ram_t is array (0 to (2**AWIDTH)-1) of std_ulogic_vector(DWIDTH-1 downto 0);
+  type ram_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
   signal spram : ram_t;
   signal rdata : std_ulogic_vector(DWIDTH-1 downto 0);
 
@@ -268,7 +268,7 @@ end neorv32_prim_sdpram;
 
 architecture neorv32_prim_sdpram_rtl of neorv32_prim_sdpram is
 
-  type ram_t is array (0 to (2**AWIDTH)-1) of std_ulogic_vector(DWIDTH-1 downto 0);
+  type ram_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
   signal sdpram : ram_t;
   signal a_rdata, b_rdata : std_ulogic_vector(DWIDTH-1 downto 0);
 

@@ -1,10 +1,9 @@
 -- ================================================================================ --
 -- NEORV32 CPU - CPU Top Entity                                                     --
 -- -------------------------------------------------------------------------------- --
--- HQ:           https://github.com/stnolting/neorv32                               --
--- Data Sheet:   https://stnolting.github.io/neorv32                                --
--- User Guide:   https://stnolting.github.io/neorv32/ug                             --
--- Software Ref: https://stnolting.github.io/neorv32/sw/files.html                  --
+-- HQ:         https://github.com/stnolting/neorv32                                 --
+-- Data Sheet: https://stnolting.github.io/neorv32                                  --
+-- User Guide: https://stnolting.github.io/neorv32/ug                               --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -61,7 +60,7 @@ entity neorv32_cpu is
     CPU_CONSTT_BR_EN    : boolean;                        -- constant-time branches
     CPU_FAST_MUL_EN     : boolean;                        -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   : boolean;                        -- use barrel shifter for shift operations
-    CPU_RF_HW_RST_EN    : boolean;                        -- enable full hardware reset for register file
+    CPU_RF_ARCH_SEL     : natural range 0 to 3;           -- register file implementation style select
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS     : natural range 0 to 16;          -- number of regions (0..16)
     PMP_MIN_GRANULARITY : natural;                        -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
@@ -184,11 +183,14 @@ begin
 
     -- CPU tuning options --
     assert false report "[NEORV32] CPU tuning options: " &
-      cond_sel_string_f(CPU_TRACE_EN,      "trace ",      "") &
-      cond_sel_string_f(CPU_CONSTT_BR_EN,  "constt_br ",  "") &
-      cond_sel_string_f(CPU_FAST_MUL_EN,   "fast_mul ",   "") &
-      cond_sel_string_f(CPU_FAST_SHIFT_EN, "fast_shift ", "") &
-      cond_sel_string_f(CPU_RF_HW_RST_EN,  "rf_hw_rst ",  "")
+      cond_sel_string_f(CPU_TRACE_EN,                 "trace ",              "") &
+      cond_sel_string_f(CPU_CONSTT_BR_EN,             "constt_br ",          "") &
+      cond_sel_string_f(CPU_FAST_MUL_EN,              "fast_mul ",           "") &
+      cond_sel_string_f(CPU_FAST_SHIFT_EN,            "fast_shift ",         "") &
+      cond_sel_string_f(boolean(CPU_RF_ARCH_SEL = 0), "rf_arch=sram_sync ",  "") &
+      cond_sel_string_f(boolean(CPU_RF_ARCH_SEL = 1), "rf_arch=sram_async ", "") &
+      cond_sel_string_f(boolean(CPU_RF_ARCH_SEL = 2), "rf_arch=ff ",         "") &
+      cond_sel_string_f(boolean(CPU_RF_ARCH_SEL = 3), "rf_arch=latch ",      "")
       severity note;
 
   end generate;
@@ -336,10 +338,10 @@ begin
   if RISCV_ISA_Zicntr or RISCV_ISA_Zihpm generate
     neorv32_cpu_counters_inst: entity neorv32.neorv32_cpu_counters
     generic map (
-    ZICNTR_EN => RISCV_ISA_Zicntr, -- implement base counters
-    ZIHPM_EN  => RISCV_ISA_Zihpm,  -- implement hardware performance monitors (HPMs)
-    HPM_NUM   => HPM_NUM_CNTS,     -- number of implemented HPM counters (0..13)
-    HPM_WIDTH => HPM_CNT_WIDTH     -- total size of HPM counters (0..64)
+      ZICNTR_EN => RISCV_ISA_Zicntr, -- implement base counters
+      ZIHPM_EN  => RISCV_ISA_Zihpm,  -- implement hardware performance monitors (HPMs)
+      HPM_NUM   => HPM_NUM_CNTS,     -- number of implemented HPM counters (0..13)
+      HPM_WIDTH => HPM_CNT_WIDTH     -- total size of HPM counters (0..64)
     )
     port map (
       -- global control --
@@ -361,8 +363,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_regfile_inst: entity neorv32.neorv32_cpu_regfile
   generic map (
-    RST_EN => CPU_RF_HW_RST_EN, -- enable dedicated hardware reset ("ASIC style")
-    RVE_EN => RISCV_ISA_E       -- implement embedded RF extension
+    RVE_EN   => RISCV_ISA_E,    -- implement embedded RF extension
+    ARCH_SEL => CPU_RF_ARCH_SEL -- architecture style select
   )
   port map (
     -- global control --

@@ -122,11 +122,6 @@ these two bus interfaces are merged into a single processor-internal bus via a p
 have higher priority). Hence, _all_ memory addresses including peripheral devices are mapped to a single unified 32-bit
 <<_address_space>>.
 
-.Linear/In-Order Execution Only
-[NOTE]
-The CPU does not perform any speculative/out-of-order operations at all. Hence, it is not vulnerable to security issues
-caused by speculative execution (like Spectre or Meltdown).
-
 .No Hardware Support for Misaligned Memory Accesses
 [IMPORTANT]
 The CPU does not support resolving unaligned memory access by the hardware. Any kind of
@@ -137,39 +132,81 @@ See section <<_application_context_handling>> for more information.
 :sectnums:
 ==== CPU Register File
 
-The data register file contains the general purpose architecture registers `x0` to `x31`. For the `rv32e` ISA only the lower
-16 registers are implemented. Register zero (`x0`/`zero`) always read as zero and any write access to it has no effect.
-Up to four individual synchronous read ports allow to fetch up to 4 register operands at once. The write and read accesses
-are mutually exclusive as they happen in separate cycles. Hence, there is no need to consider things like "read-during-write"
-behavior.
+The data register file (VHDL file `neorv32_cpu_regfile.vhd`) implements the general purpose RISC-V architecture registers
+`x0` to `x31`. For the "embedded" `rv32e` ISA option only the lower 16 registers are implemented. Register zero (`x0`/`zero`)
+always reads as zero and any write access to it has no effect. Read and write accesses are mutually exclusive as they occur
+in different execution cycles. Hence, the "read-during-write" behavior of the register file is irrelevant.
 
-.Memory Primitive Tuning Options
+The register file can be realized using different architecture styles to optimize the implementation for the target
+platform/technology. The `CPU_RF_ARCH_SEL` <<_cpu_tuning_options, CPU tuning option>> generic is used to select a
+specific architecture style:
+
+.CPU Register File Implementation Flavors
+[cols="<2,<4,<4"]
+[options="header",grid="rows"]
+|=======================
+| `CPU_RF_ARCH_SEL`    | Implementation Style                       | Note
+| **0** (`sram_sync`)  | <<_register_based_with_synchronous_read>>  | can infer FPGA block-RAM
+| **1** (`sram_async`) | <<_register_based_with_asynchronous_read>> | can infer FPGA distributed-RAM
+| **2** (`ff`)         | <<_flipflop_based>>                        | provides a full hardware reset
+| **3** (`latch`)      | <<_latch_based>>                           | improved efficiency for ASIC implementations
+|=======================
+
+.No Hardware Reset
+[IMPORTANT]
+Apart from the <<_flipflop_based>> style, the register file does not provide a dedicated hardware reset. Hence, all `x`
+registers power-up in an undefined state and need software-based initialization (e.g. by the <<_start_up_code_crt0>>).
+
+.Technology-Specific Register File
 [TIP]
-The physical implementation of the register file's memory core can be tuned for FPGA or ASIC implementation.
-See section <<_cpu_rf_hw_rst_en>> tuning option for more information.
+For maximum efficiency regarding area, performance and energy the default register file VHDL module can be replaced
+by a platform-/technology-specific macro or primitive.
 
-.Implementation of the `zero` Register within FPGA Block RAM
-[NOTE]
-Register `zero` is also mapped to a _physical memory location_ within the register file's block RAM. By this, there is no need
-to add a further multiplexer to "insert" zero if reading from register `zero` reducing logic requirements and shortening the
-critical path. However, this also requires that the physical storage bits of register `zero` are explicitly initialized (set
-to zero) by the hardware. This is done transparently by the CPU control requiring no additional processing overhead.
+[discrete]
+===== Register-Based with Synchronous Read
 
-.Block RAM Ports
-[NOTE]
-The default register file configuration uses two access ports: a read-only port for reading register `rs2` (second source operand)
-and a read/write port for reading register `rs1` (first source operand) and for writing processing results to register `rd`
-(destination register). Hence, a simple dual-port RAM can be used to implement the entire register file. From a functional point
-of view, read and write accesses to the register file do never occur in the same clock cycle, so no bypass logic is required at all.
+This style implements the architecture registers as register-based SRAM array forming a synchronous simple-dual-port
+RAM. One port is used in time division multiplexing for writing (`rd`) and reading the first operand (`rs1`). The
+second port is used exclusively for reading the second operand (`rs2`). Read and write accesses are implemented as
+synchronous operations triggering on the rising clock edge. Hence, this architecture style can infer **FPGA block RAM**.
+
+The `x0`/`zero` register is also implemented as another physical register within the RAM. However, this requires that
+these register bits are explicitly initialized (set to zero) by the hardware. This is done transparently by the CPU
+control without requiring additional processing effort.
+
+[discrete]
+===== Register-Based with Asynchronous Read
+
+For this style, the register file is implemented as register-based SRAM, too. Writing data (`rd`) and reading
+operands (`rs1` & `rs2`) is performed by three individual port, whereby the read accesses are implemented _asynchronously_.
+Hence, this architecture style can infer **FPGA distributed RAM**. If the `x0`/`zero` register is read, the respective
+operand is masked before the read data is buffered in the operand output register.
+
+[discrete]
+===== FlipFlop-Based
+
+The register file can also be constructed from individual synchronous flip flops (edge triggered registers).
+No flip flops are implemented for architecture register `x0`/`zero` which is hardwired to zero. In contrast to
+the other architecture styles, this implementation flavor provides a **dedicated hardware reset** that
+initializes all flip-flops to zero during system reset.
+
+[discrete]
+===== Latch-Based
+
+The latch-based architecture version implements the individual architecture registers as simple latches that are
+transparent during the low phase of the clock. A data input register (for `rd`) and two output registers (for
+`rs1` & `rs2`) ensure correct control and improved timing. No latches are implemented for architecture register
+`x0`/`zero`; it is hardwired to zero. This architecture styles provides superior performance and area efficiency
+for **ASIC implementations** when based on standard cells.
 
 
 :sectnums:
 ==== CPU Arithmetic Logic Unit
 
-The arithmetic/logic unit (ALU) is used for actual data processing as well as generating memory and branch addresses.
-All "simple" <<_i_isa_extension>> computational instructions (like `add` and `or`) are implemented as plain combinatorial logic
-requiring only a single cycle to complete. More sophisticated instructions like shift operations or multiplications are processed
-by so-called "ALU co-processors".
+The arithmetic/logic unit ("ALU", VHDL file `neorv32_cpu_alu.vhd`) is used for actual data processing as well as generating
+memory and branch addresses. All "simple" <<_i_isa_extension>> computational instructions (like `add` and `or`) are implemented
+as plain combinatorial logic requiring only a single cycle to complete. More sophisticated instructions like shift operations
+or multiplications are processed by so-called "ALU co-processors".
 
 The co-processors are implemented as iterative units that require several cycles to complete processing. Besides the base ISA's
 shift instructions, the co-processors are used to implement all further unprivileged ISA extensions (e.g. <<_m_isa_extension>>,
@@ -179,16 +216,17 @@ corruption of the co-processor's internal state (like FPU CSRs).
 
 .Multi-Cycle Execution Monitor
 [NOTE]
-The CPU control will raise an illegal instruction exception if a multi-cycle functional unit (like the <<_custom_functions_unit_cfu>>)
-does not complete processing in a bound amount of time (configured via the package's `alu_cp_tmo_c` constant; default = 512 clock cycles).
+The CPU control will raise an illegal instruction exception if a multi-cycle functional unit (like the
+<<_custom_functions_unit_cfu>>) does not complete processing in a bound amount of time (configured via
+the package's `alu_cp_tmo_c` constant; default = 512 clock cycles).
 
 
 :sectnums:
 ==== CPU Bus Unit
 
-The bus unit takes care of handling data memory accesses via load and store instructions. It handles data adjustment when accessing
-sub-word data quantities (16-bit or 8-bit) and performs sign-extension for singed load operations. The bus unit also includes the optional
-<<_smpmp_isa_extension>> that performs permission checks for all data and instruction accesses.
+The bus or load/store unit (VHDL file `neorv32_cpu_lsu.vhd`) takes care of handling data memory accesses via load and store
+instructions. It performs data adjustment when accessing sub-word data quantities (16-bit or 8-bit) and applies sign-extension
+for singed load operations.
 
 A list of the bus interface signals and a detailed description of the protocol can be found in section <<_bus_interface>>.
 All bus interface signals are driven/buffered by registers; so even a complex SoC interconnection bus network will not
@@ -237,7 +275,7 @@ branch delta tracing. Furthermore, trace data can also be made available externa
 
 Trace data is generated by the CPU's trace generator (VHDL file `neorv32_cpu_trace.vhd`), which is enabled if either the
 <<_execution_trace_buffer_tracer>> is implemented of if the external trace ports are enabled by the `TRACE_PORT_EN`
-<<_processor_top_entity_signals, top generic>> (via the CPU core's <<_cpu_trace_en>> tuning option).
+<<_processor_top_entity_generics, top generic>> (via the CPU core's <<_cpu_trace_en>> tuning option).
 
 The trace port protocol is partly compatible to the **RISC-V Formal Interface (RVFI)** defined by Yosys
 (https://yosyshq.readthedocs.io/projects/riscv-formal/en/latest/rvfi.html).
@@ -368,19 +406,16 @@ approach requires only a few hardware resources and does not impact the critical
 
 {empty} +
 [discrete]
-===== **`CPU_RF_HW_RST_EN`**
+===== **`CPU_RF_ARCH_SEL`**
 
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
 |=======================
-| Name        | Register file hardware reset
-| Type        | `boolean`
-| Default     | `false` (disabled)
-| Description | When **enabled** the CPU register file is implemented using single flip flops that provide a full hardware reset.
-The register file is reset to all-zero after each hardware reset. Note that this options requires a lot of flip flops and LUTs to
-build the register file. However, timing might be optimized as there is no need to route to far blockRAM resources.
-|             | When **disabled** the CPU register file is implemented in a way to allow synthesis to infer memory primitives
-like blockRAM. Note that these primitives do not provide any kind of hardware reset. Hence, the data content is undefined after reset.
+| Name        | Register file implementation style
+| Type        | `natural` (0..2)
+| Default     | `0` (simple-dual-port RAM with synchronous read)
+| Description | This variable can be used to select a specific architecture for the CPU's general-purpose register file that
+can be implemented most efficiently for the target platform/technology. see section <<_cpu_register_file>>.
 |=======================
 
 
