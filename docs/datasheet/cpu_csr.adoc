@@ -846,7 +846,8 @@ software and are not accessible for lower-privileged software.
 | Address     | `0xf11`
 | Reset value | `0x00000000`
 | ISA         | `Zicsr`
-| Description | Read-only and hardwired to zero.
+| Description | This register is hardwired to the value provided by the `OCD_JEDEC_ID` <<_processor_top_entity_generics>>
+(the upper bits are filled with zeros).
 |=======================
 
 
