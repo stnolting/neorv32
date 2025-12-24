@@ -484,6 +484,7 @@ begin
     generic map (
       -- General --
       HART_ID             => i,
+      VENDOR_ID           => (others => '0'),
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,
