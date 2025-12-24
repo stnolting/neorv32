@@ -7,6 +7,7 @@
 -- + Zbs:  Single-bit instructions                                                  --
 -- + Zbkb: Bit-manipulation instructions for cryptography                           --
 -- + Zbkc: Carry-less multiplication instructions for cryptography                  --
+-- + Zbkx: Crossbar permutation instructions for cryptography                       --
 -- [NOTE] RISC-V "B" ISA Extension = Zba + Zbb + Zbs                                --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
@@ -26,11 +27,12 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_cp_bitmanip is
   generic (
     EN_FAST_SHIFT : boolean; -- use barrel shifter for shift operations
-    EN_ZBA        : boolean; -- enable address-generation instructions
-    EN_ZBB        : boolean; -- enable basic bit-manipulation instructions
-    EN_ZBKC       : boolean; -- enable carry-less multiplication instructions
-    EN_ZBKB       : boolean; -- enable bit-manipulation instructions for cryptography
-    EN_ZBS        : boolean  -- enable single-bit instructions
+    EN_ZBA        : boolean; -- address-generation instructions
+    EN_ZBB        : boolean; -- basic bit-manipulation instructions
+    EN_ZBKC       : boolean; -- carry-less multiplication instructions for cryptography
+    EN_ZBKB       : boolean; -- bit-manipulation instructions for cryptography
+    EN_ZBKX       : boolean; -- crossbar permutation instructions for cryptography
+    EN_ZBS        : boolean  -- single-bit instructions
   );
   port (
     -- global control --
@@ -78,33 +80,67 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
     return cnt_v;
   end function popcount_f;
 
-  -- Zbb --
-  constant op_andn_c  : natural := 0; -- logic with negate
-  constant op_orn_c   : natural := 1; -- logic with negate
-  constant op_xnor_c  : natural := 2; -- logic with negate
-  constant op_cz_c    : natural := 3; -- count leading/trailing zeros
-  constant op_cpop_c  : natural := 4; -- count population
-  constant op_max_c   : natural := 5; -- signed/unsigned minimum/maximum
-  constant op_sext_c  : natural := 6; -- sign extension
-  constant op_zexth_c : natural := 7; -- zero extension
-  constant op_rot_c   : natural := 8; -- bitwise rotation
-  constant op_orcb_c  : natural := 9; -- or-combine
+  -- byte-wise vector look-up --
+  function xperm8_f(vec : std_ulogic_vector(31 downto 0); sel : std_ulogic_vector(7 downto 0)) return std_ulogic_vector is
+    variable res_v : std_ulogic_vector(7 downto 0);
+  begin
+    if (sel(7 downto 2) /= "000000") then -- index out of range
+      res_v := (others => '0');
+    else
+      case sel(1 downto 0) is
+        when "00"   => res_v := vec(7 downto 0);
+        when "01"   => res_v := vec(15 downto 8);
+        when "10"   => res_v := vec(23 downto 16);
+        when others => res_v := vec(31 downto 24);
+      end case;
+    end if;
+    return res_v;
+  end function xperm8_f;
+
+  -- nibble-wise vector look-up --
+  function xperm4_f(vec : std_ulogic_vector(31 downto 0); sel : std_ulogic_vector(3 downto 0)) return std_ulogic_vector is
+    variable res_v : std_ulogic_vector(3 downto 0);
+  begin
+    if (sel(3) /= '0') then -- index out of range
+      res_v := (others => '0');
+    else
+      case sel(2 downto 0) is
+        when "000"  => res_v := vec(3 downto 0);
+        when "001"  => res_v := vec(7 downto 4);
+        when "010"  => res_v := vec(11 downto 8);
+        when "011"  => res_v := vec(15 downto 12);
+        when "100"  => res_v := vec(19 downto 16);
+        when "101"  => res_v := vec(23 downto 20);
+        when "110"  => res_v := vec(27 downto 24);
+        when others => res_v := vec(31 downto 28);
+      end case;
+    end if;
+    return res_v;
+  end function xperm4_f;
+
+  -- instruction select (one-hot) --
+  constant op_andn_c  : natural := 0;  -- logic with negate
+  constant op_orn_c   : natural := 1;  -- logic with negate
+  constant op_xnor_c  : natural := 2;  -- logic with negate
+  constant op_cz_c    : natural := 3;  -- count leading/trailing zeros
+  constant op_cpop_c  : natural := 4;  -- count population
+  constant op_max_c   : natural := 5;  -- signed/unsigned minimum/maximum
+  constant op_sext_c  : natural := 6;  -- sign extension
+  constant op_zexth_c : natural := 7;  -- zero extension
+  constant op_rot_c   : natural := 8;  -- bit-wise rotation
+  constant op_orcb_c  : natural := 9;  -- or-combine
   constant op_rev8_c  : natural := 10; -- byte-reverse
-  -- Zba --
   constant op_shadd_c : natural := 11; -- shifted-add
-  -- Zbs --
   constant op_bclr_c  : natural := 12; -- single bit clear
   constant op_bext_c  : natural := 13; -- single bit extract
   constant op_binv_c  : natural := 14; -- single bit invert
   constant op_bset_c  : natural := 15; -- single bit set
-  -- Zbkb (extending Zbb) --
   constant op_pack_c  : natural := 16; -- pack bytes/halves
   constant op_zip_c   : natural := 17; -- (de)interleave
   constant op_brev8_c : natural := 18; -- byte-wise bit-reverse
-  -- Zbkc --
   constant op_clmul_c : natural := 19; -- carry-less multiplication
-  --
-  constant op_width_c : natural := 20;
+  constant op_xperm_c : natural := 20; -- crossbar permutation
+  constant op_width_c : natural := 21;
 
   -- controller --
   type ctrl_state_t is (S_IDLE, S_START, S_BUSY);
@@ -148,7 +184,7 @@ architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
   -- operation/intermediate results --
   type res_t is array (0 to op_width_c-1) of std_ulogic_vector(31 downto 0);
   signal res_int, res_out : res_t;
-  signal adder_res, one_hot_res, zip_res, unzip_res : std_ulogic_vector(31 downto 0);
+  signal xperm4_res, xperm8_res, adder_res, one_hot_res, zip_res, unzip_res : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -185,6 +221,9 @@ begin
 
   -- Zbkc - Carry-less multiplication instructions --
   cmd(op_clmul_c) <= '1' when EN_ZBKC and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000101") and (ctrl_i.ir_funct3(2) = '0') and (ctrl_i.ir_funct3(0) = '1') else '0'; -- CLMUL[H]
+
+  -- Zbkx - Crossbar permutations --
+  cmd(op_xperm_c) <= '1' when EN_ZBKX and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0010100") and ((ctrl_i.ir_funct3 = "100") or (ctrl_i.ir_funct3 = "010")) else '0'; -- XPERM[4/8]
 
   -- Valid Instruction? --
   valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and (or_reduce_f(cmd) = '1') else '0';
@@ -409,6 +448,32 @@ begin
   end generate;
 
 
+  -- Crossbar Permutations ------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  xperm_enable:
+  if EN_ZBKX generate
+
+    -- byte-wise vector look-up --
+    xperm8_gen:
+    for i in 0 to 3 generate
+      xperm8_res(8*i+7 downto 8*i+0) <= xperm8_f(rs1_reg, rs2_reg(8*i+7 downto 8*i+0));
+    end generate;
+
+    -- nibble-wise vector look-up --
+    xperm4_gen:
+    for i in 0 to 7 generate
+      xperm4_res(4*i+3 downto 4*i+0) <= xperm4_f(rs1_reg, rs2_reg(4*i+3 downto 4*i+0));
+    end generate;
+
+  end generate;
+
+  xperm_disable:
+  if not EN_ZBKX generate
+    xperm8_res <= (others => '0');
+    xperm4_res <= (others => '0');
+  end generate;
+
+
   -- Operation Results ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- logic with negate --
@@ -484,6 +549,9 @@ begin
   -- carry-less multiplication --
   res_int(op_clmul_c) <= clmul.res(63 downto 32) when (ctrl_i.ir_funct3(1) = '1') else clmul.res(31 downto 0);
 
+  -- crossbar permutation --
+  res_int(op_xperm_c) <= xperm8_res when (ctrl_i.ir_funct3(2) = '1') else xperm4_res;
+
 
   -- Output Select --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -507,6 +575,7 @@ begin
   res_out(op_zip_c)   <= res_int(op_zip_c)   when EN_ZBKB             and (cmd(op_zip_c)   = '1') else (others => '0');
   res_out(op_brev8_c) <= res_int(op_brev8_c) when EN_ZBKB             and (cmd(op_brev8_c) = '1') else (others => '0');
   res_out(op_clmul_c) <= res_int(op_clmul_c) when EN_ZBKC             and (cmd(op_clmul_c) = '1') else (others => '0');
+  res_out(op_xperm_c) <= res_int(op_xperm_c) when EN_ZBKX             and (cmd(op_xperm_c) = '1') else (others => '0');
 
 
   -- Output Gate ----------------------------------------------------------------------------
@@ -516,13 +585,15 @@ begin
     if (rstn_i = '0') then
       res_o <= (others => '0');
     elsif rising_edge(clk_i) then
-      res_o <= (others => '0'); -- default
+      res_o <= (others => '0');
       if (valid = '1') then
-        res_o <= res_out(op_andn_c) or res_out(op_orn_c)  or res_out(op_xnor_c)  or res_out(op_cz_c)    or
-                 res_out(op_cpop_c) or res_out(op_max_c)  or res_out(op_sext_c)  or res_out(op_zexth_c) or
-                 res_out(op_rot_c)  or res_out(op_orcb_c) or res_out(op_rev8_c)  or res_out(op_shadd_c) or
-                 res_out(op_bclr_c) or res_out(op_bext_c) or res_out(op_binv_c)  or res_out(op_bset_c)  or
-                 res_out(op_pack_c) or res_out(op_zip_c)  or res_out(op_brev8_c) or res_out(op_clmul_c);
+        res_o <= res_out(op_andn_c)  or res_out(op_orn_c)   or res_out(op_xnor_c)  or
+                 res_out(op_cz_c)    or res_out(op_cpop_c)  or res_out(op_max_c)   or
+                 res_out(op_sext_c)  or res_out(op_zexth_c) or res_out(op_rot_c)   or
+                 res_out(op_orcb_c)  or res_out(op_rev8_c)  or res_out(op_shadd_c) or
+                 res_out(op_bclr_c)  or res_out(op_bext_c)  or res_out(op_binv_c)  or
+                 res_out(op_bset_c)  or res_out(op_pack_c)  or res_out(op_zip_c)   or
+                 res_out(op_brev8_c) or res_out(op_clmul_c) or res_out(op_xperm_c);
       end if;
     end if;
   end process output_gate;
