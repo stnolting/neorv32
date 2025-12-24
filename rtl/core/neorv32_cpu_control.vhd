@@ -19,6 +19,7 @@ entity neorv32_cpu_control is
   generic (
     -- General --
     HART_ID          : natural range 0 to 1023;        -- hardware thread ID
+    VENDOR_ID        : std_ulogic_vector(31 downto 0); -- vendor ID (JDEC bank ID + offset)
     BOOT_ADDR        : std_ulogic_vector(31 downto 0); -- boot address
     DEBUG_PARK_ADDR  : std_ulogic_vector(31 downto 0); -- debug-mode parking loop entry address, 4-byte aligned
     DEBUG_EXC_ADDR   : std_ulogic_vector(31 downto 0); -- debug-mode exception entry address, 4-byte aligned
@@ -1199,9 +1200,10 @@ begin
           -- --------------------------------------------------------------------
           -- machine information
           -- --------------------------------------------------------------------
-          when csr_marchid_c => csr_rdata(4 downto 0) <= "10011"; -- architecture ID
-          when csr_mimpid_c  => csr_rdata <= hw_version_c; -- implementation ID
-          when csr_mhartid_c => csr_rdata(9 downto 0) <= std_ulogic_vector(to_unsigned(HART_ID, 10)); -- hardware thread ID
+          when csr_mvendorid_c => csr_rdata <= VENDOR_ID; -- vendor ID (JDEC bank ID + offset)
+          when csr_marchid_c   => csr_rdata(4 downto 0) <= "10011"; -- architecture ID
+          when csr_mimpid_c    => csr_rdata <= hw_version_c; -- implementation ID
+          when csr_mhartid_c   => csr_rdata(9 downto 0) <= std_ulogic_vector(to_unsigned(HART_ID, 10)); -- hardware thread ID
 
           -- --------------------------------------------------------------------
           -- debug-mode

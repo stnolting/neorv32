@@ -22,6 +22,7 @@ entity neorv32_cpu is
   generic (
     -- General --
     HART_ID             : natural range 0 to 1023;        -- hardware thread ID
+    VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor ID (JDEC bank ID + offset)
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- CPU boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- CPU debug mode parking loop entry address
     DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- CPU debug mode exception entry address
@@ -97,6 +98,7 @@ end neorv32_cpu;
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
+  constant rf_awidth_c : natural := cond_sel_natural_f(RISCV_ISA_E, 4, 5); -- register file address width
   constant riscv_a_c   : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
   constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
   constant riscv_zcb_c : boolean := RISCV_ISA_C and RISCV_ISA_Zcb; -- Zcb: additional compressed instructions
@@ -105,9 +107,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
                                     RISCV_ISA_Zkne and RISCV_ISA_Zknd and RISCV_ISA_Zknh; -- Zkn: NIST suite
   constant riscv_zks_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
                                     RISCV_ISA_Zksh and RISCV_ISA_Zksed; -- Zks: ShangMi suite
-
-  -- external CSR interface read-back --
-  signal xcsr_tm, xcsr_cnt, xcsr_pmp, xcsr_alu, xcsr_res : std_ulogic_vector(31 downto 0);
 
   -- local signals --
   signal ctrl        : ctrl_bus_t;                     -- main control bus
@@ -120,17 +119,20 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal rf_wdata    : std_ulogic_vector(31 downto 0); -- register file write data
   signal rs1         : std_ulogic_vector(31 downto 0); -- source register 1
   signal rs2         : std_ulogic_vector(31 downto 0); -- source register 2
-  signal alu_res     : std_ulogic_vector(31 downto 0); -- alu result
-  signal alu_add     : std_ulogic_vector(31 downto 0); -- alu address result
+  signal alu_res     : std_ulogic_vector(31 downto 0); -- ALU result
+  signal alu_add     : std_ulogic_vector(31 downto 0); -- ALU address result
   signal alu_cmp     : std_ulogic_vector(1 downto 0);  -- comparator result
-  signal alu_cp_done : std_ulogic;                     -- alu co-processor operation done
-  signal lsu_rdata   : std_ulogic_vector(31 downto 0); -- lsu memory read data
-  signal lsu_mar     : std_ulogic_vector(31 downto 0); -- lsu memory address register
-  signal lsu_err     : std_ulogic_vector(3 downto 0);  -- lsu alignment/access errors
+  signal alu_cp_done : std_ulogic;                     -- ALU co-processor operation done
+  signal lsu_rdata   : std_ulogic_vector(31 downto 0); -- LSU memory read data
+  signal lsu_mar     : std_ulogic_vector(31 downto 0); -- LSU memory address register
+  signal lsu_err     : std_ulogic_vector(3 downto 0);  -- LSU alignment/access errors
   signal lsu_wait    : std_ulogic;                     -- wait for current data bus access
   signal dbus_req    : bus_req_t;                      -- data bus request
-  signal csr_rdata   : std_ulogic_vector(31 downto 0); -- csr read data
-  signal irq_machine : std_ulogic_vector(2 downto 0);  -- risc-v standard machine-level interrupts
+  signal csr_rdata   : std_ulogic_vector(31 downto 0); -- CSR read data
+  signal irq_machine : std_ulogic_vector(2 downto 0);  -- RISC-V standard machine-level interrupts
+
+  -- external CSR interface read-back --
+  signal xcsr_tm, xcsr_cnt, xcsr_pmp, xcsr_alu, xcsr_res : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -150,7 +152,7 @@ begin
       cond_sel_string_f(true,             "x",         "" ) & -- always enabled
       cond_sel_string_f(RISCV_ISA_Zaamo,  "_zaamo",    "" ) &
       cond_sel_string_f(RISCV_ISA_Zalrsc, "_zalrsc",   "" ) &
-      cond_sel_string_f(RISCV_ISA_C,      "_zca",      "" ) & -- Zcb requires Zca (=C) in the ISA string
+      cond_sel_string_f(RISCV_ISA_C,      "_zca",      "" ) &
       cond_sel_string_f(riscv_zcb_c,      "_zcb",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zba,    "_zba",      "" ) &
       cond_sel_string_f(RISCV_ISA_Zbb,    "_zbb",      "" ) &
@@ -189,7 +191,7 @@ begin
       cond_sel_string_f(CPU_FAST_SHIFT_EN,            "fast_shift ",         "") &
       cond_sel_string_f(boolean(CPU_RF_ARCH_SEL = 0), "rf_arch=sram_sync ",  "") &
       cond_sel_string_f(boolean(CPU_RF_ARCH_SEL = 1), "rf_arch=sram_async ", "") &
-      cond_sel_string_f(boolean(CPU_RF_ARCH_SEL = 2), "rf_arch=ff ",         "") &
+      cond_sel_string_f(boolean(CPU_RF_ARCH_SEL = 2), "rf_arch=reg",         "") &
       cond_sel_string_f(boolean(CPU_RF_ARCH_SEL = 3), "rf_arch=latch ",      "")
       severity note;
 
@@ -227,6 +229,7 @@ begin
   generic map (
     -- General --
     HART_ID          => HART_ID,          -- hardware thread ID
+    VENDOR_ID        => VENDOR_ID,        -- vendor ID (JDEC bank ID + offset)
     BOOT_ADDR        => BOOT_ADDR,        -- CPU boot address
     DEBUG_PARK_ADDR  => DEBUG_PARK_ADDR,  -- CPU debug mode parking loop entry address
     DEBUG_EXC_ADDR   => DEBUG_EXC_ADDR,   -- CPU debug mode exception entry address
@@ -363,7 +366,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_regfile_inst: entity neorv32.neorv32_cpu_regfile
   generic map (
-    RVE_EN   => RISCV_ISA_E,    -- implement embedded RF extension
+    DWIDTH   => 32,             -- data width
+    AWIDTH   => rf_awidth_c,    -- address width
     ARCH_SEL => CPU_RF_ARCH_SEL -- architecture style select
   )
   port map (
@@ -475,7 +479,7 @@ begin
       i_priv_i => if_pmp_priv,   -- access privilege
       i_err_o  => if_pmp_err,    -- PMP fault
       -- data access check --
-      d_addr_i => alu_add,       -- access address [use "rs1 + ctrl.alu_imm" to improve timing?]
+      d_addr_i => alu_add,       -- access address
       d_priv_i => ctrl.lsu_priv, -- access privilege
       d_err_o  => rw_pmp_err     -- PMP fault
     );
