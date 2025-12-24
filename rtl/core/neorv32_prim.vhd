@@ -424,7 +424,7 @@ end neorv32_prim_cnt;
 architecture neorv32_prim_cnt_rtl of neorv32_prim_cnt is
 
   signal count : std_ulogic_vector(63 downto 0);
-  signal carry, inc : std_ulogic_vector(0 downto 0);
+  signal carry, incen : std_ulogic_vector(0 downto 0);
   signal inc_lo, inc_hi : std_ulogic_vector(32 downto 0);
 
 begin
@@ -434,9 +434,12 @@ begin
   counter_core: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      incen <= (others => '0');
       count <= (others => '0');
       carry <= (others => '0');
     elsif rising_edge(clk_i) then
+      -- increment enable --
+      incen(0) <= inc_i;
       -- low-word --
       if (we_i(0) = '1') then
         count(31 downto 0) <= data_i;
@@ -454,8 +457,7 @@ begin
   end process counter_core;
 
   -- increments --
-  inc(0) <= inc_i;
-  inc_lo <= std_ulogic_vector(unsigned('0' & count(31 downto  0)) + unsigned(inc));
+  inc_lo <= std_ulogic_vector(unsigned('0' & count(31 downto  0)) + unsigned(incen));
   inc_hi <= std_ulogic_vector(unsigned('0' & count(63 downto 32)) + unsigned(carry));
 
   -- Output Gating and Trimming -------------------------------------------------------------
@@ -464,7 +466,7 @@ begin
   begin
     cnt_o <= (others => '0');
     if (oe_i = '1') then
-      cnt_o(CWIDTH-1 downto 0) <= count(CWIDTH-1 downto 0); -- unconnected counter bits should be optimized away
+      cnt_o(CWIDTH-1 downto 0) <= count(CWIDTH-1 downto 0);
     end if;
   end process trim;
 

@@ -114,22 +114,17 @@ begin
   inhibit_rd(63 downto 16) <= (others => '0');
 
 
-  -- Counter Increment Enable ---------------------------------------------------------------
+  -- Counter Increment Enable (no increment during debugging or if inhibited) ---------------
   -- -------------------------------------------------------------------------------------------
-  cnt_increment: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      cnt_inc <= (others => '0');
-    elsif rising_edge(clk_i) then
-      -- increment if an (enabled) event fires; do not increment if CPU is in debug-mode or if counter is inhibited
-      cnt_inc(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not ctrl_i.cpu_debug) and (not inhibit(0));
-      cnt_inc(1) <= '0'; -- [m]time[h] not implemented
-      cnt_inc(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not ctrl_i.cpu_debug) and (not inhibit(2));
-      for i in 3 to 15 loop
-        cnt_inc(i) <= or_reduce_f(ctrl_i.cnt_event and hpmevent(i)) and (not ctrl_i.cpu_debug) and (not inhibit(i));
-      end loop;
-    end if;
-  end process cnt_increment;
+  cnt_inc(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not ctrl_i.cpu_debug) and (not inhibit(0));
+  cnt_inc(1) <= '0'; -- undefined
+  cnt_inc(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not ctrl_i.cpu_debug) and (not inhibit(2));
+
+  -- NEORV32-specific events --
+  event_gen:
+  for i in 3 to 15 generate
+    cnt_inc(i) <= or_reduce_f(ctrl_i.cnt_event and hpmevent(i)) and (not ctrl_i.cpu_debug) and (not inhibit(i));
+  end generate;
 
 
   -- Base Counters (Zicntr) -----------------------------------------------------------------
