@@ -227,6 +227,7 @@ begin
       EN_ZBB        => RISCV_ISA_Zbb,  -- enable basic bit-manipulation instruction
       EN_ZBKB       => RISCV_ISA_Zbkb, -- enable bit-manipulation instructions for cryptography
       EN_ZBKC       => RISCV_ISA_Zbkc, -- enable carry-less multiplication instructions
+      EN_ZBKX       => RISCV_ISA_Zbkx, -- crossbar permutation instructions for cryptography
       EN_ZBS        => RISCV_ISA_Zbs   -- enable single-bit instructions
     )
     port map (
@@ -381,7 +382,6 @@ begin
   if RISCV_ISA_Zbkx or RISCV_ISA_Zknh or RISCV_ISA_Zkne or RISCV_ISA_Zknd or RISCV_ISA_Zksh or RISCV_ISA_Zksed generate
     neorv32_cpu_cp_crypto_inst: entity neorv32.neorv32_cpu_cp_crypto
     generic map (
-      EN_ZBKX  => RISCV_ISA_Zbkx,  -- enable crossbar permutation extension
       EN_ZKNH  => RISCV_ISA_Zknh,  -- enable NIST hash extension
       EN_ZKNE  => RISCV_ISA_Zkne,  -- enable NIST AES encryption extension
       EN_ZKND  => RISCV_ISA_Zknd,  -- enable NIST AES decryption extension

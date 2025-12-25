@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 24.12.2025 | 1.12.5.9 | minor rtl cleanups | [#1461](https://github.com/stnolting/neorv32/pull/1461) |
 | 23.12.2025 | 1.12.5.8 | :sparkles: add new tuning option `CPU_RF_ARCH_SEL` to select implementation style of CPU register file (FPGA block RAM, FPGA distributed RAM, individual FFs, individual latches) | [#1460](https://github.com/stnolting/neorv32/pull/1460) |
 | 21.12.2025 | 1.12.5.7 | :warning: remove `mxcsr` CSR | [#1459](https://github.com/stnolting/neorv32/pull/1459) |
 | 19.12.2025 | 1.12.5.6 | further CPU code cleanups | [#1456](https://github.com/stnolting/neorv32/pull/1456) |

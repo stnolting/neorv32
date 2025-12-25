@@ -84,7 +84,7 @@ The generic type "suv(x:y)" represents a `std_ulogic_vector(x downto y)`.
 |=======================
 | Name | Type | Description
 | `HART_ID`          | natural   | ID of the core (for <<_mhartid>> CSR).
-| `NUM_HARTS`        | natural   | Total number of cores in the system.
+| `VENDOR_ID`        | suv(31:0) | Vendor ID (for <<_mvendorid>> CSR).
 | `BOOT_ADDR`        | suv(31:0) | CPU reset address. See section <<_address_space>>.
 | `DEBUG_PARK_ADDR`  | suv(31:0) | "Park loop" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
 | `DEBUG_EXC_ADDR`   | suv(31:0) | "Exception" entry address for the <<_on_chip_debugger_ocd>>, has to be 4-byte aligned.
@@ -148,7 +148,7 @@ specific architecture style:
 | `CPU_RF_ARCH_SEL`    | Implementation Style                       | Note
 | **0** (`sram_sync`)  | <<_register_based_with_synchronous_read>>  | can infer FPGA block-RAM
 | **1** (`sram_async`) | <<_register_based_with_asynchronous_read>> | can infer FPGA distributed-RAM
-| **2** (`ff`)         | <<_flipflop_based>>                        | provides a full hardware reset
+| **2** (`reg`)        | <<_register_based_with_reset>>             | provides a full hardware reset
 | **3** (`latch`)      | <<_latch_based>>                           | improved efficiency for ASIC implementations
 |=======================
 
@@ -183,12 +183,11 @@ Hence, this architecture style can infer **FPGA distributed RAM**. If the `x0`/`
 operand is masked before the read data is buffered in the operand output register.
 
 [discrete]
-===== FlipFlop-Based
+===== Register-Based with Reset
 
-The register file can also be constructed from individual synchronous flip flops (edge triggered registers).
-No flip flops are implemented for architecture register `x0`/`zero` which is hardwired to zero. In contrast to
-the other architecture styles, this implementation flavor provides a **dedicated hardware reset** that
-initializes all flip-flops to zero during system reset.
+The register file can also be constructed from individual rising-edge-triggered flip flops (registers). No registers
+are implemented for `x0`/`zero` which is hardwired to zero. In contrast to the other architecture styles, this
+implementation flavor provides a **dedicated hardware reset** that initializes all registers to zero during CPU reset.
 
 [discrete]
 ===== Latch-Based
@@ -197,7 +196,7 @@ The latch-based architecture version implements the individual architecture regi
 transparent during the low phase of the clock. A data input register (for `rd`) and two output registers (for
 `rs1` & `rs2`) ensure correct control and improved timing. No latches are implemented for architecture register
 `x0`/`zero`; it is hardwired to zero. This architecture styles provides superior performance and area efficiency
-for **ASIC implementations** when based on standard cells.
+for **ASIC implementations** when realized with standard cells.
 
 
 :sectnums:

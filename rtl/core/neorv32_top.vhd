@@ -272,6 +272,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
   constant cpu_sdtrig_en_c : boolean := OCD_EN and boolean(OCD_NUM_HW_TRIGGERS > 0);
   constant trace_en_c      : boolean := TRACE_PORT_EN or IO_TRACER_EN;
+  constant vendorid_c      : std_ulogic_vector(31 downto 0) := x"00000" & '0' & OCD_JEDEC_ID;
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(IMEM_SIZE), IMEM_SIZE, 2**index_size_f(IMEM_SIZE));
@@ -484,6 +485,7 @@ begin
     generic map (
       -- General --
       HART_ID             => i,
+      VENDOR_ID           => vendorid_c,
       BOOT_ADDR           => cpu_boot_addr_c,
       DEBUG_PARK_ADDR     => dm_park_entry_c,
       DEBUG_EXC_ADDR      => dm_exc_entry_c,

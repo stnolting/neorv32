@@ -2,7 +2,6 @@
 -- NEORV32 CPU - Co-Processor: RISC-V Scalar Cryptography ('Zk*') ISA Extensions    --
 -- -------------------------------------------------------------------------------- --
 -- Supported sub-extensions:                                                        --
--- + Zbkx:  crossbar permutations                                                   --
 -- + Zknh:  NIST suite's hash functions                                             --
 -- + Zkne:  NIST suite's AES encryption                                             --
 -- + Zknd:  NIST suite's AES decryption                                             --
@@ -25,7 +24,6 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_cp_crypto is
   generic (
-    EN_ZBKX  : boolean; -- enable crossbar permutation extension
     EN_ZKNH  : boolean; -- enable NIST hash extension
     EN_ZKNE  : boolean; -- enable NIST AES encryption extension
     EN_ZKND  : boolean; -- enable NIST AES decryption extension
@@ -117,44 +115,6 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   -- helper functions
   -- ----------------------------------------------------------------------------------------
 
-  -- byte-wise vector look-up --
-  function xperm8_f(vec : std_ulogic_vector(31 downto 0); sel : std_ulogic_vector(7 downto 0)) return std_ulogic_vector is
-    variable res_v : std_ulogic_vector(7 downto 0);
-  begin
-    if (sel(7 downto 2) /= "000000") then -- index out of range
-      res_v := (others => '0');
-    else
-      case sel(1 downto 0) is
-        when "00"   => res_v := vec(7 downto 0);
-        when "01"   => res_v := vec(15 downto 8);
-        when "10"   => res_v := vec(23 downto 16);
-        when others => res_v := vec(31 downto 24);
-      end case;
-    end if;
-    return res_v;
-  end function xperm8_f;
-
-  -- nibble-wise vector look-up --
-  function xperm4_f(vec : std_ulogic_vector(31 downto 0); sel : std_ulogic_vector(3 downto 0)) return std_ulogic_vector is
-    variable res_v : std_ulogic_vector(3 downto 0);
-  begin
-    if (sel(3) /= '0') then -- index out of range
-      res_v := (others => '0');
-    else
-      case sel(2 downto 0) is
-        when "000"  => res_v := vec(3 downto 0);
-        when "001"  => res_v := vec(7 downto 4);
-        when "010"  => res_v := vec(11 downto 8);
-        when "011"  => res_v := vec(15 downto 12);
-        when "100"  => res_v := vec(19 downto 16);
-        when "101"  => res_v := vec(23 downto 20);
-        when "110"  => res_v := vec(27 downto 24);
-        when others => res_v := vec(31 downto 28);
-      end case;
-    end if;
-    return res_v;
-  end function xperm4_f;
-
   -- logical shift left --
   function lsl_f(data : std_ulogic_vector(31 downto 0); shamt : natural range 0 to 31) return std_ulogic_vector is
     variable res_v : std_ulogic_vector(31 downto 0);
@@ -197,21 +157,13 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
 
   -- multiply 8-bit field element by 4-bit value for AES MixCols step --
   function gfmul_f(x : std_ulogic_vector(7 downto 0); y : std_ulogic_vector(3 downto 0)) return std_ulogic_vector is
-    variable res_v : std_ulogic_vector(7 downto 0);
+    variable a_v, b_v, c_v, d_v, res_v : std_ulogic_vector(7 downto 0);
   begin
-    res_v := (others => '0');
-    if (y(0) = '1') then
-      res_v := res_v xor x;
-    end if;
-    if (y(1) = '1') then
-      res_v := res_v xor xt2_f(x);
-    end if;
-    if (y(2) = '1') then
-      res_v := res_v xor xt2_f(xt2_f(x));
-    end if;
-    if (y(3) = '1') then
-      res_v := res_v xor xt2_f(xt2_f(xt2_f(x)));
-    end if;
+    if (y(0) = '1') then a_v := x;                      else a_v := x"00"; end if;
+    if (y(1) = '1') then b_v := xt2_f(x);               else b_v := x"00"; end if;
+    if (y(2) = '1') then c_v := xt2_f(xt2_f(x));        else c_v := x"00"; end if;
+    if (y(3) = '1') then d_v := xt2_f(xt2_f(xt2_f(x))); else d_v := x"00"; end if;
+    res_v := a_v xor b_v xor c_v xor d_v;
     return res_v;
   end function gfmul_f;
 
@@ -220,15 +172,14 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   -- ----------------------------------------------------------------------------------------
 
   -- instruction decoder --
-  constant cmd_xperm_c  : natural := 0;
-  constant cmd_sha256_c : natural := 1;
-  constant cmd_sha512_c : natural := 2;
-  constant cmd_aesenc_c : natural := 3;
-  constant cmd_aesdec_c : natural := 4;
-  constant cmd_sm3_c    : natural := 5;
-  constant cmd_sm4_c    : natural := 6;
+  constant cmd_sha256_c : natural := 0;
+  constant cmd_sha512_c : natural := 1;
+  constant cmd_aesenc_c : natural := 2;
+  constant cmd_aesdec_c : natural := 3;
+  constant cmd_sm3_c    : natural := 4;
+  constant cmd_sm4_c    : natural := 5;
   --
-  signal cmd       : std_ulogic_vector(6 downto 0);
+  signal cmd       : std_ulogic_vector(5 downto 0);
   signal cmd_valid : std_ulogic;
 
   -- controller --
@@ -256,8 +207,8 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   end record;
   signal aes : aes_t;
 
-  -- permutation core, sha core, sm3 core --
-  signal xperm_res, xperm4_res, xperm8_res, sha_res, sm3_res, hash_res : std_ulogic_vector(31 downto 0);
+  -- sha core, sm3 core --
+  signal sha_res, sm3_res, hash_res : std_ulogic_vector(31 downto 0);
 
   -- ShangMi core --
   type sm4_t is record
@@ -271,9 +222,6 @@ begin
 
   -- Instruction Decode ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cmd(cmd_xperm_c)  <= '1' when EN_ZBKX and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0010100") and
-                                ((ctrl_i.ir_funct3 = "100") or (ctrl_i.ir_funct3 = "010")) else '0';
-
   cmd(cmd_sha256_c) <= '1' when EN_ZKNH and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 2) = "0001000000") and
                                 (ctrl_i.ir_funct3 = "001") else '0';
 
@@ -352,47 +300,17 @@ begin
     elsif rising_edge(clk_i) then
       res_o <= (others => '0'); -- default
       if (done = '1') then
-        case out_sel is
-          when "100"         => res_o <= xperm_res;
-          when "101" | "110" => res_o <= blk_res;
-          when others        => res_o <= hash_res;
-        end case;
+        if (out_sel = "101") or (out_sel = "110") then
+          res_o <= blk_res;
+        else
+          res_o <= hash_res;
+        end if;
       end if;
     end if;
   end process result;
 
   -- function unit select --
   out_sel <= funct12(9 downto 8) & funct12(5);
-
-
-  -- Crossbar Permutations ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  xperm_enabled:
-  if EN_ZBKX generate
-
-    -- byte-wise vector look-up --
-    xperm8_gen:
-    for i in 0 to 3 generate
-      xperm8_res(8*i+7 downto 8*i+0) <= xperm8_f(rs1, rs2(8*i+7 downto 8*i+0));
-    end generate;
-
-    -- nibble-wise vector look-up --
-    xperm4_gen:
-    for i in 0 to 7 generate
-      xperm4_res(4*i+3 downto 4*i+0) <= xperm4_f(rs1, rs2(4*i+3 downto 4*i+0));
-    end generate;
-
-    -- operation select --
-    xperm_res <= xperm8_res when (funct3(2) = '1') else xperm4_res;
-
-  end generate;
-
-  xperm_disabled:
-  if not EN_ZBKX generate
-    xperm8_res <= (others => '0');
-    xperm4_res <= (others => '0');
-    xperm_res  <= (others => '0');
-  end generate;
 
 
   -- Hash Functions -------------------------------------------------------------------------
