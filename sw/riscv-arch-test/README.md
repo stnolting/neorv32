@@ -66,3 +66,6 @@ external bus interface. This subsystem provides main memory and environment cont
 `riscv-arch-test/riscv-test-suite/env/arch_test.h` to exclude the BREAK exception cause
 from the relocation list as the NEORV32 sets `mtval` to zero for this type of exception.
 This is **explicitly permitted** by the RISC-V priv. spec.
+
+> [!TIP]
+> For advanced profiling and debugging execution trace data can be logged by enabling the `TRACE_EN` generic of the testbench.
