@@ -324,7 +324,7 @@ void neorv32_aux_print_hw_config(void) {
 
   // IDs
   neorv32_uart0_printf(
-    "Vendor ID:           0x%n\n"
+    "Vendor ID:           0x%x\n"
     "Architecture ID:     0x%x\n"
     "Implementation ID:   0x%x\n"
     "Hart ID:             0x%x",
