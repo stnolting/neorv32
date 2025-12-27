@@ -19,7 +19,7 @@ entity neorv32_cpu_control is
   generic (
     -- General --
     HART_ID          : natural range 0 to 1023;        -- hardware thread ID
-    VENDOR_ID        : std_ulogic_vector(31 downto 0); -- vendor ID (JEDEC bank ID + offset)
+    VENDOR_ID        : std_ulogic_vector(31 downto 0); -- vendor ID
     BOOT_ADDR        : std_ulogic_vector(31 downto 0); -- boot address
     DEBUG_PARK_ADDR  : std_ulogic_vector(31 downto 0); -- debug-mode parking loop entry address, 4-byte aligned
     DEBUG_EXC_ADDR   : std_ulogic_vector(31 downto 0); -- debug-mode exception entry address, 4-byte aligned
@@ -231,7 +231,10 @@ begin
     trap.ecall        <= '0';
     trap.ebreak       <= '0';
     ctrl_nxt          <= ctrl_bus_zero_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
-    ctrl_nxt.csr_addr <= ctrl.csr_addr; -- keep previous CSR address
+    ctrl_nxt.csr_addr <= ctrl.csr_addr;   -- keep previous CSR address
+    ctrl_nxt.lsu_rmw  <= ctrl.lsu_rmw;    -- keep memory access type
+    ctrl_nxt.lsu_rsv  <= ctrl.lsu_rsv;
+    ctrl_nxt.lsu_rw   <= ctrl.lsu_rw;
 
     -- immediate --
     case opcode_v is
@@ -248,7 +251,7 @@ begin
     if (opcode_v(4) = '1') then -- ALU ops
       ctrl_nxt.alu_unsigned <= funct3_v(0); -- unsigned ALU operation? (SLTIU, SLTU)
     else -- branches
-      ctrl_nxt.alu_unsigned <= funct3_v(1); -- unsigned branches? (BLTU, BGEU)
+      ctrl_nxt.alu_unsigned <= funct3_v(1); -- unsigned branch? (BLTU, BGEU)
     end if;
 
     -- ALU operands --
@@ -257,21 +260,6 @@ begin
     end if;
     if (opcode_v /= opcode_alu_c) then -- operand B = immediate?
       ctrl_nxt.alu_opb_mux <= '1';
-    end if;
-
-    -- (atomic) memory read/write access --
-    if RISCV_ISA_Zaamo and (opcode_v(2) = opcode_amo_c(2)) and (exec.ir(instr_funct5_lsb_c+1) = '0') then -- atomic read-modify-write operation
-      ctrl_nxt.lsu_rmw <= '1'; -- read-modify-write
-      ctrl_nxt.lsu_rsv <= '0';
-      ctrl_nxt.lsu_rw  <= '0'; -- executed as single load for the CPU control logic
-    elsif RISCV_ISA_Zalrsc and (opcode_v(2) = opcode_amo_c(2)) and (exec.ir(instr_funct5_lsb_c+1) = '1') then -- atomic reservation-set operation
-      ctrl_nxt.lsu_rmw <= '0';
-      ctrl_nxt.lsu_rsv <= '1'; -- reservation-operation
-      ctrl_nxt.lsu_rw  <= exec.ir(instr_funct5_lsb_c);
-    else -- normal load/store
-      ctrl_nxt.lsu_rmw <= '0';
-      ctrl_nxt.lsu_rsv <= '0';
-      ctrl_nxt.lsu_rw  <= exec.ir(instr_opcode_lsb_c+5);
     end if;
 
     -- state machine --
@@ -383,6 +371,19 @@ begin
 
           -- memory access --
           when opcode_load_c | opcode_store_c | opcode_amo_c =>
+            if RISCV_ISA_Zaamo and (opcode_v(2) = opcode_amo_c(2)) and (exec.ir(instr_funct5_lsb_c+1) = '0') then -- atomic read-modify-write operation
+              ctrl_nxt.lsu_rmw <= '1'; -- read-modify-write
+              ctrl_nxt.lsu_rsv <= '0';
+              ctrl_nxt.lsu_rw  <= '0'; -- executed as single load for the CPU control logic
+            elsif RISCV_ISA_Zalrsc and (opcode_v(2) = opcode_amo_c(2)) and (exec.ir(instr_funct5_lsb_c+1) = '1') then -- atomic reservation-set operation
+              ctrl_nxt.lsu_rmw <= '0';
+              ctrl_nxt.lsu_rsv <= '1'; -- reservation-operation
+              ctrl_nxt.lsu_rw  <= exec.ir(instr_funct5_lsb_c);
+            else -- normal load/store
+              ctrl_nxt.lsu_rmw <= '0';
+              ctrl_nxt.lsu_rsv <= '0';
+              ctrl_nxt.lsu_rw  <= exec.ir(instr_opcode_lsb_c+5);
+            end if;
             exec_nxt.state <= S_MEM_REQ;
 
           -- branch / jump-and-link (with register) --
@@ -474,8 +475,8 @@ begin
 
       when others => -- S_SLEEP / undefined state: halt CPU
       -- ------------------------------------------------------------
-        if (or_reduce_f(trap.irq_buf) = '1') or (debug_ctrl.run = '1') or (csr.dcsr_step = '1') then -- enabled pending IRQ, debug-mode, single-step
-          exec_nxt.state <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC
+        if (or_reduce_f(trap.irq_buf) = '1') or (trap.exc_fire = '1') then -- wake up on enabled pending IRQ or if pending exception
+          exec_nxt.state <= S_DISPATCH;
         end if;
 
     end case;
@@ -1200,7 +1201,7 @@ begin
           -- --------------------------------------------------------------------
           -- machine information
           -- --------------------------------------------------------------------
-          when csr_mvendorid_c => csr_rdata <= VENDOR_ID; -- vendor ID (JEDEC bank ID + offset)
+          when csr_mvendorid_c => csr_rdata <= VENDOR_ID; -- vendor ID
           when csr_marchid_c   => csr_rdata(4 downto 0) <= "10011"; -- architecture ID
           when csr_mimpid_c    => csr_rdata <= hw_version_c; -- implementation ID
           when csr_mhartid_c   => csr_rdata(9 downto 0) <= std_ulogic_vector(to_unsigned(HART_ID, 10)); -- hardware thread ID
