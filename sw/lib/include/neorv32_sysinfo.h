@@ -106,6 +106,14 @@ enum NEORV32_SYSINFO_SOC_enum {
 /**@}*/
 
 /**********************************************************************//**
+ * Check if this is a simulation.
+ * @return Non-zero if we are inside the matrix.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_is_sim(void) {
+  return (uint32_t)(NEORV32_SYSINFO->SOC >> SYSINFO_SOC_SIM);
+}
+
+/**********************************************************************//**
  * Get number of processor cores/harts.
  * @return Number of physical CPU cores / harts.
  **************************************************************************/
