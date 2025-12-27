@@ -223,7 +223,7 @@ begin
   );
 
 
-  -- Control Unit (Back-End / Instruction Execution) ----------------------------------------
+  -- Control Unit / Back-End (Instruction Execution) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_control_inst: entity neorv32.neorv32_cpu_control
   generic map (

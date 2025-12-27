@@ -94,7 +94,6 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
   type cp_data_t  is array (0 to 6) of std_ulogic_vector(31 downto 0);
   signal cp_result : cp_data_t;
   signal cp_valid  : std_ulogic_vector(6 downto 0);
-  signal cp_shamt  : std_ulogic_vector(4 downto 0);
 
   -- proxy logic --
   signal fpu_csr_en, fpu_csr_we, cfu_done, cfu_busy : std_ulogic;
@@ -162,9 +161,6 @@ begin
   -- > "cp_result" data has to be always zero unless the specific co-processor has been actually triggered
   cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5) or cp_result(6);
 
-  -- shift amount --
-  cp_shamt <= opb(cp_shamt'left downto 0);
-
 
   -- ALU[I]-Opcode Co-Processor: Shifter Unit (Base ISA) ------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -174,15 +170,15 @@ begin
   )
   port map (
     -- global control --
-    clk_i   => clk_i,        -- global clock, rising edge
-    rstn_i  => rstn_i,       -- global reset, low-active, async
-    ctrl_i  => ctrl_i,       -- main control bus
+    clk_i   => clk_i,           -- global clock, rising edge
+    rstn_i  => rstn_i,          -- global reset, low-active, async
+    ctrl_i  => ctrl_i,          -- main control bus
     -- data input --
-    rs1_i   => rs1_i,        -- rf source 1
-    shamt_i => cp_shamt,     -- shift amount
+    rs1_i   => rs1_i,           -- rf source 1
+    shamt_i => opb(4 downto 0), -- shift amount
     -- result and status --
-    res_o   => cp_result(0), -- operation result
-    valid_o => cp_valid(0)   -- data output valid
+    res_o   => cp_result(0),    -- operation result
+    valid_o => cp_valid(0)      -- data output valid
   );
 
 
@@ -232,17 +228,17 @@ begin
     )
     port map (
       -- global control --
-      clk_i   => clk_i,        -- global clock, rising edge
-      rstn_i  => rstn_i,       -- global reset, low-active, async
-      ctrl_i  => ctrl_i,       -- main control bus
+      clk_i   => clk_i,           -- global clock, rising edge
+      rstn_i  => rstn_i,          -- global reset, low-active, async
+      ctrl_i  => ctrl_i,          -- main control bus
       -- data input --
-      less_i  => cmp_ls,       -- compare less
-      rs1_i   => rs1_i,        -- rf source 1
-      rs2_i   => rs2_i,        -- rf source 2
-      shamt_i => cp_shamt,     -- shift amount
+      less_i  => cmp_ls,          -- compare less
+      rs1_i   => rs1_i,           -- rf source 1
+      rs2_i   => rs2_i,           -- rf source 2
+      shamt_i => opb(4 downto 0), -- shift amount
       -- result and status --
-      res_o   => cp_result(2), -- operation result
-      valid_o => cp_valid(2)   -- data output valid
+      res_o   => cp_result(2),    -- operation result
+      valid_o => cp_valid(2)      -- data output valid
     );
   end generate;
 
