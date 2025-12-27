@@ -850,6 +850,15 @@ software and are not accessible for lower-privileged software.
 (the upper bits are filled with zeros).
 |=======================
 
+.`mvendorid` CSR Bits
+[cols="^2,^2,<6"]
+[options="header",grid="rows"]
+|=======================
+| Bits  | R/W | Description
+|  6:0  | r/- | JEDEC ID offset
+|  31:7 | r/- | JEDEC ID bank
+|=======================
+
 
 {empty} +
 [discrete]
