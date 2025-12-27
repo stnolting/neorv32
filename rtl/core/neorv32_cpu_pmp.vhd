@@ -89,7 +89,10 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
   -- address comparators, region-match and permission check --
   type cmp_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(1 downto 0); -- 0 = instruction fetch, 1 = data access
-  signal cmp_na, cmp_ge, cmp_lt, match, allow : cmp_t;
+  signal cmp_na, cmp_ge, cmp_lt, match : cmp_t;
+
+  -- permission check --
+  signal allow_ex, allow_rw : std_ulogic_vector(NUM_REGIONS-1 downto 0);
 
   -- access check prioritizing logic --
   signal fail_ex, fail_rw : std_ulogic_vector(NUM_REGIONS downto 0);
@@ -267,7 +270,7 @@ begin
   end generate;
 
 
-  -- Region Access and Permission Check Logic -----------------------------------------------
+  -- Region Access Check --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   region_gen:
   for r in 0 to NUM_REGIONS-1 generate
@@ -291,7 +294,6 @@ begin
       cmp_lt(r)(1) <= '1' when (unsigned(d_addr_i(31 downto pmp_lsb_c)) <  unsigned(pmpaddr(r  )(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
     end generate;
 
-
     -- check region match according to configured mode --
     match_gen: process(pmpcfg, cmp_ge, cmp_lt, cmp_na)
     begin
@@ -308,44 +310,31 @@ begin
       end if;
     end process match_gen;
 
-
-    -- check region permissions --
-    perm_gen: process(ctrl_i, i_priv_i, d_priv_i, pmpcfg)
-    begin
-      allow(r) <= (others => '1'); -- default: I/D allowed
-      -- execute (X) --
-      if (i_priv_i = priv_mode_u_c) or (pmpcfg(r)(cfg_l_c) = '1') then
-        allow(r)(0) <= pmpcfg(r)(cfg_x_c);
-      end if;
-      -- read/write (RW) --
-      if (ctrl_i.lsu_rmw = '1') then -- read-modify-write
-        if (d_priv_i = priv_mode_u_c) or (pmpcfg(r)(cfg_l_c) = '1') then
-          allow(r)(1) <= pmpcfg(r)(cfg_r_c) and pmpcfg(r)(cfg_w_c);
-        end if;
-      elsif (ctrl_i.lsu_rw = '0') then -- read
-        if (d_priv_i = priv_mode_u_c) or (pmpcfg(r)(cfg_l_c) = '1') then
-          allow(r)(1) <= pmpcfg(r)(cfg_r_c);
-        end if;
-      else -- write
-        if (d_priv_i = priv_mode_u_c) or (pmpcfg(r)(cfg_l_c) = '1') then
-          allow(r)(1) <= pmpcfg(r)(cfg_w_c);
-        end if;
-      end if;
-    end process perm_gen;
-
   end generate;
 
 
-  -- Access Permission Check (using static prioritization) ----------------------------------
+  -- Permission Check -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  fail_ex(NUM_REGIONS) <= '1' when (i_priv_i /= priv_mode_m_c) else '0'; -- default if no match: fail if not M-mode
-  fail_rw(NUM_REGIONS) <= '1' when (d_priv_i /= priv_mode_m_c) else '0'; -- default if no match: fail if not M-mode
-
-  -- prioritization logic implemented as a multiplexer chain --
-  fault_check_gen:
+  perm_gen:
   for r in NUM_REGIONS-1 downto 0 generate -- start with lowest priority
-    fail_ex(r) <= not allow(r)(0) when (match(r)(0) = '1') else fail_ex(r+1);
-    fail_rw(r) <= not allow(r)(1) when (match(r)(1) = '1') else fail_rw(r+1);
+    -- execute (X), check privilege and permission --
+    allow_ex(r) <= '1' when (i_priv_i = priv_mode_m_c) and (pmpcfg(r)(cfg_l_c) = '0') else -- grant if M and not locked
+                   pmpcfg(r)(cfg_x_c);
+    -- read/write (RW), check privilege and permission(s) according to access type --
+    allow_rw(r) <= '1' when (d_priv_i = priv_mode_m_c) and (pmpcfg(r)(cfg_l_c) = '0')    else -- grant if M and not locked
+                   pmpcfg(r)(cfg_r_c) and pmpcfg(r)(cfg_w_c) when (ctrl_i.lsu_rmw = '1') else -- read-modify-write access
+                   pmpcfg(r)(cfg_r_c)                        when (ctrl_i.lsu_rw = '0')  else -- read access
+                   pmpcfg(r)(cfg_w_c);                                                        -- write access
+  end generate;
+
+  -- very last entry: start of chain (fail if not M-mode) --
+  fail_ex(NUM_REGIONS) <= '1' when (i_priv_i /= priv_mode_m_c) else '0';
+  fail_rw(NUM_REGIONS) <= '1' when (d_priv_i /= priv_mode_m_c) else '0';
+  -- prioritization logic implemented as a multiplexer chain --
+  prio_gen:
+  for r in NUM_REGIONS-1 downto 0 generate -- start with lowest priority
+    fail_ex(r) <= not allow_ex(r) when (match(r)(0) = '1') else fail_ex(r+1);
+    fail_rw(r) <= not allow_rw(r) when (match(r)(1) = '1') else fail_rw(r+1);
   end generate;
 
   -- output buffer (ignore PMP rules when in debug-mode) --
