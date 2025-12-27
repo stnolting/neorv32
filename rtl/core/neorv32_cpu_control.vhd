@@ -474,8 +474,8 @@ begin
 
       when others => -- S_SLEEP / undefined state: halt CPU
       -- ------------------------------------------------------------
-        if (or_reduce_f(trap.irq_buf) = '1') or (debug_ctrl.run = '1') or (csr.dcsr_step = '1') then -- enabled pending IRQ, debug-mode, single-step
-          exec_nxt.state <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC
+        if (or_reduce_f(trap.irq_buf) = '1') or (trap.exc_fire = '1') then -- wake up on enabled pending IRQ or if pending exception
+          exec_nxt.state <= S_DISPATCH;
         end if;
 
     end case;
