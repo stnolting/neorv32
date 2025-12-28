@@ -48,7 +48,7 @@ architecture neorv32_cpu_counters_rtl of neorv32_cpu_counters is
   signal inhibit, cnt_inc : std_ulogic_vector(15 downto 0);
 
   -- individual HPM read-backs --
-  type hpmevent_t is array (3 to 15) of std_ulogic_vector(11 downto 0);
+  type hpmevent_t is array (3 to 15) of std_ulogic_vector(10 downto 0);
   type hpmcnt_t   is array (3 to 15) of std_ulogic_vector(63 downto 0);
   signal hpmevent, hpmevent_rd : hpmevent_t;
   signal hpmcnt_rd : hpmcnt_t;
@@ -206,7 +206,7 @@ begin
           hpmevent(i) <= (others => '0');
         elsif rising_edge(clk_i) then
           if (cfg_we(i) = '1') then
-            hpmevent(i) <= ctrl_i.csr_wdata(11 downto 0);
+            hpmevent(i) <= ctrl_i.csr_wdata(10 downto 0);
           end if;
           hpmevent(i)(cnt_event_tm_c) <= '0'; -- time: not available
         end if;

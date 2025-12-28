@@ -298,6 +298,7 @@ package file (`neorv32_package.vhd`).
 | `ixl`       |     2 | `rvfi_ixl`       | Current `XLEN`; hardwired to `01` = 32-bit
 | `debug`     |     1 | -                | Set if the current instruction is executed in debug-mode
 | `compr`     |     1 | -                | Set if the current instruction is a decompressed instruction
+| `delta`     |     1 | -                | Set if the current instruction is the target of a control-flow transfer
 4+^| **Integer Register**
 | `rs1_addr`  |     5 | `rvfi_rs1_addr`  | register `rs1` address
 | `rs2_addr`  |     5 | `rvfi_rs2_addr`  | register `rs2` address

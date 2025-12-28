@@ -242,11 +242,10 @@ int main() {
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_WAIT_DIS);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_ALU);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_BRANCH);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_BRANCHED);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_CTRLFLOW);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_LOAD);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_STORE);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_WAIT_LSU);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_TRAP);
 
     // make sure there was no exception
     if (trap_cause == trap_never_c) {
@@ -2317,11 +2316,10 @@ int main() {
       "#04 DISP waits    : %u\n"
       "#05 ALU waits     : %u\n"
       "#06 branch instr. : %u\n"
-      "#07 taken branch  : %u\n"
+      "#07 control flow  : %u\n"
       "#08 MEM loads     : %u\n"
       "#09 MEM stores    : %u\n"
-      "#10 MEM waits     : %u\n"
-      "#11 traps         : %u\n",
+      "#10 MEM waits     : %u\n",
       neorv32_cpu_csr_read(CSR_CYCLE),
       neorv32_cpu_csr_read(CSR_INSTRET),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER3),
@@ -2331,8 +2329,7 @@ int main() {
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER7),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER8),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER9),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER10),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER11)
+      neorv32_cpu_csr_read(CSR_MHPMCOUNTER10)
     );
   }
 

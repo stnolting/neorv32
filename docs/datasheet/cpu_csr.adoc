@@ -753,11 +753,10 @@ events is observed (logical OR). Note that the counter will only increment by 1 
 caused by a fence instruction, a control flow transfer or a instruction fetch bus wait cycle)
 | 5   | `HPMCNT_EVENT_WAIT_ALU` | r/w | delay/wait cycle caused by a _multi-cycle_ <<_cpu_arithmetic_logic_unit>> operation
 | 6   | `HPMCNT_EVENT_BRANCH`   | r/w | executed branch instruction (unconditional, conditional-taken or conditional-not-taken)
-| 7   | `HPMCNT_EVENT_BRANCHED` | r/w | taken branch (unconditional or conditional-taken)
+| 7   | `HPMCNT_EVENT_CTRLFLOW` | r/w | control flow transfer (jump, taken branch, trap entry, trap exit)
 | 8   | `HPMCNT_EVENT_LOAD`     | r/w | executed load operation (read-modify-write AMOs are counted as one load and one store operation)
 | 9   | `HPMCNT_EVENT_STORE`    | r/w | executed store operation (read-modify-write AMOs are counted as one load and one store operation)
 | 10  | `HPMCNT_EVENT_WAIT_LSU` | r/w | memory/bus/cache/etc. delay/wait cycle while executing any load or store operation (caused by a data bus wait cycle))
-| 11  | `HPMCNT_EVENT_TRAP`     | r/w | trap entry (<<_traps_exceptions_and_interrupts>>)
 |=======================
 
 .Instruction Retiring ("Retired == Executed")

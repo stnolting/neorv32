@@ -55,19 +55,15 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
   signal stop_addr : std_ulogic_vector(30 downto 0);
 
   -- trace arbiter --
-  type state_t is (S_OFFLINE, S_TRACING);
   type arbiter_t is record
-    state : state_t; -- FSM state
-    first : std_ulogic; -- first trace entry
+    run   : std_ulogic; -- tracing in progress
     valid : std_ulogic_vector(1 downto 0); -- valid-sample shift register
-    compr : std_ulogic_vector(1 downto 0); -- is-decompressed shift register
+    first : std_ulogic; -- first trace entry
+    delta : std_ulogic; -- control flow transfer detected
     src   : std_ulogic_vector(31 downto 0); -- source address
     dst   : std_ulogic_vector(31 downto 0); -- destination address
-    add   : std_ulogic_vector(31 downto 0); -- offset for next linear address
-    nxt   : std_ulogic_vector(31 downto 0); -- next linear address
-    push  : std_ulogic; -- push SRC + DST to trace buffer
+    push  : std_ulogic; -- push to trace buffer
     astop : std_ulogic; -- auto-stop tracing
-    run   : std_ulogic; -- tracing in progress
   end record;
   signal arbiter : arbiter_t;
 
@@ -149,64 +145,47 @@ begin
   trace_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      arbiter.state <= S_OFFLINE;
-      arbiter.first <= '0';
+      arbiter.run   <= '0';
       arbiter.valid <= (others => '0');
-      arbiter.compr <= (others => '0');
+      arbiter.first <= '0';
+      arbiter.delta <= '0';
       arbiter.src   <= (others => '0');
       arbiter.dst   <= (others => '0');
     elsif rising_edge(clk_i) then
-      case arbiter.state is
-
-        when S_OFFLINE => -- tracing disabled
-        -- ------------------------------------------------------------
-          arbiter.first <= '1'; -- this will be the first trace packet
-          arbiter.valid <= (others => '0'); -- no valid data sampled yet
-          if (ctrl_en = '1') and (ctrl_start = '1') then
-            arbiter.state <= S_TRACING;
-          end if;
-
-        when S_TRACING => -- tracing in progress
-        -- ------------------------------------------------------------
-          arbiter.valid(0) <= '0'; -- default
-          if (ctrl_en = '0') or (ctrl_stop = '1') or (arbiter.astop = '1') then -- tracing still running
-            arbiter.state <= S_OFFLINE;
-          elsif (trace_src.valid = '1') and (trace_src.debug = '0') then -- valid trace packet and not in debug-mode
-            arbiter.valid(0) <= '1';
-            arbiter.compr(0) <= trace_src.compr;
-            arbiter.dst      <= trace_src.pc_rdata(31 downto 1) & trace_src.intr;
-          end if;
-          -- sample shift register --
-          if (arbiter.valid(0) = '1') then
-            arbiter.valid(1) <= '1';
-            arbiter.compr(1) <= arbiter.compr(0);
-            arbiter.src      <= arbiter.dst(31 downto 1) & arbiter.first;
-          end if;
-          -- clear first-packet flag on first push
-          if (arbiter.push = '1') then
-            arbiter.first <= '0';
-          end if;
-
-        when others => -- undefined
-        -- ------------------------------------------------------------
-          arbiter.state <= S_OFFLINE;
-
-      end case;
+      if (arbiter.run = '0') then -- tracing disabled
+        arbiter.valid <= (others => '0'); -- no valid data sampled yet
+        arbiter.first <= '1'; -- this will be the first trace packet
+        arbiter.delta <= '0';
+        if (ctrl_en = '1') and (ctrl_start = '1') then
+          arbiter.run <= '1';
+        end if;
+      else -- tracing in progress
+        arbiter.valid(0) <= '0'; -- default
+        if (ctrl_en = '0') or (ctrl_stop = '1') or (arbiter.astop = '1') then -- tracing still running
+          arbiter.run <= '0';
+        elsif (trace_src.valid = '1') and (trace_src.debug = '0') then -- valid trace packet and not in debug-mode
+          arbiter.valid(0) <= '1';
+          arbiter.dst      <= trace_src.pc_rdata(31 downto 1) & trace_src.intr;
+        end if;
+        -- sample shift register --
+        if (arbiter.valid(0) = '1') then
+          arbiter.valid(1) <= '1';
+          arbiter.src      <= arbiter.dst(31 downto 1) & arbiter.first;
+        end if;
+        arbiter.delta <= trace_src.delta;
+        -- clear first-packet flag on first push
+        if (arbiter.push = '1') then
+          arbiter.first <= '0';
+        end if;
+      end if;
     end if;
   end process trace_arbiter;
 
-  -- compute next linear address --
-  arbiter.add <= x"00000002" when (arbiter.compr(1) = '1') else x"00000004";
-  arbiter.nxt <= std_ulogic_vector(unsigned(arbiter.src) + unsigned(arbiter.add));
-
-  -- push to trace buffer if address delta (new PC != next linear address) --
-  arbiter.push <= '1' when (arbiter.dst(31 downto 1) /= arbiter.nxt(31 downto 1)) and (arbiter.valid = "11") else '0';
+  -- push to trace buffer --
+  arbiter.push <= '1' when (arbiter.valid = "11") and (arbiter.delta = '1') else '0';
 
   -- automatic stop if reaching stop address --
-  arbiter.astop <= '1' when (arbiter.src(31 downto 1) = stop_addr) and (arbiter.valid(0) = '1') else '0';
-
-  -- tracing in process --
-  arbiter.run <= '0' when (arbiter.state = S_OFFLINE) else '1';
+  arbiter.astop <= '1' when (arbiter.dst(31 downto 1) = stop_addr) and (arbiter.valid(0) = '1') else '0';
 
 
   -- Interrupt Generator --------------------------------------------------------------------

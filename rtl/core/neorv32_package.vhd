@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120601"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120602"; -- hardware version
   constant archid_c      : natural := 19; -- official RISC-V architecture ID
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
@@ -236,6 +236,7 @@ package neorv32_package is
     ixl       : std_ulogic_vector(1 downto 0); -- XLEN; 01 = 32-bit
     debug     : std_ulogic; -- set if instruction is executed in debug-mode
     compr     : std_ulogic; -- set if instruction is a decompressed instruction
+    delta     : std_ulogic; -- set if instruction is target of a control-flow transfer
     -- integer register --
     rs1_addr  : std_ulogic_vector(4 downto 0);  -- rs1 address
     rs2_addr  : std_ulogic_vector(4 downto 0);  -- rs2 address
@@ -270,6 +271,7 @@ package neorv32_package is
     ixl       => "01",
     debug     => '0',
     compr     => '0',
+    delta     => '0',
     rs1_addr  => (others => '0'),
     rs2_addr  => (others => '0'),
     rs1_rdata => (others => '0'),
@@ -611,7 +613,7 @@ package neorv32_package is
     csr_addr     : std_ulogic_vector(11 downto 0); -- address
     csr_wdata    : std_ulogic_vector(31 downto 0); -- write data
     -- counter events --
-    cnt_event    : std_ulogic_vector(11 downto 0); -- counter increment events
+    cnt_event    : std_ulogic_vector(10 downto 0); -- counter increment events
     -- instruction word --
     ir_funct3    : std_ulogic_vector(2 downto 0);  -- funct3 bit field
     ir_funct12   : std_ulogic_vector(11 downto 0); -- funct12 bit field
@@ -793,11 +795,10 @@ package neorv32_package is
   constant cnt_event_wait_dis_c : natural := 4;  -- instruction dispatch wait cycle
   constant cnt_event_wait_alu_c : natural := 5;  -- multi-cycle ALU co-processor wait cycle
   constant cnt_event_branch_c   : natural := 6;  -- executed branch instruction
-  constant cnt_event_branched_c : natural := 7;  -- control flow transfer
+  constant cnt_event_ctrlflow_c : natural := 7;  -- control flow transfer
   constant cnt_event_load_c     : natural := 8;  -- load operation
   constant cnt_event_store_c    : natural := 9;  -- store operation
   constant cnt_event_wait_lsu_c : natural := 10; -- load-store unit memory wait cycle
-  constant cnt_event_trap_c     : natural := 11; -- entered trap
 
 -- **********************************************************************************************************
 -- Helper Functions
