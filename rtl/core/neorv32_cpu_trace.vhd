@@ -38,8 +38,9 @@ architecture neorv32_cpu_trace_rtl of neorv32_cpu_trace is
   -- trace arbiter
   type arbiter_t is record
     state : std_ulogic; -- sampling phase
-    order : std_ulogic_vector(31 downto 0); -- instruction counter
     entry : std_ulogic; -- trap entry
+    delta : std_ulogic; -- control flow transfer
+    order : std_ulogic_vector(31 downto 0); -- instruction counter
     done  : std_ulogic; -- execution of current instruction completed
     valid : std_ulogic; -- commit trace data
   end record;
@@ -56,25 +57,18 @@ begin
   begin
     if (rstn_i = '0') then
       arbiter.state <= '0';
-      arbiter.order <= (others => '0');
       arbiter.entry <= '0';
+      arbiter.delta <= '0';
+      arbiter.order <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- sampling control --
-      if (arbiter.state = '0') then
-        arbiter.state <= ctrl_i.cnt_event(cnt_event_ir_c); -- start trace cycle when in EXECUTE state
-      elsif (arbiter.done = '1') then -- commit trace data when back in DISPATCH stage
-        arbiter.state <= '0';
-      end if;
+      -- sampling control: start trace cycle when in EXECUTE state --
+      arbiter.state <= (arbiter.state or ctrl_i.cnt_event(cnt_event_ir_c)) and (not arbiter.done);
+      -- trap-entry detector: buffer trap entry until trace commit --
+      arbiter.entry <= (arbiter.entry or ctrl_i.cpu_trap) and (not arbiter.valid);
+      -- delta detector: buffer delta trigger until we are back in EXECUTE stage --
+      arbiter.delta <= (arbiter.delta or ctrl_i.cnt_event(cnt_event_ctrlflow_c)) and (not ctrl_i.cnt_event(cnt_event_ir_c));
       -- instruction counter --
-      if (arbiter.valid = '1') then
-        arbiter.order <= std_ulogic_vector(unsigned(arbiter.order) + 1);
-      end if;
-      -- trap-entry detector --
-      if (arbiter.valid = '1') then
-        arbiter.entry <= '0';
-      else
-        arbiter.entry <= arbiter.entry or ctrl_i.cpu_trap;
-      end if;
+      arbiter.order <= std_ulogic_vector(unsigned(arbiter.order) + unsigned(replicate_f(arbiter.valid, 1)));
     end if;
   end process trace_arbiter;
 
@@ -105,6 +99,11 @@ begin
         trace_buf.mode  <= ctrl_i.cpu_priv & ctrl_i.cpu_priv;
         trace_buf.debug <= ctrl_i.cpu_debug;
         trace_buf.compr <= ctrl_i.cnt_event(cnt_event_compr_c);
+      end if;
+      if (arbiter.delta = '1') then
+        trace_buf.delta <= '1';
+      elsif (trace_buf.valid = '1') then
+        trace_buf.delta <= '0';
       end if;
 
       -- integer register --
@@ -218,7 +217,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     machine  : std_ulogic_vector(31 downto 0); -- instruction word
     mnemonic : string(1 to 11); -- according assembly mnemonic
   end record;
-  type inst_t is array (0 to 191) of inst_touple_c;
+  type inst_t is array (0 to 192) of inst_touple_c;
   constant inst_c : inst_t := (
     ("-------------------------0110111", "lui        "), -- base ISA
     ("-------------------------0010111", "auipc      "),
@@ -411,7 +410,8 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     ("1010000----------000-----1010011", "fle.s      "),
     ("111000000000-----001-----1010011", "fclass.s   "),
     ("110100000000-------------1010011", "fcvt.s.w   "),
-    ("110100000001-------------1010011", "fcvt.s.wu  ")
+    ("110100000001-------------1010011", "fcvt.s.wu  "),
+    ("--------------------------------", "INVALID    ") -- last entry matches all: invalid
   );
 
   -- decode instruction mnemonic --
@@ -422,7 +422,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
         return inst_c(i).mnemonic;
       end if;
     end loop;
-    return "INVALID";
+    return "fail";
   end function decode_mnemonic_f;
 
   -- decode CSR name --

@@ -236,6 +236,7 @@ package neorv32_package is
     ixl       : std_ulogic_vector(1 downto 0); -- XLEN; 01 = 32-bit
     debug     : std_ulogic; -- set if instruction is executed in debug-mode
     compr     : std_ulogic; -- set if instruction is a decompressed instruction
+    delta     : std_ulogic; -- set if instruction is target of a control-flow transfer
     -- integer register --
     rs1_addr  : std_ulogic_vector(4 downto 0);  -- rs1 address
     rs2_addr  : std_ulogic_vector(4 downto 0);  -- rs2 address
@@ -270,6 +271,7 @@ package neorv32_package is
     ixl       => "01",
     debug     => '0',
     compr     => '0',
+    delta     => '0',
     rs1_addr  => (others => '0'),
     rs2_addr  => (others => '0'),
     rs1_rdata => (others => '0'),
