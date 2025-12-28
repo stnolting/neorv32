@@ -157,7 +157,7 @@ void portable_init(core_portable *p, int *argc, char *argv[]) {
   if (num_hpm_cnts_global > 1)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_WAIT_DIS); }
   if (num_hpm_cnts_global > 2)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_ALU); }
   if (num_hpm_cnts_global > 3)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_BRANCH);   }
-  if (num_hpm_cnts_global > 4)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_BRANCHED); }
+  if (num_hpm_cnts_global > 4)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_CTRLFLOW); }
   if (num_hpm_cnts_global > 5)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_LOAD);     }
   if (num_hpm_cnts_global > 6)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_STORE);    }
   if (num_hpm_cnts_global > 7)  {neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_WAIT_LSU); }
@@ -200,7 +200,7 @@ void portable_fini(core_portable *p) {
     if (num_hpm_cnts_global > 1)  {neorv32_uart0_printf(" > Instr. dispatch wait cycles : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER4));  }
     if (num_hpm_cnts_global > 2)  {neorv32_uart0_printf(" > ALU wait cycles             : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER5));  }
     if (num_hpm_cnts_global > 3)  {neorv32_uart0_printf(" > Branch instructions         : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER6));  }
-    if (num_hpm_cnts_global > 4)  {neorv32_uart0_printf(" > Taken branches              : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));  }
+    if (num_hpm_cnts_global > 4)  {neorv32_uart0_printf(" > Control flow transfers      : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER7));  }
     if (num_hpm_cnts_global > 5)  {neorv32_uart0_printf(" > Load instructions           : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER8));  }
     if (num_hpm_cnts_global > 6)  {neorv32_uart0_printf(" > Store instructions          : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER9));  }
     if (num_hpm_cnts_global > 7)  {neorv32_uart0_printf(" > Load/store wait cycles      : %u\n", (uint32_t)neorv32_cpu_csr_read(CSR_MHPMCOUNTER10)); }

@@ -96,7 +96,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     state : exec_state_t;
     ir    : std_ulogic_vector(31 downto 0); -- instruction word being executed right now
     ci    : std_ulogic;                     -- current instruction is decompressed instruction
-    tbr   : std_ulogic;                     -- taken branch
     pc    : std_ulogic_vector(31 downto 0); -- current PC (current instruction)
     pc2   : std_ulogic_vector(31 downto 0); -- next PC (next linear instruction)
   end record;
@@ -199,7 +198,6 @@ begin
       exec.state <= S_RESTART;
       exec.ir    <= (others => '0');
       exec.ci    <= '0';
-      exec.tbr   <= '0';
       exec.pc    <= BOOT_ADDR(31 downto 2) & "00"; -- 32-bit-aligned boot address
       exec.pc2   <= BOOT_ADDR(31 downto 2) & "00"; -- 32-bit-aligned boot address
     elsif rising_edge(clk_i) then
@@ -223,7 +221,6 @@ begin
 
     -- defaults --
     exec_nxt          <= exec;
-    exec_nxt.tbr      <= '0';
     trap.env_enter    <= '0';
     trap.env_exit     <= '0';
     trap.instr_be     <= '0';
@@ -427,7 +424,6 @@ begin
       -- ------------------------------------------------------------
         if CPU_CONSTT_BR_EN or (branch_taken = '1') then
           ctrl_nxt.if_reset <= '1'; -- reset instruction fetch to restart at next-PC (pc2)
-          exec_nxt.tbr      <= '1'; -- this is a taken branch
         end if;
         if (branch_taken = '1') then -- taken/unconditional branch
           trap.instr_ma <= alu_add_i(1) and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination misaligned?
@@ -544,7 +540,7 @@ begin
   cnt_event(cnt_event_wait_dis_c) <= '1' when (exec.state = S_DISPATCH) and (frontend_i.valid = '0')                 else '0'; -- instruction dispatch wait
   cnt_event(cnt_event_wait_alu_c) <= '1' when (exec.state = S_ALU_WAIT)                                              else '0'; -- multi-cycle ALU wait
   cnt_event(cnt_event_branch_c)   <= '1' when (exec.state = S_BRANCH)                                                else '0'; -- executed branch instruction
-  cnt_event(cnt_event_branched_c) <= '1' when (exec.tbr = '1')                                                       else '0'; -- taken branch
+  cnt_event(cnt_event_ctrlflow_c) <= '1' when (ctrl.if_reset = '1') and (exec.ir(6 downto 0) /= opcode_fence_c)      else '0'; -- control flow transfer
   cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '0') or (ctrl.lsu_rmw = '1')) else '0'; -- executed load operation
   cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '1') or (ctrl.lsu_rmw = '1')) else '0'; -- executed store operation
   cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exec.state = S_MEM_RSP)                      else '0'; -- load/store memory wait

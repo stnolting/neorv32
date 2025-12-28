@@ -336,18 +336,17 @@ enum NEORV32_CSR_MXISA_enum {
  * CPU mhpmevent hardware performance monitor events
  **************************************************************************/
 enum NEORV32_HPMCNT_EVENT_enum {
-  HPMCNT_EVENT_CY       = 0,  /**< CPU mhpmevent CSR (0):  Active cycle */
-  HPMCNT_EVENT_TM       = 1,  /**< CPU mhpmevent CSR (1):  Reserved */
-  HPMCNT_EVENT_IR       = 2,  /**< CPU mhpmevent CSR (2):  Retired instruction */
-  HPMCNT_EVENT_COMPR    = 3,  /**< CPU mhpmevent CSR (3):  Executed compressed instruction */
-  HPMCNT_EVENT_WAIT_DIS = 4,  /**< CPU mhpmevent CSR (4):  Instruction dispatch wait cycle */
-  HPMCNT_EVENT_WAIT_ALU = 5,  /**< CPU mhpmevent CSR (5):  Multi-cycle ALU co-processor wait cycle */
-  HPMCNT_EVENT_BRANCH   = 6,  /**< CPU mhpmevent CSR (6):  Executed branch instruction */
-  HPMCNT_EVENT_BRANCHED = 7,  /**< CPU mhpmevent CSR (7):  Control flow transfer */
-  HPMCNT_EVENT_LOAD     = 8,  /**< CPU mhpmevent CSR (8):  Executed load operation */
-  HPMCNT_EVENT_STORE    = 9,  /**< CPU mhpmevent CSR (9):  Executed store operation */
-  HPMCNT_EVENT_WAIT_LSU = 10, /**< CPU mhpmevent CSR (10): Load-store unit memory wait cycle */
-  HPMCNT_EVENT_TRAP     = 11  /**< CPU mhpmevent CSR (11): Entered trap */
+  HPMCNT_EVENT_CY       = 0, /**< mhpmevent CSR (0):  Active cycle */
+  HPMCNT_EVENT_TM       = 1, /**< mhpmevent CSR (1):  Reserved */
+  HPMCNT_EVENT_IR       = 2, /**< mhpmevent CSR (2):  Retired instruction */
+  HPMCNT_EVENT_COMPR    = 3, /**< mhpmevent CSR (3):  Executed compressed instruction */
+  HPMCNT_EVENT_WAIT_DIS = 4, /**< mhpmevent CSR (4):  Instruction dispatch wait cycle */
+  HPMCNT_EVENT_WAIT_ALU = 5, /**< mhpmevent CSR (5):  Multi-cycle ALU co-processor wait cycle */
+  HPMCNT_EVENT_BRANCH   = 6, /**< mhpmevent CSR (6):  Executed branch instruction */
+  HPMCNT_EVENT_CTRLFLOW = 7, /**< mhpmevent CSR (7):  Control flow transfer */
+  HPMCNT_EVENT_LOAD     = 8, /**< mhpmevent CSR (8):  Executed load operation */
+  HPMCNT_EVENT_STORE    = 9, /**< mhpmevent CSR (9):  Executed store operation */
+  HPMCNT_EVENT_WAIT_LSU = 10 /**< mhpmevent CSR (10): Load-store unit memory wait cycle */
 };
 
 
