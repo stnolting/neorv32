@@ -246,7 +246,6 @@ int main() {
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_LOAD);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_STORE);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_WAIT_LSU);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_TRAP);
 
     // make sure there was no exception
     if (trap_cause == trap_never_c) {
@@ -2331,8 +2330,7 @@ int main() {
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER7),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER8),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER9),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER10),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER11)
+      neorv32_cpu_csr_read(CSR_MHPMCOUNTER10)
     );
   }
 

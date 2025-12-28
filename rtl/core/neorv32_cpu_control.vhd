@@ -164,7 +164,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal monitor_cnt  : std_ulogic_vector(alu_cp_tmo_c downto 0); -- execution monitor cycle counter
   signal csr_valid    : std_ulogic_vector(2 downto 0); -- CSR access: [2] implemented, [1] r/w access, [0] privilege
   signal illegal_cmd  : std_ulogic; -- illegal instruction check
-  signal cnt_event    : std_ulogic_vector(11 downto 0); -- counter events
+  signal cnt_event    : std_ulogic_vector(10 downto 0); -- counter events
   signal ebreak_trig  : std_ulogic; -- environment break exception trigger
   signal trap_env     : std_ulogic_vector(6 downto 0); -- environment call cause-value helper
 
@@ -548,7 +548,6 @@ begin
   cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '0') or (ctrl.lsu_rmw = '1')) else '0'; -- executed load operation
   cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '1') or (ctrl.lsu_rmw = '1')) else '0'; -- executed store operation
   cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exec.state = S_MEM_RSP)                      else '0'; -- load/store memory wait
-  cnt_event(cnt_event_trap_c)     <= '1' when (trap.env_enter = '1')                                                 else '0'; -- entered trap
 
 
   -- ****************************************************************************************************************************

@@ -611,7 +611,7 @@ package neorv32_package is
     csr_addr     : std_ulogic_vector(11 downto 0); -- address
     csr_wdata    : std_ulogic_vector(31 downto 0); -- write data
     -- counter events --
-    cnt_event    : std_ulogic_vector(11 downto 0); -- counter increment events
+    cnt_event    : std_ulogic_vector(10 downto 0); -- counter increment events
     -- instruction word --
     ir_funct3    : std_ulogic_vector(2 downto 0);  -- funct3 bit field
     ir_funct12   : std_ulogic_vector(11 downto 0); -- funct12 bit field
@@ -797,7 +797,6 @@ package neorv32_package is
   constant cnt_event_load_c     : natural := 8;  -- load operation
   constant cnt_event_store_c    : natural := 9;  -- store operation
   constant cnt_event_wait_lsu_c : natural := 10; -- load-store unit memory wait cycle
-  constant cnt_event_trap_c     : natural := 11; -- entered trap
 
 -- **********************************************************************************************************
 -- Helper Functions
