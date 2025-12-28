@@ -149,191 +149,190 @@ enum NEORV32_CSR_enum {
 
 
 /**********************************************************************//**
- * CPU fflags (fcsr)</b> CSR (r/w): FPU accrued exception flags
+ * fflags (fcsr)</b> CSR (r/w): FPU accrued exception flags
  **************************************************************************/
 enum NEORV32_CSR_FFLAGS_enum {
-  CSR_FFLAGS_NX = 0, /**< CPU fflags CSR (0): NX - inexact (r/w) */
-  CSR_FFLAGS_UF = 1, /**< CPU fflags CSR (1): UF - underflow (r/w) */
-  CSR_FFLAGS_OF = 2, /**< CPU fflags CSR (2): OF - overflow (r/w) */
-  CSR_FFLAGS_DZ = 3, /**< CPU fflags CSR (3): DZ - divide by zero (r/w) */
-  CSR_FFLAGS_NV = 4  /**< CPU fflags CSR (4): NV - invalid operation (r/w) */
+  CSR_FFLAGS_NX = 0, /**< fflags CSR (0): NX - inexact (r/w) */
+  CSR_FFLAGS_UF = 1, /**< fflags CSR (1): UF - underflow (r/w) */
+  CSR_FFLAGS_OF = 2, /**< fflags CSR (2): OF - overflow (r/w) */
+  CSR_FFLAGS_DZ = 3, /**< fflags CSR (3): DZ - divide by zero (r/w) */
+  CSR_FFLAGS_NV = 4  /**< fflags CSR (4): NV - invalid operation (r/w) */
 };
 
 
 /**********************************************************************//**
- * CPU mcountern CSR (r/w): Machine counter-enable register
+ * mcountern CSR (r/w): Machine counter-enable register
  **************************************************************************/
 enum NEORV32_CSR_MCOUNTEREN_enum {
-  CSR_MCOUNTEREN_CY = 0, /**< CPU mcountern CSR (0): CY - cycle counter (r/w) */
-  CSR_MCOUNTEREN_IR = 2  /**< CPU mcountern CSR (2): IR instruction-retired counter (r/w) */
+  CSR_MCOUNTEREN_CY = 0, /**< mcountern CSR (0): CY - cycle counter (r/w) */
+  CSR_MCOUNTEREN_IR = 2  /**< mcountern CSR (2): IR instruction-retired counter (r/w) */
 };
 
 
 /**********************************************************************//**
- * CPU mstatus CSR (r/w): Machine status - low word
+ * mstatus CSR (r/w): Machine status - low word
  **************************************************************************/
 enum NEORV32_CSR_MSTATUS_enum {
-  CSR_MSTATUS_MIE   =  3, /**< CPU mstatus CSR  (3): MIE - Machine interrupt enable bit (r/w) */
-  CSR_MSTATUS_MPIE  =  7, /**< CPU mstatus CSR  (7): MPIE - Machine previous interrupt enable bit (r/w) */
-  CSR_MSTATUS_MPP_L = 11, /**< CPU mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
-  CSR_MSTATUS_MPP_H = 12, /**< CPU mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
-  CSR_MSTATUS_MPRV  = 17, /**< CPU mstatus CSR (17): MPRV - Use MPP as effective privilege for M-mode load/stores when set (r/w) */
-  CSR_MSTATUS_TW    = 21  /**< CPU mstatus CSR (21): TW - Disallow execution of wfi instruction in user mode when set (r/w) */
+  CSR_MSTATUS_MIE   =  3, /**< mstatus CSR  (3): MIE - Machine interrupt enable bit (r/w) */
+  CSR_MSTATUS_MPIE  =  7, /**< mstatus CSR  (7): MPIE - Machine previous interrupt enable bit (r/w) */
+  CSR_MSTATUS_MPP_L = 11, /**< mstatus CSR (11): MPP_L - Machine previous privilege mode bit low (r/w) */
+  CSR_MSTATUS_MPP_H = 12, /**< mstatus CSR (12): MPP_H - Machine previous privilege mode bit high (r/w) */
+  CSR_MSTATUS_MPRV  = 17, /**< mstatus CSR (17): MPRV - Use MPP as effective privilege for M-mode load/stores when set (r/w) */
+  CSR_MSTATUS_TW    = 21  /**< mstatus CSR (21): TW - Disallow execution of wfi instruction in user mode when set (r/w) */
 };
 
 
 /**********************************************************************//**
- * CPU mcountinhibitCSR (r/w): Machine counter-inhibit
+ * mcountinhibitCSR (r/w): Machine counter-inhibit
  **************************************************************************/
 enum NEORV32_CSR_MCOUNTINHIBIT_enum {
-  CSR_MCOUNTINHIBIT_CY    = 0,  /**< CPU mcountinhibit CSR (0): CY - Enable auto-increment of [m]cycle[h]   CSR when set (r/w) */
-  CSR_MCOUNTINHIBIT_IR    = 2,  /**< CPU mcountinhibit CSR (2): IR - Enable auto-increment of [m]instret[h] CSR when set (r/w) */
+  CSR_MCOUNTINHIBIT_CY    = 0,  /**< mcountinhibit CSR (0): CY - Enable auto-increment of [m]cycle[h]   CSR when set (r/w) */
+  CSR_MCOUNTINHIBIT_IR    = 2,  /**< mcountinhibit CSR (2): IR - Enable auto-increment of [m]instret[h] CSR when set (r/w) */
 
-  CSR_MCOUNTINHIBIT_HPM3  = 3,  /**< CPU mcountinhibit CSR (3):  HPM3  - Enable auto-increment of hpmcnt3[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM4  = 4,  /**< CPU mcountinhibit CSR (4):  HPM4  - Enable auto-increment of hpmcnt4[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM5  = 5,  /**< CPU mcountinhibit CSR (5):  HPM5  - Enable auto-increment of hpmcnt5[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM6  = 6,  /**< CPU mcountinhibit CSR (6):  HPM6  - Enable auto-increment of hpmcnt6[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM7  = 7,  /**< CPU mcountinhibit CSR (7):  HPM7  - Enable auto-increment of hpmcnt7[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM8  = 8,  /**< CPU mcountinhibit CSR (8):  HPM8  - Enable auto-increment of hpmcnt8[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM9  = 9,  /**< CPU mcountinhibit CSR (9):  HPM9  - Enable auto-increment of hpmcnt9[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM10 = 10, /**< CPU mcountinhibit CSR (10): HPM10 - Enable auto-increment of hpmcnt10[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM11 = 11, /**< CPU mcountinhibit CSR (11): HPM11 - Enable auto-increment of hpmcnt11[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM12 = 12, /**< CPU mcountinhibit CSR (12): HPM12 - Enable auto-increment of hpmcnt12[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM13 = 13, /**< CPU mcountinhibit CSR (13): HPM13 - Enable auto-increment of hpmcnt13[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM14 = 14, /**< CPU mcountinhibit CSR (14): HPM14 - Enable auto-increment of hpmcnt14[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM15 = 15, /**< CPU mcountinhibit CSR (15): HPM15 - Enable auto-increment of hpmcnt15[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM16 = 16, /**< CPU mcountinhibit CSR (16): HPM16 - Enable auto-increment of hpmcnt16[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM17 = 17, /**< CPU mcountinhibit CSR (17): HPM17 - Enable auto-increment of hpmcnt17[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM18 = 18, /**< CPU mcountinhibit CSR (18): HPM18 - Enable auto-increment of hpmcnt18[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM19 = 19, /**< CPU mcountinhibit CSR (19): HPM19 - Enable auto-increment of hpmcnt19[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM20 = 20, /**< CPU mcountinhibit CSR (20): HPM20 - Enable auto-increment of hpmcnt20[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM21 = 21, /**< CPU mcountinhibit CSR (21): HPM21 - Enable auto-increment of hpmcnt21[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM22 = 22, /**< CPU mcountinhibit CSR (22): HPM22 - Enable auto-increment of hpmcnt22[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM23 = 23, /**< CPU mcountinhibit CSR (23): HPM23 - Enable auto-increment of hpmcnt23[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM24 = 24, /**< CPU mcountinhibit CSR (24): HPM24 - Enable auto-increment of hpmcnt24[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM25 = 25, /**< CPU mcountinhibit CSR (25): HPM25 - Enable auto-increment of hpmcnt25[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM26 = 26, /**< CPU mcountinhibit CSR (26): HPM26 - Enable auto-increment of hpmcnt26[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM27 = 27, /**< CPU mcountinhibit CSR (27): HPM27 - Enable auto-increment of hpmcnt27[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM28 = 28, /**< CPU mcountinhibit CSR (28): HPM28 - Enable auto-increment of hpmcnt28[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM29 = 29, /**< CPU mcountinhibit CSR (29): HPM29 - Enable auto-increment of hpmcnt29[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM30 = 30, /**< CPU mcountinhibit CSR (30): HPM30 - Enable auto-increment of hpmcnt30[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM31 = 31  /**< CPU mcountinhibit CSR (31): HPM31 - Enable auto-increment of hpmcnt31[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM3  = 3,  /**< mcountinhibit CSR (3):  HPM3  - Enable auto-increment of hpmcnt3[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM4  = 4,  /**< mcountinhibit CSR (4):  HPM4  - Enable auto-increment of hpmcnt4[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM5  = 5,  /**< mcountinhibit CSR (5):  HPM5  - Enable auto-increment of hpmcnt5[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM6  = 6,  /**< mcountinhibit CSR (6):  HPM6  - Enable auto-increment of hpmcnt6[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM7  = 7,  /**< mcountinhibit CSR (7):  HPM7  - Enable auto-increment of hpmcnt7[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM8  = 8,  /**< mcountinhibit CSR (8):  HPM8  - Enable auto-increment of hpmcnt8[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM9  = 9,  /**< mcountinhibit CSR (9):  HPM9  - Enable auto-increment of hpmcnt9[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM10 = 10, /**< mcountinhibit CSR (10): HPM10 - Enable auto-increment of hpmcnt10[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM11 = 11, /**< mcountinhibit CSR (11): HPM11 - Enable auto-increment of hpmcnt11[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM12 = 12, /**< mcountinhibit CSR (12): HPM12 - Enable auto-increment of hpmcnt12[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM13 = 13, /**< mcountinhibit CSR (13): HPM13 - Enable auto-increment of hpmcnt13[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM14 = 14, /**< mcountinhibit CSR (14): HPM14 - Enable auto-increment of hpmcnt14[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM15 = 15, /**< mcountinhibit CSR (15): HPM15 - Enable auto-increment of hpmcnt15[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM16 = 16, /**< mcountinhibit CSR (16): HPM16 - Enable auto-increment of hpmcnt16[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM17 = 17, /**< mcountinhibit CSR (17): HPM17 - Enable auto-increment of hpmcnt17[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM18 = 18, /**< mcountinhibit CSR (18): HPM18 - Enable auto-increment of hpmcnt18[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM19 = 19, /**< mcountinhibit CSR (19): HPM19 - Enable auto-increment of hpmcnt19[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM20 = 20, /**< mcountinhibit CSR (20): HPM20 - Enable auto-increment of hpmcnt20[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM21 = 21, /**< mcountinhibit CSR (21): HPM21 - Enable auto-increment of hpmcnt21[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM22 = 22, /**< mcountinhibit CSR (22): HPM22 - Enable auto-increment of hpmcnt22[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM23 = 23, /**< mcountinhibit CSR (23): HPM23 - Enable auto-increment of hpmcnt23[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM24 = 24, /**< mcountinhibit CSR (24): HPM24 - Enable auto-increment of hpmcnt24[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM25 = 25, /**< mcountinhibit CSR (25): HPM25 - Enable auto-increment of hpmcnt25[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM26 = 26, /**< mcountinhibit CSR (26): HPM26 - Enable auto-increment of hpmcnt26[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM27 = 27, /**< mcountinhibit CSR (27): HPM27 - Enable auto-increment of hpmcnt27[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM28 = 28, /**< mcountinhibit CSR (28): HPM28 - Enable auto-increment of hpmcnt28[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM29 = 29, /**< mcountinhibit CSR (29): HPM29 - Enable auto-increment of hpmcnt29[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM30 = 30, /**< mcountinhibit CSR (30): HPM30 - Enable auto-increment of hpmcnt30[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM31 = 31  /**< mcountinhibit CSR (31): HPM31 - Enable auto-increment of hpmcnt31[h] when set (r/w) */
 };
 
 
 /**********************************************************************//**
- * CPU mie CSR (r/w): Machine interrupt enable
+ * mie CSR (r/w): Machine interrupt enable
  **************************************************************************/
 enum NEORV32_CSR_MIE_enum {
-  CSR_MIE_MSIE    =  3, /**< CPU mie CSR  (3): MSIE - Machine software interrupt enable (r/w) */
-  CSR_MIE_MTIE    =  7, /**< CPU mie CSR  (7): MTIE - Machine timer interrupt enable bit (r/w) */
-  CSR_MIE_MEIE    = 11, /**< CPU mie CSR (11): MEIE - Machine external interrupt enable bit (r/w) */
+  CSR_MIE_MSIE    =  3, /**< mie CSR  (3): MSIE - Machine software interrupt enable (r/w) */
+  CSR_MIE_MTIE    =  7, /**< mie CSR  (7): MTIE - Machine timer interrupt enable bit (r/w) */
+  CSR_MIE_MEIE    = 11, /**< mie CSR (11): MEIE - Machine external interrupt enable bit (r/w) */
 
   /* NEORV32-specific extension: Fast Interrupt Requests (FIRQ) */
-  CSR_MIE_FIRQ0E  = 16, /**< CPU mie CSR (16): FIRQ0E - Fast interrupt channel 0 enable bit (r/w) */
-  CSR_MIE_FIRQ1E  = 17, /**< CPU mie CSR (17): FIRQ1E - Fast interrupt channel 1 enable bit (r/w) */
-  CSR_MIE_FIRQ2E  = 18, /**< CPU mie CSR (18): FIRQ2E - Fast interrupt channel 2 enable bit (r/w) */
-  CSR_MIE_FIRQ3E  = 19, /**< CPU mie CSR (19): FIRQ3E - Fast interrupt channel 3 enable bit (r/w) */
-  CSR_MIE_FIRQ4E  = 20, /**< CPU mie CSR (20): FIRQ4E - Fast interrupt channel 4 enable bit (r/w) */
-  CSR_MIE_FIRQ5E  = 21, /**< CPU mie CSR (21): FIRQ5E - Fast interrupt channel 5 enable bit (r/w) */
-  CSR_MIE_FIRQ6E  = 22, /**< CPU mie CSR (22): FIRQ6E - Fast interrupt channel 6 enable bit (r/w) */
-  CSR_MIE_FIRQ7E  = 23, /**< CPU mie CSR (23): FIRQ7E - Fast interrupt channel 7 enable bit (r/w) */
-  CSR_MIE_FIRQ8E  = 24, /**< CPU mie CSR (24): FIRQ8E - Fast interrupt channel 8 enable bit (r/w) */
-  CSR_MIE_FIRQ9E  = 25, /**< CPU mie CSR (25): FIRQ9E - Fast interrupt channel 9 enable bit (r/w) */
-  CSR_MIE_FIRQ10E = 26, /**< CPU mie CSR (26): FIRQ10E - Fast interrupt channel 10 enable bit (r/w) */
-  CSR_MIE_FIRQ11E = 27, /**< CPU mie CSR (27): FIRQ11E - Fast interrupt channel 11 enable bit (r/w) */
-  CSR_MIE_FIRQ12E = 28, /**< CPU mie CSR (28): FIRQ12E - Fast interrupt channel 12 enable bit (r/w) */
-  CSR_MIE_FIRQ13E = 29, /**< CPU mie CSR (29): FIRQ13E - Fast interrupt channel 13 enable bit (r/w) */
-  CSR_MIE_FIRQ14E = 30, /**< CPU mie CSR (30): FIRQ14E - Fast interrupt channel 14 enable bit (r/w) */
-  CSR_MIE_FIRQ15E = 31  /**< CPU mie CSR (31): FIRQ15E - Fast interrupt channel 15 enable bit (r/w) */
+  CSR_MIE_FIRQ0E  = 16, /**< mie CSR (16): FIRQ0E - Fast interrupt channel 0 enable bit (r/w) */
+  CSR_MIE_FIRQ1E  = 17, /**< mie CSR (17): FIRQ1E - Fast interrupt channel 1 enable bit (r/w) */
+  CSR_MIE_FIRQ2E  = 18, /**< mie CSR (18): FIRQ2E - Fast interrupt channel 2 enable bit (r/w) */
+  CSR_MIE_FIRQ3E  = 19, /**< mie CSR (19): FIRQ3E - Fast interrupt channel 3 enable bit (r/w) */
+  CSR_MIE_FIRQ4E  = 20, /**< mie CSR (20): FIRQ4E - Fast interrupt channel 4 enable bit (r/w) */
+  CSR_MIE_FIRQ5E  = 21, /**< mie CSR (21): FIRQ5E - Fast interrupt channel 5 enable bit (r/w) */
+  CSR_MIE_FIRQ6E  = 22, /**< mie CSR (22): FIRQ6E - Fast interrupt channel 6 enable bit (r/w) */
+  CSR_MIE_FIRQ7E  = 23, /**< mie CSR (23): FIRQ7E - Fast interrupt channel 7 enable bit (r/w) */
+  CSR_MIE_FIRQ8E  = 24, /**< mie CSR (24): FIRQ8E - Fast interrupt channel 8 enable bit (r/w) */
+  CSR_MIE_FIRQ9E  = 25, /**< mie CSR (25): FIRQ9E - Fast interrupt channel 9 enable bit (r/w) */
+  CSR_MIE_FIRQ10E = 26, /**< mie CSR (26): FIRQ10E - Fast interrupt channel 10 enable bit (r/w) */
+  CSR_MIE_FIRQ11E = 27, /**< mie CSR (27): FIRQ11E - Fast interrupt channel 11 enable bit (r/w) */
+  CSR_MIE_FIRQ12E = 28, /**< mie CSR (28): FIRQ12E - Fast interrupt channel 12 enable bit (r/w) */
+  CSR_MIE_FIRQ13E = 29, /**< mie CSR (29): FIRQ13E - Fast interrupt channel 13 enable bit (r/w) */
+  CSR_MIE_FIRQ14E = 30, /**< mie CSR (30): FIRQ14E - Fast interrupt channel 14 enable bit (r/w) */
+  CSR_MIE_FIRQ15E = 31  /**< mie CSR (31): FIRQ15E - Fast interrupt channel 15 enable bit (r/w) */
 };
 
 
 /**********************************************************************//**
- * CPU mip CSR (r/-): Machine interrupt pending
+ * mip CSR (r/-): Machine interrupt pending
  **************************************************************************/
 enum NEORV32_CSR_MIP_enum {
-  CSR_MIP_MSIP    =  3, /**< CPU mip CSR  (3): MSIP - Machine software interrupt pending (r/-) */
-  CSR_MIP_MTIP    =  7, /**< CPU mip CSR  (7): MTIP - Machine timer interrupt pending (r/-) */
-  CSR_MIP_MEIP    = 11, /**< CPU mip CSR (11): MEIP - Machine external interrupt pending (r/-) */
-
+  CSR_MIP_MSIP    =  3, /**<  mip CSR  (3): MSIP - Machine software interrupt pending (r/-) */
+  CSR_MIP_MTIP    =  7, /**<  mip CSR  (7): MTIP - Machine timer interrupt pending (r/-) */
+  CSR_MIP_MEIP    = 11, /**<  mip CSR (11): MEIP - Machine external interrupt pending (r/-) */
   /* NEORV32-specific extension: Fast Interrupt Requests (FIRQ) */
-  CSR_MIP_FIRQ0P  = 16, /**< CPU mip CSR (16): FIRQ0P - Fast interrupt channel 0 pending (r/-) */
-  CSR_MIP_FIRQ1P  = 17, /**< CPU mip CSR (17): FIRQ1P - Fast interrupt channel 1 pending (r/-) */
-  CSR_MIP_FIRQ2P  = 18, /**< CPU mip CSR (18): FIRQ2P - Fast interrupt channel 2 pending (r/-) */
-  CSR_MIP_FIRQ3P  = 19, /**< CPU mip CSR (19): FIRQ3P - Fast interrupt channel 3 pending (r/-) */
-  CSR_MIP_FIRQ4P  = 20, /**< CPU mip CSR (20): FIRQ4P - Fast interrupt channel 4 pending (r/-) */
-  CSR_MIP_FIRQ5P  = 21, /**< CPU mip CSR (21): FIRQ5P - Fast interrupt channel 5 pending (r/-) */
-  CSR_MIP_FIRQ6P  = 22, /**< CPU mip CSR (22): FIRQ6P - Fast interrupt channel 6 pending (r/-) */
-  CSR_MIP_FIRQ7P  = 23, /**< CPU mip CSR (23): FIRQ7P - Fast interrupt channel 7 pending (r/-) */
-  CSR_MIP_FIRQ8P  = 24, /**< CPU mip CSR (24): FIRQ8P - Fast interrupt channel 8 pending (r/-) */
-  CSR_MIP_FIRQ9P  = 25, /**< CPU mip CSR (25): FIRQ9P - Fast interrupt channel 9 pending (r/-) */
-  CSR_MIP_FIRQ10P = 26, /**< CPU mip CSR (26): FIRQ10P - Fast interrupt channel 10 pending (r/-) */
-  CSR_MIP_FIRQ11P = 27, /**< CPU mip CSR (27): FIRQ11P - Fast interrupt channel 11 pending (r/-) */
-  CSR_MIP_FIRQ12P = 28, /**< CPU mip CSR (28): FIRQ12P - Fast interrupt channel 12 pending (r/-) */
-  CSR_MIP_FIRQ13P = 29, /**< CPU mip CSR (29): FIRQ13P - Fast interrupt channel 13 pending (r/-) */
-  CSR_MIP_FIRQ14P = 30, /**< CPU mip CSR (30): FIRQ14P - Fast interrupt channel 14 pending (r/-) */
-  CSR_MIP_FIRQ15P = 31  /**< CPU mip CSR (31): FIRQ15P - Fast interrupt channel 15 pending (r/-) */
+  CSR_MIP_FIRQ0P  = 16, /**< mip CSR (16): FIRQ0P - Fast interrupt channel 0 pending (r/-) */
+  CSR_MIP_FIRQ1P  = 17, /**< mip CSR (17): FIRQ1P - Fast interrupt channel 1 pending (r/-) */
+  CSR_MIP_FIRQ2P  = 18, /**< mip CSR (18): FIRQ2P - Fast interrupt channel 2 pending (r/-) */
+  CSR_MIP_FIRQ3P  = 19, /**< mip CSR (19): FIRQ3P - Fast interrupt channel 3 pending (r/-) */
+  CSR_MIP_FIRQ4P  = 20, /**< mip CSR (20): FIRQ4P - Fast interrupt channel 4 pending (r/-) */
+  CSR_MIP_FIRQ5P  = 21, /**< mip CSR (21): FIRQ5P - Fast interrupt channel 5 pending (r/-) */
+  CSR_MIP_FIRQ6P  = 22, /**< mip CSR (22): FIRQ6P - Fast interrupt channel 6 pending (r/-) */
+  CSR_MIP_FIRQ7P  = 23, /**< mip CSR (23): FIRQ7P - Fast interrupt channel 7 pending (r/-) */
+  CSR_MIP_FIRQ8P  = 24, /**< mip CSR (24): FIRQ8P - Fast interrupt channel 8 pending (r/-) */
+  CSR_MIP_FIRQ9P  = 25, /**< mip CSR (25): FIRQ9P - Fast interrupt channel 9 pending (r/-) */
+  CSR_MIP_FIRQ10P = 26, /**< mip CSR (26): FIRQ10P - Fast interrupt channel 10 pending (r/-) */
+  CSR_MIP_FIRQ11P = 27, /**< mip CSR (27): FIRQ11P - Fast interrupt channel 11 pending (r/-) */
+  CSR_MIP_FIRQ12P = 28, /**< mip CSR (28): FIRQ12P - Fast interrupt channel 12 pending (r/-) */
+  CSR_MIP_FIRQ13P = 29, /**< mip CSR (29): FIRQ13P - Fast interrupt channel 13 pending (r/-) */
+  CSR_MIP_FIRQ14P = 30, /**< mip CSR (30): FIRQ14P - Fast interrupt channel 14 pending (r/-) */
+  CSR_MIP_FIRQ15P = 31  /**< mip CSR (31): FIRQ15P - Fast interrupt channel 15 pending (r/-) */
 };
 
 
 /**********************************************************************//**
- * CPU misa CSR (r/-): Machine instruction set extensions
+ * misa CSR (r/-): Machine instruction set extensions
  **************************************************************************/
 enum NEORV32_CSR_MISA_enum {
-  CSR_MISA_A      =  0, /**< CPU misa CSR  (0): A: Atomic memory accesses CPU extension available (r/-)*/
-  CSR_MISA_B      =  1, /**< CPU misa CSR  (1): B: Bit manipulation CPU extension available (r/-)*/
-  CSR_MISA_C      =  2, /**< CPU misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
-  CSR_MISA_E      =  4, /**< CPU misa CSR  (4): E: Embedded CPU extension available (r/-) */
-  CSR_MISA_I      =  8, /**< CPU misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
-  CSR_MISA_M      = 12, /**< CPU misa CSR (12): M: Multiplier/divider CPU extension available (r/-)*/
-  CSR_MISA_U      = 20, /**< CPU misa CSR (20): U: User mode CPU extension available (r/-)*/
-  CSR_MISA_X      = 23, /**< CPU misa CSR (23): X: Non-standard CPU extension available (r/-) */
-  CSR_MISA_MXL_LO = 30, /**< CPU misa CSR (30): MXL.lo: CPU data width (r/-) */
-  CSR_MISA_MXL_HI = 31  /**< CPU misa CSR (31): MXL.Hi: CPU data width (r/-) */
+  CSR_MISA_A      =  0, /**< misa CSR  (0): A: Atomic memory accesses CPU extension available (r/-)*/
+  CSR_MISA_B      =  1, /**< misa CSR  (1): B: Bit manipulation CPU extension available (r/-)*/
+  CSR_MISA_C      =  2, /**< misa CSR  (2): C: Compressed instructions CPU extension available (r/-)*/
+  CSR_MISA_E      =  4, /**< misa CSR  (4): E: Embedded CPU extension available (r/-) */
+  CSR_MISA_I      =  8, /**< misa CSR  (8): I: Base integer ISA CPU extension available (r/-) */
+  CSR_MISA_M      = 12, /**< misa CSR (12): M: Multiplier/divider CPU extension available (r/-)*/
+  CSR_MISA_U      = 20, /**< misa CSR (20): U: User mode CPU extension available (r/-)*/
+  CSR_MISA_X      = 23, /**< misa CSR (23): X: Non-standard CPU extension available (r/-) */
+  CSR_MISA_MXL_LO = 30, /**< misa CSR (30): MXL.lo: CPU data width (r/-) */
+  CSR_MISA_MXL_HI = 31  /**< misa CSR (31): MXL.Hi: CPU data width (r/-) */
 };
 
 
 /**********************************************************************//**
- * CPU mxisa CSR (r/-): Machine extended instruction set extensions (NEORV32-specific)
+ * mxisa CSR (r/-): Machine extended instruction set extensions (NEORV32-specific)
  **************************************************************************/
 enum NEORV32_CSR_MXISA_enum {
-  CSR_MXISA_ZICSR    =  0, /**< CPU mxisa CSR  (0): privileged architecture (r/-)*/
-  CSR_MXISA_ZIFENCEI =  1, /**< CPU mxisa CSR  (1): instruction stream sync (r/-)*/
-  CSR_MXISA_ZMMUL    =  2, /**< CPU mxisa CSR  (2): hardware mul/div (r/-)*/
-  CSR_MXISA_ZXCFU    =  3, /**< CPU mxisa CSR  (3): custom RISC-V instructions (r/-)*/
-  CSR_MXISA_ZKT      =  4, /**< CPU mxisa CSR  (4): data independent execution time (of cryptography operations) (r/-)*/
-  CSR_MXISA_ZFINX    =  5, /**< CPU mxisa CSR  (5): FPU using x registers (r/-)*/
-  CSR_MXISA_ZICOND   =  6, /**< CPU mxisa CSR  (6): integer conditional operations (r/-)*/
-  CSR_MXISA_ZICNTR   =  7, /**< CPU mxisa CSR  (7): standard instruction, cycle and time counter CSRs (r/-)*/
-  CSR_MXISA_SMPMP    =  8, /**< CPU mxisa CSR  (8): physical memory protection (r/-)*/
-  CSR_MXISA_ZIHPM    =  9, /**< CPU mxisa CSR  (9): hardware performance monitors (r/-)*/
-  CSR_MXISA_SDEXT    = 10, /**< CPU mxisa CSR (10): RISC-V debug mode (r/-)*/
-  CSR_MXISA_SDTRIG   = 11, /**< CPU mxisa CSR (11): RISC-V trigger module (r/-)*/
-  CSR_MXISA_ZBKX     = 12, /**< CPU mxisa CSR (12): scalar cryptography - crossbar permutation (r/-)*/
-  CSR_MXISA_ZKND     = 13, /**< CPU mxisa CSR (13): scalar cryptography - NIST AES decryption (r/-)*/
-  CSR_MXISA_ZKNE     = 14, /**< CPU mxisa CSR (14): scalar cryptography - NIST AES encryption (r/-)*/
-  CSR_MXISA_ZKNH     = 15, /**< CPU mxisa CSR (15): scalar cryptography - NIST hash functions (r/-)*/
-  CSR_MXISA_ZBKB     = 16, /**< CPU mxisa CSR (16): scalar cryptography - bit manipulation instructions (r/-)*/
-  CSR_MXISA_ZBKC     = 17, /**< CPU mxisa CSR (17): scalar cryptography - carry-less multiplication instructions (r/-)*/
-  CSR_MXISA_ZKN      = 18, /**< CPU mxisa CSR (18): scalar cryptography - NIST algorithm suite (r/-)*/
-  CSR_MXISA_ZKSH     = 19, /**< CPU mxisa CSR (19): scalar cryptography - ShangMi hash functions (r/-)*/
-  CSR_MXISA_ZKSED    = 20, /**< CPU mxisa CSR (20): scalar cryptography - ShangMi block cyphers (r/-)*/
-  CSR_MXISA_ZKS      = 21, /**< CPU mxisa CSR (21): scalar cryptography - ShangMi algorithm suite (r/-)*/
-  CSR_MXISA_ZBA      = 22, /**< CPU mxisa CSR (22): shifted-add bit-manipulation operations (r/-)*/
-  CSR_MXISA_ZBB      = 23, /**< CPU mxisa CSR (23): basic bit-manipulation operations (r/-)*/
-  CSR_MXISA_ZBS      = 24, /**< CPU mxisa CSR (24): single-bit bit-manipulation operations (r/-)*/
-  CSR_MXISA_ZAAMO    = 25, /**< CPU mxisa CSR (25): atomic read-modify-write operations (r/-)*/
-  CSR_MXISA_ZALRSC   = 26, /**< CPU mxisa CSR (26): atomic reservation-set operations (r/-)*/
-  CSR_MXISA_ZCB      = 27, /**< CPU mxisa CSR (27): additional code size reduction instruction (r/-)*/
-  CSR_MXISA_ZCA      = 28, /**< CPU mxisa CSR (28): compressed instructions without floating-point (r/-)*/
-  CSR_MXISA_ZIBI     = 29, /**< CPU mxisa CSR (29): branch with immediate-comparison (r/-)*/
-  CSR_MXISA_ZIMOP    = 30  /**< CPU mxisa CSR (30): may-be-operations (r/-)*/
+  CSR_MXISA_ZICSR    =  0, /**< mxisa CSR  (0): privileged architecture (r/-)*/
+  CSR_MXISA_ZIFENCEI =  1, /**< mxisa CSR  (1): instruction stream sync (r/-)*/
+  CSR_MXISA_ZMMUL    =  2, /**< mxisa CSR  (2): hardware mul/div (r/-)*/
+  CSR_MXISA_ZXCFU    =  3, /**< mxisa CSR  (3): custom RISC-V instructions (r/-)*/
+  CSR_MXISA_ZKT      =  4, /**< mxisa CSR  (4): data independent execution time (of cryptography operations) (r/-)*/
+  CSR_MXISA_ZFINX    =  5, /**< mxisa CSR  (5): FPU using x registers (r/-)*/
+  CSR_MXISA_ZICOND   =  6, /**< mxisa CSR  (6): integer conditional operations (r/-)*/
+  CSR_MXISA_ZICNTR   =  7, /**< mxisa CSR  (7): standard instruction, cycle and time counter CSRs (r/-)*/
+  CSR_MXISA_SMPMP    =  8, /**< mxisa CSR  (8): physical memory protection (r/-)*/
+  CSR_MXISA_ZIHPM    =  9, /**< mxisa CSR  (9): hardware performance monitors (r/-)*/
+  CSR_MXISA_SDEXT    = 10, /**< mxisa CSR (10): RISC-V debug mode (r/-)*/
+  CSR_MXISA_SDTRIG   = 11, /**< mxisa CSR (11): RISC-V trigger module (r/-)*/
+  CSR_MXISA_ZBKX     = 12, /**< mxisa CSR (12): scalar cryptography - crossbar permutation (r/-)*/
+  CSR_MXISA_ZKND     = 13, /**< mxisa CSR (13): scalar cryptography - NIST AES decryption (r/-)*/
+  CSR_MXISA_ZKNE     = 14, /**< mxisa CSR (14): scalar cryptography - NIST AES encryption (r/-)*/
+  CSR_MXISA_ZKNH     = 15, /**< mxisa CSR (15): scalar cryptography - NIST hash functions (r/-)*/
+  CSR_MXISA_ZBKB     = 16, /**< mxisa CSR (16): scalar cryptography - bit manipulation instructions (r/-)*/
+  CSR_MXISA_ZBKC     = 17, /**< mxisa CSR (17): scalar cryptography - carry-less multiplication instructions (r/-)*/
+  CSR_MXISA_ZKN      = 18, /**< mxisa CSR (18): scalar cryptography - NIST algorithm suite (r/-)*/
+  CSR_MXISA_ZKSH     = 19, /**< mxisa CSR (19): scalar cryptography - ShangMi hash functions (r/-)*/
+  CSR_MXISA_ZKSED    = 20, /**< mxisa CSR (20): scalar cryptography - ShangMi block cyphers (r/-)*/
+  CSR_MXISA_ZKS      = 21, /**< mxisa CSR (21): scalar cryptography - ShangMi algorithm suite (r/-)*/
+  CSR_MXISA_ZBA      = 22, /**< mxisa CSR (22): shifted-add bit-manipulation operations (r/-)*/
+  CSR_MXISA_ZBB      = 23, /**< mxisa CSR (23): basic bit-manipulation operations (r/-)*/
+  CSR_MXISA_ZBS      = 24, /**< mxisa CSR (24): single-bit bit-manipulation operations (r/-)*/
+  CSR_MXISA_ZAAMO    = 25, /**< mxisa CSR (25): atomic read-modify-write operations (r/-)*/
+  CSR_MXISA_ZALRSC   = 26, /**< mxisa CSR (26): atomic reservation-set operations (r/-)*/
+  CSR_MXISA_ZCB      = 27, /**< mxisa CSR (27): additional code size reduction instruction (r/-)*/
+  CSR_MXISA_ZCA      = 28, /**< mxisa CSR (28): compressed instructions without floating-point (r/-)*/
+  CSR_MXISA_ZIBI     = 29, /**< mxisa CSR (29): branch with immediate-comparison (r/-)*/
+  CSR_MXISA_ZIMOP    = 30  /**< mxisa CSR (30): may-be-operations (r/-)*/
 };
 
 
 /**********************************************************************//**
- * CPU mhpmevent hardware performance monitor events
+ * mhpmevent hardware performance monitor events
  **************************************************************************/
 enum NEORV32_HPMCNT_EVENT_enum {
   HPMCNT_EVENT_CY       = 0, /**< mhpmevent CSR (0):  Active cycle */
@@ -351,15 +350,15 @@ enum NEORV32_HPMCNT_EVENT_enum {
 
 
 /**********************************************************************//**
- * CPU pmpcfg PMP configuration attributes
+ * pmpcfg PMP configuration attributes
  **************************************************************************/
 enum NEORV32_PMPCFG_ATTRIBUTES_enum {
-  PMPCFG_R     = 0, /**< CPU pmpcfg attribute (0): Read */
-  PMPCFG_W     = 1, /**< CPU pmpcfg attribute (1): Write */
-  PMPCFG_X     = 2, /**< CPU pmpcfg attribute (2): Execute */
-  PMPCFG_A_LSB = 3, /**< CPU pmpcfg attribute (3): Mode LSB #NEORV32_PMP_MODES_enum */
-  PMPCFG_A_MSB = 4, /**< CPU pmpcfg attribute (4): Mode MSB #NEORV32_PMP_MODES_enum */
-  PMPCFG_L     = 7  /**< CPU pmpcfg attribute (7): Locked */
+  PMPCFG_R     = 0, /**< pmpcfg attribute (0): Read */
+  PMPCFG_W     = 1, /**< pmpcfg attribute (1): Write */
+  PMPCFG_X     = 2, /**< pmpcfg attribute (2): Execute */
+  PMPCFG_A_LSB = 3, /**< pmpcfg attribute (3): Mode LSB #NEORV32_PMP_MODES_enum */
+  PMPCFG_A_MSB = 4, /**< pmpcfg attribute (4): Mode MSB #NEORV32_PMP_MODES_enum */
+  PMPCFG_L     = 7  /**< pmpcfg attribute (7): Locked */
 };
 
 /**********************************************************************//**
@@ -374,7 +373,7 @@ enum NEORV32_PMP_MODES_enum {
 
 
 /**********************************************************************//**
- * Trap codes from mcause CSR.
+ * Trap codes from mcause CSR
  **************************************************************************/
 enum NEORV32_EXCEPTION_CODES_enum {
   TRAP_CODE_I_MISALIGNED = 0x00000000U, /**< 0.0:  Instruction address misaligned */
