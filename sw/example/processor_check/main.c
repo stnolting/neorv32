@@ -444,9 +444,59 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Counter privilege-mode filtering
+  // ----------------------------------------------------------
+  PRINT("[%i] CNT priv-mode filtering ", cnt_test);
+  trap_cause = trap_never_c;
+
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_SMCNTRPMF)) {
+    cnt_test++;
+
+    neorv32_cpu_csr_write(CSR_MCYCLECFGH,   1 << CSR_MCYCLECFGH_UINH);   // inhibit cycle when in user-mode
+    neorv32_cpu_csr_write(CSR_MINSTRETCFGH, 1 << CSR_MINSTRETCFGH_MINH); // inhibit instret when in machine-mode
+
+    uint32_t delta_cy_m, delta_cy_u, delta_ir_m, delta_ir_u;
+
+    // machine-mode test
+    delta_cy_m = neorv32_cpu_csr_read(CSR_CYCLE);
+    delta_ir_m = neorv32_cpu_csr_read(CSR_INSTRET);
+    asm volatile ("nop");
+    asm volatile ("nop");
+    delta_cy_m = neorv32_cpu_csr_read(CSR_CYCLE) - delta_cy_m;
+    delta_ir_m = neorv32_cpu_csr_read(CSR_INSTRET) - delta_ir_m;
+
+    // user-mode test
+    goto_user_mode();
+    {
+      delta_cy_u = neorv32_cpu_csr_read(CSR_CYCLE);
+      delta_ir_u = neorv32_cpu_csr_read(CSR_INSTRET);
+      asm volatile ("nop");
+      asm volatile ("nop");
+      delta_cy_u = neorv32_cpu_csr_read(CSR_CYCLE) - delta_cy_u;
+      delta_ir_u = neorv32_cpu_csr_read(CSR_INSTRET) - delta_ir_u;
+      asm volatile ("ecall"); // exit user-mode
+    }
+
+    if ((delta_cy_m != 0) && (delta_cy_u == 0) && (delta_ir_m == 0) && (delta_ir_u != 0)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    // re-enable base counters for all privilege modes
+    neorv32_cpu_csr_write(CSR_MCYCLECFGH, 0);
+    neorv32_cpu_csr_write(CSR_MINSTRETCFGH, 0);
+  }
+  else {
+    PRINT("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
   // May-be-operation
   // ----------------------------------------------------------
-  PRINT("[%i] May-be-operation ", cnt_test);
+  PRINT("[%i] May-be-operations ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
