@@ -15,7 +15,7 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_verilog_wrapper is
-  port ( -- [note] add ports as required; generics/parameters cannot be used
+  port ( -- [NOTE] add ports as required; generics/parameters cannot be used
     -- Global control --
     clk_i       : in  std_ulogic; -- global clock, rising edge
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
@@ -32,7 +32,7 @@ begin
   -- The core of the problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_top_inst: neorv32_top
-  generic map ( -- [note] add configuration options as required
+  generic map ( -- [NOTE] add configuration options as required
     -- Processor Clocking --
     CLOCK_FREQUENCY     => 100_000_000, -- clock frequency of clk_i in Hz
     -- Boot Configuration --
@@ -64,6 +64,7 @@ begin
     RISCV_ISA_Zksed     => true,        -- ShangMi block cipher extension
     RISCV_ISA_Zksh      => true,        -- ShangMi hash extension
     RISCV_ISA_Zxcfu     => true,        -- custom (instr.) functions unit
+    RISCV_ISA_Smcntrpmf => true,        -- counter privilege-mode filtering
     -- Tuning Options --
     CPU_FAST_MUL_EN     => true,        -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   => true,        -- use barrel shifter for shift operations
@@ -109,7 +110,7 @@ begin
     IO_TRACER_BUFFER    => 32,          -- trace buffer depth
     IO_TRACER_SIMLOG_EN => true         -- enable simulation-mode trace log
   )
-  port map ( -- [note] add ports as required
+  port map ( -- [NOTE] add ports as required
     -- Global control --
     clk_i       => clk_i,       -- global clock, rising edge
     rstn_i      => rstn_i,      -- global reset, low-active, async

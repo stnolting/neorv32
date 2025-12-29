@@ -165,6 +165,7 @@ begin
     RISCV_ISA_Zksh      => RISCV_ISA_Zksh,
     RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
     RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
+    RISCV_ISA_Smcntrpmf => true,
     -- Extension Options --
     CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
     CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,

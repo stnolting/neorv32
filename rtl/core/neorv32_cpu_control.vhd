@@ -18,48 +18,49 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    HART_ID          : natural range 0 to 1023;        -- hardware thread ID
-    VENDOR_ID        : std_ulogic_vector(31 downto 0); -- vendor ID
-    BOOT_ADDR        : std_ulogic_vector(31 downto 0); -- boot address
-    DEBUG_PARK_ADDR  : std_ulogic_vector(31 downto 0); -- debug-mode parking loop entry address, 4-byte aligned
-    DEBUG_EXC_ADDR   : std_ulogic_vector(31 downto 0); -- debug-mode exception entry address, 4-byte aligned
+    HART_ID             : natural range 0 to 1023;        -- hardware thread ID
+    VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor ID
+    BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- boot address
+    DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- debug-mode parking loop entry address, 4-byte aligned
+    DEBUG_EXC_ADDR      : std_ulogic_vector(31 downto 0); -- debug-mode exception entry address, 4-byte aligned
     -- RISC-V ISA Extensions --
-    RISCV_ISA_A      : boolean; -- atomic memory operations extension
-    RISCV_ISA_B      : boolean; -- bit-manipulation extension
-    RISCV_ISA_C      : boolean; -- compressed extension
-    RISCV_ISA_E      : boolean; -- embedded-class register file extension
-    RISCV_ISA_M      : boolean; -- mul/div extension
-    RISCV_ISA_U      : boolean; -- user mode extension
-    RISCV_ISA_Zaamo  : boolean; -- atomic read-modify-write extension
-    RISCV_ISA_Zalrsc : boolean; -- atomic reservation-set operations extension
-    RISCV_ISA_Zcb    : boolean; -- additional code size reduction instructions
-    RISCV_ISA_Zba    : boolean; -- shifted-add bit-manipulation extension
-    RISCV_ISA_Zbb    : boolean; -- basic bit-manipulation extension
-    RISCV_ISA_Zbkb   : boolean; -- bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc   : boolean; -- carry-less multiplication instructions
-    RISCV_ISA_Zbkx   : boolean; -- cryptography crossbar permutation extension
-    RISCV_ISA_Zbs    : boolean; -- single-bit bit-manipulation extension
-    RISCV_ISA_Zfinx  : boolean; -- 32-bit floating-point extension
-    RISCV_ISA_Zibi   : boolean; -- branch with immediate
-    RISCV_ISA_Zicntr : boolean; -- base counters
-    RISCV_ISA_Zicond : boolean; -- integer conditional operations
-    RISCV_ISA_Zihpm  : boolean; -- hardware performance monitors
-    RISCV_ISA_Zimop  : boolean; -- may-be-operations
-    RISCV_ISA_Zkn    : boolean; -- NIST algorithm suite
-    RISCV_ISA_Zknd   : boolean; -- cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne   : boolean; -- cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh   : boolean; -- cryptography NIST hash extension
-    RISCV_ISA_Zks    : boolean; -- ShangMi algorithm suite
-    RISCV_ISA_Zksed  : boolean; -- ShangMi block cipher extension
-    RISCV_ISA_Zksh   : boolean; -- ShangMi hash extension
-    RISCV_ISA_Zkt    : boolean; -- data-independent execution time (for cryptography operations)
-    RISCV_ISA_Zmmul  : boolean; -- multiply-only M sub-extension
-    RISCV_ISA_Zxcfu  : boolean; -- custom (instr.) functions unit
-    RISCV_ISA_Sdext  : boolean; -- external debug mode extension
-    RISCV_ISA_Sdtrig : boolean; -- trigger module extension
-    RISCV_ISA_Smpmp  : boolean; -- physical memory protection
+    RISCV_ISA_A         : boolean; -- atomic memory operations extension
+    RISCV_ISA_B         : boolean; -- bit-manipulation extension
+    RISCV_ISA_C         : boolean; -- compressed extension
+    RISCV_ISA_E         : boolean; -- embedded-class register file extension
+    RISCV_ISA_M         : boolean; -- mul/div extension
+    RISCV_ISA_U         : boolean; -- user mode extension
+    RISCV_ISA_Zaamo     : boolean; -- atomic read-modify-write extension
+    RISCV_ISA_Zalrsc    : boolean; -- atomic reservation-set operations extension
+    RISCV_ISA_Zcb       : boolean; -- additional code size reduction instructions
+    RISCV_ISA_Zba       : boolean; -- shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb       : boolean; -- basic bit-manipulation extension
+    RISCV_ISA_Zbkb      : boolean; -- bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc      : boolean; -- carry-less multiplication instructions
+    RISCV_ISA_Zbkx      : boolean; -- cryptography crossbar permutation extension
+    RISCV_ISA_Zbs       : boolean; -- single-bit bit-manipulation extension
+    RISCV_ISA_Zfinx     : boolean; -- 32-bit floating-point extension
+    RISCV_ISA_Zibi      : boolean; -- branch with immediate
+    RISCV_ISA_Zicntr    : boolean; -- base counters
+    RISCV_ISA_Zicond    : boolean; -- integer conditional operations
+    RISCV_ISA_Zihpm     : boolean; -- hardware performance monitors
+    RISCV_ISA_Zimop     : boolean; -- may-be-operations
+    RISCV_ISA_Zkn       : boolean; -- NIST algorithm suite
+    RISCV_ISA_Zknd      : boolean; -- cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne      : boolean; -- cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh      : boolean; -- cryptography NIST hash extension
+    RISCV_ISA_Zks       : boolean; -- ShangMi algorithm suite
+    RISCV_ISA_Zksed     : boolean; -- ShangMi block cipher extension
+    RISCV_ISA_Zksh      : boolean; -- ShangMi hash extension
+    RISCV_ISA_Zkt       : boolean; -- data-independent execution time (for cryptography operations)
+    RISCV_ISA_Zmmul     : boolean; -- multiply-only M sub-extension
+    RISCV_ISA_Zxcfu     : boolean; -- custom (instr.) functions unit
+    RISCV_ISA_Sdext     : boolean; -- external debug mode extension
+    RISCV_ISA_Sdtrig    : boolean; -- trigger module extension
+    RISCV_ISA_Smcntrpmf : boolean; -- counter privilege-mode filtering
+    RISCV_ISA_Smpmp     : boolean; -- physical memory protection
     -- Tuning Options --
-    CPU_CONSTT_BR_EN : boolean  -- constant-time branches
+    CPU_CONSTT_BR_EN    : boolean  -- constant-time branches
   );
   port (
     -- global control --
@@ -598,6 +599,10 @@ begin
       when csr_cycle_c | csr_mcycle_c | csr_instret_c | csr_minstret_c | csr_cycleh_c | csr_mcycleh_c | csr_instreth_c | csr_minstreth_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zicntr);
 
+      -- counter privilege-mode filtering CSRs --
+      when csr_mcyclecfg_c | csr_minstretcfg_c | csr_mcyclecfgh_c | csr_minstretcfgh_c =>
+        csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Smcntrpmf);
+
       -- debug-mode CSRs --
       when csr_dcsr_c | csr_dpc_c | csr_dscratch0_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Sdext);
@@ -1079,7 +1084,6 @@ begin
           csr.mstatus_mie  <= csr.mstatus_mpie;
           csr.mstatus_mpie <= '1';
         end if;
-
       end if;
 
       -- ********************************************************************************
@@ -1212,38 +1216,38 @@ begin
           -- NEORV32-specific
           -- --------------------------------------------------------------------
           when csr_mxisa_c => -- machine extended ISA extensions information
-            csr_rdata(0)  <= '1';                                -- Zicsr: CSR access (always enabled)
-            csr_rdata(1)  <= '1';                                -- Zifencei: instruction stream sync. (always enabled)
-            csr_rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_Zmmul);  -- Zmmul: mul/div
-            csr_rdata(3)  <= bool_to_ulogic_f(RISCV_ISA_Zxcfu);  -- Zxcfu: custom instructions
-            csr_rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_Zkt);    -- Zkt: data independent execution latency
-            csr_rdata(5)  <= bool_to_ulogic_f(RISCV_ISA_Zfinx);  -- Zfinx: FPU using x registers
-            csr_rdata(6)  <= bool_to_ulogic_f(RISCV_ISA_Zicond); -- Zicond: integer conditional operations
-            csr_rdata(7)  <= bool_to_ulogic_f(RISCV_ISA_Zicntr); -- Zicntr: base counters
-            csr_rdata(8)  <= bool_to_ulogic_f(RISCV_ISA_Smpmp);  -- Smpmp: physical memory protection
-            csr_rdata(9)  <= bool_to_ulogic_f(RISCV_ISA_Zihpm);  -- Zihpm: hardware performance monitors
-            csr_rdata(10) <= bool_to_ulogic_f(RISCV_ISA_Sdext);  -- Sdext: external debug
-            csr_rdata(11) <= bool_to_ulogic_f(RISCV_ISA_Sdtrig); -- Sdtrig: trigger module
-            csr_rdata(12) <= bool_to_ulogic_f(RISCV_ISA_Zbkx);   -- Zbkx: cryptography crossbar permutation
-            csr_rdata(13) <= bool_to_ulogic_f(RISCV_ISA_Zknd);   -- Zknd: cryptography NIST AES decryption
-            csr_rdata(14) <= bool_to_ulogic_f(RISCV_ISA_Zkne);   -- Zkne: cryptography NIST AES encryption
-            csr_rdata(15) <= bool_to_ulogic_f(RISCV_ISA_Zknh);   -- Zknh: cryptography NIST hash functions
-            csr_rdata(16) <= bool_to_ulogic_f(RISCV_ISA_Zbkb);   -- Zbkb: bit manipulation instructions for cryptography
-            csr_rdata(17) <= bool_to_ulogic_f(RISCV_ISA_Zbkc);   -- Zbkc: carry-less multiplication for cryptography
-            csr_rdata(18) <= bool_to_ulogic_f(RISCV_ISA_Zkn);    -- Zkn: NIST algorithm suite
-            csr_rdata(19) <= bool_to_ulogic_f(RISCV_ISA_Zksh);   -- Zksh: ShangMi hash functions
-            csr_rdata(20) <= bool_to_ulogic_f(RISCV_ISA_Zksed);  -- Zksed: ShangMi block ciphers
-            csr_rdata(21) <= bool_to_ulogic_f(RISCV_ISA_Zks);    -- Zks: ShangMi algorithm suite
-            csr_rdata(22) <= bool_to_ulogic_f(RISCV_ISA_Zba);    -- Zba: shifted-add bit-manipulation
-            csr_rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);    -- Zbb: basic bit-manipulation
-            csr_rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);    -- Zbs: single-bit bit-manipulation
-            csr_rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);  -- Zaamo: atomic memory operations
-            csr_rdata(26) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc); -- Zalrsc: reservation-set operations
-            csr_rdata(27) <= bool_to_ulogic_f(RISCV_ISA_Zcb);    -- Zcb: additional code size reduction instructions
-            csr_rdata(28) <= bool_to_ulogic_f(RISCV_ISA_C);      -- Zca: C without floating-point
-            csr_rdata(29) <= bool_to_ulogic_f(RISCV_ISA_Zibi);   -- Zibi: branch with immediate-comparison
-            csr_rdata(30) <= bool_to_ulogic_f(RISCV_ISA_Zimop);  -- Zimop: may-be-operations
-            csr_rdata(31) <= '0';                                -- reserved
+            csr_rdata(0)  <= '1';                                   -- Zicsr: CSR access (always enabled)
+            csr_rdata(1)  <= '1';                                   -- Zifencei: instruction stream sync. (always enabled)
+            csr_rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_Zmmul);     -- Zmmul: mul/div
+            csr_rdata(3)  <= bool_to_ulogic_f(RISCV_ISA_Zxcfu);     -- Zxcfu: custom instructions
+            csr_rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_Zkt);       -- Zkt: data independent execution latency
+            csr_rdata(5)  <= bool_to_ulogic_f(RISCV_ISA_Zfinx);     -- Zfinx: FPU using x registers
+            csr_rdata(6)  <= bool_to_ulogic_f(RISCV_ISA_Zicond);    -- Zicond: integer conditional operations
+            csr_rdata(7)  <= bool_to_ulogic_f(RISCV_ISA_Zicntr);    -- Zicntr: base counters
+            csr_rdata(8)  <= bool_to_ulogic_f(RISCV_ISA_Smpmp);     -- Smpmp: physical memory protection
+            csr_rdata(9)  <= bool_to_ulogic_f(RISCV_ISA_Zihpm);     -- Zihpm: hardware performance monitors
+            csr_rdata(10) <= bool_to_ulogic_f(RISCV_ISA_Sdext);     -- Sdext: external debug
+            csr_rdata(11) <= bool_to_ulogic_f(RISCV_ISA_Sdtrig);    -- Sdtrig: trigger module
+            csr_rdata(12) <= bool_to_ulogic_f(RISCV_ISA_Zbkx);      -- Zbkx: cryptography crossbar permutation
+            csr_rdata(13) <= bool_to_ulogic_f(RISCV_ISA_Zknd);      -- Zknd: cryptography NIST AES decryption
+            csr_rdata(14) <= bool_to_ulogic_f(RISCV_ISA_Zkne);      -- Zkne: cryptography NIST AES encryption
+            csr_rdata(15) <= bool_to_ulogic_f(RISCV_ISA_Zknh);      -- Zknh: cryptography NIST hash functions
+            csr_rdata(16) <= bool_to_ulogic_f(RISCV_ISA_Zbkb);      -- Zbkb: bit manipulation instructions for cryptography
+            csr_rdata(17) <= bool_to_ulogic_f(RISCV_ISA_Zbkc);      -- Zbkc: carry-less multiplication for cryptography
+            csr_rdata(18) <= bool_to_ulogic_f(RISCV_ISA_Zkn);       -- Zkn: NIST algorithm suite
+            csr_rdata(19) <= bool_to_ulogic_f(RISCV_ISA_Zksh);      -- Zksh: ShangMi hash functions
+            csr_rdata(20) <= bool_to_ulogic_f(RISCV_ISA_Zksed);     -- Zksed: ShangMi block ciphers
+            csr_rdata(21) <= bool_to_ulogic_f(RISCV_ISA_Zks);       -- Zks: ShangMi algorithm suite
+            csr_rdata(22) <= bool_to_ulogic_f(RISCV_ISA_Zba);       -- Zba: shifted-add bit-manipulation
+            csr_rdata(23) <= bool_to_ulogic_f(RISCV_ISA_Zbb);       -- Zbb: basic bit-manipulation
+            csr_rdata(24) <= bool_to_ulogic_f(RISCV_ISA_Zbs);       -- Zbs: single-bit bit-manipulation
+            csr_rdata(25) <= bool_to_ulogic_f(RISCV_ISA_Zaamo);     -- Zaamo: atomic memory operations
+            csr_rdata(26) <= bool_to_ulogic_f(RISCV_ISA_Zalrsc);    -- Zalrsc: reservation-set operations
+            csr_rdata(27) <= bool_to_ulogic_f(RISCV_ISA_Zcb);       -- Zcb: additional code size reduction instructions
+            csr_rdata(28) <= bool_to_ulogic_f(RISCV_ISA_C);         -- Zca: C without floating-point
+            csr_rdata(29) <= bool_to_ulogic_f(RISCV_ISA_Zibi);      -- Zibi: branch with immediate-comparison
+            csr_rdata(30) <= bool_to_ulogic_f(RISCV_ISA_Zimop);     -- Zimop: may-be-operations
+            csr_rdata(31) <= bool_to_ulogic_f(RISCV_ISA_Smcntrpmf); -- Smcntrpmf: counter privilege-mode filtering
 
           -- --------------------------------------------------------------------
           -- undefined/unavailable or implemented externally
