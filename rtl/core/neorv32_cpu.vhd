@@ -344,10 +344,12 @@ begin
   if RISCV_ISA_Zicntr or RISCV_ISA_Zihpm generate
     neorv32_cpu_counters_inst: entity neorv32.neorv32_cpu_counters
     generic map (
-      ZICNTR_EN => RISCV_ISA_Zicntr, -- implement base counters
-      ZIHPM_EN  => RISCV_ISA_Zihpm,  -- implement hardware performance monitors (HPMs)
-      HPM_NUM   => HPM_NUM_CNTS,     -- number of implemented HPM counters (0..13)
-      HPM_WIDTH => HPM_CNT_WIDTH     -- total size of HPM counters (0..64)
+      ZICNTR_EN    => RISCV_ISA_Zicntr,    -- base counters
+      ZIHPM_EN     => RISCV_ISA_Zihpm,     -- hardware performance monitors (HPMs)
+      SMCNTRPMF_EN => RISCV_ISA_Smcntrpmf, -- counter privilege-mode filtering
+      UMODE_EN     => RISCV_ISA_U,         -- user-mode
+      HPM_NUM      => HPM_NUM_CNTS,        -- number of implemented HPM counters (0..13)
+      HPM_WIDTH    => HPM_CNT_WIDTH        -- total size of HPM counters (0..64)
     )
     port map (
       -- global control --
@@ -360,7 +362,7 @@ begin
   end generate;
 
   cnts_disabled:
-  if (not RISCV_ISA_Zicntr) and (not RISCV_ISA_Zihpm) generate
+  if not (RISCV_ISA_Zicntr or RISCV_ISA_Zihpm) generate
     xcsr_cnt <= (others => '0');
   end generate;
 
