@@ -51,7 +51,7 @@ architecture neorv32_prim_fifo_rtl of neorv32_prim_fifo is
 
   -- local signals --
   signal rdata : std_ulogic_vector(DWIDTH-1 downto 0);
-  signal we, re, ram_re, match, full, empty, avail : std_ulogic;
+  signal we, re, match, full, empty, avail : std_ulogic;
   signal w_pnt, w_nxt, r_pnt, r_nxt : std_ulogic_vector(AWIDTH downto 0);
 
 begin
@@ -446,7 +446,8 @@ begin
       else
         count(31 downto 0) <= inc_lo(31 downto 0);
       end if;
-      carry(0) <= inc_lo(32); -- low-to-high carry
+      -- low-to-high carry --
+      carry(0) <= inc_lo(32);
       -- high-word --
       if (we_i(1) = '1') then
         count(63 downto 32) <= data_i;

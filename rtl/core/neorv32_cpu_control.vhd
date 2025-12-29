@@ -1084,7 +1084,6 @@ begin
           csr.mstatus_mie  <= csr.mstatus_mpie;
           csr.mstatus_mpie <= '1';
         end if;
-
       end if;
 
       -- ********************************************************************************
