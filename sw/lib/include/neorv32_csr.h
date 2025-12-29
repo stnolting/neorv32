@@ -27,13 +27,17 @@ enum NEORV32_CSR_enum {
   CSR_FCSR           = 0x003, /**< 0x003 - fcsr:   Floating-point control/status register (frm + fflags) */
 
   /* machine control and status */
-  CSR_MSTATUS        = 0x300, /**< 0x300 - mstatus:       Machine status register (#NEORV32_CSR_MSTATUS_enum) */
-  CSR_MISA           = 0x301, /**< 0x301 - misa:          Machine ISA and extensions (#NEORV32_CSR_MISA_enum) */
-  CSR_MIE            = 0x304, /**< 0x304 - mie:           Machine interrupt-enable register (#NEORV32_CSR_MIE_enum) */
-  CSR_MTVEC          = 0x305, /**< 0x305 - mtvec:         Machine trap-handler base address */
-  CSR_MCOUNTEREN     = 0x306, /**< 0x305 - mcounteren:    Machine counter enable register (#NEORV32_CSR_MCOUNTEREN_enum) */
-  CSR_MSTATUSH       = 0x310, /**< 0x310 - mstatush:      Machine status register - high word */
+  CSR_MSTATUS        = 0x300, /**< 0x300 - mstatus:    Machine status register (#NEORV32_CSR_MSTATUS_enum) */
+  CSR_MISA           = 0x301, /**< 0x301 - misa:       Machine ISA and extensions (#NEORV32_CSR_MISA_enum) */
+  CSR_MIE            = 0x304, /**< 0x304 - mie:        Machine interrupt-enable register (#NEORV32_CSR_MIE_enum) */
+  CSR_MTVEC          = 0x305, /**< 0x305 - mtvec:      Machine trap-handler base address */
+  CSR_MCOUNTEREN     = 0x306, /**< 0x305 - mcounteren: Machine counter enable register (#NEORV32_CSR_MCOUNTEREN_enum) */
+  CSR_MSTATUSH       = 0x310, /**< 0x310 - mstatush:   Machine status register - high word */
+
+  /* machine counter control */
   CSR_MCOUNTINHIBIT  = 0x320, /**< 0x320 - mcountinhibit: Machine counter-inhibit register (#NEORV32_CSR_MCOUNTINHIBIT_enum) */
+  CSR_MCYCLECFG      = 0x321, /**< 0x321 - mcyclecfg:     Machine cycle counter privilege mode filtering - low word */
+  CSR_MINSTRETCFG    = 0x322, /**< 0x322 - minstretcfg:   Machine instret counter privilege mode filtering - low word */
 
   /* machine configuration */
   CSR_MENVCFG        = 0x30a, /**< 0x30a - menvcfg:  Machine environment configuration register - low word */
@@ -84,6 +88,10 @@ enum NEORV32_CSR_enum {
   CSR_PMPADDR13      = 0x3bd, /**< 0x3bd - pmpaddr13: Physical memory protection address register 13 */
   CSR_PMPADDR14      = 0x3be, /**< 0x3be - pmpaddr14: Physical memory protection address register 14 */
   CSR_PMPADDR15      = 0x3bf, /**< 0x3bf - pmpaddr15: Physical memory protection address register 15 */
+
+  /* machine counter control - continued */
+  CSR_MCYCLECFGH     = 0x721, /**< 0x721 - mcyclecfgh:   Machine cycle counter privilege mode filtering - high word */
+  CSR_MINSTRETCFGH   = 0x722, /**< 0x722 - minstretcfgh: Machine instret counter privilege mode filtering - high word */
 
   /* on-chip debugger - hardware trigger module */
   CSR_TSELECT        = 0x7a0, /**< 0x7a0 - tselect:  Trigger select */

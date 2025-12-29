@@ -598,6 +598,10 @@ begin
       when csr_cycle_c | csr_mcycle_c | csr_instret_c | csr_minstret_c | csr_cycleh_c | csr_mcycleh_c | csr_instreth_c | csr_minstreth_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zicntr);
 
+      -- counter privilege-mode filtering CSRs --
+      when csr_mcyclecfg_c | csr_minstretcfg_c | csr_mcyclecfgh_c | csr_minstretcfgh_c =>
+        csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Smcntrpmf);
+
       -- debug-mode CSRs --
       when csr_dcsr_c | csr_dpc_c | csr_dscratch0_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Sdext);
