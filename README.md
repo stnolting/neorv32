@@ -112,6 +112,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 [`Zxcfu`](https://stnolting.github.io/neorv32/#_zxcfu_isa_extension)
 [`Sdext`](https://stnolting.github.io/neorv32/#_sdext_isa_extension)
 [`Sdtrig`](https://stnolting.github.io/neorv32/#_sdtrig_isa_extension)
+[`Smcntrpmf`](https://stnolting.github.io/neorv32/#_smcntrpmf_isa_extension)
 [`Smpmp`](https://stnolting.github.io/neorv32/#_smpmp_isa_extension)
 * compatible to subsets of the RISC-V "Unprivileged ISA Specification" and "Privileged Architecture Specification"
 * `machine` and `user` privilege modes
