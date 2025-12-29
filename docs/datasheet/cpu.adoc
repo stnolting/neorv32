@@ -154,8 +154,8 @@ specific architecture style:
 
 .No Hardware Reset
 [IMPORTANT]
-Apart from the <<_flipflop_based>> style, the register file does not provide a dedicated hardware reset. Hence, all `x`
-registers power-up in an undefined state and need software-based initialization (e.g. by the <<_start_up_code_crt0>>).
+Apart from the <<_register_based_with_reset>> style, the register file does not provide a dedicated hardware reset.
+Hence, all `x` registers power-up in an undefined state and need software-based initialization (e.g. by the <<_start_up_code_crt0>>).
 
 .Technology-Specific Register File
 [TIP]
