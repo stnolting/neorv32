@@ -250,10 +250,11 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Counters and Timers}]
   add_params $group {
-    { RISCV_ISA_Zicntr {Zicntr - Base counters (cycles and instructions)} {} }
-    { RISCV_ISA_Zihpm  {Zihpm - Hardware performance monitors (HPMs)}     {} }
-    { HPM_CNT_WIDTH    {HPM width}                                        {Counter width in bits}  {$RISCV_ISA_Zihpm} }
-    { HPM_NUM_CNTS     {HPM counters}                                     {Number of HPM counters} {$RISCV_ISA_Zihpm} }
+    { RISCV_ISA_Zicntr    {Zicntr - Base counters (cycles and instructions)} {} }
+    { RISCV_ISA_Smcntrpmf {Smcntrpmf - Counter privilege-mode filtering}     {} }
+    { RISCV_ISA_Zihpm     {Zihpm - Hardware performance monitors (HPMs)}     {} }
+    { HPM_CNT_WIDTH       {HPM width}                                        {Counter width in bits}  {$RISCV_ISA_Zihpm} }
+    { HPM_NUM_CNTS        {HPM counters}                                     {Number of HPM counters} {$RISCV_ISA_Zihpm} }
   }
 
   set group [add_group $page {Bit-Manipulation}]

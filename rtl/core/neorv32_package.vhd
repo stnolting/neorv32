@@ -870,6 +870,7 @@ package neorv32_package is
       RISCV_ISA_Zksed       : boolean                        := false;
       RISCV_ISA_Zksh        : boolean                        := false;
       RISCV_ISA_Zxcfu       : boolean                        := false;
+      RISCV_ISA_Smcntrpmf   : boolean                        := false;
       -- Tuning Options --
       CPU_CONSTT_BR_EN      : boolean                        := false;
       CPU_FAST_MUL_EN       : boolean                        := false;

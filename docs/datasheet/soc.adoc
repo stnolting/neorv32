@@ -216,7 +216,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `OCD_EN`                | boolean   | false         | Implement the on-chip debugger and the CPU debug mode (<<_sdext_isa_extension>>).
 | `OCD_NUM_HW_TRIGGERS`   | natural   | 0             | Number of implemented HW triggers (<<_trigger_module>> / <<_sdtrig_isa_extension>>) for hardware break-/watchpoints (0..16).
 | `OCD_AUTHENTICATION`    | boolean   | false         | Implement <<_debug_authentication>> module.
-| `OCD_JEDEC_ID`          | suv(10:0) | "00000000000" | JEDEC ID; continuation codes plus vendor ID (passed to the JTAG <<_debug_transport_module_dtm>>).
+| `OCD_JEDEC_ID`          | suv(10:0) | "00000000000" | JEDEC ID: continuation codes plus vendor ID.
 4+^| **CPU <<_instruction_sets_and_extensions>>**
 | `RISCV_ISA_C`           | boolean   | false         | Enable <<_c_isa_extension>> (compressed instructions).
 | `RISCV_ISA_E`           | boolean   | false         | Enable <<_e_isa_extension>> (reduced register file size).
@@ -244,6 +244,7 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `RISCV_ISA_Zksh`        | boolean   | false         | Enable <<_zksh_isa_extension>> (scalar cryptography ShangMi hash functions).
 | `RISCV_ISA_Zmmul`       | boolean   | false         | Enable <<_zmmul_isa_extension>> (hardware-based integer multiplication).
 | `RISCV_ISA_Zxcfu`       | boolean   | false         | Enable NEORV32-specific <<_zxcfu_isa_extension>> (custom RISC-V instructions).
+| `RISCV_ISA_Smcntrpmf`   | boolean   | false         | Enable <<_smcntrpmf_isa_extension>> (counter privilege-mode filtering).
 4+^| **<<_cpu_tuning_options>>**
 | `CPU_CONSTT_BR_EN`      | boolean   | false         | Implement constant-time branches (same execution times for taken and not-taken branches).
 | `CPU_FAST_MUL_EN`       | boolean   | false         | Implement fast but large full-parallel multipliers (trying to infer DSP blocks); see section <<_cpu_arithmetic_logic_unit>>.
