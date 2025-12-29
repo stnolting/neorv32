@@ -305,37 +305,56 @@ enum NEORV32_CSR_MISA_enum {
  * mxisa CSR (r/-): Machine extended instruction set extensions (NEORV32-specific)
  **************************************************************************/
 enum NEORV32_CSR_MXISA_enum {
-  CSR_MXISA_ZICSR    =  0, /**< mxisa CSR  (0): privileged architecture (r/-)*/
-  CSR_MXISA_ZIFENCEI =  1, /**< mxisa CSR  (1): instruction stream sync (r/-)*/
-  CSR_MXISA_ZMMUL    =  2, /**< mxisa CSR  (2): hardware mul/div (r/-)*/
-  CSR_MXISA_ZXCFU    =  3, /**< mxisa CSR  (3): custom RISC-V instructions (r/-)*/
-  CSR_MXISA_ZKT      =  4, /**< mxisa CSR  (4): data independent execution time (of cryptography operations) (r/-)*/
-  CSR_MXISA_ZFINX    =  5, /**< mxisa CSR  (5): FPU using x registers (r/-)*/
-  CSR_MXISA_ZICOND   =  6, /**< mxisa CSR  (6): integer conditional operations (r/-)*/
-  CSR_MXISA_ZICNTR   =  7, /**< mxisa CSR  (7): standard instruction, cycle and time counter CSRs (r/-)*/
-  CSR_MXISA_SMPMP    =  8, /**< mxisa CSR  (8): physical memory protection (r/-)*/
-  CSR_MXISA_ZIHPM    =  9, /**< mxisa CSR  (9): hardware performance monitors (r/-)*/
-  CSR_MXISA_SDEXT    = 10, /**< mxisa CSR (10): RISC-V debug mode (r/-)*/
-  CSR_MXISA_SDTRIG   = 11, /**< mxisa CSR (11): RISC-V trigger module (r/-)*/
-  CSR_MXISA_ZBKX     = 12, /**< mxisa CSR (12): scalar cryptography - crossbar permutation (r/-)*/
-  CSR_MXISA_ZKND     = 13, /**< mxisa CSR (13): scalar cryptography - NIST AES decryption (r/-)*/
-  CSR_MXISA_ZKNE     = 14, /**< mxisa CSR (14): scalar cryptography - NIST AES encryption (r/-)*/
-  CSR_MXISA_ZKNH     = 15, /**< mxisa CSR (15): scalar cryptography - NIST hash functions (r/-)*/
-  CSR_MXISA_ZBKB     = 16, /**< mxisa CSR (16): scalar cryptography - bit manipulation instructions (r/-)*/
-  CSR_MXISA_ZBKC     = 17, /**< mxisa CSR (17): scalar cryptography - carry-less multiplication instructions (r/-)*/
-  CSR_MXISA_ZKN      = 18, /**< mxisa CSR (18): scalar cryptography - NIST algorithm suite (r/-)*/
-  CSR_MXISA_ZKSH     = 19, /**< mxisa CSR (19): scalar cryptography - ShangMi hash functions (r/-)*/
-  CSR_MXISA_ZKSED    = 20, /**< mxisa CSR (20): scalar cryptography - ShangMi block cyphers (r/-)*/
-  CSR_MXISA_ZKS      = 21, /**< mxisa CSR (21): scalar cryptography - ShangMi algorithm suite (r/-)*/
-  CSR_MXISA_ZBA      = 22, /**< mxisa CSR (22): shifted-add bit-manipulation operations (r/-)*/
-  CSR_MXISA_ZBB      = 23, /**< mxisa CSR (23): basic bit-manipulation operations (r/-)*/
-  CSR_MXISA_ZBS      = 24, /**< mxisa CSR (24): single-bit bit-manipulation operations (r/-)*/
-  CSR_MXISA_ZAAMO    = 25, /**< mxisa CSR (25): atomic read-modify-write operations (r/-)*/
-  CSR_MXISA_ZALRSC   = 26, /**< mxisa CSR (26): atomic reservation-set operations (r/-)*/
-  CSR_MXISA_ZCB      = 27, /**< mxisa CSR (27): additional code size reduction instruction (r/-)*/
-  CSR_MXISA_ZCA      = 28, /**< mxisa CSR (28): compressed instructions without floating-point (r/-)*/
-  CSR_MXISA_ZIBI     = 29, /**< mxisa CSR (29): branch with immediate-comparison (r/-)*/
-  CSR_MXISA_ZIMOP    = 30  /**< mxisa CSR (30): may-be-operations (r/-)*/
+  CSR_MXISA_ZICSR     =  0, /**< mxisa CSR  (0): privileged architecture (r/-)*/
+  CSR_MXISA_ZIFENCEI  =  1, /**< mxisa CSR  (1): instruction stream sync (r/-)*/
+  CSR_MXISA_ZMMUL     =  2, /**< mxisa CSR  (2): hardware mul/div (r/-)*/
+  CSR_MXISA_ZXCFU     =  3, /**< mxisa CSR  (3): custom RISC-V instructions (r/-)*/
+  CSR_MXISA_ZKT       =  4, /**< mxisa CSR  (4): data independent execution time (of cryptography operations) (r/-)*/
+  CSR_MXISA_ZFINX     =  5, /**< mxisa CSR  (5): FPU using x registers (r/-)*/
+  CSR_MXISA_ZICOND    =  6, /**< mxisa CSR  (6): integer conditional operations (r/-)*/
+  CSR_MXISA_ZICNTR    =  7, /**< mxisa CSR  (7): standard instruction, cycle and time counter CSRs (r/-)*/
+  CSR_MXISA_SMPMP     =  8, /**< mxisa CSR  (8): physical memory protection (r/-)*/
+  CSR_MXISA_ZIHPM     =  9, /**< mxisa CSR  (9): hardware performance monitors (r/-)*/
+  CSR_MXISA_SDEXT     = 10, /**< mxisa CSR (10): RISC-V debug mode (r/-)*/
+  CSR_MXISA_SDTRIG    = 11, /**< mxisa CSR (11): RISC-V trigger module (r/-)*/
+  CSR_MXISA_ZBKX      = 12, /**< mxisa CSR (12): scalar cryptography - crossbar permutation (r/-)*/
+  CSR_MXISA_ZKND      = 13, /**< mxisa CSR (13): scalar cryptography - NIST AES decryption (r/-)*/
+  CSR_MXISA_ZKNE      = 14, /**< mxisa CSR (14): scalar cryptography - NIST AES encryption (r/-)*/
+  CSR_MXISA_ZKNH      = 15, /**< mxisa CSR (15): scalar cryptography - NIST hash functions (r/-)*/
+  CSR_MXISA_ZBKB      = 16, /**< mxisa CSR (16): scalar cryptography - bit manipulation instructions (r/-)*/
+  CSR_MXISA_ZBKC      = 17, /**< mxisa CSR (17): scalar cryptography - carry-less multiplication instructions (r/-)*/
+  CSR_MXISA_ZKN       = 18, /**< mxisa CSR (18): scalar cryptography - NIST algorithm suite (r/-)*/
+  CSR_MXISA_ZKSH      = 19, /**< mxisa CSR (19): scalar cryptography - ShangMi hash functions (r/-)*/
+  CSR_MXISA_ZKSED     = 20, /**< mxisa CSR (20): scalar cryptography - ShangMi block cyphers (r/-)*/
+  CSR_MXISA_ZKS       = 21, /**< mxisa CSR (21): scalar cryptography - ShangMi algorithm suite (r/-)*/
+  CSR_MXISA_ZBA       = 22, /**< mxisa CSR (22): shifted-add bit-manipulation operations (r/-)*/
+  CSR_MXISA_ZBB       = 23, /**< mxisa CSR (23): basic bit-manipulation operations (r/-)*/
+  CSR_MXISA_ZBS       = 24, /**< mxisa CSR (24): single-bit bit-manipulation operations (r/-)*/
+  CSR_MXISA_ZAAMO     = 25, /**< mxisa CSR (25): atomic read-modify-write operations (r/-)*/
+  CSR_MXISA_ZALRSC    = 26, /**< mxisa CSR (26): atomic reservation-set operations (r/-)*/
+  CSR_MXISA_ZCB       = 27, /**< mxisa CSR (27): additional code size reduction instruction (r/-)*/
+  CSR_MXISA_ZCA       = 28, /**< mxisa CSR (28): compressed instructions without floating-point (r/-)*/
+  CSR_MXISA_ZIBI      = 29, /**< mxisa CSR (29): branch with immediate-comparison (r/-)*/
+  CSR_MXISA_ZIMOP     = 30, /**< mxisa CSR (30): may-be-operations (r/-)*/
+  CSR_MXISA_SMCNTRPMF = 31  /**< mxisa CSR (31): base counter privilege-mode filtering (r/-)*/
+};
+
+
+/**********************************************************************//**
+ * mcyclecfgh CSR (r/w): Machine cycle counter privilege-mode filtering
+ **************************************************************************/
+enum NEORV32_CSR_MCYCLECFGH_enum {
+  CSR_MCYCLECFGH_UINH = 28, /**< mcyclecfgh CSR (28): inhibit cycle counter when in user-mode when set (r/w) */
+  CSR_MCYCLECFGH_MINH = 30  /**< mcyclecfgh CSR (30): inhibit cycle counter when in machine-mode when set (r/w) */
+};
+
+
+/**********************************************************************//**
+ * minstretcfgh CSR (r/w): Machine instret counter privilege-mode filtering
+ **************************************************************************/
+enum NEORV32_CSR_MINSTRETCFGH_enum {
+  CSR_MINSTRETCFGH_UINH = 28, /**< minstretcfgh CSR (28): inhibit instret counter when in user-mode when set (r/w) */
+  CSR_MINSTRETCFGH_MINH = 30  /**< minstretcfgh CSR (30): inhibit instret counter when in machine-mode when set (r/w) */
 };
 
 
