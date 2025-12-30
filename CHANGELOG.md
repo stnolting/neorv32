@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 30.12.2025 | 1.12.6.4 | minor rtl edits, cleanups and optimizations | [#1465](https://github.com/stnolting/neorv32/pull/1465) |
 | 29.12.2025 | 1.12.6.3 | :sparkles: add support for RISC-V `Smcntrpmf` ISA extension (counter privilege-mode filtering) | [#1464](https://github.com/stnolting/neorv32/pull/1464) |
 | 28.12.2025 | 1.12.6.2 | :warning: HPM: remove "trap" event select; replace "taken branch" event by "control flow transfer" event | [#1463](https://github.com/stnolting/neorv32/pull/1463) |
 | 27.12.2025 | 1.12.6.1 | rtl edits, cleanups and optimizations | [#1462](https://github.com/stnolting/neorv32/pull/1462) |
