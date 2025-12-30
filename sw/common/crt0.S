@@ -191,19 +191,19 @@ __crt0_destructors_end:
 #endif
 
 // ************************************************************************************************
-// Halt CPU.
+// Halt CPU. Bootloader should never return; if it does -> panic.
 // ************************************************************************************************
-#ifndef MAKE_BOOTLOADER // bootloader should never return; if it does -> panic
+#ifndef MAKE_BOOTLOADER
 __crt0_halting:
   csrr x8, mhartid
   bnez x8, __crt0_halt
 
 .global __crt0_halt_primary
 __crt0_halt_primary:
-  ebreak                // try to transfer control to external debugger; otherwise -> panic
+  ebreak     // try to transfer control to external debugger; otherwise -> panic
 
 .global __crt0_halt
-__crt0_halt:            // same code as trap handler but with different label/address to track origin
+__crt0_halt: // same code as trap handler but with different label/address to track origin
   wfi
   j __crt0_halt
 #endif
