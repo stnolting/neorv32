@@ -325,7 +325,7 @@ begin
                    ((not ctrl_i.lsu_rd) or pmpcfg(r)(cfg_r_c)) and ((not ctrl_i.lsu_wr) or pmpcfg(r)(cfg_w_c));
   end generate;
 
-  -- very last entry: start of chain (fail if not M-mode) --
+  -- start of chain (lowest priority): fail if not M-mode --
   fail_ex(NUM_REGIONS) <= '1' when (i_priv_i /= priv_mode_m_c) else '0';
   fail_rw(NUM_REGIONS) <= '1' when (d_priv_i /= priv_mode_m_c) else '0';
   -- prioritization logic implemented as a multiplexer chain --
