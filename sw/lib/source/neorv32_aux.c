@@ -324,17 +324,15 @@ void neorv32_aux_print_hw_config(void) {
 
   // IDs
   neorv32_uart0_printf(
+    "Hart ID:             0x%x\n"
     "Vendor ID:           0x%x\n"
     "Architecture ID:     0x%x\n"
-    "Implementation ID:   0x%x\n"
-    "Hart ID:             0x%x",
+    "Implementation ID:   0x%x (v",
+    neorv32_cpu_csr_read(CSR_MHARTID),
     neorv32_cpu_csr_read(CSR_MVENDORID),
     neorv32_cpu_csr_read(CSR_MARCHID),
-    neorv32_cpu_csr_read(CSR_MIMPID),
-    neorv32_cpu_csr_read(CSR_MHARTID)
+    neorv32_cpu_csr_read(CSR_MIMPID)
   );
-  // hardware version
-  neorv32_uart0_printf(" (v");
   neorv32_aux_print_hw_version(neorv32_cpu_csr_read(CSR_MIMPID));
   neorv32_uart0_printf(")\n");
 
