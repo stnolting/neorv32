@@ -506,7 +506,8 @@ begin
   ctrl_o.lsu_req      <= ctrl.lsu_req;
   ctrl_o.lsu_rd       <= ctrl.lsu_rd;
   ctrl_o.lsu_wr       <= ctrl.lsu_wr;
-  ctrl_o.lsu_mo_we    <= '1' when (exec.state = S_MEM_REQ) else '0'; -- write memory output registers (data & address)
+  ctrl_o.lsu_mo_en    <= '1' when (exec.state = S_MEM_REQ) else '0'; -- write memory output registers
+  ctrl_o.lsu_mi_en    <= '1' when (exec.state = S_MEM_RSP) else '0'; -- write memory input registers
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.prv_level; -- effective privilege level for loads/stores in M-mode
   -- control and status registers --

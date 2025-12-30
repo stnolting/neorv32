@@ -598,16 +598,17 @@ package neorv32_package is
     alu_sub      : std_ulogic;                     -- addition/subtraction control
     alu_opa_mux  : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
     alu_opb_mux  : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
-    alu_unsigned : std_ulogic;                     -- is unsigned ALU operation
+    alu_unsigned : std_ulogic;                     -- is unsigned operation
     alu_imm      : std_ulogic_vector(31 downto 0); -- immediate
-    alu_cp_alu   : std_ulogic;                     -- ALU.base co-processor trigger (one-shot)
+    alu_cp_alu   : std_ulogic;                     -- base co-processor trigger (one-shot)
     alu_cp_cfu   : std_ulogic;                     -- CFU co-processor trigger (one-shot)
     alu_cp_fpu   : std_ulogic;                     -- FPU co-processor trigger (one-shot)
     -- load/store unit --
     lsu_req      : std_ulogic;                     -- trigger memory access request
     lsu_rd       : std_ulogic;                     -- read access
     lsu_wr       : std_ulogic;                     -- write access
-    lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
+    lsu_mo_en    : std_ulogic;                     -- output register write enable
+    lsu_mi_en    : std_ulogic;                     -- input register write enable
     lsu_fence    : std_ulogic;                     -- fence operation
     lsu_priv     : std_ulogic;                     -- effective privilege mode for load/store
     -- control and status registers --
@@ -653,7 +654,8 @@ package neorv32_package is
     lsu_req      => '0',
     lsu_rd       => '0',
     lsu_wr       => '0',
-    lsu_mo_we    => '0',
+    lsu_mo_en    => '0',
+    lsu_mi_en    => '0',
     lsu_fence    => '0',
     lsu_priv     => '0',
     csr_we       => '0',
