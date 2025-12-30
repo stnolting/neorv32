@@ -230,9 +230,8 @@ begin
     trap.ebreak       <= '0';
     ctrl_nxt          <= ctrl_bus_zero_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
     ctrl_nxt.csr_addr <= ctrl.csr_addr;   -- keep previous CSR address
-    ctrl_nxt.lsu_rmw  <= ctrl.lsu_rmw;    -- keep memory access type
-    ctrl_nxt.lsu_rsv  <= ctrl.lsu_rsv;
-    ctrl_nxt.lsu_rw   <= ctrl.lsu_rw;
+    ctrl_nxt.lsu_rd   <= ctrl.lsu_rd; -- keep memory access read/write type
+    ctrl_nxt.lsu_wr   <= ctrl.lsu_wr;
 
     -- immediate --
     case opcode_v is
@@ -370,17 +369,14 @@ begin
           -- memory access --
           when opcode_load_c | opcode_store_c | opcode_amo_c =>
             if RISCV_ISA_Zaamo and (opcode_v(2) = opcode_amo_c(2)) and (exec.ir(instr_funct5_lsb_c+1) = '0') then -- atomic read-modify-write operation
-              ctrl_nxt.lsu_rmw <= '1'; -- read-modify-write
-              ctrl_nxt.lsu_rsv <= '0';
-              ctrl_nxt.lsu_rw  <= '0'; -- executed as single load for the CPU control logic
+              ctrl_nxt.lsu_rd <= '1';
+              ctrl_nxt.lsu_wr <= '1';
             elsif RISCV_ISA_Zalrsc and (opcode_v(2) = opcode_amo_c(2)) and (exec.ir(instr_funct5_lsb_c+1) = '1') then -- atomic reservation-set operation
-              ctrl_nxt.lsu_rmw <= '0';
-              ctrl_nxt.lsu_rsv <= '1'; -- reservation-operation
-              ctrl_nxt.lsu_rw  <= exec.ir(instr_funct5_lsb_c);
+              ctrl_nxt.lsu_rd <= '1';
+              ctrl_nxt.lsu_wr <= exec.ir(instr_funct5_lsb_c);
             else -- normal load/store
-              ctrl_nxt.lsu_rmw <= '0';
-              ctrl_nxt.lsu_rsv <= '0';
-              ctrl_nxt.lsu_rw  <= exec.ir(instr_opcode_lsb_c+5);
+              ctrl_nxt.lsu_rd <= not exec.ir(instr_opcode_lsb_c+5);
+              ctrl_nxt.lsu_wr <= exec.ir(instr_opcode_lsb_c+5);
             end if;
             exec_nxt.state <= S_MEM_REQ;
 
@@ -446,7 +442,7 @@ begin
       when S_MEM_RSP => -- wait for memory response
       -- ------------------------------------------------------------
         if (lsu_wait_i = '0') or (or_reduce_f(trap.exc_buf(exc_laccess_c downto exc_salign_c)) = '1') then -- bus response or load/store exception
-          ctrl_nxt.rf_wb_en <= (not ctrl.lsu_rw) or ctrl.lsu_rsv or ctrl.lsu_rmw; -- write to RF if read operation (won't happen in case of exception)
+          ctrl_nxt.rf_wb_en <= ctrl.lsu_rd; -- write to RF if read operation (won't happen in case of exception)
           exec_nxt.state    <= S_DISPATCH;
         end if;
 
@@ -508,9 +504,8 @@ begin
   ctrl_o.alu_cp_fpu   <= ctrl.alu_cp_fpu and (not or_reduce_f(trap.exc_buf(exc_ialign_c downto exc_iaccess_c))); -- trigger if no instruction exception
   -- load/store unit --
   ctrl_o.lsu_req      <= ctrl.lsu_req;
-  ctrl_o.lsu_rw       <= ctrl.lsu_rw;
-  ctrl_o.lsu_rmw      <= ctrl.lsu_rmw;
-  ctrl_o.lsu_rsv      <= ctrl.lsu_rsv;
+  ctrl_o.lsu_rd       <= ctrl.lsu_rd;
+  ctrl_o.lsu_wr       <= ctrl.lsu_wr;
   ctrl_o.lsu_mo_we    <= '1' when (exec.state = S_MEM_REQ) else '0'; -- write memory output registers (data & address)
   ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.prv_level; -- effective privilege level for loads/stores in M-mode
@@ -534,17 +529,17 @@ begin
 
   -- Counter Events -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cnt_event(cnt_event_cy_c)       <= '0' when (exec.state = S_SLEEP)                                                 else '1'; -- active cycle
+  cnt_event(cnt_event_cy_c)       <= '0' when (exec.state = S_SLEEP)                                     else '1'; -- active cycle
   cnt_event(cnt_event_tm_c)       <= '0';
-  cnt_event(cnt_event_ir_c)       <= '1' when (exec.state = S_EXECUTE)                                               else '0'; -- retired (=executed) instr.
-  cnt_event(cnt_event_compr_c)    <= '1' when (exec.state = S_EXECUTE)  and (exec.ci = '1')                          else '0'; -- executed compressed instr.
-  cnt_event(cnt_event_wait_dis_c) <= '1' when (exec.state = S_DISPATCH) and (frontend_i.valid = '0')                 else '0'; -- instruction dispatch wait
-  cnt_event(cnt_event_wait_alu_c) <= '1' when (exec.state = S_ALU_WAIT)                                              else '0'; -- multi-cycle ALU wait
-  cnt_event(cnt_event_branch_c)   <= '1' when (exec.state = S_BRANCH)                                                else '0'; -- executed branch instruction
-  cnt_event(cnt_event_ctrlflow_c) <= '1' when (ctrl.if_reset = '1') and (exec.ir(6 downto 0) /= opcode_fence_c)      else '0'; -- control flow transfer
-  cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '0') or (ctrl.lsu_rmw = '1')) else '0'; -- executed load operation
-  cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and ((ctrl.lsu_rw = '1') or (ctrl.lsu_rmw = '1')) else '0'; -- executed store operation
-  cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exec.state = S_MEM_RSP)                      else '0'; -- load/store memory wait
+  cnt_event(cnt_event_ir_c)       <= '1' when (exec.state = S_EXECUTE)                                   else '0'; -- retired (=executed) instr.
+  cnt_event(cnt_event_compr_c)    <= '1' when (exec.state = S_EXECUTE) and (exec.ci = '1')               else '0'; -- executed compressed instr.
+  cnt_event(cnt_event_wait_dis_c) <= '1' when (exec.state = S_DISPATCH) and (frontend_i.valid = '0')     else '0'; -- instruction dispatch wait
+  cnt_event(cnt_event_wait_alu_c) <= '1' when (exec.state = S_ALU_WAIT)                                  else '0'; -- multi-cycle ALU wait
+  cnt_event(cnt_event_branch_c)   <= '1' when (exec.state = S_BRANCH)                                    else '0'; -- executed branch instruction
+  cnt_event(cnt_event_ctrlflow_c) <= '1' when (ctrl.if_reset = '1') and (exec.ir(6 downto 2) /= "00011") else '0'; -- control flow transfer
+  cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rd = '1')               else '0'; -- executed load operation
+  cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_wr = '1')               else '0'; -- executed store operation
+  cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exec.state = S_MEM_RSP)          else '0'; -- load/store memory wait
 
 
   -- ****************************************************************************************************************************
@@ -874,13 +869,9 @@ begin
   trap.irq_fire(1) <= trap.irq_buf(irq_db_halt_c) when (exec.state = S_RESTART) or (exec.state = S_EXECUTE) or (exec.state = S_SLEEP) else '0';
 
 
-  -- ****************************************************************************************************************************
-  -- CPU Debug Mode
-  -- ****************************************************************************************************************************
-
-  -- Debug Control --------------------------------------------------------------------------
+  -- Debug-Mode Control ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  debug_mode_enable:
+  debug_mode_enabled:
   if RISCV_ISA_Sdext generate
 
     -- debug mode active? --
@@ -907,7 +898,7 @@ begin
   end generate;
 
   -- Sdext ISA extension not enabled --
-  debug_mode_disable:
+  debug_mode_disabled:
   if not RISCV_ISA_Sdext generate
     debug_ctrl.run        <= '0';
     debug_ctrl.trig_halt  <= '0';
@@ -963,30 +954,30 @@ begin
   csr_write_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      csr.prv_level     <= priv_mode_m_c;
-      csr.mstatus_mie   <= '0';
-      csr.mstatus_mpie  <= '0';
-      csr.mstatus_mpp   <= '0';
-      csr.mstatus_mprv  <= '0';
-      csr.mstatus_tw    <= '0';
-      csr.mie_msi       <= '0';
-      csr.mie_mei       <= '0';
-      csr.mie_mti       <= '0';
-      csr.mie_firq      <= (others => '0');
-      csr.mtvec         <= (others => '0');
-      csr.mscratch      <= (others => '0');
-      csr.mepc          <= (others => '0');
-      csr.mcause        <= (others => '0');
-      csr.mtval         <= (others => '0');
-      csr.mtinst        <= (others => '0');
-      csr.mcounteren    <= (others => '0');
-      csr.dcsr_ebreakm  <= '0';
-      csr.dcsr_ebreaku  <= '0';
-      csr.dcsr_step     <= '0';
-      csr.dcsr_prv      <= '0';
-      csr.dcsr_cause    <= (others => '0');
-      csr.dpc           <= (others => '0');
-      csr.dscratch0     <= (others => '0');
+      csr.prv_level    <= priv_mode_m_c;
+      csr.mstatus_mie  <= '0';
+      csr.mstatus_mpie <= '0';
+      csr.mstatus_mpp  <= '0';
+      csr.mstatus_mprv <= '0';
+      csr.mstatus_tw   <= '0';
+      csr.mie_msi      <= '0';
+      csr.mie_mei      <= '0';
+      csr.mie_mti      <= '0';
+      csr.mie_firq     <= (others => '0');
+      csr.mtvec        <= (others => '0');
+      csr.mscratch     <= (others => '0');
+      csr.mepc         <= (others => '0');
+      csr.mcause       <= (others => '0');
+      csr.mtval        <= (others => '0');
+      csr.mtinst       <= (others => '0');
+      csr.mcounteren   <= (others => '0');
+      csr.dcsr_ebreakm <= '0';
+      csr.dcsr_ebreaku <= '0';
+      csr.dcsr_step    <= '0';
+      csr.dcsr_prv     <= '0';
+      csr.dcsr_cause   <= (others => '0');
+      csr.dpc          <= (others => '0');
+      csr.dscratch0    <= (others => '0');
     elsif rising_edge(clk_i) then
 
       -- ********************************************************************************
@@ -1201,9 +1192,9 @@ begin
           -- machine information
           -- --------------------------------------------------------------------
           when csr_mvendorid_c => csr_rdata <= VENDOR_ID; -- vendor ID
-          when csr_marchid_c   => csr_rdata(4 downto 0) <= "10011"; -- architecture ID
+          when csr_marchid_c   => csr_rdata <= x"00000013"; -- architecture ID
           when csr_mimpid_c    => csr_rdata <= hw_version_c; -- implementation ID
-          when csr_mhartid_c   => csr_rdata(9 downto 0) <= std_ulogic_vector(to_unsigned(HART_ID, 10)); -- hardware thread ID
+          when csr_mhartid_c   => csr_rdata <= std_ulogic_vector(to_unsigned(HART_ID, 32)); -- hardware thread ID
 
           -- --------------------------------------------------------------------
           -- debug-mode
@@ -1252,7 +1243,7 @@ begin
           -- --------------------------------------------------------------------
           -- undefined/unavailable or implemented externally
           -- --------------------------------------------------------------------
-          when others => -- FPU, PMP, HPM, base counters, trigger module, etc.
+          when others => -- FPU, PMP, HPM, base counters, etc.
             csr_rdata <= xcsr_rdata_i;
 
         end case;

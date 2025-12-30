@@ -20,8 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120603"; -- hardware version
-  constant archid_c      : natural := 19; -- official RISC-V architecture ID
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120604"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -606,9 +605,8 @@ package neorv32_package is
     alu_cp_fpu   : std_ulogic;                     -- FPU co-processor trigger (one-shot)
     -- load/store unit --
     lsu_req      : std_ulogic;                     -- trigger memory access request
-    lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
-    lsu_rmw      : std_ulogic;                     -- set if atomic read-modify-write operation
-    lsu_rsv      : std_ulogic;                     -- set if atomic reservation-set operation
+    lsu_rd       : std_ulogic;                     -- read access
+    lsu_wr       : std_ulogic;                     -- write access
     lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
     lsu_fence    : std_ulogic;                     -- fence operation
     lsu_priv     : std_ulogic;                     -- effective privilege mode for load/store
@@ -653,9 +651,8 @@ package neorv32_package is
     alu_cp_cfu   => '0',
     alu_cp_fpu   => '0',
     lsu_req      => '0',
-    lsu_rw       => '0',
-    lsu_rmw      => '0',
-    lsu_rsv      => '0',
+    lsu_rd       => '0',
+    lsu_wr       => '0',
     lsu_mo_we    => '0',
     lsu_fence    => '0',
     lsu_priv     => '0',

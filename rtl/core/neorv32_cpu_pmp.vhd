@@ -321,10 +321,8 @@ begin
     allow_ex(r) <= '1' when (i_priv_i = priv_mode_m_c) and (pmpcfg(r)(cfg_l_c) = '0') else -- grant if M and not locked
                    pmpcfg(r)(cfg_x_c);
     -- read/write (RW), check privilege and permission(s) according to access type --
-    allow_rw(r) <= '1' when (d_priv_i = priv_mode_m_c) and (pmpcfg(r)(cfg_l_c) = '0')    else -- grant if M and not locked
-                   pmpcfg(r)(cfg_r_c) and pmpcfg(r)(cfg_w_c) when (ctrl_i.lsu_rmw = '1') else -- read-modify-write access
-                   pmpcfg(r)(cfg_r_c)                        when (ctrl_i.lsu_rw = '0')  else -- read access
-                   pmpcfg(r)(cfg_w_c);                                                        -- write access
+    allow_rw(r) <= '1' when (d_priv_i = priv_mode_m_c) and (pmpcfg(r)(cfg_l_c) = '0') else -- grant if M and not locked
+                   ((not ctrl_i.lsu_rd) or pmpcfg(r)(cfg_r_c)) and ((not ctrl_i.lsu_wr) or pmpcfg(r)(cfg_w_c));
   end generate;
 
   -- very last entry: start of chain (fail if not M-mode) --
