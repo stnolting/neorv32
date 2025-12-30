@@ -68,7 +68,6 @@ begin
     end if;
   end process arbiter_sync;
 
-
   -- Access Arbiter Comb --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   arbiter_fsm: process(state, locked, sel_q, a_req, b_req, a_req_i, b_req_i, x_rsp_i)
@@ -134,7 +133,6 @@ begin
     end case;
   end process arbiter_fsm;
 
-
   -- Request Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   x_req_o.meta  <= a_req_i.meta  when (sel = '0') else b_req_i.meta;
@@ -151,7 +149,6 @@ begin
   x_req_o.fence <= a_req_i.fence or b_req_i.fence;
   x_req_o.stb   <= stb;
 
-
   -- Response Switch ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   a_rsp_o.data <= x_rsp_i.data;
@@ -161,7 +158,6 @@ begin
   b_rsp_o.data <= x_rsp_i.data;
   b_rsp_o.ack  <= x_rsp_i.ack when (sel = '1') else '0';
   b_rsp_o.err  <= x_rsp_i.err when (sel = '1') else '0';
-
 
 end neorv32_bus_switch_rtl;
 
@@ -203,7 +199,7 @@ architecture neorv32_bus_reg_rtl of neorv32_bus_reg is
 
 begin
 
-  -- Request Register -----------------------------------------------------------------------
+  -- Request Register Stage -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   request_reg_enabled:
   if REQ_REG_EN generate
@@ -230,8 +226,7 @@ begin
     device_req_o <= host_req_i;
   end generate;
 
-
-  -- Response Register ----------------------------------------------------------------------
+  -- Response Register Stage ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   response_reg_enabled:
   if RSP_REG_EN generate
@@ -249,7 +244,6 @@ begin
   if not RSP_REG_EN generate
     host_rsp_o <= device_rsp_i;
   end generate;
-
 
 end neorv32_bus_reg_rtl;
 
@@ -340,8 +334,6 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   -- bus monitor --
   constant tmo_int_log2_c : natural := index_size_f(TMO_INT);
   constant tmo_ext_log2_c : natural := index_size_f(TMO_EXT);
-  constant tmo_int_en_c   : boolean := boolean(TMO_INT > 0);
-  constant tmo_ext_en_c   : boolean := boolean(TMO_EXT > 0);
   type keeper_t is record
     state : std_ulogic_vector(1 downto 0);
     lock  : std_ulogic;
@@ -358,10 +350,7 @@ begin
   port_sel(0) <= '1' when A_EN and (req_i.addr(31 downto a_lo_c) = A_BASE(31 downto a_lo_c)) else '0';
   port_sel(1) <= '1' when B_EN and (req_i.addr(31 downto b_lo_c) = B_BASE(31 downto b_lo_c)) else '0';
   port_sel(2) <= '1' when C_EN and (req_i.addr(31 downto c_lo_c) = C_BASE(31 downto c_lo_c)) else '0';
-
-  -- accesses to the "void" are redirected to the X port --
-  port_sel(3) <= '1' when X_EN and (port_sel(2 downto 0) = "000") else '0';
-
+  port_sel(3) <= '1' when X_EN and (port_sel(2 downto 0) = "000") else '0'; -- access to the "void"
 
   -- Gateway Ports --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -402,7 +391,6 @@ begin
   rsp_o.ack  <= int_rsp.ack or keeper.err;
   rsp_o.err  <= int_rsp.err or keeper.err;
 
-
   -- Bus Monitor (aka "the KEEPER") ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_monitor: process(rstn_i, clk_i)
@@ -418,7 +406,7 @@ begin
         when "00" => -- idle, waiting for new access request
         -- ------------------------------------------------------------
           keeper.lock <= req_i.lock;
-          keeper.ext  <= port_sel(port_sel'left); -- external bus access?
+          keeper.ext  <= port_sel(3); -- external bus access?
           keeper.cnt  <= (others => '0');
           if (req_i.stb = '1') then
             keeper.state <= "01";
@@ -426,15 +414,9 @@ begin
 
         when "01" => -- busy, transfer in progress
         -- ------------------------------------------------------------
-          -- timeout counter --
-          if (int_rsp.ack = '1') then
-            keeper.cnt <= (others => '0');
-          else
-            keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1);
-          end if;
-          -- bus status --
-          if ((keeper.ext = '0') and tmo_int_en_c and (keeper.cnt(tmo_int_log2_c) = '1')) or -- int timeout
-             ((keeper.ext = '1') and tmo_ext_en_c and (keeper.cnt(tmo_ext_log2_c) = '1')) then -- ext timeout
+          keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1); -- timeout counter
+          if ((keeper.ext = '0') and (TMO_INT > 0) and (keeper.cnt(tmo_int_log2_c) = '1')) or -- internal timeout
+             ((keeper.ext = '1') and (TMO_EXT > 0) and (keeper.cnt(tmo_ext_log2_c) = '1')) then -- external timeout
             keeper.state <= "11";
           elsif (keeper.lock = '1') then -- locked / burst transfer
             if (req_i.lock = '0') then
@@ -459,9 +441,8 @@ begin
   term_o     <= keeper.state(1); -- terminate pending (external) bus access
 
   -- timeout notifications --
-  assert tmo_int_en_c report "[NEORV32] Internal bus timeout disabled! Can cause permanent system stall!" severity warning;
-  assert tmo_ext_en_c report "[NEORV32] External bus timeout disabled! Can cause permanent system stall!" severity warning;
-
+  assert (TMO_INT > 0) report "[NEORV32] Internal bus timeout disabled! Can cause permanent system stall!" severity warning;
+  assert (TMO_EXT > 0) report "[NEORV32] External bus timeout disabled! Can cause permanent system stall!" severity warning;
 
 end neorv32_bus_gateway_rtl;
 
@@ -488,7 +469,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_io_switch is
   generic (
-    DEV_SIZE  : natural := 256; -- size of each IO device, has to be a power of two
+    DEV_SIZE  : natural; -- size of each IO device, has to be a power of two
     -- device port enable and base address; enabled ports do not have to be contiguous --
     DEV_00_EN : boolean := false; DEV_00_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
     DEV_01_EN : boolean := false; DEV_01_BASE : std_ulogic_vector(31 downto 0) := (others => '0');
@@ -623,7 +604,6 @@ begin
     device_rsp_i => main_rsp
   );
 
-
   -- Combine Device Ports -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   dev_00_req_o <= dev_req(0);  dev_rsp(0)  <= dev_00_rsp_i;
@@ -659,7 +639,6 @@ begin
   dev_30_req_o <= dev_req(30); dev_rsp(30) <= dev_30_rsp_i;
   dev_31_req_o <= dev_req(31); dev_rsp(31) <= dev_31_rsp_i;
 
-
   -- Request --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_request_gen:
@@ -685,7 +664,6 @@ begin
 
   end generate;
 
-
   -- Response -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_response: process(dev_rsp)
@@ -701,7 +679,6 @@ begin
     end loop;
     main_rsp <= tmp_v;
   end process bus_response;
-
 
 end neorv32_bus_io_switch_rtl;
 
@@ -752,13 +729,9 @@ architecture neorv32_bus_amo_rmw_rtl of neorv32_bus_amo_rmw is
   signal arbiter, arbiter_nxt : arbiter_t;
 
   -- internal data ALU --
-  signal alu_res : std_ulogic_vector(31 downto 0);
-
-  -- comparator --
-  signal cmp_opa  : std_ulogic_vector(32 downto 0);
-  signal cmp_opb  : std_ulogic_vector(32 downto 0);
+  signal alu_res, cmp_res : std_ulogic_vector(31 downto 0);
+  signal cmp_opa, cmp_opb : std_ulogic_vector(32 downto 0);
   signal cmp_less : std_ulogic;
-  signal cmp_res  : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -775,7 +748,6 @@ begin
       arbiter <= arbiter_nxt;
     end if;
   end process arbiter_sync;
-
 
   -- Arbiter Comb ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -838,7 +810,6 @@ begin
   core_rsp_o.err  <= sys_rsp_i.err  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) else '0';
   core_rsp_o.ack  <= sys_rsp_i.ack  when (arbiter.state = S_IDLE) or (arbiter.state = S_WRITE_WAIT) else '0';
 
-
   -- Data ALU -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   amo_alu: process(rstn_i, clk_i)
@@ -863,12 +834,11 @@ begin
   cmp_less <= '1' when (signed(cmp_opa) < signed(cmp_opb)) else '0';
   cmp_res  <= cmp_opa(31 downto 0) when ((cmp_less xor arbiter.cmd(0)) = '1') else cmp_opb(31 downto 0);
 
-
 end neorv32_bus_amo_rmw_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 SoC - Processor Bus Infrastructure: Reservation Set Controller           --
+-- NEORV32 SoC - Processor Bus Infrastructure: Reservation Station                  --
 -- -------------------------------------------------------------------------------- --
 -- Reservation set controller for the RISC-V A/Zalrsc ISA extension.                --
 -- [NOTE] Only a single global reservation set is implemented.                      --
@@ -916,19 +886,14 @@ begin
       if (core_req_i.fence = '1') then
         valid <= '0';
       elsif (core_req_i.stb = '1') and (core_req_i.meta(0) = '0') then -- data memory access?
-        if (lr = '1') then -- load-reservate operation
-          valid <= '1';
-        else -- any other data memory operation
-          valid <= '0';
-        end if;
+        valid <= lr; -- set on load-reservate; clear for all other memory requests
       end if;
     end if;
   end process rvs_control;
 
   -- check if reservation-set operation --
-  lr <= '1' when (core_req_i.amo = '1') and (core_req_i.amoop(3 downto 2) = "10") and (core_req_i.rw = '0') else '0';
-  sc <= '1' when (core_req_i.amo = '1') and (core_req_i.amoop(3 downto 2) = "10") and (core_req_i.rw = '1') else '0';
-
+  lr <= '1' when (core_req_i.amo = '1') and (core_req_i.amoop = "1000") else '0';
+  sc <= '1' when (core_req_i.amo = '1') and (core_req_i.amoop = "1001") else '0';
 
   -- System Bus Interface -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -942,8 +907,8 @@ begin
     end if;
   end process bus_request;
 
-  -- if the store-conditional instruction fails there will be no write-request being send
-  -- to the bus system so we need to provide a local ACK to complete the bus access
+  -- if the store-conditional instruction fails there will be no memory request
+  -- so we need to provide a local ACK to complete the bus access
   sc_result: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -957,6 +922,5 @@ begin
   core_rsp_o.err  <= sys_rsp_i.err;
   core_rsp_o.ack  <= sys_rsp_i.ack or sc_fail; -- generate local ACK if SC fails
   core_rsp_o.data <= sys_rsp_i.data(31 downto 1) & (sys_rsp_i.data(0) or sc_fail); -- set LSB if SC fails
-
 
 end neorv32_bus_amo_rvs_rtl;
