@@ -20,8 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120603"; -- hardware version
-  constant archid_c      : natural := 19; -- official RISC-V architecture ID
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120604"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -599,17 +598,17 @@ package neorv32_package is
     alu_sub      : std_ulogic;                     -- addition/subtraction control
     alu_opa_mux  : std_ulogic;                     -- operand A select (0=rs1, 1=PC)
     alu_opb_mux  : std_ulogic;                     -- operand B select (0=rs2, 1=IMM)
-    alu_unsigned : std_ulogic;                     -- is unsigned ALU operation
+    alu_unsigned : std_ulogic;                     -- is unsigned operation
     alu_imm      : std_ulogic_vector(31 downto 0); -- immediate
-    alu_cp_alu   : std_ulogic;                     -- ALU.base co-processor trigger (one-shot)
+    alu_cp_alu   : std_ulogic;                     -- base co-processor trigger (one-shot)
     alu_cp_cfu   : std_ulogic;                     -- CFU co-processor trigger (one-shot)
     alu_cp_fpu   : std_ulogic;                     -- FPU co-processor trigger (one-shot)
     -- load/store unit --
     lsu_req      : std_ulogic;                     -- trigger memory access request
-    lsu_rw       : std_ulogic;                     -- 0: read access, 1: write access
-    lsu_rmw      : std_ulogic;                     -- set if atomic read-modify-write operation
-    lsu_rsv      : std_ulogic;                     -- set if atomic reservation-set operation
-    lsu_mo_we    : std_ulogic;                     -- memory address and data output register write enable
+    lsu_rd       : std_ulogic;                     -- read access
+    lsu_wr       : std_ulogic;                     -- write access
+    lsu_mo_en    : std_ulogic;                     -- output register write enable
+    lsu_mi_en    : std_ulogic;                     -- input register write enable
     lsu_fence    : std_ulogic;                     -- fence operation
     lsu_priv     : std_ulogic;                     -- effective privilege mode for load/store
     -- control and status registers --
@@ -653,10 +652,10 @@ package neorv32_package is
     alu_cp_cfu   => '0',
     alu_cp_fpu   => '0',
     lsu_req      => '0',
-    lsu_rw       => '0',
-    lsu_rmw      => '0',
-    lsu_rsv      => '0',
-    lsu_mo_we    => '0',
+    lsu_rd       => '0',
+    lsu_wr       => '0',
+    lsu_mo_en    => '0',
+    lsu_mi_en    => '0',
     lsu_fence    => '0',
     lsu_priv     => '0',
     csr_we       => '0',
@@ -809,21 +808,21 @@ package neorv32_package is
 -- Helper Functions
 -- **********************************************************************************************************
 
-  function index_size_f(input : natural) return natural;
-  function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural;
-  function cond_sel_suv_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector;
-  function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string;
-  function max_natural_f(a : natural; b : natural) return natural;
-  function min_natural_f(a : natural; b : natural) return natural;
-  function bool_to_ulogic_f(cond : boolean) return std_ulogic;
-  function or_reduce_f(input : std_ulogic_vector) return std_ulogic;
-  function and_reduce_f(input : std_ulogic_vector) return std_ulogic;
-  function xor_reduce_f(input : std_ulogic_vector) return std_ulogic;
-  function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character;
-  function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector;
-  function is_power_of_two_f(input : natural) return boolean;
-  function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector;
-  function to_hexstring_f(data : std_ulogic_vector) return string;
+  function index_size_f       (n : natural                                              ) return natural;
+  function cond_sel_natural_f (c : boolean; t : natural; f : natural                    ) return natural;
+  function cond_sel_suv_f     (c : boolean; t : std_ulogic_vector; f : std_ulogic_vector) return std_ulogic_vector;
+  function cond_sel_string_f  (c : boolean; t : string; f : string                      ) return string;
+  function max_natural_f      (a : natural; b : natural                                 ) return natural;
+  function min_natural_f      (a : natural; b : natural                                 ) return natural;
+  function bool_to_ulogic_f   (c : boolean                                              ) return std_ulogic;
+  function or_reduce_f        (d : std_ulogic_vector                                    ) return std_ulogic;
+  function and_reduce_f       (d : std_ulogic_vector                                    ) return std_ulogic;
+  function xor_reduce_f       (d : std_ulogic_vector                                    ) return std_ulogic;
+  function to_hexchar_f       (d : std_ulogic_vector(3 downto 0)                        ) return character;
+  function bit_rev_f          (d : std_ulogic_vector                                    ) return std_ulogic_vector;
+  function is_power_of_two_f  (n : natural                                              ) return boolean;
+  function replicate_f        (d : std_ulogic; n : natural                              ) return std_ulogic_vector;
+  function to_hexstring_f     (d : std_ulogic_vector                                    ) return string;
 
 -- **********************************************************************************************************
 -- NEORV32 Processor Top Entity (component prototype)
@@ -832,114 +831,114 @@ package neorv32_package is
   component neorv32_top
     generic (
       -- General --
-      CLOCK_FREQUENCY       : natural                        := 0;
-      TRACE_PORT_EN         : boolean                        := false;
-      DUAL_CORE_EN          : boolean                        := false;
+      CLOCK_FREQUENCY     : natural                        := 0;
+      TRACE_PORT_EN       : boolean                        := false;
+      DUAL_CORE_EN        : boolean                        := false;
       -- Boot Configuration --
-      BOOT_MODE_SELECT      : natural range 0 to 2           := 0;
-      BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000";
+      BOOT_MODE_SELECT    : natural range 0 to 2           := 0;
+      BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000";
       -- On-Chip Debugger (OCD) --
-      OCD_EN                : boolean                        := false;
-      OCD_NUM_HW_TRIGGERS   : natural range 0 to 16          := 0;
-      OCD_AUTHENTICATION    : boolean                        := false;
-      OCD_JEDEC_ID          : std_ulogic_vector(10 downto 0) := "00000000000";
+      OCD_EN              : boolean                        := false;
+      OCD_NUM_HW_TRIGGERS : natural range 0 to 16          := 0;
+      OCD_AUTHENTICATION  : boolean                        := false;
+      OCD_JEDEC_ID        : std_ulogic_vector(10 downto 0) := "00000000000";
       -- RISC-V CPU Extensions --
-      RISCV_ISA_C           : boolean                        := false;
-      RISCV_ISA_E           : boolean                        := false;
-      RISCV_ISA_M           : boolean                        := false;
-      RISCV_ISA_U           : boolean                        := false;
-      RISCV_ISA_Zaamo       : boolean                        := false;
-      RISCV_ISA_Zalrsc      : boolean                        := false;
-      RISCV_ISA_Zba         : boolean                        := false;
-      RISCV_ISA_Zbb         : boolean                        := false;
-      RISCV_ISA_Zbkb        : boolean                        := false;
-      RISCV_ISA_Zbkc        : boolean                        := false;
-      RISCV_ISA_Zbkx        : boolean                        := false;
-      RISCV_ISA_Zbs         : boolean                        := false;
-      RISCV_ISA_Zcb         : boolean                        := false;
-      RISCV_ISA_Zfinx       : boolean                        := false;
-      RISCV_ISA_Zibi        : boolean                        := false;
-      RISCV_ISA_Zicntr      : boolean                        := false;
-      RISCV_ISA_Zicond      : boolean                        := false;
-      RISCV_ISA_Zihpm       : boolean                        := false;
-      RISCV_ISA_Zimop       : boolean                        := false;
-      RISCV_ISA_Zmmul       : boolean                        := false;
-      RISCV_ISA_Zknd        : boolean                        := false;
-      RISCV_ISA_Zkne        : boolean                        := false;
-      RISCV_ISA_Zknh        : boolean                        := false;
-      RISCV_ISA_Zksed       : boolean                        := false;
-      RISCV_ISA_Zksh        : boolean                        := false;
-      RISCV_ISA_Zxcfu       : boolean                        := false;
-      RISCV_ISA_Smcntrpmf   : boolean                        := false;
+      RISCV_ISA_C         : boolean                        := false;
+      RISCV_ISA_E         : boolean                        := false;
+      RISCV_ISA_M         : boolean                        := false;
+      RISCV_ISA_U         : boolean                        := false;
+      RISCV_ISA_Zaamo     : boolean                        := false;
+      RISCV_ISA_Zalrsc    : boolean                        := false;
+      RISCV_ISA_Zba       : boolean                        := false;
+      RISCV_ISA_Zbb       : boolean                        := false;
+      RISCV_ISA_Zbkb      : boolean                        := false;
+      RISCV_ISA_Zbkc      : boolean                        := false;
+      RISCV_ISA_Zbkx      : boolean                        := false;
+      RISCV_ISA_Zbs       : boolean                        := false;
+      RISCV_ISA_Zcb       : boolean                        := false;
+      RISCV_ISA_Zfinx     : boolean                        := false;
+      RISCV_ISA_Zibi      : boolean                        := false;
+      RISCV_ISA_Zicntr    : boolean                        := false;
+      RISCV_ISA_Zicond    : boolean                        := false;
+      RISCV_ISA_Zihpm     : boolean                        := false;
+      RISCV_ISA_Zimop     : boolean                        := false;
+      RISCV_ISA_Zmmul     : boolean                        := false;
+      RISCV_ISA_Zknd      : boolean                        := false;
+      RISCV_ISA_Zkne      : boolean                        := false;
+      RISCV_ISA_Zknh      : boolean                        := false;
+      RISCV_ISA_Zksed     : boolean                        := false;
+      RISCV_ISA_Zksh      : boolean                        := false;
+      RISCV_ISA_Zxcfu     : boolean                        := false;
+      RISCV_ISA_Smcntrpmf : boolean                        := false;
       -- Tuning Options --
-      CPU_CONSTT_BR_EN      : boolean                        := false;
-      CPU_FAST_MUL_EN       : boolean                        := false;
-      CPU_FAST_SHIFT_EN     : boolean                        := false;
-      CPU_RF_ARCH_SEL       : natural range 0 to 3           := 0;
+      CPU_CONSTT_BR_EN    : boolean                        := false;
+      CPU_FAST_MUL_EN     : boolean                        := false;
+      CPU_FAST_SHIFT_EN   : boolean                        := false;
+      CPU_RF_ARCH_SEL     : natural range 0 to 3           := 0;
       -- Physical Memory Protection (PMP) --
-      PMP_NUM_REGIONS       : natural range 0 to 16          := 0;
-      PMP_MIN_GRANULARITY   : natural                        := 4;
-      PMP_TOR_MODE_EN       : boolean                        := false;
-      PMP_NAP_MODE_EN       : boolean                        := false;
+      PMP_NUM_REGIONS     : natural range 0 to 16          := 0;
+      PMP_MIN_GRANULARITY : natural                        := 4;
+      PMP_TOR_MODE_EN     : boolean                        := false;
+      PMP_NAP_MODE_EN     : boolean                        := false;
       -- Hardware Performance Monitors (HPM) --
-      HPM_NUM_CNTS          : natural range 0 to 13          := 0;
-      HPM_CNT_WIDTH         : natural range 0 to 64          := 40;
+      HPM_NUM_CNTS        : natural range 0 to 13          := 0;
+      HPM_CNT_WIDTH       : natural range 0 to 64          := 40;
       -- Internal Instruction memory (IMEM) --
-      IMEM_EN               : boolean                        := false;
-      IMEM_SIZE             : natural                        := 16*1024;
-      IMEM_OUTREG_EN        : boolean                        := false;
+      IMEM_EN             : boolean                        := false;
+      IMEM_SIZE           : natural                        := 16*1024;
+      IMEM_OUTREG_EN      : boolean                        := false;
       -- Internal Data memory (DMEM) --
-      DMEM_EN               : boolean                        := false;
-      DMEM_SIZE             : natural                        := 8*1024;
-      DMEM_OUTREG_EN        : boolean                        := false;
+      DMEM_EN             : boolean                        := false;
+      DMEM_SIZE           : natural                        := 8*1024;
+      DMEM_OUTREG_EN      : boolean                        := false;
       -- CPU Caches --
-      ICACHE_EN             : boolean                        := false;
-      ICACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
-      DCACHE_EN             : boolean                        := false;
-      DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
-      CACHE_BLOCK_SIZE      : natural range 8 to 1024        := 64;
-      CACHE_BURSTS_EN       : boolean                        := true;
+      ICACHE_EN           : boolean                        := false;
+      ICACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;
+      DCACHE_EN           : boolean                        := false;
+      DCACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;
+      CACHE_BLOCK_SIZE    : natural range 8 to 1024        := 64;
+      CACHE_BURSTS_EN     : boolean                        := true;
       -- External bus interface (XBUS) --
-      XBUS_EN               : boolean                        := false;
-      XBUS_TIMEOUT          : natural                        := 2048;
-      XBUS_REGSTAGE_EN      : boolean                        := false;
+      XBUS_EN             : boolean                        := false;
+      XBUS_TIMEOUT        : natural                        := 2048;
+      XBUS_REGSTAGE_EN    : boolean                        := false;
       -- Processor peripherals --
-      IO_DISABLE_SYSINFO    : boolean                        := false;
-      IO_GPIO_NUM           : natural range 0 to 64          := 0;
-      IO_CLINT_EN           : boolean                        := false;
-      IO_UART0_EN           : boolean                        := false;
-      IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;
-      IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;
-      IO_UART1_EN           : boolean                        := false;
-      IO_UART1_RX_FIFO      : natural range 1 to 2**15       := 1;
-      IO_UART1_TX_FIFO      : natural range 1 to 2**15       := 1;
-      IO_SPI_EN             : boolean                        := false;
-      IO_SPI_FIFO           : natural range 1 to 2**15       := 1;
-      IO_SDI_EN             : boolean                        := false;
-      IO_SDI_FIFO           : natural range 1 to 2**15       := 1;
-      IO_TWI_EN             : boolean                        := false;
-      IO_TWI_FIFO           : natural range 1 to 2**15       := 1;
-      IO_TWD_EN             : boolean                        := false;
-      IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;
-      IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;
-      IO_PWM_NUM            : natural range 0 to 32          := 0;
-      IO_WDT_EN             : boolean                        := false;
-      IO_TRNG_EN            : boolean                        := false;
-      IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
-      IO_CFS_EN             : boolean                        := false;
-      IO_NEOLED_EN          : boolean                        := false;
-      IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;
-      IO_GPTMR_NUM          : natural range 0 to 16          := 0;
-      IO_ONEWIRE_EN         : boolean                        := false;
-      IO_ONEWIRE_FIFO       : natural range 1 to 2**15       := 1;
-      IO_DMA_EN             : boolean                        := false;
-      IO_DMA_DSC_FIFO       : natural range 4 to 512         := 4;
-      IO_SLINK_EN           : boolean                        := false;
-      IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;
-      IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;
-      IO_TRACER_EN          : boolean                        := false;
-      IO_TRACER_BUFFER      : natural range 1 to 2**15       := 1;
-      IO_TRACER_SIMLOG_EN   : boolean                        := false
+      IO_DISABLE_SYSINFO  : boolean                        := false;
+      IO_GPIO_NUM         : natural range 0 to 64          := 0;
+      IO_CLINT_EN         : boolean                        := false;
+      IO_UART0_EN         : boolean                        := false;
+      IO_UART0_RX_FIFO    : natural range 1 to 2**15       := 1;
+      IO_UART0_TX_FIFO    : natural range 1 to 2**15       := 1;
+      IO_UART1_EN         : boolean                        := false;
+      IO_UART1_RX_FIFO    : natural range 1 to 2**15       := 1;
+      IO_UART1_TX_FIFO    : natural range 1 to 2**15       := 1;
+      IO_SPI_EN           : boolean                        := false;
+      IO_SPI_FIFO         : natural range 1 to 2**15       := 1;
+      IO_SDI_EN           : boolean                        := false;
+      IO_SDI_FIFO         : natural range 1 to 2**15       := 1;
+      IO_TWI_EN           : boolean                        := false;
+      IO_TWI_FIFO         : natural range 1 to 2**15       := 1;
+      IO_TWD_EN           : boolean                        := false;
+      IO_TWD_RX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_TWD_TX_FIFO      : natural range 1 to 2**15       := 1;
+      IO_PWM_NUM          : natural range 0 to 32          := 0;
+      IO_WDT_EN           : boolean                        := false;
+      IO_TRNG_EN          : boolean                        := false;
+      IO_TRNG_FIFO        : natural range 1 to 2**15       := 1;
+      IO_CFS_EN           : boolean                        := false;
+      IO_NEOLED_EN        : boolean                        := false;
+      IO_NEOLED_TX_FIFO   : natural range 1 to 2**15       := 1;
+      IO_GPTMR_NUM        : natural range 0 to 16          := 0;
+      IO_ONEWIRE_EN       : boolean                        := false;
+      IO_ONEWIRE_FIFO     : natural range 1 to 2**15       := 1;
+      IO_DMA_EN           : boolean                        := false;
+      IO_DMA_DSC_FIFO     : natural range 4 to 512         := 4;
+      IO_SLINK_EN         : boolean                        := false;
+      IO_SLINK_RX_FIFO    : natural range 1 to 2**15       := 1;
+      IO_SLINK_TX_FIFO    : natural range 1 to 2**15       := 1;
+      IO_TRACER_EN        : boolean                        := false;
+      IO_TRACER_BUFFER    : natural range 1 to 2**15       := 1;
+      IO_TRACER_SIMLOG_EN : boolean                        := false
     );
     port (
       -- Global control --
@@ -1015,7 +1014,7 @@ package neorv32_package is
       onewire_i      : in  std_ulogic := 'H';
       onewire_o      : out std_ulogic;
       -- PWM (available if IO_PWM_NUM > 0) --
-      pwm_o          : out std_ulogic_vector(31 downto 0); -- pwm channels
+      pwm_o          : out std_ulogic_vector(31 downto 0);
       -- Custom Functions Subsystem IO --
       cfs_in_i       : in  std_ulogic_vector(255 downto 0) := (others => 'L');
       cfs_out_o      : out std_ulogic_vector(255 downto 0);
@@ -1040,10 +1039,10 @@ package body neorv32_package is
 
   -- Minimal required number of bits to represent <input> numbers ---------------------------
   -- -------------------------------------------------------------------------------------------
-  function index_size_f(input : natural) return natural is
+  function index_size_f(n : natural) return natural is
   begin
     for i in 0 to 31 loop
-      if (2**i >= input) then
+      if (2**i >= n) then
         return i;
       end if;
     end loop;
@@ -1052,34 +1051,34 @@ package body neorv32_package is
 
   -- Conditional select natural -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function cond_sel_natural_f(cond : boolean; val_t : natural; val_f : natural) return natural is
+  function cond_sel_natural_f(c : boolean; t : natural; f : natural) return natural is
   begin
-    if cond then
-      return val_t;
+    if c then
+      return t;
     else
-      return val_f;
+      return f;
     end if;
   end function cond_sel_natural_f;
 
   -- Conditional select std_ulogic_vector ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function cond_sel_suv_f(cond : boolean; val_t : std_ulogic_vector; val_f : std_ulogic_vector) return std_ulogic_vector is
+  function cond_sel_suv_f(c : boolean; t : std_ulogic_vector; f : std_ulogic_vector) return std_ulogic_vector is
   begin
-    if cond then
-      return val_t;
+    if c then
+      return t;
     else
-      return val_f;
+      return f;
     end if;
   end function cond_sel_suv_f;
 
   -- Conditional select string --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function cond_sel_string_f(cond : boolean; val_t : string; val_f : string) return string is
+  function cond_sel_string_f(c : boolean; t : string; f : string) return string is
   begin
-    if cond then
-      return val_t;
+    if c then
+      return t;
     else
-      return val_f;
+      return f;
     end if;
   end function cond_sel_string_f;
 
@@ -1107,9 +1106,9 @@ package body neorv32_package is
 
   -- Convert boolean to std_ulogic ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function bool_to_ulogic_f(cond : boolean) return std_ulogic is
+  function bool_to_ulogic_f(c : boolean) return std_ulogic is
   begin
-    if cond then
+    if c then
       return '1';
     else
       return '0';
@@ -1118,77 +1117,77 @@ package body neorv32_package is
 
   -- OR all bits ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function or_reduce_f(input : std_ulogic_vector) return std_ulogic is
+  function or_reduce_f(d : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := '0';
-    for i in input'range loop
-      tmp_v := tmp_v or input(i);
+    for i in d'range loop
+      tmp_v := tmp_v or d(i);
     end loop;
     return tmp_v;
   end function or_reduce_f;
 
   -- AND all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function and_reduce_f(input : std_ulogic_vector) return std_ulogic is
+  function and_reduce_f(d : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := '1';
-    for i in input'range loop
-      tmp_v := tmp_v and input(i);
+    for i in d'range loop
+      tmp_v := tmp_v and d(i);
     end loop;
     return tmp_v;
   end function and_reduce_f;
 
   -- XOR all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function xor_reduce_f(input : std_ulogic_vector) return std_ulogic is
+  function xor_reduce_f(d : std_ulogic_vector) return std_ulogic is
     variable tmp_v : std_ulogic;
   begin
     tmp_v := '0';
-    for i in input'range loop
-      tmp_v := tmp_v xor input(i);
+    for i in d'range loop
+      tmp_v := tmp_v xor d(i);
     end loop;
     return tmp_v;
   end function xor_reduce_f;
 
   -- Convert 4-bit std_ulogic_vector to lowercase hex char ----------------------------------
   -- -------------------------------------------------------------------------------------------
-  function to_hexchar_f(input : std_ulogic_vector(3 downto 0)) return character is
+  function to_hexchar_f(d : std_ulogic_vector(3 downto 0)) return character is
     variable hex_v : string(1 to 16);
   begin
     hex_v := "0123456789abcdef";
-    if ((input(0) /= '0') and (input(0) /= '1')) or
-       ((input(1) /= '0') and (input(1) /= '1')) or
-       ((input(2) /= '0') and (input(2) /= '1')) or
-       ((input(3) /= '0') and (input(3) /= '1')) then
+    if ((d(0) /= '0') and (d(0) /= '1')) or
+       ((d(1) /= '0') and (d(1) /= '1')) or
+       ((d(2) /= '0') and (d(2) /= '1')) or
+       ((d(3) /= '0') and (d(3) /= '1')) then
       return '?';
     else
-      return hex_v(to_integer(unsigned(input)) + 1);
+      return hex_v(to_integer(unsigned(d)) + 1);
     end if;
   end function to_hexchar_f;
 
   -- Bit reversal ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function bit_rev_f(input : std_ulogic_vector) return std_ulogic_vector is
-    variable tmp_v, output_v : std_ulogic_vector(input'length-1 downto 0);
+  function bit_rev_f(d : std_ulogic_vector) return std_ulogic_vector is
+    variable tmp_v, output_v : std_ulogic_vector(d'length-1 downto 0);
   begin
-    tmp_v := input;
-    for i in 0 to input'length-1 loop
-      output_v((input'length-1)-i) := tmp_v(i);
+    tmp_v := d;
+    for i in 0 to d'length-1 loop
+      output_v((d'length-1)-i) := tmp_v(i);
     end loop;
     return output_v;
   end function bit_rev_f;
 
-  -- Test if input number is a power of two -------------------------------------------------
+  -- Test if number is a power of two -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function is_power_of_two_f(input : natural) return boolean is
+  function is_power_of_two_f(n : natural) return boolean is
     variable tmp_v : unsigned(31 downto 0);
   begin
-    tmp_v := to_unsigned(input, 32);
-    if (input = 0) then
+    tmp_v := to_unsigned(n, 32);
+    if (n = 0) then
       return false;
-    elsif (input = 1) then
+    elsif (n = 1) then
       return true;
     elsif ((tmp_v and (tmp_v - 1)) = 0) then
       return true;
@@ -1199,21 +1198,21 @@ package body neorv32_package is
 
   -- Replicate bit --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function replicate_f(input : std_ulogic; num : natural) return std_ulogic_vector is
-    variable tmp_v : std_ulogic_vector(num-1 downto 0);
+  function replicate_f(d : std_ulogic; n : natural) return std_ulogic_vector is
+    variable tmp_v : std_ulogic_vector(n-1 downto 0);
   begin
-    tmp_v := (others => input);
+    tmp_v := (others => d);
     return tmp_v;
   end function replicate_f;
 
   -- Convert to hex string ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function to_hexstring_f(data : std_ulogic_vector) return string is
-    variable num_v : natural := data'length/4;
+  function to_hexstring_f(d : std_ulogic_vector) return string is
+    variable num_v : natural := d'length/4;
     variable res_v : string(1 to num_v);
   begin
     for i in 0 to num_v-1 loop
-      res_v(i+1) := to_hexchar_f(data(data'high - i*4 downto data'high - i*4 - 3));
+      res_v(i+1) := to_hexchar_f(d(d'high - i*4 downto d'high - i*4 - 3));
     end loop;
     return res_v;
   end function to_hexstring_f;

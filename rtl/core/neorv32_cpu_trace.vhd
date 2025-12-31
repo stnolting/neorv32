@@ -46,7 +46,7 @@ architecture neorv32_cpu_trace_rtl of neorv32_cpu_trace is
   end record;
   signal arbiter : arbiter_t;
 
-  -- trace buffer --
+  -- trace packet buffer --
   signal trace_buf : trace_port_t;
 
 begin
@@ -77,9 +77,9 @@ begin
   arbiter.valid <= arbiter.state and arbiter.done;
 
 
-  -- Trace Buffer ---------------------------------------------------------------------------
+  -- Assemble Trace Packet ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  trace_buffer: process(rstn_i, clk_i)
+  trace_packet_buffer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
       trace_buf <= trace_port_terminate_c;
@@ -133,10 +133,10 @@ begin
 
       -- memory access --
       if (ctrl_i.lsu_req = '1') then
-        if (ctrl_i.lsu_rw = '0') or (ctrl_i.lsu_rmw = '1') then
+        if (ctrl_i.lsu_rd = '1') then
           trace_buf.mem_rmask <= mem_ben_i;
         end if;
-        if (ctrl_i.lsu_rw = '1') or (ctrl_i.lsu_rmw = '1') then
+        if (ctrl_i.lsu_wr = '1') then
           trace_buf.mem_wmask <= mem_ben_i;
         end if;
       elsif (trace_buf.valid = '1') then
@@ -148,7 +148,7 @@ begin
       trace_buf.mem_wdata <= mem_wdata_i;
 
     end if;
-  end process trace_buffer;
+  end process trace_packet_buffer;
 
   -- trace output --
   trace_o <= trace_buf;

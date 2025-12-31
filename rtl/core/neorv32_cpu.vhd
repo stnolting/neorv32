@@ -100,6 +100,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
 
   -- auto-configuration --
   constant rf_awidth_c : natural := cond_sel_natural_f(RISCV_ISA_E, 4, 5); -- register file address width
+  constant amo_en_c    : boolean := RISCV_ISA_Zaamo or RISCV_ISA_Zalrsc; -- any AMO extension available
   constant riscv_a_c   : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
   constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
   constant riscv_zcb_c : boolean := RISCV_ISA_C and RISCV_ISA_Zcb; -- Zcb: additional compressed instructions
@@ -438,7 +439,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_lsu_inst: entity neorv32.neorv32_cpu_lsu
   generic map (
-    HART_ID => HART_ID -- hardware thread ID
+    HART_ID => HART_ID, -- hardware thread ID
+    AMO_EN  => amo_en_c -- enable atomic memory accesses
   )
   port map (
     -- global control --
@@ -469,7 +471,7 @@ begin
     neorv32_cpu_pmp_inst: entity neorv32.neorv32_cpu_pmp
     generic map (
       NUM_REGIONS => PMP_NUM_REGIONS,     -- number of regions (0..16)
-      GRANULARITY => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+      GRANULARITY => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes
       TOR_EN      => PMP_TOR_MODE_EN,     -- enable TOR mode
       NAP_EN      => PMP_NAP_MODE_EN      -- enable NAPOT/NA4 modes
     )
