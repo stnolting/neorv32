@@ -63,5 +63,4 @@ begin
   -- processing done --
   valid_o <= valid_cmd;
 
-
 end neorv32_cpu_cp_cond_rtl;

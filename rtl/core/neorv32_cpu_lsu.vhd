@@ -98,6 +98,7 @@ begin
   mem_do_reg: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      req.meta <= (others => '0');
       req.addr <= (others => '0');
       req.data <= (others => '0');
       req.ben  <= (others => '0');
@@ -105,6 +106,7 @@ begin
       misalign <= '0';
     elsif rising_edge(clk_i) then
       if (ctrl_i.lsu_mo_en = '1') then
+        req.meta <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & ctrl_i.cpu_debug & ctrl_i.lsu_priv & '0';
         req.addr <= addr_i; -- memory address register
         case ctrl_i.ir_funct3(1 downto 0) is -- alignment + byte-enable
           when "00" => -- byte
@@ -123,6 +125,7 @@ begin
             req.ben  <= (others => '1');
             misalign <= addr_i(1) or addr_i(0);
         end case;
+        -- bus locking --
         if AMO_EN and (ctrl_i.ir_opcode(2) = '1') and (ctrl_i.ir_funct12(8) = '0') then
           req.rw <= '0'; -- atomic read-modify-write operations are modified load requests
         else
@@ -133,18 +136,17 @@ begin
   end process mem_do_reg;
 
   -- direct output --
-  req.meta  <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & ctrl_i.cpu_debug & ctrl_i.lsu_priv & '0';
   req.burst <= '0'; -- only non-burst/single-accesses
   req.fence <= ctrl_i.lsu_fence;
-
-  -- address feedback for MTVAL CSR --
-  mar_o <= req.addr;
 
   -- access request (all source signals are driven by registers) --
   req.stb <= ctrl_i.lsu_req and (not misalign) and (not pmp_fault_i);
 
   -- output bus request --
   dbus_req_o <= req;
+
+  -- address feedback for MTVAL CSR --
+  mar_o <= req.addr;
 
 
   -- Response -------------------------------------------------------------------------------

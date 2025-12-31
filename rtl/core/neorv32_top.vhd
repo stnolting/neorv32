@@ -21,229 +21,229 @@ use neorv32.neorv32_package.all;
 entity neorv32_top is
   generic (
     -- General --
-    CLOCK_FREQUENCY       : natural                        := 0;           -- clock frequency of clk_i in Hz
-    TRACE_PORT_EN         : boolean                        := false;       -- enable CPU execution trace port
-    DUAL_CORE_EN          : boolean                        := false;       -- enable dual-core homogeneous SMP
+    CLOCK_FREQUENCY     : natural                        := 0;             -- clock frequency of clk_i in Hz
+    TRACE_PORT_EN       : boolean                        := false;         -- enable CPU execution trace port
+    DUAL_CORE_EN        : boolean                        := false;         -- enable dual-core homogeneous SMP
 
     -- Boot Configuration --
-    BOOT_MODE_SELECT      : natural range 0 to 2           := 0;           -- boot configuration select (default = 0 = bootloader)
-    BOOT_ADDR_CUSTOM      : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
+    BOOT_MODE_SELECT    : natural range 0 to 2           := 0;             -- boot configuration select (default = 0 = bootloader)
+    BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000";   -- custom CPU boot address (if boot_config = 1)
 
     -- On-Chip Debugger (OCD) --
-    OCD_EN                : boolean                        := false;       -- implement on-chip debugger
-    OCD_NUM_HW_TRIGGERS   : natural range 0 to 16          := 0;           -- number of hardware break-/watchpoints
-    OCD_AUTHENTICATION    : boolean                        := false;       -- implement on-chip debugger authentication
-    OCD_JEDEC_ID          : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
+    OCD_EN              : boolean                        := false;         -- implement on-chip debugger
+    OCD_NUM_HW_TRIGGERS : natural range 0 to 16          := 0;             -- number of hardware break-/watchpoints
+    OCD_AUTHENTICATION  : boolean                        := false;         -- implement on-chip debugger authentication
+    OCD_JEDEC_ID        : std_ulogic_vector(10 downto 0) := "00000000000"; -- JEDEC ID: continuation codes + vendor ID
 
     -- RISC-V CPU Extensions --
-    RISCV_ISA_C           : boolean                        := false;       -- compressed extension
-    RISCV_ISA_E           : boolean                        := false;       -- embedded RF extension
-    RISCV_ISA_M           : boolean                        := false;       -- mul/div extension
-    RISCV_ISA_U           : boolean                        := false;       -- user mode extension
-    RISCV_ISA_Zaamo       : boolean                        := false;       -- atomic read-modify-write operations extension
-    RISCV_ISA_Zalrsc      : boolean                        := false;       -- atomic reservation-set operations extension
-    RISCV_ISA_Zba         : boolean                        := false;       -- shifted-add bit-manipulation extension
-    RISCV_ISA_Zbb         : boolean                        := false;       -- basic bit-manipulation extension
-    RISCV_ISA_Zbkb        : boolean                        := false;       -- bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc        : boolean                        := false;       -- carry-less multiplication instructions
-    RISCV_ISA_Zbkx        : boolean                        := false;       -- cryptography crossbar permutation extension
-    RISCV_ISA_Zbs         : boolean                        := false;       -- single-bit bit-manipulation extension
-    RISCV_ISA_Zcb         : boolean                        := false;       -- additional code size reduction instructions
-    RISCV_ISA_Zfinx       : boolean                        := false;       -- 32-bit floating-point extension
-    RISCV_ISA_Zibi        : boolean                        := false;       -- branch with immediate
-    RISCV_ISA_Zicntr      : boolean                        := false;       -- base counters
-    RISCV_ISA_Zicond      : boolean                        := false;       -- integer conditional operations
-    RISCV_ISA_Zihpm       : boolean                        := false;       -- hardware performance monitors
-    RISCV_ISA_Zimop       : boolean                        := false;       -- may-be-operations
-    RISCV_ISA_Zknd        : boolean                        := false;       -- cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne        : boolean                        := false;       -- cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh        : boolean                        := false;       -- cryptography NIST hash extension
-    RISCV_ISA_Zksed       : boolean                        := false;       -- ShangMi block cipher extension
-    RISCV_ISA_Zksh        : boolean                        := false;       -- ShangMi hash extension
-    RISCV_ISA_Zmmul       : boolean                        := false;       -- multiply-only M sub-extension
-    RISCV_ISA_Zxcfu       : boolean                        := false;       -- custom (instr.) functions unit
-    RISCV_ISA_Smcntrpmf   : boolean                        := false;       -- counter privilege-mode filtering
+    RISCV_ISA_C         : boolean                        := false;         -- compressed extension
+    RISCV_ISA_E         : boolean                        := false;         -- embedded RF extension
+    RISCV_ISA_M         : boolean                        := false;         -- mul/div extension
+    RISCV_ISA_U         : boolean                        := false;         -- user mode extension
+    RISCV_ISA_Zaamo     : boolean                        := false;         -- atomic read-modify-write operations extension
+    RISCV_ISA_Zalrsc    : boolean                        := false;         -- atomic reservation-set operations extension
+    RISCV_ISA_Zba       : boolean                        := false;         -- shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb       : boolean                        := false;         -- basic bit-manipulation extension
+    RISCV_ISA_Zbkb      : boolean                        := false;         -- bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc      : boolean                        := false;         -- carry-less multiplication instructions
+    RISCV_ISA_Zbkx      : boolean                        := false;         -- cryptography crossbar permutation extension
+    RISCV_ISA_Zbs       : boolean                        := false;         -- single-bit bit-manipulation extension
+    RISCV_ISA_Zcb       : boolean                        := false;         -- additional code size reduction instructions
+    RISCV_ISA_Zfinx     : boolean                        := false;         -- 32-bit floating-point extension
+    RISCV_ISA_Zibi      : boolean                        := false;         -- branch with immediate
+    RISCV_ISA_Zicntr    : boolean                        := false;         -- base counters
+    RISCV_ISA_Zicond    : boolean                        := false;         -- integer conditional operations
+    RISCV_ISA_Zihpm     : boolean                        := false;         -- hardware performance monitors
+    RISCV_ISA_Zimop     : boolean                        := false;         -- may-be-operations
+    RISCV_ISA_Zknd      : boolean                        := false;         -- cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne      : boolean                        := false;         -- cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh      : boolean                        := false;         -- cryptography NIST hash extension
+    RISCV_ISA_Zksed     : boolean                        := false;         -- ShangMi block cipher extension
+    RISCV_ISA_Zksh      : boolean                        := false;         -- ShangMi hash extension
+    RISCV_ISA_Zmmul     : boolean                        := false;         -- multiply-only M sub-extension
+    RISCV_ISA_Zxcfu     : boolean                        := false;         -- custom (instr.) functions unit
+    RISCV_ISA_Smcntrpmf : boolean                        := false;         -- counter privilege-mode filtering
 
     -- Tuning Options --
-    CPU_CONSTT_BR_EN      : boolean                        := false;       -- enable constant-time branches
-    CPU_FAST_MUL_EN       : boolean                        := false;       -- use DSPs for M extension's multiplier
-    CPU_FAST_SHIFT_EN     : boolean                        := false;       -- use barrel shifter for shift operations
-    CPU_RF_ARCH_SEL       : natural range 0 to 3           := 0;           -- register file implementation style select
+    CPU_CONSTT_BR_EN    : boolean                        := false;         -- enable constant-time branches
+    CPU_FAST_MUL_EN     : boolean                        := false;         -- use DSPs for M extension's multiplier
+    CPU_FAST_SHIFT_EN   : boolean                        := false;         -- use barrel shifter for shift operations
+    CPU_RF_ARCH_SEL     : natural range 0 to 3           := 0;             -- register file implementation style select
 
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS       : natural range 0 to 16          := 0;           -- number of regions (0..16)
-    PMP_MIN_GRANULARITY   : natural                        := 4;           -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
-    PMP_TOR_MODE_EN       : boolean                        := false;       -- implement TOR mode
-    PMP_NAP_MODE_EN       : boolean                        := false;       -- implement NAPOT/NA4 modes
+    PMP_NUM_REGIONS     : natural range 0 to 16          := 0;             -- number of regions (0..16)
+    PMP_MIN_GRANULARITY : natural                        := 4;             -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
+    PMP_TOR_MODE_EN     : boolean                        := false;         -- implement TOR mode
+    PMP_NAP_MODE_EN     : boolean                        := false;         -- implement NAPOT/NA4 modes
 
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS          : natural range 0 to 13          := 0;           -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH         : natural range 0 to 64          := 40;          -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS        : natural range 0 to 13          := 0;             -- number of implemented HPM counters (0..13)
+    HPM_CNT_WIDTH       : natural range 0 to 64          := 40;            -- total size of HPM counters (0..64)
 
     -- Internal Instruction memory (IMEM) --
-    IMEM_EN               : boolean                        := false;       -- implement processor-internal instruction memory
-    IMEM_SIZE             : natural                        := 16*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
-    IMEM_OUTREG_EN        : boolean                        := false;       -- enable IMEM output register stage (for improved mapping/timing)
+    IMEM_EN             : boolean                        := false;         -- implement processor-internal instruction memory
+    IMEM_SIZE           : natural                        := 16*1024;       -- size of processor-internal instruction memory in bytes (use a power of 2)
+    IMEM_OUTREG_EN      : boolean                        := false;         -- enable IMEM output register stage (for improved mapping/timing)
 
     -- Internal Data memory (DMEM) --
-    DMEM_EN               : boolean                        := false;       -- implement processor-internal data memory
-    DMEM_SIZE             : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
-    DMEM_OUTREG_EN        : boolean                        := false;       -- enable DMEM output register stage (for improved mapping/timing)
+    DMEM_EN             : boolean                        := false;         -- implement processor-internal data memory
+    DMEM_SIZE           : natural                        := 8*1024;        -- size of processor-internal data memory in bytes (use a power of 2)
+    DMEM_OUTREG_EN      : boolean                        := false;         -- enable DMEM output register stage (for improved mapping/timing)
 
     -- CPU Caches --
-    ICACHE_EN             : boolean                        := false;       -- implement instruction cache (i-cache)
-    ICACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;           -- i-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_EN             : boolean                        := false;       -- implement data cache (d-cache)
-    DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;           -- d-cache: number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE      : natural range 8 to 1024        := 64;          -- i-cache/d-cache: block size in bytes (min 8), has to be a power of 2
-    CACHE_BURSTS_EN       : boolean                        := true;        -- i-cache/d-cache: enable issuing of burst transfer for cache update
+    ICACHE_EN           : boolean                        := false;         -- implement instruction cache (i-cache)
+    ICACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;             -- i-cache: number of blocks (min 1), has to be a power of 2
+    DCACHE_EN           : boolean                        := false;         -- implement data cache (d-cache)
+    DCACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;             -- d-cache: number of blocks (min 1), has to be a power of 2
+    CACHE_BLOCK_SIZE    : natural range 8 to 1024        := 64;            -- i-cache/d-cache: block size in bytes (min 8), has to be a power of 2
+    CACHE_BURSTS_EN     : boolean                        := true;          -- i-cache/d-cache: enable issuing of burst transfer for cache update
 
     -- External bus interface (XBUS) --
-    XBUS_EN               : boolean                        := false;       -- implement external memory bus interface
-    XBUS_TIMEOUT          : natural                        := 2048;        -- cycles after a pending bus access auto-terminates (0 = disabled)
-    XBUS_REGSTAGE_EN      : boolean                        := false;       -- add XBUS register stage
+    XBUS_EN             : boolean                        := false;         -- implement external memory bus interface
+    XBUS_TIMEOUT        : natural                        := 2048;          -- cycles after a pending bus access auto-terminates (0 = disabled)
+    XBUS_REGSTAGE_EN    : boolean                        := false;         -- add XBUS register stage
 
     -- Processor peripherals --
-    IO_DISABLE_SYSINFO    : boolean                        := false;       -- disable the SYSINFO module (for advanced users only)
-    IO_GPIO_NUM           : natural range 0 to 32          := 0;           -- number of GPIO input/output pairs (0..32)
-    IO_CLINT_EN           : boolean                        := false;       -- implement core local interruptor (CLINT)
-    IO_UART0_EN           : boolean                        := false;       -- implement primary universal asynchronous receiver/transmitter (UART0)
-    IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
-    IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
-    IO_UART1_EN           : boolean                        := false;       -- implement secondary universal asynchronous receiver/transmitter (UART1)
-    IO_UART1_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
-    IO_UART1_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
-    IO_SPI_EN             : boolean                        := false;       -- implement serial peripheral interface (SPI)
-    IO_SPI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be a power of two, min 1
-    IO_SDI_EN             : boolean                        := false;       -- implement serial data interface (SDI)
-    IO_SDI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
-    IO_TWI_EN             : boolean                        := false;       -- implement two-wire interface (TWI)
-    IO_TWI_FIFO           : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
-    IO_TWD_EN             : boolean                        := false;       -- implement two-wire device (TWD)
-    IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be zero or a power of two, min 1
-    IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be zero or a power of two, min 1
-    IO_PWM_NUM            : natural range 0 to 32          := 0;           -- number of PWM channels to implement (0..32)
-    IO_WDT_EN             : boolean                        := false;       -- implement watch dog timer (WDT)
-    IO_TRNG_EN            : boolean                        := false;       -- implement true random number generator (TRNG)
-    IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;           -- data FIFO depth, has to be a power of two, min 1
-    IO_CFS_EN             : boolean                        := false;       -- implement custom functions subsystem (CFS)
-    IO_NEOLED_EN          : boolean                        := false;       -- implement NeoPixel-compatible smart LED interface (NEOLED)
-    IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;           -- NEOLED FIFO depth, has to be a power of two, min 1
-    IO_GPTMR_NUM          : natural range 0 to 16          := 0;           -- number of GPTMR timer slices to implement (0..16)
-    IO_ONEWIRE_EN         : boolean                        := false;       -- implement 1-wire interface (ONEWIRE)
-    IO_ONEWIRE_FIFO       : natural range 1 to 2**15       := 1;           -- RTX FIFO depth, has to be zero or a power of two, min 1
-    IO_DMA_EN             : boolean                        := false;       -- implement direct memory access controller (DMA)
-    IO_DMA_DSC_FIFO       : natural range 4 to 512         := 4;           -- DMA descriptor FIFO depth, has to be a power of two, min 4
-    IO_SLINK_EN           : boolean                        := false;       -- implement stream link interface (SLINK)
-    IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;           -- RX FIFO depth, has to be a power of two, min 1
-    IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;           -- TX FIFO depth, has to be a power of two, min 1
-    IO_TRACER_EN          : boolean                        := false;       -- implement instruction tracer
-    IO_TRACER_BUFFER      : natural range 1 to 2**15       := 1;           -- trace buffer depth, has to be a power of two, min 1
-    IO_TRACER_SIMLOG_EN   : boolean                        := false        -- write full trace log to file (simulation-only)
+    IO_DISABLE_SYSINFO  : boolean                        := false;         -- disable the SYSINFO module (for advanced users only)
+    IO_GPIO_NUM         : natural range 0 to 32          := 0;             -- number of GPIO input/output pairs (0..32)
+    IO_CLINT_EN         : boolean                        := false;         -- implement core local interruptor (CLINT)
+    IO_UART0_EN         : boolean                        := false;         -- implement primary universal asynchronous receiver/transmitter (UART0)
+    IO_UART0_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two, min 1
+    IO_UART0_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two, min 1
+    IO_UART1_EN         : boolean                        := false;         -- implement secondary universal asynchronous receiver/transmitter (UART1)
+    IO_UART1_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two, min 1
+    IO_UART1_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two, min 1
+    IO_SPI_EN           : boolean                        := false;         -- implement serial peripheral interface (SPI)
+    IO_SPI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be a power of two, min 1
+    IO_SDI_EN           : boolean                        := false;         -- implement serial data interface (SDI)
+    IO_SDI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two, min 1
+    IO_TWI_EN           : boolean                        := false;         -- implement two-wire interface (TWI)
+    IO_TWI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two, min 1
+    IO_TWD_EN           : boolean                        := false;         -- implement two-wire device (TWD)
+    IO_TWD_RX_FIFO      : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be zero or a power of two, min 1
+    IO_TWD_TX_FIFO      : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be zero or a power of two, min 1
+    IO_PWM_NUM          : natural range 0 to 32          := 0;             -- number of PWM channels to implement (0..32)
+    IO_WDT_EN           : boolean                        := false;         -- implement watch dog timer (WDT)
+    IO_TRNG_EN          : boolean                        := false;         -- implement true random number generator (TRNG)
+    IO_TRNG_FIFO        : natural range 1 to 2**15       := 1;             -- data FIFO depth, has to be a power of two, min 1
+    IO_CFS_EN           : boolean                        := false;         -- implement custom functions subsystem (CFS)
+    IO_NEOLED_EN        : boolean                        := false;         -- implement NeoPixel-compatible smart LED interface (NEOLED)
+    IO_NEOLED_TX_FIFO   : natural range 1 to 2**15       := 1;             -- NEOLED FIFO depth, has to be a power of two, min 1
+    IO_GPTMR_NUM        : natural range 0 to 16          := 0;             -- number of GPTMR timer slices to implement (0..16)
+    IO_ONEWIRE_EN       : boolean                        := false;         -- implement 1-wire interface (ONEWIRE)
+    IO_ONEWIRE_FIFO     : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two, min 1
+    IO_DMA_EN           : boolean                        := false;         -- implement direct memory access controller (DMA)
+    IO_DMA_DSC_FIFO     : natural range 4 to 512         := 4;             -- DMA descriptor FIFO depth, has to be a power of two, min 4
+    IO_SLINK_EN         : boolean                        := false;         -- implement stream link interface (SLINK)
+    IO_SLINK_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two, min 1
+    IO_SLINK_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two, min 1
+    IO_TRACER_EN        : boolean                        := false;         -- implement instruction tracer
+    IO_TRACER_BUFFER    : natural range 1 to 2**15       := 1;             -- trace buffer depth, has to be a power of two, min 1
+    IO_TRACER_SIMLOG_EN : boolean                        := false          -- write full trace log to file (simulation-only)
   );
   port (
     -- Global control --
-    clk_i          : in  std_ulogic;                                        -- global clock, rising edge
-    rstn_i         : in  std_ulogic;                                        -- global reset, low-active, async
-    rstn_ocd_o     : out std_ulogic;                                        -- on-chip debugger reset output, low-active, sync
-    rstn_wdt_o     : out std_ulogic;                                        -- watchdog reset output, low-active, sync
+    clk_i          : in  std_ulogic;                                         -- global clock, rising edge
+    rstn_i         : in  std_ulogic;                                         -- global reset, low-active, async
+    rstn_ocd_o     : out std_ulogic;                                         -- on-chip debugger reset output, low-active, sync
+    rstn_wdt_o     : out std_ulogic;                                         -- watchdog reset output, low-active, sync
 
     -- Execution trace (available if TRACE_PORT_EN = true) --
-    trace_cpu0_o   : out trace_port_t;                                      -- CPU 0 trace port
-    trace_cpu1_o   : out trace_port_t;                                      -- CPU 1 trace port
+    trace_cpu0_o   : out trace_port_t;                                       -- CPU 0 trace port
+    trace_cpu1_o   : out trace_port_t;                                       -- CPU 1 trace port
 
     -- JTAG on-chip debugger interface (available if OCD_EN = true) --
-    jtag_tck_i     : in  std_ulogic := 'L';                                 -- serial clock
-    jtag_tdi_i     : in  std_ulogic := 'L';                                 -- serial data input
-    jtag_tdo_o     : out std_ulogic;                                        -- serial data output
-    jtag_tms_i     : in  std_ulogic := 'L';                                 -- mode select
+    jtag_tck_i     : in  std_ulogic := 'L';                                  -- serial clock
+    jtag_tdi_i     : in  std_ulogic := 'L';                                  -- serial data input
+    jtag_tdo_o     : out std_ulogic;                                         -- serial data output
+    jtag_tms_i     : in  std_ulogic := 'L';                                  -- mode select
 
     -- External bus interface (available if XBUS_EN = true) --
-    xbus_adr_o     : out std_ulogic_vector(31 downto 0);                    -- address
-    xbus_dat_o     : out std_ulogic_vector(31 downto 0);                    -- write data
-    xbus_cti_o     : out std_ulogic_vector(2 downto 0);                     -- cycle type
-    xbus_tag_o     : out std_ulogic_vector(2 downto 0);                     -- access tag
-    xbus_we_o      : out std_ulogic;                                        -- read/write
-    xbus_sel_o     : out std_ulogic_vector(3 downto 0);                     -- byte enable
-    xbus_stb_o     : out std_ulogic;                                        -- strobe
-    xbus_cyc_o     : out std_ulogic;                                        -- valid cycle
-    xbus_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- read data
-    xbus_ack_i     : in  std_ulogic := 'L';                                 -- transfer acknowledge
-    xbus_err_i     : in  std_ulogic := 'L';                                 -- transfer error
+    xbus_adr_o     : out std_ulogic_vector(31 downto 0);                     -- address
+    xbus_dat_o     : out std_ulogic_vector(31 downto 0);                     -- write data
+    xbus_cti_o     : out std_ulogic_vector(2 downto 0);                      -- cycle type
+    xbus_tag_o     : out std_ulogic_vector(2 downto 0);                      -- access tag
+    xbus_we_o      : out std_ulogic;                                         -- read/write
+    xbus_sel_o     : out std_ulogic_vector(3 downto 0);                      -- byte enable
+    xbus_stb_o     : out std_ulogic;                                         -- strobe
+    xbus_cyc_o     : out std_ulogic;                                         -- valid cycle
+    xbus_dat_i     : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- read data
+    xbus_ack_i     : in  std_ulogic := 'L';                                  -- transfer acknowledge
+    xbus_err_i     : in  std_ulogic := 'L';                                  -- transfer error
 
     -- Stream Link Interface (available if IO_SLINK_EN = true) --
-    slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- RX input data
-    slink_rx_src_i : in  std_ulogic_vector(3 downto 0)  := (others => 'L'); -- RX source routing information
-    slink_rx_val_i : in  std_ulogic := 'L';                                 -- RX valid input
-    slink_rx_lst_i : in  std_ulogic := 'L';                                 -- RX last element of stream
-    slink_rx_rdy_o : out std_ulogic;                                        -- RX ready to receive
-    slink_tx_dat_o : out std_ulogic_vector(31 downto 0);                    -- TX output data
-    slink_tx_dst_o : out std_ulogic_vector(3 downto 0);                     -- TX destination routing information
-    slink_tx_val_o : out std_ulogic;                                        -- TX valid output
-    slink_tx_lst_o : out std_ulogic;                                        -- TX last element of stream
-    slink_tx_rdy_i : in  std_ulogic := 'L';                                 -- TX ready to send
+    slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- RX input data
+    slink_rx_src_i : in  std_ulogic_vector(3 downto 0)  := (others => 'L');  -- RX source routing information
+    slink_rx_val_i : in  std_ulogic := 'L';                                  -- RX valid input
+    slink_rx_lst_i : in  std_ulogic := 'L';                                  -- RX last element of stream
+    slink_rx_rdy_o : out std_ulogic;                                         -- RX ready to receive
+    slink_tx_dat_o : out std_ulogic_vector(31 downto 0);                     -- TX output data
+    slink_tx_dst_o : out std_ulogic_vector(3 downto 0);                      -- TX destination routing information
+    slink_tx_val_o : out std_ulogic;                                         -- TX valid output
+    slink_tx_lst_o : out std_ulogic;                                         -- TX last element of stream
+    slink_tx_rdy_i : in  std_ulogic := 'L';                                  -- TX ready to send
 
     -- GPIO (available if IO_GPIO_NUM > 0) --
-    gpio_o         : out std_ulogic_vector(31 downto 0);                    -- parallel output
-    gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L'); -- parallel input; interrupt-capable
+    gpio_o         : out std_ulogic_vector(31 downto 0);                     -- parallel output
+    gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- parallel input; interrupt-capable
 
     -- primary UART0 (available if IO_UART0_EN = true) --
-    uart0_txd_o    : out std_ulogic;                                        -- UART0 send data
-    uart0_rxd_i    : in  std_ulogic := 'L';                                 -- UART0 receive data
-    uart0_rtsn_o   : out std_ulogic;                                        -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
-    uart0_ctsn_i   : in  std_ulogic := 'L';                                 -- HW flow control: UART0.TX allowed to transmit, low-active, optional
+    uart0_txd_o    : out std_ulogic;                                         -- UART0 send data
+    uart0_rxd_i    : in  std_ulogic := 'L';                                  -- UART0 receive data
+    uart0_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
+    uart0_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: UART0.TX allowed to transmit, low-active, optional
 
     -- secondary UART1 (available if IO_UART1_EN = true) --
-    uart1_txd_o    : out std_ulogic;                                        -- UART1 send data
-    uart1_rxd_i    : in  std_ulogic := 'L';                                 -- UART1 receive data
-    uart1_rtsn_o   : out std_ulogic;                                        -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
-    uart1_ctsn_i   : in  std_ulogic := 'L';                                 -- HW flow control: UART1.TX allowed to transmit, low-active, optional
+    uart1_txd_o    : out std_ulogic;                                         -- UART1 send data
+    uart1_rxd_i    : in  std_ulogic := 'L';                                  -- UART1 receive data
+    uart1_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
+    uart1_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: UART1.TX allowed to transmit, low-active, optional
 
     -- SPI (available if IO_SPI_EN = true) --
-    spi_clk_o      : out std_ulogic;                                        -- SPI serial clock
-    spi_dat_o      : out std_ulogic;                                        -- controller data out, peripheral data in
-    spi_dat_i      : in  std_ulogic := 'L';                                 -- controller data in, peripheral data out
-    spi_csn_o      : out std_ulogic_vector(7 downto 0);                     -- chip-select, low-active
+    spi_clk_o      : out std_ulogic;                                         -- SPI serial clock
+    spi_dat_o      : out std_ulogic;                                         -- controller data out, peripheral data in
+    spi_dat_i      : in  std_ulogic := 'L';                                  -- controller data in, peripheral data out
+    spi_csn_o      : out std_ulogic_vector(7 downto 0);                      -- chip-select, low-active
 
     -- SDI (available if IO_SDI_EN = true) --
-    sdi_clk_i      : in  std_ulogic := 'L';                                 -- SDI serial clock
-    sdi_dat_o      : out std_ulogic;                                        -- controller data out, peripheral data in
-    sdi_dat_i      : in  std_ulogic := 'L';                                 -- controller data in, peripheral data out
-    sdi_csn_i      : in  std_ulogic := 'H';                                 -- chip-select, low-active
+    sdi_clk_i      : in  std_ulogic := 'L';                                  -- SDI serial clock
+    sdi_dat_o      : out std_ulogic;                                         -- controller data out, peripheral data in
+    sdi_dat_i      : in  std_ulogic := 'L';                                  -- controller data in, peripheral data out
+    sdi_csn_i      : in  std_ulogic := 'H';                                  -- chip-select, low-active
 
     -- TWI (available if IO_TWI_EN = true) --
-    twi_sda_i      : in  std_ulogic := 'H';                                 -- serial data line sense input
-    twi_sda_o      : out std_ulogic;                                        -- serial data line output (pull low only)
-    twi_scl_i      : in  std_ulogic := 'H';                                 -- serial clock line sense input
-    twi_scl_o      : out std_ulogic;                                        -- serial clock line output (pull low only)
+    twi_sda_i      : in  std_ulogic := 'H';                                  -- serial data line sense input
+    twi_sda_o      : out std_ulogic;                                         -- serial data line output (pull low only)
+    twi_scl_i      : in  std_ulogic := 'H';                                  -- serial clock line sense input
+    twi_scl_o      : out std_ulogic;                                         -- serial clock line output (pull low only)
 
     -- TWD (available if IO_TWD_EN = true) --
-    twd_sda_i      : in  std_ulogic := 'H';                                 -- serial data line sense input
-    twd_sda_o      : out std_ulogic;                                        -- serial data line output (pull low only)
-    twd_scl_i      : in  std_ulogic := 'H';                                 -- serial clock line sense input
-    twd_scl_o      : out std_ulogic;                                        -- serial clock line output (pull low only)
+    twd_sda_i      : in  std_ulogic := 'H';                                  -- serial data line sense input
+    twd_sda_o      : out std_ulogic;                                         -- serial data line output (pull low only)
+    twd_scl_i      : in  std_ulogic := 'H';                                  -- serial clock line sense input
+    twd_scl_o      : out std_ulogic;                                         -- serial clock line output (pull low only)
 
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
-    onewire_i      : in  std_ulogic := 'H';                                 -- 1-wire bus sense input
-    onewire_o      : out std_ulogic;                                        -- 1-wire bus output (pull low only)
+    onewire_i      : in  std_ulogic := 'H';                                  -- 1-wire bus sense input
+    onewire_o      : out std_ulogic;                                         -- 1-wire bus output (pull low only)
 
     -- PWM (available if IO_PWM_NUM > 0) --
-    pwm_o          : out std_ulogic_vector(31 downto 0);                    -- PWM channels
+    pwm_o          : out std_ulogic_vector(31 downto 0);                     -- PWM channels
 
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_ulogic_vector(255 downto 0) := (others => 'L'); -- custom CFS inputs conduit
     cfs_out_o      : out std_ulogic_vector(255 downto 0);                    -- custom CFS outputs conduit
 
     -- NeoPixel-compatible smart LED interface (available if IO_NEOLED_EN = true) --
-    neoled_o       : out std_ulogic;                                        -- async serial data line
+    neoled_o       : out std_ulogic;                                         -- async serial data line
 
     -- Machine timer system time (available if IO_CLINT_EN = true) --
-    mtime_time_o   : out std_ulogic_vector(63 downto 0);                    -- current system time
+    mtime_time_o   : out std_ulogic_vector(63 downto 0);                     -- current system time
 
     -- CPU interrupts --
-    irq_msi_i      : in  std_ulogic := 'L';                                 -- machine software interrupt, available if IO_CLINT_EN = false
-    irw_mti_i      : in  std_ulogic := 'L';                                 -- machine timer interrupt, available if IO_CLINT_EN = false
-    irq_mei_i      : in  std_ulogic := 'L'                                  -- machine external interrupt
+    irq_msi_i      : in  std_ulogic := 'L';                                  -- machine software interrupt, available if IO_CLINT_EN = false
+    irw_mti_i      : in  std_ulogic := 'L';                                  -- machine timer interrupt, available if IO_CLINT_EN = false
+    irq_mei_i      : in  std_ulogic := 'L'                                   -- machine external interrupt
   );
 end neorv32_top;
 
