@@ -1014,9 +1014,9 @@ begin
 
           when csr_dcsr_c => -- debug mode control and status register
             csr.dcsr_step    <= csr_wdata(2);
+            csr.dcsr_ebreaku <= csr_wdata(12);
             csr.dcsr_ebreakm <= csr_wdata(15);
             csr.dcsr_prv     <= or_reduce_f(csr_wdata(1 downto 0)); -- everything != U will fall back to M
-            csr.dcsr_ebreaku <= csr_wdata(12);
 
           when csr_dpc_c => -- debug mode program counter
             csr.dpc <= csr_wdata(31 downto 1) & '0';
