@@ -462,6 +462,7 @@
           <description>Channel configuration register</description>
           <register>
             <name>TOPCMP</name>
+            <description>Channel counter full word access alias</description>
             <addressOffset>0x0</addressOffset>
             <fields>
               <field>
