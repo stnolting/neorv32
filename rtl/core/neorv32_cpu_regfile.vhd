@@ -13,7 +13,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -74,9 +74,8 @@ begin
       if rising_edge(clk_i) then
         if (rf_we = '1') then
           regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0)))) <= rd_i;
-        else
-          rs1_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
         end if;
+        rs1_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
         rs2_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs2(AWIDTH-1 downto 0))));
       end if;
     end process rf_access;
