@@ -40,6 +40,8 @@ include::litex_support.adoc[]
 
 include::micropython_port.adoc[]
 
+include::rust_support.adoc[]
+
 include::using_ocd.adoc[]
 
 include::neorv32_in_verilog.adoc[]

@@ -1,0 +1,26 @@
+<<<
+:sectnums:
+== Rust Support
+
+The easiest way to get started writing Rust for the NEORV32 is via the
+https://crates.io/crates/embassy-neorv32[embassy-neorv32] crate which provides RISC-V runtime
+support and a safe, high-level hardware abstraction layer (HAL) for interacting with various
+hardware peripherals. https://github.com/embassy-rs/embassy[Embassy] is a lightweight async
+executor popular among the embedded Rust community; however, the HAL is designed to work with any
+async executor. Additionally, the HAL provides blocking methods for interacting with most supported
+peripherals, so not even an executor is needed. Check out the
+https://github.com/kurtjd/neorv32-rs/tree/main/embassy-neorv32/examples[examples] to see how it can
+be used!
+
+.Supported Peripherals
+[NOTE]
+Although the most common/important NEORV32 peripherals are supported by the HAL, not all of them are
+yet. Please check the README for an up-to-date list of supported peripherals. If a peripheral that
+you need is currently unsupported, please open an issue. Or better yet, PRs are highly welcome and
+encouraged ;)
+
+Rust HALs are typically designed to be safe and ergonomic to use, though at the cost of some
+flexibility. When finer-grained control is needed, the peripheral access crate (PAC) provided by
+https://crates.io/crates/neorv32-pac[neorv32-pac] can be used standalone or alongside the HAL. PACs
+act as thin wrappers around raw peripheral register access, and thus offer no higher-level
+abstractions or safety guarantees, but provide maximum flexibility in using the hardware.
