@@ -387,7 +387,7 @@ end neorv32_prim_mul_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 - Primitives - Generic 64-Bit Counter Module                             --
+-- NEORV32 - Primitives - Generic Counter Module                                    --
 -- -------------------------------------------------------------------------------- --
 -- High and low words are split across two individual registers to improve timing   --
 -- by cutting the carry chain. The actual counter width can be trimmed via CWIDTH.  --
