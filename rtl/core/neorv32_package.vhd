@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120604"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120605"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -681,11 +681,6 @@ package neorv32_package is
     fault  : std_ulogic;                     -- instruction-fetch error
   end record;
 
-  -- Comparator Bus -------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  constant cmp_equal_c : natural := 0;
-  constant cmp_less_c  : natural := 1; -- for signed and unsigned comparisons
-
   -- ALU Function Codes ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   constant alu_op_zero_c : std_ulogic_vector(2 downto 0) := "000"; -- result <= 0
@@ -1118,37 +1113,37 @@ package body neorv32_package is
   -- OR all bits ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function or_reduce_f(d : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic;
+    variable v : std_ulogic;
   begin
-    tmp_v := '0';
+    v := '0';
     for i in d'range loop
-      tmp_v := tmp_v or d(i);
+      v := v or d(i);
     end loop;
-    return tmp_v;
+    return v;
   end function or_reduce_f;
 
   -- AND all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function and_reduce_f(d : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic;
+    variable v : std_ulogic;
   begin
-    tmp_v := '1';
+    v := '1';
     for i in d'range loop
-      tmp_v := tmp_v and d(i);
+      v := v and d(i);
     end loop;
-    return tmp_v;
+    return v;
   end function and_reduce_f;
 
   -- XOR all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function xor_reduce_f(d : std_ulogic_vector) return std_ulogic is
-    variable tmp_v : std_ulogic;
+    variable v : std_ulogic;
   begin
-    tmp_v := '0';
+    v := '0';
     for i in d'range loop
-      tmp_v := tmp_v xor d(i);
+      v := v xor d(i);
     end loop;
-    return tmp_v;
+    return v;
   end function xor_reduce_f;
 
   -- Convert 4-bit std_ulogic_vector to lowercase hex char ----------------------------------
@@ -1170,26 +1165,26 @@ package body neorv32_package is
   -- Bit reversal ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function bit_rev_f(d : std_ulogic_vector) return std_ulogic_vector is
-    variable tmp_v, output_v : std_ulogic_vector(d'length-1 downto 0);
+    variable v, r : std_ulogic_vector(d'length-1 downto 0);
   begin
-    tmp_v := d;
+    v := d;
     for i in 0 to d'length-1 loop
-      output_v((d'length-1)-i) := tmp_v(i);
+      r((d'length-1)-i) := v(i);
     end loop;
-    return output_v;
+    return r;
   end function bit_rev_f;
 
   -- Test if number is a power of two -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function is_power_of_two_f(n : natural) return boolean is
-    variable tmp_v : unsigned(31 downto 0);
+    variable v : unsigned(31 downto 0);
   begin
-    tmp_v := to_unsigned(n, 32);
+    v := to_unsigned(n, 32);
     if (n = 0) then
       return false;
     elsif (n = 1) then
       return true;
-    elsif ((tmp_v and (tmp_v - 1)) = 0) then
+    elsif ((v and (v - 1)) = 0) then
       return true;
     else
       return false;
@@ -1199,22 +1194,21 @@ package body neorv32_package is
   -- Replicate bit --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function replicate_f(d : std_ulogic; n : natural) return std_ulogic_vector is
-    variable tmp_v : std_ulogic_vector(n-1 downto 0);
+    variable v : std_ulogic_vector(n-1 downto 0);
   begin
-    tmp_v := (others => d);
-    return tmp_v;
+    v := (others => d);
+    return v;
   end function replicate_f;
 
   -- Convert to hex string ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function to_hexstring_f(d : std_ulogic_vector) return string is
-    variable num_v : natural := d'length/4;
-    variable res_v : string(1 to num_v);
+    variable v : string(1 to d'length/4);
   begin
-    for i in 0 to num_v-1 loop
-      res_v(i+1) := to_hexchar_f(d(d'high - i*4 downto d'high - i*4 - 3));
+    for i in 0 to (d'length/4)-1 loop
+      v(i+1) := to_hexchar_f(d(d'high-i*4 downto (d'high-i*4)-3));
     end loop;
-    return res_v;
+    return v;
   end function to_hexstring_f;
 
 end neorv32_package;
