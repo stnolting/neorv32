@@ -204,7 +204,7 @@ begin
   cmd(op_rot_c)   <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_funct12(11 downto 5) = "0110000") and (((ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct3 = "001")) or (ctrl_i.ir_funct3 = "101")) else '0'; -- ROL, ROR[I]
 
   -- Zba - Address generation instructions --
-  cmd(op_shadd_c) <= '1' when ZBA and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0010000") and (ctrl_i.ir_funct3(0) = '0') and (ctrl_i.ir_funct3(1 downto 2) /= "00") else '0'; -- SH[1,2,3]ADD
+  cmd(op_shadd_c) <= '1' when ZBA and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0010000") and (ctrl_i.ir_funct3(0) = '0') and (ctrl_i.ir_funct3(2 downto 1) /= "00") else '0'; -- SH[1,2,3]ADD
 
   -- Zbs - Single-bit instructions --
   cmd(op_bclr_c)  <= '1' when ZBS and (ctrl_i.ir_funct12(11 downto 5) = "0100100") and (ctrl_i.ir_funct3 = "001") else '0'; -- BCLR[I]
