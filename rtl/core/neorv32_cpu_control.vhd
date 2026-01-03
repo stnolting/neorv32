@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -180,9 +180,9 @@ begin
   begin
     if (exec.ir(instr_opcode_lsb_c+2) = '0') then -- conditional branch
       if (exec.ir(instr_funct3_msb_c) = '0') then -- bge / bne
-        branch_taken <= alu_cmp_i(cmp_equal_c) xor exec.ir(instr_funct3_lsb_c);
+        branch_taken <= alu_cmp_i(0) xor exec.ir(instr_funct3_lsb_c);
       else -- blt(u) / bge(u)
-        branch_taken <= alu_cmp_i(cmp_less_c) xor exec.ir(instr_funct3_lsb_c);
+        branch_taken <= alu_cmp_i(1) xor exec.ir(instr_funct3_lsb_c);
       end if;
     else -- unconditional branch are always taken
       branch_taken <= '1';

@@ -7,7 +7,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -319,7 +319,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal iodev_req : iodev_req_t;
   signal iodev_rsp : iodev_rsp_t;
 
-  -- IRQs --
+  -- fast interrupts (FIRQ) --
   type firq_enum_t is (
     FIRQ_TWD, FIRQ_UART0, FIRQ_UART1, FIRQ_SPI, FIRQ_SDI, FIRQ_TWI, FIRQ_CFS, FIRQ_NEOLED,
     FIRQ_GPIO, FIRQ_GPTMR, FIRQ_ONEWIRE, FIRQ_DMA, FIRQ_SLINK, FIRQ_TRNG, FIRQ_TRACER
@@ -419,8 +419,7 @@ begin
     -- simulation notifier --
     assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
 
-  end generate; -- /config_checks
-
+  end generate;
 
   -- **************************************************************************************************************************
   -- Clock and Reset Generators
@@ -451,8 +450,7 @@ begin
       clk_en_o => clk_gen
     );
 
-  end generate; -- /soc_generators
-
+  end generate;
 
   -- **************************************************************************************************************************
   -- Core Complex
@@ -559,7 +557,6 @@ begin
       dbus_rsp_i => cpu_d_rsp(i)
     );
 
-
     -- CPU Instruction Cache ------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_icache_enabled:
@@ -587,7 +584,6 @@ begin
       icache_req(i) <= cpu_i_req(i);
       cpu_i_rsp(i)  <= icache_rsp(i);
     end generate;
-
 
     -- CPU Data Cache -------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -617,7 +613,6 @@ begin
       cpu_d_rsp(i)  <= dcache_rsp(i);
     end generate;
 
-
     -- Core Instruction/Data Bus Switch -------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_core_bus_switch_inst: entity neorv32.neorv32_bus_switch
@@ -637,12 +632,11 @@ begin
       x_rsp_i => core_rsp(i)
     );
 
-  end generate; -- /core_complex
+  end generate;
 
   -- CPU execution trace ports --
   trace_cpu0_o <= cpu_trace(core_req'left);
   trace_cpu1_o <= cpu_trace(core_req'right) when (num_cores_c = 2) else trace_port_terminate_c;
-
 
   -- Core Complex Bus Arbiter ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -672,7 +666,6 @@ begin
     core_rsp(0) <= sys1_rsp;
   end generate;
 
-
   -- **************************************************************************************************************************
   -- Direct Memory Access Controller (DMA) Complex
   -- **************************************************************************************************************************
@@ -696,7 +689,6 @@ begin
       irq_o     => firq(FIRQ_DMA)
     );
 
-
     -- DMA Bus Switch -------------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_dma_bus_switch_inst: entity neorv32.neorv32_bus_switch
@@ -716,7 +708,7 @@ begin
       x_rsp_i => sys2_rsp
     );
 
-  end generate; -- /neorv32_dma_complex_enabled
+  end generate;
 
   neorv32_dma_complex_disabled:
   if not IO_DMA_EN generate
@@ -727,7 +719,6 @@ begin
     dma_req              <= req_terminate_c;
     dma_rsp              <= rsp_terminate_c;
   end generate;
-
 
   -- **************************************************************************************************************************
   -- Atomic Memory Operations
@@ -757,7 +748,6 @@ begin
       sys2_rsp <= amo_rsp;
     end generate;
 
-
     -- Reservation-Set Controller -------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_bus_amo_rvs_enabled:
@@ -779,8 +769,7 @@ begin
       amo_rsp  <= sys3_rsp;
     end generate;
 
-  end generate; -- /atomics
-
+  end generate;
 
   -- **************************************************************************************************************************
   -- Address Region Gateway
@@ -824,7 +813,6 @@ begin
     x_rsp_i => xbus_rsp
   );
 
-
   -- **************************************************************************************************************************
   -- Memory System
   -- **************************************************************************************************************************
@@ -855,7 +843,6 @@ begin
       imem_rsp <= rsp_terminate_c;
     end generate;
 
-
     -- Processor-Internal Data Memory (DMEM) --------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_dmem_enabled:
@@ -877,7 +864,6 @@ begin
     if not DMEM_EN generate
       dmem_rsp <= rsp_terminate_c;
     end generate;
-
 
     -- External Bus Interface (XBUS) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -920,8 +906,7 @@ begin
       xbus_cyc_o <= '0';
     end generate;
 
-  end generate; -- /memory_system
-
+  end generate;
 
   -- **************************************************************************************************************************
   -- IO/Peripheral Modules
@@ -1007,7 +992,6 @@ begin
       dev_31_req_o => iodev_req(IODEV_OCD),     dev_31_rsp_i => iodev_rsp(IODEV_OCD)
     );
 
-
     -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_boot_rom_enabled:
@@ -1025,7 +1009,6 @@ begin
     if not bootrom_en_c generate
       iodev_rsp(IODEV_BOOTROM) <= rsp_terminate_c;
     end generate;
-
 
     -- Custom Functions Subsystem (CFS) -------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1049,7 +1032,6 @@ begin
       firq(FIRQ_CFS)       <= '0';
       cfs_out_o            <= (others => '0');
     end generate;
-
 
     -- Serial Data Interface (SDI) ------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1079,7 +1061,6 @@ begin
       firq(FIRQ_SDI)       <= '0';
     end generate;
 
-
     -- General Purpose Input/Output Port (GPIO) -----------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_gpio_enabled:
@@ -1106,7 +1087,6 @@ begin
       firq(FIRQ_GPIO)       <= '0';
     end generate;
 
-
     -- Watch Dog Timer (WDT) ------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_wdt_enabled:
@@ -1129,7 +1109,6 @@ begin
       iodev_rsp(IODEV_WDT) <= rsp_terminate_c;
       rstn_wdt             <= '1';
     end generate;
-
 
     -- Core Local Interruptor (CLINT) ---------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1157,7 +1136,6 @@ begin
       mti                    <= (others => irw_mti_i);
       msi                    <= (others => irq_msi_i);
     end generate;
-
 
     -- Primary Universal Asynchronous Receiver/Transmitter (UART0) ----------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1190,7 +1168,6 @@ begin
       firq(FIRQ_UART0)       <= '0';
     end generate;
 
-
     -- Secondary Universal Asynchronous Receiver/Transmitter (UART1) --------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_uart1_enabled:
@@ -1221,7 +1198,6 @@ begin
       uart1_rtsn_o           <= '1';
       firq(FIRQ_UART1)       <= '0';
     end generate;
-
 
     -- Serial Peripheral Interface (SPI) ------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1254,7 +1230,6 @@ begin
       firq(FIRQ_SPI)       <= '0';
     end generate;
 
-
     -- Two-Wire Interface (TWI) ---------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_twi_enabled:
@@ -1284,7 +1259,6 @@ begin
       twi_scl_o            <= '1';
       firq(FIRQ_TWI)       <= '0';
     end generate;
-
 
     -- Two-Wire Device (TWD) ------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1317,7 +1291,6 @@ begin
       firq(FIRQ_TWD)       <= '0';
     end generate;
 
-
     -- Pulse-Width Modulation Controller (PWM) ------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_pwm_enabled:
@@ -1342,7 +1315,6 @@ begin
       pwm_o                <= (others => '0');
     end generate;
 
-
     -- True Random Number Generator (TRNG) ----------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_trng_enabled:
@@ -1365,7 +1337,6 @@ begin
       iodev_rsp(IODEV_TRNG) <= rsp_terminate_c;
       firq(FIRQ_TRNG)       <= '0';
     end generate;
-
 
     -- Smart LED (WS2811/WS2812) Interface (NEOLED) -------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1393,7 +1364,6 @@ begin
       neoled_o                <= '0';
     end generate;
 
-
     -- General Purpose Timer (GPTMR) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_gptmr_enabled:
@@ -1417,7 +1387,6 @@ begin
       iodev_rsp(IODEV_GPTMR) <= rsp_terminate_c;
       firq(FIRQ_GPTMR)       <= '0';
     end generate;
-
 
     -- 1-Wire Interface Controller (ONEWIRE) --------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1445,7 +1414,6 @@ begin
       onewire_o                <= '1';
       firq(FIRQ_ONEWIRE)       <= '0';
     end generate;
-
 
     -- Stream Link Interface (SLINK) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1486,7 +1454,6 @@ begin
       slink_tx_lst_o         <= '0';
     end generate;
 
-
     -- Execution Tracer (TRACER) --------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
     neorv32_tracer_enabled:
@@ -1515,7 +1482,6 @@ begin
       iodev_rsp(IODEV_TRACER) <= rsp_terminate_c;
       firq(FIRQ_TRACER)       <= '0';
     end generate;
-
 
     -- System Configuration Information Memory (SYSINFO) --------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1575,9 +1541,7 @@ begin
       iodev_rsp(IODEV_SYSINFO) <= rsp_terminate_c;
     end generate;
 
-
-  end generate; -- /io_system
-
+  end generate;
 
   -- **************************************************************************************************************************
   -- On-Chip Debugger Complex
@@ -1634,6 +1598,5 @@ begin
     dci_ndmrstn          <= '1';
     dci_haltreq          <= (others => '0');
   end generate;
-
 
 end neorv32_top_rtl;

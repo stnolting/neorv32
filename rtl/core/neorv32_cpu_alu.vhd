@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -61,41 +61,25 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
 
   -- Zibi ISA extension: compare with immediate --
   function zibi_cmp_f(sel : std_ulogic_vector(4 downto 0); cmp : std_ulogic_vector) return std_ulogic is
-    variable imm_v : std_ulogic_vector(cmp'length-1 downto 0);
+    variable imm_v : std_ulogic_vector(31 downto 0);
   begin
-    -- immediate selection --
     if (sel = "00000") then
       imm_v := (others => '1');
     else
-      imm_v := (others => '0');
-      imm_v(4 downto 0) := sel;
+      imm_v := replicate_f('0', 27) & sel;
     end if;
-    -- equal? --
-    if (imm_v = cmp) then
-      return '1';
-    else
-      return '0';
-    end if;
+    return bool_to_ulogic_f(imm_v = cmp);
   end function zibi_cmp_f;
 
-  -- comparator --
-  signal cmp_rs1, cmp_rs2 : std_ulogic_vector(32 downto 0);
-  signal cmp_eq,  cmp_ls  : std_ulogic;
-
-  -- operands --
-  signal opa,   opb   : std_ulogic_vector(31 downto 0);
-  signal opa_x, opb_x : std_ulogic_vector(32 downto 0);
-
-  -- intermediate results --
-  signal addsub_res : std_ulogic_vector(32 downto 0);
-  signal cp_res     : std_ulogic_vector(31 downto 0);
+  -- wiring --
+  signal opa, opb, cp_res : std_ulogic_vector(31 downto 0);
+  signal cmp_rs1, cmp_rs2, opa_x, opb_x, addsub : std_ulogic_vector(32 downto 0);
+  signal cmp : std_ulogic_vector(1 downto 0);
 
   -- co-processor interface --
   type cp_data_t  is array (0 to 6) of std_ulogic_vector(31 downto 0);
   signal cp_result : cp_data_t;
-  signal cp_valid  : std_ulogic_vector(6 downto 0);
-
-  -- proxy logic --
+  signal cp_valid : std_ulogic_vector(6 downto 0);
   signal fpu_csr_en, fpu_csr_we, cfu_done, cfu_busy : std_ulogic;
   signal fpu_csr_rd, cfu_res : std_ulogic_vector(31 downto 0);
 
@@ -105,41 +89,29 @@ begin
   -- -------------------------------------------------------------------------------------------
   cmp_rs1 <= (rs1_i(rs1_i'left) and (not ctrl_i.alu_unsigned)) & rs1_i; -- sign-extend
   cmp_rs2 <= (rs2_i(rs2_i'left) and (not ctrl_i.alu_unsigned)) & rs2_i; -- sign-extend
+  cmp(0) <= '1' when (rs1_i = rs2_i) else '0';
+  cmp(1) <= '1' when (signed(cmp_rs1) < signed(cmp_rs2)) else '0'; -- signed or unsigned comparison
 
-  cmp_eq <= '1' when (rs1_i = rs2_i) else '0';
-  cmp_ls <= '1' when (signed(cmp_rs1) < signed(cmp_rs2)) else '0'; -- signed or unsigned comparison
+  zibi_enabled:
+  if RISCV_ISA_Zibi generate
+    cmp_o(0) <= zibi_cmp_f(ctrl_i.rf_rs2, rs1_i) when (ctrl_i.ir_funct3(2 downto 1) = "01") else cmp(0);
+    cmp_o(1) <= cmp(1);
+  end generate;
+  zibi_disabled:
+  if not RISCV_ISA_Zibi generate
+    cmp_o <= cmp;
+  end generate;
 
-  cmp_o(cmp_equal_c) <= zibi_cmp_f(ctrl_i.rf_rs2, rs1_i) when (ctrl_i.ir_funct3(2 downto 1) = "01") and RISCV_ISA_Zibi else cmp_eq;
-  cmp_o(cmp_less_c)  <= cmp_ls;
-
-
-  -- ALU Input Operand Select ---------------------------------------------------------------
+  -- ALU Core -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  opa <= ctrl_i.pc_cur  when (ctrl_i.alu_opa_mux = '1') else rs1_i;
-  opb <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i;
-
-
-  -- Adder/Subtractor Core ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  opa_x <= (opa(opa'left) and (not ctrl_i.alu_unsigned)) & opa; -- sign-extend
-  opb_x <= (opb(opb'left) and (not ctrl_i.alu_unsigned)) & opb; -- sign-extend
-
-  addsub_res <= std_ulogic_vector(unsigned(opa_x) - unsigned(opb_x)) when (ctrl_i.alu_sub = '1') else
-                std_ulogic_vector(unsigned(opa_x) + unsigned(opb_x));
-
-  add_o <= addsub_res(31 downto 0); -- direct output
-
-
-  -- ALU Operation Select -------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  alu_core: process(ctrl_i, addsub_res, cp_res, rs1_i, opb)
+  alu_core: process(ctrl_i, addsub, cp_res, opb, rs1_i)
   begin
     res_o <= (others => '0');
     case ctrl_i.alu_op is
       when alu_op_zero_c => res_o <= (others => '0');
-      when alu_op_add_c  => res_o <= addsub_res(31 downto 0);
+      when alu_op_add_c  => res_o <= addsub(31 downto 0);
       when alu_op_cp_c   => res_o <= cp_res;
-      when alu_op_slt_c  => res_o(0) <= addsub_res(addsub_res'left); -- carry/borrow
+      when alu_op_slt_c  => res_o(0) <= addsub(addsub'left); -- carry/borrow
       when alu_op_movb_c => res_o <= opb;
       when alu_op_xor_c  => res_o <= opb xor rs1_i;
       when alu_op_or_c   => res_o <= opb or  rs1_i;
@@ -148,19 +120,24 @@ begin
     end case;
   end process alu_core;
 
+  -- operands --
+  opa   <= ctrl_i.pc_cur  when (ctrl_i.alu_opa_mux = '1') else rs1_i;
+  opb   <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i;
+  opa_x <= (opa(opa'left) and (not ctrl_i.alu_unsigned)) & opa; -- sign-extend
+  opb_x <= (opb(opb'left) and (not ctrl_i.alu_unsigned)) & opb; -- sign-extend
+
+  -- adder/subtractor
+  add_o  <= addsub(31 downto 0); -- direct output
+  addsub <= std_ulogic_vector(unsigned(opa_x) - unsigned(opb_x)) when (ctrl_i.alu_sub = '1') else
+            std_ulogic_vector(unsigned(opa_x) + unsigned(opb_x));
 
   -- **************************************************************************************************************************
-  -- ALU Co-Processors
+  -- Co-Processors
   -- **************************************************************************************************************************
 
-  -- multi-cycle co-processor operation done? --
-  -- > "cp_valid" signal has to be set (for one cycle) one cycle before CP output data (cp_result) is valid
+  -- result and status --
   done_o <= cp_valid(0) or cp_valid(1) or cp_valid(2) or cp_valid(3) or cp_valid(4) or cp_valid(5) or cp_valid(6);
-
-  -- co-processor result --
-  -- > "cp_result" data has to be always zero unless the specific co-processor has been actually triggered
   cp_res <= cp_result(0) or cp_result(1) or cp_result(2) or cp_result(3) or cp_result(4) or cp_result(5) or cp_result(6);
-
 
   -- ALU[I]-Opcode Co-Processor: Shifter Unit (Base ISA) ------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -180,7 +157,6 @@ begin
     res_o   => cp_result(0),    -- operation result
     valid_o => cp_valid(0)      -- data output valid
   );
-
 
   -- ALU-Opcode Co-Processor: Integer Multiplication/Division Unit ('M' ISA Extension) ------
   -- -------------------------------------------------------------------------------------------
@@ -211,20 +187,19 @@ begin
     cp_valid(1)  <= '0';
   end generate;
 
-
   -- ALU[I]-Opcode Co-Processor: Bit-Manipulation Unit ('B' ISA Extension) ------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_bitmanip_inst_true:
   if RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbs or RISCV_ISA_Zbkc generate
     neorv32_cpu_cp_bitmanip_inst: entity neorv32.neorv32_cpu_cp_bitmanip
     generic map (
-      EN_FAST_SHIFT => FAST_SHIFT_EN,  -- use barrel shifter for shift operations
-      EN_ZBA        => RISCV_ISA_Zba,  -- enable address-generation instruction
-      EN_ZBB        => RISCV_ISA_Zbb,  -- enable basic bit-manipulation instruction
-      EN_ZBKB       => RISCV_ISA_Zbkb, -- enable bit-manipulation instructions for cryptography
-      EN_ZBKC       => RISCV_ISA_Zbkc, -- enable carry-less multiplication instructions
-      EN_ZBKX       => RISCV_ISA_Zbkx, -- crossbar permutation instructions for cryptography
-      EN_ZBS        => RISCV_ISA_Zbs   -- enable single-bit instructions
+      FAST_SHIFT => FAST_SHIFT_EN,  -- use barrel shifter for shift operations
+      ZBA        => RISCV_ISA_Zba,  -- enable address-generation instruction
+      ZBB        => RISCV_ISA_Zbb,  -- enable basic bit-manipulation instruction
+      ZBKB       => RISCV_ISA_Zbkb, -- enable bit-manipulation instructions for cryptography
+      ZBKC       => RISCV_ISA_Zbkc, -- enable carry-less multiplication instructions
+      ZBKX       => RISCV_ISA_Zbkx, -- crossbar permutation instructions for cryptography
+      ZBS        => RISCV_ISA_Zbs   -- enable single-bit instructions
     )
     port map (
       -- global control --
@@ -232,7 +207,7 @@ begin
       rstn_i  => rstn_i,          -- global reset, low-active, async
       ctrl_i  => ctrl_i,          -- main control bus
       -- data input --
-      less_i  => cmp_ls,          -- compare less
+      less_i  => cmp(1),          -- compare less
       rs1_i   => rs1_i,           -- rf source 1
       rs2_i   => rs2_i,           -- rf source 2
       shamt_i => opb(4 downto 0), -- shift amount
@@ -247,7 +222,6 @@ begin
     cp_result(2) <= (others => '0');
     cp_valid(2)  <= '0';
   end generate;
-
 
   -- FLOAT-Opcode Co-Processor: Single-Precision FPUUnit ('Zfinx' ISA Extension) ------------
   -- -------------------------------------------------------------------------------------------
@@ -265,8 +239,8 @@ begin
       csr_wdata_i => ctrl_i.csr_wdata,            -- write data
       csr_rdata_o => fpu_csr_rd,                  -- read data
       -- data input --
-      equal_i     => cmp_eq,                      -- compare equal
-      less_i      => cmp_ls,                      -- compare less
+      equal_i     => cmp(0),                      -- compare equal
+      less_i      => cmp(1),                      -- compare less
       rs1_i       => rs1_i,                       -- rf source 1
       rs2_i       => rs2_i,                       -- rf source 2
       -- result and status --
@@ -289,7 +263,6 @@ begin
     cp_result(3) <= (others => '0');
     cp_valid(3)  <= '0';
   end generate;
-
 
   -- CUSTOM-Opcode Co-Processor: Custom Functions Unit ('Zxcfu' ISA Extension) --------------
   -- -------------------------------------------------------------------------------------------
@@ -345,7 +318,6 @@ begin
     cp_valid(4)  <= '0';
   end generate;
 
-
   -- ALU-Opcode Co-Processor: Conditional Operations Unit ('Zicond' ISA Extension) ----------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_cp_cond_inst_true:
@@ -370,7 +342,6 @@ begin
     cp_result(5) <= (others => '0');
     cp_valid(5)  <= '0';
   end generate;
-
 
   -- ALU[I]-Opcode Co-Processor: Scalar Cryptography Unit ('Zk*' ISA Extensions) ------------
   -- -------------------------------------------------------------------------------------------
@@ -403,6 +374,5 @@ begin
     cp_result(6) <= (others => '0');
     cp_valid(6)  <= '0';
   end generate;
-
 
 end neorv32_cpu_alu_rtl;
