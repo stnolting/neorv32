@@ -193,13 +193,13 @@ begin
   if RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbs or RISCV_ISA_Zbkc generate
     neorv32_cpu_cp_bitmanip_inst: entity neorv32.neorv32_cpu_cp_bitmanip
     generic map (
-      EN_FAST_SHIFT => FAST_SHIFT_EN,  -- use barrel shifter for shift operations
-      EN_ZBA        => RISCV_ISA_Zba,  -- enable address-generation instruction
-      EN_ZBB        => RISCV_ISA_Zbb,  -- enable basic bit-manipulation instruction
-      EN_ZBKB       => RISCV_ISA_Zbkb, -- enable bit-manipulation instructions for cryptography
-      EN_ZBKC       => RISCV_ISA_Zbkc, -- enable carry-less multiplication instructions
-      EN_ZBKX       => RISCV_ISA_Zbkx, -- crossbar permutation instructions for cryptography
-      EN_ZBS        => RISCV_ISA_Zbs   -- enable single-bit instructions
+      FAST_SHIFT => FAST_SHIFT_EN,  -- use barrel shifter for shift operations
+      ZBA        => RISCV_ISA_Zba,  -- enable address-generation instruction
+      ZBB        => RISCV_ISA_Zbb,  -- enable basic bit-manipulation instruction
+      ZBKB       => RISCV_ISA_Zbkb, -- enable bit-manipulation instructions for cryptography
+      ZBKC       => RISCV_ISA_Zbkc, -- enable carry-less multiplication instructions
+      ZBKX       => RISCV_ISA_Zbkx, -- crossbar permutation instructions for cryptography
+      ZBS        => RISCV_ISA_Zbs   -- enable single-bit instructions
     )
     port map (
       -- global control --
