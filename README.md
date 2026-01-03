@@ -32,12 +32,11 @@ and targets FPGA / RISC-V beginners as well as experienced users.
 [community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
 targeting various FPGA boards and toolchains to get started.
 * :package: The entire processor is also available as [Vivado IP Block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block).
-* :kite: Support for [FreeRTOS](https://github.com/stnolting/neorv32-freertos),
-[Zephyr OS](https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html),
-[Ada](https://github.com/GNAT-Academic-Program/neorv32-hal),
-[MicroPython](https://github.com/stnolting/neorv32-micropython),
-[LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC Builder Framework and
-[Rust](https://crates.io/crates/embassy-neorv32) via Embassy framework.
+* :kite: Upstream [Zephyr OS](https://docs.zephyrproject.org/latest/boards/others/neorv32/doc/index.html) and
+[FreeRTOS](https://github.com/stnolting/neorv32-freertos) OS support.
+* :building_construction: [LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC builder integration.
+* :gear: [MicroPython](https://github.com/stnolting/neorv32-micropython) port, [Ada](https://github.com/GNAT-Academic-Program/neorv32-hal) support, and
+[Rust](https://crates.io/crates/embassy-neorv32) integration via Embassy framework.
 * :desktop_computer: Pre-configured [Eclipse project](https://stnolting.github.io/neorv32/ug/#_eclipse_ide) for developing and debugging code using an IDE.
 * :label: The project's change log is available in [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
 * :rocket: Check out the [quick links below](#getting-started) and the
