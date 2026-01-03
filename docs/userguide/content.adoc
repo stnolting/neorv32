@@ -12,6 +12,7 @@
 * <<_freertos_support>>
 * <<_litex_soc_builder_support>>
 * <<_micropython_port>>
+* <<_rust_support>>
 * <<_using_the_on_chip_debugger>>
 * <<_neorv32_in_verilog>>
 * <<_eclipse_ide>>
