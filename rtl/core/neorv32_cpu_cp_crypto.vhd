@@ -5,12 +5,12 @@
 -- + Zknh:  NIST suite's hash functions                                             --
 -- + Zkne:  NIST suite's AES encryption                                             --
 -- + Zknd:  NIST suite's AES decryption                                             --
--- + Zksed: ShangMi suite's block cyphers                                           --
+-- + Zksed: ShangMi suite's block ciphers                                           --
 -- + Zksh:  ShangMi suite's hash functions                                          --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -27,7 +27,7 @@ entity neorv32_cpu_cp_crypto is
     EN_ZKNH  : boolean; -- enable NIST hash extension
     EN_ZKNE  : boolean; -- enable NIST AES encryption extension
     EN_ZKND  : boolean; -- enable NIST AES decryption extension
-    EN_ZKSED : boolean; -- enable ShangMi block cypher extension
+    EN_ZKSED : boolean; -- enable ShangMi block cipher extension
     EN_ZKSH  : boolean  -- enable ShangMi hash extension
   );
   port (
@@ -190,7 +190,6 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   signal rs2     : std_ulogic_vector(31 downto 0);
   signal funct12 : std_ulogic_vector(11 downto 0);
   signal funct3  : std_ulogic_vector(2 downto 0);
-  signal out_sel : std_ulogic_vector(2 downto 0);
 
   -- helper logic --
   signal rs2_sel : std_ulogic_vector(7 downto 0);
@@ -198,7 +197,7 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   signal rol_res : std_ulogic_vector(31 downto 0);
   signal blk_res : std_ulogic_vector(31 downto 0);
 
-  -- aes core --
+  -- AES core --
   type aes_t is record
     dec  : std_ulogic;
     so   : std_ulogic_vector(7 downto 0);
@@ -207,7 +206,7 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   end record;
   signal aes : aes_t;
 
-  -- sha core, sm3 core --
+  -- SHA core, SM3 core --
   signal sha_res, sm3_res, hash_res : std_ulogic_vector(31 downto 0);
 
   -- ShangMi core --
@@ -300,7 +299,8 @@ begin
     elsif rising_edge(clk_i) then
       res_o <= (others => '0'); -- default
       if (done = '1') then
-        if (out_sel = "101") or (out_sel = "110") then
+        if ((funct12(9 downto 8) = "10") and (funct12(5) = '1')) or
+           ((funct12(9 downto 8) = "11") and (funct12(5) = '0')) then
           res_o <= blk_res;
         else
           res_o <= hash_res;
@@ -308,9 +308,6 @@ begin
       end if;
     end if;
   end process result;
-
-  -- function unit select --
-  out_sel <= funct12(9 downto 8) & funct12(5);
 
 
   -- Hash Functions -------------------------------------------------------------------------
@@ -359,9 +356,9 @@ begin
   end generate;
 
 
-  -- Block Cyphers (AES/SM4) Helper Logic ---------------------------------------------------
+  -- Block Ciphers (AES/SM4) Helper Logic ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  block_cyphers_enabled:
+  block_ciphers_enabled:
   if EN_ZKNE or EN_ZKND or EN_ZKSED generate
 
     -- select byte from rs2 via bs --
@@ -371,7 +368,7 @@ begin
       rs2(23 downto 16) when "10",
       rs2(31 downto 24) when others;
 
-    -- rotate input select --
+    -- rotation input select --
     rol_in <= aes.mix2 when (not EN_ZKSED) else
               sm4.rnd  when (not EN_ZKNE) and (not EN_ZKND) else
               aes.mix2 when (funct12(8) = '0') else sm4.rnd;
@@ -383,12 +380,12 @@ begin
       rol_in(15 downto 0) & rol_in(31 downto 16) when "10",
       rol_in(07 downto 0) & rol_in(31 downto 08) when others;
 
-    -- block cypher result --
+    -- block cipher result --
     blk_res <= rs1 xor rol_res;
 
   end generate;
 
-  block_cyphers_disabled:
+  block_ciphers_disabled:
   if not (EN_ZKNE or EN_ZKND or EN_ZKSED) generate
     rs2_sel <= (others => '0');
     rol_in  <= (others => '0');
@@ -487,6 +484,5 @@ begin
     sm4.so2 <= (others => '0');
     sm4.rnd <= (others => '0');
   end generate;
-
 
 end neorv32_cpu_cp_crypto_rtl;
