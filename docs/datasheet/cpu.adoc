@@ -128,6 +128,32 @@ The CPU does not support resolving unaligned memory access by the hardware. Any 
 unaligned memory access will raise an exception to allow a software-based emulation.
 See section <<_application_context_handling>> for more information.
 
+:sectnums:
+==== CPU Front-End
+
+The front-end is responsible for fetching instructions in chunks of 32-bits. This can be a single aligned 32-bit
+instruction, two 16-bit instructions or a mixture of both. Unaligned 32bit instructions are explicitly supported.
+The instruction chunks are queued within the instruction prefetch buffer (IPB). A consecutive logic reads data
+from this FIFO, optionally decompresses 16-bit instructions and assembles 32-bit instruction words that are forwarded
+to the CPU back-end for execution.
+
+The IPB allows the front-end to do "speculative" instruction fetches as it keeps fetching the next consecutive
+instruction all the time. This also allows to decouple instruction fetch and instruction execution so both stages
+can operate in parallel to increase performance.
+
+:sectnums:
+==== CPU Back-End
+
+The actual instruction execution is conducted by a micro-sequencer-based approach. Execution is split into several
+micro-operations, each of which generates special control signals, e.g., to configure the ALU or to trigger memory
+accesses. Simple arithmetic/logical operations require two cycles, while more complex operations require additional
+cycles depending on the CPU configuration. Since the front-end essentially works in parallel "in the background",
+an optimal CPI (cycles per instruction) value of 2 can be achieved.
+
+The division into individual micro-operations not only allows for small hardware that reuses CPU parts in different
+cycles (e.g., the ALU: for arithmetic/logical calculations and also for calculating the next program counter). It also
+allows for precise monitoring of execution and the generation of precise traps. Hence, the back-end also includes
+<<_control_and_status_registers_csrs>>, the<<_traps_exceptions_and_interrupts>> logic and the <<_cpu_debug_mode>> controller.
 
 :sectnums:
 ==== CPU Register File
@@ -205,7 +231,7 @@ for **ASIC implementations** when realized with standard cells.
 The arithmetic/logic unit ("ALU", VHDL file `neorv32_cpu_alu.vhd`) is used for actual data processing as well as generating
 memory and branch addresses. All "simple" <<_i_isa_extension>> computational instructions (like `add` and `or`) are implemented
 as plain combinatorial logic requiring only a single cycle to complete. More sophisticated instructions like shift operations
-or multiplications are processed by so-called "ALU co-processors".
+or multiplications are processed by so-called "ALU co-processors" (VHDL files `neorv32_cpu_cp_*.vhd`).
 
 The co-processors are implemented as iterative units that require several cycles to complete processing. Besides the base ISA's
 shift instructions, the co-processors are used to implement all further unprivileged ISA extensions (e.g. <<_m_isa_extension>>,
@@ -236,32 +262,6 @@ effect maximal operation frequency.
 The CPU does not support a hardware-based handling of unaligned memory accesses! Any unaligned access will raise a bus load/store unaligned
 address exception. The exception handler can be used to _emulate_ unaligned memory accesses in software.
 See the NEORV32 Runtime Environment's <<_application_context_handling>> section for more information.
-
-
-:sectnums:
-==== CPU Control Unit
-
-The CPU control unit is responsible for generating all the control signals for the different CPU modules.
-The control unit is split into a "front-end" and a "back-end".
-
-**Front-End**
-
-The front-end is responsible for fetching instructions in chunks of 32-bits. This can be a single aligned 32-bit instruction,
-two aligned 16-bit instructions or a mixture of those. The instructions including control and exception information are stored
-to a FIFO queue - the instruction prefetch buffer (IPB). This FIFO has a depth of two entries by default but can be customized
-via the `ipb_depth_c` VHDL package constant.
-
-The FIFO allows the front-end to do "speculative" instruction fetches, as it keeps fetching the next consecutive instruction
-all the time. This also allows to decouple front-end (instruction fetch) and back-end (instruction execution) so both modules
-can operate in parallel to increase performance. However, all potential side effects that are caused by this "speculative"
-instruction fetch are already handled by the CPU front-end ensuring a defined execution stage while preventing security
-side-channel attacks.
-
-**Back-End**
-
-Instruction data from the instruction prefetch buffer is decompressed (if the `C` ISA extension is enabled) and sent to the
-CPU back-end for actual execution. Execution is conducted by a state-machine that controls all of the CPU modules. The back-end also
-includes the <<_control_and_status_registers_csrs>> as well as the trap controller.
 
 
 :sectnums:
@@ -568,7 +568,7 @@ exclusive bus access and a 4-word incrementing-address read burst.
 [wavedrom, format="svg", align="center"]
 ----
 {signal: [
-  {name: 'clk', wave: 'p.................'},
+  {name: 'clk', wave: 'p................'},
   [
     "request",
     {name: 'meta',  wave: 'x2...x.|.2....x..'},

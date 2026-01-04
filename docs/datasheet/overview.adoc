@@ -230,7 +230,8 @@ rtl/core
 
 Most of the RTL sources use **entity instantiation**. Hence, the RTL compile order might be relevant (depending on
 the synthesis/simulation tool. Therefore, two file-list files are provided in the `rtl` folder that list all required
-HDL files for the CPU core and for the entire processor and also represent their recommended compile order.
+HDL files for the CPU core and for the entire processor and also represent their recommended compile order. Note that
+these files list the architecture "bottom-up" - the according top entity is listed in the very last line.
 These file-list files can be consumed by EDA tools to simplify project setup.
 
 * `file_list_cpu.f` - HDL files and compile order for the CPU core; top module: `neorv32_cpu`
