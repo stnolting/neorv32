@@ -422,7 +422,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
         return inst_c(i).mnemonic;
       end if;
     end loop;
-    return "fail";
+    return "DECODE_FAIL";
   end function decode_mnemonic_f;
 
   -- decode CSR name --
@@ -687,6 +687,7 @@ begin
             write(line_v, string'("  "));
           end if;
           write(line_v, string'(decode_mnemonic_f(trace_i.insn)));
+          write(line_v, string'(" "));
           write(line_v, string'(decode_operands_f(trace_i.insn)));
           -- trap entry --
           if (trace_i.intr = '1') then

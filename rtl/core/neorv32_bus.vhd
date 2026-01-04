@@ -414,7 +414,13 @@ begin
 
         when "01" => -- busy, transfer in progress
         -- ------------------------------------------------------------
-          keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1); -- timeout counter
+          -- timeout counter --
+          if (int_rsp.ack = '1') then -- reset for each burst element
+            keeper.cnt <= (others => '0');
+          else
+            keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1);
+          end if;
+          -- bus status --
           if ((keeper.ext = '0') and (TMO_INT > 0) and (keeper.cnt(tmo_int_log2_c) = '1')) or -- internal timeout
              ((keeper.ext = '1') and (TMO_EXT > 0) and (keeper.cnt(tmo_ext_log2_c) = '1')) then -- external timeout
             keeper.state <= "11";
