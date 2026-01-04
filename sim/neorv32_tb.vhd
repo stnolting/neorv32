@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -418,12 +418,12 @@ begin
     -- device address size in bytes and base address --
     DEV_0_EN => EXT_MEM_A_EN, DEV_0_SIZE => EXT_MEM_A_SIZE, DEV_0_BASE => EXT_MEM_A_BASE,
     DEV_1_EN => EXT_MEM_B_EN, DEV_1_SIZE => EXT_MEM_B_SIZE, DEV_1_BASE => EXT_MEM_B_BASE,
-    DEV_2_EN => true,         DEV_2_SIZE =>              8, DEV_2_BASE => x"F0000000",
-    DEV_3_EN => true,         DEV_3_SIZE =>              4, DEV_3_BASE => x"FF000000",
-    DEV_4_EN => true,         DEV_4_SIZE =>             16, DEV_4_BASE => x"B0000000",
-    DEV_5_EN => true,         DEV_5_SIZE =>             16, DEV_5_BASE => x"FF100000",
-    DEV_6_EN => false,        DEV_6_SIZE =>              0, DEV_6_BASE => (others => '0'), -- unused
-    DEV_7_EN => false,        DEV_7_SIZE =>              0, DEV_7_BASE => (others => '0')  -- unused
+    DEV_2_EN => true,         DEV_2_SIZE => 8,              DEV_2_BASE => x"F0000000",
+    DEV_3_EN => true,         DEV_3_SIZE => 4,              DEV_3_BASE => x"FF000000",
+    DEV_4_EN => true,         DEV_4_SIZE => 16,             DEV_4_BASE => x"B0000000",
+    DEV_5_EN => true,         DEV_5_SIZE => 16,             DEV_5_BASE => x"FF100000",
+    DEV_6_EN => false,        DEV_6_SIZE => 0,              DEV_6_BASE => (others => '0'), -- unused
+    DEV_7_EN => false,        DEV_7_SIZE => 0,              DEV_7_BASE => (others => '0')  -- unused
   )
   port map (
     -- host port --

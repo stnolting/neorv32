@@ -1133,8 +1133,8 @@ begin
     if not IO_CLINT_EN generate
       iodev_rsp(IODEV_CLINT) <= rsp_terminate_c;
       mtime_time_o           <= (others => '0');
-      mti                    <= (others => irw_mti_i);
-      msi                    <= (others => irq_msi_i);
+      mti                    <= (others => irw_mti_i); -- TODO: provide individual top ports for dual-core w/o internal CLINT
+      msi                    <= (others => irq_msi_i); -- TODO: provide individual top ports for dual-core w/o internal CLINT
     end generate;
 
     -- Primary Universal Asynchronous Receiver/Transmitter (UART0) ----------------------------
