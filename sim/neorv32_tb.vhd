@@ -29,7 +29,7 @@ entity neorv32_tb is
     RISCV_ISA_U       : boolean                        := true;        -- user mode extension
     RISCV_ISA_Zaamo   : boolean                        := true;        -- atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc  : boolean                        := true;        -- atomic reservation-set operations extension
-    RISCV_ISA_Zcb     : boolean                        := false;       -- additional code size reduction instructions
+    RISCV_ISA_Zcb     : boolean                        := true;        -- additional code size reduction instructions
     RISCV_ISA_Zba     : boolean                        := true;        -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb     : boolean                        := true;        -- basic bit-manipulation extension
     RISCV_ISA_Zbkb    : boolean                        := true;        -- bit-manipulation instructions for cryptography
@@ -58,10 +58,10 @@ entity neorv32_tb is
     DMEM_EN           : boolean                        := true;        -- implement processor-internal data memory
     DMEM_SIZE         : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
     ICACHE_EN         : boolean                        := true;        -- implement instruction cache
-    ICACHE_NUM_BLOCKS : natural range 1 to 4096        := 64;          -- i-cache: number of blocks (min 1), has to be a power of 2
+    ICACHE_NUM_BLOCKS : natural range 1 to 4096        := 64;          -- i-cache: number of blocks, has to be a power of 2
     DCACHE_EN         : boolean                        := true;        -- implement data cache
-    DCACHE_NUM_BLOCKS : natural range 1 to 4096        := 32;          -- d-cache: number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE  : natural range 8 to 1024        := 32;          -- i-cache/d-cache: block size in bytes (min 8), has to be a power of 2
+    DCACHE_NUM_BLOCKS : natural range 1 to 4096        := 32;          -- d-cache: number of blocks, has to be a power of 2
+    CACHE_BLOCK_SIZE  : natural range 4 to 1024        := 32;          -- i-cache/d-cache: block size in bytes, has to be a power of 2
     CACHE_BURSTS_EN   : boolean                        := true;        -- enable issuing of burst transfer for cache update
     TRACE_LOG_EN      : boolean                        := true;        -- write full trace log to file
     -- external memory A --
