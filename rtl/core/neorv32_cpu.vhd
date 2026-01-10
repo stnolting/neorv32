@@ -110,9 +110,13 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant riscv_zks_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
                                     RISCV_ISA_Zksh and RISCV_ISA_Zksed; -- Zks: ShangMi suite
 
-  -- local signals --
-  signal ctrl        : ctrl_bus_t;                     -- main control bus
-  signal frontend    : if_bus_t;                       -- instruction-fetch interface
+  -- busses --
+  signal ctrl : ctrl_bus_t;
+  signal frontend : if_bus_t;
+  signal ibus_rsp, dbus_rsp : bus_rsp_t;
+  signal ibus_req, dbus_req : bus_req_t;
+
+  -- wiring --
   signal if_pmp_addr : std_ulogic_vector(31 downto 0); -- instruction fetch access address
   signal if_pmp_priv : std_ulogic;                     -- instruction fetch access privilege level
   signal if_pmp_err  : std_ulogic;                     -- instruction fetch PMP access fault
@@ -129,7 +133,6 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   signal lsu_mar     : std_ulogic_vector(31 downto 0); -- LSU memory address register
   signal lsu_err     : std_ulogic_vector(3 downto 0);  -- LSU alignment/access errors
   signal lsu_wait    : std_ulogic;                     -- wait for current data bus access
-  signal dbus_req    : bus_req_t;                      -- data bus request
   signal csr_rdata   : std_ulogic_vector(31 downto 0); -- CSR read data
   signal irq_machine : std_ulogic_vector(2 downto 0);  -- RISC-V standard machine-level interrupts
 
@@ -215,8 +218,8 @@ begin
     rstn_i     => rstn_i,      -- global reset, low-active, async
     ctrl_i     => ctrl,        -- main control bus
     -- instruction fetch interface --
-    ibus_req_o => ibus_req_o,  -- request
-    ibus_rsp_i => ibus_rsp_i,  -- response
+    ibus_req_o => ibus_req,    -- request
+    ibus_rsp_i => ibus_rsp,    -- response
     -- PMP interface --
     pmp_addr_o => if_pmp_addr, -- access address
     pmp_priv_o => if_pmp_priv, -- access privilege level
@@ -224,6 +227,10 @@ begin
     -- back-end interface --
     frontend_o => frontend     -- fetch data and status
   );
+
+  -- memory interface --
+  ibus_req_o <= ibus_req;
+  ibus_rsp   <= ibus_rsp_i;
 
 
   -- Control Unit / Back-End (Instruction Execution) ----------------------------------------
@@ -457,11 +464,12 @@ begin
     pmp_fault_i => rw_pmp_err, -- PMP read/write access fault
     -- data bus --
     dbus_req_o  => dbus_req,   -- request
-    dbus_rsp_i  => dbus_rsp_i  -- response
+    dbus_rsp_i  => dbus_rsp    -- response
   );
 
-  -- memory request --
+  -- memory interface --
   dbus_req_o <= dbus_req;
+  dbus_rsp   <= dbus_rsp_i;
 
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------

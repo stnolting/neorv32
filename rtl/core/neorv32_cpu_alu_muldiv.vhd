@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 CPU - Co-Processor: Integer Mul/Div Unit (RISC-V 'M'/'Zmmul' Extensions) --
+-- NEORV32 CPU - ALU Integer Multiply/Divide Unit (RISC-V M/Zmmul ISA Extensions)   --
 -- -------------------------------------------------------------------------------- --
 -- Multiplier core (signed/unsigned) uses serial add-and-shift algorithm.           --
 -- Multiplications can be mapped to DSP blocks (faster!) when FAST_MUL_EN = true.   --
@@ -8,7 +8,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -20,7 +20,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cpu_cp_muldiv is
+entity neorv32_cpu_alu_muldiv is
   generic (
     FAST_MUL_EN : boolean; -- use DSPs for faster multiplication
     DIVISION_EN : boolean  -- implement divider hardware
@@ -37,9 +37,9 @@ entity neorv32_cpu_cp_muldiv is
     res_o   : out std_ulogic_vector(31 downto 0); -- operation result
     valid_o : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_cp_muldiv;
+end neorv32_cpu_alu_muldiv;
 
-architecture neorv32_cpu_cp_muldiv_rtl of neorv32_cpu_cp_muldiv is
+architecture neorv32_cpu_alu_muldiv_rtl of neorv32_cpu_alu_muldiv is
 
   -- absolute value --
   function abs_f(input: std_ulogic_vector; is_signed: std_ulogic) return std_ulogic_vector is
@@ -302,4 +302,4 @@ begin
   end process operation_result;
 
 
-end neorv32_cpu_cp_muldiv_rtl;
+end neorv32_cpu_alu_muldiv_rtl;

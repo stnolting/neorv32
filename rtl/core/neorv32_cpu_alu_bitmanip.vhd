@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 CPU - Co-Processor: Bit Manipulation Unit (RISC-V "Zb*" ISA Extensions)  --
+-- NEORV32 CPU - ALU Bit-Manipulation Unit (RISC-V Zb* ISA Extensions)              --
 -- -------------------------------------------------------------------------------- --
 -- Supported sub-extensions:                                                        --
 -- + Zba:  Address-generation instructions                                          --
@@ -24,7 +24,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cpu_cp_bitmanip is
+entity neorv32_cpu_alu_bitmanip is
   generic (
     FAST_SHIFT : boolean; -- use barrel shifter for shift operations
     ZBA        : boolean; -- address-generation instructions
@@ -48,9 +48,9 @@ entity neorv32_cpu_cp_bitmanip is
     res_o   : out std_ulogic_vector(31 downto 0); -- operation result
     valid_o : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_cp_bitmanip;
+end neorv32_cpu_alu_bitmanip;
 
-architecture neorv32_cpu_cp_bitmanip_rtl of neorv32_cpu_cp_bitmanip is
+architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
 
   -- count leading zeros --
   function leading_zeros_f(input : std_ulogic_vector) return natural is
@@ -600,4 +600,4 @@ begin
   valid_o <= valid;
 
 
-end neorv32_cpu_cp_bitmanip_rtl;
+end neorv32_cpu_alu_bitmanip_rtl;

@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 CPU - Co-Processor: RISC-V Scalar Cryptography ('Zk*') ISA Extensions    --
+-- NEORV32 CPU - ALU Scalar Cryptography Unit (RISC-V Zk* ISA Extensions)           --
 -- -------------------------------------------------------------------------------- --
 -- Supported sub-extensions:                                                        --
 -- + Zknh:  NIST suite's hash functions                                             --
@@ -22,7 +22,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cpu_cp_crypto is
+entity neorv32_cpu_alu_crypto is
   generic (
     EN_ZKNH  : boolean; -- enable NIST hash extension
     EN_ZKNE  : boolean; -- enable NIST AES encryption extension
@@ -42,9 +42,9 @@ entity neorv32_cpu_cp_crypto is
     res_o   : out std_ulogic_vector(31 downto 0); -- operation result
     valid_o : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_cp_crypto;
+end neorv32_cpu_alu_crypto;
 
-architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
+architecture neorv32_cpu_alu_crypto_rtl of neorv32_cpu_alu_crypto is
 
   -- ----------------------------------------------------------------------------------------
   -- look-up tables (ROMs)
@@ -485,4 +485,4 @@ begin
     sm4.rnd <= (others => '0');
   end generate;
 
-end neorv32_cpu_cp_crypto_rtl;
+end neorv32_cpu_alu_crypto_rtl;
