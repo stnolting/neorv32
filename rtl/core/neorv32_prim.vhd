@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 - Primitives - Generic Single-Clock FIFO (FIFO)                          --
+-- NEORV32 Primitives - Generic Single-Clock FIFO (FIFO)                            --
 -- -------------------------------------------------------------------------------- --
 -- The FIFO operates in "first-word-fall-through" (FWFT) mode: the first written    --
 -- word appears directly at the output (after the synchronous-read delay) without   --
@@ -80,7 +80,7 @@ begin
   -- Status ---------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- more than 1 FIFO entry --
-  fifo_status_large:
+  status_large:
   if (AWIDTH > 0) generate
     match <= '1' when (r_pnt(AWIDTH-1 downto 0) = w_pnt(AWIDTH-1 downto 0)) else '0';
     full  <= '1' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '0';
@@ -97,7 +97,7 @@ begin
   end generate;
 
   -- just 1 FIFO entry --
-  fifo_status_small:
+  status_small:
   if (AWIDTH = 0) generate
     match <= '1' when (r_pnt(0) = w_pnt(0)) else '0';
     full  <= not match;
@@ -113,7 +113,7 @@ begin
   -- Memory ---------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- more than 1 FIFO entry --
-  fifo_memory_large:
+  memory_large:
   if (AWIDTH > 0) generate
     memory_core: process(clk_i) -- simple dual-port RAM
     begin
@@ -127,7 +127,7 @@ begin
   end generate;
 
   -- just 1 FIFO entry --
-  fifo_memory_small:
+  memory_small:
   if (AWIDTH = 0) generate
     memory_core: process(rstn_i, clk_i) -- single register
     begin
@@ -149,14 +149,14 @@ end neorv32_prim_fifo_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 - Primitives - Generic Single-Port RAM (SPRAM)                           --
+-- NEORV32 Primitives - Generic Single-Port RAM (SPRAM)                             --
 -- -------------------------------------------------------------------------------- --
 -- Provides a single read/write port.                                               --
 -- Can be mapped to blockRAM primitives.                                            --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -193,18 +193,34 @@ begin
 
   -- Memory Core ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  memory_core: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (en_i = '1') then
-        if (rw_i = '1') then
-          spram(to_integer(unsigned(addr_i))) <= data_i;
-        else
-          rdata <= spram(to_integer(unsigned(addr_i)));
+  memory_large:
+  if (AWIDTH > 0) generate
+    memory_core: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        if (en_i = '1') then
+          if (rw_i = '1') then
+            spram(to_integer(unsigned(addr_i))) <= data_i;
+          else
+            rdata <= spram(to_integer(unsigned(addr_i)));
+          end if;
         end if;
       end if;
-    end if;
-  end process memory_core;
+    end process memory_core;
+  end generate;
+
+  -- single entry only --
+  memory_small:
+  if (AWIDTH = 0) generate
+    memory_core: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        if (en_i = '1') and (rw_i = '1') then
+          rdata <= data_i;
+        end if;
+      end if;
+    end process memory_core;
+  end generate;
 
   -- Output Register ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -228,101 +244,11 @@ end neorv32_prim_spram_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 - Primitives - Generic Simple Dual-Port RAM (SDPRAM)                     --
--- -------------------------------------------------------------------------------- --
--- Provides a single read/write port and a read-only port.                          --
--- Can be mapped to blockRAM primitives.                                            --
+-- NEORV32 Primitives - Generic 2-Cycle Signed/Unsigned Integer Multiplier (MUL)    --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
--- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
--- SPDX-License-Identifier: BSD-3-Clause                                            --
--- ================================================================================ --
-
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-
-entity neorv32_prim_sdpram is
-  generic (
-    AWIDTH : natural; -- address width (number of bits)
-    DWIDTH : natural; -- data width (number of bits)
-    OUTREG : boolean  -- add output register stage
-  );
-  port (
-    -- global control --
-    clk_i    : in  std_ulogic;                           -- global clock
-    -- read/write port --
-    a_en_i   : in  std_ulogic;                           -- access enable
-    a_rw_i   : in  std_ulogic;                           -- 0=read, 1=write
-    a_addr_i : in  std_ulogic_vector(AWIDTH-1 downto 0); -- read/write address
-    a_data_i : in  std_ulogic_vector(DWIDTH-1 downto 0); -- write data
-    a_data_o : out std_ulogic_vector(DWIDTH-1 downto 0); -- read data
-    -- read port --
-    b_en_i   : in  std_ulogic;                           -- access enable
-    b_addr_i : in  std_ulogic_vector(AWIDTH-1 downto 0); -- read address
-    b_data_o : out std_ulogic_vector(DWIDTH-1 downto 0)  -- read data
-  );
-end neorv32_prim_sdpram;
-
-architecture neorv32_prim_sdpram_rtl of neorv32_prim_sdpram is
-
-  type ram_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
-  signal sdpram : ram_t;
-  signal a_rdata, b_rdata : std_ulogic_vector(DWIDTH-1 downto 0);
-
-begin
-
-  -- Memory Core ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  memory_core: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      -- port A: read/write --
-      if (a_en_i = '1') then
-        if (a_rw_i = '1') then
-          sdpram(to_integer(unsigned(a_addr_i))) <= a_data_i;
-        else
-          a_rdata <= sdpram(to_integer(unsigned(a_addr_i)));
-        end if;
-      end if;
-      -- port B: read-only --
-      if (b_en_i = '1') then
-        b_rdata <= sdpram(to_integer(unsigned(b_addr_i)));
-      end if;
-    end if;
-  end process memory_core;
-
-  -- Output Register ------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  output_register_enabled:
-  if OUTREG generate -- might improve FPGA mapping and/or timing results
-    read_outreg: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        a_data_o <= a_rdata;
-        b_data_o <= b_rdata;
-      end if;
-    end process read_outreg;
-  end generate;
-
-  -- no output register --
-  output_register_disabled:
-  if not OUTREG generate
-    a_data_o <= a_rdata;
-    b_data_o <= b_rdata;
-  end generate;
-
-end neorv32_prim_sdpram_rtl;
-
-
--- ================================================================================ --
--- NEORV32 - Primitives - Generic 2-Cycle Signed/Unsigned Integer Multiplier (MUL)  --
--- -------------------------------------------------------------------------------- --
--- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
--- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -387,7 +313,7 @@ end neorv32_prim_mul_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 - Primitives - Generic Counter Module                                    --
+-- NEORV32 Primitives - Generic Counter Module                                      --
 -- -------------------------------------------------------------------------------- --
 -- High and low words are split across two individual registers to improve timing   --
 -- by cutting the carry chain. The actual counter width can be trimmed via CWIDTH.  --
@@ -395,7 +321,7 @@ end neorv32_prim_mul_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --

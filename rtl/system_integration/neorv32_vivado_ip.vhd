@@ -8,7 +8,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -90,7 +90,7 @@ entity neorv32_vivado_ip is
     ICACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
     DCACHE_EN             : boolean                        := false;
     DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
-    CACHE_BLOCK_SIZE      : natural range 8 to 1024        := 64;
+    CACHE_BLOCK_SIZE      : natural range 4 to 1024        := 64;
     CACHE_BURSTS_EN       : boolean                        := true;
     -- External Bus Interface --
     XBUS_EN               : boolean                        := false;

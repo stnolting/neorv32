@@ -267,11 +267,11 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `DMEM_SIZE`             | natural   | 8*1024        | Size in bytes of the processor-internal data memory (use a power of 2).
 | `DMEM_OUTREG_EN`        | boolean   | false         | Add DMEM output register stage (improves mapping/timing at the expense of latency).
 4+^| **CPU Caches (<<_processor_internal_instruction_cache_icache, instruction-cache>> & <<_processor_internal_data_cache_dcache, data-cache>>)**
-| `ICACHE_EN`             | boolean   | false         | Implement the instruction cache (I$).
-| `ICACHE_NUM_BLOCKS`     | natural   | 4             | Number of blocks ("lines") Has to be a power of two.
-| `DCACHE_EN`             | boolean   | false         | Implement the data cache (D$)
+| `ICACHE_EN`             | boolean   | false         | Implement the instruction cache ("I$").
+| `ICACHE_NUM_BLOCKS`     | natural   | 4             | Number of blocks ("lines"). Has to be a power of two.
+| `DCACHE_EN`             | boolean   | false         | Implement the data cache ("D$")
 | `DCACHE_NUM_BLOCKS`     | natural   | 4             | Number of blocks ("lines"). Has to be a power of two.
-| `CACHE_BLOCK_SIZE`      | natural   | 64            | Size in bytes of each block (I$ and D$). Has to be a power of two, min 8.
+| `CACHE_BLOCK_SIZE`      | natural   | 64            | global cache block size (I$ **and** D$) in bytes. Has to be a power of two, min 4.
 | `CACHE_BURSTS_EN`       | boolean   | true          | Enable burst transfers for cache updates.
 4+^| **<<_processor_external_bus_interface_xbus>> (Wishbone / AXI4-Compatible Bridging)**
 | `XBUS_EN`               | boolean   | false         | Implement the external bus interface.
