@@ -71,14 +71,14 @@ entity neorv32_top is
     CPU_RF_ARCH_SEL     : natural range 0 to 3           := 0;             -- register file implementation style select
 
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS     : natural range 0 to 16          := 0;             -- number of regions (0..16)
+    PMP_NUM_REGIONS     : natural range 0 to 16          := 0;             -- number of regions
     PMP_MIN_GRANULARITY : natural                        := 4;             -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     PMP_TOR_MODE_EN     : boolean                        := false;         -- implement TOR mode
     PMP_NAP_MODE_EN     : boolean                        := false;         -- implement NAPOT/NA4 modes
 
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS        : natural range 0 to 13          := 0;             -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH       : natural range 0 to 64          := 40;            -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS        : natural range 0 to 13          := 0;             -- number of implemented HPM counters
+    HPM_CNT_WIDTH       : natural range 0 to 64          := 40;            -- total size of HPM counters
 
     -- Internal Instruction memory (IMEM) --
     IMEM_EN             : boolean                        := false;         -- implement processor-internal instruction memory
@@ -105,40 +105,40 @@ entity neorv32_top is
 
     -- Processor peripherals --
     IO_DISABLE_SYSINFO  : boolean                        := false;         -- disable the SYSINFO module (for advanced users only)
-    IO_GPIO_NUM         : natural range 0 to 32          := 0;             -- number of GPIO input/output pairs (0..32)
+    IO_GPIO_NUM         : natural range 0 to 32          := 0;             -- number of GPIO input/output pairs
     IO_CLINT_EN         : boolean                        := false;         -- implement core local interruptor (CLINT)
     IO_UART0_EN         : boolean                        := false;         -- implement primary universal asynchronous receiver/transmitter (UART0)
-    IO_UART0_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two, min 1
-    IO_UART0_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two, min 1
+    IO_UART0_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two
+    IO_UART0_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two
     IO_UART1_EN         : boolean                        := false;         -- implement secondary universal asynchronous receiver/transmitter (UART1)
-    IO_UART1_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two, min 1
-    IO_UART1_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two, min 1
+    IO_UART1_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two
+    IO_UART1_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two
     IO_SPI_EN           : boolean                        := false;         -- implement serial peripheral interface (SPI)
-    IO_SPI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be a power of two, min 1
+    IO_SPI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be a power of two
     IO_SDI_EN           : boolean                        := false;         -- implement serial data interface (SDI)
-    IO_SDI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two, min 1
+    IO_SDI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two
     IO_TWI_EN           : boolean                        := false;         -- implement two-wire interface (TWI)
-    IO_TWI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two, min 1
+    IO_TWI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two
     IO_TWD_EN           : boolean                        := false;         -- implement two-wire device (TWD)
-    IO_TWD_RX_FIFO      : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be zero or a power of two, min 1
-    IO_TWD_TX_FIFO      : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be zero or a power of two, min 1
-    IO_PWM_NUM          : natural range 0 to 32          := 0;             -- number of PWM channels to implement (0..32)
+    IO_TWD_RX_FIFO      : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be zero or a power of two
+    IO_TWD_TX_FIFO      : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be zero or a power of two
+    IO_PWM_NUM          : natural range 0 to 32          := 0;             -- number of PWM channels to implement
     IO_WDT_EN           : boolean                        := false;         -- implement watch dog timer (WDT)
     IO_TRNG_EN          : boolean                        := false;         -- implement true random number generator (TRNG)
-    IO_TRNG_FIFO        : natural range 1 to 2**15       := 1;             -- data FIFO depth, has to be a power of two, min 1
+    IO_TRNG_FIFO        : natural range 1 to 2**15       := 1;             -- data FIFO depth, has to be a power of two
     IO_CFS_EN           : boolean                        := false;         -- implement custom functions subsystem (CFS)
     IO_NEOLED_EN        : boolean                        := false;         -- implement NeoPixel-compatible smart LED interface (NEOLED)
-    IO_NEOLED_TX_FIFO   : natural range 1 to 2**15       := 1;             -- NEOLED FIFO depth, has to be a power of two, min 1
+    IO_NEOLED_TX_FIFO   : natural range 1 to 2**15       := 1;             -- NEOLED FIFO depth, has to be a power of two
     IO_GPTMR_NUM        : natural range 0 to 16          := 0;             -- number of GPTMR timer slices to implement (0..16)
     IO_ONEWIRE_EN       : boolean                        := false;         -- implement 1-wire interface (ONEWIRE)
-    IO_ONEWIRE_FIFO     : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two, min 1
+    IO_ONEWIRE_FIFO     : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two
     IO_DMA_EN           : boolean                        := false;         -- implement direct memory access controller (DMA)
-    IO_DMA_DSC_FIFO     : natural range 4 to 512         := 4;             -- DMA descriptor FIFO depth, has to be a power of two, min 4
+    IO_DMA_DSC_FIFO     : natural range 4 to 512         := 4;             -- DMA descriptor FIFO depth, has to be a power of two
     IO_SLINK_EN         : boolean                        := false;         -- implement stream link interface (SLINK)
-    IO_SLINK_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two, min 1
-    IO_SLINK_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two, min 1
+    IO_SLINK_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two
+    IO_SLINK_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two
     IO_TRACER_EN        : boolean                        := false;         -- implement instruction tracer
-    IO_TRACER_BUFFER    : natural range 1 to 2**15       := 1;             -- trace buffer depth, has to be a power of two, min 1
+    IO_TRACER_BUFFER    : natural range 1 to 2**15       := 1;             -- trace buffer depth, has to be a power of two
     IO_TRACER_SIMLOG_EN : boolean                        := false          -- write full trace log to file (simulation-only)
   );
   port (
@@ -395,7 +395,7 @@ begin
     assert io_sysinfo_en_c report
       "[NEORV32] SYSINFO module disabled - NEORV32 software framework will not function properly!" severity warning;
 
-    -- Clock speed not defined --
+    -- clock speed not defined --
     assert (CLOCK_FREQUENCY > 0) report
       "[NEORV32] CLOCK_FREQUENCY must be configured according to the frequency of clk_i port!" severity warning;
 
@@ -404,17 +404,17 @@ begin
     assert not (BOOT_MODE_SELECT = 1) report "[NEORV32] BOOT_MODE_SELECT 1 - booting from custom address" severity note;
     assert not (BOOT_MODE_SELECT = 2) report "[NEORV32] BOOT_MODE_SELECT 2 - booting IMEM image" severity note;
 
-    -- Boot configuration: boot from initialized IMEM requires the IMEM to be enabled --
+    -- boot configuration: boot from initialized IMEM requires the IMEM to be enabled --
     assert not ((BOOT_MODE_SELECT = 2) and (not IMEM_EN)) report
       "[NEORV32] BOOT_MODE_SELECT = 2 (boot IMEM image) requires the internal instruction memory (IMEM) to be enabled!" severity error;
 
-    -- The SMP dual-core configuration requires the CLINT --
+    -- SMP dual-core configuration requires the CLINT --
     assert not (DUAL_CORE_EN and (not IO_CLINT_EN)) report
       "[NEORV32] The SMP dual-core configuration requires the CLINT to be enabled!" severity error;
 
-    -- XBUS interface might generate burst transfers --
-    assert not (XBUS_EN and (ICACHE_EN or DCACHE_EN)) report
-      "[NEORV32] XBUS will emit burst transfers for cached addresses!" severity warning;
+    -- XBUS burst transfers --
+    assert not (XBUS_EN and CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN)) report
+      "[NEORV32] XBUS will emit burst transfers for cached accesses." severity warning;
 
     -- simulation notifier --
     assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
