@@ -97,9 +97,12 @@ architecture neorv32_cache_rtl of neorv32_cache is
   end record;
   signal cache_i : cache_i_t;
 
+  -- cache bypass response buffer --
+  signal bp_rsp : bus_rsp_t;
+
   -- control arbiter --
   type state_t is (
-    S_IDLE, S_CHECK, S_DIRECT_RSP, S_CLEAR, S_DOWNLOAD_START, S_DOWNLOAD_WAIT, S_DOWNLOAD_RUN, S_DONE
+    S_IDLE, S_CHECK, S_DIRECT_REQ, S_DIRECT_RSP, S_CLEAR, S_DOWNLOAD_START, S_DOWNLOAD_WAIT, S_DOWNLOAD_RUN, S_DONE
   );
   type ctrl_t is record
     state    : state_t; -- state machine
@@ -136,7 +139,7 @@ begin
 
   -- Control Engine FSM Comb ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_engine_comb: process(ctrl, host_req_i, cache_i, bus_rsp_i)
+  ctrl_engine_comb: process(ctrl, host_req_i, cache_i, bus_rsp_i, bp_rsp)
   begin
     -- control engine defaults --
     ctrl_nxt.state    <= ctrl.state;
@@ -162,10 +165,10 @@ begin
     host_rsp_o.data <= cache_i.data; -- cache read data (for cache hit)
 
     -- bus interface defaults --
-    bus_req_o       <= host_req_i;
-    bus_req_o.stb   <= '0'; -- no request by default
-    bus_req_o.burst <= '0'; -- no burst by default
-    bus_req_o.fence <= '0'; -- no fence by default
+    bus_req_o      <= req_terminate_c; -- default: all off
+    bus_req_o.meta <= host_req_i.meta;
+    bus_req_o.addr <= ctrl.tag_idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00"; -- cache access
+    bus_req_o.ben  <= (others => '1'); -- cache updates use full-word accesses only
 
     -- fsm --
     case ctrl.state is
@@ -184,50 +187,42 @@ begin
 
       when S_CHECK => -- check access request
       -- ------------------------------------------------------------
-        ctrl_nxt.tag     <= host_req_i.addr(31 downto 32-tag_size_c);
-        ctrl_nxt.idx     <= host_req_i.addr((offset_size_c+2+index_size_c)-1 downto offset_size_c+2);
+        ctrl_nxt.tag_idx <= host_req_i.addr(31 downto 32-(tag_size_c + index_size_c));
         ctrl_nxt.ofs_ext <= (others => '0');
         ctrl_nxt.ofs_int <= (others => '0');
         ctrl_nxt.buf_req <= '0'; -- access about to be completed
         --
         if (ctrl.buf_dir = '1') then -- direct/uncached access; no cache update
-          bus_req_o.stb  <= '1';
-          ctrl_nxt.state <= S_DIRECT_RSP;
-        elsif (cache_i.sta_hit = '1') then -- cache HIT
+          ctrl_nxt.state <= S_DIRECT_REQ;
+        elsif (cache_i.hit = '1') then -- cache HIT
           if (host_req_i.rw = '0') or READ_ONLY then -- read from cache
             host_rsp_o.ack <= '1';
             host_rsp_o.err <= cache_i.stat;
             ctrl_nxt.state <= S_IDLE;
-          elsif WRITE_THROUGH then -- write-through: write to main memory and also to the cache
+          else -- write to main memory and also to the cache
             cache_o.we     <= host_req_i.ben;
-            bus_req_o.stb  <= '1';
-            ctrl_nxt.state <= S_DIRECT_RSP;
-          else -- write to cache only
-            cache_o.we     <= host_req_i.ben;
-            host_rsp_o.ack <= '1';
-            ctrl_nxt.state <= S_IDLE;
+            ctrl_nxt.state <= S_DIRECT_REQ; -- write-through
           end if;
-        elsif (host_req_i.rw = '0') or READ_ONLY then -- read MISS
-          if (cache_i.sta_drt = '1') and (not WRITE_THROUGH) and (not READ_ONLY) then
-            host_rsp_o.err <= '1';    -- [TODO] error as feature not implemented yet
-            ctrl_nxt.state <= S_IDLE; -- [TODO] upload dirty block first
-          else
+        else -- cache MISS
+          if (host_req_i.rw = '0') or READ_ONLY then -- read miss
             ctrl_nxt.state <= S_DOWNLOAD_START; -- get block from main memory
-          end if;
-        else -- write MISS
-          if (cache_i.sta_drt = '1') and (not WRITE_THROUGH) then
-            host_rsp_o.err <= '1';    -- [TODO] error as feature not implemented yet
-            ctrl_nxt.state <= S_IDLE; -- [TODO] upload dirty block first
-          else -- write-through: write to main memory, no cache update
-            bus_req_o.stb  <= '1';
-            ctrl_nxt.state <= S_DIRECT_RSP;
+          else -- write miss
+            ctrl_nxt.state <= S_DIRECT_REQ; -- write-through
           end if;
         end if;
 
-      when S_DIRECT_RSP => -- wait for direct memory access response
+      when S_DIRECT_REQ => -- direct memory access request
       -- ------------------------------------------------------------
-        host_rsp_o <= bus_rsp_i; -- cache bypass
-        if (bus_rsp_i.ack = '1') then
+        bus_req_o      <= host_req_i;
+        bus_req_o.stb  <= '1';
+        ctrl_nxt.state <= S_DIRECT_RSP;
+
+      when S_DIRECT_RSP => -- direct memory access response
+      -- ------------------------------------------------------------
+        bus_req_o     <= host_req_i;
+        bus_req_o.stb <= '0'; -- to prevent pass-through of STB signal
+        host_rsp_o    <= bp_rsp; -- registered response
+        if (bp_rsp.ack = '1') then
           ctrl_nxt.state <= S_IDLE;
         end if;
 
@@ -314,6 +309,22 @@ begin
 
     end case;
   end process ctrl_engine_comb;
+
+
+  -- Cache Bypass (Direct Access) Response Buffer -------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  response_buf: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      bp_rsp <= rsp_terminate_c;
+    elsif rising_edge(clk_i) then
+      bp_rsp.ack <= bus_rsp_i.ack;
+      bp_rsp.err <= bus_rsp_i.err;
+      if (bus_rsp_i.ack = '1') then -- reduce switching activity
+        bp_rsp.data <= bus_rsp_i.data;
+      end if;
+    end if;
+  end process response_buf;
 
 
   -- Cache Memory Core ----------------------------------------------------------------------
