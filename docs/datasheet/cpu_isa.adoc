@@ -189,7 +189,7 @@ The `wfi` instruction is used to enter CPU <<_sleep_mode>>.
 ==== `M` ISA Extension
 
 Hardware-accelerated integer multiplication and division operations are available via the RISC-V `M` ISA extension.
-This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_muldiv.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_alu_muldiv.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -311,7 +311,7 @@ instead of a dedicated floating-point register file. Thus, the `Zfinx` extension
 less hardware resources and features faster context changes. This also implies that there are NO dedicated `f`
 register file-related load/store or move instructions. The `Zfinx` extension'S floating-point unit is controlled
 via dedicated <<_floating_point_csrs>>.
-This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_cp_fpu.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-process (`rtl/core/neorv32_cpu_alu_fpu.vhd`).
 
 .Fused / Multiply-Add and Division / Square Root Instructions
 [WARNING]
@@ -379,7 +379,7 @@ User-level access to the counter CSRs can be constrained by the <<_mcounteren>> 
 
 The `Zicond` ISA extension adds integer conditional move primitives that allow to implement branch-less
 control flows. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zicond`>> generic.
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_cond.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_cond.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -452,7 +452,7 @@ Without the `Zimop` extension, any `mop.r*` instruction will raise an illegal in
 The `Zba` sub-extension is part of the _RISC-V bit manipulation_ ISA specification (<<_b_isa_extension>>)
 and adds shifted-add / address-generation instructions. It is enabled by the top's
 <<_processor_top_entity_generics, `RISCV_ISA_Zba`>> generic. This ISA extension is implemented as multi-cycle
-ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+ALU co-processor (`rtl/core/neorv32_cpu_alu_bitmanip.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -467,7 +467,7 @@ ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
 
 The `Zbb` sub-extension is part of the _RISC-V bit manipulation_ ISA specification (<<_b_isa_extension>>)
 and adds the basic bit manipulation instructions. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zbb`>>
-generic. This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+generic. This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_bitmanip.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -493,7 +493,7 @@ See section <<_cpu_tuning_options>> for more information.
 
 The `Zbs` sub-extension is part of the _RISC-V bit manipulation_ ISA specification (<<_b_isa_extension>>)
 and adds single-bit operations. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zbs`>> generic.
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_bitmanip.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -509,7 +509,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 The `Zbkb` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and extends the _RISC-V bit manipulation_
 ISA extension with additional instructions. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zbkb`>> generic.
 Note that enabling this extension will also enable the `Zbb` basic bit-manipulation ISA extension (which is extended by `Zknb`).
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_bitmanip.vhd`).
 
 .Instructions and Timing (in addition to `Zbb`)
 [cols="<2,<5,<4"]
@@ -526,7 +526,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 
 The `Zbkc` sub-extension is part of the _RISC-V scalar cryptography_ ISA extension and adds carry-less multiplication instruction.
 ISA extension with additional instructions. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zbkc`>> generic.
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_bitmanip.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_bitmanip.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -541,7 +541,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 
 The `Zbkx` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds crossbar permutation instructions.
 It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zbkx`>> generic.
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_crypto.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -574,7 +574,7 @@ A processor configuration which implements `Zkn` must implement all of the above
 
 The `Zknd` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds NIST AES decryption instructions.
 It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zknd`>> generic.
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_crypto.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -589,7 +589,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 
 The `Zkne` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds NIST AES encryption instructions.
 It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zkne`>> generic.
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_crypto.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -604,7 +604,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 
 The `Zknh` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds NIST hash function instructions.
 It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zknh`>> generic.
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_crypto.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -637,7 +637,7 @@ A processor configuration which implements `Zks` must implement all of the above
 
 The `Zksed` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds ShangMi block cypher
 and key schedule instructions. It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zksed`>> generic.
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_crypto.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
@@ -653,7 +653,7 @@ This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neo
 
 The `Zksh` sub-extension is part of the _RISC-V scalar cryptography_ ISA specification and adds ShangMi hash function instructions.
 It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zksh`>> generic.
-This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_cp_crypto.vhd`).
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_crypto.vhd`).
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
