@@ -11,7 +11,7 @@
 | Top entity ports:       | none                |
 | Configuration generics: | `DCACHE_EN`         | implement processor-internal, CPU-exclusive data cache (D$) when `true`
 |                         | `DCACHE_NUM_BLOCKS` | number of cache blocks ("cache lines"); has to be a power of two
-|                         | `CACHE_BLOCK_SIZE`  | size of a cache block in bytes; has to be a power of two (global configuration for I$ and D$), min 8
+|                         | `CACHE_BLOCK_SIZE`  | size of a cache block in bytes (global configuration for I$ and D$); has to be a power of two, min 4
 |                         | `CACHE_BURSTS_EN`   | enable burst transfers for cache update
 | CPU interrupts:         | none                |
 |=======================
