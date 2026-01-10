@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120606"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120607"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -891,7 +891,7 @@ package neorv32_package is
       ICACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;
       DCACHE_EN           : boolean                        := false;
       DCACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;
-      CACHE_BLOCK_SIZE    : natural range 8 to 1024        := 64;
+      CACHE_BLOCK_SIZE    : natural range 4 to 1024        := 64;
       CACHE_BURSTS_EN     : boolean                        := true;
       -- External bus interface (XBUS) --
       XBUS_EN             : boolean                        := false;

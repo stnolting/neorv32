@@ -92,10 +92,10 @@ entity neorv32_top is
 
     -- CPU Caches --
     ICACHE_EN           : boolean                        := false;         -- implement instruction cache (i-cache)
-    ICACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;             -- i-cache: number of blocks (min 1), has to be a power of 2
+    ICACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;             -- i-cache: number of blocks, has to be a power of 2
     DCACHE_EN           : boolean                        := false;         -- implement data cache (d-cache)
-    DCACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;             -- d-cache: number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE    : natural range 8 to 1024        := 64;            -- i-cache/d-cache: block size in bytes (min 8), has to be a power of 2
+    DCACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;             -- d-cache: number of blocks, has to be a power of 2
+    CACHE_BLOCK_SIZE    : natural range 4 to 1024        := 64;            -- i-cache/d-cache: block size in bytes, has to be a power of 2
     CACHE_BURSTS_EN     : boolean                        := true;          -- i-cache/d-cache: enable issuing of burst transfer for cache update
 
     -- External bus interface (XBUS) --

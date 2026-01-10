@@ -6,7 +6,7 @@
 # -- -------------------------------------------------------------------------------- --
 # -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 # -- Copyright (c) NEORV32 contributors.                                              --
-# -- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+# -- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 # -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 # -- SPDX-License-Identifier: BSD-3-Clause                                            --
 # -- ================================================================================ --
@@ -66,7 +66,7 @@ update_compile_order -fileset sources_1
 # **************************************************************
 ipx::package_project -root_dir $outputdir/packaged_ip -vendor NEORV32 -library user -taxonomy /UserIP -import_files -set_current true -force
 set_property display_name "NEORV32" [ipx::current_core]
-set_property vendor_display_name "Stephan Nolting" [ipx::current_core]
+set_property vendor_display_name "neorv32" [ipx::current_core]
 set_property company_url https://github.com/stnolting/neorv32 [ipx::current_core]
 set_property description "The NEORV32 RISC-V Processor" [ipx::current_core]
 
