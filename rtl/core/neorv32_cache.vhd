@@ -12,7 +12,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -26,9 +26,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cache is
   generic (
-    NUM_BLOCKS : natural range 2 to 1024;       -- number of cache blocks (min 2), has to be a power of 2
-    BLOCK_SIZE : natural range 8 to 32768;      -- cache block size in bytes (min 8), has to be a power of 2
-    UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (page number / 4 MSBs of address)
+    NUM_BLOCKS : natural range 1 to 1024;       -- number of cache blocks, has to be a power of 2
+    BLOCK_SIZE : natural range 4 to 32768;      -- cache block size in bytes, has to be a power of 2
+    UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (4 MSBs of address)
     READ_ONLY  : boolean;                       -- read-only accesses for host
     BURSTS_EN  : boolean                        -- enable issuing of burst transfers
   );
@@ -68,8 +68,6 @@ architecture neorv32_cache_rtl of neorv32_cache is
       clr_i   : in  std_ulogic;
       new_i   : in  std_ulogic;
       hit_o   : out std_ulogic;
-      drt_o   : out std_ulogic;
-      tag_o   : out std_ulogic_vector(31 downto 0);
       addr_i  : in  std_ulogic_vector(31 downto 0);
       we_i    : in  std_ulogic_vector(3 downto 0);
       wdata_i : in  std_ulogic_vector(31 downto 0);
@@ -322,8 +320,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_memory_inst: neorv32_cache_memory
   generic map (
-    NUM_BLOCKS => block_num_c, -- number of blocks (min 2), has to be a power of 2
-    BLOCK_SIZE => block_size_c -- block size in bytes (min 4), has to be a power of 2
+    NUM_BLOCKS => block_num_c, -- number of blocks, has to be a power of 2
+    BLOCK_SIZE => block_size_c -- block size in bytes, has to be a power of 2
   )
   port map (
     -- global control --
@@ -332,9 +330,7 @@ begin
     -- management --
     clr_i   => cache_o.cmd_clr, -- clear entire cache
     new_i   => cache_o.cmd_new, -- make accessed block valid and set tag
-    hit_o   => cache_i.sta_hit, -- cache hit
-    drt_o   => cache_i.sta_drt, -- cache dirty
-    tag_o   => open,            -- tag of accessed block; MSB-aligned, zero-extended
+    hit_o   => cache_i.hit,     -- cache hit
     -- cache access --
     addr_i  => cache_o.addr,    -- access address
     we_i    => cache_o.we,      -- byte-wide data write enable
@@ -352,7 +348,7 @@ end neorv32_cache_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2026 Stephan Nolting. All rights reserved.                         --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -366,8 +362,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cache_memory is
   generic (
-    NUM_BLOCKS : natural; -- number of blocks (min 2), has to be a power of 2
-    BLOCK_SIZE : natural  -- block size in bytes (min 4), has to be a power of 2
+    NUM_BLOCKS : natural; -- number of blocks, has to be a power of 2, min 1
+    BLOCK_SIZE : natural  -- block size in bytes, has to be a power of 2, min 4
   );
   port (
     -- global control --
@@ -377,8 +373,6 @@ entity neorv32_cache_memory is
     clr_i   : in  std_ulogic;                     -- clear entire cache
     new_i   : in  std_ulogic;                     -- make accessed block valid & clean and set tag
     hit_o   : out std_ulogic;                     -- cache hit
-    drt_o   : out std_ulogic;                     -- accessed block is dirty
-    tag_o   : out std_ulogic_vector(31 downto 0); -- tag of accessed block; MSB-aligned, zero-extended
     -- cache access --
     addr_i  : in  std_ulogic_vector(31 downto 0); -- access address
     we_i    : in  std_ulogic_vector(3 downto 0);  -- byte-wide data write enable
@@ -397,75 +391,70 @@ architecture neorv32_cache_memory_rtl of neorv32_cache_memory is
   constant adr_size_c    : natural := offset_size_c + index_size_c; -- RAM address size
   constant tag_size_c    : natural := 32 - (offset_size_c + index_size_c + 2); -- +2 bits for byte offset
 
-  -- helpers --
-  constant zero_c : std_ulogic_vector(31 downto 0) := (others => '0');
-
-  -- status flag memory --
-  signal valid_mem, dirty_mem : std_ulogic_vector(NUM_BLOCKS-1 downto 0);
-  signal valid_mem_rd, dirty_mem_rd : std_ulogic;
+  -- status flags --
+  signal valid : std_ulogic_vector(NUM_BLOCKS-1 downto 0);
+  signal valid_rd : std_ulogic;
 
   -- cache access --
-  signal acc_tag : std_ulogic_vector(tag_size_c-1 downto 0);
-  signal tag_rd  : std_ulogic_vector(tag_size_c-1 downto 0);
-  signal tag_ff  : std_ulogic_vector(tag_size_c-1 downto 0);
-  signal acc_idx : std_ulogic_vector(index_size_c-1 downto 0);
-  signal acc_off : std_ulogic_vector(offset_size_c-1 downto 0);
-  signal acc_adr : std_ulogic_vector(adr_size_c-1 downto 0);
-  signal wdata   : std_ulogic_vector(32 downto 0);
-  signal rdata   : std_ulogic_vector(32 downto 0);
+  signal tag, tag_reg, tag_rd: std_ulogic_vector(tag_size_c-1 downto 0);
+  signal addr : std_ulogic_vector(adr_size_c-1 downto 0);
+  signal wdata, rdata : std_ulogic_vector(32 downto 0);
 
 begin
 
   -- Access Address Decomposition -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  acc_tag <= addr_i(31 downto 31-(tag_size_c-1)); -- tag
-  acc_idx <= addr_i(31-tag_size_c downto 2+offset_size_c); -- index (cache block select)
-  acc_off <= addr_i(2+(offset_size_c-1) downto 2); -- word offset within block
-  acc_adr <= acc_idx & acc_off; -- RAM address
+  tag  <= addr_i(31 downto 31-(tag_size_c-1)); -- tag
+  addr <= addr_i(adr_size_c+1 downto 2); -- RAM address
 
-  -- tag pipeline stage --
+  -- tag pipeline register --
   tag_buffer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      tag_ff <= (others => '0');
+      tag_reg <= (others => '0');
     elsif rising_edge(clk_i) then
-      tag_ff <= acc_tag;
+      tag_reg <= tag;
     end if;
   end process tag_buffer;
 
 
   -- Status Memory --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  status_memory: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      valid_mem    <= (others => '0');
-      dirty_mem    <= (others => '0');
-      valid_mem_rd <= '0';
-      dirty_mem_rd <= '0';
-    elsif rising_edge(clk_i) then
-      -- valid flags --
-      if (clr_i = '1') then -- invalidate entire cache
-        valid_mem <= (others => '0');
-      elsif (new_i = '1') then -- make accessed block valid
-        valid_mem(to_integer(unsigned(acc_idx))) <= '1';
+  status_mem_large:
+  if (NUM_BLOCKS > 1) generate
+    status_memory: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        valid    <= (others => '0');
+        valid_rd <= '0';
+      elsif rising_edge(clk_i) then
+        if (clr_i = '1') then -- invalidate entire cache
+          valid <= (others => '0');
+        elsif (new_i = '1') then -- make indexed block valid
+          valid(to_integer(unsigned(addr_i(31-tag_size_c downto 2+offset_size_c)))) <= '1';
+        end if;
+        valid_rd <= valid(to_integer(unsigned(addr_i(31-tag_size_c downto 2+offset_size_c)))); -- sync read
       end if;
-      -- dirty flags --
-      if (clr_i = '1') then -- invalidate entire cache
-        dirty_mem <= (others => '0');
-      elsif (new_i = '1') then -- make accessed block clean
-        dirty_mem(to_integer(unsigned(acc_idx))) <= '0';
-      elsif (we_i /= "0000") then -- modify cache content
-        dirty_mem(to_integer(unsigned(acc_idx))) <= '1';
-      end if;
-      -- syn flag read --
-      valid_mem_rd <= valid_mem(to_integer(unsigned(acc_idx)));
-      dirty_mem_rd <= dirty_mem(to_integer(unsigned(acc_idx)));
-    end if;
-  end process status_memory;
+    end process status_memory;
+  end generate;
 
-  -- modified cache --
-  drt_o <= valid_mem_rd and dirty_mem_rd;
+  -- single-entry only --
+  status_mem_small:
+  if (NUM_BLOCKS = 1) generate
+    status_memory: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        valid(0) <= '0';
+      elsif rising_edge(clk_i) then
+        if (clr_i = '1') then -- invalidate
+          valid(0) <= '0';
+        elsif (new_i = '1') then -- make valid
+          valid(0) <= '1';
+        end if;
+      end if;
+    end process status_memory;
+    valid_rd <= valid(0);
+  end generate;
 
 
   -- Tag Memory -----------------------------------------------------------------------------
@@ -480,16 +469,13 @@ begin
     clk_i  => clk_i,
     en_i   => '1',
     rw_i   => new_i,
-    addr_i => acc_idx,
-    data_i => acc_tag,
+    addr_i => addr_i(31-tag_size_c downto 2+offset_size_c), -- index
+    data_i => tag,
     data_o => tag_rd
   );
 
   -- access status (1 cycle latency due to sync memory read) --
-  hit_o <= '1' when (valid_mem_rd = '1') and (tag_rd = tag_ff) else '0'; -- cache access hit
-
-  -- tag output: MSB-aligned, zero-extended --
-  tag_o <= tag_rd & zero_c(31-tag_size_c downto 0);
+  hit_o <= '1' when (valid_rd = '1') and (tag_rd = tag_reg) else '0'; -- cache hit
 
 
   -- Data Memory ----------------------------------------------------------------------------
@@ -507,7 +493,7 @@ begin
       clk_i  => clk_i,
       en_i   => '1',
       rw_i   => we_i(i),
-      addr_i => acc_adr,
+      addr_i => addr,
       data_i => wdata(i*8+7 downto i*8),
       data_o => rdata(i*8+7 downto i*8)
     );
@@ -524,7 +510,7 @@ begin
     clk_i  => clk_i,
     en_i   => '1',
     rw_i   => we_i(3),
-    addr_i => acc_adr,
+    addr_i => addr,
     data_i => wdata(32 downto 24),
     data_o => rdata(32 downto 24)
   );
