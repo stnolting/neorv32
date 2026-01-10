@@ -1,12 +1,12 @@
 -- ================================================================================ --
--- NEORV32 CPU - Co-Processor: Shifter (CPU Base ISA)                               --
+-- NEORV32 CPU - ALU Shifter (RISC-V Base ISA)                                      --
 -- -------------------------------------------------------------------------------- --
 -- FAST_SHIFT_EN = false -> Use bit-serial shifter architecture (small but slow)    --
 -- FAST_SHIFT_EN = true  -> Use barrel shifter architecture (large but fast)        --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -18,7 +18,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cpu_cp_shifter is
+entity neorv32_cpu_alu_shifter is
   generic (
     FAST_SHIFT_EN : boolean -- implement fast but large barrel shifter
   );
@@ -34,9 +34,9 @@ entity neorv32_cpu_cp_shifter is
     res_o   : out std_ulogic_vector(31 downto 0); -- operation result
     valid_o : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_cp_shifter;
+end neorv32_cpu_alu_shifter;
 
-architecture neorv32_cpu_cp_shifter_rtl of neorv32_cpu_cp_shifter is
+architecture neorv32_cpu_alu_shifter_rtl of neorv32_cpu_alu_shifter is
 
   -- instruction decode --
   signal valid_cmd : std_ulogic;
@@ -163,4 +163,4 @@ begin
   end generate;
 
 
-end neorv32_cpu_cp_shifter_rtl;
+end neorv32_cpu_alu_shifter_rtl;

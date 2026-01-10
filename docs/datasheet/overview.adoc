@@ -182,13 +182,13 @@ rtl/core
 ├─ neorv32_cpu_alu.vhd           - Arithmetic/logic unit
 ├─ neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
 ├─ neorv32_cpu_counters.vhd      - Hardware counters (Zicntr & Zihpm ext.)
-├─ neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
-├─ neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
-├─ neorv32_cpu_cp_cond.vhd       - Integer conditional co-processor (Zicond ext.)
-├─ neorv32_cpu_cp_crypto.vhd     - Scalar cryptography co-processor (Zk*/Zbk* ext.)
-├─ neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
-├─ neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M ext.)
-├─ neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
+├─ neorv32_cpu_alu_bitmanip.vhd  - Bit-manipulation unit (B ext.)
+├─ neorv32_cpu_alu_cfu.vhd       - Custom instructions unit (Zxcfu ext.)
+├─ neorv32_cpu_alu_cond.vhd      - Integer conditional unit (Zicond ext.)
+├─ neorv32_cpu_alu_crypto.vhd    - Scalar cryptography unit (Zk*/Zbk* ext.)
+├─ neorv32_cpu_alu_fpu.vhd       - Floating-point unit (Zfinx ext.)
+├─ neorv32_cpu_alu_muldiv.vhd    - Integer MUL/DIV unit (M ext.)
+├─ neorv32_cpu_alu_shifter.vhd   - Bit-shift unit (base ISA)
 ├─ neorv32_cpu_decompressor.vhd  - Compressed instructions decoder (C ext.)
 ├─ neorv32_cpu_frontend.vhd      - Instruction fetch and issue
 ├─ neorv32_cpu_hwtrig.vhd        - Hardware trigger module (Sdtrig ext.)

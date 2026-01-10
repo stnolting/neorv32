@@ -141,7 +141,7 @@ begin
 
   -- ALU[I]-Opcode Co-Processor: Shifter Unit (Base ISA) ------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_shifter_inst: entity neorv32.neorv32_cpu_cp_shifter
+  neorv32_cpu_alu_shifter_inst: entity neorv32.neorv32_cpu_alu_shifter
   generic map (
     FAST_SHIFT_EN => FAST_SHIFT_EN -- use barrel shifter for shift operations
   )
@@ -160,9 +160,9 @@ begin
 
   -- ALU-Opcode Co-Processor: Integer Multiplication/Division Unit ('M' ISA Extension) ------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_muldiv_inst_true:
+  neorv32_cpu_alu_muldiv_enabled:
   if RISCV_ISA_M or RISCV_ISA_Zmmul generate
-    neorv32_cpu_cp_muldiv_inst: entity neorv32.neorv32_cpu_cp_muldiv
+    neorv32_cpu_alu_muldiv_inst: entity neorv32.neorv32_cpu_alu_muldiv
     generic map (
       FAST_MUL_EN => FAST_MUL_EN, -- use DSPs for faster multiplication
       DIVISION_EN => RISCV_ISA_M  -- implement divider hardware
@@ -181,7 +181,7 @@ begin
     );
   end generate;
 
-  neorv32_cpu_cp_muldiv_inst_false:
+  neorv32_cpu_alu_muldiv_disabled:
   if (not RISCV_ISA_M) and (not RISCV_ISA_Zmmul) generate
     cp_result(1) <= (others => '0');
     cp_valid(1)  <= '0';
@@ -189,9 +189,9 @@ begin
 
   -- ALU[I]-Opcode Co-Processor: Bit-Manipulation Unit ('B' ISA Extension) ------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_bitmanip_inst_true:
+  neorv32_cpu_alu_bitmanip_enabled:
   if RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbs or RISCV_ISA_Zbkc generate
-    neorv32_cpu_cp_bitmanip_inst: entity neorv32.neorv32_cpu_cp_bitmanip
+    neorv32_cpu_alu_bitmanip_inst: entity neorv32.neorv32_cpu_alu_bitmanip
     generic map (
       FAST_SHIFT => FAST_SHIFT_EN,  -- use barrel shifter for shift operations
       ZBA        => RISCV_ISA_Zba,  -- enable address-generation instruction
@@ -217,7 +217,7 @@ begin
     );
   end generate;
 
-  neorv32_cpu_cp_bitmanip_inst_false:
+  neorv32_cpu_alu_bitmanip_disabled:
   if not (RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbs or RISCV_ISA_Zbkc) generate
     cp_result(2) <= (others => '0');
     cp_valid(2)  <= '0';
@@ -225,9 +225,9 @@ begin
 
   -- FLOAT-Opcode Co-Processor: Single-Precision FPUUnit ('Zfinx' ISA Extension) ------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_fpu_inst_true:
+  neorv32_cpu_alu_fpu_enabled:
   if RISCV_ISA_Zfinx generate
-    neorv32_cpu_cp_fpu_inst: entity neorv32.neorv32_cpu_cp_fpu
+    neorv32_cpu_alu_fpu_inst: entity neorv32.neorv32_cpu_alu_fpu
     port map (
       -- global control --
       clk_i       => clk_i,                       -- global clock, rising edge
@@ -254,7 +254,7 @@ begin
     csr_o      <= fpu_csr_rd when (fpu_csr_en = '1') else (others => '0');
   end generate;
 
-  neorv32_cpu_cp_fpu_inst_false:
+  neorv32_cpu_alu_fpu_disabled:
   if not RISCV_ISA_Zfinx generate
     fpu_csr_en   <= '0';
     fpu_csr_we   <= '0';
@@ -266,9 +266,9 @@ begin
 
   -- CUSTOM-Opcode Co-Processor: Custom Functions Unit ('Zxcfu' ISA Extension) --------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_cfu_inst_true:
+  neorv32_cpu_alu_cfu_enabled:
   if RISCV_ISA_Zxcfu generate
-    neorv32_cpu_cp_cfu_inst: entity neorv32.neorv32_cpu_cp_cfu
+    neorv32_cpu_alu_cfu_inst: entity neorv32.neorv32_cpu_alu_cfu
     port map (
       -- global control --
       clk_i    => clk_i,                          -- global clock, rising edge
@@ -309,7 +309,7 @@ begin
     cp_valid(4) <= cfu_done and (ctrl_i.alu_cp_cfu or cfu_busy);
   end generate;
 
-  neorv32_cpu_cp_cfu_inst_false:
+  neorv32_cpu_alu_cfu_disabled:
   if not RISCV_ISA_Zxcfu generate
     cfu_done     <= '0';
     cfu_res      <= (others => '0');
@@ -320,9 +320,9 @@ begin
 
   -- ALU-Opcode Co-Processor: Conditional Operations Unit ('Zicond' ISA Extension) ----------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_cond_inst_true:
+  neorv32_cpu_alu_cond_enabled:
   if RISCV_ISA_Zicond generate
-    neorv32_cpu_cp_cond_inst: entity neorv32.neorv32_cpu_cp_cond
+    neorv32_cpu_alu_cond_inst: entity neorv32.neorv32_cpu_alu_cond
     port map (
       -- global control --
       clk_i   => clk_i,        -- global clock, rising edge
@@ -337,7 +337,7 @@ begin
     );
   end generate;
 
-  neorv32_cpu_cp_cond_inst_false:
+  neorv32_cpu_alu_cond_disabled:
   if not RISCV_ISA_Zicond generate
     cp_result(5) <= (others => '0');
     cp_valid(5)  <= '0';
@@ -345,9 +345,9 @@ begin
 
   -- ALU[I]-Opcode Co-Processor: Scalar Cryptography Unit ('Zk*' ISA Extensions) ------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_crypto_inst_true:
+  neorv32_cpu_alu_crypto_enabled:
   if RISCV_ISA_Zbkx or RISCV_ISA_Zknh or RISCV_ISA_Zkne or RISCV_ISA_Zknd or RISCV_ISA_Zksh or RISCV_ISA_Zksed generate
-    neorv32_cpu_cp_crypto_inst: entity neorv32.neorv32_cpu_cp_crypto
+    neorv32_cpu_alu_crypto_inst: entity neorv32.neorv32_cpu_alu_crypto
     generic map (
       EN_ZKNH  => RISCV_ISA_Zknh,  -- enable NIST hash extension
       EN_ZKNE  => RISCV_ISA_Zkne,  -- enable NIST AES encryption extension
@@ -369,7 +369,7 @@ begin
     );
   end generate;
 
-  neorv32_cpu_cp_crypto_inst_false:
+  neorv32_cpu_alu_crypto_disabled:
   if not (RISCV_ISA_Zbkx or RISCV_ISA_Zknh or RISCV_ISA_Zkne or RISCV_ISA_Zknd or RISCV_ISA_Zksh or RISCV_ISA_Zksed) generate
     cp_result(6) <= (others => '0');
     cp_valid(6)  <= '0';
