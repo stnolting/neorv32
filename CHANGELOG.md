@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 10.01.2026 | 1.12.6.7 | cache: relax size configuration constraints; :test_tube: add register stages for direct/uncached accesses | [#1471](https://github.com/stnolting/neorv32/pull/1471) |
 | 04.01.2026 | 1.12.6.6 | :bug: fix bus time-out bug introduced in v1.12.6.4; minor rtl optimizations | [#1470](https://github.com/stnolting/neorv32/pull/1470) |
 | 02.01.2026 | 1.12.6.5 | minor rtl edits; optimize register file's mapping to FPGA BRAM | [#1467](https://github.com/stnolting/neorv32/pull/1467) |
 | 30.12.2025 | 1.12.6.4 | minor rtl edits, cleanups and optimizations | [#1465](https://github.com/stnolting/neorv32/pull/1465) |
