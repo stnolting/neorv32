@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 - Primitives - Generic Single-Clock FIFO (FIFO)                          --
+-- NEORV32 Primitives - Generic Single-Clock FIFO (FIFO)                            --
 -- -------------------------------------------------------------------------------- --
 -- The FIFO operates in "first-word-fall-through" (FWFT) mode: the first written    --
 -- word appears directly at the output (after the synchronous-read delay) without   --
@@ -149,7 +149,7 @@ end neorv32_prim_fifo_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 - Primitives - Generic Single-Port RAM (SPRAM)                           --
+-- NEORV32 Primitives - Generic Single-Port RAM (SPRAM)                             --
 -- -------------------------------------------------------------------------------- --
 -- Provides a single read/write port.                                               --
 -- Can be mapped to blockRAM primitives.                                            --
@@ -244,7 +244,7 @@ end neorv32_prim_spram_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 - Primitives - Generic 2-Cycle Signed/Unsigned Integer Multiplier (MUL)  --
+-- NEORV32 Primitives - Generic 2-Cycle Signed/Unsigned Integer Multiplier (MUL)    --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -313,7 +313,7 @@ end neorv32_prim_mul_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 - Primitives - Generic Counter Module                                    --
+-- NEORV32 Primitives - Generic Counter Module                                      --
 -- -------------------------------------------------------------------------------- --
 -- High and low words are split across two individual registers to improve timing   --
 -- by cutting the carry chain. The actual counter width can be trimmed via CWIDTH.  --

@@ -262,7 +262,7 @@ begin
       -- start at HIGH half-word --
       else
         if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
-          align_clr        <= ipb.avail(1); -- start of next instruction word is 32-bit-aligned again
+          align_clr        <= ipb.avail(1); -- start of next instruction word IS 32-bit-aligned again
           issue_valid(0)   <= '0';
           issue_valid(1)   <= ipb.avail(1);
           frontend_o.fault <= ipb.rdata(1)(16);
@@ -311,7 +311,7 @@ end neorv32_cpu_frontend_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
