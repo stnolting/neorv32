@@ -44,8 +44,8 @@ end neorv32_cache;
 
 architecture neorv32_cache_rtl of neorv32_cache is
 
-  -- work-in-progress / TODO --
-  constant WRITE_THROUGH : boolean := true; -- only write-through cache strategy is supported yet
+  -- only emit bursts if enabled and if block size is at least 8 bytes --
+  constant bursts_en_c : boolean := BURSTS_EN and boolean(BLOCK_SIZE >= 8);
 
   -- make sure cache sizes are a power of two --
   constant block_num_c  : natural := 2**index_size_f(NUM_BLOCKS);
@@ -248,7 +248,7 @@ begin
         bus_req_o.rw    <= '0'; -- read access
         bus_req_o.stb   <= '1'; -- send initial (burst/locking) request
         bus_req_o.lock  <= '1'; -- this is a locked transfer
-        bus_req_o.burst <= bool_to_ulogic_f(BURSTS_EN); -- this is a burst transfer
+        bus_req_o.burst <= bool_to_ulogic_f(bursts_en_c); -- this is a burst transfer
         bus_req_o.ben   <= (others => '1'); -- full-word access
         ctrl_nxt.state  <= S_DOWNLOAD_WAIT;
 
@@ -262,13 +262,13 @@ begin
         bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_size_c-1 downto 0) & "00";
         bus_req_o.rw    <= '0'; -- read access
         bus_req_o.lock  <= '1'; -- this is a locked transfer
-        bus_req_o.burst <= bool_to_ulogic_f(BURSTS_EN); -- this is a burst transfer
+        bus_req_o.burst <= bool_to_ulogic_f(bursts_en_c); -- this is a burst transfer
         bus_req_o.ben   <= (others => '1'); -- full-word access
         -- wait for initial ACK to start actual bursting --
         if (bus_rsp_i.ack = '1') then
           ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1);
           ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1);
-          if BURSTS_EN then -- burst transfer
+          if bursts_en_c then
             ctrl_nxt.state <= S_DOWNLOAD_RUN;
           elsif (and_reduce_f(ctrl.ofs_int) = '1') then -- block completed
             ctrl_nxt.state <= S_DONE;
@@ -279,8 +279,8 @@ begin
 
       when S_DOWNLOAD_RUN => -- bursts enabled: send read requests and get data responses
       -- ------------------------------------------------------------
-        if BURSTS_EN then -- burst transfer
-          cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+        if bursts_en_c then
+          cache_o.addr    <= ctrl.tag_idx & ctrl.ofs_int & "00";
           cache_o.cmd_new <= '1'; -- set new block (set tag and make valid)
           cache_o.data    <= bus_rsp_i.data;
           cache_o.stat    <= bus_rsp_i.err;
