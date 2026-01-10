@@ -119,7 +119,7 @@ Note that this feature is only available within a simulation.
                                   <|`1`     `UART_CTRL_SIM_MODE`                      ^| r/w <| enable **simulation mode**
                                   <|`2`     `UART_CTRL_HWFC_EN`                       ^| r/w <| enable RTS/CTS hardware flow-control
                                   <|`5:3`   `UART_CTRL_PRSC_MSB : UART_CTRL_PRSC_LSB` ^| r/w <| baud rate clock prescaler select
-                                  <|`15:6`  `UART_CTRL_BAUD_MSB : UART_CTRL_BAUD_LSB` ^| r/w <| 12-bit baud value configuration value
+                                  <|`15:6`  `UART_CTRL_BAUD_MSB : UART_CTRL_BAUD_LSB` ^| r/w <| 10-bit baud value configuration value
                                   <|`16`    `UART_CTRL_RX_NEMPTY`                     ^| r/- <| RX FIFO not empty (data available)
                                   <|`17`    `UART_CTRL_RX_FULL`                       ^| r/- <| RX FIFO full
                                   <|`18`    `UART_CTRL_TX_EMPTY`                      ^| r/- <| TX FIFO empty
@@ -127,7 +127,7 @@ Note that this feature is only available within a simulation.
                                   <|`20`    `UART_CTRL_IRQ_RX_NEMPTY`                 ^| r/w <| fire RX-IRQ if RX FIFO not empty
                                   <|`21`    `UART_CTRL_IRQ_RX_FULL`                   ^| r/w <| fire RX-IRQ if RX FIFO full
                                   <|`22`    `UART_CTRL_IRQ_TX_EMPTY`                  ^| r/w <| fire TX-IRQ if TX FIFO empty
-                                  <|`23`    `UART_CTRL_IRQ_TX_NHALF`                  ^| r/w <| fire TX-IRQ if TX not full
+                                  <|`23`    `UART_CTRL_IRQ_TX_NFULL`                  ^| r/w <| fire TX-IRQ if TX not full
                                   <|`29:24` -                                         ^| r/- <| _reserved_, read as zero
                                   <|`30`    `UART_CTRL_RX_OVER`                       ^| r/- <| RX FIFO overflow; cleared by disabling the module
                                   <|`31`    `UART_CTRL_TX_BUSY`                       ^| r/- <| TX busy or TX FIFO not empty
