@@ -80,7 +80,7 @@ begin
   -- Status ---------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- more than 1 FIFO entry --
-  fifo_status_large:
+  status_large:
   if (AWIDTH > 0) generate
     match <= '1' when (r_pnt(AWIDTH-1 downto 0) = w_pnt(AWIDTH-1 downto 0)) else '0';
     full  <= '1' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '0';
@@ -97,7 +97,7 @@ begin
   end generate;
 
   -- just 1 FIFO entry --
-  fifo_status_small:
+  status_small:
   if (AWIDTH = 0) generate
     match <= '1' when (r_pnt(0) = w_pnt(0)) else '0';
     full  <= not match;
@@ -113,7 +113,7 @@ begin
   -- Memory ---------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- more than 1 FIFO entry --
-  fifo_memory_large:
+  memory_large:
   if (AWIDTH > 0) generate
     memory_core: process(clk_i) -- simple dual-port RAM
     begin
@@ -127,7 +127,7 @@ begin
   end generate;
 
   -- just 1 FIFO entry --
-  fifo_memory_small:
+  memory_small:
   if (AWIDTH = 0) generate
     memory_core: process(rstn_i, clk_i) -- single register
     begin
@@ -156,7 +156,7 @@ end neorv32_prim_fifo_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -193,35 +193,20 @@ begin
 
   -- Memory Core ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  memory_core: process(clk_i)
-  begin
-    if rising_edge(clk_i) then
-      if (en_i = '1') then
-        if (rw_i = '1') then
-          spram(to_integer(unsigned(addr_i))) <= data_i;
-        else
-          rdata <= spram(to_integer(unsigned(addr_i)));
-        end if;
-      end if;
-    end if;
-  end process memory_core;
-
-  -- Output Register ------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  output_register_enabled:
-  if OUTREG generate -- might improve FPGA mapping and/or timing results
-    read_outreg: process(clk_i)
+  memory_large:
+  if (AWIDTH > 0) generate
+    memory_core: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        data_o <= rdata;
+        if (en_i = '1') then
+          if (rw_i = '1') then
+            spram(to_integer(unsigned(addr_i))) <= data_i;
+          else
+            rdata <= spram(to_integer(unsigned(addr_i)));
+          end if;
+        end if;
       end if;
-    end process read_outreg;
-  end generate;
-
-  -- no output register --
-  output_register_disabled:
-  if not OUTREG generate
-    data_o <= rdata;
+    end process memory_core;
   end generate;
 
   -- single entry only --
@@ -263,7 +248,7 @@ end neorv32_prim_spram_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -336,7 +321,7 @@ end neorv32_prim_mul_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
