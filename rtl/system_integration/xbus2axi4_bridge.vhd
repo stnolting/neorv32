@@ -144,8 +144,8 @@ begin
 
   -- AXI read data channel --
   m_axi_rready  <= '1'; -- always ready for read response
-  xbus_rd_ack   <= '1' when (m_axi_rvalid = '1') and (m_axi_rresp  = "00") else '0';
-  xbus_rd_err   <= '1' when (m_axi_rvalid = '1') and (m_axi_rresp /= "00") else '0';
+  xbus_rd_ack   <= '1' when (m_axi_rvalid = '1') and (m_axi_rresp(1) = '0') else '0'; -- OKAY(00)/EXOKAY(01)
+  xbus_rd_err   <= '1' when (m_axi_rvalid = '1') and (m_axi_rresp(1) = '1') else '0'; -- SLVERR(10)/DECERR(11)
   xbus_dat_o    <= std_ulogic_vector(m_axi_rdata);
 
   -- AXI write address channel --
@@ -165,8 +165,8 @@ begin
 
   -- AXI write response channel --
   m_axi_bready  <= '1'; -- always ready for write response
-  xbus_wr_ack   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp  = "00") else '0';
-  xbus_wr_err   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp /= "00") else '0';
+  xbus_wr_ack   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp(1) = '0') else '0'; -- OKAY(00)/EXOKAY(01)
+  xbus_wr_err   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp(1) = '1') else '0'; -- SLVERR(10)/DECERR(11)
 
   -- XBUS response --
   xbus_ack_o    <= xbus_rd_ack or xbus_wr_ack;
