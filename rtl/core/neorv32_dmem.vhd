@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -17,8 +17,8 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_dmem is
   generic (
-    MEM_SIZE  : natural; -- memory size in bytes, has to be a power of 2, min 4
-    OUTREG_EN : boolean  -- implement output register stage
+    MEM_SIZE : natural; -- memory size in bytes, has to be a power of 2, min 4
+    OUTREG   : boolean  -- implement output register stage
   );
   port (
     clk_i     : in  std_ulogic; -- global clock line
@@ -32,7 +32,7 @@ architecture neorv32_dmem_rtl of neorv32_dmem is
 
   -- auto-configuration --
   constant awidth_c  : natural := index_size_f(MEM_SIZE/4); -- word address width
-  constant latency_c : natural := cond_sel_natural_f(OUTREG_EN, 2, 1); -- memory latency
+  constant latency_c : natural := cond_sel_natural_f(OUTREG, 2, 1); -- memory latency
 
   -- local signals --
   signal rdata : std_ulogic_vector(31 downto 0);
@@ -50,7 +50,7 @@ begin
     generic map (
       AWIDTH => awidth_c,
       DWIDTH => 8,
-      OUTREG => OUTREG_EN
+      OUTREG => OUTREG
     )
     port map (
       clk_i  => clk_i,
@@ -64,7 +64,6 @@ begin
 
   -- byte-wise enable --
   en <= bus_req_i.ben when (bus_req_i.stb = '1') else (others => '0');
-
 
   -- Bus Handshake --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -82,6 +81,5 @@ begin
   bus_rsp_o.data <= rdata when (rden(latency_c-1) = '1') else (others => '0'); -- output gate
   bus_rsp_o.err  <= '0'; -- no access error possible
   bus_rsp_o.ack  <= rden(latency_c-1) or wack;
-
 
 end neorv32_dmem_rtl;

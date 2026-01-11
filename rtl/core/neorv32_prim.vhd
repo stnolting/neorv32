@@ -201,9 +201,8 @@ begin
         if (en_i = '1') then
           if (rw_i = '1') then
             spram(to_integer(unsigned(addr_i))) <= data_i;
-          else
-            rdata <= spram(to_integer(unsigned(addr_i)));
           end if;
+          rdata <= spram(to_integer(unsigned(addr_i)));
         end if;
       end if;
     end process memory_core;

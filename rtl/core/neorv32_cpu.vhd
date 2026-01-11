@@ -111,10 +111,9 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
                                     RISCV_ISA_Zksh and RISCV_ISA_Zksed; -- Zks: ShangMi suite
 
   -- busses --
-  signal ctrl : ctrl_bus_t;
-  signal frontend : if_bus_t;
-  signal ibus_rsp, dbus_rsp : bus_rsp_t;
-  signal ibus_req, dbus_req : bus_req_t;
+  signal ctrl     : ctrl_bus_t; -- main control bus
+  signal frontend : if_bus_t;   -- front-end to back-end interface
+  signal dbus_req : bus_req_t;  -- intermediate data memory request
 
   -- wiring --
   signal if_pmp_addr : std_ulogic_vector(31 downto 0); -- instruction fetch access address
@@ -218,8 +217,8 @@ begin
     rstn_i     => rstn_i,      -- global reset, low-active, async
     ctrl_i     => ctrl,        -- main control bus
     -- instruction fetch interface --
-    ibus_req_o => ibus_req,    -- request
-    ibus_rsp_i => ibus_rsp,    -- response
+    ibus_req_o => ibus_req_o,  -- request
+    ibus_rsp_i => ibus_rsp_i,  -- response
     -- PMP interface --
     pmp_addr_o => if_pmp_addr, -- access address
     pmp_priv_o => if_pmp_priv, -- access privilege level
@@ -227,10 +226,6 @@ begin
     -- back-end interface --
     frontend_o => frontend     -- fetch data and status
   );
-
-  -- memory interface --
-  ibus_req_o <= ibus_req;
-  ibus_rsp   <= ibus_rsp_i;
 
 
   -- Control Unit / Back-End (Instruction Execution) ----------------------------------------
@@ -454,7 +449,7 @@ begin
     clk_i       => clk_i,      -- global clock, rising edge
     rstn_i      => rstn_i,     -- global reset, low-active, async
     ctrl_i      => ctrl,       -- main control bus
-    -- cpu data access interface --
+    -- memory data access interface --
     addr_i      => alu_add,    -- access address
     wdata_i     => rs2,        -- write data
     rdata_o     => lsu_rdata,  -- read data
@@ -464,12 +459,11 @@ begin
     pmp_fault_i => rw_pmp_err, -- PMP read/write access fault
     -- data bus --
     dbus_req_o  => dbus_req,   -- request
-    dbus_rsp_i  => dbus_rsp    -- response
+    dbus_rsp_i  => dbus_rsp_i  -- response
   );
 
-  -- memory interface --
+  -- memory request --
   dbus_req_o <= dbus_req;
-  dbus_rsp   <= dbus_rsp_i;
 
 
   -- Physical Memory Protection (PMP) -------------------------------------------------------
