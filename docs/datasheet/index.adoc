@@ -1,6 +1,6 @@
-= The NEORV32 RISC-V Processor - Datasheet
+= The NEORV32 RISC-V Processor - Data Sheet
 include::../attrs.adoc[]
-:title: [Datasheet] The NEORV32 RISC-V Processor
+:title: [Data Sheet] The NEORV32 RISC-V Processor
 :icons: font
 :imagesdir: img
 :toc: left
@@ -13,10 +13,10 @@ image::riscv_logo.png[width=350,align=center,link="https://riscv.org/"]
 
 [.text-center]
 https://github.com/stnolting/neorv32[image:https://img.shields.io/badge/GitHub-stnolting%2Fneorv32-ffbd00?style=flat&logo=github&[title='homepage']]
-https://github.com/stnolting/neorv32/releases/tag/nightly_release[image:https://img.shields.io/badge/data%20sheet-PDF-ffbd00?longCache=true&style=flat&logo=asciidoctor[title='datasheet (pdf)']]
-https://github.com/stnolting/neorv32/releases/tag/nightly_release[image:https://img.shields.io/badge/user%20guide-PDF-ffbd00?longCache=true&style=flat&logo=asciidoctor[title='userguide (pdf)']]
-https://stnolting.github.io/neorv32/ug[image:https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat[title='userguide (html)']]
-https://stnolting.github.io/neorv32/sw/files.html[image:https://img.shields.io/badge/doxygen-HTML-ffbd00?longCache=true&style=flat&logo=Doxygen[title='doxygen']] +
+https://github.com/stnolting/neorv32/releases/download/nightly_release/NEORV32-nightly.pdf[image:https://img.shields.io/badge/Data%20Sheet-PDF-ffbd00?longCache=true&style=flat&logo=asciidoctor[title='Data Sheet (pdf)']]
+https://github.com/stnolting/neorv32/releases/download/nightly_release/NEORV32_UserGuide-nightly.pdf[image:https://img.shields.io/badge/User%20Guide-PDF-ffbd00?longCache=true&style=flat&logo=asciidoctor[title='User Guide (pdf)']]
+https://stnolting.github.io/neorv32/ug[image:https://img.shields.io/badge/-HTML-ffbd00?longCache=true&style=flat[title='User Guide (html)']]
+https://stnolting.github.io/neorv32/sw/files.html[image:https://img.shields.io/badge/SW_API-HTML-ffbd00?longCache=true&style=flat&logo=Doxygen[title='doxygen']] +
 https://github.com/stnolting/neorv32/blob/main/LICENSE[image:https://img.shields.io/github/license/stnolting/neorv32?longCache=true&style=flat&logo=bsd&[title='license']]
 https://github.com/stnolting/neorv32/releases[image:https://img.shields.io/github/v/release/stnolting/neorv32?longCache=true&style=flat&logo=GitHub[title='release']]
 https://github.com/stnolting/neorv32/releases[image:https://img.shields.io/github/commits-since/stnolting/neorv32/latest?longCache=true&style=flat&logo=GitHub[title='release-commits']]
