@@ -25,7 +25,7 @@ entity neorv32_cpu_lsu is
     clk_i       : in  std_ulogic; -- global clock, rising edge
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  ctrl_bus_t; -- main control bus
-    -- CPU data access interface --
+    -- memory data access interface --
     addr_i      : in  std_ulogic_vector(31 downto 0); -- access address
     wdata_i     : in  std_ulogic_vector(31 downto 0); -- write data
     rdata_o     : out std_ulogic_vector(31 downto 0); -- read data

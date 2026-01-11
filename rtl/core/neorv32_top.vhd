@@ -826,9 +826,9 @@ begin
     if IMEM_EN generate
       neorv32_imem_inst: entity neorv32.neorv32_imem
       generic map (
-        MEM_SIZE  => imem_size_c,
-        MEM_INIT  => imem_as_rom_c,
-        OUTREG_EN => IMEM_OUTREG_EN
+        MEM_SIZE => imem_size_c,
+        MEM_INIT => imem_as_rom_c,
+        OUTREG   => IMEM_OUTREG_EN
       )
       port map (
         clk_i     => clk_i,
@@ -849,8 +849,8 @@ begin
     if DMEM_EN generate
       neorv32_dmem_inst: entity neorv32.neorv32_dmem
       generic map (
-        MEM_SIZE  => dmem_size_c,
-        OUTREG_EN => DMEM_OUTREG_EN
+        MEM_SIZE => dmem_size_c,
+        OUTREG   => DMEM_OUTREG_EN
       )
       port map (
         clk_i     => clk_i,
