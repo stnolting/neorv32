@@ -774,18 +774,18 @@ begin
         trap.irq_buf(irq_firq_0_c+i) <= (trap.irq_pnd(irq_firq_0_c+i) and csr.mie_firq(i)) or (trap.env_pend and trap.irq_buf(irq_firq_0_c+i));
       end loop;
       -- exception buffer: accumulate exception requests; clear all requests at once when trap environment starts --
-      trap.exc_buf(exc_iaccess_c)  <= (trap.exc_buf(exc_iaccess_c)  or trap.instr_be)         and (not trap.env_enter);
-      trap.exc_buf(exc_illegal_c)  <= (trap.exc_buf(exc_illegal_c)  or trap.instr_il)         and (not trap.env_enter);
-      trap.exc_buf(exc_ialign_c)   <= (trap.exc_buf(exc_ialign_c)   or trap.instr_ma)         and (not trap.env_enter);
-      trap.exc_buf(exc_ecall_c)    <= (trap.exc_buf(exc_ecall_c)    or trap.ecall)            and (not trap.env_enter);
-      trap.exc_buf(exc_ebreak_c)   <= (trap.exc_buf(exc_ebreak_c)   or ebreak_trig)           and (not trap.env_enter);
-      trap.exc_buf(exc_salign_c)   <= (trap.exc_buf(exc_salign_c)   or lsu_err_i(2))          and (not trap.env_enter);
-      trap.exc_buf(exc_lalign_c)   <= (trap.exc_buf(exc_lalign_c)   or lsu_err_i(0))          and (not trap.env_enter);
-      trap.exc_buf(exc_saccess_c)  <= (trap.exc_buf(exc_saccess_c)  or lsu_err_i(3))          and (not trap.env_enter);
-      trap.exc_buf(exc_laccess_c)  <= (trap.exc_buf(exc_laccess_c)  or lsu_err_i(1))          and (not trap.env_enter);
-      trap.exc_buf(exc_db_break_c) <= (trap.exc_buf(exc_db_break_c) or debug_ctrl.trig_break) and (not trap.env_enter);
-      trap.exc_buf(exc_db_trig_c)  <= (trap.exc_buf(exc_db_trig_c)  or debug_ctrl.trig_hw)    and (not trap.env_enter);
-      trap.exc_buf(exc_db_step_c)  <= (trap.exc_buf(exc_db_step_c)  or debug_ctrl.trig_step)  and (not trap.env_enter);
+      trap.exc_buf(exc_iaccess_c) <= (trap.exc_buf(exc_iaccess_c) or trap.instr_be)         and (not trap.env_enter);
+      trap.exc_buf(exc_illegal_c) <= (trap.exc_buf(exc_illegal_c) or trap.instr_il)         and (not trap.env_enter);
+      trap.exc_buf(exc_ialign_c)  <= (trap.exc_buf(exc_ialign_c)  or trap.instr_ma)         and (not trap.env_enter);
+      trap.exc_buf(exc_ecall_c)   <= (trap.exc_buf(exc_ecall_c)   or trap.ecall)            and (not trap.env_enter);
+      trap.exc_buf(exc_ebreak_c)  <= (trap.exc_buf(exc_ebreak_c)  or ebreak_trig)           and (not trap.env_enter);
+      trap.exc_buf(exc_salign_c)  <= (trap.exc_buf(exc_salign_c)  or lsu_err_i(2))          and (not trap.env_enter);
+      trap.exc_buf(exc_lalign_c)  <= (trap.exc_buf(exc_lalign_c)  or lsu_err_i(0))          and (not trap.env_enter);
+      trap.exc_buf(exc_saccess_c) <= (trap.exc_buf(exc_saccess_c) or lsu_err_i(3))          and (not trap.env_enter);
+      trap.exc_buf(exc_laccess_c) <= (trap.exc_buf(exc_laccess_c) or lsu_err_i(1))          and (not trap.env_enter);
+      trap.exc_buf(exc_db_brkp_c) <= (trap.exc_buf(exc_db_brkp_c) or debug_ctrl.trig_break) and (not trap.env_enter);
+      trap.exc_buf(exc_db_trig_c) <= (trap.exc_buf(exc_db_trig_c) or debug_ctrl.trig_hw)    and (not trap.env_enter);
+      trap.exc_buf(exc_db_step_c) <= (trap.exc_buf(exc_db_step_c) or debug_ctrl.trig_step)  and (not trap.env_enter);
     end if;
   end process trap_buffer;
 
@@ -798,41 +798,41 @@ begin
   -- -------------------------------------------------------------------------------------------
   trap.cause <=
     -- standard RISC-V synchronous exceptions --
-    trap_iaf_c      when (trap.exc_buf(exc_iaccess_c)  = '1') else -- instruction access fault
-    trap_iil_c      when (trap.exc_buf(exc_illegal_c)  = '1') else -- illegal instruction
-    trap_ima_c      when (trap.exc_buf(exc_ialign_c)   = '1') else -- instruction address misaligned
-    trap_env        when (trap.exc_buf(exc_ecall_c)    = '1') else -- environment call from U/M-mode
-    trap_brk_c      when (trap.exc_buf(exc_ebreak_c)   = '1') else -- environment breakpoint
-    trap_sma_c      when (trap.exc_buf(exc_salign_c)   = '1') else -- store address misaligned
-    trap_lma_c      when (trap.exc_buf(exc_lalign_c)   = '1') else -- load address misaligned
-    trap_saf_c      when (trap.exc_buf(exc_saccess_c)  = '1') else -- store access fault
-    trap_laf_c      when (trap.exc_buf(exc_laccess_c)  = '1') else -- load access fault
-    -- standard RISC-V debug mode synchronous exceptions and interrupts --
-    trap_db_halt_c  when (trap.irq_buf(irq_db_halt_c)  = '1') else -- external halt request
-    trap_db_trig_c  when (trap.exc_buf(exc_db_trig_c)  = '1') else -- hardware trigger
-    trap_db_break_c when (trap.exc_buf(exc_db_break_c) = '1') else -- breakpoint
-    trap_db_step_c  when (trap.exc_buf(exc_db_step_c)  = '1') else -- single stepping
+    trap_iaf_c     when (trap.exc_buf(exc_iaccess_c) = '1') else -- instruction access fault
+    trap_iil_c     when (trap.exc_buf(exc_illegal_c) = '1') else -- illegal instruction
+    trap_ima_c     when (trap.exc_buf(exc_ialign_c)  = '1') else -- instruction address misaligned
+    trap_env       when (trap.exc_buf(exc_ecall_c)   = '1') else -- environment call from U/M-mode
+    trap_brk_c     when (trap.exc_buf(exc_ebreak_c)  = '1') else -- environment breakpoint
+    trap_sma_c     when (trap.exc_buf(exc_salign_c)  = '1') else -- store address misaligned
+    trap_lma_c     when (trap.exc_buf(exc_lalign_c)  = '1') else -- load address misaligned
+    trap_saf_c     when (trap.exc_buf(exc_saccess_c) = '1') else -- store access fault
+    trap_laf_c     when (trap.exc_buf(exc_laccess_c) = '1') else -- load access fault
+    -- standard RISC-V debug mode traps --
+    trap_db_halt_c when (trap.irq_buf(irq_db_halt_c) = '1') else -- external halt request
+    trap_db_trig_c when (trap.exc_buf(exc_db_trig_c) = '1') else -- hardware trigger
+    trap_db_brkp_c when (trap.exc_buf(exc_db_brkp_c) = '1') else -- breakpoint
+    trap_db_step_c when (trap.exc_buf(exc_db_step_c) = '1') else -- single stepping
     -- NEORV32-specific fast interrupts --
-    trap_firq0_c    when (trap.irq_buf(irq_firq_0_c)   = '1') else -- fast interrupt channel 0
-    trap_firq1_c    when (trap.irq_buf(irq_firq_1_c)   = '1') else -- fast interrupt channel 1
-    trap_firq2_c    when (trap.irq_buf(irq_firq_2_c)   = '1') else -- fast interrupt channel 2
-    trap_firq3_c    when (trap.irq_buf(irq_firq_3_c)   = '1') else -- fast interrupt channel 3
-    trap_firq4_c    when (trap.irq_buf(irq_firq_4_c)   = '1') else -- fast interrupt channel 4
-    trap_firq5_c    when (trap.irq_buf(irq_firq_5_c)   = '1') else -- fast interrupt channel 5
-    trap_firq6_c    when (trap.irq_buf(irq_firq_6_c)   = '1') else -- fast interrupt channel 6
-    trap_firq7_c    when (trap.irq_buf(irq_firq_7_c)   = '1') else -- fast interrupt channel 7
-    trap_firq8_c    when (trap.irq_buf(irq_firq_8_c)   = '1') else -- fast interrupt channel 8
-    trap_firq9_c    when (trap.irq_buf(irq_firq_9_c)   = '1') else -- fast interrupt channel 9
-    trap_firq10_c   when (trap.irq_buf(irq_firq_10_c)  = '1') else -- fast interrupt channel 10
-    trap_firq11_c   when (trap.irq_buf(irq_firq_11_c)  = '1') else -- fast interrupt channel 11
-    trap_firq12_c   when (trap.irq_buf(irq_firq_12_c)  = '1') else -- fast interrupt channel 12
-    trap_firq13_c   when (trap.irq_buf(irq_firq_13_c)  = '1') else -- fast interrupt channel 13
-    trap_firq14_c   when (trap.irq_buf(irq_firq_14_c)  = '1') else -- fast interrupt channel 14
-    trap_firq15_c   when (trap.irq_buf(irq_firq_15_c)  = '1') else -- fast interrupt channel 15
+    trap_firq0_c   when (trap.irq_buf(irq_firq_0_c)  = '1') else -- fast interrupt channel 0
+    trap_firq1_c   when (trap.irq_buf(irq_firq_1_c)  = '1') else -- fast interrupt channel 1
+    trap_firq2_c   when (trap.irq_buf(irq_firq_2_c)  = '1') else -- fast interrupt channel 2
+    trap_firq3_c   when (trap.irq_buf(irq_firq_3_c)  = '1') else -- fast interrupt channel 3
+    trap_firq4_c   when (trap.irq_buf(irq_firq_4_c)  = '1') else -- fast interrupt channel 4
+    trap_firq5_c   when (trap.irq_buf(irq_firq_5_c)  = '1') else -- fast interrupt channel 5
+    trap_firq6_c   when (trap.irq_buf(irq_firq_6_c)  = '1') else -- fast interrupt channel 6
+    trap_firq7_c   when (trap.irq_buf(irq_firq_7_c)  = '1') else -- fast interrupt channel 7
+    trap_firq8_c   when (trap.irq_buf(irq_firq_8_c)  = '1') else -- fast interrupt channel 8
+    trap_firq9_c   when (trap.irq_buf(irq_firq_9_c)  = '1') else -- fast interrupt channel 9
+    trap_firq10_c  when (trap.irq_buf(irq_firq_10_c) = '1') else -- fast interrupt channel 10
+    trap_firq11_c  when (trap.irq_buf(irq_firq_11_c) = '1') else -- fast interrupt channel 11
+    trap_firq12_c  when (trap.irq_buf(irq_firq_12_c) = '1') else -- fast interrupt channel 12
+    trap_firq13_c  when (trap.irq_buf(irq_firq_13_c) = '1') else -- fast interrupt channel 13
+    trap_firq14_c  when (trap.irq_buf(irq_firq_14_c) = '1') else -- fast interrupt channel 14
+    trap_firq15_c  when (trap.irq_buf(irq_firq_15_c) = '1') else -- fast interrupt channel 15
     -- standard RISC-V interrupts --
-    trap_mei_c      when (trap.irq_buf(irq_mei_irq_c)  = '1') else -- machine external interrupt (MEI)
-    trap_msi_c      when (trap.irq_buf(irq_msi_irq_c)  = '1') else -- machine software interrupt (MSI)
-    trap_mti_c;   --when (trap.irq_buf(irq_mti_irq_c)  = '1') else -- machine timer interrupt (MTI)
+    trap_mei_c     when (trap.irq_buf(irq_mei_irq_c) = '1') else -- machine external interrupt (MEI)
+    trap_msi_c     when (trap.irq_buf(irq_msi_irq_c) = '1') else -- machine software interrupt (MSI)
+    trap_mti_c;  --when (trap.irq_buf(irq_mti_irq_c) = '1') else -- machine timer interrupt (MTI)
 
   -- environment call helper --
   trap_env <= trap_env_c(6 downto 2) & csr.prv_level & csr.prv_level;
