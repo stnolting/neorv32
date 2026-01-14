@@ -808,6 +808,25 @@
           <description>RTX data register</description>
           <addressOffset>0x04</addressOffset>
           <readAction>modify</readAction>
+          <fields>
+            <field>
+              <name>UART_DATA_RTX</name>
+              <bitRange>[7:0]</bitRange>
+              <description>Receive/transmit data</description>
+            </field>
+            <field>
+              <name>UART_DATA_RX_FIFO</name>
+              <bitRange>[11:8]</bitRange>
+              <access>read-only</access>
+              <description>log2(RX FIFO size)</description>
+            </field>
+            <field>
+              <name>UART_DATA_TX_FIFO</name>
+              <bitRange>[15:12]</bitRange>
+              <access>read-only</access>
+              <description>log2(TX FIFO size)</description>
+            </field>
+          </fields>
         </register>
       </registers>
     </peripheral>
