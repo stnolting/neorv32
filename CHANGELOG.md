@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 16.01.2025 | 1.12.7.1 | :warning: rename bootloader ROM module `neorv32_boot_rom` -> `neorv32_bootrom` | #1477 |
 | 12.01.2025 | [**1.12.7**](https://github.com/stnolting/neorv32/releases/tag/v1.12.7) | :rocket: **New release** | |
 | 11.01.2026 | 1.12.6.9 | minor RTL cleanups and optimizations | [#1474](https://github.com/stnolting/neorv32/pull/1474) |
 | 10.01.2026 | 1.12.6.8 | :warning: rename ALU co-processor modules: `neorv32_cpu_cp_*` -> `neorv32_cpu_alu_*` | [#1472](https://github.com/stnolting/neorv32/pull/1472) |
