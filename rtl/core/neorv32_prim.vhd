@@ -151,8 +151,8 @@ end neorv32_prim_fifo_rtl;
 -- ================================================================================ --
 -- NEORV32 Primitives - Generic Single-Port RAM (SPRAM)                             --
 -- -------------------------------------------------------------------------------- --
--- Provides a single read/write port.                                               --
--- Can be mapped to blockRAM primitives.                                            --
+-- Provides a single read/write port. Read-during-write behavior is irrelevant as   --
+-- read and write accesses are guaranteed to be mutually exclusive.                 --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
