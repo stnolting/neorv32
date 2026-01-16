@@ -3,13 +3,13 @@
 # -------------------------------------------------------------------------------- #
 # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              #
 # Copyright (c) NEORV32 contributors.                                              #
-# Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  #
+# Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  #
 # Licensed under the BSD-3-Clause license, see LICENSE for details.                #
 # SPDX-License-Identifier: BSD-3-Clause                                            #
 # ================================================================================ #
 
 .DEFAULT_GOAL := help
-all: clean check version convert sim
+all: clean check convert sim
 
 # Executables
 GHDL      ?= ghdl
@@ -18,14 +18,17 @@ SIMULATOR ?= iverilog
 # Build directory
 BUILD = build
 
-# RTL
-CORE_RTL ?= ../core
-TOP      ?= neorv32_verilog_wrapper
+# NEORV32 sources
+NEORV32_HOME = ../..
+NEORV32_SOC_FILE = $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f)
+NEORV32_SOC_SRCS = $(subst NEORV32_RTL_PATH_PLACEHOLDER, $(NEORV32_HOME)/rtl, $(NEORV32_SOC_FILE))
+
+# Conversion wrapper top VHDL file
+WRAPPER ?= neorv32_verilog_wrapper
 
 # Simulation
-SIM_SRC    = testbench.v $(TOP).v
+SIM_SRC = testbench.v $(WRAPPER).v
 DUMP_WAVE ?= 0
-
 VERILATOR_ARGS = -Wno-fatal --binary --Mdir $(BUILD)
 ifeq ($(DUMP_WAVE), 1)
 VERILATOR_ARGS += --trace --trace-fst
@@ -35,11 +38,8 @@ endif
 # Check framework
 # -----------------------------------------------------------------------------
 
-version:
-	@echo "NEORV32 Version:"
-	@grep -rni $(CORE_RTL)/neorv32_package.vhd -e 'hw_version_c'
-
 check:
+	@echo $(NEORV32_SOC_SRCS)
 	@echo "GHDL version:"
 	@$(GHDL) -v
 
@@ -47,27 +47,29 @@ check:
 # Convert to Verilog and show instantiation prototype
 # -----------------------------------------------------------------------------
 
-$(TOP).v:
-	@echo "Converting to Verilog: $(TOP).vhd -> $(TOP).v"
+$(WRAPPER).v:
+	@echo "Converting to Verilog: $(WRAPPER).vhd -> $(WRAPPER).v"
 	@mkdir -p $(BUILD)
-	@$(GHDL) -i --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild $(CORE_RTL)/*.vhd $(TOP).vhd
-	@$(GHDL) -m --std=08 --work=neorv32 --workdir=$(BUILD) $(TOP)
-	@$(GHDL) synth --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild --out=verilog $(TOP) > $(TOP).v
+	@echo "NEORV32 source files:"
+	@echo $(NEORV32_SOC_SRCS)
+	@$(GHDL) -i --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild $(NEORV32_SOC_SRCS) $(WRAPPER).vhd
+	@$(GHDL) -m --std=08 --work=neorv32 --workdir=$(BUILD) $(WRAPPER)
+	@$(GHDL) synth --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild --out=verilog $(WRAPPER) > $(WRAPPER).v
 
-prototype: $(TOP).v
+prototype: $(WRAPPER).v
 	@echo "-----------------------------------------------"
 	@echo "Verilog instantiation prototype"
 	@echo "-----------------------------------------------"
-	@sed -n "/module $(TOP)/,/);/p" $(TOP).v
+	@sed -n "/module $(WRAPPER)/,/);/p" $(WRAPPER).v
 	@echo "-----------------------------------------------"
 
-convert: $(TOP).v prototype
+convert: $(WRAPPER).v prototype
 
 # -----------------------------------------------------------------------------
 # Run Verilog simulation
 # -----------------------------------------------------------------------------
 
-sim: $(TOP).v
+sim: $(WRAPPER).v
 ifeq ($(DUMP_WAVE), 1)
 	@echo "Dumping waveform data to 'wave.fst'"
 endif
@@ -94,16 +96,15 @@ help:
 	@echo ""
 	@echo "Targets:"
 	@echo "  help       Show this text"
-	@echo "  version    Show NEORV32 version"
 	@echo "  check      Show GHDL version"
 	@echo "  convert    Convert NEORV32 to Verilog (generate '$(NEORV32_VERILOG)')"
 	@echo "  prototype  Show Verilog instantiation prototoype"
 	@echo "  sim        Run simulation with Icarus Verilog or Verilator"
 	@echo "  clean      Remove all artifacts"
-	@echo "  all        clean + check + version + convert + sim"
+	@echo "  all        clean + check + convert + sim"
 	@echo ""
 	@echo "Variables:"
-	@echo "  TOP        Conversion wrapper; default = $(TOP)"
+	@echo "  WRAPPER    Conversion wrapper; default = $(WRAPPER)"
 	@echo "  GHDL       GHDL executable; default = $(GHDL)"
 	@echo "  SIMULATOR  Verilog simulator executable; default = $(SIMULATOR)"
 	@echo "  DUMP_WAVE  Dump waveform data to 'wave.fst' when 1; default = $(DUMP_WAVE)"
@@ -118,4 +119,4 @@ help:
 clean:
 	@echo "Removing artifacts..."
 	@rm -rf $(BUILD)
-	@rm -f $(TOP).v *.vcd *.fst *.log
+	@rm -f $(WRAPPER).v *.vcd *.fst *.log

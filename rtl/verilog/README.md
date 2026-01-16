@@ -34,6 +34,10 @@ Example:
 ```
 
 > [!TIP]
+> This flow uses the SoC's VHDL [file-list file](https://stnolting.github.io/neorv32/#_file_list_files)
+for easy customization of the design sources.
+
+> [!TIP]
 > The [Verilog GH actions workflow](https://github.com/stnolting/neorv32/actions/workflows/Verilog.yml)
 automatically converts the pre-configured wrapper and runs Icarus Verilog and Verilator simulations.
 The generated Verilog code can be downloaded as CI Workflow artifact.
