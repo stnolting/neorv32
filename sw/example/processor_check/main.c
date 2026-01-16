@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -31,9 +31,9 @@
 #define ADDR_UNREACHABLE   (0x70000000U)
 //** Word-aligned address that returns a bus error on write-request */
 #define ADDR_WRERR         (0xFFFE0004U)
-//** External memory base address */
-#define EXT_FMEM_DATA_BASE (0xB0000000U)
-#define EXT_FMEM_TAG_BASE  (0xFF100000U)
+//** External memory base address (uncached) */
+#define EXT_FMEM_DATA_BASE (0xFF100000U)
+#define EXT_FMEM_TAG_BASE  (0xFF200000U)
 //** External IRQ trigger base address */
 #define SIM_TRIG_BASE      (0xFF000000U)
 //** VT-style terminal highlighting */
@@ -549,7 +549,7 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // External memory interface test (and I-cache block-/word-wise error check)
+  // External memory interface test
   // ----------------------------------------------------------
   PRINT("[%i] Ext. memory (@0x%x) ", cnt_test, (uint32_t)EXT_FMEM_DATA_BASE);
 
@@ -563,15 +563,16 @@ int main() {
     // set tags (= error response) for the external memory
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x0, 0); // no error when accessing EXT_FMEM_DATA_BASE+0
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x4, 0); // no error when accessing EXT_FMEM_DATA_BASE+4
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x8, 1); // ERROR when accessing EXT_FMEM_DATA_BASE+8
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0xC, 1); // ERROR when accessing EXT_FMEM_DATA_BASE+12
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x8, 1); // ERROR, but will not be accessed
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0xC, 1); // ERROR, but will not be accessed
 
     // setup test program in external memory
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0, 0x3407D073); // csrwi mscratch, 15 (32-bit)
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+4, 0x00008067); // ret (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x0, 0x3407D073); // csrwi mscratch, 15 (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x4, 0x00008067); // ret (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x8, 0x3400D073); // csrwi mscratch, 1 (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0xC, 0x3400D073); // csrwi mscratch, 1 (32-bit)
 
     // execute program
-    asm volatile ("fence.i"); // flush i-cache
     tmp_a = (uint32_t)EXT_FMEM_DATA_BASE; // call the dummy sub program
     asm volatile ("jalr ra, %[input_i]" : : [input_i] "r" (tmp_a));
 
@@ -710,8 +711,8 @@ int main() {
     trap_cause = trap_never_c;
     cnt_test++;
 
-    // clear scratch CSR
-    neorv32_cpu_csr_write(CSR_MSCRATCH, 0);
+    // clear MIE CSR (used as general-purpose CSR as mscratch will be altered by the RTE trap handling)
+    neorv32_cpu_csr_write(CSR_MIE, 8);
 
     // set tags (= error response) for the external memory
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x0, 0); // no error when accessing EXT_FMEM_DATA_BASE+0
@@ -720,18 +721,18 @@ int main() {
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0xC, 0); // no error when accessing EXT_FMEM_DATA_BASE+12
 
     // setup test program in external memory
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x0, 0x00010001); // c.nop + c.nop
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x4, 0xD0730001); // csrwi mscratch, 15 (32-bit) + c.nop
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x8, 0x00013407); // c.nop + csrwi mscratch, 15 (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x0, 0x00008067); // ret (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x4, 0x50730001); // csrwi mie, 0 (32-bit) + c.nop
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x8, 0x00013040); // c.nop + csrwi mscratch, 0 (32-bit)
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0xC, 0x00008067); // ret (32-bit)
 
     // execute program
-    asm volatile ("fence.i"); // flush i-cache
     tmp_a = (uint32_t)EXT_FMEM_DATA_BASE+6; // call the dummy sub program starting at "csrwi mscratch, 15 (32-bit)"
     asm volatile ("jalr ra, %[input_i]" : : [input_i] "r" (tmp_a));
 
     if ((trap_cause == TRAP_CODE_I_ACCESS) && // correct exception cause
-        (trap_mepc == tmp_a)) { // correct exception address
+        (trap_mepc == tmp_a) && // correct exception address
+        (neorv32_cpu_csr_read(CSR_MIE) == 8)) { // make sure the program was executed in the right way
       test_ok();
     }
     else {
