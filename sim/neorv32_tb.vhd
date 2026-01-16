@@ -182,7 +182,7 @@ begin
     -- Internal Instruction memory --
     IMEM_EN             => IMEM_EN,
     IMEM_SIZE           => IMEM_SIZE,
-    IMEM_OUTREG_EN      => true,
+    IMEM_OUTREG_EN      => false,
     -- Internal Data memory --
     DMEM_EN             => DMEM_EN,
     DMEM_SIZE           => DMEM_SIZE,
@@ -420,10 +420,10 @@ begin
     DEV_1_EN => EXT_MEM_B_EN, DEV_1_SIZE => EXT_MEM_B_SIZE, DEV_1_BASE => EXT_MEM_B_BASE,
     DEV_2_EN => true,         DEV_2_SIZE => 8,              DEV_2_BASE => x"F0000000",
     DEV_3_EN => true,         DEV_3_SIZE => 4,              DEV_3_BASE => x"FF000000",
-    DEV_4_EN => true,         DEV_4_SIZE => 16,             DEV_4_BASE => x"B0000000",
-    DEV_5_EN => true,         DEV_5_SIZE => 16,             DEV_5_BASE => x"FF100000",
-    DEV_6_EN => false,        DEV_6_SIZE => 0,              DEV_6_BASE => (others => '0'), -- unused
-    DEV_7_EN => false,        DEV_7_SIZE => 0,              DEV_7_BASE => (others => '0')  -- unused
+    DEV_4_EN => true,         DEV_4_SIZE => 16,             DEV_4_BASE => x"FF100000",
+    DEV_5_EN => true,         DEV_5_SIZE => 16,             DEV_5_BASE => x"FF200000",
+    DEV_6_EN => false,        DEV_6_SIZE => 0,              DEV_6_BASE => (others => '0'),
+    DEV_7_EN => false,        DEV_7_SIZE => 0,              DEV_7_BASE => (others => '0')
   )
   port map (
     -- host port --
@@ -436,8 +436,8 @@ begin
     dev_3_req_o => xbus_trig_req,      dev_3_rsp_i => xbus_trig_rsp,
     dev_4_req_o => xbus_fmem_data_req, dev_4_rsp_i => xbus_fmem_data_rsp,
     dev_5_req_o => xbus_fmem_tag_req,  dev_5_rsp_i => xbus_fmem_tag_rsp,
-    dev_6_req_o => open,               dev_6_rsp_i => xbus_rsp_terminate_c, -- unused
-    dev_7_req_o => open,               dev_7_rsp_i => xbus_rsp_terminate_c  -- unused
+    dev_6_req_o => open,               dev_6_rsp_i => xbus_rsp_terminate_c,
+    dev_7_req_o => open,               dev_7_rsp_i => xbus_rsp_terminate_c
   );
 
 
@@ -543,6 +543,5 @@ begin
     mem_req_i => xbus_fmem_data_req,
     mem_rsp_o => xbus_fmem_data_rsp
   );
-
 
 end neorv32_tb_rtl;

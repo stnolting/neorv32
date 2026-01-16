@@ -40,6 +40,8 @@ architecture xbus_fmem_rtl of xbus_fmem is
   constant awidth_c : natural := index_size_f(MEM_SIZE/4);
 
   -- data memory --
+  type data_mem_t is array ((2**awidth_c)-1 downto 0) of std_ulogic_vector(7 downto 0);
+  signal data_mem_0, data_mem_1, data_mem_2, data_mem_3 : data_mem_t;
   signal data_req : xbus_req_t;
   signal data_mem_en : std_ulogic_vector(3 downto 0);
   signal data_mem_rd : std_ulogic_vector(31 downto 0);
@@ -95,25 +97,46 @@ begin
     end if;
   end process tag_mem_handshake;
 
+
   -- Data Memory ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  data_mem_gen:
-  for i in 0 to 3 generate -- four individual byte-wide RAMs
-    data_mem_inst: entity neorv32.neorv32_prim_spram
-    generic map (
-      AWIDTH => awidth_c,
-      DWIDTH => 8,
-      OUTREG => false
-    )
-    port map (
-      clk_i  => clk_i,
-      en_i   => data_mem_en(i),
-      rw_i   => mem_req_i.we,
-      addr_i => mem_req_i.addr(awidth_c+1 downto 2),
-      data_i => mem_req_i.data(i*8+7 downto i*8),
-      data_o => data_mem_rd(i*8+7 downto i*8)
-    );
-  end generate;
+  data_memory: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      -- byte 0 --
+      if (data_mem_en(0) = '1') then
+        if (mem_req_i.we = '1') then
+          data_mem_0(to_integer(unsigned(mem_req_i.addr(awidth_c+1 downto 2)))) <= mem_req_i.data(7 downto 0);
+        else
+          data_mem_rd(7 downto 0) <= data_mem_0(to_integer(unsigned(mem_req_i.addr(awidth_c+1 downto 2))));
+        end if;
+      end if;
+      -- byte 1 --
+      if (data_mem_en(1) = '1') then
+        if (mem_req_i.we = '1') then
+          data_mem_1(to_integer(unsigned(mem_req_i.addr(awidth_c+1 downto 2)))) <= mem_req_i.data(15 downto 8);
+        else
+          data_mem_rd(15 downto 8) <= data_mem_1(to_integer(unsigned(mem_req_i.addr(awidth_c+1 downto 2))));
+        end if;
+      end if;
+      -- byte 2 --
+      if (data_mem_en(2) = '1') then
+        if (mem_req_i.we = '1') then
+          data_mem_2(to_integer(unsigned(mem_req_i.addr(awidth_c+1 downto 2)))) <= mem_req_i.data(23 downto 16);
+        else
+          data_mem_rd(23 downto 16) <= data_mem_2(to_integer(unsigned(mem_req_i.addr(awidth_c+1 downto 2))));
+        end if;
+      end if;
+      -- byte 3 --
+      if (data_mem_en(3) = '1') then
+        if (mem_req_i.we = '1') then
+          data_mem_3(to_integer(unsigned(mem_req_i.addr(awidth_c+1 downto 2)))) <= mem_req_i.data(31 downto 24);
+        else
+          data_mem_rd(31 downto 24) <= data_mem_3(to_integer(unsigned(mem_req_i.addr(awidth_c+1 downto 2))));
+        end if;
+      end if;
+    end if;
+  end process data_memory;
 
   -- byte-wise access enable --
   data_mem_en <= mem_req_i.sel when (mem_req_i.cyc = '1') and (mem_req_i.stb = '1') else (others => '0');
