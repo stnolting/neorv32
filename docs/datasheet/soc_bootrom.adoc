@@ -5,7 +5,7 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_boot_rom.vhd         | default platform-agnostic bootloader ROM
+| Hardware source files:  | neorv32_bootrom.vhd          | default platform-agnostic bootloader ROM
 |                         | neorv32_bootloader_image.vhd | memory image (VHDL package)
 | Software driver files:  | none                         | _implicitly used_
 | Top entity ports:       | none                         |
