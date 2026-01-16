@@ -172,8 +172,8 @@ and area utilization.
 rtl/core
 │
 ├─ neorv32_application_image.vhd - IMEM application initialization image (package)
-├─ neorv32_boot_rom.vhd          - Bootloader ROM
 ├─ neorv32_bootloader_image.vhd  - Bootloader ROM memory image (package)
+├─ neorv32_bootrom.vhd           - Bootloader ROM
 ├─ neorv32_bus.vhd               - SoC bus infrastructure modules
 ├─ neorv32_cache.vhd             - Generic cache module
 ├─ neorv32_cfs.vhd               - Custom functions subsystem

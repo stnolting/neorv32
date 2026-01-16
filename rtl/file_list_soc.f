@@ -27,7 +27,7 @@ NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_imem.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_dmem.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_xbus.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_bootloader_image.vhd
-NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_boot_rom.vhd
+NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_bootrom.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cfs.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_sdi.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_gpio.vhd

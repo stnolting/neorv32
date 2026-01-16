@@ -994,9 +994,9 @@ begin
 
     -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_boot_rom_enabled:
+    neorv32_bootrom_enabled:
     if bootrom_en_c generate
-      neorv32_boot_rom_inst: entity neorv32.neorv32_boot_rom
+      neorv32_boot_rom_inst: entity neorv32.neorv32_bootrom
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
