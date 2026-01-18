@@ -19,8 +19,8 @@ image::neorv32_processor.png[align=center]
 **Key Features**
 
 * _optional_ SMP <<_dual_core_configuration>>
-* _optional_ processor-internal data and instruction memories (<<_data_memory_dmem,**DMEM**>>/<<_instruction_memory_imem,**IMEM**>>)
-* _optional_ caches (<<_processor_internal_instruction_cache_icache,**I-CACHE**>>, <<_processor_internal_data_cache_dcache,**D-CACHE**>>)
+* _optional_ data and instruction memories (<<_data_memory_dmem,**DMEM**>>/<<_instruction_memory_imem,**IMEM**>>)
+* _optional_ caches (<<_instruction_cache_icache,**I-CACHE**>>, <<_data_cache_dcache,**D-CACHE**>>)
 * _optional_ internal bootloader (<<_bootloader_rom_bootrom,**BOOTROM**>>) with UART console & SPI/TWI flash and SD card boot options
 * _optional_ RISC-V-compatible core local interruptor (<<_core_local_interruptor_clint,**CLINT**>>)
 * _optional_ two independent universal asynchronous receivers and transmitters (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0,**UART0**>>,
@@ -259,14 +259,14 @@ The generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downt
 | `HPM_NUM_CNTS`          | natural   | 0             | Number of implemented hardware performance monitor counters (0..13).
 | `HPM_CNT_WIDTH`         | natural   | 40            | Total LSB-aligned size of each HPM counter. Min 0, max 64.
 4+^| **Internal <<_instruction_memory_imem>>**
-| `IMEM_EN`               | boolean   | false         | Implement the processor-internal instruction memory.
-| `IMEM_SIZE`             | natural   | 16*1024       | Size in bytes of the processor internal instruction memory (use a power of 2).
+| `IMEM_EN`               | boolean   | false         | Implement instruction memory.
+| `IMEM_SIZE`             | natural   | 16*1024       | Size in bytes of the instruction memory (use a power of 2).
 | `IMEM_OUTREG_EN`        | boolean   | false         | Add IMEM output register stage (improves mapping/timing at the expense of latency).
 4+^| **Internal <<_data_memory_dmem>>**
-| `DMEM_EN`               | boolean   | false         | Implement the processor-internal data memory.
-| `DMEM_SIZE`             | natural   | 8*1024        | Size in bytes of the processor-internal data memory (use a power of 2).
+| `DMEM_EN`               | boolean   | false         | Implement data memory.
+| `DMEM_SIZE`             | natural   | 8*1024        | Size in bytes of the data memory (use a power of 2).
 | `DMEM_OUTREG_EN`        | boolean   | false         | Add DMEM output register stage (improves mapping/timing at the expense of latency).
-4+^| **CPU Caches (<<_processor_internal_instruction_cache_icache, instruction-cache>> & <<_processor_internal_data_cache_dcache, data-cache>>)**
+4+^| **CPU Caches (<<_instruction_cache_icache>> & <<_data_cache_dcache>>)**
 | `ICACHE_EN`             | boolean   | false         | Implement the instruction cache ("I$").
 | `ICACHE_NUM_BLOCKS`     | natural   | 4             | Number of blocks ("lines"). Has to be a power of two.
 | `DCACHE_EN`             | boolean   | false         | Implement the data cache ("D$")
@@ -486,8 +486,8 @@ can be used to further constrain the physical memory attributes.
 ==== Bus System
 
 The CPU provides individual interfaces for instruction fetch and data access. It can can access all of the 32-bit
-address space from each of the interface. Both of them can be equipped with optional caches (<<_processor_internal_data_cache_dcache>>
-and <<_processor_internal_instruction_cache_icache>>).
+address space from each of the interface. Both of them can be equipped with optional caches (<<_data_cache_dcache>>
+and <<_instruction_cache_icache>>).
 
 The two CPU interfaces are multiplexed by a simple bus switch into a _single processor-internal bus_. Optionally,
 this bus is further multiplexed by another instance of the bus switch so the <<_direct_memory_access_controller_dma>>
@@ -591,7 +591,7 @@ implements a specific sub-extensions of the <<_a_isa_extension,`A`>> ISA extensi
 
 .Direct Access
 [IMPORTANT]
-Atomic operations **always bypass** the CPU's <<_processor_internal_data_cache_dcache, data cache>>
+Atomic operations **always bypass** the CPU's <<_data_cache_dcache, data cache>>
 using direct/uncached accesses. Care must be taken to maintain data <<_memory_coherence>>.
 
 .Physical Memory Attributes
@@ -660,7 +660,7 @@ of caches, buffers and storage.
 
 [start=1]
 . The CPU pipeline and its instruction prefetch buffer
-. The <<_processor_internal_data_cache_dcache>> and <<_processor_internal_instruction_cache_icache>>
+. The <<_data_cache_dcache>> and <<_instruction_cache_icache>>
 . Internal and external memories
 
 All caches and buffers operate transparently for the software. Hence, special attention must therefore be
@@ -671,9 +671,9 @@ NEORV32 uses two instructions for manual memory synchronization which are always
 regardless of the actual CPU/ISA configuration:
 
 * `fence.i` (<<_zifencei_isa_extension>>): flush the CPU's instruction prefetch buffer and
-clear the CPU's <<_processor_internal_instruction_cache_icache, instruction cache>>.
+clear the CPU's <<_instruction_cache_icache, instruction cache>>.
 * `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>): clear and reload the CPU's
-<<_processor_internal_data_cache_dcache, data cache>>. Flushing is not required as the data cache
+<<_data_cache_dcache, data cache>>. Flushing is not required as the data cache
 uses the **write-through** strategy. Hence, write operations are always synchronized with main memory.
 
 .Weak Coherence Model
