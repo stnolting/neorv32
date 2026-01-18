@@ -459,7 +459,7 @@ begin
               when others => exec_nxt.state <= S_DISPATCH; -- illegal or CSR operation
             end case;
           elsif (funct3_v /= funct3_zimop_c) and -- write to CSR if not may-be-operation
-                (((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c)) or (exec.ir(instr_rd_msb_c downto instr_rd_lsb_c) = "00000")) then
+                ((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or (exec.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000")) then
             ctrl_nxt.csr_we <= '1'; -- CSRRW[I]: always write CSR; CSRR[S/C][I]: write CSR if rs1/imm5 is NOT zero
           end if;
         end if;
