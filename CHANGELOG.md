@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 18.01.2025 | 1.12.7.3 | :sparkles: encapsulate memory components; caches: use block invalidation when a bus error occurs during block download | [#1481](https://github.com/stnolting/neorv32/pull/1481) |
 | 18.01.2025 | 1.12.7.2 | :bug: fix `csrr[r/c][i]` instructions: do not write CSR if `rs1/imm5` is not zero | [#1479](https://github.com/stnolting/neorv32/pull/1479) |
 | 16.01.2025 | 1.12.7.1 | :warning: rename bootloader ROM module: `neorv32_boot_rom` -> `neorv32_bootrom` | [#1477](https://github.com/stnolting/neorv32/pull/1477) |
 | 12.01.2025 | [**1.12.7**](https://github.com/stnolting/neorv32/releases/tag/v1.12.7) | :rocket: **New release** | |
