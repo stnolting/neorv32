@@ -6,6 +6,7 @@
 [grid="none"]
 |=======================
 | Hardware source files:  | neorv32_bootrom.vhd          | default platform-agnostic bootloader ROM
+|                         | neorv32_bootrom_rom.vhd      | ROM component (primitive/IP wrapper)
 |                         | neorv32_bootloader_image.vhd | memory image (VHDL package)
 | Software driver files:  | none                         | _implicitly used_
 | Top entity ports:       | none                         |
@@ -15,9 +16,9 @@
 
 **Key Features**
 
-* Burst-capable tightly-coupled on-chip ROM
+* Tightly-coupled on-chip ROM
 * Accessible at the byte level
-* Can be mapped to blockRAM primitives
+* Mapped to memory primitives
 * Pre-initialized with default NEORV32 bootloader
 
 
@@ -34,3 +35,9 @@ The bootloader ROM is initialized during synthesis with the default bootloader i
 (`rtl/core/neorv32_bootloader_image.vhd`). The physical size of the ROM is automatically
 adjusted to the next power of two of the image size. However, note that the BOOTROM is
 constrained to a maximum size of 64kB.
+
+.Memory Primitives
+[TIP]
+The memory's memory core is encapsulated as individual wrapper (`neorv32_bootrom_rom.vhd`)
+that can be replaced by a technology-specific IP. All interface ports provide static signal
+widths to ease replacement.
