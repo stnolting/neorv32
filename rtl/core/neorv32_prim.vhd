@@ -169,11 +169,11 @@ entity neorv32_prim_spram is
   generic (
     AWIDTH : natural; -- address width (number of bits)
     DWIDTH : natural; -- data width (number of bits)
-    OUTREG : boolean  -- add output register stage
+    OUTREG : natural  -- add output register stage when 1
   );
   port (
     -- global control --
-    clk_i  : in  std_ulogic;                           -- global clock
+    clk_i  : in  std_ulogic;                           -- clock, rising edge
     -- read/write port --
     en_i   : in  std_ulogic;                           -- access enable
     rw_i   : in  std_ulogic;                           -- 0=read, 1=write
@@ -224,7 +224,7 @@ begin
   -- Output Register ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   output_register_enabled:
-  if OUTREG generate -- might improve FPGA mapping and/or timing results
+  if (OUTREG = 1) generate -- might improve FPGA mapping and/or timing results
     read_outreg: process(clk_i)
     begin
       if rising_edge(clk_i) then
@@ -235,7 +235,7 @@ begin
 
   -- no output register --
   output_register_disabled:
-  if not OUTREG generate
+  if (OUTREG = 0) generate
     data_o <= rdata;
   end generate;
 
@@ -262,8 +262,8 @@ entity neorv32_prim_mul is
   );
   port (
     -- global control --
-    clk_i    : in  std_ulogic;                              -- global clock
-    rstn_i   : in  std_ulogic;                              -- global reset, low-active, async
+    clk_i    : in  std_ulogic;                              -- clock, rising edge
+    rstn_i   : in  std_ulogic;                              -- reset, low-active, async
     -- data path --
     en_i     : in  std_ulogic;                              -- enable input operand registers
     opa_i    : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand A
@@ -335,8 +335,8 @@ entity neorv32_prim_cnt is
   );
   port (
     -- global control --
-    clk_i  : in  std_ulogic;                     -- global clock, rising edge
-    rstn_i : in  std_ulogic;                     -- global reset, low-active, async
+    clk_i  : in  std_ulogic;                     -- clock, rising edge
+    rstn_i : in  std_ulogic;                     -- reset, low-active, async
     inc_i  : in  std_ulogic;                     -- enable counter increment
     -- read/write access --
     we_i   : in  std_ulogic_vector(1 downto 0);  -- subword write enable
