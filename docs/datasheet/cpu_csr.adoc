@@ -753,7 +753,7 @@ events is observed (logical OR). Note that the counter will only increment by 1 
 | 2   | `HPMCNT_EVENT_IR`       | r/w | executed instruction (16-bit/compressed or 32-bit/uncompressed)
 4+^| **NEORV32-specific**
 | 3   | `HPMCNT_EVENT_COMPR`    | r/w | executed 16-bit/compressed (<<_c_isa_extension>>) instruction
-| 4   | `HPMCNT_EVENT_WAIT_DIS` | r/w | instruction dispatch wait cycle (wait for instruction prefetch-buffer refill (<<_cpu_control_unit>> IPB);
+| 4   | `HPMCNT_EVENT_WAIT_DIS` | r/w | instruction dispatch wait cycle (wait for instruction prefetch-buffer refill);
 caused by a fence instruction, a control flow transfer or a instruction fetch bus wait cycle)
 | 5   | `HPMCNT_EVENT_WAIT_ALU` | r/w | delay/wait cycle caused by a _multi-cycle_ <<_cpu_arithmetic_logic_unit>> operation
 | 6   | `HPMCNT_EVENT_BRANCH`   | r/w | executed branch instruction (unconditional, conditional-taken or conditional-not-taken)

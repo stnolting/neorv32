@@ -247,9 +247,9 @@ the package's `alu_cp_tmo_c` constant; default = 512 clock cycles).
 
 
 :sectnums:
-==== CPU Bus Unit
+==== CPU Load/Store Unit
 
-The bus or load/store unit (VHDL file `neorv32_cpu_lsu.vhd`) takes care of handling data memory accesses via load and store
+The load/store unit (VHDL file `neorv32_cpu_lsu.vhd`) takes care of handling data memory accesses via load and store
 instructions. It performs data adjustment when accessing sub-word data quantities (16-bit or 8-bit) and applies sign-extension
 for singed load operations.
 
