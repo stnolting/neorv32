@@ -5,13 +5,14 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_dmem.vhd  | generic processor-internal data memory (RAM)
-| Software driver files:  | none              |
-| Top entity ports:       | none              |
-| Configuration generics: | `DMEM_EN`         | implement processor-internal DMEM when `true`
-|                         | `DMEM_SIZE`       | DMEM size in bytes (use a power of 2)
-|                         | `DMEM_OUTREG_EN`  | add DMEM output register stage
-| CPU interrupts:         | none              |
+| Hardware source files:  | neorv32_dmem.vhd     | generic processor-internal data memory (RAM)
+|                         | neorv32_dmem_ram.vhd | RAM component (primitive/IP wrapper)
+| Software driver files:  | none                 |
+| Top entity ports:       | none                 |
+| Configuration generics: | `DMEM_EN`            | implement DMEM when `true`
+|                         | `DMEM_SIZE`          | DMEM size in bytes (use a power of 2)
+|                         | `DMEM_OUTREG_EN`     | add DMEM output register stage
+| CPU interrupts:         | none                 |
 |=======================
 
 **Key Features**
@@ -19,28 +20,22 @@
 * Burst-capable tightly-coupled on-chip data memory
 * Configurable RAM size
 * Accessible at the byte level
-* Can be mapped to blockRAM primitives
+* Can also be used for executing code
+* Mapped to memory primitives
 * Optional output register for improved timing
 
 
 **Overview**
 
 Implementation of the processor-internal data memory is enabled by the processor's `DMEM_EN`
-generic. The total memory size in bytes is defined via the `DMEM_SIZE` generic. Note that this
-size should be a power of two to optimize physical implementation. If the DMEM is implemented,
-it is mapped to base address `0x80000000` by default (see section <<_address_space>>).
-The DMEM is always implemented as true RAM.
+generic. The total memory size in bytes is defined via the `DMEM_SIZE` generic. Only sizes that
+are powers of two are supported. If enabled, the DEME is mapped to base address `0x80000000`
+(see section <<_address_space>>).
 
 .Platform-Specific Memory Primitives
 [NOTE]
 If required, the default DMEM can be replaced by a platform-/technology-specific primitive to
 optimize area utilization, timing and power consumption.
-
-.Memory Size
-[NOTE]
-If the configured memory size (via the `DMEM_SIZE` generic) is not a power of two the actual memory
-size will be auto-adjusted to the next power of two (e.g. configuring a memory size of 60kB will result in a
-physical memory size of 64kB).
 
 .Output Register Stage
 [TIP]
@@ -48,6 +43,11 @@ An optional output register stage can be enabled via `DMEM_OUTREG_EN`. For FPGA 
 mapping/timing results. Note that this option will increase the read latency by one clock cycle. Write accesses
 are not affected by this at all.
 
-.Execute from RAM
+.Retrieve Memory Configuration by Software
 [TIP]
-The CPU is capable of executing code also from arbitrary data memory.
+Software can retrieve the DMEM size from the <<_sysinfo_miscellaneous_configuration>> register.
+
+.Memory Primitives
+[TIP]
+The memory's memory core is encapsulated as individual wrapper (`neorv32_dmem_ram.vhd`) that can be
+replaced by a technology-specific IP. All interface ports provide static signal widths to ease replacement.

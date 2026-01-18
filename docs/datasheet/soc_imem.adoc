@@ -6,10 +6,12 @@
 [grid="none"]
 |=======================
 | Hardware source files:  | neorv32_imem.vhd              | generic processor-internal instruction memory (RAM or ROM)
+|                         | neorv32_imem_ram.vhd          | RAM component (primitive/IP wrapper)
+|                         | neorv32_imem_rom.vhd          | ROM component (primitive/IP wrapper)
 |                         | neorv32_application_image.vhd | memory image (VHDL package)
 | Software driver files:  | none                          |
 | Top entity ports:       | none                          |
-| Configuration generics: | `IMEM_EN`                     | implement processor-internal IMEM when `true`
+| Configuration generics: | `IMEM_EN`                     | implement IMEM when `true`
 |                         | `IMEM_SIZE`                   | IMEM size in bytes (use a power of 2)
 |                         | `IMEM_OUTREG_EN`              | add IMEM output register stage
 |                         | `BOOT_MODE_SELECT`            | implement IMEM as ROM when `BOOT_MODE_SELECT` = 2; see <<_boot_configuration>>
@@ -21,7 +23,7 @@
 * Burst-capable tightly-coupled on-chip instruction memory
 * Configurable RAM size
 * Accessible at the byte level
-* Can be mapped to blockRAM primitives
+* Mapped to memory primitives
 * Optional output register for improved timing
 * Can be implemented as pre-initialized ROM containing application firmware
 
@@ -30,30 +32,19 @@
 
 Implementation of the processor-internal instruction memory is enabled by the processor's
 `IMEM_EN` generic. The total memory size in bytes is defined via the `IMEM_SIZE` generic.
-Note that this size should be a power of two to optimize physical implementation. If enabled,
-the IMEM is mapped to base address `0x00000000` (see section <<_address_space>>).
+Only sizes that are powers of two are supported. If enabled, the IMEM is mapped to base
+address `0x00000000` (see section <<_address_space>>).
 
-By default the IMEM is implemented as true RAM so the content can be modified during run time. This is
-required when using the <<_bootloader>> (or the <<_on_chip_debugger_ocd>>) so it can update the content of the IMEM at
-any time.
+By default the IMEM is implemented as true RAM so the content can be modified during run time.
+Alternatively, the IMEM can be implemented as **pre-initialized read-only memory (ROM)**, so the
+processor can directly boot from it after reset. This option is configured via the `BOOT_MODE_SELECT`
+generic. See section <<_boot_configuration>> for more information. If the IMEM is implemented as ROM
+any write attempt to it will raise a _store access fault_ exception.
 
-Alternatively, the IMEM can be implemented as **pre-initialized read-only memory (ROM)**, so the processor can
-directly boot from it after reset. This option is configured via the `BOOT_MODE_SELECT` generic. See section
-<<_boot_configuration>> for more information. The initialization image is embedded into the bitstream during synthesis.
-The software framework provides an option to generate and override the default VHDL initialization file
-`rtl/core/neorv32_application_image.vhd`, which is automatically inserted into the IMEM (see <<_makefile_targets>>.
-If the IMEM is implemented as RAM (default), the memory block will not be initialized at all.
-
-.Platform-Specific Memory Primitives
-[NOTE]
-If required, the default IMEM can be replaced by a platform-/technology-specific primitive to
-optimize area utilization, timing and power consumption.
-
-.Memory Size
-[NOTE]
-If the configured memory size (via the `IMEM_SIZE` generic) is not a power of two the actual memory
-size will be auto-adjusted to the next power of two (e.g. configuring a memory size of 60kB will result in a
-physical memory size of 64kB).
+The software framework provides an option to generate and override the default VHDL initialization
+file `rtl/core/neorv32_application_image.vhd`, which is automatically inserted into the IMEM (see
+<<_makefile_targets>>. If the IMEM is implemented as RAM (default), the memory block will not be
+initialized at all.
 
 .Output Register Stage
 [TIP]
@@ -61,6 +52,11 @@ An optional output register stage can be enabled via `IMEM_OUTREG_EN`. For FPGA 
 mapping/timing results. Note that this option will increase the read latency by one clock cycle. Write accesses
 are not affected by this at all.
 
-.Read-Only Access
-[NOTE]
-If the IMEM is implemented as ROM any write attempt to it will raise a _store access fault_ exception.
+.Retrieve Memory Configuration by Software
+[TIP]
+Software can retrieve the DMEM size from the <<_sysinfo_miscellaneous_configuration>> register.
+
+.Memory Primitives
+[TIP]
+The memory's memory core is encapsulated as individual wrapper (`neorv32_imem_ram.vhd` / `neorv32_imem_ram.vhd`)
+that can be replaced by a technology-specific IP. All interface ports provide static signal widths to ease replacement.
