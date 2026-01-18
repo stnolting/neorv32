@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - Processor-Internal Data Memory (DMEM)                              --
+-- NEORV32 SoC - Data Memory (DMEM)                                                 --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -10,7 +10,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -30,56 +29,70 @@ end neorv32_dmem;
 
 architecture neorv32_dmem_rtl of neorv32_dmem is
 
+  -- DMEM RAM wrapper --
+  -- [NOTE] We use component instantiation here to allow easy black-box instantiation for
+  -- late component binding (e.g. when using the VHDL-to-Verilog flow with Verilog memory IP).
+  component neorv32_dmem_ram
+  generic (
+    AWIDTH : natural;
+    OUTREG : natural
+  );
+  port (
+    clk_i  : in  std_ulogic;
+    en_i   : in  std_ulogic_vector(3 downto 0);
+    rw_i   : in  std_ulogic;
+    addr_i : in  std_ulogic_vector(31 downto 0);
+    data_i : in  std_ulogic_vector(31 downto 0);
+    data_o : out std_ulogic_vector(31 downto 0)
+  );
+  end component;
+
   -- auto-configuration --
-  constant awidth_c  : natural := index_size_f(MEM_SIZE/4); -- word address width
-  constant latency_c : natural := cond_sel_natural_f(OUTREG, 2, 1); -- memory latency
+  constant awidth_c : natural := index_size_f(MEM_SIZE); -- address width (byte-addressing)
+  constant outreg_c : natural := cond_sel_natural_f(OUTREG, 1, 0); -- add output register?
 
   -- local signals --
   signal rdata : std_ulogic_vector(31 downto 0);
-  signal wack  : std_ulogic;
+  signal wren  : std_ulogic;
   signal rden  : std_ulogic_vector(1 downto 0);
-  signal en    : std_ulogic_vector(3 downto 0);
+  signal ben   : std_ulogic_vector(3 downto 0);
 
 begin
 
-  -- Memory Core ----------------------------------------------------------------------------
+  -- Data Memory (Wrapper) ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dmem_ram_gen:
-  for i in 0 to 3 generate -- four individual byte-wide RAMs
-    ram_inst: entity neorv32.neorv32_prim_spram
-    generic map (
-      AWIDTH => awidth_c,
-      DWIDTH => 8,
-      OUTREG => OUTREG
-    )
-    port map (
-      clk_i  => clk_i,
-      en_i   => en(i),
-      rw_i   => bus_req_i.rw,
-      addr_i => bus_req_i.addr(awidth_c+1 downto 2),
-      data_i => bus_req_i.data(i*8+7 downto i*8),
-      data_o => rdata(i*8+7 downto i*8)
-    );
-  end generate;
+  dmem_ram_inst: neorv32_dmem_ram
+  generic map (
+    AWIDTH => awidth_c,
+    OUTREG => outreg_c
+  )
+  port map (
+    clk_i  => clk_i,
+    en_i   => ben,
+    rw_i   => bus_req_i.rw,
+    addr_i => bus_req_i.addr,
+    data_i => bus_req_i.data,
+    data_o => rdata
+  );
 
   -- byte-wise enable --
-  en <= bus_req_i.ben when (bus_req_i.stb = '1') else (others => '0');
+  ben <= bus_req_i.ben when (bus_req_i.stb = '1') else (others => '0');
 
   -- Bus Handshake --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      wack <= '0';
+      wren <= '0';
       rden <= (others => '0');
     elsif rising_edge(clk_i) then
-      wack <= bus_req_i.stb and bus_req_i.rw;
+      wren <= bus_req_i.stb and bus_req_i.rw;
       rden <= rden(0) & (bus_req_i.stb and (not bus_req_i.rw));
     end if;
   end process bus_handshake;
 
-  bus_rsp_o.data <= rdata when (rden(latency_c-1) = '1') else (others => '0'); -- output gate
-  bus_rsp_o.err  <= '0'; -- no access error possible
-  bus_rsp_o.ack  <= rden(latency_c-1) or wack;
+  bus_rsp_o.data <= rdata when (rden(outreg_c) = '1') else (others => '0'); -- output gate
+  bus_rsp_o.err  <= '0';
+  bus_rsp_o.ack  <= rden(outreg_c) or wren;
 
 end neorv32_dmem_rtl;
