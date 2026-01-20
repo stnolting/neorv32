@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 Wrapper for Conversion to Verilog                                        --
+-- NEORV32 Wrapper for Conversion to Verilog (example configuration)                --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -79,12 +79,14 @@ begin
     -- Internal Instruction memory (IMEM) --
     IMEM_EN             => true,        -- implement processor-internal instruction memory
     IMEM_SIZE           => 16*1024,     -- size of processor-internal instruction memory in bytes
+    IMEM_OUTREG_EN      => false,       -- no additional output register
     -- Internal Data memory (DMEM) --
     DMEM_EN             => true,        -- implement processor-internal data memory
     DMEM_SIZE           => 8*1024,      -- size of processor-internal data memory in bytes
+    DMEM_OUTREG_EN      => true,        -- add additional output register
     -- CPU Caches --
     ICACHE_EN           => true,        -- implement instruction cache (i-cache)
-    ICACHE_NUM_BLOCKS   => 4,           -- i-cache: number of blocks, has to be a power of 2
+    ICACHE_NUM_BLOCKS   => 8,           -- i-cache: number of blocks, has to be a power of 2
     DCACHE_EN           => true,        -- implement data cache (d-cache)
     DCACHE_NUM_BLOCKS   => 4,           -- d-cache: number of blocks, has to be a power of 2
     CACHE_BLOCK_SIZE    => 64,          -- i-cache/d-cache: block size in bytes, has to be a power of 2
