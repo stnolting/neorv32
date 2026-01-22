@@ -52,5 +52,5 @@ NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_imem_image.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_imem_rom.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_imem_ram.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_dmem_ram.vhd
-NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_bootloader_image.vhd
+NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_bootrom_image.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_bootrom_rom.vhd
