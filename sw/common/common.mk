@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------- #
 # The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              #
 # Copyright (c) NEORV32 contributors.                                              #
-# Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  #
+# Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  #
 # Licensed under the BSD-3-Clause license, see LICENSE for details.                #
 # SPDX-License-Identifier: BSD-3-Clause                                            #
 # ================================================================================ #
@@ -74,16 +74,16 @@ CORE_SRC += $(NEORV32_COM_PATH)/crt0.S
 LD_SCRIPT ?= $(NEORV32_COM_PATH)/neorv32.ld
 
 # Main output files
-APP_EXE  = neorv32_exe.bin
-APP_ELF  = main.elf
-APP_HEX  = neorv32_raw_exe.hex
-APP_BIN  = neorv32_raw_exe.bin
-APP_COE  = neorv32_raw_exe.coe
-APP_MEM  = neorv32_raw_exe.mem
-APP_MIF  = neorv32_raw_exe.mif
-APP_ASM  = main.asm
-APP_VHD  = neorv32_application_image.vhd
-BOOT_VHD = neorv32_bootloader_image.vhd
+APP_ELF = main.elf
+APP_ASM = main.asm
+APP_EXE = neorv32_exe.bin
+APP_VHD = neorv32_imem_image.vhd
+APP_HEX = neorv32_raw_exe.hex
+APP_BIN = neorv32_raw_exe.bin
+APP_COE = neorv32_raw_exe.coe
+APP_MEM = neorv32_raw_exe.mem
+APP_MIF = neorv32_raw_exe.mif
+BLD_VHD = neorv32_bootrom_image.vhd
 
 # Binary main file
 BIN_MAIN = $(BUILD_DIR)/main.bin
@@ -234,7 +234,7 @@ $(BIN_MAIN): $(APP_ELF) | $(BUILD_DIR)
 $(APP_EXE): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_EXE)"
-	$(Q)$(IMAGE_GEN) -t app_bin -i $< -o $@
+	$(Q)$(IMAGE_GEN) -t exe -i $< -o $@
 	$(ECHO) "Executable size in bytes:"
 	$(Q)$(WC) -c < $(APP_EXE)
 
@@ -242,37 +242,37 @@ $(APP_EXE): $(BIN_MAIN) $(IMAGE_GEN)
 $(APP_VHD): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_VHD)"
-	$(Q)$(IMAGE_GEN) -t app_vhd -i $< -o $@
+	$(Q)$(IMAGE_GEN) -t vhd -i $< -o $@
 
 # Generate NEORV32 RAW executable image in plain hex format
 $(APP_HEX): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_HEX)"
-	$(Q)$(IMAGE_GEN) -t raw_hex -i $< -o $@
+	$(Q)$(IMAGE_GEN) -t hex -i $< -o $@
 
 # Generate NEORV32 RAW executable image in binary format
 $(APP_BIN): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_BIN)"
-	$(Q)$(IMAGE_GEN) -t raw_bin -i $< -o $@
+	$(Q)$(IMAGE_GEN) -t bin -i $< -o $@
 
 # Generate NEORV32 RAW executable image in COE format
 $(APP_COE): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_COE)"
-	$(Q)$(IMAGE_GEN) -t raw_coe -i $< -o $@
+	$(Q)$(IMAGE_GEN) -t coe -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MIF format
 $(APP_MIF): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_MIF)"
-	$(Q)$(IMAGE_GEN) -t raw_mif -i $< -o $@
+	$(Q)$(IMAGE_GEN) -t mif -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MEM format
 $(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_MEM)"
-	$(Q)$(IMAGE_GEN) -t raw_mem -i $< -o $@
+	$(Q)$(IMAGE_GEN) -t mem -i $< -o $@
 
 # -----------------------------------------------------------------------------
 # BOOTROM / bootloader image targets
@@ -281,14 +281,14 @@ $(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
 # Create local VHDL BOOTROM image
 bl_image: $(BIN_MAIN) $(IMAGE_GEN)
 	$(Q)$(SET) -e
-	$(ECHO) "Generating $(BOOT_VHD)"
-	$(Q)$(IMAGE_GEN) -t bld_vhd -i $< -o $(BOOT_VHD)
+	$(ECHO) "Generating $(BLD_VHD)"
+	$(Q)$(IMAGE_GEN) -t vhd -i $< -o $(BLD_VHD)
 
 # Install BOOTROM image to VHDL source directory
 bootloader: bl_image
 	$(Q)$(SET) -e
-	$(ECHO) "Installing bootloader image to $(NEORV32_RTL_PATH)/core/$(BOOT_VHD)"
-	$(Q)$(CP) $(BOOT_VHD) $(NEORV32_RTL_PATH)/core/.
+	$(ECHO) "Installing bootloader image to $(NEORV32_RTL_PATH)/core/$(BLD_VHD)"
+	$(Q)$(CP) $(BLD_VHD) $(NEORV32_RTL_PATH)/core/.
 
 # -----------------------------------------------------------------------------
 # In-console simulation using default testbench and GHDL
@@ -335,7 +335,7 @@ gdb: $(APP_ELF)
 # remove all build artifacts
 clean:
 	$(Q)$(RM) -rf $(BUILD_DIR)
-	$(Q)$(RM) -f $(APP_EXE) $(APP_ELF) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BOOT_VHD)
+	$(Q)$(RM) -f $(APP_EXE) $(APP_ELF) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BLD_VHD)
 	$(Q)$(RM) -f .gdb_history
 
 # also remove image generator
@@ -451,8 +451,8 @@ help:
 	$(ECHO) "  elf_sections  show ELF sections"
 	$(ECHO) "  clean         clean up project home folder"
 	$(ECHO) "  clean_all     clean up project home folder and image generator"
-	$(ECHO) "  bl_image      compile and generate VHDL BOOTROM bootloader boot image <$(BOOT_VHD)> in local folder"
-	$(ECHO) "  bootloader    compile, generate and install VHDL BOOTROM bootloader boot image <$(BOOT_VHD)>"
+	$(ECHO) "  bl_image      compile and generate VHDL BOOTROM bootloader boot image <$(BLD_VHD)> in local folder"
+	$(ECHO) "  bootloader    compile, generate and install VHDL BOOTROM bootloader boot image <$(BLD_VHD)>"
 	$(ECHO) ""
 	$(ECHO) "Variables:"
 	$(ECHO) ""
