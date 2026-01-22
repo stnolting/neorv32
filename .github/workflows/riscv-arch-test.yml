@@ -1,0 +1,79 @@
+name: 'RISC-V Architecture Compatibility Tests'
+
+on:
+  schedule:
+    - cron: "0 5 * * 0"
+  push:
+    branches:
+      - main
+    paths:
+      - 'sw/riscv-arch-test/**'
+      - '.github/workflows/riscv-arch-test.yml'
+  pull_request:
+    paths:
+      - 'sw/riscv-arch-test/**'
+      - '.github/workflows/riscv-arch-test.yml'
+  workflow_dispatch:
+
+jobs:
+
+  neorv32-verification:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: '📂 Repository checkout'
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+        submodules: recursive
+
+    - name: '📦 Install Python'
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: '📦 Install xPack RISC-V GCC'
+      run: |
+        wget -q https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v15.2.0-1/xpack-riscv-none-elf-gcc-15.2.0-1-linux-x64.tar.gz
+        mkdir $GITHUB_WORKSPACE/riscv-gcc
+        tar -xzf xpack-riscv-none-elf-gcc-15.2.0-1-linux-x64.tar.gz -C $GITHUB_WORKSPACE/riscv-gcc
+        echo $GITHUB_WORKSPACE/riscv-gcc/xpack-riscv-none-elf-gcc-15.2.0-1/bin >> $GITHUB_PATH
+
+    - name: '📦 Install Sail RISC-V reference model'
+      run: |
+        mkdir $GITHUB_WORKSPACE/sail-riscv
+        wget -q https://github.com/riscv/sail-riscv/releases/download/0.8/sail-riscv-Linux-x86_64.tar.gz
+        tar -xzf $GITHUB_WORKSPACE/sail-riscv-Linux-x86_64.tar.gz -C $GITHUB_WORKSPACE/sail-riscv
+        ls -al $GITHUB_WORKSPACE/sail-riscv/sail-riscv-Linux-x86_64/bin
+        echo $GITHUB_WORKSPACE/sail-riscv/sail-riscv-Linux-x86_64/bin >> $GITHUB_PATH
+
+    - name: '📦 Install RISCOF'
+      run: |
+        echo "upstream RISCOF is broken! https://github.com/riscv-software-src/riscof/issues/122"
+        pip3 install git+https://github.com/riscv/riscof.git@d38859f85fe407bcacddd2efcd355ada4683aee4
+
+    - name: '📦 Install GHDL'
+      uses: ghdl/setup-ghdl@v1
+      with:
+        version: nightly
+        backend: mcode
+
+    - name: '🔍 Check tools'
+      run: |
+        python -V
+        riscv-none-elf-gcc -v
+        sail_riscv_sim --version
+        riscof --version
+        ghdl -v
+
+    - name: '⚙️ Run compatibility tests'
+      run: /bin/bash -c "chmod u+x $GITHUB_WORKSPACE/sw/riscv-arch-test/run.sh && $GITHUB_WORKSPACE/sw/riscv-arch-test/run.sh"
+
+    - name: '📤 Archive test report'
+      uses: actions/upload-artifact@v6
+      with:
+        name: test_report
+        path: |
+          sw/riscv-arch-test/riscof_work/report.html
+          sw/riscv-arch-test/riscof_work/style.css

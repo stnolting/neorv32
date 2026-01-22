@@ -1,26 +1,32 @@
-name: Documentation
+name: 'Build Documentation'
 
 on:
   push:
+    branches:
+      - main
     paths:
-    - 'docs/**'
-    - '.github/workflows/Documentation.yml'
+      - 'docs/**'
+      - '.github/workflows/Documentation.yml'
   pull_request:
     paths:
-    - 'docs/**'
-    - '.github/workflows/Documentation.yml'
+      - 'docs/**'
+      - '.github/workflows/Documentation.yml'
   workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
 
 jobs:
 
   doxygen:
     runs-on: ubuntu-latest
-    name: 'SW Framework'
+    name: 'API Documentation'
 
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: '🛠️ Modifying Doxyfile'
       run: |
@@ -34,7 +40,7 @@ jobs:
         doxyfile-path: 'docs/Doxyfile'
 
     - name: '📤 Upload Artifact'
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: NEORV32-Doxygen
         path: doxygen_build/html
@@ -42,12 +48,12 @@ jobs:
 
   asciidoctor:
     runs-on: ubuntu-latest
-    name: 'Datasheet'
+    name: 'Datasheet & User Guide'
 
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -55,7 +61,7 @@ jobs:
       run: make -C docs container
 
     - name: '📤 Upload Artifact: HTML'
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: NEORV32
         path: docs/public
@@ -72,10 +78,10 @@ jobs:
     steps:
 
     - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: '📥 Download Artifacts'
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
 
     - name: '🛠️ Organize public subdir and create a tarball'
       run: |
@@ -99,10 +105,11 @@ jobs:
       run: |
         cd public
         git init
-        cp ../.git/config ./.git/config
+        # use authenticated remote (GITHUB_TOKEN is available as a secret)
+        git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
         touch .nojekyll
         git add .
         git config --local user.email "push@gha"
         git config --local user.name "GHA"
-        git commit -am 'update ${{ github.sha }}'
-        git push -u origin +HEAD:gh-pages
+        git commit -am "update ${{ github.sha }}"
+        git push -u origin +HEAD:gh-pages --force

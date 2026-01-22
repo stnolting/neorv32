@@ -8,8 +8,8 @@
 | Hardware source files:  | neorv32_clint.vhd |
 | Software driver files:  | neorv32_clint.c   | link:https://stnolting.github.io/neorv32/sw/neorv32__clint_8c.html[Online software reference (Doxygen)]
 |                         | neorv32_clint.h   | link:https://stnolting.github.io/neorv32/sw/neorv32__clint_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `mtime_irq_i`     | RISC-V machine timer IRQ if CLINT is **not** implemented
-|                         | `msw_irq_i`       | RISC-V software IRQ if CLINT is **not** implemented
+| Top entity ports:       | `irq_msi_i`       | RISC-V software IRQ if CLINT is **not** implemented
+|                         | `irw_mti_i`       | RISC-V machine timer IRQ if CLINT is **not** implemented
 |                         | `mtime_time_o`    | Current system time (from CLINT's MTIMER)
 | Configuration generics: | `IO_CLINT_EN`     | implement core local interruptor when `true`
 | CPU interrupts:         | `MTI`             | machine timer interrupt (see <<_processor_interrupts>>)
@@ -41,16 +41,16 @@ clock tick. Upon reset the timer is reset to all zero. Each hart provides an ind
 (`NEORV32_CLINT->MTIMECMP[0]` for hart 0). Whenever `MTIMECMP >= MTIME` the according machine timer interrupt is pending.
 
 
-**MSIW Device**
+**MSWI Device**
 
-The MSIV provides software interrupts for each hart via hart-individual memory-mapped registers (`NEORV32_CLINT->MSWI[0]` for
+The MSWI provides software interrupts for each hart via hart-individual memory-mapped registers (`NEORV32_CLINT->MSWI[0]` for
 hart 0). Setting bit 0 of this register will bring the machine software interrupt into pending state.
 
 
 .External Machine Timer and Software Interrupts
 [NOTE]
 If the NEORV32 CLINT module is disabled (`IO_CLINT_EN` = `false`) the core's machine timer interrupt and
-machine software interrupt become available as processor-external signals (`mtime_irq_i` and `msw_irq_i`, respectively).
+machine software interrupt become available as processor-external signals (`irw_mti_i` and `irq_msi_i`, respectively).
 
 
 **Register Map**

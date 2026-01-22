@@ -30,8 +30,8 @@ debug both cores at once. SMP-debugging is fully supported by the RISC-V gdb por
 | **Clock and reset** | Both cores use the same global processor clock and reset.
 | **Address space** | Both cores have full access to the same physical <<_address_space>>.
 | **Interrupts** | All <<_processor_interrupts>> are routed to both cores. Hence, each core has access to
-all <<_neorv32_specific_fast_interrupt_requests>> (FIRQs). Additionally, the RISC-V machine-level _external
-interrupt_ (via the top `mext_irq_i` port) is also send to both cores. In contrast, the RISC-V machine level
+all <<_neorv32_specific_fast_interrupt_requests>> (FIRQs). Additionally, the RISC-V machine-level _external interrupt_
+(via the top `irq_mei_i` port) is also sent to both cores. In contrast, the RISC-V machine level
 _software_ and _timer_ interrupts are core-exclusive (provided by the <<_core_local_interruptor_clint>>).
 | **RTE** | The <<_neorv32_runtime_environment>> can be used for both cores. However, the RTE needs to be
 explicitly initialized on each core (executing `neorv32_rte_setup()`). Note that the installed trap handlers
@@ -41,7 +41,7 @@ apply to both cores. The installed user-defined trap handlers can check the acco
 while the top of stack of core 1 has to be explicitly defined by core 0 (see <<_dual_core_boot>>). Both
 cores share the same heap, `.data` and `.bss` sections. Hence, only core 0 setups the `.data` and `.bss`
 sections at boot-up.
-| **Constructors and destructors** | Constructors and destructors are executed by core 0 only
+| **Constructors and destructors** | Constructors and destructors are supported by core 0 only
 (see section <<_c_standard_library>>).
 | **Cache layout** | If enabled, each CPU core has its own data and/or instruction cache.
 | **Cache coherency** | Be aware that there is no cache snooping available. If any CPU1 cache is enabled
@@ -54,12 +54,12 @@ instructions) or by using atomic memory accesses. See <<_memory_coherence>> for 
 
 ==== Dual-Core Boot
 
-After reset, both cores start booting. However, core 1 will - regardless of the <<_boot_configuration>> - always
-enter <<_sleep_mode>> right inside the default <<_start_up_code_crt0>>. The primary core (core 0) will continue
-booting, executing either the <<_bootloader>> or the pre-installed image from the internal instruction memory
-(depending on the boot configuration).
-
-To boot-up core 1, the primary core has to use a special library function provided by the NEORV32 software framework:
+After reset, both cores start booting at the same reset vector using the same executable. However, core 1
+will - regardless of the <<_boot_configuration>> - always enter <<_sleep_mode>> right inside the default
+<<_start_up_code_crt0>>. The primary core (core 0) will continue booting, executing either the <<_bootloader>>
+or the pre-installed image from the internal instruction memory (depending on the boot configuration).
+To explicitly boot-up core 1, the primary core has to use a special library function provided by the
+NEORV32 software framework:
 
 .CPU Core 1 Launch Function Prototype (note that this function can only be executed on core 0)
 [source,c]
@@ -67,12 +67,17 @@ To boot-up core 1, the primary core has to use a special library function provid
 int neorv32_smp_launch(int (*entry_point)(void), uint8_t* stack_memory, size_t stack_size_bytes);
 ----
 
-When executed, core 0 uses the two 32-bit `MTIMECMP` registers of the <<_core_local_interruptor_clint>> to
-store the _launch configuration_ at a defined address location. This launch configuration consists of the stack
-configuration (via `stack_memory` and `stack_size_bytes`) and the actual entry point for core 1. After these
-registers have been populated, core 1 will trigger core 1's software interrupt (also via the CLINT) to wake it
-from sleep mode. After that, core 1 will fetch the launch configuration and will start execution at the configured
-entry point.
+.Core 1 Boot-Up
+[NOTE]
+Core 0 will ensure that core 1 only uses start-up code from the shared executable.
+See https://github.com/stnolting/neorv32/pull/1450.
+
+Core 0 uses the two 32-bit `MTIMECMP` registers of the <<_core_local_interruptor_clint>> to submit a
+_launch configuration_ to core 1. This launch configuration consists of the stack layout (via the
+`stack_memory` and `stack_size_bytes` arguments) and the actual entry point for core 1. When these
+registers have been populated, core 0 will trigger the software interrupt of core 1 (also via the CLINT)
+to wake it from sleep mode. After that, core 1 will fetch the launch configuration and will start
+execution at the configured entry point.
 
 .CPU Core 1 Main Function
 [source,c]
@@ -88,8 +93,3 @@ The memory for the stack of core 1 (`stack_memory`) can be either statically all
 volatile memory array; placed in the `.data` or `.bss` section of core 0) or dynamically allocated
 (using `malloc`; placed on the heap of core 0). In any case the memory should be aligned to a 16-byte
 boundary.
-
-After that, the primary core triggers the _machine software interrupt_ of core 1 using the
-<<_core_local_interruptor_clint>>. Core 1 wakes up from sleep mode, consumes the configuration structure and
-finally starts executing at the provided entry point. When `neorv32_smp_launch()` returns (with no error
-code) the secondary core is online and running.

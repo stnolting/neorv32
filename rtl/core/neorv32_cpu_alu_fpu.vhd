@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 CPU - Co-Processor: Single-Precision FPU (RISC-V "Zfinx" Extension)      --
+-- NEORV32 CPU - ALU Single-Precision FPU (RISC-V Zfinx ISA Extension)              --
 -- -------------------------------------------------------------------------------- --
 -- The Zfinx floating-point extension uses the integer register file (x) for all FP --
 -- operations.                                                                      --
@@ -18,7 +18,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -30,33 +30,33 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cpu_cp_fpu is
+entity neorv32_cpu_alu_fpu is
   generic (
     -- FPU-specific options --
     FPU_SUBNORMAL_SUPPORT : boolean := false -- Implemented sub-normal support, default false
   );
   port (
     -- global control --
-    clk_i       : in  std_ulogic; -- global clock, rising edge
-    rstn_i      : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i      : in  ctrl_bus_t; -- main control bus
+    clk_i       : in  std_ulogic;                     -- global clock, rising edge
+    rstn_i      : in  std_ulogic;                     -- global reset, low-active, async
+    ctrl_i      : in  ctrl_bus_t;                     -- main control bus
     -- CSR interface --
-    csr_we_i    : in  std_ulogic; -- write enable
-    csr_addr_i  : in  std_ulogic_vector(1 downto 0); -- address
-    csr_wdata_i : in  std_ulogic_vector(XLEN-1 downto 0); -- write data
-    csr_rdata_o : out std_ulogic_vector(XLEN-1 downto 0); -- read data
+    csr_we_i    : in  std_ulogic;                     -- write enable
+    csr_addr_i  : in  std_ulogic_vector(1 downto 0);  -- address
+    csr_wdata_i : in  std_ulogic_vector(31 downto 0); -- write data
+    csr_rdata_o : out std_ulogic_vector(31 downto 0); -- read data
     -- data input --
-    equal_i     : in  std_ulogic; -- compare equal
-    less_i      : in  std_ulogic; -- compare less
-    rs1_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    rs2_i       : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+    equal_i     : in  std_ulogic;                     -- compare equal
+    less_i      : in  std_ulogic;                     -- compare less
+    rs1_i       : in  std_ulogic_vector(31 downto 0); -- rf source 1
+    rs2_i       : in  std_ulogic_vector(31 downto 0); -- rf source 2
     -- result and status --
-    res_o       : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-    valid_o     : out std_ulogic -- data output valid
+    res_o       : out std_ulogic_vector(31 downto 0); -- operation result
+    valid_o     : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_cp_fpu;
+end neorv32_cpu_alu_fpu;
 
-architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
+architecture neorv32_cpu_alu_fpu_rtl of neorv32_cpu_alu_fpu is
 
   -- FPU core functions --
   constant op_class_c  : std_ulogic_vector(2 downto 0) := "000";
@@ -74,7 +74,7 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
   signal fflags     : std_ulogic_vector(4 downto 0);
 
   -- float-to-integer unit --
-  component neorv32_cpu_cp_fpu_f2i
+  component neorv32_cpu_alu_fpu_f2i
     generic (
       FPU_SUBNORMAL_SUPPORT : boolean := false
     );
@@ -96,7 +96,7 @@ architecture neorv32_cpu_cp_fpu_rtl of neorv32_cpu_cp_fpu is
   end component;
 
   -- normalizer + rounding unit --
-  component neorv32_cpu_cp_fpu_normalizer
+  component neorv32_cpu_alu_fpu_normalizer
     generic (
       FPU_SUBNORMAL_SUPPORT : boolean := false
     );
@@ -661,7 +661,7 @@ begin
 
   -- Convert: Float to [unsigned] Integer (FCVT.S.W) ----------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_fpu_f2i_inst: neorv32_cpu_cp_fpu_f2i
+  neorv32_cpu_alu_fpu_f2i_inst: neorv32_cpu_alu_fpu_f2i
   generic map (
     -- FPU-specific options --
     FPU_SUBNORMAL_SUPPORT => FPU_SUBNORMAL_SUPPORT -- Implemented sub-normal support, default false
@@ -1427,7 +1427,7 @@ begin
 
   -- Normalizer & Rounding Unit -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  neorv32_cpu_cp_fpu_normalizer_inst: neorv32_cpu_cp_fpu_normalizer
+  neorv32_cpu_alu_fpu_normalizer_inst: neorv32_cpu_alu_fpu_normalizer
   generic map (
     FPU_SUBNORMAL_SUPPORT => FPU_SUBNORMAL_SUPPORT -- implemented sub-normal support, default false
   )
@@ -1496,7 +1496,7 @@ begin
   fu_core_done <= fu_compare.done or fu_classify.done or fu_sign_inject.done or fu_min_max.done or normalizer.done or fu_conv_f2i.done;
 
 
-end neorv32_cpu_cp_fpu_rtl;
+end neorv32_cpu_alu_fpu_rtl;
 
 
 -- ================================================================================ --
@@ -1518,7 +1518,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cpu_cp_fpu_normalizer is
+entity neorv32_cpu_alu_fpu_normalizer is
   generic (
     FPU_SUBNORMAL_SUPPORT : boolean := false -- implemented sub-normal support, default false
   );
@@ -1542,9 +1542,9 @@ entity neorv32_cpu_cp_fpu_normalizer is
     flags_o    : out std_ulogic_vector(4 downto 0);  -- exception flags output
     done_o     : out std_ulogic                      -- operation done
   );
-end neorv32_cpu_cp_fpu_normalizer;
+end neorv32_cpu_alu_fpu_normalizer;
 
-architecture neorv32_cpu_cp_fpu_normalizer_rtl of neorv32_cpu_cp_fpu_normalizer is
+architecture neorv32_cpu_alu_fpu_normalizer_rtl of neorv32_cpu_alu_fpu_normalizer is
 
   -- controller --
   type ctrl_engine_state_t is (S_IDLE, S_PREPARE_I2F, S_CHECK_I2F, S_PREPARE_NORM, S_PREPARE_SHIFT, S_NORMALIZE_BUSY, S_ROUND, S_CHECK, S_FINALIZE);
@@ -1933,7 +1933,7 @@ begin
   end process rounding_unit_add;
 
 
-end neorv32_cpu_cp_fpu_normalizer_rtl;
+end neorv32_cpu_alu_fpu_normalizer_rtl;
 
 
 -- ================================================================================ --
@@ -1953,7 +1953,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cpu_cp_fpu_f2i is
+entity neorv32_cpu_alu_fpu_f2i is
   generic (
     FPU_SUBNORMAL_SUPPORT : boolean := false -- Implemented sub-normal support, default false
   );
@@ -1975,9 +1975,9 @@ entity neorv32_cpu_cp_fpu_f2i is
     flags_o    : out std_ulogic_vector(4 downto 0); -- exception flags
     done_o     : out std_ulogic -- operation done
   );
-end neorv32_cpu_cp_fpu_f2i;
+end neorv32_cpu_alu_fpu_f2i;
 
-architecture neorv32_cpu_cp_fpu_f2i_rtl of neorv32_cpu_cp_fpu_f2i is
+architecture neorv32_cpu_alu_fpu_f2i_rtl of neorv32_cpu_alu_fpu_f2i is
 
   -- controller --
   type ctrl_engine_state_t is (S_IDLE, S_PREPARE_F2I, S_NORMALIZE_BUSY, S_ROUND, S_FINALIZE);
@@ -2105,7 +2105,7 @@ begin
             -- Catch: When the exponent is larger than XLEN + 1 set the overflow flag and go to the next stage.
             -- Note: We use 127 as that is an exponent of 0, XLEN for the integer width and + 1 for safety.
             -- In principle the +1 shouldn't be needed.
-            if (unsigned(ctrl.cnt) > (127+XLEN+1)) then -- 0 + 32 + 1 or 127 + 32 + 1
+            if (unsigned(ctrl.cnt) > (127+32+1)) then -- 0 + 32 + 1 or 127 + 32 + 1
               ctrl.over <= '1';
               ctrl.state <= S_FINALIZE;
             else
@@ -2333,4 +2333,4 @@ begin
   end process rounding_unit_add;
 
 
-end neorv32_cpu_cp_fpu_f2i_rtl;
+end neorv32_cpu_alu_fpu_f2i_rtl;

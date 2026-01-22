@@ -1,12 +1,12 @@
 -- ================================================================================ --
--- NEORV32 CPU - Co-Processor: Custom (RISC-V Instructions) Functions Unit (CFU)    --
+-- NEORV32 CPU - ALU Custom (RISC-V Instructions) Functions Unit (CFU)              --
 -- -------------------------------------------------------------------------------- --
 -- See the CPU's data sheet for more information. Also take a look at the "software --
 -- counterpart" of this CFU example in sw/example/demo_cfu.                         --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -15,7 +15,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity neorv32_cpu_cp_cfu is
+entity neorv32_cpu_alu_cfu is
   port (
     -- global control --
     clk_i    : in  std_ulogic; -- global clock, rising edge
@@ -23,7 +23,7 @@ entity neorv32_cpu_cp_cfu is
     -- operation trigger --
     start_i  : in  std_ulogic; -- start trigger, single-shot
     -- operands --
-    type_i   : in  std_ulogic; -- instruction type (0 = R-type, 1 = I-type)
+    type_i   : in  std_ulogic;                     -- instruction type (0 = R-type, 1 = I-type)
     funct3_i : in  std_ulogic_vector(2 downto 0);  -- "funct3" bit-field from instruction word
     funct7_i : in  std_ulogic_vector(6 downto 0);  -- "funct7" bit-field from instruction word (R-type only)
     imm12_i  : in  std_ulogic_vector(11 downto 0); -- "imm12" bit-field from instruction word (I-type only)
@@ -31,9 +31,9 @@ entity neorv32_cpu_cp_cfu is
     rs2_i    : in  std_ulogic_vector(31 downto 0); -- rf source 2 via "rs2" bit-field from instruction word
     -- result and status --
     result_o : out std_ulogic_vector(31 downto 0); -- operation result
-    valid_o  : out std_ulogic -- operation done
+    valid_o  : out std_ulogic                      -- operation done
   );
-end neorv32_cpu_cp_cfu;
+end neorv32_cpu_alu_cfu;
 
   -- **********************************************************
   -- CFU Example: XTEA - Extended Tiny Encryption Algorithm
@@ -46,7 +46,7 @@ end neorv32_cpu_cp_cfu;
   -- The RTL code was implemented according to an open-source C reference:
   -- https://de.wikipedia.org/wiki/Extended_Tiny_Encryption_Algorithm
 
-architecture neorv32_cpu_cp_cfu_rtl of neorv32_cpu_cp_cfu is
+architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
 
   -- instruction type identifiers --
   constant r_type_c : std_ulogic := '0'; -- R-type CFU instructions (custom-0 opcode)
@@ -166,4 +166,4 @@ begin
   end process result_select;
 
 
-end neorv32_cpu_cp_cfu_rtl;
+end neorv32_cpu_alu_cfu_rtl;

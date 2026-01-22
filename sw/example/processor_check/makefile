@@ -1,7 +1,7 @@
 # Processor-check program makefile
 
-# Maximum ISA configuration (but without C)
-override MARCH = rv32imac_zba_zbb_zbs_zbkb_zbkc_zbkx_zknd_zkne_zknh_zksh_zksed_zicsr_zfinx_zifencei_zicond
+# Maximum ISA configuration
+override MARCH = rv32imac_zba_zbb_zbs_zbkb_zbkc_zbkx_zcb_zknd_zkne_zknh_zksh_zksed_zicsr_zfinx_zifencei_zicond_zimop
 
 # Optimization goal
 EFFORT = -Os
@@ -29,4 +29,4 @@ include $(NEORV32_HOME)/sw/common/common.mk
 
 # Add test-specific makefile target
 sim-check: sim
-	cat $(NEORV32_HOME)/sim/neorv32.uart0.log | grep "PROCESSOR TEST COMPLETED SUCCESSFULLY!"
+	@cat $(NEORV32_HOME)/sim/ghdl.log | grep -q "PROCESSOR CHECK COMPLETED SUCCESSFULLY!"

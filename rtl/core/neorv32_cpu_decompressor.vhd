@@ -25,7 +25,7 @@ entity neorv32_cpu_decompressor is
   );
   port (
     instr_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction
-    instr_o : out std_ulogic_vector(31 downto 0); -- decompressed instruction
+    instr_o : out std_ulogic_vector(31 downto 0);  -- decompressed instruction
     instr_is_zcmp : out std_ulogic; -- instruction is part of Zcmp extension
     zcmp_is_push : out std_ulogic;
     zcmp_is_popret : out std_ulogic; -- instruction is popret
@@ -416,6 +416,5 @@ begin
 
   -- output illegal instruction in its pre-decoded 32-bit form --
   instr_o <= decoded(31 downto 2) & (decoded(1) and (not illegal)) & decoded(0); -- force OPCODE[1] to zero if illegal
-
 
 end neorv32_cpu_decompressor_rtl;

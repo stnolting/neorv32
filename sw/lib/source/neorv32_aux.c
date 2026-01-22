@@ -299,8 +299,12 @@ void neorv32_aux_print_hw_config(void) {
 
   // general
   neorv32_uart0_printf("Is simulation:       ");
-  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) { neorv32_uart0_printf("yes\n"); }
-  else { neorv32_uart0_printf("no\n"); }
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_SIM)) {
+    neorv32_uart0_printf("yes\n");
+  }
+  else {
+    neorv32_uart0_printf("no\n");
+  }
 
   neorv32_uart0_printf("CPU cores (harts):   %u\n", neorv32_sysinfo_get_numcores());
 
@@ -319,14 +323,16 @@ void neorv32_aux_print_hw_config(void) {
   }
 
   // IDs
-  neorv32_uart0_printf("Hart ID:             0x%x\n"
-                       "Architecture ID:     0x%x\n"
-                       "Implementation ID:   0x%x",
-                       neorv32_cpu_csr_read(CSR_MHARTID),
-                       neorv32_cpu_csr_read(CSR_MARCHID),
-                       neorv32_cpu_csr_read(CSR_MIMPID));
-  // hardware version
-  neorv32_uart0_printf(" (v");
+  neorv32_uart0_printf(
+    "Hart ID:             0x%x\n"
+    "Vendor ID:           0x%x\n"
+    "Architecture ID:     0x%x\n"
+    "Implementation ID:   0x%x (v",
+    neorv32_cpu_csr_read(CSR_MHARTID),
+    neorv32_cpu_csr_read(CSR_MVENDORID),
+    neorv32_cpu_csr_read(CSR_MARCHID),
+    neorv32_cpu_csr_read(CSR_MIMPID)
+  );
   neorv32_aux_print_hw_version(neorv32_cpu_csr_read(CSR_MIMPID));
   neorv32_uart0_printf(")\n");
 
@@ -353,9 +359,6 @@ void neorv32_aux_print_hw_config(void) {
 
   // CPU sub-extensions
   tmp = neorv32_cpu_csr_read(CSR_MXISA);
-  if (tmp & (1<<CSR_MXISA_SDEXT))     { neorv32_uart0_printf("Sdext ");     }
-  if (tmp & (1<<CSR_MXISA_SDTRIG))    { neorv32_uart0_printf("Sdtrig ");    }
-  if (tmp & (1<<CSR_MXISA_SMPMP))     { neorv32_uart0_printf("Smpmp ");     }
   if (tmp & (1<<CSR_MXISA_ZAAMO))     { neorv32_uart0_printf("Zaamo ");     }
   if (tmp & (1<<CSR_MXISA_ZALRSC))    { neorv32_uart0_printf("Zalrsc ");    }
   if (tmp & (1<<CSR_MXISA_ZCA))       { neorv32_uart0_printf("Zca ");       }
@@ -373,6 +376,7 @@ void neorv32_aux_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_ZICSR))     { neorv32_uart0_printf("Zicsr ");     }
   if (tmp & (1<<CSR_MXISA_ZIFENCEI))  { neorv32_uart0_printf("Zifencei ");  }
   if (tmp & (1<<CSR_MXISA_ZIHPM))     { neorv32_uart0_printf("Zihpm ");     }
+  if (tmp & (1<<CSR_MXISA_ZIMOP))     { neorv32_uart0_printf("Zimop ");     }
   if (tmp & (1<<CSR_MXISA_ZKN))       { neorv32_uart0_printf("Zkn ");       }
   if (tmp & (1<<CSR_MXISA_ZKND))      { neorv32_uart0_printf("Zknd ");      }
   if (tmp & (1<<CSR_MXISA_ZKNE))      { neorv32_uart0_printf("Zkne ");      }
@@ -383,15 +387,10 @@ void neorv32_aux_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_ZKT))       { neorv32_uart0_printf("Zkt ");       }
   if (tmp & (1<<CSR_MXISA_ZMMUL))     { neorv32_uart0_printf("Zmmul ");     }
   if (tmp & (1<<CSR_MXISA_ZXCFU))     { neorv32_uart0_printf("Zxcfu ");     }
-
-  // CPU tuning options
-  tmp = neorv32_cpu_csr_read(CSR_MXCSR);
-  neorv32_uart0_printf("\nTuning options:      ");
-  if (tmp & (1<<CSR_MXCSR_TRACE))     { neorv32_uart0_printf("trace ");      }
-  if (tmp & (1<<CSR_MXCSR_CONSTTBR))  { neorv32_uart0_printf("constt_br ");  }
-  if (tmp & (1<<CSR_MXCSR_FASTMUL))   { neorv32_uart0_printf("fast_mul ");   }
-  if (tmp & (1<<CSR_MXCSR_FASTSHIFT)) { neorv32_uart0_printf("fast_shift "); }
-  if (tmp & (1<<CSR_MXCSR_RFHWRST))   { neorv32_uart0_printf("rf_hw_rst ");  }
+  if (tmp & (1<<CSR_MXISA_SDEXT))     { neorv32_uart0_printf("Sdext ");     }
+  if (tmp & (1<<CSR_MXISA_SDTRIG))    { neorv32_uart0_printf("Sdtrig ");    }
+  if (tmp & (1<<CSR_MXISA_SMCNTRPMF)) { neorv32_uart0_printf("Smcntrpmf "); }
+  if (tmp & (1<<CSR_MXISA_SMPMP))     { neorv32_uart0_printf("Smpmp ");     }
 
   // check physical memory protection
   neorv32_uart0_printf("\nPhys. Memory Prot.:  ");

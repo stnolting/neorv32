@@ -8,7 +8,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -43,18 +43,19 @@ entity neorv32_vivado_ip is
     RISCV_ISA_U           : boolean                        := false;
     RISCV_ISA_Zaamo       : boolean                        := false;
     RISCV_ISA_Zalrsc      : boolean                        := false;
-    RISCV_ISA_Zcb         : boolean                        := false;
     RISCV_ISA_Zba         : boolean                        := false;
     RISCV_ISA_Zbb         : boolean                        := false;
     RISCV_ISA_Zbkb        : boolean                        := false;
     RISCV_ISA_Zbkc        : boolean                        := false;
     RISCV_ISA_Zbkx        : boolean                        := false;
     RISCV_ISA_Zbs         : boolean                        := false;
+    RISCV_ISA_Zcb         : boolean                        := false;
     RISCV_ISA_Zfinx       : boolean                        := false;
     RISCV_ISA_Zibi        : boolean                        := false;
     RISCV_ISA_Zicntr      : boolean                        := false;
     RISCV_ISA_Zicond      : boolean                        := false;
     RISCV_ISA_Zihpm       : boolean                        := false;
+    RISCV_ISA_Zimop       : boolean                        := false;
     RISCV_ISA_Zmmul       : boolean                        := false;
     RISCV_ISA_Zknd        : boolean                        := false;
     RISCV_ISA_Zkne        : boolean                        := false;
@@ -62,11 +63,12 @@ entity neorv32_vivado_ip is
     RISCV_ISA_Zksed       : boolean                        := false;
     RISCV_ISA_Zksh        : boolean                        := false;
     RISCV_ISA_Zxcfu       : boolean                        := false;
+    RISCV_ISA_Smcntrpmf   : boolean                        := false;
     -- Tuning Options --
     CPU_CONSTT_BR_EN      : boolean                        := false;
     CPU_FAST_MUL_EN       : boolean                        := false;
     CPU_FAST_SHIFT_EN     : boolean                        := false;
-    CPU_RF_HW_RST_EN      : boolean                        := false;
+    CPU_RF_ARCH_SEL       : natural range 0 to 3           := 1; -- map to distributed RAM
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS       : natural range 0 to 16          := 0;
     PMP_MIN_GRANULARITY   : natural                        := 4;
@@ -88,7 +90,7 @@ entity neorv32_vivado_ip is
     ICACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
     DCACHE_EN             : boolean                        := false;
     DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
-    CACHE_BLOCK_SIZE      : natural range 8 to 1024        := 64;
+    CACHE_BLOCK_SIZE      : natural range 4 to 1024        := 64;
     CACHE_BURSTS_EN       : boolean                        := true;
     -- External Bus Interface --
     XBUS_EN               : boolean                        := false;
@@ -115,7 +117,7 @@ entity neorv32_vivado_ip is
     IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;
     IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;
     IO_PWM_EN             : boolean                        := false;
-    IO_PWM_NUM_CH         : natural range 1 to 16          := 1; -- variable-sized ports must be at least 0 downto 0; #974
+    IO_PWM_NUM            : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
     IO_WDT_EN             : boolean                        := false;
     IO_TRNG_EN            : boolean                        := false;
     IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
@@ -123,6 +125,7 @@ entity neorv32_vivado_ip is
     IO_NEOLED_EN          : boolean                        := false;
     IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;
     IO_GPTMR_EN           : boolean                        := false;
+    IO_GPTMR_NUM          : natural range 1 to 16          := 1;
     IO_ONEWIRE_EN         : boolean                        := false;
     IO_DMA_EN             : boolean                        := false;
     IO_DMA_DSC_FIFO       : natural range 4 to 512         := 4;
@@ -244,8 +247,8 @@ entity neorv32_vivado_ip is
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      : in  std_logic := '0';
     onewire_o      : out std_logic;
-    -- PWM (available if IO_PWM_NUM_CH > 0) --
-    pwm_o          : out std_logic_vector(IO_PWM_NUM_CH-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
+    -- PWM (available if IO_PWM_NUM > 0) --
+    pwm_o          : out std_logic_vector(IO_PWM_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       : in  std_logic_vector(255 downto 0) := (others => '0');
     cfs_out_o      : out std_logic_vector(255 downto 0);
@@ -254,18 +257,19 @@ entity neorv32_vivado_ip is
     -- Machine timer system time (available if IO_CLINT_EN = true) --
     mtime_time_o   : out std_logic_vector(63 downto 0);
     -- CPU Interrupts --
-    mtime_irq_i    : in  std_logic := '0';
-    msw_irq_i      : in  std_logic := '0';
-    mext_irq_i     : in  std_logic := '0'
+    irq_msi_i      : in  std_logic := '0';
+    irw_mti_i      : in  std_logic := '0';
+    irq_mei_i      : in  std_logic := '0'
   );
 end entity;
 
 architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
 
   -- auto-configuration --
-  constant num_gpio_c : natural := cond_sel_natural_f(IO_GPIO_EN, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
-  constant num_pwm_c  : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM_CH, 0);
-  constant burst_en_c : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN); -- any cache bursts?
+  constant num_gpio_c  : natural := cond_sel_natural_f(IO_GPIO_EN, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
+  constant num_pwm_c   : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM, 0);
+  constant num_gptmr_c : natural := cond_sel_natural_f(IO_GPTMR_EN, IO_GPTMR_NUM, 0);
+  constant burst_en_c  : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN); -- any cache bursts?
 
   -- AXI4 bridge --
   component xbus2axi4_bridge
@@ -343,9 +347,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal mtime_time_aux : std_ulogic_vector(63 downto 0);
 
   -- constrained size ports --
-  signal gpio_o_aux : std_ulogic_vector(31 downto 0);
-  signal gpio_i_aux : std_ulogic_vector(31 downto 0);
-  signal pwm_o_aux  : std_ulogic_vector(15 downto 0);
+  signal gpio_o_aux, gpio_i_aux, pwm_o_aux : std_ulogic_vector(31 downto 0);
 
   -- internal xbus --
   signal xbus_req : xbus_req_t;
@@ -375,18 +377,19 @@ begin
     RISCV_ISA_U         => RISCV_ISA_U,
     RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,
     RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
-    RISCV_ISA_Zcb       => RISCV_ISA_Zcb,
     RISCV_ISA_Zba       => RISCV_ISA_Zba,
     RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
     RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
     RISCV_ISA_Zbkc      => RISCV_ISA_Zbkc,
     RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,
     RISCV_ISA_Zbs       => RISCV_ISA_Zbs,
+    RISCV_ISA_Zcb       => RISCV_ISA_Zcb,
     RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
     RISCV_ISA_Zibi      => RISCV_ISA_Zibi,
     RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
     RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
     RISCV_ISA_Zihpm     => RISCV_ISA_Zihpm,
+    RISCV_ISA_Zimop     => RISCV_ISA_Zimop,
     RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
     RISCV_ISA_Zknd      => RISCV_ISA_Zknd,
     RISCV_ISA_Zkne      => RISCV_ISA_Zkne,
@@ -394,11 +397,12 @@ begin
     RISCV_ISA_Zksed     => RISCV_ISA_Zksed,
     RISCV_ISA_Zksh      => RISCV_ISA_Zksh,
     RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
+    RISCV_ISA_Smcntrpmf => RISCV_ISA_Smcntrpmf,
     -- Extension Options --
     CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
     CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
     CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
-    CPU_RF_HW_RST_EN    => CPU_RF_HW_RST_EN,
+    CPU_RF_ARCH_SEL     => CPU_RF_ARCH_SEL,
     -- Physical Memory Protection --
     PMP_NUM_REGIONS     => PMP_NUM_REGIONS,
     PMP_MIN_GRANULARITY => PMP_MIN_GRANULARITY,
@@ -445,14 +449,14 @@ begin
     IO_TWD_EN           => IO_TWD_EN,
     IO_TWD_RX_FIFO      => IO_TWD_RX_FIFO,
     IO_TWD_TX_FIFO      => IO_TWD_TX_FIFO,
-    IO_PWM_NUM_CH       => num_pwm_c,
+    IO_PWM_NUM          => num_pwm_c,
     IO_WDT_EN           => IO_WDT_EN,
     IO_TRNG_EN          => IO_TRNG_EN,
     IO_TRNG_FIFO        => IO_TRNG_FIFO,
     IO_CFS_EN           => IO_CFS_EN,
     IO_NEOLED_EN        => IO_NEOLED_EN,
     IO_NEOLED_TX_FIFO   => IO_NEOLED_TX_FIFO,
-    IO_GPTMR_EN         => IO_GPTMR_EN,
+    IO_GPTMR_NUM        => num_gptmr_c,
     IO_ONEWIRE_EN       => IO_ONEWIRE_EN,
     IO_DMA_EN           => IO_DMA_EN,
     IO_DMA_DSC_FIFO     => IO_DMA_DSC_FIFO,
@@ -532,7 +536,7 @@ begin
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      => std_ulogic(onewire_i),
     onewire_o      => onewire_o_aux,
-    -- PWM available if IO_PWM_NUM_CH > 0) --
+    -- PWM available if IO_PWM_NUM > 0) --
     pwm_o          => pwm_o_aux,
     -- Custom Functions Subsystem IO (available if IO_CFS_EN = true) --
     cfs_in_i       => std_ulogic_vector(cfs_in_i),
@@ -542,9 +546,9 @@ begin
     -- Machine timer system time (available if IO_MTIME_EN = true) --
     mtime_time_o   => mtime_time_aux,
     -- CPU Interrupts --
-    mtime_irq_i    => std_ulogic(mtime_irq_i),
-    msw_irq_i      => std_ulogic(msw_irq_i),
-    mext_irq_i     => std_ulogic(mext_irq_i)
+    irq_msi_i      => std_ulogic(irq_msi_i),
+    irw_mti_i      => std_ulogic(irw_mti_i),
+    irq_mei_i      => std_ulogic(irq_mei_i)
   );
 
 
@@ -608,7 +612,7 @@ begin
 
   -- PWM --
   pwm_mapping:
-  for i in 0 to IO_PWM_NUM_CH-1 generate
+  for i in 0 to IO_PWM_NUM-1 generate
     pwm_o(i) <= std_logic(pwm_o_aux(i));
   end generate;
 

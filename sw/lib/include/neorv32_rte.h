@@ -21,9 +21,8 @@
  **************************************************************************/
 /**@{*/
 void     neorv32_rte_setup(void);
-void     neorv32_rte_core(void);
 int      neorv32_rte_handler_install(uint32_t code, void (*handler)(void));
-void     neorv32_rte_debug_handler(void);
+int      neorv32_rte_handler_uninstall(uint32_t code);
 uint32_t neorv32_rte_context_get(int x);
 void     neorv32_rte_context_put(int x, uint32_t data);
 /**@}*/

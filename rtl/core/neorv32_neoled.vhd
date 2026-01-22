@@ -24,7 +24,7 @@ entity neorv32_neoled is
     rstn_i    : in  std_ulogic;                    -- global reset line, low-active
     bus_req_i : in  bus_req_t;                     -- bus request
     bus_rsp_o : out bus_rsp_t;                     -- bus response
-    clkgen_i  : in  std_ulogic_vector(7 downto 0); -- pre-scaled clocks
+    clkgen_i  : in  std_ulogic_vector(7 downto 0); -- prescaled clock enables
     irq_o     : out std_ulogic;                    -- interrupt request
     neoled_o  : out std_ulogic                     -- serial async data line
   );

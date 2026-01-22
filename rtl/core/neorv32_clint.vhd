@@ -6,7 +6,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -23,13 +23,13 @@ entity neorv32_clint is
     NUM_HARTS : natural range 1 to 4095 -- number of physical CPU cores
   );
   port (
-    clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- global reset line, low-active, async
-    bus_req_i : in  bus_req_t; -- bus request
-    bus_rsp_o : out bus_rsp_t; -- bus response
-    time_o    : out std_ulogic_vector(63 downto 0); -- current system time
+    clk_i     : in  std_ulogic;                              -- global clock line
+    rstn_i    : in  std_ulogic;                              -- global reset line, low-active, async
+    bus_req_i : in  bus_req_t;                               -- bus request
+    bus_rsp_o : out bus_rsp_t;                               -- bus response
+    time_o    : out std_ulogic_vector(63 downto 0);          -- current system time
     mti_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0); -- machine timer interrupt
-    msi_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0) -- machine software interrupt
+    msi_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0)  -- machine software interrupt
   );
 end neorv32_clint;
 
@@ -150,10 +150,10 @@ begin
     mswi_reg: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-         mswi(i) <= '0';
+        mswi(i) <= '0';
       elsif rising_edge(clk_i) then
         if (mswi_en(i) = '1') and (bus_req_i.rw = '1') then
-           mswi(i) <= bus_req_i.data(0);
+          mswi(i) <= bus_req_i.data(0);
         end if;
       end if;
     end process mswi_reg;
@@ -206,7 +206,7 @@ end neorv32_clint_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -276,4 +276,3 @@ begin
   cmp_hi_gt <= '1' when (unsigned(mtime_i(63 downto 32)) > unsigned(mtimecmp_q(63 downto 32))) else '0';
 
 end neorv32_clint_mtimecmp_rtl;
-

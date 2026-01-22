@@ -84,8 +84,8 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_SOC_IO_TRACER  = 27, /**< SYSINFO_SOC (10) (r/-): Execution tracer implemented when 1 (via IO_TRACER_EN generic) */
   SYSINFO_SOC_IO_GPTMR   = 28, /**< SYSINFO_SOC (28) (r/-): General purpose timer implemented when 1 (via IO_GPTMR_EN generic) */
   SYSINFO_SOC_IO_SLINK   = 29, /**< SYSINFO_SOC (29) (r/-): Stream link interface implemented when 1 (via IO_SLINK_EN generic) */
-  SYSINFO_SOC_IO_ONEWIRE = 30  /**< SYSINFO_SOC (30) (r/-): 1-wire interface controller implemented when 1 (via IO_ONEWIRE_EN generic) */
-//SYSINFO_SOC_reserved   = 31  /**< SYSINFO_SOC (31) (r/-): reserved */
+  SYSINFO_SOC_IO_ONEWIRE = 30, /**< SYSINFO_SOC (30) (r/-): 1-wire interface controller implemented when 1 (via IO_ONEWIRE_EN generic) */
+  SYSINFO_SOC_SIM        = 31  /**< SYSINFO_SOC (31) (r/-): Set if this is a simulation */
 };
 
 /** NEORV32_SYSINFO.CACHE (r/-): Cache configuration */
@@ -104,6 +104,14 @@ enum NEORV32_SYSINFO_SOC_enum {
   SYSINFO_CACHE_DATA_BURSTS_EN    = 24  /**< SYSINFO_CACHE (14) (r/-): d-cache: issue burst transfers or cache update (via CACHE_BURSTS_EN generic) */
 };
 /**@}*/
+
+/**********************************************************************//**
+ * Check if this is a simulation.
+ * @return Non-zero if we are inside the matrix.
+ **************************************************************************/
+inline uint32_t __attribute__ ((always_inline)) neorv32_sysinfo_is_sim(void) {
+  return (uint32_t)(NEORV32_SYSINFO->SOC >> SYSINFO_SOC_SIM);
+}
 
 /**********************************************************************//**
  * Get number of processor cores/harts.

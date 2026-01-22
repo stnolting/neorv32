@@ -20,19 +20,19 @@ if [ -z "$1" ]
   then
     GHDL_RUN_ARGS="${@:---stop-time=10ms}"
   else
-    # Let's pass down all the parameters to GHDL
     GHDL_RUN_ARGS=$@
 fi
 echo "GHDL simulation run parameters: $GHDL_RUN_ARGS";
 
-# GHDL run
+# prepare GHDL run
 runcmd="$GHDL -r --work=neorv32 --workdir=build --std=08 neorv32_tb \
   --max-stack-alloc=0 \
   --ieee-asserts=disable \
   --assert-level=error $GHDL_RUN_ARGS"
 
-if [ -n "$GHDL_DEVNULL" ]; then
-  $runcmd >> /dev/null
+# run simulation
+if [ -n "$GHDL_NOLOG" ]; then
+  eval "$runcmd"
 else
-  $runcmd
+  eval "$runcmd" 2>&1 | tee ghdl.log
 fi

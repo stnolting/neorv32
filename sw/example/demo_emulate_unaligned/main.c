@@ -9,9 +9,8 @@
 
 /**********************************************************************//**
  * @file demo_emulate_unaligned/main.c
- * @author Stephan Nolting
- * @brief Demo program for emulating unaligned memory accesses using the NEORV32
- * run-time environment (RTE).
+ * @brief Demo program for emulating unaligned memory accesses using the
+ * context-access functions of the NEORV32 run-time environment.
  **************************************************************************/
 
 #include <neorv32.h>
@@ -78,8 +77,8 @@ void trap_handler_emulate_unaligned_lw(void) {
 
   }
   else {
-    // use the RTE debug handler for any other misaligned load exception
-    neorv32_rte_debug_handler();
+    neorv32_uart0_printf("Unexpected instruction (0x%x @ 0x%x)!\n",
+      neorv32_cpu_csr_read(CSR_MTINST), neorv32_cpu_csr_read(CSR_MEPC));
   }
 }
 

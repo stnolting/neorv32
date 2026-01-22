@@ -1,17 +1,16 @@
 -- ================================================================================ --
--- NEORV32 CPU - Co-Processor: RISC-V Scalar Cryptography ('Zk*') ISA Extensions    --
+-- NEORV32 CPU - ALU Scalar Cryptography Unit (RISC-V Zk* ISA Extensions)           --
 -- -------------------------------------------------------------------------------- --
 -- Supported sub-extensions:                                                        --
--- + Zbkx:  crossbar permutations                                                   --
 -- + Zknh:  NIST suite's hash functions                                             --
 -- + Zkne:  NIST suite's AES encryption                                             --
 -- + Zknd:  NIST suite's AES decryption                                             --
--- + Zksed: ShangMi suite's block cyphers                                           --
+-- + Zksed: ShangMi suite's block ciphers                                           --
 -- + Zksh:  ShangMi suite's hash functions                                          --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -23,13 +22,12 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cpu_cp_crypto is
+entity neorv32_cpu_alu_crypto is
   generic (
-    EN_ZBKX  : boolean; -- enable crossbar permutation extension
     EN_ZKNH  : boolean; -- enable NIST hash extension
     EN_ZKNE  : boolean; -- enable NIST AES encryption extension
     EN_ZKND  : boolean; -- enable NIST AES decryption extension
-    EN_ZKSED : boolean; -- enable ShangMi block cypher extension
+    EN_ZKSED : boolean; -- enable ShangMi block cipher extension
     EN_ZKSH  : boolean  -- enable ShangMi hash extension
   );
   port (
@@ -38,15 +36,15 @@ entity neorv32_cpu_cp_crypto is
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
     -- data input --
-    rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+    rs1_i   : in  std_ulogic_vector(31 downto 0); -- rf source 1
+    rs2_i   : in  std_ulogic_vector(31 downto 0); -- rf source 2
     -- result and status --
-    res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-    valid_o : out std_ulogic -- data output valid
+    res_o   : out std_ulogic_vector(31 downto 0); -- operation result
+    valid_o : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_cp_crypto;
+end neorv32_cpu_alu_crypto;
 
-architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
+architecture neorv32_cpu_alu_crypto_rtl of neorv32_cpu_alu_crypto is
 
   -- ----------------------------------------------------------------------------------------
   -- look-up tables (ROMs)
@@ -117,44 +115,6 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   -- helper functions
   -- ----------------------------------------------------------------------------------------
 
-  -- byte-wise vector look-up --
-  function xperm8_f(vec : std_ulogic_vector(31 downto 0); sel : std_ulogic_vector(7 downto 0)) return std_ulogic_vector is
-    variable res_v : std_ulogic_vector(7 downto 0);
-  begin
-    if (sel(7 downto 2) /= "000000") then -- index out of range
-      res_v := (others => '0');
-    else
-      case sel(1 downto 0) is
-        when "00"   => res_v := vec(7 downto 0);
-        when "01"   => res_v := vec(15 downto 8);
-        when "10"   => res_v := vec(23 downto 16);
-        when others => res_v := vec(31 downto 24);
-      end case;
-    end if;
-    return res_v;
-  end function xperm8_f;
-
-  -- nibble-wise vector look-up --
-  function xperm4_f(vec : std_ulogic_vector(31 downto 0); sel : std_ulogic_vector(3 downto 0)) return std_ulogic_vector is
-    variable res_v : std_ulogic_vector(3 downto 0);
-  begin
-    if (sel(3) /= '0') then -- index out of range
-      res_v := (others => '0');
-    else
-      case sel(2 downto 0) is
-        when "000"  => res_v := vec(3 downto 0);
-        when "001"  => res_v := vec(7 downto 4);
-        when "010"  => res_v := vec(11 downto 8);
-        when "011"  => res_v := vec(15 downto 12);
-        when "100"  => res_v := vec(19 downto 16);
-        when "101"  => res_v := vec(23 downto 20);
-        when "110"  => res_v := vec(27 downto 24);
-        when others => res_v := vec(31 downto 28);
-      end case;
-    end if;
-    return res_v;
-  end function xperm4_f;
-
   -- logical shift left --
   function lsl_f(data : std_ulogic_vector(31 downto 0); shamt : natural range 0 to 31) return std_ulogic_vector is
     variable res_v : std_ulogic_vector(31 downto 0);
@@ -197,21 +157,13 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
 
   -- multiply 8-bit field element by 4-bit value for AES MixCols step --
   function gfmul_f(x : std_ulogic_vector(7 downto 0); y : std_ulogic_vector(3 downto 0)) return std_ulogic_vector is
-    variable res_v : std_ulogic_vector(7 downto 0);
+    variable a_v, b_v, c_v, d_v, res_v : std_ulogic_vector(7 downto 0);
   begin
-    res_v := (others => '0');
-    if (y(0) = '1') then
-      res_v := res_v xor x;
-    end if;
-    if (y(1) = '1') then
-      res_v := res_v xor xt2_f(x);
-    end if;
-    if (y(2) = '1') then
-      res_v := res_v xor xt2_f(xt2_f(x));
-    end if;
-    if (y(3) = '1') then
-      res_v := res_v xor xt2_f(xt2_f(xt2_f(x)));
-    end if;
+    if (y(0) = '1') then a_v := x;                      else a_v := x"00"; end if;
+    if (y(1) = '1') then b_v := xt2_f(x);               else b_v := x"00"; end if;
+    if (y(2) = '1') then c_v := xt2_f(xt2_f(x));        else c_v := x"00"; end if;
+    if (y(3) = '1') then d_v := xt2_f(xt2_f(xt2_f(x))); else d_v := x"00"; end if;
+    res_v := a_v xor b_v xor c_v xor d_v;
     return res_v;
   end function gfmul_f;
 
@@ -220,15 +172,14 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   -- ----------------------------------------------------------------------------------------
 
   -- instruction decoder --
-  constant cmd_xperm_c  : natural := 0;
-  constant cmd_sha256_c : natural := 1;
-  constant cmd_sha512_c : natural := 2;
-  constant cmd_aesenc_c : natural := 3;
-  constant cmd_aesdec_c : natural := 4;
-  constant cmd_sm3_c    : natural := 5;
-  constant cmd_sm4_c    : natural := 6;
+  constant cmd_sha256_c : natural := 0;
+  constant cmd_sha512_c : natural := 1;
+  constant cmd_aesenc_c : natural := 2;
+  constant cmd_aesdec_c : natural := 3;
+  constant cmd_sm3_c    : natural := 4;
+  constant cmd_sm4_c    : natural := 5;
   --
-  signal cmd       : std_ulogic_vector(6 downto 0);
+  signal cmd       : std_ulogic_vector(5 downto 0);
   signal cmd_valid : std_ulogic;
 
   -- controller --
@@ -239,7 +190,6 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   signal rs2     : std_ulogic_vector(31 downto 0);
   signal funct12 : std_ulogic_vector(11 downto 0);
   signal funct3  : std_ulogic_vector(2 downto 0);
-  signal out_sel : std_ulogic_vector(2 downto 0);
 
   -- helper logic --
   signal rs2_sel : std_ulogic_vector(7 downto 0);
@@ -247,7 +197,7 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   signal rol_res : std_ulogic_vector(31 downto 0);
   signal blk_res : std_ulogic_vector(31 downto 0);
 
-  -- aes core --
+  -- AES core --
   type aes_t is record
     dec  : std_ulogic;
     so   : std_ulogic_vector(7 downto 0);
@@ -256,8 +206,8 @@ architecture neorv32_cpu_cp_crypto_rtl of neorv32_cpu_cp_crypto is
   end record;
   signal aes : aes_t;
 
-  -- permutation core, sha core, sm3 core --
-  signal xperm_res, xperm4_res, xperm8_res, sha_res, sm3_res, hash_res : std_ulogic_vector(31 downto 0);
+  -- SHA core, SM3 core --
+  signal sha_res, sm3_res, hash_res : std_ulogic_vector(31 downto 0);
 
   -- ShangMi core --
   type sm4_t is record
@@ -271,9 +221,6 @@ begin
 
   -- Instruction Decode ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cmd(cmd_xperm_c)  <= '1' when EN_ZBKX and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0010100") and
-                                ((ctrl_i.ir_funct3 = "100") or (ctrl_i.ir_funct3 = "010")) else '0';
-
   cmd(cmd_sha256_c) <= '1' when EN_ZKNH and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 2) = "0001000000") and
                                 (ctrl_i.ir_funct3 = "001") else '0';
 
@@ -352,47 +299,15 @@ begin
     elsif rising_edge(clk_i) then
       res_o <= (others => '0'); -- default
       if (done = '1') then
-        case out_sel is
-          when "100"         => res_o <= xperm_res;
-          when "101" | "110" => res_o <= blk_res;
-          when others        => res_o <= hash_res;
-        end case;
+        if ((funct12(9 downto 8) = "10") and (funct12(5) = '1')) or
+           ((funct12(9 downto 8) = "11") and (funct12(5) = '0')) then
+          res_o <= blk_res;
+        else
+          res_o <= hash_res;
+        end if;
       end if;
     end if;
   end process result;
-
-  -- function unit select --
-  out_sel <= funct12(9 downto 8) & funct12(5);
-
-
-  -- Crossbar Permutations ------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  xperm_enabled:
-  if EN_ZBKX generate
-
-    -- byte-wise vector look-up --
-    xperm8_gen:
-    for i in 0 to 3 generate
-      xperm8_res(8*i+7 downto 8*i+0) <= xperm8_f(rs1, rs2(8*i+7 downto 8*i+0));
-    end generate;
-
-    -- nibble-wise vector look-up --
-    xperm4_gen:
-    for i in 0 to 7 generate
-      xperm4_res(4*i+3 downto 4*i+0) <= xperm4_f(rs1, rs2(4*i+3 downto 4*i+0));
-    end generate;
-
-    -- operation select --
-    xperm_res <= xperm8_res when (funct3(2) = '1') else xperm4_res;
-
-  end generate;
-
-  xperm_disabled:
-  if not EN_ZBKX generate
-    xperm8_res <= (others => '0');
-    xperm4_res <= (others => '0');
-    xperm_res  <= (others => '0');
-  end generate;
 
 
   -- Hash Functions -------------------------------------------------------------------------
@@ -441,9 +356,9 @@ begin
   end generate;
 
 
-  -- Block Cyphers (AES/SM4) Helper Logic ---------------------------------------------------
+  -- Block Ciphers (AES/SM4) Helper Logic ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  block_cyphers_enabled:
+  block_ciphers_enabled:
   if EN_ZKNE or EN_ZKND or EN_ZKSED generate
 
     -- select byte from rs2 via bs --
@@ -453,7 +368,7 @@ begin
       rs2(23 downto 16) when "10",
       rs2(31 downto 24) when others;
 
-    -- rotate input select --
+    -- rotation input select --
     rol_in <= aes.mix2 when (not EN_ZKSED) else
               sm4.rnd  when (not EN_ZKNE) and (not EN_ZKND) else
               aes.mix2 when (funct12(8) = '0') else sm4.rnd;
@@ -465,12 +380,12 @@ begin
       rol_in(15 downto 0) & rol_in(31 downto 16) when "10",
       rol_in(07 downto 0) & rol_in(31 downto 08) when others;
 
-    -- block cypher result --
+    -- block cipher result --
     blk_res <= rs1 xor rol_res;
 
   end generate;
 
-  block_cyphers_disabled:
+  block_ciphers_disabled:
   if not (EN_ZKNE or EN_ZKND or EN_ZKSED) generate
     rs2_sel <= (others => '0');
     rol_in  <= (others => '0');
@@ -570,5 +485,4 @@ begin
     sm4.rnd <= (others => '0');
   end generate;
 
-
-end neorv32_cpu_cp_crypto_rtl;
+end neorv32_cpu_alu_crypto_rtl;

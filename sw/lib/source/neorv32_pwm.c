@@ -27,99 +27,118 @@ int neorv32_pwm_available(void) {
 
 /**********************************************************************//**
  * Get number of implemented PWM channels.
- * @warning This function will override all channel configuration registers.
  *
- * @return Number of implemented PWM channels.
+ * @return Number of implemented PWM channels (0..32).
  **************************************************************************/
 int neorv32_pmw_get_num_channels(void) {
 
-  int i = 0;
-  uint32_t cnt = 0;
+  uint32_t backup = NEORV32_PWM->POLARITY;
+  NEORV32_PWM->POLARITY = -1;
+  uint32_t tmp = NEORV32_PWM->POLARITY;
 
+  uint32_t i = 0, cnt = 0;
   for (i=0; i<16; i++) {
-    NEORV32_PWM->CHANNEL_CFG[i] = 1;
-    cnt += NEORV32_PWM->CHANNEL_CFG[i];
+    cnt += tmp & 1;
+    tmp >>= 1;
   }
+
+  NEORV32_PWM->POLARITY = backup;
 
   return (int)cnt;
 }
 
 
 /**********************************************************************//**
- * Enable PWM channel.
+ * Set global PWM counter clock prescaler.
  *
- * @param[in] channel Channel select (0..15).
+ * @param[in] prsc Clock prescaler select (0..7). See #NEORV32_CLOCK_PRSC_enum.
  **************************************************************************/
-void neorv32_pwm_ch_enable(int channel) {
+void neorv32_pwm_set_clock(int prsc) {
 
-  channel &= 0xf; // constrain range
-
-  NEORV32_PWM->CHANNEL_CFG[channel] |= ((uint32_t)(1 << PWM_CFG_EN));
+  NEORV32_PWM->CLKPRSC = prsc;
 }
 
 
 /**********************************************************************//**
- * Disable PWM channel.
+ * Enable PWM channel using bit mask.
  *
- * @param[in] channel Channel select (0..15).
+ * @param[in] mask Channel bit mask.
  **************************************************************************/
-void neorv32_pwm_ch_disable(int channel) {
+void neorv32_pwm_ch_enable_mask(uint32_t mask) {
 
-  channel &= 0xf; // constrain range
-
-  NEORV32_PWM->CHANNEL_CFG[channel] &= ~((uint32_t)(1 << PWM_CFG_EN));
+  NEORV32_PWM->ENABLE |= mask;
 }
 
 
 /**********************************************************************//**
- * Set PWM channel's polarity configuration.
+ * Disable PWM channel using bit mask.
  *
- * @param[in] channel Channel select (0..15).
- * @param[in] normal polarity if false (default), inverted polarity if true
+ * @param[in] mask Channel bit mask.
  **************************************************************************/
-void neorv32_pwm_ch_set_polarity(int channel, bool inverted) {
+void neorv32_pwm_ch_disable_mask(uint32_t mask) {
 
-  channel &= 0xf; // constrain range
+  NEORV32_PWM->ENABLE &= ~mask;
+}
 
-  if (inverted) {
-    NEORV32_PWM->CHANNEL_CFG[channel] |= ((uint32_t)(1 << PWM_CFG_POL));
+
+/**********************************************************************//**
+ * Enable individual PWM channel.
+ *
+ * @param[in] ch Channel select (0..31).
+ **************************************************************************/
+void neorv32_pwm_ch_enable_single(int ch) {
+
+  NEORV32_PWM->ENABLE |= (1 << (ch & 0x1fu));
+}
+
+
+/**********************************************************************//**
+ * Disable individual PWM channel using bit mask.
+ *
+ * @param[in] ch Channel select (0..31).
+ **************************************************************************/
+void neorv32_pwm_ch_disable_single(int ch) {
+
+  NEORV32_PWM->ENABLE &= ~(1 << (ch & 0x1fu));
+}
+
+
+/**********************************************************************//**
+ * Configure a single channel's wrap value and polarity.
+ *
+ * @param[in] ch Channel select (0..31).
+ * @param[in] top Wrap value for PWM counter (16-bit).
+ * @param[in] pol Polarity of PWM output (0 = normal, 1 = inverse).
+ * @param[in] mode Operation mode (0 = fast-PWM, 1 = phase-correct PWM).
+ **************************************************************************/
+void neorv32_pwm_ch_setup(int ch, int top, int pol, int mode) {
+
+  ch &= 0x1fu;
+  uint32_t mask = 1 << ch;
+
+  if (pol) {
+    NEORV32_PWM->POLARITY |= mask;
   } else {
-    NEORV32_PWM->CHANNEL_CFG[channel] &= ~((uint32_t)(1 << PWM_CFG_POL));
+    NEORV32_PWM->POLARITY &= ~mask;
   }
-}
 
+  if (mode) {
+    NEORV32_PWM->MODE |= mask;
+  } else {
+    NEORV32_PWM->MODE &= ~mask;
+  }
 
-/**********************************************************************//**
- * Set PWM channel's clock configuration.
- *
- * @param[in] channel Channel select (0..15).
- * @param[in] prsc Coarse clock prescaler select (3-bit, LSB-aligned). See #NEORV32_CLOCK_PRSC_enum.
- * @param[in] cdiv Fine clock divider value (10-bit, LSB-aligned).
- **************************************************************************/
-void neorv32_pwm_ch_set_clock(int channel, int prsc, int cdiv) {
-
-  channel &= 0xf; // constrain range
-
-  uint32_t tmp = NEORV32_PWM->CHANNEL_CFG[channel];
-  tmp &= 0x880000ffU; // clear current prsc and cdiv, keep enable, polarity, and duty
-  tmp |= ((uint32_t)(prsc & 0x7U))   << PWM_CFG_PRSC_LSB;
-  tmp |= ((uint32_t)(cdiv & 0x3ffU)) << PWM_CFG_CDIV_LSB;
-  NEORV32_PWM->CHANNEL_CFG[channel] = tmp;
+  NEORV32_PWM->CHANNEL[ch].TOP = top;
 }
 
 
 /**********************************************************************//**
  * Set PWM channel's duty cycle.
  *
- * @param[in] channel Channel select (0..15).
- * @param[in] duty Duty cycle (8-bit, LSB-aligned).
+ * @param[in] ch Channel select (0..31).
+ * @param[in] duty Duty cycle (16-bit).
  **************************************************************************/
-void neorv32_pwm_ch_set_duty(int channel, int duty) {
+void neorv32_pwm_ch_set_duty(int ch, int duty) {
 
-  channel &= 0xf; // constrain range
-
-  uint32_t tmp = NEORV32_PWM->CHANNEL_CFG[channel];
-  tmp &= 0xffffff00U; // clear current duty cycle configuration
-  tmp |= (uint32_t)(duty & 0x000000ffU); // set new configuration
-  NEORV32_PWM->CHANNEL_CFG[channel] = tmp;
+  NEORV32_PWM->CHANNEL[ch & 0x1f].CMP = duty;
 }

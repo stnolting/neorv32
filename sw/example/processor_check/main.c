@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -31,11 +31,15 @@
 #define ADDR_UNREACHABLE   (0x70000000U)
 //** Word-aligned address that returns a bus error on write-request */
 #define ADDR_WRERR         (0xFFFE0004U)
-//** External memory base address */
-#define EXT_FMEM_DATA_BASE (0xB0000000U)
-#define EXT_FMEM_TAG_BASE  (0xFF100000U)
+//** External memory base address (uncached) */
+#define EXT_FMEM_DATA_BASE (0xFF100000U)
+#define EXT_FMEM_TAG_BASE  (0xFF200000U)
 //** External IRQ trigger base address */
 #define SIM_TRIG_BASE      (0xFF000000U)
+//** VT-style terminal highlighting */
+#define TERM_HL_GREEN      "\033[1;32m"
+#define TERM_HL_RED        "\033[1;31m"
+#define TERM_HL_RESET      "\033[0m"
 /**@}*/
 
 
@@ -89,7 +93,6 @@ volatile unsigned char constr_src[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 
 volatile uint32_t constr_res = 0; // for constructor test
 volatile uint32_t amo_var = 0; // atomic memory access test
 volatile _Atomic int atomic_cnt = 0; // dual core atomic test
-volatile uint32_t backup[2]; // backup stuff
 
 
 /**********************************************************************//**
@@ -174,7 +177,7 @@ int main() {
   install_err += neorv32_rte_handler_install(TRAP_CODE_FIRQ_14,      global_trap_handler);
   install_err += neorv32_rte_handler_install(TRAP_CODE_FIRQ_15,      global_trap_handler);
   if (install_err) {
-    PRINT("RTE fail!\n");
+    PRINT("RTE setup failed!\n");
     return 1;
   }
 
@@ -239,11 +242,10 @@ int main() {
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_WAIT_DIS);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_ALU);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_BRANCH);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_BRANCHED);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_CTRLFLOW);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_LOAD);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_STORE);
     neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_WAIT_LSU);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER11, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT11, 1 << HPMCNT_EVENT_TRAP);
 
     // make sure there was no exception
     if (trap_cause == trap_never_c) {
@@ -336,7 +338,7 @@ int main() {
   // ----------------------------------------------------------
   // Test standard RISC-V counters
   // ----------------------------------------------------------
-  PRINT("[%i] Zicntr CNTs ", cnt_test);
+  PRINT("[%i] Zicntr CSRs ", cnt_test);
   trap_cause = trap_never_c;
   cnt_test++;
 
@@ -442,6 +444,84 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Counter privilege-mode filtering
+  // ----------------------------------------------------------
+  PRINT("[%i] CNT priv-mode filtering ", cnt_test);
+  trap_cause = trap_never_c;
+
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_SMCNTRPMF)) {
+    cnt_test++;
+
+    neorv32_cpu_csr_write(CSR_MCYCLECFGH,   1 << CSR_MCYCLECFGH_UINH);   // inhibit cycle when in user-mode
+    neorv32_cpu_csr_write(CSR_MINSTRETCFGH, 1 << CSR_MINSTRETCFGH_MINH); // inhibit instret when in machine-mode
+
+    uint32_t delta_cy_m, delta_cy_u, delta_ir_m, delta_ir_u;
+
+    // machine-mode test
+    delta_cy_m = neorv32_cpu_csr_read(CSR_CYCLE);
+    delta_ir_m = neorv32_cpu_csr_read(CSR_INSTRET);
+    asm volatile ("nop");
+    asm volatile ("nop");
+    delta_cy_m = neorv32_cpu_csr_read(CSR_CYCLE) - delta_cy_m;
+    delta_ir_m = neorv32_cpu_csr_read(CSR_INSTRET) - delta_ir_m;
+
+    // user-mode test
+    goto_user_mode();
+    {
+      delta_cy_u = neorv32_cpu_csr_read(CSR_CYCLE);
+      delta_ir_u = neorv32_cpu_csr_read(CSR_INSTRET);
+      asm volatile ("nop");
+      asm volatile ("nop");
+      delta_cy_u = neorv32_cpu_csr_read(CSR_CYCLE) - delta_cy_u;
+      delta_ir_u = neorv32_cpu_csr_read(CSR_INSTRET) - delta_ir_u;
+      asm volatile ("ecall"); // exit user-mode
+    }
+
+    if ((delta_cy_m != 0) && (delta_cy_u == 0) && (delta_ir_m == 0) && (delta_ir_u != 0)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
+    // re-enable base counters for all privilege modes
+    neorv32_cpu_csr_write(CSR_MCYCLECFGH, 0);
+    neorv32_cpu_csr_write(CSR_MINSTRETCFGH, 0);
+  }
+  else {
+    PRINT("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // May-be-operation
+  // ----------------------------------------------------------
+  PRINT("[%i] May-be-operations ", cnt_test);
+  trap_cause = trap_never_c;
+  cnt_test++;
+
+  tmp_a = CUSTOM_INSTR_I_TYPE(0b110000011100, 123456, 0b100, 0b1110011); // mop.r.16
+  tmp_b = CUSTOM_INSTR_R_TYPE(0b1100111, 789, 654321, 0b100, 0b1110011); // mop.rr.7
+
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIMOP)) {
+    if ((trap_cause == trap_never_c) && (tmp_a == 0) && (tmp_b == 0)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    if (trap_cause == TRAP_CODE_I_ILLEGAL) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+
+
+  // ----------------------------------------------------------
   // Execute MRET in U-mode (has to trap!)
   // ----------------------------------------------------------
   PRINT("[%i] MRET in U-mode ", cnt_test);
@@ -469,11 +549,11 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // External memory interface test (and I-cache block-/word-wise error check)
+  // External memory interface test
   // ----------------------------------------------------------
   PRINT("[%i] Ext. memory (@0x%x) ", cnt_test, (uint32_t)EXT_FMEM_DATA_BASE);
 
-  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) && (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM))) {
+  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) && neorv32_sysinfo_is_sim()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -483,15 +563,16 @@ int main() {
     // set tags (= error response) for the external memory
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x0, 0); // no error when accessing EXT_FMEM_DATA_BASE+0
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x4, 0); // no error when accessing EXT_FMEM_DATA_BASE+4
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x8, 1); // ERROR when accessing EXT_FMEM_DATA_BASE+8
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0xC, 1); // ERROR when accessing EXT_FMEM_DATA_BASE+12
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x8, 1); // ERROR, but will not be accessed
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0xC, 1); // ERROR, but will not be accessed
 
     // setup test program in external memory
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0, 0x3407D073); // csrwi mscratch, 15 (32-bit)
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+4, 0x00008067); // ret (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x0, 0x3407D073); // csrwi mscratch, 15 (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x4, 0x00008067); // ret (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x8, 0x3400D073); // csrwi mscratch, 1 (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0xC, 0x3400D073); // csrwi mscratch, 1 (32-bit)
 
     // execute program
-    asm volatile ("fence.i"); // flush i-cache
     tmp_a = (uint32_t)EXT_FMEM_DATA_BASE; // call the dummy sub program
     asm volatile ("jalr ra, %[input_i]" : : [input_i] "r" (tmp_a));
 
@@ -597,7 +678,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] IF access EXC ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
+  if (neorv32_sysinfo_is_sim()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -626,13 +707,12 @@ int main() {
 
   // skip if C-mode is implemented
   if ((neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_C)) &&
-      (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) &&
-      (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM))) {
+      (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) && neorv32_sysinfo_is_sim()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
-    // clear scratch CSR
-    neorv32_cpu_csr_write(CSR_MSCRATCH, 0);
+    // clear MIE CSR (used as general-purpose CSR as mscratch will be altered by the RTE trap handling)
+    neorv32_cpu_csr_write(CSR_MIE, 8);
 
     // set tags (= error response) for the external memory
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0x0, 0); // no error when accessing EXT_FMEM_DATA_BASE+0
@@ -641,18 +721,18 @@ int main() {
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_TAG_BASE+0xC, 0); // no error when accessing EXT_FMEM_DATA_BASE+12
 
     // setup test program in external memory
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x0, 0x00010001); // c.nop + c.nop
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x4, 0xD0730001); // csrwi mscratch, 15 (32-bit) + c.nop
-    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x8, 0x00013407); // c.nop + csrwi mscratch, 15 (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x0, 0x00008067); // ret (32-bit)
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x4, 0x50730001); // csrwi mie, 0 (32-bit) + c.nop
+    neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0x8, 0x00013040); // c.nop + csrwi mscratch, 0 (32-bit)
     neorv32_cpu_store_unsigned_word((uint32_t)EXT_FMEM_DATA_BASE+0xC, 0x00008067); // ret (32-bit)
 
     // execute program
-    asm volatile ("fence.i"); // flush i-cache
     tmp_a = (uint32_t)EXT_FMEM_DATA_BASE+6; // call the dummy sub program starting at "csrwi mscratch, 15 (32-bit)"
     asm volatile ("jalr ra, %[input_i]" : : [input_i] "r" (tmp_a));
 
     if ((trap_cause == TRAP_CODE_I_ACCESS) && // correct exception cause
-        (trap_mepc == tmp_a)) { // correct exception address
+        (trap_mepc == tmp_a) && // correct exception address
+        (neorv32_cpu_csr_read(CSR_MIE) == 8)) { // make sure the program was executed in the right way
       test_ok();
     }
     else {
@@ -679,7 +759,6 @@ int main() {
   // try executing some illegal instructions
   asm volatile (".word 0x58007053"); // unsupported fsqrt.s x0, x0
   asm volatile (".word 0x0e00302f"); // unsupported amoswap.D x0, x0, (x0)
-  asm volatile (".word 0x34004073"); // illegal CSR access funct3 (using mscratch)
   asm volatile (".word 0x30200077"); // mret with illegal opcode
   asm volatile (".word 0x3020007f"); // mret with illegal opcode
   asm volatile (".word 0x7b200073"); // dret outside of debug mode
@@ -702,11 +781,11 @@ int main() {
   // number of traps we are expecting + expected instruction word of last illegal instruction
   uint32_t invalid_instr;
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
-    tmp_a += 16;
+    tmp_a += 15;
     invalid_instr = 0x08812681; // mtinst: pre-decompressed; clear bit 1 if compressed instruction
   }
   else { // C extension disabled
-    tmp_a += 14;
+    tmp_a += 13;
     invalid_instr = 0xfe003023;
   }
 
@@ -731,7 +810,7 @@ int main() {
   PRINT("[%i] BREAK EXC ", cnt_test);
 
   // skip on real hardware since ebreak will make problems when running this test program via gdb
-  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
+  if (neorv32_sysinfo_is_sim()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -893,7 +972,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] CLINT.MTI ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
+  if (neorv32_clint_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -932,7 +1011,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] CLINT.MSI ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
+  if (neorv32_clint_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -966,7 +1045,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] MEI (sim) IRQ ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
+  if (neorv32_sysinfo_is_sim()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1000,7 +1079,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] Permanent IRQ (MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
+  if (neorv32_clint_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1033,7 +1112,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] Pending IRQ (MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
+  if (neorv32_clint_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1071,7 +1150,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] Vectored IRQ (sim) ", cnt_test);
 
-  if (neorv32_cpu_csr_read(CSR_MXCSR) & (1 << CSR_MXCSR_ISSIM)) {
+  if (neorv32_sysinfo_is_sim()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1117,7 +1196,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ0 (TWD) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWD)) {
+  if (neorv32_twd_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1285,7 +1364,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ5 (TRACER) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRACER)) {
+  if (neorv32_tracer_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1327,7 +1406,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ6 (SPI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SPI)) {
+  if (neorv32_spi_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1367,7 +1446,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ7 (TWI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TWI)) {
+  if (neorv32_twi_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1417,7 +1496,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ8 (GPIO) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPIO)) {
+  if (neorv32_gpio_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1466,7 +1545,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ9 (NEOLED) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_NEOLED)) {
+  if (neorv32_neoled_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1505,7 +1584,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ10 (DMA) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_DMA)) {
+  if (neorv32_dma_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1567,7 +1646,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ11 (SDI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SDI)) {
+  if ((neorv32_sdi_available()) && (neorv32_spi_available())) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1612,33 +1691,40 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ12 (GPTMR) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_GPTMR)) {
+  if (neorv32_gptmr_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
-    // enable GPTMR FIRQ
+    // setup GPTMR and CPU interrupt
+    neorv32_gptmr_setup(CLK_PRSC_2);
     neorv32_cpu_csr_write(CSR_MIE, 1 << GPTMR_FIRQ_ENABLE);
 
-    // match-interrupt after CLK_PRSC_2*THRESHOLD = 2*2 = 8 clock cycles
-    neorv32_gptmr_setup(CLK_PRSC_2, 2);
+    // slice 0: single-shot match-interrupt after CLK_PRSC_2*THRESHOLD = 2*5 = 10 clock cycles
+    neorv32_gptmr_configure(0, 0, 5, 0);
+    neorv32_gptmr_enable_single(0);
 
     // wait for interrupt
-    asm volatile ("nop");
-    asm volatile ("nop");
+    asm volatile ("wfi");
 
     neorv32_cpu_csr_write(CSR_MIE, 0);
 
     if ((trap_cause == GPTMR_TRAP_CODE) && // correct interrupt?
-        (NEORV32_GPTMR->CTRL & (1 << GPTMR_CTRL_IRQ_PND))) { // timer interrupt pending?
-      test_ok();
+        (NEORV32_GPTMR->SLICE[0].CNT == NEORV32_GPTMR->SLICE[0].THR) && // counter == threshold?
+        (neorv32_gptmr_irq_get() == 0)) { // slice 0 interrupt pending?
+      neorv32_gptmr_irq_ack(0);
+      if (neorv32_gptmr_irq_get() == -1) { // slice 0 interrupt no longer pending?
+        test_ok();
+      }
+      else {
+        test_fail();
+      }
     }
     else {
       test_fail();
     }
 
     // disable GPTMR
-    neorv32_gptmr_disable();
-
+    neorv32_gptmr_disable_mask(-1);
   }
   else {
     PRINT("[n.a.]\n");
@@ -1650,7 +1736,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ13 (ONEWIRE) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_ONEWIRE)) {
+  if (neorv32_onewire_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1691,7 +1777,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ14 (SLINK) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_SLINK)) {
+  if (neorv32_slink_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1733,7 +1819,8 @@ int main() {
   // Fast interrupt channel 15 (TRNG)
   // ----------------------------------------------------------
   PRINT("[%i] FIRQ15 (TRNG) ", cnt_test);
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_TRNG)) {
+
+  if (neorv32_trng_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1858,8 +1945,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] User-mode WFI (wake-up via MTI) ", cnt_test);
 
-  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) &&
-      (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U))) {
+  if ((neorv32_clint_available()) && (neorv32_cpu_csr_read(CSR_MISA) & (1 << CSR_MISA_U))) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -1897,7 +1983,7 @@ int main() {
   // ----------------------------------------------------------
   PRINT("[%i] WFI (wakeup on pending MTI) ", cnt_test);
 
-  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_IO_CLINT)) {
+  if (neorv32_clint_available()) {
     trap_cause = trap_never_c;
     cnt_test++;
 
@@ -2281,11 +2367,10 @@ int main() {
       "#04 DISP waits    : %u\n"
       "#05 ALU waits     : %u\n"
       "#06 branch instr. : %u\n"
-      "#07 ctrl flow tr. : %u\n"
+      "#07 control flow  : %u\n"
       "#08 MEM loads     : %u\n"
       "#09 MEM stores    : %u\n"
-      "#10 MEM waits     : %u\n"
-      "#11 traps         : %u\n",
+      "#10 MEM waits     : %u\n",
       neorv32_cpu_csr_read(CSR_CYCLE),
       neorv32_cpu_csr_read(CSR_INSTRET),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER3),
@@ -2295,8 +2380,7 @@ int main() {
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER7),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER8),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER9),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER10),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER11)
+      neorv32_cpu_csr_read(CSR_MHPMCOUNTER10)
     );
   }
 
@@ -2308,21 +2392,14 @@ int main() {
 
   // final result
   if (cnt_fail == 0) {
-    PRINT("%c[1m[PROCESSOR TEST COMPLETED SUCCESSFULLY!]%c[0m\n", 27, 27);
+    PRINT(TERM_HL_GREEN"[PROCESSOR CHECK COMPLETED SUCCESSFULLY!]"TERM_HL_RESET"\n");
+    return 0;
   }
   else {
-    PRINT("%c[1m[PROCESSOR TEST FAILED!]%c[0m\n", 27, 27);
+    PRINT(TERM_HL_RED"[PROCESSOR CHECK FAILED!]"TERM_HL_RESET"\n");
+    return -1;
   }
 
-  // make sure sim mode is disabled and UARTs are actually enabled
-  NEORV32_UART0->CTRL |=  (1 << UART_CTRL_EN);
-  NEORV32_UART0->CTRL &= ~(1 << UART_CTRL_SIM_MODE);
-  NEORV32_UART1->CTRL = NEORV32_UART0->CTRL;
-
-  // minimal result report
-  PRINT("%u/%u\n", (uint32_t)cnt_fail, (uint32_t)cnt_test);
-
-  return 0;
 }
 
 
@@ -2333,7 +2410,7 @@ int main() {
  **************************************************************************/
 void sim_irq_trigger(uint32_t sel) {
 
-  *((volatile uint32_t*)SIM_TRIG_BASE) = sel;
+  neorv32_cpu_store_unsigned_word(SIM_TRIG_BASE, sel);
 }
 
 
@@ -2461,7 +2538,7 @@ void gpio_trap_handler(void) {
  **************************************************************************/
 void test_ok(void) {
 
-  PRINT("%c[1m[ok]%c[0m\n", 27, 27);
+  PRINT(TERM_HL_GREEN"[ok]"TERM_HL_RESET"\n");
   cnt_ok++;
 }
 
@@ -2471,7 +2548,7 @@ void test_ok(void) {
  **************************************************************************/
 void test_fail(void) {
 
-  PRINT("%c[1m[fail]%c[0m\n", 27, 27);
+  PRINT(TERM_HL_RED"[fail]"TERM_HL_RESET"\n");
   cnt_fail++;
 }
 

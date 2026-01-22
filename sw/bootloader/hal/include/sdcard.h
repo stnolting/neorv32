@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 
+// prototypes
 int sdcard_setup(void);
 int sdcard_stream_get(uint32_t* rdata);
 

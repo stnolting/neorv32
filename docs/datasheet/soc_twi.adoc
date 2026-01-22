@@ -70,7 +70,9 @@ clock configuration.
 Based on the clock configuration, the actual TWI clock frequency f~SCL~ is derived
 from the processor's main clock f~main~ according to the following equation:
 
+****
 _**f~SCL~**_ = _f~main~[Hz]_ / (4 * `clock_prescaler` * (1 + TWI_CTRL_CDIV))
+****
 
 Hence, the maximum TWI clock is f~main~ / 8 and the lowest TWI clock is f~main~ / 262144. The generated TWI clock is
 always symmetric having a duty cycle of exactly 50% (if the clock is not haled by a device during clock stretching).

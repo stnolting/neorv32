@@ -6,7 +6,7 @@
 # -- -------------------------------------------------------------------------------- --
 # -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 # -- Copyright (c) NEORV32 contributors.                                              --
-# -- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+# -- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 # -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 # -- SPDX-License-Identifier: BSD-3-Clause                                            --
 # -- ================================================================================ --
@@ -66,7 +66,7 @@ update_compile_order -fileset sources_1
 # **************************************************************
 ipx::package_project -root_dir $outputdir/packaged_ip -vendor NEORV32 -library user -taxonomy /UserIP -import_files -set_current true -force
 set_property display_name "NEORV32" [ipx::current_core]
-set_property vendor_display_name "Stephan Nolting" [ipx::current_core]
+set_property vendor_display_name "neorv32" [ipx::current_core]
 set_property company_url https://github.com/stnolting/neorv32 [ipx::current_core]
 set_property description "The NEORV32 RISC-V Processor" [ipx::current_core]
 
@@ -137,8 +137,8 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_CFS_EN}     [ipx::get_ports cfs_*            -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_NEOLED_EN}  [ipx::get_ports neoled_o         -of_objects [ipx::current_core]]
   set_property enablement_dependency {$IO_CLINT_EN}   [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
-  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports mtime_irq_i      -of_objects [ipx::current_core]]
-  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports msw_irq_i        -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports irw_mti_i        -of_objects [ipx::current_core]]
+  set_property enablement_dependency {!$IO_CLINT_EN}  [ipx::get_ports irq_msi_i        -of_objects [ipx::current_core]]
 
 
   # **************************************************************
@@ -250,10 +250,11 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Counters and Timers}]
   add_params $group {
-    { RISCV_ISA_Zicntr {Zicntr - Base counters (cycles and instructions)} {} }
-    { RISCV_ISA_Zihpm  {Zihpm - Hardware performance monitors (HPMs)}     {} }
-    { HPM_CNT_WIDTH    {HPM width}                                        {Counter width in bits}  {$RISCV_ISA_Zihpm} }
-    { HPM_NUM_CNTS     {HPM counters}                                     {Number of HPM counters} {$RISCV_ISA_Zihpm} }
+    { RISCV_ISA_Zicntr    {Zicntr - Base counters (cycles and instructions)} {} }
+    { RISCV_ISA_Smcntrpmf {Smcntrpmf - Counter privilege-mode filtering}     {} }
+    { RISCV_ISA_Zihpm     {Zihpm - Hardware performance monitors (HPMs)}     {} }
+    { HPM_CNT_WIDTH       {HPM width}                                        {Counter width in bits}  {$RISCV_ISA_Zihpm} }
+    { HPM_NUM_CNTS        {HPM counters}                                     {Number of HPM counters} {$RISCV_ISA_Zihpm} }
   }
 
   set group [add_group $page {Bit-Manipulation}]
@@ -283,9 +284,10 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Miscelanous}]
   add_params $group {
+    { RISCV_ISA_Zfinx  {Zfinx - Embedded FPU (using integer register file)} {} }
     { RISCV_ISA_Zibi   {Zibi - Branch with immediate-comparison}            {} }
     { RISCV_ISA_Zicond {Zicond - Conditional-move instructions}             {} }
-    { RISCV_ISA_Zfinx  {Zfinx - Embedded FPU (using integer register file)} {} }
+    { RISCV_ISA_Zimop  {Zimop - May-be-operation}                           {} }
     { RISCV_ISA_Zxcfu  {Zxcfu - Custom-instructions unit (user-defined)}    {} }
   }
 
@@ -300,11 +302,14 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Tuning Options}]
   add_params $group {
-    { CPU_CONSTT_BR_EN  {Constant-time branches}                {Identical execution times for taken and not-taken branches} }
-    { CPU_FAST_MUL_EN   {DSP-based multiplier}                  {Use DSP block instead of bit-serial multipliers} }
-    { CPU_FAST_SHIFT_EN {Barrel shifter}                        {Use full-parallel shifters instead of of bit-serial shifters} }
-    { CPU_RF_HW_RST_EN  {Full hardware reset for register file} {Implement register file with FFs instead of BRAM to allow full hardware reset} }
+    { CPU_CONSTT_BR_EN  {Constant-time branches} {Identical execution times for taken and not-taken branches} }
+    { CPU_FAST_MUL_EN   {DSP-based multiplier}   {Use DSP block instead of bit-serial multipliers} }
+    { CPU_FAST_SHIFT_EN {Barrel shifter}         {Use full-parallel shifters instead of of bit-serial shifters} }
+    { CPU_RF_ARCH_SEL   {Register file style}    {Select implementation style of CPU register file} }
   }
+  set_property widget {comboBox} [ipgui::get_guiparamspec -name "CPU_RF_ARCH_SEL" -component [ipx::current_core] ]
+  set_property value_validation_type pairs [ipx::get_user_parameters CPU_RF_ARCH_SEL -of_objects [ipx::current_core]]
+  set_property value_validation_pairs {{Block RAM} 0 {Distributed RAM} 1 {FFs with reset} 2 {Latches} 3} [ipx::get_user_parameters CPU_RF_ARCH_SEL -of_objects [ipx::current_core]]
 
 
   # **************************************************************
@@ -414,8 +419,8 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Pulse-Width Modulation Controller (PWM)}]
   add_params $group {
-    { IO_PWM_EN     {Enable PWM} }
-    { IO_PWM_NUM_CH {Channels} {} {$IO_PWM_EN} }
+    { IO_PWM_EN  {Enable PWM} }
+    { IO_PWM_NUM {Number of PWM channels} {} {$IO_PWM_EN} }
   }
 
   set group [add_group $page {Watchdog Timer (WDT)}]
@@ -442,7 +447,8 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {General Purpose Timer (GPTMR)}]
   add_params $group {
-    { IO_GPTMR_EN {Enable GPTMR} }
+    { IO_GPTMR_EN  {Enable GPTMR} }
+    { IO_GPTMR_NUM {Number of independent timer slices} }
   }
 
   set group [add_group $page {One-Wire Interface Controller (ONEWIRE)}]

@@ -6,7 +6,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -74,68 +74,60 @@ end entity;
 
 architecture xbus2axi4_bridge_rtl of xbus2axi4_bridge is
 
-  type state_t is (S_IDLE, S_SINGLE, S_BURST_RUN, S_BURST_END);
-  signal state : state_t;
+  signal state : std_ulogic_vector(1 downto 0);
   signal arvalid, awvalid, wvalid, xbus_rd_ack, xbus_rd_err, xbus_wr_ack, xbus_wr_err : std_ulogic;
   constant blen_c : std_logic_vector(7 downto 0) := std_logic_vector(to_unsigned((BURST_LEN/4)-1, 8));
 
 begin
 
-  -- handshake arbiter --
+  -- AXI arbiter --
   arbiter: process(resetn, clk)
   begin
     if (resetn = '0') then
       arvalid <= '0';
       awvalid <= '0';
       wvalid  <= '0';
-      state   <= S_IDLE;
+      state   <= (others => '0');
     elsif rising_edge(clk) then
       -- AXI handshake --
       arvalid <= arvalid and std_ulogic(not m_axi_arready);
       awvalid <= awvalid and std_ulogic(not m_axi_awready);
       wvalid  <= wvalid  and std_ulogic(not m_axi_wready);
-
       -- state machine --
       case state is
 
-        when S_SINGLE => -- single read/write transfer in progress
-        -- ------------------------------------------------------------
-          if (m_axi_rvalid = '1') or (m_axi_bvalid = '1') then
-            state <= S_IDLE;
-          end if;
-
-        when S_BURST_RUN => -- burst read transfer in progress
-        -- ------------------------------------------------------------
-          if not BURST_EN then -- burst not supported
-            state <= S_IDLE;
-          elsif (m_axi_rlast = '1') then -- burst completed by device
-            state <= S_BURST_END;
-          end if;
-
-        when S_BURST_END => -- end of burst
-        -- ------------------------------------------------------------
-          if not BURST_EN then -- burst not supported
-            state <= S_IDLE;
-          elsif (xbus_cti_i = "000") then -- burst completed by host
-            state <= S_IDLE;
-          end if;
-
-        when others => -- S_IDLE: wait for access request
+        when "00" => -- idle; wait for access request
         -- ------------------------------------------------------------
           arvalid <= '0';
           awvalid <= '0';
           wvalid  <= '0';
           if (xbus_stb_i = '1') then -- access request
-            if (xbus_cti_i = "010") and BURST_EN then -- incrementing address burst access
-              arvalid <= '1'; -- read-only
-              state   <= S_BURST_RUN;
+            if BURST_EN and (xbus_cti_i = "010") then -- incrementing address burst access
+              arvalid <= '1'; -- read-only!
+              state   <= "10";
             else -- single access (read/write)
               arvalid <= not xbus_we_i;
               awvalid <= xbus_we_i;
               wvalid  <= xbus_we_i;
-              state   <= S_SINGLE;
+              state   <= "01";
             end if;
           end if;
+
+        when "01" => -- single read/write transfer in progress
+        -- ------------------------------------------------------------
+          if (m_axi_rvalid = '1') or (m_axi_bvalid = '1') then
+            state <= (others => '0');
+          end if;
+
+        when "10" => -- burst read transfer in progress
+        -- ------------------------------------------------------------
+          if (BURST_EN = false) or (xbus_cti_i = "000") then -- burst completed by host
+            state <= (others => '0');
+          end if;
+
+        when others => -- undefined
+        -- ------------------------------------------------------------
+          state <= (others => '0');
 
       end case;
     end if;
@@ -143,7 +135,7 @@ begin
 
   -- AXI read address channel --
   m_axi_araddr  <= std_logic_vector(xbus_adr_i);
-  m_axi_arlen   <= blen_c when (state = S_BURST_RUN) and BURST_EN else (others => '0'); -- burst length
+  m_axi_arlen   <= blen_c when BURST_EN and (state(1) = '1') else (others => '0'); -- burst length
   m_axi_arsize  <= "010"; -- 4 bytes per transfer
   m_axi_arburst <= "01"; -- incrementing bursts only
   m_axi_arcache <= "0011"; -- recommended by Vivado
@@ -152,8 +144,8 @@ begin
 
   -- AXI read data channel --
   m_axi_rready  <= '1'; -- always ready for read response
-  xbus_rd_ack   <= '1' when (m_axi_rvalid = '1') and (m_axi_rresp  = "00") else '0';
-  xbus_rd_err   <= '1' when (m_axi_rvalid = '1') and (m_axi_rresp /= "00") else '0';
+  xbus_rd_ack   <= '1' when (m_axi_rvalid = '1') and (m_axi_rresp(1) = '0') else '0'; -- OKAY(00)/EXOKAY(01)
+  xbus_rd_err   <= '1' when (m_axi_rvalid = '1') and (m_axi_rresp(1) = '1') else '0'; -- SLVERR(10)/DECERR(11)
   xbus_dat_o    <= std_ulogic_vector(m_axi_rdata);
 
   -- AXI write address channel --
@@ -173,8 +165,8 @@ begin
 
   -- AXI write response channel --
   m_axi_bready  <= '1'; -- always ready for write response
-  xbus_wr_ack   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp  = "00") else '0';
-  xbus_wr_err   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp /= "00") else '0';
+  xbus_wr_ack   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp(1) = '0') else '0'; -- OKAY(00)/EXOKAY(01)
+  xbus_wr_err   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp(1) = '1') else '0'; -- SLVERR(10)/DECERR(11)
 
   -- XBUS response --
   xbus_ack_o    <= xbus_rd_ack or xbus_wr_ack;

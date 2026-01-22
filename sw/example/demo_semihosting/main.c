@@ -54,7 +54,13 @@ int main() {
   // semihosting enabled at all?
 #ifndef STDIO_SEMIHOSTING
   neorv32_uart0_printf("[WARNING] stdio semihosting not enabled!\n");
-  neorv32_uart0_printf("Recompile with 'USER_FLAGS+=-DSTDIO_SEMIHOSTING'\n");
+  neorv32_uart0_printf("Recompile with USER_FLAGS+=-DSTDIO_SEMIHOSTING\n\n");
+#endif
+
+  // hint
+#ifndef UART_SEMIHOSTING
+  neorv32_uart0_puts("[NOTE] You can redirect ALL UART data via semihosting\n");
+  neorv32_uart0_puts("Recompile with USER_FLAGS+\"=-DSTDIO_SEMIHOSTING -DUART_SEMIHOSTING\"\n\n");
 #endif
 
 
@@ -62,6 +68,15 @@ int main() {
   // Print string to host's STDOUT
   // ------------------------------------------------------
   neorv32_semihosting_puts("Hello semihosting!\r\n");
+
+
+  // ------------------------------------------------------
+  // Print a RTE panic message via UART redirection
+  // ------------------------------------------------------
+#ifdef UART_SEMIHOSTING
+  neorv32_uart0_printf("NEORV32-RTE panic warning:\r\n");
+  asm volatile ("ecall");
+#endif
 
 
   // ------------------------------------------------------

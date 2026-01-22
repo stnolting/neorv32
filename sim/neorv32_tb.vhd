@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -19,63 +19,64 @@ use neorv32.neorv32_package.all;
 entity neorv32_tb is
   generic (
     -- processor --
-    CLOCK_FREQUENCY     : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
-    DUAL_CORE_EN        : boolean                        := false;        -- enable dual-core homogeneous SMP
-    BOOT_MODE_SELECT    : natural range 0 to 2           := 2;           -- boot from pre-initialized IMEM
-    BOOT_ADDR_CUSTOM    : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
-    RISCV_ISA_C         : boolean                        := true;        -- compressed extension
-    RISCV_ISA_E         : boolean                        := false;       -- embedded RF extension
-    RISCV_ISA_M         : boolean                        := true;        -- mul/div extension
-    RISCV_ISA_U         : boolean                        := true;        -- user mode extension
-    RISCV_ISA_Zaamo     : boolean                        := true;        -- atomic read-modify-write operations extension
-    RISCV_ISA_Zalrsc    : boolean                        := true;        -- atomic reservation-set operations extension
-    RISCV_ISA_Zcb       : boolean                        := false;       -- additional code size reduction instructions
-    RISCV_ISA_Zcmp      : boolean                        := true;        -- implement additional code size reduction instructions
-    RISCV_ISA_Zba       : boolean                        := true;        -- shifted-add bit-manipulation extension
-    RISCV_ISA_Zbb       : boolean                        := true;        -- basic bit-manipulation extension
-    RISCV_ISA_Zbkb      : boolean                        := true;        -- bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc      : boolean                        := true;        -- carry-less multiplication instructions
-    RISCV_ISA_Zbkx      : boolean                        := true;        -- cryptography crossbar permutation extension
-    RISCV_ISA_Zbs       : boolean                        := true;        -- single-bit bit-manipulation extension
-    RISCV_ISA_Zfinx     : boolean                        := true;        -- 32-bit floating-point extension
-    RISCV_ISA_Zibi      : boolean                        := true;        -- branch with immediate
-    RISCV_ISA_Zicntr    : boolean                        := true;        -- base counters
-    RISCV_ISA_Zicond    : boolean                        := true;        -- integer conditional operations
-    RISCV_ISA_Zihpm     : boolean                        := true;        -- hardware performance monitors
-    RISCV_ISA_Zknd      : boolean                        := true;        -- cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne      : boolean                        := true;        -- cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh      : boolean                        := true;        -- cryptography NIST hash extension
-    RISCV_ISA_Zksed     : boolean                        := true;        -- ShangMi block cipher extension
-    RISCV_ISA_Zksh      : boolean                        := true;        -- ShangMi hash extension
-    RISCV_ISA_Zmmul     : boolean                        := true;        -- multiply-only M sub-extension
-    RISCV_ISA_Zxcfu     : boolean                        := true;        -- custom (instr.) functions unit
-    CPU_CONSTT_BR_EN    : boolean                        := false;       -- constant-time branches
-    CPU_FAST_MUL_EN     : boolean                        := true;        -- use DSPs for M extension's multiplier
-    CPU_FAST_SHIFT_EN   : boolean                        := true;        -- use barrel shifter for shift operations
-    CPU_RF_HW_RST_EN    : boolean                        := false;       -- implement full hardware reset for register file
-    IMEM_EN             : boolean                        := true;        -- implement processor-internal instruction memory
-    IMEM_SIZE           : natural                        := 32*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
-    DMEM_EN             : boolean                        := true;        -- implement processor-internal data memory
-    DMEM_SIZE           : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
-    ICACHE_EN           : boolean                        := true;        -- implement instruction cache
-    ICACHE_NUM_BLOCKS   : natural range 1 to 4096        := 64;          -- i-cache: number of blocks (min 1), has to be a power of 2
-    DCACHE_EN           : boolean                        := true;        -- implement data cache
-    DCACHE_NUM_BLOCKS   : natural range 1 to 4096        := 32;          -- d-cache: number of blocks (min 1), has to be a power of 2
-    CACHE_BLOCK_SIZE    : natural range 8 to 1024        := 32;          -- i-cache/d-cache: block size in bytes (min 8), has to be a power of 2
-    CACHE_BURSTS_EN     : boolean                        := true;        -- enable issuing of burst transfer for cache update
-    TRACE_LOG_EN        : boolean                        := true;        -- write full trace log to file
+    CLOCK_FREQUENCY   : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
+    DUAL_CORE_EN      : boolean                        := false;        -- enable dual-core homogeneous SMP
+    BOOT_MODE_SELECT  : natural range 0 to 2           := 2;           -- boot from pre-initialized IMEM
+    BOOT_ADDR_CUSTOM  : std_ulogic_vector(31 downto 0) := x"00000000"; -- custom CPU boot address (if boot_config = 1)
+    RISCV_ISA_C       : boolean                        := true;        -- compressed extension
+    RISCV_ISA_E       : boolean                        := false;       -- embedded RF extension
+    RISCV_ISA_M       : boolean                        := true;        -- mul/div extension
+    RISCV_ISA_U       : boolean                        := true;        -- user mode extension
+    RISCV_ISA_Zaamo   : boolean                        := true;        -- atomic read-modify-write operations extension
+    RISCV_ISA_Zalrsc  : boolean                        := true;        -- atomic reservation-set operations extension
+    RISCV_ISA_Zcb     : boolean                        := true;        -- additional code size reduction instructions
+    RISCV_ISA_Zcmp    : boolean                        := false;        -- implement additional code size reduction instructions
+    RISCV_ISA_Zba     : boolean                        := true;        -- shifted-add bit-manipulation extension
+    RISCV_ISA_Zbb     : boolean                        := true;        -- basic bit-manipulation extension
+    RISCV_ISA_Zbkb    : boolean                        := true;        -- bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc    : boolean                        := true;        -- carry-less multiplication instructions
+    RISCV_ISA_Zbkx    : boolean                        := true;        -- cryptography crossbar permutation extension
+    RISCV_ISA_Zbs     : boolean                        := true;        -- single-bit bit-manipulation extension
+    RISCV_ISA_Zfinx   : boolean                        := true;        -- 32-bit floating-point extension
+    RISCV_ISA_Zibi    : boolean                        := true;        -- branch with immediate
+    RISCV_ISA_Zicntr  : boolean                        := true;        -- base counters
+    RISCV_ISA_Zicond  : boolean                        := true;        -- integer conditional operations
+    RISCV_ISA_Zihpm   : boolean                        := true;        -- hardware performance monitors
+    RISCV_ISA_Zimop   : boolean                        := true;        -- may-be-operations
+    RISCV_ISA_Zknd    : boolean                        := true;        -- cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne    : boolean                        := true;        -- cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh    : boolean                        := true;        -- cryptography NIST hash extension
+    RISCV_ISA_Zksed   : boolean                        := true;        -- ShangMi block cipher extension
+    RISCV_ISA_Zksh    : boolean                        := true;        -- ShangMi hash extension
+    RISCV_ISA_Zmmul   : boolean                        := true;        -- multiply-only M sub-extension
+    RISCV_ISA_Zxcfu   : boolean                        := true;        -- custom (instr.) functions unit
+    CPU_CONSTT_BR_EN  : boolean                        := false;       -- constant-time branches
+    CPU_FAST_MUL_EN   : boolean                        := true;        -- use DSPs for M extension's multiplier
+    CPU_FAST_SHIFT_EN : boolean                        := true;        -- use barrel shifter for shift operations
+    CPU_RF_ARCH_SEL   : natural range 0 to 3           := 0;           -- register file implementation style select
+    IMEM_EN           : boolean                        := true;        -- implement processor-internal instruction memory
+    IMEM_SIZE         : natural                        := 32*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
+    DMEM_EN           : boolean                        := true;        -- implement processor-internal data memory
+    DMEM_SIZE         : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
+    ICACHE_EN         : boolean                        := true;        -- implement instruction cache
+    ICACHE_NUM_BLOCKS : natural range 1 to 4096        := 64;          -- i-cache: number of blocks, has to be a power of 2
+    DCACHE_EN         : boolean                        := true;        -- implement data cache
+    DCACHE_NUM_BLOCKS : natural range 1 to 4096        := 32;          -- d-cache: number of blocks, has to be a power of 2
+    CACHE_BLOCK_SIZE  : natural range 4 to 1024        := 32;          -- i-cache/d-cache: block size in bytes, has to be a power of 2
+    CACHE_BURSTS_EN   : boolean                        := true;        -- enable issuing of burst transfer for cache update
+    TRACE_LOG_EN      : boolean                        := true;        -- write full trace log to file
     -- external memory A --
-    EXT_MEM_A_EN : boolean := false; -- enable memory
-    EXT_MEM_A_BASE : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address, has to be word-aligned
-    EXT_MEM_A_SIZE : natural := 64; -- memory size in bytes, min 4
-    EXT_MEM_A_LATE : natural range 1 to 4096 := 20; -- access latency cycles
-    EXT_MEM_A_FILE : string := ""; -- memory initialization file (plain HEX), no initialization if empty
+    EXT_MEM_A_EN      : boolean                        := false;       -- enable memory
+    EXT_MEM_A_BASE    : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address, has to be word-aligned
+    EXT_MEM_A_SIZE    : natural                        := 64;          -- memory size in bytes, min 4
+    EXT_MEM_A_LATE    : natural range 1 to 4096        := 20;          -- access latency cycles
+    EXT_MEM_A_FILE    : string                         := "";          -- memory initialization file (plain HEX), no initialization if empty
     -- external memory B --
-    EXT_MEM_B_EN : boolean := false; -- enable memory
-    EXT_MEM_B_BASE : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address, has to be word-aligned
-    EXT_MEM_B_SIZE : natural := 64; -- memory size in bytes, min 4
-    EXT_MEM_B_LATE : natural range 1 to 4096 := 40; -- access latency cycles
-    EXT_MEM_B_FILE : string := "" -- memory initialization file (plain HEX), no initialization if empty
+    EXT_MEM_B_EN      : boolean                        := false;       -- enable memory
+    EXT_MEM_B_BASE    : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address, has to be word-aligned
+    EXT_MEM_B_SIZE    : natural                        := 64;          -- memory size in bytes, min 4
+    EXT_MEM_B_LATE    : natural range 1 to 4096        := 40;          -- access latency cycles
+    EXT_MEM_B_FILE    : string                         := ""           -- memory initialization file (plain HEX), no initialization if empty
   );
 end neorv32_tb;
 
@@ -154,21 +155,23 @@ begin
     RISCV_ISA_Zbs => RISCV_ISA_Zbs,
     RISCV_ISA_Zfinx => RISCV_ISA_Zfinx,
     RISCV_ISA_Zibi      => RISCV_ISA_Zibi,
-    RISCV_ISA_Zicntr => RISCV_ISA_Zicntr,
-    RISCV_ISA_Zicond => RISCV_ISA_Zicond,
-    RISCV_ISA_Zihpm => RISCV_ISA_Zihpm,
-    RISCV_ISA_Zknd => RISCV_ISA_Zknd,
-    RISCV_ISA_Zkne => RISCV_ISA_Zkne,
-    RISCV_ISA_Zknh => RISCV_ISA_Zknh,
-    RISCV_ISA_Zksed => RISCV_ISA_Zksed,
-    RISCV_ISA_Zksh => RISCV_ISA_Zksh,
-    RISCV_ISA_Zmmul => RISCV_ISA_Zmmul,
-    RISCV_ISA_Zxcfu => RISCV_ISA_Zxcfu,
+    RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
+    RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
+    RISCV_ISA_Zihpm     => RISCV_ISA_Zihpm,
+    RISCV_ISA_Zimop     => RISCV_ISA_Zimop,
+    RISCV_ISA_Zknd      => RISCV_ISA_Zknd,
+    RISCV_ISA_Zkne      => RISCV_ISA_Zkne,
+    RISCV_ISA_Zknh      => RISCV_ISA_Zknh,
+    RISCV_ISA_Zksed     => RISCV_ISA_Zksed,
+    RISCV_ISA_Zksh      => RISCV_ISA_Zksh,
+    RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
+    RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
+    RISCV_ISA_Smcntrpmf => true,
     -- Extension Options --
-    CPU_CONSTT_BR_EN => CPU_CONSTT_BR_EN,
-    CPU_FAST_MUL_EN => CPU_FAST_MUL_EN,
-    CPU_FAST_SHIFT_EN => CPU_FAST_SHIFT_EN,
-    CPU_RF_HW_RST_EN => CPU_RF_HW_RST_EN,
+    CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
+    CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
+    CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
+    CPU_RF_ARCH_SEL     => CPU_RF_ARCH_SEL,
     -- Physical Memory Protection (PMP) --
     PMP_NUM_REGIONS => 5,
     PMP_MIN_GRANULARITY => 4,
@@ -178,9 +181,9 @@ begin
     HPM_NUM_CNTS => 12,
     HPM_CNT_WIDTH => 40,
     -- Internal Instruction memory --
-    IMEM_EN => IMEM_EN,
-    IMEM_SIZE => IMEM_SIZE,
-    IMEM_OUTREG_EN => true,
+    IMEM_EN             => IMEM_EN,
+    IMEM_SIZE           => IMEM_SIZE,
+    IMEM_OUTREG_EN      => false,
     -- Internal Data memory --
     DMEM_EN => DMEM_EN,
     DMEM_SIZE => DMEM_SIZE,
@@ -197,40 +200,40 @@ begin
     XBUS_TIMEOUT        => 2048,
     XBUS_REGSTAGE_EN    => true,
     -- Processor peripherals --
-    IO_GPIO_NUM => 32,
-    IO_CLINT_EN => true,
-    IO_UART0_EN => true,
-    IO_UART0_RX_FIFO => 32,
-    IO_UART0_TX_FIFO => 32,
-    IO_UART1_EN => true,
-    IO_UART1_RX_FIFO => 1,
-    IO_UART1_TX_FIFO => 1,
-    IO_SPI_EN => true,
-    IO_SPI_FIFO => 4,
-    IO_SDI_EN => true,
-    IO_SDI_FIFO => 4,
-    IO_TWI_EN => true,
-    IO_TWI_FIFO => 4,
-    IO_TWD_EN => true,
-    IO_TWD_RX_FIFO => 4,
-    IO_TWD_TX_FIFO => 4,
-    IO_PWM_NUM_CH => 8,
-    IO_WDT_EN => true,
-    IO_TRNG_EN => true,
-    IO_TRNG_FIFO => 4,
-    IO_CFS_EN => true,
-    IO_NEOLED_EN => true,
-    IO_NEOLED_TX_FIFO => 8,
-    IO_GPTMR_EN => true,
-    IO_ONEWIRE_EN => true,
-    IO_ONEWIRE_FIFO => 8,
-    IO_DMA_EN => true,
-    IO_DMA_DSC_FIFO => 8,
-    IO_SLINK_EN => true,
-    IO_SLINK_RX_FIFO => 4,
-    IO_SLINK_TX_FIFO => 1,
-    IO_TRACER_EN => true,
-    IO_TRACER_BUFFER => 32,
+    IO_GPIO_NUM         => 32,
+    IO_CLINT_EN         => true,
+    IO_UART0_EN         => true,
+    IO_UART0_RX_FIFO    => 32,
+    IO_UART0_TX_FIFO    => 32,
+    IO_UART1_EN         => true,
+    IO_UART1_RX_FIFO    => 1,
+    IO_UART1_TX_FIFO    => 1,
+    IO_SPI_EN           => true,
+    IO_SPI_FIFO         => 4,
+    IO_SDI_EN           => true,
+    IO_SDI_FIFO         => 4,
+    IO_TWI_EN           => true,
+    IO_TWI_FIFO         => 4,
+    IO_TWD_EN           => true,
+    IO_TWD_RX_FIFO      => 4,
+    IO_TWD_TX_FIFO      => 4,
+    IO_PWM_NUM          => 8,
+    IO_WDT_EN           => true,
+    IO_TRNG_EN          => true,
+    IO_TRNG_FIFO        => 4,
+    IO_CFS_EN           => true,
+    IO_NEOLED_EN        => true,
+    IO_NEOLED_TX_FIFO   => 8,
+    IO_GPTMR_NUM        => 4,
+    IO_ONEWIRE_EN       => true,
+    IO_ONEWIRE_FIFO     => 8,
+    IO_DMA_EN           => true,
+    IO_DMA_DSC_FIFO     => 8,
+    IO_SLINK_EN         => true,
+    IO_SLINK_RX_FIFO    => 4,
+    IO_SLINK_TX_FIFO    => 1,
+    IO_TRACER_EN        => true,
+    IO_TRACER_BUFFER    => 32,
     IO_TRACER_SIMLOG_EN => TRACE_LOG_EN
   )
   port map(
@@ -316,9 +319,9 @@ begin
     -- Machine timer system time --
     mtime_time_o => open,
     -- CPU Interrupts --
-    mtime_irq_i => mti,
-    msw_irq_i => msi,
-    mext_irq_i => mei
+    irq_msi_i      => msi,
+    irw_mti_i      => mti,
+    irq_mei_i      => mei
   );
 
   -- Two-Wire Bus - Tri-State Drivers (modules can only actively pull the signals low) ------
@@ -416,12 +419,12 @@ begin
     -- device address size in bytes and base address --
     DEV_0_EN => EXT_MEM_A_EN, DEV_0_SIZE => EXT_MEM_A_SIZE, DEV_0_BASE => EXT_MEM_A_BASE,
     DEV_1_EN => EXT_MEM_B_EN, DEV_1_SIZE => EXT_MEM_B_SIZE, DEV_1_BASE => EXT_MEM_B_BASE,
-    DEV_2_EN => true,         DEV_2_SIZE =>              8, DEV_2_BASE => x"F0000000",
-    DEV_3_EN => true,         DEV_3_SIZE =>              4, DEV_3_BASE => x"FF000000",
-    DEV_4_EN => true,         DEV_4_SIZE =>             16, DEV_4_BASE => x"B0000000",
-    DEV_5_EN => true,         DEV_5_SIZE =>             16, DEV_5_BASE => x"FF100000",
-    DEV_6_EN => false,        DEV_6_SIZE =>              0, DEV_6_BASE => (others => '0'), -- unused
-    DEV_7_EN => false,        DEV_7_SIZE =>              0, DEV_7_BASE => (others => '0')  -- unused
+    DEV_2_EN => true,         DEV_2_SIZE => 8,              DEV_2_BASE => x"F0000000",
+    DEV_3_EN => true,         DEV_3_SIZE => 4,              DEV_3_BASE => x"FF000000",
+    DEV_4_EN => true,         DEV_4_SIZE => 16,             DEV_4_BASE => x"FF100000",
+    DEV_5_EN => true,         DEV_5_SIZE => 16,             DEV_5_BASE => x"FF200000",
+    DEV_6_EN => false,        DEV_6_SIZE => 0,              DEV_6_BASE => (others => '0'),
+    DEV_7_EN => false,        DEV_7_SIZE => 0,              DEV_7_BASE => (others => '0')
   )
   port map (
     -- host port --
@@ -434,8 +437,8 @@ begin
     dev_3_req_o => xbus_trig_req,      dev_3_rsp_i => xbus_trig_rsp,
     dev_4_req_o => xbus_fmem_data_req, dev_4_rsp_i => xbus_fmem_data_rsp,
     dev_5_req_o => xbus_fmem_tag_req,  dev_5_rsp_i => xbus_fmem_tag_rsp,
-    dev_6_req_o => open,               dev_6_rsp_i => xbus_rsp_terminate_c, -- unused
-    dev_7_req_o => open,               dev_7_rsp_i => xbus_rsp_terminate_c  -- unused
+    dev_6_req_o => open,               dev_6_rsp_i => xbus_rsp_terminate_c,
+    dev_7_req_o => open,               dev_7_rsp_i => xbus_rsp_terminate_c
   );
 
 
@@ -541,6 +544,5 @@ begin
     mem_req_i => xbus_fmem_data_req,
     mem_rsp_o => xbus_fmem_data_rsp
   );
-
 
 end neorv32_tb_rtl;

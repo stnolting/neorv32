@@ -95,7 +95,7 @@ to take into account a dynamic frequency scaling of the processor.
 | `17`    | `SYSINFO_SOC_IO_UART0`   | set if primary UART0 is implemented (via top's `IO_UART0_EN` generic)
 | `18`    | `SYSINFO_SOC_IO_SPI`     | set if SPI is implemented (via top's `IO_SPI_EN` generic)
 | `19`    | `SYSINFO_SOC_IO_TWI`     | set if TWI is implemented (via top's `IO_TWI_EN` generic)
-| `20`    | `SYSINFO_SOC_IO_PWM`     | set if PWM is implemented (via top's `IO_PWM_NUM_CH` generic)
+| `20`    | `SYSINFO_SOC_IO_PWM`     | set if PWM is implemented (via top's `IO_PWM_NUM` generic)
 | `21`    | `SYSINFO_SOC_IO_WDT`     | set if WDT is implemented (via top's `IO_WDT_EN` generic)
 | `22`    | `SYSINFO_SOC_IO_CFS`     | set if custom functions subsystem is implemented (via top's `IO_CFS_EN` generic)
 | `23`    | `SYSINFO_SOC_IO_TRNG`    | set if TRNG is implemented (via top's `IO_TRNG_EN` generic)
@@ -103,10 +103,10 @@ to take into account a dynamic frequency scaling of the processor.
 | `25`    | `SYSINFO_SOC_IO_UART1`   | set if secondary UART1 is implemented (via top's `IO_UART1_EN` generic)
 | `26`    | `SYSINFO_SOC_IO_NEOLED`  | set if smart LED interface is implemented (via top's `IO_NEOLED_EN` generic)
 | `27`    | `SYSINFO_SOC_IO_TRACER`  | set if execution tracer is implemented (via top's `IO_TRACER_EN` generic)
-| `28`    | `SYSINFO_SOC_IO_GPTMR`   | set if GPTMR is implemented (via top's `IO_GPTMR_EN` generic)
+| `28`    | `SYSINFO_SOC_IO_GPTMR`   | set if GPTMR is implemented (via top's `IO_GPTMR_NUM` generic)
 | `29`    | `SYSINFO_SOC_IO_SLINK`   | set if stream link interface is implemented (via top's `IO_SLINK_EN` generic)
 | `30`    | `SYSINFO_SOC_IO_ONEWIRE` | set if ONEWIRE interface is implemented (via top's `IO_ONEWIRE_EN` generic)
-| `31`    | -                        | _reserved_, read as zero
+| `31`    | `SYSINFO_SOC_SIM`        | set if NEORV32 is being simulated
 |=======================
 
 
@@ -114,8 +114,8 @@ to take into account a dynamic frequency scaling of the processor.
 
 The SYSINFO cache register provides information about the configuration of the processor caches:
 
-* <<_processor_internal_instruction_cache_icache>>
-* <<_processor_internal_data_cache_dcache>>
+* <<_instruction_cache_icache>>
+* <<_data_cache_dcache>>
 
 .SYSINFO `CACHE` Bits
 [cols="^1,<10,<10"]

@@ -1,7 +1,5 @@
 /* ================================================================================ */
-/* NEORV32 CPU - RISC-V GCC Linker Script                                           */
-/* -------------------------------------------------------------------------------- */
-/* "Park loop" code linking for execution-based on-chip debugger'S (OCD) code ROM.  */
+/* NEORV32 CPU - OCD Park loop code linker script (for DM code ROM)                 */
 /* -------------------------------------------------------------------------------- */
 /* The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              */
 /* Copyright (c) NEORV32 contributors.                                              */
@@ -12,11 +10,11 @@
 
 OUTPUT_FORMAT("elf32-littleriscv")
 OUTPUT_ARCH(riscv)
-ENTRY(_ocd_start)
+ENTRY(ocd_start)
 
 MEMORY
 {
-  dm_code_rom (rx) : ORIGIN = 0xFFFFFE00, LENGTH = 128
+  dm_code_rom (rx) : ORIGIN = 0xFFFFFF00, LENGTH = 64
 }
 
 SECTIONS

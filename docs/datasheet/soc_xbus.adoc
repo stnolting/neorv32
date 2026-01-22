@@ -21,7 +21,7 @@
 | Configuration generics: | `XBUS_EN`            | enable external bus interface when `true`
 |                         | `XBUS_TIMEOUT`       | number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled)
 |                         | `XBUS_REGSTAGE_EN`   | implement XBUS register stages
-|                         | (`CACHE_BLOCK_SIZE`) | burst size
+|                         | (`CACHE_BLOCK_SIZE`) | burst size (defined by global cache block size)
 |                         | (`CACHE_BURSTS_EN`)  | enable burst transfers for cache update
 | CPU interrupts:         | none                 |
 |=======================

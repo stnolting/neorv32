@@ -96,10 +96,10 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_sys_clock is
   port (
-    clk_i    : in  std_ulogic; -- global clock, rising edge
-    rstn_i   : in  std_ulogic; -- global reset, low-active, async
-    enable_i : in  std_ulogic; -- generator enable
-    clk_en_o : out std_ulogic_vector(7 downto 0) -- clock-enable ticks
+    clk_i    : in  std_ulogic;                   -- global clock, rising edge
+    rstn_i   : in  std_ulogic;                   -- global reset, low-active, async
+    enable_i : in  std_ulogic;                   -- generator enable
+    clk_en_o : out std_ulogic_vector(7 downto 0) -- prescaled clock-enables
   );
 end neorv32_sys_clock;
 

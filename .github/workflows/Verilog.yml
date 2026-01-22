@@ -1,0 +1,90 @@
+name: 'Verilog Conversion'
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'rtl/**'
+      - '.github/workflows/Verilog.yml'
+  pull_request:
+    paths:
+      - 'rtl/**'
+      - '.github/workflows/Verilog.yml'
+  workflow_dispatch:
+
+jobs:
+
+  convert:
+    name: '♻️ Convert to Verilog'
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: '📂 Repository Checkout'
+      uses: actions/checkout@v6
+
+    - name: '📦 Install GHDL'
+      uses: ghdl/setup-ghdl@v1
+      with:
+        version: nightly
+        backend: mcode
+
+    - name: '⚙️ Run conversion'
+      run: |
+        make -C rtl/verilog clean convert
+
+    - name: '📤 Archive generated Verilog code'
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: neorv32_verilog_wrapper
+        path: rtl/verilog/neorv32_verilog_wrapper.v
+
+  sim_iverilog:
+    name: '🖥️ Verilog simulation - Icarus Verilog'
+    needs: convert
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: '📂 Repository Checkout'
+      uses: actions/checkout@v6
+
+    - name: '📂 Checkout Conversion Artifact'
+      uses: actions/download-artifact@v7
+      with:
+        name: neorv32_verilog_wrapper
+        path: rtl/verilog
+
+    - name: '📦 Install Icarus Verilog'
+      run: sudo apt install iverilog
+
+    - name: '⚙️ Run Simulation'
+      run: |
+        make -C rtl/verilog SIMULATOR=iverilog sim | tee iverilog.log
+        grep 'Simulation successful!' iverilog.log
+
+  sim_verilator:
+    name: '🖥️ Verilog simulation - Verilator'
+    needs: convert
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: '📂 Repository Checkout'
+      uses: actions/checkout@v6
+
+    - name: '📂 Checkout Conversion Artifact'
+      uses: actions/download-artifact@v7
+      with:
+        name: neorv32_verilog_wrapper
+        path: rtl/verilog
+
+    - name: '📦 Install Verilator'
+      run: sudo apt install verilator
+
+    - name: '⚙️ Run Simulation'
+      run: |
+        make -C rtl/verilog SIMULATOR=verilator sim | tee verilator.log
+        grep 'Simulation successful!' verilator.log

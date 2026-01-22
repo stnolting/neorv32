@@ -29,8 +29,8 @@ entity neorv32_cpu_hwtrig is
     rstn_i : in  std_ulogic; -- global reset, low-active, async
     ctrl_i : in  ctrl_bus_t; -- main control bus
     -- data path --
-    mar_i  : in  std_ulogic_vector(XLEN-1 downto 0); -- memory address register
-    csr_o  : out std_ulogic_vector(XLEN-1 downto 0); -- CSR read data
+    mar_i  : in  std_ulogic_vector(31 downto 0); -- memory address register
+    csr_o  : out std_ulogic_vector(31 downto 0); -- CSR read data
     -- trigger firing --
     hit_o  : out std_ulogic -- high until debug-mode is entered
   );
@@ -42,9 +42,9 @@ architecture neorv32_cpu_hwtrig_rtl of neorv32_cpu_hwtrig is
   constant log2_num_triggers_c : natural := index_size_f(NUM_TRIGGERS);
 
   -- match control CSRs: tdata1[tselect] and tdata2[tselect] --
-  type tdata2_t is array (0 to NUM_TRIGGERS-1) of std_ulogic_vector(XLEN-1 downto 0);
+  type tdata2_t is array (0 to NUM_TRIGGERS-1) of std_ulogic_vector(31 downto 0);
   signal tdata2 : tdata2_t;
-  signal tdata1, tdata1_rb, tdata2_rb, tinfo_rb : std_ulogic_vector(XLEN-1 downto 0);
+  signal tdata1, tdata1_rb, tdata2_rb, tinfo_rb : std_ulogic_vector(31 downto 0);
   signal tdata1_exec, tdata1_store, tdata1_load, tdata1_hit : std_ulogic_vector(NUM_TRIGGERS-1 downto 0);
 
   -- trigger select --
@@ -128,7 +128,7 @@ begin
   tdata1(31 downto 28) <= x"6"; -- type: address match trigger (mcontrol6)
   tdata1(27)           <= '1'; -- dmode: ignore machine-mode write accesses
   tdata1(26)           <= '0'; -- uncertain: trigger satisfies the configured conditions
-  tdata1(25)           <= or_reduce_f(tdata1_hit and sel); -- hit1: trigger fired IMMEDIATELY AFTER condition has retired
+  tdata1(25)           <= tdata1(22); -- hit1: see hit0
   tdata1(24)           <= '0'; -- vs: VS-mode not implemented
   tdata1(23)           <= '0'; -- vu: VU-mode not implemented
   tdata1(22)           <= or_reduce_f(tdata1_hit and sel); -- hit0: trigger fired IMMEDIATELY AFTER condition has retired
@@ -142,15 +142,15 @@ begin
   tdata1(5)            <= '0'; -- uncertainen: trigger satisfies the configured conditions
   tdata1(4)            <= '0'; -- s: supervisor-mode not supported
   tdata1(3)            <= bool_to_ulogic_f(RISCV_ISA_U); -- u: trigger always enabled when in user-mode (if implemented)
-  tdata1(2)            <= or_reduce_f(tdata1_exec and sel); -- execute: enable trigger on instruction address match
+  tdata1(2)            <= or_reduce_f(tdata1_exec  and sel); -- execute: enable trigger on instruction address match
   tdata1(1)            <= or_reduce_f(tdata1_store and sel); -- store: enable trigger on store address match
-  tdata1(0)            <= or_reduce_f(tdata1_load and sel); -- load: enable trigger on load address match
+  tdata1(0)            <= or_reduce_f(tdata1_load  and sel); -- load: enable trigger on load address match
   --
   tdata1_rb <= tdata1 when (sel_invalid = '0') else (others => '0'); -- all-zero if invalid trigger selection
 
   -- tdata2 read-back select --
   tdata2_readback: process(sel, sel_invalid, tdata2)
-    variable res_v : std_ulogic_vector(XLEN-1 downto 0);
+    variable res_v : std_ulogic_vector(31 downto 0);
   begin
     res_v := (others => '0');
     for i in 0 to NUM_TRIGGERS-1 loop

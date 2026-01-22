@@ -1,8 +1,5 @@
 ## Contributor Covenant Code of Conduct
 
-> [!IMPORTANT]
-> Please note that we have a **Code of Conduct**. Please follow it in all your interactions with this project.
-
 ### Our Pledge
 
 In the interest of fostering an open and welcoming environment, we as
@@ -68,7 +65,5 @@ members of the project's leadership.
 ### Attribution
 
 This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 1.4,
-available at [https://www.contributor-covenant.org/version/1/4/code-of-conduct.html](https://www.contributor-covenant.org/version/1/4/code-of-conduct.html)
-
-For answers to common questions about this code of conduct, see
-[https://www.contributor-covenant.org/faq](https://www.contributor-covenant.org/faq)
+available at [https://www.contributor-covenant.org/version/1/4/code-of-conduct.html](https://www.contributor-covenant.org/version/1/4/code-of-conduct.html).
+For answers to common questions about this code of conduct, see [https://www.contributor-covenant.org/faq](https://www.contributor-covenant.org/faq).

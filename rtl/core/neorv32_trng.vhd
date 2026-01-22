@@ -32,11 +32,11 @@ end neorv32_trng;
 
 architecture neorv32_trng_rtl of neorv32_trng is
 
-  -- neoTRNG Configuration --------------------------------------------------------------------------
-  constant num_cells_c     : natural := 3; -- total number of ring-oscillator cells
-  constant num_inv_start_c : natural := 5; -- number of inverters in first cell, has to be odd, min 3
+  -- neoTRNG Configuration ---------------------------------------------------------------------------
+  constant num_cells_c     : natural := 3;  -- total number of ring-oscillator cells
+  constant num_inv_start_c : natural := 5;  -- number of inverters in first cell, has to be odd, min 3
   constant num_raw_bits_c  : natural := 64; -- number of raw bits to process for one output byte
-  -- ------------------------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------------
 
   -- control register bits --
   constant ctrl_en_c       : natural := 0; -- r/w: TRNG enable

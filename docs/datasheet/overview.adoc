@@ -55,7 +55,7 @@ that provides hands-on tutorials to get you started.
 **NEORV32 CPU (the core)**
 
 * 32-bit RISC-V CPU
-* fully compatible to the RISC-V ISA specs. - checked by the https://github.com/stnolting/neorv32-riscof[official RISCOF architecture tests]
+* fully compatible to the RISC-V ISA specs. - checked by the official RISC-V architecture compatibility tests
 * base ISA + privileged ISA + several optional standard and custom ISA extensions
 * option to add user-defined RISC-V instructions as custom ISA extension
 * rich set of customization options (ISA extensions, design goal: performance / area / energy, tuning options, ...)
@@ -81,6 +81,7 @@ that provides hands-on tutorials to get you started.
 * core libraries and HAL for high-level usage of the provided functions and peripherals
 * processor-specific runtime environment and several example programs
 * Doxygen-based documentation of the software framework; a deployed version is available at https://stnolting.github.io/neorv32/sw/files.html
+* Ada support at https://github.com/GNAT-Academic-Program/neorv32-hal
 
 **OS Support**
 
@@ -113,35 +114,34 @@ The root directory of the repository is considered the NEORV32 base or home fold
 
 .Folder Structure
 ...................................
-neorv32                    - Project home folder
+neorv32                   - Project home folder
 │
-├─ docs                    - Documentation
-│  ├─ datasheet            - AsciiDoc sources for the NEORV32 data sheet
-│  ├─ figures              - Figures and logos
-│  ├─ references           - Data sheets and RISC-V specs
-│  └─ userguide            - AsciiDoc sources for the NEORV32 user guide
+├─ docs                   - Documentation
+│  ├─ datasheet           - AsciiDoc sources for the NEORV32 data sheet
+│  ├─ figures             - Figures and logos
+│  ├─ references          - Data sheets and RISC-V specs
+│  └─ userguide           - AsciiDoc sources for the NEORV32 user guide
 │
-├─ rtl                     - HDL sources
-│  ├─ core                 - Core sources of the CPU & SoC
-│  ├─ processor_templates  - Pre-configured SoC wrappers
-│  ├─ system_integration   - System wrappers and bridges for advanced SoC connectivity
-│  └─ test_setups          - Minimal test setup "SoCs" used in the User Guide
+├─ rtl                    - HDL sources
+│  ├─ core                - Core sources of the CPU & SoC
+│  ├─ system_integration  - System wrappers and bridges for advanced SoC connectivity
+│  ├─ test_setups         - Minimal test setup "SoCs" used in the User Guide
+│  └─ verilog             - Scripts and examples for converting NEORV32 to Verilog
 │
-├─ sim                     - Simulation files
+├─ sim                    - Simulation files
 │
-└─ sw                      - Software framework
-   ├─ bootloader           - Sources of the processor-internal bootloader
-   ├─ common               - Linker script, crt0.S start-up code and central makefile
-   ├─ example              - Example programs for the core and the SoC modules
-   │  ├─ eclipse           - Pre-configured Eclipse IDE project
-   │  └─ ...               - Several example programs
-   ├─ image_gen            - Helper program to generate executables & memory images
-   ├─ lib                  - Processor core library
-   │  ├─ include           - NEORV32 core library header files (*.h)
-   │  └─ source            - NEORV32 core library source files (*.c)
-   ├─ ocd_firmware         - Firmware for the on-chip debugger "park loop"
-   ├─ openocd              - OpenOCD configuration files
-   └─ svd                  - Processor system view description file (CMSIS-SVD)
+└─ sw                     - Software framework
+   ├─ bootloader          - Sources of the default builtin bootloader
+   ├─ common              - Linker script, crt0.S start-up code and central makefile
+   ├─ example             - Example programs for the core and the SoC modules
+   │  ├─ eclipse          - Pre-configured Eclipse IDE project
+   │  └─ ...              - Several example programs
+   ├─ image_gen           - Helper program to generate executables & memory images
+   ├─ lib                 - NEORV32 core library
+   ├─ ocd_firmware        - Firmware for the on-chip debugger "park loop"
+   ├─ openocd             - OpenOCD configuration files
+   ├─ riscv-arch-test     - Test RISC-V compatibility using the official test framework
+   └─ svd                 - Processor system view description file (CMSIS-SVD)
 ...................................
 
 
@@ -161,34 +161,38 @@ All core VHDL files from the list below have to be assigned to a **new library**
 [NOTE]
 See section <<_file_list_files>> for more information.
 
-.Replacing Modules for Customization or Optimization
+.Replacing Modules for Customization or Optimization (Especially Memory Modules)
 [TIP]
-Any module of the core can be replaced for customization purpose. For example, the default IMEM and DMEM
-modules or the CPU's register file can be replaced by technology-specific primitives to optimize energy, speed
-and area utilization.
+Any module of the core can be replaced for customization purpose.
+For ASIC implementations (and for some FPGA implementations), this is particularly recommended for
+the underlying memories. Therefore, all (larger) memories are encapsulated as easily replaceable IP
+wrappers (i.e. `*_ram.vhd` and `*_rom.vhd` files). By default, these wrappers use a generic memory
+description that should infer blockRAM on most FPGA platforms.
 
 .RTL File List (in alphabetical order)
 ...................................
 rtl/core
 │
 ├─ neorv32_application_image.vhd - IMEM application initialization image (package)
-├─ neorv32_boot_rom.vhd          - Bootloader ROM
 ├─ neorv32_bootloader_image.vhd  - Bootloader ROM memory image (package)
+├─ neorv32_bootrom.vhd           - Bootloader ROM
+├─ neorv32_bootrom_rom.vhd       - BOOTROM ROM primitive wrapper
 ├─ neorv32_bus.vhd               - SoC bus infrastructure modules
 ├─ neorv32_cache.vhd             - Generic cache module
+├─ neorv32_cache_ram.vhd         - Cache tag and data RAM primitive wrapper
 ├─ neorv32_cfs.vhd               - Custom functions subsystem
 ├─ neorv32_clint.vhd             - Core local interruptor
 ├─ neorv32_cpu.vhd               - NEORV32 CPU TOP ENTITY
 ├─ neorv32_cpu_alu.vhd           - Arithmetic/logic unit
 ├─ neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
 ├─ neorv32_cpu_counters.vhd      - Hardware counters (Zicntr & Zihpm ext.)
-├─ neorv32_cpu_cp_bitmanip.vhd   - Bit-manipulation co-processor (B ext.)
-├─ neorv32_cpu_cp_cfu.vhd        - Custom instructions co-processor (Zxcfu ext.)
-├─ neorv32_cpu_cp_cond.vhd       - Integer conditional co-processor (Zicond ext.)
-├─ neorv32_cpu_cp_crypto.vhd     - Scalar cryptography co-processor (Zk*/Zbk* ext.)
-├─ neorv32_cpu_cp_fpu.vhd        - Floating-point co-processor (Zfinx ext.)
-├─ neorv32_cpu_cp_muldiv.vhd     - Mul/Div co-processor (M ext.)
-├─ neorv32_cpu_cp_shifter.vhd    - Bit-shift co-processor (base ISA)
+├─ neorv32_cpu_alu_bitmanip.vhd  - Bit-manipulation unit (B ext.)
+├─ neorv32_cpu_alu_cfu.vhd       - Custom instructions unit (Zxcfu ext.)
+├─ neorv32_cpu_alu_cond.vhd      - Integer conditional unit (Zicond ext.)
+├─ neorv32_cpu_alu_crypto.vhd    - Scalar cryptography unit (Zk*/Zbk* ext.)
+├─ neorv32_cpu_alu_fpu.vhd       - Floating-point unit (Zfinx ext.)
+├─ neorv32_cpu_alu_muldiv.vhd    - Integer MUL/DIV unit (M ext.)
+├─ neorv32_cpu_alu_shifter.vhd   - Bit-shift unit (base ISA)
 ├─ neorv32_cpu_decompressor.vhd  - Compressed instructions decoder (C ext.)
 ├─ neorv32_cpu_frontend.vhd      - Instruction fetch and issue
 ├─ neorv32_cpu_hwtrig.vhd        - Hardware trigger module (Sdtrig ext.)
@@ -200,10 +204,13 @@ rtl/core
 ├─ neorv32_debug_dm.vhd          - On-chip debugger: debug module
 ├─ neorv32_debug_dtm.vhd         - On-chip debugger: debug transfer module
 ├─ neorv32_dma.vhd               - Direct memory access controller
-├─ neorv32_dmem.vhd              - Processor-internal data memory
+├─ neorv32_dmem.vhd              - Data memory
+├─ neorv32_dmem_ram.vhd          - Data memory RAM primitive wrapper
 ├─ neorv32_gpio.vhd              - General purpose input/output port unit
 ├─ neorv32_gptmr.vhd             - General purpose 32-bit timer
-├─ neorv32_imem.vhd              - Processor-internal instruction memory
+├─ neorv32_imem.vhd              - Instruction memory
+├─ neorv32_imem_ram.vhd          - Instruction memory RAM primitive wrapper
+├─ neorv32_imem_rom.vhd          - Instruction memory ROM primitive wrapper
 ├─ neorv32_neoled.vhd            - NeoPixel (TM) compatible smart LED interface
 ├─ neorv32_onewire.vhd           - One-Wire serial interface controller
 ├─ neorv32_package.vhd           - Main VHDL package file
@@ -230,7 +237,8 @@ rtl/core
 
 Most of the RTL sources use **entity instantiation**. Hence, the RTL compile order might be relevant (depending on
 the synthesis/simulation tool. Therefore, two file-list files are provided in the `rtl` folder that list all required
-HDL files for the CPU core and for the entire processor and also represent their recommended compile order.
+HDL files for the CPU core and for the entire processor and also represent their recommended compile order. Note that
+these files list the architecture "bottom-up" - the according top entity is listed in the very last line.
 These file-list files can be consumed by EDA tools to simplify project setup.
 
 * `file_list_cpu.f` - HDL files and compile order for the CPU core; top module: `neorv32_cpu`
@@ -285,11 +293,14 @@ Asserts are used to inform the user about the actual processor configuration and
 same source file, component instantiation is used for them. * When instantiating the top-level processor module
 (`neorv32_top.vhd`) in a user-defined design, either entity instantiation or component instantiation can be used,
 as the NEORV32 package file/library file already provides a corresponding component declaration.
+* Larger memories (IMEM, DMEM, caches) are implemented as encapsulated wrappers, which are instantiated by component
+instantiation. The interfaces of these blocks are static (fixed signal widths; not dependent on the configuration).
+This means they can be easily replaced by corresponding Verilog IP wrappers (also via black-box instantiation and late binding).
 
-.Verilog Version
+.Verilog "Version"
 [TIP]
-A GHDL-generated all-Verilog version of the processor is available at https://github.com/stnolting/neorv32-verilog.
-The provided setup generates a single plain Verilog netlist for a given processor configuration.
+Scripts and instructions for an automatic to-Verilog conversion can be found in `rtl/verilog`. See
+https://stnolting.github.io/neorv32/ug/#_neorv32_in_verilog[UG: NEORV32 in Verilog] for more information.
 
 
 <<<
@@ -301,8 +312,8 @@ The provided setup generates a single plain Verilog netlist for a given processo
 
 The NEORV32 processor is optimized for minimal size. However, the actual size (silicon area or FPGA resources)
 depends on the specific configuration. For example, an RTOS-capable setup based on a `rv32imc_Zicsr_Zicntr` CPU
-configuration requires about 2300 LUTs and 1000 FFs and can run at up to 130 MHz (implementation results for an
-Altera Cyclone IV E `EP4CE22F17C6` FPGA).
+configuration including peripheral and memories requires about 2300 LUTs and 1000 FFs and can run at up to 130 MHz
+(implementation results for an Altera Cyclone IV E `EP4CE22F17C6` FPGA).
 
 .NEORV32 Setups
 [TIP]
@@ -324,6 +335,24 @@ The according sources can be found in the `sw/example/coremark` folder.
 | _performance_ (`rv32imc_Zicsr_Zifencei` + perf. options) |          95.23 | **0.9523**    | **3.54**
 |=======================
 
+Performance can be further improved by enabling additional ISA extensions. Note that the compiler
+also needs to support these extensions (make sure to use a `multilib` GCC configuration for optimal
+code results).
+
 The NEORV32 CPU is based on a multi-cycle architecture. Each instruction is executed in a sequence of
 several consecutive micro operations. The average CPI (cycles per instruction) depends on the instruction
 mix of a specific applications and also on the available CPU extensions, tuning options and memory latency.
+
+
+// ####################################################################################################################
+:sectnums:
+=== RISC-V Compatibility
+
+The NEORV32 CPU passes the official **RISC-V Architecture Compatibility Tests**. This framework is used to check
+RISC-V implementations for compatibility to the official RISC-V user/privileged ISA specifications. The NEORV32 port
+of this test framework is available in `sw/riscv-arch-test`.
+
+.Unsupported ISA Extensions
+[TIP]
+Executing instructions or accessing CSRs from unsupported ISA extensions will raise a precise illegal
+instruction exception allowing full software emulation (see section <<_full_virtualization>>).

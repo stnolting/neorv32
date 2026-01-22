@@ -16,6 +16,15 @@
 
 #include <stdint.h>
 
+// VT100 terminal control
+#define VT_TERM_HL_ON  "\033[1;31m" // enable highlighting
+#define VT_TERM_HL_OFF "\033[0m"    // disable highlighting (restore default)
+
+// to-string helpers
+#define xstr(a) str(a)
+#define str(a) #a
+
+// prototypes
 char uart_getc(void);
 void uart_putc(char c);
 void uart_puts(const char *s);

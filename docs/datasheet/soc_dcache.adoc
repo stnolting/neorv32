@@ -1,19 +1,19 @@
 <<<
-<<<
 :sectnums:
-==== Processor-Internal Data Cache (dCache)
+==== Data Cache (dCache)
 
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_cache.vhd   | Generic cache module
-| Software driver files:  | none                |
-| Top entity ports:       | none                |
-| Configuration generics: | `DCACHE_EN`         | implement processor-internal, CPU-exclusive data cache (D$) when `true`
-|                         | `DCACHE_NUM_BLOCKS` | number of cache blocks ("cache lines"); has to be a power of two
-|                         | `CACHE_BLOCK_SIZE`  | size of a cache block in bytes; has to be a power of two (global configuration for I$ and D$), min 8
-|                         | `CACHE_BURSTS_EN`   | enable burst transfers for cache update
-| CPU interrupts:         | none                |
+| Hardware source files:  | neorv32_cache.vhd     | generic cache module
+|                         | neorv32_cache_ram.vhd | tag and data RAM (primitive/IP wrapper)
+| Software driver files:  | none                  |
+| Top entity ports:       | none                  |
+| Configuration generics: | `DCACHE_EN`           | implement CPU-exclusive data cache (D$) when `true`
+|                         | `DCACHE_NUM_BLOCKS`   | number of cache blocks ("cache lines"); has to be a power of two
+|                         | `CACHE_BLOCK_SIZE`    | size of a cache block in bytes (global configuration for I$ and D$); has to be a power of two, min 4
+|                         | `CACHE_BURSTS_EN`     | enable burst transfers for cache update
+| CPU interrupts:         | none                  |
 |=======================
 
 **Key Features**
@@ -22,33 +22,33 @@
 * Configurable number of lines
 * Configurable line size
 * Allows bypassing for _uncached_ accesses
+* Tag and data storage mapped to memory primitives
 
 
 **Overview**
 
-The processor features an optional CPU data cache. The cache is connected directly to the CPU's data access interface
-and provides full-transparent accesses. The cache is direct-mapped and uses "write-through" as write strategy.
-The cache uses <<_locked_bus_accesses_and_bursts>> to download cache blocks/lines from main memory.
-In the <<_dual_core_configuration>> each CPU core is equipped with a private data cache.
+The processor features an optional CPU data cache. The cache is connected directly to the <<_cpu_loadstore_unit>>
+and provides full-transparent accesses. The cache is direct-mapped and uses "write-through" as write policy.
+For the <<_dual_core_configuration>> each CPU core is equipped with a private data cache.
 
-The data cache is implemented if `DCACHE_EN` it _true_. The total cache memory size in bytes is defined by
+The data cache is enabled by the `DCACHE_EN` generic. The total cache memory size in bytes is defined by
 `DCACHE_NUM_BLOCKS x CACHE_BLOCK_SIZE`. `DCACHE_NUM_BLOCKS` defines the number of cache blocks (or "cache lines")
-and `CACHE_BLOCK_SIZE` defines the block size in bytes; note that this configuration is global for all caches.
+and `CACHE_BLOCK_SIZE` defines the block size in bytes; note that the latter configuration is global for all caches.
 
 .Burst Transfers
 [IMPORTANT]
-Cache update operations (e.g. to resolve a cache miss) can use <<_locked_bus_accesses_and_bursts,burst transfers>> to
-increase performance. Burst operations are enabled (for all caches) by the `CACHE_BURSTS_EN` top generic. Note that
-when bursts are enabled all cache block transfers are **always executed as burst transfers**. Hence, all devices,
-memories and endpoints that can be accessed by the cache must also be able to process bursts
-(including the <<_processor_external_bus_interface_xbus>>).
+Cache update operations (to resolve a cache miss) can use <<_locked_bus_accesses_and_bursts,burst transfers>>
+to increase performance. Burst operations are enabled (for all caches) by the `CACHE_BURSTS_EN` top generic.
+When bursts are enabled all cache block transfers are **always executed as burst transfers**. Hence, all devices,
+memories and endpoints that can be accessed by the cache must also be able to process bursts (including the
+<<_processor_external_bus_interface_xbus>>).
 
 .Uncached Accesses
 [NOTE]
-The cache provides direct/uncached accesses to memory (bypassing the cache) in order to access memory-mapped IO (like the
-processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000` to `0xFFFFFFFF`
-will bypass the cache. Hence, access will not be cached. See section <<_address_space>> for more information. Furthermore,
-the atomic memory operations of the <<_zaamo_isa_extension>> will always **bypass** the cache.
+The cache provides direct/uncached accesses to memory (bypassing the cache) in order to access memory-mapped IO
+(like the processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000`
+to `0xFFFFFFFF` will bypass the cache. See section <<_address_space>> for more information. Furthermore, atomic
+memory operations  will always **bypass** the cache.
 
 .Manual Cache Flush/Clear/Reload and Memory Coherence
 [NOTE]
@@ -57,10 +57,14 @@ See section <<_memory_coherence>> for more information.
 
 .Cache Block Update Bus Error Handling
 [NOTE]
-If the cache encounters a bus error while downloading a new block from main memory, only the according
-data word is marked as faulty (instead of invalidating the entire cache block). A bus access fault exception
-is only raised if the CPU accesses a cached word that has actually been marked as faulty.
+If the cache encounters a bus error while downloading a new block from main memory, the entire block is discarded
+and an bus error exception is raised.
 
-.Retrieve Cache Configuration from Software
+.Retrieve Cache Configuration by Software
 [TIP]
 Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_configuration>> register.
+
+.Memory Primitives
+[TIP]
+The cache's tag and data RAMs are encapsulated as individual wrapper (`neorv32_cache_ram.vhd`) that can be
+replaced by a technology-specific IP. All interface ports provide static signal widths to ease replacement.

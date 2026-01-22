@@ -1,9 +1,9 @@
 -- ================================================================================ --
--- NEORV32 CPU - Co-Processor: RISC-V Cond. Operations ('Zicond') ISA Extension     --
+-- NEORV32 CPU - ALU Conditional Operations Unit (RISC-V Zicond ISA Extension)      --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -14,22 +14,22 @@ use ieee.std_logic_1164.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_cpu_cp_cond is
+entity neorv32_cpu_alu_cond is
   port (
     -- global control --
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
     -- data input --
-    rs1_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 1
-    rs2_i   : in  std_ulogic_vector(XLEN-1 downto 0); -- rf source 2
+    rs1_i   : in  std_ulogic_vector(31 downto 0); -- rf source 1
+    rs2_i   : in  std_ulogic_vector(31 downto 0); -- rf source 2
     -- result and status --
-    res_o   : out std_ulogic_vector(XLEN-1 downto 0); -- operation result
-    valid_o : out std_ulogic -- data output valid
+    res_o   : out std_ulogic_vector(31 downto 0); -- operation result
+    valid_o : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_cp_cond;
+end neorv32_cpu_alu_cond;
 
-architecture neorv32_cpu_cp_cond_rtl of neorv32_cpu_cp_cond is
+architecture neorv32_cpu_alu_cond_rtl of neorv32_cpu_alu_cond is
 
   signal valid_cmd, condition : std_ulogic;
 
@@ -63,5 +63,4 @@ begin
   -- processing done --
   valid_o <= valid_cmd;
 
-
-end neorv32_cpu_cp_cond_rtl;
+end neorv32_cpu_alu_cond_rtl;

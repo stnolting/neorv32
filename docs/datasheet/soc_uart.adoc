@@ -56,7 +56,9 @@ via a 10-bit `UART_CTRL_BAUDx` baud divisor (`baud_div`) and a 3-bit `UART_CTRL_
 | Resulting `clock_prescaler` |       2 |       4 |       8 |      64 |     128 |    1024 |    2048 |    4096
 |=======================
 
+****
 _**Baud rate**_ = (_f~main~[Hz]_ / `clock_prescaler`) / (`baud_div` + 1)
+****
 
 
 **RX and TX FIFOs**
@@ -102,8 +104,8 @@ enabled, will set `uart0_rtsn_o` high to indicate that the UART is not capable o
 
 The simulation mode of the UART allows to redirect TX data to the simulator console instead of sending it via the
 physical `uart0_txd_o` signal. Simulation mode is enabled by setting the `UART_CTRL_SIM_MODE` bit. When enabled,
-all data written to the `DATA` register is sent to the simulator, printed as ASCII characters to the simulator console
-and also dumped to a log file "`neorv32.uart0.log`" that is created in the simulation's home folder.
+all data written to the `DATA` register is sent to the simulator and printed as ASCII characters to the simulator console.
+Note that this feature is only available within a simulation.
 
 
 **Register Map**
@@ -117,7 +119,7 @@ and also dumped to a log file "`neorv32.uart0.log`" that is created in the simul
                                   <|`1`     `UART_CTRL_SIM_MODE`                      ^| r/w <| enable **simulation mode**
                                   <|`2`     `UART_CTRL_HWFC_EN`                       ^| r/w <| enable RTS/CTS hardware flow-control
                                   <|`5:3`   `UART_CTRL_PRSC_MSB : UART_CTRL_PRSC_LSB` ^| r/w <| baud rate clock prescaler select
-                                  <|`15:6`  `UART_CTRL_BAUD_MSB : UART_CTRL_BAUD_LSB` ^| r/w <| 12-bit baud value configuration value
+                                  <|`15:6`  `UART_CTRL_BAUD_MSB : UART_CTRL_BAUD_LSB` ^| r/w <| 10-bit baud value configuration value
                                   <|`16`    `UART_CTRL_RX_NEMPTY`                     ^| r/- <| RX FIFO not empty (data available)
                                   <|`17`    `UART_CTRL_RX_FULL`                       ^| r/- <| RX FIFO full
                                   <|`18`    `UART_CTRL_TX_EMPTY`                      ^| r/- <| TX FIFO empty
@@ -125,7 +127,7 @@ and also dumped to a log file "`neorv32.uart0.log`" that is created in the simul
                                   <|`20`    `UART_CTRL_IRQ_RX_NEMPTY`                 ^| r/w <| fire RX-IRQ if RX FIFO not empty
                                   <|`21`    `UART_CTRL_IRQ_RX_FULL`                   ^| r/w <| fire RX-IRQ if RX FIFO full
                                   <|`22`    `UART_CTRL_IRQ_TX_EMPTY`                  ^| r/w <| fire TX-IRQ if TX FIFO empty
-                                  <|`23`    `UART_CTRL_IRQ_TX_NHALF`                  ^| r/w <| fire TX-IRQ if TX not full
+                                  <|`23`    `UART_CTRL_IRQ_TX_NFULL`                  ^| r/w <| fire TX-IRQ if TX not full
                                   <|`29:24` -                                         ^| r/- <| _reserved_, read as zero
                                   <|`30`    `UART_CTRL_RX_OVER`                       ^| r/- <| RX FIFO overflow; cleared by disabling the module
                                   <|`31`    `UART_CTRL_TX_BUSY`                       ^| r/- <| TX busy or TX FIFO not empty
@@ -164,9 +166,6 @@ and also dumped to a log file "`neorv32.uart0.log`" that is created in the simul
 The secondary UART (UART1) is functionally identical to the primary UART
 (<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>). UART1 uses different addresses for the
 control register (`CTRL`) and the data register (`DATA`) and uses a different CPU fast interrupt (FIRQ) channel.
-
-The secondary UART (UART1) provides the same simulation mode as the primary UART (UART0). However, output data is
-written to UART1-specific log file `neorv32.uart1.log`. This data is also printed to the simulator console.
 
 
 **Register Map**

@@ -7,7 +7,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -21,6 +21,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_frontend is
   generic (
+    HART_ID   : natural; -- hardware thread ID
     RISCV_C : boolean; -- implement C ISA extension
     RISCV_ZCB : boolean; -- implement Zcb ISA sub-extension
     RISCV_ZCMP : boolean -- implement Zcb ISA sub-extension
@@ -31,10 +32,14 @@ entity neorv32_cpu_frontend is
     rstn_i : in std_ulogic; -- global reset, low-active, async
     ctrl_i : in ctrl_bus_t; -- main control bus
     -- instruction fetch interface --
-    ibus_req_o : out bus_req_t;
-    ibus_rsp_i : in bus_rsp_t;
+    ibus_req_o : out bus_req_t; -- request
+    ibus_rsp_i : in  bus_rsp_t; -- response
+    -- PMP interface --
+    pmp_addr_o : out std_ulogic_vector(31 downto 0); -- access address
+    pmp_priv_o : out std_ulogic; -- access privilege level
+    pmp_err_i  : in  std_ulogic; -- PMP access fault
     -- back-end interface --
-    frontend_o : out if_bus_t
+    frontend_o : out if_bus_t -- fetch data and status
   );
 end neorv32_cpu_frontend;
 
@@ -62,12 +67,15 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   type state_t is (S_RESTART, S_REQUEST, S_PENDING);
   type fetch_t is record
     state : state_t;
-    restart : std_ulogic; -- buffered restart request (after branch)
-    pc      : std_ulogic_vector(XLEN-1 downto 0);
-    priv    : std_ulogic; -- fetch privilege level
-    debug   : std_ulogic; -- debug-mode access
+    reset : std_ulogic; -- buffered restart request (after branch)
+    addr  : std_ulogic_vector(31 downto 0); -- fetch address
+    priv  : std_ulogic; -- fetch privilege level
+    debug : std_ulogic; -- debug-mode access
   end record;
   signal fetch : fetch_t;
+
+  -- reset instruction fetch after branch --
+  signal restart : std_ulogic;
 
   -- instruction prefetch buffer (FIFO) interface --
   type ipb_data_t is array (0 to 1) of std_ulogic_vector(16 downto 0); -- bus_error & 16-bit instruction
@@ -116,37 +124,37 @@ begin
   begin
     if (rstn_i = '0') then
       fetch.state <= S_RESTART;
-      fetch.restart <= '1'; -- reset IPB and issue engine
-      fetch.pc      <= (others => '0');
-      fetch.priv    <= priv_mode_m_c;
-      fetch.debug   <= '0';
+      fetch.reset <= '1'; -- reset IPB and issue engine
+      fetch.addr  <= (others => '0');
+      fetch.priv  <= priv_mode_m_c;
+      fetch.debug <= '0';
     elsif rising_edge(clk_i) then
       case fetch.state is
 
         when S_RESTART => -- set new start address
-          -- ------------------------------------------------------------
-          fetch.restart <= '0'; -- restart done
-          fetch.pc      <= ctrl_i.pc_nxt; -- initialize from PC
-          fetch.priv    <= ctrl_i.cpu_priv; -- set new privilege level
-          fetch.debug   <= ctrl_i.cpu_debug; -- access from debug-mode
-          fetch.state   <= S_REQUEST;
+        -- ------------------------------------------------------------
+          fetch.reset <= '0'; -- restart done
+          fetch.addr  <= ctrl_i.pc_nxt; -- initialize from PC
+          fetch.priv  <= ctrl_i.cpu_priv; -- set new privilege level
+          fetch.debug <= ctrl_i.cpu_debug; -- access from debug-mode
+          fetch.state <= S_REQUEST;
 
         when S_REQUEST => -- request next 32-bit-aligned instruction word
-          -- ------------------------------------------------------------
-          fetch.restart <= fetch.restart or ctrl_i.if_reset; -- buffer restart request
+        -- ------------------------------------------------------------
+          fetch.reset <= restart; -- buffer restart request
           if (ipb.free = "11") then -- free IPB space?
             fetch.state <= S_PENDING;
-          elsif (fetch.restart = '1') or (ctrl_i.if_reset = '1') then -- restart because of branch
+          elsif (restart = '1') then -- restart request due to branch
             fetch.state <= S_RESTART;
           end if;
 
         when S_PENDING => -- wait for bus response and write instruction data to prefetch buffer
-          -- ------------------------------------------------------------
-          fetch.restart <= fetch.restart or ctrl_i.if_reset; -- buffer restart request
+        -- ------------------------------------------------------------
+          fetch.reset <= restart; -- buffer restart request
           if (ibus_rsp_i.ack = '1') then -- wait for bus response
-            fetch.pc <= std_ulogic_vector(unsigned(fetch.pc) + 4); -- next word
-            fetch.pc(1) <= '0'; -- (re-)align to 32-bit
-            if (fetch.restart = '1') or (ctrl_i.if_reset = '1') then -- restart request due to branch
+            fetch.addr    <= std_ulogic_vector(unsigned(fetch.addr) + 4); -- next word
+            fetch.addr(1) <= '0'; -- (re-)align to 32-bit
+            if (restart = '1') then -- restart request due to branch
               fetch.state <= S_RESTART;
             else -- request next linear instruction word
               fetch.state <= S_REQUEST;
@@ -161,28 +169,33 @@ begin
     end if;
   end process fetch_fsm;
 
+  -- reset instruction fetch after branch --
+  restart <= fetch.reset or ctrl_i.if_reset;
+
+  -- PMP interface --
+  pmp_addr_o <= fetch.addr(31 downto 2) & "00"; -- word aligned
+  pmp_priv_o <= fetch.priv;
+
   -- instruction bus request --
-  ibus_req_o.meta  <= fetch.debug & fetch.priv & '1'; -- LSB: instruction access
-  ibus_req_o.addr  <= fetch.pc(XLEN-1 downto 2) & "00";    -- word aligned
+  ibus_req_o.meta  <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & fetch.debug & fetch.priv & '1';
+  ibus_req_o.addr  <= fetch.addr(31 downto 2) & "00"; -- word aligned
   ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
-  ibus_req_o.data  <= (others => '0');  -- read-only
-  ibus_req_o.ben   <= (others => '1');  -- always full-word access
-  ibus_req_o.rw    <= '0';              -- read-only
-  ibus_req_o.amo   <= '0';              -- cannot be an atomic memory operation
-  ibus_req_o.amoop <= (others => '0');  -- cannot be an atomic memory operation
-  ibus_req_o.burst <= '0';              -- only single-access
-  ibus_req_o.lock  <= '0';              -- always unlocked access
-  ibus_req_o.fence <= ctrl_i.if_fence;  -- fence request, valid without STB being set ("out-of-band" signal)
+  ibus_req_o.data  <= (others => '0'); -- read-only
+  ibus_req_o.ben   <= (others => '1'); -- always full-word access
+  ibus_req_o.rw    <= '0';             -- read-only
+  ibus_req_o.amo   <= '0';             -- cannot be an atomic memory operation
+  ibus_req_o.amoop <= (others => '0'); -- cannot be an atomic memory operation
+  ibus_req_o.burst <= '0';             -- only single-access
+  ibus_req_o.lock  <= '0';             -- always unlocked access
+  ibus_req_o.fence <= ctrl_i.if_fence; -- fence request, valid without STB being set ("out-of-band" signal)
 
   -- IPB instruction data and status --
-  ipb.wdata(0) <= ibus_rsp_i.err & ibus_rsp_i.data(15 downto 0);
-  ipb.wdata(1) <= ibus_rsp_i.err & ibus_rsp_i.data(31 downto 16);
+  ipb.wdata(0) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(15 downto 0);
+  ipb.wdata(1) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
-  ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.pc(1) = '0') or (not RISCV_C)) else
-               '0';
-  ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') else
-               '0';
+  ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.addr(1) = '0') or (not RISCV_C)) else '0';
+  ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') else '0';
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -195,17 +208,17 @@ begin
     )
     port map(
       -- global control --
-      clk_i => clk_i, -- clock, rising edge
-      rstn_i => rstn_i, -- async reset, low-active
-      clear_i => fetch.restart, -- sync reset, high-active
+      clk_i   => clk_i,        -- clock, rising edge
+      rstn_i  => rstn_i,       -- async reset, low-active
+      clear_i => restart,      -- sync reset, high-active
       -- write port --
       wdata_i => ipb.wdata(i), -- write data
-      we_i => ipb.we(i), -- write enable
-      free_o => ipb.free(i), -- at least one entry is free when set
+      we_i    => ipb.we(i),    -- write enable
+      free_o  => ipb.free(i),  -- at least one entry is free when set
       -- read port --
-      re_i => ipb.re(i), -- read enable
+      re_i    => ipb.re(i),    -- read enable
       rdata_o => ipb.rdata(i), -- read data
-      avail_o => ipb.avail(i) -- data available when set
+      avail_o => ipb.avail(i)  -- data available when set
     );
   end generate;
 
@@ -235,8 +248,7 @@ begin
       );
 
     -- half-word select --
-    cmd16 <= ipb.rdata(0)(15 downto 0) when (align_q = '0') else
-             ipb.rdata(1)(15 downto 0);
+    cmd16 <= ipb.rdata(0)(15 downto 0) when (align_q = '0') else ipb.rdata(1)(15 downto 0);
 
     -- Issue Engine FSM -----------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -247,7 +259,7 @@ begin
       elsif rising_edge(clk_i) then
         zcmp_instr_reg <= zcmp_instr_nxt;
         issue_state_reg <= issue_state_nxt;
-        if (fetch.restart = '1') then
+        if (fetch.reset = '1') then
           align_q <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
         elsif (ipb.re(0) = '1') or (ipb.re(1) = '1') or (issue_valid_zcmp /= "00") then
           align_q <= (align_q and (not align_clr)) or align_set; -- alignment "RS flip-flop"
@@ -338,7 +350,7 @@ begin
             end if;
           end if;
 
-          if (fetch.restart = '1') then -- on branch ipb's must not be acknowledged as they contain old instructions 
+          if (fetch.reset = '1') then -- on branch ipb's must not be acknowledged as they contain old instructions 
             issue_valid_zcmp <= "00";
             issue_state_nxt <= S_ISSUE;
           end if;
@@ -367,7 +379,7 @@ begin
         rstn_i => rstn_i,
         ctrl_i => ctrl_i,
         zcmp_detect => zcmp_detect,
-        fetch_restart => fetch.restart,
+        fetch_restart => fetch.reset,
         ipb_avail => ipb.avail,
         zcmp_instr_reg => zcmp_instr_reg,
         zcmp_is_push => zcmp_is_push,
@@ -410,7 +422,7 @@ end neorv32_cpu_frontend_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --

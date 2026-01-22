@@ -17,7 +17,7 @@ https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules[Adding C
 
 .Default CFU Hardware/Software Example
 [TIP]
-The default CFU module (`rtl/core/neorv32_cpu_cp_cfu.vhd`) implements the _Extended Tiny Encryption Algorithm (XTEA)_
+The default CFU module (`rtl/core/neorv32_cpu_alu_cfu.vhd`) implements the _Extended Tiny Encryption Algorithm (XTEA)_
 as application example. The according example program is located in `sw/example/demo_cfu`.
 
 
@@ -132,7 +132,7 @@ neorv32_cfu_r_instr(0b0100100, 0b001, res, tmp);
 :sectnums:
 ==== Custom Instructions Hardware
 
-The CFU hardware module (`rtl/core/neorv32_cpu_cp_cfu.vhd`) is tightly integrated into to CPU and coupled as ALU
+The CFU hardware module (`rtl/core/neorv32_cpu_alu_cfu.vhd`) is tightly integrated into to CPU and coupled as ALU
 co-processor. A simple interface is used to communicate operands, operation definition and the processing result.
 
 .CFU Interface

@@ -4,7 +4,7 @@
   <vendor>github.com/stnolting/neorv32</vendor>
   <name>neorv32</name>
   <series>RISC-V</series>
-  <version>1.12.4</version>
+  <version>1.12.7</version>
   <description>The NEORV32 RISC-V Processor</description>
 
   <!-- CPU core -->
@@ -24,17 +24,18 @@
   </cpu>
 
   <!-- defaults for all peripherals -->
-  <addressUnitBits>8</addressUnitBits>
+  <addressUnitBits>16</addressUnitBits>
   <width>32</width>
   <size>32</size>
   <access>read-write</access>
   <resetValue>0x00000000</resetValue>
-  <resetMask>0x00000000</resetMask> <!-- default IO devices do not have a dedicated reset -->
+  <resetMask>0xffffffff</resetMask>
 
   <!-- Peripherals -->
   <peripherals>
 
-    <!-- CFS -->
+    <!-- **************************************************************** -->
+    <!-- CFS                                                              -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>CFS</name>
@@ -117,7 +118,8 @@
       </registers>
     </peripheral>
 
-    <!-- SDI -->
+    <!-- **************************************************************** -->
+    <!-- SDI                                                              -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>SDI</name>
@@ -214,7 +216,8 @@
       </registers>
     </peripheral>
 
-    <!-- SLINK -->
+    <!-- **************************************************************** -->
+    <!-- SLINK                                                            -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>SLINK</name>
@@ -330,7 +333,8 @@
       </registers>
     </peripheral>
 
-    <!-- DMA -->
+    <!-- **************************************************************** -->
+    <!-- DMA                                                              -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>DMA</name>
@@ -415,7 +419,8 @@
       </registers>
     </peripheral>
 
-    <!-- PWM -->
+    <!-- **************************************************************** -->
+    <!-- PWM                                                              -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>PWM</name>
@@ -424,122 +429,60 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x40</size>
+        <size>0x100</size>
         <usage>registers</usage>
       </addressBlock>
 
       <registers>
         <register>
-          <name>CHANNEL_CFG[0]</name>
-          <description>Channel 0 configuration register</description>
+          <name>ENABLE</name>
+          <description>Channel enable</description>
           <addressOffset>0x00</addressOffset>
-          <fields>
-            <field>
-              <name>PWM_CFG_DUTY</name>
-              <bitRange>[7:0]</bitRange>
-              <description>Duty cycle</description>
-            </field>
-            <field>
-              <name>PWM_CFG_CDIV</name>
-              <bitRange>[17:8]</bitRange>
-              <description>Clock divider</description>
-            </field>
-            <field>
-              <name>PWM_CFG_POL</name>
-              <bitRange>[27:27]</bitRange>
-              <description>Channel polarity, inverted when set</description>
-            </field>
-            <field>
-              <name>PWM_CFG_PRSC</name>
-              <bitRange>[30:28]</bitRange>
-              <description>Clock prescaler select</description>
-            </field>
-            <field>
-              <name>PWM_CFG_EN</name>
-              <bitRange>[31:31]</bitRange>
-              <description>Channel enable</description>
-            </field>
-          </fields>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[1]</name>
-          <description>Channel 1 configuration register</description>
+        <register>
+          <name>POLARITY</name>
+          <description>Channel polarity</description>
           <addressOffset>0x04</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[2]</name>
-          <description>Channel 2 configuration register</description>
+        <register>
+          <name>CLKPRSC</name>
+          <description>Clock prescaler select</description>
           <addressOffset>0x08</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[3]</name>
-          <description>Channel 3 configuration register</description>
+        <register>
+          <name>MODE</name>
+          <description>Channel operation mode (0 = fast-PWM; 1 = phase-correct PWM)</description>
           <addressOffset>0x0C</addressOffset>
         </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[4]</name>
-          <description>Channel 4 configuration register</description>
-          <addressOffset>0x10</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[5]</name>
-          <description>Channel 5 configuration register</description>
-          <addressOffset>0x14</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[6]</name>
-          <description>Channel 6 configuration register</description>
-          <addressOffset>0x18</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[7]</name>
-          <description>Channel 7 configuration register</description>
-          <addressOffset>0x1C</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[8]</name>
-          <description>Channel 8 configuration register</description>
-          <addressOffset>0x20</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[9]</name>
-          <description>Channel 9 configuration register</description>
-          <addressOffset>0x24</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[10]</name>
-          <description>Channel 10 configuration register</description>
-          <addressOffset>0x28</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[11]</name>
-          <description>Channel 11 configuration register</description>
-          <addressOffset>0x2C</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[12]</name>
-          <description>Channel 12 configuration register</description>
-          <addressOffset>0x30</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[13]</name>
-          <description>Channel 13 configuration register</description>
-          <addressOffset>0x34</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[14]</name>
-          <description>Channel 14 configuration register</description>
-          <addressOffset>0x38</addressOffset>
-        </register>
-        <register derivedFrom="CHANNEL_CFG[0]">
-          <name>CHANNEL_CFG[15]</name>
-          <description>Channel 15 configuration register</description>
-          <addressOffset>0x3C</addressOffset>
-        </register>
+        <cluster>
+          <dim>32</dim>
+          <dimIncrement>0x04</dimIncrement>
+          <addressOffset>0x80</addressOffset>
+          <name>CHANNEL[%s]</name>
+          <description>Channel configuration register</description>
+          <register>
+            <name>TOPCMP</name>
+            <description>Channel counter full word access alias</description>
+            <addressOffset>0x0</addressOffset>
+            <fields>
+              <field>
+                <name>CMP</name>
+                <bitRange>[15:0]</bitRange>
+                <description>Channel counter compare value</description>
+              </field>
+              <field>
+                <name>TOP</name>
+                <bitRange>[31:16]</bitRange>
+                <description>Channel counter top/wrap value</description>
+              </field>
+            </fields>
+          </register>
+        </cluster>
       </registers>
     </peripheral>
 
-    <!-- GPTMR -->
+    <!-- **************************************************************** -->
+    <!-- GPTMR                                                            -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>GPTMR</name>
@@ -550,55 +493,67 @@
 
       <addressBlock>
         <offset>0</offset>
-        <size>0x10</size>
+        <size>0x100</size>
         <usage>registers</usage>
       </addressBlock>
 
       <registers>
         <register>
-          <name>CTRL</name>
-          <description>Control register</description>
+          <name>CSR0</name>
+          <description>Control and status register 0</description>
           <addressOffset>0x00</addressOffset>
           <fields>
             <field>
-              <name>GPTMR_CTRL_EN</name>
-              <bitRange>[0:0]</bitRange>
-              <description>Timer enable flag</description>
+              <name>ENABLE</name>
+              <bitRange>[15:0]</bitRange>
+              <description>Per-slice enable bit</description>
             </field>
             <field>
-              <name>GPTMR_CTRL_PRSC</name>
-              <bitRange>[3:1]</bitRange>
-              <description>Clock prescaler select</description>
-            </field>
-            <field>
-              <name>GPTMR_CTRL_IRQ_CLR</name>
-              <bitRange>[30:30]</bitRange>
-              <access>write-only</access>
-              <description>Set to clear timer-match interrupt</description>
-            </field>
-            <field>
-              <name>GPTMR_CTRL_IRQ_PND</name>
-              <bitRange>[31:31]</bitRange>
-              <access>read-only</access>
-              <description>Timer-match interrupt pending</description>
+              <name>MODE</name>
+              <bitRange>[31:16]</bitRange>
+              <description>Per-slice mode bit (0 = single-shot mode, 1 = continuous mode)</description>
             </field>
           </fields>
         </register>
         <register>
-          <name>THRES</name>
-          <description>Threshold register</description>
+          <name>CSR1</name>
+          <description>Control and status register 1</description>
           <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>IRQ</name>
+              <bitRange>[15:0]</bitRange>
+              <description>Per-slice interrupt-pending bit; write 0 to clear</description>
+            </field>
+            <field>
+              <name>PRSC</name>
+              <bitRange>[18:16]</bitRange>
+              <description>Global clock prescaler select</description>
+            </field>
+          </fields>
         </register>
-        <register>
-          <name>COUNT</name>
-          <description>Counter register</description>
-          <addressOffset>0x08</addressOffset>
-          <access>read-only</access>
-        </register>
+        <cluster>
+          <dim>16</dim>
+          <dimIncrement>0x08</dimIncrement>
+          <addressOffset>0x80</addressOffset>
+          <name>SLICE[%s]</name>
+          <description>Timer slice</description>
+          <register>
+            <name>CNT</name>
+            <description>Counter register</description>
+            <addressOffset>0x00</addressOffset>
+          </register>
+          <register>
+            <name>THR</name>
+            <description>Threshold register</description>
+            <addressOffset>0x04</addressOffset>
+          </register>
+        </cluster>
       </registers>
     </peripheral>
 
-    <!-- ONEWIRE -->
+    <!-- **************************************************************** -->
+    <!-- ONEWIRE                                                          -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>ONEWIRE</name>
@@ -700,7 +655,8 @@
       </registers>
     </peripheral>
 
-    <!-- CLINT -->
+    <!-- **************************************************************** -->
+    <!-- CLINT                                                            -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>CLINT</name>
@@ -742,7 +698,8 @@
       </registers>
     </peripheral>
 
-    <!-- UART0 -->
+    <!-- **************************************************************** -->
+    <!-- UART0                                                            -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>UART0</name>
@@ -851,11 +808,31 @@
           <description>RTX data register</description>
           <addressOffset>0x04</addressOffset>
           <readAction>modify</readAction>
+          <fields>
+            <field>
+              <name>UART_DATA_RTX</name>
+              <bitRange>[7:0]</bitRange>
+              <description>Receive/transmit data</description>
+            </field>
+            <field>
+              <name>UART_DATA_RX_FIFO</name>
+              <bitRange>[11:8]</bitRange>
+              <access>read-only</access>
+              <description>log2(RX FIFO size)</description>
+            </field>
+            <field>
+              <name>UART_DATA_TX_FIFO</name>
+              <bitRange>[15:12]</bitRange>
+              <access>read-only</access>
+              <description>log2(TX FIFO size)</description>
+            </field>
+          </fields>
         </register>
       </registers>
     </peripheral>
 
-    <!-- UART1 -->
+    <!-- **************************************************************** -->
+    <!-- UART1                                                            -->
     <!-- **************************************************************** -->
     <peripheral derivedFrom="UART0">
       <name>UART1</name>
@@ -871,7 +848,8 @@
       </addressBlock>
     </peripheral>
 
-    <!-- SPI -->
+    <!-- **************************************************************** -->
+    <!-- SPI                                                              -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>SPI</name>
@@ -977,7 +955,8 @@
       </registers>
     </peripheral>
 
-    <!-- TWI -->
+    <!-- **************************************************************** -->
+    <!-- TWI                                                              -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>TWI</name>
@@ -1082,7 +1061,8 @@
       </registers>
     </peripheral>
 
-    <!-- TWD -->
+    <!-- **************************************************************** -->
+    <!-- TWD                                                              -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>TWD</name>
@@ -1217,7 +1197,8 @@
       </registers>
     </peripheral>
 
-    <!-- TRNG -->
+    <!-- **************************************************************** -->
+    <!-- TRNG                                                             -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>TRNG</name>
@@ -1287,7 +1268,8 @@
       </registers>
     </peripheral>
 
-    <!-- WDT -->
+    <!-- **************************************************************** -->
+    <!-- WDT                                                              -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>WDT</name>
@@ -1345,7 +1327,8 @@
       </registers>
     </peripheral>
 
-    <!-- GPIO -->
+    <!-- **************************************************************** -->
+    <!-- GPIO                                                             -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>GPIO</name>
@@ -1395,7 +1378,8 @@
       </registers>
     </peripheral>
 
-    <!-- NEOLED -->
+    <!-- **************************************************************** -->
+    <!-- NEOLED                                                           -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>NEOLED</name>
@@ -1488,7 +1472,8 @@
       </registers>
     </peripheral>
 
-    <!-- TRACER -->
+    <!-- **************************************************************** -->
+    <!-- TRACER                                                           -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>TRACER</name>
@@ -1578,7 +1563,8 @@
       </registers>
     </peripheral>
 
-    <!-- SYSINFO -->
+    <!-- **************************************************************** -->
+    <!-- SYSINFO                                                          -->
     <!-- **************************************************************** -->
     <peripheral>
       <name>SYSINFO</name>
@@ -1644,6 +1630,7 @@
             <field><name>SYSINFO_SOC_IO_GPTMR</name><bitRange>[28:28]</bitRange><description>General purpose timer implemented</description></field>
             <field><name>SYSINFO_SOC_IO_SLINK</name><bitRange>[29:29]</bitRange><description>Stream link interface implemented</description></field>
             <field><name>SYSINFO_SOC_IO_ONEWIRE</name><bitRange>[30:30]</bitRange><description>1-wire interface controller implemented</description></field>
+            <field><name>SYSINFO_SOC_SIM</name><bitRange>[31:31]</bitRange><description>Set if this is a simulation</description></field>
           </fields>
         </register>
         <register>
