@@ -32,7 +32,7 @@ end neorv32_bootrom_rom;
 
 architecture neorv32_bootrom_rom_rtl of neorv32_bootrom_rom is
 
-  constant awidth_c : natural := index_size_f(image_size_c); -- byte address width
+  constant awidth_c : natural := index_size_f(image_size_c); -- physical byte address width
 
 begin
 
@@ -43,8 +43,8 @@ begin
 
   -- size check --
   assert (image_size_c <= 2**AWIDTH) report
-    "[NEORV32] Bootloader image (" & natural'image(image_size_c) & " bytes) " &
-    "overflows processor-internal BOOTROM (" & natural'image(2**AWIDTH) & " bytes)!" severity error;
+    "[NEORV32] BOOTROM image (" & natural'image(image_size_c) & " bytes) " &
+    "overflows BOOTROM size (" & natural'image(2**AWIDTH) & " bytes)!" severity error;
 
   -- ROM --
   rom_access: process(clk_i)

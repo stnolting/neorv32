@@ -33,7 +33,7 @@ end neorv32_imem_rom;
 
 architecture neorv32_imem_rom_rtl of neorv32_imem_rom is
 
-  constant awidth_c : natural := index_size_f(image_size_c); -- byte address width
+  constant awidth_c : natural := index_size_f(image_size_c); -- physical byte address width
   signal rdata : std_ulogic_vector(31 downto 0);
 
 begin
@@ -45,8 +45,8 @@ begin
 
   -- size check --
   assert (image_size_c <= 2**AWIDTH) report
-    "[NEORV32] Application image (" & natural'image(image_size_c) & " bytes) " &
-    "overflows processor-internal IMEM (" & natural'image(2**AWIDTH) & " bytes)!" severity error;
+    "[NEORV32] IMEM image (" & natural'image(image_size_c) & " bytes) " &
+    "overflows IMEM size (" & natural'image(2**AWIDTH) & " bytes)!" severity error;
 
   -- ROM --
   rom_access: process(clk_i)
