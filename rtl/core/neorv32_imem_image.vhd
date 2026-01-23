@@ -1,14 +1,11 @@
--- The NEORV32 RISC-V Processor
--- Auto-generated memory image for internal IMEM
-
 library ieee;
 use ieee.std_logic_1164.all;
 
-package neorv32_application_image is
+package neorv32_imem_image is
 
-constant application_image_size_c : natural := 768;
 type rom_t is array (0 to 255) of std_ulogic_vector(31 downto 0);
-constant application_image_data_c : rom_t := (
+constant image_size_c : natural := 772;
+constant image_data_c : rom_t := (
 x"f14020f3",
 x"80002217",
 x"ffb20213",
@@ -19,11 +16,11 @@ x"000022b7",
 x"80028293",
 x"30029073",
 x"00000317",
-x"18c30313",
+x"19030313",
 x"30531073",
 x"30401073",
 x"00000397",
-x"2cc38393",
+x"2d038393",
 x"80000417",
 x"fc440413",
 x"80000497",
@@ -61,7 +58,7 @@ x"30046073",
 x"10500073",
 x"ffdff06f",
 x"00000797",
-x"0e478793",
+x"0e878793",
 x"30579073",
 x"fff44737",
 x"00872103",
@@ -81,22 +78,23 @@ x"00052023",
 x"00450513",
 x"ff5ff06f",
 x"00000417",
-x"1e440413",
+x"1e840413",
 x"00000497",
-x"1dc48493",
+x"1e048493",
 x"00945a63",
 x"00042083",
 x"000080e7",
 x"00440413",
 x"ff1ff06f",
 x"00000617",
-x"08860613",
+x"08c60613",
 x"0ff0000f",
 x"0000100f",
 x"00000513",
 x"00000593",
 x"000600e7",
 x"30047073",
+x"30401073",
 x"00000597",
 x"05058593",
 x"30559073",
@@ -204,4 +202,4 @@ x"00008067",
 others => (others => '0')
 );
 
-end neorv32_application_image;
+end neorv32_imem_image;

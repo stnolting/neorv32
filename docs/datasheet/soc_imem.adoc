@@ -5,17 +5,17 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_imem.vhd              | generic processor-internal instruction memory (RAM or ROM)
-|                         | neorv32_imem_ram.vhd          | RAM component (primitive/IP wrapper)
-|                         | neorv32_imem_rom.vhd          | ROM component (primitive/IP wrapper)
-|                         | neorv32_application_image.vhd | memory image (VHDL package)
-| Software driver files:  | none                          |
-| Top entity ports:       | none                          |
-| Configuration generics: | `IMEM_EN`                     | implement IMEM when `true`
-|                         | `IMEM_SIZE`                   | IMEM size in bytes (use a power of 2)
-|                         | `IMEM_OUTREG_EN`              | add IMEM output register stage
-|                         | `BOOT_MODE_SELECT`            | implement IMEM as ROM when `BOOT_MODE_SELECT` = 2; see <<_boot_configuration>>
-| CPU interrupts:         | none                          |
+| Hardware source files:  | neorv32_imem.vhd       | generic processor-internal instruction memory (RAM or ROM)
+|                         | neorv32_imem_image.vhd | memory initialization image (VHDL package)
+|                         | neorv32_imem_ram.vhd   | RAM component (primitive/IP wrapper)
+|                         | neorv32_imem_rom.vhd   | ROM component (primitive/IP wrapper)
+| Software driver files:  | none                   |
+| Top entity ports:       | none                   |
+| Configuration generics: | `IMEM_EN`              | implement IMEM when `true`
+|                         | `IMEM_SIZE`            | IMEM size in bytes (use a power of 2)
+|                         | `IMEM_OUTREG_EN`       | add IMEM output register stage
+|                         | `BOOT_MODE_SELECT`     | implement IMEM as ROM when `BOOT_MODE_SELECT` = 2; see <<_boot_configuration>>
+| CPU interrupts:         | none                   |
 |=======================
 
 **Key Features**
@@ -42,7 +42,7 @@ generic. See section <<_boot_configuration>> for more information. If the IMEM i
 any write attempt to it will raise a _store access fault_ exception.
 
 The software framework provides an option to generate and override the default VHDL initialization
-file `rtl/core/neorv32_application_image.vhd`, which is automatically inserted into the IMEM (see
+file `rtl/core/neorv32_imem_image.vhd`, which is automatically inserted into the IMEM (see
 <<_makefile_targets>>. If the IMEM is implemented as RAM (default), the memory block will not be
 initialized at all.
 

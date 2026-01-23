@@ -200,8 +200,8 @@ Targets:
   coe           compile and generate <neorv32_raw_exe.coe> executable memory image
   mem           compile and generate <neorv32_raw_exe.mem> executable memory image
   mif           compile and generate <neorv32_raw_exe.mif> executable memory image
-  image         compile and generate VHDL IMEM application boot image <neorv32_application_image.vhd> in local folder
-  install       compile, generate and install VHDL IMEM application boot image <neorv32_application_image.vhd>
+  image         compile and generate VHDL IMEM application boot image <neorv32_imem_image.vhd> in local folder
+  install       compile, generate and install VHDL IMEM application boot image <neorv32_imem_image.vhd>
   sim           in-console simulation using default/simple testbench and GHDL
   hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl
   all           exe + install + hex + bin + asm
@@ -209,8 +209,8 @@ Targets:
   elf_sections  show ELF sections
   clean         clean up project home folder
   clean_all     clean up project home folder and image generator
-  bl_image      compile and generate VHDL BOOTROM bootloader boot image <neorv32_bootloader_image.vhd> in local folder
-  bootloader    compile, generate and install VHDL BOOTROM bootloader boot image <neorv32_bootloader_image.vhd>
+  bl_image      compile and generate VHDL BOOTROM bootloader boot image <neorv32_bootrom_image.vhd> in local folder
+  bootloader    compile, generate and install VHDL BOOTROM bootloader boot image <neorv32_bootrom_image.vhd>
 
 Variables:
 
@@ -489,23 +489,22 @@ The binary executable image (see <<_rom_layout>>) is further processed by the NE
 to generate a final executable file. The image generator can generate several types of executable file formats selected
 by a flag when calling the generator. **Note that all these options are managed by the makefile (see <<_makefile_targets>>).**
 
-[cols="<2,<8"]
+[cols="<1,<9"]
 [grid="none"]
 |=======================
-| `app_bin` | Generates an executable binary file (including a bootloader header) for upload via the bootloader.
-| `app_vhd` | Generates an executable VHDL memory initialization image for the processor-internal IMEM.
-| `bld_vhd` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM.
-| `raw_hex` | Generates a raw 8x ASCII hex-char file for custom purpose.
-| `raw_bin` | Generates a raw binary file for custom purpose.
-| `raw_coe` | Generates a raw COE file for FPGA memory initialization.
-| `raw_mem` | Generates a raw MEM file for FPGA memory initialization.
-| `raw_mif` | Generates a raw MIF file for FPGA memory initialization.
+| `exe` | Generates an executable binary file (including a bootloader header) for upload via the bootloader.
+| `vhd` | Generates a VHDL memory image (package file, package name is the same as the output file name).
+| `hex` | Generates a raw 8x ASCII hex-char file for custom purpose.
+| `bin` | Generates a raw binary file for custom purpose.
+| `coe` | Generates a raw COE file for FPGA memory initialization.
+| `mem` | Generates a raw MEM file for FPGA memory initialization.
+| `mif` | Generates a raw MIF file for FPGA memory initialization.
 |=======================
 
 .Image Generator Compilation
 [NOTE]
 The sources of the image generator are automatically compiled when invoking the makefile
-(requiring a _native_ GCC installation).
+(requires a native GCC installation).
 
 .Executable Header
 [NOTE]
