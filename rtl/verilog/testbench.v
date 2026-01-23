@@ -1,9 +1,15 @@
-// ****************************************************************************
-// NEORV32 Verilog testbench
-//
-// Simple testbench to check the default NEORV32 Verilog wrapper that
-// checks for the initial UART output of the bootloader ("NEORV32").
-// ****************************************************************************
+// ================================================================================ //
+// NEORV32 - Verilog testbench                                                      //
+// -------------------------------------------------------------------------------- //
+// Simple testbench for the auto-generated all-Verilog version of NEORV32.          //
+// Checks for the initial UART output of the bootloader ("NEORV32").                //
+// -------------------------------------------------------------------------------- //
+// The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
+// Copyright (c) NEORV32 contributors.                                              //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
+// Licensed under the BSD-3-Clause license, see LICENSE for details.                //
+// SPDX-License-Identifier: BSD-3-Clause                                            //
+// ================================================================================ //
 
 `timescale 1 ns/100 ps // time-unit = 1 ns, precision = 100 ps
 
@@ -36,7 +42,7 @@ module neorv32_verilog_tb;
     #5 clk = !clk; // T = 2*5ns -> f = 100MHz
   end
 
-  // unit under test: minimal NEORV32 Verilog wrapper
+  // unit under test
   // note that there are NO parameters available - the configuration has to be done
   // in the NEORV32 VHDL wrapper *before* synthesizing the generated Verilog code
   neorv32_verilog_wrapper neorv32_verilog_inst (
@@ -62,9 +68,8 @@ module neorv32_verilog_tb;
   integer i;
 
   always @(posedge clk) begin
-    // update "FIFO"
+    // update char buffer
     if (char_valid == 1'b1) begin
-      // top-to-bottom shift
       for (i=6; i>0; i=i-1) begin
         char_buffer[i-1] <= char_buffer[i];
       end
