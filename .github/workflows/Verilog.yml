@@ -32,7 +32,7 @@ jobs:
 
     - name: '⚙️ Run conversion'
       run: |
-        make -C rtl/verilog clean convert
+        make -C rtl/verilog VHDL_EXCLUDE=neorv32_dmem_ram.vhd clean convert
 
     - name: '📤 Archive generated Verilog code'
       if: always()
@@ -62,7 +62,7 @@ jobs:
 
     - name: '⚙️ Run Simulation'
       run: |
-        make -C rtl/verilog SIMULATOR=iverilog sim | tee iverilog.log
+        make -C rtl/verilog SIMULATOR=iverilog VERILOG_IP=ip/neorv32_dmem_ram.v sim | tee iverilog.log
         grep 'Simulation successful!' iverilog.log
 
   sim_verilator:
@@ -86,5 +86,5 @@ jobs:
 
     - name: '⚙️ Run Simulation'
       run: |
-        make -C rtl/verilog SIMULATOR=verilator sim | tee verilator.log
+        make -C rtl/verilog SIMULATOR=verilator VERILOG_IP=ip/neorv32_dmem_ram.v sim | tee verilator.log
         grep 'Simulation successful!' verilator.log
