@@ -173,10 +173,9 @@ description that should infer blockRAM on most FPGA platforms.
 ...................................
 rtl/core
 │
-├─ neorv32_application_image.vhd - IMEM application initialization image (package)
-├─ neorv32_bootloader_image.vhd  - Bootloader ROM memory image (package)
 ├─ neorv32_bootrom.vhd           - Bootloader ROM
-├─ neorv32_bootrom_rom.vhd       - BOOTROM ROM primitive wrapper
+├─ neorv32_bootrom_image.vhd     - Bootloader ROM initialization image
+├─ neorv32_bootrom_rom.vhd       - Bootloader ROM primitive wrapper
 ├─ neorv32_bus.vhd               - SoC bus infrastructure modules
 ├─ neorv32_cache.vhd             - Generic cache module
 ├─ neorv32_cache_ram.vhd         - Cache tag and data RAM primitive wrapper
@@ -209,6 +208,7 @@ rtl/core
 ├─ neorv32_gpio.vhd              - General purpose input/output port unit
 ├─ neorv32_gptmr.vhd             - General purpose 32-bit timer
 ├─ neorv32_imem.vhd              - Instruction memory
+├─ neorv32_imem_image.vhd        - Instruction memory initialization image
 ├─ neorv32_imem_ram.vhd          - Instruction memory RAM primitive wrapper
 ├─ neorv32_imem_rom.vhd          - Instruction memory ROM primitive wrapper
 ├─ neorv32_neoled.vhd            - NeoPixel (TM) compatible smart LED interface

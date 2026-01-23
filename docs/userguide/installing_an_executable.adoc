@@ -18,7 +18,7 @@ IMEM_EN          => true, -- implement processor-internal instruction memory
 ----
 
 [start=2]
-. Regenerate and re-install the default IMEM initialization file (`rtl/core/neorv32_application_image.vhd`)
+. Regenerate and re-install the default IMEM initialization file (`rtl/core/neorv32_imem_image.vhd`)
 so that it contains the image of your actual application firmware.
 
 [source,bash]
@@ -28,8 +28,8 @@ Memory utilization:
    text    data     bss     dec     hex filename
   22192    1352    4216   27760    6c70 main.elf
 Compiling image generator...
-Generating neorv32_application_image.vhd
-Installing application image to ../../../rtl/core/neorv32_application_image.vhd
+Generating neorv32_imem_image.vhd
+Installing application image to ../../../rtl/core/neorv32_imem_image.vhd
 ----
 
 [start=3]

@@ -122,8 +122,8 @@ Memory utilization:
    text    data     bss     dec     hex filename
    5596       0     116    5712    1650 main.elf <2>
 Compiling image generator...
-Generating neorv32_application_image.vhd
-Installing application image to ../../../rtl/core/neorv32_application_image.vhd <3>
+Generating neorv32_imem_image.vhd
+Installing application image to ../../../rtl/core/neorv32_imem_image.vhd <3>
 Simulating processor using default testbench...
 GHDL simulation run parameters: --stop-time=10ms <4>
 ../rtl/core/neorv32_top.vhd:329:5:@0ms:(assertion note): [NEORV32] The NEORV32 RISC-V Processor (v1.11.6.0), github.com/stnolting/neorv32

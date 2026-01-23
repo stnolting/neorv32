@@ -29,10 +29,13 @@ architecture neorv32_bootrom_rtl of neorv32_bootrom is
   -- [NOTE] We use component instantiation here to allow easy black-box instantiation for
   -- late component binding (e.g. when using the VHDL-to-Verilog flow with Verilog memory IP).
   component neorv32_bootrom_rom
+  generic (
+    AWIDTH : natural
+  );
   port (
     clk_i  : in  std_ulogic;
     en_i   : in  std_ulogic;
-    addr_i : in  std_ulogic_vector(15 downto 0);
+    addr_i : in  std_ulogic_vector(31 downto 0);
     data_o : out std_ulogic_vector(31 downto 0)
   );
   end component;
@@ -49,10 +52,13 @@ begin
   -- Pre-initialized Bootloader ROM (Wrapper) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bootrom_rom_inst: neorv32_bootrom_rom
+  generic map (
+    AWIDTH => awidth_c
+  )
   port map (
     clk_i  => clk_i,
     en_i   => bus_req_i.stb,
-    addr_i => bus_req_i.addr(awidth_c-1 downto 0),
+    addr_i => bus_req_i.addr,
     data_o => rdata
   );
 

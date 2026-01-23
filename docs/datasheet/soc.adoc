@@ -749,7 +749,7 @@ For the SMPA dual-core CPU configuration boot procedure see section <<_dual_core
 ==== Booting via Bootloader
 
 This is the most common and thus, the default boot configuration. When selected, the processor-internal
-<<_bootloader_rom_bootrom>> is enabled. This ROM contains the executable image (`rtl/core/neorv32_bootloader_image.vhd`)
+<<_bootloader_rom_bootrom>> is enabled. This ROM contains the executable image (`rtl/core/neorv32_bootrom_image.vhd`)
 of the default NEORV32 <<_bootloader>> that will be executed right after reset. The bootloader provides an interactive
 user console for executable upload as well as an automatic boot-configuration targeting external (SPI) memories.
 
@@ -772,7 +772,7 @@ If the processor-internal <<_instruction_memory_imem>> is enabled it will be imp
 ==== Boot IMEM Image
 
 This configuration will implement the <<_instruction_memory_imem>> as _pre-initialized read-only memory_ (ROM).
-The ROM is initialized during synthesis with the according application image file (`rtl/core/neorv32_application_image.vhd`).
+The ROM is initialized during synthesis with the according application image file (`rtl/core/neorv32_imem_image.vhd`).
 After reset, the CPU will directly start executing this image. Since the IMEM is implemented as ROM, the executable cannot
 be altered at runtime at all.
 

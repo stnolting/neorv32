@@ -5,13 +5,13 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_bootrom.vhd          | default platform-agnostic bootloader ROM
-|                         | neorv32_bootrom_rom.vhd      | ROM component (primitive/IP wrapper)
-|                         | neorv32_bootloader_image.vhd | memory image (VHDL package)
-| Software driver files:  | none                         | _implicitly used_
-| Top entity ports:       | none                         |
-| Configuration generics: | `BOOT_MODE_SELECT`           | implement BOOTROM when `BOOT_MODE_SELECT` = 0; see <<_boot_configuration>>
-| CPU interrupts:         | none                         |
+| Hardware source files:  | neorv32_bootrom.vhd       | default platform-agnostic bootloader ROM
+|                         | neorv32_bootrom_image.vhd | memory initialization image
+|                         | neorv32_bootrom_rom.vhd   | ROM component (primitive/IP wrapper)
+| Software driver files:  | none                      | _implicitly used_
+| Top entity ports:       | none                      |
+| Configuration generics: | `BOOT_MODE_SELECT`        | implement BOOTROM when `BOOT_MODE_SELECT` = 0; see <<_boot_configuration>>
+| CPU interrupts:         | none                      |
 |=======================
 
 **Key Features**
@@ -32,7 +32,7 @@ Note that the entire boot ROM is read-only.
 .Bootloader Image
 [IMPORTANT]
 The bootloader ROM is initialized during synthesis with the default bootloader image
-(`rtl/core/neorv32_bootloader_image.vhd`). The physical size of the ROM is automatically
+(`rtl/core/neorv32_bootrom_image.vhd`). The physical size of the ROM is automatically
 adjusted to the next power of two of the image size. However, note that the BOOTROM is
 constrained to a maximum size of 64kB.
 
