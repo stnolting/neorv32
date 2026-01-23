@@ -37,7 +37,9 @@ architecture neorv32_dmem_ram_rtl of neorv32_dmem_ram is
 begin
 
   -- notifier --
-  assert false report "[NEORV32] Using default DMEM RAM component." severity warning;
+  assert false report
+    "[NEORV32] Using default DMEM RAM component (" &
+    natural'image(2**AWIDTH) & " bytes)." severity warning;
 
   -- 4x byte-wide RAMs --
   ram_gen:
