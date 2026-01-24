@@ -71,6 +71,8 @@ convert: $(WRAPPER).v prototype
 # -----------------------------------------------------------------------------
 
 sim: $(WRAPPER).v
+	@echo "Verilog source files:"
+	@echo $(VERILOG_SRCS)
 ifeq ($(SIMULATOR), iverilog)
 	@echo "Running simulation with Icarus Verilog"
 	@mkdir -p $(BUILD)
@@ -87,8 +89,6 @@ endif
 ifeq ($(DUMP_WAVE), 1)
 	@echo "Dumping waveform data to 'wave.fst'"
 endif
-	@echo "Verilog source files:"
-	@echo $(VERILOG_SRCS)
 
 # -----------------------------------------------------------------------------
 # Help

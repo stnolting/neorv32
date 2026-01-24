@@ -188,7 +188,7 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 	$(Q)$(CC_HOST) $< -o $(IMAGE_GEN)
 
 # -----------------------------------------------------------------------------
-# General targets: Assemble, compile, link, dump
+# Build targets: Assemble, compile, link, dump
 # -----------------------------------------------------------------------------
 
 # Create the build directories if they don't exist
