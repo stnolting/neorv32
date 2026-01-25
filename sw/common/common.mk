@@ -300,7 +300,7 @@ bootloader: bl_image
 
 sim: $(APP_VHD)
 	$(ECHO) "Simulating processor using default testbench..."
-	$(Q)$(CHMOD) $(NEORV32_SIM_PATH)/ghdl.sh
+	$(Q)$(CHMOD) +rx $(NEORV32_SIM_PATH)/ghdl.sh
 	$(Q)./$(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
 
 # Install VHDL memory initialization file
