@@ -49,6 +49,9 @@ GDB_ARGS ?= -ex "target extended-remote localhost:3333"
 # GHDL simulation run arguments
 GHDL_RUN_FLAGS ?=
 
+# Serial device for UART bootloader upload
+UART_TTY ?= /dev/ttyUSB1
+
 # -----------------------------------------------------------------------------
 # NEORV32 framework
 # -----------------------------------------------------------------------------
@@ -120,8 +123,8 @@ SET   = set
 CP    = cp
 RM    = rm
 MKDIR = mkdir
-SH    = sh
 WC    = wc
+CHMOD = chmod
 
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
@@ -160,7 +163,7 @@ mem:     $(APP_MEM)
 mif:     $(APP_MIF)
 image:   $(APP_VHD)
 install: image install-$(APP_VHD)
-all:     $(APP_ELF) $(APP_ASM) $(APP_EXE) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_VHD) install hex bin
+all:     clean_all elf asm exe hex bin coe mem mif image install
 
 # -----------------------------------------------------------------------------
 # Verbosity
@@ -186,6 +189,7 @@ endif
 $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 	$(ECHO) Compiling image generator...
 	$(Q)$(CC_HOST) $< -o $(IMAGE_GEN)
+	$(Q)$(CHMOD) +rx $(IMAGE_GEN)
 
 # -----------------------------------------------------------------------------
 # Build targets: Assemble, compile, link, dump
@@ -296,7 +300,8 @@ bootloader: bl_image
 
 sim: $(APP_VHD)
 	$(ECHO) "Simulating processor using default testbench..."
-	$(Q)$(SH) $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
+	$(Q)$(CHMOD) +rx $(NEORV32_SIM_PATH)/ghdl.sh
+	$(Q)./$(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
 
 # Install VHDL memory initialization file
 install-$(APP_VHD): $(APP_VHD)
@@ -309,7 +314,8 @@ install-$(APP_VHD): $(APP_VHD)
 # -----------------------------------------------------------------------------
 
 hdl_lists:
-	$(Q)$(SH) $(NEORV32_RTL_PATH)/generate_file_lists.sh
+	$(Q)$(CHMOD) +rx $(NEORV32_RTL_PATH)/generate_file_lists.sh
+	$(Q)./$(NEORV32_RTL_PATH)/generate_file_lists.sh
 
 # -----------------------------------------------------------------------------
 # Show final ELF details (just for debugging)
@@ -320,6 +326,14 @@ elf_info: $(APP_ELF)
 
 elf_sections: $(APP_ELF)
 	$(Q)$(READELF) -S $(APP_ELF)
+
+# -----------------------------------------------------------------------------
+# Upload to bootloader via UART
+# -----------------------------------------------------------------------------
+
+upload: $(APP_EXE)
+	$(Q)$(CHMOD) +rx $(NEORV32_EXG_PATH)/uart_upload.sh
+	$(Q)./$(NEORV32_EXG_PATH)/uart_upload.sh $(UART_TTY) $(APP_EXE)
 
 # -----------------------------------------------------------------------------
 # Run GDB
@@ -430,27 +444,31 @@ help:
 	$(ECHO) ""
 	$(ECHO) "Targets:"
 	$(ECHO) ""
-	$(ECHO) "  help          show this text"
-	$(ECHO) "  check         check toolchain and list supported ISA extensions"
-	$(ECHO) "  info          show project/makefile configuration"
-	$(ECHO) "  gdb           start GNU debugging session"
-	$(ECHO) "  asm           build and generate <$(APP_ASM)> assembly listing file"
-	$(ECHO) "  elf           build and generate <$(APP_ELF)> ELF file"
-	$(ECHO) "  exe           build and generate <$(APP_EXE)> executable file for bootloader upload"
-	$(ECHO) "  bin           build and generate <$(APP_BIN)> executable memory image"
-	$(ECHO) "  hex           build and generate <$(APP_HEX)> executable memory image"
-	$(ECHO) "  coe           build and generate <$(APP_COE)> executable memory image"
-	$(ECHO) "  mem           build and generate <$(APP_MEM)> executable memory image"
-	$(ECHO) "  mif           build and generate <$(APP_MIF)> executable memory image"
-	$(ECHO) "  image         build and generate VHDL IMEM application memory image <$(APP_VHD)> in local folder"
-	$(ECHO) "  install       build, generate and install VHDL IMEM application memory image <$(APP_VHD)>"
+	$(ECHO) "  help       show this text"
+	$(ECHO) "  check      check toolchain and list supported ISA extensions"
+	$(ECHO) "  info       show project/makefile configuration"
+	$(ECHO) "  gdb        start GNU debugging session"
+	$(ECHO) "  asm        build and generate <$(APP_ASM)> assembly listing file"
+	$(ECHO) "  elf        build and generate <$(APP_ELF)> ELF file"
+	$(ECHO) "  exe        build and generate <$(APP_EXE)> executable file for bootloader upload"
+	$(ECHO) "  bin        build and generate <$(APP_BIN)> executable memory image"
+	$(ECHO) "  hex        build and generate <$(APP_HEX)> executable memory image"
+	$(ECHO) "  coe        build and generate <$(APP_COE)> executable memory image"
+	$(ECHO) "  mem        build and generate <$(APP_MEM)> executable memory image"
+	$(ECHO) "  mif        build and generate <$(APP_MIF)> executable memory image"
+	$(ECHO) "  image      build and generate VHDL IMEM application memory image <$(APP_VHD)> in local folder"
+	$(ECHO) "  install    build, generate and install VHDL IMEM application memory image <$(APP_VHD)>"
+	$(ECHO) "  clean      clean up project home folder"
+	$(ECHO) "  clean_all  clean up project home folder and image generator"
+	$(ECHO) "  all        clean_all + elf + asm + exe + hex + bin + coe + mem + mif + image + install"
+	$(ECHO) ""
+	$(ECHO) "Additional targets:"
+	$(ECHO) ""
 	$(ECHO) "  sim           in-console simulation using default testbench (sim folder) and GHDL"
 	$(ECHO) "  hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
-	$(ECHO) "  all           exe + install + hex + bin + asm"
+	$(ECHO) "  upload        upload executable to bootloader via UART ($(UART_TTY))"
 	$(ECHO) "  elf_info      show ELF layout info"
 	$(ECHO) "  elf_sections  show ELF sections"
-	$(ECHO) "  clean         clean up project home folder"
-	$(ECHO) "  clean_all     clean up project home folder and image generator"
 	$(ECHO) "  bl_image      build and generate VHDL BOOTROM bootloader memory image <$(BLD_VHD)> in local folder"
 	$(ECHO) "  bootloader    build, generate and install VHDL BOOTROM bootloader memory image <$(BLD_VHD)>"
 	$(ECHO) ""
@@ -469,5 +487,6 @@ help:
 	$(ECHO) "  RISCV_PREFIX    Toolchain prefix: \"$(RISCV_PREFIX)\""
 	$(ECHO) "  NEORV32_HOME    NEORV32 home folder: \"$(NEORV32_HOME)\""
 	$(ECHO) "  GDB_ARGS        GDB arguments: \"$(GDB_ARGS)\""
+	$(ECHO) "  UART_TTY        Serial port for upload to bootloader: \"$(UART_TTY)\""
 	$(ECHO) "  GHDL_RUN_FLAGS  GHDL simulation run arguments: \"$(GHDL_RUN_FLAGS)\""
 	$(ECHO) ""
