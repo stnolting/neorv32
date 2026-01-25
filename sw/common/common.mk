@@ -49,6 +49,9 @@ GDB_ARGS ?= -ex "target extended-remote localhost:3333"
 # GHDL simulation run arguments
 GHDL_RUN_FLAGS ?=
 
+# Serial device for UART bootloader upload
+UART_TTY ?= /dev/ttyUSB1
+
 # -----------------------------------------------------------------------------
 # NEORV32 framework
 # -----------------------------------------------------------------------------
@@ -325,6 +328,14 @@ elf_sections: $(APP_ELF)
 	$(Q)$(READELF) -S $(APP_ELF)
 
 # -----------------------------------------------------------------------------
+# Upload to bootloader via UART
+# -----------------------------------------------------------------------------
+
+upload: $(APP_EXE)
+	$(Q)$(CHMOD) +rx $(NEORV32_EXG_PATH)/uart_upload.sh
+	$(Q)./$(NEORV32_EXG_PATH)/uart_upload.sh $(UART_TTY) $(APP_EXE)
+
+# -----------------------------------------------------------------------------
 # Run GDB
 # -----------------------------------------------------------------------------
 
@@ -455,7 +466,7 @@ help:
 	$(ECHO) ""
 	$(ECHO) "  sim           in-console simulation using default testbench (sim folder) and GHDL"
 	$(ECHO) "  hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
-	$(ECHO) "  all           exe + install + hex + bin + asm"
+	$(ECHO) "  upload        upload executable to bootloader via UART ($(UART_TTY))"
 	$(ECHO) "  elf_info      show ELF layout info"
 	$(ECHO) "  elf_sections  show ELF sections"
 	$(ECHO) "  bl_image      build and generate VHDL BOOTROM bootloader memory image <$(BLD_VHD)> in local folder"
@@ -476,5 +487,6 @@ help:
 	$(ECHO) "  RISCV_PREFIX    Toolchain prefix: \"$(RISCV_PREFIX)\""
 	$(ECHO) "  NEORV32_HOME    NEORV32 home folder: \"$(NEORV32_HOME)\""
 	$(ECHO) "  GDB_ARGS        GDB arguments: \"$(GDB_ARGS)\""
+	$(ECHO) "  UART_TTY        Serial port for upload to bootloader: \"$(UART_TTY)\""
 	$(ECHO) "  GHDL_RUN_FLAGS  GHDL simulation run arguments: \"$(GHDL_RUN_FLAGS)\""
 	$(ECHO) ""
