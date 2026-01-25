@@ -120,8 +120,8 @@ SET   = set
 CP    = cp
 RM    = rm
 MKDIR = mkdir
-SH    = sh
 WC    = wc
+CHMOD = chmod
 
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
@@ -186,6 +186,7 @@ endif
 $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 	$(ECHO) Compiling image generator...
 	$(Q)$(CC_HOST) $< -o $(IMAGE_GEN)
+	$(Q)$(CHMOD) +rx $(IMAGE_GEN)
 
 # -----------------------------------------------------------------------------
 # Build targets: Assemble, compile, link, dump
@@ -296,7 +297,8 @@ bootloader: bl_image
 
 sim: $(APP_VHD)
 	$(ECHO) "Simulating processor using default testbench..."
-	$(Q)$(SH) $(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
+	$(Q)$(CHMOD) $(NEORV32_SIM_PATH)/ghdl.sh
+	$(Q)./$(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
 
 # Install VHDL memory initialization file
 install-$(APP_VHD): $(APP_VHD)
@@ -309,7 +311,8 @@ install-$(APP_VHD): $(APP_VHD)
 # -----------------------------------------------------------------------------
 
 hdl_lists:
-	$(Q)$(SH) $(NEORV32_RTL_PATH)/generate_file_lists.sh
+	$(Q)$(CHMOD) +rx $(NEORV32_RTL_PATH)/generate_file_lists.sh
+	$(Q)./$(NEORV32_RTL_PATH)/generate_file_lists.sh
 
 # -----------------------------------------------------------------------------
 # Show final ELF details (just for debugging)
