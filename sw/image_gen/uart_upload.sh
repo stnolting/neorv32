@@ -25,15 +25,14 @@ TIMEOUT=$(( (FILESIZE / (BAUD/10)) + 2 ))
 
 # setup serial port
 printf "Opening serial port ($1)... "
-stty -F $1 $BAUD raw -echo -ixon -ixoff -icrnl -onlcr
+stty -F $1 $BAUD -hup raw -echo cs8 -cstopb -ixon clocal cread
 exec 3<>$1
 printf "OK\n"
 
 # send executable
 printf "Uploading executable ($FILESIZE bytes)... "
-printf " " >&3 # skip auto-boot
-printf "u" >&3 # start upload
-cat $2 >&3     # send executable
+printf " u" >&3 # skip auto-boot (SPACE) and start upload ('u')
+cat $2 >&3 # send executable
 
 # wait for upload to complete and check bootloader response
 UPOLOAD_OK=0
@@ -41,8 +40,8 @@ EXPIRED=$(( SECONDS + TIMEOUT ))
 PATTERN="OK"
 BUFFER=""
 while [ $SECONDS -lt $EXPIRED ]; do
-  if read -r -n 1 -u 3 -t 1 ch; then
-    BUFFER+="$ch"
+  if read -r -n 1 -u 3 -t 1 CH; then
+    BUFFER+=$CH
     UPOLOAD_OK=-1
     if [[ "$BUFFER" == *"$PATTERN"* ]]; then
       UPOLOAD_OK=1
