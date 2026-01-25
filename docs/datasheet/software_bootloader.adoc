@@ -163,6 +163,14 @@ Make sure the terminal sends the executable in raw binary mode.
 . The executable is now in the instruction memory of the processor. To execute the program right
 now run the "start executable" command by typing `e`.
 
+.Uploading via `make upload` right from the console
+[TIP]
+The <<_application_makefile>> provides an "`upload`" target that allows you to transfer a compiled executable directly
+to the bootloader via UART right from the console. This script handles the communication with the bootloader and is
+based on a simple shell helper script `neorv32/sw/image_gen/uart_upload.sh`. Example:
+`neorv32/sw/example/demo_blink_led$ make UART_TTY=/dev/ttyUSB1 upload`.
+The serial interface device is defined by `UART_TTY` .
+
 
 :sectnums:
 ==== Programming an SPI (/TWI) Flash
