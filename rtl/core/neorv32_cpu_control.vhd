@@ -229,9 +229,9 @@ begin
     trap.ecall        <= '0';
     trap.ebreak       <= '0';
     ctrl_nxt          <= ctrl_bus_zero_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
-    ctrl_nxt.csr_addr <= ctrl.csr_addr;   -- keep previous CSR address
-    ctrl_nxt.lsu_rd   <= ctrl.lsu_rd; -- keep memory access read/write type
-    ctrl_nxt.lsu_wr   <= ctrl.lsu_wr;
+    ctrl_nxt.csr_addr <= ctrl.csr_addr; -- keep previous CSR address
+    ctrl_nxt.lsu_rd   <= ctrl.lsu_rd; -- keep memory read access type
+    ctrl_nxt.lsu_wr   <= ctrl.lsu_wr; -- keep memory write access type
 
     -- immediate --
     case opcode_v is
@@ -794,6 +794,35 @@ begin
                  (trap.ebreak and (not csr.prv_level) and (not csr.dcsr_ebreaku) and (not debug_ctrl.run));   -- M-mode trap on U-ebreak
 
 
+  -- Trap Triggers --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  trap_pending: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      trap.env_pend <= '0';
+    elsif rising_edge(clk_i) then
+      if (trap.env_enter = '1') then -- start of trap environment acknowledged by execute engine
+        trap.env_pend <= '0';
+      elsif (trap.exc_fire = '1') or (or_reduce_f(trap.irq_fire) = '1') then -- trap trigger
+        trap.env_pend <= '1';
+      end if;
+    end if;
+  end process trap_pending;
+
+  -- any sync. exception? --
+  trap.exc_fire <= or_reduce_f(trap.exc_buf); -- cannot be masked
+
+  -- any system interrupt? --
+  trap.irq_fire(0) <= '1' when
+    ((exec.state = S_EXECUTE) or (exec.state = S_SLEEP)) and -- trigger system IRQ only in S_EXECUTE state or in sleep mode
+    (or_reduce_f(trap.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
+    ((csr.mstatus_mie = '1') or (csr.prv_level = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
+    (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
+
+  -- debug-entry halt interrupt? allow halt also after "reset" (#879) --
+  trap.irq_fire(1) <= trap.irq_buf(irq_db_halt_c) when (exec.state = S_RESTART) or (exec.state = S_EXECUTE) or (exec.state = S_SLEEP) else '0';
+
+
   -- Trap Priority Encoder ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   trap.cause <=
@@ -807,7 +836,7 @@ begin
     trap_lma_c     when (trap.exc_buf(exc_lalign_c)  = '1') else -- load address misaligned
     trap_saf_c     when (trap.exc_buf(exc_saccess_c) = '1') else -- store access fault
     trap_laf_c     when (trap.exc_buf(exc_laccess_c) = '1') else -- load access fault
-    -- standard RISC-V debug mode traps --
+    -- standard RISC-V debug-mode traps --
     trap_db_halt_c when (trap.irq_buf(irq_db_halt_c) = '1') else -- external halt request
     trap_db_trig_c when (trap.exc_buf(exc_db_trig_c) = '1') else -- hardware trigger
     trap_db_brkp_c when (trap.exc_buf(exc_db_brkp_c) = '1') else -- breakpoint
@@ -839,35 +868,6 @@ begin
 
   -- exception program counter: async. interrupt or sync. exception? --
   trap.pc <= exec.pc2 when (trap.cause(trap.cause'left) = '1') else exec.pc;
-
-
-  -- Trap Triggers --------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  trap_pending: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      trap.env_pend <= '0';
-    elsif rising_edge(clk_i) then
-      if (trap.env_enter = '1') then -- start of trap environment acknowledged by execute engine
-        trap.env_pend <= '0';
-      elsif (trap.exc_fire = '1') or (or_reduce_f(trap.irq_fire) = '1') then -- trap trigger
-        trap.env_pend <= '1';
-      end if;
-    end if;
-  end process trap_pending;
-
-  -- any sync. exception? --
-  trap.exc_fire <= or_reduce_f(trap.exc_buf); -- cannot be masked
-
-  -- any system interrupt? --
-  trap.irq_fire(0) <= '1' when
-    ((exec.state = S_EXECUTE) or (exec.state = S_SLEEP)) and -- trigger system IRQ only in S_EXECUTE state or in sleep mode
-    (or_reduce_f(trap.irq_buf(irq_firq_15_c downto irq_msi_irq_c)) = '1') and -- pending system IRQ
-    ((csr.mstatus_mie = '1') or (csr.prv_level = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
-    (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
-
-  -- debug-entry halt interrupt? allow halt also after "reset" (#879) --
-  trap.irq_fire(1) <= trap.irq_buf(irq_db_halt_c) when (exec.state = S_RESTART) or (exec.state = S_EXECUTE) or (exec.state = S_SLEEP) else '0';
 
 
   -- Debug-Mode Control ---------------------------------------------------------------------
