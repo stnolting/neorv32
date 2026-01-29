@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -14,8 +14,8 @@
 #ifndef NEORV32_TWD_H
 #define NEORV32_TWD_H
 
+#include <neorv32.h>
 #include <stdint.h>
-
 
 /**********************************************************************//**
  * @name IO Device: Two-Wire Device Controller (TWD)
@@ -41,7 +41,7 @@ enum NEORV32_TWD_CTRL_enum {
   TWD_CTRL_IRQ_RX_AVAIL = 11, /**< TWD control register(11) (r/w): IRQ if RX FIFO data available */
   TWD_CTRL_IRQ_RX_FULL  = 12, /**< TWD control register(12) (r/w): IRQ if RX FIFO full */
   TWD_CTRL_IRQ_TX_EMPTY = 13, /**< TWD control register(13) (r/w): IRQ if TX FIFO empty */
-  
+
   TWD_CTRL_RX_FIFO_LSB  = 16, /**< TWD control register(16) (r/-): log2(RX_FIFO size), LSB */
   TWD_CTRL_RX_FIFO_MSB  = 19, /**< TWD control register(19) (r/-): log2(RX_FIFO size), MSB */
   TWD_CTRL_TX_FIFO_LSB  = 20, /**< TWD control register(20) (r/-): log2(TX_FIFO size), LSB */
