@@ -15,8 +15,11 @@ license(s) are listed in `license.md`.
 
 ### > [`references`](references)
 
-Reference material like RISC-V and Wishbone specifications.
+Reference material like RISC-V and Wishbone specifications. The most recent ratified version
+of the RISC-V ISA specs can be found online:
 
+* [Volume I: Unprivileged Architecture](https://docs.riscv.org/reference/isa/unpriv/unpriv-index.html)
+* [Volume II: Privileged Architecture](https://docs.riscv.org/reference/isa/priv/priv-index.html)
 
 ### > [`userguide`](userguide)
 
