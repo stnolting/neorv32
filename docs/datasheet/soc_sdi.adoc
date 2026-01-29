@@ -86,8 +86,8 @@ of the interrupt is resolved.
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
 .16+<| `0xfff70000` .16+<| `CTRL` <|`0`     `SDI_CTRL_EN`                           ^| r/w <| SDI module enable
-                                  <|`1`     `SDR_CTRL_CLR_RX`                       ^| r/- <| clear RX FIFO, flag auto-clears
-                                  <|`2`     `SDR_CTRL_CLR_TX`                       ^| r/- <| clear TX FIFO, flag auto-clears
+                                  <|`1`     `SDR_CTRL_CLR_RX`                       ^| -/w <| clear RX FIFO, flag auto-clears
+                                  <|`2`     `SDR_CTRL_CLR_TX`                       ^| -/w <| clear TX FIFO, flag auto-clears
                                   <|`3`     -                                       ^| r/- <| _reserved_, read as zero
                                   <|`7:4`   `SDI_CTRL_FIFO_MSB : SDI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(_IO_SDI_FIFO_)
                                   <|`15:8`  -                                       ^| r/- <| reserved, read as zero
@@ -101,6 +101,6 @@ of the interrupt is resolved.
                                   <|`27`    `SDI_CTRL_TX_FULL`                      ^| r/- <| TX FIFO full
                                   <|`30:28` -                                       ^| r/- <| _reserved_, read as zero
                                   <|`31`    `SDI_CTRL_CS_ACTIVE`                    ^| r/- <| Chip-select is active when set
-.2+<| `0xfff70004` .2+<| `DATA` <|`7:0`    ^| r/w <| receive/transmit data (FIFO)
-                                <|`31:8` - ^| r/- <| _reserved_, read as zero
+.2+<| `0xfff70004` .2+<| `DATA` <|`7:0`  `SDI_DATA_MSB : SDI_DATA_LSB` ^| r/w <| receive/transmit data (FIFO)
+                                <|`31:8` -                             ^| r/- <| _reserved_, read as zero
 |=======================
