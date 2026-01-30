@@ -190,7 +190,7 @@ begin
   -- ALU[I]-Opcode Co-Processor: Bit-Manipulation Unit ('B' ISA Extension) ------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_bitmanip_enabled:
-  if RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbs or RISCV_ISA_Zbkc generate
+  if RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbkc or RISCV_ISA_Zbkx or RISCV_ISA_Zbs generate
     neorv32_cpu_alu_bitmanip_inst: entity neorv32.neorv32_cpu_alu_bitmanip
     generic map (
       FAST_SHIFT => FAST_SHIFT_EN,  -- use barrel shifter for shift operations
@@ -218,7 +218,7 @@ begin
   end generate;
 
   neorv32_cpu_alu_bitmanip_disabled:
-  if not (RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbs or RISCV_ISA_Zbkc) generate
+  if not (RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbkc or RISCV_ISA_Zbkx or RISCV_ISA_Zbs) generate
     cp_result(2) <= (others => '0');
     cp_valid(2)  <= '0';
   end generate;
@@ -346,12 +346,12 @@ begin
   -- ALU[I]-Opcode Co-Processor: Scalar Cryptography Unit ('Zk*' ISA Extensions) ------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_crypto_enabled:
-  if RISCV_ISA_Zbkx or RISCV_ISA_Zknh or RISCV_ISA_Zkne or RISCV_ISA_Zknd or RISCV_ISA_Zksh or RISCV_ISA_Zksed generate
+  if RISCV_ISA_Zknd or RISCV_ISA_Zkne or RISCV_ISA_Zknh or RISCV_ISA_Zksed or RISCV_ISA_Zksh generate
     neorv32_cpu_alu_crypto_inst: entity neorv32.neorv32_cpu_alu_crypto
     generic map (
-      EN_ZKNH  => RISCV_ISA_Zknh,  -- enable NIST hash extension
-      EN_ZKNE  => RISCV_ISA_Zkne,  -- enable NIST AES encryption extension
       EN_ZKND  => RISCV_ISA_Zknd,  -- enable NIST AES decryption extension
+      EN_ZKNE  => RISCV_ISA_Zkne,  -- enable NIST AES encryption extension
+      EN_ZKNH  => RISCV_ISA_Zknh,  -- enable NIST hash extension
       EN_ZKSED => RISCV_ISA_Zksed, -- enable ShangMi block cypher extension
       EN_ZKSH  => RISCV_ISA_Zksh   -- enable ShangMi hash extension
     )
@@ -370,7 +370,7 @@ begin
   end generate;
 
   neorv32_cpu_alu_crypto_disabled:
-  if not (RISCV_ISA_Zbkx or RISCV_ISA_Zknh or RISCV_ISA_Zkne or RISCV_ISA_Zknd or RISCV_ISA_Zksh or RISCV_ISA_Zksed) generate
+  if not (RISCV_ISA_Zknd or RISCV_ISA_Zkne or RISCV_ISA_Zknh or RISCV_ISA_Zksed or RISCV_ISA_Zksh) generate
     cp_result(6) <= (others => '0');
     cp_valid(6)  <= '0';
   end generate;

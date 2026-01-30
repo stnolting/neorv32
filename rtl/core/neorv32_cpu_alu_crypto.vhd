@@ -2,9 +2,9 @@
 -- NEORV32 CPU - ALU Scalar Cryptography Unit (RISC-V Zk* ISA Extensions)           --
 -- -------------------------------------------------------------------------------- --
 -- Supported sub-extensions:                                                        --
--- + Zknh:  NIST suite's hash functions                                             --
--- + Zkne:  NIST suite's AES encryption                                             --
 -- + Zknd:  NIST suite's AES decryption                                             --
+-- + Zkne:  NIST suite's AES encryption                                             --
+-- + Zknh:  NIST suite's hash functions                                             --
 -- + Zksed: ShangMi suite's block ciphers                                           --
 -- + Zksh:  ShangMi suite's hash functions                                          --
 -- -------------------------------------------------------------------------------- --
@@ -24,9 +24,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_alu_crypto is
   generic (
-    EN_ZKNH  : boolean; -- enable NIST hash extension
-    EN_ZKNE  : boolean; -- enable NIST AES encryption extension
     EN_ZKND  : boolean; -- enable NIST AES decryption extension
+    EN_ZKNE  : boolean; -- enable NIST AES encryption extension
+    EN_ZKNH  : boolean; -- enable NIST hash extension
     EN_ZKSED : boolean; -- enable ShangMi block cipher extension
     EN_ZKSH  : boolean  -- enable ShangMi hash extension
   );

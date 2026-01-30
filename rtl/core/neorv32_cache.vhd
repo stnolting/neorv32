@@ -234,16 +234,15 @@ begin
 
       when S_DOWNLOAD_START => -- start block download / send single request (if no bursts)
       -- ------------------------------------------------------------
-        cache_o.addr    <= ctrl.tag_idx & ctrl.ofs_int & "00";
         bus_req_o.addr  <= ctrl.tag_idx & ctrl.ofs_ext(offset_width_c-1 downto 0) & "00";
         bus_req_o.rw    <= '0'; -- read access
-        bus_req_o.stb   <= '1'; -- send initial (burst/locking) request
+        bus_req_o.stb   <= '1'; -- send (initial burst/locking) request
         bus_req_o.lock  <= '1'; -- this is a locked transfer
         bus_req_o.burst <= bool_to_ulogic_f(bursts_en_c); -- this is a burst transfer
         bus_req_o.ben   <= (others => '1'); -- full-word access
         ctrl_nxt.state  <= S_DOWNLOAD_WAIT;
 
-      when S_DOWNLOAD_WAIT => -- wait for exclusive (=locked) bus access / response
+      when S_DOWNLOAD_WAIT => -- wait for exclusive/locked bus access
       -- ------------------------------------------------------------
         cache_o.addr    <= ctrl.tag_idx & ctrl.ofs_int & "00";
         cache_o.data    <= bus_rsp_i.data;
@@ -373,6 +372,21 @@ begin
   end generate;
 
 
+  -- Cache Hit Check ------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  tag_buffer: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      tag_reg <= (others => '0');
+    elsif rising_edge(clk_i) then
+      tag_reg <= cache_o.addr(31 downto 31-(tag_width_c-1));
+    end if;
+  end process tag_buffer;
+
+  -- cache hit --
+  cache_i.hit <= '1' when (valid_rd = '1') and (tag_rd(tag_width_c-1 downto 0) = tag_reg) else '0';
+
+
   -- Cache Tag and Data Memory (Wrapper) ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_ram_inst: neorv32_cache_ram
@@ -390,20 +404,5 @@ begin
     data_i    => cache_o.data,
     data_o    => cache_i.data
   );
-
-
-  -- Cache Hit Check ------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  tag_buffer: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      tag_reg <= (others => '0');
-    elsif rising_edge(clk_i) then
-      tag_reg <= cache_o.addr(31 downto 31-(tag_width_c-1));
-    end if;
-  end process tag_buffer;
-
-  -- cache hit --
-  cache_i.hit <= '1' when (valid_rd = '1') and (tag_rd(tag_width_c-1 downto 0) = tag_reg) else '0';
 
 end neorv32_cache_rtl;

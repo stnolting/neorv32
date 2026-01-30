@@ -200,6 +200,10 @@ begin
       cond_sel_string_f(boolean(CPU_RF_ARCH_SEL = 3), "rf_arch=latch ",      "")
       severity note;
 
+    -- ISA configuration checks --
+    assert not (RISCV_ISA_Zcb and (not RISCV_ISA_C)) report
+      "[NEORV32] CPU ISA: Zcb requires C!" severity error;
+
   end generate;
 
 

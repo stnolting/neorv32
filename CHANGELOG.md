@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 30.01.2025 | 1.12.7.5 | :bug: fix enabling of `Zbkx` ISA extension | [#1486](https://github.com/stnolting/neorv32/pull/1486) |
 | 22.01.2025 | 1.12.7.4 | :warning: rework memory image files | [#1482](https://github.com/stnolting/neorv32/pull/1482) |
 | 18.01.2025 | 1.12.7.3 | :sparkles: encapsulate memory components; caches: use block invalidation when a bus error occurs during block download | [#1481](https://github.com/stnolting/neorv32/pull/1481) |
 | 18.01.2025 | 1.12.7.2 | :bug: fix `csrr[r/c][i]` instructions: do not write CSR if `rs1/imm5` is not zero | [#1479](https://github.com/stnolting/neorv32/pull/1479) |
@@ -603,4 +604,4 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 29.06.2022 | 1.7.3.2 | :test_tube: add experimental core complex wrapper for integration into the [**LiteX**](https://github.com/enjoy-digital/litex) SoC builder framework | [#353](https://github.com/stnolting/neorv32/pull/353) |
 | 28.06.2022 | 1.7.3.1 | :bug: fix bug that caused permanent CPU stall if illegal load/store instruction | [#356](https://github.com/stnolting/neorv32/pull/356) |
 | 23.06.2022 | [**1.7.3**](https://github.com/stnolting/neorv32/releases/tag/v1.7.3) | :rocket: **New release** | |
-| ...        | ...     | Changelog trimmed. See [`CHANGELOG.md` in v1.7.3](https://github.com/stnolting/neorv32/blob/v1.7.3/CHANGELOG.md) for older logs. | ... |
+| ...        | ...     | Change log trimmed. See [`CHANGELOG.md` in v1.7.3](https://github.com/stnolting/neorv32/blob/v1.7.3/CHANGELOG.md) for older logs. | ... |
