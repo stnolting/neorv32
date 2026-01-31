@@ -34,7 +34,7 @@ entity neorv32_cpu_alu is
     RISCV_ISA_Zksed  : boolean; -- ShangMi block cipher extension
     RISCV_ISA_Zksh   : boolean; -- ShangMi hash extension
     RISCV_ISA_Zmmul  : boolean; -- multiply-only M sub-extension
-    RISCV_ISA_Zxcfu  : boolean; -- custom (instr.) functions unit
+    RISCV_ISA_Xcfu   : boolean; -- custom (instr.) functions unit
     -- Tuning Options --
     FAST_MUL_EN      : boolean; -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN    : boolean  -- use barrel shifter for shift operations
@@ -264,10 +264,10 @@ begin
     cp_valid(3)  <= '0';
   end generate;
 
-  -- CUSTOM-Opcode Co-Processor: Custom Functions Unit ('Zxcfu' ISA Extension) --------------
+  -- CUSTOM-Opcode Co-Processor: Custom Functions Unit ('Xcfu' ISA Extension) ---------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_cfu_enabled:
-  if RISCV_ISA_Zxcfu generate
+  if RISCV_ISA_Xcfu generate
     neorv32_cpu_alu_cfu_inst: entity neorv32.neorv32_cpu_alu_cfu
     port map (
       -- global control --
@@ -310,7 +310,7 @@ begin
   end generate;
 
   neorv32_cpu_alu_cfu_disabled:
-  if not RISCV_ISA_Zxcfu generate
+  if not RISCV_ISA_Xcfu generate
     cfu_done     <= '0';
     cfu_res      <= (others => '0');
     cfu_busy     <= '0';

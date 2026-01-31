@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 31.01.2025 | 1.12.7.6 | :warning: rename `Zxcfu` ISA extension to `Xcfu` | [#1487](https://github.com/stnolting/neorv32/pull/1487) |
 | 30.01.2025 | 1.12.7.5 | :bug: fix enabling of `Zbkx` ISA extension | [#1486](https://github.com/stnolting/neorv32/pull/1486) |
 | 22.01.2025 | 1.12.7.4 | :warning: rework memory image files | [#1482](https://github.com/stnolting/neorv32/pull/1482) |
 | 18.01.2025 | 1.12.7.3 | :sparkles: encapsulate memory components; caches: use block invalidation when a bus error occurs during block download | [#1481](https://github.com/stnolting/neorv32/pull/1481) |

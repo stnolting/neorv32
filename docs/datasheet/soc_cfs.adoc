@@ -39,7 +39,7 @@ real-time data transport (I2S) or just replication of existent NEORV32 periphera
 .Custom ISA Instructions
 [TIP]
 If you like to implement _custom instructions_ that are executed right within the CPU's ALU
-see the <<_zxcfu_isa_extension>> and the according <<_custom_functions_unit_cfu>>.
+see the <<_xcfu_isa_extension>> and the according <<_custom_functions_unit_cfu>>.
 
 .CFS Template
 [TIP]

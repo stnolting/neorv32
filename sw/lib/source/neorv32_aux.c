@@ -386,11 +386,11 @@ void neorv32_aux_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_ZKSH))      { neorv32_uart0_printf("Zksh ");      }
   if (tmp & (1<<CSR_MXISA_ZKT))       { neorv32_uart0_printf("Zkt ");       }
   if (tmp & (1<<CSR_MXISA_ZMMUL))     { neorv32_uart0_printf("Zmmul ");     }
-  if (tmp & (1<<CSR_MXISA_ZXCFU))     { neorv32_uart0_printf("Zxcfu ");     }
   if (tmp & (1<<CSR_MXISA_SDEXT))     { neorv32_uart0_printf("Sdext ");     }
   if (tmp & (1<<CSR_MXISA_SDTRIG))    { neorv32_uart0_printf("Sdtrig ");    }
   if (tmp & (1<<CSR_MXISA_SMCNTRPMF)) { neorv32_uart0_printf("Smcntrpmf "); }
   if (tmp & (1<<CSR_MXISA_SMPMP))     { neorv32_uart0_printf("Smpmp ");     }
+  if (tmp & (1<<CSR_MXISA_XCFU))      { neorv32_uart0_printf("Xcfu ");      }
 
   // check physical memory protection
   neorv32_uart0_printf("\nPhys. Memory Prot.:  ");

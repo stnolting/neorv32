@@ -288,7 +288,7 @@ proc setup_ip_gui {} {
     { RISCV_ISA_Zibi   {Zibi - Branch with immediate-comparison}            {} }
     { RISCV_ISA_Zicond {Zicond - Conditional-move instructions}             {} }
     { RISCV_ISA_Zimop  {Zimop - May-be-operation}                           {} }
-    { RISCV_ISA_Zxcfu  {Zxcfu - Custom-instructions unit (user-defined)}    {} }
+    { RISCV_ISA_Xcfu   {Xcfu - Custom-instructions unit (user-defined)}     {} }
   }
 
   set group [add_group $page {Physical Memory Protection (PMP)}]

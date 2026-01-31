@@ -186,7 +186,7 @@ rtl/core
 ├─ neorv32_cpu_control.vhd       - CPU control, exception system and CSRs
 ├─ neorv32_cpu_counters.vhd      - Hardware counters (Zicntr & Zihpm ext.)
 ├─ neorv32_cpu_alu_bitmanip.vhd  - Bit-manipulation unit (B ext.)
-├─ neorv32_cpu_alu_cfu.vhd       - Custom instructions unit (Zxcfu ext.)
+├─ neorv32_cpu_alu_cfu.vhd       - Custom instructions unit (Xcfu ext.)
 ├─ neorv32_cpu_alu_cond.vhd      - Integer conditional unit (Zicond ext.)
 ├─ neorv32_cpu_alu_crypto.vhd    - Scalar cryptography unit (Zk*/Zbk* ext.)
 ├─ neorv32_cpu_alu_fpu.vhd       - Floating-point unit (Zfinx ext.)

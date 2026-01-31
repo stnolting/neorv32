@@ -61,8 +61,8 @@ entity neorv32_top is
     RISCV_ISA_Zksed     : boolean                        := false;         -- ShangMi block cipher extension
     RISCV_ISA_Zksh      : boolean                        := false;         -- ShangMi hash extension
     RISCV_ISA_Zmmul     : boolean                        := false;         -- multiply-only M sub-extension
-    RISCV_ISA_Zxcfu     : boolean                        := false;         -- custom (instr.) functions unit
     RISCV_ISA_Smcntrpmf : boolean                        := false;         -- counter privilege-mode filtering
+    RISCV_ISA_Xcfu      : boolean                        := false;         -- custom (instr.) functions unit
 
     -- Tuning Options --
     CPU_CONSTT_BR_EN    : boolean                        := false;         -- enable constant-time branches
@@ -514,11 +514,11 @@ begin
       RISCV_ISA_Zksed     => RISCV_ISA_Zksed,
       RISCV_ISA_Zksh      => RISCV_ISA_Zksh,
       RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,
-      RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
       RISCV_ISA_Sdext     => OCD_EN,
       RISCV_ISA_Sdtrig    => cpu_sdtrig_en_c,
       RISCV_ISA_Smcntrpmf => RISCV_ISA_Smcntrpmf,
       RISCV_ISA_Smpmp     => cpu_smpmp_en_c,
+      RISCV_ISA_Xcfu      => RISCV_ISA_Xcfu,
       -- Tuning Options --
       CPU_TRACE_EN        => trace_en_c,
       CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
