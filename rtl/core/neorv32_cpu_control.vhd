@@ -54,11 +54,11 @@ entity neorv32_cpu_control is
     RISCV_ISA_Zksh      : boolean; -- ShangMi hash extension
     RISCV_ISA_Zkt       : boolean; -- data-independent execution time (for cryptography operations)
     RISCV_ISA_Zmmul     : boolean; -- multiply-only M sub-extension
-    RISCV_ISA_Zxcfu     : boolean; -- custom (instr.) functions unit
     RISCV_ISA_Sdext     : boolean; -- external debug mode extension
     RISCV_ISA_Sdtrig    : boolean; -- trigger module extension
     RISCV_ISA_Smcntrpmf : boolean; -- counter privilege-mode filtering
     RISCV_ISA_Smpmp     : boolean; -- physical memory protection
+    RISCV_ISA_Xcfu      : boolean; -- custom (instr.) functions unit
     -- Tuning Options --
     CPU_CONSTT_BR_EN    : boolean  -- constant-time branches
   );
@@ -1211,7 +1211,7 @@ begin
             csr_rdata(0)  <= '1';                                   -- Zicsr: CSR access (always enabled)
             csr_rdata(1)  <= '1';                                   -- Zifencei: instruction stream sync. (always enabled)
             csr_rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_Zmmul);     -- Zmmul: mul/div
-            csr_rdata(3)  <= bool_to_ulogic_f(RISCV_ISA_Zxcfu);     -- Zxcfu: custom instructions
+            csr_rdata(3)  <= bool_to_ulogic_f(RISCV_ISA_Xcfu);      -- Xcfu: custom instructions
             csr_rdata(4)  <= bool_to_ulogic_f(RISCV_ISA_Zkt);       -- Zkt: data independent execution latency
             csr_rdata(5)  <= bool_to_ulogic_f(RISCV_ISA_Zfinx);     -- Zfinx: FPU using x registers
             csr_rdata(6)  <= bool_to_ulogic_f(RISCV_ISA_Zicond);    -- Zicond: integer conditional operations
