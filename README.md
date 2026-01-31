@@ -109,15 +109,15 @@ setup according to your needs. Note that all of the following SoC modules are en
 [`Zksed`](https://stnolting.github.io/neorv32/#_zksed_isa_extension)
 [`Zksh`](https://stnolting.github.io/neorv32/#_zksh_isa_extension)
 [`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_isa_extension)
-[`Zxcfu`](https://stnolting.github.io/neorv32/#_zxcfu_isa_extension)
 [`Sdext`](https://stnolting.github.io/neorv32/#_sdext_isa_extension)
 [`Sdtrig`](https://stnolting.github.io/neorv32/#_sdtrig_isa_extension)
 [`Smcntrpmf`](https://stnolting.github.io/neorv32/#_smcntrpmf_isa_extension)
 [`Smpmp`](https://stnolting.github.io/neorv32/#_smpmp_isa_extension)
+[`Xcfu`](https://stnolting.github.io/neorv32/#_xcfu_isa_extension)
 * compatible to subsets of the RISC-V "Unprivileged ISA Specification" and "Privileged Architecture Specification"
 * `machine` and `user` privilege modes
 * implements **all** standard RISC-V exceptions and interrupts + 16 fast interrupt request channels as NEORV32-specific extension
-* custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as `Zxcfu` ISA extension)
+* custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as custom `Xcfu` ISA extension)
 for **custom RISC-V instructions**
 
 **Memories**

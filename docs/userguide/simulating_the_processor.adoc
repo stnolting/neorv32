@@ -129,7 +129,7 @@ GHDL simulation run parameters: --stop-time=10ms <4>
 ../rtl/core/neorv32_top.vhd:329:5:@0ms:(assertion note): [NEORV32] The NEORV32 RISC-V Processor (v1.11.6.0), github.com/stnolting/neorv32
 ../rtl/core/neorv32_top.vhd:335:5:@0ms:(assertion note): [NEORV32] Processor Configuration: CPU (smp-dual-core) IMEM-ROM DMEM I-CACHE D-CACHE XBUS CLINT GPIO UART0 UART1 SPI SDI TWI TWD PWM WDT TRNG CFS NEOLED GPTMR ONEWIRE DMA SLINK SYSINFO OCD OCD-AUTH OCD-HWBP
 ../rtl/core/neorv32_top.vhd:388:5:@0ms:(assertion note): [NEORV32] BOOT_MODE_SELECT = 2: booting IMEM image
-../rtl/core/neorv32_cpu.vhd:130:5:@0ms:(assertion note): [NEORV32] CPU ISA: rv32iabmux_zaamo_zalrsc_zba_zbb_zbkb_zbkc_zbkx_zbs_zicntr_zicond_zicsr_zifencei_zihpm_zfinx_zkn_zknd_zkne_zknh_zks_zksed_zksh_zkt_zmmul_zxcfu_sdext_sdtrig_smpmp
+../rtl/core/neorv32_cpu.vhd:130:5:@0ms:(assertion note): [NEORV32] CPU ISA: rv32iabmux_zaamo_zalrsc_zba_zbb_zbkb_zbkc_zbkx_zbs_zicntr_zicond_zicsr_zifencei_zihpm_zfinx_zkn_zknd_zkne_zknh_zks_zksed_zksh_zkt_zmmul_sdext_sdtrig_smpmp_xcfu
 ../rtl/core/neorv32_cpu.vhd:168:5:@0ms:(assertion note): [NEORV32] CPU tuning options: fast_mul fast_shift
 ../rtl/core/neorv32_cpu.vhd:175:5:@0ms:(assertion warning): [NEORV32] Assuming this is a simulation.
 ../rtl/core/neorv32_imem.vhd:61:3:@0ms:(assertion note): [NEORV32] Implementing processor-internal IMEM as pre-initialized ROM.

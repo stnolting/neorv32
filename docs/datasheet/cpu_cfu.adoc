@@ -2,7 +2,7 @@
 :sectnums:
 === Custom Functions Unit (CFU)
 
-The Custom Functions Unit (CFU) is the central part of the NEORV32-specific <<_zxcfu_isa_extension>> and
+The Custom Functions Unit (CFU) is the central part of the custom NEORV32-specific <<_xcfu_isa_extension>> and
 represents the actual hardware module that can be used to implement **custom RISC-V instructions**.
 These are intended for operations that are inefficient in terms of performance, latency, energy consumption or
 program memory requirements when implemented entirely in software.
