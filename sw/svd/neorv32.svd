@@ -197,7 +197,7 @@
             </field>
             <field>
               <name>SDI_CTRL_TX_FULL</name>
-              <bitRange>[28:28]</bitRange>
+              <bitRange>[27:27]</bitRange>
               <access>read-only</access>
               <description>TX FIFO full</description>
             </field>
@@ -220,7 +220,7 @@
               <bitRange>[7:0]</bitRange>
               <description>RX data / TX data (via FIFOs)</description>
             </field>
-           </fields>
+          </fields>
         </register>
       </registers>
     </peripheral>
