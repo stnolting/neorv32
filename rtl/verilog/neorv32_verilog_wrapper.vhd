@@ -63,8 +63,8 @@ begin
     RISCV_ISA_Zknh      => true,        -- cryptography NIST hash extension
     RISCV_ISA_Zksed     => true,        -- ShangMi block cipher extension
     RISCV_ISA_Zksh      => true,        -- ShangMi hash extension
-    RISCV_ISA_Zxcfu     => true,        -- custom (instr.) functions unit
     RISCV_ISA_Smcntrpmf => true,        -- counter privilege-mode filtering
+    RISCV_ISA_Xcfu      => true,        -- custom (instr.) functions unit
     -- Tuning Options --
     CPU_FAST_MUL_EN     => true,        -- use DSPs for M extension's multiplier
     CPU_FAST_SHIFT_EN   => true,        -- use barrel shifter for shift operations

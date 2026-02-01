@@ -62,8 +62,8 @@ entity neorv32_vivado_ip is
     RISCV_ISA_Zknh        : boolean                        := false;
     RISCV_ISA_Zksed       : boolean                        := false;
     RISCV_ISA_Zksh        : boolean                        := false;
-    RISCV_ISA_Zxcfu       : boolean                        := false;
     RISCV_ISA_Smcntrpmf   : boolean                        := false;
+    RISCV_ISA_Xcfu        : boolean                        := false;
     -- Tuning Options --
     CPU_CONSTT_BR_EN      : boolean                        := false;
     CPU_FAST_MUL_EN       : boolean                        := false;
@@ -396,8 +396,8 @@ begin
     RISCV_ISA_Zknh      => RISCV_ISA_Zknh,
     RISCV_ISA_Zksed     => RISCV_ISA_Zksed,
     RISCV_ISA_Zksh      => RISCV_ISA_Zksh,
-    RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,
     RISCV_ISA_Smcntrpmf => RISCV_ISA_Smcntrpmf,
+    RISCV_ISA_Xcfu      => RISCV_ISA_Xcfu,
     -- Extension Options --
     CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
     CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,

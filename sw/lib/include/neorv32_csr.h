@@ -308,7 +308,7 @@ enum NEORV32_CSR_MXISA_enum {
   CSR_MXISA_ZICSR     =  0, /**< mxisa CSR  (0): privileged architecture (r/-)*/
   CSR_MXISA_ZIFENCEI  =  1, /**< mxisa CSR  (1): instruction stream sync (r/-)*/
   CSR_MXISA_ZMMUL     =  2, /**< mxisa CSR  (2): hardware mul/div (r/-)*/
-  CSR_MXISA_ZXCFU     =  3, /**< mxisa CSR  (3): custom RISC-V instructions (r/-)*/
+  CSR_MXISA_XCFU      =  3, /**< mxisa CSR  (3): custom RISC-V instructions (r/-)*/
   CSR_MXISA_ZKT       =  4, /**< mxisa CSR  (4): data independent execution time (of cryptography operations) (r/-)*/
   CSR_MXISA_ZFINX     =  5, /**< mxisa CSR  (5): FPU using x registers (r/-)*/
   CSR_MXISA_ZICOND    =  6, /**< mxisa CSR  (6): integer conditional operations (r/-)*/

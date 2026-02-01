@@ -52,11 +52,11 @@ entity neorv32_cpu is
     RISCV_ISA_Zksed     : boolean;                        -- ShangMi hash extension
     RISCV_ISA_Zksh      : boolean;                        -- ShangMi block cipher extension
     RISCV_ISA_Zmmul     : boolean;                        -- multiply-only M sub-extension
-    RISCV_ISA_Zxcfu     : boolean;                        -- custom (instr.) functions unit
     RISCV_ISA_Sdext     : boolean;                        -- external debug mode extension
     RISCV_ISA_Sdtrig    : boolean;                        -- trigger module extension
     RISCV_ISA_Smcntrpmf : boolean;                        -- counter privilege-mode filtering
     RISCV_ISA_Smpmp     : boolean;                        -- physical memory protection
+    RISCV_ISA_Xcfu      : boolean;                        -- custom (instr.) functions unit
     -- Tuning Options --
     CPU_TRACE_EN        : boolean;                        -- enable CPU execution trace generator
     CPU_CONSTT_BR_EN    : boolean;                        -- constant-time branches
@@ -181,11 +181,11 @@ begin
       cond_sel_string_f(RISCV_ISA_Zksh,      "_zksh",      "" ) &
       cond_sel_string_f(riscv_zkt_c,         "_zkt",       "" ) &
       cond_sel_string_f(RISCV_ISA_Zmmul,     "_zmmul",     "" ) &
-      cond_sel_string_f(RISCV_ISA_Zxcfu,     "_zxcfu",     "" ) &
       cond_sel_string_f(RISCV_ISA_Sdext,     "_sdext",     "" ) &
       cond_sel_string_f(RISCV_ISA_Sdtrig,    "_sdtrig",    "" ) &
       cond_sel_string_f(RISCV_ISA_Smcntrpmf, "_smcntrpmf", "" ) &
-      cond_sel_string_f(RISCV_ISA_Smpmp,     "_smpmp",     "" )
+      cond_sel_string_f(RISCV_ISA_Smpmp,     "_smpmp",     "" ) &
+      cond_sel_string_f(RISCV_ISA_xcfu,      "_xcfu",      "" )
       severity note;
 
     -- CPU tuning options --
@@ -273,11 +273,11 @@ begin
     RISCV_ISA_Zksh      => RISCV_ISA_Zksh,      -- ShangMi hash extension
     RISCV_ISA_Zkt       => riscv_zkt_c,         -- data-independent execution time for cryptography operations available
     RISCV_ISA_Zmmul     => RISCV_ISA_Zmmul,     -- multiply-only M sub-extension
-    RISCV_ISA_Zxcfu     => RISCV_ISA_Zxcfu,     -- custom (instr.) functions unit
     RISCV_ISA_Sdext     => RISCV_ISA_Sdext,     -- external debug mode extension
     RISCV_ISA_Sdtrig    => RISCV_ISA_Sdtrig,    -- trigger module extension
     RISCV_ISA_Smcntrpmf => RISCV_ISA_Smcntrpmf, -- counter privilege-mode filtering
     RISCV_ISA_Smpmp     => RISCV_ISA_Smpmp,     -- physical memory protection
+    RISCV_ISA_Xcfu      => RISCV_ISA_Xcfu,      -- custom (instr.) functions unit
     -- Tuning Options --
     CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN     -- constant-time branches
   )
@@ -418,7 +418,7 @@ begin
     RISCV_ISA_Zksed  => RISCV_ISA_Zksed,  -- ShangMi block cipher extension
     RISCV_ISA_Zksh   => RISCV_ISA_Zksh,   -- ShangMi hash extension
     RISCV_ISA_Zmmul  => RISCV_ISA_Zmmul,  -- multiply-only M sub-extension
-    RISCV_ISA_Zxcfu  => RISCV_ISA_Zxcfu,  -- custom (instr.) functions unit
+    RISCV_ISA_Xcfu   => RISCV_ISA_Xcfu,   -- custom (instr.) functions unit
     -- Tuning Options --
     FAST_MUL_EN      => CPU_FAST_MUL_EN,  -- use DSPs for M extension's multiplier
     FAST_SHIFT_EN    => CPU_FAST_SHIFT_EN -- use barrel shifter for shift operations
