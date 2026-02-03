@@ -37,7 +37,7 @@ architecture neorv32_bus_switch_rtl of neorv32_bus_switch is
   type state_t is (S_IDLE, S_BUSY_A, S_BUSY_B);
   signal state, state_nxt : state_t;
   signal a_req, b_req, sel, sel_q, stb : std_ulogic;
-  signal locked, locked_nxt : std_ulogic_vector(1 downto 0);
+  signal lock, lock_nxt : std_ulogic_vector(1 downto 0);
 
 begin
 
@@ -46,68 +46,60 @@ begin
   arbiter_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      state  <= S_IDLE;
-      sel_q  <= '0';
-      locked <= "00";
-      a_req  <= '0';
-      b_req  <= '0';
+      state <= S_IDLE;
+      sel_q <= '0';
+      lock  <= "00";
+      a_req <= '0';
+      b_req <= '0';
     elsif rising_edge(clk_i) then
-      state  <= state_nxt;
-      sel_q  <= sel;
-      locked <= locked_nxt;
-      if (state = S_BUSY_A) then -- clear request
+      state <= state_nxt;
+      sel_q <= sel;
+      lock  <= lock_nxt;
+      if (state = S_BUSY_A) then
         a_req <= '0';
-      else -- buffer request
-        a_req <= a_req or a_req_i.stb;
+      elsif (a_req_i.stb = '1') then
+        a_req <= '1';
       end if;
-      if (state = S_BUSY_B) then -- clear request
+      if (state = S_BUSY_B) then
         b_req <= '0';
-      else -- buffer request
-        b_req <= b_req or b_req_i.stb;
+      elsif (b_req_i.stb = '1') then
+        b_req <= '1';
       end if;
     end if;
   end process arbiter_sync;
 
   -- Access Arbiter Comb --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  arbiter_fsm: process(state, locked, sel_q, a_req, b_req, a_req_i, b_req_i, x_rsp_i)
+  arbiter_fsm: process(state, lock, sel_q, a_req, b_req, a_req_i, b_req_i, x_rsp_i)
   begin
     -- defaults --
-    state_nxt  <= state;
-    locked_nxt <= locked;
-    sel        <= '0';
-    stb        <= '0';
+    state_nxt <= state;
+    lock_nxt  <= lock;
+    sel       <= '0';
+    stb       <= '0';
 
     -- state machine --
     case state is
 
-      when S_BUSY_A => -- port A access in progress
+      when S_BUSY_A => -- A: wait for response (lock-release or single-access ACK)
       -- ------------------------------------------------------------
         sel <= '0';
-        if (locked(0) = '1') then -- port A has exclusive access until the lock is released
-          stb <= a_req_i.stb; -- allow further transfer requests from port A
-          if (a_req_i.lock = '0') then -- lock is released
-            state_nxt <= S_IDLE;
-          end if;
-        elsif (x_rsp_i.ack = '1') then -- single-access: terminate when receiving ACK
+        stb <= a_req_i.stb;
+        if ((lock(0) = '1') and (a_req_i.lock = '0')) or ((lock(0) = '0') and (x_rsp_i.ack = '1')) then
           state_nxt <= S_IDLE;
         end if;
 
-      when S_BUSY_B => -- port B access in progress
+      when S_BUSY_B => -- B: wait for response (lock-release or single-access ACK)
       -- ------------------------------------------------------------
         sel <= '1';
-        if (locked(1) = '1') then -- port B has exclusive access until the lock is released
-          stb <= b_req_i.stb; -- allow further transfer requests from port B
-          if (b_req_i.lock = '0') then -- lock is released
-            state_nxt <= S_IDLE;
-          end if;
-        elsif (x_rsp_i.ack = '1') then -- single-access: terminate when receiving ACK
+        stb <= b_req_i.stb;
+        if ((lock(1) = '1') and (b_req_i.lock = '0')) or ((lock(1) = '0') and (x_rsp_i.ack = '1')) then
           state_nxt <= S_IDLE;
         end if;
 
       when others => -- wait for requests
       -- ------------------------------------------------------------
-        locked_nxt <= b_req_i.lock & a_req_i.lock;
+        lock_nxt <= b_req_i.lock & a_req_i.lock;
         if (sel_q = '1') or (not ROUND_ROBIN_EN) then
           if (a_req_i.stb = '1') or (a_req = '1') then -- request from port A (prioritized)?
             sel       <= '0';
@@ -151,13 +143,13 @@ begin
 
   -- Response Switch ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
+  a_rsp_o.ack  <= x_rsp_i.ack when (sel_q = '0') else '0';
+  a_rsp_o.err  <= x_rsp_i.err when (sel_q = '0') else '0';
   a_rsp_o.data <= x_rsp_i.data;
-  a_rsp_o.ack  <= x_rsp_i.ack when (sel = '0') else '0';
-  a_rsp_o.err  <= x_rsp_i.err when (sel = '0') else '0';
 
+  b_rsp_o.ack  <= x_rsp_i.ack when (sel_q = '1') else '0';
+  b_rsp_o.err  <= x_rsp_i.err when (sel_q = '1') else '0';
   b_rsp_o.data <= x_rsp_i.data;
-  b_rsp_o.ack  <= x_rsp_i.ack when (sel = '1') else '0';
-  b_rsp_o.err  <= x_rsp_i.err when (sel = '1') else '0';
 
 end neorv32_bus_switch_rtl;
 
