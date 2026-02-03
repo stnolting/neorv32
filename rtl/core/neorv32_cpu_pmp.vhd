@@ -7,7 +7,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -46,7 +46,7 @@ end neorv32_cpu_pmp;
 architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
   -- auto-configuration --
-  constant g_c : natural := cond_sel_natural_f(boolean(GRANULARITY < 4), 4, 2**index_size_f(GRANULARITY));
+  constant g_c : natural := sel_natural_f(boolean(GRANULARITY < 4), 4, 2**index_size_f(GRANULARITY));
 
   -- configuration register bits --
   constant cfg_r_c  : natural := 0; -- read permission

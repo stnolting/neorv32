@@ -332,13 +332,14 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   signal int_rsp : bus_rsp_t;
 
   -- bus monitor --
-  constant tmo_int_log2_c : natural := index_size_f(TMO_INT);
-  constant tmo_ext_log2_c : natural := index_size_f(TMO_EXT);
+  constant tmo_int_c : natural := index_size_f(TMO_INT);
+  constant tmo_ext_c : natural := index_size_f(TMO_EXT);
+  constant tmo_cnt_c : natural := sel_natural_f(boolean(tmo_ext_c > tmo_int_c), tmo_ext_c, tmo_int_c);
   type keeper_t is record
     state : std_ulogic_vector(1 downto 0);
     lock  : std_ulogic;
     ext   : std_ulogic;
-    cnt   : std_ulogic_vector(max_natural_f(tmo_int_log2_c, tmo_ext_log2_c) downto 0);
+    cnt   : std_ulogic_vector(tmo_cnt_c downto 0);
     err   : std_ulogic;
   end record;
   signal keeper : keeper_t;
@@ -366,7 +367,7 @@ begin
       port_req(i) <= req_terminate_c;
       if port_en_list_c(i) then -- port enabled
         port_req(i) <= req_i;
-        port_req(i).stb <= port_sel(i) and req_i.stb;
+        port_req(i).stb <= req_i.stb and port_sel(i);
       end if;
     end loop;
   end process request;
@@ -421,8 +422,8 @@ begin
             keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1);
           end if;
           -- bus status --
-          if ((keeper.ext = '0') and (TMO_INT > 0) and (keeper.cnt(tmo_int_log2_c) = '1')) or -- internal timeout
-             ((keeper.ext = '1') and (TMO_EXT > 0) and (keeper.cnt(tmo_ext_log2_c) = '1')) then -- external timeout
+          if ((keeper.ext = '0') and (TMO_INT > 0) and (keeper.cnt(tmo_int_c) = '1')) or -- internal timeout
+             ((keeper.ext = '1') and (TMO_EXT > 0) and (keeper.cnt(tmo_ext_c) = '1')) then -- external timeout
             keeper.state <= "11";
           elsif (keeper.lock = '1') then -- locked / burst transfer
             if (req_i.lock = '0') then

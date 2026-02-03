@@ -259,12 +259,12 @@ architecture neorv32_top_rtl of neorv32_top is
   constant bootrom_en_c    : boolean := boolean(BOOT_MODE_SELECT = 0);
   constant imem_as_rom_c   : boolean := boolean(BOOT_MODE_SELECT = 2);
   constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) :=
-    cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 0), base_io_bootrom_c,
-    cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 1), BOOT_ADDR_CUSTOM,
-    cond_sel_suv_f(boolean(BOOT_MODE_SELECT = 2), mem_imem_base_c, x"00000000")));
+    sel_suv_f(boolean(BOOT_MODE_SELECT = 0), base_io_bootrom_c,
+    sel_suv_f(boolean(BOOT_MODE_SELECT = 1), BOOT_ADDR_CUSTOM,
+    sel_suv_f(boolean(BOOT_MODE_SELECT = 2), mem_imem_base_c, x"00000000")));
 
   -- auto-configuration --
-  constant num_cores_c     : natural := cond_sel_natural_f(DUAL_CORE_EN, 2, 1);
+  constant num_cores_c     : natural := sel_natural_f(DUAL_CORE_EN, 2, 1);
   constant io_gpio_en_c    : boolean := boolean(IO_GPIO_NUM > 0);
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM > 0);
   constant io_gptmr_en_c   : boolean := boolean(IO_GPTMR_NUM > 0);
@@ -276,8 +276,8 @@ architecture neorv32_top_rtl of neorv32_top is
   constant vendorid_c      : std_ulogic_vector(31 downto 0) := x"00000" & '0' & OCD_JEDEC_ID;
 
   -- make sure physical memory sizes are a power of two --
-  constant imem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(IMEM_SIZE), IMEM_SIZE, 2**index_size_f(IMEM_SIZE));
-  constant dmem_size_c : natural := cond_sel_natural_f(is_power_of_two_f(DMEM_SIZE), DMEM_SIZE, 2**index_size_f(DMEM_SIZE));
+  constant imem_size_c : natural := 2**index_size_f(IMEM_SIZE);
+  constant dmem_size_c : natural := 2**index_size_f(DMEM_SIZE);
 
   -- reset nets --
   signal rstn_wdt, rstn_sys, rstn_ext : std_ulogic;
@@ -350,36 +350,36 @@ begin
     -- show SoC configuration --
     assert false report
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
-      cond_sel_string_f(boolean(num_cores_c = 1), "(single-core) ",   "") &
-      cond_sel_string_f(boolean(num_cores_c = 2), "(smp-dual-core) ", "") &
-      cond_sel_string_f(IMEM_EN,         cond_sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
-      cond_sel_string_f(DMEM_EN,         "DMEM ",     "") &
-      cond_sel_string_f(bootrom_en_c,    "BOOTROM ",  "") &
-      cond_sel_string_f(ICACHE_EN,       "I-CACHE ",  "") &
-      cond_sel_string_f(DCACHE_EN,       "D-CACHE ",  "") &
-      cond_sel_string_f(XBUS_EN,         "XBUS ",     "") &
-      cond_sel_string_f(IO_CLINT_EN,     "CLINT ",    "") &
-      cond_sel_string_f(io_gpio_en_c,    "GPIO ",     "") &
-      cond_sel_string_f(IO_UART0_EN,     "UART0 ",    "") &
-      cond_sel_string_f(IO_UART1_EN,     "UART1 ",    "") &
-      cond_sel_string_f(IO_SPI_EN,       "SPI ",      "") &
-      cond_sel_string_f(IO_SDI_EN,       "SDI ",      "") &
-      cond_sel_string_f(IO_TWI_EN,       "TWI ",      "") &
-      cond_sel_string_f(IO_TWD_EN,       "TWD ",      "") &
-      cond_sel_string_f(io_pwm_en_c,     "PWM ",      "") &
-      cond_sel_string_f(IO_WDT_EN,       "WDT ",      "") &
-      cond_sel_string_f(IO_TRNG_EN,      "TRNG ",     "") &
-      cond_sel_string_f(IO_CFS_EN,       "CFS ",      "") &
-      cond_sel_string_f(IO_NEOLED_EN,    "NEOLED ",   "") &
-      cond_sel_string_f(io_gptmr_en_c,   "GPTMR ",    "") &
-      cond_sel_string_f(IO_ONEWIRE_EN,   "ONEWIRE ",  "") &
-      cond_sel_string_f(IO_DMA_EN,       "DMA ",      "") &
-      cond_sel_string_f(IO_SLINK_EN,     "SLINK ",    "") &
-      cond_sel_string_f(io_sysinfo_en_c, "SYSINFO ",  "") &
-      cond_sel_string_f(IO_TRACER_EN,    "TRACER ",   "") &
-      cond_sel_string_f(OCD_EN,          "OCD ",      "") &
-      cond_sel_string_f(OCD_EN,          "OCD-AUTH ", "") &
-      cond_sel_string_f(OCD_EN,          "OCD-HWBP ", "") &
+      sel_string_f(boolean(num_cores_c = 1), "(single-core) ",   "") &
+      sel_string_f(boolean(num_cores_c = 2), "(smp-dual-core) ", "") &
+      sel_string_f(IMEM_EN,         sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
+      sel_string_f(DMEM_EN,         "DMEM ",     "") &
+      sel_string_f(bootrom_en_c,    "BOOTROM ",  "") &
+      sel_string_f(ICACHE_EN,       "I-CACHE ",  "") &
+      sel_string_f(DCACHE_EN,       "D-CACHE ",  "") &
+      sel_string_f(XBUS_EN,         "XBUS ",     "") &
+      sel_string_f(IO_CLINT_EN,     "CLINT ",    "") &
+      sel_string_f(io_gpio_en_c,    "GPIO ",     "") &
+      sel_string_f(IO_UART0_EN,     "UART0 ",    "") &
+      sel_string_f(IO_UART1_EN,     "UART1 ",    "") &
+      sel_string_f(IO_SPI_EN,       "SPI ",      "") &
+      sel_string_f(IO_SDI_EN,       "SDI ",      "") &
+      sel_string_f(IO_TWI_EN,       "TWI ",      "") &
+      sel_string_f(IO_TWD_EN,       "TWD ",      "") &
+      sel_string_f(io_pwm_en_c,     "PWM ",      "") &
+      sel_string_f(IO_WDT_EN,       "WDT ",      "") &
+      sel_string_f(IO_TRNG_EN,      "TRNG ",     "") &
+      sel_string_f(IO_CFS_EN,       "CFS ",      "") &
+      sel_string_f(IO_NEOLED_EN,    "NEOLED ",   "") &
+      sel_string_f(io_gptmr_en_c,   "GPTMR ",    "") &
+      sel_string_f(IO_ONEWIRE_EN,   "ONEWIRE ",  "") &
+      sel_string_f(IO_DMA_EN,       "DMA ",      "") &
+      sel_string_f(IO_SLINK_EN,     "SLINK ",    "") &
+      sel_string_f(io_sysinfo_en_c, "SYSINFO ",  "") &
+      sel_string_f(IO_TRACER_EN,    "TRACER ",   "") &
+      sel_string_f(OCD_EN,          "OCD ",      "") &
+      sel_string_f(OCD_EN,          "OCD-AUTH ", "") &
+      sel_string_f(OCD_EN,          "OCD-HWBP ", "") &
       ""
       severity note;
 
