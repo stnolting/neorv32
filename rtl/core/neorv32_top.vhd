@@ -383,41 +383,37 @@ begin
       ""
       severity note;
 
-    -- IMEM size was not a power of two --
-    assert not ((IMEM_SIZE /= imem_size_c) and IMEM_EN) report
-      "[NEORV32] Auto-adjusting invalid IMEM size configuration." severity warning;
-
-    -- DMEM size was not a power of two --
-    assert not ((DMEM_SIZE /= dmem_size_c) and DMEM_EN) report
-      "[NEORV32] Auto-adjusting invalid DMEM size configuration." severity warning;
-
-    -- SYSINFO disabled --
-    assert io_sysinfo_en_c report
-      "[NEORV32] SYSINFO module disabled - NEORV32 software framework will not function properly!" severity warning;
+    -- simulation notifier --
+    assert not is_simulation_c report
+      "[NEORV32] Assuming this is a simulation." severity warning;
 
     -- clock speed not defined --
     assert (CLOCK_FREQUENCY > 0) report
       "[NEORV32] CLOCK_FREQUENCY must be configured according to the frequency of clk_i port!" severity warning;
 
+    -- SYSINFO disabled --
+    assert io_sysinfo_en_c report
+      "[NEORV32] SYSINFO module disabled - software framework will not function properly!" severity warning;
+
     -- Boot configuration notifier --
-    assert not (BOOT_MODE_SELECT = 0) report "[NEORV32] BOOT_MODE_SELECT 0 - booting via bootloader" severity note;
-    assert not (BOOT_MODE_SELECT = 1) report "[NEORV32] BOOT_MODE_SELECT 1 - booting from custom address" severity note;
-    assert not (BOOT_MODE_SELECT = 2) report "[NEORV32] BOOT_MODE_SELECT 2 - booting IMEM image" severity note;
+    assert not (BOOT_MODE_SELECT = 0) report
+      "[NEORV32] BOOT_MODE_SELECT 0 - booting via bootloader" severity note;
+    assert not (BOOT_MODE_SELECT = 1) report
+      "[NEORV32] BOOT_MODE_SELECT 1 - booting from custom address" severity note;
+    assert not (BOOT_MODE_SELECT = 2) report
+      "[NEORV32] BOOT_MODE_SELECT 2 - booting IMEM image" severity note;
 
     -- boot configuration: boot from initialized IMEM requires the IMEM to be enabled --
     assert not ((BOOT_MODE_SELECT = 2) and (not IMEM_EN)) report
-      "[NEORV32] BOOT_MODE_SELECT = 2 (boot IMEM image) requires the internal instruction memory (IMEM) to be enabled!" severity error;
+      "[NEORV32] BOOT_MODE_SELECT = 2 (boot IMEM image) requires the internal instruction memory (IMEM)!" severity error;
 
     -- SMP dual-core configuration requires the CLINT --
     assert not (DUAL_CORE_EN and (not IO_CLINT_EN)) report
-      "[NEORV32] The SMP dual-core configuration requires the CLINT to be enabled!" severity error;
+      "[NEORV32] SMP dual-core configuration requires the CLINT!" severity error;
 
     -- XBUS burst transfers --
     assert not (XBUS_EN and CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN)) report
       "[NEORV32] XBUS will emit burst transfers for cached accesses." severity warning;
-
-    -- simulation notifier --
-    assert not is_simulation_c report "[NEORV32] Assuming this is a simulation." severity warning;
 
   end generate;
 
@@ -619,7 +615,7 @@ begin
     generic map (
       ROUND_ROBIN_EN => false, -- use prioritizing arbitration
       A_READ_ONLY    => false,
-      B_READ_ONLY    => true   -- instruction fetch is read-only
+      B_READ_ONLY    => true -- instruction fetch is read-only
     )
     port map (
       clk_i   => clk_i,
