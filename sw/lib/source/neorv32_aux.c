@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -591,7 +591,7 @@ void neorv32_aux_print_about(void) {
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     neorv32_uart0_puts("The NEORV32 RISC-V Processor, github.com/stnolting/neorv32\n"
                        "Copyright (c) NEORV32 contributors.\n"
-                       "Copyright (c) 2020 - 2025, Stephan Nolting. All rights reserved.\n"
+                       "Copyright (c) 2020 - 2026, Stephan Nolting. All rights reserved.\n"
                        "SPDX-License-Identifier: BSD-3-Clause\n");
   }
 }
@@ -649,7 +649,7 @@ void neorv32_aux_print_license(void) {
       "BSD 3-Clause License\n"
       "\n"
       "Copyright (c) NEORV32 contributors.\n"
-      "Copyright (c) 2020 - 2025, Stephan Nolting. All rights reserved.\n"
+      "Copyright (c) 2020 - 2026, Stephan Nolting. All rights reserved.\n"
       "\n"
       "Redistribution and use in source and binary forms, with or without modification, are\n"
       "permitted provided that the following conditions are met:\n"
