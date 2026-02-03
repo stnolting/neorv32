@@ -29,14 +29,14 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 03.02.2025 | 1.12.7.7 | minor rtl cleanups; improve timing of bus switch module | [#1489](https://github.com/stnolting/neorv32/pull/1489) |
-| 31.01.2025 | 1.12.7.6 | :warning: rename `Zxcfu` ISA extension to `Xcfu` | [#1487](https://github.com/stnolting/neorv32/pull/1487) |
-| 30.01.2025 | 1.12.7.5 | :bug: fix enabling of `Zbkx` ISA extension | [#1486](https://github.com/stnolting/neorv32/pull/1486) |
-| 22.01.2025 | 1.12.7.4 | :warning: rework memory image files | [#1482](https://github.com/stnolting/neorv32/pull/1482) |
-| 18.01.2025 | 1.12.7.3 | :sparkles: encapsulate memory components; caches: use block invalidation when a bus error occurs during block download | [#1481](https://github.com/stnolting/neorv32/pull/1481) |
-| 18.01.2025 | 1.12.7.2 | :bug: fix `csrr[r/c][i]` instructions: do not write CSR if `rs1/imm5` is not zero | [#1479](https://github.com/stnolting/neorv32/pull/1479) |
-| 16.01.2025 | 1.12.7.1 | :warning: rename bootloader ROM module: `neorv32_boot_rom` -> `neorv32_bootrom` | [#1477](https://github.com/stnolting/neorv32/pull/1477) |
-| 12.01.2025 | [**1.12.7**](https://github.com/stnolting/neorv32/releases/tag/v1.12.7) | :rocket: **New release** | |
+| 03.02.2026 | 1.12.7.7 | minor rtl cleanups; improve timing of bus switch module | [#1489](https://github.com/stnolting/neorv32/pull/1489) |
+| 31.01.2026 | 1.12.7.6 | :warning: rename `Zxcfu` ISA extension to `Xcfu` | [#1487](https://github.com/stnolting/neorv32/pull/1487) |
+| 30.01.2026 | 1.12.7.5 | :bug: fix enabling of `Zbkx` ISA extension | [#1486](https://github.com/stnolting/neorv32/pull/1486) |
+| 22.01.2026 | 1.12.7.4 | :warning: rework memory image files | [#1482](https://github.com/stnolting/neorv32/pull/1482) |
+| 18.01.2026 | 1.12.7.3 | :sparkles: encapsulate memory components; caches: use block invalidation when a bus error occurs during block download | [#1481](https://github.com/stnolting/neorv32/pull/1481) |
+| 18.01.2026 | 1.12.7.2 | :bug: fix `csrr[r/c][i]` instructions: do not write CSR if `rs1/imm5` is not zero | [#1479](https://github.com/stnolting/neorv32/pull/1479) |
+| 16.01.2026 | 1.12.7.1 | :warning: rename bootloader ROM module: `neorv32_boot_rom` -> `neorv32_bootrom` | [#1477](https://github.com/stnolting/neorv32/pull/1477) |
+| 12.01.2026 | [**1.12.7**](https://github.com/stnolting/neorv32/releases/tag/v1.12.7) | :rocket: **New release** | |
 | 11.01.2026 | 1.12.6.9 | minor RTL cleanups and optimizations | [#1474](https://github.com/stnolting/neorv32/pull/1474) |
 | 10.01.2026 | 1.12.6.8 | :warning: rename ALU co-processor modules: `neorv32_cpu_cp_*` -> `neorv32_cpu_alu_*` | [#1472](https://github.com/stnolting/neorv32/pull/1472) |
 | 10.01.2026 | 1.12.6.7 | cache: relax size configuration constraints; :test_tube: add register stages for direct/uncached accesses | [#1471](https://github.com/stnolting/neorv32/pull/1471) |
