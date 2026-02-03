@@ -67,11 +67,9 @@ architecture neorv32_cache_rtl of neorv32_cache is
   -- only emit bursts if enabled and if block size is at least 8 bytes --
   constant bursts_en_c : boolean := BURSTS_EN and boolean(BLOCK_SIZE >= 8);
 
-  -- make sure cache sizes are a power of two --
-  constant block_num_c  : natural := 2**index_size_f(NUM_BLOCKS);
-  constant block_size_c : natural := 2**index_size_f(BLOCK_SIZE);
-
   -- cache layout --
+  constant block_num_c    : natural := 2**index_size_f(NUM_BLOCKS); -- extend if not a power of two
+  constant block_size_c   : natural := 2**index_size_f(BLOCK_SIZE); -- extend if not a power of two
   constant offset_width_c : natural := index_size_f(block_size_c/4); -- word offset
   constant index_width_c  : natural := index_size_f(block_num_c);
   constant tag_width_c    : natural := 32 - (offset_width_c + index_width_c + 2);

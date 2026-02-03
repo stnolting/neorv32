@@ -266,10 +266,11 @@ end entity;
 architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
 
   -- auto-configuration --
-  constant num_gpio_c  : natural := cond_sel_natural_f(IO_GPIO_EN, max_natural_f(IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM), 0);
-  constant num_pwm_c   : natural := cond_sel_natural_f(IO_PWM_EN, IO_PWM_NUM, 0);
-  constant num_gptmr_c : natural := cond_sel_natural_f(IO_GPTMR_EN, IO_GPTMR_NUM, 0);
+  constant num_pwm_c   : natural := sel_natural_f(IO_PWM_EN, IO_PWM_NUM, 0);
+  constant num_gptmr_c : natural := sel_natural_f(IO_GPTMR_EN, IO_GPTMR_NUM, 0);
   constant burst_en_c  : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN); -- any cache bursts?
+  constant max_gpio_c  : natural := sel_natural_f(boolean(IO_GPIO_IN_NUM > IO_GPIO_OUT_NUM), IO_GPIO_IN_NUM, IO_GPIO_OUT_NUM);
+  constant num_gpio_c  : natural := sel_natural_f(IO_GPIO_EN, max_gpio_c, 0);
 
   -- AXI4 bridge --
   component xbus2axi4_bridge
