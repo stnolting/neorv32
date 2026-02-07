@@ -10,10 +10,10 @@ EFFORT = -Os
 override USER_FLAGS += -ggdb -gdwarf-3
 
 # Adjust processor IMEM size
-override USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=32k
+override USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=32k -Wl,--defsym,__neorv32_rom_base=0x00000000
 
 # Adjust processor DMEM size
-override USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=8k
+override USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=8k -Wl,--defsym,__neorv32_ram_base=0x80000000
 
 # Adjust maximum heap size
 override USER_FLAGS += -Wl,--defsym,__neorv32_heap_size=3k
