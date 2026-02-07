@@ -39,7 +39,7 @@ begin
   -- notifier --
   assert false report
     "[NEORV32] Using default DMEM RAM component (" &
-    natural'image(2**AWIDTH) & " bytes)." severity warning;
+    natural'image(2**AWIDTH) & " bytes)." severity note;
 
   -- 4x byte-wide RAMs --
   ram_gen:

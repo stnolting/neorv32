@@ -41,7 +41,7 @@ begin
   -- notifier --
   assert false report
     "[NEORV32] Using default IMEM ROM component (" &
-    natural'image(2**awidth_c) & " bytes)." severity warning;
+    natural'image(2**awidth_c) & " bytes)." severity note;
 
   -- size check --
   assert (image_size_c <= 2**AWIDTH) report

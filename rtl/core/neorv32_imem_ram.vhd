@@ -37,7 +37,7 @@ architecture neorv32_imem_ram_rtl of neorv32_imem_ram is
 begin
 
   -- notifier --
-  assert false report "[NEORV32] Using default IMEM RAM component." severity warning;
+  assert false report "[NEORV32] Using default IMEM RAM component." severity note;
 
   -- 4x byte-wide RAMs --
   ram_gen:
