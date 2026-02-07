@@ -13,7 +13,7 @@
 |                         | `sdi_dat_i`         | 1-bit serial data input
 |                         | `sdi_csn_i`         | 1-bit chip-select input (low-active)
 | Configuration generics: | `IO_SDI_EN`         | implement SDI controller when `true`
-|                         | `IO_SDI_FIFO`       | data FIFO size, has to a power of two, min 1
+|                         | `IO_SDI_FIFO`       | data FIFO size, has to be a power of two, min 1
 | CPU interrupts:         | fast IRQ channel 11 | configurable SDI interrupt (see <<_processor_interrupts>>)
 |=======================
 
@@ -21,14 +21,14 @@
 
 * SPI-compatible device-side controller
 * Programmable SPI clock polarity
-* Optional data RX/TY FIFO
+* Optional data RX/TX FIFO
 * Interrupt based on FIFO status
 
 
 **Overview**
 
 The serial data interface module provides a **device-side** SPI interface to receive communications from an
-**external SPI host**, which is responsible of performing the actual transmission (i.e. the host generates the
+**external SPI host**, which is responsible for performing the actual transmission (i.e. the host generates the
 SPI clock and control the chip-select line). An optional receive/transmit FIFO can be configured via the
 `IO_SDI_FIFO` generic to support transmissions without CPU interaction.
 
@@ -37,7 +37,7 @@ SPI clock and control the chip-select line). An optional receive/transmit FIFO c
 The NEORV32 SDI module only supports _device mode_. If you are looking for a _host-mode_ serial peripheral
 interface (transactions performed by the NEORV32) check out the <<_serial_peripheral_interface_controller_spi>>.
 
-The SDI module provides a single control register `CTRL` to configure the module and to check it's status and a
+The SDI module provides a single control register `CTRL` to configure the module and to check its status and a
 single data register `DATA` for receiving/transmitting data. Any access to the `DATA` register actually accesses
 the internal RX/TX FIFO.
 
@@ -52,7 +52,7 @@ FIFO. This TX data will be sent back to the external host during an SPI transfer
 TX FIFO all-zero is sent. Received bytes are pushed to the RX FIFO and can be retrieved by reading the RX FIFO via
 the `DATA` register. Data is always transferred MSB-first. The current state of these FIFOs is available via the
 control register's `SDI_CTRL_RX_*` and `SDI_CTRL_TX_*` status flags. The RX/TX FIFOs can be cleared at any time by
-the `SDR_CTRL_CLR_*` control register bits.
+the `SDI_CTRL_CLR_*` control register bits.
 
 Data is only transferred (and pushed to the RX FIFO / popped from the TX FIFO) when the chip-select input `sdi_csn_i`
 is active (low-active). If the external SPI host aborts the transmission by setting the chip-select signal high again
@@ -66,7 +66,7 @@ supported yet. However, experiments have shown that the SDI module can also deal
 
 All SDI operations are clocked by the external `sdi_clk_i` signal. This signal is synchronized to the processor's
 clock domain to simplify timing behavior. This clock synchronization requires the external SDI clock (`sdi_clk_i`)
-to not **not exceed 1/4 of the processor's main clock**.
+to **not exceed 1/4 of the processor's main clock**.
 
 
 **SDI Interrupt**
@@ -86,8 +86,8 @@ of the interrupt is resolved.
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
 .16+<| `0xfff70000` .16+<| `CTRL` <|`0`     `SDI_CTRL_EN`                           ^| r/w <| SDI module enable
-                                  <|`1`     `SDR_CTRL_CLR_RX`                       ^| r/- <| clear RX FIFO, flag auto-clears
-                                  <|`2`     `SDR_CTRL_CLR_TX`                       ^| r/- <| clear TX FIFO, flag auto-clears
+                                  <|`1`     `SDI_CTRL_CLR_RX`                       ^| -/w <| clear RX FIFO, flag auto-clears
+                                  <|`2`     `SDI_CTRL_CLR_TX`                       ^| -/w <| clear TX FIFO, flag auto-clears
                                   <|`3`     -                                       ^| r/- <| _reserved_, read as zero
                                   <|`7:4`   `SDI_CTRL_FIFO_MSB : SDI_CTRL_FIFO_LSB` ^| r/- <| FIFO depth; log2(_IO_SDI_FIFO_)
                                   <|`15:8`  -                                       ^| r/- <| reserved, read as zero
@@ -101,6 +101,6 @@ of the interrupt is resolved.
                                   <|`27`    `SDI_CTRL_TX_FULL`                      ^| r/- <| TX FIFO full
                                   <|`30:28` -                                       ^| r/- <| _reserved_, read as zero
                                   <|`31`    `SDI_CTRL_CS_ACTIVE`                    ^| r/- <| Chip-select is active when set
-.2+<| `0xfff70004` .2+<| `DATA` <|`7:0`    ^| r/w <| receive/transmit data (FIFO)
-                                <|`31:8` - ^| r/- <| _reserved_, read as zero
+.2+<| `0xfff70004` .2+<| `DATA` <|`7:0`  `SDI_DATA_MSB : SDI_DATA_LSB` ^| r/w <| receive/transmit data (FIFO)
+                                <|`31:8` -                             ^| r/- <| _reserved_, read as zero
 |=======================

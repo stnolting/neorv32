@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -141,7 +141,7 @@ void xtea_sw_decipher(unsigned int num_cycles, uint32_t *v, const uint32_t k[4])
 /**********************************************************************//**
  * Main function: run pure-SW XTEA and compare with HW-accelerated XTEA
  *
- * @note This program requires UART0 and the Zxcfu and Zicntr ISA extension.
+ * @note This program requires UART0 and the Xcfu and Zicntr ISA extension.
  *
  * @return 0 if execution was successful
  **************************************************************************/
@@ -161,9 +161,9 @@ int main() {
   // setup UART0 at default baud rate, no interrupts
   neorv32_uart0_setup(BAUD_RATE, 0);
 
-  // check if the CFU is implemented (the CFU is wrapped in the core's "Zxcfu" ISA extension)
+  // check if the CFU is implemented (the CFU is wrapped in the core's "Xcfu" ISA extension)
   if (neorv32_cfu_available() == 0) {
-    neorv32_uart0_printf("ERROR! CFU ('Zxcfu' ISA extension) not implemented!\n");
+    neorv32_uart0_printf("ERROR! CFU ('Xcfu' ISA extension) not implemented!\n");
     return -1;
   }
 

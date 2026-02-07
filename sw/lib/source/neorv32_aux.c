@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -386,11 +386,11 @@ void neorv32_aux_print_hw_config(void) {
   if (tmp & (1<<CSR_MXISA_ZKSH))      { neorv32_uart0_printf("Zksh ");      }
   if (tmp & (1<<CSR_MXISA_ZKT))       { neorv32_uart0_printf("Zkt ");       }
   if (tmp & (1<<CSR_MXISA_ZMMUL))     { neorv32_uart0_printf("Zmmul ");     }
-  if (tmp & (1<<CSR_MXISA_ZXCFU))     { neorv32_uart0_printf("Zxcfu ");     }
   if (tmp & (1<<CSR_MXISA_SDEXT))     { neorv32_uart0_printf("Sdext ");     }
   if (tmp & (1<<CSR_MXISA_SDTRIG))    { neorv32_uart0_printf("Sdtrig ");    }
   if (tmp & (1<<CSR_MXISA_SMCNTRPMF)) { neorv32_uart0_printf("Smcntrpmf "); }
   if (tmp & (1<<CSR_MXISA_SMPMP))     { neorv32_uart0_printf("Smpmp ");     }
+  if (tmp & (1<<CSR_MXISA_XCFU))      { neorv32_uart0_printf("Xcfu ");      }
 
   // check physical memory protection
   neorv32_uart0_printf("\nPhys. Memory Prot.:  ");
@@ -591,7 +591,7 @@ void neorv32_aux_print_about(void) {
   if (neorv32_uart0_available() != 0) { // cannot output anything if UART0 is not implemented
     neorv32_uart0_puts("The NEORV32 RISC-V Processor, github.com/stnolting/neorv32\n"
                        "Copyright (c) NEORV32 contributors.\n"
-                       "Copyright (c) 2020 - 2025, Stephan Nolting. All rights reserved.\n"
+                       "Copyright (c) 2020 - 2026, Stephan Nolting. All rights reserved.\n"
                        "SPDX-License-Identifier: BSD-3-Clause\n");
   }
 }
@@ -649,7 +649,7 @@ void neorv32_aux_print_license(void) {
       "BSD 3-Clause License\n"
       "\n"
       "Copyright (c) NEORV32 contributors.\n"
-      "Copyright (c) 2020 - 2025, Stephan Nolting. All rights reserved.\n"
+      "Copyright (c) 2020 - 2026, Stephan Nolting. All rights reserved.\n"
       "\n"
       "Redistribution and use in source and binary forms, with or without modification, are\n"
       "permitted provided that the following conditions are met:\n"

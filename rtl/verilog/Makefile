@@ -9,39 +9,38 @@
 # ================================================================================ #
 
 .DEFAULT_GOAL := help
-all: clean check convert sim
+all: clean convert sim
 
 # Executables
-GHDL      ?= ghdl
+GHDL ?= ghdl
 SIMULATOR ?= iverilog
 
 # Build directory
-BUILD = build
+BUILD ?= build
 
-# NEORV32 sources
-NEORV32_HOME = ../..
-NEORV32_SOC_FILE = $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f)
-NEORV32_SOC_SRCS = $(subst NEORV32_RTL_PATH_PLACEHOLDER, $(NEORV32_HOME)/rtl, $(NEORV32_SOC_FILE))
+# NEORV32 VHDL sources
+NEORV32_HOME ?= ../..
+NEORV32_FFILE = $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f)
+NEORV32_SRCS = $(subst NEORV32_RTL_PATH_PLACEHOLDER, $(NEORV32_HOME)/rtl, $(NEORV32_FFILE))
 
-# Conversion wrapper top VHDL file
+# VHDL conversion wrapper entity/file name
 WRAPPER ?= neorv32_verilog_wrapper
 
+# Exclude default core files (to replace them by custom Verilog IP)
+VHDL_EXCLUDE ?=
+VHDL_SRCS = $(filter-out $(addprefix %,$(VHDL_EXCLUDE)), $(NEORV32_SRCS))
+
+# Verilog sources
+VERILOG_IP ?=
+VERILOG_TB ?= testbench.v
+VERILOG_SRCS = $(VERILOG_TB) $(WRAPPER).v $(VERILOG_IP)
+
 # Simulation
-SIM_SRC = testbench.v $(WRAPPER).v
 DUMP_WAVE ?= 0
 VERILATOR_ARGS = -Wno-fatal --binary --Mdir $(BUILD)
 ifeq ($(DUMP_WAVE), 1)
 VERILATOR_ARGS += --trace --trace-fst
 endif
-
-# -----------------------------------------------------------------------------
-# Check framework
-# -----------------------------------------------------------------------------
-
-check:
-	@echo $(NEORV32_SOC_SRCS)
-	@echo "GHDL version:"
-	@$(GHDL) -v
 
 # -----------------------------------------------------------------------------
 # Convert to Verilog and show instantiation prototype
@@ -50,9 +49,11 @@ check:
 $(WRAPPER).v:
 	@echo "Converting to Verilog: $(WRAPPER).vhd -> $(WRAPPER).v"
 	@mkdir -p $(BUILD)
-	@echo "NEORV32 source files:"
-	@echo $(NEORV32_SOC_SRCS)
-	@$(GHDL) -i --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild $(NEORV32_SOC_SRCS) $(WRAPPER).vhd
+	@echo "NEORV32 VHDL source files:"
+	@echo $(VHDL_SRCS)
+	@echo "Excluded NEORV32 VHDL core files:"
+	@echo $(VHDL_EXCLUDE)
+	@$(GHDL) -i --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild $(VHDL_SRCS) $(WRAPPER).vhd
 	@$(GHDL) -m --std=08 --work=neorv32 --workdir=$(BUILD) $(WRAPPER)
 	@$(GHDL) synth --std=08 --work=neorv32 --workdir=$(BUILD) -Pbuild --out=verilog $(WRAPPER) > $(WRAPPER).v
 
@@ -70,21 +71,23 @@ convert: $(WRAPPER).v prototype
 # -----------------------------------------------------------------------------
 
 sim: $(WRAPPER).v
-ifeq ($(DUMP_WAVE), 1)
-	@echo "Dumping waveform data to 'wave.fst'"
-endif
+	@echo "Verilog source files:"
+	@echo $(VERILOG_SRCS)
 ifeq ($(SIMULATOR), iverilog)
 	@echo "Running simulation with Icarus Verilog"
 	@mkdir -p $(BUILD)
-	@iverilog -DDUMP_WAVE=$(DUMP_WAVE) -o $(BUILD)/neorv32-iverilog $(SIM_SRC)
+	@iverilog -DDUMP_WAVE=$(DUMP_WAVE) -o $(BUILD)/neorv32-iverilog $(VERILOG_SRCS)
 	@vvp $(BUILD)/neorv32-iverilog
 else ifeq ($(SIMULATOR), verilator)
 	@echo "Running simulation with Verilator"
 	@mkdir -p $(BUILD)
-	@verilator -DDUMP_WAVE=$(DUMP_WAVE) $(VERILATOR_ARGS) $(SIM_SRC)
+	@verilator -DDUMP_WAVE=$(DUMP_WAVE) $(VERILATOR_ARGS) $(VERILOG_SRCS)
 	@./$(BUILD)/Vtestbench
 else
-	$(error Unsupported SIMULATORulator: $(SIMULATOR))
+	$(error Unsupported SIMULATOR: $(SIMULATOR))
+endif
+ifeq ($(DUMP_WAVE), 1)
+	@echo "Dumping waveform data to 'wave.fst'"
 endif
 
 # -----------------------------------------------------------------------------
@@ -96,21 +99,30 @@ help:
 	@echo ""
 	@echo "Targets:"
 	@echo "  help       Show this text"
-	@echo "  check      Show GHDL version"
-	@echo "  convert    Convert NEORV32 to Verilog (generate '$(NEORV32_VERILOG)')"
-	@echo "  prototype  Show Verilog instantiation prototoype"
-	@echo "  sim        Run simulation with Icarus Verilog or Verilator"
-	@echo "  clean      Remove all artifacts"
-	@echo "  all        clean + check + convert + sim"
+	@echo "  convert    Convert NEORV32 to Verilog (generate $(WRAPPER).v)"
+	@echo "  prototype  Show Verilog instantiation prototype"
+	@echo "  sim        Run simulation with Icarus-Verilog or Verilator"
+	@echo "  clean      Remove all build artifacts"
+	@echo "  all        clean + convert + sim"
 	@echo ""
 	@echo "Variables:"
-	@echo "  WRAPPER    Conversion wrapper; default = $(WRAPPER)"
-	@echo "  GHDL       GHDL executable; default = $(GHDL)"
-	@echo "  SIMULATOR  Verilog simulator executable; default = $(SIMULATOR)"
-	@echo "  DUMP_WAVE  Dump waveform data to 'wave.fst' when 1; default = $(DUMP_WAVE)"
+	@echo "  GHDL          GHDL executable; default = $(GHDL)"
+	@echo "  WRAPPER       VHDL conversion wrapper; default = $(WRAPPER)"
+	@echo "  VHDL_EXCLUDE  Default NEORV32 VHDL core files to exclude from conversion"
+	@echo "  VERILOG_IP    Custom Verilog IPs (for simulation)"
+	@echo "  SIMULATOR     Verilog simulator; 'iverilog' or 'verilator'; default = $(SIMULATOR)"
+	@echo "  DUMP_WAVE     Dump waveform data to 'wave.fst' when 1; default = $(DUMP_WAVE)"
 	@echo ""
-	@echo "Example:"
+	@echo "Simple example:"
 	@echo "  make SIMULATOR=verilator DUMP_WAVE=1 clean convert sim"
+	@echo ""
+	@echo "Default NEORV32 VHDL files can be excluded from the VHDL-to-Verilog conversion,"
+	@echo "leaving them as black box instances in the resulting all-Verilog netlist. These"
+	@echo "black box instances can be bind to custom Verilog IPs. Note that the substituted"
+	@echo "Verilog IPs must provide identical interfaces (parameters and ports)."
+	@echo ""
+	@echo "Example: Replace the default NEORV32 DMEM RAM primitive by a custom Verilog IP."
+	@echo "  make VHDL_EXCLUDE=neorv32_dmem_ram.vhd VERILOG_IP=ip/neorv32_dmem_ram.v clean convert sim"
 
 # -----------------------------------------------------------------------------
 # Clean up

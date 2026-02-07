@@ -179,42 +179,46 @@ For more complex projects, it may be useful to use explicit `source` and `includ
 Invoking a project-local makefile (executing `make` or `make help`) will show the help menu that lists all
 available targets as well as all variable including their _current_ setting.
 
-[source,makefile]
+[source,bash]
 ----
 neorv32/sw/example/hello_world$ make
 NEORV32 Software Makefile
 Find more information at https://github.com/stnolting/neorv32
-Use make V=1 or set BUILD_VERBOSE to increase build verbosity
+Use 'make V=1' or set BUILD_VERBOSE to increase build verbosity
 
 Targets:
 
-  help          show this text
-  check         check toolchain and list supported ISA extensions
-  info          show project/makefile configuration
-  gdb           start GNU debugging session
-  asm           compile and generate <main.asm> assembly listing file for manual debugging
-  elf           compile and generate <main.elf> ELF file
-  exe           compile and generate <neorv32_exe.bin> executable image file for bootloader upload (includes a HEADER!)
-  bin           compile and generate <neorv32_raw_exe.bin> executable memory image
-  hex           compile and generate <neorv32_raw_exe.hex> executable memory image
-  coe           compile and generate <neorv32_raw_exe.coe> executable memory image
-  mem           compile and generate <neorv32_raw_exe.mem> executable memory image
-  mif           compile and generate <neorv32_raw_exe.mif> executable memory image
-  image         compile and generate VHDL IMEM application boot image <neorv32_application_image.vhd> in local folder
-  install       compile, generate and install VHDL IMEM application boot image <neorv32_application_image.vhd>
-  sim           in-console simulation using default/simple testbench and GHDL
+  help       show this text
+  check      check toolchain and list supported ISA extensions
+  info       show project/makefile configuration
+  gdb        start GNU debugging session
+  asm        build and generate <main.asm> assembly listing file
+  elf        build and generate <main.elf> ELF file
+  exe        build and generate <neorv32_exe.bin> executable file for bootloader upload
+  bin        build and generate <neorv32_raw_exe.bin> executable memory image
+  hex        build and generate <neorv32_raw_exe.hex> executable memory image
+  coe        build and generate <neorv32_raw_exe.coe> executable memory image
+  mem        build and generate <neorv32_raw_exe.mem> executable memory image
+  mif        build and generate <neorv32_raw_exe.mif> executable memory image
+  image      build and generate VHDL IMEM application memory image <neorv32_imem_image.vhd> in local folder
+  install    build, generate and install VHDL IMEM application memory image <neorv32_imem_image.vhd>
+  clean      clean up project home folder
+  clean_all  clean up project home folder and image generator
+  all        clean_all + elf + asm + exe + hex + bin + coe + mem + mif + image + install
+
+Additional targets:
+
+  sim           in-console simulation using default testbench (sim folder) and GHDL
   hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl
-  all           exe + install + hex + bin + asm
+  upload        upload executable to bootloader via UART (/dev/ttyUSB1)
   elf_info      show ELF layout info
   elf_sections  show ELF sections
-  clean         clean up project home folder
-  clean_all     clean up project home folder and image generator
-  bl_image      compile and generate VHDL BOOTROM bootloader boot image <neorv32_bootloader_image.vhd> in local folder
-  bootloader    compile, generate and install VHDL BOOTROM bootloader boot image <neorv32_bootloader_image.vhd>
+  bl_image      build and generate VHDL BOOTROM bootloader memory image <neorv32_bootrom_image.vhd> in local folder
+  bootloader    build, generate and install VHDL BOOTROM bootloader memory image <neorv32_bootrom_image.vhd>
 
 Variables:
 
-  BUILD_VERBOSE   Set to increase build verbosity: 0
+  BUILD_VERBOSE   Set to increase build verbosity: "0"
   USER_FLAGS      Custom toolchain flags [append only]: "-ggdb -gdwarf-3 -Wl,--defsym,__neorv32_rom_size=16k -Wl,--defsym,__neorv32_ram_size=8k"
   USER_LIBS       Custom libraries [append only]: ""
   EFFORT          Optimization level: "-Os"
@@ -222,11 +226,12 @@ Variables:
   MABI            Machine binary interface: "ilp32"
   APP_INC         C include folder(s) [append only]: "-I ."
   APP_SRC         C source folder(s) [append only]: "./main.c   "
-  APP_OBJ         Object file(s) [append only]
+  APP_OBJ         Object file(s) [append only]: ""
   ASM_INC         ASM include folder(s) [append only]: "-I ."
   RISCV_PREFIX    Toolchain prefix: "riscv-none-elf-"
   NEORV32_HOME    NEORV32 home folder: "../../.."
-  GDB_ARGS        GDB (connection) arguments: "-ex target extended-remote localhost:3333"
+  GDB_ARGS        GDB arguments: "-ex target extended-remote localhost:3333"
+  UART_TTY        Serial port for upload to bootloader: "/dev/ttyUSB1"
   GHDL_RUN_FLAGS  GHDL simulation run arguments: ""
 ----
 
@@ -236,7 +241,7 @@ All _intermediate_ build artifacts (like object files and binaries) will be plac
 folder named `build`. The _resulting_ build artifacts (like executable, the main ELF and all memory
 initialization/image files) will be placed in the root project folder.
 
-.Increse Verbosity
+.Increase Verbosity
 [TIP]
 Use `make V=1` or set `BUILD_VERBOSE` in your environment to increase build verbosity.
 
@@ -489,23 +494,22 @@ The binary executable image (see <<_rom_layout>>) is further processed by the NE
 to generate a final executable file. The image generator can generate several types of executable file formats selected
 by a flag when calling the generator. **Note that all these options are managed by the makefile (see <<_makefile_targets>>).**
 
-[cols="<2,<8"]
+[cols="<1,<9"]
 [grid="none"]
 |=======================
-| `app_bin` | Generates an executable binary file (including a bootloader header) for upload via the bootloader.
-| `app_vhd` | Generates an executable VHDL memory initialization image for the processor-internal IMEM.
-| `bld_vhd` | Generates an executable VHDL memory initialization image for the processor-internal BOOT ROM.
-| `raw_hex` | Generates a raw 8x ASCII hex-char file for custom purpose.
-| `raw_bin` | Generates a raw binary file for custom purpose.
-| `raw_coe` | Generates a raw COE file for FPGA memory initialization.
-| `raw_mem` | Generates a raw MEM file for FPGA memory initialization.
-| `raw_mif` | Generates a raw MIF file for FPGA memory initialization.
+| `exe` | Generates an executable binary file (including a bootloader header) for upload via the bootloader.
+| `vhd` | Generates a VHDL memory image (package file, package name is the same as the output file name).
+| `hex` | Generates a raw 8x ASCII hex-char file for custom purpose.
+| `bin` | Generates a raw binary file for custom purpose.
+| `coe` | Generates a raw COE file for FPGA memory initialization.
+| `mem` | Generates a raw MEM file for FPGA memory initialization.
+| `mif` | Generates a raw MIF file for FPGA memory initialization.
 |=======================
 
 .Image Generator Compilation
 [NOTE]
 The sources of the image generator are automatically compiled when invoking the makefile
-(requiring a _native_ GCC installation).
+(requires a native GCC installation).
 
 .Executable Header
 [NOTE]

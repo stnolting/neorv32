@@ -148,11 +148,13 @@
             <field>
               <name>SDI_CTRL_CLR_RX</name>
               <bitRange>[1:1]</bitRange>
+              <access>write-only</access>
               <description>Clear RX FIFO, flag auto-clears</description>
             </field>
             <field>
               <name>SDI_CTRL_CLR_TX</name>
               <bitRange>[2:2]</bitRange>
+              <access>write-only</access>
               <description>Clear TX FIFO, flag auto-clears</description>
             </field>
             <field>
@@ -195,7 +197,7 @@
             </field>
             <field>
               <name>SDI_CTRL_TX_FULL</name>
-              <bitRange>[28:28]</bitRange>
+              <bitRange>[27:27]</bitRange>
               <access>read-only</access>
               <description>TX FIFO full</description>
             </field>
@@ -209,9 +211,16 @@
         </register>
         <register>
           <name>DATA</name>
-          <description>RX/TX data register (lowest 8 bit)</description>
+          <description>RX/TX data register</description>
           <addressOffset>0x04</addressOffset>
           <readAction>modify</readAction>
+          <fields>
+            <field>
+              <name>SDI_DATA</name>
+              <bitRange>[7:0]</bitRange>
+              <description>RX data / TX data (via FIFOs)</description>
+            </field>
+          </fields>
         </register>
       </registers>
     </peripheral>

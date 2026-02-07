@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120703"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120707"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -806,21 +806,18 @@ package neorv32_package is
 -- Helper Functions
 -- **********************************************************************************************************
 
-  function index_size_f       (n : natural                                              ) return natural;
-  function cond_sel_natural_f (c : boolean; t : natural; f : natural                    ) return natural;
-  function cond_sel_suv_f     (c : boolean; t : std_ulogic_vector; f : std_ulogic_vector) return std_ulogic_vector;
-  function cond_sel_string_f  (c : boolean; t : string; f : string                      ) return string;
-  function max_natural_f      (a : natural; b : natural                                 ) return natural;
-  function min_natural_f      (a : natural; b : natural                                 ) return natural;
-  function bool_to_ulogic_f   (c : boolean                                              ) return std_ulogic;
-  function or_reduce_f        (d : std_ulogic_vector                                    ) return std_ulogic;
-  function and_reduce_f       (d : std_ulogic_vector                                    ) return std_ulogic;
-  function xor_reduce_f       (d : std_ulogic_vector                                    ) return std_ulogic;
-  function to_hexchar_f       (d : std_ulogic_vector(3 downto 0)                        ) return character;
-  function bit_rev_f          (d : std_ulogic_vector                                    ) return std_ulogic_vector;
-  function is_power_of_two_f  (n : natural                                              ) return boolean;
-  function replicate_f        (d : std_ulogic; n : natural                              ) return std_ulogic_vector;
-  function to_hexstring_f     (d : std_ulogic_vector                                    ) return string;
+  function index_size_f     (n : natural                          ) return natural;
+  function sel_natural_f    (c : boolean; t, f : natural          ) return natural;
+  function sel_suv_f        (c : boolean; t, f : std_ulogic_vector) return std_ulogic_vector;
+  function sel_string_f     (c : boolean; t, f : string           ) return string;
+  function bool_to_ulogic_f (c : boolean                          ) return std_ulogic;
+  function or_reduce_f      (d : std_ulogic_vector                ) return std_ulogic;
+  function and_reduce_f     (d : std_ulogic_vector                ) return std_ulogic;
+  function xor_reduce_f     (d : std_ulogic_vector                ) return std_ulogic;
+  function to_hexchar_f     (d : std_ulogic_vector(3 downto 0)    ) return character;
+  function bit_rev_f        (d : std_ulogic_vector                ) return std_ulogic_vector;
+  function replicate_f      (d : std_ulogic; n : natural          ) return std_ulogic_vector;
+  function to_hexstring_f   (d : std_ulogic_vector                ) return string;
 
 -- **********************************************************************************************************
 -- NEORV32 Processor Top Entity (component prototype)
@@ -867,8 +864,8 @@ package neorv32_package is
       RISCV_ISA_Zknh      : boolean                        := false;
       RISCV_ISA_Zksed     : boolean                        := false;
       RISCV_ISA_Zksh      : boolean                        := false;
-      RISCV_ISA_Zxcfu     : boolean                        := false;
       RISCV_ISA_Smcntrpmf : boolean                        := false;
+      RISCV_ISA_Xcfu      : boolean                        := false;
       -- Tuning Options --
       CPU_CONSTT_BR_EN    : boolean                        := false;
       CPU_FAST_MUL_EN     : boolean                        := false;
@@ -1050,58 +1047,36 @@ package body neorv32_package is
 
   -- Conditional select natural -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function cond_sel_natural_f(c : boolean; t : natural; f : natural) return natural is
+  function sel_natural_f(c : boolean; t, f : natural) return natural is
   begin
     if c then
       return t;
     else
       return f;
     end if;
-  end function cond_sel_natural_f;
+  end function sel_natural_f;
 
   -- Conditional select std_ulogic_vector ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function cond_sel_suv_f(c : boolean; t : std_ulogic_vector; f : std_ulogic_vector) return std_ulogic_vector is
+  function sel_suv_f(c : boolean; t, f : std_ulogic_vector) return std_ulogic_vector is
   begin
     if c then
       return t;
     else
       return f;
     end if;
-  end function cond_sel_suv_f;
+  end function sel_suv_f;
 
   -- Conditional select string --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  function cond_sel_string_f(c : boolean; t : string; f : string) return string is
+  function sel_string_f(c : boolean; t, f : string) return string is
   begin
     if c then
       return t;
     else
       return f;
     end if;
-  end function cond_sel_string_f;
-
-  -- Select maximal natural value -----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function max_natural_f(a : natural; b : natural) return natural is
-  begin
-    if a < b then
-      return b;
-    else
-      return a;
-    end if;
-  end function max_natural_f;
-
-  -- Select minimal natural value -----------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function min_natural_f(a : natural; b : natural) return natural is
-  begin
-    if a < b then
-      return a;
-    else
-      return b;
-    end if;
-  end function min_natural_f;
+  end function sel_string_f;
 
   -- Convert boolean to std_ulogic ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1177,23 +1152,6 @@ package body neorv32_package is
     end loop;
     return r;
   end function bit_rev_f;
-
-  -- Test if number is a power of two -------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  function is_power_of_two_f(n : natural) return boolean is
-    variable v : unsigned(31 downto 0);
-  begin
-    v := to_unsigned(n, 32);
-    if (n = 0) then
-      return false;
-    elsif (n = 1) then
-      return true;
-    elsif ((v and (v - 1)) = 0) then
-      return true;
-    else
-      return false;
-    end if;
-  end function is_power_of_two_f;
 
   -- Replicate bit --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

@@ -44,12 +44,12 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_zksed_isa_extension,`Zksed`>>         | Scalar cryptography ShangMi block cypher instructions        | <<_processor_top_entity_generics, `RISCV_ISA_Zksed`>>
 | <<_zksh_isa_extension,`Zksh`>>           | Scalar cryptography ShangMi hash instructions                | <<_processor_top_entity_generics, `RISCV_ISA_Zksh`>>
 | <<_zkt_isa_extension,`Zkt`>>             | Data independent execution time (of cryptography operations) | _Implicitly_ enabled
-| <<_zmmul_isa_extension,`Zmmul`>>         | Integer multiplication-only instructions                     | <<_processor_top_entity_generics, `RISCV_ISA_Zmmul`>>
-| <<_zxcfu_isa_extension,`Zxcfu`>>         | Custom / user-defined instructions                           | <<_processor_top_entity_generics, `RISCV_ISA_Zxcfu`>>
+| <<_zmmul_isa_extension,`Zmmul`>>         | Integer multiplication-only instructions (subset of `M`)     | <<_processor_top_entity_generics, `RISCV_ISA_Zmmul`>>
 | <<_sdext_isa_extension,`Sdext`>>         | External debug support extension (on-chip debugger)          | <<_processor_top_entity_generics, `OCD_EN`>>
 | <<_sdtrig_isa_extension,`Sdtrig`>>       | Debug trigger module extension (hardware breakpoint)         | <<_processor_top_entity_generics, `OCD_NUM_HW_TRIGGERS`>>
 | <<_smcntrpmf_isa_extension,`Smcntrpmf`>> | Counter privilege-mode filtering                             | <<_processor_top_entity_generics, `RISCV_ISA_Smcntrpmf`>>
 | <<_smpmp_isa_extension,`Smpmp`>>         | Physical memory protection (PMP) extension                   | <<_processor_top_entity_generics, `RISCV_ISA_Smpmp`>>
+| <<_xcfu_isa_extension,`Xcfu`>>           | Custom / user-defined instructions                           | <<_processor_top_entity_generics, `RISCV_ISA_Xcfu`>>
 |=======================
 
 .RISC-V ISA Specification
@@ -701,12 +701,11 @@ To further reduce the possibility of timing side-channel attacks, conditional br
 This is a sub-extension of the <<_m_isa_extension>> ISA extension. It implements only the multiplication operations
 of the `M` extensions and is intended for size-constrained setups that require hardware-based
 integer multiplications but not hardware-based divisions, which will be computed entirely in software.
-Note that the <<_zmmul_isa_extension>> and <<_m_isa_extension>> are mutually exclusive.
 
 
-==== `Zxcfu` ISA Extension
+==== `Xcfu` ISA Extension
 
-The `Zxcfu` presents a NEORV32-specific ISA extension. It adds the <<_custom_functions_unit_cfu>> to
+The `Xcfu` presents a custom NEORV32-specific ISA extension. It adds the <<_custom_functions_unit_cfu>> to
 the CPU core, which allows to add custom RISC-V instructions to the processor core.
 For detailed information regarding the CFU, its hardware and the according software interface
 see section <<_custom_functions_unit_cfu>>.
