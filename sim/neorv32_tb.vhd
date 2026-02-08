@@ -54,8 +54,10 @@ entity neorv32_tb is
     CPU_FAST_SHIFT_EN : boolean                        := true;        -- use barrel shifter for shift operations
     CPU_RF_ARCH_SEL   : natural range 0 to 3           := 0;           -- register file implementation style select
     IMEM_EN           : boolean                        := true;        -- implement processor-internal instruction memory
+    IMEM_BASE         : std_ulogic_vector(31 downto 0) := x"00000000"; -- base address of processor-internal instruction memory (naturally aligned)
     IMEM_SIZE         : natural                        := 32*1024;     -- size of processor-internal instruction memory in bytes (use a power of 2)
     DMEM_EN           : boolean                        := true;        -- implement processor-internal data memory
+    DMEM_BASE         : std_ulogic_vector(31 downto 0) := x"80000000"; -- base address of processor-internal data memory (naturally aligned)
     DMEM_SIZE         : natural                        := 8*1024;      -- size of processor-internal data memory in bytes (use a power of 2)
     ICACHE_EN         : boolean                        := true;        -- implement instruction cache
     ICACHE_NUM_BLOCKS : natural range 1 to 4096        := 64;          -- i-cache: number of blocks, has to be a power of 2
@@ -181,10 +183,12 @@ begin
     HPM_CNT_WIDTH       => 40,
     -- Internal Instruction memory --
     IMEM_EN             => IMEM_EN,
+    IMEM_BASE           => IMEM_BASE,
     IMEM_SIZE           => IMEM_SIZE,
     IMEM_OUTREG_EN      => false,
     -- Internal Data memory --
     DMEM_EN             => DMEM_EN,
+    DMEM_BASE           => DMEM_BASE,
     DMEM_SIZE           => DMEM_SIZE,
     DMEM_OUTREG_EN      => true,
     -- CPU Caches --

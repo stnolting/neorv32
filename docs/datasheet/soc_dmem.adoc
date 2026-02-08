@@ -10,6 +10,7 @@
 | Software driver files:  | none                 |
 | Top entity ports:       | none                 |
 | Configuration generics: | `DMEM_EN`            | implement DMEM when `true`
+|                         | `DMEM_BASE`          | 32-bit base address (naturally aligned to DMEM size)
 |                         | `DMEM_SIZE`          | DMEM size in bytes (use a power of 2)
 |                         | `DMEM_OUTREG_EN`     | add DMEM output register stage
 | CPU interrupts:         | none                 |
@@ -29,8 +30,16 @@
 
 Implementation of the processor-internal data memory is enabled by the processor's `DMEM_EN`
 generic. The total memory size in bytes is defined via the `DMEM_SIZE` generic. Only sizes that
-are powers of two are supported. If enabled, the DEME is mapped to base address `0x80000000`
-(see section <<_address_space>>).
+are powers of two are supported. If enabled, the DMEM is mapped to base address `0x80000000`
+by default (see section <<_address_space>>).
+
+.Custom DMEM Base Address
+[IMPORTANT]
+The base address of the DMEM can be customized via the `DMEM_BASE` generic. Please note that
+the selected address must be naturally aligned to the DMEM size (`DMEM_SIZE`) and that there must
+be no overlap with other sections of the internal <<_address_space>> (internal IMEM if enabled
+and the internal IO/peripheral address space). Any non-default address must also be passed to the
+<<_linker_script>> (e.g. `USER_FLAGS += -Wl,--defsym,__neorv32_ram_base=<DMEM_BASE>`).
 
 .Platform-Specific Memory Primitives
 [NOTE]

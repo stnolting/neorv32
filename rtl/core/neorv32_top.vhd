@@ -82,11 +82,13 @@ entity neorv32_top is
 
     -- Internal Instruction memory (IMEM) --
     IMEM_EN             : boolean                        := false;         -- implement processor-internal instruction memory
+    IMEM_BASE           : std_ulogic_vector(31 downto 0) := x"00000000";   -- base address of processor-internal instruction memory (naturally aligned)
     IMEM_SIZE           : natural                        := 16*1024;       -- size of processor-internal instruction memory in bytes (use a power of 2)
     IMEM_OUTREG_EN      : boolean                        := false;         -- enable IMEM output register stage (for improved mapping/timing)
 
     -- Internal Data memory (DMEM) --
     DMEM_EN             : boolean                        := false;         -- implement processor-internal data memory
+    DMEM_BASE           : std_ulogic_vector(31 downto 0) := x"80000000";   -- base address of processor-internal data memory (naturally aligned)
     DMEM_SIZE           : natural                        := 8*1024;        -- size of processor-internal data memory in bytes (use a power of 2)
     DMEM_OUTREG_EN      : boolean                        := false;         -- enable DMEM output register stage (for improved mapping/timing)
 
@@ -261,7 +263,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) :=
     sel_suv_f(boolean(BOOT_MODE_SELECT = 0), base_io_bootrom_c,
     sel_suv_f(boolean(BOOT_MODE_SELECT = 1), BOOT_ADDR_CUSTOM,
-    sel_suv_f(boolean(BOOT_MODE_SELECT = 2), mem_imem_base_c, x"00000000")));
+    sel_suv_f(boolean(BOOT_MODE_SELECT = 2), IMEM_BASE, x"00000000")));
 
   -- auto-configuration --
   constant num_cores_c     : natural := sel_natural_f(DUAL_CORE_EN, 2, 1);
@@ -411,9 +413,17 @@ begin
     assert not (DUAL_CORE_EN and (not IO_CLINT_EN)) report
       "[NEORV32] SMP dual-core configuration requires the CLINT!" severity error;
 
-    -- XBUS burst transfers --
-    assert not (XBUS_EN and CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN)) report
-      "[NEORV32] XBUS will emit burst transfers for cached accesses." severity warning;
+    -- custom IMEM adress --
+    assert not (IMEM_EN and (IMEM_BASE /= x"00000000")) report
+      "[NEORV32] Using non-default IMEM base address. Configure SW framework accordingly." severity warning;
+    assert (or_reduce_f(IMEM_BASE(index_size_f(imem_size_c)-1 downto 0)) = '0') report
+      "[NEORV32] IMEM base address has to be naturally aligned to its size!" severity error;
+
+    -- custom DMEM adress --
+    assert not (DMEM_EN and (DMEM_BASE /= x"80000000")) report
+      "[NEORV32] Using non-default DMEM base address. Configure SW framework accordingly." severity warning;
+    assert (or_reduce_f(DMEM_BASE(index_size_f(dmem_size_c)-1 downto 0)) = '0') report
+      "[NEORV32] DMEM base address has to be naturally aligned to its size!" severity error;
 
   end generate;
 
@@ -777,11 +787,11 @@ begin
     TMO_EXT => XBUS_TIMEOUT,
     -- port A: internal IMEM --
     A_EN    => IMEM_EN,
-    A_BASE  => mem_imem_base_c,
+    A_BASE  => IMEM_BASE,
     A_SIZE  => imem_size_c,
     -- port B: internal DMEM --
     B_EN    => DMEM_EN,
-    B_BASE  => mem_dmem_base_c,
+    B_BASE  => DMEM_BASE,
     B_SIZE  => dmem_size_c,
     -- port C: IO --
     C_EN    => true,

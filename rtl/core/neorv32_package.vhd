@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120707"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120708"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -35,20 +35,16 @@ package neorv32_package is
   ;
 
 -- **********************************************************************************************************
--- SoC Address Space Layout
+-- SoC Peripheral/IO Address Space Layout
 -- **********************************************************************************************************
-
-  -- Main Address Regions (base address must be aligned to the region's size) ---
-  constant mem_imem_base_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- IMEM size via top generic
-  constant mem_dmem_base_c : std_ulogic_vector(31 downto 0) := x"80000000"; -- DMEM size via top generic
-  constant mem_io_base_c   : std_ulogic_vector(31 downto 0) := x"ffe00000";
-  constant mem_io_size_c   : natural := 32*64*1024; -- 32 * iodev_size_c
 
   -- Start of uncached memory access (256MB page / 4 MSBs only) --
   constant mem_uncached_begin_c : std_ulogic_vector(31 downto 0) := x"f0000000";
+  constant mem_io_base_c        : std_ulogic_vector(31 downto 0) := x"ffe00000";
+  constant mem_io_size_c        : natural := 32*64*1024; -- 32 * iodev_size_c
+  constant iodev_size_c         : natural := 64*1024; -- size of a single IO device (bytes)
 
   -- IO Address Map (base address must be aligned to the region's size) --
-  constant iodev_size_c      : natural := 64*1024; -- size of a single IO device (bytes)
   constant base_io_bootrom_c : std_ulogic_vector(31 downto 0) := x"ffe00000";
 --constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffe10000"; -- reserved
 --constant base_io_???_c     : std_ulogic_vector(31 downto 0) := x"ffe20000"; -- reserved
@@ -877,10 +873,12 @@ package neorv32_package is
       HPM_CNT_WIDTH       : natural range 0 to 64          := 40;
       -- Internal Instruction memory (IMEM) --
       IMEM_EN             : boolean                        := false;
+      IMEM_BASE           : std_ulogic_vector(31 downto 0) := x"00000000";
       IMEM_SIZE           : natural                        := 16*1024;
       IMEM_OUTREG_EN      : boolean                        := false;
       -- Internal Data memory (DMEM) --
       DMEM_EN             : boolean                        := false;
+      DMEM_BASE           : std_ulogic_vector(31 downto 0) := x"80000000";
       DMEM_SIZE           : natural                        := 8*1024;
       DMEM_OUTREG_EN      : boolean                        := false;
       -- CPU Caches --
