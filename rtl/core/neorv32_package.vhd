@@ -893,7 +893,6 @@ package neorv32_package is
       XBUS_TIMEOUT        : natural                        := 2048;
       XBUS_REGSTAGE_EN    : boolean                        := false;
       -- Processor peripherals --
-      IO_DISABLE_SYSINFO  : boolean                        := false;
       IO_GPIO_NUM         : natural range 0 to 64          := 0;
       IO_CLINT_EN         : boolean                        := false;
       IO_UART0_EN         : boolean                        := false;
