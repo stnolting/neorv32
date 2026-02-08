@@ -79,10 +79,12 @@ entity neorv32_vivado_ip is
     HPM_CNT_WIDTH         : natural range 0 to 64          := 40;
     -- Internal Instruction memory --
     IMEM_EN               : boolean                        := false;
+    IMEM_BASE             : std_ulogic_vector(31 downto 0) := x"00000000";
     IMEM_SIZE             : natural                        := 16384;
     IMEM_OUTREG_EN        : boolean                        := false;
     -- Internal Data memory --
     DMEM_EN               : boolean                        := false;
+    DMEM_BASE             : std_ulogic_vector(31 downto 0) := x"80000000";
     DMEM_SIZE             : natural                        := 8192;
     DMEM_OUTREG_EN        : boolean                        := false;
     -- CPU Caches --
@@ -414,10 +416,12 @@ begin
     HPM_CNT_WIDTH       => HPM_CNT_WIDTH,
     -- Internal Instruction memory --
     IMEM_EN             => IMEM_EN,
+    IMEM_BASE           => IMEM_BASE,
     IMEM_SIZE           => IMEM_SIZE,
     IMEM_OUTREG_EN      => IMEM_OUTREG_EN,
     -- Internal Data memory --
     DMEM_EN             => DMEM_EN,
+    DMEM_BASE           => DMEM_BASE,
     DMEM_SIZE           => DMEM_SIZE,
     DMEM_OUTREG_EN      => DMEM_OUTREG_EN,
     -- CPU Caches --
@@ -432,7 +436,6 @@ begin
     XBUS_TIMEOUT        => XBUS_TIMEOUT,
     XBUS_REGSTAGE_EN    => XBUS_REGSTAGE_EN,
     -- Processor peripherals --
-    IO_DISABLE_SYSINFO  => false,
     IO_GPIO_NUM         => num_gpio_c,
     IO_CLINT_EN         => IO_CLINT_EN,
     IO_UART0_EN         => IO_UART0_EN,
