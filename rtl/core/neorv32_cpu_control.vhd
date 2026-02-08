@@ -169,9 +169,12 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ebreak_trig  : std_ulogic; -- environment break exception trigger
   signal trap_env     : std_ulogic_vector(6 downto 0); -- environment call cause-value helper
 
-  -- Zcmp PC hold --
-  signal zcmp_event, zcmp_event_nxt, zcmp_event_reset : std_ulogic;
-  signal zcmp_pc, zcmp_pc_nxt : std_ulogic_vector(31 downto 0);
+  -- Zcmp PC-hold interface (driven by generate blocks below) --
+  signal zcmp_dispatch_pc  : std_ulogic_vector(31 downto 0); -- PC for S_DISPATCH
+  signal zcmp_execute_pc2  : std_ulogic_vector(31 downto 0); -- next-PC for S_EXECUTE
+  signal zcmp_trap_gate    : std_ulogic;                     -- '1' = suppress traps
+  signal zcmp_ir_count_en  : std_ulogic;                     -- '1' = count as retired
+  signal zcmp_dispatch_ack : std_ulogic;                     -- valid instruction dispatched
 
 begin
 
@@ -209,14 +212,13 @@ begin
     elsif rising_edge(clk_i) then
       ctrl <= ctrl_nxt;
       exec <= exec_nxt;
-      zcmp_pc <= zcmp_pc_nxt;
     end if;
   end process exec_sync;
 
 
   -- Execution Micro Sequencer Comb ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  exec_comb: process(exec, debug_ctrl, trap, hwtrig_i, frontend_i, csr, ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, zcmp_pc, zcmp_event)
+  exec_comb: process(exec, debug_ctrl, trap, hwtrig_i, frontend_i, csr, ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, zcmp_dispatch_pc, zcmp_execute_pc2, zcmp_trap_gate)
     variable opcode_v : std_ulogic_vector(6 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
     variable funct3_v : std_ulogic_vector(2 downto 0);
@@ -238,8 +240,7 @@ begin
     ctrl_nxt.csr_addr <= ctrl.csr_addr; -- keep previous CSR address
     ctrl_nxt.lsu_rd   <= ctrl.lsu_rd; -- keep memory read access type
     ctrl_nxt.lsu_wr   <= ctrl.lsu_wr; -- keep memory write access type
-    zcmp_pc_nxt       <= zcmp_pc; -- hold by default
-    zcmp_event_reset  <= '0';
+    zcmp_dispatch_ack <= '0';
 
     -- immediate --
     case opcode_v is
@@ -287,23 +288,15 @@ begin
           ctrl_nxt.alu_imm <= x"00000004";
         end if;
         -- dispatch instruction --
-        if ((trap.env_pend = '1') or (trap.exc_fire = '1')) and (frontend_i.zcmp_atomic_tail = '0') then -- pending trap or pending exception (fast); not during zcmp atomic tail
+        if ((trap.env_pend = '1') or (trap.exc_fire = '1')) and (zcmp_trap_gate = '0') then -- pending trap or pending exception (fast)
           exec_nxt.state <= S_TRAP_ENTER;
         elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
-          trap.instr_be  <= frontend_i.fault; -- access fault during instruction fetch
-          exec_nxt.ci    <= frontend_i.compr; -- this is a decompressed instruction
-          exec_nxt.ir    <= frontend_i.instr; -- actual instruction word
-          -- zcmp PC hold: capture PC at start of sequence, then freeze during micro-ops --
-          if (zcmp_event = '1') then -- first dispatch after zcmp detected: save current pc2
-            zcmp_pc_nxt      <= exec.pc2(31 downto 1) & '0';
-            zcmp_event_reset <= '1';
-          end if;
-          if (frontend_i.zcmp_in_uop_seq = '1') and (zcmp_event = '0') then -- during zcmp micro-ops: hold PC
-            exec_nxt.pc <= zcmp_pc;
-          else -- normal PC advance
-            exec_nxt.pc <= exec.pc2(31 downto 1) & '0';
-          end if;
-          exec_nxt.state <= S_EXECUTE; -- start executing new instruction
+          trap.instr_be     <= frontend_i.fault; -- access fault during instruction fetch
+          exec_nxt.ci       <= frontend_i.compr; -- this is a decompressed instruction
+          exec_nxt.ir       <= frontend_i.instr; -- actual instruction word
+          zcmp_dispatch_ack <= '1'; -- notify zcmp generate block
+          exec_nxt.pc       <= zcmp_dispatch_pc; -- generate block decides held or normal PC
+          exec_nxt.state    <= S_EXECUTE; -- start executing new instruction
           if (frontend_i.instr(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
             ctrl_nxt.csr_addr <= frontend_i.instr(instr_imm12_msb_c downto instr_imm12_lsb_c); -- reduce switching activity on csr_addr net
           end if;
@@ -335,11 +328,7 @@ begin
 
       when S_EXECUTE => -- decode and prepare execution (FSM will be here for exactly 1 cycle in any case)
       -- ------------------------------------------------------------
-        if (frontend_i.zcmp_in_uop_seq = '1') then -- during zcmp micro-ops: freeze next-PC
-          exec_nxt.pc2 <= std_ulogic_vector(unsigned(zcmp_pc) + 2);
-        else
-          exec_nxt.pc2 <= alu_add_i(31 downto 1) & '0'; -- next PC = PC + immediate
-        end if;
+        exec_nxt.pc2 <= zcmp_execute_pc2; -- generate block selects held or normal next-PC
         case opcode_v is
 
           -- register/immediate ALU operation --
@@ -552,7 +541,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   cnt_event(cnt_event_cy_c)       <= '0' when (exec.state = S_SLEEP)                                     else '1'; -- active cycle
   cnt_event(cnt_event_tm_c)       <= '0';
-  cnt_event(cnt_event_ir_c)       <= '1' when (exec.state = S_EXECUTE) and ((frontend_i.zcmp_in_uop_seq = '0') or (frontend_i.zcmp_start = '1')) else '0'; -- retired (=executed) instr.
+  cnt_event(cnt_event_ir_c)       <= '1' when (exec.state = S_EXECUTE) and (zcmp_ir_count_en = '1')        else '0'; -- retired (=executed) instr.
   cnt_event(cnt_event_compr_c)    <= '1' when (exec.state = S_EXECUTE) and (exec.ci = '1')               else '0'; -- executed compressed instr.
   cnt_event(cnt_event_wait_dis_c) <= '1' when (exec.state = S_DISPATCH) and (frontend_i.valid = '0')     else '0'; -- instruction dispatch wait
   cnt_event(cnt_event_wait_alu_c) <= '1' when (exec.state = S_ALU_WAIT)                                  else '0'; -- multi-cycle ALU wait
@@ -564,34 +553,60 @@ begin
 
 
   -- ****************************************************************************************************************************
-  -- Zcmp micro op detection
+  -- Zcmp PC-Hold
   -- ****************************************************************************************************************************
 
-  zcmp_enabled:
+  zcmp_pchold_enabled:
   if RISCV_ISA_Zcmp generate
-    -- single-bit register captures the zcmp_start signal from the frontend --
-    zcmp_event_sync: process(rstn_i, clk_i)
+    -- internal state, invisible to FSM --
+    signal zcmp_event_r : std_ulogic;
+    signal zcmp_pc_r    : std_ulogic_vector(31 downto 0);
+  begin
+
+    -- clocked process: capture zcmp_start as event flag; capture PC on dispatch ack --
+    zcmp_pchold_sync: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        zcmp_event <= '0';
+        zcmp_event_r <= '0';
+        zcmp_pc_r    <= (others => '0');
       elsif rising_edge(clk_i) then
-        zcmp_event <= zcmp_event_nxt;
+        -- event flag: set on zcmp_start, clear on first dispatch ack --
+        if (frontend_i.zcmp_start = '1') then
+          zcmp_event_r <= '1';
+        elsif (zcmp_dispatch_ack = '1') then
+          zcmp_event_r <= '0';
+        end if;
+        -- PC capture: latch pc2 on the first dispatch after zcmp_start --
+        if (zcmp_event_r = '1') and (zcmp_dispatch_ack = '1') then
+          zcmp_pc_r <= exec.pc2(31 downto 1) & '0';
+        end if;
       end if;
-    end process zcmp_event_sync;
+    end process zcmp_pchold_sync;
 
-    zcmp_event_nxt <= '1' when (frontend_i.zcmp_start = '1') else
-                      '0' when (zcmp_event_reset = '1') else
-                      zcmp_event;
-  end generate;
+    -- S_DISPATCH PC: hold during micro-ops (after event cleared), pass through otherwise --
+    zcmp_dispatch_pc <= zcmp_pc_r when (frontend_i.zcmp_in_uop_seq = '1') and (zcmp_event_r = '0')
+                        else exec.pc2(31 downto 1) & '0';
 
-  zcmp_disabled:
+    -- S_EXECUTE next-PC: frozen during micro-ops, normal ALU result otherwise --
+    zcmp_execute_pc2 <= std_ulogic_vector(unsigned(zcmp_pc_r) + 2) when (frontend_i.zcmp_in_uop_seq = '1')
+                        else alu_add_i(31 downto 1) & '0';
+
+    -- trap gate: suppress traps during atomic tail of zcmp sequence --
+    zcmp_trap_gate <= frontend_i.zcmp_atomic_tail;
+
+    -- retired instruction count: count only non-uop instructions, or the first uop (start) --
+    zcmp_ir_count_en <= '1' when (frontend_i.zcmp_in_uop_seq = '0') or (frontend_i.zcmp_start = '1')
+                        else '0';
+
+  end generate zcmp_pchold_enabled;
+
+  zcmp_pchold_disabled:
   if not RISCV_ISA_Zcmp generate
-    zcmp_event     <= '0';
-    zcmp_event_nxt <= '0';
-    zcmp_pc        <= (others => '0');
-    zcmp_pc_nxt    <= (others => '0');
-    zcmp_event_reset <= '0';
-  end generate;
+    zcmp_dispatch_pc <= exec.pc2(31 downto 1) & '0';
+    zcmp_execute_pc2 <= alu_add_i(31 downto 1) & '0';
+    zcmp_trap_gate   <= '0';
+    zcmp_ir_count_en <= '1';
+  end generate zcmp_pchold_disabled;
 
   -- CSR Access Check -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
