@@ -42,7 +42,7 @@ architecture neorv32_cache_ram_rtl of neorv32_cache_ram is
 begin
 
   -- notifier --
-  assert false report "[NEORV32] Using default CACHE RAM component." severity warning;
+  assert false report "[NEORV32] Using default CACHE RAM component." severity note;
 
   -- tag RAM --
   tag_memory_inst: entity neorv32.neorv32_prim_spram
