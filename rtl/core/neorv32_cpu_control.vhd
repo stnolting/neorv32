@@ -169,6 +169,10 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal ebreak_trig  : std_ulogic; -- environment break exception trigger
   signal trap_env     : std_ulogic_vector(6 downto 0); -- environment call cause-value helper
 
+  -- Zcmp PC hold --
+  signal zcmp_event, zcmp_event_nxt, zcmp_event_reset : std_ulogic;
+  signal zcmp_pc, zcmp_pc_nxt : std_ulogic_vector(31 downto 0);
+
 begin
 
   -- ****************************************************************************************************************************
@@ -205,13 +209,14 @@ begin
     elsif rising_edge(clk_i) then
       ctrl <= ctrl_nxt;
       exec <= exec_nxt;
+      zcmp_pc <= zcmp_pc_nxt;
     end if;
   end process exec_sync;
 
 
   -- Execution Micro Sequencer Comb ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  exec_comb: process(exec, debug_ctrl, trap, hwtrig_i, frontend_i, csr, ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken)
+  exec_comb: process(exec, debug_ctrl, trap, hwtrig_i, frontend_i, csr, ctrl, alu_cp_done_i, lsu_wait_i, alu_add_i, branch_taken, zcmp_pc, zcmp_event)
     variable opcode_v : std_ulogic_vector(6 downto 0);
     variable funct7_v : std_ulogic_vector(6 downto 0);
     variable funct3_v : std_ulogic_vector(2 downto 0);
@@ -233,6 +238,8 @@ begin
     ctrl_nxt.csr_addr <= ctrl.csr_addr; -- keep previous CSR address
     ctrl_nxt.lsu_rd   <= ctrl.lsu_rd; -- keep memory read access type
     ctrl_nxt.lsu_wr   <= ctrl.lsu_wr; -- keep memory write access type
+    zcmp_pc_nxt       <= zcmp_pc; -- hold by default
+    zcmp_event_reset  <= '0';
 
     -- immediate --
     case opcode_v is
@@ -280,13 +287,22 @@ begin
           ctrl_nxt.alu_imm <= x"00000004";
         end if;
         -- dispatch instruction --
-        if (trap.env_pend = '1') or (trap.exc_fire = '1') then -- pending trap or pending exception (fast)
+        if ((trap.env_pend = '1') or (trap.exc_fire = '1')) and (frontend_i.zcmp_atomic_tail = '0') then -- pending trap or pending exception (fast); not during zcmp atomic tail
           exec_nxt.state <= S_TRAP_ENTER;
         elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
           trap.instr_be  <= frontend_i.fault; -- access fault during instruction fetch
           exec_nxt.ci    <= frontend_i.compr; -- this is a decompressed instruction
           exec_nxt.ir    <= frontend_i.instr; -- actual instruction word
-          exec_nxt.pc    <= exec.pc2(31 downto 1) & '0';
+          -- zcmp PC hold: capture PC at start of sequence, then freeze during micro-ops --
+          if (zcmp_event = '1') then -- first dispatch after zcmp detected: save current pc2
+            zcmp_pc_nxt      <= exec.pc2(31 downto 1) & '0';
+            zcmp_event_reset <= '1';
+          end if;
+          if (frontend_i.zcmp_in_uop_seq = '1') and (zcmp_event = '0') then -- during zcmp micro-ops: hold PC
+            exec_nxt.pc <= zcmp_pc;
+          else -- normal PC advance
+            exec_nxt.pc <= exec.pc2(31 downto 1) & '0';
+          end if;
           exec_nxt.state <= S_EXECUTE; -- start executing new instruction
           if (frontend_i.instr(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
             ctrl_nxt.csr_addr <= frontend_i.instr(instr_imm12_msb_c downto instr_imm12_lsb_c); -- reduce switching activity on csr_addr net
@@ -319,7 +335,11 @@ begin
 
       when S_EXECUTE => -- decode and prepare execution (FSM will be here for exactly 1 cycle in any case)
       -- ------------------------------------------------------------
-        exec_nxt.pc2 <= alu_add_i(31 downto 1) & '0'; -- next PC = PC + immediate
+        if (frontend_i.zcmp_in_uop_seq = '1') then -- during zcmp micro-ops: freeze next-PC
+          exec_nxt.pc2 <= std_ulogic_vector(unsigned(zcmp_pc) + 2);
+        else
+          exec_nxt.pc2 <= alu_add_i(31 downto 1) & '0'; -- next PC = PC + immediate
+        end if;
         case opcode_v is
 
           -- register/immediate ALU operation --
@@ -532,7 +552,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   cnt_event(cnt_event_cy_c)       <= '0' when (exec.state = S_SLEEP)                                     else '1'; -- active cycle
   cnt_event(cnt_event_tm_c)       <= '0';
-  cnt_event(cnt_event_ir_c)       <= '1' when (exec.state = S_EXECUTE)                                   else '0'; -- retired (=executed) instr.
+  cnt_event(cnt_event_ir_c)       <= '1' when (exec.state = S_EXECUTE) and ((frontend_i.zcmp_in_uop_seq = '0') or (frontend_i.zcmp_start = '1')) else '0'; -- retired (=executed) instr.
   cnt_event(cnt_event_compr_c)    <= '1' when (exec.state = S_EXECUTE) and (exec.ci = '1')               else '0'; -- executed compressed instr.
   cnt_event(cnt_event_wait_dis_c) <= '1' when (exec.state = S_DISPATCH) and (frontend_i.valid = '0')     else '0'; -- instruction dispatch wait
   cnt_event(cnt_event_wait_alu_c) <= '1' when (exec.state = S_ALU_WAIT)                                  else '0'; -- multi-cycle ALU wait
@@ -546,6 +566,32 @@ begin
   -- ****************************************************************************************************************************
   -- Zcmp micro op detection
   -- ****************************************************************************************************************************
+
+  zcmp_enabled:
+  if RISCV_ISA_Zcmp generate
+    -- single-bit register captures the zcmp_start signal from the frontend --
+    zcmp_event_sync: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        zcmp_event <= '0';
+      elsif rising_edge(clk_i) then
+        zcmp_event <= zcmp_event_nxt;
+      end if;
+    end process zcmp_event_sync;
+
+    zcmp_event_nxt <= '1' when (frontend_i.zcmp_start = '1') else
+                      '0' when (zcmp_event_reset = '1') else
+                      zcmp_event;
+  end generate;
+
+  zcmp_disabled:
+  if not RISCV_ISA_Zcmp generate
+    zcmp_event     <= '0';
+    zcmp_event_nxt <= '0';
+    zcmp_pc        <= (others => '0');
+    zcmp_pc_nxt    <= (others => '0');
+    zcmp_event_reset <= '0';
+  end generate;
 
   -- CSR Access Check -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

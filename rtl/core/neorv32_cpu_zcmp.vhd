@@ -51,7 +51,7 @@ architecture arch of neorv32_cpu_zcmp is
   signal zcmp_num_regs : integer range 0 to 15;
   signal zcmp_stack_adj_base : integer range 0 to 127;
   signal zcmp_stack_adj : integer range 0 to 255;
-  -- signal zcmp_in_uop_seq : std_ulogic; -- TODO needed?
+  signal zcmp_in_uop_seq_int : std_ulogic;
 
   signal zcmp_instr, zcmp_sw_instr, zcmp_lw_instr, zcmp_jalr_instr : std_ulogic_vector(31 downto 0);
   constant zcmp_sw_instr_opcode : std_ulogic_vector(6 downto 0) := "0100011";
@@ -152,18 +152,20 @@ begin
     end if;
   end process uop_fsm_sync;
 
-  uop_fsm_comb : process (uop_state_reg, zcmp_jalr_instr, zcmp_sa01_r1s, zcmp_sa01_r2s, zcmp_is_mvsa01, zcmp_is_mva01s, uop_ctr, fetch_restart, ipb_avail, zcmp_in_uop_seq, zcmp_is_popret, zcmp_is_popretz, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
+  zcmp_in_uop_seq <= zcmp_in_uop_seq_int;
+
+  uop_fsm_comb : process (uop_state_reg, zcmp_jalr_instr, zcmp_sa01_r1s, zcmp_sa01_r2s, zcmp_is_mvsa01, zcmp_is_mva01s, uop_ctr, fetch_restart, ipb_avail, zcmp_in_uop_seq_int, zcmp_is_popret, zcmp_is_popretz, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
   begin
 
     -- defaults
     uop_ctr_nxt_in_seq <= uop_ctr;
     uop_state_nxt <= uop_state_reg;
-    zcmp_in_uop_seq <= '0';
+    zcmp_in_uop_seq_int <= '0';
     frontend_bus_zcmp.valid <= '0';
     frontend_bus_zcmp.compr <= '1';
     frontend_bus_zcmp.fault <= '0';
     frontend_bus_zcmp.instr <= (others => '0');
-    frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq;
+    frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq_int;
     frontend_bus_zcmp.zcmp_atomic_tail <= '0';
     frontend_bus_zcmp.zcmp_start <= '0';
 
@@ -178,7 +180,7 @@ begin
         end if;
 
       when S_ZCMP_UOP_SEQ =>
-        zcmp_in_uop_seq <= '1';
+        zcmp_in_uop_seq_int <= '1';
         if (uop_ctr = 15) then -- last instruction
           frontend_bus_zcmp.instr <= zcmp_stack_adj_instr; -- issue stack pointer adjustment instruction
           frontend_bus_zcmp.valid <= '1';
@@ -216,7 +218,7 @@ begin
         -- because cm.push is often the first instruction after a branch instruction, this fsm begins to run before the frontend receives the restart signal. We abort on fetch.restart  
         if (fetch_restart = '1' or ctrl_i.cpu_trap = '1') then
           uop_state_nxt <= S_ZCMP_ABORT;
-          zcmp_in_uop_seq <= '0';
+          zcmp_in_uop_seq_int <= '0';
           uop_ctr_nxt_in_seq <= 0;
           frontend_bus_zcmp.valid <= '0';
           frontend_bus_zcmp.instr <= (others => '0');
@@ -224,7 +226,7 @@ begin
 
       when S_POPRET =>
         frontend_bus_zcmp.zcmp_atomic_tail <= '1'; -- no pending traps will be handled
-        zcmp_in_uop_seq <= '1';
+        zcmp_in_uop_seq_int <= '1';
         frontend_bus_zcmp.instr <= zcmp_jalr_instr;
         frontend_bus_zcmp.valid <= '1';
 
@@ -234,7 +236,7 @@ begin
 
       when S_POPRETZ =>
         frontend_bus_zcmp.zcmp_atomic_tail <= '1';
-        zcmp_in_uop_seq <= '1';
+        zcmp_in_uop_seq_int <= '1';
         frontend_bus_zcmp.instr <= zcmp_zero_a0_instr; --zero a0
         frontend_bus_zcmp.valid <= '1';
 
@@ -245,13 +247,13 @@ begin
         -- double move instruction, first uop
       when S_ZCMP_DOUBLE_MOVE_1 =>
         frontend_bus_zcmp.zcmp_atomic_tail <= '1';
-        zcmp_in_uop_seq <= '1';
+        zcmp_in_uop_seq_int <= '1';
 
         -- abort on previous branch
         if (fetch_restart = '1') then
           uop_state_nxt <= S_ZCMP_ABORT;
           frontend_bus_zcmp.zcmp_atomic_tail <= '0';
-          zcmp_in_uop_seq <= '0';
+          zcmp_in_uop_seq_int <= '0';
           uop_ctr_nxt_in_seq <= 0;
           frontend_bus_zcmp.valid <= '0';
           frontend_bus_zcmp.instr <= (others => '0');
@@ -272,13 +274,13 @@ begin
         -- double move instruction, second uop
       when S_ZCMP_DOUBLE_MOVE_2 =>
         frontend_bus_zcmp.zcmp_atomic_tail <= '1';
-        zcmp_in_uop_seq <= '1';
+        zcmp_in_uop_seq_int <= '1';
 
         -- abort on previous branch
         if (fetch_restart = '1') then
           uop_state_nxt <= S_ZCMP_ABORT;
           frontend_bus_zcmp.zcmp_atomic_tail <= '0';
-          zcmp_in_uop_seq <= '0';
+          zcmp_in_uop_seq_int <= '0';
           uop_ctr_nxt_in_seq <= 0;
           frontend_bus_zcmp.valid <= '0';
           frontend_bus_zcmp.instr <= (others => '0');
