@@ -1,6 +1,7 @@
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_package.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_sys.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_decompressor.vhd
+NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_zcmp.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_frontend.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_control.vhd
 NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_cpu_hwtrig.vhd
