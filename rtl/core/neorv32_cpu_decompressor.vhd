@@ -27,11 +27,7 @@ entity neorv32_cpu_decompressor is
     instr_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction
     instr_o : out std_ulogic_vector(31 downto 0);  -- decompressed instruction
     instr_is_zcmp : out std_ulogic; -- instruction is part of Zcmp extension
-    zcmp_is_push : out std_ulogic;
-    zcmp_is_popret : out std_ulogic; -- instruction is popret
-    zcmp_is_popretz : out std_ulogic; -- instruction is popretz
-    zcmp_is_mvsa01 : out std_ulogic;
-    zcmp_is_mva01s : out std_ulogic
+    zcmp_op : out zcmp_op_t -- Zcmp operation type
   );
 end neorv32_cpu_decompressor;
 
@@ -75,11 +71,7 @@ begin
     illegal <= '0';
     decoded <= x"00000003"; -- empty rv32 instruction
     instr_is_zcmp <= '0';
-    zcmp_is_popret <= '0';
-    zcmp_is_popretz <= '0';
-    zcmp_is_mvsa01 <= '0';
-    zcmp_is_mva01s <= '0';
-    zcmp_is_push <= '0';
+    zcmp_op <= ZCMP_OP_NONE;
 
     -- decoder --
     case instr_i(ci_opcode_msb_c downto ci_opcode_lsb_c) is
@@ -377,31 +369,32 @@ begin
               end if;
             end if;
 
-          when "101" =>      
-            
-          if ZCMP_EN then 
+          when "101" =>
+
+          if ZCMP_EN then
             case instr_i(12 downto 8) is
               when "11000" => -- cm.push
                instr_is_zcmp <= '1';
-               zcmp_is_push <= '1';
+               zcmp_op <= ZCMP_OP_PUSH;
               when "11010" => -- cm.pop
                instr_is_zcmp <= '1';
+               zcmp_op <= ZCMP_OP_POP;
               when "11110" => -- cm.popret
                instr_is_zcmp <= '1';
-               zcmp_is_popret<='1';
+               zcmp_op <= ZCMP_OP_POPRET;
               when "11100" => -- cm.popretz
                instr_is_zcmp <= '1';
-               zcmp_is_popretz <='1';
+               zcmp_op <= ZCMP_OP_POPRETZ;
               when others =>
                illegal <= '1';
             end case;
             if (instr_i(12 downto 10) = "011")  then -- double moves
                 if (instr_i(6 downto 5) = "01") then -- mvsa01
                   instr_is_zcmp <= '1';
-                  zcmp_is_mvsa01 <= '1';
+                  zcmp_op <= ZCMP_OP_MVSA01;
                 elsif (instr_i(6 downto 5) = "11") then -- mvsa01s
                   instr_is_zcmp <= '1';
-                  zcmp_is_mva01s <= '1';
+                  zcmp_op <= ZCMP_OP_MVA01S;
                 end if;
             end if;
           end if;

@@ -672,6 +672,18 @@ package neorv32_package is
     cpu_debug    => '0'
   );
 
+  -- Zcmp compressed instruction operation --------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  type zcmp_op_t is (
+    ZCMP_OP_NONE,
+    ZCMP_OP_PUSH,
+    ZCMP_OP_POP,
+    ZCMP_OP_POPRET,
+    ZCMP_OP_POPRETZ,
+    ZCMP_OP_MVSA01,
+    ZCMP_OP_MVA01S
+  );
+
   -- Instruction Fetch Interface ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   type if_bus_t is record

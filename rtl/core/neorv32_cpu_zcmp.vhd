@@ -25,14 +25,10 @@ entity neorv32_cpu_zcmp is
     rstn_i : in std_logic;
     zcmp_detect : in std_logic;
     ctrl_i : in ctrl_bus_t;
-    fetch_restart : in std_logic;  
+    fetch_restart : in std_logic;
     zcmp_instr_reg: in std_ulogic_vector(15 downto 0);
     ipb_avail : in std_ulogic_vector(1 downto 0);
-    zcmp_is_push : in std_ulogic;
-    zcmp_is_popret : in std_ulogic; -- instruction is popret
-    zcmp_is_popretz : in std_ulogic; -- instruction is popretz
-    zcmp_is_mvsa01 : in std_ulogic;
-    zcmp_is_mva01s : in std_ulogic;
+    zcmp_op : in zcmp_op_t; -- Zcmp operation type
     frontend_bus_zcmp : out if_bus_t;
     zcmp_in_uop_seq : out std_logic
   );
@@ -119,11 +115,11 @@ begin
                               zcmp_addi_instr_opcode; -- addi 
 
   -- use either the addi instruction with negative offset (push) or positive (pop)
-  zcmp_stack_adj_instr <= zcmp_push_stack_adj_instr when zcmp_is_push = '1' else
+  zcmp_stack_adj_instr <= zcmp_push_stack_adj_instr when zcmp_op = ZCMP_OP_PUSH else
                           zcmp_pop_stack_adj_instr;
 
   -- stack instruction is either a load or store depending on push/pop sequence
-  zcmp_instr <= zcmp_sw_instr when zcmp_is_push = '1' else
+  zcmp_instr <= zcmp_sw_instr when zcmp_op = ZCMP_OP_PUSH else
                 zcmp_lw_instr;
 
   -- li a0, 0 opcode                              
@@ -154,7 +150,7 @@ begin
 
   zcmp_in_uop_seq <= zcmp_in_uop_seq_int;
 
-  uop_fsm_comb : process (uop_state_reg, zcmp_jalr_instr, zcmp_sa01_r1s, zcmp_sa01_r2s, zcmp_is_mvsa01, zcmp_is_mva01s, uop_ctr, fetch_restart, ipb_avail, zcmp_in_uop_seq_int, zcmp_is_popret, zcmp_is_popretz, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
+  uop_fsm_comb : process (uop_state_reg, zcmp_jalr_instr, zcmp_sa01_r1s, zcmp_sa01_r2s, zcmp_op, uop_ctr, fetch_restart, ipb_avail, zcmp_in_uop_seq_int, ctrl_i, zcmp_detect, zcmp_num_regs, zcmp_instr, zcmp_stack_adj_instr)
   begin
 
     -- defaults
@@ -171,12 +167,15 @@ begin
 
     case uop_state_reg is
       when S_IDLE =>
-        if (zcmp_detect = '1') then -- 
-          if (zcmp_is_mvsa01 = '1' or zcmp_is_mva01s = '1') then
-            uop_state_nxt <= S_ZCMP_DOUBLE_MOVE_1;
-          else
-            uop_state_nxt <= S_ZCMP_UOP_SEQ;
-          end if;
+        if (zcmp_detect = '1') then
+          case zcmp_op is
+            when ZCMP_OP_MVSA01 | ZCMP_OP_MVA01S =>
+              uop_state_nxt <= S_ZCMP_DOUBLE_MOVE_1;
+            when ZCMP_OP_PUSH | ZCMP_OP_POP | ZCMP_OP_POPRET | ZCMP_OP_POPRETZ =>
+              uop_state_nxt <= S_ZCMP_UOP_SEQ;
+            when others =>
+              uop_state_nxt <= S_IDLE; -- should not happen
+          end case;
         end if;
 
       when S_ZCMP_UOP_SEQ =>
@@ -185,18 +184,20 @@ begin
           frontend_bus_zcmp.instr <= zcmp_stack_adj_instr; -- issue stack pointer adjustment instruction
           frontend_bus_zcmp.valid <= '1';
 
-          if (ctrl_i.if_ready = '1') then -- only advance if the uop has been acknowledged by control unit 
+          if (ctrl_i.if_ready = '1') then -- only advance if the uop has been acknowledged by control unit
             uop_ctr_nxt_in_seq <= 0;
-
-            if (zcmp_is_popret = '1') then
-              frontend_bus_zcmp.zcmp_atomic_tail <= '1';
-              uop_state_nxt <= S_POPRET; -- issue return instruction
-            elsif (zcmp_is_popretz = '1') then
-              frontend_bus_zcmp.zcmp_atomic_tail <= '1';
-              uop_state_nxt <= S_POPRETZ; -- zero a0 before returning  
-            else
-              uop_state_nxt <= S_IDLE; -- cm.push is finished after stack adjustment
-            end if;
+            case zcmp_op is
+              when ZCMP_OP_POPRET =>
+                frontend_bus_zcmp.zcmp_atomic_tail <= '1';
+                uop_state_nxt <= S_POPRET;
+              when ZCMP_OP_POPRETZ =>
+                frontend_bus_zcmp.zcmp_atomic_tail <= '1';
+                uop_state_nxt <= S_POPRETZ;
+              when ZCMP_OP_PUSH | ZCMP_OP_POP =>
+                uop_state_nxt <= S_IDLE;
+              when others =>
+                uop_state_nxt <= S_IDLE; -- should not happen
+            end case;
           end if;
 
         else
@@ -259,11 +260,14 @@ begin
           frontend_bus_zcmp.instr <= (others => '0');
         end if;
 
-        if (zcmp_is_mva01s = '1') then
-          frontend_bus_zcmp.instr <= x"000" & zcmp_sa01_r1s & zcmp_addi_instr_funct3 & "01010" & zcmp_addi_instr_opcode;
-        else
-          frontend_bus_zcmp.instr <= x"000" & "01010" & zcmp_addi_instr_funct3 & zcmp_sa01_r1s & zcmp_addi_instr_opcode;
-        end if;
+        case zcmp_op is
+          when ZCMP_OP_MVA01S =>
+            frontend_bus_zcmp.instr <= x"000" & zcmp_sa01_r1s & zcmp_addi_instr_funct3 & "01010" & zcmp_addi_instr_opcode;
+          when ZCMP_OP_MVSA01 =>
+            frontend_bus_zcmp.instr <= x"000" & "01010" & zcmp_addi_instr_funct3 & zcmp_sa01_r1s & zcmp_addi_instr_opcode;
+          when others =>
+            frontend_bus_zcmp.instr <= (others => '0'); -- should not happen
+        end case;
 
         frontend_bus_zcmp.valid <= '1';
 
@@ -286,11 +290,14 @@ begin
           frontend_bus_zcmp.instr <= (others => '0');
         end if;
 
-        if (zcmp_is_mva01s = '1') then
-          frontend_bus_zcmp.instr <= x"000" & zcmp_sa01_r2s & zcmp_addi_instr_funct3 & "01011" & zcmp_addi_instr_opcode;
-        else
-          frontend_bus_zcmp.instr <= x"000" & "01011" & zcmp_addi_instr_funct3 & zcmp_sa01_r2s & zcmp_addi_instr_opcode;
-        end if;
+        case zcmp_op is
+          when ZCMP_OP_MVA01S =>
+            frontend_bus_zcmp.instr <= x"000" & zcmp_sa01_r2s & zcmp_addi_instr_funct3 & "01011" & zcmp_addi_instr_opcode;
+          when ZCMP_OP_MVSA01 =>
+            frontend_bus_zcmp.instr <= x"000" & "01011" & zcmp_addi_instr_funct3 & zcmp_sa01_r2s & zcmp_addi_instr_opcode;
+          when others =>
+            frontend_bus_zcmp.instr <= (others => '0'); -- should not happen
+        end case;
 
         frontend_bus_zcmp.valid <= '1';
 
@@ -301,13 +308,15 @@ begin
       when S_ZCMP_ABORT =>
         if (ipb_avail /= "00") then
           uop_state_nxt <= S_IDLE;
-
-          if (zcmp_detect = '1') then -- it is possible that the next instruction in one of the ipbs is from the zcmp extension 
-            if (zcmp_is_mvsa01 = '1' or zcmp_is_mva01s = '1') then
-              uop_state_nxt <= S_ZCMP_DOUBLE_MOVE_1;
-            else
-              uop_state_nxt <= S_ZCMP_UOP_SEQ;
-            end if;
+          if (zcmp_detect = '1') then -- it is possible that the next instruction in one of the ipbs is from the zcmp extension
+            case zcmp_op is
+              when ZCMP_OP_MVSA01 | ZCMP_OP_MVA01S =>
+                uop_state_nxt <= S_ZCMP_DOUBLE_MOVE_1;
+              when ZCMP_OP_PUSH | ZCMP_OP_POP | ZCMP_OP_POPRET | ZCMP_OP_POPRETZ =>
+                uop_state_nxt <= S_ZCMP_UOP_SEQ;
+              when others =>
+                uop_state_nxt <= S_IDLE;
+            end case;
           end if;
         end if;
 

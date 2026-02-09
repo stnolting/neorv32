@@ -106,11 +106,7 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
   -- decompressor signal for Zcmp
   signal instr_is_zcmp : std_ulogic;
-  signal zcmp_is_push : std_ulogic;
-  signal zcmp_is_popret : std_ulogic;
-  signal zcmp_is_popretz : std_ulogic;
-  signal zcmp_is_mvsa01 : std_ulogic;
-  signal zcmp_is_mva01s : std_ulogic;
+  signal zcmp_op : zcmp_op_t;
 
 begin
 
@@ -240,11 +236,7 @@ begin
         instr_i => cmd16,
         instr_o => cmd32,
         instr_is_zcmp => instr_is_zcmp,
-        zcmp_is_push => zcmp_is_push,
-        zcmp_is_popret => zcmp_is_popret,
-        zcmp_is_popretz => zcmp_is_popretz,
-        zcmp_is_mvsa01 => zcmp_is_mvsa01,
-        zcmp_is_mva01s => zcmp_is_mva01s
+        zcmp_op => zcmp_op
       );
 
     -- half-word select --
@@ -382,11 +374,7 @@ begin
         fetch_restart => fetch.reset,
         ipb_avail => ipb.avail,
         zcmp_instr_reg => zcmp_instr_reg,
-        zcmp_is_push => zcmp_is_push,
-        zcmp_is_mva01s => zcmp_is_mva01s,
-        zcmp_is_mvsa01 => zcmp_is_mvsa01,
-        zcmp_is_popret => zcmp_is_popret,
-        zcmp_is_popretz => zcmp_is_popretz,
+        zcmp_op => zcmp_op,
         frontend_bus_zcmp => frontend_bus_zcmp,
         zcmp_in_uop_seq => zcmp_in_uop_seq
       );
