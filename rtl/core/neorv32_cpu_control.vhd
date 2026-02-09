@@ -588,7 +588,7 @@ begin
                         else exec.pc2(31 downto 1) & '0';
 
     -- S_EXECUTE next-PC: frozen during micro-ops, normal ALU result otherwise --
-    zcmp_execute_pc2 <= std_ulogic_vector(unsigned(zcmp_pc_r) + 2) when (frontend_i.zcmp_in_uop_seq = '1')
+    zcmp_execute_pc2 <= zcmp_pc_r when (frontend_i.zcmp_in_uop_seq = '1')
                         else alu_add_i(31 downto 1) & '0';
 
     -- trap gate: suppress traps during atomic tail of zcmp sequence --

@@ -1,14 +1,14 @@
 
 
-
 #include "zcmp.h"
 #include "cm_mva01s.h"
 #include "cm_mvsa01.h"
 #include "cm_push.h"
 #include "cm_pop.h"
+#include "cm_exc.h"
+#include "cm_irq.h"
 
 #define BAUD_RATE 19200
-
 
 int main()
 {
@@ -19,13 +19,13 @@ int main()
 
 	neorv32_uart0_printf("\n");
 
-	cm_push();
+	// cm_push();
+	// cm_pop();
 	// cm_mva01s();
-
-	// neorv32_uart0_printf("\n");
-
 	// cm_mvsa01();
 
+	cm_exc();
+	cm_irq();
 
 	return 0;
 }
