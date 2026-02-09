@@ -82,11 +82,13 @@ entity neorv32_top is
 
     -- Internal Instruction memory (IMEM) --
     IMEM_EN             : boolean                        := false;         -- implement processor-internal instruction memory
+    IMEM_BASE           : std_ulogic_vector(31 downto 0) := x"00000000";   -- base address of processor-internal instruction memory (naturally aligned)
     IMEM_SIZE           : natural                        := 16*1024;       -- size of processor-internal instruction memory in bytes (use a power of 2)
     IMEM_OUTREG_EN      : boolean                        := false;         -- enable IMEM output register stage (for improved mapping/timing)
 
     -- Internal Data memory (DMEM) --
     DMEM_EN             : boolean                        := false;         -- implement processor-internal data memory
+    DMEM_BASE           : std_ulogic_vector(31 downto 0) := x"80000000";   -- base address of processor-internal data memory (naturally aligned)
     DMEM_SIZE           : natural                        := 8*1024;        -- size of processor-internal data memory in bytes (use a power of 2)
     DMEM_OUTREG_EN      : boolean                        := false;         -- enable DMEM output register stage (for improved mapping/timing)
 
@@ -104,7 +106,6 @@ entity neorv32_top is
     XBUS_REGSTAGE_EN    : boolean                        := false;         -- add XBUS register stage
 
     -- Processor peripherals --
-    IO_DISABLE_SYSINFO  : boolean                        := false;         -- disable the SYSINFO module (for advanced users only)
     IO_GPIO_NUM         : natural range 0 to 32          := 0;             -- number of GPIO input/output pairs
     IO_CLINT_EN         : boolean                        := false;         -- implement core local interruptor (CLINT)
     IO_UART0_EN         : boolean                        := false;         -- implement primary universal asynchronous receiver/transmitter (UART0)
@@ -261,7 +262,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant cpu_boot_addr_c : std_ulogic_vector(31 downto 0) :=
     sel_suv_f(boolean(BOOT_MODE_SELECT = 0), base_io_bootrom_c,
     sel_suv_f(boolean(BOOT_MODE_SELECT = 1), BOOT_ADDR_CUSTOM,
-    sel_suv_f(boolean(BOOT_MODE_SELECT = 2), mem_imem_base_c, x"00000000")));
+    sel_suv_f(boolean(BOOT_MODE_SELECT = 2), IMEM_BASE, x"00000000")));
 
   -- auto-configuration --
   constant num_cores_c     : natural := sel_natural_f(DUAL_CORE_EN, 2, 1);
@@ -269,7 +270,6 @@ architecture neorv32_top_rtl of neorv32_top is
   constant io_pwm_en_c     : boolean := boolean(IO_PWM_NUM > 0);
   constant io_gptmr_en_c   : boolean := boolean(IO_GPTMR_NUM > 0);
   constant cpu_smpmp_en_c  : boolean := boolean(PMP_NUM_REGIONS > 0);
-  constant io_sysinfo_en_c : boolean := not IO_DISABLE_SYSINFO;
   constant ocd_auth_en_c   : boolean := OCD_EN and OCD_AUTHENTICATION;
   constant cpu_sdtrig_en_c : boolean := OCD_EN and boolean(OCD_NUM_HW_TRIGGERS > 0);
   constant trace_en_c      : boolean := TRACE_PORT_EN or IO_TRACER_EN;
@@ -352,34 +352,34 @@ begin
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
       sel_string_f(boolean(num_cores_c = 1), "(single-core) ",   "") &
       sel_string_f(boolean(num_cores_c = 2), "(smp-dual-core) ", "") &
-      sel_string_f(IMEM_EN,         sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
-      sel_string_f(DMEM_EN,         "DMEM ",     "") &
-      sel_string_f(bootrom_en_c,    "BOOTROM ",  "") &
-      sel_string_f(ICACHE_EN,       "I-CACHE ",  "") &
-      sel_string_f(DCACHE_EN,       "D-CACHE ",  "") &
-      sel_string_f(XBUS_EN,         "XBUS ",     "") &
-      sel_string_f(IO_CLINT_EN,     "CLINT ",    "") &
-      sel_string_f(io_gpio_en_c,    "GPIO ",     "") &
-      sel_string_f(IO_UART0_EN,     "UART0 ",    "") &
-      sel_string_f(IO_UART1_EN,     "UART1 ",    "") &
-      sel_string_f(IO_SPI_EN,       "SPI ",      "") &
-      sel_string_f(IO_SDI_EN,       "SDI ",      "") &
-      sel_string_f(IO_TWI_EN,       "TWI ",      "") &
-      sel_string_f(IO_TWD_EN,       "TWD ",      "") &
-      sel_string_f(io_pwm_en_c,     "PWM ",      "") &
-      sel_string_f(IO_WDT_EN,       "WDT ",      "") &
-      sel_string_f(IO_TRNG_EN,      "TRNG ",     "") &
-      sel_string_f(IO_CFS_EN,       "CFS ",      "") &
-      sel_string_f(IO_NEOLED_EN,    "NEOLED ",   "") &
-      sel_string_f(io_gptmr_en_c,   "GPTMR ",    "") &
-      sel_string_f(IO_ONEWIRE_EN,   "ONEWIRE ",  "") &
-      sel_string_f(IO_DMA_EN,       "DMA ",      "") &
-      sel_string_f(IO_SLINK_EN,     "SLINK ",    "") &
-      sel_string_f(io_sysinfo_en_c, "SYSINFO ",  "") &
-      sel_string_f(IO_TRACER_EN,    "TRACER ",   "") &
-      sel_string_f(OCD_EN,          "OCD ",      "") &
-      sel_string_f(OCD_EN,          "OCD-AUTH ", "") &
-      sel_string_f(OCD_EN,          "OCD-HWBP ", "") &
+      sel_string_f(IMEM_EN,       sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
+      sel_string_f(DMEM_EN,       "DMEM ",     "") &
+      sel_string_f(bootrom_en_c,  "BOOTROM ",  "") &
+      sel_string_f(ICACHE_EN,     "I-CACHE ",  "") &
+      sel_string_f(DCACHE_EN,     "D-CACHE ",  "") &
+      sel_string_f(XBUS_EN,       "XBUS ",     "") &
+      sel_string_f(IO_CLINT_EN,   "CLINT ",    "") &
+      sel_string_f(io_gpio_en_c,  "GPIO ",     "") &
+      sel_string_f(IO_UART0_EN,   "UART0 ",    "") &
+      sel_string_f(IO_UART1_EN,   "UART1 ",    "") &
+      sel_string_f(IO_SPI_EN,     "SPI ",      "") &
+      sel_string_f(IO_SDI_EN,     "SDI ",      "") &
+      sel_string_f(IO_TWI_EN,     "TWI ",      "") &
+      sel_string_f(IO_TWD_EN,     "TWD ",      "") &
+      sel_string_f(io_pwm_en_c,   "PWM ",      "") &
+      sel_string_f(IO_WDT_EN,     "WDT ",      "") &
+      sel_string_f(IO_TRNG_EN,    "TRNG ",     "") &
+      sel_string_f(IO_CFS_EN,     "CFS ",      "") &
+      sel_string_f(IO_NEOLED_EN,  "NEOLED ",   "") &
+      sel_string_f(io_gptmr_en_c, "GPTMR ",    "") &
+      sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ",  "") &
+      sel_string_f(IO_DMA_EN,     "DMA ",      "") &
+      sel_string_f(IO_SLINK_EN,   "SLINK ",    "") &
+      sel_string_f(true,          "SYSINFO ",  "") & -- always enabled
+      sel_string_f(IO_TRACER_EN,  "TRACER ",   "") &
+      sel_string_f(OCD_EN,        "OCD ",      "") &
+      sel_string_f(OCD_EN,        "OCD-AUTH ", "") &
+      sel_string_f(OCD_EN,        "OCD-HWBP ", "") &
       ""
       severity note;
 
@@ -391,11 +391,7 @@ begin
     assert (CLOCK_FREQUENCY > 0) report
       "[NEORV32] CLOCK_FREQUENCY must be configured according to the frequency of clk_i port!" severity warning;
 
-    -- SYSINFO disabled --
-    assert io_sysinfo_en_c report
-      "[NEORV32] SYSINFO module disabled - software framework will not function properly!" severity warning;
-
-    -- Boot configuration notifier --
+    -- boot configuration notifier --
     assert not (BOOT_MODE_SELECT = 0) report
       "[NEORV32] BOOT_MODE_SELECT 0 - booting via bootloader" severity note;
     assert not (BOOT_MODE_SELECT = 1) report
@@ -411,9 +407,17 @@ begin
     assert not (DUAL_CORE_EN and (not IO_CLINT_EN)) report
       "[NEORV32] SMP dual-core configuration requires the CLINT!" severity error;
 
-    -- XBUS burst transfers --
-    assert not (XBUS_EN and CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN)) report
-      "[NEORV32] XBUS will emit burst transfers for cached accesses." severity warning;
+    -- custom IMEM adress --
+    assert not (IMEM_EN and (IMEM_BASE /= x"00000000")) report
+      "[NEORV32] Using non-default IMEM base address. Configure SW framework accordingly." severity warning;
+    assert (or_reduce_f(IMEM_BASE(index_size_f(imem_size_c)-1 downto 0)) = '0') report
+      "[NEORV32] IMEM base address has to be naturally aligned to its size!" severity error;
+
+    -- custom DMEM adress --
+    assert not (DMEM_EN and (DMEM_BASE /= x"80000000")) report
+      "[NEORV32] Using non-default DMEM base address. Configure SW framework accordingly." severity warning;
+    assert (or_reduce_f(DMEM_BASE(index_size_f(dmem_size_c)-1 downto 0)) = '0') report
+      "[NEORV32] DMEM base address has to be naturally aligned to its size!" severity error;
 
   end generate;
 
@@ -777,11 +781,11 @@ begin
     TMO_EXT => XBUS_TIMEOUT,
     -- port A: internal IMEM --
     A_EN    => IMEM_EN,
-    A_BASE  => mem_imem_base_c,
+    A_BASE  => IMEM_BASE,
     A_SIZE  => imem_size_c,
     -- port B: internal DMEM --
     B_EN    => DMEM_EN,
-    B_BASE  => mem_dmem_base_c,
+    B_BASE  => DMEM_BASE,
     B_SIZE  => dmem_size_c,
     -- port C: IO --
     C_EN    => true,
@@ -916,38 +920,38 @@ begin
     neorv32_bus_io_switch_inst: entity neorv32.neorv32_bus_io_switch
     generic map (
       DEV_SIZE  => iodev_size_c,
-      DEV_00_EN => bootrom_en_c,    DEV_00_BASE => base_io_bootrom_c,
-      DEV_01_EN => false,           DEV_01_BASE => (others => '0'), -- reserved
-      DEV_02_EN => false,           DEV_02_BASE => (others => '0'), -- reserved
-      DEV_03_EN => false,           DEV_03_BASE => (others => '0'), -- reserved
-      DEV_04_EN => false,           DEV_04_BASE => (others => '0'), -- reserved
-      DEV_05_EN => false,           DEV_05_BASE => (others => '0'), -- reserved
-      DEV_06_EN => false,           DEV_06_BASE => (others => '0'), -- reserved
-      DEV_07_EN => false,           DEV_07_BASE => (others => '0'), -- reserved
-      DEV_08_EN => false,           DEV_08_BASE => (others => '0'), -- reserved
-      DEV_09_EN => false,           DEV_09_BASE => (others => '0'), -- reserved
-      DEV_10_EN => IO_TWD_EN,       DEV_10_BASE => base_io_twd_c,
-      DEV_11_EN => IO_CFS_EN,       DEV_11_BASE => base_io_cfs_c,
-      DEV_12_EN => IO_SLINK_EN,     DEV_12_BASE => base_io_slink_c,
-      DEV_13_EN => IO_DMA_EN,       DEV_13_BASE => base_io_dma_c,
-      DEV_14_EN => false,           DEV_14_BASE => (others => '0'), -- reserved
-      DEV_15_EN => false,           DEV_15_BASE => (others => '0'), -- reserved
-      DEV_16_EN => io_pwm_en_c,     DEV_16_BASE => base_io_pwm_c,
-      DEV_17_EN => io_gptmr_en_c,   DEV_17_BASE => base_io_gptmr_c,
-      DEV_18_EN => IO_ONEWIRE_EN,   DEV_18_BASE => base_io_onewire_c,
-      DEV_19_EN => IO_TRACER_EN,    DEV_19_BASE => base_io_tracer_c,
-      DEV_20_EN => IO_CLINT_EN,     DEV_20_BASE => base_io_clint_c,
-      DEV_21_EN => IO_UART0_EN,     DEV_21_BASE => base_io_uart0_c,
-      DEV_22_EN => IO_UART1_EN,     DEV_22_BASE => base_io_uart1_c,
-      DEV_23_EN => IO_SDI_EN,       DEV_23_BASE => base_io_sdi_c,
-      DEV_24_EN => IO_SPI_EN,       DEV_24_BASE => base_io_spi_c,
-      DEV_25_EN => IO_TWI_EN,       DEV_25_BASE => base_io_twi_c,
-      DEV_26_EN => IO_TRNG_EN,      DEV_26_BASE => base_io_trng_c,
-      DEV_27_EN => IO_WDT_EN,       DEV_27_BASE => base_io_wdt_c,
-      DEV_28_EN => io_gpio_en_c,    DEV_28_BASE => base_io_gpio_c,
-      DEV_29_EN => IO_NEOLED_EN,    DEV_29_BASE => base_io_neoled_c,
-      DEV_30_EN => io_sysinfo_en_c, DEV_30_BASE => base_io_sysinfo_c,
-      DEV_31_EN => OCD_EN,          DEV_31_BASE => base_io_ocd_c
+      DEV_00_EN => bootrom_en_c,  DEV_00_BASE => base_io_bootrom_c,
+      DEV_01_EN => false,         DEV_01_BASE => (others => '0'), -- reserved
+      DEV_02_EN => false,         DEV_02_BASE => (others => '0'), -- reserved
+      DEV_03_EN => false,         DEV_03_BASE => (others => '0'), -- reserved
+      DEV_04_EN => false,         DEV_04_BASE => (others => '0'), -- reserved
+      DEV_05_EN => false,         DEV_05_BASE => (others => '0'), -- reserved
+      DEV_06_EN => false,         DEV_06_BASE => (others => '0'), -- reserved
+      DEV_07_EN => false,         DEV_07_BASE => (others => '0'), -- reserved
+      DEV_08_EN => false,         DEV_08_BASE => (others => '0'), -- reserved
+      DEV_09_EN => false,         DEV_09_BASE => (others => '0'), -- reserved
+      DEV_10_EN => IO_TWD_EN,     DEV_10_BASE => base_io_twd_c,
+      DEV_11_EN => IO_CFS_EN,     DEV_11_BASE => base_io_cfs_c,
+      DEV_12_EN => IO_SLINK_EN,   DEV_12_BASE => base_io_slink_c,
+      DEV_13_EN => IO_DMA_EN,     DEV_13_BASE => base_io_dma_c,
+      DEV_14_EN => false,         DEV_14_BASE => (others => '0'), -- reserved
+      DEV_15_EN => false,         DEV_15_BASE => (others => '0'), -- reserved
+      DEV_16_EN => io_pwm_en_c,   DEV_16_BASE => base_io_pwm_c,
+      DEV_17_EN => io_gptmr_en_c, DEV_17_BASE => base_io_gptmr_c,
+      DEV_18_EN => IO_ONEWIRE_EN, DEV_18_BASE => base_io_onewire_c,
+      DEV_19_EN => IO_TRACER_EN,  DEV_19_BASE => base_io_tracer_c,
+      DEV_20_EN => IO_CLINT_EN,   DEV_20_BASE => base_io_clint_c,
+      DEV_21_EN => IO_UART0_EN,   DEV_21_BASE => base_io_uart0_c,
+      DEV_22_EN => IO_UART1_EN,   DEV_22_BASE => base_io_uart1_c,
+      DEV_23_EN => IO_SDI_EN,     DEV_23_BASE => base_io_sdi_c,
+      DEV_24_EN => IO_SPI_EN,     DEV_24_BASE => base_io_spi_c,
+      DEV_25_EN => IO_TWI_EN,     DEV_25_BASE => base_io_twi_c,
+      DEV_26_EN => IO_TRNG_EN,    DEV_26_BASE => base_io_trng_c,
+      DEV_27_EN => IO_WDT_EN,     DEV_27_BASE => base_io_wdt_c,
+      DEV_28_EN => io_gpio_en_c,  DEV_28_BASE => base_io_gpio_c,
+      DEV_29_EN => IO_NEOLED_EN,  DEV_29_BASE => base_io_neoled_c,
+      DEV_30_EN => true,          DEV_30_BASE => base_io_sysinfo_c, -- allways enabled
+      DEV_31_EN => OCD_EN,        DEV_31_BASE => base_io_ocd_c
     )
     port map (
       clk_i        => clk_i,
@@ -1481,61 +1485,53 @@ begin
 
     -- System Configuration Information Memory (SYSINFO) --------------------------------------
     -- -------------------------------------------------------------------------------------------
-    neorv32_sysinfo_enabled:
-    if io_sysinfo_en_c generate
-      neorv32_sysinfo_inst: entity neorv32.neorv32_sysinfo
-      generic map (
-        BUS_TMO_INT       => int_bus_tmo_c,
-        BUS_TMO_EXT       => XBUS_TIMEOUT,
-        NUM_HARTS         => num_cores_c,
-        CLOCK_FREQUENCY   => CLOCK_FREQUENCY,
-        BOOT_MODE_SELECT  => BOOT_MODE_SELECT,
-        INT_BOOTLOADER_EN => bootrom_en_c,
-        IMEM_EN           => IMEM_EN,
-        IMEM_ROM          => imem_as_rom_c,
-        IMEM_SIZE         => imem_size_c,
-        DMEM_EN           => DMEM_EN,
-        DMEM_SIZE         => dmem_size_c,
-        ICACHE_EN         => ICACHE_EN,
-        ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
-        DCACHE_EN         => DCACHE_EN,
-        DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
-        CACHE_BLOCK_SIZE  => CACHE_BLOCK_SIZE,
-        CACHE_BURSTS_EN   => CACHE_BURSTS_EN,
-        XBUS_EN           => XBUS_EN,
-        OCD_EN            => OCD_EN,
-        OCD_AUTH          => ocd_auth_en_c,
-        IO_GPIO_EN        => io_gpio_en_c,
-        IO_CLINT_EN       => IO_CLINT_EN,
-        IO_UART0_EN       => IO_UART0_EN,
-        IO_UART1_EN       => IO_UART1_EN,
-        IO_SPI_EN         => IO_SPI_EN,
-        IO_SDI_EN         => IO_SDI_EN,
-        IO_TWI_EN         => IO_TWI_EN,
-        IO_TWD_EN         => IO_TWD_EN,
-        IO_PWM_EN         => io_pwm_en_c,
-        IO_WDT_EN         => IO_WDT_EN,
-        IO_TRNG_EN        => IO_TRNG_EN,
-        IO_CFS_EN         => IO_CFS_EN,
-        IO_NEOLED_EN      => IO_NEOLED_EN,
-        IO_GPTMR_EN       => io_gptmr_en_c,
-        IO_ONEWIRE_EN     => IO_ONEWIRE_EN,
-        IO_DMA_EN         => IO_DMA_EN,
-        IO_SLINK_EN       => IO_SLINK_EN,
-        IO_TRACER_EN      => IO_TRACER_EN
-      )
-      port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => iodev_req(IODEV_SYSINFO),
-        bus_rsp_o => iodev_rsp(IODEV_SYSINFO)
-      );
-    end generate;
-
-    neorv32_sysinfo_disabled:
-    if not io_sysinfo_en_c generate
-      iodev_rsp(IODEV_SYSINFO) <= rsp_terminate_c;
-    end generate;
+    neorv32_sysinfo_inst: entity neorv32.neorv32_sysinfo
+    generic map (
+      BUS_TMO_INT       => int_bus_tmo_c,
+      BUS_TMO_EXT       => XBUS_TIMEOUT,
+      NUM_HARTS         => num_cores_c,
+      CLOCK_FREQUENCY   => CLOCK_FREQUENCY,
+      BOOT_MODE_SELECT  => BOOT_MODE_SELECT,
+      INT_BOOTLOADER_EN => bootrom_en_c,
+      IMEM_EN           => IMEM_EN,
+      IMEM_ROM          => imem_as_rom_c,
+      IMEM_SIZE         => imem_size_c,
+      DMEM_EN           => DMEM_EN,
+      DMEM_SIZE         => dmem_size_c,
+      ICACHE_EN         => ICACHE_EN,
+      ICACHE_NUM_BLOCKS => ICACHE_NUM_BLOCKS,
+      DCACHE_EN         => DCACHE_EN,
+      DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
+      CACHE_BLOCK_SIZE  => CACHE_BLOCK_SIZE,
+      CACHE_BURSTS_EN   => CACHE_BURSTS_EN,
+      XBUS_EN           => XBUS_EN,
+      OCD_EN            => OCD_EN,
+      OCD_AUTH          => ocd_auth_en_c,
+      IO_GPIO_EN        => io_gpio_en_c,
+      IO_CLINT_EN       => IO_CLINT_EN,
+      IO_UART0_EN       => IO_UART0_EN,
+      IO_UART1_EN       => IO_UART1_EN,
+      IO_SPI_EN         => IO_SPI_EN,
+      IO_SDI_EN         => IO_SDI_EN,
+      IO_TWI_EN         => IO_TWI_EN,
+      IO_TWD_EN         => IO_TWD_EN,
+      IO_PWM_EN         => io_pwm_en_c,
+      IO_WDT_EN         => IO_WDT_EN,
+      IO_TRNG_EN        => IO_TRNG_EN,
+      IO_CFS_EN         => IO_CFS_EN,
+      IO_NEOLED_EN      => IO_NEOLED_EN,
+      IO_GPTMR_EN       => io_gptmr_en_c,
+      IO_ONEWIRE_EN     => IO_ONEWIRE_EN,
+      IO_DMA_EN         => IO_DMA_EN,
+      IO_SLINK_EN       => IO_SLINK_EN,
+      IO_TRACER_EN      => IO_TRACER_EN
+    )
+    port map (
+      clk_i     => clk_i,
+      rstn_i    => rstn_sys,
+      bus_req_i => iodev_req(IODEV_SYSINFO),
+      bus_rsp_o => iodev_rsp(IODEV_SYSINFO)
+    );
 
   end generate;
 
