@@ -26,13 +26,6 @@ However, advanced users that do not want to use the default NEORV32 software fra
 entire SYSINFO module. This might also be suitable for setups that use the processor just as wrapper for a CPU-only
 configuration.
 
-.Disabling the SYSINFO Module
-[WARNING]
-Setting the `IO_DISABLE_SYSINFO` top entity generic to `true` will remove the SYSINFO module from the design.
-This option is suitable for advanced uses that wish to use a CPU-only setup that still contains the bus infrastructure.
-As a result, large parts of the NEORV32 software framework no longer work (e.g. most IO drivers, the RTE and the bootloader).
-**Hence, this option is not recommended.**
-
 
 **Register Map**
 

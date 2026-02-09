@@ -12,6 +12,7 @@
 | Software driver files:  | none                   |
 | Top entity ports:       | none                   |
 | Configuration generics: | `IMEM_EN`              | implement IMEM when `true`
+|                         | `IMEM_BASE`            | 32-bit base address (naturally aligned to IMEM size)
 |                         | `IMEM_SIZE`            | IMEM size in bytes (use a power of 2)
 |                         | `IMEM_OUTREG_EN`       | add IMEM output register stage
 |                         | `BOOT_MODE_SELECT`     | implement IMEM as ROM when `BOOT_MODE_SELECT` = 2; see <<_boot_configuration>>
@@ -33,7 +34,15 @@
 Implementation of the processor-internal instruction memory is enabled by the processor's
 `IMEM_EN` generic. The total memory size in bytes is defined via the `IMEM_SIZE` generic.
 Only sizes that are powers of two are supported. If enabled, the IMEM is mapped to base
-address `0x00000000` (see section <<_address_space>>).
+address `0x00000000` by default (see section <<_address_space>>).
+
+.Custom IMEM Base Address
+[IMPORTANT]
+The base address of the IMEM can be customized via the `IMEM_BASE` generic. Please note that
+the selected address must be naturally aligned to the IMEM size (`IMEM_SIZE`) and that there must
+be no overlap with other sections of the internal <<_address_space>> (internal DMEM if enabled
+and the internal IO/peripheral address space). Any non-default address must also be passed to the
+<<_linker_script>> (e.g. `USER_FLAGS += -Wl,--defsym,__neorv32_rom_base=<IMEM_BASE>`).
 
 By default the IMEM is implemented as true RAM so the content can be modified during run time.
 Alternatively, the IMEM can be implemented as **pre-initialized read-only memory (ROM)**, so the
