@@ -243,7 +243,7 @@ entity neorv32_top is
 
     -- CPU interrupts --
     irq_msi_i      : in  std_ulogic := 'L';                                  -- machine software interrupt, available if IO_CLINT_EN = false
-    irw_mti_i      : in  std_ulogic := 'L';                                  -- machine timer interrupt, available if IO_CLINT_EN = false
+    irq_mti_i      : in  std_ulogic := 'L';                                  -- machine timer interrupt, available if IO_CLINT_EN = false
     irq_mei_i      : in  std_ulogic := 'L'                                   -- machine external interrupt
   );
 end neorv32_top;
@@ -1133,7 +1133,7 @@ begin
     if not IO_CLINT_EN generate
       iodev_rsp(IODEV_CLINT) <= rsp_terminate_c;
       mtime_time_o           <= (others => '0');
-      mti                    <= (others => irw_mti_i); -- TODO: provide individual top ports for dual-core w/o internal CLINT
+      mti                    <= (others => irq_mti_i); -- TODO: provide individual top ports for dual-core w/o internal CLINT
       msi                    <= (others => irq_msi_i); -- TODO: provide individual top ports for dual-core w/o internal CLINT
     end generate;
 
