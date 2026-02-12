@@ -167,7 +167,7 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `mtime_time_o`   | 64 | out |   -   | CLINT.MTIMER system time output
 5+^| **RISC-V Machine-Mode <<_processor_interrupts>>**
 | `irq_msi_i`      |  1 |  in | `'L'` | machine software interrupt (RISC-V), high-level-active; available only if CLINT is not enabled
-| `irw_mti_i`      |  1 |  in | `'L'` | machine timer interrupt (RISC-V), high-level-active; available only if CLINT is not enabled
+| `irq_mti_i`      |  1 |  in | `'L'` | machine timer interrupt (RISC-V), high-level-active; available only if CLINT is not enabled
 | `irq_mei_i`      |  1 |  in | `'L'` | machine external interrupt (RISC-V), high-level-active
 |=======================
 
@@ -395,7 +395,7 @@ architecture specification. See CPU section <<_traps_exceptions_and_interrupts>>
 |=======================
 | Top signal  | Description
 | `irq_msi_i` | Machine software interrupt (`MSI`). This IRQ is only available if the processor-internal <<_core_local_interruptor_clint>> is not implemented.
-| `irw_mti_i` | Machine timer interrupt (`MTI`). This IRQ is only available if the processor-internal <<_core_local_interruptor_clint>> is not implemented.
+| `irq_mti_i` | Machine timer interrupt (`MTI`). This IRQ is only available if the processor-internal <<_core_local_interruptor_clint>> is not implemented.
 | `irq_mei_i` | Machine external interrupt (`MEI`). This interrupt is always available for custom use.
 |=======================
 
