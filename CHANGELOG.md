@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 12.02.2026 | 1.12.7.9 | :warning: fix typo in top's MTIME IRQ port name: `irw_mti_i` -> `irq_mti_i` | [1494](https://github.com/stnolting/neorv32/pull/1494) |
 | 08.02.2026 | 1.12.7.8 | add generics to customize IMEM and DMEM base addresses (`IMEM_BASE` & `DMEM_BASE`); :warning: remove `IO_DISABLE_SYSINFO` generic | [#1492](https://github.com/stnolting/neorv32/pull/1492) |
 | 03.02.2026 | 1.12.7.7 | minor rtl cleanups; improve timing of bus switch module | [#1489](https://github.com/stnolting/neorv32/pull/1489) |
 | 31.01.2026 | 1.12.7.6 | :warning: rename `Zxcfu` ISA extension to `Xcfu` | [#1487](https://github.com/stnolting/neorv32/pull/1487) |
