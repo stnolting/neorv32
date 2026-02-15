@@ -24,7 +24,7 @@
 
 
 /**********************************************************************//**
-// global trap handler table (for all cores!)
+// global trap handler table (for all CPU cores)
  **************************************************************************/
 static volatile uint32_t __attribute__((aligned(4))) __neorv32_rte_vector_lut[2][32];
 
@@ -63,7 +63,7 @@ static void __neorv32_rte_puth(uint32_t num) {
 
 
 /**********************************************************************//**
- * Default trap handler printing debug information.
+ * Default trap handler printing panic information.
  **************************************************************************/
 static void __neorv32_rte_panic(void) {
 
@@ -90,7 +90,7 @@ static void __neorv32_rte_panic(void) {
   uint32_t cause = neorv32_cpu_csr_read(CSR_MCAUSE);
   uint32_t fatal = 0;
   switch (cause) {
-    case TRAP_CODE_I_ACCESS:     __neorv32_rte_puts("Instruction access fault");  fatal = 1; break;
+    case TRAP_CODE_I_ACCESS:     __neorv32_rte_puts("Instruction access fault"); fatal = 1; break;
     case TRAP_CODE_I_ILLEGAL:    __neorv32_rte_puts("Illegal instruction"); break;
     case TRAP_CODE_I_MISALIGNED: __neorv32_rte_puts("Instruction address misaligned"); fatal = 1; break;
     case TRAP_CODE_BREAKPOINT:   __neorv32_rte_puts("Environment breakpoint"); break;
@@ -103,22 +103,22 @@ static void __neorv32_rte_panic(void) {
     case TRAP_CODE_MSI:          __neorv32_rte_puts("Machine software IRQ"); break;
     case TRAP_CODE_MTI:          __neorv32_rte_puts("Machine timer IRQ"); break;
     case TRAP_CODE_MEI:          __neorv32_rte_puts("Machine external IRQ"); break;
-    case TRAP_CODE_FIRQ_0:
-    case TRAP_CODE_FIRQ_1:
-    case TRAP_CODE_FIRQ_2:
-    case TRAP_CODE_FIRQ_3:
-    case TRAP_CODE_FIRQ_4:
-    case TRAP_CODE_FIRQ_5:
-    case TRAP_CODE_FIRQ_6:
-    case TRAP_CODE_FIRQ_7:
-    case TRAP_CODE_FIRQ_8:
-    case TRAP_CODE_FIRQ_9:
-    case TRAP_CODE_FIRQ_10:
-    case TRAP_CODE_FIRQ_11:
-    case TRAP_CODE_FIRQ_12:
-    case TRAP_CODE_FIRQ_13:
-    case TRAP_CODE_FIRQ_14:
-    case TRAP_CODE_FIRQ_15:      __neorv32_rte_puts("FIRQ channel "); __neorv32_rte_puth(cause); break;
+    case TRAP_CODE_FIRQ_0:       __neorv32_rte_puts("FIRQ-0 (TWD)"); break;
+    case TRAP_CODE_FIRQ_1:       __neorv32_rte_puts("FIRQ-1 (CFS)"); break;
+    case TRAP_CODE_FIRQ_2:       __neorv32_rte_puts("FIRQ-2 (UART0)"); break;
+    case TRAP_CODE_FIRQ_3:       __neorv32_rte_puts("FIRQ-3 (UART1)"); break;
+    case TRAP_CODE_FIRQ_4:       __neorv32_rte_puts("FIRQ-4 (reserved)"); break;
+    case TRAP_CODE_FIRQ_5:       __neorv32_rte_puts("FIRQ-5 (TRACER)"); break;
+    case TRAP_CODE_FIRQ_6:       __neorv32_rte_puts("FIRQ-6 (SPI)"); break;
+    case TRAP_CODE_FIRQ_7:       __neorv32_rte_puts("FIRQ-7 (TWI)"); break;
+    case TRAP_CODE_FIRQ_8:       __neorv32_rte_puts("FIRQ-8 (GPIO)"); break;
+    case TRAP_CODE_FIRQ_9:       __neorv32_rte_puts("FIRQ-9 (NEOLED)"); break;
+    case TRAP_CODE_FIRQ_10:      __neorv32_rte_puts("FIRQ-10 (DMA)"); break;
+    case TRAP_CODE_FIRQ_11:      __neorv32_rte_puts("FIRQ-11 (SDI)"); break;
+    case TRAP_CODE_FIRQ_12:      __neorv32_rte_puts("FIRQ-12 (GPTMR)"); break;
+    case TRAP_CODE_FIRQ_13:      __neorv32_rte_puts("FIRQ-13 (ONEWIRE)"); break;
+    case TRAP_CODE_FIRQ_14:      __neorv32_rte_puts("FIRQ-14 (SLINK)"); break;
+    case TRAP_CODE_FIRQ_15:      __neorv32_rte_puts("FIRQ-15 (TRNG)"); break;
     default:                     __neorv32_rte_puts("Unknown trap cause "); __neorv32_rte_puth(cause); fatal = 1; break;
   }
 
@@ -142,7 +142,7 @@ static void __neorv32_rte_panic(void) {
 
   // halt if fatal exception
   if (fatal) {
-    __neorv32_rte_puts(" FATAL! HALTING CPU </NEORV32-RTE-PANIC>" RTE_TERM_HL_OFF "\n");
+    __neorv32_rte_puts(" FATAL! Halting CPU </NEORV32-RTE-PANIC>" RTE_TERM_HL_OFF "\n");
     asm volatile (
       "__neorv32_rte_panic_halt:   \n" // halt and catch fire
       " wfi                        \n"
@@ -283,7 +283,12 @@ static void __attribute__((naked,aligned(4))) __neorv32_rte_core(void) {
     "lw x31, 31*4(sp) \n"
 #endif
     "lw x2,   2*4(sp) \n" // restore original stack pointer
-    "mret             \n"
+
+    // --------------------------------------------
+    // resume execution
+    // --------------------------------------------
+
+    "mret \n"
 	:
   : "i" (__neorv32_rte_vector_lut));
 }
