@@ -239,6 +239,13 @@ This is an open-source project that is free of charge and provided under an
 permissive [license](https://github.com/stnolting/neorv32/blob/main/LICENSE).
 See the [legal](https://stnolting.github.io/neorv32/#_legal) section for more information.
 
----------------------------------------
 
-**:heart: A big shout-out to the community and all the [contributors](https://github.com/stnolting/neorv32/graphs/contributors)!**
+## Contributing
+
+Contributions are very welcome! If you’d like to improve something, fix a bug, or add a feature,
+feel free to open an issue or submit a pull request. See how to [contribute](CONTRIBUTING.md).
+A big **thank you** goes out to the community and all contributors who help improve this project:
+
+<a href="https://github.com/stnolting/neorv32/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=stnolting/neorv32" />
+</a>
