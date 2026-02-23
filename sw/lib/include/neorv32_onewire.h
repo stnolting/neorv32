@@ -81,7 +81,6 @@ void    neorv32_onewire_enable(void);
 void    neorv32_onewire_disable(void);
 void    neorv32_onewire_flush(void);
 int     neorv32_onewire_sense(void);
-
 int     neorv32_onewire_busy(void);
 void    neorv32_onewire_reset(void);
 int     neorv32_onewire_reset_get_presence(void);
@@ -91,7 +90,6 @@ void    neorv32_onewire_write_bit(uint8_t bit);
 void    neorv32_onewire_read_byte(void);
 uint8_t neorv32_onewire_read_byte_get(void);
 void    neorv32_onewire_write_byte(uint8_t byte);
-
 int     neorv32_onewire_reset_blocking(void);
 uint8_t neorv32_onewire_read_bit_blocking(void);
 void    neorv32_onewire_write_bit_blocking(uint8_t bit);

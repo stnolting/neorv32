@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -142,11 +142,7 @@ uint32_t neorv32_cpu_pmp_get_num_regions(void) {
   neorv32_cpu_csr_write(CSR_PMPCFG3, mask);
 
   // sum up all written ones (only available PMPCFG* CSRs/entries will return =! 0)
-  union {
-    uint32_t uint32;
-    uint8_t  uint8[sizeof(uint32_t)/sizeof(uint8_t)];
-  } cnt;
-
+  subwords32_t cnt;
   cnt.uint32 = 0;
   cnt.uint32 += neorv32_cpu_csr_read(CSR_PMPCFG0) & mask;
   cnt.uint32 += neorv32_cpu_csr_read(CSR_PMPCFG1) & mask;

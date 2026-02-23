@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -49,7 +49,7 @@ void neorv32_sdi_setup(uint32_t irq_mask) {
  **************************************************************************/
 void neorv32_sdi_disable(void) {
 
-  NEORV32_SDI->CTRL &= ~((uint32_t)(1 << SDI_CTRL_EN));
+  __MMREG32_BCLR(NEORV32_SDI->CTRL, 1 << SDI_CTRL_EN);
 }
 
 
@@ -58,7 +58,7 @@ void neorv32_sdi_disable(void) {
  **************************************************************************/
 void neorv32_sdi_enable(void) {
 
-  NEORV32_SDI->CTRL |= ((uint32_t)(1 << SDI_CTRL_EN));
+  __MMREG32_BSET(NEORV32_SDI->CTRL, 1 << SDI_CTRL_EN);
 }
 
 
@@ -169,7 +169,7 @@ int neorv32_sdi_tx_full(void) {
  **************************************************************************/
 void neorv32_sdi_rx_clear(void) {
 
-  NEORV32_SDI->CTRL |= (uint32_t)(1 << SDI_CTRL_CLR_RX);
+  __MMREG32_BSET(NEORV32_SDI->CTRL, 1 << SDI_CTRL_CLR_RX);
 }
 
 
@@ -178,7 +178,7 @@ void neorv32_sdi_rx_clear(void) {
  **************************************************************************/
 void neorv32_sdi_tx_clear(void) {
 
-  NEORV32_SDI->CTRL |= (uint32_t)(1 << SDI_CTRL_CLR_TX);
+  __MMREG32_BSET(NEORV32_SDI->CTRL, 1 << SDI_CTRL_CLR_TX);
 }
 
 

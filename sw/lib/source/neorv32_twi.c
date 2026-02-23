@@ -62,7 +62,7 @@ int neorv32_twi_get_fifo_depth(void) {
  **************************************************************************/
 void neorv32_twi_disable(void) {
 
-  NEORV32_TWI->CTRL &= ~((uint32_t)(1 << TWI_CTRL_EN));
+  __MMREG32_BCLR(NEORV32_TWI->CTRL, 1 << TWI_CTRL_EN);
 }
 
 
@@ -71,7 +71,7 @@ void neorv32_twi_disable(void) {
  **************************************************************************/
 void neorv32_twi_enable(void) {
 
-  NEORV32_TWI->CTRL |= (uint32_t)(1 << TWI_CTRL_EN);
+  __MMREG32_BSET(NEORV32_TWI->CTRL, 1 << TWI_CTRL_EN);
 }
 
 

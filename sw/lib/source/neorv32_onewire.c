@@ -88,7 +88,7 @@ int neorv32_onewire_setup(uint32_t t_base) {
  **************************************************************************/
 void neorv32_onewire_enable(void) {
 
-  NEORV32_ONEWIRE->CTRL |= (1 << ONEWIRE_CTRL_EN);
+  __MMREG32_BSET(NEORV32_ONEWIRE->CTRL, 1 << ONEWIRE_CTRL_EN);
 }
 
 
@@ -97,7 +97,7 @@ void neorv32_onewire_enable(void) {
  **************************************************************************/
 void neorv32_onewire_disable(void) {
 
-  NEORV32_ONEWIRE->CTRL &= ~(1 << ONEWIRE_CTRL_EN);
+  __MMREG32_BCLR(NEORV32_ONEWIRE->CTRL, 1 << ONEWIRE_CTRL_EN);
 }
 
 
@@ -106,7 +106,7 @@ void neorv32_onewire_disable(void) {
  **************************************************************************/
 void neorv32_onewire_flush(void) {
 
-  NEORV32_ONEWIRE->CTRL &= ~(1 << ONEWIRE_CTRL_CLEAR);
+  __MMREG32_BSET(NEORV32_ONEWIRE->CTRL, 1 << ONEWIRE_CTRL_CLEAR);
 }
 
 
