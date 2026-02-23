@@ -246,6 +246,35 @@ typedef union {
 
 
 /**********************************************************************//**
+ * @name Memory-mapped register bit-mask operations
+ **************************************************************************/
+/**@{*/
+// generic
+#define __MMREG_BSET(r, m) (r |=  m)
+#define __MMREG_BCLR(r, m) (r &= ~m)
+#define __MMREG_BINV(r, m) (r ^=  m)
+// 32-bit access
+#ifdef __riscv_a // use atomic RMW instructions (Zaamo)
+#define __MMREG32_BSET(r, m) (neorv32_cpu_amoor( (uint32_t)(&r), (uint32_t)( m)))
+#define __MMREG32_BCLR(r, m) (neorv32_cpu_amoand((uint32_t)(&r), (uint32_t)(~m)))
+#define __MMREG32_BINV(r, m) (neorv32_cpu_amoxor((uint32_t)(&r), (uint32_t)( m)))
+#else // use individual load + modify + write instructions
+#define __MMREG32_BSET(r, m) __MMREG_BSET(r, (uint32_t)m)
+#define __MMREG32_BCLR(r, m) __MMREG_BCLR(r, (uint32_t)m)
+#define __MMREG32_BINV(r, m) __MMREG_BINV(r, (uint32_t)m)
+#endif
+// 16-bit access
+#define __MMREG16_BSET(r, m) __MMREG_BSET(r, (uint16_t)m)
+#define __MMREG16_BCLR(r, m) __MMREG_BCLR(r, (uint16_t)m)
+#define __MMREG16_BINV(r, m) __MMREG_BTOG(r, (uint16_t)m)
+// 8-bit access
+#define __MMREG8_BSET(r, m) __MMREG_BSET(r, (uint8_t)m)
+#define __MMREG8_BCLR(r, m) __MMREG_BCLR(r, (uint8_t)m)
+#define __MMREG8_BINV(r, m) __MMREG_BTOG(r, (uint8_t)m)
+/**@}*/
+
+
+/**********************************************************************//**
  * @name Include all processor header files
  **************************************************************************/
 /**@{*/

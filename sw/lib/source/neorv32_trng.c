@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -56,7 +56,7 @@ void neorv32_trng_disable(void) {
  **************************************************************************/
 void neorv32_trng_fifo_clear(void) {
 
-  NEORV32_TRNG->CTRL |= 1 << TRNG_CTRL_FIFO_CLR; // bit auto clears
+  __MMREG32_BSET(NEORV32_TRNG->CTRL, 1 << TRNG_CTRL_FIFO_CLR);
 }
 
 
