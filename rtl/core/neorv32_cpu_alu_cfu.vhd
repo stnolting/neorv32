@@ -41,7 +41,7 @@ end neorv32_cpu_alu_cfu;
 
   -- This CFU example implements the Extended Tiny Encryption Algorithm (XTEA).
   -- The CFU provides five R-type instructions for encryption and decryption.
-  -- andfour I-type instruction are used for reading/writing the XTEA key registers.
+  -- Four additional I-type instruction are used for reading/writing the XTEA key registers.
 
   -- The RTL code was implemented according to an open-source C reference:
   -- https://de.wikipedia.org/wiki/Extended_Tiny_Encryption_Algorithm
