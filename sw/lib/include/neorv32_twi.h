@@ -89,6 +89,7 @@ int  neorv32_twi_sense_scl(void);
 int  neorv32_twi_sense_sda(void);
 int  neorv32_twi_busy(void);
 int  neorv32_twi_get(uint8_t *data);
+void neorv32_twi_get_discard(void);
 int  neorv32_twi_transfer(uint8_t *data, int mack);
 void neorv32_twi_generate_stop(void);
 void neorv32_twi_generate_start(void);

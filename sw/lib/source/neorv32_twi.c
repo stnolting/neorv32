@@ -127,6 +127,15 @@ int neorv32_twi_get(uint8_t *data) {
 
 
  /**********************************************************************//**
+ * Discard oldest entry from RX FIFO (if available).
+ **************************************************************************/
+void neorv32_twi_get_discard(void) {
+
+  (void)NEORV32_TWI->DCMD;
+}
+
+
+ /**********************************************************************//**
  * TWI transfer: send data byte and also receive data byte.
  *
  * @note Blocking function.
