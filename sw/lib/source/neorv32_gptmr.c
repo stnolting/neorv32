@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -78,7 +78,7 @@ void neorv32_gptmr_setup(int prsc) {
  **************************************************************************/
 void neorv32_gptmr_enable_single(int sel) {
 
-  NEORV32_GPTMR->CSR0.ENABLE |= ((uint16_t)(1 << (sel & 15)));
+  __MMREG16_BSET(NEORV32_GPTMR->CSR0.ENABLE, 1 << (sel & 15));
 }
 
 
@@ -89,7 +89,7 @@ void neorv32_gptmr_enable_single(int sel) {
  **************************************************************************/
 void neorv32_gptmr_disable_single(int sel) {
 
-  NEORV32_GPTMR->CSR0.ENABLE &= ~((uint16_t)(1 << (sel & 15)));
+  __MMREG16_BCLR(NEORV32_GPTMR->CSR0.ENABLE, 1 << (sel & 15));
 }
 
 
@@ -100,7 +100,7 @@ void neorv32_gptmr_disable_single(int sel) {
  **************************************************************************/
 void neorv32_gptmr_enable_mask(uint16_t mask) {
 
-  NEORV32_GPTMR->CSR0.ENABLE |= mask;
+  __MMREG16_BSET(NEORV32_GPTMR->CSR0.ENABLE, mask);
 }
 
 
@@ -111,7 +111,7 @@ void neorv32_gptmr_enable_mask(uint16_t mask) {
  **************************************************************************/
 void neorv32_gptmr_disable_mask(uint16_t mask) {
 
-  NEORV32_GPTMR->CSR0.ENABLE &= ~mask;
+  __MMREG16_BCLR(NEORV32_GPTMR->CSR0.ENABLE, mask);
 }
 
 
@@ -170,9 +170,5 @@ int neorv32_gptmr_irq_get(void) {
  **************************************************************************/
 void neorv32_gptmr_irq_ack(int sel) {
 
-  if ((sel < 0) || (sel > 15)) {
-    return; // invalid select
-  }
-
-  NEORV32_GPTMR->CSR1.IRQ &= ~((uint16_t)(1 << sel));
+  __MMREG16_BCLR(NEORV32_GPTMR->CSR1.IRQ, 1 << (sel & 0xf));
 }

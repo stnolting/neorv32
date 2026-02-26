@@ -20,8 +20,8 @@ const uint32_t signature = 0xB007C0DE;
 enum operation_enum {
   OP_EXE,
   OP_VHD,
-  OP_HEX,
   OP_BIN,
+  OP_HEX,
   OP_COE,
   OP_MEM,
   OP_MIF
@@ -38,16 +38,17 @@ void print_help(void){
     "  -h            Show this help text and exit\n"
     "  -i file_name  Input binary file name; mandatory\n"
     "  -o file_name  Output file name; mandatory\n"
-    "  -t type       Type of image to generate; default is 'exe'\n"
+    "  -t format     Output image format; default is 'exe'\n"
+    "  -n number     Number of bytes per line (hex, coe, mem, mif); default is 4\n"
     "\n"
-    "Image type:\n"
+    "Image formats (using little-Endian byte ordering):\n"
     "  exe  Executable for bootloader upload (binary file with header) \n"
     "  vhd  VHDL memory image (raw executable)\n"
-    "  hex  ASCII hex file (raw executable)\n"
     "  bin  Binary file (raw executable)\n"
-    "  coe  COE file (raw executable)\n"
-    "  mem  MEM file (raw executable)\n"
-    "  mif  MIF file (raw executable)\n"
+    "  hex  HEX file ('number' bytes per line, ASCII, raw executable)\n"
+    "  coe  COE file ('number' bytes per line, ASCII, raw executable)\n"
+    "  mem  MEM file ('number' bytes per line, ASCII, raw executable)\n"
+    "  mif  MIF file ('number' bytes per line, ASCII, raw executable)\n"
   );
 }
 
@@ -85,8 +86,8 @@ int main(int argc, char *argv[]) {
       i++;
       if      (strcmp(argv[i], "exe") == 0) { operation = OP_EXE; }
       else if (strcmp(argv[i], "vhd") == 0) { operation = OP_VHD; }
-      else if (strcmp(argv[i], "hex") == 0) { operation = OP_HEX; }
       else if (strcmp(argv[i], "bin") == 0) { operation = OP_BIN; }
+      else if (strcmp(argv[i], "hex") == 0) { operation = OP_HEX; }
       else if (strcmp(argv[i], "coe") == 0) { operation = OP_COE; }
       else if (strcmp(argv[i], "mem") == 0) { operation = OP_MEM; }
       else if (strcmp(argv[i], "mif") == 0) { operation = OP_MIF; }
@@ -104,7 +105,7 @@ int main(int argc, char *argv[]) {
 
   // open input file
   input = fopen(input_file, "rb");
-  if(input == NULL) {
+  if (input == NULL) {
     printf("[ERROR] Input file error (%s)!\n", input_file);
     return -2;
   }
@@ -237,6 +238,16 @@ int main(int argc, char *argv[]) {
   }
 
   // --------------------------------------------------------------------------
+  // executable binary file
+  // --------------------------------------------------------------------------
+  else if (operation == OP_BIN) {
+
+    while(fread(&byte, sizeof(unsigned char), 1, input) != 0) {
+      fputc(byte, output);
+    }
+  }
+
+  // --------------------------------------------------------------------------
   // executable ASCII hex file
   // --------------------------------------------------------------------------
   else if (operation == OP_HEX) {
@@ -244,16 +255,6 @@ int main(int argc, char *argv[]) {
     while(fread(&u32, sizeof(uint32_t), 1, input) != 0) {
       snprintf(tmp_string, sizeof(tmp_string), "%08x\n", (unsigned int)u32);
       fputs(tmp_string, output);
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // executable binary file
-  // --------------------------------------------------------------------------
-  else if (operation == OP_BIN) {
-
-    while(fread(&byte, sizeof(unsigned char), 1, input) != 0) {
-      fputc(byte, output);
     }
   }
 

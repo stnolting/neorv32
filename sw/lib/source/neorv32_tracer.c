@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -81,7 +81,7 @@ int neorv32_tracer_run(void) {
  **************************************************************************/
 void neorv32_tracer_irq_ack(void) {
 
-  NEORV32_TRACER->CTRL |= (1 << TRACER_CTRL_IRQ_CLR);
+  __MMREG32_BSET(NEORV32_TRACER->CTRL, 1 << TRACER_CTRL_IRQ_CLR);
 }
 
 

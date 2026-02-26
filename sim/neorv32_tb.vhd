@@ -324,7 +324,7 @@ begin
     mtime_time_o => open,
     -- CPU Interrupts --
     irq_msi_i      => msi,
-    irw_mti_i      => mti,
+    irq_mti_i      => mti,
     irq_mei_i      => mei
   );
 

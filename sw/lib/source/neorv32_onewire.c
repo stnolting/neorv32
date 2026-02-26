@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -88,7 +88,7 @@ int neorv32_onewire_setup(uint32_t t_base) {
  **************************************************************************/
 void neorv32_onewire_enable(void) {
 
-  NEORV32_ONEWIRE->CTRL |= (1 << ONEWIRE_CTRL_EN);
+  __MMREG32_BSET(NEORV32_ONEWIRE->CTRL, 1 << ONEWIRE_CTRL_EN);
 }
 
 
@@ -97,7 +97,7 @@ void neorv32_onewire_enable(void) {
  **************************************************************************/
 void neorv32_onewire_disable(void) {
 
-  NEORV32_ONEWIRE->CTRL &= ~(1 << ONEWIRE_CTRL_EN);
+  __MMREG32_BCLR(NEORV32_ONEWIRE->CTRL, 1 << ONEWIRE_CTRL_EN);
 }
 
 
@@ -106,40 +106,29 @@ void neorv32_onewire_disable(void) {
  **************************************************************************/
 void neorv32_onewire_flush(void) {
 
-  NEORV32_ONEWIRE->CTRL &= ~(1 << ONEWIRE_CTRL_CLEAR);
+  __MMREG32_BSET(NEORV32_ONEWIRE->CTRL, 1 << ONEWIRE_CTRL_CLEAR);
 }
 
 
 /**********************************************************************//**
  * Get current bus state.
  *
- * @return 1 if bus is high, 0 if bus is low.
+ * @return Non-zero if bus is high, zero if bus is low.
  **************************************************************************/
 int neorv32_onewire_sense(void) {
 
-  if (NEORV32_ONEWIRE->CTRL & (1 << ONEWIRE_CTRL_SENSE)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_ONEWIRE->CTRL & (1 << ONEWIRE_CTRL_SENSE));
 }
 
 /**********************************************************************//**
  * Check if ONEWIRE module is busy.
  *
- * @return 0 if not busy, 1 if busy.
+ * @return Zero if not busy, non-zero if busy.
  **************************************************************************/
 int neorv32_onewire_busy(void) {
 
-  // check busy flag
-  if (NEORV32_ONEWIRE->CTRL & (1 << ONEWIRE_CTRL_BUSY)) {
-    return 1;
+  return (int)(NEORV32_ONEWIRE->CTRL & (1 << ONEWIRE_CTRL_BUSY));
   }
-  else {
-    return 0;
-  }
-}
 
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -164,17 +153,11 @@ void neorv32_onewire_reset(void) {
  *
  * @note This function is non-blocking.
  *
- * @return 0 if at lest one device is present, -1 otherwise
+ * @return Zero if at lest one device is present, non-zero otherwise
  **************************************************************************/
 int neorv32_onewire_reset_get_presence(void) {
 
-  // check presence bit
-  if (NEORV32_ONEWIRE->DCMD & (1 << ONEWIRE_DCMD_PRESENCE)) {
-    return 0;
-  }
-  else {
-    return -1;
-  }
+  return (int)(NEORV32_ONEWIRE->DCMD & (1 << ONEWIRE_DCMD_PRESENCE));
 }
 
 

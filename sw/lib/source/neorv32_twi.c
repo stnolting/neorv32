@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -62,7 +62,7 @@ int neorv32_twi_get_fifo_depth(void) {
  **************************************************************************/
 void neorv32_twi_disable(void) {
 
-  NEORV32_TWI->CTRL &= ~((uint32_t)(1 << TWI_CTRL_EN));
+  __MMREG32_BCLR(NEORV32_TWI->CTRL, 1 << TWI_CTRL_EN);
 }
 
 
@@ -71,55 +71,40 @@ void neorv32_twi_disable(void) {
  **************************************************************************/
 void neorv32_twi_enable(void) {
 
-  NEORV32_TWI->CTRL |= (uint32_t)(1 << TWI_CTRL_EN);
+  __MMREG32_BSET(NEORV32_TWI->CTRL, 1 << TWI_CTRL_EN);
 }
 
 
 /**********************************************************************//**
  * Get current state of SCL bus line.
  *
- * @return 1 if SCL is high, 0 if SCL is low.
+ * @return non-zero if SCL is high, zero if SCL is low.
  **************************************************************************/
 int neorv32_twi_sense_scl(void) {
 
-  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_SENSE_SCL)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_TWI->CTRL & (1 << TWI_CTRL_SENSE_SCL));
 }
 
 
 /**********************************************************************//**
  * Get current state of SDA bus line.
  *
- * @return 1 if SDA is high, 0 if SDA is low.
+ * @return non-zero if SDA is high, zero if SDA is low.
  **************************************************************************/
 int neorv32_twi_sense_sda(void) {
 
-  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_SENSE_SDA)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_TWI->CTRL & (1 << TWI_CTRL_SENSE_SDA));
 }
 
 
 /**********************************************************************//**
  * Check if TWI controller is busy (TWI bus engine busy or TX FIFO not empty).
  *
- * @return 0 if idle, 1 if busy
+ * @return zero if idle, non-zero if busy
  **************************************************************************/
 int neorv32_twi_busy(void) {
 
-  if (NEORV32_TWI->CTRL & (1 << TWI_CTRL_BUSY)) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
+  return (int)(NEORV32_TWI->CTRL & (1 << TWI_CTRL_BUSY));
 }
 
 
@@ -138,6 +123,15 @@ int neorv32_twi_get(uint8_t *data) {
   uint32_t tmp = NEORV32_TWI->DCMD;
   *data = (uint8_t)tmp;
   return (int)((tmp >> TWI_DCMD_ACK) & 1);
+}
+
+
+ /**********************************************************************//**
+ * Discard oldest entry from RX FIFO (if available).
+ **************************************************************************/
+void neorv32_twi_get_discard(void) {
+
+  (void)NEORV32_TWI->DCMD;
 }
 
 

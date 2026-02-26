@@ -22,18 +22,18 @@ module neorv32_verilog_tb;
 
   // generator setup
   initial begin
-    if (`DUMP_WAVE == 1) begin
-      $dumpfile("wave.fst"); // write waveform data
-      $dumpvars();
-    end
-    $display ("\nNEORV32 Verilog testbench\n");
+`ifdef DUMP_WAVE
+    $dumpfile("wave.fst"); // write waveform data
+    $dumpvars();
+`endif
+    $display ("[TB] NEORV32 Verilog testbench\n");
     clk = 0;
     nrst = 0;
     #100; // active reset for 100 * timescale = 100 ns
     nrst = 1;
     #15_000_000;
     // if we reach this the simulation has failed
-    $display("Simulation terminated (time out)!");
+    $display("[TB] Simulation terminated (time out)!");
     $finish; // terminate
   end
 
@@ -63,29 +63,37 @@ module neorv32_verilog_tb;
     .valid_o (char_valid)
   );
 
-  // buffer the processor's UART data in a small FIFO-like queue
-  reg [7:0] char_buffer [0:6];
+  // line buffer for UART output
+  reg [7:0] uart_log [0:63];
   integer i;
 
-  always @(posedge clk) begin
-    // update char buffer
-    if (char_valid == 1'b1) begin
-      for (i=6; i>0; i=i-1) begin
-        char_buffer[i-1] <= char_buffer[i];
+  always @(posedge clk or negedge nrst) begin
+    if (nrst == 1'b0) begin
+      i <= 0;
+    end else begin
+      if (char_valid == 1'b1) begin
+        if ((char_data == 8'd10) || (char_data == 8'd13)) begin
+          i <= 0; // line break
+        end else begin
+          uart_log[i] <= char_data;
+          if (i >= 63) begin
+            i <= 0;
+          end else begin
+            i <= i + 1;
+          end
+        end
       end
-      char_buffer[6] <= char_data;
-    end
-    // check for result string: "NEORV32" is sent by the default bootloader right after reset
-    if ((char_buffer[0] == "N") &&
-        (char_buffer[1] == "E") &&
-        (char_buffer[2] == "O") &&
-        (char_buffer[3] == "R") &&
-        (char_buffer[4] == "V") &&
-        (char_buffer[5] == "3") &&
-        (char_buffer[6] == "2")) begin
-      $display (""); // force line break
-      $display("Simulation successful!");
-      $finish; // terminate
+      // check for result string: "NEORV32" is sent by the default bootloader right after reset
+      if ((uart_log[0] == "N") &&
+          (uart_log[1] == "E") &&
+          (uart_log[2] == "O") &&
+          (uart_log[3] == "R") &&
+          (uart_log[4] == "V") &&
+          (uart_log[5] == "3") &&
+          (uart_log[6] == "2")) begin
+        $display("\n[TB] Simulation successful!");
+        $finish; // terminate
+      end
     end
   end
 

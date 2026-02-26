@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -66,7 +66,7 @@ void neorv32_pwm_set_clock(int prsc) {
  **************************************************************************/
 void neorv32_pwm_ch_enable_mask(uint32_t mask) {
 
-  NEORV32_PWM->ENABLE |= mask;
+  __MMREG32_BSET(NEORV32_PWM->ENABLE, mask);
 }
 
 
@@ -77,7 +77,7 @@ void neorv32_pwm_ch_enable_mask(uint32_t mask) {
  **************************************************************************/
 void neorv32_pwm_ch_disable_mask(uint32_t mask) {
 
-  NEORV32_PWM->ENABLE &= ~mask;
+  __MMREG32_BCLR(NEORV32_PWM->ENABLE, mask);
 }
 
 
@@ -88,7 +88,7 @@ void neorv32_pwm_ch_disable_mask(uint32_t mask) {
  **************************************************************************/
 void neorv32_pwm_ch_enable_single(int ch) {
 
-  NEORV32_PWM->ENABLE |= (1 << (ch & 0x1fu));
+  __MMREG32_BSET(NEORV32_PWM->ENABLE, 1 << (ch & 0x1fu));
 }
 
 
@@ -99,7 +99,7 @@ void neorv32_pwm_ch_enable_single(int ch) {
  **************************************************************************/
 void neorv32_pwm_ch_disable_single(int ch) {
 
-  NEORV32_PWM->ENABLE &= ~(1 << (ch & 0x1fu));
+  __MMREG32_BCLR(NEORV32_PWM->ENABLE, 1 << (ch & 0x1fu));
 }
 
 
@@ -117,15 +117,15 @@ void neorv32_pwm_ch_setup(int ch, int top, int pol, int mode) {
   uint32_t mask = 1 << ch;
 
   if (pol) {
-    NEORV32_PWM->POLARITY |= mask;
+    __MMREG32_BSET(NEORV32_PWM->POLARITY, mask);
   } else {
-    NEORV32_PWM->POLARITY &= ~mask;
+    __MMREG32_BCLR(NEORV32_PWM->POLARITY, mask);
   }
 
   if (mode) {
-    NEORV32_PWM->MODE |= mask;
+    __MMREG32_BSET(NEORV32_PWM->MODE, mask);
   } else {
-    NEORV32_PWM->MODE &= ~mask;
+    __MMREG32_BCLR(NEORV32_PWM->MODE, mask);
   }
 
   NEORV32_PWM->CHANNEL[ch].TOP = top;
