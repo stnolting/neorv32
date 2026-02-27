@@ -58,6 +58,7 @@ void neorv32_twd_irq_config(int enable, uint32_t irq_mask) {
   const uint32_t mask = (1 << TWD_CTRL_IRQ_RX_AVAIL) |
                         (1 << TWD_CTRL_IRQ_RX_FULL)  |
                         (1 << TWD_CTRL_IRQ_TX_EMPTY) |
+                        (1 << TWD_CTRL_IRQ_TX_NFULL) |
                         (1 << TWD_CTRL_IRQ_COM_BEG)  |
                         (1 << TWD_CTRL_IRQ_COM_END);
 

@@ -43,16 +43,16 @@ architecture neorv32_twd_rtl of neorv32_twd is
   constant ctrl_fsel_c         : natural :=  3; -- r/w: input filter / sample clock select
   constant ctrl_addr0_c        : natural :=  4; -- r/w: device address, bit 0 (LSB)
   constant ctrl_addr6_c        : natural := 10; -- r/w: device address, bit 6 (MSB)
-  constant ctrl_irq_rx_avail_c : natural := 11; -- r/w: IRQ if RX FIFO data available
+  constant ctrl_irq_rx_avail_c : natural := 11; -- r/w: IRQ if RX FIFO not empty
   constant ctrl_irq_rx_full_c  : natural := 12; -- r/w: IRQ if RX FIFO full
   constant ctrl_irq_tx_empty_c : natural := 13; -- r/w: IRQ if TX FIFO empty
-  constant ctrl_irq_com_beg_c  : natural := 14; -- r/w: IRQ if begin of communication
-  constant ctrl_irq_com_end_c  : natural := 15; -- r/w: IRQ if end of communication
-  constant ctrl_rx_size0_c     : natural := 16; -- r/-: log2(RX_FIFO size), bit 0 (LSB)
-  constant ctrl_rx_size3_c     : natural := 19; -- r/-: log2(RX_FIFO size), bit 3 (MSB)
-  constant ctrl_tx_size0_c     : natural := 20; -- r/-: log2(TX_FIFO size), bit 0 (LSB)
-  constant ctrl_tx_size3_c     : natural := 23; -- r/-: log2(TX_FIFO size), bit 3 (MSB)
---constant ctrl_???_c          : natural := 24; -- r/-: reserved
+  constant ctrl_irq_tx_nfull_c : natural := 14; -- r/w: IRQ if TX FIFO not full
+  constant ctrl_irq_com_beg_c  : natural := 15; -- r/w: IRQ if begin of communication
+  constant ctrl_irq_com_end_c  : natural := 16; -- r/w: IRQ if end of communication
+  constant ctrl_rx_size0_c     : natural := 17; -- r/-: log2(RX_FIFO size), bit 0 (LSB)
+  constant ctrl_rx_size3_c     : natural := 20; -- r/-: log2(RX_FIFO size), bit 3 (MSB)
+  constant ctrl_tx_size0_c     : natural := 21; -- r/-: log2(TX_FIFO size), bit 0 (LSB)
+  constant ctrl_tx_size3_c     : natural := 24; -- r/-: log2(TX_FIFO size), bit 3 (MSB)
   constant ctrl_rx_avail_c     : natural := 25; -- r/-: RX FIFO data available
   constant ctrl_rx_full_c      : natural := 26; -- r/-: RX FIFO full
   constant ctrl_tx_empty_c     : natural := 27; -- r/-: TX FIFO empty
@@ -76,6 +76,7 @@ architecture neorv32_twd_rtl of neorv32_twd is
     irq_rx_avail : std_ulogic;
     irq_rx_full  : std_ulogic;
     irq_tx_empty : std_ulogic;
+    irq_tx_nfull : std_ulogic;
     irq_com_beg  : std_ulogic;
     irq_com_end  : std_ulogic;
   end record;
@@ -139,6 +140,7 @@ begin
       ctrl.irq_rx_avail <= '0';
       ctrl.irq_rx_full  <= '0';
       ctrl.irq_tx_empty <= '0';
+      ctrl.irq_tx_nfull <= '0';
       ctrl.irq_com_beg  <= '0';
       ctrl.irq_com_end  <= '0';
     elsif rising_edge(clk_i) then
@@ -154,6 +156,7 @@ begin
         ctrl.irq_rx_avail <= bus_req_i.data(ctrl_irq_rx_avail_c);
         ctrl.irq_rx_full  <= bus_req_i.data(ctrl_irq_rx_full_c);
         ctrl.irq_tx_empty <= bus_req_i.data(ctrl_irq_tx_empty_c);
+        ctrl.irq_tx_nfull <= bus_req_i.data(ctrl_irq_tx_nfull_c);
         ctrl.irq_com_beg  <= bus_req_i.data(ctrl_irq_com_beg_c);
         ctrl.irq_com_end  <= bus_req_i.data(ctrl_irq_com_end_c);
       end if;
@@ -166,6 +169,7 @@ begin
           bus_rsp_o.data(ctrl_irq_rx_avail_c)                    <= ctrl.irq_rx_avail;
           bus_rsp_o.data(ctrl_irq_rx_full_c)                     <= ctrl.irq_rx_full;
           bus_rsp_o.data(ctrl_irq_tx_empty_c)                    <= ctrl.irq_tx_empty;
+          bus_rsp_o.data(ctrl_irq_tx_nfull_c)                    <= ctrl.irq_tx_nfull;
           bus_rsp_o.data(ctrl_irq_com_beg_c)                     <= ctrl.irq_com_beg;
           bus_rsp_o.data(ctrl_irq_com_end_c)                     <= ctrl.irq_com_end;
           bus_rsp_o.data(ctrl_rx_size3_c downto ctrl_rx_size0_c) <= std_ulogic_vector(to_unsigned(rx_size_c, 4));
@@ -255,9 +259,10 @@ begin
       irq_o <= '0';
     elsif rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
-               (ctrl.irq_rx_avail and      rx_fifo.avail)  or -- RX FIFO data available
+               (ctrl.irq_rx_avail and      rx_fifo.avail)  or -- RX FIFO not empty
                (ctrl.irq_rx_full  and (not rx_fifo.free))  or -- RX FIFO full
                (ctrl.irq_tx_empty and (not tx_fifo.avail)) or -- TX FIFO empty
+               (ctrl.irq_tx_nfull and      tx_fifo.free)   or -- TX FIFO not full
                (ctrl.irq_com_beg  and      com_beg)        or -- begin of communication
                (ctrl.irq_com_end  and      com_end));         -- end of communication
     end if;

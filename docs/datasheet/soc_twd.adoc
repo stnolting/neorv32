@@ -63,7 +63,7 @@ Depending on the transaction type, data is either read from the TX FIFO and tran
 
 **Read Operation: Host Reads Data from TWD Module**
 
-.TWD read operation timing (split across two lines)
+.Exemplary single-byte TWD read operation (split across two lines)
 [wavedrom, format="svg", align="center"]
 ----
 {signal: [
@@ -98,7 +98,7 @@ all-one bytes are sent back to the host. The transaction is terminated by a STOP
 
 **Write Operation: Host Writes Data to TWD Module**
 
-.TWD write operation timing (split across two lines)
+.Exemplary single-byte TWD write operation timing (split across two lines)
 [wavedrom, format="svg", align="center"]
 ----
 {signal: [
@@ -131,7 +131,7 @@ The transaction is terminated by a STOP condition.
 
 **Communication Status**
 
-Actual communication with the TWD is **started** when a START (or REPEATED-START) condition followed by the TWD device
+Actual communication with the TWD is (re-)**started** when a START or REPEATED-START condition followed by the TWD device
 address is received. This communication is **terminated** as soon as a STOP condition is received. The current state of the
 communication can be polled via the `TWD_CTRL_COM` control register flag.
 
@@ -147,13 +147,20 @@ The TWD module provides a single interrupt to signal certain FIFO conditions and
 The control register's `TWD_CTRL_IRQ_*` bits are used to enabled individual interrupt conditions. Note that all enabled
 conditions are logically OR-ed.
 
-* `TWD_CTRL_IRQ_RX_AVAIL`: trigger interrupt if at least one data byte is available in the RX FIFO (i.e. `TWD_CTRL_RX_AVAIL` is set)
-* `TWD_CTRL_IRQ_RX_FULL`: trigger interrupt if the RX FIFO is completely full (i.e. `TWD_CTRL_RX_FULL` is set)
-* `TWD_CTRL_IRQ_TX_EMPTY`: trigger interrupt if the TX FIFO is empty (i.e. `TWD_CTRL_TX_EMPTY` is set)
-* `TWD_CTRL_IRQ_COM_BEG`: trigger interrupt if a communication-start has been observed (i.e. `TWD_CTRL_COM_BEG` is set)
-* `TWD_CTRL_IRQ_COM_END`: trigger interrupt if a communication-end has been observed (i.e. `TWD_CTRL_COM_END` is set)
+.TWD Interrupts Sources
+[cols="<3,<6,<3"]
+[options="header",grid="all"]
+|=======================
+| Interrupt Enable | Description | Interrupt Condition
+| `TWD_CTRL_IRQ_RX_AVAIL` | Interrupt if at least one data byte is available in the RX FIFO. | `TWD_CTRL_RX_AVAIL == 1`
+| `TWD_CTRL_IRQ_RX_FULL`  | Interrupt if the RX FIFO is full.                                | `TWD_CTRL_RX_FULL == 1`
+| `TWD_CTRL_IRQ_TX_EMPTY` | Interrupt if the TX FIFO is empty.                               | `TWD_CTRL_TX_EMPTY == 1`
+| `TWD_CTRL_IRQ_TX_NFULL` | Interrupt if the TX FIFO is not full yet.                        | `TWD_CTRL_TX_FULL == 0`
+| `TWD_CTRL_IRQ_COM_BEG`  | Interrupt if a communication-start has been observed.            | `TWD_CTRL_COM_BEG == 1`
+| `TWD_CTRL_IRQ_COM_END`  | Interrupt if a communication-end has been observed.              | `TWD_CTRL_COM_END == 1`
+|=======================
 
-The interrupt remains active until all enabled interrupt-causing conditions are resolved.
+The CPU interrupt request remains active until all enabled interrupt-causing conditions are resolved.
 The interrupt can only trigger if the module is actually enabled (`TWD_CTRL_EN` is set).
 
 
@@ -183,26 +190,26 @@ twd_scl_i <= std_ulogic(scl_io); -- sense
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.20+<| `0xffea0000` .20+<| `CTRL` <|`0`     `TWD_CTRL_EN`                                   ^| r/w <| TWD enable, reset if cleared
-                                  <|`1`     `TWD_CTRL_CLR_RX`                               ^| -/w <| Clear RX FIFO, flag auto-clears
-                                  <|`2`     `TWD_CTRL_CLR_TX`                               ^| -/w <| Clear TX FIFO, flag auto-clears
-                                  <|`3`     `TWD_CTRL_FSEL`                                 ^| r/w <| Bus sample clock / filter select
-                                  <|`10:4`  `TWD_CTRL_DEV_ADDR6 : TWD_CTRL_DEV_ADDR0`       ^| r/w <| Device address (7-bit)
-                                  <|`11`    `TWD_CTRL_IRQ_RX_AVAIL`                         ^| r/w <| IRQ if RX FIFO data available
-                                  <|`12`    `TWD_CTRL_IRQ_RX_FULL`                          ^| r/w <| IRQ if RX FIFO full
-                                  <|`13`    `TWD_CTRL_IRQ_TX_EMPTY`                         ^| r/w <| IRQ if TX FIFO empty
-                                  <|`14`    `TWD_CTRL_IRQ_COM_BEG`                          ^| r/w <| IRQ if begin of communication
-                                  <|`15`    `TWD_CTRL_IRQ_COM_END`                          ^| r/w <| IRQ if end of communication
-                                  <|`19:16` `TWD_CTRL_RX_FIFO_MSB : TWD_CTRL_RX_FIFO_LSB`   ^| r/- <| FIFO depth; log2(`IO_TWD_RX_FIFO`)
-                                  <|`23:20` `TWD_CTRL_TX_FIFO_MSB : TWD_CTRL_TX_FIFO_LSB`   ^| r/- <| FIFO depth; log2(`IO_TWD_TX_FIFO`)
-                                  <|`24`    -                                               ^| r/- <| _reserved_, read as zero
-                                  <|`25`    `TWD_CTRL_RX_AVAIL`                             ^| r/- <| RX FIFO data available
-                                  <|`26`    `TWD_CTRL_RX_FULL`                              ^| r/- <| RX FIFO full
-                                  <|`27`    `TWD_CTRL_TX_EMPTY`                             ^| r/- <| TX FIFO empty
-                                  <|`28`    `TWD_CTRL_TX_FULL`                              ^| r/- <| TX FIFO full
-                                  <|`29`    `TWD_CTRL_COM_BEG`                              ^| r/c <| Communication has started; clear by writing 1
-                                  <|`30`    `TWD_CTRL_COM_END`                              ^| r/c <| Communication has ended; clear by writing 1
-                                  <|`31`    `TWD_CTRL_COM`                                  ^| r/- <| Active communication
-.2+<| `0xffea0004` .2+<| `DATA`   <|`7:0`   `TWD_DATA_MSB : TWD_DATA_LSB`                   ^| r/w <| RX/TX data FIFO access
-                                  <|`31:8`  -                                               ^| r/- <| _reserved_, read as zero
+.20+<| `0xffea0000` .20+<| `CTRL` <|`0`     `TWD_CTRL_EN`                                 ^| r/w <| TWD enable, reset if cleared
+                                  <|`1`     `TWD_CTRL_CLR_RX`                             ^| -/w <| Clear RX FIFO, flag auto-clears
+                                  <|`2`     `TWD_CTRL_CLR_TX`                             ^| -/w <| Clear TX FIFO, flag auto-clears
+                                  <|`3`     `TWD_CTRL_FSEL`                               ^| r/w <| Bus sample clock / filter select
+                                  <|`10:4`  `TWD_CTRL_DEV_ADDR6 : TWD_CTRL_DEV_ADDR0`     ^| r/w <| Device address (7-bit)
+                                  <|`11`    `TWD_CTRL_IRQ_RX_AVAIL`                       ^| r/w <| IRQ if RX FIFO data available
+                                  <|`12`    `TWD_CTRL_IRQ_RX_FULL`                        ^| r/w <| IRQ if RX FIFO full
+                                  <|`13`    `TWD_CTRL_IRQ_TX_EMPTY`                       ^| r/w <| IRQ if TX FIFO empty
+                                  <|`14`    `TWD_CTRL_IRQ_TX_NFULL`                       ^| r/w <| IRQ if TX FIFO is not full
+                                  <|`15`    `TWD_CTRL_IRQ_COM_BEG`                        ^| r/w <| IRQ if begin of communication
+                                  <|`16`    `TWD_CTRL_IRQ_COM_END`                        ^| r/w <| IRQ if end of communication
+                                  <|`20:17` `TWD_CTRL_RX_FIFO_MSB : TWD_CTRL_RX_FIFO_LSB` ^| r/- <| FIFO depth; log2(`IO_TWD_RX_FIFO`)
+                                  <|`24:21` `TWD_CTRL_TX_FIFO_MSB : TWD_CTRL_TX_FIFO_LSB` ^| r/- <| FIFO depth; log2(`IO_TWD_TX_FIFO`)
+                                  <|`25`    `TWD_CTRL_RX_AVAIL`                           ^| r/- <| RX FIFO data available
+                                  <|`26`    `TWD_CTRL_RX_FULL`                            ^| r/- <| RX FIFO full
+                                  <|`27`    `TWD_CTRL_TX_EMPTY`                           ^| r/- <| TX FIFO empty
+                                  <|`28`    `TWD_CTRL_TX_FULL`                            ^| r/- <| TX FIFO full
+                                  <|`29`    `TWD_CTRL_COM_BEG`                            ^| r/c <| Communication has started; clear by writing 1
+                                  <|`30`    `TWD_CTRL_COM_END`                            ^| r/c <| Communication has ended; clear by writing 1
+                                  <|`31`    `TWD_CTRL_COM`                                ^| r/- <| Active communication
+.2+<| `0xffea0004` .2+<| `DATA`   <|`7:0`   `TWD_DATA_MSB : TWD_DATA_LSB`                 ^| r/w <| RX/TX data FIFO access
+                                  <|`31:8`  -                                             ^| r/- <| _reserved_, read as zero
 |=======================
