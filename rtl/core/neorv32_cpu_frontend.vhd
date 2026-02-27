@@ -248,6 +248,8 @@ begin
     begin
       if (rstn_i = '0') then
         align_q <= '0'; -- start aligned after reset
+        zcmp_instr_reg <= (others => '0');
+        issue_state_reg <= S_ISSUE;
       elsif rising_edge(clk_i) then
         zcmp_instr_reg <= zcmp_instr_nxt;
         issue_state_reg <= issue_state_nxt;
