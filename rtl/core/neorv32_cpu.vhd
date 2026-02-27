@@ -33,13 +33,14 @@ entity neorv32_cpu is
     RISCV_ISA_U         : boolean;                        -- user mode extension
     RISCV_ISA_Zaamo     : boolean;                        -- atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc    : boolean;                        -- atomic reservation-set operations extension
+    RISCV_ISA_Zcb       : boolean;                        -- additional code size reduction instructions
+    RISCV_ISA_Zcmp      : boolean;                        -- implement additional code size reduction instructions
     RISCV_ISA_Zba       : boolean;                        -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean;                        -- basic bit-manipulation extension
     RISCV_ISA_Zbkb      : boolean;                        -- bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc      : boolean;                        -- carry-less multiplication instructions
     RISCV_ISA_Zbkx      : boolean;                        -- cryptography crossbar permutation extension
     RISCV_ISA_Zbs       : boolean;                        -- single-bit bit-manipulation extension
-    RISCV_ISA_Zcb       : boolean;                        -- additional code size reduction instructions
     RISCV_ISA_Zfinx     : boolean;                        -- 32-bit floating-point extension
     RISCV_ISA_Zibi      : boolean;                        -- branch with immediate
     RISCV_ISA_Zicntr    : boolean;                        -- base counters
@@ -104,6 +105,7 @@ architecture neorv32_cpu_rtl of neorv32_cpu is
   constant riscv_a_c   : boolean := RISCV_ISA_Zaamo and RISCV_ISA_Zalrsc; -- A: atomic memory operations
   constant riscv_b_c   : boolean := RISCV_ISA_Zba and RISCV_ISA_Zbb and RISCV_ISA_Zbs; -- B: bit manipulation
   constant riscv_zcb_c : boolean := RISCV_ISA_C and RISCV_ISA_Zcb; -- Zcb: additional compressed instructions
+  constant riscv_zcmp_c : boolean := RISCV_ISA_C and RISCV_ISA_Zcmp; -- Zcmp: additional compressed instructions
   constant riscv_zkt_c : boolean := CPU_FAST_SHIFT_EN; -- Zkt: data-independent execution time for cryptography operations
   constant riscv_zkn_c : boolean := RISCV_ISA_Zbkb and RISCV_ISA_Zbkc and RISCV_ISA_Zbkx and
                                     RISCV_ISA_Zkne and RISCV_ISA_Zknd and RISCV_ISA_Zknh; -- Zkn: NIST suite
@@ -213,7 +215,8 @@ begin
   generic map (
     HART_ID   => HART_ID,      -- hardware thread ID
     RISCV_C   => RISCV_ISA_C,  -- implement C ISA extension
-    RISCV_ZCB => RISCV_ISA_Zcb -- implement Zcb ISA sub-extension
+    RISCV_ZCB => riscv_zcb_c, -- implement Zcb ISA sub-extension
+    RISCV_ZCMP => riscv_zcmp_c -- implement Zcmp ISA sub-extension
   )
   port map (
     -- global control --
@@ -251,7 +254,8 @@ begin
     RISCV_ISA_U         => RISCV_ISA_U,         -- user mode extension
     RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,     -- atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,    -- atomic reservation-set operations extension
-    RISCV_ISA_Zcb       => riscv_zcb_c,         -- additional code size reduction instructions
+    RISCV_ISA_Zcb       => riscv_zcb_c,         -- additional code size reduction instructions (Zcb)
+    RISCV_ISA_Zcmp    => riscv_zcmp_c,     -- implement additional code size reduction instructions (Zcmp)
     RISCV_ISA_Zba       => RISCV_ISA_Zba,       -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       => RISCV_ISA_Zbb,       -- basic bit-manipulation extension
     RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,      -- bit-manipulation instructions for cryptography
