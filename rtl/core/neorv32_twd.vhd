@@ -123,7 +123,7 @@ architecture neorv32_twd_rtl of neorv32_twd is
   signal engine : engine_t;
 
   -- communication state monitor --
-  signal com_ff, com_beg, com_end : std_ulogic;
+  signal com_beg, com_end : std_ulogic;
 
 begin
 
@@ -368,7 +368,7 @@ begin
           if (tx_fifo.avail = '1') and (engine.cmd = '1') then -- data available for read?
             engine.sreg <= tx_fifo.rdata;
             engine.sda  <= tx_fifo.rdata(7);
-          else -- no TX data or write operation
+          else -- no TX data available or write operation
             engine.sreg <= (others => '1');
             engine.sda  <= '1';
           end if;
@@ -429,23 +429,21 @@ begin
   com_state_monitor: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      com_ff  <= '0';
       com_beg <= '0';
       com_end <= '0';
     elsif rising_edge(clk_i) then
-      com_ff <= engine.com;
       if (ctrl.enable = '0') then
         com_beg <= '0';
         com_end <= '0';
       else
         -- begin of communication --
-        if (engine.com = '1') and (com_ff = '0') then
+        if (engine.state = S_RESP) and (smp.scl_fall = '1') then
           com_beg <= '1';
         elsif (acc_we = '1') and (bus_req_i.addr(2) = '0') and (bus_req_i.data(ctrl_com_beg_c) = '1') then
           com_beg <= '0';
         end if;
         -- end of communication --
-        if (engine.com = '0') and (com_ff = '1') then
+        if (engine.state = S_IDLE) and (engine.com = '1') then
           com_end <= '1';
         elsif (acc_we = '1') and (bus_req_i.addr(2) = '0') and (bus_req_i.data(ctrl_com_end_c) = '1') then
           com_end <= '0';
