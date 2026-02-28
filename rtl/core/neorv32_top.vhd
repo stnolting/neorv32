@@ -457,11 +457,11 @@ begin
   -- **************************************************************************************************************************
 
   -- fast interrupt requests (FIRQs) --
-  cpu_firq(0)  <= firq(FIRQ_TWD); -- highest priority
+  cpu_firq(0)  <= '0'; -- reserved
   cpu_firq(1)  <= firq(FIRQ_CFS);
   cpu_firq(2)  <= firq(FIRQ_UART0);
   cpu_firq(3)  <= firq(FIRQ_UART1);
-  cpu_firq(4)  <= '0'; -- reserved
+  cpu_firq(4)  <= firq(FIRQ_TWD);
   cpu_firq(5)  <= firq(FIRQ_TRACER);
   cpu_firq(6)  <= firq(FIRQ_SPI);
   cpu_firq(7)  <= firq(FIRQ_TWI);
@@ -472,7 +472,7 @@ begin
   cpu_firq(12) <= firq(FIRQ_GPTMR);
   cpu_firq(13) <= firq(FIRQ_ONEWIRE);
   cpu_firq(14) <= firq(FIRQ_SLINK);
-  cpu_firq(15) <= firq(FIRQ_TRNG); -- lowest priority
+  cpu_firq(15) <= firq(FIRQ_TRNG);
 
   -- CPU core(s) + optional caches + bus switch --
   core_complex_gen:
