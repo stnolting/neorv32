@@ -1078,7 +1078,7 @@
       <description>Two-wire device controller</description>
       <baseAddress>0xFFEA0000</baseAddress>
 
-      <interrupt><name>TWD_FIRQ</name><value>0</value></interrupt>
+      <interrupt><name>TWD_FIRQ</name><value>4</value></interrupt>
 
       <addressBlock>
         <offset>0</offset>

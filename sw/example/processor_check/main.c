@@ -1194,67 +1194,10 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 0 (TWD)
+  // Fast interrupt channel 0 (reserved)
   // ----------------------------------------------------------
-  PRINT("[%i] FIRQ0 (TWD) ", cnt_test);
-
-  if (neorv32_twd_available()) {
-    trap_cause = trap_never_c;
-    cnt_test++;
-
-    // install TWD trap handler and enable IRQ source
-    neorv32_rte_handler_install(TWD_TRAP_CODE, twd_trap_handler);
-    neorv32_cpu_csr_set(CSR_MIE, 1 << TWD_FIRQ_ENABLE);
-    neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
-    twd_irq = 0;
-
-    // configure TWD and enable RX-avail, COM-started and COM-ended interrupts
-    neorv32_twd_setup(
-      0b1101001,
-      0,
-      (1 << TWD_CTRL_IRQ_RX_AVAIL) + (1 << TWD_CTRL_IRQ_COM_BEG) + (1 << TWD_CTRL_IRQ_COM_END)
-    );
-    neorv32_twd_put(0xAB);
-
-    // configure TWI
-    neorv32_twi_setup(CLK_PRSC_8, 0, 0);
-
-    // send I2C sequence and wait for 3 interrupts
-    neorv32_twi_generate_start_nonblocking();
-    neorv32_twi_send_nonblocking(0b11010010, 0); // write-address
-    neorv32_cpu_sleep(); // wait for communication-begin IRQ
-    //
-    neorv32_twi_send_nonblocking(0x47, 0);
-    neorv32_cpu_sleep(); // wait for RX-data-available IRQ
-    //
-    neorv32_twi_generate_start_nonblocking(); // repeated-start
-    neorv32_twi_send_nonblocking(0b11010011, 0); // read-address
-    neorv32_cpu_sleep(); // wait for communication-begin IRQ
-    //
-    neorv32_twi_send_nonblocking(0xFF, 1);
-    neorv32_twi_generate_stop_nonblocking();
-    neorv32_cpu_sleep(); // wait for communication-end IRQ
-
-    neorv32_cpu_csr_write(CSR_MIE, 0);
-
-    neorv32_twi_get_discard(); // discard write-address
-    neorv32_twi_get_discard(); // discard write-data
-    neorv32_twi_get_discard(); // discard read-data
-    uint8_t twd_rdata;
-    tmp_a = (uint32_t)neorv32_twi_get(&twd_rdata);
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWD_TRAP_CODE) && // interrupt triggered
-        (twd_irq == 0x00010102) && // all interrupt causes correct?
-        (neorv32_twd_rx_available() == 0) && // no more data received by TWD
-        (twd_rdata == 0xAB) && (tmp_a == 0)) { // correct read data + ACK
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT("[n.a.]\n");
-  }
+  PRINT("[%i] FIRQ0 (reserved) ", cnt_test);
+  PRINT("[n.a.]\n");
 
 
   // ----------------------------------------------------------
@@ -1375,10 +1318,67 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 4 (reserved)
+  // Fast interrupt channel 4 (TWD)
   // ----------------------------------------------------------
-  PRINT("[%i] FIRQ4 (reserved) ", cnt_test);
-  PRINT("[n.a.]\n");
+  PRINT("[%i] FIRQ4 (TWD) ", cnt_test);
+
+  if (neorv32_twd_available()) {
+    trap_cause = trap_never_c;
+    cnt_test++;
+
+    // install TWD trap handler and enable IRQ source
+    neorv32_rte_handler_install(TWD_TRAP_CODE, twd_trap_handler);
+    neorv32_cpu_csr_set(CSR_MIE, 1 << TWD_FIRQ_ENABLE);
+    neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+    twd_irq = 0;
+
+    // configure TWD and enable RX-avail, COM-started and COM-ended interrupts
+    neorv32_twd_setup(
+      0b1101001,
+      0,
+      (1 << TWD_CTRL_IRQ_RX_AVAIL) + (1 << TWD_CTRL_IRQ_COM_BEG) + (1 << TWD_CTRL_IRQ_COM_END)
+    );
+    neorv32_twd_put(0xAB);
+
+    // configure TWI
+    neorv32_twi_setup(CLK_PRSC_8, 0, 0);
+
+    // send I2C sequence and wait for 3 interrupts
+    neorv32_twi_generate_start_nonblocking();
+    neorv32_twi_send_nonblocking(0b11010010, 0); // write-address
+    neorv32_cpu_sleep(); // wait for communication-begin IRQ
+    //
+    neorv32_twi_send_nonblocking(0x47, 0);
+    neorv32_cpu_sleep(); // wait for RX-data-available IRQ
+    //
+    neorv32_twi_generate_start_nonblocking(); // repeated-start
+    neorv32_twi_send_nonblocking(0b11010011, 0); // read-address
+    neorv32_cpu_sleep(); // wait for communication-begin IRQ
+    //
+    neorv32_twi_send_nonblocking(0xFF, 1);
+    neorv32_twi_generate_stop_nonblocking();
+    neorv32_cpu_sleep(); // wait for communication-end IRQ
+
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    neorv32_twi_get_discard(); // discard write-address
+    neorv32_twi_get_discard(); // discard write-data
+    neorv32_twi_get_discard(); // discard read-data
+    uint8_t twd_rdata;
+    tmp_a = (uint32_t)neorv32_twi_get(&twd_rdata);
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWD_TRAP_CODE) && // interrupt triggered
+        (twd_irq == 0x00010102) && // all interrupt causes correct?
+        (neorv32_twd_rx_available() == 0) && // no more data received by TWD
+        (twd_rdata == 0xAB) && (tmp_a == 0)) { // correct read data + ACK
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT("[n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------
