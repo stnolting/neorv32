@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - Generic Cache - Data and Tag RAM Primitive Wrapper                 --
+-- NEORV32 SoC - Generic Cache - Status and Data RAM Primitive Wrapper              --
 -- -------------------------------------------------------------------------------- --
 -- Replace this file by a more efficient technology-specific IP wrapper. The read-  --
 -- during-write behavior is irrelevant as read/write accesses are mutual exclusive. --
@@ -13,7 +13,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -25,10 +24,15 @@ entity neorv32_cache_ram is
     OFS_WIDTH : natural  -- offset width
   );
   port (
+    -- global control --
     clk_i     : in  std_ulogic;                     -- global clock, rising edge
     addr_i    : in  std_ulogic_vector(31 downto 0); -- full byte address
-    tag_we_i  : in  std_ulogic;                     -- tag write-enable
-    tag_o     : out std_ulogic_vector(31 downto 0); -- zero-extended read tag
+    -- status memory --
+    sta_we_i  : in  std_ulogic;                     -- status memory write-enable
+    vld_i     : in  std_ulogic;                     -- valid-flag input
+    vld_o     : out std_ulogic;                     -- valid-flag output
+    tag_o     : out std_ulogic_vector(31 downto 0); -- zero-extended tag output
+    -- data memory --
     data_we_i : in  std_ulogic_vector(3 downto 0);  -- byte-wise data write-enable
     data_i    : in  std_ulogic_vector(31 downto 0); -- write data
     data_o    : out std_ulogic_vector(31 downto 0)  -- read data
@@ -37,36 +41,38 @@ end neorv32_cache_ram;
 
 architecture neorv32_cache_ram_rtl of neorv32_cache_ram is
 
-  signal tag_rd : std_ulogic_vector(TAG_WIDTH-1 downto 0);
+  signal sta_wr, sta_rd : std_ulogic_vector(TAG_WIDTH downto 0);
 
 begin
 
   -- notifier --
   assert false report "[NEORV32] Using default CACHE RAM component." severity note;
 
-  -- tag RAM --
-  tag_memory_inst: entity neorv32.neorv32_prim_spram
+  -- status RAM (valid-flag + tag) --
+  status_ram_inst: entity neorv32.neorv32_prim_spram
   generic map (
     AWIDTH => IDX_WIDTH,
-    DWIDTH => TAG_WIDTH,
+    DWIDTH => TAG_WIDTH + 1,
     OUTREG => 0
   )
   port map (
     clk_i  => clk_i,
     en_i   => '1',
-    rw_i   => tag_we_i,
+    rw_i   => sta_we_i,
     addr_i => addr_i(31-TAG_WIDTH downto 2+OFS_WIDTH), -- index
-    data_i => addr_i(31 downto 31-(TAG_WIDTH-1)), -- tag
-    data_o => tag_rd
+    data_i => sta_wr, -- valid-flag & tag
+    data_o => sta_rd
   );
 
-  -- zero-extend tag output --
-  tag_o <= std_ulogic_vector(resize(unsigned(tag_rd), 32));
+  sta_wr <= vld_i & addr_i(31 downto 31-(TAG_WIDTH-1));
+  vld_o  <= sta_rd(TAG_WIDTH); -- MSB = valid-flag
+  tag_o(TAG_WIDTH-1 downto 0) <= sta_rd(TAG_WIDTH-1 downto 0); -- actual tag
+  tag_o(31 downto TAG_WIDTH)  <= (others => '0'); -- zero-extend
 
-  -- data RAM --
-  data_memory_gen:
+  -- data RAM (four individual byte RAMs per word) --
+  data_ram_gen:
   for i in 0 to 3 generate
-    data_memory_inst: entity neorv32.neorv32_prim_spram
+    data_ram_inst: entity neorv32.neorv32_prim_spram
     generic map (
       AWIDTH => IDX_WIDTH + OFS_WIDTH,
       DWIDTH => 8,
