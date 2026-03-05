@@ -36,7 +36,7 @@ jobs:
 
     - name: '📤 Archive generated Verilog code'
       if: always()
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: neorv32_verilog_wrapper
         path: rtl/verilog/neorv32_verilog_wrapper.v
