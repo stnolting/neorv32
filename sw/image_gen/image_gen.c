@@ -175,24 +175,24 @@ int main(int argc, char *argv[]) {
   void *text = NULL;
   void *rodata = NULL;
   void *data = NULL;
-  uint32_t text_size = 0;
-  uint32_t rodata_size = 0;
-  uint32_t data_size = 0;
+  unsigned int text_size = 0;
+  unsigned int rodata_size = 0;
+  unsigned int data_size = 0;
 
   // scan section headers
   for (i = 0; i < elf.e_shnum; i++) {
     const char *section_name = shstrtab + shdrs[i].sh_name;
     if (strcmp(section_name, ".text") == 0) {
       text = read_section(input, &shdrs[i]);
-      text_size = shdrs[i].sh_size;
+      text_size = (unsigned int)shdrs[i].sh_size;
     }
     if (strcmp(section_name, ".rodata") == 0) {
       rodata = read_section(input, &shdrs[i]);
-      rodata_size = shdrs[i].sh_size;
+      rodata_size = (unsigned int)shdrs[i].sh_size;
     }
     if (strcmp(section_name, ".data") == 0) {
       data = read_section(input, &shdrs[i]);
-      data_size = shdrs[i].sh_size;
+      data_size = (unsigned int)shdrs[i].sh_size;
     }
   }
 
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
 //printf(".data:   %d bytes\n", data_size);
 
   // final image size
-  raw_exe_size = (unsigned int)(text_size + rodata_size + data_size);
+  raw_exe_size = text_size + rodata_size + data_size;
   if (raw_exe_size == 0) {// input file empty?
     printf("[ERROR] Image is empty!\n");
     return -2;
