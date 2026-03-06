@@ -36,10 +36,14 @@ VERILOG_TB ?= testbench.v
 VERILOG_SRCS = $(VERILOG_TB) $(WRAPPER).v $(VERILOG_IP)
 
 # Simulation
-DUMP_WAVE ?= 0
 VERILATOR_ARGS = -Wno-fatal --binary --Mdir $(BUILD)
+ICARUS_ARGS =
+
+# Dump waveform data
+DUMP_WAVE ?= 0
 ifeq ($(DUMP_WAVE), 1)
-VERILATOR_ARGS += --trace --trace-fst
+VERILATOR_ARGS += -DDUMP_WAVE=1 --trace --trace-fst
+ICARUS_ARGS += -DDUMP_WAVE=1
 endif
 
 # -----------------------------------------------------------------------------
@@ -76,12 +80,12 @@ sim: $(WRAPPER).v
 ifeq ($(SIMULATOR), iverilog)
 	@echo "Running simulation with Icarus Verilog"
 	@mkdir -p $(BUILD)
-	@iverilog -DDUMP_WAVE=$(DUMP_WAVE) -o $(BUILD)/neorv32-iverilog $(VERILOG_SRCS)
+	@iverilog $(ICARUS_ARGS) -o $(BUILD)/neorv32-iverilog $(VERILOG_SRCS)
 	@vvp $(BUILD)/neorv32-iverilog
 else ifeq ($(SIMULATOR), verilator)
 	@echo "Running simulation with Verilator"
 	@mkdir -p $(BUILD)
-	@verilator -DDUMP_WAVE=$(DUMP_WAVE) $(VERILATOR_ARGS) $(VERILOG_SRCS)
+	@verilator $(VERILATOR_ARGS) $(VERILOG_SRCS)
 	@./$(BUILD)/Vtestbench
 else
 	$(error Unsupported SIMULATOR: $(SIMULATOR))

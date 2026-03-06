@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 06.03.2026 | 1.12.8.4 | minor rtl edits | [#1503](https://github.com/stnolting/neorv32/pull/1503) |
 | 28.02.2026 | 1.12.8.3 | optimize cache module (less hardware, faster block updates) | [#1500](https://github.com/stnolting/neorv32/pull/1500) |
 | 28.02.2026 | 1.12.8.2 | :warning: map TWD interrupt to FIRQ channel 4 | [#1499](https://github.com/stnolting/neorv32/pull/1499) |
 | 25.02.2026 | 1.12.8.1 | TWD: add communication state flags and according IRQs; add IRQ if TX FIFO not full; :warning: remove bus sense flags | [#1498](https://github.com/stnolting/neorv32/pull/1498) |
