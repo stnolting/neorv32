@@ -247,7 +247,7 @@ begin
       valid         <= '0';
 
       -- operand gating / buffering --
-      if (ctrl_i.alu_cp_alu = '1') then
+      if (valid_cmd = '1') then
         less_reg <= less_i;
         rs1_reg  <= rs1_i;
         rs2_reg  <= rs2_i;
