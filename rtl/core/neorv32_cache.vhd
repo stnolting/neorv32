@@ -57,9 +57,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   port (
     clk_i     : in  std_ulogic;
     addr_i    : in  std_ulogic_vector(31 downto 0);
-    sta_we_i  : in  std_ulogic;
-    vld_i     : in  std_ulogic;
-    vld_o     : out std_ulogic;
+    tag_we_i  : in  std_ulogic;
     tag_o     : out std_ulogic_vector(31 downto 0);
     data_we_i : in  std_ulogic_vector(3 downto 0);
     data_i    : in  std_ulogic_vector(31 downto 0);
@@ -81,6 +79,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   type cache_o_t is record
     set  : std_ulogic;
     vld  : std_ulogic;
+    drt  : std_ulogic;
     addr : std_ulogic_vector(31 downto 0);
     data : std_ulogic_vector(31 downto 0);
     we   : std_ulogic_vector(3 downto 0);
@@ -89,6 +88,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
 
   -- cache -> control interface --
   type cache_i_t is record
+    drt  : std_ulogic;
     hit  : std_ulogic;
     tag  : std_ulogic_vector(31 downto 0);
     data : std_ulogic_vector(31 downto 0);
@@ -116,8 +116,9 @@ architecture neorv32_cache_rtl of neorv32_cache is
   signal ctrl, ctrl_nxt : ctrl_t;
 
   -- status check --
-  signal valid_rd : std_ulogic;
-  signal tag_reg  : std_ulogic_vector(tag_width_c-1 downto 0);
+  signal valid, dirty       : std_ulogic_vector(NUM_BLOCKS-1 downto 0);
+  signal valid_rd, dirty_rd : std_ulogic;
+  signal tag_reg            : std_ulogic_vector(tag_width_c-1 downto 0);
 
 begin
 
@@ -129,7 +130,7 @@ begin
       ctrl.state   <= S_IDLE;
       ctrl.bus_err <= '0';
       ctrl.buf_req <= '0';
-      ctrl.buf_syn <= '1'; -- start with cache clearing
+      ctrl.buf_syn <= '0';
       ctrl.buf_bp  <= '0';
       ctrl.bp_req  <= '0';
       ctrl.hit     <= '0';
@@ -163,6 +164,7 @@ begin
     -- cache access defaults --
     cache_o.set  <= '0';
     cache_o.vld  <= '0';
+    cache_o.drt  <= '0';
     cache_o.addr <= host_req_i.addr;
     cache_o.we   <= (others => '0');
     cache_o.data <= host_req_i.data;
@@ -320,7 +322,51 @@ begin
   end process ctrl_engine_comb;
 
 
-  -- Cache Data and Status Memory (Wrapper) -------------------------------------------------
+  -- Status Memory: Block Valid -------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  status_valid: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      valid    <= (others => '0');
+      valid_rd <= '0';
+    elsif rising_edge(clk_i) then
+      if (cache_o.set = '1') then
+        valid(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c)))) <= cache_o.vld;
+      end if;
+      valid_rd <= valid(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c))));
+    end if;
+  end process status_valid;
+
+
+  -- Status Memory: Block Dirty -------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  status_dirty_enabled:
+  if false generate -- TODO / WIP
+    status_dirty: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        dirty    <= (others => '0');
+        dirty_rd <= '0';
+      elsif rising_edge(clk_i) then
+        if (cache_o.set = '1') or (cache_o.drt = '1') then
+          dirty(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c)))) <= cache_o.drt;
+        end if;
+        dirty_rd <= dirty(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c))));
+      end if;
+    end process status_dirty;
+  end generate;
+
+  status_dirty_disabled:
+  if true generate -- TODO / WIP
+    dirty    <= (others => '0');
+    dirty_rd <= '0';
+  end generate;
+
+  -- block dirty --
+  cache_i.drt <= dirty_rd when (valid_rd = '1') else '0';
+
+
+  -- Cache Data and Tag Memory (Wrapper) ----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cache_ram_inst: neorv32_cache_ram
   generic map (
@@ -331,9 +377,7 @@ begin
   port map (
     clk_i     => clk_i,
     addr_i    => cache_o.addr,
-    sta_we_i  => cache_o.set,
-    vld_i     => cache_o.vld,
-    vld_o     => valid_rd,
+    tag_we_i  => cache_o.set,
     tag_o     => cache_i.tag,
     data_we_i => cache_o.we,
     data_i    => cache_o.data,
