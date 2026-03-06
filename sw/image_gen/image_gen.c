@@ -274,7 +274,7 @@ int main(int argc, char *argv[]) {
     fputc((unsigned char)((checksum >> 24) & 0xFF), output);
 
     // report
-    printf("Executable: %d bytes @ 0x%08X, checksum = 0x%08X\n", raw_exe_size, (unsigned int)base_addr), (unsigned int)checksum);
+    printf("Executable: %d bytes @ 0x%08X, checksum = 0x%08X\n", raw_exe_size, (unsigned int)base_addr, (unsigned int)checksum);
   }
 
   // --------------------------------------------------------------------------
