@@ -196,7 +196,6 @@ Targets:
   elf        build and generate <main.elf> ELF file
   exe        build and generate <neorv32_exe.bin> executable file for bootloader upload
   bin        build and generate <neorv32_raw_exe.bin> executable memory image
-  hex        build and generate <neorv32_raw_exe.hex> executable memory image
   coe        build and generate <neorv32_raw_exe.coe> executable memory image
   mem        build and generate <neorv32_raw_exe.mem> executable memory image
   mif        build and generate <neorv32_raw_exe.mif> executable memory image
@@ -204,7 +203,7 @@ Targets:
   install    build, generate and install VHDL IMEM application memory image <neorv32_imem_image.vhd>
   clean      clean up project home folder
   clean_all  clean up project home folder and image generator
-  all        clean_all + elf + asm + exe + hex + bin + coe + mem + mif + image + install
+  all        clean_all + elf + asm + exe + bin + coe + mem + mif + image + install
 
 Additional targets:
 
@@ -219,7 +218,7 @@ Additional targets:
 Variables:
 
   BUILD_VERBOSE   Set to increase build verbosity: "0"
-  USER_FLAGS      Custom toolchain flags [append only]: "-ggdb -gdwarf-3 -Wl,--defsym,__neorv32_rom_size=16k -Wl,--defsym,__neorv32_ram_size=8k"
+  USER_FLAGS      Custom toolchain flags [append only]: "-ggdb -gdwarf-3 -Wl,--defsym,__neorv32_rom_size=16k -Wl,--defsym,__neorv32_rom_base=0x00002000 -Wl,--defsym,__neorv32_ram_size=8k"
   USER_LIBS       Custom libraries [append only]: ""
   EFFORT          Optimization level: "-Os"
   MARCH           Machine architecture: "rv32i_zicsr_zifencei"
@@ -343,7 +342,7 @@ Note that depending on the application some sections might have zero size.
 .Default RAM Layout
 [source]
 ----
-End of RAM
+<End of RAM>
 +------------------------------+
 |             Stack            |
 +------------------------------+
@@ -358,7 +357,7 @@ End of RAM
 +------------------------------+
 |  Initialized data (".data")  |
 +------------------------------+
-Start of RAM
+<Start of RAM>
 ----
 
 [start=1]
@@ -386,21 +385,21 @@ The <<_smpmp_isa_extension,physical memory protection>> extension can be used to
 :sectnums:
 ==== ROM Layout
 
-The default NEORV32 linker script uses the defined ROM (**IMEM**) size to map several sections.
-Note that depending on the application some sections might have zero size.
+The default NEORV32 linker script uses the defined ROM (**IMEM**) size to map several sections into
+an executable layout. Note that depending on the application some sections might have zero size.
 
 .Default ROM Layout
 [source]
 ----
-End of ROM
-+------------------------------+
-|   Initial data for ".data"   |
-+------------------------------+
-|  Read-only data (".rodata")  |
-+------------------------------+
-|    Program code (".text")    |
-+------------------------------+
-Start of ROM
+<End of ROM>
++-----------------------------+
+|  Initial data for ".data"   |
++-----------------------------+
+|  Read-only data ".rodata"   |
++-----------------------------+
+|    Program code ".text"     |
++-----------------------------+
+<Start of ROM>
 ----
 
 [start=1]
