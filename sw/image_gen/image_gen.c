@@ -15,7 +15,7 @@
 #include <elf.h>
 
 // executable signature identifier ("magic word", for bootloader only)
-const uint32_t signature = 0xB007C0DE;
+const uint32_t signature_c = 0x214F454E;
 
 // output image types (operation select)
 enum operation_enum {
@@ -26,6 +26,25 @@ enum operation_enum {
   OP_MEM,
   OP_MIF
 };
+
+// bootloader executable header
+typedef struct __attribute__((packed,aligned(4))) {
+  uint32_t signature;
+  uint32_t base_addr;
+  uint32_t size;
+  uint32_t checksum;
+} exe_header_t;
+
+// ************************************************************
+// Write 32-bit data to file (little-Endian).
+// ************************************************************
+void write32(uint32_t d, FILE *f) {
+
+  fputc((unsigned char)((d >>  0) & 0xFF), f);
+  fputc((unsigned char)((d >>  8) & 0xFF), f);
+  fputc((unsigned char)((d >> 16) & 0xFF), f);
+  fputc((unsigned char)((d >> 24) & 0xFF), f);
+}
 
 // ************************************************************
 // Read ELF section.
@@ -225,7 +244,7 @@ int main(int argc, char *argv[]) {
 
   // construct raw image
   uint8_t *raw_image = malloc(raw_exe_size);
-  const uint32_t *raw_image32 = (const uint32_t *)raw_image;
+  uint32_t *raw_image32 = (uint32_t *)raw_image;
   if (!raw_image) {
     printf("[ERROR] malloc failed!\n");
     return -1;
@@ -239,8 +258,10 @@ int main(int argc, char *argv[]) {
   // --------------------------------------------------------------------------
   if (operation == OP_EXE) {
 
+    exe_header_t header;
+
     // reserve header space
-    for (i = 0; i < 3*4; i++) {
+    for (i = 0; i < sizeof(header); i++) {
       fputc(0, output);
     }
 
@@ -248,33 +269,23 @@ int main(int argc, char *argv[]) {
     checksum = 0;
     for (i = 0; i < raw_exe_size/4; i++) {
       checksum += raw_image32[i];
-      fputc((unsigned char)((raw_image32[i] >>  0) & 0xFF), output);
-      fputc((unsigned char)((raw_image32[i] >>  8) & 0xFF), output);
-      fputc((unsigned char)((raw_image32[i] >> 16) & 0xFF), output);
-      fputc((unsigned char)((raw_image32[i] >> 24) & 0xFF), output);
+      write32(raw_image32[i], output);
     }
 
-    // populate header
+    // setup header
     rewind(output);
-    // signature (magic word)
-    fputc((unsigned char)((signature >>  0) & 0xFF), output);
-    fputc((unsigned char)((signature >>  8) & 0xFF), output);
-    fputc((unsigned char)((signature >> 16) & 0xFF), output);
-    fputc((unsigned char)((signature >> 24) & 0xFF), output);
-    // size (bytes)
-    fputc((unsigned char)((raw_exe_size >>  0) & 0xFF), output);
-    fputc((unsigned char)((raw_exe_size >>  8) & 0xFF), output);
-    fputc((unsigned char)((raw_exe_size >> 16) & 0xFF), output);
-    fputc((unsigned char)((raw_exe_size >> 24) & 0xFF), output);
-    // checksum (sum complement)
-    checksum = ~checksum;
-    fputc((unsigned char)((checksum >>  0) & 0xFF), output);
-    fputc((unsigned char)((checksum >>  8) & 0xFF), output);
-    fputc((unsigned char)((checksum >> 16) & 0xFF), output);
-    fputc((unsigned char)((checksum >> 24) & 0xFF), output);
+    header.signature = signature_c;
+    header.base_addr = base_addr;
+    header.size      = raw_exe_size;
+    header.checksum  = ~checksum;
+    write32(header.signature, output);
+    write32(header.base_addr, output);
+    write32(header.size, output);
+    write32(header.checksum, output);
 
     // report
-    printf("Executable: %d bytes @ 0x%08X, checksum = 0x%08X\n", raw_exe_size, (unsigned int)base_addr, (unsigned int)checksum);
+    printf("Executable (EXE): %d bytes @ 0x%08X, checksum = 0x%08X\n",
+           (unsigned int)header.size, (unsigned int)header.base_addr, (unsigned int)header.checksum);
   }
 
   // --------------------------------------------------------------------------
@@ -332,7 +343,7 @@ int main(int argc, char *argv[]) {
     fputs(tmp_string, output);
 
     // report
-    printf("Executable: %d bytes\n", raw_exe_size);
+    printf("Executable (VHD): %d bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
@@ -345,7 +356,7 @@ int main(int argc, char *argv[]) {
     }
 
     // report
-    printf("Executable: %d bytes\n", raw_exe_size);
+    printf("Executable (BIN): %d bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
@@ -371,7 +382,7 @@ int main(int argc, char *argv[]) {
     }
 
     // report
-    printf("Executable: %d bytes\n", raw_exe_size);
+    printf("Executable (COE): %d bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
@@ -386,7 +397,7 @@ int main(int argc, char *argv[]) {
     }
 
     // report
-    printf("Executable: %d bytes\n", raw_exe_size);
+    printf("Executable (MEM): %d bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
@@ -420,7 +431,7 @@ int main(int argc, char *argv[]) {
     fputs(tmp_string, output);
 
     // report
-    printf("Executable: %d bytes\n", raw_exe_size);
+    printf("Executable (MIF): %d bytes\n", raw_exe_size);
   }
 
   // invalid operation
