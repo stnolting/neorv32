@@ -17,11 +17,20 @@
 #include <stdint.h>
 
 // neorv32 executable layout
+#define BIN_SIGNATURE 0x214F454E // executable identifier
 #define BIN_OFFSET_SIGNATURE   0 // byte offset to signature
-#define BIN_OFFSET_SIZE        4 // byte offset to size
-#define BIN_OFFSET_CHECKSUM    8 // byte offset to checksum
-#define BIN_OFFSET_DATA       12 // byte offset to data start
-#define BIN_SIGNATURE 0xB007C0DE // executable identifier
+#define BIN_OFFSET_BASE        4 // byte offset to base address
+#define BIN_OFFSET_SIZE        8 // byte offset to size
+#define BIN_OFFSET_CHECKSUM   12 // byte offset to checksum
+#define BIN_OFFSET_DATA       16 // byte offset to data start
+
+// bootloader executable header
+typedef struct __attribute__((packed,aligned(4))) {
+  uint32_t signature;
+  uint32_t base_addr;
+  uint32_t size;
+  uint32_t checksum;
+} executable_header_t;
 
 // prototypes
 void system_setup(void);
