@@ -239,8 +239,6 @@ overridden by Makefile directives.
 [options="header", grid="rows"]
 |=======================
 | Parameter | Default | Legal values | Description
-4+<| **Memory layout**
-| `EXE_BASE_ADDR`         | `0x00000000` | any 4-byte-aligned address | Memory base address for the executable; also the boot address for the application.
 4+<| **Serial console** - requires <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>
 | `UART_EN`               | `1`     | `0,1` | Set to `1` to enable the serial console.
 | `UART_BAUD`             | `19200` | any   | Baud rate of UART0.
@@ -275,7 +273,7 @@ overridden by Makefile directives.
 | `SPI_SDCARD_FILE`       | `"boot.bin"`  | 8.3 DOS format | File name of the boot image. Has to be located in the root directory.
 4+<| **Branding** - for text printed via serial console
 | `THEME_INTRO`           | `"NEORV32 Bootloader"` | any string | Intro text that is shown in the bootloader console.
-| `THEME_EXE`             | `"neorv32_exe.bin"`    | any string | Name of executable that is shown in the console menu.
+| `THEME_EXE`             | `"neorv32_exe.bin"`    | any string | Name of executable that is shown in the upload menu.
 |=======================
 
 
