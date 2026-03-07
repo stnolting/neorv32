@@ -114,7 +114,8 @@ architecture neorv32_cache_rtl of neorv32_cache is
     pnd_syn : std_ulogic; -- pending synchronization request
     pnd_bp  : std_ulogic; -- pending bypass bus request
     bp_req  : std_ulogic; -- cache bypass bus request (STB)
-    hit     : std_ulogic; -- forced cache hit
+    hit     : std_ulogic; -- forced cache hit (to skip status update latency)
+    cln     : std_ulogic; -- forced clean status (to skip status update latency)
     tag     : std_ulogic_vector(tag_width_c-1 downto 0); -- tag
     idx     : std_ulogic_vector(index_width_c-1 downto 0); -- index
     ofs_int : std_ulogic_vector(offset_width_c-1 downto 0); -- cache address offset
@@ -143,6 +144,7 @@ begin
       ctrl.pnd_bp  <= '0';
       ctrl.bp_req  <= '0';
       ctrl.hit     <= '0';
+      ctrl.cln     <= '0';
       ctrl.tag     <= (others => '0');
       ctrl.idx     <= (others => '0');
       ctrl.ofs_int <= (others => '0');
@@ -166,6 +168,7 @@ begin
     ctrl_nxt.pnd_bp  <= '0';
     ctrl_nxt.bp_req  <= '0';
     ctrl_nxt.hit     <= '0';
+    ctrl_nxt.cln     <= '0';
     ctrl_nxt.tag     <= ctrl.tag;
     ctrl_nxt.idx     <= ctrl.idx;
     ctrl_nxt.ofs_int <= ctrl.ofs_int;
@@ -325,7 +328,7 @@ begin
 
       when S_READ_DONE => -- delay cycle for pending host access to cache
       -- ------------------------------------------------------------
-        ctrl_nxt.hit <= '1'; -- force cache hit to skip valid-flag read latency
+        ctrl_nxt.hit <= '1'; -- force cache hit to skip status flag read latency
         if (ctrl.bus_err = '1') then -- bus error during block download
           host_rsp_o.ack <= '1';
           host_rsp_o.err <= '1';
@@ -388,19 +391,24 @@ begin
 
       when S_WRITE_DONE => -- update cache block status
       -- ------------------------------------------------------------
-        cache_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-        if (ctrl.bus_err = '1') or READ_ONLY then -- bus error during block upload
-          host_rsp_o.ack <= '1';
-          host_rsp_o.err <= '1';
-          ctrl_nxt.state <= S_IDLE;
-        else
-          cache_o.vld <= '1';
-          cache_o.set <= '1'; -- set tag and make valid & clean
-          if (ctrl.sync = '1') then -- this is part of a cache synchronization operation
-            ctrl_nxt.state <= S_SYNC_DELAY;
+        if not READ_ONLY then
+          ctrl_nxt.cln <= '1'; -- force cache clean to skip status flag read latency
+          cache_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+          if (ctrl.bus_err = '1') or READ_ONLY then -- bus error during block upload
+            host_rsp_o.ack <= '1';
+            host_rsp_o.err <= '1';
+            ctrl_nxt.state <= S_IDLE;
           else
-            ctrl_nxt.state <= S_CHECK;
+            cache_o.vld <= '1';
+            cache_o.set <= '1'; -- set tag and make valid & clean
+            if (ctrl.sync = '1') then -- this is part of a cache synchronization operation
+              ctrl_nxt.state <= S_SYNC_DELAY;
+            else
+              ctrl_nxt.state <= S_CHECK;
+            end if;
           end if;
+        else
+          ctrl_nxt.state <= S_IDLE;
         end if;
 
       when others => -- undefined
@@ -456,7 +464,7 @@ begin
   end generate;
 
   -- block dirty --
-  cache_i.drt <= dirty_rd when (valid_rd = '1') else '0';
+  cache_i.drt <= '0' when (ctrl.cln = '1') else dirty_rd when (valid_rd = '1') else '0';
 
 
   -- Cache Data and Tag Memory (Wrapper) ----------------------------------------------------
