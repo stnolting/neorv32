@@ -130,6 +130,52 @@ CMD:>
 
 
 :sectnums:
+==== Bootloader Image Format
+
+In order to keep the bootloader as small as possible, complete ELF parsing was omitted. Therefore, a
+compiled ELF cannot be loaded directly into the processor via the bootloader. Instead, the image generator
+(see <<_executable_image_formats>>) is used to create a simplified executable file for the bootloader that
+contains all the necessary information from the ELF and can be processed by the bootloader with little overhead.
+
+After the executable has been compiled, the image generator extracts the relevant sections and combines them into
+an image that corresponds to the <<_rom_layout>> of the processor configuration. This image is preceded by a simple
+header containing information for transmission as well as for relocation and booting. The header consists of
+four individual 32-bit words, which, like the actual image, are stored in low-endian byte order.
+
+.Bootloader Executable Header
+[source,c]
+----
+// bootloader executable header, little-Endian
+typedef struct __attribute__((packed,aligned(4))) {
+  uint32_t signature; // = 0x214F454E ("NEO!")
+  uint32_t base_addr; // executable base address & entry point
+  uint32_t size;      // size in bytes
+  uint32_t checksum;  // sum-complement checksum
+} exe_header_t;
+----
+
+The first word represents the signature (`0x214F454E`, "NEO!" as string representation). Based on this, the bootloader
+can recognize a valid executable that also matches the bootloader version.
+
+The next word defines the base address of the image. The bootloader stores the received image starting at this address.
+This allows the bootloader to store different programs at different memory addresses, for example. The base address is
+ultimately defined by the <<_linker_script>> using the `__neorv32_rom_base` symbol. This also corresponds to the entry
+point of the program that is executed during bootup.
+
+The next word is the size of the image in bytes. The size of the generated executable is always a multiple of 4.
+
+The last word represents a checksum that ensures the transfer and integrity of the executable. To keep the bootloader
+simple, a simple "sum complement" checksum is used here.
+
+.Exemplary Header
+[source,bash]
+----
+neorv32/sw/example/processor_check$ xxd -e -l 32 neorv32_exe.bin
+00000000: 214f454e 00000000 00007078 2af7f9c6   NEO!....xp.....*
+----
+
+
+:sectnums:
 ==== Auto Boot Sequence
 
 After reset, the bootloader waits 8 seconds for UART console input before it starts the automatic boot sequence.
