@@ -11,7 +11,6 @@
 | Top entity ports:       | `twd_sda_i`        | 1-bit serial data line sense input
 |                         | `twd_sda_o`        | 1-bit serial data line output (pull low only)
 |                         | `twd_scl_i`        | 1-bit serial clock line sense input
-|                         | `twd_scl_o`        | 1-bit serial clock line output (pull low only)
 | Configuration generics: | `IO_TWD_EN`        | implement TWD controller when `true`
 |                         | `IO_TWD_RX_FIFO`   | RX FIFO depth, has to be a power of two, min 1
 |                         | `IO_TWD_TX_FIFO`   | TX FIFO depth, has to be a power of two, min 1
@@ -164,22 +163,25 @@ The CPU interrupt request remains active until all enabled interrupt-causing con
 The interrupt can only trigger if the module is actually enabled (`TWD_CTRL_EN` is set).
 
 
-**Tristate Drivers**
+**Tristate Driver**
 
-The TWD module requires two tristate drivers (actually: open-drain drivers - signals can only be actively driven low) for
-the SDA and SCL lines, which have to be implemented by the user in the setup's top module / IO ring. A generic VHDL example
-is shown below (here, `sda_io` and `scl_io` are the actual TWD bus lines).
+The TWD module requires a single tristate drives (actually: open-drain drivers - signals can only be actively driven low) for
+the SDA line, which have to be implemented by the user in the setup's top module / IO ring. The SCL signal is only read by the
+TWD module (input only) and therefore does not require a tristate driver. A generic VHDL example is shown below.
 
 .TWD Tristate Driver Example (VHDL)
 [source,VHDL]
 ----
-sda_io : inout std_logic;
-scl_io : inout std_logic;
-...
-sda_io    <= '0' when (twd_sda_o = '0') else 'Z'; -- drive (pull low)
-scl_io    <= '0' when (twd_scl_o = '0') else 'Z'; -- drive (pull low)
-twd_sda_i <= std_ulogic(sda_io); -- sense
-twd_scl_i <= std_ulogic(scl_io); -- sense
+-- IO ports / bus lines --
+sda_io : inout std_logic; -- bidirectional
+scl_io : in    std_logic; -- input only
+
+-- tristate driver --
+sda_io <= '0' when (twd_sda_o = '0') else 'Z'; -- drive (pull low)
+
+-- sense --
+twd_sda_i <= std_ulogic(sda_io);
+twd_scl_i <= std_ulogic(scl_io);
 ----
 
 
