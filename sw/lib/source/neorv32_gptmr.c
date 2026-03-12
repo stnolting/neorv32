@@ -60,7 +60,7 @@ void neorv32_gptmr_setup(int prsc) {
   NEORV32_GPTMR->CSR1.WORD = 0;
 
   // set prescaler
-  NEORV32_GPTMR->CSR1.WORD = (uint16_t)prsc;
+  NEORV32_GPTMR->CSR1.PRSC = (uint16_t)prsc;
 
   // reset all slices
   int i;
