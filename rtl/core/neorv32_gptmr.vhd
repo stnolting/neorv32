@@ -5,7 +5,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -86,7 +86,7 @@ begin
         -- control and status register 1 (CSR1) --
         if (acc_addr = "01") then
           if (bus_req_i.ben(3 downto 2) = "11") then -- high half: clock prescaler
-            clkprsc <= bus_req_i.data(2 downto 0);
+            clkprsc <= bus_req_i.data(18 downto 16);
           end if;
         end if;
       end if;
