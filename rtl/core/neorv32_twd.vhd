@@ -29,7 +29,6 @@ entity neorv32_twd is
     twd_sda_i : in  std_ulogic;                    -- serial data line input
     twd_sda_o : out std_ulogic;                    -- serial data line output
     twd_scl_i : in  std_ulogic;                    -- serial clock line input
-    twd_scl_o : out std_ulogic;                    -- serial clock line output
     irq_o     : out std_ulogic                     -- interrupt
   );
 end neorv32_twd;
@@ -424,8 +423,7 @@ begin
     end if;
   end process bus_engine;
 
-  -- TWI lines --
-  twd_scl_o <= '1'; -- used as input only
+  -- TWI data line tri-state driver --
   twd_sda_o <= engine.sda;
 
 

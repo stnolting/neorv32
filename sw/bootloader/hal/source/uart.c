@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -76,7 +76,7 @@ void uart_puts(const char *s) {
 void uart_puth(uint32_t num) {
 
 #if (UART_EN == 1)
-  static const char hex_symbols[16] = "0123456789abcdef";
+  static const char hex_symbols[16] = "0123456789ABCDEF";
   uart_putc('0');
   uart_putc('x');
 

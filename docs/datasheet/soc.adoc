@@ -152,7 +152,6 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `twd_sda_i`      |  1 |  in | `'H'` | serial data line sense input
 | `twd_sda_o`      |  1 | out |   -   | serial data line output (pull low only)
 | `twd_scl_i`      |  1 |  in | `'H'` | serial clock line sense input
-| `twd_scl_o`      |  1 | out |   -   | serial clock line output (pull low only)
 5+^| **<<_one_wire_serial_interface_controller_onewire>>**
 | `onewire_i`      |  1 |  in | `'H'` | 1-wire bus sense input
 | `onewire_o`      |  1 | out |   -   | 1-wire bus output (pull low only)

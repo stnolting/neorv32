@@ -222,7 +222,6 @@ entity neorv32_top is
     twd_sda_i      : in  std_ulogic := 'H';                                  -- serial data line sense input
     twd_sda_o      : out std_ulogic;                                         -- serial data line output (pull low only)
     twd_scl_i      : in  std_ulogic := 'H';                                  -- serial clock line sense input
-    twd_scl_o      : out std_ulogic;                                         -- serial clock line output (pull low only)
 
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      : in  std_ulogic := 'H';                                  -- 1-wire bus sense input
@@ -1278,7 +1277,6 @@ begin
         twd_sda_i => twd_sda_i,
         twd_sda_o => twd_sda_o,
         twd_scl_i => twd_scl_i,
-        twd_scl_o => twd_scl_o,
         irq_o     => firq(FIRQ_TWD)
       );
     end generate;
@@ -1287,7 +1285,6 @@ begin
     if not IO_TWD_EN generate
       iodev_rsp(IODEV_TWD) <= rsp_terminate_c;
       twd_sda_o            <= '1';
-      twd_scl_o            <= '1';
       firq(FIRQ_TWD)       <= '0';
     end generate;
 

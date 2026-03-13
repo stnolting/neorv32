@@ -3,7 +3,7 @@
 /* -------------------------------------------------------------------------------- */
 /* The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              */
 /* Copyright (c) NEORV32 contributors.                                              */
-/* Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  */
+/* Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  */
 /* Licensed under the BSD-3-Clause license, see LICENSE for details.                */
 /* SPDX-License-Identifier: BSD-3-Clause                                            */
 /* ================================================================================ */
@@ -68,7 +68,7 @@ int main(void) {
   uart_putc('\n');
   uart_puts("Loading from TWI flash "xstr(TWI_FLASH_ID)" @"xstr(TWI_FLASH_BASE_ADDR)"... ");
   if (system_app_load(twi_flash_setup, twi_flash_stream_get) == 0) {
-    system_app_boot((uint32_t)EXE_BASE_ADDR);
+    system_app_boot();
   }
 #endif
 
@@ -77,7 +77,7 @@ int main(void) {
   uart_putc('\n');
   uart_puts("Loading from SPI flash @"xstr(SPI_FLASH_BASE_ADDR)"... ");
   if (system_app_load(spi_flash_setup, spi_flash_stream_get) == 0) {
-    system_app_boot((uint32_t)EXE_BASE_ADDR);
+    system_app_boot();
   }
 #endif
 
@@ -86,7 +86,7 @@ int main(void) {
   uart_putc('\n');
   uart_puts("Loading SD card file "SPI_SDCARD_FILE"... ");
   if (system_app_load(sdcard_setup, sdcard_stream_get) == 0) {
-    system_app_boot((uint32_t)EXE_BASE_ADDR);
+    system_app_boot();
   }
 #endif
 
@@ -123,7 +123,7 @@ skip_auto_boot:
 
     /**** start application program from main memory ****/
     if (cmd == 'e') {
-      system_app_boot((uint32_t)EXE_BASE_ADDR);
+      system_app_boot();
     }
 
     /**** exit while loop: shutdown ****/

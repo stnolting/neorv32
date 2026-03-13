@@ -79,12 +79,12 @@ pending and the counter is reset to zero and starts counting again up to the thr
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Description
-| `0xfff10000` | `CSR0.WORD`     | `31:0` | r/w | Control and status register 0 (full-word access).
-| `0xfff10000` | `CSR0.ENABLE`   | `15:0` | r/w | Slice enable (one bit per implemented slice starting at LSB).
-| `0xfff10002` | `CSR0.MODE`     | `15:0` | r/w | Slice operation mode: 0 = single shot, 1 = continuous (one bit per implemented slice starting at LSB).
-| `0xfff10004` | `CSR1.WORD`     | `31:0` | r/w | Control and status register 1 (full-word access).
-| `0xfff10004` | `CSR1.IRQ`      | `15:0` | r/w | Slice interrupt pending (one bit per implemented slice starting at LSB); write 0 to bit to clear interrupt.
-| `0xfff10006` | `CSR1.PRSC`     |  `2:0` | r/w | Global clock prescaler select.
+| `0xfff10000` | `CSR0.WORD`     | `31:0` | r/w | Control and status register 0 full-word access.
+| `0xfff10000` | `CSR0.ENABLE`   | `15:0` | r/w | Control and status register 0 - Slice enable (one bit per implemented slice starting at LSB).
+| `0xfff10002` | `CSR0.MODE`     | `15:0` | r/w | Control and status register 0 - Slice operation mode: 0 = single shot, 1 = continuous (one bit per implemented slice starting at LSB).
+| `0xfff10004` | `CSR1.WORD`     | `31:0` | r/w | Control and status register 1 full-word access.
+| `0xfff10004` | `CSR1.IRQ`      | `15:0` | r/w | Control and status register 1 - Slice interrupt pending (one bit per implemented slice starting at LSB); write 0 to clear interrupt.
+| `0xfff10006` | `CSR1.PRSC`     |  `2:0` | r/w | Control and status register 1 - Global clock prescaler select.
 | `0xfff10080` | `SLICE[0].CNT`  | `31:0` | r/w | Slice 0 counter register.
 | `0xfff10084` | `SLICE[0].THR`  | `31:0` | r/w | Slice 0 threshold register.
 | ...          | ...             | ...    | ... | ...

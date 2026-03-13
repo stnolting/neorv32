@@ -245,7 +245,6 @@ entity neorv32_vivado_ip is
     twd_sda_i      : in  std_logic := '0';
     twd_sda_o      : out std_logic;
     twd_scl_i      : in  std_logic := '0';
-    twd_scl_o      : out std_logic;
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      : in  std_logic := '0';
     onewire_o      : out std_logic;
@@ -343,7 +342,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal spi_csn_aux : std_ulogic_vector(7 downto 0);
   signal sdi_do_aux : std_ulogic;
   signal twi_sda_o_aux, twi_scl_o_aux : std_ulogic;
-  signal twd_sda_o_aux, twd_scl_o_aux : std_ulogic;
+  signal twd_sda_o_aux : std_ulogic;
   signal onewire_o_aux : std_ulogic;
   signal cfs_out_aux : std_ulogic_vector(255 downto 0);
   signal neoled_aux : std_ulogic;
@@ -536,7 +535,6 @@ begin
     twd_sda_i      => std_ulogic(twd_sda_i),
     twd_sda_o      => twd_sda_o_aux,
     twd_scl_i      => std_ulogic(twd_scl_i),
-    twd_scl_o      => twd_scl_o_aux,
     -- 1-Wire Interface (available if IO_ONEWIRE_EN = true) --
     onewire_i      => std_ulogic(onewire_i),
     onewire_o      => onewire_o_aux,
@@ -585,7 +583,6 @@ begin
   twi_scl_o <= std_logic(twi_scl_o_aux);
 
   twd_sda_o <= std_logic(twd_sda_o_aux);
-  twd_scl_o <= std_logic(twd_scl_o_aux);
 
   onewire_o <= std_logic(onewire_o_aux);
 
