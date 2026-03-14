@@ -41,6 +41,11 @@ build instructions in the official RISC-V GNU toolchain GitHub repository: https
 More information regarding the toolchain (building from scratch or downloading prebuilt ones) can be found in the
 user guide section https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup[Software Toolchain Setup].
 
+.RISC-V GCC C-Api Documentation
+[TIP]
+A copy of the official RISC-V GCC C-API reference (https://github.com/riscv-non-isa/riscv-c-api-doc) is located
+in the project's `docs` folder: `neorv32/docs/riscv-c-api.pdf`
+
 
 <<<
 // ####################################################################################################################
