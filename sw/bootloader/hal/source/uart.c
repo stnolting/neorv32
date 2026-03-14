@@ -89,7 +89,7 @@ void uart_puth(uint32_t num) {
 
 
 /**********************************************************************//**
- * Setup UART device.
+ * Setup UART device for executable streaming. Just a dummy.
  *
  * @return 0 if success, !=0 if error
  **************************************************************************/
@@ -118,7 +118,11 @@ int uart_stream_get(uint32_t* rdata) {
     tmp.uint8[i] = (uint8_t)uart_getc();
   }
   *rdata = tmp.uint32;
+#if (UART_OVERFLOW == 1)
+  return (int)(NEORV32_UART0->CTRL & (1<<UART_CTRL_RX_OVER)); ; // RX overflow?
+#else
   return 0;
+#endif
 #else
   return 1;
 #endif
