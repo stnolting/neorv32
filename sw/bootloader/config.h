@@ -28,6 +28,16 @@
 #define UART_BAUD 19200
 #endif
 
+// Enable UART0 hardware flow control (0,1)
+#ifndef UART_HWFC
+#define UART_HWFC 0
+#endif
+
+// Enable UART0 RX overflow detection (0,1)
+#ifndef UART_OVERFLOW
+#define UART_OVERFLOW 0
+#endif
+
 /**********************************************************************
  * Status LED (high-active)
  **********************************************************************/
