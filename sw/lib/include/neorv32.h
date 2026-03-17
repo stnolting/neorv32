@@ -254,7 +254,7 @@ typedef union {
 #define __MMREG_BCLR(r, m) ((r) &= ~(m))
 #define __MMREG_BINV(r, m) ((r) ^=  (m))
 // 32-bit access
-#ifdef __riscv_zaamo // use atomic RMW instructions
+#if defined(__riscv_a) || defined(__riscv_zaamo) // use atomic RMW instructions
 #define __MMREG32_BSET(r, m) (neorv32_cpu_amoor( (uint32_t)(&r), (uint32_t)( (m))))
 #define __MMREG32_BCLR(r, m) (neorv32_cpu_amoand((uint32_t)(&r), (uint32_t)(~(m))))
 #define __MMREG32_BINV(r, m) (neorv32_cpu_amoxor((uint32_t)(&r), (uint32_t)( (m))))
