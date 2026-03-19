@@ -110,7 +110,7 @@ SIZE    = $(RISCV_PREFIX)size
 GDB     = $(RISCV_PREFIX)gdb
 
 # Host's native compiler
-CC_HOST = gcc -Wall -O -g
+CC_HOST = gcc -Wall -O -g $(shell pkg-config --cflags libelf)
 
 # System tools
 ECHO  = @echo

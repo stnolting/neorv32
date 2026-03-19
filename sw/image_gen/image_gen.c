@@ -12,7 +12,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __APPLE__
+#include <libelf.h>
+#else
 #include <elf.h>
+#endif
 
 // executable signature identifier ("magic word", for bootloader only)
 const uint32_t signature_c = 0x214F454E;
