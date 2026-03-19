@@ -17,8 +17,8 @@
 #include <uart.h>
 
 // global variables
-uint32_t g_exe_base = 0; // base address & entry-point of executable
-uint32_t g_exe_size = 0; // size of the loaded executable; 0 if no executable available
+uint32_t g_exe_base   = (uint32_t)DEFAULT_EXE_ADDR; // (default) base/entry-point of executable
+uint32_t g_exe_size   = 0; // size of the loaded executable; 0 if no executable available
 uint32_t g_flash_addr = 0; // current flash/stream address
 
 
