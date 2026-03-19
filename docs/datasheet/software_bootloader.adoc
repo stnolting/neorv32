@@ -217,9 +217,15 @@ based on a simple shell helper script `neorv32/sw/image_gen/uart_upload.sh`. Exa
 `neorv32/sw/example/demo_blink_led$ make UART_TTY=/dev/ttyUSB1 upload`.
 The serial interface device is defined by `UART_TTY` .
 
+.UART Overflow Detection and Hardware Flow Control
+[NOTE]
+For setups that use very high custom baud rates values and/or provide very high main memory latency (e.g. external
+DDR-RAM with several cache layers), it is recommended to enable the UART RTS/CTS hardware flow control. In addition,
+enabling overflow detection can make debugging easier. See <<_Customizing_the_Internal_Bootloader>> for more information.
+
 
 :sectnums:
-==== Programming an SPI (/TWI) Flash
+==== Programming an SPI or TWI Flash
 
 This guide shows how to write an executable to the SPI flash via the bootloader so it can be automatically
 fetched and executed after processor reset. If the TWI flash option is enabled, an according command for
@@ -288,6 +294,8 @@ overridden by Makefile directives.
 4+<| **Serial console** - requires <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>
 | `UART_EN`               | `1`     | `0,1` | Set to `1` to enable the serial console.
 | `UART_BAUD`             | `19200` | any   | Baud rate of UART0.
+| `UART_OVERFLOW`         | `0`     | `0,1` | Enable RX overflow detection. Recommended for high baud rates / high memory latency.
+| `UART_HWFC`             | `0`     | `0,1` | Enable RTS/CTS hardware flow control. Recommended for very high baud rates / high memory latency.
 4+<| **Status LED** - requires <<_general_purpose_input_and_output_port_gpio>>
 | `STATUS_LED_EN`         | `1` | `0,1`   | Enable bootloader status led ("heart beat") at `GPIO` output port pin `STATUS_LED_PIN` when `1`.
 | `STATUS_LED_PIN`        | `0` | `0..31` | `GPIO` output pin used for the high-active status LED.
@@ -331,6 +339,8 @@ overridden by Makefile directives.
 |=======================
 | **`ERROR_DEVICE`**    | A device-accessing function returned an error code. Make sure that the device is properly
 connected and that all required processor modules/interface are actually enabled (by the according <<_processor_top_entity_generics>>).
+This error can also occur if there was an RX overflow on the UART (if overflow detection is enabled). In this case, either UART hardware
+flow control should be enabled or the baud rate should be reduced; both adjustments require recompiling the bootloader.
 | **`ERROR_SIGNATURE`** | The signature that indicates a valid NEORV32 executable of the accessed executable is incorrect.
 This can be caused by a temporary transmission error or by an invalid or corrupted executable.
 | **`ERROR_CHECKSUM`**  | The checksum of the loaded executable is incorrect. This can be caused by a temporary transmission
