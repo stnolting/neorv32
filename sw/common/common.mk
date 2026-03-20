@@ -77,15 +77,15 @@ CORE_SRC += $(NEORV32_COM_PATH)/crt0.S
 LD_SCRIPT ?= $(NEORV32_COM_PATH)/neorv32.ld
 
 # Main output files
-APP_ELF = main.elf
-APP_ASM = main.asm
-APP_EXE = neorv32_exe.bin
-APP_VHD = neorv32_imem_image.vhd
-APP_BIN = neorv32_raw_exe.bin
-APP_COE = neorv32_raw_exe.coe
-APP_MEM = neorv32_raw_exe.mem
-APP_MIF = neorv32_raw_exe.mif
-BLD_VHD = neorv32_bootrom_image.vhd
+APP_ELF ?= main.elf
+APP_ASM ?= main.asm
+APP_EXE ?= neorv32_exe.bin
+APP_VHD ?= neorv32_imem_image.vhd
+APP_BIN ?= neorv32_raw_exe.bin
+APP_COE ?= neorv32_raw_exe.coe
+APP_MEM ?= neorv32_raw_exe.mem
+APP_MIF ?= neorv32_raw_exe.mif
+BLD_VHD ?= neorv32_bootrom_image.vhd
 
 # Define all sources
 SRC  = $(APP_SRC)
@@ -413,7 +413,7 @@ info:
 # Help
 # -----------------------------------------------------------------------------
 
-help:
+help::
 	$(ECHO) "NEORV32 Software Makefile"
 	$(ECHO) "Find more information at https://github.com/stnolting/neorv32"
 	$(ECHO) "Use 'make V=1' or set BUILD_VERBOSE to increase build verbosity"
