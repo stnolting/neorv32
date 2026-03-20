@@ -273,6 +273,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant cpu_sdtrig_en_c : boolean := OCD_EN and boolean(OCD_NUM_HW_TRIGGERS > 0);
   constant trace_en_c      : boolean := TRACE_PORT_EN or IO_TRACER_EN;
   constant vendorid_c      : std_ulogic_vector(31 downto 0) := x"00000" & '0' & OCD_JEDEC_ID;
+  constant bursts_en_c     : boolean := CACHE_BURSTS_EN and boolean(CACHE_BLOCK_SIZE >= 8);
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := 2**index_size_f(IMEM_SIZE);
@@ -566,7 +567,7 @@ begin
         BLOCK_SIZE => CACHE_BLOCK_SIZE,
         UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
         READ_ONLY  => true,
-        BURSTS_EN  => CACHE_BURSTS_EN
+        BURSTS_EN  => bursts_en_c
       )
       port map (
         clk_i      => clk_i,
@@ -594,7 +595,7 @@ begin
         BLOCK_SIZE => CACHE_BLOCK_SIZE,
         UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
         READ_ONLY  => false,
-        BURSTS_EN  => CACHE_BURSTS_EN
+        BURSTS_EN  => bursts_en_c
       )
       port map (
         clk_i      => clk_i,
@@ -1500,7 +1501,7 @@ begin
       DCACHE_EN         => DCACHE_EN,
       DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
       CACHE_BLOCK_SIZE  => CACHE_BLOCK_SIZE,
-      CACHE_BURSTS_EN   => CACHE_BURSTS_EN,
+      CACHE_BURSTS_EN   => bursts_en_c,
       XBUS_EN           => XBUS_EN,
       OCD_EN            => OCD_EN,
       OCD_AUTH          => ocd_auth_en_c,
