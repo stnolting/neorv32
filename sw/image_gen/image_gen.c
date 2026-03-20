@@ -382,7 +382,6 @@ int main(int argc, char *argv[]) {
         snprintf(tmp_string, sizeof(tmp_string), "%08x,\n", (unsigned int)raw_image32[i]);
       }
       fputs(tmp_string, output);
-      i++;
     }
 
     // report
@@ -397,7 +396,6 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < raw_exe_size/4; i++) {
       snprintf(tmp_string, sizeof(tmp_string), "@%08x %08x\n", (unsigned int)i, (unsigned int)raw_image32[i]);
       fputs(tmp_string, output);
-      i++;
     }
 
     // report
@@ -427,7 +425,6 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < raw_exe_size/4; i++) {
       snprintf(tmp_string, sizeof(tmp_string), "%08x : %08x;\n", (unsigned int)i, (unsigned int)raw_image32[i]);
       fputs(tmp_string, output);
-      i++;
     }
 
     // footer
