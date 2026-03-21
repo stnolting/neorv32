@@ -77,15 +77,15 @@ CORE_SRC += $(NEORV32_COM_PATH)/crt0.S
 LD_SCRIPT ?= $(NEORV32_COM_PATH)/neorv32.ld
 
 # Main output files
-APP_ELF = main.elf
-APP_ASM = main.asm
-APP_EXE = neorv32_exe.bin
-APP_VHD = neorv32_imem_image.vhd
-APP_BIN = neorv32_raw_exe.bin
-APP_COE = neorv32_raw_exe.coe
-APP_MEM = neorv32_raw_exe.mem
-APP_MIF = neorv32_raw_exe.mif
-BLD_VHD = neorv32_bootrom_image.vhd
+APP_ELF ?= main.elf
+APP_ASM ?= main.asm
+APP_EXE ?= neorv32_exe.bin
+APP_VHD ?= neorv32_imem_image.vhd
+APP_BIN ?= neorv32_raw_exe.bin
+APP_COE ?= neorv32_raw_exe.coe
+APP_MEM ?= neorv32_raw_exe.mem
+APP_MIF ?= neorv32_raw_exe.mif
+BLD_VHD ?= neorv32_bootrom_image.vhd
 
 # Define all sources
 SRC  = $(APP_SRC)
@@ -102,7 +102,21 @@ OBJ += $(APP_OBJ)
 # Tools and flags
 # -----------------------------------------------------------------------------
 
-# Compiler tools
+# Host OS
+ifeq ($(OS),Windows_NT)
+  PLATFORM := windows
+else
+  UNAME_S := $(shell uname -s)
+  ifeq ($(UNAME_S),Darwin)
+    PLATFORM := macos
+  else ifeq ($(UNAME_S),Linux)
+    PLATFORM := linux
+  else
+    PLATFORM := unknown
+  endif
+endif
+
+# Compiler suite
 CC      = $(RISCV_PREFIX)gcc
 OBJDUMP = $(RISCV_PREFIX)objdump
 READELF = $(RISCV_PREFIX)readelf
@@ -110,7 +124,10 @@ SIZE    = $(RISCV_PREFIX)size
 GDB     = $(RISCV_PREFIX)gdb
 
 # Host's native compiler
-CC_HOST = gcc -Wall -O -g $(shell pkg-config --cflags libelf)
+CC_HOST = gcc -Wall -O -g
+ifeq ($(PLATFORM),macos)
+  CC_HOST += $(shell pkg-config --cflags libelf)
+endif
 
 # System tools
 ECHO  = @echo
@@ -122,8 +139,8 @@ CHMOD = chmod
 
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
-ifeq ($(OS),Windows_NT)
-IMAGE_GEN := $(IMAGE_GEN).exe
+ifeq ($(PLATFORM),windows)
+  IMAGE_GEN := $(IMAGE_GEN).exe
 endif
 
 # Compiler & linker flags
@@ -163,15 +180,15 @@ all:     clean_all elf asm exe bin coe mem mif image install
 # -----------------------------------------------------------------------------
 
 ifeq ("$(origin V)", "command line")
-BUILD_VERBOSE=$(V)
+  BUILD_VERBOSE=$(V)
 endif
 ifndef BUILD_VERBOSE
-BUILD_VERBOSE = 0
+  BUILD_VERBOSE = 0
 endif
 ifeq ($(BUILD_VERBOSE),0)
-Q = @
+  Q = @
 else
-Q =
+  Q =
 endif
 
 # -----------------------------------------------------------------------------
@@ -379,6 +396,7 @@ info:
 	$(ECHO) "******************************************************"
 	$(ECHO) "Project / Makefile Configuration"
 	$(ECHO) "******************************************************"
+	$(ECHO) "Platform: $(PLATFORM)"
 	$(ECHO) "Source files: $(APP_SRC)"
 	$(ECHO) "Include folder(s): $(APP_INC)"
 	$(ECHO) "ASM include folder(s): $(ASM_INC)"
@@ -413,7 +431,7 @@ info:
 # Help
 # -----------------------------------------------------------------------------
 
-help:
+help::
 	$(ECHO) "NEORV32 Software Makefile"
 	$(ECHO) "Find more information at https://github.com/stnolting/neorv32"
 	$(ECHO) "Use 'make V=1' or set BUILD_VERBOSE to increase build verbosity"
