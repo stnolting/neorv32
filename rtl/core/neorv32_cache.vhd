@@ -302,16 +302,18 @@ begin
       when S_READ_BURST => -- issue read burst
       -- ------------------------------------------------------------
         if bursts_en_c then
-          cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-          cache_o.data    <= bus_rsp_i.data;
-          cache_o.we      <= (others => '1'); -- write full words
-          bus_req_o.rw    <= '0'; -- read access
-          bus_req_o.lock  <= '1'; -- locked transfer
-          bus_req_o.burst <= '1'; -- burst transfer
+          cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+          cache_o.data   <= bus_rsp_i.data;
+          cache_o.we     <= (others => '1'); -- write full words
+          bus_req_o.rw   <= '0'; -- read access
+          bus_req_o.lock <= '1'; -- locked transfer
           -- send requests --
-          if (ctrl.ofs_ext(offset_width_c) = '0') then -- request main memory word
-            ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1);
+          if (ctrl.ofs_ext(offset_width_c) = '0') then -- request next transfer
             bus_req_o.stb    <= '1';
+            ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1);
+            if (and_reduce_f(ctrl.ofs_ext(offset_width_c-1 downto 0)) = '0') then
+              bus_req_o.burst <= '1'; -- set burst indicator; except for the very last transfer
+            end if;
           end if;
           -- receive responses --
           if (bus_rsp_i.ack = '1') then -- received cache word
@@ -411,16 +413,18 @@ begin
       when S_WRITE_BURST => -- issue write burst
       -- ------------------------------------------------------------
         if bursts_en_c and (not READ_ONLY) then
-          cache_o.addr    <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_width_c-1 downto 0) & "00";
-          bus_req_o.addr  <= ctrl.tag & ctrl.idx & ctrl.ofs_buf(offset_width_c-1 downto 0) & "00";
-          bus_req_o.data  <= cache_i.data;
-          bus_req_o.rw    <= '1'; -- write access
-          bus_req_o.lock  <= '1'; -- locked transfer
-          bus_req_o.burst <= '1'; -- burst transfer
+          cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_width_c-1 downto 0) & "00";
+          bus_req_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_buf(offset_width_c-1 downto 0) & "00";
+          bus_req_o.data <= cache_i.data;
+          bus_req_o.rw   <= '1'; -- write access
+          bus_req_o.lock <= '1'; -- locked transfer
           -- send requests --
-          if (ctrl.ofs_buf(offset_width_c) = '0') then -- request main memory word
-            ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1);
+          if (ctrl.ofs_buf(offset_width_c) = '0') then -- request next transfer
             bus_req_o.stb    <= '1';
+            ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1);
+            if (and_reduce_f(ctrl.ofs_buf(offset_width_c-1 downto 0)) = '0') then
+              bus_req_o.burst <= '1'; -- set burst indicator; except for the very last transfer
+            end if;
           end if;
           -- receive responses --
           if (bus_rsp_i.ack = '1') then -- received cache word

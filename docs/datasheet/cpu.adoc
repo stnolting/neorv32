@@ -579,19 +579,19 @@ exclusive bus access and a 4-word incrementing-address read burst.
     {name: 'rw',    wave: 'x0.1.x.|.0....x..'},
     {name: 'amo',   wave: 'x1...x.|.........'},
     {name: 'amoop', wave: 'x2...x.|.........'},
-    {name: 'burst', wave: 'x0....x|.1.....0x'},
-    {name: 'lock',  wave: 'x1...0x|.1.....0x', node: '.b...f...i.....m'},
+    {name: 'burst', wave: 'x0....x|.1...0..x', node: '.............m..'},
+    {name: 'lock',  wave: 'x1...0x|.1.....0x', node: '.b...f...i.....n'},
     {name: 'fence', wave: '0................'},
   ],
   {},
   [
     "response",
-    {name: 'ack',  wave: '0.1010.|..101..0.', node: '..c.eg....j.l..n'},
+    {name: 'ack',  wave: '0.1010.|..101..0.', node: '..c.eg....j.l..o'},
     {name: 'err',  wave: 'x.0x0x.|x.0x0..x.'},
     {name: 'data', wave: 'x.2x...|x.3x456x.', data: ['rdata', '[0]', '[4]', '[8]', '[12]']},
   ]
 ],
- edge: ['ab', 'a~>c', 'c~>d', 'd~>e', 'fg', 'hi', 'h~>j', 'j~>k', 'k~>l', 'mn']
+ edge: ['ab', 'a~>c', 'c~>d', 'd~>e', 'fg', 'hi', 'h~>j', 'j~>k', 'k~>l', 'm', 'no']
 }
 ----
 
@@ -609,10 +609,11 @@ exclusive bus access and a 4-word incrementing-address read burst.
 
 [start=1]
 . The locked burst request is sent by setting `lock` and `burst` together with the first `stb` ("h"). The address applied to `addr`
-defines the base/start address of the burst. `lock` and `burst` stay high until the end of the burst ("m").
+defines the base/start address of the burst.`lock` stays high until the very last `stb` has been acknowledged ("n").
 . The bus is locked when the host received the first `ack` ("j"). Now the host has exclusive bus access and can
 request the remaining burst strobes ("k").
-. The burst is completed when all required `stb` pulses are sent and when all corresponding `ack` have been received ("n").
+. For the very last transfer element `burst` is deasserted ("m"). This indicates the end of the burst.
+. The burst transfer is completed when all required `stb` pulses are sent and when all corresponding `ack` have been received ("o").
 `burst` is cleared. `lock` is cleared and has to be low for at least one cycle to release the bus lock.
 
 .Burst Generators
