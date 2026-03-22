@@ -20,11 +20,14 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_decompressor is
   generic (
-    ZCB_EN : boolean -- enable Zcb ISA extension
+    ZCB_EN : boolean; -- enable Zcb ISA extension
+    ZCMP_EN : boolean
   );
   port (
     instr_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction
-    instr_o : out std_ulogic_vector(31 downto 0)  -- decompressed instruction
+    instr_o : out std_ulogic_vector(31 downto 0);  -- decompressed instruction
+    instr_is_zcmp : out std_ulogic; -- instruction is part of Zcmp extension
+    zcmp_op : out zcmp_op_t -- Zcmp operation type
   );
 end neorv32_cpu_decompressor;
 
@@ -67,6 +70,8 @@ begin
     -- defaults --
     illegal <= '0';
     decoded <= x"00000003"; -- empty rv32 instruction
+    instr_is_zcmp <= '0';
+    zcmp_op <= ZCMP_OP_NONE;
 
     -- decoder --
     case instr_i(ci_opcode_msb_c downto ci_opcode_lsb_c) is
@@ -364,6 +369,35 @@ begin
               end if;
             end if;
 
+          when "101" =>
+
+          if ZCMP_EN then
+            case instr_i(12 downto 8) is
+              when "11000" => -- cm.push
+               instr_is_zcmp <= '1';
+               zcmp_op <= ZCMP_OP_PUSH;
+              when "11010" => -- cm.pop
+               instr_is_zcmp <= '1';
+               zcmp_op <= ZCMP_OP_POP;
+              when "11110" => -- cm.popret
+               instr_is_zcmp <= '1';
+               zcmp_op <= ZCMP_OP_POPRET;
+              when "11100" => -- cm.popretz
+               instr_is_zcmp <= '1';
+               zcmp_op <= ZCMP_OP_POPRETZ;
+              when others =>
+               illegal <= '1';
+            end case;
+            if (instr_i(12 downto 10) = "011")  then -- double moves
+                if (instr_i(6 downto 5) = "01") then -- mvsa01
+                  instr_is_zcmp <= '1';
+                  zcmp_op <= ZCMP_OP_MVSA01;
+                elsif (instr_i(6 downto 5) = "11") then -- mvsa01s
+                  instr_is_zcmp <= '1';
+                  zcmp_op <= ZCMP_OP_MVA01S;
+                end if;
+            end if;
+          end if;
           when others => -- "001"/"101": C.FLDSP / C.LQSP, C.FSDSP / C.SQSP -> illegal
           -- --------------------------------------------------------------------------------------
             illegal <= '1';
