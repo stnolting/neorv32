@@ -76,7 +76,6 @@ architecture xbus2axi4_bridge_rtl of xbus2axi4_bridge is
   constant blen_c : std_ulogic_vector(7 downto 0) := std_ulogic_vector(to_unsigned((BURST_LEN/4)-1, 8));
   signal arvalid, awvalid, wvalid, wb_ack, xbus_rd_ack, xbus_rd_err, xbus_wr_ack, xbus_wr_err : std_ulogic;
   signal state : std_ulogic_vector(1 downto 0);
-  signal bcnt : std_ulogic_vector(7 downto 0);
 
 begin
 
@@ -89,7 +88,6 @@ begin
       wvalid  <= '0';
       wb_ack  <= '0';
       state   <= (others => '0');
-      bcnt    <= (others => '0');
     elsif rising_edge(clk) then
       -- AXI handshake --
       arvalid <= arvalid and std_ulogic(not m_axi_arready);
@@ -104,12 +102,11 @@ begin
           arvalid <= xbus_stb_i and (not xbus_we_i);
           awvalid <= xbus_stb_i and xbus_we_i;
           wvalid  <= xbus_stb_i and xbus_we_i;
-          bcnt    <= x"01"; -- start with first transfer
           if (xbus_stb_i = '1') then
-            if BURST_EN and (xbus_cti_i = "010") then -- incrementing address burst
-              state <= '1' & xbus_we_i;
-            else -- single transfer
+            if (xbus_cti_i = "000") then -- single transfer
               state <= "01";
+            elsif BURST_EN and (xbus_cti_i = "010") then -- incrementing address burst
+              state <= '1' & xbus_we_i;
             end if;
           end if;
 
@@ -121,13 +118,9 @@ begin
 
         when "10" | "11" => -- burst transfer in progress
         -- ------------------------------------------------------------
-          if BURST_EN then
-            if (wvalid = '1') or -- local ACK for the strobe-starting request
-               ((bcnt /= blen_c) and (xbus_stb_i = '1')) then -- local ACK for the first N-1 transfer requests
-              wb_ack <= state(0); -- set for write bursts only
-            end if;
-            if (xbus_stb_i = '1') then
-              bcnt <= std_ulogic_vector(unsigned(bcnt) + 1); -- transfer counter
+          if (state(0) = '1') and BURST_EN then -- issue BURST_LEN-1 local ACKs during write-burst
+            if (wvalid = '1') or ((xbus_cti_i = "010") and (xbus_stb_i = '1')) then
+              wb_ack <= '1';
             end if;
           end if;
           if (xbus_cti_i = "000") or (BURST_EN = false) then -- burst completed
@@ -169,7 +162,7 @@ begin
   -- AXI write data channel --
   m_axi_wdata   <= std_logic_vector(xbus_dat_i);
   m_axi_wstrb   <= std_logic_vector(xbus_sel_i);
-  m_axi_wlast   <= '1' when (xbus_cti_i = "000") or (bcnt = blen_c) else '0'; -- last word of transfer
+  m_axi_wlast   <= '1' when (xbus_cti_i = "000") else '0'; -- last word of transfer
   m_axi_wvalid  <= '1' when (wvalid = '1') or (BURST_EN and (state = "11") and (xbus_stb_i = '1')) else '0';
 
   -- AXI write response channel --
@@ -177,7 +170,7 @@ begin
   xbus_wr_ack   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp(1) = '0') else '0'; -- OKAY(00)/EXOKAY(01)
   xbus_wr_err   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp(1) = '1') else '0'; -- SLVERR(10)/DECERR(11)
 
-  -- XBUS response; issue BLEN-1 local ACKs during write-burst --
+  -- XBUS response --
   xbus_ack_o    <= '1' when BURST_EN and (wb_ack = '1') else (xbus_rd_ack or xbus_wr_ack);
   xbus_err_o    <= '0' when BURST_EN and (wb_ack = '1') else (xbus_rd_err or xbus_wr_err);
 
