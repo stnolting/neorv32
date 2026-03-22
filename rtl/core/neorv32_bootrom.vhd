@@ -41,7 +41,7 @@ architecture neorv32_bootrom_rtl of neorv32_bootrom is
   end component;
 
   -- auto-configuration --
-  constant awidth_c : natural := index_size_f(iodev_size_c); -- max address width (byte-addressing)
+  constant awidth_c : natural := index_size_f(mem_io_dev_size_c); -- max address width (byte-addressing)
 
   -- local signals --
   signal rden  : std_ulogic;

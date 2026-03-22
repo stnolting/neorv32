@@ -70,6 +70,7 @@ int  core1_main(void);
 void goto_user_mode(void);
 void trace_test_1(void);
 void trace_test_2(void);
+void twd_trap_handler(void);
 
 // trap value that will be NEVER set by the hardware
 const uint32_t trap_never_c = 0x80000000U;
@@ -93,6 +94,7 @@ volatile unsigned char constr_src[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 
 volatile uint32_t constr_res = 0; // for constructor test
 volatile uint32_t amo_var = 0; // atomic memory access test
 volatile _Atomic int atomic_cnt = 0; // dual core atomic test
+volatile uint32_t twd_irq = 0; // TWD interrupt checks
 
 
 /**********************************************************************//**
@@ -1192,47 +1194,10 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 0 (TWD)
+  // Fast interrupt channel 0 (reserved)
   // ----------------------------------------------------------
-  PRINT("[%i] FIRQ0 (TWD) ", cnt_test);
-
-  if (neorv32_twd_available()) {
-    trap_cause = trap_never_c;
-    cnt_test++;
-
-    // configure TWD and enable RX-available interrupt
-    neorv32_twd_setup(0b1101001, 0, 1 << TWD_CTRL_IRQ_RX_AVAIL);
-
-    // configure TWI with third-fastest clock, no clock stretching
-    neorv32_twi_setup(CLK_PRSC_8, 1, 0);
-
-    // enable fast interrupt
-    neorv32_cpu_csr_write(CSR_MIE, 1 << TWD_FIRQ_ENABLE);
-
-    // program sequence: write data via TWI
-    neorv32_twi_generate_start_nonblocking();
-    neorv32_twi_send_nonblocking(0b11010010, 0); // write-address
-    neorv32_twi_send_nonblocking(0x47, 0);
-    neorv32_twi_generate_stop_nonblocking();
-
-    // wait for interrupt
-    neorv32_cpu_sleep();
-
-    neorv32_cpu_csr_write(CSR_MIE, 0);
-
-    tmp_a = neorv32_twd_get();
-    if ((trap_cause == TWD_TRAP_CODE) && // interrupt triggered
-        (tmp_a == 0x47) && // correct data received by TWD
-        (neorv32_twd_rx_available() == 0)) { // no more data received by TWD
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    PRINT("[n.a.]\n");
-  }
+  PRINT("[%i] FIRQ0 (reserved) ", cnt_test);
+  PRINT("[n.a.]\n");
 
 
   // ----------------------------------------------------------
@@ -1353,10 +1318,67 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Fast interrupt channel 4 (reserved)
+  // Fast interrupt channel 4 (TWD)
   // ----------------------------------------------------------
-  PRINT("[%i] FIRQ4 (reserved) ", cnt_test);
-  PRINT("[n.a.]\n");
+  PRINT("[%i] FIRQ4 (TWD) ", cnt_test);
+
+  if (neorv32_twd_available()) {
+    trap_cause = trap_never_c;
+    cnt_test++;
+
+    // install TWD trap handler and enable IRQ source
+    neorv32_rte_handler_install(TWD_TRAP_CODE, twd_trap_handler);
+    neorv32_cpu_csr_set(CSR_MIE, 1 << TWD_FIRQ_ENABLE);
+    neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE);
+    twd_irq = 0;
+
+    // configure TWD and enable RX-avail, COM-started and COM-ended interrupts
+    neorv32_twd_setup(
+      0b1101001,
+      0,
+      (1 << TWD_CTRL_IRQ_RX_AVAIL) + (1 << TWD_CTRL_IRQ_COM_BEG) + (1 << TWD_CTRL_IRQ_COM_END)
+    );
+    neorv32_twd_put(0xAB);
+
+    // configure TWI
+    neorv32_twi_setup(CLK_PRSC_8, 0, 0);
+
+    // send I2C sequence and wait for 3 interrupts
+    neorv32_twi_generate_start_nonblocking();
+    neorv32_twi_send_nonblocking(0b11010010, 0); // write-address
+    neorv32_cpu_sleep(); // wait for communication-begin IRQ
+    //
+    neorv32_twi_send_nonblocking(0x47, 0);
+    neorv32_cpu_sleep(); // wait for RX-data-available IRQ
+    //
+    neorv32_twi_generate_start_nonblocking(); // repeated-start
+    neorv32_twi_send_nonblocking(0b11010011, 0); // read-address
+    neorv32_cpu_sleep(); // wait for communication-begin IRQ
+    //
+    neorv32_twi_send_nonblocking(0xFF, 1);
+    neorv32_twi_generate_stop_nonblocking();
+    neorv32_cpu_sleep(); // wait for communication-end IRQ
+
+    neorv32_cpu_csr_write(CSR_MIE, 0);
+
+    neorv32_twi_get_discard(); // discard write-address
+    neorv32_twi_get_discard(); // discard write-data
+    neorv32_twi_get_discard(); // discard read-data
+    uint8_t twd_rdata;
+    tmp_a = (uint32_t)neorv32_twi_get(&twd_rdata);
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TWD_TRAP_CODE) && // interrupt triggered
+        (twd_irq == 0x00010102) && // all interrupt causes correct?
+        (neorv32_twd_rx_available() == 0) && // no more data received by TWD
+        (twd_rdata == 0xAB) && (tmp_a == 0)) { // correct read data + ACK
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT("[n.a.]\n");
+  }
 
 
   // ----------------------------------------------------------
@@ -2603,4 +2625,23 @@ void __attribute__((noinline)) trace_test_1(void) {
 void __attribute__((noinline)) trace_test_2(void) {
 
   asm volatile ("nop");
+}
+
+
+/**********************************************************************//**
+ * TWD interrupt handler
+ **************************************************************************/
+void twd_trap_handler(void) {
+
+  if (neorv32_twd_com_started()) { // communication-start observed?
+    twd_irq += 1<<0;
+  }
+  else if (neorv32_twd_rx_available()) { // data received
+    if (neorv32_twd_get() == 0x47) { // correct byte received?
+      twd_irq += 1<<8;
+    }
+  }
+  else if (neorv32_twd_com_ended()) { // communication-end observed?
+    twd_irq += 1<<16;
+  }
 }

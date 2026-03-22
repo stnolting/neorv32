@@ -75,12 +75,6 @@ extern "C" {
  * @name Fast Interrupt Requests (FIRQ) Aliases
  **************************************************************************/
 /**@{*/
-/** @name Two-Wire Device (TWD) */
-/**@{*/
-#define TWD_FIRQ_ENABLE        CSR_MIE_FIRQ0E    /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
-#define TWD_FIRQ_PENDING       CSR_MIP_FIRQ0P    /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
-#define TWD_TRAP_CODE          TRAP_CODE_FIRQ_0  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
-/**@}*/
 /** @name Custom Functions Subsystem (CFS) */
 /**@{*/
 #define CFS_FIRQ_ENABLE        CSR_MIE_FIRQ1E    /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
@@ -98,6 +92,12 @@ extern "C" {
 #define UART1_FIRQ_ENABLE      CSR_MIE_FIRQ3E    /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
 #define UART1_FIRQ_PENDING     CSR_MIP_FIRQ3P    /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
 #define UART1_TRAP_CODE        TRAP_CODE_FIRQ_3  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
+/**@}*/
+/** @name Two-Wire Device (TWD) */
+/**@{*/
+#define TWD_FIRQ_ENABLE        CSR_MIE_FIRQ4E    /**< MIE CSR bit (#NEORV32_CSR_MIE_enum) */
+#define TWD_FIRQ_PENDING       CSR_MIP_FIRQ4P    /**< MIP CSR bit (#NEORV32_CSR_MIP_enum) */
+#define TWD_TRAP_CODE          TRAP_CODE_FIRQ_4  /**< MCAUSE CSR trap code (#NEORV32_EXCEPTION_CODES_enum) */
 /**@}*/
 /** @name Execution Trace Buffer (TRACER) */
 /**@{*/
@@ -254,23 +254,23 @@ typedef union {
 #define __MMREG_BCLR(r, m) ((r) &= ~(m))
 #define __MMREG_BINV(r, m) ((r) ^=  (m))
 // 32-bit access
-#ifdef __riscv_a // use atomic RMW instructions (Zaamo)
-#define __MMREG32_BSET(r, m) (neorv32_cpu_amoor( (uint32_t)(&r), (uint32_t)( (m))))
-#define __MMREG32_BCLR(r, m) (neorv32_cpu_amoand((uint32_t)(&r), (uint32_t)(~(m))))
-#define __MMREG32_BINV(r, m) (neorv32_cpu_amoxor((uint32_t)(&r), (uint32_t)( (m))))
+#if defined(__riscv_a) || defined(__riscv_zaamo) // use atomic RMW instructions
+#define __MMREG32_BSET(r, m) (neorv32_cpu_amoor( (uint32_t)(&r),  (uint32_t)(m)))
+#define __MMREG32_BCLR(r, m) (neorv32_cpu_amoand((uint32_t)(&r), ~(uint32_t)(m)))
+#define __MMREG32_BINV(r, m) (neorv32_cpu_amoxor((uint32_t)(&r),  (uint32_t)(m)))
 #else // use individual load + modify + write instructions
-#define __MMREG32_BSET(r, m) __MMREG_BSET(r, (uint32_t)m)
-#define __MMREG32_BCLR(r, m) __MMREG_BCLR(r, (uint32_t)m)
-#define __MMREG32_BINV(r, m) __MMREG_BINV(r, (uint32_t)m)
+#define __MMREG32_BSET(r, m) __MMREG_BSET(r, (uint32_t)(m))
+#define __MMREG32_BCLR(r, m) __MMREG_BCLR(r, (uint32_t)(m))
+#define __MMREG32_BINV(r, m) __MMREG_BINV(r, (uint32_t)(m))
 #endif
 // 16-bit access
-#define __MMREG16_BSET(r, m) __MMREG_BSET(r, (uint16_t)m)
-#define __MMREG16_BCLR(r, m) __MMREG_BCLR(r, (uint16_t)m)
-#define __MMREG16_BINV(r, m) __MMREG_BTOG(r, (uint16_t)m)
+#define __MMREG16_BSET(r, m) __MMREG_BSET(r, (uint16_t)(m))
+#define __MMREG16_BCLR(r, m) __MMREG_BCLR(r, (uint16_t)(m))
+#define __MMREG16_BINV(r, m) __MMREG_BTOG(r, (uint16_t)(m))
 // 8-bit access
-#define __MMREG8_BSET(r, m) __MMREG_BSET(r, (uint8_t)m)
-#define __MMREG8_BCLR(r, m) __MMREG_BCLR(r, (uint8_t)m)
-#define __MMREG8_BINV(r, m) __MMREG_BTOG(r, (uint8_t)m)
+#define __MMREG8_BSET(r, m) __MMREG_BSET(r, (uint8_t)(m))
+#define __MMREG8_BCLR(r, m) __MMREG_BCLR(r, (uint8_t)(m))
+#define __MMREG8_BINV(r, m) __MMREG_BTOG(r, (uint8_t)(m))
 /**@}*/
 
 

@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -15,15 +15,6 @@
 #define CONFIG_H
 
 /**********************************************************************
- * Processor memory layout
- **********************************************************************/
-
-// Main memory base address for executable (32-bit, has to be 4-byte-aligned)
-#ifndef EXE_BASE_ADDR
-#define EXE_BASE_ADDR 0x00000000
-#endif
-
-/**********************************************************************
  * Serial console
  **********************************************************************/
 
@@ -35,6 +26,16 @@
 // UART0 baud rate
 #ifndef UART_BAUD
 #define UART_BAUD 19200
+#endif
+
+// Enable UART0 hardware flow control (0,1)
+#ifndef UART_HWFC
+#define UART_HWFC 0
+#endif
+
+// Enable UART0 RX overflow detection (0,1)
+#ifndef UART_OVERFLOW
+#define UART_OVERFLOW 0
 #endif
 
 /**********************************************************************
@@ -189,6 +190,15 @@
 // Name of expected executable for UART upload (string)
 #ifndef THEME_EXE
 #define THEME_EXE "neorv32_exe.bin"
+#endif
+
+/**********************************************************************
+ * Misc
+ **********************************************************************/
+
+// Default executable address; e.g. for directly executing from main memory (32-bit, has to be 4-byte-aligned)
+#ifndef DEFAULT_EXE_ADDR
+#define DEFAULT_EXE_ADDR 0x00000000
 #endif
 
 #endif // CONFIG_H

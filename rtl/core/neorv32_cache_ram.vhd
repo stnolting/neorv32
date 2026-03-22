@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 SoC - Generic Cache - Data and Tag RAM Primitive Wrapper                 --
+-- NEORV32 SoC - Generic Cache - Tag and Data RAM Primitive Wrapper                 --
 -- -------------------------------------------------------------------------------- --
 -- Replace this file by a more efficient technology-specific IP wrapper. The read-  --
 -- during-write behavior is irrelevant as read/write accesses are mutual exclusive. --
@@ -13,7 +13,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -25,10 +24,13 @@ entity neorv32_cache_ram is
     OFS_WIDTH : natural  -- offset width
   );
   port (
+    -- global control --
     clk_i     : in  std_ulogic;                     -- global clock, rising edge
     addr_i    : in  std_ulogic_vector(31 downto 0); -- full byte address
+    -- tag memory --
     tag_we_i  : in  std_ulogic;                     -- tag write-enable
-    tag_o     : out std_ulogic_vector(31 downto 0); -- zero-extended read tag
+    tag_o     : out std_ulogic_vector(31 downto 0); -- zero-extended tag output
+    -- data memory --
     data_we_i : in  std_ulogic_vector(3 downto 0);  -- byte-wise data write-enable
     data_i    : in  std_ulogic_vector(31 downto 0); -- write data
     data_o    : out std_ulogic_vector(31 downto 0)  -- read data
@@ -45,7 +47,7 @@ begin
   assert false report "[NEORV32] Using default CACHE RAM component." severity note;
 
   -- tag RAM --
-  tag_memory_inst: entity neorv32.neorv32_prim_spram
+  tag_ram_inst: entity neorv32.neorv32_prim_spram
   generic map (
     AWIDTH => IDX_WIDTH,
     DWIDTH => TAG_WIDTH,
@@ -60,13 +62,13 @@ begin
     data_o => tag_rd
   );
 
-  -- zero-extend tag output --
-  tag_o <= std_ulogic_vector(resize(unsigned(tag_rd), 32));
+  tag_o(TAG_WIDTH-1 downto 0) <= tag_rd(TAG_WIDTH-1 downto 0); -- actual tag
+  tag_o(31 downto TAG_WIDTH)  <= (others => '0'); -- zero-extend
 
   -- data RAM --
-  data_memory_gen:
-  for i in 0 to 3 generate
-    data_memory_inst: entity neorv32.neorv32_prim_spram
+  data_ram_gen:
+  for i in 0 to 3 generate -- four individual byte RAMs per word
+    data_ram_inst: entity neorv32.neorv32_prim_spram
     generic map (
       AWIDTH => IDX_WIDTH + OFS_WIDTH,
       DWIDTH => 8,

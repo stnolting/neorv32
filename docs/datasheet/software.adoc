@@ -41,6 +41,11 @@ build instructions in the official RISC-V GNU toolchain GitHub repository: https
 More information regarding the toolchain (building from scratch or downloading prebuilt ones) can be found in the
 user guide section https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup[Software Toolchain Setup].
 
+.RISC-V GCC C-Api Documentation
+[TIP]
+A copy of the official RISC-V GCC C-API reference (https://github.com/riscv-non-isa/riscv-c-api-doc) is located
+in the project's `docs` folder: `neorv32/docs/riscv-c-api.pdf`
+
 
 <<<
 // ####################################################################################################################
@@ -196,7 +201,6 @@ Targets:
   elf        build and generate <main.elf> ELF file
   exe        build and generate <neorv32_exe.bin> executable file for bootloader upload
   bin        build and generate <neorv32_raw_exe.bin> executable memory image
-  hex        build and generate <neorv32_raw_exe.hex> executable memory image
   coe        build and generate <neorv32_raw_exe.coe> executable memory image
   mem        build and generate <neorv32_raw_exe.mem> executable memory image
   mif        build and generate <neorv32_raw_exe.mif> executable memory image
@@ -204,7 +208,7 @@ Targets:
   install    build, generate and install VHDL IMEM application memory image <neorv32_imem_image.vhd>
   clean      clean up project home folder
   clean_all  clean up project home folder and image generator
-  all        clean_all + elf + asm + exe + hex + bin + coe + mem + mif + image + install
+  all        clean_all + elf + asm + exe + bin + coe + mem + mif + image + install
 
 Additional targets:
 
@@ -219,7 +223,7 @@ Additional targets:
 Variables:
 
   BUILD_VERBOSE   Set to increase build verbosity: "0"
-  USER_FLAGS      Custom toolchain flags [append only]: "-ggdb -gdwarf-3 -Wl,--defsym,__neorv32_rom_size=16k -Wl,--defsym,__neorv32_ram_size=8k"
+  USER_FLAGS      Custom toolchain flags [append only]: "-ggdb -gdwarf-3 -Wl,--defsym,__neorv32_rom_size=16k -Wl,--defsym,__neorv32_rom_base=0x00002000 -Wl,--defsym,__neorv32_ram_size=8k"
   USER_LIBS       Custom libraries [append only]: ""
   EFFORT          Optimization level: "-Os"
   MARCH           Machine architecture: "rv32i_zicsr_zifencei"
@@ -343,7 +347,7 @@ Note that depending on the application some sections might have zero size.
 .Default RAM Layout
 [source]
 ----
-End of RAM
+<End of RAM>
 +------------------------------+
 |             Stack            |
 +------------------------------+
@@ -358,7 +362,7 @@ End of RAM
 +------------------------------+
 |  Initialized data (".data")  |
 +------------------------------+
-Start of RAM
+<Start of RAM>
 ----
 
 [start=1]
@@ -386,21 +390,21 @@ The <<_smpmp_isa_extension,physical memory protection>> extension can be used to
 :sectnums:
 ==== ROM Layout
 
-The default NEORV32 linker script uses the defined ROM (**IMEM**) size to map several sections.
-Note that depending on the application some sections might have zero size.
+The default NEORV32 linker script uses the defined ROM (**IMEM**) size to map several sections into
+an executable layout. Note that depending on the application some sections might have zero size.
 
 .Default ROM Layout
 [source]
 ----
-End of ROM
-+------------------------------+
-|   Initial data for ".data"   |
-+------------------------------+
-|  Read-only data (".rodata")  |
-+------------------------------+
-|    Program code (".text")    |
-+------------------------------+
-Start of ROM
+<End of ROM>
++-----------------------------+
+|  Initial data for ".data"   |
++-----------------------------+
+|  Read-only data ".rodata"   |
++-----------------------------+
+|    Program code ".text"     |
++-----------------------------+
+<Start of ROM>
 ----
 
 [start=1]
@@ -409,11 +413,10 @@ Start of ROM
 . **Heap (`.heap`)**: Initialization data that is copied at runtime to the RAM's `data` section by by the <<_start_up_code_crt0>>.
 
 .Binary Executable Image
-[IMPORTANT]
-The main <<_application_makefile>> extracts the `.text`, `.rodata`, and `.data` sections from the final ELF
-and concatenates them in order to build the final binary executable image (`main.bin`). Once placed in memory,
-this image can be executed right away. Furthermore, this image is used by the image generator auxiliary tool
-to generate different <<_executable_image_formats>>.
+[NOTE]
+The above sections are concatenated by the <<_application_makefile>> to create a standalone and portable executable.
+This can be exported in various <<_executable_image_formats>>, e.g. for transfer via the <<_bootloader>> or to initialize
+read-only memory.
 
 
 <<<
@@ -490,16 +493,44 @@ The `crt0.S` start-up performs the following operations:
 :sectnums:
 === Executable Image Formats
 
-The binary executable image (see <<_rom_layout>>) is further processed by the NEORV32 image generator (`sw/image_gen`)
-to generate a final executable file. The image generator can generate several types of executable file formats selected
-by a flag when calling the generator. **Note that all these options are managed by the makefile (see <<_makefile_targets>>).**
+The compiled, assembled and linked ELF file (generated by the <<_application_makefile>> is further processed by
+the NEORV32 executable image generator (`sw/image_gen`). This utility can generate various types of standalone
+and portable executable file formats, which are used, for example, for uploading via the <<_bootloader>> or for
+initializing SoC ROM modules.
 
-[cols="<1,<9"]
+.Invoking the Image Generator
+[source,bash]
+----
+neorv32/sw/image_gen$ ./image_gen
+NEORV32 executable image generator
+
+Usage:    image_gen [options]
+Example:  image_gen -i main.elf -o main_exe.bin -t exe
+
+Options:
+  -h            Show this help text and exit
+  -i file_name  ELF input file
+  -o file_name  Image output file
+  -t format     Image output format
+
+Image formats (using little-Endian byte ordering):
+  exe  Executable for bootloader upload (binary file with header)
+  vhd  VHDL memory image (raw executable)
+  bin  Binary file (raw executable)
+  coe  COE file (8x hex per line, ASCII, raw executable)
+  mem  MEM file (8x hex per line, ASCII, raw executable)
+  mif  MIF file (8x hex per line, ASCII, raw executable)
+----
+
+The image generator can be used as a stand-alone program, but it is also integrated into the application makefile.
+This provides corresponding <<_makefile_targets>>) for the different image types:
+
+.Image Generation Targets
+[cols="<1,<10"]
 [grid="none"]
 |=======================
-| `exe` | Generates an executable binary file (including a bootloader header) for upload via the bootloader.
-| `vhd` | Generates a VHDL memory image (package file, package name is the same as the output file name).
-| `hex` | Generates a raw 8x ASCII hex-char file for custom purpose.
+| `exe` | Generates an executable binary file (including a header; see <<_bootloader_image_format>>) for upload via the <<_bootloader>>.
+| `vhd` | Generates a raw VHDL memory image (package file, package name is the same as the output file name).
 | `bin` | Generates a raw binary file for custom purpose.
 | `coe` | Generates a raw COE file for FPGA memory initialization.
 | `mem` | Generates a raw MEM file for FPGA memory initialization.
@@ -508,50 +539,13 @@ by a flag when calling the generator. **Note that all these options are managed 
 
 .Image Generator Compilation
 [NOTE]
-The sources of the image generator are automatically compiled when invoking the makefile
-(requires a native GCC installation).
-
-.Executable Header
-[NOTE]
-For the `app_bin` option the image generator adds a small header to the executable. This header is required by the
-<<_bootloader>> to identify and manage the executable. The header consists of three 32-bit words located right
-at the beginning of the file. The first word of the executable is the signature word and is always `0xB007C0DE`.
-Based on this word the bootloader can identify a valid image file. The next word represents the size in bytes of the
-actual program image in bytes. A simple complement checksum of the actual program image is given by the third word.
-This provides a simple protection against data transmission or storage errors.
-**Note that this executable format cannot be used for _direct_ execution.**
+The sources of the image generator are automatically compiled when invoking the according makefile targets.
+Note that compiling the image generator requires a _native_ C compiler.
 
 .VHDL Memory Initialization Files
 [NOTE]
 The generated VHDL images are plain VHDL packages providing program data as constant array.
 Note that this array is always extended to a power of 2. Unused elements are set to zero.
-
-Optionally, the NEORV32 image generator can also be used stand-alone:
-
-[source,bash]
-----
-neorv32/sw/image_gen$ ./image_gen
-NEORV32 executable image generator
-
-Usage:    image_gen [options]
-Example:  image_gen -i main.bin -o main_exe.bin -t app_bin
-
-Options:
-  -h             Show this help text and exit
-  -i file_name   Input binary file name; mandatory
-  -o file_name   Output file name; mandatory
-  -t type        Type of image to generate; default is 'app_bin'
-
-Image type:
-  app_bin   Application executable for bootloader upload (binary file with header)
-  app_vhd   Application memory image (IMEM VHDL package file)
-  bld_vhd   Bootloader memory image (BOOTROM VHDL package file)
-  raw_hex   ASCII hex file (raw executable)
-  raw_bin   Binary file (raw executable)
-  raw_coe   COE file (raw executable)
-  raw_mem   MEM file (raw executable)
-  raw_mif   MIF file (raw executable)
-----
 
 
 <<<

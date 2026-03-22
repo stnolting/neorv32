@@ -15,28 +15,6 @@
 
 
 /**********************************************************************//**
- * Unavailable extensions warnings.
- **************************************************************************/
-/**@{*/
-#if defined __riscv_d || (__riscv_flen == 64)
-  #error Double-precision floating-point extension D/Zdinx is NOT supported!
-#endif
-
-#if (__riscv_xlen > 32)
-  #error Only XLEN=32 (rv32) is supported!
-#endif
-
-#ifdef __riscv_fdiv
-  #warning Floating-point division instruction FDIV is NOT supported!
-#endif
-
-#ifdef __riscv_fsqrt
-  #warning Floating-point square root instruction FSQRT is NOT supported!
-#endif
-/**@}*/
-
-
-/**********************************************************************//**
  * Get cycle counter from cycle[h].
  *
  * @return Current cycle counter (64 bit).

@@ -77,19 +77,15 @@ CORE_SRC += $(NEORV32_COM_PATH)/crt0.S
 LD_SCRIPT ?= $(NEORV32_COM_PATH)/neorv32.ld
 
 # Main output files
-APP_ELF = main.elf
-APP_ASM = main.asm
-APP_EXE = neorv32_exe.bin
-APP_VHD = neorv32_imem_image.vhd
-APP_HEX = neorv32_raw_exe.hex
-APP_BIN = neorv32_raw_exe.bin
-APP_COE = neorv32_raw_exe.coe
-APP_MEM = neorv32_raw_exe.mem
-APP_MIF = neorv32_raw_exe.mif
-BLD_VHD = neorv32_bootrom_image.vhd
-
-# Binary main file
-BIN_MAIN = $(BUILD_DIR)/main.bin
+APP_ELF ?= main.elf
+APP_ASM ?= main.asm
+APP_EXE ?= neorv32_exe.bin
+APP_VHD ?= neorv32_imem_image.vhd
+APP_BIN ?= neorv32_raw_exe.bin
+APP_COE ?= neorv32_raw_exe.coe
+APP_MEM ?= neorv32_raw_exe.mem
+APP_MIF ?= neorv32_raw_exe.mif
+BLD_VHD ?= neorv32_bootrom_image.vhd
 
 # Define all sources
 SRC  = $(APP_SRC)
@@ -106,16 +102,32 @@ OBJ += $(APP_OBJ)
 # Tools and flags
 # -----------------------------------------------------------------------------
 
-# Compiler tools
+# Host OS
+ifeq ($(OS),Windows_NT)
+  PLATFORM := windows
+else
+  UNAME_S := $(shell uname -s)
+  ifeq ($(UNAME_S),Darwin)
+    PLATFORM := macos
+  else ifeq ($(UNAME_S),Linux)
+    PLATFORM := linux
+  else
+    PLATFORM := unknown
+  endif
+endif
+
+# Compiler suite
 CC      = $(RISCV_PREFIX)gcc
 OBJDUMP = $(RISCV_PREFIX)objdump
-OBJCOPY = $(RISCV_PREFIX)objcopy
 READELF = $(RISCV_PREFIX)readelf
 SIZE    = $(RISCV_PREFIX)size
 GDB     = $(RISCV_PREFIX)gdb
 
 # Host's native compiler
 CC_HOST = gcc -Wall -O -g
+ifeq ($(PLATFORM),macos)
+  CC_HOST += $(shell pkg-config --cflags libelf)
+endif
 
 # System tools
 ECHO  = @echo
@@ -123,13 +135,12 @@ SET   = set
 CP    = cp
 RM    = rm
 MKDIR = mkdir
-WC    = wc
 CHMOD = chmod
 
 # NEORV32 executable image generator
 IMAGE_GEN = $(NEORV32_EXG_PATH)/image_gen
-ifeq ($(OS),Windows_NT)
-IMAGE_GEN := $(IMAGE_GEN).exe
+ifeq ($(PLATFORM),windows)
+  IMAGE_GEN := $(IMAGE_GEN).exe
 endif
 
 # Compiler & linker flags
@@ -156,29 +167,28 @@ NEO_ASFLAGS  = $(CC_FLAGS) $(ASFLAGS)
 elf:     $(APP_ELF)
 asm:     $(APP_ASM)
 exe:     $(APP_EXE)
-hex:     $(APP_HEX)
 bin:     $(APP_BIN)
 coe:     $(APP_COE)
 mem:     $(APP_MEM)
 mif:     $(APP_MIF)
 image:   $(APP_VHD)
 install: image install-$(APP_VHD)
-all:     clean_all elf asm exe hex bin coe mem mif image install
+all:     clean_all elf asm exe bin coe mem mif image install
 
 # -----------------------------------------------------------------------------
 # Verbosity
 # -----------------------------------------------------------------------------
 
 ifeq ("$(origin V)", "command line")
-BUILD_VERBOSE=$(V)
+  BUILD_VERBOSE=$(V)
 endif
 ifndef BUILD_VERBOSE
-BUILD_VERBOSE = 0
+  BUILD_VERBOSE = 0
 endif
 ifeq ($(BUILD_VERBOSE),0)
-Q = @
+  Q = @
 else
-Q =
+  Q =
 endif
 
 # -----------------------------------------------------------------------------
@@ -226,54 +236,42 @@ $(APP_ELF): $(OBJ)
 $(APP_ASM): $(APP_ELF)
 	$(Q)$(OBJDUMP) -d -S -z $< > $@
 
-# Generate final executable from .text + .rodata + .data (in THIS order!)
-$(BIN_MAIN): $(APP_ELF) | $(BUILD_DIR)
-	$(Q)$(OBJCOPY) -I elf32-little $< -j .text -j .rodata -j .data -O binary $@
-
 # -----------------------------------------------------------------------------
 # Application targets: Generate executable formats
 # -----------------------------------------------------------------------------
 
 # Generate NEORV32 executable image for upload via bootloader
-$(APP_EXE): $(BIN_MAIN) $(IMAGE_GEN)
+$(APP_EXE): $(APP_ELF) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_EXE)"
 	$(Q)$(IMAGE_GEN) -t exe -i $< -o $@
-	$(ECHO) "Executable size in bytes:"
-	$(Q)$(WC) -c < $(APP_EXE)
 
-# Generate NEORV32 executable VHDL boot image
-$(APP_VHD): $(BIN_MAIN) $(IMAGE_GEN)
+# Generate NEORV32 RAW executable VHDL boot image
+$(APP_VHD): $(APP_ELF) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_VHD)"
 	$(Q)$(IMAGE_GEN) -t vhd -i $< -o $@
 
-# Generate NEORV32 RAW executable image in plain hex format
-$(APP_HEX): $(BIN_MAIN) $(IMAGE_GEN)
-	$(Q)$(SET) -e
-	$(ECHO) "Generating $(APP_HEX)"
-	$(Q)$(IMAGE_GEN) -t hex -i $< -o $@
-
 # Generate NEORV32 RAW executable image in binary format
-$(APP_BIN): $(BIN_MAIN) $(IMAGE_GEN)
+$(APP_BIN): $(APP_ELF) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_BIN)"
 	$(Q)$(IMAGE_GEN) -t bin -i $< -o $@
 
 # Generate NEORV32 RAW executable image in COE format
-$(APP_COE): $(BIN_MAIN) $(IMAGE_GEN)
+$(APP_COE): $(APP_ELF) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_COE)"
 	$(Q)$(IMAGE_GEN) -t coe -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MIF format
-$(APP_MIF): $(BIN_MAIN) $(IMAGE_GEN)
+$(APP_MIF): $(APP_ELF) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_MIF)"
 	$(Q)$(IMAGE_GEN) -t mif -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MEM format
-$(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
+$(APP_MEM): $(APP_ELF) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_MEM)"
 	$(Q)$(IMAGE_GEN) -t mem -i $< -o $@
@@ -283,7 +281,7 @@ $(APP_MEM): $(BIN_MAIN) $(IMAGE_GEN)
 # -----------------------------------------------------------------------------
 
 # Create local VHDL BOOTROM image
-bl_image: $(BIN_MAIN) $(IMAGE_GEN)
+bl_image: $(APP_ELF) $(IMAGE_GEN)
 	$(Q)$(SET) -e
 	$(ECHO) "Generating $(BLD_VHD)"
 	$(Q)$(IMAGE_GEN) -t vhd -i $< -o $(BLD_VHD)
@@ -349,7 +347,7 @@ gdb: $(APP_ELF)
 # remove all build artifacts
 clean:
 	$(Q)$(RM) -rf $(BUILD_DIR)
-	$(Q)$(RM) -f $(APP_EXE) $(APP_ELF) $(APP_HEX) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BLD_VHD)
+	$(Q)$(RM) -f $(APP_EXE) $(APP_ELF) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BLD_VHD)
 	$(Q)$(RM) -f .gdb_history
 
 # also remove image generator
@@ -371,10 +369,6 @@ check: $(IMAGE_GEN)
 	$(ECHO) $(OBJDUMP)
 	$(ECHO) "******************************************************"
 	$(Q)$(OBJDUMP) -V
-	$(ECHO) "******************************************************"
-	$(ECHO) $(OBJCOPY)
-	$(ECHO) "******************************************************"
-	$(Q)$(OBJCOPY) -V
 	$(ECHO) "******************************************************"
 	$(ECHO) $(READELF)
 	$(ECHO) "******************************************************"
@@ -402,6 +396,7 @@ info:
 	$(ECHO) "******************************************************"
 	$(ECHO) "Project / Makefile Configuration"
 	$(ECHO) "******************************************************"
+	$(ECHO) "Platform: $(PLATFORM)"
 	$(ECHO) "Source files: $(APP_SRC)"
 	$(ECHO) "Include folder(s): $(APP_INC)"
 	$(ECHO) "ASM include folder(s): $(ASM_INC)"
@@ -425,7 +420,6 @@ info:
 	$(ECHO) "MABI: $(MABI)"
 	$(ECHO) "CC: $(CC)"
 	$(ECHO) "OBJDUMP: $(OBJDUMP)"
-	$(ECHO) "OBJCOPY: $(OBJCOPY)"
 	$(ECHO) "SIZE: $(SIZE)"
 	$(ECHO) "DEBUGGER: $(GDB)"
 	$(ECHO) "GDB_ARGS: $(GDB_ARGS)"
@@ -437,7 +431,7 @@ info:
 # Help
 # -----------------------------------------------------------------------------
 
-help:
+help::
 	$(ECHO) "NEORV32 Software Makefile"
 	$(ECHO) "Find more information at https://github.com/stnolting/neorv32"
 	$(ECHO) "Use 'make V=1' or set BUILD_VERBOSE to increase build verbosity"
@@ -452,7 +446,6 @@ help:
 	$(ECHO) "  elf        build and generate <$(APP_ELF)> ELF file"
 	$(ECHO) "  exe        build and generate <$(APP_EXE)> executable file for bootloader upload"
 	$(ECHO) "  bin        build and generate <$(APP_BIN)> executable memory image"
-	$(ECHO) "  hex        build and generate <$(APP_HEX)> executable memory image"
 	$(ECHO) "  coe        build and generate <$(APP_COE)> executable memory image"
 	$(ECHO) "  mem        build and generate <$(APP_MEM)> executable memory image"
 	$(ECHO) "  mif        build and generate <$(APP_MIF)> executable memory image"
@@ -460,7 +453,7 @@ help:
 	$(ECHO) "  install    build, generate and install VHDL IMEM application memory image <$(APP_VHD)>"
 	$(ECHO) "  clean      clean up project home folder"
 	$(ECHO) "  clean_all  clean up project home folder and image generator"
-	$(ECHO) "  all        clean_all + elf + asm + exe + hex + bin + coe + mem + mif + image + install"
+	$(ECHO) "  all        clean_all + elf + asm + exe + bin + coe + mem + mif + image + install"
 	$(ECHO) ""
 	$(ECHO) "Additional targets:"
 	$(ECHO) ""

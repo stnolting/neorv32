@@ -1078,7 +1078,7 @@
       <description>Two-wire device controller</description>
       <baseAddress>0xFFEA0000</baseAddress>
 
-      <interrupt><name>TWD_FIRQ</name><value>0</value></interrupt>
+      <interrupt><name>TWD_FIRQ</name><value>4</value></interrupt>
 
       <addressBlock>
         <offset>0</offset>
@@ -1135,14 +1135,29 @@
               <description>IRQ if TX FIFO empty</description>
             </field>
             <field>
+              <name>TWD_CTRL_IRQ_TX_NFULL</name>
+              <bitRange>[14:14]</bitRange>
+              <description>IRQ if TX FIFO is not full</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_IRQ_COM_BEG</name>
+              <bitRange>[15:15]</bitRange>
+              <description>IRQ if begin of communication</description>
+            </field>
+            <field>
+              <name>TWD_CTRL_IRQ_COM_END</name>
+              <bitRange>[16:16]</bitRange>
+              <description>IRQ if end of communication</description>
+            </field>
+            <field>
               <name>TWD_CTRL_RX_FIFO</name>
-              <bitRange>[19:16]</bitRange>
+              <bitRange>[20:17]</bitRange>
               <access>read-only</access>
               <description>log2(TWD RX FIFO size)</description>
             </field>
             <field>
               <name>TWD_CTRL_TX_FIFO</name>
-              <bitRange>[23:20]</bitRange>
+              <bitRange>[24:21]</bitRange>
               <access>read-only</access>
               <description>log2(TWD TX FIFO size)</description>
             </field>
@@ -1171,22 +1186,20 @@
               <description>TX FIFO full</description>
             </field>
             <field>
-              <name>TWD_CTRL_SENSE_SCL</name>
+              <name>TWD_CTRL_COM_BEG</name>
               <bitRange>[29:29]</bitRange>
-              <access>read-only</access>
-              <description>current state of the SCL bus line</description>
+              <description>communication has started; clear by writing 1</description>
             </field>
             <field>
-              <name>TWD_CTRL_SENSE_SDA</name>
+              <name>TWD_CTRL_COM_END</name>
               <bitRange>[30:30]</bitRange>
-              <access>read-only</access>
-              <description>current state of the SDA bus line</description>
+              <description>communication has ended; clear by writing 1</description>
             </field>
             <field>
-              <name>TWD_CTRL_BUSY</name>
+              <name>TWD_CTRL_COM</name>
               <bitRange>[31:31]</bitRange>
               <access>read-only</access>
-              <description>bus engine is busy (transaction in progress)</description>
+              <description>active communication</description>
             </field>
           </fields>
         </register>

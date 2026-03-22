@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -17,7 +17,8 @@
 #include <uart.h>
 
 // global variables
-uint32_t g_exe_size = 0; // size of the loaded executable; 0 if no executable available
+uint32_t g_exe_base   = (uint32_t)DEFAULT_EXE_ADDR; // (default) base/entry-point of executable
+uint32_t g_exe_size   = 0; // size of the loaded executable; 0 if no executable available
 uint32_t g_flash_addr = 0; // current flash/stream address
 
 
@@ -89,6 +90,9 @@ void system_setup(void) {
 #if (UART_EN == 1)
   if (neorv32_uart0_available()) {
     neorv32_uart0_setup(UART_BAUD, 0);
+#if (UART_OVERFLOW == 1)
+    neorv32_uart0_rtscts_enable(); // enable RTS/CTS hardware flow control
+#endif
   }
 #endif
 
@@ -125,13 +129,15 @@ int system_app_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata)) {
 
   // get image header
   int rc = 0;
-  uint32_t exe_signature = 0, exe_size = 0, exe_checksum = 0;
-  rc |= stream_get(&exe_signature);
-  rc |= stream_get(&exe_size);
-  rc |= stream_get(&exe_checksum);
+  executable_header_t header;
+  rc |= stream_get(&header.signature);
+  rc |= stream_get(&header.base_addr);
+  rc |= stream_get(&header.size);
+  rc |= stream_get(&header.checksum);
+  g_exe_base = header.base_addr;
 
   // signature OK?
-  if (exe_signature != (uint32_t)BIN_SIGNATURE) {
+  if (header.signature != (uint32_t)BIN_SIGNATURE) {
     uart_puts("\aERROR_SIGNATURE\n");
     return 1;
   }
@@ -139,13 +145,13 @@ int system_app_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata)) {
   // transfer executable
   uint32_t tmp = 0;
   uint32_t i = 0;
-  while (i < exe_size) { // in chunks of 4 bytes
+  while (i < header.size) { // in chunks of 4 bytes
     if (rc) {
       break;
     }
     rc |= stream_get(&tmp);
-    exe_checksum += tmp;
-    neorv32_cpu_store_unsigned_word((uint32_t)EXE_BASE_ADDR + i, tmp);
+    header.checksum += tmp;
+    neorv32_cpu_store_unsigned_word(header.base_addr + i, tmp);
     i += 4;
   }
 
@@ -154,12 +160,12 @@ int system_app_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata)) {
     uart_puts("\aERROR_DEVICE\n");
     return 1;
   }
-  if ((exe_checksum + 1) != 0) {
+  if ((header.checksum + 1) != 0) {
     uart_puts("\aERROR_CHECKSUM\n");
     return 1;
   }
 
-  g_exe_size = exe_size;
+  g_exe_size = header.size;
   uart_puts("OK\n");
 
   // sync data cache
@@ -192,11 +198,20 @@ int system_app_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream
     return 1;
   }
 
+  executable_header_t header;
+  header.signature = BIN_SIGNATURE;
+  header.base_addr = g_exe_base;
+  header.size      = g_exe_size;
+  header.checksum  = g_exe_base;
+  uint32_t addr_backup = g_flash_addr; // backup initial start address
+
   // confirmation prompt
   uart_puts("Write ");
-  uart_puth(g_exe_size);
-  uart_puts(" bytes to flash @");
-  uart_puth(g_flash_addr);
+  uart_puth(header.size);
+  uart_puts(" bytes from ");
+  uart_puth(header.base_addr);
+  uart_puts(" to flash @");
+  uart_puth(addr_backup);
   uart_puts("? (y/n)\n");
   if (uart_getc() != 'y') {
     return 1;
@@ -214,15 +229,13 @@ int system_app_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream
 
   // write executable
   int rc = 0;
-  uint32_t checksum = 0;
   uint32_t tmp = 0;
   uint32_t i = 0;
-  uint32_t addr_backup = g_flash_addr; // backup initial start address
 
   g_flash_addr += (uint32_t)BIN_OFFSET_DATA;
-  while (i < g_exe_size) { // in chunks of 4 bytes
-    tmp = neorv32_cpu_load_unsigned_word((uint32_t)EXE_BASE_ADDR + i);
-    checksum += tmp;
+  while (i < header.size) { // in chunks of 4 bytes
+    tmp = neorv32_cpu_load_unsigned_word(header.base_addr + i);
+    header.checksum += tmp;
     rc |= stream_put(tmp);
     i += 4;
     if (rc) {
@@ -230,11 +243,15 @@ int system_app_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream
     }
   }
 
-  // write header
+  // restore original flash address pointer
   g_flash_addr = addr_backup;
-  rc |= stream_put(BIN_SIGNATURE);
-  rc |= stream_put(g_exe_size);
-  rc |= stream_put(~checksum);
+
+  // write header
+  rc |= stream_put(header.signature);
+  rc |= stream_put(header.base_addr);
+  rc |= stream_put(header.size);
+  header.checksum = ~header.checksum;
+  rc |= stream_put(header.checksum);
 
   if (rc) {
     uart_puts("\aERROR_DEVICE\n");
@@ -247,11 +264,9 @@ int system_app_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream
 
 
 /**********************************************************************//**
- * Boot application executable.
- *
- * @param boot_addr Application boot address (32-bit, has to be 4-byte-aligned).
+ * Boot application executable at address "g_exe_base".
  **************************************************************************/
-void system_app_boot(uint32_t boot_addr) {
+void system_app_boot(void) {
 
   // executable available?
   if (g_exe_size == 0) {
@@ -260,6 +275,9 @@ void system_app_boot(uint32_t boot_addr) {
       return;
     }
   }
+
+  // boot address - local copy
+  uint32_t boot_addr = g_exe_base;
 
   // start application in machine mode; disable interrupts
   neorv32_cpu_csr_write(CSR_MSTATUS, (1 << CSR_MSTATUS_MPP_H) + (1 << CSR_MSTATUS_MPP_L));
