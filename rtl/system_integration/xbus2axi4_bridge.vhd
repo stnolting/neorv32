@@ -1,7 +1,7 @@
 -- ================================================================================ --
 -- NEORV32 SoC - XBUS to AXI4-Compatible Bridge                                     --
 -- -------------------------------------------------------------------------------- --
--- This bridge supports single transfers and also incrementing address bursts.      --
+-- Supported transfers: Single Transfers + Incrementing Address Bursts.             --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -118,12 +118,12 @@ begin
 
         when "10" | "11" => -- burst transfer in progress
         -- ------------------------------------------------------------
-          if (state(0) = '1') and BURST_EN then -- issue BURST_LEN-1 local ACKs during write-burst
+          if (state(0) = '1') and BURST_EN then
             if (wvalid = '1') or ((xbus_cti_i = "010") and (xbus_stb_i = '1')) then
-              wb_ack <= '1';
+              wb_ack <= '1'; -- issue BURST_LEN-1 local ACKs during write-burst
             end if;
           end if;
-          if (xbus_cti_i = "000") or (BURST_EN = false) then -- burst completed
+          if (xbus_cti_i = "000") or (BURST_EN = false) then
             state <= "00";
           end if;
 
