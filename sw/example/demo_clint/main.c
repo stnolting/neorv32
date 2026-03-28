@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,7 +9,6 @@
 
 /**********************************************************************//**
  * @file demo_clint/main.c
- * @author Stephan Nolting
  * @brief Simple core local interruptor (CLINT) usage example.
  **************************************************************************/
 
@@ -59,7 +58,10 @@ int main() {
                      "Also toggles GPIO.output(0) at 1Hz.\n\n");
 
   // clear GPIO output port
+
+  // configure lowest 8 GPIO pins as outputs
   neorv32_gpio_port_set(0);
+  neorv32_gpio_dir_set(1); // pin 0 = output
 
   // setup date and time for the Unix time of CLINT.MTIMER
   date_t date;

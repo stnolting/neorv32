@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,7 +9,6 @@
 
 /**********************************************************************//**
  * @file demo_blink_led/main.c
- * @author Stephan Nolting
  * @brief Minimal blinking LED demo program using the lowest 8 bits of the GPIO.output port.
  **************************************************************************/
 #include <neorv32.h>
@@ -36,6 +35,10 @@ int main() {
 
   // clear GPIO output (set all bits to 0)
   neorv32_gpio_port_set(0);
+
+  // configure lowest 8 GPIO pins as outputs
+  // this is only relevant if the GPIO direction control feature is enabled
+  neorv32_gpio_dir_set(0x000000FF);
 
   int cnt = 0;
 
