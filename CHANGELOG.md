@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 28.03.2026 | 1.12.8.8 | add optional GPIO direction control | [#1517](https://github.com/stnolting/neorv32/pull/1517) |
 | 12.03.2026 | 1.12.8.7 | :bug: fix GPTMR prescaler register write access logic | [#1509](https://github.com/stnolting/neorv32/pull/1509) |
 | 08.03.2026 | 1.12.8.6 | remove `twd_scl_o` top port; SCL is only sampled by the TWD, but not driven | [#1506](https://github.com/stnolting/neorv32/pull/1506) |
 | 07.03.2026 | 1.12.8.5 | :sparkles: bootloader: add flexible executable base address; :warning: rework bootloader executable header and signature | [#1505](https://github.com/stnolting/neorv32/pull/1505) |

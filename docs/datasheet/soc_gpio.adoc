@@ -8,9 +8,11 @@
 | Hardware source files:  | neorv32_gpio.vhd   |
 | Software driver files:  | neorv32_gpio.c     | link:https://stnolting.github.io/neorv32/sw/neorv32__gpio_8c.html[Online software reference (Doxygen)]
 |                         | neorv32_gpio.h     | link:https://stnolting.github.io/neorv32/sw/neorv32__gpio_8h.html[Online software reference (Doxygen)]
-| Top entity ports:       | `gpio_o`           | 32-bit parallel output port
+| Top entity ports:       | `gpio_dir_o`       | 32-bit direction control output port
+|                         | `gpio_o`           | 32-bit parallel output port
 |                         | `gpio_i`           | 32-bit parallel input port
 | Configuration generics: | `IO_GPIO_NUM`      | number of input/output pairs to implement (0..32)
+|                         | `IO_GPIO_DIR_EN`   | enable direction control feature when _true_
 | CPU interrupts:         | fast IRQ channel 8 | input-pin change interrupt (see <<_processor_interrupts>>)
 |=======================
 
@@ -23,22 +25,59 @@
 
 **Overview**
 
-The general purpose IO unit provides simple uni-directional input and output port. These ports can be used
-chip-externally (for example to drive status LEDs, connect buttons, etc.) or chip-internally to provide control
-signals for other IP modules. The input port features programmable pin-individual level or edge interrupts
-capabilities.
+The general purpose IO module provides simple unidirectional - or optionally bidirectional - inputs and outputs.
+These connections can be used externally (for example, to control status LEDs, connect buttons, etc.) or internally
+to provide control signals for other IP modules. The input port features programmable, pin-specific level- or
+edge-triggered interrupts.
 
 Data written to the `PORT_OUT` will appear on the processor's `gpio_o` port. Vice versa, the `PORT_IN` register
 represents the current state of the processor's `gpio_i`.
 
 The actual number of input/output pairs is defined by the `IO_GPIO_NUM` generic. When set to zero, the GPIO module
 is excluded from synthesis and the output port `gpio_o` is tied to all-zero. If `IO_GPIO_NUM` is less than the
-maximum value of 32, only the LSB-aligned bits in `gpio_o` and `gpio_i` are actually connected while the remaining
-bits are tied to zero or are left unconnected, respectively. This also applies to all memory-mapped interface
-registers of the GPIO module (i.e. the according most-significant bits are hardwired to zero).
+maximum value of 32, only the LSB-aligned bits of `gpio_o` and `gpio_i` are actually connected while the remaining
+ones are tied to zero or are left unconnected, respectively. This also applies to all memory-mapped interface
+registers of the GPIO module (i.e. the according most-significant bits are hardwired to zero and are read-only).
 
 
-**Input Pin Interrupts**
+**Direction Control**
+
+The IO ports can also be used as bidirectional ports. The direction feature must be explicitly enabled via the
+`IO_GPIO_DIR_EN` generic. When enabled, the `PORT_DIR` register is used to control the direction of each individual
+IO signal by directly driving the top's `gpio_dir_o` port. Setting bit _i_ to `1` configures the according pin as
+output. Clearing bit _i_ configures the according pin as input. Note that the `PORT_DIR` register resets to all-zero
+configuring all bi-directional IOs as inputs.
+
+.GPIO Tristate Driver Wiring
+----
+gpio_dir_o[i] -------+    0 = input (default)
+                     |    1 = output
+                   |\|
+                   | \
+gpio_o[i] -------->|  >---+---<> GPIO pin [i]
+                   | /    |
+                   |/     |
+                          |
+gpio_i[i] <---------------+
+----
+
+.GPIO VHDL Tristate Driver Example (external `gpio_io` port is of type `std_logic_vector`)
+[source,VHDL]
+----
+gpio_tristate_gen:
+for i in 0 to IO_GPIO_NUM-1 generate
+  gpio_io(i) <= std_logic(gpio_o(i)) when (gpio_dir_o(i) = '1') else 'Z'; -- drive
+end generate;
+
+gpio_i(IO_GPIO_NUM-1 downto 0) <= std_ulogic_vector(gpio_io(IO_GPIO_NUM-1 downto 0)); -- sense
+----
+
+.`GPIO_DIR` As Additional Output Port
+[TIP]
+If the bi-directional feature is not required, the `gpio_dir_o` port can be used as additional output port.
+
+
+**Interrupts**
 
 Each input pin (`gpio_i`) provides an individual programmable interrupt trigger. The actual interrupt trigger
 type can be configured individually for each input pin using the `IRQ_TYPE` and `IRQ_POLARITY` registers.
@@ -84,7 +123,7 @@ A demo program for the GPIO input interrupts can be found in `sw/example/demo_gp
 | Address      | Name [C]       | Bit(s) | R/W | Function
 | `0xfffc0000` | `PORT_IN`      | 31:0   | r/- | Parallel input port; `PORT_IN(i)` corresponds to `gpio_i(i)`
 | `0xfffc0004` | `PORT_OUT`     | 31:0   | r/w | Parallel output port; `PORT_OUT(i)` corresponds to `gpio_o(i)`
-| `0xfffc0008` | -              | 31:0   | r/- | _reserved_, read as zero
+| `0xfffc0008` | `PORT_DIR`     | 31:0   | r/w | Port direction; `PORT_DIR(i)` corresponds to `gpio_o(i)`; `0` = input (default), `1` = output; this register is hardwired to all-zero if `IO_GPIO_DIR_EN = false`
 | `0xfffc000c` | -              | 31:0   | r/- | _reserved_, read as zero
 | `0xfffc0010` | `IRQ_TYPE`     | 31:0   | r/w | Trigger type select (`0` = level trigger, `1` = edge trigger); `IRQ_TYPE(i)` corresponds to `gpio_i(i)`
 | `0xfffc0014` | `IRQ_POLARITY` | 31:0   | r/w | Trigger polarity select (`0` = low-level/falling-edge, `1` = high-level/rising-edge); `IRQ_POLARITY(i)` corresponds to `gpio_i(i)`

@@ -46,9 +46,10 @@ data in _raw_ byte mode without any protocol overhead (e.g. XMODEM). Note that s
 with transmitting files larger than 4kB (see https://github.com/stnolting/neorv32/pull/215).
 **For Windows I can recommend TeraTerm (GUI) and SimplySerial (Window terminal). For Linux I can recommend `picocom`.**
 
-By default the bootloader uses the LSB of the top entity's GPIO output port (`gpio_o(0)`) for an high-active
-status LED. All other output pins are set to low. After reset, the status LED will start blinking at 2Hz and the
-<<_auto_boot_sequence>> is started. This auto-boot sequence can be skipped within 8s by pressing any key.
+By default the bootloader uses the LSB of the GPIO output port (`gpio_o(0)`) for a high-active status LED.
+If the GPIO's direction control feature is implemented, only pin 0 is configured as output; the remaining pins
+are configured as inputs. All other output pins are set to low. After reset, the status LED will start blinking
+at 2Hz and the <<_auto_boot_sequence>> is started. This auto-boot sequence can be skipped within 8s by pressing any key.
 
 .Default Bootloader Console
 [source]
@@ -298,7 +299,7 @@ overridden by Makefile directives.
 | `UART_HWFC`             | `0`     | `0,1` | Enable RTS/CTS hardware flow control. Recommended for very high baud rates / high memory latency.
 4+<| **Status LED** - requires <<_general_purpose_input_and_output_port_gpio>>
 | `STATUS_LED_EN`         | `1` | `0,1`   | Enable bootloader status led ("heart beat") at `GPIO` output port pin `STATUS_LED_PIN` when `1`.
-| `STATUS_LED_PIN`        | `0` | `0..31` | `GPIO` output pin used for the high-active status LED.
+| `STATUS_LED_PIN`        | `0` | `0..31` | `GPIO` output pin used for the high-active status LED. Note that if the GPIO module's direction control feature is enabled only this pin is configured as output.
 4+<| **Auto-boot** - requires <<_core_local_interruptor_clint>>
 | `AUTO_BOOT_EN`          | `1`  | `0,1` | Auto-boot enabled when `1`.
 | `AUTO_BOOT_TIMEOUT`     | `8`  | any   | Timeout in seconds after which the auto-boot sequence starts (if there is no UART input by the user).

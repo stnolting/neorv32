@@ -1378,6 +1378,11 @@
           <addressOffset>0x04</addressOffset>
         </register>
         <register>
+          <name>PORT_DIR</name>
+          <description>Port direction configuration: 0 = input, 1 = output</description>
+          <addressOffset>0x08</addressOffset>
+        </register>
+        <register>
           <name>IRQ_TYPE</name>
           <description>Interrupt trigger type (level/edge) for each input pin</description>
           <addressOffset>0x10</addressOffset>

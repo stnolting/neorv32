@@ -186,6 +186,7 @@ int main() {
 
   // clear GPIOs (they are used by the TB to trigger external events)
   neorv32_gpio_port_set(0);
+  neorv32_gpio_dir_set(-1); // set all as outputs
 
   // prepare counters
   neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
