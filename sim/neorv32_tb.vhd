@@ -89,7 +89,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
 
   -- IO connection --
   signal uart0_txd, uart0_ctsn, uart1_txd, uart1_ctsn : std_ulogic;
-  signal gpio : std_ulogic_vector(31 downto 0);
+  signal gpio_dir, gpio_out, gpio_in : std_ulogic_vector(31 downto 0);
+  signal gpio : std_logic_vector(31 downto 0);
   signal i2c_scl, i2c_sda : std_logic;
   signal twi_scl_i, twi_scl_o, twi_sda_i, twi_sda_o : std_ulogic;
   signal twd_scl_i, twd_sda_i, twd_sda_o : std_ulogic;
@@ -204,6 +205,7 @@ begin
     XBUS_REGSTAGE_EN    => true,
     -- Processor peripherals --
     IO_GPIO_NUM         => 32,
+    IO_GPIO_DIR_EN      => true,
     IO_CLINT_EN         => true,
     IO_UART0_EN         => true,
     IO_UART0_RX_FIFO    => 32,
@@ -277,8 +279,9 @@ begin
     slink_tx_lst_o => slink_tx.last,
     slink_tx_rdy_i => slink_tx.ready,
     -- GPIO --
-    gpio_o         => gpio,
-    gpio_i         => gpio,
+    gpio_dir_o     => gpio_dir,
+    gpio_o         => gpio_out,
+    gpio_i         => gpio_in,
     -- primary UART0 --
     uart0_txd_o    => uart0_txd,
     uart0_rxd_i    => uart1_txd,
@@ -325,6 +328,17 @@ begin
     irq_mti_i      => mti,
     irq_mei_i      => mei
   );
+
+
+  -- Bidirectional GPIO ---------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  gpio_gen:
+  for i in 0 to 31 generate
+    gpio(i) <= std_logic(gpio_out(i)) when (gpio_dir(i) = '1') else 'Z'; -- drive
+  end generate;
+
+  gpio_in <= std_ulogic_vector(gpio); -- sense
+  gpio    <= (others => 'L'); -- weak pull-downs
 
 
   -- Two-Wire Bus - Tri-State Drivers (modules can only actively pull low) ------------------

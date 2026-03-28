@@ -107,6 +107,7 @@ entity neorv32_top is
 
     -- Processor peripherals --
     IO_GPIO_NUM         : natural range 0 to 32          := 0;             -- number of GPIO input/output pairs
+    IO_GPIO_DIR_EN      : boolean                        := false;         -- enable GPIO direction control port
     IO_CLINT_EN         : boolean                        := false;         -- implement core local interruptor (CLINT)
     IO_UART0_EN         : boolean                        := false;         -- implement primary universal asynchronous receiver/transmitter (UART0)
     IO_UART0_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two
@@ -185,6 +186,7 @@ entity neorv32_top is
     slink_tx_rdy_i : in  std_ulogic := 'L';                                  -- TX ready to send
 
     -- GPIO (available if IO_GPIO_NUM > 0) --
+    gpio_dir_o     : out std_ulogic_vector(31 downto 0);                     -- direction control (0=in, 1=out)
     gpio_o         : out std_ulogic_vector(31 downto 0);                     -- parallel output
     gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- parallel input; interrupt-capable
 
@@ -1067,22 +1069,25 @@ begin
     if io_gpio_en_c generate
       neorv32_gpio_inst: entity neorv32.neorv32_gpio
       generic map (
-        GPIO_NUM => IO_GPIO_NUM
+        GPIO_NUM => IO_GPIO_NUM,
+        GPIO_DIR => IO_GPIO_DIR_EN
       )
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => iodev_req(IODEV_GPIO),
-        bus_rsp_o => iodev_rsp(IODEV_GPIO),
-        gpio_o    => gpio_o,
-        gpio_i    => gpio_i,
-        irq_o     => firq(FIRQ_GPIO)
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        bus_req_i  => iodev_req(IODEV_GPIO),
+        bus_rsp_o  => iodev_rsp(IODEV_GPIO),
+        port_dir_o => gpio_dir_o,
+        port_out_o => gpio_o,
+        port_in_i  => gpio_i,
+        irq_o      => firq(FIRQ_GPIO)
       );
     end generate;
 
     neorv32_gpio_disabled:
     if not io_gpio_en_c generate
       iodev_rsp(IODEV_GPIO) <= rsp_terminate_c;
+      gpio_dir_o            <= (others => '0');
       gpio_o                <= (others => '0');
       firq(FIRQ_GPIO)       <= '0';
     end generate;

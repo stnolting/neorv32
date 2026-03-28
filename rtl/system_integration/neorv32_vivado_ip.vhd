@@ -102,6 +102,8 @@ entity neorv32_vivado_ip is
     IO_GPIO_EN            : boolean                        := false;
     IO_GPIO_IN_NUM        : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
     IO_GPIO_OUT_NUM       : natural range 1 to 32          := 1;
+    IO_GPIO_DIR_EN        : boolean                        := false;
+    IO_GPIO_DIR_NUM       : natural range 1 to 32          := 1;
     IO_CLINT_EN           : boolean                        := false;
     IO_UART0_EN           : boolean                        := false;
     IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;
@@ -214,6 +216,7 @@ entity neorv32_vivado_ip is
     -- Processor IO
     -- ------------------------------------------------------------
     -- GPIO (available if IO_GPIO_IN/OUT_NUM > 0) --
+    gpio_dir_o     : out std_logic_vector(IO_GPIO_DIR_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     gpio_o         : out std_logic_vector(IO_GPIO_OUT_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     gpio_i         : in  std_logic_vector(IO_GPIO_IN_NUM-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
     -- primary UART0 (available if IO_UART0_EN = true) --
@@ -349,7 +352,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal mtime_time_aux : std_ulogic_vector(63 downto 0);
 
   -- constrained size ports --
-  signal gpio_o_aux, gpio_i_aux, pwm_o_aux : std_ulogic_vector(31 downto 0);
+  signal gpio_dir_o_aux, gpio_o_aux, gpio_i_aux, pwm_o_aux : std_ulogic_vector(31 downto 0);
 
   -- internal xbus --
   signal xbus_req : xbus_req_t;
@@ -436,6 +439,7 @@ begin
     XBUS_REGSTAGE_EN    => XBUS_REGSTAGE_EN,
     -- Processor peripherals --
     IO_GPIO_NUM         => num_gpio_c,
+    IO_GPIO_DIR_EN      => IO_GPIO_DIR_EN,
     IO_CLINT_EN         => IO_CLINT_EN,
     IO_UART0_EN         => IO_UART0_EN,
     IO_UART0_RX_FIFO    => IO_UART0_RX_FIFO,
@@ -504,6 +508,7 @@ begin
     slink_tx_lst_o => s0_axis_tlast_aux,
     slink_tx_rdy_i => std_ulogic(s0_axis_tready),
     -- GPIO (available if IO_GPIO_NUM > 0) --
+    gpio_dir_o     => gpio_dir_o_aux,
     gpio_o         => gpio_o_aux,
     gpio_i         => gpio_i_aux,
     -- primary UART0 (available if IO_UART0_EN = true) --
@@ -593,7 +598,7 @@ begin
   mtime_time_o <= std_logic_vector(mtime_time_aux);
 
 
-  -- Type Conversion (Constrained-Size Ports) -----------------------------------------------
+  -- Mapping for Constrained-Size Ports -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
   -- GPIO input --
@@ -609,6 +614,12 @@ begin
   gpio_out_mapping:
   for i in 0 to IO_GPIO_OUT_NUM-1 generate
     gpio_o(i) <= std_logic(gpio_o_aux(i));
+  end generate;
+
+  -- GPIO direction --
+  gpio_dir_mapping:
+  for i in 0 to IO_GPIO_DIR_NUM-1 generate
+    gpio_dir_o(i) <= std_logic(gpio_dir_o_aux(i));
   end generate;
 
   -- PWM --

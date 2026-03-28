@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120807"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120808"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -893,6 +893,7 @@ package neorv32_package is
       XBUS_REGSTAGE_EN    : boolean                        := false;
       -- Processor peripherals --
       IO_GPIO_NUM         : natural range 0 to 64          := 0;
+      IO_GPIO_DIR_EN      : boolean                        := false;
       IO_CLINT_EN         : boolean                        := false;
       IO_UART0_EN         : boolean                        := false;
       IO_UART0_RX_FIFO    : natural range 1 to 2**15       := 1;
@@ -966,6 +967,7 @@ package neorv32_package is
       slink_tx_lst_o : out std_ulogic;
       slink_tx_rdy_i : in  std_ulogic := 'L';
       -- GPIO (available if IO_GPIO_NUM > 0) --
+      gpio_dir_o     : out std_ulogic_vector(31 downto 0);
       gpio_o         : out std_ulogic_vector(31 downto 0);
       gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');
       -- primary UART0 (available if IO_UART0_EN = true) --

@@ -121,8 +121,9 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `slink_tx_lst_o` |  1 | out |   -   | TX last element of stream
 | `slink_tx_rdy_i` |  1 |  in | `'L'` | TX allowed to send
 5+^| **<<_general_purpose_input_and_output_port_gpio>>**
-| `gpio_o`         | 32 | out |   -   | general purpose parallel output
-| `gpio_i`         | 32 |  in | `'L'` | general purpose parallel input (interrupt-capable)
+| `gpio_dir_o`     | 32 | out |   -   | general purpose port direction control (`0` = input, `1` = output)
+| `gpio_o`         | 32 | out |   -   | general purpose parallel output port
+| `gpio_i`         | 32 |  in | `'L'` | general purpose parallel input port (interrupt-capable)
 5+^| **<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>**
 | `uart0_txd_o`    |  1 | out |   -   | serial transmitter
 | `uart0_rxd_i`    |  1 |  in | `'L'` | serial receiver
@@ -272,6 +273,7 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `XBUS_REGSTAGE_EN`    | boolean   | false         | Implement XBUS register stages to ease timing closure.
 4+^| **Peripheral/IO Modules**
 | `IO_GPIO_NUM`         | natural   | 0             | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>, max 32.
+| `IO_GPIO_DIR_EN`      | boolean   | false         | Enable optional GPIO direction control interface (`gpio_dir_o`).
 | `IO_CLINT_EN`         | boolean   | false         | Implement the <<_core_local_interruptor_clint>>.
 | `IO_UART0_EN`         | boolean   | false         | Implement the <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>.
 | `IO_UART0_RX_FIFO`    | natural   | 1             | UART0 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
