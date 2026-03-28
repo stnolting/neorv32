@@ -123,7 +123,7 @@ A demo program for the GPIO input interrupts can be found in `sw/example/demo_gp
 | Address      | Name [C]       | Bit(s) | R/W | Function
 | `0xfffc0000` | `PORT_IN`      | 31:0   | r/- | Parallel input port; `PORT_IN(i)` corresponds to `gpio_i(i)`
 | `0xfffc0004` | `PORT_OUT`     | 31:0   | r/w | Parallel output port; `PORT_OUT(i)` corresponds to `gpio_o(i)`
-| `0xfffc0008` | -              | 31:0   | r/- | _reserved_, read as zero
+| `0xfffc0008` | `PORT_DIR`     | 31:0   | r/w | Port direction; `PORT_DIR(i)` corresponds to `gpio_o(i)`; `0` = input (default), `1` = output; this register is hardwired to all-zero if `IO_GPIO_DIR_EN = false`
 | `0xfffc000c` | -              | 31:0   | r/- | _reserved_, read as zero
 | `0xfffc0010` | `IRQ_TYPE`     | 31:0   | r/w | Trigger type select (`0` = level trigger, `1` = edge trigger); `IRQ_TYPE(i)` corresponds to `gpio_i(i)`
 | `0xfffc0014` | `IRQ_POLARITY` | 31:0   | r/w | Trigger polarity select (`0` = low-level/falling-edge, `1` = high-level/rising-edge); `IRQ_POLARITY(i)` corresponds to `gpio_i(i)`
