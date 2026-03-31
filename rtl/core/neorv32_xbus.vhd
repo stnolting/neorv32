@@ -103,7 +103,6 @@ begin
   -- cycle type identifier (for the ENTIRE access - burst-termination type is not supported!) --
   xbus_cti_o <= "001" when (bus_req.lock = '1') and (bus_req.amo   = '1') else -- constant address burst
                 "010" when (bus_req.lock = '1') and (bus_req.burst = '1') else -- incrementing address burst
---              "111" when (bus_req.lock = '1') else -- [TODO] end of burst - do we need this?
                 "000"; -- single access
 
   -- access meta data (compatible to AXI4 "xPROT") --
