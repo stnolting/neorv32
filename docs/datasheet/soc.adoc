@@ -271,42 +271,62 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `XBUS_EN`             | boolean   | false         | Implement the external bus interface.
 | `XBUS_TIMEOUT`        | natural   | 2048          | Number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled).
 | `XBUS_REGSTAGE_EN`    | boolean   | false         | Implement XBUS register stages to ease timing closure.
-4+^| **Peripheral/IO Modules**
-| `IO_GPIO_NUM`         | natural   | 0             | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>, max 32.
+4+^| **<<_general_purpose_input_and_output_port_gpio>>**
+| `IO_GPIO_NUM`         | natural   | 0             | Number of GPIO pairs, max 32.
 | `IO_GPIO_DIR_EN`      | boolean   | false         | Enable optional GPIO direction control interface (`gpio_dir_o`).
-| `IO_CLINT_EN`         | boolean   | false         | Implement the <<_core_local_interruptor_clint>>.
-| `IO_UART0_EN`         | boolean   | false         | Implement the <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>.
+4+^| **<<_core_local_interruptor_clint>>**
+| `IO_CLINT_EN`         | boolean   | false         | Implement CLINT.
+4+^| **<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>**
+| `IO_UART0_EN`         | boolean   | false         | Implement UART0.
 | `IO_UART0_RX_FIFO`    | natural   | 1             | UART0 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_UART0_TX_FIFO`    | natural   | 1             | UART0 TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_UART1_EN`         | boolean   | false         | Implement the <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>.
+4+^| **<<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>**
+| `IO_UART1_EN`         | boolean   | false         | Implement UART1.
 | `IO_UART1_RX_FIFO`    | natural   | 1             | UART1 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_UART1_TX_FIFO`    | natural   | 1             | UART1 TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_SPI_EN`           | boolean   | false         | Implement the <<_serial_peripheral_interface_controller_spi>>.
-| `IO_SPI_FIFO`         | natural   | 1             | Depth of the <<_serial_peripheral_interface_controller_spi>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_SDI_EN`           | boolean   | false         | Implement the <<_serial_data_interface_controller_sdi>>.
-| `IO_SDI_FIFO`         | natural   | 1             | Depth of the <<_serial_data_interface_controller_sdi>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_TWI_EN`           | boolean   | false         | Implement the <<_two_wire_serial_interface_controller_twi>>.
-| `IO_TWI_FIFO`         | natural   | 1             | Depth of the <<_two_wire_serial_interface_controller_twi>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_TWD_EN`           | boolean   | false         | Implement the <<_two_wire_serial_device_controller_twd>>.
-| `IO_TWD_RX_FIFO`      | natural   | 1             | Depth of the <<_two_wire_serial_device_controller_twd>> RX FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_TWD_TX_FIFO`      | natural   | 1             | Depth of the <<_two_wire_serial_device_controller_twd>> TX FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_PWM_NUM`          | natural   | 0             | Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..32).
-| `IO_WDT_EN`           | boolean   | false         | Implement the <<_watchdog_timer_wdt>>.
-| `IO_TRNG_EN`          | boolean   | false         | Implement the <<_true_random_number_generator_trng>>.
+4+^| **<<_serial_peripheral_interface_controller_spi>>**
+| `IO_SPI_EN`           | boolean   | false         | Implement SPI controller.
+| `IO_SPI_FIFO`         | natural   | 1             | Depth of the SPI FIFO. Has to be a power of two, min 1, max 32768.
+4+^| **<<_serial_data_interface_controller_sdi>>**
+| `IO_SDI_EN`           | boolean   | false         | Implement SDI controller.
+| `IO_SDI_FIFO`         | natural   | 1             | Depth of the SDI FIFO. Has to be a power of two, min 1, max 32768.
+4+^| **<<_two_wire_serial_interface_controller_twi>>**
+| `IO_TWI_EN`           | boolean   | false         | Implement TWI controller.
+| `IO_TWI_FIFO`         | natural   | 1             | Depth of the TWI FIFO. Has to be a power of two, min 1, max 32768.
+4+^| **<<_two_wire_serial_device_controller_twd>>**
+| `IO_TWD_EN`           | boolean   | false         | Implement TWD controller.
+| `IO_TWD_RX_FIFO`      | natural   | 1             | Depth of the TWD RX FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_TWD_TX_FIFO`      | natural   | 1             | Depth of the TWD TX FIFO. Has to be a power of two, min 1, max 32768.
+4+^| **<<_pulse_width_modulation_controller_pwm>>**
+| `IO_PWM_NUM`          | natural   | 0             | Number of PWM channels to implement (0..32).
+4+^| **<<_watchdog_timer_wdt>>**
+| `IO_WDT_EN`           | boolean   | false         | Implement WDT.
+4+^| **<<_true_random_number_generator_trng>>**
+| `IO_TRNG_EN`          | boolean   | false         | Implement TRNG.
 | `IO_TRNG_FIFO`        | natural   | 1             | Depth of the TRNG data FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_CFS_EN`           | boolean   | false         | Implement the <<_custom_functions_subsystem_cfs>>.
-| `IO_NEOLED_EN`        | boolean   | false         | Implement the <<_smart_led_interface_neoled>>.
-| `IO_NEOLED_TX_FIFO`   | natural   | 1             | TX FIFO depth of the <<_smart_led_interface_neoled>>. Has to be a power of two, min 1, max 32768.
-| `IO_GPTMR_NUM`        | natural   | 0             | Number of individual <<_general_purpose_timer_gptmr>> timer slices (0..16).
-| `IO_ONEWIRE_EN`       | boolean   | false         | Implement the <<_one_wire_serial_interface_controller_onewire>>.
-| `IO_ONEWIRE_FIFO`     | natural   | 1             | Depth of the <<_one_wire_serial_interface_controller_onewire>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_DMA_EN`           | boolean   | false         | Implement the <<_direct_memory_access_controller_dma>>.
+| `IO_TRNG_NUM_RO`      | natural   | 3             | Total number of ring-oscillators.
+| `IO_TRNG_NUM_INV`     | natural   | 5             | Number of inverters in first ring-oscillator; has to be odd.
+| `IO_TRNG_NUM_RBIT`    | natural   | 64            | Number of raw random bits to process for one output byte; has to be power of 2.
+4+^| **<<_custom_functions_subsystem_cfs>>**
+| `IO_CFS_EN`           | boolean   | false         | Implement CFS.
+4+^| **<<_smart_led_interface_neoled>>**
+| `IO_NEOLED_EN`        | boolean   | false         | Implement NEOLED controller.
+| `IO_NEOLED_TX_FIFO`   | natural   | 1             | TX FIFO depth of the NEOLED controller. Has to be a power of two, min 1, max 32768.
+4+^| **<<_general_purpose_timer_gptmr>>**
+| `IO_GPTMR_NUM`        | natural   | 0             | Number of individual GPTMR timer slices (0..16).
+4+^| **<<_one_wire_serial_interface_controller_onewire>>**
+| `IO_ONEWIRE_EN`       | boolean   | false         | Implement 1-wire controller.
+| `IO_ONEWIRE_FIFO`     | natural   | 1             | Depth of the 1-Wire FIFO. Has to be a power of two, min 1, max 32768.
+4+^| **<<_direct_memory_access_controller_dma>>**
+| `IO_DMA_EN`           | boolean   | false         | Implement DMA controller.
 | `IO_DMA_DSC_FIFO`     | natural   | 4             | Depth of the DMA transfer descriptor FIFO. Has to be a power of two, min 4, max 512.
-| `IO_SLINK_EN`         | boolean   | false         | Implement the <<_stream_link_interface_slink>> (AXI4-Stream-Compatible).
+4+^| **<<_stream_link_interface_slink>>**
+| `IO_SLINK_EN`         | boolean   | false         | Implement stream link interface (AXI4-Stream-Compatible).
 | `IO_SLINK_RX_FIFO`    | natural   | 1             | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_SLINK_TX_FIFO`    | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_TRACER_EN`        | boolean   | false         | Implement the <<_execution_trace_buffer_tracer>>.
-| `IO_TRACER_BUFFER`    | natural   | 1             | Depth of the <<_execution_trace_buffer_tracer>>. Has to be a power of two, min 1, max 32768.
+4+^| ** <<_execution_trace_buffer_tracer>>**
+| `IO_TRACER_EN`        | boolean   | false         | Implement the trace buffer.
+| `IO_TRACER_BUFFER`    | natural   | 1             | Depth of the trace buffer. Has to be a power of two, min 1, max 32768.
 | `IO_TRACER_SIMLOG_EN` | boolean   | false         | Write full trace log to file (simulation-only).
 |=======================
 

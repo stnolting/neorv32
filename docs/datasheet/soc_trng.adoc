@@ -2,7 +2,7 @@
 :sectnums:
 ==== True Random-Number Generator (TRNG)
 
-[cols="<3,<3,<4"]
+[cols="<3,<3,<6"]
 [grid="none"]
 |=======================
 | Hardware source files:  | neorv32_trng.vhd    |
@@ -11,6 +11,9 @@
 | Top entity ports:       | none                |
 | Configuration generics: | `IO_TRNG_EN`        | implement TRNG when `true`
 |                         | `IO_TRNG_FIFO`      | data FIFO depth, min 1, has to be a power of two
+|                         | `IO_TRNG_NUM_RO`    | total number of ring-oscillators
+|                         | `IO_TRNG_NUM_INV`   | number of inverters in first ring-oscillator, has to be odd
+|                         | `IO_TRNG_NUM_RBIT`  | number of raw bits to process for one output byte, has to be power of two
 | CPU interrupts:         | fast IRQ channel 15 | data available interrupt (see <<_processor_interrupts>>)
 |=======================
 

@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120808"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120809"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -921,6 +921,9 @@ package neorv32_package is
       -- True-Random Number Generator (TRNG) --
       IO_TRNG_EN          : boolean                        := false;
       IO_TRNG_FIFO        : natural range 1 to 2**15       := 1;
+      IO_TRNG_NUM_RO      : natural range 1 to 255         := 3;
+      IO_TRNG_NUM_INV     : natural range 3 to 4095        := 5;
+      IO_TRNG_NUM_RBIT    : natural range 1 to 4096        := 64;
       -- Custom Functions Subsystem (CFS) --
       IO_CFS_EN           : boolean                        := false;
       -- Smart LED interface (NEOLED) --
