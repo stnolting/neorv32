@@ -32,12 +32,18 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** TRNG control register bits */
 enum NEORV32_TRNG_CTRL_enum {
-  TRNG_CTRL_EN       = 0, /**< TRNG data register(0) (r/w): TRNG enable */
-  TRNG_CTRL_FIFO_CLR = 1, /**< TRNG data register(1) (-/w): Clear data FIFO (auto clears) */
-  TRNG_CTRL_FIFO_LSB = 2, /**< TRNG data register(2) (r/-): log2(FIFO size), LSB */
-  TRNG_CTRL_FIFO_MSB = 5, /**< TRNG data register(5) (r/-): log2(FIFO size), MSB */
-  TRNG_CTRL_SIM_MODE = 6, /**< TRNG data register(6) (r/-): PRNG mode (simulation mode) */
-  TRNG_CTRL_AVAIL    = 7  /**< TRNG data register(7) (r/-): Random data available */
+  TRNG_CTRL_EN       =  0, /**< TRNG data register(0)  (r/w): TRNG enable */
+  TRNG_CTRL_FIFO_CLR =  1, /**< TRNG data register(1)  (-/w): Clear data FIFO (auto clears) */
+  TRNG_CTRL_SIM_MODE =  2, /**< TRNG data register(2)  (r/-): PRNG mode (simulation mode) */
+  TRNG_CTRL_AVAIL    =  3, /**< TRNG data register(3)  (r/-): Random data available */
+  TRNG_CTRL_FIFO_LSB =  4, /**< TRNG data register(4)  (r/-): log2(FIFO size), LSB */
+  TRNG_CTRL_FIFO_MSB =  7, /**< TRNG data register(7)  (r/-): log2(FIFO size), MSB */
+  TRNG_CTRL_NBIT_LSB =  8, /**< TRNG data register(8)  (r/-): log2(number of raw bits) processed for one output byte, LSB */
+  TRNG_CTRL_NBIT_MSB = 11, /**< TRNG data register(11) (r/-): log2(number of raw bits) processed for one output byte, MSB */
+  TRNG_CTRL_NRO_LSB  = 12, /**< TRNG data register(12) (r/-): number of ring-oscillators, LSB */
+  TRNG_CTRL_NRO_MSB  = 19, /**< TRNG data register(19) (r/-): number of ring-oscillators, MSB */
+  TRNG_CTRL_NINV_LSB = 20, /**< TRNG data register(20) (r/-): number of inverters in first ring-oscillator, LSB */
+  TRNG_CTRL_NINV_MSB = 31  /**< TRNG data register(31) (r/-): number of inverters in first ring-oscillator, MSB */
 };
 
 /** TRNG data register bits */
@@ -57,6 +63,9 @@ void    neorv32_trng_enable(void);
 void    neorv32_trng_disable(void);
 void    neorv32_trng_fifo_clear(void);
 int     neorv32_trng_get_fifo_depth(void);
+int     neorv32_trng_get_num_raw_bits(void);
+int     neorv32_trng_get_num_ros(void);
+int     neorv32_trng_get_num_inv(void);
 int     neorv32_trng_data_avail(void);
 uint8_t neorv32_trng_data_get(void);
 int     neorv32_trng_check_sim_mode(void);

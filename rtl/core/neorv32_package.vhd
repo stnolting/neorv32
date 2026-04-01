@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120808"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120809"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -887,44 +887,61 @@ package neorv32_package is
       DCACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;
       CACHE_BLOCK_SIZE    : natural range 4 to 1024        := 64;
       CACHE_BURSTS_EN     : boolean                        := true;
-      -- External bus interface (XBUS) --
+      -- External Bus Interface (XBUS) --
       XBUS_EN             : boolean                        := false;
       XBUS_TIMEOUT        : natural                        := 2048;
       XBUS_REGSTAGE_EN    : boolean                        := false;
-      -- Processor peripherals --
+      -- General-Purpose Input/Output Controller (GPIO) --
       IO_GPIO_NUM         : natural range 0 to 64          := 0;
       IO_GPIO_DIR_EN      : boolean                        := false;
+      -- RISC-V Core-Local Interruptor (CLINT) --
       IO_CLINT_EN         : boolean                        := false;
+      -- Universal Asynchronous Receiver/Transmitter (UART0/UART1) --
       IO_UART0_EN         : boolean                        := false;
       IO_UART0_RX_FIFO    : natural range 1 to 2**15       := 1;
       IO_UART0_TX_FIFO    : natural range 1 to 2**15       := 1;
       IO_UART1_EN         : boolean                        := false;
       IO_UART1_RX_FIFO    : natural range 1 to 2**15       := 1;
       IO_UART1_TX_FIFO    : natural range 1 to 2**15       := 1;
+      -- Serial Peripheral Interface (SPI Host, SDI Device) --
       IO_SPI_EN           : boolean                        := false;
       IO_SPI_FIFO         : natural range 1 to 2**15       := 1;
       IO_SDI_EN           : boolean                        := false;
       IO_SDI_FIFO         : natural range 1 to 2**15       := 1;
+      -- Two-Wire Interface (TWI Host, TWD Device) --
       IO_TWI_EN           : boolean                        := false;
       IO_TWI_FIFO         : natural range 1 to 2**15       := 1;
       IO_TWD_EN           : boolean                        := false;
       IO_TWD_RX_FIFO      : natural range 1 to 2**15       := 1;
       IO_TWD_TX_FIFO      : natural range 1 to 2**15       := 1;
+      -- Pulse-Width Modulation Controller (PWM) --
       IO_PWM_NUM          : natural range 0 to 32          := 0;
+      -- Watchdog Timer (WDT) --
       IO_WDT_EN           : boolean                        := false;
+      -- True-Random Number Generator (TRNG) --
       IO_TRNG_EN          : boolean                        := false;
       IO_TRNG_FIFO        : natural range 1 to 2**15       := 1;
+      IO_TRNG_NUM_RO      : natural range 1 to 255         := 3;
+      IO_TRNG_NUM_INV     : natural range 3 to 4095        := 5;
+      IO_TRNG_NUM_RBIT    : natural range 1 to 4096        := 64;
+      -- Custom Functions Subsystem (CFS) --
       IO_CFS_EN           : boolean                        := false;
+      -- Smart LED interface (NEOLED) --
       IO_NEOLED_EN        : boolean                        := false;
       IO_NEOLED_TX_FIFO   : natural range 1 to 2**15       := 1;
+      -- General-Purpose Timer (GPTMR) --
       IO_GPTMR_NUM        : natural range 0 to 16          := 0;
+      -- 1-Wire Interface (ONEWIRE) --
       IO_ONEWIRE_EN       : boolean                        := false;
       IO_ONEWIRE_FIFO     : natural range 1 to 2**15       := 1;
+      -- Direct Memory Access Controller (DMA) --
       IO_DMA_EN           : boolean                        := false;
       IO_DMA_DSC_FIFO     : natural range 4 to 512         := 4;
+      -- Stream Link Interface (SLINK) --
       IO_SLINK_EN         : boolean                        := false;
       IO_SLINK_RX_FIFO    : natural range 1 to 2**15       := 1;
       IO_SLINK_TX_FIFO    : natural range 1 to 2**15       := 1;
+      -- Instruction Tracer (TRACER) --
       IO_TRACER_EN        : boolean                        := false;
       IO_TRACER_BUFFER    : natural range 1 to 2**15       := 1;
       IO_TRACER_SIMLOG_EN : boolean                        := false

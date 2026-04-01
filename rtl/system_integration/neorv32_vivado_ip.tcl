@@ -197,8 +197,9 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {Execution Trace Buffer (TRACER)}]
   add_params $group {
-    { IO_TRACER_EN     {Enable tracer}      {Implement execution tracer module} }
-    { IO_TRACER_BUFFER {Trace buffer depth} {Maximum number of logged execution deltas} {$IO_TRACER_EN} {$IO_TRACER_EN ? $IO_TRACER_BUFFER : 1} }
+    { IO_TRACER_EN        {Enable tracer}      {Implement execution tracer module} }
+    { IO_TRACER_BUFFER    {Trace buffer depth} {Maximum number of logged execution deltas}    {$IO_TRACER_EN} {$IO_TRACER_EN ? $IO_TRACER_BUFFER : 1} }
+    { IO_TRACER_SIMLOG_EN {Simulation logging} {Generate full trace log; only for simulation} {$IO_TRACER_EN} }
   }
 
 
@@ -436,8 +437,11 @@ proc setup_ip_gui {} {
 
   set group [add_group $page {True Random-Number Generator (TRNG)}]
   add_params $group {
-    { IO_TRNG_EN   {Enable TRNG} }
-    { IO_TRNG_FIFO {FIFO depth} {Number of entries (use a power of two)} {$IO_TRNG_EN} }
+    { IO_TRNG_EN        {Enable TRNG} }
+    { IO_TRNG_FIFO      {FIFO depth}    {Number of entries (use a power of two)}                          {$IO_TRNG_EN} }
+    { IO_TRNG_NUM_RO    {Number of ROs} {Number of ring-oscillators}                                      {$IO_TRNG_EN} }
+    { IO_TRNG_NUM_INV   {1st RO length} {Length of first ring-oscillator (has to be odd)}                 {$IO_TRNG_EN} }
+    { IO_TRNG_NUM_RBIT  {Sample length} {Number of raw random bits per output bytes (use a power of two)} {$IO_TRNG_EN} }
   }
 
   set group [add_group $page {Custom Functions Subsystem (CFS)}]
