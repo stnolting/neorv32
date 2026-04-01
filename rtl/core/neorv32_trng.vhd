@@ -170,7 +170,7 @@ end neorv32_trng_rtl;
 
 
 -- ============================================================================================= --
--- neoTRNG - A Tiny and Platform-Independent True Random Number Generator (Version 3.3)          --
+-- neoTRNG - A Tiny and Platform-Independent True Random Number Generator (Version 3.4)          --
 -- https://github.com/stnolting/neoTRNG                                                          --
 -- ============================================================================================= --
 -- The neoTNG true-random number generator samples free-running ring-oscillators (combinatorial  --
@@ -189,7 +189,7 @@ end neorv32_trng_rtl;
 -- ============================================================================================= --
 -- BSD 3-Clause License                                                                          --
 --                                                                                               --
--- Copyright (c) 2025, Stephan Nolting. All rights reserved.                                     --
+-- Copyright (c) 2026, Stephan Nolting. All rights reserved.                                     --
 --                                                                                               --
 -- Redistribution and use in source and binary forms, with or without modification, are          --
 -- permitted provided that the following conditions are met:                                     --
@@ -222,10 +222,10 @@ use ieee.numeric_std.all;
 
 entity neoTRNG is
   generic (
-    NUM_CELLS     : natural range 1 to 99   := 3; -- number of ring-oscillator cells
-    NUM_INV_START : natural range 3 to 99   := 5; -- number of inverters in first ring-oscillator cell, has to be odd
-    NUM_RAW_BITS  : natural range 1 to 4096 := 64; -- number of XOR-ed raw bits per random sample byte (has to be a power of 2)
-    SIM_MODE      : boolean                 := false -- enable simulation mode (no physical random if enabled!)
+    NUM_CELLS     : natural range 1 to 255;  -- number of ring-oscillator cells, min 1
+    NUM_INV_START : natural range 3 to 4095; -- number of inverters in first ring-oscillator cell, has to be odd
+    NUM_RAW_BITS  : natural range 1 to 4096; -- number of raw bits per random sample byte (has to be a power of 2)
+    SIM_MODE      : boolean                  -- enable simulation mode (no physical random if enabled!)
   );
   port (
     clk_i    : in  std_ulogic; -- module clock
@@ -252,8 +252,8 @@ architecture neoTRNG_rtl of neoTRNG is
   -- entropy source cell --
   component neoTRNG_cell
     generic (
-      NUM_INV  : natural range 3 to 999 := 3; -- number of inverters, has to be odd, min 3
-      SIM_MODE : boolean := false -- enable simulation mode (no physical random if enabled!)
+      NUM_INV  : natural; -- number of inverters, has to be odd, min 3
+      SIM_MODE : boolean  -- enable simulation mode (no physical random if enabled!)
     );
     port (
       clk_i  : in  std_ulogic; -- clock
@@ -286,11 +286,11 @@ architecture neoTRNG_rtl of neoTRNG is
 
 begin
 
-  -- Sanity Checks --------------------------------------------------------------------------
+  -- Configuration Checks -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   assert false report
-    "[neoTRNG] The neoTRNG (v3.3) - A Tiny and Platform-Independent True Random Number Generator, " &
-    "https://github.com/stnolting/neoTRNG" severity note;
+    "[neoTRNG] The neoTRNG (v3.4) - A Tiny and Platform-Independent True Random Number Generator, " &
+    "github.com/stnolting/neoTRNG" severity note;
 
   assert (NUM_INV_START mod 2) /= 0 report
     "[neoTRNG] Number of inverters in first cell [NUM_INV_START] has to be odd!" severity error;
@@ -308,7 +308,7 @@ begin
   for i in 0 to NUM_CELLS-1 generate
     neoTRNG_cell_inst: neoTRNG_cell
     generic map (
-      NUM_INV  => NUM_INV_START + (2 * i), -- increasing (odd) ring-oscillator length
+      NUM_INV  => NUM_INV_START + (2*i), -- increasing (odd) ring-oscillator length
       SIM_MODE => SIM_MODE
     )
     port map (
@@ -321,8 +321,7 @@ begin
   end generate;
 
   -- enable-shift-register chain --
-  cell_en_in(0) <= sample_en;
-  cell_en_in(NUM_CELLS-1 downto 1) <= cell_en_out(NUM_CELLS-2 downto 0);
+  cell_en_in <= cell_en_out(NUM_CELLS-2 downto 0) & sample_en;
 
   -- combine cell outputs --
   combine: process(cell_rnd)
@@ -389,8 +388,8 @@ end neoTRNG_rtl;
 
 -- ================================================================================================ --
 -- neoTRNG entropy source cell, based on a simple ring-oscillator constructed from an odd number    --
--- of inverter. The inverters are decoupled using individually-enabled latches to prevent synthesis --
--- from "optimizing" (=removing) parts of the oscillator chain.                                     --
+-- of inverters. The inverters are decoupled using individually-enabled latches to prevent          --
+-- synthesis from "optimizing" (=removing) parts of the oscillator chain.                           --
 -- ================================================================================================ --
 
 library ieee;
@@ -398,8 +397,8 @@ use ieee.std_logic_1164.all;
 
 entity neoTRNG_cell is
   generic (
-    NUM_INV  : natural range 3 to 999 := 3; -- number of inverters, has to be odd, min 3
-    SIM_MODE : boolean := false -- enable simulation mode (no physical random if enabled!)
+    NUM_INV  : natural; -- number of inverters, has to be odd, min 3
+    SIM_MODE : boolean  -- enable simulation mode (no physical random if enabled!)
   );
   port (
     clk_i  : in  std_ulogic; -- clock
@@ -461,10 +460,12 @@ begin
 
     -- inverter with "propagation delay" (implemented as a simple FF) --
     inverter_sim:
-    if SIM_MODE generate -- for SIMULATION ONLY
-      inverter_sim_ff: process(clk_i) -- this will NOT generate true random numbers
+    if SIM_MODE generate -- for SIMULATION ONLY!
+      inverter_sim_ff: process(rstn_i, clk_i) -- this will NOT generate true random numbers
       begin
-        if rising_edge(clk_i) then
+        if (rstn_i = '0') then
+          inv_out(i) <= '0';
+        elsif rising_edge(clk_i) then
           inv_out(i) <= not inv_in(i);
         end if;
       end process inverter_sim_ff;
@@ -473,8 +474,7 @@ begin
   end generate;
 
   -- chaining --
-  inv_in(0) <= latch(NUM_INV-1); -- beginning/end of chain
-  inv_in(NUM_INV-1 downto 1) <= latch(NUM_INV-2 downto 0); -- inside chain
+  inv_in <= latch(NUM_INV-2 downto 0) & latch(NUM_INV-1);
 
 
   -- Output Synchronizer --------------------------------------------------------------------
