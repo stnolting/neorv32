@@ -35,22 +35,25 @@ end neorv32_trng;
 
 architecture neorv32_trng_rtl of neorv32_trng is
 
-  -- neoTRNG Configuration ---------------------------------------------------------------------------
-  constant num_cells_c     : natural := 3;  -- total number of ring-oscillator cells
-  constant num_inv_start_c : natural := 5;  -- number of inverters in first cell, has to be odd, min 3
-  constant num_raw_bits_c  : natural := 64; -- number of raw bits to process for one output byte
-  -- -------------------------------------------------------------------------------------------------
+  -- auto configuration --
+  constant num_inv_start_c  : natural := sel_natural_f(boolean((NUM_INV mod 2) = 0), NUM_INV+1, NUM_INV); -- is #INV odd?
+  constant num_raw_bits_c   : natural := 2**index_size_f(NUM_RBIT); -- make sure #BITS is a power of 2
+  constant log2_rbit_c      : natural := index_size_f(num_raw_bits_c); -- log2(#BITS)
+  constant log2_fifo_size_c : natural := index_size_f(TRNG_FIFO); -- FIFO address width
 
   -- control register bits --
-  constant ctrl_en_c       : natural := 0; -- r/w: TRNG enable
-  constant ctrl_fifo_clr_c : natural := 1; -- -/w: Clear data FIFO (auto clears)
-  constant ctrl_fifo0_c    : natural := 2; -- r/-: log2(FIFO size) bit 0, LSB
-  constant ctrl_fifo3_c    : natural := 5; -- r/-: log2(FIFO size) bit 3, MSB
-  constant ctrl_sim_mode_c : natural := 6; -- r/-: TRNG implemented in pseudo-RNG simulation mode
-  constant ctrl_avail_c    : natural := 7; -- r/-: Random data available
-
-  -- helpers --
-  constant log2_fifo_size_c : natural := index_size_f(TRNG_FIFO);
+  constant ctrl_en_c       : natural :=  0; -- r/w: TRNG enable
+  constant ctrl_fifo_clr_c : natural :=  1; -- -/w: Clear data FIFO (auto clears)
+  constant ctrl_sim_mode_c : natural :=  2; -- r/-: TRNG implemented in non-TRNG/pseudo-RNG simulation mode
+  constant ctrl_avail_c    : natural :=  3; -- r/-: Random data available
+  constant ctrl_fifo0_c    : natural :=  4; -- r/-: log2(FIFO size) bit 0, LSB
+  constant ctrl_fifo3_c    : natural :=  7; -- r/-: log2(FIFO size) bit 3, MSB
+  constant ctrl_nbit0_c    : natural :=  8; -- r/-: log2(number raw bits) processed for one random byte, bit 0, LSB
+  constant ctrl_nbit3_c    : natural := 11; -- r/-: log2(number raw bits) processed for one random byte, bit 3, MSB
+  constant ctrl_nro0_c     : natural := 12; -- r/-: number of ring-oscillators, bit 0, LSB
+  constant ctrl_nro7_c     : natural := 19; -- r/-: number of ring-oscillators, bit 7, MSB
+  constant ctrl_ninv0_c    : natural := 20; -- r/-: number of inverters in first ring-oscillator, bit 0, LSB
+  constant ctrl_ninv7_c    : natural := 31; -- r/-: number of inverters in first ring-oscillator, bit 11, MSB
 
   -- neoTRNG true random number generator --
   component neoTRNG
@@ -96,18 +99,24 @@ begin
       bus_rsp_o.ack  <= bus_req_i.stb;
       bus_rsp_o.err  <= '0';
       bus_rsp_o.data <= (others => '0');
-      -- host access --
-      fifo_clr <= '0'; -- default
-      if (bus_req_i.stb = '1') then
-        if (bus_req_i.rw = '1') then -- write control register
-          enable   <= bus_req_i.data(ctrl_en_c);
-          fifo_clr <= bus_req_i.data(ctrl_fifo_clr_c);
-        elsif (bus_req_i.addr(2) = '0') then -- read control register
+      -- write access --
+      fifo_clr <= '0';
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(2) = '0') then -- control register
+        enable   <= bus_req_i.data(ctrl_en_c);
+        fifo_clr <= bus_req_i.data(ctrl_fifo_clr_c);
+      end if;
+      -- read access --
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
+        if (bus_req_i.addr(2) = '0') then -- control register
           bus_rsp_o.data(ctrl_en_c)                        <= enable;
-          bus_rsp_o.data(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+          bus_rsp_o.data(ctrl_fifo_clr_c)                  <= '0';
           bus_rsp_o.data(ctrl_sim_mode_c)                  <= bool_to_ulogic_f(is_simulation_c);
           bus_rsp_o.data(ctrl_avail_c)                     <= fifo.avail;
-        else -- read data register
+          bus_rsp_o.data(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+          bus_rsp_o.data(ctrl_nbit3_c downto ctrl_nbit0_c) <= std_ulogic_vector(to_unsigned(log2_rbit_c, 4));
+          bus_rsp_o.data(ctrl_nro7_c  downto ctrl_nro0_c)  <= std_ulogic_vector(to_unsigned(NUM_RO, 8));
+          bus_rsp_o.data(ctrl_ninv7_c downto ctrl_ninv0_c) <= std_ulogic_vector(to_unsigned(NUM_INV, 12));
+        else -- data register
           bus_rsp_o.data(7 downto 0) <= fifo.rdata;
         end if;
       end if;
@@ -118,24 +127,24 @@ begin
   -- neoTRNG True Random Number Generator ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   neoTRNG_inst: neoTRNG
-    generic map (
-      NUM_CELLS     => num_cells_c,
-      NUM_INV_START => num_inv_start_c,
-      NUM_RAW_BITS  => num_raw_bits_c,
-      SIM_MODE      => is_simulation_c
-    )
-    port map (
-      clk_i    => clk_i,
-      rstn_i   => rstn_i,
-      enable_i => enable,
-      valid_o  => fifo.we,
-      data_o   => fifo.wdata
-    );
+  generic map (
+    NUM_CELLS     => NUM_RO,
+    NUM_INV_START => num_inv_start_c,
+    NUM_RAW_BITS  => num_raw_bits_c,
+    SIM_MODE      => is_simulation_c
+  )
+  port map (
+    clk_i    => clk_i,
+    rstn_i   => rstn_i,
+    enable_i => enable,
+    valid_o  => fifo.we,
+    data_o   => fifo.wdata
+  );
 
 
-  -- Data FIFO ("Random Pool") --------------------------------------------------------------
+  -- Random Number Buffer --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rnd_pool_fifo_inst: entity neorv32.neorv32_prim_fifo
+  rnd_fifo_inst: entity neorv32.neorv32_prim_fifo
   generic map (
     AWIDTH  => log2_fifo_size_c,
     DWIDTH  => 8,
