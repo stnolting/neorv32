@@ -1253,22 +1253,40 @@
               <description>Clear data FIFO when set (flag auto clears)</description>
             </field>
             <field>
-              <name>TRNG_CTRL_FIFO_SIZE</name>
-              <bitRange>[5:2]</bitRange>
-              <access>read-only</access>
-              <description>log2(TRNG FIFO size)</description>
-            </field>
-            <field>
               <name>TRNG_CTRL_SIM_MODE</name>
-              <bitRange>[6:6]</bitRange>
+              <bitRange>[2:2]</bitRange>
               <access>read-only</access>
               <description>TRNG simulation mode (PRNG!) active</description>
             </field>
             <field>
               <name>TRNG_CTRL_AVAIL</name>
-              <bitRange>[7:7]</bitRange>
+              <bitRange>[3:3]</bitRange>
               <access>read-only</access>
               <description>Random data available</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_FIFO</name>
+              <bitRange>[7:4]</bitRange>
+              <access>read-only</access>
+              <description>log2(TRNG FIFO depth)</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_NBIT</name>
+              <bitRange>[11:8]</bitRange>
+              <access>read-only</access>
+              <description>log2(number of raw bits) processed for one output byte</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_NRO</name>
+              <bitRange>[19:12]</bitRange>
+              <access>read-only</access>
+              <description>Total number of ring-oscillators</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_NINV</name>
+              <bitRange>[31:20]</bitRange>
+              <access>read-only</access>
+              <description>Number of inverters in first ring-oscillator</description>
             </field>
           </fields>
         </register>

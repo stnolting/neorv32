@@ -100,45 +100,76 @@ entity neorv32_top is
     CACHE_BLOCK_SIZE    : natural range 4 to 1024        := 64;            -- i-cache/d-cache: block size in bytes, has to be a power of 2
     CACHE_BURSTS_EN     : boolean                        := true;          -- i-cache/d-cache: enable issuing of burst transfer for cache update
 
-    -- External bus interface (XBUS) --
-    XBUS_EN             : boolean                        := false;         -- implement external memory bus interface
+    -- External Bus Interface (XBUS) --
+    XBUS_EN             : boolean                        := false;         -- implement external bus interface
     XBUS_TIMEOUT        : natural                        := 2048;          -- cycles after a pending bus access auto-terminates (0 = disabled)
     XBUS_REGSTAGE_EN    : boolean                        := false;         -- add XBUS register stage
 
-    -- Processor peripherals --
+    -- General-Purpose Input/Output Controller (GPIO) --
     IO_GPIO_NUM         : natural range 0 to 32          := 0;             -- number of GPIO input/output pairs
     IO_GPIO_DIR_EN      : boolean                        := false;         -- enable GPIO direction control port
+
+    -- RISC-V Core-Local Interruptor (CLINT) --
     IO_CLINT_EN         : boolean                        := false;         -- implement core local interruptor (CLINT)
+
+    -- Universal Asynchronous Receiver/Transmitter (UART0/UART1) --
     IO_UART0_EN         : boolean                        := false;         -- implement primary universal asynchronous receiver/transmitter (UART0)
     IO_UART0_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two
     IO_UART0_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two
     IO_UART1_EN         : boolean                        := false;         -- implement secondary universal asynchronous receiver/transmitter (UART1)
     IO_UART1_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two
     IO_UART1_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two
+
+    -- Serial Peripheral Interface (SPI Host, SDI Device) --
     IO_SPI_EN           : boolean                        := false;         -- implement serial peripheral interface (SPI)
     IO_SPI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be a power of two
     IO_SDI_EN           : boolean                        := false;         -- implement serial data interface (SDI)
     IO_SDI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two
+
+    -- Two-Wire Interface (TWI Host, TWD Device) --
     IO_TWI_EN           : boolean                        := false;         -- implement two-wire interface (TWI)
     IO_TWI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two
     IO_TWD_EN           : boolean                        := false;         -- implement two-wire device (TWD)
     IO_TWD_RX_FIFO      : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be zero or a power of two
     IO_TWD_TX_FIFO      : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be zero or a power of two
+
+    -- Pulse-Width Modulation Controller (PWM) --
     IO_PWM_NUM          : natural range 0 to 32          := 0;             -- number of PWM channels to implement
+
+    -- Watchdog Timer (WDT) --
     IO_WDT_EN           : boolean                        := false;         -- implement watch dog timer (WDT)
+
+    -- True-Random Number Generator (TRNG) --
     IO_TRNG_EN          : boolean                        := false;         -- implement true random number generator (TRNG)
     IO_TRNG_FIFO        : natural range 1 to 2**15       := 1;             -- data FIFO depth, has to be a power of two
+    IO_TRNG_NUM_RO      : natural range 1 to 255         := 3;             -- total number of ring-oscillators
+    IO_TRNG_NUM_INV     : natural range 3 to 4095        := 5;             -- number of inverters in first ring-oscillator; has to be odd
+    IO_TRNG_NUM_RBIT    : natural range 1 to 4096        := 64;            -- number of raw bits to process for one output byte; has to be power of two
+
+    -- True-Random Number Generator (TRNG) --
     IO_CFS_EN           : boolean                        := false;         -- implement custom functions subsystem (CFS)
+
+    -- Smart LED interface (NEOLED) --
     IO_NEOLED_EN        : boolean                        := false;         -- implement NeoPixel-compatible smart LED interface (NEOLED)
     IO_NEOLED_TX_FIFO   : natural range 1 to 2**15       := 1;             -- NEOLED FIFO depth, has to be a power of two
+
+    -- General-Purpose Timer (GPTMR) --
     IO_GPTMR_NUM        : natural range 0 to 16          := 0;             -- number of GPTMR timer slices to implement (0..16)
+
+    -- 1-Wire Interface (ONEWIRE) --
     IO_ONEWIRE_EN       : boolean                        := false;         -- implement 1-wire interface (ONEWIRE)
     IO_ONEWIRE_FIFO     : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two
+
+    -- Direct Memory Access Controller (DMA) --
     IO_DMA_EN           : boolean                        := false;         -- implement direct memory access controller (DMA)
     IO_DMA_DSC_FIFO     : natural range 4 to 512         := 4;             -- DMA descriptor FIFO depth, has to be a power of two
+
+    -- Stream Link Interface (SLINK) --
     IO_SLINK_EN         : boolean                        := false;         -- implement stream link interface (SLINK)
     IO_SLINK_RX_FIFO    : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be a power of two
     IO_SLINK_TX_FIFO    : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be a power of two
+
+    -- Instruction Tracer (TRACER) --
     IO_TRACER_EN        : boolean                        := false;         -- implement instruction tracer
     IO_TRACER_BUFFER    : natural range 1 to 2**15       := 1;             -- trace buffer depth, has to be a power of two
     IO_TRACER_SIMLOG_EN : boolean                        := false          -- write full trace log to file (simulation-only)
@@ -1324,7 +1355,10 @@ begin
     if IO_TRNG_EN generate
       neorv32_trng_inst: entity neorv32.neorv32_trng
       generic map (
-        TRNG_FIFO => IO_TRNG_FIFO
+        TRNG_FIFO => IO_TRNG_FIFO,
+        NUM_RO    => IO_TRNG_NUM_RO,
+        NUM_INV   => IO_TRNG_NUM_INV,
+        NUM_RBIT  => IO_TRNG_NUM_RBIT
       )
       port map (
         clk_i     => clk_i,

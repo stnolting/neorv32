@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,7 +9,6 @@
 
 /**********************************************************************//**
  * @file demo_trng/main.c
- * @author Stephan Nolting
  * @brief True random number generator demo program.
  **************************************************************************/
 
@@ -73,7 +72,7 @@ int main(void) {
   neorv32_uart0_setup(BAUD_RATE, 0);
 
   // intro
-  neorv32_uart0_printf("\n<<< NEORV32 TRNG Demo >>>\n");
+  neorv32_uart0_printf("\n<<< NEORV32 TRNG Demo >>>\n\n");
 
   // check if TRNG unit is implemented at all
   if (neorv32_trng_available() == 0) {
@@ -81,15 +80,26 @@ int main(void) {
     return 1;
   }
 
+  // show TRNG configuration
+  neorv32_uart0_printf("TRNG configuration\n");
+  int i;
+  for (i=0; i<neorv32_trng_get_num_ros(); i++) {
+    neorv32_uart0_printf(" Ring-oscillator [%i]: %i inverters\n", i, neorv32_trng_get_num_inv() + i*2);
+  }
+  neorv32_uart0_printf(" Raw random bits per output byte: %i\n", neorv32_trng_get_num_raw_bits());
+  neorv32_uart0_printf(" Random data FIFO depth: %i\n", neorv32_trng_get_fifo_depth());
+
   // check if TRNG is using simulation mode
   if (neorv32_trng_check_sim_mode() != 0) {
-    neorv32_uart0_printf("WARNING! TRNG uses simulation-only mode implementing a pseudo-RNG (LFSR)\n");
-    neorv32_uart0_printf("         instead of the physical entropy sources!\n");
+    neorv32_uart0_printf(
+      "\n"
+      "WARNING! TRNG uses simulation-only mode implementing a pseudo-RNG (LFSR)\n"
+      "         instead of the physical entropy sources!\n"
+    );
   }
 
   // enable TRNG
-  neorv32_uart0_printf("\nTRNG FIFO depth: %i\n", neorv32_trng_get_fifo_depth());
-  neorv32_uart0_printf("Starting TRNG...\n");
+  neorv32_uart0_printf("\nStarting TRNG...\n");
   neorv32_trng_enable();
   delay_ms(100); // TRNG "warm up"
   neorv32_trng_fifo_clear(); // discard "warm-up" data
