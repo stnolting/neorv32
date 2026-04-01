@@ -199,44 +199,61 @@ begin
     DCACHE_NUM_BLOCKS   => DCACHE_NUM_BLOCKS,
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
     CACHE_BURSTS_EN     => CACHE_BURSTS_EN,
-    -- External bus interface --
+    -- External Bus Interface (XBUS) --
     XBUS_EN             => true,
     XBUS_TIMEOUT        => 2048,
     XBUS_REGSTAGE_EN    => true,
-    -- Processor peripherals --
+    -- General-Purpose Input/Output Controller (GPIO) --
     IO_GPIO_NUM         => 32,
     IO_GPIO_DIR_EN      => true,
+    -- RISC-V Core-Local Interruptor (CLINT) --
     IO_CLINT_EN         => true,
     IO_UART0_EN         => true,
+    -- Universal Asynchronous Receiver/Transmitter (UART0/UART1) --
     IO_UART0_RX_FIFO    => 32,
     IO_UART0_TX_FIFO    => 32,
     IO_UART1_EN         => true,
     IO_UART1_RX_FIFO    => 1,
     IO_UART1_TX_FIFO    => 1,
+    -- Serial Peripheral Interface (SPI Host, SDI Device) --
     IO_SPI_EN           => true,
     IO_SPI_FIFO         => 4,
     IO_SDI_EN           => true,
     IO_SDI_FIFO         => 4,
+    -- Two-Wire Interface (TWI Host, TWD Device) --
     IO_TWI_EN           => true,
     IO_TWI_FIFO         => 4,
     IO_TWD_EN           => true,
     IO_TWD_RX_FIFO      => 4,
     IO_TWD_TX_FIFO      => 4,
+    -- Pulse-Width Modulation Controller (PWM) --
     IO_PWM_NUM          => 8,
+    -- Watchdog Timer (WDT) --
     IO_WDT_EN           => true,
+    -- True-Random Number Generator (TRNG) --
     IO_TRNG_EN          => true,
     IO_TRNG_FIFO        => 4,
+    IO_TRNG_NUM_RO      => 3,
+    IO_TRNG_NUM_INV     => 5,
+    IO_TRNG_NUM_RBIT    => 64,
+    -- Custom Functions Subsystem (CFS) --
     IO_CFS_EN           => true,
+    -- Smart LED interface (NEOLED) --
     IO_NEOLED_EN        => true,
     IO_NEOLED_TX_FIFO   => 8,
+    -- General-Purpose Timer (GPTMR) --
     IO_GPTMR_NUM        => 4,
+    -- 1-Wire Interface (ONEWIRE) --
     IO_ONEWIRE_EN       => true,
     IO_ONEWIRE_FIFO     => 8,
+    -- Direct Memory Access Controller (DMA) --
     IO_DMA_EN           => true,
     IO_DMA_DSC_FIFO     => 8,
+    -- Stream Link Interface (SLINK) --
     IO_SLINK_EN         => true,
     IO_SLINK_RX_FIFO    => 4,
     IO_SLINK_TX_FIFO    => 1,
+    -- Instruction Tracer (TRACER) --
     IO_TRACER_EN        => true,
     IO_TRACER_BUFFER    => 32,
     IO_TRACER_SIMLOG_EN => TRACE_LOG_EN
