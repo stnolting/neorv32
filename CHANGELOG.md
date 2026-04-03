@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 03.04.2026 | [**1.12.9**](https://github.com/stnolting/neorv32/releases/tag/v1.12.9) | :rocket: **New release** | |
 | 03.04.2026 | 1.12.8.10 | :bug: fix `sc.w` reservation set instruction: return all-zero on success | [#1520](https://github.com/stnolting/neorv32/pull/1520) |
 | 01.04.2026 | 1.12.8.9 | add TRNG architecture configuration generics; :warning: rework TRNG control register layout | [#1518](https://github.com/stnolting/neorv32/pull/1518) |
 | 28.03.2026 | 1.12.8.8 | add optional GPIO direction control | [#1517](https://github.com/stnolting/neorv32/pull/1517) |
