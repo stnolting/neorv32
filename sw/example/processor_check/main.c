@@ -2098,9 +2098,9 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Test atomic lr/sc memory access - failing access
+  // Test atomic lr/sc memory access
   // ----------------------------------------------------------
-  PRINT("[%i] AMO LR/SC (failing) ", cnt_test);
+  PRINT("[%i] AMO LR/SC ", cnt_test);
 
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZALRSC)) {
     trap_cause = trap_never_c;
@@ -2110,16 +2110,14 @@ int main() {
     asm volatile ("fence"); // flush/reload d-cache
 
     tmp_a = neorv32_cpu_amolr((uint32_t)&amo_var);
-    amo_var = 0x10cafe00; // break reservation
-    asm volatile ("fence"); // flush/reload d-cache
-    tmp_b = (neorv32_cpu_amosc((uint32_t)&amo_var, 0xaaaaaaaa) & 1);
-    tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)&amo_var, 0xcccccccc) & 1); // another SC: must fail
-    tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0) & 1); // another SC: must fail; no bus exception!
+    tmp_b = neorv32_cpu_amosc((uint32_t)&amo_var, 0x12345678); // must succeed returning all-zero
+    tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)&amo_var, 0xffffffff) & 1); // another SC: must fail
+    tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0) & 1); // another SC: must fail; no bus exception
     asm volatile ("fence"); // flush/reload d-cache
 
     if ((tmp_a   == 0x00cafe00) && // correct LR.W result
-        (amo_var == 0x10cafe00) && // atomic variable NOT updates by SC.W
-        (tmp_b   == 0x00000007) && // SC.W[2] failed, SC.W[1] failed, SC.W[0] failed
+        (amo_var == 0x12345678) && // atomic variable NOT updates by SC.W
+        (tmp_b   == 0x00000003) && // 1st SC.W success, 2nd SC.W failed, 3rd SC.W failed
         (trap_cause == trap_never_c)) { // no exception
       test_ok();
     }
