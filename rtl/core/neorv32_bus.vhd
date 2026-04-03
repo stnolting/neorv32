@@ -932,8 +932,8 @@ begin
   -- on the read-back bus, so we must override data to all-zeros.
   core_rsp_o.err  <= sys_rsp_i.err;
   core_rsp_o.ack  <= sys_rsp_i.ack or sc_fail; -- generate local ACK if SC fails
-  core_rsp_o.data <= (0 => '1', others => '0') when (sc_fail = '1') else -- SC failed: return 1
-                     (others => '0')            when (sc_pend = '1') else -- SC succeeded: return 0
+  core_rsp_o.data <= x"00000001" when (sc_fail = '1') else -- SC failed: return 1
+                     x"00000000" when (sc_pend = '1') else -- SC succeeded: return 0
                      sys_rsp_i.data; -- normal access: pass-through
 
 end neorv32_bus_amo_rvs_rtl;
