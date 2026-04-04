@@ -22,43 +22,19 @@
 * Configurable number of lines
 * Configurable line size
 * Allows bypassing for _uncached_ accesses
-* Tag and data storage mapped to memory primitives
+* Tag and data RAM mapped to memory primitives
 
 
 **Overview**
 
-The processor features an optional CPU instruction cache. The cache is connected directly to the <<_cpu_front_end>>
-fetch interface and provides full-transparent accesses. The cache is direct-mapped and read-only.
+The processor features an optional instruction cache (i-cache) that is directly connected to the <<_cpu_front_end>>
+instruction fetch interface providing full-transparent accesses. The cache is direct-mapped and read-only.
 For the <<_dual_core_configuration>> each CPU core is equipped with a private instruction cache.
 
-The instruction cache is enabled by the `ICACHE_EN` generic. The total cache memory size in bytes is defined by
-`ICACHE_NUM_BLOCKS x CACHE_BLOCK_SIZE`. `ICACHE_NUM_BLOCKS` defines the number of cache blocks (or "cache lines")
-and `CACHE_BLOCK_SIZE` defines the block size in bytes; note that the latter configuration is global for all caches.
-
-.Burst Transfers
-[IMPORTANT]
-Cache update operations (to resolve a cache miss) can use <<_locked_bus_accesses_and_bursts,burst transfers>>
-to increase performance. Burst operations are enabled (for all caches) by the `CACHE_BURSTS_EN` top generic.
-When bursts are enabled all cache block transfers are **always executed as burst transfers**. Hence, all devices,
-memories and endpoints that can be accessed by the cache must also be able to process bursts (including the
-<<_processor_external_bus_interface_xbus>>).
-
-.Uncached Accesses
-[NOTE]
-The cache provides direct/uncached accesses to memory (bypassing the cache) in order to access memory-mapped IO
-(like the processor-internal IO/peripheral modules). All accesses that target the address range from `0xF0000000`
-to `0xFFFFFFFF` will bypass the cache. See section <<_address_space>> for more information. Furthermore, atomic
-memory operations  will always **bypass** the cache.
-
-.Manual Cache Clear/Reload and Memory Coherence
-[NOTE]
-By executing the `fence.i` instruction the instruction cache is cleared and reloaded.
-See section <<_memory_coherence>> for more information.
-
-.Cache Block Update Bus Error Handling
-[NOTE]
-If the cache encounters a bus error while downloading a new block from main memory, the entire block is discarded
-and an bus error exception is raised.
+The instruction cache is enabled by the `ICACHE_EN` generic. The total cache memory size in bytes is defined
+by `ICACHE_NUM_BLOCKS x CACHE_BLOCK_SIZE`. `ICACHE_NUM_BLOCKS` defines the number of cache blocks ("lines")
+and `CACHE_BLOCK_SIZE` defines the block (line) size in bytes; note that the latter configuration is global
+for all caches.
 
 .Retrieve Cache Configuration by Software
 [TIP]
@@ -66,5 +42,45 @@ Software can retrieve the cache configuration/layout from the <<_sysinfo_cache_c
 
 .Memory Primitives
 [TIP]
-The cache's tag and data RAMs are encapsulated as individual wrapper (`neorv32_cache_ram.vhd`) that can be
+The cache's tag and data RAMs are encapsulated as wrapper (`neorv32_cache_ram.vhd`) that can be modified or
 replaced by a technology-specific IP. All interface ports provide static signal widths to ease replacement.
+
+**Burst Transfers**
+
+Cache update operations can use <<_locked_bus_accesses_and_bursts,burst transfers>> to increase performance.
+Burst operations are enabled (for all caches) by the `CACHE_BURSTS_EN` top generic. When bursts are enabled
+all cache block transfers are **always executed as burst transfers**. Hence, all devices, memories and endpoints
+that can be accessed by the cache must also be able to process bursts (including modules connected to the
+<<_processor_external_bus_interface_xbus>>).
+
+**Cache Bypass**
+
+The cache provides direct/uncached accesses (bypassing the cache) in order to access memory-mapped IO like
+the processor-internal IO/peripheral modules. All accesses that target the address range from `0xF0000000`
+to `0xFFFFFFFF` will bypass the cache. See section <<_address_space>> for more information. Furthermore, atomic
+memory operations  will always **bypass** the cache.
+
+**Cache Synchronization and Memory Coherence**
+
+By executing the `fence.i` instruction the entire i-cache is invalidated. The next access therefore results
+in a cache miss that reloads the cache with up-to-date data from main memory. See section
+<<_memory_coherence>> for more information.
+
+**Cache Bus Error Handling**
+
+The cache responds differently to bus errors depending on which operation caused the error. Note that all
+instruction cache accesses are entirely read-only.
+
+[start=1]
+
+. **Cache Bypass**: If a bus error occurs during a cache bypass operation - for example, when accessing
+memory-mapped I/O - the bus error is reported to the CPU _immediately_ and with _full precision_. The
+address reported in <<_mepc>> represents the _exact_ address that caused the error.
+
+. **Cache Miss**: If the instruction request results in a cache miss, the according memory block is fetched
+from main memory. If any memory access within this block transfer causes a bus error, the entire cache block
+is discarded and the bus error is reported to the CPU _immediately_ and with _partial precision_. The address
+reported in <<_mepc>> represents an address within the cache/memory block whose fetch caused the error.
+
+. **Cache Synchronization**: A cache synchronization operation (`fence.i`) cannot cause any bus error
+as it just invalided all current cache blocks without performing any memory access at all.
