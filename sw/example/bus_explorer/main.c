@@ -49,7 +49,7 @@ void memory_trap_handler(void);
  **************************************************************************/
 int main() {
 
-  char buffer[8];
+  char buffer[40];
   char strtok_delimiter[] = " ";
   int length = 0;
 
