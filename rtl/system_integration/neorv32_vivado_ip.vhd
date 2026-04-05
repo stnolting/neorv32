@@ -156,7 +156,6 @@ entity neorv32_vivado_ip is
     IO_TRACER_EN          : boolean                        := false;
     IO_TRACER_BUFFER      : natural range 1 to 2**15       := 1;
     IO_TRACER_SIMLOG_EN   : boolean                        := false
-
   );
   port (
     -- ------------------------------------------------------------
