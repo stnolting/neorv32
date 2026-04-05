@@ -45,6 +45,7 @@
 #define TERM_HL_RESET      "\033[0m"
 /**@}*/
 
+#define ZICCLSM_EN 1
 
 /**********************************************************************//**
  * @name UART print macros
@@ -893,24 +894,39 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Unaligned load address
+  // Unaligned word load - all three misaligned offsets
+  // With ZICCLSM_EN: load must succeed and return correct data.
+  // Without: must raise L_MISALIGNED exception, dest reg unchanged.
   // ----------------------------------------------------------
-  PRINT("[%i] LD align EXC ", cnt_test);
-  trap_cause = trap_never_c;
-  cnt_test++;
-
-  // load from unaligned address
-  asm volatile ("li %[da], 0xcafe1230 \n" // initialize destination register with known value
-                "lw %[da], 0(%[ad])   \n" // must not update destination register to to exception
-                : [da] "=&r" (tmp_b) : [ad] "r" (ADDR_UNALIGNED_1));
-
-  if ((trap_cause == TRAP_CODE_L_MISALIGNED) &&
-      (neorv32_cpu_csr_read(CSR_MTVAL) == ADDR_UNALIGNED_1) &&
-      (tmp_b == 0xcafe1230)) { // make sure dest. reg is not updated
-    test_ok();
-  }
-  else {
-    test_fail();
+  {
+    volatile uint32_t lw_buf[2] = {0x44332211U, 0x88776655U};
+    // expected LW result for offsets 1, 2, 3 (little-endian byte assembly)
+    const uint32_t lw_expected[4] = {0, 0x55443322U, 0x66554433U, 0x77665544U};
+    int lw_off;
+    for (lw_off = 1; lw_off <= 3; lw_off++) {
+      uint32_t lw_addr = (uint32_t)lw_buf + lw_off;
+      PRINT("[%i] LW align+%i ", cnt_test, lw_off);
+      trap_cause = trap_never_c;
+      cnt_test++;
+      asm volatile ("li %[da], 0xcafe1230 \n"
+                    "lw %[da], 0(%[ad])   \n"
+                    : [da] "=&r" (tmp_b) : [ad] "r" (lw_addr));
+#ifdef ZICCLSM_EN
+      if ((trap_cause == trap_never_c) && (tmp_b == lw_expected[lw_off])) {
+        test_ok();
+      } else {
+        test_fail();
+      }
+#else
+      if ((trap_cause == TRAP_CODE_L_MISALIGNED) &&
+          (neorv32_cpu_csr_read(CSR_MTVAL) == lw_addr) &&
+          (tmp_b == 0xcafe1230U)) { // dest reg must not be updated on exception
+        test_ok();
+      } else {
+        test_fail();
+      }
+#endif
+    }
   }
 
 
@@ -937,29 +953,41 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // Unaligned store address
+  // Unaligned word store - all three misaligned offsets
+  // With ZICCLSM_EN: store must succeed and write correct bytes.
+  // Without: must raise S_MISALIGNED exception, memory unchanged.
   // ----------------------------------------------------------
-  PRINT("[%i] ST align EXC ", cnt_test);
-  trap_cause = trap_never_c;
-  cnt_test++;
-
-  // initialize test variable
-  store_access_addr[0] = 0x11223344;
-  store_access_addr[1] = 0x55667788;
-  tmp_a = (uint32_t)(&store_access_addr[0]);
-  tmp_a += 2; // make word-unaligned
-
-  // store to unaligned address
-  neorv32_cpu_store_unsigned_word(tmp_a, 0);
-
-  if ((trap_cause == TRAP_CODE_S_MISALIGNED) &&
-      (neorv32_cpu_csr_read(CSR_MTVAL) == tmp_a) &&
-      (store_access_addr[0] == 0x11223344) &&
-      (store_access_addr[1] == 0x55667788)) { // make sure memory was not altered
-    test_ok();
-  }
-  else {
-    test_fail();
+  {
+    // expected buf[0]/buf[1] after SW 0x11223344 at each offset (little-endian)
+    const uint32_t sw_exp0[4] = {0, 0x22334400U, 0x33440000U, 0x44000000U};
+    const uint32_t sw_exp1[4] = {0, 0x00000011U, 0x00001122U, 0x00112233U};
+    int sw_off;
+    for (sw_off = 1; sw_off <= 3; sw_off++) {
+      volatile uint32_t sw_buf[2] = {0x00000000U, 0x00000000U};
+      uint32_t sw_addr = (uint32_t)sw_buf + sw_off;
+      PRINT("[%i] SW align+%i ", cnt_test, sw_off);
+      trap_cause = trap_never_c;
+      cnt_test++;
+      asm volatile ("sw %[s], 0(%[a])" : : [s] "r" (0x11223344U), [a] "r" (sw_addr));
+#ifdef ZICCLSM_EN
+      if ((trap_cause == trap_never_c) &&
+          (sw_buf[0] == sw_exp0[sw_off]) &&
+          (sw_buf[1] == sw_exp1[sw_off])) {
+        test_ok();
+      } else {
+        test_fail();
+      }
+#else
+      if ((trap_cause == TRAP_CODE_S_MISALIGNED) &&
+          (neorv32_cpu_csr_read(CSR_MTVAL) == sw_addr) &&
+          (sw_buf[0] == 0x00000000U) && // memory must not be altered
+          (sw_buf[1] == 0x00000000U)) {
+        test_ok();
+      } else {
+        test_fail();
+      }
+#endif
+    }
   }
 
 
@@ -980,6 +1008,154 @@ int main() {
   else {
     test_fail();
   }
+
+
+  // ----------------------------------------------------------
+  // Misaligned half-word load - only odd offset (+1, +3) is misaligned
+  // With ZICCLSM_EN: load must succeed and return correct data.
+  // Without: must raise L_MISALIGNED, dest reg unchanged.
+  // ----------------------------------------------------------
+  {
+    // LH expected results (sign-extended int16): offset 1=0x3322, offset 3=0x5544
+    const int16_t lh_expected[4] = {0, (int16_t)0x3322, 0, (int16_t)0x5544};
+    int lh_off;
+    for (lh_off = 1; lh_off <= 3; lh_off += 2) { // only offsets 1 and 3 are misaligned for HW
+      volatile uint32_t lh_buf[2] = {0x44332211U, 0x88776655U};
+      uint32_t lh_addr = (uint32_t)lh_buf + lh_off;
+      PRINT("[%i] LH align+%i ", cnt_test, lh_off);
+      trap_cause = trap_never_c;
+      cnt_test++;
+      int16_t lh_res;
+      asm volatile ("li %[da], 0xcafe \n"
+                    "lh %[da], 0(%[ad]) \n"
+                    : [da] "=&r" (lh_res) : [ad] "r" (lh_addr));
+#ifdef ZICCLSM_EN
+      if ((trap_cause == trap_never_c) && (lh_res == lh_expected[lh_off])) {
+        test_ok();
+      } else {
+        test_fail();
+      }
+#else
+      if ((trap_cause == TRAP_CODE_L_MISALIGNED) &&
+          (neorv32_cpu_csr_read(CSR_MTVAL) == lh_addr) &&
+          ((uint16_t)lh_res == (uint16_t)0xcafe)) { // dest reg must not be updated on exception
+        test_ok();
+      } else {
+        test_fail();
+      }
+#endif
+    }
+  }
+
+
+  // ----------------------------------------------------------
+  // Misaligned half-word store - only odd offset (+1, +3) is misaligned
+  // With ZICCLSM_EN: store must succeed and write correct bytes.
+  // Without: must raise S_MISALIGNED, memory unchanged.
+  // SH 0xABCD: LE stores byte[0]=0xCD at addr+0, byte[1]=0xAB at addr+1
+  // ----------------------------------------------------------
+  {
+    // expected buf[0] and buf[1] after SH 0xABCD at each odd offset
+    const uint32_t sh_exp0[4] = {0, 0x00ABCD00U, 0, 0xCD000000U};
+    const uint32_t sh_exp1[4] = {0, 0x00000000U, 0, 0x000000ABU};
+    int sh_off;
+    for (sh_off = 1; sh_off <= 3; sh_off += 2) {
+      volatile uint32_t sh_buf[2] = {0x00000000U, 0x00000000U};
+      uint32_t sh_addr = (uint32_t)sh_buf + sh_off;
+      PRINT("[%i] SH align+%i ", cnt_test, sh_off);
+      trap_cause = trap_never_c;
+      cnt_test++;
+      asm volatile ("sh %[s], 0(%[a])" : : [s] "r" (0x0000ABCDU), [a] "r" (sh_addr));
+#ifdef ZICCLSM_EN
+      if ((trap_cause == trap_never_c) &&
+          (sh_buf[0] == sh_exp0[sh_off]) &&
+          (sh_buf[1] == sh_exp1[sh_off])) {
+        test_ok();
+      } else {
+        test_fail();
+      }
+#else
+      if ((trap_cause == TRAP_CODE_S_MISALIGNED) &&
+          (neorv32_cpu_csr_read(CSR_MTVAL) == sh_addr) &&
+          (sh_buf[0] == 0x00000000U) && // memory must not be altered
+          (sh_buf[1] == 0x00000000U)) {
+        test_ok();
+      } else {
+        test_fail();
+      }
+#endif
+    }
+  }
+
+
+  // ----------------------------------------------------------
+  // Zicclsm + PMP: access fault on first or second sub-access
+  // Only meaningful when hardware decomposes misaligned accesses (ZICCLSM_EN).
+  // Uses the TOR-protected pmp_access region already set up earlier:
+  //   - pmp_access[0..6]: R-only in U-mode  (TOR range)
+  //   - pmp_access[7]   : no R/W in U-mode  (outside TOR, X-only region 2)
+  //   - pmp_access[-1]  : no R/W in U-mode  (before TOR base, X-only region 2)
+  // For store fault tests, region 1 is temporarily extended with W permission.
+  // ----------------------------------------------------------
+#ifdef ZICCLSM_EN
+  if (pmp_num_regions >= 3) {
+
+    uint32_t pmp_bound = (uint32_t)(&pmp_access[0]) + sizeof(pmp_access) - 4;
+
+    // Two cases per access type: fault on 1st sub-access, fault on 2nd sub-access.
+    const int32_t offsets[2] = {
+      -3,                                        // 1st sub-access expected to fault (before allowed range)
+      sizeof(pmp_access) - sizeof(uint32_t) + 1, // 2nd sub-access expected to fault (after allowed range)
+    };
+
+    int i;
+    for (i = 0; i < 2; i++) {
+      int32_t offset = offsets[i];
+      uint32_t addr = (uint32_t)pmp_access + offset;
+      uint32_t res;
+
+      PRINT("[%i] LW align %d PMP EXC ", cnt_test, offset);
+      trap_cause = trap_never_c;
+      cnt_test++;
+      goto_user_mode();
+      asm volatile ("lw %[d], 0(%[a])" : [d] "=r" (res) : [a] "r" (addr));
+      if (trap_cause == TRAP_CODE_L_ACCESS) {
+        test_ok();
+      } else {
+        test_fail();
+      }
+    }
+
+    // Temporarily add W permission to region 1 for store fault tests
+    neorv32_cpu_pmp_configure_region(1, pmp_bound >> 2,
+      (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_R) | (1 << PMPCFG_W));
+
+    for (i = 0; i < 2; i++) {
+      int32_t offset = offsets[i];
+      uint32_t addr = (uint32_t)pmp_access + offset;
+
+      PRINT("[%i] SW align %d PMP EXC ", cnt_test, offset);
+      trap_cause = trap_never_c;
+      cnt_test++;
+      goto_user_mode();
+      {
+        asm volatile ("sw %[s], 0(%[a])" : : [s] "r" (0xdeadbeefU), [a] "r" (addr));
+      }
+      if (trap_cause == TRAP_CODE_S_ACCESS) {
+        test_ok();
+      } else {
+        test_fail();
+      }
+    }
+
+    // Restore region 1 to read-only
+    neorv32_cpu_pmp_configure_region(1, pmp_bound >> 2,
+      (PMP_TOR << PMPCFG_A_LSB) | (1 << PMPCFG_R));
+
+  } else {
+    PRINT("[n.a.] Zicclsm PMP access fault tests (no PMP)\n");
+  }
+#endif
 
 
   // ----------------------------------------------------------
