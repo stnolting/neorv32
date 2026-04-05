@@ -31,7 +31,7 @@ int main(void) {
   system_setup();
 
   // intro screen
-  uart_puts("\n\n\n" THEME_INTRO "\n"
+  uart_puts("\n\n" THEME_INTRO "\n"
             "build: " __DATE__ "\n\n");
 
   // ------------------------------------------------
