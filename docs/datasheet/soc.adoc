@@ -656,21 +656,22 @@ Depending on the configuration, the NEORV32 memory hierarchy consists of several
 
 [start=1]
 . The CPU execution pipeline and its _instruction prefetch buffer_ (<<_cpu_front_end>>)
-. The <<_data_cache_dcache>> and <<_instruction_cache_icache>> (both optional)
-. Processor-internal and processor-external memories (depends on setup configuration)
+. The optional <<_data_cache_dcache>> and <<_instruction_cache_icache>>
+. Processor-internal and processor-external memories (depending on setup configuration)
 
 Memory accesses are initiated exclusively by the CPU or the <<_direct_memory_access_controller_dma>>.
 Since the levels of the memory hierarchy are transparent to the software, special care must be taken
 to ensure memory coherence is maintained throughout the entire system/application. Note that coherence
 and especially cache synchronization is **not** performed automatically by the hardware itself as there
-is no snooping implemented. NEORV32 supports two RISC-V memory ordering instructions for manual memory
-synchronization which are always available regardless of the actual CPU/ISA configuration:
+is no snooping implemented. NEORV32 supports two RISC-V memory ordering instructions that are used for
+manual memory synchronization:
 
-* `fence.i` (<<_zifencei_isa_extension>>): flush the CPU's instruction prefetch buffer
-and clear the CPU's instruction cache.
-* `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>): clear and reload the CPU's
-data cache. Flushing is not implemented as the data cache uses **write-through** strategy.
-Hence, write operations are always synchronized with main memory.
+* `fence.i` (<<_zifencei_isa_extension>>): Clear the CPU's instruction prefetch buffer
+and the CPU's instruction cache. The next cache access therefore results
+in a miss that fetches up-to-date data from main memory.
+* `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>): Flush the CPU's data cache: Modified ("dirty")
+blocks are copied back to main memory; all clean blocks are invalidated so that the next CPU access to
+any block results in a cache miss that reloads the cache with up-to-date data from main memory.
 
 .Weak Coherence Model
 [IMPORTANT]

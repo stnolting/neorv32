@@ -29,6 +29,9 @@
 #define ADDR_UNALIGNED_3   (0x00000003U)
 //** Unreachable word-aligned cached address */
 #define ADDR_UNREACHABLE   (0x70000000U)
+//** Word-aligned cached dummy ROM/RAM address */
+#define ADDR_CACHED_ROM    (0xE0000000U)
+#define ADDR_CACHED_RAM    (0xE1000000U)
 //** Word-aligned address that returns a bus error on write-request */
 #define ADDR_WRERR         (0xFFFE0004U)
 //** External memory base address (uncached) */
@@ -586,6 +589,64 @@ int main() {
     else {
       test_fail();
     }
+  }
+  else {
+    PRINT("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
+  // D-cache write-back error tests
+  // ----------------------------------------------------------
+  PRINT("[%i] D-cache write-back error ", cnt_test);
+
+  if ((NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_DCACHE)) && neorv32_sysinfo_is_sim()) {
+    cnt_test++;
+    tmp_a = 0;
+
+    // cache read miss -> write back error
+    trap_cause = trap_never_c;
+    asm volatile ("fence");
+    neorv32_cpu_load_unsigned_word(ADDR_CACHED_ROM); // load cached ROM block into cache
+    neorv32_cpu_store_unsigned_word(ADDR_CACHED_ROM, 0); // modify the block
+    neorv32_cpu_load_unsigned_word(ADDR_CACHED_RAM); // evict modified block (read miss) -> write-back error
+    asm volatile ("nop");
+    asm volatile ("nop");
+    if (trap_cause == TRAP_CODE_L_ACCESS) { // bus read error
+      tmp_a |= 0b001;
+    }
+
+    // cache write miss -> write back error
+    trap_cause = trap_never_c;
+    asm volatile ("fence");
+    neorv32_cpu_load_unsigned_word(ADDR_CACHED_ROM); // load cached ROM block into cache
+    neorv32_cpu_store_unsigned_word(ADDR_CACHED_RAM, 0); // evict modified block -> no error since block is clean
+    asm volatile ("nop");
+    asm volatile ("nop");
+    if (trap_cause == trap_never_c) { // no bus error
+      tmp_a |= 0b010;
+    }
+
+    // cache sync -> write back error
+    trap_cause = trap_never_c;
+    asm volatile ("fence");
+    neorv32_cpu_load_unsigned_word(ADDR_CACHED_ROM); // load cached ROM block into cache
+    neorv32_cpu_store_unsigned_word(ADDR_CACHED_ROM, 0); // modify the block
+    asm volatile ("fence"); // write back all modified blocks -> write-back error
+    neorv32_cpu_store_unsigned_word(ADDR_CACHED_RAM, 0); // evict modified block (write miss) -> write-back error
+    asm volatile ("nop");
+    if (trap_cause == TRAP_CODE_S_ACCESS) { // bus write error
+      tmp_a |= 0b100;
+    }
+
+    // check test results
+    if (tmp_a == 0b111) { // all tests passed
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+
   }
   else {
     PRINT("[n.a.]\n");

@@ -468,15 +468,16 @@ void neorv32_aux_print_hw_config(void) {
     ic_num_blocks = 1 << ic_num_blocks;
 
     neorv32_uart0_printf("%u bytes (%ux%u)", ic_num_blocks*ic_block_size, ic_num_blocks, ic_block_size);
+
+    if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_INST_BURSTS_EN)) {
+      neorv32_uart0_printf(", bursts enabled\n");
+    }
+    else {
+      neorv32_uart0_printf(", no bursts\n");
+    }
   }
   else {
     neorv32_uart0_printf("none");
-  }
-  if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_INST_BURSTS_EN)) {
-    neorv32_uart0_printf(", bursts enabled\n");
-  }
-  else {
-    neorv32_uart0_printf("\n");
   }
 
   // CPU d-cache
@@ -490,15 +491,16 @@ void neorv32_aux_print_hw_config(void) {
     dc_num_blocks = 1 << dc_num_blocks;
 
     neorv32_uart0_printf("%u bytes (%ux%u)", dc_num_blocks*dc_block_size, dc_num_blocks, dc_block_size);
+
+    if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_DATA_BURSTS_EN)) {
+      neorv32_uart0_printf(", bursts enabled\n");
+    }
+    else {
+      neorv32_uart0_printf(", no bursts\n");
+    }
   }
   else {
     neorv32_uart0_printf("none");
-  }
-  if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_DATA_BURSTS_EN)) {
-    neorv32_uart0_printf(", bursts enabled\n");
-  }
-  else {
-    neorv32_uart0_printf("\n");
   }
 
   // external bus interface

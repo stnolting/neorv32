@@ -114,8 +114,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   -- XBUS --
   signal xbus_core_req, xbus_ext_mem_a_req, xbus_ext_mem_b_req, xbus_mmio_req, xbus_trig_req : xbus_req_t;
   signal xbus_core_rsp, xbus_ext_mem_a_rsp, xbus_ext_mem_b_rsp, xbus_mmio_rsp, xbus_trig_rsp : xbus_rsp_t;
-  signal xbus_fmem_data_req, xbus_fmem_tag_req : xbus_req_t;
-  signal xbus_fmem_data_rsp, xbus_fmem_tag_rsp : xbus_rsp_t;
+  signal xbus_rom_req, xbus_ram_req, xbus_fmem_data_req, xbus_fmem_tag_req : xbus_req_t;
+  signal xbus_rom_rsp, xbus_ram_rsp, xbus_fmem_data_rsp, xbus_fmem_tag_rsp : xbus_rsp_t;
 
 begin
 
@@ -449,14 +449,14 @@ begin
   xbus_interconnect: entity work.xbus_gateway
   generic map (
     -- device address size in bytes and base address --
-    DEV_0_EN => EXT_MEM_A_EN, DEV_0_SIZE => EXT_MEM_A_SIZE, DEV_0_BASE => EXT_MEM_A_BASE,
-    DEV_1_EN => EXT_MEM_B_EN, DEV_1_SIZE => EXT_MEM_B_SIZE, DEV_1_BASE => EXT_MEM_B_BASE,
-    DEV_2_EN => true,         DEV_2_SIZE => 8,              DEV_2_BASE => x"F0000000",
-    DEV_3_EN => true,         DEV_3_SIZE => 4,              DEV_3_BASE => x"FF000000",
-    DEV_4_EN => true,         DEV_4_SIZE => 16,             DEV_4_BASE => x"FF100000",
-    DEV_5_EN => true,         DEV_5_SIZE => 16,             DEV_5_BASE => x"FF200000",
-    DEV_6_EN => false,        DEV_6_SIZE => 0,              DEV_6_BASE => (others => '0'),
-    DEV_7_EN => false,        DEV_7_SIZE => 0,              DEV_7_BASE => (others => '0')
+    DEV_0_EN => EXT_MEM_A_EN, DEV_0_SIZE => EXT_MEM_A_SIZE,   DEV_0_BASE => EXT_MEM_A_BASE,
+    DEV_1_EN => EXT_MEM_B_EN, DEV_1_SIZE => EXT_MEM_B_SIZE,   DEV_1_BASE => EXT_MEM_B_BASE,
+    DEV_2_EN => true,         DEV_2_SIZE => 8,                DEV_2_BASE => x"F0000000",
+    DEV_3_EN => true,         DEV_3_SIZE => 4,                DEV_3_BASE => x"FF000000",
+    DEV_4_EN => true,         DEV_4_SIZE => 16,               DEV_4_BASE => x"FF100000",
+    DEV_5_EN => true,         DEV_5_SIZE => 16,               DEV_5_BASE => x"FF200000",
+    DEV_6_EN => true,         DEV_6_SIZE => CACHE_BLOCK_SIZE, DEV_6_BASE => x"E0000000",
+    DEV_7_EN => true,         DEV_7_SIZE => CACHE_BLOCK_SIZE, DEV_7_BASE => x"E1000000"
   )
   port map (
     -- host port --
@@ -469,8 +469,8 @@ begin
     dev_3_req_o => xbus_trig_req,      dev_3_rsp_i => xbus_trig_rsp,
     dev_4_req_o => xbus_fmem_data_req, dev_4_rsp_i => xbus_fmem_data_rsp,
     dev_5_req_o => xbus_fmem_tag_req,  dev_5_rsp_i => xbus_fmem_tag_rsp,
-    dev_6_req_o => open,               dev_6_rsp_i => xbus_rsp_terminate_c,
-    dev_7_req_o => open,               dev_7_rsp_i => xbus_rsp_terminate_c
+    dev_6_req_o => xbus_rom_req,       dev_6_rsp_i => xbus_rom_rsp,
+    dev_7_req_o => xbus_ram_req,       dev_7_rsp_i => xbus_ram_rsp
   );
 
 
@@ -520,6 +520,29 @@ begin
   if not EXT_MEM_B_EN generate
     xbus_ext_mem_b_rsp <= xbus_rsp_terminate_c;
   end generate;
+
+
+  -- XBUS: External ROM/RAM Dummy (cached) --------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  xbus_mem_dummy: process(rst_gen, clk_gen)
+  begin
+    if (rst_gen = '0') then
+      xbus_rom_rsp <= xbus_rsp_terminate_c;
+      xbus_ram_rsp <= xbus_rsp_terminate_c;
+    elsif rising_edge(clk_gen) then
+      xbus_rom_rsp <= xbus_rsp_terminate_c;
+      xbus_ram_rsp <= xbus_rsp_terminate_c;
+      if (xbus_rom_req.cyc = '1') and (xbus_rom_req.stb = '1') then -- ROM access
+        xbus_rom_rsp.data <= x"abcd1234";
+        xbus_rom_rsp.ack  <= not xbus_rom_req.we;
+        xbus_rom_rsp.err  <= xbus_rom_req.we; -- error if write access
+      elsif (xbus_ram_req.cyc = '1') and (xbus_ram_req.stb = '1') then -- RAM access
+        xbus_ram_rsp.data <= x"5678eeff";
+        xbus_ram_rsp.ack  <= '1';
+        xbus_ram_rsp.err  <= '0';
+      end if;
+    end if;
+  end process xbus_mem_dummy;
 
 
   -- XBUS: External Memory-Mapped IO (uncached) ---------------------------------------------
