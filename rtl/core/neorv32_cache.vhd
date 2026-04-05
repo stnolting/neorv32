@@ -2,11 +2,11 @@
 -- NEORV32 SoC - Generic Cache                                                      --
 -- -------------------------------------------------------------------------------- --
 -- The cache is direct-mapped and implements "write-back" & "write-allocate" write  --
--- policies. Burst transfers are used BURSTS_EN is enabled. Otherwise, block        --
+-- policies. Burst transfers are used if BURSTS_EN is enabled. Otherwise, block     --
 -- transfers are split into individual single-word transfers. Total cache size in   --
 -- bytes is NUM_BLOCKS x BLOCK_SIZE.                                                --
 --                                                                                  --
--- Bus transaction types that will *bypass* the cache:                              --
+-- Access types that will *bypass* the cache:                                       --
 -- * any atomic memory operation                                                    --
 -- * accesses to the explicit "uncached address space page" (or higher),            --
 --   which is defined by the 4 most significant address bits (UC_BEGIN)             --
@@ -30,7 +30,7 @@ entity neorv32_cache is
     NUM_BLOCKS : natural range 1 to 4096;       -- number of cache blocks, has to be a power of 2
     BLOCK_SIZE : natural range 4 to 1024;       -- cache block size in bytes, has to be a power of 2
     UC_BEGIN   : std_ulogic_vector(3 downto 0); -- begin of uncached address space (4 MSBs of address)
-    READ_ONLY  : boolean;                       -- read-only accesses for host
+    READ_ONLY  : boolean;                       -- cache is read-only accesses for host
     BURSTS_EN  : boolean                        -- enable issuing of burst transfers
   );
   port (
@@ -65,9 +65,6 @@ architecture neorv32_cache_rtl of neorv32_cache is
   );
   end component;
 
-  -- only emit bursts if explicitly enabled and if block size is at least 16 bytes --
-  constant bursts_en_c : boolean := BURSTS_EN and boolean(BLOCK_SIZE >= 16);
-
   -- cache layout --
   constant block_num_c    : natural := 2**index_size_f(NUM_BLOCKS); -- extend if not a power of two
   constant block_size_c   : natural := 2**index_size_f(BLOCK_SIZE); -- extend if not a power of two
@@ -98,7 +95,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   -- control arbiter --
   type state_t is (
     S_IDLE, S_CHECK, S_BYPASS,
-    S_SYNC_START, S_SYNC_DELAY, S_SYNC_CHECK,
+    S_SYNC_START, S_SYNC_DELAY, S_SYNC_CHECK, S_SYNC_NEXT,
     S_READ_START, S_READ_WAIT, S_READ_BURST, S_READ_DONE,
     S_WRITE_START, S_WRITE_REQ, S_WRITE_RSP, S_WRITE_WAIT, S_WRITE_BURST, S_WRITE_DONE
   );
@@ -194,11 +191,15 @@ begin
     -- fsm --
     case ctrl.state is
 
+      -- ==========================================================================
+      -- Access check: hit/miss/bypass
+      -- ==========================================================================
+
       when S_IDLE => -- wait for request
       -- ------------------------------------------------------------
         ctrl_nxt.bus_err <= '0'; -- reset bus error flag
         ctrl_nxt.sync    <= '0'; -- reset sync-in-progress flag
-        if (ctrl.pnd_syn = '1') then -- pending sync request
+        if (ctrl.pnd_syn = '1') then -- pending sync request: invalidate clean blocks & write-back dirty blocks
           ctrl_nxt.state <= S_SYNC_START;
         elsif (host_req_i.stb = '1') or (ctrl.pnd_req = '1') then -- (pending) access request
           if (unsigned(host_req_i.addr(31 downto 28)) >= unsigned(UC_BEGIN)) or (host_req_i.amo = '1') then
@@ -240,15 +241,19 @@ begin
           ctrl_nxt.state <= S_IDLE;
         end if;
 
-      when S_SYNC_START => -- start cache synchronization
+      -- ==========================================================================
+      -- Cache synchronization: invalidate all blocks & write back dirty blocks
+      -- ==========================================================================
+
+      when S_SYNC_START => -- start synchronization
       -- ------------------------------------------------------------
-        bus_req_o.fence  <= '1';
+        bus_req_o.fence  <= '1'; -- send downstream fence request
         ctrl_nxt.pnd_syn <= '0'; -- sync request accepted
         ctrl_nxt.sync    <= '1'; -- syncing in progress
         ctrl_nxt.idx     <= (others => '0');
         ctrl_nxt.state   <= S_SYNC_DELAY;
 
-      when S_SYNC_DELAY => -- cache access latency
+      when S_SYNC_DELAY => -- cache read access latency
       -- ------------------------------------------------------------
         cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
         ctrl_nxt.state <= S_SYNC_CHECK;
@@ -256,25 +261,38 @@ begin
       when S_SYNC_CHECK => -- check if current block is dirty
       -- ------------------------------------------------------------
         cache_o.addr     <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-        cache_o.vld      <= '0';
-        cache_o.set      <= '1'; -- invalidate current block
         ctrl_nxt.ofs_ext <= (others => '0');
         ctrl_nxt.ofs_int <= (others => '0');
+        ctrl_nxt.bus_err <= '0'; -- reset bus error flag
         if (cache_i.drt = '1') and (READ_ONLY = false) then -- block is dirty: upload to memory
           ctrl_nxt.state <= S_WRITE_START;
-        elsif (and_reduce_f(ctrl.idx) = '1') then -- all blocks checked
+        else -- block is clean: go to next block
+          ctrl_nxt.state <= S_SYNC_NEXT;
+        end if;
+
+      when S_SYNC_NEXT => -- update block status and prepare next block
+      -- ------------------------------------------------------------
+        cache_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
+        cache_o.set  <= '1'; -- update cache block status
+        cache_o.drt  <= ctrl.bus_err; -- block is still dirty if there was a bus error
+        cache_o.vld  <= ctrl.bus_err; -- keep block valid if there was a bus error (skip block)
+        ctrl_nxt.idx <= std_ulogic_vector(unsigned(ctrl.idx) + 1);
+        if (and_reduce_f(ctrl.idx) = '1') then -- all blocks checked
           ctrl_nxt.state <= S_IDLE;
-        else -- next block
-          ctrl_nxt.idx   <= std_ulogic_vector(unsigned(ctrl.idx) + 1);
+        else -- access next block
           ctrl_nxt.state <= S_SYNC_DELAY;
         end if;
+
+      -- ==========================================================================
+      -- Download: read block from main memory
+      -- ==========================================================================
 
       when S_READ_START => -- start block download / send single request (if no bursts)
       -- ------------------------------------------------------------
         bus_req_o.rw    <= '0'; -- read access
         bus_req_o.stb   <= '1'; -- send request
         bus_req_o.lock  <= '1'; -- locked transfer
-        bus_req_o.burst <= bool_to_ulogic_f(bursts_en_c); -- burst transfer
+        bus_req_o.burst <= bool_to_ulogic_f(BURSTS_EN); -- burst transfer
         ctrl_nxt.state  <= S_READ_WAIT;
 
       when S_READ_WAIT => -- wait for exclusive bus access / single response (if no bursts)
@@ -284,13 +302,13 @@ begin
         cache_o.we      <= (others => '1'); -- write full words
         bus_req_o.rw    <= '0'; -- read access
         bus_req_o.lock  <= '1'; -- locked transfer
-        bus_req_o.burst <= bool_to_ulogic_f(bursts_en_c); -- burst transfer
+        bus_req_o.burst <= bool_to_ulogic_f(BURSTS_EN); -- burst transfer
         -- wait for initial ACK to start actual bursting or to issue next single request --
         if (bus_rsp_i.ack = '1') then
           ctrl_nxt.bus_err <= ctrl.bus_err or bus_rsp_i.err; -- accumulate bus errors
           ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1);
           ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1);
-          if bursts_en_c then
+          if BURSTS_EN then
             ctrl_nxt.state <= S_READ_BURST;
           elsif (and_reduce_f(ctrl.ofs_int) = '1') then -- block completed
             ctrl_nxt.state <= S_READ_DONE;
@@ -301,7 +319,7 @@ begin
 
       when S_READ_BURST => -- issue read burst
       -- ------------------------------------------------------------
-        if bursts_en_c then
+        if BURSTS_EN then
           cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
           cache_o.data   <= bus_rsp_i.data;
           cache_o.we     <= (others => '1'); -- write full words
@@ -327,18 +345,22 @@ begin
           ctrl_nxt.state <= S_IDLE;
         end if;
 
-      when S_READ_DONE => -- delay cycle for pending host access to cache
+      when S_READ_DONE => -- update status of downloaded block + host miss access latency delay
       -- ------------------------------------------------------------
         cache_o.vld  <= not ctrl.bus_err; -- make valid if no error; invalidate otherwise
         cache_o.set  <= '1'; -- update cache block status
         ctrl_nxt.hit <= '1'; -- force cache hit to skip status flag read latency
-        if (ctrl.bus_err = '1') then -- bus error during block download
+        if (ctrl.bus_err = '1') then -- bus error during block download (caused by cache miss)
           host_rsp_o.err <= '1';
-          host_rsp_o.ack <= '1'; -- return bus error
+          host_rsp_o.ack <= '1'; -- terminate current request and return bus error
           ctrl_nxt.state <= S_IDLE;
         else
           ctrl_nxt.state <= S_CHECK;
         end if;
+
+      -- ==========================================================================
+      -- Upload: write block to main memory
+      -- ==========================================================================
 
       when S_WRITE_START => -- start block upload: get data word from cache
       -- ------------------------------------------------------------
@@ -347,7 +369,7 @@ begin
           bus_req_o.data  <= cache_i.data;
           bus_req_o.rw    <= '1'; -- write access
           bus_req_o.lock  <= '1'; -- locked transfer
-          bus_req_o.burst <= bool_to_ulogic_f(bursts_en_c); -- burst transfer
+          bus_req_o.burst <= bool_to_ulogic_f(BURSTS_EN); -- burst transfer
           if (or_reduce_f(ctrl.ofs_int) = '0') then -- first write operation?
             ctrl_nxt.tag <= cache_i.tag(tag_width_c-1 downto 0); -- get tag of evicted block
           end if;
@@ -363,7 +385,7 @@ begin
           bus_req_o.data  <= cache_i.data;
           bus_req_o.rw    <= '1'; -- write access
           bus_req_o.lock  <= '1'; -- locked transfer
-          bus_req_o.burst <= bool_to_ulogic_f(bursts_en_c); -- burst transfer
+          bus_req_o.burst <= bool_to_ulogic_f(BURSTS_EN); -- burst transfer
           bus_req_o.stb   <= '1'; -- send request
           ctrl_nxt.state  <= S_WRITE_RSP;
         else
@@ -377,13 +399,13 @@ begin
           bus_req_o.data  <= cache_i.data;
           bus_req_o.rw    <= '1'; -- write access
           bus_req_o.lock  <= '1'; -- locked transfer
-          bus_req_o.burst <= bool_to_ulogic_f(bursts_en_c); -- burst transfer
+          bus_req_o.burst <= bool_to_ulogic_f(BURSTS_EN); -- burst transfer
           -- wait for ACK --
           if (bus_rsp_i.ack = '1') then
             ctrl_nxt.bus_err <= ctrl.bus_err or bus_rsp_i.err; -- accumulate bus errors
             ctrl_nxt.ofs_int <= std_ulogic_vector(unsigned(ctrl.ofs_int) + 1);
             ctrl_nxt.ofs_ext <= std_ulogic_vector(unsigned(ctrl.ofs_ext) + 1);
-            if bursts_en_c then
+            if BURSTS_EN then
               ctrl_nxt.state <= S_WRITE_WAIT;
             elsif (and_reduce_f(ctrl.ofs_int) = '1') then -- block completed
               ctrl_nxt.state <= S_WRITE_DONE;
@@ -397,7 +419,7 @@ begin
 
       when S_WRITE_WAIT => -- cache read latency
       -- ------------------------------------------------------------
-        if bursts_en_c and (not READ_ONLY) then
+        if BURSTS_EN and (not READ_ONLY) then
           cache_o.addr     <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_width_c-1 downto 0) & "00";
           bus_req_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_buf(offset_width_c-1 downto 0) & "00";
           bus_req_o.data   <= cache_i.data;
@@ -412,7 +434,7 @@ begin
 
       when S_WRITE_BURST => -- issue write burst
       -- ------------------------------------------------------------
-        if bursts_en_c and (not READ_ONLY) then
+        if BURSTS_EN and (not READ_ONLY) then
           cache_o.addr   <= ctrl.tag & ctrl.idx & ctrl.ofs_ext(offset_width_c-1 downto 0) & "00";
           bus_req_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_buf(offset_width_c-1 downto 0) & "00";
           bus_req_o.data <= cache_i.data;
@@ -438,21 +460,23 @@ begin
           ctrl_nxt.state <= S_IDLE;
         end if;
 
-      when S_WRITE_DONE => -- update cache block status
+      when S_WRITE_DONE => -- update status of uploaded block
       -- ------------------------------------------------------------
         if not READ_ONLY then
           cache_o.addr <= ctrl.tag & ctrl.idx & ctrl.ofs_int & "00";
-          cache_o.vld  <= '1'; -- make cache block clean ...
-          cache_o.set  <= not ctrl.bus_err; -- ... if there was no bus error
-          ctrl_nxt.cln <= '1'; -- force cache clean to skip status flag read latency
-          if (ctrl.bus_err = '1') then -- bus error during block upload
-            assert (ctrl.sync = '0') report "[NEORV32] D-CACHE SYNC ERROR!" severity error; -- [TODO] error during sync
+          ctrl_nxt.cln <= '1'; -- force cache clean to skip status flag read latency (for S_CHECK only)
+          if (ctrl.sync = '1') then -- block upload caused by cache synchronization
+            ctrl_nxt.state <= S_SYNC_NEXT;
+          elsif (ctrl.bus_err = '1') then -- block upload caused by cache miss: BUS ERROR during upload
+            cache_o.set    <= '1'; -- update cache block status
+            cache_o.vld    <= '0'; -- invalidate cache block
             host_rsp_o.err <= '1';
-            host_rsp_o.ack <= '1'; -- return bus error
+            host_rsp_o.ack <= '1'; -- terminate current request and return bus error
             ctrl_nxt.state <= S_IDLE;
-          elsif (ctrl.sync = '1') then -- block upload caused by cache synchronization operation
-            ctrl_nxt.state <= S_SYNC_DELAY;
-          else -- block upload caused by cache miss
+          else -- block upload caused by cache miss: block upload successful
+            cache_o.set    <= '1'; -- update cache block status
+            cache_o.drt    <= '0'; -- cache block is clean now
+            cache_o.vld    <= '1'; -- cache block is still valid
             ctrl_nxt.state <= S_CHECK;
           end if;
         else
@@ -512,7 +536,7 @@ begin
   end generate;
 
   -- block dirty --
-  cache_i.drt <= '0' when (ctrl.cln = '1') else dirty_rd when (valid_rd = '1') else '0';
+  cache_i.drt <= '0' when (ctrl.cln = '1') else (dirty_rd and valid_rd);
 
 
   -- Cache Data and Tag Memory (Wrapper) ----------------------------------------------------
