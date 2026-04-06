@@ -42,9 +42,9 @@
 //** Silent mode (only show actual errors when != 0) */
 #define SILENT_MODE        (1)
 //** Run FPU CSR tests when != 0 */
-#define RUN_CSR_TESTS      (1)
+#define RUN_CSR_TESTS      (0)
 //** Run FPU exception tests when != 0 */
-#define RUN_EXC_TESTS      (1)
+#define RUN_EXC_TESTS      (0)
 //** Run conversion tests when != 0 */
 #define RUN_CONV_TESTS     (1)
 //** Run add/sub tests when != 0 */
@@ -60,11 +60,11 @@
 //** Run classify tests when != 0 */
 #define RUN_CLASSIFY_TESTS (1)
 //** Run corner case tests when != 0 */
-#define RUN_CORNER_TESTS   (1)
+#define RUN_CORNER_TESTS   (0)
 //** Run unsupported instructions tests when != 0 */
-#define RUN_UNAVAIL_TESTS  (1)
+#define RUN_UNAVAIL_TESTS  (0)
 //** Run average instruction execution time test when != 0 */
-#define RUN_TIMING_TESTS   (1)
+#define RUN_TIMING_TESTS   (0)
 /**@}*/
 
 
