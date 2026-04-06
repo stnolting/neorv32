@@ -2,55 +2,58 @@
 :sectnums:
 === Custom Functions Unit (CFU)
 
-The Custom Functions Unit (CFU) is the central part of the custom NEORV32-specific <<_xcfu_isa_extension>> and
-represents the actual hardware module that can be used to implement **custom RISC-V instructions**.
-These are intended for operations that are inefficient in terms of performance, latency, energy consumption or
-program memory requirements when implemented entirely in software.
+The Custom Functions Unit (CFU) is a NEORV32-specific ISA extension (<<_xcfu_isa_extension, `Xcfu`>>)
+providing a generic hardware module that can be used to implement **custom RISC-V instructions**.
 
-.CFU Complexity
+.CFU vs. Other Customization Options
 [NOTE]
-The CFU is not intended for complex and **CPU-independent** functional units that implement complete accelerators
-(like full block-based AES encryption). These kind of accelerators should be implemented as memory-mapped co-processor
-via the <<_custom_functions_subsystem_cfs>> to allow CPU-independent operation. A comparative survey of all NEORV32-specific
-hardware extension/customization options is provided in the user guide section
+The CFU is _not_ intended for complex and **CPU-independent** functional units that implement complete accelerators
+(like full block-based AES encryption). These kind of accelerators should be implemented as stream- or memory-mapped
+co-processor (e.g. <<_custom_functions_subsystem_cfs>>) to allow CPU-independent operation. A comparative survey of all
+NEORV32-specific hardware extension/customization options is provided in the user guide section
 https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules[Adding Custom Hardware Modules].
 
 .Default CFU Hardware/Software Example
 [TIP]
 The default CFU module (`rtl/core/neorv32_cpu_alu_cfu.vhd`) implements the _Extended Tiny Encryption Algorithm (XTEA)_
-as application example. The according example program is located in `sw/example/demo_cfu`.
+as example application. The according demo program is located in `sw/example/demo_cfu`.
 
 
 :sectnums:
 ==== CFU Instruction Formats
 
-The custom instructions executed by the CFU utilize a specific opcode space in the `rv32` 32-bit instruction
-encoding space that has been explicitly reserved for user-defined extensions by the RISC-V specifications ("Guaranteed
-Non-Standard Encoding Space"). The NEORV32 CFU uses the `custom-0` and `custom-1` opcodes to identify the instructions
-implemented by the CFU and to differentiate between the predefined instruction formats. The NEORV32 CFU utilizes these
-two opcodes to support user-defined **R-type** instructions and **I-type** instructions. Both instruction formats are
-compliant to the RISC-V specification.
+The CFU instructions can utilize a limited set of RISC-V OPCODESin `rv32` 32-bit instruction encoding space
+for custom purpose. So far, two OPCODES are supported that have been explicitly reserved by the RISC-V ISA spec.
+for user-defined extensions ("Guaranteed Non-Standard Encoding Space"). It is up to the designer to decide exactly what
+function these opcodes serve and what type of instruction type/format they use.
 
-* `custom-0` (`0001011`), used for <<_cfu_r_type_instructions>>
-* `custom-1` (`0101011`), used for <<_cfu_i_type_instructions>>
+.Available CFU OPCODES (defined in `sw/lib/include/neorv32_intrinsics.h`)
+[source,c]
+----
+#define RISCV_OPCODE_CUSTOM0 0b0001011 // RISC-V "CUSTOM-0"
+#define RISCV_OPCODE_CUSTOM1 0b0101011 // RISC-V "CUSTOM-1"
+----
+
+.Default CFU Example
+[TIP]
+For the provided XTEA CFU example, the "custom-0" opcode is used to implement custom <<_risc_v_r_type_instructions>>
+while the "custom-1" is used to implement custom <<_risc_v_i_type_instructions>>.
 
 
 :sectnums:
-===== CFU R-Type Instructions
+===== RISC-V R-Type Instructions
 
-The R-type CFU instructions operate on two source registers `rs1` and `rs2` and return the processing result to
+The R-type instructions operate on two source registers `rs1` and `rs2` and return the processing result via
 the destination register `rd`. The actual operation can be defined by using the `funct7` and `funct3` bit fields.
 These immediates can also be used to pass additional data to the CFU like offsets, look-up-tables addresses or
 shift-amounts. However, the actual functionality is entirely user-defined. Note that all immediate values are
 always compile-time-static.
 
-Example operation: `rd <= rs1 xnor rs2` (bit-wise logical XNOR)
-
-.CFU R-type instruction format
+.R-Type Instruction Format
 [wavedrom, format="svg", align="center"]
 ----
 {reg: [
-    {bits: 7, name: 'opcode', type: 1, attr: 'Custom-0'},
+    {bits: 7, name: 'opcode', type: 1},
     {bits: 5, name: 'rd'      },
     {bits: 3, name: 'funct3', type: 1},
     {bits: 5, name: 'rs1'     },
@@ -59,73 +62,56 @@ Example operation: `rd <= rs1 xnor rs2` (bit-wise logical XNOR)
 ]}
 ----
 
-* `funct7`: 7-bit immediate (immediate data or function select)
-* `rs2`: address of second source register (providing 32-bit source data)
-* `rs1`: address of first source register (providing 32-bit source data)
-* `funct3`: 3-bit immediate (immediate data or function select)
-* `rd`: address of destination register (32-bit processing result)
-* `opcode`: `0001011` (RISC-V `custom-0` opcode)
-
 
 :sectnums:
-===== CFU I-Type Instructions
+===== RISC-V I-Type Instructions
 
-The I-type CFU instructions operate on one source registers `rs1` and a 12-bit immediate value `im12` and return
-the processing result to the destination register `rd`. The actual operation can be defined by using the `funct3`
+The I-type instructions operate on one source registers `rs1` and a 12-bit immediate operand `im12` and return
+the processing result via the destination register `rd`. The actual operation can be defined by using the `funct3`
 bit field. Alternatively, this immediate can also be used to pass additional data to the CFU like offsets,
 look-up-tables addresses or shift-amounts. However, the actual functionality is entirely user-defined. Note that
 all immediate values are always compile-time-static.
 
-Example operation: `rd <= rs1 * imm12` (multiply with immediate)
-
-.CFU I-type instruction format
+.I-Type Instruction Format
 [wavedrom, format="svg", align="center"]
 ----
 {reg: [
-    {bits:  7, name: 'opcode', type: 1, attr: 'Custom-1'},
+    {bits:  7, name: 'opcode', type: 1},
     {bits:  5, name: 'rd'      },
     {bits:  3, name: 'funct3', type: 1},
     {bits:  5, name: 'rs1'     },
-    {bits: 12, name: 'imm12'   }
+    {bits: 12, name: 'imm12',  type: 1}
 ]}
 ----
-
-* `imm12`: 12-bit immediate
-* `rs1`: address of first source register (providing 32-bit source data)
-* `funct3`: 3-bit immediate (immediate data or function select)
-* `rd`: address of destination register (32-bit processing result)
-* `opcode`: `0101011` (RISC-V `custom-1` opcode)
 
 
 :sectnums:
 ==== Using Custom Instructions in Software
 
-The custom instructions provided by the CFU can be used in plain C code by using **intrinsics**. Intrinsics
-behave like "normal" C functions but under the hood they are a set of macros that hide the complexity of inline
-assembly, which is used to construct the custom 32-bit instruction words. Using intrinsics removes the need to
-modify the compiler, built-in libraries or the assembler when using custom instructions. Each intrinsic will be
-compiled into a single 32-bit instruction word without any overhead providing maximum code efficiency. The
-NEORV32 software framework provides two pre-defined prototypes for custom instructions:
+The custom instructions provided by the CFU can be utilized in plain C-code using **intrinsics**. Intrinsics
+behave like normal C-functions but under the hood they substitute a sequence of assembly instruction for the
+original function call. For now, the NEORV32 software framework provides two pre-defined prototypes for custom
+instructions:
 
-.CFU instruction prototypes (defined in `sw/lib/include/neorv32_cfu.h`)
+.RISC-V Instruction Prototypes (simplified; defined in `sw/lib/include/neorv32_intrinsics.h`)
 [source,c]
 ----
-uint32_t neorv32_cfu_r_instr(funct7, funct3, rs1, rs2); // R-type instruction
-uint32_t neorv32_cfu_i_instr(funct3, imm12, rs1);       // I-type instruction
+uint32_t RISCV_INSTR_R_TYPE(int opcode, int funct3, int funct7, uint32_t rs1, uint32_t rs2);
+uint32_t RISCV_INSTR_I_TYPE(int opcode, int funct3, uint32_t rs1, int imm12);
 ----
 
-The intrinsic functions always return a 32-bit value of type `uint32_t` (the processing result) which can be
-discarded if not needed. The `funct3`, `funct7` and `im12` bit-fields are used to pass  compile-time-static
+These intrinsics always return a 32-bit value of type `uint32_t` (the processing result) which can be
+discarded if not needed. The `funct3`, `funct7` and `im12` bit-fields are used to pass compile-time-static
 literals to the CFU. The `rs1` and `rs2` arguments pass actual runtime data to the CFU via register addresses.
 These register arguments can be populated with variables or literals; the compiler will add the required code
-to move the data into a register before passing it to the CFU. The following examples shows how to pass arguments:
+to move the data into a register before passing it to the CFU.
 
-.CFU instruction usage examples
+.CFU Instruction Examples
 [source,c]
 ----
-uint32_t res = neorv32_cfu_r_instr(0b0000000, 0b101, 8, 123);
-uint32_t tmp = neorv32_cfu_i_instr(0b011, 0x47a, res);
-neorv32_cfu_r_instr(0b0100100, 0b001, res, tmp);
+uint32_t foo = 12345;
+uint32_t res = RISCV_INSTR_I_TYPE(RISCV_OPCODE_CUSTOM1, 0b001, foo, 0xABC);
+res = RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b101, 0b1100110, res, foo);
 ----
 
 

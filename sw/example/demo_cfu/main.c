@@ -44,20 +44,27 @@
 /**@}*/
 
 /*
- * The CFU custom instructions can be used as plain C functions as they are simple "intrinsics".
- * There are two prototype primitives"for the CFU instructions (defined in sw/lib/include/neorv32_cfu.h):
+ * This is where the actual CFU instructions are defined. Based on the templates for generating custom
+ * RISC-V instructions, intrinsics are created that can be used just like regular C functions
+ * The instruction prototypes as well as the OPCODES available for the CFU are defined in
+ * "sw/lib/neorv32_intrinsics.h".
  *
- * > neorv32_cfu_r_instr(funct7, funct3, rs1, rs2) - for r-type CFU instructions (custom-0 opcode)
- * > neorv32_cfu_i_instr(funct3, imm12, rs1)       - for i-type CFU instructions (custom-1 opcode)
+ * So far, two RISC-V instruction formats are available: R-type instructions and I-type instructions.
  *
- * Each instance of these intrinsics is converted into a single 32-bit RISC-V instruction word
- * without any calling overhead.
+ * R-type instructions require 5 arguments:
+ * - opcode : The 7-bit OPCODE that identifies the instruction.
+ * - funct3 : A 3-bit immediate for function select.
+ * - funct7 : Another 7-bit immediate for function select.
+ * - rs1    : The 1st register source operand.
+ * - rs2    : The 2nd register source operand.
  *
- * The "rs*" source operands can be literals, variables, function return values, etc. The 7-bit
- * immediate ("funct7"), the 3-bit immediate ("funct3") and the 12-bit immediate ("imm12") values
- * can be used to pass compile-time static literals to the CFU or for fine-grained function selection.
+ * I-type instructions require 4 arguments:
+ * - opcode : The 7-bit OPCODE that identifies the instruction.
+ * - funct3 : A 3-bit immediate for function select.
+ * - rs1    : The 1st register source operand.
+ * - imm12  : A 12-bit immediate operand.
  *
- * Each "neorv32_cfu_*" intrinsic returns a 32-bit data word of type uint32_t that represents
+ * Each instruction returns a 32-bit data word of type uint32_t that represents
  * the processing result of the according instruction.
  */
 
