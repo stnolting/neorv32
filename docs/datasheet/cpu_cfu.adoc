@@ -22,16 +22,22 @@ as example application. The according demo program is located in `sw/example/dem
 :sectnums:
 ==== CFU Instruction Formats
 
-The CFU instructions can utilize a limited set of RISC-V OPCODESin `rv32` 32-bit instruction encoding space
-for custom purpose. So far, two OPCODES are supported that have been explicitly reserved by the RISC-V ISA spec.
-for user-defined extensions ("Guaranteed Non-Standard Encoding Space"). It is up to the designer to decide exactly what
-function these opcodes serve and what type of instruction type/format they use.
+The CFU instructions can utilize a limited set of RISC-V OPCODES in `rv32` 32-bit instruction encoding space for
+custom purpose. It is up to the designer to decide exactly what function these opcodes serve and what type of instruction
+type/format they use. So far, four OPCODES are supported. Two of them ("custom-0" and "custom-1") have been explicitly
+reserved by the RISC-V ISA spec. for user-defined extensions ("Guaranteed Non-Standard Encoding Space"). These should be
+the first choice for implementing custom CFU instruction.
+
+The other two OPCODES ("op-32" and "op-imm-32") are reserved by the RISC-V spec. for extended operations and future
+ISA extensions. Note that the support/handling of the latter two OPCODES in NEORV32 might change in future.
 
 .Available CFU OPCODES (defined in `sw/lib/include/neorv32_intrinsics.h`)
 [source,c]
 ----
 #define RISCV_OPCODE_CUSTOM0 0b0001011 // RISC-V "CUSTOM-0"
 #define RISCV_OPCODE_CUSTOM1 0b0101011 // RISC-V "CUSTOM-1"
+#define RISCV_OPCODE_OP32    0b0111011 // RISC-V "OP-32"
+#define RISCV_OPCODE_OPIMM32 0b0011011 // RISC-V "OP-IMM-32"
 ----
 
 .Default CFU Example
@@ -53,12 +59,12 @@ always compile-time-static.
 [wavedrom, format="svg", align="center"]
 ----
 {reg: [
-    {bits: 7, name: 'opcode', type: 1},
-    {bits: 5, name: 'rd'      },
-    {bits: 3, name: 'funct3', type: 1},
-    {bits: 5, name: 'rs1'     },
-    {bits: 5, name: 'rs2'     },
-    {bits: 7, name: 'funct7', type: 1}
+  {bits: 7, name: 'opcode', type: 1},
+  {bits: 5, name: 'rd'      },
+  {bits: 3, name: 'funct3', type: 1},
+  {bits: 5, name: 'rs1'     },
+  {bits: 5, name: 'rs2'     },
+  {bits: 7, name: 'funct7', type: 1}
 ]}
 ----
 
@@ -76,11 +82,11 @@ all immediate values are always compile-time-static.
 [wavedrom, format="svg", align="center"]
 ----
 {reg: [
-    {bits:  7, name: 'opcode', type: 1},
-    {bits:  5, name: 'rd'      },
-    {bits:  3, name: 'funct3', type: 1},
-    {bits:  5, name: 'rs1'     },
-    {bits: 12, name: 'imm12',  type: 1}
+  {bits:  7, name: 'opcode', type: 1},
+  {bits:  5, name: 'rd'      },
+  {bits:  3, name: 'funct3', type: 1},
+  {bits:  5, name: 'rs1'     },
+  {bits: 12, name: 'imm12',  type: 1}
 ]}
 ----
 

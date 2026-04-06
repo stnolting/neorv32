@@ -23,8 +23,10 @@
  * @name RISC-V opcodes for custom instructions / NEORV32 CFU
  **************************************************************************/
 /**@{*/
-#define RISCV_OPCODE_CUSTOM0 0b0001011
-#define RISCV_OPCODE_CUSTOM1 0b0101011
+#define RISCV_OPCODE_CUSTOM0 0b0001011 // RISC-V "CUSTOM-0"
+#define RISCV_OPCODE_CUSTOM1 0b0101011 // RISC-V "CUSTOM-1"
+#define RISCV_OPCODE_OP32    0b0111011 // RISC-V "OP-32", experimental!
+#define RISCV_OPCODE_OPIMM32 0b0011011 // RISC-V "OP-IMM-32", experimental!
 /**@}*/
 
 /**********************************************************************//**

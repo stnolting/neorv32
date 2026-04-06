@@ -341,7 +341,7 @@ begin
               ctrl_nxt.alu_sub <= '1';
             end if;
 
-            -- is base rv32i/e ALU[I] instruction (excluding shifts)? --
+            -- base rv32 ALU[I] instruction (excluding shifts) --
             if ((opcode_v(5) = '0') and (funct3_v /= funct3_sll_c) and (funct3_v /= funct3_sr_c)) or -- base ALUI instruction (excluding SLLI, SRLI, SRAI)
                ((opcode_v(5) = '1') and (((funct3_v = funct3_sadd_c) and (funct7_v = "0000000")) or ((funct3_v = funct3_sadd_c) and (funct7_v = "0100000")) or
                                          ((funct3_v = funct3_slt_c)  and (funct7_v = "0000000")) or ((funct3_v = funct3_sltu_c) and (funct7_v = "0000000")) or
@@ -350,7 +350,7 @@ begin
               ctrl_nxt.rf_wb_en <= '1'; -- valid RF write-back (won't happen if exception)
               exec_nxt.state    <= S_DISPATCH;
             else -- [NOTE] illegal ALU[I] instructions are handled as multi-cycle operations that will time-out if no ALU co-processor responds
-              ctrl_nxt.alu_cp_alu <= '1'; -- trigger ALU[I] opcode co-processor
+              ctrl_nxt.alu_cp_alu <= '1'; -- trigger ALU[I] co-processor
               exec_nxt.state      <= S_ALU_WAIT;
             end if;
 
@@ -395,8 +395,8 @@ begin
             ctrl_nxt.alu_cp_fpu <= '1';
             exec_nxt.state      <= S_ALU_WAIT; -- will be aborted by monitor timeout if FPU is not implemented
 
-          -- CFU: custom RISC-V instructions --
-          when opcode_cust0_c | opcode_cust1_c =>
+          -- CFU: custom / extended RISC-V instructions --
+          when opcode_cust0_c | opcode_cust1_c | opcode_op32_c | opcode_op32i_c =>
             ctrl_nxt.alu_cp_cfu <= '1';
             exec_nxt.state      <= S_ALU_WAIT; -- will be aborted by monitor timeout if CFU is not implemented
 
@@ -691,8 +691,8 @@ begin
           end case;
         end if;
 
-      -- ALU[I] / FPU / custom operations --
-      when opcode_alu_c | opcode_alui_c | opcode_fpu_c | opcode_cust0_c | opcode_cust1_c =>
+      -- ALU[I] / FPU / OP32 / custom operations --
+      when opcode_alu_c | opcode_alui_c | opcode_fpu_c | opcode_op32_c | opcode_op32i_c | opcode_cust0_c | opcode_cust1_c =>
         illegal_cmd <= '0'; -- [NOTE] valid if not terminated/invalidated by the "instruction execution monitor"
 
       -- memory ordering --
