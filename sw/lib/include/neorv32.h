@@ -280,7 +280,6 @@ typedef union {
 /**@{*/
 #include "neorv32_aux.h"
 #include "neorv32_cfs.h"
-#include "neorv32_cfu.h"
 #include "neorv32_clint.h"
 #include "neorv32_cpu.h"
 #include "neorv32_csr.h"
