@@ -8,7 +8,9 @@
 
 /**
  * @file neorv32_intrinsics.h
- * @brief Helper macros for custom instructions / "intrinsics".
+ * @brief Prototypes for custom RISC-V instructions ("intrinsics").
+ * Based on the ".insn" pseudo directive:
+ * https://sourceware.org/binutils/docs/as/RISC_002dV_002dFormats.html
  */
 
 #ifndef NEORV32_INTRINSICS_H
@@ -18,122 +20,51 @@
 #include <stdint.h>
 
 /**********************************************************************//**
- * @name Register aliases (physical names and ABI names)
+ * @name RISC-V opcodes for custom instructions / NEORV32 CFU
  **************************************************************************/
-asm (
-  ".set reg_x0,   0 \n"
-  ".set reg_x1,   1 \n"
-  ".set reg_x2,   2 \n"
-  ".set reg_x3,   3 \n"
-  ".set reg_x4,   4 \n"
-  ".set reg_x5,   5 \n"
-  ".set reg_x6,   6 \n"
-  ".set reg_x7,   7 \n"
-  ".set reg_x8,   8 \n"
-  ".set reg_x9,   9 \n"
-  ".set reg_x10, 10 \n"
-  ".set reg_x11, 11 \n"
-  ".set reg_x12, 12 \n"
-  ".set reg_x13, 13 \n"
-  ".set reg_x14, 14 \n"
-  ".set reg_x15, 15 \n"
-#ifndef __riscv_32e
-  ".set reg_x16, 16 \n"
-  ".set reg_x17, 17 \n"
-  ".set reg_x18, 18 \n"
-  ".set reg_x19, 19 \n"
-  ".set reg_x20, 20 \n"
-  ".set reg_x21, 21 \n"
-  ".set reg_x22, 22 \n"
-  ".set reg_x23, 23 \n"
-  ".set reg_x24, 24 \n"
-  ".set reg_x25, 25 \n"
-  ".set reg_x26, 26 \n"
-  ".set reg_x27, 27 \n"
-  ".set reg_x28, 28 \n"
-  ".set reg_x29, 29 \n"
-  ".set reg_x30, 30 \n"
-  ".set reg_x31, 31 \n"
-#endif
-  ".set reg_zero, 0 \n"
-  ".set reg_ra,   1 \n"
-  ".set reg_sp,   2 \n"
-  ".set reg_gp,   3 \n"
-  ".set reg_tp,   4 \n"
-  ".set reg_t0,   5 \n"
-  ".set reg_t1,   6 \n"
-  ".set reg_t2,   7 \n"
-  ".set reg_s0,   8 \n"
-  ".set reg_s1,   9 \n"
-  ".set reg_a0,  10 \n"
-  ".set reg_a1,  11 \n"
-  ".set reg_a2,  12 \n"
-  ".set reg_a3,  13 \n"
-  ".set reg_a4,  14 \n"
-  ".set reg_a5,  15 \n"
-#ifndef __riscv_32e
-  ".set reg_a6,  16 \n"
-  ".set reg_a7,  17 \n"
-  ".set reg_s2,  18 \n"
-  ".set reg_s3,  19 \n"
-  ".set reg_s4,  20 \n"
-  ".set reg_s5,  21 \n"
-  ".set reg_s6,  22 \n"
-  ".set reg_s7,  23 \n"
-  ".set reg_s8,  24 \n"
-  ".set reg_s9,  25 \n"
-  ".set reg_s10, 26 \n"
-  ".set reg_s11, 27 \n"
-  ".set reg_t3,  28 \n"
-  ".set reg_t4,  29 \n"
-  ".set reg_t5,  30 \n"
-  ".set reg_t6,  31 \n"
-#endif
-);
-
+/**@{*/
+#define RISCV_OPCODE_CUSTOM0 0b0001011
+#define RISCV_OPCODE_CUSTOM1 0b0101011
+/**@}*/
 
 /**********************************************************************//**
- * @name R-type instruction format, RISC-V-standard
+ * Emit a RISC-V R-type instruction.
+ *
+ * @param[in] opcode Opcode (7-bit).
+ * @param[in] funct3 Function select (3-bit).
+ * @param[in] funct7 Function select (7-bit).
+ * @param[in] rs1 Register source operand 1 (32-bit).
+ * @param[in] rs2 Register source operand 2 (32-bit).
+ * @return Instruction result (destination register rd, 32-bit).
  **************************************************************************/
-#define CUSTOM_INSTR_R_TYPE(funct7, rs2, rs1, funct3, opcode) \
-({                                                            \
-  uint32_t __return;                                          \
-  asm volatile (                                              \
-    ".word (                                                  \
-      (((" #funct7 ") & 0x7f) << 25) |                        \
-      (((  reg_%2   ) & 0x1f) << 20) |                        \
-      (((  reg_%1   ) & 0x1f) << 15) |                        \
-      (((" #funct3 ") & 0x07) << 12) |                        \
-      (((  reg_%0   ) & 0x1f) <<  7) |                        \
-      (((" #opcode ") & 0x7f) <<  0)                          \
-    );"                                                       \
-    : [rd] "=r" (__return)                                    \
-    : "r" (rs1),                                              \
-      "r" (rs2)                                               \
-  );                                                          \
-  __return;                                                   \
-})
+inline uint32_t __attribute__ ((always_inline)) RISCV_INSTR_R_TYPE(const int opcode, const int funct3, const int funct7, uint32_t rs1, uint32_t rs2) {
 
+  register uint32_t __rd;
+  register uint32_t __rs1 = rs1;
+  register uint32_t __rs2 = rs2;
+
+  asm volatile (".insn r %3, %4, %5, %0, %1, %2" : "=r"(__rd) : "r"(__rs1), "r"(__rs2), "i"(opcode), "i"(funct3), "i"(funct7));
+
+  return __rd;
+}
 
 /**********************************************************************//**
- * @name I-type instruction format, RISC-V-standard
+ * Emit a RISC-V I-type instruction.
+ *
+ * @param[in] opcode Opcode (7-bit).
+ * @param[in] funct3 Function select (3-bit).
+ * @param[in] rs1 Register source operand 1 (32-bit).
+ * @param[in] imm12 Immediate source operand (12-bit).
+ * @return Instruction result (destination register rd, 32-bit).
  **************************************************************************/
-#define CUSTOM_INSTR_I_TYPE(imm12, rs1, funct3, opcode) \
-({                                                      \
-  uint32_t __return;                                    \
-  asm volatile (                                        \
-    ".word (                                            \
-      (((" #imm12  ") & 0xfff) << 20) |                 \
-      (((  reg_%1   ) &  0x1f) << 15) |                 \
-      (((" #funct3 ") &  0x07) << 12) |                 \
-      (((  reg_%0   ) &  0x1f) <<  7) |                 \
-      (((" #opcode ") &  0x7f) <<  0)                   \
-    );"                                                 \
-    : [rd] "=r" (__return)                              \
-    : "r" (rs1)                                         \
-  );                                                    \
-  __return;                                             \
-})
+inline uint32_t __attribute__ ((always_inline)) RISCV_INSTR_I_TYPE(const int opcode, const int funct3, uint32_t rs1, const int imm12) {
 
+  register uint32_t __rd;
+  register uint32_t __rs1 = rs1;
+
+  asm volatile (".insn i %2, %3, %0, %1, %4" : "=r"(__rd) : "r"(__rs1), "i"(opcode), "i"(funct3), "i"(imm12));
+
+  return __rd;
+}
 
 #endif // NEORV32_INTRINSICS_H
