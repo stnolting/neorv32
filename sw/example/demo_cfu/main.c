@@ -30,17 +30,17 @@
 
 
 /**********************************************************************//**
- * @name Define macros for easy CFU instruction wrapping
+ * @name Define XTEA CFU instruction based on the intrinsic templates
  **************************************************************************/
 /**@{*/
-#define xtea_key_write(i, data)     neorv32_cfu_i_instr(0b001, i, data)
-#define xtea_key_read(i)            neorv32_cfu_i_instr(0b000, i, 0   )
-#define xtea_hw_init(sum)           neorv32_cfu_r_instr(0b0000000, 0b100, sum, 0 )
-#define xtea_hw_enc_v0_step(v0, v1) neorv32_cfu_r_instr(0b0000000, 0b000, v0,  v1)
-#define xtea_hw_enc_v1_step(v0, v1) neorv32_cfu_r_instr(0b0000000, 0b001, v0,  v1)
-#define xtea_hw_dec_v0_step(v0, v1) neorv32_cfu_r_instr(0b0000000, 0b010, v0,  v1)
-#define xtea_hw_dec_v1_step(v0, v1) neorv32_cfu_r_instr(0b0000000, 0b011, v0,  v1)
-#define xtea_hw_illegal_inst()      neorv32_cfu_r_instr(0b0000000, 0b111, 0,   0 )
+#define xtea_key_write(i, k)        RISCV_INSTR_I_TYPE(RISCV_OPCODE_CUSTOM1, 0b001, k, i)
+#define xtea_key_read(i)            RISCV_INSTR_I_TYPE(RISCV_OPCODE_CUSTOM1, 0b000, 0, i)
+#define xtea_hw_init(s)             RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b100, 0b0000000, s,  0 )
+#define xtea_hw_enc_v0_step(v0, v1) RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b000, 0b0000000, v0, v1)
+#define xtea_hw_enc_v1_step(v0, v1) RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b001, 0b0000000, v0, v1)
+#define xtea_hw_dec_v0_step(v0, v1) RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b010, 0b0000000, v0, v1)
+#define xtea_hw_dec_v1_step(v0, v1) RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b011, 0b0000000, v0, v1)
+#define xtea_hw_illegal_inst()      RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b111, 0b0000000, 0,  0 )
 /**@}*/
 
 /*
@@ -162,7 +162,7 @@ int main() {
   neorv32_uart0_setup(BAUD_RATE, 0);
 
   // check if the CFU is implemented (the CFU is wrapped in the core's "Xcfu" ISA extension)
-  if (neorv32_cfu_available() == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_XCFU)) == 0) {
     neorv32_uart0_printf("ERROR! CFU ('Xcfu' ISA extension) not implemented!\n");
     return -1;
   }
@@ -183,7 +183,7 @@ int main() {
   neorv32_uart0_printf("\n<<< NEORV32 Custom Functions Unit (CFU) - Custom Instructions Example >>>\n\n");
 
   neorv32_uart0_printf("[NOTE] This program assumes the default CFU hardware in\n"
-                       "       'rtl/core/neorv32_cpu_cp_cfu.vhd' that implements\n"
+                       "       rtl/core/neorv32_cpu_cp_cfu.vhd that implements\n"
                        "       the Extended Tiny Encryption Algorithm (XTEA).\n\n");
 
 
