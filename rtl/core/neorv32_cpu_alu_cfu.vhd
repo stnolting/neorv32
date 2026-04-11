@@ -15,25 +15,32 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library neorv32;
+use neorv32.neorv32_package.all;
+
 entity neorv32_cpu_alu_cfu is
   port (
     -- global control --
     clk_i    : in  std_ulogic; -- global clock, rising edge
     rstn_i   : in  std_ulogic; -- global reset, low-active, async
-    -- operation trigger --
+    -- request --
     start_i  : in  std_ulogic; -- start trigger, single-shot
-    -- operands --
-    type_i   : in  std_ulogic;                     -- instruction type (0 = R-type, 1 = I-type)
-    funct3_i : in  std_ulogic_vector(2 downto 0);  -- "funct3" bit-field from instruction word
-    funct7_i : in  std_ulogic_vector(6 downto 0);  -- "funct7" bit-field from instruction word (R-type only)
-    imm12_i  : in  std_ulogic_vector(11 downto 0); -- "imm12" bit-field from instruction word (I-type only)
-    rs1_i    : in  std_ulogic_vector(31 downto 0); -- rf source 1 via "rs1" bit-field from instruction word
-    rs2_i    : in  std_ulogic_vector(31 downto 0); -- rf source 2 via "rs2" bit-field from instruction word
-    -- result and status --
+    inst_i   : in  std_ulogic_vector(31 downto 0); -- full instruction word
+    rs1_i    : in  std_ulogic_vector(31 downto 0); -- register source operand 1
+    rs2_i    : in  std_ulogic_vector(31 downto 0); -- register source operand 2
+    -- response --
     result_o : out std_ulogic_vector(31 downto 0); -- operation result
-    valid_o  : out std_ulogic                      -- operation done
+    valid_o  : out std_ulogic                      -- operation done; result valid
   );
 end neorv32_cpu_alu_cfu;
+
+architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
+
+  -- supported CFU opcodes --
+  constant opcode_custom0_c : std_ulogic_vector(6 downto 0) := "0001011"; -- CUSTOM-0 opcode
+  constant opcode_custom1_c : std_ulogic_vector(6 downto 0) := "0101011"; -- CUSTOM-1 opcode
+  constant opcode_op32_c    : std_ulogic_vector(6 downto 0) := "0011011"; -- OP-32 opcode
+  constant opcode_opimm32_c : std_ulogic_vector(6 downto 0) := "0111011"; -- OP-IMM-32 opcode
 
   -- **********************************************************
   -- CFU Example: XTEA - Extended Tiny Encryption Algorithm
@@ -46,11 +53,9 @@ end neorv32_cpu_alu_cfu;
   -- The RTL code was implemented according to an open-source C reference:
   -- https://de.wikipedia.org/wiki/Extended_Tiny_Encryption_Algorithm
 
-architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
-
-  -- instruction type identifiers --
-  constant r_type_c : std_ulogic := '0'; -- R-type CFU instructions (custom-0 opcode)
-  constant i_type_c : std_ulogic := '1'; -- I-type CFU instructions (custom-1 opcode)
+  -- instruction types (opcode field) --
+  constant xtea_r_type_c : std_ulogic_vector(6 downto 0) := opcode_custom0_c; -- XTEA R-type instructions
+  constant xtea_i_type_c : std_ulogic_vector(6 downto 0) := opcode_custom1_c; -- XTEA I-type instructions
 
   -- instruction identifiers (funct3 bit-field) --
   constant xtea_enc_v0_c : std_ulogic_vector(2 downto 0) := "000";
@@ -58,6 +63,12 @@ architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
   constant xtea_dec_v0_c : std_ulogic_vector(2 downto 0) := "010";
   constant xtea_dec_v1_c : std_ulogic_vector(2 downto 0) := "011";
   constant xtea_init_c   : std_ulogic_vector(2 downto 0) := "100";
+
+  -- instruction decoder --
+  signal start  : std_ulogic; -- start valid CFU instruction
+  signal itype  : std_ulogic; -- XTEA instruction type (0 = r-type, 1 = i-type)
+  signal funct3 : std_ulogic_vector(2 downto 0); -- i-type/r-type function select
+  signal imm12  : std_ulogic_vector(11 downto 0); -- i-type immediate
 
   -- round-key update --
   constant xtea_delta_c : std_ulogic_vector(31 downto 0) := x"9e3779b9";
@@ -81,6 +92,14 @@ architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
 
 begin
 
+  -- XTEA Instruction Decode ----------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  start  <= start_i when (inst_i(6 downto 0) = xtea_r_type_c) or (inst_i(6 downto 0) = xtea_i_type_c) else '0'; -- valid instruction?
+  itype  <= '0' when (inst_i(6 downto 0) = xtea_r_type_c) else '1'; -- XTEA r-type or i-type?
+  funct3 <= inst_i(14 downto 12); -- i-type/r-type 2-bit function select
+  imm12  <= inst_i(31 downto 20); -- i-type 12-bit immediate
+
+
   -- XTEA Processing Core ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   xtea_core: process(rstn_i, clk_i)
@@ -98,14 +117,14 @@ begin
       xtea.done(1) <= xtea.done(0); -- arbitration shift register
 
       -- trigger new operation --
-      if (start_i = '1') then
-        if (type_i = r_type_c) then -- R-type for computational instructions
+      if (start = '1') then
+         if (itype = '0') then -- R-type for computational instructions
           xtea.opa     <= rs1_i; -- buffer input operand rs1
           xtea.opb     <= rs2_i; -- buffer input operand rs2
           xtea.done(0) <= '1'; -- start data processing
         else -- I-type is used for key access instructions
-          if (funct3_i(0) = '1') then -- key write-enable
-            key_mem(to_integer(unsigned(imm12_i(1 downto 0)))) <= rs1_i; -- write key data at imm12(1:0)
+          if (funct3(0) = '1') then -- key write-enable
+            key_mem(to_integer(unsigned(imm12(1 downto 0)))) <= rs1_i; -- write key data at imm12(1:0)
           end if;
         end if;
       end if;
@@ -113,15 +132,15 @@ begin
       -- data processing --
       if (xtea.done(0) = '1') then -- second-stage execution trigger
         -- update "sum" round key --
-        if (funct3_i(2) = '1') then -- initialize
+        if (funct3(2) = '1') then -- initialize
           xtea.sum <= xtea.opa; -- set initial round key
-        elsif (funct3_i(1 downto 0) = xtea_enc_v0_c(1 downto 0)) then -- encrypt v0
+        elsif (funct3(1 downto 0) = xtea_enc_v0_c(1 downto 0)) then -- encrypt v0
           xtea.sum <= std_ulogic_vector(unsigned(xtea.sum) + unsigned(xtea_delta_c));
-        elsif (funct3_i(1 downto 0) = xtea_dec_v1_c(1 downto 0)) then -- decrypt v1
+        elsif (funct3(1 downto 0) = xtea_dec_v1_c(1 downto 0)) then -- decrypt v1
           xtea.sum <= std_ulogic_vector(unsigned(xtea.sum) - unsigned(xtea_delta_c));
         end if;
         -- process "v" operands --
-        if (funct3_i(1) = '0') then -- encrypt
+        if (funct3(1) = '0') then -- encrypt
           xtea.res <= std_ulogic_vector(unsigned(tmp_b) + unsigned(tmp_r));
         else -- decrypt
           xtea.res <= std_ulogic_vector(unsigned(tmp_b) - unsigned(tmp_r));
@@ -132,22 +151,22 @@ begin
   end process xtea_core;
 
   -- helpers --
-  tmp_a <= xtea.opb when (funct3_i(0) = '0') else xtea.opa; -- v1 / v0 select
-  tmp_b <= xtea.opa when (funct3_i(0) = '0') else xtea.opb; -- v0 / v1 select
-  tmp_x <= xtea.opb(27 downto 0) & "0000"  when (funct3_i(0) = '0') else xtea.opa(27 downto 0) & "0000";  -- v << 4
-  tmp_y <= "00000" & xtea.opb(31 downto 5) when (funct3_i(0) = '0') else "00000" & xtea.opa(31 downto 5); -- v >> 5
-  tmp_z <= key_mem(to_integer(unsigned(xtea.sum(1 downto 0)))) when (funct3_i(0) = '0') else -- key[sum & 3]
+  tmp_a <= xtea.opb when (funct3(0) = '0') else xtea.opa; -- v1 / v0 select
+  tmp_b <= xtea.opa when (funct3(0) = '0') else xtea.opb; -- v0 / v1 select
+  tmp_x <= xtea.opb(27 downto 0) & "0000"  when (funct3(0) = '0') else xtea.opa(27 downto 0) & "0000";  -- v << 4
+  tmp_y <= "00000" & xtea.opb(31 downto 5) when (funct3(0) = '0') else "00000" & xtea.opa(31 downto 5); -- v >> 5
+  tmp_z <= key_mem(to_integer(unsigned(xtea.sum(1 downto 0)))) when (funct3(0) = '0') else -- key[sum & 3]
            key_mem(to_integer(unsigned(xtea.sum(12 downto 11)))); -- key[(sum >> 11) & 3]
   tmp_r <= std_ulogic_vector(unsigned(tmp_x xor tmp_y) + unsigned(tmp_a)) xor std_ulogic_vector(unsigned(xtea.sum) + unsigned(tmp_z));
 
 
   -- Function Result Select -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  result_select: process(type_i, funct3_i, imm12_i, xtea, key_mem)
+  result_select: process(itype, funct3, imm12, xtea, key_mem)
   begin -- no need for a register stage here; the CFU output is registered inside the ALU module anyway
-    if (type_i = r_type_c) then -- R-type instructions; function select via "funct3" and ""funct7
+    if (itype = '0') then -- R-type instructions; function select via "funct3"
     -- ----------------------------------------------------------------------
-      case funct3_i is -- just check "funct3" here; "funct7" bit-field is ignored in this example
+      case funct3 is -- just check "funct3" here
         when xtea_enc_v0_c | xtea_enc_v1_c | xtea_dec_v0_c | xtea_dec_v1_c => -- encryption/decryption
           result_o <= xtea.res; -- processing result
           valid_o  <= xtea.done(1); -- multi-cycle processing done when set
@@ -160,7 +179,7 @@ begin
       end case;
     else -- I-type instructions; used for key access
     -- ----------------------------------------------------------------------
-      result_o <= key_mem(to_integer(unsigned(imm12_i(1 downto 0))));
+      result_o <= key_mem(to_integer(unsigned(imm12(1 downto 0))));
       valid_o  <= '1'; -- pure-combinatorial, so we are done "immediately"
     end if;
   end process result_select;

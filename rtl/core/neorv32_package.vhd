@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120902"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120903"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -332,6 +332,9 @@ package neorv32_package is
   -- official custom opcodes - free for custom instructions --
   constant opcode_cust0_c  : std_ulogic_vector(6 downto 0) := "0001011"; -- custom-0 (NEORV32 CFU)
   constant opcode_cust1_c  : std_ulogic_vector(6 downto 0) := "0101011"; -- custom-1 (NEORV32 CFU)
+  -- extended opcodes --
+  constant opcode_op32_c   : std_ulogic_vector(6 downto 0) := "0111011"; -- OP-32 (NEORV32 CFU)
+  constant opcode_op32i_c  : std_ulogic_vector(6 downto 0) := "0011011"; -- OP-IMM-32 (NEORV32 CFU)
 
   -- RISC-V Funct3 --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

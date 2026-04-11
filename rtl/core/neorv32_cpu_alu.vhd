@@ -45,8 +45,8 @@ entity neorv32_cpu_alu is
     rstn_i : in  std_ulogic; -- global reset, low-active, async
     ctrl_i : in  ctrl_bus_t; -- main control bus
     -- data input --
-    rs1_i  : in  std_ulogic_vector(31 downto 0); -- rf source 1
-    rs2_i  : in  std_ulogic_vector(31 downto 0); -- rf source 2
+    rs1_i  : in  std_ulogic_vector(31 downto 0); -- register source 1
+    rs2_i  : in  std_ulogic_vector(31 downto 0); -- register source 2
     -- data output --
     cmp_o  : out std_ulogic_vector(1 downto 0);  -- comparator status
     res_o  : out std_ulogic_vector(31 downto 0); -- ALU result
@@ -80,6 +80,7 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
   type cp_data_t  is array (0 to 6) of std_ulogic_vector(31 downto 0);
   signal cp_result : cp_data_t;
   signal cp_valid : std_ulogic_vector(6 downto 0);
+  signal cfu_inst : std_ulogic_vector(31 downto 0);
   signal fpu_csr_en, fpu_csr_we, cfu_done, cfu_busy : std_ulogic;
   signal fpu_csr_rd, cfu_res : std_ulogic_vector(31 downto 0);
 
@@ -151,14 +152,14 @@ begin
     rstn_i  => rstn_i,          -- global reset, low-active, async
     ctrl_i  => ctrl_i,          -- main control bus
     -- data input --
-    rs1_i   => rs1_i,           -- rf source 1
+    rs1_i   => rs1_i,           -- register source 1
     shamt_i => opb(4 downto 0), -- shift amount
     -- result and status --
     res_o   => cp_result(0),    -- operation result
     valid_o => cp_valid(0)      -- data output valid
   );
 
-  -- ALU-Opcode Co-Processor: Integer Multiplication/Division Unit ('M' ISA Extension) ------
+  -- ALU-Opcode Co-Processor: Integer Multiplication/Division Unit (M ISA Extension) --------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_muldiv_enabled:
   if RISCV_ISA_M or RISCV_ISA_Zmmul generate
@@ -173,8 +174,8 @@ begin
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
       -- data input --
-      rs1_i   => rs1_i,        -- rf source 1
-      rs2_i   => rs2_i,        -- rf source 2
+      rs1_i   => rs1_i,        -- register source 1
+      rs2_i   => rs2_i,        -- register source 2
       -- result and status --
       res_o   => cp_result(1), -- operation result
       valid_o => cp_valid(1)   -- data output valid
@@ -187,7 +188,7 @@ begin
     cp_valid(1)  <= '0';
   end generate;
 
-  -- ALU[I]-Opcode Co-Processor: Bit-Manipulation Unit ('B' ISA Extension) ------------------
+  -- ALU[I]-Opcode Co-Processor: Bit-Manipulation Unit (B ISA Extension) --------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_bitmanip_enabled:
   if RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbkc or RISCV_ISA_Zbkx or RISCV_ISA_Zbs generate
@@ -208,8 +209,8 @@ begin
       ctrl_i  => ctrl_i,          -- main control bus
       -- data input --
       less_i  => cmp(1),          -- compare less
-      rs1_i   => rs1_i,           -- rf source 1
-      rs2_i   => rs2_i,           -- rf source 2
+      rs1_i   => rs1_i,           -- register source 1
+      rs2_i   => rs2_i,           -- register source 2
       shamt_i => opb(4 downto 0), -- shift amount
       -- result and status --
       res_o   => cp_result(2),    -- operation result
@@ -223,7 +224,7 @@ begin
     cp_valid(2)  <= '0';
   end generate;
 
-  -- FLOAT-Opcode Co-Processor: Single-Precision FPUUnit ('Zfinx' ISA Extension) ------------
+  -- FLOAT-Opcode Co-Processor: Single-Precision FPUUnit (Zfinx ISA Extension) --------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_fpu_enabled:
   if RISCV_ISA_Zfinx generate
@@ -241,8 +242,8 @@ begin
       -- data input --
       equal_i     => cmp(0),                      -- compare equal
       less_i      => cmp(1),                      -- compare less
-      rs1_i       => rs1_i,                       -- rf source 1
-      rs2_i       => rs2_i,                       -- rf source 2
+      rs1_i       => rs1_i,                       -- register source 1
+      rs2_i       => rs2_i,                       -- register source 2
       -- result and status --
       res_o       => cp_result(3),                -- operation result
       valid_o     => cp_valid(3)                  -- data output valid
@@ -264,28 +265,28 @@ begin
     cp_valid(3)  <= '0';
   end generate;
 
-  -- CUSTOM-Opcode Co-Processor: Custom Functions Unit ('Xcfu' ISA Extension) ---------------
+  -- CUSTOM/OP32-Opcode Co-Processor: Custom Functions Unit (Xcfu ISA Extension) ------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_cfu_enabled:
   if RISCV_ISA_Xcfu generate
     neorv32_cpu_alu_cfu_inst: entity neorv32.neorv32_cpu_alu_cfu
     port map (
       -- global control --
-      clk_i    => clk_i,                          -- global clock, rising edge
-      rstn_i   => rstn_i,                         -- global reset, low-active, async
-      -- operation trigger --
-      start_i  => ctrl_i.alu_cp_cfu,              -- start trigger, single-shot
-      -- operands --
-      type_i   => ctrl_i.ir_opcode(5),            -- instruction type
-      funct3_i => ctrl_i.ir_funct3,               -- "funct3" bit-field
-      funct7_i => ctrl_i.ir_funct12(11 downto 5), -- "funct7" bit-field
-      imm12_i  => ctrl_i.ir_funct12(11 downto 0), -- "imm12" bit-field
-      rs1_i    => rs1_i,                          -- rf source 1
-      rs2_i    => rs2_i,                          -- rf source 2
-      -- result and status --
-      result_o => cfu_res,                        -- operation result
-      valid_o  => cfu_done                        -- result valid, operation done
+      clk_i    => clk_i,             -- global clock, rising edge
+      rstn_i   => rstn_i,            -- global reset, low-active, async
+      -- request
+      start_i  => ctrl_i.alu_cp_cfu, -- start trigger, single-shot
+      inst_i   => cfu_inst,          -- instruction word
+      rs1_i    => rs1_i,             -- register source 1
+      rs2_i    => rs2_i,             -- register source 2
+      -- response --
+      result_o => cfu_res,           -- operation result
+      valid_o  => cfu_done           -- result valid, operation done
     );
+
+    -- CFU instruction word --
+    cfu_inst <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd &
+                opcode_cust0_c(6) & ctrl_i.ir_opcode(5 downto 4) & opcode_cust0_c(3 downto 0); -- constrained OPCODE
 
     -- response proxy --
     cfu_proxy: process(rstn_i, clk_i)
@@ -311,14 +312,15 @@ begin
 
   neorv32_cpu_alu_cfu_disabled:
   if not RISCV_ISA_Xcfu generate
-    cfu_done     <= '0';
+    cfu_inst     <= (others => '0');
     cfu_res      <= (others => '0');
+    cfu_done     <= '0';
     cfu_busy     <= '0';
     cp_result(4) <= (others => '0');
     cp_valid(4)  <= '0';
   end generate;
 
-  -- ALU-Opcode Co-Processor: Conditional Operations Unit ('Zicond' ISA Extension) ----------
+  -- ALU-Opcode Co-Processor: Conditional Operations Unit (Zicond ISA Extension) ------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_cond_enabled:
   if RISCV_ISA_Zicond generate
@@ -329,8 +331,8 @@ begin
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
       -- data input --
-      rs1_i   => rs1_i,        -- rf source 1
-      rs2_i   => rs2_i,        -- rf source 2
+      rs1_i   => rs1_i,        -- register source 1
+      rs2_i   => rs2_i,        -- register source 2
       -- result and status --
       res_o   => cp_result(5), -- operation result
       valid_o => cp_valid(5)   -- data output valid
@@ -343,7 +345,7 @@ begin
     cp_valid(5)  <= '0';
   end generate;
 
-  -- ALU[I]-Opcode Co-Processor: Scalar Cryptography Unit ('Zk*' ISA Extensions) ------------
+  -- ALU[I]-Opcode Co-Processor: Scalar Cryptography Unit (Zk* ISA Extensions) --------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_crypto_enabled:
   if RISCV_ISA_Zknd or RISCV_ISA_Zkne or RISCV_ISA_Zknh or RISCV_ISA_Zksed or RISCV_ISA_Zksh generate
@@ -352,7 +354,7 @@ begin
       EN_ZKND  => RISCV_ISA_Zknd,  -- enable NIST AES decryption extension
       EN_ZKNE  => RISCV_ISA_Zkne,  -- enable NIST AES encryption extension
       EN_ZKNH  => RISCV_ISA_Zknh,  -- enable NIST hash extension
-      EN_ZKSED => RISCV_ISA_Zksed, -- enable ShangMi block cypher extension
+      EN_ZKSED => RISCV_ISA_Zksed, -- enable ShangMi block cipher extension
       EN_ZKSH  => RISCV_ISA_Zksh   -- enable ShangMi hash extension
     )
     port map (
@@ -361,8 +363,8 @@ begin
       rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
       -- data input --
-      rs1_i   => rs1_i,        -- rf source 1
-      rs2_i   => rs2_i,        -- rf source 2
+      rs1_i   => rs1_i,        -- register source 1
+      rs2_i   => rs2_i,        -- register source 2
       -- result and status --
       res_o   => cp_result(6), -- operation result
       valid_o => cp_valid(6)   -- data output valid

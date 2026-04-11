@@ -22,16 +22,22 @@ as example application. The according demo program is located in `sw/example/dem
 :sectnums:
 ==== CFU Instruction Formats
 
-The CFU instructions can utilize a limited set of RISC-V OPCODESin `rv32` 32-bit instruction encoding space
-for custom purpose. So far, two OPCODES are supported that have been explicitly reserved by the RISC-V ISA spec.
-for user-defined extensions ("Guaranteed Non-Standard Encoding Space"). It is up to the designer to decide exactly what
-function these opcodes serve and what type of instruction type/format they use.
+The CFU instructions can utilize a limited set of RISC-V OPCODES in `rv32` 32-bit instruction encoding space for
+custom purpose. It is up to the designer to decide exactly what function these opcodes serve and what type of instruction
+type/format they use. So far, four OPCODES are supported. Two of them ("custom-0" and "custom-1") have been explicitly
+reserved by the RISC-V ISA spec. for user-defined extensions ("Guaranteed Non-Standard Encoding Space"). These should be
+the first choice for implementing custom CFU instruction.
+
+The other two OPCODES ("op-32" and "op-imm-32") are reserved by the RISC-V spec. for extended operations and future
+ISA extensions. Note that the support/handling of the latter two OPCODES in NEORV32 might change in future.
 
 .Available CFU OPCODES (defined in `sw/lib/include/neorv32_intrinsics.h`)
 [source,c]
 ----
 #define RISCV_OPCODE_CUSTOM0 0b0001011 // RISC-V "CUSTOM-0"
 #define RISCV_OPCODE_CUSTOM1 0b0101011 // RISC-V "CUSTOM-1"
+#define RISCV_OPCODE_OP32    0b0111011 // RISC-V "OP-32"
+#define RISCV_OPCODE_OPIMM32 0b0011011 // RISC-V "OP-IMM-32"
 ----
 
 .Default CFU Example
@@ -53,12 +59,12 @@ always compile-time-static.
 [wavedrom, format="svg", align="center"]
 ----
 {reg: [
-    {bits: 7, name: 'opcode', type: 1},
-    {bits: 5, name: 'rd'      },
-    {bits: 3, name: 'funct3', type: 1},
-    {bits: 5, name: 'rs1'     },
-    {bits: 5, name: 'rs2'     },
-    {bits: 7, name: 'funct7', type: 1}
+  {bits: 7, name: 'opcode', type: 1},
+  {bits: 5, name: 'rd'      },
+  {bits: 3, name: 'funct3', type: 1},
+  {bits: 5, name: 'rs1'     },
+  {bits: 5, name: 'rs2'     },
+  {bits: 7, name: 'funct7', type: 1}
 ]}
 ----
 
@@ -76,11 +82,11 @@ all immediate values are always compile-time-static.
 [wavedrom, format="svg", align="center"]
 ----
 {reg: [
-    {bits:  7, name: 'opcode', type: 1},
-    {bits:  5, name: 'rd'      },
-    {bits:  3, name: 'funct3', type: 1},
-    {bits:  5, name: 'rs1'     },
-    {bits: 12, name: 'imm12',  type: 1}
+  {bits:  7, name: 'opcode', type: 1},
+  {bits:  5, name: 'rd'      },
+  {bits:  3, name: 'funct3', type: 1},
+  {bits:  5, name: 'rs1'     },
+  {bits: 12, name: 'imm12',  type: 1}
 ]}
 ----
 
@@ -122,51 +128,52 @@ The CFU hardware module (`rtl/core/neorv32_cpu_alu_cfu.vhd`) is tightly integrat
 co-processor. A simple interface is used to communicate operands, operation definition and the processing result.
 
 .CFU Interface
-[cols="^1,^1,^2,<8"]
+[cols="^2,^1,^1,<8"]
 [options="header",grid="rows"]
 |=======================
-| Signal  | Width | Instruction Type | Description
+| Signal | Direction | Width | Description
+4+^| **Global**
+| `clk_i`    |  in |  1 | CPU clock, registers trigger on a rising-edge
+| `rstn_i`   |  in |  1 | CPU reset, low-active, asynchronous
 4+^| **Request**
-| `start`  |     1 | all    | Trigger CFU operation; high for exactly one cycle
-| `type`   |     1 | all    | CFU instruction type (`0` = R-type, `1` = I-type); defined by the opcode
-| `funct3` |     3 | all    | 3-bit function select from the according custom instruction word
-| `funct7` |     7 | R-type | 7-bit function select from the according custom instruction word (**)
-| `imm12`  |    12 | I-type | 12-bit immediate from the custom according instruction word
-| `rs1`    |    32 | all    | Register operand 1 (addresses by the `rs1` instruction word bit field)
-| `rs2`    |    32 | R-type | Register operand 2 (addresses by the `rs2` instruction word bit field)
+| `start_i`  |  in |  1 | Trigger CFU operation; high for exactly one cycle
+| `inst_i`   |  in | 32 | CFU instruction word
+| `rs1_i`    |  in | 32 | Register operand 1 read from the CPU register file
+| `rs2_i`    |  in | 32 | Register operand 2 read from the CPU register file
 4+^| **Response**
-| `result` |     1 | all    | Processing result that is written to `rd`
-| `valid`  |    32 | all    | High for exactly one cycle when the CFU operation is done an `result` is valid
+| `result_o` | out |  1 | Processing result that is written to the destination register (`rd`)
+| `valid_o`  | out | 32 | High for exactly one cycle when the CFU operation is done an `result` is valid
 |=======================
 
-.CFU Interface Timing Examples
-[wavedrom, format="svg", align="center"]
-----
-{signal: [
-  {name: 'clk',    wave: 'p....|.......|..'},
-  {name: 'start',  wave: '01010|...1010|..', node: '.a.c.....e.g.'},
-  {name: 'type',   wave: 'x0x0.|.x.1x1.|.0'},
-  {name: 'funct3', wave: 'x3x4.|.x.5x6.|.x'},
-  {name: 'funct7', wave: 'x3x4.|.x.....|..'},
-  {name: 'imm12',  wave: 'x....|...5x6.|.x'},
-  {name: 'rs1',    wave: 'x3x4.|.x.5x6.|.x'},
-  {name: 'rs2',    wave: 'x3x4.|.x.....|..'},
-  {},
-  {name: 'result', wave: 'x3x..|4x.5x..|6x'},
-  {name: 'valid',  wave: '010..|10.10..|10', node: '.b....d..f....h'},
-],
- edge: ['a~>b', 'c~>d', 'e~>f', 'g~>h']
-}
-----
-
-CFU operations can be entirely combinatorial (e.g. for a bit-reversal operation) so the result is available at
-the end of the current clock cycle. However, operations can also take several clock cycles to complete (like
-multiplications) and may also include internal states and memories. However, the CFU has to complete computation
-within a **bound time window** (default = 512 clock cycles). Otherwise, an illegal instruction exception is raised.
-See section <<_cpu_arithmetic_logic_unit>> for more information.
+CFU operations can be entirely combinatorial (e.g. for simple operation like bit-reversal) so the result is already
+valid at the end of the current clock cycle. CFU operations can also take several clock cycles to complete (like an
+iterative multiplications) and may also include internal states and memories. However, the CFU has to complete
+its operation within a **bound time window** (default = 512 clock cycles). Otherwise, an illegal instruction
+exception is raised. See section <<_cpu_arithmetic_logic_unit>> for more information.
 
 .CFU Exception
 [NOTE]
 The CFU can intentionally raise an illegal instruction exception by not asserting the `valid` signal at all which
 will cause an execution timeout. For example this can be used to signal invalid configurations/operations to the
-runtime environment. See the documentation in the CFU's VHDL source file for more information.
+runtime environment. See the documentation in the CFU's HDL source file for more information.
+
+The following figure shows two timing sequences for CFU operations. The first one (orange) resembles a pure
+combinatorial operation that completes within the same cycle in which it was triggered. The second (blue)
+one performs a multi-cycle operation and is completed after several clock cycles.
+
+.CFU Interface Timing Examples
+[wavedrom, format="svg", align="center"]
+----
+{signal: [
+  {name: 'clk_i',    wave: 'p....|..'},
+  {name: 'start_i',  wave: '01010|..', node: '.a.c'},
+  {name: 'inst_i',   wave: 'x4x5.|.0'},
+  {name: 'rs1_i',    wave: 'x4x5.|.x'},
+  {name: 'rs2_i',    wave: 'x4x5.|.x'},
+  {},
+  {name: 'result_o', wave: 'x4x..|5x'},
+  {name: 'valid_o',  wave: '010..|10', node: '.b....d'},
+],
+  edge: ['a~>b', 'c~>d']
+}
+----
