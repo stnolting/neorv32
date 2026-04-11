@@ -60,7 +60,7 @@ documents can be found in the projects `docs/references` folder.
 
 .Discovering ISA Extensions
 [TIP]
-Software can discover available ISA extensions via the <<_misa>> and <<_mxisa>> CSRs or by executing an instruction
+Software can discover available ISA extensions via the <<_misa>> and <<_mxisah>> CSRs or by executing an instruction
 and checking for an illegal instruction exception (i.e. <<_full_virtualization>>).
 
 

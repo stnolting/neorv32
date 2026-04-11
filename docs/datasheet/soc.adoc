@@ -189,7 +189,7 @@ By default, all configuration options are **disabled**.
 
 .Software Discovery of Configuration
 [TIP]
-Software can determine the actual CPU configuration via the <<_misa>> and <<_mxisa>> CSRs. The SoC/Processor configuration
+Software can determine the actual CPU configuration via the <<_misa>> and <<_mxisah>> CSRs. The SoC/Processor configuration
 can be determined via the <<_system_configuration_information_memory_sysinfo, SYSINFO>> memory-mapped registers.
 
 .NEORV32 Processor Generic List; table abbreviations: the generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downto y)`"
