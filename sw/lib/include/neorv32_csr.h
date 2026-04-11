@@ -152,7 +152,8 @@ enum NEORV32_CSR_enum {
   CSR_MCONFIGPTR     = 0xf15, /**< 0xf15 - mconfigptr: Machine configuration pointer register */
 
   /* NEORV32-specific */
-  CSR_MXISA          = 0xfc0  /**< 0xfc0 - mxisa: Machine extended ISA and extensions (#NEORV32_CSR_MXISA_enum) */
+  CSR_MXISA          = 0xfc0, /**< 0xfc0 - mxisa:  Machine extended ISA and extensions, low word (#NEORV32_CSR_MXISA_enum) */
+  CSR_MXISAH         = 0xfc1  /**< 0xfc1 - mxisah: Machine extended ISA and extensions, high word (#NEORV32_CSR_MXISAH_enum) */
 };
 
 

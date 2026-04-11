@@ -564,7 +564,7 @@ begin
       when csr_mstatus_c  | csr_mstatush_c      | csr_misa_c      | csr_mie_c     | csr_mtvec_c  |
            csr_mscratch_c | csr_mepc_c          | csr_mcause_c    | csr_mip_c     | csr_mtval_c  |
            csr_mtinst_c   | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c |
-           csr_mhartid_c  | csr_mconfigptr_c    | csr_mxisa_c =>
+           csr_mhartid_c  | csr_mconfigptr_c    | csr_mxisa_c     | csr_mxisah_c =>
         csr_valid(2) <= '1';
 
       -- machine-controlled user-mode CSRs --
@@ -1207,7 +1207,7 @@ begin
           -- --------------------------------------------------------------------
           -- NEORV32-specific
           -- --------------------------------------------------------------------
-          when csr_mxisa_c => -- machine extended ISA extensions information
+          when csr_mxisa_c => -- machine extended ISA extensions information, low-word
             csr_rdata(0)  <= '1';                                   -- Zicsr: CSR access (always enabled)
             csr_rdata(1)  <= '1';                                   -- Zifencei: instruction stream sync. (always enabled)
             csr_rdata(2)  <= bool_to_ulogic_f(RISCV_ISA_Zmmul);     -- Zmmul: mul/div
@@ -1240,6 +1240,9 @@ begin
             csr_rdata(29) <= bool_to_ulogic_f(RISCV_ISA_Zibi);      -- Zibi: branch with immediate-comparison
             csr_rdata(30) <= bool_to_ulogic_f(RISCV_ISA_Zimop);     -- Zimop: may-be-operations
             csr_rdata(31) <= bool_to_ulogic_f(RISCV_ISA_Smcntrpmf); -- Smcntrpmf: counter privilege-mode filtering
+
+          when csr_mxisah_c => -- machine extended ISA extensions information, high-word
+            csr_rdata <= (others => '0'); -- reserved
 
           -- --------------------------------------------------------------------
           -- undefined/unavailable or implemented externally
