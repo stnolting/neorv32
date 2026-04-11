@@ -29,8 +29,9 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 11.04.2026 | 1.12.9.4 | add NEORV32-specific `MXISAH` CSR | [#1527](https://github.com/stnolting/neorv32/pull/1527) |
 | 06.04.2026 | 1.12.9.3 | :warning: CFU: rework/simplify interface; add support for RISC-V `OP-32` and `OP-IMM-32` opcodes / instructions | [#1524](https://github.com/stnolting/neorv32/pull/1524) |
-| 06.04.2026 | 1.12.9.2 | :test_tube: rework intrinsics (use `.insn` pseudo directive) | [#](https://github.com/stnolting/neorv32/pull/1523) |
+| 06.04.2026 | 1.12.9.2 | :test_tube: rework intrinsics (use `.insn` pseudo directive) | [#1523](https://github.com/stnolting/neorv32/pull/1523) |
 | 05.04.2026 | 1.12.9.1 | :sparkles: add cache write-back & write-allocate policies | [#1513](https://github.com/stnolting/neorv32/pull/1513) |
 | 03.04.2026 | [**1.12.9**](https://github.com/stnolting/neorv32/releases/tag/v1.12.9) | :rocket: **New release** | |
 | 03.04.2026 | 1.12.8.10 | :bug: fix `sc.w` reservation set instruction: return all-zero on success | [#1520](https://github.com/stnolting/neorv32/pull/1520) |
