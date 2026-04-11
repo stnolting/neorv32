@@ -8,7 +8,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause                                            */
 /* ================================================================================ */
 
-// libraries
 #include <stdint.h>
 #include <neorv32.h>
 #include <config.h>
@@ -168,6 +167,8 @@ skip_auto_boot:
       uart_puts("\nMISA: ");
       uart_puth(neorv32_cpu_csr_read(CSR_MISA));
       uart_puts("\nXISA: ");
+      uart_puth(neorv32_cpu_csr_read(CSR_MXISAH));
+      uart_putc(':');
       uart_puth(neorv32_cpu_csr_read(CSR_MXISA));
       uart_puts("\nSOC:  ");
       uart_puth(NEORV32_SYSINFO->SOC);
@@ -213,10 +214,8 @@ skip_auto_boot:
   }
 #endif
 
-  // raise exception and halt
+  // bootloader should never return: raise exception and halt
   asm volatile ("ebreak");
   __builtin_unreachable();
-
-  // bootloader should never return
   return -1;
 }
