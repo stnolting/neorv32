@@ -41,3 +41,31 @@ riscof_work
 # generated documentation stuff
 /docs/doxygen_build/
 /docs/public/
+
+# =========================
+# Vivado generated files
+# =========================
+
+*.jou
+*.str
+
+.cache/
+.hw/
+.ip_user_files/
+.runs/
+.sim/
+.gen/
+.srcs/
+
+# Vivado project files (generated)
+*.xpr
+*.xsa
+*.ltx
+
+# Bitstreams / hardware outputs
+*.bit
+*.bin
+
+# Reports
+*.rpt
+*.pb
