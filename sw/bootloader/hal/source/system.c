@@ -106,6 +106,9 @@ void system_setup(void) {
     neorv32_cpu_csr_write(CSR_MIE, 1 << CSR_MIE_MTIE); // enable timer IRQ source
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
   }
+
+  // user-defined initialization code; macro defined in config.h
+  USER_CODE_INIT;
 }
 
 

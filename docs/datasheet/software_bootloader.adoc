@@ -329,6 +329,8 @@ overridden by Makefile directives.
 4+<| **Branding** - for text printed via serial console
 | `THEME_INTRO`           | `"NEORV32 Bootloader"` | any string | Intro text that is shown in the bootloader console.
 | `THEME_EXE`             | `"neorv32_exe.bin"`    | any string | Name of executable that is shown in the upload menu.
+4+<| **Custom Code**
+| `USER_CODE_INIT`        | `(void)0` (_empty statement_) | any code | User-defined initialization code (wrapped in a macro) that is executed right after the bootloader's hardware initialization.
 4+<| **Miscellaneous**
 | `DEFAULT_EXE_ADDR`      | `0x00000000` | 32-bit | Default base address of executable; can be used to directly execute from main memory.
 |=======================
