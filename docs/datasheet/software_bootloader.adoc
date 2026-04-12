@@ -292,6 +292,8 @@ overridden by Makefile directives.
 [options="header", grid="rows"]
 |=======================
 | Parameter | Default | Legal values | Description
+4+<| **Additional includes**
+| -                       | - | - | Add further `#include` statements right at the beginning of the file.
 4+<| **Serial console** - requires <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>
 | `UART_EN`               | `1`     | `0,1` | Set to `1` to enable the serial console.
 | `UART_BAUD`             | `19200` | any   | Baud rate of UART0.
@@ -326,7 +328,7 @@ overridden by Makefile directives.
 | `SPI_SDCARD_CLK_PRSC`   | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock prescaler.
 | `SPI_SDCARD_CLK_DIV`    | `0`           | `0..15`        | SPI clock divider value.
 | `SPI_SDCARD_FILE`       | `"boot.bin"`  | 8.3 DOS format | File name of the boot image. Has to be located in the root directory.
-4+<| **Branding** - for text printed via serial console
+4+<| **Branding**
 | `THEME_INTRO`           | `"NEORV32 Bootloader"` | any string | Intro text that is shown in the bootloader console.
 | `THEME_EXE`             | `"neorv32_exe.bin"`    | any string | Name of executable that is shown in the upload menu.
 4+<| **Custom Code**
