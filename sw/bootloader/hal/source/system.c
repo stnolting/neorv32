@@ -206,7 +206,7 @@ int system_app_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream
   header.signature = BIN_SIGNATURE;
   header.base_addr = g_exe_base;
   header.size      = g_exe_size;
-  header.checksum  = g_exe_base;
+  header.checksum  = 0; // initialize checksum computation
   uint32_t addr_backup = g_flash_addr; // backup initial start address
 
   // confirmation prompt
