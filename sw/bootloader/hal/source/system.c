@@ -254,8 +254,7 @@ int system_app_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream
   rc |= stream_put(header.signature);
   rc |= stream_put(header.base_addr);
   rc |= stream_put(header.size);
-  header.checksum = ~header.checksum;
-  rc |= stream_put(header.checksum);
+  rc |= stream_put(~header.checksum);
 
   if (rc) {
     uart_puts("\aERROR_DEVICE\n");
@@ -302,9 +301,10 @@ void system_app_boot(void) {
 
   // start application
   asm volatile (
-    "fence.i            \n"
-    "csrw mepc, %[addr] \n"
-    "mret               \n"
+    "fence.i                 \n"
+    "csrw mepc, %[addr]      \n"
+    "la ra, __crt0_main_exit \n" // in case app's main tries to return...
+    "mret                    \n"
     : : [addr] "r" (boot_addr)
   );
 
