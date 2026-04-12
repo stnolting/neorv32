@@ -49,7 +49,7 @@ In the following table these CSRs are highlighted with "⚠️".
 5+^| **<<_machine_trap_handling_csrs>>**
 | 0x340 | <<_mscratch>> | `CSR_MSCRATCH` | MRW | Machine scratch register
 | 0x341 | <<_mepc>>     | `CSR_MEPC`     | MRW | Machine exception program counter
-| 0x342 | <<_mcause>>   | `CSR_MCAUSE`   | MRW ⚠️| Machine trap cause
+| 0x342 | <<_mcause>>   | `CSR_MCAUSE`   | MRW ⚠️ | Machine trap cause
 | 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW ⚠️ | Machine trap value
 | 0x344 | <<_mip>>      | `CSR_MIP`      | MRW | Machine interrupt pending register
 | 0x34a | <<_mtinst>>   | `CSR_MTINST`   | MRW ⚠️ | Machine trap instruction
@@ -62,9 +62,9 @@ In the following table these CSRs are highlighted with "⚠️".
 | 0x7a2 | <<_tdata2>>   | `CSR_TDATA2`   | MRW | Trigger data register 2
 | 0x7a4 | <<_tinfo>>    | `CSR_TINFO`    | MRW | Trigger information register
 5+^| **<<_cpu_debug_mode_csrs>>**
-| 0x7b0 | <<_dcsr>>      | - | DRW | Debug control and status register
-| 0x7b1 | <<_dpc>>       | - | DRW | Debug program counter
-| 0x7b2 | <<_dscratch0>> | - | DRW | Debug scratch register 0
+| 0x7b0 | <<_dcsr>>      | `CSR_DCSR`      | DRW | Debug control and status register
+| 0x7b1 | <<_dpc>>       | `CSR_DPC`       | DRW | Debug program counter
+| 0x7b2 | <<_dscratch0>> | `CSR_DSCRATCH0` | DRW | Debug scratch register 0
 5+^| **<<_machine_counter_and_timer_csrs>>**
 | 0xb00 | <<_mcycleh, `mcycle`>>      | `CSR_MCYCLE`    | MRW | Machine cycle counter low word
 | 0xb02 | <<_minstreth, `minstret`>>  | `CSR_MINSTRET`  | MRW | Machine instruction-retired counter low word
@@ -85,7 +85,8 @@ In the following table these CSRs are highlighted with "⚠️".
 | 0xf14 | <<_mhartid>>    | `CSR_MHARTID`    | MRO | Machine hardware thread ID
 | 0xf15 | <<_mconfigptr>> | `CSR_MCONFIGPTR` | MRO | Machine configuration pointer register
 5+^| **<<_neorv32_specific_csrs>>**
-| 0xfc0 | <<_mxisa>> | `CSR_MXISA` | MRO | Extended machine CPU ISA and extensions
+| 0xfc0 | <<_mxisah, `mxisa`>>  | `CSR_MXISA`  | MRO | Extended machine CPU ISA and extensions low word
+| 0xfc1 | <<_mxisah, `mxisah`>> | `CSR_MXISAH` | MRO | Extended machine CPU ISA and extensions high word
 |=======================
 
 
@@ -234,7 +235,7 @@ will _not_ cause an illegal instruction exception.
 
 [TIP]
 Machine-mode software can discover available `Z*` sub-extensions (like `Zicsr` or `Zfinx`) by checking the NEORV32-specific
-<<_mxisa>> CSR.
+<<_mxisah>> CSRs.
 
 
 {empty} +
@@ -989,17 +990,18 @@ NEORV32-specific CSRs are mapped to addresses that are explicitly reserved for c
 
 
 [discrete]
-===== **`mxisa`**
+===== **`mxisa[h]`**
 
 [cols="<1,<8"]
 [grid="none"]
 |=======================
 | Name        | Machine extended ISA and extensions register
-| Address     | `0xfc0`
+| Address     | `0xfc0` (`mxisa`, low word)
+|             | `0xfc1` (`mxisah`, high word)
 | Reset value | `DEFINED`
 | ISA         | <<_zicsr_isa_extension,`Zicsr`>> & <<_x_isa_extension,`X`>>
-| Description | The `mxisa` CSR is a NEORV32-specific read-only CSR that helps machine-mode software to
-discover additional ISA (sub-)extensions and CPU configuration options.
+| Description | The `mxisa[h]` CSRs are NEORV32-specific read-only CSRs that help machine-mode software to
+discover additional ISA (sub-)extensions (beyond the _base_ extensions listed in <<_misa>>).
 |=======================
 
 .`mxisa` CSR Bits
@@ -1039,4 +1041,12 @@ discover additional ISA (sub-)extensions and CPU configuration options.
 | 29  | `CSR_MXISA_ZIBI`      | r/- | <<_zibi_isa_extension>> available
 | 30  | `CSR_MXISA_ZIMOP`     | r/- | <<_zimop_isa_extension>> available
 | 31  | `CSR_MXISA_SMCNTRPMF` | r/- | <<_smcntrpmf_isa_extension>> available
+|=======================
+
+.`mxisah` CSR Bits
+[cols="^1,<2,^1,<6"]
+[options="header",grid="rows"]
+|=======================
+| Bit | Name [C] | R/W | Description
+| 31:0 | - | r/- | _reserved_, read as zero
 |=======================

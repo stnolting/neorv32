@@ -117,7 +117,7 @@ CMD:> i
 HWV:  0x01120101 <1>
 CLK:  0x05f5e100 <2>
 MISA: 0x40901107 <3>
-XISA: 0x0fc06fd3 <4>
+XISA: 0x00000000:0x0fc06fd3 <4>
 SOC:  0x38efc87b <5>
 MISC: 0x0a010d00 <6>
 CMD:>
@@ -125,7 +125,7 @@ CMD:>
 <1> Processor hardware version in BCD format (<<_mimpid>> CSR).
 <2> Processor clock speed in Hz (`CLK` register of <<_system_configuration_information_memory_sysinfo>>.
 <3> RISC-V CPU extensions (<<_misa>> CSR).
-<4> NEORV32-specific CPU extensions (<<_mxisa>> CSR).
+<4> Additional RISC-V CPU (sub-)extensions (high & low words of <<_mxisah>> CSRs).
 <5> Processor configuration (`SOC` register of <<_system_configuration_information_memory_sysinfo>>.
 <6> Miscellaneous memory and SoC configuration (`MISC` register of <<_system_configuration_information_memory_sysinfo>>.
 
