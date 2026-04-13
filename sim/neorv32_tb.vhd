@@ -38,6 +38,7 @@ entity neorv32_tb is
     RISCV_ISA_Zbs     : boolean                        := true;        -- single-bit bit-manipulation extension
     RISCV_ISA_Zfinx   : boolean                        := true;        -- 32-bit floating-point extension
     RISCV_ISA_Zibi    : boolean                        := true;        -- branch with immediate
+    RISCV_ISA_Zicclsm : boolean                        := true;        -- misaligned loads/stores to main memory
     RISCV_ISA_Zicntr  : boolean                        := true;        -- base counters
     RISCV_ISA_Zicond  : boolean                        := true;        -- integer conditional operations
     RISCV_ISA_Zihpm   : boolean                        := true;        -- hardware performance monitors
@@ -157,6 +158,7 @@ begin
     RISCV_ISA_Zbs       => RISCV_ISA_Zbs,
     RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
     RISCV_ISA_Zibi      => RISCV_ISA_Zibi,
+    RISCV_ISA_Zicclsm   => RISCV_ISA_Zicclsm,
     RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
     RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
     RISCV_ISA_Zihpm     => RISCV_ISA_Zihpm,

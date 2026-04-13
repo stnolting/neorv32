@@ -51,6 +51,7 @@ entity neorv32_top is
     RISCV_ISA_Zcb       : boolean                        := false;         -- additional code size reduction instructions
     RISCV_ISA_Zfinx     : boolean                        := false;         -- 32-bit floating-point extension
     RISCV_ISA_Zibi      : boolean                        := false;         -- branch with immediate
+    RISCV_ISA_Zicclsm   : boolean                        := false;         -- misaligned loads/stores to main memory
     RISCV_ISA_Zicntr    : boolean                        := false;         -- base counters
     RISCV_ISA_Zicond    : boolean                        := false;         -- integer conditional operations
     RISCV_ISA_Zihpm     : boolean                        := false;         -- hardware performance monitors
@@ -537,6 +538,7 @@ begin
       RISCV_ISA_Zcb       => RISCV_ISA_Zcb,
       RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
       RISCV_ISA_Zibi      => RISCV_ISA_Zibi,
+      RISCV_ISA_Zicclsm   => RISCV_ISA_Zicclsm,
       RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
       RISCV_ISA_Zicond    => RISCV_ISA_Zicond,
       RISCV_ISA_Zihpm     => RISCV_ISA_Zihpm,
