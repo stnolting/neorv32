@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 12.04.2026 | 1.12.9.5 | :bug: fix bootloader's executable checksum computation | [#1528](https://github.com/stnolting/neorv32/pull/1528) |
 | 11.04.2026 | 1.12.9.4 | add NEORV32-specific `MXISAH` CSR | [#1527](https://github.com/stnolting/neorv32/pull/1527) |
 | 06.04.2026 | 1.12.9.3 | :warning: CFU: rework/simplify interface; add support for RISC-V `OP-32` and `OP-IMM-32` opcodes / instructions | [#1524](https://github.com/stnolting/neorv32/pull/1524) |
 | 06.04.2026 | 1.12.9.2 | :test_tube: rework intrinsics (use `.insn` pseudo directive) | [#1523](https://github.com/stnolting/neorv32/pull/1523) |
