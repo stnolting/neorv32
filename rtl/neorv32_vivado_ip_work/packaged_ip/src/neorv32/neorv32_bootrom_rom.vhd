@@ -1,0 +1,59 @@
+-- ================================================================================ --
+-- NEORV32 SoC - Bootloader ROM (BOOTROM) - ROM Primitive Wrapper                   --
+-- -------------------------------------------------------------------------------- --
+-- Replace this file by a more efficient technology-specific IP wrapper.            --
+-- -------------------------------------------------------------------------------- --
+-- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
+-- Copyright (c) NEORV32 contributors.                                              --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
+-- SPDX-License-Identifier: BSD-3-Clause                                            --
+-- ================================================================================ --
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+library neorv32;
+use neorv32.neorv32_package.all;
+use neorv32.neorv32_bootrom_image.all;
+
+entity neorv32_bootrom_rom is
+  generic (
+    AWIDTH : natural -- address width (byte address)
+  );
+  port (
+    clk_i  : in  std_ulogic;                     -- clock, rising-edge
+    en_i   : in  std_ulogic;                     -- access-enable
+    addr_i : in  std_ulogic_vector(31 downto 0); -- full byte address
+    data_o : out std_ulogic_vector(31 downto 0)  -- read data, sync
+  );
+end neorv32_bootrom_rom;
+
+architecture neorv32_bootrom_rom_rtl of neorv32_bootrom_rom is
+
+  constant awidth_c : natural := index_size_f(image_size_c); -- physical byte address width
+
+begin
+
+  -- notifier --
+  assert false report
+    "[NEORV32] Using default BOOTROM ROM component (" &
+    natural'image(2**awidth_c) & " bytes)." severity warning;
+
+  -- size check --
+  assert (image_size_c <= 2**AWIDTH) report
+    "[NEORV32] BOOTROM image (" & natural'image(image_size_c) & " bytes) " &
+    "overflows BOOTROM size (" & natural'image(2**AWIDTH) & " bytes)!" severity error;
+
+  -- ROM --
+  rom_access: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if (en_i = '1') then
+        data_o <= image_data_c(to_integer(unsigned(addr_i(awidth_c-1 downto 2))));
+      end if;
+    end if;
+  end process rom_access;
+
+end neorv32_bootrom_rom_rtl;
