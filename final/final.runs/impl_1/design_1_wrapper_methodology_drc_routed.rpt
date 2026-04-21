@@ -1,0 +1,130 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.1 (win64) Build 6140274 Thu May 22 00:12:29 MDT 2025
+| Date         : Mon Apr 20 19:55:35 2026
+| Host         : mobile running 64-bit major release  (build 9200)
+| Command      : report_methodology -file design_1_wrapper_methodology_drc_routed.rpt -pb design_1_wrapper_methodology_drc_routed.pb -rpx design_1_wrapper_methodology_drc_routed.rpx
+| Design       : design_1_wrapper
+| Device       : xc7s50csga324-1
+| Speed File   : -1
+| Design State : Fully Routed
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Report Methodology
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+             Max checks: <unlimited>
+             Checks found: 19
++-----------+----------+-------------------------------+--------+
+| Rule      | Severity | Description                   | Checks |
++-----------+----------+-------------------------------+--------+
+| TIMING-18 | Warning  | Missing input or output delay | 19     |
++-----------+----------+-------------------------------+--------+
+
+2. REPORT DETAILS
+-----------------
+TIMING-18#1 Warning
+Missing input or output delay  
+An input delay is missing on gpio_i_0[0] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#2 Warning
+Missing input or output delay  
+An input delay is missing on gpio_i_0[1] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#3 Warning
+Missing input or output delay  
+An input delay is missing on gpio_i_0[2] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#4 Warning
+Missing input or output delay  
+An input delay is missing on gpio_i_0[3] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#5 Warning
+Missing input or output delay  
+An input delay is missing on gpio_i_0[4] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#6 Warning
+Missing input or output delay  
+An input delay is missing on gpio_i_0[5] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#7 Warning
+Missing input or output delay  
+An input delay is missing on gpio_i_0[6] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#8 Warning
+Missing input or output delay  
+An input delay is missing on gpio_i_0[7] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#9 Warning
+Missing input or output delay  
+An input delay is missing on reset_rtl_0 relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#10 Warning
+Missing input or output delay  
+An input delay is missing on uart0_rxd_i_0 relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#11 Warning
+Missing input or output delay  
+An output delay is missing on gpio_o_0[0] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#12 Warning
+Missing input or output delay  
+An output delay is missing on gpio_o_0[1] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#13 Warning
+Missing input or output delay  
+An output delay is missing on gpio_o_0[2] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#14 Warning
+Missing input or output delay  
+An output delay is missing on gpio_o_0[3] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#15 Warning
+Missing input or output delay  
+An output delay is missing on gpio_o_0[4] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#16 Warning
+Missing input or output delay  
+An output delay is missing on gpio_o_0[5] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#17 Warning
+Missing input or output delay  
+An output delay is missing on gpio_o_0[6] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#18 Warning
+Missing input or output delay  
+An output delay is missing on gpio_o_0[7] relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+TIMING-18#19 Warning
+Missing input or output delay  
+An output delay is missing on uart0_txd_o_0 relative to the rising and/or falling clock edge(s) of clk_100MHz.
+Related violations: <none>
+
+

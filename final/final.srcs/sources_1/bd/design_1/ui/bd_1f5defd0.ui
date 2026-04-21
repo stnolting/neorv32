@@ -1,0 +1,33 @@
+{
+   "ActiveEmotionalView":"Default View",
+   "Default View_ScaleFactor":"1.31908",
+   "Default View_TopLeft":"-162,-456",
+   "ExpandedHierarchyInLayout":"",
+   "guistr":"# # String gsaved with Nlview 7.8.0 2024-04-26 e1825d835c VDI=44 GEI=38 GUI=JA:21.0
+#  -string -flagsOSRD
+preplace port port-id_clk_100MHz -pg 1 -lvl 0 -x -200 -y -190 -defaultsOSRD
+preplace port port-id_reset_rtl_0 -pg 1 -lvl 0 -x -200 -y -350 -defaultsOSRD
+preplace port port-id_uart0_rxd_i_0 -pg 1 -lvl 0 -x -200 -y -60 -defaultsOSRD
+preplace port port-id_uart0_txd_o_0 -pg 1 -lvl 3 -x 880 -y -150 -defaultsOSRD
+preplace portBus gpio_i_0 -pg 1 -lvl 0 -x -200 -y -120 -defaultsOSRD
+preplace portBus gpio_o_0 -pg 1 -lvl 3 -x 880 -y -120 -defaultsOSRD
+preplace inst clk_wiz_0 -pg 1 -lvl 1 -x 280 -y -190 -defaultsOSRD
+preplace inst proc_sys_reset_0 -pg 1 -lvl 2 -x 620 -y -340 -defaultsOSRD
+preplace inst neorv32_vivado_ip_0 -pg 1 -lvl 2 -x 620 -y -130 -defaultsOSRD
+preplace netloc clk_100MHz_1 1 0 1 -180J -190n
+preplace netloc reset_rtl_0_1 1 0 2 190 -360 NJ
+preplace netloc clk_wiz_0_clk_out1 1 1 1 380 -380n
+preplace netloc clk_wiz_0_locked 1 1 1 370 -300n
+preplace netloc proc_sys_reset_0_peripheral_aresetn 1 1 2 390 -440 850
+preplace netloc gpio_i_0_1 1 0 2 NJ -120 370
+preplace netloc uart0_rxd_i_0_1 1 0 2 NJ -60 390
+preplace netloc neorv32_vivado_ip_0_gpio_o 1 2 1 850 -150n
+preplace netloc neorv32_vivado_ip_0_uart0_txd_o 1 2 1 860 -150n
+levelinfo -pg 1 -200 280 620 880
+pagesize -pg 1 -db -bbox -sgen -340 -630 1020 200
+"
+}
+{
+   "da_board_cnt":"2",
+   "da_clkrst_cnt":"3"
+}

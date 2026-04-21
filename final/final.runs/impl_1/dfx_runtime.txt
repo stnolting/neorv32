@@ -1,0 +1,2 @@
+DFXRuntime Profile Report:
+Total Application(DFX) Runtime :                  CPU : 0:0:5 WALL : 0:0:0  0.00 % 

@@ -1,0 +1,24 @@
+#-----------------------------------------------------------
+# Vivado v2025.1 (64-bit)
+# SW Build 6140274 on Thu May 22 00:12:29 MDT 2025
+# IP Build 6138677 on Thu May 22 03:10:11 MDT 2025
+# SharedData Build 6139179 on Tue May 20 17:58:58 MDT 2025
+# Start of session at: Mon Apr 20 19:54:07 2026
+# Process ID         : 26172
+# Current directory  : C:/Users/denny/final/final.runs/synth_1
+# Command line       : vivado.exe -log design_1_wrapper.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source design_1_wrapper.tcl
+# Log file           : C:/Users/denny/final/final.runs/synth_1/design_1_wrapper.vds
+# Journal file       : C:/Users/denny/final/final.runs/synth_1\vivado.jou
+# Running On         : mobile
+# Platform           : Windows Server 2016 or Windows 10
+# Operating System   : 26100
+# Processor Detail   : Intel(R) Core(TM) i9-14900HX
+# CPU Frequency      : 2419 MHz
+# CPU Physical cores : 24
+# CPU Logical cores  : 32
+# Host memory        : 33951 MB
+# Swap memory        : 5905 MB
+# Total Virtual      : 39857 MB
+# Available Virtual  : 21560 MB
+#-----------------------------------------------------------
+source design_1_wrapper.tcl -notrace

@@ -1,0 +1,1 @@
+--incr --debug typical --relax --mt 2  -L xil_defaultlib -L proc_sys_reset_v5_0_17 -L neorv32 -L unisims_ver -L unimacro_ver -L secureip -L xpm --snapshot design_1 xil_defaultlib.design_1 xil_defaultlib.glbl -log elaborate.log

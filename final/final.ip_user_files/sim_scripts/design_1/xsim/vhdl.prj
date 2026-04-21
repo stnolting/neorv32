@@ -1,0 +1,68 @@
+vhdl xil_defaultlib  \
+"../../../bd/design_1/ip/design_1_proc_sys_reset_0_0/sim/design_1_proc_sys_reset_0_0.vhd" \
+
+vhdl neorv32  \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_package.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_bootrom.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_bootrom_image.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_bootrom_rom.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_bus.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_prim.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cache.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cache_ram.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cfs.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_clint.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_decompressor.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_frontend.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_control.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_hwtrig.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_counters.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_regfile.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_alu_shifter.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_alu_muldiv.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_alu_bitmanip.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_alu_fpu.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_alu_cfu.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_alu_cond.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_alu_crypto.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_alu.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_lsu.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_pmp.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu_trace.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_cpu.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_debug_auth.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_debug_dm.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_debug_dtm.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_dma.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_dmem.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_dmem_ram.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_gpio.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_gptmr.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_imem.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_imem_image.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_imem_ram.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_imem_rom.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_neoled.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_onewire.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_pwm.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_sdi.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_slink.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_spi.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_sys.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_sysinfo.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_xbus.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_wdt.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_uart.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_twi.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_twd.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_trng.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_tracer.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32/neorv32_top.vhd" \
+
+vhdl xil_defaultlib  \
+"../../../bd/design_1/ipshared/9444/src/xbus2axi4_bridge.vhd" \
+"../../../bd/design_1/ipshared/9444/src/neorv32_vivado_ip.vhd" \
+"../../../bd/design_1/ip/design_1_neorv32_vivado_ip_0_2/sim/design_1_neorv32_vivado_ip_0_2.vhd" \
+
+# Do not sort compile order
+nosort
