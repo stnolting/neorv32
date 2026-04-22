@@ -385,34 +385,34 @@ begin
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
       sel_string_f(boolean(num_cores_c = 1), "(single-core) ",   "") &
       sel_string_f(boolean(num_cores_c = 2), "(smp-dual-core) ", "") &
-      sel_string_f(IMEM_EN,       sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
-      sel_string_f(DMEM_EN,       "DMEM ",     "") &
-      sel_string_f(bootrom_en_c,  "BOOTROM ",  "") &
-      sel_string_f(ICACHE_EN,     "I-CACHE ",  "") &
-      sel_string_f(DCACHE_EN,     "D-CACHE ",  "") &
-      sel_string_f(XBUS_EN,       "XBUS ",     "") &
-      sel_string_f(IO_CLINT_EN,   "CLINT ",    "") &
-      sel_string_f(io_gpio_en_c,  "GPIO ",     "") &
-      sel_string_f(IO_UART0_EN,   "UART0 ",    "") &
-      sel_string_f(IO_UART1_EN,   "UART1 ",    "") &
-      sel_string_f(IO_SPI_EN,     "SPI ",      "") &
-      sel_string_f(IO_SDI_EN,     "SDI ",      "") &
-      sel_string_f(IO_TWI_EN,     "TWI ",      "") &
-      sel_string_f(IO_TWD_EN,     "TWD ",      "") &
-      sel_string_f(io_pwm_en_c,   "PWM ",      "") &
-      sel_string_f(IO_WDT_EN,     "WDT ",      "") &
-      sel_string_f(IO_TRNG_EN,    "TRNG ",     "") &
-      sel_string_f(IO_CFS_EN,     "CFS ",      "") &
-      sel_string_f(IO_NEOLED_EN,  "NEOLED ",   "") &
-      sel_string_f(io_gptmr_en_c, "GPTMR ",    "") &
-      sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ",  "") &
-      sel_string_f(IO_DMA_EN,     "DMA ",      "") &
-      sel_string_f(IO_SLINK_EN,   "SLINK ",    "") &
-      sel_string_f(true,          "SYSINFO ",  "") & -- always enabled
-      sel_string_f(IO_TRACER_EN,  "TRACER ",   "") &
-      sel_string_f(OCD_EN,        "OCD ",      "") &
-      sel_string_f(OCD_EN,        "OCD-AUTH ", "") &
-      sel_string_f(OCD_EN,        "OCD-HWBP ", "") &
+      sel_string_f(IMEM_EN,         sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
+      sel_string_f(DMEM_EN,         "DMEM ",     "") &
+      sel_string_f(bootrom_en_c,    "BOOTROM ",  "") &
+      sel_string_f(ICACHE_EN,       "I-CACHE ",  "") &
+      sel_string_f(DCACHE_EN,       "D-CACHE ",  "") &
+      sel_string_f(XBUS_EN,         "XBUS ",     "") &
+      sel_string_f(IO_CLINT_EN,     "CLINT ",    "") &
+      sel_string_f(io_gpio_en_c,    "GPIO ",     "") &
+      sel_string_f(IO_UART0_EN,     "UART0 ",    "") &
+      sel_string_f(IO_UART1_EN,     "UART1 ",    "") &
+      sel_string_f(IO_SPI_EN,       "SPI ",      "") &
+      sel_string_f(IO_SDI_EN,       "SDI ",      "") &
+      sel_string_f(IO_TWI_EN,       "TWI ",      "") &
+      sel_string_f(IO_TWD_EN,       "TWD ",      "") &
+      sel_string_f(io_pwm_en_c,     "PWM ",      "") &
+      sel_string_f(IO_WDT_EN,       "WDT ",      "") &
+      sel_string_f(IO_TRNG_EN,      "TRNG ",     "") &
+      sel_string_f(IO_CFS_EN,       "CFS ",      "") &
+      sel_string_f(IO_NEOLED_EN,    "NEOLED ",   "") &
+      sel_string_f(io_gptmr_en_c,   "GPTMR ",    "") &
+      sel_string_f(IO_ONEWIRE_EN,   "ONEWIRE ",  "") &
+      sel_string_f(IO_DMA_EN,       "DMA ",      "") &
+      sel_string_f(IO_SLINK_EN,     "SLINK ",    "") &
+      sel_string_f(true,            "SYSINFO ",  "") & -- always enabled
+      sel_string_f(IO_TRACER_EN,    "TRACER ",   "") &
+      sel_string_f(OCD_EN,          "OCD ",      "") &
+      sel_string_f(ocd_auth_en_c,   "OCD-AUTH ", "") &
+      sel_string_f(cpu_sdtrig_en_c, "OCD-HWBP ", "") &
       ""
       severity note;
 
