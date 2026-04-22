@@ -146,7 +146,7 @@ entity neorv32_top is
     IO_TRNG_NUM_INV     : natural range 3 to 4095        := 5;             -- number of inverters in first ring-oscillator; has to be odd
     IO_TRNG_NUM_RBIT    : natural range 1 to 4096        := 64;            -- number of raw bits to process for one output byte; has to be power of two
 
-    -- True-Random Number Generator (TRNG) --
+    -- Custom Functions Subsystem (CFS) --
     IO_CFS_EN           : boolean                        := false;         -- implement custom functions subsystem (CFS)
 
     -- Smart LED interface (NEOLED) --
