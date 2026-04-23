@@ -53,7 +53,7 @@ architecture neorv32_trng_rtl of neorv32_trng is
   constant ctrl_nro0_c     : natural := 12; -- r/-: number of ring-oscillators, bit 0, LSB
   constant ctrl_nro7_c     : natural := 19; -- r/-: number of ring-oscillators, bit 7, MSB
   constant ctrl_ninv0_c    : natural := 20; -- r/-: number of inverters in first ring-oscillator, bit 0, LSB
-  constant ctrl_ninv7_c    : natural := 31; -- r/-: number of inverters in first ring-oscillator, bit 11, MSB
+  constant ctrl_ninv11_c   : natural := 31; -- r/-: number of inverters in first ring-oscillator, bit 11, MSB
 
   -- neoTRNG true random number generator --
   component neoTRNG
@@ -108,14 +108,14 @@ begin
       -- read access --
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         if (bus_req_i.addr(2) = '0') then -- control register
-          bus_rsp_o.data(ctrl_en_c)                        <= enable;
-          bus_rsp_o.data(ctrl_fifo_clr_c)                  <= '0';
-          bus_rsp_o.data(ctrl_sim_mode_c)                  <= bool_to_ulogic_f(is_simulation_c);
-          bus_rsp_o.data(ctrl_avail_c)                     <= fifo.avail;
-          bus_rsp_o.data(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-          bus_rsp_o.data(ctrl_nbit3_c downto ctrl_nbit0_c) <= std_ulogic_vector(to_unsigned(log2_rbit_c, 4));
-          bus_rsp_o.data(ctrl_nro7_c  downto ctrl_nro0_c)  <= std_ulogic_vector(to_unsigned(NUM_RO, 8));
-          bus_rsp_o.data(ctrl_ninv7_c downto ctrl_ninv0_c) <= std_ulogic_vector(to_unsigned(NUM_INV, 12));
+          bus_rsp_o.data(ctrl_en_c)                         <= enable;
+          bus_rsp_o.data(ctrl_fifo_clr_c)                   <= '0';
+          bus_rsp_o.data(ctrl_sim_mode_c)                   <= bool_to_ulogic_f(is_simulation_c);
+          bus_rsp_o.data(ctrl_avail_c)                      <= fifo.avail;
+          bus_rsp_o.data(ctrl_fifo3_c  downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+          bus_rsp_o.data(ctrl_nbit3_c  downto ctrl_nbit0_c) <= std_ulogic_vector(to_unsigned(log2_rbit_c, 4));
+          bus_rsp_o.data(ctrl_nro7_c   downto ctrl_nro0_c)  <= std_ulogic_vector(to_unsigned(NUM_RO, 8));
+          bus_rsp_o.data(ctrl_ninv11_c downto ctrl_ninv0_c) <= std_ulogic_vector(to_unsigned(num_inv_start_c, 12));
         else -- data register
           bus_rsp_o.data(7 downto 0) <= fifo.rdata;
         end if;
@@ -253,7 +253,7 @@ architecture neoTRNG_rtl of neoTRNG is
   -- round_up[log2(x)] --
   function clog2_f(x : natural) return natural is
   begin
-    for i in 0 to natural'high loop
+    for i in 0 to 31 loop
       if (2**i >= x) then
         return i;
       end if;
