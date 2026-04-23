@@ -144,7 +144,7 @@ entity neorv32_top is
     IO_TRNG_FIFO        : natural range 1 to 2**15       := 1;             -- data FIFO depth, has to be a power of two
     IO_TRNG_NUM_RO      : natural range 1 to 255         := 3;             -- total number of ring-oscillators
     IO_TRNG_NUM_INV     : natural range 3 to 4095        := 5;             -- number of inverters in first ring-oscillator; has to be odd
-    IO_TRNG_NUM_RBIT    : natural range 1 to 4096        := 64;            -- number of raw bits to process for one output byte; has to be power of two
+    IO_TRNG_NUM_RBIT    : natural range 8 to 4096        := 64;            -- number of raw bits to process for one output byte; has to be power of two
 
     -- Custom Functions Subsystem (CFS) --
     IO_CFS_EN           : boolean                        := false;         -- implement custom functions subsystem (CFS)
