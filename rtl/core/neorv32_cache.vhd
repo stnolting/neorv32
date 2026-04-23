@@ -118,7 +118,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
   signal ctrl, ctrl_nxt : ctrl_t;
 
   -- status check --
-  signal valid    : std_ulogic_vector(NUM_BLOCKS-1 downto 0);
+  signal valid    : std_ulogic_vector(block_num_c-1 downto 0);
   signal valid_rd : std_ulogic;
   signal dirty_rd : std_ulogic;
   signal dirty_we : std_ulogic;
