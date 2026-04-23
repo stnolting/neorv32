@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120905"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120906"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -411,8 +411,8 @@ package neorv32_package is
   -- special values (single-precision) --
   constant fp_single_qnan_c     : std_ulogic_vector(31 downto 0) := x"7fc00000"; -- quiet NaN
   constant fp_single_snan_c     : std_ulogic_vector(31 downto 0) := x"7fa00000"; -- signaling NaN
-  constant fp_single_pos_max_c  : std_ulogic_vector(31 downto 0) := x"7f7FFFFF"; -- positive max
-  constant fp_single_neg_max_c  : std_ulogic_vector(31 downto 0) := x"Ff7FFFFF"; -- negative max
+  constant fp_single_pos_max_c  : std_ulogic_vector(31 downto 0) := x"7f7fffff"; -- positive max
+  constant fp_single_neg_max_c  : std_ulogic_vector(31 downto 0) := x"ff7fffff"; -- negative max
   constant fp_single_pos_inf_c  : std_ulogic_vector(31 downto 0) := x"7f800000"; -- positive infinity
   constant fp_single_neg_inf_c  : std_ulogic_vector(31 downto 0) := x"ff800000"; -- negative infinity
   constant fp_single_pos_zero_c : std_ulogic_vector(31 downto 0) := x"00000000"; -- positive zero
