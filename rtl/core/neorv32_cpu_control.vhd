@@ -18,7 +18,7 @@ use neorv32.neorv32_package.all;
 entity neorv32_cpu_control is
   generic (
     -- General --
-    HART_ID             : natural range 0 to 1023;        -- hardware thread ID
+    HART_ID             : natural range 0 to 1;           -- hardware thread ID
     VENDOR_ID           : std_ulogic_vector(31 downto 0); -- vendor ID
     BOOT_ADDR           : std_ulogic_vector(31 downto 0); -- boot address
     DEBUG_PARK_ADDR     : std_ulogic_vector(31 downto 0); -- debug-mode parking loop entry address, 4-byte aligned
@@ -1033,7 +1033,7 @@ begin
       -- Hardware CSR access: trap enter
       -- ********************************************************************************
       elsif (trap.env_enter = '1') then
-        if (debug_ctrl.run = '0') then -- no CSE update when in debug-mode
+        if (debug_ctrl.run = '0') then -- no CSR update when in debug-mode
           if RISCV_ISA_Sdext and (trap.cause(5) = '1') then -- trap to debug-mode
             csr.prv_level  <= priv_mode_m_c;
             csr.dcsr_cause <= trap.cause(2 downto 0);

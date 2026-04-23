@@ -17,7 +17,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_lsu is
   generic (
-    HART_ID : natural; -- hardware thread ID
+    HART_ID : natural range 0 to 1; -- hardware thread ID
     AMO_EN  : boolean  -- enable atomic memory accesses
   );
   port (

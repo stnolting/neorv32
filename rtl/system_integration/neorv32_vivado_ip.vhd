@@ -134,8 +134,8 @@ entity neorv32_vivado_ip is
     IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
     IO_TRNG_NUM_RO        : natural range 1 to 255         := 3;
     IO_TRNG_NUM_INV       : natural range 3 to 4095        := 5;
-    IO_TRNG_NUM_RBIT      : natural range 1 to 4096        := 64;
-    -- True-Random Number Generator (TRNG) --
+    IO_TRNG_NUM_RBIT      : natural range 8 to 4096        := 64;
+    -- Custom Functions Subsystem (CFS) --
     IO_CFS_EN             : boolean                        := false;
     -- Smart LED interface (NEOLED) --
     IO_NEOLED_EN          : boolean                        := false;

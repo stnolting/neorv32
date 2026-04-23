@@ -98,6 +98,7 @@ begin
     cmp_o(0) <= zibi_cmp_f(ctrl_i.rf_rs2, rs1_i) when (ctrl_i.ir_funct3(2 downto 1) = "01") else cmp(0);
     cmp_o(1) <= cmp(1);
   end generate;
+
   zibi_disabled:
   if not RISCV_ISA_Zibi generate
     cmp_o <= cmp;

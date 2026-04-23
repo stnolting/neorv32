@@ -130,8 +130,8 @@ entity neorv32_top is
     IO_TWI_EN           : boolean                        := false;         -- implement two-wire interface (TWI)
     IO_TWI_FIFO         : natural range 1 to 2**15       := 1;             -- RTX FIFO depth, has to be zero or a power of two
     IO_TWD_EN           : boolean                        := false;         -- implement two-wire device (TWD)
-    IO_TWD_RX_FIFO      : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be zero or a power of two
-    IO_TWD_TX_FIFO      : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be zero or a power of two
+    IO_TWD_RX_FIFO      : natural range 1 to 2**15       := 1;             -- RX FIFO depth, has to be zero or a power of two
+    IO_TWD_TX_FIFO      : natural range 1 to 2**15       := 1;             -- TX FIFO depth, has to be zero or a power of two
 
     -- Pulse-Width Modulation Controller (PWM) --
     IO_PWM_NUM          : natural range 0 to 32          := 0;             -- number of PWM channels to implement
@@ -144,9 +144,9 @@ entity neorv32_top is
     IO_TRNG_FIFO        : natural range 1 to 2**15       := 1;             -- data FIFO depth, has to be a power of two
     IO_TRNG_NUM_RO      : natural range 1 to 255         := 3;             -- total number of ring-oscillators
     IO_TRNG_NUM_INV     : natural range 3 to 4095        := 5;             -- number of inverters in first ring-oscillator; has to be odd
-    IO_TRNG_NUM_RBIT    : natural range 1 to 4096        := 64;            -- number of raw bits to process for one output byte; has to be power of two
+    IO_TRNG_NUM_RBIT    : natural range 8 to 4096        := 64;            -- number of raw bits to process for one output byte; has to be power of two
 
-    -- True-Random Number Generator (TRNG) --
+    -- Custom Functions Subsystem (CFS) --
     IO_CFS_EN           : boolean                        := false;         -- implement custom functions subsystem (CFS)
 
     -- Smart LED interface (NEOLED) --
@@ -385,34 +385,34 @@ begin
       "[NEORV32] Processor Configuration: CPU " & -- cpu core is always enabled
       sel_string_f(boolean(num_cores_c = 1), "(single-core) ",   "") &
       sel_string_f(boolean(num_cores_c = 2), "(smp-dual-core) ", "") &
-      sel_string_f(IMEM_EN,       sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
-      sel_string_f(DMEM_EN,       "DMEM ",     "") &
-      sel_string_f(bootrom_en_c,  "BOOTROM ",  "") &
-      sel_string_f(ICACHE_EN,     "I-CACHE ",  "") &
-      sel_string_f(DCACHE_EN,     "D-CACHE ",  "") &
-      sel_string_f(XBUS_EN,       "XBUS ",     "") &
-      sel_string_f(IO_CLINT_EN,   "CLINT ",    "") &
-      sel_string_f(io_gpio_en_c,  "GPIO ",     "") &
-      sel_string_f(IO_UART0_EN,   "UART0 ",    "") &
-      sel_string_f(IO_UART1_EN,   "UART1 ",    "") &
-      sel_string_f(IO_SPI_EN,     "SPI ",      "") &
-      sel_string_f(IO_SDI_EN,     "SDI ",      "") &
-      sel_string_f(IO_TWI_EN,     "TWI ",      "") &
-      sel_string_f(IO_TWD_EN,     "TWD ",      "") &
-      sel_string_f(io_pwm_en_c,   "PWM ",      "") &
-      sel_string_f(IO_WDT_EN,     "WDT ",      "") &
-      sel_string_f(IO_TRNG_EN,    "TRNG ",     "") &
-      sel_string_f(IO_CFS_EN,     "CFS ",      "") &
-      sel_string_f(IO_NEOLED_EN,  "NEOLED ",   "") &
-      sel_string_f(io_gptmr_en_c, "GPTMR ",    "") &
-      sel_string_f(IO_ONEWIRE_EN, "ONEWIRE ",  "") &
-      sel_string_f(IO_DMA_EN,     "DMA ",      "") &
-      sel_string_f(IO_SLINK_EN,   "SLINK ",    "") &
-      sel_string_f(true,          "SYSINFO ",  "") & -- always enabled
-      sel_string_f(IO_TRACER_EN,  "TRACER ",   "") &
-      sel_string_f(OCD_EN,        "OCD ",      "") &
-      sel_string_f(OCD_EN,        "OCD-AUTH ", "") &
-      sel_string_f(OCD_EN,        "OCD-HWBP ", "") &
+      sel_string_f(IMEM_EN,         sel_string_f(imem_as_rom_c, "IMEM-ROM ", "IMEM "), "") &
+      sel_string_f(DMEM_EN,         "DMEM ",     "") &
+      sel_string_f(bootrom_en_c,    "BOOTROM ",  "") &
+      sel_string_f(ICACHE_EN,       "I-CACHE ",  "") &
+      sel_string_f(DCACHE_EN,       "D-CACHE ",  "") &
+      sel_string_f(XBUS_EN,         "XBUS ",     "") &
+      sel_string_f(IO_CLINT_EN,     "CLINT ",    "") &
+      sel_string_f(io_gpio_en_c,    "GPIO ",     "") &
+      sel_string_f(IO_UART0_EN,     "UART0 ",    "") &
+      sel_string_f(IO_UART1_EN,     "UART1 ",    "") &
+      sel_string_f(IO_SPI_EN,       "SPI ",      "") &
+      sel_string_f(IO_SDI_EN,       "SDI ",      "") &
+      sel_string_f(IO_TWI_EN,       "TWI ",      "") &
+      sel_string_f(IO_TWD_EN,       "TWD ",      "") &
+      sel_string_f(io_pwm_en_c,     "PWM ",      "") &
+      sel_string_f(IO_WDT_EN,       "WDT ",      "") &
+      sel_string_f(IO_TRNG_EN,      "TRNG ",     "") &
+      sel_string_f(IO_CFS_EN,       "CFS ",      "") &
+      sel_string_f(IO_NEOLED_EN,    "NEOLED ",   "") &
+      sel_string_f(io_gptmr_en_c,   "GPTMR ",    "") &
+      sel_string_f(IO_ONEWIRE_EN,   "ONEWIRE ",  "") &
+      sel_string_f(IO_DMA_EN,       "DMA ",      "") &
+      sel_string_f(IO_SLINK_EN,     "SLINK ",    "") &
+      sel_string_f(true,            "SYSINFO ",  "") & -- always enabled
+      sel_string_f(IO_TRACER_EN,    "TRACER ",   "") &
+      sel_string_f(OCD_EN,          "OCD ",      "") &
+      sel_string_f(ocd_auth_en_c,   "OCD-AUTH ", "") &
+      sel_string_f(cpu_sdtrig_en_c, "OCD-HWBP ", "") &
       ""
       severity note;
 
@@ -983,7 +983,7 @@ begin
       DEV_27_EN => IO_WDT_EN,         DEV_27_BASE => base_io_wdt_c,
       DEV_28_EN => io_gpio_en_c,      DEV_28_BASE => base_io_gpio_c,
       DEV_29_EN => IO_NEOLED_EN,      DEV_29_BASE => base_io_neoled_c,
-      DEV_30_EN => true,              DEV_30_BASE => base_io_sysinfo_c, -- allways enabled
+      DEV_30_EN => true,              DEV_30_BASE => base_io_sysinfo_c, -- always enabled
       DEV_31_EN => OCD_EN,            DEV_31_BASE => base_io_ocd_c
     )
     port map (

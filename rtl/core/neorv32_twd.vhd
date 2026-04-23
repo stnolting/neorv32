@@ -88,7 +88,6 @@ architecture neorv32_twd_rtl of neorv32_twd is
     sda_sreg : std_ulogic_vector(2 downto 0); -- SDA synchronizer
     scl_sreg : std_ulogic_vector(2 downto 0); -- SCL synchronizer
     sda      : std_ulogic; -- current SDA state
-    scl      : std_ulogic; -- current SCL state
     scl_rise : std_ulogic; -- SCL rising edge
     scl_fall : std_ulogic; -- SCL falling edge
     start    : std_ulogic; -- start condition
@@ -299,7 +298,6 @@ begin
 
   -- bus event detectors (event signals are "single-shot") --
   smp.sda      <= smp.sda_sreg(1);
-  smp.scl      <= smp.sda_sreg(1);
   smp.scl_rise <= smp.valid and (not smp.scl_sreg(2)) and (    smp.scl_sreg(1));
   smp.scl_fall <= smp.valid and (    smp.scl_sreg(2)) and (not smp.scl_sreg(1));
   smp.start    <= smp.valid and smp.scl_sreg(2) and smp.scl_sreg(1) and (    smp.sda_sreg(2)) and (not smp.sda_sreg(1));
