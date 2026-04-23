@@ -25,8 +25,8 @@ entity neorv32_gpio is
     bus_req_i  : in  bus_req_t;                      -- bus request
     bus_rsp_o  : out bus_rsp_t;                      -- bus response
     port_dir_o : out std_ulogic_vector(31 downto 0); -- direction control (0 = in, 1 = out)
-    port_out_o : out std_ulogic_vector(31 downto 0); -- input port
-    port_in_i  : in  std_ulogic_vector(31 downto 0); -- output port
+    port_out_o : out std_ulogic_vector(31 downto 0); -- output port
+    port_in_i  : in  std_ulogic_vector(31 downto 0); -- input port
     irq_o      : out std_ulogic                      -- CPU interrupt
   );
 end neorv32_gpio;

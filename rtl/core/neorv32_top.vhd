@@ -983,7 +983,7 @@ begin
       DEV_27_EN => IO_WDT_EN,         DEV_27_BASE => base_io_wdt_c,
       DEV_28_EN => io_gpio_en_c,      DEV_28_BASE => base_io_gpio_c,
       DEV_29_EN => IO_NEOLED_EN,      DEV_29_BASE => base_io_neoled_c,
-      DEV_30_EN => true,              DEV_30_BASE => base_io_sysinfo_c, -- allways enabled
+      DEV_30_EN => true,              DEV_30_BASE => base_io_sysinfo_c, -- always enabled
       DEV_31_EN => OCD_EN,            DEV_31_BASE => base_io_ocd_c
     )
     port map (
