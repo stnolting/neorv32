@@ -81,7 +81,7 @@ begin
                        (ctrl_i.csr_addr(11 downto 5) = csr_mcycleh_c(11 downto 5))) else '0';
   cfg_acc <= '1' when (ctrl_i.csr_addr(11 downto 5) = csr_mhpmevent3_c(11 downto 5)) else '0';
   inh_acc <= '1' when (ctrl_i.csr_addr = csr_mcountinhibit_c) else '0';
-  pmf_acc <= '1' when SMCNTRPMF_EN and (ctrl_i.csr_addr(11 downto 2) = csr_minstretcfgh_c(11 downto 2)) else '0';
+  pmf_acc <= '1' when (ctrl_i.csr_addr(11 downto 2) = csr_minstretcfgh_c(11 downto 2)) else '0';
 
   -- global CSR read-back and subword select --
   rdata64 <= cycle_rd or time_rd or instret_rd or hpm_rd or inhibit_rd or pmf_rd;
