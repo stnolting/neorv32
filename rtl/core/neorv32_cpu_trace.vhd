@@ -68,7 +68,9 @@ begin
       -- delta detector: buffer delta trigger until we are back in EXECUTE stage --
       arbiter.delta <= (arbiter.delta or ctrl_i.cnt_event(cnt_event_ctrlflow_c)) and (not ctrl_i.cnt_event(cnt_event_ir_c));
       -- instruction counter --
-      arbiter.order <= std_ulogic_vector(unsigned(arbiter.order) + unsigned(replicate_f(arbiter.valid, 1)));
+      if (arbiter.valid = '1') then
+        arbiter.order <= std_ulogic_vector(unsigned(arbiter.order) + 1);
+      end if;
     end if;
   end process trace_arbiter;
 
