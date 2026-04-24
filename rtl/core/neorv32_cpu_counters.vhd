@@ -8,7 +8,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -75,11 +75,11 @@ begin
   end generate;
 
   -- CSR access --
-  cnt_acc <= '1' when ZICNTR_EN and ((ctrl_i.csr_addr(11 downto 5) = csr_cycle_c(11 downto 5)) or
-                                     (ctrl_i.csr_addr(11 downto 5) = csr_mcycle_c(11 downto 5)) or
-                                     (ctrl_i.csr_addr(11 downto 5) = csr_cycleh_c(11 downto 5)) or
-                                     (ctrl_i.csr_addr(11 downto 5) = csr_mcycleh_c(11 downto 5))) else '0';
-  cfg_acc <= '1' when ZIHPM_EN and (ctrl_i.csr_addr(11 downto 5) = csr_mhpmevent3_c(11 downto 5)) else '0';
+  cnt_acc <= '1' when ((ctrl_i.csr_addr(11 downto 5) = csr_cycle_c(11 downto 5)) or
+                       (ctrl_i.csr_addr(11 downto 5) = csr_mcycle_c(11 downto 5)) or
+                       (ctrl_i.csr_addr(11 downto 5) = csr_cycleh_c(11 downto 5)) or
+                       (ctrl_i.csr_addr(11 downto 5) = csr_mcycleh_c(11 downto 5))) else '0';
+  cfg_acc <= '1' when (ctrl_i.csr_addr(11 downto 5) = csr_mhpmevent3_c(11 downto 5)) else '0';
   inh_acc <= '1' when (ctrl_i.csr_addr = csr_mcountinhibit_c) else '0';
   pmf_acc <= '1' when SMCNTRPMF_EN and (ctrl_i.csr_addr(11 downto 2) = csr_minstretcfgh_c(11 downto 2)) else '0';
 
