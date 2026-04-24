@@ -124,7 +124,9 @@ begin
         when S_BUSY => -- processing
         -- ------------------------------------------------------------
           ctrl.cnt <= std_ulogic_vector(unsigned(ctrl.cnt) - 1);
-          if (or_reduce_f(ctrl.cnt) = '0') or (ctrl_i.cpu_trap = '1') then -- abort on trap
+          if (ctrl_i.cpu_trap = '1') then -- abort on trap
+            ctrl.state <= S_IDLE;
+          elsif (or_reduce_f(ctrl.cnt) = '0') then -- processing done
             ctrl.state <= S_DONE;
           end if;
 
