@@ -186,7 +186,13 @@ end neorv32_prim_spram;
 architecture neorv32_prim_spram_rtl of neorv32_prim_spram is
 
   type ram_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
-  signal spram : ram_t;
+  -- Initialise to zero so simulators don't see 'U' on reads before first write.
+  -- 'U' propagates into loads/addresses and can trigger spurious access faults
+  -- (e.g. in newlib malloc's heap-metadata reads) that do not reflect real
+  -- hardware behaviour. On FPGA, inferred BRAMs power up to zero, so this
+  -- initialiser folds into the default BRAM INIT values and is a no-op for
+  -- synthesis / resource usage.
+  signal spram : ram_t := (others => (others => '0'));
   signal rdata : std_ulogic_vector(DWIDTH-1 downto 0);
 
 begin
