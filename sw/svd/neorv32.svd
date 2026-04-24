@@ -802,7 +802,8 @@
               <name>UART_CTRL_RX_OVER</name>
               <bitRange>[30:30]</bitRange>
               <access>read-only</access>
-              <description>RX FIFO overflow</description>
+              <readAction>modify</readAction>
+              <description>RX FIFO overflow; clears on CTRL read access</description>
             </field>
             <field>
               <name>UART_CTRL_TX_BUSY</name>
