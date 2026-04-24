@@ -194,12 +194,12 @@ begin
   cmd(op_andn_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "111") else '0'; -- ANDN
   cmd(op_orn_c)   <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "110") else '0'; -- ORN
   cmd(op_xnor_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "100") else '0'; -- XORN
-  cmd(op_max_c)   <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000101") and (ctrl_i.ir_funct3(2) = '1') else '0'; -- MAX[U], MIN[U]
-  cmd(op_zexth_c) <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12 = "000010000000") and (ctrl_i.ir_funct3 = "100") else '0'; -- ZEXT.H
-  cmd(op_orcb_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "001010000111") and (ctrl_i.ir_funct3 = "101") else '0'; -- ORC.B
-  cmd(op_cz_c)    <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000000") and (ctrl_i.ir_funct3 = "001") else '0'; -- CLZ, CTZ
-  cmd(op_cpop_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011000000010") and (ctrl_i.ir_funct3 = "001") else '0'; -- CPOP
-  cmd(op_sext_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000010") and (ctrl_i.ir_funct3 = "001") else '0';
+  cmd(op_max_c)   <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000101") and (ctrl_i.ir_funct3(2) = '1') else '0'; -- MAX[U], MIN[U]
+  cmd(op_zexth_c) <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12 = "000010000000") and (ctrl_i.ir_funct3 = "100") else '0'; -- ZEXT.H
+  cmd(op_orcb_c)  <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "001010000111") and (ctrl_i.ir_funct3 = "101") else '0'; -- ORC.B
+  cmd(op_cz_c)    <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000000") and (ctrl_i.ir_funct3 = "001") else '0'; -- CLZ, CTZ
+  cmd(op_cpop_c)  <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011000000010") and (ctrl_i.ir_funct3 = "001") else '0'; -- CPOP
+  cmd(op_sext_c)  <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000010") and (ctrl_i.ir_funct3 = "001") else '0';
   cmd(op_rev8_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011010011000") and (ctrl_i.ir_funct3 = "101") else '0';
   cmd(op_rot_c)   <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_funct12(11 downto 5) = "0110000") and (((ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct3 = "001")) or (ctrl_i.ir_funct3 = "101")) else '0'; -- ROL, ROR[I]
 
