@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -22,12 +22,12 @@ entity neorv32_cpu_trace is
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  ctrl_bus_t; -- main control bus
     -- operands --
-    rs1_rdata_i : std_ulogic_vector(31 downto 0); -- rs1 read data
-    rs2_rdata_i : std_ulogic_vector(31 downto 0); -- rs2 read data
-    rd_wdata_i  : std_ulogic_vector(31 downto 0); -- rd write data
-    mem_ben_i   : std_ulogic_vector(3 downto 0);  -- memory byte-enable
-    mem_addr_i  : std_ulogic_vector(31 downto 0); -- memory address
-    mem_wdata_i : std_ulogic_vector(31 downto 0); -- memory write data
+    rs1_rdata_i : in  std_ulogic_vector(31 downto 0); -- rs1 read data
+    rs2_rdata_i : in  std_ulogic_vector(31 downto 0); -- rs2 read data
+    rd_wdata_i  : in  std_ulogic_vector(31 downto 0); -- rd write data
+    mem_ben_i   : in  std_ulogic_vector(3 downto 0);  -- memory byte-enable
+    mem_addr_i  : in  std_ulogic_vector(31 downto 0); -- memory address
+    mem_wdata_i : in  std_ulogic_vector(31 downto 0); -- memory write data
     -- trace port --
     trace_o     : out trace_port_t -- execution trace port
   );
