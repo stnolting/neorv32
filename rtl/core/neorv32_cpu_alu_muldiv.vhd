@@ -197,7 +197,7 @@ begin
         if (mul.start = '1') then -- start new multiplication
           mul.res(63 downto 32) <= (others => '0');
           mul.res(31 downto 0)  <= rs1_i;
-        elsif (ctrl.state /= S_IDLE) then -- processing steps or sign-finalization step
+        elsif (ctrl.state /= S_IDLE) and (ctrl_i.ir_funct3(2) = '0') then -- MUL processing steps or sign-finalization step
           mul.res(63 downto 31) <= mul.add(32 downto 0);
           mul.res(30 downto 0)  <= mul.res(31 downto 1);
         end if;
