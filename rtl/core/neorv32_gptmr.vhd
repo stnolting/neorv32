@@ -178,10 +178,12 @@ begin
       irq <= (others => '0');
     elsif rising_edge(clk_i) then
       for i in 0 to NUM_SLICES-1 loop
-        if (trig(i) = '1') and (enable(i) = '1') then
+        if (enable(i) = '0') then
+          irq(i) <= '0';
+        elsif (trig(i) = '1') then
           irq(i) <= '1';
         elsif (bus_req_i.stb = '1') and (bus_req_i.rw = '1') and (acc_addr = "01") and
-              (bus_req_i.data(i) = '0') then -- write 0 to clear/ACK
+              (bus_req_i.ben(i/8) = '1') and (bus_req_i.data(i) = '0') then -- write 0 to clear/ACK
           irq(i) <= '0';
         end if;
       end loop;
@@ -189,7 +191,7 @@ begin
   end process irq_generator;
 
   -- CPU interrupt --
-  irq_o <= or_reduce_f(irq and enable);
+  irq_o <= or_reduce_f(irq);
 
 end neorv32_gptmr_rtl;
 
