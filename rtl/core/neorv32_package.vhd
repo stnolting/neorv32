@@ -893,7 +893,7 @@ package neorv32_package is
       XBUS_TIMEOUT        : natural                        := 2048;
       XBUS_REGSTAGE_EN    : boolean                        := false;
       -- General-Purpose Input/Output Controller (GPIO) --
-      IO_GPIO_NUM         : natural range 0 to 64          := 0;
+      IO_GPIO_NUM         : natural range 0 to 32          := 0;
       IO_GPIO_DIR_EN      : boolean                        := false;
       -- RISC-V Core-Local Interruptor (CLINT) --
       IO_CLINT_EN         : boolean                        := false;
