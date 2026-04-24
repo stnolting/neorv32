@@ -1053,7 +1053,7 @@ package body neorv32_package is
         return i;
       end if;
     end loop;
-    return 0;
+    return 32; -- fallback
   end function index_size_f;
 
   -- Conditional select natural -------------------------------------------------------------
