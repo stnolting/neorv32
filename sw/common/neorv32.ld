@@ -53,8 +53,11 @@ SECTIONS
     *(.text .text* .text.* .gnu.linkonce.t.*)
 
     . = ALIGN(4);
-    PROVIDE_HIDDEN(__init_array_start = .);
+    PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array))
+    PROVIDE_HIDDEN (__preinit_array_end = .);
+
+    PROVIDE_HIDDEN(__init_array_start = .);
     KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
     KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
     PROVIDE_HIDDEN(__init_array_end = .);
@@ -121,10 +124,6 @@ SECTIONS
     *(.dynsbss)
     *(.dynbss)
     *(.bss .bss* .bss.* .gnu.linkonce.b.*)
-
-    PROVIDE_HIDDEN (__preinit_array_start = .);
-    KEEP (*(.preinit_array))
-    PROVIDE_HIDDEN (__preinit_array_end = .);
 
     *(COMMON)
     /* finish section on WORD boundary */
