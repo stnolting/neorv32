@@ -58,8 +58,8 @@ channels. Eight pre-defined prescaler values are available:
 The `MODE` register defines the PWM operation mode of a channel. If bit _i_ is `0` channel _i_ operates in
 **fast-PWM** mode. If bit _i_ is `1` channel _i_ operates in **phase-correct PWM** mode.
 
-Duty cycle and period length of each channel are defined by the according `CHANNEL`. This register is split in
-two half-words: the lowest half-word defines the counter-compare value (`CMP`) while the upper half-word defines
+Duty cycle and period length of each channel are defined by the according `CHANNEL` registers. These registera are
+split in two half-words: the lowest half-word defines the counter-compare value (`CMP`) while the upper half-word defines
 the counter-wrap value (`TOP`). Regardless of the configured PWM operation mode, the duty cycle of channel _i_ is
 defined by the following formula:
 
@@ -73,7 +73,7 @@ setting `CMP = 0`. 100% duty cycle is achieved by setting `CMP = TOP + 1`.
 .`CHANNEL` Half-Word Access
 [TIP]
 In contrast to many other NEORV32 peripherals, the PWM `CHANNEL[i]` registers can also be accessed using half-word
-load/store operation. This allows to update the `TOP` and `CMP` sub-registers with a single instruction.
+load/store operation. This allows to update `TOP` and `CMP` independant of each other.
 
 
 **Fast-PWM Mode**
