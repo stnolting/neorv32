@@ -68,7 +68,7 @@ __crt0_entry:
 #endif
 
 // ************************************************************************************************
-// SMP setup - wait for configuration if we are not core 0.
+// SMP setup - wait for configuration if we are not core 0 (max two cores are supported).
 // ************************************************************************************************
 __crt0_smp_check:
   beqz  x1, __crt0_smp_primary // proceed with normal boot-up if we are core 0
@@ -88,8 +88,9 @@ __crt0_smp_sleep:
   // machine software interrupt handler
 .balign 4
 __crt0_smp_wakeup:
-  la    x15, __crt0_panic      // panic if we encounter another trap
+  la    x15,   __crt0_panic    // panic if we encounter another trap
   csrw  mtvec, x15
+  csrwi mie,   0               // disable all interrupt sources
 
   li    x14, 0xfff44000        // CLINT.MTIMECMP base address
   lw    x2,  8(x14)            // MTIMECMP[1].lo = stack top (sp)
