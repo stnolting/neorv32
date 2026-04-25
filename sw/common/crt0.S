@@ -3,7 +3,7 @@
 // -------------------------------------------------------------------------------- //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -26,9 +26,9 @@ __crt0_entry:
 .option norvc                           // make sure setup code is uncompressed (if executing RVC on non-RVC core)
   csrr  x1, mhartid                     // get ID of this core
 
-  la    x4, __crt0_ram_last             // last address of RAM, stack pointer (sp) starts here
-  andi  x2, x4, 0xfffffff0              // align stack to 16-bytes according to the RISC-V ABI (#1021)
-  la    x3, __global_pointer            // global pointer "gp"
+  la    x4, __crt0_stack_top            // first address after last RAM byte, stack pointer (sp) starts here
+  andi  x2, x4, -16                     // align stack to 16-bytes according to the RISC-V ABI (#1021)
+  la    x3, __global_pointer$           // global pointer "gp"
 
   li    x5, 0x00001800                  // mstatus.mpp = machine-mode
   csrw  mstatus, x5

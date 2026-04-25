@@ -95,7 +95,7 @@ SECTIONS
   .data : ALIGN(4)
   {
     PROVIDE(__data_start = .);
-    __global_pointer = . + 0x800;
+    __global_pointer$ = . + 0x800;
 
     *(.data .data.* .data* .gnu.linkonce.d.*)
     *(.srodata .srodata.*)
