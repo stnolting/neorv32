@@ -120,7 +120,6 @@ SECTIONS
     *(.sbss .sbss* .sbss.* .gnu.linkonce.sb.*)
     *(.tbss .tbss.* .gnu.linkonce.tb.*) *(.tcommon)
     *(.scommon)
-    *(.dynamic)
     *(.dynsbss)
     *(.dynbss)
     *(.bss .bss* .bss.* .gnu.linkonce.b.*)
@@ -153,6 +152,7 @@ SECTIONS
   .note.gnu.build-id : { *(.note.gnu.build-id) }
   .hash              : { *(.hash) }
   .gnu.hash          : { *(.gnu.hash) }
+  .dynamic           : { *(.dynamic) }
   .dynsym            : { *(.dynsym) }
   .dynstr            : { *(.dynstr) }
   .gnu.version       : { *(.gnu.version) }
