@@ -85,6 +85,7 @@ SECTIONS
 
     /* constant data like strings */
     *(.rodata .rodata* .rodata.* .gnu.linkonce.r.*)
+    *(.srodata .srodata.*)
 
     /* finish section on WORD boundary */
     . = ALIGN(4);
@@ -101,7 +102,6 @@ SECTIONS
     __global_pointer$ = . + 0x800;
 
     *(.data .data.* .data* .gnu.linkonce.d.*)
-    *(.srodata .srodata.*)
     *(.sdata .sdata.* .gnu.linkonce.s.*)
     *(.tdata .tdata.* .gnu.linkonce.td.*)
 
