@@ -105,17 +105,16 @@ __crt0_smp_primary:
 // ************************************************************************************************
 // Copy .data section from ROM to RAM.
 // ************************************************************************************************
-__crt0_data_init:
-  beq   x7, x8, __crt0_data_copy_end // __crt0_copy_data_src_begin == __crt0_copy_data_dst_begin
-
 __crt0_data_copy:
-  bge   x8, x9,  __crt0_data_copy_end
-  lw    x15, 0(x7)
-  sw    x15, 0(x8)
-  addi  x7, x7, 4                    // word-wise operations; section begins and ends on word boundary
-  addi  x8, x8, 4
-  j     __crt0_data_copy
+  beq   x7, x8, __crt0_data_copy_end  // skip if src == dst
+  bge   x8, x9, __crt0_data_copy_end  // skip if empty section
 
+__crt0_data_copy_loop:
+  lw    x15, 0(x7)
+  sw    x15, 0(x8)                    // word-wise operations; section begins and ends on word boundary
+  addi  x7, x7, 4
+  addi  x8, x8, 4
+  blt   x8, x9, __crt0_data_copy_loop
 __crt0_data_copy_end:
 
 // ************************************************************************************************
