@@ -3,22 +3,22 @@
 # SW Build 6140274 on Thu May 22 00:12:29 MDT 2025
 # IP Build 6138677 on Thu May 22 03:10:11 MDT 2025
 # SharedData Build 6139179 on Tue May 20 17:58:58 MDT 2025
-# Start of session at: Mon Apr 20 19:54:56 2026
-# Process ID         : 27540
-# Current directory  : C:/Users/denny/final/final.runs/impl_1
+# Start of session at: Wed Apr 22 23:47:44 2026
+# Process ID         : 28216
+# Current directory  : C:/Users/mustafa.shaky/finalSOC-main/final/final.runs/impl_1
 # Command line       : vivado.exe -log design_1_wrapper.vdi -applog -product Vivado -messageDb vivado.pb -mode batch -source design_1_wrapper.tcl -notrace
-# Log file           : C:/Users/denny/final/final.runs/impl_1/design_1_wrapper.vdi
-# Journal file       : C:/Users/denny/final/final.runs/impl_1\vivado.jou
-# Running On         : mobile
+# Log file           : C:/Users/mustafa.shaky/finalSOC-main/final/final.runs/impl_1/design_1_wrapper.vdi
+# Journal file       : C:/Users/mustafa.shaky/finalSOC-main/final/final.runs/impl_1\vivado.jou
+# Running On         : ece-d4000-wshak
 # Platform           : Windows Server 2016 or Windows 10
 # Operating System   : 26100
-# Processor Detail   : Intel(R) Core(TM) i9-14900HX
-# CPU Frequency      : 2419 MHz
-# CPU Physical cores : 24
-# CPU Logical cores  : 32
-# Host memory        : 33951 MB
-# Swap memory        : 5905 MB
-# Total Virtual      : 39857 MB
-# Available Virtual  : 21774 MB
+# Processor Detail   : Intel(R) Core(TM) Ultra 9 185H
+# CPU Frequency      : 3072 MHz
+# CPU Physical cores : 16
+# CPU Logical cores  : 22
+# Host memory        : 68137 MB
+# Swap memory        : 10200 MB
+# Total Virtual      : 78337 MB
+# Available Virtual  : 10851 MB
 #-----------------------------------------------------------
 source design_1_wrapper.tcl -notrace

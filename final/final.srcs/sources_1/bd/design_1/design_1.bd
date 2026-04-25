@@ -1,7 +1,7 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0xC396C6174A350BCE",
+      "boundary_crc": "0xC396C6172EB57490",
       "device": "xc7s50csga324-1",
       "gen_directory": "../../../../final.gen/sources_1/bd/design_1",
       "name": "design_1",
@@ -50,7 +50,7 @@
             "value_src": "default"
           },
           "POLARITY": {
-            "value": "ACTIVE_HIGH"
+            "value": "ACTIVE_LOW"
           }
         }
       },
@@ -92,7 +92,15 @@
         "xci_name": "design_1_clk_wiz_0_0",
         "xci_path": "ip\\design_1_clk_wiz_0_0\\design_1_clk_wiz_0_0.xci",
         "inst_hier_path": "clk_wiz_0",
-        "has_run_ip_tcl": "true"
+        "has_run_ip_tcl": "true",
+        "parameters": {
+          "RESET_PORT": {
+            "value": "resetn"
+          },
+          "RESET_TYPE": {
+            "value": "ACTIVE_LOW"
+          }
+        }
       },
       "proc_sys_reset_0": {
         "vlnv": "xilinx.com:ip:proc_sys_reset:5.0",
@@ -110,6 +118,15 @@
         "inst_hier_path": "neorv32_vivado_ip_0",
         "has_run_ip_tcl": "true",
         "parameters": {
+          "DMEM_EN": {
+            "value": "true"
+          },
+          "DMEM_SIZE": {
+            "value": "16384"
+          },
+          "IMEM_EN": {
+            "value": "true"
+          },
           "IO_GPIO_EN": {
             "value": "true"
           },
@@ -172,8 +189,8 @@
       "reset_rtl_0_1": {
         "ports": [
           "reset_rtl_0",
-          "clk_wiz_0/reset",
-          "proc_sys_reset_0/ext_reset_in"
+          "proc_sys_reset_0/ext_reset_in",
+          "clk_wiz_0/resetn"
         ]
       },
       "uart0_rxd_i_0_1": {
