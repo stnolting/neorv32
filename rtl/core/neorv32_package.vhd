@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120907"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01120908"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -893,7 +893,7 @@ package neorv32_package is
       XBUS_TIMEOUT        : natural                        := 2048;
       XBUS_REGSTAGE_EN    : boolean                        := false;
       -- General-Purpose Input/Output Controller (GPIO) --
-      IO_GPIO_NUM         : natural range 0 to 64          := 0;
+      IO_GPIO_NUM         : natural range 0 to 32          := 0;
       IO_GPIO_DIR_EN      : boolean                        := false;
       -- RISC-V Core-Local Interruptor (CLINT) --
       IO_CLINT_EN         : boolean                        := false;
@@ -1053,7 +1053,7 @@ package body neorv32_package is
         return i;
       end if;
     end loop;
-    return 0;
+    return 32; -- fallback
   end function index_size_f;
 
   -- Conditional select natural -------------------------------------------------------------
