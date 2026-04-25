@@ -160,7 +160,10 @@ NEO_ASFLAGS  = $(CC_FLAGS) $(ASFLAGS)
 # Application output definitions
 # -----------------------------------------------------------------------------
 
-.PHONY: check info help elf_info clean clean_all
+.PHONY: check info help elf_info elf_sections clean clean_all \
+        elf asm exe bin coe mem mif image install all \
+        sim upload gdb bootloader bl_image hdl_lists
+
 .DEFAULT_GOAL := help
 
 elf:     $(APP_ELF)
