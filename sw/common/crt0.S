@@ -123,10 +123,11 @@ __crt0_data_copy_end:
 // ************************************************************************************************
 __crt0_bss_clear:
   bge   x10, x11, __crt0_bss_clear_end
+
+__crt0_bss_clear_loop:
   sw    zero, 0(x10)
   addi  x10, x10, 4 // word-wise operations; section begins and ends on word boundary
-  j     __crt0_bss_clear
-
+  blt   x10, x11, __crt0_bss_clear_loop
 __crt0_bss_clear_end:
 
 // ************************************************************************************************
