@@ -69,7 +69,7 @@ module design_1_clk_wiz_0_0
   // Clock out ports
   output        clk_out1,
   // Status and control signals
-  input         reset,
+  input         resetn,
   output        locked,
  // Clock in ports
   input         clk_in1
@@ -80,7 +80,7 @@ module design_1_clk_wiz_0_0
   // Clock out ports  
   .clk_out1(clk_out1),
   // Status and control signals               
-  .reset(reset), 
+  .resetn(resetn), 
   .locked(locked),
  // Clock in ports
   .clk_in1(clk_in1)

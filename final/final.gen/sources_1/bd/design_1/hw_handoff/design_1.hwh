@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Mon Apr 20 19:52:46 2026" VIVADOVERSION="2025.1">
+<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Wed Apr 22 23:46:48 2026" VIVADOVERSION="2025.1">
 
   <SYSTEMINFO ARCH="spartan7" DEVICE="7s50" NAME="design_1" PACKAGE="csga324" SPEEDGRADE="-1"/>
 
@@ -19,10 +19,10 @@
         <CONNECTION INSTANCE="neorv32_vivado_ip_0" PORT="gpio_o"/>
       </CONNECTIONS>
     </PORT>
-    <PORT DIR="I" NAME="reset_rtl_0" POLARITY="ACTIVE_HIGH" SIGIS="rst" SIGNAME="External_Ports_reset_rtl_0">
+    <PORT DIR="I" NAME="reset_rtl_0" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="External_Ports_reset_rtl_0">
       <CONNECTIONS>
-        <CONNECTION INSTANCE="clk_wiz_0" PORT="reset"/>
         <CONNECTION INSTANCE="proc_sys_reset_0" PORT="ext_reset_in"/>
+        <CONNECTION INSTANCE="clk_wiz_0" PORT="resetn"/>
       </CONNECTIONS>
     </PORT>
     <PORT DIR="I" NAME="uart0_rxd_i_0" SIGIS="undef" SIGNAME="External_Ports_uart0_rxd_i_0">
@@ -317,8 +317,8 @@
         <PARAMETER NAME="C_PSEN_PORT" VALUE="psen"/>
         <PARAMETER NAME="C_PSINCDEC_PORT" VALUE="psincdec"/>
         <PARAMETER NAME="C_REF_CLK_FREQ" VALUE="100.0"/>
-        <PARAMETER NAME="C_RESET_LOW" VALUE="0"/>
-        <PARAMETER NAME="C_RESET_PORT" VALUE="reset"/>
+        <PARAMETER NAME="C_RESET_LOW" VALUE="1"/>
+        <PARAMETER NAME="C_RESET_PORT" VALUE="resetn"/>
         <PARAMETER NAME="C_SECONDARY_IN_FREQ" VALUE="100.000"/>
         <PARAMETER NAME="C_SECONDARY_IN_JITTER" VALUE="0.010"/>
         <PARAMETER NAME="C_SECONDARY_IN_TIMEPERIOD" VALUE="10.000"/>
@@ -581,8 +581,8 @@
         <PARAMETER NAME="REF_CLK_FREQ" VALUE="100.0"/>
         <PARAMETER NAME="RELATIVE_INCLK" VALUE="REL_PRIMARY"/>
         <PARAMETER NAME="RESET_BOARD_INTERFACE" VALUE="Custom"/>
-        <PARAMETER NAME="RESET_PORT" VALUE="reset"/>
-        <PARAMETER NAME="RESET_TYPE" VALUE="ACTIVE_HIGH"/>
+        <PARAMETER NAME="RESET_PORT" VALUE="resetn"/>
+        <PARAMETER NAME="RESET_TYPE" VALUE="ACTIVE_LOW"/>
         <PARAMETER NAME="SECONDARY_IN_FREQ" VALUE="100.000"/>
         <PARAMETER NAME="SECONDARY_IN_JITTER" VALUE="0.010"/>
         <PARAMETER NAME="SECONDARY_IN_TIMEPERIOD" VALUE="10.000"/>
@@ -636,7 +636,7 @@
             <CONNECTION INSTANCE="proc_sys_reset_0" PORT="dcm_locked"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" NAME="reset" POLARITY="ACTIVE_HIGH" SIGIS="rst" SIGNAME="External_Ports_reset_rtl_0">
+        <PORT DIR="I" NAME="resetn" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="External_Ports_reset_rtl_0">
           <CONNECTIONS>
             <CONNECTION INSTANCE="External_Ports" PORT="reset_rtl_0"/>
           </CONNECTIONS>
@@ -661,16 +661,16 @@
         <PARAMETER NAME="DCACHE_EN" VALUE="false"/>
         <PARAMETER NAME="DCACHE_NUM_BLOCKS" VALUE="4"/>
         <PARAMETER NAME="DMEM_BASE" VALUE="0x80000000"/>
-        <PARAMETER NAME="DMEM_EN" VALUE="false"/>
+        <PARAMETER NAME="DMEM_EN" VALUE="true"/>
         <PARAMETER NAME="DMEM_OUTREG_EN" VALUE="false"/>
-        <PARAMETER NAME="DMEM_SIZE" VALUE="8192"/>
+        <PARAMETER NAME="DMEM_SIZE" VALUE="16384"/>
         <PARAMETER NAME="DUAL_CORE_EN" VALUE="false"/>
         <PARAMETER NAME="HPM_CNT_WIDTH" VALUE="40"/>
         <PARAMETER NAME="HPM_NUM_CNTS" VALUE="0"/>
         <PARAMETER NAME="ICACHE_EN" VALUE="false"/>
         <PARAMETER NAME="ICACHE_NUM_BLOCKS" VALUE="4"/>
         <PARAMETER NAME="IMEM_BASE" VALUE="0x00000000"/>
-        <PARAMETER NAME="IMEM_EN" VALUE="false"/>
+        <PARAMETER NAME="IMEM_EN" VALUE="true"/>
         <PARAMETER NAME="IMEM_OUTREG_EN" VALUE="false"/>
         <PARAMETER NAME="IMEM_SIZE" VALUE="16384"/>
         <PARAMETER NAME="IO_CFS_EN" VALUE="false"/>
@@ -805,7 +805,7 @@
       <PARAMETERS>
         <PARAMETER NAME="C_AUX_RESET_HIGH" VALUE="0"/>
         <PARAMETER NAME="C_AUX_RST_WIDTH" VALUE="4"/>
-        <PARAMETER NAME="C_EXT_RESET_HIGH" VALUE="1"/>
+        <PARAMETER NAME="C_EXT_RESET_HIGH" VALUE="0"/>
         <PARAMETER NAME="C_EXT_RST_WIDTH" VALUE="4"/>
         <PARAMETER NAME="C_FAMILY" VALUE="spartan7"/>
         <PARAMETER NAME="C_NUM_BUS_RST" VALUE="1"/>
@@ -825,7 +825,7 @@
             <CONNECTION INSTANCE="clk_wiz_0" PORT="locked"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" NAME="ext_reset_in" POLARITY="ACTIVE_HIGH" SIGIS="rst" SIGNAME="External_Ports_reset_rtl_0">
+        <PORT DIR="I" NAME="ext_reset_in" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="External_Ports_reset_rtl_0">
           <CONNECTIONS>
             <CONNECTION INSTANCE="External_Ports" PORT="reset_rtl_0"/>
           </CONNECTIONS>

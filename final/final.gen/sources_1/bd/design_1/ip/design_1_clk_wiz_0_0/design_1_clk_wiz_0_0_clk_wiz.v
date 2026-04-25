@@ -68,7 +68,7 @@ module design_1_clk_wiz_0_0_clk_wiz
   // Clock out ports
   output        clk_out1,
   // Status and control signals
-  input         reset,
+  input         resetn,
   output        locked,
   input         clk_in1
  );
@@ -174,7 +174,7 @@ wire clk_in2_design_1_clk_wiz_0_0;
     .CLKFBSTOPPED        (clkfbstopped_unused),
     .PWRDWN              (1'b0),
     .RST                 (reset_high));
-  assign reset_high = reset; 
+  assign reset_high = ~resetn; 
 
   assign locked = locked_int;
 // Clock Monitor clock assigning

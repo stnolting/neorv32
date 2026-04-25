@@ -1078,11 +1078,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Apr 20 23:43:30 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 03:46:48 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:1bdf82c3</spirit:value>
+            <spirit:value>9:11caaed9</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -1097,11 +1097,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Apr 20 23:43:30 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 03:46:48 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:dd92154f</spirit:value>
+            <spirit:value>9:95d29dea</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -1112,7 +1112,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:dd92154f</spirit:value>
+            <spirit:value>9:95d29dea</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -1123,7 +1123,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:dd92154f</spirit:value>
+            <spirit:value>9:95d29dea</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -1139,11 +1139,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Apr 20 23:52:46 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 03:46:48 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:1bdf82c3</spirit:value>
+            <spirit:value>9:11caaed9</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -1159,11 +1159,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Apr 20 23:52:46 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 03:46:48 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:dd92154f</spirit:value>
+            <spirit:value>9:95d29dea</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -3332,7 +3332,7 @@
       <spirit:modelParameter spirit:dataType="boolean">
         <spirit:name>IMEM_EN</spirit:name>
         <spirit:displayName>Imem En</spirit:displayName>
-        <spirit:value spirit:format="bool" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IMEM_EN">false</spirit:value>
+        <spirit:value spirit:format="bool" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.IMEM_EN">true</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="std_ulogic_vector(31 downto 0)">
         <spirit:name>IMEM_BASE</spirit:name>
@@ -3373,7 +3373,7 @@
       <spirit:modelParameter spirit:dataType="boolean">
         <spirit:name>DMEM_EN</spirit:name>
         <spirit:displayName>Dmem En</spirit:displayName>
-        <spirit:value spirit:format="bool" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DMEM_EN">false</spirit:value>
+        <spirit:value spirit:format="bool" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DMEM_EN">true</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="std_ulogic_vector(31 downto 0)">
         <spirit:name>DMEM_BASE</spirit:name>
@@ -3390,7 +3390,7 @@
       <spirit:modelParameter spirit:dataType="integer">
         <spirit:name>DMEM_SIZE</spirit:name>
         <spirit:displayName>Dmem Size</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DMEM_SIZE" spirit:minimum="0" spirit:rangeType="long">8192</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.DMEM_SIZE" spirit:minimum="0" spirit:rangeType="long">16384</spirit:value>
         <spirit:vendorExtensions>
           <xilinx:parameterInfo>
             <xilinx:enablement>
@@ -4808,7 +4808,7 @@
     <spirit:parameter>
       <spirit:name>IMEM_EN</spirit:name>
       <spirit:displayName>Enable internal IMEM</spirit:displayName>
-      <spirit:value spirit:format="bool" spirit:resolve="user" spirit:id="PARAM_VALUE.IMEM_EN">false</spirit:value>
+      <spirit:value spirit:format="bool" spirit:resolve="user" spirit:id="PARAM_VALUE.IMEM_EN">true</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>IMEM_BASE</spirit:name>
@@ -4817,7 +4817,7 @@
       <spirit:vendorExtensions>
         <xilinx:parameterInfo>
           <xilinx:enablement>
-            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.IMEM_BASE">false</xilinx:isEnabled>
+            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.IMEM_BASE">true</xilinx:isEnabled>
           </xilinx:enablement>
         </xilinx:parameterInfo>
       </spirit:vendorExtensions>
@@ -4829,7 +4829,7 @@
       <spirit:vendorExtensions>
         <xilinx:parameterInfo>
           <xilinx:enablement>
-            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.IMEM_SIZE">false</xilinx:isEnabled>
+            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.IMEM_SIZE">true</xilinx:isEnabled>
           </xilinx:enablement>
         </xilinx:parameterInfo>
       </spirit:vendorExtensions>
@@ -4841,7 +4841,7 @@
       <spirit:vendorExtensions>
         <xilinx:parameterInfo>
           <xilinx:enablement>
-            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.IMEM_OUTREG_EN">false</xilinx:isEnabled>
+            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.IMEM_OUTREG_EN">true</xilinx:isEnabled>
           </xilinx:enablement>
         </xilinx:parameterInfo>
       </spirit:vendorExtensions>
@@ -4849,7 +4849,7 @@
     <spirit:parameter>
       <spirit:name>DMEM_EN</spirit:name>
       <spirit:displayName>Enable internal DMEM</spirit:displayName>
-      <spirit:value spirit:format="bool" spirit:resolve="user" spirit:id="PARAM_VALUE.DMEM_EN">false</spirit:value>
+      <spirit:value spirit:format="bool" spirit:resolve="user" spirit:id="PARAM_VALUE.DMEM_EN">true</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>DMEM_BASE</spirit:name>
@@ -4858,7 +4858,7 @@
       <spirit:vendorExtensions>
         <xilinx:parameterInfo>
           <xilinx:enablement>
-            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.DMEM_BASE">false</xilinx:isEnabled>
+            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.DMEM_BASE">true</xilinx:isEnabled>
           </xilinx:enablement>
         </xilinx:parameterInfo>
       </spirit:vendorExtensions>
@@ -4866,11 +4866,11 @@
     <spirit:parameter>
       <spirit:name>DMEM_SIZE</spirit:name>
       <spirit:displayName>DMEM size (bytes)</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DMEM_SIZE" spirit:minimum="0" spirit:rangeType="long">8192</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.DMEM_SIZE" spirit:minimum="0" spirit:rangeType="long">16384</spirit:value>
       <spirit:vendorExtensions>
         <xilinx:parameterInfo>
           <xilinx:enablement>
-            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.DMEM_SIZE">false</xilinx:isEnabled>
+            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.DMEM_SIZE">true</xilinx:isEnabled>
           </xilinx:enablement>
         </xilinx:parameterInfo>
       </spirit:vendorExtensions>
@@ -4882,7 +4882,7 @@
       <spirit:vendorExtensions>
         <xilinx:parameterInfo>
           <xilinx:enablement>
-            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.DMEM_OUTREG_EN">false</xilinx:isEnabled>
+            <xilinx:isEnabled xilinx:resolve="generated" xilinx:id="PARAM_ENABLEMENT.DMEM_OUTREG_EN">true</xilinx:isEnabled>
           </xilinx:enablement>
         </xilinx:parameterInfo>
       </spirit:vendorExtensions>
@@ -5369,6 +5369,9 @@
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.CLK.FREQ_TOLERANCE_HZ" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.CLK.PHASE" xilinx:valueSource="ip_propagated" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.RESETN.POLARITY" xilinx:valuePermission="bd_and_user"/>
+        <xilinx:configElementInfo xilinx:referenceId="PARAM_VALUE.DMEM_EN" xilinx:valueSource="user"/>
+        <xilinx:configElementInfo xilinx:referenceId="PARAM_VALUE.DMEM_SIZE" xilinx:valueSource="user"/>
+        <xilinx:configElementInfo xilinx:referenceId="PARAM_VALUE.IMEM_EN" xilinx:valueSource="user"/>
         <xilinx:configElementInfo xilinx:referenceId="PARAM_VALUE.IO_GPIO_EN" xilinx:valueSource="user"/>
         <xilinx:configElementInfo xilinx:referenceId="PARAM_VALUE.IO_GPIO_IN_NUM" xilinx:valueSource="user"/>
         <xilinx:configElementInfo xilinx:referenceId="PARAM_VALUE.IO_GPIO_OUT_NUM" xilinx:valueSource="user"/>

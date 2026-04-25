@@ -118,7 +118,7 @@
         </spirit:parameter>
         <spirit:parameter>
           <spirit:name>POLARITY</spirit:name>
-          <spirit:value spirit:resolve="generated" spirit:id="BUSIFPARAM_VALUE.EXT_RESET.POLARITY">ACTIVE_HIGH</spirit:value>
+          <spirit:value spirit:resolve="generated" spirit:id="BUSIFPARAM_VALUE.EXT_RESET.POLARITY">ACTIVE_LOW</spirit:value>
           <spirit:vendorExtensions>
             <xilinx:parameterInfo>
               <xilinx:parameterUsage>none</xilinx:parameterUsage>
@@ -395,7 +395,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:3f837698</spirit:value>
+            <spirit:value>9:1b7c995a</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -409,11 +409,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Apr 20 23:47:04 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 03:46:47 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:3f837698</spirit:value>
+            <spirit:value>9:1b7c995a</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -424,7 +424,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:3f837698</spirit:value>
+            <spirit:value>9:1b7c995a</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -440,11 +440,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Apr 20 23:43:31 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 03:46:47 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:eee68b26</spirit:value>
+            <spirit:value>9:67acd0f3</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -460,11 +460,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Apr 20 23:47:04 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 03:46:47 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:eee68b26</spirit:value>
+            <spirit:value>9:67acd0f3</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -480,11 +480,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Apr 20 23:43:31 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 03:46:47 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:3f837698</spirit:value>
+            <spirit:value>9:1b7c995a</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -500,11 +500,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Mon Apr 20 23:47:04 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 03:46:47 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:3f837698</spirit:value>
+            <spirit:value>9:1b7c995a</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -699,7 +699,7 @@
       <spirit:modelParameter spirit:dataType="std_logic">
         <spirit:name>C_EXT_RESET_HIGH</spirit:name>
         <spirit:displayName>Ext Reset High</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_EXT_RESET_HIGH">1</spirit:value>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.C_EXT_RESET_HIGH">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="std_logic">
         <spirit:name>C_AUX_RESET_HIGH</spirit:name>
@@ -809,7 +809,7 @@
     <spirit:parameter>
       <spirit:name>C_EXT_RESET_HIGH</spirit:name>
       <spirit:displayName>Ext Reset High</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.C_EXT_RESET_HIGH" spirit:order="1300" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">1</spirit:value>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.C_EXT_RESET_HIGH" spirit:order="1300" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>C_AUX_RST_WIDTH</spirit:name>

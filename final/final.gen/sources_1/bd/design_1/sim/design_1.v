@@ -2,8 +2,8 @@
 //Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 //--------------------------------------------------------------------------------
 //Tool Version: Vivado v.2025.1 (win64) Build 6140274 Thu May 22 00:12:29 MDT 2025
-//Date        : Mon Apr 20 19:52:46 2026
-//Host        : mobile running 64-bit major release  (build 9200)
+//Date        : Wed Apr 22 23:46:46 2026
+//Host        : ece-d4000-wshak running 64-bit major release  (build 9200)
 //Command     : generate_target design_1.bd
 //Design      : design_1
 //Purpose     : IP block netlist
@@ -21,7 +21,7 @@ module design_1
   (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 CLK.CLK_100MHZ CLK" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME CLK.CLK_100MHZ, CLK_DOMAIN design_1_clk_100MHz, FREQ_HZ 100000000, FREQ_TOLERANCE_HZ 0, INSERT_VIP 0, PHASE 0.0" *) input clk_100MHz;
   input [7:0]gpio_i_0;
   (* X_INTERFACE_INFO = "xilinx.com:signal:data:1.0 DATA.GPIO_O_0 DATA" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME DATA.GPIO_O_0, LAYERED_METADATA undef" *) output [7:0]gpio_o_0;
-  (* X_INTERFACE_INFO = "xilinx.com:signal:reset:1.0 RST.RESET_RTL_0 RST" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME RST.RESET_RTL_0, INSERT_VIP 0, POLARITY ACTIVE_HIGH" *) input reset_rtl_0;
+  (* X_INTERFACE_INFO = "xilinx.com:signal:reset:1.0 RST.RESET_RTL_0 RST" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME RST.RESET_RTL_0, INSERT_VIP 0, POLARITY ACTIVE_LOW" *) input reset_rtl_0;
   input uart0_rxd_i_0;
   (* X_INTERFACE_INFO = "xilinx.com:signal:data:1.0 DATA.UART0_TXD_O_0 DATA" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME DATA.UART0_TXD_O_0, LAYERED_METADATA undef" *) output uart0_txd_o_0;
 
@@ -39,7 +39,7 @@ module design_1
        (.clk_in1(clk_100MHz),
         .clk_out1(clk_wiz_0_clk_out1),
         .locked(clk_wiz_0_locked),
-        .reset(reset_rtl_0));
+        .resetn(reset_rtl_0));
   design_1_neorv32_vivado_ip_0_2 neorv32_vivado_ip_0
        (.clk(clk_wiz_0_clk_out1),
         .gpio_i(gpio_i_0),

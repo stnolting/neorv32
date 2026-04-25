@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Product Version: Vivado v2025.1 (64-bit)                                     -->
+<!--                                                                              -->
+<!-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.                        -->
+<!-- Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.        -->
+
+<hwsession version="1" minor="2">
+  <device name="xc7s50_0" gui_info="dashboard1=dashboard_3[xc7s50_0/XADC=XADC_PLOT_1;],dashboard2=dashboard_1[xc7s50_0/XADC=XADC_PLOT_1;]"/>
+  <ObjectList object_type="hw_device" gui_info="">
+    <Object name="xc7s50_0" gui_info="">
+      <Properties Property="FULL_PROBES.FILE" value=""/>
+      <Properties Property="PROBES.FILE" value=""/>
+      <Properties Property="PROGRAM.HW_BITSTREAM" value="$_project_name_.runs/impl_1/design_1_wrapper.bit"/>
+      <Properties Property="SLR.COUNT" value="1"/>
+    </Object>
+  </ObjectList>
+  <ObjectList object_type="hw_sysmon" gui_info="">
+    <Object name="XADC" gui_info="dashboard_2=[TEMPERATURE=-65281;SCAN_RATE=1000;TRACK_TIME=1;],dashboard_3=[TEMPERATURE=-65281;SCAN_RATE=1000;TRACK_TIME=1;],dashboard_1=[TEMPERATURE=-65281;SCAN_RATE=1000;TRACK_TIME=1;]"/>
+  </ObjectList>
+  <probeset name="hw project" active="false"/>
+</hwsession>
