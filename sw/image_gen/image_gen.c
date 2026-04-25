@@ -201,6 +201,7 @@ int main(int argc, char *argv[]) {
   unsigned int text_size = 0;
   unsigned int rodata_size = 0;
   unsigned int data_size = 0;
+  uint32_t text_vma = 0, rodata_vma = 0, data_vma = 0;
 
   // scan section headers
   for (i = 0; i < elf.e_shnum; i++) {
@@ -208,36 +209,109 @@ int main(int argc, char *argv[]) {
     if (strcmp(section_name, ".text") == 0) {
       text = read_section(input, &shdrs[i]);
       text_size = (unsigned int)shdrs[i].sh_size;
+      text_vma  = (uint32_t)shdrs[i].sh_addr;
     }
     if (strcmp(section_name, ".rodata") == 0) {
       rodata = read_section(input, &shdrs[i]);
       rodata_size = (unsigned int)shdrs[i].sh_size;
+      rodata_vma  = (uint32_t)shdrs[i].sh_addr;
     }
     if (strcmp(section_name, ".data") == 0) {
       data = read_section(input, &shdrs[i]);
       data_size = (unsigned int)shdrs[i].sh_size;
+      data_vma  = (uint32_t)shdrs[i].sh_addr;
+    }
+  }
+
+  // ****************************************
+  // parse program headers to translate each section's VMA -> LMA.
+  //
+  // The linker may insert alignment padding between sections (e.g. a 4-byte
+  // gap between .text and .rodata when .rodata requires 8-byte alignment).
+  // Concatenating sections back-to-back by size drops those gaps and shifts
+  // every byte after the first gap backward, quietly corrupting .rodata
+  // loads and crt0's .data init. Lay sections out at their LMAs and
+  // zero-fill gaps instead.
+  //
+  // For ROM-resident sections (.text, .rodata) LMA == VMA. For .data the
+  // linker script uses `AT > rom`, so VMA is in RAM and LMA lives in ROM;
+  // only a program-header walk recovers the correct LMA.
+  // ****************************************
+
+  Elf32_Phdr *phdrs = NULL;
+  if (elf.e_phnum > 0) {
+    phdrs = malloc((size_t)elf.e_phentsize * elf.e_phnum);
+    if (!phdrs) {
+      printf("[ERROR] malloc failed!\n");
+      return -1;
+    }
+    fseek(input, elf.e_phoff, SEEK_SET);
+    if (fread(phdrs, elf.e_phentsize, elf.e_phnum, input) <= 0) {
+      printf("[ERROR] Input file read error (%s)!\n", input_file);
+      return -2;
     }
   }
 
   fclose(input);
+
+  // Resolve each section's LMA by finding the PT_LOAD segment that covers its VMA.
+  // Default to VMA (LMA == VMA) if no PT_LOAD matches, which is the common case
+  // for ROM-resident sections.
+  uint32_t text_lma = text_vma, rodata_lma = rodata_vma, data_lma = data_vma;
+  for (i = 0; i < elf.e_phnum; i++) {
+    if (phdrs[i].p_type != PT_LOAD) continue;
+    uint32_t vlo = (uint32_t)phdrs[i].p_vaddr;
+    uint32_t vhi = vlo + (uint32_t)phdrs[i].p_memsz;
+    uint32_t plo = (uint32_t)phdrs[i].p_paddr;
+    if (text_size   && text_vma   >= vlo && text_vma   <  vhi) text_lma   = plo + (text_vma   - vlo);
+    if (rodata_size && rodata_vma >= vlo && rodata_vma <  vhi) rodata_lma = plo + (rodata_vma - vlo);
+    if (data_size   && data_vma   >= vlo && data_vma   <  vhi) data_lma   = plo + (data_vma   - vlo);
+  }
 
   // ****************************************
   // generate raw image
   // ****************************************
 
   // debug
-//printf(".text:   %d bytes\n", text_size);
-//printf(".rodata: %d bytes\n", rodata_size);
-//printf(".data:   %d bytes\n", data_size);
+//printf(".text:   %u bytes @ LMA 0x%08x\n", text_size,   text_lma);
+//printf(".rodata: %u bytes @ LMA 0x%08x\n", rodata_size, rodata_lma);
+//printf(".data:   %u bytes @ LMA 0x%08x\n", data_size,   data_lma);
 
-  // final image size
-  raw_exe_size = text_size + rodata_size + data_size;
+  // rom_base = minimum LMA across present sections (image byte 0 <-> rom_base)
+  uint32_t rom_base = 0xFFFFFFFFU;
+  if (text_size   && text_lma   < rom_base) rom_base = text_lma;
+  if (rodata_size && rodata_lma < rom_base) rom_base = rodata_lma;
+  if (data_size   && data_lma   < rom_base) rom_base = data_lma;
+  if (rom_base == 0xFFFFFFFFU) rom_base = 0;
+
+  uint32_t text_off   = text_size   ? (text_lma   - rom_base) : 0;
+  uint32_t rodata_off = rodata_size ? (rodata_lma - rom_base) : 0;
+  uint32_t data_off   = data_size   ? (data_lma   - rom_base) : 0;
+
+  // image size spans the highest section end relative to rom_base
+  uint32_t img_end = 0;
+  if (text_size   && text_off   + text_size   > img_end) img_end = text_off   + text_size;
+  if (rodata_size && rodata_off + rodata_size > img_end) img_end = rodata_off + rodata_size;
+  if (data_size   && data_off   + data_size   > img_end) img_end = data_off   + data_size;
+  raw_exe_size = (unsigned int)img_end;
+
   if (raw_exe_size == 0) {// input file empty?
     printf("[ERROR] Image is empty!\n");
+    free(phdrs);
     return -2;
   }
   if ((raw_exe_size % 4) != 0) {
     printf("[WARNING] Image size is not a multiple of 4 bytes!\n");
+  }
+
+  // report any alignment gap (zero-filled) so silent regressions are visible
+  if (text_size && rodata_size && rodata_off > text_off + text_size) {
+    printf("[INFO] %u-byte LMA gap before .rodata (zero-filled)\n",
+           (unsigned)(rodata_off - (text_off + text_size)));
+  }
+  if (rodata_size && data_size && data_off > rodata_off + rodata_size) {
+    printf("[INFO] %u-byte LMA gap before .data (zero-filled)\n",
+           (unsigned)(data_off - (rodata_off + rodata_size)));
   }
 
   // make sure memory array is a power of two
@@ -246,16 +320,18 @@ int main(int argc, char *argv[]) {
     ext_exe_size *= 2;
   }
 
-  // construct raw image
-  uint8_t *raw_image = malloc(raw_exe_size);
+  // construct raw image (zero-fill ensures inter-section gaps are defined)
+  uint8_t *raw_image = calloc(raw_exe_size, 1);
   uint32_t *raw_image32 = (uint32_t *)raw_image;
   if (!raw_image) {
-    printf("[ERROR] malloc failed!\n");
+    printf("[ERROR] calloc failed!\n");
+    free(phdrs);
     return -1;
   }
-  memcpy(raw_image,                           text,   text_size);   // start with .text
-  memcpy(raw_image + text_size,               rodata, rodata_size); // append .rodata
-  memcpy(raw_image + text_size + rodata_size, data,   data_size);   // append .data
+  if (text)   memcpy(raw_image + text_off,   text,   text_size);
+  if (rodata) memcpy(raw_image + rodata_off, rodata, rodata_size);
+  if (data)   memcpy(raw_image + data_off,   data,   data_size);
+  free(phdrs);
 
   // --------------------------------------------------------------------------
   // executable for bootloader upload (including header)
