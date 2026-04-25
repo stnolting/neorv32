@@ -262,7 +262,7 @@ begin
 
   -- comparators --
   cmp_zero <= '1' when (cnt = x"0000") else '0';
-  cmp_top  <= '1' when (cnt = top)     else '0';
+  cmp_top  <= '0' when (unsigned(cnt) < unsigned(top)) else '1';
   wrap_o   <= cmp_top;
 
   -- Output / Duty Cycle Control ------------------------------------------------------------
