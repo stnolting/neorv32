@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 25.04.2026 | 1.12.9.9 | `C` ISA extension: decompressor cleanups and logic optimizations (dead code elimination) | [#1537](https://github.com/stnolting/neorv32/pull/1537) |
 | 24.04.2026 | 1.12.9.8 | minor rtl (corner case) fixes and logic optimizations | [#1534](https://github.com/stnolting/neorv32/pull/1534) |
 | 24.04.2026 | 1.12.9.7 | UART: reset RX overflow flag on CTRL read; minor code cleanups | [#1533](https://github.com/stnolting/neorv32/pull/1533) |
 | 23.04.2026 | 1.12.9.6 | minor rtl fixes, edits and cleanups | [#1531](https://github.com/stnolting/neorv32/pull/1531) |
