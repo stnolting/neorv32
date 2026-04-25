@@ -183,9 +183,12 @@ begin
   if (ARCH_SEL = 3) generate
 
     -- write buffer --
-    rf_write: process(clk_i)
+    rf_write: process(rstn_i, clk_i)
     begin
-      if rising_edge(clk_i) then
+      if (rstn_i = '0') then
+        wdata  <= (others => '0');
+        onehot <= (others => '0');
+      elsif rising_edge(clk_i) then
         -- input register --
         if (ctrl_i.rf_wb_en = '1') then
           wdata <= rd_i;
