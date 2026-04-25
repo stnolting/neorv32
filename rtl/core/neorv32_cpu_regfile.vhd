@@ -49,7 +49,7 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   signal rf_we  : std_ulogic;
   signal addr   : std_ulogic_vector(4 downto 0);
   signal wdata  : std_ulogic_vector(DWIDTH-1 downto 0);
-  signal onehot : std_ulogic_vector((2**AWIDTH)-1 downto 0);
+  signal onehot : std_ulogic_vector((2**AWIDTH)-1 downto 1);
 
   -- memory core --
   type   regfile_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
@@ -140,7 +140,7 @@ begin
 
     -- write select --
     onehot_gen:
-    for i in 0 to (2**AWIDTH)-1 generate
+    for i in 1 to (2**AWIDTH)-1 generate
       onehot(i) <= ctrl_i.rf_wb_en when (unsigned(ctrl_i.rf_rd(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
     end generate;
 
@@ -192,7 +192,7 @@ begin
         end if;
         -- one-hot decoder --
         onehot <= (others => '0');
-        for i in 0 to (2**AWIDTH)-1 loop
+        for i in 1 to (2**AWIDTH)-1 loop
           if (unsigned(ctrl_i.rf_rd(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) then
             onehot(i) <= ctrl_i.rf_wb_en;
           end if;
