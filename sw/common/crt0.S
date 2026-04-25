@@ -131,7 +131,9 @@ __crt0_bss_clear_end:
 
 // ************************************************************************************************
 // Call constructors (not supported for bootloader).
-// [WARNING] Constructors do not preserve any registers!
+// [NOTE] Constructor/destructor calls may clobber caller-saved registers
+// (t0-t6, a0-a7, ra). Loop counters use s0/s1 (callee-saved), which are
+// preserved by the called functions according to the RISC-V calling convention.
 // ************************************************************************************************
 #ifndef MAKE_BOOTLOADER
 __crt0_constructors_primary:
@@ -139,12 +141,13 @@ __crt0_constructors_primary:
   la    x9, __init_array_end
 
 __crt0_constructors:
-  bge   x8, x9, __crt0_constructors_end
+  bge   x8, x9, __crt0_constructors_end  // skip if empty
+
+__crt0_constructors_loop:
   lw    x1, 0(x8)
   jalr  x1, 0(x1) // call constructor function; put return address in ra
   addi  x8, x8, 4
-  j     __crt0_constructors
-
+  blt   x8, x9, __crt0_constructors_loop
 __crt0_constructors_end:
 #endif
 
@@ -170,7 +173,9 @@ __crt0_main_exit:         // main's "return" and "exit" will arrive here
 
 // ************************************************************************************************
 // Call destructors (not supported for bootloader).
-// [WARNING] Destructors do not preserve any registers!
+// [NOTE] Constructor/destructor calls may clobber caller-saved registers
+// (t0-t6, a0-a7, ra). Loop counters use s0/s1 (callee-saved), which are
+// preserved by the called functions according to the RISC-V calling convention.
 // ************************************************************************************************
 #ifndef MAKE_BOOTLOADER
 __crt0_destructors_primary:
@@ -182,11 +187,12 @@ __crt0_destructors_primary:
 
 __crt0_destructors:
   bge   x8, x9, __crt0_destructors_end
+
+__crt0_destructors_loop:
   lw    x1, 0(x8)
   jalr  x1, 0(x1)                  // call destructor function; put return address in ra
   addi  x8, x8, 4
-  j     __crt0_destructors
-
+  blt   x8, x9, __crt0_destructors_loop
 __crt0_destructors_end:
 #endif
 
