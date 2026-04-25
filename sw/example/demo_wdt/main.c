@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -9,7 +9,6 @@
 
 /**********************************************************************//**
  * @file demo_wdt/main.c
- * @author Stephan Nolting
  * @brief Watchdog demo program.
  **************************************************************************/
 #include <neorv32.h>
@@ -22,18 +21,8 @@
 /** UART BAUD rate */
 #define BAUD_RATE 19200
 /** WDT timeout (until system reset) in seconds */
-#define WDT_TIMEOUT_S 8
+#define WDT_TIMEOUT_SEC 8
 /**@}*/
-
-
-/**********************************************************************//**
- * Simple busy-wait helper.
- *
- * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
- **************************************************************************/
-void delay_ms(uint32_t time_ms) {
-  neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), time_ms);
-}
 
 
 /**********************************************************************//**
@@ -87,7 +76,7 @@ int main() {
 
 
   // compute WDT timeout value; the WDT counter increments at f_wdt = f_main / 4096
-  uint32_t timeout = WDT_TIMEOUT_S * (neorv32_sysinfo_get_clk() / 4096);
+  uint32_t timeout = WDT_TIMEOUT_SEC * (neorv32_sysinfo_get_clk() / 4096);
   if (timeout & 0xFF000000U) { // check if timeout value fits into 24-bit
     neorv32_uart0_puts("Timeout value does not fit into 24-bit!\n");
     return -1;
@@ -102,7 +91,7 @@ int main() {
   neorv32_uart0_puts("Resetting WDT 5 times...\n");
   int i;
   for (i=0; i<5; i++) {
-    delay_ms(750);
+    neorv32_aux_delay_ms(neorv32_sysinfo_get_clk(), 750);
     neorv32_wdt_feed(WDT_PASSWORD); // reset internal counter using the access password
     neorv32_uart0_puts("WDT reset.\n");
   }
