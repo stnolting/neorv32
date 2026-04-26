@@ -160,7 +160,13 @@ begin
     ctrl_nxt.bus_err <= ctrl.bus_err;
     ctrl_nxt.pnd_req <= ctrl.pnd_req or host_req_i.stb;
     ctrl_nxt.pnd_syn <= ctrl.pnd_syn or host_req_i.fence;
-    ctrl_nxt.pnd_bp  <= '0';
+    -- pnd_bp is sticky during the write-back detour from S_CHECK -> S_WRITE_*
+    -- -> S_BYPASS so the bypass survives the flush, but we forcibly clear it
+    -- whenever the FSM is back in S_IDLE so any error/early-terminate path
+    -- (e.g. S_WRITE_DONE bus_err -> S_IDLE) cannot leak a stale '1' into the
+    -- next request. S_IDLE itself sets pnd_bp <= '1' explicitly when the new
+    -- request is uncached/AMO, so this default is safe there too.
+    ctrl_nxt.pnd_bp  <= '0' when (ctrl.state = S_IDLE) else ctrl.pnd_bp;
     ctrl_nxt.bp_req  <= '0';
     ctrl_nxt.hit     <= '0';
     ctrl_nxt.cln     <= '0';
@@ -217,8 +223,25 @@ begin
         ctrl_nxt.pnd_req <= '0'; -- access request accepted
         ctrl_nxt.bp_req  <= '1'; -- in case we are doing a bypass request (set STB for one cycle)
         --
-        if (ctrl.pnd_bp = '1') then -- cache bypass
-          ctrl_nxt.state <= S_BYPASS;
+        if (ctrl.pnd_bp = '1') then -- cache bypass (uncached or atomic memory operation)
+          -- Coherence with write-back D-cache: an AMO that bypasses the cache
+          -- must NOT see stale memory if the same line is dirty in this cache,
+          -- and must NOT leave a stale (clean) copy behind after the AMO writes
+          -- memory. Three cases:
+          --   * cache HIT, dirty       -> write-back the line first, invalidate,
+          --                               then bypass (S_WRITE_START -> S_WRITE_DONE
+          --                               -> S_BYPASS, see S_WRITE_DONE handling)
+          --   * cache HIT, clean       -> just invalidate inline, then bypass
+          --   * cache MISS             -> direct bypass (no cache state to fix)
+          if (cache_i.hit = '1') and (cache_i.drt = '1') and (READ_ONLY = false) then
+            ctrl_nxt.state <= S_WRITE_START; -- pnd_bp stays via the sticky default
+          else
+            if (cache_i.hit = '1') and (READ_ONLY = false) then
+              cache_o.set <= '1'; -- invalidate the cached copy so post-AMO reads refill from memory
+              cache_o.vld <= '0';
+            end if;
+            ctrl_nxt.state <= S_BYPASS; -- pnd_bp will be cleared in S_BYPASS on ACK
+          end if;
         elsif (cache_i.hit = '1') then -- cache HIT: read/write from/to cache
           if (host_req_i.rw = '1') and (READ_ONLY = false) then -- modify cache
             cache_o.we  <= host_req_i.ben;
@@ -238,7 +261,8 @@ begin
         bus_req_o.stb <= ctrl.bp_req; -- one-shot
         host_rsp_o    <= bus_rsp_i;
         if (bus_rsp_i.ack = '1') then
-          ctrl_nxt.state <= S_IDLE;
+          ctrl_nxt.pnd_bp <= '0'; -- clear sticky bypass flag now that the bypass completed
+          ctrl_nxt.state  <= S_IDLE;
         end if;
 
       -- ==========================================================================
@@ -467,12 +491,18 @@ begin
           ctrl_nxt.cln <= '1'; -- force cache clean to skip status flag read latency (for S_CHECK only)
           if (ctrl.sync = '1') then -- block upload caused by cache synchronization
             ctrl_nxt.state <= S_SYNC_NEXT;
-          elsif (ctrl.bus_err = '1') then -- block upload caused by cache miss: BUS ERROR during upload
-            cache_o.set    <= '1'; -- update cache block status
-            cache_o.vld    <= '0'; -- invalidate cache block
-            host_rsp_o.err <= '1';
-            host_rsp_o.ack <= '1'; -- terminate current request and return bus error
-            ctrl_nxt.state <= S_IDLE;
+          elsif (ctrl.bus_err = '1') then -- block upload caused by cache miss or AMO pre-flush: BUS ERROR during upload
+            cache_o.set     <= '1'; -- update cache block status
+            cache_o.vld     <= '0'; -- invalidate cache block
+            host_rsp_o.err  <= '1';
+            host_rsp_o.ack  <= '1'; -- terminate current request and return bus error
+            ctrl_nxt.pnd_bp <= '0'; -- if this writeback was an AMO pre-flush, drop the now-aborted bypass too
+            ctrl_nxt.state  <= S_IDLE;
+          elsif (ctrl.pnd_bp = '1') then -- write-back was for an AMO/uncached pre-flush: invalidate then bypass
+            cache_o.set     <= '1';
+            cache_o.vld     <= '0'; -- invalidate so subsequent cache hits don't return pre-AMO data
+            ctrl_nxt.bp_req <= '1'; -- re-arm one-shot STB for the now-pending bypass
+            ctrl_nxt.state  <= S_BYPASS;
           else -- block upload caused by cache miss: block upload successful
             cache_o.set    <= '1'; -- update cache block status
             cache_o.drt    <= '0'; -- cache block is clean now
