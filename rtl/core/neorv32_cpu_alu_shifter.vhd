@@ -90,8 +90,8 @@ begin
           serial.busy <= '1';
         elsif (serial.done = '1') or (ctrl_i.cpu_trap = '1') then -- abort on trap
           serial.busy <= '0';
-        serial.oe <= serial.busy and serial.done;
         end if;
+        serial.oe <= serial.busy and serial.done;
         -- shift register --
         if (valid_cmd = '1') then -- trigger new operation
           serial.cnt  <= shamt_i;

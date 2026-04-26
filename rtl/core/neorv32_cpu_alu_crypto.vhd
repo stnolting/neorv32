@@ -268,7 +268,7 @@ begin
         -- wait for operation trigger --
         when S_IDLE =>
           if (cmd_valid = '1') then -- trigger new operation
-            if (cmd(cmd_aesenc_c) = '1') or (cmd(cmd_aesdec_c) = '1') or (cmd(cmd_sm3_c) = '1') or (cmd(cmd_sm4_c) = '1') then
+            if (cmd(cmd_aesenc_c) = '1') or (cmd(cmd_aesdec_c) = '1') or (cmd(cmd_sm4_c) = '1') then
               state <= S_BUSY;
             else
               done  <= '1';

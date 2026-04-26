@@ -96,7 +96,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   start  <= start_i when (inst_i(6 downto 0) = xtea_r_type_c) or (inst_i(6 downto 0) = xtea_i_type_c) else '0'; -- valid instruction?
   itype  <= '0' when (inst_i(6 downto 0) = xtea_r_type_c) else '1'; -- XTEA r-type or i-type?
-  funct3 <= inst_i(14 downto 12); -- i-type/r-type 2-bit function select
+  funct3 <= inst_i(14 downto 12); -- type function select
   imm12  <= inst_i(31 downto 20); -- i-type 12-bit immediate
 
 

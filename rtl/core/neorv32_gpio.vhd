@@ -109,13 +109,11 @@ begin
         end if;
       end if;
     end process dir_write;
-    port_dir_o <= port_dir;
   end generate;
 
   dir_conf_disabled:
   if not GPIO_DIR generate
-    port_dir   <= (others => '0');
-    port_dir_o <= (others => '0');
+    port_dir <= (others => '0');
   end generate;
 
   -- input sampling --
@@ -130,11 +128,13 @@ begin
     end if;
   end process input_stage;
 
-  -- direct output --
+  -- output --
   output_stage: process(port_out)
   begin
     port_out_o <= (others => '0');
     port_out_o(GPIO_NUM-1 downto 0) <= port_out;
+    port_dir_o <= (others => '0');
+    port_dir_o(GPIO_NUM-1 downto 0) <= port_dir;
   end process output_stage;
 
 

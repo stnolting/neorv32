@@ -194,12 +194,12 @@ begin
   cmd(op_andn_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "111") else '0'; -- ANDN
   cmd(op_orn_c)   <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "110") else '0'; -- ORN
   cmd(op_xnor_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0100000") and (ctrl_i.ir_funct3 = "100") else '0'; -- XORN
-  cmd(op_max_c)   <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000101") and (ctrl_i.ir_funct3(2) = '1') else '0'; -- MAX[U], MIN[U]
-  cmd(op_zexth_c) <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12 = "000010000000") and (ctrl_i.ir_funct3 = "100") else '0'; -- ZEXT.H
-  cmd(op_orcb_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "001010000111") and (ctrl_i.ir_funct3 = "101") else '0'; -- ORC.B
-  cmd(op_cz_c)    <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000000") and (ctrl_i.ir_funct3 = "001") else '0'; -- CLZ, CTZ
-  cmd(op_cpop_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011000000010") and (ctrl_i.ir_funct3 = "001") else '0'; -- CPOP
-  cmd(op_sext_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000010") and (ctrl_i.ir_funct3 = "001") else '0';
+  cmd(op_max_c)   <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000101") and (ctrl_i.ir_funct3(2) = '1') else '0'; -- MAX[U], MIN[U]
+  cmd(op_zexth_c) <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12 = "000010000000") and (ctrl_i.ir_funct3 = "100") else '0'; -- ZEXT.H
+  cmd(op_orcb_c)  <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "001010000111") and (ctrl_i.ir_funct3 = "101") else '0'; -- ORC.B
+  cmd(op_cz_c)    <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000000") and (ctrl_i.ir_funct3 = "001") else '0'; -- CLZ, CTZ
+  cmd(op_cpop_c)  <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011000000010") and (ctrl_i.ir_funct3 = "001") else '0'; -- CPOP
+  cmd(op_sext_c)  <= '1' when  ZBB          and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12(11 downto 1) = "01100000010") and (ctrl_i.ir_funct3 = "001") else '0';
   cmd(op_rev8_c)  <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_opcode(5) = '0') and (ctrl_i.ir_funct12 = "011010011000") and (ctrl_i.ir_funct3 = "101") else '0';
   cmd(op_rot_c)   <= '1' when (ZBB or ZBKB) and (ctrl_i.ir_funct12(11 downto 5) = "0110000") and (((ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct3 = "001")) or (ctrl_i.ir_funct3 = "101")) else '0'; -- ROL, ROR[I]
 
@@ -398,7 +398,7 @@ begin
   end process shift_adder;
 
 
-  -- One-Hot Generator ----------------------------------------------------------------------
+  -- One-Hot Encoder ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   shift_one_hot: process(sha_reg)
   begin
@@ -422,7 +422,8 @@ begin
           clmul.cnt <= std_ulogic_vector(to_unsigned(32, clmul.cnt'length));
           clmul.res <= replicate_f('0', 32) & rs1_reg;
         elsif (clmul.run = '1') then -- operation in progress
-          clmul.cnt <= std_ulogic_vector(unsigned(clmul.cnt) - 1);
+          clmul.cnt     <= std_ulogic_vector(unsigned(clmul.cnt) - 1);
+          clmul.res(63) <= '0'; -- always zero
           if (clmul.res(0) = '1') then
             clmul.res(62 downto 31) <= clmul.res(63 downto 32) xor rs2_reg;
           else
@@ -553,27 +554,27 @@ begin
 
   -- Output Select --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  res_out(op_andn_c)  <= res_int(op_andn_c)  when (ZBB or ZBKB) and (cmd(op_andn_c)  = '1') else (others => '0');
-  res_out(op_orn_c)   <= res_int(op_orn_c)   when (ZBB or ZBKB) and (cmd(op_orn_c)   = '1') else (others => '0');
-  res_out(op_xnor_c)  <= res_int(op_xnor_c)  when (ZBB or ZBKB) and (cmd(op_xnor_c)  = '1') else (others => '0');
-  res_out(op_cz_c)    <= res_int(op_cz_c)    when (ZBB or ZBKB) and (cmd(op_cz_c)    = '1') else (others => '0');
-  res_out(op_cpop_c)  <= res_int(op_cpop_c)  when (ZBB or ZBKB) and (cmd(op_cpop_c)  = '1') else (others => '0');
-  res_out(op_max_c)   <= res_int(op_max_c)   when (ZBB or ZBKB) and (cmd(op_max_c)   = '1') else (others => '0');
-  res_out(op_sext_c)  <= res_int(op_sext_c)  when (ZBB or ZBKB) and (cmd(op_sext_c)  = '1') else (others => '0');
-  res_out(op_zexth_c) <= res_int(op_zexth_c) when (ZBB or ZBKB) and (cmd(op_zexth_c) = '1') else (others => '0');
-  res_out(op_rot_c)   <= res_int(op_rot_c)   when (ZBB or ZBKB) and (cmd(op_rot_c)   = '1') else (others => '0');
-  res_out(op_orcb_c)  <= res_int(op_orcb_c)  when (ZBB or ZBKB) and (cmd(op_orcb_c)  = '1') else (others => '0');
-  res_out(op_rev8_c)  <= res_int(op_rev8_c)  when (ZBB or ZBKB) and (cmd(op_rev8_c)  = '1') else (others => '0');
-  res_out(op_shadd_c) <= res_int(op_shadd_c) when ZBA           and (cmd(op_shadd_c) = '1') else (others => '0');
-  res_out(op_bclr_c)  <= res_int(op_bclr_c)  when ZBS           and (cmd(op_bclr_c)  = '1') else (others => '0');
-  res_out(op_bext_c)  <= res_int(op_bext_c)  when ZBS           and (cmd(op_bext_c)  = '1') else (others => '0');
-  res_out(op_binv_c)  <= res_int(op_binv_c)  when ZBS           and (cmd(op_binv_c)  = '1') else (others => '0');
-  res_out(op_bset_c)  <= res_int(op_bset_c)  when ZBS           and (cmd(op_bset_c)  = '1') else (others => '0');
-  res_out(op_pack_c)  <= res_int(op_pack_c)  when ZBKB          and (cmd(op_pack_c)  = '1') else (others => '0');
-  res_out(op_zip_c)   <= res_int(op_zip_c)   when ZBKB          and (cmd(op_zip_c)   = '1') else (others => '0');
-  res_out(op_brev8_c) <= res_int(op_brev8_c) when ZBKB          and (cmd(op_brev8_c) = '1') else (others => '0');
-  res_out(op_clmul_c) <= res_int(op_clmul_c) when ZBKC          and (cmd(op_clmul_c) = '1') else (others => '0');
-  res_out(op_xperm_c) <= res_int(op_xperm_c) when ZBKX          and (cmd(op_xperm_c) = '1') else (others => '0');
+  res_out(op_andn_c)  <= res_int(op_andn_c)  when (cmd(op_andn_c)  = '1') else (others => '0');
+  res_out(op_orn_c)   <= res_int(op_orn_c)   when (cmd(op_orn_c)   = '1') else (others => '0');
+  res_out(op_xnor_c)  <= res_int(op_xnor_c)  when (cmd(op_xnor_c)  = '1') else (others => '0');
+  res_out(op_cz_c)    <= res_int(op_cz_c)    when (cmd(op_cz_c)    = '1') else (others => '0');
+  res_out(op_cpop_c)  <= res_int(op_cpop_c)  when (cmd(op_cpop_c)  = '1') else (others => '0');
+  res_out(op_max_c)   <= res_int(op_max_c)   when (cmd(op_max_c)   = '1') else (others => '0');
+  res_out(op_sext_c)  <= res_int(op_sext_c)  when (cmd(op_sext_c)  = '1') else (others => '0');
+  res_out(op_zexth_c) <= res_int(op_zexth_c) when (cmd(op_zexth_c) = '1') else (others => '0');
+  res_out(op_rot_c)   <= res_int(op_rot_c)   when (cmd(op_rot_c)   = '1') else (others => '0');
+  res_out(op_orcb_c)  <= res_int(op_orcb_c)  when (cmd(op_orcb_c)  = '1') else (others => '0');
+  res_out(op_rev8_c)  <= res_int(op_rev8_c)  when (cmd(op_rev8_c)  = '1') else (others => '0');
+  res_out(op_shadd_c) <= res_int(op_shadd_c) when (cmd(op_shadd_c) = '1') else (others => '0');
+  res_out(op_bclr_c)  <= res_int(op_bclr_c)  when (cmd(op_bclr_c)  = '1') else (others => '0');
+  res_out(op_bext_c)  <= res_int(op_bext_c)  when (cmd(op_bext_c)  = '1') else (others => '0');
+  res_out(op_binv_c)  <= res_int(op_binv_c)  when (cmd(op_binv_c)  = '1') else (others => '0');
+  res_out(op_bset_c)  <= res_int(op_bset_c)  when (cmd(op_bset_c)  = '1') else (others => '0');
+  res_out(op_pack_c)  <= res_int(op_pack_c)  when (cmd(op_pack_c)  = '1') else (others => '0');
+  res_out(op_zip_c)   <= res_int(op_zip_c)   when (cmd(op_zip_c)   = '1') else (others => '0');
+  res_out(op_brev8_c) <= res_int(op_brev8_c) when (cmd(op_brev8_c) = '1') else (others => '0');
+  res_out(op_clmul_c) <= res_int(op_clmul_c) when (cmd(op_clmul_c) = '1') else (others => '0');
+  res_out(op_xperm_c) <= res_int(op_xperm_c) when (cmd(op_xperm_c) = '1') else (others => '0');
 
 
   -- Output Gate ----------------------------------------------------------------------------

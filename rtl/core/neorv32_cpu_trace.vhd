@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -22,12 +22,12 @@ entity neorv32_cpu_trace is
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  ctrl_bus_t; -- main control bus
     -- operands --
-    rs1_rdata_i : std_ulogic_vector(31 downto 0); -- rs1 read data
-    rs2_rdata_i : std_ulogic_vector(31 downto 0); -- rs2 read data
-    rd_wdata_i  : std_ulogic_vector(31 downto 0); -- rd write data
-    mem_ben_i   : std_ulogic_vector(3 downto 0);  -- memory byte-enable
-    mem_addr_i  : std_ulogic_vector(31 downto 0); -- memory address
-    mem_wdata_i : std_ulogic_vector(31 downto 0); -- memory write data
+    rs1_rdata_i : in  std_ulogic_vector(31 downto 0); -- rs1 read data
+    rs2_rdata_i : in  std_ulogic_vector(31 downto 0); -- rs2 read data
+    rd_wdata_i  : in  std_ulogic_vector(31 downto 0); -- rd write data
+    mem_ben_i   : in  std_ulogic_vector(3 downto 0);  -- memory byte-enable
+    mem_addr_i  : in  std_ulogic_vector(31 downto 0); -- memory address
+    mem_wdata_i : in  std_ulogic_vector(31 downto 0); -- memory write data
     -- trace port --
     trace_o     : out trace_port_t -- execution trace port
   );
@@ -68,7 +68,9 @@ begin
       -- delta detector: buffer delta trigger until we are back in EXECUTE stage --
       arbiter.delta <= (arbiter.delta or ctrl_i.cnt_event(cnt_event_ctrlflow_c)) and (not ctrl_i.cnt_event(cnt_event_ir_c));
       -- instruction counter --
-      arbiter.order <= std_ulogic_vector(unsigned(arbiter.order) + unsigned(replicate_f(arbiter.valid, 1)));
+      if (arbiter.valid = '1') then
+        arbiter.order <= std_ulogic_vector(unsigned(arbiter.order) + 1);
+      end if;
     end if;
   end process trace_arbiter;
 
@@ -320,7 +322,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     ("0000001----------000-----0110011", "mul        "), -- M / Zm*
     ("0000001----------001-----0110011", "mulh       "),
     ("0000001----------010-----0110011", "mulhsu     "),
-    ("0000001----------011-----0110011", "mulh       "),
+    ("0000001----------011-----0110011", "mulhu      "),
     ("0000001----------100-----0110011", "div        "),
     ("0000001----------101-----0110011", "divu       "),
     ("0000001----------110-----0110011", "rem        "),
@@ -354,7 +356,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     ("0110000----------101-----0110011", "ror        "),
     ("0110000----------101-----0010011", "rori       "),
     ("011000000100-----001-----0010011", "sext.b     "),
-    ("011000000101-----001-----0010011", "sext.j     "),
+    ("011000000101-----001-----0010011", "sext.h     "),
     ("0010000----------010-----0110011", "sh1add     "),
     ("0010000----------100-----0110011", "sh2add     "),
     ("0010000----------110-----0110011", "sh3add     "),
@@ -603,8 +605,8 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when opcode_auipc_c  => return "x" & integer'image(rd_iv)  & ", 0x" & to_hexstring_f(iu_v);
       when opcode_jal_c    => return "x" & integer'image(rd_iv)  & ", "   & integer'image(ij_iv);
       when opcode_jalr_c   => return "x" & integer'image(rd_iv)  & ", "   & integer'image(ii_iv)  & "(x"  & integer'image(rs1_iv) & ")";
-      when opcode_branch_c => return "x" & integer'image(rs1_iv) & ", x"  & integer'image(rs2_iv) & ", "  & integer'image(is_iv);
-      when opcode_load_c   => return "x" & integer'image(rd_iv)  & ", "   & integer'image(is_iv)  & "(x"  & integer'image(rs1_iv) & ")";
+      when opcode_branch_c => return "x" & integer'image(rs1_iv) & ", x"  & integer'image(rs2_iv) & ", "  & integer'image(ib_iv);
+      when opcode_load_c   => return "x" & integer'image(rd_iv)  & ", "   & integer'image(ii_iv)  & "(x"  & integer'image(rs1_iv) & ")";
       when opcode_store_c  => return "x" & integer'image(rs2_iv) & ", "   & integer'image(is_iv)  & "(x"  & integer'image(rs1_iv) & ")";
       when opcode_amo_c    =>
         if (inst(28 downto 27) = "10") then -- zalrsc LR

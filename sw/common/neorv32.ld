@@ -3,7 +3,7 @@
 /* -------------------------------------------------------------------------------- */
 /* The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              */
 /* Copyright (c) NEORV32 contributors.                                              */
-/* Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  */
+/* Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  */
 /* Licensed under the BSD-3-Clause license, see LICENSE for details.                */
 /* SPDX-License-Identifier: BSD-3-Clause                                            */
 /* ================================================================================ */
@@ -53,8 +53,11 @@ SECTIONS
     *(.text .text* .text.* .gnu.linkonce.t.*)
 
     . = ALIGN(4);
-    PROVIDE_HIDDEN(__init_array_start = .);
+    PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array))
+    PROVIDE_HIDDEN (__preinit_array_end = .);
+
+    PROVIDE_HIDDEN(__init_array_start = .);
     KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
     KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
     PROVIDE_HIDDEN(__init_array_end = .);
@@ -82,6 +85,7 @@ SECTIONS
 
     /* constant data like strings */
     *(.rodata .rodata* .rodata.* .gnu.linkonce.r.*)
+    *(.srodata .srodata.*)
 
     /* finish section on WORD boundary */
     . = ALIGN(4);
@@ -95,10 +99,9 @@ SECTIONS
   .data : ALIGN(4)
   {
     PROVIDE(__data_start = .);
-    __global_pointer = . + 0x800;
+    __global_pointer$ = . + 0x800;
 
     *(.data .data.* .data* .gnu.linkonce.d.*)
-    *(.srodata .srodata.*)
     *(.sdata .sdata.* .gnu.linkonce.s.*)
     *(.tdata .tdata.* .gnu.linkonce.td.*)
 
@@ -117,14 +120,9 @@ SECTIONS
     *(.sbss .sbss* .sbss.* .gnu.linkonce.sb.*)
     *(.tbss .tbss.* .gnu.linkonce.tb.*) *(.tcommon)
     *(.scommon)
-    *(.dynamic)
     *(.dynsbss)
     *(.dynbss)
     *(.bss .bss* .bss.* .gnu.linkonce.b.*)
-
-    PROVIDE_HIDDEN (__preinit_array_start = .);
-    KEEP (*(.preinit_array))
-    PROVIDE_HIDDEN (__preinit_array_end = .);
 
     *(COMMON)
     /* finish section on WORD boundary */
@@ -154,6 +152,7 @@ SECTIONS
   .note.gnu.build-id : { *(.note.gnu.build-id) }
   .hash              : { *(.hash) }
   .gnu.hash          : { *(.gnu.hash) }
+  .dynamic           : { *(.dynamic) }
   .dynsym            : { *(.dynsym) }
   .dynstr            : { *(.dynstr) }
   .gnu.version       : { *(.gnu.version) }
@@ -222,7 +221,7 @@ SECTIONS
 /* Export symbols for neorv32 crt0 start-up code                                                     */
 /* ************************************************************************************************* */
   PROVIDE(__crt0_max_heap            = __neorv32_heap_size);
-  PROVIDE(__crt0_ram_last            = (ORIGIN(ram) + LENGTH(ram)) - 1);
+  PROVIDE(__crt0_stack_top           = ORIGIN(ram) + LENGTH(ram));
   PROVIDE(__crt0_bss_start           = ADDR(.bss));
   PROVIDE(__crt0_bss_end             = ADDR(.bss) + SIZEOF(.bss));
   PROVIDE(__crt0_copy_data_src_begin = LOADADDR(.data));

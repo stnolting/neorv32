@@ -78,11 +78,10 @@ architecture neorv32_cpu_alu_muldiv_rtl of neorv32_cpu_alu_muldiv is
   -- divider core --
   type div_t is record
     start : std_ulogic;
+    divi  : std_ulogic_vector(31 downto 0);
     quot  : std_ulogic_vector(31 downto 0);
     rema  : std_ulogic_vector(31 downto 0);
     sign  : std_ulogic;
-    sub_a : std_ulogic_vector(32 downto 0);
-    sub_s : std_ulogic;
     sub   : std_ulogic_vector(32 downto 0);
     res_u : std_ulogic_vector(31 downto 0);
     res   : std_ulogic_vector(31 downto 0);
@@ -125,7 +124,9 @@ begin
         when S_BUSY => -- processing
         -- ------------------------------------------------------------
           ctrl.cnt <= std_ulogic_vector(unsigned(ctrl.cnt) - 1);
-          if (or_reduce_f(ctrl.cnt) = '0') or (ctrl_i.cpu_trap = '1') then -- abort on trap
+          if (ctrl_i.cpu_trap = '1') then -- abort on trap
+            ctrl.state <= S_IDLE;
+          elsif (or_reduce_f(ctrl.cnt) = '0') then -- processing done
             ctrl.state <= S_DONE;
           end if;
 
@@ -198,7 +199,7 @@ begin
         if (mul.start = '1') then -- start new multiplication
           mul.res(63 downto 32) <= (others => '0');
           mul.res(31 downto 0)  <= rs1_i;
-        elsif (ctrl.state /= S_IDLE) then -- processing steps or sign-finalization step
+        elsif (ctrl.state /= S_IDLE) and (ctrl_i.ir_funct3(2) = '0') then -- MUL processing steps or sign-finalization step
           mul.res(63 downto 31) <= mul.add(32 downto 0);
           mul.res(30 downto 0)  <= mul.res(31 downto 1);
         end if;
@@ -235,13 +236,15 @@ begin
     divider_core: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        div.rema <= (others => '0');
+        div.divi <= (others => '0');
         div.quot <= (others => '0');
+        div.rema <= (others => '0');
         div.sign <= '0';
       elsif rising_edge(clk_i) then
         if (div.start = '1') then -- start new division
-          div.rema <= (others => '0');
+          div.divi <= abs_f(rs2_i, ctrl.rs2_signed);
           div.quot <= abs_f(rs1_i, ctrl.rs1_signed);
+          div.rema <= (others => '0');
           case ctrl_i.ir_funct3(1 downto 0) is -- check for result's sign compensation
             when "00"   => div.sign <= or_reduce_f(rs2_i) and (rs1_i(rs1_i'left) xor rs2_i(rs2_i'left)); -- signed div
             when "10"   => div.sign <= rs1_i(rs1_i'left); -- signed rem
@@ -259,10 +262,7 @@ begin
     end process divider_core;
 
     -- do another subtraction (and shift) --
-    div.sub_a <= '0' & div.rema(30 downto 0) & div.quot(31);
-    div.sub_s <= rs2_i(31) and ctrl.rs2_signed;
-    div.sub   <= std_ulogic_vector(unsigned(div.sub_a) - unsigned(div.sub_s & rs2_i)) when (div.sub_s = '0') else
-                 std_ulogic_vector(unsigned(div.sub_a) + unsigned(div.sub_s & rs2_i));
+    div.sub <= std_ulogic_vector(unsigned('0' & div.rema(30 downto 0) & div.quot(31)) - unsigned('0' & div.divi));
 
     -- result select and sign compensation --
     div.res_u <= div.quot when (ctrl_i.ir_funct3(2 downto 1) = op_div_c(2 downto 1)) else div.rema;
@@ -273,11 +273,10 @@ begin
   -- no divider --
   divider_core_serial_none:
   if not DIVISION_EN generate
+    div.divi  <= (others => '0');
     div.quot  <= (others => '0');
     div.rema  <= (others => '0');
     div.sign  <= '0';
-    div.sub_a <= (others => '0');
-    div.sub_s <= '0';
     div.sub   <= (others => '0');
     div.res_u <= (others => '0');
     div.res   <= (others => '0');

@@ -131,7 +131,6 @@ endif
 
 # System tools
 ECHO  = @echo
-SET   = set
 CP    = cp
 RM    = rm
 MKDIR = mkdir
@@ -161,7 +160,10 @@ NEO_ASFLAGS  = $(CC_FLAGS) $(ASFLAGS)
 # Application output definitions
 # -----------------------------------------------------------------------------
 
-.PHONY: check info help elf_info clean clean_all
+.PHONY: check info help elf_info elf_sections clean clean_all \
+        elf asm exe bin coe mem mif image install all \
+        sim upload gdb bootloader bl_image hdl_lists
+
 .DEFAULT_GOAL := help
 
 elf:     $(APP_ELF)
@@ -242,37 +244,31 @@ $(APP_ASM): $(APP_ELF)
 
 # Generate NEORV32 executable image for upload via bootloader
 $(APP_EXE): $(APP_ELF) $(IMAGE_GEN)
-	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_EXE)"
 	$(Q)$(IMAGE_GEN) -t exe -i $< -o $@
 
 # Generate NEORV32 RAW executable VHDL boot image
 $(APP_VHD): $(APP_ELF) $(IMAGE_GEN)
-	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_VHD)"
 	$(Q)$(IMAGE_GEN) -t vhd -i $< -o $@
 
 # Generate NEORV32 RAW executable image in binary format
 $(APP_BIN): $(APP_ELF) $(IMAGE_GEN)
-	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_BIN)"
 	$(Q)$(IMAGE_GEN) -t bin -i $< -o $@
 
 # Generate NEORV32 RAW executable image in COE format
 $(APP_COE): $(APP_ELF) $(IMAGE_GEN)
-	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_COE)"
 	$(Q)$(IMAGE_GEN) -t coe -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MIF format
 $(APP_MIF): $(APP_ELF) $(IMAGE_GEN)
-	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_MIF)"
 	$(Q)$(IMAGE_GEN) -t mif -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MEM format
 $(APP_MEM): $(APP_ELF) $(IMAGE_GEN)
-	$(Q)$(SET) -e
 	$(ECHO) "Generating $(APP_MEM)"
 	$(Q)$(IMAGE_GEN) -t mem -i $< -o $@
 
@@ -282,13 +278,11 @@ $(APP_MEM): $(APP_ELF) $(IMAGE_GEN)
 
 # Create local VHDL BOOTROM image
 bl_image: $(APP_ELF) $(IMAGE_GEN)
-	$(Q)$(SET) -e
 	$(ECHO) "Generating $(BLD_VHD)"
 	$(Q)$(IMAGE_GEN) -t vhd -i $< -o $(BLD_VHD)
 
 # Install BOOTROM image to VHDL source directory
 bootloader: bl_image
-	$(Q)$(SET) -e
 	$(ECHO) "Installing bootloader image to $(NEORV32_RTL_PATH)/core/$(BLD_VHD)"
 	$(Q)$(CP) $(BLD_VHD) $(NEORV32_RTL_PATH)/core/.
 
@@ -303,7 +297,6 @@ sim: $(APP_VHD)
 
 # Install VHDL memory initialization file
 install-$(APP_VHD): $(APP_VHD)
-	$(Q)$(SET) -e
 	$(ECHO) "Installing application image to $(NEORV32_RTL_PATH)/core/$(APP_VHD)"
 	$(Q)$(CP) $(APP_VHD) $(NEORV32_RTL_PATH)/core/.
 
