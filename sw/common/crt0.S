@@ -3,7 +3,7 @@
 // -------------------------------------------------------------------------------- //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -26,9 +26,9 @@ __crt0_entry:
 .option norvc                           // make sure setup code is uncompressed (if executing RVC on non-RVC core)
   csrr  x1, mhartid                     // get ID of this core
 
-  la    x4, __crt0_ram_last             // last address of RAM, stack pointer (sp) starts here
-  andi  x2, x4, 0xfffffff0              // align stack to 16-bytes according to the RISC-V ABI (#1021)
-  la    x3, __global_pointer            // global pointer "gp"
+  la    x4, __crt0_stack_top            // first address after last RAM byte, stack pointer (sp) starts here
+  andi  x2, x4, -16                     // align stack to 16-bytes according to the RISC-V ABI (#1021)
+  la    x3, __global_pointer$           // global pointer "gp"
 
   li    x5, 0x00001800                  // mstatus.mpp = machine-mode
   csrw  mstatus, x5
@@ -68,7 +68,7 @@ __crt0_entry:
 #endif
 
 // ************************************************************************************************
-// SMP setup - wait for configuration if we are not core 0.
+// SMP setup - wait for configuration if we are not core 0 (max two cores are supported).
 // ************************************************************************************************
 __crt0_smp_check:
   beqz  x1, __crt0_smp_primary // proceed with normal boot-up if we are core 0
@@ -88,8 +88,9 @@ __crt0_smp_sleep:
   // machine software interrupt handler
 .balign 4
 __crt0_smp_wakeup:
-  la    x15, __crt0_panic      // panic if we encounter another trap
+  la    x15,   __crt0_panic    // panic if we encounter another trap
   csrw  mtvec, x15
+  csrwi mie,   0               // disable all interrupt sources
 
   li    x14, 0xfff44000        // CLINT.MTIMECMP base address
   lw    x2,  8(x14)            // MTIMECMP[1].lo = stack top (sp)
@@ -105,17 +106,16 @@ __crt0_smp_primary:
 // ************************************************************************************************
 // Copy .data section from ROM to RAM.
 // ************************************************************************************************
-__crt0_data_init:
-  beq   x7, x8, __crt0_data_copy_end // __crt0_copy_data_src_begin == __crt0_copy_data_dst_begin
-
 __crt0_data_copy:
-  bge   x8, x9,  __crt0_data_copy_end
-  lw    x15, 0(x7)
-  sw    x15, 0(x8)
-  addi  x7, x7, 4                    // word-wise operations; section begins and ends on word boundary
-  addi  x8, x8, 4
-  j     __crt0_data_copy
+  beq   x7, x8, __crt0_data_copy_end  // skip if src == dst
+  bge   x8, x9, __crt0_data_copy_end  // skip if empty section
 
+__crt0_data_copy_loop:
+  lw    x15, 0(x7)
+  sw    x15, 0(x8)                    // word-wise operations; section begins and ends on word boundary
+  addi  x7, x7, 4
+  addi  x8, x8, 4
+  blt   x8, x9, __crt0_data_copy_loop
 __crt0_data_copy_end:
 
 // ************************************************************************************************
@@ -123,15 +123,18 @@ __crt0_data_copy_end:
 // ************************************************************************************************
 __crt0_bss_clear:
   bge   x10, x11, __crt0_bss_clear_end
+
+__crt0_bss_clear_loop:
   sw    zero, 0(x10)
   addi  x10, x10, 4 // word-wise operations; section begins and ends on word boundary
-  j     __crt0_bss_clear
-
+  blt   x10, x11, __crt0_bss_clear_loop
 __crt0_bss_clear_end:
 
 // ************************************************************************************************
 // Call constructors (not supported for bootloader).
-// [WARNING] Constructors do not preserve any registers!
+// [NOTE] Constructor/destructor calls may clobber caller-saved registers
+// (t0-t6, a0-a7, ra). Loop counters use s0/s1 (callee-saved), which are
+// preserved by the called functions according to the RISC-V calling convention.
 // ************************************************************************************************
 #ifndef MAKE_BOOTLOADER
 __crt0_constructors_primary:
@@ -139,12 +142,13 @@ __crt0_constructors_primary:
   la    x9, __init_array_end
 
 __crt0_constructors:
-  bge   x8, x9, __crt0_constructors_end
+  bge   x8, x9, __crt0_constructors_end  // skip if empty
+
+__crt0_constructors_loop:
   lw    x1, 0(x8)
   jalr  x1, 0(x1) // call constructor function; put return address in ra
   addi  x8, x8, 4
-  j     __crt0_constructors
-
+  blt   x8, x9, __crt0_constructors_loop
 __crt0_constructors_end:
 #endif
 
@@ -170,7 +174,9 @@ __crt0_main_exit:         // main's "return" and "exit" will arrive here
 
 // ************************************************************************************************
 // Call destructors (not supported for bootloader).
-// [WARNING] Destructors do not preserve any registers!
+// [NOTE] Constructor/destructor calls may clobber caller-saved registers
+// (t0-t6, a0-a7, ra). Loop counters use s0/s1 (callee-saved), which are
+// preserved by the called functions according to the RISC-V calling convention.
 // ************************************************************************************************
 #ifndef MAKE_BOOTLOADER
 __crt0_destructors_primary:
@@ -182,11 +188,12 @@ __crt0_destructors_primary:
 
 __crt0_destructors:
   bge   x8, x9, __crt0_destructors_end
+
+__crt0_destructors_loop:
   lw    x1, 0(x8)
   jalr  x1, 0(x1)                  // call destructor function; put return address in ra
   addi  x8, x8, 4
-  j     __crt0_destructors
-
+  blt   x8, x9, __crt0_destructors_loop
 __crt0_destructors_end:
 #endif
 
