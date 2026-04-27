@@ -136,7 +136,7 @@ endif
 ECHO  = @echo
 CP    = cp
 RM    = rm
-MKDIR = mkdir
+MKDIR = mkdir -p
 CHMOD = chmod
 
 # NEORV32 executable image generator
@@ -212,7 +212,7 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 
 # Create the build directories if they don't exist
 $(BUILD_DIR):
-	$(Q)$(MKDIR) -p $(BUILD_DIR)
+	$(Q)$(MKDIR) $(BUILD_DIR)
 
 # Compile app *.s sources (assembly)
 $(BUILD_DIR)/%.s.o: %.s | $(BUILD_DIR)
@@ -292,7 +292,7 @@ bootloader: bl_image
 sim: $(APP_VHD)
 	$(ECHO) "Simulating processor using default testbench..."
 	$(Q)$(CHMOD) +rx $(NEORV32_SIM_PATH)/ghdl.sh
-	$(Q)./$(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
+	$(Q)$(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
 
 # Install VHDL memory initialization file
 install-$(APP_VHD): $(APP_VHD)
@@ -305,7 +305,7 @@ install-$(APP_VHD): $(APP_VHD)
 
 hdl_lists:
 	$(Q)$(CHMOD) +rx $(NEORV32_RTL_PATH)/generate_file_lists.sh
-	$(Q)./$(NEORV32_RTL_PATH)/generate_file_lists.sh
+	$(Q)$(NEORV32_RTL_PATH)/generate_file_lists.sh
 
 # -----------------------------------------------------------------------------
 # Show final ELF details (just for debugging)
@@ -323,7 +323,7 @@ elf_sections: $(APP_ELF)
 
 upload: $(APP_EXE)
 	$(Q)$(CHMOD) +rx $(NEORV32_EXG_PATH)/uart_upload.sh
-	$(Q)./$(NEORV32_EXG_PATH)/uart_upload.sh $(UART_TTY) $(APP_EXE)
+	$(Q)$(NEORV32_EXG_PATH)/uart_upload.sh $(UART_TTY) $(APP_EXE)
 
 # -----------------------------------------------------------------------------
 # Run GDB
