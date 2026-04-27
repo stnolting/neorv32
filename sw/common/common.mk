@@ -40,6 +40,9 @@ MABI  ?= ilp32
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
 
+# User-defined libraries
+USER_LIBS ?=
+
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
 
