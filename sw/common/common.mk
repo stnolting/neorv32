@@ -13,10 +13,10 @@
 # configuration when including this makefile in the project-specific makefile)
 # -----------------------------------------------------------------------------
 
-# User's application sources (*.c, *.cpp, *.s, *.S); add additional files here
+# User's application sources (*.c, *.cpp, *.s, *.S)
 APP_SRC ?= $(wildcard ./*.c) $(wildcard ./*.s) $(wildcard ./*.cpp) $(wildcard ./*.S)
 
-# User's application object files (*.o, *.cpp, *.s, *.S); add additional files here
+# User's application object files (*.o)
 APP_OBJ ?=
 
 # User's application include folders (don't forget the '-I' before each entry)
@@ -204,7 +204,7 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 	$(Q)$(CHMOD) +rx $(IMAGE_GEN)
 
 # -----------------------------------------------------------------------------
-# Build targets: Assemble, compile, link, dump
+# Build targets: Assemble, compile, link
 # -----------------------------------------------------------------------------
 
 # Create the build directories if they don't exist
@@ -239,7 +239,7 @@ $(APP_ASM): $(APP_ELF)
 	$(Q)$(OBJDUMP) -d -S -z $< > $@
 
 # -----------------------------------------------------------------------------
-# Application targets: Generate executable formats
+# Image file targets: Generate executable formats
 # -----------------------------------------------------------------------------
 
 # Generate NEORV32 executable image for upload via bootloader
@@ -271,10 +271,6 @@ $(APP_MIF): $(APP_ELF) $(IMAGE_GEN)
 $(APP_MEM): $(APP_ELF) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_MEM)"
 	$(Q)$(IMAGE_GEN) -t mem -i $< -o $@
-
-# -----------------------------------------------------------------------------
-# BOOTROM / bootloader image targets
-# -----------------------------------------------------------------------------
 
 # Create local VHDL BOOTROM image
 bl_image: $(APP_ELF) $(IMAGE_GEN)
