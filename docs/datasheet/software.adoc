@@ -208,7 +208,7 @@ Targets:
   install    build, generate and install VHDL IMEM application memory image <neorv32_imem_image.vhd>
   clean      clean up project home folder
   clean_all  clean up project home folder and image generator
-  all        clean_all + elf + asm + exe + bin + coe + mem + mif + image + install
+  all        elf + asm + exe + bin + coe + mem + mif + image + install
 
 Additional targets:
 

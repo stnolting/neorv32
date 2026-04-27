@@ -177,8 +177,8 @@ coe:     $(APP_COE)
 mem:     $(APP_MEM)
 mif:     $(APP_MIF)
 image:   $(APP_VHD)
-install: image install-$(APP_VHD)
-all:     clean_all elf asm exe bin coe mem mif image install
+install: install-$(APP_VHD)
+all:     elf asm exe bin coe mem mif image install
 
 # -----------------------------------------------------------------------------
 # Verbosity
@@ -445,7 +445,7 @@ help::
 	$(ECHO) "  install    build, generate and install VHDL IMEM application memory image <$(APP_VHD)>"
 	$(ECHO) "  clean      clean up project home folder"
 	$(ECHO) "  clean_all  clean up project home folder and image generator"
-	$(ECHO) "  all        clean_all + elf + asm + exe + bin + coe + mem + mif + image + install"
+	$(ECHO) "  all        elf + asm + exe + bin + coe + mem + mif + image + install"
 	$(ECHO) ""
 	$(ECHO) "Additional targets:"
 	$(ECHO) ""
