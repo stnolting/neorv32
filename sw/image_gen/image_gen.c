@@ -61,7 +61,7 @@ void print_help(void){
     "  -i file_name  Flattened binary input file\n"
     "  -o file_name  Image output file\n"
     "  -t format     Image output format\n"
-    "  -b address    Bootloader exe relocation address (hex; for \"-t exe\" only)\n"
+    "  -b address    Bootloader exe base address (hex; for \"-t exe\" only)\n"
     "\n"
     "Image formats (using little-Endian byte ordering):\n"
     "  exe  Executable for bootloader upload (binary file with header) \n"
