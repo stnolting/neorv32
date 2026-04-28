@@ -484,12 +484,7 @@ begin
             host_rsp_o.err <= '1';
             host_rsp_o.ack <= '1'; -- terminate current request and return bus error
             ctrl_nxt.state <= S_IDLE;
-          elsif (ctrl.pnd_bp = '1') then -- write-back was for an AMO/uncached pre-flush: invalidate then bypass
-            cache_o.set     <= '1';
-            cache_o.vld     <= '0'; -- invalidate so subsequent cache hits don't return pre-AMO data
-            ctrl_nxt.bp_req <= '1'; -- re-arm one-shot STB for the now-pending bypass
-            ctrl_nxt.state  <= S_BYPASS;
-          else -- block upload caused by cache miss: block upload successful
+          else -- block upload caused by cache miss or AMO pre-flush: upload successful
             cache_o.set    <= '1'; -- update cache block status
             cache_o.drt    <= '0'; -- cache block is clean now
             cache_o.vld    <= '1'; -- cache block is still valid
