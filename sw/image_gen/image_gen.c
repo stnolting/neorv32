@@ -160,7 +160,13 @@ int main(int argc, char *argv[]) {
 
   // --------------------------------------------------------------------------
   // open input/output files
-  // ****************************************
+  // --------------------------------------------------------------------------
+
+  if ((input_file == NULL) || (output_file == NULL)) {
+    printf("[ERROR] No input/oupt file(s) specified!\n");
+    return -2;
+  }
+
   input = fopen(input_file, "rb");
   if (input == NULL) {
     printf("[ERROR] Input file error (%s)!\n", input_file);
@@ -215,22 +221,14 @@ int main(int argc, char *argv[]) {
   raw_exe_size = padded_size;
   uint32_t *raw_image32 = (uint32_t *)raw_image;
 
-  // debug
-//printf(".text:   %d bytes\n", text_size);
-//printf(".rodata: %d bytes\n", rodata_size);
-//printf(".data:   %d bytes\n", data_size);
-
-  // final image size
-  raw_exe_size = text_size + rodata_size + data_size;
-  if (raw_exe_size == 0) {// input file empty?
+  if (raw_exe_size == 0) {
     printf("[ERROR] Image is empty!\n");
+    free(raw_image);
+    fclose(output);
     return -2;
   }
-  if ((raw_exe_size % 4) != 0) {
-    printf("[WARNING] Image size is not a multiple of 4 bytes!\n");
-  }
 
-  // make sure memory array is a power of two
+  // make sure memory array is a power of two (for the VHDL images)
   ext_exe_size = 4;
   while (ext_exe_size < raw_exe_size) {
     ext_exe_size *= 2;
