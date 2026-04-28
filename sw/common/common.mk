@@ -134,6 +134,7 @@ CC_HOST = gcc -Wall -O -g
 # System tools
 ECHO  = @echo
 CP    = cp
+SED   = sed
 RM    = rm
 MKDIR = mkdir -p
 CHMOD = chmod
@@ -249,9 +250,9 @@ $(APP_ASM): $(APP_ELF)
 # -----------------------------------------------------------------------------
 
 # Generate NEORV32 executable image for upload via bootloader
-$(APP_EXE): $(APP_ELF) $(IMAGE_GEN)
+$(APP_EXE): $(APP_ELF) $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_EXE)"
-	$(Q)$(IMAGE_GEN) -t exe -i $< -o $@
+	$(Q)$(IMAGE_GEN) -t exe -b $(shell $(READELF) -h $(APP_ELF) | $(SED) -n 's/.*Entry point address: *//p') -i $< -o $@
 
 # Generate NEORV32 RAW executable VHDL boot image
 $(APP_VHD): $(APP_FLT) $(IMAGE_GEN)
