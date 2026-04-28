@@ -54,13 +54,14 @@ void print_help(void){
     "NEORV32 executable image generator\n"
     "\n"
     "Usage:    image_gen [options]\n"
-    "Example:  image_gen -i main.elf -o main_exe.bin -t exe\n"
+    "Example:  image_gen -i elf.bin -o main_exe.bin -b A0000000 -t exe\n"
     "\n"
     "Options:\n"
     "  -h            Show this help text and exit\n"
-    "  -i file_name  ELF input file\n"
+    "  -i file_name  Flattened binary input file\n"
     "  -o file_name  Image output file\n"
     "  -t format     Image output format\n"
+    "  -b address    Bootloader exe relocation address (hex; for \"-t exe\" only)\n"
     "\n"
     "Image formats (using little-Endian byte ordering):\n"
     "  exe  Executable for bootloader upload (binary file with header) \n"
@@ -135,6 +136,15 @@ int main(int argc, char *argv[]) {
         return -1;
       }
     }
+    // bootloader relocation/base address
+    else if (strcmp(argv[i], "-b") == 0) {
+      i++;
+      if (i >= (unsigned int)argc) {
+        printf("[ERROR] Missing argument for '-b'!\n");
+        return -1;
+      }
+      base_addr = (uint32_t)strtoul(argv[i], NULL, 0);
+    }
     // invalid
     else {
       printf("[ERROR] Invalid flag '%s'!\n", argv[i]);
@@ -142,7 +152,13 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // ****************************************
+  // we need a base address for the bootloader executable
+  if ((operation == OP_EXE) && (base_addr == -1)) {
+    printf("[ERROR] Missing '-b' argument!\n");
+    return -1;
+  }
+
+  // --------------------------------------------------------------------------
   // open input/output files
   // ****************************************
   input = fopen(input_file, "rb");
