@@ -386,12 +386,7 @@ begin
 
           -- memory fence operations --
           when opcode_fence_c =>
-            -- RISC-V: fence.i must make prior stores visible to subsequent
-            -- instruction fetches. With a write-back D-cache that means
-            -- fence.i has to drain the D-cache too, not just invalidate the
-            -- I-cache. Always assert lsu_fence so both `fence` and `fence.i`
-            -- flush the D-cache; only `fence.i` additionally invalidates I.
-            ctrl_nxt.lsu_fence <= '1'; -- data fence (fence and fence.i)
+            ctrl_nxt.lsu_fence <= '1'; -- data fence (fence and fence.i); flush $D so $I gets updated data; #1540
             ctrl_nxt.if_fence  <= exec.ir(instr_funct3_lsb_c); -- instruction fence (fence.i only)
             exec_nxt.state     <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC (actually only required for fence.i)
 

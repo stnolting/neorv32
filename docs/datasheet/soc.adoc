@@ -652,7 +652,7 @@ that are executed by processor-external agents.
 :sectnums:
 ==== Memory Coherence
 
-Depending on the configuration, the NEORV32 memory hierarchy consists of several levels.
+Depending on the configuration, the NEORV32 memory hierarchy provides several levels/layers of memory.
 
 [start=1]
 . The CPU execution pipeline and its _instruction prefetch buffer_ (<<_cpu_front_end>>)
@@ -666,12 +666,12 @@ and especially cache synchronization is **not** performed automatically by the h
 is no snooping implemented. NEORV32 supports two RISC-V memory ordering instructions that are used for
 manual memory synchronization:
 
-* `fence.i` (<<_zifencei_isa_extension>>): Clear the CPU's instruction prefetch buffer
-and the CPU's instruction cache. The next cache access therefore results
-in a miss that fetches up-to-date data from main memory.
 * `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>): Flush the CPU's data cache: Modified ("dirty")
 blocks are copied back to main memory; all clean blocks are invalidated so that the next CPU access to
 any block results in a cache miss that reloads the cache with up-to-date data from main memory.
+* `fence.i` (<<_zifencei_isa_extension>>): Perform the same operations as `fence` (i.e. flushing the data
+cache), but also clear the CPU's instruction prefetch buffer and instruction cache. The next instruction
+cache access therefore results in a miss that fetches up-to-date data from main memory.
 
 .Weak Coherence Model
 [IMPORTANT]

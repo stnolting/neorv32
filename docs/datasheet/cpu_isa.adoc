@@ -290,9 +290,11 @@ Example: `MARCH=rv32imc_zca_zcb_...`
 
 ==== `Zifencei` ISA Extension
 
-This instruction is the only standard mechanism to ensure that stores visible to a hart will also be visible to its
-instruction fetches. When executed, the CPU flushes the instruction prefetch buffer and reloads the CPU's
-instruction cache (if enabled). See section <<_memory_coherence>> for more information.
+This instruction is the only standard mechanism to ensure that stores visible to a hart will also be visible to
+its instruction fetches. When executed, the CPU flushes the data cache (if enabled) to main memory, clears the
+instruction prefetch buffer and invalidates the instruction cache (if enabled). The next instruction fetch request
+from the CPU will result in an instruction cache miss that will return up-to-date data from main memory.
+See section <<_memory_coherence>> for more information.
 
 .Instructions and Timing
 [cols="<2,<5,<4"]
