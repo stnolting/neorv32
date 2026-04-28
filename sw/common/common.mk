@@ -128,9 +128,6 @@ GDB     = $(RISCV_PREFIX)gdb
 
 # Host's native compiler
 CC_HOST = gcc -Wall -O -g
-ifeq ($(PLATFORM),macos)
-  CC_HOST += $(shell pkg-config --cflags libelf)
-endif
 
 # System tools
 ECHO  = @echo
