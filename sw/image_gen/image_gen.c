@@ -35,6 +35,17 @@ typedef struct __attribute__((packed,aligned(4))) {
 } exe_header_t;
 
 // ************************************************************
+// Read 32-bit data from byte pointer (little-Endian).
+// ************************************************************
+uint32_t read32(const uint8_t *p) {
+
+  return ((uint32_t)p[0] <<  0) |
+         ((uint32_t)p[1] <<  8) |
+         ((uint32_t)p[2] << 16) |
+         ((uint32_t)p[3] << 24);
+}
+
+// ************************************************************
 // Write 32-bit data to file (little-Endian).
 // ************************************************************
 void write32(uint32_t d, FILE *f) {
@@ -249,9 +260,10 @@ int main(int argc, char *argv[]) {
 
     // actual data and checksum
     checksum = 0;
-    for (i = 0; i < raw_exe_size/4; i++) {
-      checksum += raw_image32[i];
-      write32(raw_image32[i], output);
+    for (n = 0; n < raw_exe_size/4; n++) {
+      word = read32(&raw_image[n*4]);
+      checksum += word;
+      write32(word, output);
     }
 
     // setup header
@@ -311,8 +323,8 @@ int main(int argc, char *argv[]) {
       pkg_name, (ext_exe_size/4)-1, raw_exe_size);
 
     // data
-    for (i = 0; i < raw_exe_size/4; i++) {
-      fprintf(output, "x\"%08x\",\n", (unsigned int)raw_image32[i]);
+    for (n = 0; n < raw_exe_size/4; n++) {
+      fprintf(output, "x\"%08x\",\n", (unsigned int)read32(&raw_image[n*4]));
     }
 
     // end
@@ -350,12 +362,13 @@ int main(int argc, char *argv[]) {
     fputs("memory_initialization_radix=16;\n", output);
     fputs("memory_initialization_vector=\n", output);
 
-    for (i = 0; i < raw_exe_size/4; i++) {
-      if (i == ((raw_exe_size/4)-1)) {
-        fprintf(output, "%08x;\n", (unsigned int)raw_image32[i]);
+    for (n = 0; n < raw_exe_size/4; n++) {
+      word = read32(&raw_image[n * 4]);
+      if (n == ((raw_exe_size/4)-1)) {
+        fprintf(output, "%08x;\n", (unsigned int)word);
       }
       else {
-        fprintf(output, "%08x,\n", (unsigned int)raw_image32[i]);
+        fprintf(output, "%08x,\n", (unsigned int)word);
       }
     }
 
@@ -369,8 +382,8 @@ int main(int argc, char *argv[]) {
 
   else if (operation == OP_MEM) {
 
-    for (i = 0; i < raw_exe_size/4; i++) {
-      fprintf(output, "@%08x %08x\n", (unsigned int)i, (unsigned int)raw_image32[i]);
+    for (n = 0; n < raw_exe_size/4; n++) {
+      fprintf(output, "@%08x %08x\n", n, (unsigned int)read32(&raw_image[n*4]));
     }
 
     // report
@@ -395,8 +408,8 @@ int main(int argc, char *argv[]) {
     );
 
     // data
-    for (i = 0; i < raw_exe_size/4; i++) {
-      fprintf(output, "%08x : %08x;\n", (unsigned int)i, (unsigned int)raw_image32[i]);
+    for (n = 0; n < raw_exe_size/4; n++) {
+      fprintf(output, "%08x : %08x;\n", n, (unsigned int)read32(&raw_image[n*4]));
     }
 
     // footer
