@@ -315,6 +315,9 @@ hdl_lists:
 # -----------------------------------------------------------------------------
 
 elf_info: $(APP_ELF)
+	$(Q)$(READELF) -h $(APP_ELF)
+
+elf_symbols: $(APP_ELF)
 	$(Q)$(OBJDUMP) -x $(APP_ELF)
 
 elf_sections: $(APP_ELF)
@@ -452,7 +455,7 @@ help::
 	$(ECHO) "  sim           in-console simulation using default testbench (sim folder) and GHDL"
 	$(ECHO) "  hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
 	$(ECHO) "  upload        upload executable to bootloader via UART ($(UART_TTY))"
-	$(ECHO) "  elf_info      show ELF layout info"
+	$(ECHO) "  elf_info      show ELF information"
 	$(ECHO) "  elf_sections  show ELF sections"
 	$(ECHO) "  bl_image      build and generate VHDL BOOTROM bootloader memory image <$(BLD_VHD)> in local folder"
 	$(ECHO) "  bootloader    build, generate and install VHDL BOOTROM bootloader memory image <$(BLD_VHD)>"
