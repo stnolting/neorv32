@@ -98,9 +98,10 @@ void print_help(void){
 int main(int argc, char *argv[]) {
 
   FILE *input = NULL, *output = NULL;
-  char *input_file = NULL, *output_file = NULL, tmp_string[1024];
-  uint32_t checksum = 0;
-  unsigned int i = 0, operation = OP_EXE, raw_exe_size = 0, ext_exe_size = 0;
+  char *input_file = NULL, *output_file = NULL;
+  uint32_t checksum = 0, base_addr = 0xFFFFFFFF;
+  int i = 0;
+  unsigned int operation = OP_EXE, raw_exe_size = 0, ext_exe_size = 0;
 
   // show help menu if there are no arguments
   if (argc <= 1) {
@@ -108,9 +109,10 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  // ****************************************
+  // --------------------------------------------------------------------------
   // parse arguments
-  // ****************************************
+  // --------------------------------------------------------------------------
+
   for (i = 1; i < argc; i++) {
     // show help
     if (strcmp(argv[i], "-h") == 0) {
@@ -158,7 +160,7 @@ int main(int argc, char *argv[]) {
   output = fopen(output_file, "wb");
   if (output == NULL) {
     printf("[ERROR] Output file error (%s)!\n", output_file);
-    fclose(output);
+    fclose(input);
     return -2;
   }
 
@@ -260,6 +262,7 @@ int main(int argc, char *argv[]) {
   // --------------------------------------------------------------------------
   // executable for bootloader upload (including header)
   // --------------------------------------------------------------------------
+
   if (operation == OP_EXE) {
 
     exe_header_t header;
@@ -288,13 +291,14 @@ int main(int argc, char *argv[]) {
     write32(header.checksum, output);
 
     // report
-    printf("Executable (EXE): %d bytes @ 0x%08X, checksum = 0x%08X\n",
+    printf("Executable (EXE): %u bytes @ 0x%08X, checksum = 0x%08X\n",
            (unsigned int)header.size, (unsigned int)header.base_addr, (unsigned int)header.checksum);
   }
 
   // --------------------------------------------------------------------------
   // VHDL memory image (package name = output file name)
   // --------------------------------------------------------------------------
+
   else if (operation == OP_VHD) {
 
     // remove path from output file
@@ -320,7 +324,7 @@ int main(int argc, char *argv[]) {
     }
 
     // header
-    snprintf(tmp_string, sizeof(tmp_string),
+    fprintf(output,
       "library ieee;\n"
       "use ieee.std_logic_1164.all;\n"
       "\n"
@@ -330,29 +334,27 @@ int main(int argc, char *argv[]) {
       "constant image_size_c : natural := %u;\n"
       "constant image_data_c : rom_t := (\n",
       pkg_name, (ext_exe_size/4)-1, raw_exe_size);
-    fputs(tmp_string, output);
 
     // data
     for (i = 0; i < raw_exe_size/4; i++) {
-      snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\",\n", (unsigned int)raw_image32[i]);
-      fputs(tmp_string, output);
+      fprintf(output, "x\"%08x\",\n", (unsigned int)raw_image32[i]);
     }
 
     // end
-    snprintf(tmp_string, sizeof(tmp_string),
+    fprintf(output,
       "others => (others => '0')\n"
       ");\n"
       "\n"
       "end %s;\n", pkg_name);
-    fputs(tmp_string, output);
 
     // report
-    printf("Executable (VHD): %d bytes\n", raw_exe_size);
+    printf("Executable (VHD): %u bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
   // executable plain-binary file
   // --------------------------------------------------------------------------
+
   else if (operation == OP_BIN) {
 
     for (i = 0; i < raw_exe_size; i++) {
@@ -360,79 +362,73 @@ int main(int argc, char *argv[]) {
     }
 
     // report
-    printf("Executable (BIN): %d bytes\n", raw_exe_size);
+    printf("Executable (BIN): %u bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
   // executable COE file
   // --------------------------------------------------------------------------
+
   else if (operation == OP_COE) {
 
     // header
-    snprintf(tmp_string, sizeof(tmp_string), "memory_initialization_radix=16;\n");
-    fputs(tmp_string, output);
-    snprintf(tmp_string, sizeof(tmp_string), "memory_initialization_vector=\n");
-    fputs(tmp_string, output);
+    fputs("memory_initialization_radix=16;\n", output);
+    fputs("memory_initialization_vector=\n", output);
 
     for (i = 0; i < raw_exe_size/4; i++) {
       if (i == ((raw_exe_size/4)-1)) {
-        snprintf(tmp_string, sizeof(tmp_string), "%08x;\n", (unsigned int)raw_image32[i]);
+        fprintf(output, "%08x;\n", (unsigned int)raw_image32[i]);
       }
       else {
-        snprintf(tmp_string, sizeof(tmp_string), "%08x,\n", (unsigned int)raw_image32[i]);
+        fprintf(output, "%08x,\n", (unsigned int)raw_image32[i]);
       }
-      fputs(tmp_string, output);
     }
 
     // report
-    printf("Executable (COE): %d bytes\n", raw_exe_size);
+    printf("Executable (COE): %u bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
   // executable MEM file
   // --------------------------------------------------------------------------
+
   else if (operation == OP_MEM) {
 
     for (i = 0; i < raw_exe_size/4; i++) {
-      snprintf(tmp_string, sizeof(tmp_string), "@%08x %08x\n", (unsigned int)i, (unsigned int)raw_image32[i]);
-      fputs(tmp_string, output);
+      fprintf(output, "@%08x %08x\n", (unsigned int)i, (unsigned int)raw_image32[i]);
     }
 
     // report
-    printf("Executable (MEM): %d bytes\n", raw_exe_size);
+    printf("Executable (MEM): %u bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
   // executable MIF file
   // --------------------------------------------------------------------------
+
   else if (operation == OP_MIF) {
 
     // header
-    snprintf(tmp_string, sizeof(tmp_string), "DEPTH = %u;\n", raw_exe_size/4); // memory depth in words
-    fputs(tmp_string, output);
-    snprintf(tmp_string, sizeof(tmp_string), "WIDTH = 32;\n"); // bits per data word
-    fputs(tmp_string, output);
-    snprintf(tmp_string, sizeof(tmp_string), "ADDRESS_RADIX = HEX;\n"); // hexadecimal address format
-    fputs(tmp_string, output);
-    snprintf(tmp_string, sizeof(tmp_string), "DATA_RADIX = HEX;\n"); // hexadecimal data format
-    fputs(tmp_string, output);
+    fprintf(output,
+      "DEPTH = %u;\n"
+      "WIDTH = 32;\n"
+      "ADDRESS_RADIX = HEX;\n"
+      "DATA_RADIX = HEX;\n"
+      "CONTENT\n"
+      "BEGIN\n",
+      raw_exe_size/4
+    );
 
-    snprintf(tmp_string, sizeof(tmp_string), "CONTENT\n");
-    fputs(tmp_string, output);
-    snprintf(tmp_string, sizeof(tmp_string), "BEGIN\n");
-    fputs(tmp_string, output);
-
+    // data
     for (i = 0; i < raw_exe_size/4; i++) {
-      snprintf(tmp_string, sizeof(tmp_string), "%08x : %08x;\n", (unsigned int)i, (unsigned int)raw_image32[i]);
-      fputs(tmp_string, output);
+      fprintf(output, "%08x : %08x;\n", (unsigned int)i, (unsigned int)raw_image32[i]);
     }
 
     // footer
-    snprintf(tmp_string, sizeof(tmp_string), "END;\n");
-    fputs(tmp_string, output);
+    fputs("END;\n", output);
 
     // report
-    printf("Executable (MIF): %d bytes\n", raw_exe_size);
+    printf("Executable (MIF): %u bytes\n", raw_exe_size);
   }
 
   // invalid operation
