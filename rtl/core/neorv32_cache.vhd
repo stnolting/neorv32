@@ -219,23 +219,16 @@ begin
         ctrl_nxt.bp_req  <= '1'; -- in case we are doing a bypass request (set STB for one cycle)
         --
         if (ctrl.pnd_bp = '1') then -- cache bypass (uncached or atomic memory operation)
-          -- Coherence with write-back D-cache: an AMO that bypasses the cache
-          -- must NOT see stale memory if the same line is dirty in this cache,
-          -- and must NOT leave a stale (clean) copy behind after the AMO writes
-          -- memory. Three cases:
-          --   * cache HIT, dirty       -> write-back the line first, invalidate,
-          --                               then bypass (S_WRITE_START -> S_WRITE_DONE
-          --                               -> S_BYPASS, see S_WRITE_DONE handling)
-          --   * cache HIT, clean       -> just invalidate inline, then bypass
-          --   * cache MISS             -> direct bypass (no cache state to fix)
-          if (cache_i.hit = '1') and (cache_i.drt = '1') and (READ_ONLY = false) then
-            ctrl_nxt.state <= S_WRITE_START; -- pnd_bp stays via the sticky default
-          else
-            if (cache_i.hit = '1') and (READ_ONLY = false) then
-              cache_o.set <= '1'; -- invalidate the cached copy so post-AMO reads refill from memory
-              cache_o.vld <= '0';
+          if (cache_i.hit = '1') then -- do we have a cached copy of the accessed address (#1540)?
+            if (cache_i.drt = '1') and (READ_ONLY = false) then
+              ctrl_nxt.state <= S_WRITE_START; -- copy modified line to main memory
+            else
+              cache_o.vld    <= '0'; -- invalidate the cached copy so post-BYPASS reads refill from memory
+              cache_o.set    <= '1';
+              ctrl_nxt.state <= S_BYPASS;
             end if;
-            ctrl_nxt.state <= S_BYPASS; -- pnd_bp will be cleared in S_BYPASS on ACK
+          else
+            ctrl_nxt.state <= S_BYPASS;
           end if;
         elsif (cache_i.hit = '1') then -- cache HIT: read/write from/to cache
           if (host_req_i.rw = '1') and (READ_ONLY = false) then -- modify cache
