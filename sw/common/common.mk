@@ -252,7 +252,7 @@ $(APP_ASM): $(APP_ELF)
 # Generate NEORV32 executable image for upload via bootloader
 $(APP_EXE): $(APP_ELF) $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_EXE)"
-	$(Q)$(IMAGE_GEN) -t exe -b $(shell $(READELF) -h $(APP_ELF) | $(SED) -n 's/.*Entry point address: *//p') -i $< -o $@
+	$(Q)$(IMAGE_GEN) -t exe -b $(shell $(READELF) -h $(APP_ELF) | $(SED) -n 's/.*Entry point address: *//p') -i $(APP_FLT) -o $@
 
 # Generate NEORV32 RAW executable VHDL boot image
 $(APP_VHD): $(APP_FLT) $(IMAGE_GEN)
