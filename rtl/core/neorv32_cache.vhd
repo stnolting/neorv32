@@ -256,7 +256,6 @@ begin
         bus_req_o.stb <= ctrl.bp_req; -- one-shot
         host_rsp_o    <= bus_rsp_i;
         if (bus_rsp_i.ack = '1') then
-          ctrl_nxt.pnd_bp <= '0'; -- clear sticky bypass flag now that the bypass completed
           ctrl_nxt.state  <= S_IDLE;
         end if;
 
@@ -487,12 +486,11 @@ begin
           if (ctrl.sync = '1') then -- block upload caused by cache synchronization
             ctrl_nxt.state <= S_SYNC_NEXT;
           elsif (ctrl.bus_err = '1') then -- block upload caused by cache miss or AMO pre-flush: BUS ERROR during upload
-            cache_o.set     <= '1'; -- update cache block status
-            cache_o.vld     <= '0'; -- invalidate cache block
-            host_rsp_o.err  <= '1';
-            host_rsp_o.ack  <= '1'; -- terminate current request and return bus error
-            ctrl_nxt.pnd_bp <= '0'; -- if this writeback was an AMO pre-flush, drop the now-aborted bypass too
-            ctrl_nxt.state  <= S_IDLE;
+            cache_o.set    <= '1'; -- update cache block status
+            cache_o.vld    <= '0'; -- invalidate cache block
+            host_rsp_o.err <= '1';
+            host_rsp_o.ack <= '1'; -- terminate current request and return bus error
+            ctrl_nxt.state <= S_IDLE;
           elsif (ctrl.pnd_bp = '1') then -- write-back was for an AMO/uncached pre-flush: invalidate then bypass
             cache_o.set     <= '1';
             cache_o.vld     <= '0'; -- invalidate so subsequent cache hits don't return pre-AMO data
