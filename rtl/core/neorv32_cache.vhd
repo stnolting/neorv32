@@ -6,10 +6,10 @@
 -- transfers are split into individual single-word transfers. Total cache size in   --
 -- bytes is NUM_BLOCKS x BLOCK_SIZE.                                                --
 --                                                                                  --
--- Access types that will *bypass* the cache:                                       --
--- * any atomic memory operation                                                    --
--- * accesses to the explicit "uncached address space page" (or higher),            --
---   which is defined by the 4 most significant address bits (UC_BEGIN)             --
+-- Handling of (uncached) AMO operations (#1540):                                   --
+-- * AMO cache miss            -> directly execute bypass                           --
+-- * AMO cache hit, line clean -> invalidate line, execute bypass                   --
+-- * AMO cache hit, line dirty -> write back line, invalidate line, execute bypass  --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
