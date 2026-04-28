@@ -121,15 +121,29 @@ int main(int argc, char *argv[]) {
     }
     // input file
     else if (strcmp(argv[i], "-i") == 0) {
-      input_file = argv[++i];
+      i++;
+      if (i >= (unsigned int)argc) {
+        printf("[ERROR] Missing argument for '-i'!\n");
+        return -1;
+      }
+      input_file = argv[i];
     }
     // output file
     else if (strcmp(argv[i], "-o") == 0) {
-      output_file = argv[++i];
+      i++;
+      if (i >= (unsigned int)argc) {
+        printf("[ERROR] Missing argument for '-o'!\n");
+        return -1;
+      }
+      output_file = argv[i];
     }
     // type
     else if (strcmp(argv[i], "-t") == 0) {
       i++;
+      if (i >= (unsigned int)argc) {
+        printf("[ERROR] Missing argument for '-t'!\n");
+        return -1;
+      }
       if      (strcmp(argv[i], "exe") == 0) { operation = OP_EXE; }
       else if (strcmp(argv[i], "vhd") == 0) { operation = OP_VHD; }
       else if (strcmp(argv[i], "bin") == 0) { operation = OP_BIN; }
