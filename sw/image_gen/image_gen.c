@@ -12,11 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef __APPLE__
-#include <libelf.h>
-#else
-#include <elf.h>
-#endif
 
 // executable signature identifier ("magic word", for bootloader only)
 const uint32_t signature_c = 0x214F454E;
@@ -48,21 +43,6 @@ void write32(uint32_t d, FILE *f) {
   fputc((unsigned char)((d >>  8) & 0xFF), f);
   fputc((unsigned char)((d >> 16) & 0xFF), f);
   fputc((unsigned char)((d >> 24) & 0xFF), f);
-}
-
-// ************************************************************
-// Read ELF section.
-// ************************************************************
-void *read_section(FILE *f, Elf32_Shdr *sh) {
-
-  void *data = malloc(sh->sh_size);
-  fseek(f, sh->sh_offset, SEEK_SET);
-  if (fread(data, 1, sh->sh_size, f) <= 0) {
-    return NULL;
-  }
-  else {
-    return data;
-  }
 }
 
 // ************************************************************
@@ -262,17 +242,6 @@ int main(int argc, char *argv[]) {
     ext_exe_size *= 2;
   }
 
-  // construct raw image
-  uint8_t *raw_image = malloc(raw_exe_size);
-  uint32_t *raw_image32 = (uint32_t *)raw_image;
-  if (!raw_image) {
-    printf("[ERROR] malloc failed!\n");
-    return -1;
-  }
-  memcpy(raw_image,                           text,   text_size);   // start with .text
-  memcpy(raw_image + text_size,               rodata, rodata_size); // append .rodata
-  memcpy(raw_image + text_size + rodata_size, data,   data_size);   // append .data
-
   // --------------------------------------------------------------------------
   // executable for bootloader upload (including header)
   // --------------------------------------------------------------------------
@@ -449,14 +418,12 @@ int main(int argc, char *argv[]) {
   else {
     printf("[ERROR] Invalid operation!\n");
     free(raw_image);
-    free(shdrs);
     fclose(output);
     return -1;
   }
 
   // clean up
   free(raw_image);
-  free(shdrs);
   fclose(output);
 
   return 0;
