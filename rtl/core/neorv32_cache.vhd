@@ -160,13 +160,7 @@ begin
     ctrl_nxt.bus_err <= ctrl.bus_err;
     ctrl_nxt.pnd_req <= ctrl.pnd_req or host_req_i.stb;
     ctrl_nxt.pnd_syn <= ctrl.pnd_syn or host_req_i.fence;
-    -- pnd_bp is sticky during the write-back detour from S_CHECK -> S_WRITE_*
-    -- -> S_BYPASS so the bypass survives the flush, but we forcibly clear it
-    -- whenever the FSM is back in S_IDLE so any error/early-terminate path
-    -- (e.g. S_WRITE_DONE bus_err -> S_IDLE) cannot leak a stale '1' into the
-    -- next request. S_IDLE itself sets pnd_bp <= '1' explicitly when the new
-    -- request is uncached/AMO, so this default is safe there too.
-    ctrl_nxt.pnd_bp  <= '0' when (ctrl.state = S_IDLE) else ctrl.pnd_bp;
+    ctrl_nxt.pnd_bp  <= ctrl.pnd_bp;
     ctrl_nxt.bp_req  <= '0';
     ctrl_nxt.hit     <= '0';
     ctrl_nxt.cln     <= '0';
@@ -205,6 +199,7 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt.bus_err <= '0'; -- reset bus error flag
         ctrl_nxt.sync    <= '0'; -- reset sync-in-progress flag
+        ctrl_nxt.pnd_bp  <= '0'; -- default: no bypass request
         if (ctrl.pnd_syn = '1') then -- pending sync request: invalidate clean blocks & write-back dirty blocks
           ctrl_nxt.state <= S_SYNC_START;
         elsif (host_req_i.stb = '1') or (ctrl.pnd_req = '1') then -- (pending) access request
