@@ -65,7 +65,7 @@ void print_help(void){
     "NEORV32 executable image generator\n"
     "\n"
     "Usage:    image_gen [options]\n"
-    "Example:  image_gen -i elf.bin -o main_exe.bin -b A0000000 -t exe\n"
+    "Example:  image_gen -i elf.bin -o main_exe.bin -b 0xA0000000 -t exe\n"
     "\n"
     "Options:\n"
     "  -h            Show this help text and exit\n"
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 
   FILE *input = NULL, *output = NULL;
   char *input_file = NULL, *output_file = NULL;
-  uint32_t checksum = 0, base_addr = 0xFFFFFFFF;
+  uint32_t checksum = 0, base_addr = 0xFFFFFFFFu, word = 0;
   int i = 0;
   unsigned int n = 0, operation = OP_EXE, raw_exe_size = 0, ext_exe_size = 0;
 
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   }
 
   // we need a base address for the bootloader executable
-  if ((operation == OP_EXE) && (base_addr == -1)) {
+  if ((operation == OP_EXE) && (base_addr == 0xFFFFFFFFu)) {
     printf("[ERROR] Missing '-b' argument!\n");
     return -1;
   }
@@ -230,14 +230,6 @@ int main(int argc, char *argv[]) {
 
   // use padded size for all word-based operations
   raw_exe_size = padded_size;
-  uint32_t *raw_image32 = (uint32_t *)raw_image;
-
-  if (raw_exe_size == 0) {
-    printf("[ERROR] Image is empty!\n");
-    free(raw_image);
-    fclose(output);
-    return -2;
-  }
 
   // make sure memory array is a power of two (for the VHDL images)
   ext_exe_size = 4;
