@@ -174,63 +174,41 @@ int main(int argc, char *argv[]) {
     return -2;
   }
 
-  // ****************************************
-  // parse ELF
-  // ****************************************
+  // --------------------------------------------------------------------------
+  // read flat binary input
+  // --------------------------------------------------------------------------
 
-  Elf32_Ehdr elf;
-  if (fread(&elf, 1, sizeof(elf), input) <= 0) {
+  fseek(input, 0, SEEK_END);
+  long flat_bin_size = ftell(input);
+  rewind(input);
+
+  // binary size
+  if (flat_bin_size <= 0) {
     printf("[ERROR] Input file is empty (%s)!\n", input_file);
+    fclose(input);
+    fclose(output);
     return -2;
   }
-
-  if (memcmp(elf.e_ident, ELFMAG, SELFMAG) != 0) {
-    printf("[ERROR] Input file is not an ELF (%s)!\n", input_file);
-    return -2;
-  }
+  raw_exe_size = (unsigned int)flat_bin_size;
 
   // base address (= entry point)
   uint32_t base_addr = (uint32_t)elf.e_entry;
 
-  // section header
-  Elf32_Shdr *shdrs = malloc(elf.e_shentsize * elf.e_shnum);
-  if (!shdrs) {
+  uint8_t *raw_image = calloc(padded_size, 1); // zero-padded
+  if (!raw_image) {
     printf("[ERROR] malloc failed!\n");
+    fclose(input);
+    fclose(output);
     return -1;
   }
-  fseek(input, elf.e_shoff, SEEK_SET);
-  if (fread(shdrs, elf.e_shentsize, elf.e_shnum, input) <= 0) {
-    printf("[ERROR] Input file read error (%s)!\n", input_file);
+
+  if (fread(raw_image, 1, raw_exe_size, input) != raw_exe_size) {
+    printf("[ERROR] Failed to read input file (%s)!\n", input_file);
+    free(raw_image);
+    fclose(input);
+    fclose(output);
     return -2;
   }
-
-  // section string table
-  Elf32_Shdr shstr = shdrs[elf.e_shstrndx];
-  char *shstrtab = read_section(input, &shstr);
-  void *text = NULL;
-  void *rodata = NULL;
-  void *data = NULL;
-  unsigned int text_size = 0;
-  unsigned int rodata_size = 0;
-  unsigned int data_size = 0;
-
-  // scan section headers
-  for (i = 0; i < elf.e_shnum; i++) {
-    const char *section_name = shstrtab + shdrs[i].sh_name;
-    if (strcmp(section_name, ".text") == 0) {
-      text = read_section(input, &shdrs[i]);
-      text_size = (unsigned int)shdrs[i].sh_size;
-    }
-    if (strcmp(section_name, ".rodata") == 0) {
-      rodata = read_section(input, &shdrs[i]);
-      rodata_size = (unsigned int)shdrs[i].sh_size;
-    }
-    if (strcmp(section_name, ".data") == 0) {
-      data = read_section(input, &shdrs[i]);
-      data_size = (unsigned int)shdrs[i].sh_size;
-    }
-  }
-
   fclose(input);
 
   // ****************************************
