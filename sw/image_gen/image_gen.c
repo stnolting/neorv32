@@ -191,8 +191,8 @@ int main(int argc, char *argv[]) {
   }
   raw_exe_size = (unsigned int)flat_bin_size;
 
-  // base address (= entry point)
-  uint32_t base_addr = (uint32_t)elf.e_entry;
+  // pad to word-aligned size
+  unsigned int padded_size = (raw_exe_size + 3u) & ~3u;
 
   uint8_t *raw_image = calloc(padded_size, 1); // zero-padded
   if (!raw_image) {
@@ -211,9 +211,9 @@ int main(int argc, char *argv[]) {
   }
   fclose(input);
 
-  // ****************************************
-  // generate raw image
-  // ****************************************
+  // use padded size for all word-based operations
+  raw_exe_size = padded_size;
+  uint32_t *raw_image32 = (uint32_t *)raw_image;
 
   // debug
 //printf(".text:   %d bytes\n", text_size);
