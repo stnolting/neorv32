@@ -81,6 +81,7 @@ LD_SCRIPT ?= $(NEORV32_COM_PATH)/neorv32.ld
 
 # Main output files
 APP_ELF ?= main.elf
+APP_FLT ?= elf.bin
 APP_ASM ?= main.asm
 APP_EXE ?= neorv32_exe.bin
 APP_VHD ?= neorv32_imem_image.vhd
@@ -122,6 +123,7 @@ endif
 # Compiler suite
 CC      = $(RISCV_PREFIX)gcc
 OBJDUMP = $(RISCV_PREFIX)objdump
+OBJCOPY = $(RISCV_PREFIX)objcopy
 READELF = $(RISCV_PREFIX)readelf
 SIZE    = $(RISCV_PREFIX)size
 GDB     = $(RISCV_PREFIX)gdb
@@ -234,6 +236,10 @@ $(APP_ELF): $(OBJ)
 	$(ECHO) "Memory utilization:"
 	$(Q)$(SIZE) $(APP_ELF)
 
+# Generate flat binary
+$(APP_FLT): $(APP_ELF)
+	$(Q)$(OBJCOPY) -O binary $^ $@
+
 # Assembly listing file (for debugging)
 $(APP_ASM): $(APP_ELF)
 	$(Q)$(OBJDUMP) -d -S -z $< > $@
@@ -336,7 +342,7 @@ gdb: $(APP_ELF)
 # remove all build artifacts
 clean:
 	$(Q)$(RM) -rf $(BUILD_DIR)
-	$(Q)$(RM) -f $(APP_EXE) $(APP_ELF) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BLD_VHD)
+	$(Q)$(RM) -f $(APP_EXE) $(APP_ELF) $(APP_FLT) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BLD_VHD)
 	$(Q)$(RM) -f .gdb_history
 
 # also remove image generator
