@@ -2168,13 +2168,11 @@ int main() {
     cnt_test++;
 
     amo_var = 0x00cafe00; // initialize
-    asm volatile ("fence"); // flush/reload d-cache
 
     tmp_a = neorv32_cpu_amolr((uint32_t)&amo_var);
     tmp_b = neorv32_cpu_amosc((uint32_t)&amo_var, 0x12345678); // must succeed returning all-zero
     tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)&amo_var, 0xffffffff) & 1); // another SC: must fail
     tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0) & 1); // another SC: must fail; no bus exception
-    asm volatile ("fence"); // flush/reload d-cache
 
     if ((tmp_a   == 0x00cafe00) && // correct LR.W result
         (amo_var == 0x12345678) && // atomic variable NOT updates by SC.W
@@ -2201,12 +2199,10 @@ int main() {
     cnt_test++;
 
     amo_var = 0xcafe1234; // initialize
-    asm volatile ("fence"); // flush/reload d-cache
 
     tmp_a = trap_cnt + 1; // we expect only a single exception here
     tmp_b = neorv32_cpu_amoadd((uint32_t)&amo_var, 0x00001234); // modify data
     neorv32_cpu_amoadd(((uint32_t)&amo_var)+1, 0x00001234); // cause an AMO alignment exception
-    asm volatile ("fence"); // flush/reload d-cache
 
     if ((tmp_a      == trap_cnt)               && // we had only a single exception
         (trap_cause == TRAP_CODE_S_MISALIGNED) && // store exception due to unaligned address of second AMO
