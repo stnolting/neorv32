@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
   char *input_file = NULL, *output_file = NULL;
   uint32_t checksum = 0, base_addr = 0xFFFFFFFF;
   int i = 0;
-  unsigned int operation = OP_EXE, raw_exe_size = 0, ext_exe_size = 0;
+  unsigned int n = 0, operation = OP_EXE, raw_exe_size = 0, ext_exe_size = 0;
 
   // show help menu if there are no arguments
   if (argc <= 1) {
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     // input file
     else if (strcmp(argv[i], "-i") == 0) {
       i++;
-      if (i >= (unsigned int)argc) {
+      if (i >= argc) {
         printf("[ERROR] Missing argument for '-i'!\n");
         return -1;
       }
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
     // output file
     else if (strcmp(argv[i], "-o") == 0) {
       i++;
-      if (i >= (unsigned int)argc) {
+      if (i >= argc) {
         printf("[ERROR] Missing argument for '-o'!\n");
         return -1;
       }
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     // type
     else if (strcmp(argv[i], "-t") == 0) {
       i++;
-      if (i >= (unsigned int)argc) {
+      if (i >= argc) {
         printf("[ERROR] Missing argument for '-t'!\n");
         return -1;
       }
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
     // bootloader relocation/base address
     else if (strcmp(argv[i], "-b") == 0) {
       i++;
-      if (i >= (unsigned int)argc) {
+      if (i >= argc) {
         printf("[ERROR] Missing argument for '-b'!\n");
         return -1;
       }
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
     exe_header_t header;
 
     // reserve header space
-    for (i = 0; i < sizeof(header); i++) {
+    for (n = 0; n < sizeof(header); n++) {
       fputc(0, output);
     }
 
@@ -344,8 +344,8 @@ int main(int argc, char *argv[]) {
 
   else if (operation == OP_BIN) {
 
-    for (i = 0; i < raw_exe_size; i++) {
-      fputc((unsigned char)(raw_image[i]), output);
+    for (n = 0; n < raw_exe_size; n++) {
+      fputc((unsigned char)(raw_image[n]), output);
     }
 
     // report
