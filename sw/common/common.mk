@@ -254,32 +254,32 @@ $(APP_EXE): $(APP_ELF) $(IMAGE_GEN)
 	$(Q)$(IMAGE_GEN) -t exe -i $< -o $@
 
 # Generate NEORV32 RAW executable VHDL boot image
-$(APP_VHD): $(APP_ELF) $(IMAGE_GEN)
+$(APP_VHD): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_VHD)"
 	$(Q)$(IMAGE_GEN) -t vhd -i $< -o $@
 
 # Generate NEORV32 RAW executable image in binary format
-$(APP_BIN): $(APP_ELF) $(IMAGE_GEN)
+$(APP_BIN): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_BIN)"
 	$(Q)$(IMAGE_GEN) -t bin -i $< -o $@
 
 # Generate NEORV32 RAW executable image in COE format
-$(APP_COE): $(APP_ELF) $(IMAGE_GEN)
+$(APP_COE): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_COE)"
 	$(Q)$(IMAGE_GEN) -t coe -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MIF format
-$(APP_MIF): $(APP_ELF) $(IMAGE_GEN)
+$(APP_MIF): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_MIF)"
 	$(Q)$(IMAGE_GEN) -t mif -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MEM format
-$(APP_MEM): $(APP_ELF) $(IMAGE_GEN)
+$(APP_MEM): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_MEM)"
 	$(Q)$(IMAGE_GEN) -t mem -i $< -o $@
 
 # Create local VHDL BOOTROM image
-bl_image: $(APP_ELF) $(IMAGE_GEN)
+bl_image: $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(BLD_VHD)"
 	$(Q)$(IMAGE_GEN) -t vhd -i $< -o $(BLD_VHD)
 
