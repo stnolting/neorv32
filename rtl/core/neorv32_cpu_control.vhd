@@ -468,7 +468,7 @@ begin
 
       when others => -- S_SLEEP / undefined state: halt CPU
       -- ------------------------------------------------------------
-        if (or_reduce_f(trap.irq_buf) = '1') or (trap.exc_fire = '1') then -- wake up on enabled pending IRQ or if pending exception
+        if (or_reduce_f(trap.irq_buf) = '1') or (trap.exc_fire = '1') then -- wake up on enabled pending IRQ or on pending exception
           exec_nxt.state <= S_DISPATCH;
         end if;
 
@@ -987,14 +987,14 @@ begin
       if (ctrl.csr_we = '1') then
         case ctrl.csr_addr is
 
-          when csr_mstatus_c => -- machine status register
+          when csr_mstatus_c => -- machine status register (low word)
             csr.mstatus_mie  <= csr_wdata(3);
             csr.mstatus_mpie <= csr_wdata(7);
             csr.mstatus_mpp  <= or_reduce_f(csr_wdata(12 downto 11)); -- everything != U will fall back to M
             csr.mstatus_mprv <= csr_wdata(17);
             csr.mstatus_tw   <= csr_wdata(21);
 
-          when csr_mie_c => -- machine interrupt enable register
+          when csr_mie_c => -- machine interrupt enable
             csr.mie_msi  <= csr_wdata(3);
             csr.mie_mti  <= csr_wdata(7);
             csr.mie_mei  <= csr_wdata(11);
@@ -1006,7 +1006,7 @@ begin
           when csr_mcounteren_c => -- machine counter access enable
             csr.mcounteren <= csr_wdata(2 downto 0);
 
-          when csr_mscratch_c => -- machine scratch register
+          when csr_mscratch_c => -- machine scratch
             csr.mscratch <= csr_wdata;
 
           when csr_mepc_c => -- machine exception program counter

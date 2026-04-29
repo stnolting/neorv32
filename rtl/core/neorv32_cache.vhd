@@ -249,7 +249,7 @@ begin
         bus_req_o.stb <= ctrl.bp_req; -- one-shot
         host_rsp_o    <= bus_rsp_i;
         if (bus_rsp_i.ack = '1') then
-          ctrl_nxt.state  <= S_IDLE;
+          ctrl_nxt.state <= S_IDLE;
         end if;
 
       -- ==========================================================================
