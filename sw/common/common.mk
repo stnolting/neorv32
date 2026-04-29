@@ -81,6 +81,7 @@ LD_SCRIPT ?= $(NEORV32_COM_PATH)/neorv32.ld
 
 # Main output files
 APP_ELF ?= main.elf
+APP_FLT ?= elf.bin
 APP_ASM ?= main.asm
 APP_EXE ?= neorv32_exe.bin
 APP_VHD ?= neorv32_imem_image.vhd
@@ -122,19 +123,18 @@ endif
 # Compiler suite
 CC      = $(RISCV_PREFIX)gcc
 OBJDUMP = $(RISCV_PREFIX)objdump
+OBJCOPY = $(RISCV_PREFIX)objcopy
 READELF = $(RISCV_PREFIX)readelf
 SIZE    = $(RISCV_PREFIX)size
 GDB     = $(RISCV_PREFIX)gdb
 
 # Host's native compiler
 CC_HOST = gcc -Wall -O -g
-ifeq ($(PLATFORM),macos)
-  CC_HOST += $(shell pkg-config --cflags libelf)
-endif
 
 # System tools
 ECHO  = @echo
 CP    = cp
+SED   = sed
 RM    = rm
 MKDIR = mkdir -p
 CHMOD = chmod
@@ -237,6 +237,10 @@ $(APP_ELF): $(OBJ)
 	$(ECHO) "Memory utilization:"
 	$(Q)$(SIZE) $(APP_ELF)
 
+# Generate flat binary
+$(APP_FLT): $(APP_ELF)
+	$(Q)$(OBJCOPY) -O binary $^ $@
+
 # Assembly listing file (for debugging)
 $(APP_ASM): $(APP_ELF)
 	$(Q)$(OBJDUMP) -d -S -z $< > $@
@@ -246,37 +250,37 @@ $(APP_ASM): $(APP_ELF)
 # -----------------------------------------------------------------------------
 
 # Generate NEORV32 executable image for upload via bootloader
-$(APP_EXE): $(APP_ELF) $(IMAGE_GEN)
+$(APP_EXE): $(APP_ELF) $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_EXE)"
-	$(Q)$(IMAGE_GEN) -t exe -i $< -o $@
+	$(Q)$(IMAGE_GEN) -t exe -b $(shell $(READELF) -h $(APP_ELF) | $(SED) -n 's/.*Entry point address: *//p') -i $(APP_FLT) -o $@
 
 # Generate NEORV32 RAW executable VHDL boot image
-$(APP_VHD): $(APP_ELF) $(IMAGE_GEN)
+$(APP_VHD): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_VHD)"
 	$(Q)$(IMAGE_GEN) -t vhd -i $< -o $@
 
 # Generate NEORV32 RAW executable image in binary format
-$(APP_BIN): $(APP_ELF) $(IMAGE_GEN)
+$(APP_BIN): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_BIN)"
 	$(Q)$(IMAGE_GEN) -t bin -i $< -o $@
 
 # Generate NEORV32 RAW executable image in COE format
-$(APP_COE): $(APP_ELF) $(IMAGE_GEN)
+$(APP_COE): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_COE)"
 	$(Q)$(IMAGE_GEN) -t coe -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MIF format
-$(APP_MIF): $(APP_ELF) $(IMAGE_GEN)
+$(APP_MIF): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_MIF)"
 	$(Q)$(IMAGE_GEN) -t mif -i $< -o $@
 
 # Generate NEORV32 RAW executable image in MEM format
-$(APP_MEM): $(APP_ELF) $(IMAGE_GEN)
+$(APP_MEM): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_MEM)"
 	$(Q)$(IMAGE_GEN) -t mem -i $< -o $@
 
 # Create local VHDL BOOTROM image
-bl_image: $(APP_ELF) $(IMAGE_GEN)
+bl_image: $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(BLD_VHD)"
 	$(Q)$(IMAGE_GEN) -t vhd -i $< -o $(BLD_VHD)
 
@@ -312,6 +316,9 @@ hdl_lists:
 # -----------------------------------------------------------------------------
 
 elf_info: $(APP_ELF)
+	$(Q)$(READELF) -h $(APP_ELF)
+
+elf_symbols: $(APP_ELF)
 	$(Q)$(OBJDUMP) -x $(APP_ELF)
 
 elf_sections: $(APP_ELF)
@@ -339,7 +346,7 @@ gdb: $(APP_ELF)
 # remove all build artifacts
 clean:
 	$(Q)$(RM) -rf $(BUILD_DIR)
-	$(Q)$(RM) -f $(APP_EXE) $(APP_ELF) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BLD_VHD)
+	$(Q)$(RM) -f $(APP_EXE) $(APP_ELF) $(APP_FLT) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BLD_VHD)
 	$(Q)$(RM) -f .gdb_history
 
 # also remove image generator
@@ -354,28 +361,25 @@ clean_all: clean
 check: $(IMAGE_GEN)
 	$(ECHO) "******************************************************"
 	$(ECHO) $(CC)
-	$(ECHO) "******************************************************"
 	$(Q)$(CC) -v
 	$(Q)$(CC) -march=help
 	$(ECHO) "******************************************************"
 	$(ECHO) $(OBJDUMP)
-	$(ECHO) "******************************************************"
 	$(Q)$(OBJDUMP) -V
 	$(ECHO) "******************************************************"
-	$(ECHO) $(READELF)
+	$(ECHO) $(OBJCOPY)
+	$(Q)$(OBJCOPY) -V
 	$(ECHO) "******************************************************"
+	$(ECHO) $(READELF)
 	$(Q)$(READELF) -v
 	$(ECHO) "******************************************************"
 	$(ECHO) $(SIZE)
-	$(ECHO) "******************************************************"
 	$(Q)$(SIZE) -V
 	$(ECHO) "******************************************************"
-	$(ECHO) "NEORV32 image generator:" $(IMAGE_GEN)
-	$(ECHO) "******************************************************"
+	$(ECHO) $(IMAGE_GEN)
 	$(Q)$(IMAGE_GEN) -h
 	$(ECHO) "******************************************************"
-	$(ECHO) "Native GCC:" $(CC_HOST)
-	$(ECHO) "******************************************************"
+	$(ECHO) $(CC_HOST)
 	$(Q)$(CC_HOST) -v
 	$(ECHO) ""
 	$(ECHO) "Toolchain check OK"
@@ -452,7 +456,7 @@ help::
 	$(ECHO) "  sim           in-console simulation using default testbench (sim folder) and GHDL"
 	$(ECHO) "  hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
 	$(ECHO) "  upload        upload executable to bootloader via UART ($(UART_TTY))"
-	$(ECHO) "  elf_info      show ELF layout info"
+	$(ECHO) "  elf_info      show ELF information"
 	$(ECHO) "  elf_sections  show ELF sections"
 	$(ECHO) "  bl_image      build and generate VHDL BOOTROM bootloader memory image <$(BLD_VHD)> in local folder"
 	$(ECHO) "  bootloader    build, generate and install VHDL BOOTROM bootloader memory image <$(BLD_VHD)>"

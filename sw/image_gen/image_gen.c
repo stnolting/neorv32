@@ -12,11 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef __APPLE__
-#include <libelf.h>
-#else
-#include <elf.h>
-#endif
 
 // executable signature identifier ("magic word", for bootloader only)
 const uint32_t signature_c = 0x214F454E;
@@ -40,6 +35,17 @@ typedef struct __attribute__((packed,aligned(4))) {
 } exe_header_t;
 
 // ************************************************************
+// Read 32-bit data from byte pointer (little-Endian).
+// ************************************************************
+uint32_t read32(const uint8_t *p) {
+
+  return ((uint32_t)p[0] <<  0) |
+         ((uint32_t)p[1] <<  8) |
+         ((uint32_t)p[2] << 16) |
+         ((uint32_t)p[3] << 24);
+}
+
+// ************************************************************
 // Write 32-bit data to file (little-Endian).
 // ************************************************************
 void write32(uint32_t d, FILE *f) {
@@ -51,21 +57,6 @@ void write32(uint32_t d, FILE *f) {
 }
 
 // ************************************************************
-// Read ELF section.
-// ************************************************************
-void *read_section(FILE *f, Elf32_Shdr *sh) {
-
-  void *data = malloc(sh->sh_size);
-  fseek(f, sh->sh_offset, SEEK_SET);
-  if (fread(data, 1, sh->sh_size, f) <= 0) {
-    return NULL;
-  }
-  else {
-    return data;
-  }
-}
-
-// ************************************************************
 // Show help menu.
 // ************************************************************
 void print_help(void){
@@ -74,13 +65,14 @@ void print_help(void){
     "NEORV32 executable image generator\n"
     "\n"
     "Usage:    image_gen [options]\n"
-    "Example:  image_gen -i main.elf -o main_exe.bin -t exe\n"
+    "Example:  image_gen -i elf.bin -o main_exe.bin -b 0xA0000000 -t exe\n"
     "\n"
     "Options:\n"
     "  -h            Show this help text and exit\n"
-    "  -i file_name  ELF input file\n"
+    "  -i file_name  Flattened binary input file\n"
     "  -o file_name  Image output file\n"
     "  -t format     Image output format\n"
+    "  -b address    Bootloader exe base address (hex; for \"-t exe\" only)\n"
     "\n"
     "Image formats (using little-Endian byte ordering):\n"
     "  exe  Executable for bootloader upload (binary file with header) \n"
@@ -98,9 +90,10 @@ void print_help(void){
 int main(int argc, char *argv[]) {
 
   FILE *input = NULL, *output = NULL;
-  char *input_file = NULL, *output_file = NULL, tmp_string[1024];
-  uint32_t checksum = 0;
-  unsigned int i = 0, operation = OP_EXE, raw_exe_size = 0, ext_exe_size = 0;
+  char *input_file = NULL, *output_file = NULL;
+  uint32_t checksum = 0, base_addr = 0xFFFFFFFFu, word = 0;
+  int i = 0;
+  unsigned int n = 0, operation = OP_EXE, raw_exe_size = 0, ext_exe_size = 0;
 
   // show help menu if there are no arguments
   if (argc <= 1) {
@@ -108,9 +101,10 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  // ****************************************
+  // --------------------------------------------------------------------------
   // parse arguments
-  // ****************************************
+  // --------------------------------------------------------------------------
+
   for (i = 1; i < argc; i++) {
     // show help
     if (strcmp(argv[i], "-h") == 0) {
@@ -119,15 +113,29 @@ int main(int argc, char *argv[]) {
     }
     // input file
     else if (strcmp(argv[i], "-i") == 0) {
-      input_file = argv[++i];
+      i++;
+      if (i >= argc) {
+        printf("[ERROR] Missing argument for '-i'!\n");
+        return -1;
+      }
+      input_file = argv[i];
     }
     // output file
     else if (strcmp(argv[i], "-o") == 0) {
-      output_file = argv[++i];
+      i++;
+      if (i >= argc) {
+        printf("[ERROR] Missing argument for '-o'!\n");
+        return -1;
+      }
+      output_file = argv[i];
     }
     // type
     else if (strcmp(argv[i], "-t") == 0) {
       i++;
+      if (i >= argc) {
+        printf("[ERROR] Missing argument for '-t'!\n");
+        return -1;
+      }
       if      (strcmp(argv[i], "exe") == 0) { operation = OP_EXE; }
       else if (strcmp(argv[i], "vhd") == 0) { operation = OP_VHD; }
       else if (strcmp(argv[i], "bin") == 0) { operation = OP_BIN; }
@@ -139,6 +147,15 @@ int main(int argc, char *argv[]) {
         return -1;
       }
     }
+    // bootloader relocation/base address
+    else if (strcmp(argv[i], "-b") == 0) {
+      i++;
+      if (i >= argc) {
+        printf("[ERROR] Missing argument for '-b'!\n");
+        return -1;
+      }
+      base_addr = (uint32_t)strtoul(argv[i], NULL, 0);
+    }
     // invalid
     else {
       printf("[ERROR] Invalid flag '%s'!\n", argv[i]);
@@ -146,9 +163,21 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // ****************************************
+  // we need a base address for the bootloader executable
+  if ((operation == OP_EXE) && (base_addr == 0xFFFFFFFFu)) {
+    printf("[ERROR] Missing '-b' argument!\n");
+    return -1;
+  }
+
+  // --------------------------------------------------------------------------
   // open input/output files
-  // ****************************************
+  // --------------------------------------------------------------------------
+
+  if ((input_file == NULL) || (output_file == NULL)) {
+    printf("[ERROR] No input/oupt file(s) specified!\n");
+    return -2;
+  }
+
   input = fopen(input_file, "rb");
   if (input == NULL) {
     printf("[ERROR] Input file error (%s)!\n", input_file);
@@ -158,122 +187,75 @@ int main(int argc, char *argv[]) {
   output = fopen(output_file, "wb");
   if (output == NULL) {
     printf("[ERROR] Output file error (%s)!\n", output_file);
+    fclose(input);
+    return -2;
+  }
+
+  // --------------------------------------------------------------------------
+  // read flat binary input
+  // --------------------------------------------------------------------------
+
+  fseek(input, 0, SEEK_END);
+  long flat_bin_size = ftell(input);
+  rewind(input);
+
+  // binary size
+  if (flat_bin_size <= 0) {
+    printf("[ERROR] Input file is empty (%s)!\n", input_file);
+    fclose(input);
     fclose(output);
     return -2;
   }
+  raw_exe_size = (unsigned int)flat_bin_size;
 
-  // ****************************************
-  // parse ELF
-  // ****************************************
+  // pad to word-aligned size
+  unsigned int padded_size = (raw_exe_size + 3u) & ~3u;
 
-  Elf32_Ehdr elf;
-  if (fread(&elf, 1, sizeof(elf), input) <= 0) {
-    printf("[ERROR] Input file is empty (%s)!\n", input_file);
-    return -2;
-  }
-
-  if (memcmp(elf.e_ident, ELFMAG, SELFMAG) != 0) {
-    printf("[ERROR] Input file is not an ELF (%s)!\n", input_file);
-    return -2;
-  }
-
-  // base address (= entry point)
-  uint32_t base_addr = (uint32_t)elf.e_entry;
-
-  // section header
-  Elf32_Shdr *shdrs = malloc(elf.e_shentsize * elf.e_shnum);
-  if (!shdrs) {
+  uint8_t *raw_image = calloc(padded_size, 1); // zero-padded
+  if (!raw_image) {
     printf("[ERROR] malloc failed!\n");
+    fclose(input);
+    fclose(output);
     return -1;
   }
-  fseek(input, elf.e_shoff, SEEK_SET);
-  if (fread(shdrs, elf.e_shentsize, elf.e_shnum, input) <= 0) {
-    printf("[ERROR] Input file read error (%s)!\n", input_file);
+
+  if (fread(raw_image, 1, raw_exe_size, input) != raw_exe_size) {
+    printf("[ERROR] Failed to read input file (%s)!\n", input_file);
+    free(raw_image);
+    fclose(input);
+    fclose(output);
     return -2;
   }
-
-  // section string table
-  Elf32_Shdr shstr = shdrs[elf.e_shstrndx];
-  char *shstrtab = read_section(input, &shstr);
-  void *text = NULL;
-  void *rodata = NULL;
-  void *data = NULL;
-  unsigned int text_size = 0;
-  unsigned int rodata_size = 0;
-  unsigned int data_size = 0;
-
-  // scan section headers
-  for (i = 0; i < elf.e_shnum; i++) {
-    const char *section_name = shstrtab + shdrs[i].sh_name;
-    if (strcmp(section_name, ".text") == 0) {
-      text = read_section(input, &shdrs[i]);
-      text_size = (unsigned int)shdrs[i].sh_size;
-    }
-    if (strcmp(section_name, ".rodata") == 0) {
-      rodata = read_section(input, &shdrs[i]);
-      rodata_size = (unsigned int)shdrs[i].sh_size;
-    }
-    if (strcmp(section_name, ".data") == 0) {
-      data = read_section(input, &shdrs[i]);
-      data_size = (unsigned int)shdrs[i].sh_size;
-    }
-  }
-
   fclose(input);
 
-  // ****************************************
-  // generate raw image
-  // ****************************************
+  // use padded size for all word-based operations
+  raw_exe_size = padded_size;
 
-  // debug
-//printf(".text:   %d bytes\n", text_size);
-//printf(".rodata: %d bytes\n", rodata_size);
-//printf(".data:   %d bytes\n", data_size);
-
-  // final image size
-  raw_exe_size = text_size + rodata_size + data_size;
-  if (raw_exe_size == 0) {// input file empty?
-    printf("[ERROR] Image is empty!\n");
-    return -2;
-  }
-  if ((raw_exe_size % 4) != 0) {
-    printf("[WARNING] Image size is not a multiple of 4 bytes!\n");
-  }
-
-  // make sure memory array is a power of two
+  // make sure memory array is a power of two (for the VHDL images)
   ext_exe_size = 4;
   while (ext_exe_size < raw_exe_size) {
     ext_exe_size *= 2;
   }
 
-  // construct raw image
-  uint8_t *raw_image = malloc(raw_exe_size);
-  uint32_t *raw_image32 = (uint32_t *)raw_image;
-  if (!raw_image) {
-    printf("[ERROR] malloc failed!\n");
-    return -1;
-  }
-  memcpy(raw_image,                           text,   text_size);   // start with .text
-  memcpy(raw_image + text_size,               rodata, rodata_size); // append .rodata
-  memcpy(raw_image + text_size + rodata_size, data,   data_size);   // append .data
-
   // --------------------------------------------------------------------------
   // executable for bootloader upload (including header)
   // --------------------------------------------------------------------------
+
   if (operation == OP_EXE) {
 
     exe_header_t header;
 
     // reserve header space
-    for (i = 0; i < sizeof(header); i++) {
+    for (n = 0; n < sizeof(header); n++) {
       fputc(0, output);
     }
 
     // actual data and checksum
     checksum = 0;
-    for (i = 0; i < raw_exe_size/4; i++) {
-      checksum += raw_image32[i];
-      write32(raw_image32[i], output);
+    for (n = 0; n < raw_exe_size/4; n++) {
+      word = read32(&raw_image[n*4]);
+      checksum += word;
+      write32(word, output);
     }
 
     // setup header
@@ -288,13 +270,14 @@ int main(int argc, char *argv[]) {
     write32(header.checksum, output);
 
     // report
-    printf("Executable (EXE): %d bytes @ 0x%08X, checksum = 0x%08X\n",
+    printf("Executable (EXE): %u bytes @ 0x%08X, checksum = 0x%08X\n",
            (unsigned int)header.size, (unsigned int)header.base_addr, (unsigned int)header.checksum);
   }
 
   // --------------------------------------------------------------------------
   // VHDL memory image (package name = output file name)
   // --------------------------------------------------------------------------
+
   else if (operation == OP_VHD) {
 
     // remove path from output file
@@ -320,7 +303,7 @@ int main(int argc, char *argv[]) {
     }
 
     // header
-    snprintf(tmp_string, sizeof(tmp_string),
+    fprintf(output,
       "library ieee;\n"
       "use ieee.std_logic_1164.all;\n"
       "\n"
@@ -330,123 +313,114 @@ int main(int argc, char *argv[]) {
       "constant image_size_c : natural := %u;\n"
       "constant image_data_c : rom_t := (\n",
       pkg_name, (ext_exe_size/4)-1, raw_exe_size);
-    fputs(tmp_string, output);
 
     // data
-    for (i = 0; i < raw_exe_size/4; i++) {
-      snprintf(tmp_string, sizeof(tmp_string), "x\"%08x\",\n", (unsigned int)raw_image32[i]);
-      fputs(tmp_string, output);
+    for (n = 0; n < raw_exe_size/4; n++) {
+      fprintf(output, "x\"%08x\",\n", (unsigned int)read32(&raw_image[n*4]));
     }
 
     // end
-    snprintf(tmp_string, sizeof(tmp_string),
+    fprintf(output,
       "others => (others => '0')\n"
       ");\n"
       "\n"
       "end %s;\n", pkg_name);
-    fputs(tmp_string, output);
 
     // report
-    printf("Executable (VHD): %d bytes\n", raw_exe_size);
+    printf("Executable (VHD): %u bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
   // executable plain-binary file
   // --------------------------------------------------------------------------
+
   else if (operation == OP_BIN) {
 
-    for (i = 0; i < raw_exe_size; i++) {
-      fputc((unsigned char)(raw_image[i]), output);
+    for (n = 0; n < raw_exe_size; n++) {
+      fputc((unsigned char)(raw_image[n]), output);
     }
 
     // report
-    printf("Executable (BIN): %d bytes\n", raw_exe_size);
+    printf("Executable (BIN): %u bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
   // executable COE file
   // --------------------------------------------------------------------------
+
   else if (operation == OP_COE) {
 
     // header
-    snprintf(tmp_string, sizeof(tmp_string), "memory_initialization_radix=16;\n");
-    fputs(tmp_string, output);
-    snprintf(tmp_string, sizeof(tmp_string), "memory_initialization_vector=\n");
-    fputs(tmp_string, output);
+    fputs("memory_initialization_radix=16;\n", output);
+    fputs("memory_initialization_vector=\n", output);
 
-    for (i = 0; i < raw_exe_size/4; i++) {
-      if (i == ((raw_exe_size/4)-1)) {
-        snprintf(tmp_string, sizeof(tmp_string), "%08x;\n", (unsigned int)raw_image32[i]);
+    for (n = 0; n < raw_exe_size/4; n++) {
+      word = read32(&raw_image[n * 4]);
+      if (n == ((raw_exe_size/4)-1)) {
+        fprintf(output, "%08x;\n", (unsigned int)word);
       }
       else {
-        snprintf(tmp_string, sizeof(tmp_string), "%08x,\n", (unsigned int)raw_image32[i]);
+        fprintf(output, "%08x,\n", (unsigned int)word);
       }
-      fputs(tmp_string, output);
     }
 
     // report
-    printf("Executable (COE): %d bytes\n", raw_exe_size);
+    printf("Executable (COE): %u bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
   // executable MEM file
   // --------------------------------------------------------------------------
+
   else if (operation == OP_MEM) {
 
-    for (i = 0; i < raw_exe_size/4; i++) {
-      snprintf(tmp_string, sizeof(tmp_string), "@%08x %08x\n", (unsigned int)i, (unsigned int)raw_image32[i]);
-      fputs(tmp_string, output);
+    for (n = 0; n < raw_exe_size/4; n++) {
+      fprintf(output, "@%08x %08x\n", n, (unsigned int)read32(&raw_image[n*4]));
     }
 
     // report
-    printf("Executable (MEM): %d bytes\n", raw_exe_size);
+    printf("Executable (MEM): %u bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
   // executable MIF file
   // --------------------------------------------------------------------------
+
   else if (operation == OP_MIF) {
 
     // header
-    snprintf(tmp_string, sizeof(tmp_string), "DEPTH = %u;\n", raw_exe_size/4); // memory depth in words
-    fputs(tmp_string, output);
-    snprintf(tmp_string, sizeof(tmp_string), "WIDTH = 32;\n"); // bits per data word
-    fputs(tmp_string, output);
-    snprintf(tmp_string, sizeof(tmp_string), "ADDRESS_RADIX = HEX;\n"); // hexadecimal address format
-    fputs(tmp_string, output);
-    snprintf(tmp_string, sizeof(tmp_string), "DATA_RADIX = HEX;\n"); // hexadecimal data format
-    fputs(tmp_string, output);
+    fprintf(output,
+      "DEPTH = %u;\n"
+      "WIDTH = 32;\n"
+      "ADDRESS_RADIX = HEX;\n"
+      "DATA_RADIX = HEX;\n"
+      "CONTENT\n"
+      "BEGIN\n",
+      raw_exe_size/4
+    );
 
-    snprintf(tmp_string, sizeof(tmp_string), "CONTENT\n");
-    fputs(tmp_string, output);
-    snprintf(tmp_string, sizeof(tmp_string), "BEGIN\n");
-    fputs(tmp_string, output);
-
-    for (i = 0; i < raw_exe_size/4; i++) {
-      snprintf(tmp_string, sizeof(tmp_string), "%08x : %08x;\n", (unsigned int)i, (unsigned int)raw_image32[i]);
-      fputs(tmp_string, output);
+    // data
+    for (n = 0; n < raw_exe_size/4; n++) {
+      fprintf(output, "%08x : %08x;\n", n, (unsigned int)read32(&raw_image[n*4]));
     }
 
     // footer
-    snprintf(tmp_string, sizeof(tmp_string), "END;\n");
-    fputs(tmp_string, output);
+    fputs("END;\n", output);
 
     // report
-    printf("Executable (MIF): %d bytes\n", raw_exe_size);
+    printf("Executable (MIF): %u bytes\n", raw_exe_size);
   }
 
   // invalid operation
   else {
     printf("[ERROR] Invalid operation!\n");
     free(raw_image);
-    free(shdrs);
     fclose(output);
     return -1;
   }
 
   // clean up
   free(raw_image);
-  free(shdrs);
   fclose(output);
 
   return 0;
