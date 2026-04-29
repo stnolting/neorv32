@@ -101,14 +101,9 @@ extension is shorthand for the following set of other extensions:
 * <<_zaamo_isa_extension>> - Atomic read-modify-write instructions.
 * <<_zalrsc_isa_extension>> - Atomic reservation-set instructions.
 
-.Atomic Variable in C Languages
-[NOTE]
-The C `_Atomic` specifier should be used for atomic variables.
-See section <<_coherence_example>> for more information.
-
 .`A` ISA Extension Exceptions
 [NOTE]
-Note that load and load-reserved instructions generate load exceptions,
+Note that according to the RISC-V spec. load and load-reservate instructions generate load exceptions,
 whereas store, store-conditional, and AMO instructions generate store exceptions.
 
 
@@ -242,6 +237,9 @@ are handled by the processor's <<_atomic_memory_operations_controller>>.
 .`aq` and `rl` Bits
 [NOTE]
 The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
+However, the CPU and especially the <<_data_cache_dcache>> treats all atomic memory operation as if
+the `aq` and `lr` bits were set (for the targeted address). See <<_memory_coherence>> for more
+information.
 
 
 ==== `Zalrsc` ISA Extension
@@ -262,6 +260,9 @@ are handled by the processor's <<_atomic_reservation_set_controller>>.
 .`aq` and `rl` Bits
 [NOTE]
 The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
+However, the CPU and especially the <<_data_cache_dcache>> treats all atomic memory operation as if
+the `aq` and `lr` bits were set (for the targeted address). See <<_memory_coherence>> for more
+information.
 
 
 ==== `Zcb` ISA Extension
