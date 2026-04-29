@@ -13,10 +13,10 @@
 # configuration when including this makefile in the project-specific makefile)
 # -----------------------------------------------------------------------------
 
-# User's application sources (*.c, *.cpp, *.s, *.S); add additional files here
+# User's application sources (*.c, *.cpp, *.s, *.S)
 APP_SRC ?= $(wildcard ./*.c) $(wildcard ./*.s) $(wildcard ./*.cpp) $(wildcard ./*.S)
 
-# User's application object files (*.o, *.cpp, *.s, *.S); add additional files here
+# User's application object files (*.o)
 APP_OBJ ?=
 
 # User's application include folders (don't forget the '-I' before each entry)
@@ -39,6 +39,9 @@ MABI  ?= ilp32
 
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS ?=
+
+# User-defined libraries
+USER_LIBS ?=
 
 # Relative or absolute path to the NEORV32 home folder
 NEORV32_HOME ?= ../../..
@@ -133,7 +136,7 @@ endif
 ECHO  = @echo
 CP    = cp
 RM    = rm
-MKDIR = mkdir
+MKDIR = mkdir -p
 CHMOD = chmod
 
 # NEORV32 executable image generator
@@ -174,8 +177,8 @@ coe:     $(APP_COE)
 mem:     $(APP_MEM)
 mif:     $(APP_MIF)
 image:   $(APP_VHD)
-install: image install-$(APP_VHD)
-all:     clean_all elf asm exe bin coe mem mif image install
+install: install-$(APP_VHD)
+all:     elf asm exe bin coe mem mif image install
 
 # -----------------------------------------------------------------------------
 # Verbosity
@@ -204,12 +207,12 @@ $(IMAGE_GEN): $(NEORV32_EXG_PATH)/image_gen.c
 	$(Q)$(CHMOD) +rx $(IMAGE_GEN)
 
 # -----------------------------------------------------------------------------
-# Build targets: Assemble, compile, link, dump
+# Build targets: Assemble, compile, link
 # -----------------------------------------------------------------------------
 
 # Create the build directories if they don't exist
 $(BUILD_DIR):
-	$(Q)$(MKDIR) -p $(BUILD_DIR)
+	$(Q)$(MKDIR) $(BUILD_DIR)
 
 # Compile app *.s sources (assembly)
 $(BUILD_DIR)/%.s.o: %.s | $(BUILD_DIR)
@@ -239,7 +242,7 @@ $(APP_ASM): $(APP_ELF)
 	$(Q)$(OBJDUMP) -d -S -z $< > $@
 
 # -----------------------------------------------------------------------------
-# Application targets: Generate executable formats
+# Image file targets: Generate executable formats
 # -----------------------------------------------------------------------------
 
 # Generate NEORV32 executable image for upload via bootloader
@@ -272,10 +275,6 @@ $(APP_MEM): $(APP_ELF) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_MEM)"
 	$(Q)$(IMAGE_GEN) -t mem -i $< -o $@
 
-# -----------------------------------------------------------------------------
-# BOOTROM / bootloader image targets
-# -----------------------------------------------------------------------------
-
 # Create local VHDL BOOTROM image
 bl_image: $(APP_ELF) $(IMAGE_GEN)
 	$(ECHO) "Generating $(BLD_VHD)"
@@ -293,7 +292,7 @@ bootloader: bl_image
 sim: $(APP_VHD)
 	$(ECHO) "Simulating processor using default testbench..."
 	$(Q)$(CHMOD) +rx $(NEORV32_SIM_PATH)/ghdl.sh
-	$(Q)./$(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
+	$(Q)$(NEORV32_SIM_PATH)/ghdl.sh $(GHDL_RUN_FLAGS)
 
 # Install VHDL memory initialization file
 install-$(APP_VHD): $(APP_VHD)
@@ -306,7 +305,7 @@ install-$(APP_VHD): $(APP_VHD)
 
 hdl_lists:
 	$(Q)$(CHMOD) +rx $(NEORV32_RTL_PATH)/generate_file_lists.sh
-	$(Q)./$(NEORV32_RTL_PATH)/generate_file_lists.sh
+	$(Q)$(NEORV32_RTL_PATH)/generate_file_lists.sh
 
 # -----------------------------------------------------------------------------
 # Show final ELF details (just for debugging)
@@ -324,7 +323,7 @@ elf_sections: $(APP_ELF)
 
 upload: $(APP_EXE)
 	$(Q)$(CHMOD) +rx $(NEORV32_EXG_PATH)/uart_upload.sh
-	$(Q)./$(NEORV32_EXG_PATH)/uart_upload.sh $(UART_TTY) $(APP_EXE)
+	$(Q)$(NEORV32_EXG_PATH)/uart_upload.sh $(UART_TTY) $(APP_EXE)
 
 # -----------------------------------------------------------------------------
 # Run GDB
@@ -446,7 +445,7 @@ help::
 	$(ECHO) "  install    build, generate and install VHDL IMEM application memory image <$(APP_VHD)>"
 	$(ECHO) "  clean      clean up project home folder"
 	$(ECHO) "  clean_all  clean up project home folder and image generator"
-	$(ECHO) "  all        clean_all + elf + asm + exe + bin + coe + mem + mif + image + install"
+	$(ECHO) "  all        elf + asm + exe + bin + coe + mem + mif + image + install"
 	$(ECHO) ""
 	$(ECHO) "Additional targets:"
 	$(ECHO) ""
