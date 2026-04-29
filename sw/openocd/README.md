@@ -6,7 +6,7 @@
 Example:
 
 ```bash
-neorv32/sw/openocd$ openocf -f neorv32.cfg
+neorv32/sw/openocd$ openocd -f neorv32.cfg
 ```
 
 Helper scripts in [`lib`](lib) are called by the main configuration files
