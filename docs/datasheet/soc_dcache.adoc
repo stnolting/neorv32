@@ -59,8 +59,12 @@ that can be accessed by the cache must also be able to process bursts (including
 
 The cache provides direct/uncached accesses (bypassing the cache) in order to access memory-mapped IO like
 the processor-internal IO/peripheral modules. All accesses that target the address range from `0xF0000000`
-to `0xFFFFFFFF` will bypass the cache. See section <<_address_space>> for more information. Furthermore, atomic
-memory operations  will always **bypass** the cache.
+to `0xFFFFFFFF` will bypass the cache. See section <<_address_space>> for more information.
+
+All atomic memory accesses also bypass the cache; however, in this case, the cache explicitly ensures
+<<_memory_coherence>>: if the address of an atomic memory access is cached, the corresponding line is
+first written back to main memory if it has been modified. The corresponding line is then invalidated,
+and the atomic access is finally executed as a cache-bypassing access.
 
 **Cache Synchronization and Memory Coherence**
 

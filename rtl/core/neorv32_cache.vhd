@@ -6,10 +6,10 @@
 -- transfers are split into individual single-word transfers. Total cache size in   --
 -- bytes is NUM_BLOCKS x BLOCK_SIZE.                                                --
 --                                                                                  --
--- Access types that will *bypass* the cache:                                       --
--- * any atomic memory operation                                                    --
--- * accesses to the explicit "uncached address space page" (or higher),            --
---   which is defined by the 4 most significant address bits (UC_BEGIN)             --
+-- Handling of (uncached) AMO operations (#1540):                                   --
+-- * AMO cache miss            -> directly execute bypass                           --
+-- * AMO cache hit, line clean -> invalidate line, execute bypass                   --
+-- * AMO cache hit, line dirty -> write back line, invalidate line, execute bypass  --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -160,7 +160,7 @@ begin
     ctrl_nxt.bus_err <= ctrl.bus_err;
     ctrl_nxt.pnd_req <= ctrl.pnd_req or host_req_i.stb;
     ctrl_nxt.pnd_syn <= ctrl.pnd_syn or host_req_i.fence;
-    ctrl_nxt.pnd_bp  <= '0';
+    ctrl_nxt.pnd_bp  <= ctrl.pnd_bp;
     ctrl_nxt.bp_req  <= '0';
     ctrl_nxt.hit     <= '0';
     ctrl_nxt.cln     <= '0';
@@ -199,6 +199,7 @@ begin
       -- ------------------------------------------------------------
         ctrl_nxt.bus_err <= '0'; -- reset bus error flag
         ctrl_nxt.sync    <= '0'; -- reset sync-in-progress flag
+        ctrl_nxt.pnd_bp  <= '0'; -- default: no bypass request
         if (ctrl.pnd_syn = '1') then -- pending sync request: invalidate clean blocks & write-back dirty blocks
           ctrl_nxt.state <= S_SYNC_START;
         elsif (host_req_i.stb = '1') or (ctrl.pnd_req = '1') then -- (pending) access request
@@ -217,8 +218,18 @@ begin
         ctrl_nxt.pnd_req <= '0'; -- access request accepted
         ctrl_nxt.bp_req  <= '1'; -- in case we are doing a bypass request (set STB for one cycle)
         --
-        if (ctrl.pnd_bp = '1') then -- cache bypass
-          ctrl_nxt.state <= S_BYPASS;
+        if (ctrl.pnd_bp = '1') then -- cache bypass (uncached or atomic memory operation)
+          if (cache_i.hit = '1') then -- do we have a cached copy of the accessed address (#1540)?
+            if (cache_i.drt = '1') and (READ_ONLY = false) then
+              ctrl_nxt.state <= S_WRITE_START; -- copy modified line to main memory
+            else
+              cache_o.vld    <= '0'; -- invalidate the cached copy so post-BYPASS reads refill from memory
+              cache_o.set    <= '1';
+              ctrl_nxt.state <= S_BYPASS;
+            end if;
+          else
+            ctrl_nxt.state <= S_BYPASS;
+          end if;
         elsif (cache_i.hit = '1') then -- cache HIT: read/write from/to cache
           if (host_req_i.rw = '1') and (READ_ONLY = false) then -- modify cache
             cache_o.we  <= host_req_i.ben;
@@ -238,7 +249,7 @@ begin
         bus_req_o.stb <= ctrl.bp_req; -- one-shot
         host_rsp_o    <= bus_rsp_i;
         if (bus_rsp_i.ack = '1') then
-          ctrl_nxt.state <= S_IDLE;
+          ctrl_nxt.state  <= S_IDLE;
         end if;
 
       -- ==========================================================================
@@ -467,13 +478,13 @@ begin
           ctrl_nxt.cln <= '1'; -- force cache clean to skip status flag read latency (for S_CHECK only)
           if (ctrl.sync = '1') then -- block upload caused by cache synchronization
             ctrl_nxt.state <= S_SYNC_NEXT;
-          elsif (ctrl.bus_err = '1') then -- block upload caused by cache miss: BUS ERROR during upload
+          elsif (ctrl.bus_err = '1') then -- block upload caused by cache miss or AMO pre-flush: BUS ERROR during upload
             cache_o.set    <= '1'; -- update cache block status
             cache_o.vld    <= '0'; -- invalidate cache block
             host_rsp_o.err <= '1';
             host_rsp_o.ack <= '1'; -- terminate current request and return bus error
             ctrl_nxt.state <= S_IDLE;
-          else -- block upload caused by cache miss: block upload successful
+          else -- block upload caused by cache miss or AMO pre-flush: upload successful
             cache_o.set    <= '1'; -- update cache block status
             cache_o.drt    <= '0'; -- cache block is clean now
             cache_o.vld    <= '1'; -- cache block is still valid

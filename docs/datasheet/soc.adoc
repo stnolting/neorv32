@@ -652,26 +652,26 @@ that are executed by processor-external agents.
 :sectnums:
 ==== Memory Coherence
 
-Depending on the configuration, the NEORV32 memory hierarchy consists of several levels.
+Depending on the configuration, the NEORV32 memory hierarchy provides several levels/layers of memory.
 
 [start=1]
 . The CPU execution pipeline and its _instruction prefetch buffer_ (<<_cpu_front_end>>)
 . The optional <<_data_cache_dcache>> and <<_instruction_cache_icache>>
 . Processor-internal and processor-external memories (depending on setup configuration)
 
-Memory accesses are initiated exclusively by the CPU or the <<_direct_memory_access_controller_dma>>.
+NEORV32 can feature up to three bus hosts: up to two CPU cores and the <<_direct_memory_access_controller_dma>>.
 Since the levels of the memory hierarchy are transparent to the software, special care must be taken
 to ensure memory coherence is maintained throughout the entire system/application. Note that coherence
 and especially cache synchronization is **not** performed automatically by the hardware itself as there
 is no snooping implemented. NEORV32 supports two RISC-V memory ordering instructions that are used for
 manual memory synchronization:
 
-* `fence.i` (<<_zifencei_isa_extension>>): Clear the CPU's instruction prefetch buffer
-and the CPU's instruction cache. The next cache access therefore results
-in a miss that fetches up-to-date data from main memory.
 * `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>): Flush the CPU's data cache: Modified ("dirty")
 blocks are copied back to main memory; all clean blocks are invalidated so that the next CPU access to
 any block results in a cache miss that reloads the cache with up-to-date data from main memory.
+* `fence.i` (<<_zifencei_isa_extension>>): Perform the same operations as `fence` (i.e. flushing the data
+cache), but also clear the CPU's instruction prefetch buffer and instruction cache. The next instruction
+cache access therefore results in a miss that fetches up-to-date data from main memory.
 
 .Weak Coherence Model
 [IMPORTANT]
@@ -680,43 +680,18 @@ coherence model. A core's `fence` just orders all memory accesses towards main m
 visible by other agents (the secondary CPU core, the DMA, processor-external modules) if these agents also
 synchronize (e.g. reload) their cache(s).
 
-===== Coherence Example
+Atomic memory accesses also require special attention. All atomic memory accesses bypass the CPU caches.
+However, in this case, the caches explicitly ensure memory coherence. If the address of an atomic memory
+access is cached, the corresponding line is first written back to main memory if it has been modified.
+Afterward, the corresponding line is invalidated, and the atomic access is executed as a cache bypass.
+The next access to the atomic address bypasses the cache if it is again an atomic memory operation.
+Normal memory accesses result in a cache miss (since the corresponding line was automatically invalidated
+previously), so that the cache is reloaded with current data from main memory.
 
-The following C example shows how to declare and use an atomic variable using the`_Atomic` specifier:
-
-.Atomic Variables - C Source Code
-[source, c]
-----
-_Atomic int counter = 0;
-
-counter = 3;
-counter++;
-----
-
-.Atomic Variables - According RISC-V Assembly Code
-[source, assembly]
-----
-li a3,3
-li a4,1
-
-fence rw,w
-sw    a3,0(a2)
-fence rw,rw
-
-amoadd.w.aqrl zero,a4,(a2)
-----
-
-The initial assignment `counter = 0` is translated into a store-word instruction (`sw`) that is
-automatically encapsulated within two `fence` instructions. This guarantees memory coherence as each
-`fence` will synchronize the CPU's data cache with upstream/main memory.
-
-The counter increment (`counter++`) is implemented as RISC-V atomic memory operation (`amoadd`). However, the
-compiler does not encapsulate this in within FENCE instructions. Hence, the altered atomic variable
-is **not** updated in the CPU's data cache (but in upstream/main memory).
-
-The above example clearly shows that special attention must be paid to memory coherence when using
-atomic memory operations.
-
+.C-Language `_Atomic` Variables
+[NOTE]
+Using plain `_Atomic` access (e.g., `_Atomic int counter = 0;`) defaults to GCC's `memory_order_seq_cst`
+buildin, which inserts fence instructions _before_ and _after_ the access. This is the safest but slowest option.
 
 <<<
 // ####################################################################################################################

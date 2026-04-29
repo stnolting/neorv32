@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 29.04.2026 | 1.13.0.1 | rework cache handling of atomic memory operations: enforce memory synchronization by hardware | [#1540](https://github.com/stnolting/neorv32/pull/1540) |
 | 27.04.2026 | [**1.13.0**](https://github.com/stnolting/neorv32/releases/tag/v1.13.0) | :rocket: **New release** | |
 | 25.04.2026 | 1.12.9.9 | `C` ISA extension: decompressor cleanups and logic optimizations (dead code elimination) | [#1537](https://github.com/stnolting/neorv32/pull/1537) |
 | 24.04.2026 | 1.12.9.8 | minor rtl (corner case) fixes and logic optimizations | [#1534](https://github.com/stnolting/neorv32/pull/1534) |
