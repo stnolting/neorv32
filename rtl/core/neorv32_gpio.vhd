@@ -129,7 +129,7 @@ begin
   end process input_stage;
 
   -- output --
-  output_stage: process(port_out)
+  output_stage: process(port_out, port_dir)
   begin
     port_out_o <= (others => '0');
     port_out_o(GPIO_NUM-1 downto 0) <= port_out;
