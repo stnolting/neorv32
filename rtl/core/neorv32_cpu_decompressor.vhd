@@ -199,9 +199,6 @@ begin
                 decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
                 decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sr_c;
                 decoded(instr_rs2_msb_c    downto instr_rs2_lsb_c)    <= instr_i(6 downto 2); -- immediate
-                if (instr_i(12) = '1') then -- nzuimm[5] = 1 -> RV32 custom / illegal
-                  illegal <= '1';
-                end if;
               when "10" => -- C.ANDI
                 decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
                 decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_and_c;
@@ -275,9 +272,6 @@ begin
             decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sll_c;
             decoded(instr_funct7_msb_c downto instr_funct7_lsb_c) <= "0000000";
             decoded(instr_rs2_msb_c    downto instr_rs2_lsb_c)    <= instr_i(6 downto 2); -- immediate
-            if (instr_i(12) = '1') then -- nzuimm[5] = 1 -> RV32 custom
-              illegal <= '1';
-            end if;
 
           when "010" | "011" => -- C.LWSP / C.FLWSP
           -- --------------------------------------------------------------------------------------
