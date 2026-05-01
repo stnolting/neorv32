@@ -139,7 +139,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mcause       : std_ulogic_vector(5 downto 0);  -- machine trap cause
     mtvec        : std_ulogic_vector(31 downto 0); -- machine trap-handler base address
     mtval        : std_ulogic_vector(31 downto 0); -- machine bad address or instruction
-    mtinst       : std_ulogic_vector(31 downto 0); -- machine trap instruction
     mscratch     : std_ulogic_vector(31 downto 0); -- machine scratch register
     mcounteren   : std_ulogic_vector(2 downto 0);  -- machine counter access enable: instruction, time, cycle
     dcsr_ebreakm : std_ulogic; -- behavior of ebreak instruction in m-mode
@@ -561,10 +560,9 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zfinx);
 
       -- machine trap setup/handling, environment/information registers, etc. --
-      when csr_mstatus_c  | csr_mstatush_c      | csr_misa_c      | csr_mie_c     | csr_mtvec_c  |
-           csr_mscratch_c | csr_mepc_c          | csr_mcause_c    | csr_mip_c     | csr_mtval_c  |
-           csr_mtinst_c   | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c |
-           csr_mhartid_c  | csr_mconfigptr_c    | csr_mxisa_c     | csr_mxisah_c =>
+      when csr_mstatus_c       | csr_mstatush_c  | csr_misa_c    | csr_mie_c    | csr_mtvec_c  | csr_mhartid_c    |
+           csr_mscratch_c      | csr_mepc_c      | csr_mcause_c  | csr_mip_c    | csr_mtval_c  | csr_mconfigptr_c |
+           csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mxisa_c  | csr_mxisah_c =>
         csr_valid(2) <= '1';
 
       -- machine-controlled user-mode CSRs --
@@ -970,7 +968,6 @@ begin
       csr.mepc         <= (others => '0');
       csr.mcause       <= (others => '0');
       csr.mtval        <= (others => '0');
-      csr.mtinst       <= (others => '0');
       csr.mcounteren   <= (others => '0');
       csr.dcsr_ebreakm <= '0';
       csr.dcsr_ebreaku <= '0';
@@ -1056,10 +1053,6 @@ begin
               csr.mtval <= lsu_mar_i; -- faulting data access address
             else -- everything else including all interrupts
               csr.mtval <= (others => '0');
-            end if;
-            csr.mtinst <= exec.ir; -- transformed trapping instruction
-            if (exec.ci = '1') and RISCV_ISA_C then
-              csr.mtinst(1) <= '0'; -- RISC-V priv. spec: clear bit 1 if compressed instruction
             end if;
           end if;
         end if;
@@ -1191,9 +1184,6 @@ begin
             csr_rdata(7)  <= trap.irq_pnd(irq_mti_irq_c);
             csr_rdata(11) <= trap.irq_pnd(irq_mei_irq_c);
             csr_rdata(31 downto 16) <= trap.irq_pnd(irq_firq_15_c downto irq_firq_0_c);
-
-          when csr_mtinst_c => -- machine trap instruction
-            csr_rdata <= csr.mtinst;
 
           -- --------------------------------------------------------------------
           -- machine information
