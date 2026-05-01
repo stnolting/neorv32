@@ -16,11 +16,6 @@ and are also hardwired to zero. Any access to such a CSR will raise an illegal i
 **WARL** behavior (write all values; read only legal values). Application software should always read back a CSR after writing
 to check if the targeted bits can actually be modified.
 
-.Read-Only RW CSRs
-[WARNING]
-Some CSRs are listed with "read-write" capabilities but will ignore any value written to them.
-In the following table these CSRs are highlighted with "⚠️".
-
 .NEORV32 Control and Status Registers (CSRs)
 [cols="<3,<5,<6,^3,<12"]
 [options="header"]
@@ -49,8 +44,8 @@ In the following table these CSRs are highlighted with "⚠️".
 5+^| **<<_machine_trap_handling_csrs>>**
 | 0x340 | <<_mscratch>> | `CSR_MSCRATCH` | MRW | Machine scratch register
 | 0x341 | <<_mepc>>     | `CSR_MEPC`     | MRW | Machine exception program counter
-| 0x342 | <<_mcause>>   | `CSR_MCAUSE`   | MRW ⚠️ | Machine trap cause
-| 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW ⚠️ | Machine trap value
+| 0x342 | <<_mcause>>   | `CSR_MCAUSE`   | MRW | Machine trap cause
+| 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW | Machine trap value
 | 0x344 | <<_mip>>      | `CSR_MIP`      | MRW | Machine interrupt pending register
 | 0x34a | <<_mtinst>>   | `CSR_MTINST`   | MRW ⚠️ | Machine trap instruction
 5+^| **<<_machine_physical_memory_protection_csrs>>**
