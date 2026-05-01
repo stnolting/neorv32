@@ -16,11 +16,6 @@ and are also hardwired to zero. Any access to such a CSR will raise an illegal i
 **WARL** behavior (write all values; read only legal values). Application software should always read back a CSR after writing
 to check if the targeted bits can actually be modified.
 
-.Read-Only RW CSRs
-[WARNING]
-Some CSRs are listed with "read-write" capabilities but will ignore any value written to them.
-In the following table these CSRs are highlighted with "⚠️".
-
 .NEORV32 Control and Status Registers (CSRs)
 [cols="<3,<5,<6,^3,<12"]
 [options="header"]
@@ -49,10 +44,9 @@ In the following table these CSRs are highlighted with "⚠️".
 5+^| **<<_machine_trap_handling_csrs>>**
 | 0x340 | <<_mscratch>> | `CSR_MSCRATCH` | MRW | Machine scratch register
 | 0x341 | <<_mepc>>     | `CSR_MEPC`     | MRW | Machine exception program counter
-| 0x342 | <<_mcause>>   | `CSR_MCAUSE`   | MRW ⚠️ | Machine trap cause
-| 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW ⚠️ | Machine trap value
+| 0x342 | <<_mcause>>   | `CSR_MCAUSE`   | MRW | Machine trap cause
+| 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW | Machine trap value
 | 0x344 | <<_mip>>      | `CSR_MIP`      | MRW | Machine interrupt pending register
-| 0x34a | <<_mtinst>>   | `CSR_MTINST`   | MRW ⚠️ | Machine trap instruction
 5+^| **<<_machine_physical_memory_protection_csrs>>**
 | 0x3a0 .. 0x303 | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg3`>>      | `CSR_PMPCFG0` .. `CSR_PMPCFG3`    | MRW | Physical memory protection configuration registers
 | 0x3b0 .. 0x3bf | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr15`>> | `CSR_PMPADDR0` .. `CSR_PMPADDR15` | MRW | Physical memory protection address registers
@@ -113,11 +107,11 @@ In the following table these CSRs are highlighted with "⚠️".
 [options="header",grid="rows"]
 |=======================
 | Bit | R/W | Function
-| 0   | r/w | **NX**: inexact
-| 1   | r/w | **UF**: underflow
-| 2   | r/w | **OF**: overflow
-| 3   | r/w | **DZ**: division by zero
 | 4   | r/w | **NV**: invalid operation
+| 3   | r/w | **DZ**: division by zero
+| 2   | r/w | **OF**: overflow
+| 1   | r/w | **UF**: underflow
+| 0   | r/w | **NX**: inexact
 |=======================
 
 {empty} +
@@ -162,8 +156,8 @@ In the following table these CSRs are highlighted with "⚠️".
 [options="header",grid="rows"]
 |=======================
 | Bit | R/W | Function
-| 4:0 | r/w | Accrued exception flags (<<_fflags>>)
 | 7:5 | r/w | Rounding mode (<<_frm>>)
+| 4:0 | r/w | Accrued exception flags (<<_fflags>>)
 |=======================
 
 
@@ -190,11 +184,11 @@ In the following table these CSRs are highlighted with "⚠️".
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 3     | `CSR_MSTATUS_MIE`  | r/w | **MIE**: Machine-mode interrupt enable flag
-| 7     | `CSR_MSTATUS_MPIE` | r/w | **MPIE**: Previous machine-mode interrupt enable flag state
-| 12:11 | `CSR_MSTATUS_MPP_H` : `CSR_MSTATUS_MPP_L` | r/w | **MPP**: Previous machine privilege mode, `11` = machine-mode "M", `00` = user-mode "U"; other values will fall-back to machine-mode
-| 17    | `CSR_MSTATUS_MPRV` | r/w | **MPRV**: Effective privilege mode for load/stores; use `MPP` as effective privilege mode when set; hardwired to zero if user-mode not implemented
 | 21    | `CSR_MSTATUS_TW`   | r/w | **TW**: Trap on execution of `wfi` instruction in user mode when set; hardwired to zero if user-mode not implemented
+| 17    | `CSR_MSTATUS_MPRV` | r/w | **MPRV**: Effective privilege mode for load/stores; use `MPP` as effective privilege mode when set; hardwired to zero if user-mode not implemented
+| 12:11 | `CSR_MSTATUS_MPP_H` : `CSR_MSTATUS_MPP_L` | r/w | **MPP**: Previous machine privilege mode, `11` = machine-mode "M", `00` = user-mode "U"; other values will fall-back to machine-mode
+| 7     | `CSR_MSTATUS_MPIE` | r/w | **MPIE**: Previous machine-mode interrupt enable flag state
+| 3     | `CSR_MSTATUS_MIE`  | r/w | **MIE**: Machine-mode interrupt enable flag
 |=======================
 
 
@@ -222,15 +216,15 @@ will _not_ cause an illegal instruction exception.
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 0     | `CSR_MISA_A_EXT` | r/- | **A**: CPU extension (atomic memory access) available, set when <<_a_isa_extension>> enabled
-| 1     | `CSR_MISA_B_EXT` | r/- | **B**: CPU extension (bit-manipulation) available, set when <<_b_isa_extension>> enabled
-| 2     | `CSR_MISA_C_EXT` | r/- | **C**: CPU extension (compressed instruction) available, set when <<_c_isa_extension>> enabled
-| 4     | `CSR_MISA_E_EXT` | r/- | **E**: CPU extension (embedded) available, set when <<_e_isa_extension>> enabled
-| 8     | `CSR_MISA_I_EXT` | r/- | **I**: CPU base ISA, cleared when <<_e_isa_extension>> enabled
-| 12    | `CSR_MISA_M_EXT` | r/- | **M**: CPU extension (mul/div) available, set when <<_m_isa_extension>> enabled
-| 20    | `CSR_MISA_U_EXT` | r/- | **U**: CPU extension (user mode) available, set when <<_u_isa_extension>> enabled
-| 23    | `CSR_MISA_X_EXT` | r/- | **X**: bit is always set to indicate non-standard / NEORV32-specific extensions
 | 31:30 | `CSR_MISA_MXL_HI_EXT` : `CSR_MISA_MXL_LO_EXT` | r/- | **MXL**: 32-bit architecture indicator (always `01`)
+| 23    | `CSR_MISA_X_EXT` | r/- | **X**: bit is always set to indicate non-standard / NEORV32-specific extensions
+| 20    | `CSR_MISA_U_EXT` | r/- | **U**: CPU extension (user mode) available, set when <<_u_isa_extension>> enabled
+| 12    | `CSR_MISA_M_EXT` | r/- | **M**: CPU extension (mul/div) available, set when <<_m_isa_extension>> enabled
+| 8     | `CSR_MISA_I_EXT` | r/- | **I**: CPU base ISA, cleared when <<_e_isa_extension>> enabled
+| 4     | `CSR_MISA_E_EXT` | r/- | **E**: CPU extension (embedded) available, set when <<_e_isa_extension>> enabled
+| 2     | `CSR_MISA_C_EXT` | r/- | **C**: CPU extension (compressed instruction) available, set when <<_c_isa_extension>> enabled
+| 1     | `CSR_MISA_B_EXT` | r/- | **B**: CPU extension (bit-manipulation) available, set when <<_b_isa_extension>> enabled
+| 0     | `CSR_MISA_A_EXT` | r/- | **A**: CPU extension (atomic memory access) available, set when <<_a_isa_extension>> enabled
 |=======================
 
 [TIP]
@@ -257,10 +251,10 @@ Machine-mode software can discover available `Z*` sub-extensions (like `Zicsr` o
 [options="header",grid="rows"]
 |=======================
 | Bit   | Name [C] | R/W | Function
-| 3     | `CSR_MIE_MSIE` | r/w | **MSIE**: Machine _software_ interrupt enable (from <<_core_local_interruptor_clint>>)
-| 7     | `CSR_MIE_MTIE` | r/w | **MTIE**: Machine _timer_ interrupt enable (from <<_core_local_interruptor_clint>>)
-| 11    | `CSR_MIE_MEIE` | r/w | **MEIE**: Machine _external_ interrupt enable
 | 31:16 | `CSR_MIE_FIRQ15E` : `CSR_MIE_FIRQ0E` | r/w | Fast interrupt channel 15..0 enable
+| 11    | `CSR_MIE_MEIE` | r/w | **MEIE**: Machine _external_ interrupt enable
+| 7     | `CSR_MIE_MTIE` | r/w | **MTIE**: Machine _timer_ interrupt enable (from <<_core_local_interruptor_clint>>)
+| 3     | `CSR_MIE_MSIE` | r/w | **MSIE**: Machine _software_ interrupt enable (from <<_core_local_interruptor_clint>>)
 |=======================
 
 
@@ -283,10 +277,10 @@ Machine-mode software can discover available `Z*` sub-extensions (like `Zicsr` o
 [options="header",grid="rows"]
 |=======================
 | Bit  | R/W | Function
-| 1:0  | r/w | **MODE**: mode configuration, `00` = DIRECT, `01` = VECTORED; other encodings are _reserved_.
 | 31:2 | r/w | **BASE**: in DIRECT mode = 4-byte-aligned base address of trap base handler, _all_ traps jump to `pc = BASE`;
 in VECTORED mode = 128-byte-aligned base address of trap vector table, interrupts cause a jump to `pc = BASE + 4 * mcause`
 and exceptions a jump to `pc = BASE`.
+| 1:0  | r/w | **MODE**: mode configuration, `00` = DIRECT, `01` = VECTORED; other encodings are _reserved_.
 |=======================
 
 .Interrupt Latency
@@ -313,10 +307,10 @@ As software does not need to determine the interrupt cause the reduction in late
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 0    | `CSR_MCOUNTEREN_CY` | r/w | **CY**: User-mode is allowed to read <<_cycleh>> CSRs when set
-| 1    | -                   | r/- | **TM**: not implemented, hardwired to zero
-| 2    | `CSR_MCOUNTEREN_IR` | r/w | **IR**: User-mode is allowed to read <<_instreth>> CSRs when set
 | 31:3 | -                   | r/- | **HPM**: hardwired to zero; hardware performance monitors are accessible by machine-mode software only
+| 2    | `CSR_MCOUNTEREN_IR` | r/w | **IR**: User-mode is allowed to read <<_instreth>> CSRs when set
+| 1    | -                   | r/- | **TM**: not implemented, hardwired to zero
+| 0    | `CSR_MCOUNTEREN_CY` | r/w | **CY**: User-mode is allowed to read <<_cycleh>> CSRs when set
 |=======================
 
 
@@ -388,19 +382,14 @@ The `mret` instruction will return to the address stored in `mepc` by automatica
 | Description | The `mcause` CSRs shows the exact cause of a trap. See section <<_traps_exceptions_and_interrupts>> for a list of all legal values.
 |=======================
 
-.Read-Only
-[IMPORTANT]
-Note that the NEORV32 `mcause` CSR is updated by the hardware only and cannot be written from software.
-However, any write-access will be ignored and will not cause any exception to maintain RISC-V compatibility.
-
-
 .`mcause` CSR bits
 [cols="^1,^1,<10"]
 [options="header",grid="rows"]
 |=======================
-| Bit | R/W | Function
-| 4:0 | r/w | **Exception code**: see <<_neorv32_trap_listing>>
-| 31  | r/w | **Interrupt**: `1` if the trap is caused by an interrupt (`0` if the trap is caused by an exception)
+| Bit  | R/W | Function
+| 31   | r/w | **Interrupt**: `1` if the trap is caused by an interrupt (`0` if the trap is caused by an exception)
+| 30:5 | r/- | Hardwired to zero
+| 4:0  | r/w | **Exception code**: see <<_neorv32_trap_listing>>
 |=======================
 
 
@@ -417,11 +406,6 @@ However, any write-access will be ignored and will not cause any exception to ma
 | ISA         | <<_zicsr_isa_extension,`Zicsr`>>
 | Description | The `mtval` CSR provides additional information why a trap was entered. See section <<_traps_exceptions_and_interrupts>> for more information.
 |=======================
-
-.Read-Only
-[IMPORTANT]
-Note that the NEORV32 `mtval` CSR is updated by the hardware only and cannot be written from software.
-However, any write-access will be ignored and will not cause any exception to maintain RISC-V compatibility.
 
 
 {empty} +
@@ -443,44 +427,16 @@ However, any write-access will be ignored and will not cause any exception to ma
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending, triggered by `msi_i` top port (see <<_cpu_top_entity_signals>>); cleared by source-specific mechanism
-| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending, triggered by `mei_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
-| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending, triggered by `mti_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
 | 31:16 | `CSR_MIP_FIRQ15P` : `CSR_MIP_FIRQ0P` | r/- | **FIRQxP**: Fast interrupt channel 15..0 pending, see <<_neorv32_specific_fast_interrupt_requests>>; cleared by source-specific mechanism
+| 11    | `CSR_MIP_MEIP`                       | r/- | **MEIP**: Machine _external_ interrupt pending, triggered by `mti_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
+| 7     | `CSR_MIP_MTIP`                       | r/- | **MTIP**: Machine _timer_ interrupt pending, triggered by `mei_i` top port (see <<_cpu_top_entity_signals>>) or by the processor-internal <<_core_local_interruptor_clint>>; cleared by source-specific mechanism
+| 3     | `CSR_MIP_MSIP`                       | r/- | **MSIP**: Machine _software_ interrupt pending, triggered by `msi_i` top port (see <<_cpu_top_entity_signals>>); cleared by source-specific mechanism
 |=======================
 
 .FIRQ Channel Mapping
 [TIP]
 See section <<_neorv32_specific_fast_interrupt_requests>> for the mapping of the FIRQ channels and the according
 interrupt-triggering processor module.
-
-
-{empty} +
-[discrete]
-===== **`mtinst`**
-
-[cols="<1,<8"]
-[grid="none"]
-|=======================
-| Name        | Machine trap instruction
-| Address     | `0x34a`
-| Reset value | `0x00000000`
-| ISA         | <<_zicsr_isa_extension,`Zicsr`>>
-| Description | The `mtinst` CSR provides additional information why a trap was entered. See section <<_traps_exceptions_and_interrupts>> for more information.
-|=======================
-
-.Read-Only
-[IMPORTANT]
-Note that the NEORV32 `mtinst` CSR is updated by the hardware only and cannot be written from software.
-However, any write-access will be ignored and will not cause any exception to maintain RISC-V compatibility.
-
-.Instruction Transformation
-[IMPORTANT]
-The RISC-V priv. spec. suggests that the instruction word written to `mtinst` by the hardware should be "transformed".
-However, the NEORV32 `mtinst` CSR uses a simplified transformation scheme: if the trap-causing instruction is a
-standard 32-bit instruction, `mtinst` contains the exact instruction word that caused the trap. If the trap-causing
-instruction is a compressed instruction, `mtinst` contains the de-compressed 32-bit equivalent with bit 1 being cleared
-while all remaining bits represent the pre-decoded 32-bit instruction equivalent.
 
 
 
@@ -553,11 +509,11 @@ All remaining register are hardwired to zero.
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 0   | `PMPCFG_R`     | r/w | **R**: Read permission
-| 1   | `PMPCFG_W`     | r/w | **W**: Write permission
-| 2   | `PMPCFG_X`     | r/w | **X**: Execute permission
-| 4:3 | `PMPCFG_A_MSB` : `PMPCFG_A_LSB` | r/w | **A**: Mode configuration (`00` = OFF, `01` = TOR, `10` = NA4, `11` = NAPOT)
 | 7   | `PMPCFG_L`     | r/w | **L**: Lock bit, prevents further write accesses, also enforces access rights in machine-mode, can only be cleared by CPU reset
+| 4:3 | `PMPCFG_A_MSB` : `PMPCFG_A_LSB` | r/w | **A**: Mode configuration (`00` = OFF, `01` = TOR, `10` = NA4, `11` = NAPOT)
+| 2   | `PMPCFG_X`     | r/w | **X**: Execute permission
+| 1   | `PMPCFG_W`     | r/w | **W**: Write permission
+| 0   | `PMPCFG_R`     | r/w | **R**: Read permission
 |=======================
 
 .Implemented Modes
@@ -602,8 +558,8 @@ All remaining register are hardwired to zero.
 [options="header",grid="rows"]
 |=======================
 | Bit   | R/W | Description
-| 31:30 | r-w | address bits `33 downto 32`´, hardwired to zero
 | 29:0  | r/w | address bits `31 downto 2`
+| 31:30 | r-w | address bits `33 downto 32`´, hardwired to zero
 |=======================
 
 
@@ -748,20 +704,19 @@ events is observed (logical OR). Note that the counter will only increment by 1 
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C]                | R/W | Event Description
-4+^| **RISC-V-compatible**
-| 0   | `HPMCNT_EVENT_CY`       | r/w | active clock cycle (CPU not in <<_sleep_mode>>)
-| 1   | `HPMCNT_EVENT_TM`       | r/- | _not implemented_, hardwired to zero
-| 2   | `HPMCNT_EVENT_IR`       | r/w | executed instruction (16-bit/compressed or 32-bit/uncompressed)
 4+^| **NEORV32-specific**
-| 3   | `HPMCNT_EVENT_COMPR`    | r/w | executed 16-bit/compressed (<<_c_isa_extension>>) instruction
-| 4   | `HPMCNT_EVENT_WAIT_DIS` | r/w | instruction dispatch wait cycle (wait for instruction prefetch-buffer refill);
-caused by a fence instruction, a control flow transfer or a instruction fetch bus wait cycle)
-| 5   | `HPMCNT_EVENT_WAIT_ALU` | r/w | delay/wait cycle caused by a _multi-cycle_ <<_cpu_arithmetic_logic_unit>> operation
-| 6   | `HPMCNT_EVENT_BRANCH`   | r/w | executed branch instruction (unconditional, conditional-taken or conditional-not-taken)
-| 7   | `HPMCNT_EVENT_CTRLFLOW` | r/w | control flow transfer (jump, taken branch, trap entry, trap exit)
-| 8   | `HPMCNT_EVENT_LOAD`     | r/w | executed load operation (read-modify-write AMOs are counted as one load and one store operation)
-| 9   | `HPMCNT_EVENT_STORE`    | r/w | executed store operation (read-modify-write AMOs are counted as one load and one store operation)
 | 10  | `HPMCNT_EVENT_WAIT_LSU` | r/w | memory/bus/cache/etc. delay/wait cycle while executing any load or store operation (caused by a data bus wait cycle))
+| 9   | `HPMCNT_EVENT_STORE`    | r/w | executed store operation (read-modify-write AMOs are counted as one load and one store operation)
+| 8   | `HPMCNT_EVENT_LOAD`     | r/w | executed load operation (read-modify-write AMOs are counted as one load and one store operation)
+| 7   | `HPMCNT_EVENT_CTRLFLOW` | r/w | control flow transfer (jump, taken branch, trap entry, trap exit)
+| 6   | `HPMCNT_EVENT_BRANCH`   | r/w | executed branch instruction (unconditional, conditional-taken or conditional-not-taken)
+| 5   | `HPMCNT_EVENT_WAIT_ALU` | r/w | delay/wait cycle caused by a _multi-cycle_ <<_cpu_arithmetic_logic_unit>> operation
+| 4   | `HPMCNT_EVENT_WAIT_DIS` | r/w | instruction dispatch wait cycle (wait for instruction prefetch-buffer refill); caused by a fence instruction, a control flow transfer or a instruction fetch bus wait cycle)
+| 3   | `HPMCNT_EVENT_COMPR`    | r/w | executed 16-bit/compressed (<<_c_isa_extension>>) instruction
+4+^| **RISC-V-compatible**
+| 2   | `HPMCNT_EVENT_IR`       | r/w | executed instruction (16-bit/compressed or 32-bit/uncompressed)
+| 1   | `HPMCNT_EVENT_TM`       | r/- | _not implemented_, hardwired to zero
+| 0   | `HPMCNT_EVENT_CY`       | r/w | active clock cycle (CPU not in <<_sleep_mode>>)
 |=======================
 
 .Instruction Retiring ("Retired == Executed")
@@ -828,10 +783,10 @@ software and are not accessible for lower-privileged software.
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Description
-| 0    | `CSR_MCOUNTINHIBIT_IR` | r/w | **IR**: Set to `1` to halt `[m]instret[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
-| 1    | -                      | r/- | **TM**: Hardwired to zero as `time[h]` CSRs are not implemented
-| 2    | `CSR_MCOUNTINHIBIT_CY` | r/w | **CY**: Set to `1` to halt `[m]cycle[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
 | 15:3 | `CSR_MCOUNTINHIBIT_HPM3` : `CSR_MCOUNTINHIBIT_HPM15` | r/w | **HPMx**: Set to `1` to halt `[m]hpmcount*[h]`; hardwired to zero if `Zihpm` ISA extension is disabled
+| 2    | `CSR_MCOUNTINHIBIT_CY` | r/w | **CY**: Set to `1` to halt `[m]cycle[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
+| 1    | -                      | r/- | **TM**: Hardwired to zero as `time[h]` CSRs are not implemented
+| 0    | `CSR_MCOUNTINHIBIT_IR` | r/w | **IR**: Set to `1` to halt `[m]instret[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
 |=======================
 
 
@@ -856,8 +811,8 @@ Note that `mcyclecfg` is hardwired to all-zero.
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Description
-| 28  | `CSR_MCYCLECFGH_UINH` | r/w | **UINH**: Set to `1` to halt `[m]cycle[h]` counter when CPU is in user-mode
 | 30  | `CSR_MCYCLECFGH_MINH` | r/w | **MINH**: Set to `1` to halt `[m]cycle[h]` counter when CPU is in machine-mode
+| 28  | `CSR_MCYCLECFGH_UINH` | r/w | **UINH**: Set to `1` to halt `[m]cycle[h]` counter when CPU is in user-mode
 |=======================
 
 
@@ -882,8 +837,8 @@ Note that `minstretcfg` is hardwired to all-zero.
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Description
-| 28  | `CSR_MINSTRETCFGH_UINH` | r/w | **UINH**: Set to `1` to halt `[m]instret[h]` counter when CPU is in user-mode
 | 30  | `CSR_MINSTRETCFGH_MINH` | r/w | **MINH**: Set to `1` to halt `[m]instret[h]` counter when CPU is in machine-mode
+| 28  | `CSR_MINSTRETCFGH_UINH` | r/w | **UINH**: Set to `1` to halt `[m]instret[h]` counter when CPU is in user-mode
 |=======================
 
 
@@ -910,9 +865,9 @@ Note that `minstretcfg` is hardwired to all-zero.
 [cols="^2,^2,<6"]
 [options="header",grid="rows"]
 |=======================
-| Bits  | R/W | Description
-|  6:0  | r/- | JEDEC ID offset
-|  31:7 | r/- | JEDEC ID bank
+| Bits | R/W | Description
+| 31:7 | r/- | JEDEC ID bank
+| 6:0  | r/- | JEDEC ID offset
 |=======================
 
 
@@ -1009,38 +964,38 @@ discover additional ISA (sub-)extensions (beyond the _base_ extensions listed in
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Description
-|  0  | `CSR_MXISA_ZICSR`     | r/- | <<_zicsr_isa_extension>> available
-|  1  | `CSR_MXISA_ZIFENCEI`  | r/- | <<_zifencei_isa_extension>> available
-|  2  | `CSR_MXISA_ZMMUL`     | r/- | <<_zmmul_isa_extension>> available
-|  3  | `CSR_MXISA_XCFU`      | r/- | <<_xcfu_isa_extension>> available
-|  4  | `CSR_MXISA_ZKT`       | r/- | <<_zkt_isa_extension>> available
-|  5  | `CSR_MXISA_ZFINX`     | r/- | <<_zfinx_isa_extension>> available
-|  6  | `CSR_MXISA_ZICOND`    | r/- | <<_zicond_isa_extension>> available
-|  7  | `CSR_MXISA_ZICNTR`    | r/- | <<_zicntr_isa_extension>> available
-|  8  | `CSR_MXISA_SMPMP`     | r/- | <<_smpmp_isa_extension>> available
-|  9  | `CSR_MXISA_ZIHPM`     | r/- | <<_zihpm_isa_extension>> available
-| 10  | `CSR_MXISA_SDEXT`     | r/- | <<_sdext_isa_extension>> available
-| 11  | `CSR_MXISA_SDTRIG`    | r/- | <<_sdtrig_isa_extension>> available
-| 12  | `CSR_MXISA_ZBKX`      | r/- | <<_zbkx_isa_extension>> available
-| 13  | `CSR_MXISA_ZKND`      | r/- | <<_zknd_isa_extension>> available
-| 14  | `CSR_MXISA_ZKNE`      | r/- | <<_zkne_isa_extension>> available
-| 15  | `CSR_MXISA_ZKNH`      | r/- | <<_zknh_isa_extension>> available
-| 16  | `CSR_MXISA_ZBKB`      | r/- | <<_zbkb_isa_extension>> available
-| 17  | `CSR_MXISA_ZBKC`      | r/- | <<_zbkc_isa_extension>> available
-| 18  | `CSR_MXISA_ZKN`       | r/- | <<_zkn_isa_extension>> available
-| 19  | `CSR_MXISA_ZKSH`      | r/- | <<_zksh_isa_extension>> available
-| 20  | `CSR_MXISA_ZKSED`     | r/- | <<_zksed_isa_extension>> available
-| 21  | `CSR_MXISA_ZKS`       | r/- | <<_zks_isa_extension>> available
-| 22  | `CSR_MXISA_ZBA`       | r/- | <<_zba_isa_extension>> available
-| 23  | `CSR_MXISA_ZBB`       | r/- | <<_zbb_isa_extension>> available
-| 24  | `CSR_MXISA_ZBS`       | r/- | <<_zbs_isa_extension>> available
-| 25  | `CSR_MXISA_ZAAMO`     | r/- | <<_zaamo_isa_extension>> available
-| 26  | `CSR_MXISA_ZALRSC`    | r/- | <<_zalrsc_isa_extension>> available
-| 27  | `CSR_MXISA_ZCB`       | r/- | <<_zcb_isa_extension>> available
-| 28  | `CSR_MXISA_ZCA`       | r/- | "`C` without floating-point", available when <<_c_isa_extension>> is available
-| 29  | `CSR_MXISA_ZIBI`      | r/- | <<_zibi_isa_extension>> available
-| 30  | `CSR_MXISA_ZIMOP`     | r/- | <<_zimop_isa_extension>> available
 | 31  | `CSR_MXISA_SMCNTRPMF` | r/- | <<_smcntrpmf_isa_extension>> available
+| 30  | `CSR_MXISA_ZIMOP`     | r/- | <<_zimop_isa_extension>> available
+| 29  | `CSR_MXISA_ZIBI`      | r/- | <<_zibi_isa_extension>> available
+| 28  | `CSR_MXISA_ZCA`       | r/- | "`C` without floating-point", available when <<_c_isa_extension>> is available
+| 27  | `CSR_MXISA_ZCB`       | r/- | <<_zcb_isa_extension>> available
+| 26  | `CSR_MXISA_ZALRSC`    | r/- | <<_zalrsc_isa_extension>> available
+| 25  | `CSR_MXISA_ZAAMO`     | r/- | <<_zaamo_isa_extension>> available
+| 24  | `CSR_MXISA_ZBS`       | r/- | <<_zbs_isa_extension>> available
+| 23  | `CSR_MXISA_ZBB`       | r/- | <<_zbb_isa_extension>> available
+| 22  | `CSR_MXISA_ZBA`       | r/- | <<_zba_isa_extension>> available
+| 21  | `CSR_MXISA_ZKS`       | r/- | <<_zks_isa_extension>> available
+| 20  | `CSR_MXISA_ZKSED`     | r/- | <<_zksed_isa_extension>> available
+| 19  | `CSR_MXISA_ZKSH`      | r/- | <<_zksh_isa_extension>> available
+| 18  | `CSR_MXISA_ZKN`       | r/- | <<_zkn_isa_extension>> available
+| 17  | `CSR_MXISA_ZBKC`      | r/- | <<_zbkc_isa_extension>> available
+| 16  | `CSR_MXISA_ZBKB`      | r/- | <<_zbkb_isa_extension>> available
+| 15  | `CSR_MXISA_ZKNH`      | r/- | <<_zknh_isa_extension>> available
+| 14  | `CSR_MXISA_ZKNE`      | r/- | <<_zkne_isa_extension>> available
+| 13  | `CSR_MXISA_ZKND`      | r/- | <<_zknd_isa_extension>> available
+| 12  | `CSR_MXISA_ZBKX`      | r/- | <<_zbkx_isa_extension>> available
+| 11  | `CSR_MXISA_SDTRIG`    | r/- | <<_sdtrig_isa_extension>> available
+| 10  | `CSR_MXISA_SDEXT`     | r/- | <<_sdext_isa_extension>> available
+|  9  | `CSR_MXISA_ZIHPM`     | r/- | <<_zihpm_isa_extension>> available
+|  8  | `CSR_MXISA_SMPMP`     | r/- | <<_smpmp_isa_extension>> available
+|  7  | `CSR_MXISA_ZICNTR`    | r/- | <<_zicntr_isa_extension>> available
+|  6  | `CSR_MXISA_ZICOND`    | r/- | <<_zicond_isa_extension>> available
+|  5  | `CSR_MXISA_ZFINX`     | r/- | <<_zfinx_isa_extension>> available
+|  4  | `CSR_MXISA_ZKT`       | r/- | <<_zkt_isa_extension>> available
+|  3  | `CSR_MXISA_XCFU`      | r/- | <<_xcfu_isa_extension>> available
+|  2  | `CSR_MXISA_ZMMUL`     | r/- | <<_zmmul_isa_extension>> available
+|  1  | `CSR_MXISA_ZIFENCEI`  | r/- | <<_zifencei_isa_extension>> available
+|  0  | `CSR_MXISA_ZICSR`     | r/- | <<_zicsr_isa_extension>> available
 |=======================
 
 .`mxisah` CSR Bits

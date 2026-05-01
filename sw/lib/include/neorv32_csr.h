@@ -64,7 +64,6 @@ enum NEORV32_CSR_enum {
   CSR_MCAUSE         = 0x342, /**< 0x342 - mcause:   Machine trap cause (#NEORV32_EXCEPTION_CODES_enum) */
   CSR_MTVAL          = 0x343, /**< 0x343 - mtval:    Machine trap value */
   CSR_MIP            = 0x344, /**< 0x344 - mip:      Machine interrupt pending register (#NEORV32_CSR_MIP_enum) */
-  CSR_MTINST         = 0x34a, /**< 0x34a - mtinst:   Machine trap instruction */
 
   /* physical memory protection */
   CSR_PMPCFG0        = 0x3a0, /**< 0x3a0 - pmpcfg0: Physical memory protection configuration register 0: regions 0..3 (#NEORV32_PMPCFG_ATTRIBUTES_enum, #NEORV32_PMP_MODES_enum) */

@@ -466,7 +466,6 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_mcause_c         => return "mcause";
       when csr_mtval_c          => return "mtval";
       when csr_mip_c            => return "mip";
-      when csr_mtinst_c         => return "mtinst";
       -- physical memory protection - configuration --
       when csr_pmpcfg0_c        => return "pmpcfg0";
       when csr_pmpcfg1_c        => return "pmpcfg1";

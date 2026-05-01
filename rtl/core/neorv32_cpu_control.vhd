@@ -96,6 +96,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type exec_t is record
     state : exec_state_t;
     ir    : std_ulogic_vector(31 downto 0); -- instruction word being executed right now
+    irc   : std_ulogic_vector(15 downto 0); -- original 16-bit format of "ir"
     ci    : std_ulogic;                     -- current instruction is decompressed instruction
     pc    : std_ulogic_vector(31 downto 0); -- current PC (current instruction)
     pc2   : std_ulogic_vector(31 downto 0); -- next PC (next linear instruction)
@@ -139,7 +140,6 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mcause       : std_ulogic_vector(5 downto 0);  -- machine trap cause
     mtvec        : std_ulogic_vector(31 downto 0); -- machine trap-handler base address
     mtval        : std_ulogic_vector(31 downto 0); -- machine bad address or instruction
-    mtinst       : std_ulogic_vector(31 downto 0); -- machine trap instruction
     mscratch     : std_ulogic_vector(31 downto 0); -- machine scratch register
     mcounteren   : std_ulogic_vector(2 downto 0);  -- machine counter access enable: instruction, time, cycle
     dcsr_ebreakm : std_ulogic; -- behavior of ebreak instruction in m-mode
@@ -198,6 +198,7 @@ begin
       ctrl       <= ctrl_bus_zero_c;
       exec.state <= S_RESTART;
       exec.ir    <= (others => '0');
+      exec.irc   <= (others => '0');
       exec.ci    <= '0';
       exec.pc    <= BOOT_ADDR(31 downto 2) & "00"; -- 32-bit-aligned boot address
       exec.pc2   <= BOOT_ADDR(31 downto 2) & "00"; -- 32-bit-aligned boot address
@@ -284,11 +285,12 @@ begin
         elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
           trap.instr_be  <= frontend_i.fault; -- access fault during instruction fetch
           exec_nxt.ci    <= frontend_i.compr; -- this is a decompressed instruction
-          exec_nxt.ir    <= frontend_i.instr; -- actual instruction word
+          exec_nxt.ir    <= frontend_i.i32; -- actual instruction word
+          exec_nxt.irc   <= frontend_i.i16; -- original instruction word
           exec_nxt.pc    <= exec.pc2(31 downto 1) & '0';
           exec_nxt.state <= S_EXECUTE; -- start executing new instruction
-          if (frontend_i.instr(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
-            ctrl_nxt.csr_addr <= frontend_i.instr(instr_imm12_msb_c downto instr_imm12_lsb_c); -- reduce switching activity on csr_addr net
+          if (frontend_i.i32(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
+            ctrl_nxt.csr_addr <= frontend_i.i32(instr_imm12_msb_c downto instr_imm12_lsb_c); -- reduce switching activity on csr_addr net
           end if;
         end if;
 
@@ -561,10 +563,9 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zfinx);
 
       -- machine trap setup/handling, environment/information registers, etc. --
-      when csr_mstatus_c  | csr_mstatush_c      | csr_misa_c      | csr_mie_c     | csr_mtvec_c  |
-           csr_mscratch_c | csr_mepc_c          | csr_mcause_c    | csr_mip_c     | csr_mtval_c  |
-           csr_mtinst_c   | csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c |
-           csr_mhartid_c  | csr_mconfigptr_c    | csr_mxisa_c     | csr_mxisah_c =>
+      when csr_mstatus_c       | csr_mstatush_c  | csr_misa_c    | csr_mie_c    | csr_mtvec_c  | csr_mhartid_c    |
+           csr_mscratch_c      | csr_mepc_c      | csr_mcause_c  | csr_mip_c    | csr_mtval_c  | csr_mconfigptr_c |
+           csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mxisa_c  | csr_mxisah_c =>
         csr_valid(2) <= '1';
 
       -- machine-controlled user-mode CSRs --
@@ -970,7 +971,6 @@ begin
       csr.mepc         <= (others => '0');
       csr.mcause       <= (others => '0');
       csr.mtval        <= (others => '0');
-      csr.mtinst       <= (others => '0');
       csr.mcounteren   <= (others => '0');
       csr.dcsr_ebreakm <= '0';
       csr.dcsr_ebreaku <= '0';
@@ -1012,7 +1012,13 @@ begin
           when csr_mepc_c => -- machine exception program counter
             csr.mepc <= csr_wdata(31 downto 1) & '0';
 
-          when csr_dcsr_c => -- debug mode control and status register
+          when csr_mcause_c => -- machine trap cause
+            csr.mcause <= csr_wdata(31) & csr_wdata(4 downto 0);
+
+          when csr_mtval_c => -- machine trap value
+            csr.mtval <= csr_wdata;
+
+          when csr_dcsr_c => -- debug mode control and status
             csr.dcsr_step    <= csr_wdata(2);
             csr.dcsr_ebreaku <= csr_wdata(12);
             csr.dcsr_ebreakm <= csr_wdata(15);
@@ -1046,14 +1052,22 @@ begin
             csr.mstatus_mpie <= csr.mstatus_mie;
             csr.mcause       <= trap.cause(6) & trap.cause(4 downto 0);
             csr.mepc         <= trap.pc(31 downto 1) & '0';
-            if (trap.cause(6) = '0') and (trap.cause(2) = '1') then -- load/store misaligned/access fault
-              csr.mtval <= lsu_mar_i; -- faulting data access address
-            else -- everything else including all interrupts
+            if (trap.cause(6) = '0') then -- sync. exception
+              if (trap.cause(2) = '1') then -- load/store misaligned/access fault
+                csr.mtval <= lsu_mar_i;
+              elsif (trap.cause(1 downto 0) = "10") then -- illegal instruction
+                if RISCV_ISA_C and (exec.ci = '1') then
+                  csr.mtval <= x"0000" & exec.irc;
+                else
+                  csr.mtval <= exec.ir;
+                end if;
+              elsif (not RISCV_ISA_C) and (trap.cause(1 downto 0) = "00") then -- instruction address misaligned
+                csr.mtval <= exec.pc2;
+              else -- everything else
+                csr.mtval <= (others => '0');
+              end if;
+            else -- interrupt
               csr.mtval <= (others => '0');
-            end if;
-            csr.mtinst <= exec.ir; -- transformed trapping instruction
-            if (exec.ci = '1') and RISCV_ISA_C then
-              csr.mtinst(1) <= '0'; -- RISC-V priv. spec: clear bit 1 if compressed instruction
             end if;
           end if;
         end if;
@@ -1185,9 +1199,6 @@ begin
             csr_rdata(7)  <= trap.irq_pnd(irq_mti_irq_c);
             csr_rdata(11) <= trap.irq_pnd(irq_mei_irq_c);
             csr_rdata(31 downto 16) <= trap.irq_pnd(irq_firq_15_c downto irq_firq_0_c);
-
-          when csr_mtinst_c => -- machine trap instruction
-            csr_rdata <= csr.mtinst;
 
           -- --------------------------------------------------------------------
           -- machine information

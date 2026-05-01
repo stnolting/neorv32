@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -42,7 +42,7 @@ volatile uint32_t data_block[2];
  **************************************************************************/
 void trap_handler_emulate_unaligned_lw(void) {
 
-  uint32_t inst = neorv32_cpu_csr_read(CSR_MTINST);
+  uint32_t inst = neorv32_cpu_load_unsigned_word(neorv32_cpu_csr_read(CSR_MEPC));
 
   // decompose I-type instruction
   uint32_t opcode   = (inst >>  0) & 0x07f;
@@ -77,8 +77,7 @@ void trap_handler_emulate_unaligned_lw(void) {
 
   }
   else {
-    neorv32_uart0_printf("Unexpected instruction (0x%x @ 0x%x)!\n",
-      neorv32_cpu_csr_read(CSR_MTINST), neorv32_cpu_csr_read(CSR_MEPC));
+    neorv32_uart0_printf("Unexpected instruction @ 0x%x!\n", neorv32_cpu_csr_read(CSR_MEPC));
   }
 }
 

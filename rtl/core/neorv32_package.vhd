@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130001"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130002"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -457,7 +457,6 @@ package neorv32_package is
   constant csr_mcause_c         : std_ulogic_vector(11 downto 0) := x"342";
   constant csr_mtval_c          : std_ulogic_vector(11 downto 0) := x"343";
   constant csr_mip_c            : std_ulogic_vector(11 downto 0) := x"344";
-  constant csr_mtinst_c         : std_ulogic_vector(11 downto 0) := x"34a";
   -- physical memory protection - configuration --
   constant csr_pmpcfg0_c        : std_ulogic_vector(11 downto 0) := x"3a0";
   constant csr_pmpcfg1_c        : std_ulogic_vector(11 downto 0) := x"3a1";
@@ -671,10 +670,11 @@ package neorv32_package is
   -- Instruction Fetch Interface ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   type if_bus_t is record
-    valid  : std_ulogic;                     -- bus signals are valid
-    instr  : std_ulogic_vector(31 downto 0); -- instruction word
-    compr  : std_ulogic;                     -- instruction is decompressed
-    fault  : std_ulogic;                     -- instruction-fetch error
+    valid : std_ulogic;                     -- bus signals are valid
+    i32   : std_ulogic_vector(31 downto 0); -- (decompressed) 32-bit instruction word
+    i16   : std_ulogic_vector(15 downto 0); -- (original) 16-bit instruction word
+    compr : std_ulogic;                     -- instruction is decompressed
+    fault : std_ulogic;                     -- instruction-fetch error
   end record;
 
   -- ALU Function Codes ---------------------------------------------------------------------
@@ -699,7 +699,7 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- [MSB] 1 = interrupt, 0 = sync. exception; [MSB-1] 1 = entry to debug mode, 0 = normal trapping
   -- RISC-V synchronous exceptions --
-  constant trap_ima_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0: instruction misaligned
+  constant trap_ima_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "00000"; -- 0: instruction address misaligned
   constant trap_iaf_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "00001"; -- 1: instruction access fault
   constant trap_iil_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "00010"; -- 2: illegal instruction
   constant trap_brk_c     : std_ulogic_vector(6 downto 0) := "0" & "0" & "00011"; -- 3: environment breakpoint
