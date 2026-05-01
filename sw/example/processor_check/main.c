@@ -833,8 +833,12 @@ int main() {
   asm volatile (".word 0xfe003023"); // illegal store funct3
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
     asm volatile (".balign 4");
-    asm volatile (".half 0x0000"); // canonical compressed illegal instruction
-    asm volatile (".half 0x66aa"); // c.flwsp (illegal since F ISA extension is not supported)
+    asm volatile (".half 0x0000"); // C0: canonical compressed illegal instruction
+    asm volatile (".half 0x6000"); // C0: c.lw (illegal since F ISA extension is not supported)
+    asm volatile (".half 0x6001"); // C1: c.lui with imm=0
+    asm volatile (".half 0x9C21"); // C1: c.xor with [12]=1
+    asm volatile (".half 0x8002"); // C2: c.jr with rs1=0
+    asm volatile (".half 0x66aa"); // C2: c.flwsp (illegal since F ISA extension is not supported)
     asm volatile (".balign 4");
   }
   asm volatile (".balign 4");
@@ -842,7 +846,7 @@ int main() {
   // number of traps we are expecting + expected instruction word of last illegal instruction
   uint32_t invalid_instr;
   if (neorv32_cpu_csr_read(CSR_MISA) & (1<<CSR_MISA_C)) { // C extension enabled
-    tmp_a += 15;
+    tmp_a += 19;
     invalid_instr = 0x000066aa;
   }
   else { // C extension disabled
