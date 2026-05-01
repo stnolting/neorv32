@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -126,10 +126,6 @@ static void __neorv32_rte_panic(void) {
   __neorv32_rte_puts(" MEPC=");
   __neorv32_rte_puth(neorv32_cpu_csr_read(CSR_MEPC));
 
-  // trapping instruction (transformed/decompressed)
-  __neorv32_rte_puts(" MTINST=");
-  __neorv32_rte_puth(neorv32_cpu_csr_read(CSR_MTINST));
-
   // trap value
   __neorv32_rte_puts(" MTVAL=");
   __neorv32_rte_puth(neorv32_cpu_csr_read(CSR_MTVAL));
@@ -161,8 +157,6 @@ static void __neorv32_rte_panic(void) {
 static void __attribute__((naked,aligned(4))) __neorv32_rte_core(void) {
 
   asm volatile (
-    "fence \n" // reload vector table
-
     // --------------------------------------------
     // save all registers to stack
     // --------------------------------------------
@@ -216,7 +210,7 @@ static void __attribute__((naked,aligned(4))) __neorv32_rte_core(void) {
     // --------------------------------------------
 
     "csrr x10, mcause     \n"
-    "srli x11, x10, 24    \n" // x10 = interrupt or sync. exception (as 256-byte offset)
+    "srli x11, x10, 24    \n" // x11 = 0x80 if interrupt, 0x00 if exception (128-byte row offset)
     "andi x12, x10, 0x1fu \n"
     "slli x12, x12, 2     \n" // x12 = trap code * 4 to get word offset
     "add  x12, x12, x11   \n"
@@ -229,14 +223,17 @@ static void __attribute__((naked,aligned(4))) __neorv32_rte_core(void) {
     // adjust return address in MEPC
     // --------------------------------------------
 
-    "csrr x10, mcause   \n" // skip if interrupt
-    "blt  x10, zero, 2f \n"
-    "csrr x10, mepc     \n"
-    "addi x10, x10, 4   \n"
+    "csrr x10, mcause   \n"
+    "blt  x10, zero, 2f \n" // skip if interrupt (MCAUSE[31] = 1)
+    "li   x11, 1        \n"
+    "beq  x10, x11,  2f \n" // skip if instruction access fault (MCAUSE = 1)
+
+    "csrr x11, mepc     \n" // address of trapping instruction
+    "addi x10, x11, 4   \n"
 #ifdef __riscv_c
-    "csrr x11, mtinst   \n" // check if trapping instruction is compressed
+    "lbu  x11, 0(x11)   \n" // OPCODE byte of trapping instruction
     "andi x11, x11, 3   \n"
-    "addi x11, x11, -3  \n" // compressed if opcode[1:0] != 3
+    "addi x11, x11, -3  \n" // check if compressed: OPCODE[1:0] != 3
     "beq  x11, zero, 1f \n"
     "addi x10, x10, -2  \n"
     "1:                 \n"
@@ -305,24 +302,25 @@ static void __attribute__((naked,aligned(4))) __neorv32_rte_core(void) {
  **************************************************************************/
 void neorv32_rte_setup(void) {
 
+  int i;
+
   // clear mstatus, set previous privilege level to machine-mode
   neorv32_cpu_csr_write(CSR_MSTATUS, (1<<CSR_MSTATUS_MPP_H) | (1<<CSR_MSTATUS_MPP_L));
-
-  // configure trap handler base address (direct mode)
-  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&__neorv32_rte_core) & 0xfffffffcU);
 
   // disable all IRQ channels
   neorv32_cpu_csr_write(CSR_MIE, 0);
 
   // install debug handler for all trap sources (executed only on core 0)
   if (neorv32_cpu_csr_read(CSR_MHARTID) == 0) {
-    int i;
     for (i=0; i<32; i++) {
       __neorv32_rte_vector_lut[0][i] = (uint32_t)(&__neorv32_rte_panic);
       __neorv32_rte_vector_lut[1][i] = (uint32_t)(&__neorv32_rte_panic);
     }
   }
   asm volatile ("fence"); // flush vector table to main memory
+
+  // configure trap handler base address (direct mode)
+  neorv32_cpu_csr_write(CSR_MTVEC, (uint32_t)(&__neorv32_rte_core) & 0xfffffffcU);
 }
 
 
@@ -397,7 +395,7 @@ uint32_t neorv32_rte_context_get(int x) {
 #endif
 
   if (tmp) {
-    tmp += neorv32_cpu_csr_read(CSR_MSCRATCH); // base address of original stack frame
+    tmp += neorv32_cpu_csr_read(CSR_MSCRATCH); // base address of trap stack frame
     return neorv32_cpu_load_unsigned_word(tmp);
   }
   else { // return zero if x = x0 (hardwired to zero)
@@ -425,7 +423,7 @@ void neorv32_rte_context_put(int x, uint32_t data) {
 #endif
 
   if (tmp) { // no store if x = x0 (hardwired to zero)
-    tmp += neorv32_cpu_csr_read(CSR_MSCRATCH); // base address of original stack frame
+    tmp += neorv32_cpu_csr_read(CSR_MSCRATCH); // base address of trap stack frame
     neorv32_cpu_store_unsigned_word(tmp, data);
   }
 }
