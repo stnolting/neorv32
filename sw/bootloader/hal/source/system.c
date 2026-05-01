@@ -50,8 +50,6 @@ static void __attribute__((interrupt("machine"),aligned(4))) system_trap_handler
     uart_putc(' ');
     uart_puth(neorv32_cpu_csr_read(CSR_MEPC));
     uart_putc(' ');
-    uart_puth(neorv32_cpu_csr_read(CSR_MTINST));
-    uart_putc(' ');
     uart_puth(neorv32_cpu_csr_read(CSR_MTVAL));
     uart_puts(VT_TERM_HL_OFF "\n");
   }
