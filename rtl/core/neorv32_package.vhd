@@ -671,10 +671,11 @@ package neorv32_package is
   -- Instruction Fetch Interface ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   type if_bus_t is record
-    valid  : std_ulogic;                     -- bus signals are valid
-    instr  : std_ulogic_vector(31 downto 0); -- instruction word
-    compr  : std_ulogic;                     -- instruction is decompressed
-    fault  : std_ulogic;                     -- instruction-fetch error
+    valid : std_ulogic;                     -- bus signals are valid
+    i32   : std_ulogic_vector(31 downto 0); -- (decompressed) 32-bit instruction word
+    i16   : std_ulogic_vector(15 downto 0); -- (original) 16-bit instruction word
+    compr : std_ulogic;                     -- instruction is decompressed
+    fault : std_ulogic;                     -- instruction-fetch error
   end record;
 
   -- ALU Function Codes ---------------------------------------------------------------------
