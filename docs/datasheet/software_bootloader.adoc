@@ -353,6 +353,6 @@ This can be caused by a temporary transmission error or by an invalid or corrupt
 | **`ERROR_CHECKSUM`**  | The checksum of the loaded executable is incorrect. This can be caused by a temporary transmission
 error or by an invalid or corrupted executable.
 | **`ERROR_EXCEPTION`** | An unexpected exception has occurred. This can be caused by an invalid bootloader configuration (non-available
-processor modules, memory layout, ...). For debugging purpose the error message will also display the content of the <<_mcause>>, <<_mepc>>,
-<<_mtinst>> and <<_mtval>> CSRs. Example: `ERROR_EXCEPTION 0x00000003 0xffe00cb4 0x00100073 0x00000000`
+processor modules, memory layout, ...). For debugging purpose the error message will also display the content of the <<_mcause>>, <<_mepc>>
+and <<_mtval>> CSRs. Example: `ERROR_EXCEPTION 0x00000003 0xffe00cb4 0x00000000`
 |=======================

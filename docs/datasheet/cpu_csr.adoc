@@ -47,7 +47,6 @@ to check if the targeted bits can actually be modified.
 | 0x342 | <<_mcause>>   | `CSR_MCAUSE`   | MRW | Machine trap cause
 | 0x343 | <<_mtval>>    | `CSR_MTVAL`    | MRW | Machine trap value
 | 0x344 | <<_mip>>      | `CSR_MIP`      | MRW | Machine interrupt pending register
-| 0x34a | <<_mtinst>>   | `CSR_MTINST`   | MRW ⚠️ | Machine trap instruction
 5+^| **<<_machine_physical_memory_protection_csrs>>**
 | 0x3a0 .. 0x303 | <<_pmpcfg, `pmpcfg0`>> .. <<_pmpcfg, `pmpcfg3`>>      | `CSR_PMPCFG0` .. `CSR_PMPCFG3`    | MRW | Physical memory protection configuration registers
 | 0x3b0 .. 0x3bf | <<_pmpaddr, `pmpaddr0`>> .. <<_pmpaddr, `pmpaddr15`>> | `CSR_PMPADDR0` .. `CSR_PMPADDR15` | MRW | Physical memory protection address registers
@@ -438,34 +437,6 @@ The `mret` instruction will return to the address stored in `mepc` by automatica
 [TIP]
 See section <<_neorv32_specific_fast_interrupt_requests>> for the mapping of the FIRQ channels and the according
 interrupt-triggering processor module.
-
-
-{empty} +
-[discrete]
-===== **`mtinst`**
-
-[cols="<1,<8"]
-[grid="none"]
-|=======================
-| Name        | Machine trap instruction
-| Address     | `0x34a`
-| Reset value | `0x00000000`
-| ISA         | <<_zicsr_isa_extension,`Zicsr`>>
-| Description | The `mtinst` CSR provides additional information why a trap was entered. See section <<_traps_exceptions_and_interrupts>> for more information.
-|=======================
-
-.Read-Only
-[IMPORTANT]
-Note that the NEORV32 `mtinst` CSR is updated by the hardware only and cannot be written from software.
-However, any write-access will be ignored and will not cause any exception to maintain RISC-V compatibility.
-
-.Instruction Transformation
-[IMPORTANT]
-The RISC-V priv. spec. suggests that the instruction word written to `mtinst` by the hardware should be "transformed".
-However, the NEORV32 `mtinst` CSR uses a simplified transformation scheme: if the trap-causing instruction is a
-standard 32-bit instruction, `mtinst` contains the exact instruction word that caused the trap. If the trap-causing
-instruction is a compressed instruction, `mtinst` contains the de-compressed 32-bit equivalent with bit 1 being cleared
-while all remaining bits represent the pre-decoded 32-bit instruction equivalent.
 
 
 
