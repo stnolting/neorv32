@@ -1012,7 +1012,13 @@ begin
           when csr_mepc_c => -- machine exception program counter
             csr.mepc <= csr_wdata(31 downto 1) & '0';
 
-          when csr_dcsr_c => -- debug mode control and status register
+          when csr_mcause_c => -- machine trap cause
+            csr.mcause <= csr_wdata(31) & csr_wdata(4 downto 0);
+
+          when csr_mtval_c => -- machine trap value
+            csr.mtval <= csr_wdata;
+
+          when csr_dcsr_c => -- debug mode control and status
             csr.dcsr_step    <= csr_wdata(2);
             csr.dcsr_ebreaku <= csr_wdata(12);
             csr.dcsr_ebreakm <= csr_wdata(15);
