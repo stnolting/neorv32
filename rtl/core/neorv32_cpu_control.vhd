@@ -1052,9 +1052,21 @@ begin
             csr.mstatus_mpie <= csr.mstatus_mie;
             csr.mcause       <= trap.cause(6) & trap.cause(4 downto 0);
             csr.mepc         <= trap.pc(31 downto 1) & '0';
-            if (trap.cause(6) = '0') and (trap.cause(2) = '1') then -- load/store misaligned/access fault
-              csr.mtval <= lsu_mar_i; -- faulting data access address
-            else -- everything else including all interrupts
+            if (trap.cause(6) = '0') then -- sync. exception
+              if (trap.cause(2) = '1') then -- load/store misaligned/access fault
+                csr.mtval <= lsu_mar_i;
+              elsif (trap.cause(1 downto 0) = "10") then -- illegal instruction
+                if RISCV_ISA_C and (exec.ci = '1') then
+                  csr.mtval <= x"0000" & exec.irc;
+                else
+                  csr.mtval <= exec.ir;
+                end if;
+              elsif (not RISCV_ISA_C) and (trap.cause(1 downto 0) = "00") then -- instruction address misaligned
+                csr.mtval <= exec.pc2;
+              else -- everything else
+                csr.mtval <= (others => '0');
+              end if;
+            else -- interrupt
               csr.mtval <= (others => '0');
             end if;
           end if;
