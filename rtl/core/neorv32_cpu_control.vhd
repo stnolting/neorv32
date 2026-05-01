@@ -96,6 +96,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   type exec_t is record
     state : exec_state_t;
     ir    : std_ulogic_vector(31 downto 0); -- instruction word being executed right now
+    irc   : std_ulogic_vector(15 downto 0); -- original 16-bit format of "ir"
     ci    : std_ulogic;                     -- current instruction is decompressed instruction
     pc    : std_ulogic_vector(31 downto 0); -- current PC (current instruction)
     pc2   : std_ulogic_vector(31 downto 0); -- next PC (next linear instruction)
@@ -197,6 +198,7 @@ begin
       ctrl       <= ctrl_bus_zero_c;
       exec.state <= S_RESTART;
       exec.ir    <= (others => '0');
+      exec.irc   <= (others => '0');
       exec.ci    <= '0';
       exec.pc    <= BOOT_ADDR(31 downto 2) & "00"; -- 32-bit-aligned boot address
       exec.pc2   <= BOOT_ADDR(31 downto 2) & "00"; -- 32-bit-aligned boot address
@@ -283,11 +285,12 @@ begin
         elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
           trap.instr_be  <= frontend_i.fault; -- access fault during instruction fetch
           exec_nxt.ci    <= frontend_i.compr; -- this is a decompressed instruction
-          exec_nxt.ir    <= frontend_i.instr; -- actual instruction word
+          exec_nxt.ir    <= frontend_i.i32; -- actual instruction word
+          exec_nxt.irc   <= frontend_i.i16; -- original instruction word
           exec_nxt.pc    <= exec.pc2(31 downto 1) & '0';
           exec_nxt.state <= S_EXECUTE; -- start executing new instruction
-          if (frontend_i.instr(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
-            ctrl_nxt.csr_addr <= frontend_i.instr(instr_imm12_msb_c downto instr_imm12_lsb_c); -- reduce switching activity on csr_addr net
+          if (frontend_i.i32(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
+            ctrl_nxt.csr_addr <= frontend_i.i32(instr_imm12_msb_c downto instr_imm12_lsb_c); -- reduce switching activity on csr_addr net
           end if;
         end if;
 
