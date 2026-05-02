@@ -89,7 +89,8 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
   -- address comparators, region-match and permission check --
   type cmp_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(1 downto 0); -- 0 = instruction fetch, 1 = data access
-  signal cmp_na, cmp_ge, cmp_lt, match : cmp_t;
+  signal cmp_na, cmp_ge, match : cmp_t;
+  signal cmp_lt : std_ulogic_vector(1 downto 0); -- 0 = instruction fetch, 1 = data access
 
   -- permission check --
   signal allow_ex, allow_rw : std_ulogic_vector(NUM_REGIONS-1 downto 0);
@@ -183,7 +184,7 @@ begin
 
   -- CSR Read Access ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_read_access: process(ctrl_i.csr_addr, cfg_rd32, addr_rd)
+  csr_read_access: process(ctrl_i, cfg_rd32, addr_rd)
   begin
     if (ctrl_i.csr_addr(11 downto 5) = csr_pmpcfg0_c(11 downto 5)) then -- PMP CSR
       if (ctrl_i.csr_addr(4) = '0') then -- PMP configuration CSR
@@ -275,23 +276,20 @@ begin
   region_gen:
   for r in 0 to NUM_REGIONS-1 generate
 
-    -- check region address match --
     -- NA4 and NAPOT --
     cmp_na(r)(0) <= '1' when ((i_addr_i(31 downto pmp_lsb_c) and addr_mask(r)) = (pmpaddr(r)(29 downto pmp_lsb_c-2) and addr_mask(r))) and NAP_EN else '0';
     cmp_na(r)(1) <= '1' when ((d_addr_i(31 downto pmp_lsb_c) and addr_mask(r)) = (pmpaddr(r)(29 downto pmp_lsb_c-2) and addr_mask(r))) and NAP_EN else '0';
+
     -- TOR region 0 --
     addr_match_r0_gen:
     if (r = 0) generate -- first entry: use ZERO as base and current entry as bound
       cmp_ge(r) <= (others => '1'); -- address is always greater than or equal to zero
-      cmp_lt(r) <= (others => '0'); -- cannot be less then zero
     end generate;
     -- TOR region above 0 --
     addr_match_rn_gen:
     if (r > 0) generate -- use previous entry as base and current entry as bound
       cmp_ge(r)(0) <= '1' when (unsigned(i_addr_i(31 downto pmp_lsb_c)) >= unsigned(pmpaddr(r-1)(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
-      cmp_lt(r)(0) <= '1' when (unsigned(i_addr_i(31 downto pmp_lsb_c)) <  unsigned(pmpaddr(r  )(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
       cmp_ge(r)(1) <= '1' when (unsigned(d_addr_i(31 downto pmp_lsb_c)) >= unsigned(pmpaddr(r-1)(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
-      cmp_lt(r)(1) <= '1' when (unsigned(d_addr_i(31 downto pmp_lsb_c)) <  unsigned(pmpaddr(r  )(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
     end generate;
 
     -- check region match according to configured mode --
@@ -299,7 +297,7 @@ begin
     begin
       if (pmpcfg(r)(cfg_ah_c downto cfg_al_c) = mode_tor_c) and TOR_EN then -- TOR
         if (r = (NUM_REGIONS-1)) then -- very last region
-          match(r) <= cmp_ge(r) and cmp_lt(r);
+          match(r) <= cmp_ge(r) and cmp_lt;
         else -- any other region
           match(r) <= cmp_ge(r) and (not cmp_ge(r+1)); -- this saves a LOT of comparators
         end if;
@@ -311,6 +309,10 @@ begin
     end process match_gen;
 
   end generate;
+
+  -- TOR last region --
+  cmp_lt(0) <= '1' when (unsigned(i_addr_i(31 downto pmp_lsb_c)) < unsigned(pmpaddr(NUM_REGIONS-1)(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
+  cmp_lt(1) <= '1' when (unsigned(d_addr_i(31 downto pmp_lsb_c)) < unsigned(pmpaddr(NUM_REGIONS-1)(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
 
 
   -- Permission Check -----------------------------------------------------------------------
