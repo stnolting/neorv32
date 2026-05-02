@@ -5,7 +5,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -151,12 +151,11 @@ begin
       end if;
       -- data register input --
       if (state = DR_CAPTURE) then -- capture phase
-        dreg <= (others => '0');
-        case ireg is -- make data MSB-aligned
-          when addr_idcode_c => dreg(dreg'left downto dreg'left-(size_idcode_c-1)) <= IDCODE_VERSION & IDCODE_PARTID & IDCODE_MANID & '1';
-          when addr_dtmcs_c  => dreg(dreg'left downto dreg'left-(size_dtmcs_c-1))  <= x"00000071";
-          when addr_dmi_c    => dreg(dreg'left downto dreg'left-(size_dmi_c-1))    <= dmi.addr & dmi.data & err & err;
-          when others        => dreg(dreg'left downto dreg'left-(size_bypass_c-1)) <= (others => '0');
+        case ireg is -- [NOTE] make data MSB-aligned and fill with zeros
+          when addr_idcode_c => dreg <= IDCODE_VERSION & IDCODE_PARTID & IDCODE_MANID & '1' & "000000000";
+          when addr_dtmcs_c  => dreg <= x"00000071" & "000000000";
+          when addr_dmi_c    => dreg <= dmi.addr & dmi.data & err & err;
+          when others        => dreg <= (others => '0');
         end case;
       elsif (state = DR_SHIFT) and (tck_rise = '1') then -- access phase; [JTAG-SYNC] evaluate TDI on rising edge of TCK
         dreg <= tdi & dreg(dreg'left downto 1);
@@ -177,9 +176,9 @@ begin
     end if;
   end process reg_access;
 
-  -- reset control --
-  dmihardreset <= '1' when (update = '1') and (ireg = addr_dtmcs_c) and (dreg(17) = '1') else '0';
-  dmireset     <= '1' when (update = '1') and (ireg = addr_dtmcs_c) and (dreg(16) = '1') else '0';
+  -- reset control; [NOTE] dreg bits are LSB-aligned --
+  dmihardreset <= '1' when (update = '1') and (ireg = addr_dtmcs_c) and (dreg((dreg'left - (size_dtmcs_c-1)) + 17) = '1') else '0';
+  dmireset     <= '1' when (update = '1') and (ireg = addr_dtmcs_c) and (dreg((dreg'left - (size_dtmcs_c-1)) + 16) = '1') else '0';
 
 
   -- Debug Module Interface -----------------------------------------------------------------
@@ -191,10 +190,10 @@ begin
       err  <= '0';
       dmi  <= dmi_req_terminate_c;
     elsif rising_edge(clk_i) then
-      -- sticky error: access attempt while DMI is busy --
+      -- sticky error: access attempt while DMI is busy or invalid operation --
       if (dmireset = '1') or (dmihardreset = '1') then
         err <= '0';
-      elsif (update = '1') and (ireg = addr_dmi_c) and (busy = '1') then
+      elsif (update = '1') and (ireg = addr_dmi_c) and ((busy = '1') or (dmi.op = "11")) then
         err <= '1';
       end if;
       -- interface arbiter --
