@@ -139,8 +139,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- CPU Bus and Debug Interfaces
   -- ----------------------------------------------------------
 
-  -- code ROM containing "park loop" --
-  -- copied manually from 'sw/ocd-firmware/neorv32_application_image.vhd' --
+  -- code ROM containing "park loop"; copied manually from 'sw/ocd-firmware/neorv32_application_image.vhd' --
   type code_rom_t is array (0 to 15) of std_ulogic_vector(31 downto 0);
   constant code_rom_c : code_rom_t := (
     x"fc0001a3",
@@ -149,7 +148,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     x"fc204403",
     x"02041063",
     x"fc104403",
-    x"fe040ae3",
+    x"fe0408e3",
     x"fc0000a3",
     x"7b202473",
     x"0ff0000f",
