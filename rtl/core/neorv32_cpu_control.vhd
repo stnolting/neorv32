@@ -388,7 +388,7 @@ begin
 
           -- memory fence operations --
           when opcode_fence_c =>
-            ctrl_nxt.cpu_fence <= exec.ir(instr_funct3_lsb_c) & '1'; -- fence.i & fence ; always flush D$ so I$ gets updated data; #1540
+            ctrl_nxt.cpu_fence <= exec.ir(instr_funct3_lsb_c) & '1'; -- fence.i & fence; always flush D$ (so I$ gets updated data; #1540)
             exec_nxt.state     <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC (actually only required for fence.i)
 
           -- FPU: floating-point operations --

@@ -126,6 +126,12 @@ architecture neorv32_cache_rtl of neorv32_cache is
 
 begin
 
+  -- Configuration Checks -------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  assert not (BURSTS_EN and (BLOCK_SIZE < 8)) report
+    "[NEORV32] Cache cannot emit burst if BLOCK_SIZE < 8." severity error;
+
+
   -- Control Engine Sync --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   ctrl_engine_sync: process(rstn_i, clk_i)
