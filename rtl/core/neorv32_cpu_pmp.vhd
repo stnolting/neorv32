@@ -21,7 +21,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_pmp is
   generic (
-    NUM_REGIONS : natural range 0 to 16; -- number of regions (0..16)
+    NUM_REGIONS : natural range 0 to 16; -- number of regions
     GRANULARITY : natural; -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     TOR_EN      : boolean; -- implement TOR mode
     NAP_EN      : boolean  -- implement NAPOT/NA4 modes
@@ -46,7 +46,11 @@ end neorv32_cpu_pmp;
 architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
   -- auto-configuration --
-  constant g_c : natural := sel_natural_f(boolean(GRANULARITY < 4), 4, 2**index_size_f(GRANULARITY));
+  -- G=0: store all bits [29:0] (pmp_lsb_c-2 = 0)
+  -- G>=1: store bits [29:G-1] -> one extra bit for NAPOT min. granularity
+  constant g_c        : natural := sel_natural_f(boolean(GRANULARITY < 4), 4, 2**index_size_f(GRANULARITY));
+  constant pmp_lsb_c  : natural := index_size_f(g_c); -- lowest bit of the addr. comparison (= G+2 = log2(g_c)), min = 2
+  constant pmp_alsb_c : natural := pmp_lsb_c - sel_natural_f(boolean(pmp_lsb_c > 2), 3, pmp_lsb_c); -- address LSB
 
   -- configuration register bits --
   constant cfg_r_c  : natural := 0; -- read permission
@@ -62,16 +66,13 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   constant mode_na4_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
   constant mode_napot_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (> 4 bytes)
 
-  -- address LSB according to granularity --
-  constant pmp_lsb_c : natural := index_size_f(g_c); -- min = 2
-
   -- configuration CSRs --
   type pmpcfg_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
   signal pmpcfg    : pmpcfg_t;
   signal pmpcfg_we : std_ulogic_vector(3 downto 0);
 
   -- address CSRs --
-  type pmpaddr_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(31 downto 0);
+  type pmpaddr_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(29 downto pmp_alsb_c);
   signal pmpaddr    : pmpaddr_t;
   signal pmpaddr_we : std_ulogic_vector(15 downto 0);
 
@@ -89,7 +90,8 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
   -- address comparators, region-match and permission check --
   type cmp_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(1 downto 0); -- 0 = instruction fetch, 1 = data access
-  signal cmp_na, cmp_ge, cmp_lt, match : cmp_t;
+  signal cmp_na, cmp_ge, match : cmp_t;
+  signal cmp_lt : std_ulogic_vector(1 downto 0); -- 0 = instruction fetch, 1 = data access
 
   -- permission check --
   signal allow_ex, allow_rw : std_ulogic_vector(NUM_REGIONS-1 downto 0);
@@ -98,12 +100,6 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   signal fail_ex, fail_rw : std_ulogic_vector(NUM_REGIONS downto 0);
 
 begin
-
-  -- Configuration Checks -------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert (GRANULARITY = g_c) report
-    "[NEORV32] Auto-adjusting invalid PMP granularity configuration." severity warning;
-
 
   -- CSR Write Access: Configuration (PMPCFG) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -170,10 +166,10 @@ begin
         if (pmpaddr_we(i) = '1') and (pmpcfg(i)(cfg_l_c) = '0') then -- unlocked write access
           if (i < NUM_REGIONS-1) then
             if (pmpcfg(i+1)(cfg_l_c) = '0') or (pmpcfg(i+1)(cfg_ah_c downto cfg_al_c) /= mode_tor_c) then -- pmpcfg(i+1) not "LOCKED TOR"
-              pmpaddr(i) <= "00" & ctrl_i.csr_wdata(29 downto 0);
+              pmpaddr(i) <= ctrl_i.csr_wdata(29 downto pmp_alsb_c);
             end if;
           else -- very last entry
-            pmpaddr(i) <= "00" & ctrl_i.csr_wdata(29 downto 0);
+            pmpaddr(i) <= ctrl_i.csr_wdata(29 downto pmp_alsb_c);
           end if;
         end if;
       end if;
@@ -183,7 +179,7 @@ begin
 
   -- CSR Read Access ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_read_access: process(ctrl_i.csr_addr, cfg_rd32, addr_rd)
+  csr_read_access: process(ctrl_i, cfg_rd32, addr_rd)
   begin
     if (ctrl_i.csr_addr(11 downto 5) = csr_pmpcfg0_c(11 downto 5)) then -- PMP CSR
       if (ctrl_i.csr_addr(4) = '0') then -- PMP configuration CSR
@@ -199,28 +195,21 @@ begin
   -- CSR read-back --
   csr_read_back_gen:
   for i in 0 to NUM_REGIONS-1 generate
-    -- configuration --
-    cfg_rd(i) <= pmpcfg(i);
-    -- address --
     address_read_back: process(pmpaddr, pmpcfg)
     begin
       addr_rd(i) <= (others => '0');
-      addr_rd(i)(29 downto pmp_lsb_c-2) <= pmpaddr(i)(29 downto pmp_lsb_c-2);
-      if (g_c = 8) and TOR_EN then -- bit G-1 reads as zero in TOR or OFF mode
+      addr_rd(i)(29 downto pmp_alsb_c) <= pmpaddr(i);
+      if (pmp_lsb_c > 2) then -- G >= 1
         if (pmpcfg(i)(cfg_ah_c) = '0') then -- TOR/OFF mode
-          addr_rd(i)(pmp_lsb_c) <= '0';
-        end if;
-      elsif (g_c > 8) then
-        if NAP_EN then
-          addr_rd(i)(pmp_lsb_c-2 downto 0) <= (others => '1'); -- in NAPOT mode bits G-2:0 must read as one
-        end if;
-        if TOR_EN then
-          if (pmpcfg(i)(cfg_ah_c) = '0') then -- TOR/OFF mode
-            addr_rd(i)(pmp_lsb_c-1 downto 0) <= (others => '0'); -- in TOR or OFF mode bits G-1:0 must read as zero
+          addr_rd(i)(pmp_lsb_c-3 downto 0) <= (others => '0'); -- [G-1:0] read as zero
+        else -- NAPOT mode (cfg_ah = '1')
+          if (pmp_alsb_c > 0) then -- G >= 2: set bits [G-2:0] to all-ones
+            addr_rd(i)(pmp_alsb_c-1 downto 0) <= (others => '1'); -- bits [G-2:0] read as one (only when G >= 2)
           end if;
         end if;
       end if;
     end process address_read_back;
+    cfg_rd(i) <= pmpcfg(i);
   end generate;
 
   -- terminate unused CSR read-backs --
@@ -242,8 +231,17 @@ begin
   mask_gen:
   for r in 0 to NUM_REGIONS-1 generate
 
-    -- NAPOT address mask generator --
-    addr_mask_napot(r)(pmp_lsb_c) <= '0';
+    -- NAPOT address mask seed bit --
+    addr_mask_napot_seed_g0:
+    if (pmp_lsb_c <= 2) generate
+      addr_mask_napot(r)(pmp_lsb_c) <= '0';
+    end generate;
+    addr_mask_napot_seed_gn:
+    if (pmp_lsb_c > 2) generate
+      addr_mask_napot(r)(pmp_lsb_c) <= not pmpaddr(r)(pmp_alsb_c);
+    end generate;
+
+    -- NAPOT address mask propagation --
     addr_mask_napot_gen:
     for i in pmp_lsb_c+1 to 31 generate
       addr_mask_napot(r)(i) <= addr_mask_napot(r)(i-1) or (not pmpaddr(r)(i-3));
@@ -275,23 +273,20 @@ begin
   region_gen:
   for r in 0 to NUM_REGIONS-1 generate
 
-    -- check region address match --
     -- NA4 and NAPOT --
     cmp_na(r)(0) <= '1' when ((i_addr_i(31 downto pmp_lsb_c) and addr_mask(r)) = (pmpaddr(r)(29 downto pmp_lsb_c-2) and addr_mask(r))) and NAP_EN else '0';
     cmp_na(r)(1) <= '1' when ((d_addr_i(31 downto pmp_lsb_c) and addr_mask(r)) = (pmpaddr(r)(29 downto pmp_lsb_c-2) and addr_mask(r))) and NAP_EN else '0';
+
     -- TOR region 0 --
     addr_match_r0_gen:
     if (r = 0) generate -- first entry: use ZERO as base and current entry as bound
       cmp_ge(r) <= (others => '1'); -- address is always greater than or equal to zero
-      cmp_lt(r) <= (others => '0'); -- cannot be less then zero
     end generate;
     -- TOR region above 0 --
     addr_match_rn_gen:
     if (r > 0) generate -- use previous entry as base and current entry as bound
       cmp_ge(r)(0) <= '1' when (unsigned(i_addr_i(31 downto pmp_lsb_c)) >= unsigned(pmpaddr(r-1)(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
-      cmp_lt(r)(0) <= '1' when (unsigned(i_addr_i(31 downto pmp_lsb_c)) <  unsigned(pmpaddr(r  )(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
       cmp_ge(r)(1) <= '1' when (unsigned(d_addr_i(31 downto pmp_lsb_c)) >= unsigned(pmpaddr(r-1)(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
-      cmp_lt(r)(1) <= '1' when (unsigned(d_addr_i(31 downto pmp_lsb_c)) <  unsigned(pmpaddr(r  )(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
     end generate;
 
     -- check region match according to configured mode --
@@ -299,7 +294,7 @@ begin
     begin
       if (pmpcfg(r)(cfg_ah_c downto cfg_al_c) = mode_tor_c) and TOR_EN then -- TOR
         if (r = (NUM_REGIONS-1)) then -- very last region
-          match(r) <= cmp_ge(r) and cmp_lt(r);
+          match(r) <= cmp_ge(r) and cmp_lt;
         else -- any other region
           match(r) <= cmp_ge(r) and (not cmp_ge(r+1)); -- this saves a LOT of comparators
         end if;
@@ -311,6 +306,10 @@ begin
     end process match_gen;
 
   end generate;
+
+  -- TOR last region --
+  cmp_lt(0) <= '1' when (unsigned(i_addr_i(31 downto pmp_lsb_c)) < unsigned(pmpaddr(NUM_REGIONS-1)(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
+  cmp_lt(1) <= '1' when (unsigned(d_addr_i(31 downto pmp_lsb_c)) < unsigned(pmpaddr(NUM_REGIONS-1)(29 downto pmp_lsb_c-2))) and TOR_EN else '0';
 
 
   -- Permission Check -----------------------------------------------------------------------

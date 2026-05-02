@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -138,7 +138,6 @@ begin
   x_req_o.amoop <= a_req_i.amoop when (sel = '0') else b_req_i.amoop;
   x_req_o.burst <= a_req_i.burst when (sel = '0') else b_req_i.burst;
   x_req_o.lock  <= a_req_i.lock  when (sel = '0') else b_req_i.lock;
-  x_req_o.fence <= a_req_i.fence or b_req_i.fence;
   x_req_o.stb   <= stb;
 
   -- Response Switch ------------------------------------------------------------------------
@@ -159,7 +158,7 @@ end neorv32_bus_switch_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -207,8 +206,6 @@ begin
         device_req_o.stb   <= host_req_i.stb;
         device_req_o.burst <= host_req_i.burst;
         device_req_o.lock  <= host_req_i.lock;
-        -- pass-through out-of-band signals --
-        device_req_o.fence <= host_req_i.fence;
       end if;
     end process request_reg;
   end generate;
@@ -251,7 +248,7 @@ end neorv32_bus_reg_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -455,7 +452,7 @@ end neorv32_bus_gateway_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -689,7 +686,7 @@ end neorv32_bus_io_switch_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -802,7 +799,6 @@ begin
   sys_req_o.amoop <= core_req_i.amoop;
   sys_req_o.burst <= core_req_i.burst;
   sys_req_o.lock  <= core_req_i.lock;
-  sys_req_o.fence <= core_req_i.fence;
 
   -- response switch --
   core_rsp_o.data <= sys_rsp_i.data when (arbiter.state = S_IDLE) else arbiter.rdata;
@@ -844,7 +840,7 @@ end neorv32_bus_amo_rmw_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -882,9 +878,7 @@ begin
     if (rstn_i = '0') then
       valid <= '0';
     elsif rising_edge(clk_i) then
-      if (core_req_i.fence = '1') then
-        valid <= '0';
-      elsif (core_req_i.stb = '1') and (core_req_i.meta(0) = '0') then -- data memory access?
+      if (core_req_i.stb = '1') and (core_req_i.meta(0) = '0') then -- data memory access?
         valid <= lr; -- set on load-reservate; clear for all other memory requests
       end if;
     end if;

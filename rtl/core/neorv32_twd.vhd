@@ -400,13 +400,15 @@ begin
         -- ------------------------------------------------------------
           if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
+          elsif (smp.start = '1') then -- start-condition
+            engine.state <= S_INIT;
           else
             if (engine.cmd = '0') then -- WRITE operation
               engine.sda   <= not rx_fifo.free; -- ACK if RX FIFO is not full; NACK if RX FIFO is full
               engine.rx_we <= smp.scl_fall; -- push to RX FIFO at end of bit slot (if RX FIFO not full)
             else -- READ operation
               engine.sda   <= '1'; -- keep high-Z so we can sample the ACK/NACK from the host
-              engine.tx_re <= smp.scl_rise and (not smp.sda); -- pop from RX FIFO if ACK at sample point
+              engine.tx_re <= smp.scl_rise and (not smp.sda); -- pop from TX FIFO if ACK at sample point
             end if;
             if (smp.scl_fall = '1') then -- end of bit slot
               engine.state <= S_PREP;

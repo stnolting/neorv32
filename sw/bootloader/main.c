@@ -168,7 +168,7 @@ skip_auto_boot:
       uart_puth(neorv32_cpu_csr_read(CSR_MISA));
       uart_puts("\nXISA: ");
       uart_puth(neorv32_cpu_csr_read(CSR_MXISAH));
-      uart_putc(':');
+      uart_putc('_');
       uart_puth(neorv32_cpu_csr_read(CSR_MXISA));
       uart_puts("\nSOC:  ");
       uart_puth(NEORV32_SYSINFO->SOC);

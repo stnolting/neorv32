@@ -388,8 +388,7 @@ begin
 
           -- memory fence operations --
           when opcode_fence_c =>
-            ctrl_nxt.lsu_fence <= '1'; -- data fence (fence and fence.i); flush $D so $I gets updated data; #1540
-            ctrl_nxt.if_fence  <= exec.ir(instr_funct3_lsb_c); -- instruction fence (fence.i only)
+            ctrl_nxt.cpu_fence <= exec.ir(instr_funct3_lsb_c) & '1'; -- fence.i & fence; always flush D$ (so I$ gets updated data; #1540)
             exec_nxt.state     <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC (actually only required for fence.i)
 
           -- FPU: floating-point operations --
@@ -481,7 +480,6 @@ begin
   -- CPU Control Bus Output -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- instruction fetch --
-  ctrl_o.if_fence     <= ctrl.if_fence;
   ctrl_o.if_reset     <= ctrl_nxt.if_reset; -- this is an ASYNC control signal!
   ctrl_o.if_ready     <= '1' when (exec.state = S_DISPATCH) else '0';
   -- program counter --
@@ -510,7 +508,6 @@ begin
   ctrl_o.lsu_wr       <= ctrl.lsu_wr;
   ctrl_o.lsu_mo_en    <= '1' when (exec.state = S_MEM_REQ) else '0'; -- write memory output registers
   ctrl_o.lsu_mi_en    <= '1' when (exec.state = S_MEM_RSP) else '0'; -- write memory input registers
-  ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.prv_level; -- effective privilege level for loads/stores in M-mode
   -- control and status registers --
   ctrl_o.csr_we       <= ctrl.csr_we;
@@ -528,6 +525,7 @@ begin
   ctrl_o.cpu_trap     <= trap.env_enter;
   ctrl_o.cpu_sync_exc <= trap.exc_fire;
   ctrl_o.cpu_debug    <= debug_ctrl.run;
+  ctrl_o.cpu_fence    <= ctrl.cpu_fence;
 
 
   -- Counter Events -------------------------------------------------------------------------

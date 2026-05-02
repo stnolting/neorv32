@@ -330,6 +330,10 @@ architecture neorv32_top_rtl of neorv32_top is
   type cpu_trace_t is array (0 to num_cores_c-1) of trace_port_t;
   signal cpu_trace : cpu_trace_t;
 
+  -- CPU memory ordering --
+  type cpu_fence_t is array (0 to num_cores_c-1) of std_ulogic_vector(1 downto 0);
+  signal cpu_fence : cpu_fence_t;
+
   -- bus: CPU core complex --
   type core_complex_req_t is array (0 to num_cores_c-1) of bus_req_t;
   type core_complex_rsp_t is array (0 to num_cores_c-1) of bus_rsp_t;
@@ -576,6 +580,7 @@ begin
       -- status --
       trace_o    => cpu_trace(i),
       sleep_o    => open,
+      fence_o    => cpu_fence(i),
       -- interrupts --
       msi_i      => msi(i),
       mei_i      => irq_mei_i,
@@ -605,6 +610,7 @@ begin
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
+        sync_i     => cpu_fence(i)(1),
         host_req_i => cpu_i_req(i),
         host_rsp_o => cpu_i_rsp(i),
         bus_req_o  => icache_req(i),
@@ -633,6 +639,7 @@ begin
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
+        sync_i     => cpu_fence(i)(0),
         host_req_i => cpu_d_req(i),
         host_rsp_o => cpu_d_rsp(i),
         bus_req_o  => dcache_req(i),

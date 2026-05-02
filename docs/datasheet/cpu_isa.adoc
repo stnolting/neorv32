@@ -238,8 +238,8 @@ are handled by the processor's <<_atomic_memory_operations_controller>>.
 [NOTE]
 The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
 However, the CPU and especially the <<_data_cache_dcache>> treats all atomic memory operation as if
-the `aq` and `lr` bits were set (for the targeted address). See <<_memory_coherence>> for more
-information.
+the `aq` and `lr` bits were set (**for the targeted address / cache line**). See <<_memory_coherence>>
+for more information.
 
 
 ==== `Zalrsc` ISA Extension
@@ -261,8 +261,8 @@ are handled by the processor's <<_atomic_reservation_set_controller>>.
 [NOTE]
 The instruction word's `aq` and `lr` memory ordering bits are not evaluated by the hardware at all.
 However, the CPU and especially the <<_data_cache_dcache>> treats all atomic memory operation as if
-the `aq` and `lr` bits were set (for the targeted address). See <<_memory_coherence>> for more
-information.
+the `aq` and `lr` bits were set (**for the targeted address / cache line**). See <<_memory_coherence>>
+for more information.
 
 
 ==== `Zcb` ISA Extension

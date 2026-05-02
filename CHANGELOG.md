@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 02.05.2026 | 1.13.0.3 | minor rtl fixes, edits and cleanups (PMP, TWD, bus | [#1543](https://github.com/stnolting/neorv32/pull/1543) |
 | 01.05.2026 | 1.13.0.2 | :warning: rework trap CSRs: remove `mtinst`; make `mtval` more verbose; add full WARL access for `mcause` and `mtval` | [#1524](https://github.com/stnolting/neorv32/pull/1542) |
 | 29.04.2026 | 1.13.0.1 | rework cache handling of atomic memory operations: enforce memory synchronization by hardware | [#1540](https://github.com/stnolting/neorv32/pull/1540) |
 | 27.04.2026 | [**1.13.0**](https://github.com/stnolting/neorv32/releases/tag/v1.13.0) | :rocket: **New release** | |
