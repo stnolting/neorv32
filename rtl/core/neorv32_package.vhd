@@ -483,6 +483,7 @@ package neorv32_package is
   constant csr_tselect_c        : std_ulogic_vector(11 downto 0) := x"7a0";
   constant csr_tdata1_c         : std_ulogic_vector(11 downto 0) := x"7a1";
   constant csr_tdata2_c         : std_ulogic_vector(11 downto 0) := x"7a2";
+  constant csr_tdata3_c         : std_ulogic_vector(11 downto 0) := x"7a3";
   constant csr_tinfo_c          : std_ulogic_vector(11 downto 0) := x"7a4";
   -- debug registers --
   constant csr_dcsr_c           : std_ulogic_vector(11 downto 0) := x"7b0";

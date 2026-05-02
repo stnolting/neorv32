@@ -603,7 +603,7 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Sdext);
 
       -- trigger module CSRs --
-      when csr_tselect_c | csr_tdata1_c | csr_tdata2_c | csr_tinfo_c =>
+      when csr_tselect_c | csr_tdata1_c | csr_tdata2_c | csr_tdata3_c | csr_tinfo_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Sdtrig);
 
       -- undefined / not implemented --

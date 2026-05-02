@@ -1017,6 +1017,20 @@ Write accesses from machine-mode are ignored (because `tdata1.dmode` is hardwire
 
 
 :sectnums!:
+===== **`tdata3`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Trigger data register 3
+| Address     | `0x7a3`
+| Reset value | `0x00000000`
+| ISA         | `Zicsr` & `Sdtrig`
+| Description | The features provided by this CSR are not implemented. Hence, this CSR is hardwired to all-zero.
+|=======================
+
+
+:sectnums!:
 ===== **`tinfo`**
 
 [cols="<1,<8"]
