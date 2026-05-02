@@ -46,7 +46,11 @@ end neorv32_cpu_pmp;
 architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
   -- auto-configuration --
-  constant g_c : natural := sel_natural_f(boolean(GRANULARITY < 4), 4, 2**index_size_f(GRANULARITY));
+  -- G=0: store all bits [29:0] (pmp_lsb_c-2 = 0)
+  -- G>=1: store bits [29:G-1] -> one extra bit for NAPOT min. granularity
+  constant g_c        : natural := sel_natural_f(boolean(GRANULARITY < 4), 4, 2**index_size_f(GRANULARITY));
+  constant pmp_lsb_c  : natural := index_size_f(g_c); -- lowest bit of the addr. comparison (= G+2 = log2(g_c)), min = 2
+  constant pmp_alsb_c : natural := pmp_lsb_c - sel_natural_f(boolean(pmp_lsb_c > 2), 3, pmp_lsb_c); -- address LSB
 
   -- configuration register bits --
   constant cfg_r_c  : natural := 0; -- read permission
@@ -62,16 +66,13 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   constant mode_na4_c   : std_ulogic_vector(1 downto 0) := "10"; -- naturally aligned four-byte region
   constant mode_napot_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (> 4 bytes)
 
-  -- address LSB according to granularity --
-  constant pmp_lsb_c : natural := index_size_f(g_c); -- min = 2
-
   -- configuration CSRs --
   type pmpcfg_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
   signal pmpcfg    : pmpcfg_t;
   signal pmpcfg_we : std_ulogic_vector(3 downto 0);
 
   -- address CSRs --
-  type pmpaddr_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(31 downto 0);
+  type pmpaddr_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(29 downto pmp_alsb_c);
   signal pmpaddr    : pmpaddr_t;
   signal pmpaddr_we : std_ulogic_vector(15 downto 0);
 
@@ -165,10 +166,10 @@ begin
         if (pmpaddr_we(i) = '1') and (pmpcfg(i)(cfg_l_c) = '0') then -- unlocked write access
           if (i < NUM_REGIONS-1) then
             if (pmpcfg(i+1)(cfg_l_c) = '0') or (pmpcfg(i+1)(cfg_ah_c downto cfg_al_c) /= mode_tor_c) then -- pmpcfg(i+1) not "LOCKED TOR"
-              pmpaddr(i) <= "00" & ctrl_i.csr_wdata(29 downto 0);
+              pmpaddr(i) <= ctrl_i.csr_wdata(29 downto pmp_alsb_c);
             end if;
           else -- very last entry
-            pmpaddr(i) <= "00" & ctrl_i.csr_wdata(29 downto 0);
+            pmpaddr(i) <= ctrl_i.csr_wdata(29 downto pmp_alsb_c);
           end if;
         end if;
       end if;
@@ -197,18 +198,13 @@ begin
     address_read_back: process(pmpaddr, pmpcfg)
     begin
       addr_rd(i) <= (others => '0');
-      addr_rd(i)(29 downto pmp_lsb_c-2) <= pmpaddr(i)(29 downto pmp_lsb_c-2);
-      if (g_c = 8) and TOR_EN then -- bit G-1 reads as zero in TOR or OFF mode
+      addr_rd(i)(29 downto pmp_alsb_c) <= pmpaddr(i);
+      if (pmp_lsb_c > 2) then -- G >= 1
         if (pmpcfg(i)(cfg_ah_c) = '0') then -- TOR/OFF mode
-          addr_rd(i)(pmp_lsb_c) <= '0';
-        end if;
-      elsif (g_c > 8) then
-        if NAP_EN then
-          addr_rd(i)(pmp_lsb_c-2 downto 0) <= (others => '1'); -- in NAPOT mode bits G-2:0 must read as one
-        end if;
-        if TOR_EN then
-          if (pmpcfg(i)(cfg_ah_c) = '0') then -- TOR/OFF mode
-            addr_rd(i)(pmp_lsb_c-1 downto 0) <= (others => '0'); -- in TOR or OFF mode bits G-1:0 must read as zero
+          addr_rd(i)(pmp_lsb_c-3 downto 0) <= (others => '0'); -- [G-1:0] read as zero
+        else -- NAPOT mode (cfg_ah = '1')
+          if (pmp_alsb_c > 0) then -- G >= 2: set bits [G-2:0] to all-ones
+            addr_rd(i)(pmp_alsb_c-1 downto 0) <= (others => '1'); -- bits [G-2:0] read as one (only when G >= 2)
           end if;
         end if;
       end if;
@@ -235,8 +231,17 @@ begin
   mask_gen:
   for r in 0 to NUM_REGIONS-1 generate
 
-    -- NAPOT address mask generator --
-    addr_mask_napot(r)(pmp_lsb_c) <= '0';
+    -- NAPOT address mask seed bit --
+    addr_mask_napot_seed_g0:
+    if (pmp_lsb_c <= 2) generate
+      addr_mask_napot(r)(pmp_lsb_c) <= '0';
+    end generate;
+    addr_mask_napot_seed_gn:
+    if (pmp_lsb_c > 2) generate
+      addr_mask_napot(r)(pmp_lsb_c) <= not pmpaddr(r)(pmp_alsb_c);
+    end generate;
+
+    -- NAPOT address mask propagation --
     addr_mask_napot_gen:
     for i in pmp_lsb_c+1 to 31 generate
       addr_mask_napot(r)(i) <= addr_mask_napot(r)(i-1) or (not pmpaddr(r)(i-3));
