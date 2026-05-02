@@ -81,6 +81,7 @@ entity neorv32_cpu is
     -- status --
     trace_o    : out trace_port_t;                   -- execution trace port (enabled when CPU_TRACE_EN = true)
     sleep_o    : out std_ulogic;                     -- CPU is in sleep mode
+    fence_o    : out std_ulogic_vector(1 downto 0);  --
     -- interrupts --
     msi_i      : in  std_ulogic;                     -- RISC-V machine software interrupt
     mei_i      : in  std_ulogic;                     -- RISC-V machine external interrupt
@@ -314,6 +315,9 @@ begin
 
   -- CPU is sleeping --
   sleep_o <= not ctrl.cnt_event(cnt_event_cy_c);
+
+  -- memory ordering / synchronization --
+  fence_o <= ctrl.cpu_fence;
 
 
   -- Hardware Trigger Module (Sdtrig) -------------------------------------------------------

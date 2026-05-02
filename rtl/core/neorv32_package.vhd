@@ -572,7 +572,6 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   type ctrl_bus_t is record
     -- instruction fetch --
-    if_fence     : std_ulogic;                     -- fence.i operation
     if_reset     : std_ulogic;                     -- restart instruction fetch
     if_ready     : std_ulogic;                     -- ready for next instruction
     -- program counter --
@@ -601,7 +600,6 @@ package neorv32_package is
     lsu_wr       : std_ulogic;                     -- write access
     lsu_mo_en    : std_ulogic;                     -- output register write enable
     lsu_mi_en    : std_ulogic;                     -- input register write enable
-    lsu_fence    : std_ulogic;                     -- fence operation
     lsu_priv     : std_ulogic;                     -- effective privilege mode for load/store
     -- control and status registers --
     csr_we       : std_ulogic;                     -- write-enable
@@ -619,11 +617,11 @@ package neorv32_package is
     cpu_trap     : std_ulogic;                     -- set when CPU is entering trap
     cpu_sync_exc : std_ulogic;                     -- set when CPU encounters a synchronous exception
     cpu_debug    : std_ulogic;                     -- set when CPU is in debug mode
+    cpu_fence    : std_ulogic_vector(1 downto 0);  -- memory ordering; [1] = instructions, [0] = data
   end record;
 
   -- control bus reset termination --
   constant ctrl_bus_zero_c : ctrl_bus_t := (
-    if_fence     => '0',
     if_reset     => '0',
     if_ready     => '0',
     pc_cur       => (others => '0'),
@@ -648,7 +646,6 @@ package neorv32_package is
     lsu_wr       => '0',
     lsu_mo_en    => '0',
     lsu_mi_en    => '0',
-    lsu_fence    => '0',
     lsu_priv     => '0',
     csr_we       => '0',
     csr_re       => '0',
@@ -661,7 +658,8 @@ package neorv32_package is
     cpu_priv     => '0',
     cpu_trap     => '0',
     cpu_sync_exc => '0',
-    cpu_debug    => '0'
+    cpu_debug    => '0',
+    cpu_fence    => (others => '0')
   );
 
   -- Instruction Fetch Interface ------------------------------------------------------------
