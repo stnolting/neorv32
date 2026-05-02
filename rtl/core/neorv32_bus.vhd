@@ -840,7 +840,7 @@ end neorv32_bus_amo_rmw_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -878,9 +878,7 @@ begin
     if (rstn_i = '0') then
       valid <= '0';
     elsif rising_edge(clk_i) then
-      if (core_req_i.fence = '1') then
-        valid <= '0';
-      elsif (core_req_i.stb = '1') and (core_req_i.meta(0) = '0') then -- data memory access?
+      if (core_req_i.stb = '1') and (core_req_i.meta(0) = '0') then -- data memory access?
         valid <= lr; -- set on load-reservate; clear for all other memory requests
       end if;
     end if;
