@@ -100,12 +100,6 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
 begin
 
-  -- Configuration Checks -------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  assert (GRANULARITY = g_c) report
-    "[NEORV32] Auto-adjusting invalid PMP granularity configuration." severity warning;
-
-
   -- CSR Write Access: Configuration (PMPCFG) -----------------------------------------------
   -- -------------------------------------------------------------------------------------------
   csr_we_cfg: process(ctrl_i) -- write enable decoder
@@ -200,9 +194,6 @@ begin
   -- CSR read-back --
   csr_read_back_gen:
   for i in 0 to NUM_REGIONS-1 generate
-    -- configuration --
-    cfg_rd(i) <= pmpcfg(i);
-    -- address --
     address_read_back: process(pmpaddr, pmpcfg)
     begin
       addr_rd(i) <= (others => '0');
@@ -222,6 +213,7 @@ begin
         end if;
       end if;
     end process address_read_back;
+    cfg_rd(i) <= pmpcfg(i);
   end generate;
 
   -- terminate unused CSR read-backs --
