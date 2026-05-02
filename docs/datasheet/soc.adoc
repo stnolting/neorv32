@@ -633,7 +633,7 @@ to memory and will return a "failed" state (i.e. `rd` = 1).
 
 The reservation-set controller implements the _strong semnatics_. A reservation is created when executing
 an `LR` instruction. Any other data memory access (for example by the DMA) will invalidate any active reservation
-(note that instruction fetch accesses do not affect the reservations at all). Furthermore, `fence[.i]` also do not
+(note that instruction fetch accesses do not affect the reservations at all). Furthermore, `fence[.i]` also does not
 impact the reservation state at all.
 
 The reservation-set controller implements a **single, global reservation set only** which is used by both cores

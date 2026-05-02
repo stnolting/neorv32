@@ -283,7 +283,7 @@ shows all available data registers and their addresses:
 | Bit(s) | Name   | R/W | Description
 | 40:34  | `addr` | r/w | 7-bit address, see <<_dm_registers>>
 | 33:2   | `data` | r/w | 32-bit data to write/read to/from the addresses DM register
-| 1:0    | `op`   | r/w | 2-bit operation (`00` = NOP; `10` = write; `01` = read)
+| 1:0    | `op`   | r/w | Write access: 2-bit operation (`00` = NOP; `10` = write; `01` = read); Read access: DMI error if nonzero
 |=======================
 
 
@@ -808,7 +808,7 @@ asynchronous interrupts) that are handled transparently by the control logic.
 ** for all other exception sources the CPU jumps to the exception entry point (defined by the <<_cpu_top_entity_generics, `CPU_DEBUG_EXC_ADDR`>> generic)
 to signal an exception to the DM; the CPU restarts the park loop again afterwards
 * interrupts are disabled; however, they will remain pending and will get executed after the CPU has left debug mode and is not being single-stepped
-* if the DM makes a resume request, the park loop exits and the CPU leaves debug mode (executing `dret`)
+* if the DM makes a resume request, the park loop exits and the CPU leaves debug mode by executing `dret`
 * the standard counters <<_machine_counter_and_timer_csrs>> `[m]cycle[h]` and `[m]instret[h]` are stopped
 * all <<_hardware_performance_monitors_hpm_csrs>> are stopped
 

@@ -722,7 +722,7 @@ columns show the value being written to the according CSRs when a trap is encoun
 [options="header",grid="rows"]
 |=======================
 | Priority | `mcause`     | RTE Trap ID              | Cause                             | `mepc` | `mtval`
-7+^| **Exceptions** (_synchronous_ to instruction execution)
+6+^| **Exceptions** (_synchronous_ to instruction execution)
 | highest  | `0x00000001` | `TRAP_CODE_I_ACCESS`     | illegal access fault              | PC     | 0
 |          | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction               | PC     | INST
 |          | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned    | PC     | ADDR
@@ -733,7 +733,7 @@ columns show the value being written to the according CSRs when a trap is encoun
 |          | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned           | PC     | ADDR
 |          | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store access fault                | PC     | ADDR
 |          | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load access fault                 | PC     | ADDR
-7+^| **Interrupts** (_asynchronous_ to instruction execution)
+6+^| **Interrupts** (_asynchronous_ to instruction execution)
 |          | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0  | I-PC   | 0
 |          | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1  | I-PC   | 0
 |          | `0x80000012` | `TRAP_CODE_FIRQ_2`       | fast interrupt request channel 2  | I-PC   | 0
