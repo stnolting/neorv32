@@ -36,6 +36,7 @@ entity neorv32_cache is
   port (
     clk_i      : in  std_ulogic; -- global clock, rising edge
     rstn_i     : in  std_ulogic; -- global reset, low-active, async
+    sync_i     : in  std_ulogic; -- perform full synchronization with main memory
     host_req_i : in  bus_req_t;  -- host request
     host_rsp_o : out bus_rsp_t;  -- host response
     bus_req_o  : out bus_req_t;  -- bus request
@@ -152,14 +153,14 @@ begin
 
   -- Control Engine Comb --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  ctrl_engine_comb: process(ctrl, host_req_i, cache_i, bus_rsp_i)
+  ctrl_engine_comb: process(ctrl, sync_i, host_req_i, cache_i, bus_rsp_i)
   begin
     -- control engine defaults --
     ctrl_nxt.state   <= ctrl.state;
     ctrl_nxt.sync    <= ctrl.sync;
     ctrl_nxt.bus_err <= ctrl.bus_err;
     ctrl_nxt.pnd_req <= ctrl.pnd_req or host_req_i.stb;
-    ctrl_nxt.pnd_syn <= ctrl.pnd_syn or host_req_i.fence;
+    ctrl_nxt.pnd_syn <= ctrl.pnd_syn or sync_i;
     ctrl_nxt.pnd_bp  <= ctrl.pnd_bp;
     ctrl_nxt.bp_req  <= '0';
     ctrl_nxt.hit     <= '0';
@@ -258,7 +259,6 @@ begin
 
       when S_SYNC_START => -- start synchronization
       -- ------------------------------------------------------------
-        bus_req_o.fence  <= '1'; -- send downstream fence request
         ctrl_nxt.pnd_syn <= '0'; -- sync request accepted
         ctrl_nxt.sync    <= '1'; -- syncing in progress
         ctrl_nxt.idx     <= (others => '0');
