@@ -162,12 +162,11 @@ begin
   ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
   ibus_req_o.data  <= (others => '0'); -- read-only
   ibus_req_o.ben   <= (others => '1'); -- always full-word access
-  ibus_req_o.rw    <= '0';             -- read-only
-  ibus_req_o.amo   <= '0';             -- cannot be an atomic memory operation
+  ibus_req_o.rw    <= '0'; -- read-only
+  ibus_req_o.amo   <= '0'; -- cannot be an atomic memory operation
   ibus_req_o.amoop <= (others => '0'); -- cannot be an atomic memory operation
-  ibus_req_o.burst <= '0';             -- only single-access
-  ibus_req_o.lock  <= '0';             -- always unlocked access
-  ibus_req_o.fence <= ctrl_i.if_fence; -- fence request, valid without STB being set ("out-of-band" signal)
+  ibus_req_o.burst <= '0'; -- only single-access
+  ibus_req_o.lock  <= '0'; -- always unlocked access
 
   -- IPB instruction data and status --
   ipb.wdata(0) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(15 downto 0);

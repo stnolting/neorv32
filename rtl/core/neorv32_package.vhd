@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130002"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130003"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -110,8 +110,6 @@ package neorv32_package is
     amoop : std_ulogic_vector(3 downto 0); -- type of atomic memory operation
     burst : std_ulogic; -- set if part of burst access
     lock  : std_ulogic; -- set if exclusive access request
-    -- out-of-band signals --
-    fence : std_ulogic; -- set if fence(.i) operation, single-shot
   end record;
 
   -- bus request termination --
@@ -125,8 +123,7 @@ package neorv32_package is
     amo   => '0',
     amoop => (others => '0'),
     burst => '0',
-    lock  => '0',
-    fence => '0'
+    lock  => '0'
   );
 
   -- bus response --
