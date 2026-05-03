@@ -65,7 +65,11 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant addr_haltsum0_c     : std_ulogic_vector(6 downto 0) := "1000000";
 
   -- DMI access --
-  signal dmi_wren, dmi_wren_auth, dmi_rden, dmi_rden_auth : std_ulogic;
+  signal dmi_wren, dmi_rden : std_ulogic;
+
+  -- ----------------------------------------------------------
+  -- DM Control
+  -- ----------------------------------------------------------
 
   -- debug module DMI registers / access --
   type progbuf_t is array (0 to 1) of std_ulogic_vector(31 downto 0);
@@ -180,9 +184,9 @@ begin
       dm_reg.ndmreset        <= '0';
       dm_reg.dmactive        <= '0';
       dm_reg.autoexecdata    <= '0';
-      dm_reg.autoexecprogbuf <= "00";
+      dm_reg.autoexecprogbuf <= (others => '0');
+      dm_reg.progbuf         <= (others => cmd_nop);
       dm_reg.command         <= (others => '0');
-      dm_reg.progbuf         <= (others => instr_nop_c);
       dm_reg.halt_req        <= '0';
       dm_reg.req_res         <= '0';
       dm_reg.reset_ack       <= '0';
@@ -191,7 +195,7 @@ begin
       dm_reg.clr_acc_err     <= '0';
       dm_reg.autoexec        <= '0';
     elsif rising_edge(clk_i) then
-      -- authenticated DMI write access --
+      -- defaults --
       dm_reg.req_res     <= '0';
       dm_reg.reset_ack   <= '0';
       dm_reg.clr_acc_err <= '0';
@@ -200,21 +204,19 @@ begin
 
           -- debug module control --
           when addr_dmcontrol_c =>
-            dm_reg.halt_req  <= dmi_req_i.data(31);           -- haltreq
-            dm_reg.req_res   <= dmi_req_i.data(30);           -- resumereq
-            dm_reg.reset_ack <= dmi_req_i.data(28);           -- ackhavereset
-            if (cmd.busy = '0') then -- no update while abstract command is executing
-              dm_reg.hartsel <= dmi_req_i.data(18 downto 16); -- hartsello
-            end if;
-            dm_reg.ndmreset  <= dmi_req_i.data(1);            -- ndmreset
+            dm_reg.halt_req  <= dmi_req_i.data(31);                                          -- haltreq
+            dm_reg.req_res   <= dmi_req_i.data(30) and (not dmi_req_i.data(31));             -- resumereq, ignore if halt request
+            dm_reg.reset_ack <= dmi_req_i.data(28);                                          -- ackhavereset
+            if (cmd_busy = '0') then dm_reg.hartsel <= dmi_req_i.data(18 downto 16); end if; -- hartsello, no update while CMD is executing
+            dm_reg.ndmreset  <= dmi_req_i.data(1);                                           -- ndmreset
 
           -- write abstract command (only when idle and no error yet) --
           when addr_command_c =>
-            if (cmd.busy = '0') and (cmd.err = "000") then dm_reg.command <= dmi_req_i.data; end if;
+            if (cmd_busy = '0') and (cmd_err = "000") then dm_reg.command <= dmi_req_i.data; end if;
 
           -- write abstract command autoexec (only when idle) --
           when addr_abstractauto_c =>
-            if (cmd.busy = '0') then
+            if (cmd_busy = '0') then
               dm_reg.autoexecprogbuf <= dmi_req_i.data(17 downto 16);
               dm_reg.autoexecdata    <= dmi_req_i.data(0);
             end if;
@@ -225,21 +227,21 @@ begin
 
           -- write program buffer 0 (only when idle) --
           when addr_progbuf0_c =>
-            if (cmd.busy = '0') then dm_reg.progbuf(0) <= dmi_req_i.data; end if;
+            if (cmd_busy = '0') then dm_reg.progbuf(0) <= dmi_req_i.data; end if;
 
           -- write program buffer 1 (only when idle) --
           when addr_progbuf1_c =>
-            if (cmd.busy = '0') then dm_reg.progbuf(1) <= dmi_req_i.data; end if;
+            if (cmd_busy = '0') then dm_reg.progbuf(1) <= dmi_req_i.data; end if;
 
           -- undefined --
           when others =>
-            NULL;
+            null;
 
         end case;
       end if;
 
-      -- dmactive can also be written if not authenticated --
-      if (dmi_req_i.addr = addr_dmcontrol_c) and (dmi_wren = '1') then
+      -- dmactive can always be written --
+      if (dmi_req_i.op = dmi_req_wr_c) and (dmi_req_i.addr = addr_dmcontrol_c) then
         dm_reg.dmactive <= dmi_req_i.data(0);
       end if;
 
@@ -274,10 +276,7 @@ begin
   -- SoC reset --
   ndmrstn_o <= '0' when (dm_reg.ndmreset = '1') and (dm_reg.dmactive = '1') else '1';
 
-  -- write to abstract data register --
-  dci.data_reg_we <= '1' when (dmi_wren_auth = '1') and (dmi_req_i.addr = addr_data0_c) and (cmd.busy = '0') else '0';
-
-  -- hart select decoder (one-hot) --
+  -- hart select --
   hartsel_decode:
   for i in 0 to NUM_HARTS-1 generate
     hartselect(i) <= '1' when (dm_reg.hartsel(2) = '0') and (dm_reg.hartsel(1 downto 0) = std_ulogic_vector(to_unsigned(i, 2))) else '0';
