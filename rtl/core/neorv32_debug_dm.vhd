@@ -170,10 +170,8 @@ begin
 
   -- DMI Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dmi_wren <= '1' when (dmi_req_i.op = dmi_req_wr_c) else '0'; -- any access
-  dmi_rden <= '1' when (dmi_req_i.op = dmi_req_rd_c) else '0';
-  dmi_wren_auth <= dmi_wren and auth.valid; -- authenticated access
-  dmi_rden_auth <= dmi_rden and auth.valid;
+  dmi_wren <= '1' when (dmi_req_i.op = dmi_req_wr_c) and (auth.valid = '1') and (dm_reg.dmactive = '1') else '0';
+  dmi_rden <= '1' when (dmi_req_i.op = dmi_req_rd_c) and (auth.valid = '1') and (dm_reg.dmactive = '1') else '0';
 
 
   -- Debug Module Interface - Write Access --------------------------------------------------
