@@ -155,14 +155,13 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
   -- Debug Core Interface --
   type dci_t is record
-    ack_hlt     : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU (re-)entered HALT state (single-shot)
-    req_res     : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants the CPU to resume when set
-    ack_res     : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts resuming when set (single-shot)
-    req_exe     : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants CPU to execute program buffer when set
-    ack_exe     : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts executing program buffer when set (single-shot)
-    ack_exc     : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU has detected an exception (single-shot)
-    data_reg_we : std_ulogic; -- write abstract data
-    data_reg    : std_ulogic_vector(31 downto 0); -- memory-mapped data exchange register
+    ack_hlt  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU (re-)entered HALT state (single-shot)
+    req_res  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants the CPU to resume when set
+    ack_res  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts resuming when set (single-shot)
+    req_exe  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants CPU to execute program buffer when set
+    ack_exe  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts executing program buffer when set (single-shot)
+    ack_exc  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU has detected an exception (single-shot)
+    data_reg : std_ulogic_vector(31 downto 0); -- memory-mapped data exchange register
   end record;
   signal dci : dci_t;
 
@@ -416,41 +415,36 @@ begin
       hart.reset      <= (others => '0');
     elsif rising_edge(clk_i) then
       for i in 0 to NUM_HARTS-1 loop
-        if (dm_reg.ndmreset = '1') then -- DM reset
-          hart.halted(i)     <= '0';
+        -- halted ACK --
+        if (dm_reg.ndmreset = '1') or (dm_reg.dmactive = '0') or (dci.ack_res(i) = '1') then
+          hart.halted(i) <= '0';
+        elsif (dci.ack_hlt(i) = '1') then
+          hart.halted(i) <= '1';
+        end if;
+        -- resume REQ --
+        if (dm_reg.ndmreset = '1') or (dm_reg.dmactive = '0') or (dci.ack_res(i) = '1') then
           hart.resume_req(i) <= '0';
+        elsif (dm_reg.req_res = '1') and (hartselect(i) = '1') then
+          hart.resume_req(i) <= '1';
+        end if;
+        -- resume ACK --
+        if (dm_reg.ndmreset = '1') or (dm_reg.dmactive = '0') or ((dm_reg.req_res = '1') and (hartselect(i) = '1')) then
           hart.resume_ack(i) <= '0';
-          hart.reset(i)      <= '1';
-        else
-          -- halted ACK --
-          if (dci.ack_hlt(i) = '1') then
-            hart.halted(i) <= '1';
-          elsif (dci.ack_res(i) = '1') then
-            hart.halted(i) <= '0';
-          end if;
-          -- resume REQ --
-          if (dm_reg.req_res = '1') and (dm_reg.halt_req = '0') and (hartselect(i) = '1') then -- ignore resume if halt is requested
-            hart.resume_req(i) <= '1';
-          elsif (dci.ack_res(i) = '1') then
-            hart.resume_req(i) <= '0';
-          end if;
-          -- resume ACK --
-          if (dci.ack_res(i) = '1') then
-            hart.resume_ack(i) <= '1';
-          elsif (dm_reg.req_res = '1') and (hartselect(i) = '1') then
-            hart.resume_ack(i) <= '0';
-          end if;
-          -- reset ACK --
-          if (dm_reg.reset_ack = '1') and (hartselect(i) = '1') then
-            hart.reset(i) <= '0';
-          end if;
+        elsif (dci.ack_res(i) = '1') then
+          hart.resume_ack(i) <= '1';
+        end if;
+        -- reset ACK --
+        if (dm_reg.ndmreset = '1') or (dm_reg.dmactive = '0') then
+          hart.reset(i) <= '1';
+        elsif (dm_reg.reset_ack = '1') and (hartselect(i) = '1') then
+          hart.reset(i) <= '0';
         end if;
       end loop;
     end if;
   end process hart_status;
 
   -- resume request(s) --
-  dci.req_res <= hart.resume_req;
+  dci.req_res <= hart.resume_req; -- resume
 
 
   -- Command Execution Arbiter --------------------------------------------------------------
@@ -638,9 +632,9 @@ begin
     auth.rdata <= (others => '0');
   end generate;
 
-  -- authenticator access --
-  auth.re <= '1' when (dmi_rden = '1') and (dmi_req_i.addr = addr_authdata_c) else '0';
-  auth.we <= '1' when (dmi_wren = '1') and (dmi_req_i.addr = addr_authdata_c) else '0';
+  -- authenticator access (always accessible) --
+  auth.we <= '1' when (dmi_req_i.op = dmi_req_wr_c) and (dmi_req_i.addr = addr_authdata_c) else '0';
+  auth.re <= '1' when (dmi_req_i.op = dmi_req_rd_c) and (dmi_req_i.addr = addr_authdata_c) else '0';
 
 
 end neorv32_debug_dm_rtl;
