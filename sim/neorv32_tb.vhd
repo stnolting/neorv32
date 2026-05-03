@@ -99,6 +99,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal spi_di, spi_do, spi_clk : std_ulogic;
   signal sdi_di, sdi_do, sdi_clk, sdi_csn : std_ulogic;
   signal msi, mei, mti : std_ulogic;
+  signal jtag_tck, jtag_tms, jtag_tdi, jtag_tdo : std_ulogic;
 
   -- slink --
   type slink_t is record
@@ -267,10 +268,10 @@ begin
     trace_cpu0_o   => open,
     trace_cpu1_o   => open,
     -- JTAG on-chip debugger interface --
-    jtag_tck_i     => '0',
-    jtag_tdi_i     => '0',
-    jtag_tdo_o     => open,
-    jtag_tms_i     => '0',
+    jtag_tck_i     => jtag_tck,
+    jtag_tdi_i     => jtag_tdi,
+    jtag_tdo_o     => jtag_tdo,
+    jtag_tms_i     => jtag_tms,
     -- External bus interface --
     xbus_adr_o     => xbus_core_req.addr,
     xbus_dat_o     => xbus_core_req.data,
