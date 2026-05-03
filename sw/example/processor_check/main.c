@@ -340,6 +340,29 @@ int main() {
 
 
   // ----------------------------------------------------------
+  // Check JTAG access from testbench
+  // ----------------------------------------------------------
+  PRINT("[%i] OCD-JTAG access (sim) ", cnt_test);
+
+  if (neorv32_sysinfo_is_sim()) {
+    neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
+    cnt_test++;
+
+    // check if testbench has written data to external memory via the on-chip debugger
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c) &&
+        (neorv32_cpu_load_unsigned_word(0xF0000000u) == 0x0cd7e571u)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT("[n.a.]\n");
+  }
+
+
+  // ----------------------------------------------------------
   // Test standard RISC-V counters
   // ----------------------------------------------------------
   PRINT("[%i] Zicntr CSRs ", cnt_test);
