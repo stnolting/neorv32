@@ -290,37 +290,35 @@ begin
   dmi_read_access: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      dmi_rsp_o.ack      <= '0';
-      dmi_rsp_o.data     <= (others => '0');
-      dm_reg.rd_acc_err  <= '0';
-      dm_reg.autoexec_rd <= '0';
+      dmi_rsp_o.ack  <= '0';
+      dmi_rsp_o.data <= (others => '0');
     elsif rising_edge(clk_i) then
-      dmi_rsp_o.ack  <= dmi_wren or dmi_rden; -- always ACK any request
+      dmi_rsp_o.ack  <= or_reduce_f(dmi_req_i.op); -- always ACK any request
       dmi_rsp_o.data <= (others => '0');
       case dmi_req_i.addr is
 
         -- debug module status register --
         when addr_dmstatus_c =>
-          if (auth.valid = '1') then
-            dmi_rsp_o.data(24)           <= dm_reg.ndmreset;                                         -- ndmresetpending
-            dmi_rsp_o.data(23)           <= '0';                                                     -- stickyunavail
-            dmi_rsp_o.data(22)           <= '1';                                                     -- impebreak
-            dmi_rsp_o.data(19 downto 18) <= (others => or_reduce_f(hart.reset and hartselect));      -- all/any_havereset
-            dmi_rsp_o.data(17 downto 16) <= (others => or_reduce_f(hart.resume_ack and hartselect)); -- all/any_resumeack
-            dmi_rsp_o.data(15 downto 14) <= (others => hartselect_inv);                              -- all/any_nonexistent
-            dmi_rsp_o.data(13 downto 12) <= (others => dm_reg.ndmreset);                             -- all/any_unavail
-            dmi_rsp_o.data(11 downto 10) <= (others => not or_reduce_f(hart.halted and hartselect)); -- all/any_running
-            dmi_rsp_o.data(9 downto 8)   <= (others => or_reduce_f(hart.halted and hartselect));     -- all/any_halted
-            dmi_rsp_o.data(5)            <= '0';                                                     -- hasresethaltreq
-            dmi_rsp_o.data(4)            <= '0';                                                     -- confstrptrvalid
+          if (dmi_rden = '1') then
+            dmi_rsp_o.data(24)           <= dm_reg.ndmreset;                                                            -- ndmresetpending
+            dmi_rsp_o.data(23)           <= '0';                                                                        -- stickyunavail
+            dmi_rsp_o.data(22)           <= '1';                                                                        -- impebreak
+            dmi_rsp_o.data(19 downto 18) <= (others => (hart_exist and or_reduce_f(hart.reset      and hartselect)));   -- all/any_havereset
+            dmi_rsp_o.data(17 downto 16) <= (others => (hart_avail and or_reduce_f(hart.resume_ack and hartselect)));   -- all/any_resumeack
+            dmi_rsp_o.data(15 downto 14) <= (others => (not hart_exist));                                               -- all/any_nonexistent
+            dmi_rsp_o.data(13 downto 12) <= (others => (hart_exist and dm_reg.ndmreset));                               -- all/any_unavail
+            dmi_rsp_o.data(11 downto 10) <= (others => (hart_avail and (not or_reduce_f(hart.halted and hartselect)))); -- all/any_running
+            dmi_rsp_o.data(9 downto 8)   <= (others => (hart_avail and      or_reduce_f(hart.halted and hartselect)));  -- all/any_halted
+            dmi_rsp_o.data(5)            <= '0';                                                                        -- hasresethaltreq
+            dmi_rsp_o.data(4)            <= '0';                                                                        -- confstrptrvalid
           end if;
-         dmi_rsp_o.data(7)          <= auth.valid; -- authenticated
-         dmi_rsp_o.data(6)          <= auth.busy;  -- authbusy
-         dmi_rsp_o.data(3 downto 0) <= "0011";     -- version
+          dmi_rsp_o.data(7)          <= auth.valid; -- authenticated
+          dmi_rsp_o.data(6)          <= auth.busy;  -- authbusy
+          dmi_rsp_o.data(3 downto 0) <= "0011";     -- version
 
         -- debug module control --
         when addr_dmcontrol_c =>
-          if (auth.valid = '1') then
+          if (dmi_rden = '1') then
             dmi_rsp_o.data(31)           <= '0';                        -- haltreq
             dmi_rsp_o.data(30)           <= '0';                        -- resumereq
             dmi_rsp_o.data(29)           <= '0';                        -- hartreset
@@ -336,7 +334,7 @@ begin
 
         -- hart info --
         when addr_hartinfo_c =>
-          if (auth.valid = '1') then
+          if (dmi_rden = '1') then
             dmi_rsp_o.data(23 downto 20) <= "0001";                  -- nscratch
             dmi_rsp_o.data(16)           <= '1';                     -- dataaccess
             dmi_rsp_o.data(15 downto 12) <= "0001";                  -- datasize
@@ -345,40 +343,40 @@ begin
 
         -- abstract control and status --
         when addr_abstractcs_c =>
-          if (auth.valid = '1') then
+          if (dmi_rden = '1') then
             dmi_rsp_o.data(28 downto 24) <= "00010";  -- progbufsize
-            dmi_rsp_o.data(12)           <= cmd.busy; -- busy
+            dmi_rsp_o.data(12)           <= cmd_busy; -- busy
             dmi_rsp_o.data(11)           <= '1';      -- relaxedpriv
-            dmi_rsp_o.data(10 downto 8)  <= cmd.err;  -- cmderr
+            dmi_rsp_o.data(10 downto 8)  <= cmd_err;  -- cmderr
             dmi_rsp_o.data(3 downto 0)   <= "0001";   -- datacount
           end if;
 
         -- abstract command autoexec --
         when addr_abstractauto_c =>
-          if (auth.valid = '1') then
+          if (dmi_rden = '1') then
             dmi_rsp_o.data(17 downto 16) <= dm_reg.autoexecprogbuf;
             dmi_rsp_o.data(0)            <= dm_reg.autoexecdata;
           end if;
 
         -- abstract data 0 --
         when addr_data0_c =>
-          if (auth.valid = '1') then
+          if (dmi_rden = '1') then
             dmi_rsp_o.data <= dci.data_reg;
           end if;
 
-        -- authentication --
+        -- authentication data (can always be read) --
         when addr_authdata_c =>
           dmi_rsp_o.data <= auth.rdata;
 
         -- halt summary 0 --
         when addr_haltsum0_c =>
-          if (auth.valid = '1') then
+          if (dmi_rden = '1') then
             dmi_rsp_o.data(NUM_HARTS-1 downto 0) <= hart.halted(NUM_HARTS-1 downto 0);
           end if;
 
         -- not implemented or read-only-zero --
         when others =>
-          dmi_rsp_o.data <= (others => '0');
+          null;
 
       end case;
 
