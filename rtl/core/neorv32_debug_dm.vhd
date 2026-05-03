@@ -80,11 +80,9 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     req_res         : std_ulogic;
     reset_ack       : std_ulogic;
     hartsel         : std_ulogic_vector(1+1 downto 0); -- plus one bit to detect "unavailable hart"
-    wr_acc_err      : std_ulogic;
-    rd_acc_err      : std_ulogic;
+    set_acc_err     : std_ulogic;
     clr_acc_err     : std_ulogic;
-    autoexec_wr     : std_ulogic;
-    autoexec_rd     : std_ulogic;
+    autoexec        : std_ulogic;
   end record;
   signal dm_reg : dm_reg_t;
 
@@ -188,9 +186,9 @@ begin
       dm_reg.req_res         <= '0';
       dm_reg.reset_ack       <= '0';
       dm_reg.hartsel         <= (others => '0');
-      dm_reg.wr_acc_err      <= '0';
+      dm_reg.set_acc_err     <= '0';
       dm_reg.clr_acc_err     <= '0';
-      dm_reg.autoexec_wr     <= '0';
+      dm_reg.autoexec        <= '0';
     elsif rising_edge(clk_i) then
       -- authenticated DMI write access --
       dm_reg.req_res     <= '0';
@@ -244,24 +242,31 @@ begin
         dm_reg.dmactive <= dmi_req_i.data(0);
       end if;
 
-      -- auto execution trigger --
-      if (((dmi_req_i.addr = addr_data0_c)    and (dm_reg.autoexecdata = '1')) or
+      -- ------------------------------------------------------
+      -- auto-execution triggers
+      -- ------------------------------------------------------
+
+      -- trigger execution on data0/progbuf0/progbuf1 access --
+      if ((dmi_wren = '1') or (dmi_rden = '1')) and
+         (((dmi_req_i.addr = addr_data0_c)    and (dm_reg.autoexecdata = '1')) or
           ((dmi_req_i.addr = addr_progbuf0_c) and (dm_reg.autoexecprogbuf(0) = '1')) or
-          ((dmi_req_i.addr = addr_progbuf1_c) and (dm_reg.autoexecprogbuf(1) = '1'))) and (dmi_wren_auth = '1') then
-        dm_reg.autoexec_wr <= '1';
+          ((dmi_req_i.addr = addr_progbuf1_c) and (dm_reg.autoexecprogbuf(1) = '1'))) then
+        dm_reg.autoexec <= '1';
       else
-        dm_reg.autoexec_wr <= '0';
+        dm_reg.autoexec <= '0';
       end if;
 
       -- invalid access while command is executing --
-      if (cmd.busy = '0') then
-        dm_reg.wr_acc_err <= '0'; -- reset error trigger when command arbiter is in idle state again
-      elsif ((dmi_req_i.addr = addr_abstractcs_c)   or (dmi_req_i.addr = addr_command_c)  or
-             (dmi_req_i.addr = addr_abstractauto_c) or (dmi_req_i.addr = addr_data0_c) or
-             (dmi_req_i.addr = addr_progbuf0_c)     or (dmi_req_i.addr = addr_progbuf1_c)) and (dmi_wren_auth = '1') then
-        dm_reg.wr_acc_err <= '1';
+      if (cmd_busy = '0') then
+        dm_reg.set_acc_err <= '0'; -- reset error trigger when command arbiter is in idle state again
+      elsif ((dmi_req_i.addr = addr_abstractcs_c)   and (dmi_wren = '1')) or
+            ((dmi_req_i.addr = addr_command_c)      and (dmi_wren = '1')) or
+            ((dmi_req_i.addr = addr_abstractauto_c) and (dmi_wren = '1')) or
+            ((dmi_req_i.addr = addr_data0_c)        and ((dmi_wren or dmi_rden) = '1')) or
+            ((dmi_req_i.addr = addr_progbuf0_c)     and ((dmi_wren or dmi_rden) = '1')) or
+            ((dmi_req_i.addr = addr_progbuf1_c)     and ((dmi_wren or dmi_rden) = '1')) then
+        dm_reg.set_acc_err <= '1';
       end if;
-
     end if;
   end process dmi_write_access;
 
@@ -379,25 +384,6 @@ begin
           null;
 
       end case;
-
-      -- invalid read access while command is executing --
-      if (cmd.busy = '0') then
-        dm_reg.rd_acc_err <= '0'; -- reset error trigger when command arbiter is in idle state again
-      elsif (dmi_rden_auth = '1') and
-            ((dmi_req_i.addr = addr_data0_c) or (dmi_req_i.addr = addr_progbuf0_c) or (dmi_req_i.addr = addr_progbuf1_c)) then
-        dm_reg.rd_acc_err <= '1';
-      end if;
-
-      -- auto execution trigger --
-      if (dmi_rden_auth = '1') and
-         (((dmi_req_i.addr = addr_data0_c)    and (dm_reg.autoexecdata = '1')) or
-          ((dmi_req_i.addr = addr_progbuf0_c) and (dm_reg.autoexecprogbuf(0) = '1')) or
-          ((dmi_req_i.addr = addr_progbuf1_c) and (dm_reg.autoexecprogbuf(1) = '1'))) then
-        dm_reg.autoexec_rd <= '1';
-      else
-        dm_reg.autoexec_rd <= '0';
-      end if;
-
     end if;
   end process dmi_read_access;
 
