@@ -6,7 +6,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -48,7 +48,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := x"ffffffc0"; -- status register (SREG)
 
   -- ----------------------------------------------------------
-  -- DMI Access
+  -- Debug Module Interface (DMI)
   -- ----------------------------------------------------------
 
   -- physical DMI registers --
@@ -96,10 +96,6 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   type cpu_progbuf_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
   signal cpu_progbuf : cpu_progbuf_t;
 
-  -- ----------------------------------------------------------
-  -- DM Control
-  -- ----------------------------------------------------------
-
   -- signed base address of data registers in memory/CSR space --
   constant dataaddr_c : std_ulogic_vector(11 downto 0) := dm_data_base_c(11 downto 0);
 
@@ -118,7 +114,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   end record;
   signal hart : hart_t;
 
-  -- authentication --
+  -- authenticator interface --
   type auth_t is record
     busy  : std_ulogic; -- authenticator is busy when set
     valid : std_ulogic; -- authentication successful
@@ -129,7 +125,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   signal auth : auth_t;
 
   -- ----------------------------------------------------------
-  -- CPU Bus and Debug Interfaces
+  -- Debug Core Interface (DCI)
   -- ----------------------------------------------------------
 
   -- code ROM containing "park loop"; copied manually from 'sw/ocd-firmware/neorv32_application_image.vhd' --
@@ -154,9 +150,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   );
 
   -- CPU access helpers --
-  signal accen, rden, wren : std_ulogic;
-
-  -- CPU ID decoder --
+  signal accen : std_ulogic;
   signal cpu_id_dec : std_ulogic_vector(NUM_HARTS-1 downto 0);
 
   -- Debug Core Interface --
@@ -567,22 +561,22 @@ begin
       -- bus handshake --
       bus_rsp_o.ack <= accen;
       bus_rsp_o.err <= '0';
-      -- data buffer write access --
-      if (dci.data_reg_we = '1') then -- DM write access
+      -- data0 write access --
+      if (dmi_wren = '1') and (dmi_req_i.addr = addr_data0_c) and (cmd_busy = '0') then -- DM write access
         dci.data_reg <= dmi_req_i.data;
-      elsif (wren = '1') and (bus_req_i.addr(7 downto 6) = dm_data_base_c(7 downto 6)) then -- CPU write access
+      elsif (accen = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(7 downto 6) = dm_data_base_c(7 downto 6)) then -- CPU write access
         for i in 0 to 3 loop
           if (bus_req_i.ben(i) = '1') then
             dci.data_reg(8*i+7 downto 8*i) <= bus_req_i.data(8*i+7 downto 8*i);
           end if;
         end loop;
       end if;
-      -- CPU status register write access --
-      dci.ack_hlt <= (others => '0'); -- all flags auto-clear
+      -- CPU status register write access; all flags auto-clear --
+      dci.ack_hlt <= (others => '0');
       dci.ack_res <= (others => '0');
       dci.ack_exe <= (others => '0');
       dci.ack_exc <= (others => '0');
-      if (wren = '1') and (bus_req_i.addr(7 downto 6) = dm_sreg_base_c(7 downto 6)) then
+      if (accen = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(7 downto 6) = dm_sreg_base_c(7 downto 6)) then
         for i in 0 to NUM_HARTS-1 loop
           if (bus_req_i.ben(0) = '1') then dci.ack_hlt(i) <= cpu_id_dec(i); end if; -- CPU has HALTED
           if (bus_req_i.ben(1) = '1') then dci.ack_res(i) <= cpu_id_dec(i); end if; -- CPU starts RESUMING
@@ -592,7 +586,7 @@ begin
       end if;
       -- CPU read access --
       bus_rsp_o.data <= (others => '0'); -- default
-      if (rden = '1') then -- output enable
+      if (accen = '1') and (bus_req_i.rw = '0') then
         case bus_req_i.addr(7 downto 6) is -- module select
           when "00" => -- dm_code_base_c: code ROM
             bus_rsp_o.data <= code_rom_c(to_integer(unsigned(bus_req_i.addr(5 downto 2))));
@@ -608,10 +602,8 @@ begin
     end if;
   end process bus_access;
 
-  -- access helpers --
-  accen <= bus_req_i.stb and bus_req_i.meta(2); -- access only when hart is in debug mode
-  rden  <= accen and (not bus_req_i.rw);
-  wren  <= accen and (    bus_req_i.rw);
+  -- access only when hart is in debug mode --
+  accen <= bus_req_i.stb and bus_req_i.meta(2);
 
   -- CPU ID decoder --
   hart_id_decode_gen:
