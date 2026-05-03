@@ -10,7 +10,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 use ieee.math_real.all;
 
 library neorv32;
@@ -480,6 +479,7 @@ begin
   if EXT_MEM_A_EN generate
     xbus_external_memory_a: entity work.xbus_memory
     generic map (
+      MEM_RST  => false,
       MEM_SIZE => EXT_MEM_A_SIZE,
       MEM_LATE => EXT_MEM_A_LATE,
       MEM_FILE => EXT_MEM_A_FILE
@@ -504,6 +504,7 @@ begin
   if EXT_MEM_B_EN generate
     xbus_external_memory_b: entity work.xbus_memory
     generic map (
+      MEM_RST  => false,
       MEM_SIZE => EXT_MEM_B_SIZE,
       MEM_LATE => EXT_MEM_B_LATE,
       MEM_FILE => EXT_MEM_B_FILE
@@ -549,6 +550,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   xbus_mmio: entity work.xbus_memory
   generic map (
+    MEM_RST  => true,
     MEM_SIZE => 8,
     MEM_LATE => 16,
     MEM_FILE => "" -- no initialization
