@@ -47,12 +47,6 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   constant dm_data_base_c : std_ulogic_vector(31 downto 0) := x"ffffff80"; -- abstract data buffer (DATA)
   constant dm_sreg_base_c : std_ulogic_vector(31 downto 0) := x"ffffffc0"; -- status register (SREG)
 
-  -- rv32i instruction prototypes --
-  constant instr_nop_c    : std_ulogic_vector(31 downto 0) := x"00000013"; -- nop
-  constant instr_lw_c     : std_ulogic_vector(31 downto 0) := x"00002003"; -- lw zero, 0(zero)
-  constant instr_sw_c     : std_ulogic_vector(31 downto 0) := x"00002023"; -- sw zero, 0(zero)
-  constant instr_ebreak_c : std_ulogic_vector(31 downto 0) := x"00100073"; -- ebreak
-
   -- ----------------------------------------------------------
   -- DMI Access
   -- ----------------------------------------------------------
@@ -111,13 +105,12 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
   -- command execution arbiter --
   type cmd_state_t is (CMD_IDLE, CMD_CHECK, CMD_START, CMD_PENDING);
-  type cmd_t is record
-    state : cmd_state_t;
-    busy  : std_ulogic;
-    ldsw  : std_ulogic_vector(31 downto 0); -- load/store instruction buffer
-    err   : std_ulogic_vector(2 downto 0);
-  end record;
-  signal cmd : cmd_t;
+  signal cmd_state : cmd_state_t;
+  signal cmd_err   : std_ulogic_vector(2 downto 0);
+  signal cmd_busy  : std_ulogic;
+  signal cmd_sw, cmd_lw, cmd_op : std_ulogic_vector(31 downto 0); -- transfer instruction (first progbuf entry)
+  constant cmd_nop : std_ulogic_vector(31 downto 0) := x"00000013"; -- RV32 nop
+  constant cmd_brk : std_ulogic_vector(31 downto 0) := x"00100073"; -- RV32 ebreak
 
   -- hart status controller --
   type hart_t is record
@@ -473,26 +466,23 @@ begin
   cmd_arbiter: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      cmd.state <= CMD_IDLE;
-      cmd.ldsw  <= instr_sw_c;
-      cmd.err   <= (others => '0');
+      cmd_state <= CMD_IDLE;
+      cmd_err   <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (dm_reg.dmactive = '0') then -- DM reset / DM disabled
-        cmd.state <= CMD_IDLE;
-        cmd.ldsw  <= instr_sw_c;
-        cmd.err   <= (others => '0');
+      if (dm_reg.ndmreset = '1') or (dm_reg.dmactive = '0') then -- hart/DM reset
+        cmd_state <= CMD_IDLE;
+        cmd_err   <= (others => '0');
       else
-        case cmd.state is
+        case cmd_state is
 
           when CMD_IDLE => -- wait for new abstract command
           -- ------------------------------------------------------------
-            if (cmd.err = "000") and -- execute only if there is no error yet
-               (((dmi_wren_auth = '1') and (dmi_req_i.addr = addr_command_c)) or -- manual execution trigger
-                ((dm_reg.autoexec_rd = '1') or (dm_reg.autoexec_wr = '1'))) then -- auto execution trigger
-              cmd.state <= CMD_CHECK;
+            if (cmd_err = "000") and -- execute only if there is no error yet
+               (((dmi_wren = '1') and (dmi_req_i.addr = addr_command_c)) or (dm_reg.autoexec = '1')) then -- manual/auto execution trigger
+              cmd_state <= CMD_CHECK;
             end if;
             if (dm_reg.clr_acc_err = '1') then -- clear error flags
-              cmd.err <= "000";
+              cmd_err <= "000";
             end if;
 
           when CMD_CHECK => -- check if command is valid / supported
@@ -502,71 +492,64 @@ begin
                (dm_reg.command(19) = '0') and -- aarpostincrement: not supported
                ((dm_reg.command(17) = '0') or -- ignore aarsize and regno if transfer = 0
                 ((dm_reg.command(15 downto 5) = "00010000000") and -- regno: only GPRs are supported: 0x1000..0x101f
-                 (dm_reg.command(22 downto 20) = "010"))) then -- aarsize: has to be 32-bit
+                 (dm_reg.command(22 downto 20) = "010"))) then -- aarsize == 32-bit
               if (or_reduce_f(hart.halted and hartselect) = '1') then -- selected CPU is halted
-                cmd.state <= CMD_START;
+                cmd_state <= CMD_START;
               else -- cannot execute since hart is not in expected state
-                cmd.err   <= "100";
-                cmd.state <= CMD_IDLE;
+                cmd_err   <= "100";
+                cmd_state <= CMD_IDLE;
               end if;
             else -- unsupported command
-              cmd.err   <= "010";
-              cmd.state <= CMD_IDLE;
+              cmd_err   <= "010";
+              cmd_state <= CMD_IDLE;
             end if;
 
-          when CMD_START => -- setup program buffer and trigger execution
+          when CMD_START => -- trigger execution
           -- ------------------------------------------------------------
-            if (dm_reg.command(17) = '1') then -- "transfer" (GPR <-> DM.data0)
-              if (dm_reg.command(16) = '0') then -- "write" = 0: data0 <- GPR
-                cmd.ldsw <= instr_sw_c;
-                cmd.ldsw(31 downto 25) <= dataaddr_c(11 downto 5); -- destination address = DM.data0
-                cmd.ldsw(24 downto 20) <= dm_reg.command(4 downto 0); -- "regno" = source register
-                cmd.ldsw(11 downto 07) <= dataaddr_c(4 downto 0); -- destination address = DM.data0
-              else -- "write" = 1: data0 -> GPR
-                cmd.ldsw <= instr_lw_c;
-                cmd.ldsw(31 downto 20) <= dataaddr_c(11 downto 0); -- source address = DM.data0
-                cmd.ldsw(11 downto 07) <= dm_reg.command(4 downto 0); -- "regno" = destination register
-              end if;
-            else
-              cmd.ldsw <= instr_nop_c; -- NOP - do nothing
-            end if;
-            -- wait until selected CPU starts executing --
-            if (or_reduce_f(dci.ack_exe and hartselect) = '1') then
-              cmd.state <= CMD_PENDING;
+            if (or_reduce_f(dci.ack_exe and hartselect) = '1') then -- wait until selected CPU starts executing
+              cmd_state <= CMD_PENDING;
             end if;
 
           when CMD_PENDING => -- wait for CPU to complete execution
           -- ------------------------------------------------------------
-            if (or_reduce_f(dci.ack_exc and hartselect) = '1') then -- exception during execution?
-              cmd.err <= "011";
-            elsif (cmd.err = "000") and ((dm_reg.rd_acc_err or dm_reg.wr_acc_err) = '1') then -- invalid read/write while command is executing?
-              cmd.err <= "001";
+            if (cmd_err = "000") then -- cmd_err is sticky - do not alter if already nonzero
+              if (or_reduce_f(dci.ack_exc and hartselect) = '1') then -- exception during execution?
+                cmd_err <= "011";
+              elsif (dm_reg.set_acc_err = '1') then -- invalid read/write while command is executing?
+                cmd_err <= "001";
+              end if;
             end if;
-            -- wait until selected CPU is halted again -> execution done --
+            -- wait until selected CPU is halted again --
             if (or_reduce_f(dci.ack_hlt and hartselect) = '1') then
-              cmd.state <= CMD_IDLE;
+              cmd_state <= CMD_IDLE;
             end if;
 
           when others => -- undefined
           -- ------------------------------------------------------------
-            cmd.state <= CMD_IDLE;
+            cmd_state <= CMD_IDLE;
 
         end case;
       end if;
     end if;
   end process cmd_arbiter;
 
-  -- assemble program buffer array --
-  cpu_progbuf(0) <= cmd.ldsw; -- pseudo program buffer for GPR<->DM.data0 transfer
-  cpu_progbuf(1) <= instr_nop_c when (dm_reg.command(18) = '0') else dm_reg.progbuf(0); -- postexec: execute program buffer instruction when set
-  cpu_progbuf(2) <= instr_nop_c when (dm_reg.command(18) = '0') else dm_reg.progbuf(1);
-  cpu_progbuf(3) <= instr_ebreak_c; -- implicit ebreak instruction
+  -- assemble transfer instruction --
+  cmd_sw <= dataaddr_c(11 downto 5) & dm_reg.command(4 downto 0) & "00000010" & dataaddr_c(4 downto 0)     & "0100011"; -- store word
+  cmd_lw <= dataaddr_c(11 downto 0)                              & "00000010" & dm_reg.command(4 downto 0) & "0000011"; -- load word
+  cmd_op <= cmd_nop when (dm_reg.command(17) = '0') else -- no transfer: execute NOP
+            cmd_sw  when (dm_reg.command(16) = '0') else cmd_lw; -- write=0: data0 <= GPR (SW); write=1: data0 => GPR (LW)
+
+  -- assemble program buffer --
+  cpu_progbuf(0) <= cmd_op; -- pseudo program buffer for GPR<->DM.data0 transfer
+  cpu_progbuf(1) <= cmd_nop when (dm_reg.command(18) = '0') else dm_reg.progbuf(0); -- postexec: execute program buffer, else -> NOPs
+  cpu_progbuf(2) <= cmd_nop when (dm_reg.command(18) = '0') else dm_reg.progbuf(1);
+  cpu_progbuf(3) <= cmd_brk; -- implicit ebreak instruction
 
   -- controller busy flag --
-  cmd.busy <= '0' when (cmd.state = CMD_IDLE) else '1';
+  cmd_busy <= '0' when (cmd_state = CMD_IDLE) else '1';
 
   -- request execution --
-  dci.req_exe <= hartselect when (cmd.state = CMD_START) else (others => '0');
+  dci.req_exe <= hartselect when (cmd_state = CMD_START) else (others => '0');
 
 
   -- Bus Access (from CPU) ------------------------------------------------------------------
