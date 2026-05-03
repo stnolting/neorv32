@@ -87,8 +87,9 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   signal dm_reg : dm_reg_t;
 
   -- currently selected hart --
-  signal hartselect     : std_ulogic_vector(NUM_HARTS-1 downto 0);
-  signal hartselect_inv : std_ulogic; -- invalid/unavailable hart selection
+  signal hartselect : std_ulogic_vector(NUM_HARTS-1 downto 0);
+  signal hart_exist : std_ulogic; -- selected hart exists
+  signal hart_avail : std_ulogic; -- selected hart is available
 
   -- CPU program buffer --
   type cpu_progbuf_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
@@ -281,7 +282,8 @@ begin
   for i in 0 to NUM_HARTS-1 generate
     hartselect(i) <= '1' when (dm_reg.hartsel(2) = '0') and (dm_reg.hartsel(1 downto 0) = std_ulogic_vector(to_unsigned(i, 2))) else '0';
   end generate;
-  hartselect_inv <= '0' when (unsigned(dm_reg.hartsel) < NUM_HARTS) else '1'; -- invalid/unavailable hart selection
+  hart_exist <= '1' when (unsigned(dm_reg.hartsel) < to_unsigned(NUM_HARTS, 3)) else '0'; -- selected hart exists
+  hart_avail <= hart_exist and (not dm_reg.ndmreset); -- selected hart is available
 
   -- CPU halt request --
   request_gen:
