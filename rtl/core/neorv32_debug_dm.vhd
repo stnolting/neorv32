@@ -199,7 +199,17 @@ begin
       dm_reg.req_res     <= '0';
       dm_reg.reset_ack   <= '0';
       dm_reg.clr_acc_err <= '0';
-      if (dmi_wren_auth = '1') then
+
+      -- ------------------------------------------------------
+      -- DMI write access
+      -- ------------------------------------------------------
+      if (dm_reg.dmactive = '0') then -- DM reset (only reset critical registers)
+        dm_reg.ndmreset        <= '0';
+        dm_reg.autoexecdata    <= '0';
+        dm_reg.autoexecprogbuf <= (others => '0');
+        dm_reg.halt_req        <= '0';
+        dm_reg.hartsel         <= (others => '0');
+      elsif (dmi_wren = '1') then
         case dmi_req_i.addr is
 
           -- debug module control --
