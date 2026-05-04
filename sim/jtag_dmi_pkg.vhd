@@ -124,7 +124,7 @@ package body jtag_dmi_pkg is
   begin
     jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '1', '0', tdo_v); -- SELECT-DR-SCAN
     jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '0', '0', tdo_v); -- CAPTURE-DR
-    jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '0', '0', tdo_v); -- SHIFT-DR (TDO becomes valid)
+    jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '0', '0', tdo_v); -- SHIFT-DR
     for i in 0 to 40 loop
       if (i = 40) then
         jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '1', din(i), tdo_v); -- EXIT1-DR
