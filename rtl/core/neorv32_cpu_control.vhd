@@ -603,7 +603,7 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Sdext);
 
       -- trigger module CSRs --
-      when csr_tselect_c | csr_tdata1_c | csr_tdata2_c | csr_tinfo_c =>
+      when csr_tselect_c | csr_tdata1_c | csr_tdata2_c | csr_tdata3_c | csr_tinfo_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Sdtrig);
 
       -- undefined / not implemented --
@@ -818,8 +818,8 @@ begin
     ((csr.mstatus_mie = '1') or (csr.prv_level = priv_mode_u_c)) and -- IRQ only when in M-mode and MIE=1 OR when in U-mode
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
 
-  -- debug-entry halt interrupt? allow halt also after "reset" (#879) --
-  trap.irq_fire(1) <= trap.irq_buf(irq_db_halt_c) when (exec.state = S_RESTART) or (exec.state = S_EXECUTE) or (exec.state = S_SLEEP) else '0';
+  -- debug halt request interrupt? --
+  trap.irq_fire(1) <= trap.irq_buf(irq_db_halt_c);
 
 
   -- Trap Priority Encoder ------------------------------------------------------------------

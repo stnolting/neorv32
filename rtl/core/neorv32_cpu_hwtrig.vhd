@@ -6,7 +6,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -201,7 +201,7 @@ begin
       for i in 0 to NUM_TRIGGERS-1 loop
         if (tdata1_hit(i) = '0') then
           tdata1_hit(i) <= match(i); -- any match?
-        elsif (sel(i) = '1') and (ctrl_i.csr_we = '1') and (csr_en = '1') and
+        elsif (sel(i) = '1') and (ctrl_i.csr_we = '1') and (csr_en = '1') and (ctrl_i.cpu_debug = '1') and
               (ctrl_i.csr_addr(2 downto 0) = csr_tdata1_c(2 downto 0)) and
               (ctrl_i.csr_wdata(22) = '0') then -- clear currently selected tdata1.hit0 by debugger
           tdata1_hit(i) <= '0';
