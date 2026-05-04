@@ -6,7 +6,7 @@
 // -------------------------------------------------------------------------------- //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -40,10 +40,11 @@ ocd_entry_exception:
 // DM_CODE_BASE + 4: normal entry - halt CPU and enter park loop
 ocd_entry_park:
   csrw dscratch0, x8                       // backup x8 to dscratch0 so we have a GPR available
-  sb   zero, (DM_SREG_BASE+SREG_HLT)(zero) // send halt-acknowledge
 
 // polling loop (wait for debugger requests)
 ocd_park_loop:
+  sb   zero, (DM_SREG_BASE+SREG_HLT)(zero) // (re-)send halt-acknowledge: CPU is (still) halted
+
   lbu  x8, (DM_SREG_BASE+SREG_EXE)(zero)   // check if pending execute request
   bnez x8, ocd_execute
 
