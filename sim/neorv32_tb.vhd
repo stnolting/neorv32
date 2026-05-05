@@ -10,14 +10,17 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 use ieee.math_real.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
 
+library work;
+use work.jtag_dmi_pkg.all;
+
 entity neorv32_tb is
   generic (
+    JTAG_TESTS_EN     : boolean                        := true;        -- enable JTAG/DMI tests in testbench
     -- processor --
     CLOCK_FREQUENCY   : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
     DUAL_CORE_EN      : boolean                        := true;        -- enable dual-core homogeneous SMP
@@ -85,7 +88,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
 
   -- generators --
   signal clk_en, clk_gen, rst_gen : std_ulogic;
-  constant f_period_c : time := (1 sec) / CLOCK_FREQUENCY;
+  constant t_cpu_c : time := (1 sec) / CLOCK_FREQUENCY; -- CPU clock period
 
   -- IO connection --
   signal uart0_txd, uart0_ctsn, uart1_txd, uart1_ctsn : std_ulogic;
@@ -100,6 +103,7 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal spi_di, spi_do, spi_clk : std_ulogic;
   signal sdi_di, sdi_do, sdi_clk, sdi_csn : std_ulogic;
   signal msi, mei, mti : std_ulogic;
+  signal jtag_tck, jtag_tms, jtag_tdi, jtag_tdo : std_ulogic;
 
   -- slink --
   type slink_t is record
@@ -121,9 +125,122 @@ begin
 
   -- Clock & Reset Generators ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rst_gen <= '0', '1' after 30*(f_period_c/2);
-  clk_en  <= '0', '1' after 60*(f_period_c/2);
-  clk_gen <= (not clk_gen) and clk_en after (f_period_c/2);
+  rst_gen <= '0', '1' after 30*(t_cpu_c/2);
+  clk_en  <= '0', '1' after 60*(t_cpu_c/2);
+  clk_gen <= (not clk_gen) and clk_en after (t_cpu_c/2);
+
+
+  -- JTAG test ------------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  jtag_test: process
+    variable tmp_v : std_ulogic_vector(31 downto 0);
+  begin
+    jtag_tck <= '0';
+    jtag_tms <= '0';
+    jtag_tdi <= '0';
+    wait for 100*t_cpu_c;
+
+    if JTAG_TESTS_EN then
+      -- reset JTAG tap --
+      wait for 10*t_cpu_c;
+      report "[TB:JTAG] Resetting JTAG tap...";
+      jtag_reset(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo);
+
+      -- enable DM (dmcontrol[0]) --
+      wait for 10*t_cpu_c;
+      report "[TB:JTAG] Enabling debug module...";
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", x"00000001"); -- dmcontrol
+
+      -- authenticate (assuming the default authenticator) --
+      wait for 10*t_cpu_c;
+      report "[TB:JTAG] Authenticating...";
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0110000", x"00000001"); -- authdata
+      dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010001", tmp_v); -- dmstatus
+      if (tmp_v(7 downto 0) = x"83") then
+        report "[TB:JTAG] JTAG access authenticated.";
+      else
+        report "[TB:JTAG] Cannot authenticate! (dmstatus = " & to_hexstring_f(tmp_v) & ")" severity error;
+      end if;
+
+      -- halt CPU core 0 --
+      report "[TB:JTAG] Halting CPU-0...";
+      wait for 10*t_cpu_c;
+      dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
+      tmp_v := tmp_v or x"80000000"; -- set haltreq (bit 31)
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
+      dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010001", tmp_v); -- dmstatus
+      if (tmp_v(8) = '1') then
+        report "[TB:JTAG] CPU-0 halted.";
+      else
+        report "[TB:JTAG] Cannot halt CPU-0! (dmstatus = " & to_hexstring_f(tmp_v) & ")" severity error;
+      end if;
+
+      -- write data word to testbench "external IO memory" --
+      wait for 10*t_cpu_c;
+      report "[TB:JTAG] Writing to memory via program buffer...";
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0100000", x"00942023"); -- progbuf0 = sw x9, 0(x8)
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0100001", x"00000013"); -- progbuf1 = nop
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0000100", x"F0000000"); -- data0 = memory address
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010111", x"00231008"); -- command = write data0 -> x8
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0000100", x"0cd7e571"); -- data0 = data ("ocd test!")
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010111", x"00271009"); -- command = rite data0 -> x9 + postexec
+      dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010110", tmp_v); -- abstractcs
+      if (tmp_v(10 downto 8) = "000") then -- no error?
+        report "[TB:JTAG] Memory write successful.";
+      else
+        report "[TB:JTAG] Memory write FAILED! (abstractcs = " & to_hexstring_f(tmp_v) & ")" severity error;
+      end if;
+
+      -- reset CPU --
+      wait for 10*t_cpu_c;
+      report "[TB:JTAG] Resetting and halting CPU-0...";
+      dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
+      tmp_v := tmp_v or x"00000002"; -- set ndmreset (bit 1)
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
+      wait for 2*t_cpu_c;
+      dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
+      tmp_v := tmp_v and x"FFFFFFFD"; -- clear ndmreset (bit 1)
+      tmp_v := tmp_v or  x"80000000"; -- set haltreq (bit 31)
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
+      wait for 2*t_cpu_c;
+      dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010001", tmp_v); -- dmstatus
+      if (tmp_v(19) = '1') and (tmp_v(9) = '1') then
+        report "[TB:JTAG] CPU-0 reset and halted.";
+      else
+        report "[TB:JTAG] CPU-0 not reset/halted! (dmstatus = " & to_hexstring_f(tmp_v) & ")" severity error;
+      end if;
+
+      -- resume CPU --
+      wait for 10*t_cpu_c;
+      report "[TB:JTAG] Resuming CPU-0...";
+      dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
+      tmp_v := tmp_v and x"7FFFFFFF"; -- clear haltreq (bit 31)
+      tmp_v := tmp_v or  x"40000000"; -- set resumereq (bit 30)
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
+      dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010001", tmp_v); -- dmstatus
+      if (tmp_v(17) = '1') then -- allresumeack
+        report "[TB:JTAG] CPU-0 resumed.";
+      else
+        report "[TB:JTAG] Cannot resume CPU-0! (dmstatus = " & to_hexstring_f(tmp_v) & ")" severity error;
+      end if;
+      dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
+      tmp_v := tmp_v and x"BFFFFFFF"; -- clear resumereq (bit 30)
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
+
+      -- disable DM --
+      wait for 10*t_cpu_c;
+      report "[TB:JTAG] Disabling debug module...";
+      dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", x"00000000"); -- dmcontrol
+      dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
+      if (tmp_v = x"00000000") then
+        report "[TB:JTAG] Debug module disabled.";
+      else
+        report "[TB:JTAG] Debug module not disabled! (dmstatus = " & to_hexstring_f(tmp_v) & ")" severity error;
+      end if;
+    end if;
+
+    wait;
+  end process jtag_test;
 
 
   -- The Core of the Problem ----------------------------------------------------------------
@@ -268,10 +385,10 @@ begin
     trace_cpu0_o   => open,
     trace_cpu1_o   => open,
     -- JTAG on-chip debugger interface --
-    jtag_tck_i     => '0',
-    jtag_tdi_i     => '0',
-    jtag_tdo_o     => open,
-    jtag_tms_i     => '0',
+    jtag_tck_i     => jtag_tck,
+    jtag_tdi_i     => jtag_tdi,
+    jtag_tdo_o     => jtag_tdo,
+    jtag_tms_i     => jtag_tms,
     -- External bus interface --
     xbus_adr_o     => xbus_core_req.addr,
     xbus_dat_o     => xbus_core_req.data,
@@ -480,6 +597,7 @@ begin
   if EXT_MEM_A_EN generate
     xbus_external_memory_a: entity work.xbus_memory
     generic map (
+      MEM_RST  => false,
       MEM_SIZE => EXT_MEM_A_SIZE,
       MEM_LATE => EXT_MEM_A_LATE,
       MEM_FILE => EXT_MEM_A_FILE
@@ -504,6 +622,7 @@ begin
   if EXT_MEM_B_EN generate
     xbus_external_memory_b: entity work.xbus_memory
     generic map (
+      MEM_RST  => false,
       MEM_SIZE => EXT_MEM_B_SIZE,
       MEM_LATE => EXT_MEM_B_LATE,
       MEM_FILE => EXT_MEM_B_FILE
@@ -549,6 +668,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   xbus_mmio: entity work.xbus_memory
   generic map (
+    MEM_RST  => true,
     MEM_SIZE => 8,
     MEM_LATE => 16,
     MEM_FILE => "" -- no initialization
