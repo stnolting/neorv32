@@ -578,16 +578,38 @@ begin
            csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Smpmp);
 
-      -- hardware performance monitors (HPM) --
-      when csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   | csr_mhpmcounter7_c   |
-           csr_mhpmcounter8_c   | csr_mhpmcounter9_c   | csr_mhpmcounter10_c  | csr_mhpmcounter11_c  | csr_mhpmcounter12_c  |
-           csr_mhpmcounter13_c  | csr_mhpmcounter14_c  | csr_mhpmcounter15_c  | -- machine counters LOW
-           csr_mhpmcounter3h_c  | csr_mhpmcounter4h_c  | csr_mhpmcounter5h_c  | csr_mhpmcounter6h_c  | csr_mhpmcounter7h_c  |
-           csr_mhpmcounter8h_c  | csr_mhpmcounter9h_c  | csr_mhpmcounter10h_c | csr_mhpmcounter11h_c | csr_mhpmcounter12h_c |
-           csr_mhpmcounter13h_c | csr_mhpmcounter14h_c | csr_mhpmcounter15h_c | -- machine counters HIGH
-           csr_mhpmevent3_c     | csr_mhpmevent4_c     | csr_mhpmevent5_c     | csr_mhpmevent6_c     | csr_mhpmevent7_c     |
-           csr_mhpmevent8_c     | csr_mhpmevent9_c     | csr_mhpmevent10_c    | csr_mhpmevent11_c    | csr_mhpmevent12_c    |
-           csr_mhpmevent13_c    | csr_mhpmevent14_c    | csr_mhpmevent15_c => -- machine event configuration
+      when csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   |
+           csr_mhpmcounter7_c   | csr_mhpmcounter8_c   | csr_mhpmcounter9_c   | csr_mhpmcounter10_c  |
+           csr_mhpmcounter11_c  | csr_mhpmcounter12_c  | csr_mhpmcounter13_c  | csr_mhpmcounter14_c  |
+           csr_mhpmcounter15_c  | csr_mhpmcounter16_c  | csr_mhpmcounter17_c  | csr_mhpmcounter18_c  |
+           csr_mhpmcounter19_c  | csr_mhpmcounter20_c  | csr_mhpmcounter21_c  | csr_mhpmcounter22_c  |
+           csr_mhpmcounter23_c  | csr_mhpmcounter24_c  | csr_mhpmcounter25_c  | csr_mhpmcounter26_c  |
+           csr_mhpmcounter27_c  | csr_mhpmcounter28_c  | csr_mhpmcounter29_c  | csr_mhpmcounter30_c  |
+           csr_mhpmcounter31_c  | -- machine counters LOW
+           csr_mhpmcounter3h_c  | csr_mhpmcounter4h_c  | csr_mhpmcounter5h_c  | csr_mhpmcounter6h_c  |
+           csr_mhpmcounter7h_c  | csr_mhpmcounter8h_c  | csr_mhpmcounter9h_c  | csr_mhpmcounter10h_c |
+           csr_mhpmcounter11h_c | csr_mhpmcounter12h_c | csr_mhpmcounter13h_c | csr_mhpmcounter14h_c |
+           csr_mhpmcounter15h_c | csr_mhpmcounter16h_c | csr_mhpmcounter17h_c | csr_mhpmcounter18h_c |
+           csr_mhpmcounter19h_c | csr_mhpmcounter20h_c | csr_mhpmcounter21h_c | csr_mhpmcounter22h_c |
+           csr_mhpmcounter23h_c | csr_mhpmcounter24h_c | csr_mhpmcounter25h_c | csr_mhpmcounter26h_c |
+           csr_mhpmcounter27h_c | csr_mhpmcounter28h_c | csr_mhpmcounter29h_c | csr_mhpmcounter30h_c |
+           csr_mhpmcounter31h_c | -- machine counters HIGH
+           csr_mhpmevent3_c     | csr_mhpmevent4_c     | csr_mhpmevent5_c     | csr_mhpmevent6_c     |
+           csr_mhpmevent7_c     | csr_mhpmevent8_c     | csr_mhpmevent9_c     | csr_mhpmevent10_c    |
+           csr_mhpmevent11_c    | csr_mhpmevent12_c    | csr_mhpmevent13_c    | csr_mhpmevent14_c    |
+           csr_mhpmevent15_c    | csr_mhpmevent16_c    | csr_mhpmevent17_c    | csr_mhpmevent18_c    |
+           csr_mhpmevent19_c    | csr_mhpmevent20_c    | csr_mhpmevent21_c    | csr_mhpmevent22_c    |
+           csr_mhpmevent23_c    | csr_mhpmevent24_c    | csr_mhpmevent25_c    | csr_mhpmevent26_c    |
+           csr_mhpmevent27_c    | csr_mhpmevent28_c    | csr_mhpmevent29_c    | csr_mhpmevent30_c    |
+           csr_mhpmevent31_c    | -- machine event configuration LOW
+           csr_mhpmevent3h_c    | csr_mhpmevent4h_c    | csr_mhpmevent5h_c    | csr_mhpmevent6h_c    |
+           csr_mhpmevent7h_c    | csr_mhpmevent8h_c    | csr_mhpmevent9h_c    | csr_mhpmevent10h_c   |
+           csr_mhpmevent11h_c   | csr_mhpmevent12h_c   | csr_mhpmevent13h_c   | csr_mhpmevent14h_c   |
+           csr_mhpmevent15h_c   | csr_mhpmevent16h_c   | csr_mhpmevent17h_c   | csr_mhpmevent18h_c   |
+           csr_mhpmevent19h_c   | csr_mhpmevent20h_c   | csr_mhpmevent21h_c   | csr_mhpmevent22h_c   |
+           csr_mhpmevent23h_c   | csr_mhpmevent24h_c   | csr_mhpmevent25h_c   | csr_mhpmevent26h_c   |
+           csr_mhpmevent27h_c   | csr_mhpmevent28h_c   | csr_mhpmevent29h_c   | csr_mhpmevent30h_c   |
+           csr_mhpmevent31h_c => -- machine event configuration HIGH
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zihpm);
 
       -- counter and timer CSRs --
