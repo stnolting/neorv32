@@ -77,8 +77,8 @@ entity neorv32_top is
     PMP_NAP_MODE_EN     : boolean                        := false;         -- implement NAPOT/NA4 modes
 
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS        : natural range 0 to 13          := 0;             -- number of implemented HPM counters
-    HPM_CNT_WIDTH       : natural range 0 to 64          := 40;            -- total size of HPM counters
+    HPM_NUM_CNTS        : natural range 0 to 29          := 0;             -- number of implemented HPM counters
+    HPM_CNT_WIDTH       : natural range 0 to 64          := 64;            -- total size of HPM counters
 
     -- Internal Instruction memory (IMEM) --
     IMEM_EN             : boolean                        := false;         -- implement processor-internal instruction memory

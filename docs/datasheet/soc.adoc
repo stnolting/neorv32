@@ -248,8 +248,8 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `PMP_TOR_MODE_EN`     | boolean   | false         | Implement support for top-of-region (TOR) mode.
 | `PMP_NAP_MODE_EN`     | boolean   | false         | Implement support for naturally-aligned power-of-two (NAPOT & NA4) modes.
 4+^| **Hardware Performance Monitors (<<_zihpm_isa_extension>>)**
-| `HPM_NUM_CNTS`        | natural   | 0             | Number of implemented hardware performance monitor counters (0..13).
-| `HPM_CNT_WIDTH`       | natural   | 40            | Total LSB-aligned size of each HPM counter. Min 0, max 64.
+| `HPM_NUM_CNTS`        | natural   | 0             | Number of implemented hardware performance monitor counters (0..29).
+| `HPM_CNT_WIDTH`       | natural   | 64            | Total LSB-aligned size of each HPM counter. Min 0, max 64.
 4+^| **Internal <<_instruction_memory_imem>>**
 | `IMEM_EN`             | boolean   | false         | Implement instruction memory.
 | `IMEM_BASE`           | suv(31:0) | x"00000000"   | Base address of the instruction memory (has to be naturally-aligned to its size). Handle with care.
