@@ -416,9 +416,9 @@ However, access privileges are still enforced so these instruction variants _do_
 
 ==== `Zihpm` ISA Extension
 
-In additions to the base counters the NEORV32 CPU provides up to 13 hardware performance monitors (HPM 3..15),
-which can be used to benchmark applications. Each HPM consists of an N-bit wide counter (split in a high-word 32-bit
-CSR and a low-word 32-bit CSR), where N is defined via the top's `HPM_CNT_WIDTH` generic and a corresponding event
+In additions to the base counters the NEORV32 CPU provides up to 29 hardware performance monitors (HPM 3..29),
+which can be used to benchmark applications. Each HPM consists of an N-bit wide counter split into a high-word 32-bit
+CSR and a low-word 32-bit CSR, where N is defined via the top's `HPM_CNT_WIDTH` generic and a corresponding event
 configuration CSR.
 
 The event configuration CSR defines the architectural events that lead to an increment of the associated HPM counter.
