@@ -551,7 +551,7 @@ implementation of the according modes.
 |             | `0x3bf` (`pmpaddr15`)
 | Reset value | all `0x00000000`
 | ISA         | <<_zicsr_isa_extension,`Zicsr`>> & <<_smpmp_isa_extension,`Smpmp`>>
-| Description | Region address/boundaries configuration.
+| Description | Region address/boundaries configuration (address/mask bits `33:2`).
 Note that, depending on `PMP_NUM_REGIONS`, a **maximum** of the lowest 16 address registers are physically implemented (`pmpaddr0 .. pmpaddr15`).
 All remaining register are hardwired to zero.
 |=======================
