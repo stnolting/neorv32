@@ -17,10 +17,11 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_alu is
   generic (
-    -- RISC-V CPU Extensions --
+    -- RISC-V ISA Extensions --
     RISCV_ISA_M      : boolean; -- mul/div extension
     RISCV_ISA_Zba    : boolean; -- address-generation instruction
     RISCV_ISA_Zbb    : boolean; -- basic bit-manipulation instruction
+    RISCV_ISA_Zbc    : boolean; -- carry-less multiplication instructions
     RISCV_ISA_Zbkb   : boolean; -- bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc   : boolean; -- carry-less multiplication instructions
     RISCV_ISA_Zbkx   : boolean; -- cryptography crossbar permutation extension
@@ -192,16 +193,17 @@ begin
   -- ALU[I]-Opcode Co-Processor: Bit-Manipulation Unit (B ISA Extension) --------------------
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_bitmanip_enabled:
-  if RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbkc or RISCV_ISA_Zbkx or RISCV_ISA_Zbs generate
+  if RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbc or RISCV_ISA_Zbkb or RISCV_ISA_Zbkc or RISCV_ISA_Zbkx or RISCV_ISA_Zbs generate
     neorv32_cpu_alu_bitmanip_inst: entity neorv32.neorv32_cpu_alu_bitmanip
     generic map (
       FAST_SHIFT => FAST_SHIFT_EN,  -- use barrel shifter for shift operations
-      ZBA        => RISCV_ISA_Zba,  -- enable address-generation instruction
-      ZBB        => RISCV_ISA_Zbb,  -- enable basic bit-manipulation instruction
-      ZBKB       => RISCV_ISA_Zbkb, -- enable bit-manipulation instructions for cryptography
-      ZBKC       => RISCV_ISA_Zbkc, -- enable carry-less multiplication instructions
+      ZBA        => RISCV_ISA_Zba,  -- address-generation instruction
+      ZBB        => RISCV_ISA_Zbb,  -- basic bit-manipulation instruction
+      ZBC        => RISCV_ISA_Zbc,  -- carry-less multiplication instructions
+      ZBKB       => RISCV_ISA_Zbkb, -- bit-manipulation instructions for cryptography
+      ZBKC       => RISCV_ISA_Zbkc, -- carry-less multiplication instructions
       ZBKX       => RISCV_ISA_Zbkx, -- crossbar permutation instructions for cryptography
-      ZBS        => RISCV_ISA_Zbs   -- enable single-bit instructions
+      ZBS        => RISCV_ISA_Zbs   -- single-bit instructions
     )
     port map (
       -- global control --
@@ -220,7 +222,7 @@ begin
   end generate;
 
   neorv32_cpu_alu_bitmanip_disabled:
-  if not (RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbkb or RISCV_ISA_Zbkc or RISCV_ISA_Zbkx or RISCV_ISA_Zbs) generate
+  if not (RISCV_ISA_Zba or RISCV_ISA_Zbb or RISCV_ISA_Zbc or RISCV_ISA_Zbkb or RISCV_ISA_Zbkc or RISCV_ISA_Zbkx or RISCV_ISA_Zbs) generate
     cp_result(2) <= (others => '0');
     cp_valid(2)  <= '0';
   end generate;
@@ -352,11 +354,11 @@ begin
   if RISCV_ISA_Zknd or RISCV_ISA_Zkne or RISCV_ISA_Zknh or RISCV_ISA_Zksed or RISCV_ISA_Zksh generate
     neorv32_cpu_alu_crypto_inst: entity neorv32.neorv32_cpu_alu_crypto
     generic map (
-      EN_ZKND  => RISCV_ISA_Zknd,  -- enable NIST AES decryption extension
-      EN_ZKNE  => RISCV_ISA_Zkne,  -- enable NIST AES encryption extension
-      EN_ZKNH  => RISCV_ISA_Zknh,  -- enable NIST hash extension
-      EN_ZKSED => RISCV_ISA_Zksed, -- enable ShangMi block cipher extension
-      EN_ZKSH  => RISCV_ISA_Zksh   -- enable ShangMi hash extension
+      EN_ZKND  => RISCV_ISA_Zknd,  -- NIST AES decryption extension
+      EN_ZKNE  => RISCV_ISA_Zkne,  -- NIST AES encryption extension
+      EN_ZKNH  => RISCV_ISA_Zknh,  -- NIST hash extension
+      EN_ZKSED => RISCV_ISA_Zksed, -- ShangMi block cipher extension
+      EN_ZKSH  => RISCV_ISA_Zksh   -- ShangMi hash extension
     )
     port map (
       -- global control --

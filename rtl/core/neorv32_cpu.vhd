@@ -35,6 +35,7 @@ entity neorv32_cpu is
     RISCV_ISA_Zalrsc    : boolean;                        -- atomic reservation-set operations extension
     RISCV_ISA_Zba       : boolean;                        -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean;                        -- basic bit-manipulation extension
+    RISCV_ISA_Zbc       : boolean;                        -- carry-less multiplication instructions
     RISCV_ISA_Zbkb      : boolean;                        -- bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc      : boolean;                        -- carry-less multiplication instructions
     RISCV_ISA_Zbkx      : boolean;                        -- cryptography crossbar permutation extension
@@ -159,6 +160,7 @@ begin
       sel_string_f(RISCV_ISA_Zalrsc,    "_zalrsc",    "" ) &
       sel_string_f(RISCV_ISA_Zba,       "_zba",       "" ) &
       sel_string_f(RISCV_ISA_Zbb,       "_zbb",       "" ) &
+      sel_string_f(RISCV_ISA_Zbc,       "_zbc",       "" ) &
       sel_string_f(RISCV_ISA_Zbkb,      "_zbkb",      "" ) &
       sel_string_f(RISCV_ISA_Zbkc,      "_zbkc",      "" ) &
       sel_string_f(RISCV_ISA_Zbkx,      "_zbkx",      "" ) &
@@ -255,6 +257,7 @@ begin
     RISCV_ISA_Zcb       => riscv_zcb_c,         -- additional code size reduction instructions
     RISCV_ISA_Zba       => RISCV_ISA_Zba,       -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       => RISCV_ISA_Zbb,       -- basic bit-manipulation extension
+    RISCV_ISA_Zbc       => RISCV_ISA_Zbc,       -- carry-less multiplication instructions
     RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,      -- bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc      => RISCV_ISA_Zbkc,      -- carry-less multiplication instructions
     RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,      -- cryptography crossbar permutation extension
@@ -405,10 +408,11 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_alu_inst: entity neorv32.neorv32_cpu_alu
   generic map (
-    -- RISC-V CPU Extensions --
+    -- RISC-V ISA Extensions --
     RISCV_ISA_M      => RISCV_ISA_M,      -- mul/div extension
     RISCV_ISA_Zba    => RISCV_ISA_Zba,    -- address-generation instruction
     RISCV_ISA_Zbb    => RISCV_ISA_Zbb,    -- basic bit-manipulation instruction
+    RISCV_ISA_Zbc    => RISCV_ISA_Zbc,    -- carry-less multiplication instructions
     RISCV_ISA_Zbkb   => RISCV_ISA_Zbkb,   -- bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc   => RISCV_ISA_Zbkc,   -- carry-less multiplication instructions
     RISCV_ISA_Zbkx   => RISCV_ISA_Zbkx,   -- cryptography crossbar permutation extension
