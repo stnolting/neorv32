@@ -48,6 +48,7 @@ begin
     RISCV_ISA_Zaamo     => true,        -- atomic memory operations extension
     RISCV_ISA_Zba       => true,        -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       => true,        -- basic bit-manipulation extension
+    RISCV_ISA_Zbc       => true,        -- carry-less multiplication instructions
     RISCV_ISA_Zbkb      => true,        -- bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc      => true,        -- carry-less multiplication instructions
     RISCV_ISA_Zbkx      => true,        -- cryptography crossbar permutation extension
