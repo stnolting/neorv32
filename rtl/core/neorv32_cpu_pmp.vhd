@@ -122,9 +122,15 @@ begin
       elsif rising_edge(clk_i) then
         if (pmpcfg_we(i/4) = '1') and (pmpcfg(i)(cfg_l_c) = '0') then -- unlocked write access
           -- permissions --
-          pmpcfg(i)(cfg_r_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_r_c); -- R (read)
-          pmpcfg(i)(cfg_w_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_w_c); -- W (write)
-          pmpcfg(i)(cfg_x_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_x_c); -- X (execute)
+          if (ctrl_i.csr_wdata((i mod 4)*8+cfg_w_c) = '1') and (ctrl_i.csr_wdata((i mod 4)*8+cfg_r_c) = '0') then -- W-only = reserved
+            pmpcfg(i)(cfg_r_c) <= '0';
+            pmpcfg(i)(cfg_w_c) <= '0';
+            pmpcfg(i)(cfg_x_c) <= '0';
+          else
+            pmpcfg(i)(cfg_r_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_r_c); -- R (read)
+            pmpcfg(i)(cfg_w_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_w_c); -- W (write)
+            pmpcfg(i)(cfg_x_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_x_c); -- X (execute)
+          end if;
           -- mode --
           mode_v := ctrl_i.csr_wdata((i mod 4)*8+cfg_ah_c downto (i mod 4)*8+cfg_al_c);
           if ((mode_v = mode_tor_c)   and (not TOR_EN)) or -- TOR mode not implemented
