@@ -578,7 +578,23 @@ begin
            csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Smpmp);
 
-      when csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   |
+      when csr_hpmcounter3_c    | csr_hpmcounter4_c    | csr_hpmcounter5_c    | csr_hpmcounter6_c    |
+           csr_hpmcounter7_c    | csr_hpmcounter8_c    | csr_hpmcounter9_c    | csr_hpmcounter10_c   |
+           csr_hpmcounter11_c   | csr_hpmcounter12_c   | csr_hpmcounter13_c   | csr_hpmcounter14_c   |
+           csr_hpmcounter15_c   | csr_hpmcounter16_c   | csr_hpmcounter17_c   | csr_hpmcounter18_c   |
+           csr_hpmcounter19_c   | csr_hpmcounter20_c   | csr_hpmcounter21_c   | csr_hpmcounter22_c   |
+           csr_hpmcounter23_c   | csr_hpmcounter24_c   | csr_hpmcounter25_c   | csr_hpmcounter26_c   |
+           csr_hpmcounter27_c   | csr_hpmcounter28_c   | csr_hpmcounter29_c   | csr_hpmcounter30_c   |
+           csr_hpmcounter31_c   | -- user counters LOW
+           csr_hpmcounter3h_c   | csr_hpmcounter4h_c   | csr_hpmcounter5h_c   | csr_hpmcounter6h_c   |
+           csr_hpmcounter7h_c   | csr_hpmcounter8h_c   | csr_hpmcounter9h_c   | csr_hpmcounter10h_c  |
+           csr_hpmcounter11h_c  | csr_hpmcounter12h_c  | csr_hpmcounter13h_c  | csr_hpmcounter14h_c  |
+           csr_hpmcounter15h_c  | csr_hpmcounter16h_c  | csr_hpmcounter17h_c  | csr_hpmcounter18h_c  |
+           csr_hpmcounter19h_c  | csr_hpmcounter20h_c  | csr_hpmcounter21h_c  | csr_hpmcounter22h_c  |
+           csr_hpmcounter23h_c  | csr_hpmcounter24h_c  | csr_hpmcounter25h_c  | csr_hpmcounter26h_c  |
+           csr_hpmcounter27h_c  | csr_hpmcounter28h_c  | csr_hpmcounter29h_c  | csr_hpmcounter30h_c  |
+           csr_hpmcounter31h_c  | -- user counters HIGH
+           csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   |
            csr_mhpmcounter7_c   | csr_mhpmcounter8_c   | csr_mhpmcounter9_c   | csr_mhpmcounter10_c  |
            csr_mhpmcounter11_c  | csr_mhpmcounter12_c  | csr_mhpmcounter13_c  | csr_mhpmcounter14_c  |
            csr_mhpmcounter15_c  | csr_mhpmcounter16_c  | csr_mhpmcounter17_c  | csr_mhpmcounter18_c  |
