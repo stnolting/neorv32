@@ -113,12 +113,13 @@ begin
       trace_buf.rs2_addr  <= ctrl_i.rf_rs2;
       trace_buf.rs1_rdata <= rs1_rdata_i;
       trace_buf.rs2_rdata <= rs2_rdata_i;
-      if (ctrl_i.rf_wb_en = '1') then
-        trace_buf.rd_addr <= ctrl_i.rf_rd;
+      if (ctrl_i.rf_wb_en = '1') and (or_reduce_f(ctrl_i.rf_rd) = '1') then
+        trace_buf.rd_rdata <= rd_wdata_i;
+        trace_buf.rd_addr  <= (others => '0');
       elsif (trace_buf.valid = '1') then
-        trace_buf.rd_addr <= (others => '0');
+        trace_buf.rd_rdata <= rd_wdata_i;
+        trace_buf.rd_addr  <= (others => '0');
       end if;
-      trace_buf.rd_rdata <= rd_wdata_i;
 
       -- program counter --
       trace_buf.pc_rdata <= ctrl_i.pc_cur;
@@ -629,6 +630,22 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_hpmcounter13_c   => return "hpmcounter13";
       when csr_hpmcounter14_c   => return "hpmcounter14";
       when csr_hpmcounter15_c   => return "hpmcounter15";
+      when csr_hpmcounter16_c   => return "hpmcounter16";
+      when csr_hpmcounter17_c   => return "hpmcounter17";
+      when csr_hpmcounter18_c   => return "hpmcounter18";
+      when csr_hpmcounter19_c   => return "hpmcounter19";
+      when csr_hpmcounter20_c   => return "hpmcounter20";
+      when csr_hpmcounter21_c   => return "hpmcounter21";
+      when csr_hpmcounter22_c   => return "hpmcounter22";
+      when csr_hpmcounter23_c   => return "hpmcounter23";
+      when csr_hpmcounter24_c   => return "hpmcounter24";
+      when csr_hpmcounter25_c   => return "hpmcounter25";
+      when csr_hpmcounter26_c   => return "hpmcounter26";
+      when csr_hpmcounter27_c   => return "hpmcounter27";
+      when csr_hpmcounter28_c   => return "hpmcounter28";
+      when csr_hpmcounter29_c   => return "hpmcounter29";
+      when csr_hpmcounter30_c   => return "hpmcounter30";
+      when csr_hpmcounter31_c   => return "hpmcounter31";
       when csr_cycleh_c         => return "cycleh";
       when csr_timeh_c          => return "timeh";
       when csr_instreth_c       => return "instreth";
@@ -645,6 +662,22 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_hpmcounter13h_c  => return "hpmcounter13h";
       when csr_hpmcounter14h_c  => return "hpmcounter14h";
       when csr_hpmcounter15h_c  => return "hpmcounter15h";
+      when csr_hpmcounter16h_c  => return "hpmcounter16h";
+      when csr_hpmcounter17h_c  => return "hpmcounter17h";
+      when csr_hpmcounter18h_c  => return "hpmcounter18h";
+      when csr_hpmcounter19h_c  => return "hpmcounter19h";
+      when csr_hpmcounter20h_c  => return "hpmcounter20h";
+      when csr_hpmcounter21h_c  => return "hpmcounter21h";
+      when csr_hpmcounter22h_c  => return "hpmcounter22h";
+      when csr_hpmcounter23h_c  => return "hpmcounter23h";
+      when csr_hpmcounter24h_c  => return "hpmcounter24h";
+      when csr_hpmcounter25h_c  => return "hpmcounter25h";
+      when csr_hpmcounter26h_c  => return "hpmcounter26h";
+      when csr_hpmcounter27h_c  => return "hpmcounter27h";
+      when csr_hpmcounter28h_c  => return "hpmcounter28h";
+      when csr_hpmcounter29h_c  => return "hpmcounter29h";
+      when csr_hpmcounter30h_c  => return "hpmcounter30h";
+      when csr_hpmcounter31h_c  => return "hpmcounter31h";
       -- machine information registers --
       when csr_mvendorid_c      => return "mvendorid";
       when csr_marchid_c        => return "marchid";
