@@ -367,6 +367,10 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cpu_firq : std_ulogic_vector(15 downto 0);
   signal mti, msi : std_ulogic_vector(num_cores_c-1 downto 0);
 
+  -- system time (mtime) --
+  signal mtime : std_ulogic_vector(63 downto 0);
+  signal mtime_lo : std_ulogic_vector(31 downto 0);
+
 begin
 
   -- **************************************************************************************************************************
@@ -1168,15 +1172,27 @@ begin
         rstn_i    => rstn_sys,
         bus_req_i => iodev_req(IODEV_CLINT),
         bus_rsp_o => iodev_rsp(IODEV_CLINT),
-        time_o    => mtime_time_o,
+        time_o    => mtime,
         mti_o     => mti,
         msi_o     => msi
       );
+
+      -- synchronize high and low words --
+      mtime_sync: process(rstn_i, clk_i)
+      begin
+        if (rstn_i = '0') then
+          mtime_lo(31 downto 0) <= (others => '0');
+        elsif rising_edge(clk_i) then
+          mtime_lo(31 downto 0) <= mtime(31 downto 0);
+        end if;
+      end process mtime_sync;
+      mtime_time_o <= mtime(63 downto 32) & mtime_lo;
     end generate;
 
     neorv32_clint_disabled:
     if not IO_CLINT_EN generate
       iodev_rsp(IODEV_CLINT) <= rsp_terminate_c;
+      mtime_lo               <= (others => '0');
       mtime_time_o           <= (others => '0');
       mti                    <= (others => irq_mti_i); -- TODO: provide individual top ports for dual-core w/o internal CLINT
       msi                    <= (others => irq_msi_i); -- TODO: provide individual top ports for dual-core w/o internal CLINT

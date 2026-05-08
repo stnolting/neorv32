@@ -27,7 +27,7 @@ entity neorv32_clint is
     rstn_i    : in  std_ulogic;                              -- global reset line, low-active, async
     bus_req_i : in  bus_req_t;                               -- bus request
     bus_rsp_o : out bus_rsp_t;                               -- bus response
-    time_o    : out std_ulogic_vector(63 downto 0);          -- current system time
+    time_o    : out std_ulogic_vector(63 downto 0);          -- current system time (HI/LO are not synchronized!)
     mti_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0); -- machine timer interrupt
     msi_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0)  -- machine software interrupt
   );
@@ -102,17 +102,8 @@ begin
   mtime_rd <= (others => '0') when (mtime_en = '0') else
               mtime(63 downto 32) when (bus_req_i.addr(2) = '1') else mtime(31 downto 0);
 
-  -- system time output: synchronize low and high words --
-  time_output: process(rstn_i, clk_i)
-  begin
-    if (rstn_i = '0') then
-      time_o(31 downto 0) <= (others => '0');
-    elsif rising_edge(clk_i) then
-      time_o(31 downto 0) <= mtime(31 downto 0);
-    end if;
-  end process time_output;
-
-  time_o(63 downto 32) <= mtime(63 downto 32);
+  -- system time output: high and low word are not synchronized! --
+  time_o <= mtime;
 
 
   -- MTIMECMP - Per-Hart Time Comparator / Interrupt Generator ------------------------------
