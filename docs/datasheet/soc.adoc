@@ -218,6 +218,7 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `RISCV_ISA_Zalrsc`    | boolean   | false         | Enable <<_zalrsc_isa_extension>> (atomic reservation-set operations).
 | `RISCV_ISA_Zba`       | boolean   | false         | Enable <<_zba_isa_extension>> (shifted-add bit-manipulation instructions).
 | `RISCV_ISA_Zbb`       | boolean   | false         | Enable <<_zbb_isa_extension>> (basic bit-manipulation instructions).
+| `RISCV_ISA_Zbc`       | boolean   | false         | Enable <<_zbc_isa_extension>> (carry-less multiplication instructions).
 | `RISCV_ISA_Zbkb`      | boolean   | false         | Enable <<_zbkb_isa_extension>> (scalar cryptography bit manipulation instructions).
 | `RISCV_ISA_Zbkc`      | boolean   | false         | Enable <<_zbkc_isa_extension>> (scalar cryptography carry-less multiplication instructions).
 | `RISCV_ISA_Zbkx`      | boolean   | false         | Enable <<_zbkx_isa_extension>> (scalar cryptography crossbar permutations).

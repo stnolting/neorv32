@@ -358,39 +358,41 @@ void neorv32_aux_print_hw_config(void) {
   }
 
   // CPU sub-extensions
-  tmp = neorv32_cpu_csr_read(CSR_MXISA);
-  if (tmp & (1<<CSR_MXISA_ZAAMO))     { neorv32_uart0_printf("Zaamo ");     }
-  if (tmp & (1<<CSR_MXISA_ZALRSC))    { neorv32_uart0_printf("Zalrsc ");    }
-  if (tmp & (1<<CSR_MXISA_ZCA))       { neorv32_uart0_printf("Zca ");       }
-  if (tmp & (1<<CSR_MXISA_ZCB))       { neorv32_uart0_printf("Zcb ");       }
-  if (tmp & (1<<CSR_MXISA_ZBA))       { neorv32_uart0_printf("Zba ");       }
-  if (tmp & (1<<CSR_MXISA_ZBB))       { neorv32_uart0_printf("Zbb ");       }
-  if (tmp & (1<<CSR_MXISA_ZBKB))      { neorv32_uart0_printf("Zbkb ");      }
-  if (tmp & (1<<CSR_MXISA_ZBKC))      { neorv32_uart0_printf("Zbkc ");      }
-  if (tmp & (1<<CSR_MXISA_ZBKX))      { neorv32_uart0_printf("Zbkx ");      }
-  if (tmp & (1<<CSR_MXISA_ZBS))       { neorv32_uart0_printf("Zbs ");       }
-  if (tmp & (1<<CSR_MXISA_ZFINX))     { neorv32_uart0_printf("Zfinx ");     }
-  if (tmp & (1<<CSR_MXISA_ZIBI))      { neorv32_uart0_printf("Zibi ");      }
-  if (tmp & (1<<CSR_MXISA_ZICNTR))    { neorv32_uart0_printf("Zicntr ");    }
-  if (tmp & (1<<CSR_MXISA_ZICOND))    { neorv32_uart0_printf("Zicond ");    }
-  if (tmp & (1<<CSR_MXISA_ZICSR))     { neorv32_uart0_printf("Zicsr ");     }
-  if (tmp & (1<<CSR_MXISA_ZIFENCEI))  { neorv32_uart0_printf("Zifencei ");  }
-  if (tmp & (1<<CSR_MXISA_ZIHPM))     { neorv32_uart0_printf("Zihpm ");     }
-  if (tmp & (1<<CSR_MXISA_ZIMOP))     { neorv32_uart0_printf("Zimop ");     }
-  if (tmp & (1<<CSR_MXISA_ZKN))       { neorv32_uart0_printf("Zkn ");       }
-  if (tmp & (1<<CSR_MXISA_ZKND))      { neorv32_uart0_printf("Zknd ");      }
-  if (tmp & (1<<CSR_MXISA_ZKNE))      { neorv32_uart0_printf("Zkne ");      }
-  if (tmp & (1<<CSR_MXISA_ZKNH))      { neorv32_uart0_printf("Zknh ");      }
-  if (tmp & (1<<CSR_MXISA_ZKS))       { neorv32_uart0_printf("Zks ");       }
-  if (tmp & (1<<CSR_MXISA_ZKSED))     { neorv32_uart0_printf("Zksed ");     }
-  if (tmp & (1<<CSR_MXISA_ZKSH))      { neorv32_uart0_printf("Zksh ");      }
-  if (tmp & (1<<CSR_MXISA_ZKT))       { neorv32_uart0_printf("Zkt ");       }
-  if (tmp & (1<<CSR_MXISA_ZMMUL))     { neorv32_uart0_printf("Zmmul ");     }
-  if (tmp & (1<<CSR_MXISA_SDEXT))     { neorv32_uart0_printf("Sdext ");     }
-  if (tmp & (1<<CSR_MXISA_SDTRIG))    { neorv32_uart0_printf("Sdtrig ");    }
-  if (tmp & (1<<CSR_MXISA_SMCNTRPMF)) { neorv32_uart0_printf("Smcntrpmf "); }
-  if (tmp & (1<<CSR_MXISA_SMPMP))     { neorv32_uart0_printf("Smpmp ");     }
-  if (tmp & (1<<CSR_MXISA_XCFU))      { neorv32_uart0_printf("Xcfu ");      }
+  uint32_t mxisa  = neorv32_cpu_csr_read(CSR_MXISA);
+  uint32_t mxisah = neorv32_cpu_csr_read(CSR_MXISAH);
+  if (mxisa  & (1<<CSR_MXISA_ZAAMO))     { neorv32_uart0_printf("Zaamo ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZALRSC))    { neorv32_uart0_printf("Zalrsc ");    }
+  if (mxisa  & (1<<CSR_MXISA_ZCA))       { neorv32_uart0_printf("Zca ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZCB))       { neorv32_uart0_printf("Zcb ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZBA))       { neorv32_uart0_printf("Zba ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZBB))       { neorv32_uart0_printf("Zbb ");       }
+  if (mxisah & (1<<CSR_MXISAH_ZBC))      { neorv32_uart0_printf("Zbc ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZBKB))      { neorv32_uart0_printf("Zbkb ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZBKC))      { neorv32_uart0_printf("Zbkc ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZBKX))      { neorv32_uart0_printf("Zbkx ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZBS))       { neorv32_uart0_printf("Zbs ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZFINX))     { neorv32_uart0_printf("Zfinx ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZIBI))      { neorv32_uart0_printf("Zibi ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZICNTR))    { neorv32_uart0_printf("Zicntr ");    }
+  if (mxisa  & (1<<CSR_MXISA_ZICOND))    { neorv32_uart0_printf("Zicond ");    }
+  if (mxisa  & (1<<CSR_MXISA_ZICSR))     { neorv32_uart0_printf("Zicsr ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZIFENCEI))  { neorv32_uart0_printf("Zifencei ");  }
+  if (mxisa  & (1<<CSR_MXISA_ZIHPM))     { neorv32_uart0_printf("Zihpm ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZIMOP))     { neorv32_uart0_printf("Zimop ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZKN))       { neorv32_uart0_printf("Zkn ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZKND))      { neorv32_uart0_printf("Zknd ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZKNE))      { neorv32_uart0_printf("Zkne ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZKNH))      { neorv32_uart0_printf("Zknh ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZKS))       { neorv32_uart0_printf("Zks ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZKSED))     { neorv32_uart0_printf("Zksed ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZKSH))      { neorv32_uart0_printf("Zksh ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZKT))       { neorv32_uart0_printf("Zkt ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZMMUL))     { neorv32_uart0_printf("Zmmul ");     }
+  if (mxisa  & (1<<CSR_MXISA_SDEXT))     { neorv32_uart0_printf("Sdext ");     }
+  if (mxisa  & (1<<CSR_MXISA_SDTRIG))    { neorv32_uart0_printf("Sdtrig ");    }
+  if (mxisa  & (1<<CSR_MXISA_SMCNTRPMF)) { neorv32_uart0_printf("Smcntrpmf "); }
+  if (mxisa  & (1<<CSR_MXISA_SMPMP))     { neorv32_uart0_printf("Smpmp ");     }
+  if (mxisa  & (1<<CSR_MXISA_XCFU))      { neorv32_uart0_printf("Xcfu ");      }
 
   // check physical memory protection
   neorv32_uart0_printf("\nPhys. Memory Prot.:  ");

@@ -44,6 +44,7 @@ entity neorv32_top is
     RISCV_ISA_Zalrsc    : boolean                        := false;         -- atomic reservation-set operations extension
     RISCV_ISA_Zba       : boolean                        := false;         -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean                        := false;         -- basic bit-manipulation extension
+    RISCV_ISA_Zbc       : boolean                        := false;         -- carry-less multiplication instructions
     RISCV_ISA_Zbkb      : boolean                        := false;         -- bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc      : boolean                        := false;         -- carry-less multiplication instructions
     RISCV_ISA_Zbkx      : boolean                        := false;         -- cryptography crossbar permutation extension
@@ -534,6 +535,7 @@ begin
       RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
       RISCV_ISA_Zba       => RISCV_ISA_Zba,
       RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
+      RISCV_ISA_Zbc       => RISCV_ISA_Zbc,
       RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
       RISCV_ISA_Zbkc      => RISCV_ISA_Zbkc,
       RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,

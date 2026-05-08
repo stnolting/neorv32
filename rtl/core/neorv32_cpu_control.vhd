@@ -35,6 +35,7 @@ entity neorv32_cpu_control is
     RISCV_ISA_Zcb       : boolean; -- additional code size reduction instructions
     RISCV_ISA_Zba       : boolean; -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean; -- basic bit-manipulation extension
+    RISCV_ISA_Zbc       : boolean; -- carry-less multiplication instructions
     RISCV_ISA_Zbkb      : boolean; -- bit-manipulation instructions for cryptography
     RISCV_ISA_Zbkc      : boolean; -- carry-less multiplication instructions
     RISCV_ISA_Zbkx      : boolean; -- cryptography crossbar permutation extension
@@ -1292,7 +1293,7 @@ begin
             csr_rdata(31) <= bool_to_ulogic_f(RISCV_ISA_Smcntrpmf); -- Smcntrpmf: counter privilege-mode filtering
 
           when csr_mxisah_c => -- machine extended ISA extensions information, high-word
-            csr_rdata <= (others => '0'); -- reserved
+            csr_rdata(0) <= bool_to_ulogic_f(RISCV_ISA_Zbc); -- Zbc: carry-less multiplication
 
           -- --------------------------------------------------------------------
           -- undefined/unavailable or implemented externally

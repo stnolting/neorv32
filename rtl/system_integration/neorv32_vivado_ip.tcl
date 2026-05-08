@@ -264,6 +264,7 @@ proc setup_ip_gui {} {
   add_params $group {
     { RISCV_ISA_Zba {Zba - Shifted-add bit-manipulation instructions} {} }
     { RISCV_ISA_Zbb {Zbb - Basic bit-manipulation instructions}       {} }
+    { RISCV_ISA_Zbc {Zbc - Carry-less multiplication instructions}    {} }
     { RISCV_ISA_Zbs {Zbs - Single-bit bit-manipulation instructions}  {} }
   }
 

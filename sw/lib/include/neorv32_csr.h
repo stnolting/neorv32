@@ -468,7 +468,7 @@ enum NEORV32_CSR_MISA_enum {
 
 
 /**********************************************************************//**
- * mxisa CSR (r/-): Machine extended instruction set extensions (NEORV32-specific)
+ * mxisa[h] CSR (r/-): Machine extended instruction set extensions (NEORV32-specific)
  **************************************************************************/
 enum NEORV32_CSR_MXISA_enum {
   CSR_MXISA_ZICSR     =  0, /**< mxisa CSR  (0): privileged architecture (r/-)*/
@@ -503,6 +503,10 @@ enum NEORV32_CSR_MXISA_enum {
   CSR_MXISA_ZIBI      = 29, /**< mxisa CSR (29): branch with immediate-comparison (r/-)*/
   CSR_MXISA_ZIMOP     = 30, /**< mxisa CSR (30): may-be-operations (r/-)*/
   CSR_MXISA_SMCNTRPMF = 31  /**< mxisa CSR (31): base counter privilege-mode filtering (r/-)*/
+};
+
+enum NEORV32_CSR_MXISAH_enum {
+  CSR_MXISAH_ZBC = 0 /**< mxisah CSR (0): carry-less multiplication (r/-)*/
 };
 
 

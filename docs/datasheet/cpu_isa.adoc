@@ -22,6 +22,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_zalrsc_isa_extension,`Zalrsc`>>       | Atomic reservation-set memory operations                     | <<_processor_top_entity_generics, `RISCV_ISA_Zalrsc`>>
 | <<_zba_isa_extension,`Zba`>>             | Shifted-add bit manipulation instructions                    | <<_processor_top_entity_generics, `RISCV_ISA_Zba`>>
 | <<_zbb_isa_extension,`Zbb`>>             | Basic bit manipulation instructions                          | <<_processor_top_entity_generics, `RISCV_ISA_Zbb`>>
+| <<_zbc_isa_extension,`Zbc`>>             | Carry-less multiplication instructions                       | <<_processor_top_entity_generics, `RISCV_ISA_Zbc`>>
 | <<_zbkb_isa_extension,`Zbkb`>>           | Scalar cryptography bit manipulation instructions            | <<_processor_top_entity_generics, `RISCV_ISA_Zbkb`>>
 | <<_zbkc_isa_extension,`Zbkc`>>           | Scalar cryptography carry-less multiplication instructions   | <<_processor_top_entity_generics, `RISCV_ISA_Zbkc`>>
 | <<_zbkx_isa_extension,`Zbkx`>>           | Scalar cryptography crossbar permutation instructions        | <<_processor_top_entity_generics, `RISCV_ISA_Zbkx`>>
@@ -284,8 +285,8 @@ Some instructions may require additional ISA (sub-) extensions.
 
 .RISC-V GCC ISA String
 [IMPORTANT]
-Technically, `Zbc` required the `Zca` extension which is `C` but excluding the floating-point operations.
-Therefore, `Zca` and `Zbc` must be contained in the ISA string so that the compiler generates `Zbc` instructions..
+Technically, `Zcb` requires the `Zca` extension which is `C` excluding the floating-point operations.
+Therefore, `Zca` and `Zcb` must be contained in the ISA string so that the compiler generates `Zcb` instructions..
 Example: `MARCH=rv32imc_zca_zcb_...`
 
 
@@ -485,10 +486,26 @@ generic. This ISA extension is implemented as multi-cycle ALU co-processor (`rtl
 | Byte-reverse            | `rev8`                   | 4
 |=======================
 
-.shifter Tuning Options
+.Shifter Tuning Options
 [TIP]
 The physical implementation of the bit-shifter can be tuned for certain design goals like area or throughput.
 See section <<_cpu_tuning_options>> for more information.
+
+
+==== `Zbc` ISA Extension
+
+The `Zbc` sub-extension adds carry-less multiplication instructions. It provides the same instructions as the
+<<_zbkc_isa_extension, `Zbkc`>> ISA extension but also provides a _reversed_ instruction (`clmulr`).
+It is enabled by the top's <<_processor_top_entity_generics, `RISCV_ISA_Zbc`>> generic.
+This ISA extension is implemented as multi-cycle ALU co-processor (`rtl/core/neorv32_cpu_alu_bitmanip.vhd`).
+
+.Instructions and Timing
+[cols="<2,<5,<4"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| Carry-less multiply | `clmul` `clmulh` `clmulr` | 4 + 32
+|=======================
 
 
 ==== `Zbs` ISA Extension
@@ -684,9 +701,9 @@ core does implement must adhere to the requirements of `Zkt`.
 .2+<| `RVI` <| `lui` `auipc` `add[i]` `slt[i][u]` `xor[i]` `or[i]` `and[i]` `sub` <| yes
             <| `sll[i]` `srl[i]` `sra[i]` <| yes if `CPU_FAST_SHIFT_EN` enabled
 | `RVM` | `mul[h]` `mulh[s]u` | yes
-.2+<| `RVC` <| `c.nop` `c.addi` `c.lui` `c.andi` `c.sub` `c.xor` `c.and` `c.mv` `c.add` <| yes
+.3+<| `RVC` <| `c.nop` `c.addi` `c.lui` `c.andi` `c.sub` `c.xor` `c.and` `c.mv` `c.add` <| yes
             <| `c.srli` `c.srai` `c.slli` <| yes if `CPU_FAST_SHIFT_EN` enabled
-.2+<| `Zcb` <| `c.mul`, `c.not`, `c.zext.b` <| yes
+            <| `c.mul` `c.not` `c.zext.b` (`Zcb`) <| yes
 | `RVK` | `aes32ds[m]i` `aes32es[m]i` `sha256sig*` `sha512sig*` `sha512sum*` `sm3p0` `sm3p1` `sm4ed` `sm4ks` | yes
 .2+<| `RVB` <| `xperm4` `xperm8` `andn` `orn` `xnor` `pack[h]` `brev8` `rev8` <| yes
             <| `ror[i]` `rol` <| yes if `CPU_FAST_SHIFT_EN` enabled
