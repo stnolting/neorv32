@@ -584,6 +584,7 @@ begin
       clk_i      => clk_i,
       rstn_i     => rstn_sys,
       -- status --
+      mtime_i    => mtime,
       trace_o    => cpu_trace(i),
       sleep_o    => open,
       fence_o    => cpu_fence(i),

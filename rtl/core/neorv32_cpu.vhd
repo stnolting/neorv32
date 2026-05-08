@@ -80,6 +80,7 @@ entity neorv32_cpu is
     clk_i      : in  std_ulogic;                     -- global clock, rising edge
     rstn_i     : in  std_ulogic;                     -- global reset, low-active, async
     -- status --
+    mtime_i    : in  std_ulogic_vector(63 downto 0); -- system time input from CLINT/MTIME
     trace_o    : out trace_port_t;                   -- execution trace port (enabled when CPU_TRACE_EN = true)
     sleep_o    : out std_ulogic;                     -- CPU is in sleep mode
     fence_o    : out std_ulogic_vector(1 downto 0);  --
@@ -370,6 +371,8 @@ begin
       clk_i   => clk_i,   -- global clock, rising edge
       rstn_i  => rstn_i,  -- global reset, low-active, async
       ctrl_i  => ctrl,    -- main control bus
+      -- system time --
+      mtime_i => mtime_i, -- from CLINT/MTIME
       -- read back --
       rdata_o => xcsr_cnt -- read data
     );
