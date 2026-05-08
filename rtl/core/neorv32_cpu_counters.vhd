@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- Implementing hardware counters/control for the following RISC-V ISA extensions:  --
 -- + Zicntr:    Base Counters           -> [m]cycle[h]         + [m]instret[h]      --
--- + Zihpm:     Hardware Perf. Monitors -> [m]hpmcnt[3..15][h] + mhpmevent[3..15]   --
+-- + Zihpm:     Hardware Perf. Monitors -> [m]hpmcnt[3..31][h] + mhpmevent[3..31]   --
 -- + Smcntrpmf: Counter Priv. Filtering -> mcyclecfg[h]        + minstretcfg[h]     --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
@@ -26,8 +26,8 @@ entity neorv32_cpu_counters is
     ZIHPM_EN     : boolean;               -- hardware performance monitors
     SMCNTRPMF_EN : boolean;               -- counter privilege-mode filtering
     UMODE_EN     : boolean;               -- user-mode
-    HPM_NUM      : natural range 0 to 13; -- number of implemented HPM counters (0..13)
-    HPM_WIDTH    : natural range 0 to 64  -- total size of HPM counters (0..64)
+    HPM_NUM      : natural range 0 to 29; -- number of implemented HPM counters
+    HPM_WIDTH    : natural range 0 to 64  -- total size of HPM counters
   );
   port (
     -- global control --
@@ -42,18 +42,18 @@ end neorv32_cpu_counters;
 architecture neorv32_cpu_counters_rtl of neorv32_cpu_counters is
 
   -- global access decoder --
-  type cnt_we_t is array (0 to 15) of std_ulogic_vector(1 downto 0);
+  type cnt_we_t is array (0 to 31) of std_ulogic_vector(1 downto 0);
   signal cnt_we : cnt_we_t;
   signal cnt_acc, cfg_acc, inh_acc, pmf_acc : std_ulogic;
-  signal sel, cnt_re, cfg_we, cfg_re : std_ulogic_vector(15 downto 0);
+  signal sel, cnt_re, cfg_we, cfg_re : std_ulogic_vector(31 downto 0);
 
   -- counter increment control --
-  signal inhibit, cnt_inc : std_ulogic_vector(15 downto 0);
+  signal inhibit, cnt_inc : std_ulogic_vector(31 downto 0);
   signal pmf_cy, pmf_ir, pmf_inh : std_ulogic_vector(1 downto 0);
 
   -- HPM read-backs --
-  type hpmevent_t is array (3 to 15) of std_ulogic_vector(10 downto 0);
-  type hpmcnt_t   is array (3 to 15) of std_ulogic_vector(63 downto 0);
+  type hpmevent_t is array (3 to 31) of std_ulogic_vector(10 downto 0);
+  type hpmcnt_t   is array (3 to 31) of std_ulogic_vector(63 downto 0);
   signal hpmevent, hpmevent_rd : hpmevent_t;
   signal hpmcnt_rd : hpmcnt_t;
 
@@ -65,10 +65,10 @@ begin
   -- Access Decoder -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   acc_gen:
-  for i in 0 to 15 generate
-    sel(i)    <= '1' when (ctrl_i.csr_addr(3 downto 0) = std_ulogic_vector(to_unsigned(i, 4))) else '0';
-    cnt_we(i)(0) <= cnt_acc and sel(i) and ctrl_i.csr_we and (not ctrl_i.csr_addr(7));
-    cnt_we(i)(1) <= cnt_acc and sel(i) and ctrl_i.csr_we and (    ctrl_i.csr_addr(7));
+  for i in 0 to 31 generate
+    sel(i)       <= '1' when (ctrl_i.csr_addr(4 downto 0) = std_ulogic_vector(to_unsigned(i, 5))) else '0';
+    cnt_we(i)(0) <= cnt_acc and sel(i) and ctrl_i.csr_we and (not ctrl_i.csr_addr(7)); -- counter low word
+    cnt_we(i)(1) <= cnt_acc and sel(i) and ctrl_i.csr_we and (    ctrl_i.csr_addr(7)); -- counter high word
     cnt_re(i)    <= cnt_acc and sel(i) and ctrl_i.csr_re;
     cfg_we(i)    <= cfg_acc and sel(i) and ctrl_i.csr_we;
     cfg_re(i)    <= cfg_acc and sel(i) and ctrl_i.csr_re;
@@ -105,9 +105,9 @@ begin
       end if;
       -- hardware performance monitors --
       if not ZIHPM_EN then
-        inhibit(15 downto 3) <= (others => '0');
+        inhibit(31 downto 3) <= (others => '0');
       elsif (inh_acc = '1') and (ctrl_i.csr_we = '1') then
-        inhibit(15 downto 3) <= ctrl_i.csr_wdata(15 downto 3); -- [m]hpmcounter*[h]
+        inhibit(31 downto 3) <= ctrl_i.csr_wdata(31 downto 3); -- [m]hpmcounter3..31[h]
       end if;
       -- unused --
       inhibit(1) <= '0'; -- [m]time[h] not implemented
@@ -115,8 +115,8 @@ begin
   end process cnt_inhibit;
 
   -- mcountinhibit read-back --
-  inhibit_rd(15 downto 0)  <= inhibit when (inh_acc = '1') and (ctrl_i.csr_re = '1') else (others => '0');
-  inhibit_rd(63 downto 16) <= (others => '0');
+  inhibit_rd(31 downto 0)  <= inhibit when (inh_acc = '1') and (ctrl_i.csr_re = '1') else (others => '0');
+  inhibit_rd(63 downto 32) <= (others => '0');
 
 
   -- Privilege-Mode Filtering ---------------------------------------------------------------
@@ -179,11 +179,11 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- RISC-V base counter events --
   cnt_inc(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not ctrl_i.cpu_debug) and (not inhibit(0)) and (not pmf_inh(0));
-  cnt_inc(1) <= '0'; -- undefined
+  cnt_inc(1) <= '0'; -- undefined (time)
   cnt_inc(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not ctrl_i.cpu_debug) and (not inhibit(2)) and (not pmf_inh(1));
   -- NEORV32-specific HPM events --
   event_gen:
-  for i in 3 to 15 generate
+  for i in 3 to 31 generate
     cnt_inc(i) <= or_reduce_f(ctrl_i.cnt_event and hpmevent(i)) and (not ctrl_i.cpu_debug) and (not inhibit(i));
   end generate;
 
@@ -243,9 +243,9 @@ begin
   if ZIHPM_EN and (HPM_NUM > 0) generate
 
     hpm_gen:
-    for i in 3 to (HPM_NUM+3)-1 generate
+    for i in 3 to (HPM_NUM + 3) - 1 generate
 
-      -- [m]hpmcnt[3..15][h] --
+      -- [m]hpmcnt[3..31][h] --
       hpmcnt_inst: entity neorv32.neorv32_prim_cnt
       generic map (
         CWIDTH => HPM_WIDTH
@@ -260,7 +260,7 @@ begin
         cnt_o  => hpmcnt_rd(i)
       );
 
-      -- mhpmevent[3..15] --
+      -- mhpmevent[3..31] --
       hpmevent_reg: process(rstn_i, clk_i)
       begin
         if (rstn_i = '0') then
@@ -278,7 +278,7 @@ begin
 
     -- terminate unused HPM slices --
     hpm_terminate_gen:
-    for i in HPM_NUM+3 to 15 generate
+    for i in HPM_NUM + 3 to 31 generate
       hpmcnt_rd(i)   <= (others => '0');
       hpmevent(i)    <= (others => '0');
       hpmevent_rd(i) <= (others => '0');
@@ -289,7 +289,7 @@ begin
       variable tmp_v : std_ulogic_vector(63 downto 0);
     begin
       tmp_v := (others => '0');
-      for i in 3 to 15 loop
+      for i in 3 to 31 loop
         tmp_v := tmp_v or hpmcnt_rd(i) or std_ulogic_vector(resize(unsigned(hpmevent_rd(i)), 64));
       end loop;
       hpm_rd <= tmp_v;

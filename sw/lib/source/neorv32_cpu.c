@@ -249,7 +249,7 @@ int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
 /**********************************************************************//**
  * Hardware performance monitors (HPM): Get number of available HPM counters.
  *
- * @warning This function overrides all available HPMCOUNTER* CSRs!
+ * @warning This function overrides all available MHPMCOUNTER* CSRs!
  *
  * @return Returns number of available HPM counters.
  **************************************************************************/
@@ -277,6 +277,22 @@ uint32_t neorv32_cpu_hpm_get_num_counters(void) {
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 1);
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 1);
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER15, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER16, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER17, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER18, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER19, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER20, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER21, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER22, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER23, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER24, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER25, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER26, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER27, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER28, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER29, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER30, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER31, 1);
 
   // sum-up all actually set HPMs
   uint32_t num_hpm = 0;
@@ -293,6 +309,22 @@ uint32_t neorv32_cpu_hpm_get_num_counters(void) {
   num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER13);
   num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER14);
   num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER15);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER16);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER17);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER18);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER19);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER20);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER21);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER22);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER23);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER24);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER25);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER26);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER27);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER28);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER29);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER30);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER31);
 
   return num_hpm;
 }

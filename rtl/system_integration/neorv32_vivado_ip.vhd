@@ -75,8 +75,8 @@ entity neorv32_vivado_ip is
     PMP_TOR_MODE_EN       : boolean                        := false;
     PMP_NAP_MODE_EN       : boolean                        := false;
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS          : natural range 0 to 13          := 0;
-    HPM_CNT_WIDTH         : natural range 0 to 64          := 40;
+    HPM_NUM_CNTS          : natural range 0 to 29          := 0;
+    HPM_CNT_WIDTH         : natural range 0 to 64          := 64;
     -- Internal Instruction Memory (IMEM) --
     IMEM_EN               : boolean                        := false;
     IMEM_BASE             : std_ulogic_vector(31 downto 0) := x"00000000";

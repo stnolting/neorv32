@@ -141,7 +141,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mtvec        : std_ulogic_vector(31 downto 0); -- machine trap-handler base address
     mtval        : std_ulogic_vector(31 downto 0); -- machine bad address or instruction
     mscratch     : std_ulogic_vector(31 downto 0); -- machine scratch register
-    mcounteren   : std_ulogic_vector(2 downto 0);  -- machine counter access enable: instruction, time, cycle
+    mcounteren   : std_ulogic_vector(31 downto 0); -- machine counter access enable
     dcsr_ebreakm : std_ulogic; -- behavior of ebreak instruction in m-mode
     dcsr_ebreaku : std_ulogic; -- behavior of ebreak instruction in u-mode
     dcsr_step    : std_ulogic; -- single-step mode
@@ -578,16 +578,54 @@ begin
            csr_pmpaddr12_c | csr_pmpaddr13_c | csr_pmpaddr14_c | csr_pmpaddr15_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Smpmp);
 
-      -- hardware performance monitors (HPM) --
-      when csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   | csr_mhpmcounter7_c   |
-           csr_mhpmcounter8_c   | csr_mhpmcounter9_c   | csr_mhpmcounter10_c  | csr_mhpmcounter11_c  | csr_mhpmcounter12_c  |
-           csr_mhpmcounter13_c  | csr_mhpmcounter14_c  | csr_mhpmcounter15_c  | -- machine counters LOW
-           csr_mhpmcounter3h_c  | csr_mhpmcounter4h_c  | csr_mhpmcounter5h_c  | csr_mhpmcounter6h_c  | csr_mhpmcounter7h_c  |
-           csr_mhpmcounter8h_c  | csr_mhpmcounter9h_c  | csr_mhpmcounter10h_c | csr_mhpmcounter11h_c | csr_mhpmcounter12h_c |
-           csr_mhpmcounter13h_c | csr_mhpmcounter14h_c | csr_mhpmcounter15h_c | -- machine counters HIGH
-           csr_mhpmevent3_c     | csr_mhpmevent4_c     | csr_mhpmevent5_c     | csr_mhpmevent6_c     | csr_mhpmevent7_c     |
-           csr_mhpmevent8_c     | csr_mhpmevent9_c     | csr_mhpmevent10_c    | csr_mhpmevent11_c    | csr_mhpmevent12_c    |
-           csr_mhpmevent13_c    | csr_mhpmevent14_c    | csr_mhpmevent15_c => -- machine event configuration
+      when csr_hpmcounter3_c    | csr_hpmcounter4_c    | csr_hpmcounter5_c    | csr_hpmcounter6_c    |
+           csr_hpmcounter7_c    | csr_hpmcounter8_c    | csr_hpmcounter9_c    | csr_hpmcounter10_c   |
+           csr_hpmcounter11_c   | csr_hpmcounter12_c   | csr_hpmcounter13_c   | csr_hpmcounter14_c   |
+           csr_hpmcounter15_c   | csr_hpmcounter16_c   | csr_hpmcounter17_c   | csr_hpmcounter18_c   |
+           csr_hpmcounter19_c   | csr_hpmcounter20_c   | csr_hpmcounter21_c   | csr_hpmcounter22_c   |
+           csr_hpmcounter23_c   | csr_hpmcounter24_c   | csr_hpmcounter25_c   | csr_hpmcounter26_c   |
+           csr_hpmcounter27_c   | csr_hpmcounter28_c   | csr_hpmcounter29_c   | csr_hpmcounter30_c   |
+           csr_hpmcounter31_c   | -- user counters LOW
+           csr_hpmcounter3h_c   | csr_hpmcounter4h_c   | csr_hpmcounter5h_c   | csr_hpmcounter6h_c   |
+           csr_hpmcounter7h_c   | csr_hpmcounter8h_c   | csr_hpmcounter9h_c   | csr_hpmcounter10h_c  |
+           csr_hpmcounter11h_c  | csr_hpmcounter12h_c  | csr_hpmcounter13h_c  | csr_hpmcounter14h_c  |
+           csr_hpmcounter15h_c  | csr_hpmcounter16h_c  | csr_hpmcounter17h_c  | csr_hpmcounter18h_c  |
+           csr_hpmcounter19h_c  | csr_hpmcounter20h_c  | csr_hpmcounter21h_c  | csr_hpmcounter22h_c  |
+           csr_hpmcounter23h_c  | csr_hpmcounter24h_c  | csr_hpmcounter25h_c  | csr_hpmcounter26h_c  |
+           csr_hpmcounter27h_c  | csr_hpmcounter28h_c  | csr_hpmcounter29h_c  | csr_hpmcounter30h_c  |
+           csr_hpmcounter31h_c  | -- user counters HIGH
+           csr_mhpmcounter3_c   | csr_mhpmcounter4_c   | csr_mhpmcounter5_c   | csr_mhpmcounter6_c   |
+           csr_mhpmcounter7_c   | csr_mhpmcounter8_c   | csr_mhpmcounter9_c   | csr_mhpmcounter10_c  |
+           csr_mhpmcounter11_c  | csr_mhpmcounter12_c  | csr_mhpmcounter13_c  | csr_mhpmcounter14_c  |
+           csr_mhpmcounter15_c  | csr_mhpmcounter16_c  | csr_mhpmcounter17_c  | csr_mhpmcounter18_c  |
+           csr_mhpmcounter19_c  | csr_mhpmcounter20_c  | csr_mhpmcounter21_c  | csr_mhpmcounter22_c  |
+           csr_mhpmcounter23_c  | csr_mhpmcounter24_c  | csr_mhpmcounter25_c  | csr_mhpmcounter26_c  |
+           csr_mhpmcounter27_c  | csr_mhpmcounter28_c  | csr_mhpmcounter29_c  | csr_mhpmcounter30_c  |
+           csr_mhpmcounter31_c  | -- machine counters LOW
+           csr_mhpmcounter3h_c  | csr_mhpmcounter4h_c  | csr_mhpmcounter5h_c  | csr_mhpmcounter6h_c  |
+           csr_mhpmcounter7h_c  | csr_mhpmcounter8h_c  | csr_mhpmcounter9h_c  | csr_mhpmcounter10h_c |
+           csr_mhpmcounter11h_c | csr_mhpmcounter12h_c | csr_mhpmcounter13h_c | csr_mhpmcounter14h_c |
+           csr_mhpmcounter15h_c | csr_mhpmcounter16h_c | csr_mhpmcounter17h_c | csr_mhpmcounter18h_c |
+           csr_mhpmcounter19h_c | csr_mhpmcounter20h_c | csr_mhpmcounter21h_c | csr_mhpmcounter22h_c |
+           csr_mhpmcounter23h_c | csr_mhpmcounter24h_c | csr_mhpmcounter25h_c | csr_mhpmcounter26h_c |
+           csr_mhpmcounter27h_c | csr_mhpmcounter28h_c | csr_mhpmcounter29h_c | csr_mhpmcounter30h_c |
+           csr_mhpmcounter31h_c | -- machine counters HIGH
+           csr_mhpmevent3_c     | csr_mhpmevent4_c     | csr_mhpmevent5_c     | csr_mhpmevent6_c     |
+           csr_mhpmevent7_c     | csr_mhpmevent8_c     | csr_mhpmevent9_c     | csr_mhpmevent10_c    |
+           csr_mhpmevent11_c    | csr_mhpmevent12_c    | csr_mhpmevent13_c    | csr_mhpmevent14_c    |
+           csr_mhpmevent15_c    | csr_mhpmevent16_c    | csr_mhpmevent17_c    | csr_mhpmevent18_c    |
+           csr_mhpmevent19_c    | csr_mhpmevent20_c    | csr_mhpmevent21_c    | csr_mhpmevent22_c    |
+           csr_mhpmevent23_c    | csr_mhpmevent24_c    | csr_mhpmevent25_c    | csr_mhpmevent26_c    |
+           csr_mhpmevent27_c    | csr_mhpmevent28_c    | csr_mhpmevent29_c    | csr_mhpmevent30_c    |
+           csr_mhpmevent31_c    | -- machine event configuration LOW
+           csr_mhpmevent3h_c    | csr_mhpmevent4h_c    | csr_mhpmevent5h_c    | csr_mhpmevent6h_c    |
+           csr_mhpmevent7h_c    | csr_mhpmevent8h_c    | csr_mhpmevent9h_c    | csr_mhpmevent10h_c   |
+           csr_mhpmevent11h_c   | csr_mhpmevent12h_c   | csr_mhpmevent13h_c   | csr_mhpmevent14h_c   |
+           csr_mhpmevent15h_c   | csr_mhpmevent16h_c   | csr_mhpmevent17h_c   | csr_mhpmevent18h_c   |
+           csr_mhpmevent19h_c   | csr_mhpmevent20h_c   | csr_mhpmevent21h_c   | csr_mhpmevent22h_c   |
+           csr_mhpmevent23h_c   | csr_mhpmevent24h_c   | csr_mhpmevent25h_c   | csr_mhpmevent26h_c   |
+           csr_mhpmevent27h_c   | csr_mhpmevent28h_c   | csr_mhpmevent29h_c   | csr_mhpmevent30h_c   |
+           csr_mhpmevent31h_c => -- machine event configuration HIGH
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zihpm);
 
       -- counter and timer CSRs --
@@ -630,10 +668,9 @@ begin
     if (ctrl.csr_addr(11 downto 4) = csr_dcsr_c(11 downto 4)) and -- debug-mode-only CSR?
        RISCV_ISA_Sdext and (debug_ctrl.run = '0') then -- debug-mode implemented and not running?
       csr_valid(0) <= '0'; -- invalid access
-    elsif RISCV_ISA_Zicntr and RISCV_ISA_U and (csr.prv_level = '0') and -- any user-mode counters available and in user-mode?
-          (ctrl.csr_addr(11 downto 8) = csr_cycle_c(11 downto 8)) and -- user-mode counter access
-          (((ctrl.csr_addr(1 downto 0) = csr_cycle_c(1 downto 0)) and (csr.mcounteren(0) = '0')) or -- illegal access to cycle
-           ((ctrl.csr_addr(1 downto 0) = csr_instret_c(1 downto 0)) and (csr.mcounteren(2) = '0'))) then -- illegal access to instret
+    elsif (RISCV_ISA_Zicntr or RISCV_ISA_Zihpm) and RISCV_ISA_U and (csr.prv_level = '0') and -- any user-mode counters available and in U-mode?
+          (ctrl.csr_addr(11 downto 8) = "1100") and (ctrl.csr_addr(6 downto 5) = "00") and -- U-mode counter CSRs
+          (csr.mcounteren(to_integer(unsigned(ctrl.csr_addr(4 downto 0)))) = '0') then -- U-mode counter access not permitted by mcounteren
       csr_valid(0) <= '0'; -- invalid access
     elsif (ctrl.csr_addr(9 downto 8) /= "00") and (csr.prv_level = '0') then -- invalid privilege level
       csr_valid(0) <= '0'; -- invalid access
@@ -1002,7 +1039,7 @@ begin
             csr.mtvec <= csr_wdata(31 downto 2) & '0' & csr_wdata(0); -- base + mode (vectored/direct)
 
           when csr_mcounteren_c => -- machine counter access enable
-            csr.mcounteren <= csr_wdata(2 downto 0);
+            csr.mcounteren <= csr_wdata;
 
           when csr_mscratch_c => -- machine scratch
             csr.mscratch <= csr_wdata;
@@ -1097,7 +1134,11 @@ begin
       csr.mcounteren(1) <= '0';
       -- no base counters --
       if not RISCV_ISA_Zicntr then
-        csr.mcounteren <= (others => '0');
+        csr.mcounteren(2 downto 0) <= (others => '0');
+      end if;
+      -- no HPM counters --
+      if not RISCV_ISA_Zihpm then
+        csr.mcounteren(31 downto 3) <= (others => '0');
       end if;
       -- no user mode --
       if not RISCV_ISA_U then
@@ -1172,8 +1213,8 @@ begin
             csr_rdata <= csr.mtvec;
 
           when csr_mcounteren_c => -- machine counter enable register
-            if RISCV_ISA_U and RISCV_ISA_Zicntr then
-              csr_rdata(2 downto 0) <= csr.mcounteren;
+            if RISCV_ISA_U and (RISCV_ISA_Zicntr or RISCV_ISA_Zihpm) then
+              csr_rdata <= csr.mcounteren;
             end if;
 
           -- --------------------------------------------------------------------

@@ -297,8 +297,8 @@ begin
     PMP_TOR_MODE_EN     => true,
     PMP_NAP_MODE_EN     => true,
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS        => 12,
-    HPM_CNT_WIDTH       => 40,
+    HPM_NUM_CNTS        => 29,
+    HPM_CNT_WIDTH       => 64,
     -- Internal Instruction memory --
     IMEM_EN             => IMEM_EN,
     IMEM_BASE           => IMEM_BASE,

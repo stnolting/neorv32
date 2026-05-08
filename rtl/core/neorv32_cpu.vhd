@@ -64,13 +64,13 @@ entity neorv32_cpu is
     CPU_FAST_SHIFT_EN   : boolean;                        -- use barrel shifter for shift operations
     CPU_RF_ARCH_SEL     : natural range 0 to 3;           -- register file implementation style select
     -- Physical Memory Protection (PMP) --
-    PMP_NUM_REGIONS     : natural range 0 to 16;          -- number of regions (0..16)
+    PMP_NUM_REGIONS     : natural range 0 to 16;          -- number of regions
     PMP_MIN_GRANULARITY : natural;                        -- minimal region granularity in bytes, has to be a power of 2, min 4 bytes
     PMP_TOR_MODE_EN     : boolean;                        -- enable TOR mode
     PMP_NAP_MODE_EN     : boolean;                        -- enable NAPOT/NA4 modes
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS        : natural range 0 to 13;          -- number of implemented HPM counters (0..13)
-    HPM_CNT_WIDTH       : natural range 0 to 64;          -- total size of HPM counters (0..64)
+    HPM_NUM_CNTS        : natural range 0 to 29;          -- number of implemented HPM counters
+    HPM_CNT_WIDTH       : natural range 0 to 64;          -- total size of HPM counters
     -- Trigger Module (TM) --
     NUM_HW_TRIGGERS     : natural range 0 to 16           -- number of hardware triggers
   );
@@ -359,8 +359,8 @@ begin
       ZIHPM_EN     => RISCV_ISA_Zihpm,     -- hardware performance monitors (HPMs)
       SMCNTRPMF_EN => RISCV_ISA_Smcntrpmf, -- counter privilege-mode filtering
       UMODE_EN     => RISCV_ISA_U,         -- user-mode
-      HPM_NUM      => HPM_NUM_CNTS,        -- number of implemented HPM counters (0..13)
-      HPM_WIDTH    => HPM_CNT_WIDTH        -- total size of HPM counters (0..64)
+      HPM_NUM      => HPM_NUM_CNTS,        -- number of implemented HPM counters
+      HPM_WIDTH    => HPM_CNT_WIDTH        -- total size of HPM counters
     )
     port map (
       -- global control --
@@ -480,7 +480,7 @@ begin
   if RISCV_ISA_Smpmp generate
     neorv32_cpu_pmp_inst: entity neorv32.neorv32_cpu_pmp
     generic map (
-      NUM_REGIONS => PMP_NUM_REGIONS,     -- number of regions (0..16)
+      NUM_REGIONS => PMP_NUM_REGIONS,     -- number of regions
       GRANULARITY => PMP_MIN_GRANULARITY, -- minimal region granularity in bytes
       TOR_EN      => PMP_TOR_MODE_EN,     -- enable TOR mode
       NAP_EN      => PMP_NAP_MODE_EN      -- enable NAPOT/NA4 modes
