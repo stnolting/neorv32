@@ -550,7 +550,6 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_dscratch0_c      => return "dscratch0";
       -- machine counters/timers --
       when csr_mcycle_c         => return "mcycle";
-      when csr_mtime_c          => return "mtime";
       when csr_minstret_c       => return "minstret";
       when csr_mhpmcounter3_c   => return "mhpmcounter3";
       when csr_mhpmcounter4_c   => return "mhpmcounter4";
@@ -582,7 +581,6 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_mhpmcounter30_c  => return "mhpmcounter30";
       when csr_mhpmcounter31_c  => return "mhpmcounter31";
       when csr_mcycleh_c        => return "mcycleh";
-      when csr_mtimeh_c         => return "mtimeh";
       when csr_minstreth_c      => return "minstreth";
       when csr_mhpmcounter3h_c  => return "mhpmcounter3h";
       when csr_mhpmcounter4h_c  => return "mhpmcounter4h";
