@@ -312,6 +312,7 @@ enum NEORV32_CSR_FFLAGS_enum {
  **************************************************************************/
 enum NEORV32_CSR_MCOUNTEREN_enum {
   CSR_MCOUNTEREN_CY    = 0, /**< mcountern CSR  (0):  CY    - cycle counter (r/w) */
+  CSR_MCOUNTEREN_TM    = 1, /**< mcountern CSR  (1):  TM    - system time counter (r/w) */
   CSR_MCOUNTEREN_IR    = 2, /**< mcountern CSR  (2):  IR    - instruction-retired counter (r/w) */
   CSR_MCOUNTEREN_HPM3  = 3,  /**< mcountern CSR (3):  HPM3  - hardware performance counter 3  (r/w) */
   CSR_MCOUNTEREN_HPM4  = 4,  /**< mcountern CSR (4):  HPM4  - hardware performance counter 4  (r/w) */
