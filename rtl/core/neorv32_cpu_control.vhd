@@ -1132,8 +1132,6 @@ begin
       -- ********************************************************************************
       -- Override: terminate unavailable registers and bits
       -- ********************************************************************************
-      -- undefined --
-      csr.mcounteren(1) <= '0';
       -- no base counters --
       if not RISCV_ISA_Zicntr then
         csr.mcounteren(2 downto 0) <= (others => '0');
