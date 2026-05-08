@@ -369,11 +369,6 @@ taken: 5 + `T_inst_latency`
 The `Zicntr` ISA extension adds the basic <<_cycleh>>, <<_mcycleh>>, <<_instreth>> and <<_minstreth>>
 counter CSRs. Section <<_machine_counter_and_timer_csrs>> shows a list of all `Zicntr`-related CSRs.
 
-.Time CSRs
-[NOTE]
-The user-mode `time[h]` CSRs are **not implemented**. Any access will trap allowing the trap handler to
-retrieve system time from the <<_core_local_interruptor_clint>>.
-
 .Constrained Access
 [TIP]
 User-level access to the counter CSRs can be constrained by the <<_mcounteren>> CSR.

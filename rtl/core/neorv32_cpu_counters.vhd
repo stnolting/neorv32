@@ -2,9 +2,9 @@
 -- NEORV32 CPU - Hardware Counters                                                  --
 -- -------------------------------------------------------------------------------- --
 -- Implementing hardware counters/control for the following RISC-V ISA extensions:  --
--- + Zicntr:    Base Counters           -> [m]cycle[h]         + [m]instret[h]      --
+-- + Zicntr:    Base Counters           -> [m]cycle[h] + time[h] + [m]instret[h]    --
 -- + Zihpm:     Hardware Perf. Monitors -> [m]hpmcnt[3..31][h] + mhpmevent[3..31]   --
--- + Smcntrpmf: Counter Priv. Filtering -> mcyclecfg[h]        + minstretcfg[h]     --
+-- + Smcntrpmf: Counter Priv. Filtering -> mcyclecfg[h] + minstretcfg[h]            --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -34,6 +34,8 @@ entity neorv32_cpu_counters is
     clk_i   : in  std_ulogic; -- global clock, rising edge
     rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
+    -- system time --
+    mtime_i : in  std_ulogic_vector(63 downto 0); -- from CLINT/MTIME
     -- read back --
     rdata_o : out std_ulogic_vector(31 downto 0) -- read data
   );
@@ -58,7 +60,7 @@ architecture neorv32_cpu_counters_rtl of neorv32_cpu_counters is
   signal hpmcnt_rd : hpmcnt_t;
 
   -- global CSR read-backs --
-  signal rdata64, cycle_rd, time_rd, instret_rd, hpm_rd, inhibit_rd, pmf_rd : std_ulogic_vector(63 downto 0);
+  signal rdata64, cycle_rd, time_q, time_rd, instret_rd, hpm_rd, inhibit_rd, pmf_rd : std_ulogic_vector(63 downto 0);
 
 begin
 
@@ -208,8 +210,16 @@ begin
       cnt_o  => cycle_rd
     );
 
-    -- [m]time[h] --
-    time_rd <= (others => '0'); -- not implemented
+    -- time[h] --
+    mtime: process(rstn_i, clk_i)
+    begin
+      if (rstn_i = '0') then
+        time_q <= (others => '0');
+      elsif rising_edge(clk_i) then
+        time_q <= mtime_i;
+      end if;
+    end process mtime;
+    time_rd <= time_q when (cnt_re(1) = '1') else (others => '0');
 
     -- [m]instret[h] --
     instret_inst: entity neorv32.neorv32_prim_cnt
@@ -232,6 +242,7 @@ begin
   base_disabled:
   if not ZICNTR_EN generate
     cycle_rd   <= (others => '0');
+    time_q     <= (others => '0');
     time_rd    <= (others => '0');
     instret_rd <= (others => '0');
   end generate;

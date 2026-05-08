@@ -65,8 +65,10 @@ to check if the targeted bits can actually be modified.
 | 0xb80 | <<_mcycleh, `mcycleh`>>     | `CSR_MCYCLEH`   | MRW | Machine cycle counter high word
 | 0xb82 | <<_minstreth, `minstreth`>> | `CSR_MINSTRETH` | MRW | Machine instruction-retired counter high word
 | 0xc00 | <<_cycleh, `cycle`>>        | `CSR_CYCLE`     | URO | Cycle counter low word
+| 0xc01 | <<_timeh, `time`>>          | `CSR_TIME`      | URO | System time low word
 | 0xc02 | <<_instreth, `instret`>>    | `CSR_INSTRET`   | URO | Instruction-retired counter low word
 | 0xc80 | <<_cycleh, `cycleh`>>       | `CSR_CYCLEH`    | URO | Cycle counter high word
+| 0xc81 | <<_timeh, `timeh`>>         | `CSR_TIMEH`     | URO | System time high word
 | 0xc82 | <<_instreth, `instreth`>>   | `CSR_INSTRETH`  | URO | Instruction-retired counter high word
 5+^| **<<_hardware_performance_monitors_hpm_csrs>>**
 | 0x323 .. 0x33f | <<_mhpmeventh, `mhpmevent3`>> .. <<_mhpmevent, `mhpmevent31`>>            | `CSR_MHPMEVENT3` .. `CSR_MHPMEVENT31`       | MRW | Machine performance-monitoring event select low word
@@ -571,12 +573,6 @@ All remaining register are hardwired to zero.
 :sectnums:
 ==== (Machine) Counter and Timer CSRs
 
-.`time[h]` CSRs (Wall Clock Time)
-[IMPORTANT]
-The NEORV32 does not implement the `time[h]` CSRs. Any access to these registers will trap. It is
-recommended that the trap handler software provides a means of accessing the machine timer of the
-<<_core_local_interruptor_clint>>.
-
 .Instruction Retired Counter Increment
 [NOTE]
 The `[m]instret[h]` counter always increments when a instruction enters the pipeline's execute stage no matter
@@ -595,6 +591,23 @@ if this instruction is actually going to retire or if it causes an exception.
 | Reset value | `0x00000000_00000000`
 | ISA         | <<_zicsr_isa_extension,`Zicsr`>> & <<_zicntr_isa_extension,`Zicntr`>>
 | Description | The `cycle[h]` CSRs are user-mode shadow copies of the according <<_mcycleh>> CSRs. The user-mode
+counter are read-only. Any write access will raise an illegal instruction exception.
+|=======================
+
+
+{empty} +
+[discrete]
+===== **`time[h]`**
+
+[cols="<1,<8"]
+[grid="none"]
+|=======================
+| Name        | System time counter
+| Address     | `0xc01` (`time`)
+|             | `0xc81` (`timeh`)
+| Reset value | `0x00000000_00000000`
+| ISA         | <<_zicsr_isa_extension,`Zicsr`>> & <<_zicntr_isa_extension,`Zicntr`>>
+| Description | The `instret[h]` CSRs are user-mode shadow copies of the according <<_minstreth>> CSRs. The user-mode
 counter are read-only. Any write access will raise an illegal instruction exception.
 |=======================
 

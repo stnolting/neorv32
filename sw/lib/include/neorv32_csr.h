@@ -217,6 +217,7 @@ enum NEORV32_CSR_enum {
 
   /* user counters and timers */
   CSR_CYCLE          = 0xc00, /**< 0xc00 - cycle:        User cycle counter low word */
+  CSR_TIME           = 0xc01, /**< 0xc01 - time:         User system time counter low word */
   CSR_INSTRET        = 0xc02, /**< 0xc02 - instret:      User instructions-retired counter low word */
   CSR_HPMCOUNTER3    = 0xc03, /**< 0xc03 - hpmcounter3:  User hardware performance monitor 3  counter low word */
   CSR_HPMCOUNTER4    = 0xc04, /**< 0xc04 - hpmcounter4:  User hardware performance monitor 4  counter low word */
@@ -249,6 +250,7 @@ enum NEORV32_CSR_enum {
   CSR_HPMCOUNTER31   = 0xc1f, /**< 0xc1f - hpmcounter31: User hardware performance monitor 31 counter low word */
 
   CSR_CYCLEH         = 0xc80, /**< 0xc80 - cycleh:        User cycle counter high word */
+  CSR_TIMEH          = 0xc81, /**< 0xc81 - timeh:         User system time counter high word */
   CSR_INSTRETH       = 0xc82, /**< 0xc82 - instreth:      User instructions-retired counter high word */
   CSR_HPMCOUNTER3H   = 0xc83, /**< 0xc83 - hpmcounter3 :  User hardware performance monitor 3  counter high word */
   CSR_HPMCOUNTER4H   = 0xc84, /**< 0xc84 - hpmcounter4h:  User hardware performance monitor 4  counter high word */
@@ -362,7 +364,6 @@ enum NEORV32_CSR_MSTATUS_enum {
 enum NEORV32_CSR_MCOUNTINHIBIT_enum {
   CSR_MCOUNTINHIBIT_CY    = 0,  /**< mcountinhibit CSR (0): CY - Enable auto-increment of [m]cycle[h]   CSR when set (r/w) */
   CSR_MCOUNTINHIBIT_IR    = 2,  /**< mcountinhibit CSR (2): IR - Enable auto-increment of [m]instret[h] CSR when set (r/w) */
-
   CSR_MCOUNTINHIBIT_HPM3  = 3,  /**< mcountinhibit CSR (3):  HPM3  - Enable auto-increment of hpmcnt3[h]  when set (r/w) */
   CSR_MCOUNTINHIBIT_HPM4  = 4,  /**< mcountinhibit CSR (4):  HPM4  - Enable auto-increment of hpmcnt4[h]  when set (r/w) */
   CSR_MCOUNTINHIBIT_HPM5  = 5,  /**< mcountinhibit CSR (5):  HPM5  - Enable auto-increment of hpmcnt5[h]  when set (r/w) */
@@ -402,7 +403,6 @@ enum NEORV32_CSR_MIE_enum {
   CSR_MIE_MSIE    =  3, /**< mie CSR  (3): MSIE - Machine software interrupt enable (r/w) */
   CSR_MIE_MTIE    =  7, /**< mie CSR  (7): MTIE - Machine timer interrupt enable bit (r/w) */
   CSR_MIE_MEIE    = 11, /**< mie CSR (11): MEIE - Machine external interrupt enable bit (r/w) */
-
   /* NEORV32-specific extension: Fast Interrupt Requests (FIRQ) */
   CSR_MIE_FIRQ0E  = 16, /**< mie CSR (16): FIRQ0E - Fast interrupt channel 0 enable bit (r/w) */
   CSR_MIE_FIRQ1E  = 17, /**< mie CSR (17): FIRQ1E - Fast interrupt channel 1 enable bit (r/w) */
