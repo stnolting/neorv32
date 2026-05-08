@@ -416,22 +416,21 @@ However, access privileges are still enforced so these instruction variants _do_
 
 ==== `Zihpm` ISA Extension
 
-In additions to the base counters the NEORV32 CPU provides up to 29 hardware performance monitors (HPM 3..29),
-which can be used to benchmark applications. Each HPM consists of an N-bit wide counter split into a high-word 32-bit
-CSR and a low-word 32-bit CSR, where N is defined via the top's `HPM_CNT_WIDTH` generic and a corresponding event
-configuration CSR.
+In additions to the base counters the NEORV32 CPU provides up to 29 hardware performance monitors (HPM; <<_mhpmcounterh>>
+and <<_hpmcounterh>>), which can be used to benchmark applications. Each HPM consists of a counter and a corresponding event
+configuration CSR (<<_mhpmeventh>>). Bothc CRSs are split into a high-word and a low-word CSR. The effective counter width can
+be defined via the top's `HPM_CNT_WIDTH` generic.
 
 The event configuration CSR defines the architectural events that lead to an increment of the associated HPM counter.
 See section <<_hardware_performance_monitors_hpm_csrs>> for a list of all HPM-related CSRs and event configurations.
 
-.Machine-Mode HPMs Only
-[NOTE]
-Note that only the machine-mode hardware performance counter CSR are available (`mhpmcounter*[h]`).
-Accessing any user-mode HPM CSR (`hpmcounter*[h]`) will raise an illegal instruction exception.
-
 .Increment Inhibit
 [TIP]
 The event-driven increment of the HPMs can be deactivated individually via the <<_mcountinhibit>> CSR.
+
+.Constrained Access
+[TIP]
+User-level access to the counter CSRs can be constrained by the <<_mcounteren>> CSR.
 
 
 ==== `Zimop` ISA Extension
