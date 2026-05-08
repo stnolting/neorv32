@@ -72,7 +72,7 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   signal pmpcfg_we : std_ulogic_vector(3 downto 0);
 
   -- address CSRs --
-  type pmpaddr_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(29 downto pmp_alsb_c);
+  type pmpaddr_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(31 downto pmp_alsb_c);
   signal pmpaddr    : pmpaddr_t;
   signal pmpaddr_we : std_ulogic_vector(15 downto 0);
 
@@ -122,9 +122,15 @@ begin
       elsif rising_edge(clk_i) then
         if (pmpcfg_we(i/4) = '1') and (pmpcfg(i)(cfg_l_c) = '0') then -- unlocked write access
           -- permissions --
-          pmpcfg(i)(cfg_r_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_r_c); -- R (read)
-          pmpcfg(i)(cfg_w_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_w_c); -- W (write)
-          pmpcfg(i)(cfg_x_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_x_c); -- X (execute)
+          if (ctrl_i.csr_wdata((i mod 4)*8+cfg_w_c) = '1') and (ctrl_i.csr_wdata((i mod 4)*8+cfg_r_c) = '0') then -- W-only = reserved
+            pmpcfg(i)(cfg_r_c) <= '0';
+            pmpcfg(i)(cfg_w_c) <= '0';
+            pmpcfg(i)(cfg_x_c) <= '0';
+          else
+            pmpcfg(i)(cfg_r_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_r_c); -- R (read)
+            pmpcfg(i)(cfg_w_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_w_c); -- W (write)
+            pmpcfg(i)(cfg_x_c) <= ctrl_i.csr_wdata((i mod 4)*8+cfg_x_c); -- X (execute)
+          end if;
           -- mode --
           mode_v := ctrl_i.csr_wdata((i mod 4)*8+cfg_ah_c downto (i mod 4)*8+cfg_al_c);
           if ((mode_v = mode_tor_c)   and (not TOR_EN)) or -- TOR mode not implemented
@@ -166,10 +172,10 @@ begin
         if (pmpaddr_we(i) = '1') and (pmpcfg(i)(cfg_l_c) = '0') then -- unlocked write access
           if (i < NUM_REGIONS-1) then
             if (pmpcfg(i+1)(cfg_l_c) = '0') or (pmpcfg(i+1)(cfg_ah_c downto cfg_al_c) /= mode_tor_c) then -- pmpcfg(i+1) not "LOCKED TOR"
-              pmpaddr(i) <= ctrl_i.csr_wdata(29 downto pmp_alsb_c);
+              pmpaddr(i) <= ctrl_i.csr_wdata(31 downto pmp_alsb_c);
             end if;
           else -- very last entry
-            pmpaddr(i) <= ctrl_i.csr_wdata(29 downto pmp_alsb_c);
+            pmpaddr(i) <= ctrl_i.csr_wdata(31 downto pmp_alsb_c);
           end if;
         end if;
       end if;
@@ -198,7 +204,7 @@ begin
     address_read_back: process(pmpaddr, pmpcfg)
     begin
       addr_rd(i) <= (others => '0');
-      addr_rd(i)(29 downto pmp_alsb_c) <= pmpaddr(i);
+      addr_rd(i)(31 downto pmp_alsb_c) <= pmpaddr(i)(31 downto pmp_alsb_c);
       if (pmp_lsb_c > 2) then -- G >= 1
         if (pmpcfg(i)(cfg_ah_c) = '0') then -- TOR/OFF mode
           addr_rd(i)(pmp_lsb_c-3 downto 0) <= (others => '0'); -- [G-1:0] read as zero
