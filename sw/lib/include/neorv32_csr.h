@@ -309,8 +309,37 @@ enum NEORV32_CSR_FFLAGS_enum {
  * mcountern CSR (r/w): Machine counter-enable register
  **************************************************************************/
 enum NEORV32_CSR_MCOUNTEREN_enum {
-  CSR_MCOUNTEREN_CY = 0, /**< mcountern CSR (0): CY - cycle counter (r/w) */
-  CSR_MCOUNTEREN_IR = 2  /**< mcountern CSR (2): IR instruction-retired counter (r/w) */
+  CSR_MCOUNTEREN_CY    = 0, /**< mcountern CSR  (0):  CY    - cycle counter (r/w) */
+  CSR_MCOUNTEREN_IR    = 2, /**< mcountern CSR  (2):  IR    - instruction-retired counter (r/w) */
+  CSR_MCOUNTEREN_HPM3  = 3,  /**< mcountern CSR (3):  HPM3  - hardware performance counter 3  (r/w) */
+  CSR_MCOUNTEREN_HPM4  = 4,  /**< mcountern CSR (4):  HPM4  - hardware performance counter 4  (r/w) */
+  CSR_MCOUNTEREN_HPM5  = 5,  /**< mcountern CSR (5):  HPM5  - hardware performance counter 5  (r/w) */
+  CSR_MCOUNTEREN_HPM6  = 6,  /**< mcountern CSR (6):  HPM6  - hardware performance counter 6  (r/w) */
+  CSR_MCOUNTEREN_HPM7  = 7,  /**< mcountern CSR (7):  HPM7  - hardware performance counter 7  (r/w) */
+  CSR_MCOUNTEREN_HPM8  = 8,  /**< mcountern CSR (8):  HPM8  - hardware performance counter 8  (r/w) */
+  CSR_MCOUNTEREN_HPM9  = 9,  /**< mcountern CSR (9):  HPM9  - hardware performance counter 9  (r/w) */
+  CSR_MCOUNTEREN_HPM10 = 10, /**< mcountern CSR (10): HPM10 - hardware performance counter 10 (r/w) */
+  CSR_MCOUNTEREN_HPM11 = 11, /**< mcountern CSR (11): HPM11 - hardware performance counter 11 (r/w) */
+  CSR_MCOUNTEREN_HPM12 = 12, /**< mcountern CSR (12): HPM12 - hardware performance counter 12 (r/w) */
+  CSR_MCOUNTEREN_HPM13 = 13, /**< mcountern CSR (13): HPM13 - hardware performance counter 13 (r/w) */
+  CSR_MCOUNTEREN_HPM14 = 14, /**< mcountern CSR (14): HPM14 - hardware performance counter 14 (r/w) */
+  CSR_MCOUNTEREN_HPM15 = 15, /**< mcountern CSR (15): HPM15 - hardware performance counter 15 (r/w) */
+  CSR_MCOUNTEREN_HPM16 = 16, /**< mcountern CSR (16): HPM16 - hardware performance counter 16 (r/w) */
+  CSR_MCOUNTEREN_HPM17 = 17, /**< mcountern CSR (17): HPM17 - hardware performance counter 17 (r/w) */
+  CSR_MCOUNTEREN_HPM18 = 18, /**< mcountern CSR (18): HPM18 - hardware performance counter 18 (r/w) */
+  CSR_MCOUNTEREN_HPM19 = 19, /**< mcountern CSR (19): HPM19 - hardware performance counter 19 (r/w) */
+  CSR_MCOUNTEREN_HPM20 = 20, /**< mcountern CSR (20): HPM20 - hardware performance counter 20 (r/w) */
+  CSR_MCOUNTEREN_HPM21 = 21, /**< mcountern CSR (21): HPM21 - hardware performance counter 21 (r/w) */
+  CSR_MCOUNTEREN_HPM22 = 22, /**< mcountern CSR (22): HPM22 - hardware performance counter 22 (r/w) */
+  CSR_MCOUNTEREN_HPM23 = 23, /**< mcountern CSR (23): HPM23 - hardware performance counter 23 (r/w) */
+  CSR_MCOUNTEREN_HPM24 = 24, /**< mcountern CSR (24): HPM24 - hardware performance counter 24 (r/w) */
+  CSR_MCOUNTEREN_HPM25 = 25, /**< mcountern CSR (25): HPM25 - hardware performance counter 25 (r/w) */
+  CSR_MCOUNTEREN_HPM26 = 26, /**< mcountern CSR (26): HPM26 - hardware performance counter 26 (r/w) */
+  CSR_MCOUNTEREN_HPM27 = 27, /**< mcountern CSR (27): HPM27 - hardware performance counter 27 (r/w) */
+  CSR_MCOUNTEREN_HPM28 = 28, /**< mcountern CSR (28): HPM28 - hardware performance counter 28 (r/w) */
+  CSR_MCOUNTEREN_HPM29 = 29, /**< mcountern CSR (29): HPM29 - hardware performance counter 29 (r/w) */
+  CSR_MCOUNTEREN_HPM30 = 30, /**< mcountern CSR (30): HPM30 - hardware performance counter 30 (r/w) */
+  CSR_MCOUNTEREN_HPM31 = 31  /**< mcountern CSR (31): HPM31 - hardware performance counter 31 (r/w) */
 };
 
 

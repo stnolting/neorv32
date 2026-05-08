@@ -141,7 +141,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     mtvec        : std_ulogic_vector(31 downto 0); -- machine trap-handler base address
     mtval        : std_ulogic_vector(31 downto 0); -- machine bad address or instruction
     mscratch     : std_ulogic_vector(31 downto 0); -- machine scratch register
-    mcounteren   : std_ulogic_vector(2 downto 0);  -- machine counter access enable: instruction, time, cycle
+    mcounteren   : std_ulogic_vector(31 downto 0); -- machine counter access enable
     dcsr_ebreakm : std_ulogic; -- behavior of ebreak instruction in m-mode
     dcsr_ebreaku : std_ulogic; -- behavior of ebreak instruction in u-mode
     dcsr_step    : std_ulogic; -- single-step mode
@@ -668,10 +668,9 @@ begin
     if (ctrl.csr_addr(11 downto 4) = csr_dcsr_c(11 downto 4)) and -- debug-mode-only CSR?
        RISCV_ISA_Sdext and (debug_ctrl.run = '0') then -- debug-mode implemented and not running?
       csr_valid(0) <= '0'; -- invalid access
-    elsif RISCV_ISA_Zicntr and RISCV_ISA_U and (csr.prv_level = '0') and -- any user-mode counters available and in user-mode?
-          (ctrl.csr_addr(11 downto 8) = csr_cycle_c(11 downto 8)) and -- user-mode counter access
-          (((ctrl.csr_addr(1 downto 0) = csr_cycle_c(1 downto 0)) and (csr.mcounteren(0) = '0')) or -- illegal access to cycle
-           ((ctrl.csr_addr(1 downto 0) = csr_instret_c(1 downto 0)) and (csr.mcounteren(2) = '0'))) then -- illegal access to instret
+    elsif (RISCV_ISA_Zicntr or RISCV_ISA_Zihpm) and RISCV_ISA_U and (csr.prv_level = '0') and -- any user-mode counters available and in U-mode?
+          (ctrl.csr_addr(11 downto 8) = "1100") and (ctrl.csr_addr(6 downto 5) = "00") and -- U-mode counter CSRs
+          (csr.mcounteren(to_integer(unsigned(ctrl.csr_addr(4 downto 0)))) = '0') then -- U-mode counter access not permitted by mcounteren
       csr_valid(0) <= '0'; -- invalid access
     elsif (ctrl.csr_addr(9 downto 8) /= "00") and (csr.prv_level = '0') then -- invalid privilege level
       csr_valid(0) <= '0'; -- invalid access
@@ -1040,7 +1039,7 @@ begin
             csr.mtvec <= csr_wdata(31 downto 2) & '0' & csr_wdata(0); -- base + mode (vectored/direct)
 
           when csr_mcounteren_c => -- machine counter access enable
-            csr.mcounteren <= csr_wdata(2 downto 0);
+            csr.mcounteren <= csr_wdata;
 
           when csr_mscratch_c => -- machine scratch
             csr.mscratch <= csr_wdata;
@@ -1135,7 +1134,11 @@ begin
       csr.mcounteren(1) <= '0';
       -- no base counters --
       if not RISCV_ISA_Zicntr then
-        csr.mcounteren <= (others => '0');
+        csr.mcounteren(2 downto 0) <= (others => '0');
+      end if;
+      -- no HPM counters --
+      if not RISCV_ISA_Zihpm then
+        csr.mcounteren(31 downto 3) <= (others => '0');
       end if;
       -- no user mode --
       if not RISCV_ISA_U then
@@ -1210,8 +1213,8 @@ begin
             csr_rdata <= csr.mtvec;
 
           when csr_mcounteren_c => -- machine counter enable register
-            if RISCV_ISA_U and RISCV_ISA_Zicntr then
-              csr_rdata(2 downto 0) <= csr.mcounteren;
+            if RISCV_ISA_U and (RISCV_ISA_Zicntr or RISCV_ISA_Zihpm) then
+              csr_rdata <= csr.mcounteren;
             end if;
 
           -- --------------------------------------------------------------------

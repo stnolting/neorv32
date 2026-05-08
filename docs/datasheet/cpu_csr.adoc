@@ -310,10 +310,10 @@ As software does not need to determine the interrupt cause the reduction in late
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Function
-| 31:3 | -                   | r/w | **HPM**: User-mode is allowed to read <<_hpmcounterh>> (3..31) CSRs when set
-| 2    | `CSR_MCOUNTEREN_IR` | r/w | **IR**: User-mode is allowed to read <<_instreth>> CSRs when set
-| 1    | -                   | r/- | **TM**: not implemented, hardwired to zero
-| 0    | `CSR_MCOUNTEREN_CY` | r/w | **CY**: User-mode is allowed to read <<_cycleh>> CSRs when set
+| 31:3 | `CSR_MCOUNTEREN_HPM31 : CSR_MCOUNTEREN_HPM3` | r/w | **HPMn**: User-mode is allowed to read <<_hpmcounterh>> (31:3) CSRs when set
+| 2    | `CSR_MCOUNTEREN_IR`                          | r/w | **IR**: User-mode is allowed to read <<_instreth>> CSRs when set
+| 1    | -                                            | r/- | **TM**: not implemented, hardwired to zero
+| 0    | `CSR_MCOUNTEREN_CY`                          | r/w | **CY**: User-mode is allowed to read <<_cycleh>> CSRs when set
 |=======================
 
 
