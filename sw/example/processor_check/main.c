@@ -411,15 +411,15 @@ int main() {
     // read base counter from user mode
     goto_user_mode();
     {
-      asm volatile ("addi      %[cy], zero, 123 \n"
-                    "rdcycle   %[cy]            \n"
-                    "addi      %[ir], zero, 123 \n" // this value must not change
-                    "rdinstret %[ir]            \n" // has to trap
-                    : [cy] "=r" (tmp_a), [ir] "=r" (tmp_b) : );
+      asm volatile ("addi    %[cy], zero, 111 \n"
+                    "rdcycle %[cy]            \n"
+                    "addi    %[tm], zero, 222 \n" // this value must not change
+                    "rdtime  %[tm]            \n" // has to trap
+                    : [cy] "=r" (tmp_a), [tm] "=r" (tmp_b) : );
     }
 
     if ((tmp_a == neorv32_cpu_csr_read(CSR_CYCLE)) &&
-        (tmp_b == 123) &&
+        (tmp_b == 222) &&
         (neorv32_cpu_csr_read(CSR_MCOUNTEREN) == (1<<CSR_MCOUNTEREN_CY)) &&
         (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL)) {
       test_ok();
@@ -1078,7 +1078,7 @@ int main() {
 
     if ((neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_MTI) &&
         (neorv32_cpu_csr_read(CSR_MTVAL) == 0) &&
-        (NEORV32_CLINT->MTIME.uint32[1] == 0x00000001) &&
+        (neorv32_cpu_csr_read(CSR_TIMEH) == 0x00000001) &&
         neorv32_clint_mtimecmp_get() == 0x0000000100000000ULL) {
       test_ok();
     }

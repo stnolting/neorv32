@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130007"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130008"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -536,7 +536,6 @@ package neorv32_package is
   constant csr_dscratch0_c      : std_ulogic_vector(11 downto 0) := x"7b2";
   -- machine counters/timers --
   constant csr_mcycle_c         : std_ulogic_vector(11 downto 0) := x"b00";
-  constant csr_mtime_c          : std_ulogic_vector(11 downto 0) := x"b01";
   constant csr_minstret_c       : std_ulogic_vector(11 downto 0) := x"b02";
   constant csr_mhpmcounter3_c   : std_ulogic_vector(11 downto 0) := x"b03";
   constant csr_mhpmcounter4_c   : std_ulogic_vector(11 downto 0) := x"b04";
@@ -569,7 +568,6 @@ package neorv32_package is
   constant csr_mhpmcounter31_c  : std_ulogic_vector(11 downto 0) := x"b1f";
   -- machine counters HIGH --
   constant csr_mcycleh_c        : std_ulogic_vector(11 downto 0) := x"b80";
-  constant csr_mtimeh_c         : std_ulogic_vector(11 downto 0) := x"b81";
   constant csr_minstreth_c      : std_ulogic_vector(11 downto 0) := x"b82";
   constant csr_mhpmcounter3h_c  : std_ulogic_vector(11 downto 0) := x"b83";
   constant csr_mhpmcounter4h_c  : std_ulogic_vector(11 downto 0) := x"b84";

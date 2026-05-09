@@ -630,7 +630,8 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zihpm);
 
       -- counter and timer CSRs --
-      when csr_cycle_c | csr_mcycle_c | csr_instret_c | csr_minstret_c | csr_cycleh_c | csr_mcycleh_c | csr_instreth_c | csr_minstreth_c =>
+      when csr_cycle_c  | csr_time_c  | csr_instret_c  | csr_mcycle_c  | csr_minstret_c |
+           csr_cycleh_c | csr_timeh_c | csr_instreth_c | csr_mcycleh_c | csr_minstreth_c =>
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zicntr);
 
       -- counter privilege-mode filtering CSRs --
@@ -1131,8 +1132,6 @@ begin
       -- ********************************************************************************
       -- Override: terminate unavailable registers and bits
       -- ********************************************************************************
-      -- undefined --
-      csr.mcounteren(1) <= '0';
       -- no base counters --
       if not RISCV_ISA_Zicntr then
         csr.mcounteren(2 downto 0) <= (others => '0');

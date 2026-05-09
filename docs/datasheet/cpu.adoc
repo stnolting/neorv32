@@ -43,6 +43,7 @@ for the protocol and type documentation.
 | `clk_i`      | 1              | in  | Global clock line, all registers triggering on rising edge.
 | `rstn_i`     | 1              | in  | Global reset, low-active.
 4+^| **Status**
+| `mtime_i`    | 64             | in  | System time from the <<_core_local_interruptor_clint>> (MTIME).
 | `trace_o`    | `trace_port_t` | out | <<_execution_trace_port>>.
 | `sleep_o`    | 1              | out | Set while the CPU is in <<_sleep_mode>>.
 | `fence_o`    | 2              | out | <<_memory_coherence>> / ordering: `[1]` = instruction fence, `[0]` = data fence.

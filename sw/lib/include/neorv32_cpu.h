@@ -23,6 +23,7 @@
 /**@{*/
 uint64_t neorv32_cpu_get_cycle(void);
 void     neorv32_cpu_set_mcycle(uint64_t value);
+uint64_t neorv32_cpu_get_time(void);
 uint64_t neorv32_cpu_get_instret(void);
 void     neorv32_cpu_set_minstret(uint64_t value);
 uint32_t neorv32_cpu_pmp_get_num_regions(void);

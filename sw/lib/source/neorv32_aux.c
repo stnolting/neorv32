@@ -17,7 +17,7 @@
 /**********************************************************************//**
  * Simple delay function using busy-wait.
  *
- * @warning Timing is imprecise! Use CLINT.MTIME or CYCLE CSRs for precise timing.
+ * @warning Timing is imprecise! Use TIME or CYCLE CSRs for precise timing.
  *
  * @param[in] clock_hz CPU clock speed in Hz.
  * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
