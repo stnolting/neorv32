@@ -607,8 +607,8 @@ counter are read-only. Any write access will raise an illegal instruction except
 |             | `0xc81` (`timeh`)
 | Reset value | `0x00000000_00000000`
 | ISA         | <<_zicsr_isa_extension,`Zicsr`>> & <<_zicntr_isa_extension,`Zicntr`>>
-| Description | The `instret[h]` CSRs are user-mode shadow copies of the according <<_minstreth>> CSRs. The user-mode
-counter are read-only. Any write access will raise an illegal instruction exception.
+| Description | The `time[h]` CSRs are user-mode shadow copies the memory-mapped machine timer ("MTIMER)
+of the <<_core_local_interruptor_clint>>. These CSR are read-only. Any write access will raise an illegal instruction exception.
 |=======================
 
 
