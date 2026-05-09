@@ -36,10 +36,6 @@ Firmware (debugger "park loop") for the on-chip debugger.
 
 Configuration files for openOCD to connect to the NEORV32 on-chip debugger via JTAG.
 
-### > [`riscv-arch-test`](riscv-arch-test)
-
-Test NEORV32 for compatibility using the official _RISC-V architecture compatibility tests_.
-
 ### > [`svd`](svd)
 
 Contains a CMSIS-SVD compatible system view description file for all
