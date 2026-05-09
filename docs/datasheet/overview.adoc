@@ -140,7 +140,6 @@ neorv32                   - Project home folder
    ├─ lib                 - NEORV32 core library
    ├─ ocd_firmware        - Firmware for the on-chip debugger "park loop"
    ├─ openocd             - OpenOCD configuration files
-   ├─ riscv-arch-test     - Test RISC-V compatibility using the official test framework
    └─ svd                 - Processor system view description file (CMSIS-SVD)
 ...................................
 
@@ -349,9 +348,9 @@ mix of a specific applications and also on the available CPU extensions, tuning 
 :sectnums:
 === RISC-V Compatibility
 
-The NEORV32 CPU passes the official **RISC-V Architecture Compatibility Tests**. This framework is used to check
-RISC-V implementations for compatibility to the official RISC-V user/privileged ISA specifications. The NEORV32 port
-of this test framework is available in `sw/riscv-arch-test`.
+The NEORV32 CPU passes the official **RISC-V Architectural Certification Tests (ACTs)** to certifying  it faithfully
+implements the RISC-V specification. The NEORV32 port of this test framework is available at
+https://github.com/stnolting/neorv32-riscv-act.
 
 .Unsupported ISA Extensions
 [TIP]
