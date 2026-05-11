@@ -288,10 +288,6 @@ and exceptions a jump to `pc = BASE`.
 | 1:0  | r/w | **MODE**: mode configuration, `00` = DIRECT, `01` = VECTORED; other encodings are _reserved_.
 |=======================
 
-.Interrupt Latency
-[TIP]
-The vectored `mtvec` mode is useful for reducing the time between interrupt request (IRQ) and servicing it (ISR).
-As software does not need to determine the interrupt cause the reduction in latency can be 5 to 10 times and as low as _26_ cycles.
 
 {empty} +
 [discrete]
@@ -672,11 +668,6 @@ Note that **all** executed instruction do increment the `[m]instret[h]` counters
 // ####################################################################################################################
 :sectnums:
 ==== Hardware Performance Monitors (HPM) CSRs
-
-.Machine-Mode HPMs Only
-[NOTE]
-Note that only the machine-mode hardware performance counter CSR are available (`mhpmcounter*[h]`).
-Accessing any user-mode HPM CSR (`hpmcounter*[h]`) will raise an illegal instruction exception.
 
 The actual number of implemented hardware performance monitors is configured via the `HPM_NUM_CNTS` top entity generic,
 Note that always all 29 HPM counter and configuration registers (`mhpmcounter*[h]` and `mhpmevent*[h]`) are accessible, but

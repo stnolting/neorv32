@@ -106,6 +106,8 @@ extension is shorthand for the following set of other extensions:
 [NOTE]
 Note that according to the RISC-V spec. load and load-reservate instructions generate load exceptions,
 whereas store, store-conditional, and AMO instructions generate store exceptions.
+Accessing an unaligned address will raise an alignment exception (and not a bus fault exception which
+is also valid according to the RISC-V spec).
 
 
 ==== `B` ISA Extension
