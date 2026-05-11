@@ -31,7 +31,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 |:----:|:-------:|:--------|:------:|
 | 08.05.2026 | 1.13.0.8 | :sparkles: add support for RISC-V `time[h]` CSRs | [#1551](https://github.com/stnolting/neorv32/pull/1551) |
 | 08.05.2026 | 1.13.0.7 | :sparkles: add support for RISC-V `Zbc` ISA extensions (carry-less multiplication) | [#1550](https://github.com/stnolting/neorv32/pull/1550) |
-| 08.05.2026 | 1.13.0.6 | :bug: fix write-only permission config and address/mask storage | [#1549](https://github.com/stnolting/neorv32/pull/1549) |
+| 08.05.2026 | 1.13.0.6 | :bug: PMP: fix write-only permission config and address/mask storage | [#1549](https://github.com/stnolting/neorv32/pull/1549) |
 | 06.05.2026 | 1.13.0.5 | add support for all hardware performance monitors (HPMs); add high-word event-select CSRs (`mhpmevent*h`); add unprivileged/user-mode CSRs shadow copies (`hpmcounter*[h]`) | [#1546](https://github.com/stnolting/neorv32/pull/1546) |
 | 03.05.2026 | 1.13.0.4 | rework on-chip debugger (OCD) fixing minor spec incompatibilities | [#1544](https://github.com/stnolting/neorv32/pull/1544) |
 | 02.05.2026 | 1.13.0.3 | minor rtl fixes, edits and cleanups (PMP, TWD, bus | [#1543](https://github.com/stnolting/neorv32/pull/1543) |
