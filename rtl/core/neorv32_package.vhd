@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130008"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130009"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -228,6 +228,7 @@ package neorv32_package is
     debug     : std_ulogic; -- set if instruction is executed in debug-mode
     compr     : std_ulogic; -- set if instruction is a decompressed instruction
     delta     : std_ulogic; -- set if instruction is target of a control-flow transfer
+    cmd32     : std_ulogic_vector(31 downto 0); -- 32-bit (decompressed) instruction word
     -- integer register --
     rs1_addr  : std_ulogic_vector(4 downto 0);  -- rs1 address
     rs2_addr  : std_ulogic_vector(4 downto 0);  -- rs2 address
@@ -263,6 +264,7 @@ package neorv32_package is
     debug     => '0',
     compr     => '0',
     delta     => '0',
+    cmd32     => (others => '0'),
     rs1_addr  => (others => '0'),
     rs2_addr  => (others => '0'),
     rs1_rdata => (others => '0'),
@@ -722,6 +724,7 @@ package neorv32_package is
     ir_funct3    : std_ulogic_vector(2 downto 0);  -- funct3 bit field
     ir_funct12   : std_ulogic_vector(11 downto 0); -- funct12 bit field
     ir_opcode    : std_ulogic_vector(6 downto 0);  -- opcode bit field
+    ir_rvc       : std_ulogic_vector(15 downto 0); -- compressed instruction word
     -- status --
     cpu_priv     : std_ulogic;                     -- effective privilege mode
     cpu_trap     : std_ulogic;                     -- set when CPU is entering trap
@@ -765,6 +768,7 @@ package neorv32_package is
     ir_funct3    => (others => '0'),
     ir_funct12   => (others => '0'),
     ir_opcode    => (others => '0'),
+    ir_rvc       => (others => '0'),
     cpu_priv     => '0',
     cpu_trap     => '0',
     cpu_sync_exc => '0',
