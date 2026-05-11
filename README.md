@@ -17,7 +17,7 @@ and targets FPGA / RISC-V beginners as well as experienced users.
 ### Key Features
 
 - [x] all-in-one package: **CPU** + **SoC** + **Software Framework** + **Test Infrastructure**
-- [x] fully self-contained - no external source dependencies
+- [x] fully self-contained - no external dependencies
 - [x] completely described in behavioral, platform-independent VHDL - **no** primitives, macros, attributes, etc.
 - [x] technology friendly; e.g. all internal memories can be mapped to FPGA or ASIC primitives
 - [x] extensive CPU & SoC configuration options for adapting to application requirements
@@ -27,7 +27,7 @@ and targets FPGA / RISC-V beginners as well as experienced users.
 - [x] easy to use – intended to work _out of the box_
 
 * :recycle: Looking for an **all-Verilog** version? Have a look at the [auto-conversion setup](rtl/verilog).
-* :mag: [Continuous integration](#project-status) to check for regressions (including RISC-V ISA compatibility check using RISCOF).
+* :mag: [Continuous integration](#project-status) to check for regressions.
 * :open_file_folder: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
 [community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
 targeting various FPGA boards and toolchains to get started.
@@ -38,7 +38,7 @@ targeting various FPGA boards and toolchains to get started.
 * :building_construction: [LiteX](https://github.com/enjoy-digital/litex/wiki/CPUs#risc-v---neorv32) SoC builder integration.
 * :gear: [MicroPython](https://github.com/stnolting/neorv32-micropython) port, [Ada](https://github.com/GNAT-Academic-Program/neorv32-hal) support, and
 [Rust](https://crates.io/crates/embassy-neorv32) integration via Embassy framework.
-* :desktop_computer: Pre-configured [Eclipse project](https://stnolting.github.io/neorv32/ug/#_eclipse_ide) for developing and debugging code using an IDE.
+* :desktop_computer: Pre-configured [Eclipse project](https://stnolting.github.io/neorv32/ug/#_eclipse_ide).
 * :label: The project's change log is available in [CHANGELOG.md](https://github.com/stnolting/neorv32/blob/main/CHANGELOG.md).
 * :rocket: Check out the [quick links below](#getting-started) and the
 [User Guide](https://stnolting.github.io/neorv32/ug/) to get started.
@@ -52,7 +52,7 @@ targeting various FPGA boards and toolchains to get started.
 | Task | CI Status |
 |:-----|:----------|
 | GitHub pages    | [![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32) |
-| Documentation   | [![Documentation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Documentation.yml?branch=main&longCache=true&style=flat-square&label=Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/Documentation.yml) |
+| Documentation   | [![Documentation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Documentation.yml?branch=main&longCache=true&style=flat-square&label=Build%20Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/Documentation.yml) |
 | Processor check | [![Processor](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Processor.yml?branch=main&longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/Processor.yml) |
 | Verilog conv.   | [![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/Verilog.yml)
 | RISC-V ACT      | [![neorv32-riscv-act](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-riscv-act/riscv-act.yml?branch=main&longCache=true&style=flat-square&label=RISC-V%20Architecture%20Certification%20Tests&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-riscv-act/actions/workflows/riscv-act.yml) |
@@ -84,15 +84,20 @@ setup according to your needs. Note that all of the following SoC modules are en
 [`B`](https://stnolting.github.io/neorv32/#_b_isa_extension)
 [`U`](https://stnolting.github.io/neorv32/#_u_isa_extension)
 [`X`](https://stnolting.github.io/neorv32/#_x_isa_extension)
+[`Sdext`](https://stnolting.github.io/neorv32/#_sdext_isa_extension)
+[`Sdtrig`](https://stnolting.github.io/neorv32/#_sdtrig_isa_extension)
+[`Smcntrpmf`](https://stnolting.github.io/neorv32/#_smcntrpmf_isa_extension)
+[`Smpmp`](https://stnolting.github.io/neorv32/#_smpmp_isa_extension)
 [`Zaamo`](https://stnolting.github.io/neorv32/#_zaamo_isa_extension)
 [`Zalrsc`](https://stnolting.github.io/neorv32/#_zalrsc_isa_extension)
-[`Zcb`](https://stnolting.github.io/neorv32/#_zcb_isa_extension)
 [`Zba`](https://stnolting.github.io/neorv32/#_zba_isa_extension)
 [`Zbb`](https://stnolting.github.io/neorv32/#_zbb_isa_extension)
+[`Zbc`](https://stnolting.github.io/neorv32/#_zbc_isa_extension)
 [`Zbkb`](https://stnolting.github.io/neorv32/#_zbkb_isa_extension)
 [`Zbkc`](https://stnolting.github.io/neorv32/#_zbkc_isa_extension)
 [`Zbkx`](https://stnolting.github.io/neorv32/#_zbkx_isa_extension)
 [`Zbs`](https://stnolting.github.io/neorv32/#_zbs_isa_extension)
+[`Zcb`](https://stnolting.github.io/neorv32/#_zcb_isa_extension)
 [`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_isa_extension)
 [`Zibi`](https://stnolting.github.io/neorv32/#_zibi_isa_extension)
 [`Zicntr`](https://stnolting.github.io/neorv32/#_zicntr_isa_extension)
@@ -101,6 +106,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 [`Zifencei`](https://stnolting.github.io/neorv32/#_zifencei_isa_extension)
 [`Zihpm`](https://stnolting.github.io/neorv32/#_zihpm_isa_extension)
 [`Zimop`](https://stnolting.github.io/neorv32/#_zimop_isa_extension)
+[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_isa_extension)
 [`Zkn`](https://stnolting.github.io/neorv32/#_zkn_isa_extension)
 [`Zknd`](https://stnolting.github.io/neorv32/#_zknd_isa_extension)
 [`Zkne`](https://stnolting.github.io/neorv32/#_zkne_isa_extension)
@@ -109,14 +115,9 @@ setup according to your needs. Note that all of the following SoC modules are en
 [`Zks`](https://stnolting.github.io/neorv32/#_zks_isa_extension)
 [`Zksed`](https://stnolting.github.io/neorv32/#_zksed_isa_extension)
 [`Zksh`](https://stnolting.github.io/neorv32/#_zksh_isa_extension)
-[`Zmmul`](https://stnolting.github.io/neorv32/#_zmmul_isa_extension)
-[`Sdext`](https://stnolting.github.io/neorv32/#_sdext_isa_extension)
-[`Sdtrig`](https://stnolting.github.io/neorv32/#_sdtrig_isa_extension)
-[`Smcntrpmf`](https://stnolting.github.io/neorv32/#_smcntrpmf_isa_extension)
-[`Smpmp`](https://stnolting.github.io/neorv32/#_smpmp_isa_extension)
 [`Xcfu`](https://stnolting.github.io/neorv32/#_xcfu_isa_extension)
 * compatible to subsets of the RISC-V "Unprivileged ISA Specification" and "Privileged Architecture Specification"
-* `machine` and `user` privilege modes
+* `machine` and optional `user` and privilege modes
 * implements **all** standard RISC-V exceptions and interrupts + 16 fast interrupt request channels as NEORV32-specific extension
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as custom `Xcfu` ISA extension)
 for **custom RISC-V instructions**
@@ -128,7 +129,7 @@ for **custom RISC-V instructions**
 caches ([iCACHE](https://stnolting.github.io/neorv32/#_instruction_cache_icache) &
 [dCACHE](https://stnolting.github.io/neorv32/#_data_cache_dcache))
 * pre-installed bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with serial user interface;
-allows booting application code via UART, I²C or SPI flash and SD card
+allows booting application code via UART, I²C or SPI flash and from SD card
 
 **Timers and Counters**
 
@@ -170,7 +171,7 @@ for advanced debugging, profiling or verification
 **Debugging**
 
 * on-chip debugger ([OCD](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd)) accessible via standard JTAG interface
-* compatible to the "Minimal RISC-V Debug Specification Version 1.0"
+* compatible to the "RISC-V Debug Specification Version 1.0"
 * compatible with **OpenOCD**, **GDB** and **Segger Embedded Studio**
 * RISC-V [trigger module](https://stnolting.github.io/neorv32/#_trigger_module) for hardware-assisted break- and watchpoints
 * optional JTAG authentication module to implement custom security mechanisms
@@ -198,14 +199,13 @@ This overview provides some *quick links* to the most important sections of the
 * [Structure](https://stnolting.github.io/neorv32/#_project_folder_structure) - folders, RTL files and compile order
 * [File-List Files](https://stnolting.github.io/neorv32/#_file_list_files) - to simplify HDL setup
 * [Metrics](https://stnolting.github.io/neorv32/#_performance) - FPGA implementation and performance evaluation
-* [RISC-V Compatibility](https://stnolting.github.io/neorv32/#_risc_v_compatibility) - what is compatible to the specs and what is not
 
 ### :desktop_computer: [NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - The SoC
 
 * [Top Entity - Signals](https://stnolting.github.io/neorv32/#_processor_top_entity_signals) - how to connect to the processor
 * [Top Entity - Generics](https://stnolting.github.io/neorv32/#_processor_top_entity_generics) - processor/CPU configuration options
 * [Address Space](https://stnolting.github.io/neorv32/#_address_space) - memory layout and address mapping
-* [Boot Configuration](https://stnolting.github.io/neorv32/#_boot_configuration) - how to make the processor start executing
+* [Boot Configuration](https://stnolting.github.io/neorv32/#_boot_configuration) - how to make the processor start execution
 * [SoC Modules](https://stnolting.github.io/neorv32/#_processor_internal_modules) - IO/peripheral modules and memories
 * [On-Chip Debugger](https://stnolting.github.io/neorv32/#_on_chip_debugger_ocd) - in-system debugging via JTAG
 
