@@ -92,7 +92,6 @@ begin
 
       -- instruction metadata --
       trace_buf.order <= arbiter.order;
-      trace_buf.insn  <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
       trace_buf.trap  <= ctrl_i.cpu_sync_exc;
       trace_buf.halt  <= not ctrl_i.cnt_event(cnt_event_cy_c);
       trace_buf.intr  <= arbiter.entry;
@@ -101,6 +100,12 @@ begin
         trace_buf.mode  <= ctrl_i.cpu_priv & ctrl_i.cpu_priv;
         trace_buf.debug <= ctrl_i.cpu_debug;
         trace_buf.compr <= ctrl_i.cnt_event(cnt_event_compr_c);
+        if (ctrl_i.cnt_event(cnt_event_compr_c) = '1') then
+          trace_buf.insn <= x"0000" & ctrl_i.ir_rvc;
+        else
+          trace_buf.insn <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
+        end if;
+        trace_buf.cmd32 <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
       end if;
       if (arbiter.delta = '1') then
         trace_buf.delta <= '1';
@@ -220,7 +225,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     machine  : std_ulogic_vector(31 downto 0); -- instruction word
     mnemonic : string(1 to 11); -- according assembly mnemonic
   end record;
-  type inst_t is array (0 to 192) of inst_touple_c;
+  type inst_t is array (0 to 230) of inst_touple_c;
   constant inst_c : inst_t := (
     ("-------------------------0110111", "lui        "), -- base ISA
     ("-------------------------0010111", "auipc      "),
@@ -414,6 +419,44 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     ("111000000000-----001-----1010011", "fclass.s   "),
     ("110100000000-------------1010011", "fcvt.s.w   "),
     ("110100000001-------------1010011", "fcvt.s.wu  "),
+    ("----------------0000000000000000", "c.illegal  "), -- C / Zca
+    ("----------------000-----------00", "c.addi4spn "),
+    ("----------------010-----------00", "c.lw       "),
+    ("----------------110-----------00", "c.sw       "),
+    ("----------------000-----------01", "c.addi     "),
+    ("----------------001-----------01", "c.jal      "),
+    ("----------------010-----------01", "c.li       "),
+    ("----------------011-00010-----01", "c.addi16sp "),
+    ("----------------011-----------01", "c.lui      "),
+    ("----------------100-00--------01", "c.srli     "),
+    ("----------------100-01--------01", "c.srai     "),
+    ("----------------100-10--------01", "c.andi     "),
+    ("----------------100011---00---01", "c.sub      "),
+    ("----------------100011---01---01", "c.xor      "),
+    ("----------------100011---10---01", "c.or       "),
+    ("----------------100011---11---01", "c.and      "),
+    ("----------------101-----------01", "c.j        "),
+    ("----------------110-----------01", "c.beqz     "),
+    ("----------------111-----------01", "c.bnez     "),
+    ("----------------000-----------10", "c.slli     "),
+    ("----------------010-----------10", "c.lwsp     "),
+    ("----------------1001000000000010", "c.ebreak   "),
+    ("----------------1001-----0000010", "c.jalr     "),
+    ("----------------1000-----0000010", "c.jr       "),
+    ("----------------1001----------10", "c.add      "),
+    ("----------------1000----------10", "c.mv       "),
+    ("----------------110-----------10", "c.swsp     "),
+    ("----------------100000--------00", "c.lbu      "), -- Zcb
+    ("----------------100001---0----00", "c.lhu      "),
+    ("----------------100001---1----00", "c.lh       "),
+    ("----------------100010--------00", "c.sb       "),
+    ("----------------100011---0----00", "c.sh       "),
+    ("----------------100111---1100001", "c.zext.b   "),
+    ("----------------100111---1100101", "c.sext.b   "),
+    ("----------------100111---1101001", "c.zext.h   "),
+    ("----------------100111---1101101", "c.sext.h   "),
+    ("----------------100111---1110101", "c.not      "),
+    ("----------------100111---10---01", "c.mul      "),
     ("--------------------------------", "INVALID    ") -- last entry matches all: invalid
   );
 
@@ -782,8 +825,13 @@ begin
           write(line_v, string'(" "));
           -- instruction word --
           write(line_v, string'("0x"));
-          write(line_v, string'(to_hexstring_f(trace_i.insn)));
-          write(line_v, string'(" "));
+          if (trace_i.compr = '1') then -- compressed instruction
+            write(line_v, string'(to_hexstring_f(trace_i.insn(15 downto 0))));
+            write(line_v, string'("     "));
+          else
+            write(line_v, string'(to_hexstring_f(trace_i.insn)));
+            write(line_v, string'(" "));
+          end if;
           -- privilege level --
           if (trace_i.debug = '1') then
             write(line_v, string'("D "));
@@ -795,14 +843,9 @@ begin
             write(line_v, string'("? "));
           end if;
           -- decoded instruction --
-          if (trace_i.compr = '1') then -- de-compressed instruction
-            write(line_v, string'("c."));
-          else
-            write(line_v, string'("  "));
-          end if;
           write(line_v, string'(decode_mnemonic_f(trace_i.insn)));
           write(line_v, string'(" "));
-          write(line_v, string'(decode_operands_f(trace_i.insn)));
+          write(line_v, string'(decode_operands_f(trace_i.cmd32)));
           -- trap entry --
           if (trace_i.intr = '1') then
             write(line_v, string'(" <TRAP_ENTRY>"));

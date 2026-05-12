@@ -288,7 +288,7 @@ package file (`neorv32_package.vhd`).
 | `valid`     |     1 | `rvfi_valid`     | All others signals are valid when set; high for one cycle
 4+^| **Instruction Metadata**
 | `order`     |    32 | `rvfi_order`     | Instruction index (linear incrementing counter; resets to zero on overflow)
-| `insn`      |    32 | `rvfi_insn`      | Instruction word; compressed instructions are shown in their decompressed 32-bit format (with `compr = 1`)
+| `insn`      |    32 | `rvfi_insn`      | Instruction word; for compressed instructions the upper 16-bit are set to zero
 | `trap`      |     1 | `rvfi_trap`      | Set if the current instruction causes a synchronous exception
 | `halt`      |     1 | `rvfi_halt`      | Set if the current instruction is last instruction before halting
 | `intr`      |     1 | `rvfi_intr`      | Set if the current instruction is the first instruction of a trap handler
@@ -297,6 +297,7 @@ package file (`neorv32_package.vhd`).
 | `debug`     |     1 | -                | Set if the current instruction is executed in debug-mode
 | `compr`     |     1 | -                | Set if the current instruction is a decompressed instruction
 | `delta`     |     1 | -                | Set if the current instruction is the target of a control-flow transfer
+| `cmd32`     |    32 | -                | 32-bit instruction word; compressed instructions are shown in their decompressed 32-bit format
 4+^| **Integer Register**
 | `rs1_addr`  |     5 | `rvfi_rs1_addr`  | register `rs1` address
 | `rs2_addr`  |     5 | `rvfi_rs2_addr`  | register `rs2` address
