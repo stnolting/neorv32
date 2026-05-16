@@ -624,30 +624,40 @@ content of the accessed address) is sent back to the requesting CPU.
 
 ===== Atomic Reservation-Set Controller
 
-A "reservation"  is defined by an address or address range that provides a guarding mechanism to support atomic
-accesses (as specified by the RISC-V <<_zalrsc_isa_extension>>). A new reservation is registered by the `LR`
-instruction. The address provided by this instruction defines the memory location(s) that is/are monitored for
-exclusive accesses. The according `SC` instruction evaluates the state of this reservation. If the reservation
-is still valid the write access performed by the `SC` instruction is finally executed and the instruction returns
-a "success" state (i.e. `rd` = 0). If the reservation has been invalidated the `SC` instruction will not write
-to memory and will return a "failed" state (i.e. `rd` = 1).
+In NEORV32 a reservation is defined by a 64-byte address granule that provides a guarding mechanism to support
+atomic accesses (as specified by the RISC-V <<_zalrsc_isa_extension>>). A new reservation is registered by the
+`LR` instruction. The address provided by this instruction defines the 64-byte-aligned memory region that is
+monitored for exclusive accesses. The according `SC` instruction evaluates the state of this reservation. If the
+reservation is still valid (same owner core / issueing core and same address granule) the write access performed by
+the `SC` instruction is finally executed and the instruction returns a _success_ state (i.e. `rd = 0`). If the
+reservation has been invalidated or does not match, the `SC` instruction will not update main memory and will return
+a _failed_ state (i.e. `rd = 1`).
 
-The reservation-set controller implements the _strong semnatics_. A reservation is created when executing
-an `LR` instruction. Any other data memory access (for example by the DMA) will invalidate any active reservation
-(note that instruction fetch accesses do not affect the reservations at all). Furthermore, `fence[.i]` also does not
-impact the reservation state at all.
+[IMPORTANT]
+In either case, the `SC` instruction issues a downstream bus access to main memory (converted to a READ in case
+of failure) to allow the detection of access faults for the target address also for failed `SC` instructions
+which is required by the RISC-V specs.
 
-The reservation-set controller implements a **single, global reservation set only** which is used by both cores
-of the SMP <<_dual_core_configuration>>. The `LR` operation of any CPU core creates a new reservation (for the
-entire address space as the reservation is global) that is also used by the other CPUs. However, only one CPU will
-receive a success state for the according `SC` operation, which - in term - invalidates the reservation again.
-This guarantees atomic accesses and thus, mutually exclusive access.
+The reservation-set controller implements a single reservation set per instance with a fixed granularity of 64 bytes.
+Each reservation tracks the owning core's ID and the aligned base address. A reservation is invalidated only when a
+write access targets the same 64-byte address granule - read accesses, instruction fetches, and `fence[.i]` instructions
+do not affect the reservation state.
+
+The reservation-set controller is shared by both cores in the SMP <<_dual_core_configuration>>.
+To ensure forward progress during concurrent atomic sequences, a turn-based arbitration mechanism is implemented:
+
+[start=1]
+. An `LR` instruction can create (or update) a reservation if no reservation is active, if the requesting core already
+owns the current reservation, or if it is the requesting core's "turn" (priority).
+. A successful `SC` flips the turn, ensuring that the other core receives priority for its next `LR` attempt.
+. A failed `SC` from the owning core also clears the reservation, preventing stale reservations from blocking progress.
+
+This guarantees atomic accesses and mutually exclusive access without starvation.
 
 .External Reservations
-[IMPORTANT]
-Note that the reservation-set controller cannot track memory accesses outside
-of the NEORV32 processor (i.e. atomic accesses via the external bus interface)
-that are executed by processor-external agents.
+[WARNING]
+Note that the reservation-set controller cannot track memory accesses outside of the NEORV32 processor
+(i.e. atomic accesses via the external bus interface) that are executed by processor-external agents.
 
 
 :sectnums:
