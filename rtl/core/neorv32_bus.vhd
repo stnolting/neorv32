@@ -836,7 +836,8 @@ end neorv32_bus_amo_rmw_rtl;
 -- NEORV32 SoC - Processor Bus Infrastructure: Reservation Station                  --
 -- -------------------------------------------------------------------------------- --
 -- Reservation set controller for the RISC-V A/Zalrsc ISA extension.                --
--- [NOTE] Only a single global reservation set is implemented.                      --
+-- [NOTE] Only a single 64-byte-wide reservation set is implemented. A simple turn- --
+-- based arbitration ensures forward progress during consecutive SMP accesses.      --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -867,67 +868,103 @@ end neorv32_bus_amo_rvs;
 
 architecture neorv32_bus_amo_rvs_rtl of neorv32_bus_amo_rvs is
 
-  signal valid, lr, sc, sc_fail, sc_pend : std_ulogic;
+  type rsv_t is record
+    set  : std_ulogic; -- valid
+    id   : std_ulogic; -- core ID
+    addr : std_ulogic_vector(31 downto 6); -- base address (64-byte granule)
+  end record;
+  signal rsv : rsv_t;
+
+  signal lr, sc, turn, lr_allow, sc_valid, sc_pend_pass, sc_pend_fail : std_ulogic;
 
 begin
 
-  -- Reservation Set Control ----------------------------------------------------------------
+  -- Reservation Station --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  rvs_control: process(rstn_i, clk_i)
+  reservation_station: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      valid <= '0';
+      rsv.set  <= '0';
+      rsv.id   <= '0';
+      rsv.addr <= (others => '0');
+      turn     <= '0';
     elsif rising_edge(clk_i) then
-      if (core_req_i.stb = '1') and (core_req_i.meta(0) = '0') then -- data memory access?
-        valid <= lr; -- set on load-reservate; clear for all other memory requests
+      if (core_req_i.stb = '1') and (core_req_i.meta(0) = '0') then -- data access request
+        if (lr = '1') then -- set new reservation
+          if (lr_allow = '1') then -- allowed by scheduling?
+            rsv.set  <= '1';
+            rsv.id   <= core_req_i.meta(3);
+            rsv.addr <= core_req_i.addr(31 downto 6);
+          end if;
+        elsif (sc = '1') then -- evaluate reservation
+          if (sc_valid = '1') then -- successful SC
+            rsv.set <= '0';
+            turn    <= not turn; -- flip turn for "fairness"
+          elsif (rsv.set = '1') and (rsv.id = core_req_i.meta(3)) then -- failed SC from owning core
+            rsv.set <= '0';
+          end if;
+        elsif (core_req_i.rw = '1') then -- any other write access
+          if (core_req_i.addr(31 downto 6) = rsv.addr) then -- invalidate on address match
+            rsv.set <= '0';
+          end if;
+        end if;
       end if;
     end if;
-  end process rvs_control;
+  end process reservation_station;
 
   -- check if reservation-set operation --
   lr <= '1' when (core_req_i.amo = '1') and (core_req_i.amoop = "1000") else '0';
   sc <= '1' when (core_req_i.amo = '1') and (core_req_i.amoop = "1001") else '0';
 
+  -- LR can set reservation if: no reservation yet OR same owner OR this core has turn priority --
+  lr_allow <= '1' when (rsv.set = '0')               else -- no active reservation
+              '1' when (rsv.id = core_req_i.meta(3)) else -- same owner (update reservation)
+              '1' when (turn = core_req_i.meta(3))   else -- priority: allowed to steal
+              '0';                                        -- blocked
+
+  -- SC valid if sent by the same core to the same address granule and reservation still active --
+  sc_valid <= rsv.set when (rsv.id = core_req_i.meta(3)) and (rsv.addr = core_req_i.addr(31 downto 6)) else '0';
+
+
   -- System Bus Interface -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_request: process(core_req_i, sc, valid)
+  bus_request: process(core_req_i, sc, sc_valid)
   begin
-    sys_req_o <= core_req_i; -- pass-through everything except STB
-    if (sc = '1') then -- store-conditional operation
-      sys_req_o.stb <= core_req_i.stb and valid; -- write allowed if reservation still valid
-    else -- normal memory request or load-reservate operation
-      sys_req_o.stb <= core_req_i.stb;
+    sys_req_o <= core_req_i; -- default: pass-through
+    if (sc = '1') and (sc_valid = '0') then -- SC fails: issue bus request, but as READ to check for access faults
+      sys_req_o.rw  <= '0'; -- read instead of write
+      sys_req_o.amo <= '0'; -- no longer an AMO operation
     end if;
   end process bus_request;
 
-  -- if the store-conditional instruction fails there will be no memory request
-  -- so we need to provide a local ACK to complete the bus access;
-  -- sc_pend tracks that a successful SC is in flight (for zeroing response data)
+  -- track pending SC operation --
   sc_result: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      sc_fail <= '0';
-      sc_pend <= '0';
+      sc_pend_pass <= '0';
+      sc_pend_fail <= '0';
     elsif rising_edge(clk_i) then
-      sc_fail <= core_req_i.stb and sc and (not valid);
-      -- set on SC success request, clear on ACK
-      if (core_req_i.stb = '1') and (sc = '1') and (valid = '1') then
-        sc_pend <= '1';
-      elsif (sys_rsp_i.ack = '1') then
-        sc_pend <= '0';
+      if (core_req_i.stb = '1') and (sc = '1') then -- set on SC request
+        if (sc_valid = '1') then
+          sc_pend_pass <= '1';
+        else
+          sc_pend_fail <= '1';
+        end if;
+      elsif (sys_rsp_i.ack = '1') then -- clear on bus response
+        sc_pend_pass <= '0';
+        sc_pend_fail <= '0';
       end if;
     end if;
   end process sc_result;
 
   -- response --
-  -- SC.W must return 0 on success and nonzero on failure in rd (RISC-V spec).
-  -- On failure, no bus request is issued; we generate a local ACK and return 1.
-  -- On success, the bus performs a write; memory returns ACK with undefined data
-  -- on the read-back bus, so we must override data to all-zeros.
+  -- SC fail + bus ok    -> access OK, reservation invalid -> return 1
+  -- SC success + bus ok -> write completed                -> return 0
+  -- SC any + bus err    -> propagate access fault         -> trap
   core_rsp_o.err  <= sys_rsp_i.err;
-  core_rsp_o.ack  <= sys_rsp_i.ack or sc_fail; -- generate local ACK if SC fails
-  core_rsp_o.data <= x"00000001" when (sc_fail = '1') else -- SC failed: return 1
-                     x"00000000" when (sc_pend = '1') else -- SC succeeded: return 0
-                     sys_rsp_i.data; -- normal access: pass-through
+  core_rsp_o.ack  <= sys_rsp_i.ack;
+  core_rsp_o.data <= x"00000001" when (sc_pend_fail = '1') else -- SC failed: return 1
+                     x"00000000" when (sc_pend_pass = '1') else -- SC passed: return 0
+                     sys_rsp_i.data;                            -- normal access / pass-through
 
 end neorv32_bus_amo_rvs_rtl;
