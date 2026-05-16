@@ -2195,13 +2195,13 @@ int main() {
 
     tmp_a = neorv32_cpu_amolr((uint32_t)&amo_var);
     tmp_b = neorv32_cpu_amosc((uint32_t)&amo_var, 0x12345678); // must succeed returning all-zero
-    tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)&amo_var, 0xffffffff) & 1); // another SC: must fail
-    tmp_b = (tmp_b << 1) | (neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0) & 1); // another SC: must fail; no bus exception
+    tmp_b = (tmp_b << 1) | neorv32_cpu_amosc((uint32_t)&amo_var, 0xffffffff); // another SC: must fail returning 1
+    neorv32_cpu_amosc((uint32_t)ADDR_UNREACHABLE, 0); // failing SC to faulty address -> must trap
 
     if ((tmp_a   == 0x00cafe00) && // correct LR.W result
         (amo_var == 0x12345678) && // atomic variable NOT updates by SC.W
-        (tmp_b   == 0x00000003) && // 1st SC.W success, 2nd SC.W failed, 3rd SC.W failed
-        (neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c)) { // no exception
+        (tmp_b   == 0x00000001) && // 1st SC.W succeeded, 2nd SC.W failed
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_S_ACCESS)) { // access fault exception
       test_ok();
     }
     else {
