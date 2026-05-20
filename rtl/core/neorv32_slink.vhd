@@ -174,7 +174,7 @@ begin
   rx_fifo.re       <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3) = '1') else '0';
   rx_fifo.we       <= slink_rx_valid_i;
   rx_fifo.wdata    <= slink_rx_last_i & slink_rx_src_i & slink_rx_data_i;
-  slink_rx_ready_o <= rx_fifo.free;
+  slink_rx_ready_o <= rx_fifo.free and ctrl.enable;
 
   -- backup RX attributes for current access --
   rx_attributes: process(rstn_i, clk_i)
