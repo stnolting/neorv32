@@ -184,9 +184,7 @@ begin
       rx_route <= (others => '0');
     elsif rising_edge(clk_i) then
       if (rx_fifo.re = '1') then
-        rx_last <= rx_fifo.rdata(36);
-      end if;
-      if (rx_fifo.re = '1') then
+        rx_last  <= rx_fifo.rdata(36);
         rx_route <= rx_fifo.rdata(35 downto 32);
       end if;
     end if;
