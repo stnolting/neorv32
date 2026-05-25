@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 25.05.2026 | 1.13.1.2 | :bug: fix stream link's `rx_ready_o` signal (zero when module is disabled) | [#1558](https://github.com/stnolting/neorv32/pull/1558) |
 | 16.05.2026 | 1.13.1.1 | :bug: fix/rework reservation station of `Zalrsc` ISA extension; `sc` can also cause a bus access fault even if the reservation failes | [#1556](https://github.com/stnolting/neorv32/pull/1556) |
 | 14.05.2026 | [**1.13.1**](https://github.com/stnolting/neorv32/releases/tag/v1.13.1) | :rocket: **New release** | |
 | 11.05.2026 | 1.13.0.9 | trace log: add RVC / compressed-instruction logging and decoding | [#1553](https://github.com/stnolting/neorv32/pull/1553) |
