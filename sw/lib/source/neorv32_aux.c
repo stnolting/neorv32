@@ -170,7 +170,7 @@ void neorv32_aux_unixtime2date(uint64_t unixtime, date_t* date) {
 
 
 /**********************************************************************//**
- * Helper function to convert up to 16 hex chars string into uint64_t
+ * Helper function to convert a string of up to 16 hex chars into uint64_t.
  *
  * @param[in,out] buffer Pointer to array of chars to convert into number.
  * @param[in] length Length of the conversion string.
@@ -459,47 +459,45 @@ void neorv32_aux_print_hw_config(void) {
     neorv32_uart0_printf("none\n");
   }
 
-  // CPU i-cache
+
+  // CPU caches
+  uint32_t c_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_BLOCK_SIZE_0) & 0x0F;
+  c_block_size = 1 << c_block_size;
+
+  uint32_t ic_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_I_NUM_BLOCKS_0) & 0x0F;
+  ic_num_blocks = 1 << ic_num_blocks;
+
+  uint32_t dc_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_D_NUM_BLOCKS_0) & 0x0F;
+  dc_num_blocks = 1 << dc_num_blocks;
+
+  uint32_t uncached_beg = ((NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_UC_BEGIN_0) & 0x0F) << 28;
+  uint32_t uncached_end = 0xFFFFFFFF;
+
   neorv32_uart0_printf("CPU I-cache:         ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_ICACHE)) {
-
-    uint32_t ic_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_INST_BLOCK_SIZE_0) & 0x0F;
-    ic_block_size = 1 << ic_block_size;
-
-    uint32_t ic_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_INST_NUM_BLOCKS_0) & 0x0F;
-    ic_num_blocks = 1 << ic_num_blocks;
-
-    neorv32_uart0_printf("%u bytes (%ux%u)", ic_num_blocks*ic_block_size, ic_num_blocks, ic_block_size);
-
-    if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_INST_BURSTS_EN)) {
-      neorv32_uart0_printf(", bursts enabled\n");
+    neorv32_uart0_printf("%u bytes (%ux%u)", ic_num_blocks*c_block_size, ic_num_blocks, c_block_size);
+    if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_BURSTS_EN)) {
+      neorv32_uart0_printf(", bursts enabled");
     }
     else {
-      neorv32_uart0_printf(", no bursts\n");
+      neorv32_uart0_printf(", no bursts");
     }
+    neorv32_uart0_printf(", uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
   }
   else {
     neorv32_uart0_printf("none");
   }
 
-  // CPU d-cache
   neorv32_uart0_printf("CPU D-cache:         ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_DCACHE)) {
-
-    uint32_t dc_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_DATA_BLOCK_SIZE_0) & 0x0F;
-    dc_block_size = 1 << dc_block_size;
-
-    uint32_t dc_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_DATA_NUM_BLOCKS_0) & 0x0F;
-    dc_num_blocks = 1 << dc_num_blocks;
-
-    neorv32_uart0_printf("%u bytes (%ux%u)", dc_num_blocks*dc_block_size, dc_num_blocks, dc_block_size);
-
-    if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_DATA_BURSTS_EN)) {
-      neorv32_uart0_printf(", bursts enabled\n");
+    neorv32_uart0_printf("%u bytes (%ux%u)", dc_num_blocks*c_block_size, dc_num_blocks, c_block_size);
+    if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_BURSTS_EN)) {
+      neorv32_uart0_printf(", bursts enabled");
     }
     else {
-      neorv32_uart0_printf(", no bursts\n");
+      neorv32_uart0_printf(", no bursts");
     }
+    neorv32_uart0_printf(", uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
   }
   else {
     neorv32_uart0_printf("none");
@@ -514,7 +512,7 @@ void neorv32_aux_print_hw_config(void) {
   else {
     neorv32_uart0_printf("none");
   }
-  if (NEORV32_SYSINFO->CACHE & ((1 << SYSINFO_CACHE_INST_BURSTS_EN) | (1 << SYSINFO_CACHE_DATA_BURSTS_EN))) {
+  if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_BURSTS_EN)) {
     neorv32_uart0_printf(", bursts enabled\n");
   }
   else {
