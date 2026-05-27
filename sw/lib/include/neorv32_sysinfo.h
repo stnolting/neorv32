@@ -23,10 +23,10 @@
 /**@{*/
 /** SYSINFO module prototype */
 typedef volatile struct __attribute__((packed,aligned(4))) {
-        uint32_t CLK;   /**< offset 0:  Clock speed in Hz */
-  const uint32_t MISC;  /**< offset 4:  Miscellaneous system configurations (#NEORV32_SYSINFO_MISC_enum) */
-  const uint32_t SOC;   /**< offset 8:  SoC features (#NEORV32_SYSINFO_SOC_enum) */
-  const uint32_t CACHE; /**< offset 12: Cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
+        uint32_t CLK;   /**< Clock speed in Hz */
+  const uint32_t MISC;  /**< Miscellaneous system configurations (#NEORV32_SYSINFO_MISC_enum) */
+  const uint32_t SOC;   /**< SoC features (#NEORV32_SYSINFO_SOC_enum) */
+  const uint32_t CACHE; /**< Cache configuration (#NEORV32_SYSINFO_CACHE_enum) */
 } neorv32_sysinfo_t;
 
 /** SYSINFO module hardware handle (#neorv32_sysinfo_t) */
@@ -91,18 +91,20 @@ enum NEORV32_SYSINFO_SOC_enum {
 
 /** NEORV32_SYSINFO.CACHE (r/-): Cache configuration */
  enum NEORV32_SYSINFO_CACHE_enum {
-  SYSINFO_CACHE_INST_BLOCK_SIZE_0 =  0, /**< SYSINFO_CACHE  (0) (r/-): i-cache: log2(Block size in bytes), bit 0 (via CACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_INST_BLOCK_SIZE_3 =  3, /**< SYSINFO_CACHE  (3) (r/-): i-cache: log2(Block size in bytes), bit 3 (via CACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_INST_NUM_BLOCKS_0 =  4, /**< SYSINFO_CACHE  (4) (r/-): i-cache: log2(Number of cache blocks), bit 0 (via ICACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_INST_NUM_BLOCKS_3 =  7, /**< SYSINFO_CACHE  (7) (r/-): i-cache: log2(Number of cache blocks), bit 3 (via ICACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_BLOCK_SIZE_0   =  0, /**< SYSINFO_CACHE  (0) (r/-): log2(Block size in bytes), bit 0 (via CACHE_BLOCK_SIZE generic) */
+  SYSINFO_CACHE_BLOCK_SIZE_3   =  3, /**< SYSINFO_CACHE  (3) (r/-): log2(Block size in bytes), bit 3 (via CACHE_BLOCK_SIZE generic) */
 
-  SYSINFO_CACHE_DATA_BLOCK_SIZE_0 =  8, /**< SYSINFO_CACHE  (8) (r/-): d-cache: log2(Block size in bytes), bit 0 (via CACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_DATA_BLOCK_SIZE_3 = 11, /**< SYSINFO_CACHE (11) (r/-): d-cache: log2(Block size in bytes), bit 3 (via CACHE_BLOCK_SIZE generic) */
-  SYSINFO_CACHE_DATA_NUM_BLOCKS_0 = 12, /**< SYSINFO_CACHE (12) (r/-): d-cache: log2(Number of cache blocks), bit 0 (via DCACHE_NUM_BLOCKS generic) */
-  SYSINFO_CACHE_DATA_NUM_BLOCKS_3 = 15, /**< SYSINFO_CACHE (15) (r/-): d-cache: log2(Number of cache blocks), bit 3 (via DCACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_I_NUM_BLOCKS_0 =  4, /**< SYSINFO_CACHE  (4) (r/-): i-cache: log2(Number of cache blocks), bit 0 (via ICACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_I_NUM_BLOCKS_3 =  7, /**< SYSINFO_CACHE  (7) (r/-): i-cache: log2(Number of cache blocks), bit 3 (via ICACHE_NUM_BLOCKS generic) */
 
-  SYSINFO_CACHE_INST_BURSTS_EN    = 16, /**< SYSINFO_CACHE (16) (r/-): i-cache: issue burst transfers or cache update (via CACHE_BURSTS_EN generic) */
-  SYSINFO_CACHE_DATA_BURSTS_EN    = 24  /**< SYSINFO_CACHE (14) (r/-): d-cache: issue burst transfers or cache update (via CACHE_BURSTS_EN generic) */
+  SYSINFO_CACHE_D_NUM_BLOCKS_0 =  8, /**< SYSINFO_CACHE  (8) (r/-): d-cache: log2(Number of cache blocks), bit 0 (via DCACHE_NUM_BLOCKS generic) */
+  SYSINFO_CACHE_D_NUM_BLOCKS_3 = 11, /**< SYSINFO_CACHE (11) (r/-): d-cache: log2(Number of cache blocks), bit 3 (via DCACHE_NUM_BLOCKS generic) */
+
+  SYSINFO_CACHE_UC_BEGIN_0     = 12, /**< SYSINFO_CACHE (12) (r/-): start of non-cached address space, 256MB page (via CACHE_BYPASS_BEGIN generic) */
+  SYSINFO_CACHE_UC_BEGIN_3     = 15, /**< SYSINFO_CACHE (15) (r/-): start of non-cached address space, 256MB page (via CACHE_BYPASS_BEGIN generic) */
+
+  SYSINFO_CACHE_BURSTS_EN      = 16  /**< SYSINFO_CACHE (16) (r/-): issue burst transfers for cache updates (via CACHE_BURSTS_EN generic) */
+
 };
 /**@}*/
 
