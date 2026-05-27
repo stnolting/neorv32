@@ -2,8 +2,8 @@
 -- NEORV32 - Processor Wrapper with AXI4 & AXI4-Stream Compatible Interfaces        --
 -- -------------------------------------------------------------------------------- --
 -- Dedicated for IP packaging/integration using AMD Vivado.                         --
--- Use the provided TCL script to automatically package this as IP module:          --
--- Vivado TCL console: > source neorv32_vivado_ip.tcl                               --
+-- Use the provided TCL script to automatically package this as IP module: navigate --
+-- to this file and run "source neorv32_vivado_ip.tcl" in the Vivado TCL console.   --
 -- See the NEORV32 Datasheet and User Guide for more information.                   --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
@@ -95,6 +95,7 @@ entity neorv32_vivado_ip is
     DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
     CACHE_BLOCK_SIZE      : natural range 4 to 1024        := 64;
     CACHE_BURSTS_EN       : boolean                        := true;
+    CACHE_UC_BASE         : std_ulogic_vector(31 downto 0) := x"F0000000";
     -- External Bus Interface (XBUS) --
     XBUS_EN               : boolean                        := false;
     XBUS_TIMEOUT          : natural                        := 2048;
