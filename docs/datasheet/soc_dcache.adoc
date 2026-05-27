@@ -13,6 +13,7 @@
 |                         | `DCACHE_NUM_BLOCKS`   | number of cache blocks ("cache lines"); has to be a power of two
 |                         | `CACHE_BLOCK_SIZE`    | size of a cache block in bytes (global configuration for I$ and D$); has to be a power of two, min 4
 |                         | `CACHE_BURSTS_EN`     | enable burst transfers for cache update
+|                         | `CACHE_UC_BASE`       | base address of uncached address space; has to be 256MB-aligned
 | CPU interrupts:         | none                  |
 |=======================
 
@@ -57,13 +58,14 @@ that can be accessed by the cache must also be able to process bursts (including
 
 **Cache Bypass**
 
-The cache provides direct/uncached accesses (bypassing the cache) in order to access memory-mapped IO like
-the processor-internal IO/peripheral modules. All accesses that target the address range from `0xF0000000`
-to `0xFFFFFFFF` will bypass the cache. See section <<_address_space>> for more information.
+The cache provides direct/uncached accesses (bypassing the cache) in order to access memory-mapped peripherals.
+The base adress of the uncached address space is configured by the `CACHE_UC_BASE` generic. Note that only the
+4 MSBs of this address are evaluated resulting in a 256MB granulrity. All accesses that target the address range
+from `CACHE_UC_BASE` to `0xFFFFFFFF` will bypass the cache. See section <<_address_space>> for more information.
 
-All atomic memory accesses also bypass the cache; however, in this case, the cache explicitly ensures
-<<_memory_coherence>>: if the address of an atomic memory access is cached, the corresponding line is
-first written back to main memory if it has been modified. The corresponding line is then invalidated,
+All atomic memory accesses also bypass the cache regardless of the adress; however, in this case, the cache
+explicitly ensures <<_memory_coherence>>: if the address of an atomic memory access is cached, the corresponding
+line is first written back to main memory if it has been modified. The corresponding line is then invalidated,
 and the atomic access is finally executed as a cache-bypassing access.
 
 **Cache Synchronization and Memory Coherence**
