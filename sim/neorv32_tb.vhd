@@ -318,6 +318,7 @@ begin
     DCACHE_NUM_BLOCKS   => DCACHE_NUM_BLOCKS,
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
     CACHE_BURSTS_EN     => CACHE_BURSTS_EN,
+    CACHE_UC_BASE       => x"F0000000",
     -- External Bus Interface (XBUS) --
     XBUS_EN             => true,
     XBUS_TIMEOUT        => 2048,

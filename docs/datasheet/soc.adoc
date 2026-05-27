@@ -268,6 +268,7 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `DCACHE_NUM_BLOCKS`   | natural   | 4             | Number of blocks ("lines"). Has to be a power of two.
 | `CACHE_BLOCK_SIZE`    | natural   | 64            | global cache block size (I$ **and** D$) in bytes. Has to be a power of two, min 4.
 | `CACHE_BURSTS_EN`     | boolean   | true          | Enable burst transfers for cache updates.
+| `CACHE_UC_BASE`       | suv(31:0) | x"F0000000"   | Base address of uncached address space. Has to be 256MB-aligned.
 4+^| **<<_processor_external_bus_interface_xbus>> (Wishbone / AXI4-Compatible Bridging)**
 | `XBUS_EN`             | boolean   | false         | Implement the external bus interface.
 | `XBUS_TIMEOUT`        | natural   | 2048          | Number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled).
