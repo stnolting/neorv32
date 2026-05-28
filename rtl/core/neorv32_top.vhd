@@ -100,6 +100,7 @@ entity neorv32_top is
     DCACHE_NUM_BLOCKS   : natural range 1 to 4096        := 4;             -- d-cache: number of blocks, has to be a power of 2
     CACHE_BLOCK_SIZE    : natural range 4 to 1024        := 64;            -- i-cache/d-cache: block size in bytes, has to be a power of 2
     CACHE_BURSTS_EN     : boolean                        := true;          -- i-cache/d-cache: enable issuing of burst transfer for cache update
+    CACHE_UC_BASE       : std_ulogic_vector(31 downto 0) := x"F0000000";   -- base address of uncached address space (has to be 256MB-aligned)
 
     -- External Bus Interface (XBUS) --
     XBUS_EN             : boolean                        := false;         -- implement external bus interface
@@ -461,6 +462,10 @@ begin
     assert (or_reduce_f(DMEM_BASE(index_size_f(dmem_size_c)-1 downto 0)) = '0') report
       "[NEORV32] DMEM base address has to be naturally aligned to its size!" severity error;
 
+    -- uncached base address alignment --
+    assert (CACHE_UC_BASE(27 downto 0) = x"0000000") report
+      "[NEORV32] Base address of uncached address space has to be 256MB-aligned!" severity error;
+
   end generate;
 
   -- **************************************************************************************************************************
@@ -610,7 +615,7 @@ begin
       generic map (
         NUM_BLOCKS => ICACHE_NUM_BLOCKS,
         BLOCK_SIZE => CACHE_BLOCK_SIZE,
-        UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
+        UC_BEGIN   => CACHE_UC_BASE(31 downto 28),
         READ_ONLY  => true,
         BURSTS_EN  => bursts_en_c
       )
@@ -639,7 +644,7 @@ begin
       generic map (
         NUM_BLOCKS => DCACHE_NUM_BLOCKS,
         BLOCK_SIZE => CACHE_BLOCK_SIZE,
-        UC_BEGIN   => mem_uncached_begin_c(31 downto 28),
+        UC_BEGIN   => CACHE_UC_BASE(31 downto 28),
         READ_ONLY  => false,
         BURSTS_EN  => bursts_en_c
       )
@@ -1567,6 +1572,7 @@ begin
       DCACHE_NUM_BLOCKS => DCACHE_NUM_BLOCKS,
       CACHE_BLOCK_SIZE  => CACHE_BLOCK_SIZE,
       CACHE_BURSTS_EN   => bursts_en_c,
+      CACHE_UC_BASE     => CACHE_UC_BASE(31 downto 28),
       XBUS_EN           => XBUS_EN,
       OCD_EN            => OCD_EN,
       OCD_AUTH          => ocd_auth_en_c,
