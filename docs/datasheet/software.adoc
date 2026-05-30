@@ -194,6 +194,7 @@ Targets:
   elf        build and generate <main.elf> ELF file
   exe        build and generate <neorv32_exe.bin> executable file for bootloader upload
   bin        build and generate <neorv32_raw_exe.bin> executable memory image
+  hex        build and generate <neorv32_raw_exe.hex> executable memory image
   coe        build and generate <neorv32_raw_exe.coe> executable memory image
   mem        build and generate <neorv32_raw_exe.mem> executable memory image
   mif        build and generate <neorv32_raw_exe.mif> executable memory image
@@ -511,6 +512,7 @@ Image formats (using little-Endian byte ordering):
   exe  Executable for bootloader upload (binary file with header)
   vhd  VHDL memory image (raw executable)
   bin  Binary file (raw executable)
+  hex  Plain hexdump file (raw executable)
   coe  COE file (8x hex per line, ASCII, raw executable)
   mem  MEM file (8x hex per line, ASCII, raw executable)
   mif  MIF file (8x hex per line, ASCII, raw executable)
@@ -526,6 +528,7 @@ This provides corresponding <<_makefile_targets>>) for the different image types
 | `exe` | Generates an executable binary file (including a header; see <<_bootloader_image_format>>) for upload via the <<_bootloader>>.
 | `vhd` | Generates a raw VHDL memory image (package file, package name is the same as the output file name).
 | `bin` | Generates a raw binary file for custom purpose.
+| `hex` | Generates a raw HEX file for custom purpose (like memory initialization via `$readmemh()` / `hread()`).
 | `coe` | Generates a raw COE file for FPGA memory initialization.
 | `mem` | Generates a raw MEM file for FPGA memory initialization.
 | `mif` | Generates a raw MIF file for FPGA memory initialization.

@@ -86,6 +86,7 @@ APP_ASM ?= main.asm
 APP_EXE ?= neorv32_exe.bin
 APP_VHD ?= neorv32_imem_image.vhd
 APP_BIN ?= neorv32_raw_exe.bin
+APP_HEX ?= neorv32_raw_exe.hex
 APP_COE ?= neorv32_raw_exe.coe
 APP_MEM ?= neorv32_raw_exe.mem
 APP_MIF ?= neorv32_raw_exe.mif
@@ -164,7 +165,7 @@ NEO_ASFLAGS  = $(CC_FLAGS) $(ASFLAGS)
 # -----------------------------------------------------------------------------
 
 .PHONY: check info help elf_info elf_sections clean clean_all \
-        elf asm exe bin coe mem mif image install all \
+        elf asm exe bin hex coe mem mif image install all \
         sim upload gdb bootloader bl_image hdl_lists
 
 .DEFAULT_GOAL := help
@@ -173,12 +174,13 @@ elf:     $(APP_ELF)
 asm:     $(APP_ASM)
 exe:     $(APP_EXE)
 bin:     $(APP_BIN)
+hex:     $(APP_HEX)
 coe:     $(APP_COE)
 mem:     $(APP_MEM)
 mif:     $(APP_MIF)
 image:   $(APP_VHD)
 install: install-$(APP_VHD)
-all:     elf asm exe bin coe mem mif image install
+all:     elf asm exe bin hex coe mem mif image install
 
 # -----------------------------------------------------------------------------
 # Verbosity
@@ -264,6 +266,11 @@ $(APP_BIN): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_BIN)"
 	$(Q)$(IMAGE_GEN) -t bin -i $< -o $@
 
+# Generate NEORV32 RAW executable image in hex format
+$(APP_HEX): $(APP_FLT) $(IMAGE_GEN)
+	$(ECHO) "Generating $(APP_HEX)"
+	$(Q)$(IMAGE_GEN) -t hex -i $< -o $@
+
 # Generate NEORV32 RAW executable image in COE format
 $(APP_COE): $(APP_FLT) $(IMAGE_GEN)
 	$(ECHO) "Generating $(APP_COE)"
@@ -346,7 +353,7 @@ gdb: $(APP_ELF)
 # remove all build artifacts
 clean:
 	$(Q)$(RM) -rf $(BUILD_DIR)
-	$(Q)$(RM) -f $(APP_EXE) $(APP_ELF) $(APP_FLT) $(APP_BIN) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BLD_VHD)
+	$(Q)$(RM) -f $(APP_EXE) $(APP_ELF) $(APP_FLT) $(APP_BIN) $(APP_HEX) $(APP_COE) $(APP_MEM) $(APP_MIF) $(APP_ASM) $(APP_VHD) $(BLD_VHD)
 	$(Q)$(RM) -f .gdb_history
 
 # also remove image generator
@@ -442,6 +449,7 @@ help::
 	$(ECHO) "  elf        build and generate <$(APP_ELF)> ELF file"
 	$(ECHO) "  exe        build and generate <$(APP_EXE)> executable file for bootloader upload"
 	$(ECHO) "  bin        build and generate <$(APP_BIN)> executable memory image"
+	$(ECHO) "  hex        build and generate <$(APP_HEX)> executable memory image"
 	$(ECHO) "  coe        build and generate <$(APP_COE)> executable memory image"
 	$(ECHO) "  mem        build and generate <$(APP_MEM)> executable memory image"
 	$(ECHO) "  mif        build and generate <$(APP_MIF)> executable memory image"

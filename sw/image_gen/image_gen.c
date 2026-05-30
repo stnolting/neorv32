@@ -21,6 +21,7 @@ enum operation_enum {
   OP_EXE,
   OP_VHD,
   OP_BIN,
+  OP_HEX,
   OP_COE,
   OP_MEM,
   OP_MIF
@@ -78,6 +79,7 @@ void print_help(void){
     "  exe  Executable for bootloader upload (binary file with header) \n"
     "  vhd  VHDL memory image (raw executable)\n"
     "  bin  Binary file (raw executable)\n"
+    "  hex  Plain hexdump file (raw executable)\n"
     "  coe  COE file (8x hex per line, ASCII, raw executable)\n"
     "  mem  MEM file (8x hex per line, ASCII, raw executable)\n"
     "  mif  MIF file (8x hex per line, ASCII, raw executable)\n"
@@ -139,6 +141,7 @@ int main(int argc, char *argv[]) {
       if      (strcmp(argv[i], "exe") == 0) { operation = OP_EXE; }
       else if (strcmp(argv[i], "vhd") == 0) { operation = OP_VHD; }
       else if (strcmp(argv[i], "bin") == 0) { operation = OP_BIN; }
+      else if (strcmp(argv[i], "hex") == 0) { operation = OP_HEX; }
       else if (strcmp(argv[i], "coe") == 0) { operation = OP_COE; }
       else if (strcmp(argv[i], "mem") == 0) { operation = OP_MEM; }
       else if (strcmp(argv[i], "mif") == 0) { operation = OP_MIF; }
@@ -315,7 +318,7 @@ int main(int argc, char *argv[]) {
       pkg_name, (ext_exe_size/4)-1, raw_exe_size);
 
     // data
-    for (n = 0; n < raw_exe_size/4; n++) {
+    for (n = 0; n < (raw_exe_size/4); n++) {
       fprintf(output, "x\"%08x\",\n", (unsigned int)read32(&raw_image[n*4]));
     }
 
@@ -336,12 +339,28 @@ int main(int argc, char *argv[]) {
 
   else if (operation == OP_BIN) {
 
-    for (n = 0; n < raw_exe_size; n++) {
-      fputc((unsigned char)(raw_image[n]), output);
+    for (n = 0; n < (raw_exe_size/4); n++) {
+      word = read32(&raw_image[n * 4]);
+      write32(word, output);
     }
 
     // report
     printf("Executable (BIN): %u bytes\n", raw_exe_size);
+  }
+
+  // --------------------------------------------------------------------------
+  // executable plain hexdump file
+  // --------------------------------------------------------------------------
+
+  else if (operation == OP_HEX) {
+
+    for (n = 0; n < (raw_exe_size/4); n++) {
+      word = read32(&raw_image[n * 4]);
+      fprintf(output, "%08x\n", (unsigned int)word);
+    }
+
+    // report
+    printf("Executable (HEX): %u bytes\n", raw_exe_size);
   }
 
   // --------------------------------------------------------------------------
@@ -354,7 +373,7 @@ int main(int argc, char *argv[]) {
     fputs("memory_initialization_radix=16;\n", output);
     fputs("memory_initialization_vector=\n", output);
 
-    for (n = 0; n < raw_exe_size/4; n++) {
+    for (n = 0; n < (raw_exe_size/4); n++) {
       word = read32(&raw_image[n * 4]);
       if (n == ((raw_exe_size/4)-1)) {
         fprintf(output, "%08x;\n", (unsigned int)word);
@@ -374,7 +393,7 @@ int main(int argc, char *argv[]) {
 
   else if (operation == OP_MEM) {
 
-    for (n = 0; n < raw_exe_size/4; n++) {
+    for (n = 0; n < (raw_exe_size/4); n++) {
       fprintf(output, "@%08x %08x\n", n, (unsigned int)read32(&raw_image[n*4]));
     }
 
@@ -400,7 +419,7 @@ int main(int argc, char *argv[]) {
     );
 
     // data
-    for (n = 0; n < raw_exe_size/4; n++) {
+    for (n = 0; n < (raw_exe_size/4); n++) {
       fprintf(output, "%08x : %08x;\n", n, (unsigned int)read32(&raw_image[n*4]));
     }
 
