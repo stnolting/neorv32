@@ -111,8 +111,8 @@ int main() {
       send_twi();
     }
     else if (!strcmp(buffer, "sense")) {
-      neorv32_uart0_printf(" SCL: %u\n", neorv32_twi_sense_scl());
-      neorv32_uart0_printf(" SDA: %u\n", neorv32_twi_sense_sda());
+      neorv32_uart0_printf(" SCL: %u\n", neorv32_twi_sense_scl() == 0 ? 0 : 1);
+      neorv32_uart0_printf(" SDA: %u\n", neorv32_twi_sense_sda() == 0 ? 0 : 1);
     }
     else {
       neorv32_uart0_printf("Invalid command. Type 'help' to see all commands.\n");
@@ -174,10 +174,10 @@ void set_clock(void) {
   neorv32_uart0_printf("\nNew I2C clock: %u Hz\n", clock);
 
   // check if bus lines are OK
-  if (neorv32_twi_sense_scl() != 1) {
+  if (neorv32_twi_sense_scl() == 0) {
     neorv32_uart0_printf("WARNING! SCL bus line is not idle-high! Pull-up missing?\n");
   }
-  if (neorv32_twi_sense_sda() != 1) {
+  if (neorv32_twi_sense_sda() == 0) {
     neorv32_uart0_printf("WARNING! SDA bus line is not idle-high! Pull-up missing?\n");
   }
 }
