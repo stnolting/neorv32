@@ -323,16 +323,17 @@ and NanoXplore FPGAs. Some pre-configured example setup are available online: ht
 **Processing Speed**
 
 The computational performance of the NEORV32 is evaluated using https://www.eembc.org/coremark/[Core Mark CPU benchmark].
-The NEORV32 CoreMark port can be found in another repository: https://github.com/stnolting/neorv32-coremark[neorv32-coremark]
+The NEORV32 CoreMark port can be found in a separate repository: https://github.com/stnolting/neorv32-coremark[neorv32-coremark]
 
-.CoreMark results (`-O3` optimization)
-[cols="<5,^1,^1,^1"]
+.CoreMark Results
+[cols="<6,^2,^2"]
 [options="header",grid="rows"]
 |=======================
-| CPU                                                      | CoreMark Score | CoreMarks/MHz | Average CPI
-| _small_ (`rv32i_Zicsr_Zifencei`)                         |          33.89 | **0.3389**    | **4.04**
-| _medium_ (`rv32imc_Zicsr_Zifencei`)                      |          62.50 | **0.6250**    | **5.34**
-| _performance_ (`rv32imc_Zicsr_Zifencei` + perf. options) |          95.23 | **0.9523**    | **3.54**
+| CPU Configuration                                        | CoreMark Score | CoreMarks/MHz
+| _small_ (`rv32i_Zicsr_Zifencei`)                         |          33.89 | **0.33**
+| _medium_ (`rv32imc_Zicsr_Zifencei`)                      |          62.50 | **0.62**
+| _performance_ (`rv32imc_Zicsr_Zifencei` + perf. options) |          95.23 | **0.95**
+| _dual-core_ (`rv32imc_Zicsr_Zifencei` + perf. options)   |         190.47 | **1.90**
 |=======================
 
 Performance can be further improved by enabling additional ISA extensions. Note that the compiler

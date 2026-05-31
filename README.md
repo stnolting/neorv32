@@ -182,7 +182,8 @@ for advanced debugging, profiling or verification
 The NEORV32 processor is optimized for minimal size. However, the actual size (silicon area or FPGA resources)
 depends on the specific configuration. For example, an RTOS-capable setup based on a `rv32imc_Zicsr_Zicntr` CPU
 configuration requires about 2300 LUTs and 1000 FFs and can run at up to 130 MHz (implementation results for an
-Altera Cyclone IV E `EP4CE22F17C6` FPGA). This configuration provides a CoreMark score of 95.23 (0.9523 CoreMarks/MHz).
+Altera Cyclone IV E `EP4CE22F17C6` FPGA). This configuration provides a CoreMark score of 95 (0.95 CoreMarks/MHz).
+The corresponding dual-core version achieves a CoreMark score of 190 (1.9 CoreMarks/MHz).
 
 More information regarding the CPU performance can be found in the
 [Data Sheet: Performance](https://stnolting.github.io/neorv32/#_performance).
