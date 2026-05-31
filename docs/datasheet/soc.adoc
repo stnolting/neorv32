@@ -782,7 +782,7 @@ However, only the specified memory-mapped registers addresses should be used.
 
 .Unimplemented Modules / Address Holes
 [NOTE]
-When accessing an IO device tha hast not been implemented (disabled via the according generic)
+When accessing an IO device that has not been implemented (disabled via the according generic)
 or when accessing an address that is actually unused, a load/store access fault exception is raised.
 
 .Writing to Read-Only Registers
