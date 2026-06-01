@@ -13,16 +13,11 @@ You can start a pre-configured debug session (using default `main.elf` as execut
 `target extended-remote localhost:3333` as GDB connection configuration) by using the **GDB**
 makefile target: `make gdb`
 
-.OCD CPU Requirements
-[NOTE]
-The on-chip debugger is only implemented if the `OCD_EN` generic is set _true_.
-
 
 :sectnums:
 === Hardware Requirements
 
-Connect a JTAG adapter to the NEORV32 `jtag_*` interface signals. If you do not have a full-scale JTAG adapter, you can
-also use a FTDI-based breakout adapter.
+Connect a JTAG adapter to the according NEORV32 `jtag_*` top interface signals:
 
 .JTAG pin mapping
 [cols="^3,^2,^2"]
@@ -45,38 +40,34 @@ is not a problem since JTAG-level resets can be triggered using TMS signaling.
 === OpenOCD
 
 The NEORV32 on-chip debugger can be accessed using the upstream version of OpenOCD.
-A pre-configured OpenOCD configuration file is provided: `sw/openocd/openocd_neorv32.*.cfg`
+A pre-configured OpenOCD configuration file is provided: `sw/openocd/neorv32.*.cfg`
 
 .Interface Configuration
 [NOTE]
-You might need to adapt the default interface configuration in `sw/openocd/interface.cfg`
+You might need to adapt the default interface configuration in `sw/openocd/lib/interface.cfg`
 according to your JTAG adapter and your operating system.
 
 To access the processor using OpenOCD, open a terminal and start OpenOCD with the pre-configured configuration file.
 
-.Connecting via OpenOCD (on Windows) using the default `openocd_neorv32.cfg` script
+.Connecting via OpenOCD (on Windows) using the default `neorv32.cfg` script
 [source, bash]
 --------------------------
-neorv32\sw\openocd>openocd.exe -f openocd_neorv32.cfg
-xPack Open On-Chip Debugger 0.12.0+dev-01850-geb6f2745b-dirty (2025-02-07-10:08)
+neorv32\sw\openocd>openocd.exe -f neorv32.cfg
+xPack Open On-Chip Debugger 0.12.0+dev-02228-ge5888bda3-dirty (2025-10-04-22:44)
 Licensed under GNU GPL v2
 For bug reports, read
         http://openocd.org/doc/doxygen/bugs.html
-*****************************************
-NEORV32 single-core openOCD configuration
-*****************************************
+Target: neorv32 single-core
 Error: libusb_open() failed with LIBUSB_ERROR_NOT_FOUND
 Info : clock speed 2000 kHz
 Info : JTAG tap: neorv32.cpu tap/device found: 0x00000001 (mfg: 0x000 (<invalid>), part: 0x0000, ver: 0x0)
-Error: Debugger is not authenticated to target Debug Module. (dmstatus=0x3). Use `riscv authdata_read` and `riscv authdata_write` commands to authenticate.
-Info : [neorv32.cpu] Examination succeed
-Info : [neorv32.cpu] starting gdb server on 3333
-Info : Listening on port 3333 for gdb connections
-Info : authdata_write resulted in successful authentication
 Info : datacount=1 progbufsize=2
 Info : Disabling abstract command reads from CSRs.
 Info : Examined RISC-V core; found 2 harts
-Info :  hart 0: XLEN=32, misa=0x40901107
+Info :  hart 0: XLEN=32, misa=0x40901106
+Info : [neorv32.cpu] Examination succeed
+Info : [neorv32.cpu] starting gdb server on 3333
+Info : Listening on port 3333 for gdb connections
 Authentication passed.
 Info : JTAG tap: neorv32.cpu tap/device found: 0x00000001 (mfg: 0x000 (<invalid>), part: 0x0000, ver: 0x0)
 Target RESET and HALTED. Ready for remote connections.
