@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -305,16 +305,25 @@ void *_sbrk(int incr) {
     write(STDERR_FILENO, "[neorv32-newlib] no heap available\r\n", 36);
 #endif
     errno = ENOMEM;
-    return (void*)-1; // error - no more memory
+    return (void*)-1;
   }
 
   // sufficient space left?
-  if ((uint32_t)(curr_heap + incr) >= NEORV32_HEAP_END) {
+  if ((uintptr_t)(curr_heap + incr) >= NEORV32_HEAP_END) {
 #ifdef NEWLIB_DEBUG
     write(STDERR_FILENO, "[neorv32-newlib] heap exhausted\r\n", 33);
 #endif
     errno = ENOMEM;
-    return (void*)-1; // error - no more memory
+    return (void*)-1;
+  }
+
+  // underrun?
+  if ((incr < 0) && ((uintptr_t)(curr_heap + incr) < NEORV32_HEAP_BEGIN)) {
+#ifdef NEWLIB_DEBUG
+    write(STDERR_FILENO, "[neorv32-newlib] heap underrun\r\n", 32);
+#endif
+    errno = ENOMEM;
+    return (void*)-1;
   }
 
   prev_heap = curr_heap;
@@ -330,13 +339,13 @@ void *_sbrk(int incr) {
 int _gettimeofday(struct timeval *tv) {
 #ifdef TIME_SEMIHOSTING
   tv->tv_sec  = (time_t)neorv32_semihosting_time();
-  tv->tv_usec = (suseconds_t)(tv->tv_sec * 1000000);
+  tv->tv_usec = 0;
   return 0;
 #else
   // use MTIME as system time (if available)
   if (neorv32_clint_available()) {
     tv->tv_sec  = (time_t)neorv32_clint_unixtime_get();
-    tv->tv_usec = (suseconds_t)(tv->tv_sec * 1000000);
+    tv->tv_usec = 0;
     return 0;
   }
   else {
