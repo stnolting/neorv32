@@ -31,11 +31,11 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 |:----:|:-------:|:--------|:------:|
 | 27.05.2026 | 1.13.1.3 | add option to configure start of uncached address space | [#1561](https://github.com/stnolting/neorv32/pull/1561) |
 | 25.05.2026 | 1.13.1.2 | :bug: fix stream link's `rx_ready_o` signal (zero when module is disabled) | [#1558](https://github.com/stnolting/neorv32/pull/1558) |
-| 16.05.2026 | 1.13.1.1 | :bug: fix/rework reservation station of `Zalrsc` ISA extension; `sc` can also cause a bus access fault even if the reservation failes | [#1556](https://github.com/stnolting/neorv32/pull/1556) |
+| 16.05.2026 | 1.13.1.1 | :bug: fix/rework reservation station of `Zalrsc` ISA extension; `sc` can also cause a bus access fault even if the reservation fails | [#1556](https://github.com/stnolting/neorv32/pull/1556) |
 | 14.05.2026 | [**1.13.1**](https://github.com/stnolting/neorv32/releases/tag/v1.13.1) | :rocket: **New release** | |
 | 11.05.2026 | 1.13.0.9 | trace log: add RVC / compressed-instruction logging and decoding | [#1553](https://github.com/stnolting/neorv32/pull/1553) |
 | 08.05.2026 | 1.13.0.8 | :sparkles: add support for RISC-V `time[h]` CSRs | [#1551](https://github.com/stnolting/neorv32/pull/1551) |
-| 08.05.2026 | 1.13.0.7 | :sparkles: add support for RISC-V `Zbc` ISA extensions (carry-less multiplication) | [#1550](https://github.com/stnolting/neorv32/pull/1550) |
+| 08.05.2026 | 1.13.0.7 | :sparkles: add support for RISC-V `Zbc` ISA extension (carry-less multiplication) | [#1550](https://github.com/stnolting/neorv32/pull/1550) |
 | 08.05.2026 | 1.13.0.6 | :bug: PMP: fix write-only permission config and address/mask storage | [#1549](https://github.com/stnolting/neorv32/pull/1549) |
 | 06.05.2026 | 1.13.0.5 | add support for all hardware performance monitors (HPMs); add high-word event-select CSRs (`mhpmevent*h`); add unprivileged/user-mode CSRs shadow copies (`hpmcounter*[h]`) | [#1546](https://github.com/stnolting/neorv32/pull/1546) |
 | 03.05.2026 | 1.13.0.4 | rework on-chip debugger (OCD) fixing minor spec incompatibilities | [#1544](https://github.com/stnolting/neorv32/pull/1544) |
