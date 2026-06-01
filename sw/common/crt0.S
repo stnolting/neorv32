@@ -207,7 +207,7 @@ __crt0_halting:
 
 .global __crt0_halt_primary
 __crt0_halt_primary:
-  ebreak     // try to transfer control to external debugger; otherwise -> panic
+  ebreak     // execution done; try to transfer control to external debugger; otherwise -> panic
 
 .global __crt0_halt
 __crt0_halt: // same code as trap handler but with different label/address to track origin
