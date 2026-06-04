@@ -196,7 +196,7 @@ begin
   exec_sync: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl       <= ctrl_bus_zero_c;
+      ctrl       <= ctrl_bus_terminate_c;
       exec.state <= S_RESTART;
       exec.ir    <= (others => '0');
       exec.irc   <= (others => '0');
@@ -230,7 +230,7 @@ begin
     trap.instr_ma     <= '0';
     trap.ecall        <= '0';
     trap.ebreak       <= '0';
-    ctrl_nxt          <= ctrl_bus_zero_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
+    ctrl_nxt          <= ctrl_bus_terminate_c; -- all zero/off by default (ALU operation = ZERO, ALU.adder_out = ADD)
     ctrl_nxt.csr_addr <= ctrl.csr_addr; -- keep previous CSR address
     ctrl_nxt.lsu_rd   <= ctrl.lsu_rd; -- keep memory read access type
     ctrl_nxt.lsu_wr   <= ctrl.lsu_wr; -- keep memory write access type
@@ -1069,7 +1069,7 @@ begin
             csr.dscratch0 <= csr_wdata;
 
           when others => -- undefined or implemented somewhere else
-            NULL;
+            null;
 
         end case;
 

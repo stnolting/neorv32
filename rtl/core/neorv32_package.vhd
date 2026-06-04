@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130103"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130104"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -733,7 +733,7 @@ package neorv32_package is
   end record;
 
   -- control bus reset termination --
-  constant ctrl_bus_zero_c : ctrl_bus_t := (
+  constant ctrl_bus_terminate_c : ctrl_bus_t := (
     if_reset     => '0',
     if_ready     => '0',
     pc_cur       => (others => '0'),
@@ -1265,11 +1265,10 @@ package body neorv32_package is
   -- Bit reversal ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function bit_rev_f(d : std_ulogic_vector) return std_ulogic_vector is
-    variable v, r : std_ulogic_vector(d'length-1 downto 0);
+    variable r : std_ulogic_vector(d'length-1 downto 0);
   begin
-    v := d;
     for i in 0 to d'length-1 loop
-      r((d'length-1)-i) := v(i);
+      r((d'length-1)-i) := d(d'low + i);
     end loop;
     return r;
   end function bit_rev_f;
