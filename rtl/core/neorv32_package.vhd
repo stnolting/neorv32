@@ -733,7 +733,7 @@ package neorv32_package is
   end record;
 
   -- control bus reset termination --
-  constant ctrl_bus_zero_c : ctrl_bus_t := (
+  constant ctrl_bus_terminate_c : ctrl_bus_t := (
     if_reset     => '0',
     if_ready     => '0',
     pc_cur       => (others => '0'),
