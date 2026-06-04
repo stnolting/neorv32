@@ -273,7 +273,7 @@ begin
       pwm_o <= '0';
     elsif rising_edge(clk_i) then
       if (en_i = '0') then
-        pwm_o <= '0';
+        pwm_o <= pol_i;
       elsif (unsigned(cnt) < unsigned(cmp)) then
         pwm_o <= not pol_i;
       else

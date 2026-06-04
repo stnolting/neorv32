@@ -40,9 +40,9 @@ register, and a `MODE` register. Each of these register provides one bit (LSB-al
 Additional, up to `IO_PWM_NUM` channel register `CHANNEL` are provided.
 
 The `ENABLE` register is used to enable individual PWM channels. By using bit-masks several channels can be enabled
-at once so they operate in perfect lockstep. The PWM counter of a disabled channel is halted and reset to zero. The
-according PWM output (`pwm_o(i)`) is also reset to 0. The polarity of each channel's output can be inverted by setting
-the corresponding bit in the `POLARITY` register.
+at once so they operate in perfect lockstep. The PWM counter of a disabled channel is halted and reset to zero; the
+according PWM output (`pwm_o(i)`) is reset to the configured polarity. The polarity of each channel's output can be
+inverted by setting the corresponding bit in the `POLARITY` register.
 
 The `CLKPRSC` register configures the _global_ clock prescaler that is used for the PWM counter increment of all
 channels. Eight pre-defined prescaler values are available:
