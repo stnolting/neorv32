@@ -186,14 +186,14 @@ begin
   dmi_controller: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      busy <= '0';
       err  <= '0';
+      busy <= '0';
       dmi  <= dmi_req_terminate_c;
     elsif rising_edge(clk_i) then
-      -- sticky error: access attempt while DMI is busy or invalid operation --
+      -- sticky error: access attempt while DMI is busy --
       if (dmireset = '1') or (dmihardreset = '1') then
         err <= '0';
-      elsif (update = '1') and (ireg = addr_dmi_c) and ((busy = '1') or (dmi.op = "11")) then
+      elsif (update = '1') and (ireg = addr_dmi_c) and (busy = '1') then
         err <= '1';
       end if;
       -- interface arbiter --
