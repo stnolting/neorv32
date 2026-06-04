@@ -75,7 +75,7 @@ begin
           when addr_tp_c  => irq_pol  <= bus_req_i.data(GPIO_NUM-1 downto 0); -- trigger polarity
           when addr_ie_c  => irq_en   <= bus_req_i.data(GPIO_NUM-1 downto 0); -- interrupt enable
           when addr_ip_c  => irq_clrn <= bus_req_i.data(GPIO_NUM-1 downto 0); -- interrupt pending (clear-only)
-          when others     => NULL;
+          when others     => null;
         end case;
       end if;
       -- read access --

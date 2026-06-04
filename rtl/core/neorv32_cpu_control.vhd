@@ -1069,7 +1069,7 @@ begin
             csr.dscratch0 <= csr_wdata;
 
           when others => -- undefined or implemented somewhere else
-            NULL;
+            null;
 
         end case;
 
