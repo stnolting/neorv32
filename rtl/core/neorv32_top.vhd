@@ -1198,6 +1198,7 @@ begin
     neorv32_clint_disabled:
     if not IO_CLINT_EN generate
       iodev_rsp(IODEV_CLINT) <= rsp_terminate_c;
+      mtime                  <= (others => '0');
       mtime_lo               <= (others => '0');
       mtime_time_o           <= (others => '0');
       mti                    <= (others => irq_mti_i); -- TODO: provide individual top ports for dual-core w/o internal CLINT
