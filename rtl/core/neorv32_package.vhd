@@ -1265,11 +1265,10 @@ package body neorv32_package is
   -- Bit reversal ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   function bit_rev_f(d : std_ulogic_vector) return std_ulogic_vector is
-    variable v, r : std_ulogic_vector(d'length-1 downto 0);
+    variable r : std_ulogic_vector(d'length-1 downto 0);
   begin
-    v := d;
     for i in 0 to d'length-1 loop
-      r((d'length-1)-i) := v(i);
+      r((d'length-1)-i) := d(d'low + i);
     end loop;
     return r;
   end function bit_rev_f;
