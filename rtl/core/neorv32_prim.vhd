@@ -118,7 +118,7 @@ begin
     memory_core: process(clk_i) -- simple dual-port RAM
     begin
       if rising_edge(clk_i) then
-        if (we = '1') then
+        if (we = '1') and (clear_i = '0') then
           fifo(to_integer(unsigned(w_pnt(AWIDTH-1 downto 0)))) <= wdata_i;
         end if;
         rdata <= fifo(to_integer(unsigned(r_pnt(AWIDTH-1 downto 0))));
@@ -134,7 +134,7 @@ begin
       if (rstn_i = '0') then
         fifo(0) <= (others => '0');
       elsif rising_edge(clk_i) then
-        if (we = '1') then
+        if (we = '1') and (clear_i = '0') then
           fifo(0) <= wdata_i;
         end if;
       end if;
