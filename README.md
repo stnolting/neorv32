@@ -51,15 +51,16 @@ targeting various FPGA boards and toolchains to get started.
 
 | Task | CI Status |
 |:-----|:----------|
-| GitHub pages       | [![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32) |
-| Documentation      | [![Documentation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Documentation.yml?branch=main&longCache=true&style=flat-square&label=Build%20Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/Documentation.yml) |
-| Processor check    | [![Processor](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Processor.yml?branch=main&longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/Processor.yml) |
-| Verilog conversion | [![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/Verilog.yml)
-| RISC-V  compliance | [![neorv32-riscv-act](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-riscv-act/riscv-act.yml?branch=main&longCache=true&style=flat-square&label=RISC-V%20ACT&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-riscv-act/actions/workflows/riscv-act.yml) |
+| GitHub pages | [![GitHub Pages](https://img.shields.io/website.svg?label=stnolting.github.io%2Fneorv32&longCache=true&style=flat-square&url=http%3A%2F%2Fstnolting.github.io%2Fneorv32%2Findex.html&logo=GitHub)](https://stnolting.github.io/neorv32) |
+| [Documentation](https://stnolting.github.io/neorv32/) | [![Documentation](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Documentation.yml?branch=main&longCache=true&style=flat-square&label=Build%20Documentation&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/Documentation.yml) |
+| [Processor check](https://github.com/stnolting/neorv32/tree/main/sw/example/processor_check) | [![Processor](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Processor.yml?branch=main&longCache=true&style=flat-square&label=Processor%20Check&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/Processor.yml) |
+| [Verilog conversion](https://github.com/stnolting/neorv32/tree/main/rtl/verilog) | [![Verilog Conversion](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32/Verilog.yml?branch=main&longCache=true&style=flat-square&label=Verilog%20Conversion&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32/actions/workflows/Verilog.yml)
+| [RISC-V compliance](https://github.com/stnolting/neorv32-riscv-act) | [![neorv32-riscv-act](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-riscv-act/riscv-act.yml?branch=main&longCache=true&style=flat-square&label=RISC-V%20ACT&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-riscv-act/actions/workflows/riscv-act.yml) |
 
-The processor passes the official RISC-V Architectural Certification Tests (ACTs). It can successfully run _any_ C program
-including CoreMark and FreeRTOS and can be synthesized for _any_ target technology - [tested](https://github.com/stnolting/neorv32-setups)
-on AMD, Intel, Lattice, Microchip, Gowin and Cologne Chip FPGAs. The processor has also been taped out several times as an ASIC.
+The processor passes the official [RISC-V Architectural Certification Tests (ACTs)](https://github.com/stnolting/neorv32-riscv-act).
+It can successfully run _any_ C program including CoreMark and FreeRTOS and can be synthesized for _any_ target
+technology - [tested](https://github.com/stnolting/neorv32-setups) on AMD, Intel, Lattice, Microchip, Gowin and
+Cologne Chip FPGAs. The processor has also been taped out several times as an ASIC.
 
 
 ## Features
