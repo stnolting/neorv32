@@ -120,9 +120,9 @@ begin
       trace_buf.rs2_rdata <= rs2_rdata_i;
       if (ctrl_i.rf_wb_en = '1') and (or_reduce_f(ctrl_i.rf_rd) = '1') then
         trace_buf.rd_rdata <= rd_wdata_i;
-        trace_buf.rd_addr  <= (others => '0');
+        trace_buf.rd_addr  <= ctrl_i.rf_rd;
       elsif (trace_buf.valid = '1') then
-        trace_buf.rd_rdata <= rd_wdata_i;
+        trace_buf.rd_rdata <= (others => '0');
         trace_buf.rd_addr  <= (others => '0');
       end if;
 
