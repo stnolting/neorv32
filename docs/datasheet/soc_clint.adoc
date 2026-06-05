@@ -18,7 +18,7 @@
 
 **Key Features**
 
-* Compatible to the RISC-V CLINT specification
+* Compatible to the RISC-V ACLINT specification
 * Global 64-bit system time
 * Timer and software interrupts for each CPU core
 
@@ -27,10 +27,14 @@
 
 The core-local interruptor provides machine-level timer and software interrupts for a set of CPU cores ("harts").
 It is compatible to the original SiFive(R) CLINT specifications and it is also backwards-compatible to the RISC-V
-_Advanced Core Local Interruptor (ACLINT)_ specifications. In terms of the ACLINT spec the NEORV32 CLINT implements three
+_Advanced Core-Local Interruptor (ACLINT)_ specifications. In terms of the ACLINT spec the NEORV32 CLINT implements three
 _devices_ that are placed next to each other in the address space: an MTIMER including time-compares and an MSWI device.
 The CLINT can support up to 4095 harts. However, the NEORV32 CLINT is configured for up to two harts only.
 Hence, only the according registers are implemented while the remaining ones are hardwired to zero.
+
+.RISC-V ACLINT Specs.
+[TIP]
+The original RISC-V ACLINT specifications are available online at https://github.com/riscvarchive/riscv-aclint.
 
 
 **MTIMER Device**
