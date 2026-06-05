@@ -66,7 +66,7 @@ begin
       -- trap-entry detector: buffer trap entry until trace commit --
       arbiter.entry <= (arbiter.entry or ctrl_i.cpu_trap) and (not arbiter.valid);
       -- delta detector: buffer delta trigger until we are back in EXECUTE stage --
-      arbiter.delta <= (arbiter.delta or ctrl_i.cnt_event(cnt_event_ctrlflow_c)) and (not ctrl_i.cnt_event(cnt_event_ir_c));
+      arbiter.delta <= (arbiter.delta or ctrl_i.cnt_event(cnt_event_delta_c)) and (not ctrl_i.cnt_event(cnt_event_ir_c));
       -- instruction counter --
       if (arbiter.valid = '1') then
         arbiter.order <= std_ulogic_vector(unsigned(arbiter.order) + 1);
@@ -99,8 +99,8 @@ begin
       if (ctrl_i.cnt_event(cnt_event_ir_c) = '1') then
         trace_buf.mode  <= ctrl_i.cpu_priv & ctrl_i.cpu_priv;
         trace_buf.debug <= ctrl_i.cpu_debug;
-        trace_buf.compr <= ctrl_i.cnt_event(cnt_event_compr_c);
-        if (ctrl_i.cnt_event(cnt_event_compr_c) = '1') then
+        trace_buf.compr <= ctrl_i.cnt_event(cnt_event_ci_c);
+        if (ctrl_i.cnt_event(cnt_event_ci_c) = '1') then
           trace_buf.insn <= x"0000" & ctrl_i.ir_rvc;
         else
           trace_buf.insn <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
@@ -587,7 +587,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_tdata1_c         => return "tdata1";
       when csr_tdata2_c         => return "tdata2";
       when csr_tinfo_c          => return "tinfo";
-      -- debug registers --
+      -- debug-mode registers --
       when csr_dcsr_c           => return "dcsr";
       when csr_dpc_c            => return "dpc";
       when csr_dscratch0_c      => return "dscratch0";
