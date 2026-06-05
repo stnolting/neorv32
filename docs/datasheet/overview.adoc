@@ -356,3 +356,25 @@ https://github.com/stnolting/neorv32-riscv-act.
 [TIP]
 Executing instructions or accessing CSRs from unsupported ISA extensions will raise a precise illegal
 instruction exception allowing full software emulation (see section <<_full_virtualization>>).
+
+
+// ####################################################################################################################
+:sectnums:
+=== RISC-V Documentation
+
+The ratified RISC-V specifications (ISA specs, frameworks, ABI, etc.) are available online at riscv.org:
+
+* **https://docs.riscv.org/reference/home**
+
+Additional resources and specs currently under development are available on GitHub:
+
+* ISA Specifications: https://github.com/riscv)
+* Non-ISA Specifications: https://github.com/riscv-non-isa
+* RISC-V Software: https://github.com/riscv-software-src
+
+Elementary software references:
+
+* RISC-V C API: https://github.com/riscv-non-isa/riscv-c-api-doc
+* RISC-V ELF psABI: https://github.com/riscv-non-isa/riscv-elf-psabi-doc
+
+

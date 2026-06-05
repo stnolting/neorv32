@@ -54,10 +54,9 @@ This chapter gives a brief overview of all available ISA extensions.
 |=======================
 
 .RISC-V ISA Specification
-[TIP]
-For more information regarding the RISC-V ISA extensions please refer to the "RISC-V Instruction Set Manual - Volume
-I: Unprivileged ISA" and "The RISC-V Instruction Set Manual Volume II: Privileged Architecture". A copy of these
-documents can be found in the projects `docs/references` folder.
+[NOTE]
+For more information regarding the RISC-V ISA extensions please refer to the official specification at riscv.org:
+https://docs.riscv.org/reference/home/
 
 .Discovering ISA Extensions
 [TIP]

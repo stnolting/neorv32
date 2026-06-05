@@ -3,7 +3,8 @@
 == On-Chip Debugger (OCD)
 
 The NEORV32 Processor features an _on-chip debugger_ (OCD) compatible to the **Minimal RISC-V Debug Specification**
-implementing the **execution-based debugging** scheme. A copy of the specification is available in `docs/references`.
+implementing the **execution-based debugging** scheme (https://docs.riscv.org/reference/debug/index.html).
+
 The on-chip debugger is implemented if the <<_processor_top_entity_generics, `OCD_EN`>> processor top generic is set
 to `true`. Optionally, a up to 16 hardware triggers can be implemented (<<_sdtrig_isa_extension>>) to support
 hardware-assisted break- and watchpoints. Furthermore, the OCD supports an optional <<_debug_authentication>>
@@ -145,11 +146,6 @@ For example, with semihosting you can
 [TIP]
 A simple semihosting example program can be found in `sw/example/demo_semihosting`.
 
-.RISC-V Semihosting Specification
-[NOTE]
-A copy of the implemented RISC-V semihosting specification is available in the
-documentation references folder: `docs/references/riscv-semihosting.pdf`
-
 The RISC-V semihosting builds upon the ARM standard. Hence, semihosting has to be **explicitly enabled** on the host
 side (in `GDB`) using the ARM command set:
 
@@ -195,6 +191,7 @@ If any semihosting request is issued without a host being connected, an environm
 Further references:
 
 * A great overview: https://interrupt.memfault.com/blog/arm-semihosting
+* RISC-V semihosting spec.: https://docs.riscv.org/reference/semihosting/index.html
 * Implementing semihosting on RISC-V: https://embeddedinn.com/articles/tutorial/understanding-riscv-semihosting/
 * Description of the service calls by ARM: https://developer.arm.com/documentation/dui0203/j/semihosting/semihosting-operations?lang=en
 
