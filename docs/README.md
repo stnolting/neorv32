@@ -11,12 +11,16 @@
 AsciiDoc sources for the NEORV32 data sheet. The online version of the data sheet is
 available at [https://stnolting.github.io/neorv32](https://stnolting.github.io/neorv32).
 
+Build the HTML data sheet with `neorv32/docs$ make html` and open `neorv32/docs/public/index.html`.
+
 ### > [`figures`](figures)
 
 Images used by the data sheet, user guide and the GitHub pages. The according
-license(s) are listed in `license.md`.
+licenses are listed in `figures/license.md`.
 
 ### > [`userguide`](userguide)
 
 AsciiDoc sources for the NEORV32 user guide. The online version of the user guide is
 available at [https://stnolting.github.io/neorv32/ug](https://stnolting.github.io/neorv32/ug).
+
+Build the HTML user guide with `neorv32/docs$ make ug-html` and open `neorv32/docs/public/ug/index.html`.
