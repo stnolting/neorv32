@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 05.06.2026 | 1.13.1.6 | :warning: rework hardware performance counter (HPM) events | [#1569](https://github.com/stnolting/neorv32/pull/1569) |
 | 05.06.2026 | 1.13.1.5 | :bug: minor rtl fixes: fix trace port's RD register signal; fix `Smcntrpmf`'s *cfg CSR address decoding | [#1568](https://github.com/stnolting/neorv32/pull/1568) |
 | 04.06.2026 | 1.13.1.4 | minor rtl edits and cleanups | [#1565](https://github.com/stnolting/neorv32/pull/1565) |
 | 27.05.2026 | 1.13.1.3 | add option to configure start of uncached address space | [#1561](https://github.com/stnolting/neorv32/pull/1561) |
