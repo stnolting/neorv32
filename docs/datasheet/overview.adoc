@@ -119,7 +119,6 @@ neorv32                   - Project home folder
 ├─ docs                   - Documentation
 │  ├─ datasheet           - AsciiDoc sources for the NEORV32 data sheet
 │  ├─ figures             - Figures and logos
-│  ├─ references          - Data sheets and RISC-V specs
 │  └─ userguide           - AsciiDoc sources for the NEORV32 user guide
 │
 ├─ rtl                    - HDL sources
