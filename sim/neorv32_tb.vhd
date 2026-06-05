@@ -194,7 +194,7 @@ begin
 
       -- reset CPU --
       wait for 10*t_cpu_c;
-      report "[TB:JTAG] Resetting and halting CPU-0...";
+      report "[TB:JTAG] Resetting SoC and halting CPU-0...";
       dmi_read(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
       tmp_v := tmp_v or x"00000002"; -- set ndmreset (bit 1)
       dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0010000", tmp_v); -- dmcontrol
