@@ -701,25 +701,21 @@ Note that all `mhpmevent*h` (hogh-word) event-select registers are hardwired to 
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C]                | R/W | Event Description
-4+^| **NEORV32-specific**
-| 10  | `HPMCNT_EVENT_WAIT_LSU` | r/w | memory/bus/cache/etc. delay/wait cycle while executing any load or store operation (caused by a data bus wait cycle))
-| 9   | `HPMCNT_EVENT_STORE`    | r/w | executed store operation (read-modify-write AMOs are counted as one load and one store operation)
-| 8   | `HPMCNT_EVENT_LOAD`     | r/w | executed load operation (read-modify-write AMOs are counted as one load and one store operation)
-| 7   | `HPMCNT_EVENT_CTRLFLOW` | r/w | control flow transfer (jump, taken branch, trap entry, trap exit)
-| 6   | `HPMCNT_EVENT_BRANCH`   | r/w | executed branch instruction (unconditional, conditional-taken or conditional-not-taken)
-| 5   | `HPMCNT_EVENT_WAIT_ALU` | r/w | delay/wait cycle caused by a _multi-cycle_ <<_cpu_arithmetic_logic_unit>> operation
-| 4   | `HPMCNT_EVENT_WAIT_DIS` | r/w | instruction dispatch wait cycle (wait for instruction prefetch-buffer refill); caused by a fence instruction, a control flow transfer or a instruction fetch bus wait cycle)
-| 3   | `HPMCNT_EVENT_COMPR`    | r/w | executed 16-bit/compressed (<<_c_isa_extension>>) instruction
-4+^| **RISC-V-compatible**
-| 2   | `HPMCNT_EVENT_IR`       | r/w | executed instruction (16-bit/compressed or 32-bit/uncompressed)
-| 1   | `HPMCNT_EVENT_TM`       | r/- | _not implemented_, hardwired to zero
+| 8   | `HPMCNT_EVENT_STORE`    | r/w | memory store operation (read-modify-write AMOs are counted as 1x load + 1x store operation)
+| 7   | `HPMCNT_EVENT_LOAD`     | r/w | memory load operation (read-modify-write AMOs are counted as 1x load + 1x store operation)
+| 6   | `HPMCNT_EVENT_DELTA`    | r/w | control flow transfer (jump, taken branch, trap entry/exit)
+| 5   | `HPMCNT_EVENT_WAIT_LSU` | r/w | memory/bus/cache/etc. delay/wait cycle while executing any load or store operation (caused by a data bus wait cycle))
+| 4   | `HPMCNT_EVENT_WAIT_ALU` | r/w | delay/wait cycle caused by a _multi-cycle_ <<_cpu_arithmetic_logic_unit>> operation (e.g. bit-serial shift)
+| 3   | `HPMCNT_EVENT_WAIT_DIS` | r/w | instruction dispatch wait cycle (wait for instruction prefetch-buffer refill); caused by a fence instruction, a control flow transfer or a instruction fetch bus wait cycle (e.g. cache miss)
+| 2   | `HPMCNT_EVENT_CI`       | r/w | executed 16-bit/compressed (<<_c_isa_extension>>) instruction
+| 1   | `HPMCNT_EVENT_IR`       | r/w | executed instruction (16-bit/compressed or 32-bit/uncompressed)
 | 0   | `HPMCNT_EVENT_CY`       | r/w | active clock cycle (CPU not in <<_sleep_mode>>)
 |=======================
 
 .Instruction Retiring ("Retired == Executed")
 [IMPORTANT]
 The CPU HPM/counter logic treats all executed instruction as "retired" even if they raise an exception,
-cause an interrupt, trigger a privilege mode change or were not meant to retire (i.e. claimed by the RISC-V spec.).
+are intercepted by an interrupt, trigger a privilege mode change or were not meant to retire (i.e. claimed by the RISC-V spec.).
 
 .Atomic Memory Access
 [NOTE]
