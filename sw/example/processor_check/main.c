@@ -242,14 +242,13 @@ int main() {
   if (num_hpm_cnts_global != 0) {
     cnt_test++;
 
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT3,  1 << HPMCNT_EVENT_COMPR);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER4,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT4,  1 << HPMCNT_EVENT_WAIT_DIS);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT5,  1 << HPMCNT_EVENT_WAIT_ALU);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT6,  1 << HPMCNT_EVENT_BRANCH);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT7,  1 << HPMCNT_EVENT_CTRLFLOW);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT8,  1 << HPMCNT_EVENT_LOAD);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9,  0); neorv32_cpu_csr_write(CSR_MHPMEVENT9,  1 << HPMCNT_EVENT_STORE);
-    neorv32_cpu_csr_write(CSR_MHPMCOUNTER10, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT10, 1 << HPMCNT_EVENT_WAIT_LSU);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER3, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT3, 1 << HPMCNT_EVENT_CI);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER4, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT4, 1 << HPMCNT_EVENT_WAIT_DIS);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER5, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT5, 1 << HPMCNT_EVENT_WAIT_ALU);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER6, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT6, 1 << HPMCNT_EVENT_WAIT_LSU);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER7, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT7, 1 << HPMCNT_EVENT_DELTA);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER8, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT8, 1 << HPMCNT_EVENT_LOAD);
+    neorv32_cpu_csr_write(CSR_MHPMCOUNTER9, 0); neorv32_cpu_csr_write(CSR_MHPMEVENT9, 1 << HPMCNT_EVENT_STORE);
 
     // make sure there was no exception
     if (neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c) {
@@ -2457,32 +2456,34 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // HPM reports
+  // counter reports
   // ----------------------------------------------------------
-  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all HPM counters
+  neorv32_cpu_csr_write(CSR_MCOUNTINHIBIT, -1); // stop all counters
+  PRINT("\n\nBase Counters & HPMs\n");
+  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZICNTR)) {
+    PRINT(
+      "[CY]   Clock cycles : %u\n"
+      "[IR]   Instructions : %u\n",
+      neorv32_cpu_csr_read(CSR_CYCLE),
+      neorv32_cpu_csr_read(CSR_INSTRET)
+    );
+  }
   if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIHPM)) {
     PRINT(
-      "\n\nHPMs:\n"
-      "#00 clock cycles  : %u\n"
-      "#02 instructions  : %u\n"
-      "#03 compr. instr. : %u\n"
-      "#04 DISP waits    : %u\n"
-      "#05 ALU waits     : %u\n"
-      "#06 branch instr. : %u\n"
-      "#07 control flow  : %u\n"
-      "#08 MEM loads     : %u\n"
-      "#09 MEM stores    : %u\n"
-      "#10 MEM waits     : %u\n",
-      neorv32_cpu_csr_read(CSR_CYCLE),
-      neorv32_cpu_csr_read(CSR_INSTRET),
+      "[HPM3] Compressed   : %u\n"
+      "[HPM4] DISP waits   : %u\n"
+      "[HPM5] ALU waits    : %u\n"
+      "[HPM6] LSU waits    : %u\n"
+      "[HPM7] Deltas       : %u\n"
+      "[HPM8] Loads        : %u\n"
+      "[HPM9] Stores       : %u\n",
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER3),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER4),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER5),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER6),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER7),
       neorv32_cpu_csr_read(CSR_MHPMCOUNTER8),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER9),
-      neorv32_cpu_csr_read(CSR_MHPMCOUNTER10)
+      neorv32_cpu_csr_read(CSR_MHPMCOUNTER9)
     );
   }
 

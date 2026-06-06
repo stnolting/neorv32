@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130105"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130106"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -531,7 +531,7 @@ package neorv32_package is
   constant csr_tdata2_c         : std_ulogic_vector(11 downto 0) := x"7a2";
   constant csr_tdata3_c         : std_ulogic_vector(11 downto 0) := x"7a3";
   constant csr_tinfo_c          : std_ulogic_vector(11 downto 0) := x"7a4";
-  -- debug registers --
+  -- debug-mode registers --
   constant csr_dcsr_c           : std_ulogic_vector(11 downto 0) := x"7b0";
   constant csr_dpc_c            : std_ulogic_vector(11 downto 0) := x"7b1";
   constant csr_dscratch0_c      : std_ulogic_vector(11 downto 0) := x"7b2";
@@ -718,7 +718,7 @@ package neorv32_package is
     csr_addr     : std_ulogic_vector(11 downto 0); -- address
     csr_wdata    : std_ulogic_vector(31 downto 0); -- write data
     -- counter events --
-    cnt_event    : std_ulogic_vector(10 downto 0); -- counter increment events
+    cnt_event    : std_ulogic_vector(8 downto 0);  -- counter increment events
     -- instruction word --
     ir_funct3    : std_ulogic_vector(2 downto 0);  -- funct3 bit field
     ir_funct12   : std_ulogic_vector(11 downto 0); -- funct12 bit field
@@ -889,19 +889,16 @@ package neorv32_package is
 
   -- Counter Events -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  -- RISC-V-compliant base counter events --
-  constant cnt_event_cy_c       : natural := 0;  -- active cycle
-  constant cnt_event_tm_c       : natural := 1;  -- time (unused/reserved)
-  constant cnt_event_ir_c       : natural := 2;  -- retired instruction
-  -- NEORV32-specific HPM counter events --
-  constant cnt_event_compr_c    : natural := 3;  -- executed compressed instruction
-  constant cnt_event_wait_dis_c : natural := 4;  -- instruction dispatch wait cycle
-  constant cnt_event_wait_alu_c : natural := 5;  -- multi-cycle ALU co-processor wait cycle
-  constant cnt_event_branch_c   : natural := 6;  -- executed branch instruction
-  constant cnt_event_ctrlflow_c : natural := 7;  -- control flow transfer
-  constant cnt_event_load_c     : natural := 8;  -- load operation
-  constant cnt_event_store_c    : natural := 9;  -- store operation
-  constant cnt_event_wait_lsu_c : natural := 10; -- load-store unit memory wait cycle
+  constant cnt_event_cy_c       : natural := 0; -- active cycle
+  constant cnt_event_ir_c       : natural := 1; -- retired instruction
+  constant cnt_event_ci_c       : natural := 2; -- executed compressed instruction
+  constant cnt_event_wait_dis_c : natural := 3; -- instruction dispatch wait cycle
+  constant cnt_event_wait_alu_c : natural := 4; -- multi-cycle ALU co-processor wait cycle
+  constant cnt_event_wait_lsu_c : natural := 5; -- load-store unit memory wait cycle
+  constant cnt_event_delta_c    : natural := 6; -- control flow transfer
+  constant cnt_event_load_c     : natural := 7; -- load operation
+  constant cnt_event_store_c    : natural := 8; -- store operation
+  constant cnt_event_width_c    : natural := 9; -- length of this list in bits
 
 -- **********************************************************************************************************
 -- Helper Functions

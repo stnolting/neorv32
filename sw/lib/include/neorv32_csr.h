@@ -294,7 +294,6 @@ enum NEORV32_CSR_enum {
   CSR_MXISAH         = 0xfc1  /**< 0xfc1 - mxisah: Machine extended ISA and extensions high word */
 };
 
-
 /**********************************************************************//**
  * fflags (fcsr)</b> CSR (r/w): FPU accrued exception flags
  **************************************************************************/
@@ -306,14 +305,13 @@ enum NEORV32_CSR_FFLAGS_enum {
   CSR_FFLAGS_NV = 4  /**< fflags CSR (4): NV - invalid operation (r/w) */
 };
 
-
 /**********************************************************************//**
  * mcountern CSR (r/w): Machine counter-enable register
  **************************************************************************/
 enum NEORV32_CSR_MCOUNTEREN_enum {
-  CSR_MCOUNTEREN_CY    = 0, /**< mcountern CSR  (0):  CY    - cycle counter (r/w) */
-  CSR_MCOUNTEREN_TM    = 1, /**< mcountern CSR  (1):  TM    - system time counter (r/w) */
-  CSR_MCOUNTEREN_IR    = 2, /**< mcountern CSR  (2):  IR    - instruction-retired counter (r/w) */
+  CSR_MCOUNTEREN_CY    = 0,  /**< mcountern CSR (0):  CY    - cycle counter (r/w) */
+  CSR_MCOUNTEREN_TM    = 1,  /**< mcountern CSR (1):  TM    - system time counter (r/w) */
+  CSR_MCOUNTEREN_IR    = 2,  /**< mcountern CSR (2):  IR    - instruction-retired counter (r/w) */
   CSR_MCOUNTEREN_HPM3  = 3,  /**< mcountern CSR (3):  HPM3  - hardware performance counter 3  (r/w) */
   CSR_MCOUNTEREN_HPM4  = 4,  /**< mcountern CSR (4):  HPM4  - hardware performance counter 4  (r/w) */
   CSR_MCOUNTEREN_HPM5  = 5,  /**< mcountern CSR (5):  HPM5  - hardware performance counter 5  (r/w) */
@@ -345,7 +343,6 @@ enum NEORV32_CSR_MCOUNTEREN_enum {
   CSR_MCOUNTEREN_HPM31 = 31  /**< mcountern CSR (31): HPM31 - hardware performance counter 31 (r/w) */
 };
 
-
 /**********************************************************************//**
  * mstatus CSR (r/w): Machine status - low word
  **************************************************************************/
@@ -357,7 +354,6 @@ enum NEORV32_CSR_MSTATUS_enum {
   CSR_MSTATUS_MPRV  = 17, /**< mstatus CSR (17): MPRV - Use MPP as effective privilege for M-mode load/stores when set (r/w) */
   CSR_MSTATUS_TW    = 21  /**< mstatus CSR (21): TW - Disallow execution of wfi instruction in user mode when set (r/w) */
 };
-
 
 /**********************************************************************//**
  * mcountinhibitCSR (r/w): Machine counter-inhibit
@@ -396,7 +392,6 @@ enum NEORV32_CSR_MCOUNTINHIBIT_enum {
   CSR_MCOUNTINHIBIT_HPM31 = 31  /**< mcountinhibit CSR (31): HPM31 - Enable auto-increment of hpmcnt31[h] when set (r/w) */
 };
 
-
 /**********************************************************************//**
  * mie CSR (r/w): Machine interrupt enable
  **************************************************************************/
@@ -422,7 +417,6 @@ enum NEORV32_CSR_MIE_enum {
   CSR_MIE_FIRQ14E = 30, /**< mie CSR (30): FIRQ14E - Fast interrupt channel 14 enable bit (r/w) */
   CSR_MIE_FIRQ15E = 31  /**< mie CSR (31): FIRQ15E - Fast interrupt channel 15 enable bit (r/w) */
 };
-
 
 /**********************************************************************//**
  * mip CSR (r/-): Machine interrupt pending
@@ -450,7 +444,6 @@ enum NEORV32_CSR_MIP_enum {
   CSR_MIP_FIRQ15P = 31  /**< mip CSR (31): FIRQ15P - Fast interrupt channel 15 pending (r/-) */
 };
 
-
 /**********************************************************************//**
  * misa CSR (r/-): Machine instruction set extensions
  **************************************************************************/
@@ -466,7 +459,6 @@ enum NEORV32_CSR_MISA_enum {
   CSR_MISA_MXL_LO = 30, /**< misa CSR (30): MXL.lo: CPU data width (r/-) */
   CSR_MISA_MXL_HI = 31  /**< misa CSR (31): MXL.Hi: CPU data width (r/-) */
 };
-
 
 /**********************************************************************//**
  * mxisa[h] CSR (r/-): Machine extended instruction set extensions (NEORV32-specific)
@@ -510,7 +502,6 @@ enum NEORV32_CSR_MXISAH_enum {
   CSR_MXISAH_ZBC = 0 /**< mxisah CSR (0): carry-less multiplication (r/-)*/
 };
 
-
 /**********************************************************************//**
  * mcyclecfgh CSR (r/w): Machine cycle counter privilege-mode filtering
  **************************************************************************/
@@ -518,7 +509,6 @@ enum NEORV32_CSR_MCYCLECFGH_enum {
   CSR_MCYCLECFGH_UINH = 28, /**< mcyclecfgh CSR (28): inhibit cycle counter when in user-mode when set (r/w) */
   CSR_MCYCLECFGH_MINH = 30  /**< mcyclecfgh CSR (30): inhibit cycle counter when in machine-mode when set (r/w) */
 };
-
 
 /**********************************************************************//**
  * minstretcfgh CSR (r/w): Machine instret counter privilege-mode filtering
@@ -528,24 +518,20 @@ enum NEORV32_CSR_MINSTRETCFGH_enum {
   CSR_MINSTRETCFGH_MINH = 30  /**< minstretcfgh CSR (30): inhibit instret counter when in machine-mode when set (r/w) */
 };
 
-
 /**********************************************************************//**
  * mhpmevent hardware performance monitor events
  **************************************************************************/
 enum NEORV32_HPMCNT_EVENT_enum {
-  HPMCNT_EVENT_CY       = 0, /**< mhpmevent CSR (0):  Active cycle */
-  HPMCNT_EVENT_TM       = 1, /**< mhpmevent CSR (1):  Reserved */
-  HPMCNT_EVENT_IR       = 2, /**< mhpmevent CSR (2):  Retired instruction */
-  HPMCNT_EVENT_COMPR    = 3, /**< mhpmevent CSR (3):  Executed compressed instruction */
-  HPMCNT_EVENT_WAIT_DIS = 4, /**< mhpmevent CSR (4):  Instruction dispatch wait cycle */
-  HPMCNT_EVENT_WAIT_ALU = 5, /**< mhpmevent CSR (5):  Multi-cycle ALU co-processor wait cycle */
-  HPMCNT_EVENT_BRANCH   = 6, /**< mhpmevent CSR (6):  Executed branch instruction */
-  HPMCNT_EVENT_CTRLFLOW = 7, /**< mhpmevent CSR (7):  Control flow transfer */
-  HPMCNT_EVENT_LOAD     = 8, /**< mhpmevent CSR (8):  Executed load operation */
-  HPMCNT_EVENT_STORE    = 9, /**< mhpmevent CSR (9):  Executed store operation */
-  HPMCNT_EVENT_WAIT_LSU = 10 /**< mhpmevent CSR (10): Load-store unit memory wait cycle */
+  HPMCNT_EVENT_CY       = 0, /**< mhpmevent CSR (0): Active cycle */
+  HPMCNT_EVENT_IR       = 1, /**< mhpmevent CSR (1): Retired instruction */
+  HPMCNT_EVENT_CI       = 2, /**< mhpmevent CSR (2): Compressed instruction */
+  HPMCNT_EVENT_WAIT_DIS = 3, /**< mhpmevent CSR (3): Instruction dispatch wait cycle */
+  HPMCNT_EVENT_WAIT_ALU = 4, /**< mhpmevent CSR (4): Multi-cycle ALU co-processor wait cycle */
+  HPMCNT_EVENT_WAIT_LSU = 5, /**< mhpmevent CSR (5): Load-store unit memory wait cycle */
+  HPMCNT_EVENT_DELTA    = 6, /**< mhpmevent CSR (6): Control flow transfer */
+  HPMCNT_EVENT_LOAD     = 7, /**< mhpmevent CSR (7): Memory load operation */
+  HPMCNT_EVENT_STORE    = 8  /**< mhpmevent CSR (8): Memory store operation */
 };
-
 
 /**********************************************************************//**
  * pmpcfg PMP configuration attributes
@@ -568,7 +554,6 @@ enum NEORV32_PMP_MODES_enum {
   PMP_NA4   = 2, /**< '10': Naturally-aligned power of two region (4 bytes) */
   PMP_NAPOT = 3  /**< '11': Naturally-aligned power of two region (greater than 4 bytes )*/
 };
-
 
 /**********************************************************************//**
  * Trap codes from mcause CSR
@@ -604,6 +589,5 @@ enum NEORV32_EXCEPTION_CODES_enum {
   TRAP_CODE_FIRQ_14      = 0x8000001eU, /**< 1.30: Fast interrupt channel 14 */
   TRAP_CODE_FIRQ_15      = 0x8000001fU  /**< 1.31: Fast interrupt channel 15 */
 };
-
 
 #endif // NEORV32_CSR_H
