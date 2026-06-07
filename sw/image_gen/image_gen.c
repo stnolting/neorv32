@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
   // --------------------------------------------------------------------------
 
   if ((input_file == NULL) || (output_file == NULL)) {
-    printf("[ERROR] No input/oupt file(s) specified!\n");
+    printf("[ERROR] No input/output file(s) specified!\n");
     return -2;
   }
 
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
 
   // binary size
   if (flat_bin_size <= 0) {
-    printf("[ERROR] Input file is empty (%s)!\n", input_file);
+    printf("[ERROR] Input file error (%s)!\n", input_file);
     fclose(input);
     fclose(output);
     return -2;
@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
   }
 
   // --------------------------------------------------------------------------
-  // executable plain-binary file
+  // plain-binary file
   // --------------------------------------------------------------------------
 
   else if (operation == OP_BIN) {
@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
   }
 
   // --------------------------------------------------------------------------
-  // executable plain hexdump file
+  // plain hex dump file
   // --------------------------------------------------------------------------
 
   else if (operation == OP_HEX) {
@@ -364,7 +364,7 @@ int main(int argc, char *argv[]) {
   }
 
   // --------------------------------------------------------------------------
-  // executable COE file
+  // COE file
   // --------------------------------------------------------------------------
 
   else if (operation == OP_COE) {
@@ -388,7 +388,7 @@ int main(int argc, char *argv[]) {
   }
 
   // --------------------------------------------------------------------------
-  // executable MEM file
+  // MEM file
   // --------------------------------------------------------------------------
 
   else if (operation == OP_MEM) {
@@ -402,7 +402,7 @@ int main(int argc, char *argv[]) {
   }
 
   // --------------------------------------------------------------------------
-  // executable MIF file
+  // MIF file
   // --------------------------------------------------------------------------
 
   else if (operation == OP_MIF) {
