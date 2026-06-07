@@ -319,12 +319,20 @@ int main(int argc, char *argv[]) {
 
     // data
     for (n = 0; n < (raw_exe_size/4); n++) {
-      fprintf(output, "x\"%08x\",\n", (unsigned int)read32(&raw_image[n*4]));
+      fprintf(output, "x\"%08x\"", (unsigned int)read32(&raw_image[n*4]));
+      if (n < (ext_exe_size/4) - 1) { // more entries?
+        fputc(',', output);
+      }
+      fputc('\n', output);
+    }
+
+    // "others" only if array is not fully occupied
+    if (raw_exe_size < ext_exe_size) {
+      fprintf(output, "others => (others => '0')\n");
     }
 
     // end
     fprintf(output,
-      "others => (others => '0')\n"
       ");\n"
       "\n"
       "end %s;\n", pkg_name);
