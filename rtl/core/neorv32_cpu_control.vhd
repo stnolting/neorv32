@@ -180,7 +180,7 @@ begin
   branch_check: process(exec, alu_cmp_i)
   begin
     if (exec.ir(instr_opcode_lsb_c+2) = '0') then -- conditional branch
-      if (exec.ir(instr_funct3_msb_c) = '0') then -- bge / bne
+      if (exec.ir(instr_funct3_msb_c) = '0') then -- beq / bne
         branch_taken <= alu_cmp_i(0) xor exec.ir(instr_funct3_lsb_c);
       else -- blt(u) / bge(u)
         branch_taken <= alu_cmp_i(1) xor exec.ir(instr_funct3_lsb_c);

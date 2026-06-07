@@ -83,7 +83,7 @@ entity neorv32_cpu is
     mtime_i    : in  std_ulogic_vector(63 downto 0); -- system time input from CLINT/MTIME
     trace_o    : out trace_port_t;                   -- execution trace port (enabled when CPU_TRACE_EN = true)
     sleep_o    : out std_ulogic;                     -- CPU is in sleep mode
-    fence_o    : out std_ulogic_vector(1 downto 0);  --
+    fence_o    : out std_ulogic_vector(1 downto 0);  -- memory ordering (cache clear/flush; I$:D$)
     -- interrupts --
     msi_i      : in  std_ulogic;                     -- RISC-V machine software interrupt
     mei_i      : in  std_ulogic;                     -- RISC-V machine external interrupt
