@@ -389,8 +389,13 @@ begin
 
           -- memory fence operations --
           when opcode_fence_c =>
-            ctrl_nxt.cpu_fence <= exec.ir(instr_funct3_lsb_c) & '1'; -- fence.i & fence; always flush D$ (so I$ gets updated data; #1540)
-            exec_nxt.state     <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC (actually only required for fence.i)
+            if (exec.ir(instr_funct3_lsb_c) = '1') then -- fence.i
+              ctrl_nxt.cpu_fence <= "11"; -- flush I$ & D$ (so I$ gets updated data; #1540)
+              exec_nxt.state     <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC
+            else -- fence
+              ctrl_nxt.cpu_fence <= '0' & or_reduce_f(exec.ir(31 downto 24)); -- flush D$ only if pred/succ != 0
+              exec_nxt.state     <= S_DISPATCH;
+            end if;
 
           -- FPU: floating-point operations --
           when opcode_fpu_c =>
