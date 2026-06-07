@@ -737,7 +737,7 @@ x"f1850513",
 x"e90ff0ef",
 x"fc102573",
 x"ff8ff0ef",
-x"03a00513",
+x"05f00513",
 x"e38ff0ef",
 x"fc002573",
 x"fe8ff0ef",
@@ -886,8 +886,8 @@ x"6f6c746f",
 x"72656461",
 x"6975620a",
 x"203a646c",
-x"2079614d",
-x"32203120",
+x"206e754a",
+x"32203720",
 x"0a363230",
 x"0000000a",
 x"6f747541",
@@ -1005,4 +1005,4 @@ x"46454443",
 others => (others => '0')
 );
 
-end neorv32_bootrom_image;
+end package neorv32_bootrom_image;
