@@ -1143,7 +1143,7 @@ package neorv32_package is
     );
   end component;
 
-end neorv32_package;
+end package neorv32_package;
 
 package body neorv32_package is
 
@@ -1290,4 +1290,4 @@ package body neorv32_package is
     return v;
   end function to_hexstring_f;
 
-end neorv32_package;
+end package body neorv32_package;
