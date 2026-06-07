@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
     fprintf(output,
       ");\n"
       "\n"
-      "end %s;\n", pkg_name);
+      "end package %s;\n", pkg_name);
 
     // report
     printf("Executable (VHD): %u bytes\n", raw_exe_size);
