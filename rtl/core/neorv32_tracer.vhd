@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -77,9 +77,8 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
   signal fifo : fifo_t;
 
   -- misc --
-  signal over_check : std_ulogic; -- FIFO overflow checker
-  signal over_trash : std_ulogic; -- discard data from trace buffer
-  signal trace_src  : trace_port_t; -- trace input stream
+  signal discard   : std_ulogic; -- discard data from trace buffer
+  signal trace_src : trace_port_t; -- trace input stream
 
 begin
 
@@ -233,25 +232,17 @@ begin
   fifo.clear <= not ctrl_en;
   fifo.we    <= arbiter.push;
   fifo.wdata <= arbiter.dst & arbiter.src;
-  fifo.re    <= '1' when (over_trash = '1') or
-                         ((bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3 downto 2) = "11")) else '0';
+  fifo.re    <= '1' when (discard = '1') or ((bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3 downto 2) = "11")) else '0';
 
   -- discard oldest entry if overflowing --
-  discard: process(rstn_i, clk_i)
+  fifo_overflow: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      over_check <= '0';
-      over_trash <= '0';
+      discard <= '0';
     elsif rising_edge(clk_i) then
-      if (over_check = '0') or (ctrl_en = '0') or (arbiter.run = '0') then
-        over_check <= not fifo.free;
-        over_trash <= '0';
-      else
-        over_check <= '0';
-        over_trash <= '1';
-      end if;
+      discard <= ctrl_en and arbiter.run and (not fifo.free);
     end if;
-  end process discard;
+  end process fifo_overflow;
 
 
   -- Simulation Trace Logging ---------------------------------------------------------------

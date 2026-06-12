@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -64,6 +64,9 @@ int main(void) {
 
   // clear output port
   neorv32_gpio_port_set(0x00000000);
+
+  // configure all GPIO pins as input; only relevant if the GPIO direction control feature is enabled
+  neorv32_gpio_dir_set(0);
 
   // configure CPU's GPIO controller interrupt
   neorv32_rte_handler_install(GPIO_TRAP_CODE, gpio_interrupt_handler); // install GPIO trap handler

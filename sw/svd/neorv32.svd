@@ -4,7 +4,7 @@
   <vendor>github.com/stnolting/neorv32</vendor>
   <name>neorv32</name>
   <series>RISC-V</series>
-  <version>1.12.8</version>
+  <version>1.13.1</version>
   <description>The NEORV32 RISC-V Processor</description>
 
   <!-- CPU core -->
@@ -802,7 +802,8 @@
               <name>UART_CTRL_RX_OVER</name>
               <bitRange>[30:30]</bitRange>
               <access>read-only</access>
-              <description>RX FIFO overflow</description>
+              <readAction>modify</readAction>
+              <description>RX FIFO overflow; clears on CTRL read access</description>
             </field>
             <field>
               <name>UART_CTRL_TX_BUSY</name>
@@ -1253,22 +1254,40 @@
               <description>Clear data FIFO when set (flag auto clears)</description>
             </field>
             <field>
-              <name>TRNG_CTRL_FIFO_SIZE</name>
-              <bitRange>[5:2]</bitRange>
-              <access>read-only</access>
-              <description>log2(TRNG FIFO size)</description>
-            </field>
-            <field>
               <name>TRNG_CTRL_SIM_MODE</name>
-              <bitRange>[6:6]</bitRange>
+              <bitRange>[2:2]</bitRange>
               <access>read-only</access>
               <description>TRNG simulation mode (PRNG!) active</description>
             </field>
             <field>
               <name>TRNG_CTRL_AVAIL</name>
-              <bitRange>[7:7]</bitRange>
+              <bitRange>[3:3]</bitRange>
               <access>read-only</access>
               <description>Random data available</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_FIFO</name>
+              <bitRange>[7:4]</bitRange>
+              <access>read-only</access>
+              <description>log2(TRNG FIFO depth)</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_NBIT</name>
+              <bitRange>[11:8]</bitRange>
+              <access>read-only</access>
+              <description>log2(number of raw bits) processed for one output byte</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_NRO</name>
+              <bitRange>[19:12]</bitRange>
+              <access>read-only</access>
+              <description>Total number of ring-oscillators</description>
+            </field>
+            <field>
+              <name>TRNG_CTRL_NINV</name>
+              <bitRange>[31:20]</bitRange>
+              <access>read-only</access>
+              <description>Number of inverters in first ring-oscillator</description>
             </field>
           </fields>
         </register>
@@ -1376,6 +1395,11 @@
           <name>PORT_OUT</name>
           <description>Parallel output port</description>
           <addressOffset>0x04</addressOffset>
+        </register>
+        <register>
+          <name>PORT_DIR</name>
+          <description>Port direction configuration: 0 = input, 1 = output</description>
+          <addressOffset>0x08</addressOffset>
         </register>
         <register>
           <name>IRQ_TYPE</name>
@@ -1661,12 +1685,11 @@
           <addressOffset>0x0C</addressOffset>
           <access>read-only</access>
           <fields>
-            <field><name>SYSINFO_CACHE_INST_BLOCK_SIZE</name><bitRange>[3:0]</bitRange><description>i-cache: log2(Block size in bytes)</description></field>
-            <field><name>SYSINFO_CACHE_INST_NUM_BLOCKS</name><bitRange>[7:4]</bitRange><description>i-cache: log2(Number of cache blocks)</description></field>
-            <field><name>SYSINFO_CACHE_DATA_BLOCK_SIZE</name><bitRange>[11:8]</bitRange><description>d-cache: log2(Block size in bytes)</description></field>
-            <field><name>SYSINFO_CACHE_DATA_NUM_BLOCKS</name><bitRange>[15:12]</bitRange><description>d-cache: log2(Number of cache blocks)</description></field>
-            <field><name>SYSINFO_CACHE_INST_BURSTS_EN</name><bitRange>[16:16]</bitRange><description>i-cache: burst transfers enabled</description></field>
-            <field><name>SYSINFO_CACHE_DATA_BURSTS_EN</name><bitRange>[24:24]</bitRange><description>d-cache: burst transfers enabled</description></field>
+            <field><name>SYSINFO_CACHE_BLOCK_SIZE</name><bitRange>[3:0]</bitRange><description>log2(Block size in bytes)</description></field>
+            <field><name>SYSINFO_CACHE_I_NUM_BLOCKS</name><bitRange>[7:4]</bitRange><description>log2(Number of i-cache blocks)</description></field>
+            <field><name>SYSINFO_CACHE_D_NUM_BLOCKS</name><bitRange>[11:8]</bitRange><description>log2(Number of d-cache blocks)</description></field>
+            <field><name>YSINFO_CACHE_UC_BEGIN</name><bitRange>[15:12]</bitRange><description>start of uncache address space (256MB page)</description></field>
+            <field><name>SYSINFO_CACHE_BURSTS_EN</name><bitRange>[16:16]</bitRange><description>burst transfers enabled</description></field>
           </fields>
         </register>
       </registers>

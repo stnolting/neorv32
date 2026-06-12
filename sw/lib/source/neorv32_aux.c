@@ -17,7 +17,7 @@
 /**********************************************************************//**
  * Simple delay function using busy-wait.
  *
- * @warning Timing is imprecise! Use CLINT.MTIME or CYCLE CSRs for precise timing.
+ * @warning Timing is imprecise! Use TIME or CYCLE CSRs for precise timing.
  *
  * @param[in] clock_hz CPU clock speed in Hz.
  * @param[in] time_ms Time in ms to wait (unsigned 32-bit).
@@ -170,7 +170,7 @@ void neorv32_aux_unixtime2date(uint64_t unixtime, date_t* date) {
 
 
 /**********************************************************************//**
- * Helper function to convert up to 16 hex chars string into uint64_t
+ * Helper function to convert a string of up to 16 hex chars into uint64_t.
  *
  * @param[in,out] buffer Pointer to array of chars to convert into number.
  * @param[in] length Length of the conversion string.
@@ -358,39 +358,41 @@ void neorv32_aux_print_hw_config(void) {
   }
 
   // CPU sub-extensions
-  tmp = neorv32_cpu_csr_read(CSR_MXISA);
-  if (tmp & (1<<CSR_MXISA_ZAAMO))     { neorv32_uart0_printf("Zaamo ");     }
-  if (tmp & (1<<CSR_MXISA_ZALRSC))    { neorv32_uart0_printf("Zalrsc ");    }
-  if (tmp & (1<<CSR_MXISA_ZCA))       { neorv32_uart0_printf("Zca ");       }
-  if (tmp & (1<<CSR_MXISA_ZCB))       { neorv32_uart0_printf("Zcb ");       }
-  if (tmp & (1<<CSR_MXISA_ZBA))       { neorv32_uart0_printf("Zba ");       }
-  if (tmp & (1<<CSR_MXISA_ZBB))       { neorv32_uart0_printf("Zbb ");       }
-  if (tmp & (1<<CSR_MXISA_ZBKB))      { neorv32_uart0_printf("Zbkb ");      }
-  if (tmp & (1<<CSR_MXISA_ZBKC))      { neorv32_uart0_printf("Zbkc ");      }
-  if (tmp & (1<<CSR_MXISA_ZBKX))      { neorv32_uart0_printf("Zbkx ");      }
-  if (tmp & (1<<CSR_MXISA_ZBS))       { neorv32_uart0_printf("Zbs ");       }
-  if (tmp & (1<<CSR_MXISA_ZFINX))     { neorv32_uart0_printf("Zfinx ");     }
-  if (tmp & (1<<CSR_MXISA_ZIBI))      { neorv32_uart0_printf("Zibi ");      }
-  if (tmp & (1<<CSR_MXISA_ZICNTR))    { neorv32_uart0_printf("Zicntr ");    }
-  if (tmp & (1<<CSR_MXISA_ZICOND))    { neorv32_uart0_printf("Zicond ");    }
-  if (tmp & (1<<CSR_MXISA_ZICSR))     { neorv32_uart0_printf("Zicsr ");     }
-  if (tmp & (1<<CSR_MXISA_ZIFENCEI))  { neorv32_uart0_printf("Zifencei ");  }
-  if (tmp & (1<<CSR_MXISA_ZIHPM))     { neorv32_uart0_printf("Zihpm ");     }
-  if (tmp & (1<<CSR_MXISA_ZIMOP))     { neorv32_uart0_printf("Zimop ");     }
-  if (tmp & (1<<CSR_MXISA_ZKN))       { neorv32_uart0_printf("Zkn ");       }
-  if (tmp & (1<<CSR_MXISA_ZKND))      { neorv32_uart0_printf("Zknd ");      }
-  if (tmp & (1<<CSR_MXISA_ZKNE))      { neorv32_uart0_printf("Zkne ");      }
-  if (tmp & (1<<CSR_MXISA_ZKNH))      { neorv32_uart0_printf("Zknh ");      }
-  if (tmp & (1<<CSR_MXISA_ZKS))       { neorv32_uart0_printf("Zks ");       }
-  if (tmp & (1<<CSR_MXISA_ZKSED))     { neorv32_uart0_printf("Zksed ");     }
-  if (tmp & (1<<CSR_MXISA_ZKSH))      { neorv32_uart0_printf("Zksh ");      }
-  if (tmp & (1<<CSR_MXISA_ZKT))       { neorv32_uart0_printf("Zkt ");       }
-  if (tmp & (1<<CSR_MXISA_ZMMUL))     { neorv32_uart0_printf("Zmmul ");     }
-  if (tmp & (1<<CSR_MXISA_SDEXT))     { neorv32_uart0_printf("Sdext ");     }
-  if (tmp & (1<<CSR_MXISA_SDTRIG))    { neorv32_uart0_printf("Sdtrig ");    }
-  if (tmp & (1<<CSR_MXISA_SMCNTRPMF)) { neorv32_uart0_printf("Smcntrpmf "); }
-  if (tmp & (1<<CSR_MXISA_SMPMP))     { neorv32_uart0_printf("Smpmp ");     }
-  if (tmp & (1<<CSR_MXISA_XCFU))      { neorv32_uart0_printf("Xcfu ");      }
+  uint32_t mxisa  = neorv32_cpu_csr_read(CSR_MXISA);
+  uint32_t mxisah = neorv32_cpu_csr_read(CSR_MXISAH);
+  if (mxisa  & (1<<CSR_MXISA_ZAAMO))     { neorv32_uart0_printf("Zaamo ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZALRSC))    { neorv32_uart0_printf("Zalrsc ");    }
+  if (mxisa  & (1<<CSR_MXISA_ZCA))       { neorv32_uart0_printf("Zca ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZCB))       { neorv32_uart0_printf("Zcb ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZBA))       { neorv32_uart0_printf("Zba ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZBB))       { neorv32_uart0_printf("Zbb ");       }
+  if (mxisah & (1<<CSR_MXISAH_ZBC))      { neorv32_uart0_printf("Zbc ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZBKB))      { neorv32_uart0_printf("Zbkb ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZBKC))      { neorv32_uart0_printf("Zbkc ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZBKX))      { neorv32_uart0_printf("Zbkx ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZBS))       { neorv32_uart0_printf("Zbs ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZFINX))     { neorv32_uart0_printf("Zfinx ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZIBI))      { neorv32_uart0_printf("Zibi ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZICNTR))    { neorv32_uart0_printf("Zicntr ");    }
+  if (mxisa  & (1<<CSR_MXISA_ZICOND))    { neorv32_uart0_printf("Zicond ");    }
+  if (mxisa  & (1<<CSR_MXISA_ZICSR))     { neorv32_uart0_printf("Zicsr ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZIFENCEI))  { neorv32_uart0_printf("Zifencei ");  }
+  if (mxisa  & (1<<CSR_MXISA_ZIHPM))     { neorv32_uart0_printf("Zihpm ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZIMOP))     { neorv32_uart0_printf("Zimop ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZKN))       { neorv32_uart0_printf("Zkn ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZKND))      { neorv32_uart0_printf("Zknd ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZKNE))      { neorv32_uart0_printf("Zkne ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZKNH))      { neorv32_uart0_printf("Zknh ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZKS))       { neorv32_uart0_printf("Zks ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZKSED))     { neorv32_uart0_printf("Zksed ");     }
+  if (mxisa  & (1<<CSR_MXISA_ZKSH))      { neorv32_uart0_printf("Zksh ");      }
+  if (mxisa  & (1<<CSR_MXISA_ZKT))       { neorv32_uart0_printf("Zkt ");       }
+  if (mxisa  & (1<<CSR_MXISA_ZMMUL))     { neorv32_uart0_printf("Zmmul ");     }
+  if (mxisa  & (1<<CSR_MXISA_SDEXT))     { neorv32_uart0_printf("Sdext ");     }
+  if (mxisa  & (1<<CSR_MXISA_SDTRIG))    { neorv32_uart0_printf("Sdtrig ");    }
+  if (mxisa  & (1<<CSR_MXISA_SMCNTRPMF)) { neorv32_uart0_printf("Smcntrpmf "); }
+  if (mxisa  & (1<<CSR_MXISA_SMPMP))     { neorv32_uart0_printf("Smpmp ");     }
+  if (mxisa  & (1<<CSR_MXISA_XCFU))      { neorv32_uart0_printf("Xcfu ");      }
 
   // check physical memory protection
   neorv32_uart0_printf("\nPhys. Memory Prot.:  ");
@@ -457,48 +459,48 @@ void neorv32_aux_print_hw_config(void) {
     neorv32_uart0_printf("none\n");
   }
 
-  // CPU i-cache
+
+  // CPU caches
+  uint32_t c_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_BLOCK_SIZE_0) & 0x0F;
+  c_block_size = 1 << c_block_size;
+
+  uint32_t ic_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_I_NUM_BLOCKS_0) & 0x0F;
+  ic_num_blocks = 1 << ic_num_blocks;
+
+  uint32_t dc_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_D_NUM_BLOCKS_0) & 0x0F;
+  dc_num_blocks = 1 << dc_num_blocks;
+
+  uint32_t uncached_beg = ((NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_UC_BEGIN_0) & 0x0F) << 28;
+  uint32_t uncached_end = 0xFFFFFFFF;
+
   neorv32_uart0_printf("CPU I-cache:         ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_ICACHE)) {
-
-    uint32_t ic_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_INST_BLOCK_SIZE_0) & 0x0F;
-    ic_block_size = 1 << ic_block_size;
-
-    uint32_t ic_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_INST_NUM_BLOCKS_0) & 0x0F;
-    ic_num_blocks = 1 << ic_num_blocks;
-
-    neorv32_uart0_printf("%u bytes (%ux%u)", ic_num_blocks*ic_block_size, ic_num_blocks, ic_block_size);
+    neorv32_uart0_printf("%u bytes (%ux%u)", ic_num_blocks*c_block_size, ic_num_blocks, c_block_size);
+    if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_BURSTS_EN)) {
+      neorv32_uart0_printf(", bursts enabled");
+    }
+    else {
+      neorv32_uart0_printf(", no bursts");
+    }
+    neorv32_uart0_printf(", uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
   }
   else {
     neorv32_uart0_printf("none");
   }
-  if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_INST_BURSTS_EN)) {
-    neorv32_uart0_printf(", bursts enabled\n");
-  }
-  else {
-    neorv32_uart0_printf("\n");
-  }
 
-  // CPU d-cache
   neorv32_uart0_printf("CPU D-cache:         ");
   if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_DCACHE)) {
-
-    uint32_t dc_block_size = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_DATA_BLOCK_SIZE_0) & 0x0F;
-    dc_block_size = 1 << dc_block_size;
-
-    uint32_t dc_num_blocks = (NEORV32_SYSINFO->CACHE >> SYSINFO_CACHE_DATA_NUM_BLOCKS_0) & 0x0F;
-    dc_num_blocks = 1 << dc_num_blocks;
-
-    neorv32_uart0_printf("%u bytes (%ux%u)", dc_num_blocks*dc_block_size, dc_num_blocks, dc_block_size);
+    neorv32_uart0_printf("%u bytes (%ux%u)", dc_num_blocks*c_block_size, dc_num_blocks, c_block_size);
+    if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_BURSTS_EN)) {
+      neorv32_uart0_printf(", bursts enabled");
+    }
+    else {
+      neorv32_uart0_printf(", no bursts");
+    }
+    neorv32_uart0_printf(", uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
   }
   else {
     neorv32_uart0_printf("none");
-  }
-  if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_DATA_BURSTS_EN)) {
-    neorv32_uart0_printf(", bursts enabled\n");
-  }
-  else {
-    neorv32_uart0_printf("\n");
   }
 
   // external bus interface
@@ -510,7 +512,7 @@ void neorv32_aux_print_hw_config(void) {
   else {
     neorv32_uart0_printf("none");
   }
-  if (NEORV32_SYSINFO->CACHE & ((1 << SYSINFO_CACHE_INST_BURSTS_EN) | (1 << SYSINFO_CACHE_DATA_BURSTS_EN))) {
+  if (NEORV32_SYSINFO->CACHE & (1 << SYSINFO_CACHE_BURSTS_EN)) {
     neorv32_uart0_printf(", bursts enabled\n");
   }
   else {

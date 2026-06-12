@@ -46,9 +46,10 @@ data in _raw_ byte mode without any protocol overhead (e.g. XMODEM). Note that s
 with transmitting files larger than 4kB (see https://github.com/stnolting/neorv32/pull/215).
 **For Windows I can recommend TeraTerm (GUI) and SimplySerial (Window terminal). For Linux I can recommend `picocom`.**
 
-By default the bootloader uses the LSB of the top entity's GPIO output port (`gpio_o(0)`) for an high-active
-status LED. All other output pins are set to low. After reset, the status LED will start blinking at 2Hz and the
-<<_auto_boot_sequence>> is started. This auto-boot sequence can be skipped within 8s by pressing any key.
+By default the bootloader uses the LSB of the GPIO output port (`gpio_o(0)`) for a high-active status LED.
+If the GPIO's direction control feature is implemented, only pin 0 is configured as output; the remaining pins
+are configured as inputs. All other output pins are set to low. After reset, the status LED will start blinking
+at 2Hz and the <<_auto_boot_sequence>> is started. This auto-boot sequence can be skipped within 8s by pressing any key.
 
 .Default Bootloader Console
 [source]
@@ -116,7 +117,7 @@ CMD:> i
 HWV:  0x01120101 <1>
 CLK:  0x05f5e100 <2>
 MISA: 0x40901107 <3>
-XISA: 0x0fc06fd3 <4>
+XISA: 0x00000000:0x0fc06fd3 <4>
 SOC:  0x38efc87b <5>
 MISC: 0x0a010d00 <6>
 CMD:>
@@ -124,7 +125,7 @@ CMD:>
 <1> Processor hardware version in BCD format (<<_mimpid>> CSR).
 <2> Processor clock speed in Hz (`CLK` register of <<_system_configuration_information_memory_sysinfo>>.
 <3> RISC-V CPU extensions (<<_misa>> CSR).
-<4> NEORV32-specific CPU extensions (<<_mxisa>> CSR).
+<4> Additional RISC-V CPU (sub-)extensions (high & low words of <<_mxisah>> CSRs).
 <5> Processor configuration (`SOC` register of <<_system_configuration_information_memory_sysinfo>>.
 <6> Miscellaneous memory and SoC configuration (`MISC` register of <<_system_configuration_information_memory_sysinfo>>.
 
@@ -291,6 +292,8 @@ overridden by Makefile directives.
 [options="header", grid="rows"]
 |=======================
 | Parameter | Default | Legal values | Description
+4+<| **Additional includes**
+| -                       | - | - | Add further `#include` statements right at the beginning of the file.
 4+<| **Serial console** - requires <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>
 | `UART_EN`               | `1`     | `0,1` | Set to `1` to enable the serial console.
 | `UART_BAUD`             | `19200` | any   | Baud rate of UART0.
@@ -298,12 +301,12 @@ overridden by Makefile directives.
 | `UART_HWFC`             | `0`     | `0,1` | Enable RTS/CTS hardware flow control. Recommended for very high baud rates / high memory latency.
 4+<| **Status LED** - requires <<_general_purpose_input_and_output_port_gpio>>
 | `STATUS_LED_EN`         | `1` | `0,1`   | Enable bootloader status led ("heart beat") at `GPIO` output port pin `STATUS_LED_PIN` when `1`.
-| `STATUS_LED_PIN`        | `0` | `0..31` | `GPIO` output pin used for the high-active status LED.
+| `STATUS_LED_PIN`        | `0` | `0..31` | `GPIO` output pin used for the high-active status LED. Note that if the GPIO module's direction control feature is enabled only this pin is configured as output.
 4+<| **Auto-boot** - requires <<_core_local_interruptor_clint>>
 | `AUTO_BOOT_EN`          | `1`  | `0,1` | Auto-boot enabled when `1`.
 | `AUTO_BOOT_TIMEOUT`     | `8`  | any   | Timeout in seconds after which the auto-boot sequence starts (if there is no UART input by the user).
 4+<| **TWI flash** - requires <<_two_wire_serial_interface_controller_twi>>
-| `TWI_FLASH_EN`          | `1`             | `0,1`     | Set to `1` to enable the SPI flash (boot) options.
+| `TWI_FLASH_EN`          | `0`             | `0,1`     | Set to `1` to enable the TWI flash (boot) options.
 | `TWI_FLASH_PROG_EN`     | `1`             | `0,1`     | Set to `1` to enable programming the TWI flash from the bootloader menu.
 | `TWI_FLASH_CLK_PRSC`    | `CLK_PRSC_1024` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | TWI clock prescaler.
 | `TWI_FLASH_CLK_DIV`     | `0`             | `0..15`   | TWI clock divider value.
@@ -311,7 +314,7 @@ overridden by Makefile directives.
 | `TWI_FLASH_BASE_ADDR`   | `0x00000000`    | 32-bit    | Defines the TWI flash base address for the executable.
 | `TWI_FLASH_ADDR_BYTES`  | `2`             | `1,2,3,4` | Number of TWI flash address bytes.
 4+<| **SPI flash** - requires <<_serial_peripheral_interface_controller_spi>>
-| `SPI_FLASH_EN`          | `1`           | `0,1`     | Set to `1` to enable the TWI flash (boot) options.
+| `SPI_FLASH_EN`          | `1`           | `0,1`     | Set to `1` to enable the SPI flash (boot) options.
 | `SPI_FLASH_PROG_EN`     | `1`           | `0,1`     | Set to `1` to enable programming the SPI flash from the bootloader menu.
 | `SPI_FLASH_CS`          | `0`           | `0..7`    | SPI chip select line (port `spi_csn_o`) for selecting the SPI flash.
 | `SPI_FLASH_CLK_PRSC`    | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock prescaler.
@@ -325,9 +328,11 @@ overridden by Makefile directives.
 | `SPI_SDCARD_CLK_PRSC`   | `CLK_PRSC_64` | `CLK_PRSC_2` `CLK_PRSC_4` `CLK_PRSC_8` `CLK_PRSC_64` `CLK_PRSC_128` `CLK_PRSC_1024` `CLK_PRSC_2024` `CLK_PRSC_4096` | SPI clock prescaler.
 | `SPI_SDCARD_CLK_DIV`    | `0`           | `0..15`        | SPI clock divider value.
 | `SPI_SDCARD_FILE`       | `"boot.bin"`  | 8.3 DOS format | File name of the boot image. Has to be located in the root directory.
-4+<| **Branding** - for text printed via serial console
+4+<| **Branding**
 | `THEME_INTRO`           | `"NEORV32 Bootloader"` | any string | Intro text that is shown in the bootloader console.
 | `THEME_EXE`             | `"neorv32_exe.bin"`    | any string | Name of executable that is shown in the upload menu.
+4+<| **Custom Code**
+| `USER_CODE_INIT`        | `(void)0` (_empty statement_) | any code | User-defined initialization code (wrapped in a macro) that is executed right after the bootloader's hardware initialization.
 4+<| **Miscellaneous**
 | `DEFAULT_EXE_ADDR`      | `0x00000000` | 32-bit | Default base address of executable; can be used to directly execute from main memory.
 |=======================
@@ -348,6 +353,6 @@ This can be caused by a temporary transmission error or by an invalid or corrupt
 | **`ERROR_CHECKSUM`**  | The checksum of the loaded executable is incorrect. This can be caused by a temporary transmission
 error or by an invalid or corrupted executable.
 | **`ERROR_EXCEPTION`** | An unexpected exception has occurred. This can be caused by an invalid bootloader configuration (non-available
-processor modules, memory layout, ...). For debugging purpose the error message will also display the content of the <<_mcause>>, <<_mepc>>,
-<<_mtinst>> and <<_mtval>> CSRs. Example: `ERROR_EXCEPTION 0x00000003 0xffe00cb4 0x00100073 0x00000000`
+processor modules, memory layout, ...). For debugging purpose the error message will also display the content of the <<_mcause>>, <<_mepc>>
+and <<_mtval>> CSRs. Example: `ERROR_EXCEPTION 0x00000003 0xffe00cb4 0x00000000`
 |=======================

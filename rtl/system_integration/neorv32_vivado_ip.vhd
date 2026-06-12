@@ -2,8 +2,8 @@
 -- NEORV32 - Processor Wrapper with AXI4 & AXI4-Stream Compatible Interfaces        --
 -- -------------------------------------------------------------------------------- --
 -- Dedicated for IP packaging/integration using AMD Vivado.                         --
--- Use the provided TCL script to automatically package this as IP module:          --
--- Vivado TCL console: > source neorv32_vivado_ip.tcl                               --
+-- Use the provided TCL script to automatically package this as IP module: navigate --
+-- to this file and run "source neorv32_vivado_ip.tcl" in the Vivado TCL console.   --
 -- See the NEORV32 Datasheet and User Guide for more information.                   --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
@@ -45,6 +45,7 @@ entity neorv32_vivado_ip is
     RISCV_ISA_Zalrsc      : boolean                        := false;
     RISCV_ISA_Zba         : boolean                        := false;
     RISCV_ISA_Zbb         : boolean                        := false;
+    RISCV_ISA_Zbc         : boolean                        := false;
     RISCV_ISA_Zbkb        : boolean                        := false;
     RISCV_ISA_Zbkc        : boolean                        := false;
     RISCV_ISA_Zbkx        : boolean                        := false;
@@ -75,14 +76,14 @@ entity neorv32_vivado_ip is
     PMP_TOR_MODE_EN       : boolean                        := false;
     PMP_NAP_MODE_EN       : boolean                        := false;
     -- Hardware Performance Monitors (HPM) --
-    HPM_NUM_CNTS          : natural range 0 to 13          := 0;
-    HPM_CNT_WIDTH         : natural range 0 to 64          := 40;
-    -- Internal Instruction memory --
+    HPM_NUM_CNTS          : natural range 0 to 29          := 0;
+    HPM_CNT_WIDTH         : natural range 0 to 64          := 64;
+    -- Internal Instruction Memory (IMEM) --
     IMEM_EN               : boolean                        := false;
     IMEM_BASE             : std_ulogic_vector(31 downto 0) := x"00000000";
     IMEM_SIZE             : natural                        := 16384;
     IMEM_OUTREG_EN        : boolean                        := false;
-    -- Internal Data memory --
+    -- Internal Data MEmory (DMEM) --
     DMEM_EN               : boolean                        := false;
     DMEM_BASE             : std_ulogic_vector(31 downto 0) := x"80000000";
     DMEM_SIZE             : natural                        := 8192;
@@ -94,49 +95,69 @@ entity neorv32_vivado_ip is
     DCACHE_NUM_BLOCKS     : natural range 1 to 4096        := 4;
     CACHE_BLOCK_SIZE      : natural range 4 to 1024        := 64;
     CACHE_BURSTS_EN       : boolean                        := true;
-    -- External Bus Interface --
+    CACHE_UC_BASE         : std_ulogic_vector(31 downto 0) := x"F0000000";
+    -- External Bus Interface (XBUS) --
     XBUS_EN               : boolean                        := false;
     XBUS_TIMEOUT          : natural                        := 2048;
     XBUS_REGSTAGE_EN      : boolean                        := false;
-    -- Processor peripherals --
+    -- General-Purpose Input/Output Controller (GPIO) --
     IO_GPIO_EN            : boolean                        := false;
     IO_GPIO_IN_NUM        : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
     IO_GPIO_OUT_NUM       : natural range 1 to 32          := 1;
+    IO_GPIO_DIR_EN        : boolean                        := false;
+    IO_GPIO_DIR_NUM       : natural range 1 to 32          := 1;
+    -- RISC-V Core-Local Interruptor (CLINT) --
     IO_CLINT_EN           : boolean                        := false;
+    -- Universal Asynchronous Receiver/Transmitter (UART0/UART1) --
     IO_UART0_EN           : boolean                        := false;
     IO_UART0_RX_FIFO      : natural range 1 to 2**15       := 1;
     IO_UART0_TX_FIFO      : natural range 1 to 2**15       := 1;
     IO_UART1_EN           : boolean                        := false;
     IO_UART1_RX_FIFO      : natural range 1 to 2**15       := 1;
     IO_UART1_TX_FIFO      : natural range 1 to 2**15       := 1;
+    -- Serial Peripheral Interface (SPI Host, SDI Device) --
     IO_SPI_EN             : boolean                        := false;
     IO_SPI_FIFO           : natural range 1 to 2**15       := 1;
     IO_SDI_EN             : boolean                        := false;
     IO_SDI_FIFO           : natural range 1 to 2**15       := 1;
+    -- Two-Wire Interface (TWI Host, TWD Device) --
     IO_TWI_EN             : boolean                        := false;
     IO_TWI_FIFO           : natural range 1 to 2**15       := 1;
     IO_TWD_EN             : boolean                        := false;
     IO_TWD_RX_FIFO        : natural range 1 to 2**15       := 1;
     IO_TWD_TX_FIFO        : natural range 1 to 2**15       := 1;
+    -- Pulse-Width Modulation Controller (PWM) --
     IO_PWM_EN             : boolean                        := false;
     IO_PWM_NUM            : natural range 1 to 32          := 1; -- variable-sized ports must be at least 0 downto 0; #974
+    -- Watchdog Timer (WDT) --
     IO_WDT_EN             : boolean                        := false;
+    -- True-Random Number Generator (TRNG) --
     IO_TRNG_EN            : boolean                        := false;
     IO_TRNG_FIFO          : natural range 1 to 2**15       := 1;
+    IO_TRNG_NUM_RO        : natural range 1 to 255         := 3;
+    IO_TRNG_NUM_INV       : natural range 3 to 4095        := 5;
+    IO_TRNG_NUM_RBIT      : natural range 8 to 4096        := 64;
+    -- Custom Functions Subsystem (CFS) --
     IO_CFS_EN             : boolean                        := false;
+    -- Smart LED interface (NEOLED) --
     IO_NEOLED_EN          : boolean                        := false;
     IO_NEOLED_TX_FIFO     : natural range 1 to 2**15       := 1;
+    -- General-Purpose Timer (GPTMR) --
     IO_GPTMR_EN           : boolean                        := false;
     IO_GPTMR_NUM          : natural range 1 to 16          := 1;
+    -- 1-Wire Interface (ONEWIRE) --
     IO_ONEWIRE_EN         : boolean                        := false;
+    -- Direct Memory Access Controller (DMA) --
     IO_DMA_EN             : boolean                        := false;
     IO_DMA_DSC_FIFO       : natural range 4 to 512         := 4;
+    -- Stream Link Interface (SLINK) --
     IO_SLINK_EN           : boolean                        := false;
     IO_SLINK_RX_FIFO      : natural range 1 to 2**15       := 1;
     IO_SLINK_TX_FIFO      : natural range 1 to 2**15       := 1;
+    -- Instruction Tracer (TRACER) --
     IO_TRACER_EN          : boolean                        := false;
-    IO_TRACER_BUFFER      : natural range 1 to 2**15       := 1
-
+    IO_TRACER_BUFFER      : natural range 1 to 2**15       := 1;
+    IO_TRACER_SIMLOG_EN   : boolean                        := false
   );
   port (
     -- ------------------------------------------------------------
@@ -214,6 +235,7 @@ entity neorv32_vivado_ip is
     -- Processor IO
     -- ------------------------------------------------------------
     -- GPIO (available if IO_GPIO_IN/OUT_NUM > 0) --
+    gpio_dir_o     : out std_logic_vector(IO_GPIO_DIR_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     gpio_o         : out std_logic_vector(IO_GPIO_OUT_NUM-1 downto 0); -- variable-sized ports must be at least 0 downto 0; #974
     gpio_i         : in  std_logic_vector(IO_GPIO_IN_NUM-1 downto 0) := (others => '0'); -- variable-sized ports must be at least 0 downto 0; #974
     -- primary UART0 (available if IO_UART0_EN = true) --
@@ -349,7 +371,7 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal mtime_time_aux : std_ulogic_vector(63 downto 0);
 
   -- constrained size ports --
-  signal gpio_o_aux, gpio_i_aux, pwm_o_aux : std_ulogic_vector(31 downto 0);
+  signal gpio_dir_o_aux, gpio_o_aux, gpio_i_aux, pwm_o_aux : std_ulogic_vector(31 downto 0);
 
   -- internal xbus --
   signal xbus_req : xbus_req_t;
@@ -381,6 +403,7 @@ begin
     RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
     RISCV_ISA_Zba       => RISCV_ISA_Zba,
     RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
+    RISCV_ISA_Zbc       => RISCV_ISA_Zbc,
     RISCV_ISA_Zbkb      => RISCV_ISA_Zbkb,
     RISCV_ISA_Zbkc      => RISCV_ISA_Zbkc,
     RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,
@@ -430,44 +453,63 @@ begin
     DCACHE_NUM_BLOCKS   => DCACHE_NUM_BLOCKS,
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
     CACHE_BURSTS_EN     => burst_en_c,
-    -- External bus interface --
+    -- External Bus Interface (XBUS) --
     XBUS_EN             => XBUS_EN,
     XBUS_TIMEOUT        => XBUS_TIMEOUT,
     XBUS_REGSTAGE_EN    => XBUS_REGSTAGE_EN,
-    -- Processor peripherals --
+    -- General-Purpose Input/Output Controller --
     IO_GPIO_NUM         => num_gpio_c,
+    IO_GPIO_DIR_EN      => IO_GPIO_DIR_EN,
+    -- RISC-V Core-Local Interruptor --
     IO_CLINT_EN         => IO_CLINT_EN,
     IO_UART0_EN         => IO_UART0_EN,
+    -- Universal Asynchronous Receiver/Transmitter --
     IO_UART0_RX_FIFO    => IO_UART0_RX_FIFO,
     IO_UART0_TX_FIFO    => IO_UART0_TX_FIFO,
     IO_UART1_EN         => IO_UART1_EN,
     IO_UART1_RX_FIFO    => IO_UART1_RX_FIFO,
     IO_UART1_TX_FIFO    => IO_UART1_TX_FIFO,
+    -- Serial Peripheral Interface (Host / Device) --
     IO_SPI_EN           => IO_SPI_EN,
     IO_SPI_FIFO         => IO_SPI_FIFO,
     IO_SDI_EN           => IO_SDI_EN,
     IO_SDI_FIFO         => IO_SDI_FIFO,
+    -- Two-Wire Interface (Host / Device) --
     IO_TWI_EN           => IO_TWI_EN,
     IO_TWI_FIFO         => IO_TWI_FIFO,
     IO_TWD_EN           => IO_TWD_EN,
     IO_TWD_RX_FIFO      => IO_TWD_RX_FIFO,
     IO_TWD_TX_FIFO      => IO_TWD_TX_FIFO,
+    -- Pulse-Width Modulation Controller --
     IO_PWM_NUM          => num_pwm_c,
+    -- Watchdog Timer --
     IO_WDT_EN           => IO_WDT_EN,
+    -- True-Random Number Generator --
     IO_TRNG_EN          => IO_TRNG_EN,
     IO_TRNG_FIFO        => IO_TRNG_FIFO,
+    IO_TRNG_NUM_RO      => IO_TRNG_NUM_RO,
+    IO_TRNG_NUM_INV     => IO_TRNG_NUM_INV,
+    IO_TRNG_NUM_RBIT    => IO_TRNG_NUM_RBIT,
+    -- Custom Functions Subsystem --
     IO_CFS_EN           => IO_CFS_EN,
+    -- Smart LED interface --
     IO_NEOLED_EN        => IO_NEOLED_EN,
     IO_NEOLED_TX_FIFO   => IO_NEOLED_TX_FIFO,
+    -- General-Purpose Timer --
     IO_GPTMR_NUM        => num_gptmr_c,
+    -- 1-Wire Interface --
     IO_ONEWIRE_EN       => IO_ONEWIRE_EN,
+    -- Direct Memory Access Controller --
     IO_DMA_EN           => IO_DMA_EN,
     IO_DMA_DSC_FIFO     => IO_DMA_DSC_FIFO,
+    -- Stream Link Interface --
     IO_SLINK_EN         => IO_SLINK_EN,
     IO_SLINK_RX_FIFO    => IO_SLINK_RX_FIFO,
     IO_SLINK_TX_FIFO    => IO_SLINK_TX_FIFO,
+    -- Instruction Tracer --
     IO_TRACER_EN        => IO_TRACER_EN,
-    IO_TRACER_BUFFER    => IO_TRACER_BUFFER
+    IO_TRACER_BUFFER    => IO_TRACER_BUFFER,
+    IO_TRACER_SIMLOG_EN => IO_TRACER_SIMLOG_EN
   )
   port map (
     -- Global control --
@@ -504,6 +546,7 @@ begin
     slink_tx_lst_o => s0_axis_tlast_aux,
     slink_tx_rdy_i => std_ulogic(s0_axis_tready),
     -- GPIO (available if IO_GPIO_NUM > 0) --
+    gpio_dir_o     => gpio_dir_o_aux,
     gpio_o         => gpio_o_aux,
     gpio_i         => gpio_i_aux,
     -- primary UART0 (available if IO_UART0_EN = true) --
@@ -593,7 +636,7 @@ begin
   mtime_time_o <= std_logic_vector(mtime_time_aux);
 
 
-  -- Type Conversion (Constrained-Size Ports) -----------------------------------------------
+  -- Mapping for Constrained-Size Ports -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
 
   -- GPIO input --
@@ -609,6 +652,12 @@ begin
   gpio_out_mapping:
   for i in 0 to IO_GPIO_OUT_NUM-1 generate
     gpio_o(i) <= std_logic(gpio_o_aux(i));
+  end generate;
+
+  -- GPIO direction --
+  gpio_dir_mapping:
+  for i in 0 to IO_GPIO_DIR_NUM-1 generate
+    gpio_dir_o(i) <= std_logic(gpio_dir_o_aux(i));
   end generate;
 
   -- PWM --

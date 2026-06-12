@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -34,6 +34,7 @@ entity neorv32_sysinfo is
     DCACHE_NUM_BLOCKS : natural; -- d-cache: number of blocks (min 2), has to be a power of 2
     CACHE_BLOCK_SIZE  : natural; -- i-cache/d-cache: block size in bytes (min 4), has to be a power of 2
     CACHE_BURSTS_EN   : boolean; -- i-cache/d-cache: enable issuing of burst transfer for cache update
+    CACHE_UC_BASE     : std_ulogic_vector(3 downto 0); -- start of uncached address space (256MB page)
     XBUS_EN           : boolean; -- implement external memory bus interface
     OCD_EN            : boolean; -- implement OCD
     OCD_AUTH          : boolean; -- implement OCD authenticator
@@ -143,17 +144,12 @@ begin
 
   -- SYSINFO(3): Cache Configuration --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  sysinfo(3)(3 downto 0)   <= std_ulogic_vector(to_unsigned(log2_c_bsize_c, 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(block_size_in_bytes)
-  sysinfo(3)(7 downto 4)   <= std_ulogic_vector(to_unsigned(log2_ic_bnum_c, 4)) when ICACHE_EN else (others => '0'); -- i-cache: log2(number_of_block)
-  --
-  sysinfo(3)(11 downto 8)  <= std_ulogic_vector(to_unsigned(log2_c_bsize_c, 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(block_size)
-  sysinfo(3)(15 downto 12) <= std_ulogic_vector(to_unsigned(log2_dc_bnum_c, 4)) when DCACHE_EN else (others => '0'); -- d-cache: log2(num_blocks)
-  --
-  sysinfo(3)(16) <= '1' when (ICACHE_EN and CACHE_BURSTS_EN) else '0'; -- i-cache: enable burst transfers
-  sysinfo(3)(23 downto 17) <= (others => '0'); -- reserved
-  --
-  sysinfo(3)(24) <= '1' when (DCACHE_EN and CACHE_BURSTS_EN) else '0'; -- d-cache: enable burst transfers
-  sysinfo(3)(31 downto 25) <= (others => '0'); -- reserved
+  sysinfo(3)(3 downto 0)   <= std_ulogic_vector(to_unsigned(log2_c_bsize_c, 4)) when ICACHE_EN or DCACHE_EN else (others => '0'); -- I$/D$ log2(block_size)
+  sysinfo(3)(7 downto 4)   <= std_ulogic_vector(to_unsigned(log2_ic_bnum_c, 4)) when ICACHE_EN else (others => '0'); -- I$ log2(number_of_blocks)
+  sysinfo(3)(11 downto 8)  <= std_ulogic_vector(to_unsigned(log2_dc_bnum_c, 4)) when DCACHE_EN else (others => '0'); -- D$ log2(number_of_blocks)
+  sysinfo(3)(15 downto 12) <= CACHE_UC_BASE when ICACHE_EN or DCACHE_EN else (others => '0'); -- start of non-cached address space (256MB page)
+  sysinfo(3)(16)           <= '1' when CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN) else '0'; -- burst transfers enabled
+  sysinfo(3)(31 downto 17) <= (others => '0'); -- reserved
 
   -- Bus Response ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

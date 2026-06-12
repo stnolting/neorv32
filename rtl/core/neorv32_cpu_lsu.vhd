@@ -17,7 +17,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_lsu is
   generic (
-    HART_ID : natural; -- hardware thread ID
+    HART_ID : natural range 0 to 1; -- hardware thread ID
     AMO_EN  : boolean  -- enable atomic memory accesses
   );
   port (
@@ -134,18 +134,10 @@ begin
     end if;
   end process mem_do_reg;
 
-  -- direct output --
-  req.burst <= '0'; -- only non-burst/single-accesses
-  req.fence <= ctrl_i.lsu_fence;
-
-  -- access request (all source signals are driven by registers) --
-  req.stb <= ctrl_i.lsu_req and (not misalign) and (not pmp_fault_i);
-
-  -- output bus request --
-  dbus_req_o <= req;
-
-  -- address feedback for MTVAL CSR --
-  mar_o <= req.addr;
+  req.burst  <= '0'; -- only non-burst/single-accesses
+  req.stb    <= ctrl_i.lsu_req and (not misalign) and (not pmp_fault_i); -- access request (all source signals are driven by registers)
+  dbus_req_o <= req; -- output bus request
+  mar_o      <= req.addr; -- address feedback for MTVAL CSR
 
 
   -- Response -------------------------------------------------------------------------------

@@ -1,8 +1,7 @@
 -- ================================================================================ --
 -- NEORV32 SoC - XBUS to AXI4-Compatible Bridge                                     --
 -- -------------------------------------------------------------------------------- --
--- This bridge supports single read/write transfers and read-bursts.                --
--- [IMPORTANT] Write-bursts are not supported yet!                                  --
+-- Supported transfers: Single Transfers + Incrementing Address Bursts.             --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -74,19 +73,20 @@ end entity;
 
 architecture xbus2axi4_bridge_rtl of xbus2axi4_bridge is
 
+  constant blen_c : std_ulogic_vector(7 downto 0) := std_ulogic_vector(to_unsigned((BURST_LEN/4)-1, 8));
+  signal arvalid, awvalid, wvalid, wb_ack, xbus_rd_ack, xbus_rd_err, xbus_wr_ack, xbus_wr_err : std_ulogic;
   signal state : std_ulogic_vector(1 downto 0);
-  signal arvalid, awvalid, wvalid, xbus_rd_ack, xbus_rd_err, xbus_wr_ack, xbus_wr_err : std_ulogic;
-  constant blen_c : std_logic_vector(7 downto 0) := std_logic_vector(to_unsigned((BURST_LEN/4)-1, 8));
 
 begin
 
-  -- AXI arbiter --
+  -- AXI transfer arbiter --
   arbiter: process(resetn, clk)
   begin
     if (resetn = '0') then
       arvalid <= '0';
       awvalid <= '0';
       wvalid  <= '0';
+      wb_ack  <= '0';
       state   <= (others => '0');
     elsif rising_edge(clk) then
       -- AXI handshake --
@@ -94,40 +94,42 @@ begin
       awvalid <= awvalid and std_ulogic(not m_axi_awready);
       wvalid  <= wvalid  and std_ulogic(not m_axi_wready);
       -- state machine --
+      wb_ack <= '0';
       case state is
 
         when "00" => -- idle; wait for access request
         -- ------------------------------------------------------------
-          arvalid <= '0';
-          awvalid <= '0';
-          wvalid  <= '0';
-          if (xbus_stb_i = '1') then -- access request
-            if BURST_EN and (xbus_cti_i = "010") then -- incrementing address burst access
-              arvalid <= '1'; -- read-only!
-              state   <= "10";
-            else -- single access (read/write)
-              arvalid <= not xbus_we_i;
-              awvalid <= xbus_we_i;
-              wvalid  <= xbus_we_i;
-              state   <= "01";
+          arvalid <= xbus_stb_i and (not xbus_we_i);
+          awvalid <= xbus_stb_i and xbus_we_i;
+          wvalid  <= xbus_stb_i and xbus_we_i;
+          if (xbus_stb_i = '1') then
+            if (xbus_cti_i = "000") then -- single transfer
+              state <= "01";
+            elsif BURST_EN and (xbus_cti_i = "010") then -- incrementing address burst
+              state <= '1' & xbus_we_i;
             end if;
           end if;
 
-        when "01" => -- single read/write transfer in progress
+        when "01" => -- single transfer in progress
         -- ------------------------------------------------------------
           if (m_axi_rvalid = '1') or (m_axi_bvalid = '1') then
-            state <= (others => '0');
+            state <= "00";
           end if;
 
-        when "10" => -- burst read transfer in progress
+        when "10" | "11" => -- burst transfer in progress
         -- ------------------------------------------------------------
-          if (BURST_EN = false) or (xbus_cti_i = "000") then -- burst completed by host
-            state <= (others => '0');
+          if (state(0) = '1') and BURST_EN then
+            if (wvalid = '1') or ((xbus_cti_i = "010") and (xbus_stb_i = '1')) then
+              wb_ack <= '1'; -- issue BURST_LEN-1 local ACKs during write-burst
+            end if;
+          end if;
+          if (xbus_cti_i = "000") or (BURST_EN = false) then
+            state <= "00";
           end if;
 
         when others => -- undefined
         -- ------------------------------------------------------------
-          state <= (others => '0');
+          state <= "00";
 
       end case;
     end if;
@@ -135,7 +137,7 @@ begin
 
   -- AXI read address channel --
   m_axi_araddr  <= std_logic_vector(xbus_adr_i);
-  m_axi_arlen   <= blen_c when BURST_EN and (state(1) = '1') else (others => '0'); -- burst length
+  m_axi_arlen   <= std_logic_vector(blen_c) when BURST_EN and (state(1) = '1') else (others => '0'); -- burst length
   m_axi_arsize  <= "010"; -- 4 bytes per transfer
   m_axi_arburst <= "01"; -- incrementing bursts only
   m_axi_arcache <= "0011"; -- recommended by Vivado
@@ -150,7 +152,7 @@ begin
 
   -- AXI write address channel --
   m_axi_awaddr  <= std_logic_vector(xbus_adr_i);
-  m_axi_awlen   <= (others => '0'); -- burst length = 1
+  m_axi_awlen   <= std_logic_vector(blen_c) when BURST_EN and (state(1) = '1') else (others => '0'); -- burst length
   m_axi_awsize  <= "010"; -- 4 bytes per transfer
   m_axi_awburst <= "01"; -- incrementing bursts only
   m_axi_awcache <= "0011"; -- recommended by Vivado
@@ -160,8 +162,8 @@ begin
   -- AXI write data channel --
   m_axi_wdata   <= std_logic_vector(xbus_dat_i);
   m_axi_wstrb   <= std_logic_vector(xbus_sel_i);
-  m_axi_wlast   <= '1'; -- single transfers only; so this is also the last word
-  m_axi_wvalid  <= std_logic(wvalid);
+  m_axi_wlast   <= '1' when (xbus_cti_i = "000") else '0'; -- last word of transfer
+  m_axi_wvalid  <= '1' when (wvalid = '1') or (BURST_EN and (state = "11") and (xbus_stb_i = '1')) else '0';
 
   -- AXI write response channel --
   m_axi_bready  <= '1'; -- always ready for write response
@@ -169,7 +171,7 @@ begin
   xbus_wr_err   <= '1' when (m_axi_bvalid = '1') and (m_axi_bresp(1) = '1') else '0'; -- SLVERR(10)/DECERR(11)
 
   -- XBUS response --
-  xbus_ack_o    <= xbus_rd_ack or xbus_wr_ack;
-  xbus_err_o    <= xbus_rd_err or xbus_wr_err;
+  xbus_ack_o    <= '1' when BURST_EN and (wb_ack = '1') else (xbus_rd_ack or xbus_wr_ack);
+  xbus_err_o    <= '0' when BURST_EN and (wb_ack = '1') else (xbus_rd_err or xbus_wr_err);
 
 end architecture;

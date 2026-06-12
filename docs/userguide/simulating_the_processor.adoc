@@ -21,11 +21,6 @@ ensure that all application images (`*_image.vhd`) are reanalyzed when recompili
 :sectnums:
 === Testbench
 
-.VUnit Testbench
-[TIP]
-A more sophisticated testbench using **VUnit** is available in a separate repository:
-https://github.com/stnolting/neorv32-vunit
-
 A plain-VHDL testbench without any third-party libraries / dependencies (`sim/neorv32_tb.vhd`) can be used for simulating
 and testing the processor and all its configurations. This testbench features clock and reset generators and enables all
 optional peripheral and CPU extensions. The processor check program (`sw/example/processor_check`) is develop in close

@@ -30,34 +30,41 @@
 
 
 /**********************************************************************//**
- * @name Define macros for easy CFU instruction wrapping
+ * @name Define XTEA CFU instruction based on the intrinsic templates
  **************************************************************************/
 /**@{*/
-#define xtea_key_write(i, data)     neorv32_cfu_i_instr(0b001, i, data)
-#define xtea_key_read(i)            neorv32_cfu_i_instr(0b000, i, 0   )
-#define xtea_hw_init(sum)           neorv32_cfu_r_instr(0b0000000, 0b100, sum, 0 )
-#define xtea_hw_enc_v0_step(v0, v1) neorv32_cfu_r_instr(0b0000000, 0b000, v0,  v1)
-#define xtea_hw_enc_v1_step(v0, v1) neorv32_cfu_r_instr(0b0000000, 0b001, v0,  v1)
-#define xtea_hw_dec_v0_step(v0, v1) neorv32_cfu_r_instr(0b0000000, 0b010, v0,  v1)
-#define xtea_hw_dec_v1_step(v0, v1) neorv32_cfu_r_instr(0b0000000, 0b011, v0,  v1)
-#define xtea_hw_illegal_inst()      neorv32_cfu_r_instr(0b0000000, 0b111, 0,   0 )
+#define xtea_key_write(i, k)        RISCV_INSTR_I_TYPE(RISCV_OPCODE_CUSTOM1, 0b001, k, i)
+#define xtea_key_read(i)            RISCV_INSTR_I_TYPE(RISCV_OPCODE_CUSTOM1, 0b000, 0, i)
+#define xtea_hw_init(s)             RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b100, 0b0000000, s,  0 )
+#define xtea_hw_enc_v0_step(v0, v1) RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b000, 0b0000000, v0, v1)
+#define xtea_hw_enc_v1_step(v0, v1) RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b001, 0b0000000, v0, v1)
+#define xtea_hw_dec_v0_step(v0, v1) RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b010, 0b0000000, v0, v1)
+#define xtea_hw_dec_v1_step(v0, v1) RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b011, 0b0000000, v0, v1)
+#define xtea_hw_illegal_inst()      RISCV_INSTR_R_TYPE(RISCV_OPCODE_CUSTOM0, 0b111, 0b0000000, 0,  0 )
 /**@}*/
 
 /*
- * The CFU custom instructions can be used as plain C functions as they are simple "intrinsics".
- * There are two prototype primitives"for the CFU instructions (defined in sw/lib/include/neorv32_cfu.h):
+ * This is where the actual CFU instructions are defined. Based on the templates for generating custom
+ * RISC-V instructions, intrinsics are created that can be used just like regular C functions
+ * The instruction prototypes as well as the OPCODES available for the CFU are defined in
+ * "sw/lib/neorv32_intrinsics.h".
  *
- * > neorv32_cfu_r_instr(funct7, funct3, rs1, rs2) - for r-type CFU instructions (custom-0 opcode)
- * > neorv32_cfu_i_instr(funct3, imm12, rs1)       - for i-type CFU instructions (custom-1 opcode)
+ * So far, two RISC-V instruction formats are available: R-type instructions and I-type instructions.
  *
- * Each instance of these intrinsics is converted into a single 32-bit RISC-V instruction word
- * without any calling overhead.
+ * R-type instructions require 5 arguments:
+ * - opcode : The 7-bit OPCODE that identifies the instruction.
+ * - funct3 : A 3-bit immediate for function select.
+ * - funct7 : Another 7-bit immediate for function select.
+ * - rs1    : The 1st register source operand.
+ * - rs2    : The 2nd register source operand.
  *
- * The "rs*" source operands can be literals, variables, function return values, etc. The 7-bit
- * immediate ("funct7"), the 3-bit immediate ("funct3") and the 12-bit immediate ("imm12") values
- * can be used to pass compile-time static literals to the CFU or for fine-grained function selection.
+ * I-type instructions require 4 arguments:
+ * - opcode : The 7-bit OPCODE that identifies the instruction.
+ * - funct3 : A 3-bit immediate for function select.
+ * - rs1    : The 1st register source operand.
+ * - imm12  : A 12-bit immediate operand.
  *
- * Each "neorv32_cfu_*" intrinsic returns a 32-bit data word of type uint32_t that represents
+ * Each instruction returns a 32-bit data word of type uint32_t that represents
  * the processing result of the according instruction.
  */
 
@@ -162,7 +169,7 @@ int main() {
   neorv32_uart0_setup(BAUD_RATE, 0);
 
   // check if the CFU is implemented (the CFU is wrapped in the core's "Xcfu" ISA extension)
-  if (neorv32_cfu_available() == 0) {
+  if ((neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_XCFU)) == 0) {
     neorv32_uart0_printf("ERROR! CFU ('Xcfu' ISA extension) not implemented!\n");
     return -1;
   }
@@ -183,7 +190,7 @@ int main() {
   neorv32_uart0_printf("\n<<< NEORV32 Custom Functions Unit (CFU) - Custom Instructions Example >>>\n\n");
 
   neorv32_uart0_printf("[NOTE] This program assumes the default CFU hardware in\n"
-                       "       'rtl/core/neorv32_cpu_cp_cfu.vhd' that implements\n"
+                       "       rtl/core/neorv32_cpu_cp_cfu.vhd that implements\n"
                        "       the Extended Tiny Encryption Algorithm (XTEA).\n\n");
 
 

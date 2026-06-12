@@ -101,6 +101,30 @@ uint32_t neorv32_gpio_port_get(void) {
 
 
 /**********************************************************************//**
+ * Set direction of GPIO port.
+ * @note Direction control must be enabled by the according top generic.
+ *
+ * @param[in] pin_mask Direction port configuration (32-bit), one bit per port: 0 = input, 1 = output.
+ **************************************************************************/
+void neorv32_gpio_dir_set(uint32_t pin_mask) {
+
+  NEORV32_GPIO->PORT_DIR = pin_mask;
+}
+
+
+/**********************************************************************//**
+ * Get direction of GPIO port.
+ * @note Direction control must be enabled by the according top generic.
+ *
+ * @return Current direction port state (32-bit), one bit per port: 0 = input, 1 = output.
+ **************************************************************************/
+uint32_t neorv32_gpio_dir_get(void) {
+
+  return NEORV32_GPIO->PORT_DIR;
+}
+
+
+/**********************************************************************//**
  * Configure pin interrupt trigger.
  *
  * @param[in] pin Input pin select (0..31).

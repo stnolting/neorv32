@@ -6,7 +6,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -20,7 +20,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_pwm is
   generic (
-    NUM_CHANNELS : natural range 0 to 32 -- number of PWM channels (0..16)
+    NUM_CHANNELS : natural range 0 to 32 -- number of PWM channels (0..32)
   );
   port (
     clk_i     : in  std_ulogic;                    -- global clock line
@@ -48,7 +48,6 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
     ben_i   : in  std_ulogic_vector(3 downto 0);
     wdata_i : in  std_ulogic_vector(31 downto 0);
     rdata_o : out std_ulogic_vector(31 downto 0);
-    wrap_o  : out std_ulogic;
     pwm_o   : out std_ulogic
   );
   end component;
@@ -132,7 +131,6 @@ begin
       wdata_i => bus_req_i.data,
       rdata_o => rdata(i),
       -- PWM output --
-      wrap_o  => open, -- [TODO] use this as interrupt trigger?
       pwm_o   => pwm(i)
     );
     cs(i) <= bus_req_i.stb when (bus_req_i.addr(7) = '1') and
@@ -175,7 +173,7 @@ end neorv32_pwm_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -200,7 +198,6 @@ entity neorv32_pwm_channel is
     wdata_i : in  std_ulogic_vector(31 downto 0); -- write data
     rdata_o : out std_ulogic_vector(31 downto 0); -- read data
     -- PWM output --
-    wrap_o  : out std_ulogic;                     -- counter wrap
     pwm_o   : out std_ulogic                      -- PWM output
   );
 end neorv32_pwm_channel;
@@ -262,8 +259,7 @@ begin
 
   -- comparators --
   cmp_zero <= '1' when (cnt = x"0000") else '0';
-  cmp_top  <= '1' when (cnt = top)     else '0';
-  wrap_o   <= cmp_top;
+  cmp_top  <= '0' when (unsigned(cnt) < unsigned(top)) else '1';
 
   -- Output / Duty Cycle Control ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -273,7 +269,7 @@ begin
       pwm_o <= '0';
     elsif rising_edge(clk_i) then
       if (en_i = '0') then
-        pwm_o <= '0';
+        pwm_o <= pol_i;
       elsif (unsigned(cnt) < unsigned(cmp)) then
         pwm_o <= not pol_i;
       else

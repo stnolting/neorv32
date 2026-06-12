@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -50,10 +50,8 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   signal ctrl : ctrl_t;
 
   signal prsc_tick      : std_ulogic; -- prescaler clock generator
+  signal cen            : std_ulogic; -- counter enable
   signal cnt            : std_ulogic_vector(23 downto 0); -- timeout counter
-  signal cnt_started    : std_ulogic; -- set when timeout counter has started
-  signal cnt_inc        : std_ulogic; -- increment counter when set
-  signal cnt_timeout    : std_ulogic; -- counter matches programmed timeout value
   signal reset_cause    : std_ulogic_vector(1 downto 0); -- cause of last reset
   signal hw_rst_timeout : std_ulogic; -- trigger reset because of timeout
   signal hw_rst_access  : std_ulogic; -- trigger reset because of illegal access in strict mode
@@ -94,9 +92,9 @@ begin
             end if;
           else -- reset timeout counter - password check
             if (bus_req_i.data(31 downto 0) = reset_pwd_c) then
-              reset_wdt <= '1'; -- password correct
+              reset_wdt <= '1'; -- correct; reset watchdog
             else
-              reset_force <= '1'; -- password incorrect
+              reset_force <= '1'; -- incorrect; trigger system reset
             end if;
           end if;
         else -- read access
@@ -115,24 +113,20 @@ begin
   wdt_counter: process(rstn_sys_i, clk_i)
   begin
     if (rstn_sys_i = '0') then
-      prsc_tick   <= '0';
-      cnt_inc     <= '0';
-      cnt_started <= '0';
-      cnt         <= (others => '0');
+      cen <= '0';
+      cnt <= (others => '0');
     elsif rising_edge(clk_i) then
-      prsc_tick   <= clkgen_i(clk_div4096_c); -- clock-enable tick
-      cnt_inc     <= prsc_tick and cnt_started; -- clock tick and started
-      cnt_started <= ctrl.enable and (cnt_started or prsc_tick); -- start with next clock tick
-      if (ctrl.enable = '0') or (reset_wdt = '1') then -- watchdog disabled or reset with correct password
-        cnt <= (others => '0');
-      elsif (cnt_inc = '1') then
-        cnt <= std_ulogic_vector(unsigned(cnt) + 1);
+      cen <= ctrl.enable; -- delay start by 1 cycle to make sure cnt is initialized by ctrl.timeout
+      if (cen = '0') or (ctrl.enable = '0') or (reset_wdt = '1') then -- watchdog disabled or reset
+        cnt <= ctrl.timeout;
+      elsif (prsc_tick = '1') then
+        cnt <= std_ulogic_vector(unsigned(cnt) - 1);
       end if;
     end if;
   end process wdt_counter;
 
-  -- timeout detector --
-  cnt_timeout <= '1' when (cnt_started = '1') and (cnt = ctrl.timeout) else '0';
+  -- countdown timer tick --
+  prsc_tick <= clkgen_i(clk_div4096_c); -- clock-enable tick at fixed clock rate
 
 
   -- Reset Generator ------------------------------------------------------------------------
@@ -142,9 +136,9 @@ begin
     if (rstn_sys_i = '0') then
       hw_rst_timeout <= '0';
       hw_rst_access  <= '0';
-    elsif rising_edge(clk_i) then
-      hw_rst_timeout <= ctrl.enable and cnt_timeout and prsc_tick; -- timeout
-      hw_rst_access  <= ctrl.enable and ctrl.lock and reset_force; -- locked and incorrect password
+    elsif rising_edge(clk_i) then -- reset triggers are sticky until system reset
+      hw_rst_timeout <= hw_rst_timeout or (ctrl.enable and cen and prsc_tick and (not or_reduce_f(cnt))); -- timeout
+      hw_rst_access  <= hw_rst_access  or (ctrl.enable and ctrl.lock and reset_force); -- locked and incorrect password
     end if;
   end process reset_generator;
 
@@ -159,12 +153,12 @@ begin
     if (rstn_ext_i = '0') then
       reset_cause <= "00"; -- reset from external hardware signal
     elsif rising_edge(clk_i) then
-      if (rstn_dbg_i = '0') then
-        reset_cause <= "01"; -- reset from on-chip debugger
-      elsif (hw_rst_timeout = '1') then
+      if (hw_rst_timeout = '1') then
         reset_cause <= "10"; -- reset from watchdog timer
       elsif (hw_rst_access = '1') then
         reset_cause <= "11"; -- reset from invalid watchdog access (locked or incorrect password)
+      elsif (rstn_dbg_i = '0') then
+        reset_cause <= "01"; -- reset from on-chip debugger
       end if;
     end if;
   end process reset_identifier;

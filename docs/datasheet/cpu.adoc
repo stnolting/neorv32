@@ -29,11 +29,12 @@ RISC-V _User_ and _Privileged Architecture_ specifications.
 :sectnums:
 === CPU Top Entity - Signals
 
-The following table shows all interface signals of the CPU top entity `rtl/core/neorv32_cpu.vhd`. The
-type of all signals is _std_ulogic_ or _std_ulogic_vector_, respectively. The "Dir." column shows the signal
-direction as seen from the CPU.
+The following table shows all interface signals of the CPU top entity `rtl/core/neorv32_cpu.vhd`. All ports
+(except for the data/instruction bus interfaces) use _std_ulogic_ or _std_ulogic_vector_ types, respectively.
+The bus ports are wrapped as custom interface types (`bus_req_t` and `bus_rsp_t`). See section <<_bus_interface>>
+for the protocol and type documentation.
 
-.NEORV32 CPU Signal List
+.NEORV32 CPU Signal List (Dir = direction seen from the CPU)
 [cols="^2,^2,^1,<8"]
 [options="header", grid="rows"]
 |=======================
@@ -42,8 +43,10 @@ direction as seen from the CPU.
 | `clk_i`      | 1              | in  | Global clock line, all registers triggering on rising edge.
 | `rstn_i`     | 1              | in  | Global reset, low-active.
 4+^| **Status**
+| `mtime_i`    | 64             | in  | System time from the <<_core_local_interruptor_clint>> (MTIME).
 | `trace_o`    | `trace_port_t` | out | <<_execution_trace_port>>.
 | `sleep_o`    | 1              | out | Set while the CPU is in <<_sleep_mode>>.
+| `fence_o`    | 2              | out | <<_memory_coherence>> / ordering: `[1]` = instruction fence, `[0]` = data fence.
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
 | `msi_i`      | 1              | in  | RISC-V machine software interrupt.
 | `mei_i`      | 1              | in  | RISC-V machine external interrupt.
@@ -57,11 +60,6 @@ direction as seen from the CPU.
 | `dbus_req_o` | `bus_req_t`    | out | Data access (load/store) bus request.
 | `dbus_rsp_i` | `bus_rsp_t`    | in  | Data access (load/store) bus response.
 |=======================
-
-.Bus Interface Protocol
-[TIP]
-See section <<_bus_interface>> for the instruction fetch and data access interface protocol and the
-according interface types (`bus_req_t` and `bus_rsp_t`).
 
 
 <<<
@@ -290,7 +288,7 @@ package file (`neorv32_package.vhd`).
 | `valid`     |     1 | `rvfi_valid`     | All others signals are valid when set; high for one cycle
 4+^| **Instruction Metadata**
 | `order`     |    32 | `rvfi_order`     | Instruction index (linear incrementing counter; resets to zero on overflow)
-| `insn`      |    32 | `rvfi_insn`      | Instruction word; compressed instructions are shown in their decompressed 32-bit format (with `compr = 1`)
+| `insn`      |    32 | `rvfi_insn`      | Instruction word; for compressed instructions the upper 16-bit are set to zero
 | `trap`      |     1 | `rvfi_trap`      | Set if the current instruction causes a synchronous exception
 | `halt`      |     1 | `rvfi_halt`      | Set if the current instruction is last instruction before halting
 | `intr`      |     1 | `rvfi_intr`      | Set if the current instruction is the first instruction of a trap handler
@@ -299,6 +297,7 @@ package file (`neorv32_package.vhd`).
 | `debug`     |     1 | -                | Set if the current instruction is executed in debug-mode
 | `compr`     |     1 | -                | Set if the current instruction is a decompressed instruction
 | `delta`     |     1 | -                | Set if the current instruction is the target of a control-flow transfer
+| `cmd32`     |    32 | -                | 32-bit instruction word; compressed instructions are shown in their decompressed 32-bit format
 4+^| **Integer Register**
 | `rs1_addr`  |     5 | `rvfi_rs1_addr`  | register `rs1` address
 | `rs2_addr`  |     5 | `rvfi_rs2_addr`  | register `rs2` address
@@ -459,22 +458,12 @@ from a host to a device. These signals are driven by the request-issuing device 
 is used to return the bus response upstream from a device back to the host and is driven by the accessed device or bus system
 (i.e. a processor-internal memory or IO device).
 
-The signals of the request bus are split in to two categories: _in-band_ signals and _out-of-band_ signals. In-band
-signals always belong to a certain bus transaction and are valid between `stb` (request) being set and the according
-`err` or `ack` (response) being set. In contrast, the out-of-band signals are not associated with any bus transaction
-and are always valid when set.
-
-.Adding Register Stages
-[TIP]
-Arbitrary pipeline stages can be added to the request and response buses at any point to relax timing (at the cost of
-additional latency). However, _all_ bus signals (request and response) need to be registered.
-
-.Bus Interface - Request Bus (`bus_req_t`)
+.Bus Interface Signals
 [cols="^1,^1,<8"]
 [options="header",grid="rows"]
 |=======================
 | Signal  | Width | Description
-3+^| **In-Band Signals**
+3+^| **Request Bus (VHDL `bus_req_t` type)**
 | `meta`  |     5 | Access meta information. +
 `meta(4:3)`: core ID from the lowest two bits of the <<_mhartid>> CSR; the DMA has core ID `0b10` +
 `meta(2)`: set when CPU is in debug-mode +
@@ -483,25 +472,22 @@ additional latency). However, _all_ bus signals (request and response) need to b
 | `addr`  |    32 | Access address using byte-wise addressing. Half-word (16-bit) and word (32-bit) addresses are aligned accordingly (e.g. LSB = 0 for half-word accesses).
 | `data`  |    32 | Write data. Writing individual bytes is controlled via `ben`.
 | `ben`   |     4 | Byte-enable for each byte in `data`. This signal is used for the write-data as well as for the read-data.
-| `stb`   |     1 | Request trigger ("strobe"). This signal is high for exactly one cycle starting a bus request. All other _in-band_ signals are valid only if `stb` is set.
+| `stb`   |     1 | **Request trigger ("strobe")**. This signal is high for exactly one cycle triggering a bus request.
 | `rw`    |     1 | Access direction (`0` = read, `1` = write).
 | `amo`   |     1 | Set if current access is an atomic memory operation.
 | `amoop` |     4 | Actual type of atomic memory operation. Irrelevant if `amo` is not set.
 | `burst` |     1 | Set during a burst transaction (always set together with `lock`).
 | `lock`  |     1 | Set if locked access; allow exclusive access to the bus system.
-3+^| **Out-Of-Band Signals**
-| `fence` |     1 | Data (load/store; `fence`) or instruction (instruction-fetch; `fence.i`) fence request; single-shot; see <<_memory_coherence>>.
+3+^| **Response Bus (VHDL `bus_rsp_t` type)**
+| `ack`   |     1 | Transfer acknowledge, single-shot.
+| `err`   |     1 | Transfer error when set, valid if `ack = 1`.
+| `data`  |    32 | Read data, valid if `ack = 1`.
 |=======================
 
-.Bus Interface - Response Bus (`bus_rsp_t`)
-[cols="^1,^1,<6"]
-[options="header",grid="rows"]
-|=======================
-| Signal | Width | Description
-| `ack`  |     1 | Transfer acknowledge, single-shot.
-| `err`  |     1 | Transfer error when set, valid if `ack = 1`.
-| `data` |    32 | Read data, valid if `ack = 1`.
-|=======================
+.Adding Register Stages
+[TIP]
+Arbitrary pipeline stages can be added to the request and response buses at any point to relax timing (at the cost of
+additional latency).
 
 
 :sectnums:
@@ -539,7 +525,6 @@ The figure below shows three exemplary single-access bus transactions:
     {name: 'amoop', wave: 'x..|.......|..'},
     {name: 'lock',  wave: 'x0.|.......|.x'},
     {name: 'burst', wave: 'x0.|.......|.x'},
-    {name: 'fence', wave: '0..|.......|..'},
   ],
   {},
   [
@@ -579,19 +564,18 @@ exclusive bus access and a 4-word incrementing-address read burst.
     {name: 'rw',    wave: 'x0.1.x.|.0....x..'},
     {name: 'amo',   wave: 'x1...x.|.........'},
     {name: 'amoop', wave: 'x2...x.|.........'},
-    {name: 'burst', wave: 'x0....x|.1.....0x'},
-    {name: 'lock',  wave: 'x1...0x|.1.....0x', node: '.b...f...i.....m'},
-    {name: 'fence', wave: '0................'},
+    {name: 'burst', wave: 'x0....x|.1...0..x', node: '.............m..'},
+    {name: 'lock',  wave: 'x1...0x|.1.....0x', node: '.b...f...i.....n'},
   ],
   {},
   [
     "response",
-    {name: 'ack',  wave: '0.1010.|..101..0.', node: '..c.eg....j.l..n'},
+    {name: 'ack',  wave: '0.1010.|..101..0.', node: '..c.eg....j.l..o'},
     {name: 'err',  wave: 'x.0x0x.|x.0x0..x.'},
     {name: 'data', wave: 'x.2x...|x.3x456x.', data: ['rdata', '[0]', '[4]', '[8]', '[12]']},
   ]
 ],
- edge: ['ab', 'a~>c', 'c~>d', 'd~>e', 'fg', 'hi', 'h~>j', 'j~>k', 'k~>l', 'mn']
+ edge: ['ab', 'a~>c', 'c~>d', 'd~>e', 'fg', 'hi', 'h~>j', 'j~>k', 'k~>l', 'm', 'no']
 }
 ----
 
@@ -609,10 +593,11 @@ exclusive bus access and a 4-word incrementing-address read burst.
 
 [start=1]
 . The locked burst request is sent by setting `lock` and `burst` together with the first `stb` ("h"). The address applied to `addr`
-defines the base/start address of the burst. `lock` and `burst` stay high until the end of the burst ("m").
+defines the base/start address of the burst.`lock` stays high until the very last `stb` has been acknowledged ("n").
 . The bus is locked when the host received the first `ack` ("j"). Now the host has exclusive bus access and can
 request the remaining burst strobes ("k").
-. The burst is completed when all required `stb` pulses are sent and when all corresponding `ack` have been received ("n").
+. For the very last transfer element `burst` is deasserted ("m"). This indicates the end of the burst.
+. The burst transfer is completed when all required `stb` pulses are sent and when all corresponding `ack` have been received ("o").
 `burst` is cleared. `lock` is cleared and has to be low for at least one cycle to release the bus lock.
 
 .Burst Generators
@@ -659,7 +644,7 @@ Whenever an exception or interrupt is triggered, the CPU switches to machine-mod
 and continues operation at the address being stored in the <<_mtvec>> CSR. The cause of the trap can be determined via the
 <<_mcause>> CSR. A list of all implemented `mcause` values and the according description can be found below in section
 <<_neorv32_trap_listing>>. The address that reflects the current program counter when a trap was taken is stored to
-<<_mepc>> CSR. Additional information regarding the cause of the trap can be retrieved from the <<_mtval>> and <<_mtinst>> CSRs.
+<<_mepc>> CSR. Additional information regarding the cause of the trap can be retrieved from the <<_mtval>> CSR.
 
 The traps are prioritized. If several _exceptions_ occur at once only the one with highest priority is triggered
 while all remaining exceptions are ignored and discarded. If several _interrupts_ trigger at once, the one with highest priority
@@ -725,52 +710,51 @@ See section <<_neorv32_specific_fast_interrupt_requests>> for the mapping of the
 **Table Annotations**
 
 The "RTE Trap ID" aliases are defined by the NEORV32 core library and can be used in plain C code
-when interacting with the pre-defined RTE functions. The <<_mcause>>, <<_mepc>>, <<_mtval>>, and
-<<_mtinst>> columns show the value being written to the according CSRs when a trap is encountered:
+when interacting with the pre-defined RTE functions. The <<_mcause>>, <<_mepc>> and <<_mtval>>
+columns show the value being written to the according CSRs when a trap is encountered:
 
 * **I-PC** - address of intercepted instruction (instruction at this address has not been executed yet and must be executed after the trap handler to maintain program flow)
 * **PC** - address of instruction that caused the trap (instruction has been executed)
-* **ADDR** - bad data memory access address that caused the trap
-* **INST** - the actual transformed/decompressed instruction word that caused the trap
-* **LAST** - the last transformed/decompressed instruction word that was executed before the trap
+* **ADDR** - memory access address that caused the trap
+* **INST** - the actual instruction word that caused the trap
 * **0** - zero
 
 .NEORV32 Trap Listing
-[cols="1,4,8,10,2,2,2"]
+[cols="1,4,8,10,2,2"]
 [options="header",grid="rows"]
 |=======================
-| Priority | `mcause`     | RTE Trap ID              | Cause                             | `mepc` | `mtval` | `mtinst`
-7+^| **Exceptions** (_synchronous_ to instruction execution)
-| highest  | `0x00000010` | `TRAP_CODE_DOUBLE_TRAP`  | double trap (trap inside trap)    | I-PC   | 0       | INST
-|          | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction               | PC     | 0       | INST
-|          | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned    | PC     | 0       | INST
-|          | `0x0000000b` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode      | PC     | 0       | INST
-|          | `0x00000008` | `TRAP_CODE_UENV_CALL`    | environment call from U-mode      | PC     | 0       | INST
-|          | `0x00000003` | `TRAP_CODE_BREAKPOINT`   | software breakpoint / HW trigger  | PC     | 0       | INST
-|          | `0x00000006` | `TRAP_CODE_S_MISALIGNED` | store address misaligned          | PC     | ADDR    | INST
-|          | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned           | PC     | ADDR    | INST
-|          | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store access fault                | PC     | ADDR    | INST
-|          | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load access fault                 | PC     | ADDR    | INST
-7+^| **Interrupts** (_asynchronous_ to instruction execution)
-|          | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0  | I-PC   | 0       | LAST
-|          | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1  | I-PC   | 0       | LAST
-|          | `0x80000012` | `TRAP_CODE_FIRQ_2`       | fast interrupt request channel 2  | I-PC   | 0       | LAST
-|          | `0x80000013` | `TRAP_CODE_FIRQ_3`       | fast interrupt request channel 3  | I-PC   | 0       | LAST
-|          | `0x80000014` | `TRAP_CODE_FIRQ_4`       | fast interrupt request channel 4  | I-PC   | 0       | LAST
-|          | `0x80000015` | `TRAP_CODE_FIRQ_5`       | fast interrupt request channel 5  | I-PC   | 0       | LAST
-|          | `0x80000016` | `TRAP_CODE_FIRQ_6`       | fast interrupt request channel 6  | I-PC   | 0       | LAST
-|          | `0x80000017` | `TRAP_CODE_FIRQ_7`       | fast interrupt request channel 7  | I-PC   | 0       | LAST
-|          | `0x80000018` | `TRAP_CODE_FIRQ_8`       | fast interrupt request channel 8  | I-PC   | 0       | LAST
-|          | `0x80000019` | `TRAP_CODE_FIRQ_9`       | fast interrupt request channel 9  | I-PC   | 0       | LAST
-|          | `0x8000001a` | `TRAP_CODE_FIRQ_10`      | fast interrupt request channel 10 | I-PC   | 0       | LAST
-|          | `0x8000001b` | `TRAP_CODE_FIRQ_11`      | fast interrupt request channel 11 | I-PC   | 0       | LAST
-|          | `0x8000001c` | `TRAP_CODE_FIRQ_12`      | fast interrupt request channel 12 | I-PC   | 0       | LAST
-|          | `0x8000001d` | `TRAP_CODE_FIRQ_13`      | fast interrupt request channel 13 | I-PC   | 0       | LAST
-|          | `0x8000001e` | `TRAP_CODE_FIRQ_14`      | fast interrupt request channel 14 | I-PC   | 0       | LAST
-|          | `0x8000001f` | `TRAP_CODE_FIRQ_15`      | fast interrupt request channel 15 | I-PC   | 0       | LAST
-|          | `0x8000000b` | `TRAP_CODE_MEI`          | machine external interrupt (MEI)  | I-PC   | 0       | LAST
-|          | `0x80000003` | `TRAP_CODE_MSI`          | machine software interrupt (MSI)  | I-PC   | 0       | LAST
-| lowest   | `0x80000007` | `TRAP_CODE_MTI`          | machine timer interrupt (MTI)     | I-PC   | 0       | LAST
+| Priority | `mcause`     | RTE Trap ID              | Cause                             | `mepc` | `mtval`
+6+^| **Exceptions** (_synchronous_ to instruction execution)
+| highest  | `0x00000001` | `TRAP_CODE_I_ACCESS`     | illegal access fault              | PC     | 0
+|          | `0x00000002` | `TRAP_CODE_I_ILLEGAL`    | illegal instruction               | PC     | INST
+|          | `0x00000000` | `TRAP_CODE_I_MISALIGNED` | instruction address misaligned    | PC     | ADDR
+|          | `0x0000000b` | `TRAP_CODE_MENV_CALL`    | environment call from M-mode      | PC     | 0
+|          | `0x00000008` | `TRAP_CODE_UENV_CALL`    | environment call from U-mode      | PC     | 0
+|          | `0x00000003` | `TRAP_CODE_BREAKPOINT`   | software breakpoint / HW trigger  | PC     | 0
+|          | `0x00000006` | `TRAP_CODE_S_MISALIGNED` | store address misaligned          | PC     | ADDR
+|          | `0x00000004` | `TRAP_CODE_L_MISALIGNED` | load address misaligned           | PC     | ADDR
+|          | `0x00000007` | `TRAP_CODE_S_ACCESS`     | store access fault                | PC     | ADDR
+|          | `0x00000005` | `TRAP_CODE_L_ACCESS`     | load access fault                 | PC     | ADDR
+6+^| **Interrupts** (_asynchronous_ to instruction execution)
+|          | `0x80000010` | `TRAP_CODE_FIRQ_0`       | fast interrupt request channel 0  | I-PC   | 0
+|          | `0x80000011` | `TRAP_CODE_FIRQ_1`       | fast interrupt request channel 1  | I-PC   | 0
+|          | `0x80000012` | `TRAP_CODE_FIRQ_2`       | fast interrupt request channel 2  | I-PC   | 0
+|          | `0x80000013` | `TRAP_CODE_FIRQ_3`       | fast interrupt request channel 3  | I-PC   | 0
+|          | `0x80000014` | `TRAP_CODE_FIRQ_4`       | fast interrupt request channel 4  | I-PC   | 0
+|          | `0x80000015` | `TRAP_CODE_FIRQ_5`       | fast interrupt request channel 5  | I-PC   | 0
+|          | `0x80000016` | `TRAP_CODE_FIRQ_6`       | fast interrupt request channel 6  | I-PC   | 0
+|          | `0x80000017` | `TRAP_CODE_FIRQ_7`       | fast interrupt request channel 7  | I-PC   | 0
+|          | `0x80000018` | `TRAP_CODE_FIRQ_8`       | fast interrupt request channel 8  | I-PC   | 0
+|          | `0x80000019` | `TRAP_CODE_FIRQ_9`       | fast interrupt request channel 9  | I-PC   | 0
+|          | `0x8000001a` | `TRAP_CODE_FIRQ_10`      | fast interrupt request channel 10 | I-PC   | 0
+|          | `0x8000001b` | `TRAP_CODE_FIRQ_11`      | fast interrupt request channel 11 | I-PC   | 0
+|          | `0x8000001c` | `TRAP_CODE_FIRQ_12`      | fast interrupt request channel 12 | I-PC   | 0
+|          | `0x8000001d` | `TRAP_CODE_FIRQ_13`      | fast interrupt request channel 13 | I-PC   | 0
+|          | `0x8000001e` | `TRAP_CODE_FIRQ_14`      | fast interrupt request channel 14 | I-PC   | 0
+|          | `0x8000001f` | `TRAP_CODE_FIRQ_15`      | fast interrupt request channel 15 | I-PC   | 0
+|          | `0x8000000b` | `TRAP_CODE_MEI`          | machine external interrupt (MEI)  | I-PC   | 0
+|          | `0x80000003` | `TRAP_CODE_MSI`          | machine software interrupt (MSI)  | I-PC   | 0
+| lowest   | `0x80000007` | `TRAP_CODE_MTI`          | machine timer interrupt (MTI)     | I-PC   | 0
 |=======================
 
 .NEORV32 Trap Description

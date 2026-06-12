@@ -18,7 +18,7 @@ USER_FLAGS += \
 -Wl,--defsym,__neorv32_ram_base=0x80000000
 
 # map to boot ROM and define maximum logical ROM size
-# [note] the physical ROM size depends on the actual bootloader size
+# [NOTE] the physical BOOTROM size depends on the actual bootloader size
 USER_FLAGS += \
 -Wl,--defsym,__neorv32_rom_size=16k \
 -Wl,--defsym,__neorv32_rom_base=0xFFE00000

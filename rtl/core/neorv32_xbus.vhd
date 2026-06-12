@@ -13,7 +13,6 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library neorv32;
 use neorv32.neorv32_package.all;
@@ -101,8 +100,8 @@ begin
   xbus_cyc_o <= bus_req.stb or pending;
 
   -- cycle type identifier (for the ENTIRE access - burst-termination type is not supported!) --
-  xbus_cti_o <= "001" when (bus_req.amo   = '1') else -- constant address burst
-                "010" when (bus_req.burst = '1') else -- incrementing address burst
+  xbus_cti_o <= "001" when (bus_req.lock = '1') and (bus_req.amo   = '1') else -- constant address burst
+                "010" when (bus_req.lock = '1') and (bus_req.burst = '1') else -- incrementing address burst
                 "000"; -- single access
 
   -- access meta data (compatible to AXI4 "xPROT") --

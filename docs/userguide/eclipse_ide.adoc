@@ -180,7 +180,7 @@ the required `main.elf` file gets generated instead of _all_ executable files (l
 . Double-click on **GDB OpenOCD Debugging**; several menu tabs will open on the right.
 * In the **Main** tab add `main.elf` to the **C/C++ Application** box.
 * In the **Debugger** tab add the NEORV32 OpenOCD script with a `-f` in front of it-
-* Example: `Config options: -f ../../openocd/openocd_neorv32.cfg`
+* Example: `Config options: -f ${ProjDirPath}/../../openocd/neorv32.cfg`
 * In the **Startup** tab uncheck he box in front of **Initial Reset** and add `monitor reset halt` to the box below.
 * In the "Common" tab mark **Shared file** to store the run-configuration right in the project folder instead of the workspace(optional).
 * In the **SVD Path** tab add the NEORV32 SVD file (`path/to/neorv32/sw/svd/neorv32.svd`).

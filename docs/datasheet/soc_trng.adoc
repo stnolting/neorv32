@@ -2,7 +2,7 @@
 :sectnums:
 ==== True Random-Number Generator (TRNG)
 
-[cols="<3,<3,<4"]
+[cols="<3,<3,<6"]
 [grid="none"]
 |=======================
 | Hardware source files:  | neorv32_trng.vhd    |
@@ -11,6 +11,9 @@
 | Top entity ports:       | none                |
 | Configuration generics: | `IO_TRNG_EN`        | implement TRNG when `true`
 |                         | `IO_TRNG_FIFO`      | data FIFO depth, min 1, has to be a power of two
+|                         | `IO_TRNG_NUM_RO`    | total number of ring-oscillators
+|                         | `IO_TRNG_NUM_INV`   | number of inverters in first ring-oscillator, has to be odd
+|                         | `IO_TRNG_NUM_RBIT`  | number of raw bits to process for one output byte, has to be power of two
 | CPU interrupts:         | fast IRQ channel 15 | data available interrupt (see <<_processor_interrupts>>)
 |=======================
 
@@ -18,6 +21,7 @@
 
 * True random number generator based on phase noise
 * Completely technology-independent architecture
+* Configurable TRNG layout to adjust to technology and quality requirements
 * Optional random data FIFO
 * Interrupt based on FIFO status
 
@@ -48,6 +52,15 @@ control register's `TRNG_CTRL_EN`. As soon as the `TRNG_CTRL_AVAIL` bit is set a
 available and can be obtained from the lowest 8 bits of the `DATA` register. If this bit is cleared, there
 is no valid data available and the reading `DATA` will return all-zero.
 
+The actual neoTRNG is configured by three generics:
+
+[start=1]
+. `IO_TRNG_NUM_RO` defines the total number of ring-oscillators.
+. `IO_TRNG_NUM_INV` defines the number of inverters in the first ring-oscillator.
+Each subsequent RO is two inverters longer than the previous one.
+. `IO_TRNG_NUM_RBIT` defines the number of raw entropy bits obtained from the ring-oscillators that are scrmabled
+and combined to produce a single random output byte.
+
 An internal entropy FIFO can be configured using the `IO_TRNG_FIFO` generic. This FIFO automatically samples
 new random data from the TRNG to provide some kind of _random data pool_ for applications which require a
 larger number of random data in a short time. The random data FIFO can be cleared at any time either by
@@ -57,7 +70,7 @@ via the `TRNG_CTRL_FIFO_*` bits.
 .Simulation
 [IMPORTANT]
 When simulating the processor the TRNG is automatically set to "simulation mode". In this mode the physical
-entropy sources (the ring oscillators) are replaced by a simple **pseudo RNG** based on a LFSR providing only
+entropy sources (the ring-oscillators) are replaced by a simple **pseudo RNG** based on a LFSR providing only
 **deterministic pseudo-random** data. The `TRNG_CTRL_SIM_MODE` flag of the control register is set if simulation
 mode is active.
 
@@ -75,11 +88,14 @@ data FIFO is completely full (indicating that at least `IO_TRNG_FIFO` bytes of r
 [options="header",grid="all"]
 |=======================
 | Address | Name [C] | Bit(s), Name [C] | R/W | Function
-.5+<| `0xfffa0000` .5+<| `CTRL` <|`0`    `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
-                                <|`1`    `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set; auto-clears
-                                <|`5:2`  `TRNG_CTRL_FIFO_MSB : TRNG_CTRL_FIFO_LSB` ^| r/- <| FIFO depth, log2(`IO_TRNG_FIFO`)
-                                <|`6`    `TRNG_CTRL_SIM_MODE`                      ^| r/- <| simulation mode (PRNG!)
-                                <|`7`    `TRNG_CTRL_AVAIL`                         ^| r/- <| random data available when set
-.2+<| `0xfffa0004` .2+<| `DATA` <|`7:0`  `TRNG_DATA_MSB : TRNG_DATA_LSB`           ^| r/- <| random data byte
-                                <|`31:8` _reserved_                                ^| r/- <| reserved, read as zero
+.8+<| `0xfffa0000` .8+<| `CTRL` <|`0`     `TRNG_CTRL_EN`                            ^| r/w <| TRNG enable
+                                <|`1`     `TRNG_CTRL_FIFO_CLR`                      ^| -/w <| flush random data FIFO when set; auto-clears
+                                <|`2`     `TRNG_CTRL_SIM_MODE`                      ^| r/- <| simulation mode (PRNG!)
+                                <|`3`     `TRNG_CTRL_AVAIL`                         ^| r/- <| random data available when set
+                                <|`7:4`   `TRNG_CTRL_FIFO_MSB : TRNG_CTRL_FIFO_LSB` ^| r/- <| FIFO depth (`log2(IO_TRNG_FIFO)`)
+                                <|`11:8`  `TRNG_CTRL_NBIT_MSB : TRNG_CTRL_NBIT_LSB` ^| r/- <| FIFO depth (`log2(IO_TRNG_NUM_RBIT)`)
+                                <|`19:12` `TRNG_CTRL_NRO_MSB : TRNG_CTRL_NRO_LSB`   ^| r/- <| Total number of ring-oscillators (`IO_TRNG_NUM_RO`)
+                                <|`31:20` `TRNG_CTRL_NINV_MSB : TRNG_CTRL_NINV_LSB` ^| r/- <| Number of inverters in first ring-oscillator (`IO_TRNG_NUM_INV`)
+.2+<| `0xfffa0004` .2+<| `DATA` <|`7:0`  `TRNG_DATA_MSB : TRNG_DATA_LSB`            ^| r/- <| random data byte
+                                <|`31:8` _reserved_                                 ^| r/- <| reserved, read as zero
 |=======================

@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -18,6 +18,7 @@ use neorv32.neorv32_package.all;
 
 entity xbus_memory is
   generic (
+    MEM_RST  : boolean := false; -- enable reset to all-zero
     MEM_SIZE : natural := 4; -- memory size in bytes; min 4; should be a power of two
     MEM_LATE : natural := 1; -- number of latency cycles (min 1)
     MEM_FILE : string  := "" -- memory initialization file (plain HEX), no initialization if empty
@@ -103,7 +104,7 @@ begin
 
   -- Pre-Initialized Memory (all-zero or HEX image if specified) ----------------------------
   -- -------------------------------------------------------------------------------------------
-  memory_data: process(clk_i)
+  memory_data: process(rstn_i, clk_i)
     -- [NOTE] The memory is split into four sub-memories using _variables_ of
     -- type 'bit_vector' to minimize the simulator's RAM footprint.
     variable mem8bv_b0_v : ram8bv_t(0 to (MEM_SIZE/4)-1) := init_mem8bv_from_hexfile_f(MEM_FILE, MEM_SIZE/4, 0);
@@ -111,7 +112,12 @@ begin
     variable mem8bv_b2_v : ram8bv_t(0 to (MEM_SIZE/4)-1) := init_mem8bv_from_hexfile_f(MEM_FILE, MEM_SIZE/4, 2);
     variable mem8bv_b3_v : ram8bv_t(0 to (MEM_SIZE/4)-1) := init_mem8bv_from_hexfile_f(MEM_FILE, MEM_SIZE/4, 3);
   begin
-    if rising_edge(clk_i) then
+    if MEM_RST and (rstn_i = '0') then
+      mem8bv_b0_v := (others => (others => '0'));
+      mem8bv_b1_v := (others => (others => '0'));
+      mem8bv_b2_v := (others => (others => '0'));
+      mem8bv_b3_v := (others => (others => '0'));
+    elsif rising_edge(clk_i) then
       if (xbus_req_i.cyc = '1') and (xbus_req_i.stb = '1') then
         if (xbus_req_i.we = '1') then
           if (xbus_req_i.sel(0) = '1') then

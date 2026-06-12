@@ -119,7 +119,6 @@ neorv32                   - Project home folder
 ├─ docs                   - Documentation
 │  ├─ datasheet           - AsciiDoc sources for the NEORV32 data sheet
 │  ├─ figures             - Figures and logos
-│  ├─ references          - Data sheets and RISC-V specs
 │  └─ userguide           - AsciiDoc sources for the NEORV32 user guide
 │
 ├─ rtl                    - HDL sources
@@ -140,7 +139,6 @@ neorv32                   - Project home folder
    ├─ lib                 - NEORV32 core library
    ├─ ocd_firmware        - Firmware for the on-chip debugger "park loop"
    ├─ openocd             - OpenOCD configuration files
-   ├─ riscv-arch-test     - Test RISC-V compatibility using the official test framework
    └─ svd                 - Processor system view description file (CMSIS-SVD)
 ...................................
 
@@ -324,16 +322,17 @@ and NanoXplore FPGAs. Some pre-configured example setup are available online: ht
 **Processing Speed**
 
 The computational performance of the NEORV32 is evaluated using https://www.eembc.org/coremark/[Core Mark CPU benchmark].
-The according sources can be found in the `sw/example/coremark` folder.
+The NEORV32 CoreMark port can be found in a separate repository: https://github.com/stnolting/neorv32-coremark[neorv32-coremark]
 
-.CoreMark results (`-O3` optimization)
-[cols="<5,^1,^1,^1"]
+.CoreMark Results
+[cols="<6,^2,^2"]
 [options="header",grid="rows"]
 |=======================
-| CPU                                                      | CoreMark Score | CoreMarks/MHz | Average CPI
-| _small_ (`rv32i_Zicsr_Zifencei`)                         |          33.89 | **0.3389**    | **4.04**
-| _medium_ (`rv32imc_Zicsr_Zifencei`)                      |          62.50 | **0.6250**    | **5.34**
-| _performance_ (`rv32imc_Zicsr_Zifencei` + perf. options) |          95.23 | **0.9523**    | **3.54**
+| CPU Configuration                                        | CoreMark Score | CoreMarks/MHz
+| _small_ (`rv32i_Zicsr_Zifencei`)                         |          33.89 | **0.33**
+| _medium_ (`rv32imc_Zicsr_Zifencei`)                      |          62.50 | **0.62**
+| _performance_ (`rv32imc_Zicsr_Zifencei` + perf. options) |          95.23 | **0.95**
+| _dual-core_ (`rv32imc_Zicsr_Zifencei` + perf. options)   |         190.47 | **1.90**
 |=======================
 
 Performance can be further improved by enabling additional ISA extensions. Note that the compiler
@@ -349,11 +348,33 @@ mix of a specific applications and also on the available CPU extensions, tuning 
 :sectnums:
 === RISC-V Compatibility
 
-The NEORV32 CPU passes the official **RISC-V Architecture Compatibility Tests**. This framework is used to check
-RISC-V implementations for compatibility to the official RISC-V user/privileged ISA specifications. The NEORV32 port
-of this test framework is available in `sw/riscv-arch-test`.
+The NEORV32 CPU passes the official **RISC-V Architectural Certification Tests (ACTs)** to certifying  it faithfully
+implements the RISC-V specification. The NEORV32 port of this test framework is available at
+https://github.com/stnolting/neorv32-riscv-act.
 
 .Unsupported ISA Extensions
 [TIP]
 Executing instructions or accessing CSRs from unsupported ISA extensions will raise a precise illegal
 instruction exception allowing full software emulation (see section <<_full_virtualization>>).
+
+
+// ####################################################################################################################
+:sectnums:
+=== RISC-V Documentation
+
+The ratified RISC-V specifications (ISA specs, frameworks, ABI, etc.) are available online at riscv.org:
+
+* **https://docs.riscv.org/reference/home**
+
+Additional resources and specs currently under development are available on GitHub:
+
+* ISA Specifications: https://github.com/riscv)
+* Non-ISA Specifications: https://github.com/riscv-non-isa
+* RISC-V Software: https://github.com/riscv-software-src
+
+Elementary software references:
+
+* RISC-V C API: https://github.com/riscv-non-isa/riscv-c-api-doc
+* RISC-V ELF psABI: https://github.com/riscv-non-isa/riscv-elf-psabi-doc
+
+

@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -22,12 +22,12 @@ entity neorv32_cpu_trace is
     rstn_i      : in  std_ulogic; -- global reset, low-active, async
     ctrl_i      : in  ctrl_bus_t; -- main control bus
     -- operands --
-    rs1_rdata_i : std_ulogic_vector(31 downto 0); -- rs1 read data
-    rs2_rdata_i : std_ulogic_vector(31 downto 0); -- rs2 read data
-    rd_wdata_i  : std_ulogic_vector(31 downto 0); -- rd write data
-    mem_ben_i   : std_ulogic_vector(3 downto 0);  -- memory byte-enable
-    mem_addr_i  : std_ulogic_vector(31 downto 0); -- memory address
-    mem_wdata_i : std_ulogic_vector(31 downto 0); -- memory write data
+    rs1_rdata_i : in  std_ulogic_vector(31 downto 0); -- rs1 read data
+    rs2_rdata_i : in  std_ulogic_vector(31 downto 0); -- rs2 read data
+    rd_wdata_i  : in  std_ulogic_vector(31 downto 0); -- rd write data
+    mem_ben_i   : in  std_ulogic_vector(3 downto 0);  -- memory byte-enable
+    mem_addr_i  : in  std_ulogic_vector(31 downto 0); -- memory address
+    mem_wdata_i : in  std_ulogic_vector(31 downto 0); -- memory write data
     -- trace port --
     trace_o     : out trace_port_t -- execution trace port
   );
@@ -66,9 +66,11 @@ begin
       -- trap-entry detector: buffer trap entry until trace commit --
       arbiter.entry <= (arbiter.entry or ctrl_i.cpu_trap) and (not arbiter.valid);
       -- delta detector: buffer delta trigger until we are back in EXECUTE stage --
-      arbiter.delta <= (arbiter.delta or ctrl_i.cnt_event(cnt_event_ctrlflow_c)) and (not ctrl_i.cnt_event(cnt_event_ir_c));
+      arbiter.delta <= (arbiter.delta or ctrl_i.cnt_event(cnt_event_delta_c)) and (not ctrl_i.cnt_event(cnt_event_ir_c));
       -- instruction counter --
-      arbiter.order <= std_ulogic_vector(unsigned(arbiter.order) + unsigned(replicate_f(arbiter.valid, 1)));
+      if (arbiter.valid = '1') then
+        arbiter.order <= std_ulogic_vector(unsigned(arbiter.order) + 1);
+      end if;
     end if;
   end process trace_arbiter;
 
@@ -90,7 +92,6 @@ begin
 
       -- instruction metadata --
       trace_buf.order <= arbiter.order;
-      trace_buf.insn  <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
       trace_buf.trap  <= ctrl_i.cpu_sync_exc;
       trace_buf.halt  <= not ctrl_i.cnt_event(cnt_event_cy_c);
       trace_buf.intr  <= arbiter.entry;
@@ -98,7 +99,13 @@ begin
       if (ctrl_i.cnt_event(cnt_event_ir_c) = '1') then
         trace_buf.mode  <= ctrl_i.cpu_priv & ctrl_i.cpu_priv;
         trace_buf.debug <= ctrl_i.cpu_debug;
-        trace_buf.compr <= ctrl_i.cnt_event(cnt_event_compr_c);
+        trace_buf.compr <= ctrl_i.cnt_event(cnt_event_ci_c);
+        if (ctrl_i.cnt_event(cnt_event_ci_c) = '1') then
+          trace_buf.insn <= x"0000" & ctrl_i.ir_rvc;
+        else
+          trace_buf.insn <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
+        end if;
+        trace_buf.cmd32 <= ctrl_i.ir_funct12 & ctrl_i.rf_rs1 & ctrl_i.ir_funct3 & ctrl_i.rf_rd & ctrl_i.ir_opcode;
       end if;
       if (arbiter.delta = '1') then
         trace_buf.delta <= '1';
@@ -111,12 +118,13 @@ begin
       trace_buf.rs2_addr  <= ctrl_i.rf_rs2;
       trace_buf.rs1_rdata <= rs1_rdata_i;
       trace_buf.rs2_rdata <= rs2_rdata_i;
-      if (ctrl_i.rf_wb_en = '1') then
-        trace_buf.rd_addr <= ctrl_i.rf_rd;
+      if (ctrl_i.rf_wb_en = '1') and (or_reduce_f(ctrl_i.rf_rd) = '1') then
+        trace_buf.rd_rdata <= rd_wdata_i;
+        trace_buf.rd_addr  <= ctrl_i.rf_rd;
       elsif (trace_buf.valid = '1') then
-        trace_buf.rd_addr <= (others => '0');
+        trace_buf.rd_rdata <= (others => '0');
+        trace_buf.rd_addr  <= (others => '0');
       end if;
-      trace_buf.rd_rdata <= rd_wdata_i;
 
       -- program counter --
       trace_buf.pc_rdata <= ctrl_i.pc_cur;
@@ -217,7 +225,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     machine  : std_ulogic_vector(31 downto 0); -- instruction word
     mnemonic : string(1 to 11); -- according assembly mnemonic
   end record;
-  type inst_t is array (0 to 192) of inst_touple_c;
+  type inst_t is array (0 to 230) of inst_touple_c;
   constant inst_c : inst_t := (
     ("-------------------------0110111", "lui        "), -- base ISA
     ("-------------------------0010111", "auipc      "),
@@ -320,7 +328,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     ("0000001----------000-----0110011", "mul        "), -- M / Zm*
     ("0000001----------001-----0110011", "mulh       "),
     ("0000001----------010-----0110011", "mulhsu     "),
-    ("0000001----------011-----0110011", "mulh       "),
+    ("0000001----------011-----0110011", "mulhu      "),
     ("0000001----------100-----0110011", "div        "),
     ("0000001----------101-----0110011", "divu       "),
     ("0000001----------110-----0110011", "rem        "),
@@ -354,7 +362,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     ("0110000----------101-----0110011", "ror        "),
     ("0110000----------101-----0010011", "rori       "),
     ("011000000100-----001-----0010011", "sext.b     "),
-    ("011000000101-----001-----0010011", "sext.j     "),
+    ("011000000101-----001-----0010011", "sext.h     "),
     ("0010000----------010-----0110011", "sh1add     "),
     ("0010000----------100-----0110011", "sh2add     "),
     ("0010000----------110-----0110011", "sh3add     "),
@@ -411,6 +419,44 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
     ("111000000000-----001-----1010011", "fclass.s   "),
     ("110100000000-------------1010011", "fcvt.s.w   "),
     ("110100000001-------------1010011", "fcvt.s.wu  "),
+    ("----------------0000000000000000", "c.illegal  "), -- C / Zca
+    ("----------------000-----------00", "c.addi4spn "),
+    ("----------------010-----------00", "c.lw       "),
+    ("----------------110-----------00", "c.sw       "),
+    ("----------------000-----------01", "c.addi     "),
+    ("----------------001-----------01", "c.jal      "),
+    ("----------------010-----------01", "c.li       "),
+    ("----------------011-00010-----01", "c.addi16sp "),
+    ("----------------011-----------01", "c.lui      "),
+    ("----------------100-00--------01", "c.srli     "),
+    ("----------------100-01--------01", "c.srai     "),
+    ("----------------100-10--------01", "c.andi     "),
+    ("----------------100011---00---01", "c.sub      "),
+    ("----------------100011---01---01", "c.xor      "),
+    ("----------------100011---10---01", "c.or       "),
+    ("----------------100011---11---01", "c.and      "),
+    ("----------------101-----------01", "c.j        "),
+    ("----------------110-----------01", "c.beqz     "),
+    ("----------------111-----------01", "c.bnez     "),
+    ("----------------000-----------10", "c.slli     "),
+    ("----------------010-----------10", "c.lwsp     "),
+    ("----------------1001000000000010", "c.ebreak   "),
+    ("----------------1001-----0000010", "c.jalr     "),
+    ("----------------1000-----0000010", "c.jr       "),
+    ("----------------1001----------10", "c.add      "),
+    ("----------------1000----------10", "c.mv       "),
+    ("----------------110-----------10", "c.swsp     "),
+    ("----------------100000--------00", "c.lbu      "), -- Zcb
+    ("----------------100001---0----00", "c.lhu      "),
+    ("----------------100001---1----00", "c.lh       "),
+    ("----------------100010--------00", "c.sb       "),
+    ("----------------100011---0----00", "c.sh       "),
+    ("----------------100111---1100001", "c.zext.b   "),
+    ("----------------100111---1100101", "c.sext.b   "),
+    ("----------------100111---1101001", "c.zext.h   "),
+    ("----------------100111---1101101", "c.sext.h   "),
+    ("----------------100111---1110101", "c.not      "),
+    ("----------------100111---10---01", "c.mul      "),
     ("--------------------------------", "INVALID    ") -- last entry matches all: invalid
   );
 
@@ -445,6 +491,8 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_menvcfgh_c       => return "menvcfgh";
       -- machine counter setup --
       when csr_mcountinhibit_c  => return "mcountinhibit";
+      when csr_mcyclecfg_c      => return "csr_mcyclecfg";
+      when csr_minstretcfg_c    => return "csr_minstretcfg";
       when csr_mhpmevent3_c     => return "mhpmevent3";
       when csr_mhpmevent4_c     => return "mhpmevent4";
       when csr_mhpmevent5_c     => return "mhpmevent5";
@@ -458,13 +506,28 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_mhpmevent13_c    => return "mhpmevent13";
       when csr_mhpmevent14_c    => return "mhpmevent14";
       when csr_mhpmevent15_c    => return "mhpmevent15";
+      when csr_mhpmevent16_c    => return "mhpmevent16";
+      when csr_mhpmevent17_c    => return "mhpmevent17";
+      when csr_mhpmevent18_c    => return "mhpmevent18";
+      when csr_mhpmevent19_c    => return "mhpmevent19";
+      when csr_mhpmevent20_c    => return "mhpmevent20";
+      when csr_mhpmevent21_c    => return "mhpmevent21";
+      when csr_mhpmevent22_c    => return "mhpmevent22";
+      when csr_mhpmevent23_c    => return "mhpmevent23";
+      when csr_mhpmevent24_c    => return "mhpmevent24";
+      when csr_mhpmevent25_c    => return "mhpmevent25";
+      when csr_mhpmevent26_c    => return "mhpmevent26";
+      when csr_mhpmevent27_c    => return "mhpmevent27";
+      when csr_mhpmevent28_c    => return "mhpmevent28";
+      when csr_mhpmevent29_c    => return "mhpmevent29";
+      when csr_mhpmevent30_c    => return "mhpmevent30";
+      when csr_mhpmevent31_c    => return "mhpmevent31";
       -- machine trap handling --
       when csr_mscratch_c       => return "mscratch";
       when csr_mepc_c           => return "mepc";
       when csr_mcause_c         => return "mcause";
       when csr_mtval_c          => return "mtval";
       when csr_mip_c            => return "mip";
-      when csr_mtinst_c         => return "mtinst";
       -- physical memory protection - configuration --
       when csr_pmpcfg0_c        => return "pmpcfg0";
       when csr_pmpcfg1_c        => return "pmpcfg1";
@@ -487,34 +550,80 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_pmpaddr13_c      => return "pmpaddr13";
       when csr_pmpaddr14_c      => return "pmpaddr14";
       when csr_pmpaddr15_c      => return "pmpaddr15";
+      -- machine counter setup - continued --
+      when csr_mcyclecfgh_c     => return "mcyclecfgh";
+      when csr_minstretcfgh_c   => return "minstretcfgh";
+      when csr_mhpmevent3h_c    => return "mhpmevent3h";
+      when csr_mhpmevent4h_c    => return "mhpmevent4h";
+      when csr_mhpmevent5h_c    => return "mhpmevent5h";
+      when csr_mhpmevent6h_c    => return "mhpmevent6h";
+      when csr_mhpmevent7h_c    => return "mhpmevent7h";
+      when csr_mhpmevent8h_c    => return "mhpmevent8h";
+      when csr_mhpmevent9h_c    => return "mhpmevent9h";
+      when csr_mhpmevent10h_c   => return "mhpmevent10h";
+      when csr_mhpmevent11h_c   => return "mhpmevent11h";
+      when csr_mhpmevent12h_c   => return "mhpmevent12h";
+      when csr_mhpmevent13h_c   => return "mhpmevent13h";
+      when csr_mhpmevent14h_c   => return "mhpmevent14h";
+      when csr_mhpmevent15h_c   => return "mhpmevent15h";
+      when csr_mhpmevent16h_c   => return "mhpmevent16h";
+      when csr_mhpmevent17h_c   => return "mhpmevent17h";
+      when csr_mhpmevent18h_c   => return "mhpmevent18h";
+      when csr_mhpmevent19h_c   => return "mhpmevent19h";
+      when csr_mhpmevent20h_c   => return "mhpmevent20h";
+      when csr_mhpmevent21h_c   => return "mhpmevent21h";
+      when csr_mhpmevent22h_c   => return "mhpmevent22h";
+      when csr_mhpmevent23h_c   => return "mhpmevent23h";
+      when csr_mhpmevent24h_c   => return "mhpmevent24h";
+      when csr_mhpmevent25h_c   => return "mhpmevent25h";
+      when csr_mhpmevent26h_c   => return "mhpmevent26h";
+      when csr_mhpmevent27h_c   => return "mhpmevent27h";
+      when csr_mhpmevent28h_c   => return "mhpmevent28h";
+      when csr_mhpmevent29h_c   => return "mhpmevent29h";
+      when csr_mhpmevent30h_c   => return "mhpmevent30h";
+      when csr_mhpmevent31h_c   => return "mhpmevent31h";
       -- trigger module registers --
       when csr_tselect_c        => return "tselect";
       when csr_tdata1_c         => return "tdata1";
       when csr_tdata2_c         => return "tdata2";
       when csr_tinfo_c          => return "tinfo";
-      -- debug registers --
+      -- debug-mode registers --
       when csr_dcsr_c           => return "dcsr";
       when csr_dpc_c            => return "dpc";
       when csr_dscratch0_c      => return "dscratch0";
       -- machine counters/timers --
       when csr_mcycle_c         => return "mcycle";
-      when csr_mtime_c          => return "mtime";
       when csr_minstret_c       => return "minstret";
-      when csr_mhpmcounter3_c   => return "mhpmcounter3_";
-      when csr_mhpmcounter4_c   => return "mhpmcounter4_";
-      when csr_mhpmcounter5_c   => return "mhpmcounter5_";
-      when csr_mhpmcounter6_c   => return "mhpmcounter6_";
-      when csr_mhpmcounter7_c   => return "mhpmcounter7_";
-      when csr_mhpmcounter8_c   => return "mhpmcounter8_";
-      when csr_mhpmcounter9_c   => return "mhpmcounter9_";
+      when csr_mhpmcounter3_c   => return "mhpmcounter3";
+      when csr_mhpmcounter4_c   => return "mhpmcounter4";
+      when csr_mhpmcounter5_c   => return "mhpmcounter5";
+      when csr_mhpmcounter6_c   => return "mhpmcounter6";
+      when csr_mhpmcounter7_c   => return "mhpmcounter7";
+      when csr_mhpmcounter8_c   => return "mhpmcounter8";
+      when csr_mhpmcounter9_c   => return "mhpmcounter9";
       when csr_mhpmcounter10_c  => return "mhpmcounter10";
       when csr_mhpmcounter11_c  => return "mhpmcounter11";
       when csr_mhpmcounter12_c  => return "mhpmcounter12";
       when csr_mhpmcounter13_c  => return "mhpmcounter13";
       when csr_mhpmcounter14_c  => return "mhpmcounter14";
       when csr_mhpmcounter15_c  => return "mhpmcounter15";
+      when csr_mhpmcounter16_c  => return "mhpmcounter16";
+      when csr_mhpmcounter17_c  => return "mhpmcounter17";
+      when csr_mhpmcounter18_c  => return "mhpmcounter18";
+      when csr_mhpmcounter19_c  => return "mhpmcounter19";
+      when csr_mhpmcounter20_c  => return "mhpmcounter20";
+      when csr_mhpmcounter21_c  => return "mhpmcounter21";
+      when csr_mhpmcounter22_c  => return "mhpmcounter22";
+      when csr_mhpmcounter23_c  => return "mhpmcounter23";
+      when csr_mhpmcounter24_c  => return "mhpmcounter24";
+      when csr_mhpmcounter25_c  => return "mhpmcounter25";
+      when csr_mhpmcounter26_c  => return "mhpmcounter26";
+      when csr_mhpmcounter27_c  => return "mhpmcounter27";
+      when csr_mhpmcounter28_c  => return "mhpmcounter28";
+      when csr_mhpmcounter29_c  => return "mhpmcounter29";
+      when csr_mhpmcounter30_c  => return "mhpmcounter30";
+      when csr_mhpmcounter31_c  => return "mhpmcounter31";
       when csr_mcycleh_c        => return "mcycleh";
-      when csr_mtimeh_c         => return "mtimeh";
       when csr_minstreth_c      => return "minstreth";
       when csr_mhpmcounter3h_c  => return "mhpmcounter3h";
       when csr_mhpmcounter4h_c  => return "mhpmcounter4h";
@@ -529,6 +638,22 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_mhpmcounter13h_c => return "mhpmcounter13h";
       when csr_mhpmcounter14h_c => return "mhpmcounter14h";
       when csr_mhpmcounter15h_c => return "mhpmcounter15h";
+      when csr_mhpmcounter16h_c => return "mhpmcounter16h";
+      when csr_mhpmcounter17h_c => return "mhpmcounter17h";
+      when csr_mhpmcounter18h_c => return "mhpmcounter18h";
+      when csr_mhpmcounter19h_c => return "mhpmcounter19h";
+      when csr_mhpmcounter20h_c => return "mhpmcounter20h";
+      when csr_mhpmcounter21h_c => return "mhpmcounter21h";
+      when csr_mhpmcounter22h_c => return "mhpmcounter22h";
+      when csr_mhpmcounter23h_c => return "mhpmcounter23h";
+      when csr_mhpmcounter24h_c => return "mhpmcounter24h";
+      when csr_mhpmcounter25h_c => return "mhpmcounter25h";
+      when csr_mhpmcounter26h_c => return "mhpmcounter26h";
+      when csr_mhpmcounter27h_c => return "mhpmcounter27h";
+      when csr_mhpmcounter28h_c => return "mhpmcounter28h";
+      when csr_mhpmcounter29h_c => return "mhpmcounter29h";
+      when csr_mhpmcounter30h_c => return "mhpmcounter30h";
+      when csr_mhpmcounter31h_c => return "mhpmcounter31h";
       -- user counters/timers --
       when csr_cycle_c          => return "cycle";
       when csr_time_c           => return "time";
@@ -546,6 +671,22 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_hpmcounter13_c   => return "hpmcounter13";
       when csr_hpmcounter14_c   => return "hpmcounter14";
       when csr_hpmcounter15_c   => return "hpmcounter15";
+      when csr_hpmcounter16_c   => return "hpmcounter16";
+      when csr_hpmcounter17_c   => return "hpmcounter17";
+      when csr_hpmcounter18_c   => return "hpmcounter18";
+      when csr_hpmcounter19_c   => return "hpmcounter19";
+      when csr_hpmcounter20_c   => return "hpmcounter20";
+      when csr_hpmcounter21_c   => return "hpmcounter21";
+      when csr_hpmcounter22_c   => return "hpmcounter22";
+      when csr_hpmcounter23_c   => return "hpmcounter23";
+      when csr_hpmcounter24_c   => return "hpmcounter24";
+      when csr_hpmcounter25_c   => return "hpmcounter25";
+      when csr_hpmcounter26_c   => return "hpmcounter26";
+      when csr_hpmcounter27_c   => return "hpmcounter27";
+      when csr_hpmcounter28_c   => return "hpmcounter28";
+      when csr_hpmcounter29_c   => return "hpmcounter29";
+      when csr_hpmcounter30_c   => return "hpmcounter30";
+      when csr_hpmcounter31_c   => return "hpmcounter31";
       when csr_cycleh_c         => return "cycleh";
       when csr_timeh_c          => return "timeh";
       when csr_instreth_c       => return "instreth";
@@ -562,6 +703,22 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when csr_hpmcounter13h_c  => return "hpmcounter13h";
       when csr_hpmcounter14h_c  => return "hpmcounter14h";
       when csr_hpmcounter15h_c  => return "hpmcounter15h";
+      when csr_hpmcounter16h_c  => return "hpmcounter16h";
+      when csr_hpmcounter17h_c  => return "hpmcounter17h";
+      when csr_hpmcounter18h_c  => return "hpmcounter18h";
+      when csr_hpmcounter19h_c  => return "hpmcounter19h";
+      when csr_hpmcounter20h_c  => return "hpmcounter20h";
+      when csr_hpmcounter21h_c  => return "hpmcounter21h";
+      when csr_hpmcounter22h_c  => return "hpmcounter22h";
+      when csr_hpmcounter23h_c  => return "hpmcounter23h";
+      when csr_hpmcounter24h_c  => return "hpmcounter24h";
+      when csr_hpmcounter25h_c  => return "hpmcounter25h";
+      when csr_hpmcounter26h_c  => return "hpmcounter26h";
+      when csr_hpmcounter27h_c  => return "hpmcounter27h";
+      when csr_hpmcounter28h_c  => return "hpmcounter28h";
+      when csr_hpmcounter29h_c  => return "hpmcounter29h";
+      when csr_hpmcounter30h_c  => return "hpmcounter30h";
+      when csr_hpmcounter31h_c  => return "hpmcounter31h";
       -- machine information registers --
       when csr_mvendorid_c      => return "mvendorid";
       when csr_marchid_c        => return "marchid";
@@ -603,8 +760,8 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       when opcode_auipc_c  => return "x" & integer'image(rd_iv)  & ", 0x" & to_hexstring_f(iu_v);
       when opcode_jal_c    => return "x" & integer'image(rd_iv)  & ", "   & integer'image(ij_iv);
       when opcode_jalr_c   => return "x" & integer'image(rd_iv)  & ", "   & integer'image(ii_iv)  & "(x"  & integer'image(rs1_iv) & ")";
-      when opcode_branch_c => return "x" & integer'image(rs1_iv) & ", x"  & integer'image(rs2_iv) & ", "  & integer'image(is_iv);
-      when opcode_load_c   => return "x" & integer'image(rd_iv)  & ", "   & integer'image(is_iv)  & "(x"  & integer'image(rs1_iv) & ")";
+      when opcode_branch_c => return "x" & integer'image(rs1_iv) & ", x"  & integer'image(rs2_iv) & ", "  & integer'image(ib_iv);
+      when opcode_load_c   => return "x" & integer'image(rd_iv)  & ", "   & integer'image(ii_iv)  & "(x"  & integer'image(rs1_iv) & ")";
       when opcode_store_c  => return "x" & integer'image(rs2_iv) & ", "   & integer'image(is_iv)  & "(x"  & integer'image(rs1_iv) & ")";
       when opcode_amo_c    =>
         if (inst(28 downto 27) = "10") then -- zalrsc LR
@@ -668,8 +825,13 @@ begin
           write(line_v, string'(" "));
           -- instruction word --
           write(line_v, string'("0x"));
-          write(line_v, string'(to_hexstring_f(trace_i.insn)));
-          write(line_v, string'(" "));
+          if (trace_i.compr = '1') then -- compressed instruction
+            write(line_v, string'(to_hexstring_f(trace_i.insn(15 downto 0))));
+            write(line_v, string'("     "));
+          else
+            write(line_v, string'(to_hexstring_f(trace_i.insn)));
+            write(line_v, string'(" "));
+          end if;
           -- privilege level --
           if (trace_i.debug = '1') then
             write(line_v, string'("D "));
@@ -681,14 +843,9 @@ begin
             write(line_v, string'("? "));
           end if;
           -- decoded instruction --
-          if (trace_i.compr = '1') then -- de-compressed instruction
-            write(line_v, string'("c."));
-          else
-            write(line_v, string'("  "));
-          end if;
           write(line_v, string'(decode_mnemonic_f(trace_i.insn)));
           write(line_v, string'(" "));
-          write(line_v, string'(decode_operands_f(trace_i.insn)));
+          write(line_v, string'(decode_operands_f(trace_i.cmd32)));
           -- trap entry --
           if (trace_i.intr = '1') then
             write(line_v, string'(" <TRAP_ENTRY>"));

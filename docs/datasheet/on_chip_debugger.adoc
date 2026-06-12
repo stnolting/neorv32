@@ -3,7 +3,8 @@
 == On-Chip Debugger (OCD)
 
 The NEORV32 Processor features an _on-chip debugger_ (OCD) compatible to the **Minimal RISC-V Debug Specification**
-implementing the **execution-based debugging** scheme. A copy of the specification is available in `docs/references`.
+implementing the **execution-based debugging** scheme (https://docs.riscv.org/reference/debug/index.html).
+
 The on-chip debugger is implemented if the <<_processor_top_entity_generics, `OCD_EN`>> processor top generic is set
 to `true`. Optionally, a up to 16 hardware triggers can be implemented (<<_sdtrig_isa_extension>>) to support
 hardware-assisted break- and watchpoints. Furthermore, the OCD supports an optional <<_debug_authentication>>
@@ -145,11 +146,6 @@ For example, with semihosting you can
 [TIP]
 A simple semihosting example program can be found in `sw/example/demo_semihosting`.
 
-.RISC-V Semihosting Specification
-[NOTE]
-A copy of the implemented RISC-V semihosting specification is available in the
-documentation references folder: `docs/references/riscv-semihosting.pdf`
-
 The RISC-V semihosting builds upon the ARM standard. Hence, semihosting has to be **explicitly enabled** on the host
 side (in `GDB`) using the ARM command set:
 
@@ -195,6 +191,7 @@ If any semihosting request is issued without a host being connected, an environm
 Further references:
 
 * A great overview: https://interrupt.memfault.com/blog/arm-semihosting
+* RISC-V semihosting spec.: https://docs.riscv.org/reference/semihosting/index.html
 * Implementing semihosting on RISC-V: https://embeddedinn.com/articles/tutorial/understanding-riscv-semihosting/
 * Description of the service calls by ARM: https://developer.arm.com/documentation/dui0203/j/semihosting/semihosting-operations?lang=en
 
@@ -283,7 +280,8 @@ shows all available data registers and their addresses:
 | Bit(s) | Name   | R/W | Description
 | 40:34  | `addr` | r/w | 7-bit address, see <<_dm_registers>>
 | 33:2   | `data` | r/w | 32-bit data to write/read to/from the addresses DM register
-| 1:0    | `op`   | r/w | 2-bit operation (`00` = NOP; `10` = write; `01` = read)
+.2+^| 1:0 .2+^| `op` | r/- | Read access - status: `00` = idle, `11` = access while DMI is busy (sticky)
+                     | -/w <| Write access - operation: `00` = NOP, `01` = read, `10` = write
 |=======================
 
 
@@ -808,7 +806,7 @@ asynchronous interrupts) that are handled transparently by the control logic.
 ** for all other exception sources the CPU jumps to the exception entry point (defined by the <<_cpu_top_entity_generics, `CPU_DEBUG_EXC_ADDR`>> generic)
 to signal an exception to the DM; the CPU restarts the park loop again afterwards
 * interrupts are disabled; however, they will remain pending and will get executed after the CPU has left debug mode and is not being single-stepped
-* if the DM makes a resume request, the park loop exits and the CPU leaves debug mode (executing `dret`)
+* if the DM makes a resume request, the park loop exits and the CPU leaves debug mode by executing `dret`
 * the standard counters <<_machine_counter_and_timer_csrs>> `[m]cycle[h]` and `[m]instret[h]` are stopped
 * all <<_hardware_performance_monitors_hpm_csrs>> are stopped
 
@@ -1013,6 +1011,20 @@ but before any subsequent instructions were executed; the debugger has to write 
 | Description | This CSR provides access to the address bits (instruction address for breakpoints;
 data access address for watchpoints) of the currently selected trigger (via <<_tselect>>).
 Write accesses from machine-mode are ignored (because `tdata1.dmode` is hardwired to one).
+|=======================
+
+
+:sectnums!:
+===== **`tdata3`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Trigger data register 3
+| Address     | `0x7a3`
+| Reset value | `0x00000000`
+| ISA         | `Zicsr` & `Sdtrig`
+| Description | The features provided by this CSR are not implemented. Hence, this CSR is hardwired to all-zero.
 |=======================
 
 

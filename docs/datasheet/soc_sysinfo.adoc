@@ -111,16 +111,14 @@ The SYSINFO cache register provides information about the configuration of the p
 * <<_data_cache_dcache>>
 
 .SYSINFO `CACHE` Bits
-[cols="^1,<10,<10"]
+[cols="^1,<8,<10"]
 [options="header",grid="all"]
 |=======================
 | Bit     | Name [C] | Description
-| `3:0`   | `SYSINFO_CACHE_INST_BLOCK_SIZE_3 : SYSINFO_CACHE_INST_BLOCK_SIZE_0` | _log2_(i-cache block size in bytes), via top's `ICACHE_BLOCK_SIZE` generic
-| `7:4`   | `SYSINFO_CACHE_INST_NUM_BLOCKS_3 : SYSINFO_CACHE_INST_NUM_BLOCKS_0` | _log2_(i-cache number of cache blocks), via top's `ICACHE_NUM_BLOCKS` generic
-| `11:8`  | `SYSINFO_CACHE_DATA_BLOCK_SIZE_3 : SYSINFO_CACHE_DATA_BLOCK_SIZE_0` | _log2_(d-cache block size in bytes), via top's `DCACHE_BLOCK_SIZE` generic
-| `15:12` | `SYSINFO_CACHE_DATA_NUM_BLOCKS_3 : SYSINFO_CACHE_DATA_NUM_BLOCKS_0` | _log2_(d-cache number of cache blocks), via top's `DCACHE_NUM_BLOCKS` generic
-| `16`    | `SYSINFO_CACHE_INST_BURSTS_EN`                                      | i-cache burst transfers enabled, via top's `CACHE_BURSTS_EN` generic
-| `23:17` | `0000000`                                                           | _reserved_
-| `24`    | `SYSINFO_CACHE_DATA_BURSTS_EN`                                      | d-cache burst transfers enabled, via top's `CACHE_BURSTS_EN` generic
-| `31:25` | `0000000`                                                           | _reserved_
+| `3:0`   | `SYSINFO_CACHE_BLOCK_SIZE_3 : SYSINFO_CACHE_BLOCK_SIZE_0`     | _log2_(cache block size in bytes), via top's `CACHE_BLOCK_SIZE` generic
+| `7:4`   | `SYSINFO_CACHE_I_NUM_BLOCKS_3 : SYSINFO_CACHE_I_NUM_BLOCKS_0` | _log2_(i-cache number of cache blocks), via top's `ICACHE_NUM_BLOCKS` generic
+| `11:8`  | `SYSINFO_CACHE_D_NUM_BLOCKS_3 : SYSINFO_CACHE_D_NUM_BLOCKS_0` | _log2_(d-cache number of cache blocks), via top's `DCACHE_NUM_BLOCKS` generic
+| `15:12` | `SYSINFO_CACHE_UC_BEGIN_3 : SYSINFO_CACHE_UC_BEGIN_0`         | start of non-cached address space, 256MB page, via top's `CACHE_UC_BASE` generic
+| `16`    | `SYSINFO_CACHE_BURSTS_EN`                                     | cache burst transfers enabled, via top's `CACHE_BURSTS_EN` generic
+| `31:17` | -                                                             | _reserved_, read as zero
 |=======================

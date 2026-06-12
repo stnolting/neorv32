@@ -19,7 +19,7 @@ build/
 !rtl/core/*_image.vhd
 
 # logs and dumps
-*.gdb_history
+*.gdb*
 *.log
 *.vcd
 *.fst

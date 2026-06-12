@@ -31,11 +31,11 @@ uint64_t neorv32_cpu_get_cycle(void) {
     }
   }
 
-  subwords64_t cycles;
-  cycles.uint32[0] = tmp2;
-  cycles.uint32[1] = tmp3;
+  subwords64_t data;
+  data.uint32[0] = tmp2;
+  data.uint32[1] = tmp3;
 
-  return cycles.uint64;
+  return data.uint64;
 }
 
 
@@ -46,13 +46,38 @@ uint64_t neorv32_cpu_get_cycle(void) {
  **************************************************************************/
 void neorv32_cpu_set_mcycle(uint64_t value) {
 
-  subwords64_t cycles;
-  cycles.uint64 = value;
+  subwords64_t data;
+  data.uint64 = value;
 
   // prevent low-to-high carry while writing
   neorv32_cpu_csr_write(CSR_MCYCLE,  0);
-  neorv32_cpu_csr_write(CSR_MCYCLEH, cycles.uint32[1]);
-  neorv32_cpu_csr_write(CSR_MCYCLE,  cycles.uint32[0]);
+  neorv32_cpu_csr_write(CSR_MCYCLEH, data.uint32[1]);
+  neorv32_cpu_csr_write(CSR_MCYCLE,  data.uint32[0]);
+}
+
+
+/**********************************************************************//**
+ * Get system time counter from time[h] (from CLINT.MTIME).
+ *
+ * @return Current system time (64 bit).
+ **************************************************************************/
+uint64_t neorv32_cpu_get_time(void) {
+
+  uint32_t tmp1 = 0, tmp2 = 0, tmp3 = 0;
+  while(1) {
+    tmp1 = neorv32_cpu_csr_read(CSR_TIMEH);
+    tmp2 = neorv32_cpu_csr_read(CSR_TIME);
+    tmp3 = neorv32_cpu_csr_read(CSR_TIMEH);
+    if (tmp1 == tmp3) {
+      break;
+    }
+  }
+
+  subwords64_t data;
+  data.uint32[0] = tmp2;
+  data.uint32[1] = tmp3;
+
+  return data.uint64;
 }
 
 
@@ -73,11 +98,11 @@ uint64_t neorv32_cpu_get_instret(void) {
     }
   }
 
-  subwords64_t cycles;
-  cycles.uint32[0] = tmp2;
-  cycles.uint32[1] = tmp3;
+  subwords64_t data;
+  data.uint32[0] = tmp2;
+  data.uint32[1] = tmp3;
 
-  return cycles.uint64;
+  return data.uint64;
 }
 
 
@@ -88,13 +113,13 @@ uint64_t neorv32_cpu_get_instret(void) {
  **************************************************************************/
 void neorv32_cpu_set_minstret(uint64_t value) {
 
-  subwords64_t cycles;
-  cycles.uint64 = value;
+  subwords64_t data;
+  data.uint64 = value;
 
   // prevent low-to-high carry while writing
   neorv32_cpu_csr_write(CSR_MINSTRET,  0);
-  neorv32_cpu_csr_write(CSR_MINSTRETH, cycles.uint32[1]);
-  neorv32_cpu_csr_write(CSR_MINSTRET,  cycles.uint32[0]);
+  neorv32_cpu_csr_write(CSR_MINSTRETH, data.uint32[1]);
+  neorv32_cpu_csr_write(CSR_MINSTRET,  data.uint32[0]);
 }
 
 
@@ -249,7 +274,7 @@ int neorv32_cpu_pmp_configure_region(int index, uint32_t addr, uint8_t config) {
 /**********************************************************************//**
  * Hardware performance monitors (HPM): Get number of available HPM counters.
  *
- * @warning This function overrides all available HPMCOUNTER* CSRs!
+ * @warning This function overrides all available MHPMCOUNTER* CSRs!
  *
  * @return Returns number of available HPM counters.
  **************************************************************************/
@@ -277,6 +302,22 @@ uint32_t neorv32_cpu_hpm_get_num_counters(void) {
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER13, 1);
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER14, 1);
   neorv32_cpu_csr_write(CSR_MHPMCOUNTER15, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER16, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER17, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER18, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER19, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER20, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER21, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER22, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER23, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER24, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER25, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER26, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER27, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER28, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER29, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER30, 1);
+  neorv32_cpu_csr_write(CSR_MHPMCOUNTER31, 1);
 
   // sum-up all actually set HPMs
   uint32_t num_hpm = 0;
@@ -293,6 +334,22 @@ uint32_t neorv32_cpu_hpm_get_num_counters(void) {
   num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER13);
   num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER14);
   num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER15);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER16);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER17);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER18);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER19);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER20);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER21);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER22);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER23);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER24);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER25);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER26);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER27);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER28);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER29);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER30);
+  num_hpm += neorv32_cpu_csr_read(CSR_MHPMCOUNTER31);
 
   return num_hpm;
 }

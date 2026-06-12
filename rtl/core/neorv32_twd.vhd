@@ -88,7 +88,6 @@ architecture neorv32_twd_rtl of neorv32_twd is
     sda_sreg : std_ulogic_vector(2 downto 0); -- SDA synchronizer
     scl_sreg : std_ulogic_vector(2 downto 0); -- SCL synchronizer
     sda      : std_ulogic; -- current SDA state
-    scl      : std_ulogic; -- current SCL state
     scl_rise : std_ulogic; -- SCL rising edge
     scl_fall : std_ulogic; -- SCL falling edge
     start    : std_ulogic; -- start condition
@@ -299,7 +298,6 @@ begin
 
   -- bus event detectors (event signals are "single-shot") --
   smp.sda      <= smp.sda_sreg(1);
-  smp.scl      <= smp.sda_sreg(1);
   smp.scl_rise <= smp.valid and (not smp.scl_sreg(2)) and (    smp.scl_sreg(1));
   smp.scl_fall <= smp.valid and (    smp.scl_sreg(2)) and (not smp.scl_sreg(1));
   smp.start    <= smp.valid and smp.scl_sreg(2) and smp.scl_sreg(1) and (    smp.sda_sreg(2)) and (not smp.sda_sreg(1));
@@ -402,13 +400,15 @@ begin
         -- ------------------------------------------------------------
           if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
+          elsif (smp.start = '1') then -- start-condition
+            engine.state <= S_INIT;
           else
             if (engine.cmd = '0') then -- WRITE operation
               engine.sda   <= not rx_fifo.free; -- ACK if RX FIFO is not full; NACK if RX FIFO is full
               engine.rx_we <= smp.scl_fall; -- push to RX FIFO at end of bit slot (if RX FIFO not full)
             else -- READ operation
               engine.sda   <= '1'; -- keep high-Z so we can sample the ACK/NACK from the host
-              engine.tx_re <= smp.scl_rise and (not smp.sda); -- pop from RX FIFO if ACK at sample point
+              engine.tx_re <= smp.scl_rise and (not smp.sda); -- pop from TX FIFO if ACK at sample point
             end if;
             if (smp.scl_fall = '1') then -- end of bit slot
               engine.state <= S_PREP;

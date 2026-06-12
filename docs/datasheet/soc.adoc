@@ -121,8 +121,9 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 | `slink_tx_lst_o` |  1 | out |   -   | TX last element of stream
 | `slink_tx_rdy_i` |  1 |  in | `'L'` | TX allowed to send
 5+^| **<<_general_purpose_input_and_output_port_gpio>>**
-| `gpio_o`         | 32 | out |   -   | general purpose parallel output
-| `gpio_i`         | 32 |  in | `'L'` | general purpose parallel input (interrupt-capable)
+| `gpio_dir_o`     | 32 | out |   -   | general purpose port direction control (`0` = input, `1` = output)
+| `gpio_o`         | 32 | out |   -   | general purpose parallel output port
+| `gpio_i`         | 32 |  in | `'L'` | general purpose parallel input port (interrupt-capable)
 5+^| **<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>**
 | `uart0_txd_o`    |  1 | out |   -   | serial transmitter
 | `uart0_rxd_i`    |  1 |  in | `'L'` | serial receiver
@@ -188,7 +189,7 @@ By default, all configuration options are **disabled**.
 
 .Software Discovery of Configuration
 [TIP]
-Software can determine the actual CPU configuration via the <<_misa>> and <<_mxisa>> CSRs. The SoC/Processor configuration
+Software can determine the actual CPU configuration via the <<_misa>> and <<_mxisah>> CSRs. The SoC/Processor configuration
 can be determined via the <<_system_configuration_information_memory_sysinfo, SYSINFO>> memory-mapped registers.
 
 .NEORV32 Processor Generic List; table abbreviations: the generic type "`suv(x:y)`" is an abbreviation for "`std_ulogic_vector(x downto y)`"
@@ -217,6 +218,7 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `RISCV_ISA_Zalrsc`    | boolean   | false         | Enable <<_zalrsc_isa_extension>> (atomic reservation-set operations).
 | `RISCV_ISA_Zba`       | boolean   | false         | Enable <<_zba_isa_extension>> (shifted-add bit-manipulation instructions).
 | `RISCV_ISA_Zbb`       | boolean   | false         | Enable <<_zbb_isa_extension>> (basic bit-manipulation instructions).
+| `RISCV_ISA_Zbc`       | boolean   | false         | Enable <<_zbc_isa_extension>> (carry-less multiplication instructions).
 | `RISCV_ISA_Zbkb`      | boolean   | false         | Enable <<_zbkb_isa_extension>> (scalar cryptography bit manipulation instructions).
 | `RISCV_ISA_Zbkc`      | boolean   | false         | Enable <<_zbkc_isa_extension>> (scalar cryptography carry-less multiplication instructions).
 | `RISCV_ISA_Zbkx`      | boolean   | false         | Enable <<_zbkx_isa_extension>> (scalar cryptography crossbar permutations).
@@ -247,8 +249,8 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `PMP_TOR_MODE_EN`     | boolean   | false         | Implement support for top-of-region (TOR) mode.
 | `PMP_NAP_MODE_EN`     | boolean   | false         | Implement support for naturally-aligned power-of-two (NAPOT & NA4) modes.
 4+^| **Hardware Performance Monitors (<<_zihpm_isa_extension>>)**
-| `HPM_NUM_CNTS`        | natural   | 0             | Number of implemented hardware performance monitor counters (0..13).
-| `HPM_CNT_WIDTH`       | natural   | 40            | Total LSB-aligned size of each HPM counter. Min 0, max 64.
+| `HPM_NUM_CNTS`        | natural   | 0             | Number of implemented hardware performance monitor counters (0..29).
+| `HPM_CNT_WIDTH`       | natural   | 64            | Total LSB-aligned size of each HPM counter. Min 0, max 64.
 4+^| **Internal <<_instruction_memory_imem>>**
 | `IMEM_EN`             | boolean   | false         | Implement instruction memory.
 | `IMEM_BASE`           | suv(31:0) | x"00000000"   | Base address of the instruction memory (has to be naturally-aligned to its size). Handle with care.
@@ -266,45 +268,67 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `DCACHE_NUM_BLOCKS`   | natural   | 4             | Number of blocks ("lines"). Has to be a power of two.
 | `CACHE_BLOCK_SIZE`    | natural   | 64            | global cache block size (I$ **and** D$) in bytes. Has to be a power of two, min 4.
 | `CACHE_BURSTS_EN`     | boolean   | true          | Enable burst transfers for cache updates.
+| `CACHE_UC_BASE`       | suv(31:0) | x"F0000000"   | Base address of uncached address space. Has to be 256MB-aligned.
 4+^| **<<_processor_external_bus_interface_xbus>> (Wishbone / AXI4-Compatible Bridging)**
 | `XBUS_EN`             | boolean   | false         | Implement the external bus interface.
 | `XBUS_TIMEOUT`        | natural   | 2048          | Number of clock cycles after which an unacknowledged external bus access will auto-terminate (0 = disabled).
 | `XBUS_REGSTAGE_EN`    | boolean   | false         | Implement XBUS register stages to ease timing closure.
-4+^| **Peripheral/IO Modules**
-| `IO_GPIO_NUM`         | natural   | 0             | Number of general purpose input/output pairs of the <<_general_purpose_input_and_output_port_gpio>>, max 32.
-| `IO_CLINT_EN`         | boolean   | false         | Implement the <<_core_local_interruptor_clint>>.
-| `IO_UART0_EN`         | boolean   | false         | Implement the <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>.
+4+^| **<<_general_purpose_input_and_output_port_gpio>>**
+| `IO_GPIO_NUM`         | natural   | 0             | Number of GPIO pairs, max 32.
+| `IO_GPIO_DIR_EN`      | boolean   | false         | Enable optional GPIO direction control interface (`gpio_dir_o`).
+4+^| **<<_core_local_interruptor_clint>>**
+| `IO_CLINT_EN`         | boolean   | false         | Implement CLINT.
+4+^| **<<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>**
+| `IO_UART0_EN`         | boolean   | false         | Implement UART0.
 | `IO_UART0_RX_FIFO`    | natural   | 1             | UART0 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_UART0_TX_FIFO`    | natural   | 1             | UART0 TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_UART1_EN`         | boolean   | false         | Implement the <<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>.
+4+^| **<<_secondary_universal_asynchronous_receiver_and_transmitter_uart1>>**
+| `IO_UART1_EN`         | boolean   | false         | Implement UART1.
 | `IO_UART1_RX_FIFO`    | natural   | 1             | UART1 RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_UART1_TX_FIFO`    | natural   | 1             | UART1 TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_SPI_EN`           | boolean   | false         | Implement the <<_serial_peripheral_interface_controller_spi>>.
-| `IO_SPI_FIFO`         | natural   | 1             | Depth of the <<_serial_peripheral_interface_controller_spi>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_SDI_EN`           | boolean   | false         | Implement the <<_serial_data_interface_controller_sdi>>.
-| `IO_SDI_FIFO`         | natural   | 1             | Depth of the <<_serial_data_interface_controller_sdi>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_TWI_EN`           | boolean   | false         | Implement the <<_two_wire_serial_interface_controller_twi>>.
-| `IO_TWI_FIFO`         | natural   | 1             | Depth of the <<_two_wire_serial_interface_controller_twi>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_TWD_EN`           | boolean   | false         | Implement the <<_two_wire_serial_device_controller_twd>>.
-| `IO_TWD_RX_FIFO`      | natural   | 1             | Depth of the <<_two_wire_serial_device_controller_twd>> RX FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_TWD_TX_FIFO`      | natural   | 1             | Depth of the <<_two_wire_serial_device_controller_twd>> TX FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_PWM_NUM`          | natural   | 0             | Number of channels of the <<_pulse_width_modulation_controller_pwm>> to implement (0..32).
-| `IO_WDT_EN`           | boolean   | false         | Implement the <<_watchdog_timer_wdt>>.
-| `IO_TRNG_EN`          | boolean   | false         | Implement the <<_true_random_number_generator_trng>>.
+4+^| **<<_serial_peripheral_interface_controller_spi>>**
+| `IO_SPI_EN`           | boolean   | false         | Implement SPI controller.
+| `IO_SPI_FIFO`         | natural   | 1             | Depth of the SPI FIFO. Has to be a power of two, min 1, max 32768.
+4+^| **<<_serial_data_interface_controller_sdi>>**
+| `IO_SDI_EN`           | boolean   | false         | Implement SDI controller.
+| `IO_SDI_FIFO`         | natural   | 1             | Depth of the SDI FIFO. Has to be a power of two, min 1, max 32768.
+4+^| **<<_two_wire_serial_interface_controller_twi>>**
+| `IO_TWI_EN`           | boolean   | false         | Implement TWI controller.
+| `IO_TWI_FIFO`         | natural   | 1             | Depth of the TWI FIFO. Has to be a power of two, min 1, max 32768.
+4+^| **<<_two_wire_serial_device_controller_twd>>**
+| `IO_TWD_EN`           | boolean   | false         | Implement TWD controller.
+| `IO_TWD_RX_FIFO`      | natural   | 1             | Depth of the TWD RX FIFO. Has to be a power of two, min 1, max 32768.
+| `IO_TWD_TX_FIFO`      | natural   | 1             | Depth of the TWD TX FIFO. Has to be a power of two, min 1, max 32768.
+4+^| **<<_pulse_width_modulation_controller_pwm>>**
+| `IO_PWM_NUM`          | natural   | 0             | Number of PWM channels to implement (0..32).
+4+^| **<<_watchdog_timer_wdt>>**
+| `IO_WDT_EN`           | boolean   | false         | Implement WDT.
+4+^| **<<_true_random_number_generator_trng>>**
+| `IO_TRNG_EN`          | boolean   | false         | Implement TRNG.
 | `IO_TRNG_FIFO`        | natural   | 1             | Depth of the TRNG data FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_CFS_EN`           | boolean   | false         | Implement the <<_custom_functions_subsystem_cfs>>.
-| `IO_NEOLED_EN`        | boolean   | false         | Implement the <<_smart_led_interface_neoled>>.
-| `IO_NEOLED_TX_FIFO`   | natural   | 1             | TX FIFO depth of the <<_smart_led_interface_neoled>>. Has to be a power of two, min 1, max 32768.
-| `IO_GPTMR_NUM`        | natural   | 0             | Number of individual <<_general_purpose_timer_gptmr>> timer slices (0..16).
-| `IO_ONEWIRE_EN`       | boolean   | false         | Implement the <<_one_wire_serial_interface_controller_onewire>>.
-| `IO_ONEWIRE_FIFO`     | natural   | 1             | Depth of the <<_one_wire_serial_interface_controller_onewire>> FIFO. Has to be a power of two, min 1, max 32768.
-| `IO_DMA_EN`           | boolean   | false         | Implement the <<_direct_memory_access_controller_dma>>.
+| `IO_TRNG_NUM_RO`      | natural   | 3             | Total number of ring-oscillators.
+| `IO_TRNG_NUM_INV`     | natural   | 5             | Number of inverters in first ring-oscillator; has to be odd.
+| `IO_TRNG_NUM_RBIT`    | natural   | 64            | Number of raw random bits to process for one output byte; has to be power of 2.
+4+^| **<<_custom_functions_subsystem_cfs>>**
+| `IO_CFS_EN`           | boolean   | false         | Implement CFS.
+4+^| **<<_smart_led_interface_neoled>>**
+| `IO_NEOLED_EN`        | boolean   | false         | Implement NEOLED controller.
+| `IO_NEOLED_TX_FIFO`   | natural   | 1             | TX FIFO depth of the NEOLED controller. Has to be a power of two, min 1, max 32768.
+4+^| **<<_general_purpose_timer_gptmr>>**
+| `IO_GPTMR_NUM`        | natural   | 0             | Number of individual GPTMR timer slices (0..16).
+4+^| **<<_one_wire_serial_interface_controller_onewire>>**
+| `IO_ONEWIRE_EN`       | boolean   | false         | Implement 1-wire controller.
+| `IO_ONEWIRE_FIFO`     | natural   | 1             | Depth of the 1-Wire FIFO. Has to be a power of two, min 1, max 32768.
+4+^| **<<_direct_memory_access_controller_dma>>**
+| `IO_DMA_EN`           | boolean   | false         | Implement DMA controller.
 | `IO_DMA_DSC_FIFO`     | natural   | 4             | Depth of the DMA transfer descriptor FIFO. Has to be a power of two, min 4, max 512.
-| `IO_SLINK_EN`         | boolean   | false         | Implement the <<_stream_link_interface_slink>> (AXI4-Stream-Compatible).
+4+^| **<<_stream_link_interface_slink>>**
+| `IO_SLINK_EN`         | boolean   | false         | Implement stream link interface (AXI4-Stream-Compatible).
 | `IO_SLINK_RX_FIFO`    | natural   | 1             | SLINK RX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
 | `IO_SLINK_TX_FIFO`    | natural   | 1             | SLINK TX FIFO depth, has to be a power of two, minimum value is 1, max 32768.
-| `IO_TRACER_EN`        | boolean   | false         | Implement the <<_execution_trace_buffer_tracer>>.
-| `IO_TRACER_BUFFER`    | natural   | 1             | Depth of the <<_execution_trace_buffer_tracer>>. Has to be a power of two, min 1, max 32768.
+4+^| ** <<_execution_trace_buffer_tracer>>**
+| `IO_TRACER_EN`        | boolean   | false         | Implement the trace buffer.
+| `IO_TRACER_BUFFER`    | natural   | 1             | Depth of the trace buffer. Has to be a power of two, min 1, max 32768.
 | `IO_TRACER_SIMLOG_EN` | boolean   | false         | Write full trace log to file (simulation-only).
 |=======================
 
@@ -439,35 +463,34 @@ table. The channel number also corresponds to the according FIRQ priority (0 = h
 :sectnums:
 === Address Space
 
-As a 32-bit architecture, NEORV32 can access 4GB of physical address space. This address space is divided into two
-regions: the lower 3.75 GB (`0x00000000 ... 0xEFFFFFFF`) are referred to as **Memory Address Space** while
-the upper 256 MB (`0xF0000000 ... 0xFFFFFFFF`) are referred to as **IO/Peripheral Address Space**.
+As a 32-bit architecture, NEORV32 can access up to 4GB of physical address space. The following figure shows
+the **default** address space layout with the according memory capabilites (_physical memory attributes_ "PMAs"):
 
 .NEORV32 Processor Address Space (Default Configuration)
 image::address_space.png[900]
 
-The _memory address space_ is intended for actual memory and provides fully cached accesses from the
-<<_instruction_cache_icache,instruction>> and <<_data_cache_dcache,data>> caches of the CPU(s). In contrast, the
-_IO/peripheral address space_ is dedicated for memory-mapped IO and provides direct / uncached accesses only.
-Note that the address ranges for cached and uncached accesses are hard-wired and are not intended to be customized by the user.
-
-How these two address regions are used is ultimately up to the user. However, in the default processor configuration
-the memory address space can be optionally populated with processor-internal instruction and data memories. By default,
-the processor-internal <<_instruction_memory_imem>> is mapped to base address `0x00000000` and the processor- internal
-<<_data_memory_dmem>> is mapped to base address `0x80000000`. The very last 2 MB of the IO/peripheral address space is
-exclusively reserved for the NEORV32-internal memory-mapped IO and peripheral modules.
-
-Accesses to "unmapped" addresses (a.k.a. **the void**) are redirected to the <<_processor_external_bus_interface_xbus>>.
-For example, if the processor-internal IMEM is disabled, accesses to the addresses starting at `0x00000000` are also
-redirected to the external bus interface. If the external bus interface is not enabled any access to the void will raise
-a bus error exception.
-
-.Physical Memory Attributes "PMAs"
+.Custom Physical Memory Attributes
 [NOTE]
-The address space regions provides specific physical memory attributes that define the access capabilities:
-`r` = read access, `w` = write access, `x` = execute access, `a` = atomic access, `c` = cached CPU access.
 Custom physical memory attributes enforced by the CPU's physical memory protection "PMP" (<<_smpmp_isa_extension>>)
 can be used to further constrain the physical memory attributes.
+
+The address space is highly configurable. Only the very last 2 MB (`0xFFE00000 .. 0xFFFFFFFF`) are exclusively reserved
+for the NEORV32's internal memory-mapped peripherals and I/O modules. The internal processor-internal <<_instruction_memory_imem>>
+and <<_data_memory_dmem>> (if enabled), on the other hand, can be mapped to any address via the configuration generics.
+
+Accesses to "unmapped" addresses (a.k.a. **the void**) are redirected to the <<_processor_external_bus_interface_xbus>>.
+For example, if the processor-internal IMEM is disabled, accesses to the addresses starting at `0x00000000` (if not mapped
+to the DMEM) are also redirected to the external bus interface. If the external bus interface is not enabled any access to
+the void will raise a bus error exception.
+
+By default, all addresses starting at `0xF0000000` are not cached by the CPU caches to provide direct access to memory-mapped
+peripherals. However, this address boundary can be lowered by the according configuration generic (`CACHE_UC_BASE`) to
+increase the size of the uncached address space. Note
+
+.Uncached Address Space
+[NOTE]
+Please note that the uncached address space can only be altered in 256 MB increments. The uncached address space
+starts at the configured 256 MB page and always extends to the end of the address space (`0xFFFFFFFF`).
 
 
 :sectnums:
@@ -601,54 +624,65 @@ content of the accessed address) is sent back to the requesting CPU.
 
 ===== Atomic Reservation-Set Controller
 
-A "reservation"  is defined by an address or address range that provides a guarding mechanism to support atomic
-accesses (as specified by the RISC-V <<_zalrsc_isa_extension>>). A new reservation is registered by the `LR`
-instruction. The address provided by this instruction defines the memory location(s) that is/are monitored for
-exclusive accesses. The according `SC` instruction evaluates the state of this reservation. If the reservation
-is still valid the write access performed by the `SC` instruction is finally executed and the instruction returns
-a "success" state (i.e. `rd` = 0). If the reservation has been invalidated the `SC` instruction will not write
-to memory and will return a "failed" state (i.e. `rd` = 1).
+In NEORV32 a reservation is defined by a 64-byte address granule that provides a guarding mechanism to support
+atomic accesses (as specified by the RISC-V <<_zalrsc_isa_extension>>). A new reservation is registered by the
+`LR` instruction. The address provided by this instruction defines the 64-byte-aligned memory region that is
+monitored for exclusive accesses. The according `SC` instruction evaluates the state of this reservation. If the
+reservation is still valid (same owner core / issueing core and same address granule) the write access performed by
+the `SC` instruction is finally executed and the instruction returns a _success_ state (i.e. `rd = 0`). If the
+reservation has been invalidated or does not match, the `SC` instruction will not update main memory and will return
+a _failed_ state (i.e. `rd = 1`).
 
-The reservation-set controller implements the _strong semnatics_. A reservation is created when executing
-an `LR` instruction. Any other data memory access (for example by the DMA) will invalidate any active reservation
-(note that instruction fetch accesses do not affect the reservations at all). Furthermore, `fence[.i]` also do not
-impact the reservation state at all.
+[IMPORTANT]
+In either case, the `SC` instruction issues a downstream bus access to main memory (converted to a READ in case
+of failure) to allow the detection of access faults for the target address also for failed `SC` instructions
+which is required by the RISC-V specs.
 
-The reservation-set controller implements a **single, global reservation set only** which is used by both cores
-of the SMP <<_dual_core_configuration>>. The `LR` operation of any CPU core creates a new reservation (for the
-entire address space as the reservation is global) that is also used by the other CPUs. However, only one CPU will
-receive a success state for the according `SC` operation, which - in term - invalidates the reservation again.
-This guarantees atomic accesses and thus, mutually exclusive access.
+The reservation-set controller implements a single reservation set per instance with a fixed granularity of 64 bytes.
+Each reservation tracks the owning core's ID and the aligned base address. A reservation is invalidated only when a
+write access targets the same 64-byte address granule - read accesses, instruction fetches, and `fence[.i]` instructions
+do not affect the reservation state.
+
+The reservation-set controller is shared by both cores in the SMP <<_dual_core_configuration>>.
+To ensure forward progress during concurrent atomic sequences, a turn-based arbitration mechanism is implemented:
+
+[start=1]
+. An `LR` instruction can create (or update) a reservation if no reservation is active, if the requesting core already
+owns the current reservation, or if it is the requesting core's "turn" (priority).
+. A successful `SC` flips the turn, ensuring that the other core receives priority for its next `LR` attempt.
+. A failed `SC` from the owning core also clears the reservation, preventing stale reservations from blocking progress.
+
+This guarantees atomic accesses and mutually exclusive access without starvation.
 
 .External Reservations
-[IMPORTANT]
-Note that the reservation-set controller cannot track memory accesses outside
-of the NEORV32 processor (i.e. atomic accesses via the external bus interface)
-that are executed by processor-external agents.
+[WARNING]
+Note that the reservation-set controller cannot track memory accesses outside of the NEORV32 processor
+(i.e. atomic accesses via the external bus interface) that are executed by processor-external agents.
 
 
 :sectnums:
 ==== Memory Coherence
 
-Depending on the configuration, the NEORV32 memory hierarchy consists of several levels.
+Depending on the configuration, the NEORV32 memory hierarchy provides several levels/layers of memory.
 
 [start=1]
 . The CPU execution pipeline and its _instruction prefetch buffer_ (<<_cpu_front_end>>)
-. The <<_data_cache_dcache>> and <<_instruction_cache_icache>> (both optional)
-. Processor-internal and processor-external memories (depends on setup configuration)
+. The optional <<_data_cache_dcache>> and <<_instruction_cache_icache>>
+. Processor-internal and processor-external memories (depending on setup configuration)
 
-Memory accesses are initiated exclusively by the CPU or the <<_direct_memory_access_controller_dma>>.
+NEORV32 can feature up to three bus hosts: up to two CPU cores and the <<_direct_memory_access_controller_dma>>.
 Since the levels of the memory hierarchy are transparent to the software, special care must be taken
 to ensure memory coherence is maintained throughout the entire system/application. Note that coherence
 and especially cache synchronization is **not** performed automatically by the hardware itself as there
-is no snooping implemented. NEORV32 supports two RISC-V memory ordering instructions for manual memory
-synchronization which are always available regardless of the actual CPU/ISA configuration:
+is no snooping implemented. NEORV32 supports two RISC-V memory ordering instructions that are used for
+manual memory synchronization:
 
-* `fence.i` (<<_zifencei_isa_extension>>): flush the CPU's instruction prefetch buffer
-and clear the CPU's instruction cache.
-* `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>): clear and reload the CPU's
-data cache. Flushing is not implemented as the data cache uses **write-through** strategy.
-Hence, write operations are always synchronized with main memory.
+* `fence` (<<_i_isa_extension>> / <<_e_isa_extension>>): Flush the CPU's data cache: Modified ("dirty")
+blocks are copied back to main memory; all clean blocks are invalidated so that the next CPU access to
+any block results in a cache miss that reloads the cache with up-to-date data from main memory.
+* `fence.i` (<<_zifencei_isa_extension>>): Perform the same operations as `fence` (i.e. flushing the data
+cache), but also clear the CPU's instruction prefetch buffer and instruction cache. The next instruction
+cache access therefore results in a miss that fetches up-to-date data from main memory.
 
 .Weak Coherence Model
 [IMPORTANT]
@@ -657,43 +691,18 @@ coherence model. A core's `fence` just orders all memory accesses towards main m
 visible by other agents (the secondary CPU core, the DMA, processor-external modules) if these agents also
 synchronize (e.g. reload) their cache(s).
 
-===== Coherence Example
+Atomic memory accesses also require special attention. All atomic memory accesses bypass the CPU caches.
+However, in this case, the caches explicitly ensure memory coherence. If the address of an atomic memory
+access is cached, the corresponding line is first written back to main memory if it has been modified.
+Afterward, the corresponding line is invalidated, and the atomic access is executed as a cache bypass.
+The next access to the atomic address bypasses the cache if it is again an atomic memory operation.
+Normal memory accesses result in a cache miss (since the corresponding line was automatically invalidated
+previously), so that the cache is reloaded with current data from main memory.
 
-The following C example shows how to declare and use an atomic variable using the`_Atomic` specifier:
-
-.Atomic Variables - C Source Code
-[source, c]
-----
-_Atomic int counter = 0;
-
-counter = 3;
-counter++;
-----
-
-.Atomic Variables - According RISC-V Assembly Code
-[source, assembly]
-----
-li a3,3
-li a4,1
-
-fence rw,w
-sw    a3,0(a2)
-fence rw,rw
-
-amoadd.w.aqrl zero,a4,(a2)
-----
-
-The initial assignment `counter = 0` is translated into a store-word instruction (`sw`) that is
-automatically encapsulated within two `fence` instructions. This guarantees memory coherence as each
-`fence` will synchronize the CPU's data cache with upstream/main memory.
-
-The counter increment (`counter++`) is implemented as RISC-V atomic memory operation (`amoadd`). However, the
-compiler does not encapsulate this in within FENCE instructions. Hence, the altered atomic variable
-is **not** updated in the CPU's data cache (but in upstream/main memory).
-
-The above example clearly shows that special attention must be paid to memory coherence when using
-atomic memory operations.
-
+.C-Language `_Atomic` Variables
+[NOTE]
+Using plain `_Atomic` access (e.g., `_Atomic int counter = 0;`) defaults to GCC's `memory_order_seq_cst`
+buildin, which inserts fence instructions _before_ and _after_ the access. This is the safest but slowest option.
 
 <<<
 // ####################################################################################################################
@@ -773,7 +782,7 @@ However, only the specified memory-mapped registers addresses should be used.
 
 .Unimplemented Modules / Address Holes
 [NOTE]
-When accessing an IO device tha hast not been implemented (disabled via the according generic)
+When accessing an IO device that has not been implemented (disabled via the according generic)
 or when accessing an address that is actually unused, a load/store access fault exception is raised.
 
 .Writing to Read-Only Registers

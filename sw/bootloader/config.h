@@ -15,6 +15,12 @@
 #define CONFIG_H
 
 /**********************************************************************
+ * Additional includes
+ **********************************************************************/
+
+#include <stdint.h>
+
+/**********************************************************************
  * Serial console
  **********************************************************************/
 
@@ -190,6 +196,18 @@
 // Name of expected executable for UART upload (string)
 #ifndef THEME_EXE
 #define THEME_EXE "neorv32_exe.bin"
+#endif
+
+/**********************************************************************
+ * User-defined code
+ **********************************************************************/
+
+// User-defined initialization code; executed at the end of #system_setup();
+#ifndef USER_CODE_INIT
+#define USER_CODE_INIT \
+({                     \
+  (void)0;             \
+})
 #endif
 
 /**********************************************************************

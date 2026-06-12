@@ -297,7 +297,7 @@ begin
       when "01"   => csr_rdata_o(4 downto 0) <= csr_fflags; -- exception flags
       when "10"   => csr_rdata_o(2 downto 0) <= csr_frm; -- rounding mode
       when "11"   => csr_rdata_o(7 downto 0) <= csr_frm & csr_fflags; -- control/status (frm & fflags)
-      when others => NULL;
+      when others => null;
     end case;
   end process csr_read;
 

@@ -29,6 +29,36 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 05.06.2026 | 1.13.1.6 | :warning: rework hardware performance counter (HPM) events | [#1569](https://github.com/stnolting/neorv32/pull/1569) |
+| 05.06.2026 | 1.13.1.5 | :bug: minor rtl fixes: fix trace port's RD register signal; fix `Smcntrpmf`'s *cfg CSR address decoding | [#1568](https://github.com/stnolting/neorv32/pull/1568) |
+| 04.06.2026 | 1.13.1.4 | minor rtl edits and cleanups | [#1565](https://github.com/stnolting/neorv32/pull/1565) |
+| 27.05.2026 | 1.13.1.3 | add option to configure start of uncached address space | [#1561](https://github.com/stnolting/neorv32/pull/1561) |
+| 25.05.2026 | 1.13.1.2 | :bug: fix stream link's `rx_ready_o` signal (zero when module is disabled) | [#1558](https://github.com/stnolting/neorv32/pull/1558) |
+| 16.05.2026 | 1.13.1.1 | :bug: fix/rework reservation station of `Zalrsc` ISA extension; `sc` can also cause a bus access fault even if the reservation fails | [#1556](https://github.com/stnolting/neorv32/pull/1556) |
+| 14.05.2026 | [**1.13.1**](https://github.com/stnolting/neorv32/releases/tag/v1.13.1) | :rocket: **New release** | |
+| 11.05.2026 | 1.13.0.9 | trace log: add RVC / compressed-instruction logging and decoding | [#1553](https://github.com/stnolting/neorv32/pull/1553) |
+| 08.05.2026 | 1.13.0.8 | :sparkles: add support for RISC-V `time[h]` CSRs | [#1551](https://github.com/stnolting/neorv32/pull/1551) |
+| 08.05.2026 | 1.13.0.7 | :sparkles: add support for RISC-V `Zbc` ISA extension (carry-less multiplication) | [#1550](https://github.com/stnolting/neorv32/pull/1550) |
+| 08.05.2026 | 1.13.0.6 | :bug: PMP: fix write-only permission config and address/mask storage | [#1549](https://github.com/stnolting/neorv32/pull/1549) |
+| 06.05.2026 | 1.13.0.5 | add support for all hardware performance monitors (HPMs); add high-word event-select CSRs (`mhpmevent*h`); add unprivileged/user-mode CSRs shadow copies (`hpmcounter*[h]`) | [#1546](https://github.com/stnolting/neorv32/pull/1546) |
+| 03.05.2026 | 1.13.0.4 | rework on-chip debugger (OCD) fixing minor spec incompatibilities | [#1544](https://github.com/stnolting/neorv32/pull/1544) |
+| 02.05.2026 | 1.13.0.3 | minor rtl fixes, edits and cleanups (PMP, TWD, bus | [#1543](https://github.com/stnolting/neorv32/pull/1543) |
+| 01.05.2026 | 1.13.0.2 | :warning: rework trap CSRs: remove `mtinst`; make `mtval` more verbose; add full WARL access for `mcause` and `mtval` | [#1524](https://github.com/stnolting/neorv32/pull/1542) |
+| 29.04.2026 | 1.13.0.1 | rework cache handling of atomic memory operations: enforce memory synchronization by hardware | [#1540](https://github.com/stnolting/neorv32/pull/1540) |
+| 27.04.2026 | [**1.13.0**](https://github.com/stnolting/neorv32/releases/tag/v1.13.0) | :rocket: **New release** | |
+| 25.04.2026 | 1.12.9.9 | `C` ISA extension: decompressor cleanups and logic optimizations (dead code elimination) | [#1537](https://github.com/stnolting/neorv32/pull/1537) |
+| 24.04.2026 | 1.12.9.8 | minor rtl (corner case) fixes and logic optimizations | [#1534](https://github.com/stnolting/neorv32/pull/1534) |
+| 24.04.2026 | 1.12.9.7 | UART: reset RX overflow flag on CTRL read; minor code cleanups | [#1533](https://github.com/stnolting/neorv32/pull/1533) |
+| 23.04.2026 | 1.12.9.6 | minor rtl fixes, edits and cleanups | [#1531](https://github.com/stnolting/neorv32/pull/1531) |
+| 12.04.2026 | 1.12.9.5 | :bug: fix bootloader's executable checksum computation | [#1528](https://github.com/stnolting/neorv32/pull/1528) |
+| 11.04.2026 | 1.12.9.4 | add NEORV32-specific `MXISAH` CSR | [#1527](https://github.com/stnolting/neorv32/pull/1527) |
+| 06.04.2026 | 1.12.9.3 | :warning: CFU: rework/simplify interface; add support for RISC-V `OP-32` and `OP-IMM-32` opcodes / instructions | [#1524](https://github.com/stnolting/neorv32/pull/1524) |
+| 06.04.2026 | 1.12.9.2 | :test_tube: rework intrinsics (use `.insn` pseudo directive) | [#1523](https://github.com/stnolting/neorv32/pull/1523) |
+| 05.04.2026 | 1.12.9.1 | :sparkles: add cache write-back & write-allocate policies | [#1513](https://github.com/stnolting/neorv32/pull/1513) |
+| 03.04.2026 | [**1.12.9**](https://github.com/stnolting/neorv32/releases/tag/v1.12.9) | :rocket: **New release** | |
+| 03.04.2026 | 1.12.8.10 | :bug: fix `sc.w` reservation set instruction: return all-zero on success | [#1520](https://github.com/stnolting/neorv32/pull/1520) |
+| 01.04.2026 | 1.12.8.9 | add TRNG architecture configuration generics; :warning: rework TRNG control register layout | [#1518](https://github.com/stnolting/neorv32/pull/1518) |
+| 28.03.2026 | 1.12.8.8 | add optional GPIO direction control | [#1517](https://github.com/stnolting/neorv32/pull/1517) |
 | 12.03.2026 | 1.12.8.7 | :bug: fix GPTMR prescaler register write access logic | [#1509](https://github.com/stnolting/neorv32/pull/1509) |
 | 08.03.2026 | 1.12.8.6 | remove `twd_scl_o` top port; SCL is only sampled by the TWD, but not driven | [#1506](https://github.com/stnolting/neorv32/pull/1506) |
 | 07.03.2026 | 1.12.8.5 | :sparkles: bootloader: add flexible executable base address; :warning: rework bootloader executable header and signature | [#1505](https://github.com/stnolting/neorv32/pull/1505) |
@@ -37,7 +67,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 28.02.2026 | 1.12.8.2 | :warning: map TWD interrupt to FIRQ channel 4 | [#1499](https://github.com/stnolting/neorv32/pull/1499) |
 | 25.02.2026 | 1.12.8.1 | TWD: add communication state flags and according IRQs; add IRQ if TX FIFO not full; :warning: remove bus sense flags | [#1498](https://github.com/stnolting/neorv32/pull/1498) |
 | 15.02.2026 | [**1.12.8**](https://github.com/stnolting/neorv32/releases/tag/v1.12.8) | :rocket: **New release** | |
-| 12.02.2026 | 1.12.7.9 | :warning: fix typo in top's MTIME IRQ port name: `irw_mti_i` -> `irq_mti_i` | [1494](https://github.com/stnolting/neorv32/pull/1494) |
+| 12.02.2026 | 1.12.7.9 | :warning: fix typo in top's MTIME IRQ port name: `irw_mti_i` -> `irq_mti_i` | [#1494](https://github.com/stnolting/neorv32/pull/1494) |
 | 08.02.2026 | 1.12.7.8 | add generics to customize IMEM and DMEM base addresses (`IMEM_BASE` & `DMEM_BASE`); :warning: remove `IO_DISABLE_SYSINFO` generic | [#1492](https://github.com/stnolting/neorv32/pull/1492) |
 | 03.02.2026 | 1.12.7.7 | minor rtl cleanups; improve timing of bus switch module | [#1489](https://github.com/stnolting/neorv32/pull/1489) |
 | 31.01.2026 | 1.12.7.6 | :warning: rename `Zxcfu` ISA extension to `Xcfu` | [#1487](https://github.com/stnolting/neorv32/pull/1487) |
