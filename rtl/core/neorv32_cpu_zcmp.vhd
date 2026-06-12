@@ -160,7 +160,8 @@ begin
     frontend_bus_zcmp.valid <= '0';
     frontend_bus_zcmp.compr <= '1';
     frontend_bus_zcmp.fault <= '0';
-    frontend_bus_zcmp.instr <= (others => '0');
+    frontend_bus_zcmp.i32   <= (others => '0');
+    frontend_bus_zcmp.i16   <= (others => '0'); -- no original 16-bit word for synthesized micro-ops
     frontend_bus_zcmp.zcmp_in_uop_seq <= zcmp_in_uop_seq_int;
     frontend_bus_zcmp.zcmp_atomic_tail <= '0';
     frontend_bus_zcmp.zcmp_start <= '0';
@@ -181,7 +182,7 @@ begin
       when S_ZCMP_UOP_SEQ =>
         zcmp_in_uop_seq_int <= '1';
         if (uop_ctr = 15) then -- last instruction
-          frontend_bus_zcmp.instr <= zcmp_stack_adj_instr; -- issue stack pointer adjustment instruction
+          frontend_bus_zcmp.i32   <= zcmp_stack_adj_instr; -- issue stack pointer adjustment instruction
           frontend_bus_zcmp.valid <= '1';
 
           if (ctrl_i.if_ready = '1') then -- only advance if the uop has been acknowledged by control unit
@@ -206,7 +207,7 @@ begin
             uop_ctr_nxt_in_seq <= uop_ctr + 1;
           end if;
 
-          frontend_bus_zcmp.instr <= zcmp_instr;
+          frontend_bus_zcmp.i32   <= zcmp_instr;
           frontend_bus_zcmp.valid <= '1';
 
           if (uop_ctr + 1 = zcmp_num_regs and ctrl_i.if_ready = '1') then -- is next register the last one?
@@ -222,13 +223,13 @@ begin
           zcmp_in_uop_seq_int <= '0';
           uop_ctr_nxt_in_seq <= 0;
           frontend_bus_zcmp.valid <= '0';
-          frontend_bus_zcmp.instr <= (others => '0');
+          frontend_bus_zcmp.i32   <= (others => '0');
         end if;
 
       when S_POPRET =>
         frontend_bus_zcmp.zcmp_atomic_tail <= '1'; -- no pending traps will be handled
         zcmp_in_uop_seq_int <= '1';
-        frontend_bus_zcmp.instr <= zcmp_jalr_instr;
+        frontend_bus_zcmp.i32   <= zcmp_jalr_instr;
         frontend_bus_zcmp.valid <= '1';
 
         if (ctrl_i.if_ready = '1') then
@@ -238,7 +239,7 @@ begin
       when S_POPRETZ =>
         frontend_bus_zcmp.zcmp_atomic_tail <= '1';
         zcmp_in_uop_seq_int <= '1';
-        frontend_bus_zcmp.instr <= zcmp_zero_a0_instr; --zero a0
+        frontend_bus_zcmp.i32   <= zcmp_zero_a0_instr; --zero a0
         frontend_bus_zcmp.valid <= '1';
 
         if (ctrl_i.if_ready = '1') then
@@ -257,16 +258,16 @@ begin
           zcmp_in_uop_seq_int <= '0';
           uop_ctr_nxt_in_seq <= 0;
           frontend_bus_zcmp.valid <= '0';
-          frontend_bus_zcmp.instr <= (others => '0');
+          frontend_bus_zcmp.i32   <= (others => '0');
         end if;
 
         case zcmp_op is
           when ZCMP_OP_MVA01S =>
-            frontend_bus_zcmp.instr <= x"000" & zcmp_sa01_r1s & zcmp_addi_instr_funct3 & "01010" & zcmp_addi_instr_opcode;
+            frontend_bus_zcmp.i32   <= x"000" & zcmp_sa01_r1s & zcmp_addi_instr_funct3 & "01010" & zcmp_addi_instr_opcode;
           when ZCMP_OP_MVSA01 =>
-            frontend_bus_zcmp.instr <= x"000" & "01010" & zcmp_addi_instr_funct3 & zcmp_sa01_r1s & zcmp_addi_instr_opcode;
+            frontend_bus_zcmp.i32   <= x"000" & "01010" & zcmp_addi_instr_funct3 & zcmp_sa01_r1s & zcmp_addi_instr_opcode;
           when others =>
-            frontend_bus_zcmp.instr <= (others => '0'); -- should not happen
+            frontend_bus_zcmp.i32   <= (others => '0'); -- should not happen
         end case;
 
         frontend_bus_zcmp.valid <= '1';
@@ -287,16 +288,16 @@ begin
           zcmp_in_uop_seq_int <= '0';
           uop_ctr_nxt_in_seq <= 0;
           frontend_bus_zcmp.valid <= '0';
-          frontend_bus_zcmp.instr <= (others => '0');
+          frontend_bus_zcmp.i32   <= (others => '0');
         end if;
 
         case zcmp_op is
           when ZCMP_OP_MVA01S =>
-            frontend_bus_zcmp.instr <= x"000" & zcmp_sa01_r2s & zcmp_addi_instr_funct3 & "01011" & zcmp_addi_instr_opcode;
+            frontend_bus_zcmp.i32   <= x"000" & zcmp_sa01_r2s & zcmp_addi_instr_funct3 & "01011" & zcmp_addi_instr_opcode;
           when ZCMP_OP_MVSA01 =>
-            frontend_bus_zcmp.instr <= x"000" & "01011" & zcmp_addi_instr_funct3 & zcmp_sa01_r2s & zcmp_addi_instr_opcode;
+            frontend_bus_zcmp.i32   <= x"000" & "01011" & zcmp_addi_instr_funct3 & zcmp_sa01_r2s & zcmp_addi_instr_opcode;
           when others =>
-            frontend_bus_zcmp.instr <= (others => '0'); -- should not happen
+            frontend_bus_zcmp.i32   <= (others => '0'); -- should not happen
         end case;
 
         frontend_bus_zcmp.valid <= '1';

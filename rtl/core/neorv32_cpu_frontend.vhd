@@ -240,7 +240,7 @@ begin
 
     -- half-word select --
     cmd16 <= ipb.rdata(0)(15 downto 0) when (align_q = '0') else ipb.rdata(1)(15 downto 0);
-    frontend_o.i16 <= cmd16; -- original 16-bit instruction
+    frontend_bus_issue.i16 <= cmd16; -- original 16-bit instruction
 
     -- Issue Engine FSM -----------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -271,7 +271,7 @@ begin
 
       issue_valid_zcmp <= "00";
       issue_valid <= "00";
-      frontend_bus_issue.instr <= (others => '0');
+      frontend_bus_issue.i32   <= (others => '0');
       frontend_bus_issue.compr <= '0';
       frontend_bus_issue.fault <= '0';
 
