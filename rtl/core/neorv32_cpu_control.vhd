@@ -390,10 +390,10 @@ begin
           -- memory fence operations --
           when opcode_fence_c =>
             if (exec.ir(instr_funct3_lsb_c) = '1') then -- fence.i
-              ctrl_nxt.cpu_fence <= "11"; -- flush I$ & D$ (so I$ gets updated data; #1540)
-              exec_nxt.state     <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC
+              ctrl_nxt.if_fence <= '1'; -- instruction fence
+              exec_nxt.state    <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC
             else -- fence
-              ctrl_nxt.cpu_fence <= '0' & or_reduce_f(exec.ir(31 downto 24)); -- flush D$ only if pred/succ != 0
+              ctrl_nxt.lsu_fence <= or_reduce_f(exec.ir(31 downto 24)); -- data fence if pred/succ != 0; execute as NOP otherwise
               exec_nxt.state     <= S_DISPATCH;
             end if;
 
@@ -488,6 +488,7 @@ begin
   -- instruction fetch --
   ctrl_o.if_reset     <= ctrl_nxt.if_reset; -- this is an ASYNC control signal!
   ctrl_o.if_ready     <= '1' when (exec.state = S_DISPATCH) else '0';
+  ctrl_o.if_fence     <= ctrl.if_fence;
   -- program counter --
   ctrl_o.pc_cur       <= exec.pc(31 downto 1) & '0';
   ctrl_o.pc_nxt       <= exec.pc2(31 downto 1) & '0';
@@ -515,6 +516,7 @@ begin
   ctrl_o.lsu_mo_en    <= '1' when (exec.state = S_MEM_REQ) else '0'; -- write memory output registers
   ctrl_o.lsu_mi_en    <= '1' when (exec.state = S_MEM_RSP) else '0'; -- write memory input registers
   ctrl_o.lsu_priv     <= csr.mstatus_mpp when (csr.mstatus_mprv = '1') else csr.prv_level; -- effective privilege level for loads/stores in M-mode
+  ctrl_o.lsu_fence    <= ctrl.lsu_fence;
   -- control and status registers --
   ctrl_o.csr_we       <= ctrl.csr_we;
   ctrl_o.csr_re       <= ctrl.csr_re;
@@ -532,7 +534,6 @@ begin
   ctrl_o.cpu_trap     <= trap.env_enter;
   ctrl_o.cpu_sync_exc <= trap.exc_fire;
   ctrl_o.cpu_debug    <= debug_ctrl.run;
-  ctrl_o.cpu_fence    <= ctrl.cpu_fence;
 
 
   -- Counter Events -------------------------------------------------------------------------
