@@ -27,6 +27,9 @@
 #undef errno
 extern int errno;
 
+// attributes to force syscall symbols (newlib link-time-optimization issue)
+#define SYSCALL_ATTR __attribute__((used, externally_visible, noinline))
+
 // global environment
 char *__env[1] = { 0 };
 char **environ = __env;
@@ -48,7 +51,7 @@ char **environ = __env;
  /**********************************************************************//**
  * Exit a program without cleaning up anything.
  **************************************************************************/
-void _exit(int status) {
+SYSCALL_ATTR void _exit(int status) {
 
   // put status into register 'a0' and jump to crt0's exit code
   asm volatile (
@@ -68,12 +71,12 @@ void _exit(int status) {
  /**********************************************************************//**
  * Open file handle.
  **************************************************************************/
-int _open(char *pathname, int flags) {
+SYSCALL_ATTR int _open(char *pathname, int flags) {
+  (void)pathname;
+  (void)flags;
 #ifdef STDIO_SEMIHOSTING
   return neorv32_semihosting_open(pathname, flags);
 #else
-  (void)pathname;
-  (void)flags;
   return -1; // no files available
 #endif
 }
@@ -82,11 +85,11 @@ int _open(char *pathname, int flags) {
  /**********************************************************************//**
  * Close file handle.
  **************************************************************************/
-int _close(int file) {
+SYSCALL_ATTR int _close(int file) {
+  (void)file;
 #ifdef STDIO_SEMIHOSTING
   return neorv32_semihosting_close(file);
 #else
-  (void)file;
   return -1; // no files available
 #endif
 }
@@ -95,7 +98,7 @@ int _close(int file) {
  /**********************************************************************//**
  * Status of an open file. All files are regarded as character special devices.
  **************************************************************************/
-int _fstat(int file, struct stat *st) {
+SYSCALL_ATTR int _fstat(int file, struct stat *st) {
   (void)file;
   st->st_mode = S_IFCHR;
   return 0;
@@ -105,7 +108,7 @@ int _fstat(int file, struct stat *st) {
  /**********************************************************************//**
  * Create new process.
  **************************************************************************/
-int _fork(void) {
+SYSCALL_ATTR int _fork(void) {
   errno = EAGAIN;
   return -1;
 }
@@ -115,7 +118,7 @@ int _fork(void) {
  * Process-ID; this is sometimes used to generate strings unlikely to
  * conflict with other processes.
  **************************************************************************/
-int _getpid() {
+SYSCALL_ATTR int _getpid() {
   return 1; // there is only one process by default
 }
 
@@ -123,11 +126,11 @@ int _getpid() {
  /**********************************************************************//**
  * Query whether output stream is a terminal.
  **************************************************************************/
-int _isatty(int file) {
+SYSCALL_ATTR int _isatty(int file) {
+  (void)file;
 #ifdef STDIO_SEMIHOSTING
   return neorv32_semihosting_istty(file);
 #else
-  (void)file;
   return 1; // all streams are terminals
 #endif
 }
@@ -136,7 +139,7 @@ int _isatty(int file) {
  /**********************************************************************//**
  * Send a signal.
  **************************************************************************/
-int _kill(int pid, int sig) {
+SYSCALL_ATTR int _kill(int pid, int sig) {
   (void)pid;
   (void)sig;
   errno = EINVAL;
@@ -147,7 +150,7 @@ int _kill(int pid, int sig) {
  /**********************************************************************//**
  * Rename existing file.
  **************************************************************************/
-int _link(char *old_name, char *new_name) {
+SYSCALL_ATTR int _link(char *old_name, char *new_name) {
   (void)old_name;
   (void)new_name;
   errno = EMLINK;
@@ -158,13 +161,13 @@ int _link(char *old_name, char *new_name) {
  /**********************************************************************//**
  * Set position in a file.
  **************************************************************************/
-int _lseek(int file, int ptr, int dir) {
-#ifdef STDIO_SEMIHOSTING
-  return neorv32_semihosting_seek(file, ptr);
-#else
+SYSCALL_ATTR int _lseek(int file, int ptr, int dir) {
   (void)file;
   (void)ptr;
   (void)dir;
+#ifdef STDIO_SEMIHOSTING
+  return neorv32_semihosting_seek(file, ptr);
+#else
   return 0;
 #endif
 }
@@ -173,7 +176,7 @@ int _lseek(int file, int ptr, int dir) {
  /**********************************************************************//**
  * Status of a file.
  **************************************************************************/
-int _stat(char *file, struct stat *st) {
+SYSCALL_ATTR int _stat(char *file, struct stat *st) {
   (void)file;
   st->st_mode = S_IFCHR; // all files are character special devices
   return 0;
@@ -183,7 +186,7 @@ int _stat(char *file, struct stat *st) {
  /**********************************************************************//**
  * Wait for child process.
  **************************************************************************/
-int _wait(int status) {
+SYSCALL_ATTR int _wait(int status) {
   (void)status;
   errno = ECHILD;
   return -1;
@@ -193,7 +196,7 @@ int _wait(int status) {
  /**********************************************************************//**
  * Remove a file's directory entry.
  **************************************************************************/
-int _unlink(char *name) {
+SYSCALL_ATTR int _unlink(char *name) {
   (void)name;
   errno = ENOENT;
   return -1;
@@ -204,7 +207,7 @@ int _unlink(char *name) {
  * Read from a file. STDIN will read from UART0, all other input streams
  * will read from UART1.
  **************************************************************************/
-int _read(int file, char *ptr, int len) {
+SYSCALL_ATTR int _read(int file, char *ptr, int len) {
 
 #ifdef STDIO_SEMIHOSTING
   return neorv32_semihosting_read(file, ptr, len);
@@ -248,7 +251,7 @@ int _read(int file, char *ptr, int len) {
  * Write to a file. STDOUT and STDERR will write to UART0, all other
  * output streams will write to UART1.
  **************************************************************************/
-int _write(int file, char *ptr, int len) {
+SYSCALL_ATTR int _write(int file, char *ptr, int len) {
 
 #ifdef STDIO_SEMIHOSTING
   return neorv32_semihosting_write(file, ptr, len);
@@ -289,7 +292,7 @@ int _write(int file, char *ptr, int len) {
  /**********************************************************************//**
  * Dynamic memory management. Used by "malloc" and "free", among others.
  **************************************************************************/
-void *_sbrk(int incr) {
+SYSCALL_ATTR void *_sbrk(int incr) {
 
   static unsigned char *curr_heap = NULL; // current heap pointer
   unsigned char *prev_heap; // previous heap pointer
@@ -336,7 +339,7 @@ void *_sbrk(int incr) {
  /**********************************************************************//**
  * Get Unix time. Used by "time", among others.
  **************************************************************************/
-int _gettimeofday(struct timeval *tv) {
+SYSCALL_ATTR int _gettimeofday(struct timeval *tv) {
 #ifdef TIME_SEMIHOSTING
   tv->tv_sec  = (time_t)neorv32_semihosting_time();
   tv->tv_usec = 0;
