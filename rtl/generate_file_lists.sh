@@ -15,7 +15,7 @@ CPU_LIST=file_list_cpu.f
 SOC_LIST=file_list_soc.f
 
 # rtl path placeholder
-PLACEHOLDER="NEORV32_RTL_PATH_PLACEHOLDER"
+PLACEHOLDER="\$NEORV32_HOME/rtl"
 
 # temporary GHDL project
 mkdir -p ~build
