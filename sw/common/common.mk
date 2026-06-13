@@ -160,6 +160,10 @@ NEO_CXXFLAGS = $(CC_FLAGS) $(CXXFLAGS)
 NEO_LDFLAGS  = $(CC_FLAGS) $(LDFLAGS)
 NEO_ASFLAGS  = $(CC_FLAGS) $(ASFLAGS)
 
+# Add CC_FLAGS as string-define
+NEO_CFLAGS   += -DCC_FLAGS_STR='"$(CC_FLAGS)"'
+NEO_CXXFLAGS += -DCC_FLAGS_STR='"$(CC_FLAGS)"'
+
 # -----------------------------------------------------------------------------
 # Application output definitions
 # -----------------------------------------------------------------------------

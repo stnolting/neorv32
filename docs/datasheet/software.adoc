@@ -237,6 +237,11 @@ initialization/image files) will be placed in the root project folder.
 [TIP]
 Use `make V=1` or set `BUILD_VERBOSE` in your environment to increase build verbosity.
 
+.Compile Flags as C-String
+[TIP]
+The makefile defines a C string `CC_FLAGS_STR` that contains all flags passed to the compiler.
+This string can be processed at runtime: `printf("CC_FLAGS: %s\n", CC_FLAGS_STR);`
+
 
 :sectnums:
 ==== Default Compiler Flags
