@@ -253,25 +253,25 @@ be altered. However, experienced users can modify them to further tune compilati
 [cols="<3,<9"]
 [grid="none"]
 |=======================
-| `-Wall`               | Enable all compiler warnings.
+| `-Wall`, `-Wextra`    | Enable all/extra compiler warnings.
 | `-ffunction-sections` | Put functions in independent sections. This allows a code optimization as dead code can be easily removed.
 | `-fdata-sections`     | Put data segment in independent sections. This allows a code optimization as unused data can be easily removed.
-| `-nostartfiles`       | Do not use the default start code. Instead, the NEORV32-specific start-up code (`sw/common/crt0.S`) is used (pulled-in by the linker script).
 | `-mno-fdiv`           | Use built-in software functions for floating-point divisions and square roots (since the according instructions are not supported yet).
 | `-mstrict-align`      | Unaligned memory accesses cannot be resolved by the hardware and require emulation.
-| `-mbranch-cost=10`    | Branching costs a lot of cycles.
-| `-Wl,--gc-sections`   | Make the linker perform dead code elimination.
+| `-mbranch-cost=10`    | Branching is expensive.
 | `-ffp-contract=off`   | Disable floating-point expression contraction (fused multiply-add/sub; not supported by the NEORV32 FPU).
 | `-g`                  | Add (simple) debug information.
 |=======================
 
 .Linker Libraries (`LD_LIBS`)
-[cols="<2,<9"]
+[cols="<3,<9"]
 [grid="none"]
 |=======================
-| `-lm`   | Include/link with `math.h`.
-| `-lc`   | Search for the standard C library when linking.
-| `-lgcc` | Make sure we have no unresolved references to internal GCC library subroutines.
+| `-lm`               | Include/link with `math.h`.
+| `-lc`               | Search for the standard C library when linking.
+| `-lgcc`             | Make sure we have no unresolved references to internal GCC library subroutines.
+| `-nostartfiles`     | Do not use the default start code. Instead, the NEORV32-specific start-up code (`sw/common/crt0.S`) is used (pulled-in by the linker script).
+| `-Wl,--gc-sections` | Make the linker perform dead code elimination.
 |=======================
 
 .Advanced Debug Symbols

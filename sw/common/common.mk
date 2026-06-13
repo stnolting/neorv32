@@ -148,10 +148,10 @@ ifeq ($(PLATFORM),windows)
 endif
 
 # Compiler & linker flags
-CC_FLAGS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -ffunction-sections -fdata-sections -nostartfiles -mno-fdiv
-CC_FLAGS += -mstrict-align -mbranch-cost=10 -Wl,--gc-sections -ffp-contract=off -g
+CC_FLAGS  = -march=$(MARCH) -mabi=$(MABI) $(EFFORT) -Wall -Wextra -ffunction-sections -fdata-sections
+CC_FLAGS += -mno-fdiv -mstrict-align -mbranch-cost=10 -ffp-contract=off -g
 CC_FLAGS += $(USER_FLAGS)
-LD_LIBS   = -lm -lc -lgcc
+LD_LIBS   = -lm -lc -lgcc -nostartfiles -Wl,--gc-sections
 LD_LIBS  += $(USER_LIBS)
 
 # Allow users to use tool-specific flags
@@ -171,7 +171,7 @@ NEO_CXXFLAGS += -DCC_FLAGS_STR='"$(CC_FLAGS)"'
 
 .PHONY: check info help elf_info elf_sections clean clean_all \
         elf asm exe bin hex coe mem mif image install all \
-        sim upload gdb bootloader bl_image hdl_lists
+        sim upload gdb bootloader bl_image hdl_lists elf_symbols
 
 .DEFAULT_GOAL := help
 
