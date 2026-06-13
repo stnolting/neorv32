@@ -19,16 +19,16 @@ SIMULATOR ?= iverilog
 BUILD ?= build
 
 # NEORV32 VHDL sources
-NEORV32_HOME ?= ../..
-NEORV32_FFILE = $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f)
-NEORV32_SRCS = $(subst NEORV32_RTL_PATH_PLACEHOLDER, $(NEORV32_HOME)/rtl, $(NEORV32_FFILE))
+NEORV32_HOME  ?= ../..
+NEORV32_FFILE := $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f)
+NEORV32_SRCS  := $(subst $$NEORV32_HOME,$(NEORV32_HOME),$(NEORV32_FFILE))
 
 # VHDL conversion wrapper entity/file name
 WRAPPER ?= neorv32_verilog_wrapper
 
 # Exclude default core files (to replace them by custom Verilog IP)
 VHDL_EXCLUDE ?=
-VHDL_SRCS = $(filter-out $(addprefix %,$(VHDL_EXCLUDE)), $(NEORV32_SRCS))
+VHDL_SRCS = $(filter-out $(addprefix %,$(VHDL_EXCLUDE)),$(NEORV32_SRCS))
 
 # Verilog sources
 VERILOG_IP ?=

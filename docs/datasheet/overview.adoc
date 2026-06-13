@@ -245,31 +245,49 @@ These file-list files can be consumed by EDA tools to simplify project setup.
 A simple bash script `generate_file_lists.sh` is provided for regenerating the file-lists (using GHDL's _elaborate_ command).
 This script can also be invoked using the default application makefile (see <<_makefile_targets>>).
 
-By default, the file-list files include a **placeholder** in the path of each included hardware source file.
-These placeholders need to be replaced by the actual path before being used. Example:
+By default, the file-list files include a **placeholder** (`$NEORV32_HOME`) in the path of each included hardware
+source file. These placeholders need to be replaced/substituted by the actual path before being used. Example:
 
-* default: `NEORV32_RTL_PATH_PLACEHOLDER/core/neorv32_package.vhd`
-* adjusted: `path/to/neorv32/rtl/core/neorv32_package.vhd`
+* default: `$NEORV32_HOME/rtl/core/neorv32_package.vhd`
+* substituted: `path/to/neorv32/rtl/core/neorv32_package.vhd`
 
-.Example: Processing the File-List Files in a Makefile
+
+**Example: Makefile**
+
+.Processing the File-List Files in a Makefile
 [source,makefile]
 ----
-NEORV32_HOME = path/to/neorv32 <1>
-NEORV32_SOC_FILE = $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f) <2>
-NEORV32_SOC_SRCS = $(subst NEORV32_RTL_PATH_PLACEHOLDER, $(NEORV32_HOME)/rtl, $(NEORV32_SOC_FILE)) <3>
+NEORV32_HOME  ?= path/to/neorv32 <1>
+NEORV32_FFILE := $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f) <2>
+NEORV32_SRCS  := $(subst $$NEORV32_HOME,$(NEORV32_HOME),$(NEORV32_FFILE)) <3>
 ----
 <1> Path to the NEORV32 home folder (i.e. the root folder of the GitHub repository).
-<2> Load the content of the `file_list_soc.f` file-list into a new variable `NEORV32_SOC_FILE`.
-<3> Substitute the file-list file's path placeholder "`NEORV32_RTL_PATH_PLACEHOLDER`" by the actual path.
+<2> Load the content of the `file_list_soc.f` file-list into a variable `NEORV32_SOC_FILE`.
+<3> Substitute the file-list file's path placeholder "`$NEORV32_HOME`" by the actual path and store to `NEORV32_SRCS` variable.
 
-.Example: Processing the File-List Files in a TCL Script
+**Example: TCL**
+
+.Processing the File-List Files in a TCL Script
 [source,tcl]
 ----
-set file_list_file [read [open "$neorv32_home/rtl/file_list_soc.f" r]]
-set file_list [string map [list "NEORV32_RTL_PATH_PLACEHOLDER" "$neorv32_home/rtl"] $file_list_file]
-puts "NEORV32 source files:"
-puts $file_list
+set neorv32_home path/to/neorv32 <1>
+set file_list_file [read [open "$neorv32_home/rtl/file_list_soc.f" r]] <2>
+set file_list [string map [list {$NEORV32_HOME} $neorv32_home] $file_list_file] <3>
 ----
+<1> Path to the NEORV32 home folder (i.e. the root folder of the GitHub repository).
+<2> Load the content of the `file_list_soc.f` file-list into a variable `file_list_file`.
+<3> Substitute the file-list file's path placeholder "`$NEORV32_HOME`" by the actual path and store to `file_list` variable.
+
+**Example: Bash**
+
+.Processing the File-List Files in a Bash Script
+[source,bash]
+----
+neorv32/rtl$ export NEORV32_HOME=path/to/neorv32 <1>
+neorv32/rtl$ envsubst < file_list_cpu.f > file_list.f <2>
+----
+<1> Set path to the NEORV32 home folder (i.e. the root folder of the GitHub repository) as environment variable.
+<2> Substitute `$NEORV32_HOME` by the content of the according environment variable and store to `file_list.f` file.
 
 
 <<<
