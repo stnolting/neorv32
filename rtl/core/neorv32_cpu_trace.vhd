@@ -813,17 +813,17 @@ begin
       elsif rising_edge(clk_i) then
         cycle_cnt <= std_ulogic_vector(unsigned(cycle_cnt) + 1);
         if (trace_i.valid = '1') then
-          -- index --
+          -- [1] index --
           write(line_v, integer'(to_integer(unsigned(trace_i.order))));
           write(line_v, string'(" "));
-          -- timestamp --
+          -- [2] timestamp --
           write(line_v, integer'(to_integer(unsigned(cycle_cnt))));
           write(line_v, string'(" "));
-          -- instruction address --
+          -- [3] instruction address --
           write(line_v, string'("0x"));
           write(line_v, string'(to_hexstring_f(trace_i.pc_rdata)));
           write(line_v, string'(" "));
-          -- instruction word --
+          -- [4] instruction word --
           write(line_v, string'("0x"));
           if (trace_i.compr = '1') then -- compressed instruction
             write(line_v, string'(to_hexstring_f(trace_i.insn(15 downto 0))));
@@ -832,7 +832,7 @@ begin
             write(line_v, string'(to_hexstring_f(trace_i.insn)));
             write(line_v, string'(" "));
           end if;
-          -- privilege level --
+          -- [5] privilege level --
           if (trace_i.debug = '1') then
             write(line_v, string'("D "));
           elsif (trace_i.mode = "11") then
@@ -842,12 +842,12 @@ begin
           else
             write(line_v, string'("? "));
           end if;
-          -- decoded instruction --
+          -- [6] decoded instruction --
           write(line_v, string'(decode_mnemonic_f(trace_i.insn)));
           write(line_v, string'(" "));
           write(line_v, string'(decode_operands_f(trace_i.cmd32)));
-          -- trap entry --
-          if (trace_i.intr = '1') then
+          -- [7] annotations --
+          if (trace_i.intr = '1') then -- exception/interrupt
             write(line_v, string'(" <TRAP_ENTRY>"));
           end if;
           -- flush line --

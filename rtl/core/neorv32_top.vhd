@@ -332,9 +332,8 @@ architecture neorv32_top_rtl of neorv32_top is
   type cpu_trace_t is array (0 to num_cores_c-1) of trace_port_t;
   signal cpu_trace : cpu_trace_t;
 
-  -- CPU memory ordering --
-  type cpu_fence_t is array (0 to num_cores_c-1) of std_ulogic_vector(1 downto 0);
-  signal cpu_fence : cpu_fence_t;
+  -- CPU memory ordering (cache synchronization) --
+  signal cpu_i_fence, cpu_d_fence, icache_sync, dcache_sync : std_ulogic_vector(num_cores_c-1 downto 0);
 
   -- bus: CPU core complex --
   type core_complex_req_t is array (0 to num_cores_c-1) of bus_req_t;
@@ -592,7 +591,6 @@ begin
       mtime_i    => mtime,
       trace_o    => cpu_trace(i),
       sleep_o    => open,
-      fence_o    => cpu_fence(i),
       -- interrupts --
       msi_i      => msi(i),
       mei_i      => irq_mei_i,
@@ -600,9 +598,11 @@ begin
       firq_i     => cpu_firq,
       dbi_i      => dci_haltreq(i),
       -- instruction bus interface --
+      ifence_o   => cpu_i_fence(i),
       ibus_req_o => cpu_i_req(i),
       ibus_rsp_i => cpu_i_rsp(i),
       -- data bus interface --
+      dfence_o   => cpu_d_fence(i),
       dbus_req_o => cpu_d_req(i),
       dbus_rsp_i => cpu_d_rsp(i)
     );
@@ -622,18 +622,21 @@ begin
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
-        sync_i     => cpu_fence(i)(1),
+        sync_i     => icache_sync(i),
         host_req_i => cpu_i_req(i),
         host_rsp_o => cpu_i_rsp(i),
         bus_req_o  => icache_req(i),
         bus_rsp_i  => icache_rsp(i)
       );
+      -- fence.i => clear I$
+      icache_sync(i) <= cpu_i_fence(i);
     end generate;
 
     neorv32_icache_disabled:
     if not ICACHE_EN generate
-      icache_req(i) <= cpu_i_req(i);
-      cpu_i_rsp(i)  <= icache_rsp(i);
+      icache_sync(i) <= '0';
+      icache_req(i)  <= cpu_i_req(i);
+      cpu_i_rsp(i)   <= icache_rsp(i);
     end generate;
 
     -- CPU Data Cache -------------------------------------------------------------------------
@@ -651,18 +654,22 @@ begin
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
-        sync_i     => cpu_fence(i)(0),
+        sync_i     => dcache_sync(i),
         host_req_i => cpu_d_req(i),
         host_rsp_o => cpu_d_rsp(i),
         bus_req_o  => dcache_req(i),
         bus_rsp_i  => dcache_rsp(i)
       );
+      -- fence   => flush D$
+      -- fence.i => clear I$ and flush D$ (so I$ gets updated data #1540)
+      dcache_sync(i) <= cpu_d_fence(i) or cpu_i_fence(i);
     end generate;
 
     neorv32_dcache_disabled:
     if not DCACHE_EN generate
-      dcache_req(i) <= cpu_d_req(i);
-      cpu_d_rsp(i)  <= dcache_rsp(i);
+      dcache_sync(i) <= '0';
+      dcache_req(i)  <= cpu_d_req(i);
+      cpu_d_rsp(i)   <= dcache_rsp(i);
     end generate;
 
     -- Core Instruction/Data Bus Switch -------------------------------------------------------

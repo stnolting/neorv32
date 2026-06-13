@@ -191,7 +191,7 @@ to check if the targeted bits can actually be modified.
 | Bit | Name [C] | R/W | Function
 | 21    | `CSR_MSTATUS_TW`   | r/w | **TW**: Trap on execution of `wfi` instruction in user mode when set; hardwired to zero if user-mode not implemented
 | 17    | `CSR_MSTATUS_MPRV` | r/w | **MPRV**: Effective privilege mode for load/stores; use `MPP` as effective privilege mode when set; hardwired to zero if user-mode not implemented
-| 12:11 | `CSR_MSTATUS_MPP_H` : `CSR_MSTATUS_MPP_L` | r/w | **MPP**: Previous machine privilege mode, `11` = machine-mode "M", `00` = user-mode "U"; other values will fall-back to machine-mode
+| 12:11 | `CSR_MSTATUS_MPP_H` : `CSR_MSTATUS_MPP_L` | r/w | **MPP**: Previous machine privilege mode, `11` = machine-mode "M", `00` = user-mode "U"; other values will fall-back to user-mode (if enabled)
 | 7     | `CSR_MSTATUS_MPIE` | r/w | **MPIE**: Previous machine-mode interrupt enable flag state
 | 3     | `CSR_MSTATUS_MIE`  | r/w | **MIE**: Machine-mode interrupt enable flag
 |=======================

@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130106"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130107"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -685,6 +685,7 @@ package neorv32_package is
     -- instruction fetch --
     if_reset     : std_ulogic;                     -- restart instruction fetch
     if_ready     : std_ulogic;                     -- ready for next instruction
+    if_fence     : std_ulogic;                     -- instruction fence
     -- program counter --
     pc_cur       : std_ulogic_vector(31 downto 0); -- address of current instruction
     pc_nxt       : std_ulogic_vector(31 downto 0); -- address of next instruction
@@ -712,6 +713,7 @@ package neorv32_package is
     lsu_mo_en    : std_ulogic;                     -- output register write enable
     lsu_mi_en    : std_ulogic;                     -- input register write enable
     lsu_priv     : std_ulogic;                     -- effective privilege mode for load/store
+    lsu_fence    : std_ulogic;                     -- data fence
     -- control and status registers --
     csr_we       : std_ulogic;                     -- write-enable
     csr_re       : std_ulogic;                     -- read-enable
@@ -729,13 +731,13 @@ package neorv32_package is
     cpu_trap     : std_ulogic;                     -- set when CPU is entering trap
     cpu_sync_exc : std_ulogic;                     -- set when CPU encounters a synchronous exception
     cpu_debug    : std_ulogic;                     -- set when CPU is in debug mode
-    cpu_fence    : std_ulogic_vector(1 downto 0);  -- memory ordering; [1] = instructions, [0] = data
   end record;
 
   -- control bus reset termination --
   constant ctrl_bus_terminate_c : ctrl_bus_t := (
     if_reset     => '0',
     if_ready     => '0',
+    if_fence     => '0',
     pc_cur       => (others => '0'),
     pc_nxt       => (others => '0'),
     pc_ret       => (others => '0'),
@@ -759,6 +761,7 @@ package neorv32_package is
     lsu_mo_en    => '0',
     lsu_mi_en    => '0',
     lsu_priv     => '0',
+    lsu_fence    => '0',
     csr_we       => '0',
     csr_re       => '0',
     csr_addr     => (others => '0'),
@@ -771,8 +774,7 @@ package neorv32_package is
     cpu_priv     => '0',
     cpu_trap     => '0',
     cpu_sync_exc => '0',
-    cpu_debug    => '0',
-    cpu_fence    => (others => '0')
+    cpu_debug    => '0'
   );
 
   -- Instruction Fetch Interface ------------------------------------------------------------
@@ -1143,7 +1145,7 @@ package neorv32_package is
     );
   end component;
 
-end neorv32_package;
+end package neorv32_package;
 
 package body neorv32_package is
 
@@ -1290,4 +1292,4 @@ package body neorv32_package is
     return v;
   end function to_hexstring_f;
 
-end neorv32_package;
+end package body neorv32_package;

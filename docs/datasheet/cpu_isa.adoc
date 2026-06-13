@@ -88,6 +88,8 @@ branches to an unaligned address require additional `2 x T_inst_latency` cycles
 | `T_mul_latency` | 1 if <<_cpu_fast_mul_en>> is `true`; 32 otherwise
 | `T_cust_latency` | latency is defined by the custom <<_custom_functions_unit_cfu>> logic; +
 however, the minimum is 1 and the maximum is 512
+| `T_cache_sync` | cycles required to clear/flush the CPU cache(s) (D$ and/or I$); +
+depends on actual cache configuration and main memory latency
 |=======================
 
 
@@ -166,17 +168,17 @@ The `I` ISA extensions is the base RISC-V integer ISA that is always enabled.
 taken: 5 + `T_inst_latency`
 | Jump/call      | `jal[r]`                                                                  | 5 + `T_inst_latency`
 | Load/store     | `lb` `lh` `lw` `lbu` `lhu` `sb` `sh` `sw`                                 | 4 + `T_data_latency`
-| Data fence     | `fence`                                                                   | 2
+| Data fence     | `fence`                                                                   | 2 + `T_cache_sync`
 | System         | `ecall` `ebreak` `mret`                                                   | 7 + `T_inst_latency`
 | System         | `wfi`                                                                     | 3
 |=======================
 
 .`fence` Instruction
 [NOTE]
-Analogous to the `fence.i` instruction (<<_zifencei_isa_extension>>) the `fence` instruction triggers
-a load/store memory synchronization operation by flushing the CPU's data cache. See section
-<<_memory_coherence>> for more information. NEORV32 ignores the predecessor and successor fields and
-always executes a conservative fence on all operations.
+The `fence` instruction triggers a load/store memory ordering operation by setting the CPU's
+<<_cpu_top_entity_signals, `dfence_o`>> signal for exactly one cycle. See section
+<<_memory_coherence>> for more information. If both the predecessor (`PREC`) and successor (`SUCC`)
+fields are zero, the instruction is executed as a NOP without triggering any memory ordering.
 
 .`wfi` Instruction
 [NOTE]
@@ -294,9 +296,8 @@ Example: `MARCH=rv32imc_zca_zcb_...`
 ==== `Zifencei` ISA Extension
 
 This instruction is the only standard mechanism to ensure that stores visible to a hart will also be visible to
-its instruction fetches. When executed, the CPU flushes the data cache (if enabled) to main memory, clears the
-instruction prefetch buffer and invalidates the instruction cache (if enabled). The next instruction fetch request
-from the CPU will result in an instruction cache miss that will return up-to-date data from main memory.
+its instruction fetch. When executed, the CPU sets its <<_cpu_top_entity_signals, `ifence_o`>> signal for
+exactly one cycle and flushes its instruction prefetch buffer and.
 See section <<_memory_coherence>> for more information.
 
 .Instructions and Timing
@@ -304,7 +305,7 @@ See section <<_memory_coherence>> for more information.
 [options="header", grid="rows"]
 |=======================
 | Class | Instructions | Execution cycles
-| Instruction fence | `fence.i` | 2
+| Instruction fence | `fence.i` | 2 + `T_cache_sync`
 |=======================
 
 
