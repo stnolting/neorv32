@@ -46,7 +46,6 @@ for the protocol and type documentation.
 | `mtime_i`    | 64             | in  | System time from the <<_core_local_interruptor_clint>> (MTIME).
 | `trace_o`    | `trace_port_t` | out | <<_execution_trace_port>>.
 | `sleep_o`    | 1              | out | Set while the CPU is in <<_sleep_mode>>.
-| `fence_o`    | 2              | out | <<_memory_coherence>> / ordering: `[1]` = instruction fence, `[0]` = data fence.
 4+^| **Interrupts (<<_traps_exceptions_and_interrupts>>)**
 | `msi_i`      | 1              | in  | RISC-V machine software interrupt.
 | `mei_i`      | 1              | in  | RISC-V machine external interrupt.
@@ -54,9 +53,11 @@ for the protocol and type documentation.
 | `firq_i`     | 16             | in  | Custom fast interrupt request signals.
 | `dbi_i`      | 1              | in  | Request CPU to halt and enter debug mode (RISC-V <<_on_chip_debugger_ocd>>).
 4+^| **Instruction <<_bus_interface>>**
+| `ifence_o`   | 1              | out | Instruction fence / memory ordering.
 | `ibus_req_o` | `bus_req_t`    | out | Instruction fetch bus request.
 | `ibus_rsp_i` | `bus_rsp_t`    | in  | Instruction fetch bus response.
 4+^| **Data <<_bus_interface>>**
+| `dfence_o`   | 1              | out | Data fence / memory ordering.
 | `dbus_req_o` | `bus_req_t`    | out | Data access (load/store) bus request.
 | `dbus_rsp_i` | `bus_rsp_t`    | in  | Data access (load/store) bus response.
 |=======================

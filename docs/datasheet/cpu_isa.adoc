@@ -175,10 +175,10 @@ taken: 5 + `T_inst_latency`
 
 .`fence` Instruction
 [NOTE]
-Analogous to the `fence.i` instruction (<<_zifencei_isa_extension>>) the `fence` instruction triggers
-a load/store memory synchronization operation by flushing the CPU's data cache. See section
+The `fence` instruction triggers a load/store memory ordering operation by setting the CPU's
+<<_cpu_top_entity_signals, `dfence_o`>> signal for exactly one cycle. See section
 <<_memory_coherence>> for more information. If both the predecessor (`PREC`) and successor (`SUCC`)
-fields are zero, the instruction is executed as a NOP without triggering a cache flush.
+fields are zero, the instruction is executed as a NOP without triggering any memory ordering.
 
 .`wfi` Instruction
 [NOTE]
@@ -296,9 +296,8 @@ Example: `MARCH=rv32imc_zca_zcb_...`
 ==== `Zifencei` ISA Extension
 
 This instruction is the only standard mechanism to ensure that stores visible to a hart will also be visible to
-its instruction fetches. When executed, the CPU flushes the data cache (if enabled), clears the CPU's instruction
-prefetch buffer and invalidates the instruction cache (if enabled). The next instruction fetch request
-from the CPU will result in an instruction cache miss that will return up-to-date data from main memory.
+its instruction fetch. When executed, the CPU sets its <<_cpu_top_entity_signals, `ifence_o`>> signal for
+exactly one cycle and flushes its instruction prefetch buffer and.
 See section <<_memory_coherence>> for more information.
 
 .Instructions and Timing
