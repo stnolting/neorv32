@@ -123,6 +123,7 @@ endif
 
 # Compiler suite
 CC      = $(RISCV_PREFIX)gcc
+CXX     = $(RISCV_PREFIX)g++
 OBJDUMP = $(RISCV_PREFIX)objdump
 OBJCOPY = $(RISCV_PREFIX)objcopy
 READELF = $(RISCV_PREFIX)readelf
@@ -234,7 +235,7 @@ $(BUILD_DIR)/%.c.o: %.c | $(BUILD_DIR)
 
 # Compile app *.cpp sources
 $(BUILD_DIR)/%.cpp.o: %.cpp | $(BUILD_DIR)
-	$(Q)$(CC) -c $(NEO_CXXFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.cpp.d -MT $(BUILD_DIR)/$*.cpp.o -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
+	$(Q)$(CXX) -c $(NEO_CXXFLAGS) -MMD -MP -MF $(BUILD_DIR)/$*.cpp.d -MT $(BUILD_DIR)/$*.cpp.o -I $(NEORV32_INC_PATH) $(APP_INC) $< -o $@
 
 # Link object files and show memory utilization
 -include $(OBJ:.o=.d)
