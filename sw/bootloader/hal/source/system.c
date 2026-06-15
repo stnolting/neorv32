@@ -89,7 +89,7 @@ void system_setup(void) {
 #if (UART_EN == 1)
   if (neorv32_uart0_available()) {
     neorv32_uart0_setup(UART_BAUD, 0);
-#if (UART_OVERFLOW == 1)
+#if (UART_HWFC == 1)
     neorv32_uart0_rtscts_enable(); // enable RTS/CTS hardware flow control
 #endif
   }
