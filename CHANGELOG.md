@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 15.06.2026 | 1.13.1.9 | remove `mhpmevent*h` CSRs that do not exist on RV32 without `Sscofpmf` | [#1575](https://github.com/stnolting/neorv32/pull/1575) |
 | 14.06.2026 | 1.13.1.8 | close (the last) RVC illegal instruction detection loophole; further shrink bootloader image size; add defaults for CPU-top generics | [#1574](https://github.com/stnolting/neorv32/pull/1574) |
 | 07.06.2026 | 1.13.1.7 | minor rtl edits and optimizations | [#1570](https://github.com/stnolting/neorv32/pull/1570) |
 | 05.06.2026 | 1.13.1.6 | :warning: rework hardware performance counter (HPM) events | [#1569](https://github.com/stnolting/neorv32/pull/1569) |
