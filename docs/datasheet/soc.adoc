@@ -80,7 +80,7 @@ clock domain also using registers. However, for ASIC implementations it is recom
 to all inputs and output so the synthesis tool can insert an explicit IO (boundary) scan chain.
 
 .NEORV32 Processor Signal List
-[cols="<4,^2,^2,^2,<8"]
+[cols="<3,^2,^2,^2,<8"]
 [options="header",grid="rows"]
 |=======================
 | Name | Width | Direction | Default | Description
