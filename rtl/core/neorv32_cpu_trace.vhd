@@ -553,35 +553,6 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       -- machine counter setup - continued --
       when csr_mcyclecfgh_c     => return "mcyclecfgh";
       when csr_minstretcfgh_c   => return "minstretcfgh";
-      when csr_mhpmevent3h_c    => return "mhpmevent3h";
-      when csr_mhpmevent4h_c    => return "mhpmevent4h";
-      when csr_mhpmevent5h_c    => return "mhpmevent5h";
-      when csr_mhpmevent6h_c    => return "mhpmevent6h";
-      when csr_mhpmevent7h_c    => return "mhpmevent7h";
-      when csr_mhpmevent8h_c    => return "mhpmevent8h";
-      when csr_mhpmevent9h_c    => return "mhpmevent9h";
-      when csr_mhpmevent10h_c   => return "mhpmevent10h";
-      when csr_mhpmevent11h_c   => return "mhpmevent11h";
-      when csr_mhpmevent12h_c   => return "mhpmevent12h";
-      when csr_mhpmevent13h_c   => return "mhpmevent13h";
-      when csr_mhpmevent14h_c   => return "mhpmevent14h";
-      when csr_mhpmevent15h_c   => return "mhpmevent15h";
-      when csr_mhpmevent16h_c   => return "mhpmevent16h";
-      when csr_mhpmevent17h_c   => return "mhpmevent17h";
-      when csr_mhpmevent18h_c   => return "mhpmevent18h";
-      when csr_mhpmevent19h_c   => return "mhpmevent19h";
-      when csr_mhpmevent20h_c   => return "mhpmevent20h";
-      when csr_mhpmevent21h_c   => return "mhpmevent21h";
-      when csr_mhpmevent22h_c   => return "mhpmevent22h";
-      when csr_mhpmevent23h_c   => return "mhpmevent23h";
-      when csr_mhpmevent24h_c   => return "mhpmevent24h";
-      when csr_mhpmevent25h_c   => return "mhpmevent25h";
-      when csr_mhpmevent26h_c   => return "mhpmevent26h";
-      when csr_mhpmevent27h_c   => return "mhpmevent27h";
-      when csr_mhpmevent28h_c   => return "mhpmevent28h";
-      when csr_mhpmevent29h_c   => return "mhpmevent29h";
-      when csr_mhpmevent30h_c   => return "mhpmevent30h";
-      when csr_mhpmevent31h_c   => return "mhpmevent31h";
       -- trigger module registers --
       when csr_tselect_c        => return "tselect";
       when csr_tdata1_c         => return "tdata1";

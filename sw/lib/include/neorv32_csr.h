@@ -108,37 +108,6 @@ enum NEORV32_CSR_enum {
   CSR_MCYCLECFGH     = 0x721, /**< 0x721 - mcyclecfgh:   Machine cycle counter privilege mode filtering - high word */
   CSR_MINSTRETCFGH   = 0x722, /**< 0x722 - minstretcfgh: Machine instret counter privilege mode filtering - high word */
 
-  /* hardware performance monitors - event configuration - continued */
-  CSR_MHPMEVENT3H    = 0x723, /**< 0x723 - mhpmevent3h:  Machine hardware performance monitor event selector 3  high word */
-  CSR_MHPMEVENT4H    = 0x724, /**< 0x724 - mhpmevent4h:  Machine hardware performance monitor event selector 4  high word */
-  CSR_MHPMEVENT5H    = 0x725, /**< 0x725 - mhpmevent5h:  Machine hardware performance monitor event selector 5  high word */
-  CSR_MHPMEVENT6H    = 0x726, /**< 0x726 - mhpmevent6h:  Machine hardware performance monitor event selector 6  high word */
-  CSR_MHPMEVENT7H    = 0x727, /**< 0x727 - mhpmevent7h:  Machine hardware performance monitor event selector 7  high word */
-  CSR_MHPMEVENT8H    = 0x728, /**< 0x728 - mhpmevent8h:  Machine hardware performance monitor event selector 8  high word */
-  CSR_MHPMEVENT9H    = 0x729, /**< 0x729 - mhpmevent9h:  Machine hardware performance monitor event selector 9  high word */
-  CSR_MHPMEVENT10H   = 0x72a, /**< 0x72a - mhpmevent10h: Machine hardware performance monitor event selector 10 high word */
-  CSR_MHPMEVENT11H   = 0x72b, /**< 0x72b - mhpmevent11h: Machine hardware performance monitor event selector 11 high word */
-  CSR_MHPMEVENT12H   = 0x72c, /**< 0x72c - mhpmevent12h: Machine hardware performance monitor event selector 12 high word */
-  CSR_MHPMEVENT13H   = 0x72d, /**< 0x72d - mhpmevent13h: Machine hardware performance monitor event selector 13 high word */
-  CSR_MHPMEVENT14H   = 0x72e, /**< 0x72e - mhpmevent14h: Machine hardware performance monitor event selector 14 high word */
-  CSR_MHPMEVENT15H   = 0x72f, /**< 0x72f - mhpmevent15h: Machine hardware performance monitor event selector 15 high word */
-  CSR_MHPMEVENT16H   = 0x730, /**< 0x730 - mhpmevent16h: Machine hardware performance monitor event selector 16 high word */
-  CSR_MHPMEVENT17H   = 0x731, /**< 0x731 - mhpmevent17h: Machine hardware performance monitor event selector 17 high word */
-  CSR_MHPMEVENT18H   = 0x732, /**< 0x732 - mhpmevent18h: Machine hardware performance monitor event selector 18 high word */
-  CSR_MHPMEVENT19H   = 0x733, /**< 0x733 - mhpmevent19h: Machine hardware performance monitor event selector 19 high word */
-  CSR_MHPMEVENT20H   = 0x734, /**< 0x734 - mhpmevent20h: Machine hardware performance monitor event selector 20 high word */
-  CSR_MHPMEVENT21H   = 0x735, /**< 0x735 - mhpmevent21h: Machine hardware performance monitor event selector 21 high word */
-  CSR_MHPMEVENT22H   = 0x736, /**< 0x736 - mhpmevent22h: Machine hardware performance monitor event selector 22 high word */
-  CSR_MHPMEVENT23H   = 0x737, /**< 0x737 - mhpmevent23h: Machine hardware performance monitor event selector 23 high word */
-  CSR_MHPMEVENT24H   = 0x738, /**< 0x738 - mhpmevent24h: Machine hardware performance monitor event selector 24 high word */
-  CSR_MHPMEVENT25H   = 0x739, /**< 0x739 - mhpmevent25h: Machine hardware performance monitor event selector 25 high word */
-  CSR_MHPMEVENT26H   = 0x73a, /**< 0x73a - mhpmevent26h: Machine hardware performance monitor event selector 26 high word */
-  CSR_MHPMEVENT27H   = 0x73b, /**< 0x73b - mhpmevent27h: Machine hardware performance monitor event selector 27 high word */
-  CSR_MHPMEVENT28H   = 0x73c, /**< 0x73c - mhpmevent28h: Machine hardware performance monitor event selector 28 high word */
-  CSR_MHPMEVENT29H   = 0x73d, /**< 0x73d - mhpmevent29h: Machine hardware performance monitor event selector 29 high word */
-  CSR_MHPMEVENT30H   = 0x73e, /**< 0x73e - mhpmevent30h: Machine hardware performance monitor event selector 30 high word */
-  CSR_MHPMEVENT31H   = 0x73f, /**< 0x73f - mhpmevent31h: Machine hardware performance monitor event selector 31 high word */
-
   /* on-chip debugger - hardware trigger module */
   CSR_TSELECT        = 0x7a0, /**< 0x7a0 - tselect:  Trigger select */
   CSR_TDATA1         = 0x7a1, /**< 0x7a1 - tdata1:   Trigger data register 0 */

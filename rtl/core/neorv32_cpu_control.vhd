@@ -623,15 +623,7 @@ begin
            csr_mhpmevent19_c    | csr_mhpmevent20_c    | csr_mhpmevent21_c    | csr_mhpmevent22_c    |
            csr_mhpmevent23_c    | csr_mhpmevent24_c    | csr_mhpmevent25_c    | csr_mhpmevent26_c    |
            csr_mhpmevent27_c    | csr_mhpmevent28_c    | csr_mhpmevent29_c    | csr_mhpmevent30_c    |
-           csr_mhpmevent31_c    | -- machine event configuration LOW
-           csr_mhpmevent3h_c    | csr_mhpmevent4h_c    | csr_mhpmevent5h_c    | csr_mhpmevent6h_c    |
-           csr_mhpmevent7h_c    | csr_mhpmevent8h_c    | csr_mhpmevent9h_c    | csr_mhpmevent10h_c   |
-           csr_mhpmevent11h_c   | csr_mhpmevent12h_c   | csr_mhpmevent13h_c   | csr_mhpmevent14h_c   |
-           csr_mhpmevent15h_c   | csr_mhpmevent16h_c   | csr_mhpmevent17h_c   | csr_mhpmevent18h_c   |
-           csr_mhpmevent19h_c   | csr_mhpmevent20h_c   | csr_mhpmevent21h_c   | csr_mhpmevent22h_c   |
-           csr_mhpmevent23h_c   | csr_mhpmevent24h_c   | csr_mhpmevent25h_c   | csr_mhpmevent26h_c   |
-           csr_mhpmevent27h_c   | csr_mhpmevent28h_c   | csr_mhpmevent29h_c   | csr_mhpmevent30h_c   |
-           csr_mhpmevent31h_c => -- machine event configuration HIGH
+           csr_mhpmevent31_c => -- machine event configuration (LOW-word only for RV32 without Sscofpmf)
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zihpm);
 
       -- counter and timer CSRs --

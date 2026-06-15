@@ -71,8 +71,7 @@ to check if the targeted bits can actually be modified.
 | 0xc81 | <<_timeh, `timeh`>>         | `CSR_TIMEH`     | URO | System time high word
 | 0xc82 | <<_instreth, `instreth`>>   | `CSR_INSTRETH`  | URO | Instruction-retired counter high word
 5+^| **<<_hardware_performance_monitors_hpm_csrs>>**
-| 0x323 .. 0x33f | <<_mhpmeventh, `mhpmevent3`>> .. <<_mhpmevent, `mhpmevent31`>>            | `CSR_MHPMEVENT3` .. `CSR_MHPMEVENT31`       | MRW | Machine performance-monitoring event select low word
-| 0x723 .. 0x73f | <<_mhpmeventh, `mhpmevent3h`>> .. <<_mhpmevent, `mhpmevent31h`>>          | `CSR_MHPMEVENT3H` .. `CSR_MHPMEVENT31H`     | MRW | Machine performance-monitoring event select high word
+| 0x323 .. 0x33f | <<_mhpmevent, `mhpmevent3`>> .. <<_mhpmevent, `mhpmevent31`>>             | `CSR_MHPMEVENT3` .. `CSR_MHPMEVENT31`       | MRW | Machine performance-monitoring event select
 | 0xb03 .. 0xb1f | <<_mhpmcounterh, `mhpmcounter3`>> .. <<_mhpmcounterh, `mhpmcounter31`>>   | `CSR_MHPMCOUNTER3` .. `CSR_MHPMCOUNTER31`   | MRW | Machine performance-monitoring counter low word
 | 0xb83 .. 0xb9f | <<_mhpmcounterh, `mhpmcounter3h`>> .. <<_mhpmcounterh, `mhpmcounter31h`>> | `CSR_MHPMCOUNTER3H` .. `CSR_MHPMCOUNTER31H` | MRW | Machine performance-monitoring counter high word
 | 0xc03 .. 0xc1f | <<_hpmcounterh, `hpmcounter3`>> .. <<_hpmcounterh, `hpmcounter31`>>       | `CSR_HPMCOUNTER3` .. `CSR_HPMCOUNTER31`     | URO | Performance-monitoring counter low word
@@ -670,7 +669,7 @@ Note that **all** executed instruction do increment the `[m]instret[h]` counters
 ==== Hardware Performance Monitors (HPM) CSRs
 
 The actual number of implemented hardware performance monitors is configured via the `HPM_NUM_CNTS` top entity generic,
-Note that always all 29 HPM counter and configuration registers (`mhpmcounter*[h]` and `mhpmevent*[h]`) are accessible, but
+Note that always all 29 HPM counter and configuration registers (`mhpmcounter*[h]` and `mhpmevent*`) are accessible, but
 only the actually configured ones are implemented as "real" physical registers - the remaining ones will be hardwired to zero.
 If trying to access an HPM-related CSR beyond `HPM_NUM_CNTS` **no illegal instruction exception is
 triggered**. These CSRs are read-only, writes are ignored and reads always return zero.
@@ -680,20 +679,18 @@ If `HPM_NUM_CNTS` is less than 64, all remaining MSB-aligned bits are hardwired 
 
 
 [discrete]
-===== **`mhpmevent[h]`**
+===== **`mhpmevent`**
 
 [cols="<1,<8"]
 [grid="none"]
 |=======================
 | Name        | Machine hardware performance monitor event select
 | Address     | `0x323` ... `0x33f` (`mhpmevent3` ... `mhpmevent31`)
-|             | `0x723` ... `0x73f` (`mhpmevent3h` ... `mhpmevent31h`)
 | Reset value | all `0x00000000`
 | ISA         | <<_zicsr_isa_extension,`Zicsr`>> & <<_zihpm_isa_extension,`Zihpm`>>
 | Description | The value in these CSRs define the micro-architectural events that cause an increment of the according `mhpmcounter*[h]` counter(s).
 All available events are listed in the table below. If more than one event is enabled, the according counter will increment if _any_ of the enabled
 events is observed (logical OR). Note that the counter will only increment by 1 step per clock cycle even if more than one trigger event is observed.
-Note that all `mhpmevent*h` (hogh-word) event-select registers are hardwired to zero.
 |=======================
 
 .`mhpmevent*` CSR Bits (Micro-Architectural Counter Events)

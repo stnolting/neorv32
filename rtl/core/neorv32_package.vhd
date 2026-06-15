@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130108"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130109"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -496,35 +496,6 @@ package neorv32_package is
   -- machine counter setup - continued --
   constant csr_mcyclecfgh_c     : std_ulogic_vector(11 downto 0) := x"721";
   constant csr_minstretcfgh_c   : std_ulogic_vector(11 downto 0) := x"722";
-  constant csr_mhpmevent3h_c    : std_ulogic_vector(11 downto 0) := x"723";
-  constant csr_mhpmevent4h_c    : std_ulogic_vector(11 downto 0) := x"724";
-  constant csr_mhpmevent5h_c    : std_ulogic_vector(11 downto 0) := x"725";
-  constant csr_mhpmevent6h_c    : std_ulogic_vector(11 downto 0) := x"726";
-  constant csr_mhpmevent7h_c    : std_ulogic_vector(11 downto 0) := x"727";
-  constant csr_mhpmevent8h_c    : std_ulogic_vector(11 downto 0) := x"728";
-  constant csr_mhpmevent9h_c    : std_ulogic_vector(11 downto 0) := x"729";
-  constant csr_mhpmevent10h_c   : std_ulogic_vector(11 downto 0) := x"72a";
-  constant csr_mhpmevent11h_c   : std_ulogic_vector(11 downto 0) := x"72b";
-  constant csr_mhpmevent12h_c   : std_ulogic_vector(11 downto 0) := x"72c";
-  constant csr_mhpmevent13h_c   : std_ulogic_vector(11 downto 0) := x"72d";
-  constant csr_mhpmevent14h_c   : std_ulogic_vector(11 downto 0) := x"72e";
-  constant csr_mhpmevent15h_c   : std_ulogic_vector(11 downto 0) := x"72f";
-  constant csr_mhpmevent16h_c   : std_ulogic_vector(11 downto 0) := x"730";
-  constant csr_mhpmevent17h_c   : std_ulogic_vector(11 downto 0) := x"731";
-  constant csr_mhpmevent18h_c   : std_ulogic_vector(11 downto 0) := x"732";
-  constant csr_mhpmevent19h_c   : std_ulogic_vector(11 downto 0) := x"733";
-  constant csr_mhpmevent20h_c   : std_ulogic_vector(11 downto 0) := x"734";
-  constant csr_mhpmevent21h_c   : std_ulogic_vector(11 downto 0) := x"735";
-  constant csr_mhpmevent22h_c   : std_ulogic_vector(11 downto 0) := x"736";
-  constant csr_mhpmevent23h_c   : std_ulogic_vector(11 downto 0) := x"737";
-  constant csr_mhpmevent24h_c   : std_ulogic_vector(11 downto 0) := x"738";
-  constant csr_mhpmevent25h_c   : std_ulogic_vector(11 downto 0) := x"739";
-  constant csr_mhpmevent26h_c   : std_ulogic_vector(11 downto 0) := x"73a";
-  constant csr_mhpmevent27h_c   : std_ulogic_vector(11 downto 0) := x"73b";
-  constant csr_mhpmevent28h_c   : std_ulogic_vector(11 downto 0) := x"73c";
-  constant csr_mhpmevent29h_c   : std_ulogic_vector(11 downto 0) := x"73d";
-  constant csr_mhpmevent30h_c   : std_ulogic_vector(11 downto 0) := x"73e";
-  constant csr_mhpmevent31h_c   : std_ulogic_vector(11 downto 0) := x"73f";
   -- trigger module registers --
   constant csr_tselect_c        : std_ulogic_vector(11 downto 0) := x"7a0";
   constant csr_tdata1_c         : std_ulogic_vector(11 downto 0) := x"7a1";
