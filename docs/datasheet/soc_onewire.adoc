@@ -130,7 +130,7 @@ the single-bit operation eight times. The relevant points in time are shown as _
 time base T~base~) with the falling edge of the bus as reference points.
 
 .Single-bit data transmission (not to scale)
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 { signal: [
   { wave: '10x....1.', node: '.........'},
@@ -149,7 +149,7 @@ time base T~base~) with the falling edge of the bus as reference points.
 ----
 
 .Reset pulse and presence detect (not to scale)
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 { signal: [
   { wave: '10..x...1', node: '.........'},
