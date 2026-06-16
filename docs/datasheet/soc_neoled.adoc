@@ -47,7 +47,7 @@ value. The actual data bits are transferred by modifying the duty cycle of the b
 send by pulling the data line LOW for at least 50μs.
 
 .WS2812 bit-level timing (timing does not scale)
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: '0-code', wave: '01...0...1',  node: '.a...b...c' },

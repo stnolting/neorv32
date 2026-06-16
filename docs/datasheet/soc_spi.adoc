@@ -75,7 +75,7 @@ The SPI module supports all standard SPI clock modes (0, 1, 2, 3), which are con
 bit defines the _clock polarity_.
 
 .SPI Clock Modes
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   [

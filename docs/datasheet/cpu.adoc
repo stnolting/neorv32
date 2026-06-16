@@ -510,7 +510,7 @@ The figure below shows three exemplary single-access bus transactions:
 . A failing read access to address `C_addr` (slow response; `ERR` arrives after several cycles).
 
 .Three Exemplary **Single-Access** Transactions
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: 'clk', wave: 'p..|.......|..'},
@@ -551,7 +551,7 @@ The following figure shows a simplified read-followed-by-write transaction imple
 exclusive bus access and a 4-word incrementing-address read burst.
 
 .**Atomic Access** Transfer (left) and 4-Word Incrementing-Address **Burst Read** Transfer (right)
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {signal: [
   {name: 'clk', wave: 'p................'},

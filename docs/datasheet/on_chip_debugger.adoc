@@ -664,7 +664,7 @@ From the CPU side the register is accessed using byte-wide load and store operat
 is associated to a specific request when read or to an according acknowledge when written.
 
 .DM Status Register Layout
-[wavedrom, format="svg", align="center"]
+[wavedrom, format="png", align="center"]
 ----
 {reg: [
     {bits: 8, name: 'Halt (HLT)',  attr: '-/w'},
