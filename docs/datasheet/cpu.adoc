@@ -436,12 +436,15 @@ When executed in debug-mode or during single-stepping, `wfi` will behave as simp
 ==== Full Virtualization
 
 Just like the RISC-V ISA, the NEORV32 aims to provide _maximum virtualization_ capabilities on CPU and SoC level to
-allow a high standard of **execution safety**. The CPU supports **all** traps specified by the official RISC-V
+allow a high level of **execution safety**. The CPU supports **all** traps specified by the official RISC-V
 specifications. Thus, the CPU provides defined hardware fall-backs via traps for any expected and unexpected situations
 (e.g. executing a malformed or not supported instruction or accessing a non-allocated memory address). For any kind
 of trap the core is always in a defined and fully synchronized state throughout the whole system (i.e. there are no
 out-of-order operations that might have to be reverted). This allows a defined and predictable execution behavior
 at any time improving overall execution safety.
+
+All reserved, unsupported, unavailable, or illegal instructions always raise a precise exception, which, for example,
+also allows for software-based emulation of additional ISA extensions or system features.
 
 
 <<<

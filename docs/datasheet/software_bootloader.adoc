@@ -222,7 +222,7 @@ The serial interface device is defined by `UART_TTY` .
 [NOTE]
 For setups that use very high custom baud rates values and/or provide very high main memory latency (e.g. external
 DDR-RAM with several cache layers), it is recommended to enable the UART RTS/CTS hardware flow control. In addition,
-enabling overflow detection can make debugging easier. See <<_Customizing_the_Internal_Bootloader>> for more information.
+enabling overflow detection can make debugging easier. See <<_customizing_the_internal_bootloader>> for more information.
 
 
 :sectnums:

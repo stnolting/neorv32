@@ -58,6 +58,12 @@ This chapter gives a brief overview of all available ISA extensions.
 For more information regarding the RISC-V ISA extensions please refer to the official specification at riscv.org:
 https://docs.riscv.org/reference/home/
 
+.Illegal Instructions
+[NOTE]
+The NEORV32 instruction-decoding logic follows a strict illegal instruction detection scheme:
+All reserved, unavailable, or unsupported instructions always raise an illegal instruction exception when executed.
+See <<_full_virtualization>> for more information.
+
 .Discovering ISA Extensions
 [TIP]
 Software can discover available ISA extensions via the <<_misa>> and <<_mxisah>> CSRs or by executing an instruction
