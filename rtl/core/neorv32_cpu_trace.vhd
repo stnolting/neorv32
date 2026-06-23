@@ -151,9 +151,9 @@ begin
         trace_buf.mem_rmask <= (others => '0');
         trace_buf.mem_wmask <= (others => '0');
       end if;
-      trace_buf.mem_addr  <= mem_addr_i;
-      trace_buf.mem_rdata <= rd_wdata_i;
-      trace_buf.mem_wdata <= mem_wdata_i;
+      trace_buf.mem_addr  <= mem_addr_i(31 downto 2)&"00";
+      trace_buf.mem_rdata <= std_ulogic_vector(shift_left(unsigned(rd_wdata_i),to_integer(unsigned(mem_addr_i(1 downto 0))) * 8));
+      trace_buf.mem_wdata <= std_ulogic_vector(shift_left(unsigned(mem_wdata_i),to_integer(unsigned(mem_addr_i(1 downto 0))) * 8)); 
 
     end if;
   end process trace_packet_buffer;
