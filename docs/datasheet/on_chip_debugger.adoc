@@ -231,6 +231,13 @@ However, JTAG-level resets can be triggered using TMS signaling.
 If the on-chip debugger is disabled the JTAG serial input `jtag_tdi_i` is directly
 connected to the JTAG serial output `jtag_tdo_o` to maintain the JTAG chain.
 
+.JTAG TAP Access via FPGA Vendor Infrastructure
+[TIP]
+Most FPGAs are programmed via JTAG and also provide mechanisms to access user-defined JTAG logic from within the FPGA
+fabric using vendor-specific primitives. Therefore, a dedicated second JTAG connection for the OCD may be omitted.
+Instead, the debugger can share the same physical JTAG connection that is already used for FPGA configuration. See the
+setups in [`neorv32-setups`](https://github.com/stnolting/neorv32-setups) for example implementations.
+
 The DTM implements a single 5-bit _instruction register_ `IR` and several _data registers_ `DR` with different sizes. The
 individual data registers are accessed by writing the respective address to the instruction register. The following table
 shows all available data registers and their addresses:
