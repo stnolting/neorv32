@@ -750,7 +750,11 @@ begin
             end case;
           end if;
         elsif (exec.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = funct3_zimop_c) then
-          illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zimop);
+          if RISCV_ISA_Zimop and (exec.ir(31) = '1') and (exec.ir(29 downto 28) = "00") and ((exec.ir(25) = '1') or (exec.ir(25 downto 22) = "0111")) then
+            illegal_cmd <= '0';
+          else
+            illegal_cmd <= '1';
+          end if;
         elsif (csr_valid = "111") then -- valid CSR operation
           illegal_cmd <= '0';
         end if;
