@@ -58,7 +58,7 @@ targeting various FPGA boards and toolchains to get started.
 | [RISC-V compliance](https://github.com/stnolting/neorv32-riscv-act) | [![neorv32-riscv-act](https://img.shields.io/github/actions/workflow/status/stnolting/neorv32-riscv-act/riscv-act.yml?branch=main&longCache=true&style=flat-square&label=RISC-V%20ACT&logo=Github%20Actions&logoColor=fff)](https://github.com/stnolting/neorv32-riscv-act/actions/workflows/riscv-act.yml) |
 
 The processor passes the official [RISC-V Architectural Certification Tests (ACT)](https://github.com/stnolting/neorv32-riscv-act).
-It can successfully run _any_ C program including CoreMark and FreeRTOS and can be synthesized for _any_ target
+It can successfully run any software including CoreMark and FreeRTOS and can be synthesized for any target
 technology - [tested](https://github.com/stnolting/neorv32-setups) on AMD, Intel, Lattice, Microchip, Gowin and
 Cologne Chip FPGAs. The processor has also been taped out several times as an ASIC.
 
