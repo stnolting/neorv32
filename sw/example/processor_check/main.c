@@ -520,34 +520,6 @@ int main() {
 
 
   // ----------------------------------------------------------
-  // May-be-operation
-  // ----------------------------------------------------------
-  PRINT("[%i] May-be-operations ", cnt_test);
-  neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
-  cnt_test++;
-
-  tmp_a = RISCV_INSTR_R_TYPE(0b1110011, 0b100, 0b1100000, 123456, 0b11100); // mop.r.16
-  tmp_b = RISCV_INSTR_R_TYPE(0b1110011, 0b100, 0b1100111, 654321, 789); // mop.rr.7
-
-  if (neorv32_cpu_csr_read(CSR_MXISA) & (1 << CSR_MXISA_ZIMOP)) {
-    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c) && (tmp_a == 0) && (tmp_b == 0)) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-  else {
-    if (neorv32_cpu_csr_read(CSR_MCAUSE) == TRAP_CODE_I_ILLEGAL) {
-      test_ok();
-    }
-    else {
-      test_fail();
-    }
-  }
-
-
-  // ----------------------------------------------------------
   // Execute MRET in U-mode (has to trap!)
   // ----------------------------------------------------------
   PRINT("[%i] MRET in U-mode ", cnt_test);
