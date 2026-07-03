@@ -240,7 +240,7 @@ end neorv32_bus_reg_rtl;
 -- ================================================================================ --
 -- NEORV32 SoC - Processor Bus Infrastructure: Section Gateway                      --
 -- -------------------------------------------------------------------------------- --
--- Bus gateway to distribute accesses to 3 non-overlapping address sub-spaces       --
+-- Bus gateway to distribute accesses to 4 non-overlapping address sub-spaces       --
 -- (A to C). Note that the sub-spaces have to be aligned to their individual sizes. --
 -- All accesses that do not match any of these sections are redirected to the X     --
 -- port. The gateway-internal bus monitor ensures that ALL accesses are completed   --
@@ -276,6 +276,10 @@ entity neorv32_bus_gateway is
     C_EN    : boolean;
     C_BASE  : std_ulogic_vector(31 downto 0);
     C_SIZE  : natural;
+    -- port D --
+    D_EN    : boolean;
+    D_BASE  : std_ulogic_vector(31 downto 0);
+    D_SIZE  : natural;
     -- port X (the void) --
     X_EN    : boolean
   );
@@ -294,6 +298,8 @@ entity neorv32_bus_gateway is
     b_rsp_i : in  bus_rsp_t;
     c_req_o : out bus_req_t;
     c_rsp_i : in  bus_rsp_t;
+    d_req_o : out bus_req_t;
+    d_rsp_i : in  bus_rsp_t;
     x_req_o : out bus_req_t;
     x_rsp_i : in  bus_rsp_t
   );
@@ -305,15 +311,16 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   constant a_lo_c : natural := index_size_f(A_SIZE);
   constant b_lo_c : natural := index_size_f(B_SIZE);
   constant c_lo_c : natural := index_size_f(C_SIZE);
-  signal port_sel : std_ulogic_vector(3 downto 0);
+  constant d_lo_c : natural := index_size_f(D_SIZE);
+  signal port_sel : std_ulogic_vector(4 downto 0);
 
   -- port enable list --
-  type port_bool_list_t is array (0 to 3) of boolean;
-  constant port_en_list_c : port_bool_list_t := (A_EN, B_EN, C_EN, X_EN);
+  type port_bool_list_t is array (0 to 4) of boolean;
+  constant port_en_list_c : port_bool_list_t := (A_EN, B_EN, C_EN, D_EN, X_EN);
 
   -- gateway ports combined as arrays --
-  type port_req_t is array (0 to 3) of bus_req_t;
-  type port_rsp_t is array (0 to 3) of bus_rsp_t;
+  type port_req_t is array (0 to 4) of bus_req_t;
+  type port_rsp_t is array (0 to 4) of bus_rsp_t;
   signal port_req : port_req_t;
   signal port_rsp : port_rsp_t;
 
@@ -340,19 +347,21 @@ begin
   port_sel(0) <= '1' when A_EN and (req_i.addr(31 downto a_lo_c) = A_BASE(31 downto a_lo_c)) else '0';
   port_sel(1) <= '1' when B_EN and (req_i.addr(31 downto b_lo_c) = B_BASE(31 downto b_lo_c)) else '0';
   port_sel(2) <= '1' when C_EN and (req_i.addr(31 downto c_lo_c) = C_BASE(31 downto c_lo_c)) else '0';
-  port_sel(3) <= '1' when X_EN and (port_sel(2 downto 0) = "000") else '0'; -- access to the "void"
+  port_sel(3) <= '1' when D_EN and (req_i.addr(31 downto d_lo_c) = D_BASE(31 downto d_lo_c)) else '0';
+  port_sel(4) <= '1' when X_EN and (port_sel(3 downto 0) = "0000") else '0'; -- access to the "void"
 
   -- Gateway Ports --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   a_req_o <= port_req(0); port_rsp(0) <= a_rsp_i;
   b_req_o <= port_req(1); port_rsp(1) <= b_rsp_i;
   c_req_o <= port_req(2); port_rsp(2) <= c_rsp_i;
-  x_req_o <= port_req(3); port_rsp(3) <= x_rsp_i;
+  d_req_o <= port_req(3); port_rsp(3) <= d_rsp_i;
+  x_req_o <= port_req(4); port_rsp(4) <= x_rsp_i;
 
   -- bus request --
   request: process(req_i, port_sel)
   begin
-    for i in 0 to 3 loop
+    for i in 0 to 4 loop
       port_req(i) <= req_terminate_c;
       if port_en_list_c(i) then -- port enabled
         port_req(i) <= req_i;
@@ -366,7 +375,7 @@ begin
     variable tmp_v : bus_rsp_t;
   begin
     tmp_v := rsp_terminate_c; -- start with all-zero
-    for i in 0 to 3 loop -- OR all response signals
+    for i in 0 to 4 loop -- OR all response signals
       if port_en_list_c(i) then -- port enabled
         tmp_v.data := tmp_v.data or port_rsp(i).data;
         tmp_v.ack  := tmp_v.ack  or port_rsp(i).ack;
@@ -396,7 +405,7 @@ begin
         when "00" => -- idle, waiting for new access request
         -- ------------------------------------------------------------
           keeper.lock <= req_i.lock;
-          keeper.ext  <= port_sel(3); -- external bus access?
+          keeper.ext  <= port_sel(port_sel'left); -- MSB set (external bus access)?
           keeper.cnt  <= (others => '0');
           if (req_i.stb = '1') then
             keeper.state <= "01";

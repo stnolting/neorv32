@@ -846,10 +846,14 @@ begin
     B_EN    => DMEM_EN,
     B_BASE  => DMEM_BASE,
     B_SIZE  => dmem_size_c,
-    -- port C: IO --
-    C_EN    => true,
-    C_BASE  => mem_io_base_c,
-    C_SIZE  => mem_io_size_c,
+    -- port C: reserved --
+    C_EN    => false,
+    C_BASE  => (others => '0'),
+    C_SIZE  => 4,
+    -- port D: IO --
+    D_EN    => true,
+    D_BASE  => mem_io_base_c,
+    D_SIZE  => mem_io_size_c,
     -- port X (the void): XBUS --
     X_EN    => XBUS_EN
   )
@@ -866,8 +870,10 @@ begin
     a_rsp_i => imem_rsp,
     b_req_o => dmem_req,
     b_rsp_i => dmem_rsp,
-    c_req_o => io_req,
-    c_rsp_i => io_rsp,
+    c_req_o => open,            -- reserved
+    c_rsp_i => rsp_terminate_c, -- reserved
+    d_req_o => io_req,
+    d_rsp_i => io_rsp,
     x_req_o => xbus_req,
     x_rsp_i => xbus_rsp
   );
