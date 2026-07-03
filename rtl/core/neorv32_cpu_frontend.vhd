@@ -141,10 +141,6 @@ begin
             end if;
           end if;
 
-        when others => -- undefined
-        -- ------------------------------------------------------------
-          fetch.state <= S_RESTART;
-
       end case;
     end if;
   end process fetch_fsm;

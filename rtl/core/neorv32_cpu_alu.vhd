@@ -119,7 +119,7 @@ begin
       when alu_op_xor_c  => res_o <= opb xor rs1_i;
       when alu_op_or_c   => res_o <= opb or  rs1_i;
       when alu_op_and_c  => res_o <= opb and rs1_i;
-      when others        => res_o <= (others => '0');
+      when others        => res_o <= (others => 'X'); -- undefined
     end case;
   end process alu_core;
 
