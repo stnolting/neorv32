@@ -189,7 +189,6 @@ architecture neorv32_cpu_alu_crypto_rtl of neorv32_cpu_alu_crypto is
   signal rs1     : std_ulogic_vector(31 downto 0);
   signal rs2     : std_ulogic_vector(31 downto 0);
   signal funct12 : std_ulogic_vector(11 downto 0);
-  signal funct3  : std_ulogic_vector(2 downto 0);
 
   -- helper logic --
   signal rs2_sel : std_ulogic_vector(7 downto 0);
@@ -250,7 +249,6 @@ begin
     if (rstn_i = '0') then
       rs1     <= (others => '0');
       rs2     <= (others => '0');
-      funct3  <= (others => '0');
       funct12 <= (others => '0');
       done    <= '0';
       state   <= S_IDLE;
@@ -259,7 +257,6 @@ begin
       if (cmd_valid = '1') then
         rs1     <= rs1_i;
         rs2     <= rs2_i;
-        funct3  <= ctrl_i.ir_funct3;
         funct12 <= ctrl_i.ir_funct12;
       end if;
       -- arbiter state machine --
