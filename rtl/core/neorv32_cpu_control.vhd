@@ -32,7 +32,6 @@ entity neorv32_cpu_control is
     RISCV_ISA_U         : boolean; -- user mode extension
     RISCV_ISA_Zaamo     : boolean; -- atomic read-modify-write extension
     RISCV_ISA_Zalrsc    : boolean; -- atomic reservation-set operations extension
-    RISCV_ISA_Zcb       : boolean; -- additional code size reduction instructions
     RISCV_ISA_Zba       : boolean; -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb       : boolean; -- basic bit-manipulation extension
     RISCV_ISA_Zbc       : boolean; -- carry-less multiplication instructions
@@ -40,6 +39,8 @@ entity neorv32_cpu_control is
     RISCV_ISA_Zbkc      : boolean; -- carry-less multiplication instructions
     RISCV_ISA_Zbkx      : boolean; -- cryptography crossbar permutation extension
     RISCV_ISA_Zbs       : boolean; -- single-bit bit-manipulation extension
+    RISCV_ISA_Zcb       : boolean; -- additional code size reduction instructions
+    RISCV_ISA_Zcmop     : boolean; -- compressed may-be-operations
     RISCV_ISA_Zfinx     : boolean; -- 32-bit floating-point extension
     RISCV_ISA_Zibi      : boolean; -- branch with immediate
     RISCV_ISA_Zicntr    : boolean; -- base counters
@@ -1293,7 +1294,8 @@ begin
             csr_rdata(31) <= bool_to_ulogic_f(RISCV_ISA_Smcntrpmf); -- Smcntrpmf: counter privilege-mode filtering
 
           when csr_mxisah_c => -- machine extended ISA extensions information, high-word
-            csr_rdata(0) <= bool_to_ulogic_f(RISCV_ISA_Zbc); -- Zbc: carry-less multiplication
+            csr_rdata(0) <= bool_to_ulogic_f(RISCV_ISA_Zbc);   -- Zbc: carry-less multiplication
+            csr_rdata(1) <= bool_to_ulogic_f(RISCV_ISA_Zcmop); -- Zcmop: compressed may-be-operations
 
           -- --------------------------------------------------------------------
           -- undefined/unavailable or implemented externally
