@@ -468,7 +468,8 @@ enum NEORV32_CSR_MXISA_enum {
 };
 
 enum NEORV32_CSR_MXISAH_enum {
-  CSR_MXISAH_ZBC = 0 /**< mxisah CSR (0): carry-less multiplication (r/-)*/
+  CSR_MXISAH_ZBC   = 0, /**< mxisah CSR (0): carry-less multiplication (r/-)*/
+  CSR_MXISAH_ZCMOP = 1  /**< mxisah CSR (1): compressed may-be-operations (r/-)*/
 };
 
 /**********************************************************************//**

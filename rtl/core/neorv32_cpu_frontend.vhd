@@ -21,9 +21,10 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_frontend is
   generic (
-    HART_ID   : natural; -- hardware thread ID
-    RISCV_C   : boolean; -- implement C ISA extension
-    RISCV_ZCB : boolean  -- implement Zcb ISA sub-extension
+    HART_ID     : natural; -- hardware thread ID
+    RISCV_C     : boolean; -- implement C ISA extension
+    RISCV_ZCB   : boolean; -- implement Zcb ISA sub-extension
+    RISCV_ZCMOP : boolean  -- implement Zcb ISA sub-extension
   );
   port (
     -- global control --
@@ -208,7 +209,8 @@ begin
     -- -------------------------------------------------------------------------------------------
     neorv32_cpu_decompressor_inst: entity neorv32.neorv32_cpu_decompressor
     generic map (
-      ZCB_EN => RISCV_ZCB
+      ZCB_EN   => RISCV_ZCB,
+      ZCMOP_EN => RISCV_ZCMOP
     )
     port map (
       instr_i => cmd16,

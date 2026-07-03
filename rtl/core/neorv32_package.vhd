@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130204"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130205"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -923,6 +923,7 @@ package neorv32_package is
       RISCV_ISA_Zbkx      : boolean                        := false;
       RISCV_ISA_Zbs       : boolean                        := false;
       RISCV_ISA_Zcb       : boolean                        := false;
+      RISCV_ISA_Zcmop     : boolean                        := false;
       RISCV_ISA_Zfinx     : boolean                        := false;
       RISCV_ISA_Zibi      : boolean                        := false;
       RISCV_ISA_Zicntr    : boolean                        := false;

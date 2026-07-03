@@ -29,6 +29,7 @@ This chapter gives a brief overview of all available ISA extensions.
 | <<_zbs_isa_extension,`Zbs`>>             | Single-bit bit manipulation instructions                     | <<_processor_top_entity_generics, `RISCV_ISA_Zbs`>>
 | <<_c_isa_extension,`Zca`>> (an alias)    | Compressed instruction without floating-point operations     | Implicitly enabled via <<_processor_top_entity_generics, `RISCV_ISA_C`>>
 | <<_zcb_isa_extension,`Zcb`>>             | Additional code size reduction instructions (build upon `C`) | <<_processor_top_entity_generics, `RISCV_ISA_Zcb`>>
+| <<_zcmop_isa_extension,`Zcmop`>>         | Compressed may-be-operation (build upon `C` + `Zimop`)       | <<_processor_top_entity_generics, `RISCV_ISA_Zcmop`>>
 | <<_zfinx_isa_extension,`Zfinx`>>         | Floating-point instructions using integer registers          | <<_processor_top_entity_generics, `RISCV_ISA_Zfinx`>>
 | <<_zibi_isa_extension,`Zibi`>>           | Branches with immediate-comparison                           | <<_processor_top_entity_generics, `RISCV_ISA_Zibi`>>
 | <<_zicntr_isa_extension,`Zicntr`>>       | Base counters extension                                      | <<_processor_top_entity_generics, `RISCV_ISA_Zicntr`>>
@@ -450,6 +451,21 @@ Without the `Zimop` extension, any `mop.r*` instruction will raise an illegal in
 |=======================
 | Class | Instructions | Execution cycles
 | System | `mop.r.[0..31]` `mop.rr.[0..7]` | 3
+|=======================
+
+
+==== `Zcmop` ISA Extension
+
+The `Zcmop` ISA extension build up upon the <<_zimop_isa_extension>> by adding compressed may-be-operation that
+decompress into their 32-bit counterparts (i.e. `c.mop.n -> mop.r.n` with `r = x0`).
+Note that this extensions requires the <<_zimop_isa_extension>> & <<_c_isa_extension>>.
+
+.Instructions and Timing
+[cols="<2,<5,<4"]
+[options="header", grid="rows"]
+|=======================
+| Class | Instructions | Execution cycles
+| System | `c.mop.n` | 3
 |=======================
 
 

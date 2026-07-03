@@ -999,6 +999,7 @@ discover additional ISA (sub-)extensions (beyond the _base_ extensions listed in
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Description
-| 31:1 | - | r/- | _reserved_, read as zero
-|    0 | - | r/- | <<_zbc_isa_extension>> available
+| 31:2 | -                  | r/- | _reserved_, read as zero
+|    1 | `CSR_MXISAH_ZCMOP` | r/- | <<_zcmop_isa_extension>> available
+|    0 | `CSR_MXISAH_ZBC`   | r/- | <<_zbc_isa_extension>> available
 |=======================
