@@ -97,7 +97,7 @@ begin
           state_nxt <= S_IDLE;
         end if;
 
-      when others => -- wait for requests
+      when S_IDLE => -- wait for requests
       -- ------------------------------------------------------------
         lock_nxt <= b_req_i.lock & a_req_i.lock;
         if (sel_q = '1') or (not ROUND_ROBIN_EN) then

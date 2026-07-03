@@ -99,8 +99,7 @@ begin
   mtime_we(1) <= mtime_en and bus_req_i.rw and (    bus_req_i.addr(2));
 
   -- subword read-back --
-  mtime_rd <= (others => '0') when (mtime_en = '0') else
-              mtime(63 downto 32) when (bus_req_i.addr(2) = '1') else mtime(31 downto 0);
+  mtime_rd <= (others => '0') when (mtime_en = '0') else mtime(63 downto 32) when (bus_req_i.addr(2) = '1') else mtime(31 downto 0);
 
   -- system time output: high and low word are not synchronized! --
   time_o <= mtime;
