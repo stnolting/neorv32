@@ -305,14 +305,14 @@ begin
   -- Instruction Decoding -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- one-hot re-encoding --
-  cmd.instr_class  <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11100") and (ctrl_i.ir_funct3 = "001")                                             else '0'; -- FCLASS
-  cmd.instr_comp   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "10100") and (ctrl_i.ir_funct3(2) = '0')                                            else '0'; -- FEQ/FLT/FLE
-  cmd.instr_i2f    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11010") and (ctrl_i.ir_funct12(4 downto 1) = "0000")                               else '0'; -- FCVT
-  cmd.instr_f2i    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11000") and (ctrl_i.ir_funct12(4 downto 1) = "0000")                               else '0'; -- FCVT
-  cmd.instr_sgnj   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00100") and (ctrl_i.ir_funct3(2) = '0') and (ctrl_i.ir_funct3(1 downto 0) /= "11") else '0'; -- FSGNJ
-  cmd.instr_minmax <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00101") and (ctrl_i.ir_funct3(2 downto 1) = "00")                                  else '0'; -- FMIN/FMAX
-  cmd.instr_addsub <= '1' when (ctrl_i.ir_funct12(11 downto 8) = "0000")                                                                             else '0'; -- FADD/FSUB
-  cmd.instr_mul    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00010")                                                                            else '0'; -- FMUL
+  cmd.instr_class  <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11100") and (ctrl_i.ir_funct12(4 downto 0) = "00000") and (ctrl_i.ir_funct3 = "001") else '0'; -- FCLASS
+  cmd.instr_comp   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "10100") and (ctrl_i.ir_funct3(2) = '0') and (ctrl_i.ir_funct3(1 downto 0) /= "11")   else '0'; -- FEQ/FLT/FLE
+  cmd.instr_i2f    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11010") and (ctrl_i.ir_funct12(4 downto 1) = "0000")                                 else '0'; -- FCVT.S.W[U]
+  cmd.instr_f2i    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "11000") and (ctrl_i.ir_funct12(4 downto 1) = "0000")                                 else '0'; -- FCVT.W[U].S
+  cmd.instr_sgnj   <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00100") and (ctrl_i.ir_funct3(2) = '0') and (ctrl_i.ir_funct3(1 downto 0) /= "11")   else '0'; -- FSGNJ
+  cmd.instr_minmax <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00101") and (ctrl_i.ir_funct3(2 downto 1) = "00")                                    else '0'; -- FMIN/FMAX
+  cmd.instr_addsub <= '1' when (ctrl_i.ir_funct12(11 downto 8) = "0000")                                                                               else '0'; -- FADD/FSUB
+  cmd.instr_mul    <= '1' when (ctrl_i.ir_funct12(11 downto 7) = "00010")                                                                              else '0'; -- FMUL
 
   -- valid FPU operation? --
   cmd.valid <= '1' when (ctrl_i.ir_funct12(6 downto 5) = "00") and -- single-precision format only
