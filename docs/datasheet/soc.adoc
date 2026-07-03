@@ -224,6 +224,7 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 | `RISCV_ISA_Zbkx`      | boolean   | false         | Enable <<_zbkx_isa_extension>> (scalar cryptography crossbar permutations).
 | `RISCV_ISA_Zbs`       | boolean   | false         | Enable <<_zbs_isa_extension>> (single-bit bit-manipulation instructions).
 | `RISCV_ISA_Zcb`       | boolean   | false         | Enable <<_zcb_isa_extension>> (additional code size reduction instruction; builds upon `C`).
+| `RISCV_ISA_Zcmop`     | boolean   | false         | Enable <<_zcmop_isa_extension>> (compressed may-be-operations; builds upon `C` and `Zimop`).
 | `RISCV_ISA_Zfinx`     | boolean   | false         | Enable <<_zfinx_isa_extension>> (single-precision floating-point unit).
 | `RISCV_ISA_Zibi`      | boolean   | false         | Enable <<_zibi_isa_extension>> (CPU base counters).
 | `RISCV_ISA_Zicntr`    | boolean   | false         | Enable <<_zicntr_isa_extension>> (CPU base counters).

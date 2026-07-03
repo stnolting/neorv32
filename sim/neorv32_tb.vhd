@@ -32,7 +32,6 @@ entity neorv32_tb is
     RISCV_ISA_U       : boolean                        := true;        -- user mode extension
     RISCV_ISA_Zaamo   : boolean                        := true;        -- atomic read-modify-write operations extension
     RISCV_ISA_Zalrsc  : boolean                        := true;        -- atomic reservation-set operations extension
-    RISCV_ISA_Zcb     : boolean                        := true;        -- additional code size reduction instructions
     RISCV_ISA_Zba     : boolean                        := true;        -- shifted-add bit-manipulation extension
     RISCV_ISA_Zbb     : boolean                        := true;        -- basic bit-manipulation extension
     RISCV_ISA_Zbc     : boolean                        := true;        -- carry-less multiplication instructions
@@ -40,6 +39,8 @@ entity neorv32_tb is
     RISCV_ISA_Zbkc    : boolean                        := true;        -- carry-less multiplication instructions
     RISCV_ISA_Zbkx    : boolean                        := true;        -- cryptography crossbar permutation extension
     RISCV_ISA_Zbs     : boolean                        := true;        -- single-bit bit-manipulation extension
+    RISCV_ISA_Zcb     : boolean                        := true;        -- additional code size reduction instructions
+    RISCV_ISA_Zcmop   : boolean                        := true;        -- compressed may-be-operations
     RISCV_ISA_Zfinx   : boolean                        := true;        -- 32-bit floating-point extension
     RISCV_ISA_Zibi    : boolean                        := true;        -- branch with immediate
     RISCV_ISA_Zicntr  : boolean                        := true;        -- base counters
@@ -266,7 +267,6 @@ begin
     RISCV_ISA_U         => RISCV_ISA_U,
     RISCV_ISA_Zaamo     => RISCV_ISA_Zaamo,
     RISCV_ISA_Zalrsc    => RISCV_ISA_Zalrsc,
-    RISCV_ISA_Zcb       => RISCV_ISA_Zcb,
     RISCV_ISA_Zba       => RISCV_ISA_Zba,
     RISCV_ISA_Zbb       => RISCV_ISA_Zbb,
     RISCV_ISA_Zbc       => RISCV_ISA_Zbc,
@@ -274,6 +274,8 @@ begin
     RISCV_ISA_Zbkc      => RISCV_ISA_Zbkc,
     RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,
     RISCV_ISA_Zbs       => RISCV_ISA_Zbs,
+    RISCV_ISA_Zcb       => RISCV_ISA_Zcb,
+    RISCV_ISA_Zcmop     => RISCV_ISA_Zcmop,
     RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
     RISCV_ISA_Zibi      => RISCV_ISA_Zibi,
     RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
