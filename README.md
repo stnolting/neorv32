@@ -99,6 +99,7 @@ setup according to your needs. Note that all of the following SoC modules are en
 [`Zbkx`](https://stnolting.github.io/neorv32/#_zbkx_isa_extension)
 [`Zbs`](https://stnolting.github.io/neorv32/#_zbs_isa_extension)
 [`Zcb`](https://stnolting.github.io/neorv32/#_zcb_isa_extension)
+[`Zcmop`](https://stnolting.github.io/neorv32/#_zcmop_isa_extension)
 [`Zfinx`](https://stnolting.github.io/neorv32/#_zfinx_isa_extension)
 [`Zibi`](https://stnolting.github.io/neorv32/#_zibi_isa_extension)
 [`Zicntr`](https://stnolting.github.io/neorv32/#_zicntr_isa_extension)
