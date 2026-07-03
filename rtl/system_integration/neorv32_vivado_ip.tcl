@@ -260,7 +260,7 @@ proc setup_ip_gui {} {
     { HPM_NUM_CNTS        {HPM counters}                                     {Number of HPM counters} {$RISCV_ISA_Zihpm} }
   }
 
-  set group [add_group $page {Bit-Manipulation}]
+  set group [add_group $page {Bit-Manipulation (B)}]
   add_params $group {
     { RISCV_ISA_Zba {Zba - Shifted-add bit-manipulation instructions} {} }
     { RISCV_ISA_Zbb {Zbb - Basic bit-manipulation instructions}       {} }
@@ -292,6 +292,7 @@ proc setup_ip_gui {} {
     { RISCV_ISA_Zibi   {Zibi - Branch with immediate-comparison}            {} }
     { RISCV_ISA_Zicond {Zicond - Conditional-move instructions}             {} }
     { RISCV_ISA_Zimop  {Zimop - May-be-operation}                           {} }
+    { RISCV_ISA_Zcmop  {Zcmop - Compressed may-be-operation}                {} {$RISCV_ISA_C && $RISCV_ISA_Zimop} {$RISCV_ISA_C && $RISCV_ISA_Zimop ? $RISCV_ISA_Zcmop : false}}
     { RISCV_ISA_Xcfu   {Xcfu - Custom-instructions unit (user-defined)}     {} }
   }
 

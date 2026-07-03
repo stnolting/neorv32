@@ -51,6 +51,7 @@ entity neorv32_vivado_ip is
     RISCV_ISA_Zbkx        : boolean                        := false;
     RISCV_ISA_Zbs         : boolean                        := false;
     RISCV_ISA_Zcb         : boolean                        := false;
+    RISCV_ISA_Zcmop       : boolean                        := false;
     RISCV_ISA_Zfinx       : boolean                        := false;
     RISCV_ISA_Zibi        : boolean                        := false;
     RISCV_ISA_Zicntr      : boolean                        := false;
@@ -409,6 +410,7 @@ begin
     RISCV_ISA_Zbkx      => RISCV_ISA_Zbkx,
     RISCV_ISA_Zbs       => RISCV_ISA_Zbs,
     RISCV_ISA_Zcb       => RISCV_ISA_Zcb,
+    RISCV_ISA_Zcmop     => RISCV_ISA_Zcmop,
     RISCV_ISA_Zfinx     => RISCV_ISA_Zfinx,
     RISCV_ISA_Zibi      => RISCV_ISA_Zibi,
     RISCV_ISA_Zicntr    => RISCV_ISA_Zicntr,
