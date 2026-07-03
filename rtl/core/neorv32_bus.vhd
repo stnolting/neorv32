@@ -758,7 +758,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   arbiter_comb: process(arbiter, core_req_i, sys_rsp_i)
   begin
-    arbiter_nxt <= arbiter; -- defaults
+    arbiter_nxt <= arbiter; -- default
     case arbiter.state is
 
       when S_IDLE => -- wait for RMW request; pass-through current request
@@ -789,10 +789,6 @@ begin
         if (sys_rsp_i.ack = '1') then
           arbiter_nxt.state <= S_IDLE;
         end if;
-
-      when others => -- undefined
-      -- ------------------------------------------------------------
-        arbiter_nxt.state <= S_IDLE;
 
     end case;
   end process arbiter_comb;
