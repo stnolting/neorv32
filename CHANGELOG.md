@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 03.07.2026 | 1.13.2.4 | :bug: fix further illegal instruction detection loopholes in `Zfinx` ISA extension (classify + compare)| [#](https://github.com/stnolting/neorv32/pull/1595) |
 | 03.07.2026 | 1.13.2.3 | minor rtl edits and cleanups | [#1594](https://github.com/stnolting/neorv32/pull/1594) |
 | 01.07.2026 | 1.13.2.2 | :bug: fix illegal instruction detection loopholes in `Ziimop` and `Zfinx` ISA extensions | [#1590](https://github.com/stnolting/neorv32/pull/1590) |
 | 01.07.2026 | 1.13.2.1 | :bug: fix RVFI memory address & data signal alignment | [#1585](https://github.com/stnolting/neorv32/pull/1585) |
