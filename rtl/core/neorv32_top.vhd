@@ -449,13 +449,13 @@ begin
     assert not (DUAL_CORE_EN and (not IO_CLINT_EN)) report
       "[NEORV32] SMP dual-core configuration requires the CLINT!" severity error;
 
-    -- custom IMEM adress --
+    -- custom IMEM address --
     assert not (IMEM_EN and (IMEM_BASE /= x"00000000")) report
       "[NEORV32] Using non-default IMEM base address. Configure SW framework accordingly." severity warning;
     assert (or_reduce_f(IMEM_BASE(index_size_f(imem_size_c)-1 downto 0)) = '0') report
       "[NEORV32] IMEM base address has to be naturally aligned to its size!" severity error;
 
-    -- custom DMEM adress --
+    -- custom DMEM address --
     assert not (DMEM_EN and (DMEM_BASE /= x"80000000")) report
       "[NEORV32] Using non-default DMEM base address. Configure SW framework accordingly." severity warning;
     assert (or_reduce_f(DMEM_BASE(index_size_f(dmem_size_c)-1 downto 0)) = '0') report
