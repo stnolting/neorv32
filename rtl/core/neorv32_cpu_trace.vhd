@@ -154,11 +154,6 @@ begin
       trace_buf.mem_addr  <= mem_addr_i;
       trace_buf.mem_rdata <= rd_wdata_i;
       trace_buf.mem_wdata <= mem_wdata_i;
- 
-           
-      
-        
-            
 
     end if;
   end process trace_packet_buffer;
