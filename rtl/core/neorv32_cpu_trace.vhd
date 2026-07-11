@@ -142,18 +142,18 @@ begin
       -- memory access --
       if (ctrl_i.lsu_req = '1') then
         if (ctrl_i.lsu_rd = '1') then
-          trace_buf.mem_rmask <= mem_ben_i;
+          trace_buf.mem_rmask <= std_ulogic_vector(shift_right(unsigned(mem_ben_i),to_integer(unsigned(mem_addr_i(1 downto 0)))));
         end if;
         if (ctrl_i.lsu_wr = '1') then
-          trace_buf.mem_wmask <= mem_ben_i;
+          trace_buf.mem_wmask <= std_ulogic_vector(shift_right(unsigned(mem_ben_i),to_integer(unsigned(mem_addr_i(1 downto 0)))));
         end if;
       elsif (trace_buf.valid = '1') then
         trace_buf.mem_rmask <= (others => '0');
         trace_buf.mem_wmask <= (others => '0');
       end if;
-      trace_buf.mem_addr  <= mem_addr_i(31 downto 2)&"00";
-      trace_buf.mem_rdata <= std_ulogic_vector(shift_left(unsigned(rd_wdata_i),to_integer(unsigned(mem_addr_i(1 downto 0))) * 8));
-      trace_buf.mem_wdata <= std_ulogic_vector(shift_left(unsigned(mem_wdata_i),to_integer(unsigned(mem_addr_i(1 downto 0))) * 8)); 
+      trace_buf.mem_addr  <= mem_addr_i;
+      trace_buf.mem_rdata <= rd_wdata_i;
+      trace_buf.mem_wdata <= mem_wdata_i;
 
     end if;
   end process trace_packet_buffer;
