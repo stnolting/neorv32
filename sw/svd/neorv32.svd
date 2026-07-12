@@ -1630,7 +1630,7 @@
           <addressOffset>0x00</addressOffset>
         </register>
         <register>
-          <name>MEM</name>
+          <name>MISC</name>
           <description>Miscellaneous system configurations</description>
           <addressOffset>0x04</addressOffset>
           <access>read-only</access>
