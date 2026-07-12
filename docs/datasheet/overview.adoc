@@ -216,6 +216,7 @@ rtl/core
 ├─ neorv32_pwm.vhd               - Pulse-width modulation controller
 ├─ neorv32_sdi.vhd               - Serial data interface controller (SPI device)
 ├─ neorv32_slink.vhd             - Stream link interface
+├─ neorv32_smc.vhd               - Serial memory controller
 ├─ neorv32_spi.vhd               - Serial peripheral interface controller (SPI host)
 ├─ neorv32_sys.vhd               - System infrastructure modules
 ├─ neorv32_sysinfo.vhd           - System configuration information memory
