@@ -35,8 +35,9 @@ entity neorv32_sysinfo is
     CACHE_BLOCK_SIZE  : natural; -- i-cache/d-cache: block size in bytes (min 4), has to be a power of 2
     CACHE_BURSTS_EN   : boolean; -- i-cache/d-cache: enable issuing of burst transfer for cache update
     CACHE_UC_BASE     : std_ulogic_vector(3 downto 0); -- start of uncached address space (256MB page)
-    XBUS_EN           : boolean; -- implement external memory bus interface
-    OCD_EN            : boolean; -- implement OCD
+    SMC_EN            : boolean; -- implement serial memory controller (SMC)
+    XBUS_EN           : boolean; -- implement external memory bus interface (XBUS)
+    OCD_EN            : boolean; -- implement on-chip debugger (OCD)
     OCD_AUTH          : boolean; -- implement OCD authenticator
     IO_GPIO_EN        : boolean; -- implement general purpose IO port (GPIO)
     IO_CLINT_EN       : boolean; -- implement machine local interruptor (CLINT)
@@ -116,7 +117,7 @@ begin
   sysinfo(2)(4)  <= '1' when OCD_EN            else '0'; -- on-chip debugger implemented
   sysinfo(2)(5)  <= '1' when ICACHE_EN         else '0'; -- processor-internal instruction cache implemented
   sysinfo(2)(6)  <= '1' when DCACHE_EN         else '0'; -- processor-internal data cache implemented
-  sysinfo(2)(7)  <= '0';                                 -- reserved
+  sysinfo(2)(7)  <= '1' when SMC_EN            else '0'; -- serial memory controller implemented
   sysinfo(2)(8)  <= '0';                                 -- reserved
   sysinfo(2)(9)  <= '0';                                 -- reserved
   sysinfo(2)(10) <= '0';                                 -- reserved
@@ -140,7 +141,7 @@ begin
   sysinfo(2)(28) <= '1' when IO_GPTMR_EN       else '0'; -- general purpose timer (GPTMR) implemented
   sysinfo(2)(29) <= '1' when IO_SLINK_EN       else '0'; -- stream link interface (SLINK) implemented
   sysinfo(2)(30) <= '1' when IO_ONEWIRE_EN     else '0'; -- 1-wire interface (ONEWIRE) implemented
-  sysinfo(2)(31) <= '1' when is_simulation_c   else '0'; -- You ever have that feeling where you're not sure if you're awake or still dreaming? - Neo, The Matrix
+  sysinfo(2)(31) <= '1' when is_simulation_c   else '0'; -- "You ever have that feeling where you're not sure if you're awake or still dreaming?" - Neo, The Matrix
 
   -- SYSINFO(3): Cache Configuration --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
