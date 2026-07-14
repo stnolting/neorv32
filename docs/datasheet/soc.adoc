@@ -476,28 +476,25 @@ table. The channel number also corresponds to the according FIRQ priority (0 = h
 === Address Space
 
 As a 32-bit architecture, NEORV32 can access up to 4GB of physical address space. The following figure shows
-the **default** address space layout with the according memory capabilites (_physical memory attributes_ "PMAs"):
+the **default** address space layout with the according memory capabilities (_physical memory attributes_ "PMAs"):
 
 .NEORV32 Processor Address Space (Default Configuration)
 image::address_space.png[900]
 
-.Custom Physical Memory Attributes
-[NOTE]
-Custom physical memory attributes enforced by the CPU's physical memory protection "PMP" (<<_smpmp_isa_extension>>)
-can be used to further constrain the physical memory attributes.
-
-The address space is highly configurable. Only the very last 2 MB (`0xFFE00000 .. 0xFFFFFFFF`) are exclusively reserved
-for the NEORV32's internal memory-mapped peripherals and I/O modules. The internal processor-internal <<_instruction_memory_imem>>
-and <<_data_memory_dmem>> (if enabled), on the other hand, can be mapped to any address via the configuration generics.
+The address space layout is highly configurable. Only the very last 2 MB (`0xFFE00000 .. 0xFFFFFFFF`) are exclusively reserved
+for the NEORV32's internal memory-mapped peripherals and I/O modules and cannot be repurposed.
+The processor-internal <<_instruction_memory_imem>> and <<_data_memory_dmem>> (if enabled), on the other hand,
+can be mapped to any address via the configuration generics. The same applies to off-chip serial memory, which can be
+mapped via the <<_serial_memory_controller_smc>> to any (256MB-aligned) address.
 
 Accesses to "unmapped" addresses (a.k.a. **the void**) are redirected to the <<_processor_external_bus_interface_xbus>>.
-For example, if the processor-internal IMEM is disabled, accesses to the addresses starting at `0x00000000` (if not mapped
-to the DMEM) are also redirected to the external bus interface. If the external bus interface is not enabled any access to
+For example, if the processor-internal IMEM is disabled or re-mapped, accesses to the addresses starting at `0x00000000`
+are also redirected to the external bus interface. If the external bus interface is not enabled any access to
 the void will raise a bus error exception.
 
 By default, all addresses starting at `0xF0000000` are not cached by the CPU caches to provide direct access to memory-mapped
 peripherals. However, this address boundary can be lowered by the according configuration generic (`CACHE_UC_BASE`) to
-increase the size of the uncached address space. Note
+increase the size of the uncached address space.
 
 .Uncached Address Space
 [NOTE]
