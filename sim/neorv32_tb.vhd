@@ -22,7 +22,7 @@ entity neorv32_tb is
   generic (
     JTAG_TESTS_EN     : boolean                        := true;        -- enable JTAG/DMI tests in testbench
     SMC_PSRAM_EN      : boolean                        := true;        -- enable 2xPSRAM models for SMC
-    PSRAM_SIZE        : natural                        := 8+1024;      -- size of each PSRAM in bytes
+    PSRAM_SIZE        : natural                        := 8*1024;      -- size of each PSRAM in bytes
     -- processor --
     CLOCK_FREQUENCY   : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
     DUAL_CORE_EN      : boolean                        := true;        -- enable dual-core homogeneous SMP

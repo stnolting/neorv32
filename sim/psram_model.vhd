@@ -1,5 +1,5 @@
 -- ================================================================================ --
--- NEORV32 - Simple PSRAM Model                                                     --
+-- NEORV32 - Simple SPI/QPI PSRAM Model                                             --
 -- -------------------------------------------------------------------------------- --
 -- [NOTE] This module was developed using AI tools. Use with care.                  --
 -- -------------------------------------------------------------------------------- --
@@ -60,7 +60,7 @@ begin
 
     -- Decode command (sets operating mode / next phase) --------------------------------------
     -- -------------------------------------------------------------------------------------------
-    procedure decode(constant c : std_logic_vector(7 downto 0)) is
+    procedure decode_f(constant c : std_logic_vector(7 downto 0)) is
     begin
       addr     <= (others => '0');
       bitcnt   <= 0;
@@ -90,7 +90,7 @@ begin
 
     -- Start access once the full address is received (am is already masked) ------------------
     -- -------------------------------------------------------------------------------------------
-    procedure start_access(constant am : unsigned(23 downto 0)) is
+    procedure start_access_f(constant am : unsigned(23 downto 0)) is
     begin
       addr   <= am;
       bitcnt <= 0;
@@ -114,7 +114,7 @@ begin
 
     -- Load next output byte (read burst / ID rollover) ---------------------------------------
     -- -------------------------------------------------------------------------------------------
-    procedure load_next is
+    procedure load_next_f is
     begin
       if phase = P_ID then
         outsr <= ID(idx);
@@ -141,14 +141,14 @@ begin
         when P_CMD =>
           if qpi then
             if bitcnt = 4 then -- second nibble completes the byte
-              decode(cmd(3 downto 0) & sio);
+              decode_f(cmd(3 downto 0) & sio);
             else
               cmd    <= cmd(3 downto 0) & sio;
               bitcnt <= bitcnt + 4;
             end if;
           else
             if (bitcnt = 7) then -- eighth bit completes the byte
-              decode(cmd(6 downto 0) & sio(0));
+              decode_f(cmd(6 downto 0) & sio(0));
             else
               cmd    <= cmd(6 downto 0) & sio(0);
               bitcnt <= bitcnt + 1;
@@ -158,14 +158,14 @@ begin
         when P_ADDR =>
           if (addr_w = 4) then
             if (bitcnt = 20) then -- 6th nibble => 24 bits complete
-              start_access((addr(19 downto 0) & unsigned(sio)) and ADDR_MASK);
+              start_access_f((addr(19 downto 0) & unsigned(sio)) and ADDR_MASK);
             else
               addr   <= addr(19 downto 0) & unsigned(sio);
               bitcnt <= bitcnt + 4;
             end if;
           else
             if (bitcnt = 23) then -- 24th bit complete
-              start_access((addr(22 downto 0) & sio(0)) and ADDR_MASK);
+              start_access_f((addr(22 downto 0) & sio(0)) and ADDR_MASK);
             else
               addr   <= addr(22 downto 0) & sio(0);
               bitcnt <= bitcnt + 1;
@@ -213,7 +213,7 @@ begin
         if (data_w = 4) then
           sio <= outsr(7 downto 4);
           if obits = 4 then
-            load_next;
+            load_next_f;
           else
             outsr <= outsr(3 downto 0) & "0000";
             obits <= obits - 4;
@@ -224,7 +224,7 @@ begin
           sio(1) <= outsr(7); -- drive only SO (IO1)
           sio(0) <= 'Z';
           if (obits = 1) then
-            load_next;
+            load_next_f;
           else
             outsr <= outsr(6 downto 0) & '0';
             obits <= obits - 1;
