@@ -55,12 +55,13 @@ that provides hands-on tutorials to get you started.
 **NEORV32 CPU (the core)**
 
 * 32-bit RISC-V CPU
+* official RISC-V open source architecture ID
 * fully compatible to the RISC-V ISA specs. - checked by the official RISC-V architecture compatibility tests
 * base ISA + privileged ISA + several optional standard and custom ISA extensions
 * option to add user-defined RISC-V instructions as custom ISA extension
 * rich set of customization options (ISA extensions, design goal: performance / area / energy, tuning options, ...)
 * <<_full_virtualization>> capabilities to increase execution safety
-* official RISC-V open source architecture ID
+* full execution tracing; compatible to the RISC-V formal interface spec (RVFI)
 
 **NEORV32 Processor (the SoC)**
 
@@ -70,6 +71,7 @@ that provides hands-on tutorials to get you started.
 * optional timers and counters (watchdog, system timer)
 * optional general purpose IO and PWM; a native NeoPixel(c)-compatible smart LED interface
 * optional embedded memories and caches for data, instructions and bootloader
+* optional serial memory interface controller (supporting XIP)
 * optional external memory interface for custom connectivity
 * optional DMA controller for CPU-independent data transfers
 * on-chip debugger compatible with OpenOCD and GDB including hardware trigger module and optional authentication
@@ -698,5 +700,3 @@ Elementary software references:
 
 * RISC-V C API: https://github.com/riscv-non-isa/riscv-c-api-doc
 * RISC-V ELF psABI: https://github.com/riscv-non-isa/riscv-elf-psabi-doc
-
-
