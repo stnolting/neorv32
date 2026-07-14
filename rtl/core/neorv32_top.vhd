@@ -103,6 +103,10 @@ entity neorv32_top is
     CACHE_BURSTS_EN     : boolean                        := true;          -- i-cache/d-cache: enable issuing of burst transfer for cache update
     CACHE_UC_BASE       : std_ulogic_vector(31 downto 0) := x"F0000000";   -- base address of uncached address space (has to be 256MB-aligned)
 
+    -- Serial Memory Controller (SMC) --
+    SMC_EN              : boolean                        := false;         -- implement serial memory controller
+    SMC_BASE            : std_ulogic_vector(31 downto 0) := x"E0000000";   -- serial memory base address (256MB-aligned)
+
     -- External Bus Interface (XBUS) --
     XBUS_EN             : boolean                        := false;         -- implement external bus interface
     XBUS_TIMEOUT        : natural                        := 2048;          -- cycles after a pending bus access auto-terminates (0 = disabled)
@@ -194,6 +198,13 @@ entity neorv32_top is
     jtag_tdo_o     : out std_ulogic;                                         -- serial data output
     jtag_tms_i     : in  std_ulogic := 'L';                                  -- mode select
 
+    -- Serial memory controller interface (available if SMC_EN = true) --
+    smc_ioen_o     : out std_ulogic;                                         -- SMC pin enable, can be used for IO multiplexing
+    smc_sck_o      : out std_ulogic;                                         -- clock
+    smc_csn_o      : out std_ulogic_vector(1 downto 0);                      -- bank/chip select, low-active
+    smc_sdo_o      : out std_ulogic;                                         -- controller data out, memory data in
+    smc_sdi_i      : in  std_ulogic := 'L';                                  -- controller data in, memory data out
+
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     : out std_ulogic_vector(31 downto 0);                     -- address
     xbus_dat_o     : out std_ulogic_vector(31 downto 0);                     -- write data
@@ -207,7 +218,7 @@ entity neorv32_top is
     xbus_ack_i     : in  std_ulogic := 'L';                                  -- transfer acknowledge
     xbus_err_i     : in  std_ulogic := 'L';                                  -- transfer error
 
-    -- Stream Link Interface (available if IO_SLINK_EN = true) --
+    -- Stream link interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- RX input data
     slink_rx_src_i : in  std_ulogic_vector(3 downto 0)  := (others => 'L');  -- RX source routing information
     slink_rx_val_i : in  std_ulogic := 'L';                                  -- RX valid input
@@ -224,13 +235,13 @@ entity neorv32_top is
     gpio_o         : out std_ulogic_vector(31 downto 0);                     -- parallel output
     gpio_i         : in  std_ulogic_vector(31 downto 0) := (others => 'L');  -- parallel input; interrupt-capable
 
-    -- primary UART0 (available if IO_UART0_EN = true) --
+    -- Primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o    : out std_ulogic;                                         -- UART0 send data
     uart0_rxd_i    : in  std_ulogic := 'L';                                  -- UART0 receive data
     uart0_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART0.RX ready to receive ("RTR"), low-active, optional
     uart0_ctsn_i   : in  std_ulogic := 'L';                                  -- HW flow control: UART0.TX allowed to transmit, low-active, optional
 
-    -- secondary UART1 (available if IO_UART1_EN = true) --
+    -- Secondary UART1 (available if IO_UART1_EN = true) --
     uart1_txd_o    : out std_ulogic;                                         -- UART1 send data
     uart1_rxd_i    : in  std_ulogic := 'L';                                  -- UART1 receive data
     uart1_rtsn_o   : out std_ulogic;                                         -- HW flow control: UART1.RX ready to receive ("RTR"), low-active, optional
@@ -309,7 +320,7 @@ architecture neorv32_top_rtl of neorv32_top is
   constant cpu_sdtrig_en_c : boolean := OCD_EN and boolean(OCD_NUM_HW_TRIGGERS > 0);
   constant trace_en_c      : boolean := TRACE_PORT_EN or IO_TRACER_EN;
   constant vendorid_c      : std_ulogic_vector(31 downto 0) := x"00000" & '0' & OCD_JEDEC_ID;
-  constant bursts_en_c     : boolean := CACHE_BURSTS_EN and boolean(CACHE_BLOCK_SIZE >= 8);
+  constant bursts_en_c     : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN) and boolean(CACHE_BLOCK_SIZE >= 8);
 
   -- make sure physical memory sizes are a power of two --
   constant imem_size_c : natural := 2**index_size_f(IMEM_SIZE);
@@ -343,15 +354,15 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp : core_complex_rsp_t;
 
   -- bus: system --
-  signal sys1_req, sys2_req, dma_req, amo_req, sys3_req, imem_req, dmem_req, io_req, xbus_req : bus_req_t;
-  signal sys1_rsp, sys2_rsp, dma_rsp, amo_rsp, sys3_rsp, imem_rsp, dmem_rsp, io_rsp, xbus_rsp : bus_rsp_t;
+  signal sys1_req, sys2_req, dma_req, amo_req, sys3_req, imem_req, dmem_req, smc_req, io_req, xbus_req : bus_req_t;
+  signal sys1_rsp, sys2_rsp, dma_rsp, amo_rsp, sys3_rsp, imem_rsp, dmem_rsp, smc_rsp, io_rsp, xbus_rsp : bus_rsp_t;
   signal xbus_terminate : std_ulogic;
 
   -- bus: IO devices --
   type io_devices_enum_t is (
     IODEV_BOOTROM, IODEV_OCD, IODEV_SYSINFO, IODEV_NEOLED, IODEV_GPIO, IODEV_WDT, IODEV_TRNG,
     IODEV_TWI, IODEV_SPI, IODEV_SDI, IODEV_UART1, IODEV_UART0, IODEV_CLINT, IODEV_ONEWIRE,
-    IODEV_GPTMR, IODEV_PWM, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD, IODEV_TRACER
+    IODEV_GPTMR, IODEV_PWM, IODEV_DMA, IODEV_SLINK, IODEV_CFS, IODEV_TWD, IODEV_TRACER, IODEV_SMC
   );
   type iodev_req_t is array (io_devices_enum_t) of bus_req_t;
   type iodev_rsp_t is array (io_devices_enum_t) of bus_rsp_t;
@@ -369,7 +380,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal mti, msi : std_ulogic_vector(num_cores_c-1 downto 0);
 
   -- system time (mtime) --
-  signal mtime : std_ulogic_vector(63 downto 0);
+  signal mtime    : std_ulogic_vector(63 downto 0);
   signal mtime_lo : std_ulogic_vector(31 downto 0);
 
 begin
@@ -400,6 +411,7 @@ begin
       sel_string_f(bootrom_en_c,    "BOOTROM ",  "") &
       sel_string_f(ICACHE_EN,       "I-CACHE ",  "") &
       sel_string_f(DCACHE_EN,       "D-CACHE ",  "") &
+      sel_string_f(SMC_EN,          "SMC ",      "") &
       sel_string_f(XBUS_EN,         "XBUS ",     "") &
       sel_string_f(IO_CLINT_EN,     "CLINT ",    "") &
       sel_string_f(io_gpio_en_c,    "GPIO ",     "") &
@@ -461,6 +473,10 @@ begin
       "[NEORV32] Using non-default DMEM base address. Configure SW framework accordingly." severity warning;
     assert (or_reduce_f(DMEM_BASE(index_size_f(dmem_size_c)-1 downto 0)) = '0') report
       "[NEORV32] DMEM base address has to be naturally aligned to its size!" severity error;
+
+    -- custom SMC address --
+    assert (or_reduce_f(SMC_BASE(27 downto 0)) = '0') report
+      "[NEORV32] SMC base address has to be 256MB aligned!" severity error;
 
     -- uncached base address alignment --
     assert (CACHE_UC_BASE(27 downto 0) = x"0000000") report
@@ -849,9 +865,9 @@ begin
     B_BASE  => DMEM_BASE,
     B_SIZE  => dmem_size_c,
     -- port C: reserved --
-    C_EN    => false,
-    C_BASE  => (others => '0'),
-    C_SIZE  => 4,
+    C_EN    => SMC_EN,
+    C_BASE  => SMC_BASE,
+    C_SIZE  => 256*1024*1024, -- 256MB
     -- port D: IO --
     D_EN    => true,
     D_BASE  => mem_io_base_c,
@@ -872,8 +888,8 @@ begin
     a_rsp_i => imem_rsp,
     b_req_o => dmem_req,
     b_rsp_i => dmem_rsp,
-    c_req_o => open,            -- reserved
-    c_rsp_i => rsp_terminate_c, -- reserved
+    c_req_o => smc_req,
+    c_rsp_i => smc_rsp,
     d_req_o => io_req,
     d_rsp_i => io_rsp,
     x_req_o => xbus_req,
@@ -931,6 +947,42 @@ begin
     if not DMEM_EN generate
       dmem_rsp <= rsp_terminate_c;
     end generate;
+
+    -- Serial Memory Controller (SMC) ---------------------------------------------------------
+    -- -------------------------------------------------------------------------------------------
+    neorv32_smc_enabled:
+    if SMC_EN generate
+      neorv32_smc_inst: entity neorv32.neorv32_smc
+      generic map (
+        BURST_EN   => bursts_en_c,
+        BURST_SIZE => CACHE_BLOCK_SIZE,
+        MEM_BASE   => SMC_BASE
+      )
+      port map (
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        ctrl_req_i => iodev_req(IODEV_SMC),
+        ctrl_rsp_o => iodev_rsp(IODEV_SMC),
+        data_req_i => smc_req,
+        data_rsp_o => smc_rsp,
+        smc_ioen_o => smc_ioen_o,
+        smc_sck_o  => smc_sck_o,
+        smc_csn_o  => smc_csn_o,
+        smc_sdo_o  => smc_sdo_o,
+        smc_sdi_i  => smc_sdi_i
+      );
+    end generate;
+
+    neorv32_smc_disabled:
+    if not SMC_EN generate
+      iodev_rsp(IODEV_SMC) <= rsp_terminate_c;
+      smc_rsp              <= rsp_terminate_c;
+      smc_ioen_o           <= '0';
+      smc_sck_o            <= '0';
+      smc_csn_o            <= (others => '1');
+      smc_sdo_o            <= '0';
+    end generate;
+
 
     -- External Bus Interface (XBUS) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
@@ -1002,7 +1054,7 @@ begin
       DEV_12_EN => IO_SLINK_EN,       DEV_12_BASE => base_io_slink_c,
       DEV_13_EN => IO_DMA_EN,         DEV_13_BASE => base_io_dma_c,
       DEV_14_EN => false,             DEV_14_BASE => (others => '0'), -- reserved
-      DEV_15_EN => false,             DEV_15_BASE => (others => '0'), -- reserved
+      DEV_15_EN => SMC_EN,            DEV_15_BASE => base_io_smc_c,
       DEV_16_EN => io_pwm_en_c,       DEV_16_BASE => base_io_pwm_c,
       DEV_17_EN => io_gptmr_en_c,     DEV_17_BASE => base_io_gptmr_c,
       DEV_18_EN => IO_ONEWIRE_EN,     DEV_18_BASE => base_io_onewire_c,
@@ -1040,7 +1092,7 @@ begin
       dev_12_req_o => iodev_req(IODEV_SLINK),   dev_12_rsp_i => iodev_rsp(IODEV_SLINK),
       dev_13_req_o => iodev_req(IODEV_DMA),     dev_13_rsp_i => iodev_rsp(IODEV_DMA),
       dev_14_req_o => open,                     dev_14_rsp_i => rsp_terminate_c, -- reserved
-      dev_15_req_o => open,                     dev_15_rsp_i => rsp_terminate_c, -- reserved
+      dev_15_req_o => iodev_req(IODEV_SMC),     dev_15_rsp_i => iodev_rsp(IODEV_SMC),
       dev_16_req_o => iodev_req(IODEV_PWM),     dev_16_rsp_i => iodev_rsp(IODEV_PWM),
       dev_17_req_o => iodev_req(IODEV_GPTMR),   dev_17_rsp_i => iodev_rsp(IODEV_GPTMR),
       dev_18_req_o => iodev_req(IODEV_ONEWIRE), dev_18_rsp_i => iodev_rsp(IODEV_ONEWIRE),
@@ -1589,6 +1641,7 @@ begin
       CACHE_BLOCK_SIZE  => CACHE_BLOCK_SIZE,
       CACHE_BURSTS_EN   => bursts_en_c,
       CACHE_UC_BASE     => CACHE_UC_BASE(31 downto 28),
+      SMC_EN            => SMC_EN,
       XBUS_EN           => XBUS_EN,
       OCD_EN            => OCD_EN,
       OCD_AUTH          => ocd_auth_en_c,
