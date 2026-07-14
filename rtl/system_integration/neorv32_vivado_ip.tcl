@@ -141,6 +141,7 @@ proc setup_ip_gui {} {
   set_property enablement_dependency {$IO_CLINT_EN}    [ipx::get_ports mtime_time_o     -of_objects [ipx::current_core]]
   set_property enablement_dependency {!$IO_CLINT_EN}   [ipx::get_ports irq_mti_i        -of_objects [ipx::current_core]]
   set_property enablement_dependency {!$IO_CLINT_EN}   [ipx::get_ports irq_msi_i        -of_objects [ipx::current_core]]
+  set_property enablement_dependency {$SMC_EN}         [ipx::get_ports smc_*            -of_objects [ipx::current_core]]
 
 
   # **************************************************************
@@ -321,7 +322,7 @@ proc setup_ip_gui {} {
   # GUI Page: Memory
   # **************************************************************
   set page [add_page {Memory}]
-  set mem_note "The memory sizes & address need to be exported to the linker via dedicated symbols. Example:"
+  set mem_note "The memory sizes & base addresses need to be exported to the linker via dedicated symbols. Example:"
   set imem_note "IMEM 32kB @ 0x00000000: -Wl,--defsym,__neorv32_rom_size=32k -Wl,--defsym,__neorv32_rom_base=0x00000000"
   set dmem_note "DMEM 16kB @ 0x80000000: -Wl,--defsym,__neorv32_ram_size=16k -Wl,--defsym,__neorv32_ram_base=0x80000000"
   ipgui::add_static_text -name {MEM note}  -component [ipx::current_core] -parent [ipgui::get_pagespec -name "Memory" -component [ipx::current_core] ] -text $mem_note
@@ -331,7 +332,7 @@ proc setup_ip_gui {} {
   set group [add_group $page {Internal Instruction Memory (IMEM)}]
   add_params $group {
     { IMEM_EN        {Enable internal IMEM} }
-    { IMEM_BASE      {IMEM base address}     {Naturally-aligned to its size; use with care!}     {$IMEM_EN} }
+    { IMEM_BASE      {IMEM base address}     {Naturally-aligned to its size}                     {$IMEM_EN} }
     { IMEM_SIZE      {IMEM size (bytes)}     {Use a power of two}                                {$IMEM_EN} }
     { IMEM_OUTREG_EN {Output register stage} {Improves mapping/timing at the expense of latency} {$IMEM_EN} }
   }
@@ -339,9 +340,15 @@ proc setup_ip_gui {} {
   set group [add_group $page {Internal Data Memory (DMEM)}]
   add_params $group {
     { DMEM_EN        {Enable internal DMEM} }
-    { DMEM_BASE      {DMEM base address}     {Naturally-aligned to its size; use with care!}     {$DMEM_EN} }
+    { DMEM_BASE      {DMEM base address}     {Naturally-aligned to its size}                     {$DMEM_EN} }
     { DMEM_SIZE      {DMEM size (bytes)}     {Use a power of two}                                {$DMEM_EN} }
     { DMEM_OUTREG_EN {Output register stage} {Improves mapping/timing at the expense of latency} {$DMEM_EN} }
+  }
+
+  set group [add_group $page {Serial Memory Controller (SMC)}]
+  add_params $group {
+    { SMC_EN   {Enable serial memeory controller} }
+    { SMC_BASE {Serial memory base address} {top 4 MSBs only / 256MB aligned} {$SMC_EN} }
   }
 
 
