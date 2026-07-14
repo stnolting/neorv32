@@ -30,8 +30,8 @@
 //** Unreachable word-aligned cached address */
 #define ADDR_UNREACHABLE   (0x70000000U)
 //** Word-aligned cached dummy ROM/RAM address */
-#define ADDR_CACHED_ROM    (0xE0000000U)
-#define ADDR_CACHED_RAM    (0xE1000000U)
+#define ADDR_CACHED_ROM    (0xD0000000U)
+#define ADDR_CACHED_RAM    (0xD1000000U)
 //** Word-aligned address that returns a bus error on write-request */
 #define ADDR_WRERR         (0xFFFE0004U)
 //** External memory base address (uncached) */
@@ -1702,7 +1702,7 @@ int main() {
     asm volatile ("fence");
 
     if ((tmp_a == 0) && // no error during descriptor programming
-        (neorv32_cpu_csr_read(CSR_MCAUSE) ==DMA_TRAP_CODE) && // correct interrupt source
+        (neorv32_cpu_csr_read(CSR_MCAUSE) == DMA_TRAP_CODE) && // correct interrupt source
         (neorv32_dma_status() == DMA_STATUS_DONE) && // DMA transfer completed without errors
         (dma_dst[0] == 0x11ee8877) && (dma_dst[1] == 0xaabbccdd)) { // correct destination data?
       test_ok();
@@ -2014,6 +2014,51 @@ int main() {
   }
   else {
     test_fail();
+  }
+
+
+  // ----------------------------------------------------------
+  // PSRAM access via SMC
+  // ----------------------------------------------------------
+  PRINT("[%i] SMC PSRAM ", cnt_test);
+
+  if ((neorv32_smc_available()) &&  neorv32_sysinfo_is_sim()) {
+    neorv32_cpu_csr_write(CSR_MCAUSE, trap_never_c);
+    cnt_test++;
+
+    // setup SMC
+    neorv32_smc_setup(
+      1,             // dual-chip mode
+      SMC_MSIZE_2MB, // PSRAM size = 2MB
+      1,             // clock prescaler
+      0,             // wait cycles for read access
+      0x03,          // read command
+      0x02,          // write command
+      0x996600       // initialization sequence: 1. NOP (0x00), 2. RESET-EN (0x66), 3. RESET (0x99)
+    );
+
+    tmp_a = neorv32_smc_get_baseaddr();
+
+    // write word to PSRAM_0
+    neorv32_cpu_store_unsigned_word(tmp_a + 0 + 0, 0xfeedcafe);
+    // write bytes to PSRAM_1
+    neorv32_cpu_store_unsigned_byte(tmp_a + 2*1024*1024 + 0, 0x12);
+    neorv32_cpu_store_unsigned_byte(tmp_a + 2*1024*1024 + 1, 0x34);
+    neorv32_cpu_store_unsigned_byte(tmp_a + 2*1024*1024 + 2, 0x56);
+    neorv32_cpu_store_unsigned_byte(tmp_a + 2*1024*1024 + 3, 0x78);
+    asm volatile ("fence");
+
+    if ((neorv32_cpu_csr_read(CSR_MCAUSE) == trap_never_c) &&
+        (neorv32_cpu_load_unsigned_word(tmp_a + 0 + 0) == 0xfeedcafe) &&
+        (neorv32_cpu_load_unsigned_word(tmp_a + 2*1024*1024 + 0) == 0x78563412)) {
+      test_ok();
+    }
+    else {
+      test_fail();
+    }
+  }
+  else {
+    PRINT("[n.a.]\n");
   }
 
 
