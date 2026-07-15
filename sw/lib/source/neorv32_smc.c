@@ -29,11 +29,11 @@ int neorv32_smc_available(void) {
  * @param[in] msize Memory chip size select (#NEORV32_SMC_MSIZE_enum).
  * @param[in] cdiv  Clock divider (3-bit); f_SPI = f_cpu/(2*(cdiv+1)).
  * @param[in] rwait Number of read access dummy/wait cycles (0..15).
- * @param[in] rmcd  Memory chip read command (8-bit).
+ * @param[in] rcmd  Memory chip read command (8-bit).
  * @param[in] wcmd  Memory chip write command (8-bit).
  * @param[in] icmd  Initialization commands (3x8-bit, LSB-aligned).
  **************************************************************************/
-void neorv32_smc_setup(int dual, int msize, int cdiv, int rwait, uint8_t rmcd, uint8_t wcmd, uint32_t icmd) {
+void neorv32_smc_setup(int dual, int msize, int cdiv, int rwait, uint8_t rcmd, uint8_t wcmd, uint32_t icmd) {
 
   // reset and disable
   NEORV32_SMC->CSR0 = 0;
@@ -48,7 +48,7 @@ void neorv32_smc_setup(int dual, int msize, int cdiv, int rwait, uint8_t rmcd, u
   tmp |= (uint32_t)((msize & 0x03U) << SMC_CSR0_MSIZE_LSB); // memory size select
   tmp |= (uint32_t)((cdiv  & 0x07U) << SMC_CSR0_CDIV_LSB);  // clock divider
   tmp |= (uint32_t)((rwait & 0x0fU) << SMC_CSR0_RWAIT_LSB); // number of read wait cycles
-  tmp |= (uint32_t)((rmcd  & 0xffU) << SMC_CSR0_RCMD_LSB);  // read command
+  tmp |= (uint32_t)((rcmd  & 0xffU) << SMC_CSR0_RCMD_LSB);  // read command
   tmp |= (uint32_t)((wcmd  & 0xffU) << SMC_CSR0_WCMD_LSB);  // write command
   NEORV32_SMC->CSR0 = tmp;
 

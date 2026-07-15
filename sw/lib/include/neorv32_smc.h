@@ -38,16 +38,16 @@ enum NEORV32_SMC_CFG0_enum {
   SMC_CSR0_DUAL      =  3, /**< SMC CSR0  (3) (r/w): Enable dual-chip mode */
   SMC_CSR0_BUSY      =  4, /**< SMC CSR0  (4) (r/-): Memory operation in progress when set */
 
-  SMC_CSR0_MSIZE_LSB =  7, /**< SMC CSR0  (7) (r/-): Memory size select, LSB */
-  SMC_CSR0_MSIZE_MSB =  8, /**< SMC CSR0  (8) (r/-): Memory size select, MSB */
-  SMC_CSR0_CDIV_LSB  =  9, /**< SMC CSR0  (9) (r/-): SPI clock divider, LSB */
-  SMC_CSR0_CDIV_MSB  = 11, /**< SMC CSR0 (11) (r/-): SPI clock divider, MSB */
-  SMC_CSR0_RWAIT_LSB = 12, /**< SMC CSR0 (12) (r/-): Read access dummy/wait cycles, LSB */
-  SMC_CSR0_RWAIT_MSB = 15, /**< SMC CSR0 (15) (r/-): Read access dummy/wait cycles, MSB */
-  SMC_CSR0_RCMD_LSB  = 16, /**< SMC CSR0 (16) (r/-): Read command, LSB */
-  SMC_CSR0_RCMD_MSB  = 23, /**< SMC CSR0 (23) (r/-): Read command, MSB */
-  SMC_CSR0_WCMD_LSB  = 24, /**< SMC CSR0 (24) (r/-): Write command, LSB */
-  SMC_CSR0_WCMD_MSB  = 31  /**< SMC CSR0 (31) (r/-): Write command, MSB */
+  SMC_CSR0_MSIZE_LSB =  7, /**< SMC CSR0  (7) (r/w): Memory size select, LSB */
+  SMC_CSR0_MSIZE_MSB =  8, /**< SMC CSR0  (8) (r/w): Memory size select, MSB */
+  SMC_CSR0_CDIV_LSB  =  9, /**< SMC CSR0  (9) (r/w): SPI clock divider, LSB */
+  SMC_CSR0_CDIV_MSB  = 11, /**< SMC CSR0 (11) (r/w): SPI clock divider, MSB */
+  SMC_CSR0_RWAIT_LSB = 12, /**< SMC CSR0 (12) (r/w): Read access dummy/wait cycles, LSB */
+  SMC_CSR0_RWAIT_MSB = 15, /**< SMC CSR0 (15) (r/w): Read access dummy/wait cycles, MSB */
+  SMC_CSR0_RCMD_LSB  = 16, /**< SMC CSR0 (16) (r/w): Read command, LSB */
+  SMC_CSR0_RCMD_MSB  = 23, /**< SMC CSR0 (23) (r/w): Read command, MSB */
+  SMC_CSR0_WCMD_LSB  = 24, /**< SMC CSR0 (24) (r/w): Write command, LSB */
+  SMC_CSR0_WCMD_MSB  = 31  /**< SMC CSR0 (31) (r/w): Write command, MSB */
 };
 
 /** SMC control and status register 1 (CSR1) bits */
@@ -59,8 +59,8 @@ enum NEORV32_SMC_CFG1_enum {
   SMC_CSR1_ICMD2_LSB    = 16, /**< SMC CSR1 (16) (r/w): Memory initialization command 2, LSB */
   SMC_CSR1_ICMD2_MSB    = 23, /**< SMC CSR1 (23) (r/w): Memory initialization command 2, MSB */
 
-  SMC_CSR1_MEM_BASE_LSB = 28, /**< SMC CSR1 (24) (r/w): Memory base address (top 4 bits / 256MB page), LSB */
-  SMC_CSR1_MEM_BASE_MSB = 31  /**< SMC CSR1 (31) (r/w): Memory base address (top 4 bits / 256MB page), MSB */
+  SMC_CSR1_MEM_BASE_LSB = 28, /**< SMC CSR1 (28) (r/-): Memory base address (top 4 bits / 256MB page), LSB */
+  SMC_CSR1_MEM_BASE_MSB = 31  /**< SMC CSR1 (31) (r/-): Memory base address (top 4 bits / 256MB page), MSB */
 };
 /**@}*/
 
@@ -81,7 +81,7 @@ enum NEORV32_SMC_MSIZE_enum {
  **************************************************************************/
 /**@{*/
 int      neorv32_smc_available(void);
-void     neorv32_smc_setup(int dual, int msize, int cdiv, int rwait, uint8_t rmcd, uint8_t wcmd, uint32_t icmd);
+void     neorv32_smc_setup(int dual, int msize, int cdiv, int rwait, uint8_t rcmd, uint8_t wcmd, uint32_t icmd);
 int      neorv32_smc_busy(void);
 void     neorv32_smc_pins_enable(void);
 void     neorv32_smc_pins_disable(void);
@@ -89,4 +89,4 @@ uint32_t neorv32_smc_get_clockspeed(void);
 uint32_t neorv32_smc_get_baseaddr(void);
 /**@}*/
 
-#endif // NEORV32_sMC_H
+#endif // NEORV32_SMC_H
