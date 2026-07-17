@@ -1049,8 +1049,9 @@ package neorv32_package is
       smc_ioen_o     : out std_ulogic;
       smc_sck_o      : out std_ulogic;
       smc_csn_o      : out std_ulogic_vector(1 downto 0);
-      smc_sdo_o      : out std_ulogic;
-      smc_sdi_i      : in  std_ulogic := 'L';
+      smc_oen_o      : out std_ulogic_vector(3 downto 0);
+      smc_sdo_o      : out std_ulogic_vector(3 downto 0);
+      smc_sdi_i      : in  std_ulogic_vector(3 downto 0) := (others => 'L');
       -- External bus interface (available if XBUS_EN = true) --
       xbus_adr_o     : out std_ulogic_vector(31 downto 0);
       xbus_dat_o     : out std_ulogic_vector(31 downto 0);

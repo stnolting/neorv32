@@ -30,15 +30,37 @@ entity neorv32_test_setup_bootloader is
     gpio_o      : out std_ulogic_vector(7 downto 0); -- parallel output
     -- UART0 --
     uart0_txd_o : out std_ulogic; -- UART0 send data
-    uart0_rxd_i : in  std_ulogic  -- UART0 receive data
+    uart0_rxd_i : in  std_ulogic;  -- UART0 receive data
+	 -- PSRAM --
+    psram_clk_o  : out std_ulogic;
+    psram_csn_o  : out std_ulogic_vector(1 downto 0);
+    psram_dat_o  : out std_ulogic;
+    psram_dat_i  : in  std_ulogic
   );
 end entity;
 
 architecture neorv32_test_setup_bootloader_rtl of neorv32_test_setup_bootloader is
 
+  signal clk : std_ulogic;
   signal con_gpio_out : std_ulogic_vector(31 downto 0);
 
+  component sys_pll
+  PORT
+	(
+		inclk0		: IN STD_LOGIC  := '0';
+		c0		: OUT STD_LOGIC 
+	);
+	end component;
+  
 begin
+
+
+  pll_inst: sys_pll
+  	PORT map
+	(
+		inclk0		=> clk_i,
+		c0		=> clk
+	);
 
   -- The Core Of The Problem ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -58,6 +80,9 @@ begin
     -- Internal Data memory --
     DMEM_EN          => true,              -- implement processor-internal data memory
     DMEM_SIZE        => DMEM_SIZE, -- size of processor-internal data memory in bytes
+    -- Serial Memory Controller --
+    SMC_EN           => true,              -- implement PSRAM controller
+    SMC_BASE         => x"E0000000",       -- PSRAM memory base (256MB-aligned)
     -- Processor peripherals --
     IO_GPIO_NUM      => 8,                 -- number of GPIO input/output pairs (0..32)
     IO_CLINT_EN      => true,              -- implement core local interruptor (CLINT)?
@@ -65,14 +90,20 @@ begin
   )
   port map (
     -- Global control --
-    clk_i       => clk_i,        -- global clock, rising edge
+    clk_i       => clk,        -- global clock, rising edge
     rstn_i      => rstn_i,       -- global reset, low-active, async
+    -- PSRAM interface (available if PSRAM_EN = true) --
+    smc_sck_o  => psram_clk_o,
+    smc_csn_o  => psram_csn_o,
+    smc_sdo_o  => psram_dat_o,
+    smc_sdi_i  => psram_dat_i,
     -- GPIO (available if IO_GPIO_NUM > 0) --
     gpio_o      => con_gpio_out, -- parallel output
     -- primary UART0 (available if IO_UART0_EN = true) --
     uart0_txd_o => uart0_txd_o,  -- UART0 send data
     uart0_rxd_i => uart0_rxd_i   -- UART0 receive data
   );
+
 
   -- GPIO output --
   gpio_o <= con_gpio_out(7 downto 0);

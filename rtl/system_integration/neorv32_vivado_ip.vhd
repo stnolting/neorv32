@@ -241,8 +241,9 @@ entity neorv32_vivado_ip is
     smc_ioen_o     : out std_logic;
     smc_sck_o      : out std_logic;
     smc_csn_o      : out std_logic_vector(1 downto 0);
-    smc_sdo_o      : out std_logic;
-    smc_sdi_i      : in  std_logic := '0';
+    smc_oen_o      : out std_logic_vector(3 downto 0);
+    smc_sdo_o      : out std_logic_vector(3 downto 0);
+    smc_sdi_i      : in  std_logic_vector(3 downto 0) := "0000";
     -- ------------------------------------------------------------
     -- Processor IO
     -- ------------------------------------------------------------
@@ -381,13 +382,15 @@ architecture neorv32_vivado_ip_rtl of neorv32_vivado_ip is
   signal cfs_out_aux : std_ulogic_vector(255 downto 0);
   signal neoled_aux : std_ulogic;
   signal mtime_time_aux : std_ulogic_vector(63 downto 0);
-  signal smc_ioen_aux, smc_sck_aux, smc_sdo_aux : std_ulogic;
+  signal smc_ioen_aux : std_ulogic;
+  signal smc_sck_aux : std_ulogic;
   signal smc_csn_aux : std_ulogic_vector(1 downto 0);
+  signal smc_sdo_aux, smc_oen_aux : std_ulogic_vector(3 downto 0);
 
   -- constrained-size ports --
   signal gpio_dir_o_aux, gpio_o_aux, gpio_i_aux, pwm_o_aux : std_ulogic_vector(31 downto 0);
 
-  -- internal xbus --
+  -- internal XBUS --
   signal xbus_req : xbus_req_t;
   signal xbus_rsp : xbus_rsp_t;
 
@@ -544,8 +547,9 @@ begin
     smc_ioen_o     => smc_ioen_aux,
     smc_sck_o      => smc_sck_aux,
     smc_csn_o      => smc_csn_aux,
+    smc_oen_o      => smc_oen_aux,
     smc_sdo_o      => smc_sdo_aux,
-    smc_sdi_i      => std_ulogic(smc_sdi_i),
+    smc_sdi_i      => std_ulogic_vector(smc_sdi_i),
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     => xbus_req.addr,
     xbus_dat_o     => xbus_req.data,
@@ -558,7 +562,7 @@ begin
     xbus_dat_i     => xbus_rsp.data,
     xbus_ack_i     => xbus_rsp.ack,
     xbus_err_i     => xbus_rsp.err,
-    -- Stream Link Interface (available if IO_SLINK_EN = true) --
+    -- Stream link interface (available if IO_SLINK_EN = true) --
     slink_rx_dat_i => std_ulogic_vector(s1_axis_tdata),
     slink_rx_src_i => std_ulogic_vector(s1_axis_tid),
     slink_rx_val_i => std_ulogic(s1_axis_tvalid),
@@ -662,7 +666,8 @@ begin
   smc_ioen_o <= std_logic(smc_ioen_aux);
   smc_sck_o  <= std_logic(smc_sck_aux);
   smc_csn_o  <= std_logic_vector(smc_csn_aux);
-  smc_sdo_o  <= std_logic(smc_sdo_aux);
+  smc_oen_o  <= std_logic_vector(smc_oen_aux);
+  smc_sdo_o  <= std_logic_vector(smc_sdo_aux);
 
 
   -- Mapping for Constrained-Size Ports -----------------------------------------------------
