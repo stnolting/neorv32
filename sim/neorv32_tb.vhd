@@ -109,7 +109,8 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal msi, mei, mti : std_ulogic;
   signal jtag_tck, jtag_tms, jtag_tdi, jtag_tdo : std_ulogic;
   signal smc_csn : std_ulogic_vector(1 downto 0);
-  signal smc_clk, smc_do, smc_di: std_ulogic;
+  signal smc_clk : std_ulogic;
+  signal smc_do, smc_di, smc_oen: std_ulogic_vector(3 downto 0);
   signal psram_data : std_logic_vector(3 downto 0);
 
   -- slink --
@@ -406,6 +407,7 @@ begin
     smc_ioen_o     => open,
     smc_sck_o      => smc_clk,
     smc_csn_o      => smc_csn,
+    smc_oen_o      => smc_oen,
     smc_sdo_o      => smc_do,
     smc_sdi_i      => smc_di,
     -- External bus interface --
@@ -521,8 +523,11 @@ begin
 
   -- Serial Memory Controller - Dual-PSRAM --------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  psram_data(0) <= std_logic(smc_do);
-  smc_di        <= std_ulogic(psram_data(1));
+  psram_data(0) <= std_logic(smc_do(0)) when (smc_oen(0) = '0') else 'Z';
+  psram_data(1) <= std_logic(smc_do(1)) when (smc_oen(1) = '0') else 'Z';
+  psram_data(2) <= std_logic(smc_do(2)) when (smc_oen(2) = '0') else 'Z';
+  psram_data(3) <= std_logic(smc_do(3)) when (smc_oen(3) = '0') else 'Z';
+  smc_di        <= std_ulogic_vector(psram_data);
 
   -- weak pull-downs --
   psram_data <= (others => 'L');
