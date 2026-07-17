@@ -1610,6 +1610,105 @@
     </peripheral>
 
     <!-- **************************************************************** -->
+    <!-- SMC                                                             -->
+    <!-- **************************************************************** -->
+    <peripheral>
+      <name>SMC</name>
+      <description>Serial Memory Controller</description>
+      <baseAddress>0xFFEF0000</baseAddress>
+
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x08</size>
+        <usage>registers</usage>
+      </addressBlock>
+
+      <registers>
+        <register>
+          <name>CSR0</name>
+          <description>Control and status register 0</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>SMC_CSR0_EN</name>
+              <bitRange>[0:0]</bitRange>
+              <description>SMC enable, reset module when 0</description>
+            </field>
+            <field>
+              <name>SMC_CSR0_IOEN</name>
+              <bitRange>[1:1]</bitRange>
+              <description>Enable control of SMC IO pins</description>
+            </field>
+            <field>
+              <name>SMC_CSR0_DUAL</name>
+              <bitRange>[3:3]</bitRange>
+              <description>Enable dual-chip mode</description>
+            </field>
+            <field>
+              <name>SMC_CSR0_BUSY</name>
+              <bitRange>[4:4]</bitRange>
+              <access>read-only</access>
+              <description>Memory operation in progress when set</description>
+            </field>
+            <field>
+              <name>SMC_CSR0_MSIZE</name>
+              <bitRange>[8:7]</bitRange>
+              <description>Memory size select</description>
+            </field>
+            <field>
+              <name>SMC_CSR0_CDIV</name>
+              <bitRange>[11:9]</bitRange>
+              <description>SPI clock divider</description>
+            </field>
+            <field>
+              <name>SMC_CSR0_RWAIT</name>
+              <bitRange>[15:12]</bitRange>
+              <description>Memory read access dummy/wait cycles</description>
+            </field>
+            <field>
+              <name>SMC_CSR0_RCMD</name>
+              <bitRange>[23:16]</bitRange>
+              <description>Memory read command</description>
+            </field>
+            <field>
+              <name>SMC_CSR0_WCMD</name>
+              <bitRange>[31:24]</bitRange>
+              <description>Memory write command</description>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CSR1</name>
+          <description>Control and status register 0</description>
+          <addressOffset>0x04</addressOffset>
+          <fields>
+            <field>
+              <name>SMC_CSR1_ICMD0</name>
+              <bitRange>[7:0]</bitRange>
+              <description>Initialization command 0</description>
+            </field>
+            <field>
+              <name>SMC_CSR1_ICMD1</name>
+              <bitRange>[15:8]</bitRange>
+              <description>Initialization command 1</description>
+            </field>
+            <field>
+              <name>SMC_CSR1_ICMD2</name>
+              <bitRange>[23:16]</bitRange>
+              <description>Initialization command 2</description>
+            </field>
+            <field>
+              <name>SMC_CSR1_MEM_BASE</name>
+              <bitRange>[31:28]</bitRange>
+              <access>read-only</access>
+              <description>Memory base address (top 4 bits / 256MB page)</description>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
+    <!-- **************************************************************** -->
     <!-- SYSINFO                                                          -->
     <!-- **************************************************************** -->
     <peripheral>
@@ -1656,6 +1755,7 @@
             <field><name>SYSINFO_SOC_OCD</name><bitRange>[4:4]</bitRange><description>On-chip debugger implemented</description></field>
             <field><name>SYSINFO_SOC_ICACHE</name><bitRange>[5:5]</bitRange><description>Processor-internal instruction cache implemented</description></field>
             <field><name>SYSINFO_SOC_DCACHE</name><bitRange>[6:6]</bitRange><description>Processor-internal data cache implemented</description></field>
+            <field><name>SYSINFO_SOC_SCM</name><bitRange>[7:7]</bitRange><description>Serial memory controller implemented</description></field>
             <field><name>SYSINFO_SOC_OCD_AUTH</name><bitRange>[11:11]</bitRange><description>On-chip debugger authentication implemented</description></field>
             <field><name>SYSINFO_SOC_IMEM_ROM</name><bitRange>[12:12]</bitRange><description>Processor-internal instruction memory implemented as pre-initialized ROM</description></field>
             <field><name>SYSINFO_SOC_IO_TWD</name><bitRange>[13:13]</bitRange><description>Two-wire device implemented</description></field>

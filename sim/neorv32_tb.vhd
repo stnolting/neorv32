@@ -21,6 +21,8 @@ use work.jtag_dmi_pkg.all;
 entity neorv32_tb is
   generic (
     JTAG_TESTS_EN     : boolean                        := true;        -- enable JTAG/DMI tests in testbench
+    SMC_PSRAM_EN      : boolean                        := true;        -- enable 2xPSRAM models for SMC
+    PSRAM_SIZE        : natural                        := 8*1024;      -- size of each PSRAM in bytes
     -- processor --
     CLOCK_FREQUENCY   : natural                        := 100_000_000; -- clock frequency of clk_i in Hz
     DUAL_CORE_EN      : boolean                        := true;        -- enable dual-core homogeneous SMP
@@ -106,6 +108,9 @@ architecture neorv32_tb_rtl of neorv32_tb is
   signal sdi_di, sdi_do, sdi_clk, sdi_csn : std_ulogic;
   signal msi, mei, mti : std_ulogic;
   signal jtag_tck, jtag_tms, jtag_tdi, jtag_tdo : std_ulogic;
+  signal smc_csn : std_ulogic_vector(1 downto 0);
+  signal smc_clk, smc_do, smc_di: std_ulogic;
+  signal psram_data : std_logic_vector(3 downto 0);
 
   -- slink --
   type slink_t is record
@@ -321,6 +326,9 @@ begin
     CACHE_BLOCK_SIZE    => CACHE_BLOCK_SIZE,
     CACHE_BURSTS_EN     => CACHE_BURSTS_EN,
     CACHE_UC_BASE       => x"F0000000",
+    -- Serial Memory Controller (SMC) --
+    SMC_EN              => true,
+    SMC_BASE            => x"E0000000",
     -- External Bus Interface (XBUS) --
     XBUS_EN             => true,
     XBUS_TIMEOUT        => 2048,
@@ -394,6 +402,12 @@ begin
     jtag_tdi_i     => jtag_tdi,
     jtag_tdo_o     => jtag_tdo,
     jtag_tms_i     => jtag_tms,
+    -- Serial memory controller interface --
+    smc_ioen_o     => open,
+    smc_sck_o      => smc_clk,
+    smc_csn_o      => smc_csn,
+    smc_sdo_o      => smc_do,
+    smc_sdi_i      => smc_di,
     -- External bus interface --
     xbus_adr_o     => xbus_core_req.addr,
     xbus_dat_o     => xbus_core_req.data,
@@ -505,6 +519,38 @@ begin
   onewire <= 'H';
 
 
+  -- Serial Memory Controller - Dual-PSRAM --------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  psram_data(0) <= std_logic(smc_do);
+  smc_di        <= std_ulogic(psram_data(1));
+
+  -- weak pull-downs --
+  psram_data <= (others => 'L');
+
+  -- PSRAM models --
+  psram_gen:
+  if SMC_PSRAM_EN generate
+    psram_model_0_inst: entity neorv32.psram_model
+    generic map (
+      MEM_BYTES => PSRAM_SIZE
+    )
+    port map (
+      sck  => std_logic(smc_clk),
+      cs_n => std_logic(smc_csn(0)),
+      sio  => psram_data
+    );
+    psram_model_1_inst: entity neorv32.psram_model
+    generic map (
+      MEM_BYTES => PSRAM_SIZE
+    )
+    port map (
+      sck  => std_logic(smc_clk),
+      cs_n => std_logic(smc_csn(1)),
+      sio  => psram_data
+    );
+  end generate;
+
+
   -- SPI/SDI Loop-Back ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   sdi_clk <= spi_clk;
@@ -577,8 +623,8 @@ begin
     DEV_3_EN => true,         DEV_3_SIZE => 4,                DEV_3_BASE => x"FF000000",
     DEV_4_EN => true,         DEV_4_SIZE => 16,               DEV_4_BASE => x"FF100000",
     DEV_5_EN => true,         DEV_5_SIZE => 16,               DEV_5_BASE => x"FF200000",
-    DEV_6_EN => true,         DEV_6_SIZE => CACHE_BLOCK_SIZE, DEV_6_BASE => x"E0000000",
-    DEV_7_EN => true,         DEV_7_SIZE => CACHE_BLOCK_SIZE, DEV_7_BASE => x"E1000000"
+    DEV_6_EN => true,         DEV_6_SIZE => CACHE_BLOCK_SIZE, DEV_6_BASE => x"D0000000",
+    DEV_7_EN => true,         DEV_7_SIZE => CACHE_BLOCK_SIZE, DEV_7_BASE => x"D1000000"
   )
   port map (
     -- host port --

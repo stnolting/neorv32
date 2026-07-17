@@ -118,9 +118,9 @@ setup according to your needs. Note that all of the following SoC modules are en
 [`Zksed`](https://stnolting.github.io/neorv32/#_zksed_isa_extension)
 [`Zksh`](https://stnolting.github.io/neorv32/#_zksh_isa_extension)
 [`Xcfu`](https://stnolting.github.io/neorv32/#_xcfu_isa_extension)
-* compatible to subsets of the RISC-V "Unprivileged ISA Specification" and "Privileged Architecture Specification"
-* `machine` and optional `user` and privilege modes
-* implements **all** standard RISC-V exceptions and interrupts + 16 fast interrupt request channels as NEORV32-specific extension
+* compliant with subsets of the RISC-V "Unprivileged ISA Specification" and "Privileged Architecture Specification"
+* `machine` and optional `user` privilege modes
+* implements all RISC-V machine-level exceptions and interrupts + 16 fast interrupt request channels as NEORV32-specific extension
 * custom functions unit ([CFU](https://stnolting.github.io/neorv32/#_custom_functions_unit_cfu) as custom `Xcfu` ISA extension)
 for **custom RISC-V instructions**
 
@@ -130,6 +130,8 @@ for **custom RISC-V instructions**
 [IMEM](https://stnolting.github.io/neorv32/#_instruction_memory_imem)) and
 caches ([iCACHE](https://stnolting.github.io/neorv32/#_instruction_cache_icache) &
 [dCACHE](https://stnolting.github.io/neorv32/#_data_cache_dcache))
+* serial memory controller ([SMC](https://stnolting.github.io/neorv32/#_serial_memory_controller_smc)) for transparent access to
+up to 2x PSRAM/flash chips (supporting XIP)
 * pre-installed bootloader ([BOOTLDROM](https://stnolting.github.io/neorv32/#_bootloader_rom_bootrom)) with serial user interface;
 allows booting application code via UART, I²C or SPI flash and from SD card
 

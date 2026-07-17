@@ -504,10 +504,18 @@ void neorv32_aux_print_hw_config(void) {
     neorv32_uart0_printf("none");
   }
 
+  // serial memory controller
+  neorv32_uart0_printf("Serial MEM ctrl.:    ");
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_SMC)) {
+    neorv32_uart0_printf("enabled, memory base: 0x%x\n", neorv32_smc_get_baseaddr());
+  }
+  else {
+    neorv32_uart0_printf("none\n");
+  }
+
   // external bus interface
   neorv32_uart0_printf("Ext. bus interface:  ");
-  tmp = NEORV32_SYSINFO->SOC;
-  if (tmp & (1 << SYSINFO_SOC_XBUS)) {
+  if (NEORV32_SYSINFO->SOC & (1 << SYSINFO_SOC_XBUS)) {
     neorv32_uart0_printf("enabled");
   }
   else {

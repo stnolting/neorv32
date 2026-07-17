@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -27,8 +27,8 @@ extern "C" {
 #if defined(STDIO_SEMIHOSTING)
 #include <stdio.h>
 #include <string.h>
-#include <fcntl.h> // for open
-#include <unistd.h> // for close
+#include <fcntl.h>  // for open()
+#include <unistd.h> // for close()
 #endif
 
 /**********************************************************************//**
@@ -51,7 +51,7 @@ extern "C" {
 #define NEORV32_SLINK_BASE   (0xFFEC0000U) /**< Stream Link Interface (SLINK) */
 #define NEORV32_DMA_BASE     (0xFFED0000U) /**< Direct Memory Access Controller (DMA) */
 //#define NEORV32_???_BASE   (0xFFEE0000U) /**< reserved */
-//#define NEORV32_???_BASE   (0xFFEF0000U) /**< reserved */
+#define NEORV32_SMC_BASE     (0xFFEF0000U) /**< Serial Memory Controller (SMC) */
 #define NEORV32_PWM_BASE     (0xFFF00000U) /**< Pulse Width Modulation Controller (PWM) */
 #define NEORV32_GPTMR_BASE   (0xFFF10000U) /**< General Purpose Timer (GPTMR) */
 #define NEORV32_ONEWIRE_BASE (0xFFF20000U) /**< 1-Wire Interface Controller (ONEWIRE) */
@@ -295,6 +295,7 @@ typedef union {
 #include "neorv32_semihosting.h"
 #include "neorv32_sdi.h"
 #include "neorv32_slink.h"
+#include "neorv32_smc.h"
 #include "neorv32_smp.h"
 #include "neorv32_spi.h"
 #include "neorv32_sysinfo.h"
