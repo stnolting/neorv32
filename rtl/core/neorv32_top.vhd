@@ -854,26 +854,29 @@ begin
 
   neorv32_bus_gateway_inst: entity neorv32.neorv32_bus_gateway
   generic map (
-    TMO_INT => int_bus_tmo_c,
-    TMO_EXT => XBUS_TIMEOUT,
     -- port A: internal IMEM --
     A_EN    => IMEM_EN,
     A_BASE  => IMEM_BASE,
     A_SIZE  => imem_size_c,
+    A_TMO   => int_bus_tmo_c,
     -- port B: internal DMEM --
     B_EN    => DMEM_EN,
     B_BASE  => DMEM_BASE,
     B_SIZE  => dmem_size_c,
-    -- port C: reserved --
+    B_TMO   => int_bus_tmo_c,
+    -- port C: internal serial memory controller --
     C_EN    => SMC_EN,
     C_BASE  => SMC_BASE,
     C_SIZE  => 256*1024*1024, -- 256MB
-    -- port D: IO --
+    C_TMO   => 2048, -- maximum SMC transfer duration + safety margin
+    -- port D: internal IO --
     D_EN    => true,
     D_BASE  => mem_io_base_c,
     D_SIZE  => mem_io_size_c,
+    D_TMO   => int_bus_tmo_c,
     -- port X (the void): XBUS --
-    X_EN    => XBUS_EN
+    X_EN    => XBUS_EN,
+    X_TMO   => XBUS_TIMEOUT
   )
   port map (
     -- global control --

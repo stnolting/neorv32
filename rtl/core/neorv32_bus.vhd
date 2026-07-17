@@ -238,13 +238,14 @@ end neorv32_bus_reg_rtl;
 
 
 -- ================================================================================ --
--- NEORV32 SoC - Processor Bus Infrastructure: Section Gateway                      --
+-- NEORV32 SoC - Processor Bus Infrastructure: Bus Gateway                          --
 -- -------------------------------------------------------------------------------- --
 -- Bus gateway to distribute accesses to 4 non-overlapping address sub-spaces       --
 -- (A to C). Note that the sub-spaces have to be aligned to their individual sizes. --
 -- All accesses that do not match any of these sections are redirected to the X     --
 -- port. The gateway-internal bus monitor ensures that ALL accesses are completed   --
--- within a bound time window. Otherwise, a bus error exception is raised.          --
+-- within a port-specific bound time window (*_TMO). Otherwise, a bus error         --
+-- exception is raised.                                                             --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -262,26 +263,29 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_bus_gateway is
   generic (
-    TMO_INT : natural; -- internal bus timeout cycles (0 = timeout disabled)
-    TMO_EXT : natural; -- external bus timeout cycles (0 = timeout disabled)
-    -- port A --
-    A_EN    : boolean; -- port enable
-    A_BASE  : std_ulogic_vector(31 downto 0); -- port address space base address
-    A_SIZE  : natural; -- port address space size in bytes (power of two), aligned to size
-    -- port B --
+    -- device port A --
+    A_EN    : boolean;                        -- port enable
+    A_BASE  : std_ulogic_vector(31 downto 0); -- port address space base address (aligned to size)
+    A_SIZE  : natural;                        -- port address space size in bytes (power of two)
+    A_TMO   : natural;                        -- port access timeout (power of two, 0 = disabled)
+    -- device port B --
     B_EN    : boolean;
     B_BASE  : std_ulogic_vector(31 downto 0);
     B_SIZE  : natural;
-    -- port C --
+    B_TMO   : natural;
+    -- device port C --
     C_EN    : boolean;
     C_BASE  : std_ulogic_vector(31 downto 0);
     C_SIZE  : natural;
-    -- port D --
+    C_TMO   : natural;
+    -- device port D --
     D_EN    : boolean;
     D_BASE  : std_ulogic_vector(31 downto 0);
     D_SIZE  : natural;
-    -- port X (the void) --
-    X_EN    : boolean
+    D_TMO   : natural;
+    -- device port X (the void) --
+    X_EN    : boolean;
+    X_TMO   : natural
   );
   port (
     -- global control --
@@ -291,7 +295,7 @@ entity neorv32_bus_gateway is
     -- host port --
     req_i   : in  bus_req_t;  -- host request
     rsp_o   : out bus_rsp_t;  -- host response
-    -- section ports --
+    -- device/section ports --
     a_req_o : out bus_req_t;
     a_rsp_i : in  bus_rsp_t;
     b_req_o : out bus_req_t;
@@ -316,7 +320,49 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
 
   -- port enable list --
   type port_bool_list_t is array (0 to 4) of boolean;
-  constant port_en_list_c : port_bool_list_t := (A_EN, B_EN, C_EN, D_EN, X_EN);
+  constant port_en_list_c : port_bool_list_t := (
+    A_EN,
+    B_EN,
+    C_EN,
+    D_EN,
+    X_EN
+  );
+
+  -- port timeout enable list --
+  type port_tmo_en_list_t is array (0 to 4) of boolean;
+  constant port_tmo_en_list_c : port_tmo_en_list_t := (
+    boolean(A_TMO > 0),
+    boolean(B_TMO > 0),
+    boolean(C_TMO > 0),
+    boolean(D_TMO > 0),
+    boolean(X_TMO > 0)
+  );
+
+  -- port timeout counter bit list --
+  type port_tmo_bit_list_t is array (0 to 4) of natural;
+  constant port_tmo_bit_list_c : port_tmo_bit_list_t := (
+    index_size_f(A_TMO),
+    index_size_f(B_TMO),
+    index_size_f(C_TMO),
+    index_size_f(D_TMO),
+    index_size_f(X_TMO)
+  );
+  signal tmo_bits : std_ulogic_vector(4 downto 0);
+  signal tmo_fire : std_ulogic;
+
+  -- find highest bit index in port_tmo_bit_list_c to determine counter width --
+  function max_tmo_bit_f(tmo_bit : port_tmo_bit_list_t) return natural is
+    variable res_v : natural;
+  begin
+    res_v := 0;
+    for i in tmo_bit'range loop
+      if tmo_bit(i) > res_v then
+        res_v := tmo_bit(i);
+      end if;
+    end loop;
+    return res_v;
+  end function max_tmo_bit_f;
+  constant tmo_cnt_size_c : natural := max_tmo_bit_f(port_tmo_bit_list_c);
 
   -- gateway ports combined as arrays --
   type port_req_t is array (0 to 4) of bus_req_t;
@@ -328,17 +374,14 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   signal int_rsp : bus_rsp_t;
 
   -- bus monitor --
-  constant tmo_int_c : natural := index_size_f(TMO_INT);
-  constant tmo_ext_c : natural := index_size_f(TMO_EXT);
-  constant tmo_cnt_c : natural := sel_natural_f(boolean(tmo_ext_c > tmo_int_c), tmo_ext_c, tmo_int_c);
   type keeper_t is record
     state : std_ulogic_vector(1 downto 0);
     lock  : std_ulogic;
-    ext   : std_ulogic;
-    cnt   : std_ulogic_vector(tmo_cnt_c downto 0);
-    err   : std_ulogic;
+    sel   : std_ulogic_vector(4 downto 0);
+    cnt   : std_ulogic_vector(tmo_cnt_size_c downto 0);
   end record;
-  signal keeper : keeper_t;
+  signal keeper  : keeper_t;
+  signal bus_err : std_ulogic;
 
 begin
 
@@ -387,8 +430,8 @@ begin
 
   -- host response --
   rsp_o.data <= int_rsp.data;
-  rsp_o.ack  <= int_rsp.ack or keeper.err;
-  rsp_o.err  <= int_rsp.err or keeper.err;
+  rsp_o.ack  <= int_rsp.ack or bus_err;
+  rsp_o.err  <= int_rsp.err or bus_err;
 
   -- Bus Monitor (aka "the KEEPER") ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -397,7 +440,7 @@ begin
     if (rstn_i = '0') then
       keeper.state <= (others => '0');
       keeper.lock  <= '0';
-      keeper.ext   <= '0';
+      keeper.sel   <= (others => '0');
       keeper.cnt   <= (others => '0');
     elsif rising_edge(clk_i) then
       case keeper.state is
@@ -405,7 +448,7 @@ begin
         when "00" => -- idle, waiting for new access request
         -- ------------------------------------------------------------
           keeper.lock <= req_i.lock;
-          keeper.ext  <= port_sel(port_sel'left); -- MSB set (external bus access)?
+          keeper.sel  <= port_sel;
           keeper.cnt  <= (others => '0');
           if (req_i.stb = '1') then
             keeper.state <= "01";
@@ -420,8 +463,7 @@ begin
             keeper.cnt <= std_ulogic_vector(unsigned(keeper.cnt) + 1);
           end if;
           -- bus status --
-          if ((keeper.ext = '0') and (TMO_INT > 0) and (keeper.cnt(tmo_int_c) = '1')) or -- internal timeout
-             ((keeper.ext = '1') and (TMO_EXT > 0) and (keeper.cnt(tmo_ext_c) = '1')) then -- external timeout
+          if (tmo_fire = '1') then -- timeout
             keeper.state <= "11";
           elsif (keeper.lock = '1') then -- locked / burst transfer
             if (req_i.lock = '0') then
@@ -441,13 +483,19 @@ begin
     end if;
   end process bus_monitor;
 
-  -- bus keeper error --
-  keeper.err <= keeper.state(1); -- send error to host
-  term_o     <= keeper.state(1); -- terminate pending (external) bus access
+  -- timeout counter bit select --
+  tmo_bit_gen:
+  for i in 0 to 4 generate
+    tmo_bits(i) <= keeper.cnt(port_tmo_bit_list_c(i)) when port_tmo_en_list_c(i) else '0';
+  end generate;
+  tmo_fire <= or_reduce_f(tmo_bits and keeper.sel);
 
-  -- timeout notifications --
-  assert (TMO_INT > 0) report "[NEORV32] Internal bus timeout disabled! Can cause permanent system stall!" severity warning;
-  assert (TMO_EXT > 0) report "[NEORV32] External bus timeout disabled! Can cause permanent system stall!" severity warning;
+  -- bus keeper error --
+  bus_err <= keeper.state(1); -- send error to host
+  term_o  <= keeper.state(1); -- terminate pending (external) bus access
+
+  -- external timeout notification --
+  assert (X_TMO > 0) report "[NEORV32] External bus timeout disabled! Can cause permanent system stall!" severity warning;
 
 end neorv32_bus_gateway_rtl;
 
@@ -929,7 +977,6 @@ begin
 
   -- SC valid if sent by the same core to the same address granule and reservation still active --
   sc_valid <= rsv.set when (rsv.id = core_req_i.meta(3)) and (rsv.addr = core_req_i.addr(31 downto 6)) else '0';
-
 
   -- System Bus Interface -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
