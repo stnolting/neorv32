@@ -47,7 +47,6 @@ image::neorv32_processor.png[align=center]
 * _optional_ system configuration information memory to determine hardware configuration via software (<<_system_configuration_information_memory_sysinfo,**SYSINFO**>>)
 
 
-
 <<<
 // ####################################################################################################################
 :sectnums:
@@ -576,6 +575,11 @@ The according time window defines the maximum number of cycles after which a _no
 raising a bus access fault exception. For example this can happen when accessing "address space holes" - addresses that
 are not mapped to any physical module at all. The specific bus access exception type corresponds to the according access
 type (i.e. instruction fetch bus access fault, load bus access fault or store bus access fault).
+
+.Serial Memory Controller Bus Timeout
+[NOTE]
+The <<_serial_memory_controller_smc>> uses a hard-coded timeout value of 2048 cycles
+so that it can complete serial accesses even at the lowest SPI clock speed.
 
 
 :sectnums:
