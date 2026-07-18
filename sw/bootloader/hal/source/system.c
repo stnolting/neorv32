@@ -17,7 +17,7 @@
 #include <uart.h>
 
 // global variables
-uint32_t g_exe_base   = (uint32_t)DEFAULT_EXE_ADDR; // (default) base/entry-point of executable
+uint32_t g_exe_base   = 0; // base/entry-point of executable
 uint32_t g_exe_size   = 0; // size of the loaded executable; 0 if no executable available
 uint32_t g_flash_addr = 0; // current flash/stream address
 
@@ -272,9 +272,29 @@ int system_app_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream
 
 
 /**********************************************************************//**
+ * Boot application right from address.
+ *
+ * @param addr Base address of executable.
+ **************************************************************************/
+void system_direct_boot(uint32_t addr) {
+
+  g_exe_base = addr;
+  g_exe_size = 0xFFFFFFFFu; // to skip size-check in system_app_boot
+
+  system_app_boot();
+
+  __builtin_unreachable();
+  while (1); // should never be reached
+}
+
+
+/**********************************************************************//**
  * Boot application executable at address "g_exe_base".
  **************************************************************************/
 void system_app_boot(void) {
+
+  // boot address - local copy
+  uint32_t boot_addr = g_exe_base;
 
   // executable available?
   if (g_exe_size == 0) {
@@ -283,9 +303,6 @@ void system_app_boot(void) {
       return;
     }
   }
-
-  // boot address - local copy
-  uint32_t boot_addr = g_exe_base;
 
   // start application in machine mode; disable interrupts
   neorv32_cpu_csr_write(CSR_MSTATUS, (1 << CSR_MSTATUS_MPP_H) + (1 << CSR_MSTATUS_MPP_L));
@@ -298,9 +315,9 @@ void system_app_boot(void) {
 #endif
 
 #if (UART_EN == 1)
-  uart_puts("Booting from ");
+  uart_puts("Booting (@");
   uart_puth(boot_addr);
-  uart_puts("...\n\n");
+  uart_puts(")...\n\n");
   while (neorv32_uart0_tx_busy()); // wait for UART0 to complete transmission
 #endif
 

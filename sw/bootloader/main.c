@@ -89,6 +89,13 @@ int main(void) {
   }
 #endif
 
+  // directly execute from memory address
+#if (DIRECT_BOOT_EN == 1)
+  uart_putc('\n');
+  uart_puts("Direct boot...\n");
+  system_direct_boot((uint32_t)DIRECT_BOOT_ADDR);
+#endif
+
 skip_auto_boot:
 #endif
 
@@ -137,6 +144,9 @@ skip_auto_boot:
         "h: Help\n"
         "i: System info\n"
         "r: Restart\n"
+#if (DIRECT_BOOT_EN == 1)
+        "d: Direct boot\n"
+#endif
         "u: Upload via UART\n"
 #if (TWI_FLASH_EN == 1)
         "t: TWI flash - load\n"
@@ -208,6 +218,14 @@ skip_auto_boot:
     if (cmd == 'c') {
       uart_puts("Loading SD card file "SPI_SDCARD_FILE"... ");
       system_app_load(sdcard_setup, sdcard_stream_get);
+    }
+#endif
+
+    /**** direct boot / execute in-place ****/
+#if (DIRECT_BOOT_EN == 1)
+    if (cmd == 'd') {
+      uart_puts("Direct execute in-place...\n");
+      system_direct_boot((uint32_t)DIRECT_BOOT_ADDR);
     }
 #endif
 

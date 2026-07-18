@@ -36,6 +36,7 @@ typedef struct __attribute__((packed,aligned(4))) {
 void system_setup(void);
 int  system_app_load(int (*dev_init)(void), int (*stream_get)(uint32_t* rdata));
 int  system_app_store(int (*dev_init)(void), int (*dev_erase)(void), int (*stream_put)(uint32_t wdata));
+void system_direct_boot(uint32_t addr);
 void system_app_boot(void);
 
 #endif // SYSTEM_H

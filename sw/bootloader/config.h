@@ -89,6 +89,20 @@
 #endif
 
 /**********************************************************************
+ * Direct boot (execute in-place)
+ **********************************************************************/
+
+// Enable direct boot / execute in-place option (0,1)
+#ifndef DIRECT_BOOT_EN
+#define DIRECT_BOOT_EN 0
+#endif
+
+// Direct boot / execute in-place base address (32-bit, has to be 4-byte-aligned)
+#ifndef DIRECT_BOOT_ADDR
+#define DIRECT_BOOT_ADDR 0xffe00000
+#endif
+
+/**********************************************************************
  * TWI flash
  **********************************************************************/
 
@@ -224,15 +238,6 @@
 ({                     \
   (void)0;             \
 })
-#endif
-
-/**********************************************************************
- * Misc
- **********************************************************************/
-
-// Default executable address; e.g. for directly executing from main memory (32-bit, has to be 4-byte-aligned)
-#ifndef DEFAULT_EXE_ADDR
-#define DEFAULT_EXE_ADDR 0x00000000
 #endif
 
 #endif // CONFIG_H
