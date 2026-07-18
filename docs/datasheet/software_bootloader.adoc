@@ -220,10 +220,11 @@ The serial interface device is defined by `UART_TTY` .
 
 .UART Overflow Detection and Hardware Flow Control
 [NOTE]
-For setups that use very high custom baud rates values and/or provide very high main memory latency (e.g. external
-DDR-RAM with several cache layers), it is recommended to enable the UART RTS/CTS hardware flow control. In addition,
-enabling overflow detection can make debugging easier. See <<_customizing_the_internal_bootloader>> for more information.
-
+The bootloader **does not check for UART RX overflows** during transmissions. However, such an error during
+transmission will most likely result in a checksum error, so the error will certainly be detected anyway.
+For setups that use very high custom baud rates values and/or provide very high main memory latency (e.g.
+external serial RAM), it is recommended to enable the UART RTS/CTS hardware flow control.
+See <<_customizing_the_internal_bootloader>> for more information.
 
 :sectnums:
 ==== Programming an SPI or TWI Flash
@@ -297,7 +298,6 @@ overridden by Makefile directives.
 4+<| **Serial console** - requires <<_primary_universal_asynchronous_receiver_and_transmitter_uart0>>
 | `UART_EN`               | `1`     | `0,1` | Set to `1` to enable the serial console.
 | `UART_BAUD`             | `19200` | any   | Baud rate of UART0.
-| `UART_OVERFLOW`         | `0`     | `0,1` | Enable RX overflow detection. Recommended for high baud rates / high memory latency.
 | `UART_HWFC`             | `0`     | `0,1` | Enable RTS/CTS hardware flow control. Recommended for very high baud rates / high memory latency.
 4+<| **Status LED** - requires <<_general_purpose_input_and_output_port_gpio>>
 | `STATUS_LED_EN`         | `1` | `0,1`   | Enable bootloader status led ("heart beat") at `GPIO` output port pin `STATUS_LED_PIN` when `1`.

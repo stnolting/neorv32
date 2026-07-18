@@ -39,11 +39,6 @@
 #define UART_HWFC 0
 #endif
 
-// Enable UART0 RX overflow detection (0,1)
-#ifndef UART_OVERFLOW
-#define UART_OVERFLOW 0
-#endif
-
 /**********************************************************************
  * Status LED (high-active)
  **********************************************************************/
