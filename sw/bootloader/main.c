@@ -43,7 +43,7 @@ int main(void) {
   // wait for timeout or user abort
   if (neorv32_clint_available()) {
     uart_puts(" in "xstr(AUTO_BOOT_TIMEOUT)"s. Press any key to abort.\n");
-    uint64_t timeout_time = neorv32_clint_time_get() + (uint64_t)(AUTO_BOOT_TIMEOUT * NEORV32_SYSINFO->CLK);
+    uint64_t timeout_time = neorv32_clint_time_get() + (AUTO_BOOT_TIMEOUT * (uint64_t)(NEORV32_SYSINFO->CLK));
     while (1) {
 
       // wait for user input via UART0
