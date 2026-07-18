@@ -55,7 +55,7 @@ at 2Hz and the <<_auto_boot_sequence>> is started. This auto-boot sequence can b
 [source]
 ----
 NEORV32 Bootloader
-build: Dec 13 2025 <1>
+build: Jul 18 2026 <1>
 
 Auto-boot in 8s. Press any key to abort. <2>
 Aborted. <3>
@@ -114,12 +114,12 @@ the general system configuration is printed:
 [source]
 ----
 CMD:> i
-HWV:  0x01120101 <1>
-CLK:  0x05f5e100 <2>
-MISA: 0x40901107 <3>
-XISA: 0x00000000:0x0fc06fd3 <4>
-SOC:  0x38efc87b <5>
-MISC: 0x0a010d00 <6>
+HWV:  0x01130207 <1>
+CLK:  0x05F5E100 <2>
+MISA: 0x40901104 <3>
+XISA: 0x00000000_0x10000F93 <4>
+SOC:  0x18BF80FF <5>
+MISC: 0x59011010 <6>
 CMD:>
 ----
 <1> Processor hardware version in BCD format (<<_mimpid>> CSR).
