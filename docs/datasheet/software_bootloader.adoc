@@ -302,6 +302,9 @@ overridden by Makefile directives.
 4+<| **Status LED** - requires <<_general_purpose_input_and_output_port_gpio>>
 | `STATUS_LED_EN`         | `1` | `0,1`   | Enable bootloader status led ("heart beat") at `GPIO` output port pin `STATUS_LED_PIN` when `1`.
 | `STATUS_LED_PIN`        | `0` | `0..31` | `GPIO` output pin used for the high-active status LED. Note that if the GPIO module's direction control feature is enabled only this pin is configured as output.
+4+<| **Serial memory** - requires <<_serial_memory_controller_smc>>
+| `SMC_EN`                | `0` | `0,1` | Enable initialization of <<_serial_memory_controller_smc>>.
+| `SMC_SETUP_ARGS`        | ... | ...   | List of configuration arguments for SMC setup function (`neorv32_smc_setup(...)`).
 4+<| **Auto-boot** - requires <<_core_local_interruptor_clint>>
 | `AUTO_BOOT_EN`          | `1`  | `0,1` | Auto-boot enabled when `1`.
 | `AUTO_BOOT_TIMEOUT`     | `8`  | any   | Timeout in seconds after which the auto-boot sequence starts (if there is no UART input by the user).

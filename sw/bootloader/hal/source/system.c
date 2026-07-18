@@ -105,6 +105,13 @@ void system_setup(void) {
     neorv32_cpu_csr_set(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // enable machine-mode interrupts
   }
 
+  // setup serial memory controller
+#if (SMC_EN == 1)
+  if (neorv32_smc_available()) {
+    neorv32_smc_setup(SMC_SETUP_ARGS);
+  }
+#endif
+
   // user-defined initialization code; macro defined in config.h
   USER_CODE_INIT;
 }
