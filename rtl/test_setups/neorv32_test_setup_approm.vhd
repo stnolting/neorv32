@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -43,19 +43,19 @@ begin
   generic map (
     -- Clocking --
     CLOCK_FREQUENCY  => CLOCK_FREQUENCY, -- clock frequency of clk_i in Hz
-    -- Boot Configuration --             
+    -- Boot Configuration --
     BOOT_MODE_SELECT => 2,               -- boot from pre-initialized IMEM
-    -- RISC-V CPU Extensions --          
+    -- RISC-V CPU Extensions --
     RISCV_ISA_C      => true,            -- implement compressed extension?
     RISCV_ISA_M      => true,            -- implement mul/div extension?
     RISCV_ISA_Zicntr => true,            -- implement base counters?
-    -- Internal Instruction memory --    
+    -- Internal Instruction memory --
     IMEM_EN          => true,            -- implement processor-internal instruction memory
     IMEM_SIZE        => IMEM_SIZE,       -- size of processor-internal instruction memory in bytes
-    -- Internal Data memory --           
+    -- Internal Data memory --
     DMEM_EN          => true,            -- implement processor-internal data memory
     DMEM_SIZE        => DMEM_SIZE,       -- size of processor-internal data memory in bytes
-    -- Processor peripherals --          
+    -- Processor peripherals --
     IO_GPIO_NUM      => 8,               -- number of GPIO input/output pairs (0..32)
     IO_CLINT_EN      => true             -- implement core local interruptor (CLINT)?
   )
@@ -69,6 +69,5 @@ begin
 
   -- GPIO output --
   gpio_o <= con_gpio_out(7 downto 0);
-
 
 end architecture;

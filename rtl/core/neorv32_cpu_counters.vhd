@@ -39,7 +39,7 @@ entity neorv32_cpu_counters is
     -- read back --
     rdata_o : out std_ulogic_vector(31 downto 0) -- read data
   );
-end neorv32_cpu_counters;
+end entity;
 
 architecture neorv32_cpu_counters_rtl of neorv32_cpu_counters is
 
@@ -114,7 +114,7 @@ begin
       -- unused --
       inhibit(1) <= '0'; -- [m]time[h] not implemented
     end if;
-  end process cnt_inhibit;
+  end process;
 
   -- mcountinhibit read-back --
   inhibit_rd(31 downto 0)  <= inhibit when (inh_acc = '1') and (ctrl_i.csr_re = '1') else (others => '0');
@@ -145,7 +145,7 @@ begin
           pmf_ir(0) <= '0';
         end if;
       end if;
-    end process pmf_reg;
+    end process;
 
     -- CSR read-back --
     pmf_read_back: process(pmf_acc, ctrl_i, pmf_cy, pmf_ir)
@@ -160,7 +160,7 @@ begin
           pmf_rd(28) <= pmf_ir(0);
         end if;
       end if;
-    end process pmf_read_back;
+    end process;
 
     -- counter-inhibit according to current privilege-mode --
     pmf_inh(0) <= pmf_cy(1) when (ctrl_i.cpu_priv = priv_mode_m_c) or (UMODE_EN = false) else pmf_cy(0);
@@ -218,7 +218,7 @@ begin
       elsif rising_edge(clk_i) then
         time_q <= mtime_i;
       end if;
-    end process mtime;
+    end process;
     time_rd <= time_q when (cnt_re(1) = '1') else (others => '0');
 
     -- [m]instret[h] --
@@ -281,7 +281,7 @@ begin
             hpmevent(i) <= ctrl_i.csr_wdata(cnt_event_width_c-1 downto 0);
           end if;
         end if;
-      end process hpmevent_reg;
+      end process;
       hpmevent_rd(i) <= hpmevent(i) when (cfg_re(i) = '1') else (others => '0');
 
     end generate;
@@ -303,7 +303,7 @@ begin
         tmp_v := tmp_v or hpmcnt_rd(i) or std_ulogic_vector(resize(unsigned(hpmevent_rd(i)), 64));
       end loop;
       hpm_rd <= tmp_v;
-    end process hpm_read_back;
+    end process;
 
   end generate;
 
@@ -316,4 +316,4 @@ begin
     hpm_rd      <= (others => '0');
   end generate;
 
-end neorv32_cpu_counters_rtl;
+end architecture;

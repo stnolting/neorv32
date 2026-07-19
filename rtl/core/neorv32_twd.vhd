@@ -31,7 +31,7 @@ entity neorv32_twd is
     twd_scl_i : in  std_ulogic;                    -- serial clock line input
     irq_o     : out std_ulogic                     -- interrupt
   );
-end neorv32_twd;
+end entity;
 
 architecture neorv32_twd_rtl of neorv32_twd is
 
@@ -184,7 +184,7 @@ begin
         end if;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
   -- access helpers --
   acc_we <= '1' when (bus_req_i.stb = '1') and (bus_req_i.rw = '1') else '0';
@@ -264,7 +264,7 @@ begin
                (ctrl.irq_com_beg  and      com_beg)        or -- begin of communication
                (ctrl.irq_com_end  and      com_end));         -- end of communication
     end if;
-  end process irq_gen;
+  end process;
 
 
   -- Bus Sampling Logic ---------------------------------------------------------------------
@@ -291,7 +291,7 @@ begin
         end if;
       end if;
     end if;
-  end process synchronizer;
+  end process;
 
   -- sample clock for input "filtering" --
   smp.clk_en <= clkgen_i(clk_div64_c) when (ctrl.fsel = '1') else clkgen_i(clk_div8_c);
@@ -421,9 +421,9 @@ begin
 
       end case;
     end if;
-  end process bus_engine;
+  end process;
 
-  -- TWI data line tri-state driver --
+  -- TWI data line (tri-state driver) --
   twd_sda_o <= engine.sda;
 
 
@@ -453,6 +453,6 @@ begin
         end if;
       end if;
     end if;
-  end process com_state_monitor;
+  end process;
 
-end neorv32_twd_rtl;
+end architecture;

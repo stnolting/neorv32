@@ -41,7 +41,7 @@ entity neorv32_cpu_frontend is
     -- back-end interface --
     frontend_o : out if_bus_t -- fetch data and status
   );
-end neorv32_cpu_frontend;
+end entity;
 
 architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
@@ -73,7 +73,7 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
     priv  : std_ulogic; -- fetch privilege level
     debug : std_ulogic; -- debug-mode access
   end record;
-  signal fetch : fetch_t;
+  signal fetch : fetch_t; -- FSM
 
   -- reset instruction fetch after branch --
   signal restart : std_ulogic;
@@ -144,7 +144,7 @@ begin
 
       end case;
     end if;
-  end process fetch_fsm;
+  end process;
 
   -- reset instruction fetch after branch --
   restart <= fetch.reset or ctrl_i.if_reset;
@@ -234,7 +234,7 @@ begin
           align_q <= (align_q and (not align_clr)) or align_set; -- alignment "RS flip-flop"
         end if;
       end if;
-    end process issue_fsm_sync;
+    end process;
 
     issue_fsm_comb: process(align_q, ipb, cmd32)
     begin
@@ -274,7 +274,7 @@ begin
           frontend_o.compr <= '0';
         end if;
       end if;
-    end process issue_fsm_comb;
+    end process;
 
     -- original 16-bit instruction word --
 
@@ -304,7 +304,7 @@ begin
     frontend_o.fault <= ipb.rdata(0)(16);
   end generate;
 
-end neorv32_cpu_frontend_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -343,7 +343,7 @@ entity neorv32_cpu_frontend_ipb is
     rdata_o : out std_ulogic_vector(DWIDTH-1 downto 0); -- read data
     avail_o : out std_ulogic  -- data available when set
   );
-end neorv32_cpu_frontend_ipb;
+end entity;
 
 architecture neorv32_cpu_frontend_ipb_rtl of neorv32_cpu_frontend_ipb is
 
@@ -376,7 +376,7 @@ begin
         r_pnt <= std_ulogic_vector(unsigned(r_pnt) + 1);
       end if;
     end if;
-  end process pointer_reg;
+  end process;
 
   -- status --
   match   <= '1' when (r_pnt(AWIDTH-1 downto 0) = w_pnt(AWIDTH-1 downto 0)) else '0';
@@ -392,9 +392,9 @@ begin
         ipb(to_integer(unsigned(w_pnt(AWIDTH-1 downto 0)))) <= wdata_i;
       end if;
     end if;
-  end process mem_write;
+  end process;
 
   -- asynchronous(!) read --
   rdata_o <= ipb(to_integer(unsigned(r_pnt(AWIDTH-1 downto 0))));
 
-end neorv32_cpu_frontend_ipb_rtl;
+end architecture;

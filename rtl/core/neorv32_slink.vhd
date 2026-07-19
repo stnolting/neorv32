@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -40,7 +40,7 @@ entity neorv32_slink is
     slink_tx_last_o  : out std_ulogic;                     -- end of stream
     slink_tx_ready_i : in  std_ulogic                      -- ready to send
   );
-end neorv32_slink;
+end entity;
 
 architecture neorv32_slink_rtl of neorv32_slink is
 
@@ -71,7 +71,7 @@ architecture neorv32_slink_rtl of neorv32_slink is
   type ctrl_t is record
     enable, irq_rx_nempty, irq_rx_full, irq_tx_empty, irq_tx_nfull : std_ulogic;
   end record;
-  signal ctrl : ctrl_t;
+  signal ctrl : ctrl_t; -- register set
 
   -- routing information --
   signal tx_route, rx_route : std_ulogic_vector(3 downto 0);
@@ -144,7 +144,7 @@ begin
         end if;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
 
   -- RX Data FIFO ---------------------------------------------------------------------------
@@ -188,7 +188,7 @@ begin
         rx_route <= rx_fifo.rdata(35 downto 32);
       end if;
     end if;
-  end process rx_attributes;
+  end process;
 
 
   -- TX Data FIFO ---------------------------------------------------------------------------
@@ -237,7 +237,6 @@ begin
                (ctrl.irq_tx_empty  and (not tx_fifo.avail)) or -- TX FIFO empty
                (ctrl.irq_tx_nfull  and (    tx_fifo.free)));   -- TX FIFO not full
     end if;
-  end process irq_gen;
+  end process;
 
-
-end neorv32_slink_rtl;
+end architecture;

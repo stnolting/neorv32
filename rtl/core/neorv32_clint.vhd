@@ -31,7 +31,7 @@ entity neorv32_clint is
     mti_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0); -- machine timer interrupt
     msi_o     : out std_ulogic_vector(NUM_HARTS-1 downto 0)  -- machine software interrupt
   );
-end neorv32_clint;
+end entity;
 
 architecture neorv32_clint_rtl of neorv32_clint is
 
@@ -170,7 +170,7 @@ begin
       tmp_v := tmp_v or mtimecmp_rd(i) or mswi_rd(i);
     end loop;
     rdata <= mtime_rd or tmp_v;
-  end process read_back;
+  end process;
 
 
   -- Bus Response ---------------------------------------------------------------------------
@@ -186,9 +186,9 @@ begin
         bus_rsp_o.data <= rdata;
       end if;
     end if;
-  end process bus_response;
+  end process;
 
-end neorv32_clint_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -216,7 +216,7 @@ entity neorv32_clint_mtimecmp is
     rdata_o : out std_ulogic_vector(31 downto 0); -- read data
     mti_o   : out std_ulogic -- interrupt
   );
-end neorv32_clint_mtimecmp;
+end entity;
 
 architecture neorv32_clint_mtimecmp_rtl of neorv32_clint_mtimecmp is
 
@@ -239,7 +239,7 @@ begin
         mtimecmp_q(63 downto 32) <= wdata_i;
       end if;
     end if;
-  end process write_access;
+  end process;
 
   -- read access --
   rdata_o <= mtimecmp_q(63 downto 32) when (re_i(1) = '1') else
@@ -257,7 +257,7 @@ begin
       cmp_lo_ge <= cmp_lo_gt or cmp_lo_eq; -- low word greater-than or equal
       mti_o     <= cmp_hi_gt or (cmp_hi_eq and cmp_lo_ge);
     end if;
-  end process irq_gen;
+  end process;
 
   -- sub-word comparators; there is one cycle delay between low (earlier) and high (later) word --
   cmp_lo_eq <= '1' when (unsigned(mtime_i(31 downto  0)) = unsigned(mtimecmp_q(31 downto  0))) else '0';
@@ -265,4 +265,4 @@ begin
   cmp_hi_eq <= '1' when (unsigned(mtime_i(63 downto 32)) = unsigned(mtimecmp_q(63 downto 32))) else '0';
   cmp_hi_gt <= '1' when (unsigned(mtime_i(63 downto 32)) > unsigned(mtimecmp_q(63 downto 32))) else '0';
 
-end neorv32_clint_mtimecmp_rtl;
+end architecture;

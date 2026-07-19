@@ -28,7 +28,7 @@ entity neorv32_cpu_decompressor is
     instr_i : in  std_ulogic_vector(15 downto 0); -- compressed instruction
     instr_o : out std_ulogic_vector(31 downto 0)  -- decompressed instruction
   );
-end neorv32_cpu_decompressor;
+end entity;
 
 architecture neorv32_cpu_decompressor_rtl of neorv32_cpu_decompressor is
 
@@ -351,9 +351,9 @@ begin
         end case;
 
     end case;
-  end process decompressor;
+  end process;
 
   -- output illegal instruction in its pre-decoded 32-bit form --
   instr_o <= decoded(31 downto 2) & (decoded(1) and (not illegal)) & decoded(0); -- force OPCODE[1] to zero if illegal
 
-end neorv32_cpu_decompressor_rtl;
+end architecture;

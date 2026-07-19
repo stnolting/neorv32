@@ -63,7 +63,7 @@ entity neorv32_litex_core_complex is
     -- CPU interrupt --
     irq_mei_i  : in  std_ulogic  -- RISC-V machine external interrupt (MEI)
   );
-end neorv32_litex_core_complex;
+end entity;
 
 architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
 
@@ -170,5 +170,4 @@ begin
     irq_mei_i  => irq_mei_i   -- machine external interrupt
   );
 
-
-end neorv32_litex_core_complex_rtl;
+end architecture;

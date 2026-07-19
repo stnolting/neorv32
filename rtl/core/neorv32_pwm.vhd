@@ -30,7 +30,7 @@ entity neorv32_pwm is
     clkgen_i  : in  std_ulogic_vector(7 downto 0); -- clock divider input
     pwm_o     : out std_ulogic_vector(31 downto 0) -- PWM output
   );
-end neorv32_pwm;
+end entity;
 
 architecture neorv32_pwm_rtl of neorv32_pwm is
 
@@ -106,7 +106,7 @@ begin
         end case;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
   -- access address helper --
   addr <= bus_req_i.addr(7) & bus_req_i.addr(3 downto 2);
@@ -145,7 +145,7 @@ begin
     elsif rising_edge(clk_i) then
       clken <= clkgen_i(to_integer(unsigned(clkprsc)));
     end if;
-  end process clk_gen;
+  end process;
 
   -- channel read-back --
   read_back: process(rdata)
@@ -156,7 +156,7 @@ begin
       tmp_v := tmp_v or rdata(i);
     end loop;
     rdata_sum <= tmp_v;
-  end process read_back;
+  end process;
 
   -- PWM output --
   channel_output: process(pwm)
@@ -165,7 +165,7 @@ begin
     pwm_o(NUM_CHANNELS-1 downto 0) <= pwm;
   end process channel_output;
 
-end neorv32_pwm_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -200,7 +200,7 @@ entity neorv32_pwm_channel is
     -- PWM output --
     pwm_o   : out std_ulogic                      -- PWM output
   );
-end neorv32_pwm_channel;
+end entity;
 
 architecture neorv32_pwm_channel_rtl of neorv32_pwm_channel is
 
@@ -226,7 +226,7 @@ begin
         end if;
       end if;
     end if;
-  end process write_access;
+  end process;
 
   -- read-back --
   rdata_o <= (top & cmp) when (cs_i = '1') else (others => '0');
@@ -255,7 +255,7 @@ begin
         end if;
       end if;
     end if;
-  end process pwm_counter;
+  end process;
 
   -- comparators --
   cmp_zero <= '1' when (cnt = x"0000") else '0';
@@ -276,6 +276,6 @@ begin
         pwm_o <= pol_i;
       end if;
     end if;
-  end process pwm_drive;
+  end process;
 
-end neorv32_pwm_channel_rtl;
+end architecture;

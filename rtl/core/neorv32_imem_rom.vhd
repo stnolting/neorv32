@@ -29,7 +29,7 @@ entity neorv32_imem_rom is
     addr_i : in  std_ulogic_vector(31 downto 0); -- full byte address
     data_o : out std_ulogic_vector(31 downto 0)  -- read data, sync
   );
-end neorv32_imem_rom;
+end entity;
 
 architecture neorv32_imem_rom_rtl of neorv32_imem_rom is
 
@@ -56,7 +56,7 @@ begin
         rdata <= image_data_c(to_integer(unsigned(addr_i(awidth_c-1 downto 2))));
       end if;
     end if;
-  end process rom_access;
+  end process;
 
   -- output register stage --
   rom_output_register_enabled:
@@ -66,7 +66,7 @@ begin
       if rising_edge(clk_i) then
         data_o <= rdata;
       end if;
-    end process rom_outreg;
+    end process;
   end generate;
 
   -- no output register stage --
@@ -75,4 +75,4 @@ begin
     data_o <= rdata;
   end generate;
 
-end neorv32_imem_rom_rtl;
+end architecture;

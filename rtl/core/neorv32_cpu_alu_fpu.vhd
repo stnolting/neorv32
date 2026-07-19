@@ -54,7 +54,7 @@ entity neorv32_cpu_alu_fpu is
     res_o       : out std_ulogic_vector(31 downto 0); -- operation result
     valid_o     : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_alu_fpu;
+end entity;
 
 architecture neorv32_cpu_alu_fpu_rtl of neorv32_cpu_alu_fpu is
 
@@ -287,7 +287,7 @@ begin
         csr_fflags <= csr_fflags or fflags;
       end if;
     end if;
-  end process csr_write;
+  end process;
 
   -- read access --
   csr_read: process(csr_addr_i, csr_fflags, csr_frm)
@@ -299,7 +299,7 @@ begin
       when "11"   => csr_rdata_o(7 downto 0) <= csr_frm & csr_fflags; -- control/status (frm & fflags)
       when others => null;
     end case;
-  end process csr_read;
+  end process;
 
 
   -- Instruction Decoding -------------------------------------------------------------------
@@ -379,7 +379,7 @@ begin
       op_class(i)(fp_class_snan_c)       <= op_is_nan_v and (not op_data(i)(22)); -- signaling NaN
       op_class(i)(fp_class_qnan_c)       <= op_is_nan_v and (    op_data(i)(22)); -- quiet NaN
     end loop; -- i
-  end process number_classifier;
+  end process;
 
 
   -- Co-Processor Control Engine ------------------------------------------------------------
@@ -443,7 +443,7 @@ begin
 
       end case;
     end if;
-  end process control_engine_fsm;
+  end process;
 
   -- operation done / valid output --
   valid_o <= ctrl_engine.valid;
@@ -561,7 +561,7 @@ begin
       fu_compare.done <= fu_compare.start; -- for actual comparison operation
       fu_min_max.done <= fu_min_max.start; -- for min/max operations
     end if;
-  end process float_comparator;
+  end process;
 
 
   -- Comparison (FEQ/FLT/FLE) ---------------------------------------------------------------
@@ -602,7 +602,7 @@ begin
       when others => -- undefined
         fu_compare.result(0) <= '0';
     end case;
-  end process float_comparison;
+  end process;
 
 
   -- Min/Max Select (FMIN/FMAX) -------------------------------------------------------------
@@ -654,7 +654,7 @@ begin
       when "100" | "101" => fu_min_max.result <= fpu_operands.rs2; -- if one input is NaN output the non-NaN one
       when others        => fu_min_max.result <= fp_single_qnan_c; -- output quiet NaN if both inputs are NaN
     end case;
-  end process min_max_select;
+  end process;
 
   -- latency --
   -- -> done in "float_comparator"
@@ -702,7 +702,7 @@ begin
       fu_sign_inject.result(30 downto 0) <= fpu_operands.rs1(30 downto 0);
     end if;
     fu_sign_inject.flags <= (others => '0'); -- does not generate flags
-  end process sign_injector;
+  end process;
 
   -- latency --
   fu_sign_inject.done <= fu_sign_inject.start;
@@ -728,7 +728,7 @@ begin
       end if;
       fu_conv_i2f.done <= fu_conv_i2f.start; -- actual conversion is done by the normalizer unit
     end if;
-  end process convert_i2f;
+  end process;
 
 
   -- Multiplier Core (FMUL) -----------------------------------------------------------------
@@ -802,7 +802,7 @@ begin
       -- latency shift register --
       multiplier.latency <= multiplier.latency(multiplier.latency'left-1 downto 0) & multiplier.start;
     end if;
-  end process multiplier_core;
+  end process;
 
   -- integer multiplier (unsigned only) --
   multiplier_core_inst: entity neorv32.neorv32_prim_mul
@@ -1001,7 +1001,7 @@ begin
       multiplier.res_class(fp_class_pos_denorm_c) <= '0'; -- is evaluated by the normalizer
       multiplier.res_class(fp_class_neg_denorm_c) <= '0'; -- is evaluated by the normalizer
     end if;
-  end process multiplier_class_core;
+  end process;
 
   -- unused --
   fu_mul.result <= (others => '0');
@@ -1194,7 +1194,7 @@ begin
         end if;
       end if;
     end if;
-  end process adder_subtractor_core;
+  end process;
 
   -- exceptions - unused --
   addsub.flags(fp_exc_dz_c) <= '0'; -- division by zero -> not possible
@@ -1381,7 +1381,7 @@ begin
       addsub.res_class(fp_class_pos_denorm_c) <= '0'; -- is evaluated by the normalizer
       addsub.res_class(fp_class_neg_denorm_c) <= '0'; -- is evaluated by the normalizer
     end if;
-  end process adder_subtractor_class_core;
+  end process;
 
   -- unused --
   fu_addsub.result <= (others => '0');
@@ -1422,7 +1422,7 @@ begin
         normalizer.flags_in  <= (others => '0'); -- no flags yet
         normalizer.start     <= fu_conv_i2f.done;
     end case;
-  end process normalizer_input_select;
+  end process;
 
 
   -- Normalizer & Rounding Unit -------------------------------------------------------------
@@ -1490,13 +1490,12 @@ begin
         end case;
       end if;
     end if;
-  end process output_gate;
+  end process;
 
   -- operation done --
   fu_core_done <= fu_compare.done or fu_classify.done or fu_sign_inject.done or fu_min_max.done or normalizer.done or fu_conv_f2i.done;
 
-
-end neorv32_cpu_alu_fpu_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -1506,7 +1505,7 @@ end neorv32_cpu_alu_fpu_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -1542,7 +1541,7 @@ entity neorv32_cpu_alu_fpu_normalizer is
     flags_o    : out std_ulogic_vector(4 downto 0);  -- exception flags output
     done_o     : out std_ulogic                      -- operation done
   );
-end neorv32_cpu_alu_fpu_normalizer;
+end entity;
 
 architecture neorv32_cpu_alu_fpu_normalizer_rtl of neorv32_cpu_alu_fpu_normalizer is
 
@@ -1846,7 +1845,7 @@ begin
         ctrl.state <= S_IDLE;
       end if;
     end if;
-  end process ctrl_engine;
+  end process;
 
   -- stop shifting when normalized --
   sreg.done <= '1' when (or_reduce_f(sreg.upper(sreg.upper'left downto 1)) = '0') and (sreg.upper(0) = '1') else '0'; -- input is zero, hidden one is set
@@ -1913,7 +1912,7 @@ begin
       when others => -- undefined
         round.en <= '0';
     end case;
-  end process rounding_unit_ctrl;
+  end process;
 
 
   -- increment/decrement --
@@ -1930,10 +1929,9 @@ begin
     else -- do nothing
       round.output <= tmp_v;
     end if;
-  end process rounding_unit_add;
+  end process;
 
-
-end neorv32_cpu_alu_fpu_normalizer_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -1941,7 +1939,7 @@ end neorv32_cpu_alu_fpu_normalizer_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2024 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -1975,7 +1973,7 @@ entity neorv32_cpu_alu_fpu_f2i is
     flags_o    : out std_ulogic_vector(4 downto 0); -- exception flags
     done_o     : out std_ulogic -- operation done
   );
-end neorv32_cpu_alu_fpu_f2i;
+end entity;
 
 architecture neorv32_cpu_alu_fpu_f2i_rtl of neorv32_cpu_alu_fpu_f2i is
 
@@ -2250,7 +2248,7 @@ begin
         ctrl.state <= S_IDLE;
       end if;
     end if;
-  end process ctrl_engine;
+  end process;
 
   -- result --
   result_o <= ctrl.result;
@@ -2314,7 +2312,7 @@ begin
       when others => -- undefined
         round.en <= '0';
     end case;
-  end process rounding_unit_ctrl;
+  end process;
 
   -- increment/decrement --
   rounding_unit_add: process(round, sreg)
@@ -2330,7 +2328,6 @@ begin
     else -- do nothing
       round.output <= tmp_v;
     end if;
-  end process rounding_unit_add;
+  end process;
 
-
-end neorv32_cpu_alu_fpu_f2i_rtl;
+end architecture;

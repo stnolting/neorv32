@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -28,7 +28,7 @@ entity neorv32_neoled is
     irq_o     : out std_ulogic;                    -- interrupt request
     neoled_o  : out std_ulogic                     -- serial async data line
   );
-end neorv32_neoled;
+end entity;
 
 architecture neorv32_neoled_rtl of neorv32_neoled is
 
@@ -127,7 +127,7 @@ begin
         end if;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
 
   -- TX Buffer (FIFO) -----------------------------------------------------------------------
@@ -166,7 +166,7 @@ begin
     elsif rising_edge(clk_i) then
       irq_o <= ctrl.enable and (not tx_fifo.avail); -- IRQ if FIFO is empty
     end if;
-  end process irq_generator;
+  end process;
 
 
   -- Serial TX Engine -----------------------------------------------------------------------
@@ -266,7 +266,7 @@ begin
 
       end case;
     end if;
-  end process serial_engine;
+  end process;
 
   -- SREG's TX data: bit 23 for RGB mode (24-bit), bit 31 for RGBW mode (32-bit) --
   serial.sbit <= serial.sreg(23) when (serial.mode = '0') else serial.sreg(31);
@@ -274,5 +274,4 @@ begin
   -- TX engine status --
   serial.busy <= '0' when (serial.state(1 downto 0) = "00") else '1';
 
-
-end neorv32_neoled_rtl;
+end architecture;

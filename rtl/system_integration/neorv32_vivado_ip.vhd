@@ -675,7 +675,7 @@ begin
     for i in 0 to IO_GPIO_IN_NUM-1 loop
       gpio_i_aux(i) <= std_ulogic(gpio_i(i));
     end loop;
-  end process gpio_in_mapping;
+  end process;
 
   -- GPIO output --
   gpio_out_mapping:
@@ -757,4 +757,4 @@ begin
     );
   end generate;
 
-end architecture neorv32_vivado_ip_rtl;
+end architecture;

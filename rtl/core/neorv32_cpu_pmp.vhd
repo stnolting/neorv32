@@ -41,7 +41,7 @@ entity neorv32_cpu_pmp is
     d_priv_i : in  std_ulogic; -- access privilege
     d_err_o  : out std_ulogic  -- PMP fault
   );
-end neorv32_cpu_pmp;
+end entity;
 
 architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
 
@@ -109,7 +109,7 @@ begin
     if (ctrl_i.csr_addr(11 downto 2) = csr_pmpcfg0_c(11 downto 2)) and (ctrl_i.csr_we = '1') then
       pmpcfg_we(to_integer(unsigned(ctrl_i.csr_addr(1 downto 0)))) <= '1';
     end if;
-  end process csr_we_cfg;
+  end process;
 
   -- CSRs --
   csr_pmpcfg_gen:
@@ -147,7 +147,7 @@ begin
           pmpcfg(i)(cfg_l_c)  <= ctrl_i.csr_wdata((i mod 4)*8+cfg_l_c);
         end if;
       end if;
-    end process csr_pmpcfg;
+    end process;
   end generate;
 
 
@@ -159,7 +159,7 @@ begin
     if (ctrl_i.csr_addr(11 downto 4) = csr_pmpaddr0_c(11 downto 4)) and (ctrl_i.csr_we = '1') then
       pmpaddr_we(to_integer(unsigned(ctrl_i.csr_addr(3 downto 0)))) <= '1';
     end if;
-  end process csr_we_addr;
+  end process;
 
   -- CSRs --
   csr_pmpaddr_gen:
@@ -179,7 +179,7 @@ begin
           end if;
         end if;
       end if;
-    end process csr_pmpaddr;
+    end process;
   end generate;
 
 
@@ -196,7 +196,7 @@ begin
     else
       csr_o <= (others => '0');
     end if;
-  end process csr_read_access;
+  end process;
 
   -- CSR read-back --
   csr_read_back_gen:
@@ -214,7 +214,7 @@ begin
           end if;
         end if;
       end if;
-    end process address_read_back;
+    end process;
     cfg_rd(i) <= pmpcfg(i);
   end generate;
 
@@ -269,7 +269,7 @@ begin
           addr_mask(r) <= (others => '0');
         end if;
       end if;
-    end process addr_masking;
+    end process;
 
   end generate;
 
@@ -309,7 +309,7 @@ begin
       else -- OFF or mode not supported
         match(r) <= (others => '0');
       end if;
-    end process match_gen;
+    end process;
 
   end generate;
 
@@ -350,7 +350,6 @@ begin
       i_err_o <= (not ctrl_i.cpu_debug) and fail_ex(0);
       d_err_o <= (not ctrl_i.cpu_debug) and fail_rw(0);
     end if;
-  end process fault_check;
+  end process;
 
-
-end neorv32_cpu_pmp_rtl;
+end architecture;

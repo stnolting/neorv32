@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -31,7 +31,7 @@ entity neorv32_twi is
     twi_scl_o : out std_ulogic;                    -- serial clock line output (0=GND, 1=high-Z)
     irq_o     : out std_ulogic                     -- interrupt
   );
-end neorv32_twi;
+end entity;
 
 architecture neorv32_twi_rtl of neorv32_twi is
 
@@ -69,7 +69,7 @@ architecture neorv32_twi_rtl of neorv32_twi is
     cdiv   : std_ulogic_vector(3 downto 0);
     clkstr : std_ulogic;
   end record;
-  signal ctrl : ctrl_t;
+  signal ctrl : ctrl_t; -- register set
 
   -- FIFO interface --
   type fifo_t is record
@@ -153,7 +153,7 @@ begin
         end if;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
 
   -- Data FIFOs ("Ring Buffer") -------------------------------------------------------------
@@ -223,7 +223,7 @@ begin
     elsif rising_edge(clk_i) then
       irq_o <= ctrl.enable and (not fifo.tx_avail) and (not engine.busy);
     end if;
-  end process irq_generator;
+  end process;
 
 
   -- TWI Clock Generator --------------------------------------------------------------------
@@ -249,7 +249,7 @@ begin
         end if;
       end if;
     end if;
-  end process clock_generator;
+  end process;
 
   -- generate four non-overlapping clock phases --
   phase_generator: process(rstn_i, clk_i)
@@ -265,7 +265,7 @@ begin
         clk_gen.phase_gen <= clk_gen.phase_gen(2 downto 0) & clk_gen.phase_gen(3); -- rotate left
       end if;
     end if;
-  end process phase_generator;
+  end process;
 
   -- TWI bus signals are set/sampled using 4 clock phase ticks --
   clk_gen.phase(0) <= clk_gen.phase_gen_ff(0) and (not clk_gen.phase_gen(0)); -- first step
@@ -369,7 +369,7 @@ begin
 
       end case;
     end if;
-  end process twi_engine;
+  end process;
 
   -- bus operation in progress --
   engine.busy <= '1' when (engine.state(2) = '1') and (engine.state(1 downto 0) /= "00") else '0';
@@ -386,11 +386,10 @@ begin
       sda_sync <= sda_sync(0) & to_stdulogic(to_bit(twi_sda_i)); -- "to_bit" to avoid HW-vs-sim mismatch
       scl_sync <= scl_sync(0) & to_stdulogic(to_bit(twi_scl_i));
     end if;
-  end process input_synchronizer;
+  end process;
 
   -- tri-state control: 0 = drive GND, 1 = tri-state / driven by pull-up --
   twi_sda_o <= sda_out;
   twi_scl_o <= scl_out;
 
-
-end neorv32_twi_rtl;
+end architecture;

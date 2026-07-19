@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -31,7 +31,7 @@ entity neorv32_spi is
     spi_csn_o : out std_ulogic_vector(7 downto 0); -- chip-select, low-active
     irq_o     : out std_ulogic                     -- CPU interrupt
   );
-end neorv32_spi;
+end entity;
 
 architecture neorv32_spi_rtl of neorv32_spi is
 
@@ -148,7 +148,7 @@ begin
         end if;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
 
   -- Data FIFO ("Ring Buffer") --------------------------------------------------------------
@@ -218,7 +218,7 @@ begin
     elsif rising_edge(clk_i) then
       irq_o <= ctrl.enable and (not tx_fifo.avail) and (not rtx_engine.busy);
     end if;
-  end process irq_generator;
+  end process;
 
 
   -- SPI Transceiver ------------------------------------------------------------------------
@@ -291,7 +291,7 @@ begin
 
       end case;
     end if;
-  end process transceiver;
+  end process;
 
   -- PHY busy flag --
   rtx_engine.busy <= '0' when (rtx_engine.state(1 downto 0) = "00") else '1';
@@ -311,7 +311,7 @@ begin
         spi_csn_o(to_integer(unsigned(rtx_engine.cs_ctrl(2 downto 0)))) <= '0';
       end if;
     end if;
-  end process chip_select;
+  end process;
 
 
   -- SPI Clock Generator --------------------------------------------------------------------
@@ -334,7 +334,6 @@ begin
         end if;
       end if;
     end if;
-  end process clock_generator;
+  end process;
 
-
-end neorv32_spi_rtl;
+end architecture;

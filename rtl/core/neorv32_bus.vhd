@@ -30,7 +30,7 @@ entity neorv32_bus_switch is
     x_req_o : out bus_req_t;  -- device port request bus
     x_rsp_i : in  bus_rsp_t   -- device port response bus
   );
-end neorv32_bus_switch;
+end entity;
 
 architecture neorv32_bus_switch_rtl of neorv32_bus_switch is
 
@@ -66,7 +66,7 @@ begin
         b_req <= '1';
       end if;
     end if;
-  end process arbiter_sync;
+  end process;
 
   -- Access Arbiter Comb --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -123,7 +123,7 @@ begin
         end if;
 
     end case;
-  end process arbiter_fsm;
+  end process;
 
   -- Request Switch -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -150,7 +150,7 @@ begin
   b_rsp_o.err  <= x_rsp_i.err when (sel_q = '1') else '0';
   b_rsp_o.data <= x_rsp_i.data;
 
-end neorv32_bus_switch_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -184,7 +184,7 @@ entity neorv32_bus_reg is
     device_req_o : out bus_req_t; -- device request
     device_rsp_i : in  bus_rsp_t  -- device response
   );
-end neorv32_bus_reg;
+end entity;
 
 architecture neorv32_bus_reg_rtl of neorv32_bus_reg is
 
@@ -207,7 +207,7 @@ begin
         device_req_o.burst <= host_req_i.burst;
         device_req_o.lock  <= host_req_i.lock;
       end if;
-    end process request_reg;
+    end process;
   end generate;
 
   request_reg_disabled:
@@ -226,7 +226,7 @@ begin
       elsif rising_edge(clk_i) then
         host_rsp_o <= device_rsp_i;
       end if;
-    end process response_reg;
+    end process;
   end generate;
 
   response_reg_disabled:
@@ -234,7 +234,7 @@ begin
     host_rsp_o <= device_rsp_i;
   end generate;
 
-end neorv32_bus_reg_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -307,7 +307,7 @@ entity neorv32_bus_gateway is
     x_req_o : out bus_req_t;
     x_rsp_i : in  bus_rsp_t
   );
-end neorv32_bus_gateway;
+end entity;
 
 architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
 
@@ -361,7 +361,7 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
       end if;
     end loop;
     return res_v;
-  end function max_tmo_bit_f;
+  end function;
   constant tmo_cnt_size_c : natural := max_tmo_bit_f(port_tmo_bit_list_c);
 
   -- gateway ports combined as arrays --
@@ -411,7 +411,7 @@ begin
         port_req(i).stb <= req_i.stb and port_sel(i);
       end if;
     end loop;
-  end process request;
+  end process;
 
   -- bus response --
   response: process(port_rsp)
@@ -426,7 +426,7 @@ begin
       end if;
     end loop;
     int_rsp <= tmp_v;
-  end process response;
+  end process;
 
   -- host response --
   rsp_o.data <= int_rsp.data;
@@ -481,7 +481,7 @@ begin
 
       end case;
     end if;
-  end process bus_monitor;
+  end process;
 
   -- timeout counter bit select --
   tmo_bit_gen:
@@ -497,7 +497,7 @@ begin
   -- external timeout notification --
   assert (X_TMO > 0) report "[NEORV32] External bus timeout disabled! Can cause permanent system stall!" severity warning;
 
-end neorv32_bus_gateway_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -598,7 +598,7 @@ entity neorv32_bus_io_switch is
     dev_30_req_o : out bus_req_t; dev_30_rsp_i : in bus_rsp_t;
     dev_31_req_o : out bus_req_t; dev_31_rsp_i : in bus_rsp_t
   );
-end neorv32_bus_io_switch;
+end entity;
 
 architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
 
@@ -707,7 +707,7 @@ begin
         else
           dev_req(i).stb <= '0';
         end if;
-      end process bus_request;
+      end process;
     end generate;
 
     bus_request_port_disabled:
@@ -731,9 +731,9 @@ begin
       end if;
     end loop;
     main_rsp <= tmp_v;
-  end process bus_response;
+  end process;
 
-end neorv32_bus_io_switch_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -767,7 +767,7 @@ entity neorv32_bus_amo_rmw is
     sys_req_o  : out bus_req_t;
     sys_rsp_i  : in  bus_rsp_t
   );
-end neorv32_bus_amo_rmw;
+end entity;
 
 architecture neorv32_bus_amo_rmw_rtl of neorv32_bus_amo_rmw is
 
@@ -800,7 +800,7 @@ begin
     elsif rising_edge(clk_i) then
       arbiter <= arbiter_nxt;
     end if;
-  end process arbiter_sync;
+  end process;
 
   -- Arbiter Comb ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -839,7 +839,7 @@ begin
         end if;
 
     end case;
-  end process arbiter_comb;
+  end process;
 
   -- request switch --
   sys_req_o.meta  <= core_req_i.meta;
@@ -874,7 +874,7 @@ begin
         when others => alu_res <= cmp_res; -- AMOMIN[U].W / AMOMAX[U].W
       end case;
     end if;
-  end process amo_alu;
+  end process;
 
   -- comparator logic (min/max for signed/unsigned) --
   cmp_opa  <= (arbiter.rdata(arbiter.rdata'left) and arbiter.cmd(3)) & arbiter.rdata; -- sign-extend if signed operation
@@ -882,7 +882,7 @@ begin
   cmp_less <= '1' when (signed(cmp_opa) < signed(cmp_opb)) else '0';
   cmp_res  <= cmp_opa(31 downto 0) when ((cmp_less xor arbiter.cmd(0)) = '1') else cmp_opb(31 downto 0);
 
-end neorv32_bus_amo_rmw_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -917,7 +917,7 @@ entity neorv32_bus_amo_rvs is
     sys_req_o  : out bus_req_t;
     sys_rsp_i  : in  bus_rsp_t
   );
-end neorv32_bus_amo_rvs;
+end entity;
 
 architecture neorv32_bus_amo_rvs_rtl of neorv32_bus_amo_rvs is
 
@@ -963,7 +963,7 @@ begin
         end if;
       end if;
     end if;
-  end process reservation_station;
+  end process;
 
   -- check if reservation-set operation --
   lr <= '1' when (core_req_i.amo = '1') and (core_req_i.amoop = "1000") else '0';
@@ -987,7 +987,7 @@ begin
       sys_req_o.rw  <= '0'; -- read instead of write
       sys_req_o.amo <= '0'; -- no longer an AMO operation
     end if;
-  end process bus_request;
+  end process;
 
   -- track pending SC operation --
   sc_result: process(rstn_i, clk_i)
@@ -1007,7 +1007,7 @@ begin
         sc_pend_fail <= '0';
       end if;
     end if;
-  end process sc_result;
+  end process;
 
   -- response --
   -- SC fail + bus ok    -> access OK, reservation invalid -> return 1
@@ -1019,4 +1019,4 @@ begin
                      x"00000000" when (sc_pend_pass = '1') else -- SC passed: return 0
                      sys_rsp_i.data;                            -- normal access / pass-through
 
-end neorv32_bus_amo_rvs_rtl;
+end architecture;

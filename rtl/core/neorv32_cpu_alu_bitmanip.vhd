@@ -50,7 +50,7 @@ entity neorv32_cpu_alu_bitmanip is
     res_o   : out std_ulogic_vector(31 downto 0); -- operation result
     valid_o : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_alu_bitmanip;
+end entity;
 
 architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
 
@@ -67,7 +67,7 @@ architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
       end if;
     end loop;
     return cnt_v;
-  end function leading_zeros_f;
+  end function;
 
   -- population count (number of set bits) --
   function popcount_f(input : std_ulogic_vector) return natural is
@@ -80,7 +80,7 @@ architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
       end if;
     end loop;
     return cnt_v;
-  end function popcount_f;
+  end function;
 
   -- byte-wise vector look-up --
   function xperm8_f(vec : std_ulogic_vector(31 downto 0); sel : std_ulogic_vector(7 downto 0)) return std_ulogic_vector is
@@ -97,7 +97,7 @@ architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
       end case;
     end if;
     return res_v;
-  end function xperm8_f;
+  end function;
 
   -- nibble-wise vector look-up --
   function xperm4_f(vec : std_ulogic_vector(31 downto 0); sel : std_ulogic_vector(3 downto 0)) return std_ulogic_vector is
@@ -118,7 +118,7 @@ architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
       end case;
     end if;
     return res_v;
-  end function xperm4_f;
+  end function;
 
   -- instruction select (one-hot) --
   constant op_andn_c   : natural := 0;  -- logic with negate
@@ -289,7 +289,7 @@ begin
 
       end case;
     end if;
-  end process controller;
+  end process;
 
 
   -- Shifter Function Core (iterative: small but slow) --------------------------------------
@@ -327,7 +327,7 @@ begin
           end if;
         end if;
       end if;
-    end process serial_shifter_core;
+    end process;
 
     -- shifted-in bit --
     shifter.nxt <= '1' when (cmd(op_cz_c) = '1') else -- count zeros
@@ -351,7 +351,7 @@ begin
           shifter.run <= '1';
         end if;
       end if;
-    end process serial_shifter_ctrl;
+    end process;
 
   end generate;
 
@@ -399,7 +399,7 @@ begin
       when others => tmp_v := rs1_reg(rs1_reg'left-3 downto 0) & "000"; -- << 3
     end case;
     adder_res <= std_ulogic_vector(unsigned(rs2_reg) + unsigned(tmp_v));
-  end process shift_adder;
+  end process;
 
 
   -- One-Hot Encoder ------------------------------------------------------------------------
@@ -408,7 +408,7 @@ begin
   begin
     one_hot_res <= (others => '0');
     one_hot_res(to_integer(unsigned(sha_reg))) <= '1';
-  end process shift_one_hot;
+  end process;
 
 
   -- Carry-Less Multiplier ------------------------------------------------------------------
@@ -436,7 +436,7 @@ begin
           clmul.res(30 downto 0) <= clmul.res(31 downto 1);
         end if;
       end if;
-    end process clmul_core;
+    end process;
 
     -- operation in progress --
     clmul.run <= '1' when (or_reduce_f(clmul.cnt) = '1') else '0';
@@ -602,10 +602,9 @@ begin
                  res_out(op_xperm_c);
       end if;
     end if;
-  end process output_gate;
+  end process;
 
   -- valid output --
   valid_o <= valid;
 
-
-end neorv32_cpu_alu_bitmanip_rtl;
+end architecture;

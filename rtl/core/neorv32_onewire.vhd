@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -29,7 +29,7 @@ entity neorv32_onewire is
     onewire_o : out std_ulogic;                    -- 1-wire line pull-down
     irq_o     : out std_ulogic                     -- transfer done IRQ
   );
-end neorv32_onewire;
+end entity;
 
 architecture neorv32_onewire_rtl of neorv32_onewire is
 
@@ -161,7 +161,7 @@ begin
       end if;
 
     end if;
-  end process bus_access;
+  end process;
 
 
   -- Data FIFO ("Ring Buffer") --------------------------------------------------------------
@@ -231,7 +231,7 @@ begin
     elsif rising_edge(clk_i) then
       irq_o <= ctrl.enable and (not fifo.tx_avail) and (not serial.busy);
     end if;
-  end process irq_generator;
+  end process;
 
 
   -- Clock Generator ------------------------------------------------------------------------
@@ -256,7 +256,7 @@ begin
       end if;
       clk_tick2 <= clk_tick; -- tick delayed by one clock cycle (for precise bus state sampling)
     end if;
-  end process clock_generator;
+  end process;
 
   -- only use the lowest 4 clocks of the system clock generator --
   clk_src <= clkgen_i(3 downto 0);
@@ -374,10 +374,9 @@ begin
 
       end case;
     end if;
-  end process serial_engine;
+  end process;
 
   -- serial engine busy? --
   serial.busy <= '0' when (serial.state(1 downto 0) = "00") else '1';
 
-
-end neorv32_onewire_rtl;
+end architecture;
