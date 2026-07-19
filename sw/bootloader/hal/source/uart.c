@@ -118,11 +118,7 @@ int uart_stream_get(uint32_t* rdata) {
     tmp.uint8[i] = (uint8_t)uart_getc();
   }
   *rdata = tmp.uint32;
-#if (UART_OVERFLOW == 1)
-  return (int)(NEORV32_UART0->CTRL & (1<<UART_CTRL_RX_OVER)); // RX overflow?
-#else
   return 0;
-#endif
 #else
   return 1;
 #endif
