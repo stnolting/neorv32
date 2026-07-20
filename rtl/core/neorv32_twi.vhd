@@ -84,15 +84,12 @@ architecture neorv32_twi_rtl of neorv32_twi is
   signal fifo : fifo_t;
 
   -- clock generator --
-  type clk_gen_t is record
-    cnt          : std_ulogic_vector(3 downto 0); -- clock divider
-    tick         : std_ulogic; -- actual TWI clock tick
-    halt         : std_ulogic; -- halt clock during clock stretching
-    phase_gen    : std_ulogic_vector(3 downto 0); -- clock phase generator
-    phase_gen_ff : std_ulogic_vector(3 downto 0);
-    phase        : std_ulogic_vector(3 downto 0);
-  end record;
-  signal clk_gen : clk_gen_t;
+  signal clkgen_cnt          : std_ulogic_vector(3 downto 0); -- clock divider
+  signal clkgen_tick         : std_ulogic; -- actual TWI clock tick
+  signal clkgen_halt         : std_ulogic; -- halt clock during clock stretching
+  signal clkgen_phase_gen    : std_ulogic_vector(3 downto 0); -- clock phase generator
+  signal clkgen_phase_gen_ff : std_ulogic_vector(3 downto 0);
+  signal clkgen_phase        : std_ulogic_vector(3 downto 0);
 
   -- bus engine --
   type engine_t is record
@@ -101,9 +98,9 @@ architecture neorv32_twi_rtl of neorv32_twi is
     sreg   : std_ulogic_vector(8 downto 0); -- shift register
     tx_re  : std_ulogic; -- pop from TX FIFO
     rx_we  : std_ulogic; -- push to RX FIFO
-    busy   : std_ulogic; -- bus operation in progress
   end record;
   signal engine : engine_t;
+  signal busy : std_ulogic; -- bus operation in progress
 
   -- I/O control --
   signal sda_sync, scl_sync : std_ulogic_vector(1 downto 0); -- input synchronizer
@@ -146,7 +143,7 @@ begin
             bus_rsp_o.data(ctrl_sense_sda_c)                 <= sda_sync(1);
             bus_rsp_o.data(ctrl_tx_full_c)                   <= not fifo.tx_free;
             bus_rsp_o.data(ctrl_rx_avail_c)                  <= fifo.rx_avail;
-            bus_rsp_o.data(ctrl_busy_c)                      <= engine.busy or fifo.tx_avail;
+            bus_rsp_o.data(ctrl_busy_c)                      <= busy or fifo.tx_avail;
           else -- RX data
             bus_rsp_o.data(8 downto 0) <= fifo.rx_rdata; -- ACK + data
           end if;
@@ -221,7 +218,7 @@ begin
     if (rstn_i = '0') then
       irq_o <= '0';
     elsif rising_edge(clk_i) then
-      irq_o <= ctrl.enable and (not fifo.tx_avail) and (not engine.busy);
+      irq_o <= ctrl.enable and (not fifo.tx_avail) and (not busy);
     end if;
   end process;
 
@@ -231,20 +228,20 @@ begin
   clock_generator: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      clk_gen.tick <= '0';
-      clk_gen.cnt  <= (others => '0');
+      clkgen_tick <= '0';
+      clkgen_cnt  <= (others => '0');
     elsif rising_edge(clk_i) then
       if (ctrl.enable = '0') then -- reset/disabled
-        clk_gen.tick <= '0';
-        clk_gen.cnt  <= (others => '0');
+        clkgen_tick <= '0';
+        clkgen_cnt  <= (others => '0');
       else
-        clk_gen.tick <= '0'; -- default
+        clkgen_tick <= '0'; -- default
         if (clkgen_i(to_integer(unsigned(ctrl.prsc))) = '1') then -- pre-scaled clock
-          if (clk_gen.cnt = ctrl.cdiv) then -- clock divider for fine-tuning
-            clk_gen.tick <= '1';
-            clk_gen.cnt  <= (others => '0');
+          if (clkgen_cnt = ctrl.cdiv) then -- clock divider for fine-tuning
+            clkgen_tick <= '1';
+            clkgen_cnt  <= (others => '0');
           else
-            clk_gen.cnt <= std_ulogic_vector(unsigned(clk_gen.cnt) + 1);
+            clkgen_cnt <= std_ulogic_vector(unsigned(clkgen_cnt) + 1);
           end if;
         end if;
       end if;
@@ -255,27 +252,27 @@ begin
   phase_generator: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      clk_gen.phase_gen    <= (others => '0');
-      clk_gen.phase_gen_ff <= (others => '0');
+      clkgen_phase_gen    <= (others => '0');
+      clkgen_phase_gen_ff <= (others => '0');
     elsif rising_edge(clk_i) then
-      clk_gen.phase_gen_ff <= clk_gen.phase_gen;
-      if (ctrl.enable = '0') or (engine.busy = '0') then -- disabled or idle
-        clk_gen.phase_gen <= "0001"; -- start with a new phase
-      elsif (clk_gen.tick = '1') and (clk_gen.halt = '0') then -- clock tick and no clock stretching
-        clk_gen.phase_gen <= clk_gen.phase_gen(2 downto 0) & clk_gen.phase_gen(3); -- rotate left
+      clkgen_phase_gen_ff <= clkgen_phase_gen;
+      if (ctrl.enable = '0') or (busy = '0') then -- disabled or idle
+        clkgen_phase_gen <= "0001"; -- start with a new phase
+      elsif (clkgen_tick = '1') and (clkgen_halt = '0') then -- clock tick and no clock stretching
+        clkgen_phase_gen <= clkgen_phase_gen(2 downto 0) & clkgen_phase_gen(3); -- rotate left
       end if;
     end if;
   end process;
 
   -- TWI bus signals are set/sampled using 4 clock phase ticks --
-  clk_gen.phase(0) <= clk_gen.phase_gen_ff(0) and (not clk_gen.phase_gen(0)); -- first step
-  clk_gen.phase(1) <= clk_gen.phase_gen_ff(1) and (not clk_gen.phase_gen(1));
-  clk_gen.phase(2) <= clk_gen.phase_gen_ff(2) and (not clk_gen.phase_gen(2));
-  clk_gen.phase(3) <= clk_gen.phase_gen_ff(3) and (not clk_gen.phase_gen(3)); -- last step
+  clkgen_phase(0) <= clkgen_phase_gen_ff(0) and (not clkgen_phase_gen(0)); -- first step
+  clkgen_phase(1) <= clkgen_phase_gen_ff(1) and (not clkgen_phase_gen(1));
+  clkgen_phase(2) <= clkgen_phase_gen_ff(2) and (not clkgen_phase_gen(2));
+  clkgen_phase(3) <= clkgen_phase_gen_ff(3) and (not clkgen_phase_gen(3)); -- last step
 
   -- clock stretching detector --
   -- controller wants to drive SCL high, but SCL is still pulled low by peripheral --
-  clk_gen.halt <= '1' when (scl_out = '1') and (scl_sync(1) = '0') and (ctrl.clkstr = '1') else '0';
+  clkgen_halt <= '1' when (scl_out = '1') and (scl_sync(1) = '0') and (ctrl.clkstr = '1') else '0';
 
 
   -- TWI Bus Engine -------------------------------------------------------------------------
@@ -300,63 +297,63 @@ begin
         -- ------------------------------------------------------------
           engine.bitcnt <= (others => '0');
           engine.sreg   <= fifo.tx_rdata(dcmd_msb_c downto dcmd_lsb_c) & (not fifo.tx_rdata(dcmd_ack_c)); -- data + HOST ACK
-          if (fifo.tx_avail = '1') and (clk_gen.tick = '1') then -- trigger new operation on next TWI clock pulse
+          if (fifo.tx_avail = '1') and (clkgen_tick = '1') then -- trigger new operation on next TWI clock pulse
             engine.tx_re             <= '1'; -- pop from TX FIFO
             engine.state(1 downto 0) <= fifo.tx_rdata(dcmd_cmd_hi_c downto dcmd_cmd_lo_c);
           end if;
 
         when "101" => -- START: generate (repeated) START condition
         -- ------------------------------------------------------------
-          if (clk_gen.phase(0) = '1') then
+          if (clkgen_phase(0) = '1') then
             sda_out <= '1';
-          elsif (clk_gen.phase(2) = '1') then
+          elsif (clkgen_phase(2) = '1') then
             sda_out <= '0';
           end if;
-          if (clk_gen.phase(0) = '1') then
+          if (clkgen_phase(0) = '1') then
             scl_out <= '1';
-          elsif (clk_gen.phase(3) = '1') then
+          elsif (clkgen_phase(3) = '1') then
             scl_out <= '0';
             engine.state(1 downto 0) <= "00"; -- go back to IDLE
           end if;
 
         when "110" => -- STOP: generate STOP condition
         -- ------------------------------------------------------------
-          if (clk_gen.phase(0) = '1') then
+          if (clkgen_phase(0) = '1') then
             sda_out <= '0';
-          elsif (clk_gen.phase(3) = '1') then
+          elsif (clkgen_phase(3) = '1') then
             sda_out                  <= '1';
             engine.state(1 downto 0) <= "00"; -- go back to IDLE
           end if;
-          if (clk_gen.phase(0) = '1') then
+          if (clkgen_phase(0) = '1') then
             scl_out <= '0';
-          elsif (clk_gen.phase(1) = '1') then
+          elsif (clkgen_phase(1) = '1') then
             scl_out <= '1';
           end if;
 
         when "111" => -- TRANSMISSION: send/receive byte + ACK/NACK/MACK
         -- ------------------------------------------------------------
           -- SCL clocking --
-          if (clk_gen.phase(0) = '1') or (clk_gen.phase(3) = '1') then
+          if (clkgen_phase(0) = '1') or (clkgen_phase(3) = '1') then
             scl_out <= '0'; -- set SCL low after transmission to keep bus claimed
-          elsif (clk_gen.phase(1) = '1') then -- first half + second half of valid data strobe
+          elsif (clkgen_phase(1) = '1') then -- first half + second half of valid data strobe
             scl_out <= '1';
           end if;
           -- SDA output --
-          if (engine.bitcnt = "1001") and (clk_gen.phase(0) = '1') then
+          if (engine.bitcnt = "1001") and (clkgen_phase(0) = '1') then
             sda_out <= '0'; -- set SDA low after transmission to keep bus claimed
-          elsif (clk_gen.phase(0) = '1') then
+          elsif (clkgen_phase(0) = '1') then
             sda_out <= engine.sreg(8); -- MSB first
           end if;
           -- SDA input --
-          if (clk_gen.phase(2) = '1') then
+          if (clkgen_phase(2) = '1') then
             engine.sreg <= engine.sreg(7 downto 0) & sda_sync(1); -- sample SDA input and shift left
           end if;
           -- bit counter --
-          if (clk_gen.phase(3) = '1') then
+          if (clkgen_phase(3) = '1') then
             engine.bitcnt <= std_ulogic_vector(unsigned(engine.bitcnt) + 1);
           end if;
           -- transmission done --
-          if (engine.bitcnt = "1001") and (clk_gen.phase(0) = '1') then
+          if (engine.bitcnt = "1001") and (clkgen_phase(0) = '1') then
             engine.rx_we             <= '1';
             engine.state(1 downto 0) <= "00"; -- go back to IDLE
           end if;
@@ -372,7 +369,7 @@ begin
   end process;
 
   -- bus operation in progress --
-  engine.busy <= '1' when (engine.state(2) = '1') and (engine.state(1 downto 0) /= "00") else '0';
+  busy <= '1' when (engine.state(2) = '1') and (engine.state(1 downto 0) /= "00") else '0';
 
 
   -- IO Control -----------------------------------------------------------------------------

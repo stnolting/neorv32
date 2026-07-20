@@ -82,18 +82,15 @@ architecture neorv32_twd_rtl of neorv32_twd is
   signal ctrl : ctrl_t;
 
   -- bus sampling logic --
-  type smp_t is record
-    clk_en   : std_ulogic; -- sample clock
-    valid    : std_ulogic; -- valid sample
-    sda_sreg : std_ulogic_vector(2 downto 0); -- SDA synchronizer
-    scl_sreg : std_ulogic_vector(2 downto 0); -- SCL synchronizer
-    sda      : std_ulogic; -- current SDA state
-    scl_rise : std_ulogic; -- SCL rising edge
-    scl_fall : std_ulogic; -- SCL falling edge
-    start    : std_ulogic; -- start condition
-    stop     : std_ulogic; -- stop condition
-  end record;
-  signal smp : smp_t;
+  signal smp_clk_en   : std_ulogic; -- sample clock
+  signal smp_valid    : std_ulogic; -- valid sample
+  signal smp_sda_sreg : std_ulogic_vector(2 downto 0); -- SDA synchronizer
+  signal smp_scl_sreg : std_ulogic_vector(2 downto 0); -- SCL synchronizer
+  signal smp_sda      : std_ulogic; -- current SDA state
+  signal smp_scl_rise : std_ulogic; -- SCL rising edge
+  signal smp_scl_fall : std_ulogic; -- SCL falling edge
+  signal smp_start    : std_ulogic; -- start condition
+  signal smp_stop     : std_ulogic; -- stop condition
 
   -- FIFO interface --
   type fifo_t is record
@@ -272,36 +269,36 @@ begin
   synchronizer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      smp.valid    <= '0';
-      smp.sda_sreg <= (others => '0');
-      smp.scl_sreg <= (others => '0');
+      smp_valid    <= '0';
+      smp_sda_sreg <= (others => '0');
+      smp_scl_sreg <= (others => '0');
     elsif rising_edge(clk_i) then
       -- input register --
-      smp.sda_sreg(0) <= to_stdulogic(to_bit(twd_sda_i)); -- "to_bit" to avoid hardware-vs-simulation mismatch
-      smp.scl_sreg(0) <= to_stdulogic(to_bit(twd_scl_i));
+      smp_sda_sreg(0) <= to_stdulogic(to_bit(twd_sda_i)); -- "to_bit" to avoid hardware-vs-simulation mismatch
+      smp_scl_sreg(0) <= to_stdulogic(to_bit(twd_scl_i));
       -- sample register --
-      smp.valid <= ctrl.enable and smp.clk_en; -- valid sample
-      if (smp.clk_en = '1') then
+      smp_valid <= ctrl.enable and smp_clk_en; -- valid sample
+      if (smp_clk_en = '1') then
         if (ctrl.enable = '1') then
-          smp.sda_sreg(2 downto 1) <= smp.sda_sreg(1 downto 0);
-          smp.scl_sreg(2 downto 1) <= smp.scl_sreg(1 downto 0);
+          smp_sda_sreg(2 downto 1) <= smp_sda_sreg(1 downto 0);
+          smp_scl_sreg(2 downto 1) <= smp_scl_sreg(1 downto 0);
         else
-          smp.sda_sreg(2 downto 1) <= (others => '1');
-          smp.scl_sreg(2 downto 1) <= (others => '1');
+          smp_sda_sreg(2 downto 1) <= (others => '1');
+          smp_scl_sreg(2 downto 1) <= (others => '1');
         end if;
       end if;
     end if;
   end process;
 
   -- sample clock for input "filtering" --
-  smp.clk_en <= clkgen_i(clk_div64_c) when (ctrl.fsel = '1') else clkgen_i(clk_div8_c);
+  smp_clk_en <= clkgen_i(clk_div64_c) when (ctrl.fsel = '1') else clkgen_i(clk_div8_c);
 
   -- bus event detectors (event signals are "single-shot") --
-  smp.sda      <= smp.sda_sreg(1);
-  smp.scl_rise <= smp.valid and (not smp.scl_sreg(2)) and (    smp.scl_sreg(1));
-  smp.scl_fall <= smp.valid and (    smp.scl_sreg(2)) and (not smp.scl_sreg(1));
-  smp.start    <= smp.valid and smp.scl_sreg(2) and smp.scl_sreg(1) and (    smp.sda_sreg(2)) and (not smp.sda_sreg(1));
-  smp.stop     <= smp.valid and smp.scl_sreg(2) and smp.scl_sreg(1) and (not smp.sda_sreg(2)) and (    smp.sda_sreg(1));
+  smp_sda      <= smp_sda_sreg(1);
+  smp_scl_rise <= smp_valid and (not smp_scl_sreg(2)) and (    smp_scl_sreg(1));
+  smp_scl_fall <= smp_valid and (    smp_scl_sreg(2)) and (not smp_scl_sreg(1));
+  smp_start    <= smp_valid and smp_scl_sreg(2) and smp_scl_sreg(1) and (    smp_sda_sreg(2)) and (not smp_sda_sreg(1));
+  smp_stop     <= smp_valid and smp_scl_sreg(2) and smp_scl_sreg(1) and (not smp_sda_sreg(2)) and (    smp_sda_sreg(1));
 
 
   -- Bus Engine -----------------------------------------------------------------------------
@@ -326,7 +323,7 @@ begin
         -- ------------------------------------------------------------
           engine.sda <= '1'; -- idle
           engine.com <= '0'; -- no active communication yet/anymore
-          if (ctrl.enable = '1') and (smp.start = '1') then
+          if (ctrl.enable = '1') and (smp_start = '1') then
             engine.state <= S_INIT;
           end if;
 
@@ -337,11 +334,11 @@ begin
 
         when S_ADDR => -- sample address + R/W bit and check if address match and data is available
         -- ------------------------------------------------------------
-          if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition received?
+          if (ctrl.enable = '0') or (smp_stop = '1') then -- disabled or stop-condition received?
             engine.state <= S_IDLE;
-          elsif (smp.start = '1') then -- start-condition received?
+          elsif (smp_start = '1') then -- start-condition received?
             engine.state <= S_INIT;
-          elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
+          elsif (engine.cnt(3) = '1') and (smp_scl_fall = '1') then -- 8 bits received?
             if (ctrl.device_addr = engine.sreg(7 downto 1)) then -- address match?
               engine.state <= S_RESP;
             else -- no access, go back to idle
@@ -349,8 +346,8 @@ begin
             end if;
           end if;
           -- sample bus on rising edge --
-          if (smp.scl_rise = '1') then
-            engine.sreg <= engine.sreg(6 downto 0) & smp.sda;
+          if (smp_scl_rise = '1') then
+            engine.sreg <= engine.sreg(6 downto 0) & smp_sda;
             engine.cnt  <= engine.cnt + 1;
           end if;
 
@@ -361,7 +358,7 @@ begin
           engine.cmd <= engine.sreg(0); -- READ/WRITE operation request
           if (ctrl.enable = '0') then -- disabled?
             engine.state <= S_IDLE;
-          elsif (smp.scl_fall = '1') then -- end of bit slot
+          elsif (smp_scl_fall = '1') then -- end of bit slot
             engine.state <= S_PREP;
           end if;
 
@@ -379,38 +376,38 @@ begin
 
         when S_RTX => -- receive/transmit 8 data bits
         -- ------------------------------------------------------------
-          if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition
+          if (ctrl.enable = '0') or (smp_stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
-          elsif (smp.start = '1') then -- start-condition
+          elsif (smp_start = '1') then -- start-condition
             engine.state <= S_INIT;
-          elsif (engine.cnt(3) = '1') and (smp.scl_fall = '1') then -- 8 bits received?
+          elsif (engine.cnt(3) = '1') and (smp_scl_fall = '1') then -- 8 bits received?
             engine.state <= S_ACK;
           end if;
           -- sample bus on rising edge --
-          if (smp.scl_rise = '1') then
-            engine.sreg <= engine.sreg(6 downto 0) & smp.sda;
+          if (smp_scl_rise = '1') then
+            engine.sreg <= engine.sreg(6 downto 0) & smp_sda;
             engine.cnt  <= engine.cnt + 1;
           end if;
           -- update bus at falling edge --
-          if (smp.scl_fall = '1') then -- end of bit slot
+          if (smp_scl_fall = '1') then -- end of bit slot
             engine.sda <= engine.sreg(7);
           end if;
 
         when S_ACK => -- receive/transmit ACK/NACK
         -- ------------------------------------------------------------
-          if (ctrl.enable = '0') or (smp.stop = '1') then -- disabled or stop-condition
+          if (ctrl.enable = '0') or (smp_stop = '1') then -- disabled or stop-condition
             engine.state <= S_IDLE;
-          elsif (smp.start = '1') then -- start-condition
+          elsif (smp_start = '1') then -- start-condition
             engine.state <= S_INIT;
           else
             if (engine.cmd = '0') then -- WRITE operation
               engine.sda   <= not rx_fifo.free; -- ACK if RX FIFO is not full; NACK if RX FIFO is full
-              engine.rx_we <= smp.scl_fall; -- push to RX FIFO at end of bit slot (if RX FIFO not full)
+              engine.rx_we <= smp_scl_fall; -- push to RX FIFO at end of bit slot (if RX FIFO not full)
             else -- READ operation
               engine.sda   <= '1'; -- keep high-Z so we can sample the ACK/NACK from the host
-              engine.tx_re <= smp.scl_rise and (not smp.sda); -- pop from TX FIFO if ACK at sample point
+              engine.tx_re <= smp_scl_rise and (not smp_sda); -- pop from TX FIFO if ACK at sample point
             end if;
-            if (smp.scl_fall = '1') then -- end of bit slot
+            if (smp_scl_fall = '1') then -- end of bit slot
               engine.state <= S_PREP;
             end if;
           end if;
@@ -440,7 +437,7 @@ begin
         com_end <= '0';
       else
         -- begin of communication --
-        if (engine.state = S_RESP) and (smp.scl_fall = '1') then
+        if (engine.state = S_RESP) and (smp_scl_fall = '1') then
           com_beg <= '1';
         elsif (acc_we = '1') and (bus_req_i.addr(2) = '0') and (bus_req_i.data(ctrl_com_beg_c) = '1') then
           com_beg <= '0';

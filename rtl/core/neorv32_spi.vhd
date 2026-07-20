@@ -74,7 +74,6 @@ architecture neorv32_spi_rtl of neorv32_spi is
   -- SPI engine --
   type rtx_engine_t is record
     state    : std_ulogic_vector(2 downto 0);
-    busy     : std_ulogic;
     sreg     : std_ulogic_vector(7 downto 0);
     bitcnt   : std_ulogic_vector(3 downto 0);
     sdi_sync : std_ulogic;
@@ -83,21 +82,24 @@ architecture neorv32_spi_rtl of neorv32_spi is
     done     : std_ulogic;
   end record;
   signal rtx_engine : rtx_engine_t;
+  signal busy : std_ulogic;
 
-  -- FIFO interfaces --
+  -- RX FIFO interface --
   type tx_fifo_t is record
     we,    re    : std_ulogic;
     wdata, rdata : std_ulogic_vector(8 downto 0);
     avail, free  : std_ulogic;
     clear        : std_ulogic;
   end record;
+  signal tx_fifo : tx_fifo_t;
+
+  -- TX FIFO interface --
   type rx_fifo_t is record
     we,    re    : std_ulogic;
     wdata, rdata : std_ulogic_vector(7 downto 0);
     avail, free  : std_ulogic;
     clear        : std_ulogic;
   end record;
-  signal tx_fifo : tx_fifo_t;
   signal rx_fifo : rx_fifo_t;
 
 begin
@@ -141,7 +143,7 @@ begin
             bus_rsp_o.data(ctrl_tx_full_c)                   <= not tx_fifo.free;
             bus_rsp_o.data(ctrl_fifo3_c downto ctrl_fifo0_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
             bus_rsp_o.data(ctrl_cs_en_c)                     <= rtx_engine.cs_ctrl(3);
-            bus_rsp_o.data(ctrl_busy_c)                      <= rtx_engine.busy or tx_fifo.avail;
+            bus_rsp_o.data(ctrl_busy_c)                      <= busy or tx_fifo.avail;
           else -- RX data
             bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
           end if;
@@ -216,7 +218,7 @@ begin
     if (rstn_i = '0') then
       irq_o <= '0';
     elsif rising_edge(clk_i) then
-      irq_o <= ctrl.enable and (not tx_fifo.avail) and (not rtx_engine.busy);
+      irq_o <= ctrl.enable and (not tx_fifo.avail) and (not busy);
     end if;
   end process;
 
@@ -226,13 +228,13 @@ begin
   transceiver: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      rtx_engine.done     <= '0';
       rtx_engine.state    <= (others => '0');
-      rtx_engine.bitcnt   <= (others => '0');
       rtx_engine.sreg     <= (others => '0');
+      rtx_engine.bitcnt   <= (others => '0');
       rtx_engine.sdi_sync <= '0';
       rtx_engine.sck      <= '0';
       rtx_engine.cs_ctrl  <= (others => '0');
+      rtx_engine.done     <= '0';
     elsif rising_edge(clk_i) then
       rtx_engine.done     <= '0';
       rtx_engine.state(2) <= ctrl.enable;
@@ -294,7 +296,7 @@ begin
   end process;
 
   -- PHY busy flag --
-  rtx_engine.busy <= '0' when (rtx_engine.state(1 downto 0) = "00") else '1';
+  busy <= '0' when (rtx_engine.state(1 downto 0) = "00") else '1';
 
   -- SPI output --
   spi_dat_o <= rtx_engine.sreg(7); -- MSB first
