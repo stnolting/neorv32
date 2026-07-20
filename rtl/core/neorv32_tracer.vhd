@@ -32,7 +32,7 @@ entity neorv32_tracer is
     bus_rsp_o : out bus_rsp_t;    -- bus response
     irq_o     : out std_ulogic    -- tracing-done interrupt
   );
-end neorv32_tracer;
+end entity;
 
 architecture neorv32_tracer_rtl of neorv32_tracer is
 
@@ -133,7 +133,7 @@ begin
         end case;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
   -- trace source select (CPU0 or CPU1) --
   trace_src <= trace0_i when (ctrl_hsel = '0') or (DUAL_CORE_EN = false) else trace1_i;
@@ -178,7 +178,7 @@ begin
         end if;
       end if;
     end if;
-  end process trace_arbiter;
+  end process;
 
   -- push to trace buffer --
   arbiter.push <= '1' when (arbiter.valid = "11") and (arbiter.delta = '1') else '0';
@@ -202,7 +202,7 @@ begin
         irq_o <= '0';
       end if;
     end if;
-  end process irq_generator;
+  end process;
 
 
   -- Trace Buffer (implemented as FIFO) -----------------------------------------------------
@@ -242,7 +242,7 @@ begin
     elsif rising_edge(clk_i) then
       discard <= ctrl_en and arbiter.run and (not fifo.free);
     end if;
-  end process fifo_overflow;
+  end process;
 
 
   -- Simulation Trace Logging ---------------------------------------------------------------
@@ -278,4 +278,4 @@ begin
     );
   end generate;
 
-end neorv32_tracer_rtl;
+end architecture;

@@ -37,7 +37,7 @@ entity neorv32_debug_dm is
     ndmrstn_o  : out std_ulogic; -- soc reset
     halt_req_o : out std_ulogic_vector(NUM_HARTS-1 downto 0) -- request hart to halt (enter debug mode)
   );
-end neorv32_debug_dm;
+end entity;
 
 architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
@@ -281,7 +281,7 @@ begin
         dm_reg.set_acc_err <= '1';
       end if;
     end if;
-  end process dmi_write_access;
+  end process;
 
   -- SoC reset --
   ndmrstn_o <= '0' when (dm_reg.ndmreset = '1') and (dm_reg.dmactive = '1') else '1';
@@ -396,7 +396,7 @@ begin
 
       end case;
     end if;
-  end process dmi_read_access;
+  end process;
 
 
   -- Hart Status Controller -----------------------------------------------------------------
@@ -436,7 +436,7 @@ begin
         end if;
       end loop;
     end if;
-  end process hart_status;
+  end process;
 
   -- resume request(s) --
   dci.req_res <= hart.resume_req; -- resume
@@ -512,7 +512,7 @@ begin
         end case;
       end if;
     end if;
-  end process cmd_arbiter;
+  end process;
 
   -- assemble transfer instruction --
   cmd_sw <= dataaddr_c(11 downto 5) & dm_reg.command(4 downto 0) & "00000010" & dataaddr_c(4 downto 0)     & "0100011"; -- store word
@@ -587,7 +587,7 @@ begin
         end case;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
   -- access only when hart is in debug mode --
   accen <= bus_req_i.stb and bus_req_i.meta(2);
@@ -632,4 +632,4 @@ begin
   auth.re <= '1' when (dmi_req_i.op = dmi_req_rd_c) and (dmi_req_i.addr = addr_authdata_c) else '0';
 
 
-end neorv32_debug_dm_rtl;
+end architecture;
