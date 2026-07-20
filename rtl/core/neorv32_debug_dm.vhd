@@ -88,7 +88,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
     clr_acc_err     : std_ulogic;
     autoexec        : std_ulogic;
   end record;
-  signal dm_reg : dm_reg_t;
+  signal dm_reg : dm_reg_t; -- register set
 
   -- currently selected hart --
   signal hartselect : std_ulogic_vector(NUM_HARTS-1 downto 0);
@@ -115,17 +115,14 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   type hart_t is record
     halted, resume_req, resume_ack, reset : std_ulogic_vector(NUM_HARTS-1 downto 0);
   end record;
-  signal hart : hart_t;
+  signal hart : hart_t; -- register set
 
   -- authenticator interface --
-  type auth_t is record
-    busy  : std_ulogic; -- authenticator is busy when set
-    valid : std_ulogic; -- authentication successful
-    re    : std_ulogic; -- data interface read enable
-    we    : std_ulogic; -- data interface write enable
-    rdata : std_ulogic_vector(31 downto 0); -- read data
-  end record;
-  signal auth : auth_t;
+  signal auth_busy  : std_ulogic; -- authenticator is busy when set
+  signal auth_valid : std_ulogic; -- authentication successful
+  signal auth_re    : std_ulogic; -- data interface read enable
+  signal auth_we    : std_ulogic; -- data interface write enable
+  signal auth_rdata : std_ulogic_vector(31 downto 0); -- read data
 
   -- ----------------------------------------------------------
   -- Debug Core Interface (DCI)
@@ -172,8 +169,8 @@ begin
 
   -- DMI Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dmi_wren <= '1' when (dmi_req_i.op = dmi_req_wr_c) and (auth.valid = '1') and (dm_reg.dmactive = '1') else '0';
-  dmi_rden <= '1' when (dmi_req_i.op = dmi_req_rd_c) and (auth.valid = '1') and (dm_reg.dmactive = '1') else '0';
+  dmi_wren <= '1' when (dmi_req_i.op = dmi_req_wr_c) and (auth_valid = '1') and (dm_reg.dmactive = '1') else '0';
+  dmi_rden <= '1' when (dmi_req_i.op = dmi_req_rd_c) and (auth_valid = '1') and (dm_reg.dmactive = '1') else '0';
 
 
   -- Debug Module Interface - Write Access --------------------------------------------------
@@ -328,8 +325,8 @@ begin
             dmi_rsp_o.data(5)            <= '0';                                                                        -- hasresethaltreq
             dmi_rsp_o.data(4)            <= '0';                                                                        -- confstrptrvalid
           end if;
-          dmi_rsp_o.data(7)          <= auth.valid; -- authenticated
-          dmi_rsp_o.data(6)          <= auth.busy;  -- authbusy
+          dmi_rsp_o.data(7)          <= auth_valid; -- authenticated
+          dmi_rsp_o.data(6)          <= auth_busy;  -- authbusy
           dmi_rsp_o.data(3 downto 0) <= "0011";     -- version
 
         -- debug module control --
@@ -382,7 +379,7 @@ begin
 
         -- authentication data (can always be read) --
         when addr_authdata_c =>
-          dmi_rsp_o.data <= auth.rdata;
+          dmi_rsp_o.data <= auth_rdata;
 
         -- halt summary 0 --
         when addr_haltsum0_c =>
@@ -609,27 +606,26 @@ begin
       clk_i    => clk_i,
       rstn_i   => rstn_i,
       -- register interface --
-      we_i     => auth.we,
-      re_i     => auth.re,
+      we_i     => auth_we,
+      re_i     => auth_re,
       wdata_i  => dmi_req_i.data,
-      rdata_o  => auth.rdata,
+      rdata_o  => auth_rdata,
       -- status --
       enable_i => dm_reg.dmactive,
-      busy_o   => auth.busy,
-      valid_o  => auth.valid
+      busy_o   => auth_busy,
+      valid_o  => auth_valid
     );
   end generate;
 
   authenticator_disabled:
   if not AUTHENTICATOR generate
-    auth.busy  <= '0';
-    auth.valid <= '1'; -- always authenticated
-    auth.rdata <= (others => '0');
+    auth_busy  <= '0';
+    auth_valid <= '1'; -- always authenticated
+    auth_rdata <= (others => '0');
   end generate;
 
   -- authenticator access (always accessible) --
-  auth.we <= '1' when (dmi_req_i.op = dmi_req_wr_c) and (dmi_req_i.addr = addr_authdata_c) else '0';
-  auth.re <= '1' when (dmi_req_i.op = dmi_req_rd_c) and (dmi_req_i.addr = addr_authdata_c) else '0';
-
+  auth_we <= '1' when (dmi_req_i.op = dmi_req_wr_c) and (dmi_req_i.addr = addr_authdata_c) else '0';
+  auth_re <= '1' when (dmi_req_i.op = dmi_req_rd_c) and (dmi_req_i.addr = addr_authdata_c) else '0';
 
 end architecture;
