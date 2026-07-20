@@ -80,12 +80,9 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
   -- instruction prefetch buffer (FIFO) interface --
   type ipb_data_t is array (0 to 1) of std_ulogic_vector(16 downto 0); -- bus_error & 16-bit instruction
-  type ipb_t is record
-    wdata, rdata : ipb_data_t;
-    we,    re    : std_ulogic_vector(1 downto 0);
-    free,  avail : std_ulogic_vector(1 downto 0);
-  end record;
-  signal ipb : ipb_t;
+  signal ipb_wdata, ipb_rdata : ipb_data_t;
+  signal ipb_we,    ipb_re    : std_ulogic_vector(1 downto 0);
+  signal ipb_free,  ipb_avail : std_ulogic_vector(1 downto 0);
 
   -- instruction issue engine --
   signal align_q, align_set, align_clr : std_ulogic;
@@ -123,7 +120,7 @@ begin
         when S_REQUEST => -- request next 32-bit-aligned instruction word
         -- ------------------------------------------------------------
           fetch.reset <= restart; -- buffer restart request
-          if (ipb.free = "11") then -- free IPB space?
+          if (ipb_free = "11") then -- free IPB space?
             fetch.state <= S_PENDING;
           elsif (restart = '1') then -- restart request due to branch
             fetch.state <= S_RESTART;
@@ -156,7 +153,7 @@ begin
   -- instruction bus request --
   ibus_req_o.meta  <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & fetch.debug & fetch.priv & '1';
   ibus_req_o.addr  <= fetch.addr(31 downto 2) & "00"; -- word aligned
-  ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb.free = "11") else '0';
+  ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb_free = "11") else '0';
   ibus_req_o.data  <= (others => '0'); -- read-only
   ibus_req_o.ben   <= (others => '1'); -- always full-word access
   ibus_req_o.rw    <= '0'; -- read-only
@@ -166,12 +163,12 @@ begin
   ibus_req_o.lock  <= '0'; -- always unlocked access
 
   -- IPB instruction data and status --
-  ipb.wdata(0) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(15 downto 0);
-  ipb.wdata(1) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(31 downto 16);
+  ipb_wdata(0) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(15 downto 0);
+  ipb_wdata(1) <= (ibus_rsp_i.err or pmp_err_i) & ibus_rsp_i.data(31 downto 16);
 
   -- IPB write enable --
-  ipb.we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.addr(1) = '0') or (not RISCV_C)) else '0';
-  ipb.we(1) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') else '0';
+  ipb_we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.addr(1) = '0') or (not RISCV_C)) else '0';
+  ipb_we(1) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') else '0';
 
   -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -188,13 +185,13 @@ begin
       rstn_i  => rstn_i,       -- async reset, low-active
       clear_i => restart,      -- sync reset, high-active
       -- write port --
-      wdata_i => ipb.wdata(i), -- write data
-      we_i    => ipb.we(i),    -- write enable
-      free_o  => ipb.free(i),  -- at least one entry is free when set
+      wdata_i => ipb_wdata(i), -- write data
+      we_i    => ipb_we(i),    -- write enable
+      free_o  => ipb_free(i),  -- at least one entry is free when set
       -- read port --
-      re_i    => ipb.re(i),    -- read enable
-      rdata_o => ipb.rdata(i), -- read data
-      avail_o => ipb.avail(i)  -- data available when set
+      re_i    => ipb_re(i),    -- read enable
+      rdata_o => ipb_rdata(i), -- read data
+      avail_o => ipb_avail(i)  -- data available when set
     );
   end generate;
 
@@ -218,7 +215,7 @@ begin
     );
 
     -- half-word select --
-    cmd16 <= ipb.rdata(0)(15 downto 0) when (align_q = '0') else ipb.rdata(1)(15 downto 0);
+    cmd16 <= ipb_rdata(0)(15 downto 0) when (align_q = '0') else ipb_rdata(1)(15 downto 0);
     frontend_o.i16 <= cmd16; -- original 16-bit instruction
 
     -- Issue Engine FSM -----------------------------------------------------------------------
@@ -230,60 +227,58 @@ begin
       elsif rising_edge(clk_i) then
         if (fetch.reset = '1') then
           align_q <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
-        elsif (ipb.re(0) = '1') or (ipb.re(1) = '1') then
+        elsif (ipb_re(0) = '1') or (ipb_re(1) = '1') then
           align_q <= (align_q and (not align_clr)) or align_set; -- alignment "RS flip-flop"
         end if;
       end if;
     end process;
 
-    issue_fsm_comb: process(align_q, ipb, cmd32)
+    issue_fsm_comb: process(align_q, ipb_avail, ipb_rdata, cmd32)
     begin
       -- defaults --
       align_set <= '0';
       align_clr <= '0';
       -- start at LOW half-word --
       if (align_q = '0') then
-        if (ipb.rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
-          align_set        <= ipb.avail(0); -- start of next instruction word is NOT 32-bit-aligned
-          issue_valid(0)   <= ipb.avail(0);
+        if (ipb_rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
+          align_set        <= ipb_avail(0); -- start of next instruction word is NOT 32-bit-aligned
+          issue_valid(0)   <= ipb_avail(0);
           issue_valid(1)   <= '0';
-          frontend_o.fault <= ipb.rdata(0)(16);
+          frontend_o.fault <= ipb_rdata(0)(16);
           frontend_o.i32   <= cmd32;
           frontend_o.compr <= '1';
         else -- aligned uncompressed, consume both IPB entries
-          issue_valid(0)   <= ipb.avail(1) and ipb.avail(0);
-          issue_valid(1)   <= ipb.avail(1) and ipb.avail(0);
-          frontend_o.fault <= ipb.rdata(1)(16) or ipb.rdata(0)(16);
-          frontend_o.i32   <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
+          issue_valid(0)   <= ipb_avail(1) and ipb_avail(0);
+          issue_valid(1)   <= ipb_avail(1) and ipb_avail(0);
+          frontend_o.fault <= ipb_rdata(1)(16) or ipb_rdata(0)(16);
+          frontend_o.i32   <= ipb_rdata(1)(15 downto 0) & ipb_rdata(0)(15 downto 0);
           frontend_o.compr <= '0';
         end if;
       -- start at HIGH half-word --
       else
-        if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
-          align_clr        <= ipb.avail(1); -- start of next instruction word IS 32-bit-aligned again
+        if (ipb_rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
+          align_clr        <= ipb_avail(1); -- start of next instruction word IS 32-bit-aligned again
           issue_valid(0)   <= '0';
-          issue_valid(1)   <= ipb.avail(1);
-          frontend_o.fault <= ipb.rdata(1)(16);
+          issue_valid(1)   <= ipb_avail(1);
+          frontend_o.fault <= ipb_rdata(1)(16);
           frontend_o.i32   <= cmd32;
           frontend_o.compr <= '1';
         else -- unaligned uncompressed, consume both IPB entries
-          issue_valid(0)   <= ipb.avail(0) and ipb.avail(1);
-          issue_valid(1)   <= ipb.avail(0) and ipb.avail(1);
-          frontend_o.fault <= ipb.rdata(0)(16) or ipb.rdata(1)(16);
-          frontend_o.i32   <= ipb.rdata(0)(15 downto 0) & ipb.rdata(1)(15 downto 0);
+          issue_valid(0)   <= ipb_avail(0) and ipb_avail(1);
+          issue_valid(1)   <= ipb_avail(0) and ipb_avail(1);
+          frontend_o.fault <= ipb_rdata(0)(16) or ipb_rdata(1)(16);
+          frontend_o.i32   <= ipb_rdata(0)(15 downto 0) & ipb_rdata(1)(15 downto 0);
           frontend_o.compr <= '0';
         end if;
       end if;
     end process;
 
-    -- original 16-bit instruction word --
-
     -- issue valid instruction word to execution stage --
     frontend_o.valid <= issue_valid(1) or issue_valid(0);
 
     -- IPB read access --
-    ipb.re(0) <= issue_valid(0) and ctrl_i.if_ready;
-    ipb.re(1) <= issue_valid(1) and ctrl_i.if_ready;
+    ipb_re(0) <= issue_valid(0) and ctrl_i.if_ready;
+    ipb_re(1) <= issue_valid(1) and ctrl_i.if_ready;
 
   end generate; -- /issue_enabled
 
@@ -296,12 +291,12 @@ begin
     issue_valid      <= (others => '0');
     cmd16            <= (others => '0');
     cmd32            <= (others => '0');
-    ipb.re           <= (others => (ctrl_i.if_ready and ipb.avail(0)));
-    frontend_o.valid <= ipb.avail(0);
-    frontend_o.i32   <= ipb.rdata(1)(15 downto 0) & ipb.rdata(0)(15 downto 0);
+    ipb_re           <= (others => (ctrl_i.if_ready and ipb_avail(0)));
+    frontend_o.valid <= ipb_avail(0);
+    frontend_o.i32   <= ipb_rdata(1)(15 downto 0) & ipb_rdata(0)(15 downto 0);
     frontend_o.i16   <= (others => '0');
     frontend_o.compr <= '0';
-    frontend_o.fault <= ipb.rdata(0)(16);
+    frontend_o.fault <= ipb_rdata(0)(16);
   end generate;
 
 end architecture;
