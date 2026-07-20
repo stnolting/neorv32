@@ -19,7 +19,7 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_xbus is
   generic (
-    REGSTAGE_EN : boolean -- add XBUS register stages
+    REGSTAGE_EN : boolean -- enable XBUS in/out register stages
   );
   port (
     clk_i      : in  std_ulogic;                     -- global clock line
@@ -39,7 +39,7 @@ entity neorv32_xbus is
     xbus_ack_i : in  std_ulogic;                     -- transfer acknowledge
     xbus_err_i : in  std_ulogic                      -- transfer error
   );
-end neorv32_xbus;
+end entity;
 
 architecture neorv32_xbus_rtl of neorv32_xbus is
 
@@ -88,7 +88,7 @@ begin
         end if;
       end if;
     end if;
-  end process arbiter;
+  end process;
 
   -- XBUS Interface -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -114,4 +114,4 @@ begin
   bus_rsp.ack  <= pending and (xbus_err_i or xbus_ack_i);
   bus_rsp.err  <= pending and xbus_err_i;
 
-end neorv32_xbus_rtl;
+end architecture;

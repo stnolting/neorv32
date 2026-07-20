@@ -234,6 +234,6 @@ begin
         sio <= (others => 'Z');
       end if;
     end if;
-  end process psram_core;
+  end process;
 
-end architecture psram_model_sim;
+end architecture;

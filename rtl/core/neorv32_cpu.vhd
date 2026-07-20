@@ -99,7 +99,7 @@ entity neorv32_cpu is
     dbus_req_o : out bus_req_t;                      -- request bus
     dbus_rsp_i : in  bus_rsp_t                       -- response bus
   );
-end neorv32_cpu;
+end entity;
 
 architecture neorv32_cpu_rtl of neorv32_cpu is
 
@@ -553,5 +553,4 @@ begin
     trace_o <= trace_port_terminate_c;
   end generate;
 
-
-end neorv32_cpu_rtl;
+end architecture;

@@ -21,7 +21,7 @@ entity neorv32_bootrom is
     bus_req_i : in  bus_req_t;  -- bus request
     bus_rsp_o : out bus_rsp_t   -- bus response
   );
-end neorv32_bootrom;
+end entity;
 
 architecture neorv32_bootrom_rtl of neorv32_bootrom is
 
@@ -71,11 +71,11 @@ begin
     elsif rising_edge(clk_i) then
       rden <= bus_req_i.stb and (not bus_req_i.rw); -- read-only
     end if;
-  end process bus_handshake;
+  end process;
 
   -- output gate --
   bus_rsp_o.data <= rdata when (rden = '1') else (others => '0');
   bus_rsp_o.ack  <= rden;
   bus_rsp_o.err  <= '0';
 
-end neorv32_bootrom_rtl;
+end architecture;

@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -29,7 +29,7 @@ entity neorv32_sys_reset is
     xrstn_wdt_o : out std_ulogic; -- reset from watchdog, low-active, sync
     xrstn_ocd_o : out std_ulogic  -- reset from on-chip debugger, low-active, sync
   );
-end neorv32_sys_reset;
+end entity;
 
 architecture neorv32_sys_reset_rtl of neorv32_sys_reset is
 
@@ -57,7 +57,7 @@ begin
       end if;
       rstn_sys_o <= and_reduce_f(sreg_sys);
     end if;
-  end process sequencer;
+  end process;
 
   -- output synchronizer --
   synchronizer: process(rstn_ext_i, clk_i)
@@ -69,9 +69,9 @@ begin
       xrstn_wdt_o <= rstn_wdt_i;
       xrstn_ocd_o <= rstn_dbg_i;
     end if;
-  end process synchronizer;
+  end process;
 
-end neorv32_sys_reset_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -101,7 +101,7 @@ entity neorv32_sys_clock is
     enable_i : in  std_ulogic;                   -- generator enable
     clk_en_o : out std_ulogic_vector(7 downto 0) -- prescaled clock-enables
   );
-end neorv32_sys_clock;
+end entity;
 
 architecture neorv32_sys_clock_rtl of neorv32_sys_clock is
 
@@ -123,7 +123,7 @@ begin
       end if;
       cnt2 <= cnt;
     end if;
-  end process ticker;
+  end process;
 
   -- rising-edge detector --
   en <= cnt and (not cnt2);
@@ -138,4 +138,4 @@ begin
   clk_en_o(clk_div2048_c) <= en(10); -- clk_i / 2048
   clk_en_o(clk_div4096_c) <= en(11); -- clk_i / 4096
 
-end neorv32_sys_clock_rtl;
+end architecture;

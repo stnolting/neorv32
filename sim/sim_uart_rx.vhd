@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -24,7 +24,7 @@ entity sim_uart_rx is
     clk : in std_ulogic; -- global clock
     rxd : in std_ulogic -- serial UART RX data
   );
-end entity sim_uart_rx;
+end entity;
 
 architecture sim_uart_rx_rtl of sim_uart_rx is
 
@@ -81,6 +81,6 @@ begin
         baudcnt <= baudcnt - 1.0;
       end if;
     end if;
-  end process sim_receiver;
+  end process;
 
-end architecture sim_uart_rx_rtl;
+end architecture;

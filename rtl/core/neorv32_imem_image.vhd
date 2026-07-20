@@ -208,4 +208,4 @@ x"00008067",
 others => (others => '0')
 );
 
-end package neorv32_imem_image;
+end package;

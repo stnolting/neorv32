@@ -133,7 +133,7 @@ begin
 
       end case;
     end if;
-  end process arbiter;
+  end process;
 
   -- AXI read address channel --
   m_axi_araddr  <= std_logic_vector(xbus_adr_i);

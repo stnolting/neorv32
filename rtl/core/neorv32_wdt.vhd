@@ -26,7 +26,7 @@ entity neorv32_wdt is
     clkgen_i    : in  std_ulogic_vector(7 downto 0); -- prescaled clock enables
     rstn_o      : out std_ulogic                     -- timeout reset, low_active, sync
   );
-end neorv32_wdt;
+end entity;
 
 architecture neorv32_wdt_rtl of neorv32_wdt is
 
@@ -105,8 +105,7 @@ begin
         end if;
       end if;
     end if;
-  end process bus_access;
-
+  end process;
 
   -- Timeout Counter ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -123,11 +122,10 @@ begin
         cnt <= std_ulogic_vector(unsigned(cnt) - 1);
       end if;
     end if;
-  end process wdt_counter;
+  end process;
 
   -- countdown timer tick --
   prsc_tick <= clkgen_i(clk_div4096_c); -- clock-enable tick at fixed clock rate
-
 
   -- Reset Generator ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -161,7 +159,6 @@ begin
         reset_cause <= "01"; -- reset from on-chip debugger
       end if;
     end if;
-  end process reset_identifier;
+  end process;
 
-
-end neorv32_wdt_rtl;
+end architecture;

@@ -42,7 +42,7 @@ entity neorv32_cache is
     bus_req_o  : out bus_req_t;  -- bus request
     bus_rsp_i  : in  bus_rsp_t   -- bus response
   );
-end neorv32_cache;
+end entity;
 
 architecture neorv32_cache_rtl of neorv32_cache is
 
@@ -67,8 +67,8 @@ architecture neorv32_cache_rtl of neorv32_cache is
   end component;
 
   -- cache layout --
-  constant block_num_c    : natural := 2**index_size_f(NUM_BLOCKS); -- extend if not a power of two
-  constant block_size_c   : natural := 2**index_size_f(BLOCK_SIZE); -- extend if not a power of two
+  constant block_num_c    : natural := 2**index_size_f(NUM_BLOCKS);  -- extend if not a power of two
+  constant block_size_c   : natural := 2**index_size_f(BLOCK_SIZE);  -- extend if not a power of two
   constant offset_width_c : natural := index_size_f(block_size_c/4); -- word offset
   constant index_width_c  : natural := index_size_f(block_num_c);
   constant tag_width_c    : natural := 32 - (offset_width_c + index_width_c + 2);
@@ -101,7 +101,7 @@ architecture neorv32_cache_rtl of neorv32_cache is
     S_WRITE_START, S_WRITE_REQ, S_WRITE_RSP, S_WRITE_WAIT, S_WRITE_BURST, S_WRITE_DONE
   );
   type ctrl_t is record
-    state   : state_t; -- state machine
+    state   : state_t;    -- FSM state
     sync    : std_ulogic; -- synchronization operation in progress
     bus_err : std_ulogic; -- bus error accumulator
     pnd_req : std_ulogic; -- pending bus request
@@ -110,13 +110,13 @@ architecture neorv32_cache_rtl of neorv32_cache is
     bp_req  : std_ulogic; -- cache bypass bus request (STB)
     hit     : std_ulogic; -- forced cache hit (to skip status update latency)
     cln     : std_ulogic; -- forced clean status (to skip status update latency)
-    tag     : std_ulogic_vector(tag_width_c-1 downto 0); -- tag
-    idx     : std_ulogic_vector(index_width_c-1 downto 0); -- index
+    tag     : std_ulogic_vector(tag_width_c-1 downto 0);    -- tag
+    idx     : std_ulogic_vector(index_width_c-1 downto 0);  -- index
     ofs_int : std_ulogic_vector(offset_width_c-1 downto 0); -- cache address offset
-    ofs_ext : std_ulogic_vector(offset_width_c downto 0); -- bus address offset + overflow bit
-    ofs_buf : std_ulogic_vector(offset_width_c downto 0); -- delayed bus address offset + overflow bit
+    ofs_ext : std_ulogic_vector(offset_width_c downto 0);   -- bus address offset + overflow bit
+    ofs_buf : std_ulogic_vector(offset_width_c downto 0);   -- delayed bus address offset + overflow bit
   end record;
-  signal ctrl, ctrl_nxt : ctrl_t;
+  signal ctrl, ctrl_nxt : ctrl_t; -- FSM
 
   -- status check --
   signal valid    : std_ulogic_vector(block_num_c-1 downto 0);
@@ -154,7 +154,7 @@ begin
     elsif rising_edge(clk_i) then
       ctrl <= ctrl_nxt;
     end if;
-  end process ctrl_engine_sync;
+  end process;
 
 
   -- Control Engine Comb --------------------------------------------------------------------
@@ -505,7 +505,7 @@ begin
         ctrl_nxt.state <= S_IDLE;
 
     end case;
-  end process ctrl_engine_comb;
+  end process;
 
 
   -- Status Memory: Block Valid -------------------------------------------------------------
@@ -521,7 +521,7 @@ begin
       end if;
       valid_rd <= valid(to_integer(unsigned(cache_o.addr(31-tag_width_c downto 2+offset_width_c))));
     end if;
-  end process status_valid;
+  end process;
 
 
   -- Status Memory: Block Dirty -------------------------------------------------------------
@@ -578,4 +578,4 @@ begin
   cache_i.hit <= '1' when (ctrl.hit = '1') or ((valid_rd = '1') and
                           (cache_i.tag(tag_width_c-1 downto 0) = host_req_i.addr(31 downto 31-(tag_width_c-1)))) else '0';
 
-end neorv32_cache_rtl;
+end architecture;

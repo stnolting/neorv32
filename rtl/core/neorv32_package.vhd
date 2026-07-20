@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130207"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130208"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -1126,7 +1126,7 @@ package neorv32_package is
     );
   end component;
 
-end package neorv32_package;
+end package;
 
 package body neorv32_package is
 
@@ -1144,7 +1144,7 @@ package body neorv32_package is
       end if;
     end loop;
     return 32; -- fallback
-  end function index_size_f;
+  end function;
 
   -- Conditional select natural -------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1155,7 +1155,7 @@ package body neorv32_package is
     else
       return f;
     end if;
-  end function sel_natural_f;
+  end function;
 
   -- Conditional select std_ulogic_vector ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1166,7 +1166,7 @@ package body neorv32_package is
     else
       return f;
     end if;
-  end function sel_suv_f;
+  end function;
 
   -- Conditional select string --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1177,7 +1177,7 @@ package body neorv32_package is
     else
       return f;
     end if;
-  end function sel_string_f;
+  end function;
 
   -- Convert boolean to std_ulogic ----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1188,7 +1188,7 @@ package body neorv32_package is
     else
       return '0';
     end if;
-  end function bool_to_ulogic_f;
+  end function;
 
   -- OR all bits ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1200,7 +1200,7 @@ package body neorv32_package is
       v := v or d(i);
     end loop;
     return v;
-  end function or_reduce_f;
+  end function;
 
   -- AND all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1212,7 +1212,7 @@ package body neorv32_package is
       v := v and d(i);
     end loop;
     return v;
-  end function and_reduce_f;
+  end function;
 
   -- XOR all bits ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1224,7 +1224,7 @@ package body neorv32_package is
       v := v xor d(i);
     end loop;
     return v;
-  end function xor_reduce_f;
+  end function;
 
   -- Convert 4-bit std_ulogic_vector to lowercase hex char ----------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1240,7 +1240,7 @@ package body neorv32_package is
     else
       return hex_v(to_integer(unsigned(d)) + 1);
     end if;
-  end function to_hexchar_f;
+  end function;
 
   -- Bit reversal ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1251,7 +1251,7 @@ package body neorv32_package is
       r((d'length-1)-i) := d(d'low + i);
     end loop;
     return r;
-  end function bit_rev_f;
+  end function;
 
   -- Replicate bit --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1260,7 +1260,7 @@ package body neorv32_package is
   begin
     v := (others => d);
     return v;
-  end function replicate_f;
+  end function;
 
   -- Convert to hex string ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -1271,6 +1271,6 @@ package body neorv32_package is
       v(i+1) := to_hexchar_f(d(d'high-i*4 downto (d'high-i*4)-3));
     end loop;
     return v;
-  end function to_hexstring_f;
+  end function;
 
-end package body neorv32_package;
+end package body;

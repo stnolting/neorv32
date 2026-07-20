@@ -27,7 +27,7 @@ entity neorv32_cpu_alu_cond is
     res_o   : out std_ulogic_vector(31 downto 0); -- operation result
     valid_o : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_alu_cond;
+end entity;
 
 architecture neorv32_cpu_alu_cond_rtl of neorv32_cpu_alu_cond is
 
@@ -37,9 +37,9 @@ begin
 
   -- Valid Instruction? ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and (ctrl_i.ir_opcode(5) = '1') and
-                        (ctrl_i.ir_funct3(2) = '1') and (ctrl_i.ir_funct3(0) = '1') and
-                        (ctrl_i.ir_funct12(11 downto 5) = "0000111") else '0';
+  valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and
+    (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct3(2) = '1') and
+    (ctrl_i.ir_funct3(0) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000111") else '0';
 
 
   -- Conditional Output ---------------------------------------------------------------------
@@ -55,7 +55,7 @@ begin
         res_o <= (others => '0');
       end if;
     end if;
-  end process cond_out;
+  end process;
 
   -- condition check: equal zero / non equal zero --
   condition <= or_reduce_f(rs2_i) xor ctrl_i.ir_funct3(1);
@@ -63,4 +63,4 @@ begin
   -- processing done --
   valid_o <= valid_cmd;
 
-end neorv32_cpu_alu_cond_rtl;
+end architecture;

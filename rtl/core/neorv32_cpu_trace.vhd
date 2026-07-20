@@ -31,7 +31,7 @@ entity neorv32_cpu_trace is
     -- trace port --
     trace_o     : out trace_port_t -- execution trace port
   );
-end neorv32_cpu_trace;
+end entity;
 
 architecture neorv32_cpu_trace_rtl of neorv32_cpu_trace is
 
@@ -41,10 +41,10 @@ architecture neorv32_cpu_trace_rtl of neorv32_cpu_trace is
     entry : std_ulogic; -- trap entry
     delta : std_ulogic; -- control flow transfer
     order : std_ulogic_vector(31 downto 0); -- instruction counter
-    done  : std_ulogic; -- execution of current instruction completed
-    valid : std_ulogic; -- commit trace data
   end record;
-  signal arbiter : arbiter_t;
+  signal arbiter : arbiter_t;  -- FSM
+  signal done    : std_ulogic; -- execution of current instruction completed
+  signal valid   : std_ulogic; -- commit trace data
 
   -- trace packet buffer --
   signal trace_buf : trace_port_t;
@@ -62,21 +62,21 @@ begin
       arbiter.order <= (others => '0');
     elsif rising_edge(clk_i) then
       -- sampling control: start trace cycle when in EXECUTE state --
-      arbiter.state <= (arbiter.state or ctrl_i.cnt_event(cnt_event_ir_c)) and (not arbiter.done);
+      arbiter.state <= (arbiter.state or ctrl_i.cnt_event(cnt_event_ir_c)) and (not done);
       -- trap-entry detector: buffer trap entry until trace commit --
-      arbiter.entry <= (arbiter.entry or ctrl_i.cpu_trap) and (not arbiter.valid);
+      arbiter.entry <= (arbiter.entry or ctrl_i.cpu_trap) and (not valid);
       -- delta detector: buffer delta trigger until we are back in EXECUTE stage --
       arbiter.delta <= (arbiter.delta or ctrl_i.cnt_event(cnt_event_delta_c)) and (not ctrl_i.cnt_event(cnt_event_ir_c));
       -- instruction counter --
-      if (arbiter.valid = '1') then
+      if (valid = '1') then
         arbiter.order <= std_ulogic_vector(unsigned(arbiter.order) + 1);
       end if;
     end if;
-  end process trace_arbiter;
+  end process;
 
   -- commit trace state when back in DISPATCH stage (or when entering sleep mode) --
-  arbiter.done  <= '1' when (ctrl_i.if_ready = '1') or (ctrl_i.cnt_event(cnt_event_cy_c) = '0') else '0';
-  arbiter.valid <= arbiter.state and arbiter.done;
+  done  <= '1' when (ctrl_i.if_ready = '1') or (ctrl_i.cnt_event(cnt_event_cy_c) = '0') else '0';
+  valid <= arbiter.state and done;
 
 
   -- Assemble Trace Packet ------------------------------------------------------------------
@@ -88,7 +88,7 @@ begin
     elsif rising_edge(clk_i) then
 
       -- trace data is valid --
-      trace_buf.valid <= arbiter.valid;
+      trace_buf.valid <= valid;
 
       -- instruction metadata --
       trace_buf.order <= arbiter.order;
@@ -156,12 +156,12 @@ begin
       trace_buf.mem_wdata <= mem_wdata_i;
 
     end if;
-  end process trace_packet_buffer;
+  end process;
 
   -- trace output --
   trace_o <= trace_buf;
 
-end neorv32_cpu_trace_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -196,7 +196,7 @@ entity neorv32_cpu_trace_simlog is
     rstn_i  : in std_ulogic;  -- global reset line, low-active, async
     trace_i : in trace_port_t -- CPU trace port
   );
-end neorv32_cpu_trace_simlog;
+end entity;
 
 architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
 
@@ -218,7 +218,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       end loop;
       return match_v;
     end if;
-  end function match_f;
+  end function;
 
   -- list of all currently supported instructions --
   type inst_touple_c is record
@@ -469,7 +469,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       end if;
     end loop;
     return "DECODE_FAIL";
-  end function decode_mnemonic_f;
+  end function;
 
   -- decode CSR name --
   function decode_csr_f(addr : std_ulogic_vector(11 downto 0)) return string is
@@ -701,7 +701,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
       -- unknown; just print address --
       when others               => return "0x" & to_hexstring_f(addr);
     end case;
-  end function decode_csr_f;
+  end function;
 
   -- decode instruction operands --
   function decode_operands_f(inst : std_ulogic_vector(31 downto 0)) return string is
@@ -758,7 +758,7 @@ architecture neorv32_cpu_trace_simlog_rtl of neorv32_cpu_trace_simlog is
         end if;
       when others => return "";
     end case;
-  end function decode_operands_f;
+  end function;
 
   -- time stamp counter --
   signal cycle_cnt : std_ulogic_vector(31 downto 0);
@@ -825,10 +825,10 @@ begin
           writeline(file_v, line_v);
         end if;
       end if;
-    end process sim_trace;
+    end process;
   end generate;
 
 -- RTL_SYNTHESIS ON
 -- pragma translate_on
 
-end neorv32_cpu_trace_simlog_rtl;
+end architecture;

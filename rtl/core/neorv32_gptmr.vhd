@@ -29,7 +29,7 @@ entity neorv32_gptmr is
     clkgen_i  : in  std_ulogic_vector(7 downto 0); -- prescaled clocks
     irq_o     : out std_ulogic                     -- timer match interrupt
   );
-end neorv32_gptmr;
+end entity;
 
 architecture neorv32_gptmr_rtl of neorv32_gptmr is
 
@@ -91,7 +91,7 @@ begin
         end if;
       end if;
     end if;
-  end process control_regs;
+  end process;
 
   -- access helper --
   acc_addr <= bus_req_i.addr(7) & bus_req_i.addr(2);
@@ -104,7 +104,7 @@ begin
     elsif rising_edge(clk_i) then
       clken <= clkgen_i(to_integer(unsigned(clkprsc)));
     end if;
-  end process clk_gen;
+  end process;
 
 
   -- Bus (Read) Access ----------------------------------------------------------------------
@@ -130,7 +130,7 @@ begin
         end case;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
 
   -- Timer Slices ---------------------------------------------------------------------------
@@ -167,7 +167,7 @@ begin
       tmp_v := tmp_v or rdata(i);
     end loop;
     rdata_sum <= tmp_v;
-  end process read_back;
+  end process;
 
 
   -- Interrupt Generator --------------------------------------------------------------------
@@ -188,12 +188,12 @@ begin
         end if;
       end loop;
     end if;
-  end process irq_generator;
+  end process;
 
   -- CPU interrupt --
   irq_o <= or_reduce_f(irq);
 
-end neorv32_gptmr_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -201,7 +201,7 @@ end neorv32_gptmr_rtl;
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -227,7 +227,7 @@ entity neorv32_gptmr_slice is
     -- IRQ output --
     irq_o   : out std_ulogic                      -- counter reached zero
   );
-end neorv32_gptmr_slice;
+end entity;
 
 architecture neorv32_gptmr_slice_rtl of neorv32_gptmr_slice is
 
@@ -262,7 +262,7 @@ begin
       -- interrupt --
       trig <= match;
     end if;
-  end process cnt_core;
+  end process;
 
   -- read-back --
   rdata_o <= (others => '0') when (cs_i = '0') else cnt when (addr_i = '0') else thr;
@@ -273,4 +273,4 @@ begin
   -- match interrupt --
   irq_o <= match and (not trig);
 
-end neorv32_gptmr_slice_rtl;
+end architecture;

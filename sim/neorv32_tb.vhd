@@ -86,7 +86,7 @@ entity neorv32_tb is
     EXT_MEM_B_LATE    : natural range 1 to 4096        := 40;          -- access latency cycles
     EXT_MEM_B_FILE    : string                         := ""           -- memory initialization file (plain HEX), no initialization if empty
   );
-end neorv32_tb;
+end entity;
 
 architecture neorv32_tb_rtl of neorv32_tb is
 
@@ -247,7 +247,7 @@ begin
     end if;
 
     wait;
-  end process jtag_test;
+  end process;
 
 
   -- The Core of the Problem ----------------------------------------------------------------
@@ -712,7 +712,7 @@ begin
         xbus_ram_rsp.err  <= '0';
       end if;
     end if;
-  end process xbus_mem_dummy;
+  end process;
 
 
   -- XBUS: External Memory-Mapped IO (uncached) ---------------------------------------------
@@ -753,7 +753,7 @@ begin
         mei <= xbus_trig_req.data(11); -- machine external interrupt
       end if;
     end if;
-  end process xbus_irq_trigger;
+  end process;
 
 
   -- XBUS: Bus-Error-Test-Memory ------------------------------------------------------------
@@ -771,4 +771,4 @@ begin
     mem_rsp_o => xbus_fmem_data_rsp
   );
 
-end neorv32_tb_rtl;
+end architecture;

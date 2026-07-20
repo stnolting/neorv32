@@ -29,7 +29,7 @@ entity neorv32_gpio is
     port_in_i  : in  std_ulogic_vector(31 downto 0); -- input port
     irq_o      : out std_ulogic                      -- CPU interrupt
   );
-end neorv32_gpio;
+end entity;
 
 architecture neorv32_gpio_rtl of neorv32_gpio is
 
@@ -92,7 +92,7 @@ begin
         end case;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
 
   -- Port IO --------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ begin
           port_dir <= bus_req_i.data(GPIO_NUM-1 downto 0);
         end if;
       end if;
-    end process dir_write;
+    end process;
   end generate;
 
   dir_conf_disabled:
@@ -126,7 +126,7 @@ begin
       port_in  <= port_in_i(GPIO_NUM-1 downto 0);
       port_in2 <= port_in;
     end if;
-  end process input_stage;
+  end process;
 
   -- output --
   output_stage: process(port_out, port_dir)
@@ -135,7 +135,7 @@ begin
     port_out_o(GPIO_NUM-1 downto 0) <= port_out;
     port_dir_o <= (others => '0');
     port_dir_o(GPIO_NUM-1 downto 0) <= port_dir;
-  end process output_stage;
+  end process;
 
 
   -- IRQ Generator --------------------------------------------------------------------------
@@ -153,7 +153,7 @@ begin
         when "11"   => irq_trig(i) <= port_in(i) and (not port_in2(i)); -- rising-edge
         when others => irq_trig(i) <= '0';
       end case;
-    end process irq_trigger;
+    end process;
   end generate;
 
   -- buffer pending interrupts until cleared or disabled --
@@ -164,9 +164,9 @@ begin
     elsif rising_edge(clk_i) then
       irq_pend <= irq_en and ((irq_pend and irq_clrn) or irq_trig);
     end if;
-  end process irq_buffer;
+  end process;
 
   -- CPU interrupt --
   irq_o <= or_reduce_f(irq_pend);
 
-end neorv32_gpio_rtl;
+end architecture;
