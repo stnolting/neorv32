@@ -197,24 +197,18 @@ architecture neorv32_cpu_alu_crypto_rtl of neorv32_cpu_alu_crypto is
   signal blk_res : std_ulogic_vector(31 downto 0);
 
   -- AES core --
-  type aes_t is record
-    dec  : std_ulogic;
-    so   : std_ulogic_vector(7 downto 0);
-    mix1 : std_ulogic_vector(31 downto 0);
-    mix2 : std_ulogic_vector(31 downto 0);
-  end record;
-  signal aes : aes_t;
+  signal aes_dec  : std_ulogic;
+  signal aes_so   : std_ulogic_vector(7 downto 0);
+  signal aes_mix1 : std_ulogic_vector(31 downto 0);
+  signal aes_mix2 : std_ulogic_vector(31 downto 0);
 
   -- SHA core, SM3 core --
   signal sha_res, sm3_res, hash_res : std_ulogic_vector(31 downto 0);
 
   -- ShangMi core --
-  type sm4_t is record
-    so1 : std_ulogic_vector(7 downto 0);
-    so2 : std_ulogic_vector(31 downto 0);
-    rnd : std_ulogic_vector(31 downto 0);
-  end record;
-  signal sm4 : sm4_t;
+  signal sm4_so1 : std_ulogic_vector(7 downto 0);
+  signal sm4_so2 : std_ulogic_vector(31 downto 0);
+  signal sm4_rnd : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -275,8 +269,8 @@ begin
         -- delay cycle --
         when S_BUSY =>
           state <= S_DONE;
-        -- S_DONE: final step & enable output for one cycle --
-        when others =>
+        -- final step & enable output for one cycle --
+        when S_DONE =>
           done  <= '1';
           state <= S_IDLE;
       end case;
@@ -366,9 +360,9 @@ begin
       rs2(31 downto 24) when others;
 
     -- rotation input select --
-    rol_in <= aes.mix2 when (not EN_ZKSED) else
-              sm4.rnd  when (not EN_ZKNE) and (not EN_ZKND) else
-              aes.mix2 when (funct12(8) = '0') else sm4.rnd;
+    rol_in <= aes_mix2 when (not EN_ZKSED) else
+              sm4_rnd  when (not EN_ZKNE) and (not EN_ZKND) else
+              aes_mix2 when (funct12(8) = '0') else sm4_rnd;
 
     -- rotate left by multiples of 8 via bs --
     with funct12(11 downto 10) select rol_res <=
@@ -397,13 +391,13 @@ begin
   if EN_ZKNE or EN_ZKND generate
 
     -- operation select --
-    aes.dec <= '1' when (not EN_ZKNE) else '0' when (not EN_ZKND) else funct12(7); -- 0 = encrypt, 1 = decrypt
+    aes_dec <= '1' when (not EN_ZKNE) else '0' when (not EN_ZKND) else funct12(7); -- 0 = encrypt, 1 = decrypt
 
     -- s-box look-up --
     aes_sbox_lookup: process(clk_i)
     begin
       if rising_edge(clk_i) then -- ROM access; try to infer memory primitives
-        aes.so <= aes_sbox_c(to_integer(unsigned(aes.dec & rs2_sel))); -- aes.dec = 0 -> fwd-s-box, aes.dec = 1 -> inv-s-box
+        aes_so <= aes_sbox_c(to_integer(unsigned(aes_dec & rs2_sel))); -- aes_dec = 0 -> fwd-s-box, aes_dec = 1 -> inv-s-box
       end if;
     end process;
 
@@ -411,33 +405,33 @@ begin
     aes_mix_columns: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        aes.mix1 <= (others => '0');
+        aes_mix1 <= (others => '0');
       elsif rising_edge(clk_i) then
-        if (aes.dec = '1') then -- decrypt
-          aes.mix1(31 downto 24) <= gfmul_f(aes.so, x"b");
-          aes.mix1(23 downto 16) <= gfmul_f(aes.so, x"d");
-          aes.mix1(15 downto 08) <= gfmul_f(aes.so, x"9");
-          aes.mix1(07 downto 00) <= gfmul_f(aes.so, x"e");
+        if (aes_dec = '1') then -- decrypt
+          aes_mix1(31 downto 24) <= gfmul_f(aes_so, x"b");
+          aes_mix1(23 downto 16) <= gfmul_f(aes_so, x"d");
+          aes_mix1(15 downto 08) <= gfmul_f(aes_so, x"9");
+          aes_mix1(07 downto 00) <= gfmul_f(aes_so, x"e");
         else -- encrypt
-          aes.mix1(31 downto 24) <= gfmul_f(aes.so, x"3");
-          aes.mix1(23 downto 16) <= aes.so;
-          aes.mix1(15 downto 08) <= aes.so;
-          aes.mix1(07 downto 00) <= gfmul_f(aes.so, x"2");
+          aes_mix1(31 downto 24) <= gfmul_f(aes_so, x"3");
+          aes_mix1(23 downto 16) <= aes_so;
+          aes_mix1(15 downto 08) <= aes_so;
+          aes_mix1(07 downto 00) <= gfmul_f(aes_so, x"2");
         end if;
       end if;
     end process;
 
     -- final / middle round --
-    aes.mix2 <= aes.mix1 when (funct12(6) = '1') else x"000000" & aes.so;
+    aes_mix2 <= aes_mix1 when (funct12(6) = '1') else x"000000" & aes_so;
 
   end generate;
 
   aes_disabled:
   if (not EN_ZKNE) and (not EN_ZKND) generate
-    aes.dec  <= '0';
-    aes.so   <= (others => '0');
-    aes.mix1 <= (others => '0');
-    aes.mix2 <= (others => '0');
+    aes_dec  <= '0';
+    aes_so   <= (others => '0');
+    aes_mix1 <= (others => '0');
+    aes_mix2 <= (others => '0');
   end generate;
 
 
@@ -450,25 +444,25 @@ begin
     sm4_sbox_lookup: process(clk_i)
     begin
       if rising_edge(clk_i) then -- ROM access; try to infer memory primitives
-        sm4.so1 <= sm4_sbox_c(to_integer(unsigned(rs2_sel)));
+        sm4_so1 <= sm4_sbox_c(to_integer(unsigned(rs2_sel)));
       end if;
     end process;
 
     -- zero-extend --
-    sm4.so2 <= x"000000" & sm4.so1;
+    sm4_so2 <= x"000000" & sm4_so1;
 
     -- round update: encrypt/decrypt or key schedule --
     sm4_round: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        sm4.rnd <= (others => '0');
+        sm4_rnd <= (others => '0');
       elsif rising_edge(clk_i) then
         if (funct12(6) = '0') then -- encrypt/decrypt
-          sm4.rnd <= sm4.so2 xor lsl_f(sm4.so2, 8) xor lsl_f(sm4.so2, 2) xor lsl_f(sm4.so2, 18) xor
-                                 lsl_f((sm4.so2 and x"0000003F"), 26) xor lsl_f((sm4.so2 and x"000000C0"), 10);
+          sm4_rnd <= sm4_so2 xor lsl_f(sm4_so2, 8) xor lsl_f(sm4_so2, 2) xor lsl_f(sm4_so2, 18) xor
+                                 lsl_f((sm4_so2 and x"0000003F"), 26) xor lsl_f((sm4_so2 and x"000000C0"), 10);
         else -- key schedule
-          sm4.rnd <= sm4.so2 xor lsl_f((sm4.so2 and x"00000007"), 29) xor lsl_f((sm4.so2 and x"000000FE"),  7) xor
-                                 lsl_f((sm4.so2 and x"00000001"), 23) xor lsl_f((sm4.so2 and x"000000F8"), 13);
+          sm4_rnd <= sm4_so2 xor lsl_f((sm4_so2 and x"00000007"), 29) xor lsl_f((sm4_so2 and x"000000FE"), 7) xor
+                                 lsl_f((sm4_so2 and x"00000001"), 23) xor lsl_f((sm4_so2 and x"000000F8"), 13);
         end if;
       end if;
     end process;
@@ -477,9 +471,9 @@ begin
 
   sm4_disabled:
   if not EN_ZKSED generate
-    sm4.so1 <= (others => '0');
-    sm4.so2 <= (others => '0');
-    sm4.rnd <= (others => '0');
+    sm4_so1 <= (others => '0');
+    sm4_so2 <= (others => '0');
+    sm4_rnd <= (others => '0');
   end generate;
 
 end architecture;

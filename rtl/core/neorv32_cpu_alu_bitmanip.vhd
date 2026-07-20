@@ -59,7 +59,7 @@ architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
     variable cnt_v : natural range 0 to input'length;
   begin
     cnt_v := 0;
-    for i in input'length-1 downto 0 loop
+    for i in input'range loop
       if (input(i) = '0') then
         cnt_v := cnt_v + 1;
       else
@@ -74,7 +74,7 @@ architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
     variable cnt_v : natural range 0 to input'length;
   begin
     cnt_v := 0;
-    for i in 0 to input'length-1 loop
+    for i in input'range loop
       if (input(i) = '1') then
         cnt_v := cnt_v + 1;
       end if;
@@ -158,26 +158,20 @@ architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
   signal sha_reg  : std_ulogic_vector(4 downto 0);
   signal less_reg : std_ulogic;
 
-  -- serial shifter --
-  type shifter_t is record
-    start   : std_ulogic;
-    run     : std_ulogic;
-    nxt     : std_ulogic;
-    bcnt    : std_ulogic_vector(5 downto 0); -- bit counter
-    cnt     : std_ulogic_vector(5 downto 0); -- iteration counter
-    cnt_max : std_ulogic_vector(5 downto 0);
-    sreg    : std_ulogic_vector(31 downto 0);
-  end record;
-  signal shifter : shifter_t;
-
   -- serial carry-less multiplier --
-  type clmul_t is record
-    start : std_ulogic;
-    run   : std_ulogic;
-    cnt   : std_ulogic_vector(5 downto 0);
-    res   : std_ulogic_vector(63 downto 0);
-  end record;
-  signal clmul : clmul_t;
+  signal clmul_start : std_ulogic;
+  signal clmul_run   : std_ulogic;
+  signal clmul_cnt   : std_ulogic_vector(5 downto 0);
+  signal clmul_res   : std_ulogic_vector(63 downto 0);
+
+  -- serial shifter --
+  signal shifter_start   : std_ulogic;
+  signal shifter_run     : std_ulogic;
+  signal shifter_nxt     : std_ulogic;
+  signal shifter_bcnt    : std_ulogic_vector(5 downto 0); -- bit counter
+  signal shifter_cnt     : std_ulogic_vector(5 downto 0); -- iteration counter
+  signal shifter_cnt_max : std_ulogic_vector(5 downto 0);
+  signal shifter_sreg    : std_ulogic_vector(31 downto 0);
 
   -- barrel shifter --
   type bs_level_t is array (5 downto 0) of std_ulogic_vector(31 downto 0);
@@ -187,7 +181,7 @@ architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
   -- operation/intermediate results --
   type res_t is array (0 to op_width_c-1) of std_ulogic_vector(31 downto 0);
   signal res_int, res_out : res_t;
-  signal xperm4_res, xperm8_res, adder_res, one_hot_res, zip_res, unzip_res : std_ulogic_vector(31 downto 0);
+  signal xperm4_res, xperm8_res, adder_res, one_hot_res, zip_res, unzip_res, res : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -227,7 +221,7 @@ begin
   -- Zbkx - Crossbar permutations --
   cmd(op_xperm_c) <= '1' when ZBKX and (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0010100") and ((ctrl_i.ir_funct3 = "100") or (ctrl_i.ir_funct3 = "010")) else '0'; -- XPERM[4/8]
 
-  -- Valid Instruction? --
+  -- Valid instruction? --
   valid_cmd <= '1' when (ctrl_i.alu_cp_alu = '1') and (or_reduce_f(cmd) = '1') else '0';
 
 
@@ -241,13 +235,13 @@ begin
       rs2_reg       <= (others => '0');
       sha_reg       <= (others => '0');
       less_reg      <= '0';
-      shifter.start <= '0';
-      clmul.start   <= '0';
+      shifter_start <= '0';
+      clmul_start   <= '0';
       valid         <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
-      shifter.start <= '0';
-      clmul.start   <= '0';
+      shifter_start <= '0';
+      clmul_start   <= '0';
       valid         <= '0';
 
       -- operand gating / buffering --
@@ -265,10 +259,10 @@ begin
         -- ------------------------------------------------------------
           if (valid_cmd = '1') then
             if (not FAST_SHIFT) and ((cmd(op_cz_c) or cmd(op_cpop_c) or cmd(op_rot_c)) = '1') then -- multi-cycle shift operation
-              shifter.start <= '1';
+              shifter_start <= '1';
               ctrl_state    <= S_START;
             elsif (cmd(op_clmul_c) = '1') or (cmd(op_clmulr_c) = '1') then -- multi-cycle carry-less multiplication operation
-              clmul.start <= '1';
+              clmul_start <= '1';
               ctrl_state  <= S_START;
             else
               valid      <= '1';
@@ -280,9 +274,9 @@ begin
         -- ------------------------------------------------------------
           ctrl_state <= S_BUSY;
 
-        when others => -- S_BUSY: wait for multi-cycle operation to finish
+        when S_BUSY => -- wait for multi-cycle operation to finish
         -- ------------------------------------------------------------
-          if ((shifter.run = '0') and (clmul.run = '0')) or (ctrl_i.cpu_trap = '1') then -- abort on trap
+          if ((shifter_run = '0') and (clmul_run = '0')) or (ctrl_i.cpu_trap = '1') then -- abort on trap
             valid      <= '1';
             ctrl_state <= S_IDLE;
           end if;
@@ -292,7 +286,7 @@ begin
   end process;
 
 
-  -- Shifter Function Core (iterative: small but slow) --------------------------------------
+  -- Serial Shifter (small but slow) --------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   serial_shifter:
   if not FAST_SHIFT generate
@@ -300,55 +294,55 @@ begin
     serial_shifter_core: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        shifter.cnt     <= (others => '0');
-        shifter.sreg    <= (others => '0');
-        shifter.cnt_max <= (others => '0');
-        shifter.bcnt    <= (others => '0');
+        shifter_cnt     <= (others => '0');
+        shifter_sreg    <= (others => '0');
+        shifter_cnt_max <= (others => '0');
+        shifter_bcnt    <= (others => '0');
       elsif rising_edge(clk_i) then
-        if (shifter.start = '1') then -- trigger new shift
-          shifter.cnt  <= (others => '0');
-          shifter.sreg <= rs1_reg;
+        if (shifter_start = '1') then -- trigger new shift
+          shifter_cnt  <= (others => '0');
+          shifter_sreg <= rs1_reg;
           if (cmd(op_cpop_c) = '1') then -- population count
-            shifter.cnt_max <= std_ulogic_vector(to_unsigned(32, shifter.cnt_max'length));
+            shifter_cnt_max <= std_ulogic_vector(to_unsigned(32, shifter_cnt_max'length));
           else
-            shifter.cnt_max <= '0' & shamt_i;
+            shifter_cnt_max <= '0' & shamt_i;
           end if;
-          shifter.bcnt <= (others => '0');
-        elsif (shifter.run = '1') then
+          shifter_bcnt <= (others => '0');
+        elsif (shifter_run = '1') then
           if ((cmd(op_rot_c) = '1') and (ctrl_i.ir_funct3(2) = '0')) or -- rol
              ((cmd(op_cz_c) = '1') and (ctrl_i.ir_funct12(0) = '0')) then -- clz
-            shifter.sreg <= shifter.sreg(shifter.sreg'left-1 downto 0) & shifter.nxt; -- left-shift
+            shifter_sreg <= shifter_sreg(shifter_sreg'left-1 downto 0) & shifter_nxt; -- left-shift
           else
-            shifter.sreg <= shifter.nxt & shifter.sreg(shifter.sreg'left downto 1); -- right-shift
+            shifter_sreg <= shifter_nxt & shifter_sreg(shifter_sreg'left downto 1); -- right-shift
           end if;
-          shifter.cnt <= std_ulogic_vector(unsigned(shifter.cnt) + 1); -- iteration counter
-          if (shifter.sreg(0) = '1') then
-            shifter.bcnt <= std_ulogic_vector(unsigned(shifter.bcnt) + 1); -- set-bits counter
+          shifter_cnt <= std_ulogic_vector(unsigned(shifter_cnt) + 1); -- iteration counter
+          if (shifter_sreg(0) = '1') then
+            shifter_bcnt <= std_ulogic_vector(unsigned(shifter_bcnt) + 1); -- set-bits counter
           end if;
         end if;
       end if;
     end process;
 
     -- shifted-in bit --
-    shifter.nxt <= '1' when (cmd(op_cz_c) = '1') else -- count zeros
-                   shifter.sreg(0) when (ctrl_i.ir_funct3(2) = '1') else -- right shift
-                   shifter.sreg(31); -- left shift
+    shifter_nxt <= '1' when (cmd(op_cz_c) = '1') else -- count zeros
+                   shifter_sreg(0) when (ctrl_i.ir_funct3(2) = '1') else -- right shift
+                   shifter_sreg(31); -- left shift
 
     -- run control --
-    serial_shifter_ctrl: process(cmd, ctrl_i, shifter)
+    serial_shifter_ctrl: process(cmd, ctrl_i, shifter_sreg, shifter_cnt)
     begin
       -- keep shifting until all bits are processed --
       if (cmd(op_cz_c) = '1') then -- count zeros
         if (ctrl_i.ir_funct12(0) = '0') then -- leading zeros
-          shifter.run <= not shifter.sreg(31);
+          shifter_run <= not shifter_sreg(31);
         else -- trailing zeros
-          shifter.run <= not shifter.sreg(0);
+          shifter_run <= not shifter_sreg(0);
         end if;
       else -- population count / rotate
-        if (shifter.cnt = shifter.cnt_max) then
-          shifter.run <= '0';
+        if (shifter_cnt = shifter_cnt_max) then
+          shifter_run <= '0';
         else
-          shifter.run <= '1';
+          shifter_run <= '1';
         end if;
       end if;
     end process;
@@ -356,34 +350,34 @@ begin
   end generate;
 
 
-  -- Shifter Function Core (parallel: fast but large) ---------------------------------------
+  -- Parallel Shifter (fast but large) ------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   barrel_shifter:
   if FAST_SHIFT generate
 
-    -- rotator input layer: convert left-rotates to right-rotates (rotate by 32 - N positions) --
+    -- shifter input layer: convert left-rotates to right-rotates (rotate by 32-N positions) --
     bs_shift <= std_ulogic_vector(unsigned(not sha_reg) + 1) when (ctrl_i.ir_funct3(2) = '0') else sha_reg;
 
-    -- rotator mux layers: right-rotates only --
+    -- shifter mux layers: right-rotates only --
     bs_level(0) <= rs1_reg;
     barrel_shifter_core:
     for i in 0 to 4 generate
       bs_level(i+1)(31 downto 32-(2**i))    <= bs_level(i)((2**i)-1 downto 0) when (bs_shift(i) = '1') else bs_level(i)(31 downto 32-(2**i));
       bs_level(i+1)((32-(2**i))-1 downto 0) <= bs_level(i)(31 downto 2**i)    when (bs_shift(i) = '1') else bs_level(i)((32-(2**i))-1 downto 0);
     end generate;
-    shifter.sreg <= bs_level(bs_level'left); -- rol/ror[i]
+    shifter_sreg <= bs_level(bs_level'left); -- rol/ror[i]
 
     -- population count --
-    shifter.bcnt <= std_ulogic_vector(to_unsigned(popcount_f(rs1_reg), shifter.bcnt'length)); -- cpop
+    shifter_bcnt <= std_ulogic_vector(to_unsigned(popcount_f(rs1_reg), shifter_bcnt'length)); -- cpop
 
     -- count leading/trailing zeros --
-    shifter.cnt <= std_ulogic_vector(to_unsigned(leading_zeros_f(rs1_reg), shifter.cnt'length)) when (ctrl_i.ir_funct12(0) = '0') else -- clz
-                   std_ulogic_vector(to_unsigned(leading_zeros_f(bit_rev_f(rs1_reg)), shifter.cnt'length)); -- ctz
+    shifter_cnt <= std_ulogic_vector(to_unsigned(leading_zeros_f(rs1_reg), shifter_cnt'length)) when (ctrl_i.ir_funct12(0) = '0') else -- clz
+                   std_ulogic_vector(to_unsigned(leading_zeros_f(bit_rev_f(rs1_reg)), shifter_cnt'length)); -- ctz
 
     -- unused --
-    shifter.run     <= '0';
-    shifter.nxt     <= '0';
-    shifter.cnt_max <= (others => '0');
+    shifter_run     <= '0';
+    shifter_nxt     <= '0';
+    shifter_cnt_max <= (others => '0');
 
   end generate;
 
@@ -419,35 +413,35 @@ begin
     clmul_core: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        clmul.cnt <= (others => '0');
-        clmul.res <= (others => '0');
+        clmul_cnt <= (others => '0');
+        clmul_res <= (others => '0');
       elsif rising_edge(clk_i) then
-        if (clmul.start = '1') then -- start new multiplication
-          clmul.cnt <= std_ulogic_vector(to_unsigned(32, clmul.cnt'length));
-          clmul.res <= replicate_f('0', 32) & rs1_reg;
-        elsif (clmul.run = '1') then -- operation in progress
-          clmul.cnt     <= std_ulogic_vector(unsigned(clmul.cnt) - 1);
-          clmul.res(63) <= '0'; -- always zero
-          if (clmul.res(0) = '1') then
-            clmul.res(62 downto 31) <= clmul.res(63 downto 32) xor rs2_reg;
+        if (clmul_start = '1') then -- start new multiplication
+          clmul_cnt <= std_ulogic_vector(to_unsigned(32, clmul_cnt'length));
+          clmul_res <= replicate_f('0', 32) & rs1_reg;
+        elsif (clmul_run = '1') then -- operation in progress
+          clmul_cnt     <= std_ulogic_vector(unsigned(clmul_cnt) - 1);
+          clmul_res(63) <= '0'; -- always zero
+          if (clmul_res(0) = '1') then
+            clmul_res(62 downto 31) <= clmul_res(63 downto 32) xor rs2_reg;
           else
-            clmul.res(62 downto 31) <= clmul.res(63 downto 32);
+            clmul_res(62 downto 31) <= clmul_res(63 downto 32);
           end if;
-          clmul.res(30 downto 0) <= clmul.res(31 downto 1);
+          clmul_res(30 downto 0) <= clmul_res(31 downto 1);
         end if;
       end if;
     end process;
 
     -- operation in progress --
-    clmul.run <= '1' when (or_reduce_f(clmul.cnt) = '1') else '0';
+    clmul_run <= '1' when (or_reduce_f(clmul_cnt) = '1') else '0';
 
   end generate;
 
   clmul_disable:
   if not (ZBC or ZBKC) generate
-    clmul.cnt <= (others => '0');
-    clmul.res <= (others => '0');
-    clmul.run <= '0';
+    clmul_cnt <= (others => '0');
+    clmul_res <= (others => '0');
+    clmul_run <= '0';
   end generate;
 
 
@@ -485,12 +479,12 @@ begin
   res_int(op_xnor_c) <= rs1_reg xor (not rs2_reg);
 
   -- count leading/trailing zeros --
-  res_int(op_cz_c)(31 downto shifter.cnt'left+1) <= (others => '0');
-  res_int(op_cz_c)(shifter.cnt'left downto 0) <= shifter.cnt;
+  res_int(op_cz_c)(31 downto shifter_cnt'left+1) <= (others => '0');
+  res_int(op_cz_c)(shifter_cnt'left downto 0) <= shifter_cnt;
 
   -- population count --
-  res_int(op_cpop_c)(31 downto shifter.bcnt'left+1) <= (others => '0');
-  res_int(op_cpop_c)(shifter.bcnt'left downto 0) <= shifter.bcnt;
+  res_int(op_cpop_c)(31 downto shifter_bcnt'left+1) <= (others => '0');
+  res_int(op_cpop_c)(shifter_bcnt'left downto 0) <= shifter_bcnt;
 
   -- min/max select --
   res_int(op_max_c) <= rs1_reg when ((less_reg xor ctrl_i.ir_funct3(1)) = '1') else rs2_reg;
@@ -505,7 +499,7 @@ begin
   res_int(op_zexth_c)(15 downto 0)  <= rs1_reg(15 downto 0);
 
   -- rotate right/left --
-  res_int(op_rot_c) <= shifter.sreg;
+  res_int(op_rot_c) <= shifter_sreg;
 
   -- or-combine.byte --
   or_combine_gen:
@@ -550,14 +544,14 @@ begin
   end generate;
 
   -- carry-less multiplication --
-  res_int(op_clmul_c)  <= clmul.res(63 downto 32) when (ctrl_i.ir_funct3(1) = '1') else clmul.res(31 downto 0);
-  res_int(op_clmulr_c) <= clmul.res(62 downto 31);
+  res_int(op_clmul_c)  <= clmul_res(63 downto 32) when (ctrl_i.ir_funct3(1) = '1') else clmul_res(31 downto 0);
+  res_int(op_clmulr_c) <= clmul_res(62 downto 31);
 
   -- crossbar permutation --
   res_int(op_xperm_c) <= xperm8_res when (ctrl_i.ir_funct3(2) = '1') else xperm4_res;
 
 
-  -- Output Select --------------------------------------------------------------------------
+  -- Output Stage ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   res_out(op_andn_c)   <= res_int(op_andn_c)   when (cmd(op_andn_c)   = '1') else (others => '0');
   res_out(op_orn_c)    <= res_int(op_orn_c)    when (cmd(op_orn_c)    = '1') else (others => '0');
@@ -582,9 +576,18 @@ begin
   res_out(op_clmulr_c) <= res_int(op_clmulr_c) when (cmd(op_clmulr_c) = '1') else (others => '0');
   res_out(op_xperm_c)  <= res_int(op_xperm_c)  when (cmd(op_xperm_c)  = '1') else (others => '0');
 
+  -- OR all --
+  res_or: process(res_out)
+    variable tmp_v : std_ulogic_vector(31 downto 0);
+  begin
+    tmp_v := (others => '0');
+    for i in 0 to op_width_c-1 loop
+      tmp_v := tmp_v or res_out(i);
+    end loop;
+    res <= tmp_v;
+  end process;
 
-  -- Output Gate ----------------------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
+  -- output gate --
   output_gate: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -592,14 +595,7 @@ begin
     elsif rising_edge(clk_i) then
       res_o <= (others => '0');
       if (valid = '1') then
-        res_o <= res_out(op_andn_c)  or res_out(op_orn_c)   or res_out(op_xnor_c)   or
-                 res_out(op_cz_c)    or res_out(op_cpop_c)  or res_out(op_max_c)    or
-                 res_out(op_sext_c)  or res_out(op_zexth_c) or res_out(op_rot_c)    or
-                 res_out(op_orcb_c)  or res_out(op_rev8_c)  or res_out(op_shadd_c)  or
-                 res_out(op_bclr_c)  or res_out(op_bext_c)  or res_out(op_binv_c)   or
-                 res_out(op_bset_c)  or res_out(op_pack_c)  or res_out(op_zip_c)    or
-                 res_out(op_brev8_c) or res_out(op_clmul_c) or res_out(op_clmulr_c) or
-                 res_out(op_xperm_c);
+        res_o <= res;
       end if;
     end if;
   end process;
