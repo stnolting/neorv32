@@ -42,7 +42,7 @@ entity neorv32_cpu_alu_crypto is
     res_o   : out std_ulogic_vector(31 downto 0); -- operation result
     valid_o : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_alu_crypto;
+end entity;
 
 architecture neorv32_cpu_alu_crypto_rtl of neorv32_cpu_alu_crypto is
 
@@ -121,7 +121,7 @@ architecture neorv32_cpu_alu_crypto_rtl of neorv32_cpu_alu_crypto is
   begin
     res_v := std_ulogic_vector(shift_left(unsigned(data), shamt));
     return res_v;
-  end function lsl_f;
+  end function;
 
   -- logical shift right --
   function lsr_f(data : std_ulogic_vector(31 downto 0); shamt : natural range 0 to 31) return std_ulogic_vector is
@@ -129,7 +129,7 @@ architecture neorv32_cpu_alu_crypto_rtl of neorv32_cpu_alu_crypto is
   begin
     res_v := std_ulogic_vector(shift_right(unsigned(data), shamt));
     return res_v;
-  end function lsr_f;
+  end function;
 
   -- rotate right --
   function ror_f(data : std_ulogic_vector(31 downto 0); shamt : natural range 0 to 31) return std_ulogic_vector is
@@ -137,7 +137,7 @@ architecture neorv32_cpu_alu_crypto_rtl of neorv32_cpu_alu_crypto is
   begin
     res_v := std_ulogic_vector(rotate_right(unsigned(data), shamt));
     return res_v;
-  end function ror_f;
+  end function;
 
   -- rotate left --
   function rol_f(data : std_ulogic_vector(31 downto 0); shamt : natural range 0 to 31) return std_ulogic_vector is
@@ -145,7 +145,7 @@ architecture neorv32_cpu_alu_crypto_rtl of neorv32_cpu_alu_crypto is
   begin
     res_v := std_ulogic_vector(rotate_left(unsigned(data), shamt));
     return res_v;
-  end function rol_f;
+  end function;
 
   -- multiply by 2 in Galois field (2^8) --
   function xt2_f(a : std_ulogic_vector(7 downto 0)) return std_ulogic_vector is
@@ -153,7 +153,7 @@ architecture neorv32_cpu_alu_crypto_rtl of neorv32_cpu_alu_crypto is
   begin
     res_v := (a(6 downto 0) & '0') xor ("000" & a(7) & a(7) & '0' & a(7) & a(7)); -- XOR with 0x1B if a(7) is set
     return res_v;
-  end function xt2_f;
+  end function;
 
   -- multiply 8-bit field element by 4-bit value for AES MixCols step --
   function gfmul_f(x : std_ulogic_vector(7 downto 0); y : std_ulogic_vector(3 downto 0)) return std_ulogic_vector is
@@ -165,7 +165,7 @@ architecture neorv32_cpu_alu_crypto_rtl of neorv32_cpu_alu_crypto is
     if (y(3) = '1') then d_v := xt2_f(xt2_f(xt2_f(x))); else d_v := x"00"; end if;
     res_v := a_v xor b_v xor c_v xor d_v;
     return res_v;
-  end function gfmul_f;
+  end function;
 
   -- ----------------------------------------------------------------------------------------
   -- logic
@@ -281,7 +281,7 @@ begin
           state <= S_IDLE;
       end case;
     end if;
-  end process control;
+  end process;
 
   -- processing done (high one cycle before actual data output) --
   valid_o <= done;
@@ -304,7 +304,7 @@ begin
         end if;
       end if;
     end if;
-  end process result;
+  end process;
 
 
   -- Hash Functions -------------------------------------------------------------------------
@@ -344,7 +344,7 @@ begin
           when others => sha_res <= lsl_f(rs1,  3) xor lsr_f(rs1,  6) xor lsr_f(rs1, 19) xor lsr_f(rs2, 29) xor lsl_f(rs2, 13); -- sha512sig1h
         end case;
       end if;
-    end process sha_core;
+    end process;
   end generate;
 
   sha_disabled:
@@ -405,7 +405,7 @@ begin
       if rising_edge(clk_i) then -- ROM access; try to infer memory primitives
         aes.so <= aes_sbox_c(to_integer(unsigned(aes.dec & rs2_sel))); -- aes.dec = 0 -> fwd-s-box, aes.dec = 1 -> inv-s-box
       end if;
-    end process aes_sbox_lookup;
+    end process;
 
     -- mix columns --
     aes_mix_columns: process(rstn_i, clk_i)
@@ -425,7 +425,7 @@ begin
           aes.mix1(07 downto 00) <= gfmul_f(aes.so, x"2");
         end if;
       end if;
-    end process aes_mix_columns;
+    end process;
 
     -- final / middle round --
     aes.mix2 <= aes.mix1 when (funct12(6) = '1') else x"000000" & aes.so;
@@ -452,7 +452,7 @@ begin
       if rising_edge(clk_i) then -- ROM access; try to infer memory primitives
         sm4.so1 <= sm4_sbox_c(to_integer(unsigned(rs2_sel)));
       end if;
-    end process sm4_sbox_lookup;
+    end process;
 
     -- zero-extend --
     sm4.so2 <= x"000000" & sm4.so1;
@@ -471,7 +471,7 @@ begin
                                  lsl_f((sm4.so2 and x"00000001"), 23) xor lsl_f((sm4.so2 and x"000000F8"), 13);
         end if;
       end if;
-    end process sm4_round;
+    end process;
 
   end generate;
 
@@ -482,4 +482,4 @@ begin
     sm4.rnd <= (others => '0');
   end generate;
 
-end neorv32_cpu_alu_crypto_rtl;
+end architecture;

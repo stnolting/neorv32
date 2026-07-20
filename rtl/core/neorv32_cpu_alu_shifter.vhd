@@ -34,7 +34,7 @@ entity neorv32_cpu_alu_shifter is
     res_o   : out std_ulogic_vector(31 downto 0); -- operation result
     valid_o : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_alu_shifter;
+end entity;
 
 architecture neorv32_cpu_alu_shifter_rtl of neorv32_cpu_alu_shifter is
 
@@ -105,7 +105,7 @@ begin
           end if;
         end if;
       end if;
-    end process shifter;
+    end process;
 
     -- shift control --
     serial.done <= not or_reduce_f(serial.cnt(serial.cnt'left downto 1));
@@ -147,7 +147,7 @@ begin
         barrel.oe  <= valid_cmd;
         barrel.res <= barrel.lvl(5);
       end if;
-    end process pipe_reg;
+    end process;
 
     -- output layer: re-convert original left shifts and result gate --
     res_o   <= (others => '0') when (barrel.oe = '0') else bit_rev_f(barrel.res) when (ctrl_i.ir_funct3(2) = '0') else barrel.res;
@@ -162,5 +162,4 @@ begin
 
   end generate;
 
-
-end neorv32_cpu_alu_shifter_rtl;
+end architecture;

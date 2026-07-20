@@ -88,7 +88,7 @@ entity neorv32_cpu_control is
     lsu_mar_i     : in  std_ulogic_vector(31 downto 0); -- memory address register
     lsu_err_i     : in  std_ulogic_vector(3 downto 0)   -- alignment/access errors
   );
-end neorv32_cpu_control;
+end entity;
 
 architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
 
@@ -103,7 +103,7 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
     pc    : std_ulogic_vector(31 downto 0); -- current PC (current instruction)
     pc2   : std_ulogic_vector(31 downto 0); -- next PC (next linear instruction)
   end record;
-  signal exec, exec_nxt : exec_t;
+  signal exec, exec_nxt : exec_t; -- FSM
   signal ctrl, ctrl_nxt : ctrl_bus_t; -- CPU control bus
 
   -- trap controller --
@@ -189,7 +189,7 @@ begin
     else -- unconditional branch are always taken
       branch_taken <= '1';
     end if;
-  end process branch_check;
+  end process;
 
 
   -- Execution Micro Sequencer Sync ---------------------------------------------------------
@@ -208,7 +208,7 @@ begin
       ctrl <= ctrl_nxt;
       exec <= exec_nxt;
     end if;
-  end process exec_sync;
+  end process;
 
 
   -- Execution Micro Sequencer Comb ---------------------------------------------------------
@@ -481,7 +481,7 @@ begin
         end if;
 
     end case;
-  end process exec_comb;
+  end process;
 
 
   -- CPU Control Bus Output -----------------------------------------------------------------
@@ -677,7 +677,7 @@ begin
     else
       csr_valid(0) <= '1'; -- access granted
     end if;
-  end process csr_check;
+  end process;
 
 
   -- Illegal Instruction Check --------------------------------------------------------------
@@ -765,7 +765,7 @@ begin
         illegal_cmd <= '1';
 
     end case;
-  end process illegal_check;
+  end process;
 
 
   -- Instruction Execution Monitor (trap if multi-cycle instruction does not complete) ------
@@ -781,7 +781,7 @@ begin
         monitor_cnt <= (others => '0');
       end if;
     end if;
-  end process multi_cycle_monitor;
+  end process;
 
 
   -- Illegal Operation Check ----------------------------------------------------------------
@@ -827,7 +827,7 @@ begin
       trap.exc_buf(exc_db_trig_c) <= (trap.exc_buf(exc_db_trig_c) or debug_ctrl.trig_hw)    and (not trap.env_enter);
       trap.exc_buf(exc_db_step_c) <= (trap.exc_buf(exc_db_step_c) or debug_ctrl.trig_step)  and (not trap.env_enter);
     end if;
-  end process trap_buffer;
+  end process;
 
   -- environment break exception trigger --
   ebreak_trig <= (trap.ebreak and (    csr.prv_level) and (not csr.dcsr_ebreakm) and (not debug_ctrl.run)) or -- M-mode trap on M-ebreak
@@ -847,7 +847,7 @@ begin
         trap.env_pend <= '1';
       end if;
     end if;
-  end process trap_pending;
+  end process;
 
   -- any sync. exception? --
   trap.exc_fire <= or_reduce_f(trap.exc_buf); -- cannot be masked
@@ -927,7 +927,7 @@ begin
           debug_ctrl.run <= '0';
         end if;
       end if;
-    end process debug_control;
+    end process;
 
     -- debug mode entry triggers --
     debug_ctrl.trig_halt  <= irq_dbg_i and (not debug_ctrl.run); -- external halt request (if not halted already)
@@ -987,7 +987,7 @@ begin
       when "11"   => csr_wdata <= csr_rdata and (not opb_v); -- clear
       when others => csr_wdata <= opb_v; -- write
     end case;
-  end process csr_alu;
+  end process;
 
 
   -- CSR Write Access -----------------------------------------------------------------------
@@ -1169,7 +1169,7 @@ begin
       end if;
 
     end if;
-  end process csr_write_access;
+  end process;
 
 
   -- CSR Read Access ------------------------------------------------------------------------
@@ -1306,9 +1306,9 @@ begin
         end case;
       end if;
     end if;
-  end process csr_read_access;
+  end process;
 
   -- CSR read data output (to register file mux) --
   csr_rdata_o <= csr_rdata;
 
-end neorv32_cpu_control_rtl;
+end architecture;

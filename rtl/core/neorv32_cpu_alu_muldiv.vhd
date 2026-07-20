@@ -37,19 +37,21 @@ entity neorv32_cpu_alu_muldiv is
     res_o   : out std_ulogic_vector(31 downto 0); -- operation result
     valid_o : out std_ulogic                      -- data output valid
   );
-end neorv32_cpu_alu_muldiv;
+end entity;
 
 architecture neorv32_cpu_alu_muldiv_rtl of neorv32_cpu_alu_muldiv is
 
   -- absolute value --
-  function abs_f(input: std_ulogic_vector; is_signed: std_ulogic) return std_ulogic_vector is
+  function abs32_f(input: std_ulogic_vector; is_signed: std_ulogic) return std_ulogic_vector is
+    variable res_v : std_ulogic_vector(31 downto 0);
   begin
     if (input(input'left) = '1') and (is_signed = '1') then
-      return std_ulogic_vector(0 - unsigned(input));
+      res_v := std_ulogic_vector(0 - unsigned(input));
     else
-      return input;
+      res_v := input;
     end if;
-  end function abs_f;
+    return res_v;
+  end function;
 
   -- operations --
   constant op_mul_c    : std_ulogic_vector(2 downto 0) := "000"; -- mul
@@ -147,7 +149,7 @@ begin
 
       end case;
     end if;
-  end process control;
+  end process;
 
   -- done? assert one cycle before actual data output --
   valid_o <= '1' when (ctrl.state = S_DONE) else '0';
@@ -204,7 +206,7 @@ begin
           mul.res(30 downto 0)  <= mul.res(31 downto 1);
         end if;
       end if;
-    end process multiplier_core;
+    end process;
 
     -- multiply by 0/-1/+1 via shift and subtraction/addition --
     mul_update: process(mul.res, ctrl, rs2_i)
@@ -222,7 +224,7 @@ begin
       else -- multiply by 0
         mul.add <= sign_v & mul.res(63 downto 32);
       end if;
-    end process mul_update;
+    end process;
 
   end generate;
 
@@ -259,7 +261,7 @@ begin
           end if;
         end if;
       end if;
-    end process divider_core;
+    end process;
 
     -- do another subtraction (and shift) --
     div.sub <= std_ulogic_vector(unsigned('0' & div.rema(30 downto 0) & div.quot(31)) - unsigned('0' & div.divi));
@@ -298,7 +300,6 @@ begin
           res_o <= div.res;
       end case;
     end if;
-  end process operation_result;
+  end process;
 
-
-end neorv32_cpu_alu_muldiv_rtl;
+end architecture;
