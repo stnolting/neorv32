@@ -92,7 +92,7 @@ uncached accesses via the <<_processor_external_bus_interface_xbus>> may have ad
 2 for accessing the default processor-internal peripherals; +
 uncached accesses via the <<_processor_external_bus_interface_xbus>> may have additional wait states; +
 branches to an unaligned address require additional `2 x T_inst_latency` cycles
-| `T_mul_latency` | 1 if <<_cpu_fast_mul_en>> is `true`; 32 otherwise
+| `T_mul_latency` | 1 if <<_cpu_fast_mul_en>> is `true` (2 if <<_cpu_fast_mul_reg>> is also `true`); 32 otherwise
 | `T_cust_latency` | latency is defined by the custom <<_custom_functions_unit_cfu>> logic; +
 however, the minimum is 1 and the maximum is 512
 | `T_cache_sync` | cycles required to clear/flush the CPU cache(s) (D$ and/or I$); +

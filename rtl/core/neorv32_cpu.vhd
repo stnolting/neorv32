@@ -63,6 +63,7 @@ entity neorv32_cpu is
     CPU_TRACE_EN        : boolean                        := false;       -- enable CPU execution trace generator
     CPU_CONSTT_BR_EN    : boolean                        := false;       -- constant-time branches
     CPU_FAST_MUL_EN     : boolean                        := false;       -- use DSPs for M extension's multiplier
+    CPU_FAST_MUL_REG    : boolean                        := false;       -- add a pipeline register to the fast multiplier (needs CPU_FAST_MUL_EN)
     CPU_FAST_SHIFT_EN   : boolean                        := false;       -- use barrel shifter for shift operations
     CPU_RF_ARCH_SEL     : natural range 0 to 3           := 0;           -- register file implementation style select
     -- Physical Memory Protection (PMP) --
@@ -440,8 +441,9 @@ begin
     RISCV_ISA_Zmmul  => RISCV_ISA_Zmmul,  -- multiply-only M sub-extension
     RISCV_ISA_Xcfu   => RISCV_ISA_Xcfu,   -- custom (instr.) functions unit
     -- Tuning Options --
-    FAST_MUL_EN      => CPU_FAST_MUL_EN,  -- use DSPs for M extension's multiplier
-    FAST_SHIFT_EN    => CPU_FAST_SHIFT_EN -- use barrel shifter for shift operations
+    FAST_MUL_EN       => CPU_FAST_MUL_EN,       -- use DSPs for M extension's multiplier
+    FAST_MUL_REG => CPU_FAST_MUL_REG, -- add a pipeline register to the fast multiplier
+    FAST_SHIFT_EN     => CPU_FAST_SHIFT_EN       -- use barrel shifter for shift operations
   )
   port map (
     -- global control --

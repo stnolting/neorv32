@@ -117,6 +117,7 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 4+^| **<<_cpu_tuning_options>>**
 | `CPU_CONSTT_BR_EN`    | boolean   | false         | Implement constant-time branches (same execution times for taken and not-taken branches).
 | `CPU_FAST_MUL_EN`     | boolean   | false         | Implement fast but large full-parallel multipliers (trying to infer DSP blocks); see section <<_cpu_arithmetic_logic_unit>>.
+| `CPU_FAST_MUL_REG` | boolean | false         | Add a pipeline register to the fast multiplier (requires `CPU_FAST_MUL_EN`); shortens the critical path on narrow-DSP FPGAs at the cost of one extra multiply latency cycle. See section <<_cpu_arithmetic_logic_unit>>.
 | `CPU_FAST_SHIFT_EN`   | boolean   | false         | Implement fast but large full-parallel barrel shifters; see section <<_cpu_arithmetic_logic_unit>>.
 | `CPU_RF_ARCH_SEL`     | natural   | 0             | CPU register file implementation style select; see section <<_cpu_register_file>>.
 4+^| **Physical Memory Protection (<<_smpmp_isa_extension>>)**
