@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 20.07.2026 | 1.13.2.8 | comprehensive VHDL coding style edits | [#1602](https://github.com/stnolting/neorv32/pull/1602) |
 | 17.07.2026 | 1.13.2.7 | :sparkles: add new SoC module: serial memory controller (SMC) to attach external serial memory (PSRAM or flash; supports XIP) | [#1599](https://github.com/stnolting/neorv32/pull/1599) |
 | 11.07.2026 | 1.13.2.6 | :bug: fix another RVFI memory address & data signal alignment bug | [#1597](https://github.com/stnolting/neorv32/pull/1597) |
 | 03.07.2026 | 1.13.2.5 | :sparkles: add support for RISC-V `Zcmop` ISA extension (compressed may-be-operations) | [#1596](https://github.com/stnolting/neorv32/pull/1596) |

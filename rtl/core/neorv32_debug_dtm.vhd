@@ -35,7 +35,7 @@ entity neorv32_debug_dtm is
     dmi_req_o  : out dmi_req_t;  -- request
     dmi_rsp_i  : in  dmi_rsp_t   -- response
   );
-end neorv32_debug_dtm;
+end entity;
 
 architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
 
@@ -86,7 +86,7 @@ begin
       tdi_ff <= tdi_ff(0) & jtag_tdi_i;
       tms_ff <= tms_ff(0) & jtag_tms_i;
     end if;
-  end process tap_synchronizer;
+  end process;
 
   -- JTAG clock edges --
   tck_rise <= '1' when (tck_ff(2 downto 1) = "01") else '0';
@@ -128,7 +128,7 @@ begin
         end case;
       end if;
     end if;
-  end process tap_control;
+  end process;
 
   -- DR_UPDATE edge detector --
   update <= '1' when (state = DR_UPDATE) and (state2 /= DR_UPDATE) else '0';
@@ -174,7 +174,7 @@ begin
         end if;
       end if;
     end if;
-  end process reg_access;
+  end process;
 
   -- reset control; [NOTE] dreg bits are LSB-aligned --
   dmihardreset <= '1' when (update = '1') and (ireg = addr_dtmcs_c) and (dreg((dreg'left - (size_dtmcs_c-1)) + 17) = '1') else '0';
@@ -210,10 +210,9 @@ begin
         busy     <= '0';
       end if;
     end if;
-  end process dmi_controller;
+  end process;
 
   -- DMI output --
   dmi_req_o <= dmi;
 
-
-end neorv32_debug_dtm_rtl;
+end architecture;

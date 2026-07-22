@@ -34,7 +34,7 @@ entity neorv32_cpu_hwtrig is
     -- trigger firing --
     hit_o  : out std_ulogic -- high until debug-mode is entered
   );
-end neorv32_cpu_hwtrig;
+end entity;
 
 architecture neorv32_cpu_hwtrig_rtl of neorv32_cpu_hwtrig is
 
@@ -95,7 +95,7 @@ begin
         end loop;
       end if;
     end if;
-  end process csr_write;
+  end process;
 
   -- valid trigger module CSR access? --
   csr_en <= '1' when (ctrl_i.csr_addr(11 downto 3) = csr_tselect_c(11 downto 3)) else '0';
@@ -122,7 +122,7 @@ begin
         when others => csr_o <= (others => '0');
       end case;
     end if;
-  end process csr_read;
+  end process;
 
   -- match control (mcontrol6 @ tdata1 selected by tselect) read-back --
   tdata1(31 downto 28) <= x"6"; -- type: address match trigger (mcontrol6)
@@ -159,7 +159,7 @@ begin
       end if;
     end loop;
     tdata2_rb <= res_v;
-  end process tdata2_readback;
+  end process;
 
   -- trigger info --
   tinfo_rb <= x"01000040" when (sel_invalid = '0') else x"01000001"; -- Sdtrig version 1.0, type-6 / type-0 only
@@ -187,7 +187,7 @@ begin
                     (tdata1_load(i)  and cmp_data(i) and ctrl_i.cnt_event(cnt_event_load_c)));   -- load
       end loop;
     end if;
-  end process match_buffer;
+  end process;
 
   -- notify execution back-end if there is/was any trigger match --
   hit_o <= or_reduce_f(match);
@@ -208,7 +208,6 @@ begin
         end if;
       end loop;
     end if;
-  end process tdata1_hit_sync;
+  end process;
 
-
-end neorv32_cpu_hwtrig_rtl;
+end architecture;

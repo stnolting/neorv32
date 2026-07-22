@@ -30,7 +30,7 @@ entity neorv32_dmem_ram is
     data_i : in  std_ulogic_vector(31 downto 0); -- write data
     data_o : out std_ulogic_vector(31 downto 0)  -- read data, sync
   );
-end neorv32_dmem_ram;
+end entity;
 
 architecture neorv32_dmem_ram_rtl of neorv32_dmem_ram is
 
@@ -60,4 +60,4 @@ begin
     );
   end generate;
 
-end neorv32_dmem_ram_rtl;
+end architecture;

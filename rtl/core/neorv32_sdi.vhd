@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -30,7 +30,7 @@ entity neorv32_sdi is
     sdi_dat_o : out std_ulogic; -- serial data output
     irq_o     : out std_ulogic  -- CPU interrupt
   );
-end neorv32_sdi;
+end entity;
 
 architecture neorv32_sdi_rtl of neorv32_sdi is
 
@@ -63,15 +63,10 @@ architecture neorv32_sdi_rtl of neorv32_sdi is
   signal ctrl : ctrl_t;
 
   -- input synchronizer --
-  type sync_t is record
-    sck_ff : std_ulogic_vector(2 downto 0);
-    csn_ff : std_ulogic_vector(1 downto 0);
-    sdi_ff : std_ulogic_vector(1 downto 0);
-    sck    : std_ulogic;
-    csn    : std_ulogic;
-    sdi    : std_ulogic;
-  end record;
-  signal sync : sync_t;
+  signal sync_sck_ff : std_ulogic_vector(2 downto 0);
+  signal sync_csn_ff : std_ulogic_vector(1 downto 0);
+  signal sync_sdi_ff : std_ulogic_vector(1 downto 0);
+  signal sync_sck, sync_csn, sync_sdi : std_ulogic;
 
   -- serial engine --
   type serial_t is record
@@ -134,14 +129,14 @@ begin
             bus_rsp_o.data(ctrl_rx_full_c)                   <= not rx_fifo.free;
             bus_rsp_o.data(ctrl_tx_empty_c)                  <= not tx_fifo.avail;
             bus_rsp_o.data(ctrl_tx_full_c)                   <= not tx_fifo.free;
-            bus_rsp_o.data(ctrl_cs_active_c)                 <= not sync.csn;
+            bus_rsp_o.data(ctrl_cs_active_c)                 <= not sync_csn;
           else -- data register
             bus_rsp_o.data(7 downto 0) <= rx_fifo.rdata;
           end if;
         end if;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
 
   -- Data FIFO ("Ring Buffer") --------------------------------------------------------------
@@ -214,7 +209,7 @@ begin
                (ctrl.irq_rx_full   and (not rx_fifo.free)) or -- RX FIFO full
                (ctrl.irq_tx_empty  and (not tx_fifo.avail))); -- TX FIFO empty
     end if;
-  end process irq_generator;
+  end process;
 
 
   -- Input Synchronizer ---------------------------------------------------------------------
@@ -222,19 +217,19 @@ begin
   synchronizer: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      sync.sck_ff <= (others => '0');
-      sync.csn_ff <= (others => '0');
-      sync.sdi_ff <= (others => '0');
+      sync_sck_ff <= (others => '0');
+      sync_csn_ff <= (others => '0');
+      sync_sdi_ff <= (others => '0');
     elsif rising_edge(clk_i) then
-      sync.sck_ff <= sync.sck_ff(1 downto 0) & sdi_clk_i;
-      sync.csn_ff <= sync.csn_ff(0) & sdi_csn_i;
-      sync.sdi_ff <= sync.sdi_ff(0) & sdi_dat_i;
+      sync_sck_ff <= sync_sck_ff(1 downto 0) & sdi_clk_i;
+      sync_csn_ff <= sync_csn_ff(0) & sdi_csn_i;
+      sync_sdi_ff <= sync_sdi_ff(0) & sdi_dat_i;
     end if;
-  end process synchronizer;
+  end process;
 
-  sync.sck <= sync.sck_ff(1) xor sync.sck_ff(2); -- edge detect (rising or falling)
-  sync.csn <= sync.csn_ff(1);
-  sync.sdi <= sync.sdi_ff(1);
+  sync_sck <= sync_sck_ff(1) xor sync_sck_ff(2); -- edge detect (rising or falling)
+  sync_csn <= sync_csn_ff(1);
+  sync_sdi <= sync_sdi_ff(1);
 
 
   -- Serial Engine --------------------------------------------------------------------------
@@ -242,11 +237,11 @@ begin
   serial_engine: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      serial.done   <= '0';
       serial.state  <= (others => '0');
       serial.cnt    <= (others => '0');
       serial.sreg   <= (others => '0');
       serial.sdi_ff <= '0';
+      serial.done   <= '0';
     elsif rising_edge(clk_i) then
       serial.done     <= '0'; -- default
       serial.state(2) <= ctrl.enable;
@@ -255,7 +250,7 @@ begin
         when "100" => -- enabled but idle, waiting for new transmission trigger
         -- ------------------------------------------------------------
           serial.cnt <= (others => '0');
-          if (sync.csn = '0') and (serial.done = '0') then -- start new transmission on falling edge of CS
+          if (sync_csn = '0') and (serial.done = '0') then -- start new transmission on falling edge of CS
             serial.state(1 downto 0) <= "01";
           end if;
 
@@ -267,19 +262,19 @@ begin
 
         when "110" => -- bit phase A: sample
         -- ------------------------------------------------------------
-          serial.sdi_ff <= sync.sdi;
-          if (sync.csn = '1') then -- transmission aborted?
+          serial.sdi_ff <= sync_sdi;
+          if (sync_csn = '1') then -- transmission aborted?
             serial.state(1 downto 0) <= "00";
-          elsif (sync.sck = '1') then
+          elsif (sync_sck = '1') then
             serial.cnt               <= std_ulogic_vector(unsigned(serial.cnt) + 1);
             serial.state(1 downto 0) <= "11";
           end if;
 
         when "111" => -- bit phase B: shift
         -- ------------------------------------------------------------
-          if (sync.csn = '1') then -- transmission aborted?
+          if (sync_csn = '1') then -- transmission aborted?
             serial.state(1 downto 0) <= "00";
-          elsif (sync.sck = '1') then
+          elsif (sync_sck = '1') then
             serial.sreg <= serial.sreg(serial.sreg'left-1 downto 0) & serial.sdi_ff;
             if (serial.cnt(3) = '1') then -- done?
               serial.done              <= '1'; -- push RX byte to FIFO and get next TX byte
@@ -295,10 +290,9 @@ begin
 
       end case;
     end if;
-  end process serial_engine;
+  end process;
 
   -- serial data output --
   sdi_dat_o <= serial.sreg(serial.sreg'left);
 
-
-end neorv32_sdi_rtl;
+end architecture;

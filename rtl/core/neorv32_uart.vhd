@@ -38,7 +38,7 @@ entity neorv32_uart is
     uart_ctsn_i : in  std_ulogic;                    -- allowed to transmit, low-active, optional
     irq_o       : out std_ulogic                     -- interrupt
   );
-end neorv32_uart;
+end entity;
 
 architecture neorv32_uart_rtl of neorv32_uart is
 
@@ -89,7 +89,7 @@ architecture neorv32_uart_rtl of neorv32_uart is
     irq_tx_empty  : std_ulogic;
     irq_tx_nfull  : std_ulogic;
   end record;
-  signal ctrl : ctrl_t;
+  signal ctrl : ctrl_t; -- register set
 
   -- serial engines --
   type serial_engine_t is record
@@ -100,7 +100,7 @@ architecture neorv32_uart_rtl of neorv32_uart is
     sync    : std_ulogic_vector(2 downto 0); -- input synchronizer
     done    : std_ulogic; -- operation done
   end record;
-  signal tx, rx : serial_engine_t;
+  signal tx, rx : serial_engine_t; -- FSM
   signal rx_overrun : std_ulogic;
 
   -- FIFO interface --
@@ -172,7 +172,7 @@ begin
         end if;
       end if;
     end if;
-  end process bus_access;
+  end process;
 
   -- UART clock enable --
   uart_clk <= clkgen_i(to_integer(unsigned(ctrl.prsc)));
@@ -249,7 +249,7 @@ begin
                (ctrl.irq_rx_nempty and rx_fifo.avail)       or -- RX FIFO not empty
                (ctrl.irq_rx_full   and (not rx_fifo.free)));   -- RX FIFO full
     end if;
-  end process irq_gen;
+  end process;
 
 
   -- Transmit Engine ------------------------------------------------------------------------
@@ -308,7 +308,7 @@ begin
 
       end case;
     end if;
-  end process transmitter;
+  end process;
 
 
   -- Receive Engine -------------------------------------------------------------------------
@@ -362,7 +362,7 @@ begin
 
       end case;
     end if;
-  end process receiver;
+  end process;
 
   -- RX flow monitor --
   rx_flow: process(rstn_i, clk_i)
@@ -380,7 +380,7 @@ begin
         rx_overrun <= '0'; -- clear on read of control register
       end if;
     end if;
-  end process rx_flow;
+  end process;
 
 
   -- UART Simulation-Mode: Print TX data to simulator console -------------------------------
@@ -409,11 +409,10 @@ begin
           end if;
         end if;
       end if;
-    end process sim_log;
+    end process;
   end generate;
 
 -- RTL_SYNTHESIS ON
 -- pragma translate_on
 
-
-end neorv32_uart_rtl;
+end architecture;

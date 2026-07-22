@@ -42,7 +42,7 @@ entity neorv32_smc is
     smc_sdo_o  : out std_ulogic_vector(3 downto 0); -- serial data output
     smc_sdi_i  : in  std_ulogic_vector(3 downto 0)  -- serial data input
   );
-end neorv32_smc;
+end entity;
 
 architecture neorv32_smc_rtl of neorv32_smc is
 
@@ -52,7 +52,7 @@ architecture neorv32_smc_rtl of neorv32_smc is
   begin
     tmp_v := d(7 downto 0) & d(15 downto 8) & d(23 downto 16) & d(31 downto 24);
     return tmp_v;
-  end function bswap32_f;
+  end function;
 
   -- configuration helpers --
   constant log2_fifo_size_c : natural := sel_natural_f(BURST_EN, index_size_f(BURST_SIZE/4), 0);
@@ -88,7 +88,7 @@ architecture neorv32_smc_rtl of neorv32_smc is
     cmd_wr : std_ulogic_vector(7 downto 0);  -- write command
     icmd   : std_ulogic_vector(23 downto 0); -- memory initialization commands (3x8-bit)
   end record;
-  signal csr : csr_t;
+  signal csr : csr_t; -- register set
 
   -- data memory access --
   signal acc_req, acc_bank : std_ulogic;
@@ -97,13 +97,13 @@ architecture neorv32_smc_rtl of neorv32_smc is
   -- bus access arbiter --
   type state_t is (S_IDLE, S_START, S_BUSY);
   type arb_t is record
-    state : state_t; -- FSM state
+    state : state_t;    -- FSM state
     rw    : std_ulogic; -- read/write access
-    bcnt  : std_ulogic_vector(8 downto 0); -- burst counter (number of words = 1024/4=256)
+    bcnt  : std_ulogic_vector(8 downto 0);  -- burst counter (number of words = 1024/4=256)
     addr  : std_ulogic_vector(23 downto 0); -- base address buffer
-    tsize : std_ulogic_vector(1 downto 0); -- data transfer quantity select
+    tsize : std_ulogic_vector(1 downto 0);  -- data transfer quantity select
   end record;
-  signal arb, arb_nxt : arb_t;
+  signal arb, arb_nxt : arb_t; -- FSM
   signal busy : std_ulogic;
 
   -- write buffer interface --
@@ -234,7 +234,7 @@ begin
         end if;
       end if;
     end if;
-  end process csr_access;
+  end process;
 
   -- SMC is in charge of interface IOs --
   smc_ioen_o <= csr.ioen;
@@ -256,7 +256,7 @@ begin
       when "111"  => acc_bank <= data_req_i.addr(24); acc_fail <= data_req_i.addr and (not x"f1ffffff"); -- 2x16 MB
       when others => acc_bank <= '-';                 acc_fail <= (others => '-');
     end case;
-  end process mask_gen;
+  end process;
 
   -- valid memory request if: SMC enabled, pin access granted and inside memory range --
   acc_req <= '1' when (data_req_i.stb = '1') and (csr.enable = '1') and (csr.ioen = '1') and (acc_fail = x"00000000") else '0';
@@ -303,7 +303,7 @@ begin
         arb.state <= S_IDLE;
       end if;
     end if;
-  end process arbiter_sync;
+  end process;
 
   -- Access Arbiter Comb --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -369,7 +369,7 @@ begin
         end if;
 
     end case;
-  end process arbiter_comb;
+  end process;
 
   -- access in progress (including MAC initialization) --
   busy <= '0' when (arb.state = S_IDLE) and (mac_busy = '0') else '1';
@@ -431,7 +431,7 @@ begin
     sdi_i   => smc_sdi_i
   );
 
-end neorv32_smc_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -481,7 +481,7 @@ entity neorv32_smc_mac is
     phy_data_i  : in  std_ulogic_vector(31 downto 0); -- RX data (LSB-aligned)
     phy_busy_i  : in  std_ulogic                      -- operation in progress
   );
-end neorv32_smc_mac;
+end entity;
 
 architecture neorv32_smc_mac_rtl of neorv32_smc_mac is
 
@@ -494,7 +494,7 @@ architecture neorv32_smc_mac_rtl of neorv32_smc_mac is
     oen   : std_ulogic_vector(3 downto 0);  -- output enable, low-active
     rdata : std_ulogic_vector(31 downto 0); -- RX data
   end record;
-  signal mac, mac_nxt : mac_t;
+  signal mac, mac_nxt : mac_t; -- FSM
 
   -- misc --
   type icmd_t is array (3 downto 0) of std_ulogic_vector(7 downto 0);
@@ -545,7 +545,7 @@ begin
         mac.oen   <= (others => '1');
       end if;
     end if;
-  end process arbiter_sync;
+  end process;
 
   -- Access Arbiter Comb --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -682,7 +682,7 @@ begin
         end if;
 
     end case;
-  end process arbiter_comb;
+  end process;
 
   -- operation in progress --
   cmd_busy_o <= '0' when (mac.state = S_IDLE) else '1';
@@ -694,7 +694,7 @@ begin
   -- RX data --
   cmd_data_o <= mac.rdata;
 
-end neorv32_smc_mac_rtl;
+end architecture;
 
 
 -- ================================================================================ --
@@ -733,7 +733,7 @@ entity neorv32_smc_phy is
     sdo_o   : out std_ulogic_vector(3 downto 0);  -- output data
     sdi_i   : in  std_ulogic_vector(3 downto 0)   -- input data
   );
-end neorv32_smc_phy;
+end entity;
 
 architecture neorv32_smc_phy_rtl of neorv32_smc_phy is
 
@@ -809,7 +809,7 @@ begin
 
       end case;
     end if;
-  end process serial_engine;
+  end process;
 
   -- transfer in progress --
   busy_o <= '0' when (state = S_IDLE) else '1';
@@ -821,4 +821,4 @@ begin
   sck_o <= sck;
   sdo_o <= ("000" & sreg(31)) when (quad_i = '0') else sreg(31 downto 28); -- [TODO]
 
-end neorv32_smc_phy_rtl;
+end architecture;

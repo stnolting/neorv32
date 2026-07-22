@@ -29,7 +29,7 @@ entity xbus_memory is
     xbus_req_i : in  xbus_req_t;
     xbus_rsp_o : out xbus_rsp_t
   );
-end xbus_memory;
+end entity;
 
 architecture xbus_memory_rtl of xbus_memory is
 
@@ -86,7 +86,7 @@ architecture xbus_memory_rtl of xbus_memory is
       end loop;
     end if;
     return mem_v;
-  end function init_mem8bv_from_hexfile_f;
+  end function;
 
   -- memory access --
   signal addr  : unsigned(addr_bits_c-1 downto 0);
@@ -148,7 +148,7 @@ begin
         end if;
       end if;
     end if;
-  end process memory_data;
+  end process;
 
   addr <= unsigned(xbus_req_i.addr(addr_bits_c+1 downto 2));
 
@@ -159,7 +159,7 @@ begin
     elsif rising_edge(clk_i) then
       ack <= xbus_req_i.cyc and xbus_req_i.stb;
     end if;
-  end process memory_ack;
+  end process;
 
 
   -- Latency Generator ----------------------------------------------------------------------
@@ -177,7 +177,7 @@ begin
         late_ack(i+1)  <= late_ack(i);
       end loop;
     end if;
-  end process latency_gen;
+  end process;
 
   -- delay select --
   dout <= rdata when (MEM_LATE = 1) else late_data(MEM_LATE-1);
@@ -188,5 +188,4 @@ begin
   xbus_rsp_o.ack  <= aout;
   xbus_rsp_o.err  <= '0';
 
-
-end xbus_memory_rtl;
+end architecture;

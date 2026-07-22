@@ -26,7 +26,7 @@ entity neorv32_imem is
     bus_req_i : in  bus_req_t;  -- bus request
     bus_rsp_o : out bus_rsp_t   -- bus response
   );
-end neorv32_imem;
+end entity;
 
 architecture neorv32_imem_rtl of neorv32_imem is
 
@@ -126,11 +126,11 @@ begin
       wren <= bus_req_i.stb and bus_req_i.rw;
       rden <= rden(0) & (bus_req_i.stb and (not bus_req_i.rw));
     end if;
-  end process bus_handshake;
+  end process;
 
   -- output gate --
   bus_rsp_o.data <= rdata when (rden(outreg_c) = '1') else (others => '0');
   bus_rsp_o.err  <= '0';
   bus_rsp_o.ack  <= rden(outreg_c) when MEM_INIT else (rden(outreg_c) or wren); -- read-only?
 
-end neorv32_imem_rtl;
+end architecture;

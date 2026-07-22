@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -29,7 +29,7 @@ entity neorv32_cfs is
     cfs_in_i  : in  std_ulogic_vector(255 downto 0); -- custom inputs conduit
     cfs_out_o : out std_ulogic_vector(255 downto 0) -- custom outputs conduit
   );
-end neorv32_cfs;
+end entity;
 
 architecture neorv32_cfs_rtl of neorv32_cfs is
 
@@ -47,14 +47,12 @@ begin
 
   cfs_out_o <= (others => '0'); -- not used for this minimal example
 
-
   -- Interrupt ------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   -- The CFS features a single interrupt signal, which is connected to the CPU's "fast interrupt" channel 1 (FIRQ1).
   -- The according CPU interrupt becomes pending as long as <irq_o> is high.
 
   irq_o <= '0'; -- not used for this minimal example
-
 
   -- Read/Write Access ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -104,7 +102,7 @@ begin
 
         -- read access (word-wise) --
         else
-          case bus_req_i.addr(15 downto 2) is -- 16-bit byte address = 14-bit word address
+          case bus_req_i.addr(15 downto 2) is -- 16-bit byte-address = 14-bit word-address
             when "00000000000000" => bus_rsp_o.data <= cfs_reg_rd(0);
             when "00000000000001" => bus_rsp_o.data <= cfs_reg_rd(1);
             when "00000000000010" => bus_rsp_o.data <= cfs_reg_rd(2);
@@ -115,8 +113,7 @@ begin
 
       end if;
     end if;
-  end process bus_access;
-
+  end process;
 
   -- CFS Function Core ----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -128,5 +125,4 @@ begin
   cfs_reg_rd(2) <= bit_rev_f(cfs_reg_wr(2)); -- bit reversal
   cfs_reg_rd(3) <= (others => '1');
 
-
-end neorv32_cfs_rtl;
+end architecture;

@@ -64,7 +64,7 @@ entity neorv32_sysinfo is
     bus_req_i : in  bus_req_t;  -- bus request
     bus_rsp_o : out bus_rsp_t   -- bus response
   );
-end neorv32_sysinfo;
+end entity;
 
 architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
 
@@ -97,7 +97,7 @@ begin
         sysinfo(0) <= bus_req_i.data;
       end if;
     end if;
-  end process sysinfo_clk;
+  end process;
 
   -- SYSINFO(1): Misc -----------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -168,6 +168,6 @@ begin
         end if;
       end if;
     end if;
-  end process bus_response;
+  end process;
 
-end neorv32_sysinfo_rtl;
+end architecture;

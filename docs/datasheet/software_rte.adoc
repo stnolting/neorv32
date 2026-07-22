@@ -104,9 +104,9 @@ The following example shows how to install trap handlers for exemplary traps.
 .Installing Custom Trap Handlers Examples
 [source,c]
 ----
-neorv32_rte_handler_install(RTE_TRAP_MTI, machine_timer_irq_handler); // handler for machine timer interrupt
-neorv32_rte_handler_install(RTE_TRAP_MENV_CALL, environment_call_handler); // handler for machine environment call exception
-neorv32_rte_handler_install(SLINK_RX_RTE_ID, slink_rx_handler); // handler for SLINK receive interrupt
+neorv32_rte_handler_install(TRAP_CODE_MTI, machine_timer_irq_handler); // handler for machine timer interrupt
+neorv32_rte_handler_install(TRAP_CODE_MENV_CALL, environment_call_handler); // handler for machine environment call exception
+neorv32_rte_handler_install(SLINK_TRAP_CODE, slink_rx_handler); // handler for SLINK receive interrupt
 ----
 
 

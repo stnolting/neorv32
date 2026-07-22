@@ -37,7 +37,7 @@ entity neorv32_cpu_lsu is
     dbus_req_o  : out bus_req_t; -- request
     dbus_rsp_i  : in  bus_rsp_t  -- response
   );
-end neorv32_cpu_lsu;
+end entity;
 
 architecture neorv32_cpu_lsu_rtl of neorv32_cpu_lsu is
 
@@ -81,7 +81,7 @@ begin
           req.lock <= '0'; -- clear at the end of the bus access
         end if;
       end if;
-    end process amo_reg;
+    end process;
   end generate;
 
   -- no atomic memory operations --
@@ -132,7 +132,7 @@ begin
         end if;
       end if;
     end if;
-  end process mem_do_reg;
+  end process;
 
   req.burst  <= '0'; -- only non-burst/single-accesses
   req.stb    <= ctrl_i.lsu_req and (not misalign) and (not pmp_fault_i); -- access request (all source signals are driven by registers)
@@ -169,7 +169,7 @@ begin
         end case;
       end if;
     end if;
-  end process mem_di_reg;
+  end process;
 
   -- wait for bus response --
   wait_o <= not dbus_rsp_i.ack;
@@ -182,4 +182,4 @@ begin
   err_o(2) <= ctrl_i.lsu_mi_en and ctrl_i.lsu_wr and misalign; -- misaligned store
   err_o(3) <= ctrl_i.lsu_mi_en and ctrl_i.lsu_wr and (dbus_rsp_i.err or pmp_fault_i); -- store access error
 
-end neorv32_cpu_lsu_rtl;
+end architecture;

@@ -44,7 +44,7 @@ package jtag_dmi_pkg is
     variable data     : out std_ulogic_vector(31 downto 0)
   );
 
-end package jtag_dmi_pkg;
+end package;
 
 package body jtag_dmi_pkg is
 
@@ -69,7 +69,7 @@ package body jtag_dmi_pkg is
     wait for t_jtag_c / 2;
     core_tck <= '0';
     wait for t_jtag_c / 4;
-  end procedure jtag_tck_cycle;
+  end procedure;
 
   -- Reset TAP controller state machine -----------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ package body jtag_dmi_pkg is
       jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '1', '0', tdo_v); -- go to RESET from any state
     end loop;
     jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '0', '0', tdo_v); -- RUN_IDLE
-  end procedure jtag_reset;
+  end procedure;
 
   -- Set TAP instruction register (IR) ------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ package body jtag_dmi_pkg is
     jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '1', ir(4), tdo_v); -- last bit: EXIT1-IR
     jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '1', '0', tdo_v);   -- UPDATE-IR
     jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '0', '0', tdo_v);   -- RUN-TEST/IDLE
-  end procedure jtag_shift_ir;
+  end procedure;
 
   -- Set TAP data register (DMI only) -------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -135,7 +135,7 @@ package body jtag_dmi_pkg is
     end loop;
     jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '1', '0', tdo_v); -- UPDATE-DR
     jtag_tck_cycle(core_tck, core_tms, core_tdi, core_tdo, '0', '0', tdo_v); -- RUN-TEST/IDLE
-  end procedure jtag_shift_dr;
+  end procedure;
 
   -- Write to DMI register ------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ package body jtag_dmi_pkg is
     jtag_shift_ir(core_tck, core_tms, core_tdi, core_tdo, "10001"); -- IR = DMI
     dmi_in_v := addr & data & "10"; -- op = write
     jtag_shift_dr(core_tck, core_tms, core_tdi, core_tdo, dmi_in_v, dmi_out_v); -- write to TAP.dmi
-  end procedure dmi_write;
+  end procedure;
 
   -- Read from DMI register -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -172,6 +172,6 @@ package body jtag_dmi_pkg is
     dmi_in_v := (others => '0'); -- op = NOP
     jtag_shift_dr(core_tck, core_tms, core_tdi, core_tdo, dmi_in_v, dmi_out_v); -- read from TAP.dmi
     data := dmi_out_v(33 downto 2);
-  end procedure dmi_read;
+  end procedure;
 
-end package body jtag_dmi_pkg;
+end package body;

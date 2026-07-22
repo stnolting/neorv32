@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -29,7 +29,7 @@ entity neorv32_onewire is
     onewire_o : out std_ulogic;                    -- 1-wire line pull-down
     irq_o     : out std_ulogic                     -- transfer done IRQ
   );
-end neorv32_onewire;
+end entity;
 
 architecture neorv32_onewire_rtl of neorv32_onewire is
 
@@ -105,7 +105,6 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
   -- serial engine --
   type serial_t is record
     state    : std_ulogic_vector(2 downto 0);
-    busy     : std_ulogic;
     bit_cnt  : unsigned(2 downto 0);
     tick_cnt : unsigned(6 downto 0);
     sreg     : std_ulogic_vector(7 downto 0);
@@ -117,6 +116,7 @@ architecture neorv32_onewire_rtl of neorv32_onewire is
     done     : std_ulogic;
   end record;
   signal serial : serial_t;
+  signal busy : std_ulogic;
 
 begin
 
@@ -153,7 +153,7 @@ begin
           bus_rsp_o.data(ctrl_tx_full_c)                             <= not fifo.tx_free;
           bus_rsp_o.data(ctrl_rx_avail_c)                            <= fifo.rx_avail;
           bus_rsp_o.data(ctrl_sense_c)                               <= serial.wire_in(1);
-          bus_rsp_o.data(ctrl_busy_c)                                <= fifo.tx_avail or serial.busy;
+          bus_rsp_o.data(ctrl_busy_c)                                <= fifo.tx_avail or busy;
         else -- data register
           bus_rsp_o.data(dcmd_msb_c downto dcmd_lsb_c) <= fifo.rx_rdata(7 downto 0);
           bus_rsp_o.data(dcmd_pres_c)                  <= fifo.rx_rdata(8);
@@ -161,7 +161,7 @@ begin
       end if;
 
     end if;
-  end process bus_access;
+  end process;
 
 
   -- Data FIFO ("Ring Buffer") --------------------------------------------------------------
@@ -229,9 +229,9 @@ begin
     if (rstn_i = '0') then
       irq_o <= '0';
     elsif rising_edge(clk_i) then
-      irq_o <= ctrl.enable and (not fifo.tx_avail) and (not serial.busy);
+      irq_o <= ctrl.enable and (not fifo.tx_avail) and (not busy);
     end if;
-  end process irq_generator;
+  end process;
 
 
   -- Clock Generator ------------------------------------------------------------------------
@@ -256,7 +256,7 @@ begin
       end if;
       clk_tick2 <= clk_tick; -- tick delayed by one clock cycle (for precise bus state sampling)
     end if;
-  end process clock_generator;
+  end process;
 
   -- only use the lowest 4 clocks of the system clock generator --
   clk_src <= clkgen_i(3 downto 0);
@@ -267,14 +267,15 @@ begin
   serial_engine: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
+      serial.state    <= (others => '0');
+      serial.bit_cnt  <= (others => '0');
+      serial.tick_cnt <= (others => '0');
+      serial.sreg     <= (others => '0');
       serial.wire_in  <= (others => '0');
       serial.wire_lo  <= '0';
       serial.wire_hi  <= '0';
-      serial.state    <= (others => '0');
-      serial.tick_cnt <= (others => '0');
-      serial.bit_cnt  <= (others => '0');
-      serial.sreg     <= (others => '0');
       serial.sample   <= '0';
+      serial.presence <= '0';
       serial.done     <= '0';
       onewire_o       <= '0';
     elsif rising_edge(clk_i) then
@@ -282,7 +283,7 @@ begin
       serial.wire_in <= serial.wire_in(0) & to_stdulogic(to_bit(onewire_i)); -- "to_bit" to avoid hardware-vs-simulation mismatch
 
       -- bus control --
-      if (serial.busy = '0') or (serial.wire_hi = '1') then -- disabled/idle or active tristate request
+      if (busy = '0') or (serial.wire_hi = '1') then -- disabled/idle or active tristate request
         onewire_o <= '1'; -- release bus (tristate), high (by pull-up resistor) or actively pulled low by device(s)
       elsif (serial.wire_lo = '1') then
         onewire_o <= '0'; -- pull bus actively low
@@ -374,10 +375,9 @@ begin
 
       end case;
     end if;
-  end process serial_engine;
+  end process;
 
   -- serial engine busy? --
-  serial.busy <= '0' when (serial.state(1 downto 0) = "00") else '1';
+  busy <= '0' when (serial.state(1 downto 0) = "00") else '1';
 
-
-end neorv32_onewire_rtl;
+end architecture;

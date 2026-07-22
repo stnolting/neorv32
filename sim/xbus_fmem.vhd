@@ -32,7 +32,7 @@ entity xbus_fmem is
     mem_req_i : in  xbus_req_t;
     mem_rsp_o : out xbus_rsp_t
   );
-end xbus_fmem;
+end entity;
 
 architecture xbus_fmem_rtl of xbus_fmem is
 
@@ -71,7 +71,7 @@ begin
         tag_err <= tag_mem(to_integer(unsigned(mem_req_i.addr(awidth_c+1 downto 2))));
       end if;
     end if;
-  end process tag_memory;
+  end process;
 
   -- access enable --
   tag_mem_en <= tag_req_i.sel(0) when (tag_req_i.cyc = '1') and (tag_req_i.stb = '1') else '0';
@@ -95,7 +95,7 @@ begin
         tag_rsp_o.err  <= '0';
       end if;
     end if;
-  end process tag_mem_handshake;
+  end process;
 
 
   -- Data Memory ----------------------------------------------------------------------------
@@ -136,7 +136,7 @@ begin
         end if;
       end if;
     end if;
-  end process data_memory;
+  end process;
 
   -- byte-wise access enable --
   data_mem_en <= mem_req_i.sel when (mem_req_i.cyc = '1') and (mem_req_i.stb = '1') else (others => '0');
@@ -162,6 +162,6 @@ begin
         end if;
       end if;
     end if;
-  end process data_mem_handshake;
+  end process;
 
-end xbus_fmem_rtl;
+end architecture;

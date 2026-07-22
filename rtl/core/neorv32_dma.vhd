@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -28,7 +28,7 @@ entity neorv32_dma is
     dma_rsp_i : in  bus_rsp_t;  -- DMA response
     irq_o     : out std_ulogic  -- transfer done interrupt
   );
-end neorv32_dma;
+end entity;
 
 architecture neorv32_dma_rtl of neorv32_dma is
 
@@ -60,7 +60,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
   function rep4_f(b : std_ulogic_vector(7 downto 0)) return std_ulogic_vector is
   begin
     return b & b & b & b;
-  end function rep4_f;
+  end function;
 
   -- one-hot encoding --
   function onehot_f(sel : std_ulogic_vector(1 downto 0)) return std_ulogic_vector is
@@ -73,7 +73,7 @@ architecture neorv32_dma_rtl of neorv32_dma is
       when others  => res_v := "1000";
     end case;
     return res_v;
-  end function onehot_f;
+  end function;
 
   -- control and status register --
   type ctrl_t is record
@@ -156,7 +156,7 @@ begin
         end if;
       end if;
     end if;
-  end process ctrl_access;
+  end process;
 
   -- transfer-done interrupt --
   irq_o <= ctrl.done;
@@ -298,7 +298,7 @@ begin
 
       end case;
     end if;
-  end process bus_engine;
+  end process;
 
 
   -- Address Increment ----------------------------------------------------------------------
@@ -317,7 +317,7 @@ begin
       when "11"   => dst_add <= to_unsigned(4, 32); -- incrementing word
       when others => dst_add <= to_unsigned(0, 32); -- constant byte/word
     end case;
-  end process address_inc;
+  end process;
 
 
   -- Input Data Alignment -------------------------------------------------------------------
@@ -340,7 +340,7 @@ begin
         end if;
       end if;
     end if;
-  end process src_align;
+  end process;
 
 
   -- Bus Output Control ---------------------------------------------------------------------
@@ -388,7 +388,6 @@ begin
     if (engine.state = S_READ_REQ) or (engine.state = S_WRITE_REQ) then
       dma_req_o.stb <= '1';
     end if;
-  end process bus_control;
+  end process;
 
-
-end neorv32_dma_rtl;
+end architecture;

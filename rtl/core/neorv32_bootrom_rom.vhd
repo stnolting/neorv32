@@ -28,7 +28,7 @@ entity neorv32_bootrom_rom is
     addr_i : in  std_ulogic_vector(31 downto 0); -- full byte address
     data_o : out std_ulogic_vector(31 downto 0)  -- read data, sync
   );
-end neorv32_bootrom_rom;
+end entity;
 
 architecture neorv32_bootrom_rom_rtl of neorv32_bootrom_rom is
 
@@ -54,6 +54,6 @@ begin
         data_o <= image_data_c(to_integer(unsigned(addr_i(awidth_c-1 downto 2))));
       end if;
     end if;
-  end process rom_access;
+  end process;
 
-end neorv32_bootrom_rom_rtl;
+end architecture;

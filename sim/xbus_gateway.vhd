@@ -3,7 +3,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- ================================================================================ --
@@ -41,7 +41,7 @@ entity xbus_gateway is
     dev_6_req_o : out xbus_req_t; dev_6_rsp_i : in xbus_rsp_t;
     dev_7_req_o : out xbus_req_t; dev_7_rsp_i : in xbus_rsp_t
   );
-end xbus_gateway;
+end entity;
 
 architecture xbus_gateway_rtl of xbus_gateway is
 
@@ -96,7 +96,7 @@ begin
         dev_req(i).cyc <= host_req_i.cyc and acc_en(i);
         dev_req(i).stb <= host_req_i.stb and acc_en(i);
       end if;
-    end process bus_request;
+    end process;
   end generate;
 
   -- response --
@@ -114,6 +114,6 @@ begin
       end if;
     end loop;
     host_rsp_o <= tmp_v;
-  end process bus_response;
+  end process;
 
-end xbus_gateway_rtl;
+end architecture;

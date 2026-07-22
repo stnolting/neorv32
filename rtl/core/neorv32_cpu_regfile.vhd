@@ -41,7 +41,7 @@ entity neorv32_cpu_regfile is
     rs1_o  : out std_ulogic_vector(DWIDTH-1 downto 0); -- source data rs1
     rs2_o  : out std_ulogic_vector(DWIDTH-1 downto 0)  -- source data rs2
   );
-end neorv32_cpu_regfile;
+end entity;
 
 architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
 
@@ -78,7 +78,7 @@ begin
         rs1_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
         rs2_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs2(AWIDTH-1 downto 0))));
       end if;
-    end process rf_access;
+    end process;
 
     -- unused --
     wdata  <= (others => '0');
@@ -103,7 +103,7 @@ begin
           regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0)))) <= rd_i;
         end if;
       end if;
-    end process rf_write;
+    end process;
 
     -- asynchronous read + zero-insertion + output-register --
     rf_read: process(rstn_i, clk_i)
@@ -123,7 +123,7 @@ begin
           rs2_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs2(AWIDTH-1 downto 0))));
         end if;
       end if;
-    end process rf_read;
+    end process;
 
     -- unused --
     rf_we  <= '0';
@@ -156,7 +156,7 @@ begin
             regfile(i) <= rd_i;
           end if;
         end if;
-      end process rf_write;
+      end process;
     end generate;
     regfile(0) <= (others => '0'); -- x0 is hardwired to zero
 
@@ -167,7 +167,7 @@ begin
         rs1_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs1(AWIDTH-1 downto 0))));
         rs2_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs2(AWIDTH-1 downto 0))));
       end if;
-    end process rf_read;
+    end process;
 
     -- unused --
     rf_we <= '0';
@@ -201,7 +201,7 @@ begin
           end if;
         end loop;
       end if;
-    end process rf_write;
+    end process;
 
     -- individual latches (transparent when clock is LOW) --
     regfile_gen:
@@ -217,7 +217,7 @@ begin
         rs1_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs1(AWIDTH-1 downto 0))));
         rs2_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs2(AWIDTH-1 downto 0))));
       end if;
-    end process rf_read;
+    end process;
 
     -- unused --
     rf_we <= '0';
@@ -225,4 +225,4 @@ begin
 
   end generate;
 
-end neorv32_cpu_regfile_rtl;
+end Architecture;

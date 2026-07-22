@@ -293,7 +293,7 @@ entity neorv32_top is
     irq_mti_i      : in  std_ulogic := 'L';                                  -- machine timer interrupt, available if IO_CLINT_EN = false
     irq_mei_i      : in  std_ulogic := 'L'                                   -- machine external interrupt
   );
-end neorv32_top;
+end entity;
 
 architecture neorv32_top_rtl of neorv32_top is
 
@@ -1263,7 +1263,7 @@ begin
         elsif rising_edge(clk_i) then
           mtime_lo(31 downto 0) <= mtime(31 downto 0);
         end if;
-      end process mtime_sync;
+      end process;
       mtime_time_o <= mtime(63 downto 32) & mtime_lo;
     end generate;
 
@@ -1734,4 +1734,4 @@ begin
     dci_haltreq          <= (others => '0');
   end generate;
 
-end neorv32_top_rtl;
+end architecture;
