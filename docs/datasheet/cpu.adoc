@@ -385,6 +385,23 @@ result bit in every cycle. Multiplication operations always require 32 clock cyc
 
 {empty} +
 [discrete]
+===== **`CPU_FAST_MUL_REG`**
+
+[cols="<1,<8"]
+[frame="topbot",grid="none"]
+|=======================
+| Name        | Fast multiplier pipeline register
+| Type        | `boolean`
+| Default     | `false` (disabled)
+| Description | Only effective together with <<_cpu_fast_mul_en>>. When **enabled** a pipeline register is added to the fast
+multiplier so the synthesis tool can retime it into the DSP cascade that is inferred when the DSP blocks are narrower than the
+operands, shortening the critical path. Costs one extra latency cycle per multiplication (`T_mul_latency` = 2).
+|             | When **disabled** the fast multiplier is bit-identical to before. Wide-DSP targets (e.g. Xilinx UltraScale+) do not need this.
+|=======================
+
+
+{empty} +
+[discrete]
 ===== **`CPU_FAST_SHIFT_EN`**
 
 [cols="<1,<8"]

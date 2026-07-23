@@ -69,6 +69,7 @@ entity neorv32_top is
     -- Tuning Options --
     CPU_CONSTT_BR_EN    : boolean                        := false;         -- enable constant-time branches
     CPU_FAST_MUL_EN     : boolean                        := false;         -- use DSPs for M extension's multiplier
+    CPU_FAST_MUL_REG    : boolean                        := false;         -- add a pipeline register to the fast multiplier (needs CPU_FAST_MUL_EN)
     CPU_FAST_SHIFT_EN   : boolean                        := false;         -- use barrel shifter for shift operations
     CPU_RF_ARCH_SEL     : natural range 0 to 3           := 0;             -- register file implementation style select
 
@@ -588,6 +589,7 @@ begin
       CPU_TRACE_EN        => trace_en_c,
       CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
+      CPU_FAST_MUL_REG    => CPU_FAST_MUL_REG,
       CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
       CPU_RF_ARCH_SEL     => CPU_RF_ARCH_SEL,
       -- Physical Memory Protection (PMP) --

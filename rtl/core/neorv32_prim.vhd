@@ -259,7 +259,8 @@ use ieee.numeric_std.all;
 
 entity neorv32_prim_mul is
   generic (
-    DWIDTH : natural -- operand width
+    DWIDTH   : natural;            -- operand width
+    PIPELINE : boolean := false    -- add a second (output) register stage
   );
   port (
     -- global control --
@@ -278,7 +279,8 @@ end entity;
 architecture neorv32_prim_mul_rtl of neorv32_prim_mul is
 
   signal opa, opb : signed(DWIDTH downto 0);
-  signal res : signed((2*DWIDTH)+1 downto 0);
+  signal res      : signed((2*DWIDTH)+1 downto 0);
+  signal res_pipe : signed((2*DWIDTH)+1 downto 0);
 
 begin
 
@@ -306,8 +308,28 @@ begin
     end if;
   end process;
 
+  -- Optional Pipeline Register -------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  -- Second register layer, giving synthesis a register to retime into a DSP
+  -- cascade (needed when DSP blocks are narrower than the operands). Shortens
+  -- the critical path at the cost of one latency cycle (handled by the caller).
+  pipe_true:
+  if PIPELINE generate
+    pipe_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve DSP mapping
+        res_pipe <= res;
+      end if;
+    end process;
+  end generate;
+
+  pipe_false:
+  if not PIPELINE generate
+    res_pipe <= res;
+  end generate;
+
   -- result --
-  res_o <= std_ulogic_vector(res((2*DWIDTH)-1 downto 0));
+  res_o <= std_ulogic_vector(res_pipe((2*DWIDTH)-1 downto 0));
 
 end architecture;
 
