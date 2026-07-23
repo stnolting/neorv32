@@ -38,8 +38,9 @@ entity neorv32_smc is
     smc_ioen_o : out std_ulogic;                    -- SMC pin enable, can be used for IO multiplexing
     smc_sck_o  : out std_ulogic;                    -- clock
     smc_csn_o  : out std_ulogic_vector(1 downto 0); -- bank/chip select, low-active
-    smc_sdo_o  : out std_ulogic;                    -- serial data output
-    smc_sdi_i  : in  std_ulogic                     -- serial data input
+    smc_oen_o  : out std_ulogic_vector(3 downto 0); -- output enable, low-active
+    smc_sdo_o  : out std_ulogic_vector(3 downto 0); -- serial data output
+    smc_sdi_i  : in  std_ulogic_vector(3 downto 0)  -- serial data input
   );
 end entity;
 
@@ -59,7 +60,7 @@ architecture neorv32_smc_rtl of neorv32_smc is
   -- CSR0 register layout --
   constant csr0_enable_c    : natural :=  0; -- r/w: SMC enable
   constant csr0_ioen_c      : natural :=  1; -- r/w: smc_ioen_o IO pin-enable
---constant csr0_mode_c      : natural :=  2; -- r/w: mode: 0=SPI, 1=QPI [TODO]
+  constant csr0_quad_c      : natural :=  2; -- r/w: 0=SPI, 1=QPI [TODO]
   constant csr0_dual_c      : natural :=  3; -- r/w: dual-memory mode enable
   constant csr0_busy_c      : natural :=  4; -- r/-: SMC busy
   --
@@ -78,6 +79,7 @@ architecture neorv32_smc_rtl of neorv32_smc is
   type csr_t is record
     enable : std_ulogic;                     -- global enable
     ioen   : std_ulogic;                     -- SMC pin-enable
+    quad   : std_ulogic;                     -- enable 4-bit QUAD mode
     dual   : std_ulogic;                     -- dual-memory mode enable
     msize  : std_ulogic_vector(1 downto 0);  -- memory size select
     cdiv   : std_ulogic_vector(2 downto 0);  -- clock divider: f_SPI = f_cpu/(2*(cdiv+1))
@@ -116,6 +118,7 @@ architecture neorv32_smc_rtl of neorv32_smc is
     clk_i       : in  std_ulogic;
     -- configuration --
     cfg_en_i    : in  std_ulogic;
+    cfg_quad_i  : in  std_ulogic;
     cfg_icmd_i  : in  std_ulogic_vector(23 downto 0);
     cfg_rcmd_i  : in  std_ulogic_vector(7 downto 0);
     cfg_wcmd_i  : in  std_ulogic_vector(7 downto 0);
@@ -129,11 +132,12 @@ architecture neorv32_smc_rtl of neorv32_smc is
     cmd_data_i  : in  std_ulogic_vector(31 downto 0);
     cmd_data_o  : out std_ulogic_vector(31 downto 0);
     cmd_busy_o  : out std_ulogic;
-    -- memory select --
+    -- memory interface --
     mem_csn_o   : out std_ulogic_vector(1 downto 0);
+    mem_oen_o   : out std_ulogic_vector(3 downto 0);
     -- PHY interface --
     phy_start_o : out std_ulogic;
-    phy_nbits_o : out std_ulogic_vector(5 downto 0);
+    phy_ntick_o : out std_ulogic_vector(5 downto 0);
     phy_data_o  : out std_ulogic_vector(31 downto 0);
     phy_data_i  : in  std_ulogic_vector(31 downto 0);
     phy_busy_i  : in  std_ulogic
@@ -152,23 +156,24 @@ architecture neorv32_smc_rtl of neorv32_smc is
     clk_i   : in  std_ulogic;
     -- operation control --
     en_i    : in  std_ulogic;
+    quad_i  : in  std_ulogic;
     start_i : in  std_ulogic;
     cdiv_i  : in  std_ulogic_vector(2 downto 0);
-    nbits_i : in  std_ulogic_vector(5 downto 0);
+    ntick_i : in  std_ulogic_vector(5 downto 0);
     busy_o  : out std_ulogic;
     -- RTX data --
     txd_i   : in  std_ulogic_vector(31 downto 0);
     rxd_o   : out std_ulogic_vector(31 downto 0);
     -- memory interface --
     sck_o   : out std_ulogic;
-    sdo_o   : out std_ulogic;
-    sdi_i   : in  std_ulogic
+    sdo_o   : out std_ulogic_vector(3 downto 0);
+    sdi_i   : in  std_ulogic_vector(3 downto 0)
   );
   end component;
 
   -- PHY interface --
   signal phy_start, phy_busy : std_ulogic;
-  signal phy_nbits : std_ulogic_vector(5 downto 0);
+  signal phy_ntick : std_ulogic_vector(5 downto 0);
   signal phy_wdata, phy_rdata : std_ulogic_vector(31 downto 0);
 
 begin
@@ -181,6 +186,7 @@ begin
       ctrl_rsp_o <= rsp_terminate_c;
       csr.enable <= '0';
       csr.ioen   <= '0';
+      csr.quad   <= '0';
       csr.dual   <= '0';
       csr.msize  <= (others => '0');
       csr.cdiv   <= (others => '0');
@@ -198,6 +204,7 @@ begin
         if (ctrl_req_i.addr(2) = '0') then -- CSR0
           csr.enable <= ctrl_req_i.data(csr0_enable_c);
           csr.ioen   <= ctrl_req_i.data(csr0_ioen_c);
+          csr.quad   <= ctrl_req_i.data(csr0_quad_c);
           csr.dual   <= ctrl_req_i.data(csr0_dual_c);
           csr.msize  <= ctrl_req_i.data(csr0_msize_msb_c downto csr0_msize_lsb_c);
           csr.cdiv   <= ctrl_req_i.data(csr0_cdiv_msb_c  downto csr0_cdiv_lsb_c);
@@ -213,6 +220,7 @@ begin
         if (ctrl_req_i.addr(2) = '0') then -- CSR0
           ctrl_rsp_o.data(csr0_enable_c)                            <= csr.enable;
           ctrl_rsp_o.data(csr0_ioen_c)                              <= csr.ioen;
+          ctrl_rsp_o.data(csr0_quad_c)                              <= csr.quad;
           ctrl_rsp_o.data(csr0_dual_c)                              <= csr.dual;
           ctrl_rsp_o.data(csr0_busy_c)                              <= busy;
           ctrl_rsp_o.data(csr0_msize_msb_c downto csr0_msize_lsb_c) <= csr.msize;
@@ -375,6 +383,7 @@ begin
     clk_i       => clk_i,
     -- configuration --
     cfg_en_i    => csr.enable,
+    cfg_quad_i  => csr.quad,
     cfg_icmd_i  => csr.icmd,
     cfg_rcmd_i  => csr.cmd_rd,
     cfg_wcmd_i  => csr.cmd_wr,
@@ -388,11 +397,12 @@ begin
     cmd_data_i  => mac_wdata,
     cmd_data_o  => mac_rdata,
     cmd_busy_o  => mac_busy,
-    -- memory select --
+    -- memory interface --
     mem_csn_o   => smc_csn_o,
+    mem_oen_o   => smc_oen_o,
     -- PHY interface --
     phy_start_o => phy_start,
-    phy_nbits_o => phy_nbits,
+    phy_ntick_o => phy_ntick,
     phy_data_o  => phy_wdata,
     phy_data_i  => phy_rdata,
     phy_busy_i  => phy_busy
@@ -407,9 +417,10 @@ begin
     clk_i   => clk_i,
     -- operation control --
     en_i    => csr.enable,
+    quad_i  => csr.quad,
     start_i => phy_start,
     cdiv_i  => csr.cdiv,
-    nbits_i => phy_nbits,
+    ntick_i => phy_ntick,
     busy_o  => phy_busy,
     -- RTX data --
     txd_i   => phy_wdata,
@@ -446,6 +457,7 @@ entity neorv32_smc_mac is
     clk_i      : in  std_ulogic;                      -- global clock line
     -- configuration --
     cfg_en_i    : in  std_ulogic;                     -- enable, reset when low
+    cfg_quad_i  : in  std_ulogic;                     -- 0=SPI, 1=QPI
     cfg_icmd_i  : in  std_ulogic_vector(23 downto 0); -- initialization commands
     cfg_rcmd_i  : in  std_ulogic_vector(7 downto 0);  -- read command
     cfg_wcmd_i  : in  std_ulogic_vector(7 downto 0);  -- write command
@@ -459,11 +471,12 @@ entity neorv32_smc_mac is
     cmd_data_i  : in  std_ulogic_vector(31 downto 0); -- transmit data (MSB-aligned)
     cmd_data_o  : out std_ulogic_vector(31 downto 0); -- receive data (LSB-aligned)
     cmd_busy_o  : out std_ulogic;                     -- operation in progress
-    -- memory select --
+    -- memory interface --
     mem_csn_o   : out std_ulogic_vector(1 downto 0);  -- bank/chip select, low-active
+    mem_oen_o   : out std_ulogic_vector(3 downto 0);  -- output enable, low-active
     -- PHY interface --
     phy_start_o : out std_ulogic;                     -- start transfer
-    phy_nbits_o : out std_ulogic_vector(5 downto 0);  -- number of bits to transfer
+    phy_ntick_o : out std_ulogic_vector(5 downto 0);  -- number transfer ticks
     phy_data_o  : out std_ulogic_vector(31 downto 0); -- TX data (MSB-aligned)
     phy_data_i  : in  std_ulogic_vector(31 downto 0); -- RX data (LSB-aligned)
     phy_busy_i  : in  std_ulogic                      -- operation in progress
@@ -478,6 +491,7 @@ architecture neorv32_smc_mac_rtl of neorv32_smc_mac is
     state : state_t;                        -- FSM state
     isel  : std_ulogic_vector(1 downto 0);  -- initialization command select
     csn   : std_ulogic_vector(1 downto 0);  -- bank/chip select, low-active
+    oen   : std_ulogic_vector(3 downto 0);  -- output enable, low-active
     rdata : std_ulogic_vector(31 downto 0); -- RX data
   end record;
   signal mac, mac_nxt : mac_t; -- FSM
@@ -486,20 +500,26 @@ architecture neorv32_smc_mac_rtl of neorv32_smc_mac is
   type icmd_t is array (3 downto 0) of std_ulogic_vector(7 downto 0);
   signal icmd : icmd_t; -- initialization commands
   signal bcsn : std_ulogic_vector(1 downto 0); -- bank chip-select
+  signal ioen : std_ulogic_vector(3 downto 0); -- output enable
   signal numb : std_ulogic_vector(2 downto 0); -- number of bytes to transfer
 
 begin
 
   -- Helper Logic ---------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  icmd(0) <= (others => '0');          -- setup command 0; CS disabled
-  icmd(1) <= cfg_icmd_i(7 downto 0);   -- setup command 1; CS enabled
-  icmd(2) <= cfg_icmd_i(15 downto 8);  -- setup command 2; CS enabled
-  icmd(3) <= cfg_icmd_i(23 downto 16); -- setup command 3; CS enabled
+  icmd(0) <= (others => '0');          -- zero/NOP; CS disabled
+  icmd(1) <= cfg_icmd_i(7 downto 0);   -- setup command 0; CS enabled
+  icmd(2) <= cfg_icmd_i(15 downto 8);  -- setup command 1; CS enabled
+  icmd(3) <= cfg_icmd_i(23 downto 16); -- setup command 2; CS enabled
 
-  bcsn <= "10" when (cmd_bank_i = '0') else "01"; -- bank/chip select, low-active
+  -- bank/chip select, low-active --
+  bcsn <= "10" when (cmd_bank_i = '0') else "01";
 
-  with cmd_size_i select numb <= -- number of bytes to transfer
+  -- output-enable mask for driving access, low-active --
+  ioen <= "1110" when (cfg_quad_i = '0') else "0000";
+
+  -- number of bytes to transfer --
+  with cmd_size_i select numb <=
     "001"           when "00", -- 1 byte
     "010"           when "01", -- 2 bytes
     "011"           when "10", -- 3 bytes
@@ -514,6 +534,7 @@ begin
       mac.state <= S_INIT_0;
       mac.isel  <= (others => '0');
       mac.csn   <= (others => '1');
+      mac.oen   <= (others => '1');
       mac.rdata <= (others => '0');
     elsif rising_edge(clk_i) then
       mac <= mac_nxt;
@@ -521,19 +542,20 @@ begin
         mac.state <= S_INIT_0;
         mac.isel  <= (others => '0');
         mac.csn   <= (others => '1');
+        mac.oen   <= (others => '1');
       end if;
     end if;
   end process;
 
   -- Access Arbiter Comb --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  arbiter_comb: process(mac, icmd, bcsn, numb, cfg_rcmd_i, cfg_wcmd_i, cfg_rwait_i, cmd_start_i,
-                        cmd_rw_i, cmd_addr_i, cmd_data_i, phy_busy_i, phy_data_i)
+  arbiter_comb: process(mac, icmd, bcsn, numb, ioen, cfg_quad_i, cfg_rcmd_i, cfg_wcmd_i, cfg_rwait_i,
+                        cmd_start_i, cmd_rw_i, cmd_addr_i, cmd_data_i, phy_busy_i, phy_data_i)
   begin
     -- defaults --
     mac_nxt     <= mac;
     phy_start_o <= '0';
-    phy_nbits_o <= (others => '0');
+    phy_ntick_o <= (others => '0');
     phy_data_o  <= (others => '0');
 
     -- fsm --
@@ -542,27 +564,35 @@ begin
       when S_INIT_0 => -- wait for PHY to become ready
       -- ------------------------------------------------------------
         mac_nxt.csn <= (others => '1'); -- disable memories
+        mac_nxt.oen <= (others => '1'); -- all inputs
         if (phy_busy_i = '0') then
           mac_nxt.state <= S_INIT_1;
         end if;
 
-      when S_INIT_1 => -- send 8-bit initialization command (SPI-mode)
+      when S_INIT_1 => -- send 8-bit initialization command
       -- ------------------------------------------------------------
         if (mac.isel = "00") then -- initial: send dummy clocks without active CS
           mac_nxt.csn <= (others => '1'); -- disable all memories
+          mac_nxt.oen <= (others => '1'); -- all inputs
         else
           mac_nxt.csn <= (others => '0'); -- enable all memories
+          mac_nxt.oen <= ioen; -- drive outputs
+        end if;
+        if (cfg_quad_i = '0') then -- SPI
+          phy_ntick_o <= "001000"; -- 8 ticks
+        else -- QPI
+          phy_ntick_o <= "000010"; -- 2 ticks
         end if;
         phy_data_o(31 downto 24) <= icmd(to_integer(unsigned(mac.isel)));
-        phy_nbits_o              <= "001000"; -- 8 bits
         phy_start_o              <= '1'; -- trigger transmission
         mac_nxt.state            <= S_INIT_2;
 
       when S_INIT_2 => -- insert delay and prepare next command
       -- ------------------------------------------------------------
-        phy_nbits_o <= "001000"; -- 8 dummy ticks
+        phy_ntick_o <= "001000"; -- 8 dummy ticks
         if (phy_busy_i = '0') then
           mac_nxt.csn  <= (others => '1'); -- disable memories
+          mac_nxt.oen  <= (others => '1'); -- all inputs
           mac_nxt.isel <= std_ulogic_vector(unsigned(mac.isel) + 1);
           if (mac.isel = "11") then -- all commands sent?
             mac_nxt.state <= S_IDLE;
@@ -575,6 +605,7 @@ begin
       when S_IDLE => -- wait for new access
       -- ------------------------------------------------------------
         mac_nxt.csn <= (others => '1'); -- memory disabled
+        mac_nxt.oen <= (others => '1'); -- all inputs
         if (cmd_start_i = '1') then
           mac_nxt.state <= S_CMD;
         end if;
@@ -582,7 +613,12 @@ begin
       when S_CMD => -- send command + address (8-bit + 24-bit)
       -- ------------------------------------------------------------
         mac_nxt.csn <= bcsn; -- memory enabled
-        phy_nbits_o <= "100000"; -- 8+24=32 bits
+        mac_nxt.oen <= ioen; -- drive outputs
+        if (cfg_quad_i = '0') then -- SPI
+          phy_ntick_o <= "100000"; -- 8+24=32 ticks
+        else -- QPI
+          phy_ntick_o <= "001000"; -- (8+24)/4=8 bits
+        end if;
         phy_start_o <= '1'; -- trigger transmission
         if (cmd_rw_i = '0') then -- read
           phy_data_o <= cfg_rcmd_i & cmd_addr_i;
@@ -599,8 +635,9 @@ begin
       when S_DUMMY => -- send dummy bits
       -- ------------------------------------------------------------
         mac_nxt.csn <= bcsn; -- memory enabled
-        phy_nbits_o <= "00" & cfg_rwait_i; -- 0..15 cycles
+        phy_ntick_o <= "00" & cfg_rwait_i; -- 0..15 cycles
         if (phy_busy_i = '0') then
+          mac_nxt.oen   <= (others => '1'); -- all inputs
           phy_start_o   <= '1'; -- trigger transmission
           mac_nxt.state <= S_DATA;
         end if;
@@ -609,8 +646,17 @@ begin
       -- ------------------------------------------------------------
         mac_nxt.csn <= bcsn; -- memory enabled
         phy_data_o  <= cmd_data_i;
-        phy_nbits_o <= numb & "000"; -- N*8 bits
+        if (cfg_quad_i = '0') then -- SPI
+          phy_ntick_o <= numb & "000"; -- N*8 ticks
+        else -- QPI
+          phy_ntick_o <= "00" & numb & '0'; -- N*2 ticks
+        end if;
         if (phy_busy_i = '0') then
+          if (cmd_rw_i = '0') then -- read
+            mac_nxt.oen <= (others => '1'); -- all inputs
+          else -- write
+            mac_nxt.oen <= ioen; -- drive outputs
+          end if;
           phy_start_o   <= '1'; -- trigger transmission
           mac_nxt.state <= S_WAIT;
         end if;
@@ -618,7 +664,7 @@ begin
       when S_WAIT => -- wait for access to complete
       -- ------------------------------------------------------------
         mac_nxt.csn <= bcsn; -- memory enabled
-        phy_nbits_o <= "000010"; -- 2 clock ticks as inter-access delay
+        phy_ntick_o <= "000010"; -- 2 clock ticks as inter-access delay
         if (phy_busy_i = '0') then
           if (cmd_rw_i = '0') then
             mac_nxt.rdata <= phy_data_i; -- sample RX data
@@ -630,6 +676,7 @@ begin
       when S_PAUSE => -- inter-access delay
       -- ------------------------------------------------------------
         mac_nxt.csn <= (others => '1'); -- memory disabled
+        mac_nxt.oen <= (others => '1'); -- all inputs
         if (phy_busy_i = '0') then
           mac_nxt.state <= S_IDLE;
         end if;
@@ -640,8 +687,9 @@ begin
   -- operation in progress --
   cmd_busy_o <= '0' when (mac.state = S_IDLE) else '1';
 
-  -- bank/chip select --
+  -- memory interface --
   mem_csn_o <= mac.csn;
+  mem_oen_o <= mac.oen;
 
   -- RX data --
   cmd_data_o <= mac.rdata;
@@ -672,17 +720,18 @@ entity neorv32_smc_phy is
     clk_i   : in  std_ulogic;                     -- clock
     -- operation control --
     en_i    : in  std_ulogic;                     -- module enable (reset when low)
+    quad_i  : in  std_ulogic;                     -- 0=SPI, 1=QPI
     start_i : in  std_ulogic;                     -- start transfer (single-shot)
     cdiv_i  : in  std_ulogic_vector(2 downto 0);  -- clock divider
-    nbits_i : in  std_ulogic_vector(5 downto 0);  -- number of bits to transfer (min 1)
+    ntick_i : in  std_ulogic_vector(5 downto 0);  -- number transfer ticks (min 1)
     busy_o  : out std_ulogic;                     -- operation in progress
     -- RTX data --
     txd_i   : in  std_ulogic_vector(31 downto 0); -- TX data (MSB-aligned)
     rxd_o   : out std_ulogic_vector(31 downto 0); -- RX data (LSB-aligned)
     -- memory interface --
     sck_o   : out std_ulogic;                     -- clock
-    sdo_o   : out std_ulogic;                     -- output data
-    sdi_i   : in  std_ulogic                      -- input data
+    sdo_o   : out std_ulogic_vector(3 downto 0);  -- output data
+    sdi_i   : in  std_ulogic_vector(3 downto 0)   -- input data
   );
 end entity;
 
@@ -693,9 +742,9 @@ architecture neorv32_smc_phy_rtl of neorv32_smc_phy is
   signal state : state_t;                        -- FSM state
   signal sreg  : std_ulogic_vector(31 downto 0); -- input/output shift register
   signal cdiv  : std_ulogic_vector(2 downto 0);  -- clock divider
-  signal bcnt  : std_ulogic_vector(5 downto 0);  -- bit counter
+  signal tcnt  : std_ulogic_vector(5 downto 0);  -- tick counter
+  signal sdi   : std_ulogic_vector(3 downto 0);  -- input sample register
   signal sck   : std_ulogic;                     -- serial clock
-  signal sdi   : std_ulogic;                     -- input sample register
 
 begin
 
@@ -707,9 +756,9 @@ begin
       state <= S_IDLE;
       sreg  <= (others => '0');
       cdiv  <= (others => '0');
-      bcnt  <= (others => '0');
+      tcnt  <= (others => '0');
+      sdi   <= (others => '0');
       sck   <= '0';
-      sdi   <= '0';
     elsif rising_edge(clk_i) then
       sdi <= sdi_i; -- input synchronizer
       case state is
@@ -718,7 +767,7 @@ begin
         -- ------------------------------------------------------------
           sck  <= '0'; -- clock mode 0: low when idle
           cdiv <= cdiv_i; -- reload clock counter
-          bcnt <= nbits_i;
+          tcnt <= ntick_i;
           sreg <= txd_i;
           if (en_i = '1') and (start_i = '1') then
             state <= S_RTX_0;
@@ -731,7 +780,7 @@ begin
           elsif (cdiv = "000") then -- end of phase
             sck   <= '1'; -- rising edge
             cdiv  <= cdiv_i; -- reload clock counter
-            bcnt  <= std_ulogic_vector(unsigned(bcnt) - 1);
+            tcnt  <= std_ulogic_vector(unsigned(tcnt) - 1);
             state <= S_RTX_1;
           else
             cdiv <= std_ulogic_vector(unsigned(cdiv) - 1);
@@ -744,8 +793,12 @@ begin
           elsif (cdiv = "000") then -- end of phase
             sck  <= '0'; -- falling edge
             cdiv <= cdiv_i; -- reload clock counter
-            sreg <= sreg(30 downto 0) & sdi; -- set & sample at falling edge
-            if (bcnt = "000000") then
+            if (quad_i = '0') then -- SPI
+              sreg <= sreg(30 downto 0) & sdi(1); -- set & sample at falling edge
+            else -- QPI
+              sreg <= sreg(27 downto 0) & sdi(3 downto 0); -- set & sample at falling edge
+            end if;
+            if (tcnt = "000000") then
               state <= S_IDLE;
             else
               state <= S_RTX_0;
@@ -766,6 +819,6 @@ begin
 
   -- serial output --
   sck_o <= sck;
-  sdo_o <= sreg(31);
+  sdo_o <= ("000" & sreg(31)) when (quad_i = '0') else sreg(31 downto 28); -- [TODO]
 
 end architecture;
