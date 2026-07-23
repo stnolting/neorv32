@@ -589,7 +589,7 @@ begin
       CPU_TRACE_EN        => trace_en_c,
       CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
-      CPU_FAST_MUL_REG => CPU_FAST_MUL_REG,
+      CPU_FAST_MUL_REG    => CPU_FAST_MUL_REG,
       CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
       CPU_RF_ARCH_SEL     => CPU_RF_ARCH_SEL,
       -- Physical Memory Protection (PMP) --

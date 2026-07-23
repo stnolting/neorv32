@@ -202,6 +202,7 @@ begin
       sel_string_f(CPU_TRACE_EN,                 "trace ",              "") &
       sel_string_f(CPU_CONSTT_BR_EN,             "constt_br ",          "") &
       sel_string_f(CPU_FAST_MUL_EN,              "fast_mul ",           "") &
+      sel_string_f(CPU_FAST_MUL_REG,             "fast_mul_reg ",       "") &
       sel_string_f(CPU_FAST_SHIFT_EN,            "fast_shift ",         "") &
       sel_string_f(boolean(CPU_RF_ARCH_SEL = 0), "rf_arch=sram_sync ",  "") &
       sel_string_f(boolean(CPU_RF_ARCH_SEL = 1), "rf_arch=sram_async ", "") &
@@ -441,9 +442,9 @@ begin
     RISCV_ISA_Zmmul  => RISCV_ISA_Zmmul,  -- multiply-only M sub-extension
     RISCV_ISA_Xcfu   => RISCV_ISA_Xcfu,   -- custom (instr.) functions unit
     -- Tuning Options --
-    FAST_MUL_EN       => CPU_FAST_MUL_EN,       -- use DSPs for M extension's multiplier
-    FAST_MUL_REG => CPU_FAST_MUL_REG, -- add a pipeline register to the fast multiplier
-    FAST_SHIFT_EN     => CPU_FAST_SHIFT_EN       -- use barrel shifter for shift operations
+    FAST_MUL_EN      => CPU_FAST_MUL_EN,  -- use DSPs for M extension's multiplier
+    FAST_MUL_REG     => CPU_FAST_MUL_REG, -- add a pipeline register to the fast multiplier
+    FAST_SHIFT_EN    => CPU_FAST_SHIFT_EN -- use barrel shifter for shift operations
   )
   port map (
     -- global control --
