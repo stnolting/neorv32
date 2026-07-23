@@ -22,9 +22,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_alu_muldiv is
   generic (
-    FAST_MUL_EN       : boolean; -- use DSPs for faster multiplication
-    FAST_MUL_REG      : boolean; -- add a pipeline register to the fast multiplier (needs FAST_MUL_EN)
-    DIVISION_EN       : boolean  -- implement divider hardware
+    FAST_MUL_EN  : boolean; -- use DSPs for faster multiplication
+    FAST_MUL_REG : boolean; -- add a pipeline register to the fast multiplier (needs FAST_MUL_EN)
+    DIVISION_EN  : boolean  -- implement divider hardware
   );
   port (
     -- global control --
@@ -68,7 +68,6 @@ architecture neorv32_cpu_alu_muldiv_rtl of neorv32_cpu_alu_muldiv is
   signal valid_cmd : std_ulogic;
 
   -- controller --
-  -- S_PIPE: single extra cycle for the pipelined fast multiplier (FAST_MUL_REG)
   type state_t is (S_IDLE, S_BUSY, S_PIPE, S_DONE);
   type ctrl_t is record
     state  : state_t;
@@ -118,6 +117,20 @@ begin
       -- fsm --
       case ctrl.state is
 
+        when S_IDLE => -- wait for start signal
+        -- ------------------------------------------------------------
+          if (valid_cmd = '1') then -- trigger new operation
+            if (ctrl_i.ir_funct3(2) = '0') and FAST_MUL_EN then -- is fast multiplication?
+              if FAST_MUL_REG then -- pipelined product needs one more cycle
+                ctrl.state <= S_PIPE;
+              else
+                ctrl.state <= S_DONE;
+              end if;
+            else -- serial division or serial multiplication
+              ctrl.state <= S_BUSY;
+            end if;
+          end if;
+
         when S_BUSY => -- processing
         -- ------------------------------------------------------------
           ctrl.cnt <= std_ulogic_vector(unsigned(ctrl.cnt) - 1);
@@ -139,20 +152,6 @@ begin
         -- ------------------------------------------------------------
           ctrl.out_en <= '1';
           ctrl.state  <= S_IDLE;
-
-        when others => -- S_IDLE: wait for start signal
-        -- ------------------------------------------------------------
-          if (valid_cmd = '1') then -- trigger new operation
-            if (ctrl_i.ir_funct3(2) = '0') and FAST_MUL_EN then -- is fast multiplication?
-              if FAST_MUL_REG then -- pipelined product needs one more cycle
-                ctrl.state <= S_PIPE;
-              else
-                ctrl.state <= S_DONE;
-              end if;
-            else -- serial division or serial multiplication
-              ctrl.state <= S_BUSY;
-            end if;
-          end if;
 
       end case;
     end if;
