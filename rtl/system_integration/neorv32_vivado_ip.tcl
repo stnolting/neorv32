@@ -310,7 +310,7 @@ proc setup_ip_gui {} {
   add_params $group {
     { CPU_CONSTT_BR_EN  {Constant-time branches} {Identical execution times for taken and not-taken branches} }
     { CPU_FAST_MUL_EN   {DSP-based multiplier}   {Use DSP block instead of bit-serial multipliers} }
-    { CPU_FAST_MUL_REG  {Multiplier register}   {Add a pipeline register to the DSP-based multiplier to improve timing closure} }
+    { CPU_FAST_MUL_REG  {Multiplier register}    {Add a pipeline register to the DSP-based multiplier to improve timing closure} }
     { CPU_FAST_SHIFT_EN {Barrel shifter}         {Use full-parallel shifters instead of of bit-serial shifters} }
     { CPU_RF_ARCH_SEL   {Register file style}    {Select implementation style of CPU register file} }
   }
