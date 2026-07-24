@@ -10,7 +10,7 @@
 The NEORV32 Processor is a **customizable microcontroller-like system on chip (SoC)** built around the NEORV32
 [RISC-V](https://riscv.org/) CPU that is written in **platform-independent VHDL**. The processor is intended as auxiliary
 controller in larger SoC designs or as tiny and customized microcontroller. The project is intended to work _out of the box_
-and targets FPGA / RISC-V beginners as well as experienced users.
+and targets digital design / RISC-V beginners as well as experienced users.
 
 ![neorv32 Overview](docs/figures/neorv32_processor.png)
 
@@ -235,7 +235,7 @@ This overview provides some *quick links* to the most important sections of the
 ### :rocket: [User Guide](https://stnolting.github.io/neorv32/ug/) - Getting Started
 
 * [Toolchain Setup](https://stnolting.github.io/neorv32/ug/#_software_toolchain_setup) - install and set up the RISC-V GCC toolchain
-* [General Hardware Setup](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) - set up a new NEORV32 FPGA project
+* [General Hardware Setup](https://stnolting.github.io/neorv32/ug/#_general_hardware_setup) - set up a new NEORV32 project
 * [Adding Custom Hardware Modules](https://stnolting.github.io/neorv32/ug/#_adding_custom_hardware_modules) - add _your_ custom hardware
 * [Convert to Verilog](https://stnolting.github.io/neorv32/ug/#_neorv32_in_verilog) - turn the NEORV32 into an all-Verilog design
 * [Package as Vivado IP block](https://stnolting.github.io/neorv32/ug/#_packaging_the_processor_as_vivado_ip_block) - turn the entire processor into an interactive AMD Vivado IP block
