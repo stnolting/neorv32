@@ -29,7 +29,8 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
-| 24.06.2026 | [**1.13.3**](https://github.com/stnolting/neorv32/releases/tag/v1.13.3) | :rocket: **New release** | |
+| 24.07.2026 | 1.13.3.1 | :bug: fix PMP's `pmpaddr*[31:30]` bits: must be read-only and zero | [#1605](https://github.com/stnolting/neorv32/pull/1605) |
+| 24.07.2026 | [**1.13.3**](https://github.com/stnolting/neorv32/releases/tag/v1.13.3) | :rocket: **New release** | |
 | 23.07.2026 | 1.13.2.9 | :sparkles: add optional `CPU_FAST_MUL_REG` generic: pipeline register for the fast multiplier (shortens critical path on narrow-DSP FPGAs; +1 multiply latency cycle) | [#1603](https://github.com/stnolting/neorv32/pull/1603) |
 | 20.07.2026 | 1.13.2.8 | comprehensive VHDL coding style edits | [#1602](https://github.com/stnolting/neorv32/pull/1602) |
 | 17.07.2026 | 1.13.2.7 | :sparkles: add new SoC module: serial memory controller (SMC) to attach external serial memory (PSRAM or flash; supports XIP) | [#1599](https://github.com/stnolting/neorv32/pull/1599) |
