@@ -38,6 +38,7 @@ entity neorv32_cpu_alu is
     RISCV_ISA_Xcfu   : boolean; -- custom (instr.) functions unit
     -- Tuning Options --
     FAST_MUL_EN      : boolean; -- use DSPs for M extension's multiplier
+    FAST_MUL_REG     : boolean; -- add a pipeline register to the fast multiplier
     FAST_SHIFT_EN    : boolean  -- use barrel shifter for shift operations
   );
   port (
@@ -167,8 +168,9 @@ begin
   if RISCV_ISA_M or RISCV_ISA_Zmmul generate
     neorv32_cpu_alu_muldiv_inst: entity neorv32.neorv32_cpu_alu_muldiv
     generic map (
-      FAST_MUL_EN => FAST_MUL_EN, -- use DSPs for faster multiplication
-      DIVISION_EN => RISCV_ISA_M  -- implement divider hardware
+      FAST_MUL_EN  => FAST_MUL_EN,  -- use DSPs for faster multiplication
+      FAST_MUL_REG => FAST_MUL_REG, -- add a pipeline register to the fast multiplier
+      DIVISION_EN  => RISCV_ISA_M   -- implement divider hardware
     )
     port map (
       -- global control --
