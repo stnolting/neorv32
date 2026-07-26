@@ -1140,14 +1140,20 @@ begin
     if IO_CFS_EN generate
       neorv32_cfs_inst: entity neorv32.neorv32_cfs
       port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_CFS),
-        bus_rsp_o   => iodev_rsp(IODEV_CFS),
-        irq_o       => firq(FIRQ_CFS),
-        cfs_in_i    => cfs_in_i,
-        cfs_out_o   => cfs_out_o
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => iodev_req(IODEV_CFS).addr(15 downto 0),
+        req_data_i => iodev_req(IODEV_CFS).data,
+        req_ben_i  => iodev_req(IODEV_CFS).ben,
+        req_stb_i  => iodev_req(IODEV_CFS).stb,
+        req_rw_i   => iodev_req(IODEV_CFS).rw,
+        rsp_data_o => iodev_rsp(IODEV_CFS).data,
+        rsp_ack_o  => iodev_rsp(IODEV_CFS).ack,
+        irq_o      => firq(FIRQ_CFS),
+        cfs_in_i   => cfs_in_i,
+        cfs_out_o  => cfs_out_o
       );
+      iodev_rsp(IODEV_CFS).err <= '0';
     end generate;
 
     neorv32_cfs_disabled:
