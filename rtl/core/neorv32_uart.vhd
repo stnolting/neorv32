@@ -346,7 +346,7 @@ begin
             if (or_reduce_f(rx.baudcnt) = '0') then -- bit done
               rx.baudcnt <= ctrl.baud;
               rx.bitcnt  <= std_ulogic_vector(unsigned(rx.bitcnt) - 1);
-              rx.sreg    <= rx.sync(2) & rx.sreg(rx.sreg'left downto 1);
+              rx.sreg    <= (rx.sync(2) and rx.sync(1)) & rx.sreg(rx.sreg'left downto 1);
             else
               rx.baudcnt <= std_ulogic_vector(unsigned(rx.baudcnt) - 1);
             end if;
