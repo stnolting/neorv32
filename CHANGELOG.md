@@ -37,7 +37,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 17.07.2026 | 1.13.2.7 | :sparkles: add new SoC module: serial memory controller (SMC) to attach external serial memory (PSRAM or flash; supports XIP) | [#1599](https://github.com/stnolting/neorv32/pull/1599) |
 | 11.07.2026 | 1.13.2.6 | :bug: fix another RVFI memory address & data signal alignment bug | [#1597](https://github.com/stnolting/neorv32/pull/1597) |
 | 03.07.2026 | 1.13.2.5 | :sparkles: add support for RISC-V `Zcmop` ISA extension (compressed may-be-operations) | [#1596](https://github.com/stnolting/neorv32/pull/1596) |
-| 03.07.2026 | 1.13.2.4 | :bug: fix further illegal instruction detection loopholes in `Zfinx` ISA extension (classify + compare)| [#](https://github.com/stnolting/neorv32/pull/1595) |
+| 03.07.2026 | 1.13.2.4 | :bug: fix further illegal instruction detection loopholes in `Zfinx` ISA extension (classify + compare)| [#1595](https://github.com/stnolting/neorv32/pull/1595) |
 | 03.07.2026 | 1.13.2.3 | minor rtl edits and cleanups | [#1594](https://github.com/stnolting/neorv32/pull/1594) |
 | 01.07.2026 | 1.13.2.2 | :bug: fix illegal instruction detection loopholes in `Ziimop` and `Zfinx` ISA extensions | [#1590](https://github.com/stnolting/neorv32/pull/1590) |
 | 01.07.2026 | 1.13.2.1 | :bug: fix RVFI memory address & data signal alignment | [#1585](https://github.com/stnolting/neorv32/pull/1585) |
