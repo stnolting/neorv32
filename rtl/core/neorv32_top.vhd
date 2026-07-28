@@ -203,8 +203,9 @@ entity neorv32_top is
     smc_ioen_o     : out std_ulogic;                                         -- SMC pin enable, can be used for IO multiplexing
     smc_sck_o      : out std_ulogic;                                         -- clock
     smc_csn_o      : out std_ulogic_vector(1 downto 0);                      -- bank/chip select, low-active
-    smc_sdo_o      : out std_ulogic;                                         -- controller data out, memory data in
-    smc_sdi_i      : in  std_ulogic := 'L';                                  -- controller data in, memory data out
+    smc_oen_o      : out std_ulogic_vector(3 downto 0);                      -- output enable, low-active
+    smc_sdo_o      : out std_ulogic_vector(3 downto 0);                      -- controller data out, memory data in
+    smc_sdi_i      : in  std_ulogic_vector(3 downto 0) := (others => 'L');   -- controller data in, memory data out
 
     -- External bus interface (available if XBUS_EN = true) --
     xbus_adr_o     : out std_ulogic_vector(31 downto 0);                     -- address
@@ -973,6 +974,7 @@ begin
         smc_ioen_o => smc_ioen_o,
         smc_sck_o  => smc_sck_o,
         smc_csn_o  => smc_csn_o,
+        smc_oen_o  => smc_oen_o,
         smc_sdo_o  => smc_sdo_o,
         smc_sdi_i  => smc_sdi_i
       );
@@ -985,9 +987,9 @@ begin
       smc_ioen_o           <= '0';
       smc_sck_o            <= '0';
       smc_csn_o            <= (others => '1');
-      smc_sdo_o            <= '0';
+      smc_oen_o            <= (others => '1');
+      smc_sdo_o            <= (others => '0');
     end generate;
-
 
     -- External Bus Interface (XBUS) ----------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
