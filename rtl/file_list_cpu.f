@@ -14,6 +14,7 @@ $NEORV32_HOME/rtl/core/neorv32_cpu_alu_cfu.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_alu_cond.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_alu_crypto.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_alu.vhd
+$NEORV32_HOME/rtl/core/neorv32_cpu_lsu_unaligned.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_lsu.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_pmp.vhd
 $NEORV32_HOME/rtl/core/neorv32_cpu_trace.vhd

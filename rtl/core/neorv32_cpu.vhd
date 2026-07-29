@@ -44,6 +44,7 @@ entity neorv32_cpu is
     RISCV_ISA_Zcmop     : boolean                        := false;       -- compressed may-be-operations
     RISCV_ISA_Zfinx     : boolean                        := false;       -- 32-bit floating-point extension
     RISCV_ISA_Zibi      : boolean                        := false;       -- branch with immediate
+    RISCV_ISA_Zicclsm   : boolean                        := false;       -- misaligned loads/stores to main memory
     RISCV_ISA_Zicntr    : boolean                        := false;       -- base counters
     RISCV_ISA_Zicond    : boolean                        := false;       -- integer conditional operations
     RISCV_ISA_Zihpm     : boolean                        := false;       -- hardware performance monitors
@@ -175,6 +176,7 @@ begin
       sel_string_f(riscv_zcmop_c,       "_zcmop",     "" ) &
       sel_string_f(RISCV_ISA_Zfinx,     "_zfinx",     "" ) &
       sel_string_f(RISCV_ISA_Zibi,      "_zibi",      "" ) &
+      sel_string_f(RISCV_ISA_Zicclsm,   "_zicclsm",   "" ) &
       sel_string_f(RISCV_ISA_Zicntr,    "_zicntr",    "" ) &
       sel_string_f(RISCV_ISA_Zicond,    "_zicond",    "" ) &
       sel_string_f(true,                "_zicsr",     "" ) & -- always enabled
@@ -468,8 +470,9 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_lsu_inst: entity neorv32.neorv32_cpu_lsu
   generic map (
-    HART_ID => HART_ID,  -- hardware thread ID
-    AMO_EN  => any_amo_c -- enable atomic memory accesses
+    HART_ID      => HART_ID,          -- hardware thread ID
+    AMO_EN       => any_amo_c,        -- enable atomic memory accesses
+    UNALIGNED_EN => RISCV_ISA_Zicclsm -- enable misaligned load/store support
   )
   port map (
     -- global control --

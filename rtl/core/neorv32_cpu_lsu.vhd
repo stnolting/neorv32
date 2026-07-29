@@ -17,8 +17,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_lsu is
   generic (
-    HART_ID : natural range 0 to 1; -- hardware thread ID
-    AMO_EN  : boolean  -- enable atomic memory accesses
+    HART_ID      : natural range 0 to 1; -- hardware thread ID
+    AMO_EN       : boolean; -- enable atomic memory accesses
+    UNALIGNED_EN : boolean  -- enable hardware-supported unaligned loads/stores (Zicclsm)
   );
   port (
     -- global control --
@@ -41,8 +42,9 @@ end entity;
 
 architecture neorv32_cpu_lsu_rtl of neorv32_cpu_lsu is
 
-  signal req : bus_req_t;
+  signal req      : bus_req_t;
   signal misalign : std_ulogic;
+  signal bus_rsp  : bus_rsp_t;
 
 begin
 
@@ -119,11 +121,19 @@ begin
           when "01" => -- half-word
             req.data <= wdata_i(15 downto 0) & wdata_i(15 downto 0);
             req.ben  <= addr_i(1) & addr_i(1) & (not addr_i(1)) & (not addr_i(1));
-            misalign <= addr_i(0);
+            if UNALIGNED_EN and (ctrl_i.ir_opcode(2) = '0') then
+              misalign <= '0'; -- handled by the unaligned access handler
+            else
+              misalign <= addr_i(0);
+            end if;
           when others => -- word
             req.data <= wdata_i;
             req.ben  <= (others => '1');
-            misalign <= addr_i(1) or addr_i(0);
+            if UNALIGNED_EN and (ctrl_i.ir_opcode(2) = '0') then
+              misalign <= '0'; -- handled by the unaligned access handler
+            else
+              misalign <= addr_i(1) or addr_i(0);
+            end if;
         end case;
         if AMO_EN and (ctrl_i.ir_opcode(2) = '1') and (ctrl_i.ir_funct12(8) = '0') then
           req.rw <= '0'; -- atomic read-modify-write operations are modified load requests
@@ -134,13 +144,43 @@ begin
     end if;
   end process;
 
-  req.burst  <= '0'; -- only non-burst/single-accesses
-  req.stb    <= ctrl_i.lsu_req and (not misalign) and (not pmp_fault_i); -- access request (all source signals are driven by registers)
-  dbus_req_o <= req; -- output bus request
-  mar_o      <= req.addr; -- address feedback for MTVAL CSR
+  req.burst <= '0'; -- only non-burst/single-accesses
+  req.stb   <= ctrl_i.lsu_req and (not misalign) and (not pmp_fault_i); -- access request (all source signals are driven by registers)
+  mar_o     <= req.addr; -- address feedback for MTVAL CSR
 
 
-  -- Response -------------------------------------------------------------------------------
+  -- Unaligned Memory Access Handler ---------------------------------------------------------
+  -- If enabled, misaligned non AMO requests are translated into one or two aligned
+  -- bus transactions. The responses are merged and returned as a single word.
+  -- -----------------------------------------------------------------------------------------
+  unaligned_enabled:
+  if UNALIGNED_EN generate
+    lsu_unaligned_inst: entity neorv32.neorv32_cpu_lsu_unaligned
+    port map (
+      clk_i       => clk_i,
+      rstn_i      => rstn_i,
+      ctrl_i      => ctrl_i,
+      pmp_fault_i => pmp_fault_i,
+      addr_i      => addr_i,
+      wdata_i     => wdata_i,
+      req_i       => req,
+      rsp_o       => bus_rsp,
+      req_o       => dbus_req_o,
+      rsp_i       => dbus_rsp_i
+    );
+  end generate;
+
+  -- direct bus connection --
+  unaligned_disabled:
+  if not UNALIGNED_EN generate
+    dbus_req_o <= req;
+    bus_rsp    <= dbus_rsp_i;
+  end generate;
+
+
+  -- Response ----------------------------------------------------------------------------------
+  -- When UNALIGNED_EN the unaligned handler has already reconstructed the read data,
+  -- so it is just registered here. otherwise the aligned byte/half/word extraction is applied.
   -- -------------------------------------------------------------------------------------------
   mem_di_reg: process(rstn_i, clk_i)
   begin
@@ -149,37 +189,41 @@ begin
     elsif rising_edge(clk_i) then
       rdata_o <= (others => '0'); -- output zero if there is no pending memory request
       if (ctrl_i.lsu_mi_en = '1') then
-        case ctrl_i.ir_funct3(1 downto 0) is
-          when "00" => -- byte
-            case req.addr(1 downto 0) is
-              when "00"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(7),  24) & dbus_rsp_i.data(7 downto 0);
-              when "01"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(15), 24) & dbus_rsp_i.data(15 downto 8);
-              when "10"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(23), 24) & dbus_rsp_i.data(23 downto 16);
-              when "11"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(31), 24) & dbus_rsp_i.data(31 downto 24);
-              when others => rdata_o <= (others => 'X');
-            end case;
-          when "01" => -- half-word
-            if (req.addr(1) = '0') then
-              rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(15), 16) & dbus_rsp_i.data(15 downto 0);
-            else
-              rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and dbus_rsp_i.data(31), 16) & dbus_rsp_i.data(31 downto 16);
-            end if;
-          when others => -- word
-            rdata_o <= dbus_rsp_i.data;
-        end case;
+        if UNALIGNED_EN then
+          rdata_o <= bus_rsp.data; -- already correctly (re-)aligned
+        else
+          case ctrl_i.ir_funct3(1 downto 0) is
+            when "00" => -- byte
+              case req.addr(1 downto 0) is
+                when "00"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp.data(7),  24) & bus_rsp.data(7 downto 0);
+                when "01"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp.data(15), 24) & bus_rsp.data(15 downto 8);
+                when "10"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp.data(23), 24) & bus_rsp.data(23 downto 16);
+                when "11"   => rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp.data(31), 24) & bus_rsp.data(31 downto 24);
+                when others => rdata_o <= (others => 'X');
+              end case;
+            when "01" => -- half-word
+              if (req.addr(1) = '0') then
+                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp.data(15), 16) & bus_rsp.data(15 downto 0);
+              else
+                rdata_o <= replicate_f((not ctrl_i.ir_funct3(2)) and bus_rsp.data(31), 16) & bus_rsp.data(31 downto 16);
+              end if;
+            when others => -- word
+              rdata_o <= bus_rsp.data;
+          end case;
+        end if;
       end if;
     end if;
   end process;
 
   -- wait for bus response --
-  wait_o <= not dbus_rsp_i.ack;
+  wait_o <= not bus_rsp.ack;
 
   -- access/alignment errors --
   -- [NOTE] AMOs will report load AND store exceptions. However, only the store exception will be reported due to its higher priority.
   -- [NOTE] ACK is ignored for the error response to shorten the bus system's critical path.
   err_o(0) <= ctrl_i.lsu_mi_en and ctrl_i.lsu_rd and misalign; -- misaligned load
-  err_o(1) <= ctrl_i.lsu_mi_en and ctrl_i.lsu_rd and (dbus_rsp_i.err or pmp_fault_i); -- load access error
+  err_o(1) <= ctrl_i.lsu_mi_en and ctrl_i.lsu_rd and (bus_rsp.err or pmp_fault_i); -- load access error
   err_o(2) <= ctrl_i.lsu_mi_en and ctrl_i.lsu_wr and misalign; -- misaligned store
-  err_o(3) <= ctrl_i.lsu_mi_en and ctrl_i.lsu_wr and (dbus_rsp_i.err or pmp_fault_i); -- store access error
+  err_o(3) <= ctrl_i.lsu_mi_en and ctrl_i.lsu_wr and (bus_rsp.err or pmp_fault_i); -- store access error
 
 end architecture;
