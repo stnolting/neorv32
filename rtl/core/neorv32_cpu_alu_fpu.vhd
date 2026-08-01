@@ -812,7 +812,6 @@ begin
   port map (
     -- global control --
     clk_i    => clk_i,
-    rstn_i   => rstn_i,
     -- data path --
     en_i     => multiplier.start,
     opa_i    => multiplier.opa,

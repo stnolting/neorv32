@@ -18,7 +18,6 @@ entity neorv32_cpu_alu_cond is
   port (
     -- global control --
     clk_i   : in  std_ulogic; -- global clock, rising edge
-    rstn_i  : in  std_ulogic; -- global reset, low-active, async
     ctrl_i  : in  ctrl_bus_t; -- main control bus
     -- data input --
     rs1_i   : in  std_ulogic_vector(31 downto 0); -- rf source 1
@@ -41,14 +40,11 @@ begin
     (ctrl_i.ir_opcode(5) = '1') and (ctrl_i.ir_funct3(2) = '1') and
     (ctrl_i.ir_funct3(0) = '1') and (ctrl_i.ir_funct12(11 downto 5) = "0000111") else '0';
 
-
   -- Conditional Output ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cond_out: process(rstn_i, clk_i)
+  cond_out: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      res_o <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (valid_cmd = '1') and (condition = '1') then -- unit triggered and move-condition is true
         res_o <= rs1_i;
       else

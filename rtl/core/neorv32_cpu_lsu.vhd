@@ -142,11 +142,9 @@ begin
 
   -- Response -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  mem_di_reg: process(rstn_i, clk_i)
+  mem_di_reg: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      rdata_o <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       rdata_o <= (others => '0'); -- output zero if there is no pending memory request
       if (ctrl_i.lsu_mi_en = '1') then
         case ctrl_i.ir_funct3(1 downto 0) is

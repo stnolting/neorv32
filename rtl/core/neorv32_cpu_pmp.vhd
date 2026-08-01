@@ -253,12 +253,10 @@ begin
       addr_mask_napot(r)(i) <= addr_mask_napot(r)(i-1) or (not pmpaddr(r)(i-3));
     end generate;
 
-    -- NAPOT address mask select --
-    addr_masking: process(rstn_i, clk_i)
+    -- NAPOT address mask buffer --
+    addr_masking: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        addr_mask(r) <= (others => '0');
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if NAP_EN then
           if (pmpcfg(r)(cfg_al_c) = '1') then -- NAPOT
             addr_mask(r) <= addr_mask_napot(r);

@@ -62,15 +62,19 @@ end entity;
 architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
 
   -- Zibi ISA extension: compare with immediate --
-  function zibi_cmp_f(sel : std_ulogic_vector(4 downto 0); cmp : std_ulogic_vector) return std_ulogic is
+  function zibi_cmp_f(sel : std_ulogic_vector(4 downto 0); cmp : std_ulogic_vector(31 downto 0)) return std_ulogic is
     variable imm_v : std_ulogic_vector(31 downto 0);
   begin
     if (sel = "00000") then
-      imm_v := (others => '1');
+      imm_v := (others => '1'); -- minus 1
     else
-      imm_v := replicate_f('0', 27) & sel;
+      imm_v := x"000000" & "000" & sel;
     end if;
-    return bool_to_ulogic_f(imm_v = cmp);
+    if (imm_v = cmp) then
+      return '1';
+    else
+      return '0';
+    end if;
   end function;
 
   -- wiring --
@@ -333,7 +337,6 @@ begin
     port map (
       -- global control --
       clk_i   => clk_i,        -- global clock, rising edge
-      rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
       -- data input --
       rs1_i   => rs1_i,        -- register source 1
