@@ -333,7 +333,6 @@ begin
     port map (
       -- global control --
       clk_i   => clk_i,        -- global clock, rising edge
-      rstn_i  => rstn_i,       -- global reset, low-active, async
       ctrl_i  => ctrl_i,       -- main control bus
       -- data input --
       rs1_i   => rs1_i,        -- register source 1
