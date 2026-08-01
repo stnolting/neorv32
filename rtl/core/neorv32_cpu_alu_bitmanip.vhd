@@ -146,8 +146,8 @@ architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
   constant op_width_c  : natural := 22;
 
   -- controller --
-  type ctrl_state_t is (S_IDLE, S_START, S_BUSY);
-  signal ctrl_state : ctrl_state_t;
+  type state_t is (S_IDLE, S_START, S_BUSY);
+  signal state      : state_t;
   signal valid_cmd  : std_ulogic;
   signal cmd        : std_ulogic_vector(op_width_c-1 downto 0);
   signal valid      : std_ulogic;
@@ -230,7 +230,7 @@ begin
   controller: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl_state    <= S_IDLE;
+      state         <= S_IDLE;
       rs1_reg       <= (others => '0');
       rs2_reg       <= (others => '0');
       sha_reg       <= (others => '0');
@@ -253,32 +253,32 @@ begin
       end if;
 
       -- fsm --
-      case ctrl_state is
+      case state is
 
         when S_IDLE => -- wait for operation trigger
         -- ------------------------------------------------------------
           if (valid_cmd = '1') then
             if (not FAST_SHIFT) and ((cmd(op_cz_c) or cmd(op_cpop_c) or cmd(op_rot_c)) = '1') then -- multi-cycle shift operation
               shifter_start <= '1';
-              ctrl_state    <= S_START;
+              state         <= S_START;
             elsif (cmd(op_clmul_c) = '1') or (cmd(op_clmulr_c) = '1') then -- multi-cycle carry-less multiplication operation
               clmul_start <= '1';
-              ctrl_state  <= S_START;
+              state       <= S_START;
             else
-              valid      <= '1';
-              ctrl_state <= S_IDLE;
+              valid <= '1';
+              state <= S_IDLE;
             end if;
           end if;
 
         when S_START => -- one cycle delay to start iterative operation
         -- ------------------------------------------------------------
-          ctrl_state <= S_BUSY;
+          state <= S_BUSY;
 
         when S_BUSY => -- wait for multi-cycle operation to finish
         -- ------------------------------------------------------------
           if ((shifter_run = '0') and (clmul_run = '0')) or (ctrl_i.cpu_trap = '1') then -- abort on trap
-            valid      <= '1';
-            ctrl_state <= S_IDLE;
+            valid <= '1';
+            state <= S_IDLE;
           end if;
 
       end case;
@@ -418,7 +418,7 @@ begin
       elsif rising_edge(clk_i) then
         if (clmul_start = '1') then -- start new multiplication
           clmul_cnt <= std_ulogic_vector(to_unsigned(32, clmul_cnt'length));
-          clmul_res <= replicate_f('0', 32) & rs1_reg;
+          clmul_res <= x"00000000" & rs1_reg;
         elsif (clmul_run = '1') then -- operation in progress
           clmul_cnt     <= std_ulogic_vector(unsigned(clmul_cnt) - 1);
           clmul_res(63) <= '0'; -- always zero

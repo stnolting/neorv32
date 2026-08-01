@@ -112,7 +112,7 @@ begin
         inhibit(31 downto 3) <= ctrl_i.csr_wdata(31 downto 3); -- [m]hpmcounter3..31[h]
       end if;
       -- unused --
-      inhibit(1) <= '0'; -- [m]time[h] not implemented
+      inhibit(1) <= '0';
     end if;
   end process;
 

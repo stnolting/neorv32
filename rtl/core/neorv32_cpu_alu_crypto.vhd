@@ -247,7 +247,7 @@ begin
       done    <= '0';
       state   <= S_IDLE;
     elsif rising_edge(clk_i) then
-      -- operand gating / buffer --
+      -- operand gating --
       if (cmd_valid = '1') then
         rs1     <= rs1_i;
         rs2     <= rs2_i;
