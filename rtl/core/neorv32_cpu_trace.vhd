@@ -91,7 +91,7 @@ begin
       trace_buf.valid <= valid;
 
       -- instruction metadata --
-      trace_buf.order <= arbiter.order;
+      trace_buf.order <= x"00000000" & arbiter.order;
       trace_buf.trap  <= ctrl_i.cpu_sync_exc;
       trace_buf.halt  <= not ctrl_i.cnt_event(cnt_event_cy_c);
       trace_buf.intr  <= arbiter.entry;
@@ -785,7 +785,7 @@ begin
         cycle_cnt <= std_ulogic_vector(unsigned(cycle_cnt) + 1);
         if (trace_i.valid = '1') then
           -- [1] index --
-          write(line_v, integer'(to_integer(unsigned(trace_i.order))));
+          write(line_v, integer'(to_integer(unsigned(trace_i.order(31 downto 0)))));
           write(line_v, string'(" "));
           -- [2] timestamp --
           write(line_v, integer'(to_integer(unsigned(cycle_cnt))));

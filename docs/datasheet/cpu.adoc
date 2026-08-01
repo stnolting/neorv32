@@ -288,7 +288,7 @@ package file (`neorv32_package.vhd`).
 | Signal      | Width | RVFI Equivalent  | Description
 | `valid`     |     1 | `rvfi_valid`     | All others signals are valid when set; high for one cycle
 4+^| **Instruction Metadata**
-| `order`     |    32 | `rvfi_order`     | Instruction index (linear incrementing counter; resets to zero on overflow)
+| `order`     |    64 | `rvfi_order`     | Instruction index (linear incrementing counter; resets to zero on overflow); bits `63:32` are hardwired to all-zero
 | `insn`      |    32 | `rvfi_insn`      | Instruction word; for compressed instructions the upper 16-bit are set to zero
 | `trap`      |     1 | `rvfi_trap`      | Set if the current instruction causes a synchronous exception
 | `halt`      |     1 | `rvfi_halt`      | Set if the current instruction is last instruction before halting
