@@ -20,7 +20,7 @@ BUILD ?= build
 
 # NEORV32 VHDL sources
 NEORV32_HOME  ?= ../..
-NEORV32_FFILE := $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f)
+NEORV32_FFILE := $(shell cat $(NEORV32_HOME)/rtl/file_list_core.f)
 NEORV32_SRCS  := $(subst $$NEORV32_HOME,$(NEORV32_HOME),$(NEORV32_FFILE))
 
 # VHDL conversion wrapper entity/file name

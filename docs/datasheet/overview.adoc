@@ -159,7 +159,7 @@ All core VHDL files from the list below have to be assigned to a **new library**
 
 .Compilation Order
 [NOTE]
-See section <<_file_list_files>> for more information.
+See section <<_file_list_file>> for more information.
 
 .Replacing Modules for Customization or Optimization (Especially Memory Modules)
 [TIP]
@@ -234,21 +234,20 @@ rtl/core
 
 
 :sectnums:
-==== File-List Files
+==== File-List File
 
 Most of the RTL sources use **entity instantiation**. Hence, the RTL compile order might be relevant (depending on
-the synthesis/simulation tool. Therefore, two file-list files are provided in the `rtl` folder that list all required
-HDL files for the CPU core and for the entire processor and also represent their recommended compile order. Note that
-these files list the architecture "bottom-up" - the according top entity is listed in the very last line.
-These file-list files can be consumed by EDA tools to simplify project setup.
+the synthesis/simulation tool. Therefore, a file-list file is provided in the `rtl` folder that list all required
+HDL files for the entire processor and also represent their recommended compile order. Note that
+this file lists the architecture "bottom-up" - the according top entity is listed in the very last line.
+The file-list file can be consumed by EDA tools to simplify project setup.
 
-* `file_list_cpu.f` - HDL files and compile order for the CPU core; top module: `neorv32_cpu`
-* `file_list_soc.f` - HDL files and compile order for the entire processor/SoC; top module: `neorv32_top`
+* `file_list_core.f` - HDL files and compile order for the entire processor/SoC; top module: `neorv32_top`
 
-A simple bash script `generate_file_lists.sh` is provided for regenerating the file-lists (using GHDL's _elaborate_ command).
+A simple bash script `file_list_regenerate.sh` is provided for regenerating the file-list (using GHDL's _elaborate_ command).
 This script can also be invoked using the default application makefile (see <<_makefile_targets>>).
 
-By default, the file-list files include a **placeholder** (`$NEORV32_HOME`) in the path of each included hardware
+By default, the file-list file includes a **placeholder** (`$NEORV32_HOME`) in the path of each included hardware
 source file. These placeholders need to be replaced/substituted by the actual path before being used. Example:
 
 * default: `$NEORV32_HOME/rtl/core/neorv32_package.vhd`
@@ -261,11 +260,11 @@ source file. These placeholders need to be replaced/substituted by the actual pa
 [source,makefile]
 ----
 NEORV32_HOME  ?= path/to/neorv32 <1>
-NEORV32_FFILE := $(shell cat $(NEORV32_HOME)/rtl/file_list_soc.f) <2>
+NEORV32_FFILE := $(shell cat $(NEORV32_HOME)/rtl/file_list_core.f) <2>
 NEORV32_SRCS  := $(subst $$NEORV32_HOME,$(NEORV32_HOME),$(NEORV32_FFILE)) <3>
 ----
 <1> Path to the NEORV32 home folder (i.e. the root folder of the GitHub repository).
-<2> Load the content of the `file_list_soc.f` file-list into a variable `NEORV32_SOC_FILE`.
+<2> Load the content of the `file_list_core.f` file-list into a variable `NEORV32_SOC_FILE`.
 <3> Substitute the file-list file's path placeholder "`$NEORV32_HOME`" by the actual path and store to `NEORV32_SRCS` variable.
 
 **Example: TCL**
@@ -274,11 +273,11 @@ NEORV32_SRCS  := $(subst $$NEORV32_HOME,$(NEORV32_HOME),$(NEORV32_FFILE)) <3>
 [source,tcl]
 ----
 set neorv32_home path/to/neorv32 <1>
-set file_list_file [read [open "$neorv32_home/rtl/file_list_soc.f" r]] <2>
+set file_list_file [read [open "$neorv32_home/rtl/file_list_core.f" r]] <2>
 set file_list [string map [list {$NEORV32_HOME} $neorv32_home] $file_list_file] <3>
 ----
 <1> Path to the NEORV32 home folder (i.e. the root folder of the GitHub repository).
-<2> Load the content of the `file_list_soc.f` file-list into a variable `file_list_file`.
+<2> Load the content of the `file_list_core.f` file-list into a variable `file_list_file`.
 <3> Substitute the file-list file's path placeholder "`$NEORV32_HOME`" by the actual path and store to `file_list` variable.
 
 **Example: Bash**
@@ -287,7 +286,7 @@ set file_list [string map [list {$NEORV32_HOME} $neorv32_home] $file_list_file] 
 [source,bash]
 ----
 neorv32/rtl$ export NEORV32_HOME=path/to/neorv32 <1>
-neorv32/rtl$ envsubst < file_list_cpu.f > file_list.f <2>
+neorv32/rtl$ envsubst < file_list_core.f > file_list.f <2>
 ----
 <1> Set path to the NEORV32 home folder (i.e. the root folder of the GitHub repository) as environment variable.
 <2> Substitute `$NEORV32_HOME` by the content of the according environment variable and store to `file_list.f` file.
