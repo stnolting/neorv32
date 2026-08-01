@@ -41,7 +41,7 @@ architecture neorv32_cpu_alu_shifter_rtl of neorv32_cpu_alu_shifter is
   -- instruction decode --
   signal valid_cmd : std_ulogic;
 
-  -- shifter --
+  -- shifter core --
   signal busy, sgn, done, oe : std_ulogic;
   signal cnt  : std_ulogic_vector(4 downto 0);
   signal sreg : std_ulogic_vector(31 downto 0);
@@ -64,31 +64,35 @@ begin
   serial_shifter:
   if not FAST_SHIFT_EN generate
 
-    shifter: process(rstn_i, clk_i)
+    -- iteration control --
+    serial_ctrl: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
         busy <= '0';
         oe   <= '0';
-        cnt  <= (others => '0');
-        sreg <= (others => '0');
       elsif rising_edge(clk_i) then
-        -- arbitration --
         if (valid_cmd = '1') then
           busy <= '1';
         elsif (done = '1') or (ctrl_i.cpu_trap = '1') then -- abort on trap
           busy <= '0';
         end if;
         oe <= busy and done;
-        -- shift register --
-        if (valid_cmd = '1') then -- trigger new operation
+      end if;
+    end process;
+
+    -- shift register --
+    serial_data: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        if (valid_cmd = '1') then
           cnt  <= shamt_i;
           sreg <= rs1_i;
-        elsif (or_reduce_f(cnt) = '1') then -- operation in progress
+        elsif (busy = '1') and (or_reduce_f(cnt) = '1') then -- operation in progress
           cnt <= std_ulogic_vector(unsigned(cnt) - 1);
           if (ctrl_i.ir_funct3(2) = '0') then -- shift left logical
-            sreg <= sreg(sreg'left-1 downto 0) & '0';
+            sreg <= sreg(30 downto 0) & '0';
           else -- shift right (arithmetical)
-            sreg <= (sreg(sreg'left) and ctrl_i.ir_funct12(10)) & sreg(sreg'left downto 1);
+            sreg <= (sreg(31) and ctrl_i.ir_funct12(10)) & sreg(31 downto 1);
           end if;
         end if;
       end if;
@@ -122,14 +126,20 @@ begin
     end generate;
 
     -- register layer --
-    pipe_reg: process(rstn_i, clk_i)
+    pipe_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        sreg <= lvl(5);
+      end if;
+    end process;
+
+    -- output control --
+    oe_reg: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        oe   <= '0';
-        sreg <= (others => '0');
+        oe <= '0';
       elsif rising_edge(clk_i) then
-        oe   <= valid_cmd;
-        sreg <= lvl(5);
+        oe <= valid_cmd;
       end if;
     end process;
 

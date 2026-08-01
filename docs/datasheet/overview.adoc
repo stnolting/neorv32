@@ -300,7 +300,9 @@ neorv32/rtl$ envsubst < file_list_core.f > file_list.f <2>
 * The entire processor, including the CPU core, is written in platform-/technology-independent VHDL.
 The code makes minimal use of VHDL 2008 features in order to remain compatible with older EDA tools.
 * A specific VHDL library `neorv32` is used for all sources.
-* All registers / flip-flops provide an _asynchronous_ reset (see <<_processor_reset>>).
+* All registers in the control path use an asynchronous reset. The registers in the data path do not
+have a dedicated reset if their state is gated by a "valid" signal. This allows using of smaller FFs
+and relaxes the reset routing.
 * The entire setup uses a single clock domain. External "clock" signals are synchronized into this
 clock domain using 2-stage shift registers.
 * A single package/library file (`neorv32_package.vhd`) is used to provide global definitions and auxiliary functions.

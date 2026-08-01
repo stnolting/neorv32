@@ -112,7 +112,7 @@ begin
         inhibit(31 downto 3) <= ctrl_i.csr_wdata(31 downto 3); -- [m]hpmcounter3..31[h]
       end if;
       -- unused --
-      inhibit(1) <= '0'; -- [m]time[h] not implemented
+      inhibit(1) <= '0';
     end if;
   end process;
 
@@ -211,11 +211,9 @@ begin
     );
 
     -- time[h] --
-    mtime: process(rstn_i, clk_i)
+    time_buf: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        time_q <= (others => '0');
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         time_q <= mtime_i;
       end if;
     end process;

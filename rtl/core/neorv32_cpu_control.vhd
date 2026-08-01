@@ -1171,11 +1171,9 @@ begin
 
   -- CSR Read Access ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_read_access: process(rstn_i, clk_i)
+  csr_read_access: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      csr_rdata <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       csr_rdata <= (others => '0'); -- output all-zero if there is no CSR read operation
       if (ctrl.csr_re = '1') then
         case ctrl.csr_addr is
