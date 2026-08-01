@@ -263,7 +263,6 @@ entity neorv32_prim_mul is
   port (
     -- global control --
     clk_i    : in  std_ulogic;                              -- clock, rising edge
-    rstn_i   : in  std_ulogic;                              -- reset, low-active, async
     -- data path --
     en_i     : in  std_ulogic;                              -- enable input operand registers
     opa_i    : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand A
@@ -284,12 +283,9 @@ begin
 
   -- Input Registers ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  in_reg: process(rstn_i, clk_i)
+  in_reg: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      opa <= (others => '0');
-      opb <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (en_i = '1') then
         opa <= signed((opa_i(opa_i'left) and opa_sn_i) & opa_i);
         opb <= signed((opb_i(opb_i'left) and opb_sn_i) & opb_i);

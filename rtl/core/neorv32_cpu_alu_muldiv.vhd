@@ -182,7 +182,6 @@ begin
     )
     port map (
       clk_i    => clk_i,
-      rstn_i   => rstn_i,
       en_i     => mul_start,
       opa_i    => rs1_i,
       opa_sn_i => rs1_signed,
