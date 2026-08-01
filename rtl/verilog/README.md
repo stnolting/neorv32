@@ -39,7 +39,7 @@ Example: Replace the default NEORV32 DMEM RAM primitive by a custom Verilog IP.
 ```
 
 > [!TIP]
-> This flow uses the SoC's VHDL [file-list file](https://stnolting.github.io/neorv32/#_file_list_files)
+> This flow uses the SoC's VHDL [file-list file](https://stnolting.github.io/neorv32/#_file_list_file)
 for easy customization of the design sources.
 
 > [!NOTE]

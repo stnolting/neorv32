@@ -20,11 +20,11 @@ image::neorv32_test_setup.png[align=center]
 Make sure to add all these rtl files to a new library called `neorv32`. If your toolchain does not
 provide a field to enter the library name, check out the "properties" menu of the added rtl files.
 
-.Compile Order and File-List Files
+.Compile Order and File-List File
 [TIP]
 Some tools (like Lattice Radiant) might require a manual compile order of the VHDL source files to
-identify the dependencies. The `rtl` folder features file-list files that list all required HDL files in
-their recommended compilation order (see https://stnolting.github.io/neorv32/#_file_list_files).
+identify the dependencies. The `rtl` folder features a file-list file that lists all required HDL files in
+their recommended compilation order (see https://stnolting.github.io/neorv32/#_file_list_file).
 
 [start=3]
 . The `rtl/core/neorv32_top.vhd` VHDL file is the top entity of the NEORV32 processor, which can be

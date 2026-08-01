@@ -202,7 +202,7 @@ This overview provides some *quick links* to the most important sections of the
 
 * [Key Features](https://stnolting.github.io/neorv32/#_project_key_features) - what makes it special
 * [Structure](https://stnolting.github.io/neorv32/#_project_folder_structure) - folders, RTL files and compile order
-* [File-List Files](https://stnolting.github.io/neorv32/#_file_list_files) - to simplify HDL setup
+* [HDL File-List File](https://stnolting.github.io/neorv32/#_file_list_file) - to simplify HDL setup
 * [Metrics](https://stnolting.github.io/neorv32/#_performance) - FPGA implementation and performance evaluation
 
 ### :desktop_computer: [NEORV32 Processor](https://stnolting.github.io/neorv32/#_neorv32_processor_soc) - The SoC
