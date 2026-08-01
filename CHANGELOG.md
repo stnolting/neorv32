@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 01.08.2026 | 1.13.3.4 | RVFI: extend `order` to 64-bit as required by the spec | [#1612](https://github.com/stnolting/neorv32/pull/1612) |
 | 01.08.2026 | 1.13.3.3 | :test_tube: remove dedicated reset logic from CPU data path FFs | [#1609](https://github.com/stnolting/neorv32/pull/1609) |
 | 26.07.2026 | 1.13.3.2 | minor rtl edits and cleanups; :warning: simplify CFS bus interface | [#1606](https://github.com/stnolting/neorv32/pull/1606) |
 | 24.07.2026 | 1.13.3.1 | :bug: fix PMP `pmpaddr*[31:30]` bits: must be read-only and zero | [#1605](https://github.com/stnolting/neorv32/pull/1605) |
