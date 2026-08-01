@@ -588,11 +588,9 @@ begin
   end process;
 
   -- output gate --
-  output_gate: process(rstn_i, clk_i)
+  output_gate: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      res_o <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       res_o <= (others => '0');
       if (valid = '1') then
         res_o <= res;

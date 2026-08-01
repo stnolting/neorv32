@@ -283,11 +283,9 @@ begin
 
   -- Output Select --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  result: process(rstn_i, clk_i)
+  result: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      res_o <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       res_o <= (others => '0'); -- default
       if (done = '1') then
         if ((funct12(9 downto 8) = "10") and (funct12(5) = '1')) or
@@ -402,11 +400,9 @@ begin
     end process;
 
     -- mix columns --
-    aes_mix_columns: process(rstn_i, clk_i)
+    aes_mix_columns: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        aes_mix1 <= (others => '0');
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if (aes_dec = '1') then -- decrypt
           aes_mix1(31 downto 24) <= gfmul_f(aes_so, x"b");
           aes_mix1(23 downto 16) <= gfmul_f(aes_so, x"d");
@@ -452,11 +448,9 @@ begin
     sm4_so2 <= x"000000" & sm4_so1;
 
     -- round update: encrypt/decrypt or key schedule --
-    sm4_round: process(rstn_i, clk_i)
+    sm4_round: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        sm4_rnd <= (others => '0');
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if (funct12(6) = '0') then -- encrypt/decrypt
           sm4_rnd <= sm4_so2 xor lsl_f(sm4_so2, 8) xor lsl_f(sm4_so2, 2) xor lsl_f(sm4_so2, 18) xor
                                  lsl_f((sm4_so2 and x"0000003F"), 26) xor lsl_f((sm4_so2 and x"000000C0"), 10);

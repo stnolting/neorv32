@@ -200,11 +200,9 @@ begin
   if not FAST_MUL_EN generate
 
     -- shift-and-add algorithm --
-    multiplier_core: process(rstn_i, clk_i)
+    multiplier_core: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        mul_res <= (others => '0');
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if (mul_start = '1') then -- start new multiplication
           mul_res(63 downto 32) <= (others => '0');
           mul_res(31 downto 0)  <= rs1_i;
@@ -242,14 +240,9 @@ begin
   if DIVISION_EN generate
 
     -- unsigned restoring division algorithm --
-    divider_core: process(rstn_i, clk_i)
+    divider_core: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        div_divi <= (others => '0');
-        div_quot <= (others => '0');
-        div_rema <= (others => '0');
-        div_sign <= '0';
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if (div_start = '1') then -- start new division
           div_divi <= abs32_f(rs2_i, rs2_signed);
           div_quot <= abs32_f(rs1_i, rs1_signed);

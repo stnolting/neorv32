@@ -44,11 +44,9 @@ begin
 
   -- Conditional Output ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cond_out: process(rstn_i, clk_i)
+  cond_out: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      res_o <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (valid_cmd = '1') and (condition = '1') then -- unit triggered and move-condition is true
         res_o <= rs1_i;
       else

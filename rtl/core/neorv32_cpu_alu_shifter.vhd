@@ -122,14 +122,20 @@ begin
     end generate;
 
     -- register layer --
-    pipe_reg: process(rstn_i, clk_i)
+    pipe_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        sreg <= lvl(5);
+      end if;
+    end process;
+
+    -- output control --
+    oe_reg: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        oe   <= '0';
-        sreg <= (others => '0');
+        oe <= '0';
       elsif rising_edge(clk_i) then
-        oe   <= valid_cmd;
-        sreg <= lvl(5);
+        oe <= valid_cmd;
       end if;
     end process;
 
