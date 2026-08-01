@@ -213,7 +213,7 @@ begin
     -- ISA configuration checks --
     assert not (RISCV_ISA_Zcb and (not RISCV_ISA_C)) report
       "[NEORV32] CPU ISA: Zcb requires C!" severity error;
-    assert not (RISCV_ISA_Zcmop and (not RISCV_ISA_C) and (not RISCV_ISA_Zimop)) report
+    assert not (RISCV_ISA_Zcmop and ((not RISCV_ISA_C) or (not RISCV_ISA_Zimop))) report
       "[NEORV32] CPU ISA: Zcmop requires C and Zimop!" severity error;
 
   end generate;
