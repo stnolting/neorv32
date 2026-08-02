@@ -134,19 +134,13 @@ begin
         when S_BUSY => -- processing
         -- ------------------------------------------------------------
           ctrl.cnt <= std_ulogic_vector(unsigned(ctrl.cnt) - 1);
-          if (ctrl_i.cpu_trap = '1') then -- abort on trap
-            ctrl.state <= S_IDLE;
-          elsif (or_reduce_f(ctrl.cnt) = '0') then -- processing done
+          if (or_reduce_f(ctrl.cnt) = '0') or (ctrl_i.cpu_trap = '1') then -- processing done? abort on trap
             ctrl.state <= S_DONE;
           end if;
 
         when S_PIPE => -- extra cycle for the fast multiplier's pipeline register
         -- ------------------------------------------------------------
-          if (ctrl_i.cpu_trap = '1') then -- abort on trap
-            ctrl.state <= S_IDLE;
-          else
-            ctrl.state <= S_DONE;
-          end if;
+          ctrl.state <= S_DONE;
 
         when S_DONE => -- S_DONE: final step / enable output for one cycle
         -- ------------------------------------------------------------
@@ -181,13 +175,13 @@ begin
       PIPELINE => FAST_MUL_REG
     )
     port map (
-      clk_i    => clk_i,
-      en_i     => mul_start,
-      opa_i    => rs1_i,
-      opa_sn_i => rs1_signed,
-      opb_i    => rs2_i,
-      opb_sn_i => rs2_signed,
-      res_o    => mul_res
+      clk_i  => clk_i,
+      en_i   => mul_start,
+      opa_i  => rs1_i,
+      opas_i => rs1_signed,
+      opb_i  => rs2_i,
+      opbs_i => rs2_signed,
+      res_o  => mul_res
     );
     mul_add <= (others => '0'); -- unused
   end generate;
@@ -251,7 +245,7 @@ begin
             when "10"   => div_sgn <= rs1_i(rs1_i'left); -- signed rem
             when others => div_sgn <= '0';
           end case;
-        elsif (ctrl.state = S_BUSY) or (ctrl.state = S_DONE) then -- running?
+        elsif ((ctrl.state = S_BUSY) or (ctrl.state = S_DONE)) and (ctrl_i.ir_funct3(2) = '1') then -- running?
           div_quo <= div_quo(30 downto 0) & (not div_sub(32));
           if (div_sub(32) = '0') then
             div_rem <= div_sub(31 downto 0);

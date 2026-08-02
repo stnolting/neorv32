@@ -811,14 +811,14 @@ begin
   )
   port map (
     -- global control --
-    clk_i    => clk_i,
+    clk_i  => clk_i,
     -- data path --
-    en_i     => multiplier.start,
-    opa_i    => multiplier.opa,
-    opa_sn_i => '0',
-    opb_i    => multiplier.opb,
-    opb_sn_i => '0',
-    res_o    => multiplier.product
+    en_i   => multiplier.start,
+    opa_i  => multiplier.opa,
+    opas_i => '0',
+    opb_i  => multiplier.opb,
+    opbs_i => '0',
+    res_o  => multiplier.product
   );
   multiplier.opa <= '1' & fpu_operands.rs1(22 downto 0); -- append hidden one to mantissa
   multiplier.opb <= '1' & fpu_operands.rs2(22 downto 0); -- append hidden one to mantissa
