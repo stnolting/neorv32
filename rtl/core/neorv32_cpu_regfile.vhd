@@ -184,30 +184,37 @@ begin
   if (ARCHSEL = 3) generate
 
     -- write buffer --
-    rf_write: process(rstn_i, clk_i)
+    rf_write_buf: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        wdata  <= (others => '0');
-        onehot <= (others => '0');
-      elsif rising_edge(clk_i) then
-        -- input register --
-        if (ctrl_i.rf_wb_en = '1') then
-          wdata <= rd_i;
+      if rising_edge(clk_i) then
+        -- data input register --
+        if (rd_we_i = '1') then
+          wdata <= rd_data_i;
         end if;
-        -- one-hot decoder --
-        onehot <= (others => '0');
-        for i in 1 to (2**AWIDTH)-1 loop
-          if (unsigned(ctrl_i.rf_rd(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) then
-            onehot(i) <= ctrl_i.rf_wb_en;
-          end if;
-        end loop;
+        -- write-address buffer --
+        if (rd_we_i = '1') then
+          addr <= rd_addr_i;
+        else
+          addr <= (others => '0');
+        end if;
       end if;
     end process;
+
+    -- write select --
+    onehot_gen:
+    for i in 1 to (2**AWIDTH)-1 generate
+      onehot(i) <= '1' when (unsigned(addr(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
+    end generate;
 
     -- individual latches (transparent when clock is LOW) --
     regfile_gen:
     for i in 1 to (2**AWIDTH)-1 generate
-      regfile(i) <= wdata when (clk_i = '0') and (onehot(i) = '1') else regfile(i);
+      rf_write: process(clk_i, onehot, wdata)
+      begin
+        if (clk_i = '0') and (onehot(i) = '1') then
+          regfile(i) <= wdata;
+        end if;
+      end process;
     end generate;
     regfile(0) <= (others => '0'); -- x0 is hardwired to zero
 
