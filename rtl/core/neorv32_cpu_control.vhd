@@ -166,6 +166,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal cnt_event    : std_ulogic_vector(cnt_event_width_c-1 downto 0); -- counter events
   signal ebreak_trig  : std_ulogic; -- environment break exception trigger
   signal trap_env     : std_ulogic_vector(6 downto 0); -- environment call cause-value helper
+  signal retire_start : std_ulogic; -- start of instruction retire tracking
+  signal retired      : std_ulogic; -- tracked instruction has retired
 
 begin
 
@@ -546,6 +548,23 @@ begin
   cnt_event(cnt_event_delta_c)    <= '1' when (ctrl.if_reset = '1') and (exec.ir(6 downto 2) /= "00011") else '0'; -- control flow transfer
   cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rd = '1')               else '0'; -- memory load
   cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_wr = '1')               else '0'; -- memory store
+
+  -- retire tacking --
+  retire_tracking: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      retire_start <= '0';
+    elsif rising_edge(clk_i) then
+      if (exec.state = S_DISPATCH) then -- instruction completed
+        retire_start <= '0';
+      elsif (exec.state = S_EXECUTE) then -- instruction started
+        retire_start <= '1';
+      end if;
+    end if;
+  end process;
+
+  -- instruction has retired: execution completed without any trap --
+  retired <= '1' when (retire_start = '1') and (exec.state = S_DISPATCH) and (env_pend = '0') and (exc_fire = '0') else '0';
 
 
   -- ****************************************************************************************************************************
