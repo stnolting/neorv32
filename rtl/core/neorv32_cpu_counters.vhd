@@ -181,7 +181,7 @@ begin
   -- -------------------------------------------------------------------------------------------
   -- RISC-V base counter events --
   cnt_inc(0) <= ctrl_i.cnt_event(cnt_event_cy_c) and (not ctrl_i.cpu_debug) and (not inhibit(0)) and (not pmf_inh(0));
-  cnt_inc(1) <= '0'; -- undefined (time)
+  cnt_inc(1) <= '0'; -- undefined
   cnt_inc(2) <= ctrl_i.cnt_event(cnt_event_ir_c) and (not ctrl_i.cpu_debug) and (not inhibit(2)) and (not pmf_inh(1));
   -- NEORV32-specific HPM events --
   event_gen:

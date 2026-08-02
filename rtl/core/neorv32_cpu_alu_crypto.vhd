@@ -253,9 +253,11 @@ begin
         rs2     <= rs2_i;
         funct12 <= ctrl_i.ir_funct12;
       end if;
-      -- arbiter state machine --
+
+      -- FSM --
       done <= '0'; -- default
       case state is
+
         -- wait for operation trigger --
         when S_IDLE =>
           if (cmd_valid = '1') then -- trigger new operation
@@ -266,13 +268,16 @@ begin
               state <= S_IDLE;
             end if;
           end if;
+
         -- delay cycle --
         when S_BUSY =>
           state <= S_DONE;
+
         -- final step & enable output for one cycle --
         when S_DONE =>
           done  <= '1';
           state <= S_IDLE;
+
       end case;
     end if;
   end process;
