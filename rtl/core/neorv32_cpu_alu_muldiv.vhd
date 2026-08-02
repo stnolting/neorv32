@@ -134,19 +134,13 @@ begin
         when S_BUSY => -- processing
         -- ------------------------------------------------------------
           ctrl.cnt <= std_ulogic_vector(unsigned(ctrl.cnt) - 1);
-          if (ctrl_i.cpu_trap = '1') then -- abort on trap
-            ctrl.state <= S_IDLE;
-          elsif (or_reduce_f(ctrl.cnt) = '0') then -- processing done
+          if (or_reduce_f(ctrl.cnt) = '0') or (ctrl_i.cpu_trap = '1') then -- processing done? abort on trap
             ctrl.state <= S_DONE;
           end if;
 
         when S_PIPE => -- extra cycle for the fast multiplier's pipeline register
         -- ------------------------------------------------------------
-          if (ctrl_i.cpu_trap = '1') then -- abort on trap
-            ctrl.state <= S_IDLE;
-          else
-            ctrl.state <= S_DONE;
-          end if;
+          ctrl.state <= S_DONE;
 
         when S_DONE => -- S_DONE: final step / enable output for one cycle
         -- ------------------------------------------------------------
