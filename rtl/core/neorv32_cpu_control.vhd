@@ -528,6 +528,7 @@ begin
   ctrl_o.ir_opcode    <= exec.ir(instr_opcode_msb_c downto instr_opcode_lsb_c);
   ctrl_o.ir_rvc       <= exec.irc;
   -- status --
+  ctrl_o.cpu_exec     <= '1' when (exec.state = S_EXECUTE) else '0';
   ctrl_o.cpu_priv     <= csr.prv_level;
   ctrl_o.cpu_trap     <= env_enter;
   ctrl_o.cpu_sync_exc <= exc_fire;

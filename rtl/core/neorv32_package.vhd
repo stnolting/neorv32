@@ -698,6 +698,7 @@ package neorv32_package is
     ir_opcode    : std_ulogic_vector(6 downto 0);  -- opcode bit field
     ir_rvc       : std_ulogic_vector(15 downto 0); -- compressed instruction word
     -- status --
+    cpu_exec     : std_ulogic;                     -- attempting to execute current instruction
     cpu_priv     : std_ulogic;                     -- effective privilege mode
     cpu_trap     : std_ulogic;                     -- set when CPU is entering trap
     cpu_sync_exc : std_ulogic;                     -- set when CPU encounters a synchronous exception
@@ -742,6 +743,7 @@ package neorv32_package is
     ir_funct12   => (others => '0'),
     ir_opcode    => (others => '0'),
     ir_rvc       => (others => '0'),
+    cpu_exec     => '0',
     cpu_priv     => '0',
     cpu_trap     => '0',
     cpu_sync_exc => '0',
