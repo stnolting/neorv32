@@ -181,13 +181,13 @@ begin
       PIPELINE => FAST_MUL_REG
     )
     port map (
-      clk_i    => clk_i,
-      en_i     => mul_start,
-      opa_i    => rs1_i,
-      opa_sn_i => rs1_signed,
-      opb_i    => rs2_i,
-      opb_sn_i => rs2_signed,
-      res_o    => mul_res
+      clk_i  => clk_i,
+      en_i   => mul_start,
+      opa_i  => rs1_i,
+      opas_i => rs1_signed,
+      opb_i  => rs2_i,
+      opbs_i => rs2_signed,
+      res_o  => mul_res
     );
     mul_add <= (others => '0'); -- unused
   end generate;

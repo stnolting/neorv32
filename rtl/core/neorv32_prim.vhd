@@ -257,27 +257,26 @@ use ieee.numeric_std.all;
 
 entity neorv32_prim_mul is
   generic (
-    DWIDTH   : natural;            -- operand width
-    PIPELINE : boolean := false    -- add a second (output) register stage
+    DWIDTH   : natural;         -- operand width
+    PIPELINE : boolean := false -- add a second (output) register stage
   );
   port (
     -- global control --
-    clk_i    : in  std_ulogic;                              -- clock, rising edge
+    clk_i  : in  std_ulogic;                              -- clock, rising edge
     -- data path --
-    en_i     : in  std_ulogic;                              -- enable input operand registers
-    opa_i    : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand A
-    opa_sn_i : in  std_ulogic;                              -- operand A is a signed number
-    opb_i    : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand B
-    opb_sn_i : in  std_ulogic;                              -- operand B is a signed number
-    res_o    : out std_ulogic_vector((2*DWIDTH)-1 downto 0) -- resulting product
+    en_i   : in  std_ulogic;                              -- enable input operand registers
+    opa_i  : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand A
+    opas_i : in  std_ulogic;                              -- operand A is a signed number
+    opb_i  : in  std_ulogic_vector(DWIDTH-1 downto 0);    -- operand B
+    opbs_i : in  std_ulogic;                              -- operand B is a signed number
+    res_o  : out std_ulogic_vector((2*DWIDTH)-1 downto 0) -- resulting product
   );
 end entity;
 
 architecture neorv32_prim_mul_rtl of neorv32_prim_mul is
 
-  signal opa, opb : signed(DWIDTH downto 0);
-  signal res      : signed((2*DWIDTH)+1 downto 0);
-  signal res_pipe : signed((2*DWIDTH)+1 downto 0);
+  signal opa, opb  : signed(DWIDTH downto 0);
+  signal res, res2 : signed((2*DWIDTH)+1 downto 0);
 
 begin
 
@@ -287,8 +286,8 @@ begin
   begin
     if rising_edge(clk_i) then
       if (en_i = '1') then
-        opa <= signed((opa_i(opa_i'left) and opa_sn_i) & opa_i);
-        opb <= signed((opb_i(opb_i'left) and opb_sn_i) & opb_i);
+        opa <= signed((opa_i(opa_i'left) and opas_i) & opa_i);
+        opb <= signed((opb_i(opb_i'left) and opbs_i) & opb_i);
       end if;
     end if;
   end process;
@@ -312,18 +311,18 @@ begin
     pipe_reg: process(clk_i)
     begin
       if rising_edge(clk_i) then -- no reset to improve DSP mapping
-        res_pipe <= res;
+        res2 <= res;
       end if;
     end process;
   end generate;
 
   pipe_false:
   if not PIPELINE generate
-    res_pipe <= res;
+    res2 <= res;
   end generate;
 
   -- result --
-  res_o <= std_ulogic_vector(res_pipe((2*DWIDTH)-1 downto 0));
+  res_o <= std_ulogic_vector(res2((2*DWIDTH)-1 downto 0));
 
 end architecture;
 
