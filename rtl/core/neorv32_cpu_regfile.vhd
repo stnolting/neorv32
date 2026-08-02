@@ -27,19 +27,24 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_regfile is
   generic (
-    DWIDTH   : natural;             -- data width
-    AWIDTH   : natural;             -- address width
-    ARCH_SEL : natural range 0 to 3 -- architecture style select
+    AWIDTH  : natural range 4 to 5; -- address width
+    ARCHSEL : natural range 0 to 3  -- architecture style select
   );
   port (
     -- global control --
-    clk_i  : in  std_ulogic; -- global clock, rising edge
-    rstn_i : in  std_ulogic; -- global reset, low-active, async
-    ctrl_i : in  ctrl_bus_t; -- main control bus
-    -- operands --
-    rd_i   : in  std_ulogic_vector(DWIDTH-1 downto 0); -- destination data rd
-    rs1_o  : out std_ulogic_vector(DWIDTH-1 downto 0); -- source data rs1
-    rs2_o  : out std_ulogic_vector(DWIDTH-1 downto 0)  -- source data rs2
+    clk_i      : in  std_ulogic; -- global clock, rising edge
+    rstn_i     : in  std_ulogic; -- global reset, low-active, async
+    zero_i     : in  std_ulogic; -- force write to x0 (for SRAM memory only)
+    -- write port (rd) --
+    rd_we_i    : in  std_ulogic;                     -- write-enable
+    rd_addr_i  : in  std_ulogic_vector(4 downto 0);  -- address
+    rd_data_i  : in  std_ulogic_vector(31 downto 0); -- write data
+    -- read port 1 (rs1) --
+    rs1_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
+    rs1_data_o : out std_ulogic_vector(31 downto 0); -- read data
+    -- read port 1 (rs2) --
+    rs2_addr_i : in  std_ulogic_vector(4 downto 0);  -- address
+    rs2_data_o : out std_ulogic_vector(31 downto 0)  -- read data
   );
 end entity;
 

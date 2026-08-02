@@ -399,19 +399,24 @@ begin
   -- -------------------------------------------------------------------------------------------
   neorv32_cpu_regfile_inst: entity neorv32.neorv32_cpu_regfile
   generic map (
-    DWIDTH   => 32,             -- data width
-    AWIDTH   => rf_awidth_c,    -- address width
-    ARCH_SEL => CPU_RF_ARCH_SEL -- architecture style select
+    AWIDTH  => rf_awidth_c,    -- address width
+    ARCHSEL => CPU_RF_ARCH_SEL -- architecture style select
   )
   port map (
     -- global control --
-    clk_i  => clk_i,    -- global clock, rising edge
-    rstn_i => rstn_i,   -- global reset, low-active, async
-    ctrl_i => ctrl,     -- main control bus
-    -- operands --
-    rd_i   => rf_wdata, -- destination operand rd
-    rs1_o  => rs1,      -- source operand rs1
-    rs2_o  => rs2       -- source operand rs2
+    clk_i      => clk_i,
+    rstn_i     => rstn_i,
+    zero_i     => ctrl.rf_zero,
+    -- write port (rd) --
+    rd_we_i    => ctrl.rf_wb_en,
+    rd_addr_i  => ctrl.rf_rd,
+    rd_data_i  => rf_wdata,
+    -- read port 1 (rs1) --
+    rs1_addr_i => ctrl.rf_rs1,
+    rs1_data_o => rs1,
+    -- read port 1 (rs2) --
+    rs2_addr_i => ctrl.rf_rs2,
+    rs2_data_o => rs2
   );
 
   -- all buses are zero unless there is an according operation --
