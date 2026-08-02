@@ -1,15 +1,14 @@
 -- ================================================================================ --
 -- NEORV32 CPU - Data Register File                                                 --
 -- -------------------------------------------------------------------------------- --
--- The architecture style of the register file is selected by the ARCH_SEL generic: --
+-- The architecture style of the register file is selected by the ARCHSEL generic:  --
 -- 0: Register-based SRAM with sync. read (e.g. to map to FPGA block RAM)           --
 -- 1: Register-based SRAM with async. read (e.g. to map to FPGA distributed RAM)    --
 -- 2: Register-based with full hardware reset                                       --
 -- 3: Latch-based (e.g. for ASIC implementation)                                    --
 --                                                                                  --
 -- [NOTE] Read-during-write behavior of the register file's memory core is          --
---        irrelevant as read and write accesses are mutually exclusive and          --
---        will never occur at the same time.                                        --
+--        irrelevant as read and write accesses are mutually exclusive.             --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -53,11 +52,11 @@ architecture neorv32_cpu_regfile_rtl of neorv32_cpu_regfile is
   -- access logic --
   signal rf_we  : std_ulogic;
   signal addr   : std_ulogic_vector(4 downto 0);
-  signal wdata  : std_ulogic_vector(DWIDTH-1 downto 0);
+  signal wdata  : std_ulogic_vector(31 downto 0);
   signal onehot : std_ulogic_vector((2**AWIDTH)-1 downto 1);
 
   -- memory core --
-  type   regfile_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
+  type   regfile_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal regfile : regfile_t;
 
 begin
@@ -65,23 +64,23 @@ begin
   -- Architecture Style 0: Register-Based SRAM with Synchronous Read ------------------------
   -- -------------------------------------------------------------------------------------------
   arch_sram_sync:
-  if (ARCH_SEL = 0) generate
+  if (ARCHSEL = 0) generate
 
     -- Register zero (x0) is just another physical register that has to be initialized by the CPU control.
     -- Writes to x0 are inhibited unless the control forces a write (writing zero) to re-initialize x0.
-    rf_we <= (ctrl_i.rf_wb_en and or_reduce_f(ctrl_i.rf_rd(AWIDTH-1 downto 0))) or ctrl_i.rf_zero;
-    addr  <= (others => '0') when (ctrl_i.rf_zero  = '1') else -- force rd = zero
-             ctrl_i.rf_rd    when (ctrl_i.rf_wb_en = '1') else ctrl_i.rf_rs1; -- multiplexed rd/rs1
+    rf_we <= (rd_we_i and or_reduce_f(rd_addr_i(AWIDTH-1 downto 0))) or zero_i;
+    addr  <= (others => '0') when (zero_i  = '1') else -- force rd = zero
+             rd_addr_i       when (rd_we_i = '1') else rs1_addr_i; -- multiplexed rd/rs1
 
     -- synchronous write & read (SDPRAM) --
     rf_access: process(clk_i)
     begin
       if rising_edge(clk_i) then
         if (rf_we = '1') then
-          regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0)))) <= rd_i;
+          regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0)))) <= rd_data_i;
         end if;
-        rs1_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
-        rs2_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs2(AWIDTH-1 downto 0))));
+        rs1_data_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
+        rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
       end if;
     end process;
 
@@ -95,17 +94,17 @@ begin
   -- Architecture Style 1: Register-Based SRAM with Asynchronous Read -----------------------
   -- -------------------------------------------------------------------------------------------
   arch_sram_async:
-  if (ARCH_SEL = 1) generate
+  if (ARCHSEL = 1) generate
 
     -- multiplexed rd/rs1 address to map to SDPRAM --
-    addr <= ctrl_i.rf_rd when (ctrl_i.rf_wb_en = '1') else ctrl_i.rf_rs1;
+    addr <= rd_addr_i when (rd_we_i = '1') else rs1_addr_i;
 
     -- synchronous write --
     rf_write: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        if (ctrl_i.rf_wb_en = '1') then
-          regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0)))) <= rd_i;
+        if (rd_we_i = '1') then
+          regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0)))) <= rd_data_i;
         end if;
       end if;
     end process;
@@ -120,12 +119,12 @@ begin
         if (ctrl_i.rf_rs1 = "00000") then -- reading x0
           rs1_o <= (others => '0');
         else
-          rs1_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
+          rs1_data_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
         end if;
-        if (ctrl_i.rf_rs2 = "00000") then -- reading x0
-          rs2_o <= (others => '0');
+        if (rs2_addr_i = "00000") then -- reading x0
+          rs2_data_o <= (others => '0');
         else
-          rs2_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs2(AWIDTH-1 downto 0))));
+          rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
         end if;
       end if;
     end process;
@@ -141,12 +140,12 @@ begin
   -- Architecture Style 2: Register-Based with Hardware Reset -------------------------------
   -- -------------------------------------------------------------------------------------------
   arch_reg:
-  if (ARCH_SEL = 2) generate
+  if (ARCHSEL = 2) generate
 
     -- write select --
     onehot_gen:
     for i in 1 to (2**AWIDTH)-1 generate
-      onehot(i) <= ctrl_i.rf_wb_en when (unsigned(ctrl_i.rf_rd(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
+      onehot(i) <= rd_we_i when (unsigned(rd_addr_i(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
     end generate;
 
     -- individual registers --
@@ -158,7 +157,7 @@ begin
           regfile(i) <= (others => '0');
         elsif rising_edge(clk_i) then
           if (onehot(i) = '1') then
-            regfile(i) <= rd_i;
+            regfile(i) <= rd_data_i;
           end if;
         end if;
       end process;
@@ -169,8 +168,8 @@ begin
     rf_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        rs1_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs1(AWIDTH-1 downto 0))));
-        rs2_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs2(AWIDTH-1 downto 0))));
+        rs1_data_o <= regfile(to_integer(unsigned(rs1_addr_i(AWIDTH-1 downto 0))));
+        rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
       end if;
     end process;
 
@@ -185,7 +184,7 @@ begin
   -- Architecture Style 3: Latch-Based ------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   arch_latch:
-  if (ARCH_SEL = 3) generate
+  if (ARCHSEL = 3) generate
 
     -- write buffer --
     rf_write: process(rstn_i, clk_i)
@@ -219,15 +218,14 @@ begin
     rf_read: process(clk_i)
     begin
       if rising_edge(clk_i) then
-        rs1_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs1(AWIDTH-1 downto 0))));
-        rs2_o <= regfile(to_integer(unsigned(ctrl_i.rf_rs2(AWIDTH-1 downto 0))));
+        rs1_data_o <= regfile(to_integer(unsigned(rs1_addr_i(AWIDTH-1 downto 0))));
+        rs2_data_o <= regfile(to_integer(unsigned(rs2_addr_i(AWIDTH-1 downto 0))));
       end if;
     end process;
 
     -- unused --
     rf_we <= '0';
-    addr  <= (others => '0');
 
   end generate;
 
-end Architecture;
+end architecture;
