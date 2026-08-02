@@ -182,7 +182,7 @@ begin
     elsif rising_edge(clk_i) then
       for i in 0 to NUM_TRIGGERS-1 loop
         match(i) <= (not ctrl_i.cpu_debug) and (match(i) or -- keep active until we are in debug-mode
-                    (tdata1_exec(i)  and cmp_inst(i) and ctrl_i.cnt_event(cnt_event_ir_c))    or -- execute
+                    (tdata1_exec(i)  and cmp_inst(i) and ctrl_i.cpu_exec)                     or -- execute
                     (tdata1_store(i) and cmp_data(i) and ctrl_i.cnt_event(cnt_event_store_c)) or -- store
                     (tdata1_load(i)  and cmp_data(i) and ctrl_i.cnt_event(cnt_event_load_c)));   -- load
       end loop;
