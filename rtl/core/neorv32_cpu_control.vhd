@@ -540,8 +540,8 @@ begin
   -- Counter Events -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   cnt_event(cnt_event_cy_c)       <= '0' when (exec.state = S_SLEEP)                                     else '1'; -- active cycle
-  cnt_event(cnt_event_ir_c)       <= '1' when (exec.state = S_EXECUTE)                                   else '0'; -- retired (=executed) instr.
-  cnt_event(cnt_event_ci_c)       <= '1' when (exec.state = S_EXECUTE) and (exec.ci = '1')               else '0'; -- executed compressed instr.
+  cnt_event(cnt_event_ir_c)       <= '1' when (retired = '1')                                            else '0'; -- retired instr.
+  cnt_event(cnt_event_ci_c)       <= '1' when (retired = '1') and (exec.ci = '1')                        else '0'; -- retired compressed instr.
   cnt_event(cnt_event_wait_dis_c) <= '1' when (exec.state = S_DISPATCH) and (frontend_i.valid = '0')     else '0'; -- instruction dispatch wait
   cnt_event(cnt_event_wait_alu_c) <= '1' when (exec.state = S_ALU_WAIT)                                  else '0'; -- multi-cycle ALU wait
   cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exec.state = S_MEM_RSP)          else '0'; -- load/store memory wait
