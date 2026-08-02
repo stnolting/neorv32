@@ -245,7 +245,7 @@ begin
             when "10"   => div_sgn <= rs1_i(rs1_i'left); -- signed rem
             when others => div_sgn <= '0';
           end case;
-        elsif (ctrl.state = S_BUSY) or (ctrl.state = S_DONE) then -- running?
+        elsif ((ctrl.state = S_BUSY) or (ctrl.state = S_DONE)) and (ctrl_i.ir_funct3(2) = '1') then -- running?
           div_quo <= div_quo(30 downto 0) & (not div_sub(32));
           if (div_sub(32) = '0') then
             div_rem <= div_sub(31 downto 0);
