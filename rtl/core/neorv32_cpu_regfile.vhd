@@ -110,14 +110,11 @@ begin
     end process;
 
     -- asynchronous read + zero-insertion + output-register --
-    rf_read: process(rstn_i, clk_i)
+    rf_read: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        rs1_o <= (others => '0');
-        rs2_o <= (others => '0');
-      elsif rising_edge(clk_i) then
-        if (ctrl_i.rf_rs1 = "00000") then -- reading x0
-          rs1_o <= (others => '0');
+      if rising_edge(clk_i) then
+        if (rs1_addr_i = "00000") then -- reading x0
+          rs1_data_o <= (others => '0');
         else
           rs1_data_o <= regfile(to_integer(unsigned(addr(AWIDTH-1 downto 0))));
         end if;
@@ -148,7 +145,7 @@ begin
       onehot(i) <= rd_we_i when (unsigned(rd_addr_i(AWIDTH-1 downto 0)) = to_unsigned(i, AWIDTH)) else '0';
     end generate;
 
-    -- individual registers --
+    -- individual registers with reset --
     regfile_gen:
     for i in 1 to (2**AWIDTH)-1 generate
       rf_write: process(rstn_i, clk_i)
