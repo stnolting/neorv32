@@ -62,11 +62,11 @@ begin
       arbiter.order <= (others => '0');
     elsif rising_edge(clk_i) then
       -- sampling control: start trace cycle when in EXECUTE state --
-      arbiter.state <= (arbiter.state or ctrl_i.cnt_event(cnt_event_ir_c)) and (not done);
+      arbiter.state <= (arbiter.state or ctrl_i.cpu_exec) and (not done);
       -- trap-entry detector: buffer trap entry until trace commit --
       arbiter.entry <= (arbiter.entry or ctrl_i.cpu_trap) and (not valid);
       -- delta detector: buffer delta trigger until we are back in EXECUTE stage --
-      arbiter.delta <= (arbiter.delta or ctrl_i.cnt_event(cnt_event_delta_c)) and (not ctrl_i.cnt_event(cnt_event_ir_c));
+      arbiter.delta <= (arbiter.delta or ctrl_i.cnt_event(cnt_event_delta_c)) and (not ctrl_i.cpu_exec);
       -- instruction counter --
       if (valid = '1') then
         arbiter.order <= std_ulogic_vector(unsigned(arbiter.order) + 1);
@@ -96,7 +96,7 @@ begin
       trace_buf.halt  <= not ctrl_i.cnt_event(cnt_event_cy_c);
       trace_buf.intr  <= arbiter.entry;
       trace_buf.ixl   <= "01"; -- XLEN = 32-bit
-      if (ctrl_i.cnt_event(cnt_event_ir_c) = '1') then
+      if (ctrl_i.cpu_exec = '1') then
         trace_buf.mode  <= ctrl_i.cpu_priv & ctrl_i.cpu_priv;
         trace_buf.debug <= ctrl_i.cpu_debug;
         trace_buf.compr <= ctrl_i.cnt_event(cnt_event_ci_c);

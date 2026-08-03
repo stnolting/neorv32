@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 02.08.2026 | 1.13.3.7 | `instret` counter: only increment for actually retired instructions | [#1615](https://github.com/stnolting/neorv32/pull/1615) |
 | 02.08.2026 | 1.13.3.6 | minor rtl cleanups and optimizations | [#1614](https://github.com/stnolting/neorv32/pull/1614) |
 | 02.08.2026 | 1.13.3.5 | CPU register file area optimizations and cleanups | [#1613](https://github.com/stnolting/neorv32/pull/1613) |
 | 01.08.2026 | 1.13.3.4 | RVFI: extend `order` to 64-bit as required by the spec | [#1612](https://github.com/stnolting/neorv32/pull/1612) |

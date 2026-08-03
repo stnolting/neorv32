@@ -166,6 +166,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal cnt_event    : std_ulogic_vector(cnt_event_width_c-1 downto 0); -- counter events
   signal ebreak_trig  : std_ulogic; -- environment break exception trigger
   signal trap_env     : std_ulogic_vector(6 downto 0); -- environment call cause-value helper
+  signal retire_start : std_ulogic; -- start of instruction retire tracking
+  signal retired      : std_ulogic; -- tracked instruction has retired
 
 begin
 
@@ -528,6 +530,7 @@ begin
   ctrl_o.ir_opcode    <= exec.ir(instr_opcode_msb_c downto instr_opcode_lsb_c);
   ctrl_o.ir_rvc       <= exec.irc;
   -- status --
+  ctrl_o.cpu_exec     <= '1' when (exec.state = S_EXECUTE) else '0';
   ctrl_o.cpu_priv     <= csr.prv_level;
   ctrl_o.cpu_trap     <= env_enter;
   ctrl_o.cpu_sync_exc <= exc_fire;
@@ -537,14 +540,31 @@ begin
   -- Counter Events -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   cnt_event(cnt_event_cy_c)       <= '0' when (exec.state = S_SLEEP)                                     else '1'; -- active cycle
-  cnt_event(cnt_event_ir_c)       <= '1' when (exec.state = S_EXECUTE)                                   else '0'; -- retired (=executed) instr.
-  cnt_event(cnt_event_ci_c)       <= '1' when (exec.state = S_EXECUTE) and (exec.ci = '1')               else '0'; -- executed compressed instr.
+  cnt_event(cnt_event_ir_c)       <= '1' when (retired = '1')                                            else '0'; -- retired instr.
+  cnt_event(cnt_event_ci_c)       <= '1' when (retired = '1') and (exec.ci = '1')                        else '0'; -- retired compressed instr.
   cnt_event(cnt_event_wait_dis_c) <= '1' when (exec.state = S_DISPATCH) and (frontend_i.valid = '0')     else '0'; -- instruction dispatch wait
   cnt_event(cnt_event_wait_alu_c) <= '1' when (exec.state = S_ALU_WAIT)                                  else '0'; -- multi-cycle ALU wait
   cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exec.state = S_MEM_RSP)          else '0'; -- load/store memory wait
   cnt_event(cnt_event_delta_c)    <= '1' when (ctrl.if_reset = '1') and (exec.ir(6 downto 2) /= "00011") else '0'; -- control flow transfer
   cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rd = '1')               else '0'; -- memory load
   cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_wr = '1')               else '0'; -- memory store
+
+  -- retire tacking --
+  retire_tracking: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      retire_start <= '0';
+    elsif rising_edge(clk_i) then
+      if (exec.state = S_DISPATCH) then -- instruction completed
+        retire_start <= '0';
+      elsif (exec.state = S_EXECUTE) then -- instruction started
+        retire_start <= '1';
+      end if;
+    end if;
+  end process;
+
+  -- instruction has retired: execution completed without any trap --
+  retired <= '1' when (retire_start = '1') and (exec.state = S_DISPATCH) and (env_pend = '0') and (exc_fire = '0') else '0';
 
 
   -- ****************************************************************************************************************************

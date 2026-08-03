@@ -568,12 +568,6 @@ All remaining register are hardwired to zero.
 :sectnums:
 ==== (Machine) Counter and Timer CSRs
 
-.Instruction Retired Counter Increment
-[NOTE]
-The `[m]instret[h]` counter always increments when a instruction enters the pipeline's execute stage no matter
-if this instruction is actually going to retire or if it causes an exception.
-
-
 [discrete]
 ===== **`cycle[h]`**
 
@@ -653,14 +647,15 @@ cycle (CPU not in <<_sleep_mode>>). These registers are read/write only for mach
 |             | `0xb82` (`minstreth`)
 | Reset value | `0x00000000_00000000`
 | ISA         | <<_zicsr_isa_extension,`Zicsr`>> & <<_zicntr_isa_extension,`Zicntr`>>
-| Description | If not halted via the <<_mcountinhibit>> CSR the `minstret[h]` CSRs will increment with every retired instruction.
+| Description | If not halted via the <<_mcountinhibit>> CSR the `minstret[h]` CSRs will increment with every **retired** instruction.
 These registers are read/write only for machine-mode software
 |=======================
 
 .Instruction Retiring
-[IMPORTANT]
-Note that **all** executed instruction do increment the `[m]instret[h]` counters even if they do not retire
-(e.g. if the instruction causes an exception).
+[NOTE]
+According to the RISC-V specification, instructions that trigger an asynchronous exception or
+are interrupted by a debug mode or an interrupt request are not considered "retired". Hence, these
+events are not counted by `[m]instret[h]`.
 
 
 <<<
@@ -704,15 +699,10 @@ events is observed (logical OR). Note that the counter will only increment by 1 
 | 5   | `HPMCNT_EVENT_WAIT_LSU` | r/w | memory/bus/cache/etc. delay/wait cycle while executing any load or store operation (caused by a data bus wait cycle))
 | 4   | `HPMCNT_EVENT_WAIT_ALU` | r/w | delay/wait cycle caused by a _multi-cycle_ <<_cpu_arithmetic_logic_unit>> operation (e.g. bit-serial shift)
 | 3   | `HPMCNT_EVENT_WAIT_DIS` | r/w | instruction dispatch wait cycle (wait for instruction prefetch-buffer refill); caused by a fence instruction, a control flow transfer or a instruction fetch bus wait cycle (e.g. cache miss)
-| 2   | `HPMCNT_EVENT_CI`       | r/w | executed 16-bit/compressed (<<_c_isa_extension>>) instruction
-| 1   | `HPMCNT_EVENT_IR`       | r/w | executed instruction (16-bit/compressed or 32-bit/uncompressed)
+| 2   | `HPMCNT_EVENT_CI`       | r/w | retired compressed instruction (<<_c_isa_extension>>)
+| 1   | `HPMCNT_EVENT_IR`       | r/w | retired instruction (16-bit/compressed or 32-bit/uncompressed)
 | 0   | `HPMCNT_EVENT_CY`       | r/w | active clock cycle (CPU not in <<_sleep_mode>>)
 |=======================
-
-.Instruction Retiring ("Retired == Executed")
-[IMPORTANT]
-The CPU HPM/counter logic treats all executed instruction as "retired" even if they raise an exception,
-are intercepted by an interrupt, trigger a privilege mode change or were not meant to retire (i.e. claimed by the RISC-V spec.).
 
 .Atomic Memory Access
 [NOTE]
