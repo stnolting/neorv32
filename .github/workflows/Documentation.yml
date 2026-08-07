@@ -30,9 +30,10 @@ jobs:
       - name: '📦 Install Doxygen'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends doxygen graphviz
+          sudo apt-get install --yes --no-install-recommends doxygen
 
       - name: '🛠️ Modify Doxyfile'
+        shell: bash
         run: |
           ls -al ./docs
           sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' ./docs/Doxyfile
@@ -47,7 +48,6 @@ jobs:
           path: doxygen_build/html
           if-no-files-found: error
 
-
   asciidoctor:
     runs-on: ubuntu-latest
     name: 'Datasheet & User Guide'
@@ -59,15 +59,16 @@ jobs:
       - name: '📦 Install Asciidoctor'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends build-essential graphviz ruby-full
+          sudo apt-get install --yes --no-install-recommends build-essential ruby-full ruby-dev nodejs npm
           sudo gem install --no-document asciidoctor asciidoctor-pdf asciidoctor-diagram rouge
+          sudo npm install --global wavedrom-cli
 
       - name: '🔎 Show Tool Versions'
         run: |
           ruby --version
           asciidoctor --version
           asciidoctor-pdf --version
-          dot --version
+          wavedrom-cli --version
 
       - name: '📚 Build Datasheet and User Guide'
         run: make -C docs all
@@ -78,7 +79,6 @@ jobs:
           name: NEORV32
           path: docs/public
           if-no-files-found: error
-
 
   deploy:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/'))
@@ -108,8 +108,7 @@ jobs:
       - name: '📦 Deploy to GitHub Releases'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload nightly_release NEORV32-SITE-nightly.tar.gz pdf/NEORV32*nightly.pdf --clobber
+        run: gh release upload nightly_release NEORV32-SITE-nightly.tar.gz pdf/NEORV32*nightly.pdf --clobber
 
       - name: '🚀 Deploy to GitHub Pages'
         run: |
