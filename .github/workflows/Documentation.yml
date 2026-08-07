@@ -97,6 +97,9 @@ jobs:
     runs-on: ubuntu-latest
     name: 'Deploy to Releases and Pages'
 
+    permissions:
+      contents: write
+
     steps:
       - name: '🧰 Repository Checkout'
         uses: actions/checkout@v6
@@ -116,14 +119,16 @@ jobs:
 
       - name: '📦 Deploy to GitHub Releases'
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: gh release upload nightly_release NEORV32-SITE-nightly.tar.gz pdf/NEORV32*nightly.pdf --clobber
 
       - name: '🚀 Deploy to GitHub Pages'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           cd public
           git init
-          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
           touch .nojekyll
           git add .
           git config --local user.email "push@gha"
