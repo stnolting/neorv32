@@ -6,16 +6,17 @@ on:
       - main
     paths:
       - 'docs/**'
+      - 'sw/**'
       - '.github/workflows/Documentation.yml'
   pull_request:
     paths:
       - 'docs/**'
+      - 'sw/**'
       - '.github/workflows/Documentation.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pages: write
+  contents: read
 
 jobs:
 
@@ -38,8 +39,11 @@ jobs:
           ls -al ./docs
           sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' ./docs/Doxyfile
 
+      - name: '🔎 Show Tool Versions'
+        run: doxygen --version
+
       - name: '📚 Generate Doxygen Documentation'
-        run: doxygen ./docs/Doxyfile
+        run: make -C docs doxygen
 
       - name: '📤 Upload Artifact'
         uses: actions/upload-artifact@v7
@@ -56,11 +60,16 @@ jobs:
       - name: '🧰 Repository Checkout'
         uses: actions/checkout@v6
 
-      - name: '📦 Install Asciidoctor'
+      - name: '💎 Set Up Ruby'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '4.0'
+
+      - name: '📦 Install Asciidoctor and Wavedrom'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends build-essential ruby-full ruby-dev nodejs npm
-          sudo gem install --no-document asciidoctor asciidoctor-pdf asciidoctor-diagram rouge
+          sudo apt-get install --yes --no-install-recommends nodejs npm
+          gem install --no-document asciidoctor asciidoctor-pdf asciidoctor-diagram rouge
           sudo npm install --global wavedrom-cli
 
       - name: '🔎 Show Tool Versions'
