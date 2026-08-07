@@ -49,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: NEORV32-Doxygen
-          path: doxygen_build/html
+          path: docs/doxygen_build/html
           if-no-files-found: error
 
   asciidoctor:
