@@ -59,7 +59,7 @@ jobs:
       - name: '📦 Install Asciidoctor'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommend build-essential graphviz ruby-full
+          sudo apt-get install --yes --no-install-recommends build-essential graphviz ruby-full
           sudo gem install --no-document asciidoctor asciidoctor-pdf asciidoctor-diagram rouge
 
       - name: '🔎 Show Tool Versions'
