@@ -12,20 +12,20 @@ or as PDF documents.
 Pre-rendered PDFs are available online as nightly pre-releases: https://github.com/stnolting/neorv32/releases/tag/nightly_release
 The HTML-based documentation is also available online at the project's https://stnolting.github.io/neorv32/[GitHub Page].
 
-The makefile provides a help target to show all available build options and their according outputs.
+The makefile provides a help target to show all available build options:
 
 [source,bash]
 ----
 neorv32/docs$ make help
+Targets:
+ all       - build datasheet and user guide as PDF and HTML
+ site      - generate revnumber.txt and build all AsciiDoc documents
+ pdf       - build datasheet PDF
+ html      - build datasheet HTML
+ ug-pdf    - build user guide PDF
+ ug-html   - build user guide HTML
+ doxygen   - build Doxygen software documentation
+ revnumber - generate revnumber.txt from the current Git revision
+ clean     - delete generated files and directories
+ help      - show this text
 ----
-
-.Example: Generate HTML documentation (data sheet) using `asciidoctor`
-[source,bash]
-----
-neorv32/docs$ make html
-----
-
-.Using Containers for Building
-[TIP]
-If you don't have `asciidoctor` / `asciidoctor-pdf` installed, you can still generate all the documentation using
-a _docker container_ via `make container`.
