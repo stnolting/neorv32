@@ -112,7 +112,6 @@ architecture neorv32_smc_rtl of neorv32_smc is
   component neorv32_smc_mac
   port (
     -- global control --
-    rstn_i      : in  std_ulogic;
     clk_i       : in  std_ulogic;
     -- configuration --
     cfg_en_i    : in  std_ulogic;
@@ -371,7 +370,6 @@ begin
   neorv32_smc_mac_inst: neorv32_smc_mac
   port map (
     -- global control --
-    rstn_i      => rstn_i,
     clk_i       => clk_i,
     -- configuration --
     cfg_en_i    => csr.enable,
@@ -442,7 +440,6 @@ use ieee.numeric_std.all;
 entity neorv32_smc_mac is
   port (
     -- global control --
-    rstn_i     : in  std_ulogic;                      -- global reset line, low-active, async
     clk_i      : in  std_ulogic;                      -- global clock line
     -- configuration --
     cfg_en_i    : in  std_ulogic;                     -- enable, reset when low
@@ -508,14 +505,9 @@ begin
 
   -- Access Arbiter Sync --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  arbiter_sync: process(rstn_i, clk_i)
+  arbiter_sync: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      mac.state <= S_INIT_0;
-      mac.isel  <= (others => '0');
-      mac.csn   <= (others => '1');
-      mac.rdata <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       mac <= mac_nxt;
       if (cfg_en_i = '0') then -- sync reset only for relevant signals
         mac.state <= S_INIT_0;

@@ -860,11 +860,9 @@ begin
 
   -- Data ALU -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  amo_alu: process(rstn_i, clk_i)
+  amo_alu: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      alu_res <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       case arbiter.cmd(2 downto 0) is
         when "000"  => alu_res <= arbiter.wdata; -- AMOSWAP.W
         when "001"  => alu_res <= std_ulogic_vector(unsigned(arbiter.rdata) + unsigned(arbiter.wdata)); -- AMOADD.W

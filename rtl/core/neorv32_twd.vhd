@@ -420,12 +420,9 @@ begin
 
   -- Communication State Monitor ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  com_state_monitor: process(rstn_i, clk_i)
+  com_state_monitor: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      com_beg <= '0';
-      com_end <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (ctrl.enable = '0') then
         com_beg <= '0';
         com_end <= '0';
