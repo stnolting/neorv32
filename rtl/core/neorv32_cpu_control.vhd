@@ -739,8 +739,9 @@ begin
         if (exec.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then -- word-quantity only
           case exec.ir(instr_funct5_msb_c downto instr_funct5_lsb_c) is
             when "00001" | "00000" | "00100" | "01100" | "01000" | "10000" | "10100" | "11000" | "11100" => illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zaamo);
-            when "00010" | "00011" => illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zalrsc);
-            when others => illegal_cmd <= '1';
+            when "00010" => illegal_cmd <= (not bool_to_ulogic_f(RISCV_ISA_Zalrsc)) or or_reduce_f(exec.ir(instr_rs2_msb_c downto instr_rs2_lsb_c)); -- LR
+            when "00011" => illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zalrsc); -- SC
+            when others  => illegal_cmd <= '1';
           end case;
         end if;
 
