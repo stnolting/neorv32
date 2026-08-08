@@ -39,8 +39,8 @@ architecture neorv32_cpu_alu_cfu_rtl of neorv32_cpu_alu_cfu is
   -- supported CFU opcodes --
   constant opcode_custom0_c : std_ulogic_vector(6 downto 0) := "0001011"; -- CUSTOM-0 opcode
   constant opcode_custom1_c : std_ulogic_vector(6 downto 0) := "0101011"; -- CUSTOM-1 opcode
-  constant opcode_op32_c    : std_ulogic_vector(6 downto 0) := "0011011"; -- OP-32 opcode
-  constant opcode_opimm32_c : std_ulogic_vector(6 downto 0) := "0111011"; -- OP-IMM-32 opcode
+  constant opcode_op32_c    : std_ulogic_vector(6 downto 0) := "0111011"; -- OP-32 opcode
+  constant opcode_opimm32_c : std_ulogic_vector(6 downto 0) := "0011011"; -- OP-IMM-32 opcode
 
   -- **********************************************************
   -- CFU Example: XTEA - Extended Tiny Encryption Algorithm
