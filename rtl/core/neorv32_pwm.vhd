@@ -138,11 +138,9 @@ begin
   end generate;
 
   -- clock generator --
-  clk_gen: process(rstn_i, clk_i)
+  clk_gen: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      clken <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       clken <= clkgen_i(to_integer(unsigned(clkprsc)));
     end if;
   end process;

@@ -223,12 +223,9 @@ begin
 
   -- TWI Clock Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  clock_generator: process(rstn_i, clk_i)
+  clock_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      clkgen_tick <= '0';
-      clkgen_cnt  <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (ctrl.enable = '0') then -- reset/disabled
         clkgen_tick <= '0';
         clkgen_cnt  <= (others => '0');
@@ -247,12 +244,9 @@ begin
   end process;
 
   -- generate four non-overlapping clock phases --
-  phase_generator: process(rstn_i, clk_i)
+  phase_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      clkgen_phase_gen    <= (others => '0');
-      clkgen_phase_gen_ff <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       clkgen_phase_gen_ff <= clkgen_phase_gen;
       if (ctrl.enable = '0') or (busy = '0') then -- disabled or idle
         clkgen_phase_gen <= "0001"; -- start with a new phase
