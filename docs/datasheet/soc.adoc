@@ -394,14 +394,26 @@ of the following sources:
 [TIP]
 The actual reset cause can be determined via the <<_watchdog_timer_wdt>>.
 
-If any of these sources triggers a reset, the internal system-wide reset will be active for at least 4 clock cycles ensuring
-a valid reset of the entire processor. This system reset is asserted _asynchronoulsy_ if triggered by the external
-`rstn_i` signal and is asserted _synchronously_ if triggered by an internal reset source. However, the system reset is
-always de-asserted _synchronously_ at the next rising clock edge.
+If any of these sources triggers a reset, the internal system-wide reset will be active for at least 4 clock cycles
+ensuring a valid reset of the entire processor (reset sequencer VHDL module: `neorv32_sys_reset`). This system reset is
+asserted _asynchronoulsy_ if triggered by the external `rstn_i` signal and is asserted _synchronously_ if triggered by
+an internal reset source. However, the system reset is always de-asserted _synchronously_ at the next rising clock edge.
 
-Internally, **all registers** that are not meant for mapping to blockRAM (like the register file) do provide a dedicated and
-**low-active asynchronous** hardware reset. This asynchronous reset ensures that the entire processor logic is reset to a
-defined state even if the main clock is not operational yet.
+==== Reset Implementation
+
+Internally, only registers that require a defined and controlled processor startup are equipped with a dedicated,
+**low-active asynchronous** hardware reset. These include, in particular, state registers of FSMs, control and configuration
+registers, and registers of the control logic. The asynchronous reset sets these components to a defined initial state even
+when the main clock is not yet available.
+
+In contrast, registers whose contents are not relevant during or immediately after the reset do not have an explicit hardware
+reset. This applies, among other things, to memory structures, pipeline registers, data buffers, and synchronizers. The values
+contained therein may initially be undefined after the reset. However, reset control, status, and validity signals ensure that
+such values are not used before they have been replaced by valid data.
+
+The deliberate omission of reset logic reduces resource requirements and reset fan-out, improves timing characteristics, and
+facilitates the mapping of suitable memory structures to FPGA block RAM. As a result, the processor startup remains fully
+controlled without creating unnecessary reset structures in components that are purely for data storage.
 
 
 <<<
