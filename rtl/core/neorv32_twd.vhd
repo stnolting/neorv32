@@ -248,11 +248,9 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_gen: process(rstn_i, clk_i)
+  irq_gen: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
                (ctrl.irq_rx_avail and      rx_fifo.avail)  or -- RX FIFO not empty
                (ctrl.irq_rx_full  and (not rx_fifo.free))  or -- RX FIFO full
@@ -266,13 +264,9 @@ begin
 
   -- Bus Sampling Logic ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  synchronizer: process(rstn_i, clk_i)
+  synchronizer: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      smp_valid    <= '0';
-      smp_sda_sreg <= (others => '0');
-      smp_scl_sreg <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       -- input register --
       smp_sda_sreg(0) <= to_stdulogic(to_bit(twd_sda_i)); -- "to_bit" to avoid hardware-vs-simulation mismatch
       smp_scl_sreg(0) <= to_stdulogic(to_bit(twd_scl_i));
@@ -426,12 +420,9 @@ begin
 
   -- Communication State Monitor ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  com_state_monitor: process(rstn_i, clk_i)
+  com_state_monitor: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      com_beg <= '0';
-      com_end <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (ctrl.enable = '0') then
         com_beg <= '0';
         com_end <= '0';

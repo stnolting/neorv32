@@ -86,11 +86,9 @@ begin
     full  <= '1' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '0';
     empty <= '1' when (r_pnt(AWIDTH)  = w_pnt(AWIDTH)) and (match = '1') else '0';
     -- [important] 'avail' is synchronized to the read port --
-    status_reg: process(rstn_i, clk_i)
+    status_reg: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        avail <= '0';
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         avail <= not empty;
       end if;
     end process;

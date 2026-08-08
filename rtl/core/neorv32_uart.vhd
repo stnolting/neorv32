@@ -238,11 +238,9 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_gen: process(rstn_i, clk_i)
+  irq_gen: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
                (ctrl.irq_tx_empty  and (not tx_fifo.avail)) or -- TX FIFO empty
                (ctrl.irq_tx_nfull  and tx_fifo.free)        or -- TX FIFO not full
@@ -263,7 +261,7 @@ begin
       tx.baudcnt <= (others => '0');
       tx.sync    <= (others => '0');
       tx.done    <= '0';
-      uart_txd_o        <= '1';
+      uart_txd_o <= '1';
     elsif rising_edge(clk_i) then
       if (uart_clk = '1') then
         tx.sync <= tx.sync(1 downto 0) & uart_ctsn_i; -- CTS synchronizer (and spike filter)

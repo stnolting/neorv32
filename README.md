@@ -28,6 +28,7 @@ and targets digital design / RISC-V beginners as well as experienced users.
 
 * :recycle: Looking for an **all-Verilog** version? Have a look at the [auto-conversion setup](rtl/verilog).
 * :mag: [Continuous integration](#project-status) to check for regressions.
+* :heavy_check_mark: Passes the official RISC-V [Architectural Certification Tests](https://github.com/stnolting/neorv32-riscv-act).
 * :open_file_folder: [Exemplary setups](https://github.com/stnolting/neorv32-setups) and
 [community projects](https://github.com/stnolting/neorv32-setups/blob/main/README.md#Community-Projects)
 targeting various FPGA boards and toolchains to get started.

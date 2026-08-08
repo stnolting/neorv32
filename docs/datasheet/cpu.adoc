@@ -127,6 +127,7 @@ The CPU does not support resolving unaligned memory access by the hardware. Any 
 unaligned memory access will raise an exception to allow a software-based emulation.
 See section <<_application_context_handling>> for more information.
 
+
 :sectnums:
 ==== CPU Front-End
 
@@ -139,6 +140,7 @@ to the CPU back-end for execution.
 The IPB allows the front-end to do "speculative" instruction fetches as it keeps fetching the next consecutive
 instruction all the time. This also allows to decouple instruction fetch and instruction execution so both stages
 can operate in parallel to increase performance.
+
 
 :sectnums:
 ==== CPU Back-End
@@ -153,6 +155,7 @@ The division into individual micro-operations not only allows for small hardware
 cycles (e.g., the ALU: for arithmetic/logical calculations and also for calculating the next program counter). It also
 allows for precise monitoring of execution and the generation of precise traps. Hence, the back-end also includes
 <<_control_and_status_registers_csrs>>, the<<_traps_exceptions_and_interrupts>> logic and the <<_cpu_debug_mode>> controller.
+
 
 :sectnums:
 ==== CPU Register File
@@ -436,6 +439,7 @@ can be implemented most efficiently for the target platform/technology. see sect
 |=======================
 
 
+:sectnums:
 ==== Sleep Mode
 
 The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing
@@ -450,6 +454,13 @@ source becomes _pending_ or if a debug session is started.
 When executed in debug-mode or during single-stepping, `wfi` will behave as simple `nop` without entering sleep mode.
 
 
+:sectnums:
+==== CPU Reset
+
+See <<_reset_implementation>>.
+
+
+:sectnums:
 ==== Full Virtualization
 
 Just like the RISC-V ISA, the NEORV32 aims to provide _maximum virtualization_ capabilities on CPU and SoC level to

@@ -248,12 +248,9 @@ begin
 
   -- Interrupt Generator (comparator is split across two cycles) ----------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_gen: process(rstn_i, clk_i)
+  irq_gen: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      cmp_lo_ge <= '0';
-      mti_o     <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       cmp_lo_ge <= cmp_lo_gt or cmp_lo_eq; -- low word greater-than or equal
       mti_o     <= cmp_hi_gt or (cmp_hi_eq and cmp_lo_ge);
     end if;
