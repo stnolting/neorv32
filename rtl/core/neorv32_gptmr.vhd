@@ -172,11 +172,9 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_generator: process(rstn_i, clk_i)
+  irq_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       for i in 0 to NUM_SLICES-1 loop
         if (enable(i) = '0') then
           irq(i) <= '0';

@@ -157,11 +157,9 @@ begin
   end generate;
 
   -- buffer pending interrupts until cleared or disabled --
-  irq_buffer: process(rstn_i, clk_i)
+  irq_buffer: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_pend <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       irq_pend <= irq_en and ((irq_pend and irq_clrn) or irq_trig);
     end if;
   end process;

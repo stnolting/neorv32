@@ -189,11 +189,9 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_generator: process(rstn_i, clk_i)
+  irq_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (ctrl_en = '0') then
         irq_o <= '0';
       elsif (stop = '1') then -- trigger interrupt when reaching auto-stop-address

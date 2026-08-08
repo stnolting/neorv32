@@ -224,11 +224,9 @@ begin
 
 
   -- IRQ if enabled and TX FIFO is empty and serial engine is idle --
-  irq_generator: process(rstn_i, clk_i)
+  irq_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       irq_o <= ctrl.enable and (not fifo.tx_avail) and (not busy);
     end if;
   end process;

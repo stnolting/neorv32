@@ -248,11 +248,9 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_gen: process(rstn_i, clk_i)
+  irq_gen: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       irq_o <= ctrl.enable and (
                (ctrl.irq_rx_avail and      rx_fifo.avail)  or -- RX FIFO not empty
                (ctrl.irq_rx_full  and (not rx_fifo.free))  or -- RX FIFO full
