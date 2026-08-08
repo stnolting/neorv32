@@ -212,13 +212,9 @@ begin
 
   -- Input Synchronizer ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  synchronizer: process(rstn_i, clk_i)
+  synchronizer: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      sync_sck_ff <= (others => '0');
-      sync_csn_ff <= (others => '0');
-      sync_sdi_ff <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       sync_sck_ff <= sync_sck_ff(1 downto 0) & sdi_clk_i;
       sync_csn_ff <= sync_csn_ff(0) & sdi_csn_i;
       sync_sdi_ff <= sync_sdi_ff(0) & sdi_dat_i;

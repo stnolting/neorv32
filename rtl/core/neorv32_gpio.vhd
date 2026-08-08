@@ -117,12 +117,9 @@ begin
   end generate;
 
   -- input sampling --
-  input_stage: process(rstn_i, clk_i)
+  input_stage: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      port_in  <= (others => '0');
-      port_in2 <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       port_in  <= port_in_i(GPIO_NUM-1 downto 0);
       port_in2 <= port_in;
     end if;

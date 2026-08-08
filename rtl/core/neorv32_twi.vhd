@@ -372,12 +372,9 @@ begin
 
   -- IO Control -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  input_synchronizer: process(rstn_i, clk_i)
+  input_synchronizer: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      sda_sync <= (others => '0');
-      scl_sync <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       sda_sync <= sda_sync(0) & to_stdulogic(to_bit(twi_sda_i)); -- "to_bit" to avoid HW-vs-sim mismatch
       scl_sync <= scl_sync(0) & to_stdulogic(to_bit(twi_scl_i));
     end if;

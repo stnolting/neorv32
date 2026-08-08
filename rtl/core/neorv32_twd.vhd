@@ -264,13 +264,9 @@ begin
 
   -- Bus Sampling Logic ---------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  synchronizer: process(rstn_i, clk_i)
+  synchronizer: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      smp_valid    <= '0';
-      smp_sda_sreg <= (others => '0');
-      smp_scl_sreg <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       -- input register --
       smp_sda_sreg(0) <= to_stdulogic(to_bit(twd_sda_i)); -- "to_bit" to avoid hardware-vs-simulation mismatch
       smp_scl_sreg(0) <= to_stdulogic(to_bit(twd_scl_i));
