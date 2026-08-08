@@ -231,10 +231,6 @@ begin
   begin
     if (rstn_i = '0') then
       state         <= S_IDLE;
-      rs1_reg       <= (others => '0');
-      rs2_reg       <= (others => '0');
-      sha_reg       <= (others => '0');
-      less_reg      <= '0';
       shifter_start <= '0';
       clmul_start   <= '0';
       valid         <= '0';
@@ -243,20 +239,11 @@ begin
       shifter_start <= '0';
       clmul_start   <= '0';
       valid         <= '0';
-
-      -- operand gating / buffering --
-      if (valid_cmd = '1') then
-        less_reg <= less_i;
-        rs1_reg  <= rs1_i;
-        rs2_reg  <= rs2_i;
-        sha_reg  <= shamt_i;
-      end if;
-
       -- fsm --
       case state is
 
-        when S_IDLE => -- wait for operation trigger
-        -- ------------------------------------------------------------
+        -- wait for operation trigger --
+        when S_IDLE =>
           if (valid_cmd = '1') then
             if (not FAST_SHIFT) and ((cmd(op_cz_c) or cmd(op_cpop_c) or cmd(op_rot_c)) = '1') then -- multi-cycle shift operation
               shifter_start <= '1';
@@ -270,18 +257,31 @@ begin
             end if;
           end if;
 
-        when S_START => -- one cycle delay to start iterative operation
-        -- ------------------------------------------------------------
+        -- one cycle delay to start iterative operation --
+        when S_START =>
           state <= S_BUSY;
 
-        when S_BUSY => -- wait for multi-cycle operation to finish
-        -- ------------------------------------------------------------
+        -- wait for multi-cycle operation to complete --
+        when S_BUSY =>
           if ((shifter_run = '0') and (clmul_run = '0')) or (ctrl_i.cpu_trap = '1') then -- abort on trap
             valid <= '1';
             state <= S_IDLE;
           end if;
 
       end case;
+    end if;
+  end process;
+
+  -- operand gating / buffering --
+  op_buf: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if (valid_cmd = '1') then
+        less_reg <= less_i;
+        rs1_reg  <= rs1_i;
+        rs2_reg  <= rs2_i;
+        sha_reg  <= shamt_i;
+      end if;
     end if;
   end process;
 
