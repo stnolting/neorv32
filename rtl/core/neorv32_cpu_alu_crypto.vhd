@@ -241,20 +241,9 @@ begin
   control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      rs1     <= (others => '0');
-      rs2     <= (others => '0');
-      funct12 <= (others => '0');
-      done    <= '0';
-      state   <= S_IDLE;
+      done  <= '0';
+      state <= S_IDLE;
     elsif rising_edge(clk_i) then
-      -- operand gating --
-      if (cmd_valid = '1') then
-        rs1     <= rs1_i;
-        rs2     <= rs2_i;
-        funct12 <= ctrl_i.ir_funct12;
-      end if;
-
-      -- FSM --
       done <= '0'; -- default
       case state is
 
@@ -273,7 +262,7 @@ begin
         when S_BUSY =>
           state <= S_DONE;
 
-        -- final step & enable output for one cycle --
+        -- final step & output enable --
         when S_DONE =>
           done  <= '1';
           state <= S_IDLE;
@@ -284,6 +273,18 @@ begin
 
   -- processing done (high one cycle before actual data output) --
   valid_o <= done;
+
+  -- operand gating / buffering --
+  op_buf: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      if (cmd_valid = '1') then
+        rs1     <= rs1_i;
+        rs2     <= rs2_i;
+        funct12 <= ctrl_i.ir_funct12;
+      end if;
+    end if;
+  end process;
 
 
   -- Output Select --------------------------------------------------------------------------
