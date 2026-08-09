@@ -79,7 +79,7 @@ architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
   signal restart : std_ulogic;
 
   -- instruction prefetch buffer (FIFO) interface --
-  type ipb_data_t is array (0 to 1) of std_ulogic_vector(16 downto 0); -- bus_error & 16-bit instruction
+  type ipb_data_t is array (1 downto 0) of std_ulogic_vector(16 downto 0); -- bus_error & 16-bit instruction
   signal ipb_wdata, ipb_rdata : ipb_data_t;
   signal ipb_we,    ipb_re    : std_ulogic_vector(1 downto 0);
   signal ipb_free,  ipb_avail : std_ulogic_vector(1 downto 0);

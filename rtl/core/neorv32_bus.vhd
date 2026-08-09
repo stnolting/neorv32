@@ -365,8 +365,8 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   constant tmo_cnt_size_c : natural := max_tmo_bit_f(port_tmo_bit_list_c);
 
   -- gateway ports combined as arrays --
-  type port_req_t is array (0 to 4) of bus_req_t;
-  type port_rsp_t is array (0 to 4) of bus_rsp_t;
+  type port_req_t is array (4 downto 0) of bus_req_t;
+  type port_rsp_t is array (4 downto 0) of bus_rsp_t;
   signal port_req : port_req_t;
   signal port_rsp : port_rsp_t;
 
@@ -628,8 +628,8 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   );
 
   -- device ports combined as arrays --
-  type dev_req_t is array (0 to num_devs_c-1) of bus_req_t;
-  type dev_rsp_t is array (0 to num_devs_c-1) of bus_rsp_t;
+  type dev_req_t is array (num_devs_c-1 downto 0) of bus_req_t;
+  type dev_rsp_t is array (num_devs_c-1 downto 0) of bus_rsp_t;
   signal dev_req : dev_req_t;
   signal dev_rsp : dev_rsp_t;
 

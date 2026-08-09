@@ -83,7 +83,7 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
   signal cmp : std_ulogic_vector(1 downto 0);
 
   -- co-processor interface --
-  type cp_data_t  is array (0 to 6) of std_ulogic_vector(31 downto 0);
+  type cp_data_t  is array (6 downto 0) of std_ulogic_vector(31 downto 0);
   signal cp_result : cp_data_t;
   signal cp_valid : std_ulogic_vector(6 downto 0);
   signal cfu_inst : std_ulogic_vector(31 downto 0);

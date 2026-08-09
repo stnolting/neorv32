@@ -342,15 +342,15 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dci_haltreq : std_ulogic_vector(num_cores_c-1 downto 0);
 
   -- CPU trace interface --
-  type cpu_trace_t is array (0 to num_cores_c-1) of trace_port_t;
+  type cpu_trace_t is array (num_cores_c-1 downto 0) of trace_port_t;
   signal cpu_trace : cpu_trace_t;
 
   -- CPU memory ordering (cache synchronization) --
   signal cpu_i_fence, cpu_d_fence, icache_sync, dcache_sync : std_ulogic_vector(num_cores_c-1 downto 0);
 
   -- bus: CPU core complex --
-  type core_complex_req_t is array (0 to num_cores_c-1) of bus_req_t;
-  type core_complex_rsp_t is array (0 to num_cores_c-1) of bus_rsp_t;
+  type core_complex_req_t is array (num_cores_c-1 downto 0) of bus_req_t;
+  type core_complex_rsp_t is array (num_cores_c-1 downto 0) of bus_rsp_t;
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req : core_complex_req_t;
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp : core_complex_rsp_t;
 
