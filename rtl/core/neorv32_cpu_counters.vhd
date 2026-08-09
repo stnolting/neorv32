@@ -106,11 +106,15 @@ begin
         inhibit(2) <= ctrl_i.csr_wdata(2); -- [m]instret[h]
       end if;
       -- hardware performance monitors --
-      if not ZIHPM_EN then
-        inhibit(31 downto 3) <= (others => '0');
-      elsif (inh_acc = '1') and (ctrl_i.csr_we = '1') then
-        inhibit(31 downto 3) <= ctrl_i.csr_wdata(31 downto 3); -- [m]hpmcounter3..31[h]
-      end if;
+      for i in 3 to 31 loop
+        if ZIHPM_EN and ((i-3) < HPM_NUM) then
+          if (inh_acc = '1') and (ctrl_i.csr_we = '1') then
+            inhibit(i) <= ctrl_i.csr_wdata(i); -- [m]hpmcounter3..31[h]
+          end if;
+        else
+          inhibit(i) <= '0'; -- unimplemented: read-only zero
+        end if;
+      end loop;
       -- unused --
       inhibit(1) <= '0';
     end if;

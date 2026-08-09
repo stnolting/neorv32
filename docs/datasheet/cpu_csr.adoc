@@ -769,10 +769,10 @@ counters are read-only. Any write access will raise an illegal instruction excep
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Description
-| 15:3 | `CSR_MCOUNTINHIBIT_HPM3` : `CSR_MCOUNTINHIBIT_HPM15` | r/w | **HPMx**: Set to `1` to halt `[m]hpmcount*[h]`; hardwired to zero if `Zihpm` ISA extension is disabled
-| 2    | `CSR_MCOUNTINHIBIT_CY` | r/w | **CY**: Set to `1` to halt `[m]cycle[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
-| 1    | -                      | r/- | **TM**: Hardwired to zero as `time[h]` CSRs are not implemented
-| 0    | `CSR_MCOUNTINHIBIT_IR` | r/w | **IR**: Set to `1` to halt `[m]instret[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
+| 31:3 | `CSR_MCOUNTINHIBIT_HPM31` : `CSR_MCOUNTINHIBIT_HPM3` | r/w | **HPMx**: Set to `1` to halt `[m]hpmcount*[h]`; hardwired to zero if `Zihpm` ISA extension is disabled; only the lowest `HPM_NUM_CNTS` bits are implemented, the remaining bits are read-only zeo
+| 2    | `CSR_MCOUNTINHIBIT_CY`                               | r/w | **CY**: Set to `1` to halt `[m]cycle[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
+| 1    | -                                                    | r/- | **TM**: Hardwired to zero as `time[h]` CSRs are not implemented
+| 0    | `CSR_MCOUNTINHIBIT_IR`                               | r/w | **IR**: Set to `1` to halt `[m]instret[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
 |=======================
 
 
