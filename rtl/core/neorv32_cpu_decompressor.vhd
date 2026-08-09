@@ -175,7 +175,7 @@ begin
               decoded(instr_imm12_msb_c  downto instr_imm12_lsb_c)  <= replicate_f(instr_i(12),3) & instr_i(4 downto 3) & instr_i(5) & instr_i(2) & instr_i(6) & x"0";
             elsif ZCMOP_EN and (instr_i(12 downto 11) = "00") and (instr_i(ci_rs2_5_msb_c downto ci_rs2_5_lsb_c) = "00000") then -- C.MOP
               decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_system_c;
-              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= "100";
+              decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_zimop_c;
               decoded(instr_rs1_msb_c    downto instr_rs1_lsb_c)    <= "00000";
               decoded(instr_rd_msb_c     downto instr_rd_lsb_c)     <= "00000";
               decoded(instr_imm12_msb_c  downto instr_imm12_lsb_c)  <= "1000" & instr_i(10) & instr_i(9) & "0111" & instr_i(8) & '0';
@@ -207,6 +207,7 @@ begin
                 decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
                 decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_sr_c;
                 decoded(instr_rs2_msb_c    downto instr_rs2_lsb_c)    <= instr_i(6 downto 2); -- immediate
+                illegal                                               <= instr_i(12); -- shamt[5] == zero
               when "10" => -- C.ANDI
                 decoded(instr_opcode_msb_c downto instr_opcode_lsb_c) <= opcode_alui_c;
                 decoded(instr_funct3_msb_c downto instr_funct3_lsb_c) <= funct3_and_c;
