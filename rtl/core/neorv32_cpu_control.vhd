@@ -549,7 +549,7 @@ begin
   cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rd = '1')               else '0'; -- memory load
   cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_wr = '1')               else '0'; -- memory store
 
-  -- retire tacking --
+  -- retire tracking --
   retire_tracking: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -563,8 +563,8 @@ begin
     end if;
   end process;
 
-  -- instruction has retired: execution completed without any trap --
-  retired <= '1' when (retire_start = '1') and (exec.state = S_DISPATCH) and (env_pend = '0') and (exc_fire = '0') else '0';
+  -- instruction has retired: execution completed without any sync. exception --
+  retired <= '1' when (retire_start = '1') and (exec.state = S_DISPATCH) and (exc_fire = '0') else '0';
 
 
   -- ****************************************************************************************************************************
