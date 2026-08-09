@@ -60,7 +60,7 @@ architecture neorv32_cpu_counters_rtl of neorv32_cpu_counters is
   signal hpmcnt_rd : hpmcnt_t;
 
   -- global CSR read-backs --
-  signal rdata64, cycle_rd, time_q, time_rd, instret_rd, hpm_rd, inhibit_rd, pmf_rd : std_ulogic_vector(63 downto 0);
+  signal rdata64, cycle_rd, time_rd, instret_rd, hpm_rd, inhibit_rd, pmf_rd : std_ulogic_vector(63 downto 0);
 
 begin
 
@@ -106,11 +106,15 @@ begin
         inhibit(2) <= ctrl_i.csr_wdata(2); -- [m]instret[h]
       end if;
       -- hardware performance monitors --
-      if not ZIHPM_EN then
-        inhibit(31 downto 3) <= (others => '0');
-      elsif (inh_acc = '1') and (ctrl_i.csr_we = '1') then
-        inhibit(31 downto 3) <= ctrl_i.csr_wdata(31 downto 3); -- [m]hpmcounter3..31[h]
-      end if;
+      for i in 3 to 31 loop
+        if ZIHPM_EN and ((i-3) < HPM_NUM) then
+          if (inh_acc = '1') and (ctrl_i.csr_we = '1') then
+            inhibit(i) <= ctrl_i.csr_wdata(i); -- [m]hpmcounter3..31[h]
+          end if;
+        else
+          inhibit(i) <= '0'; -- unimplemented: read-only zero
+        end if;
+      end loop;
       -- unused --
       inhibit(1) <= '0';
     end if;
@@ -211,13 +215,7 @@ begin
     );
 
     -- time[h] --
-    time_buf: process(clk_i)
-    begin
-      if rising_edge(clk_i) then
-        time_q <= mtime_i;
-      end if;
-    end process;
-    time_rd <= time_q when (cnt_re(1) = '1') else (others => '0');
+    time_rd <= mtime_i when (cnt_re(1) = '1') else (others => '0');
 
     -- [m]instret[h] --
     instret_inst: entity neorv32.neorv32_prim_cnt
@@ -240,7 +238,6 @@ begin
   base_disabled:
   if not ZICNTR_EN generate
     cycle_rd   <= (others => '0');
-    time_q     <= (others => '0');
     time_rd    <= (others => '0');
     instret_rd <= (others => '0');
   end generate;

@@ -284,7 +284,8 @@ Machine-mode software can discover available `Z*` sub-extensions (like `Zicsr` o
 | 31:2 | r/w | **BASE**: in DIRECT mode = 4-byte-aligned base address of trap base handler, _all_ traps jump to `pc = BASE`;
 in VECTORED mode = 128-byte-aligned base address of trap vector table, interrupts cause a jump to `pc = BASE + 4 * mcause`
 and exceptions a jump to `pc = BASE`.
-| 1:0  | r/w | **MODE**: mode configuration, `00` = DIRECT, `01` = VECTORED; other encodings are _reserved_.
+| 1:0  | r/w | **MODE**: mode configuration, `00` = DIRECT, `01` = VECTORED; other encodings are _reserved_ and will fall back
+to DIRECT mode; the lowest address bits are hardwired to zero in VECTORED mode to enforce the according 128-byte-alignment
 |=======================
 
 
@@ -769,10 +770,10 @@ counters are read-only. Any write access will raise an illegal instruction excep
 [options="header",grid="rows"]
 |=======================
 | Bit | Name [C] | R/W | Description
-| 15:3 | `CSR_MCOUNTINHIBIT_HPM3` : `CSR_MCOUNTINHIBIT_HPM15` | r/w | **HPMx**: Set to `1` to halt `[m]hpmcount*[h]`; hardwired to zero if `Zihpm` ISA extension is disabled
-| 2    | `CSR_MCOUNTINHIBIT_CY` | r/w | **CY**: Set to `1` to halt `[m]cycle[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
-| 1    | -                      | r/- | **TM**: Hardwired to zero as `time[h]` CSRs are not implemented
-| 0    | `CSR_MCOUNTINHIBIT_IR` | r/w | **IR**: Set to `1` to halt `[m]instret[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
+| 31:3 | `CSR_MCOUNTINHIBIT_HPM31` : `CSR_MCOUNTINHIBIT_HPM3` | r/w | **HPMx**: Set to `1` to halt `[m]hpmcount*[h]`; hardwired to zero if `Zihpm` ISA extension is disabled; only the lowest `HPM_NUM_CNTS` bits are implemented, the remaining bits are read-only zeo
+| 2    | `CSR_MCOUNTINHIBIT_CY`                               | r/w | **CY**: Set to `1` to halt `[m]cycle[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
+| 1    | -                                                    | r/- | **TM**: Hardwired to zero as `time[h]` CSRs are not implemented
+| 0    | `CSR_MCOUNTINHIBIT_IR`                               | r/w | **IR**: Set to `1` to halt `[m]instret[h]`; hardwired to zero if `Zicntr` ISA extension is disabled
 |=======================
 
 

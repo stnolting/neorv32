@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 09.08.2026 | 1.13.3.9 | minor CPU updates, optimizations and RISC-V-compliance fixes | [#1621](https://github.com/stnolting/neorv32/pull/1621) |
 | 08.08.2026 | 1.13.3.8 | remove reset from registers where it is not strictly necessary | [#1620](https://github.com/stnolting/neorv32/pull/1620) |
 | 02.08.2026 | 1.13.3.7 | `instret` counter: only increment for actually retired instructions | [#1615](https://github.com/stnolting/neorv32/pull/1615) |
 | 02.08.2026 | 1.13.3.6 | minor rtl cleanups and optimizations | [#1614](https://github.com/stnolting/neorv32/pull/1614) |

@@ -549,7 +549,7 @@ begin
   cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rd = '1')               else '0'; -- memory load
   cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_wr = '1')               else '0'; -- memory store
 
-  -- retire tacking --
+  -- retire tracking --
   retire_tracking: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
@@ -563,8 +563,8 @@ begin
     end if;
   end process;
 
-  -- instruction has retired: execution completed without any trap --
-  retired <= '1' when (retire_start = '1') and (exec.state = S_DISPATCH) and (env_pend = '0') and (exc_fire = '0') else '0';
+  -- instruction has retired: execution completed without any sync. exception --
+  retired <= '1' when (retire_start = '1') and (exec.state = S_DISPATCH) and (exc_fire = '0') else '0';
 
 
   -- ****************************************************************************************************************************
@@ -739,8 +739,9 @@ begin
         if (exec.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then -- word-quantity only
           case exec.ir(instr_funct5_msb_c downto instr_funct5_lsb_c) is
             when "00001" | "00000" | "00100" | "01100" | "01000" | "10000" | "10100" | "11000" | "11100" => illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zaamo);
-            when "00010" | "00011" => illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zalrsc);
-            when others => illegal_cmd <= '1';
+            when "00010" => illegal_cmd <= (not bool_to_ulogic_f(RISCV_ISA_Zalrsc)) or or_reduce_f(exec.ir(instr_rs2_msb_c downto instr_rs2_lsb_c)); -- LR
+            when "00011" => illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zalrsc); -- SC
+            when others  => illegal_cmd <= '1';
           end case;
         end if;
 
@@ -1056,8 +1057,12 @@ begin
             csr.mie_mei  <= csr_wdata(11);
             csr.mie_firq <= csr_wdata(31 downto 16);
 
-          when csr_mtvec_c => -- machine trap-handler base address
-            csr.mtvec <= csr_wdata(31 downto 2) & '0' & csr_wdata(0); -- base + mode (vectored/direct)
+          when csr_mtvec_c => -- machine trap-handler base + mode
+            if (csr_wdata(1 downto 0) = "01") then -- vectored mode
+              csr.mtvec <= csr_wdata(31 downto 7) & "00000" & "01";
+            else -- direct mode (fallback for reserved modes)
+              csr.mtvec <= csr_wdata(31 downto 2) & "00";
+            end if;
 
           when csr_mcounteren_c => -- machine counter access enable
             csr.mcounteren <= csr_wdata;
