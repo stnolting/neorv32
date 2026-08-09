@@ -1057,8 +1057,12 @@ begin
             csr.mie_mei  <= csr_wdata(11);
             csr.mie_firq <= csr_wdata(31 downto 16);
 
-          when csr_mtvec_c => -- machine trap-handler base address
-            csr.mtvec <= csr_wdata(31 downto 2) & '0' & csr_wdata(0); -- base + mode (vectored/direct)
+          when csr_mtvec_c => -- machine trap-handler base + mode
+            if (csr_wdata(1 downto 0) = "01") then -- vectored mode
+              csr.mtvec <= csr_wdata(31 downto 7) & "00000" & "01";
+            else -- direct mode (fallback for reserved modes)
+              csr.mtvec <= csr_wdata(31 downto 2) & "00";
+            end if;
 
           when csr_mcounteren_c => -- machine counter access enable
             csr.mcounteren <= csr_wdata;
