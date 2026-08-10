@@ -99,16 +99,16 @@ package neorv32_package is
   -- -------------------------------------------------------------------------------------------
   -- bus request --
   type bus_req_t is record
-    meta  : std_ulogic_vector(4 downto 0); -- access meta data: core_ID[2], debug[1], priv[1], instr/data[1]
+    meta  : std_ulogic_vector(4 downto 0);  -- access meta data: core_ID[2], debug[1], priv[1], instr/data[1]
     addr  : std_ulogic_vector(31 downto 0); -- access address
     data  : std_ulogic_vector(31 downto 0); -- write data
-    ben   : std_ulogic_vector(3 downto 0); -- byte enable
-    stb   : std_ulogic; -- request strobe, single-shot
-    rw    : std_ulogic; -- 0 = read, 1 = write
-    amo   : std_ulogic; -- set if atomic memory operation
-    amoop : std_ulogic_vector(3 downto 0); -- type of atomic memory operation
-    burst : std_ulogic; -- set if part of burst access
-    lock  : std_ulogic; -- set if exclusive access request
+    ben   : std_ulogic_vector(3 downto 0);  -- byte enable
+    stb   : std_ulogic;                     -- request strobe, single-shot
+    rw    : std_ulogic;                     -- 0 = read, 1 = write
+    amo   : std_ulogic;                     -- set if atomic memory operation
+    amoop : std_ulogic_vector(3 downto 0);  -- type of atomic memory operation
+    burst : std_ulogic;                     -- set if part of burst access
+    lock  : std_ulogic;                     -- set if exclusive access request
   end record;
 
   -- bus request termination --
@@ -127,8 +127,8 @@ package neorv32_package is
 
   -- bus response --
   type bus_rsp_t is record
-    ack  : std_ulogic; -- set if access acknowledge, single-shot
-    err  : std_ulogic; -- set if access error, valid if ack = 1
+    ack  : std_ulogic;                     -- set if access acknowledge, single-shot
+    err  : std_ulogic;                     -- set if access error, valid if ack = 1
     data : std_ulogic_vector(31 downto 0); -- read data, valid if ack = 1
   end record;
 
@@ -178,12 +178,12 @@ package neorv32_package is
   type xbus_req_t is record
     addr : std_ulogic_vector(31 downto 0); -- access address
     data : std_ulogic_vector(31 downto 0); -- write data
-    cti  : std_ulogic_vector(2 downto 0); -- cycle type
-    tag  : std_ulogic_vector(2 downto 0); -- access tag
-    we   : std_ulogic; -- read/write
-    sel  : std_ulogic_vector(3 downto 0); -- byte enable
-    stb  : std_ulogic; -- strobe
-    cyc  : std_ulogic; -- valid cycle
+    cti  : std_ulogic_vector(2 downto 0);  -- cycle type
+    tag  : std_ulogic_vector(2 downto 0);  -- access tag
+    we   : std_ulogic;                     -- read/write
+    sel  : std_ulogic_vector(3 downto 0);  -- byte enable
+    stb  : std_ulogic;                     -- strobe
+    cyc  : std_ulogic;                     -- valid cycle
   end record;
 
   -- request termination --
@@ -201,8 +201,8 @@ package neorv32_package is
   -- response --
   type xbus_rsp_t is record
     data : std_ulogic_vector(31 downto 0); -- read data, valid if ack=1
-    ack  : std_ulogic; -- access acknowledge
-    err  : std_ulogic; -- access error
+    ack  : std_ulogic;                     -- access acknowledge
+    err  : std_ulogic;                     -- access error
   end record;
 
   -- response termination --
@@ -219,14 +219,14 @@ package neorv32_package is
     -- instruction metadata --
     order     : std_ulogic_vector(63 downto 0); -- instruction index
     insn      : std_ulogic_vector(31 downto 0); -- instruction word
-    trap      : std_ulogic; -- set if the current instruction causes a sync exception
-    halt      : std_ulogic; -- set if last instruction before halting
-    intr      : std_ulogic; -- set if executing the first instruction of a trap handler
-    mode      : std_ulogic_vector(1 downto 0); -- 00 = user mode, 11 = machine mode
-    ixl       : std_ulogic_vector(1 downto 0); -- XLEN; 01 = 32-bit
-    debug     : std_ulogic; -- set if instruction is executed in debug-mode
-    compr     : std_ulogic; -- set if instruction is a decompressed instruction
-    delta     : std_ulogic; -- set if instruction is target of a control-flow transfer
+    trap      : std_ulogic;                     -- set if the current instruction causes a sync exception
+    halt      : std_ulogic;                     -- set if last instruction before halting
+    intr      : std_ulogic;                     -- set if executing the first instruction of a trap handler
+    mode      : std_ulogic_vector(1 downto 0);  -- 00 = user mode, 11 = machine mode
+    ixl       : std_ulogic_vector(1 downto 0);  -- XLEN; 01 = 32-bit
+    debug     : std_ulogic;                     -- set if instruction is executed in debug-mode
+    compr     : std_ulogic;                     -- set if instruction is a decompressed instruction
+    delta     : std_ulogic;                     -- set if instruction is target of a control-flow transfer
     cmd32     : std_ulogic_vector(31 downto 0); -- 32-bit (decompressed) instruction word
     -- integer register --
     rs1_addr  : std_ulogic_vector(4 downto 0);  -- rs1 address
