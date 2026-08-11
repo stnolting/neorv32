@@ -239,8 +239,8 @@ $(BUILD_DIR)/%.cpp.o: %.cpp | $(BUILD_DIR)
 
 # Link object files and show memory utilization
 -include $(OBJ:.o=.d)
-$(APP_ELF): $(OBJ)
-	$(Q)$(CC) $(NEO_LDFLAGS) -T $(LD_SCRIPT) $^ $(LD_LIBS) -o $@
+$(APP_ELF): $(OBJ) $(LD_SCRIPT)
+	$(Q)$(CC) $(NEO_LDFLAGS) -T $(LD_SCRIPT) $(OBJ) $(LD_LIBS) -o $@
 	$(ECHO) "Memory utilization:"
 	$(Q)$(SIZE) $(APP_ELF)
 
