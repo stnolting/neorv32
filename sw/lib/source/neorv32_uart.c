@@ -84,7 +84,7 @@ void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_m
 
   uint32_t tmp = 0;
   tmp |= (uint32_t)(1              & 1U)     << UART_CTRL_EN;
-  tmp |= (uint32_t)(prsc_sel       & 3U)     << UART_CTRL_PRSC_LSB;
+  tmp |= (uint32_t)(prsc_sel       & 7U)     << UART_CTRL_PRSC_LSB;
   tmp |= (uint32_t)((baud_div - 1) & 0x3ffU) << UART_CTRL_BAUD_LSB;
   tmp |= (uint32_t)(irq_mask       & (0xfu   << UART_CTRL_IRQ_RX_NEMPTY));
 
