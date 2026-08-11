@@ -8,7 +8,7 @@
 
 /**
  * @file neorv32_sdi.h
- * @brief Serial data interface controller (SPPI) HW driver header file.
+ * @brief Serial data interface controller (SDI) HW driver header file.
  */
 
 #ifndef NEORV32_SDI_H
@@ -32,7 +32,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
 
 /** SDI control register bits */
 enum NEORV32_SDI_CTRL_enum {
-  SDI_CTRL_EN            =  0, /**< SDI control register(0) (r/w): SID module enable */
+  SDI_CTRL_EN            =  0, /**< SDI control register(0) (r/w): SDI module enable */
   SDI_CTRL_CLR_RX        =  1, /**< SDI control register(1) (r/w): Clear RX FIFO, flag auto-clears */
   SDI_CTRL_CLR_TX        =  2, /**< SDI control register(2) (r/w): Clear TX FIFO, flag auto-clears */
 
@@ -66,10 +66,6 @@ void    neorv32_sdi_put(uint8_t data);
 uint8_t neorv32_sdi_get(void);
 void    neorv32_sdi_put_nonblocking(uint8_t data);
 uint8_t neorv32_sdi_get_nonblocking(void);
-int     neorv32_sdi_rx_empty(void);
-int     neorv32_sdi_rx_full(void);
-int     neorv32_sdi_tx_empty(void);
-int     neorv32_sdi_tx_full(void);
 int     neorv32_sdi_rx_empty(void);
 int     neorv32_sdi_rx_full(void);
 int     neorv32_sdi_tx_empty(void);
