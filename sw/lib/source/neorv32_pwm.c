@@ -88,7 +88,7 @@ void neorv32_pwm_ch_disable_mask(uint32_t mask) {
  **************************************************************************/
 void neorv32_pwm_ch_enable_single(int ch) {
 
-  __MMREG32_BSET(NEORV32_PWM->ENABLE, 1 << (ch & 0x1fu));
+  __MMREG32_BSET(NEORV32_PWM->ENABLE, 1 << (ch & 31u));
 }
 
 
@@ -99,7 +99,7 @@ void neorv32_pwm_ch_enable_single(int ch) {
  **************************************************************************/
 void neorv32_pwm_ch_disable_single(int ch) {
 
-  __MMREG32_BCLR(NEORV32_PWM->ENABLE, 1 << (ch & 0x1fu));
+  __MMREG32_BCLR(NEORV32_PWM->ENABLE, 1 << (ch & 31u));
 }
 
 
@@ -113,7 +113,7 @@ void neorv32_pwm_ch_disable_single(int ch) {
  **************************************************************************/
 void neorv32_pwm_ch_setup(int ch, int top, int pol, int mode) {
 
-  ch &= 0x1fu;
+  ch &= 31u;
   uint32_t mask = 1 << ch;
 
   if (pol) {
@@ -140,5 +140,5 @@ void neorv32_pwm_ch_setup(int ch, int top, int pol, int mode) {
  **************************************************************************/
 void neorv32_pwm_ch_set_duty(int ch, int duty) {
 
-  NEORV32_PWM->CHANNEL[ch & 0x1f].CMP = duty;
+  NEORV32_PWM->CHANNEL[ch & 31u].CMP = duty;
 }
