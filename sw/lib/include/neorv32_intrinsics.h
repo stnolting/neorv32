@@ -39,7 +39,7 @@
  * @param[in] rs2 Register source operand 2 (32-bit).
  * @return Instruction result (destination register rd, 32-bit).
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) RISCV_INSTR_R_TYPE(const int opcode, const int funct3, const int funct7, uint32_t rs1, uint32_t rs2) {
+static inline uint32_t __attribute__ ((always_inline)) RISCV_INSTR_R_TYPE(const int opcode, const int funct3, const int funct7, uint32_t rs1, uint32_t rs2) {
 
   register uint32_t __rd;
   register uint32_t __rs1 = rs1;
@@ -59,7 +59,7 @@ inline uint32_t __attribute__ ((always_inline)) RISCV_INSTR_R_TYPE(const int opc
  * @param[in] imm12 Immediate source operand (12-bit).
  * @return Instruction result (destination register rd, 32-bit).
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) RISCV_INSTR_I_TYPE(const int opcode, const int funct3, uint32_t rs1, const int imm12) {
+static inline uint32_t __attribute__ ((always_inline)) RISCV_INSTR_I_TYPE(const int opcode, const int funct3, uint32_t rs1, const int imm12) {
 
   register uint32_t __rd;
   register uint32_t __rs1 = rs1;

@@ -48,7 +48,7 @@ int      neorv32_cpu_hwtrig_get_number(void);
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Data word (32-bit) to store.
  **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_word(uint32_t addr, uint32_t wdata) {
+static inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_word(uint32_t addr, uint32_t wdata) {
 
   uint32_t reg_addr = addr;
   uint32_t reg_data = wdata;
@@ -64,7 +64,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_word(uint
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Data half-word (16-bit) to store.
  **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_half(uint32_t addr, uint16_t wdata) {
+static inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_half(uint32_t addr, uint16_t wdata) {
 
   uint32_t reg_addr = addr;
   uint32_t reg_data = (uint32_t)wdata;
@@ -78,7 +78,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_half(uint
  * @param[in] addr Address (32-bit).
  * @param[in] wdata Data byte (8-bit) to store.
  **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_byte(uint32_t addr, uint8_t wdata) {
+static inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_byte(uint32_t addr, uint8_t wdata) {
 
   uint32_t reg_addr = addr;
   uint32_t reg_data = (uint32_t)wdata;
@@ -94,7 +94,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_store_unsigned_byte(uint
  * @param[in] addr Address (32-bit).
  * @return Read data word (32-bit).
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_word(uint32_t addr) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_word(uint32_t addr) {
 
   uint32_t reg_addr = addr;
   uint32_t reg_data;
@@ -111,7 +111,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_word(u
  * @param[in] addr Address (32-bit).
  * @return Read data half-word (16-bit).
  **************************************************************************/
-inline uint16_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_half(uint32_t addr) {
+static inline uint16_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_half(uint32_t addr) {
 
   uint32_t reg_addr = addr;
   uint16_t reg_data;
@@ -128,7 +128,7 @@ inline uint16_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_half(u
  * @param[in] addr Address (32-bit).
  * @return Read data half-word (16-bit).
  **************************************************************************/
-inline int16_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_half(uint32_t addr) {
+static inline int16_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_half(uint32_t addr) {
 
   uint32_t reg_addr = addr;
   int16_t reg_data;
@@ -143,7 +143,7 @@ inline int16_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_half(uint
  * @param[in] addr Address (32-bit).
  * @return Read data byte (8-bit).
  **************************************************************************/
-inline uint8_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_byte(uint32_t addr) {
+static inline uint8_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_byte(uint32_t addr) {
 
   uint32_t reg_addr = addr;
   uint8_t reg_data;
@@ -158,7 +158,7 @@ inline uint8_t __attribute__ ((always_inline)) neorv32_cpu_load_unsigned_byte(ui
  * @param[in] addr Address (32-bit).
  * @return Read data byte (8-bit).
  **************************************************************************/
-inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint32_t addr) {
+static inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint32_t addr) {
 
   uint32_t reg_addr = addr;
   int8_t reg_data;
@@ -178,7 +178,7 @@ inline int8_t __attribute__ ((always_inline)) neorv32_cpu_load_signed_byte(uint3
  * @param[in] csr_id ID of CSR to read. See #NEORV32_CSR_enum.
  * @return Read data (uint32_t).
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int csr_id) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int csr_id) {
 
   uint32_t csr_data;
   asm volatile ("csrr %[dst], %[id]" : [dst] "=r" (csr_data) : [id] "i" (csr_id));
@@ -192,7 +192,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_read(const int c
  * @param[in] csr_id ID of CSR to write. See #NEORV32_CSR_enum.
  * @param[in] data Data to write (uint32_t).
  **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_id, uint32_t data) {
+static inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_id, uint32_t data) {
 
   uint32_t csr_data = data;
   asm volatile ("csrw %[id], %[src]" :  : [id] "i" (csr_id), [src] "r" (csr_data));
@@ -205,7 +205,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_write(const int csr_
  * @param[in] csr_id ID of CSR to write. See #NEORV32_CSR_enum.
  * @param[in] mask Bit mask (high-active) to set bits (uint32_t).
  **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_csr_set(const int csr_id, uint32_t mask) {
+static inline void __attribute__ ((always_inline)) neorv32_cpu_csr_set(const int csr_id, uint32_t mask) {
 
   uint32_t csr_data = mask;
   asm volatile ("csrs %[id], %[src]" :  : [id] "i" (csr_id), [src] "r" (csr_data));
@@ -218,7 +218,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_set(const int csr_id
  * @param[in] csr_id ID of CSR to write. See #NEORV32_CSR_enum.
  * @param[in] mask Bit mask (high-active) to clear bits (uint32_t).
  **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int csr_id, uint32_t mask) {
+static inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int csr_id, uint32_t mask) {
 
   uint32_t csr_data = mask;
   asm volatile ("csrc %[id], %[src]" :  : [id] "i" (csr_id), [src] "r" (csr_data));
@@ -237,7 +237,7 @@ inline void __attribute__ ((always_inline)) neorv32_cpu_csr_clr(const int csr_id
  * @param[in] wdata New data to write to selected CSR.
  * @return Old data read from selected CSR.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_swap(const int csr_id, uint32_t wdata) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_swap(const int csr_id, uint32_t wdata) {
 
   uint32_t tmp;
   asm volatile ("csrrw %[dst], %[id], %[src]" : [dst] "=r" (tmp) : [id] "i" (csr_id), [src] "r" (wdata));
@@ -254,7 +254,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_csr_swap(const int c
  * @param[in] addr Address (32-bit).
  * @return Read data word (32-bit).
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amolr(uint32_t addr) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amolr(uint32_t addr) {
 
 #if defined(__riscv_a) || defined(__riscv_zalrsc)
   uint32_t amo_addr = addr;
@@ -281,7 +281,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amolr(uint32_t addr)
  * @param[in] wdata Data word to-be-written conditionally (32-bit).
  * @return Status: zero = ok, non-zero = failed (32-bit).
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amosc(uint32_t addr, uint32_t wdata) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amosc(uint32_t addr, uint32_t wdata) {
 
 #if defined(__riscv_a) || defined(__riscv_zalrsc)
   uint32_t amo_addr  = addr;
@@ -310,7 +310,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amosc(uint32_t addr,
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoswap(uint32_t addr, uint32_t wdata) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoswap(uint32_t addr, uint32_t wdata) {
 
 #if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
@@ -339,7 +339,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoswap(uint32_t add
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoadd(uint32_t addr, uint32_t wdata) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoadd(uint32_t addr, uint32_t wdata) {
 
 #if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
@@ -368,7 +368,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoadd(uint32_t addr
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoxor(uint32_t addr, uint32_t wdata) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoxor(uint32_t addr, uint32_t wdata) {
 
 #if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
@@ -397,7 +397,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoxor(uint32_t addr
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoand(uint32_t addr, uint32_t wdata) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoand(uint32_t addr, uint32_t wdata) {
 
 #if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
@@ -426,7 +426,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoand(uint32_t addr
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoor(uint32_t addr, uint32_t wdata) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoor(uint32_t addr, uint32_t wdata) {
 
 #if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
@@ -455,7 +455,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amoor(uint32_t addr,
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomin(uint32_t addr, uint32_t wdata) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomin(uint32_t addr, uint32_t wdata) {
 
 #if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
@@ -484,7 +484,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomin(uint32_t addr
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomax(uint32_t addr, uint32_t wdata) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomax(uint32_t addr, uint32_t wdata) {
 
 #if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
@@ -513,7 +513,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomax(uint32_t addr
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amominu(uint32_t addr, uint32_t wdata) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amominu(uint32_t addr, uint32_t wdata) {
 
 #if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
@@ -542,7 +542,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amominu(uint32_t add
  * @param[in] wdata Operand data for read-modify-write operation (32-bit).
  * @return Pre-operation memory content
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomaxu(uint32_t addr, uint32_t wdata) {
+static inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomaxu(uint32_t addr, uint32_t wdata) {
 
 #if defined(__riscv_a) || defined(__riscv_zaamo)
   uint32_t amo_addr  = addr;
@@ -572,7 +572,7 @@ inline uint32_t __attribute__ ((always_inline)) neorv32_cpu_amomaxu(uint32_t add
  * @note The WFI (wait for interrupt) instruction will make the CPU halt until
  * any enabled interrupt source becomes pending.
  **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
+static inline void __attribute__ ((always_inline)) neorv32_cpu_sleep(void) {
 
   asm volatile ("wfi");
 }
