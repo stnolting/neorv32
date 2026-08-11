@@ -30,7 +30,7 @@ int neorv32_pwm_available(void) {
  *
  * @return Number of implemented PWM channels (0..32).
  **************************************************************************/
-int neorv32_pmw_get_num_channels(void) {
+int neorv32_pwm_get_num_channels(void) {
 
   uint32_t backup = NEORV32_PWM->POLARITY;
   NEORV32_PWM->POLARITY = -1;

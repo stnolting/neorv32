@@ -47,7 +47,7 @@ typedef volatile struct __attribute__((packed,aligned(4))) {
  **************************************************************************/
 /**@{*/
 int  neorv32_pwm_available(void);
-int  neorv32_pmw_get_num_channels(void);
+int  neorv32_pwm_get_num_channels(void);
 void neorv32_pwm_set_clock(int prsc);
 void neorv32_pwm_ch_enable_mask(uint32_t mask);
 void neorv32_pwm_ch_disable_mask(uint32_t mask);
