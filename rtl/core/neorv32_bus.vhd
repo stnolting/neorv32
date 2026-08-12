@@ -374,8 +374,9 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   signal int_rsp : bus_rsp_t;
 
   -- bus monitor --
+  type state_t is (S_IDLE, S_BUSY, S_ERROR);
   type keeper_t is record
-    state : std_ulogic_vector(1 downto 0);
+    state : state_t;
     lock  : std_ulogic;
     sel   : std_ulogic_vector(4 downto 0);
     cnt   : std_ulogic_vector(tmo_cnt_size_c downto 0);
@@ -438,23 +439,23 @@ begin
   bus_monitor: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      keeper.state <= (others => '0');
+      keeper.state <= S_IDLE;
       keeper.lock  <= '0';
       keeper.sel   <= (others => '0');
       keeper.cnt   <= (others => '0');
     elsif rising_edge(clk_i) then
       case keeper.state is
 
-        when "00" => -- idle, waiting for new access request
+        when S_IDLE => -- idle, waiting for new access request
         -- ------------------------------------------------------------
           keeper.lock <= req_i.lock;
           keeper.sel  <= port_sel;
           keeper.cnt  <= (others => '0');
           if (req_i.stb = '1') then
-            keeper.state <= "01";
+            keeper.state <= S_BUSY;
           end if;
 
-        when "01" => -- busy, transfer in progress
+        when S_BUSY => -- busy, transfer in progress
         -- ------------------------------------------------------------
           -- timeout counter --
           if (int_rsp.ack = '1') then -- reset for each burst element
@@ -464,19 +465,19 @@ begin
           end if;
           -- bus status --
           if (tmo_fire = '1') then -- timeout
-            keeper.state <= "11";
+            keeper.state <= S_ERROR;
           elsif (keeper.lock = '1') then -- locked / burst transfer
             if (req_i.lock = '0') then
-              keeper.state <= "00";
+              keeper.state <= S_IDLE;
             end if;
           elsif (int_rsp.ack = '1') then -- end of single transfer
-            keeper.state <= "00";
+            keeper.state <= S_IDLE;
           end if;
 
-        when others => -- return error response until end of (locked) transfer
+        when S_ERROR => -- return error response until end of (locked) transfer
         -- ------------------------------------------------------------
           if (keeper.lock = '0') or (req_i.lock = '0') then
-            keeper.state <= "00";
+            keeper.state <= S_IDLE;
           end if;
 
       end case;
@@ -491,8 +492,8 @@ begin
   tmo_fire <= or_reduce_f(tmo_bits and keeper.sel);
 
   -- bus keeper error --
-  bus_err <= keeper.state(1); -- send error to host
-  term_o  <= keeper.state(1); -- terminate pending (external) bus access
+  bus_err <= '1' when (keeper.state = S_ERROR) else '0'; -- send error to host
+  term_o  <= '1' when (keeper.state = S_ERROR) else '0'; -- terminate pending (external) bus access
 
   -- external timeout notification --
   assert (X_TMO > 0) report "[NEORV32] External bus timeout disabled! Can cause permanent system stall!" severity warning;
