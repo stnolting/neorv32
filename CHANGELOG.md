@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 12.08.2026 | 1.13.4.2 | minor rtl edits and optimizations | [#1624](https://github.com/stnolting/neorv32/pull/1624) |
 | 12.08.2026 | 1.13.4.1 | declare FIFO/SPRAM memory arrays per generate-branch to fix RAM extraction on Verific-based synthesis tools | [#1623](https://github.com/stnolting/neorv32/pull/1623) |
 | 10.08.2026 | [**1.13.4**](https://github.com/stnolting/neorv32/releases/tag/v1.13.4) | :rocket: **New release** | |
 | 09.08.2026 | 1.13.3.9 | minor CPU updates, optimizations and RISC-V-compliance fixes | [#1621](https://github.com/stnolting/neorv32/pull/1621) |
