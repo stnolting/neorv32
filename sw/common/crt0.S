@@ -184,17 +184,16 @@ __crt0_destructors_primary:
   csrr  x8, mhartid
   bnez  x8, __crt0_destructors_end // execute destructors only on core 0
 
-  la    x8, __fini_array_start
-  la    x9, __fini_array_end
-
-__crt0_destructors:
-  bge   x8, x9, __crt0_destructors_end
+  la    x8, __fini_array_end       // execute destructors in REVERSE order
+  la    x9, __fini_array_start
 
 __crt0_destructors_loop:
-  lw    x1, 0(x8)
-  jalr  x1, 0(x1)                  // call destructor function; put return address in ra
-  addi  x8, x8, 4
-  blt   x8, x9, __crt0_destructors_loop
+  beq   x8, x9, __crt0_destructors_end
+  addi  x8, x8, -4
+  lw    x5, 0(x8)
+  jalr  x1, 0(x5)                  // call destructor function; put return address in ra
+  j     __crt0_destructors_loop
+
 __crt0_destructors_end:
 #endif
 
