@@ -9,7 +9,8 @@
 // ================================================================================ //
 
 .file "crt0.S"
-.section .text.crt0
+.section .text.crt0,"ax",@progbits
+.type _start,@function
 .balign 4
 .global _start
 _start:
