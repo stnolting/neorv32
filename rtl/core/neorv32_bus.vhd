@@ -431,8 +431,8 @@ begin
 
   -- host response --
   rsp_o.data <= int_rsp.data;
-  rsp_o.ack  <= int_rsp.ack or bus_err;
-  rsp_o.err  <= int_rsp.err or bus_err;
+  rsp_o.ack  <= '0' when (keeper.state = S_IDLE) else (int_rsp.ack or bus_err); -- filter spurious response
+  rsp_o.err  <= '0' when (keeper.state = S_IDLE) else (int_rsp.err or bus_err); -- filter spurious response
 
   -- Bus Monitor (aka "the KEEPER") ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
