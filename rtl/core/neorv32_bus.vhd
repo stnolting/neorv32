@@ -219,14 +219,27 @@ begin
   -- -------------------------------------------------------------------------------------------
   response_reg_enabled:
   if RSP_REG_EN generate
-    response_reg: process(rstn_i, clk_i)
+
+    -- signals that DO require a defined reset (access control signals) --
+    response_reg_reset: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        host_rsp_o <= rsp_terminate_c;
+        host_rsp_o.ack <= '0';
+        host_rsp_o.err <= '0';
       elsif rising_edge(clk_i) then
-        host_rsp_o <= device_rsp_i;
+        host_rsp_o.ack <= device_rsp_i.ack;
+        host_rsp_o.err <= device_rsp_i.err;
       end if;
     end process;
+
+    -- signals that do not need a defined reset --
+    response_reg_noreset: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        host_rsp_o.data <= device_rsp_i.data;
+      end if;
+    end process;
+
   end generate;
 
   response_reg_disabled:
