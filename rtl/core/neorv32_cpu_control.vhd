@@ -392,11 +392,10 @@ begin
           when opcode_fence_c =>
             if (exec.ir(instr_funct3_lsb_c) = '1') then -- fence.i
               ctrl_nxt.if_fence <= '1'; -- instruction fence
-              exec_nxt.state    <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC
             else -- fence
               ctrl_nxt.lsu_fence <= or_reduce_f(exec.ir(31 downto 24)); -- data fence if pred/succ != 0; execute as NOP otherwise
-              exec_nxt.state     <= S_DISPATCH;
             end if;
+            exec_nxt.state <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC (only required for fence.i)
 
           -- FPU: floating-point operations --
           when opcode_fpu_c =>
