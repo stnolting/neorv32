@@ -290,9 +290,10 @@ begin
           exec_nxt.irc   <= frontend_i.i16; -- original instruction word
           exec_nxt.pc    <= exec.pc2(31 downto 1) & '0';
           exec_nxt.state <= S_EXECUTE; -- start executing new instruction
-          if (frontend_i.i32(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
-            ctrl_nxt.csr_addr <= frontend_i.i32(instr_imm12_msb_c downto instr_imm12_lsb_c); -- reduce switching activity on csr_addr net
-          end if;
+        end if;
+        -- buffer CSR address for SYSTEM instructions to reduce switching activity on csr_addr net --
+        if (frontend_i.i32(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
+          ctrl_nxt.csr_addr <= frontend_i.i32(instr_imm12_msb_c downto instr_imm12_lsb_c);
         end if;
 
       when S_TRAP_ENTER => -- enter trap environment and jump to trap vector
