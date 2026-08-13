@@ -69,7 +69,7 @@ entity neorv32_vivado_ip is
     -- Tuning Options --
     CPU_CONSTT_BR_EN      : boolean                        := false;
     CPU_FAST_MUL_EN       : boolean                        := false;
-    CPU_FAST_MUL_REG      : boolean                        := false;
+    CPU_FAST_MUL_REGS     : natural range 1 to 3           := 1;
     CPU_FAST_SHIFT_EN     : boolean                        := false;
     CPU_RF_ARCH_SEL       : natural range 0 to 3           := 1; -- map to distributed RAM
     -- Physical Memory Protection (PMP) --
@@ -442,7 +442,7 @@ begin
     -- Extension Options --
     CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
     CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
-    CPU_FAST_MUL_REG    => CPU_FAST_MUL_REG,
+    CPU_FAST_MUL_REGS   => CPU_FAST_MUL_REGS,
     CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
     CPU_RF_ARCH_SEL     => CPU_RF_ARCH_SEL,
     -- Physical Memory Protection --

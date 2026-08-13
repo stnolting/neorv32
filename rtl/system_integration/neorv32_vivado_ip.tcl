@@ -310,10 +310,12 @@ proc setup_ip_gui {} {
   add_params $group {
     { CPU_CONSTT_BR_EN  {Constant-time branches} {Identical execution times for taken and not-taken branches} }
     { CPU_FAST_MUL_EN   {DSP-based multiplier}   {Use DSP block instead of bit-serial multipliers} }
-    { CPU_FAST_MUL_REG  {Multiplier register}    {Add a pipeline register to the DSP-based multiplier to improve timing closure} }
+    { CPU_FAST_MUL_REGS {Multiplier registers}   {Number of multiplier register stages (1..3)} }
     { CPU_FAST_SHIFT_EN {Barrel shifter}         {Use full-parallel shifters instead of of bit-serial shifters} }
     { CPU_RF_ARCH_SEL   {Register file style}    {Select implementation style of CPU register file} }
   }
+  set_property value_validation_range_minimum 1 [ipx::get_user_parameters CPU_FAST_MUL_REGS -of_objects [ipx::current_core]]
+  set_property value_validation_range_maximum 3 [ipx::get_user_parameters CPU_FAST_MUL_REGS -of_objects [ipx::current_core]]
   set_property widget {comboBox} [ipgui::get_guiparamspec -name "CPU_RF_ARCH_SEL" -component [ipx::current_core] ]
   set_property value_validation_type pairs [ipx::get_user_parameters CPU_RF_ARCH_SEL -of_objects [ipx::current_core]]
   set_property value_validation_pairs {{Block RAM} 0 {Distributed RAM} 1 {FFs with reset} 2 {Latches} 3} [ipx::get_user_parameters CPU_RF_ARCH_SEL -of_objects [ipx::current_core]]
