@@ -67,29 +67,29 @@ architecture neorv32_cpu_pmp_rtl of neorv32_cpu_pmp is
   constant mode_napot_c : std_ulogic_vector(1 downto 0) := "11"; -- naturally aligned power-of-two region (> 4 bytes)
 
   -- configuration CSRs --
-  type pmpcfg_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(7 downto 0);
+  type pmpcfg_t is array (NUM_REGIONS-1 downto 0) of std_ulogic_vector(7 downto 0);
   signal pmpcfg    : pmpcfg_t;
   signal pmpcfg_we : std_ulogic_vector(3 downto 0);
 
   -- address CSRs --
-  type pmpaddr_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(29 downto pmp_alsb_c);
+  type pmpaddr_t is array (NUM_REGIONS-1 downto 0) of std_ulogic_vector(29 downto pmp_alsb_c);
   signal pmpaddr    : pmpaddr_t;
   signal pmpaddr_we : std_ulogic_vector(15 downto 0);
 
   -- CSR read-back --
-  type csr_cfg_rd_t   is array (0 to 15) of std_ulogic_vector(7 downto 0);
-  type csr_cfg_rd32_t is array (0 to 03) of std_ulogic_vector(31 downto 0);
-  type csr_addr_rd_t  is array (0 to 15) of std_ulogic_vector(31 downto 0);
+  type csr_cfg_rd_t   is array (15 downto 0) of std_ulogic_vector(7 downto 0);
+  type csr_cfg_rd32_t is array (03 downto 0) of std_ulogic_vector(31 downto 0);
+  type csr_addr_rd_t  is array (15 downto 0) of std_ulogic_vector(31 downto 0);
   signal cfg_rd   : csr_cfg_rd_t;
   signal cfg_rd32 : csr_cfg_rd32_t;
   signal addr_rd  : csr_addr_rd_t;
 
   -- address mask (NA4/NAPOT) --
-  type addr_mask_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(31 downto pmp_lsb_c);
+  type addr_mask_t is array (NUM_REGIONS-1 downto 0) of std_ulogic_vector(31 downto pmp_lsb_c);
   signal addr_mask_napot, addr_mask : addr_mask_t;
 
   -- address comparators, region-match and permission check --
-  type cmp_t is array (0 to NUM_REGIONS-1) of std_ulogic_vector(1 downto 0); -- 0 = instruction fetch, 1 = data access
+  type cmp_t is array (NUM_REGIONS-1 downto 0) of std_ulogic_vector(1 downto 0); -- 0 = instruction fetch, 1 = data access
   signal cmp_na, cmp_ge, match : cmp_t;
   signal cmp_lt : std_ulogic_vector(1 downto 0); -- 0 = instruction fetch, 1 = data access
 

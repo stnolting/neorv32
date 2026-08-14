@@ -81,8 +81,11 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant log2_c_bsize_c   : natural := index_size_f(CACHE_BLOCK_SIZE);
 
   -- system information memory --
-  type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
+  type sysinfo_t is array (3 downto 0) of std_ulogic_vector(31 downto 0);
   signal sysinfo : sysinfo_t;
+
+  -- bus access --
+  signal ack, err : std_ulogic;
 
 begin
 
@@ -157,17 +160,22 @@ begin
   bus_response: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o <= rsp_terminate_c;
+      ack <= '0';
+      err <= '0';
     elsif rising_edge(clk_i) then
-      bus_rsp_o <= rsp_terminate_c; -- default
+      ack <= '0';
+      err <= '0';
       if (bus_req_i.stb = '1') then
-        bus_rsp_o.data <= sysinfo(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
-        bus_rsp_o.ack  <= '1';
+        ack <= '1';
         if (bus_req_i.rw = '1') and (bus_req_i.addr(3 downto 2) /= "00") then
-          bus_rsp_o.err <= '1'; -- error if write access to any address other than zero
+          err <= '1'; -- error if write access to any address other than zero
         end if;
       end if;
     end if;
   end process;
+
+  bus_rsp_o.ack  <= ack;
+  bus_rsp_o.err  <= err;
+  bus_rsp_o.data <= sysinfo(to_integer(unsigned(bus_req_i.addr(3 downto 2)))) when (ack = '1') else (others => '0');
 
 end architecture;
