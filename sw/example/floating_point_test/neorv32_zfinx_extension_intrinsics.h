@@ -188,7 +188,7 @@ float subnormal_flush(float tmp) {
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fadds(float rs1, float rs2) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fadds(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -206,7 +206,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fadds(float rs1, fl
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fsubs(float rs1, float rs2) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fsubs(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -224,7 +224,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fsubs(float rs1, fl
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fmuls(float rs1, float rs2) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fmuls(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -242,7 +242,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fmuls(float rs1, fl
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fmins(float rs1, float rs2) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fmins(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -260,7 +260,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fmins(float rs1, fl
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fmaxs(float rs1, float rs2) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fmaxs(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -277,7 +277,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fmaxs(float rs1, fl
  * @param[in] rs1 Source operand 1.
  * @return Result.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_wus(float rs1) {
+static inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_wus(float rs1) {
 
   float_conv_t opa;
   opa.float_value = rs1;
@@ -292,7 +292,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_wus(float r
  * @param[in] rs1 Source operand 1.
  * @return Result.
  **************************************************************************/
-inline int32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_ws(float rs1) {
+static inline int32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_ws(float rs1) {
 
   float_conv_t opa;
   opa.float_value = rs1;
@@ -307,7 +307,7 @@ inline int32_t __attribute__ ((always_inline)) riscv_intrinsic_fcvt_ws(float rs1
  * @param[in] rs1 Source operand 1.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_swu(uint32_t rs1) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_swu(uint32_t rs1) {
 
   float_conv_t res;
 
@@ -322,7 +322,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_swu(uint32_t r
  * @param[in] rs1 Source operand 1.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_sw(int32_t rs1) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_sw(int32_t rs1) {
 
   float_conv_t res;
 
@@ -338,7 +338,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fcvt_sw(int32_t rs1
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_feqs(float rs1, float rs2) {
+static inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_feqs(float rs1, float rs2) {
 
   float_conv_t opa, opb;
   opa.float_value = rs1;
@@ -355,7 +355,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_feqs(float rs1, 
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_flts(float rs1, float rs2) {
+static inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_flts(float rs1, float rs2) {
 
   float_conv_t opa, opb;
   opa.float_value = rs1;
@@ -372,7 +372,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_flts(float rs1, 
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fles(float rs1, float rs2) {
+static inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fles(float rs1, float rs2) {
 
   float_conv_t opa, opb;
   opa.float_value = rs1;
@@ -389,7 +389,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fles(float rs1, 
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjs(float rs1, float rs2) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjs(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -407,7 +407,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjs(float rs1, f
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjns(float rs1, float rs2) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjns(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -425,7 +425,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjns(float rs1, 
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjxs(float rs1, float rs2) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjxs(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -442,7 +442,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fsgnjxs(float rs1, 
  * @param[in] rs1 Source operand 1.
  * @return Result.
  **************************************************************************/
-inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fclasss(float rs1) {
+static inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fclasss(float rs1) {
 
   float_conv_t opa;
   opa.float_value = rs1;
@@ -464,7 +464,7 @@ inline uint32_t __attribute__ ((always_inline)) riscv_intrinsic_fclasss(float rs
  * @param[in] rs2 Source operand 2.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fdivs(float rs1, float rs2) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fdivs(float rs1, float rs2) {
 
   float_conv_t opa, opb, res;
   opa.float_value = rs1;
@@ -483,7 +483,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fdivs(float rs1, fl
  * @param[in] rs1 Source operand 1.
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fsqrts(float rs1) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fsqrts(float rs1) {
 
   float_conv_t opa, res;
   opa.float_value = rs1;
@@ -503,7 +503,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fsqrts(float rs1) {
  * @param[in] rs3 Source operand 3
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fmadds(float rs1, float rs2, float rs3) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fmadds(float rs1, float rs2, float rs3) {
 
   (void)rs1;
   (void)rs2;
@@ -525,7 +525,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fmadds(float rs1, f
  * @param[in] rs3 Source operand 3
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fmsubs(float rs1, float rs2, float rs3) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fmsubs(float rs1, float rs2, float rs3) {
 
   (void)rs1;
   (void)rs2;
@@ -547,7 +547,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fmsubs(float rs1, f
  * @param[in] rs3 Source operand 3
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fnmsubs(float rs1, float rs2, float rs3) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fnmsubs(float rs1, float rs2, float rs3) {
 
   (void)rs1;
   (void)rs2;
@@ -569,7 +569,7 @@ inline float __attribute__ ((always_inline)) riscv_intrinsic_fnmsubs(float rs1, 
  * @param[in] rs3 Source operand 3
  * @return Result.
  **************************************************************************/
-inline float __attribute__ ((always_inline)) riscv_intrinsic_fnmadds(float rs1, float rs2, float rs3) {
+static inline float __attribute__ ((always_inline)) riscv_intrinsic_fnmadds(float rs1, float rs2, float rs3) {
 
   (void)rs1;
   (void)rs2;
