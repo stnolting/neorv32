@@ -57,8 +57,8 @@ architecture xbus_gateway_rtl of xbus_gateway is
   constant dev_size_list_c : dev_size_list_t := (DEV_0_SIZE, DEV_1_SIZE, DEV_2_SIZE, DEV_3_SIZE, DEV_4_SIZE, DEV_5_SIZE, DEV_6_SIZE, DEV_7_SIZE);
 
   -- device ports combined as arrays --
-  type dev_req_t is array (0 to num_devs_c-1) of xbus_req_t;
-  type dev_rsp_t is array (0 to num_devs_c-1) of xbus_rsp_t;
+  type dev_req_t is array (num_devs_c-1 downto 0) of xbus_req_t;
+  type dev_rsp_t is array (num_devs_c-1 downto 0) of xbus_rsp_t;
   signal dev_req : dev_req_t;
   signal dev_rsp : dev_rsp_t;
 

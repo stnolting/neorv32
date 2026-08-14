@@ -69,8 +69,8 @@ architecture neorv32_litex_core_complex_rtl of neorv32_litex_core_complex is
 
   -- configuration helpers --
   constant num_configs_c : natural := 5;    -- number of pre-defined configurations
-  type bool_t is array (0 to num_configs_c-1) of boolean;
-  type natural_t is array (0 to num_configs_c-1) of natural;
+  type bool_t is array (num_configs_c-1 downto 0) of boolean;
+  type natural_t is array (num_configs_c-1 downto 0) of natural;
   type configs_t is record
     riscv_c      : bool_t;
     riscv_m      : bool_t;

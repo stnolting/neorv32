@@ -57,7 +57,7 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
   signal clkprsc, addr : std_ulogic_vector(2 downto 0);
 
   -- wiring --
-  type rdata_t is array (0 to NUM_CHANNELS-1) of std_ulogic_vector(31 downto 0);
+  type rdata_t is array (NUM_CHANNELS-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal rdata : rdata_t;
   signal rdata_sum : std_ulogic_vector(31 downto 0);
   signal cs, pwm : std_ulogic_vector(NUM_CHANNELS-1 downto 0);

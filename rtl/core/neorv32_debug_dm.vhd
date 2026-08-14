@@ -72,7 +72,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   -- ----------------------------------------------------------
 
   -- debug module DMI registers / access --
-  type progbuf_t is array (0 to 1) of std_ulogic_vector(31 downto 0);
+  type progbuf_t is array (1 downto 0) of std_ulogic_vector(31 downto 0);
   type dm_reg_t is record
     ndmreset        : std_ulogic;
     dmactive        : std_ulogic;
@@ -96,7 +96,7 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
   signal hart_avail : std_ulogic; -- selected hart is available
 
   -- CPU program buffer --
-  type cpu_progbuf_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
+  type cpu_progbuf_t is array (3 downto 0) of std_ulogic_vector(31 downto 0);
   signal cpu_progbuf : cpu_progbuf_t;
 
   -- signed base address of data registers in memory/CSR space --

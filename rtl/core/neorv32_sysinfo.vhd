@@ -81,7 +81,7 @@ architecture neorv32_sysinfo_rtl of neorv32_sysinfo is
   constant log2_c_bsize_c   : natural := index_size_f(CACHE_BLOCK_SIZE);
 
   -- system information memory --
-  type sysinfo_t is array (0 to 3) of std_ulogic_vector(31 downto 0);
+  type sysinfo_t is array (3 downto 0) of std_ulogic_vector(31 downto 0);
   signal sysinfo : sysinfo_t;
 
   -- bus access --

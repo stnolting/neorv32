@@ -44,7 +44,7 @@ end entity;
 architecture neorv32_cpu_counters_rtl of neorv32_cpu_counters is
 
   -- global access decoder --
-  type cnt_we_t is array (0 to 31) of std_ulogic_vector(1 downto 0);
+  type cnt_we_t is array (31 downto 0) of std_ulogic_vector(1 downto 0);
   signal cnt_we : cnt_we_t;
   signal cnt_acc, cfg_acc, inh_acc, pmf_acc : std_ulogic;
   signal sel, cnt_re, cfg_we, cfg_re : std_ulogic_vector(31 downto 0);

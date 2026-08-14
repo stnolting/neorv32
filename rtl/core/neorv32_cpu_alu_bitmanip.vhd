@@ -179,7 +179,7 @@ architecture neorv32_cpu_alu_bitmanip_rtl of neorv32_cpu_alu_bitmanip is
   signal bs_shift : std_ulogic_vector(4 downto 0);
 
   -- operation/intermediate results --
-  type res_t is array (0 to op_width_c-1) of std_ulogic_vector(31 downto 0);
+  type res_t is array (op_width_c-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal res_int, res : res_t;
   signal xperm4_res, xperm8_res, adder_res, one_hot_res, zip_res, unzip_res, res_out : std_ulogic_vector(31 downto 0);
 
@@ -253,7 +253,6 @@ begin
               state       <= S_START;
             else
               valid <= '1';
-              state <= S_IDLE;
             end if;
           end if;
 
@@ -276,7 +275,7 @@ begin
   op_buf: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (valid_cmd = '1') then
+      if (ctrl_i.alu_cp_alu = '1') then
         less_reg <= less_i;
         rs1_reg  <= rs1_i;
         rs2_reg  <= rs2_i;
