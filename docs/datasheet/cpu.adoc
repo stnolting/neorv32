@@ -388,18 +388,20 @@ result bit in every cycle. Multiplication operations always require 32 clock cyc
 
 {empty} +
 [discrete]
-===== **`CPU_FAST_MUL_REG`**
+===== **`CPU_FAST_MUL_REGS`**
 
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
 |=======================
-| Name        | Fast multiplier pipeline register
-| Type        | `boolean`
-| Default     | `false` (disabled)
-| Description | Only effective together with <<_cpu_fast_mul_en>>. When **enabled** a pipeline register is added to the fast
-multiplier so the synthesis tool can retime it into the DSP cascade that is inferred when the DSP blocks are narrower than the
-operands, shortening the critical path. Costs one extra latency cycle per multiplication (`T_mul_latency` = 2).
-|             | When **disabled** the fast multiplier is bit-identical to before. Wide-DSP targets (e.g. Xilinx UltraScale+) do not need this.
+| Name        | Fast multiplier register stages
+| Type        | `natural` (1..3)
+| Default     | 1
+| Description | Only effective together with <<_cpu_fast_mul_en>>. This option selects the number of register stages in the fast
+multiplier. The multiplier result is valid `CPU_FAST_MUL_REGS + 1` cycles after the operation trigger, including input operand capture;
+`T_mul_latency` equals `CPU_FAST_MUL_REGS`.
+|             | A value of 1 uses a single inferred multiplier stage. A value of 2 adds an output register that synthesis may retime
+into a DSP cascade. A value of 3 decomposes the product into four half-word multiplications with explicitly registered partial
+products, partial sums, and final result. This provides deterministic pipeline boundaries and avoids multi-DSP multiplier cascades.
 |=======================
 
 

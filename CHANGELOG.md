@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 14.08.2026 | 1.13.4.5 | CPU: generalize fast multiplier pipeline | [#1625](https://github.com/stnolting/neorv32/pull/1625) |
 | 14.08.2026 | 1.13.4.4 | minor rtl edits and optimizations | [#1624](https://github.com/stnolting/neorv32/pull/1624) |
 | 14.08.2026 | 1.13.4.3 | normalize bus/list array ranges to `x downto y` | [#1622](https://github.com/stnolting/neorv32/pull/1622) |
 | 14.08.2026 | 1.13.4.2 | bitmanip: simplify register enables | [#1626](https://github.com/stnolting/neorv32/pull/1626) |

@@ -249,7 +249,9 @@ end architecture;
 
 
 -- ================================================================================ --
--- NEORV32 Primitives - Generic 2-Cycle Signed/Unsigned Integer Multiplier (MUL)    --
+-- NEORV32 Primitives - Generic Signed/Unsigned Integer Multiplier (MUL)            --
+-- -------------------------------------------------------------------------------- --
+-- The result is valid NUM_REGS+1 cycles after en_i.                                --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -264,8 +266,8 @@ use ieee.numeric_std.all;
 
 entity neorv32_prim_mul is
   generic (
-    DWIDTH   : natural;         -- operand width
-    PIPELINE : boolean := false -- add a second (output) register stage
+    DWIDTH   : natural;                   -- operand width
+    NUM_REGS : natural range 1 to 3 := 1  -- number of multiplier register stages
   );
   port (
     -- global control --
@@ -282,8 +284,8 @@ end entity;
 
 architecture neorv32_prim_mul_rtl of neorv32_prim_mul is
 
-  signal opa, opb  : signed(DWIDTH downto 0);
-  signal res, res2 : signed((2*DWIDTH)+1 downto 0);
+  signal opa, opb : signed(DWIDTH downto 0);
+  signal res      : signed((2*DWIDTH)+1 downto 0);
 
 begin
 
@@ -299,37 +301,80 @@ begin
     end if;
   end process;
 
-  -- Output Register ------------------------------------------------------------------------
+  -- Multiplier -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  out_reg: process(clk_i)
-  begin
-    if rising_edge(clk_i) then -- no reset to improve DSP mapping
-      res <= opa * opb;
-    end if;
-  end process;
-
-  -- Optional Pipeline Register -------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  -- Second register layer, giving synthesis a register to retime into a DSP
-  -- cascade (needed when DSP blocks are narrower than the operands). Shortens
-  -- the critical path at the cost of one latency cycle (handled by the caller).
-  pipe_true:
-  if PIPELINE generate
-    pipe_reg: process(clk_i)
+  one_reg:
+  if (NUM_REGS = 1) generate
+    mul_reg: process(clk_i)
     begin
-      if rising_edge(clk_i) then -- no reset to improve DSP mapping
-        res2 <= res;
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        res <= opa * opb;
       end if;
     end process;
   end generate;
 
-  pipe_false:
-  if not PIPELINE generate
-    res2 <= res;
+  two_regs:
+  if (NUM_REGS = 2) generate
+    signal mul_res : signed((2*DWIDTH)+1 downto 0);
+  begin
+    mul_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        mul_res <= opa * opb;
+      end if;
+    end process;
+
+    result_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        res <= mul_res;
+      end if;
+    end process;
+  end generate;
+
+  three_regs:
+  if (NUM_REGS = 3) generate
+    constant lo_width_c : natural := DWIDTH / 2;
+    constant hi_width_c : natural := (DWIDTH + 1) - lo_width_c;
+    constant pp_width_c : natural := 2 * hi_width_c;
+    constant pr_width_c : natural := (2 * DWIDTH) + 2;
+
+    signal q_ll, q_lh, q_hl, q_hh : signed(pp_width_c-1 downto 0);
+    signal q_sum_lo, q_sum_hi     : signed(pr_width_c-1 downto 0);
+  begin
+    partial_product_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        q_ll <= resize(signed('0' & std_ulogic_vector(opa(lo_width_c-1 downto 0))) *
+                       signed('0' & std_ulogic_vector(opb(lo_width_c-1 downto 0))), pp_width_c);
+        q_lh <= resize(signed('0' & std_ulogic_vector(opa(lo_width_c-1 downto 0))) *
+                       resize(opb(opb'left downto lo_width_c), hi_width_c), pp_width_c);
+        q_hl <= resize(resize(opa(opa'left downto lo_width_c), hi_width_c) *
+                       signed('0' & std_ulogic_vector(opb(lo_width_c-1 downto 0))), pp_width_c);
+        q_hh <= resize(resize(opa(opa'left downto lo_width_c), hi_width_c) *
+                       resize(opb(opb'left downto lo_width_c), hi_width_c), pp_width_c);
+      end if;
+    end process;
+
+    partial_sum_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        q_sum_lo <= resize(q_ll, pr_width_c) + shift_left(resize(q_lh, pr_width_c), lo_width_c);
+        q_sum_hi <= shift_left(resize(q_hl, pr_width_c), lo_width_c) +
+                    shift_left(resize(q_hh, pr_width_c), 2*lo_width_c);
+      end if;
+    end process;
+
+    result_reg: process(clk_i)
+    begin
+      if rising_edge(clk_i) then -- no reset to improve multiplier mapping
+        res <= q_sum_lo + q_sum_hi;
+      end if;
+    end process;
   end generate;
 
   -- result --
-  res_o <= std_ulogic_vector(res2((2*DWIDTH)-1 downto 0));
+  res_o <= std_ulogic_vector(res((2*DWIDTH)-1 downto 0));
 
 end architecture;
 

@@ -63,7 +63,7 @@ entity neorv32_cpu is
     CPU_TRACE_EN        : boolean                        := false;       -- enable CPU execution trace generator
     CPU_CONSTT_BR_EN    : boolean                        := false;       -- constant-time branches
     CPU_FAST_MUL_EN     : boolean                        := false;       -- use DSPs for M extension's multiplier
-    CPU_FAST_MUL_REG    : boolean                        := false;       -- add a pipeline register to the fast multiplier (needs CPU_FAST_MUL_EN)
+    CPU_FAST_MUL_REGS   : natural range 1 to 3           := 1;           -- number of fast multiplier register stages (needs CPU_FAST_MUL_EN)
     CPU_FAST_SHIFT_EN   : boolean                        := false;       -- use barrel shifter for shift operations
     CPU_RF_ARCH_SEL     : natural range 0 to 3           := 0;           -- register file implementation style select
     -- Physical Memory Protection (PMP) --
@@ -202,7 +202,7 @@ begin
       sel_string_f(CPU_TRACE_EN,                 "trace ",              "") &
       sel_string_f(CPU_CONSTT_BR_EN,             "constt_br ",          "") &
       sel_string_f(CPU_FAST_MUL_EN,              "fast_mul ",           "") &
-      sel_string_f(CPU_FAST_MUL_REG,             "fast_mul_reg ",       "") &
+      "fast_mul_regs=" & natural'image(CPU_FAST_MUL_REGS) & " " &
       sel_string_f(CPU_FAST_SHIFT_EN,            "fast_shift ",         "") &
       sel_string_f(boolean(CPU_RF_ARCH_SEL = 0), "rf_arch=sram_sync ",  "") &
       sel_string_f(boolean(CPU_RF_ARCH_SEL = 1), "rf_arch=sram_async ", "") &
@@ -428,28 +428,28 @@ begin
   neorv32_cpu_alu_inst: entity neorv32.neorv32_cpu_alu
   generic map (
     -- RISC-V ISA Extensions --
-    RISCV_ISA_M      => RISCV_ISA_M,      -- mul/div extension
-    RISCV_ISA_Zba    => RISCV_ISA_Zba,    -- address-generation instruction
-    RISCV_ISA_Zbb    => RISCV_ISA_Zbb,    -- basic bit-manipulation instruction
-    RISCV_ISA_Zbc    => RISCV_ISA_Zbc,    -- carry-less multiplication instructions
-    RISCV_ISA_Zbkb   => RISCV_ISA_Zbkb,   -- bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc   => RISCV_ISA_Zbkc,   -- carry-less multiplication instructions
-    RISCV_ISA_Zbkx   => RISCV_ISA_Zbkx,   -- cryptography crossbar permutation extension
-    RISCV_ISA_Zbs    => RISCV_ISA_Zbs,    -- single-bit instructions
-    RISCV_ISA_Zfinx  => RISCV_ISA_Zfinx,  -- 32-bit floating-point extension
-    RISCV_ISA_Zibi   => RISCV_ISA_Zibi,   -- branch with immediate
-    RISCV_ISA_Zicond => RISCV_ISA_Zicond, -- integer conditional operations
-    RISCV_ISA_Zknd   => RISCV_ISA_Zknd,   -- cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne   => RISCV_ISA_Zkne,   -- cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh   => RISCV_ISA_Zknh,   -- cryptography NIST hash extension
-    RISCV_ISA_Zksed  => RISCV_ISA_Zksed,  -- ShangMi block cipher extension
-    RISCV_ISA_Zksh   => RISCV_ISA_Zksh,   -- ShangMi hash extension
-    RISCV_ISA_Zmmul  => RISCV_ISA_Zmmul,  -- multiply-only M sub-extension
-    RISCV_ISA_Xcfu   => RISCV_ISA_Xcfu,   -- custom (instr.) functions unit
+    RISCV_ISA_M      => RISCV_ISA_M,       -- mul/div extension
+    RISCV_ISA_Zba    => RISCV_ISA_Zba,     -- address-generation instruction
+    RISCV_ISA_Zbb    => RISCV_ISA_Zbb,     -- basic bit-manipulation instruction
+    RISCV_ISA_Zbc    => RISCV_ISA_Zbc,     -- carry-less multiplication instructions
+    RISCV_ISA_Zbkb   => RISCV_ISA_Zbkb,    -- bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc   => RISCV_ISA_Zbkc,    -- carry-less multiplication instructions
+    RISCV_ISA_Zbkx   => RISCV_ISA_Zbkx,    -- cryptography crossbar permutation extension
+    RISCV_ISA_Zbs    => RISCV_ISA_Zbs,     -- single-bit instructions
+    RISCV_ISA_Zfinx  => RISCV_ISA_Zfinx,   -- 32-bit floating-point extension
+    RISCV_ISA_Zibi   => RISCV_ISA_Zibi,    -- branch with immediate
+    RISCV_ISA_Zicond => RISCV_ISA_Zicond,  -- integer conditional operations
+    RISCV_ISA_Zknd   => RISCV_ISA_Zknd,    -- cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne   => RISCV_ISA_Zkne,    -- cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh   => RISCV_ISA_Zknh,    -- cryptography NIST hash extension
+    RISCV_ISA_Zksed  => RISCV_ISA_Zksed,   -- ShangMi block cipher extension
+    RISCV_ISA_Zksh   => RISCV_ISA_Zksh,    -- ShangMi hash extension
+    RISCV_ISA_Zmmul  => RISCV_ISA_Zmmul,   -- multiply-only M sub-extension
+    RISCV_ISA_Xcfu   => RISCV_ISA_Xcfu,    -- custom (instr.) functions unit
     -- Tuning Options --
-    FAST_MUL_EN      => CPU_FAST_MUL_EN,  -- use DSPs for M extension's multiplier
-    FAST_MUL_REG     => CPU_FAST_MUL_REG, -- add a pipeline register to the fast multiplier
-    FAST_SHIFT_EN    => CPU_FAST_SHIFT_EN -- use barrel shifter for shift operations
+    FAST_MUL_EN      => CPU_FAST_MUL_EN,   -- use DSPs for M extension's multiplier
+    FAST_MUL_REGS    => CPU_FAST_MUL_REGS, -- number of fast multiplier register stages
+    FAST_SHIFT_EN    => CPU_FAST_SHIFT_EN  -- use barrel shifter for shift operations
   )
   port map (
     -- global control --

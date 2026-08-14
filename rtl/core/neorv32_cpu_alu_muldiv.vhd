@@ -22,9 +22,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_alu_muldiv is
   generic (
-    FAST_MUL_EN  : boolean; -- use DSPs for faster multiplication
-    FAST_MUL_REG : boolean; -- add a pipeline register to the fast multiplier (needs FAST_MUL_EN)
-    DIVISION_EN  : boolean  -- implement divider hardware
+    FAST_MUL_EN   : boolean;              -- use DSPs for faster multiplication
+    FAST_MUL_REGS : natural range 1 to 3; -- number of fast multiplier register stages (needs FAST_MUL_EN)
+    DIVISION_EN   : boolean               -- implement divider hardware
   );
   port (
     -- global control --
@@ -63,6 +63,9 @@ architecture neorv32_cpu_alu_muldiv_rtl of neorv32_cpu_alu_muldiv is
   constant op_divu_c   : std_ulogic_vector(2 downto 0) := "101";
   constant op_rem_c    : std_ulogic_vector(2 downto 0) := "110";
   constant op_remu_c   : std_ulogic_vector(2 downto 0) := "111";
+
+  -- clock cycles from fast-multiplier operand capture to result
+  constant mul_latency_c : natural := FAST_MUL_REGS + 1;
 
   -- instruction decode --
   signal valid_cmd : std_ulogic;
@@ -121,7 +124,8 @@ begin
         -- ------------------------------------------------------------
           if (valid_cmd = '1') then -- trigger new operation
             if (ctrl_i.ir_funct3(2) = '0') and FAST_MUL_EN then -- is fast multiplication?
-              if FAST_MUL_REG then -- pipelined product needs one more cycle
+              if (FAST_MUL_REGS > 1) then -- wait for the pipelined product
+                ctrl.cnt   <= std_ulogic_vector(to_unsigned(mul_latency_c - 3, ctrl.cnt'length));
                 ctrl.state <= S_PIPE;
               else
                 ctrl.state <= S_DONE;
@@ -138,9 +142,12 @@ begin
             ctrl.state <= S_DONE;
           end if;
 
-        when S_PIPE => -- extra cycle for the fast multiplier's pipeline register
+        when S_PIPE => -- wait for fast-multiplier pipeline
         -- ------------------------------------------------------------
-          ctrl.state <= S_DONE;
+          ctrl.cnt <= std_ulogic_vector(unsigned(ctrl.cnt) - 1);
+          if (or_reduce_f(ctrl.cnt) = '0') then
+            ctrl.state <= S_DONE;
+          end if;
 
         when S_DONE => -- S_DONE: final step / enable output for one cycle
         -- ------------------------------------------------------------
@@ -172,7 +179,7 @@ begin
     multiplier_inst: entity neorv32.neorv32_prim_mul
     generic map (
       DWIDTH   => 32,
-      PIPELINE => FAST_MUL_REG
+      NUM_REGS => FAST_MUL_REGS
     )
     port map (
       clk_i  => clk_i,
