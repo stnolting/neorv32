@@ -39,7 +39,7 @@ jobs:
         wget -q https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack/releases/download/v15.2.0-1/xpack-riscv-none-elf-gcc-15.2.0-1-linux-x64.tar.gz
         mkdir $GITHUB_WORKSPACE/riscv-gcc
         tar -xzf xpack-riscv-none-elf-gcc-15.2.0-1-linux-x64.tar.gz -C $GITHUB_WORKSPACE/riscv-gcc
-        echo $GITHUB_WORKSPACE/riscv-gcc/xpack-riscv-none-elf-gcc-15.2.0-1/bin >> $GITHUB_PATH
+        echo "$GITHUB_WORKSPACE/riscv-gcc/xpack-riscv-none-elf-gcc-15.2.0-1/bin" >> $GITHUB_PATH
 
     - name: '📦 Install GHDL'
       uses: ghdl/setup-ghdl@v1
