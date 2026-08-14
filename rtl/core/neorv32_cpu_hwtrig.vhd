@@ -42,7 +42,7 @@ architecture neorv32_cpu_hwtrig_rtl of neorv32_cpu_hwtrig is
   constant log2_num_triggers_c : natural := index_size_f(NUM_TRIGGERS);
 
   -- match control CSRs: tdata1[tselect] and tdata2[tselect] --
-  type tdata2_t is array (0 to NUM_TRIGGERS-1) of std_ulogic_vector(31 downto 0);
+  type tdata2_t is array (NUM_TRIGGERS-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal tdata2 : tdata2_t;
   signal tdata1, tdata1_rb, tdata2_rb, tinfo_rb : std_ulogic_vector(31 downto 0);
   signal tdata1_exec, tdata1_store, tdata1_load, tdata1_hit : std_ulogic_vector(NUM_TRIGGERS-1 downto 0);

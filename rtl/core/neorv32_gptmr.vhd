@@ -56,7 +56,7 @@ architecture neorv32_gptmr_rtl of neorv32_gptmr is
   signal enable, mode, irq : std_ulogic_vector(NUM_SLICES-1 downto 0);
 
   -- slice wiring --
-  type rdata_t is array (0 to NUM_SLICES-1) of std_ulogic_vector(31 downto 0);
+  type rdata_t is array (NUM_SLICES-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal rdata : rdata_t;
   signal rdata_sum : std_ulogic_vector(31 downto 0);
   signal cs, trig : std_ulogic_vector(NUM_SLICES-1 downto 0);
