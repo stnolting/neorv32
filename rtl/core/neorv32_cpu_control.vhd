@@ -290,9 +290,10 @@ begin
           exec_nxt.irc   <= frontend_i.i16; -- original instruction word
           exec_nxt.pc    <= exec.pc2(31 downto 1) & '0';
           exec_nxt.state <= S_EXECUTE; -- start executing new instruction
-          if (frontend_i.i32(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
-            ctrl_nxt.csr_addr <= frontend_i.i32(instr_imm12_msb_c downto instr_imm12_lsb_c); -- reduce switching activity on csr_addr net
-          end if;
+        end if;
+        -- buffer CSR address for SYSTEM instructions to reduce switching activity on csr_addr net --
+        if (frontend_i.i32(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
+          ctrl_nxt.csr_addr <= frontend_i.i32(instr_imm12_msb_c downto instr_imm12_lsb_c);
         end if;
 
       when S_TRAP_ENTER => -- enter trap environment and jump to trap vector
@@ -391,11 +392,10 @@ begin
           when opcode_fence_c =>
             if (exec.ir(instr_funct3_lsb_c) = '1') then -- fence.i
               ctrl_nxt.if_fence <= '1'; -- instruction fence
-              exec_nxt.state    <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC
             else -- fence
               ctrl_nxt.lsu_fence <= or_reduce_f(exec.ir(31 downto 24)); -- data fence if pred/succ != 0; execute as NOP otherwise
-              exec_nxt.state     <= S_DISPATCH;
             end if;
+            exec_nxt.state <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC (only required for fence.i)
 
           -- FPU: floating-point operations --
           when opcode_fpu_c =>
