@@ -253,7 +253,6 @@ begin
               state       <= S_START;
             else
               valid <= '1';
-              state <= S_IDLE;
             end if;
           end if;
 
@@ -276,7 +275,7 @@ begin
   op_buf: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      if (valid_cmd = '1') then
+      if (ctrl_i.alu_cp_alu = '1') then
         less_reg <= less_i;
         rs1_reg  <= rs1_i;
         rs2_reg  <= rs2_i;
