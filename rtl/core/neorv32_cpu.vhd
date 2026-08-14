@@ -428,24 +428,24 @@ begin
   neorv32_cpu_alu_inst: entity neorv32.neorv32_cpu_alu
   generic map (
     -- RISC-V ISA Extensions --
-    RISCV_ISA_M      => RISCV_ISA_M,      -- mul/div extension
-    RISCV_ISA_Zba    => RISCV_ISA_Zba,    -- address-generation instruction
-    RISCV_ISA_Zbb    => RISCV_ISA_Zbb,    -- basic bit-manipulation instruction
-    RISCV_ISA_Zbc    => RISCV_ISA_Zbc,    -- carry-less multiplication instructions
-    RISCV_ISA_Zbkb   => RISCV_ISA_Zbkb,   -- bit-manipulation instructions for cryptography
-    RISCV_ISA_Zbkc   => RISCV_ISA_Zbkc,   -- carry-less multiplication instructions
-    RISCV_ISA_Zbkx   => RISCV_ISA_Zbkx,   -- cryptography crossbar permutation extension
-    RISCV_ISA_Zbs    => RISCV_ISA_Zbs,    -- single-bit instructions
-    RISCV_ISA_Zfinx  => RISCV_ISA_Zfinx,  -- 32-bit floating-point extension
-    RISCV_ISA_Zibi   => RISCV_ISA_Zibi,   -- branch with immediate
-    RISCV_ISA_Zicond => RISCV_ISA_Zicond, -- integer conditional operations
-    RISCV_ISA_Zknd   => RISCV_ISA_Zknd,   -- cryptography NIST AES decryption extension
-    RISCV_ISA_Zkne   => RISCV_ISA_Zkne,   -- cryptography NIST AES encryption extension
-    RISCV_ISA_Zknh   => RISCV_ISA_Zknh,   -- cryptography NIST hash extension
-    RISCV_ISA_Zksed  => RISCV_ISA_Zksed,  -- ShangMi block cipher extension
-    RISCV_ISA_Zksh   => RISCV_ISA_Zksh,   -- ShangMi hash extension
-    RISCV_ISA_Zmmul  => RISCV_ISA_Zmmul,  -- multiply-only M sub-extension
-    RISCV_ISA_Xcfu   => RISCV_ISA_Xcfu,   -- custom (instr.) functions unit
+    RISCV_ISA_M      => RISCV_ISA_M,       -- mul/div extension
+    RISCV_ISA_Zba    => RISCV_ISA_Zba,     -- address-generation instruction
+    RISCV_ISA_Zbb    => RISCV_ISA_Zbb,     -- basic bit-manipulation instruction
+    RISCV_ISA_Zbc    => RISCV_ISA_Zbc,     -- carry-less multiplication instructions
+    RISCV_ISA_Zbkb   => RISCV_ISA_Zbkb,    -- bit-manipulation instructions for cryptography
+    RISCV_ISA_Zbkc   => RISCV_ISA_Zbkc,    -- carry-less multiplication instructions
+    RISCV_ISA_Zbkx   => RISCV_ISA_Zbkx,    -- cryptography crossbar permutation extension
+    RISCV_ISA_Zbs    => RISCV_ISA_Zbs,     -- single-bit instructions
+    RISCV_ISA_Zfinx  => RISCV_ISA_Zfinx,   -- 32-bit floating-point extension
+    RISCV_ISA_Zibi   => RISCV_ISA_Zibi,    -- branch with immediate
+    RISCV_ISA_Zicond => RISCV_ISA_Zicond,  -- integer conditional operations
+    RISCV_ISA_Zknd   => RISCV_ISA_Zknd,    -- cryptography NIST AES decryption extension
+    RISCV_ISA_Zkne   => RISCV_ISA_Zkne,    -- cryptography NIST AES encryption extension
+    RISCV_ISA_Zknh   => RISCV_ISA_Zknh,    -- cryptography NIST hash extension
+    RISCV_ISA_Zksed  => RISCV_ISA_Zksed,   -- ShangMi block cipher extension
+    RISCV_ISA_Zksh   => RISCV_ISA_Zksh,    -- ShangMi hash extension
+    RISCV_ISA_Zmmul  => RISCV_ISA_Zmmul,   -- multiply-only M sub-extension
+    RISCV_ISA_Xcfu   => RISCV_ISA_Xcfu,    -- custom (instr.) functions unit
     -- Tuning Options --
     FAST_MUL_EN      => CPU_FAST_MUL_EN,   -- use DSPs for M extension's multiplier
     FAST_MUL_REGS    => CPU_FAST_MUL_REGS, -- number of fast multiplier register stages
