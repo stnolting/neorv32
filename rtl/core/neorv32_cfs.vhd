@@ -42,7 +42,7 @@ end entity;
 architecture neorv32_cfs_rtl of neorv32_cfs is
 
   -- exemplary CFS interface registers --
-  type cfs_regs_t is array (0 to 3) of std_ulogic_vector(31 downto 0); -- implement 4 read/write registers
+  type cfs_regs_t is array (3 downto 0) of std_ulogic_vector(31 downto 0); -- implement 4 read/write registers
   signal cfs_reg_wr : cfs_regs_t; -- for WRITE accesses
   signal cfs_reg_rd : cfs_regs_t; -- for READ accesses
 

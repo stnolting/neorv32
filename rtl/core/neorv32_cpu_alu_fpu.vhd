@@ -145,8 +145,8 @@ architecture neorv32_cpu_alu_fpu_rtl of neorv32_cpu_alu_fpu is
   signal ctrl_engine : ctrl_engine_t;
 
   -- floating-point operands --
-  type op_data_t  is array (0 to 1) of std_ulogic_vector(31 downto 0);
-  type op_class_t is array (0 to 1) of std_ulogic_vector(9 downto 0);
+  type op_data_t  is array (1 downto 0) of std_ulogic_vector(31 downto 0);
+  type op_class_t is array (1 downto 0) of std_ulogic_vector(9 downto 0);
   type fpu_operands_t is record
     rs1       : std_ulogic_vector(31 downto 0);
     rs1_class : std_ulogic_vector(9 downto 0);
