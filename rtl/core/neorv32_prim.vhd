@@ -45,9 +45,9 @@ end entity;
 
 architecture neorv32_prim_fifo_rtl of neorv32_prim_fifo is
 
-  -- memory core --
+  -- memory core; the actual RAM signal is declared per generate-branch as a shared
+  -- architecture-scope signal would defeat RAM extraction on some synthesis tools --
   type ram_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
-  signal fifo : ram_t;
 
   -- local signals --
   signal rdata : std_ulogic_vector(DWIDTH-1 downto 0);
@@ -113,6 +113,8 @@ begin
   -- more than 1 FIFO entry --
   memory_large:
   if (AWIDTH > 0) generate
+    signal fifo : ram_t;
+  begin
     memory_core: process(clk_i) -- simple dual-port RAM
     begin
       if rising_edge(clk_i) then
@@ -127,6 +129,8 @@ begin
   -- just 1 FIFO entry --
   memory_small:
   if (AWIDTH = 0) generate
+    signal fifo : ram_t;
+  begin
     memory_core: process(clk_i) -- single register
     begin
       if rising_edge(clk_i) then
@@ -181,8 +185,9 @@ end entity;
 
 architecture neorv32_prim_spram_rtl of neorv32_prim_spram is
 
+  -- memory core; the actual RAM signal is declared per generate-branch as a shared
+  -- architecture-scope signal would defeat RAM extraction on some synthesis tools --
   type ram_t is array ((2**AWIDTH)-1 downto 0) of std_ulogic_vector(DWIDTH-1 downto 0);
-  signal spram : ram_t;
   signal rdata : std_ulogic_vector(DWIDTH-1 downto 0);
 
 begin
@@ -191,6 +196,8 @@ begin
   -- -------------------------------------------------------------------------------------------
   memory_large:
   if (AWIDTH > 0) generate
+    signal spram : ram_t;
+  begin
     memory_core: process(clk_i)
     begin
       if rising_edge(clk_i) then
@@ -207,6 +214,8 @@ begin
   -- single entry only --
   memory_small:
   if (AWIDTH = 0) generate
+    signal spram : ram_t;
+  begin
     memory_core: process(clk_i)
     begin
       if rising_edge(clk_i) then

@@ -328,37 +328,37 @@ enum NEORV32_CSR_MSTATUS_enum {
  * mcountinhibitCSR (r/w): Machine counter-inhibit
  **************************************************************************/
 enum NEORV32_CSR_MCOUNTINHIBIT_enum {
-  CSR_MCOUNTINHIBIT_CY    = 0,  /**< mcountinhibit CSR (0): CY - Enable auto-increment of [m]cycle[h]   CSR when set (r/w) */
-  CSR_MCOUNTINHIBIT_IR    = 2,  /**< mcountinhibit CSR (2): IR - Enable auto-increment of [m]instret[h] CSR when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM3  = 3,  /**< mcountinhibit CSR (3):  HPM3  - Enable auto-increment of hpmcnt3[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM4  = 4,  /**< mcountinhibit CSR (4):  HPM4  - Enable auto-increment of hpmcnt4[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM5  = 5,  /**< mcountinhibit CSR (5):  HPM5  - Enable auto-increment of hpmcnt5[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM6  = 6,  /**< mcountinhibit CSR (6):  HPM6  - Enable auto-increment of hpmcnt6[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM7  = 7,  /**< mcountinhibit CSR (7):  HPM7  - Enable auto-increment of hpmcnt7[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM8  = 8,  /**< mcountinhibit CSR (8):  HPM8  - Enable auto-increment of hpmcnt8[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM9  = 9,  /**< mcountinhibit CSR (9):  HPM9  - Enable auto-increment of hpmcnt9[h]  when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM10 = 10, /**< mcountinhibit CSR (10): HPM10 - Enable auto-increment of hpmcnt10[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM11 = 11, /**< mcountinhibit CSR (11): HPM11 - Enable auto-increment of hpmcnt11[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM12 = 12, /**< mcountinhibit CSR (12): HPM12 - Enable auto-increment of hpmcnt12[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM13 = 13, /**< mcountinhibit CSR (13): HPM13 - Enable auto-increment of hpmcnt13[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM14 = 14, /**< mcountinhibit CSR (14): HPM14 - Enable auto-increment of hpmcnt14[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM15 = 15, /**< mcountinhibit CSR (15): HPM15 - Enable auto-increment of hpmcnt15[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM16 = 16, /**< mcountinhibit CSR (16): HPM16 - Enable auto-increment of hpmcnt16[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM17 = 17, /**< mcountinhibit CSR (17): HPM17 - Enable auto-increment of hpmcnt17[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM18 = 18, /**< mcountinhibit CSR (18): HPM18 - Enable auto-increment of hpmcnt18[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM19 = 19, /**< mcountinhibit CSR (19): HPM19 - Enable auto-increment of hpmcnt19[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM20 = 20, /**< mcountinhibit CSR (20): HPM20 - Enable auto-increment of hpmcnt20[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM21 = 21, /**< mcountinhibit CSR (21): HPM21 - Enable auto-increment of hpmcnt21[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM22 = 22, /**< mcountinhibit CSR (22): HPM22 - Enable auto-increment of hpmcnt22[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM23 = 23, /**< mcountinhibit CSR (23): HPM23 - Enable auto-increment of hpmcnt23[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM24 = 24, /**< mcountinhibit CSR (24): HPM24 - Enable auto-increment of hpmcnt24[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM25 = 25, /**< mcountinhibit CSR (25): HPM25 - Enable auto-increment of hpmcnt25[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM26 = 26, /**< mcountinhibit CSR (26): HPM26 - Enable auto-increment of hpmcnt26[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM27 = 27, /**< mcountinhibit CSR (27): HPM27 - Enable auto-increment of hpmcnt27[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM28 = 28, /**< mcountinhibit CSR (28): HPM28 - Enable auto-increment of hpmcnt28[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM29 = 29, /**< mcountinhibit CSR (29): HPM29 - Enable auto-increment of hpmcnt29[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM30 = 30, /**< mcountinhibit CSR (30): HPM30 - Enable auto-increment of hpmcnt30[h] when set (r/w) */
-  CSR_MCOUNTINHIBIT_HPM31 = 31  /**< mcountinhibit CSR (31): HPM31 - Enable auto-increment of hpmcnt31[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_CY    = 0,  /**< mcountinhibit CSR (0):  CY    - Disable auto-increment of [m]cycle[h]   CSR when set (r/w) */
+  CSR_MCOUNTINHIBIT_IR    = 2,  /**< mcountinhibit CSR (2):  IR    - Disable auto-increment of [m]instret[h] CSR when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM3  = 3,  /**< mcountinhibit CSR (3):  HPM3  - Disable auto-increment of hpmcnt3[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM4  = 4,  /**< mcountinhibit CSR (4):  HPM4  - Disable auto-increment of hpmcnt4[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM5  = 5,  /**< mcountinhibit CSR (5):  HPM5  - Disable auto-increment of hpmcnt5[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM6  = 6,  /**< mcountinhibit CSR (6):  HPM6  - Disable auto-increment of hpmcnt6[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM7  = 7,  /**< mcountinhibit CSR (7):  HPM7  - Disable auto-increment of hpmcnt7[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM8  = 8,  /**< mcountinhibit CSR (8):  HPM8  - Disable auto-increment of hpmcnt8[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM9  = 9,  /**< mcountinhibit CSR (9):  HPM9  - Disable auto-increment of hpmcnt9[h]  when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM10 = 10, /**< mcountinhibit CSR (10): HPM10 - Disable auto-increment of hpmcnt10[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM11 = 11, /**< mcountinhibit CSR (11): HPM11 - Disable auto-increment of hpmcnt11[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM12 = 12, /**< mcountinhibit CSR (12): HPM12 - Disable auto-increment of hpmcnt12[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM13 = 13, /**< mcountinhibit CSR (13): HPM13 - Disable auto-increment of hpmcnt13[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM14 = 14, /**< mcountinhibit CSR (14): HPM14 - Disable auto-increment of hpmcnt14[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM15 = 15, /**< mcountinhibit CSR (15): HPM15 - Disable auto-increment of hpmcnt15[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM16 = 16, /**< mcountinhibit CSR (16): HPM16 - Disable auto-increment of hpmcnt16[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM17 = 17, /**< mcountinhibit CSR (17): HPM17 - Disable auto-increment of hpmcnt17[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM18 = 18, /**< mcountinhibit CSR (18): HPM18 - Disable auto-increment of hpmcnt18[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM19 = 19, /**< mcountinhibit CSR (19): HPM19 - Disable auto-increment of hpmcnt19[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM20 = 20, /**< mcountinhibit CSR (20): HPM20 - Disable auto-increment of hpmcnt20[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM21 = 21, /**< mcountinhibit CSR (21): HPM21 - Disable auto-increment of hpmcnt21[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM22 = 22, /**< mcountinhibit CSR (22): HPM22 - Disable auto-increment of hpmcnt22[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM23 = 23, /**< mcountinhibit CSR (23): HPM23 - Disable auto-increment of hpmcnt23[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM24 = 24, /**< mcountinhibit CSR (24): HPM24 - Disable auto-increment of hpmcnt24[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM25 = 25, /**< mcountinhibit CSR (25): HPM25 - Disable auto-increment of hpmcnt25[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM26 = 26, /**< mcountinhibit CSR (26): HPM26 - Disable auto-increment of hpmcnt26[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM27 = 27, /**< mcountinhibit CSR (27): HPM27 - Disable auto-increment of hpmcnt27[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM28 = 28, /**< mcountinhibit CSR (28): HPM28 - Disable auto-increment of hpmcnt28[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM29 = 29, /**< mcountinhibit CSR (29): HPM29 - Disable auto-increment of hpmcnt29[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM30 = 30, /**< mcountinhibit CSR (30): HPM30 - Disable auto-increment of hpmcnt30[h] when set (r/w) */
+  CSR_MCOUNTINHIBIT_HPM31 = 31  /**< mcountinhibit CSR (31): HPM31 - Disable auto-increment of hpmcnt31[h] when set (r/w) */
 };
 
 /**********************************************************************//**

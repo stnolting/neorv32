@@ -1,7 +1,7 @@
 // ================================================================================ //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
-// Copyright (c) 2020 - 2025 Stephan Nolting. All rights reserved.                  //
+// Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  //
 // Licensed under the BSD-3-Clause license, see LICENSE for details.                //
 // SPDX-License-Identifier: BSD-3-Clause                                            //
 // ================================================================================ //
@@ -83,7 +83,7 @@ inline uint32_t __attribute__((always_inline)) neorv32_slink_get(void) {
  * Check if last RX word has "end-of-stream" delimiter.
  *
  * @note This function must be called AFTER reading the actual data word
- * using #neorv32_slink_put(void).
+ * using #neorv32_slink_get(void).
  *
  * @return Zero if not end of stream, non-zero if end of stream.
  **************************************************************************/
@@ -97,7 +97,7 @@ inline int __attribute__((always_inline)) neorv32_slink_check_last(void) {
  * Set TX link routing destination.
  *
  * @note This function must be called BEFORE sending the actual data word
- * using #neorv32_slink_get(void).
+ * using #neorv32_slink_put(void).
  *
  * @param[in] dst Routing destination ID (4-bit, LSB-aligned).
  **************************************************************************/

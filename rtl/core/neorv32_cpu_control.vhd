@@ -272,7 +272,7 @@ begin
 
       when S_DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
       -- ------------------------------------------------------------
-        -- prepare update of next-PC (pc2) in S_EXECUTE state --
+        -- prepare PC increment (pc2 in S_EXECUTE state) --
         ctrl_nxt.alu_opa_mux <= '1'; -- opa = current PC
         ctrl_nxt.alu_opb_mux <= '1'; -- opb = immediate = +2/4
         if RISCV_ISA_C and (frontend_i.compr = '1') then
@@ -284,7 +284,7 @@ begin
         if (env_pend = '1') or (exc_fire = '1') then -- pending trap or pending exception (fast)
           exec_nxt.state <= S_TRAP_ENTER;
         elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
-          instr_be  <= frontend_i.fault; -- access fault during instruction fetch
+          instr_be       <= frontend_i.fault; -- access fault during instruction fetch
           exec_nxt.ci    <= frontend_i.compr; -- this is a decompressed instruction
           exec_nxt.ir    <= frontend_i.i32; -- actual instruction word
           exec_nxt.irc   <= frontend_i.i16; -- original instruction word
@@ -459,11 +459,11 @@ begin
         if (or_reduce_f(exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- non-illegal instruction
           if (funct3_v = funct3_env_c) then -- environment instruction
             case exec.ir(instr_imm12_lsb_c+2 downto instr_imm12_lsb_c) is -- three LSBs are sufficient here
-              when "000"  => ecall          <= '1'; -- ecall
-              when "001"  => ebreak         <= '1'; -- ebreak
-              when "010"  => exec_nxt.state <= S_TRAP_EXIT; -- xret
-              when "101"  => exec_nxt.state <= S_SLEEP; -- wfi
-              when others => exec_nxt.state <= S_DISPATCH; -- illegal or CSR operation
+              when "000"  => ecall          <= '1';         -- ecall
+              when "001"  => ebreak         <= '1';         -- ebreak
+              when "010"  => exec_nxt.state <= S_TRAP_EXIT; -- mret/dret
+              when "101"  => exec_nxt.state <= S_SLEEP;     -- wfi
+              when others => exec_nxt.state <= S_DISPATCH;  -- illegal or CSR operation
             end case;
           elsif (funct3_v /= funct3_zimop_c) and -- write to CSR if not may-be-operation
                 ((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or (exec.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000")) then
@@ -585,9 +585,9 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zfinx);
 
       -- machine trap setup/handling, environment/information registers, etc. --
-      when csr_mstatus_c       | csr_mstatush_c  | csr_misa_c    | csr_mie_c    | csr_mtvec_c  | csr_mhartid_c    |
-           csr_mscratch_c      | csr_mepc_c      | csr_mcause_c  | csr_mip_c    | csr_mtval_c  | csr_mconfigptr_c |
-           csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mxisa_c  | csr_mxisah_c =>
+      when csr_mstatus_c       | csr_mstatush_c  | csr_misa_c    | csr_mie_c    | csr_mtvec_c | csr_mhartid_c    |
+           csr_mscratch_c      | csr_mepc_c      | csr_mcause_c  | csr_mip_c    | csr_mtval_c | csr_mconfigptr_c |
+           csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mxisa_c | csr_mxisah_c =>
         csr_valid(2) <= '1';
 
       -- machine-controlled user-mode CSRs --
@@ -1059,7 +1059,7 @@ begin
 
           when csr_mtvec_c => -- machine trap-handler base + mode
             if (csr_wdata(1 downto 0) = "01") then -- vectored mode
-              csr.mtvec <= csr_wdata(31 downto 7) & "00000" & "01";
+              csr.mtvec <= csr_wdata(31 downto 7) & "00000" & "01"; -- enforce alignment
             else -- direct mode (fallback for reserved modes)
               csr.mtvec <= csr_wdata(31 downto 2) & "00";
             end if;

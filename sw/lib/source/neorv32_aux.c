@@ -31,14 +31,14 @@ void neorv32_aux_delay_ms(uint32_t clock_hz, uint32_t time_ms) {
   uint32_t iterations = (uint32_t)(wait_cycles >> 4);
 
   asm volatile (
-    " __neorv32_aux_delay_ms_start:                   \n"
-    " beq  %[cnt_r], zero, __neorv32_aux_delay_ms_end \n" // 3 cycles (if not taken)
-    " bne  zero,     zero, __neorv32_aux_delay_ms_end \n" // 3 cycles (never taken)
-    " addi %[cnt_w], %[cnt_r], -1                     \n" // 2 cycles
-    " nop                                             \n" // 2 cycles
-    " j    __neorv32_aux_delay_ms_start               \n" // 6 cycles
-    " __neorv32_aux_delay_ms_end:                     \n"
-    : [cnt_w] "=r" (iterations) : [cnt_r] "r" (iterations)
+    " 1:                      \n"
+    " beq  %[cnt], zero,   2f \n" // 3 cycles (if not taken)
+    " bne  zero,   zero,   2f \n" // 3 cycles (never taken)
+    " addi %[cnt], %[cnt], -1 \n" // 2 cycles
+    " nop                     \n" // 2 cycles
+    " j    1b                 \n" // 6 cycles
+    " 2:                      \n"
+    : [cnt] "+r" (iterations) : : "memory"
   );
 }
 
@@ -486,7 +486,7 @@ void neorv32_aux_print_hw_config(void) {
     neorv32_uart0_printf(", uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
   }
   else {
-    neorv32_uart0_printf("none");
+    neorv32_uart0_printf("none\n");
   }
 
   neorv32_uart0_printf("CPU D-cache:         ");
@@ -501,7 +501,7 @@ void neorv32_aux_print_hw_config(void) {
     neorv32_uart0_printf(", uncached: 0x%x..0x%x\n", uncached_beg, uncached_end);
   }
   else {
-    neorv32_uart0_printf("none");
+    neorv32_uart0_printf("none\n");
   }
 
   // serial memory controller
@@ -529,7 +529,7 @@ void neorv32_aux_print_hw_config(void) {
   }
 
   // bus timeouts
-  neorv32_uart0_printf("Bus timeout (int):   %u cycles\n", neorv32_sysinfo_get_extbustimeout());
+  neorv32_uart0_printf("Bus timeout (int):   %u cycles\n", neorv32_sysinfo_get_intbustimeout());
   neorv32_uart0_printf("Bus timeout (ext):   %u cycles\n", neorv32_sysinfo_get_extbustimeout());
 
   // peripherals

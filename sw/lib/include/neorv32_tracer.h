@@ -66,15 +66,15 @@ uint32_t neorv32_tracer_data_get_dst(void);
 /**********************************************************************//**
  * Start tracing.
  **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_tracer_start(void) {
+static inline void __attribute__ ((always_inline)) neorv32_tracer_start(void) {
   __MMREG32_BSET(NEORV32_TRACER->CTRL, 1 << TRACER_CTRL_START);
 }
 
 /**********************************************************************//**
  * Stop tracing.
  **************************************************************************/
-inline void __attribute__ ((always_inline)) neorv32_tracer_stop(void) {
-  __MMREG32_BSET(NEORV32_TRACER->CTRL, 11 << TRACER_CTRL_STOP);
+static inline void __attribute__ ((always_inline)) neorv32_tracer_stop(void) {
+  __MMREG32_BSET(NEORV32_TRACER->CTRL, 1 << TRACER_CTRL_STOP);
 }
 
 #endif // NEORV32_TRACER_H
