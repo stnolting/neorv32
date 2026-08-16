@@ -880,7 +880,7 @@ begin
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
 
   -- debug halt request interrupt? --
-  irq_fire(1) <= irq_buf(irq_db_halt_c);
+  irq_fire(1) <= irq_buf(irq_db_halt_c) when RISCV_ISA_Sdext else '0';
 
 
   -- Trap Priority Encoder ------------------------------------------------------------------
@@ -897,10 +897,10 @@ begin
     trap_saf_c     when (exc_buf(exc_saccess_c) = '1') else -- store access fault
     trap_laf_c     when (exc_buf(exc_laccess_c) = '1') else -- load access fault
     -- standard RISC-V debug-mode traps --
-    trap_db_halt_c when (irq_buf(irq_db_halt_c) = '1') else -- external halt request
-    trap_db_trig_c when (exc_buf(exc_db_trig_c) = '1') else -- hardware trigger
-    trap_db_brkp_c when (exc_buf(exc_db_brkp_c) = '1') else -- breakpoint
-    trap_db_step_c when (exc_buf(exc_db_step_c) = '1') else -- single stepping
+    trap_db_halt_c when (irq_buf(irq_db_halt_c) = '1') and RISCV_ISA_Sdext  else -- external halt request
+    trap_db_trig_c when (exc_buf(exc_db_trig_c) = '1') and RISCV_ISA_Sdtrig else -- hardware trigger
+    trap_db_brkp_c when (exc_buf(exc_db_brkp_c) = '1') and RISCV_ISA_Sdext  else -- breakpoint
+    trap_db_step_c when (exc_buf(exc_db_step_c) = '1') and RISCV_ISA_Sdext  else -- single stepping
     -- NEORV32-specific fast interrupts --
     trap_firq0_c   when (irq_buf(irq_firq_0_c)  = '1') else -- fast interrupt channel 0
     trap_firq1_c   when (irq_buf(irq_firq_1_c)  = '1') else -- fast interrupt channel 1
