@@ -94,10 +94,10 @@ begin
 
   -- Comparator Unit ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cmp_rs1 <= (rs1_i(rs1_i'left) and (not ctrl_i.alu_unsigned)) & rs1_i; -- sign-extend
-  cmp_rs2 <= (rs2_i(rs2_i'left) and (not ctrl_i.alu_unsigned)) & rs2_i; -- sign-extend
-  cmp(0) <= '1' when (rs1_i = rs2_i) else '0';
-  cmp(1) <= '1' when (signed(cmp_rs1) < signed(cmp_rs2)) else '0'; -- signed or unsigned comparison
+  cmp_rs1 <= (rs1_i(31) xnor ctrl_i.alu_unsigned) & rs1_i(30 downto 0); -- invert MSB for signed comparison
+  cmp_rs2 <= (rs2_i(31) xnor ctrl_i.alu_unsigned) & rs2_i(30 downto 0); -- invert MSB for signed comparison
+  cmp_lt  <= '1' when (unsigned(cmp_rs1) < unsigned(cmp_rs2)) else '0';
+  cmp_eq  <= '1' when (rs1_i = rs2_i) else '0';
 
   zibi_enabled:
   if RISCV_ISA_Zibi generate
