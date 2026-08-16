@@ -510,7 +510,6 @@ begin
     port map (
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
-      enable_i => '1',
       clk_en_o => clk_gen
     );
 
