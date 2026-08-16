@@ -433,9 +433,11 @@ begin
           instr_ma     <= alu_add_i(1) and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination misaligned?
           exec_nxt.pc2 <= alu_add_i(31 downto 1) & '0';
         end if;
-        ctrl_nxt.pc_ret   <= exec.pc2(31 downto 1) & '0'; -- output return address
-        ctrl_nxt.rf_wb_en <= exec.ir(instr_opcode_lsb_c+2); -- save return address if link operation (won't happen if exception)
-        exec_nxt.state    <= S_DISPATCH;
+        if (exec.ir(instr_opcode_lsb_c+2) = '1') then -- is link operation
+          ctrl_nxt.pc_ret   <= exec.pc2(31 downto 1) & '0'; -- output return address
+          ctrl_nxt.rf_wb_en <= '1'; -- save return address (won't happen if exception)
+        end if;
+        exec_nxt.state <= S_DISPATCH;
 
       when S_MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
