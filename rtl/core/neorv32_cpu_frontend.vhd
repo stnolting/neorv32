@@ -45,21 +45,19 @@ end entity;
 
 architecture neorv32_cpu_frontend_rtl of neorv32_cpu_frontend is
 
+  -- heart ID --
+  constant hid_c : std_ulogic_vector(1 downto 0) := std_ulogic_vector(to_unsigned(HART_ID, 2));
+
   -- instruction prefetch buffer --
   component neorv32_cpu_frontend_ipb
-  generic (
-    AWIDTH : natural;
-    DWIDTH : natural
-  );
   port (
     clk_i   : in  std_ulogic;
-    rstn_i  : in  std_ulogic;
     clear_i : in  std_ulogic;
-    wdata_i : in  std_ulogic_vector(DWIDTH-1 downto 0);
+    wdata_i : in  std_ulogic_vector(16 downto 0);
     we_i    : in  std_ulogic;
     free_o  : out std_ulogic;
     re_i    : in  std_ulogic;
-    rdata_o : out std_ulogic_vector(DWIDTH-1 downto 0);
+    rdata_o : out std_ulogic_vector(16 downto 0);
     avail_o : out std_ulogic
   );
   end component;
@@ -130,8 +128,7 @@ begin
         -- ------------------------------------------------------------
           fetch.reset <= restart; -- buffer restart request
           if (ibus_rsp_i.ack = '1') then -- wait for bus response
-            fetch.addr    <= std_ulogic_vector(unsigned(fetch.addr) + 4); -- next word
-            fetch.addr(1) <= '0'; -- (re-)align to 32-bit
+            fetch.addr <= std_ulogic_vector(unsigned(fetch.addr(31 downto 2)) + 1) & "00"; -- next (re-)aligned word
             if (restart = '1') then -- restart request due to branch
               fetch.state <= S_RESTART;
             else -- request next linear instruction word
@@ -151,7 +148,7 @@ begin
   pmp_priv_o <= fetch.priv;
 
   -- instruction bus request --
-  ibus_req_o.meta  <= std_ulogic_vector(to_unsigned(HART_ID, 2)) & fetch.debug & fetch.priv & '1';
+  ibus_req_o.meta  <= hid_c & fetch.debug & fetch.priv & '1';
   ibus_req_o.addr  <= fetch.addr(31 downto 2) & "00"; -- word aligned
   ibus_req_o.stb   <= '1' when (fetch.state = S_REQUEST) and (ipb_free = "11") else '0';
   ibus_req_o.data  <= (others => '0'); -- read-only
@@ -170,28 +167,23 @@ begin
   ipb_we(0) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') and ((fetch.addr(1) = '0') or (not RISCV_C)) else '0';
   ipb_we(1) <= '1' when (fetch.state = S_PENDING) and (ibus_rsp_i.ack = '1') else '0';
 
-  -- Instruction Prefetch Buffer (FIFO) -----------------------------------------------------
+  -- Instruction Prefetch Buffer ------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   prefetch_buffer:
   for i in 0 to 1 generate
     ipb_inst: neorv32_cpu_frontend_ipb
-    generic map (
-      AWIDTH => 1, -- 1 address bit = 2 entries
-      DWIDTH => 17 -- error status & instruction half-word data
-    )
     port map (
       -- global control --
-      clk_i   => clk_i,        -- clock, rising edge
-      rstn_i  => rstn_i,       -- async reset, low-active
-      clear_i => restart,      -- sync reset, high-active
+      clk_i   => clk_i,
+      clear_i => restart,
       -- write port --
-      wdata_i => ipb_wdata(i), -- write data
-      we_i    => ipb_we(i),    -- write enable
-      free_o  => ipb_free(i),  -- at least one entry is free when set
+      wdata_i => ipb_wdata(i),
+      we_i    => ipb_we(i),
+      free_o  => ipb_free(i),
       -- read port --
-      re_i    => ipb_re(i),    -- read enable
-      rdata_o => ipb_rdata(i), -- read data
-      avail_o => ipb_avail(i)  -- data available when set
+      re_i    => ipb_re(i),
+      rdata_o => ipb_rdata(i),
+      avail_o => ipb_avail(i)
     );
   end generate;
 
@@ -220,14 +212,12 @@ begin
 
     -- Issue Engine FSM -----------------------------------------------------------------------
     -- -------------------------------------------------------------------------------------------
-    issue_fsm_sync: process(rstn_i, clk_i)
+    issue_fsm_sync: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        align_q <= '0'; -- start aligned after reset
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if (fetch.reset = '1') then
-          align_q <= ctrl_i.pc_nxt(1); -- branch to unaligned address?
-        elsif (ipb_re(0) = '1') or (ipb_re(1) = '1') then
+          align_q <= ctrl_i.pc_nxt(1); -- restart at unaligned address?
+        elsif (ipb_re /= "00") then
           align_q <= (align_q and (not align_clr)) or align_set; -- alignment "RS flip-flop"
         end if;
       end if;
@@ -242,14 +232,12 @@ begin
       if (align_q = '0') then
         if (ipb_rdata(0)(1 downto 0) /= "11") then -- compressed, consume IPB(0) entry
           align_set        <= ipb_avail(0); -- start of next instruction word is NOT 32-bit-aligned
-          issue_valid(0)   <= ipb_avail(0);
-          issue_valid(1)   <= '0';
+          issue_valid      <= '0' & ipb_avail(0);
           frontend_o.fault <= ipb_rdata(0)(16);
           frontend_o.i32   <= cmd32;
           frontend_o.compr <= '1';
         else -- aligned uncompressed, consume both IPB entries
-          issue_valid(0)   <= ipb_avail(1) and ipb_avail(0);
-          issue_valid(1)   <= ipb_avail(1) and ipb_avail(0);
+          issue_valid      <= (others => (ipb_avail(1) and ipb_avail(0)));
           frontend_o.fault <= ipb_rdata(1)(16) or ipb_rdata(0)(16);
           frontend_o.i32   <= ipb_rdata(1)(15 downto 0) & ipb_rdata(0)(15 downto 0);
           frontend_o.compr <= '0';
@@ -258,14 +246,12 @@ begin
       else
         if (ipb_rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
           align_clr        <= ipb_avail(1); -- start of next instruction word IS 32-bit-aligned again
-          issue_valid(0)   <= '0';
-          issue_valid(1)   <= ipb_avail(1);
+          issue_valid      <= ipb_avail(1) & '0';
           frontend_o.fault <= ipb_rdata(1)(16);
           frontend_o.i32   <= cmd32;
           frontend_o.compr <= '1';
         else -- unaligned uncompressed, consume both IPB entries
-          issue_valid(0)   <= ipb_avail(0) and ipb_avail(1);
-          issue_valid(1)   <= ipb_avail(0) and ipb_avail(1);
+          issue_valid      <= (others => (ipb_avail(0) and ipb_avail(1)));
           frontend_o.fault <= ipb_rdata(0)(16) or ipb_rdata(1)(16);
           frontend_o.i32   <= ipb_rdata(0)(15 downto 0) & ipb_rdata(1)(15 downto 0);
           frontend_o.compr <= '0';
@@ -277,8 +263,7 @@ begin
     frontend_o.valid <= issue_valid(1) or issue_valid(0);
 
     -- IPB read access --
-    ipb_re(0) <= issue_valid(0) and ctrl_i.if_ready;
-    ipb_re(1) <= issue_valid(1) and ctrl_i.if_ready;
+    ipb_re <= issue_valid when (ctrl_i.if_ready = '1') else "00";
 
   end generate; -- /issue_enabled
 
@@ -303,7 +288,7 @@ end architecture;
 
 
 -- ================================================================================ --
--- NEORV32 CPU - Instruction Prefetch Buffer                                        --
+-- NEORV32 CPU - Instruction Prefetch Buffer (FIFO)                                 --
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
@@ -320,63 +305,59 @@ library neorv32;
 use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_frontend_ipb is
-  generic (
-    AWIDTH : natural; -- address width
-    DWIDTH : natural  -- data width
-  );
   port (
     -- global control --
     clk_i   : in  std_ulogic; -- clock, rising edge
-    rstn_i  : in  std_ulogic; -- async reset, low-active
     clear_i : in  std_ulogic; -- sync reset, high-active
     -- write port --
-    wdata_i : in  std_ulogic_vector(DWIDTH-1 downto 0); -- write data
+    wdata_i : in  std_ulogic_vector(16 downto 0); -- write data
     we_i    : in  std_ulogic; -- write enable
     free_o  : out std_ulogic; -- at least one entry is free when set
     -- read port --
     re_i    : in  std_ulogic; -- read enable
-    rdata_o : out std_ulogic_vector(DWIDTH-1 downto 0); -- read data
+    rdata_o : out std_ulogic_vector(16 downto 0); -- read data
     avail_o : out std_ulogic  -- data available when set
   );
 end entity;
 
 architecture neorv32_cpu_frontend_ipb_rtl of neorv32_cpu_frontend_ipb is
 
+  -- IPB depth --
+  constant awidth_c : natural := 1; -- 1 address bit = 2 entries
+
   -- pointers and status --
-  signal w_pnt, r_pnt : std_ulogic_vector(AWIDTH downto 0);
+  signal w_pnt, r_pnt : std_ulogic_vector(awidth_c downto 0);
   signal match : std_ulogic;
 
   -- memory core --
-  type ipb_t is array (0 to (2**AWIDTH)-1) of std_ulogic_vector(DWIDTH-1 downto 0);
+  type ipb_t is array (0 to (2**awidth_c)-1) of std_ulogic_vector(16 downto 0);
   signal ipb : ipb_t;
 
 begin
 
   -- Pointers -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  pointer_reg: process(rstn_i, clk_i)
+  pointer_reg: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      w_pnt <= (others => '0');
-      r_pnt <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (clear_i = '1') then
         w_pnt <= (others => '0');
-      elsif (we_i = '1') then
-        w_pnt <= std_ulogic_vector(unsigned(w_pnt) + 1);
-      end if;
-      if (clear_i = '1') then
         r_pnt <= (others => '0');
-      elsif (re_i = '1') then
-        r_pnt <= std_ulogic_vector(unsigned(r_pnt) + 1);
+      else
+        if (we_i = '1') then
+          w_pnt <= std_ulogic_vector(unsigned(w_pnt) + 1);
+        end if;
+        if (re_i = '1') then
+          r_pnt <= std_ulogic_vector(unsigned(r_pnt) + 1);
+        end if;
       end if;
     end if;
   end process;
 
   -- status --
-  match   <= '1' when (r_pnt(AWIDTH-1 downto 0) = w_pnt(AWIDTH-1 downto 0)) else '0';
-  free_o  <= '0' when (r_pnt(AWIDTH) /= w_pnt(AWIDTH)) and (match = '1') else '1';
-  avail_o <= '0' when (r_pnt(AWIDTH)  = w_pnt(AWIDTH)) and (match = '1') else '1';
+  match   <= '1' when (r_pnt(awidth_c-1 downto 0) = w_pnt(awidth_c-1 downto 0)) else '0';
+  free_o  <= '0' when (r_pnt(awidth_c) /= w_pnt(awidth_c)) and (match = '1') else '1';
+  avail_o <= '0' when (r_pnt(awidth_c)  = w_pnt(awidth_c)) and (match = '1') else '1';
 
   -- Memory Core ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -384,12 +365,12 @@ begin
   begin
     if rising_edge(clk_i) then
       if (we_i = '1') then
-        ipb(to_integer(unsigned(w_pnt(AWIDTH-1 downto 0)))) <= wdata_i;
+        ipb(to_integer(unsigned(w_pnt(awidth_c-1 downto 0)))) <= wdata_i;
       end if;
     end if;
   end process;
 
-  -- asynchronous(!) read --
-  rdata_o <= ipb(to_integer(unsigned(r_pnt(AWIDTH-1 downto 0))));
+  -- asynchronous read --
+  rdata_o <= ipb(to_integer(unsigned(r_pnt(awidth_c-1 downto 0))));
 
 end architecture;
