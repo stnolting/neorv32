@@ -77,10 +77,9 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
     end if;
   end function;
 
-  -- wiring --
-  signal opa, opb, cp_res : std_ulogic_vector(31 downto 0);
-  signal cmp_rs1, cmp_rs2, opa_x, opb_x, addsub : std_ulogic_vector(32 downto 0);
-  signal cmp : std_ulogic_vector(1 downto 0);
+  -- ALU core --
+  signal cmp_rs1, cmp_rs2, opa, opb, addsub, cp_res : std_ulogic_vector(31 downto 0);
+  signal cmp_eq, cmp_lt, slt : std_ulogic;
 
   -- co-processor interface --
   type cp_data_t  is array (6 downto 0) of std_ulogic_vector(31 downto 0);
@@ -101,13 +100,13 @@ begin
 
   zibi_enabled:
   if RISCV_ISA_Zibi generate
-    cmp_o(0) <= zibi_cmp_f(ctrl_i.rf_rs2, rs1_i) when (ctrl_i.ir_funct3(2 downto 1) = "01") else cmp(0);
-    cmp_o(1) <= cmp(1);
+    cmp_o(0) <= zibi_cmp_f(ctrl_i.rf_rs2, rs1_i) when (ctrl_i.ir_funct3(2 downto 1) = "01") else cmp_eq;
+    cmp_o(1) <= cmp_lt;
   end generate;
 
   zibi_disabled:
   if not RISCV_ISA_Zibi generate
-    cmp_o <= cmp;
+    cmp_o <= cmp_lt & cmp_eq;
   end generate;
 
   -- ALU Core -------------------------------------------------------------------------------
@@ -216,7 +215,7 @@ begin
       rstn_i  => rstn_i,          -- global reset, low-active, async
       ctrl_i  => ctrl_i,          -- main control bus
       -- data input --
-      less_i  => cmp(1),          -- compare less
+      less_i  => cmp_lt,          -- compare less
       rs1_i   => rs1_i,           -- register source 1
       rs2_i   => rs2_i,           -- register source 2
       shamt_i => opb(4 downto 0), -- shift amount
@@ -248,8 +247,8 @@ begin
       csr_wdata_i => ctrl_i.csr_wdata,            -- write data
       csr_rdata_o => fpu_csr_rd,                  -- read data
       -- data input --
-      equal_i     => cmp(0),                      -- compare equal
-      less_i      => cmp(1),                      -- compare less
+      equal_i     => cmp_eq,                      -- compare equal
+      less_i      => cmp_lt,                      -- compare less
       rs1_i       => rs1_i,                       -- register source 1
       rs2_i       => rs2_i,                       -- register source 2
       -- result and status --
