@@ -112,14 +112,14 @@ begin
 
   -- ALU Core -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  alu_core: process(ctrl_i, addsub, cp_res, opb, rs1_i)
+  alu_core: process(ctrl_i, addsub, cp_res, slt, opb, rs1_i)
   begin
     res_o <= (others => '0');
     case ctrl_i.alu_op is
       when alu_op_zero_c => res_o <= (others => '0');
-      when alu_op_add_c  => res_o <= addsub(31 downto 0);
+      when alu_op_add_c  => res_o <= addsub;
       when alu_op_cp_c   => res_o <= cp_res;
-      when alu_op_slt_c  => res_o(0) <= addsub(addsub'left); -- carry/borrow
+      when alu_op_slt_c  => res_o <= x"0000000" & "000" & slt;
       when alu_op_movb_c => res_o <= opb;
       when alu_op_xor_c  => res_o <= opb xor rs1_i;
       when alu_op_or_c   => res_o <= opb or  rs1_i;
@@ -129,15 +129,14 @@ begin
   end process;
 
   -- operands --
-  opa   <= ctrl_i.pc_cur  when (ctrl_i.alu_opa_mux = '1') else rs1_i;
-  opb   <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i;
-  opa_x <= (opa(opa'left) and (not ctrl_i.alu_unsigned)) & opa; -- sign-extend
-  opb_x <= (opb(opb'left) and (not ctrl_i.alu_unsigned)) & opb; -- sign-extend
+  opa <= ctrl_i.pc_cur  when (ctrl_i.alu_opa_mux = '1') else rs1_i;
+  opb <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i;
 
   -- adder/subtractor
-  add_o  <= addsub(31 downto 0); -- direct output
-  addsub <= std_ulogic_vector(unsigned(opa_x) - unsigned(opb_x)) when (ctrl_i.alu_sub = '1') else
-            std_ulogic_vector(unsigned(opa_x) + unsigned(opb_x));
+  addsub <= std_ulogic_vector(unsigned(opa) - unsigned(opb)) when (ctrl_i.alu_sub = '1') else
+            std_ulogic_vector(unsigned(opa) + unsigned(opb));
+  add_o  <= addsub; -- direct output
+  slt    <= addsub(31) when (opa(31) = opb(31)) else opa(31) when (ctrl_i.alu_unsigned = '0') else opb(31);
 
   -- **************************************************************************************************************************
   -- Co-Processors
