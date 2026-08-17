@@ -301,7 +301,7 @@ char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) {
  * @note This function is blocking.
  * @note No trailing line break is added; use #neorv32_uart_println if you need one
  * (e.g. when composing a single line from several calls).
- * @warning "/n" line breaks are automatically converted to "/r/n".
+ * @warning "\\n" line breaks are automatically converted to "\\r\\n".
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] s Pointer to string.
