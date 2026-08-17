@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130405"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130406"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -770,13 +770,6 @@ package neorv32_package is
   constant alu_op_xor_c  : std_ulogic_vector(2 downto 0) := "101"; -- result <= A xor B
   constant alu_op_or_c   : std_ulogic_vector(2 downto 0) := "110"; -- result <= A or B
   constant alu_op_and_c  : std_ulogic_vector(2 downto 0) := "111"; -- result <= A and B
-
-  -- Register File Input Select -------------------------------------------------------------
-  -- -------------------------------------------------------------------------------------------
-  constant rf_mux_alu_c : std_ulogic_vector(1 downto 0) := "00"; -- register file <= alu result
-  constant rf_mux_mem_c : std_ulogic_vector(1 downto 0) := "01"; -- register file <= memory read data
-  constant rf_mux_csr_c : std_ulogic_vector(1 downto 0) := "10"; -- register file <= CSR read data
-  constant rf_mux_ret_c : std_ulogic_vector(1 downto 0) := "11"; -- register file <= link-PC (return address)
 
   -- Trap ID Codes --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------

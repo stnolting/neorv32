@@ -433,9 +433,11 @@ begin
           instr_ma     <= alu_add_i(1) and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination misaligned?
           exec_nxt.pc2 <= alu_add_i(31 downto 1) & '0';
         end if;
-        ctrl_nxt.pc_ret   <= exec.pc2(31 downto 1) & '0'; -- output return address
-        ctrl_nxt.rf_wb_en <= exec.ir(instr_opcode_lsb_c+2); -- save return address if link operation (won't happen if exception)
-        exec_nxt.state    <= S_DISPATCH;
+        if (exec.ir(instr_opcode_lsb_c+2) = '1') then -- is link operation
+          ctrl_nxt.pc_ret   <= exec.pc2(31 downto 1) & '0'; -- output return address
+          ctrl_nxt.rf_wb_en <= '1'; -- save return address (won't happen if exception)
+        end if;
+        exec_nxt.state <= S_DISPATCH;
 
       when S_MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
@@ -878,7 +880,7 @@ begin
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
 
   -- debug halt request interrupt? --
-  irq_fire(1) <= irq_buf(irq_db_halt_c);
+  irq_fire(1) <= irq_buf(irq_db_halt_c) when RISCV_ISA_Sdext else '0';
 
 
   -- Trap Priority Encoder ------------------------------------------------------------------
@@ -895,10 +897,10 @@ begin
     trap_saf_c     when (exc_buf(exc_saccess_c) = '1') else -- store access fault
     trap_laf_c     when (exc_buf(exc_laccess_c) = '1') else -- load access fault
     -- standard RISC-V debug-mode traps --
-    trap_db_halt_c when (irq_buf(irq_db_halt_c) = '1') else -- external halt request
-    trap_db_trig_c when (exc_buf(exc_db_trig_c) = '1') else -- hardware trigger
-    trap_db_brkp_c when (exc_buf(exc_db_brkp_c) = '1') else -- breakpoint
-    trap_db_step_c when (exc_buf(exc_db_step_c) = '1') else -- single stepping
+    trap_db_halt_c when (irq_buf(irq_db_halt_c) = '1') and RISCV_ISA_Sdext  else -- external halt request
+    trap_db_trig_c when (exc_buf(exc_db_trig_c) = '1') and RISCV_ISA_Sdtrig else -- hardware trigger
+    trap_db_brkp_c when (exc_buf(exc_db_brkp_c) = '1') and RISCV_ISA_Sdext  else -- breakpoint
+    trap_db_step_c when (exc_buf(exc_db_step_c) = '1') and RISCV_ISA_Sdext  else -- single stepping
     -- NEORV32-specific fast interrupts --
     trap_firq0_c   when (irq_buf(irq_firq_0_c)  = '1') else -- fast interrupt channel 0
     trap_firq1_c   when (irq_buf(irq_firq_1_c)  = '1') else -- fast interrupt channel 1

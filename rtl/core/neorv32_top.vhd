@@ -348,7 +348,7 @@ architecture neorv32_top_rtl of neorv32_top is
   -- CPU memory ordering (cache synchronization) --
   signal cpu_i_fence, cpu_d_fence, icache_sync, dcache_sync : std_ulogic_vector(num_cores_c-1 downto 0);
 
-  -- bus: CPU core complex --
+  -- bus: core complex --
   type core_complex_req_t is array (0 to num_cores_c-1) of bus_req_t;
   type core_complex_rsp_t is array (0 to num_cores_c-1) of bus_rsp_t;
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req : core_complex_req_t;
@@ -380,7 +380,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cpu_firq : std_ulogic_vector(15 downto 0);
   signal mti, msi : std_ulogic_vector(num_cores_c-1 downto 0);
 
-  -- system time (mtime) --
+  -- system time --
   signal mtime    : std_ulogic_vector(63 downto 0);
   signal mtime_lo : std_ulogic_vector(31 downto 0);
 
@@ -510,7 +510,6 @@ begin
     port map (
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
-      enable_i => '1',
       clk_en_o => clk_gen
     );
 
