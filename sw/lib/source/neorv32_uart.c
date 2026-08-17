@@ -299,7 +299,9 @@ char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) {
  * Print string (zero-terminated) via UART.
  *
  * @note This function is blocking.
- * @warning "/n" line breaks are automatically converted to "/r/n".
+ * @note No trailing line break is added; use #neorv32_uart_println if you need one
+ * (e.g. when composing a single line from several calls).
+ * @warning "\\n" line breaks are automatically converted to "\\r\\n".
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] s Pointer to string.
@@ -317,6 +319,22 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
     neorv32_uart_putc(UARTx, c);
   }
 #endif
+}
+
+
+/**********************************************************************//**
+ * Print string (zero-terminated) via UART and append a trailing line break.
+ *
+ * @note This function is blocking.
+ * @warning "/n" line breaks are automatically converted to "/r/n".
+ *
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
+ * @param[in] s Pointer to string.
+ **************************************************************************/
+void neorv32_uart_println(neorv32_uart_t *UARTx, const char *s) {
+
+  neorv32_uart_puts(UARTx, s);
+  neorv32_uart_puts(UARTx, "\n");
 }
 
 
