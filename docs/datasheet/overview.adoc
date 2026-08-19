@@ -175,10 +175,9 @@ rtl/core
 │
 ├─ neorv32_bootrom.vhd           - Bootloader ROM
 ├─ neorv32_bootrom_image.vhd     - Bootloader ROM initialization image
-├─ neorv32_bootrom_rom.vhd       - Bootloader ROM primitive wrapper
 ├─ neorv32_bus.vhd               - SoC bus infrastructure modules
 ├─ neorv32_cache.vhd             - Generic cache module
-├─ neorv32_cache_ram.vhd         - Cache tag and data RAM primitive wrapper
+├─ neorv32_cache_ram.vhd         - Cache tag and data RAM
 ├─ neorv32_cfs.vhd               - Custom functions subsystem
 ├─ neorv32_clint.vhd             - Core local interruptor
 ├─ neorv32_cpu.vhd               - NEORV32 CPU TOP ENTITY
@@ -204,13 +203,10 @@ rtl/core
 ├─ neorv32_debug_dtm.vhd         - On-chip debugger: debug transfer module
 ├─ neorv32_dma.vhd               - Direct memory access controller
 ├─ neorv32_dmem.vhd              - Data memory
-├─ neorv32_dmem_ram.vhd          - Data memory RAM primitive wrapper
 ├─ neorv32_gpio.vhd              - General purpose input/output port unit
 ├─ neorv32_gptmr.vhd             - General purpose 32-bit timer
 ├─ neorv32_imem.vhd              - Instruction memory
 ├─ neorv32_imem_image.vhd        - Instruction memory initialization image
-├─ neorv32_imem_ram.vhd          - Instruction memory RAM primitive wrapper
-├─ neorv32_imem_rom.vhd          - Instruction memory ROM primitive wrapper
 ├─ neorv32_neoled.vhd            - NeoPixel (TM) compatible smart LED interface
 ├─ neorv32_onewire.vhd           - One-Wire serial interface controller
 ├─ neorv32_package.vhd           - Main VHDL package file
