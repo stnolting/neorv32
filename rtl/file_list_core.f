@@ -24,6 +24,7 @@ $NEORV32_HOME/rtl/core/neorv32_bus.vhd
 $NEORV32_HOME/rtl/core/neorv32_dma.vhd
 $NEORV32_HOME/rtl/core/neorv32_smc.vhd
 $NEORV32_HOME/rtl/core/neorv32_xbus.vhd
+$NEORV32_HOME/rtl/core/neorv32_cfs.vhd
 $NEORV32_HOME/rtl/core/neorv32_sdi.vhd
 $NEORV32_HOME/rtl/core/neorv32_gpio.vhd
 $NEORV32_HOME/rtl/core/neorv32_wdt.vhd
@@ -50,4 +51,3 @@ $NEORV32_HOME/rtl/core/neorv32_imem.vhd
 $NEORV32_HOME/rtl/core/neorv32_dmem.vhd
 $NEORV32_HOME/rtl/core/neorv32_bootrom_image.vhd
 $NEORV32_HOME/rtl/core/neorv32_bootrom.vhd
-$NEORV32_HOME/rtl/core/neorv32_cfs.vhd
