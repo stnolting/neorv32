@@ -5,7 +5,7 @@
 You can use [GHDL's synthesis feature](https://ghdl.github.io/ghdl/using/Synthesis.html) to convert
 a preconfigured NEORV32 wrapper setup into a single, synthesizable, **plain-Verilog** module. The
 resulting Verilog module can be instantiated within an all-Verilog design. The provided makefile is
-used for conversion and also for running all-Verilog simulation.
+used for conversion and also for running an all-Verilog simulation.
 
 ```
 NEORV32 Verilog Conversion and Test
@@ -22,7 +22,7 @@ Variables:
   GHDL          GHDL executable; default = ghdl
   WRAPPER       VHDL conversion wrapper; default = neorv32_verilog_wrapper
   VHDL_EXCLUDE  Default NEORV32 VHDL core files to exclude from conversion
-  VERILOG_IP    Custom Verilog IPs (for simulation)
+  VERILOG_SRC   Custom Verilog (substitution) modules
   SIMULATOR     Verilog simulator; 'iverilog' or 'verilator'; default = iverilog
   DUMP_WAVE     Dump waveform data to 'wave.fst' when 1; default = 0
 
@@ -31,11 +31,11 @@ Simple example:
 
 Default NEORV32 VHDL files can be excluded from the VHDL-to-Verilog conversion,
 leaving them as black box instances in the resulting all-Verilog netlist. These
-black box instances can be bind to custom Verilog IPs. Note that the substituted
-Verilog IPs must provide identical interfaces (parameters and ports).
+black box instances can be bind to custom Verilog moduless. Note that the substituted
+Verilog modules must provide identical interfaces (parameters and ports).
 
-Example: Replace the default NEORV32 DMEM RAM primitive by a custom Verilog IP.
-  make VHDL_EXCLUDE=neorv32_dmem_ram.vhd VERILOG_IP=ip/neorv32_dmem_ram.v clean convert sim
+Example: Replace the default NEORV32 DMEM RAM component by a custom Verilog module.
+  make VHDL_EXCLUDE=neorv32_dmem.vhd VERILOG_SRC=modules/neorv32_dmem.v clean convert sim
 ```
 
 > [!TIP]
@@ -47,7 +47,7 @@ for easy customization of the design sources.
 automatically converts the pre-configured wrapper and runs Icarus Verilog and Verilator simulations.
 The generated Verilog code can be downloaded as CI Workflow artifact.
 
-### Replacing VHDL Modules by Verilog IPs
+### Replacing VHDL Components by Verilog Modules
 
 GHDL supports black-box instantiation during conversion. This feature can be used to replace the
 plain VHDL memory primitive wrappers with custom Verilog IP. For this purpose, the standard NEORV32
