@@ -20,7 +20,7 @@ package neorv32_package is
 
   -- Architecture Constants -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130406"; -- hardware version
+  constant hw_version_c  : std_ulogic_vector(31 downto 0) := x"01130407"; -- hardware version
   constant int_bus_tmo_c : natural := 16; -- internal bus timeout window; has to be a power of two
   constant alu_cp_tmo_c  : natural := 9;  -- log2 of max ALU co-processor execution cycles
 
@@ -1119,6 +1119,63 @@ package neorv32_package is
     irq_msi_i      : in  std_ulogic := 'L';
     irq_mti_i      : in  std_ulogic := 'L';
     irq_mei_i      : in  std_ulogic := 'L'
+  );
+  end component;
+
+-- **********************************************************************************************************
+-- Component declarations for modules that can be replaced by external (Verilog) IP
+-- **********************************************************************************************************
+
+  -- instruction memory (IMEM) --
+  component neorv32_imem
+  generic (
+    AWIDTH  : natural;
+    INITROM : boolean;
+    OUTREG  : boolean
+  );
+  port (
+    clk_i      : in  std_ulogic;
+    rstn_i     : in  std_ulogic;
+    req_addr_i : in  std_ulogic_vector(31 downto 0);
+    req_data_i : in  std_ulogic_vector(31 downto 0);
+    req_ben_i  : in  std_ulogic_vector(3 downto 0);
+    req_stb_i  : in  std_ulogic;
+    req_rw_i   : in  std_ulogic;
+    rsp_data_o : out std_ulogic_vector(31 downto 0);
+    rsp_ack_o  : out std_ulogic
+  );
+  end component;
+
+  -- data memory (DMEM) --
+  component neorv32_dmem
+  generic (
+    AWIDTH : natural;
+    OUTREG : boolean
+  );
+  port (
+    clk_i      : in  std_ulogic;
+    rstn_i     : in  std_ulogic;
+    req_addr_i : in  std_ulogic_vector(31 downto 0);
+    req_data_i : in  std_ulogic_vector(31 downto 0);
+    req_ben_i  : in  std_ulogic_vector(3 downto 0);
+    req_stb_i  : in  std_ulogic;
+    req_rw_i   : in  std_ulogic;
+    rsp_data_o : out std_ulogic_vector(31 downto 0);
+    rsp_ack_o  : out std_ulogic
+  );
+  end component;
+
+  -- bootloader ROM (BOOTROM) --
+  component neorv32_bootrom
+  port (
+    clk_i      : in  std_ulogic;
+    rstn_i     : in  std_ulogic;
+    req_addr_i : in  std_ulogic_vector(15 downto 0);
+    req_ben_i  : in  std_ulogic_vector(3 downto 0);
+    req_stb_i  : in  std_ulogic;
+    req_rw_i   : in  std_ulogic;
+    rsp_data_o : out std_ulogic_vector(31 downto 0);
+    rsp_ack_o  : out std_ulogic
   );
   end component;
 

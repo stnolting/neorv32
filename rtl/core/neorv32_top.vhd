@@ -911,9 +911,10 @@ begin
 
     -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
     -- -------------------------------------------------------------------------------------------
+    -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_imem_enabled:
     if IMEM_EN generate
-      neorv32_imem_inst: entity neorv32.neorv32_imem
+      neorv32_imem_inst: neorv32_imem
       generic map (
         AWIDTH  => log2_imem_size_c,
         INITROM => imem_as_rom_c,
@@ -930,6 +931,7 @@ begin
         rsp_data_o => imem_rsp.data,
         rsp_ack_o  => imem_rsp.ack
       );
+      imem_rsp.err <= '0';
     end generate;
 
     neorv32_imem_disabled:
@@ -939,9 +941,10 @@ begin
 
     -- Processor-Internal Data Memory (DMEM) --------------------------------------------------
     -- -------------------------------------------------------------------------------------------
+    -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_dmem_enabled:
     if DMEM_EN generate
-      neorv32_dmem_inst: entity neorv32.neorv32_dmem
+      neorv32_dmem_inst: neorv32_dmem
       generic map (
         AWIDTH => log2_dmem_size_c,
         OUTREG => DMEM_OUTREG_EN
@@ -957,6 +960,7 @@ begin
         rsp_data_o => dmem_rsp.data,
         rsp_ack_o  => dmem_rsp.ack
       );
+      dmem_rsp.err <= '0';
     end generate;
 
     neorv32_dmem_disabled:
@@ -1129,9 +1133,10 @@ begin
 
     -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
     -- -------------------------------------------------------------------------------------------
+    -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_bootrom_enabled:
     if bootrom_en_c generate
-      neorv32_boot_rom_inst: entity neorv32.neorv32_bootrom
+      neorv32_boot_rom_inst: neorv32_bootrom
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
@@ -1142,6 +1147,7 @@ begin
         rsp_data_o => iodev_rsp(IODEV_BOOTROM).data,
         rsp_ack_o  => iodev_rsp(IODEV_BOOTROM).ack
       );
+      iodev_rsp(IODEV_BOOTROM).err <= '0';
     end generate;
 
     neorv32_boot_rom_disabled:
