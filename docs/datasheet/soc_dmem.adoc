@@ -5,15 +5,14 @@
 [cols="<3,<3,<4"]
 [grid="none"]
 |=======================
-| Hardware source files:  | neorv32_dmem.vhd     | generic processor-internal data memory (RAM)
-|                         | neorv32_dmem_ram.vhd | RAM component (primitive/IP wrapper)
-| Software driver files:  | none                 |
-| Top entity ports:       | none                 |
-| Configuration generics: | `DMEM_EN`            | implement DMEM when `true`
-|                         | `DMEM_BASE`          | 32-bit base address (naturally aligned to DMEM size)
-|                         | `DMEM_SIZE`          | DMEM size in bytes (use a power of 2)
-|                         | `DMEM_OUTREG_EN`     | add DMEM output register stage
-| CPU interrupts:         | none                 |
+| Hardware source files:  | neorv32_dmem.vhd | processor-internal data memory (RAM)
+| Software driver files:  | none             |
+| Top entity ports:       | none             |
+| Configuration generics: | `DMEM_EN`        | implement DMEM when `true`
+|                         | `DMEM_BASE`      | 32-bit base address (naturally aligned to DMEM size)
+|                         | `DMEM_SIZE`      | DMEM size in bytes (use a power of 2)
+|                         | `DMEM_OUTREG_EN` | add DMEM output register stage
+| CPU interrupts:         | none             |
 |=======================
 
 **Key Features**

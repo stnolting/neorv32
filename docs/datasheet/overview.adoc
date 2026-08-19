@@ -313,6 +313,18 @@ as the NEORV32 package file/library file already provides a corresponding compon
 instantiation. The interfaces of these blocks are static (fixed signal widths; not dependent on the configuration).
 This means they can be easily replaced by corresponding Verilog IP wrappers (also via black-box instantiation and late binding).
 
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Verilog-Only and Mixed-Language Setups
+
+
+
+:sectnums:
+==== All-Verilog Setup
+
+
 .All-Verilog Setup
 [TIP]
 Scripts and instructions for an automatic to-Verilog conversion as well as an all-Verilog
