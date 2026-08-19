@@ -169,7 +169,7 @@ entity neorv32_prim_spram is
   generic (
     AWIDTH : natural; -- address width (number of bits)
     DWIDTH : natural; -- data width (number of bits)
-    OUTREG : natural  -- add output register stage when 1
+    OUTREG : boolean  -- add output register stage when true
   );
   port (
     -- global control --
@@ -230,7 +230,7 @@ begin
   -- Output Register ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   output_register_enabled:
-  if (OUTREG = 1) generate -- might improve FPGA mapping and/or timing results
+  if OUTREG generate -- might improve FPGA mapping and/or timing results
     read_outreg: process(clk_i)
     begin
       if rising_edge(clk_i) then
@@ -241,7 +241,7 @@ begin
 
   -- no output register --
   output_register_disabled:
-  if (OUTREG = 0) generate
+  if not OUTREG generate
     data_o <= rdata;
   end generate;
 
