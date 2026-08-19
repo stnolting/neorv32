@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 19.08.2026 | 1.13.4.7 | :warning: rework/remove memory/IP wrappers | [#1631](https://github.com/stnolting/neorv32/pull/1631) |
 | 17.08.2026 | 1.13.4.6 | CPU: minor timing optimizations and code cleanups | [#1630](https://github.com/stnolting/neorv32/pull/1630) |
 | 14.08.2026 | 1.13.4.5 | CPU: generalize fast multiplier pipeline | [#1625](https://github.com/stnolting/neorv32/pull/1625) |
 | 14.08.2026 | 1.13.4.4 | minor rtl edits and optimizations | [#1624](https://github.com/stnolting/neorv32/pull/1624) |
@@ -364,5 +365,5 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 | 05.08.2024 | 1.10.2.3 | :bug: fix bug in **Vivado IP module** (error if zero-sized input port is unconnected) | [#978](https://github.com/stnolting/neorv32/pull/978) |
 | 04.08.2024 | 1.10.2.2 | :bug: fix bug in **Vivado IP module** (error if AXI port is unconnected) | [#976](https://github.com/stnolting/neorv32/pull/976) |
 | 02.08.2024 | 1.10.2.1 | :warning: rework CFU; remove support for R5-type instructions | [#971](https://github.com/stnolting/neorv32/pull/971) |
-| 29.07.2024 | [**:1.10.2**](https://github.com/stnolting/neorv32/releases/tag/v1.10.2) | :rocket: **New release** | |
+| 29.07.2024 | [**1.10.2**](https://github.com/stnolting/neorv32/releases/tag/v1.10.2) | :rocket: **New release** | |
 | ...        | ...      | **Change log trimmed. See [`CHANGELOG.md` in v1.10.2](https://github.com/stnolting/neorv32/blob/v1.10.2/CHANGELOG.md) for older logs.** | ... |
