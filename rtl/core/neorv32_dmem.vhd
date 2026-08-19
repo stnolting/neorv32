@@ -16,14 +16,22 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_dmem is
   generic (
-    MEM_SIZE : natural; -- memory size in bytes, has to be a power of 2, min 4
-    OUTREG   : boolean  -- implement output register stage
+    AWIDTH : natural; -- memory address width (byte-addressing)
+    OUTREG : boolean  -- add output register stage
   );
   port (
-    clk_i     : in  std_ulogic; -- global clock line
-    rstn_i    : in  std_ulogic; -- async reset, low-active
-    bus_req_i : in  bus_req_t;  -- bus request
-    bus_rsp_o : out bus_rsp_t   -- bus response
+    -- global control --
+    clk_i      : in  std_ulogic;                     -- clock, trigger on rising edge
+    rstn_i     : in  std_ulogic;                     -- async reset, low-active
+    -- bus request --
+    req_addr_i : in  std_ulogic_vector(31 downto 0); -- access address (byte-addressing)
+    req_data_i : in  std_ulogic_vector(31 downto 0); -- write data
+    req_ben_i  : in  std_ulogic_vector(3 downto 0);  -- byte enable
+    req_stb_i  : in  std_ulogic;                     -- request strobe
+    req_rw_i   : in  std_ulogic;                     -- 0 = read, 1 = write
+    -- bus response --
+    rsp_data_o : out std_ulogic_vector(31 downto 0); -- read data
+    rsp_ack_o  : out std_ulogic                      -- access acknowledge
   );
 end entity;
 

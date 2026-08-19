@@ -324,8 +324,10 @@ architecture neorv32_top_rtl of neorv32_top is
   constant bursts_en_c     : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN) and boolean(CACHE_BLOCK_SIZE >= 8);
 
   -- make sure physical memory sizes are a power of two --
-  constant imem_size_c : natural := 2**index_size_f(IMEM_SIZE);
-  constant dmem_size_c : natural := 2**index_size_f(DMEM_SIZE);
+  constant log2_imem_size_c : natural := index_size_f(IMEM_SIZE);
+  constant log2_dmem_size_c : natural := index_size_f(DMEM_SIZE);
+  constant imem_size_c      : natural := 2**log2_imem_size_c;
+  constant dmem_size_c      : natural := 2**log2_dmem_size_c;
 
   -- reset nets --
   signal rstn_wdt, rstn_sys, rstn_ext : std_ulogic;
@@ -913,15 +915,20 @@ begin
     if IMEM_EN generate
       neorv32_imem_inst: entity neorv32.neorv32_imem
       generic map (
-        MEM_SIZE => imem_size_c,
-        MEM_INIT => imem_as_rom_c,
-        OUTREG   => IMEM_OUTREG_EN
+        AWIDTH  => log2_imem_size_c,
+        INITROM => imem_as_rom_c,
+        OUTREG  => IMEM_OUTREG_EN
       )
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => imem_req,
-        bus_rsp_o => imem_rsp
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => imem_req.addr,
+        req_data_i => imem_req.data,
+        req_ben_i  => imem_req.ben,
+        req_stb_i  => imem_req.stb,
+        req_rw_i   => imem_req.rw,
+        rsp_data_o => imem_rsp.data,
+        rsp_ack_o  => imem_rsp.ack
       );
     end generate;
 
@@ -936,14 +943,19 @@ begin
     if DMEM_EN generate
       neorv32_dmem_inst: entity neorv32.neorv32_dmem
       generic map (
-        MEM_SIZE => dmem_size_c,
-        OUTREG   => DMEM_OUTREG_EN
+        AWIDTH => log2_dmem_size_c,
+        OUTREG => DMEM_OUTREG_EN
       )
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => dmem_req,
-        bus_rsp_o => dmem_rsp
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => dmem_req.addr,
+        req_data_i => dmem_req.data,
+        req_ben_i  => dmem_req.ben,
+        req_stb_i  => dmem_req.stb,
+        req_rw_i   => dmem_req.rw,
+        rsp_data_o => dmem_rsp.data,
+        rsp_ack_o  => dmem_rsp.ack
       );
     end generate;
 
@@ -1121,10 +1133,14 @@ begin
     if bootrom_en_c generate
       neorv32_boot_rom_inst: entity neorv32.neorv32_bootrom
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => iodev_req(IODEV_BOOTROM),
-        bus_rsp_o => iodev_rsp(IODEV_BOOTROM)
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => iodev_req(IODEV_BOOTROM).addr(15 downto 0),
+        req_ben_i  => iodev_req(IODEV_BOOTROM).ben,
+        req_stb_i  => iodev_req(IODEV_BOOTROM).stb,
+        req_rw_i   => iodev_req(IODEV_BOOTROM).rw,
+        rsp_data_o => iodev_rsp(IODEV_BOOTROM).data,
+        rsp_ack_o  => iodev_rsp(IODEV_BOOTROM).ack
       );
     end generate;
 
