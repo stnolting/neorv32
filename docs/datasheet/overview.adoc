@@ -309,9 +309,8 @@ Asserts are used to inform the user about the actual processor configuration and
 same source file, component instantiation is used for them. * When instantiating the top-level processor module
 (`neorv32_top.vhd`) in a user-defined design, either entity instantiation or component instantiation can be used,
 as the NEORV32 package file/library file already provides a corresponding component declaration.
-* Larger memories (IMEM, DMEM, caches) are implemented as encapsulated wrappers, which are instantiated by component
-instantiation. The interfaces of these blocks are static (fixed signal widths; not dependent on the configuration).
-This means they can be easily replaced by corresponding Verilog IP wrappers (also via black-box instantiation and late binding).
+* Certain modules are explicitly designed to be replaced by external (Verilog) IP.
+See section <<_replaceable_modules>> for more information.
 
 
 <<<
@@ -319,6 +318,21 @@ This means they can be easily replaced by corresponding Verilog IP wrappers (als
 :sectnums:
 === Verilog-Only and Mixed-Language Setups
 
+NEORV32 is developed in VHDL. However, the project also supports Verilog-based and mixed-language
+tool flows for users who cannot (or do not want to) work with VHDL directly.
+There are two main approaches to integrate NEORV32 into a Verilog design:
+
+[start=1]
+. **Mixed-language design:** If your EDA toolchain supports mixed VHDL/Verilog designs, you can instantiate the
+NEORV32 processor top entity directly from your Verilog project. No conversion is required in this case.
+. **All-Verilog design:** If your EDA toolchain does *not* support mixed-language designs, NEORV32 provides a
+GHDL-based conversion flow that generates a plain-Verilog version of the entire processor. See section
+<<_convert_to_verilog>> for a detailed description of this flow.
+
+Additionally, certain SoC modules (for example the processor-internal instruction and data memories) are specifically
+designed so that they can be replaced by external, custom (Verilog) modules — for example to integrate
+technology-specific memory IP. This mechanism works independently of the full all-Verilog conversion flow.
+All modules that can be replaced by external IP are listed in section <<_replaceable_modules>>.
 
 
 :sectnums:
