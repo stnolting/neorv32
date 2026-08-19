@@ -62,7 +62,7 @@ jobs:
 
     - name: '⚙️ Run Simulation'
       run: |
-        make -C rtl/verilog SIMULATOR=iverilog VHDL_EXCLUDE=neorv32_dmem.vhd VERILOG_SRC=modules/neorv32_dmem.v clean convert sim | tee iverilog.log
+        make -C rtl/verilog SIMULATOR=iverilog VHDL_EXCLUDE=neorv32_dmem.vhd VERILOG_SRC=modules/neorv32_dmem.v sim | tee iverilog.log
         grep 'Simulation successful!' iverilog.log
 
   sim_verilator:
@@ -86,5 +86,5 @@ jobs:
 
     - name: '⚙️ Run Simulation'
       run: |
-        make -C rtl/verilog SIMULATOR=verilator VHDL_EXCLUDE=neorv32_dmem.vhd VERILOG_SRC=modules/neorv32_dmem.v clean convert sim | tee verilator.log
+        make -C rtl/verilog SIMULATOR=verilator VHDL_EXCLUDE=neorv32_dmem.vhd VERILOG_SRC=modules/neorv32_dmem.v sim | tee verilator.log
         grep 'Simulation successful!' verilator.log
