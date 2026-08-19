@@ -35,8 +35,7 @@ The bootloader ROM is initialized during synthesis with the default bootloader i
 adjusted to the next power of two of the image size. However, note that the BOOTROM is
 constrained to a maximum size of 64kB.
 
-.Memory Primitives
+.Custom IP Replacement
 [TIP]
-The memory's memory core is encapsulated as individual wrapper (`neorv32_bootrom_rom.vhd`)
-that can be replaced by a technology-specific IP. All interface ports provide static signal
-widths to ease replacement.
+This module/file can be replaced by a platform-specific module/file (for example, to use technology-specific memory IP).
+See section <<_replaceable_modules>> for more information.

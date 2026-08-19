@@ -55,7 +55,7 @@ are not affected by this at all.
 [TIP]
 Software can retrieve the DMEM size from the <<_sysinfo_miscellaneous_configuration>> register.
 
-.Memory Primitives
+.Custom IP Replacement
 [TIP]
-The memory's memory core is encapsulated as individual wrapper (`neorv32_dmem_ram.vhd`) that can be
-replaced by a technology-specific IP. All interface ports provide static signal widths to ease replacement.
+This module/file can be replaced by a platform-specific module/file (for example, to use technology-specific memory IP).
+See section <<_replaceable_modules>> for more information.
