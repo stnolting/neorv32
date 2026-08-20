@@ -19,7 +19,8 @@ module neorv32_bootrom (
   input         req_rw_i,   // 0 = read, 1 = write
   // bus response
   output [13:0] rsp_data_o, // read data
-  output        rsp_ack_o   // access acknowledge
+  output        rsp_ack_o,  // access acknowledge
+  output        rsp_err_o   // access error
 );
 
   localparam ROM_AWIDTH = 10; // ACTUAL address width (words) of bootloader image
@@ -51,5 +52,6 @@ module neorv32_bootrom (
 
   assign rsp_data_o = (ack == 1'b1) ? rdata : 32'h00000000;
   assign rsp_ack_o  = ack;
+  assign rsp_err_o  = 1'b0; // no access errors supported (could be used for ECC / parity checks)
 
 endmodule

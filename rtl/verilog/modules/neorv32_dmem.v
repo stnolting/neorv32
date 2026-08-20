@@ -23,7 +23,8 @@ module neorv32_dmem #(
   input         req_rw_i,   // 0 = read, 1 = write
   // bus response
   output [31:0] rsp_data_o, // read data
-  output        rsp_ack_o   // access acknowledge
+  output        rsp_ack_o,  // access acknowledge
+  output        rsp_err_o   // access error
 );
 
   // we have 4 parallel byte-wide RAMs; so we need to access them using the WORD address
@@ -108,5 +109,6 @@ module neorv32_dmem #(
       assign rsp_ack_o  = ack[0];
     end
   endgenerate
+  assign rsp_err_o = 1'b0; // no access errors supported (could be used for ECC / parity checks)
 
 endmodule

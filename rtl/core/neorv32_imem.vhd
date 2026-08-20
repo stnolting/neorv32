@@ -34,7 +34,8 @@ entity neorv32_imem is
     req_rw_i   : in  std_ulogic;                     -- 0 = read, 1 = write
     -- bus response --
     rsp_data_o : out std_ulogic_vector(31 downto 0); -- read data
-    rsp_ack_o  : out std_ulogic                      -- access acknowledge
+    rsp_ack_o  : out std_ulogic;                     -- access acknowledge
+    rsp_err_o  : out std_ulogic                      -- access error
   );
 end entity;
 
@@ -115,6 +116,7 @@ begin
 
   rsp_data_o <= rdata when (rdack(outreg_c) = '1') else (others => '0');
   rsp_ack_o  <= rdack(outreg_c) when INITROM else (rdack(outreg_c) or wrack);
+  rsp_err_o  <= '0'; -- no access errors supported (could be used for ECC / parity checks)
 
 end architecture;
 

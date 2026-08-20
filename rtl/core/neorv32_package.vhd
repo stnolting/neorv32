@@ -1142,7 +1142,8 @@ package neorv32_package is
     req_stb_i  : in  std_ulogic;
     req_rw_i   : in  std_ulogic;
     rsp_data_o : out std_ulogic_vector(31 downto 0);
-    rsp_ack_o  : out std_ulogic
+    rsp_ack_o  : out std_ulogic;
+    rsp_err_o  : out std_ulogic
   );
   end component;
 
@@ -1161,7 +1162,8 @@ package neorv32_package is
     req_stb_i  : in  std_ulogic;
     req_rw_i   : in  std_ulogic;
     rsp_data_o : out std_ulogic_vector(31 downto 0);
-    rsp_ack_o  : out std_ulogic
+    rsp_ack_o  : out std_ulogic;
+    rsp_err_o  : out std_ulogic
   );
   end component;
 
@@ -1175,7 +1177,8 @@ package neorv32_package is
     req_stb_i  : in  std_ulogic;
     req_rw_i   : in  std_ulogic;
     rsp_data_o : out std_ulogic_vector(31 downto 0);
-    rsp_ack_o  : out std_ulogic
+    rsp_ack_o  : out std_ulogic;
+    rsp_err_o  : out std_ulogic
   );
   end component;
 
