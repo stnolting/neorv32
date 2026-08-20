@@ -29,10 +29,10 @@ architecture psram_model_sim of psram_model is
 
   type mem_t   is array (0 to MEM_BYTES-1) of std_logic_vector(7 downto 0);
   type phase_t is (P_CMD, P_ADDR, P_DUMMY, P_READ, P_WRITE, P_ID, P_DONE);
-  type id_t    is array (0 to 7) of std_logic_vector(7 downto 0);
+  type id_t    is array (7 downto 0) of std_logic_vector(7 downto 0);
 
   constant ADDR_MASK : unsigned(23 downto 0) := to_unsigned(MEM_BYTES-1, 24);
-  constant ID : id_t := (x"01", x"23", x"45", x"67", x"89", x"ab", x"cd", x"ef");
+  constant ID : id_t := (0 => x"01", 1 => x"23", 2 => x"45", 3 => x"67", 4 => x"89", 5 => x"ab", 6 => x"cd", 7 => x"ef");
 
   -- states and stuff --
   signal mem      : mem_t   := (others => (others => '0'));
