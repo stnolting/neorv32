@@ -4,10 +4,24 @@
 
 You can use [GHDL's synthesis feature](https://ghdl.github.io/ghdl/using/Synthesis.html) to convert
 a preconfigured NEORV32 wrapper setup into a single, synthesizable, **plain-Verilog** module. The
-resulting Verilog module can be instantiated within an all-Verilog design. The provided makefile is
-used for conversion and also for running an all-Verilog simulation.
+resulting Verilog module can be instantiated within an all-Verilog design.
+
+GHDL supports black-box instantiation during conversion. This feature can be used to replace
+certain NEORV32 modules by custom Verilog modules. For this purpose, the according NEORV32 VHDL
+modules provide a simple, uniform entity: only generics that convert to integer Verilog parameters
+and only ports with a static size. This allows to replace these components 1-by-1 by corresponding
+Verilog modules. Exemplary Verilog replacement modules can be found in the [`modules`](modules) folder.
+
+More information can be found in the online documentation:
+
+* [Convert to Verilog](https://stnolting.github.io/neorv32/#_convert_to_verilog)
+* [Replaceable Modules](https://stnolting.github.io/neorv32/#_replaceable_modules)
+
+The provided Makefile is used to automate the conversion and to run simulation
+with Verilator or Icarus Verilog:
 
 ```
+neorv32/rtl/verilog$ make help
 NEORV32 Verilog Conversion and Test
 
 Targets:
@@ -46,12 +60,3 @@ for easy customization of the design sources.
 > The [Verilog GH actions workflow](https://github.com/stnolting/neorv32/actions/workflows/Verilog.yml)
 automatically converts the pre-configured wrapper and runs Icarus Verilog and Verilator simulations.
 The generated Verilog code can be downloaded as CI Workflow artifact.
-
-### Replacing VHDL Components by Verilog Modules
-
-GHDL supports black-box instantiation during conversion. This feature can be used to replace the
-plain VHDL memory primitive wrappers with custom Verilog IP. For this purpose, the standard NEORV32
-VHDL memory wrappers have a simple, uniform entity: only integer generics and only ports with a
-fixed bit width at elaboration time. This allows to replace these modules 1-to-1 by corresponding
-Verilog modules, which can be used to map those memories to technology-specific macros (e.g. ASIC
-memory IP). Sample replacement IPs can be found in the [`ip`](ip) folder.

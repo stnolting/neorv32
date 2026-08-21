@@ -19,9 +19,10 @@
 
 * Burst-capable tightly-coupled on-chip data memory
 * Configurable RAM size
-* Accessible at the byte level
+* Accessible at byte level
 * Can also be used for executing code
 * Mapped to memory primitives
+* Can be replaced by custom (Verilog) memory IP
 * Optional output register for improved timing
 
 
@@ -57,5 +58,6 @@ Software can retrieve the DMEM size from the <<_sysinfo_miscellaneous_configurat
 
 .Custom IP Replacement
 [TIP]
-This module/file can be replaced by a platform-specific module/file (for example, to use technology-specific memory IP).
-See section <<_replaceable_modules>> for more information.
+This module/file can be replaced by a platform-specific module/file (for example, to use
+technology-specific memory IP). See section <<_replaceable_modules>> for more information.
+Alternatively, a custom DMEM can be connected via the <<_processor_external_bus_interface_xbus>>.

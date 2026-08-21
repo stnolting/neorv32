@@ -16,8 +16,9 @@
 **Key Features**
 
 * Tightly-coupled on-chip ROM
-* Accessible at the byte level
+* Accessible at byte level
 * Mapped to memory primitives
+* Can be replaced by custom (Verilog) memory IP
 * Pre-initialized with default NEORV32 bootloader
 
 
@@ -37,5 +38,6 @@ constrained to a maximum size of 64kB.
 
 .Custom IP Replacement
 [TIP]
-This module/file can be replaced by a platform-specific module/file (for example, to use technology-specific memory IP).
-See section <<_replaceable_modules>> for more information.
+This module/file can be replaced by a platform-specific module/file (for example, to use
+technology-specific memory IP). See section <<_replaceable_modules>> for more information.
+Alternatively, a custom BOOTROM can be connected via the <<_processor_external_bus_interface_xbus>>.
