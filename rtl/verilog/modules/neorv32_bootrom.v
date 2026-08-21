@@ -1,5 +1,5 @@
 // ================================================================================ //
-// NEORV32 - Bootloader ROM - Verilog Version                                       //
+// NEORV32 - Bootloader ROM (BOOTROM) - Verilog Version                             //
 // -------------------------------------------------------------------------------- //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //

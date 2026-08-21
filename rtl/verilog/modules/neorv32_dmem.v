@@ -1,5 +1,5 @@
 // ================================================================================ //
-// NEORV32 - Data Memory - Verilog Version                                          //
+// NEORV32 - Data Memory (DMEM) - Verilog Version                                   //
 // -------------------------------------------------------------------------------- //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
@@ -41,10 +41,10 @@ module neorv32_dmem #(
   // the RAM is split into 4x 8-bit RAMs as some FPGA synthesis tools have issues
   // inferring a 32-bit RAM with individual byte-enables; they also seem to have
   // issues with multi-dimensional RAMs; i.e. [4][2**AWIDTH][8]
-  reg [7:0] ram_b0 [2**RAM_AWIDTH-1:0];
-  reg [7:0] ram_b1 [2**RAM_AWIDTH-1:0];
-  reg [7:0] ram_b2 [2**RAM_AWIDTH-1:0];
-  reg [7:0] ram_b3 [2**RAM_AWIDTH-1:0];
+  reg [7:0] ram_b0 [0:2**RAM_AWIDTH-1];
+  reg [7:0] ram_b1 [0:2**RAM_AWIDTH-1];
+  reg [7:0] ram_b2 [0:2**RAM_AWIDTH-1];
+  reg [7:0] ram_b3 [0:2**RAM_AWIDTH-1];
 
   always @(posedge clk_i) begin
     if (en[0] == 1'b1) begin // byte 0
