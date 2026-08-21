@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 21.08.2026 | 1.13.4.9 | :bug: fix permanent CPU stall when accessing unmapped addresses (if XBUS is disabled) | [#1634](https://github.com/stnolting/neorv32/pull/1634) |
 | 21.08.2026 | 1.13.4.8 | convert remaining list arrays to `downto` (named-association aggregates) | [#1632](https://github.com/stnolting/neorv32/pull/1632) |
 | 19.08.2026 | 1.13.4.7 | :warning: rework/remove memory/IP wrappers | [#1631](https://github.com/stnolting/neorv32/pull/1631) |
 | 17.08.2026 | 1.13.4.6 | CPU: minor timing optimizations and code cleanups | [#1630](https://github.com/stnolting/neorv32/pull/1630) |
