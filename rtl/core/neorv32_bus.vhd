@@ -509,7 +509,8 @@ begin
   term_o  <= '1' when (keeper.state = S_ERROR) else '0'; -- terminate pending (external) bus access
 
   -- external timeout notification --
-  assert (X_TMO > 0) report "[NEORV32] External bus timeout disabled! Can cause permanent system stall!" severity warning;
+  assert ((not X_EN) or (X_TMO > 0)) report
+    "[NEORV32] External bus timeout disabled! Can cause permanent system stall!" severity warning;
 
 end architecture;
 
