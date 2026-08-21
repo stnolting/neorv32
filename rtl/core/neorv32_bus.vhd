@@ -626,9 +626,9 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   -- list of enabled device ports --
   type dev_en_list_t is array (num_devs_c-1 downto 0) of boolean;
   constant dev_en_list_c : dev_en_list_t := (
-    0 => DEV_00_EN, 1 => DEV_01_EN, 2 => DEV_02_EN, 3 => DEV_03_EN,
-    4 => DEV_04_EN, 5 => DEV_05_EN, 6 => DEV_06_EN, 7 => DEV_07_EN,
-    8 => DEV_08_EN, 9 => DEV_09_EN, 10 => DEV_10_EN, 11 => DEV_11_EN,
+    0  => DEV_00_EN, 1  => DEV_01_EN, 2  => DEV_02_EN, 3  => DEV_03_EN,
+    4  => DEV_04_EN, 5  => DEV_05_EN, 6  => DEV_06_EN, 7  => DEV_07_EN,
+    8  => DEV_08_EN, 9  => DEV_09_EN, 10 => DEV_10_EN, 11 => DEV_11_EN,
     12 => DEV_12_EN, 13 => DEV_13_EN, 14 => DEV_14_EN, 15 => DEV_15_EN,
     16 => DEV_16_EN, 17 => DEV_17_EN, 18 => DEV_18_EN, 19 => DEV_19_EN,
     20 => DEV_20_EN, 21 => DEV_21_EN, 22 => DEV_22_EN, 23 => DEV_23_EN,
@@ -639,9 +639,9 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   -- list of device base addresses --
   type dev_base_list_t is array (num_devs_c-1 downto 0) of std_ulogic_vector(31 downto 0);
   constant dev_base_list_c : dev_base_list_t := (
-    0 => DEV_00_BASE, 1 => DEV_01_BASE, 2 => DEV_02_BASE, 3 => DEV_03_BASE,
-    4 => DEV_04_BASE, 5 => DEV_05_BASE, 6 => DEV_06_BASE, 7 => DEV_07_BASE,
-    8 => DEV_08_BASE, 9 => DEV_09_BASE, 10 => DEV_10_BASE, 11 => DEV_11_BASE,
+    0  => DEV_00_BASE, 1  => DEV_01_BASE, 2  => DEV_02_BASE, 3  => DEV_03_BASE,
+    4  => DEV_04_BASE, 5  => DEV_05_BASE, 6  => DEV_06_BASE, 7  => DEV_07_BASE,
+    8  => DEV_08_BASE, 9  => DEV_09_BASE, 10 => DEV_10_BASE, 11 => DEV_11_BASE,
     12 => DEV_12_BASE, 13 => DEV_13_BASE, 14 => DEV_14_BASE, 15 => DEV_15_BASE,
     16 => DEV_16_BASE, 17 => DEV_17_BASE, 18 => DEV_18_BASE, 19 => DEV_19_BASE,
     20 => DEV_20_BASE, 21 => DEV_21_BASE, 22 => DEV_22_BASE, 23 => DEV_23_BASE,
