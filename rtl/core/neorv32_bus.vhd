@@ -332,33 +332,33 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   signal port_sel : std_ulogic_vector(4 downto 0);
 
   -- port enable list --
-  type port_bool_list_t is array (0 to 4) of boolean;
+  type port_bool_list_t is array (4 downto 0) of boolean;
   constant port_en_list_c : port_bool_list_t := (
-    A_EN,
-    B_EN,
-    C_EN,
-    D_EN,
-    X_EN
+    0 => A_EN,
+    1 => B_EN,
+    2 => C_EN,
+    3 => D_EN,
+    4 => X_EN
   );
 
   -- port timeout enable list --
-  type port_tmo_en_list_t is array (0 to 4) of boolean;
+  type port_tmo_en_list_t is array (4 downto 0) of boolean;
   constant port_tmo_en_list_c : port_tmo_en_list_t := (
-    boolean(A_TMO > 0),
-    boolean(B_TMO > 0),
-    boolean(C_TMO > 0),
-    boolean(D_TMO > 0),
-    boolean(X_TMO > 0)
+    0 => boolean(A_TMO > 0),
+    1 => boolean(B_TMO > 0),
+    2 => boolean(C_TMO > 0),
+    3 => boolean(D_TMO > 0),
+    4 => boolean(X_TMO > 0)
   );
 
   -- port timeout counter bit list --
-  type port_tmo_bit_list_t is array (0 to 4) of natural;
+  type port_tmo_bit_list_t is array (4 downto 0) of natural;
   constant port_tmo_bit_list_c : port_tmo_bit_list_t := (
-    index_size_f(A_TMO),
-    index_size_f(B_TMO),
-    index_size_f(C_TMO),
-    index_size_f(D_TMO),
-    index_size_f(X_TMO)
+    0 => index_size_f(A_TMO),
+    1 => index_size_f(B_TMO),
+    2 => index_size_f(C_TMO),
+    3 => index_size_f(D_TMO),
+    4 => index_size_f(X_TMO)
   );
   signal tmo_bits : std_ulogic_vector(4 downto 0);
   signal tmo_fire : std_ulogic;
@@ -624,21 +624,29 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   constant addr_hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_c)) - 1; -- high address boundary bit
 
   -- list of enabled device ports --
-  type dev_en_list_t is array (0 to num_devs_c-1) of boolean;
+  type dev_en_list_t is array (num_devs_c-1 downto 0) of boolean;
   constant dev_en_list_c : dev_en_list_t := (
-    DEV_00_EN, DEV_01_EN, DEV_02_EN, DEV_03_EN, DEV_04_EN, DEV_05_EN, DEV_06_EN, DEV_07_EN,
-    DEV_08_EN, DEV_09_EN, DEV_10_EN, DEV_11_EN, DEV_12_EN, DEV_13_EN, DEV_14_EN, DEV_15_EN,
-    DEV_16_EN, DEV_17_EN, DEV_18_EN, DEV_19_EN, DEV_20_EN, DEV_21_EN, DEV_22_EN, DEV_23_EN,
-    DEV_24_EN, DEV_25_EN, DEV_26_EN, DEV_27_EN, DEV_28_EN, DEV_29_EN, DEV_30_EN, DEV_31_EN
+    0  => DEV_00_EN, 1  => DEV_01_EN, 2  => DEV_02_EN, 3  => DEV_03_EN,
+    4  => DEV_04_EN, 5  => DEV_05_EN, 6  => DEV_06_EN, 7  => DEV_07_EN,
+    8  => DEV_08_EN, 9  => DEV_09_EN, 10 => DEV_10_EN, 11 => DEV_11_EN,
+    12 => DEV_12_EN, 13 => DEV_13_EN, 14 => DEV_14_EN, 15 => DEV_15_EN,
+    16 => DEV_16_EN, 17 => DEV_17_EN, 18 => DEV_18_EN, 19 => DEV_19_EN,
+    20 => DEV_20_EN, 21 => DEV_21_EN, 22 => DEV_22_EN, 23 => DEV_23_EN,
+    24 => DEV_24_EN, 25 => DEV_25_EN, 26 => DEV_26_EN, 27 => DEV_27_EN,
+    28 => DEV_28_EN, 29 => DEV_29_EN, 30 => DEV_30_EN, 31 => DEV_31_EN
   );
 
   -- list of device base addresses --
-  type dev_base_list_t is array (0 to num_devs_c-1) of std_ulogic_vector(31 downto 0);
+  type dev_base_list_t is array (num_devs_c-1 downto 0) of std_ulogic_vector(31 downto 0);
   constant dev_base_list_c : dev_base_list_t := (
-    DEV_00_BASE, DEV_01_BASE, DEV_02_BASE, DEV_03_BASE, DEV_04_BASE, DEV_05_BASE, DEV_06_BASE, DEV_07_BASE,
-    DEV_08_BASE, DEV_09_BASE, DEV_10_BASE, DEV_11_BASE, DEV_12_BASE, DEV_13_BASE, DEV_14_BASE, DEV_15_BASE,
-    DEV_16_BASE, DEV_17_BASE, DEV_18_BASE, DEV_19_BASE, DEV_20_BASE, DEV_21_BASE, DEV_22_BASE, DEV_23_BASE,
-    DEV_24_BASE, DEV_25_BASE, DEV_26_BASE, DEV_27_BASE, DEV_28_BASE, DEV_29_BASE, DEV_30_BASE, DEV_31_BASE
+    0  => DEV_00_BASE, 1  => DEV_01_BASE, 2  => DEV_02_BASE, 3  => DEV_03_BASE,
+    4  => DEV_04_BASE, 5  => DEV_05_BASE, 6  => DEV_06_BASE, 7  => DEV_07_BASE,
+    8  => DEV_08_BASE, 9  => DEV_09_BASE, 10 => DEV_10_BASE, 11 => DEV_11_BASE,
+    12 => DEV_12_BASE, 13 => DEV_13_BASE, 14 => DEV_14_BASE, 15 => DEV_15_BASE,
+    16 => DEV_16_BASE, 17 => DEV_17_BASE, 18 => DEV_18_BASE, 19 => DEV_19_BASE,
+    20 => DEV_20_BASE, 21 => DEV_21_BASE, 22 => DEV_22_BASE, 23 => DEV_23_BASE,
+    24 => DEV_24_BASE, 25 => DEV_25_BASE, 26 => DEV_26_BASE, 27 => DEV_27_BASE,
+    28 => DEV_28_BASE, 29 => DEV_29_BASE, 30 => DEV_30_BASE, 31 => DEV_31_BASE
   );
 
   -- device ports combined as arrays --
