@@ -344,15 +344,15 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dci_haltreq : std_ulogic_vector(num_cores_c-1 downto 0);
 
   -- CPU trace interface --
-  type cpu_trace_t is array (0 to num_cores_c-1) of trace_port_t;
+  type cpu_trace_t is array (num_cores_c-1 downto 0) of trace_port_t;
   signal cpu_trace : cpu_trace_t;
 
   -- CPU memory ordering (cache synchronization) --
   signal cpu_i_fence, cpu_d_fence, icache_sync, dcache_sync : std_ulogic_vector(num_cores_c-1 downto 0);
 
   -- bus: core complex --
-  type core_complex_req_t is array (0 to num_cores_c-1) of bus_req_t;
-  type core_complex_rsp_t is array (0 to num_cores_c-1) of bus_rsp_t;
+  type core_complex_req_t is array (num_cores_c-1 downto 0) of bus_req_t;
+  type core_complex_rsp_t is array (num_cores_c-1 downto 0) of bus_rsp_t;
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req : core_complex_req_t;
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp : core_complex_rsp_t;
 
@@ -715,8 +715,8 @@ begin
   end generate;
 
   -- CPU execution trace ports --
-  trace_cpu0_o <= cpu_trace(core_req'left);
-  trace_cpu1_o <= cpu_trace(core_req'right) when (num_cores_c = 2) else trace_port_terminate_c;
+  trace_cpu0_o <= cpu_trace(core_req'low);
+  trace_cpu1_o <= cpu_trace(core_req'high) when (num_cores_c = 2) else trace_port_terminate_c;
 
   -- Core Complex Bus Arbiter ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -731,10 +731,10 @@ begin
     port map (
       clk_i   => clk_i,
       rstn_i  => rstn_sys,
-      a_req_i => core_req(core_req'left),
-      a_rsp_o => core_rsp(core_rsp'left),
-      b_req_i => core_req(core_req'right),
-      b_rsp_o => core_rsp(core_rsp'right),
+      a_req_i => core_req(core_req'low),
+      a_rsp_o => core_rsp(core_rsp'low),
+      b_req_i => core_req(core_req'high),
+      b_rsp_o => core_rsp(core_rsp'high),
       x_req_o => sys1_req,
       x_rsp_i => sys1_rsp
     );
@@ -1637,8 +1637,8 @@ begin
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
-        trace0_i  => cpu_trace(cpu_trace'left),
-        trace1_i  => cpu_trace(cpu_trace'right),
+        trace0_i  => cpu_trace(cpu_trace'low),
+        trace1_i  => cpu_trace(cpu_trace'high),
         bus_req_i => iodev_req(IODEV_TRACER),
         bus_rsp_o => iodev_rsp(IODEV_TRACER),
         irq_o     => firq(FIRQ_TRACER)
