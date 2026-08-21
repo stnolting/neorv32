@@ -532,7 +532,7 @@ begin
     generic map (
       AWIDTH => index_size_f(NUM_BLOCKS),
       DWIDTH => 1,
-      OUTREG => 0
+      OUTREG => false
     )
     port map (
       clk_i     => clk_i,

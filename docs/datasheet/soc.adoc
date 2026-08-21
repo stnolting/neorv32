@@ -348,6 +348,47 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 <<<
 // ####################################################################################################################
 :sectnums:
+=== Replaceable Modules
+
+Certain NEORV32 SoC modules are designed so that they can be substituted with a custom, external (Verilog) module.
+This makes it possible to integrate platform-specific IP, such as technology-specific memory, instead of using the
+default/generic RTL implementation. To enable this kind of replacement, the corresponding processor modules follow
+a few specific design conventions:
+
+[start=1]
+. **Component instantiation**: These modules are instantiated using VHDL's component instantiation syntax rather
+than direct entity instantiation. This allows black-box instantiation and late-binding, which is required by the
+GHDL-based <<_convert_to_verilog>> flow used by NEORV32.
+. **Simple interfaces**: All ports use only the basic `std_ulogic` / `std_ulogic_vector` types.
+Custom or composite VHDL types (such as records) are intentionally avoided.
+. **Static port widths**: Port widths are fixed and defined at elaboration time;
+no generic-dependent or dynamically computed port widths are used.
+
+These properties ensure that the affected modules can be cleanly swapped out for external, technology-specific
+implementations without breaking the overall top-level structure or the automated <<_convert_to_verilog>> process.
+
+At this time, the following modules are being considered for possible replacement:
+
+.Modules that can be replaced directly by external (Verilog) IP
+[cols="<5,<5,<6"]
+[options="header",grid="all"]
+|=======================
+| Module | File name | Exemplary Verilog substitution module
+| Bootloader ROM (<<_bootloader_rom_bootrom,BOOTROM>>)   | `rtl/core/neorv32_bootrom.vhd` | `rtl/verilog/neorv32_bootrom.v`
+| Data memory (<<_data_memory_dmem,DMEM>>)               | `rtl/core/neorv32_dmem.vhd`    | `rtl/verilog/neorv32_dmem.v`   
+| Instruction memory (<<_instruction_memory_imem,IMEM>>) | `rtl/core/neorv32_imem.vhd`    | `rtl/verilog/neorv32_imem.v`   
+|=======================
+
+.Replacing additional modules
+[NOTES]
+Others modules like peripheral/IO modules (such as the UART) should not be replaced directly. Instead,
+the default module should be disabled using the appropriate top generic. Custom modules can be connected,
+for example, via the <<_processor_external_bus_interface_xbus>>.
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
 === Processor Clocking
 
 The entire system is implemented as fully-synchronous logic design using a single clock domain that is driven

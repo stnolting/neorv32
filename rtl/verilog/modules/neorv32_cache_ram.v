@@ -1,5 +1,5 @@
 // ================================================================================ //
-// NEORV32 - Generic Cache - Data and Tag RAM Primitive Wrapper - Verilog IP Module //
+// NEORV32 - Generic Cache - Data and Tag RAM - Verilog Version                     //
 // -------------------------------------------------------------------------------- //
 // The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              //
 // Copyright (c) NEORV32 contributors.                                              //
