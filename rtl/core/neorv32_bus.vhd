@@ -497,12 +497,12 @@ begin
     end if;
   end process;
 
-  -- timeout counter bit select --
+  -- timeout counter bit select; fire also if no port is selected at all (#1633) --
   tmo_bit_gen:
   for i in 0 to 4 generate
     tmo_bits(i) <= keeper.cnt(port_tmo_bit_list_c(i)) when port_tmo_en_list_c(i) else '0';
   end generate;
-  tmo_fire <= or_reduce_f(tmo_bits and keeper.sel);
+  tmo_fire <= or_reduce_f(tmo_bits and keeper.sel) or (not or_reduce_f(keeper.sel));
 
   -- bus keeper error --
   bus_err <= '1' when (keeper.state = S_ERROR) else '0'; -- send error to host
