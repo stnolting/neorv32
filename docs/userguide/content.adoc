@@ -14,7 +14,6 @@
 * <<_micropython_port>>
 * <<_rust_support>>
 * <<_using_the_on_chip_debugger>>
-* <<_neorv32_in_verilog>>
 * <<_eclipse_ide>>
 
 include::sw_toolchain_setup.adoc[]
@@ -44,8 +43,6 @@ include::micropython_port.adoc[]
 include::rust_support.adoc[]
 
 include::using_ocd.adoc[]
-
-include::neorv32_in_verilog.adoc[]
 
 include::eclipse_ide.adoc[]
 

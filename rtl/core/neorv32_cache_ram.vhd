@@ -43,16 +43,13 @@ architecture neorv32_cache_ram_rtl of neorv32_cache_ram is
 
 begin
 
-  -- notifier --
-  assert false report "[NEORV32] Using default CACHE RAM component." severity note;
-
   -- Tag RAM --------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   tag_ram_inst: entity neorv32.neorv32_prim_spram
   generic map (
     AWIDTH => IDX_WIDTH,
     DWIDTH => TAG_WIDTH,
-    OUTREG => 0
+    OUTREG => false
   )
   port map (
     clk_i  => clk_i,
@@ -74,7 +71,7 @@ begin
     generic map (
       AWIDTH => IDX_WIDTH + OFS_WIDTH,
       DWIDTH => 8,
-      OUTREG => 0
+      OUTREG => false
     )
     port map (
       clk_i  => clk_i,

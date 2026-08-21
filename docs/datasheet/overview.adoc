@@ -175,10 +175,9 @@ rtl/core
 │
 ├─ neorv32_bootrom.vhd           - Bootloader ROM
 ├─ neorv32_bootrom_image.vhd     - Bootloader ROM initialization image
-├─ neorv32_bootrom_rom.vhd       - Bootloader ROM primitive wrapper
 ├─ neorv32_bus.vhd               - SoC bus infrastructure modules
 ├─ neorv32_cache.vhd             - Generic cache module
-├─ neorv32_cache_ram.vhd         - Cache tag and data RAM primitive wrapper
+├─ neorv32_cache_ram.vhd         - Cache tag and data RAM
 ├─ neorv32_cfs.vhd               - Custom functions subsystem
 ├─ neorv32_clint.vhd             - Core local interruptor
 ├─ neorv32_cpu.vhd               - NEORV32 CPU TOP ENTITY
@@ -204,13 +203,10 @@ rtl/core
 ├─ neorv32_debug_dtm.vhd         - On-chip debugger: debug transfer module
 ├─ neorv32_dma.vhd               - Direct memory access controller
 ├─ neorv32_dmem.vhd              - Data memory
-├─ neorv32_dmem_ram.vhd          - Data memory RAM primitive wrapper
 ├─ neorv32_gpio.vhd              - General purpose input/output port unit
 ├─ neorv32_gptmr.vhd             - General purpose 32-bit timer
 ├─ neorv32_imem.vhd              - Instruction memory
 ├─ neorv32_imem_image.vhd        - Instruction memory initialization image
-├─ neorv32_imem_ram.vhd          - Instruction memory RAM primitive wrapper
-├─ neorv32_imem_rom.vhd          - Instruction memory ROM primitive wrapper
 ├─ neorv32_neoled.vhd            - NeoPixel (TM) compatible smart LED interface
 ├─ neorv32_onewire.vhd           - One-Wire serial interface controller
 ├─ neorv32_package.vhd           - Main VHDL package file
@@ -313,15 +309,89 @@ Asserts are used to inform the user about the actual processor configuration and
 same source file, component instantiation is used for them. * When instantiating the top-level processor module
 (`neorv32_top.vhd`) in a user-defined design, either entity instantiation or component instantiation can be used,
 as the NEORV32 package file/library file already provides a corresponding component declaration.
-* Larger memories (IMEM, DMEM, caches) are implemented as encapsulated wrappers, which are instantiated by component
-instantiation. The interfaces of these blocks are static (fixed signal widths; not dependent on the configuration).
-This means they can be easily replaced by corresponding Verilog IP wrappers (also via black-box instantiation and late binding).
+* Certain modules are explicitly designed to be replaced by external (Verilog) IP.
+See section <<_replaceable_modules>> for more information.
 
-.All-Verilog Setup
+
+<<<
+// ####################################################################################################################
+:sectnums:
+=== Verilog-Only and Mixed-Language Setups
+
+NEORV32 is developed in VHDL. However, the project also supports Verilog-based and mixed-language
+tool flows for users who cannot (or do not want to) work with VHDL directly.
+There are two main approaches to integrate NEORV32 into a Verilog design:
+
+[start=1]
+. **Mixed-language design:** If your EDA toolchain supports mixed VHDL/Verilog designs, you can instantiate the
+NEORV32 processor top entity directly from your Verilog project. No conversion is required in this case.
+. **All-Verilog design:** If your EDA toolchain does *not* support mixed-language designs, NEORV32 provides a
+GHDL-based conversion flow that generates a plain-Verilog version of the entire processor. See section
+<<_convert_to_verilog>> for a detailed description of this flow.
+
+Additionally, certain SoC modules (for example the processor-internal instruction and data memories) are specifically
+designed so that they can be replaced by external, custom (Verilog) modules — for example to integrate
+technology-specific memory IP. This mechanism works independently of the full all-Verilog conversion flow.
+All modules that can be replaced by external IP are listed in section <<_replaceable_modules>>.
+
+
+:sectnums:
+==== Convert to Verilog
+
+The free and open **GHDL** can be used to generate an **all-Verilog** version of NEORV32. GHDL's synthesis feature
+is used to convert a pre-configured NEORV32 setup - including all peripherals, memories and memory images - into
+a single plain-Verilog module. A pre-defined conversion setup is provided in `rtl/verilog`.
+
+.GHDL Synthesis
 [TIP]
-Scripts and instructions for an automatic to-Verilog conversion as well as an all-Verilog
-setup that uses custom Verilog memory IPs can be found in `rtl/verilog`. See
-https://stnolting.github.io/neorv32/ug/#_neorv32_in_verilog[UG: NEORV32 in Verilog]for more information.
+More information regarding GHDL's synthesis option can be found at https://ghdl.github.io/ghdl/using/Synthesis.html.
+
+An intermediate VHDL wrapper (`rtl/verilog/neorv32_verilog_wrapper.vhd`) is used to configure the SoC
+(using VHDL generics) and to customize the interface ports. After conversion, a single Verilog file is generated
+(`rtl/verilog/neorv32_verilog_wrapper.v`) that contains the entire NEORV32 processor.
+
+The actual conversion is conducted by a single Makefile (`rtl/verilog/Makefile`), which analyzes all the processor's
+sources and finally calls GHDL `synth` to create the final Verilog code. After conversion, the interface of the resulting
+`neorv32_verilog_wrapper` Verilog module is shown in the console which can be used as instantiation template.
+
+[source,bash]
+----
+neorv32/rtl/verilog$ make convert
+Converting to Verilog: neorv32_verilog_wrapper.vhd -> neorv32_verilog_wrapper.v
+
+...
+
+-----------------------------------------------
+Verilog instantiation prototype
+-----------------------------------------------
+module neorv32_verilog_wrapper
+  (input  clk_i,
+   input  rstn_i,
+   input  uart0_rxd_i,
+   output uart0_txd_o);
+-----------------------------------------------
+----
+
+.Replace NEORV32 Components by Verilog Modules
+[TIP]
+The pre-defined conversion setup also allows to replace certain VHDL modules of the core by according
+Verilog modules for simulation. See the Readme in `rtl/verilog` for more information. A list of all
+SoC modules that can be replaced by Verilog modules is provided in section <<_replaceable_modules>>.
+
+**Conversion Notes**
+
+* GHDL synthesis generates an un-optimized plain Verilog code without any (technology-specific) primitives.
+However, optimizations will be performed later by the technology-specific synthesis tool.
+* The output of the GHDL synthesis is a _post-elaboration_ result. Therefore, all the processor's configuration
+options (i.e. VHDL generics) are resolved **before** the actual output is generated. Hence, the entity of the
+conversion wrapper must not have any generics.
+* The interface of the resulting Verilog module lists all inputs first followed by all outputs.
+* The original module hierarchy is preserved as well as all module interface names.
+* VHDL records are collapsed into linear arrays.
+* Modules that follow the component-instantiation conventions described in
+<<Replacing SoC Modules with External Components>> convert cleanly into this flow, since their black-box,
+late-binding-compatible interfaces are already restricted to simple, statically-sized `std_ulogic` /
+`std_ulogic_vector` ports.
 
 
 <<<
