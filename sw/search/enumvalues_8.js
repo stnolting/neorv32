@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['uart_5fctrl_5fbaud_5flsb_0',['UART_CTRL_BAUD_LSB',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afcadcd1df08e2cde66a173b7a15cdb35315',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5fbaud_5fmsb_1',['UART_CTRL_BAUD_MSB',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca14a7f1b4d22a0ac1e2267676436d3cbd',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5fen_2',['UART_CTRL_EN',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca38f6c0e5991f8f80159a388c1080f7c2',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5fhwfc_5fen_3',['UART_CTRL_HWFC_EN',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afcacab78fcd440167c5a2c0f5d300c8f07c',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5firq_5frx_5ffull_4',['UART_CTRL_IRQ_RX_FULL',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afcae5f01868b170d71a5f3064023c96a82a',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5firq_5frx_5fnempty_5',['UART_CTRL_IRQ_RX_NEMPTY',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca569ea830518914c5330fa14680b02851',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5firq_5ftx_5fempty_6',['UART_CTRL_IRQ_TX_EMPTY',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca15b9fca73877aad446a8cd338e228e2c',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5firq_5ftx_5fnfull_7',['UART_CTRL_IRQ_TX_NFULL',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca9e5b82d843b4764e1db8a3aabae2a9b2',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5fprsc_5flsb_8',['UART_CTRL_PRSC_LSB',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afcabd769a60e96298ff33124bdba37e5b9d',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5fprsc_5fmsb_9',['UART_CTRL_PRSC_MSB',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca9e405f32ed5e3421546cd3a8c47660fb',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5frx_5ffull_10',['UART_CTRL_RX_FULL',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca47c44fa21e51401621c28019025c1166',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5frx_5fnempty_11',['UART_CTRL_RX_NEMPTY',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca2015dd85e361aa0476e847953b62baff',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5frx_5fover_12',['UART_CTRL_RX_OVER',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca81a52e0b81018f2cf43e64d74caba632',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5fsim_5fmode_13',['UART_CTRL_SIM_MODE',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca42ed376220259ab22c6f837d08273ef1',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5ftx_5fbusy_14',['UART_CTRL_TX_BUSY',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca0eb636d8b7961d7073c5c7341b5bbe25',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5ftx_5fempty_15',['UART_CTRL_TX_EMPTY',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afcac5c044233b6c4162cf862f3d9831ef46',1,'neorv32_uart.h']]],
+  ['uart_5fctrl_5ftx_5fnfull_16',['UART_CTRL_TX_NFULL',['../neorv32__uart_8h.html#ad9f75f453beca1619344bb4213352afca2d2a8aedea4e6051c5b75d2b9a0bb7c4',1,'neorv32_uart.h']]],
+  ['uart_5fdata_5frtx_5flsb_17',['UART_DATA_RTX_LSB',['../neorv32__uart_8h.html#adcf35350a9ea18a59c32c35f528643f2ae70e9f6cd69af724932e79ea7e7f7195',1,'neorv32_uart.h']]],
+  ['uart_5fdata_5frtx_5fmsb_18',['UART_DATA_RTX_MSB',['../neorv32__uart_8h.html#adcf35350a9ea18a59c32c35f528643f2a19926d013ca202645d38f2c704782ebb',1,'neorv32_uart.h']]],
+  ['uart_5fdata_5frx_5ffifo_5fsize_5flsb_19',['UART_DATA_RX_FIFO_SIZE_LSB',['../neorv32__uart_8h.html#adcf35350a9ea18a59c32c35f528643f2a43b296e86d1f2ec7400d57655c3180ef',1,'neorv32_uart.h']]],
+  ['uart_5fdata_5frx_5ffifo_5fsize_5fmsb_20',['UART_DATA_RX_FIFO_SIZE_MSB',['../neorv32__uart_8h.html#adcf35350a9ea18a59c32c35f528643f2a81a82ac0dc5c8c8d7af21553288e3225',1,'neorv32_uart.h']]],
+  ['uart_5fdata_5ftx_5ffifo_5fsize_5flsb_21',['UART_DATA_TX_FIFO_SIZE_LSB',['../neorv32__uart_8h.html#adcf35350a9ea18a59c32c35f528643f2a6d718ad0bb82a5cb053c117cd2d6ca8e',1,'neorv32_uart.h']]],
+  ['uart_5fdata_5ftx_5ffifo_5fsize_5fmsb_22',['UART_DATA_TX_FIFO_SIZE_MSB',['../neorv32__uart_8h.html#adcf35350a9ea18a59c32c35f528643f2ada92cbbe278e3e0592eba58c97699529',1,'neorv32_uart.h']]]
+];
