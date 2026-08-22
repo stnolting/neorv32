@@ -914,7 +914,7 @@ begin
     -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_imem_enabled:
     if IMEM_EN generate
-      neorv32_imem_inst: neorv32_imem
+      neorv32_imem_inst: neorv32_imem -- component declaration in package file
       generic map (
         AWIDTH  => log2_imem_size_c,
         INITROM => imem_as_rom_c,
@@ -944,7 +944,7 @@ begin
     -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_dmem_enabled:
     if DMEM_EN generate
-      neorv32_dmem_inst: neorv32_dmem
+      neorv32_dmem_inst: neorv32_dmem -- component declaration in package file
       generic map (
         AWIDTH => log2_dmem_size_c,
         OUTREG => DMEM_OUTREG_EN
@@ -1136,7 +1136,7 @@ begin
     -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_bootrom_enabled:
     if bootrom_en_c generate
-      neorv32_boot_rom_inst: neorv32_bootrom
+      neorv32_boot_rom_inst: neorv32_bootrom -- component declaration in package file
       port map (
         clk_i      => clk_i,
         rstn_i     => rstn_sys,
