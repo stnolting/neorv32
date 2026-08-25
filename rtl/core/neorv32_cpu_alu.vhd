@@ -78,7 +78,7 @@ architecture neorv32_cpu_alu_rtl of neorv32_cpu_alu is
   end function;
 
   -- ALU core --
-  signal cmp_rs1, cmp_rs2, opa, opb, addsub, cp_res : std_ulogic_vector(31 downto 0);
+  signal cmp_rs1, cmp_rs2, opa, opb, slt_opb, addsub, cp_res : std_ulogic_vector(31 downto 0);
   signal cmp_eq, cmp_lt, slt : std_ulogic;
 
   -- co-processor interface --
@@ -132,10 +132,11 @@ begin
   opb <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i;
 
   -- adder/subtractor
-  addsub <= std_ulogic_vector(unsigned(opa) - unsigned(opb)) when (ctrl_i.alu_sub = '1') else
-            std_ulogic_vector(unsigned(opa) + unsigned(opb));
-  add_o  <= addsub; -- direct output
-  slt    <= addsub(31) when (opa(31) = opb(31)) else opa(31) when (ctrl_i.alu_unsigned = '0') else opb(31);
+  addsub  <= std_ulogic_vector(unsigned(opa) - unsigned(opb)) when (ctrl_i.alu_sub = '1') else
+             std_ulogic_vector(unsigned(opa) + unsigned(opb));
+  add_o   <= addsub; -- direct output
+  slt_opb <= (opb(31) xnor ctrl_i.alu_unsigned) & opb(30 downto 0);
+  slt     <= '1' when unsigned(cmp_rs1) < unsigned(slt_opb) else '0';
 
   -- **************************************************************************************************************************
   -- Co-Processors
