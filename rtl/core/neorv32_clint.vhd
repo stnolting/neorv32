@@ -101,7 +101,7 @@ begin
   -- subword read-back --
   mtime_rd <= (others => '0') when (mtime_en = '0') else mtime(63 downto 32) when (bus_req_i.addr(2) = '1') else mtime(31 downto 0);
 
-  -- system time output: high and low word are not synchronized! --
+  -- system time output: high and low word are NOT synchronized! --
   time_o <= mtime;
 
 
@@ -207,14 +207,14 @@ use ieee.numeric_std.all;
 
 entity neorv32_clint_mtimecmp is
   port (
-    clk_i   : in  std_ulogic; -- global clock line
-    rstn_i  : in  std_ulogic; -- global reset line, low-active, async
+    clk_i   : in  std_ulogic;                     -- global clock line
+    rstn_i  : in  std_ulogic;                     -- global reset line, low-active, async
     mtime_i : in  std_ulogic_vector(63 downto 0); -- global mtime (async words!)
-    we_i    : in  std_ulogic_vector(1 downto 0); -- HI/LO word write enable
-    re_i    : in  std_ulogic_vector(1 downto 0); -- HI/LO word read enable
+    we_i    : in  std_ulogic_vector(1 downto 0);  -- HI/LO word write enable
+    re_i    : in  std_ulogic_vector(1 downto 0);  -- HI/LO word read enable
     wdata_i : in  std_ulogic_vector(31 downto 0); -- write data
     rdata_o : out std_ulogic_vector(31 downto 0); -- read data
-    mti_o   : out std_ulogic -- interrupt
+    mti_o   : out std_ulogic                      -- interrupt
   );
 end entity;
 

@@ -132,9 +132,11 @@ begin
   opb <= ctrl_i.alu_imm when (ctrl_i.alu_opb_mux = '1') else rs2_i;
 
   -- adder/subtractor
-  addsub  <= std_ulogic_vector(unsigned(opa) - unsigned(opb)) when (ctrl_i.alu_sub = '1') else
-             std_ulogic_vector(unsigned(opa) + unsigned(opb));
-  add_o   <= addsub; -- direct output
+  addsub <= std_ulogic_vector(unsigned(opa) - unsigned(opb)) when (ctrl_i.alu_sub = '1') else
+            std_ulogic_vector(unsigned(opa) + unsigned(opb));
+  add_o  <= addsub; -- direct output
+
+  -- set-on-less-than --
   slt_opb <= (opb(31) xnor ctrl_i.alu_unsigned) & opb(30 downto 0);
   slt     <= '1' when unsigned(cmp_rs1) < unsigned(slt_opb) else '0';
 
