@@ -88,6 +88,10 @@ architecture neorv32_smc_rtl of neorv32_smc is
   end record;
   signal csr : csr_t; -- register set
 
+  -- control interface --
+  signal ctrl_ack, ctrl_rden : std_ulogic;
+  signal ctrl_rdata : std_ulogic_vector(31 downto 0);
+
   -- data memory access --
   signal acc_req, acc_bank : std_ulogic;
   signal acc_fail : std_ulogic_vector(31 downto 0);
@@ -174,10 +178,21 @@ begin
 
   -- Control and Status Registers -----------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl_rsp_o <= rsp_terminate_c;
+      ctrl_ack  <= '0';
+      ctrl_rden <= '0';
+    elsif rising_edge(clk_i) then
+      ctrl_ack  <= ctrl_req_i.stb;
+      ctrl_rden <= ctrl_req_i.stb and (not ctrl_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  csr_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
       csr.enable <= '0';
       csr.ioen   <= '0';
       csr.dual   <= '0';
@@ -188,11 +203,6 @@ begin
       csr.cmd_wr <= (others => '0');
       csr.icmd   <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- defaults --
-      ctrl_rsp_o.ack  <= ctrl_req_i.stb;
-      ctrl_rsp_o.err  <= '0';
-      ctrl_rsp_o.data <= (others => '0');
-      -- write access --
       if (ctrl_req_i.stb = '1') and (ctrl_req_i.rw = '1') then
         if (ctrl_req_i.addr(2) = '0') then -- CSR0
           csr.enable <= ctrl_req_i.data(csr0_enable_c);
@@ -207,25 +217,35 @@ begin
           csr.icmd <= ctrl_req_i.data(23 downto 0);
         end if;
       end if;
-      -- read access --
-      if (ctrl_req_i.stb = '1') and (ctrl_req_i.rw = '0') then
-        if (ctrl_req_i.addr(2) = '0') then -- CSR0
-          ctrl_rsp_o.data(csr0_enable_c)                            <= csr.enable;
-          ctrl_rsp_o.data(csr0_ioen_c)                              <= csr.ioen;
-          ctrl_rsp_o.data(csr0_dual_c)                              <= csr.dual;
-          ctrl_rsp_o.data(csr0_busy_c)                              <= busy;
-          ctrl_rsp_o.data(csr0_msize_msb_c downto csr0_msize_lsb_c) <= csr.msize;
-          ctrl_rsp_o.data(csr0_cdiv_msb_c  downto csr0_cdiv_lsb_c)  <= csr.cdiv;
-          ctrl_rsp_o.data(csr0_rwait_msb_c downto csr0_rwait_lsb_c) <= csr.rwait;
-          ctrl_rsp_o.data(csr0_rcmd_msb_c  downto csr0_rcmd_lsb_c)  <= csr.cmd_rd;
-          ctrl_rsp_o.data(csr0_wcmd_msb_c  downto csr0_wcmd_lsb_c)  <= csr.cmd_wr;
-        else -- CSR1
-          ctrl_rsp_o.data(23 downto 0)  <= csr.icmd;
-          ctrl_rsp_o.data(31 downto 28) <= MEM_BASE(31 downto 28);
-        end if;
+    end if;
+  end process;
+
+  -- read access (asynchronous) --
+  csr_read: process(ctrl_rden, ctrl_req_i.addr, csr, busy)
+  begin
+    ctrl_rdata <= (others => '0');
+    if (ctrl_rden = '1') then -- output gating
+      if (ctrl_req_i.addr(2) = '0') then -- CSR0
+        ctrl_rdata(csr0_enable_c)                            <= csr.enable;
+        ctrl_rdata(csr0_ioen_c)                              <= csr.ioen;
+        ctrl_rdata(csr0_dual_c)                              <= csr.dual;
+        ctrl_rdata(csr0_busy_c)                              <= busy;
+        ctrl_rdata(csr0_msize_msb_c downto csr0_msize_lsb_c) <= csr.msize;
+        ctrl_rdata(csr0_cdiv_msb_c  downto csr0_cdiv_lsb_c)  <= csr.cdiv;
+        ctrl_rdata(csr0_rwait_msb_c downto csr0_rwait_lsb_c) <= csr.rwait;
+        ctrl_rdata(csr0_rcmd_msb_c  downto csr0_rcmd_lsb_c)  <= csr.cmd_rd;
+        ctrl_rdata(csr0_wcmd_msb_c  downto csr0_wcmd_lsb_c)  <= csr.cmd_wr;
+      else -- CSR1
+        ctrl_rdata(23 downto 0)  <= csr.icmd;
+        ctrl_rdata(31 downto 28) <= MEM_BASE(31 downto 28);
       end if;
     end if;
   end process;
+
+  -- bus response --
+  ctrl_rsp_o.ack  <= ctrl_ack;
+  ctrl_rsp_o.err  <= '0'; -- no access errors supported
+  ctrl_rsp_o.data <= ctrl_rdata;
 
   -- SMC is in charge of interface IOs --
   smc_ioen_o <= csr.ioen;
