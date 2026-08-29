@@ -52,6 +52,9 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   signal ctrl : ctrl_t; -- register set
 
   -- misc --
+  signal bus_ack        : std_ulogic; -- access acknowledge
+  signal bus_rden       : std_ulogic; -- bus read access
+  signal bus_rdata      : std_ulogic_vector(31 downto 0); -- bus read data
   signal prsc_tick      : std_ulogic; -- prescaler clock generator
   signal cen            : std_ulogic; -- counter enable
   signal cnt            : std_ulogic_vector(23 downto 0); -- timeout counter
@@ -63,50 +66,65 @@ begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_sys_i, clk_i)
+  bus_handshake: process(rstn_sys_i, clk_i)
   begin
     if (rstn_sys_i = '0') then
-      bus_rsp_o    <= rsp_terminate_c;
-      ctrl.enable  <= '0'; -- disable WDT after reset
-      ctrl.lock    <= '0'; -- unlock after reset
-      ctrl.timeout <= (others => '0');
-      reset_wdt    <= '0';
-      reset_force  <= '0';
+      bus_ack  <= '0';
+      bus_rden <= '0';
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack  <= bus_req_i.stb;
-      bus_rsp_o.err  <= '0';
-      bus_rsp_o.data <= (others => '0');
-      -- defaults --
-      reset_wdt   <= '0';
-      reset_force <= '0';
-      -- bus access --
-      if (bus_req_i.stb = '1') then
-        if (bus_req_i.rw = '1') then -- write access
-          if (bus_req_i.addr(2) = '0') then -- control register
-            if (ctrl.lock = '0') then -- update configuration only if not locked
-              ctrl.enable  <= bus_req_i.data(ctrl_enable_c);
-              ctrl.lock    <= bus_req_i.data(ctrl_lock_c);
-              ctrl.timeout <= bus_req_i.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c);
-            else -- write access attempt to locked CTRL register
-              reset_force <= '1';
-            end if;
-          else -- reset timeout counter - password check
-            if (bus_req_i.data(31 downto 0) = reset_pwd_c) then
-              reset_wdt <= '1'; -- correct; reset watchdog
-            else
-              reset_force <= '1'; -- incorrect; trigger system reset
-            end if;
+      bus_ack  <= bus_req_i.stb;
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  bus_write: process(rstn_sys_i, clk_i)
+  begin
+    if (rstn_sys_i = '0') then
+      ctrl.enable   <= '0'; -- disable WDT after reset
+      ctrl.lock     <= '0'; -- unlock after reset
+      ctrl.timeout  <= (others => '0');
+      ctrl.rst_time <= '0';
+      ctrl.rst_trig <= '0';
+    elsif rising_edge(clk_i) then
+      ctrl.rst_time <= '0'; -- default
+      ctrl.rst_trig <= '0'; -- default
+      if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
+        if (bus_req_i.addr(2) = '0') then -- control register
+          if (ctrl.lock = '0') then -- update configuration only if not locked
+            ctrl.enable  <= bus_req_i.data(ctrl_enable_c);
+            ctrl.lock    <= bus_req_i.data(ctrl_lock_c);
+            ctrl.timeout <= bus_req_i.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c);
+          else -- write access attempt to locked CTRL register
+            ctrl.rst_trig <= '1';
           end if;
-        else -- read access
-          bus_rsp_o.data(ctrl_enable_c)                                <= ctrl.enable;
-          bus_rsp_o.data(ctrl_lock_c)                                  <= ctrl.lock;
-          bus_rsp_o.data(ctrl_rcause_msb_c downto ctrl_rcause_lsb_c)   <= reset_cause;
-          bus_rsp_o.data(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c) <= ctrl.timeout;
+        else -- reset timeout counter - password check
+          if (bus_req_i.data(31 downto 0) = reset_pwd_c) then
+            ctrl.rst_time <= '1'; -- correct: reset timer
+          else
+            ctrl.rst_trig <= '1'; -- incorrect: trigger system reset
+          end if;
         end if;
       end if;
     end if;
   end process;
+
+  -- read access (asynchronous) --
+  bus_read: process(bus_rden, ctrl, reset_cause)
+  begin
+    bus_rdata <= (others => '0');
+    if (bus_rden = '1') then -- output gating
+      bus_rdata(ctrl_enable_c)                                <= ctrl.enable;
+      bus_rdata(ctrl_lock_c)                                  <= ctrl.lock;
+      bus_rdata(ctrl_rcause_msb_c  downto ctrl_rcause_lsb_c)  <= reset_cause;
+      bus_rdata(ctrl_timeout_msb_c downto ctrl_timeout_lsb_c) <= ctrl.timeout;
+    end if;
+  end process;
+
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= bus_rdata;
 
   -- Timeout Counter ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
