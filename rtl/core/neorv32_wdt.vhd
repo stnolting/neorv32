@@ -17,14 +17,14 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_wdt is
   port (
-    clk_i       : in  std_ulogic;                    -- global clock line
-    rstn_ext_i  : in  std_ulogic;                    -- external reset, low-active
-    rstn_dbg_i  : in  std_ulogic;                    -- debugger reset, low-active
-    rstn_sys_i  : in  std_ulogic;                    -- system reset, low-active
-    bus_req_i   : in  bus_req_t;                     -- bus request
-    bus_rsp_o   : out bus_rsp_t;                     -- bus response
-    clkgen_i    : in  std_ulogic_vector(7 downto 0); -- prescaled clock enables
-    rstn_o      : out std_ulogic                     -- timeout reset, low_active, sync
+    clk_i      : in  std_ulogic;                    -- global clock line
+    rstn_ext_i : in  std_ulogic;                    -- external reset, low-active
+    rstn_dbg_i : in  std_ulogic;                    -- debugger reset, low-active
+    rstn_sys_i : in  std_ulogic;                    -- system reset, low-active
+    bus_req_i  : in  bus_req_t;                     -- bus request
+    bus_rsp_o  : out bus_rsp_t;                     -- bus response
+    clkgen_i   : in  std_ulogic_vector(7 downto 0); -- prescaled clock enables
+    rstn_o     : out std_ulogic                     -- timeout reset, low_active, sync
   );
 end entity;
 
@@ -43,9 +43,11 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
 
   -- control register --
   type ctrl_t is record
-    enable  : std_ulogic;
-    lock    : std_ulogic;
-    timeout : std_ulogic_vector(23 downto 0);
+    enable   : std_ulogic;
+    lock     : std_ulogic;
+    timeout  : std_ulogic_vector(23 downto 0);
+    rst_time : std_ulogic; -- reset timeout counter
+    rst_trig : std_ulogic; -- trigger system reset
   end record;
   signal ctrl : ctrl_t; -- register set
 
@@ -53,8 +55,6 @@ architecture neorv32_wdt_rtl of neorv32_wdt is
   signal prsc_tick      : std_ulogic; -- prescaler clock generator
   signal cen            : std_ulogic; -- counter enable
   signal cnt            : std_ulogic_vector(23 downto 0); -- timeout counter
-  signal reset_wdt      : std_ulogic; -- reset timeout counter ("feed the watch dog")
-  signal reset_force    : std_ulogic; -- illegal access
   signal hw_rst_timeout : std_ulogic; -- trigger reset because of timeout
   signal hw_rst_access  : std_ulogic; -- trigger reset because of illegal access if locked
   signal reset_cause    : std_ulogic_vector(1 downto 0); -- cause of last reset
@@ -117,7 +117,7 @@ begin
       cnt <= (others => '0');
     elsif rising_edge(clk_i) then
       cen <= ctrl.enable; -- delay start by 1 cycle to make sure cnt is initialized by ctrl.timeout
-      if (cen = '0') or (ctrl.enable = '0') or (reset_wdt = '1') then -- watchdog disabled or reset
+      if (cen = '0') or (ctrl.enable = '0') or (ctrl.rst_time = '1') then -- watchdog disabled or reset
         cnt <= ctrl.timeout;
       elsif (prsc_tick = '1') then
         cnt <= std_ulogic_vector(unsigned(cnt) - 1);
@@ -138,7 +138,7 @@ begin
       rstn_o         <= '1';
     elsif rising_edge(clk_i) then -- reset triggers are sticky until system reset
       hw_rst_timeout <= hw_rst_timeout or (ctrl.enable and cen and prsc_tick and (not or_reduce_f(cnt))); -- timeout
-      hw_rst_access  <= hw_rst_access  or (ctrl.enable and ctrl.lock and reset_force); -- locked and incorrect password
+      hw_rst_access  <= hw_rst_access  or (ctrl.enable and ctrl.lock and ctrl.rst_trig); -- locked and incorrect password
       rstn_o         <= not (hw_rst_timeout or hw_rst_access); -- system-wide reset
     end if;
   end process;
