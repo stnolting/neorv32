@@ -75,13 +75,9 @@ begin
 
   -- JTAG Input Synchronizer ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  tap_synchronizer: process(rstn_i, clk_i)
+  tap_synchronizer: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      tck_ff <= (others => '0');
-      tdi_ff <= (others => '0');
-      tms_ff <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       tck_ff <= tck_ff(1 downto 0) & jtag_tck_i;
       tdi_ff <= tdi_ff(0) & jtag_tdi_i;
       tms_ff <= tms_ff(0) & jtag_tms_i;

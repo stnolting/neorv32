@@ -145,8 +145,8 @@ architecture neorv32_cpu_alu_fpu_rtl of neorv32_cpu_alu_fpu is
   signal ctrl_engine : ctrl_engine_t;
 
   -- floating-point operands --
-  type op_data_t  is array (0 to 1) of std_ulogic_vector(31 downto 0);
-  type op_class_t is array (0 to 1) of std_ulogic_vector(9 downto 0);
+  type op_data_t  is array (1 downto 0) of std_ulogic_vector(31 downto 0);
+  type op_class_t is array (1 downto 0) of std_ulogic_vector(9 downto 0);
   type fpu_operands_t is record
     rs1       : std_ulogic_vector(31 downto 0);
     rs1_class : std_ulogic_vector(9 downto 0);
@@ -811,15 +811,14 @@ begin
   )
   port map (
     -- global control --
-    clk_i    => clk_i,
-    rstn_i   => rstn_i,
+    clk_i  => clk_i,
     -- data path --
-    en_i     => multiplier.start,
-    opa_i    => multiplier.opa,
-    opa_sn_i => '0',
-    opb_i    => multiplier.opb,
-    opb_sn_i => '0',
-    res_o    => multiplier.product
+    en_i   => multiplier.start,
+    opa_i  => multiplier.opa,
+    opas_i => '0',
+    opb_i  => multiplier.opb,
+    opbs_i => '0',
+    res_o  => multiplier.product
   );
   multiplier.opa <= '1' & fpu_operands.rs1(22 downto 0); -- append hidden one to mantissa
   multiplier.opb <= '1' & fpu_operands.rs2(22 downto 0); -- append hidden one to mantissa

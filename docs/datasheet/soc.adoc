@@ -117,7 +117,7 @@ can be determined via the <<_system_configuration_information_memory_sysinfo, SY
 4+^| **<<_cpu_tuning_options>>**
 | `CPU_CONSTT_BR_EN`    | boolean   | false         | Implement constant-time branches (same execution times for taken and not-taken branches).
 | `CPU_FAST_MUL_EN`     | boolean   | false         | Implement fast but large full-parallel multipliers (trying to infer DSP blocks); see section <<_cpu_arithmetic_logic_unit>>.
-| `CPU_FAST_MUL_REG`    | boolean   | false         | Add a pipeline register to the fast multiplier (requires `CPU_FAST_MUL_EN`); see section <<_cpu_arithmetic_logic_unit>>.
+| `CPU_FAST_MUL_REGS`   | natural   | 1             | Number of register stages for the fast multiplier (1..3; requires `CPU_FAST_MUL_EN`); see section <<_cpu_arithmetic_logic_unit>>.
 | `CPU_FAST_SHIFT_EN`   | boolean   | false         | Implement fast but large full-parallel barrel shifters; see section <<_cpu_arithmetic_logic_unit>>.
 | `CPU_RF_ARCH_SEL`     | natural   | 0             | CPU register file implementation style select; see section <<_cpu_register_file>>.
 4+^| **Physical Memory Protection (<<_smpmp_isa_extension>>)**
@@ -348,6 +348,47 @@ to all inputs and output so the synthesis tool can insert an explicit IO (bounda
 <<<
 // ####################################################################################################################
 :sectnums:
+=== Replaceable Modules
+
+Certain NEORV32 SoC modules are designed so that they can be substituted with a custom, external (Verilog) module.
+This makes it possible to integrate platform-specific IP, such as technology-specific memory, instead of using the
+default/generic RTL implementation. To enable this kind of replacement, the corresponding processor modules follow
+a few specific design conventions:
+
+[start=1]
+. **Component instantiation**: These modules are instantiated using VHDL's component instantiation syntax rather
+than direct entity instantiation. This allows black-box instantiation and late-binding, which is required by the
+GHDL-based <<_convert_to_verilog>> flow used by NEORV32.
+. **Simple interfaces**: All ports use only the basic `std_ulogic` / `std_ulogic_vector` types.
+Custom or composite VHDL types (such as records) are intentionally avoided.
+. **Static port widths**: Port widths are fixed and defined at elaboration time;
+no generic-dependent or dynamically computed port widths are used.
+
+These properties ensure that the affected modules can be cleanly swapped out for external, technology-specific
+implementations without breaking the overall top-level structure or the automated <<_convert_to_verilog>> process.
+
+At this time, the following modules are being considered for possible replacement:
+
+.Modules that can be replaced directly by external (Verilog) IP
+[cols="<5,<5,<6"]
+[options="header",grid="all"]
+|=======================
+| Module | File name | Exemplary Verilog substitution module
+| Bootloader ROM (<<_bootloader_rom_bootrom,BOOTROM>>)   | `rtl/core/neorv32_bootrom.vhd` | `rtl/verilog/neorv32_bootrom.v`
+| Data memory (<<_data_memory_dmem,DMEM>>)               | `rtl/core/neorv32_dmem.vhd`    | `rtl/verilog/neorv32_dmem.v`   
+| Instruction memory (<<_instruction_memory_imem,IMEM>>) | `rtl/core/neorv32_imem.vhd`    | `rtl/verilog/neorv32_imem.v`   
+|=======================
+
+.Replacing additional modules
+[NOTES]
+Others modules like peripheral/IO modules (such as the UART) should not be replaced directly. Instead,
+the default module should be disabled using the appropriate top generic. Custom modules can be connected,
+for example, via the <<_processor_external_bus_interface_xbus>>.
+
+
+<<<
+// ####################################################################################################################
+:sectnums:
 === Processor Clocking
 
 The entire system is implemented as fully-synchronous logic design using a single clock domain that is driven
@@ -394,14 +435,26 @@ of the following sources:
 [TIP]
 The actual reset cause can be determined via the <<_watchdog_timer_wdt>>.
 
-If any of these sources triggers a reset, the internal system-wide reset will be active for at least 4 clock cycles ensuring
-a valid reset of the entire processor. This system reset is asserted _asynchronoulsy_ if triggered by the external
-`rstn_i` signal and is asserted _synchronously_ if triggered by an internal reset source. However, the system reset is
-always de-asserted _synchronously_ at the next rising clock edge.
+If any of these sources triggers a reset, the internal system-wide reset will be active for at least 4 clock cycles
+ensuring a valid reset of the entire processor (reset sequencer VHDL module: `neorv32_sys_reset`). This system reset is
+asserted _asynchronoulsy_ if triggered by the external `rstn_i` signal and is asserted _synchronously_ if triggered by
+an internal reset source. However, the system reset is always de-asserted _synchronously_ at the next rising clock edge.
 
-Internally, **all registers** that are not meant for mapping to blockRAM (like the register file) do provide a dedicated and
-**low-active asynchronous** hardware reset. This asynchronous reset ensures that the entire processor logic is reset to a
-defined state even if the main clock is not operational yet.
+==== Reset Implementation
+
+Internally, only registers that require a defined and controlled processor startup are equipped with a dedicated,
+**low-active asynchronous** hardware reset. These include, in particular, state registers of FSMs, control and configuration
+registers, and registers of the control logic. The asynchronous reset sets these components to a defined initial state even
+when the main clock is not yet available.
+
+In contrast, registers whose contents are not relevant during or immediately after the reset do not have an explicit hardware
+reset. This applies, among other things, to memory structures, pipeline registers, data buffers, and synchronizers. The values
+contained therein may initially be undefined after the reset. However, reset control, status, and validity signals ensure that
+such values are not used before they have been replaced by valid data.
+
+The deliberate omission of reset logic reduces resource requirements and reset fan-out, improves timing characteristics, and
+facilitates the mapping of suitable memory structures to FPGA block RAM. As a result, the processor startup remains fully
+controlled without creating unnecessary reset structures in components that are purely for data storage.
 
 
 <<<

@@ -6,16 +6,17 @@ on:
       - main
     paths:
       - 'docs/**'
+      - 'sw/**'
       - '.github/workflows/Documentation.yml'
   pull_request:
     paths:
       - 'docs/**'
+      - 'sw/**'
       - '.github/workflows/Documentation.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pages: write
+  contents: read
 
 jobs:
 
@@ -24,48 +25,69 @@ jobs:
     name: 'API Documentation'
 
     steps:
+      - name: '🧰 Repository Checkout'
+        uses: actions/checkout@v6
 
-    - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v6
+      - name: '📦 Install Doxygen'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends doxygen
 
-    - name: '🛠️ Modifying Doxyfile'
-      run: |
-        ls -al ./docs
-        sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' ./docs/Doxyfile
+      - name: '🛠️ Modify Doxyfile'
+        shell: bash
+        run: |
+          ls -al ./docs
+          sed -i 's/$(PWD)\/../$(GITHUB_WORKSPACE)/g' ./docs/Doxyfile
 
-    - name: '📚 Generate Doxygen Documentation'
-      uses: mattnotmitt/doxygen-action@v1.12.0
-      with:
-        working-directory: '.'
-        doxyfile-path: 'docs/Doxyfile'
+      - name: '🔎 Show Tool Versions'
+        run: doxygen --version
 
-    - name: '📤 Upload Artifact'
-      uses: actions/upload-artifact@v7
-      with:
-        name: NEORV32-Doxygen
-        path: doxygen_build/html
+      - name: '📚 Generate Doxygen Documentation'
+        run: make -C docs doxygen
 
+      - name: '📤 Upload Artifact'
+        uses: actions/upload-artifact@v7
+        with:
+          name: NEORV32-Doxygen
+          path: docs/doxygen_build/html
+          if-no-files-found: error
 
   asciidoctor:
     runs-on: ubuntu-latest
     name: 'Datasheet & User Guide'
 
     steps:
+      - name: '🧰 Repository Checkout'
+        uses: actions/checkout@v6
 
-    - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
+      - name: '💎 Set Up Ruby'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '4.0'
 
-    - name: '📚 Build Datasheet and User Guide (PDF and HTML)'
-      run: make -C docs container
+      - name: '📦 Install Asciidoctor and Wavedrom'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends nodejs npm
+          gem install --no-document asciidoctor asciidoctor-pdf asciidoctor-diagram rouge
+          sudo npm install --global wavedrom-cli
 
-    - name: '📤 Upload Artifact: HTML'
-      uses: actions/upload-artifact@v7
-      with:
-        name: NEORV32
-        path: docs/public
+      - name: '🔎 Show Tool Versions'
+        run: |
+          ruby --version
+          asciidoctor --version
+          asciidoctor-pdf --version
+          wavedrom-cli --version
 
+      - name: '📚 Build Datasheet and User Guide'
+        run: make -C docs all
+
+      - name: '📤 Upload Artifact: HTML and PDF'
+        uses: actions/upload-artifact@v7
+        with:
+          name: NEORV32
+          path: docs/public
+          if-no-files-found: error
 
   deploy:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/'))
@@ -75,41 +97,41 @@ jobs:
     runs-on: ubuntu-latest
     name: 'Deploy to Releases and Pages'
 
+    permissions:
+      contents: write
+
     steps:
+      - name: '🧰 Repository Checkout'
+        uses: actions/checkout@v6
 
-    - name: '🧰 Repository Checkout'
-      uses: actions/checkout@v6
+      - name: '📥 Download Artifacts'
+        uses: actions/download-artifact@v8
 
-    - name: '📥 Download Artifacts'
-      uses: actions/download-artifact@v8
+      - name: '🛠️ Organize public subdir and create a tarball'
+        run: |
+          mv NEORV32 public
+          mv public/pdf ./
+          mv NEORV32-Doxygen public/sw
+          tar zvcf NEORV32-SITE-nightly.tar.gz -C public .
+          cd pdf
+          mv NEORV32.pdf NEORV32-nightly.pdf
+          mv NEORV32_UserGuide.pdf NEORV32_UserGuide-nightly.pdf
 
-    - name: '🛠️ Organize public subdir and create a tarball'
-      run: |
-        mv NEORV32 public
-        mv public/pdf ./
-        mv NEORV32-Doxygen public/sw
-        tar zvcf NEORV32-SITE-nightly.tar.gz -C public .
-        cd pdf
-        mv NEORV32.pdf NEORV32-nightly.pdf
-        mv NEORV32_UserGuide.pdf NEORV32_UserGuide-nightly.pdf
+      - name: '📦 Deploy to GitHub Releases'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload nightly_release NEORV32-SITE-nightly.tar.gz pdf/NEORV32*nightly.pdf --clobber
 
-    # Tagged: create a pre-release or a release (semver)
-    # Untagged: update the assets of pre-release 'nightly_release'
-    - name: '📦 Deploy to GitHub-Releases'
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        gh release upload nightly_release NEORV32-SITE-nightly.tar.gz pdf/NEORV32*nightly.pdf --clobber
-
-    - name: '🚀 Deploy to GitHub-Pages'
-      run: |
-        cd public
-        git init
-        # use authenticated remote (GITHUB_TOKEN is available as a secret)
-        git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-        touch .nojekyll
-        git add .
-        git config --local user.email "push@gha"
-        git config --local user.name "GHA"
-        git commit -am "update ${{ github.sha }}"
-        git push -u origin +HEAD:gh-pages --force
+      - name: '🚀 Deploy to GitHub Pages'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd public
+          git init
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          touch .nojekyll
+          git add .
+          git config --local user.email "push@gha"
+          git config --local user.name "GHA"
+          git commit -m "update ${{ github.sha }}"
+          git push -u origin +HEAD:gh-pages --force

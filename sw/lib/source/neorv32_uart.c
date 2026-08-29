@@ -74,7 +74,7 @@ void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_m
 #endif
 
   // find baud prescaler (10-bit wide))
-  while (baud_div >= 0x3ffU) {
+  while (baud_div >= 0x400U) {
     if ((prsc_sel == 2) || (prsc_sel == 4))
       baud_div >>= 3;
     else
@@ -84,9 +84,9 @@ void neorv32_uart_setup(neorv32_uart_t *UARTx, uint32_t baudrate, uint32_t irq_m
 
   uint32_t tmp = 0;
   tmp |= (uint32_t)(1              & 1U)     << UART_CTRL_EN;
-  tmp |= (uint32_t)(prsc_sel       & 3U)     << UART_CTRL_PRSC_LSB;
+  tmp |= (uint32_t)(prsc_sel       & 7U)     << UART_CTRL_PRSC_LSB;
   tmp |= (uint32_t)((baud_div - 1) & 0x3ffU) << UART_CTRL_BAUD_LSB;
-  tmp |= (uint32_t)(irq_mask       & (0xfu   << UART_CTRL_IRQ_RX_NEMPTY));
+  tmp |= (uint32_t)(irq_mask       & (0xfU   << UART_CTRL_IRQ_RX_NEMPTY));
 
 #ifdef UART0_SIM_MODE
 #warning UART0_SIM_MODE (primary UART) enabled! \
@@ -192,8 +192,13 @@ void neorv32_uart_rtscts_disable(neorv32_uart_t *UARTx) {
  **************************************************************************/
 void neorv32_uart_putc(neorv32_uart_t *UARTx, char c) {
 
+#ifdef UART_SEMIHOSTING
+  (void)UARTx;
+  neorv32_semihosting_putc(c);
+#else
   while ((UARTx->CTRL & (1<<UART_CTRL_TX_NFULL)) == 0); // wait for free space in TX FIFO
   neorv32_uart_tx_put(UARTx, c);
+#endif
 }
 
 
@@ -294,7 +299,9 @@ char neorv32_uart_char_received_get(neorv32_uart_t *UARTx) {
  * Print string (zero-terminated) via UART.
  *
  * @note This function is blocking.
- * @warning "/n" line breaks are automatically converted to "/r/n".
+ * @note No trailing line break is added; use #neorv32_uart_println if you need one
+ * (e.g. when composing a single line from several calls).
+ * @warning "\\n" line breaks are automatically converted to "\\r\\n".
  *
  * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
  * @param[in] s Pointer to string.
@@ -312,6 +319,22 @@ void neorv32_uart_puts(neorv32_uart_t *UARTx, const char *s) {
     neorv32_uart_putc(UARTx, c);
   }
 #endif
+}
+
+
+/**********************************************************************//**
+ * Print string (zero-terminated) via UART and append a trailing line break.
+ *
+ * @note This function is blocking.
+ * @warning "/n" line breaks are automatically converted to "/r/n".
+ *
+ * @param[in,out] UARTx Hardware handle to UART register struct, #neorv32_uart_t.
+ * @param[in] s Pointer to string.
+ **************************************************************************/
+void neorv32_uart_println(neorv32_uart_t *UARTx, const char *s) {
+
+  neorv32_uart_puts(UARTx, s);
+  neorv32_uart_puts(UARTx, "\n");
 }
 
 
@@ -340,7 +363,7 @@ void neorv32_uart_vprintf(neorv32_uart_t *UARTx, const char *format, va_list arg
 
   while ((c = *format++)) {
     if (c == '%') {
-      c = tolower(*format++);
+      c = tolower((unsigned char)(*format++));
       switch (c) {
 
         case 's': // string

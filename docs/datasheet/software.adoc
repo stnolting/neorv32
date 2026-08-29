@@ -200,7 +200,7 @@ Targets:
 Additional targets:
 
   sim           in-console simulation using default testbench (sim folder) and GHDL
-  hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl
+  hdl_list      regenerate HDL file-list (*.f) in NEORV32_HOME/rtl
   upload        upload executable to bootloader via UART (/dev/ttyUSB1)
   elf_info      show ELF information
   elf_sections  show ELF sections

@@ -49,16 +49,16 @@ architecture xbus_gateway_rtl of xbus_gateway is
   constant num_devs_c : natural := 8; -- number of device ports
 
   -- list of device base address and address size --
-  type dev_en_list_t   is array (0 to num_devs_c-1) of boolean;
-  type dev_base_list_t is array (0 to num_devs_c-1) of std_ulogic_vector(31 downto 0);
-  type dev_size_list_t is array (0 to num_devs_c-1) of natural;
-  constant dev_en_list_c   : dev_en_list_t   := (DEV_0_EN, DEV_1_EN, DEV_2_EN, DEV_3_EN, DEV_4_EN, DEV_5_EN, DEV_6_EN, DEV_7_EN);
-  constant dev_base_list_c : dev_base_list_t := (DEV_0_BASE, DEV_1_BASE, DEV_2_BASE, DEV_3_BASE, DEV_4_BASE, DEV_5_BASE, DEV_6_BASE, DEV_7_BASE);
-  constant dev_size_list_c : dev_size_list_t := (DEV_0_SIZE, DEV_1_SIZE, DEV_2_SIZE, DEV_3_SIZE, DEV_4_SIZE, DEV_5_SIZE, DEV_6_SIZE, DEV_7_SIZE);
+  type dev_en_list_t   is array (num_devs_c-1 downto 0) of boolean;
+  type dev_base_list_t is array (num_devs_c-1 downto 0) of std_ulogic_vector(31 downto 0);
+  type dev_size_list_t is array (num_devs_c-1 downto 0) of natural;
+  constant dev_en_list_c : dev_en_list_t := (0 => DEV_0_EN, 1 => DEV_1_EN, 2 => DEV_2_EN, 3 => DEV_3_EN, 4 => DEV_4_EN, 5 => DEV_5_EN, 6 => DEV_6_EN, 7 => DEV_7_EN);
+  constant dev_base_list_c : dev_base_list_t := (0 => DEV_0_BASE, 1 => DEV_1_BASE, 2 => DEV_2_BASE, 3 => DEV_3_BASE, 4 => DEV_4_BASE, 5 => DEV_5_BASE, 6 => DEV_6_BASE, 7 => DEV_7_BASE);
+  constant dev_size_list_c : dev_size_list_t := (0 => DEV_0_SIZE, 1 => DEV_1_SIZE, 2 => DEV_2_SIZE, 3 => DEV_3_SIZE, 4 => DEV_4_SIZE, 5 => DEV_5_SIZE, 6 => DEV_6_SIZE, 7 => DEV_7_SIZE);
 
   -- device ports combined as arrays --
-  type dev_req_t is array (0 to num_devs_c-1) of xbus_req_t;
-  type dev_rsp_t is array (0 to num_devs_c-1) of xbus_rsp_t;
+  type dev_req_t is array (num_devs_c-1 downto 0) of xbus_req_t;
+  type dev_rsp_t is array (num_devs_c-1 downto 0) of xbus_rsp_t;
   signal dev_req : dev_req_t;
   signal dev_rsp : dev_rsp_t;
 

@@ -159,11 +159,9 @@ begin
   tx_fifo.clr   <= not ctrl.enable;
 
   -- IRQ generator --
-  irq_generator: process(rstn_i, clk_i)
+  irq_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       irq_o <= ctrl.enable and (not tx_fifo.avail); -- IRQ if FIFO is empty
     end if;
   end process;

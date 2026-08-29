@@ -127,6 +127,7 @@ The CPU does not support resolving unaligned memory access by the hardware. Any 
 unaligned memory access will raise an exception to allow a software-based emulation.
 See section <<_application_context_handling>> for more information.
 
+
 :sectnums:
 ==== CPU Front-End
 
@@ -139,6 +140,7 @@ to the CPU back-end for execution.
 The IPB allows the front-end to do "speculative" instruction fetches as it keeps fetching the next consecutive
 instruction all the time. This also allows to decouple instruction fetch and instruction execution so both stages
 can operate in parallel to increase performance.
+
 
 :sectnums:
 ==== CPU Back-End
@@ -153,6 +155,7 @@ The division into individual micro-operations not only allows for small hardware
 cycles (e.g., the ALU: for arithmetic/logical calculations and also for calculating the next program counter). It also
 allows for precise monitoring of execution and the generation of precise traps. Hence, the back-end also includes
 <<_control_and_status_registers_csrs>>, the<<_traps_exceptions_and_interrupts>> logic and the <<_cpu_debug_mode>> controller.
+
 
 :sectnums:
 ==== CPU Register File
@@ -288,7 +291,7 @@ package file (`neorv32_package.vhd`).
 | Signal      | Width | RVFI Equivalent  | Description
 | `valid`     |     1 | `rvfi_valid`     | All others signals are valid when set; high for one cycle
 4+^| **Instruction Metadata**
-| `order`     |    32 | `rvfi_order`     | Instruction index (linear incrementing counter; resets to zero on overflow)
+| `order`     |    64 | `rvfi_order`     | Instruction index (linear incrementing counter; resets to zero on overflow); bits `63:32` are hardwired to all-zero
 | `insn`      |    32 | `rvfi_insn`      | Instruction word; for compressed instructions the upper 16-bit are set to zero
 | `trap`      |     1 | `rvfi_trap`      | Set if the current instruction causes a synchronous exception
 | `halt`      |     1 | `rvfi_halt`      | Set if the current instruction is last instruction before halting
@@ -385,18 +388,20 @@ result bit in every cycle. Multiplication operations always require 32 clock cyc
 
 {empty} +
 [discrete]
-===== **`CPU_FAST_MUL_REG`**
+===== **`CPU_FAST_MUL_REGS`**
 
 [cols="<1,<8"]
 [frame="topbot",grid="none"]
 |=======================
-| Name        | Fast multiplier pipeline register
-| Type        | `boolean`
-| Default     | `false` (disabled)
-| Description | Only effective together with <<_cpu_fast_mul_en>>. When **enabled** a pipeline register is added to the fast
-multiplier so the synthesis tool can retime it into the DSP cascade that is inferred when the DSP blocks are narrower than the
-operands, shortening the critical path. Costs one extra latency cycle per multiplication (`T_mul_latency` = 2).
-|             | When **disabled** the fast multiplier is bit-identical to before. Wide-DSP targets (e.g. Xilinx UltraScale+) do not need this.
+| Name        | Fast multiplier register stages
+| Type        | `natural` (1..3)
+| Default     | 1
+| Description | Only effective together with <<_cpu_fast_mul_en>>. This option selects the number of register stages in the fast
+multiplier. The multiplier result is valid `CPU_FAST_MUL_REGS + 1` cycles after the operation trigger, including input operand capture;
+`T_mul_latency` equals `CPU_FAST_MUL_REGS`.
+|             | A value of 1 uses a single inferred multiplier stage. A value of 2 adds an output register that synthesis may retime
+into a DSP cascade. A value of 3 decomposes the product into four half-word multiplications with explicitly registered partial
+products, partial sums, and final result. This provides deterministic pipeline boundaries and avoids multi-DSP multiplier cascades.
 |=======================
 
 
@@ -436,6 +441,7 @@ can be implemented most efficiently for the target platform/technology. see sect
 |=======================
 
 
+:sectnums:
 ==== Sleep Mode
 
 The NEORV32 CPU provides a single sleep mode that can be entered to power-down the core reducing
@@ -450,6 +456,13 @@ source becomes _pending_ or if a debug session is started.
 When executed in debug-mode or during single-stepping, `wfi` will behave as simple `nop` without entering sleep mode.
 
 
+:sectnums:
+==== CPU Reset
+
+See <<_reset_implementation>>.
+
+
+:sectnums:
 ==== Full Virtualization
 
 Just like the RISC-V ISA, the NEORV32 aims to provide _maximum virtualization_ capabilities on CPU and SoC level to

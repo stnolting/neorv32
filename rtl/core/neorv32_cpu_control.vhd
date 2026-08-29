@@ -166,6 +166,8 @@ architecture neorv32_cpu_control_rtl of neorv32_cpu_control is
   signal cnt_event    : std_ulogic_vector(cnt_event_width_c-1 downto 0); -- counter events
   signal ebreak_trig  : std_ulogic; -- environment break exception trigger
   signal trap_env     : std_ulogic_vector(6 downto 0); -- environment call cause-value helper
+  signal retire_start : std_ulogic; -- start of instruction retire tracking
+  signal retired      : std_ulogic; -- tracked instruction has retired
 
 begin
 
@@ -270,7 +272,7 @@ begin
 
       when S_DISPATCH => -- wait for ISSUE ENGINE to emit a valid instruction word
       -- ------------------------------------------------------------
-        -- prepare update of next-PC (pc2) in S_EXECUTE state --
+        -- prepare PC increment (pc2 in S_EXECUTE state) --
         ctrl_nxt.alu_opa_mux <= '1'; -- opa = current PC
         ctrl_nxt.alu_opb_mux <= '1'; -- opb = immediate = +2/4
         if RISCV_ISA_C and (frontend_i.compr = '1') then
@@ -282,15 +284,16 @@ begin
         if (env_pend = '1') or (exc_fire = '1') then -- pending trap or pending exception (fast)
           exec_nxt.state <= S_TRAP_ENTER;
         elsif (frontend_i.valid = '1') and (hwtrig_i = '0') then -- new instruction word available and no pending HW trigger
-          instr_be  <= frontend_i.fault; -- access fault during instruction fetch
+          instr_be       <= frontend_i.fault; -- access fault during instruction fetch
           exec_nxt.ci    <= frontend_i.compr; -- this is a decompressed instruction
           exec_nxt.ir    <= frontend_i.i32; -- actual instruction word
           exec_nxt.irc   <= frontend_i.i16; -- original instruction word
           exec_nxt.pc    <= exec.pc2(31 downto 1) & '0';
           exec_nxt.state <= S_EXECUTE; -- start executing new instruction
-          if (frontend_i.i32(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
-            ctrl_nxt.csr_addr <= frontend_i.i32(instr_imm12_msb_c downto instr_imm12_lsb_c); -- reduce switching activity on csr_addr net
-          end if;
+        end if;
+        -- buffer CSR address for SYSTEM instructions to reduce switching activity on csr_addr net --
+        if (frontend_i.i32(instr_opcode_msb_c downto instr_opcode_lsb_c+2) = opcode_system_c(6 downto 2)) then
+          ctrl_nxt.csr_addr <= frontend_i.i32(instr_imm12_msb_c downto instr_imm12_lsb_c);
         end if;
 
       when S_TRAP_ENTER => -- enter trap environment and jump to trap vector
@@ -389,11 +392,10 @@ begin
           when opcode_fence_c =>
             if (exec.ir(instr_funct3_lsb_c) = '1') then -- fence.i
               ctrl_nxt.if_fence <= '1'; -- instruction fence
-              exec_nxt.state    <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC
             else -- fence
               ctrl_nxt.lsu_fence <= or_reduce_f(exec.ir(31 downto 24)); -- data fence if pred/succ != 0; execute as NOP otherwise
-              exec_nxt.state     <= S_DISPATCH;
             end if;
+            exec_nxt.state <= S_RESTART; -- reset instruction fetch & IPB via branch to next-PC (only required for fence.i)
 
           -- FPU: floating-point operations --
           when opcode_fpu_c =>
@@ -431,9 +433,11 @@ begin
           instr_ma     <= alu_add_i(1) and bool_to_ulogic_f(not RISCV_ISA_C); -- branch destination misaligned?
           exec_nxt.pc2 <= alu_add_i(31 downto 1) & '0';
         end if;
-        ctrl_nxt.pc_ret   <= exec.pc2(31 downto 1) & '0'; -- output return address
-        ctrl_nxt.rf_wb_en <= exec.ir(instr_opcode_lsb_c+2); -- save return address if link operation (won't happen if exception)
-        exec_nxt.state    <= S_DISPATCH;
+        if (exec.ir(instr_opcode_lsb_c+2) = '1') then -- is link operation
+          ctrl_nxt.pc_ret   <= exec.pc2(31 downto 1) & '0'; -- output return address
+          ctrl_nxt.rf_wb_en <= '1'; -- save return address (won't happen if exception)
+        end if;
+        exec_nxt.state <= S_DISPATCH;
 
       when S_MEM_REQ => -- trigger memory request
       -- ------------------------------------------------------------
@@ -457,11 +461,11 @@ begin
         if (or_reduce_f(exc_buf(exc_ialign_c downto exc_iaccess_c)) = '0') then -- non-illegal instruction
           if (funct3_v = funct3_env_c) then -- environment instruction
             case exec.ir(instr_imm12_lsb_c+2 downto instr_imm12_lsb_c) is -- three LSBs are sufficient here
-              when "000"  => ecall          <= '1'; -- ecall
-              when "001"  => ebreak         <= '1'; -- ebreak
-              when "010"  => exec_nxt.state <= S_TRAP_EXIT; -- xret
-              when "101"  => exec_nxt.state <= S_SLEEP; -- wfi
-              when others => exec_nxt.state <= S_DISPATCH; -- illegal or CSR operation
+              when "000"  => ecall          <= '1';         -- ecall
+              when "001"  => ebreak         <= '1';         -- ebreak
+              when "010"  => exec_nxt.state <= S_TRAP_EXIT; -- mret/dret
+              when "101"  => exec_nxt.state <= S_SLEEP;     -- wfi
+              when others => exec_nxt.state <= S_DISPATCH;  -- illegal or CSR operation
             end case;
           elsif (funct3_v /= funct3_zimop_c) and -- write to CSR if not may-be-operation
                 ((funct3_v = funct3_csrrw_c) or (funct3_v = funct3_csrrwi_c) or (exec.ir(instr_rs1_msb_c downto instr_rs1_lsb_c) /= "00000")) then
@@ -528,6 +532,7 @@ begin
   ctrl_o.ir_opcode    <= exec.ir(instr_opcode_msb_c downto instr_opcode_lsb_c);
   ctrl_o.ir_rvc       <= exec.irc;
   -- status --
+  ctrl_o.cpu_exec     <= '1' when (exec.state = S_EXECUTE) else '0';
   ctrl_o.cpu_priv     <= csr.prv_level;
   ctrl_o.cpu_trap     <= env_enter;
   ctrl_o.cpu_sync_exc <= exc_fire;
@@ -537,14 +542,31 @@ begin
   -- Counter Events -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   cnt_event(cnt_event_cy_c)       <= '0' when (exec.state = S_SLEEP)                                     else '1'; -- active cycle
-  cnt_event(cnt_event_ir_c)       <= '1' when (exec.state = S_EXECUTE)                                   else '0'; -- retired (=executed) instr.
-  cnt_event(cnt_event_ci_c)       <= '1' when (exec.state = S_EXECUTE) and (exec.ci = '1')               else '0'; -- executed compressed instr.
+  cnt_event(cnt_event_ir_c)       <= '1' when (retired = '1')                                            else '0'; -- retired instr.
+  cnt_event(cnt_event_ci_c)       <= '1' when (retired = '1') and (exec.ci = '1')                        else '0'; -- retired compressed instr.
   cnt_event(cnt_event_wait_dis_c) <= '1' when (exec.state = S_DISPATCH) and (frontend_i.valid = '0')     else '0'; -- instruction dispatch wait
   cnt_event(cnt_event_wait_alu_c) <= '1' when (exec.state = S_ALU_WAIT)                                  else '0'; -- multi-cycle ALU wait
   cnt_event(cnt_event_wait_lsu_c) <= '1' when (ctrl.lsu_req = '0') and (exec.state = S_MEM_RSP)          else '0'; -- load/store memory wait
   cnt_event(cnt_event_delta_c)    <= '1' when (ctrl.if_reset = '1') and (exec.ir(6 downto 2) /= "00011") else '0'; -- control flow transfer
   cnt_event(cnt_event_load_c)     <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_rd = '1')               else '0'; -- memory load
   cnt_event(cnt_event_store_c)    <= '1' when (ctrl.lsu_req = '1') and (ctrl.lsu_wr = '1')               else '0'; -- memory store
+
+  -- retire tracking --
+  retire_tracking: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      retire_start <= '0';
+    elsif rising_edge(clk_i) then
+      if (exec.state = S_DISPATCH) then -- instruction completed
+        retire_start <= '0';
+      elsif (exec.state = S_EXECUTE) then -- instruction started
+        retire_start <= '1';
+      end if;
+    end if;
+  end process;
+
+  -- instruction has retired: execution completed without any sync. exception --
+  retired <= '1' when (retire_start = '1') and (exec.state = S_DISPATCH) and (exc_fire = '0') else '0';
 
 
   -- ****************************************************************************************************************************
@@ -565,9 +587,9 @@ begin
         csr_valid(2) <= bool_to_ulogic_f(RISCV_ISA_Zfinx);
 
       -- machine trap setup/handling, environment/information registers, etc. --
-      when csr_mstatus_c       | csr_mstatush_c  | csr_misa_c    | csr_mie_c    | csr_mtvec_c  | csr_mhartid_c    |
-           csr_mscratch_c      | csr_mepc_c      | csr_mcause_c  | csr_mip_c    | csr_mtval_c  | csr_mconfigptr_c |
-           csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mxisa_c  | csr_mxisah_c =>
+      when csr_mstatus_c       | csr_mstatush_c  | csr_misa_c    | csr_mie_c    | csr_mtvec_c | csr_mhartid_c    |
+           csr_mscratch_c      | csr_mepc_c      | csr_mcause_c  | csr_mip_c    | csr_mtval_c | csr_mconfigptr_c |
+           csr_mcountinhibit_c | csr_mvendorid_c | csr_marchid_c | csr_mimpid_c | csr_mxisa_c | csr_mxisah_c =>
         csr_valid(2) <= '1';
 
       -- machine-controlled user-mode CSRs --
@@ -719,8 +741,9 @@ begin
         if (exec.ir(instr_funct3_msb_c downto instr_funct3_lsb_c) = "010") then -- word-quantity only
           case exec.ir(instr_funct5_msb_c downto instr_funct5_lsb_c) is
             when "00001" | "00000" | "00100" | "01100" | "01000" | "10000" | "10100" | "11000" | "11100" => illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zaamo);
-            when "00010" | "00011" => illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zalrsc);
-            when others => illegal_cmd <= '1';
+            when "00010" => illegal_cmd <= (not bool_to_ulogic_f(RISCV_ISA_Zalrsc)) or or_reduce_f(exec.ir(instr_rs2_msb_c downto instr_rs2_lsb_c)); -- LR
+            when "00011" => illegal_cmd <= not bool_to_ulogic_f(RISCV_ISA_Zalrsc); -- SC
+            when others  => illegal_cmd <= '1';
           end case;
         end if;
 
@@ -857,7 +880,7 @@ begin
     (debug_ctrl.run = '0') and (csr.dcsr_step = '0') else '0'; -- no system IRQs when in debug-mode / during single-stepping
 
   -- debug halt request interrupt? --
-  irq_fire(1) <= irq_buf(irq_db_halt_c);
+  irq_fire(1) <= irq_buf(irq_db_halt_c) when RISCV_ISA_Sdext else '0';
 
 
   -- Trap Priority Encoder ------------------------------------------------------------------
@@ -874,10 +897,10 @@ begin
     trap_saf_c     when (exc_buf(exc_saccess_c) = '1') else -- store access fault
     trap_laf_c     when (exc_buf(exc_laccess_c) = '1') else -- load access fault
     -- standard RISC-V debug-mode traps --
-    trap_db_halt_c when (irq_buf(irq_db_halt_c) = '1') else -- external halt request
-    trap_db_trig_c when (exc_buf(exc_db_trig_c) = '1') else -- hardware trigger
-    trap_db_brkp_c when (exc_buf(exc_db_brkp_c) = '1') else -- breakpoint
-    trap_db_step_c when (exc_buf(exc_db_step_c) = '1') else -- single stepping
+    trap_db_halt_c when (irq_buf(irq_db_halt_c) = '1') and RISCV_ISA_Sdext  else -- external halt request
+    trap_db_trig_c when (exc_buf(exc_db_trig_c) = '1') and RISCV_ISA_Sdtrig else -- hardware trigger
+    trap_db_brkp_c when (exc_buf(exc_db_brkp_c) = '1') and RISCV_ISA_Sdext  else -- breakpoint
+    trap_db_step_c when (exc_buf(exc_db_step_c) = '1') and RISCV_ISA_Sdext  else -- single stepping
     -- NEORV32-specific fast interrupts --
     trap_firq0_c   when (irq_buf(irq_firq_0_c)  = '1') else -- fast interrupt channel 0
     trap_firq1_c   when (irq_buf(irq_firq_1_c)  = '1') else -- fast interrupt channel 1
@@ -1036,8 +1059,12 @@ begin
             csr.mie_mei  <= csr_wdata(11);
             csr.mie_firq <= csr_wdata(31 downto 16);
 
-          when csr_mtvec_c => -- machine trap-handler base address
-            csr.mtvec <= csr_wdata(31 downto 2) & '0' & csr_wdata(0); -- base + mode (vectored/direct)
+          when csr_mtvec_c => -- machine trap-handler base + mode
+            if (csr_wdata(1 downto 0) = "01") then -- vectored mode
+              csr.mtvec <= csr_wdata(31 downto 7) & "00000" & "01"; -- enforce alignment
+            else -- direct mode (fallback for reserved modes)
+              csr.mtvec <= csr_wdata(31 downto 2) & "00";
+            end if;
 
           when csr_mcounteren_c => -- machine counter access enable
             csr.mcounteren <= csr_wdata;
@@ -1171,11 +1198,9 @@ begin
 
   -- CSR Read Access ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  csr_read_access: process(rstn_i, clk_i)
+  csr_read_access: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      csr_rdata <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       csr_rdata <= (others => '0'); -- output all-zero if there is no CSR read operation
       if (ctrl.csr_re = '1') then
         case ctrl.csr_addr is

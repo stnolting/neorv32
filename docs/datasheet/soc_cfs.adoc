@@ -18,23 +18,24 @@
 
 * Tightly-coupled co-processor unit for custom hardware accelerators
 * Can operate independently of the CPU
-* CPU access via memory-mapped registers (16kB)
-* Custom 256-bit input and output conduits for custom IO
+* Access via memory-mapped registers (64kB)
+* Pre-defined 256-bit input and output conduits for custom IO
+* One dedicated interrupt channel
 
 
 **Overview**
 
-The custom functions subsystem is meant for implementing custom tightly-coupled co-processors or interfaces.
-It provides up to 16384 32-bit memory-mapped read/write registers (`REG`, see register map below) that can be
-accessed by the CPU via normal load/store operations. The actual functionality of these register has to be
-defined by the hardware designer. Furthermore, the CFS provides two input/output conduits to implement custom
-on-chip or off-chip interfaces.
+The custom functions subsystem is a template module that allows to implement custom tightly-coupled co-processors
+or interfaces. It provides up to 64kB of address space for memory-mapped registers (`REG`, see register map below)
+that can be accessed by the CPU via normal load/store operations. The actual functionality is to be defined by the
+hardware designer. Furthermore, the CFS provides two input/output conduits to implement custom on-chip or off-chip
+interfaces.
 
-Just like any other externally-connected IP, logic implemented within the custom functions subsystem can operate
-_independently_ of the CPU providing true parallel processing capabilities. Potential use cases might include
-dedicated hardware accelerators for en-/decryption (AES), signal processing (FFT) or AI applications
-(CNNs) as well as custom IO systems like fast memory interfaces (DDR) and mass storage (SDIO), networking (CAN)
-real-time data transport (I2S) or just replication of existent NEORV32 peripherals.
+Logic implemented within the custom functions subsystem can operate _independently_ of the CPU providing true
+parallel processing capabilities. Potential use cases might include dedicated hardware accelerators for en-/decryption
+(e.g. AES), signal processing (e.g. FFT), AI applications (e.g. CNNs), custom IO controllers (e.g. SDIO),
+networking (e.g. CAN), real-time data transport (e.g. I2S) or just replication of existent NEORV32 peripherals
+(e.g. a second SPI controller).
 
 .Custom ISA Instructions
 [TIP]
@@ -63,10 +64,9 @@ int temp = (int)NEORV32_CFS->REG[20]; // read from CFS register 20
 
 **CFS Custom IOs**
 
-The CFS provides two unidirectional input and output conduits `cfs_in_i` and `cfs_out_o`. Both signals
-are 512 bit wide and are are directly propagated to the processor's top entity. These conduits can be used
-to implement application-specific interfaces like memory or peripheral connections. The actual use case of
-these signals has to be defined by the hardware designer.
+The CFS provides two unidirectional input and output conduits (`cfs_in_i` and `cfs_out_o`). Both signals
+are 256 bit wide and are are directly propagated to the processor's top entity. These conduits can be used
+to implement application-specific interfaces like memory or peripheral connections.
 
 
 **CFS Interrupt**

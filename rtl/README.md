@@ -10,9 +10,10 @@ folder to a **new VHDL library** called `neorv32`.
 * SoC top: [`neorv32_top.vhd`](core/neorv32_top.vhd)
 
 > [!TIP]
-> Two file-list files (`*.f`) are provided that list all required rtl files for the CPU core and
-for the entire processor including their recommended compile order.
-See the online documentation for more information: https://stnolting.github.io/neorv32/#_file_list_files
+> A file-list file (`*.f`) is provided that lists all required rtl files
+for the entire processor including the recommended compile order.
+See the online documentation for more information:
+https://stnolting.github.io/neorv32/#_file_list_files
 
 ### > [`system_integration`](system_integration)
 

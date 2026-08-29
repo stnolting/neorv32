@@ -171,7 +171,7 @@ NEO_CXXFLAGS += -DCC_FLAGS_STR='"$(CC_FLAGS)"'
 
 .PHONY: check info help elf_info elf_sections clean clean_all \
         elf asm exe bin hex coe mem mif image install all \
-        sim upload gdb bootloader bl_image hdl_lists elf_symbols
+        sim upload gdb bootloader bl_image hdl_list elf_symbols
 
 .DEFAULT_GOAL := help
 
@@ -239,8 +239,8 @@ $(BUILD_DIR)/%.cpp.o: %.cpp | $(BUILD_DIR)
 
 # Link object files and show memory utilization
 -include $(OBJ:.o=.d)
-$(APP_ELF): $(OBJ)
-	$(Q)$(CC) $(NEO_LDFLAGS) -T $(LD_SCRIPT) $^ $(LD_LIBS) -o $@
+$(APP_ELF): $(OBJ) $(LD_SCRIPT)
+	$(Q)$(CC) $(NEO_LDFLAGS) -T $(LD_SCRIPT) $(OBJ) $(LD_LIBS) -o $@
 	$(ECHO) "Memory utilization:"
 	$(Q)$(SIZE) $(APP_ELF)
 
@@ -316,12 +316,12 @@ install-$(APP_VHD): $(APP_VHD)
 	$(Q)$(CP) $(APP_VHD) $(NEORV32_RTL_PATH)/core/.
 
 # -----------------------------------------------------------------------------
-# Regenerate HDL file list file(s)
+# Regenerate HDL file list file
 # -----------------------------------------------------------------------------
 
-hdl_lists:
-	$(Q)$(CHMOD) +rx $(NEORV32_RTL_PATH)/generate_file_lists.sh
-	$(Q)$(NEORV32_RTL_PATH)/generate_file_lists.sh
+hdl_list:
+	$(Q)$(CHMOD) +rx $(NEORV32_RTL_PATH)/file_list_regenerate.sh
+	$(Q)$(NEORV32_RTL_PATH)/file_list_regenerate.sh
 
 # -----------------------------------------------------------------------------
 # Show final ELF details (just for debugging)
@@ -467,7 +467,7 @@ help::
 	$(ECHO) "Additional targets:"
 	$(ECHO) ""
 	$(ECHO) "  sim           in-console simulation using default testbench (sim folder) and GHDL"
-	$(ECHO) "  hdl_lists     regenerate HDL file-lists (*.f) in NEORV32_HOME/rtl"
+	$(ECHO) "  hdl_list      regenerate HDL file-list file (*.f) in NEORV32_HOME/rtl"
 	$(ECHO) "  upload        upload executable to bootloader via UART ($(UART_TTY))"
 	$(ECHO) "  elf_info      show ELF information"
 	$(ECHO) "  elf_sections  show ELF sections"

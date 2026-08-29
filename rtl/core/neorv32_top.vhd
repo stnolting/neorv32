@@ -69,7 +69,7 @@ entity neorv32_top is
     -- Tuning Options --
     CPU_CONSTT_BR_EN    : boolean                        := false;         -- enable constant-time branches
     CPU_FAST_MUL_EN     : boolean                        := false;         -- use DSPs for M extension's multiplier
-    CPU_FAST_MUL_REG    : boolean                        := false;         -- add a pipeline register to the fast multiplier (needs CPU_FAST_MUL_EN)
+    CPU_FAST_MUL_REGS   : natural range 1 to 3           := 1;             -- number of fast multiplier register stages (needs CPU_FAST_MUL_EN)
     CPU_FAST_SHIFT_EN   : boolean                        := false;         -- use barrel shifter for shift operations
     CPU_RF_ARCH_SEL     : natural range 0 to 3           := 0;             -- register file implementation style select
 
@@ -325,8 +325,10 @@ architecture neorv32_top_rtl of neorv32_top is
   constant bursts_en_c     : boolean := CACHE_BURSTS_EN and (ICACHE_EN or DCACHE_EN) and boolean(CACHE_BLOCK_SIZE >= 8);
 
   -- make sure physical memory sizes are a power of two --
-  constant imem_size_c : natural := 2**index_size_f(IMEM_SIZE);
-  constant dmem_size_c : natural := 2**index_size_f(DMEM_SIZE);
+  constant log2_imem_size_c : natural := index_size_f(IMEM_SIZE);
+  constant log2_dmem_size_c : natural := index_size_f(DMEM_SIZE);
+  constant imem_size_c      : natural := 2**log2_imem_size_c;
+  constant dmem_size_c      : natural := 2**log2_dmem_size_c;
 
   -- reset nets --
   signal rstn_wdt, rstn_sys, rstn_ext : std_ulogic;
@@ -343,15 +345,15 @@ architecture neorv32_top_rtl of neorv32_top is
   signal dci_haltreq : std_ulogic_vector(num_cores_c-1 downto 0);
 
   -- CPU trace interface --
-  type cpu_trace_t is array (0 to num_cores_c-1) of trace_port_t;
+  type cpu_trace_t is array (num_cores_c-1 downto 0) of trace_port_t;
   signal cpu_trace : cpu_trace_t;
 
   -- CPU memory ordering (cache synchronization) --
   signal cpu_i_fence, cpu_d_fence, icache_sync, dcache_sync : std_ulogic_vector(num_cores_c-1 downto 0);
 
-  -- bus: CPU core complex --
-  type core_complex_req_t is array (0 to num_cores_c-1) of bus_req_t;
-  type core_complex_rsp_t is array (0 to num_cores_c-1) of bus_rsp_t;
+  -- bus: core complex --
+  type core_complex_req_t is array (num_cores_c-1 downto 0) of bus_req_t;
+  type core_complex_rsp_t is array (num_cores_c-1 downto 0) of bus_rsp_t;
   signal cpu_i_req, cpu_d_req, icache_req, dcache_req, core_req : core_complex_req_t;
   signal cpu_i_rsp, cpu_d_rsp, icache_rsp, dcache_rsp, core_rsp : core_complex_rsp_t;
 
@@ -381,7 +383,7 @@ architecture neorv32_top_rtl of neorv32_top is
   signal cpu_firq : std_ulogic_vector(15 downto 0);
   signal mti, msi : std_ulogic_vector(num_cores_c-1 downto 0);
 
-  -- system time (mtime) --
+  -- system time --
   signal mtime    : std_ulogic_vector(63 downto 0);
   signal mtime_lo : std_ulogic_vector(31 downto 0);
 
@@ -511,7 +513,6 @@ begin
     port map (
       clk_i    => clk_i,
       rstn_i   => rstn_sys,
-      enable_i => '1',
       clk_en_o => clk_gen
     );
 
@@ -590,7 +591,7 @@ begin
       CPU_TRACE_EN        => trace_en_c,
       CPU_CONSTT_BR_EN    => CPU_CONSTT_BR_EN,
       CPU_FAST_MUL_EN     => CPU_FAST_MUL_EN,
-      CPU_FAST_MUL_REG    => CPU_FAST_MUL_REG,
+      CPU_FAST_MUL_REGS   => CPU_FAST_MUL_REGS,
       CPU_FAST_SHIFT_EN   => CPU_FAST_SHIFT_EN,
       CPU_RF_ARCH_SEL     => CPU_RF_ARCH_SEL,
       -- Physical Memory Protection (PMP) --
@@ -715,8 +716,8 @@ begin
   end generate;
 
   -- CPU execution trace ports --
-  trace_cpu0_o <= cpu_trace(core_req'left);
-  trace_cpu1_o <= cpu_trace(core_req'right) when (num_cores_c = 2) else trace_port_terminate_c;
+  trace_cpu0_o <= cpu_trace(core_req'low);
+  trace_cpu1_o <= cpu_trace(core_req'high) when (num_cores_c = 2) else trace_port_terminate_c;
 
   -- Core Complex Bus Arbiter ---------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -731,10 +732,10 @@ begin
     port map (
       clk_i   => clk_i,
       rstn_i  => rstn_sys,
-      a_req_i => core_req(core_req'left),
-      a_rsp_o => core_rsp(core_rsp'left),
-      b_req_i => core_req(core_req'right),
-      b_rsp_o => core_rsp(core_rsp'right),
+      a_req_i => core_req(core_req'low),
+      a_rsp_o => core_rsp(core_rsp'low),
+      b_req_i => core_req(core_req'high),
+      b_rsp_o => core_rsp(core_rsp'high),
       x_req_o => sys1_req,
       x_rsp_i => sys1_rsp
     );
@@ -911,20 +912,27 @@ begin
 
     -- Processor-Internal Instruction Memory (IMEM) -------------------------------------------
     -- -------------------------------------------------------------------------------------------
+    -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_imem_enabled:
     if IMEM_EN generate
-      neorv32_imem_inst: entity neorv32.neorv32_imem
+      neorv32_imem_inst: neorv32_imem -- component declaration in package file
       generic map (
-        MEM_SIZE => imem_size_c,
-        MEM_INIT => imem_as_rom_c,
-        OUTREG   => IMEM_OUTREG_EN
+        AWIDTH  => log2_imem_size_c,
+        INITROM => imem_as_rom_c,
+        OUTREG  => IMEM_OUTREG_EN
       )
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => imem_req,
-        bus_rsp_o => imem_rsp
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => imem_req.addr,
+        req_data_i => imem_req.data,
+        req_ben_i  => imem_req.ben,
+        req_stb_i  => imem_req.stb,
+        req_rw_i   => imem_req.rw,
+        rsp_data_o => imem_rsp.data,
+        rsp_ack_o  => imem_rsp.ack
       );
+      imem_rsp.err <= '0';
     end generate;
 
     neorv32_imem_disabled:
@@ -934,19 +942,26 @@ begin
 
     -- Processor-Internal Data Memory (DMEM) --------------------------------------------------
     -- -------------------------------------------------------------------------------------------
+    -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_dmem_enabled:
     if DMEM_EN generate
-      neorv32_dmem_inst: entity neorv32.neorv32_dmem
+      neorv32_dmem_inst: neorv32_dmem -- component declaration in package file
       generic map (
-        MEM_SIZE => dmem_size_c,
-        OUTREG   => DMEM_OUTREG_EN
+        AWIDTH => log2_dmem_size_c,
+        OUTREG => DMEM_OUTREG_EN
       )
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => dmem_req,
-        bus_rsp_o => dmem_rsp
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => dmem_req.addr,
+        req_data_i => dmem_req.data,
+        req_ben_i  => dmem_req.ben,
+        req_stb_i  => dmem_req.stb,
+        req_rw_i   => dmem_req.rw,
+        rsp_data_o => dmem_rsp.data,
+        rsp_ack_o  => dmem_rsp.ack
       );
+      dmem_rsp.err <= '0';
     end generate;
 
     neorv32_dmem_disabled:
@@ -1120,15 +1135,21 @@ begin
 
     -- Processor-Internal Bootloader ROM (BOOTROM) --------------------------------------------
     -- -------------------------------------------------------------------------------------------
+    -- [NOTE] Use component instantiation here to allow easy replacement by external (Verilog) IP.
     neorv32_bootrom_enabled:
     if bootrom_en_c generate
-      neorv32_boot_rom_inst: entity neorv32.neorv32_bootrom
+      neorv32_boot_rom_inst: neorv32_bootrom -- component declaration in package file
       port map (
-        clk_i     => clk_i,
-        rstn_i    => rstn_sys,
-        bus_req_i => iodev_req(IODEV_BOOTROM),
-        bus_rsp_o => iodev_rsp(IODEV_BOOTROM)
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => iodev_req(IODEV_BOOTROM).addr(15 downto 0),
+        req_ben_i  => iodev_req(IODEV_BOOTROM).ben,
+        req_stb_i  => iodev_req(IODEV_BOOTROM).stb,
+        req_rw_i   => iodev_req(IODEV_BOOTROM).rw,
+        rsp_data_o => iodev_rsp(IODEV_BOOTROM).data,
+        rsp_ack_o  => iodev_rsp(IODEV_BOOTROM).ack
       );
+      iodev_rsp(IODEV_BOOTROM).err <= '0';
     end generate;
 
     neorv32_boot_rom_disabled:
@@ -1142,14 +1163,20 @@ begin
     if IO_CFS_EN generate
       neorv32_cfs_inst: entity neorv32.neorv32_cfs
       port map (
-        clk_i       => clk_i,
-        rstn_i      => rstn_sys,
-        bus_req_i   => iodev_req(IODEV_CFS),
-        bus_rsp_o   => iodev_rsp(IODEV_CFS),
-        irq_o       => firq(FIRQ_CFS),
-        cfs_in_i    => cfs_in_i,
-        cfs_out_o   => cfs_out_o
+        clk_i      => clk_i,
+        rstn_i     => rstn_sys,
+        req_addr_i => iodev_req(IODEV_CFS).addr(15 downto 0),
+        req_data_i => iodev_req(IODEV_CFS).data,
+        req_ben_i  => iodev_req(IODEV_CFS).ben,
+        req_stb_i  => iodev_req(IODEV_CFS).stb,
+        req_rw_i   => iodev_req(IODEV_CFS).rw,
+        rsp_data_o => iodev_rsp(IODEV_CFS).data,
+        rsp_ack_o  => iodev_rsp(IODEV_CFS).ack,
+        irq_o      => firq(FIRQ_CFS),
+        cfs_in_i   => cfs_in_i,
+        cfs_out_o  => cfs_out_o
       );
+      iodev_rsp(IODEV_CFS).err <= '0';
     end generate;
 
     neorv32_cfs_disabled:
@@ -1612,8 +1639,8 @@ begin
       port map (
         clk_i     => clk_i,
         rstn_i    => rstn_sys,
-        trace0_i  => cpu_trace(cpu_trace'left),
-        trace1_i  => cpu_trace(cpu_trace'right),
+        trace0_i  => cpu_trace(cpu_trace'low),
+        trace1_i  => cpu_trace(cpu_trace'high),
         bus_req_i => iodev_req(IODEV_TRACER),
         bus_rsp_o => iodev_rsp(IODEV_TRACER),
         irq_o     => firq(FIRQ_TRACER)

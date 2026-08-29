@@ -98,7 +98,6 @@ entity neorv32_sys_clock is
   port (
     clk_i    : in  std_ulogic;                   -- global clock, rising edge
     rstn_i   : in  std_ulogic;                   -- global reset, low-active, async
-    enable_i : in  std_ulogic;                   -- generator enable
     clk_en_o : out std_ulogic_vector(7 downto 0) -- prescaled clock-enables
   );
 end entity;
@@ -116,11 +115,7 @@ begin
       cnt  <= (others => '0');
       cnt2 <= (others => '0');
     elsif rising_edge(clk_i) then
-      if (enable_i = '1') then
-        cnt <= std_ulogic_vector(unsigned(cnt) + 1);
-      else
-        cnt <= (others => '0'); -- reset if disabled
-      end if;
+      cnt  <= std_ulogic_vector(unsigned(cnt) + 1);
       cnt2 <= cnt;
     end if;
   end process;

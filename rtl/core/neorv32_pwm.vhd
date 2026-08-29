@@ -57,7 +57,7 @@ architecture neorv32_pwm_rtl of neorv32_pwm is
   signal clkprsc, addr : std_ulogic_vector(2 downto 0);
 
   -- wiring --
-  type rdata_t is array (0 to NUM_CHANNELS-1) of std_ulogic_vector(31 downto 0);
+  type rdata_t is array (NUM_CHANNELS-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal rdata : rdata_t;
   signal rdata_sum : std_ulogic_vector(31 downto 0);
   signal cs, pwm : std_ulogic_vector(NUM_CHANNELS-1 downto 0);
@@ -138,11 +138,9 @@ begin
   end generate;
 
   -- clock generator --
-  clk_gen: process(rstn_i, clk_i)
+  clk_gen: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      clken <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       clken <= clkgen_i(to_integer(unsigned(clkprsc)));
     end if;
   end process;
@@ -233,12 +231,9 @@ begin
 
   -- PWM Counter ----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  pwm_counter: process(rstn_i, clk_i)
+  pwm_counter: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      dir <= '0';
-      cnt <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (en_i = '0') then
         dir <= '0';
         cnt <= (others => '0');

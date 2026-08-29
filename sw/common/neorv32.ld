@@ -101,9 +101,10 @@ SECTIONS
     PROVIDE(__data_start = .);
     __global_pointer$ = . + 0x800;
 
-    *(.data .data.* .data* .gnu.linkonce.d.*)
+    *(.data .data.* .gnu.linkonce.d.*)
+    *(.data.rel.ro .data.rel.ro.*)
     *(.sdata .sdata.* .gnu.linkonce.s.*)
-    *(.tdata .tdata.* .gnu.linkonce.td.*)
+    *(.got .got.* .igot .igot.*)
 
     /* finish section on WORD boundary */
     . = ALIGN(4);
@@ -148,7 +149,6 @@ SECTIONS
 /* Unused sections                                                                                   */
 /* ************************************************************************************************* */
   .jcr               : { KEEP (*(.jcr)) }
-  .got               : { *(.got.plt) *(.igot.plt) *(.got) *(.igot) } .interp : { *(.interp) }
   .note.gnu.build-id : { *(.note.gnu.build-id) }
   .hash              : { *(.hash) }
   .gnu.hash          : { *(.gnu.hash) }

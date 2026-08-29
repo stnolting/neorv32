@@ -29,7 +29,7 @@ int neorv32_spi_available(void) {
  * Enable and configure SPI controller. The SPI control register bits are listed in #NEORV32_SPI_CTRL_enum.
  *
  * @param[in] prsc Clock prescaler select (0..7).  See #NEORV32_CLOCK_PRSC_enum.
- * @prama[in] cdiv Clock divider (0..15).
+ * @param[in] cdiv Clock divider (0..15).
  * @param[in] clk_phase Clock phase (0=sample on rising edge, 1=sample on falling edge).
  * @param[in] clk_polarity Clock polarity (when idle).
  **************************************************************************/

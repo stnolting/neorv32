@@ -189,11 +189,9 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_generator: process(rstn_i, clk_i)
+  irq_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (ctrl_en = '0') then
         irq_o <= '0';
       elsif (stop = '1') then -- trigger interrupt when reaching auto-stop-address
@@ -235,11 +233,9 @@ begin
   fifo.re    <= '1' when (discard = '1') or ((bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3 downto 2) = "11")) else '0';
 
   -- discard oldest entry if overflowing --
-  fifo_overflow: process(rstn_i, clk_i)
+  fifo_overflow: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      discard <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       discard <= ctrl_en and arbiter.run and (not fifo.free);
     end if;
   end process;

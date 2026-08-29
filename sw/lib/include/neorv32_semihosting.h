@@ -99,7 +99,7 @@ int neorv32_semihosting_system(char *cmd);
  * @param[in] arg Argument / pointer to data array.
  * @return Host return value.
  **************************************************************************/
-inline int __attribute__ ((always_inline)) neorv32_semihosting_req(int id, void* arg) {
+static inline int __attribute__ ((always_inline)) neorv32_semihosting_req(int id, void* arg) {
 
   register int value asm ("a0") = id;
   register void* data asm ("a1") = arg;

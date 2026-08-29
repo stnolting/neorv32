@@ -22,9 +22,9 @@ use neorv32.neorv32_package.all;
 
 entity neorv32_cpu_alu_muldiv is
   generic (
-    FAST_MUL_EN  : boolean; -- use DSPs for faster multiplication
-    FAST_MUL_REG : boolean; -- add a pipeline register to the fast multiplier (needs FAST_MUL_EN)
-    DIVISION_EN  : boolean  -- implement divider hardware
+    FAST_MUL_EN   : boolean;              -- use DSPs for faster multiplication
+    FAST_MUL_REGS : natural range 1 to 3; -- number of fast multiplier register stages (needs FAST_MUL_EN)
+    DIVISION_EN   : boolean               -- implement divider hardware
   );
   port (
     -- global control --
@@ -64,27 +64,30 @@ architecture neorv32_cpu_alu_muldiv_rtl of neorv32_cpu_alu_muldiv is
   constant op_rem_c    : std_ulogic_vector(2 downto 0) := "110";
   constant op_remu_c   : std_ulogic_vector(2 downto 0) := "111";
 
+  -- clock cycles from fast-multiplier operand capture to result
+  constant mul_latency_c : natural := FAST_MUL_REGS + 1;
+
   -- instruction decode --
   signal valid_cmd : std_ulogic;
 
   -- controller --
   type state_t is (S_IDLE, S_BUSY, S_PIPE, S_DONE);
   type ctrl_t is record
-    state  : state_t;
-    cnt    : std_ulogic_vector(4 downto 0);
-    out_en : std_ulogic;
+    state : state_t;
+    cnt   : std_ulogic_vector(4 downto 0);
+    oe    : std_ulogic;
   end record;
   signal ctrl : ctrl_t; -- FSM
   signal rs1_signed, rs2_signed : std_ulogic;
 
   -- divider core --
   signal div_start : std_ulogic;
-  signal div_divi  : std_ulogic_vector(31 downto 0);
-  signal div_quot  : std_ulogic_vector(31 downto 0);
-  signal div_rema  : std_ulogic_vector(31 downto 0);
-  signal div_sign  : std_ulogic;
+  signal div_opb   : std_ulogic_vector(31 downto 0);
+  signal div_quo   : std_ulogic_vector(31 downto 0);
+  signal div_rem   : std_ulogic_vector(31 downto 0);
+  signal div_sgn   : std_ulogic;
   signal div_sub   : std_ulogic_vector(32 downto 0);
-  signal div_res_u : std_ulogic_vector(31 downto 0);
+  signal div_ures  : std_ulogic_vector(31 downto 0);
   signal div_res   : std_ulogic_vector(31 downto 0);
 
   -- multiplier core --
@@ -106,13 +109,13 @@ begin
   control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      ctrl.state  <= S_IDLE;
-      ctrl.cnt    <= (others => '0');
-      ctrl.out_en <= '0';
+      ctrl.state <= S_IDLE;
+      ctrl.cnt   <= (others => '0');
+      ctrl.oe    <= '0';
     elsif rising_edge(clk_i) then
       -- defaults --
-      ctrl.out_en <= '0';
-      ctrl.cnt    <= std_ulogic_vector(to_unsigned(30, 5)); -- cycle counter initialization
+      ctrl.oe  <= '0';
+      ctrl.cnt <= std_ulogic_vector(to_unsigned(30, 5)); -- cycle counter initialization
 
       -- fsm --
       case ctrl.state is
@@ -121,7 +124,8 @@ begin
         -- ------------------------------------------------------------
           if (valid_cmd = '1') then -- trigger new operation
             if (ctrl_i.ir_funct3(2) = '0') and FAST_MUL_EN then -- is fast multiplication?
-              if FAST_MUL_REG then -- pipelined product needs one more cycle
+              if (FAST_MUL_REGS > 1) then -- wait for the pipelined product
+                ctrl.cnt   <= std_ulogic_vector(to_unsigned(mul_latency_c - 3, ctrl.cnt'length));
                 ctrl.state <= S_PIPE;
               else
                 ctrl.state <= S_DONE;
@@ -134,24 +138,21 @@ begin
         when S_BUSY => -- processing
         -- ------------------------------------------------------------
           ctrl.cnt <= std_ulogic_vector(unsigned(ctrl.cnt) - 1);
-          if (ctrl_i.cpu_trap = '1') then -- abort on trap
-            ctrl.state <= S_IDLE;
-          elsif (or_reduce_f(ctrl.cnt) = '0') then -- processing done
+          if (or_reduce_f(ctrl.cnt) = '0') or (ctrl_i.cpu_trap = '1') then -- processing done? abort on trap
             ctrl.state <= S_DONE;
           end if;
 
-        when S_PIPE => -- extra cycle for the fast multiplier's pipeline register
+        when S_PIPE => -- wait for fast-multiplier pipeline
         -- ------------------------------------------------------------
-          if (ctrl_i.cpu_trap = '1') then -- abort on trap
-            ctrl.state <= S_IDLE;
-          else
+          ctrl.cnt <= std_ulogic_vector(unsigned(ctrl.cnt) - 1);
+          if (or_reduce_f(ctrl.cnt) = '0') then
             ctrl.state <= S_DONE;
           end if;
 
         when S_DONE => -- S_DONE: final step / enable output for one cycle
         -- ------------------------------------------------------------
-          ctrl.out_en <= '1';
-          ctrl.state  <= S_IDLE;
+          ctrl.oe    <= '1';
+          ctrl.state <= S_IDLE;
 
       end case;
     end if;
@@ -178,17 +179,16 @@ begin
     multiplier_inst: entity neorv32.neorv32_prim_mul
     generic map (
       DWIDTH   => 32,
-      PIPELINE => FAST_MUL_REG
+      NUM_REGS => FAST_MUL_REGS
     )
     port map (
-      clk_i    => clk_i,
-      rstn_i   => rstn_i,
-      en_i     => mul_start,
-      opa_i    => rs1_i,
-      opa_sn_i => rs1_signed,
-      opb_i    => rs2_i,
-      opb_sn_i => rs2_signed,
-      res_o    => mul_res
+      clk_i  => clk_i,
+      en_i   => mul_start,
+      opa_i  => rs1_i,
+      opas_i => rs1_signed,
+      opb_i  => rs2_i,
+      opbs_i => rs2_signed,
+      res_o  => mul_res
     );
     mul_add <= (others => '0'); -- unused
   end generate;
@@ -200,11 +200,9 @@ begin
   if not FAST_MUL_EN generate
 
     -- shift-and-add algorithm --
-    multiplier_core: process(rstn_i, clk_i)
+    multiplier_core: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        mul_res <= (others => '0');
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if (mul_start = '1') then -- start new multiplication
           mul_res(63 downto 32) <= (others => '0');
           mul_res(31 downto 0)  <= rs1_i;
@@ -242,53 +240,48 @@ begin
   if DIVISION_EN generate
 
     -- unsigned restoring division algorithm --
-    divider_core: process(rstn_i, clk_i)
+    divider_core: process(clk_i)
     begin
-      if (rstn_i = '0') then
-        div_divi <= (others => '0');
-        div_quot <= (others => '0');
-        div_rema <= (others => '0');
-        div_sign <= '0';
-      elsif rising_edge(clk_i) then
+      if rising_edge(clk_i) then
         if (div_start = '1') then -- start new division
-          div_divi <= abs32_f(rs2_i, rs2_signed);
-          div_quot <= abs32_f(rs1_i, rs1_signed);
-          div_rema <= (others => '0');
+          div_opb <= abs32_f(rs2_i, rs2_signed);
+          div_quo <= abs32_f(rs1_i, rs1_signed);
+          div_rem <= (others => '0');
           case ctrl_i.ir_funct3(1 downto 0) is -- check for result's sign compensation
-            when "00"   => div_sign <= or_reduce_f(rs2_i) and (rs1_i(rs1_i'left) xor rs2_i(rs2_i'left)); -- signed div
-            when "10"   => div_sign <= rs1_i(rs1_i'left); -- signed rem
-            when others => div_sign <= '0';
+            when "00"   => div_sgn <= or_reduce_f(rs2_i) and (rs1_i(rs1_i'left) xor rs2_i(rs2_i'left)); -- signed div
+            when "10"   => div_sgn <= rs1_i(rs1_i'left); -- signed rem
+            when others => div_sgn <= '0';
           end case;
-        elsif (ctrl.state = S_BUSY) or (ctrl.state = S_DONE) then -- running?
-          div_quot <= div_quot(30 downto 0) & (not div_sub(32));
+        elsif ((ctrl.state = S_BUSY) or (ctrl.state = S_DONE)) and (ctrl_i.ir_funct3(2) = '1') then -- running?
+          div_quo <= div_quo(30 downto 0) & (not div_sub(32));
           if (div_sub(32) = '0') then
-            div_rema <= div_sub(31 downto 0);
+            div_rem <= div_sub(31 downto 0);
           else -- underflow: restore
-            div_rema <= div_rema(30 downto 0) & div_quot(31);
+            div_rem <= div_rem(30 downto 0) & div_quo(31);
           end if;
         end if;
       end if;
     end process;
 
     -- do another subtraction (and shift) --
-    div_sub <= std_ulogic_vector(unsigned('0' & div_rema(30 downto 0) & div_quot(31)) - unsigned('0' & div_divi));
+    div_sub <= std_ulogic_vector(unsigned('0' & div_rem(30 downto 0) & div_quo(31)) - unsigned('0' & div_opb));
 
     -- result select and sign compensation --
-    div_res_u <= div_quot when (ctrl_i.ir_funct3(2 downto 1) = op_div_c(2 downto 1)) else div_rema;
-    div_res   <= std_ulogic_vector(0 - unsigned(div_res_u)) when (div_sign = '1') else div_res_u;
+    div_ures <= div_quo when (ctrl_i.ir_funct3(2 downto 1) = op_div_c(2 downto 1)) else div_rem;
+    div_res  <= std_ulogic_vector(0 - unsigned(div_ures)) when (div_sgn = '1') else div_ures;
 
   end generate;
 
   -- no divider --
   divider_core_serial_none:
   if not DIVISION_EN generate
-    div_divi  <= (others => '0');
-    div_quot  <= (others => '0');
-    div_rema  <= (others => '0');
-    div_sign  <= '0';
-    div_sub   <= (others => '0');
-    div_res_u <= (others => '0');
-    div_res   <= (others => '0');
+    div_opb  <= (others => '0');
+    div_quo  <= (others => '0');
+    div_rem  <= (others => '0');
+    div_sgn  <= '0';
+    div_sub  <= (others => '0');
+    div_ures <= (others => '0');
+    div_res  <= (others => '0');
   end generate;
 
 
@@ -297,7 +290,7 @@ begin
   operation_result: process(ctrl, ctrl_i.ir_funct3, mul_res, div_res)
   begin
     res_o <= (others => '0');
-    if (ctrl.out_en = '1') then
+    if (ctrl.oe = '1') then
       case ctrl_i.ir_funct3 is
         when op_mul_c =>
           res_o <= mul_res(31 downto 0);

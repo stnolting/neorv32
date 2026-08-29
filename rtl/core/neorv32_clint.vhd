@@ -59,7 +59,7 @@ architecture neorv32_clint_rtl of neorv32_clint is
   signal mtime_we : std_ulogic_vector(1 downto 0);
 
   -- mtimecmp access --
-  type mtimecmp_rwe_t is array (0 to NUM_HARTS-1) of std_ulogic_vector(1 downto 0);
+  type mtimecmp_rwe_t is array (NUM_HARTS-1 downto 0) of std_ulogic_vector(1 downto 0);
   signal mtimecmp_we : mtimecmp_rwe_t;
   signal mtimecmp_re : mtimecmp_rwe_t;
   signal mtimecmp_en : std_ulogic_vector(NUM_HARTS-1 downto 0);
@@ -68,7 +68,7 @@ architecture neorv32_clint_rtl of neorv32_clint is
   signal mswi_en, mswi : std_ulogic_vector(NUM_HARTS-1 downto 0);
 
   -- read-back --
-  type rb32_t is array (0 to NUM_HARTS-1) of std_ulogic_vector(31 downto 0);
+  type rb32_t is array (NUM_HARTS-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal mtimecmp_rd : rb32_t;
   signal mswi_rd     : rb32_t;
   signal mtime       : std_ulogic_vector(63 downto 0);
@@ -248,12 +248,9 @@ begin
 
   -- Interrupt Generator (comparator is split across two cycles) ----------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_gen: process(rstn_i, clk_i)
+  irq_gen: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      cmp_lo_ge <= '0';
-      mti_o     <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       cmp_lo_ge <= cmp_lo_gt or cmp_lo_eq; -- low word greater-than or equal
       mti_o     <= cmp_hi_gt or (cmp_hi_eq and cmp_lo_ge);
     end if;

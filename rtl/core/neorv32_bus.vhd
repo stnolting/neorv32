@@ -219,14 +219,27 @@ begin
   -- -------------------------------------------------------------------------------------------
   response_reg_enabled:
   if RSP_REG_EN generate
-    response_reg: process(rstn_i, clk_i)
+
+    -- signals that DO require a defined reset (access control signals) --
+    response_reg_reset: process(rstn_i, clk_i)
     begin
       if (rstn_i = '0') then
-        host_rsp_o <= rsp_terminate_c;
+        host_rsp_o.ack <= '0';
+        host_rsp_o.err <= '0';
       elsif rising_edge(clk_i) then
-        host_rsp_o <= device_rsp_i;
+        host_rsp_o.ack <= device_rsp_i.ack;
+        host_rsp_o.err <= device_rsp_i.err;
       end if;
     end process;
+
+    -- signals that do not need a defined reset --
+    response_reg_noreset: process(clk_i)
+    begin
+      if rising_edge(clk_i) then
+        host_rsp_o.data <= device_rsp_i.data;
+      end if;
+    end process;
+
   end generate;
 
   response_reg_disabled:
@@ -319,33 +332,33 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   signal port_sel : std_ulogic_vector(4 downto 0);
 
   -- port enable list --
-  type port_bool_list_t is array (0 to 4) of boolean;
+  type port_bool_list_t is array (4 downto 0) of boolean;
   constant port_en_list_c : port_bool_list_t := (
-    A_EN,
-    B_EN,
-    C_EN,
-    D_EN,
-    X_EN
+    0 => A_EN,
+    1 => B_EN,
+    2 => C_EN,
+    3 => D_EN,
+    4 => X_EN
   );
 
   -- port timeout enable list --
-  type port_tmo_en_list_t is array (0 to 4) of boolean;
+  type port_tmo_en_list_t is array (4 downto 0) of boolean;
   constant port_tmo_en_list_c : port_tmo_en_list_t := (
-    boolean(A_TMO > 0),
-    boolean(B_TMO > 0),
-    boolean(C_TMO > 0),
-    boolean(D_TMO > 0),
-    boolean(X_TMO > 0)
+    0 => boolean(A_TMO > 0),
+    1 => boolean(B_TMO > 0),
+    2 => boolean(C_TMO > 0),
+    3 => boolean(D_TMO > 0),
+    4 => boolean(X_TMO > 0)
   );
 
   -- port timeout counter bit list --
-  type port_tmo_bit_list_t is array (0 to 4) of natural;
+  type port_tmo_bit_list_t is array (4 downto 0) of natural;
   constant port_tmo_bit_list_c : port_tmo_bit_list_t := (
-    index_size_f(A_TMO),
-    index_size_f(B_TMO),
-    index_size_f(C_TMO),
-    index_size_f(D_TMO),
-    index_size_f(X_TMO)
+    0 => index_size_f(A_TMO),
+    1 => index_size_f(B_TMO),
+    2 => index_size_f(C_TMO),
+    3 => index_size_f(D_TMO),
+    4 => index_size_f(X_TMO)
   );
   signal tmo_bits : std_ulogic_vector(4 downto 0);
   signal tmo_fire : std_ulogic;
@@ -365,8 +378,8 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   constant tmo_cnt_size_c : natural := max_tmo_bit_f(port_tmo_bit_list_c);
 
   -- gateway ports combined as arrays --
-  type port_req_t is array (0 to 4) of bus_req_t;
-  type port_rsp_t is array (0 to 4) of bus_rsp_t;
+  type port_req_t is array (4 downto 0) of bus_req_t;
+  type port_rsp_t is array (4 downto 0) of bus_rsp_t;
   signal port_req : port_req_t;
   signal port_rsp : port_rsp_t;
 
@@ -374,8 +387,9 @@ architecture neorv32_bus_gateway_rtl of neorv32_bus_gateway is
   signal int_rsp : bus_rsp_t;
 
   -- bus monitor --
+  type state_t is (S_IDLE, S_BUSY, S_ERROR);
   type keeper_t is record
-    state : std_ulogic_vector(1 downto 0);
+    state : state_t;
     lock  : std_ulogic;
     sel   : std_ulogic_vector(4 downto 0);
     cnt   : std_ulogic_vector(tmo_cnt_size_c downto 0);
@@ -430,31 +444,31 @@ begin
 
   -- host response --
   rsp_o.data <= int_rsp.data;
-  rsp_o.ack  <= int_rsp.ack or bus_err;
-  rsp_o.err  <= int_rsp.err or bus_err;
+  rsp_o.ack  <= '0' when (keeper.state = S_IDLE) else (int_rsp.ack or bus_err); -- filter spurious response
+  rsp_o.err  <= '0' when (keeper.state = S_IDLE) else (int_rsp.err or bus_err); -- filter spurious response
 
   -- Bus Monitor (aka "the KEEPER") ---------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   bus_monitor: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      keeper.state <= (others => '0');
+      keeper.state <= S_IDLE;
       keeper.lock  <= '0';
       keeper.sel   <= (others => '0');
       keeper.cnt   <= (others => '0');
     elsif rising_edge(clk_i) then
       case keeper.state is
 
-        when "00" => -- idle, waiting for new access request
+        when S_IDLE => -- idle, waiting for new access request
         -- ------------------------------------------------------------
           keeper.lock <= req_i.lock;
           keeper.sel  <= port_sel;
           keeper.cnt  <= (others => '0');
           if (req_i.stb = '1') then
-            keeper.state <= "01";
+            keeper.state <= S_BUSY;
           end if;
 
-        when "01" => -- busy, transfer in progress
+        when S_BUSY => -- busy, transfer in progress
         -- ------------------------------------------------------------
           -- timeout counter --
           if (int_rsp.ack = '1') then -- reset for each burst element
@@ -464,38 +478,39 @@ begin
           end if;
           -- bus status --
           if (tmo_fire = '1') then -- timeout
-            keeper.state <= "11";
+            keeper.state <= S_ERROR;
           elsif (keeper.lock = '1') then -- locked / burst transfer
             if (req_i.lock = '0') then
-              keeper.state <= "00";
+              keeper.state <= S_IDLE;
             end if;
           elsif (int_rsp.ack = '1') then -- end of single transfer
-            keeper.state <= "00";
+            keeper.state <= S_IDLE;
           end if;
 
-        when others => -- return error response until end of (locked) transfer
+        when S_ERROR => -- return error response until end of (locked) transfer
         -- ------------------------------------------------------------
           if (keeper.lock = '0') or (req_i.lock = '0') then
-            keeper.state <= "00";
+            keeper.state <= S_IDLE;
           end if;
 
       end case;
     end if;
   end process;
 
-  -- timeout counter bit select --
+  -- timeout counter bit select; fire also if no port is selected at all (#1633) --
   tmo_bit_gen:
   for i in 0 to 4 generate
     tmo_bits(i) <= keeper.cnt(port_tmo_bit_list_c(i)) when port_tmo_en_list_c(i) else '0';
   end generate;
-  tmo_fire <= or_reduce_f(tmo_bits and keeper.sel);
+  tmo_fire <= or_reduce_f(tmo_bits and keeper.sel) or (not or_reduce_f(keeper.sel));
 
   -- bus keeper error --
-  bus_err <= keeper.state(1); -- send error to host
-  term_o  <= keeper.state(1); -- terminate pending (external) bus access
+  bus_err <= '1' when (keeper.state = S_ERROR) else '0'; -- send error to host
+  term_o  <= '1' when (keeper.state = S_ERROR) else '0'; -- terminate pending (external) bus access
 
   -- external timeout notification --
-  assert (X_TMO > 0) report "[NEORV32] External bus timeout disabled! Can cause permanent system stall!" severity warning;
+  assert ((not X_EN) or (X_TMO > 0)) report
+    "[NEORV32] External bus timeout disabled! Can cause permanent system stall!" severity warning;
 
 end architecture;
 
@@ -610,26 +625,34 @@ architecture neorv32_bus_io_switch_rtl of neorv32_bus_io_switch is
   constant addr_hi_c : natural := (index_size_f(DEV_SIZE) + index_size_f(num_devs_c)) - 1; -- high address boundary bit
 
   -- list of enabled device ports --
-  type dev_en_list_t is array (0 to num_devs_c-1) of boolean;
+  type dev_en_list_t is array (num_devs_c-1 downto 0) of boolean;
   constant dev_en_list_c : dev_en_list_t := (
-    DEV_00_EN, DEV_01_EN, DEV_02_EN, DEV_03_EN, DEV_04_EN, DEV_05_EN, DEV_06_EN, DEV_07_EN,
-    DEV_08_EN, DEV_09_EN, DEV_10_EN, DEV_11_EN, DEV_12_EN, DEV_13_EN, DEV_14_EN, DEV_15_EN,
-    DEV_16_EN, DEV_17_EN, DEV_18_EN, DEV_19_EN, DEV_20_EN, DEV_21_EN, DEV_22_EN, DEV_23_EN,
-    DEV_24_EN, DEV_25_EN, DEV_26_EN, DEV_27_EN, DEV_28_EN, DEV_29_EN, DEV_30_EN, DEV_31_EN
+    0  => DEV_00_EN, 1  => DEV_01_EN, 2  => DEV_02_EN, 3  => DEV_03_EN,
+    4  => DEV_04_EN, 5  => DEV_05_EN, 6  => DEV_06_EN, 7  => DEV_07_EN,
+    8  => DEV_08_EN, 9  => DEV_09_EN, 10 => DEV_10_EN, 11 => DEV_11_EN,
+    12 => DEV_12_EN, 13 => DEV_13_EN, 14 => DEV_14_EN, 15 => DEV_15_EN,
+    16 => DEV_16_EN, 17 => DEV_17_EN, 18 => DEV_18_EN, 19 => DEV_19_EN,
+    20 => DEV_20_EN, 21 => DEV_21_EN, 22 => DEV_22_EN, 23 => DEV_23_EN,
+    24 => DEV_24_EN, 25 => DEV_25_EN, 26 => DEV_26_EN, 27 => DEV_27_EN,
+    28 => DEV_28_EN, 29 => DEV_29_EN, 30 => DEV_30_EN, 31 => DEV_31_EN
   );
 
   -- list of device base addresses --
-  type dev_base_list_t is array (0 to num_devs_c-1) of std_ulogic_vector(31 downto 0);
+  type dev_base_list_t is array (num_devs_c-1 downto 0) of std_ulogic_vector(31 downto 0);
   constant dev_base_list_c : dev_base_list_t := (
-    DEV_00_BASE, DEV_01_BASE, DEV_02_BASE, DEV_03_BASE, DEV_04_BASE, DEV_05_BASE, DEV_06_BASE, DEV_07_BASE,
-    DEV_08_BASE, DEV_09_BASE, DEV_10_BASE, DEV_11_BASE, DEV_12_BASE, DEV_13_BASE, DEV_14_BASE, DEV_15_BASE,
-    DEV_16_BASE, DEV_17_BASE, DEV_18_BASE, DEV_19_BASE, DEV_20_BASE, DEV_21_BASE, DEV_22_BASE, DEV_23_BASE,
-    DEV_24_BASE, DEV_25_BASE, DEV_26_BASE, DEV_27_BASE, DEV_28_BASE, DEV_29_BASE, DEV_30_BASE, DEV_31_BASE
+    0  => DEV_00_BASE, 1  => DEV_01_BASE, 2  => DEV_02_BASE, 3  => DEV_03_BASE,
+    4  => DEV_04_BASE, 5  => DEV_05_BASE, 6  => DEV_06_BASE, 7  => DEV_07_BASE,
+    8  => DEV_08_BASE, 9  => DEV_09_BASE, 10 => DEV_10_BASE, 11 => DEV_11_BASE,
+    12 => DEV_12_BASE, 13 => DEV_13_BASE, 14 => DEV_14_BASE, 15 => DEV_15_BASE,
+    16 => DEV_16_BASE, 17 => DEV_17_BASE, 18 => DEV_18_BASE, 19 => DEV_19_BASE,
+    20 => DEV_20_BASE, 21 => DEV_21_BASE, 22 => DEV_22_BASE, 23 => DEV_23_BASE,
+    24 => DEV_24_BASE, 25 => DEV_25_BASE, 26 => DEV_26_BASE, 27 => DEV_27_BASE,
+    28 => DEV_28_BASE, 29 => DEV_29_BASE, 30 => DEV_30_BASE, 31 => DEV_31_BASE
   );
 
   -- device ports combined as arrays --
-  type dev_req_t is array (0 to num_devs_c-1) of bus_req_t;
-  type dev_rsp_t is array (0 to num_devs_c-1) of bus_rsp_t;
+  type dev_req_t is array (num_devs_c-1 downto 0) of bus_req_t;
+  type dev_rsp_t is array (num_devs_c-1 downto 0) of bus_rsp_t;
   signal dev_req : dev_req_t;
   signal dev_rsp : dev_rsp_t;
 
@@ -860,11 +883,9 @@ begin
 
   -- Data ALU -------------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  amo_alu: process(rstn_i, clk_i)
+  amo_alu: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      alu_res <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       case arbiter.cmd(2 downto 0) is
         when "000"  => alu_res <= arbiter.wdata; -- AMOSWAP.W
         when "001"  => alu_res <= std_ulogic_vector(unsigned(arbiter.rdata) + unsigned(arbiter.wdata)); -- AMOADD.W

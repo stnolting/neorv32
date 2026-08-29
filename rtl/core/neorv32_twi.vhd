@@ -213,11 +213,9 @@ begin
 
 
   -- IRQ if enabled and TX FIFO is empty and bus engine is idle --
-  irq_generator: process(rstn_i, clk_i)
+  irq_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq_o <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       irq_o <= ctrl.enable and (not fifo.tx_avail) and (not busy);
     end if;
   end process;
@@ -225,12 +223,9 @@ begin
 
   -- TWI Clock Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  clock_generator: process(rstn_i, clk_i)
+  clock_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      clkgen_tick <= '0';
-      clkgen_cnt  <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (ctrl.enable = '0') then -- reset/disabled
         clkgen_tick <= '0';
         clkgen_cnt  <= (others => '0');
@@ -249,12 +244,9 @@ begin
   end process;
 
   -- generate four non-overlapping clock phases --
-  phase_generator: process(rstn_i, clk_i)
+  phase_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      clkgen_phase_gen    <= (others => '0');
-      clkgen_phase_gen_ff <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       clkgen_phase_gen_ff <= clkgen_phase_gen;
       if (ctrl.enable = '0') or (busy = '0') then -- disabled or idle
         clkgen_phase_gen <= "0001"; -- start with a new phase
@@ -374,12 +366,9 @@ begin
 
   -- IO Control -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  input_synchronizer: process(rstn_i, clk_i)
+  input_synchronizer: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      sda_sync <= (others => '0');
-      scl_sync <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       sda_sync <= sda_sync(0) & to_stdulogic(to_bit(twi_sda_i)); -- "to_bit" to avoid HW-vs-sim mismatch
       scl_sync <= scl_sync(0) & to_stdulogic(to_bit(twi_scl_i));
     end if;

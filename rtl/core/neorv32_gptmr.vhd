@@ -56,7 +56,7 @@ architecture neorv32_gptmr_rtl of neorv32_gptmr is
   signal enable, mode, irq : std_ulogic_vector(NUM_SLICES-1 downto 0);
 
   -- slice wiring --
-  type rdata_t is array (0 to NUM_SLICES-1) of std_ulogic_vector(31 downto 0);
+  type rdata_t is array (NUM_SLICES-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal rdata : rdata_t;
   signal rdata_sum : std_ulogic_vector(31 downto 0);
   signal cs, trig : std_ulogic_vector(NUM_SLICES-1 downto 0);
@@ -97,11 +97,9 @@ begin
   acc_addr <= bus_req_i.addr(7) & bus_req_i.addr(2);
 
   -- clock generator --
-  clk_gen: process(rstn_i, clk_i)
+  clk_gen: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      clken <= '0';
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       clken <= clkgen_i(to_integer(unsigned(clkprsc)));
     end if;
   end process;
@@ -172,11 +170,9 @@ begin
 
   -- Interrupt Generator --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  irq_generator: process(rstn_i, clk_i)
+  irq_generator: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      irq <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       for i in 0 to NUM_SLICES-1 loop
         if (enable(i) = '0') then
           irq(i) <= '0';
