@@ -185,7 +185,7 @@ begin
 
       -- write data word to testbench "external IO memory" --
       wait for 10*t_cpu_c;
-      report "[TB:JTAG] Writing to memory via program buffer...";
+      report "[TB:JTAG] Writing to memory (0xF0000000) via program buffer...";
       dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0100000", x"00942023"); -- progbuf0 = sw x9, 0(x8)
       dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0100001", x"00000013"); -- progbuf1 = nop
       dmi_write(jtag_tck, jtag_tms, jtag_tdi, jtag_tdo, "0000100", x"F0000000"); -- data0 = memory address
