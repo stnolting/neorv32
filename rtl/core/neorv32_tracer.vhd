@@ -50,6 +50,10 @@ architecture neorv32_tracer_rtl of neorv32_tracer is
   -- helpers --
   constant log2_fifo_size_c : natural := index_size_f(TRACE_DEPTH);
 
+  -- bus interface --
+  signal bus_ack, bus_rden : std_ulogic;
+  signal bus_rdata : std_ulogic_vector(31 downto 0);
+
   -- control registers --
   signal ctrl_en, ctrl_hsel, ctrl_start, ctrl_stop, ctrl_iclr : std_ulogic;
   signal stop_addr : std_ulogic_vector(30 downto 0);
@@ -84,10 +88,21 @@ begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o  <= rsp_terminate_c;
+      bus_ack  <= '0';
+      bus_rden <= '0';
+    elsif rising_edge(clk_i) then
+      bus_ack  <= bus_req_i.stb;
+      bus_rden <= bus_req_i.stb and (not bus_req_i.rw);
+    end if;
+  end process;
+
+  -- write access --
+  bus_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
       ctrl_en    <= '0';
       ctrl_hsel  <= '0';
       ctrl_start <= '0';
@@ -95,10 +110,6 @@ begin
       ctrl_iclr  <= '0';
       stop_addr  <= (others => '0');
     elsif rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack <= bus_req_i.stb;
-      bus_rsp_o.err <= '0';
-      -- write access --
       ctrl_start <= '0';
       ctrl_stop  <= '0';
       ctrl_iclr  <= '0';
@@ -114,26 +125,35 @@ begin
           stop_addr <= bus_req_i.data(31 downto 1);
         end if;
       end if;
-      -- read access --
-      bus_rsp_o.data <= (others => '0');
-      if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
-        case bus_req_i.addr(3 downto 2) is
-          when "00" => -- control register
-            bus_rsp_o.data(ctrl_enable_c) <= ctrl_en;
-            bus_rsp_o.data(ctrl_hsel_c)   <= ctrl_hsel and bool_to_ulogic_f(DUAL_CORE_EN);
-            bus_rsp_o.data(ctrl_run_c)    <= arbiter.run;
-            bus_rsp_o.data(ctrl_avail_c)  <= fifo.avail;
-            bus_rsp_o.data(data_tbm_msb_c downto data_tbm_lsb_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
-          when "01" => -- stop-address register
-            bus_rsp_o.data <= stop_addr & '0';
-          when "10" => -- trace data: source
-            bus_rsp_o.data <= fifo.rdata(31 downto 0);
-          when others => -- trace data: destination
-            bus_rsp_o.data <= fifo.rdata(63 downto 32);
-        end case;
-      end if;
     end if;
   end process;
+
+  -- read access (asynchronous) --
+  bus_read: process(bus_rden, bus_req_i.addr, ctrl_en, ctrl_hsel, arbiter.run, fifo, stop_addr)
+  begin
+    bus_rdata <= (others => '0');
+    if (bus_rden = '1') then -- output gating
+      case bus_req_i.addr(3 downto 2) is
+        when "00" => -- control register
+          bus_rdata(ctrl_enable_c) <= ctrl_en;
+          bus_rdata(ctrl_hsel_c)   <= ctrl_hsel and bool_to_ulogic_f(DUAL_CORE_EN);
+          bus_rdata(ctrl_run_c)    <= arbiter.run;
+          bus_rdata(ctrl_avail_c)  <= fifo.avail;
+          bus_rdata(data_tbm_msb_c downto data_tbm_lsb_c) <= std_ulogic_vector(to_unsigned(log2_fifo_size_c, 4));
+        when "01" => -- stop-address register
+          bus_rdata <= stop_addr & '0';
+        when "10" => -- trace data: source
+          bus_rdata <= fifo.rdata(31 downto 0);
+        when others => -- trace data: destination
+          bus_rdata <= fifo.rdata(63 downto 32);
+      end case;
+    end if;
+  end process;
+
+  -- bus response --
+  bus_rsp_o.ack  <= bus_ack;
+  bus_rsp_o.err  <= '0'; -- no access errors supported
+  bus_rsp_o.data <= bus_rdata;
 
   -- trace source select (CPU0 or CPU1) --
   trace_src <= trace0_i when (ctrl_hsel = '0') or (DUAL_CORE_EN = false) else trace1_i;
@@ -230,7 +250,7 @@ begin
   fifo.clear <= not ctrl_en;
   fifo.we    <= push;
   fifo.wdata <= arbiter.dst & arbiter.src;
-  fifo.re    <= '1' when (discard = '1') or ((bus_req_i.stb = '1') and (bus_req_i.rw = '0') and (bus_req_i.addr(3 downto 2) = "11")) else '0';
+  fifo.re    <= '1' when (discard = '1') or ((bus_rden = '1') and (bus_req_i.addr(3 downto 2) = "11")) else '0';
 
   -- discard oldest entry if overflowing --
   fifo_overflow: process(clk_i)
