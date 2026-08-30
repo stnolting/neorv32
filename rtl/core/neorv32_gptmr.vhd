@@ -54,15 +54,33 @@ architecture neorv32_gptmr_rtl of neorv32_gptmr is
   signal acc_addr : std_ulogic_vector(1 downto 0);
   signal clkprsc : std_ulogic_vector(2 downto 0);
   signal enable, mode, irq : std_ulogic_vector(NUM_SLICES-1 downto 0);
+  signal clken : std_ulogic;
 
   -- slice wiring --
   type rdata_t is array (NUM_SLICES-1 downto 0) of std_ulogic_vector(31 downto 0);
   signal rdata : rdata_t;
   signal rdata_sum : std_ulogic_vector(31 downto 0);
   signal cs, trig : std_ulogic_vector(NUM_SLICES-1 downto 0);
-  signal clken : std_ulogic;
 
 begin
+
+  -- Bus Handshake --------------------------------------------------------------------------
+  -- -------------------------------------------------------------------------------------------
+  bus_handshake: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      bus_rsp_o.ack <= '0';
+    elsif rising_edge(clk_i) then
+      bus_rsp_o.ack <= bus_req_i.stb;
+    end if;
+  end process;
+
+  -- no access errors supported --
+  bus_rsp_o.err <= '0';
+
+  -- access helper --
+  acc_addr <= bus_req_i.addr(7) & bus_req_i.addr(2);
+
 
   -- Configuration Registers ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -74,7 +92,7 @@ begin
       clkprsc <= (others => '0');
     elsif rising_edge(clk_i) then
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then -- write access
-        -- control and status register 0 (CSR0) --
+        -- CSR0: control and status register 0 --
         if (acc_addr = "00") then
           if (bus_req_i.ben(1 downto 0) = "11") then -- low half: per-slice enable
             enable <= bus_req_i.data((NUM_SLICES-1)+0 downto 0);
@@ -83,7 +101,7 @@ begin
             mode <= bus_req_i.data((NUM_SLICES-1)+16 downto 16);
           end if;
         end if;
-        -- control and status register 1 (CSR1) --
+        -- CSR1: control and status register 1 --
         if (acc_addr = "01") then
           if (bus_req_i.ben(3 downto 2) = "11") then -- high half: clock prescaler
             clkprsc <= bus_req_i.data(18 downto 16);
@@ -92,9 +110,6 @@ begin
       end if;
     end if;
   end process;
-
-  -- access helper --
-  acc_addr <= bus_req_i.addr(7) & bus_req_i.addr(2);
 
   -- clock generator --
   clk_gen: process(clk_i)
@@ -105,15 +120,11 @@ begin
   end process;
 
 
-  -- Bus (Read) Access ----------------------------------------------------------------------
+  -- Bus Read Access ------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_read: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      bus_rsp_o <= rsp_terminate_c;
-    elsif rising_edge(clk_i) then
-      bus_rsp_o.ack  <= bus_req_i.stb;
-      bus_rsp_o.err  <= '0';
+    if rising_edge(clk_i) then
       bus_rsp_o.data <= (others => '0');
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then -- read access
         case acc_addr is

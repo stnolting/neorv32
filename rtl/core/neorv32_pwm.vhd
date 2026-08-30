@@ -67,19 +67,28 @@ begin
 
   -- Bus Access -----------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o <= rsp_terminate_c;
-      enable    <= (others => '0');
-      polarity  <= (others => '0');
-      clkprsc   <= (others => '0');
-      mode      <= (others => '0');
+      bus_rsp_o.ack <= '0';
     elsif rising_edge(clk_i) then
-      -- handshake --
       bus_rsp_o.ack <= bus_req_i.stb;
-      bus_rsp_o.err <= '0';
-      -- write access --
+    end if;
+  end process;
+  bus_rsp_o.err <= '0'; -- no access errors supported
+
+  -- access address helper --
+  addr <= bus_req_i.addr(7) & bus_req_i.addr(3 downto 2);
+
+  -- write access --
+  bus_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      enable   <= (others => '0');
+      polarity <= (others => '0');
+      clkprsc  <= (others => '0');
+      mode     <= (others => '0');
+    elsif rising_edge(clk_i) then
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '1') then
         if (addr = "000") then
           enable <= bus_req_i.data(NUM_CHANNELS-1 downto 0);
@@ -94,22 +103,25 @@ begin
           mode <= bus_req_i.data(NUM_CHANNELS-1 downto 0);
         end if;
       end if;
-      -- read access --
+    end if;
+  end process;
+
+  -- read access --
+  bus_read: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
       bus_rsp_o.data <= (others => '0');
       if (bus_req_i.stb = '1') and (bus_req_i.rw = '0') then
         case addr is
           when "000"  => bus_rsp_o.data(NUM_CHANNELS-1 downto 0) <= enable;
           when "001"  => bus_rsp_o.data(NUM_CHANNELS-1 downto 0) <= polarity;
-          when "010"  => bus_rsp_o.data(2 downto 0) <= clkprsc;
+          when "010"  => bus_rsp_o.data(2 downto 0)              <= clkprsc;
           when "011"  => bus_rsp_o.data(NUM_CHANNELS-1 downto 0) <= mode;
-          when others => bus_rsp_o.data <= rdata_sum;
+          when others => bus_rsp_o.data                          <= rdata_sum;
         end case;
       end if;
     end if;
   end process;
-
-  -- access address helper --
-  addr <= bus_req_i.addr(7) & bus_req_i.addr(3 downto 2);
 
   -- Channel Controllers --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
