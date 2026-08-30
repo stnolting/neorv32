@@ -57,9 +57,7 @@ architecture neorv32_debug_dtm_rtl of neorv32_debug_dtm is
   -- JTAG tap --
   type state_t is (LOGIC_RESET, DR_SCAN, DR_CAPTURE, DR_SHIFT, DR_EXIT1, DR_PAUSE, DR_EXIT2, DR_UPDATE,
                       RUN_IDLE, IR_SCAN, IR_CAPTURE, IR_SHIFT, IR_EXIT1, IR_PAUSE, IR_EXIT2, IR_UPDATE);
-  signal state, state2 : state_t;
-
-  -- TAP registers --
+  signal state : state_t;
   signal ireg : std_ulogic_vector(4 downto 0);
   signal dreg : std_ulogic_vector(size_dmi_c-1 downto 0); -- max size (= dmi size)
 
@@ -93,10 +91,10 @@ begin
   tap_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      state2 <= LOGIC_RESET;
       state  <= LOGIC_RESET;
+      update <= '0';
     elsif rising_edge(clk_i) then
-      state2 <= state;
+      update <= '0';
       if (tck_rise = '1') then -- clock pulse (evaluate TMS on the rising edge of TCK)
         case state is -- JTAG state machine
           when LOGIC_RESET => if (tms = '0') then state <= RUN_IDLE;   else state <= LOGIC_RESET; end if;
@@ -117,13 +115,12 @@ begin
           when IR_UPDATE   => if (tms = '0') then state <= RUN_IDLE;   else state <= DR_SCAN;     end if;
           when others      => state <= LOGIC_RESET;
         end case;
+        if (state = DR_UPDATE) then -- register update pulse
+          update <= '1';
+        end if;
       end if;
     end if;
   end process;
-
-  -- DR_UPDATE edge detector --
-  update <= '1' when (state = DR_UPDATE) and (state2 /= DR_UPDATE) else '0';
-
 
   -- Tap Register Access --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
