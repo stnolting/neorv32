@@ -287,7 +287,7 @@ begin
           if (align_q = '0') then
             if (ipb.rdata(0)(1 downto 0) /= "11") and (ipb.avail(0) = '1') then -- compressed, consume IPB(0) entry
 
-              if (instr_is_zcmp = '1') then -- following instruction is part of zcmp extension
+              if (instr_is_zcmp = '1') and (ipb.rdata(0)(16) = '0') then -- zcmp instruction without fetch fault (faulted words use the regular path to raise an access fault)
                 zcmp_instr_nxt <= ipb.rdata(0)(15 downto 0); -- save zcmp instruction
                 issue_state_nxt <= S_ZCMP;
                 zcmp_detect <= '1';
@@ -310,7 +310,7 @@ begin
           elsif (ipb.avail(1) = '1') then
             if (ipb.rdata(1)(1 downto 0) /= "11") then -- compressed, consume IPB(1) entry
 
-              if (instr_is_zcmp = '1') then -- following instruction is part of zcmp extension
+              if (instr_is_zcmp = '1') and (ipb.rdata(1)(16) = '0') then -- zcmp instruction without fetch fault (faulted words use the regular path to raise an access fault)
                 zcmp_instr_nxt <= ipb.rdata(1)(15 downto 0); -- save zcmp instruction
                 issue_state_nxt <= S_ZCMP;
                 zcmp_detect <= '1'; -- signal that zcmp sequence is about to start

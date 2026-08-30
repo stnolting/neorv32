@@ -7,8 +7,10 @@
 #include "cm_pop.h"
 #include "cm_exc.h"
 #include "cm_irq.h"
+#include "cm_resv.h"
+#include "cm_fetch_fault.h"
 
-#define BAUD_RATE 19200
+#define BAUD_RATE 1000000 // high baud rate to speed up simulation (use 19200 for real hardware)
 
 int main()
 {
@@ -26,6 +28,8 @@ int main()
 
 	cm_exc();
 	cm_irq();
+	cm_resv();
+	cm_fetch_fault(); // locks a PMP entry - keep last
 
 	return 0;
 }

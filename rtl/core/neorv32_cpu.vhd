@@ -170,6 +170,7 @@ begin
       sel_string_f(RISCV_ISA_Zbs,       "_zbs",       "" ) &
       sel_string_f(RISCV_ISA_C,         "_zca",       "" ) &
       sel_string_f(riscv_zcb_c,         "_zcb",       "" ) &
+      sel_string_f(riscv_zcmp_c,        "_zcmp",      "" ) &
       sel_string_f(RISCV_ISA_Zfinx,     "_zfinx",     "" ) &
       sel_string_f(RISCV_ISA_Zibi,      "_zibi",      "" ) &
       sel_string_f(RISCV_ISA_Zicntr,    "_zicntr",    "" ) &
