@@ -427,7 +427,7 @@ void neorv32_aux_print_hw_config(void) {
   neorv32_uart0_printf("\nHPM counters:        ");
   uint32_t hpm_num = neorv32_cpu_hpm_get_num_counters();
   if (hpm_num != 0) {
-    neorv32_uart0_printf("%u counter(s), %u bit(s) wide", hpm_num, neorv32_cpu_hpm_get_size());
+    neorv32_uart0_printf("%u counter(s), %u-bit wide", hpm_num, neorv32_cpu_hpm_get_size());
   }
   else {
     neorv32_uart0_printf("none");
