@@ -29,6 +29,7 @@ mimpid = 0x01040312 -> Version 01.04.03.12 -> v1.4.3.12
 
 | Date | Version | Comment | Ticket |
 |:----:|:-------:|:--------|:------:|
+| 29.08.2026 | 1.13.5.3 | :test_tube: use asynchronous bus read access for further IO devices | [#1640](https://github.com/stnolting/neorv32/pull/1640) |
 | 29.08.2026 | 1.13.5.2 | :test_tube: use asynchronous bus read access for serial IO devices | [#1638](https://github.com/stnolting/neorv32/pull/1638) |
 | 29.08.2026 | 1.13.5.1 | CPU: optimize set-on-less-than timing | [#1635](https://github.com/stnolting/neorv32/pull/1635) |
 | 22.08.2026 | [**1.13.5**](https://github.com/stnolting/neorv32/releases/tag/v1.13.5) | :rocket: **New release** | |
