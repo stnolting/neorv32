@@ -155,13 +155,13 @@ architecture neorv32_debug_dm_rtl of neorv32_debug_dm is
 
   -- Debug Core Interface --
   type dci_t is record
-    ack_hlt  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU (re-)entered HALT state (single-shot)
-    req_res  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants the CPU to resume when set
-    ack_res  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts resuming when set (single-shot)
-    req_exe  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants CPU to execute program buffer when set
-    ack_exe  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts executing program buffer when set (single-shot)
-    ack_exc  : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU has detected an exception (single-shot)
-    data_reg : std_ulogic_vector(31 downto 0); -- memory-mapped data exchange register
+    ack_hlt : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU (re-)entered HALT state (single-shot)
+    req_res : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants the CPU to resume when set
+    ack_res : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts resuming when set (single-shot)
+    req_exe : std_ulogic_vector(NUM_HARTS-1 downto 0); -- DM wants CPU to execute program buffer when set
+    ack_exe : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU starts executing program buffer when set (single-shot)
+    ack_exc : std_ulogic_vector(NUM_HARTS-1 downto 0); -- CPU has detected an exception (single-shot)
+    data0   : std_ulogic_vector(31 downto 0); -- memory-mapped data exchange register
   end record;
   signal dci : dci_t;
 
@@ -211,15 +211,19 @@ begin
 
           -- debug module control --
           when addr_dmcontrol_c =>
-            dm_reg.halt_req  <= dmi_req_i.data(31);                                          -- haltreq
-            dm_reg.req_res   <= dmi_req_i.data(30) and (not dmi_req_i.data(31));             -- resumereq, ignore if halt request
-            dm_reg.reset_ack <= dmi_req_i.data(28);                                          -- ackhavereset
-            if (cmd_busy = '0') then dm_reg.hartsel <= dmi_req_i.data(18 downto 16); end if; -- hartsello, no update while CMD is executing
-            dm_reg.ndmreset  <= dmi_req_i.data(1);                                           -- ndmreset
+            dm_reg.halt_req  <= dmi_req_i.data(31);                              -- haltreq
+            dm_reg.req_res   <= dmi_req_i.data(30) and (not dmi_req_i.data(31)); -- resumereq, ignore if halt request
+            dm_reg.reset_ack <= dmi_req_i.data(28);                              -- ackhavereset
+            if (cmd_busy = '0') then
+              dm_reg.hartsel <= dmi_req_i.data(18 downto 16);                    -- hartsello, no update while CMD is executing
+            end if;
+            dm_reg.ndmreset  <= dmi_req_i.data(1);                               -- ndmreset
 
           -- write abstract command (only when idle and no error yet) --
           when addr_command_c =>
-            if (cmd_busy = '0') and (cmd_err = "000") then dm_reg.command <= dmi_req_i.data; end if;
+            if (cmd_busy = '0') and (cmd_err = "000") then
+              dm_reg.command <= dmi_req_i.data;
+            end if;
 
           -- write abstract command autoexec (only when idle) --
           when addr_abstractauto_c =>
@@ -230,15 +234,21 @@ begin
 
           -- acknowledge command error --
           when addr_abstractcs_c =>
-            if (dmi_req_i.data(10 downto 8) = "111") then dm_reg.clr_acc_err <= '1'; end if;
+            if (dmi_req_i.data(10 downto 8) = "111") then
+              dm_reg.clr_acc_err <= '1';
+            end if;
 
           -- write program buffer 0 (only when idle) --
           when addr_progbuf0_c =>
-            if (cmd_busy = '0') then dm_reg.progbuf(0) <= dmi_req_i.data; end if;
+            if (cmd_busy = '0') then
+              dm_reg.progbuf(0) <= dmi_req_i.data;
+            end if;
 
           -- write program buffer 1 (only when idle) --
           when addr_progbuf1_c =>
-            if (cmd_busy = '0') then dm_reg.progbuf(1) <= dmi_req_i.data; end if;
+            if (cmd_busy = '0') then
+              dm_reg.progbuf(1) <= dmi_req_i.data;
+            end if;
 
           -- undefined --
           when others =>
@@ -371,7 +381,7 @@ begin
         -- abstract data 0 --
         when addr_data0_c =>
           if (dmi_rden = '1') then
-            dmi_rsp_o.data <= dci.data_reg;
+            dmi_rsp_o.data <= dci.data0;
           end if;
 
         -- authentication data (can always be read) --
@@ -386,7 +396,7 @@ begin
 
         -- not implemented or read-only-zero --
         when others =>
-          null;
+          dmi_rsp_o.data <= (others => '0');
 
       end case;
     end if;
@@ -536,11 +546,11 @@ begin
       bus_rsp_o.err <= '0';
       -- data0 write access --
       if (dmi_wren = '1') and (dmi_req_i.addr = addr_data0_c) and (cmd_busy = '0') then -- DM write access
-        dci.data_reg <= dmi_req_i.data;
+        dci.data0 <= dmi_req_i.data;
       elsif (accen = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(7 downto 6) = dm_data_base_c(7 downto 6)) then -- CPU write access
         for i in 0 to 3 loop
           if (bus_req_i.ben(i) = '1') then
-            dci.data_reg(8*i+7 downto 8*i) <= bus_req_i.data(8*i+7 downto 8*i);
+            dci.data0(8*i+7 downto 8*i) <= bus_req_i.data(8*i+7 downto 8*i);
           end if;
         end loop;
       end if;
