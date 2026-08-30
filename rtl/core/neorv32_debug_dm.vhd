@@ -529,22 +529,25 @@ begin
   dci.req_exe <= hartselect when (cmd_state = CMD_START) else (others => '0');
 
 
-  -- Bus Access (from CPU) ------------------------------------------------------------------
+  -- CPU Interface --------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  bus_access: process(rstn_i, clk_i)
+  bus_handshake: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      bus_rsp_o    <= rsp_terminate_c;
-      dci.data_reg <= (others => '0');
-      dci.ack_hlt  <= (others => '0');
-      dci.ack_res  <= (others => '0');
-      dci.ack_exe  <= (others => '0');
-      dci.ack_exc  <= (others => '0');
-    elsif rising_edge(clk_i) then
-      -- bus handshake --
-      bus_rsp_o.ack <= accen;
+      bus_rsp_o.ack <= '0';
       bus_rsp_o.err <= '0';
-      -- data0 write access --
+    elsif rising_edge(clk_i) then
+      bus_rsp_o.ack <= bus_req_i.stb;
+      bus_rsp_o.err <= bus_req_i.stb and (not bus_req_i.meta(2)); -- access error non-debug-mode access
+    end if;
+  end process;
+
+  -- data0 register --
+  data0_write: process(rstn_i, clk_i)
+  begin
+    if (rstn_i = '0') then
+      dci.data0 <= (others => '0');
+    elsif rising_edge(clk_i) then
       if (dmi_wren = '1') and (dmi_req_i.addr = addr_data0_c) and (cmd_busy = '0') then -- DM write access
         dci.data0 <= dmi_req_i.data;
       elsif (accen = '1') and (bus_req_i.rw = '1') and (bus_req_i.addr(7 downto 6) = dm_data_base_c(7 downto 6)) then -- CPU write access
@@ -554,8 +557,14 @@ begin
           end if;
         end loop;
       end if;
-      -- CPU status register write access; all flags auto-clear --
-      dci.ack_hlt <= (others => '0');
+    end if;
+  end process;
+
+  -- status register --
+  status_reg: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
+      dci.ack_hlt <= (others => '0'); -- all flags auto-clear
       dci.ack_res <= (others => '0');
       dci.ack_exe <= (others => '0');
       dci.ack_exc <= (others => '0');
@@ -567,16 +576,22 @@ begin
           if (bus_req_i.ben(3) = '1') then dci.ack_exc(i) <= cpu_id_dec(i); end if; -- CPU has encountered an EXCEPTION
         end loop;
       end if;
-      -- CPU read access --
+    end if;
+  end process;
+
+  -- bus read access --
+  bus_read: process(clk_i)
+  begin
+    if rising_edge(clk_i) then
       bus_rsp_o.data <= (others => '0'); -- default
       if (accen = '1') and (bus_req_i.rw = '0') then
-        case bus_req_i.addr(7 downto 6) is -- module select
+        case bus_req_i.addr(7 downto 6) is
           when "00" => -- dm_code_base_c: code ROM
             bus_rsp_o.data <= code_rom_c(to_integer(unsigned(bus_req_i.addr(5 downto 2))));
           when "01" => -- dm_pbuf_base_c: program buffer
             bus_rsp_o.data <= cpu_progbuf(to_integer(unsigned(bus_req_i.addr(3 downto 2))));
           when "10" => -- dm_data_base_c: data buffer
-            bus_rsp_o.data <= dci.data_reg;
+            bus_rsp_o.data <= dci.data0;
           when others => -- dm_sreg_base_c: status register
             bus_rsp_o.data(1*8) <= or_reduce_f(dci.req_res and cpu_id_dec); -- DM requests CPU to resume
             bus_rsp_o.data(2*8) <= or_reduce_f(dci.req_exe and cpu_id_dec); -- DM requests CPU to execute program buffer
