@@ -300,12 +300,9 @@ begin
 
   -- Debug Module Interface - Read Access ---------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  dmi_read_access: process(rstn_i, clk_i)
+  dmi_read_access: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      dmi_rsp_o.ack  <= '0';
-      dmi_rsp_o.data <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       dmi_rsp_o.ack  <= or_reduce_f(dmi_req_i.op); -- always ACK any request
       dmi_rsp_o.data <= (others => '0');
       case dmi_req_i.addr is
@@ -398,14 +395,9 @@ begin
 
   -- Hart Status Controller -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  hart_status: process(rstn_i, clk_i)
+  hart_status: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      hart.halted     <= (others => '0');
-      hart.resume_req <= (others => '0');
-      hart.resume_ack <= (others => '0');
-      hart.reset      <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       for i in 0 to NUM_HARTS-1 loop
         -- halted ACK --
         if (dm_reg.ndmreset = '1') or (dm_reg.dmactive = '0') or (dci.ack_res(i) = '1') then
@@ -441,12 +433,9 @@ begin
 
   -- Command Execution Arbiter --------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  cmd_arbiter: process(rstn_i, clk_i)
+  cmd_arbiter: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      cmd_state <= CMD_IDLE;
-      cmd_err   <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       if (dm_reg.ndmreset = '1') or (dm_reg.dmactive = '0') then -- hart/DM reset
         cmd_state <= CMD_IDLE;
         cmd_err   <= (others => '0');
